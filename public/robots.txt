@@ -1,0 +1,8 @@
+User-agent: *
+Allow: /
+Disallow: /dashboard
+Disallow: /financeiro
+Disallow: /vendas
+Disallow: /estoque
+Disallow: /fiscal
+Disallow: /configuracoes
