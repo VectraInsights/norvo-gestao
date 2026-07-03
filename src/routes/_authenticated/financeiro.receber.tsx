@@ -12,7 +12,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { Loader2, Plus, TrendingUp, Trash2, MoreHorizontal, Check, RotateCcw, Ban } from "lucide-react";
+import { Loader2, Plus, TrendingUp, Trash2, MoreHorizontal, Check, RotateCcw, Ban, ArrowUp, ArrowDown, ArrowUpDown } from "lucide-react";
 import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -196,6 +196,65 @@ export function LancamentosPage({ tipo }: { tipo: "receber" | "pagar" }) {
     onError: (e: Error) => toast.error(e.message),
   });
 
+  // Edição
+  const [editing, setEditing] = useState<null | { id: string } & ReturnType<typeof emptyForm>>(null);
+  const abrirEdicao = async (id: string) => {
+    const { data, error } = await supabase.from("lancamentos_financeiros")
+      .select("id,descricao,valor,data_emissao,data_vencimento,contato_id,categoria_id,conta_bancaria_id,documento,observacoes")
+      .eq("id", id).maybeSingle();
+    if (error || !data) { toast.error(error?.message ?? "Não encontrado"); return; }
+    setEditing({
+      id: data.id,
+      descricao: data.descricao ?? "",
+      valor: String(data.valor ?? ""),
+      data_emissao: data.data_emissao ?? format(new Date(), "yyyy-MM-dd"),
+      data_vencimento: data.data_vencimento ?? format(new Date(), "yyyy-MM-dd"),
+      contato_id: data.contato_id ?? "",
+      categoria_id: data.categoria_id ?? "",
+      conta_bancaria_id: data.conta_bancaria_id ?? "",
+      documento: data.documento ?? "",
+      observacoes: data.observacoes ?? "",
+    });
+  };
+  const salvarEdicao = useMutation({
+    mutationFn: async (input: NonNullable<typeof editing>) => {
+      const valor = Number(input.valor);
+      if (!(valor > 0)) throw new Error("Valor deve ser maior que zero");
+      const { error } = await supabase.from("lancamentos_financeiros").update({
+        descricao: input.descricao, valor,
+        data_emissao: input.data_emissao, data_vencimento: input.data_vencimento,
+        contato_id: input.contato_id || null, categoria_id: input.categoria_id || null,
+        conta_bancaria_id: input.conta_bancaria_id || null,
+        documento: input.documento || null, observacoes: input.observacoes || null,
+      }).eq("id", input.id);
+      if (error) throw error;
+    },
+    onSuccess: () => { toast.success("Lançamento atualizado"); setEditing(null); invalidate(); },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+  // Ordenação
+  type SortKey = "descricao" | "contato" | "data_vencimento" | "valor" | "status";
+  const [sort, setSort] = useState<{ key: SortKey; dir: "asc" | "desc" }>({ key: "data_vencimento", dir: "desc" });
+  const toggleSort = (key: SortKey) =>
+    setSort((s) => s.key === key ? { key, dir: s.dir === "asc" ? "desc" : "asc" } : { key, dir: "asc" });
+  const sorted = [...(lancamentos ?? [])].sort((a, b) => {
+    const dir = sort.dir === "asc" ? 1 : -1;
+    const va = sort.key === "contato" ? (a.contato?.nome ?? "") : (a as unknown as Record<string, unknown>)[sort.key];
+    const vb = sort.key === "contato" ? (b.contato?.nome ?? "") : (b as unknown as Record<string, unknown>)[sort.key];
+    if (typeof va === "number" && typeof vb === "number") return (va - vb) * dir;
+    return String(va ?? "").localeCompare(String(vb ?? "")) * dir;
+  });
+  const SortHead = ({ k, children, className }: { k: SortKey; children: React.ReactNode; className?: string }) => (
+    <TableHead className={className}>
+      <button type="button" onClick={() => toggleSort(k)} className="inline-flex items-center gap-1 font-medium hover:text-foreground">
+        {children}
+        {sort.key !== k ? <ArrowUpDown className="h-3 w-3 opacity-50" />
+          : sort.dir === "asc" ? <ArrowUp className="h-3 w-3" /> : <ArrowDown className="h-3 w-3" />}
+      </button>
+    </TableHead>
+  );
+
   const titulo = tipo === "receber" ? "Contas a receber" : "Contas a pagar";
   const desc = tipo === "receber" ? "Recebimentos futuros e realizados." : "Compromissos financeiros a vencer e pagos.";
 
@@ -317,23 +376,23 @@ export function LancamentosPage({ tipo }: { tipo: "receber" | "pagar" }) {
                 <TableHead className="w-10">
                   <Checkbox checked={allChecked} onCheckedChange={toggleAll} aria-label="Selecionar todos" />
                 </TableHead>
-                <TableHead>Descrição</TableHead>
-                <TableHead>Contato</TableHead>
-                <TableHead>Vencimento</TableHead>
-                <TableHead className="text-right">Valor</TableHead>
-                <TableHead>Status</TableHead>
+                <SortHead k="descricao">Descrição</SortHead>
+                <SortHead k="contato">Contato</SortHead>
+                <SortHead k="data_vencimento">Vencimento</SortHead>
+                <SortHead k="valor" className="text-right">Valor</SortHead>
+                <SortHead k="status">Status</SortHead>
                 <TableHead />
               </TableRow>
             </TableHeader>
             <TableBody>
-              {lancamentos.map((l) => {
+              {sorted.map((l) => {
                 const emAndamento = marcarPago.isPending && marcarPago.variables?.id === l.id;
                 return (
                   <TableRow key={l.id} data-state={selected.has(l.id) ? "selected" : undefined}>
-                    <TableCell>
+                    <TableCell onClick={(e) => e.stopPropagation()}>
                       <Checkbox checked={selected.has(l.id)} onCheckedChange={() => toggle(l.id)} aria-label="Selecionar" />
                     </TableCell>
-                    <TableCell className="font-medium">{l.descricao}</TableCell>
+                    <TableCell className="font-medium cursor-pointer hover:underline" onClick={() => abrirEdicao(l.id)}>{l.descricao}</TableCell>
                     <TableCell className="text-muted-foreground">{l.contato?.nome ?? "—"}</TableCell>
                     <TableCell className="text-tabular">{format(new Date(l.data_vencimento), "dd/MM/yyyy")}</TableCell>
                     <TableCell className="text-right text-tabular font-medium">{brl(l.valor)}</TableCell>
@@ -378,6 +437,76 @@ export function LancamentosPage({ tipo }: { tipo: "receber" | "pagar" }) {
           </Table>
         </Card>
       )}
+
+      <Dialog open={!!editing} onOpenChange={(v) => { if (!v && !salvarEdicao.isPending) setEditing(null); }}>
+        <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-lg">
+          <DialogHeader><DialogTitle>Editar lançamento</DialogTitle></DialogHeader>
+          {editing && (
+            <form onSubmit={(e) => { e.preventDefault(); salvarEdicao.mutate(editing); }} className="space-y-3">
+              <div>
+                <Label>Descrição *</Label>
+                <Input required value={editing.descricao} onChange={(e) => setEditing({ ...editing, descricao: e.target.value })} />
+              </div>
+              <div className="grid grid-cols-3 gap-3">
+                <div>
+                  <Label>Valor (R$) *</Label>
+                  <Input required type="number" step="0.01" min="0.01" value={editing.valor} onChange={(e) => setEditing({ ...editing, valor: e.target.value })} />
+                </div>
+                <div>
+                  <Label>Emissão</Label>
+                  <Input type="date" value={editing.data_emissao} onChange={(e) => setEditing({ ...editing, data_emissao: e.target.value })} />
+                </div>
+                <div>
+                  <Label>Vencimento *</Label>
+                  <Input required type="date" value={editing.data_vencimento} onChange={(e) => setEditing({ ...editing, data_vencimento: e.target.value })} />
+                </div>
+              </div>
+              <div>
+                <Label>{tipo === "receber" ? "Cliente" : "Fornecedor"}</Label>
+                <Select value={editing.contato_id} onValueChange={(v) => setEditing({ ...editing, contato_id: v })}>
+                  <SelectTrigger><SelectValue placeholder="Selecionar contato" /></SelectTrigger>
+                  <SelectContent>
+                    {contatosOpt?.map((c) => <SelectItem key={c.id} value={c.id}>{c.nome}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <Label>Conta bancária</Label>
+                  <Select value={editing.conta_bancaria_id} onValueChange={(v) => setEditing({ ...editing, conta_bancaria_id: v })}>
+                    <SelectTrigger><SelectValue placeholder="Selecionar" /></SelectTrigger>
+                    <SelectContent>
+                      {contasOpt?.map((c) => <SelectItem key={c.id} value={c.id}>{c.nome}{c.banco ? ` — ${c.banco}` : ""}</SelectItem>)}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div>
+                  <Label>Categoria</Label>
+                  <Select value={editing.categoria_id} onValueChange={(v) => setEditing({ ...editing, categoria_id: v })}>
+                    <SelectTrigger><SelectValue placeholder="Selecionar" /></SelectTrigger>
+                    <SelectContent>
+                      {categoriasOpt?.map((c) => <SelectItem key={c.id} value={c.id}>{c.nome}</SelectItem>)}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+              <div>
+                <Label>Nº documento / NF</Label>
+                <Input value={editing.documento} onChange={(e) => setEditing({ ...editing, documento: e.target.value })} />
+              </div>
+              <div>
+                <Label>Observações</Label>
+                <Textarea rows={2} value={editing.observacoes} onChange={(e) => setEditing({ ...editing, observacoes: e.target.value })} />
+              </div>
+              <DialogFooter>
+                <Button type="submit" disabled={salvarEdicao.isPending}>
+                  {salvarEdicao.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}Salvar alterações
+                </Button>
+              </DialogFooter>
+            </form>
+          )}
+        </DialogContent>
+      </Dialog>
     </>
   );
 }

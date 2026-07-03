@@ -1,0 +1,1 @@
+GRANT EXECUTE ON FUNCTION public.recalc_saldo_conta(uuid) TO authenticated;
