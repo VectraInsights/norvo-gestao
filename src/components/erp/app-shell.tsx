@@ -6,6 +6,7 @@ import {
 } from "lucide-react";
 import norvoLogo from "@/assets/norvo-logo.png";
 import { supabase } from "@/integrations/supabase/client";
+import { ShortcutsDialog } from "@/components/erp/shortcuts-dialog";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
