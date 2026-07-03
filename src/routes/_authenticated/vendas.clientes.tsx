@@ -31,6 +31,8 @@ export const Route = createFileRoute("/_authenticated/vendas/clientes")({
 
 const emptyForm = () => ({
   nome: "", documento: "", email: "", telefone: "",
+  cep: "", logradouro: "", numero: "", complemento: "",
+  bairro: "", cidade: "", uf: "", observacoes: "",
   isCliente: true, isFornecedor: false,
 });
 
