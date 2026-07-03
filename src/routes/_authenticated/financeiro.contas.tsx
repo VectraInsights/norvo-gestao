@@ -56,7 +56,7 @@ function ContasBancarias() {
     queryFn: async ({ signal }): Promise<ContaBancaria[]> => {
       const { data, error } = await supabase.from("contas_bancarias")
         .select("id,nome,banco,agencia,conta,saldo_atual")
-        .eq("empresa_id", empresa!.id).order("nome").abortSignal(signal);
+        .eq("empresa_id", empresa!.id).order("banco").abortSignal(signal);
       if (error) throw error; return (data ?? []) as ContaBancaria[];
     },
   });
