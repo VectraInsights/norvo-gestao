@@ -328,7 +328,7 @@ function ReconcileDialog({ contaId, empresaId, autoConciliar, onClose }: { conta
                               ))}
                           </SelectContent>
                         </Select>
-                        <Button variant="outline" size="sm" onClick={() => criarLanc.mutate(tx)}>
+                        <Button variant="outline" size="sm" onClick={() => { setNovoTx(tx); setNovaDescricao(tx.memo ?? ""); }}>
                           Novo
                         </Button>
                       </div>
