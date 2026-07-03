@@ -129,7 +129,13 @@ export function LancamentosPage({ tipo }: { tipo: "receber" | "pagar" }) {
         tipo,
         descricao: input.descricao,
         valor,
+        data_emissao: input.data_emissao,
         data_vencimento: input.data_vencimento,
+        contato_id: input.contato_id || null,
+        categoria_id: input.categoria_id || null,
+        conta_bancaria_id: input.conta_bancaria_id || null,
+        documento: input.documento || null,
+        observacoes: input.observacoes || null,
       });
       if (error) throw error;
     },
