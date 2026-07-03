@@ -125,6 +125,14 @@ function Clientes() {
         documento: doc || null,
         email: input.email || null,
         telefone: input.telefone || null,
+        cep: input.cep || null,
+        logradouro: input.logradouro || null,
+        numero: input.numero || null,
+        complemento: input.complemento || null,
+        bairro: input.bairro || null,
+        cidade: input.cidade || null,
+        uf: input.uf || null,
+        observacoes: input.observacoes || null,
       });
       if (error) throw error;
     },
