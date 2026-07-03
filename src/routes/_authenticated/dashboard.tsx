@@ -41,6 +41,13 @@ type ProximoReceberRow = {
 };
 type AlertaRow = { id: string; titulo: string; mensagem: string | null };
 
+function friendlyEmpresaError(error: { message?: string; code?: string }) {
+  if (error.code === "23505" || error.message?.toLowerCase().includes("duplicate key")) {
+    return "Já existe uma empresa cadastrada com este CNPJ";
+  }
+  return error.message ?? "Não foi possível salvar a empresa";
+}
+
 function Dashboard() {
   const qc = useQueryClient();
 
@@ -330,7 +337,7 @@ function FirstEmpresa({ onCreated }: { onCreated: () => Promise<void> }) {
         ...form, nome_fantasia: nome, cnpj: cnpjDigits || null,
         created_by: userRes.user.id,
       });
-      if (error) throw error;
+      if (error) throw new Error(friendlyEmpresaError(error));
     },
     onSuccess: async () => {
       toast.success("Empresa criada!");
