@@ -152,7 +152,7 @@ function Clientes() {
         actions={
           <Dialog open={open} onOpenChange={(v) => { if (!criar.isPending) setOpen(v); }}>
             <DialogTrigger asChild><Button><Plus className="mr-1 h-4 w-4" />Novo contato</Button></DialogTrigger>
-            <DialogContent>
+            <DialogContent className="max-h-[90vh] overflow-y-auto">
               <DialogHeader><DialogTitle>Novo contato</DialogTitle></DialogHeader>
               <form onSubmit={(e) => { e.preventDefault(); criar.mutate(form); }} className="space-y-3">
                 <div><Label>Nome / Razão social *</Label><Input required value={form.nome} onChange={(e) => setForm({ ...form, nome: e.target.value })} /></div>
