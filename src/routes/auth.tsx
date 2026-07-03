@@ -8,6 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { toast } from "sonner";
 import { Loader2 } from "lucide-react";
+import nimboLogo from "@/assets/nimbo-logo.png";
 
 export const Route = createFileRoute("/auth")({
   component: AuthPage,
