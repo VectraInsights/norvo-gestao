@@ -179,7 +179,10 @@ export function AppShell({ children }: { children: ReactNode }) {
       <div className="flex min-w-0 flex-col">
         <header className="flex h-16 items-center justify-between border-b border-border/60 bg-background/80 px-6 backdrop-blur lg:hidden">
           <Button variant="ghost" size="sm" onClick={() => setOpen(true)}>Menu</Button>
-          <span className="text-display">Nimbo.</span>
+          <div className="flex items-center gap-2">
+            <img src={nimboLogo} alt="Nimbo." width={24} height={24} className="h-6 w-6" />
+            <span className="text-display">Nimbo.</span>
+          </div>
           <div className="w-10" />
         </header>
         <main className="min-w-0 flex-1 overflow-auto p-6 lg:p-8">{children}</main>
