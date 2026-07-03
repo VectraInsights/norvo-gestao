@@ -255,12 +255,15 @@ function ReconcileDialog({ contaId, empresaId, autoConciliar, onClose }: { conta
     }
   }, [autoConciliar, txs, lancamentosAbertos, conciliar]);
 
+  const [novoTx, setNovoTx] = useState<OfxRow | null>(null);
+  const [novaDescricao, setNovaDescricao] = useState("");
+
   const criarLanc = useMutation({
-    mutationFn: async (tx: OfxRow) => {
+    mutationFn: async ({ tx, descricao }: { tx: OfxRow; descricao: string }) => {
       if (!empresaId || !contaId) throw new Error("Empresa não selecionada");
       const tipo = tx.valor >= 0 ? "receber" : "pagar";
       const { data: lanc, error } = await supabase.from("lancamentos_financeiros").insert({
-        empresa_id: empresaId, tipo, descricao: tx.memo || "Importado OFX",
+        empresa_id: empresaId, tipo, descricao: descricao || tx.memo || "Importado OFX",
         valor: Math.abs(tx.valor), valor_pago: Math.abs(tx.valor),
         data_emissao: tx.data_transacao, data_vencimento: tx.data_transacao,
         data_pagamento: tx.data_transacao, status: "pago", conta_bancaria_id: contaId,
@@ -272,6 +275,7 @@ function ReconcileDialog({ contaId, empresaId, autoConciliar, onClose }: { conta
     },
     onSuccess: () => {
       toast.success("Lançamento criado e conciliado");
+      setNovoTx(null); setNovaDescricao("");
       qc.invalidateQueries({ queryKey: ["ofx", contaId] });
       qc.invalidateQueries({ queryKey: ["lancamentos"] });
     },
