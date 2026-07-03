@@ -82,10 +82,10 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { title: "Nimbo. — Gestão financeira, vendas, estoque e fiscal" },
+      { title: "Norvo — Gestão financeira, vendas, estoque e fiscal" },
       { name: "description", content: "ERP na nuvem para pequenas e médias empresas brasileiras: financeiro, CRM, estoque e emissão fiscal em um único painel." },
-      { name: "author", content: "Nimbo." },
-      { property: "og:title", content: "Nimbo. — ERP moderno na nuvem" },
+      { name: "author", content: "Norvo" },
+      { property: "og:title", content: "Norvo — ERP moderno na nuvem" },
       { property: "og:description", content: "Financeiro, vendas, estoque e fiscal em um só lugar." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },

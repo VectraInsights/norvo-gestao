@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { ArrowRight, BarChart3, Boxes, FileText, ReceiptText, ShieldCheck, Users } from "lucide-react";
-import nimboLogo from "@/assets/nimbo-logo.png";
+import norvoLogo from "@/assets/norvo-logo.png";
 
 export const Route = createFileRoute("/")({
   component: LandingPage,
@@ -22,8 +22,8 @@ function LandingPage() {
       <header className="border-b border-border/60">
         <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-5">
           <Link to="/" className="flex items-center gap-2">
-            <img src={nimboLogo} alt="Nimbo." width={32} height={32} className="h-8 w-8" />
-            <span className="text-display text-xl">Nimbo.</span>
+            <img src={norvoLogo} alt="Norvo" width={32} height={32} className="h-8 w-8" />
+            <span className="text-display text-xl">Norvo</span>
           </Link>
           <div className="flex items-center gap-3">
             <Link to="/auth" className="text-sm text-muted-foreground hover:text-foreground">Entrar</Link>
@@ -84,7 +84,7 @@ function LandingPage() {
 
       <footer className="border-t border-border/60 py-8">
         <div className="mx-auto flex max-w-6xl items-center justify-between px-6 text-sm text-muted-foreground">
-          <span>© {new Date().getFullYear()} Nimbo.</span>
+          <span>© {new Date().getFullYear()} Norvo</span>
           <span className="text-xs">Esqueleto v0.1</span>
         </div>
       </footer>
