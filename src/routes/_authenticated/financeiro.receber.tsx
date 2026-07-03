@@ -44,7 +44,13 @@ type Lancamento = {
   contato: { nome: string } | null;
 };
 
-const emptyForm = () => ({ descricao: "", valor: "", data_vencimento: format(new Date(), "yyyy-MM-dd") });
+const emptyForm = () => ({
+  descricao: "", valor: "",
+  data_emissao: format(new Date(), "yyyy-MM-dd"),
+  data_vencimento: format(new Date(), "yyyy-MM-dd"),
+  contato_id: "", categoria_id: "", conta_bancaria_id: "",
+  documento: "", observacoes: "",
+});
 
 export function LancamentosPage({ tipo }: { tipo: "receber" | "pagar" }) {
   const { data: empresa } = useEmpresaAtual();
