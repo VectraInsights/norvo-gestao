@@ -385,14 +385,14 @@ export function LancamentosPage({ tipo }: { tipo: "receber" | "pagar" }) {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {lancamentos.map((l) => {
+              {sorted.map((l) => {
                 const emAndamento = marcarPago.isPending && marcarPago.variables?.id === l.id;
                 return (
                   <TableRow key={l.id} data-state={selected.has(l.id) ? "selected" : undefined}>
-                    <TableCell>
+                    <TableCell onClick={(e) => e.stopPropagation()}>
                       <Checkbox checked={selected.has(l.id)} onCheckedChange={() => toggle(l.id)} aria-label="Selecionar" />
                     </TableCell>
-                    <TableCell className="font-medium">{l.descricao}</TableCell>
+                    <TableCell className="font-medium cursor-pointer hover:underline" onClick={() => abrirEdicao(l.id)}>{l.descricao}</TableCell>
                     <TableCell className="text-muted-foreground">{l.contato?.nome ?? "—"}</TableCell>
                     <TableCell className="text-tabular">{format(new Date(l.data_vencimento), "dd/MM/yyyy")}</TableCell>
                     <TableCell className="text-right text-tabular font-medium">{brl(l.valor)}</TableCell>
