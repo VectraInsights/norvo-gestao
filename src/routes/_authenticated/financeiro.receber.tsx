@@ -10,7 +10,8 @@ import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import { Loader2, Plus, TrendingUp } from "lucide-react";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Loader2, Plus, TrendingUp, Trash2 } from "lucide-react";
 import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -166,6 +167,34 @@ export function LancamentosPage({ tipo }: { tipo: "receber" | "pagar" }) {
     onError: (e: Error) => toast.error(e.message),
   });
 
+  const [selected, setSelected] = useState<Set<string>>(new Set());
+  const toggle = (id: string) => setSelected((s) => { const n = new Set(s); n.has(id) ? n.delete(id) : n.add(id); return n; });
+  const allIds = (lancamentos ?? []).map((l) => l.id);
+  const allChecked = allIds.length > 0 && allIds.every((id) => selected.has(id));
+  const toggleAll = () => setSelected(allChecked ? new Set() : new Set(allIds));
+  const clearSel = () => setSelected(new Set());
+
+  const excluirLote = useMutation({
+    mutationFn: async (ids: string[]) => {
+      const { error } = await supabase.from("lancamentos_financeiros").delete().in("id", ids);
+      if (error) throw error;
+    },
+    onSuccess: () => { toast.success("Lançamentos excluídos"); clearSel(); invalidate(); },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+  const alterarStatusLote = useMutation({
+    mutationFn: async ({ ids, status }: { ids: string[]; status: "aberto" | "pago" | "cancelado" | "vencido" | "parcial" }) => {
+      const patch = status === "pago"
+        ? { status, data_pagamento: format(new Date(), "yyyy-MM-dd") }
+        : { status };
+      const { error } = await supabase.from("lancamentos_financeiros").update(patch).in("id", ids);
+      if (error) throw error;
+    },
+    onSuccess: () => { toast.success("Status alterado"); clearSel(); invalidate(); },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
   const titulo = tipo === "receber" ? "Contas a receber" : "Contas a pagar";
   const desc = tipo === "receber" ? "Recebimentos futuros e realizados." : "Compromissos financeiros a vencer e pagos.";
 
@@ -259,9 +288,34 @@ export function LancamentosPage({ tipo }: { tipo: "receber" | "pagar" }) {
         <EmptyState icon={TrendingUp} title="Sem lançamentos" description={`Crie o primeiro lançamento de ${titulo.toLowerCase()}.`} />
       ) : (
         <Card className="overflow-hidden shadow-panel">
+          {selected.size > 0 && (
+            <div className="flex flex-wrap items-center gap-2 border-b bg-muted/40 px-3 py-2 text-sm">
+              <span className="font-medium">{selected.size} selecionado(s)</span>
+              <div className="ml-auto flex flex-wrap gap-2">
+                <Select onValueChange={(v) => alterarStatusLote.mutate({ ids: [...selected], status: v as "aberto" })}>
+                  <SelectTrigger className="h-8 w-[180px]"><SelectValue placeholder="Alterar status" /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="aberto">Aberto</SelectItem>
+                    <SelectItem value="pago">Pago</SelectItem>
+                    <SelectItem value="parcial">Parcial</SelectItem>
+                    <SelectItem value="vencido">Vencido</SelectItem>
+                    <SelectItem value="cancelado">Cancelado</SelectItem>
+                  </SelectContent>
+                </Select>
+                <Button size="sm" variant="destructive" disabled={excluirLote.isPending}
+                  onClick={() => { if (confirm(`Excluir ${selected.size} lançamento(s)?`)) excluirLote.mutate([...selected]); }}>
+                  <Trash2 className="mr-1 h-4 w-4" />Excluir
+                </Button>
+                <Button size="sm" variant="ghost" onClick={clearSel}>Limpar</Button>
+              </div>
+            </div>
+          )}
           <Table>
             <TableHeader>
               <TableRow>
+                <TableHead className="w-10">
+                  <Checkbox checked={allChecked} onCheckedChange={toggleAll} aria-label="Selecionar todos" />
+                </TableHead>
                 <TableHead>Descrição</TableHead>
                 <TableHead>Contato</TableHead>
                 <TableHead>Vencimento</TableHead>
@@ -274,7 +328,10 @@ export function LancamentosPage({ tipo }: { tipo: "receber" | "pagar" }) {
               {lancamentos.map((l) => {
                 const emAndamento = marcarPago.isPending && marcarPago.variables?.id === l.id;
                 return (
-                  <TableRow key={l.id}>
+                  <TableRow key={l.id} data-state={selected.has(l.id) ? "selected" : undefined}>
+                    <TableCell>
+                      <Checkbox checked={selected.has(l.id)} onCheckedChange={() => toggle(l.id)} aria-label="Selecionar" />
+                    </TableCell>
                     <TableCell className="font-medium">{l.descricao}</TableCell>
                     <TableCell className="text-muted-foreground">{l.contato?.nome ?? "—"}</TableCell>
                     <TableCell className="text-tabular">{format(new Date(l.data_vencimento), "dd/MM/yyyy")}</TableCell>
