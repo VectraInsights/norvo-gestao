@@ -189,7 +189,7 @@ function ContasBancarias() {
 }
 
 function ReconcileDialog({ contaId, empresaId, autoConciliar, onClose }: { contaId: string | null; empresaId: string | null; autoConciliar: boolean; onClose: () => void }) {
-  const autoRunRef = React.useRef<Set<string>>(new Set());
+  const autoRunRef = useRef<Set<string>>(new Set());
   const qc = useQueryClient();
   const open = !!contaId;
 
