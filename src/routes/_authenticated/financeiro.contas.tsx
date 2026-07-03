@@ -43,7 +43,8 @@ function ContasBancarias() {
   const { data: empresa } = useEmpresaAtual();
   const qc = useQueryClient();
   const [open, setOpen] = useState(false);
-  const [form, setForm] = useState({ nome: "", banco: "", agencia: "", conta: "", saldo_inicial: "0" });
+  const [form, setForm] = useState({ banco: "", agencia: "", conta: "", saldo_inicial: "0" });
+  const [autoConciliar, setAutoConciliar] = useState(true);
   const [reconcilingId, setReconcilingId] = useState<string | null>(null);
   const [importing, setImporting] = useState<string | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
