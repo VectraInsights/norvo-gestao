@@ -66,13 +66,13 @@ function ContasBancarias() {
       if (!empresa) throw new Error("Empresa não selecionada");
       const saldo = Number(input.saldo_inicial);
       const { error } = await supabase.from("contas_bancarias").insert({
-        empresa_id: empresa.id, ...input, saldo_inicial: saldo, saldo_atual: saldo,
+        empresa_id: empresa.id, ...input, nome: input.banco, saldo_inicial: saldo, saldo_atual: saldo,
       });
       if (error) throw error;
     },
     onSuccess: () => {
       toast.success("Conta criada"); setOpen(false);
-      setForm({ nome: "", banco: "", agencia: "", conta: "", saldo_inicial: "0" });
+      setForm({ banco: "", agencia: "", conta: "", saldo_inicial: "0" });
       qc.invalidateQueries({ queryKey: ["contas-bancarias"] });
     },
     onError: (e: Error) => toast.error(e.message),
