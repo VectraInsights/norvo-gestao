@@ -120,25 +120,31 @@ function ContasBancarias() {
       <input ref={fileRef} type="file" accept=".ofx,.OFX,text/plain" className="hidden" onChange={handleFile} />
       <PageHeader eyebrow="Financeiro" title="Contas bancárias" description="Cadastro de contas, importação OFX e conciliação."
         actions={
-          <Dialog open={open} onOpenChange={(v) => { if (!criar.isPending) setOpen(v); }}>
-            <DialogTrigger asChild><Button><Plus className="mr-1 h-4 w-4" />Nova conta</Button></DialogTrigger>
-            <DialogContent>
-              <DialogHeader><DialogTitle>Nova conta bancária</DialogTitle></DialogHeader>
-              <form onSubmit={(e) => { e.preventDefault(); criar.mutate(form); }} className="space-y-3">
-                <div className="grid grid-cols-3 gap-3">
-                  <div><Label>Banco</Label><Input required value={form.banco} onChange={(e) => setForm({ ...form, banco: e.target.value })} placeholder="Bradesco" /></div>
-                  <div><Label>Agência</Label><Input value={form.agencia} onChange={(e) => setForm({ ...form, agencia: e.target.value })} /></div>
-                  <div><Label>Conta</Label><Input value={form.conta} onChange={(e) => setForm({ ...form, conta: e.target.value })} /></div>
-                </div>
-                <div><Label>Saldo inicial (R$)</Label><Input type="number" step="0.01" value={form.saldo_inicial} onChange={(e) => setForm({ ...form, saldo_inicial: e.target.value })} /></div>
-                <DialogFooter>
-                  <Button type="submit" disabled={criar.isPending}>
-                    {criar.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}Salvar
-                  </Button>
-                </DialogFooter>
-              </form>
-            </DialogContent>
-          </Dialog>
+          <div className="flex items-center gap-3">
+            <label className="flex items-center gap-2 text-xs text-muted-foreground cursor-pointer">
+              <Checkbox checked={autoConciliar} onCheckedChange={(v) => setAutoConciliar(!!v)} />
+              Conciliar automaticamente (mesmo valor e data)
+            </label>
+            <Dialog open={open} onOpenChange={(v) => { if (!criar.isPending) setOpen(v); }}>
+              <DialogTrigger asChild><Button><Plus className="mr-1 h-4 w-4" />Nova conta</Button></DialogTrigger>
+              <DialogContent>
+                <DialogHeader><DialogTitle>Nova conta bancária</DialogTitle></DialogHeader>
+                <form onSubmit={(e) => { e.preventDefault(); criar.mutate(form); }} className="space-y-3">
+                  <div className="grid grid-cols-3 gap-3">
+                    <div><Label>Banco</Label><Input required value={form.banco} onChange={(e) => setForm({ ...form, banco: e.target.value })} placeholder="Bradesco" /></div>
+                    <div><Label>Agência</Label><Input value={form.agencia} onChange={(e) => setForm({ ...form, agencia: e.target.value })} /></div>
+                    <div><Label>Conta</Label><Input value={form.conta} onChange={(e) => setForm({ ...form, conta: e.target.value })} /></div>
+                  </div>
+                  <div><Label>Saldo inicial (R$)</Label><Input type="number" step="0.01" value={form.saldo_inicial} onChange={(e) => setForm({ ...form, saldo_inicial: e.target.value })} /></div>
+                  <DialogFooter>
+                    <Button type="submit" disabled={criar.isPending}>
+                      {criar.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}Salvar
+                    </Button>
+                  </DialogFooter>
+                </form>
+              </DialogContent>
+            </Dialog>
+          </div>
         }
       />
       {!contas?.length ? (
