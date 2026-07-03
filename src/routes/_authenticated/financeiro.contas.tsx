@@ -68,11 +68,11 @@ function ContasBancarias() {
     <>
       <PageHeader eyebrow="Financeiro" title="Contas bancárias" description="Cadastro de contas e saldos para conciliação."
         actions={
-          <Dialog open={open} onOpenChange={setOpen}>
+          <Dialog open={open} onOpenChange={(v) => { if (!criar.isPending) setOpen(v); }}>
             <DialogTrigger asChild><Button><Plus className="mr-1 h-4 w-4" />Nova conta</Button></DialogTrigger>
             <DialogContent>
               <DialogHeader><DialogTitle>Nova conta bancária</DialogTitle></DialogHeader>
-              <form onSubmit={submit} className="space-y-3">
+              <form onSubmit={(e) => { e.preventDefault(); criar.mutate(form); }} className="space-y-3">
                 <div><Label>Nome</Label><Input required value={form.nome} onChange={(e) => setForm({ ...form, nome: e.target.value })} placeholder="Conta principal" /></div>
                 <div className="grid grid-cols-3 gap-3">
                   <div><Label>Banco</Label><Input value={form.banco} onChange={(e) => setForm({ ...form, banco: e.target.value })} /></div>
@@ -80,10 +80,15 @@ function ContasBancarias() {
                   <div><Label>Conta</Label><Input value={form.conta} onChange={(e) => setForm({ ...form, conta: e.target.value })} /></div>
                 </div>
                 <div><Label>Saldo inicial (R$)</Label><Input type="number" step="0.01" value={form.saldo_inicial} onChange={(e) => setForm({ ...form, saldo_inicial: e.target.value })} /></div>
-                <DialogFooter><Button type="submit">Salvar</Button></DialogFooter>
+                <DialogFooter>
+                  <Button type="submit" disabled={criar.isPending}>
+                    {criar.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}Salvar
+                  </Button>
+                </DialogFooter>
               </form>
             </DialogContent>
           </Dialog>
+
         }
       />
       {!contas?.length ? (
