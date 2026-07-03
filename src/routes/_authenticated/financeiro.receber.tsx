@@ -376,11 +376,11 @@ export function LancamentosPage({ tipo }: { tipo: "receber" | "pagar" }) {
                 <TableHead className="w-10">
                   <Checkbox checked={allChecked} onCheckedChange={toggleAll} aria-label="Selecionar todos" />
                 </TableHead>
-                <TableHead>Descrição</TableHead>
-                <TableHead>Contato</TableHead>
-                <TableHead>Vencimento</TableHead>
-                <TableHead className="text-right">Valor</TableHead>
-                <TableHead>Status</TableHead>
+                <SortHead k="descricao">Descrição</SortHead>
+                <SortHead k="contato">Contato</SortHead>
+                <SortHead k="data_vencimento">Vencimento</SortHead>
+                <SortHead k="valor" className="text-right">Valor</SortHead>
+                <SortHead k="status">Status</SortHead>
                 <TableHead />
               </TableRow>
             </TableHeader>
