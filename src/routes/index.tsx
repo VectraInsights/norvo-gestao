@@ -1,5 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { ArrowRight, BarChart3, Boxes, FileText, ReceiptText, ShieldCheck, Users } from "lucide-react";
+import nimboLogo from "@/assets/nimbo-logo.png";
 
 export const Route = createFileRoute("/")({
   component: LandingPage,
