@@ -30,7 +30,7 @@ export const Route = createFileRoute("/_authenticated/financeiro/contas")({
 const brl = (n: number) => Number(n).toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 
 type ContaBancaria = {
-  id: string; nome: string; banco: string | null;
+  id: string; nome: string | null; banco: string | null;
   agencia: string | null; conta: string | null; saldo_atual: number;
 };
 
