@@ -4,6 +4,7 @@ import {
   LayoutDashboard, ReceiptText, Users, Boxes, FileText, Settings, LogOut,
   Wallet, TrendingUp, Banknote, ShoppingCart, UserSquare2, Package, ChevronDown,
 } from "lucide-react";
+import nimboLogo from "@/assets/nimbo-logo.png";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -81,12 +82,10 @@ export function AppShell({ children }: { children: ReactNode }) {
         )}
       >
         <div className="flex h-16 items-center gap-2 border-b border-sidebar-border px-5">
-          <div className="grid h-8 w-8 place-items-center rounded-md bg-primary text-primary-foreground">
-            <span className="text-display text-lg">N</span>
-          </div>
+          <img src={nimboLogo} alt="Nimbo." width={32} height={32} className="h-8 w-8" />
           <div>
             <div className="text-display text-lg leading-none">Nimbo.</div>
-            <div className="text-[10px] uppercase tracking-widest text-muted-foreground">ERP</div>
+            <div className="text-[10px] uppercase tracking-widest text-muted-foreground">Cloud ERP</div>
           </div>
         </div>
 
@@ -180,7 +179,10 @@ export function AppShell({ children }: { children: ReactNode }) {
       <div className="flex min-w-0 flex-col">
         <header className="flex h-16 items-center justify-between border-b border-border/60 bg-background/80 px-6 backdrop-blur lg:hidden">
           <Button variant="ghost" size="sm" onClick={() => setOpen(true)}>Menu</Button>
-          <span className="text-display">Nimbo.</span>
+          <div className="flex items-center gap-2">
+            <img src={nimboLogo} alt="Nimbo." width={24} height={24} className="h-6 w-6" />
+            <span className="text-display">Nimbo.</span>
+          </div>
           <div className="w-10" />
         </header>
         <main className="min-w-0 flex-1 overflow-auto p-6 lg:p-8">{children}</main>

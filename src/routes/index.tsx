@@ -1,5 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { ArrowRight, BarChart3, Boxes, FileText, ReceiptText, ShieldCheck, Users } from "lucide-react";
+import nimboLogo from "@/assets/nimbo-logo.png";
 
 export const Route = createFileRoute("/")({
   component: LandingPage,
@@ -21,9 +22,7 @@ function LandingPage() {
       <header className="border-b border-border/60">
         <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-5">
           <Link to="/" className="flex items-center gap-2">
-            <div className="grid h-8 w-8 place-items-center rounded-md bg-primary text-primary-foreground">
-              <span className="text-display text-lg">N</span>
-            </div>
+            <img src={nimboLogo} alt="Nimbo." width={32} height={32} className="h-8 w-8" />
             <span className="text-display text-xl">Nimbo.</span>
           </Link>
           <div className="flex items-center gap-3">
