@@ -167,6 +167,33 @@ export function LancamentosPage({ tipo }: { tipo: "receber" | "pagar" }) {
     onError: (e: Error) => toast.error(e.message),
   });
 
+  const [selected, setSelected] = useState<Set<string>>(new Set());
+  const toggle = (id: string) => setSelected((s) => { const n = new Set(s); n.has(id) ? n.delete(id) : n.add(id); return n; });
+  const allIds = (lancamentos ?? []).map((l) => l.id);
+  const allChecked = allIds.length > 0 && allIds.every((id) => selected.has(id));
+  const toggleAll = () => setSelected(allChecked ? new Set() : new Set(allIds));
+  const clearSel = () => setSelected(new Set());
+
+  const excluirLote = useMutation({
+    mutationFn: async (ids: string[]) => {
+      const { error } = await supabase.from("lancamentos_financeiros").delete().in("id", ids);
+      if (error) throw error;
+    },
+    onSuccess: () => { toast.success("Lançamentos excluídos"); clearSel(); invalidate(); },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+  const alterarStatusLote = useMutation({
+    mutationFn: async ({ ids, status }: { ids: string[]; status: string }) => {
+      const patch: Record<string, unknown> = { status };
+      if (status === "pago") patch.data_pagamento = format(new Date(), "yyyy-MM-dd");
+      const { error } = await supabase.from("lancamentos_financeiros").update(patch).in("id", ids);
+      if (error) throw error;
+    },
+    onSuccess: () => { toast.success("Status alterado"); clearSel(); invalidate(); },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
   const titulo = tipo === "receber" ? "Contas a receber" : "Contas a pagar";
   const desc = tipo === "receber" ? "Recebimentos futuros e realizados." : "Compromissos financeiros a vencer e pagos.";
 
