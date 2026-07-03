@@ -6,11 +6,12 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Plus, Loader2, Search } from "lucide-react";
+import { Plus, Loader2, Search, Trash2 } from "lucide-react";
 import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
+import { getSelectedEmpresaId, setSelectedEmpresaId } from "@/hooks/use-empresa";
 
 export const Route = createFileRoute("/_authenticated/configuracoes/empresas")({
   component: EmpresasPage,
@@ -21,19 +22,54 @@ const emptyForm = {
   logradouro: "", numero: "", complemento: "", bairro: "", cidade: "", uf: "", cep: "",
 };
 
+type Empresa = typeof emptyForm & { id: string; created_by?: string; created_at?: string; updated_at?: string };
+
+function friendlyEmpresaError(error: { message?: string; code?: string }) {
+  if (error.code === "23505" || error.message?.toLowerCase().includes("duplicate key")) {
+    return "Já existe uma empresa cadastrada com este CNPJ";
+  }
+  return error.message ?? "Não foi possível salvar a empresa";
+}
+
 function EmpresasPage() {
   const qc = useQueryClient();
   const [open, setOpen] = useState(false);
   const [form, setForm] = useState(emptyForm);
+  const [editing, setEditing] = useState<Empresa | null>(null);
   const [lookingUp, setLookingUp] = useState(false);
 
   const { data: empresas } = useQuery({
     queryKey: ["empresas"],
     queryFn: async () => {
       const { data, error } = await supabase.from("empresas").select("*").order("created_at");
-      if (error) throw error; return data;
+      if (error) throw error; return (data ?? []) as Empresa[];
     },
   });
+
+  const openNew = () => {
+    setEditing(null);
+    setForm(emptyForm);
+    setOpen(true);
+  };
+
+  const openEdit = (empresa: Empresa) => {
+    setEditing(empresa);
+    setForm({
+      cnpj: empresa.cnpj ?? "",
+      nome_fantasia: empresa.nome_fantasia ?? "",
+      razao_social: empresa.razao_social ?? "",
+      email: empresa.email ?? "",
+      telefone: empresa.telefone ?? "",
+      logradouro: empresa.logradouro ?? "",
+      numero: empresa.numero ?? "",
+      complemento: empresa.complemento ?? "",
+      bairro: empresa.bairro ?? "",
+      cidade: empresa.cidade ?? "",
+      uf: empresa.uf ?? "",
+      cep: empresa.cep ?? "",
+    });
+    setOpen(true);
+  };
 
   const lookupCnpj = async () => {
     const digits = form.cnpj.replace(/\D/g, "");
@@ -76,16 +112,39 @@ function EmpresasPage() {
     e.preventDefault();
     const { data: u } = await supabase.auth.getUser();
     if (!u.user) return toast.error("Sessão expirada");
+    const nome = form.nome_fantasia.trim();
+    if (!nome) return toast.error("Informe o nome da empresa");
     const cnpjDigits = form.cnpj.replace(/\D/g, "");
     if (cnpjDigits) {
-      const { data: dup } = await supabase.from("empresas").select("id").eq("cnpj", cnpjDigits).maybeSingle();
+      let dupQuery = supabase.from("empresas").select("id").eq("cnpj", cnpjDigits);
+      if (editing) dupQuery = dupQuery.neq("id", editing.id);
+      const { data: dup, error: dupError } = await dupQuery.maybeSingle();
+      if (dupError) return toast.error(dupError.message);
       if (dup) return toast.error("Já existe uma empresa cadastrada com este CNPJ");
     }
-    const payload = { ...form, cnpj: cnpjDigits || null, created_by: u.user.id };
-    const { error } = await supabase.from("empresas").insert(payload);
+    const payload = { ...form, nome_fantasia: nome, cnpj: cnpjDigits || null };
+    const { error } = editing
+      ? await supabase.from("empresas").update(payload).eq("id", editing.id)
+      : await supabase.from("empresas").insert({ ...payload, created_by: u.user.id });
+    if (error) return toast.error(friendlyEmpresaError(error));
+    toast.success(editing ? "Empresa atualizada" : "Empresa criada");
+    setOpen(false); setEditing(null); setForm(emptyForm);
+    await qc.invalidateQueries({ queryKey: ["empresas"] });
+    await qc.invalidateQueries({ queryKey: ["dashboard-stats"] });
+  };
+
+  const deleteEmpresa = async () => {
+    if (!editing) return;
+    const ok = window.confirm(`Excluir ${editing.nome_fantasia}? Todos os dados vinculados a esta empresa também serão removidos.`);
+    if (!ok) return;
+    const { error } = await supabase.from("empresas").delete().eq("id", editing.id);
     if (error) return toast.error(error.message);
-    toast.success("Empresa criada"); setOpen(false); setForm(emptyForm);
-    qc.invalidateQueries({ queryKey: ["empresas"] });
+    const remaining = (empresas ?? []).filter((empresa) => empresa.id !== editing.id);
+    if (getSelectedEmpresaId() === editing.id && remaining[0]) setSelectedEmpresaId(remaining[0].id);
+    toast.success("Empresa excluída");
+    setOpen(false); setEditing(null); setForm(emptyForm);
+    await qc.invalidateQueries({ queryKey: ["empresas"] });
+    await qc.invalidateQueries({ queryKey: ["dashboard-stats"] });
   };
 
   return (
@@ -93,9 +152,9 @@ function EmpresasPage() {
       <PageHeader eyebrow="Configurações" title="Empresas" description="Empresas às quais você tem acesso."
         actions={
           <Dialog open={open} onOpenChange={(v) => { setOpen(v); if (!v) setForm(emptyForm); }}>
-            <DialogTrigger asChild><Button><Plus className="mr-1 h-4 w-4" />Nova empresa</Button></DialogTrigger>
+            <DialogTrigger asChild><Button onClick={openNew}><Plus className="mr-1 h-4 w-4" />Nova empresa</Button></DialogTrigger>
             <DialogContent className="max-w-lg">
-              <DialogHeader><DialogTitle>Nova empresa</DialogTitle></DialogHeader>
+              <DialogHeader><DialogTitle>{editing ? "Editar empresa" : "Nova empresa"}</DialogTitle></DialogHeader>
               <form onSubmit={submit} className="space-y-3">
                 <div>
                   <Label>CNPJ</Label>
@@ -127,7 +186,14 @@ function EmpresasPage() {
                   <div><Label>UF</Label><Input maxLength={2} value={form.uf} onChange={(e) => setForm({ ...form, uf: e.target.value.toUpperCase() })} /></div>
                   <div><Label>CEP</Label><Input value={form.cep} onChange={(e) => setForm({ ...form, cep: e.target.value })} /></div>
                 </div>
-                <DialogFooter><Button type="submit">Salvar</Button></DialogFooter>
+                <DialogFooter className="gap-2 sm:justify-between">
+                  {editing && (
+                    <Button type="button" variant="destructive" onClick={deleteEmpresa}>
+                      <Trash2 className="mr-2 h-4 w-4" />Excluir
+                    </Button>
+                  )}
+                  <Button type="submit">Salvar</Button>
+                </DialogFooter>
               </form>
             </DialogContent>
           </Dialog>
@@ -137,8 +203,8 @@ function EmpresasPage() {
         <Table>
           <TableHeader><TableRow><TableHead>Nome fantasia</TableHead><TableHead>Razão social</TableHead><TableHead>CNPJ</TableHead><TableHead>Cidade</TableHead></TableRow></TableHeader>
           <TableBody>
-            {empresas?.map((e: any) => (
-              <TableRow key={e.id}>
+            {empresas?.map((e) => (
+              <TableRow key={e.id} className="cursor-pointer" onClick={() => openEdit(e)}>
                 <TableCell className="font-medium">{e.nome_fantasia}</TableCell>
                 <TableCell className="text-muted-foreground">{e.razao_social ?? "—"}</TableCell>
                 <TableCell className="text-tabular">{e.cnpj ?? "—"}</TableCell>
