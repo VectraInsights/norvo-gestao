@@ -5,9 +5,9 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card } from "@/components/ui/card";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Loader2, Plus, Users } from "lucide-react";
 import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
@@ -31,8 +31,10 @@ export const Route = createFileRoute("/_authenticated/vendas/clientes")({
 
 const emptyForm = () => ({
   nome: "", documento: "", email: "", telefone: "",
-  tipo: "cliente" as TipoContato,
+  isCliente: true, isFornecedor: false,
 });
+
+function onlyDigits(s: string) { return s.replace(/\D/g, ""); }
 
 function Clientes() {
   const { data: empresa } = useEmpresaAtual();
@@ -55,7 +57,29 @@ function Clientes() {
   const criar = useMutation({
     mutationFn: async (input: ReturnType<typeof emptyForm>) => {
       if (!empresa) throw new Error("Empresa não selecionada");
-      const { error } = await supabase.from("contatos").insert({ empresa_id: empresa.id, ...input });
+      if (!input.isCliente && !input.isFornecedor) {
+        throw new Error("Selecione ao menos um tipo: Cliente ou Fornecedor");
+      }
+      const tipo: TipoContato =
+        input.isCliente && input.isFornecedor ? "ambos"
+        : input.isCliente ? "cliente" : "fornecedor";
+
+      const doc = onlyDigits(input.documento);
+      if (doc) {
+        const { data: existente, error: errBusca } = await supabase.from("contatos")
+          .select("id,nome").eq("empresa_id", empresa.id).eq("documento", doc).maybeSingle();
+        if (errBusca) throw errBusca;
+        if (existente) throw new Error(`Já existe um contato com este CPF/CNPJ: ${existente.nome}`);
+      }
+
+      const { error } = await supabase.from("contatos").insert({
+        empresa_id: empresa.id,
+        nome: input.nome,
+        tipo,
+        documento: doc || null,
+        email: input.email || null,
+        telefone: input.telefone || null,
+      });
       if (error) throw error;
     },
     onSuccess: () => {
@@ -76,27 +100,27 @@ function Clientes() {
             <DialogContent>
               <DialogHeader><DialogTitle>Novo contato</DialogTitle></DialogHeader>
               <form onSubmit={(e) => { e.preventDefault(); criar.mutate(form); }} className="space-y-3">
-                <div><Label>Nome / Razão social</Label><Input required value={form.nome} onChange={(e) => setForm({ ...form, nome: e.target.value })} /></div>
-                <div className="grid grid-cols-2 gap-3">
-                  <div><Label>Tipo</Label>
-                    <Select value={form.tipo} onValueChange={(v) => setForm({ ...form, tipo: v as TipoContato })}>
-                      <SelectTrigger><SelectValue /></SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="cliente">Cliente</SelectItem>
-                        <SelectItem value="fornecedor">Fornecedor</SelectItem>
-                        <SelectItem value="ambos">Ambos</SelectItem>
-                        <SelectItem value="transportadora">Transportadora</SelectItem>
-                      </SelectContent>
-                    </Select>
+                <div><Label>Nome / Razão social *</Label><Input required value={form.nome} onChange={(e) => setForm({ ...form, nome: e.target.value })} /></div>
+                <div>
+                  <Label>Tipo *</Label>
+                  <div className="flex gap-4 mt-2">
+                    <label className="flex items-center gap-2 text-sm cursor-pointer">
+                      <Checkbox checked={form.isCliente} onCheckedChange={(v) => setForm({ ...form, isCliente: v === true })} />
+                      Cliente
+                    </label>
+                    <label className="flex items-center gap-2 text-sm cursor-pointer">
+                      <Checkbox checked={form.isFornecedor} onCheckedChange={(v) => setForm({ ...form, isFornecedor: v === true })} />
+                      Fornecedor
+                    </label>
                   </div>
-                  <div><Label>CPF/CNPJ</Label><Input value={form.documento} onChange={(e) => setForm({ ...form, documento: e.target.value })} /></div>
                 </div>
+                <div><Label>CPF/CNPJ</Label><Input value={form.documento} onChange={(e) => setForm({ ...form, documento: e.target.value })} /></div>
                 <div className="grid grid-cols-2 gap-3">
                   <div><Label>Email</Label><Input type="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} /></div>
                   <div><Label>Telefone</Label><Input value={form.telefone} onChange={(e) => setForm({ ...form, telefone: e.target.value })} /></div>
                 </div>
                 <DialogFooter>
-                  <Button type="submit" disabled={criar.isPending}>
+                  <Button type="submit" disabled={criar.isPending || (!form.isCliente && !form.isFornecedor)}>
                     {criar.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}Salvar
                   </Button>
                 </DialogFooter>
