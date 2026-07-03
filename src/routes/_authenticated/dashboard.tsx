@@ -13,6 +13,7 @@ import { EmptyState } from "@/components/erp/empty-state";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { lazy, Suspense, useState } from "react";
+import { useSelectedEmpresaId } from "@/hooks/use-empresa";
 import { toast } from "sonner";
 import { brl, dateBR } from "@/lib/format";
 import type { ReceitaPoint } from "@/components/erp/receita-chart";
@@ -55,7 +56,8 @@ function Dashboard() {
       return (data ?? []) as Empresa[];
     },
   });
-  const empresa = empresas?.[0];
+  const selectedId = useSelectedEmpresaId();
+  const empresa = (selectedId && empresas?.find((e) => e.id === selectedId)) || empresas?.[0];
 
   const { data: stats, isLoading: loadingStats } = useQuery({
     enabled: !!empresa,
@@ -319,8 +321,13 @@ function FirstEmpresa({ onCreated }: { onCreated: () => Promise<void> }) {
       if (!nome) throw new Error("Informe o nome da empresa");
       const { data: userRes, error: authErr } = await supabase.auth.getUser();
       if (authErr || !userRes.user) throw new Error("Sessão expirada");
+      const cnpjDigits = form.cnpj.replace(/\D/g, "");
+      if (cnpjDigits) {
+        const { data: dup } = await supabase.from("empresas").select("id").eq("cnpj", cnpjDigits).maybeSingle();
+        if (dup) throw new Error("Já existe uma empresa cadastrada com este CNPJ");
+      }
       const { error } = await supabase.from("empresas").insert({
-        ...form, nome_fantasia: nome, cnpj: form.cnpj.replace(/\D/g, "") || null,
+        ...form, nome_fantasia: nome, cnpj: cnpjDigits || null,
         created_by: userRes.user.id,
       });
       if (error) throw error;

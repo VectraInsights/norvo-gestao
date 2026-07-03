@@ -9,6 +9,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { setSelectedEmpresaId, useSelectedEmpresaId } from "@/hooks/use-empresa";
 import {
   DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuLabel,
 } from "@/components/ui/dropdown-menu";
@@ -59,7 +60,13 @@ export function AppShell({ children }: { children: ReactNode }) {
     },
   });
 
-  const currentEmpresa = empresas?.[0];
+  const selectedId = useSelectedEmpresaId();
+  const currentEmpresa = (selectedId && empresas?.find((e) => e.id === selectedId)) || empresas?.[0];
+
+  const handleSelectEmpresa = (id: string) => {
+    setSelectedEmpresaId(id);
+    qc.invalidateQueries();
+  };
 
   // Fecha ao navegar (mobile)
   useEffect(() => { setOpen(false); }, [location.pathname]);
@@ -106,7 +113,9 @@ export function AppShell({ children }: { children: ReactNode }) {
             <DropdownMenuContent className="w-56" align="start">
               <DropdownMenuLabel>Empresas</DropdownMenuLabel>
               {empresas?.map((e) => (
-                <DropdownMenuItem key={e.id}>{e.nome_fantasia}</DropdownMenuItem>
+                <DropdownMenuItem key={e.id} onSelect={() => handleSelectEmpresa(e.id)}>
+                  {e.nome_fantasia} {currentEmpresa?.id === e.id ? "✓" : ""}
+                </DropdownMenuItem>
               ))}
               <DropdownMenuSeparator />
               <DropdownMenuItem onSelect={() => navigate({ to: "/configuracoes/empresas" })}>
