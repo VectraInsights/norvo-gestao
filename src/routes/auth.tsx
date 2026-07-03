@@ -61,8 +61,8 @@ function AuthPage() {
       {/* Lado esquerdo — marca */}
       <aside className="hidden flex-col justify-between bg-primary p-12 text-primary-foreground lg:flex">
         <Link to="/" className="flex items-center gap-2">
-          <div className="grid h-9 w-9 place-items-center rounded-md bg-primary-foreground/10 backdrop-blur">
-            <span className="text-display text-lg">N</span>
+          <div className="grid h-10 w-10 place-items-center rounded-lg bg-primary-foreground/10 backdrop-blur">
+            <img src={nimboLogo} alt="" width={28} height={28} className="h-7 w-7" />
           </div>
           <span className="text-display text-xl">Nimbo.</span>
         </Link>
