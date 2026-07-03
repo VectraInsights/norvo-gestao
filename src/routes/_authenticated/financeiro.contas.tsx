@@ -255,12 +255,15 @@ function ReconcileDialog({ contaId, empresaId, autoConciliar, onClose }: { conta
     }
   }, [autoConciliar, txs, lancamentosAbertos, conciliar]);
 
+  const [novoTx, setNovoTx] = useState<OfxRow | null>(null);
+  const [novaDescricao, setNovaDescricao] = useState("");
+
   const criarLanc = useMutation({
-    mutationFn: async (tx: OfxRow) => {
+    mutationFn: async ({ tx, descricao }: { tx: OfxRow; descricao: string }) => {
       if (!empresaId || !contaId) throw new Error("Empresa não selecionada");
       const tipo = tx.valor >= 0 ? "receber" : "pagar";
       const { data: lanc, error } = await supabase.from("lancamentos_financeiros").insert({
-        empresa_id: empresaId, tipo, descricao: tx.memo || "Importado OFX",
+        empresa_id: empresaId, tipo, descricao: descricao || tx.memo || "Importado OFX",
         valor: Math.abs(tx.valor), valor_pago: Math.abs(tx.valor),
         data_emissao: tx.data_transacao, data_vencimento: tx.data_transacao,
         data_pagamento: tx.data_transacao, status: "pago", conta_bancaria_id: contaId,
@@ -272,6 +275,7 @@ function ReconcileDialog({ contaId, empresaId, autoConciliar, onClose }: { conta
     },
     onSuccess: () => {
       toast.success("Lançamento criado e conciliado");
+      setNovoTx(null); setNovaDescricao("");
       qc.invalidateQueries({ queryKey: ["ofx", contaId] });
       qc.invalidateQueries({ queryKey: ["lancamentos"] });
     },
@@ -324,7 +328,7 @@ function ReconcileDialog({ contaId, empresaId, autoConciliar, onClose }: { conta
                               ))}
                           </SelectContent>
                         </Select>
-                        <Button variant="outline" size="sm" onClick={() => criarLanc.mutate(tx)}>
+                        <Button variant="outline" size="sm" onClick={() => { setNovoTx(tx); setNovaDescricao(tx.memo ?? ""); }}>
                           Novo
                         </Button>
                       </div>
@@ -336,6 +340,29 @@ function ReconcileDialog({ contaId, empresaId, autoConciliar, onClose }: { conta
           </Table>
         )}
       </DialogContent>
+
+      <Dialog open={!!novoTx} onOpenChange={(v) => { if (!v) { setNovoTx(null); setNovaDescricao(""); } }}>
+        <DialogContent>
+          <DialogHeader><DialogTitle>Novo lançamento a partir do extrato</DialogTitle></DialogHeader>
+          {novoTx && (
+            <form onSubmit={(e) => { e.preventDefault(); criarLanc.mutate({ tx: novoTx, descricao: novaDescricao }); }} className="space-y-3">
+              <div className="grid grid-cols-2 gap-3 text-sm text-muted-foreground">
+                <div>Data: <span className="text-foreground">{format(new Date(novoTx.data_transacao), "dd/MM/yyyy")}</span></div>
+                <div>Valor: <span className={novoTx.valor < 0 ? "text-destructive" : "text-success"}>{brl(novoTx.valor)}</span></div>
+              </div>
+              <div>
+                <Label>Descrição</Label>
+                <Input required autoFocus value={novaDescricao} onChange={(e) => setNovaDescricao(e.target.value)} placeholder="Descrição do lançamento" />
+              </div>
+              <DialogFooter>
+                <Button type="submit" disabled={criarLanc.isPending}>
+                  {criarLanc.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}Criar e conciliar
+                </Button>
+              </DialogFooter>
+            </form>
+          )}
+        </DialogContent>
+      </Dialog>
     </Dialog>
   );
 }
