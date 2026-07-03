@@ -149,7 +149,7 @@ export type Database = {
           created_at: string
           empresa_id: string
           id: string
-          nome: string
+          nome: string | null
           saldo_atual: number
           saldo_inicial: number
           updated_at: string
@@ -162,7 +162,7 @@ export type Database = {
           created_at?: string
           empresa_id: string
           id?: string
-          nome: string
+          nome?: string | null
           saldo_atual?: number
           saldo_inicial?: number
           updated_at?: string
@@ -175,7 +175,7 @@ export type Database = {
           created_at?: string
           empresa_id?: string
           id?: string
-          nome?: string
+          nome?: string | null
           saldo_atual?: number
           saldo_inicial?: number
           updated_at?: string
@@ -1043,6 +1043,7 @@ export type Database = {
         Args: { _empresa: string; _user: string }
         Returns: boolean
       }
+      recalc_saldo_conta: { Args: { _conta_id: string }; Returns: undefined }
     }
     Enums: {
       app_role:
