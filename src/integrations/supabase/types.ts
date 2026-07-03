@@ -14,6 +14,53 @@ export type Database = {
   }
   public: {
     Tables: {
+      alertas: {
+        Row: {
+          created_at: string
+          empresa_id: string
+          id: string
+          lido: boolean
+          mensagem: string | null
+          ref_id: string | null
+          ref_tabela: string | null
+          severidade: string
+          tipo: string
+          titulo: string
+        }
+        Insert: {
+          created_at?: string
+          empresa_id: string
+          id?: string
+          lido?: boolean
+          mensagem?: string | null
+          ref_id?: string | null
+          ref_tabela?: string | null
+          severidade?: string
+          tipo: string
+          titulo: string
+        }
+        Update: {
+          created_at?: string
+          empresa_id?: string
+          id?: string
+          lido?: boolean
+          mensagem?: string | null
+          ref_id?: string | null
+          ref_tabela?: string | null
+          severidade?: string
+          tipo?: string
+          titulo?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "alertas_empresa_id_fkey"
+            columns: ["empresa_id"]
+            isOneToOne: false
+            referencedRelation: "empresas"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       categorias_financeiras: {
         Row: {
           cor: string | null
@@ -42,6 +89,50 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "categorias_financeiras_empresa_id_fkey"
+            columns: ["empresa_id"]
+            isOneToOne: false
+            referencedRelation: "empresas"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      condicoes_pagamento: {
+        Row: {
+          ativo: boolean
+          created_at: string
+          empresa_id: string
+          entrada: boolean
+          id: string
+          intervalo_dias: number
+          nome: string
+          parcelas: number
+          updated_at: string
+        }
+        Insert: {
+          ativo?: boolean
+          created_at?: string
+          empresa_id: string
+          entrada?: boolean
+          id?: string
+          intervalo_dias?: number
+          nome: string
+          parcelas?: number
+          updated_at?: string
+        }
+        Update: {
+          ativo?: boolean
+          created_at?: string
+          empresa_id?: string
+          entrada?: boolean
+          id?: string
+          intervalo_dias?: number
+          nome?: string
+          parcelas?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "condicoes_pagamento_empresa_id_fkey"
             columns: ["empresa_id"]
             isOneToOne: false
             referencedRelation: "empresas"
@@ -163,6 +254,44 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "contatos_empresa_id_fkey"
+            columns: ["empresa_id"]
+            isOneToOne: false
+            referencedRelation: "empresas"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      depositos: {
+        Row: {
+          ativo: boolean
+          created_at: string
+          empresa_id: string
+          id: string
+          nome: string
+          padrao: boolean
+          updated_at: string
+        }
+        Insert: {
+          ativo?: boolean
+          created_at?: string
+          empresa_id: string
+          id?: string
+          nome: string
+          padrao?: boolean
+          updated_at?: string
+        }
+        Update: {
+          ativo?: boolean
+          created_at?: string
+          empresa_id?: string
+          id?: string
+          nome?: string
+          padrao?: boolean
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "depositos_empresa_id_fkey"
             columns: ["empresa_id"]
             isOneToOne: false
             referencedRelation: "empresas"
@@ -360,6 +489,7 @@ export type Database = {
           created_by: string | null
           custo_unitario: number | null
           data: string
+          deposito_id: string | null
           empresa_id: string
           id: string
           observacoes: string | null
@@ -373,6 +503,7 @@ export type Database = {
           created_by?: string | null
           custo_unitario?: number | null
           data?: string
+          deposito_id?: string | null
           empresa_id: string
           id?: string
           observacoes?: string | null
@@ -386,6 +517,7 @@ export type Database = {
           created_by?: string | null
           custo_unitario?: number | null
           data?: string
+          deposito_id?: string | null
           empresa_id?: string
           id?: string
           observacoes?: string | null
@@ -395,6 +527,13 @@ export type Database = {
           venda_id?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "movimentacoes_estoque_deposito_id_fkey"
+            columns: ["deposito_id"]
+            isOneToOne: false
+            referencedRelation: "depositos"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "movimentacoes_estoque_empresa_id_fkey"
             columns: ["empresa_id"]
@@ -414,6 +553,53 @@ export type Database = {
             columns: ["venda_id"]
             isOneToOne: false
             referencedRelation: "vendas"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      nfe_config: {
+        Row: {
+          ambiente: string
+          cnae: string | null
+          created_at: string
+          empresa_id: string
+          id: string
+          natureza_operacao: string | null
+          proximo_numero: number
+          regime_tributario: string
+          serie: number
+          updated_at: string
+        }
+        Insert: {
+          ambiente?: string
+          cnae?: string | null
+          created_at?: string
+          empresa_id: string
+          id?: string
+          natureza_operacao?: string | null
+          proximo_numero?: number
+          regime_tributario?: string
+          serie?: number
+          updated_at?: string
+        }
+        Update: {
+          ambiente?: string
+          cnae?: string | null
+          created_at?: string
+          empresa_id?: string
+          id?: string
+          natureza_operacao?: string | null
+          proximo_numero?: number
+          regime_tributario?: string
+          serie?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "nfe_config_empresa_id_fkey"
+            columns: ["empresa_id"]
+            isOneToOne: true
+            referencedRelation: "empresas"
             referencedColumns: ["id"]
           },
         ]
@@ -590,6 +776,7 @@ export type Database = {
         Row: {
           created_at: string
           desconto: number
+          desconto_pct: number
           descricao: string
           id: string
           preco_unitario: number
@@ -601,6 +788,7 @@ export type Database = {
         Insert: {
           created_at?: string
           desconto?: number
+          desconto_pct?: number
           descricao: string
           id?: string
           preco_unitario?: number
@@ -612,6 +800,7 @@ export type Database = {
         Update: {
           created_at?: string
           desconto?: number
+          desconto_pct?: number
           descricao?: string
           id?: string
           preco_unitario?: number
@@ -640,6 +829,7 @@ export type Database = {
       vendas: {
         Row: {
           cliente_id: string | null
+          condicao_pagamento_id: string | null
           created_at: string
           data: string
           data_validade: string | null
@@ -657,6 +847,7 @@ export type Database = {
         }
         Insert: {
           cliente_id?: string | null
+          condicao_pagamento_id?: string | null
           created_at?: string
           data?: string
           data_validade?: string | null
@@ -674,6 +865,7 @@ export type Database = {
         }
         Update: {
           cliente_id?: string | null
+          condicao_pagamento_id?: string | null
           created_at?: string
           data?: string
           data_validade?: string | null
@@ -698,6 +890,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "vendas_condicao_pagamento_id_fkey"
+            columns: ["condicao_pagamento_id"]
+            isOneToOne: false
+            referencedRelation: "condicoes_pagamento"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "vendas_empresa_id_fkey"
             columns: ["empresa_id"]
             isOneToOne: false
@@ -711,6 +910,60 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      cancelar_nota_fiscal: {
+        Args: { _motivo: string; _nf_id: string }
+        Returns: {
+          chave: string | null
+          contato_id: string | null
+          created_at: string
+          data_emissao: string | null
+          empresa_id: string
+          id: string
+          mensagem: string | null
+          numero: string | null
+          pdf_url: string | null
+          serie: string | null
+          status: Database["public"]["Enums"]["nf_status"]
+          tipo: Database["public"]["Enums"]["nf_tipo"]
+          updated_at: string
+          valor_total: number | null
+          venda_id: string | null
+          xml_url: string | null
+        }
+        SetofOptions: {
+          from: "*"
+          to: "notas_fiscais"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
+      emitir_nota_fiscal: {
+        Args: { _nf_id: string }
+        Returns: {
+          chave: string | null
+          contato_id: string | null
+          created_at: string
+          data_emissao: string | null
+          empresa_id: string
+          id: string
+          mensagem: string | null
+          numero: string | null
+          pdf_url: string | null
+          serie: string | null
+          status: Database["public"]["Enums"]["nf_status"]
+          tipo: Database["public"]["Enums"]["nf_tipo"]
+          updated_at: string
+          valor_total: number | null
+          venda_id: string | null
+          xml_url: string | null
+        }
+        SetofOptions: {
+          from: "*"
+          to: "notas_fiscais"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
       has_empresa_role: {
         Args: {
           _empresa: string
