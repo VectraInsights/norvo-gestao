@@ -14,7 +14,7 @@ import { useEmpresaAtual } from "@/hooks/use-empresa";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 
-export const Route = createFileRoute("/_authenticated/configuracoes")({
+export const Route = createFileRoute("/_authenticated/configuracoes/")({
   component: Configuracoes,
 });
 
