@@ -910,6 +910,60 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      cancelar_nota_fiscal: {
+        Args: { _motivo: string; _nf_id: string }
+        Returns: {
+          chave: string | null
+          contato_id: string | null
+          created_at: string
+          data_emissao: string | null
+          empresa_id: string
+          id: string
+          mensagem: string | null
+          numero: string | null
+          pdf_url: string | null
+          serie: string | null
+          status: Database["public"]["Enums"]["nf_status"]
+          tipo: Database["public"]["Enums"]["nf_tipo"]
+          updated_at: string
+          valor_total: number | null
+          venda_id: string | null
+          xml_url: string | null
+        }
+        SetofOptions: {
+          from: "*"
+          to: "notas_fiscais"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
+      emitir_nota_fiscal: {
+        Args: { _nf_id: string }
+        Returns: {
+          chave: string | null
+          contato_id: string | null
+          created_at: string
+          data_emissao: string | null
+          empresa_id: string
+          id: string
+          mensagem: string | null
+          numero: string | null
+          pdf_url: string | null
+          serie: string | null
+          status: Database["public"]["Enums"]["nf_status"]
+          tipo: Database["public"]["Enums"]["nf_tipo"]
+          updated_at: string
+          valor_total: number | null
+          venda_id: string | null
+          xml_url: string | null
+        }
+        SetofOptions: {
+          from: "*"
+          to: "notas_fiscais"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
       has_empresa_role: {
         Args: {
           _empresa: string
