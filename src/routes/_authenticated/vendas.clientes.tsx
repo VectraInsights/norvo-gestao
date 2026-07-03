@@ -8,6 +8,7 @@ import { Card } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Textarea } from "@/components/ui/textarea";
 import { Loader2, Plus, Search, Users } from "lucide-react";
 import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
@@ -31,6 +32,8 @@ export const Route = createFileRoute("/_authenticated/vendas/clientes")({
 
 const emptyForm = () => ({
   nome: "", documento: "", email: "", telefone: "",
+  cep: "", logradouro: "", numero: "", complemento: "",
+  bairro: "", cidade: "", uf: "", observacoes: "",
   isCliente: true, isFornecedor: false,
 });
 
@@ -64,6 +67,13 @@ function Clientes() {
         nome: d.razao_social || d.nome_fantasia || f.nome,
         email: d.email ?? f.email,
         telefone: d.ddd_telefone_1 ?? f.telefone,
+        cep: d.cep ?? f.cep,
+        logradouro: d.logradouro ?? f.logradouro,
+        numero: d.numero ?? f.numero,
+        complemento: d.complemento ?? f.complemento,
+        bairro: d.bairro ?? f.bairro,
+        cidade: d.municipio ?? f.cidade,
+        uf: d.uf ?? f.uf,
       }));
       toast.success("Dados preenchidos a partir da Receita");
     } catch (err) {
@@ -116,6 +126,14 @@ function Clientes() {
         documento: doc || null,
         email: input.email || null,
         telefone: input.telefone || null,
+        cep: input.cep || null,
+        logradouro: input.logradouro || null,
+        numero: input.numero || null,
+        complemento: input.complemento || null,
+        bairro: input.bairro || null,
+        cidade: input.cidade || null,
+        uf: input.uf || null,
+        observacoes: input.observacoes || null,
       });
       if (error) throw error;
     },
@@ -134,7 +152,7 @@ function Clientes() {
         actions={
           <Dialog open={open} onOpenChange={(v) => { if (!criar.isPending) setOpen(v); }}>
             <DialogTrigger asChild><Button><Plus className="mr-1 h-4 w-4" />Novo contato</Button></DialogTrigger>
-            <DialogContent>
+            <DialogContent className="max-h-[90vh] overflow-y-auto">
               <DialogHeader><DialogTitle>Novo contato</DialogTitle></DialogHeader>
               <form onSubmit={(e) => { e.preventDefault(); criar.mutate(form); }} className="space-y-3">
                 <div><Label>Nome / Razão social *</Label><Input required value={form.nome} onChange={(e) => setForm({ ...form, nome: e.target.value })} /></div>
@@ -165,6 +183,23 @@ function Clientes() {
                 <div className="grid grid-cols-2 gap-3">
                   <div><Label>Email</Label><Input type="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} /></div>
                   <div><Label>Telefone</Label><Input value={form.telefone} onChange={(e) => setForm({ ...form, telefone: e.target.value })} /></div>
+                </div>
+                <div className="grid grid-cols-3 gap-3">
+                  <div><Label>CEP</Label><Input value={form.cep} onChange={(e) => setForm({ ...form, cep: e.target.value })} /></div>
+                  <div className="col-span-2"><Label>Logradouro</Label><Input value={form.logradouro} onChange={(e) => setForm({ ...form, logradouro: e.target.value })} /></div>
+                </div>
+                <div className="grid grid-cols-3 gap-3">
+                  <div><Label>Número</Label><Input value={form.numero} onChange={(e) => setForm({ ...form, numero: e.target.value })} /></div>
+                  <div className="col-span-2"><Label>Complemento</Label><Input value={form.complemento} onChange={(e) => setForm({ ...form, complemento: e.target.value })} /></div>
+                </div>
+                <div className="grid grid-cols-3 gap-3">
+                  <div><Label>Bairro</Label><Input value={form.bairro} onChange={(e) => setForm({ ...form, bairro: e.target.value })} /></div>
+                  <div><Label>Cidade</Label><Input value={form.cidade} onChange={(e) => setForm({ ...form, cidade: e.target.value })} /></div>
+                  <div><Label>UF</Label><Input maxLength={2} value={form.uf} onChange={(e) => setForm({ ...form, uf: e.target.value.toUpperCase() })} /></div>
+                </div>
+                <div>
+                  <Label>Observações</Label>
+                  <Textarea rows={3} value={form.observacoes} onChange={(e) => setForm({ ...form, observacoes: e.target.value })} />
                 </div>
                 <DialogFooter>
                   <Button type="submit" disabled={criar.isPending || (!form.isCliente && !form.isFornecedor)}>
