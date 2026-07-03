@@ -267,37 +267,61 @@ function DashboardSkeleton() {
 }
 
 function FirstEmpresa({ onCreated }: { onCreated: () => void }) {
-  const [nome, setNome] = useState("");
-  const [cnpj, setCnpj] = useState("");
+  const [form, setForm] = useState({
+    cnpj: "", nome_fantasia: "", razao_social: "", email: "", telefone: "",
+    logradouro: "", numero: "", complemento: "", bairro: "", cidade: "", uf: "", cep: "",
+  });
+  const [lookingUp, setLookingUp] = useState(false);
+
+  const lookupCnpj = async () => {
+    const digits = form.cnpj.replace(/\D/g, "");
+    if (digits.length !== 14) { toast.error("CNPJ deve ter 14 dígitos"); return; }
+    setLookingUp(true);
+    try {
+      const res = await fetch(`https://brasilapi.com.br/api/cnpj/v1/${digits}`);
+      if (!res.ok) throw new Error("CNPJ não encontrado");
+      const d = await res.json();
+      setForm((f) => ({
+        ...f, cnpj: digits,
+        razao_social: d.razao_social ?? "",
+        nome_fantasia: d.nome_fantasia || d.razao_social || "",
+        email: d.email ?? "",
+        telefone: [d.ddd_telefone_1].filter(Boolean).join(""),
+        logradouro: d.logradouro ?? "", numero: d.numero ?? "", complemento: d.complemento ?? "",
+        bairro: d.bairro ?? "", cidade: d.municipio ?? "", uf: d.uf ?? "", cep: d.cep ?? "",
+      }));
+      toast.success("Dados preenchidos a partir da Receita");
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Falha ao consultar CNPJ");
+    } finally {
+      setLookingUp(false);
+    }
+  };
 
   const criarMut = useMutation({
     mutationFn: async () => {
-      const trimmed = nome.trim();
-      if (!trimmed) throw new Error("Nome é obrigatório");
+      const nome = form.nome_fantasia.trim();
+      if (!nome) throw new Error("Informe o CNPJ ou o nome fantasia");
       const { data: userRes, error: authErr } = await supabase.auth.getUser();
       if (authErr || !userRes.user) throw new Error("Sessão expirada");
       const { error } = await supabase.from("empresas").insert({
-        nome_fantasia: trimmed,
-        cnpj: cnpj.trim() || null,
+        ...form, nome_fantasia: nome, cnpj: form.cnpj.replace(/\D/g, "") || null,
         created_by: userRes.user.id,
       });
       if (error) throw error;
     },
     onSuccess: () => {
-      toast.success("Empresa criada! Categorias, condições e configuração fiscal foram provisionadas automaticamente.");
+      toast.success("Empresa criada!");
       onCreated();
     },
     onError: (e: Error) => toast.error(e.message),
   });
 
-  const submit = (e: React.FormEvent) => {
-    e.preventDefault();
-    criarMut.mutate();
-  };
+  const submit = (e: React.FormEvent) => { e.preventDefault(); criarMut.mutate(); };
 
   return (
     <div className="mx-auto max-w-lg">
-      <PageHeader eyebrow="Bem-vindo" title="Cadastre sua empresa" description="Para começar, crie a primeira empresa desta conta." />
+      <PageHeader eyebrow="Bem-vindo" title="Cadastre sua empresa" description="Informe o CNPJ para preenchermos os dados automaticamente." />
       <Card className="shadow-panel">
         <CardContent className="p-6">
           <div className="mb-4 grid h-10 w-10 place-items-center rounded-md bg-accent text-accent-foreground">
@@ -305,12 +329,17 @@ function FirstEmpresa({ onCreated }: { onCreated: () => void }) {
           </div>
           <form onSubmit={submit} className="space-y-4">
             <div>
-              <label className="text-sm font-medium">Nome fantasia</label>
-              <Input required value={nome} onChange={(e) => setNome(e.target.value)} placeholder="Minha Empresa Ltda" />
+              <label className="text-sm font-medium">CNPJ <span className="text-xs text-muted-foreground">(opcional — preenche o restante)</span></label>
+              <div className="flex gap-2">
+                <Input value={form.cnpj} onChange={(e) => setForm({ ...form, cnpj: e.target.value })} placeholder="00.000.000/0000-00" />
+                <Button type="button" variant="outline" onClick={lookupCnpj} disabled={lookingUp || !form.cnpj}>
+                  {lookingUp ? "..." : "Buscar"}
+                </Button>
+              </div>
             </div>
             <div>
-              <label className="text-sm font-medium">CNPJ (opcional)</label>
-              <Input value={cnpj} onChange={(e) => setCnpj(e.target.value)} placeholder="00.000.000/0000-00" />
+              <label className="text-sm font-medium">Nome fantasia</label>
+              <Input value={form.nome_fantasia} onChange={(e) => setForm({ ...form, nome_fantasia: e.target.value })} placeholder="Minha Empresa Ltda" />
             </div>
             <Button type="submit" className="w-full" disabled={criarMut.isPending}>
               {criarMut.isPending ? "Criando…" : "Criar empresa"}
