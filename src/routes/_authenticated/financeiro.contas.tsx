@@ -10,15 +10,24 @@ import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogT
 import { Banknote, Plus } from "lucide-react";
 import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEmpresaAtual } from "@/hooks/use-empresa";
 import { toast } from "sonner";
+import { Loader2 } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/financeiro/contas")({
   component: ContasBancarias,
+  errorComponent: ({ error }) => (
+    <div className="p-6 text-sm text-destructive" role="alert">Falha: {error.message}</div>
+  ),
 });
 
-function brl(n: number) { return Number(n).toLocaleString("pt-BR", { style: "currency", currency: "BRL" }); }
+const brl = (n: number) => Number(n).toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
+
+type ContaBancaria = {
+  id: string; nome: string; banco: string | null;
+  agencia: string | null; conta: string | null; saldo_atual: number;
+};
 
 function ContasBancarias() {
   const { data: empresa } = useEmpresaAtual();
@@ -28,23 +37,32 @@ function ContasBancarias() {
 
   const { data: contas } = useQuery({
     enabled: !!empresa,
-    queryKey: ["contas-bancarias", empresa?.id],
-    queryFn: async () => {
-      const { data, error } = await supabase.from("contas_bancarias").select("*").eq("empresa_id", empresa!.id).order("nome");
-      if (error) throw error; return data;
+    queryKey: ["contas-bancarias", empresa?.id] as const,
+    queryFn: async ({ signal }): Promise<ContaBancaria[]> => {
+      const { data, error } = await supabase.from("contas_bancarias")
+        .select("id,nome,banco,agencia,conta,saldo_atual")
+        .eq("empresa_id", empresa!.id).order("nome").abortSignal(signal);
+      if (error) throw error; return (data ?? []) as ContaBancaria[];
     },
   });
 
-  const submit = async (e: React.FormEvent) => {
-    e.preventDefault(); if (!empresa) return;
-    const saldo = Number(form.saldo_inicial);
-    const { error } = await supabase.from("contas_bancarias").insert({
-      empresa_id: empresa.id, ...form, saldo_inicial: saldo, saldo_atual: saldo,
-    });
-    if (error) return toast.error(error.message);
-    toast.success("Conta criada");
-    setOpen(false); qc.invalidateQueries({ queryKey: ["contas-bancarias"] });
-  };
+  const criar = useMutation({
+    mutationFn: async (input: typeof form) => {
+      if (!empresa) throw new Error("Empresa não selecionada");
+      const saldo = Number(input.saldo_inicial);
+      const { error } = await supabase.from("contas_bancarias").insert({
+        empresa_id: empresa.id, ...input, saldo_inicial: saldo, saldo_atual: saldo,
+      });
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      toast.success("Conta criada"); setOpen(false);
+      setForm({ nome: "", banco: "", agencia: "", conta: "", saldo_inicial: "0" });
+      qc.invalidateQueries({ queryKey: ["contas-bancarias"] });
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
 
   return (
     <>
