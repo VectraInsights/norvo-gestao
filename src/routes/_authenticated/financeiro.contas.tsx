@@ -98,7 +98,7 @@ function ContasBancarias() {
           <Table>
             <TableHeader><TableRow><TableHead>Nome</TableHead><TableHead>Banco</TableHead><TableHead>Ag/Conta</TableHead><TableHead className="text-right">Saldo atual</TableHead></TableRow></TableHeader>
             <TableBody>
-              {contas.map((c: any) => (
+              {contas.map((c) => (
                 <TableRow key={c.id}>
                   <TableCell className="font-medium">{c.nome}</TableCell>
                   <TableCell>{c.banco ?? "—"}</TableCell>
