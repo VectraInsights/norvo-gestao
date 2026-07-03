@@ -319,8 +319,13 @@ function FirstEmpresa({ onCreated }: { onCreated: () => Promise<void> }) {
       if (!nome) throw new Error("Informe o nome da empresa");
       const { data: userRes, error: authErr } = await supabase.auth.getUser();
       if (authErr || !userRes.user) throw new Error("Sessão expirada");
+      const cnpjDigits = form.cnpj.replace(/\D/g, "");
+      if (cnpjDigits) {
+        const { data: dup } = await supabase.from("empresas").select("id").eq("cnpj", cnpjDigits).maybeSingle();
+        if (dup) throw new Error("Já existe uma empresa cadastrada com este CNPJ");
+      }
       const { error } = await supabase.from("empresas").insert({
-        ...form, nome_fantasia: nome, cnpj: form.cnpj.replace(/\D/g, "") || null,
+        ...form, nome_fantasia: nome, cnpj: cnpjDigits || null,
         created_by: userRes.user.id,
       });
       if (error) throw error;
