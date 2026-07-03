@@ -56,7 +56,8 @@ function Dashboard() {
       return (data ?? []) as Empresa[];
     },
   });
-  const empresa = empresas?.[0];
+  const selectedId = useSelectedEmpresaId();
+  const empresa = (selectedId && empresas?.find((e) => e.id === selectedId)) || empresas?.[0];
 
   const { data: stats, isLoading: loadingStats } = useQuery({
     enabled: !!empresa,
