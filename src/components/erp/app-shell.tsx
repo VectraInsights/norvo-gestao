@@ -210,13 +210,15 @@ export function AppShell({ children }: { children: ReactNode }) {
 
       {/* Conteúdo */}
       <div className="flex min-w-0 flex-col">
-        <header className="flex h-16 items-center justify-between border-b border-border/60 bg-background/80 px-6 backdrop-blur lg:hidden">
-          <Button variant="ghost" size="sm" onClick={() => setOpen(true)}>Menu</Button>
+        <header className="flex h-14 items-center justify-between border-b border-border/60 bg-background/80 px-4 backdrop-blur lg:px-8">
           <div className="flex items-center gap-2">
-            <img src={norvoLogo} alt="Norvo" width={24} height={24} className="h-6 w-6" />
-            <span className="text-display">Norvo</span>
+            <Button variant="ghost" size="sm" className="lg:hidden" onClick={() => setOpen(true)}>Menu</Button>
+            <div className="flex items-center gap-2 lg:hidden">
+              <img src={norvoLogo} alt="Norvo" width={24} height={24} className="h-6 w-6" />
+              <span className="text-display">Norvo</span>
+            </div>
           </div>
-          <div className="w-10" />
+          <ShortcutsDialog />
         </header>
         <main className="min-w-0 flex-1 overflow-auto p-6 lg:p-8">{children}</main>
       </div>
