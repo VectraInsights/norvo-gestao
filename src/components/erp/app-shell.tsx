@@ -71,6 +71,30 @@ export function AppShell({ children }: { children: ReactNode }) {
   // Fecha ao navegar (mobile)
   useEffect(() => { setOpen(false); }, [location.pathname]);
 
+  // Atalhos globais de teclado (Alt+tecla)
+  useEffect(() => {
+    const shortcuts: Record<string, string> = {
+      d: "/financeiro/pagar",
+      r: "/financeiro/receber",
+      c: "/vendas/clientes",
+      f: "/vendas/clientes",
+      p: "/vendas/pedidos",
+      e: "/estoque/produtos",
+      h: "/dashboard",
+    };
+    const onKey = (ev: KeyboardEvent) => {
+      if (!ev.altKey || ev.ctrlKey || ev.metaKey || ev.shiftKey) return;
+      const target = ev.target as HTMLElement | null;
+      if (target && (target.isContentEditable || ["INPUT", "TEXTAREA", "SELECT"].includes(target.tagName))) return;
+      const to = shortcuts[ev.key.toLowerCase()];
+      if (!to) return;
+      ev.preventDefault();
+      navigate({ to });
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [navigate]);
+
   const signOut = async () => {
     await qc.cancelQueries();
     qc.clear();
