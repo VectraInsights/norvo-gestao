@@ -683,6 +683,73 @@ export type Database = {
           },
         ]
       }
+      ofx_transacoes: {
+        Row: {
+          conta_bancaria_id: string
+          created_at: string
+          data_transacao: string
+          empresa_id: string
+          fitid: string
+          id: string
+          lancamento_id: string | null
+          memo: string | null
+          status: string
+          tipo: string
+          updated_at: string
+          valor: number
+        }
+        Insert: {
+          conta_bancaria_id: string
+          created_at?: string
+          data_transacao: string
+          empresa_id: string
+          fitid: string
+          id?: string
+          lancamento_id?: string | null
+          memo?: string | null
+          status?: string
+          tipo: string
+          updated_at?: string
+          valor: number
+        }
+        Update: {
+          conta_bancaria_id?: string
+          created_at?: string
+          data_transacao?: string
+          empresa_id?: string
+          fitid?: string
+          id?: string
+          lancamento_id?: string | null
+          memo?: string | null
+          status?: string
+          tipo?: string
+          updated_at?: string
+          valor?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ofx_transacoes_conta_bancaria_id_fkey"
+            columns: ["conta_bancaria_id"]
+            isOneToOne: false
+            referencedRelation: "contas_bancarias"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ofx_transacoes_empresa_id_fkey"
+            columns: ["empresa_id"]
+            isOneToOne: false
+            referencedRelation: "empresas"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ofx_transacoes_lancamento_id_fkey"
+            columns: ["lancamento_id"]
+            isOneToOne: false
+            referencedRelation: "lancamentos_financeiros"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       produtos: {
         Row: {
           ativo: boolean
