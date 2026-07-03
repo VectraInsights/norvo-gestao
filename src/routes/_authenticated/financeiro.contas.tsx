@@ -237,6 +237,24 @@ function ReconcileDialog({ contaId, empresaId, autoConciliar, onClose }: { conta
     onError: (e: Error) => toast.error(e.message),
   });
 
+  useEffect(() => {
+    if (!autoConciliar || !txs || !lancamentosAbertos) return;
+    const usados = new Set<string>();
+    for (const tx of txs) {
+      if (tx.status === "conciliada" || autoRunRef.current.has(tx.id)) continue;
+      const match = lancamentosAbertos.find((l) =>
+        !usados.has(l.id) &&
+        Math.abs(Number(l.valor) - Math.abs(tx.valor)) < 0.01 &&
+        l.data_vencimento === tx.data_transacao
+      );
+      if (match) {
+        usados.add(match.id);
+        autoRunRef.current.add(tx.id);
+        conciliar.mutate({ ofxId: tx.id, lancamentoId: match.id, valor: tx.valor });
+      }
+    }
+  }, [autoConciliar, txs, lancamentosAbertos, conciliar]);
+
   const criarLanc = useMutation({
     mutationFn: async (tx: OfxRow) => {
       if (!empresaId || !contaId) throw new Error("Empresa não selecionada");
