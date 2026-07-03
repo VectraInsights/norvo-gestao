@@ -4,7 +4,7 @@ import {
   LayoutDashboard, ReceiptText, Users, Boxes, FileText, Settings, LogOut,
   Wallet, TrendingUp, Banknote, ShoppingCart, UserSquare2, Package, ChevronDown,
 } from "lucide-react";
-import nimboLogo from "@/assets/nimbo-logo.png";
+import norvoLogo from "@/assets/norvo-logo.png";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -82,9 +82,9 @@ export function AppShell({ children }: { children: ReactNode }) {
         )}
       >
         <div className="flex h-16 items-center gap-2 border-b border-sidebar-border px-5">
-          <img src={nimboLogo} alt="Nimbo." width={32} height={32} className="h-8 w-8" />
+          <img src={norvoLogo} alt="Norvo" width={32} height={32} className="h-8 w-8" />
           <div>
-            <div className="text-display text-lg leading-none">Nimbo.</div>
+            <div className="text-display text-lg leading-none">Norvo</div>
             <div className="text-[10px] uppercase tracking-widest text-muted-foreground">Cloud ERP</div>
           </div>
         </div>
@@ -180,8 +180,8 @@ export function AppShell({ children }: { children: ReactNode }) {
         <header className="flex h-16 items-center justify-between border-b border-border/60 bg-background/80 px-6 backdrop-blur lg:hidden">
           <Button variant="ghost" size="sm" onClick={() => setOpen(true)}>Menu</Button>
           <div className="flex items-center gap-2">
-            <img src={nimboLogo} alt="Nimbo." width={24} height={24} className="h-6 w-6" />
-            <span className="text-display">Nimbo.</span>
+            <img src={norvoLogo} alt="Norvo" width={24} height={24} className="h-6 w-6" />
+            <span className="text-display">Norvo</span>
           </div>
           <div className="w-10" />
         </header>

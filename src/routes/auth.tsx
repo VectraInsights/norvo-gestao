@@ -8,7 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { toast } from "sonner";
 import { Loader2 } from "lucide-react";
-import nimboLogo from "@/assets/nimbo-logo.png";
+import norvoLogo from "@/assets/norvo-logo.png";
 
 export const Route = createFileRoute("/auth")({
   component: AuthPage,
@@ -62,9 +62,9 @@ function AuthPage() {
       <aside className="hidden flex-col justify-between bg-primary p-12 text-primary-foreground lg:flex">
         <Link to="/" className="flex items-center gap-2">
           <div className="grid h-10 w-10 place-items-center rounded-lg bg-primary-foreground/10 backdrop-blur">
-            <img src={nimboLogo} alt="" width={28} height={28} className="h-7 w-7" />
+            <img src={norvoLogo} alt="" width={28} height={28} className="h-7 w-7" />
           </div>
-          <span className="text-display text-xl">Nimbo.</span>
+          <span className="text-display text-xl">Norvo</span>
         </Link>
         <div>
           <p className="text-display text-4xl leading-tight">
@@ -72,7 +72,7 @@ function AuthPage() {
           </p>
           <p className="mt-4 text-sm text-primary-foreground/70">Gestão financeira, comercial, estoque e fiscal em um só ambiente.</p>
         </div>
-        <p className="text-xs uppercase tracking-widest text-primary-foreground/60">Nimbo. · v0.1</p>
+        <p className="text-xs uppercase tracking-widest text-primary-foreground/60">Norvo · v0.1</p>
       </aside>
 
       {/* Formulário */}
