@@ -155,6 +155,17 @@ function Clientes() {
             <DialogContent className="max-h-[90vh] overflow-y-auto">
               <DialogHeader><DialogTitle>Novo contato</DialogTitle></DialogHeader>
               <form onSubmit={(e) => { e.preventDefault(); criar.mutate(form); }} className="space-y-3">
+                <div>
+                  <Label>CPF/CNPJ</Label>
+                  <div className="flex gap-2">
+                    <Input value={form.documento}
+                      onChange={(e) => setForm({ ...form, documento: e.target.value })}
+                      onKeyDown={handleCnpjKeyDown} />
+                    <Button type="button" variant="outline" onClick={lookupCnpj} disabled={lookingUp || !form.documento}>
+                      {lookingUp ? <Loader2 className="h-4 w-4 animate-spin" /> : <Search className="h-4 w-4" />}
+                    </Button>
+                  </div>
+                </div>
                 <div><Label>Nome / Razão social *</Label><Input required value={form.nome} onChange={(e) => setForm({ ...form, nome: e.target.value })} /></div>
                 <div>
                   <Label>Tipo *</Label>
@@ -167,17 +178,6 @@ function Clientes() {
                       <Checkbox checked={form.isFornecedor} onCheckedChange={(v) => setForm({ ...form, isFornecedor: v === true })} />
                       Fornecedor
                     </label>
-                  </div>
-                </div>
-                <div>
-                  <Label>CPF/CNPJ</Label>
-                  <div className="flex gap-2">
-                    <Input value={form.documento}
-                      onChange={(e) => setForm({ ...form, documento: e.target.value })}
-                      onKeyDown={handleCnpjKeyDown} />
-                    <Button type="button" variant="outline" onClick={lookupCnpj} disabled={lookingUp || !form.documento}>
-                      {lookingUp ? <Loader2 className="h-4 w-4 animate-spin" /> : <Search className="h-4 w-4" />}
-                    </Button>
                   </div>
                 </div>
                 <div className="grid grid-cols-2 gap-3">
