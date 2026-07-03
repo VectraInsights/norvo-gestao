@@ -66,6 +66,13 @@ function Clientes() {
         nome: d.razao_social || d.nome_fantasia || f.nome,
         email: d.email ?? f.email,
         telefone: d.ddd_telefone_1 ?? f.telefone,
+        cep: d.cep ?? f.cep,
+        logradouro: d.logradouro ?? f.logradouro,
+        numero: d.numero ?? f.numero,
+        complemento: d.complemento ?? f.complemento,
+        bairro: d.bairro ?? f.bairro,
+        cidade: d.municipio ?? f.cidade,
+        uf: d.uf ?? f.uf,
       }));
       toast.success("Dados preenchidos a partir da Receita");
     } catch (err) {
