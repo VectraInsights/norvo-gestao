@@ -76,7 +76,12 @@ function EmpresasPage() {
     e.preventDefault();
     const { data: u } = await supabase.auth.getUser();
     if (!u.user) return toast.error("Sessão expirada");
-    const payload = { ...form, cnpj: form.cnpj || null, created_by: u.user.id };
+    const cnpjDigits = form.cnpj.replace(/\D/g, "");
+    if (cnpjDigits) {
+      const { data: dup } = await supabase.from("empresas").select("id").eq("cnpj", cnpjDigits).maybeSingle();
+      if (dup) return toast.error("Já existe uma empresa cadastrada com este CNPJ");
+    }
+    const payload = { ...form, cnpj: cnpjDigits || null, created_by: u.user.id };
     const { error } = await supabase.from("empresas").insert(payload);
     if (error) return toast.error(error.message);
     toast.success("Empresa criada"); setOpen(false); setForm(emptyForm);
