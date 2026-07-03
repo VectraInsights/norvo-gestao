@@ -50,7 +50,7 @@ function Configuracoes() {
 
 function CategoriasTab({ empresaId }: { empresaId: string }) {
   const qc = useQueryClient();
-  const [nome, setNome] = useState(""); const [tipo, setTipo] = useState<"receita" | "despesa">("despesa");
+  const [nome, setNome] = useState(""); const [tipo, setTipo] = useState<"receber" | "pagar">("pagar");
 
   const { data } = useQuery({
     queryKey: ["categorias", empresaId],
@@ -69,13 +69,15 @@ function CategoriasTab({ empresaId }: { empresaId: string }) {
     qc.invalidateQueries({ queryKey: ["categorias"] });
   };
 
+  const tipoLabel = (t: string) => t === "receber" ? "Receita" : "Despesa";
+
   return (
     <Card className="mt-4 shadow-panel"><CardContent className="p-4">
       <div className="mb-3 flex gap-2">
         <Input placeholder="Nova categoria" value={nome} onChange={(e) => setNome(e.target.value)} />
-        <Select value={tipo} onValueChange={(v) => setTipo(v as any)}>
+        <Select value={tipo} onValueChange={(v) => setTipo(v as "receber" | "pagar")}>
           <SelectTrigger className="w-36"><SelectValue /></SelectTrigger>
-          <SelectContent><SelectItem value="receita">Receita</SelectItem><SelectItem value="despesa">Despesa</SelectItem></SelectContent>
+          <SelectContent><SelectItem value="receber">Receita</SelectItem><SelectItem value="pagar">Despesa</SelectItem></SelectContent>
         </Select>
         <Button onClick={add}><Plus className="mr-1 h-4 w-4" />Adicionar</Button>
       </div>
