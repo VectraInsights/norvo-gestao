@@ -181,6 +181,7 @@ function ContasBancarias() {
       <ReconcileDialog
         contaId={reconcilingId}
         empresaId={empresa?.id ?? null}
+        autoConciliar={autoConciliar}
         onClose={() => setReconcilingId(null)}
       />
     </>
