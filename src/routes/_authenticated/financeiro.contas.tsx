@@ -10,6 +10,8 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Banknote, Plus, Upload, Loader2, Link2, Check } from "lucide-react";
+import { Checkbox } from "@/components/ui/checkbox";
+import { useEffect } from "react";
 import { useRef, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -28,7 +30,7 @@ export const Route = createFileRoute("/_authenticated/financeiro/contas")({
 const brl = (n: number) => Number(n).toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 
 type ContaBancaria = {
-  id: string; nome: string; banco: string | null;
+  id: string; nome: string | null; banco: string | null;
   agencia: string | null; conta: string | null; saldo_atual: number;
 };
 
@@ -41,7 +43,8 @@ function ContasBancarias() {
   const { data: empresa } = useEmpresaAtual();
   const qc = useQueryClient();
   const [open, setOpen] = useState(false);
-  const [form, setForm] = useState({ nome: "", banco: "", agencia: "", conta: "", saldo_inicial: "0" });
+  const [form, setForm] = useState({ banco: "", agencia: "", conta: "", saldo_inicial: "0" });
+  const [autoConciliar, setAutoConciliar] = useState(true);
   const [reconcilingId, setReconcilingId] = useState<string | null>(null);
   const [importing, setImporting] = useState<string | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
@@ -53,7 +56,7 @@ function ContasBancarias() {
     queryFn: async ({ signal }): Promise<ContaBancaria[]> => {
       const { data, error } = await supabase.from("contas_bancarias")
         .select("id,nome,banco,agencia,conta,saldo_atual")
-        .eq("empresa_id", empresa!.id).order("nome").abortSignal(signal);
+        .eq("empresa_id", empresa!.id).order("banco").abortSignal(signal);
       if (error) throw error; return (data ?? []) as ContaBancaria[];
     },
   });
@@ -63,13 +66,13 @@ function ContasBancarias() {
       if (!empresa) throw new Error("Empresa não selecionada");
       const saldo = Number(input.saldo_inicial);
       const { error } = await supabase.from("contas_bancarias").insert({
-        empresa_id: empresa.id, ...input, saldo_inicial: saldo, saldo_atual: saldo,
+        empresa_id: empresa.id, ...input, nome: input.banco, saldo_inicial: saldo, saldo_atual: saldo,
       });
       if (error) throw error;
     },
     onSuccess: () => {
       toast.success("Conta criada"); setOpen(false);
-      setForm({ nome: "", banco: "", agencia: "", conta: "", saldo_inicial: "0" });
+      setForm({ banco: "", agencia: "", conta: "", saldo_inicial: "0" });
       qc.invalidateQueries({ queryKey: ["contas-bancarias"] });
     },
     onError: (e: Error) => toast.error(e.message),
@@ -117,26 +120,31 @@ function ContasBancarias() {
       <input ref={fileRef} type="file" accept=".ofx,.OFX,text/plain" className="hidden" onChange={handleFile} />
       <PageHeader eyebrow="Financeiro" title="Contas bancárias" description="Cadastro de contas, importação OFX e conciliação."
         actions={
-          <Dialog open={open} onOpenChange={(v) => { if (!criar.isPending) setOpen(v); }}>
-            <DialogTrigger asChild><Button><Plus className="mr-1 h-4 w-4" />Nova conta</Button></DialogTrigger>
-            <DialogContent>
-              <DialogHeader><DialogTitle>Nova conta bancária</DialogTitle></DialogHeader>
-              <form onSubmit={(e) => { e.preventDefault(); criar.mutate(form); }} className="space-y-3">
-                <div><Label>Nome</Label><Input required value={form.nome} onChange={(e) => setForm({ ...form, nome: e.target.value })} placeholder="Conta principal" /></div>
-                <div className="grid grid-cols-3 gap-3">
-                  <div><Label>Banco</Label><Input value={form.banco} onChange={(e) => setForm({ ...form, banco: e.target.value })} /></div>
-                  <div><Label>Agência</Label><Input value={form.agencia} onChange={(e) => setForm({ ...form, agencia: e.target.value })} /></div>
-                  <div><Label>Conta</Label><Input value={form.conta} onChange={(e) => setForm({ ...form, conta: e.target.value })} /></div>
-                </div>
-                <div><Label>Saldo inicial (R$)</Label><Input type="number" step="0.01" value={form.saldo_inicial} onChange={(e) => setForm({ ...form, saldo_inicial: e.target.value })} /></div>
-                <DialogFooter>
-                  <Button type="submit" disabled={criar.isPending}>
-                    {criar.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}Salvar
-                  </Button>
-                </DialogFooter>
-              </form>
-            </DialogContent>
-          </Dialog>
+          <div className="flex items-center gap-3">
+            <label className="flex items-center gap-2 text-xs text-muted-foreground cursor-pointer">
+              <Checkbox checked={autoConciliar} onCheckedChange={(v) => setAutoConciliar(!!v)} />
+              Conciliar automaticamente (mesmo valor e data)
+            </label>
+            <Dialog open={open} onOpenChange={(v) => { if (!criar.isPending) setOpen(v); }}>
+              <DialogTrigger asChild><Button><Plus className="mr-1 h-4 w-4" />Nova conta</Button></DialogTrigger>
+              <DialogContent>
+                <DialogHeader><DialogTitle>Nova conta bancária</DialogTitle></DialogHeader>
+                <form onSubmit={(e) => { e.preventDefault(); criar.mutate(form); }} className="space-y-3">
+                  <div className="grid grid-cols-3 gap-3">
+                    <div><Label>Banco</Label><Input required value={form.banco} onChange={(e) => setForm({ ...form, banco: e.target.value })} placeholder="Bradesco" /></div>
+                    <div><Label>Agência</Label><Input value={form.agencia} onChange={(e) => setForm({ ...form, agencia: e.target.value })} /></div>
+                    <div><Label>Conta</Label><Input value={form.conta} onChange={(e) => setForm({ ...form, conta: e.target.value })} /></div>
+                  </div>
+                  <div><Label>Saldo inicial (R$)</Label><Input type="number" step="0.01" value={form.saldo_inicial} onChange={(e) => setForm({ ...form, saldo_inicial: e.target.value })} /></div>
+                  <DialogFooter>
+                    <Button type="submit" disabled={criar.isPending}>
+                      {criar.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}Salvar
+                    </Button>
+                  </DialogFooter>
+                </form>
+              </DialogContent>
+            </Dialog>
+          </div>
         }
       />
       {!contas?.length ? (
@@ -145,14 +153,13 @@ function ContasBancarias() {
         <Card className="overflow-hidden shadow-panel">
           <Table>
             <TableHeader><TableRow>
-              <TableHead>Nome</TableHead><TableHead>Banco</TableHead><TableHead>Ag/Conta</TableHead>
+              <TableHead>Banco</TableHead><TableHead>Ag/Conta</TableHead>
               <TableHead className="text-right">Saldo atual</TableHead><TableHead />
             </TableRow></TableHeader>
             <TableBody>
               {contas.map((c) => (
                 <TableRow key={c.id}>
-                  <TableCell className="font-medium">{c.nome}</TableCell>
-                  <TableCell>{c.banco ?? "—"}</TableCell>
+                  <TableCell className="font-medium">{c.banco ?? c.nome ?? "—"}</TableCell>
                   <TableCell className="text-tabular">{c.agencia ?? "—"}/{c.conta ?? "—"}</TableCell>
                   <TableCell className="text-right text-tabular font-medium">{brl(c.saldo_atual)}</TableCell>
                   <TableCell className="text-right whitespace-nowrap">
@@ -174,13 +181,15 @@ function ContasBancarias() {
       <ReconcileDialog
         contaId={reconcilingId}
         empresaId={empresa?.id ?? null}
+        autoConciliar={autoConciliar}
         onClose={() => setReconcilingId(null)}
       />
     </>
   );
 }
 
-function ReconcileDialog({ contaId, empresaId, onClose }: { contaId: string | null; empresaId: string | null; onClose: () => void }) {
+function ReconcileDialog({ contaId, empresaId, autoConciliar, onClose }: { contaId: string | null; empresaId: string | null; autoConciliar: boolean; onClose: () => void }) {
+  const autoRunRef = useRef<Set<string>>(new Set());
   const qc = useQueryClient();
   const open = !!contaId;
 
@@ -227,6 +236,24 @@ function ReconcileDialog({ contaId, empresaId, onClose }: { contaId: string | nu
     },
     onError: (e: Error) => toast.error(e.message),
   });
+
+  useEffect(() => {
+    if (!autoConciliar || !txs || !lancamentosAbertos) return;
+    const usados = new Set<string>();
+    for (const tx of txs) {
+      if (tx.status === "conciliada" || autoRunRef.current.has(tx.id)) continue;
+      const match = lancamentosAbertos.find((l) =>
+        !usados.has(l.id) &&
+        Math.abs(Number(l.valor) - Math.abs(tx.valor)) < 0.01 &&
+        l.data_vencimento === tx.data_transacao
+      );
+      if (match) {
+        usados.add(match.id);
+        autoRunRef.current.add(tx.id);
+        conciliar.mutate({ ofxId: tx.id, lancamentoId: match.id, valor: tx.valor });
+      }
+    }
+  }, [autoConciliar, txs, lancamentosAbertos, conciliar]);
 
   const criarLanc = useMutation({
     mutationFn: async (tx: OfxRow) => {
