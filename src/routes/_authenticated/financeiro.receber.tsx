@@ -8,6 +8,8 @@ import { Card } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Textarea } from "@/components/ui/textarea";
 import { Loader2, Plus, TrendingUp } from "lucide-react";
 import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
@@ -42,7 +44,13 @@ type Lancamento = {
   contato: { nome: string } | null;
 };
 
-const emptyForm = () => ({ descricao: "", valor: "", data_vencimento: format(new Date(), "yyyy-MM-dd") });
+const emptyForm = () => ({
+  descricao: "", valor: "",
+  data_emissao: format(new Date(), "yyyy-MM-dd"),
+  data_vencimento: format(new Date(), "yyyy-MM-dd"),
+  contato_id: "", categoria_id: "", conta_bancaria_id: "",
+  documento: "", observacoes: "",
+});
 
 export function LancamentosPage({ tipo }: { tipo: "receber" | "pagar" }) {
   const { data: empresa } = useEmpresaAtual();
@@ -69,6 +77,40 @@ export function LancamentosPage({ tipo }: { tipo: "receber" | "pagar" }) {
     },
   });
 
+  const { data: contatosOpt } = useQuery({
+    enabled: !!empresa,
+    queryKey: ["contatos-opt", empresa?.id, tipo] as const,
+    queryFn: async () => {
+      const tipos = (tipo === "receber" ? ["cliente", "ambos"] : ["fornecedor", "ambos"]) as ("cliente" | "fornecedor" | "ambos")[];
+      const { data, error } = await supabase.from("contatos")
+        .select("id,nome,tipo").eq("empresa_id", empresa!.id).in("tipo", tipos).order("nome");
+      if (error) throw error;
+      return data ?? [];
+    },
+  });
+
+  const { data: contasOpt } = useQuery({
+    enabled: !!empresa,
+    queryKey: ["contas-opt", empresa?.id] as const,
+    queryFn: async () => {
+      const { data, error } = await supabase.from("contas_bancarias")
+        .select("id,nome,banco").eq("empresa_id", empresa!.id).eq("ativo", true).order("nome");
+      if (error) throw error;
+      return data ?? [];
+    },
+  });
+
+  const { data: categoriasOpt } = useQuery({
+    enabled: !!empresa,
+    queryKey: ["categorias-opt", empresa?.id, tipo] as const,
+    queryFn: async () => {
+      const { data, error } = await supabase.from("categorias_financeiras")
+        .select("id,nome").eq("empresa_id", empresa!.id).eq("tipo", tipo).order("nome");
+      if (error) throw error;
+      return data ?? [];
+    },
+  });
+
   const invalidate = () => {
     qc.invalidateQueries({ queryKey: ["lancamentos"] });
     qc.invalidateQueries({ queryKey: ["dashboard-stats"] });
@@ -87,7 +129,13 @@ export function LancamentosPage({ tipo }: { tipo: "receber" | "pagar" }) {
         tipo,
         descricao: input.descricao,
         valor,
+        data_emissao: input.data_emissao,
         data_vencimento: input.data_vencimento,
+        contato_id: input.contato_id || null,
+        categoria_id: input.categoria_id || null,
+        conta_bancaria_id: input.conta_bancaria_id || null,
+        documento: input.documento || null,
+        observacoes: input.observacoes || null,
       });
       if (error) throw error;
     },
@@ -132,22 +180,63 @@ export function LancamentosPage({ tipo }: { tipo: "receber" | "pagar" }) {
             <DialogTrigger asChild>
               <Button><Plus className="mr-1 h-4 w-4" />Novo lançamento</Button>
             </DialogTrigger>
-            <DialogContent>
+            <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-lg">
               <DialogHeader><DialogTitle>Novo lançamento — {titulo}</DialogTitle></DialogHeader>
               <form onSubmit={(e) => { e.preventDefault(); criar.mutate(form); }} className="space-y-3">
                 <div>
-                  <Label>Descrição</Label>
+                  <Label>Descrição *</Label>
                   <Input required value={form.descricao} onChange={(e) => setForm({ ...form, descricao: e.target.value })} />
                 </div>
-                <div className="grid grid-cols-2 gap-3">
+                <div className="grid grid-cols-3 gap-3">
                   <div>
-                    <Label>Valor (R$)</Label>
+                    <Label>Valor (R$) *</Label>
                     <Input required type="number" step="0.01" min="0.01" value={form.valor} onChange={(e) => setForm({ ...form, valor: e.target.value })} />
                   </div>
                   <div>
-                    <Label>Vencimento</Label>
+                    <Label>Emissão</Label>
+                    <Input type="date" value={form.data_emissao} onChange={(e) => setForm({ ...form, data_emissao: e.target.value })} />
+                  </div>
+                  <div>
+                    <Label>Vencimento *</Label>
                     <Input required type="date" value={form.data_vencimento} onChange={(e) => setForm({ ...form, data_vencimento: e.target.value })} />
                   </div>
+                </div>
+                <div>
+                  <Label>{tipo === "receber" ? "Cliente" : "Fornecedor"}</Label>
+                  <Select value={form.contato_id} onValueChange={(v) => setForm({ ...form, contato_id: v })}>
+                    <SelectTrigger><SelectValue placeholder="Selecionar contato" /></SelectTrigger>
+                    <SelectContent>
+                      {contatosOpt?.map((c) => <SelectItem key={c.id} value={c.id}>{c.nome}</SelectItem>)}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <Label>Conta bancária</Label>
+                    <Select value={form.conta_bancaria_id} onValueChange={(v) => setForm({ ...form, conta_bancaria_id: v })}>
+                      <SelectTrigger><SelectValue placeholder="Selecionar" /></SelectTrigger>
+                      <SelectContent>
+                        {contasOpt?.map((c) => <SelectItem key={c.id} value={c.id}>{c.nome}{c.banco ? ` — ${c.banco}` : ""}</SelectItem>)}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div>
+                    <Label>Categoria</Label>
+                    <Select value={form.categoria_id} onValueChange={(v) => setForm({ ...form, categoria_id: v })}>
+                      <SelectTrigger><SelectValue placeholder="Selecionar" /></SelectTrigger>
+                      <SelectContent>
+                        {categoriasOpt?.map((c) => <SelectItem key={c.id} value={c.id}>{c.nome}</SelectItem>)}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+                <div>
+                  <Label>Nº documento / NF</Label>
+                  <Input value={form.documento} onChange={(e) => setForm({ ...form, documento: e.target.value })} />
+                </div>
+                <div>
+                  <Label>Observações</Label>
+                  <Textarea rows={2} value={form.observacoes} onChange={(e) => setForm({ ...form, observacoes: e.target.value })} />
                 </div>
                 <DialogFooter>
                   <Button type="submit" disabled={criar.isPending}>
