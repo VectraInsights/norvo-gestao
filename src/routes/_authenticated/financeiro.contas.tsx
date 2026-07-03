@@ -340,6 +340,29 @@ function ReconcileDialog({ contaId, empresaId, autoConciliar, onClose }: { conta
           </Table>
         )}
       </DialogContent>
+
+      <Dialog open={!!novoTx} onOpenChange={(v) => { if (!v) { setNovoTx(null); setNovaDescricao(""); } }}>
+        <DialogContent>
+          <DialogHeader><DialogTitle>Novo lançamento a partir do extrato</DialogTitle></DialogHeader>
+          {novoTx && (
+            <form onSubmit={(e) => { e.preventDefault(); criarLanc.mutate({ tx: novoTx, descricao: novaDescricao }); }} className="space-y-3">
+              <div className="grid grid-cols-2 gap-3 text-sm text-muted-foreground">
+                <div>Data: <span className="text-foreground">{format(new Date(novoTx.data_transacao), "dd/MM/yyyy")}</span></div>
+                <div>Valor: <span className={novoTx.valor < 0 ? "text-destructive" : "text-success"}>{brl(novoTx.valor)}</span></div>
+              </div>
+              <div>
+                <Label>Descrição</Label>
+                <Input required autoFocus value={novaDescricao} onChange={(e) => setNovaDescricao(e.target.value)} placeholder="Descrição do lançamento" />
+              </div>
+              <DialogFooter>
+                <Button type="submit" disabled={criarLanc.isPending}>
+                  {criarLanc.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}Criar e conciliar
+                </Button>
+              </DialogFooter>
+            </form>
+          )}
+        </DialogContent>
+      </Dialog>
     </Dialog>
   );
 }
