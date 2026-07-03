@@ -144,7 +144,16 @@ function Dashboard() {
   });
 
   if (loadingEmp) return <DashboardSkeleton />;
-  if (!empresa) return <FirstEmpresa onCreated={() => qc.invalidateQueries({ queryKey: ["empresas"] })} />;
+  if (!empresa) {
+    return (
+      <FirstEmpresa
+        onCreated={async () => {
+          await qc.invalidateQueries({ queryKey: ["empresas"] });
+          await qc.refetchQueries({ queryKey: ["empresas"], type: "active" });
+        }}
+      />
+    );
+  }
 
   const cards = [
     { label: "Receita do mês", value: brl(stats?.receitaMes ?? 0), icon: ArrowUpRight, tone: "text-success" },
@@ -266,7 +275,7 @@ function DashboardSkeleton() {
   );
 }
 
-function FirstEmpresa({ onCreated }: { onCreated: () => void }) {
+function FirstEmpresa({ onCreated }: { onCreated: () => Promise<void> }) {
   const [form, setForm] = useState({
     cnpj: "", nome_fantasia: "", razao_social: "", email: "", telefone: "",
     logradouro: "", numero: "", complemento: "", bairro: "", cidade: "", uf: "", cep: "",
@@ -298,10 +307,16 @@ function FirstEmpresa({ onCreated }: { onCreated: () => void }) {
     }
   };
 
+  const handleCnpjKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key !== "Enter") return;
+    e.preventDefault();
+    if (!lookingUp && form.cnpj) lookupCnpj();
+  };
+
   const criarMut = useMutation({
     mutationFn: async () => {
       const nome = form.nome_fantasia.trim();
-      if (!nome) throw new Error("Informe o CNPJ ou o nome fantasia");
+      if (!nome) throw new Error("Informe o nome da empresa");
       const { data: userRes, error: authErr } = await supabase.auth.getUser();
       if (authErr || !userRes.user) throw new Error("Sessão expirada");
       const { error } = await supabase.from("empresas").insert({
@@ -310,9 +325,9 @@ function FirstEmpresa({ onCreated }: { onCreated: () => void }) {
       });
       if (error) throw error;
     },
-    onSuccess: () => {
+    onSuccess: async () => {
       toast.success("Empresa criada!");
-      onCreated();
+      await onCreated();
     },
     onError: (e: Error) => toast.error(e.message),
   });
@@ -329,17 +344,22 @@ function FirstEmpresa({ onCreated }: { onCreated: () => void }) {
           </div>
           <form onSubmit={submit} className="space-y-4">
             <div>
-              <label className="text-sm font-medium">CNPJ <span className="text-xs text-muted-foreground">(opcional — preenche o restante)</span></label>
+              <label className="text-sm font-medium">CNPJ</label>
               <div className="flex gap-2">
-                <Input value={form.cnpj} onChange={(e) => setForm({ ...form, cnpj: e.target.value })} placeholder="00.000.000/0000-00" />
+                <Input
+                  value={form.cnpj}
+                  onChange={(e) => setForm({ ...form, cnpj: e.target.value })}
+                  onKeyDown={handleCnpjKeyDown}
+                  placeholder="00.000.000/0000-00"
+                />
                 <Button type="button" variant="outline" onClick={lookupCnpj} disabled={lookingUp || !form.cnpj}>
                   {lookingUp ? "..." : "Buscar"}
                 </Button>
               </div>
             </div>
             <div>
-              <label className="text-sm font-medium">Nome fantasia</label>
-              <Input value={form.nome_fantasia} onChange={(e) => setForm({ ...form, nome_fantasia: e.target.value })} placeholder="Minha Empresa Ltda" />
+              <label className="text-sm font-medium">Nome da empresa <span className="text-destructive">*</span></label>
+              <Input required value={form.nome_fantasia} onChange={(e) => setForm({ ...form, nome_fantasia: e.target.value })} placeholder="Minha Empresa Ltda" />
             </div>
             <Button type="submit" className="w-full" disabled={criarMut.isPending}>
               {criarMut.isPending ? "Criando…" : "Criar empresa"}
