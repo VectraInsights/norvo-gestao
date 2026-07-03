@@ -125,9 +125,8 @@ function ContasBancarias() {
             <DialogContent>
               <DialogHeader><DialogTitle>Nova conta bancária</DialogTitle></DialogHeader>
               <form onSubmit={(e) => { e.preventDefault(); criar.mutate(form); }} className="space-y-3">
-                <div><Label>Nome</Label><Input required value={form.nome} onChange={(e) => setForm({ ...form, nome: e.target.value })} placeholder="Conta principal" /></div>
                 <div className="grid grid-cols-3 gap-3">
-                  <div><Label>Banco</Label><Input value={form.banco} onChange={(e) => setForm({ ...form, banco: e.target.value })} /></div>
+                  <div><Label>Banco</Label><Input required value={form.banco} onChange={(e) => setForm({ ...form, banco: e.target.value })} placeholder="Bradesco" /></div>
                   <div><Label>Agência</Label><Input value={form.agencia} onChange={(e) => setForm({ ...form, agencia: e.target.value })} /></div>
                   <div><Label>Conta</Label><Input value={form.conta} onChange={(e) => setForm({ ...form, conta: e.target.value })} /></div>
                 </div>
