@@ -11,7 +11,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, Dialog
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Loader2, Plus, TrendingUp, Trash2 } from "lucide-react";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { Loader2, Plus, TrendingUp, Trash2, MoreHorizontal, Check, RotateCcw, Ban } from "lucide-react";
 import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -340,16 +341,35 @@ export function LancamentosPage({ tipo }: { tipo: "receber" | "pagar" }) {
                       <Badge className={STATUS_TONE[l.status] ?? ""} variant="secondary">{l.status}</Badge>
                     </TableCell>
                     <TableCell className="text-right">
-                      {l.status !== "pago" && l.status !== "cancelado" && (
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          disabled={emAndamento}
-                          onClick={() => marcarPago.mutate({ id: l.id, valor: l.valor })}
-                        >
-                          {emAndamento && <Loader2 className="mr-2 h-3 w-3 animate-spin" />}Marcar pago
-                        </Button>
-                      )}
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button variant="ghost" size="icon" aria-label="Ações">
+                            <MoreHorizontal className="h-4 w-4" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                          {l.status !== "pago" && (
+                            <DropdownMenuItem disabled={emAndamento} onClick={() => marcarPago.mutate({ id: l.id, valor: l.valor })}>
+                              <Check className="mr-2 h-4 w-4" />Informar pagamento
+                            </DropdownMenuItem>
+                          )}
+                          {l.status !== "aberto" && (
+                            <DropdownMenuItem onClick={() => alterarStatusLote.mutate({ ids: [l.id], status: "aberto" })}>
+                              <RotateCcw className="mr-2 h-4 w-4" />Voltar para aberto
+                            </DropdownMenuItem>
+                          )}
+                          {l.status !== "cancelado" && (
+                            <DropdownMenuItem onClick={() => alterarStatusLote.mutate({ ids: [l.id], status: "cancelado" })}>
+                              <Ban className="mr-2 h-4 w-4" />Cancelar
+                            </DropdownMenuItem>
+                          )}
+                          <DropdownMenuSeparator />
+                          <DropdownMenuItem className="text-destructive focus:text-destructive"
+                            onClick={() => { if (confirm("Excluir lançamento?")) excluirLote.mutate([l.id]); }}>
+                            <Trash2 className="mr-2 h-4 w-4" />Excluir
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
                     </TableCell>
                   </TableRow>
                 );
