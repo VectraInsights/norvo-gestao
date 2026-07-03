@@ -77,6 +77,40 @@ export function LancamentosPage({ tipo }: { tipo: "receber" | "pagar" }) {
     },
   });
 
+  const { data: contatosOpt } = useQuery({
+    enabled: !!empresa,
+    queryKey: ["contatos-opt", empresa?.id, tipo] as const,
+    queryFn: async () => {
+      const tipos = tipo === "receber" ? ["cliente", "ambos"] : ["fornecedor", "ambos"];
+      const { data, error } = await supabase.from("contatos")
+        .select("id,nome,tipo").eq("empresa_id", empresa!.id).in("tipo", tipos).order("nome");
+      if (error) throw error;
+      return data ?? [];
+    },
+  });
+
+  const { data: contasOpt } = useQuery({
+    enabled: !!empresa,
+    queryKey: ["contas-opt", empresa?.id] as const,
+    queryFn: async () => {
+      const { data, error } = await supabase.from("contas_bancarias")
+        .select("id,nome,banco").eq("empresa_id", empresa!.id).eq("ativo", true).order("nome");
+      if (error) throw error;
+      return data ?? [];
+    },
+  });
+
+  const { data: categoriasOpt } = useQuery({
+    enabled: !!empresa,
+    queryKey: ["categorias-opt", empresa?.id, tipo] as const,
+    queryFn: async () => {
+      const { data, error } = await supabase.from("categorias_financeiras")
+        .select("id,nome").eq("empresa_id", empresa!.id).eq("tipo", tipo).order("nome");
+      if (error) throw error;
+      return data ?? [];
+    },
+  });
+
   const invalidate = () => {
     qc.invalidateQueries({ queryKey: ["lancamentos"] });
     qc.invalidateQueries({ queryKey: ["dashboard-stats"] });
