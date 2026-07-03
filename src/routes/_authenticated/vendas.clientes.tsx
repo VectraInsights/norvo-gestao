@@ -41,6 +41,43 @@ function Clientes() {
   const qc = useQueryClient();
   const [open, setOpen] = useState(false);
   const [form, setForm] = useState(emptyForm);
+  const [lookingUp, setLookingUp] = useState(false);
+
+  const lookupCnpj = async () => {
+    const digits = onlyDigits(form.documento);
+    if (digits.length !== 14) return toast.error("CNPJ deve ter 14 dígitos");
+    if (!empresa) return toast.error("Empresa não selecionada");
+    setLookingUp(true);
+    try {
+      const { data: existente } = await supabase.from("contatos")
+        .select("id,nome").eq("empresa_id", empresa.id).eq("documento", digits).maybeSingle();
+      if (existente) {
+        toast.error(`Já cadastrado: ${existente.nome}`);
+        return;
+      }
+      const res = await fetch(`https://brasilapi.com.br/api/cnpj/v1/${digits}`);
+      if (!res.ok) throw new Error("CNPJ não encontrado");
+      const d = await res.json();
+      setForm((f) => ({
+        ...f,
+        documento: digits,
+        nome: d.razao_social || d.nome_fantasia || f.nome,
+        email: d.email ?? f.email,
+        telefone: d.ddd_telefone_1 ?? f.telefone,
+      }));
+      toast.success("Dados preenchidos a partir da Receita");
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Falha ao consultar CNPJ");
+    } finally {
+      setLookingUp(false);
+    }
+  };
+
+  const handleCnpjKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key !== "Enter") return;
+    e.preventDefault();
+    if (!lookingUp && form.documento) lookupCnpj();
+  };
 
   const { data: contatos, isLoading } = useQuery({
     enabled: !!empresa,
