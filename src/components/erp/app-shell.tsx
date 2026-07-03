@@ -60,7 +60,13 @@ export function AppShell({ children }: { children: ReactNode }) {
     },
   });
 
-  const currentEmpresa = empresas?.[0];
+  const selectedId = useSelectedEmpresaId();
+  const currentEmpresa = (selectedId && empresas?.find((e) => e.id === selectedId)) || empresas?.[0];
+
+  const handleSelectEmpresa = (id: string) => {
+    setSelectedEmpresaId(id);
+    qc.invalidateQueries();
+  };
 
   // Fecha ao navegar (mobile)
   useEffect(() => { setOpen(false); }, [location.pathname]);
