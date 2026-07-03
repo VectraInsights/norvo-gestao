@@ -147,14 +147,13 @@ function ContasBancarias() {
         <Card className="overflow-hidden shadow-panel">
           <Table>
             <TableHeader><TableRow>
-              <TableHead>Nome</TableHead><TableHead>Banco</TableHead><TableHead>Ag/Conta</TableHead>
+              <TableHead>Banco</TableHead><TableHead>Ag/Conta</TableHead>
               <TableHead className="text-right">Saldo atual</TableHead><TableHead />
             </TableRow></TableHeader>
             <TableBody>
               {contas.map((c) => (
                 <TableRow key={c.id}>
-                  <TableCell className="font-medium">{c.nome}</TableCell>
-                  <TableCell>{c.banco ?? "—"}</TableCell>
+                  <TableCell className="font-medium">{c.banco ?? c.nome ?? "—"}</TableCell>
                   <TableCell className="text-tabular">{c.agencia ?? "—"}/{c.conta ?? "—"}</TableCell>
                   <TableCell className="text-right text-tabular font-medium">{brl(c.saldo_atual)}</TableCell>
                   <TableCell className="text-right whitespace-nowrap">
