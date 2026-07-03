@@ -66,6 +66,12 @@ function EmpresasPage() {
     }
   };
 
+  const handleCnpjKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key !== "Enter") return;
+    e.preventDefault();
+    if (!lookingUp && form.cnpj) lookupCnpj();
+  };
+
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
     const { data: u } = await supabase.auth.getUser();
@@ -87,16 +93,17 @@ function EmpresasPage() {
               <DialogHeader><DialogTitle>Nova empresa</DialogTitle></DialogHeader>
               <form onSubmit={submit} className="space-y-3">
                 <div>
-                  <Label>CNPJ <span className="text-xs text-muted-foreground">(opcional — preenche o restante)</span></Label>
+                  <Label>CNPJ</Label>
                   <div className="flex gap-2">
                     <Input placeholder="00.000.000/0000-00" value={form.cnpj}
-                      onChange={(e) => setForm({ ...form, cnpj: e.target.value })} />
+                      onChange={(e) => setForm({ ...form, cnpj: e.target.value })}
+                      onKeyDown={handleCnpjKeyDown} />
                     <Button type="button" variant="outline" onClick={lookupCnpj} disabled={lookingUp || !form.cnpj}>
                       {lookingUp ? <Loader2 className="h-4 w-4 animate-spin" /> : <Search className="h-4 w-4" />}
                     </Button>
                   </div>
                 </div>
-                <div><Label>Nome fantasia</Label><Input required value={form.nome_fantasia} onChange={(e) => setForm({ ...form, nome_fantasia: e.target.value })} /></div>
+                <div><Label>Nome da empresa <span className="text-destructive">*</span></Label><Input required value={form.nome_fantasia} onChange={(e) => setForm({ ...form, nome_fantasia: e.target.value })} /></div>
                 <div><Label>Razão social</Label><Input value={form.razao_social} onChange={(e) => setForm({ ...form, razao_social: e.target.value })} /></div>
                 <div className="grid grid-cols-2 gap-3">
                   <div><Label>Email</Label><Input type="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} /></div>
