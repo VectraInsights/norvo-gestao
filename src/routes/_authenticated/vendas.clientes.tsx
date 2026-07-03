@@ -8,7 +8,7 @@ import { Card } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Loader2, Plus, Users } from "lucide-react";
+import { Loader2, Plus, Search, Users } from "lucide-react";
 import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -41,6 +41,43 @@ function Clientes() {
   const qc = useQueryClient();
   const [open, setOpen] = useState(false);
   const [form, setForm] = useState(emptyForm);
+  const [lookingUp, setLookingUp] = useState(false);
+
+  const lookupCnpj = async () => {
+    const digits = onlyDigits(form.documento);
+    if (digits.length !== 14) return toast.error("CNPJ deve ter 14 dígitos");
+    if (!empresa) return toast.error("Empresa não selecionada");
+    setLookingUp(true);
+    try {
+      const { data: existente } = await supabase.from("contatos")
+        .select("id,nome").eq("empresa_id", empresa.id).eq("documento", digits).maybeSingle();
+      if (existente) {
+        toast.error(`Já cadastrado: ${existente.nome}`);
+        return;
+      }
+      const res = await fetch(`https://brasilapi.com.br/api/cnpj/v1/${digits}`);
+      if (!res.ok) throw new Error("CNPJ não encontrado");
+      const d = await res.json();
+      setForm((f) => ({
+        ...f,
+        documento: digits,
+        nome: d.razao_social || d.nome_fantasia || f.nome,
+        email: d.email ?? f.email,
+        telefone: d.ddd_telefone_1 ?? f.telefone,
+      }));
+      toast.success("Dados preenchidos a partir da Receita");
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Falha ao consultar CNPJ");
+    } finally {
+      setLookingUp(false);
+    }
+  };
+
+  const handleCnpjKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key !== "Enter") return;
+    e.preventDefault();
+    if (!lookingUp && form.documento) lookupCnpj();
+  };
 
   const { data: contatos, isLoading } = useQuery({
     enabled: !!empresa,
@@ -114,7 +151,17 @@ function Clientes() {
                     </label>
                   </div>
                 </div>
-                <div><Label>CPF/CNPJ</Label><Input value={form.documento} onChange={(e) => setForm({ ...form, documento: e.target.value })} /></div>
+                <div>
+                  <Label>CPF/CNPJ</Label>
+                  <div className="flex gap-2">
+                    <Input value={form.documento}
+                      onChange={(e) => setForm({ ...form, documento: e.target.value })}
+                      onKeyDown={handleCnpjKeyDown} />
+                    <Button type="button" variant="outline" onClick={lookupCnpj} disabled={lookingUp || !form.documento}>
+                      {lookingUp ? <Loader2 className="h-4 w-4 animate-spin" /> : <Search className="h-4 w-4" />}
+                    </Button>
+                  </div>
+                </div>
                 <div className="grid grid-cols-2 gap-3">
                   <div><Label>Email</Label><Input type="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} /></div>
                   <div><Label>Telefone</Label><Input value={form.telefone} onChange={(e) => setForm({ ...form, telefone: e.target.value })} /></div>

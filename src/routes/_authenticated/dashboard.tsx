@@ -296,6 +296,14 @@ function FirstEmpresa({ onCreated }: { onCreated: () => Promise<void> }) {
     if (digits.length !== 14) { toast.error("CNPJ deve ter 14 dígitos"); return; }
     setLookingUp(true);
     try {
+      const { data: dup } = await supabase.from("empresas").select("id,nome_fantasia").eq("cnpj", digits).maybeSingle();
+      if (dup) {
+        toast.error(`CNPJ já cadastrado: ${dup.nome_fantasia}`);
+        setLookingUp(false);
+        return;
+      }
+    } catch { /* segue */ }
+    try {
       const res = await fetch(`https://brasilapi.com.br/api/cnpj/v1/${digits}`);
       if (!res.ok) throw new Error("CNPJ não encontrado");
       const d = await res.json();
