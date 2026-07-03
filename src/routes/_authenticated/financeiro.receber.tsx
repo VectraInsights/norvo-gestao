@@ -437,6 +437,76 @@ export function LancamentosPage({ tipo }: { tipo: "receber" | "pagar" }) {
           </Table>
         </Card>
       )}
+
+      <Dialog open={!!editing} onOpenChange={(v) => { if (!v && !salvarEdicao.isPending) setEditing(null); }}>
+        <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-lg">
+          <DialogHeader><DialogTitle>Editar lançamento</DialogTitle></DialogHeader>
+          {editing && (
+            <form onSubmit={(e) => { e.preventDefault(); salvarEdicao.mutate(editing); }} className="space-y-3">
+              <div>
+                <Label>Descrição *</Label>
+                <Input required value={editing.descricao} onChange={(e) => setEditing({ ...editing, descricao: e.target.value })} />
+              </div>
+              <div className="grid grid-cols-3 gap-3">
+                <div>
+                  <Label>Valor (R$) *</Label>
+                  <Input required type="number" step="0.01" min="0.01" value={editing.valor} onChange={(e) => setEditing({ ...editing, valor: e.target.value })} />
+                </div>
+                <div>
+                  <Label>Emissão</Label>
+                  <Input type="date" value={editing.data_emissao} onChange={(e) => setEditing({ ...editing, data_emissao: e.target.value })} />
+                </div>
+                <div>
+                  <Label>Vencimento *</Label>
+                  <Input required type="date" value={editing.data_vencimento} onChange={(e) => setEditing({ ...editing, data_vencimento: e.target.value })} />
+                </div>
+              </div>
+              <div>
+                <Label>{tipo === "receber" ? "Cliente" : "Fornecedor"}</Label>
+                <Select value={editing.contato_id} onValueChange={(v) => setEditing({ ...editing, contato_id: v })}>
+                  <SelectTrigger><SelectValue placeholder="Selecionar contato" /></SelectTrigger>
+                  <SelectContent>
+                    {contatosOpt?.map((c) => <SelectItem key={c.id} value={c.id}>{c.nome}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <Label>Conta bancária</Label>
+                  <Select value={editing.conta_bancaria_id} onValueChange={(v) => setEditing({ ...editing, conta_bancaria_id: v })}>
+                    <SelectTrigger><SelectValue placeholder="Selecionar" /></SelectTrigger>
+                    <SelectContent>
+                      {contasOpt?.map((c) => <SelectItem key={c.id} value={c.id}>{c.nome}{c.banco ? ` — ${c.banco}` : ""}</SelectItem>)}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div>
+                  <Label>Categoria</Label>
+                  <Select value={editing.categoria_id} onValueChange={(v) => setEditing({ ...editing, categoria_id: v })}>
+                    <SelectTrigger><SelectValue placeholder="Selecionar" /></SelectTrigger>
+                    <SelectContent>
+                      {categoriasOpt?.map((c) => <SelectItem key={c.id} value={c.id}>{c.nome}</SelectItem>)}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+              <div>
+                <Label>Nº documento / NF</Label>
+                <Input value={editing.documento} onChange={(e) => setEditing({ ...editing, documento: e.target.value })} />
+              </div>
+              <div>
+                <Label>Observações</Label>
+                <Textarea rows={2} value={editing.observacoes} onChange={(e) => setEditing({ ...editing, observacoes: e.target.value })} />
+              </div>
+              <DialogFooter>
+                <Button type="submit" disabled={salvarEdicao.isPending}>
+                  {salvarEdicao.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}Salvar alterações
+                </Button>
+              </DialogFooter>
+            </form>
+          )}
+        </DialogContent>
+      </Dialog>
     </>
   );
 }
