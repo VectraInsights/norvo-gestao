@@ -81,7 +81,7 @@ export function LancamentosPage({ tipo }: { tipo: "receber" | "pagar" }) {
     enabled: !!empresa,
     queryKey: ["contatos-opt", empresa?.id, tipo] as const,
     queryFn: async () => {
-      const tipos = tipo === "receber" ? ["cliente", "ambos"] : ["fornecedor", "ambos"];
+      const tipos = (tipo === "receber" ? ["cliente", "ambos"] : ["fornecedor", "ambos"]) as ("cliente" | "fornecedor" | "ambos")[];
       const { data, error } = await supabase.from("contatos")
         .select("id,nome,tipo").eq("empresa_id", empresa!.id).in("tipo", tipos).order("nome");
       if (error) throw error;
