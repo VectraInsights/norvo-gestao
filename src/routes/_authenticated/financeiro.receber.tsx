@@ -184,9 +184,10 @@ export function LancamentosPage({ tipo }: { tipo: "receber" | "pagar" }) {
   });
 
   const alterarStatusLote = useMutation({
-    mutationFn: async ({ ids, status }: { ids: string[]; status: string }) => {
-      const patch: Record<string, unknown> = { status };
-      if (status === "pago") patch.data_pagamento = format(new Date(), "yyyy-MM-dd");
+    mutationFn: async ({ ids, status }: { ids: string[]; status: "aberto" | "pago" | "cancelado" | "vencido" | "parcial" }) => {
+      const patch = status === "pago"
+        ? { status, data_pagamento: format(new Date(), "yyyy-MM-dd") }
+        : { status };
       const { error } = await supabase.from("lancamentos_financeiros").update(patch).in("id", ids);
       if (error) throw error;
     },
