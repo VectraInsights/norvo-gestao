@@ -113,7 +113,9 @@ export function AppShell({ children }: { children: ReactNode }) {
             <DropdownMenuContent className="w-56" align="start">
               <DropdownMenuLabel>Empresas</DropdownMenuLabel>
               {empresas?.map((e) => (
-                <DropdownMenuItem key={e.id}>{e.nome_fantasia}</DropdownMenuItem>
+                <DropdownMenuItem key={e.id} onSelect={() => handleSelectEmpresa(e.id)}>
+                  {e.nome_fantasia} {currentEmpresa?.id === e.id ? "✓" : ""}
+                </DropdownMenuItem>
               ))}
               <DropdownMenuSeparator />
               <DropdownMenuItem onSelect={() => navigate({ to: "/configuracoes/empresas" })}>
