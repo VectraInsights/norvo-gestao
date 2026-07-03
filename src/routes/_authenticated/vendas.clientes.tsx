@@ -151,7 +151,17 @@ function Clientes() {
                     </label>
                   </div>
                 </div>
-                <div><Label>CPF/CNPJ</Label><Input value={form.documento} onChange={(e) => setForm({ ...form, documento: e.target.value })} /></div>
+                <div>
+                  <Label>CPF/CNPJ</Label>
+                  <div className="flex gap-2">
+                    <Input value={form.documento}
+                      onChange={(e) => setForm({ ...form, documento: e.target.value })}
+                      onKeyDown={handleCnpjKeyDown} />
+                    <Button type="button" variant="outline" onClick={lookupCnpj} disabled={lookingUp || !form.documento}>
+                      {lookingUp ? <Loader2 className="h-4 w-4 animate-spin" /> : <Search className="h-4 w-4" />}
+                    </Button>
+                  </div>
+                </div>
                 <div className="grid grid-cols-2 gap-3">
                   <div><Label>Email</Label><Input type="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} /></div>
                   <div><Label>Telefone</Label><Input value={form.telefone} onChange={(e) => setForm({ ...form, telefone: e.target.value })} /></div>
