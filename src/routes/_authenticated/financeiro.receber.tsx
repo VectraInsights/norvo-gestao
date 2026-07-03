@@ -196,6 +196,65 @@ export function LancamentosPage({ tipo }: { tipo: "receber" | "pagar" }) {
     onError: (e: Error) => toast.error(e.message),
   });
 
+  // Edição
+  const [editing, setEditing] = useState<null | { id: string } & ReturnType<typeof emptyForm>>(null);
+  const abrirEdicao = async (id: string) => {
+    const { data, error } = await supabase.from("lancamentos_financeiros")
+      .select("id,descricao,valor,data_emissao,data_vencimento,contato_id,categoria_id,conta_bancaria_id,documento,observacoes")
+      .eq("id", id).maybeSingle();
+    if (error || !data) { toast.error(error?.message ?? "Não encontrado"); return; }
+    setEditing({
+      id: data.id,
+      descricao: data.descricao ?? "",
+      valor: String(data.valor ?? ""),
+      data_emissao: data.data_emissao ?? format(new Date(), "yyyy-MM-dd"),
+      data_vencimento: data.data_vencimento ?? format(new Date(), "yyyy-MM-dd"),
+      contato_id: data.contato_id ?? "",
+      categoria_id: data.categoria_id ?? "",
+      conta_bancaria_id: data.conta_bancaria_id ?? "",
+      documento: data.documento ?? "",
+      observacoes: data.observacoes ?? "",
+    });
+  };
+  const salvarEdicao = useMutation({
+    mutationFn: async (input: NonNullable<typeof editing>) => {
+      const valor = Number(input.valor);
+      if (!(valor > 0)) throw new Error("Valor deve ser maior que zero");
+      const { error } = await supabase.from("lancamentos_financeiros").update({
+        descricao: input.descricao, valor,
+        data_emissao: input.data_emissao, data_vencimento: input.data_vencimento,
+        contato_id: input.contato_id || null, categoria_id: input.categoria_id || null,
+        conta_bancaria_id: input.conta_bancaria_id || null,
+        documento: input.documento || null, observacoes: input.observacoes || null,
+      }).eq("id", input.id);
+      if (error) throw error;
+    },
+    onSuccess: () => { toast.success("Lançamento atualizado"); setEditing(null); invalidate(); },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+  // Ordenação
+  type SortKey = "descricao" | "contato" | "data_vencimento" | "valor" | "status";
+  const [sort, setSort] = useState<{ key: SortKey; dir: "asc" | "desc" }>({ key: "data_vencimento", dir: "desc" });
+  const toggleSort = (key: SortKey) =>
+    setSort((s) => s.key === key ? { key, dir: s.dir === "asc" ? "desc" : "asc" } : { key, dir: "asc" });
+  const sorted = [...(lancamentos ?? [])].sort((a, b) => {
+    const dir = sort.dir === "asc" ? 1 : -1;
+    const va = sort.key === "contato" ? (a.contato?.nome ?? "") : (a as unknown as Record<string, unknown>)[sort.key];
+    const vb = sort.key === "contato" ? (b.contato?.nome ?? "") : (b as unknown as Record<string, unknown>)[sort.key];
+    if (typeof va === "number" && typeof vb === "number") return (va - vb) * dir;
+    return String(va ?? "").localeCompare(String(vb ?? "")) * dir;
+  });
+  const SortHead = ({ k, children, className }: { k: SortKey; children: React.ReactNode; className?: string }) => (
+    <TableHead className={className}>
+      <button type="button" onClick={() => toggleSort(k)} className="inline-flex items-center gap-1 font-medium hover:text-foreground">
+        {children}
+        {sort.key !== k ? <ArrowUpDown className="h-3 w-3 opacity-50" />
+          : sort.dir === "asc" ? <ArrowUp className="h-3 w-3" /> : <ArrowDown className="h-3 w-3" />}
+      </button>
+    </TableHead>
+  );
+
   const titulo = tipo === "receber" ? "Contas a receber" : "Contas a pagar";
   const desc = tipo === "receber" ? "Recebimentos futuros e realizados." : "Compromissos financeiros a vencer e pagos.";
 
