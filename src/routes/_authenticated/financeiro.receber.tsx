@@ -187,15 +187,63 @@ export function LancamentosPage({ tipo }: { tipo: "receber" | "pagar" }) {
                   <Label>Descrição</Label>
                   <Input required value={form.descricao} onChange={(e) => setForm({ ...form, descricao: e.target.value })} />
                 </div>
-                <div className="grid grid-cols-2 gap-3">
+            <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-lg">
+              <DialogHeader><DialogTitle>Novo lançamento — {titulo}</DialogTitle></DialogHeader>
+              <form onSubmit={(e) => { e.preventDefault(); criar.mutate(form); }} className="space-y-3">
+                <div>
+                  <Label>Descrição *</Label>
+                  <Input required value={form.descricao} onChange={(e) => setForm({ ...form, descricao: e.target.value })} />
+                </div>
+                <div className="grid grid-cols-3 gap-3">
                   <div>
-                    <Label>Valor (R$)</Label>
+                    <Label>Valor (R$) *</Label>
                     <Input required type="number" step="0.01" min="0.01" value={form.valor} onChange={(e) => setForm({ ...form, valor: e.target.value })} />
                   </div>
                   <div>
-                    <Label>Vencimento</Label>
+                    <Label>Emissão</Label>
+                    <Input type="date" value={form.data_emissao} onChange={(e) => setForm({ ...form, data_emissao: e.target.value })} />
+                  </div>
+                  <div>
+                    <Label>Vencimento *</Label>
                     <Input required type="date" value={form.data_vencimento} onChange={(e) => setForm({ ...form, data_vencimento: e.target.value })} />
                   </div>
+                </div>
+                <div>
+                  <Label>{tipo === "receber" ? "Cliente" : "Fornecedor"}</Label>
+                  <Select value={form.contato_id} onValueChange={(v) => setForm({ ...form, contato_id: v })}>
+                    <SelectTrigger><SelectValue placeholder="Selecionar contato" /></SelectTrigger>
+                    <SelectContent>
+                      {contatosOpt?.map((c) => <SelectItem key={c.id} value={c.id}>{c.nome}</SelectItem>)}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <Label>Conta bancária</Label>
+                    <Select value={form.conta_bancaria_id} onValueChange={(v) => setForm({ ...form, conta_bancaria_id: v })}>
+                      <SelectTrigger><SelectValue placeholder="Selecionar" /></SelectTrigger>
+                      <SelectContent>
+                        {contasOpt?.map((c) => <SelectItem key={c.id} value={c.id}>{c.nome}{c.banco ? ` — ${c.banco}` : ""}</SelectItem>)}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div>
+                    <Label>Categoria</Label>
+                    <Select value={form.categoria_id} onValueChange={(v) => setForm({ ...form, categoria_id: v })}>
+                      <SelectTrigger><SelectValue placeholder="Selecionar" /></SelectTrigger>
+                      <SelectContent>
+                        {categoriasOpt?.map((c) => <SelectItem key={c.id} value={c.id}>{c.nome}</SelectItem>)}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+                <div>
+                  <Label>Nº documento / NF</Label>
+                  <Input value={form.documento} onChange={(e) => setForm({ ...form, documento: e.target.value })} />
+                </div>
+                <div>
+                  <Label>Observações</Label>
+                  <Textarea rows={2} value={form.observacoes} onChange={(e) => setForm({ ...form, observacoes: e.target.value })} />
                 </div>
                 <DialogFooter>
                   <Button type="submit" disabled={criar.isPending}>
