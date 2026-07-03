@@ -76,6 +76,16 @@ function EmpresasPage() {
     if (digits.length !== 14) return toast.error("CNPJ deve ter 14 dígitos");
     setLookingUp(true);
     try {
+      let dupQ = supabase.from("empresas").select("id,nome_fantasia").eq("cnpj", digits);
+      if (editing) dupQ = dupQ.neq("id", editing.id);
+      const { data: dup } = await dupQ.maybeSingle();
+      if (dup) {
+        toast.error(`CNPJ já cadastrado: ${dup.nome_fantasia}`);
+        setLookingUp(false);
+        return;
+      }
+    } catch { /* ignore, seguirá para busca */ }
+    try {
       const res = await fetch(`https://brasilapi.com.br/api/cnpj/v1/${digits}`);
       if (!res.ok) throw new Error("CNPJ não encontrado");
       const d = await res.json();
