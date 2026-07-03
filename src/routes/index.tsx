@@ -24,7 +24,7 @@ function LandingPage() {
             <div className="grid h-8 w-8 place-items-center rounded-md bg-primary text-primary-foreground">
               <span className="text-display text-lg">N</span>
             </div>
-            <span className="text-display text-xl">Nimbo ERP</span>
+            <span className="text-display text-xl">Nimbo.</span>
           </Link>
           <div className="flex items-center gap-3">
             <Link to="/auth" className="text-sm text-muted-foreground hover:text-foreground">Entrar</Link>
@@ -85,7 +85,7 @@ function LandingPage() {
 
       <footer className="border-t border-border/60 py-8">
         <div className="mx-auto flex max-w-6xl items-center justify-between px-6 text-sm text-muted-foreground">
-          <span>© {new Date().getFullYear()} Nimbo ERP</span>
+          <span>© {new Date().getFullYear()} Nimbo.</span>
           <span className="text-xs">Esqueleto v0.1</span>
         </div>
       </footer>

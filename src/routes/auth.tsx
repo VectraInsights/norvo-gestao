@@ -63,7 +63,7 @@ function AuthPage() {
           <div className="grid h-9 w-9 place-items-center rounded-md bg-primary-foreground/10 backdrop-blur">
             <span className="text-display text-lg">N</span>
           </div>
-          <span className="text-display text-xl">Nimbo ERP</span>
+          <span className="text-display text-xl">Nimbo.</span>
         </Link>
         <div>
           <p className="text-display text-4xl leading-tight">
@@ -71,7 +71,7 @@ function AuthPage() {
           </p>
           <p className="mt-4 text-sm text-primary-foreground/70">Gestão financeira, comercial, estoque e fiscal em um só ambiente.</p>
         </div>
-        <p className="text-xs uppercase tracking-widest text-primary-foreground/60">Nimbo ERP · v0.1</p>
+        <p className="text-xs uppercase tracking-widest text-primary-foreground/60">Nimbo. · v0.1</p>
       </aside>
 
       {/* Formulário */}
