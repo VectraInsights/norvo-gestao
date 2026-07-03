@@ -85,7 +85,7 @@ export function AppShell({ children }: { children: ReactNode }) {
             <span className="text-display text-lg">N</span>
           </div>
           <div>
-            <div className="text-display text-lg leading-none">Nimbo</div>
+            <div className="text-display text-lg leading-none">Nimbo.</div>
             <div className="text-[10px] uppercase tracking-widest text-muted-foreground">ERP</div>
           </div>
         </div>
@@ -180,7 +180,7 @@ export function AppShell({ children }: { children: ReactNode }) {
       <div className="flex min-w-0 flex-col">
         <header className="flex h-16 items-center justify-between border-b border-border/60 bg-background/80 px-6 backdrop-blur lg:hidden">
           <Button variant="ghost" size="sm" onClick={() => setOpen(true)}>Menu</Button>
-          <span className="text-display">Nimbo</span>
+          <span className="text-display">Nimbo.</span>
           <div className="w-10" />
         </header>
         <main className="min-w-0 flex-1 overflow-auto p-6 lg:p-8">{children}</main>
