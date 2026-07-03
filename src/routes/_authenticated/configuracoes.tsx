@@ -87,7 +87,7 @@ function CategoriasTab({ empresaId }: { empresaId: string }) {
           {data?.map((c: any) => (
             <TableRow key={c.id}>
               <TableCell className="font-medium">{c.nome}</TableCell>
-              <TableCell className="capitalize text-muted-foreground">{c.tipo}</TableCell>
+              <TableCell className="capitalize text-muted-foreground">{tipoLabel(c.tipo)}</TableCell>
               <TableCell className="text-right"><Button variant="ghost" size="icon" onClick={() => remove(c.id)}><Trash2 className="h-4 w-4" /></Button></TableCell>
             </TableRow>
           ))}
