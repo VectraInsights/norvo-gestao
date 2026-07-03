@@ -13,6 +13,7 @@ import { EmptyState } from "@/components/erp/empty-state";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { lazy, Suspense, useState } from "react";
+import { useSelectedEmpresaId } from "@/hooks/use-empresa";
 import { toast } from "sonner";
 import { brl, dateBR } from "@/lib/format";
 import type { ReceitaPoint } from "@/components/erp/receita-chart";
