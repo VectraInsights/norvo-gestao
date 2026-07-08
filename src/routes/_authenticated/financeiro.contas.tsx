@@ -281,7 +281,7 @@ function ContasFinanceiras() {
                             <Input required value={form.nome} onChange={(e) => setForm({ ...form, nome: e.target.value })} />
                             <p className="text-xs text-muted-foreground mt-1">Dê um nome para identificar esta conta depois</p>
                           </div>
-                          <div><Label>Saldo inicial (R$)</Label><Input type="number" step="0.01" value={form.saldo_inicial} onChange={(e) => setForm({ ...form, saldo_inicial: e.target.value })} /></div>
+                          {/* saldo movido para o passo 3 */}
                         </>
                       )}
 
