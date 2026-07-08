@@ -52,7 +52,11 @@ export function formatContaComDigito(raw: string): string {
   return `${s.slice(0, -1)}-${s.slice(-1)}`;
 }
 
-/** Normaliza para comparação: só dígitos, sem zeros à esquerda */
+/** Normaliza para comparação: só dígitos, sem zeros à esquerda e sem dígito verificador */
 export function normalizaContaNumero(raw: string | null | undefined): string {
-  return (raw ?? "").replace(/\D/g, "").replace(/^0+/, "");
+  // Se veio com hífen, descarta o que vem depois (dígito verificador)
+  const semDv = (raw ?? "").split("-")[0];
+  const digits = semDv.replace(/\D/g, "").replace(/^0+/, "");
+  return digits;
 }
+
