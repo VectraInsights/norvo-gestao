@@ -16,16 +16,16 @@ type Lanc = {
 };
 
 const HEADERS = [
-  "Descrição",
+  "Data competência (dd/mm/aaaa)",
+  "Data Vencimento (dd/mm/aaaa)",
   "Valor",
-  "Data emissão (dd/mm/aaaa)",
-  "Data vencimento (dd/mm/aaaa)",
-  "Contato",
+  "Descrição",
   "Categoria",
-  "Conta financeira",
-  "Documento/NF",
-  "Observações",
+  "Cliente/Fornecedor",
+  "CNPJ/CPF",
+  "Obs.",
 ];
+
 
 function parseData(v: unknown): string | null {
   if (v == null || v === "") return null;
