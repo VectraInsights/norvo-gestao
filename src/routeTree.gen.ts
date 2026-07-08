@@ -15,6 +15,7 @@ import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AuthenticatedDashboardRouteImport } from './routes/_authenticated/dashboard'
 import { Route as AuthenticatedConfiguracoesIndexRouteImport } from './routes/_authenticated/configuracoes.index'
+import { Route as AuthenticatedVendasVendasRouteImport } from './routes/_authenticated/vendas.vendas'
 import { Route as AuthenticatedVendasPedidosRouteImport } from './routes/_authenticated/vendas.pedidos'
 import { Route as AuthenticatedVendasClientesRouteImport } from './routes/_authenticated/vendas.clientes'
 import { Route as AuthenticatedFiscalNotasRouteImport } from './routes/_authenticated/fiscal.notas'
@@ -54,6 +55,12 @@ const AuthenticatedConfiguracoesIndexRoute =
   AuthenticatedConfiguracoesIndexRouteImport.update({
     id: '/configuracoes/',
     path: '/configuracoes/',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedVendasVendasRoute =
+  AuthenticatedVendasVendasRouteImport.update({
+    id: '/vendas/vendas',
+    path: '/vendas/vendas',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
 const AuthenticatedVendasPedidosRoute =
@@ -132,6 +139,7 @@ export interface FileRoutesByFullPath {
   '/fiscal/notas': typeof AuthenticatedFiscalNotasRoute
   '/vendas/clientes': typeof AuthenticatedVendasClientesRoute
   '/vendas/pedidos': typeof AuthenticatedVendasPedidosRoute
+  '/vendas/vendas': typeof AuthenticatedVendasVendasRoute
   '/configuracoes/': typeof AuthenticatedConfiguracoesIndexRoute
 }
 export interface FileRoutesByTo {
@@ -149,6 +157,7 @@ export interface FileRoutesByTo {
   '/fiscal/notas': typeof AuthenticatedFiscalNotasRoute
   '/vendas/clientes': typeof AuthenticatedVendasClientesRoute
   '/vendas/pedidos': typeof AuthenticatedVendasPedidosRoute
+  '/vendas/vendas': typeof AuthenticatedVendasVendasRoute
   '/configuracoes': typeof AuthenticatedConfiguracoesIndexRoute
 }
 export interface FileRoutesById {
@@ -168,6 +177,7 @@ export interface FileRoutesById {
   '/_authenticated/fiscal/notas': typeof AuthenticatedFiscalNotasRoute
   '/_authenticated/vendas/clientes': typeof AuthenticatedVendasClientesRoute
   '/_authenticated/vendas/pedidos': typeof AuthenticatedVendasPedidosRoute
+  '/_authenticated/vendas/vendas': typeof AuthenticatedVendasVendasRoute
   '/_authenticated/configuracoes/': typeof AuthenticatedConfiguracoesIndexRoute
 }
 export interface FileRouteTypes {
@@ -187,6 +197,7 @@ export interface FileRouteTypes {
     | '/fiscal/notas'
     | '/vendas/clientes'
     | '/vendas/pedidos'
+    | '/vendas/vendas'
     | '/configuracoes/'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -204,6 +215,7 @@ export interface FileRouteTypes {
     | '/fiscal/notas'
     | '/vendas/clientes'
     | '/vendas/pedidos'
+    | '/vendas/vendas'
     | '/configuracoes'
   id:
     | '__root__'
@@ -222,6 +234,7 @@ export interface FileRouteTypes {
     | '/_authenticated/fiscal/notas'
     | '/_authenticated/vendas/clientes'
     | '/_authenticated/vendas/pedidos'
+    | '/_authenticated/vendas/vendas'
     | '/_authenticated/configuracoes/'
   fileRoutesById: FileRoutesById
 }
@@ -274,6 +287,13 @@ declare module '@tanstack/react-router' {
       path: '/configuracoes'
       fullPath: '/configuracoes/'
       preLoaderRoute: typeof AuthenticatedConfiguracoesIndexRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/vendas/vendas': {
+      id: '/_authenticated/vendas/vendas'
+      path: '/vendas/vendas'
+      fullPath: '/vendas/vendas'
+      preLoaderRoute: typeof AuthenticatedVendasVendasRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/vendas/pedidos': {
@@ -361,6 +381,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedFiscalNotasRoute: typeof AuthenticatedFiscalNotasRoute
   AuthenticatedVendasClientesRoute: typeof AuthenticatedVendasClientesRoute
   AuthenticatedVendasPedidosRoute: typeof AuthenticatedVendasPedidosRoute
+  AuthenticatedVendasVendasRoute: typeof AuthenticatedVendasVendasRoute
   AuthenticatedConfiguracoesIndexRoute: typeof AuthenticatedConfiguracoesIndexRoute
 }
 
@@ -378,6 +399,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedFiscalNotasRoute: AuthenticatedFiscalNotasRoute,
   AuthenticatedVendasClientesRoute: AuthenticatedVendasClientesRoute,
   AuthenticatedVendasPedidosRoute: AuthenticatedVendasPedidosRoute,
+  AuthenticatedVendasVendasRoute: AuthenticatedVendasVendasRoute,
   AuthenticatedConfiguracoesIndexRoute: AuthenticatedConfiguracoesIndexRoute,
 }
 

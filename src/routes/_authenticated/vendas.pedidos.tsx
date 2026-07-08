@@ -107,7 +107,7 @@ function VendasPage() {
     <>
       <PageHeader
         eyebrow="Vendas & CRM"
-        title="Pedidos e propostas"
+        title="Orçamentos"
         description="Proposta → pedido → faturamento. Ao faturar, o sistema baixa estoque, gera contas a receber e cria a nota fiscal."
         actions={
           <div className="flex items-center gap-2">
