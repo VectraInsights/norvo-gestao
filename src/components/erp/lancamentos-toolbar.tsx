@@ -69,30 +69,29 @@ export function LancamentosToolbar({
     const exemplo = [
       HEADERS,
       [
-        "Venda pedido 123",
+        format(new Date(), "dd/MM/yyyy"),
+        format(new Date(), "dd/MM/yyyy"),
         1500.5,
-        format(new Date(), "dd/MM/yyyy"),
-        format(new Date(), "dd/MM/yyyy"),
-        contatos?.[0]?.nome ?? "",
+        "Venda pedido 123",
         categorias?.[0]?.nome ?? "",
-        contas?.[0]?.nome ?? "",
-        "NF-001",
+        contatos?.[0]?.nome ?? "",
+        "",
         "Receita (valor positivo)",
       ],
       [
-        "Compra fornecedor X",
+        format(new Date(), "dd/MM/yyyy"),
+        format(new Date(), "dd/MM/yyyy"),
         -850,
-        format(new Date(), "dd/MM/yyyy"),
-        format(new Date(), "dd/MM/yyyy"),
-        contatos?.[0]?.nome ?? "",
+        "Compra fornecedor X",
         categorias?.[0]?.nome ?? "",
-        contas?.[0]?.nome ?? "",
-        "NF-002",
+        contatos?.[0]?.nome ?? "",
+        "",
         "Despesa (valor negativo)",
       ],
     ];
     const ws = XLSX.utils.aoa_to_sheet(exemplo);
-    ws["!cols"] = [{ wch: 32 }, { wch: 12 }, { wch: 22 }, { wch: 22 }, { wch: 24 }, { wch: 20 }, { wch: 22 }, { wch: 16 }, { wch: 32 }];
+    ws["!cols"] = [{ wch: 22 }, { wch: 22 }, { wch: 12 }, { wch: 32 }, { wch: 20 }, { wch: 24 }, { wch: 18 }, { wch: 32 }];
+
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, "Modelo");
     const info = XLSX.utils.aoa_to_sheet([
