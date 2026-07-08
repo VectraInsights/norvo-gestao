@@ -373,8 +373,39 @@ function ContasFinanceiras() {
                         </>
                       )}
 
-                      <DialogFooter>
-                        <Button type="submit" disabled={criar.isPending || !podeContinuarStep2()}>
+                      <div>
+                        <Button type="submit" disabled={!podeContinuarStep2()}>Continuar</Button>
+                      </div>
+                    </form>
+                  </Card>
+                )}
+
+                {/* Step 3 - saldo */}
+                {step === 3 && (
+                  <Card className="p-4 space-y-3">
+                    <div className="flex items-center gap-2">
+                      <div className="h-5 w-5 rounded-full bg-muted text-muted-foreground flex items-center justify-center text-[10px] font-bold">3</div>
+                      <h3 className="font-semibold text-sm">Informe o saldo *</h3>
+                      <Button variant="link" size="sm" className="h-auto p-0 ml-2" onClick={() => setStep(2)}>Editar dados</Button>
+                    </div>
+                    <form onSubmit={(e) => { e.preventDefault(); if (form.data_inicio_lancamentos && form.saldo_dia_anterior !== "") criar.mutate(form); }} className="space-y-3">
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                        <div>
+                          <Label>Início dos lançamentos *</Label>
+                          <Input required type="date" value={form.data_inicio_lancamentos} onChange={(e) => setForm({ ...form, data_inicio_lancamentos: e.target.value })} />
+                          <p className="text-xs text-muted-foreground mt-1">Informe uma data até hoje</p>
+                        </div>
+                        <div>
+                          <Label>Saldo final da conta no dia anterior *</Label>
+                          <div className="relative">
+                            <span className="absolute left-2 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">R$</span>
+                            <Input required type="number" step="0.01" className="pl-9" value={form.saldo_dia_anterior} onChange={(e) => setForm({ ...form, saldo_dia_anterior: e.target.value })} />
+                          </div>
+                        </div>
+                      </div>
+                      <DialogFooter className="pt-2">
+                        <Button type="button" variant="outline" onClick={() => { setOpen(false); resetWizard(); }}>Cancelar</Button>
+                        <Button type="submit" disabled={criar.isPending || !form.data_inicio_lancamentos || form.saldo_dia_anterior === ""}>
                           {criar.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}Salvar
                         </Button>
                       </DialogFooter>
