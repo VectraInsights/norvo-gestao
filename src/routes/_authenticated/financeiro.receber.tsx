@@ -355,9 +355,21 @@ export function LancamentosPage({ tipo }: { tipo: "receber" | "pagar" }) {
                     </Select>
                   </div>
                 </div>
-                <div>
-                  <Label>Nº documento / NF</Label>
-                  <Input value={form.documento} onChange={(e) => setForm({ ...form, documento: e.target.value })} />
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <Label>Nº documento / NF</Label>
+                    <Input value={form.documento} onChange={(e) => setForm({ ...form, documento: e.target.value })} />
+                  </div>
+                  <div>
+                    <Label>Forma de pagamento</Label>
+                    <Select value={form.forma_pagamento || "__none"} onValueChange={(v) => setForm({ ...form, forma_pagamento: v === "__none" ? "" : v })}>
+                      <SelectTrigger><SelectValue placeholder="Selecionar" /></SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="__none">Não informar</SelectItem>
+                        {FORMAS_PAGAMENTO.map((f) => <SelectItem key={f} value={f}>{f}</SelectItem>)}
+                      </SelectContent>
+                    </Select>
+                  </div>
                 </div>
                 <div>
                   <Label>Observações</Label>
