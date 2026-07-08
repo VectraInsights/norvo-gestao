@@ -146,19 +146,21 @@ export function LancamentosToolbar({
       rows.forEach((r, i) => {
         const linha = i + 2;
         const descricao = String(r["Descrição"] ?? "").trim();
-        const valor = parseValor(r["Valor"]);
+        const valorRaw = parseValor(r["Valor"]);
         const dv = parseData(r["Data vencimento (dd/mm/aaaa)"] ?? r["Vencimento"] ?? r["Data vencimento"]);
         const de = parseData(r["Data emissão (dd/mm/aaaa)"] ?? r["Emissão"] ?? r["Data emissão"]) ?? dv;
-        if (!descricao || !(valor > 0) || !dv) {
+        if (!descricao || valorRaw === 0 || !dv) {
           erros.push(`Linha ${linha}: campos obrigatórios inválidos`);
           return;
         }
+        const tipoLinha: "receber" | "pagar" = valorRaw >= 0 ? "receber" : "pagar";
+        const valor = Math.abs(valorRaw);
         const nomeContato = String(r["Contato"] ?? "").trim().toLowerCase();
         const nomeCat = String(r["Categoria"] ?? "").trim().toLowerCase();
         const nomeConta = String(r["Conta financeira"] ?? r["Conta bancária"] ?? "").trim().toLowerCase();
         inserts.push({
           empresa_id: empresaId,
-          tipo,
+          tipo: tipoLinha,
           descricao,
           valor,
           data_emissao: de ?? undefined,
@@ -177,10 +179,13 @@ export function LancamentosToolbar({
       }
       const { error } = await supabase.from("lancamentos_financeiros").insert(inserts);
       if (error) throw error;
-      toast.success(`${inserts.length} lançamento(s) importado(s)${erros.length ? ` — ${erros.length} linha(s) ignorada(s)` : ""}`);
+      const nRec = inserts.filter((x) => x.tipo === "receber").length;
+      const nPag = inserts.length - nRec;
+      toast.success(`Importado(s): ${nRec} receita(s), ${nPag} despesa(s)${erros.length ? ` — ${erros.length} linha(s) ignorada(s)` : ""}`);
       onImported();
     } catch (e) {
       toast.error((e as Error).message);
+
     } finally {
       if (fileRef.current) fileRef.current.value = "";
     }
