@@ -78,7 +78,7 @@ function ContasFinanceiras() {
   const { data: empresa } = useEmpresaAtual();
   const qc = useQueryClient();
   const [open, setOpen] = useState(false);
-  const [step, setStep] = useState<1 | 2>(1);
+  const [step, setStep] = useState<1 | 2 | 3>(1);
   const [tipo, setTipo] = useState<TipoConta>("corrente");
   const [form, setForm] = useState<FormState>(initialForm("corrente"));
   const [autoConciliar, setAutoConciliar] = useState(true);
