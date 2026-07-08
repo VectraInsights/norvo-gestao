@@ -66,47 +66,99 @@ export function LancamentosToolbar({
   const label = tipo === "receber" ? "receitas" : "despesas";
 
   const baixarModelo = () => {
-    const exemplo = [
+    const hoje = format(new Date(), "dd/MM/yyyy");
+    const linhas: (string | number)[][] = [
       HEADERS,
-      [
-        format(new Date(), "dd/MM/yyyy"),
-        format(new Date(), "dd/MM/yyyy"),
-        1500.5,
-        "Venda pedido 123",
-        categorias?.[0]?.nome ?? "",
-        contatos?.[0]?.nome ?? "",
-        "",
-        "Receita (valor positivo)",
-      ],
-      [
-        format(new Date(), "dd/MM/yyyy"),
-        format(new Date(), "dd/MM/yyyy"),
-        -850,
-        "Compra fornecedor X",
-        categorias?.[0]?.nome ?? "",
-        contatos?.[0]?.nome ?? "",
-        "",
-        "Despesa (valor negativo)",
-      ],
+      [hoje, hoje, 1500.5, "Venda pedido 123", categorias?.[0]?.nome ?? "Vendas", contatos?.[0]?.nome ?? "Cliente exemplo", "", "Receita (valor positivo)"],
+      [hoje, hoje, -850, "Compra fornecedor X", categorias?.[0]?.nome ?? "Fornecedores", contatos?.[0]?.nome ?? "Fornecedor exemplo", "", "Despesa (valor negativo)"],
+      [hoje, hoje, 2300, "Prestação de serviço", categorias?.[0]?.nome ?? "Serviços", "", "", ""],
+      [hoje, hoje, -450.75, "Conta de energia", categorias?.[0]?.nome ?? "Utilidades", "", "12.345.678/0001-99", ""],
     ];
-    const ws = XLSX.utils.aoa_to_sheet(exemplo);
-    ws["!cols"] = [{ wch: 22 }, { wch: 22 }, { wch: 12 }, { wch: 32 }, { wch: 20 }, { wch: 24 }, { wch: 18 }, { wch: 32 }];
+    const ws = XLSX.utils.aoa_to_sheet(linhas);
+    ws["!cols"] = [{ wch: 22 }, { wch: 22 }, { wch: 14 }, { wch: 34 }, { wch: 22 }, { wch: 26 }, { wch: 20 }, { wch: 34 }];
+    ws["!rows"] = [{ hpt: 32 }];
+    ws["!freeze"] = { xSplit: "0", ySplit: "1", topLeftCell: "A2", activePane: "bottomLeft", state: "frozen" };
+
+    const BORDER = { style: "thin", color: { rgb: "E5E7EB" } };
+    const border = { top: BORDER, bottom: BORDER, left: BORDER, right: BORDER };
+
+    HEADERS.forEach((_, c) => {
+      const ref = XLSX.utils.encode_cell({ r: 0, c });
+      ws[ref].s = {
+        font: { name: "Calibri", sz: 12, bold: true, color: { rgb: "FFFFFF" } },
+        fill: { patternType: "solid", fgColor: { rgb: "0F172A" } },
+        alignment: { horizontal: "center", vertical: "center", wrapText: true },
+        border: {
+          top: { style: "thin", color: { rgb: "0F172A" } },
+          bottom: { style: "medium", color: { rgb: "F59E0B" } },
+          left: { style: "thin", color: { rgb: "0F172A" } },
+          right: { style: "thin", color: { rgb: "0F172A" } },
+        },
+      };
+    });
+
+    for (let r = 1; r < linhas.length; r++) {
+      const zebra = r % 2 === 0 ? "F8FAFC" : "FFFFFF";
+      const valorCel = linhas[r][2] as number;
+      const receita = valorCel >= 0;
+      for (let c = 0; c < HEADERS.length; c++) {
+        const ref = XLSX.utils.encode_cell({ r, c });
+        if (!ws[ref]) ws[ref] = { t: "s", v: "" };
+        const base: Record<string, unknown> = {
+          font: { name: "Calibri", sz: 11, color: { rgb: "0F172A" } },
+          fill: { patternType: "solid", fgColor: { rgb: zebra } },
+          alignment: { vertical: "center", wrapText: true },
+          border,
+        };
+        if (c === 0 || c === 1) {
+          (base.alignment as Record<string, unknown>).horizontal = "center";
+        }
+        if (c === 2) {
+          ws[ref].z = 'R$ #,##0.00;[Red]-R$ #,##0.00';
+          (base.alignment as Record<string, unknown>).horizontal = "right";
+          (base.font as Record<string, unknown>) = { name: "Calibri", sz: 11, bold: true, color: { rgb: receita ? "047857" : "B91C1C" } };
+        }
+        ws[ref].s = base;
+      }
+    }
 
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, "Modelo");
-    const info = XLSX.utils.aoa_to_sheet([
-      ["Modelo de importação — despesas e receitas"],
-      [],
-      ["Preencha uma linha por lançamento a partir da linha 2 da aba Modelo."],
-      ["Campos obrigatórios: Data Vencimento, Valor, Descrição."],
-      ["Valor POSITIVO = Receita (a receber). Valor NEGATIVO = Despesa (a pagar)."],
-      ["Datas no formato dd/mm/aaaa."],
-      ["Categoria e Cliente/Fornecedor devem existir previamente no sistema (mesmo nome). CNPJ/CPF é opcional."],
 
-    ]);
+    const infoRows: string[][] = [
+      ["Modelo de importação — Norvo"],
+      [""],
+      ["Como preencher"],
+      ["1. Uma linha por lançamento, começando na linha 2 da aba Modelo."],
+      ["2. Campos obrigatórios: Data competência, Data Vencimento, Valor, Descrição, Categoria."],
+      ["3. Valor POSITIVO = Receita (a receber). Valor NEGATIVO = Despesa (a pagar)."],
+      ["4. Datas sempre no formato dd/mm/aaaa."],
+      ["5. Categoria e Cliente/Fornecedor devem existir previamente no sistema (mesmo nome). CNPJ/CPF é opcional."],
+    ];
+    const info = XLSX.utils.aoa_to_sheet(infoRows);
+    info["!cols"] = [{ wch: 110 }];
+    info["!rows"] = [{ hpt: 34 }, { hpt: 8 }, { hpt: 22 }];
+    info["A1"].s = {
+      font: { name: "Calibri", sz: 18, bold: true, color: { rgb: "FFFFFF" } },
+      fill: { patternType: "solid", fgColor: { rgb: "0F172A" } },
+      alignment: { horizontal: "left", vertical: "center", indent: 1 },
+    };
+    info["A3"].s = {
+      font: { name: "Calibri", sz: 12, bold: true, color: { rgb: "F59E0B" } },
+      alignment: { horizontal: "left", vertical: "center" },
+    };
+    for (let r = 3; r < infoRows.length; r++) {
+      const ref = XLSX.utils.encode_cell({ r, c: 0 });
+      info[ref].s = {
+        font: { name: "Calibri", sz: 11, color: { rgb: "1F2937" } },
+        alignment: { horizontal: "left", vertical: "center", wrapText: true },
+      };
+    }
     XLSX.utils.book_append_sheet(wb, info, "Instruções");
+
     XLSX.writeFile(wb, `Modelo_despesas_receitas_norvo.xlsx`);
   };
+
 
 
   const exportar = () => {
