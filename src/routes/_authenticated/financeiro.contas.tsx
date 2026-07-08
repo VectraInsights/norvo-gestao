@@ -9,19 +9,20 @@ import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Banknote, Plus, Upload, Loader2, Link2, Check } from "lucide-react";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Banknote, Plus, Upload, Loader2, Link2, Check, Landmark, Wallet, CreditCard, TrendingUp, PiggyBank, DollarSign, Database, Coins } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
-import { useEffect } from "react";
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEmpresaAtual } from "@/hooks/use-empresa";
 import { toast } from "sonner";
 import { parseOfx } from "@/lib/ofx";
 import { format } from "date-fns";
+import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/_authenticated/financeiro/contas")({
-  component: ContasBancarias,
+  component: ContasFinanceiras,
   errorComponent: ({ error }) => (
     <div className="p-6 text-sm text-destructive" role="alert">Falha: {error.message}</div>
   ),
@@ -29,9 +30,12 @@ export const Route = createFileRoute("/_authenticated/financeiro/contas")({
 
 const brl = (n: number) => Number(n).toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 
+type TipoConta = "corrente" | "caixa" | "cartao_credito" | "investimento" | "poupanca" | "aplicacao_automatica" | "outras";
+
 type ContaBancaria = {
   id: string; nome: string | null; banco: string | null;
   agencia: string | null; conta: string | null; saldo_atual: number;
+  tipo: TipoConta;
 };
 
 type OfxRow = {
@@ -39,11 +43,44 @@ type OfxRow = {
   memo: string | null; status: string; lancamento_id: string | null;
 };
 
-function ContasBancarias() {
+const TIPO_PRINCIPAL: { value: TipoConta; label: string; desc: string; icon: typeof Landmark }[] = [
+  { value: "corrente", label: "Conta corrente", desc: "Conecte sua conta bancária para manter o fluxo de caixa sempre conciliado.", icon: Landmark },
+  { value: "caixa", label: "Conta caixa", desc: "Registre entradas e saídas em dinheiro, como caixa físico ou fundo fixo.", icon: Wallet },
+  { value: "cartao_credito", label: "Cartão de crédito", desc: "Centralize faturas e despesas do cartão empresarial em uma tela exclusiva.", icon: CreditCard },
+];
+const TIPO_OUTROS: { value: TipoConta; label: string; desc: string; icon: typeof Landmark }[] = [
+  { value: "investimento", label: "Investimento", desc: "Acompanhe aplicações e rendimentos.", icon: TrendingUp },
+  { value: "poupanca", label: "Conta poupança", desc: "Controle depósitos e resgates separados da conta corrente.", icon: PiggyBank },
+  { value: "aplicacao_automatica", label: "Aplicação automática", desc: "Registre aplicações automáticas entre contas da empresa.", icon: Database },
+  { value: "outras", label: "Outras contas", desc: "Registre movimentos específicos, como empréstimos de sócios.", icon: Coins },
+];
+const TIPO_LABEL: Record<TipoConta, string> = {
+  corrente: "Conta corrente", caixa: "Conta caixa", cartao_credito: "Cartão de crédito",
+  investimento: "Investimento", poupanca: "Conta poupança", aplicacao_automatica: "Aplicação automática", outras: "Outras contas",
+};
+
+type FormState = {
+  tipo: TipoConta;
+  nome: string; banco: string; agencia: string; conta: string;
+  modalidade: string; padrao: boolean; saldo_inicial: string;
+  conta_vinculada_id: string;
+  cartao_ultimos4: string; cartao_bandeira: string; cartao_emissor: string;
+  cartao_conta_pagamento_id: string; cartao_dia_fechamento: string; cartao_dia_vencimento: string;
+};
+
+const initialForm = (tipo: TipoConta): FormState => ({
+  tipo, nome: "", banco: "", agencia: "", conta: "", modalidade: "", padrao: false, saldo_inicial: "0",
+  conta_vinculada_id: "", cartao_ultimos4: "", cartao_bandeira: "", cartao_emissor: "",
+  cartao_conta_pagamento_id: "", cartao_dia_fechamento: "", cartao_dia_vencimento: "",
+});
+
+function ContasFinanceiras() {
   const { data: empresa } = useEmpresaAtual();
   const qc = useQueryClient();
   const [open, setOpen] = useState(false);
-  const [form, setForm] = useState({ banco: "", agencia: "", conta: "", saldo_inicial: "0" });
+  const [step, setStep] = useState<1 | 2>(1);
+  const [tipo, setTipo] = useState<TipoConta>("corrente");
+  const [form, setForm] = useState<FormState>(initialForm("corrente"));
   const [autoConciliar, setAutoConciliar] = useState(true);
   const [reconcilingId, setReconcilingId] = useState<string | null>(null);
   const [importing, setImporting] = useState<string | null>(null);
@@ -55,33 +92,62 @@ function ContasBancarias() {
     queryKey: ["contas-bancarias", empresa?.id] as const,
     queryFn: async ({ signal }): Promise<ContaBancaria[]> => {
       const { data, error } = await supabase.from("contas_bancarias")
-        .select("id,nome,banco,agencia,conta,saldo_atual")
+        .select("id,nome,banco,agencia,conta,saldo_atual,tipo")
         .eq("empresa_id", empresa!.id).order("banco").abortSignal(signal);
       if (error) throw error; return (data ?? []) as ContaBancaria[];
     },
   });
 
+  const contasCorrentes = (contas ?? []).filter((c) => c.tipo === "corrente");
+
+  const resetWizard = () => { setStep(1); setTipo("corrente"); setForm(initialForm("corrente")); };
+
   const criar = useMutation({
-    mutationFn: async (input: typeof form) => {
+    mutationFn: async (input: FormState) => {
       if (!empresa) throw new Error("Empresa não selecionada");
-      const saldo = Number(input.saldo_inicial);
-      const { error } = await supabase.from("contas_bancarias").insert({
-        empresa_id: empresa.id, ...input, nome: input.banco, saldo_inicial: saldo, saldo_atual: saldo,
-      });
+      const saldo = Number(input.saldo_inicial || 0);
+      const payload: Record<string, unknown> = {
+        empresa_id: empresa.id,
+        tipo: input.tipo,
+        nome: input.nome || input.banco || TIPO_LABEL[input.tipo],
+        padrao: input.padrao,
+      };
+      if (input.tipo === "corrente") {
+        Object.assign(payload, {
+          banco: input.banco, agencia: input.agencia, conta: input.conta,
+          modalidade: input.modalidade || null, saldo_inicial: saldo, saldo_atual: saldo,
+        });
+      } else if (input.tipo === "caixa" || input.tipo === "outras") {
+        Object.assign(payload, { saldo_inicial: saldo, saldo_atual: saldo });
+      } else if (input.tipo === "cartao_credito") {
+        Object.assign(payload, {
+          cartao_ultimos4: input.cartao_ultimos4, cartao_bandeira: input.cartao_bandeira,
+          cartao_emissor: input.cartao_emissor,
+          cartao_conta_pagamento_id: input.cartao_conta_pagamento_id || null,
+          cartao_dia_fechamento: input.cartao_dia_fechamento ? Number(input.cartao_dia_fechamento) : null,
+          cartao_dia_vencimento: input.cartao_dia_vencimento ? Number(input.cartao_dia_vencimento) : null,
+        });
+      } else if (input.tipo === "investimento" || input.tipo === "aplicacao_automatica") {
+        Object.assign(payload, {
+          banco: input.banco, conta_vinculada_id: input.conta_vinculada_id || null,
+        });
+      } else if (input.tipo === "poupanca") {
+        Object.assign(payload, {
+          banco: input.banco, conta_vinculada_id: input.conta_vinculada_id || null,
+          modalidade: input.modalidade || null,
+        });
+      }
+      const { error } = await supabase.from("contas_bancarias").insert(payload as never);
       if (error) throw error;
     },
     onSuccess: () => {
-      toast.success("Conta criada"); setOpen(false);
-      setForm({ banco: "", agencia: "", conta: "", saldo_inicial: "0" });
+      toast.success("Conta criada"); setOpen(false); resetWizard();
       qc.invalidateQueries({ queryKey: ["contas-bancarias"] });
     },
     onError: (e: Error) => toast.error(e.message),
   });
 
-  const triggerUpload = (contaId: string) => {
-    setUploadContaId(contaId);
-    fileRef.current?.click();
-  };
+  const triggerUpload = (contaId: string) => { setUploadContaId(contaId); fileRef.current?.click(); };
 
   const handleFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -93,13 +159,8 @@ function ContasBancarias() {
       const txs = parseOfx(text);
       if (!txs.length) { toast.error("Nenhuma transação encontrada no OFX"); return; }
       const rows = txs.map((t) => ({
-        empresa_id: empresa.id,
-        conta_bancaria_id: uploadContaId,
-        fitid: t.fitid,
-        data_transacao: t.data,
-        valor: t.valor,
-        tipo: t.tipo,
-        memo: t.memo,
+        empresa_id: empresa.id, conta_bancaria_id: uploadContaId, fitid: t.fitid,
+        data_transacao: t.data, valor: t.valor, tipo: t.tipo, memo: t.memo,
       }));
       const { error, count } = await supabase.from("ofx_transacoes")
         .upsert(rows, { onConflict: "conta_bancaria_id,fitid", ignoreDuplicates: true, count: "exact" });
@@ -109,64 +170,240 @@ function ContasBancarias() {
       setReconcilingId(uploadContaId);
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Falha ao importar OFX");
-    } finally {
-      setImporting(null);
-      setUploadContaId(null);
-    }
+    } finally { setImporting(null); setUploadContaId(null); }
+  };
+
+  const podeContinuarStep2 = () => {
+    if (form.tipo === "corrente") return !!form.banco && !!form.agencia && !!form.conta && !!form.nome && !!form.modalidade;
+    if (form.tipo === "caixa" || form.tipo === "outras") return !!form.nome;
+    if (form.tipo === "cartao_credito")
+      return !!form.nome && !!form.cartao_ultimos4 && !!form.cartao_bandeira && !!form.cartao_emissor
+        && !!form.cartao_conta_pagamento_id && !!form.cartao_dia_fechamento && !!form.cartao_dia_vencimento;
+    if (form.tipo === "investimento" || form.tipo === "aplicacao_automatica")
+      return !!form.nome && !!form.banco && !!form.conta_vinculada_id;
+    if (form.tipo === "poupanca")
+      return !!form.nome && !!form.banco && !!form.conta_vinculada_id && !!form.modalidade;
+    return false;
   };
 
   return (
     <>
       <input ref={fileRef} type="file" accept=".ofx,.OFX,text/plain" className="hidden" onChange={handleFile} />
-      <PageHeader eyebrow="Financeiro" title="Contas bancárias" description="Cadastro de contas, importação OFX e conciliação."
+      <PageHeader eyebrow="Financeiro" title="Contas financeiras" description="Cadastro de contas, importação OFX e conciliação."
         actions={
           <div className="flex items-center gap-3">
             <label className="flex items-center gap-2 text-xs text-muted-foreground cursor-pointer">
               <Checkbox checked={autoConciliar} onCheckedChange={(v) => setAutoConciliar(!!v)} />
               Conciliar automaticamente (mesmo valor e data)
             </label>
-            <Dialog open={open} onOpenChange={(v) => { if (!criar.isPending) setOpen(v); }}>
+            <Dialog open={open} onOpenChange={(v) => { if (!criar.isPending) { setOpen(v); if (!v) resetWizard(); } }}>
               <DialogTrigger asChild><Button><Plus className="mr-1 h-4 w-4" />Nova conta</Button></DialogTrigger>
-              <DialogContent>
-                <DialogHeader><DialogTitle>Nova conta bancária</DialogTitle></DialogHeader>
-                <form onSubmit={(e) => { e.preventDefault(); criar.mutate(form); }} className="space-y-3">
-                  <div className="grid grid-cols-3 gap-3">
-                    <div><Label>Banco</Label><Input required value={form.banco} onChange={(e) => setForm({ ...form, banco: e.target.value })} placeholder="Bradesco" /></div>
-                    <div><Label>Agência</Label><Input value={form.agencia} onChange={(e) => setForm({ ...form, agencia: e.target.value })} /></div>
-                    <div><Label>Conta</Label><Input value={form.conta} onChange={(e) => setForm({ ...form, conta: e.target.value })} /></div>
+              <DialogContent className="sm:max-w-4xl max-h-[90vh] overflow-y-auto">
+                <DialogHeader><DialogTitle>Cadastrar conta financeira</DialogTitle></DialogHeader>
+
+                {/* Step 1 - tipo */}
+                <Card className={cn("p-4 space-y-3", step !== 1 && "opacity-70")}>
+                  <div className="flex items-center gap-2">
+                    <div className={cn("h-5 w-5 rounded-full flex items-center justify-center text-[10px] font-bold",
+                      step === 1 ? "bg-muted text-muted-foreground" : "bg-success text-success-foreground")}>
+                      {step === 1 ? "1" : <Check className="h-3 w-3" />}
+                    </div>
+                    <h3 className="font-semibold text-sm">Escolha o tipo de conta *</h3>
+                    {step === 2 && <Button variant="link" size="sm" className="h-auto p-0 ml-2" onClick={() => setStep(1)}>Editar</Button>}
                   </div>
-                  <div><Label>Saldo inicial (R$)</Label><Input type="number" step="0.01" value={form.saldo_inicial} onChange={(e) => setForm({ ...form, saldo_inicial: e.target.value })} /></div>
-                  <DialogFooter>
-                    <Button type="submit" disabled={criar.isPending}>
-                      {criar.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}Salvar
-                    </Button>
-                  </DialogFooter>
-                </form>
+                  {step === 1 && (
+                    <>
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                        {TIPO_PRINCIPAL.map((t) => (
+                          <TipoCard key={t.value} t={t} selected={tipo === t.value} onSelect={() => setTipo(t.value)} />
+                        ))}
+                      </div>
+                      <div className="text-xs text-muted-foreground pt-2">Outras opções:</div>
+                      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                        {TIPO_OUTROS.map((t) => (
+                          <TipoCard key={t.value} t={t} selected={tipo === t.value} onSelect={() => setTipo(t.value)} />
+                        ))}
+                      </div>
+                      <div className="pt-3">
+                        <Button onClick={() => { setForm(initialForm(tipo)); setStep(2); }}>Continuar</Button>
+                      </div>
+                    </>
+                  )}
+                </Card>
+
+                {/* Step 2 - dados */}
+                {step === 2 && (
+                  <Card className="p-4 space-y-3">
+                    <div className="flex items-center gap-2">
+                      <div className="h-5 w-5 rounded-full bg-muted text-muted-foreground flex items-center justify-center text-[10px] font-bold">2</div>
+                      <h3 className="font-semibold text-sm">Preencha os dados *</h3>
+                    </div>
+
+                    <form onSubmit={(e) => { e.preventDefault(); if (podeContinuarStep2()) criar.mutate(form); }} className="space-y-3">
+                      {form.tipo === "corrente" && (
+                        <>
+                          <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                            <div><Label>Banco *</Label><Input required value={form.banco} onChange={(e) => setForm({ ...form, banco: e.target.value })} /></div>
+                            <div><Label>Agência (sem dígito) *</Label><Input required value={form.agencia} onChange={(e) => setForm({ ...form, agencia: e.target.value })} /></div>
+                            <div><Label>Conta (com dígito) *</Label><Input required value={form.conta} onChange={(e) => setForm({ ...form, conta: e.target.value })} /></div>
+                          </div>
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                            <div>
+                              <Label>Nome da conta *</Label>
+                              <Input required value={form.nome} onChange={(e) => setForm({ ...form, nome: e.target.value })} />
+                              <p className="text-xs text-muted-foreground mt-1">Dê um nome para identificar esta conta depois</p>
+                            </div>
+                            <div>
+                              <Label>Modalidade da conta *</Label>
+                              <RadioGroup value={form.modalidade} onValueChange={(v) => setForm({ ...form, modalidade: v })} className="flex gap-4 pt-2">
+                                <label className="flex items-center gap-2 text-sm"><RadioGroupItem value="pj" /> Conta empresarial (PJ)</label>
+                                <label className="flex items-center gap-2 text-sm"><RadioGroupItem value="pf" /> Conta pessoal (PF)</label>
+                              </RadioGroup>
+                            </div>
+                          </div>
+                          <div><Label>Saldo inicial (R$)</Label><Input type="number" step="0.01" value={form.saldo_inicial} onChange={(e) => setForm({ ...form, saldo_inicial: e.target.value })} /></div>
+                          <label className="flex items-center gap-2 text-sm">
+                            <Checkbox checked={form.padrao} onCheckedChange={(v) => setForm({ ...form, padrao: !!v })} />
+                            Use esta conta como padrão ao criar receitas e despesas.
+                          </label>
+                        </>
+                      )}
+
+                      {(form.tipo === "caixa" || form.tipo === "outras") && (
+                        <>
+                          <div>
+                            <Label>Nome da conta *</Label>
+                            <Input required value={form.nome} onChange={(e) => setForm({ ...form, nome: e.target.value })} />
+                            <p className="text-xs text-muted-foreground mt-1">Dê um nome para identificar esta conta depois</p>
+                          </div>
+                          <div><Label>Saldo inicial (R$)</Label><Input type="number" step="0.01" value={form.saldo_inicial} onChange={(e) => setForm({ ...form, saldo_inicial: e.target.value })} /></div>
+                        </>
+                      )}
+
+                      {form.tipo === "cartao_credito" && (
+                        <>
+                          <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
+                            <div>
+                              <Label>Nome do cartão *</Label>
+                              <Input required value={form.nome} onChange={(e) => setForm({ ...form, nome: e.target.value })} />
+                              <p className="text-xs text-muted-foreground mt-1">Dê um nome para identificar este cartão depois</p>
+                            </div>
+                            <div><Label>Últimos 4 números *</Label><Input required maxLength={4} value={form.cartao_ultimos4} onChange={(e) => setForm({ ...form, cartao_ultimos4: e.target.value.replace(/\D/g, "").slice(0, 4) })} /></div>
+                            <div>
+                              <Label>Bandeira do cartão *</Label>
+                              <Select value={form.cartao_bandeira} onValueChange={(v) => setForm({ ...form, cartao_bandeira: v })}>
+                                <SelectTrigger><SelectValue placeholder="Selecione a bandeira" /></SelectTrigger>
+                                <SelectContent>
+                                  {["Visa", "Mastercard", "Elo", "American Express", "Hipercard", "Outra"].map((b) => (<SelectItem key={b} value={b}>{b}</SelectItem>))}
+                                </SelectContent>
+                              </Select>
+                            </div>
+                            <div>
+                              <Label>Emissor do cartão *</Label>
+                              <Input required value={form.cartao_emissor} onChange={(e) => setForm({ ...form, cartao_emissor: e.target.value })} placeholder="Ex: Bradesco" />
+                            </div>
+                          </div>
+                          <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                            <div>
+                              <Label>Conta padrão para pagamento *</Label>
+                              <Select value={form.cartao_conta_pagamento_id} onValueChange={(v) => setForm({ ...form, cartao_conta_pagamento_id: v })}>
+                                <SelectTrigger><SelectValue placeholder="Selecione" /></SelectTrigger>
+                                <SelectContent>
+                                  {contasCorrentes.map((c) => (<SelectItem key={c.id} value={c.id}>{c.nome ?? c.banco}</SelectItem>))}
+                                </SelectContent>
+                              </Select>
+                            </div>
+                            <div><Label>Dia do fechamento *</Label><Input required type="number" min={1} max={31} value={form.cartao_dia_fechamento} onChange={(e) => setForm({ ...form, cartao_dia_fechamento: e.target.value })} /></div>
+                            <div><Label>Dia do vencimento *</Label><Input required type="number" min={1} max={31} value={form.cartao_dia_vencimento} onChange={(e) => setForm({ ...form, cartao_dia_vencimento: e.target.value })} /></div>
+                          </div>
+                        </>
+                      )}
+
+                      {(form.tipo === "investimento" || form.tipo === "aplicacao_automatica") && (
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                          <div>
+                            <Label>Nome da conta {form.tipo === "investimento" ? "investimento" : "aplicação"} *</Label>
+                            <Input required value={form.nome} onChange={(e) => setForm({ ...form, nome: e.target.value })} />
+                            <p className="text-xs text-muted-foreground mt-1">Dê um nome para identificar esta conta depois</p>
+                          </div>
+                          <div><Label>Banco *</Label><Input required value={form.banco} onChange={(e) => setForm({ ...form, banco: e.target.value })} /></div>
+                          <div>
+                            <Label>Conta corrente vinculada *</Label>
+                            <Select value={form.conta_vinculada_id} onValueChange={(v) => setForm({ ...form, conta_vinculada_id: v })}>
+                              <SelectTrigger><SelectValue placeholder="Selecione" /></SelectTrigger>
+                              <SelectContent>
+                                {contasCorrentes.map((c) => (<SelectItem key={c.id} value={c.id}>{c.nome ?? c.banco}</SelectItem>))}
+                              </SelectContent>
+                            </Select>
+                          </div>
+                        </div>
+                      )}
+
+                      {form.tipo === "poupanca" && (
+                        <>
+                          <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                            <div>
+                              <Label>Nome da conta poupança *</Label>
+                              <Input required value={form.nome} onChange={(e) => setForm({ ...form, nome: e.target.value })} />
+                              <p className="text-xs text-muted-foreground mt-1">Dê um nome para identificar esta conta depois</p>
+                            </div>
+                            <div><Label>Banco *</Label><Input required value={form.banco} onChange={(e) => setForm({ ...form, banco: e.target.value })} /></div>
+                            <div>
+                              <Label>Conta corrente vinculada *</Label>
+                              <Select value={form.conta_vinculada_id} onValueChange={(v) => setForm({ ...form, conta_vinculada_id: v })}>
+                                <SelectTrigger><SelectValue placeholder="Selecione" /></SelectTrigger>
+                                <SelectContent>
+                                  {contasCorrentes.map((c) => (<SelectItem key={c.id} value={c.id}>{c.nome ?? c.banco}</SelectItem>))}
+                                </SelectContent>
+                              </Select>
+                            </div>
+                          </div>
+                          <div>
+                            <Label>Modalidade da conta *</Label>
+                            <RadioGroup value={form.modalidade} onValueChange={(v) => setForm({ ...form, modalidade: v })} className="flex gap-4 pt-2">
+                              <label className="flex items-center gap-2 text-sm"><RadioGroupItem value="pj" /> Conta empresarial (PJ)</label>
+                              <label className="flex items-center gap-2 text-sm"><RadioGroupItem value="pf" /> Conta pessoal (PF)</label>
+                            </RadioGroup>
+                          </div>
+                        </>
+                      )}
+
+                      <DialogFooter>
+                        <Button type="submit" disabled={criar.isPending || !podeContinuarStep2()}>
+                          {criar.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}Salvar
+                        </Button>
+                      </DialogFooter>
+                    </form>
+                  </Card>
+                )}
               </DialogContent>
             </Dialog>
           </div>
         }
       />
       {!contas?.length ? (
-        <EmptyState icon={Banknote} title="Sem contas bancárias" description="Cadastre suas contas para acompanhar saldos e realizar conciliação." />
+        <EmptyState icon={Banknote} title="Sem contas financeiras" description="Cadastre suas contas para acompanhar saldos e realizar conciliação." />
       ) : (
         <Card className="overflow-hidden shadow-panel">
           <Table>
             <TableHeader><TableRow>
-              <TableHead>Banco</TableHead><TableHead>Ag/Conta</TableHead>
+              <TableHead>Nome</TableHead><TableHead>Tipo</TableHead><TableHead>Ag/Conta</TableHead>
               <TableHead className="text-right">Saldo atual</TableHead><TableHead />
             </TableRow></TableHeader>
             <TableBody>
               {contas.map((c) => (
                 <TableRow key={c.id}>
-                  <TableCell className="font-medium">{c.banco ?? c.nome ?? "—"}</TableCell>
+                  <TableCell className="font-medium">{c.nome ?? c.banco ?? "—"}</TableCell>
+                  <TableCell><Badge variant="secondary">{TIPO_LABEL[c.tipo]}</Badge></TableCell>
                   <TableCell className="text-tabular">{c.agencia ?? "—"}/{c.conta ?? "—"}</TableCell>
                   <TableCell className="text-right text-tabular font-medium">{brl(c.saldo_atual)}</TableCell>
                   <TableCell className="text-right whitespace-nowrap">
-                    <Button variant="ghost" size="sm" disabled={importing === c.id} onClick={() => triggerUpload(c.id)}>
-                      {importing === c.id ? <Loader2 className="mr-1 h-3 w-3 animate-spin" /> : <Upload className="mr-1 h-3 w-3" />}
-                      Importar OFX
-                    </Button>
+                    {c.tipo === "corrente" && (
+                      <Button variant="ghost" size="sm" disabled={importing === c.id} onClick={() => triggerUpload(c.id)}>
+                        {importing === c.id ? <Loader2 className="mr-1 h-3 w-3 animate-spin" /> : <Upload className="mr-1 h-3 w-3" />}
+                        Importar OFX
+                      </Button>
+                    )}
                     <Button variant="ghost" size="sm" onClick={() => setReconcilingId(c.id)}>
                       <Link2 className="mr-1 h-3 w-3" />Conciliar
                     </Button>
@@ -185,6 +422,27 @@ function ContasBancarias() {
         onClose={() => setReconcilingId(null)}
       />
     </>
+  );
+}
+
+function TipoCard({ t, selected, onSelect }: { t: { value: TipoConta; label: string; desc: string; icon: typeof Landmark }; selected: boolean; onSelect: () => void }) {
+  const Icon = t.icon;
+  return (
+    <button type="button" onClick={onSelect}
+      className={cn("text-left rounded-lg border p-3 transition hover:border-primary/60",
+        selected ? "border-primary ring-1 ring-primary bg-primary/5" : "border-border")}>
+      <div className="flex items-start justify-between gap-2">
+        <div className="flex items-center gap-2">
+          <div className={cn("h-4 w-4 rounded-full border-2 flex items-center justify-center",
+            selected ? "border-primary" : "border-muted-foreground")}>
+            {selected && <div className="h-2 w-2 rounded-full bg-primary" />}
+          </div>
+          <span className="font-medium text-sm">{t.label}</span>
+        </div>
+        <Icon className="h-4 w-4 text-muted-foreground" />
+      </div>
+      <p className="text-xs text-muted-foreground mt-2 leading-snug">{t.desc}</p>
+    </button>
   );
 }
 
