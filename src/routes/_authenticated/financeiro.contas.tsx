@@ -445,7 +445,31 @@ function ContasFinanceiras() {
                           <Label>Saldo final da conta no dia anterior *</Label>
                           <div className="relative">
                             <span className="absolute left-2 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">R$</span>
-                            <Input required type="number" step="0.01" className="pl-9" value={form.saldo_dia_anterior} onChange={(e) => setForm({ ...form, saldo_dia_anterior: e.target.value })} />
+                            <Input
+                              required
+                              type="number"
+                              step="0.01"
+                              className="pl-9"
+                              value={form.saldo_dia_anterior}
+                              onKeyDown={(e) => {
+                                if (e.key === "-") {
+                                  e.preventDefault();
+                                  const v = form.saldo_dia_anterior;
+                                  if (v === "" || v === "0") {
+                                    setForm({ ...form, saldo_dia_anterior: "-" });
+                                  } else if (v === "-") {
+                                    setForm({ ...form, saldo_dia_anterior: "" });
+                                  } else {
+                                    setForm({
+                                      ...form,
+                                      saldo_dia_anterior: v.startsWith("-") ? v.slice(1) : `-${v}`,
+                                    });
+                                  }
+                                }
+                              }}
+                              onChange={(e) => setForm({ ...form, saldo_dia_anterior: e.target.value })}
+                            />
+
                           </div>
                         </div>
                       </div>
