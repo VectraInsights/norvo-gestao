@@ -3,8 +3,10 @@ import { useEffect, useState, type ReactNode } from "react";
 import {
   LayoutDashboard, ReceiptText, Users, Boxes, FileText, Settings, LogOut,
   Wallet, TrendingUp, Banknote, ShoppingCart, UserSquare2, Package, ChevronDown,
+  Sun, Moon,
 } from "lucide-react";
 import norvoLogo from "@/assets/norvo-logo.png";
+import { useTheme } from "@/hooks/use-theme";
 import { supabase } from "@/integrations/supabase/client";
 import { ShortcutsDialog } from "@/components/erp/shortcuts-dialog";
 import { Button } from "@/components/ui/button";
@@ -46,6 +48,7 @@ export function AppShell({ children }: { children: ReactNode }) {
   const location = useLocation();
   const qc = useQueryClient();
   const [open, setOpen] = useState(false);
+  const { theme, toggle: toggleTheme } = useTheme();
 
   const { data: user } = useQuery({
     queryKey: ["auth-user"],
@@ -219,7 +222,12 @@ export function AppShell({ children }: { children: ReactNode }) {
               <span className="text-display">Norvo</span>
             </div>
           </div>
-          <ShortcutsDialog />
+          <div className="flex items-center gap-1">
+            <Button variant="ghost" size="icon" onClick={toggleTheme} aria-label="Alternar tema">
+              {theme === "dark" ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
+            </Button>
+            <ShortcutsDialog />
+          </div>
         </header>
         <main className="min-w-0 flex-1 overflow-auto p-6 lg:p-8">{children}</main>
       </div>

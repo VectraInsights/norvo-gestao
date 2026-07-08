@@ -17,9 +17,10 @@ import { supabase } from "@/integrations/supabase/client";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEmpresaAtual } from "@/hooks/use-empresa";
 import { toast } from "sonner";
-import { parseOfx } from "@/lib/ofx";
+import { parseOfxFull } from "@/lib/ofx";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
+import { detectBancoByNome, detectBancoByCodigo, formatContaComDigito, normalizaContaNumero } from "@/lib/bancos";
 
 export const Route = createFileRoute("/_authenticated/financeiro/contas")({
   component: ContasFinanceiras,
@@ -173,11 +174,39 @@ function ContasFinanceiras() {
     const file = e.target.files?.[0];
     e.target.value = "";
     if (!file || !uploadContaId || !empresa) return;
+    const conta = (contas ?? []).find((c) => c.id === uploadContaId);
     setImporting(uploadContaId);
     try {
       const text = await file.text();
-      const txs = parseOfx(text);
+      const { account, transactions: txs } = parseOfxFull(text);
       if (!txs.length) { toast.error("Nenhuma transação encontrada no OFX"); return; }
+
+      // Verifica se o OFX bate com a conta cadastrada
+      if (conta) {
+        const problemas: string[] = [];
+        const bancoOfx = detectBancoByCodigo(account.bankId);
+        const bancoConta = detectBancoByNome(conta.banco);
+        if (bancoOfx && bancoConta && bancoOfx.slug !== bancoConta.slug) {
+          problemas.push(`Banco: OFX é ${bancoOfx.nome}, conta cadastrada é ${bancoConta.nome}`);
+        } else if (bancoOfx && conta.banco && !bancoConta) {
+          problemas.push(`Banco do OFX (${bancoOfx.nome}) não bate com "${conta.banco}"`);
+        }
+        if (account.branchId && conta.agencia) {
+          const a1 = account.branchId.replace(/\D/g, "").replace(/^0+/, "");
+          const a2 = conta.agencia.replace(/\D/g, "").replace(/^0+/, "");
+          if (a1 && a2 && a1 !== a2) problemas.push(`Agência: OFX ${account.branchId} × conta ${conta.agencia}`);
+        }
+        if (account.acctId && conta.conta) {
+          const c1 = normalizaContaNumero(account.acctId);
+          const c2 = normalizaContaNumero(conta.conta);
+          if (c1 && c2 && c1 !== c2) problemas.push(`Conta: OFX ${account.acctId} × conta ${conta.conta}`);
+        }
+        if (problemas.length) {
+          const msg = `Este OFX parece ser de outra conta:\n\n• ${problemas.join("\n• ")}\n\nDeseja importar mesmo assim?`;
+          if (!window.confirm(msg)) { toast.warning("Importação cancelada"); return; }
+        }
+      }
+
       const rows = txs.map((t) => ({
         empresa_id: empresa.id, conta_bancaria_id: uploadContaId, fitid: t.fitid,
         data_transacao: t.data, valor: t.valor, tipo: t.tipo, memo: t.memo,
@@ -185,7 +214,9 @@ function ContasFinanceiras() {
       const { error, count } = await supabase.from("ofx_transacoes")
         .upsert(rows, { onConflict: "conta_bancaria_id,fitid", ignoreDuplicates: true, count: "exact" });
       if (error) throw error;
-      toast.success(`${count ?? rows.length} transações importadas`);
+      const novas = count ?? 0;
+      const duplicadas = rows.length - novas;
+      toast.success(`${novas} nova(s) transação(ões) importada(s)${duplicadas > 0 ? ` · ${duplicadas} já existiam` : ""}`);
       qc.invalidateQueries({ queryKey: ["ofx", uploadContaId] });
       setReconcilingId(uploadContaId);
     } catch (err) {
@@ -265,7 +296,7 @@ function ContasFinanceiras() {
                           <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
                             <div><Label>Banco *</Label><Input required value={form.banco} onChange={(e) => setForm({ ...form, banco: e.target.value })} /></div>
                             <div><Label>Agência (sem dígito) *</Label><Input required value={form.agencia} onChange={(e) => setForm({ ...form, agencia: e.target.value })} /></div>
-                            <div><Label>Conta (com dígito) *</Label><Input required value={form.conta} onChange={(e) => setForm({ ...form, conta: e.target.value })} /></div>
+                            <div><Label>Conta (com dígito) *</Label><Input required value={form.conta} onChange={(e) => setForm({ ...form, conta: e.target.value })} onBlur={(e) => setForm({ ...form, conta: formatContaComDigito(e.target.value) })} placeholder="Ex: 12345-6" /></div>
                           </div>
                           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                             <div>
@@ -444,7 +475,19 @@ function ContasFinanceiras() {
             <TableBody>
               {contas.map((c) => (
                 <TableRow key={c.id}>
-                  <TableCell className="font-medium">{c.nome ?? c.banco ?? "—"}</TableCell>
+                  <TableCell className="font-medium">
+                    <div className="flex items-center gap-2">
+                      {(() => {
+                        const b = detectBancoByNome(c.banco);
+                        return b ? (
+                          <img src={b.logo} alt={b.nome} className="h-6 w-6 rounded object-contain bg-white ring-1 ring-border shrink-0" />
+                        ) : (
+                          <div className="h-6 w-6 rounded bg-muted grid place-items-center shrink-0"><Banknote className="h-3 w-3 text-muted-foreground" /></div>
+                        );
+                      })()}
+                      <span>{c.nome ?? c.banco ?? "—"}</span>
+                    </div>
+                  </TableCell>
                   <TableCell><Badge variant="secondary">{TIPO_LABEL[c.tipo]}</Badge></TableCell>
                   <TableCell className="text-tabular">{c.agencia ?? "—"}/{c.conta ?? "—"}</TableCell>
                   <TableCell className="text-right text-tabular font-medium">{brl(c.saldo_atual)}</TableCell>
