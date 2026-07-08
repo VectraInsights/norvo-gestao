@@ -3,9 +3,10 @@ import { useEffect, useState, type ReactNode } from "react";
 import {
   LayoutDashboard, ReceiptText, Users, Boxes, FileText, Settings, LogOut,
   Wallet, TrendingUp, Banknote, ShoppingCart, UserSquare2, Package, ChevronDown,
-  Sun, Moon,
+  Sun, Moon, PanelLeftClose, PanelLeftOpen,
 } from "lucide-react";
 import norvoLogo from "@/assets/norvo-logo.png";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { useTheme } from "@/hooks/use-theme";
 import { supabase } from "@/integrations/supabase/client";
 import { ShortcutsDialog } from "@/components/erp/shortcuts-dialog";
