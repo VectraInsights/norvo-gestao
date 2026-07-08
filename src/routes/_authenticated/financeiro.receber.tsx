@@ -282,6 +282,10 @@ export function LancamentosPage({ tipo }: { tipo: "receber" | "pagar" }) {
   };
   const abaLabelQuitado = tipo === "receber" ? "Recebidos" : "Pagos";
 
+  const allIds = filtrados.map((l) => l.id);
+  const allChecked = allIds.length > 0 && allIds.every((id) => selected.has(id));
+  const toggleAll = () => setSelected(allChecked ? new Set() : new Set(allIds));
+
   const titulo = tipo === "receber" ? "Contas a receber" : "Contas a pagar";
   const desc = tipo === "receber" ? "Recebimentos futuros e realizados." : "Compromissos financeiros a vencer e pagos.";
 
