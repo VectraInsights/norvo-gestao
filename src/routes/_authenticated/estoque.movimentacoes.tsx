@@ -186,7 +186,7 @@ function Movimentacoes() {
                   </div>
                   <div>
                     <Label>Custo unit.</Label>
-                    <Input type="number" step="0.01" min="0" value={form.custo_unitario} onChange={(e) => setForm({ ...form, custo_unitario: e.target.value })} />
+                    <MoneyInput value={form.custo_unitario} onChange={(v) => setForm({ ...form, custo_unitario: v })} prefix="" />
                   </div>
                 </div>
                 <div>
