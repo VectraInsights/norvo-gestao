@@ -147,17 +147,16 @@ export function LancamentosToolbar({
         const linha = i + 2;
         const descricao = String(r["Descrição"] ?? "").trim();
         const valorRaw = parseValor(r["Valor"]);
-        const dv = parseData(r["Data vencimento (dd/mm/aaaa)"] ?? r["Vencimento"] ?? r["Data vencimento"]);
-        const de = parseData(r["Data emissão (dd/mm/aaaa)"] ?? r["Emissão"] ?? r["Data emissão"]) ?? dv;
+        const dv = parseData(r["Data Vencimento (dd/mm/aaaa)"] ?? r["Data Vencimento"] ?? r["Data vencimento"] ?? r["Vencimento"]);
+        const de = parseData(r["Data competência (dd/mm/aaaa)"] ?? r["Data competência"] ?? r["Competência"] ?? r["Data emissão"]) ?? dv;
         if (!descricao || valorRaw === 0 || !dv) {
           erros.push(`Linha ${linha}: campos obrigatórios inválidos`);
           return;
         }
         const tipoLinha: "receber" | "pagar" = valorRaw >= 0 ? "receber" : "pagar";
         const valor = Math.abs(valorRaw);
-        const nomeContato = String(r["Contato"] ?? "").trim().toLowerCase();
+        const nomeContato = String(r["Cliente/Fornecedor"] ?? r["Contato"] ?? "").trim().toLowerCase();
         const nomeCat = String(r["Categoria"] ?? "").trim().toLowerCase();
-        const nomeConta = String(r["Conta financeira"] ?? r["Conta bancária"] ?? "").trim().toLowerCase();
         inserts.push({
           empresa_id: empresaId,
           tipo: tipoLinha,
@@ -167,11 +166,12 @@ export function LancamentosToolbar({
           data_vencimento: dv,
           contato_id: nomeContato ? mContatos.get(nomeContato) ?? null : null,
           categoria_id: nomeCat ? mCategorias.get(nomeCat) ?? null : null,
-          conta_bancaria_id: nomeConta ? mContas.get(nomeConta) ?? null : null,
-          documento: String(r["Documento/NF"] ?? r["Documento"] ?? "").trim() || null,
-          observacoes: String(r["Observações"] ?? "").trim() || null,
+          conta_bancaria_id: null,
+          documento: String(r["CNPJ/CPF"] ?? "").trim() || null,
+          observacoes: String(r["Obs."] ?? r["Observações"] ?? "").trim() || null,
         });
       });
+
 
       if (!inserts.length) {
         toast.error(erros[0] ?? "Planilha vazia");
