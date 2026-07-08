@@ -26,7 +26,7 @@ const NAV: NavGroup[] = [
     { to: "/financeiro/receber", label: "Contas a receber", icon: TrendingUp },
     { to: "/financeiro/pagar",   label: "Contas a pagar",   icon: ReceiptText },
     { to: "/financeiro/fluxo",   label: "Fluxo de caixa",   icon: Wallet },
-    { to: "/financeiro/contas",  label: "Contas bancárias", icon: Banknote },
+    { to: "/financeiro/contas",  label: "Contas financeiras", icon: Banknote },
   ]},
   { label: "Vendas & CRM", items: [
     { to: "/vendas/clientes", label: "Clientes",  icon: UserSquare2 },
