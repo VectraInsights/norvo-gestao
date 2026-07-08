@@ -266,7 +266,7 @@ function ContasFinanceiras() {
                               </RadioGroup>
                             </div>
                           </div>
-                          <div><Label>Saldo inicial (R$)</Label><Input type="number" step="0.01" value={form.saldo_inicial} onChange={(e) => setForm({ ...form, saldo_inicial: e.target.value })} /></div>
+                          {/* saldo movido para o passo 3 */}
                           <label className="flex items-center gap-2 text-sm">
                             <Checkbox checked={form.padrao} onCheckedChange={(v) => setForm({ ...form, padrao: !!v })} />
                             Use esta conta como padrão ao criar receitas e despesas.
