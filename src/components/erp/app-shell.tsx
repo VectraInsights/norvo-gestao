@@ -49,6 +49,17 @@ export function AppShell({ children }: { children: ReactNode }) {
   const location = useLocation();
   const qc = useQueryClient();
   const [open, setOpen] = useState(false);
+  const [collapsed, setCollapsed] = useState<boolean>(() => {
+    if (typeof window === "undefined") return false;
+    return window.localStorage.getItem("norvo-sidebar-collapsed") === "1";
+  });
+  const toggleCollapsed = () => {
+    setCollapsed((c) => {
+      const next = !c;
+      try { window.localStorage.setItem("norvo-sidebar-collapsed", next ? "1" : "0"); } catch {}
+      return next;
+    });
+  };
   const { theme, toggle: toggleTheme } = useTheme();
 
   const { data: user } = useQuery({
