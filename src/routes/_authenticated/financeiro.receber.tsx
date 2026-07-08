@@ -48,12 +48,14 @@ type Lancamento = {
   contato: { nome: string } | null;
 };
 
+const FORMAS_PAGAMENTO = ["Pix", "Boleto", "Cartão de crédito", "Cartão de débito", "Dinheiro", "Transferência", "Cheque", "Outros"] as const;
+
 const emptyForm = () => ({
   descricao: "", valor: "",
   data_emissao: format(new Date(), "yyyy-MM-dd"),
   data_vencimento: format(new Date(), "yyyy-MM-dd"),
   contato_id: "", categoria_id: "", conta_bancaria_id: "",
-  documento: "", observacoes: "",
+  documento: "", observacoes: "", forma_pagamento: "",
 });
 
 export function LancamentosPage({ tipo }: { tipo: "receber" | "pagar" }) {
@@ -140,6 +142,7 @@ export function LancamentosPage({ tipo }: { tipo: "receber" | "pagar" }) {
         conta_bancaria_id: input.conta_bancaria_id || null,
         documento: input.documento || null,
         observacoes: input.observacoes || null,
+        forma_pagamento: input.forma_pagamento || null,
       });
       if (error) throw error;
     },
@@ -200,7 +203,7 @@ export function LancamentosPage({ tipo }: { tipo: "receber" | "pagar" }) {
   const [editing, setEditing] = useState<null | { id: string } & ReturnType<typeof emptyForm>>(null);
   const abrirEdicao = async (id: string) => {
     const { data, error } = await supabase.from("lancamentos_financeiros")
-      .select("id,descricao,valor,data_emissao,data_vencimento,contato_id,categoria_id,conta_bancaria_id,documento,observacoes")
+      .select("id,descricao,valor,data_emissao,data_vencimento,contato_id,categoria_id,conta_bancaria_id,documento,observacoes,forma_pagamento")
       .eq("id", id).maybeSingle();
     if (error || !data) { toast.error(error?.message ?? "Não encontrado"); return; }
     setEditing({
@@ -214,6 +217,7 @@ export function LancamentosPage({ tipo }: { tipo: "receber" | "pagar" }) {
       conta_bancaria_id: data.conta_bancaria_id ?? "",
       documento: data.documento ?? "",
       observacoes: data.observacoes ?? "",
+      forma_pagamento: (data as { forma_pagamento?: string | null }).forma_pagamento ?? "",
     });
   };
   const salvarEdicao = useMutation({
@@ -226,6 +230,7 @@ export function LancamentosPage({ tipo }: { tipo: "receber" | "pagar" }) {
         contato_id: input.contato_id || null, categoria_id: input.categoria_id || null,
         conta_bancaria_id: input.conta_bancaria_id || null,
         documento: input.documento || null, observacoes: input.observacoes || null,
+        forma_pagamento: input.forma_pagamento || null,
       }).eq("id", input.id);
       if (error) throw error;
     },
@@ -350,9 +355,21 @@ export function LancamentosPage({ tipo }: { tipo: "receber" | "pagar" }) {
                     </Select>
                   </div>
                 </div>
-                <div>
-                  <Label>Nº documento / NF</Label>
-                  <Input value={form.documento} onChange={(e) => setForm({ ...form, documento: e.target.value })} />
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <Label>Nº documento / NF</Label>
+                    <Input value={form.documento} onChange={(e) => setForm({ ...form, documento: e.target.value })} />
+                  </div>
+                  <div>
+                    <Label>Forma de pagamento</Label>
+                    <Select value={form.forma_pagamento || "__none"} onValueChange={(v) => setForm({ ...form, forma_pagamento: v === "__none" ? "" : v })}>
+                      <SelectTrigger><SelectValue placeholder="Selecionar" /></SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="__none">Não informar</SelectItem>
+                        {FORMAS_PAGAMENTO.map((f) => <SelectItem key={f} value={f}>{f}</SelectItem>)}
+                      </SelectContent>
+                    </Select>
+                  </div>
                 </div>
                 <div>
                   <Label>Observações</Label>
@@ -551,9 +568,21 @@ export function LancamentosPage({ tipo }: { tipo: "receber" | "pagar" }) {
                   </Select>
                 </div>
               </div>
-              <div>
-                <Label>Nº documento / NF</Label>
-                <Input value={editing.documento} onChange={(e) => setEditing({ ...editing, documento: e.target.value })} />
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <Label>Nº documento / NF</Label>
+                  <Input value={editing.documento} onChange={(e) => setEditing({ ...editing, documento: e.target.value })} />
+                </div>
+                <div>
+                  <Label>Forma de pagamento</Label>
+                  <Select value={editing.forma_pagamento || "__none"} onValueChange={(v) => setEditing({ ...editing, forma_pagamento: v === "__none" ? "" : v })}>
+                    <SelectTrigger><SelectValue placeholder="Selecionar" /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="__none">Não informar</SelectItem>
+                      {FORMAS_PAGAMENTO.map((f) => <SelectItem key={f} value={f}>{f}</SelectItem>)}
+                    </SelectContent>
+                  </Select>
+                </div>
               </div>
               <div>
                 <Label>Observações</Label>

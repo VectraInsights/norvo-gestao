@@ -453,6 +453,7 @@ export type Database = {
           descricao: string
           documento: string | null
           empresa_id: string
+          forma_pagamento: string | null
           id: string
           observacoes: string | null
           status: Database["public"]["Enums"]["lancamento_status"]
@@ -472,6 +473,7 @@ export type Database = {
           descricao: string
           documento?: string | null
           empresa_id: string
+          forma_pagamento?: string | null
           id?: string
           observacoes?: string | null
           status?: Database["public"]["Enums"]["lancamento_status"]
@@ -491,6 +493,7 @@ export type Database = {
           descricao?: string
           documento?: string | null
           empresa_id?: string
+          forma_pagamento?: string | null
           id?: string
           observacoes?: string | null
           status?: Database["public"]["Enums"]["lancamento_status"]
