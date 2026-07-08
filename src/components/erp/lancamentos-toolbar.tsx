@@ -149,7 +149,7 @@ export function LancamentosToolbar({
           tipo,
           descricao,
           valor,
-          data_emissao: de,
+          data_emissao: de ?? undefined,
           data_vencimento: dv,
           contato_id: nomeContato ? mContatos.get(nomeContato) ?? null : null,
           categoria_id: nomeCat ? mCategorias.get(nomeCat) ?? null : null,
