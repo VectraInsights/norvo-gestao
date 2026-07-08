@@ -430,7 +430,7 @@ export function LancamentosPage({ tipo }: { tipo: "receber" | "pagar" }) {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {sorted.map((l) => {
+              {filtrados.map((l) => {
                 const emAndamento = marcarPago.isPending && marcarPago.variables?.id === l.id;
                 return (
                   <TableRow key={l.id} data-state={selected.has(l.id) ? "selected" : undefined}>
