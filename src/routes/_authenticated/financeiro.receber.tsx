@@ -256,6 +256,23 @@ export function LancamentosPage({ tipo }: { tipo: "receber" | "pagar" }) {
     </TableHead>
   );
 
+  // Aba: Vencidos (aberto/parcial e vencimento < hoje) | A vencer (aberto/parcial e vencimento >= hoje) | Quitados (pago, vencimento < hoje)
+  type Aba = "vencidos" | "avencer" | "quitados";
+  const [aba, setAba] = useState<Aba>("avencer");
+  const hojeStr = format(new Date(), "yyyy-MM-dd");
+  const emAberto = (s: string) => s === "aberto" || s === "parcial" || s === "vencido";
+  const filtrados = sorted.filter((l) => {
+    if (aba === "vencidos") return emAberto(l.status) && l.data_vencimento < hojeStr;
+    if (aba === "avencer") return emAberto(l.status) && l.data_vencimento >= hojeStr;
+    return l.status === "pago" && l.data_vencimento < hojeStr;
+  });
+  const cont = {
+    vencidos: sorted.filter((l) => emAberto(l.status) && l.data_vencimento < hojeStr).length,
+    avencer: sorted.filter((l) => emAberto(l.status) && l.data_vencimento >= hojeStr).length,
+    quitados: sorted.filter((l) => l.status === "pago" && l.data_vencimento < hojeStr).length,
+  };
+  const abaLabelQuitado = tipo === "receber" ? "Recebidos" : "Pagos";
+
   const titulo = tipo === "receber" ? "Contas a receber" : "Contas a pagar";
   const desc = tipo === "receber" ? "Recebimentos futuros e realizados." : "Compromissos financeiros a vencer e pagos.";
 
