@@ -475,7 +475,19 @@ function ContasFinanceiras() {
             <TableBody>
               {contas.map((c) => (
                 <TableRow key={c.id}>
-                  <TableCell className="font-medium">{c.nome ?? c.banco ?? "—"}</TableCell>
+                  <TableCell className="font-medium">
+                    <div className="flex items-center gap-2">
+                      {(() => {
+                        const b = detectBancoByNome(c.banco);
+                        return b ? (
+                          <img src={b.logo} alt={b.nome} className="h-6 w-6 rounded object-contain bg-white ring-1 ring-border shrink-0" />
+                        ) : (
+                          <div className="h-6 w-6 rounded bg-muted grid place-items-center shrink-0"><Banknote className="h-3 w-3 text-muted-foreground" /></div>
+                        );
+                      })()}
+                      <span>{c.nome ?? c.banco ?? "—"}</span>
+                    </div>
+                  </TableCell>
                   <TableCell><Badge variant="secondary">{TIPO_LABEL[c.tipo]}</Badge></TableCell>
                   <TableCell className="text-tabular">{c.agencia ?? "—"}/{c.conta ?? "—"}</TableCell>
                   <TableCell className="text-right text-tabular font-medium">{brl(c.saldo_atual)}</TableCell>
