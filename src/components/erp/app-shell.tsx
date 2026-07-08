@@ -253,6 +253,9 @@ export function AppShell({ children }: { children: ReactNode }) {
         <header className="flex h-14 items-center justify-between border-b border-border/60 bg-background/80 px-4 backdrop-blur lg:px-8">
           <div className="flex items-center gap-2">
             <Button variant="ghost" size="sm" className="lg:hidden" onClick={() => setOpen(true)}>Menu</Button>
+            <Button variant="ghost" size="icon" className="hidden lg:inline-flex" onClick={toggleCollapsed} aria-label={collapsed ? "Expandir barra lateral" : "Recolher barra lateral"}>
+              {collapsed ? <PanelLeftOpen className="h-4 w-4" /> : <PanelLeftClose className="h-4 w-4" />}
+            </Button>
             <div className="flex items-center gap-2 lg:hidden">
               <img src={norvoLogo} alt="Norvo" width={24} height={24} className="h-6 w-6" />
               <span className="text-display">Norvo</span>
@@ -268,5 +271,6 @@ export function AppShell({ children }: { children: ReactNode }) {
         <main className="min-w-0 flex-1 overflow-auto p-6 lg:p-8">{children}</main>
       </div>
     </div>
+    </TooltipProvider>
   );
 }
