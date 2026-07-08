@@ -448,7 +448,7 @@ export function LancamentosPage({ tipo }: { tipo: "receber" | "pagar" }) {
                   </SelectContent>
                 </Select>
                 <Button size="sm" variant="destructive" disabled={excluirLote.isPending}
-                  onClick={() => { if (confirm(`Excluir ${selected.size} lançamento(s)?`)) excluirLote.mutate([...selected]); }}>
+                  onClick={() => { if (confirm(`Excluir ${selected.size} lançamento(s)?\n\nSe algum estiver conciliado, a transação do extrato voltará para "em aberto" (não será apagada).`)) excluirLote.mutate([...selected]); }}>
                   <Trash2 className="mr-1 h-4 w-4" />Excluir
                 </Button>
                 <Button size="sm" variant="ghost" onClick={clearSel}>Limpar</Button>
