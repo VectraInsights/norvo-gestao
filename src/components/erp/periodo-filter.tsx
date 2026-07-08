@@ -14,13 +14,18 @@ export type Periodo = { from: Date | null; to: Date | null; label: string };
 
 export const PERIODO_TODOS: Periodo = { from: null, to: null, label: "Todo o período" };
 
+export function periodoProx7(): Periodo {
+  const hoje = new Date();
+  return { from: startOfDay(hoje), to: endOfDay(addDays(hoje, 6)), label: "Próximos 7 dias" };
+}
+
 type PresetKey =
   | "hoje" | "prox7" | "prox30" | "ult7" | "ult30"
   | "mesatual" | "anoatual" | "todos" | "custom";
 
 const PRESETS: { k: PresetKey; label: string; range: () => Periodo }[] = [
   { k: "hoje", label: "Hoje", range: () => { const d = new Date(); return { from: startOfDay(d), to: endOfDay(d), label: "Hoje" }; } },
-  { k: "prox7", label: "Próximos 7 dias", range: () => ({ from: startOfDay(new Date()), to: endOfDay(addDays(new Date(), 7)), label: "Próximos 7 dias" }) },
+  { k: "prox7", label: "Próximos 7 dias", range: () => periodoProx7() },
   { k: "prox30", label: "Próximos 30 dias", range: () => ({ from: startOfDay(new Date()), to: endOfDay(addDays(new Date(), 30)), label: "Próximos 30 dias" }) },
   { k: "ult7", label: "Últimos 7 dias", range: () => ({ from: startOfDay(subDays(new Date(), 7)), to: endOfDay(new Date()), label: "Últimos 7 dias" }) },
   { k: "ult30", label: "Últimos 30 dias", range: () => ({ from: startOfDay(subDays(new Date(), 30)), to: endOfDay(new Date()), label: "Últimos 30 dias" }) },

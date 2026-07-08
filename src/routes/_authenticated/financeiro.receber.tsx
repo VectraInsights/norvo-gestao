@@ -20,7 +20,7 @@ import { useEmpresaAtual } from "@/hooks/use-empresa";
 import { toast } from "sonner";
 import { format } from "date-fns";
 import { LancamentosToolbar } from "@/components/erp/lancamentos-toolbar";
-import { PeriodoFilter, PERIODO_TODOS, type Periodo } from "@/components/erp/periodo-filter";
+import { PeriodoFilter, periodoProx7, type Periodo } from "@/components/erp/periodo-filter";
 
 export const Route = createFileRoute("/_authenticated/financeiro/receber")({
   component: () => <LancamentosPage tipo="receber" />,
@@ -256,7 +256,7 @@ export function LancamentosPage({ tipo }: { tipo: "receber" | "pagar" }) {
   );
 
   // Filtro de período (aplicado sobre data_vencimento)
-  const [periodo, setPeriodo] = useState<Periodo>(PERIODO_TODOS);
+  const [periodo, setPeriodo] = useState<Periodo>(() => periodoProx7());
   const dentroPeriodo = (dataStr: string) => {
     if (!periodo.from || !periodo.to) return true;
     const d = new Date(dataStr + "T12:00:00");
