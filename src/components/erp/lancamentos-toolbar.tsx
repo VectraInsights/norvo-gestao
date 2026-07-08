@@ -1,5 +1,5 @@
 import { useRef } from "react";
-import * as XLSX from "xlsx";
+import * as XLSX from "xlsx-js-style";
 import { Button } from "@/components/ui/button";
 import { Download, Printer, Upload, FileSpreadsheet } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
