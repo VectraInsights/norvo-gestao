@@ -286,11 +286,17 @@ export function LancamentosPage({ tipo }: { tipo: "receber" | "pagar" }) {
     if (aba === "avencer") return emAberto(l.status) && l.data_vencimento >= hojeStr;
     return l.status === "pago";
   };
-  const filtrados = noPeriodo.filter(filtroAba);
+  const [busca, setBusca] = useState("");
+  const buscaNorm = busca.trim().toLowerCase();
+  const aplicaBusca = (l: Lancamento) =>
+    !buscaNorm ||
+    l.descricao.toLowerCase().includes(buscaNorm) ||
+    (l.contato?.nome ?? "").toLowerCase().includes(buscaNorm);
+  const filtrados = noPeriodo.filter(filtroAba).filter(aplicaBusca);
   const cont = {
-    vencidos: noPeriodo.filter((l) => emAberto(l.status) && l.data_vencimento < hojeStr).length,
-    avencer: noPeriodo.filter((l) => emAberto(l.status) && l.data_vencimento >= hojeStr).length,
-    quitados: noPeriodo.filter((l) => l.status === "pago").length,
+    vencidos: noPeriodo.filter((l) => emAberto(l.status) && l.data_vencimento < hojeStr).filter(aplicaBusca).length,
+    avencer: noPeriodo.filter((l) => emAberto(l.status) && l.data_vencimento >= hojeStr).filter(aplicaBusca).length,
+    quitados: noPeriodo.filter((l) => l.status === "pago").filter(aplicaBusca).length,
   };
   const abaLabelQuitado = tipo === "receber" ? "Recebidos" : "Pagos";
 
