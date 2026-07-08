@@ -13,7 +13,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { Loader2, Plus, TrendingUp, Trash2, MoreHorizontal, Check, RotateCcw, Ban, ArrowUp, ArrowDown, ArrowUpDown } from "lucide-react";
+import { Loader2, Plus, TrendingUp, Trash2, MoreHorizontal, Check, RotateCcw, Ban, ArrowUp, ArrowDown, ArrowUpDown, Search, X } from "lucide-react";
 import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -77,7 +77,7 @@ export function LancamentosPage({ tipo }: { tipo: "receber" | "pagar" }) {
         .eq("empresa_id", empresa!.id)
         .eq("tipo", tipo)
         .order("data_vencimento", { ascending: false })
-        .limit(100)
+        .limit(2000)
         .abortSignal(signal);
       if (error) throw error;
       return (data ?? []) as unknown as Lancamento[];
@@ -286,11 +286,17 @@ export function LancamentosPage({ tipo }: { tipo: "receber" | "pagar" }) {
     if (aba === "avencer") return emAberto(l.status) && l.data_vencimento >= hojeStr;
     return l.status === "pago";
   };
-  const filtrados = noPeriodo.filter(filtroAba);
+  const [busca, setBusca] = useState("");
+  const buscaNorm = busca.trim().toLowerCase();
+  const aplicaBusca = (l: Lancamento) =>
+    !buscaNorm ||
+    l.descricao.toLowerCase().includes(buscaNorm) ||
+    (l.contato?.nome ?? "").toLowerCase().includes(buscaNorm);
+  const filtrados = noPeriodo.filter(filtroAba).filter(aplicaBusca);
   const cont = {
-    vencidos: noPeriodo.filter((l) => emAberto(l.status) && l.data_vencimento < hojeStr).length,
-    avencer: noPeriodo.filter((l) => emAberto(l.status) && l.data_vencimento >= hojeStr).length,
-    quitados: noPeriodo.filter((l) => l.status === "pago").length,
+    vencidos: noPeriodo.filter((l) => emAberto(l.status) && l.data_vencimento < hojeStr).filter(aplicaBusca).length,
+    avencer: noPeriodo.filter((l) => emAberto(l.status) && l.data_vencimento >= hojeStr).filter(aplicaBusca).length,
+    quitados: noPeriodo.filter((l) => l.status === "pago").filter(aplicaBusca).length,
   };
   const abaLabelQuitado = tipo === "receber" ? "Recebidos" : "Pagos";
 
@@ -411,6 +417,25 @@ export function LancamentosPage({ tipo }: { tipo: "receber" | "pagar" }) {
           ))}
         </div>
         <PeriodoFilter value={periodo} onChange={(p) => { setPeriodo(p); clearSel(); }} />
+        <div className="relative ml-auto w-full sm:w-80">
+          <Search className="pointer-events-none absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+          <Input
+            value={busca}
+            onChange={(e) => { setBusca(e.target.value); clearSel(); }}
+            placeholder="Pesquisar por descrição ou contato…"
+            className="h-9 pl-8 pr-8"
+          />
+          {busca && (
+            <button
+              type="button"
+              onClick={() => setBusca("")}
+              className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+              aria-label="Limpar busca"
+            >
+              <X className="h-4 w-4" />
+            </button>
+          )}
+        </div>
       </div>
 
       <LancamentosToolbar

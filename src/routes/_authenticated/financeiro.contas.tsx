@@ -695,11 +695,58 @@ function ReconcileDialog({ contaId, empresaId, autoConciliar, onClose }: { conta
     onError: (e: Error) => toast.error(e.message),
   });
 
+  const excluirExtrato = useMutation({
+    mutationFn: async () => {
+      if (!contaId) throw new Error("Conta não selecionada");
+      // 1) coleta ids de lançamentos vinculados ao extrato desta conta
+      const { data: vinculos, error: eSel } = await supabase.from("ofx_transacoes")
+        .select("lancamento_id").eq("conta_bancaria_id", contaId).not("lancamento_id", "is", null);
+      if (eSel) throw eSel;
+      const lancIds = Array.from(new Set((vinculos ?? []).map((v) => v.lancamento_id).filter(Boolean) as string[]));
+      // 2) apaga todas as transações OFX da conta
+      const { error: eDel } = await supabase.from("ofx_transacoes").delete().eq("conta_bancaria_id", contaId);
+      if (eDel) throw eDel;
+      // 3) apaga os lançamentos que estavam conciliados a este extrato
+      if (lancIds.length) {
+        const { error: eLanc } = await supabase.from("lancamentos_financeiros").delete().in("id", lancIds);
+        if (eLanc) throw eLanc;
+      }
+      return { txs: (vinculos?.length ?? 0), lancs: lancIds.length };
+    },
+    onSuccess: (r) => {
+      toast.success(`Extrato removido — ${r.lancs} lançamento(s) excluído(s)`);
+      qc.invalidateQueries({ queryKey: ["ofx", contaId] });
+      qc.invalidateQueries({ queryKey: ["lanc-abertos", empresaId] });
+      qc.invalidateQueries({ queryKey: ["lancamentos"] });
+      qc.invalidateQueries({ queryKey: ["contas-bancarias"] });
+      onClose();
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
   return (
     <Dialog open={open} onOpenChange={(v) => { if (!v) onClose(); }}>
       <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-3xl">
         <DialogHeader>
-          <DialogTitle>Conciliação bancária</DialogTitle>
+          <div className="flex items-start justify-between gap-3">
+            <DialogTitle>Conciliação bancária</DialogTitle>
+            {txs && txs.length > 0 && (
+              <Button
+                variant="outline"
+                size="sm"
+                className="text-destructive hover:text-destructive"
+                disabled={excluirExtrato.isPending}
+                onClick={() => {
+                  if (window.confirm("Excluir todo o extrato OFX importado desta conta?\n\nSerão apagados TODOS os lançamentos criados/conciliados a partir dele, mesmo os já conciliados. Esta ação não pode ser desfeita.")) {
+                    excluirExtrato.mutate();
+                  }
+                }}
+              >
+                {excluirExtrato.isPending ? <Loader2 className="mr-1 h-3 w-3 animate-spin" /> : <Trash2 className="mr-1 h-3 w-3" />}
+                Excluir extrato importado
+              </Button>
+            )}
+          </div>
         </DialogHeader>
         <Tabs defaultValue="pendentes" className="w-full">
           <TabsList>
