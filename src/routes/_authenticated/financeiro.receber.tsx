@@ -20,6 +20,7 @@ import { useEmpresaAtual } from "@/hooks/use-empresa";
 import { toast } from "sonner";
 import { format } from "date-fns";
 import { LancamentosToolbar } from "@/components/erp/lancamentos-toolbar";
+import { PeriodoFilter, PERIODO_TODOS, type Periodo } from "@/components/erp/periodo-filter";
 
 export const Route = createFileRoute("/_authenticated/financeiro/receber")({
   component: () => <LancamentosPage tipo="receber" />,
@@ -171,9 +172,7 @@ export function LancamentosPage({ tipo }: { tipo: "receber" | "pagar" }) {
 
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const toggle = (id: string) => setSelected((s) => { const n = new Set(s); n.has(id) ? n.delete(id) : n.add(id); return n; });
-  const allIds = (lancamentos ?? []).map((l) => l.id);
-  const allChecked = allIds.length > 0 && allIds.every((id) => selected.has(id));
-  const toggleAll = () => setSelected(allChecked ? new Set() : new Set(allIds));
+  // allIds calculado depois dos filtros (mais abaixo, via `filtrados`)
   const clearSel = () => setSelected(new Set());
 
   const excluirLote = useMutation({
@@ -256,22 +255,36 @@ export function LancamentosPage({ tipo }: { tipo: "receber" | "pagar" }) {
     </TableHead>
   );
 
+  // Filtro de período (aplicado sobre data_vencimento)
+  const [periodo, setPeriodo] = useState<Periodo>(PERIODO_TODOS);
+  const dentroPeriodo = (dataStr: string) => {
+    if (!periodo.from || !periodo.to) return true;
+    const d = new Date(dataStr + "T12:00:00");
+    return d >= periodo.from && d <= periodo.to;
+  };
+  const noPeriodo = sorted.filter((l) => dentroPeriodo(l.data_vencimento));
+
   // Aba: Vencidos (aberto/parcial e vencimento < hoje) | A vencer (aberto/parcial e vencimento >= hoje) | Quitados (pago, vencimento < hoje)
   type Aba = "vencidos" | "avencer" | "quitados";
   const [aba, setAba] = useState<Aba>("avencer");
   const hojeStr = format(new Date(), "yyyy-MM-dd");
   const emAberto = (s: string) => s === "aberto" || s === "parcial" || s === "vencido";
-  const filtrados = sorted.filter((l) => {
+  const filtroAba = (l: Lancamento) => {
     if (aba === "vencidos") return emAberto(l.status) && l.data_vencimento < hojeStr;
     if (aba === "avencer") return emAberto(l.status) && l.data_vencimento >= hojeStr;
     return l.status === "pago" && l.data_vencimento < hojeStr;
-  });
+  };
+  const filtrados = noPeriodo.filter(filtroAba);
   const cont = {
-    vencidos: sorted.filter((l) => emAberto(l.status) && l.data_vencimento < hojeStr).length,
-    avencer: sorted.filter((l) => emAberto(l.status) && l.data_vencimento >= hojeStr).length,
-    quitados: sorted.filter((l) => l.status === "pago" && l.data_vencimento < hojeStr).length,
+    vencidos: noPeriodo.filter((l) => emAberto(l.status) && l.data_vencimento < hojeStr).length,
+    avencer: noPeriodo.filter((l) => emAberto(l.status) && l.data_vencimento >= hojeStr).length,
+    quitados: noPeriodo.filter((l) => l.status === "pago" && l.data_vencimento < hojeStr).length,
   };
   const abaLabelQuitado = tipo === "receber" ? "Recebidos" : "Pagos";
+
+  const allIds = filtrados.map((l) => l.id);
+  const allChecked = allIds.length > 0 && allIds.every((id) => selected.has(id));
+  const toggleAll = () => setSelected(allChecked ? new Set() : new Set(allIds));
 
   const titulo = tipo === "receber" ? "Contas a receber" : "Contas a pagar";
   const desc = tipo === "receber" ? "Recebimentos futuros e realizados." : "Compromissos financeiros a vencer e pagos.";
@@ -356,27 +369,30 @@ export function LancamentosPage({ tipo }: { tipo: "receber" | "pagar" }) {
         }
       />
 
-      <div className="mb-3 inline-flex rounded-md border bg-muted/30 p-1 text-sm">
-        {([
-          { k: "vencidos", label: `Vencidos (${cont.vencidos})` },
-          { k: "avencer", label: `A vencer (${cont.avencer})` },
-          { k: "quitados", label: `${abaLabelQuitado} (${cont.quitados})` },
-        ] as { k: Aba; label: string }[]).map((t) => (
-          <button
-            key={t.k}
-            type="button"
-            onClick={() => { setAba(t.k); clearSel(); }}
-            className={`rounded px-3 py-1.5 transition-colors ${aba === t.k ? "bg-background shadow-sm font-medium" : "text-muted-foreground hover:text-foreground"}`}
-          >
-            {t.label}
-          </button>
-        ))}
+      <div className="mb-3 flex flex-wrap items-center gap-2">
+        <div className="inline-flex rounded-md border bg-muted/30 p-1 text-sm">
+          {([
+            { k: "vencidos", label: `Vencidos (${cont.vencidos})` },
+            { k: "avencer", label: `A vencer (${cont.avencer})` },
+            { k: "quitados", label: `${abaLabelQuitado} (${cont.quitados})` },
+          ] as { k: Aba; label: string }[]).map((t) => (
+            <button
+              key={t.k}
+              type="button"
+              onClick={() => { setAba(t.k); clearSel(); }}
+              className={`rounded px-3 py-1.5 transition-colors ${aba === t.k ? "bg-background shadow-sm font-medium" : "text-muted-foreground hover:text-foreground"}`}
+            >
+              {t.label}
+            </button>
+          ))}
+        </div>
+        <PeriodoFilter value={periodo} onChange={(p) => { setPeriodo(p); clearSel(); }} />
       </div>
 
       <LancamentosToolbar
         tipo={tipo}
         empresaId={empresa?.id}
-        lancamentos={lancamentos}
+        lancamentos={filtrados}
         contatos={contatosOpt?.map((c) => ({ id: c.id, nome: c.nome ?? "" }))}
         categorias={categoriasOpt?.map((c) => ({ id: c.id, nome: c.nome ?? "" }))}
         contas={contasOpt?.map((c) => ({ id: c.id, nome: c.nome ?? "" }))}
