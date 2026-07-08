@@ -701,58 +701,77 @@ function ReconcileDialog({ contaId, empresaId, autoConciliar, onClose }: { conta
         <DialogHeader>
           <DialogTitle>Conciliação bancária</DialogTitle>
         </DialogHeader>
-        {isLoading ? (
-          <div className="py-6 text-center text-sm text-muted-foreground">Carregando…</div>
-        ) : !txs?.length ? (
-          <div className="py-6 text-center text-sm text-muted-foreground">
-            Nenhuma transação importada. Use "Importar OFX" para começar.
-          </div>
-        ) : (
-          <Table>
-            <TableHeader><TableRow>
-              <TableHead>Data</TableHead><TableHead>Memo</TableHead>
-              <TableHead className="text-right">Valor</TableHead>
-              <TableHead>Vincular</TableHead>
-            </TableRow></TableHeader>
-            <TableBody>
-              {txs.map((tx) => (
-                <TableRow key={tx.id}>
-                  <TableCell className="text-tabular whitespace-nowrap">
-                    {format(new Date(tx.data_transacao), "dd/MM/yyyy")}
-                  </TableCell>
-                  <TableCell className="text-sm">{tx.memo ?? "—"}</TableCell>
-                  <TableCell className={`text-right text-tabular ${tx.valor < 0 ? "text-destructive" : "text-success"}`}>
-                    {brl(tx.valor)}
-                  </TableCell>
-                  <TableCell>
-                    {tx.status === "conciliada" ? (
-                      <Badge variant="secondary" className="bg-success/15 text-success"><Check className="mr-1 h-3 w-3" />Conciliada</Badge>
-                    ) : (
-                      <div className="flex gap-2">
-                        <Select onValueChange={(v) => conciliar.mutate({ ofxId: tx.id, lancamentoId: v, valor: tx.valor })}>
-                          <SelectTrigger className="h-8 w-[220px]"><SelectValue placeholder="Vincular lançamento" /></SelectTrigger>
-                          <SelectContent>
-                            {lancamentosAbertos?.filter((l) => Math.abs(Number(l.valor) - Math.abs(tx.valor)) < 0.01)
-                              .concat(lancamentosAbertos?.filter((l) => Math.abs(Number(l.valor) - Math.abs(tx.valor)) >= 0.01) ?? [])
-                              .map((l) => (
-                                <SelectItem key={l.id} value={l.id}>
-                                  {format(new Date(l.data_vencimento), "dd/MM")} — {l.descricao} ({brl(Number(l.valor))})
-                                </SelectItem>
-                              ))}
-                          </SelectContent>
-                        </Select>
-                        <Button variant="outline" size="sm" onClick={() => { setNovoTx(tx); setNovaDescricao(tx.memo ?? ""); }}>
-                          Novo
-                        </Button>
-                      </div>
-                    )}
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        )}
+        <Tabs defaultValue="pendentes" className="w-full">
+          <TabsList>
+            <TabsTrigger value="pendentes">
+              Conciliações pendentes
+              {txs && ` (${txs.filter((t) => t.status !== "conciliada").length})`}
+            </TabsTrigger>
+            <TabsTrigger value="movimentacoes">Movimentações</TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="pendentes" className="mt-4">
+            {isLoading ? (
+              <div className="py-6 text-center text-sm text-muted-foreground">Carregando…</div>
+            ) : !txs?.length ? (
+              <div className="py-6 text-center text-sm text-muted-foreground">
+                Nenhuma transação importada. Use "Importar OFX" para começar.
+              </div>
+            ) : txs.filter((t) => t.status !== "conciliada").length === 0 ? (
+              <div className="py-8 text-center text-sm text-muted-foreground">
+                Tudo conciliado. 🎉
+              </div>
+            ) : (
+              <Table>
+                <TableHeader><TableRow>
+                  <TableHead>Data</TableHead><TableHead>Memo</TableHead>
+                  <TableHead className="text-right">Valor</TableHead>
+                  <TableHead>Vincular</TableHead>
+                </TableRow></TableHeader>
+                <TableBody>
+                  {txs.filter((t) => t.status !== "conciliada").map((tx) => (
+                    <TableRow key={tx.id}>
+                      <TableCell className="text-tabular whitespace-nowrap">
+                        {format(new Date(tx.data_transacao), "dd/MM/yyyy")}
+                      </TableCell>
+                      <TableCell className="text-sm">{tx.memo ?? "—"}</TableCell>
+                      <TableCell className={`text-right text-tabular ${tx.valor < 0 ? "text-destructive" : "text-success"}`}>
+                        {brl(tx.valor)}
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex gap-2">
+                          <Select onValueChange={(v) => conciliar.mutate({ ofxId: tx.id, lancamentoId: v, valor: tx.valor })}>
+                            <SelectTrigger className="h-8 w-[220px]"><SelectValue placeholder="Vincular lançamento" /></SelectTrigger>
+                            <SelectContent>
+                              {lancamentosAbertos?.filter((l) => Math.abs(Number(l.valor) - Math.abs(tx.valor)) < 0.01)
+                                .concat(lancamentosAbertos?.filter((l) => Math.abs(Number(l.valor) - Math.abs(tx.valor)) >= 0.01) ?? [])
+                                .map((l) => (
+                                  <SelectItem key={l.id} value={l.id}>
+                                    {format(new Date(l.data_vencimento), "dd/MM")} — {l.descricao} ({brl(Number(l.valor))})
+                                  </SelectItem>
+                                ))}
+                            </SelectContent>
+                          </Select>
+                          <Button variant="outline" size="sm" onClick={() => { setNovoTx(tx); setNovaDescricao(tx.memo ?? ""); }}>
+                            Novo
+                          </Button>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            )}
+          </TabsContent>
+
+          <TabsContent value="movimentacoes" className="mt-4">
+            <div className="py-10 text-center text-sm text-muted-foreground border border-dashed border-border rounded-lg">
+              Em breve: histórico de movimentações da conta.
+            </div>
+          </TabsContent>
+        </Tabs>
       </DialogContent>
+
 
       <Dialog open={!!novoTx} onOpenChange={(v) => { if (!v) { setNovoTx(null); setNovaDescricao(""); } }}>
         <DialogContent>
