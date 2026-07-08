@@ -17,9 +17,10 @@ import { supabase } from "@/integrations/supabase/client";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEmpresaAtual } from "@/hooks/use-empresa";
 import { toast } from "sonner";
-import { parseOfx } from "@/lib/ofx";
+import { parseOfxFull } from "@/lib/ofx";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
+import { detectBancoByNome, detectBancoByCodigo, formatContaComDigito, normalizaContaNumero } from "@/lib/bancos";
 
 export const Route = createFileRoute("/_authenticated/financeiro/contas")({
   component: ContasFinanceiras,
