@@ -33,7 +33,8 @@ const NAV: NavGroup[] = [
   ]},
   { label: "Vendas & CRM", items: [
     { to: "/vendas/clientes", label: "Clientes",  icon: UserSquare2 },
-    { to: "/vendas/pedidos",  label: "Pedidos e propostas", icon: ShoppingCart },
+    { to: "/vendas/vendas",   label: "Vendas",    icon: ShoppingCart },
+    { to: "/vendas/pedidos",  label: "Orçamentos", icon: ShoppingCart },
   ]},
   { label: "Estoque", items: [
     { to: "/estoque/produtos", label: "Produtos", icon: Package },
