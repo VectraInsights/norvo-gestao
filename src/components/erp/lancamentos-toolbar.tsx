@@ -196,7 +196,7 @@ export function LancamentosToolbar({
       if (error) throw error;
       const nRec = inserts.filter((x) => x.tipo === "receber").length;
       const nPag = inserts.length - nRec;
-      toast.success(`Importado(s): ${nRec} receita(s), ${nPag} despesa(s)${erros.length ? ` — ${erros.length} linha(s) ignorada(s)` : ""}`);
+      toast.success(`Importado(s): ${nRec} receita(s), ${nPag} despesa(s)`);
       onImported();
     } catch (e) {
       toast.error((e as Error).message);
