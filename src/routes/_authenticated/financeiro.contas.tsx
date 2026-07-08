@@ -244,7 +244,7 @@ function ContasFinanceiras() {
                       <h3 className="font-semibold text-sm">Preencha os dados *</h3>
                     </div>
 
-                    <form onSubmit={(e) => { e.preventDefault(); if (podeContinuarStep2()) criar.mutate(form); }} className="space-y-3">
+                    <form onSubmit={(e) => { e.preventDefault(); if (podeContinuarStep2()) setStep(3); }} className="space-y-3">
                       {form.tipo === "corrente" && (
                         <>
                           <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
