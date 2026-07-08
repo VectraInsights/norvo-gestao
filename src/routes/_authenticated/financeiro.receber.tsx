@@ -316,7 +316,7 @@ export function LancamentosPage({ tipo }: { tipo: "receber" | "pagar" }) {
                 <div className="grid grid-cols-3 gap-3">
                   <div>
                     <Label>Valor (R$) *</Label>
-                    <Input required type="number" step="0.01" min="0.01" value={form.valor} onChange={(e) => setForm({ ...form, valor: e.target.value })} />
+                    <MoneyInput required value={form.valor} onChange={(v) => setForm({ ...form, valor: v })} prefix="" />
                   </div>
                   <div>
                     <Label>Emissão</Label>
