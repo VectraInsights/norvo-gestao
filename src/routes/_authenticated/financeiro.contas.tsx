@@ -174,11 +174,39 @@ function ContasFinanceiras() {
     const file = e.target.files?.[0];
     e.target.value = "";
     if (!file || !uploadContaId || !empresa) return;
+    const conta = (contas ?? []).find((c) => c.id === uploadContaId);
     setImporting(uploadContaId);
     try {
       const text = await file.text();
-      const txs = parseOfx(text);
+      const { account, transactions: txs } = parseOfxFull(text);
       if (!txs.length) { toast.error("Nenhuma transação encontrada no OFX"); return; }
+
+      // Verifica se o OFX bate com a conta cadastrada
+      if (conta) {
+        const problemas: string[] = [];
+        const bancoOfx = detectBancoByCodigo(account.bankId);
+        const bancoConta = detectBancoByNome(conta.banco);
+        if (bancoOfx && bancoConta && bancoOfx.slug !== bancoConta.slug) {
+          problemas.push(`Banco: OFX é ${bancoOfx.nome}, conta cadastrada é ${bancoConta.nome}`);
+        } else if (bancoOfx && conta.banco && !bancoConta) {
+          problemas.push(`Banco do OFX (${bancoOfx.nome}) não bate com "${conta.banco}"`);
+        }
+        if (account.branchId && conta.agencia) {
+          const a1 = account.branchId.replace(/\D/g, "").replace(/^0+/, "");
+          const a2 = conta.agencia.replace(/\D/g, "").replace(/^0+/, "");
+          if (a1 && a2 && a1 !== a2) problemas.push(`Agência: OFX ${account.branchId} × conta ${conta.agencia}`);
+        }
+        if (account.acctId && conta.conta) {
+          const c1 = normalizaContaNumero(account.acctId);
+          const c2 = normalizaContaNumero(conta.conta);
+          if (c1 && c2 && c1 !== c2) problemas.push(`Conta: OFX ${account.acctId} × conta ${conta.conta}`);
+        }
+        if (problemas.length) {
+          const msg = `Este OFX parece ser de outra conta:\n\n• ${problemas.join("\n• ")}\n\nDeseja importar mesmo assim?`;
+          if (!window.confirm(msg)) { toast.warning("Importação cancelada"); return; }
+        }
+      }
+
       const rows = txs.map((t) => ({
         empresa_id: empresa.id, conta_bancaria_id: uploadContaId, fitid: t.fitid,
         data_transacao: t.data, valor: t.valor, tipo: t.tipo, memo: t.memo,
@@ -186,7 +214,9 @@ function ContasFinanceiras() {
       const { error, count } = await supabase.from("ofx_transacoes")
         .upsert(rows, { onConflict: "conta_bancaria_id,fitid", ignoreDuplicates: true, count: "exact" });
       if (error) throw error;
-      toast.success(`${count ?? rows.length} transações importadas`);
+      const novas = count ?? 0;
+      const duplicadas = rows.length - novas;
+      toast.success(`${novas} nova(s) transação(ões) importada(s)${duplicadas > 0 ? ` · ${duplicadas} já existiam` : ""}`);
       qc.invalidateQueries({ queryKey: ["ofx", uploadContaId] });
       setReconcilingId(uploadContaId);
     } catch (err) {
