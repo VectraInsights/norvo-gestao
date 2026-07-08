@@ -46,6 +46,8 @@ function Clientes() {
   const [open, setOpen] = useState(false);
   const [form, setForm] = useState(emptyForm);
   const [lookingUp, setLookingUp] = useState(false);
+  const [selected, setSelected] = useState<Set<string>>(new Set());
+  const toggleOne = (id: string) => setSelected((s) => { const n = new Set(s); n.has(id) ? n.delete(id) : n.add(id); return n; });
 
   const lookupCnpj = async () => {
     const digits = onlyDigits(form.documento);
