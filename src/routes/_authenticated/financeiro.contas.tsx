@@ -108,12 +108,14 @@ function ContasFinanceiras() {
   const criar = useMutation({
     mutationFn: async (input: FormState) => {
       if (!empresa) throw new Error("Empresa não selecionada");
-      const saldo = Number(input.saldo_inicial || 0);
+      const saldo = Number(input.saldo_dia_anterior || input.saldo_inicial || 0);
       const payload: Record<string, unknown> = {
         empresa_id: empresa.id,
         tipo: input.tipo,
         nome: input.nome || input.banco || TIPO_LABEL[input.tipo],
         padrao: input.padrao,
+        data_inicio_lancamentos: input.data_inicio_lancamentos || null,
+        saldo_inicial: saldo, saldo_atual: saldo,
       };
       if (input.tipo === "corrente") {
         Object.assign(payload, {
