@@ -131,13 +131,17 @@ export function AppShell({ children }: { children: ReactNode }) {
           open && "translate-x-0"
         )}
       >
-        <div className={cn("flex h-16 items-center gap-2 border-b border-sidebar-border", collapsed ? "justify-center px-2" : "px-5") }>
-          <img src={norvoLogo} alt="Norvo" width={32} height={32} className="h-8 w-8 shrink-0" />
-          {!collapsed && (
-            <div>
-              <div className="text-display text-lg leading-none">Norvo</div>
-              <div className="text-[10px] uppercase tracking-widest text-muted-foreground">Cloud ERP</div>
+        <div className={cn("flex h-16 items-center gap-3 border-b border-sidebar-border", collapsed ? "justify-center px-2" : "px-5") }>
+          <div className="relative shrink-0">
+            <div className="absolute inset-0 rounded-xl bg-gradient-to-br from-primary/40 to-primary/10 blur-md" aria-hidden />
+            <div className="relative grid h-10 w-10 place-items-center rounded-xl bg-gradient-to-br from-sidebar-accent to-sidebar-accent/40 ring-1 ring-sidebar-border shadow-sm">
+              <img src={norvoLogo} alt="Norvo" width={28} height={28} className="h-7 w-7" />
             </div>
+          </div>
+          {!collapsed && (
+            <span className="text-display text-2xl leading-none tracking-tight bg-gradient-to-b from-foreground to-foreground/70 bg-clip-text text-transparent">
+              Norvo
+            </span>
           )}
         </div>
 
