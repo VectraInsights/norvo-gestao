@@ -509,7 +509,7 @@ export function LancamentosPage({ tipo }: { tipo: "receber" | "pagar" }) {
                           )}
                           <DropdownMenuSeparator />
                           <DropdownMenuItem className="text-destructive focus:text-destructive"
-                            onClick={() => { if (confirm("Excluir lançamento?")) excluirLote.mutate([l.id]); }}>
+                            onClick={() => { if (confirm('Excluir lançamento?\n\nSe estiver conciliado, a transação do extrato voltará para "em aberto" (não será apagada).')) excluirLote.mutate([l.id]); }}>
                             <Trash2 className="mr-2 h-4 w-4" />Excluir
                           </DropdownMenuItem>
                         </DropdownMenuContent>
