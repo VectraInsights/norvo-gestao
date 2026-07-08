@@ -69,7 +69,7 @@ export function LancamentosToolbar({
     const exemplo = [
       HEADERS,
       [
-        tipo === "receber" ? "Venda pedido 123" : "Compra fornecedor X",
+        "Venda pedido 123",
         1500.5,
         format(new Date(), "dd/MM/yyyy"),
         format(new Date(), "dd/MM/yyyy"),
@@ -77,25 +77,37 @@ export function LancamentosToolbar({
         categorias?.[0]?.nome ?? "",
         contas?.[0]?.nome ?? "",
         "NF-001",
-        "Observação opcional",
+        "Receita (valor positivo)",
+      ],
+      [
+        "Compra fornecedor X",
+        -850,
+        format(new Date(), "dd/MM/yyyy"),
+        format(new Date(), "dd/MM/yyyy"),
+        contatos?.[0]?.nome ?? "",
+        categorias?.[0]?.nome ?? "",
+        contas?.[0]?.nome ?? "",
+        "NF-002",
+        "Despesa (valor negativo)",
       ],
     ];
     const ws = XLSX.utils.aoa_to_sheet(exemplo);
     ws["!cols"] = [{ wch: 32 }, { wch: 12 }, { wch: 22 }, { wch: 22 }, { wch: 24 }, { wch: 20 }, { wch: 22 }, { wch: 16 }, { wch: 32 }];
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, "Modelo");
-    // Aba de instruções
     const info = XLSX.utils.aoa_to_sheet([
-      [`Modelo de importação — ${label}`],
+      ["Modelo de importação — despesas e receitas"],
       [],
       ["Preencha uma linha por lançamento a partir da linha 2 da aba Modelo."],
       ["Campos obrigatórios: Descrição, Valor, Data vencimento."],
+      ["Valor POSITIVO = Receita (a receber). Valor NEGATIVO = Despesa (a pagar)."],
       ["Datas no formato dd/mm/aaaa."],
       ["Contato/Categoria/Conta financeira devem existir previamente no sistema (mesmo nome)."],
     ]);
     XLSX.utils.book_append_sheet(wb, info, "Instruções");
-    XLSX.writeFile(wb, `modelo-${label}.xlsx`);
+    XLSX.writeFile(wb, `Modelo_despesas_receitas_norvo.xlsx`);
   };
+
 
   const exportar = () => {
     const rows = (lancamentos ?? []).map((l) => ({
@@ -134,19 +146,21 @@ export function LancamentosToolbar({
       rows.forEach((r, i) => {
         const linha = i + 2;
         const descricao = String(r["Descrição"] ?? "").trim();
-        const valor = parseValor(r["Valor"]);
+        const valorRaw = parseValor(r["Valor"]);
         const dv = parseData(r["Data vencimento (dd/mm/aaaa)"] ?? r["Vencimento"] ?? r["Data vencimento"]);
         const de = parseData(r["Data emissão (dd/mm/aaaa)"] ?? r["Emissão"] ?? r["Data emissão"]) ?? dv;
-        if (!descricao || !(valor > 0) || !dv) {
+        if (!descricao || valorRaw === 0 || !dv) {
           erros.push(`Linha ${linha}: campos obrigatórios inválidos`);
           return;
         }
+        const tipoLinha: "receber" | "pagar" = valorRaw >= 0 ? "receber" : "pagar";
+        const valor = Math.abs(valorRaw);
         const nomeContato = String(r["Contato"] ?? "").trim().toLowerCase();
         const nomeCat = String(r["Categoria"] ?? "").trim().toLowerCase();
         const nomeConta = String(r["Conta financeira"] ?? r["Conta bancária"] ?? "").trim().toLowerCase();
         inserts.push({
           empresa_id: empresaId,
-          tipo,
+          tipo: tipoLinha,
           descricao,
           valor,
           data_emissao: de ?? undefined,
@@ -165,10 +179,13 @@ export function LancamentosToolbar({
       }
       const { error } = await supabase.from("lancamentos_financeiros").insert(inserts);
       if (error) throw error;
-      toast.success(`${inserts.length} lançamento(s) importado(s)${erros.length ? ` — ${erros.length} linha(s) ignorada(s)` : ""}`);
+      const nRec = inserts.filter((x) => x.tipo === "receber").length;
+      const nPag = inserts.length - nRec;
+      toast.success(`Importado(s): ${nRec} receita(s), ${nPag} despesa(s)${erros.length ? ` — ${erros.length} linha(s) ignorada(s)` : ""}`);
       onImported();
     } catch (e) {
       toast.error((e as Error).message);
+
     } finally {
       if (fileRef.current) fileRef.current.value = "";
     }
