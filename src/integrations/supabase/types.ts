@@ -68,6 +68,7 @@ export type Database = {
           empresa_id: string
           id: string
           nome: string
+          parent_id: string | null
           tipo: Database["public"]["Enums"]["lancamento_tipo"]
         }
         Insert: {
@@ -76,6 +77,7 @@ export type Database = {
           empresa_id: string
           id?: string
           nome: string
+          parent_id?: string | null
           tipo: Database["public"]["Enums"]["lancamento_tipo"]
         }
         Update: {
@@ -84,6 +86,7 @@ export type Database = {
           empresa_id?: string
           id?: string
           nome?: string
+          parent_id?: string | null
           tipo?: Database["public"]["Enums"]["lancamento_tipo"]
         }
         Relationships: [
@@ -92,6 +95,13 @@ export type Database = {
             columns: ["empresa_id"]
             isOneToOne: false
             referencedRelation: "empresas"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "categorias_financeiras_parent_id_fkey"
+            columns: ["parent_id"]
+            isOneToOne: false
+            referencedRelation: "categorias_financeiras"
             referencedColumns: ["id"]
           },
         ]

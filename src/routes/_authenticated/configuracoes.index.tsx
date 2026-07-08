@@ -50,7 +50,9 @@ function Configuracoes() {
 
 function CategoriasTab({ empresaId }: { empresaId: string }) {
   const qc = useQueryClient();
-  const [nome, setNome] = useState(""); const [tipo, setTipo] = useState<"receber" | "pagar">("pagar");
+  const [nome, setNome] = useState("");
+  const [tipo, setTipo] = useState<"receber" | "pagar">("pagar");
+  const [parentId, setParentId] = useState<string>("__none");
 
   const { data } = useQuery({
     queryKey: ["categorias", empresaId],
@@ -59,9 +61,13 @@ function CategoriasTab({ empresaId }: { empresaId: string }) {
 
   const add = async () => {
     if (!nome) return;
-    const { error } = await supabase.from("categorias_financeiras").insert({ empresa_id: empresaId, nome, tipo });
+    const { error } = await supabase.from("categorias_financeiras").insert({
+      empresa_id: empresaId, nome, tipo,
+      parent_id: parentId === "__none" ? null : parentId,
+    });
     if (error) return toast.error(error.message);
-    setNome(""); qc.invalidateQueries({ queryKey: ["categorias"] });
+    setNome(""); setParentId("__none");
+    qc.invalidateQueries({ queryKey: ["categorias"] });
   };
   const remove = async (id: string) => {
     const { error } = await supabase.from("categorias_financeiras").delete().eq("id", id);
@@ -70,23 +76,40 @@ function CategoriasTab({ empresaId }: { empresaId: string }) {
   };
 
   const tipoLabel = (t: string) => t === "receber" ? "Receita" : "Despesa";
+  type Cat = { id: string; nome: string; tipo: string; parent_id: string | null };
+  const all = (data ?? []) as Cat[];
+  const parents = all.filter((c) => !c.parent_id && c.tipo === tipo);
+  const ordered: Cat[] = [];
+  all.filter((c) => !c.parent_id).forEach((p) => {
+    ordered.push(p);
+    all.filter((c) => c.parent_id === p.id).forEach((s) => ordered.push(s));
+  });
 
   return (
     <Card className="mt-4 shadow-panel"><CardContent className="p-4">
-      <div className="mb-3 flex gap-2">
-        <Input placeholder="Nova categoria" value={nome} onChange={(e) => setNome(e.target.value)} />
-        <Select value={tipo} onValueChange={(v) => setTipo(v as "receber" | "pagar")}>
-          <SelectTrigger className="w-36"><SelectValue /></SelectTrigger>
+      <div className="mb-3 grid grid-cols-[2fr_1fr_1.5fr_auto] gap-2">
+        <Input placeholder="Nova categoria ou subcategoria" value={nome} onChange={(e) => setNome(e.target.value)} />
+        <Select value={tipo} onValueChange={(v) => { setTipo(v as "receber" | "pagar"); setParentId("__none"); }}>
+          <SelectTrigger><SelectValue /></SelectTrigger>
           <SelectContent><SelectItem value="receber">Receita</SelectItem><SelectItem value="pagar">Despesa</SelectItem></SelectContent>
+        </Select>
+        <Select value={parentId} onValueChange={setParentId}>
+          <SelectTrigger><SelectValue placeholder="Categoria pai (opcional)" /></SelectTrigger>
+          <SelectContent>
+            <SelectItem value="__none">— Sem categoria pai —</SelectItem>
+            {parents.map((p) => <SelectItem key={p.id} value={p.id}>{p.nome}</SelectItem>)}
+          </SelectContent>
         </Select>
         <Button onClick={add}><Plus className="mr-1 h-4 w-4" />Adicionar</Button>
       </div>
       <Table>
         <TableHeader><TableRow><TableHead>Nome</TableHead><TableHead>Tipo</TableHead><TableHead /></TableRow></TableHeader>
         <TableBody>
-          {data?.map((c: any) => (
+          {ordered.map((c) => (
             <TableRow key={c.id}>
-              <TableCell className="font-medium">{c.nome}</TableCell>
+              <TableCell className={c.parent_id ? "pl-8 text-muted-foreground" : "font-medium"}>
+                {c.parent_id ? `↳ ${c.nome}` : c.nome}
+              </TableCell>
               <TableCell className="capitalize text-muted-foreground">{tipoLabel(c.tipo)}</TableCell>
               <TableCell className="text-right"><Button variant="ghost" size="icon" onClick={() => remove(c.id)}><Trash2 className="h-4 w-4" /></Button></TableCell>
             </TableRow>
@@ -96,6 +119,7 @@ function CategoriasTab({ empresaId }: { empresaId: string }) {
     </CardContent></Card>
   );
 }
+
 
 function CondicoesTab({ empresaId }: { empresaId: string }) {
   const qc = useQueryClient();
