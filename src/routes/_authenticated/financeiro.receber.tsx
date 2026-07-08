@@ -356,6 +356,23 @@ export function LancamentosPage({ tipo }: { tipo: "receber" | "pagar" }) {
         }
       />
 
+      <div className="mb-3 inline-flex rounded-md border bg-muted/30 p-1 text-sm">
+        {([
+          { k: "vencidos", label: `Vencidos (${cont.vencidos})` },
+          { k: "avencer", label: `A vencer (${cont.avencer})` },
+          { k: "quitados", label: `${abaLabelQuitado} (${cont.quitados})` },
+        ] as { k: Aba; label: string }[]).map((t) => (
+          <button
+            key={t.k}
+            type="button"
+            onClick={() => { setAba(t.k); clearSel(); }}
+            className={`rounded px-3 py-1.5 transition-colors ${aba === t.k ? "bg-background shadow-sm font-medium" : "text-muted-foreground hover:text-foreground"}`}
+          >
+            {t.label}
+          </button>
+        ))}
+      </div>
+
       <LancamentosToolbar
         tipo={tipo}
         empresaId={empresa?.id}
