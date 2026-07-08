@@ -148,35 +148,50 @@ export function LancamentosToolbar({
         const descricao = String(r["Descrição"] ?? "").trim();
         const valorRaw = parseValor(r["Valor"]);
         const dv = parseData(r["Data Vencimento (dd/mm/aaaa)"] ?? r["Data Vencimento"] ?? r["Data vencimento"] ?? r["Vencimento"]);
-        const de = parseData(r["Data competência (dd/mm/aaaa)"] ?? r["Data competência"] ?? r["Competência"] ?? r["Data emissão"]) ?? dv;
-        if (!descricao || valorRaw === 0 || !dv) {
-          erros.push(`Linha ${linha}: campos obrigatórios inválidos`);
+        const de = parseData(r["Data competência (dd/mm/aaaa)"] ?? r["Data competência"] ?? r["Competência"] ?? r["Data emissão"]);
+        const nomeCat = String(r["Categoria"] ?? "").trim().toLowerCase();
+        const faltando: string[] = [];
+        if (!de) faltando.push("Data competência");
+        if (!dv) faltando.push("Data Vencimento");
+        if (valorRaw === 0) faltando.push("Valor");
+        if (!descricao) faltando.push("Descrição");
+        if (!nomeCat) faltando.push("Categoria");
+        if (faltando.length) {
+          erros.push(`Linha ${linha}: campo(s) obrigatório(s) ausente(s): ${faltando.join(", ")}`);
+          return;
+        }
+        const catId = mCategorias.get(nomeCat);
+        if (!catId) {
+          erros.push(`Linha ${linha}: categoria "${r["Categoria"]}" não encontrada`);
           return;
         }
         const tipoLinha: "receber" | "pagar" = valorRaw >= 0 ? "receber" : "pagar";
         const valor = Math.abs(valorRaw);
         const nomeContato = String(r["Cliente/Fornecedor"] ?? r["Contato"] ?? "").trim().toLowerCase();
-        const nomeCat = String(r["Categoria"] ?? "").trim().toLowerCase();
         inserts.push({
           empresa_id: empresaId,
           tipo: tipoLinha,
           descricao,
           valor,
-          data_emissao: de ?? undefined,
-          data_vencimento: dv,
+          data_emissao: de!,
+          data_vencimento: dv!,
           contato_id: nomeContato ? mContatos.get(nomeContato) ?? null : null,
-          categoria_id: nomeCat ? mCategorias.get(nomeCat) ?? null : null,
+          categoria_id: catId,
           conta_bancaria_id: null,
           documento: String(r["CNPJ/CPF"] ?? "").trim() || null,
           observacoes: String(r["Obs."] ?? r["Observações"] ?? "").trim() || null,
         });
       });
 
-
-      if (!inserts.length) {
-        toast.error(erros[0] ?? "Planilha vazia");
+      if (erros.length) {
+        toast.error(`Importação cancelada — ${erros.length} erro(s)`, { description: erros.slice(0, 5).join("\n") });
         return;
       }
+      if (!inserts.length) {
+        toast.error("Planilha vazia");
+        return;
+      }
+
       const { error } = await supabase.from("lancamentos_financeiros").insert(inserts);
       if (error) throw error;
       const nRec = inserts.filter((x) => x.tipo === "receber").length;
