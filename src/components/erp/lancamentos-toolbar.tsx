@@ -1,10 +1,12 @@
-import { useRef } from "react";
+import { useRef, useState } from "react";
 import * as XLSX from "xlsx-js-style";
 import { Button } from "@/components/ui/button";
 import { Download, Printer, Upload, FileSpreadsheet } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { format, parse, isValid } from "date-fns";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from "@/components/ui/dialog";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 type Opt = { id: string; nome: string };
 type Lanc = {
@@ -45,6 +47,13 @@ function parseValor(v: unknown): number {
   return isNaN(n) ? 0 : n;
 }
 
+type Insert = {
+  empresa_id: string; tipo: "receber" | "pagar"; descricao: string; valor: number;
+  data_emissao?: string; data_vencimento: string;
+  contato_id: string | null; categoria_id: string | null; conta_bancaria_id: string | null;
+  documento: string | null; observacoes: string | null;
+};
+
 export function LancamentosToolbar({
   tipo,
   empresaId,
@@ -63,6 +72,9 @@ export function LancamentosToolbar({
   onImported: () => void;
 }) {
   const fileRef = useRef<HTMLInputElement>(null);
+  const [pending, setPending] = useState<{ inserts: Insert[]; criados: { categorias: number; contatos: number } } | null>(null);
+  const [contaSel, setContaSel] = useState<string>("__none");
+  const [saving, setSaving] = useState(false);
   const label = tipo === "receber" ? "receitas" : "despesas";
 
   const baixarModelo = () => {
@@ -133,7 +145,7 @@ export function LancamentosToolbar({
       ["2. Campos obrigatórios: Data competência, Data Vencimento, Valor, Descrição, Categoria."],
       ["3. Valor POSITIVO = Receita (a receber). Valor NEGATIVO = Despesa (a pagar)."],
       ["4. Datas sempre no formato dd/mm/aaaa."],
-      ["5. Categoria e Cliente/Fornecedor devem existir previamente no sistema (mesmo nome). CNPJ/CPF é opcional."],
+      ["5. Categorias e Clientes/Fornecedores inexistentes serão criados automaticamente."],
     ];
     const info = XLSX.utils.aoa_to_sheet(infoRows);
     info["!cols"] = [{ wch: 110 }];
@@ -182,18 +194,14 @@ export function LancamentosToolbar({
       const wb = XLSX.read(buf, { cellDates: true });
       const ws = wb.Sheets[wb.SheetNames.find((n) => n.toLowerCase().includes("modelo")) ?? wb.SheetNames[0]];
       const rows = XLSX.utils.sheet_to_json<Record<string, unknown>>(ws, { defval: "" });
-      const byNome = (list: Opt[] | undefined) => new Map((list ?? []).map((o) => [o.nome.trim().toLowerCase(), o.id]));
-      const mContatos = byNome(contatos);
-      const mCategorias = byNome(categorias);
-      
 
-      type Insert = {
-        empresa_id: string; tipo: "receber" | "pagar"; descricao: string; valor: number;
-        data_emissao?: string; data_vencimento: string;
-        contato_id: string | null; categoria_id: string | null; conta_bancaria_id: string | null;
-        documento: string | null; observacoes: string | null;
+      type Parsed = {
+        linha: number;
+        descricao: string; valor: number; tipoLinha: "receber" | "pagar";
+        de: string; dv: string;
+        catNome: string; contatoNome: string; documento: string | null; observacoes: string | null;
       };
-      const inserts: Insert[] = [];
+      const parsed: Parsed[] = [];
       const erros: string[] = [];
       rows.forEach((r, i) => {
         const linha = i + 2;
@@ -201,35 +209,24 @@ export function LancamentosToolbar({
         const valorRaw = parseValor(r["Valor"]);
         const dv = parseData(r["Data Vencimento (dd/mm/aaaa)"] ?? r["Data Vencimento"] ?? r["Data vencimento"] ?? r["Vencimento"]);
         const de = parseData(r["Data competência (dd/mm/aaaa)"] ?? r["Data competência"] ?? r["Competência"] ?? r["Data emissão"]);
-        const nomeCat = String(r["Categoria"] ?? "").trim().toLowerCase();
+        const catNome = String(r["Categoria"] ?? "").trim();
         const faltando: string[] = [];
         if (!de) faltando.push("Data competência");
         if (!dv) faltando.push("Data Vencimento");
         if (valorRaw === 0) faltando.push("Valor");
         if (!descricao) faltando.push("Descrição");
-        if (!nomeCat) faltando.push("Categoria");
+        if (!catNome) faltando.push("Categoria");
         if (faltando.length) {
           erros.push(`Linha ${linha}: campo(s) obrigatório(s) ausente(s): ${faltando.join(", ")}`);
           return;
         }
-        const catId = mCategorias.get(nomeCat);
-        if (!catId) {
-          erros.push(`Linha ${linha}: categoria "${r["Categoria"]}" não encontrada`);
-          return;
-        }
-        const tipoLinha: "receber" | "pagar" = valorRaw >= 0 ? "receber" : "pagar";
-        const valor = Math.abs(valorRaw);
-        const nomeContato = String(r["Cliente/Fornecedor"] ?? r["Contato"] ?? "").trim().toLowerCase();
-        inserts.push({
-          empresa_id: empresaId,
-          tipo: tipoLinha,
-          descricao,
-          valor,
-          data_emissao: de!,
-          data_vencimento: dv!,
-          contato_id: nomeContato ? mContatos.get(nomeContato) ?? null : null,
-          categoria_id: catId,
-          conta_bancaria_id: null,
+        parsed.push({
+          linha,
+          descricao, valor: Math.abs(valorRaw),
+          tipoLinha: valorRaw >= 0 ? "receber" : "pagar",
+          de: de!, dv: dv!,
+          catNome,
+          contatoNome: String(r["Cliente/Fornecedor"] ?? r["Contato"] ?? "").trim(),
           documento: String(r["CNPJ/CPF"] ?? "").trim() || null,
           observacoes: String(r["Obs."] ?? r["Observações"] ?? "").trim() || null,
         });
@@ -239,12 +236,84 @@ export function LancamentosToolbar({
         toast.error(`Importação cancelada — ${erros.length} erro(s)`, { description: erros.slice(0, 5).join("\n") });
         return;
       }
-      if (!inserts.length) {
-        toast.error("Planilha vazia");
-        return;
+      if (!parsed.length) { toast.error("Planilha vazia"); return; }
+
+      // Maps existentes
+      const mCategorias = new Map((categorias ?? []).map((o) => [o.nome.trim().toLowerCase(), o.id]));
+      const mContatos = new Map((contatos ?? []).map((o) => [o.nome.trim().toLowerCase(), o.id]));
+
+      // Criar categorias faltantes (por nome+tipo)
+      const novasCats = new Map<string, { nome: string; tipo: "receber" | "pagar" }>();
+      parsed.forEach((p) => {
+        const key = p.catNome.toLowerCase();
+        if (!mCategorias.has(key)) novasCats.set(key, { nome: p.catNome, tipo: p.tipoLinha });
+      });
+      let criadasCats = 0;
+      if (novasCats.size) {
+        const payload = Array.from(novasCats.values()).map((c) => ({
+          empresa_id: empresaId, nome: c.nome, tipo: c.tipo, parent_id: null,
+        }));
+        const { data, error } = await supabase.from("categorias_financeiras").insert(payload).select("id,nome");
+        if (error) throw error;
+        (data ?? []).forEach((c) => mCategorias.set(c.nome.trim().toLowerCase(), c.id));
+        criadasCats = data?.length ?? 0;
       }
 
-      // Checagem de duplicidade: descrição + data_vencimento + valor
+      // Criar contatos faltantes
+      const novosContatos = new Map<string, { nome: string; tipo: "cliente" | "fornecedor"; documento: string | null }>();
+      parsed.forEach((p) => {
+        if (!p.contatoNome) return;
+        const key = p.contatoNome.toLowerCase();
+        if (!mContatos.has(key)) {
+          novosContatos.set(key, {
+            nome: p.contatoNome,
+            tipo: p.tipoLinha === "receber" ? "cliente" : "fornecedor",
+            documento: p.documento,
+          });
+        }
+      });
+      let criadosCtt = 0;
+      if (novosContatos.size) {
+        const payload = Array.from(novosContatos.values()).map((c) => ({
+          empresa_id: empresaId, nome: c.nome, tipo: c.tipo, documento: c.documento,
+        }));
+        const { data, error } = await supabase.from("contatos").insert(payload).select("id,nome");
+        if (error) throw error;
+        (data ?? []).forEach((c) => mContatos.set(c.nome.trim().toLowerCase(), c.id));
+        criadosCtt = data?.length ?? 0;
+      }
+
+      const inserts: Insert[] = parsed.map((p) => ({
+        empresa_id: empresaId,
+        tipo: p.tipoLinha,
+        descricao: p.descricao,
+        valor: p.valor,
+        data_emissao: p.de,
+        data_vencimento: p.dv,
+        contato_id: p.contatoNome ? mContatos.get(p.contatoNome.toLowerCase()) ?? null : null,
+        categoria_id: mCategorias.get(p.catNome.toLowerCase()) ?? null,
+        conta_bancaria_id: null,
+        documento: p.documento,
+        observacoes: p.observacoes,
+      }));
+
+      setContaSel("__none");
+      setPending({ inserts, criados: { categorias: criadasCats, contatos: criadosCtt } });
+    } catch (e) {
+      toast.error((e as Error).message);
+    } finally {
+      if (fileRef.current) fileRef.current.value = "";
+    }
+  };
+
+  const confirmarImportacao = async () => {
+    if (!pending || !empresaId) return;
+    setSaving(true);
+    try {
+      const contaId = contaSel === "__none" ? null : contaSel;
+      const inserts = pending.inserts.map((i) => ({ ...i, conta_bancaria_id: contaId }));
+
+      // Dedup contra existentes
       const vencs = Array.from(new Set(inserts.map((i) => i.data_vencimento)));
       const { data: existentes } = await supabase
         .from("lancamentos_financeiros")
@@ -254,23 +323,27 @@ export function LancamentosToolbar({
       const chave = (d: string, v: string, val: number) =>
         `${d.trim().toLowerCase()}|${v}|${Number(val).toFixed(2)}`;
       const existSet = new Set((existentes ?? []).map((e) => chave(e.descricao, e.data_vencimento, Number(e.valor))));
-      const seenBatch = new Set<string>();
+      const seen = new Set<string>();
       const novos: Insert[] = [];
       const duplicados: string[] = [];
       inserts.forEach((ins) => {
         const k = chave(ins.descricao, ins.data_vencimento, ins.valor);
-        if (existSet.has(k) || seenBatch.has(k)) {
+        if (existSet.has(k) || seen.has(k)) {
           duplicados.push(`${ins.descricao} — ${format(new Date(ins.data_vencimento), "dd/MM/yyyy")} — R$ ${ins.valor.toFixed(2)}`);
           return;
         }
-        seenBatch.add(k);
+        seen.add(k);
         novos.push(ins);
       });
 
+      const criadosMsg = `${pending.criados.categorias} categoria(s) e ${pending.criados.contatos} contato(s) criado(s) automaticamente`;
+
       if (!novos.length) {
         toast.warning(`Nenhum lançamento importado — ${duplicados.length} duplicata(s) ignorada(s)`, {
-          description: duplicados.slice(0, 5).join("\n"),
+          description: `${criadosMsg}\n${duplicados.slice(0, 5).join("\n")}`,
         });
+        setPending(null);
+        onImported();
         return;
       }
 
@@ -278,20 +351,17 @@ export function LancamentosToolbar({
       if (error) throw error;
       const nRec = novos.filter((x) => x.tipo === "receber").length;
       const nPag = novos.length - nRec;
-      const msg = `Importado(s): ${nRec} receita(s), ${nPag} despesa(s)`;
-      if (duplicados.length) {
-        toast.success(msg, {
-          description: `${duplicados.length} duplicata(s) ignorada(s):\n${duplicados.slice(0, 5).join("\n")}`,
-        });
-      } else {
-        toast.success(msg);
-      }
+      toast.success(`Importado(s): ${nRec} receita(s), ${nPag} despesa(s)`, {
+        description: duplicados.length
+          ? `${criadosMsg}\n${duplicados.length} duplicata(s) ignorada(s):\n${duplicados.slice(0, 5).join("\n")}`
+          : criadosMsg,
+      });
+      setPending(null);
       onImported();
     } catch (e) {
       toast.error((e as Error).message);
-
     } finally {
-      if (fileRef.current) fileRef.current.value = "";
+      setSaving(false);
     }
   };
 
@@ -316,6 +386,42 @@ export function LancamentosToolbar({
         className="hidden"
         onChange={(e) => { const f = e.target.files?.[0]; if (f) importar(f); }}
       />
+
+      <Dialog open={!!pending} onOpenChange={(o) => { if (!o && !saving) setPending(null); }}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Vincular conta financeira</DialogTitle>
+            <DialogDescription>
+              {pending ? (
+                <>
+                  {pending.inserts.length} lançamento(s) prontos para importar.
+                  {(pending.criados.categorias > 0 || pending.criados.contatos > 0) && (
+                    <> Criados automaticamente: {pending.criados.categorias} categoria(s), {pending.criados.contatos} contato(s).</>
+                  )}
+                </>
+              ) : null}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-2">
+            <label className="text-sm font-medium">Conta financeira (opcional)</label>
+            <Select value={contaSel} onValueChange={setContaSel}>
+              <SelectTrigger><SelectValue placeholder="Selecione uma conta" /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="__none">Sem conta vinculada</SelectItem>
+                {(contas ?? []).map((c) => (
+                  <SelectItem key={c.id} value={c.id}>{c.nome}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setPending(null)} disabled={saving}>Cancelar</Button>
+            <Button onClick={confirmarImportacao} disabled={saving}>
+              {saving ? "Importando..." : "Confirmar importação"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
