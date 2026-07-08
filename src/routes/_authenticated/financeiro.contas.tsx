@@ -447,29 +447,33 @@ function ContasFinanceiras() {
                             <span className="absolute left-2 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">R$</span>
                             <Input
                               required
-                              type="number"
-                              step="0.01"
+                              type="text"
+                              inputMode="numeric"
                               className="pl-9"
-                              value={form.saldo_dia_anterior}
+                              value={(() => {
+                                const raw = form.saldo_dia_anterior;
+                                if (raw === "" || raw === "-") return raw;
+                                const n = Number(raw);
+                                if (isNaN(n)) return "";
+                                return n.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+                              })()}
                               onKeyDown={(e) => {
                                 if (e.key === "-") {
                                   e.preventDefault();
                                   const v = form.saldo_dia_anterior;
-                                  if (v === "" || v === "0") {
-                                    setForm({ ...form, saldo_dia_anterior: "-" });
-                                  } else if (v === "-") {
-                                    setForm({ ...form, saldo_dia_anterior: "" });
-                                  } else {
-                                    setForm({
-                                      ...form,
-                                      saldo_dia_anterior: v.startsWith("-") ? v.slice(1) : `-${v}`,
-                                    });
-                                  }
+                                  if (v === "" || v === "0") setForm({ ...form, saldo_dia_anterior: "-" });
+                                  else if (v === "-") setForm({ ...form, saldo_dia_anterior: "" });
+                                  else setForm({ ...form, saldo_dia_anterior: v.startsWith("-") ? v.slice(1) : `-${v}` });
                                 }
                               }}
-                              onChange={(e) => setForm({ ...form, saldo_dia_anterior: e.target.value })}
+                              onChange={(e) => {
+                                const negative = form.saldo_dia_anterior.startsWith("-");
+                                const digits = e.target.value.replace(/\D/g, "");
+                                if (!digits) { setForm({ ...form, saldo_dia_anterior: negative ? "-" : "" }); return; }
+                                const val = (Number(digits) / 100).toFixed(2);
+                                setForm({ ...form, saldo_dia_anterior: negative ? `-${val}` : val });
+                              }}
                             />
-
                           </div>
                         </div>
                       </div>
