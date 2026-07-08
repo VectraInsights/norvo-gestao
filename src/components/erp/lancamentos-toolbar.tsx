@@ -16,16 +16,16 @@ type Lanc = {
 };
 
 const HEADERS = [
-  "Descrição",
+  "Data competência (dd/mm/aaaa)",
+  "Data Vencimento (dd/mm/aaaa)",
   "Valor",
-  "Data emissão (dd/mm/aaaa)",
-  "Data vencimento (dd/mm/aaaa)",
-  "Contato",
+  "Descrição",
   "Categoria",
-  "Conta financeira",
-  "Documento/NF",
-  "Observações",
+  "Cliente/Fornecedor",
+  "CNPJ/CPF",
+  "Obs.",
 ];
+
 
 function parseData(v: unknown): string | null {
   if (v == null || v === "") return null;
@@ -69,40 +69,40 @@ export function LancamentosToolbar({
     const exemplo = [
       HEADERS,
       [
-        "Venda pedido 123",
+        format(new Date(), "dd/MM/yyyy"),
+        format(new Date(), "dd/MM/yyyy"),
         1500.5,
-        format(new Date(), "dd/MM/yyyy"),
-        format(new Date(), "dd/MM/yyyy"),
-        contatos?.[0]?.nome ?? "",
+        "Venda pedido 123",
         categorias?.[0]?.nome ?? "",
-        contas?.[0]?.nome ?? "",
-        "NF-001",
+        contatos?.[0]?.nome ?? "",
+        "",
         "Receita (valor positivo)",
       ],
       [
-        "Compra fornecedor X",
+        format(new Date(), "dd/MM/yyyy"),
+        format(new Date(), "dd/MM/yyyy"),
         -850,
-        format(new Date(), "dd/MM/yyyy"),
-        format(new Date(), "dd/MM/yyyy"),
-        contatos?.[0]?.nome ?? "",
+        "Compra fornecedor X",
         categorias?.[0]?.nome ?? "",
-        contas?.[0]?.nome ?? "",
-        "NF-002",
+        contatos?.[0]?.nome ?? "",
+        "",
         "Despesa (valor negativo)",
       ],
     ];
     const ws = XLSX.utils.aoa_to_sheet(exemplo);
-    ws["!cols"] = [{ wch: 32 }, { wch: 12 }, { wch: 22 }, { wch: 22 }, { wch: 24 }, { wch: 20 }, { wch: 22 }, { wch: 16 }, { wch: 32 }];
+    ws["!cols"] = [{ wch: 22 }, { wch: 22 }, { wch: 12 }, { wch: 32 }, { wch: 20 }, { wch: 24 }, { wch: 18 }, { wch: 32 }];
+
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, "Modelo");
     const info = XLSX.utils.aoa_to_sheet([
       ["Modelo de importação — despesas e receitas"],
       [],
       ["Preencha uma linha por lançamento a partir da linha 2 da aba Modelo."],
-      ["Campos obrigatórios: Descrição, Valor, Data vencimento."],
+      ["Campos obrigatórios: Data Vencimento, Valor, Descrição."],
       ["Valor POSITIVO = Receita (a receber). Valor NEGATIVO = Despesa (a pagar)."],
       ["Datas no formato dd/mm/aaaa."],
-      ["Contato/Categoria/Conta financeira devem existir previamente no sistema (mesmo nome)."],
+      ["Categoria e Cliente/Fornecedor devem existir previamente no sistema (mesmo nome). CNPJ/CPF é opcional."],
+
     ]);
     XLSX.utils.book_append_sheet(wb, info, "Instruções");
     XLSX.writeFile(wb, `Modelo_despesas_receitas_norvo.xlsx`);
@@ -133,7 +133,7 @@ export function LancamentosToolbar({
       const byNome = (list: Opt[] | undefined) => new Map((list ?? []).map((o) => [o.nome.trim().toLowerCase(), o.id]));
       const mContatos = byNome(contatos);
       const mCategorias = byNome(categorias);
-      const mContas = byNome(contas);
+      
 
       type Insert = {
         empresa_id: string; tipo: "receber" | "pagar"; descricao: string; valor: number;
@@ -147,17 +147,16 @@ export function LancamentosToolbar({
         const linha = i + 2;
         const descricao = String(r["Descrição"] ?? "").trim();
         const valorRaw = parseValor(r["Valor"]);
-        const dv = parseData(r["Data vencimento (dd/mm/aaaa)"] ?? r["Vencimento"] ?? r["Data vencimento"]);
-        const de = parseData(r["Data emissão (dd/mm/aaaa)"] ?? r["Emissão"] ?? r["Data emissão"]) ?? dv;
+        const dv = parseData(r["Data Vencimento (dd/mm/aaaa)"] ?? r["Data Vencimento"] ?? r["Data vencimento"] ?? r["Vencimento"]);
+        const de = parseData(r["Data competência (dd/mm/aaaa)"] ?? r["Data competência"] ?? r["Competência"] ?? r["Data emissão"]) ?? dv;
         if (!descricao || valorRaw === 0 || !dv) {
           erros.push(`Linha ${linha}: campos obrigatórios inválidos`);
           return;
         }
         const tipoLinha: "receber" | "pagar" = valorRaw >= 0 ? "receber" : "pagar";
         const valor = Math.abs(valorRaw);
-        const nomeContato = String(r["Contato"] ?? "").trim().toLowerCase();
+        const nomeContato = String(r["Cliente/Fornecedor"] ?? r["Contato"] ?? "").trim().toLowerCase();
         const nomeCat = String(r["Categoria"] ?? "").trim().toLowerCase();
-        const nomeConta = String(r["Conta financeira"] ?? r["Conta bancária"] ?? "").trim().toLowerCase();
         inserts.push({
           empresa_id: empresaId,
           tipo: tipoLinha,
@@ -167,11 +166,12 @@ export function LancamentosToolbar({
           data_vencimento: dv,
           contato_id: nomeContato ? mContatos.get(nomeContato) ?? null : null,
           categoria_id: nomeCat ? mCategorias.get(nomeCat) ?? null : null,
-          conta_bancaria_id: nomeConta ? mContas.get(nomeConta) ?? null : null,
-          documento: String(r["Documento/NF"] ?? r["Documento"] ?? "").trim() || null,
-          observacoes: String(r["Observações"] ?? "").trim() || null,
+          conta_bancaria_id: null,
+          documento: String(r["CNPJ/CPF"] ?? "").trim() || null,
+          observacoes: String(r["Obs."] ?? r["Observações"] ?? "").trim() || null,
         });
       });
+
 
       if (!inserts.length) {
         toast.error(erros[0] ?? "Planilha vazia");
