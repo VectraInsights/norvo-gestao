@@ -152,6 +152,21 @@ function ContasFinanceiras() {
     onError: (e: Error) => toast.error(e.message),
   });
 
+  const excluir = useMutation({
+    mutationFn: async (id: string) => {
+      // limpa vínculos que impediriam o delete
+      await supabase.from("ofx_transacoes").delete().eq("conta_bancaria_id", id);
+      await supabase.from("lancamentos_financeiros").update({ conta_bancaria_id: null }).eq("conta_bancaria_id", id);
+      const { error } = await supabase.from("contas_bancarias").delete().eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      toast.success("Conta excluída");
+      qc.invalidateQueries({ queryKey: ["contas-bancarias"] });
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
   const triggerUpload = (contaId: string) => { setUploadContaId(contaId); fileRef.current?.click(); };
 
   const handleFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
