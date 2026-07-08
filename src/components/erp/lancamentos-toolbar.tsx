@@ -98,10 +98,11 @@ export function LancamentosToolbar({
       ["Modelo de importação — despesas e receitas"],
       [],
       ["Preencha uma linha por lançamento a partir da linha 2 da aba Modelo."],
-      ["Campos obrigatórios: Descrição, Valor, Data vencimento."],
+      ["Campos obrigatórios: Data Vencimento, Valor, Descrição."],
       ["Valor POSITIVO = Receita (a receber). Valor NEGATIVO = Despesa (a pagar)."],
       ["Datas no formato dd/mm/aaaa."],
-      ["Contato/Categoria/Conta financeira devem existir previamente no sistema (mesmo nome)."],
+      ["Categoria e Cliente/Fornecedor devem existir previamente no sistema (mesmo nome). CNPJ/CPF é opcional."],
+
     ]);
     XLSX.utils.book_append_sheet(wb, info, "Instruções");
     XLSX.writeFile(wb, `Modelo_despesas_receitas_norvo.xlsx`);
