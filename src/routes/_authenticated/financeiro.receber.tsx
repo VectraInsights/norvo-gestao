@@ -181,12 +181,18 @@ export function LancamentosPage({ tipo }: { tipo: "receber" | "pagar" }) {
 
   const excluirLote = useMutation({
     mutationFn: async (ids: string[]) => {
+      // Desvincula das transações OFX antes de excluir — a transação bancária
+      // volta para "aberto" (podendo ser reconciliada novamente), mas não é apagada.
+      const { error: eOfx } = await supabase.from("ofx_transacoes")
+        .update({ status: "aberto", lancamento_id: null }).in("lancamento_id", ids);
+      if (eOfx) throw eOfx;
       const { error } = await supabase.from("lancamentos_financeiros").delete().in("id", ids);
       if (error) throw error;
     },
     onSuccess: () => { toast.success("Lançamentos excluídos"); clearSel(); invalidate(); },
     onError: (e: Error) => toast.error(e.message),
   });
+
 
   const alterarStatusLote = useMutation({
     mutationFn: async ({ ids, status }: { ids: string[]; status: "aberto" | "pago" | "cancelado" | "vencido" | "parcial" }) => {
