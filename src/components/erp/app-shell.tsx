@@ -119,35 +119,47 @@ export function AppShell({ children }: { children: ReactNode }) {
   };
 
   return (
-    <div className="grid min-h-screen bg-background lg:grid-cols-[260px_1fr]">
+    <TooltipProvider delayDuration={200}>
+    <div className={cn("grid min-h-screen bg-background", collapsed ? "lg:grid-cols-[72px_1fr]" : "lg:grid-cols-[260px_1fr]")}>
       {/* Sidebar */}
       <aside
         className={cn(
-          "border-r border-sidebar-border bg-sidebar text-sidebar-foreground",
-          "fixed inset-y-0 left-0 z-40 w-[260px] -translate-x-full transition-transform lg:static lg:translate-x-0",
+          "border-r border-sidebar-border bg-sidebar text-sidebar-foreground flex flex-col",
+          "fixed inset-y-0 left-0 z-40 -translate-x-full transition-all lg:static lg:translate-x-0",
+          collapsed ? "w-[72px]" : "w-[260px]",
           open && "translate-x-0"
         )}
       >
-        <div className="flex h-16 items-center gap-2 border-b border-sidebar-border px-5">
-          <img src={norvoLogo} alt="Norvo" width={32} height={32} className="h-8 w-8" />
-          <div>
-            <div className="text-display text-lg leading-none">Norvo</div>
-            <div className="text-[10px] uppercase tracking-widest text-muted-foreground">Cloud ERP</div>
-          </div>
+        <div className={cn("flex h-16 items-center gap-2 border-b border-sidebar-border", collapsed ? "justify-center px-2" : "px-5") }>
+          <img src={norvoLogo} alt="Norvo" width={32} height={32} className="h-8 w-8 shrink-0" />
+          {!collapsed && (
+            <div>
+              <div className="text-display text-lg leading-none">Norvo</div>
+              <div className="text-[10px] uppercase tracking-widest text-muted-foreground">Cloud ERP</div>
+            </div>
+          )}
         </div>
 
         {/* Empresa switcher */}
         <div className="border-b border-sidebar-border p-3">
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <button className="flex w-full items-center justify-between rounded-md bg-sidebar-accent/60 px-3 py-2 text-left text-sm hover:bg-sidebar-accent">
-                <div className="min-w-0">
-                  <div className="truncate font-medium">{currentEmpresa?.nome_fantasia ?? "Nenhuma empresa"}</div>
-                  <div className="truncate text-xs text-muted-foreground">
-                    {currentEmpresa?.cnpj ?? "Cadastre sua empresa"}
-                  </div>
-                </div>
-                <ChevronDown className="h-4 w-4 shrink-0 opacity-60" />
+              <button className={cn("flex w-full items-center rounded-md bg-sidebar-accent/60 text-left text-sm hover:bg-sidebar-accent", collapsed ? "justify-center p-2" : "justify-between px-3 py-2")}>
+                {collapsed ? (
+                  <span className="grid h-7 w-7 place-items-center rounded bg-primary/10 text-xs font-semibold">
+                    {currentEmpresa?.nome_fantasia?.[0]?.toUpperCase() ?? "?"}
+                  </span>
+                ) : (
+                  <>
+                    <div className="min-w-0">
+                      <div className="truncate font-medium">{currentEmpresa?.nome_fantasia ?? "Nenhuma empresa"}</div>
+                      <div className="truncate text-xs text-muted-foreground">
+                        {currentEmpresa?.cnpj ?? "Cadastre sua empresa"}
+                      </div>
+                    </div>
+                    <ChevronDown className="h-4 w-4 shrink-0 opacity-60" />
+                  </>
+                )}
               </button>
             </DropdownMenuTrigger>
             <DropdownMenuContent className="w-56" align="start">
@@ -168,26 +180,35 @@ export function AppShell({ children }: { children: ReactNode }) {
         <nav className="flex-1 overflow-y-auto p-3">
           {NAV.map((group) => (
             <div key={group.label} className="mb-5">
-              <div className="mb-1.5 px-3 text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">
-                {group.label}
-              </div>
+              {!collapsed && (
+                <div className="mb-1.5 px-3 text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">
+                  {group.label}
+                </div>
+              )}
               {group.items.map((item) => {
                 const active = location.pathname === item.to || location.pathname.startsWith(item.to + "/");
-                return (
+                const link = (
                   <Link
                     key={item.to}
                     to={item.to}
                     className={cn(
-                      "flex items-center gap-2.5 rounded-md px-3 py-2 text-sm transition-colors",
+                      "flex items-center rounded-md text-sm transition-colors",
+                      collapsed ? "justify-center p-2" : "gap-2.5 px-3 py-2",
                       active
                         ? "bg-sidebar-primary text-sidebar-primary-foreground"
                         : "text-sidebar-foreground hover:bg-sidebar-accent"
                     )}
                   >
-                    <item.icon className="h-4 w-4" />
-                    {item.label}
+                    <item.icon className="h-4 w-4 shrink-0" />
+                    {!collapsed && item.label}
                   </Link>
                 );
+                return collapsed ? (
+                  <Tooltip key={item.to}>
+                    <TooltipTrigger asChild>{link}</TooltipTrigger>
+                    <TooltipContent side="right">{item.label}</TooltipContent>
+                  </Tooltip>
+                ) : link;
               })}
             </div>
           ))}
@@ -196,14 +217,16 @@ export function AppShell({ children }: { children: ReactNode }) {
         <div className="border-t border-sidebar-border p-3">
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <button className="flex w-full items-center gap-2 rounded-md px-3 py-2 text-left text-sm hover:bg-sidebar-accent">
-                <div className="grid h-8 w-8 place-items-center rounded-full bg-primary text-primary-foreground text-xs font-semibold">
+              <button className={cn("flex w-full items-center rounded-md text-left text-sm hover:bg-sidebar-accent", collapsed ? "justify-center p-2" : "gap-2 px-3 py-2")}>
+                <div className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-primary text-primary-foreground text-xs font-semibold">
                   {user?.email?.[0]?.toUpperCase() ?? "?"}
                 </div>
-                <div className="min-w-0 flex-1">
-                  <div className="truncate text-sm">{user?.email}</div>
-                  <div className="truncate text-xs text-muted-foreground">Minha conta</div>
-                </div>
+                {!collapsed && (
+                  <div className="min-w-0 flex-1">
+                    <div className="truncate text-sm">{user?.email}</div>
+                    <div className="truncate text-xs text-muted-foreground">Minha conta</div>
+                  </div>
+                )}
               </button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-56">
@@ -218,6 +241,7 @@ export function AppShell({ children }: { children: ReactNode }) {
           </DropdownMenu>
         </div>
       </aside>
+
 
       {/* Backdrop mobile */}
       {open && (
