@@ -626,8 +626,10 @@ function ReconcileDialog({ contaId, empresaId, autoConciliar, onClose }: { conta
     onError: (e: Error) => toast.error(e.message),
   });
 
+  const autoRunningRef = useRef(false);
   useEffect(() => {
-    if (!autoConciliar || !txs || !lancamentosAbertos) return;
+    if (!autoConciliar || !txs || !lancamentosAbertos || autoRunningRef.current) return;
+    const pares: { ofxId: string; lancamentoId: string; valor: number }[] = [];
     const usados = new Set<string>();
     for (const tx of txs) {
       if (tx.status === "conciliada" || autoRunRef.current.has(tx.id)) continue;
@@ -639,10 +641,31 @@ function ReconcileDialog({ contaId, empresaId, autoConciliar, onClose }: { conta
       if (match) {
         usados.add(match.id);
         autoRunRef.current.add(tx.id);
-        conciliar.mutate({ ofxId: tx.id, lancamentoId: match.id, valor: tx.valor });
+        pares.push({ ofxId: tx.id, lancamentoId: match.id, valor: tx.valor });
       }
     }
-  }, [autoConciliar, txs, lancamentosAbertos, conciliar]);
+    if (!pares.length) return;
+    autoRunningRef.current = true;
+    (async () => {
+      const hoje = format(new Date(), "yyyy-MM-dd");
+      let ok = 0;
+      for (const p of pares) {
+        const { error: e1 } = await supabase.from("lancamentos_financeiros")
+          .update({ status: "pago", valor_pago: Math.abs(p.valor), data_pagamento: hoje, conta_bancaria_id: contaId })
+          .eq("id", p.lancamentoId);
+        if (e1) continue;
+        const { error: e2 } = await supabase.from("ofx_transacoes")
+          .update({ status: "conciliada", lancamento_id: p.lancamentoId }).eq("id", p.ofxId);
+        if (!e2) ok++;
+      }
+      if (ok > 0) toast.success(`${ok} lançamento(s) conciliado(s) automaticamente`);
+      qc.invalidateQueries({ queryKey: ["ofx", contaId] });
+      qc.invalidateQueries({ queryKey: ["lanc-abertos", empresaId] });
+      qc.invalidateQueries({ queryKey: ["lancamentos"] });
+      autoRunningRef.current = false;
+    })();
+  }, [autoConciliar, txs, lancamentosAbertos, contaId, empresaId, qc]);
+
 
   const [novoTx, setNovoTx] = useState<OfxRow | null>(null);
   const [novaDescricao, setNovaDescricao] = useState("");
