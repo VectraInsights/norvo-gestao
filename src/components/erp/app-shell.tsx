@@ -48,6 +48,7 @@ export function AppShell({ children }: { children: ReactNode }) {
   const location = useLocation();
   const qc = useQueryClient();
   const [open, setOpen] = useState(false);
+  const { theme, toggle: toggleTheme } = useTheme();
 
   const { data: user } = useQuery({
     queryKey: ["auth-user"],
