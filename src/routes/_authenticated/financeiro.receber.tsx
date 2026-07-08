@@ -456,7 +456,7 @@ export function LancamentosPage({ tipo }: { tipo: "receber" | "pagar" }) {
                   <Checkbox checked={allChecked} onCheckedChange={toggleAll} aria-label="Selecionar todos" />
                 </TableHead>
                 <SortHead k="descricao">Descrição</SortHead>
-                <SortHead k="contato">Contato</SortHead>
+                <SortHead k="contato">{tipo === "pagar" ? "Fornecedor" : "Cliente"}</SortHead>
                 <SortHead k="data_vencimento">Vencimento</SortHead>
                 <SortHead k="valor" className="text-right">Valor</SortHead>
                 <SortHead k="status">Status</SortHead>
