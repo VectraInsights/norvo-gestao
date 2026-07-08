@@ -38,6 +38,7 @@ const NAV: NavGroup[] = [
   ]},
   { label: "Estoque", items: [
     { to: "/estoque/produtos", label: "Produtos", icon: Package },
+    { to: "/estoque/fornecedores", label: "Fornecedores", icon: UserSquare2 },
     { to: "/estoque/movimentacoes", label: "Movimentações", icon: Boxes },
   ]},
   { label: "Fiscal", items: [
