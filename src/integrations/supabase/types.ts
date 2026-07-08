@@ -145,42 +145,86 @@ export type Database = {
           agencia: string | null
           ativo: boolean
           banco: string | null
+          cartao_bandeira: string | null
+          cartao_conta_pagamento_id: string | null
+          cartao_dia_fechamento: number | null
+          cartao_dia_vencimento: number | null
+          cartao_emissor: string | null
+          cartao_ultimos4: string | null
           conta: string | null
+          conta_vinculada_id: string | null
           created_at: string
           empresa_id: string
           id: string
+          modalidade: string | null
           nome: string | null
+          padrao: boolean
           saldo_atual: number
           saldo_inicial: number
+          tipo: Database["public"]["Enums"]["conta_financeira_tipo"]
           updated_at: string
         }
         Insert: {
           agencia?: string | null
           ativo?: boolean
           banco?: string | null
+          cartao_bandeira?: string | null
+          cartao_conta_pagamento_id?: string | null
+          cartao_dia_fechamento?: number | null
+          cartao_dia_vencimento?: number | null
+          cartao_emissor?: string | null
+          cartao_ultimos4?: string | null
           conta?: string | null
+          conta_vinculada_id?: string | null
           created_at?: string
           empresa_id: string
           id?: string
+          modalidade?: string | null
           nome?: string | null
+          padrao?: boolean
           saldo_atual?: number
           saldo_inicial?: number
+          tipo?: Database["public"]["Enums"]["conta_financeira_tipo"]
           updated_at?: string
         }
         Update: {
           agencia?: string | null
           ativo?: boolean
           banco?: string | null
+          cartao_bandeira?: string | null
+          cartao_conta_pagamento_id?: string | null
+          cartao_dia_fechamento?: number | null
+          cartao_dia_vencimento?: number | null
+          cartao_emissor?: string | null
+          cartao_ultimos4?: string | null
           conta?: string | null
+          conta_vinculada_id?: string | null
           created_at?: string
           empresa_id?: string
           id?: string
+          modalidade?: string | null
           nome?: string | null
+          padrao?: boolean
           saldo_atual?: number
           saldo_inicial?: number
+          tipo?: Database["public"]["Enums"]["conta_financeira_tipo"]
           updated_at?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "contas_bancarias_cartao_conta_pagamento_id_fkey"
+            columns: ["cartao_conta_pagamento_id"]
+            isOneToOne: false
+            referencedRelation: "contas_bancarias"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "contas_bancarias_conta_vinculada_id_fkey"
+            columns: ["conta_vinculada_id"]
+            isOneToOne: false
+            referencedRelation: "contas_bancarias"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "contas_bancarias_empresa_id_fkey"
             columns: ["empresa_id"]
@@ -1054,6 +1098,14 @@ export type Database = {
         | "estoque"
         | "fiscal"
         | "viewer"
+      conta_financeira_tipo:
+        | "corrente"
+        | "caixa"
+        | "cartao_credito"
+        | "investimento"
+        | "poupanca"
+        | "aplicacao_automatica"
+        | "outras"
       contato_tipo: "cliente" | "fornecedor" | "ambos" | "transportadora"
       estoque_movimento: "entrada" | "saida" | "ajuste" | "transferencia"
       lancamento_status: "aberto" | "pago" | "parcial" | "vencido" | "cancelado"
@@ -1206,6 +1258,15 @@ export const Constants = {
         "estoque",
         "fiscal",
         "viewer",
+      ],
+      conta_financeira_tipo: [
+        "corrente",
+        "caixa",
+        "cartao_credito",
+        "investimento",
+        "poupanca",
+        "aplicacao_automatica",
+        "outras",
       ],
       contato_tipo: ["cliente", "fornecedor", "ambos", "transportadora"],
       estoque_movimento: ["entrada", "saida", "ajuste", "transferencia"],
