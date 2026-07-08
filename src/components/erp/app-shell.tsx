@@ -134,9 +134,9 @@ export function AppShell({ children }: { children: ReactNode }) {
       >
         <div className={cn("flex h-16 items-center gap-3 border-b border-sidebar-border", collapsed ? "justify-center px-2" : "px-5") }>
           <div className="relative shrink-0">
-            <div className="absolute inset-0 rounded-xl bg-gradient-to-br from-primary/40 to-primary/10 blur-md" aria-hidden />
-            <div className="relative grid h-10 w-10 place-items-center rounded-xl bg-gradient-to-br from-white to-white/80 ring-1 ring-sidebar-border shadow-sm dark:from-white dark:to-white/90">
-              <img src={norvoLogo} alt="Norvo" width={28} height={28} className="h-7 w-7" />
+            <div className="absolute -inset-1 rounded-2xl bg-gradient-to-br from-primary/40 via-primary/20 to-transparent blur-lg opacity-70" aria-hidden />
+            <div className="relative grid h-10 w-10 place-items-center rounded-2xl bg-gradient-to-br from-primary to-primary/70 text-primary-foreground shadow-[0_4px_16px_-4px_var(--color-primary)] ring-1 ring-primary/30">
+              <span className="text-display text-lg font-semibold leading-none">N</span>
             </div>
           </div>
           {!collapsed && (
