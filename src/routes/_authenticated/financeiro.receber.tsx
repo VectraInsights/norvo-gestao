@@ -142,6 +142,7 @@ export function LancamentosPage({ tipo }: { tipo: "receber" | "pagar" }) {
         conta_bancaria_id: input.conta_bancaria_id || null,
         documento: input.documento || null,
         observacoes: input.observacoes || null,
+        forma_pagamento: input.forma_pagamento || null,
       });
       if (error) throw error;
     },
