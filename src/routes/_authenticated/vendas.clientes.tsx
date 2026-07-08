@@ -235,11 +235,49 @@ function Clientes() {
         <EmptyState icon={Users} title="Nenhum contato" description="Cadastre clientes, fornecedores e transportadoras." />
       ) : (
         <Card className="overflow-hidden shadow-panel">
+          {selected.size > 0 && (
+            <div className="flex items-center justify-between border-b bg-muted/30 px-4 py-2 text-sm">
+              <span>{selected.size} selecionado(s)</span>
+              <AlertDialog>
+                <AlertDialogTrigger asChild>
+                  <Button size="sm" variant="destructive" disabled={excluir.isPending}>
+                    <Trash2 className="mr-1 h-4 w-4" />Excluir
+                  </Button>
+                </AlertDialogTrigger>
+                <AlertDialogContent>
+                  <AlertDialogHeader>
+                    <AlertDialogTitle>Excluir contatos?</AlertDialogTitle>
+                    <AlertDialogDescription>
+                      Esta ação removerá {selected.size} contato(s). Não é possível desfazer.
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter>
+                    <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                    <AlertDialogAction onClick={() => excluir.mutate(Array.from(selected))}>Confirmar</AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
+            </div>
+          )}
           <Table>
-            <TableHeader><TableRow><TableHead>Nome</TableHead><TableHead>Tipo</TableHead><TableHead>Documento</TableHead><TableHead>Contato</TableHead></TableRow></TableHeader>
+            <TableHeader>
+              <TableRow>
+                <TableHead className="w-10">
+                  <Checkbox
+                    checked={contatos.length > 0 && selected.size === contatos.length}
+                    onCheckedChange={(v) => setSelected(v === true ? new Set(contatos.map((c) => c.id)) : new Set())}
+                    aria-label="Selecionar todos"
+                  />
+                </TableHead>
+                <TableHead>Nome</TableHead><TableHead>Tipo</TableHead><TableHead>Documento</TableHead><TableHead>Contato</TableHead>
+              </TableRow>
+            </TableHeader>
             <TableBody>
               {contatos.map((c) => (
-                <TableRow key={c.id}>
+                <TableRow key={c.id} data-state={selected.has(c.id) ? "selected" : undefined}>
+                  <TableCell>
+                    <Checkbox checked={selected.has(c.id)} onCheckedChange={() => toggleOne(c.id)} aria-label={`Selecionar ${c.nome}`} />
+                  </TableCell>
                   <TableCell className="font-medium">{c.nome}</TableCell>
                   <TableCell className="capitalize text-muted-foreground">{c.tipo}</TableCell>
                   <TableCell className="text-tabular">{c.documento ?? "—"}</TableCell>
