@@ -8,6 +8,7 @@ import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Banknote, Plus, Upload, Loader2, Link2, Check, Landmark, Wallet, CreditCard, TrendingUp, PiggyBank, DollarSign, Database, Coins, Trash2 } from "lucide-react";
@@ -626,8 +627,10 @@ function ReconcileDialog({ contaId, empresaId, autoConciliar, onClose }: { conta
     onError: (e: Error) => toast.error(e.message),
   });
 
+  const autoRunningRef = useRef(false);
   useEffect(() => {
-    if (!autoConciliar || !txs || !lancamentosAbertos) return;
+    if (!autoConciliar || !txs || !lancamentosAbertos || autoRunningRef.current) return;
+    const pares: { ofxId: string; lancamentoId: string; valor: number }[] = [];
     const usados = new Set<string>();
     for (const tx of txs) {
       if (tx.status === "conciliada" || autoRunRef.current.has(tx.id)) continue;
@@ -639,10 +642,31 @@ function ReconcileDialog({ contaId, empresaId, autoConciliar, onClose }: { conta
       if (match) {
         usados.add(match.id);
         autoRunRef.current.add(tx.id);
-        conciliar.mutate({ ofxId: tx.id, lancamentoId: match.id, valor: tx.valor });
+        pares.push({ ofxId: tx.id, lancamentoId: match.id, valor: tx.valor });
       }
     }
-  }, [autoConciliar, txs, lancamentosAbertos, conciliar]);
+    if (!pares.length) return;
+    autoRunningRef.current = true;
+    (async () => {
+      const hoje = format(new Date(), "yyyy-MM-dd");
+      let ok = 0;
+      for (const p of pares) {
+        const { error: e1 } = await supabase.from("lancamentos_financeiros")
+          .update({ status: "pago", valor_pago: Math.abs(p.valor), data_pagamento: hoje, conta_bancaria_id: contaId })
+          .eq("id", p.lancamentoId);
+        if (e1) continue;
+        const { error: e2 } = await supabase.from("ofx_transacoes")
+          .update({ status: "conciliada", lancamento_id: p.lancamentoId }).eq("id", p.ofxId);
+        if (!e2) ok++;
+      }
+      if (ok > 0) toast.success(`${ok} lançamento(s) conciliado(s) automaticamente`);
+      qc.invalidateQueries({ queryKey: ["ofx", contaId] });
+      qc.invalidateQueries({ queryKey: ["lanc-abertos", empresaId] });
+      qc.invalidateQueries({ queryKey: ["lancamentos"] });
+      autoRunningRef.current = false;
+    })();
+  }, [autoConciliar, txs, lancamentosAbertos, contaId, empresaId, qc]);
+
 
   const [novoTx, setNovoTx] = useState<OfxRow | null>(null);
   const [novaDescricao, setNovaDescricao] = useState("");
@@ -677,58 +701,77 @@ function ReconcileDialog({ contaId, empresaId, autoConciliar, onClose }: { conta
         <DialogHeader>
           <DialogTitle>Conciliação bancária</DialogTitle>
         </DialogHeader>
-        {isLoading ? (
-          <div className="py-6 text-center text-sm text-muted-foreground">Carregando…</div>
-        ) : !txs?.length ? (
-          <div className="py-6 text-center text-sm text-muted-foreground">
-            Nenhuma transação importada. Use "Importar OFX" para começar.
-          </div>
-        ) : (
-          <Table>
-            <TableHeader><TableRow>
-              <TableHead>Data</TableHead><TableHead>Memo</TableHead>
-              <TableHead className="text-right">Valor</TableHead>
-              <TableHead>Vincular</TableHead>
-            </TableRow></TableHeader>
-            <TableBody>
-              {txs.map((tx) => (
-                <TableRow key={tx.id}>
-                  <TableCell className="text-tabular whitespace-nowrap">
-                    {format(new Date(tx.data_transacao), "dd/MM/yyyy")}
-                  </TableCell>
-                  <TableCell className="text-sm">{tx.memo ?? "—"}</TableCell>
-                  <TableCell className={`text-right text-tabular ${tx.valor < 0 ? "text-destructive" : "text-success"}`}>
-                    {brl(tx.valor)}
-                  </TableCell>
-                  <TableCell>
-                    {tx.status === "conciliada" ? (
-                      <Badge variant="secondary" className="bg-success/15 text-success"><Check className="mr-1 h-3 w-3" />Conciliada</Badge>
-                    ) : (
-                      <div className="flex gap-2">
-                        <Select onValueChange={(v) => conciliar.mutate({ ofxId: tx.id, lancamentoId: v, valor: tx.valor })}>
-                          <SelectTrigger className="h-8 w-[220px]"><SelectValue placeholder="Vincular lançamento" /></SelectTrigger>
-                          <SelectContent>
-                            {lancamentosAbertos?.filter((l) => Math.abs(Number(l.valor) - Math.abs(tx.valor)) < 0.01)
-                              .concat(lancamentosAbertos?.filter((l) => Math.abs(Number(l.valor) - Math.abs(tx.valor)) >= 0.01) ?? [])
-                              .map((l) => (
-                                <SelectItem key={l.id} value={l.id}>
-                                  {format(new Date(l.data_vencimento), "dd/MM")} — {l.descricao} ({brl(Number(l.valor))})
-                                </SelectItem>
-                              ))}
-                          </SelectContent>
-                        </Select>
-                        <Button variant="outline" size="sm" onClick={() => { setNovoTx(tx); setNovaDescricao(tx.memo ?? ""); }}>
-                          Novo
-                        </Button>
-                      </div>
-                    )}
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        )}
+        <Tabs defaultValue="pendentes" className="w-full">
+          <TabsList>
+            <TabsTrigger value="pendentes">
+              Conciliações pendentes
+              {txs && ` (${txs.filter((t) => t.status !== "conciliada").length})`}
+            </TabsTrigger>
+            <TabsTrigger value="movimentacoes">Movimentações</TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="pendentes" className="mt-4">
+            {isLoading ? (
+              <div className="py-6 text-center text-sm text-muted-foreground">Carregando…</div>
+            ) : !txs?.length ? (
+              <div className="py-6 text-center text-sm text-muted-foreground">
+                Nenhuma transação importada. Use "Importar OFX" para começar.
+              </div>
+            ) : txs.filter((t) => t.status !== "conciliada").length === 0 ? (
+              <div className="py-8 text-center text-sm text-muted-foreground">
+                Tudo conciliado. 🎉
+              </div>
+            ) : (
+              <Table>
+                <TableHeader><TableRow>
+                  <TableHead>Data</TableHead><TableHead>Memo</TableHead>
+                  <TableHead className="text-right">Valor</TableHead>
+                  <TableHead>Vincular</TableHead>
+                </TableRow></TableHeader>
+                <TableBody>
+                  {txs.filter((t) => t.status !== "conciliada").map((tx) => (
+                    <TableRow key={tx.id}>
+                      <TableCell className="text-tabular whitespace-nowrap">
+                        {format(new Date(tx.data_transacao), "dd/MM/yyyy")}
+                      </TableCell>
+                      <TableCell className="text-sm">{tx.memo ?? "—"}</TableCell>
+                      <TableCell className={`text-right text-tabular ${tx.valor < 0 ? "text-destructive" : "text-success"}`}>
+                        {brl(tx.valor)}
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex gap-2">
+                          <Select onValueChange={(v) => conciliar.mutate({ ofxId: tx.id, lancamentoId: v, valor: tx.valor })}>
+                            <SelectTrigger className="h-8 w-[220px]"><SelectValue placeholder="Vincular lançamento" /></SelectTrigger>
+                            <SelectContent>
+                              {lancamentosAbertos?.filter((l) => Math.abs(Number(l.valor) - Math.abs(tx.valor)) < 0.01)
+                                .concat(lancamentosAbertos?.filter((l) => Math.abs(Number(l.valor) - Math.abs(tx.valor)) >= 0.01) ?? [])
+                                .map((l) => (
+                                  <SelectItem key={l.id} value={l.id}>
+                                    {format(new Date(l.data_vencimento), "dd/MM")} — {l.descricao} ({brl(Number(l.valor))})
+                                  </SelectItem>
+                                ))}
+                            </SelectContent>
+                          </Select>
+                          <Button variant="outline" size="sm" onClick={() => { setNovoTx(tx); setNovaDescricao(tx.memo ?? ""); }}>
+                            Novo
+                          </Button>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            )}
+          </TabsContent>
+
+          <TabsContent value="movimentacoes" className="mt-4">
+            <div className="py-10 text-center text-sm text-muted-foreground border border-dashed border-border rounded-lg">
+              Em breve: histórico de movimentações da conta.
+            </div>
+          </TabsContent>
+        </Tabs>
       </DialogContent>
+
 
       <Dialog open={!!novoTx} onOpenChange={(v) => { if (!v) { setNovoTx(null); setNovaDescricao(""); } }}>
         <DialogContent>
