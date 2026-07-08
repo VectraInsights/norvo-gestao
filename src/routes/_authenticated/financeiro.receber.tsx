@@ -13,7 +13,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { Loader2, Plus, TrendingUp, Trash2, MoreHorizontal, Check, RotateCcw, Ban, ArrowUp, ArrowDown, ArrowUpDown } from "lucide-react";
+import { Loader2, Plus, TrendingUp, Trash2, MoreHorizontal, Check, RotateCcw, Ban, ArrowUp, ArrowDown, ArrowUpDown, Search, X } from "lucide-react";
 import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -77,7 +77,7 @@ export function LancamentosPage({ tipo }: { tipo: "receber" | "pagar" }) {
         .eq("empresa_id", empresa!.id)
         .eq("tipo", tipo)
         .order("data_vencimento", { ascending: false })
-        .limit(100)
+        .limit(2000)
         .abortSignal(signal);
       if (error) throw error;
       return (data ?? []) as unknown as Lancamento[];
