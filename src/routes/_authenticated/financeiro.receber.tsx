@@ -256,7 +256,7 @@ export function LancamentosPage({ tipo }: { tipo: "receber" | "pagar" }) {
   );
 
   // Filtro de período (aplicado sobre data_vencimento)
-  const [periodo, setPeriodo] = useState<Periodo>(PERIODO_TODOS);
+  const [periodo, setPeriodo] = useState<Periodo>(() => periodoProx7());
   const dentroPeriodo = (dataStr: string) => {
     if (!periodo.from || !periodo.to) return true;
     const d = new Date(dataStr + "T12:00:00");
