@@ -66,19 +66,22 @@ type FormState = {
   conta_vinculada_id: string;
   cartao_ultimos4: string; cartao_bandeira: string; cartao_emissor: string;
   cartao_conta_pagamento_id: string; cartao_dia_fechamento: string; cartao_dia_vencimento: string;
+  data_inicio_lancamentos: string; saldo_dia_anterior: string;
 };
 
 const initialForm = (tipo: TipoConta): FormState => ({
   tipo, nome: "", banco: "", agencia: "", conta: "", modalidade: "", padrao: false, saldo_inicial: "0",
   conta_vinculada_id: "", cartao_ultimos4: "", cartao_bandeira: "", cartao_emissor: "",
   cartao_conta_pagamento_id: "", cartao_dia_fechamento: "", cartao_dia_vencimento: "",
+  data_inicio_lancamentos: "", saldo_dia_anterior: "",
 });
+
 
 function ContasFinanceiras() {
   const { data: empresa } = useEmpresaAtual();
   const qc = useQueryClient();
   const [open, setOpen] = useState(false);
-  const [step, setStep] = useState<1 | 2>(1);
+  const [step, setStep] = useState<1 | 2 | 3>(1);
   const [tipo, setTipo] = useState<TipoConta>("corrente");
   const [form, setForm] = useState<FormState>(initialForm("corrente"));
   const [autoConciliar, setAutoConciliar] = useState(true);
@@ -105,12 +108,14 @@ function ContasFinanceiras() {
   const criar = useMutation({
     mutationFn: async (input: FormState) => {
       if (!empresa) throw new Error("Empresa não selecionada");
-      const saldo = Number(input.saldo_inicial || 0);
+      const saldo = Number(input.saldo_dia_anterior || input.saldo_inicial || 0);
       const payload: Record<string, unknown> = {
         empresa_id: empresa.id,
         tipo: input.tipo,
         nome: input.nome || input.banco || TIPO_LABEL[input.tipo],
         padrao: input.padrao,
+        data_inicio_lancamentos: input.data_inicio_lancamentos || null,
+        saldo_inicial: saldo, saldo_atual: saldo,
       };
       if (input.tipo === "corrente") {
         Object.assign(payload, {
@@ -239,7 +244,7 @@ function ContasFinanceiras() {
                       <h3 className="font-semibold text-sm">Preencha os dados *</h3>
                     </div>
 
-                    <form onSubmit={(e) => { e.preventDefault(); if (podeContinuarStep2()) criar.mutate(form); }} className="space-y-3">
+                    <form onSubmit={(e) => { e.preventDefault(); if (podeContinuarStep2()) setStep(3); }} className="space-y-3">
                       {form.tipo === "corrente" && (
                         <>
                           <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
@@ -261,7 +266,7 @@ function ContasFinanceiras() {
                               </RadioGroup>
                             </div>
                           </div>
-                          <div><Label>Saldo inicial (R$)</Label><Input type="number" step="0.01" value={form.saldo_inicial} onChange={(e) => setForm({ ...form, saldo_inicial: e.target.value })} /></div>
+                          {/* saldo movido para o passo 3 */}
                           <label className="flex items-center gap-2 text-sm">
                             <Checkbox checked={form.padrao} onCheckedChange={(v) => setForm({ ...form, padrao: !!v })} />
                             Use esta conta como padrão ao criar receitas e despesas.
@@ -276,7 +281,7 @@ function ContasFinanceiras() {
                             <Input required value={form.nome} onChange={(e) => setForm({ ...form, nome: e.target.value })} />
                             <p className="text-xs text-muted-foreground mt-1">Dê um nome para identificar esta conta depois</p>
                           </div>
-                          <div><Label>Saldo inicial (R$)</Label><Input type="number" step="0.01" value={form.saldo_inicial} onChange={(e) => setForm({ ...form, saldo_inicial: e.target.value })} /></div>
+                          {/* saldo movido para o passo 3 */}
                         </>
                       )}
 
@@ -368,8 +373,39 @@ function ContasFinanceiras() {
                         </>
                       )}
 
-                      <DialogFooter>
-                        <Button type="submit" disabled={criar.isPending || !podeContinuarStep2()}>
+                      <div>
+                        <Button type="submit" disabled={!podeContinuarStep2()}>Continuar</Button>
+                      </div>
+                    </form>
+                  </Card>
+                )}
+
+                {/* Step 3 - saldo */}
+                {step === 3 && (
+                  <Card className="p-4 space-y-3">
+                    <div className="flex items-center gap-2">
+                      <div className="h-5 w-5 rounded-full bg-muted text-muted-foreground flex items-center justify-center text-[10px] font-bold">3</div>
+                      <h3 className="font-semibold text-sm">Informe o saldo *</h3>
+                      <Button variant="link" size="sm" className="h-auto p-0 ml-2" onClick={() => setStep(2)}>Editar dados</Button>
+                    </div>
+                    <form onSubmit={(e) => { e.preventDefault(); if (form.data_inicio_lancamentos && form.saldo_dia_anterior !== "") criar.mutate(form); }} className="space-y-3">
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                        <div>
+                          <Label>Início dos lançamentos *</Label>
+                          <Input required type="date" value={form.data_inicio_lancamentos} onChange={(e) => setForm({ ...form, data_inicio_lancamentos: e.target.value })} />
+                          <p className="text-xs text-muted-foreground mt-1">Informe uma data até hoje</p>
+                        </div>
+                        <div>
+                          <Label>Saldo final da conta no dia anterior *</Label>
+                          <div className="relative">
+                            <span className="absolute left-2 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">R$</span>
+                            <Input required type="number" step="0.01" className="pl-9" value={form.saldo_dia_anterior} onChange={(e) => setForm({ ...form, saldo_dia_anterior: e.target.value })} />
+                          </div>
+                        </div>
+                      </div>
+                      <DialogFooter className="pt-2">
+                        <Button type="button" variant="outline" onClick={() => { setOpen(false); resetWizard(); }}>Cancelar</Button>
+                        <Button type="submit" disabled={criar.isPending || !form.data_inicio_lancamentos || form.saldo_dia_anterior === ""}>
                           {criar.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}Salvar
                         </Button>
                       </DialogFooter>
