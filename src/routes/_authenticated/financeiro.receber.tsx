@@ -389,8 +389,8 @@ export function LancamentosPage({ tipo }: { tipo: "receber" | "pagar" }) {
             <div key={i} className="h-12 animate-pulse rounded-md bg-muted/30" />
           ))}
         </div>
-      ) : !lancamentos?.length ? (
-        <EmptyState icon={TrendingUp} title="Sem lançamentos" description={`Crie o primeiro lançamento de ${titulo.toLowerCase()}.`} />
+      ) : !filtrados.length ? (
+        <EmptyState icon={TrendingUp} title="Nenhum lançamento nesta aba" description="Ajuste a aba acima ou crie um novo lançamento." />
       ) : (
         <Card className="overflow-hidden shadow-panel">
           {selected.size > 0 && (
