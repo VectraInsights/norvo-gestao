@@ -133,7 +133,7 @@ export function LancamentosToolbar({
       const byNome = (list: Opt[] | undefined) => new Map((list ?? []).map((o) => [o.nome.trim().toLowerCase(), o.id]));
       const mContatos = byNome(contatos);
       const mCategorias = byNome(categorias);
-      const mContas = byNome(contas);
+      
 
       type Insert = {
         empresa_id: string; tipo: "receber" | "pagar"; descricao: string; valor: number;
