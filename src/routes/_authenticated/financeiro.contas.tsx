@@ -66,13 +66,16 @@ type FormState = {
   conta_vinculada_id: string;
   cartao_ultimos4: string; cartao_bandeira: string; cartao_emissor: string;
   cartao_conta_pagamento_id: string; cartao_dia_fechamento: string; cartao_dia_vencimento: string;
+  data_inicio_lancamentos: string; saldo_dia_anterior: string;
 };
 
 const initialForm = (tipo: TipoConta): FormState => ({
   tipo, nome: "", banco: "", agencia: "", conta: "", modalidade: "", padrao: false, saldo_inicial: "0",
   conta_vinculada_id: "", cartao_ultimos4: "", cartao_bandeira: "", cartao_emissor: "",
   cartao_conta_pagamento_id: "", cartao_dia_fechamento: "", cartao_dia_vencimento: "",
+  data_inicio_lancamentos: "", saldo_dia_anterior: "",
 });
+
 
 function ContasFinanceiras() {
   const { data: empresa } = useEmpresaAtual();
