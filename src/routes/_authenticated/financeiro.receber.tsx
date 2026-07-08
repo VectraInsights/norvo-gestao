@@ -256,6 +256,23 @@ export function LancamentosPage({ tipo }: { tipo: "receber" | "pagar" }) {
     </TableHead>
   );
 
+  // Aba: Vencidos (aberto/parcial e vencimento < hoje) | A vencer (aberto/parcial e vencimento >= hoje) | Quitados (pago, vencimento < hoje)
+  type Aba = "vencidos" | "avencer" | "quitados";
+  const [aba, setAba] = useState<Aba>("avencer");
+  const hojeStr = format(new Date(), "yyyy-MM-dd");
+  const emAberto = (s: string) => s === "aberto" || s === "parcial" || s === "vencido";
+  const filtrados = sorted.filter((l) => {
+    if (aba === "vencidos") return emAberto(l.status) && l.data_vencimento < hojeStr;
+    if (aba === "avencer") return emAberto(l.status) && l.data_vencimento >= hojeStr;
+    return l.status === "pago" && l.data_vencimento < hojeStr;
+  });
+  const cont = {
+    vencidos: sorted.filter((l) => emAberto(l.status) && l.data_vencimento < hojeStr).length,
+    avencer: sorted.filter((l) => emAberto(l.status) && l.data_vencimento >= hojeStr).length,
+    quitados: sorted.filter((l) => l.status === "pago" && l.data_vencimento < hojeStr).length,
+  };
+  const abaLabelQuitado = tipo === "receber" ? "Recebidos" : "Pagos";
+
   const titulo = tipo === "receber" ? "Contas a receber" : "Contas a pagar";
   const desc = tipo === "receber" ? "Recebimentos futuros e realizados." : "Compromissos financeiros a vencer e pagos.";
 
@@ -339,6 +356,23 @@ export function LancamentosPage({ tipo }: { tipo: "receber" | "pagar" }) {
         }
       />
 
+      <div className="mb-3 inline-flex rounded-md border bg-muted/30 p-1 text-sm">
+        {([
+          { k: "vencidos", label: `Vencidos (${cont.vencidos})` },
+          { k: "avencer", label: `A vencer (${cont.avencer})` },
+          { k: "quitados", label: `${abaLabelQuitado} (${cont.quitados})` },
+        ] as { k: Aba; label: string }[]).map((t) => (
+          <button
+            key={t.k}
+            type="button"
+            onClick={() => { setAba(t.k); clearSel(); }}
+            className={`rounded px-3 py-1.5 transition-colors ${aba === t.k ? "bg-background shadow-sm font-medium" : "text-muted-foreground hover:text-foreground"}`}
+          >
+            {t.label}
+          </button>
+        ))}
+      </div>
+
       <LancamentosToolbar
         tipo={tipo}
         empresaId={empresa?.id}
@@ -355,8 +389,8 @@ export function LancamentosPage({ tipo }: { tipo: "receber" | "pagar" }) {
             <div key={i} className="h-12 animate-pulse rounded-md bg-muted/30" />
           ))}
         </div>
-      ) : !lancamentos?.length ? (
-        <EmptyState icon={TrendingUp} title="Sem lançamentos" description={`Crie o primeiro lançamento de ${titulo.toLowerCase()}.`} />
+      ) : !filtrados.length ? (
+        <EmptyState icon={TrendingUp} title="Nenhum lançamento nesta aba" description="Ajuste a aba acima ou crie um novo lançamento." />
       ) : (
         <Card className="overflow-hidden shadow-panel">
           {selected.size > 0 && (
@@ -396,7 +430,7 @@ export function LancamentosPage({ tipo }: { tipo: "receber" | "pagar" }) {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {sorted.map((l) => {
+              {filtrados.map((l) => {
                 const emAndamento = marcarPago.isPending && marcarPago.variables?.id === l.id;
                 return (
                   <TableRow key={l.id} data-state={selected.has(l.id) ? "selected" : undefined}>
