@@ -9,7 +9,8 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
-import { Loader2, Plus, Search, Users } from "lucide-react";
+import { Loader2, Plus, Search, Trash2, Users } from "lucide-react";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -45,6 +46,8 @@ function Clientes() {
   const [open, setOpen] = useState(false);
   const [form, setForm] = useState(emptyForm);
   const [lookingUp, setLookingUp] = useState(false);
+  const [selected, setSelected] = useState<Set<string>>(new Set());
+  const toggleOne = (id: string) => setSelected((s) => { const n = new Set(s); n.has(id) ? n.delete(id) : n.add(id); return n; });
 
   const lookupCnpj = async () => {
     const digits = onlyDigits(form.documento);
@@ -146,6 +149,21 @@ function Clientes() {
     onError: (e: Error) => toast.error(e.message),
   });
 
+  const excluir = useMutation({
+    mutationFn: async (ids: string[]) => {
+      if (!ids.length) return;
+      const { error } = await supabase.from("contatos").delete().in("id", ids);
+      if (error) throw error;
+    },
+    onSuccess: (_d, ids) => {
+      toast.success(`${ids.length} contato(s) excluído(s)`);
+      setSelected(new Set());
+      qc.invalidateQueries({ queryKey: ["contatos"] });
+      qc.invalidateQueries({ queryKey: ["dashboard-stats"] });
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
   return (
     <>
       <PageHeader eyebrow="Vendas & CRM" title="Clientes e fornecedores" description="Cadastro unificado de contatos."
@@ -217,11 +235,49 @@ function Clientes() {
         <EmptyState icon={Users} title="Nenhum contato" description="Cadastre clientes, fornecedores e transportadoras." />
       ) : (
         <Card className="overflow-hidden shadow-panel">
+          {selected.size > 0 && (
+            <div className="flex items-center justify-between border-b bg-muted/30 px-4 py-2 text-sm">
+              <span>{selected.size} selecionado(s)</span>
+              <AlertDialog>
+                <AlertDialogTrigger asChild>
+                  <Button size="sm" variant="destructive" disabled={excluir.isPending}>
+                    <Trash2 className="mr-1 h-4 w-4" />Excluir
+                  </Button>
+                </AlertDialogTrigger>
+                <AlertDialogContent>
+                  <AlertDialogHeader>
+                    <AlertDialogTitle>Excluir contatos?</AlertDialogTitle>
+                    <AlertDialogDescription>
+                      Esta ação removerá {selected.size} contato(s). Não é possível desfazer.
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter>
+                    <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                    <AlertDialogAction onClick={() => excluir.mutate(Array.from(selected))}>Confirmar</AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
+            </div>
+          )}
           <Table>
-            <TableHeader><TableRow><TableHead>Nome</TableHead><TableHead>Tipo</TableHead><TableHead>Documento</TableHead><TableHead>Contato</TableHead></TableRow></TableHeader>
+            <TableHeader>
+              <TableRow>
+                <TableHead className="w-10">
+                  <Checkbox
+                    checked={contatos.length > 0 && selected.size === contatos.length}
+                    onCheckedChange={(v) => setSelected(v === true ? new Set(contatos.map((c) => c.id)) : new Set())}
+                    aria-label="Selecionar todos"
+                  />
+                </TableHead>
+                <TableHead>Nome</TableHead><TableHead>Tipo</TableHead><TableHead>Documento</TableHead><TableHead>Contato</TableHead>
+              </TableRow>
+            </TableHeader>
             <TableBody>
               {contatos.map((c) => (
-                <TableRow key={c.id}>
+                <TableRow key={c.id} data-state={selected.has(c.id) ? "selected" : undefined}>
+                  <TableCell>
+                    <Checkbox checked={selected.has(c.id)} onCheckedChange={() => toggleOne(c.id)} aria-label={`Selecionar ${c.nome}`} />
+                  </TableCell>
                   <TableCell className="font-medium">{c.nome}</TableCell>
                   <TableCell className="capitalize text-muted-foreground">{c.tipo}</TableCell>
                   <TableCell className="text-tabular">{c.documento ?? "—"}</TableCell>
