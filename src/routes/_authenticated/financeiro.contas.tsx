@@ -458,6 +458,15 @@ function ContasFinanceiras() {
                     <Button variant="ghost" size="sm" onClick={() => setReconcilingId(c.id)}>
                       <Link2 className="mr-1 h-3 w-3" />Conciliar
                     </Button>
+                    <Button variant="ghost" size="sm" className="text-destructive hover:text-destructive"
+                      disabled={excluir.isPending}
+                      onClick={() => {
+                        if (window.confirm(`Excluir a conta "${c.nome ?? c.banco}"? Extratos importados serão apagados e lançamentos vinculados ficarão sem conta.`)) {
+                          excluir.mutate(c.id);
+                        }
+                      }}>
+                      <Trash2 className="mr-1 h-3 w-3" />Excluir
+                    </Button>
                   </TableCell>
                 </TableRow>
               ))}
