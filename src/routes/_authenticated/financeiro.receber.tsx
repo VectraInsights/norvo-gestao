@@ -20,7 +20,7 @@ import { useEmpresaAtual } from "@/hooks/use-empresa";
 import { toast } from "sonner";
 import { format } from "date-fns";
 import { LancamentosToolbar } from "@/components/erp/lancamentos-toolbar";
-import { PeriodoFilter, PERIODO_TODOS, type Periodo } from "@/components/erp/periodo-filter";
+import { PeriodoFilter, PERIODO_TODOS, periodoProx7, type Periodo } from "@/components/erp/periodo-filter";
 
 export const Route = createFileRoute("/_authenticated/financeiro/receber")({
   component: () => <LancamentosPage tipo="receber" />,
