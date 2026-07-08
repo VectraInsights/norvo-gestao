@@ -137,8 +137,9 @@ function Produtos() {
                 </div>
                 <div className="grid grid-cols-3 gap-3">
                   <div><Label>Unidade</Label><Input value={form.unidade} onChange={(e) => setForm({ ...form, unidade: e.target.value })} /></div>
-                  <div><Label>Preço custo</Label><Input type="number" step="0.01" min="0" value={form.preco_custo} onChange={(e) => setForm({ ...form, preco_custo: e.target.value })} /></div>
-                  <div><Label>Preço venda</Label><Input type="number" step="0.01" min="0" value={form.preco_venda} onChange={(e) => setForm({ ...form, preco_venda: e.target.value })} /></div>
+                  <div><Label>Preço custo</Label><MoneyInput value={form.preco_custo} onChange={(v) => setForm({ ...form, preco_custo: v })} prefix="" /></div>
+                  <div><Label>Preço venda</Label><MoneyInput value={form.preco_venda} onChange={(v) => setForm({ ...form, preco_venda: v })} prefix="" /></div>
+
                 </div>
                 <div className="grid grid-cols-2 gap-3">
                   <div><Label>Estoque inicial</Label><Input type="number" step="0.001" value={form.estoque_atual} onChange={(e) => setForm({ ...form, estoque_atual: e.target.value })} /></div>
