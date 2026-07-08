@@ -330,7 +330,7 @@ function NovaVendaSheet({ onClose }: { onClose: () => void }) {
                     <TableRow key={i}>
                       <TableCell className="font-medium">{it.descricao}</TableCell>
                       <TableCell><Input type="number" step="0.001" min="0" value={it.quantidade} onChange={(e) => updateItem(i, { quantidade: Number(e.target.value) })} className="h-8" /></TableCell>
-                      <TableCell><Input type="number" step="0.01" min="0" value={it.preco_unitario} onChange={(e) => updateItem(i, { preco_unitario: Number(e.target.value) })} className="h-8" /></TableCell>
+                      <TableCell><MoneyInput value={String(it.preco_unitario ?? "")} onChange={(v) => updateItem(i, { preco_unitario: Number(v) })} prefix="" className="h-8" /></TableCell>
                       <TableCell><Input type="number" step="0.01" min="0" max="100" value={it.desconto_pct} onChange={(e) => updateItem(i, { desconto_pct: Number(e.target.value) })} className="h-8" /></TableCell>
                       <TableCell className="text-right text-tabular">{brl(totals.linhas[i]?.total ?? 0)}</TableCell>
                       <TableCell><Button variant="ghost" size="icon" onClick={() => removeItem(i)} disabled={disabled}><Trash2 className="h-4 w-4" /></Button></TableCell>
