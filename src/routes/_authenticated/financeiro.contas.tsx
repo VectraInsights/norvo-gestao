@@ -10,7 +10,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import { Banknote, Plus, Upload, Loader2, Link2, Check, Landmark, Wallet, CreditCard, TrendingUp, PiggyBank, DollarSign, Database, Coins } from "lucide-react";
+import { Banknote, Plus, Upload, Loader2, Link2, Check, Landmark, Wallet, CreditCard, TrendingUp, PiggyBank, DollarSign, Database, Coins, Trash2 } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
 import { useEffect, useRef, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
@@ -147,6 +147,21 @@ function ContasFinanceiras() {
     },
     onSuccess: () => {
       toast.success("Conta criada"); setOpen(false); resetWizard();
+      qc.invalidateQueries({ queryKey: ["contas-bancarias"] });
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+  const excluir = useMutation({
+    mutationFn: async (id: string) => {
+      // limpa vínculos que impediriam o delete
+      await supabase.from("ofx_transacoes").delete().eq("conta_bancaria_id", id);
+      await supabase.from("lancamentos_financeiros").update({ conta_bancaria_id: null }).eq("conta_bancaria_id", id);
+      const { error } = await supabase.from("contas_bancarias").delete().eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      toast.success("Conta excluída");
       qc.invalidateQueries({ queryKey: ["contas-bancarias"] });
     },
     onError: (e: Error) => toast.error(e.message),
@@ -442,6 +457,15 @@ function ContasFinanceiras() {
                     )}
                     <Button variant="ghost" size="sm" onClick={() => setReconcilingId(c.id)}>
                       <Link2 className="mr-1 h-3 w-3" />Conciliar
+                    </Button>
+                    <Button variant="ghost" size="sm" className="text-destructive hover:text-destructive"
+                      disabled={excluir.isPending}
+                      onClick={() => {
+                        if (window.confirm(`Excluir a conta "${c.nome ?? c.banco}"? Extratos importados serão apagados e lançamentos vinculados ficarão sem conta.`)) {
+                          excluir.mutate(c.id);
+                        }
+                      }}>
+                      <Trash2 className="mr-1 h-3 w-3" />Excluir
                     </Button>
                   </TableCell>
                 </TableRow>
