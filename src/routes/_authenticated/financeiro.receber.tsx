@@ -19,6 +19,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEmpresaAtual } from "@/hooks/use-empresa";
 import { toast } from "sonner";
 import { format } from "date-fns";
+import { LancamentosToolbar } from "@/components/erp/lancamentos-toolbar";
 
 export const Route = createFileRoute("/_authenticated/financeiro/receber")({
   component: () => <LancamentosPage tipo="receber" />,
