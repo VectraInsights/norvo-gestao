@@ -244,11 +244,48 @@ export function LancamentosToolbar({
         return;
       }
 
-      const { error } = await supabase.from("lancamentos_financeiros").insert(inserts);
+      // Checagem de duplicidade: descrição + data_vencimento + valor
+      const vencs = Array.from(new Set(inserts.map((i) => i.data_vencimento)));
+      const { data: existentes } = await supabase
+        .from("lancamentos_financeiros")
+        .select("descricao,data_vencimento,valor")
+        .eq("empresa_id", empresaId)
+        .in("data_vencimento", vencs);
+      const chave = (d: string, v: string, val: number) =>
+        `${d.trim().toLowerCase()}|${v}|${Number(val).toFixed(2)}`;
+      const existSet = new Set((existentes ?? []).map((e) => chave(e.descricao, e.data_vencimento, Number(e.valor))));
+      const seenBatch = new Set<string>();
+      const novos: Insert[] = [];
+      const duplicados: string[] = [];
+      inserts.forEach((ins) => {
+        const k = chave(ins.descricao, ins.data_vencimento, ins.valor);
+        if (existSet.has(k) || seenBatch.has(k)) {
+          duplicados.push(`${ins.descricao} — ${format(new Date(ins.data_vencimento), "dd/MM/yyyy")} — R$ ${ins.valor.toFixed(2)}`);
+          return;
+        }
+        seenBatch.add(k);
+        novos.push(ins);
+      });
+
+      if (!novos.length) {
+        toast.warning(`Nenhum lançamento importado — ${duplicados.length} duplicata(s) ignorada(s)`, {
+          description: duplicados.slice(0, 5).join("\n"),
+        });
+        return;
+      }
+
+      const { error } = await supabase.from("lancamentos_financeiros").insert(novos);
       if (error) throw error;
-      const nRec = inserts.filter((x) => x.tipo === "receber").length;
-      const nPag = inserts.length - nRec;
-      toast.success(`Importado(s): ${nRec} receita(s), ${nPag} despesa(s)`);
+      const nRec = novos.filter((x) => x.tipo === "receber").length;
+      const nPag = novos.length - nRec;
+      const msg = `Importado(s): ${nRec} receita(s), ${nPag} despesa(s)`;
+      if (duplicados.length) {
+        toast.success(msg, {
+          description: `${duplicados.length} duplicata(s) ignorada(s):\n${duplicados.slice(0, 5).join("\n")}`,
+        });
+      } else {
+        toast.success(msg);
+      }
       onImported();
     } catch (e) {
       toast.error((e as Error).message);
