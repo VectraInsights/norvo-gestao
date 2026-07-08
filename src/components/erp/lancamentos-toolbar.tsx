@@ -69,7 +69,7 @@ export function LancamentosToolbar({
     const exemplo = [
       HEADERS,
       [
-        tipo === "receber" ? "Venda pedido 123" : "Compra fornecedor X",
+        "Venda pedido 123",
         1500.5,
         format(new Date(), "dd/MM/yyyy"),
         format(new Date(), "dd/MM/yyyy"),
@@ -77,25 +77,37 @@ export function LancamentosToolbar({
         categorias?.[0]?.nome ?? "",
         contas?.[0]?.nome ?? "",
         "NF-001",
-        "Observação opcional",
+        "Receita (valor positivo)",
+      ],
+      [
+        "Compra fornecedor X",
+        -850,
+        format(new Date(), "dd/MM/yyyy"),
+        format(new Date(), "dd/MM/yyyy"),
+        contatos?.[0]?.nome ?? "",
+        categorias?.[0]?.nome ?? "",
+        contas?.[0]?.nome ?? "",
+        "NF-002",
+        "Despesa (valor negativo)",
       ],
     ];
     const ws = XLSX.utils.aoa_to_sheet(exemplo);
     ws["!cols"] = [{ wch: 32 }, { wch: 12 }, { wch: 22 }, { wch: 22 }, { wch: 24 }, { wch: 20 }, { wch: 22 }, { wch: 16 }, { wch: 32 }];
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, "Modelo");
-    // Aba de instruções
     const info = XLSX.utils.aoa_to_sheet([
-      [`Modelo de importação — ${label}`],
+      ["Modelo de importação — despesas e receitas"],
       [],
       ["Preencha uma linha por lançamento a partir da linha 2 da aba Modelo."],
       ["Campos obrigatórios: Descrição, Valor, Data vencimento."],
+      ["Valor POSITIVO = Receita (a receber). Valor NEGATIVO = Despesa (a pagar)."],
       ["Datas no formato dd/mm/aaaa."],
       ["Contato/Categoria/Conta financeira devem existir previamente no sistema (mesmo nome)."],
     ]);
     XLSX.utils.book_append_sheet(wb, info, "Instruções");
-    XLSX.writeFile(wb, `modelo-${label}.xlsx`);
+    XLSX.writeFile(wb, `Modelo_despesas_receitas_norvo.xlsx`);
   };
+
 
   const exportar = () => {
     const rows = (lancamentos ?? []).map((l) => ({
