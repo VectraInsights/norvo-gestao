@@ -154,6 +154,7 @@ export type Database = {
           conta: string | null
           conta_vinculada_id: string | null
           created_at: string
+          data_inicio_lancamentos: string | null
           empresa_id: string
           id: string
           modalidade: string | null
@@ -177,6 +178,7 @@ export type Database = {
           conta?: string | null
           conta_vinculada_id?: string | null
           created_at?: string
+          data_inicio_lancamentos?: string | null
           empresa_id: string
           id?: string
           modalidade?: string | null
@@ -200,6 +202,7 @@ export type Database = {
           conta?: string | null
           conta_vinculada_id?: string | null
           created_at?: string
+          data_inicio_lancamentos?: string | null
           empresa_id?: string
           id?: string
           modalidade?: string | null
