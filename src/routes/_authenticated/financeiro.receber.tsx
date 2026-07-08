@@ -339,6 +339,16 @@ export function LancamentosPage({ tipo }: { tipo: "receber" | "pagar" }) {
         }
       />
 
+      <LancamentosToolbar
+        tipo={tipo}
+        empresaId={empresa?.id}
+        lancamentos={lancamentos}
+        contatos={contatosOpt?.map((c) => ({ id: c.id, nome: c.nome }))}
+        categorias={categoriasOpt?.map((c) => ({ id: c.id, nome: c.nome }))}
+        contas={contasOpt?.map((c) => ({ id: c.id, nome: c.nome }))}
+        onImported={invalidate}
+      />
+
       {isLoading ? (
         <div className="space-y-2" aria-label="Carregando">
           {Array.from({ length: 4 }).map((_, i) => (
