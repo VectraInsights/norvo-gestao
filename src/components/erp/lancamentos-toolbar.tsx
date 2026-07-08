@@ -123,7 +123,13 @@ export function LancamentosToolbar({
       const mCategorias = byNome(categorias);
       const mContas = byNome(contas);
 
-      const inserts: Record<string, unknown>[] = [];
+      type Insert = {
+        empresa_id: string; tipo: "receber" | "pagar"; descricao: string; valor: number;
+        data_emissao: string | null; data_vencimento: string;
+        contato_id: string | null; categoria_id: string | null; conta_bancaria_id: string | null;
+        documento: string | null; observacoes: string | null;
+      };
+      const inserts: Insert[] = [];
       const erros: string[] = [];
       rows.forEach((r, i) => {
         const linha = i + 2;
