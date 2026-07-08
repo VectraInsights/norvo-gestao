@@ -48,12 +48,14 @@ type Lancamento = {
   contato: { nome: string } | null;
 };
 
+const FORMAS_PAGAMENTO = ["Pix", "Boleto", "Cartão de crédito", "Cartão de débito", "Dinheiro", "Transferência", "Cheque", "Outros"] as const;
+
 const emptyForm = () => ({
   descricao: "", valor: "",
   data_emissao: format(new Date(), "yyyy-MM-dd"),
   data_vencimento: format(new Date(), "yyyy-MM-dd"),
   contato_id: "", categoria_id: "", conta_bancaria_id: "",
-  documento: "", observacoes: "",
+  documento: "", observacoes: "", forma_pagamento: "",
 });
 
 export function LancamentosPage({ tipo }: { tipo: "receber" | "pagar" }) {
