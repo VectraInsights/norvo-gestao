@@ -115,11 +115,12 @@ function ProjetosPage() {
         data_inicio: dataInicio || null, data_prevista: dataPrev || null,
         orcamento: Number(orcamento) || 0, cor,
       };
+      const tbl = supabase.from("projetos" as never) as any;
       if (editing) {
-        const { error } = await supabase.from("projetos" as never).update(payload).eq("id", editing.id);
+        const { error } = await tbl.update(payload).eq("id", editing.id);
         if (error) throw error;
       } else {
-        const { error } = await supabase.from("projetos" as never).insert(payload);
+        const { error } = await tbl.insert(payload);
         if (error) throw error;
       }
     },
