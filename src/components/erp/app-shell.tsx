@@ -3,7 +3,7 @@ import { useEffect, useState, type ReactNode } from "react";
 import {
   LayoutDashboard, ReceiptText, Users, Boxes, FileText, Settings, LogOut,
   Wallet, TrendingUp, Banknote, ShoppingCart, UserSquare2, Package, ChevronDown,
-  Sun, Moon, PanelLeftClose, PanelLeftOpen, Kanban, Briefcase, Wrench,
+  Sun, Moon, PanelLeftClose, PanelLeftOpen, Kanban, Briefcase, Wrench, UsersRound,
 } from "lucide-react";
 import norvoLogo from "@/assets/norvo-logo.png";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
