@@ -1,0 +1,247 @@
+import { createFileRoute } from "@tanstack/react-router";
+import { PageHeader } from "@/components/erp/page-header";
+import { EmptyState } from "@/components/erp/empty-state";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Card } from "@/components/ui/card";
+import { Skeleton } from "@/components/ui/skeleton";
+import { Textarea } from "@/components/ui/textarea";
+import { MoneyInput } from "@/components/erp/money-input";
+import {
+  Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
+} from "@/components/ui/table";
+import {
+  Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogTrigger,
+} from "@/components/ui/dialog";
+import {
+  Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
+} from "@/components/ui/select";
+import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
+  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
+import { Users, Plus, Trash2 } from "lucide-react";
+import { useState } from "react";
+import { supabase } from "@/integrations/supabase/client";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useEmpresaAtual } from "@/hooks/use-empresa";
+import { toast } from "sonner";
+import { brl, dateBR } from "@/lib/format";
+
+export const Route = createFileRoute("/_authenticated/rh/colaboradores")({
+  component: ColaboradoresPage,
+  errorComponent: ({ error }) => (
+    <div role="alert" className="rounded-md border border-destructive/40 bg-destructive/5 p-4 text-sm text-destructive">
+      Erro: {error.message}
+    </div>
+  ),
+});
+
+type Colab = {
+  id: string; nome: string; cpf: string | null; cargo: string | null;
+  email: string | null; telefone: string | null; salario_base: number;
+  data_admissao: string | null; data_demissao: string | null;
+  status: string; pix: string | null; banco: string | null;
+  agencia: string | null; conta: string | null; observacoes: string | null;
+};
+
+const STATUS: Record<string, string> = {
+  ativo: "Ativo", ferias: "Férias", afastado: "Afastado", demitido: "Demitido",
+};
+
+function ColaboradoresPage() {
+  const { data: empresa } = useEmpresaAtual();
+  const qc = useQueryClient();
+  const [open, setOpen] = useState(false);
+  const [editing, setEditing] = useState<Colab | null>(null);
+  const [form, setForm] = useState({
+    nome: "", cpf: "", cargo: "", email: "", telefone: "",
+    salario_base: "0", data_admissao: "", status: "ativo",
+    pix: "", banco: "", agencia: "", conta: "", observacoes: "",
+  });
+  const set = <K extends keyof typeof form>(k: K, v: (typeof form)[K]) => setForm((f) => ({ ...f, [k]: v }));
+
+  const { data: colabs, isLoading } = useQuery({
+    enabled: !!empresa,
+    queryKey: ["colaboradores", empresa?.id],
+    queryFn: async () => {
+      const { data, error } = await supabase.from("colaboradores" as never)
+        .select("*").eq("empresa_id", empresa!.id).order("nome");
+      if (error) throw error;
+      return (data ?? []) as unknown as Colab[];
+    },
+  });
+
+  const reset = () => {
+    setEditing(null);
+    setForm({
+      nome: "", cpf: "", cargo: "", email: "", telefone: "",
+      salario_base: "0", data_admissao: "", status: "ativo",
+      pix: "", banco: "", agencia: "", conta: "", observacoes: "",
+    });
+  };
+
+  const openEdit = (c: Colab) => {
+    setEditing(c);
+    setForm({
+      nome: c.nome, cpf: c.cpf ?? "", cargo: c.cargo ?? "",
+      email: c.email ?? "", telefone: c.telefone ?? "",
+      salario_base: String(c.salario_base ?? 0),
+      data_admissao: c.data_admissao ?? "", status: c.status,
+      pix: c.pix ?? "", banco: c.banco ?? "", agencia: c.agencia ?? "",
+      conta: c.conta ?? "", observacoes: c.observacoes ?? "",
+    });
+    setOpen(true);
+  };
+
+  const save = useMutation({
+    mutationFn: async () => {
+      if (!empresa) throw new Error("Selecione uma empresa");
+      if (!form.nome.trim()) throw new Error("Nome é obrigatório");
+      const payload: any = {
+        empresa_id: empresa.id, nome: form.nome.trim(),
+        cpf: form.cpf || null, cargo: form.cargo || null,
+        email: form.email || null, telefone: form.telefone || null,
+        salario_base: Number(form.salario_base) || 0,
+        data_admissao: form.data_admissao || null, status: form.status,
+        pix: form.pix || null, banco: form.banco || null,
+        agencia: form.agencia || null, conta: form.conta || null,
+        observacoes: form.observacoes || null,
+      };
+      const tbl = supabase.from("colaboradores" as never) as any;
+      if (editing) {
+        const { error } = await tbl.update(payload).eq("id", editing.id);
+        if (error) throw error;
+      } else {
+        const { error } = await tbl.insert(payload);
+        if (error) throw error;
+      }
+    },
+    onSuccess: () => {
+      toast.success(editing ? "Colaborador atualizado" : "Colaborador cadastrado");
+      qc.invalidateQueries({ queryKey: ["colaboradores"] });
+      setOpen(false); reset();
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+  const del = useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase.from("colaboradores" as never).delete().eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      toast.success("Colaborador excluído");
+      qc.invalidateQueries({ queryKey: ["colaboradores"] });
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+  return (
+    <div className="space-y-6">
+      <PageHeader
+        title="Colaboradores"
+        description="Cadastro de funcionários, cargos e dados de pagamento."
+        actions={
+          <Dialog open={open} onOpenChange={(o) => { setOpen(o); if (!o) reset(); }}>
+            <DialogTrigger asChild>
+              <Button size="sm"><Plus className="h-4 w-4 mr-1" />Novo colaborador</Button>
+            </DialogTrigger>
+            <DialogContent className="max-w-xl">
+              <DialogHeader><DialogTitle>{editing ? "Editar colaborador" : "Novo colaborador"}</DialogTitle></DialogHeader>
+              <div className="grid gap-3 max-h-[70vh] overflow-y-auto pr-1">
+                <div className="grid grid-cols-2 gap-3">
+                  <div><Label>Nome *</Label><Input value={form.nome} onChange={(e) => set("nome", e.target.value)} /></div>
+                  <div><Label>CPF</Label><Input value={form.cpf} onChange={(e) => set("cpf", e.target.value)} /></div>
+                </div>
+                <div className="grid grid-cols-2 gap-3">
+                  <div><Label>Cargo</Label><Input value={form.cargo} onChange={(e) => set("cargo", e.target.value)} /></div>
+                  <div>
+                    <Label>Status</Label>
+                    <Select value={form.status} onValueChange={(v) => set("status", v)}>
+                      <SelectTrigger><SelectValue /></SelectTrigger>
+                      <SelectContent>
+                        {Object.entries(STATUS).map(([k, v]) => <SelectItem key={k} value={k}>{v}</SelectItem>)}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+                <div className="grid grid-cols-2 gap-3">
+                  <div><Label>E-mail</Label><Input type="email" value={form.email} onChange={(e) => set("email", e.target.value)} /></div>
+                  <div><Label>Telefone</Label><Input value={form.telefone} onChange={(e) => set("telefone", e.target.value)} /></div>
+                </div>
+                <div className="grid grid-cols-2 gap-3">
+                  <div><Label>Salário base</Label><MoneyInput value={form.salario_base} onChange={(v) => set("salario_base", v)} /></div>
+                  <div><Label>Data de admissão</Label><Input type="date" value={form.data_admissao} onChange={(e) => set("data_admissao", e.target.value)} /></div>
+                </div>
+                <div className="grid grid-cols-2 gap-3">
+                  <div><Label>PIX</Label><Input value={form.pix} onChange={(e) => set("pix", e.target.value)} /></div>
+                  <div><Label>Banco</Label><Input value={form.banco} onChange={(e) => set("banco", e.target.value)} /></div>
+                </div>
+                <div className="grid grid-cols-2 gap-3">
+                  <div><Label>Agência</Label><Input value={form.agencia} onChange={(e) => set("agencia", e.target.value)} /></div>
+                  <div><Label>Conta</Label><Input value={form.conta} onChange={(e) => set("conta", e.target.value)} /></div>
+                </div>
+                <div><Label>Observações</Label><Textarea rows={2} value={form.observacoes} onChange={(e) => set("observacoes", e.target.value)} /></div>
+              </div>
+              <DialogFooter>
+                <Button variant="outline" onClick={() => setOpen(false)}>Cancelar</Button>
+                <Button onClick={() => save.mutate()} disabled={save.isPending}>Salvar</Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
+        }
+      />
+
+      <Card className="p-0 overflow-hidden">
+        {isLoading ? (
+          <div className="p-6"><Skeleton className="h-32 w-full" /></div>
+        ) : !colabs || colabs.length === 0 ? (
+          <EmptyState icon={Users} title="Nenhum colaborador ainda" description="Cadastre o primeiro colaborador." />
+        ) : (
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Nome</TableHead>
+                <TableHead>Cargo</TableHead>
+                <TableHead>Status</TableHead>
+                <TableHead>Admissão</TableHead>
+                <TableHead className="text-right">Salário</TableHead>
+                <TableHead className="w-10"></TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {colabs.map((c) => (
+                <TableRow key={c.id} className="cursor-pointer" onClick={() => openEdit(c)}>
+                  <TableCell className="font-medium">{c.nome}</TableCell>
+                  <TableCell>{c.cargo ?? "—"}</TableCell>
+                  <TableCell>{STATUS[c.status] ?? c.status}</TableCell>
+                  <TableCell>{c.data_admissao ? dateBR(c.data_admissao) : "—"}</TableCell>
+                  <TableCell className="text-right text-tabular">{brl(c.salario_base ?? 0)}</TableCell>
+                  <TableCell onClick={(e) => e.stopPropagation()}>
+                    <AlertDialog>
+                      <AlertDialogTrigger asChild>
+                        <Button variant="ghost" size="icon" className="h-8 w-8"><Trash2 className="h-4 w-4" /></Button>
+                      </AlertDialogTrigger>
+                      <AlertDialogContent>
+                        <AlertDialogHeader>
+                          <AlertDialogTitle>Excluir colaborador?</AlertDialogTitle>
+                          <AlertDialogDescription>As folhas vinculadas também serão removidas.</AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter>
+                          <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                          <AlertDialogAction onClick={() => del.mutate(c.id)}>Excluir</AlertDialogAction>
+                        </AlertDialogFooter>
+                      </AlertDialogContent>
+                    </AlertDialog>
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        )}
+      </Card>
+    </div>
+  );
+}
