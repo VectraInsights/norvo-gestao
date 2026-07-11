@@ -185,7 +185,7 @@ function ProjetosPage() {
                   <div><Label>Previsão</Label><Input type="date" value={dataPrev} onChange={(e) => setDataPrev(e.target.value)} /></div>
                 </div>
                 <div className="grid grid-cols-[1fr_auto] gap-3">
-                  <div><Label>Orçamento</Label><MoneyInput value={orcamento} onValueChange={setOrcamento} /></div>
+                  <div><Label>Orçamento</Label><MoneyInput value={orcamento} onChange={setOrcamento} /></div>
                   <div><Label>Cor</Label><Input type="color" value={cor} onChange={(e) => setCor(e.target.value)} className="h-10 w-14 p-1" /></div>
                 </div>
               </div>
