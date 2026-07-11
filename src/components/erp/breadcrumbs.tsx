@@ -14,6 +14,7 @@ const LABELS: Record<string, string> = {
   estoque: "Estoque",
   produtos: "Produtos",
   fornecedores: "Fornecedores",
+  compras: "Ordens de compra",
   movimentacoes: "Movimentações",
   fiscal: "Fiscal",
   notas: "Notas fiscais",
