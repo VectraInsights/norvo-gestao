@@ -26,6 +26,7 @@ import { Route as AuthenticatedFinanceiroContasRouteImport } from './routes/_aut
 import { Route as AuthenticatedEstoqueProdutosRouteImport } from './routes/_authenticated/estoque.produtos'
 import { Route as AuthenticatedEstoqueMovimentacoesRouteImport } from './routes/_authenticated/estoque.movimentacoes'
 import { Route as AuthenticatedEstoqueFornecedoresRouteImport } from './routes/_authenticated/estoque.fornecedores'
+import { Route as AuthenticatedEstoqueComprasRouteImport } from './routes/_authenticated/estoque.compras'
 import { Route as AuthenticatedConfiguracoesEmpresasRouteImport } from './routes/_authenticated/configuracoes.empresas'
 
 const SitemapDotxmlRoute = SitemapDotxmlRouteImport.update({
@@ -124,6 +125,12 @@ const AuthenticatedEstoqueFornecedoresRoute =
     path: '/estoque/fornecedores',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedEstoqueComprasRoute =
+  AuthenticatedEstoqueComprasRouteImport.update({
+    id: '/estoque/compras',
+    path: '/estoque/compras',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedConfiguracoesEmpresasRoute =
   AuthenticatedConfiguracoesEmpresasRouteImport.update({
     id: '/configuracoes/empresas',
@@ -137,6 +144,7 @@ export interface FileRoutesByFullPath {
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/configuracoes/empresas': typeof AuthenticatedConfiguracoesEmpresasRoute
+  '/estoque/compras': typeof AuthenticatedEstoqueComprasRoute
   '/estoque/fornecedores': typeof AuthenticatedEstoqueFornecedoresRoute
   '/estoque/movimentacoes': typeof AuthenticatedEstoqueMovimentacoesRoute
   '/estoque/produtos': typeof AuthenticatedEstoqueProdutosRoute
@@ -156,6 +164,7 @@ export interface FileRoutesByTo {
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/configuracoes/empresas': typeof AuthenticatedConfiguracoesEmpresasRoute
+  '/estoque/compras': typeof AuthenticatedEstoqueComprasRoute
   '/estoque/fornecedores': typeof AuthenticatedEstoqueFornecedoresRoute
   '/estoque/movimentacoes': typeof AuthenticatedEstoqueMovimentacoesRoute
   '/estoque/produtos': typeof AuthenticatedEstoqueProdutosRoute
@@ -177,6 +186,7 @@ export interface FileRoutesById {
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/_authenticated/dashboard': typeof AuthenticatedDashboardRoute
   '/_authenticated/configuracoes/empresas': typeof AuthenticatedConfiguracoesEmpresasRoute
+  '/_authenticated/estoque/compras': typeof AuthenticatedEstoqueComprasRoute
   '/_authenticated/estoque/fornecedores': typeof AuthenticatedEstoqueFornecedoresRoute
   '/_authenticated/estoque/movimentacoes': typeof AuthenticatedEstoqueMovimentacoesRoute
   '/_authenticated/estoque/produtos': typeof AuthenticatedEstoqueProdutosRoute
@@ -198,6 +208,7 @@ export interface FileRouteTypes {
     | '/sitemap.xml'
     | '/dashboard'
     | '/configuracoes/empresas'
+    | '/estoque/compras'
     | '/estoque/fornecedores'
     | '/estoque/movimentacoes'
     | '/estoque/produtos'
@@ -217,6 +228,7 @@ export interface FileRouteTypes {
     | '/sitemap.xml'
     | '/dashboard'
     | '/configuracoes/empresas'
+    | '/estoque/compras'
     | '/estoque/fornecedores'
     | '/estoque/movimentacoes'
     | '/estoque/produtos'
@@ -237,6 +249,7 @@ export interface FileRouteTypes {
     | '/sitemap.xml'
     | '/_authenticated/dashboard'
     | '/_authenticated/configuracoes/empresas'
+    | '/_authenticated/estoque/compras'
     | '/_authenticated/estoque/fornecedores'
     | '/_authenticated/estoque/movimentacoes'
     | '/_authenticated/estoque/produtos'
@@ -379,6 +392,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedEstoqueFornecedoresRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/estoque/compras': {
+      id: '/_authenticated/estoque/compras'
+      path: '/estoque/compras'
+      fullPath: '/estoque/compras'
+      preLoaderRoute: typeof AuthenticatedEstoqueComprasRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/configuracoes/empresas': {
       id: '/_authenticated/configuracoes/empresas'
       path: '/configuracoes/empresas'
@@ -392,6 +412,7 @@ declare module '@tanstack/react-router' {
 interface AuthenticatedRouteRouteChildren {
   AuthenticatedDashboardRoute: typeof AuthenticatedDashboardRoute
   AuthenticatedConfiguracoesEmpresasRoute: typeof AuthenticatedConfiguracoesEmpresasRoute
+  AuthenticatedEstoqueComprasRoute: typeof AuthenticatedEstoqueComprasRoute
   AuthenticatedEstoqueFornecedoresRoute: typeof AuthenticatedEstoqueFornecedoresRoute
   AuthenticatedEstoqueMovimentacoesRoute: typeof AuthenticatedEstoqueMovimentacoesRoute
   AuthenticatedEstoqueProdutosRoute: typeof AuthenticatedEstoqueProdutosRoute
@@ -410,6 +431,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedDashboardRoute: AuthenticatedDashboardRoute,
   AuthenticatedConfiguracoesEmpresasRoute:
     AuthenticatedConfiguracoesEmpresasRoute,
+  AuthenticatedEstoqueComprasRoute: AuthenticatedEstoqueComprasRoute,
   AuthenticatedEstoqueFornecedoresRoute: AuthenticatedEstoqueFornecedoresRoute,
   AuthenticatedEstoqueMovimentacoesRoute:
     AuthenticatedEstoqueMovimentacoesRoute,
