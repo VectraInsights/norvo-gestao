@@ -20,6 +20,7 @@ import { Route as AuthenticatedVendasPedidosRouteImport } from './routes/_authen
 import { Route as AuthenticatedVendasCrmRouteImport } from './routes/_authenticated/vendas.crm'
 import { Route as AuthenticatedVendasClientesRouteImport } from './routes/_authenticated/vendas.clientes'
 import { Route as AuthenticatedProjetosProjetosRouteImport } from './routes/_authenticated/projetos.projetos'
+import { Route as AuthenticatedProjetosOsRouteImport } from './routes/_authenticated/projetos.os'
 import { Route as AuthenticatedFiscalNotasRouteImport } from './routes/_authenticated/fiscal.notas'
 import { Route as AuthenticatedFinanceiroReceberRouteImport } from './routes/_authenticated/financeiro.receber'
 import { Route as AuthenticatedFinanceiroPagarRouteImport } from './routes/_authenticated/financeiro.pagar'
@@ -90,6 +91,11 @@ const AuthenticatedProjetosProjetosRoute =
     path: '/projetos/projetos',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedProjetosOsRoute = AuthenticatedProjetosOsRouteImport.update({
+  id: '/projetos/os',
+  path: '/projetos/os',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
 const AuthenticatedFiscalNotasRoute =
   AuthenticatedFiscalNotasRouteImport.update({
     id: '/fiscal/notas',
@@ -166,6 +172,7 @@ export interface FileRoutesByFullPath {
   '/financeiro/pagar': typeof AuthenticatedFinanceiroPagarRoute
   '/financeiro/receber': typeof AuthenticatedFinanceiroReceberRoute
   '/fiscal/notas': typeof AuthenticatedFiscalNotasRoute
+  '/projetos/os': typeof AuthenticatedProjetosOsRoute
   '/projetos/projetos': typeof AuthenticatedProjetosProjetosRoute
   '/vendas/clientes': typeof AuthenticatedVendasClientesRoute
   '/vendas/crm': typeof AuthenticatedVendasCrmRoute
@@ -188,6 +195,7 @@ export interface FileRoutesByTo {
   '/financeiro/pagar': typeof AuthenticatedFinanceiroPagarRoute
   '/financeiro/receber': typeof AuthenticatedFinanceiroReceberRoute
   '/fiscal/notas': typeof AuthenticatedFiscalNotasRoute
+  '/projetos/os': typeof AuthenticatedProjetosOsRoute
   '/projetos/projetos': typeof AuthenticatedProjetosProjetosRoute
   '/vendas/clientes': typeof AuthenticatedVendasClientesRoute
   '/vendas/crm': typeof AuthenticatedVendasCrmRoute
@@ -212,6 +220,7 @@ export interface FileRoutesById {
   '/_authenticated/financeiro/pagar': typeof AuthenticatedFinanceiroPagarRoute
   '/_authenticated/financeiro/receber': typeof AuthenticatedFinanceiroReceberRoute
   '/_authenticated/fiscal/notas': typeof AuthenticatedFiscalNotasRoute
+  '/_authenticated/projetos/os': typeof AuthenticatedProjetosOsRoute
   '/_authenticated/projetos/projetos': typeof AuthenticatedProjetosProjetosRoute
   '/_authenticated/vendas/clientes': typeof AuthenticatedVendasClientesRoute
   '/_authenticated/vendas/crm': typeof AuthenticatedVendasCrmRoute
@@ -236,6 +245,7 @@ export interface FileRouteTypes {
     | '/financeiro/pagar'
     | '/financeiro/receber'
     | '/fiscal/notas'
+    | '/projetos/os'
     | '/projetos/projetos'
     | '/vendas/clientes'
     | '/vendas/crm'
@@ -258,6 +268,7 @@ export interface FileRouteTypes {
     | '/financeiro/pagar'
     | '/financeiro/receber'
     | '/fiscal/notas'
+    | '/projetos/os'
     | '/projetos/projetos'
     | '/vendas/clientes'
     | '/vendas/crm'
@@ -281,6 +292,7 @@ export interface FileRouteTypes {
     | '/_authenticated/financeiro/pagar'
     | '/_authenticated/financeiro/receber'
     | '/_authenticated/fiscal/notas'
+    | '/_authenticated/projetos/os'
     | '/_authenticated/projetos/projetos'
     | '/_authenticated/vendas/clientes'
     | '/_authenticated/vendas/crm'
@@ -375,6 +387,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedProjetosProjetosRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/projetos/os': {
+      id: '/_authenticated/projetos/os'
+      path: '/projetos/os'
+      fullPath: '/projetos/os'
+      preLoaderRoute: typeof AuthenticatedProjetosOsRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/fiscal/notas': {
       id: '/_authenticated/fiscal/notas'
       path: '/fiscal/notas'
@@ -460,6 +479,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedFinanceiroPagarRoute: typeof AuthenticatedFinanceiroPagarRoute
   AuthenticatedFinanceiroReceberRoute: typeof AuthenticatedFinanceiroReceberRoute
   AuthenticatedFiscalNotasRoute: typeof AuthenticatedFiscalNotasRoute
+  AuthenticatedProjetosOsRoute: typeof AuthenticatedProjetosOsRoute
   AuthenticatedProjetosProjetosRoute: typeof AuthenticatedProjetosProjetosRoute
   AuthenticatedVendasClientesRoute: typeof AuthenticatedVendasClientesRoute
   AuthenticatedVendasCrmRoute: typeof AuthenticatedVendasCrmRoute
@@ -482,6 +502,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedFinanceiroPagarRoute: AuthenticatedFinanceiroPagarRoute,
   AuthenticatedFinanceiroReceberRoute: AuthenticatedFinanceiroReceberRoute,
   AuthenticatedFiscalNotasRoute: AuthenticatedFiscalNotasRoute,
+  AuthenticatedProjetosOsRoute: AuthenticatedProjetosOsRoute,
   AuthenticatedProjetosProjetosRoute: AuthenticatedProjetosProjetosRoute,
   AuthenticatedVendasClientesRoute: AuthenticatedVendasClientesRoute,
   AuthenticatedVendasCrmRoute: AuthenticatedVendasCrmRoute,
