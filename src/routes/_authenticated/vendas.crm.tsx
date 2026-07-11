@@ -138,10 +138,10 @@ function CRM() {
       };
       if (editing) {
         const { error } = await supabase.from("crm_oportunidades" as never)
-          .update(payload).eq("id", editing.id);
+          .update(payload as never).eq("id", editing.id);
         if (error) throw error;
       } else {
-        const { error } = await supabase.from("crm_oportunidades" as never).insert(payload);
+        const { error } = await supabase.from("crm_oportunidades" as never).insert(payload as never);
         if (error) throw error;
       }
     },
