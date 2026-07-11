@@ -11,6 +11,7 @@ const LABELS: Record<string, string> = {
   vendas: "Vendas",
   clientes: "Clientes",
   pedidos: "Orçamentos",
+  crm: "Funil (CRM)",
   estoque: "Estoque",
   produtos: "Produtos",
   fornecedores: "Fornecedores",
