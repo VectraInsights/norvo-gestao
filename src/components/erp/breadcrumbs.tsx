@@ -21,6 +21,8 @@ const LABELS: Record<string, string> = {
   notas: "Notas fiscais",
   configuracoes: "Configurações",
   empresas: "Empresas",
+  projetos: "Projetos",
+  os: "Ordens de serviço",
 };
 
 export function Breadcrumbs() {
