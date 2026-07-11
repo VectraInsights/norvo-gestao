@@ -61,7 +61,7 @@ export function CommandPalette() {
     enabled,
     queryFn: async () => {
       const { data } = await supabase
-        .from("produtos").select("id,nome,sku")
+        .from("produtos").select("id,nome,codigo")
         .eq("empresa_id", empresaId!).ilike("nome", `%${term}%`).limit(6);
       return data ?? [];
     },
