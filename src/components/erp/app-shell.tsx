@@ -35,6 +35,7 @@ const NAV: NavGroup[] = [
     { to: "/financeiro/contas",  label: "Contas financeiras", icon: Banknote },
   ]},
   { label: "Vendas & CRM", items: [
+    { to: "/vendas/crm",      label: "Funil (CRM)", icon: Kanban },
     { to: "/vendas/clientes", label: "Clientes",  icon: UserSquare2 },
     { to: "/vendas/vendas",   label: "Vendas",    icon: ShoppingCart },
     { to: "/vendas/pedidos",  label: "Orçamentos", icon: ShoppingCart },
