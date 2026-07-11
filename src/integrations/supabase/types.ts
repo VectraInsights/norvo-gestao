@@ -810,6 +810,128 @@ export type Database = {
           },
         ]
       }
+      ordens_compra: {
+        Row: {
+          conta_bancaria_id: string | null
+          created_at: string
+          data_emissao: string
+          data_prevista: string | null
+          deposito_id: string | null
+          empresa_id: string
+          fornecedor_id: string | null
+          id: string
+          numero: number | null
+          observacoes: string | null
+          status: Database["public"]["Enums"]["oc_status"]
+          total: number
+          updated_at: string
+        }
+        Insert: {
+          conta_bancaria_id?: string | null
+          created_at?: string
+          data_emissao?: string
+          data_prevista?: string | null
+          deposito_id?: string | null
+          empresa_id: string
+          fornecedor_id?: string | null
+          id?: string
+          numero?: number | null
+          observacoes?: string | null
+          status?: Database["public"]["Enums"]["oc_status"]
+          total?: number
+          updated_at?: string
+        }
+        Update: {
+          conta_bancaria_id?: string | null
+          created_at?: string
+          data_emissao?: string
+          data_prevista?: string | null
+          deposito_id?: string | null
+          empresa_id?: string
+          fornecedor_id?: string | null
+          id?: string
+          numero?: number | null
+          observacoes?: string | null
+          status?: Database["public"]["Enums"]["oc_status"]
+          total?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ordens_compra_conta_bancaria_id_fkey"
+            columns: ["conta_bancaria_id"]
+            isOneToOne: false
+            referencedRelation: "contas_bancarias"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ordens_compra_deposito_id_fkey"
+            columns: ["deposito_id"]
+            isOneToOne: false
+            referencedRelation: "depositos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ordens_compra_empresa_id_fkey"
+            columns: ["empresa_id"]
+            isOneToOne: false
+            referencedRelation: "empresas"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ordens_compra_fornecedor_id_fkey"
+            columns: ["fornecedor_id"]
+            isOneToOne: false
+            referencedRelation: "contatos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      ordens_compra_itens: {
+        Row: {
+          created_at: string
+          custo_unitario: number
+          id: string
+          ordem_id: string
+          produto_id: string
+          quantidade: number
+          subtotal: number
+        }
+        Insert: {
+          created_at?: string
+          custo_unitario?: number
+          id?: string
+          ordem_id: string
+          produto_id: string
+          quantidade?: number
+          subtotal?: number
+        }
+        Update: {
+          created_at?: string
+          custo_unitario?: number
+          id?: string
+          ordem_id?: string
+          produto_id?: string
+          quantidade?: number
+          subtotal?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ordens_compra_itens_ordem_id_fkey"
+            columns: ["ordem_id"]
+            isOneToOne: false
+            referencedRelation: "ordens_compra"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ordens_compra_itens_produto_id_fkey"
+            columns: ["produto_id"]
+            isOneToOne: false
+            referencedRelation: "produtos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       produtos: {
         Row: {
           ativo: boolean
@@ -1133,6 +1255,7 @@ export type Database = {
         | "cancelada"
         | "rejeitada"
       nf_tipo: "nfe" | "nfse" | "nfce"
+      oc_status: "rascunho" | "enviada" | "recebida" | "cancelada"
       venda_status:
         | "rascunho"
         | "proposta"
@@ -1296,6 +1419,7 @@ export const Constants = {
         "rejeitada",
       ],
       nf_tipo: ["nfe", "nfse", "nfce"],
+      oc_status: ["rascunho", "enviada", "recebida", "cancelada"],
       venda_status: ["rascunho", "proposta", "pedido", "faturado", "cancelado"],
     },
   },
