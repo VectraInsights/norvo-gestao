@@ -22,6 +22,8 @@ const ROUTES: { label: string; to: string; hint?: string }[] = [
   { label: "Fornecedores", to: "/estoque/fornecedores" },
   { label: "Movimentações", to: "/estoque/movimentacoes" },
   { label: "Notas fiscais", to: "/fiscal/notas" },
+  { label: "Projetos", to: "/projetos/projetos" },
+  { label: "Ordens de serviço", to: "/projetos/os" },
   { label: "Configurações", to: "/configuracoes" },
 ];
 
