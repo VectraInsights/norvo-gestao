@@ -50,6 +50,10 @@ const NAV: NavGroup[] = [
     { to: "/projetos/projetos", label: "Projetos", icon: Briefcase },
     { to: "/projetos/os", label: "Ordens de serviço", icon: Wrench },
   ]},
+  { label: "RH", items: [
+    { to: "/rh/colaboradores", label: "Colaboradores", icon: UsersRound },
+    { to: "/rh/folha", label: "Folha de pagamento", icon: Wallet },
+  ]},
   { label: "Fiscal", items: [
     { to: "/fiscal/notas", label: "Notas fiscais", icon: FileText },
   ]},
