@@ -10,6 +10,9 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/comp
 import { useTheme } from "@/hooks/use-theme";
 import { supabase } from "@/integrations/supabase/client";
 import { ShortcutsDialog } from "@/components/erp/shortcuts-dialog";
+import { CommandPalette } from "@/components/erp/command-palette";
+import { NotificationsBell } from "@/components/erp/notifications-bell";
+import { Breadcrumbs } from "@/components/erp/breadcrumbs";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
