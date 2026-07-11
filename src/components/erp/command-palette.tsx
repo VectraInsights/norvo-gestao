@@ -125,7 +125,7 @@ export function CommandPalette() {
                 {produtos.map((p) => (
                   <CommandItem key={p.id} value={`prod-${p.id}-${p.nome}`} onSelect={() => go("/estoque/produtos")}>
                     <span className="truncate">{p.nome}</span>
-                    {p.sku && <span className="ml-auto text-xs text-muted-foreground">{p.sku}</span>}
+                    {p.codigo && <span className="ml-auto text-xs text-muted-foreground">{p.codigo}</span>}
                   </CommandItem>
                 ))}
               </CommandGroup>
