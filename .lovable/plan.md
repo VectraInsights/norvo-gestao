@@ -1,99 +1,56 @@
-# Plano: ERP completo — Nimbo
+# Roadmap para tornar o Norvo um ERP profissional
 
-O esqueleto atual já tem schema multi-tenant, autenticação, sidebar e telas iniciais. Agora vou transformar cada módulo em algo utilizável ponta a ponta, com regras de negócio reais (não só CRUD isolado).
-
-Escopo grande — vou executar em blocos, começando pelos fluxos que geram valor primeiro (vendas→estoque→financeiro→fiscal). Se preferir priorizar outra ordem, me avise antes de aprovar.
+Como o escopo é grande, vou entregar em **5 fases** incrementais. Cada fase é independente e utilizável ao final. Confirma a ordem antes de eu começar.
 
 ---
 
-## 1. Banco de dados (uma migration)
+## Fase 1 — Refino visual premium + produtividade global (base)
+Impacto imediato em todo o app, sem tocar em regras de negócio.
 
-**Novas tabelas / campos**
-- `categorias_dre` (receita/despesa/imposto) e `categoria_id` em `lancamentos_financeiros` já existente — só popular defaults.
-- `condicoes_pagamento` (à vista, 30/60/90, parcelado) para usar em vendas.
-- `vendas.status` estender: `rascunho | proposta | pedido | faturado | cancelado`.
-- `vendas.numero` sequencial por empresa (trigger).
-- `venda_itens` já tem — adicionar `desconto_pct`.
-- `nfe_config` por empresa (ambiente homolog/prod, série, próximo número, certificado stub).
-- `contas_recorrentes` (para lançamentos que se repetem mensalmente).
-- `conciliacao_bancaria` (import OFX básico — parser simples).
-- `alertas` (contas vencendo, estoque baixo).
+- **Design system v2**: revisar tokens em `src/styles.css` (sombras em camadas, escala tipográfica editorial, espaçamento consistente, focus-rings acessíveis, motion tokens).
+- **Componentes**: `PageHeader`, `Card`, `Table`, `Badge`, `EmptyState`, `Toolbar` padronizados com micro-interações (hover elevation, transições suaves).
+- **Command Palette (Ctrl/⌘+K)**: busca global de rotas, clientes, produtos, lançamentos.
+- **Centro de notificações**: badge no header lendo `public.alertas` (já existe) com dropdown e "marcar como lida".
+- **Breadcrumbs** automáticos por rota + skeletons padronizados.
 
-**Funções/triggers**
-- `fn_gerar_numero_venda(empresa_id)` → sequencial.
-- Trigger em `vendas` ao virar `faturado`:
-  - baixa estoque (`movimentacoes_estoque` tipo saída) respeitando `condicoes_pagamento`;
-  - gera N `lancamentos_financeiros` a receber conforme parcelas;
-  - cria registro em `notas_fiscais` status `pendente`.
-- Trigger em `movimentacoes_estoque` atualiza `produtos.estoque_atual`.
-- View `vw_dashboard_kpis` (receita mês, despesa mês, saldo, inadimplência, ticket médio).
-- View `vw_fluxo_caixa_projetado` (90 dias).
+## Fase 2 — Módulo Compras / Ordens de Compra
+- Tabelas novas: `ordens_compra`, `ordem_compra_itens`, `recebimentos`.
+- Fluxo: rascunho → enviada → parcial/recebida → lançamento em Contas a Pagar automático + entrada de estoque.
+- Rotas: `/compras/ordens`, `/compras/recebimentos`.
+- Integração com Fornecedores e Produtos existentes.
 
-Todas com GRANT + RLS via `is_empresa_member`.
+## Fase 3 — CRM avançado (Funil de vendas)
+- Tabelas: `oportunidades`, `funil_estagios`, `atividades` (tarefas/ligações/e-mails).
+- Kanban drag-and-drop por estágio, valor ponderado, forecast do mês.
+- Conversão Oportunidade → Orçamento → Venda (reaproveita `vendas`).
+- Timeline de atividades por cliente.
 
-## 2. Server functions (`src/lib/*.functions.ts`)
+## Fase 4 — Projetos / Ordens de Serviço
+- Tabelas: `projetos`, `os` (ordem de serviço), `os_itens`, `apontamentos_horas`.
+- Kanban de tarefas, cronômetro de horas, faturamento gera lançamento a receber.
+- Vínculo com Cliente e Colaborador.
 
-- `vendas.functions.ts`: `criarVenda`, `adicionarItem`, `mudarStatus` (proposta→pedido→faturado dispara triggers), `duplicarVenda`.
-- `financeiro.functions.ts`: `quitarLancamento` (marca pago + cria movimento na conta bancária), `conciliarOFX`, `gerarRecorrencias`.
-- `estoque.functions.ts`: `ajusteInventario`, `transferencia`.
-- `fiscal.functions.ts`: `emitirNFe` (stub — gera XML mock, chave de acesso fake, PDF via jsPDF), `cancelarNFe`.
-- `dashboard.functions.ts`: KPIs agregados por período.
-- Todas com `requireSupabaseAuth` + checagem de papel via `has_empresa_role`.
-
-## 3. Frontend — telas completas
-
-### Vendas & CRM
-- `/vendas/pedidos`: tabela com filtros por status, busca; botão "Nova venda" abre wizard drawer (cliente → itens com autocomplete de produtos, cálculo automático de subtotal/desconto/total → condição de pagamento → observações).
-- Detalhe da venda: timeline de status, ações contextualizadas (Aprovar proposta, Faturar, Cancelar, Duplicar, Gerar NF-e, Baixar PDF).
-- `/vendas/clientes`: incrementar com histórico de compras, ticket médio, última compra, limite de crédito.
-
-### Estoque
-- `/estoque/produtos`: colunas de estoque atual/mínimo, badge "abaixo do mínimo", preço custo/venda, margem.
-- `/estoque/movimentacoes`: form de entrada/saída/ajuste/transferência entre depósitos, kardex por produto.
-
-### Financeiro
-- `/financeiro/receber` e `/pagar`: filtros (status, vencimento, categoria, cliente/fornecedor), ações em lote (quitar, exportar CSV), formulário com anexo, recorrência, parcelamento.
-- `/financeiro/contas`: saldo em tempo real (calculado por lançamentos), extrato, botão "Importar OFX".
-- `/financeiro/fluxo`: além do gráfico atual, tabela projetada 90 dias, DRE simplificado por categoria, exportar.
-
-### Fiscal
-- `/fiscal/notas`: listagem por status (rascunho/autorizada/cancelada), botões emitir/cancelar/baixar XML+PDF (stubs funcionais), config de série/ambiente por empresa.
-
-### Dashboard
-- 6 KPIs reais alimentados pela view (receita, despesa, saldo, a receber, a pagar, inadimplência).
-- Gráfico receita vs despesa 12 meses.
-- Top 5 clientes, top 5 produtos, alertas (contas vencendo, estoque baixo).
-
-### Configurações
-- Empresa: dados fiscais completos (regime tributário, IE, CNAE).
-- Usuários: convidar por email, atribuir papel.
-- Categorias financeiras (CRUD).
-- Condições de pagamento (CRUD).
-- Configuração NF-e (série, ambiente, logo).
-
-## 4. Infra / DX
-
-- Utilitários `src/lib/format.ts` (BRL, CNPJ, data BR).
-- Componentes reutilizáveis: `DataTable` com filtros/paginação, `MoneyInput`, `StatusBadge`, `ConfirmDialog`, `DrawerForm`.
-- Loading skeletons e empty states consistentes.
-- Toasts em todas as mutações.
-
-## 5. Fora de escopo (declarar explicitamente)
-
-- Integração real com SEFAZ / Focus NFe (fica com stub — plugável depois via secret).
-- App mobile, boleto/PIX real (mocks), OCR de nota, integração bancária Open Finance real.
+## Fase 5 — RH básico + Dashboard executivo + Auditoria
+- **RH**: `colaboradores`, `folha_pagamento` (competência, salário, encargos, pró-labore) → gera lançamentos a pagar mensais.
+- **Dashboard executivo**: DRE simplificado, comparativo m/m e a/a, top clientes/fornecedores, aging de recebíveis/pagáveis, saúde de caixa 90 dias.
+- **Auditoria** (`audit_log`): trigger genérico registrando INSERT/UPDATE/DELETE em tabelas críticas + tela de consulta.
+- **Permissões**: refinar `app_role` (owner/admin/financeiro/vendas/estoque/fiscal) e aplicar RLS por role em módulos novos.
 
 ---
 
-## Ordem de execução
+## Detalhes técnicos
 
-1. Migration única com tudo do bloco 1.
-2. Server fns e utilitários.
-3. Vendas (wizard + detalhe) — é o coração operacional.
-4. Financeiro completo.
-5. Estoque completo + integração automática.
-6. Fiscal (stub emissão).
-7. Dashboard com dados reais.
-8. Configurações estendidas.
+- Todas as tabelas novas em `public` com **RLS + GRANTs** (padrão do projeto, `is_empresa_member` / `has_empresa_role`).
+- Cada módulo adiciona: migration → tipos regenerados → rota TanStack → item no `app-shell` NAV → tela CRUD com `useSuspenseQuery` + `useMutation`.
+- Reuso de `MoneyInput`, `PeriodoFilter`, `StatusBadge`, `EmptyState`.
+- Command Palette com `cmdk` (já compatível com shadcn).
+- Kanban com `@dnd-kit/core` (leve e SSR-safe).
+- Dashboard com Recharts (já usado em `receita-chart`/`fluxo-chart`).
 
-Aprova esse plano ou quer ajustar prioridades / cortar algo?
+---
+
+## Como quer prosseguir?
+
+Sugiro executar na ordem **Fase 1 → 2 → 3 → 4 → 5** (base visual primeiro, depois módulos por impacto de negócio). Cada fase é uma entrega fechada.
+
+Se preferir outra ordem, me diga. Senão, começo pela **Fase 1** agora.

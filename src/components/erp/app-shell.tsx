@@ -10,6 +10,9 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/comp
 import { useTheme } from "@/hooks/use-theme";
 import { supabase } from "@/integrations/supabase/client";
 import { ShortcutsDialog } from "@/components/erp/shortcuts-dialog";
+import { CommandPalette } from "@/components/erp/command-palette";
+import { NotificationsBell } from "@/components/erp/notifications-bell";
+import { Breadcrumbs } from "@/components/erp/breadcrumbs";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
@@ -268,13 +271,18 @@ export function AppShell({ children }: { children: ReactNode }) {
             </div>
           </div>
           <div className="flex items-center gap-1">
+            <CommandPalette />
+            <NotificationsBell />
             <Button variant="ghost" size="icon" onClick={toggleTheme} aria-label="Alternar tema">
               {theme === "dark" ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
             </Button>
             <ShortcutsDialog />
           </div>
         </header>
-        <main className="min-w-0 flex-1 overflow-auto p-6 lg:p-8">{children}</main>
+        <main className="min-w-0 flex-1 overflow-auto p-6 lg:p-8">
+          <Breadcrumbs />
+          {children}
+        </main>
       </div>
     </div>
     </TooltipProvider>
