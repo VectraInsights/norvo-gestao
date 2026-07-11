@@ -19,6 +19,8 @@ import { Route as AuthenticatedVendasVendasRouteImport } from './routes/_authent
 import { Route as AuthenticatedVendasPedidosRouteImport } from './routes/_authenticated/vendas.pedidos'
 import { Route as AuthenticatedVendasCrmRouteImport } from './routes/_authenticated/vendas.crm'
 import { Route as AuthenticatedVendasClientesRouteImport } from './routes/_authenticated/vendas.clientes'
+import { Route as AuthenticatedRhFolhaRouteImport } from './routes/_authenticated/rh.folha'
+import { Route as AuthenticatedRhColaboradoresRouteImport } from './routes/_authenticated/rh.colaboradores'
 import { Route as AuthenticatedProjetosProjetosRouteImport } from './routes/_authenticated/projetos.projetos'
 import { Route as AuthenticatedProjetosOsRouteImport } from './routes/_authenticated/projetos.os'
 import { Route as AuthenticatedFiscalNotasRouteImport } from './routes/_authenticated/fiscal.notas'
@@ -83,6 +85,17 @@ const AuthenticatedVendasClientesRoute =
   AuthenticatedVendasClientesRouteImport.update({
     id: '/vendas/clientes',
     path: '/vendas/clientes',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedRhFolhaRoute = AuthenticatedRhFolhaRouteImport.update({
+  id: '/rh/folha',
+  path: '/rh/folha',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedRhColaboradoresRoute =
+  AuthenticatedRhColaboradoresRouteImport.update({
+    id: '/rh/colaboradores',
+    path: '/rh/colaboradores',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
 const AuthenticatedProjetosProjetosRoute =
@@ -174,6 +187,8 @@ export interface FileRoutesByFullPath {
   '/fiscal/notas': typeof AuthenticatedFiscalNotasRoute
   '/projetos/os': typeof AuthenticatedProjetosOsRoute
   '/projetos/projetos': typeof AuthenticatedProjetosProjetosRoute
+  '/rh/colaboradores': typeof AuthenticatedRhColaboradoresRoute
+  '/rh/folha': typeof AuthenticatedRhFolhaRoute
   '/vendas/clientes': typeof AuthenticatedVendasClientesRoute
   '/vendas/crm': typeof AuthenticatedVendasCrmRoute
   '/vendas/pedidos': typeof AuthenticatedVendasPedidosRoute
@@ -197,6 +212,8 @@ export interface FileRoutesByTo {
   '/fiscal/notas': typeof AuthenticatedFiscalNotasRoute
   '/projetos/os': typeof AuthenticatedProjetosOsRoute
   '/projetos/projetos': typeof AuthenticatedProjetosProjetosRoute
+  '/rh/colaboradores': typeof AuthenticatedRhColaboradoresRoute
+  '/rh/folha': typeof AuthenticatedRhFolhaRoute
   '/vendas/clientes': typeof AuthenticatedVendasClientesRoute
   '/vendas/crm': typeof AuthenticatedVendasCrmRoute
   '/vendas/pedidos': typeof AuthenticatedVendasPedidosRoute
@@ -222,6 +239,8 @@ export interface FileRoutesById {
   '/_authenticated/fiscal/notas': typeof AuthenticatedFiscalNotasRoute
   '/_authenticated/projetos/os': typeof AuthenticatedProjetosOsRoute
   '/_authenticated/projetos/projetos': typeof AuthenticatedProjetosProjetosRoute
+  '/_authenticated/rh/colaboradores': typeof AuthenticatedRhColaboradoresRoute
+  '/_authenticated/rh/folha': typeof AuthenticatedRhFolhaRoute
   '/_authenticated/vendas/clientes': typeof AuthenticatedVendasClientesRoute
   '/_authenticated/vendas/crm': typeof AuthenticatedVendasCrmRoute
   '/_authenticated/vendas/pedidos': typeof AuthenticatedVendasPedidosRoute
@@ -247,6 +266,8 @@ export interface FileRouteTypes {
     | '/fiscal/notas'
     | '/projetos/os'
     | '/projetos/projetos'
+    | '/rh/colaboradores'
+    | '/rh/folha'
     | '/vendas/clientes'
     | '/vendas/crm'
     | '/vendas/pedidos'
@@ -270,6 +291,8 @@ export interface FileRouteTypes {
     | '/fiscal/notas'
     | '/projetos/os'
     | '/projetos/projetos'
+    | '/rh/colaboradores'
+    | '/rh/folha'
     | '/vendas/clientes'
     | '/vendas/crm'
     | '/vendas/pedidos'
@@ -294,6 +317,8 @@ export interface FileRouteTypes {
     | '/_authenticated/fiscal/notas'
     | '/_authenticated/projetos/os'
     | '/_authenticated/projetos/projetos'
+    | '/_authenticated/rh/colaboradores'
+    | '/_authenticated/rh/folha'
     | '/_authenticated/vendas/clientes'
     | '/_authenticated/vendas/crm'
     | '/_authenticated/vendas/pedidos'
@@ -378,6 +403,20 @@ declare module '@tanstack/react-router' {
       path: '/vendas/clientes'
       fullPath: '/vendas/clientes'
       preLoaderRoute: typeof AuthenticatedVendasClientesRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/rh/folha': {
+      id: '/_authenticated/rh/folha'
+      path: '/rh/folha'
+      fullPath: '/rh/folha'
+      preLoaderRoute: typeof AuthenticatedRhFolhaRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/rh/colaboradores': {
+      id: '/_authenticated/rh/colaboradores'
+      path: '/rh/colaboradores'
+      fullPath: '/rh/colaboradores'
+      preLoaderRoute: typeof AuthenticatedRhColaboradoresRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/projetos/projetos': {
@@ -481,6 +520,8 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedFiscalNotasRoute: typeof AuthenticatedFiscalNotasRoute
   AuthenticatedProjetosOsRoute: typeof AuthenticatedProjetosOsRoute
   AuthenticatedProjetosProjetosRoute: typeof AuthenticatedProjetosProjetosRoute
+  AuthenticatedRhColaboradoresRoute: typeof AuthenticatedRhColaboradoresRoute
+  AuthenticatedRhFolhaRoute: typeof AuthenticatedRhFolhaRoute
   AuthenticatedVendasClientesRoute: typeof AuthenticatedVendasClientesRoute
   AuthenticatedVendasCrmRoute: typeof AuthenticatedVendasCrmRoute
   AuthenticatedVendasPedidosRoute: typeof AuthenticatedVendasPedidosRoute
@@ -504,6 +545,8 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedFiscalNotasRoute: AuthenticatedFiscalNotasRoute,
   AuthenticatedProjetosOsRoute: AuthenticatedProjetosOsRoute,
   AuthenticatedProjetosProjetosRoute: AuthenticatedProjetosProjetosRoute,
+  AuthenticatedRhColaboradoresRoute: AuthenticatedRhColaboradoresRoute,
+  AuthenticatedRhFolhaRoute: AuthenticatedRhFolhaRoute,
   AuthenticatedVendasClientesRoute: AuthenticatedVendasClientesRoute,
   AuthenticatedVendasCrmRoute: AuthenticatedVendasCrmRoute,
   AuthenticatedVendasPedidosRoute: AuthenticatedVendasPedidosRoute,
