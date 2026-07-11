@@ -106,6 +106,77 @@ export type Database = {
           },
         ]
       }
+      colaboradores: {
+        Row: {
+          agencia: string | null
+          banco: string | null
+          cargo: string | null
+          conta: string | null
+          cpf: string | null
+          created_at: string
+          data_admissao: string | null
+          data_demissao: string | null
+          email: string | null
+          empresa_id: string
+          id: string
+          nome: string
+          observacoes: string | null
+          pix: string | null
+          salario_base: number
+          status: Database["public"]["Enums"]["colaborador_status"]
+          telefone: string | null
+          updated_at: string
+        }
+        Insert: {
+          agencia?: string | null
+          banco?: string | null
+          cargo?: string | null
+          conta?: string | null
+          cpf?: string | null
+          created_at?: string
+          data_admissao?: string | null
+          data_demissao?: string | null
+          email?: string | null
+          empresa_id: string
+          id?: string
+          nome: string
+          observacoes?: string | null
+          pix?: string | null
+          salario_base?: number
+          status?: Database["public"]["Enums"]["colaborador_status"]
+          telefone?: string | null
+          updated_at?: string
+        }
+        Update: {
+          agencia?: string | null
+          banco?: string | null
+          cargo?: string | null
+          conta?: string | null
+          cpf?: string | null
+          created_at?: string
+          data_admissao?: string | null
+          data_demissao?: string | null
+          email?: string | null
+          empresa_id?: string
+          id?: string
+          nome?: string
+          observacoes?: string | null
+          pix?: string | null
+          salario_base?: number
+          status?: Database["public"]["Enums"]["colaborador_status"]
+          telefone?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "colaboradores_empresa_id_fkey"
+            columns: ["empresa_id"]
+            isOneToOne: false
+            referencedRelation: "empresas"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       condicoes_pagamento: {
         Row: {
           ativo: boolean
@@ -567,6 +638,91 @@ export type Database = {
           updated_at?: string
         }
         Relationships: []
+      }
+      folha_pagamento: {
+        Row: {
+          beneficios: number
+          colaborador_id: string
+          competencia_ano: number
+          competencia_mes: number
+          created_at: string
+          data_pagamento: string | null
+          descontos: number
+          empresa_id: string
+          horas_extras: number
+          id: string
+          inss: number
+          irrf: number
+          lancamento_id: string | null
+          liquido: number
+          observacoes: string | null
+          salario: number
+          status: Database["public"]["Enums"]["folha_status"]
+          updated_at: string
+        }
+        Insert: {
+          beneficios?: number
+          colaborador_id: string
+          competencia_ano: number
+          competencia_mes: number
+          created_at?: string
+          data_pagamento?: string | null
+          descontos?: number
+          empresa_id: string
+          horas_extras?: number
+          id?: string
+          inss?: number
+          irrf?: number
+          lancamento_id?: string | null
+          liquido?: number
+          observacoes?: string | null
+          salario?: number
+          status?: Database["public"]["Enums"]["folha_status"]
+          updated_at?: string
+        }
+        Update: {
+          beneficios?: number
+          colaborador_id?: string
+          competencia_ano?: number
+          competencia_mes?: number
+          created_at?: string
+          data_pagamento?: string | null
+          descontos?: number
+          empresa_id?: string
+          horas_extras?: number
+          id?: string
+          inss?: number
+          irrf?: number
+          lancamento_id?: string | null
+          liquido?: number
+          observacoes?: string | null
+          salario?: number
+          status?: Database["public"]["Enums"]["folha_status"]
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "folha_pagamento_colaborador_id_fkey"
+            columns: ["colaborador_id"]
+            isOneToOne: false
+            referencedRelation: "colaboradores"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "folha_pagamento_empresa_id_fkey"
+            columns: ["empresa_id"]
+            isOneToOne: false
+            referencedRelation: "empresas"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "folha_pagamento_lancamento_id_fkey"
+            columns: ["lancamento_id"]
+            isOneToOne: false
+            referencedRelation: "lancamentos_financeiros"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       lancamentos_financeiros: {
         Row: {
@@ -1498,6 +1654,7 @@ export type Database = {
         | "estoque"
         | "fiscal"
         | "viewer"
+      colaborador_status: "ativo" | "ferias" | "afastado" | "demitido"
       conta_financeira_tipo:
         | "corrente"
         | "caixa"
@@ -1508,6 +1665,7 @@ export type Database = {
         | "outras"
       contato_tipo: "cliente" | "fornecedor" | "ambos" | "transportadora"
       estoque_movimento: "entrada" | "saida" | "ajuste" | "transferencia"
+      folha_status: "aberta" | "paga" | "cancelada"
       lancamento_status: "aberto" | "pago" | "parcial" | "vencido" | "cancelado"
       lancamento_tipo: "receber" | "pagar"
       nf_status:
@@ -1674,6 +1832,7 @@ export const Constants = {
         "fiscal",
         "viewer",
       ],
+      colaborador_status: ["ativo", "ferias", "afastado", "demitido"],
       conta_financeira_tipo: [
         "corrente",
         "caixa",
@@ -1685,6 +1844,7 @@ export const Constants = {
       ],
       contato_tipo: ["cliente", "fornecedor", "ambos", "transportadora"],
       estoque_movimento: ["entrada", "saida", "ajuste", "transferencia"],
+      folha_status: ["aberta", "paga", "cancelada"],
       lancamento_status: ["aberto", "pago", "parcial", "vencido", "cancelado"],
       lancamento_tipo: ["receber", "pagar"],
       nf_status: [
