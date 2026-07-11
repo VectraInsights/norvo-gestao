@@ -149,7 +149,6 @@ function ProjetosPage() {
       <PageHeader
         title="Projetos"
         description="Organize entregas, prazos e orçamentos por projeto."
-        icon={Briefcase}
         actions={
           <Dialog open={open} onOpenChange={(o) => { setOpen(o); if (!o) reset(); }}>
             <DialogTrigger asChild>
