@@ -171,7 +171,7 @@ function CRM() {
       const et = etapas.find((e) => e.id === etapa_id);
       const status = et?.ganho ? "ganha" : et?.perdido ? "perdida" : "aberta";
       const { error } = await supabase.from("crm_oportunidades" as never)
-        .update({ etapa_id, status }).eq("id", id);
+        .update({ etapa_id, status } as never).eq("id", id);
       if (error) throw error;
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: ["crm_oportunidades", empresa?.id] }),
