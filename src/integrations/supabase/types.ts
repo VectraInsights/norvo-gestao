@@ -318,6 +318,123 @@ export type Database = {
           },
         ]
       }
+      crm_etapas: {
+        Row: {
+          cor: string | null
+          created_at: string
+          empresa_id: string
+          ganho: boolean | null
+          id: string
+          nome: string
+          ordem: number
+          perdido: boolean | null
+          updated_at: string
+        }
+        Insert: {
+          cor?: string | null
+          created_at?: string
+          empresa_id: string
+          ganho?: boolean | null
+          id?: string
+          nome: string
+          ordem?: number
+          perdido?: boolean | null
+          updated_at?: string
+        }
+        Update: {
+          cor?: string | null
+          created_at?: string
+          empresa_id?: string
+          ganho?: boolean | null
+          id?: string
+          nome?: string
+          ordem?: number
+          perdido?: boolean | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "crm_etapas_empresa_id_fkey"
+            columns: ["empresa_id"]
+            isOneToOne: false
+            referencedRelation: "empresas"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      crm_oportunidades: {
+        Row: {
+          contato_id: string | null
+          created_at: string
+          data_prevista: string | null
+          descricao: string | null
+          empresa_id: string
+          etapa_id: string | null
+          id: string
+          ordem: number
+          probabilidade: number | null
+          responsavel_id: string | null
+          status: string
+          titulo: string
+          updated_at: string
+          valor: number | null
+        }
+        Insert: {
+          contato_id?: string | null
+          created_at?: string
+          data_prevista?: string | null
+          descricao?: string | null
+          empresa_id: string
+          etapa_id?: string | null
+          id?: string
+          ordem?: number
+          probabilidade?: number | null
+          responsavel_id?: string | null
+          status?: string
+          titulo: string
+          updated_at?: string
+          valor?: number | null
+        }
+        Update: {
+          contato_id?: string | null
+          created_at?: string
+          data_prevista?: string | null
+          descricao?: string | null
+          empresa_id?: string
+          etapa_id?: string | null
+          id?: string
+          ordem?: number
+          probabilidade?: number | null
+          responsavel_id?: string | null
+          status?: string
+          titulo?: string
+          updated_at?: string
+          valor?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "crm_oportunidades_contato_id_fkey"
+            columns: ["contato_id"]
+            isOneToOne: false
+            referencedRelation: "contatos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "crm_oportunidades_empresa_id_fkey"
+            columns: ["empresa_id"]
+            isOneToOne: false
+            referencedRelation: "empresas"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "crm_oportunidades_etapa_id_fkey"
+            columns: ["etapa_id"]
+            isOneToOne: false
+            referencedRelation: "crm_etapas"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       depositos: {
         Row: {
           ativo: boolean

@@ -1,0 +1,1 @@
+REVOKE EXECUTE ON FUNCTION public.tg_empresa_crm_defaults() FROM PUBLIC, anon, authenticated;

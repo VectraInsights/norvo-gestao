@@ -3,7 +3,7 @@ import { useEffect, useState, type ReactNode } from "react";
 import {
   LayoutDashboard, ReceiptText, Users, Boxes, FileText, Settings, LogOut,
   Wallet, TrendingUp, Banknote, ShoppingCart, UserSquare2, Package, ChevronDown,
-  Sun, Moon, PanelLeftClose, PanelLeftOpen,
+  Sun, Moon, PanelLeftClose, PanelLeftOpen, Kanban,
 } from "lucide-react";
 import norvoLogo from "@/assets/norvo-logo.png";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
@@ -35,6 +35,7 @@ const NAV: NavGroup[] = [
     { to: "/financeiro/contas",  label: "Contas financeiras", icon: Banknote },
   ]},
   { label: "Vendas & CRM", items: [
+    { to: "/vendas/crm",      label: "Funil (CRM)", icon: Kanban },
     { to: "/vendas/clientes", label: "Clientes",  icon: UserSquare2 },
     { to: "/vendas/vendas",   label: "Vendas",    icon: ShoppingCart },
     { to: "/vendas/pedidos",  label: "Orçamentos", icon: ShoppingCart },
