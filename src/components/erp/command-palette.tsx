@@ -24,6 +24,8 @@ const ROUTES: { label: string; to: string; hint?: string }[] = [
   { label: "Notas fiscais", to: "/fiscal/notas" },
   { label: "Projetos", to: "/projetos/projetos" },
   { label: "Ordens de serviço", to: "/projetos/os" },
+  { label: "Colaboradores", to: "/rh/colaboradores" },
+  { label: "Folha de pagamento", to: "/rh/folha" },
   { label: "Configurações", to: "/configuracoes" },
 ];
 
