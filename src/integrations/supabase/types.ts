@@ -1049,6 +1049,88 @@ export type Database = {
           },
         ]
       }
+      ordens_servico: {
+        Row: {
+          cliente_id: string | null
+          created_at: string
+          data_abertura: string
+          data_conclusao: string | null
+          data_prevista: string | null
+          descricao: string | null
+          empresa_id: string
+          id: string
+          numero: number | null
+          observacoes: string | null
+          prioridade: Database["public"]["Enums"]["os_prioridade"]
+          projeto_id: string | null
+          responsavel_id: string | null
+          status: Database["public"]["Enums"]["os_status"]
+          titulo: string
+          updated_at: string
+          valor: number | null
+        }
+        Insert: {
+          cliente_id?: string | null
+          created_at?: string
+          data_abertura?: string
+          data_conclusao?: string | null
+          data_prevista?: string | null
+          descricao?: string | null
+          empresa_id: string
+          id?: string
+          numero?: number | null
+          observacoes?: string | null
+          prioridade?: Database["public"]["Enums"]["os_prioridade"]
+          projeto_id?: string | null
+          responsavel_id?: string | null
+          status?: Database["public"]["Enums"]["os_status"]
+          titulo: string
+          updated_at?: string
+          valor?: number | null
+        }
+        Update: {
+          cliente_id?: string | null
+          created_at?: string
+          data_abertura?: string
+          data_conclusao?: string | null
+          data_prevista?: string | null
+          descricao?: string | null
+          empresa_id?: string
+          id?: string
+          numero?: number | null
+          observacoes?: string | null
+          prioridade?: Database["public"]["Enums"]["os_prioridade"]
+          projeto_id?: string | null
+          responsavel_id?: string | null
+          status?: Database["public"]["Enums"]["os_status"]
+          titulo?: string
+          updated_at?: string
+          valor?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ordens_servico_cliente_id_fkey"
+            columns: ["cliente_id"]
+            isOneToOne: false
+            referencedRelation: "contatos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ordens_servico_empresa_id_fkey"
+            columns: ["empresa_id"]
+            isOneToOne: false
+            referencedRelation: "empresas"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ordens_servico_projeto_id_fkey"
+            columns: ["projeto_id"]
+            isOneToOne: false
+            referencedRelation: "projetos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       produtos: {
         Row: {
           ativo: boolean
@@ -1137,6 +1219,69 @@ export type Database = {
           updated_at?: string
         }
         Relationships: []
+      }
+      projetos: {
+        Row: {
+          cliente_id: string | null
+          cor: string | null
+          created_at: string
+          data_conclusao: string | null
+          data_inicio: string | null
+          data_prevista: string | null
+          descricao: string | null
+          empresa_id: string
+          id: string
+          nome: string
+          orcamento: number | null
+          status: Database["public"]["Enums"]["projeto_status"]
+          updated_at: string
+        }
+        Insert: {
+          cliente_id?: string | null
+          cor?: string | null
+          created_at?: string
+          data_conclusao?: string | null
+          data_inicio?: string | null
+          data_prevista?: string | null
+          descricao?: string | null
+          empresa_id: string
+          id?: string
+          nome: string
+          orcamento?: number | null
+          status?: Database["public"]["Enums"]["projeto_status"]
+          updated_at?: string
+        }
+        Update: {
+          cliente_id?: string | null
+          cor?: string | null
+          created_at?: string
+          data_conclusao?: string | null
+          data_inicio?: string | null
+          data_prevista?: string | null
+          descricao?: string | null
+          empresa_id?: string
+          id?: string
+          nome?: string
+          orcamento?: number | null
+          status?: Database["public"]["Enums"]["projeto_status"]
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "projetos_cliente_id_fkey"
+            columns: ["cliente_id"]
+            isOneToOne: false
+            referencedRelation: "contatos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "projetos_empresa_id_fkey"
+            columns: ["empresa_id"]
+            isOneToOne: false
+            referencedRelation: "empresas"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       venda_itens: {
         Row: {
@@ -1373,6 +1518,20 @@ export type Database = {
         | "rejeitada"
       nf_tipo: "nfe" | "nfse" | "nfce"
       oc_status: "rascunho" | "enviada" | "recebida" | "cancelada"
+      os_prioridade: "baixa" | "media" | "alta" | "urgente"
+      os_status:
+        | "aberta"
+        | "em_execucao"
+        | "aguardando"
+        | "concluida"
+        | "cancelada"
+        | "faturada"
+      projeto_status:
+        | "planejado"
+        | "em_andamento"
+        | "pausado"
+        | "concluido"
+        | "cancelado"
       venda_status:
         | "rascunho"
         | "proposta"
@@ -1537,6 +1696,22 @@ export const Constants = {
       ],
       nf_tipo: ["nfe", "nfse", "nfce"],
       oc_status: ["rascunho", "enviada", "recebida", "cancelada"],
+      os_prioridade: ["baixa", "media", "alta", "urgente"],
+      os_status: [
+        "aberta",
+        "em_execucao",
+        "aguardando",
+        "concluida",
+        "cancelada",
+        "faturada",
+      ],
+      projeto_status: [
+        "planejado",
+        "em_andamento",
+        "pausado",
+        "concluido",
+        "cancelado",
+      ],
       venda_status: ["rascunho", "proposta", "pedido", "faturado", "cancelado"],
     },
   },

@@ -3,7 +3,7 @@ import { useEffect, useState, type ReactNode } from "react";
 import {
   LayoutDashboard, ReceiptText, Users, Boxes, FileText, Settings, LogOut,
   Wallet, TrendingUp, Banknote, ShoppingCart, UserSquare2, Package, ChevronDown,
-  Sun, Moon, PanelLeftClose, PanelLeftOpen, Kanban,
+  Sun, Moon, PanelLeftClose, PanelLeftOpen, Kanban, Briefcase, Wrench,
 } from "lucide-react";
 import norvoLogo from "@/assets/norvo-logo.png";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
@@ -45,6 +45,10 @@ const NAV: NavGroup[] = [
     { to: "/estoque/fornecedores", label: "Fornecedores", icon: UserSquare2 },
     { to: "/estoque/compras", label: "Ordens de compra", icon: ShoppingCart },
     { to: "/estoque/movimentacoes", label: "Movimentações", icon: Boxes },
+  ]},
+  { label: "Projetos", items: [
+    { to: "/projetos/projetos", label: "Projetos", icon: Briefcase },
+    { to: "/projetos/os", label: "Ordens de serviço", icon: Wrench },
   ]},
   { label: "Fiscal", items: [
     { to: "/fiscal/notas", label: "Notas fiscais", icon: FileText },
