@@ -23,6 +23,9 @@ const LABELS: Record<string, string> = {
   empresas: "Empresas",
   projetos: "Projetos",
   os: "Ordens de serviço",
+  rh: "RH",
+  colaboradores: "Colaboradores",
+  folha: "Folha de pagamento",
 };
 
 export function Breadcrumbs() {
