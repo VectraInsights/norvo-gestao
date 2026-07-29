@@ -261,6 +261,35 @@ export function AppShell({ children }: { children: ReactNode }) {
           aria-label="Navegação principal"
           onKeyDown={onNavKeyDown}
         >
+          {showOverview && (() => {
+            const active = location.pathname === "/dashboard" || location.pathname.startsWith("/dashboard/");
+            const link = (
+              <Link
+                to="/dashboard"
+                data-nav-focusable
+                aria-current={active ? "page" : undefined}
+                className={cn(
+                  "mb-2 flex touch-manipulation items-center rounded-md text-sm font-medium transition-colors",
+                  "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sidebar-ring",
+                  collapsed ? "justify-center p-2" : "min-h-11 gap-2.5 px-3 py-2 lg:min-h-0",
+                  active
+                    ? "bg-sidebar-primary text-sidebar-primary-foreground"
+                    : "text-sidebar-foreground hover:bg-sidebar-accent"
+                )}
+              >
+                <LayoutDashboard className="h-4 w-4 shrink-0" />
+                {!collapsed && OVERVIEW_LABEL}
+              </Link>
+            );
+            return collapsed ? (
+              <Tooltip>
+                <TooltipTrigger asChild>{link}</TooltipTrigger>
+                <TooltipContent side="right">{OVERVIEW_LABEL}</TooltipContent>
+              </Tooltip>
+            ) : (
+              link
+            );
+          })()}
           {navGroups.map((group) => {
             const groupActive = group.items.some(
               (i) => location.pathname === i.to || location.pathname.startsWith(i.to + "/")
