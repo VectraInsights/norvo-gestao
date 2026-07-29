@@ -1,7 +1,7 @@
 import { Link, useLocation, useNavigate } from "@tanstack/react-router";
 import { useCallback, useEffect, useRef, useState, type KeyboardEvent as ReactKeyboardEvent, type ReactNode } from "react";
 import {
-  LayoutDashboard, Settings, LogOut, ChevronDown,
+  LayoutDashboard, Settings, LogOut, ChevronDown, Star,
   Sun, Moon, PanelLeftClose, PanelLeftOpen,
 } from "lucide-react";
 import norvoLogo from "@/assets/norvo-logo.png";
