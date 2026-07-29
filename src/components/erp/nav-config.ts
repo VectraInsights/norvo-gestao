@@ -7,7 +7,10 @@ import {
 export type NavItem = { to: string; label: string; icon: typeof LayoutDashboard };
 export type NavGroup = { label: string; icon: typeof LayoutDashboard; items: NavItem[] };
 
-export const NAV: NavGroup[] = [
+const byLabel = (a: { label: string }, b: { label: string }) =>
+  a.label.localeCompare(b.label, "pt-BR", { sensitivity: "base" });
+
+const RAW_NAV: NavGroup[] = [
   { label: "Visão geral", icon: LayoutDashboard, items: [
     { to: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
   ]},
@@ -41,3 +44,7 @@ export const NAV: NavGroup[] = [
     { to: "/fiscal/notas", label: "Notas fiscais", icon: FileText },
   ]},
 ];
+
+export const NAV: NavGroup[] = [...RAW_NAV]
+  .sort(byLabel)
+  .map((g) => ({ ...g, items: [...g.items].sort(byLabel) }));
