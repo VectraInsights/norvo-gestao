@@ -7,7 +7,10 @@ import {
 export type NavItem = { to: string; label: string; icon: typeof LayoutDashboard };
 export type NavGroup = { label: string; icon: typeof LayoutDashboard; items: NavItem[] };
 
-export const NAV: NavGroup[] = [
+const byLabel = (a: { label: string }, b: { label: string }) =>
+  a.label.localeCompare(b.label, "pt-BR", { sensitivity: "base" });
+
+const RAW_NAV: NavGroup[] = [
   { label: "Visão geral", icon: LayoutDashboard, items: [
     { to: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
   ]},
