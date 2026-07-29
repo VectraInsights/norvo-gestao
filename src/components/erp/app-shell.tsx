@@ -1,9 +1,8 @@
 import { Link, useLocation, useNavigate } from "@tanstack/react-router";
-import { useEffect, useState, type ReactNode } from "react";
+import { useCallback, useEffect, useRef, useState, type KeyboardEvent as ReactKeyboardEvent, type ReactNode } from "react";
 import {
-  LayoutDashboard, ReceiptText, Users, Boxes, FileText, Settings, LogOut,
-  Wallet, TrendingUp, Banknote, ShoppingCart, UserSquare2, Package, ChevronDown,
-  Sun, Moon, PanelLeftClose, PanelLeftOpen, Kanban, Briefcase, Wrench, UsersRound,
+  LayoutDashboard, Settings, LogOut, ChevronDown,
+  Sun, Moon, PanelLeftClose, PanelLeftOpen,
 } from "lucide-react";
 import norvoLogo from "@/assets/norvo-logo.png";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
@@ -13,6 +12,8 @@ import { ShortcutsDialog } from "@/components/erp/shortcuts-dialog";
 import { CommandPalette } from "@/components/erp/command-palette";
 import { NotificationsBell } from "@/components/erp/notifications-bell";
 import { Breadcrumbs } from "@/components/erp/breadcrumbs";
+import { MenuSettingsDialog } from "@/components/erp/menu-settings-dialog";
+import { useMenuPrefs } from "@/hooks/use-menu-prefs";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
@@ -21,43 +22,6 @@ import {
   DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuLabel,
 } from "@/components/ui/dropdown-menu";
 
-type NavItem = { to: string; label: string; icon: typeof LayoutDashboard };
-type NavGroup = { label: string; icon: typeof LayoutDashboard; items: NavItem[] };
-
-const NAV: NavGroup[] = [
-  { label: "Visão geral", icon: LayoutDashboard, items: [
-    { to: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
-  ]},
-  { label: "Financeiro", icon: Wallet, items: [
-    { to: "/financeiro/receber", label: "Contas a receber", icon: TrendingUp },
-    { to: "/financeiro/pagar",   label: "Contas a pagar",   icon: ReceiptText },
-    { to: "/financeiro/fluxo",   label: "Fluxo de caixa",   icon: Wallet },
-    { to: "/financeiro/contas",  label: "Contas financeiras", icon: Banknote },
-  ]},
-  { label: "Vendas & CRM", icon: ShoppingCart, items: [
-    { to: "/vendas/crm",      label: "Funil (CRM)", icon: Kanban },
-    { to: "/vendas/clientes", label: "Clientes",  icon: UserSquare2 },
-    { to: "/vendas/vendas",   label: "Vendas",    icon: ShoppingCart },
-    { to: "/vendas/pedidos",  label: "Orçamentos", icon: ShoppingCart },
-  ]},
-  { label: "Estoque", icon: Boxes, items: [
-    { to: "/estoque/produtos", label: "Produtos", icon: Package },
-    { to: "/estoque/fornecedores", label: "Fornecedores", icon: UserSquare2 },
-    { to: "/estoque/compras", label: "Ordens de compra", icon: ShoppingCart },
-    { to: "/estoque/movimentacoes", label: "Movimentações", icon: Boxes },
-  ]},
-  { label: "Projetos", icon: Briefcase, items: [
-    { to: "/projetos/projetos", label: "Projetos", icon: Briefcase },
-    { to: "/projetos/os", label: "Ordens de serviço", icon: Wrench },
-  ]},
-  { label: "RH", icon: UsersRound, items: [
-    { to: "/rh/colaboradores", label: "Colaboradores", icon: UsersRound },
-    { to: "/rh/folha", label: "Folha de pagamento", icon: Wallet },
-  ]},
-  { label: "Fiscal", icon: FileText, items: [
-    { to: "/fiscal/notas", label: "Notas fiscais", icon: FileText },
-  ]},
-];
 
 
 export function AppShell({ children }: { children: ReactNode }) {
@@ -76,11 +40,16 @@ export function AppShell({ children }: { children: ReactNode }) {
       return next;
     });
   };
+  // Todos os grupos começam fechados por padrão
   const [openGroups, setOpenGroups] = useState<Record<string, boolean>>({});
-  const toggleGroup = (label: string, fallbackOpen: boolean) => {
-    setOpenGroups((g) => ({ ...g, [label]: !(g[label] ?? fallbackOpen) }));
+  const closeAllGroups = useCallback(() => setOpenGroups({}), []);
+  const toggleGroup = (label: string) => {
+    setOpenGroups((g) => ({ ...g, [label]: !g[label] }));
   };
+  const sidebarRef = useRef<HTMLElement | null>(null);
+  const navRef = useRef<HTMLElement | null>(null);
   const { theme, toggle: toggleTheme } = useTheme();
+
 
 
   const { data: user } = useQuery({
@@ -105,8 +74,69 @@ export function AppShell({ children }: { children: ReactNode }) {
     qc.invalidateQueries();
   };
 
-  // Fecha ao navegar (mobile)
-  useEffect(() => { setOpen(false); }, [location.pathname]);
+  // Preferências de menu por usuário (ordem + visibilidade)
+  const { prefs, groups: navGroups, save: savePrefs, reset: resetPrefs } = useMenuPrefs(user?.id);
+
+  // Fecha o drawer mobile e todos os dropdowns ao navegar
+  useEffect(() => {
+    setOpen(false);
+    closeAllGroups();
+  }, [location.pathname, closeAllGroups]);
+
+  // Fecha os dropdowns ao clicar fora da barra lateral
+  useEffect(() => {
+    const onPointerDown = (ev: PointerEvent) => {
+      const el = sidebarRef.current;
+      if (!el) return;
+      if (el.contains(ev.target as Node)) return;
+      closeAllGroups();
+      setOpen(false);
+    };
+    document.addEventListener("pointerdown", onPointerDown);
+    return () => document.removeEventListener("pointerdown", onPointerDown);
+  }, [closeAllGroups]);
+
+  // Navegação por teclado dentro do menu: setas, Home/End, Enter/Espaço e Esc
+  const onNavKeyDown = useCallback((ev: ReactKeyboardEvent<HTMLElement>) => {
+    const nav = navRef.current;
+    if (!nav) return;
+    const target = ev.target as HTMLElement | null;
+    if (!target) return;
+
+    if (ev.key === "Escape") {
+      ev.preventDefault();
+      const groupLabel = target.getAttribute("data-nav-group");
+      closeAllGroups();
+      const btn = groupLabel
+        ? nav.querySelector<HTMLElement>(`button[data-nav-group="${CSS.escape(groupLabel)}"]`)
+        : null;
+      btn?.focus();
+      return;
+    }
+
+    if (ev.key === "ArrowRight" || ev.key === "ArrowLeft") {
+      const groupLabel = target.getAttribute("data-nav-group");
+      if (target.tagName === "BUTTON" && groupLabel) {
+        ev.preventDefault();
+        setOpenGroups((g) => ({ ...g, [groupLabel]: ev.key === "ArrowRight" }));
+      }
+      return;
+    }
+
+    if (!["ArrowDown", "ArrowUp", "Home", "End"].includes(ev.key)) return;
+
+    const items = Array.from(nav.querySelectorAll<HTMLElement>("[data-nav-focusable]"));
+    if (!items.length) return;
+    ev.preventDefault();
+    const current = items.indexOf(target.closest<HTMLElement>("[data-nav-focusable]") ?? target);
+    let next = current;
+    if (ev.key === "ArrowDown") next = current < 0 ? 0 : (current + 1) % items.length;
+    else if (ev.key === "ArrowUp") next = current <= 0 ? items.length - 1 : current - 1;
+    else if (ev.key === "Home") next = 0;
+    else next = items.length - 1;
+    items[next]?.focus();
+  }, [closeAllGroups]);
+
 
   // Atalhos globais de teclado (Alt+tecla)
   useEffect(() => {
@@ -144,6 +174,7 @@ export function AppShell({ children }: { children: ReactNode }) {
     <div className={cn("grid min-h-screen bg-background", collapsed ? "lg:grid-cols-[72px_1fr]" : "lg:grid-cols-[260px_1fr]")}>
       {/* Sidebar */}
       <aside
+        ref={sidebarRef}
         className={cn(
           "border-r border-sidebar-border bg-sidebar text-sidebar-foreground flex flex-col",
           "fixed inset-y-0 left-0 z-40 -translate-x-full transition-all lg:static lg:translate-x-0",
@@ -202,22 +233,33 @@ export function AppShell({ children }: { children: ReactNode }) {
           </DropdownMenu>
         </div>
 
-        <nav className="flex-1 overflow-y-auto p-3">
-          {NAV.map((group) => {
+        <nav
+          ref={navRef}
+          className="flex-1 overflow-y-auto p-3"
+          aria-label="Navegação principal"
+          onKeyDown={onNavKeyDown}
+        >
+          {navGroups.map((group) => {
             const groupActive = group.items.some(
               (i) => location.pathname === i.to || location.pathname.startsWith(i.to + "/")
             );
-            const isOpen = collapsed || (openGroups[group.label] ?? groupActive);
+            const isOpen = collapsed || !!openGroups[group.label];
             const GroupIcon = group.icon;
+            const panelId = `nav-group-${group.label.replace(/\W+/g, "-").toLowerCase()}`;
             return (
               <div key={group.label} className="mb-2">
                 {!collapsed && (
                   <button
                     type="button"
-                    onClick={() => toggleGroup(group.label, groupActive)}
+                    data-nav-focusable
+                    data-nav-group={group.label}
+                    onClick={() => toggleGroup(group.label)}
                     aria-expanded={isOpen}
+                    aria-controls={panelId}
                     className={cn(
-                      "flex w-full items-center gap-2.5 rounded-md px-3 py-2 text-sm font-medium transition-colors",
+                      "flex w-full touch-manipulation select-none items-center gap-2.5 rounded-md px-3 text-sm font-medium transition-colors",
+                      "min-h-11 py-2 lg:min-h-0 lg:py-2",
+                      "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sidebar-ring",
                       groupActive && !isOpen
                         ? "bg-sidebar-accent text-sidebar-foreground"
                         : "text-sidebar-foreground hover:bg-sidebar-accent"
@@ -231,16 +273,20 @@ export function AppShell({ children }: { children: ReactNode }) {
                   </button>
                 )}
                 {isOpen && (
-                  <div className={cn(!collapsed && "mt-1 space-y-0.5 pl-4")}>
+                  <div id={panelId} role="group" className={cn(!collapsed && "mt-1 space-y-0.5 pl-4")}>
                     {group.items.map((item) => {
                       const active = location.pathname === item.to || location.pathname.startsWith(item.to + "/");
                       const link = (
                         <Link
                           key={item.to}
                           to={item.to}
+                          data-nav-focusable
+                          data-nav-group={group.label}
+                          aria-current={active ? "page" : undefined}
                           className={cn(
-                            "flex items-center rounded-md text-sm transition-colors",
-                            collapsed ? "justify-center p-2" : "gap-2.5 px-3 py-2",
+                            "flex touch-manipulation items-center rounded-md text-sm transition-colors",
+                            "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sidebar-ring",
+                            collapsed ? "justify-center p-2" : "min-h-11 gap-2.5 px-3 py-2 lg:min-h-0",
                             active
                               ? "bg-sidebar-primary text-sidebar-primary-foreground"
                               : "text-sidebar-foreground hover:bg-sidebar-accent"
@@ -263,6 +309,13 @@ export function AppShell({ children }: { children: ReactNode }) {
             );
           })}
         </nav>
+
+        {!collapsed && (
+          <div className="border-t border-sidebar-border p-3 pb-2">
+            <MenuSettingsDialog prefs={prefs} onSave={savePrefs} onReset={resetPrefs} />
+          </div>
+        )}
+
 
 
         <div className="border-t border-sidebar-border p-3">
