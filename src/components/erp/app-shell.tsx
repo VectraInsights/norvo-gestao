@@ -197,41 +197,67 @@ export function AppShell({ children }: { children: ReactNode }) {
         </div>
 
         <nav className="flex-1 overflow-y-auto p-3">
-          {NAV.map((group) => (
-            <div key={group.label} className="mb-5">
-              {!collapsed && (
-                <div className="mb-1.5 px-3 text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">
-                  {group.label}
-                </div>
-              )}
-              {group.items.map((item) => {
-                const active = location.pathname === item.to || location.pathname.startsWith(item.to + "/");
-                const link = (
-                  <Link
-                    key={item.to}
-                    to={item.to}
+          {NAV.map((group) => {
+            const groupActive = group.items.some(
+              (i) => location.pathname === i.to || location.pathname.startsWith(i.to + "/")
+            );
+            const isOpen = collapsed || (openGroups[group.label] ?? groupActive);
+            const GroupIcon = group.icon;
+            return (
+              <div key={group.label} className="mb-2">
+                {!collapsed && (
+                  <button
+                    type="button"
+                    onClick={() => toggleGroup(group.label, groupActive)}
+                    aria-expanded={isOpen}
                     className={cn(
-                      "flex items-center rounded-md text-sm transition-colors",
-                      collapsed ? "justify-center p-2" : "gap-2.5 px-3 py-2",
-                      active
-                        ? "bg-sidebar-primary text-sidebar-primary-foreground"
+                      "flex w-full items-center gap-2.5 rounded-md px-3 py-2 text-sm font-medium transition-colors",
+                      groupActive && !isOpen
+                        ? "bg-sidebar-accent text-sidebar-foreground"
                         : "text-sidebar-foreground hover:bg-sidebar-accent"
                     )}
                   >
-                    <item.icon className="h-4 w-4 shrink-0" />
-                    {!collapsed && item.label}
-                  </Link>
-                );
-                return collapsed ? (
-                  <Tooltip key={item.to}>
-                    <TooltipTrigger asChild>{link}</TooltipTrigger>
-                    <TooltipContent side="right">{item.label}</TooltipContent>
-                  </Tooltip>
-                ) : link;
-              })}
-            </div>
-          ))}
+                    <GroupIcon className="h-4 w-4 shrink-0" />
+                    <span className="flex-1 text-left">{group.label}</span>
+                    <ChevronDown
+                      className={cn("h-4 w-4 shrink-0 opacity-60 transition-transform", isOpen && "rotate-180")}
+                    />
+                  </button>
+                )}
+                {isOpen && (
+                  <div className={cn(!collapsed && "mt-1 space-y-0.5 pl-4")}>
+                    {group.items.map((item) => {
+                      const active = location.pathname === item.to || location.pathname.startsWith(item.to + "/");
+                      const link = (
+                        <Link
+                          key={item.to}
+                          to={item.to}
+                          className={cn(
+                            "flex items-center rounded-md text-sm transition-colors",
+                            collapsed ? "justify-center p-2" : "gap-2.5 px-3 py-2",
+                            active
+                              ? "bg-sidebar-primary text-sidebar-primary-foreground"
+                              : "text-sidebar-foreground hover:bg-sidebar-accent"
+                          )}
+                        >
+                          <item.icon className="h-4 w-4 shrink-0" />
+                          {!collapsed && item.label}
+                        </Link>
+                      );
+                      return collapsed ? (
+                        <Tooltip key={item.to}>
+                          <TooltipTrigger asChild>{link}</TooltipTrigger>
+                          <TooltipContent side="right">{item.label}</TooltipContent>
+                        </Tooltip>
+                      ) : link;
+                    })}
+                  </div>
+                )}
+              </div>
+            );
+          })}
         </nav>
+
 
         <div className="border-t border-sidebar-border p-3">
           <DropdownMenu>
