@@ -44,3 +44,7 @@ const RAW_NAV: NavGroup[] = [
     { to: "/fiscal/notas", label: "Notas fiscais", icon: FileText },
   ]},
 ];
+
+export const NAV: NavGroup[] = [...RAW_NAV]
+  .sort(byLabel)
+  .map((g) => ({ ...g, items: [...g.items].sort(byLabel) }));
