@@ -40,11 +40,16 @@ export function AppShell({ children }: { children: ReactNode }) {
       return next;
     });
   };
+  // Todos os grupos começam fechados por padrão
   const [openGroups, setOpenGroups] = useState<Record<string, boolean>>({});
-  const toggleGroup = (label: string, fallbackOpen: boolean) => {
-    setOpenGroups((g) => ({ ...g, [label]: !(g[label] ?? fallbackOpen) }));
+  const closeAllGroups = useCallback(() => setOpenGroups({}), []);
+  const toggleGroup = (label: string) => {
+    setOpenGroups((g) => ({ ...g, [label]: !g[label] }));
   };
+  const sidebarRef = useRef<HTMLElement | null>(null);
+  const navRef = useRef<HTMLElement | null>(null);
   const { theme, toggle: toggleTheme } = useTheme();
+
 
 
   const { data: user } = useQuery({
