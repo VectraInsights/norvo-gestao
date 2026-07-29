@@ -1,9 +1,8 @@
 import { Link, useLocation, useNavigate } from "@tanstack/react-router";
-import { useEffect, useState, type ReactNode } from "react";
+import { useCallback, useEffect, useRef, useState, type ReactNode } from "react";
 import {
-  LayoutDashboard, ReceiptText, Users, Boxes, FileText, Settings, LogOut,
-  Wallet, TrendingUp, Banknote, ShoppingCart, UserSquare2, Package, ChevronDown,
-  Sun, Moon, PanelLeftClose, PanelLeftOpen, Kanban, Briefcase, Wrench, UsersRound,
+  LayoutDashboard, Settings, LogOut, ChevronDown,
+  Sun, Moon, PanelLeftClose, PanelLeftOpen,
 } from "lucide-react";
 import norvoLogo from "@/assets/norvo-logo.png";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
@@ -13,6 +12,8 @@ import { ShortcutsDialog } from "@/components/erp/shortcuts-dialog";
 import { CommandPalette } from "@/components/erp/command-palette";
 import { NotificationsBell } from "@/components/erp/notifications-bell";
 import { Breadcrumbs } from "@/components/erp/breadcrumbs";
+import { MenuSettingsDialog } from "@/components/erp/menu-settings-dialog";
+import { useMenuPrefs } from "@/hooks/use-menu-prefs";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
@@ -21,43 +22,6 @@ import {
   DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuLabel,
 } from "@/components/ui/dropdown-menu";
 
-type NavItem = { to: string; label: string; icon: typeof LayoutDashboard };
-type NavGroup = { label: string; icon: typeof LayoutDashboard; items: NavItem[] };
-
-const NAV: NavGroup[] = [
-  { label: "Visão geral", icon: LayoutDashboard, items: [
-    { to: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
-  ]},
-  { label: "Financeiro", icon: Wallet, items: [
-    { to: "/financeiro/receber", label: "Contas a receber", icon: TrendingUp },
-    { to: "/financeiro/pagar",   label: "Contas a pagar",   icon: ReceiptText },
-    { to: "/financeiro/fluxo",   label: "Fluxo de caixa",   icon: Wallet },
-    { to: "/financeiro/contas",  label: "Contas financeiras", icon: Banknote },
-  ]},
-  { label: "Vendas & CRM", icon: ShoppingCart, items: [
-    { to: "/vendas/crm",      label: "Funil (CRM)", icon: Kanban },
-    { to: "/vendas/clientes", label: "Clientes",  icon: UserSquare2 },
-    { to: "/vendas/vendas",   label: "Vendas",    icon: ShoppingCart },
-    { to: "/vendas/pedidos",  label: "Orçamentos", icon: ShoppingCart },
-  ]},
-  { label: "Estoque", icon: Boxes, items: [
-    { to: "/estoque/produtos", label: "Produtos", icon: Package },
-    { to: "/estoque/fornecedores", label: "Fornecedores", icon: UserSquare2 },
-    { to: "/estoque/compras", label: "Ordens de compra", icon: ShoppingCart },
-    { to: "/estoque/movimentacoes", label: "Movimentações", icon: Boxes },
-  ]},
-  { label: "Projetos", icon: Briefcase, items: [
-    { to: "/projetos/projetos", label: "Projetos", icon: Briefcase },
-    { to: "/projetos/os", label: "Ordens de serviço", icon: Wrench },
-  ]},
-  { label: "RH", icon: UsersRound, items: [
-    { to: "/rh/colaboradores", label: "Colaboradores", icon: UsersRound },
-    { to: "/rh/folha", label: "Folha de pagamento", icon: Wallet },
-  ]},
-  { label: "Fiscal", icon: FileText, items: [
-    { to: "/fiscal/notas", label: "Notas fiscais", icon: FileText },
-  ]},
-];
 
 
 export function AppShell({ children }: { children: ReactNode }) {
