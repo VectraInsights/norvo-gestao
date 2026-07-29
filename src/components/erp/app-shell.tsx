@@ -77,24 +77,33 @@ export function AppShell({ children }: { children: ReactNode }) {
   // Preferências de menu por usuário (ordem + visibilidade)
   const { prefs, groups: navGroups, save: savePrefs, reset: resetPrefs } = useMenuPrefs(user?.id);
 
-  // Fecha o drawer mobile e todos os dropdowns ao navegar
+  // Grupo que contém a rota atual — deve permanecer aberto
+  const activeGroupLabel = navGroups.find((g) =>
+    g.items.some((i) => location.pathname === i.to || location.pathname.startsWith(i.to + "/")),
+  )?.label;
+  const keepActiveOpen = useCallback(() => {
+    setOpenGroups(activeGroupLabel ? { [activeGroupLabel]: true } : {});
+  }, [activeGroupLabel]);
+
+  // Fecha o drawer mobile e os dropdowns ao navegar, mantendo o grupo ativo aberto
   useEffect(() => {
     setOpen(false);
-    closeAllGroups();
-  }, [location.pathname, closeAllGroups]);
+    keepActiveOpen();
+  }, [location.pathname, keepActiveOpen]);
 
-  // Fecha os dropdowns ao clicar fora da barra lateral
+  // Fecha os dropdowns ao clicar fora da barra lateral (mantém o grupo ativo)
   useEffect(() => {
     const onPointerDown = (ev: PointerEvent) => {
       const el = sidebarRef.current;
       if (!el) return;
       if (el.contains(ev.target as Node)) return;
-      closeAllGroups();
+      keepActiveOpen();
       setOpen(false);
     };
     document.addEventListener("pointerdown", onPointerDown);
     return () => document.removeEventListener("pointerdown", onPointerDown);
-  }, [closeAllGroups]);
+  }, [keepActiveOpen]);
+
 
   // Navegação por teclado dentro do menu: setas, Home/End, Enter/Espaço e Esc
   const onNavKeyDown = useCallback((ev: ReactKeyboardEvent<HTMLElement>) => {
