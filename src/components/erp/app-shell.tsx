@@ -80,14 +80,13 @@ export function AppShell({ children }: { children: ReactNode }) {
   const { prefs, groups: prefGroups, save: savePrefs, reset: resetPrefs } = useMenuPrefs(user?.id);
   const { favorites, toggle: toggleFavorite, isFavorite } = useFavorites(user?.id);
 
-  // Visão geral sempre no topo, Favoritos logo abaixo, demais conforme personalização
+  // Visão geral é um link direto (Dashboard); Favoritos sempre visível; demais conforme personalização
   const favItems = ALL_NAV_ITEMS
     .filter((i) => favorites.includes(i.to))
     .sort((a, b) => a.label.localeCompare(b.label, "pt-BR", { sensitivity: "base" }));
-  const overview = prefGroups.find((g) => g.label === OVERVIEW_LABEL);
+  const showOverview = prefGroups.some((g) => g.label === OVERVIEW_LABEL);
   const navGroups = [
-    ...(overview ? [overview] : []),
-    ...(favItems.length ? [{ label: FAVORITES_LABEL, icon: Star, items: favItems }] : []),
+    { label: FAVORITES_LABEL, icon: Star, items: favItems },
     ...prefGroups.filter((g) => g.label !== OVERVIEW_LABEL),
   ];
 
