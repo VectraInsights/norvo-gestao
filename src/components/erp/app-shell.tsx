@@ -14,6 +14,8 @@ import { NotificationsBell } from "@/components/erp/notifications-bell";
 import { Breadcrumbs } from "@/components/erp/breadcrumbs";
 import { MenuSettingsDialog } from "@/components/erp/menu-settings-dialog";
 import { useMenuPrefs } from "@/hooks/use-menu-prefs";
+import { useFavorites } from "@/hooks/use-favorites";
+import { ALL_NAV_ITEMS, FAVORITES_LABEL, OVERVIEW_LABEL } from "@/components/erp/nav-config";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
