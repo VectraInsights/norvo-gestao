@@ -75,7 +75,19 @@ export function AppShell({ children }: { children: ReactNode }) {
   };
 
   // Preferências de menu por usuário (ordem + visibilidade)
-  const { prefs, groups: navGroups, save: savePrefs, reset: resetPrefs } = useMenuPrefs(user?.id);
+  const { prefs, groups: prefGroups, save: savePrefs, reset: resetPrefs } = useMenuPrefs(user?.id);
+  const { favorites, toggle: toggleFavorite, isFavorite } = useFavorites(user?.id);
+
+  // Visão geral sempre no topo, Favoritos logo abaixo, demais conforme personalização
+  const favItems = ALL_NAV_ITEMS
+    .filter((i) => favorites.includes(i.to))
+    .sort((a, b) => a.label.localeCompare(b.label, "pt-BR", { sensitivity: "base" }));
+  const overview = prefGroups.find((g) => g.label === OVERVIEW_LABEL);
+  const navGroups = [
+    ...(overview ? [overview] : []),
+    ...(favItems.length ? [{ label: FAVORITES_LABEL, icon: Star, items: favItems }] : []),
+    ...prefGroups.filter((g) => g.label !== OVERVIEW_LABEL),
+  ];
 
   // Grupo que contém a rota atual — deve permanecer aberto
   const activeGroupLabel = navGroups.find((g) =>
