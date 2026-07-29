@@ -171,22 +171,33 @@ export function AppShell({ children }: { children: ReactNode }) {
           </DropdownMenu>
         </div>
 
-        <nav className="flex-1 overflow-y-auto p-3">
-          {NAV.map((group) => {
+        <nav
+          ref={navRef}
+          className="flex-1 overflow-y-auto p-3"
+          aria-label="Navegação principal"
+          onKeyDown={onNavKeyDown}
+        >
+          {navGroups.map((group) => {
             const groupActive = group.items.some(
               (i) => location.pathname === i.to || location.pathname.startsWith(i.to + "/")
             );
-            const isOpen = collapsed || (openGroups[group.label] ?? groupActive);
+            const isOpen = collapsed || !!openGroups[group.label];
             const GroupIcon = group.icon;
+            const panelId = `nav-group-${group.label.replace(/\W+/g, "-").toLowerCase()}`;
             return (
               <div key={group.label} className="mb-2">
                 {!collapsed && (
                   <button
                     type="button"
-                    onClick={() => toggleGroup(group.label, groupActive)}
+                    data-nav-focusable
+                    data-nav-group={group.label}
+                    onClick={() => toggleGroup(group.label)}
                     aria-expanded={isOpen}
+                    aria-controls={panelId}
                     className={cn(
-                      "flex w-full items-center gap-2.5 rounded-md px-3 py-2 text-sm font-medium transition-colors",
+                      "flex w-full touch-manipulation select-none items-center gap-2.5 rounded-md px-3 text-sm font-medium transition-colors",
+                      "min-h-11 py-2 lg:min-h-0 lg:py-2",
+                      "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sidebar-ring",
                       groupActive && !isOpen
                         ? "bg-sidebar-accent text-sidebar-foreground"
                         : "text-sidebar-foreground hover:bg-sidebar-accent"
@@ -200,16 +211,20 @@ export function AppShell({ children }: { children: ReactNode }) {
                   </button>
                 )}
                 {isOpen && (
-                  <div className={cn(!collapsed && "mt-1 space-y-0.5 pl-4")}>
+                  <div id={panelId} role="group" className={cn(!collapsed && "mt-1 space-y-0.5 pl-4")}>
                     {group.items.map((item) => {
                       const active = location.pathname === item.to || location.pathname.startsWith(item.to + "/");
                       const link = (
                         <Link
                           key={item.to}
                           to={item.to}
+                          data-nav-focusable
+                          data-nav-group={group.label}
+                          aria-current={active ? "page" : undefined}
                           className={cn(
-                            "flex items-center rounded-md text-sm transition-colors",
-                            collapsed ? "justify-center p-2" : "gap-2.5 px-3 py-2",
+                            "flex touch-manipulation items-center rounded-md text-sm transition-colors",
+                            "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sidebar-ring",
+                            collapsed ? "justify-center p-2" : "min-h-11 gap-2.5 px-3 py-2 lg:min-h-0",
                             active
                               ? "bg-sidebar-primary text-sidebar-primary-foreground"
                               : "text-sidebar-foreground hover:bg-sidebar-accent"
@@ -232,6 +247,13 @@ export function AppShell({ children }: { children: ReactNode }) {
             );
           })}
         </nav>
+
+        {!collapsed && (
+          <div className="border-t border-sidebar-border p-3 pb-2">
+            <MenuSettingsDialog prefs={prefs} onSave={savePrefs} onReset={resetPrefs} />
+          </div>
+        )}
+
 
 
         <div className="border-t border-sidebar-border p-3">
