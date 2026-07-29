@@ -45,6 +45,13 @@ const RAW_NAV: NavGroup[] = [
   ]},
 ];
 
+export const OVERVIEW_LABEL = "Visão geral";
+export const FAVORITES_LABEL = "Favoritos";
+
 export const NAV: NavGroup[] = [...RAW_NAV]
-  .sort(byLabel)
+  .sort((a, b) =>
+    a.label === OVERVIEW_LABEL ? -1 : b.label === OVERVIEW_LABEL ? 1 : byLabel(a, b),
+  )
   .map((g) => ({ ...g, items: [...g.items].sort(byLabel) }));
+
+export const ALL_NAV_ITEMS: NavItem[] = NAV.flatMap((g) => g.items);

@@ -1,7 +1,7 @@
 import { Link, useLocation, useNavigate } from "@tanstack/react-router";
 import { useCallback, useEffect, useRef, useState, type KeyboardEvent as ReactKeyboardEvent, type ReactNode } from "react";
 import {
-  LayoutDashboard, Settings, LogOut, ChevronDown,
+  LayoutDashboard, Settings, LogOut, ChevronDown, Star,
   Sun, Moon, PanelLeftClose, PanelLeftOpen,
 } from "lucide-react";
 import norvoLogo from "@/assets/norvo-logo.png";
@@ -14,6 +14,8 @@ import { NotificationsBell } from "@/components/erp/notifications-bell";
 import { Breadcrumbs } from "@/components/erp/breadcrumbs";
 import { MenuSettingsDialog } from "@/components/erp/menu-settings-dialog";
 import { useMenuPrefs } from "@/hooks/use-menu-prefs";
+import { useFavorites } from "@/hooks/use-favorites";
+import { ALL_NAV_ITEMS, FAVORITES_LABEL, OVERVIEW_LABEL } from "@/components/erp/nav-config";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
@@ -75,7 +77,19 @@ export function AppShell({ children }: { children: ReactNode }) {
   };
 
   // Preferências de menu por usuário (ordem + visibilidade)
-  const { prefs, groups: navGroups, save: savePrefs, reset: resetPrefs } = useMenuPrefs(user?.id);
+  const { prefs, groups: prefGroups, save: savePrefs, reset: resetPrefs } = useMenuPrefs(user?.id);
+  const { favorites, toggle: toggleFavorite, isFavorite } = useFavorites(user?.id);
+
+  // Visão geral sempre no topo, Favoritos logo abaixo, demais conforme personalização
+  const favItems = ALL_NAV_ITEMS
+    .filter((i) => favorites.includes(i.to))
+    .sort((a, b) => a.label.localeCompare(b.label, "pt-BR", { sensitivity: "base" }));
+  const overview = prefGroups.find((g) => g.label === OVERVIEW_LABEL);
+  const navGroups = [
+    ...(overview ? [overview] : []),
+    ...(favItems.length ? [{ label: FAVORITES_LABEL, icon: Star, items: favItems }] : []),
+    ...prefGroups.filter((g) => g.label !== OVERVIEW_LABEL),
+  ];
 
   // Grupo que contém a rota atual — deve permanecer aberto
   const activeGroupLabel = navGroups.find((g) =>
@@ -287,13 +301,12 @@ export function AppShell({ children }: { children: ReactNode }) {
                       const active = location.pathname === item.to || location.pathname.startsWith(item.to + "/");
                       const link = (
                         <Link
-                          key={item.to}
                           to={item.to}
                           data-nav-focusable
                           data-nav-group={group.label}
                           aria-current={active ? "page" : undefined}
                           className={cn(
-                            "flex touch-manipulation items-center rounded-md text-sm transition-colors",
+                            "flex flex-1 touch-manipulation items-center rounded-md text-sm transition-colors",
                             "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sidebar-ring",
                             collapsed ? "justify-center p-2" : "min-h-11 gap-2.5 px-3 py-2 lg:min-h-0",
                             active
@@ -305,12 +318,34 @@ export function AppShell({ children }: { children: ReactNode }) {
                           {!collapsed && item.label}
                         </Link>
                       );
-                      return collapsed ? (
-                        <Tooltip key={item.to}>
-                          <TooltipTrigger asChild>{link}</TooltipTrigger>
-                          <TooltipContent side="right">{item.label}</TooltipContent>
-                        </Tooltip>
-                      ) : link;
+                      if (collapsed) {
+                        return (
+                          <Tooltip key={item.to}>
+                            <TooltipTrigger asChild>{link}</TooltipTrigger>
+                            <TooltipContent side="right">{item.label}</TooltipContent>
+                          </Tooltip>
+                        );
+                      }
+                      const fav = isFavorite(item.to);
+                      return (
+                        <div key={`${group.label}-${item.to}`} className="flex items-center gap-1">
+                          {link}
+                          <button
+                            type="button"
+                            onClick={() => toggleFavorite(item.to)}
+                            aria-pressed={fav}
+                            aria-label={fav ? `Remover ${item.label} dos favoritos` : `Adicionar ${item.label} aos favoritos`}
+                            title={fav ? "Remover dos favoritos" : "Adicionar aos favoritos"}
+                            className={cn(
+                              "shrink-0 rounded-md p-2 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sidebar-ring",
+                              fav ? "text-amber-400" : "text-sidebar-foreground/40 hover:text-sidebar-foreground"
+                            )}
+                          >
+                            <Star className={cn("h-3.5 w-3.5", fav && "fill-current")} />
+                          </button>
+                        </div>
+                      );
+
                     })}
                   </div>
                 )}
