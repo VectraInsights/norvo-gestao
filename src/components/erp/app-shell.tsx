@@ -76,7 +76,12 @@ export function AppShell({ children }: { children: ReactNode }) {
       return next;
     });
   };
+  const [openGroups, setOpenGroups] = useState<Record<string, boolean>>({});
+  const toggleGroup = (label: string, fallbackOpen: boolean) => {
+    setOpenGroups((g) => ({ ...g, [label]: !(g[label] ?? fallbackOpen) }));
+  };
   const { theme, toggle: toggleTheme } = useTheme();
+
 
   const { data: user } = useQuery({
     queryKey: ["auth-user"],
