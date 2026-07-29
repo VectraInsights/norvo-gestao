@@ -277,11 +277,12 @@ export function LancamentosPage({ tipo }: { tipo: "receber" | "pagar" }) {
   const noPeriodo = sorted.filter((l) => dentroPeriodo(l.data_vencimento));
 
   // Aba: Vencidos (aberto/parcial e vencimento < hoje) | A vencer (aberto/parcial e vencimento >= hoje) | Quitados (pago, vencimento < hoje)
-  type Aba = "vencidos" | "avencer" | "quitados";
+  type Aba = "todos" | "vencidos" | "avencer" | "quitados";
   const [aba, setAba] = useState<Aba>("avencer");
   const hojeStr = format(new Date(), "yyyy-MM-dd");
   const emAberto = (s: string) => s === "aberto" || s === "parcial" || s === "vencido";
   const filtroAba = (l: Lancamento) => {
+    if (aba === "todos") return true;
     if (aba === "vencidos") return emAberto(l.status) && l.data_vencimento < hojeStr;
     if (aba === "avencer") return emAberto(l.status) && l.data_vencimento >= hojeStr;
     return l.status === "pago";
@@ -294,6 +295,7 @@ export function LancamentosPage({ tipo }: { tipo: "receber" | "pagar" }) {
     (l.contato?.nome ?? "").toLowerCase().includes(buscaNorm);
   const filtrados = noPeriodo.filter(filtroAba).filter(aplicaBusca);
   const cont = {
+    todos: noPeriodo.filter(aplicaBusca).length,
     vencidos: noPeriodo.filter((l) => emAberto(l.status) && l.data_vencimento < hojeStr).filter(aplicaBusca).length,
     avencer: noPeriodo.filter((l) => emAberto(l.status) && l.data_vencimento >= hojeStr).filter(aplicaBusca).length,
     quitados: noPeriodo.filter((l) => l.status === "pago").filter(aplicaBusca).length,
@@ -402,6 +404,7 @@ export function LancamentosPage({ tipo }: { tipo: "receber" | "pagar" }) {
       <div className="mb-3 flex flex-wrap items-center gap-2">
         <div className="inline-flex rounded-md border bg-muted/30 p-1 text-sm">
           {([
+            { k: "todos", label: `Todos (${cont.todos})` },
             { k: "vencidos", label: `Vencidos (${cont.vencidos})` },
             { k: "avencer", label: `A vencer (${cont.avencer})` },
             { k: "quitados", label: `${abaLabelQuitado} (${cont.quitados})` },
