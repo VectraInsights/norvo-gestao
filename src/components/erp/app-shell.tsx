@@ -74,8 +74,69 @@ export function AppShell({ children }: { children: ReactNode }) {
     qc.invalidateQueries();
   };
 
-  // Fecha ao navegar (mobile)
-  useEffect(() => { setOpen(false); }, [location.pathname]);
+  // Preferências de menu por usuário (ordem + visibilidade)
+  const { prefs, groups: navGroups, save: savePrefs, reset: resetPrefs } = useMenuPrefs(user?.id);
+
+  // Fecha o drawer mobile e todos os dropdowns ao navegar
+  useEffect(() => {
+    setOpen(false);
+    closeAllGroups();
+  }, [location.pathname, closeAllGroups]);
+
+  // Fecha os dropdowns ao clicar fora da barra lateral
+  useEffect(() => {
+    const onPointerDown = (ev: PointerEvent) => {
+      const el = sidebarRef.current;
+      if (!el) return;
+      if (el.contains(ev.target as Node)) return;
+      closeAllGroups();
+      setOpen(false);
+    };
+    document.addEventListener("pointerdown", onPointerDown);
+    return () => document.removeEventListener("pointerdown", onPointerDown);
+  }, [closeAllGroups]);
+
+  // Navegação por teclado dentro do menu: setas, Home/End, Enter/Espaço e Esc
+  const onNavKeyDown = useCallback((ev: React.KeyboardEvent<HTMLElement>) => {
+    const nav = navRef.current;
+    if (!nav) return;
+    const target = ev.target as HTMLElement | null;
+    if (!target) return;
+
+    if (ev.key === "Escape") {
+      ev.preventDefault();
+      const groupLabel = target.getAttribute("data-nav-group");
+      closeAllGroups();
+      const btn = groupLabel
+        ? nav.querySelector<HTMLElement>(`button[data-nav-group="${CSS.escape(groupLabel)}"]`)
+        : null;
+      btn?.focus();
+      return;
+    }
+
+    if (ev.key === "ArrowRight" || ev.key === "ArrowLeft") {
+      const groupLabel = target.getAttribute("data-nav-group");
+      if (target.tagName === "BUTTON" && groupLabel) {
+        ev.preventDefault();
+        setOpenGroups((g) => ({ ...g, [groupLabel]: ev.key === "ArrowRight" }));
+      }
+      return;
+    }
+
+    if (!["ArrowDown", "ArrowUp", "Home", "End"].includes(ev.key)) return;
+
+    const items = Array.from(nav.querySelectorAll<HTMLElement>("[data-nav-focusable]"));
+    if (!items.length) return;
+    ev.preventDefault();
+    const current = items.indexOf(target.closest<HTMLElement>("[data-nav-focusable]") ?? target);
+    let next = current;
+    if (ev.key === "ArrowDown") next = current < 0 ? 0 : (current + 1) % items.length;
+    else if (ev.key === "ArrowUp") next = current <= 0 ? items.length - 1 : current - 1;
+    else if (ev.key === "Home") next = 0;
+    else next = items.length - 1;
+    items[next]?.focus();
+  }, [closeAllGroups]);
+
 
   // Atalhos globais de teclado (Alt+tecla)
   useEffect(() => {
