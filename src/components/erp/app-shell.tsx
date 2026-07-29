@@ -80,14 +80,13 @@ export function AppShell({ children }: { children: ReactNode }) {
   const { prefs, groups: prefGroups, save: savePrefs, reset: resetPrefs } = useMenuPrefs(user?.id);
   const { favorites, toggle: toggleFavorite, isFavorite } = useFavorites(user?.id);
 
-  // Visão geral sempre no topo, Favoritos logo abaixo, demais conforme personalização
+  // Visão geral é um link direto (Dashboard); Favoritos sempre visível; demais conforme personalização
   const favItems = ALL_NAV_ITEMS
     .filter((i) => favorites.includes(i.to))
     .sort((a, b) => a.label.localeCompare(b.label, "pt-BR", { sensitivity: "base" }));
-  const overview = prefGroups.find((g) => g.label === OVERVIEW_LABEL);
+  const showOverview = prefGroups.some((g) => g.label === OVERVIEW_LABEL);
   const navGroups = [
-    ...(overview ? [overview] : []),
-    ...(favItems.length ? [{ label: FAVORITES_LABEL, icon: Star, items: favItems }] : []),
+    { label: FAVORITES_LABEL, icon: Star, items: favItems },
     ...prefGroups.filter((g) => g.label !== OVERVIEW_LABEL),
   ];
 
@@ -262,6 +261,35 @@ export function AppShell({ children }: { children: ReactNode }) {
           aria-label="Navegação principal"
           onKeyDown={onNavKeyDown}
         >
+          {showOverview && (() => {
+            const active = location.pathname === "/dashboard" || location.pathname.startsWith("/dashboard/");
+            const link = (
+              <Link
+                to="/dashboard"
+                data-nav-focusable
+                aria-current={active ? "page" : undefined}
+                className={cn(
+                  "mb-2 flex touch-manipulation items-center rounded-md text-sm font-medium transition-colors",
+                  "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sidebar-ring",
+                  collapsed ? "justify-center p-2" : "min-h-11 gap-2.5 px-3 py-2 lg:min-h-0",
+                  active
+                    ? "bg-sidebar-primary text-sidebar-primary-foreground"
+                    : "text-sidebar-foreground hover:bg-sidebar-accent"
+                )}
+              >
+                <LayoutDashboard className="h-4 w-4 shrink-0" />
+                {!collapsed && OVERVIEW_LABEL}
+              </Link>
+            );
+            return collapsed ? (
+              <Tooltip>
+                <TooltipTrigger asChild>{link}</TooltipTrigger>
+                <TooltipContent side="right">{OVERVIEW_LABEL}</TooltipContent>
+              </Tooltip>
+            ) : (
+              link
+            );
+          })()}
           {navGroups.map((group) => {
             const groupActive = group.items.some(
               (i) => location.pathname === i.to || location.pathname.startsWith(i.to + "/")
@@ -347,6 +375,11 @@ export function AppShell({ children }: { children: ReactNode }) {
                       );
 
                     })}
+                    {!collapsed && group.items.length === 0 && (
+                      <div className="px-3 py-2 text-xs text-sidebar-foreground/50">
+                        Nenhum favorito ainda
+                      </div>
+                    )}
                   </div>
                 )}
               </div>
