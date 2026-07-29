@@ -1,5 +1,5 @@
 import { Link, useLocation, useNavigate } from "@tanstack/react-router";
-import { useCallback, useEffect, useRef, useState, type ReactNode } from "react";
+import { useCallback, useEffect, useRef, useState, type KeyboardEvent as ReactKeyboardEvent, type ReactNode } from "react";
 import {
   LayoutDashboard, Settings, LogOut, ChevronDown,
   Sun, Moon, PanelLeftClose, PanelLeftOpen,
@@ -97,7 +97,7 @@ export function AppShell({ children }: { children: ReactNode }) {
   }, [closeAllGroups]);
 
   // Navegação por teclado dentro do menu: setas, Home/End, Enter/Espaço e Esc
-  const onNavKeyDown = useCallback((ev: React.KeyboardEvent<HTMLElement>) => {
+  const onNavKeyDown = useCallback((ev: ReactKeyboardEvent<HTMLElement>) => {
     const nav = navRef.current;
     if (!nav) return;
     const target = ev.target as HTMLElement | null;
@@ -174,6 +174,7 @@ export function AppShell({ children }: { children: ReactNode }) {
     <div className={cn("grid min-h-screen bg-background", collapsed ? "lg:grid-cols-[72px_1fr]" : "lg:grid-cols-[260px_1fr]")}>
       {/* Sidebar */}
       <aside
+        ref={sidebarRef}
         className={cn(
           "border-r border-sidebar-border bg-sidebar text-sidebar-foreground flex flex-col",
           "fixed inset-y-0 left-0 z-40 -translate-x-full transition-all lg:static lg:translate-x-0",
