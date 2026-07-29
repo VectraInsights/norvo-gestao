@@ -375,6 +375,11 @@ export function AppShell({ children }: { children: ReactNode }) {
                       );
 
                     })}
+                    {!collapsed && group.items.length === 0 && (
+                      <div className="px-3 py-2 text-xs text-sidebar-foreground/50">
+                        Nenhum favorito ainda
+                      </div>
+                    )}
                   </div>
                 )}
               </div>
