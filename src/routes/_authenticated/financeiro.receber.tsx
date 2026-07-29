@@ -295,6 +295,7 @@ export function LancamentosPage({ tipo }: { tipo: "receber" | "pagar" }) {
     (l.contato?.nome ?? "").toLowerCase().includes(buscaNorm);
   const filtrados = noPeriodo.filter(filtroAba).filter(aplicaBusca);
   const cont = {
+    todos: noPeriodo.filter(aplicaBusca).length,
     vencidos: noPeriodo.filter((l) => emAberto(l.status) && l.data_vencimento < hojeStr).filter(aplicaBusca).length,
     avencer: noPeriodo.filter((l) => emAberto(l.status) && l.data_vencimento >= hojeStr).filter(aplicaBusca).length,
     quitados: noPeriodo.filter((l) => l.status === "pago").filter(aplicaBusca).length,
