@@ -277,11 +277,12 @@ export function LancamentosPage({ tipo }: { tipo: "receber" | "pagar" }) {
   const noPeriodo = sorted.filter((l) => dentroPeriodo(l.data_vencimento));
 
   // Aba: Vencidos (aberto/parcial e vencimento < hoje) | A vencer (aberto/parcial e vencimento >= hoje) | Quitados (pago, vencimento < hoje)
-  type Aba = "vencidos" | "avencer" | "quitados";
+  type Aba = "todos" | "vencidos" | "avencer" | "quitados";
   const [aba, setAba] = useState<Aba>("avencer");
   const hojeStr = format(new Date(), "yyyy-MM-dd");
   const emAberto = (s: string) => s === "aberto" || s === "parcial" || s === "vencido";
   const filtroAba = (l: Lancamento) => {
+    if (aba === "todos") return true;
     if (aba === "vencidos") return emAberto(l.status) && l.data_vencimento < hojeStr;
     if (aba === "avencer") return emAberto(l.status) && l.data_vencimento >= hojeStr;
     return l.status === "pago";
