@@ -404,6 +404,7 @@ export function LancamentosPage({ tipo }: { tipo: "receber" | "pagar" }) {
       <div className="mb-3 flex flex-wrap items-center gap-2">
         <div className="inline-flex rounded-md border bg-muted/30 p-1 text-sm">
           {([
+            { k: "todos", label: `Todos (${cont.todos})` },
             { k: "vencidos", label: `Vencidos (${cont.vencidos})` },
             { k: "avencer", label: `A vencer (${cont.avencer})` },
             { k: "quitados", label: `${abaLabelQuitado} (${cont.quitados})` },
