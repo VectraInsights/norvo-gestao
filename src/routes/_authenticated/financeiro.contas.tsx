@@ -1219,20 +1219,12 @@ const ReconcileRow = memo(function ReconcileRow({
           {modoBusca ? (
             <div className="space-y-1">
               <Label className="text-xs">Lançamento existente</Label>
-              <Select value={r.lancamento_id} onValueChange={(v) => onSetRow(tx.id, { lancamento_id: v })}>
-                <SelectTrigger><SelectValue placeholder="Selecione um lançamento em aberto" /></SelectTrigger>
-                <SelectContent>
-                  {lancamentosAbertos
-                    .slice()
-                    .sort((a, b) => Math.abs(Number(a.valor) - Math.abs(tx.valor)) - Math.abs(Number(b.valor) - Math.abs(tx.valor)))
-                    .slice(0, 100)
-                    .map((l) => (
-                      <SelectItem key={l.id} value={l.id}>
-                        {format(new Date(l.data_vencimento + "T00:00:00"), "dd/MM")} — {l.descricao} ({brl(Number(l.valor))})
-                      </SelectItem>
-                    ))}
-                </SelectContent>
-              </Select>
+              <LancamentoPicker
+                valorRef={Math.abs(tx.valor)}
+                lancamentos={lancamentosAbertos}
+                value={r.lancamento_id}
+                onChange={(v) => onSetRow(tx.id, { lancamento_id: v })}
+              />
             </div>
           ) : (
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
