@@ -106,6 +106,47 @@ export type Database = {
           },
         ]
       }
+      centros_custo: {
+        Row: {
+          ativo: boolean
+          codigo: string | null
+          created_at: string
+          descricao: string | null
+          empresa_id: string
+          id: string
+          nome: string
+          updated_at: string
+        }
+        Insert: {
+          ativo?: boolean
+          codigo?: string | null
+          created_at?: string
+          descricao?: string | null
+          empresa_id: string
+          id?: string
+          nome: string
+          updated_at?: string
+        }
+        Update: {
+          ativo?: boolean
+          codigo?: string | null
+          created_at?: string
+          descricao?: string | null
+          empresa_id?: string
+          id?: string
+          nome?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "centros_custo_empresa_id_fkey"
+            columns: ["empresa_id"]
+            isOneToOne: false
+            referencedRelation: "empresas"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       colaboradores: {
         Row: {
           agencia: string | null
@@ -727,9 +768,11 @@ export type Database = {
       lancamentos_financeiros: {
         Row: {
           categoria_id: string | null
+          centro_custo_id: string | null
           conta_bancaria_id: string | null
           contato_id: string | null
           created_at: string
+          created_by: string | null
           data_emissao: string
           data_pagamento: string | null
           data_vencimento: string
@@ -747,9 +790,11 @@ export type Database = {
         }
         Insert: {
           categoria_id?: string | null
+          centro_custo_id?: string | null
           conta_bancaria_id?: string | null
           contato_id?: string | null
           created_at?: string
+          created_by?: string | null
           data_emissao?: string
           data_pagamento?: string | null
           data_vencimento: string
@@ -767,9 +812,11 @@ export type Database = {
         }
         Update: {
           categoria_id?: string | null
+          centro_custo_id?: string | null
           conta_bancaria_id?: string | null
           contato_id?: string | null
           created_at?: string
+          created_by?: string | null
           data_emissao?: string
           data_pagamento?: string | null
           data_vencimento?: string
@@ -791,6 +838,13 @@ export type Database = {
             columns: ["categoria_id"]
             isOneToOne: false
             referencedRelation: "categorias_financeiras"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "lancamentos_financeiros_centro_custo_id_fkey"
+            columns: ["centro_custo_id"]
+            isOneToOne: false
+            referencedRelation: "centros_custo"
             referencedColumns: ["id"]
           },
           {
