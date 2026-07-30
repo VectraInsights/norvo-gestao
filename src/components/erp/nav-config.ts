@@ -1,7 +1,7 @@
 import {
   LayoutDashboard, ReceiptText, Boxes, FileText,
   Wallet, TrendingUp, Banknote, ShoppingCart, UserSquare2, Package,
-  Kanban, Briefcase, Wrench, UsersRound,
+  Kanban, Briefcase, Wrench, UsersRound, ListTree, FolderCog,
 } from "lucide-react";
 
 export type NavItem = { to: string; label: string; icon: typeof LayoutDashboard };
@@ -19,6 +19,8 @@ const RAW_NAV: NavGroup[] = [
     { to: "/financeiro/pagar",   label: "Contas a pagar",   icon: ReceiptText },
     { to: "/financeiro/fluxo",   label: "Fluxo de caixa",   icon: Wallet },
     { to: "/financeiro/contas",  label: "Contas financeiras", icon: Banknote },
+    { to: "/financeiro/extrato", label: "Extrato de movimentações", icon: ListTree },
+    { to: "/financeiro/cadastros", label: "Cadastros", icon: FolderCog },
   ]},
   { label: "Vendas & CRM", icon: ShoppingCart, items: [
     { to: "/vendas/crm",      label: "Funil (CRM)", icon: Kanban },
