@@ -179,8 +179,6 @@ function CadastrosPage() {
 
         {/* Categorias */}
         <TabsContent value="categorias" className="mt-4">
-          <div className="mb-3 flex justify-end">
-        <TabsContent value="categorias" className="mt-4">
           <div className="mb-3 flex items-center justify-between gap-3">
             <Tabs value={catTipoTab} onValueChange={(v) => setCatTipoTab(v as "pagar" | "receber")}>
               <TabsList>
