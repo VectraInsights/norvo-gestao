@@ -63,6 +63,12 @@ function CadastrosPage() {
     mutationFn: async () => {
       if (!empresa) throw new Error("Empresa não selecionada");
       if (!catForm.nome.trim()) throw new Error("Informe o nome");
+      const norm = (s: string) =>
+        s.trim().toLocaleLowerCase("pt-BR").normalize("NFD").replace(/\p{Diacritic}/gu, "");
+      const duplicada = (categorias ?? []).some(
+        (c) => c.id !== catForm.id && norm(c.nome) === norm(catForm.nome),
+      );
+      if (duplicada) throw new Error("Já existe uma categoria com esse nome");
       const payload = {
         empresa_id: empresa.id,
         nome: catForm.nome.trim(),
