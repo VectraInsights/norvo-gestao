@@ -27,7 +27,9 @@ import { Route as AuthenticatedFiscalNotasRouteImport } from './routes/_authenti
 import { Route as AuthenticatedFinanceiroReceberRouteImport } from './routes/_authenticated/financeiro.receber'
 import { Route as AuthenticatedFinanceiroPagarRouteImport } from './routes/_authenticated/financeiro.pagar'
 import { Route as AuthenticatedFinanceiroFluxoRouteImport } from './routes/_authenticated/financeiro.fluxo'
+import { Route as AuthenticatedFinanceiroExtratoRouteImport } from './routes/_authenticated/financeiro.extrato'
 import { Route as AuthenticatedFinanceiroContasRouteImport } from './routes/_authenticated/financeiro.contas'
+import { Route as AuthenticatedFinanceiroCadastrosRouteImport } from './routes/_authenticated/financeiro.cadastros'
 import { Route as AuthenticatedEstoqueProdutosRouteImport } from './routes/_authenticated/estoque.produtos'
 import { Route as AuthenticatedEstoqueMovimentacoesRouteImport } from './routes/_authenticated/estoque.movimentacoes'
 import { Route as AuthenticatedEstoqueFornecedoresRouteImport } from './routes/_authenticated/estoque.fornecedores'
@@ -133,10 +135,22 @@ const AuthenticatedFinanceiroFluxoRoute =
     path: '/financeiro/fluxo',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedFinanceiroExtratoRoute =
+  AuthenticatedFinanceiroExtratoRouteImport.update({
+    id: '/financeiro/extrato',
+    path: '/financeiro/extrato',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedFinanceiroContasRoute =
   AuthenticatedFinanceiroContasRouteImport.update({
     id: '/financeiro/contas',
     path: '/financeiro/contas',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedFinanceiroCadastrosRoute =
+  AuthenticatedFinanceiroCadastrosRouteImport.update({
+    id: '/financeiro/cadastros',
+    path: '/financeiro/cadastros',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
 const AuthenticatedEstoqueProdutosRoute =
@@ -180,7 +194,9 @@ export interface FileRoutesByFullPath {
   '/estoque/fornecedores': typeof AuthenticatedEstoqueFornecedoresRoute
   '/estoque/movimentacoes': typeof AuthenticatedEstoqueMovimentacoesRoute
   '/estoque/produtos': typeof AuthenticatedEstoqueProdutosRoute
+  '/financeiro/cadastros': typeof AuthenticatedFinanceiroCadastrosRoute
   '/financeiro/contas': typeof AuthenticatedFinanceiroContasRoute
+  '/financeiro/extrato': typeof AuthenticatedFinanceiroExtratoRoute
   '/financeiro/fluxo': typeof AuthenticatedFinanceiroFluxoRoute
   '/financeiro/pagar': typeof AuthenticatedFinanceiroPagarRoute
   '/financeiro/receber': typeof AuthenticatedFinanceiroReceberRoute
@@ -205,7 +221,9 @@ export interface FileRoutesByTo {
   '/estoque/fornecedores': typeof AuthenticatedEstoqueFornecedoresRoute
   '/estoque/movimentacoes': typeof AuthenticatedEstoqueMovimentacoesRoute
   '/estoque/produtos': typeof AuthenticatedEstoqueProdutosRoute
+  '/financeiro/cadastros': typeof AuthenticatedFinanceiroCadastrosRoute
   '/financeiro/contas': typeof AuthenticatedFinanceiroContasRoute
+  '/financeiro/extrato': typeof AuthenticatedFinanceiroExtratoRoute
   '/financeiro/fluxo': typeof AuthenticatedFinanceiroFluxoRoute
   '/financeiro/pagar': typeof AuthenticatedFinanceiroPagarRoute
   '/financeiro/receber': typeof AuthenticatedFinanceiroReceberRoute
@@ -232,7 +250,9 @@ export interface FileRoutesById {
   '/_authenticated/estoque/fornecedores': typeof AuthenticatedEstoqueFornecedoresRoute
   '/_authenticated/estoque/movimentacoes': typeof AuthenticatedEstoqueMovimentacoesRoute
   '/_authenticated/estoque/produtos': typeof AuthenticatedEstoqueProdutosRoute
+  '/_authenticated/financeiro/cadastros': typeof AuthenticatedFinanceiroCadastrosRoute
   '/_authenticated/financeiro/contas': typeof AuthenticatedFinanceiroContasRoute
+  '/_authenticated/financeiro/extrato': typeof AuthenticatedFinanceiroExtratoRoute
   '/_authenticated/financeiro/fluxo': typeof AuthenticatedFinanceiroFluxoRoute
   '/_authenticated/financeiro/pagar': typeof AuthenticatedFinanceiroPagarRoute
   '/_authenticated/financeiro/receber': typeof AuthenticatedFinanceiroReceberRoute
@@ -259,7 +279,9 @@ export interface FileRouteTypes {
     | '/estoque/fornecedores'
     | '/estoque/movimentacoes'
     | '/estoque/produtos'
+    | '/financeiro/cadastros'
     | '/financeiro/contas'
+    | '/financeiro/extrato'
     | '/financeiro/fluxo'
     | '/financeiro/pagar'
     | '/financeiro/receber'
@@ -284,7 +306,9 @@ export interface FileRouteTypes {
     | '/estoque/fornecedores'
     | '/estoque/movimentacoes'
     | '/estoque/produtos'
+    | '/financeiro/cadastros'
     | '/financeiro/contas'
+    | '/financeiro/extrato'
     | '/financeiro/fluxo'
     | '/financeiro/pagar'
     | '/financeiro/receber'
@@ -310,7 +334,9 @@ export interface FileRouteTypes {
     | '/_authenticated/estoque/fornecedores'
     | '/_authenticated/estoque/movimentacoes'
     | '/_authenticated/estoque/produtos'
+    | '/_authenticated/financeiro/cadastros'
     | '/_authenticated/financeiro/contas'
+    | '/_authenticated/financeiro/extrato'
     | '/_authenticated/financeiro/fluxo'
     | '/_authenticated/financeiro/pagar'
     | '/_authenticated/financeiro/receber'
@@ -461,11 +487,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedFinanceiroFluxoRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/financeiro/extrato': {
+      id: '/_authenticated/financeiro/extrato'
+      path: '/financeiro/extrato'
+      fullPath: '/financeiro/extrato'
+      preLoaderRoute: typeof AuthenticatedFinanceiroExtratoRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/financeiro/contas': {
       id: '/_authenticated/financeiro/contas'
       path: '/financeiro/contas'
       fullPath: '/financeiro/contas'
       preLoaderRoute: typeof AuthenticatedFinanceiroContasRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/financeiro/cadastros': {
+      id: '/_authenticated/financeiro/cadastros'
+      path: '/financeiro/cadastros'
+      fullPath: '/financeiro/cadastros'
+      preLoaderRoute: typeof AuthenticatedFinanceiroCadastrosRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/estoque/produtos': {
@@ -513,7 +553,9 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedEstoqueFornecedoresRoute: typeof AuthenticatedEstoqueFornecedoresRoute
   AuthenticatedEstoqueMovimentacoesRoute: typeof AuthenticatedEstoqueMovimentacoesRoute
   AuthenticatedEstoqueProdutosRoute: typeof AuthenticatedEstoqueProdutosRoute
+  AuthenticatedFinanceiroCadastrosRoute: typeof AuthenticatedFinanceiroCadastrosRoute
   AuthenticatedFinanceiroContasRoute: typeof AuthenticatedFinanceiroContasRoute
+  AuthenticatedFinanceiroExtratoRoute: typeof AuthenticatedFinanceiroExtratoRoute
   AuthenticatedFinanceiroFluxoRoute: typeof AuthenticatedFinanceiroFluxoRoute
   AuthenticatedFinanceiroPagarRoute: typeof AuthenticatedFinanceiroPagarRoute
   AuthenticatedFinanceiroReceberRoute: typeof AuthenticatedFinanceiroReceberRoute
@@ -538,7 +580,9 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedEstoqueMovimentacoesRoute:
     AuthenticatedEstoqueMovimentacoesRoute,
   AuthenticatedEstoqueProdutosRoute: AuthenticatedEstoqueProdutosRoute,
+  AuthenticatedFinanceiroCadastrosRoute: AuthenticatedFinanceiroCadastrosRoute,
   AuthenticatedFinanceiroContasRoute: AuthenticatedFinanceiroContasRoute,
+  AuthenticatedFinanceiroExtratoRoute: AuthenticatedFinanceiroExtratoRoute,
   AuthenticatedFinanceiroFluxoRoute: AuthenticatedFinanceiroFluxoRoute,
   AuthenticatedFinanceiroPagarRoute: AuthenticatedFinanceiroPagarRoute,
   AuthenticatedFinanceiroReceberRoute: AuthenticatedFinanceiroReceberRoute,
@@ -566,13 +610,3 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}

@@ -22,6 +22,7 @@ import { toast } from "sonner";
 import { format } from "date-fns";
 import { LancamentosToolbar } from "@/components/erp/lancamentos-toolbar";
 import { PeriodoFilter, periodoProx7, type Periodo } from "@/components/erp/periodo-filter";
+import { usePerfisMap } from "@/hooks/use-perfis";
 
 export const Route = createFileRoute("/_authenticated/financeiro/receber")({
   component: () => <LancamentosPage tipo="receber" />,
@@ -46,6 +47,8 @@ type Lancamento = {
   valor: number;
   status: string;
   data_vencimento: string;
+  created_at: string;
+  created_by: string | null;
   contato: { nome: string } | null;
 };
 
@@ -61,6 +64,7 @@ const emptyForm = () => ({
 
 export function LancamentosPage({ tipo }: { tipo: "receber" | "pagar" }) {
   const { data: empresa } = useEmpresaAtual();
+  const perfis = usePerfisMap(!!empresa);
   const qc = useQueryClient();
   const [open, setOpen] = useState(false);
   const [form, setForm] = useState(emptyForm);
@@ -73,7 +77,7 @@ export function LancamentosPage({ tipo }: { tipo: "receber" | "pagar" }) {
     queryFn: async ({ signal }): Promise<Lancamento[]> => {
       const { data, error } = await supabase
         .from("lancamentos_financeiros")
-        .select("id,descricao,valor,status,data_vencimento,contato:contatos(nome)")
+        .select("id,descricao,valor,status,data_vencimento,created_at,created_by,contato:contatos(nome)")
         .eq("empresa_id", empresa!.id)
         .eq("tipo", tipo)
         .order("data_vencimento", { ascending: false })
@@ -494,6 +498,7 @@ export function LancamentosPage({ tipo }: { tipo: "receber" | "pagar" }) {
                 <SortHead k="data_vencimento">Vencimento</SortHead>
                 <SortHead k="valor" className="text-right">Valor</SortHead>
                 <SortHead k="status">Status</SortHead>
+                <TableHead>Lançado por</TableHead>
                 <TableHead />
               </TableRow>
             </TableHeader>
@@ -511,6 +516,11 @@ export function LancamentosPage({ tipo }: { tipo: "receber" | "pagar" }) {
                     <TableCell className="text-right text-tabular font-medium">{brl(l.valor)}</TableCell>
                     <TableCell>
                       <Badge className={STATUS_TONE[l.status] ?? ""} variant="secondary">{l.status}</Badge>
+                    </TableCell>
+                    <TableCell className="whitespace-nowrap text-xs text-muted-foreground">
+                      {l.created_by ? (perfis[l.created_by] ?? "—") : "—"}
+                      <br />
+                      {format(new Date(l.created_at), "dd/MM/yyyy HH:mm")}
                     </TableCell>
                     <TableCell className="text-right">
                       <DropdownMenu>
