@@ -582,6 +582,8 @@ type RowState = {
   lancamento_id: string;
 };
 
+const PAGE_SIZE = 25;
+
 const emptyRow = (memo: string | null): RowState => ({
   descricao: memo ?? "", categoria_id: "", contato_id: "", centro_custo_id: "", lancamento_id: "",
 });
