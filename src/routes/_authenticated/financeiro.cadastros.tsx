@@ -104,6 +104,8 @@ function CadastrosPage() {
 
   const pais = (categorias ?? []).filter((c) => !c.parent_id);
   const nomePai = (id: string | null) => pais.find((p) => p.id === id)?.nome ?? "—";
+  const [catTipoTab, setCatTipoTab] = useState<"pagar" | "receber">("pagar");
+  const categoriasFiltradas = (categorias ?? []).filter((c) => c.tipo === catTipoTab);
 
   /* ---------------- Centros de custo ---------------- */
   const ccKey = ["cadastros-centros", empresa?.id] as const;
