@@ -78,6 +78,49 @@ const initialForm = (tipo: TipoConta): FormState => ({
 });
 
 
+/** Concilia automaticamente (mesmo valor e mesma data) tudo o que der match.
+ *  Retorna a quantidade de conciliações efetuadas. */
+async function autoConciliarConta(contaId: string, empresaId: string): Promise<number> {
+  const [{ data: txs }, { data: abertos }] = await Promise.all([
+    supabase.from("ofx_transacoes")
+      .select("id,data_transacao,valor,status")
+      .eq("conta_bancaria_id", contaId).neq("status", "conciliada"),
+    supabase.from("lancamentos_financeiros")
+      .select("id,valor,data_vencimento")
+      .eq("empresa_id", empresaId).in("status", ["aberto", "vencido", "parcial"])
+      .order("data_vencimento").limit(1000),
+  ]);
+  if (!txs?.length || !abertos?.length) return 0;
+
+  const usados = new Set<string>();
+  const pares: { ofxId: string; lancamentoId: string; valor: number }[] = [];
+  for (const tx of txs) {
+    const match = abertos.find((l) =>
+      !usados.has(l.id) &&
+      Math.abs(Number(l.valor) - Math.abs(Number(tx.valor))) < 0.01 &&
+      l.data_vencimento === tx.data_transacao
+    );
+    if (match) {
+      usados.add(match.id);
+      pares.push({ ofxId: tx.id, lancamentoId: match.id, valor: Number(tx.valor) });
+    }
+  }
+  if (!pares.length) return 0;
+
+  const hoje = format(new Date(), "yyyy-MM-dd");
+  let ok = 0;
+  for (const p of pares) {
+    const { error: e1 } = await supabase.from("lancamentos_financeiros")
+      .update({ status: "pago", valor_pago: Math.abs(p.valor), data_pagamento: hoje, conta_bancaria_id: contaId })
+      .eq("id", p.lancamentoId);
+    if (e1) continue;
+    const { error: e2 } = await supabase.from("ofx_transacoes")
+      .update({ status: "conciliada", lancamento_id: p.lancamentoId }).eq("id", p.ofxId);
+    if (!e2) ok++;
+  }
+  return ok;
+}
+
 function ContasFinanceiras() {
   const { data: empresa } = useEmpresaAtual();
   const qc = useQueryClient();
