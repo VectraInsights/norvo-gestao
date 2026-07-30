@@ -545,6 +545,8 @@ function ContasFinanceiras() {
         conta={contas?.find((c) => c.id === reconcilingId) ?? null}
         empresaId={empresa?.id ?? null}
         autoConciliar={autoConciliar}
+        importing={reconcilingId ? importing === reconcilingId : false}
+        onImport={() => reconcilingId && triggerUpload(reconcilingId)}
         onClose={() => setReconcilingId(null)}
       />
     </>
