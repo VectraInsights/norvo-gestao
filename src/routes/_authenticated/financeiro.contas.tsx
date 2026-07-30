@@ -932,10 +932,11 @@ function ReconcileDialog({ contaId, conta, empresaId, autoConciliar, importing, 
               <Button variant="outline" size="sm" disabled={!sel.size || criarEConciliar.isPending} onClick={conciliarSelecionados}>
                 {criarEConciliar.isPending && <Loader2 className="mr-1 h-3 w-3 animate-spin" />}Conciliar
               </Button>
-              <Button variant="outline" size="sm" disabled={!sel.size || arquivar.isPending}
-                onClick={() => arquivar.mutate(Array.from(sel))}>
-                <Archive className="mr-1 h-3 w-3" />Arquivar
+              <Button variant="outline" size="sm" disabled={!sel.size || excluirTx.isPending}
+                onClick={() => excluirTx.mutate(Array.from(sel))}>
+                <Trash2 className="mr-1 h-3 w-3" />Excluir
               </Button>
+
               <div className="ml-auto">
                 <Select value={ordem} onValueChange={(v) => setOrdem(v as typeof ordem)}>
                   <SelectTrigger className="h-8 w-[170px]"><SelectValue /></SelectTrigger>
