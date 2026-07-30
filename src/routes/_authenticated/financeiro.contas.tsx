@@ -604,6 +604,22 @@ function ReconcileDialog({ contaId, conta, empresaId, autoConciliar, onClose }: 
 
   useEffect(() => { if (!open) { setBusca(""); setFiltro("todos"); setSel(new Set()); setRows({}); setBuscarModo({}); } }, [open]);
 
+  useEffect(() => {
+    if (!open) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        const t = e.target as HTMLElement;
+        if (t && (t.tagName === "INPUT" || t.tagName === "TEXTAREA" || t.isContentEditable)) {
+          return;
+        }
+        e.preventDefault();
+        onClose();
+      }
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [open, onClose]);
+
   const { data: txs, isLoading } = useQuery({
     enabled: open && !!empresaId,
     queryKey: ["ofx", contaId] as const,
