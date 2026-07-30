@@ -1070,3 +1070,120 @@ function ReconcileDialog({ contaId, conta, empresaId, autoConciliar, onClose }: 
     </Dialog>
   );
 }
+
+type MovRow = {
+  id: string; descricao: string; valor: number; valor_pago: number; tipo: string;
+  status: string; data_vencimento: string; data_pagamento: string | null;
+  categoria: { nome: string } | null;
+  contato: { nome: string } | null;
+};
+
+function MovimentacoesConta({ contaId, empresaId, saldoAtual }: { contaId: string | null; empresaId: string | null; saldoAtual: number }) {
+  const [busca, setBusca] = useState("");
+  const [situacao, setSituacao] = useState<"todas" | "realizadas" | "previstas">("todas");
+
+  const { data, isLoading } = useQuery({
+    enabled: !!contaId && !!empresaId,
+    queryKey: ["mov-conta", contaId] as const,
+    queryFn: async (): Promise<MovRow[]> => {
+      const { data, error } = await supabase.from("lancamentos_financeiros")
+        .select("id,descricao,valor,valor_pago,tipo,status,data_vencimento,data_pagamento,categoria:categorias_financeiras(nome),contato:contatos(nome)")
+        .eq("empresa_id", empresaId!)
+        .eq("conta_bancaria_id", contaId!)
+        .neq("status", "cancelado")
+        .order("data_vencimento", { ascending: true })
+        .limit(500);
+      if (error) throw error;
+      return (data ?? []) as unknown as MovRow[];
+    },
+  });
+
+  const q = busca.trim().toLowerCase();
+  const linhas = (data ?? [])
+    .filter((l) => situacao === "todas" || (situacao === "realizadas" ? l.status === "pago" : l.status !== "pago"))
+    .filter((l) => !q || l.descricao.toLowerCase().includes(q) || (l.contato?.nome ?? "").toLowerCase().includes(q));
+
+  const entradas = linhas.filter((l) => l.tipo === "receber").reduce((s, l) => s + Number(l.status === "pago" ? l.valor_pago : l.valor), 0);
+  const saidas = linhas.filter((l) => l.tipo === "pagar").reduce((s, l) => s + Number(l.status === "pago" ? l.valor_pago : l.valor), 0);
+
+  let acumulado = 0;
+  const comSaldo = linhas.map((l) => {
+    const v = Number(l.status === "pago" ? l.valor_pago : l.valor) * (l.tipo === "receber" ? 1 : -1);
+    acumulado += v;
+    return { l, v, saldo: acumulado };
+  });
+
+  return (
+    <div className="space-y-4">
+      <div className="flex flex-wrap items-center gap-2">
+        <div className="relative w-full max-w-sm">
+          <Search className="pointer-events-none absolute left-2 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+          <Input className="pl-8" placeholder="Buscar por descrição ou contato" value={busca} onChange={(e) => setBusca(e.target.value)} />
+        </div>
+        <Select value={situacao} onValueChange={(v) => setSituacao(v as typeof situacao)}>
+          <SelectTrigger className="h-9 w-[180px]"><SelectValue /></SelectTrigger>
+          <SelectContent>
+            <SelectItem value="todas">Todas</SelectItem>
+            <SelectItem value="realizadas">Realizadas</SelectItem>
+            <SelectItem value="previstas">Previstas</SelectItem>
+          </SelectContent>
+        </Select>
+      </div>
+
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+        <Card className="p-3">
+          <div className="text-xs text-muted-foreground">Entradas</div>
+          <div className="text-lg font-semibold text-success">{brl(entradas)}</div>
+        </Card>
+        <Card className="p-3">
+          <div className="text-xs text-muted-foreground">Saídas</div>
+          <div className="text-lg font-semibold text-destructive">{brl(saidas)}</div>
+        </Card>
+        <Card className="p-3">
+          <div className="text-xs text-muted-foreground">Saldo atual da conta</div>
+          <div className="text-lg font-semibold">{brl(saldoAtual)}</div>
+        </Card>
+      </div>
+
+      {isLoading ? (
+        <div className="py-6 text-center text-sm text-muted-foreground">Carregando…</div>
+      ) : !comSaldo.length ? (
+        <div className="rounded-lg border border-dashed py-10 text-center text-sm text-muted-foreground">
+          Nenhuma movimentação nesta conta.
+        </div>
+      ) : (
+        <Table>
+          <TableHeader><TableRow>
+            <TableHead>Data</TableHead>
+            <TableHead>Descrição</TableHead>
+            <TableHead>Categoria</TableHead>
+            <TableHead>Situação</TableHead>
+            <TableHead className="text-right">Valor</TableHead>
+            <TableHead className="text-right">Saldo</TableHead>
+          </TableRow></TableHeader>
+          <TableBody>
+            {comSaldo.map(({ l, v, saldo }) => (
+              <TableRow key={l.id}>
+                <TableCell className="text-tabular whitespace-nowrap">
+                  {format(new Date((l.data_pagamento ?? l.data_vencimento) + "T00:00:00"), "dd/MM/yyyy")}
+                </TableCell>
+                <TableCell className="text-sm">
+                  {l.descricao}
+                  {l.contato?.nome && <span className="block text-xs text-muted-foreground">{l.contato.nome}</span>}
+                </TableCell>
+                <TableCell className="text-sm text-muted-foreground">{l.categoria?.nome ?? "—"}</TableCell>
+                <TableCell>
+                  <Badge variant={l.status === "pago" ? "secondary" : "outline"}>
+                    {l.status === "pago" ? "Realizado" : "Previsto"}
+                  </Badge>
+                </TableCell>
+                <TableCell className={cn("text-right text-tabular", v < 0 ? "text-destructive" : "text-success")}>{brl(v)}</TableCell>
+                <TableCell className="text-right text-tabular font-medium">{brl(saldo)}</TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+      )}
+    </div>
+  );
+}
