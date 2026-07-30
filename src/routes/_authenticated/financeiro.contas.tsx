@@ -910,9 +910,19 @@ function ReconcileDialog({ contaId, conta, empresaId, autoConciliar, importing, 
                   <Search className="pointer-events-none absolute left-2 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                   <Input className="pl-8" placeholder="Descrição ou valor" value={busca} onChange={(e) => setBusca(e.target.value)} />
                 </div>
-                <Button variant="ghost" size="sm" onClick={() => { setBusca(""); setFiltro("todos"); }}>
+                <Select value={mes} onValueChange={setMes}>
+                  <SelectTrigger className="w-[180px]"><SelectValue placeholder="Mês" /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="todos">Todos os meses</SelectItem>
+                    {mesesDisponiveis.map((m) => (
+                      <SelectItem key={m} value={m}>{labelMes(m)}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <Button variant="ghost" size="sm" onClick={() => { setBusca(""); setFiltro("todos"); setMes("todos"); }}>
                   <Trash2 className="mr-1 h-3 w-3" />Limpar filtros
                 </Button>
+
               </div>
             </div>
 
