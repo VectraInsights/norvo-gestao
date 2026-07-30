@@ -63,6 +63,12 @@ function CadastrosPage() {
     mutationFn: async () => {
       if (!empresa) throw new Error("Empresa não selecionada");
       if (!catForm.nome.trim()) throw new Error("Informe o nome");
+      const norm = (s: string) =>
+        s.trim().toLocaleLowerCase("pt-BR").normalize("NFD").replace(/\p{Diacritic}/gu, "");
+      const duplicada = (categorias ?? []).some(
+        (c) => c.id !== catForm.id && norm(c.nome) === norm(catForm.nome),
+      );
+      if (duplicada) throw new Error("Já existe uma categoria com esse nome");
       const payload = {
         empresa_id: empresa.id,
         nome: catForm.nome.trim(),
@@ -98,6 +104,8 @@ function CadastrosPage() {
 
   const pais = (categorias ?? []).filter((c) => !c.parent_id);
   const nomePai = (id: string | null) => pais.find((p) => p.id === id)?.nome ?? "—";
+  const [catTipoTab, setCatTipoTab] = useState<"pagar" | "receber">("pagar");
+  const categoriasFiltradas = (categorias ?? []).filter((c) => c.tipo === catTipoTab);
 
   /* ---------------- Centros de custo ---------------- */
   const ccKey = ["cadastros-centros", empresa?.id] as const;
@@ -171,15 +179,25 @@ function CadastrosPage() {
 
         {/* Categorias */}
         <TabsContent value="categorias" className="mt-4">
-          <div className="mb-3 flex justify-end">
-            <Button size="sm" onClick={() => { setCatForm({ nome: "", tipo: "pagar", parent_id: "none" }); setCatOpen(true); }}>
+          <div className="mb-3 flex items-center justify-between gap-3">
+            <Tabs value={catTipoTab} onValueChange={(v) => setCatTipoTab(v as "pagar" | "receber")}>
+              <TabsList>
+                <TabsTrigger value="pagar">Despesas</TabsTrigger>
+                <TabsTrigger value="receber">Receitas</TabsTrigger>
+              </TabsList>
+            </Tabs>
+            <Button size="sm" onClick={() => { setCatForm({ nome: "", tipo: catTipoTab, parent_id: "none" }); setCatOpen(true); }}>
               <Plus className="mr-1 h-4 w-4" />Nova categoria
             </Button>
           </div>
           {loadingCat ? (
             <div className="space-y-2">{Array.from({ length: 4 }).map((_, i) => <div key={i} className="h-12 animate-pulse rounded-md bg-muted/30" />)}</div>
-          ) : !categorias?.length ? (
-            <EmptyState icon={FolderCog} title="Nenhuma categoria" description="Crie a primeira categoria financeira." />
+          ) : !categoriasFiltradas.length ? (
+            <EmptyState
+              icon={FolderCog}
+              title={catTipoTab === "pagar" ? "Nenhuma categoria de despesa" : "Nenhuma categoria de receita"}
+              description="Crie a primeira categoria financeira deste tipo."
+            />
           ) : (
             <Card className="overflow-hidden shadow-panel">
               <Table>
@@ -192,7 +210,7 @@ function CadastrosPage() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {categorias.map((c) => (
+                  {categoriasFiltradas.map((c) => (
                     <TableRow key={c.id}>
                       <TableCell className={c.parent_id ? "pl-8 text-muted-foreground" : "font-medium"}>{c.nome}</TableCell>
                       <TableCell>
@@ -219,7 +237,6 @@ function CadastrosPage() {
           )}
         </TabsContent>
 
-        {/* Centros de custo */}
         <TabsContent value="centros" className="mt-4">
           <div className="mb-3 flex justify-end">
             <Button size="sm" onClick={() => { setCcForm({ nome: "", codigo: "", descricao: "", ativo: true }); setCcOpen(true); }}>
