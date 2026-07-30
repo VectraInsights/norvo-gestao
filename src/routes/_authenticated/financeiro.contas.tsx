@@ -10,7 +10,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import { Banknote, Plus, Upload, Loader2, Link2, Check, Landmark, Wallet, CreditCard, TrendingUp, PiggyBank, DollarSign, Database, Coins, Trash2, Search, Archive, X } from "lucide-react";
+import { Banknote, Plus, Upload, Loader2, Link2, Check, Landmark, Wallet, CreditCard, TrendingUp, PiggyBank, DollarSign, Database, Coins, Trash2, Search, X } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
 import { useEffect, useRef, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
@@ -772,18 +772,20 @@ function ReconcileDialog({ contaId, conta, empresaId, autoConciliar, importing, 
     onError: (e: Error) => toast.error(e.message),
   });
 
-  const arquivar = useMutation({
+  const excluirTx = useMutation({
     mutationFn: async (ids: string[]) => {
-      const { error } = await supabase.from("ofx_transacoes").update({ status: "arquivada" }).in("id", ids);
+      const { error } = await supabase.from("ofx_transacoes")
+        .delete().in("id", ids).neq("status", "conciliada");
       if (error) throw error;
     },
     onSuccess: () => {
-      toast.success("Lançamento(s) arquivado(s)");
+      toast.success("Lançamento(s) excluído(s) do extrato");
       setSel(new Set());
       qc.invalidateQueries({ queryKey: ["ofx", contaId] });
     },
     onError: (e: Error) => toast.error(e.message),
   });
+
 
   const excluirExtrato = useMutation({
     mutationFn: async () => {
@@ -930,10 +932,11 @@ function ReconcileDialog({ contaId, conta, empresaId, autoConciliar, importing, 
               <Button variant="outline" size="sm" disabled={!sel.size || criarEConciliar.isPending} onClick={conciliarSelecionados}>
                 {criarEConciliar.isPending && <Loader2 className="mr-1 h-3 w-3 animate-spin" />}Conciliar
               </Button>
-              <Button variant="outline" size="sm" disabled={!sel.size || arquivar.isPending}
-                onClick={() => arquivar.mutate(Array.from(sel))}>
-                <Archive className="mr-1 h-3 w-3" />Arquivar
+              <Button variant="outline" size="sm" disabled={!sel.size || excluirTx.isPending}
+                onClick={() => excluirTx.mutate(Array.from(sel))}>
+                <Trash2 className="mr-1 h-3 w-3" />Excluir
               </Button>
+
               <div className="ml-auto">
                 <Select value={ordem} onValueChange={(v) => setOrdem(v as typeof ordem)}>
                   <SelectTrigger className="h-8 w-[170px]"><SelectValue /></SelectTrigger>
@@ -989,8 +992,9 @@ function ReconcileDialog({ contaId, conta, empresaId, autoConciliar, importing, 
                         </div>
                         <div className="flex items-center justify-between border-t bg-muted/30 px-4 py-2">
                           <Badge variant="secondary" className="text-xs">Integração manual</Badge>
-                          <Button variant="outline" size="sm" onClick={() => arquivar.mutate([tx.id])} disabled={arquivar.isPending}>
-                            <Archive className="mr-1 h-3 w-3" />Arquivar
+                          <Button variant="outline" size="sm" onClick={() => excluirTx.mutate([tx.id])} disabled={excluirTx.isPending}>
+                            <Trash2 className="mr-1 h-3 w-3" />Excluir
+
                           </Button>
                         </div>
                       </Card>
