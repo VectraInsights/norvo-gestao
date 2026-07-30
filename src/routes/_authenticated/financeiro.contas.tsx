@@ -130,6 +130,27 @@ function ContasFinanceiras() {
   const [form, setForm] = useState<FormState>(initialForm("corrente"));
   const [autoConciliar, setAutoConciliar] = useState(true);
   const [reconcilingId, setReconcilingId] = useState<string | null>(null);
+  const [preparando, setPreparando] = useState<string | null>(null);
+
+  const abrirConciliacao = async (id: string) => {
+    if (!autoConciliar || !empresa?.id) { setReconcilingId(id); return; }
+    setPreparando(id);
+    try {
+      const ok = await autoConciliarConta(id, empresa.id);
+      if (ok > 0) {
+        toast.success(`${ok} lançamento(s) conciliado(s) automaticamente`);
+        qc.invalidateQueries({ queryKey: ["ofx", id] });
+        qc.invalidateQueries({ queryKey: ["lanc-abertos", empresa.id] });
+        qc.invalidateQueries({ queryKey: ["lancamentos"] });
+      }
+    } catch {
+      /* segue abrindo a tela mesmo se a automação falhar */
+    } finally {
+      setPreparando(null);
+      setReconcilingId(id);
+    }
+  };
+
   const [importing, setImporting] = useState<string | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
   const [uploadContaId, setUploadContaId] = useState<string | null>(null);
