@@ -4,10 +4,10 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
-import { CalendarIcon } from "lucide-react";
+import { CalendarIcon, ChevronLeft, ChevronRight } from "lucide-react";
 import {
   startOfDay, endOfDay, startOfMonth, endOfMonth, startOfYear, endOfYear,
-  addDays, subDays, format, parse, isValid,
+  addDays, subDays, addMonths, addYears, format, parse, isValid,
 } from "date-fns";
 
 export type Periodo = { from: Date | null; to: Date | null; label: string };
