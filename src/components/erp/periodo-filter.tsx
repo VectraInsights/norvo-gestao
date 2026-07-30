@@ -1,13 +1,13 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
-import { CalendarIcon } from "lucide-react";
+import { CalendarIcon, ChevronLeft, ChevronRight } from "lucide-react";
 import {
   startOfDay, endOfDay, startOfMonth, endOfMonth, startOfYear, endOfYear,
-  addDays, subDays, format, parse, isValid,
+  addDays, subDays, addMonths, addYears, format, parse, isValid,
 } from "date-fns";
 
 export type Periodo = { from: Date | null; to: Date | null; label: string };
@@ -39,30 +39,88 @@ function parseBR(s: string): Date | null {
   return isValid(d) ? d : null;
 }
 
+const NAVEGAVEIS: PresetKey[] = ["hoje", "prox7", "prox30", "ult7", "ult30", "mesatual", "anoatual"];
+
+function shiftPeriodo(p: Periodo, preset: PresetKey, dir: 1 | -1): Periodo | null {
+  if (!p.from || !p.to) return null;
+  const fmt = (a: Date, b: Date) => `${format(a, "dd/MM/yyyy")} — ${format(b, "dd/MM/yyyy")}`;
+  switch (preset) {
+    case "hoje": {
+      const d = addDays(p.from, dir);
+      return { from: startOfDay(d), to: endOfDay(d), label: format(d, "dd/MM/yyyy") };
+    }
+    case "prox7":
+    case "ult7": {
+      const f = addDays(p.from, 7 * dir), t = addDays(p.to, 7 * dir);
+      return { from: startOfDay(f), to: endOfDay(t), label: fmt(f, t) };
+    }
+    case "prox30":
+    case "ult30": {
+      const f = addDays(p.from, 30 * dir), t = addDays(p.to, 30 * dir);
+      return { from: startOfDay(f), to: endOfDay(t), label: fmt(f, t) };
+    }
+    case "mesatual": {
+      const f = startOfMonth(addMonths(p.from, dir));
+      return { from: f, to: endOfMonth(f), label: format(f, "MM/yyyy") };
+    }
+    case "anoatual": {
+      const f = startOfYear(addYears(p.from, dir));
+      return { from: f, to: endOfYear(f), label: format(f, "yyyy") };
+    }
+    default:
+      return null;
+  }
+}
+
 export function PeriodoFilter({ value, onChange }: { value: Periodo; onChange: (p: Periodo) => void }) {
   const [open, setOpen] = useState(false);
   const [mode, setMode] = useState<PresetKey>("todos");
+  const [activePreset, setActivePreset] = useState<PresetKey | null>(
+    () => PRESETS.find((p) => p.label === value.label)?.k ?? null,
+  );
   const [fromStr, setFromStr] = useState(value.from ? format(value.from, "dd/MM/yyyy") : "");
   const [toStr, setToStr] = useState(value.to ? format(value.to, "dd/MM/yyyy") : "");
   const [range, setRange] = useState<{ from?: Date; to?: Date }>({
     from: value.from ?? undefined, to: value.to ?? undefined,
   });
 
+  useEffect(() => {
+    const match = PRESETS.find((p) => p.label === value.label)?.k;
+    if (match) setActivePreset(match);
+  }, [value.label]);
+
   const applyPreset = (k: PresetKey) => {
-    if (k === "custom") { setMode("custom"); return; }
+    if (k === "custom") { setMode("custom"); setActivePreset(null); return; }
     const p = PRESETS.find((x) => x.k === k)!.range();
+    setActivePreset(k);
     onChange(p);
     setOpen(false);
   };
 
+  const podeNavegar = !!activePreset && NAVEGAVEIS.includes(activePreset);
+
+  const navegar = (dir: 1 | -1) => {
+    if (!activePreset) return;
+    const p = shiftPeriodo(value, activePreset, dir);
+    if (p) onChange(p);
+  };
+
+
   const applyCustom = () => {
     const f = parseBR(fromStr); const t = parseBR(toStr);
     if (!f || !t) return;
+    setActivePreset(null);
     onChange({ from: startOfDay(f), to: endOfDay(t), label: `${fromStr} — ${toStr}` });
     setOpen(false);
   };
 
   return (
+    <div className="inline-flex items-center gap-1">
+      {podeNavegar && (
+        <Button size="sm" variant="outline" className="px-2" aria-label="Período anterior" onClick={() => navegar(-1)}>
+          <ChevronLeft className="h-4 w-4" />
+        </Button>
+      )}
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>
         <Button size="sm" variant="outline">
@@ -133,5 +191,11 @@ export function PeriodoFilter({ value, onChange }: { value: Periodo; onChange: (
         </div>
       </PopoverContent>
     </Popover>
+      {podeNavegar && (
+        <Button size="sm" variant="outline" className="px-2" aria-label="Próximo período" onClick={() => navegar(1)}>
+          <ChevronRight className="h-4 w-4" />
+        </Button>
+      )}
+    </div>
   );
 }
