@@ -857,16 +857,13 @@ function ReconcileDialog({ contaId, conta, empresaId, autoConciliar, onClose }: 
           </div>
         </DialogHeader>
 
-        <Tabs defaultValue="pendentes" className="w-full">
-          <TabsList>
-            <TabsTrigger value="pendentes">
-              Conciliações pendentes
-              <Badge variant="secondary" className="ml-2">{pendentes.length}</Badge>
-            </TabsTrigger>
-            <TabsTrigger value="movimentacoes">Movimentações</TabsTrigger>
-          </TabsList>
+        <div className="w-full">
+          <div className="mb-3 flex items-center gap-2 text-sm font-medium">
+            Conciliações pendentes
+            <Badge variant="secondary">{pendentes.length}</Badge>
+          </div>
 
-          <TabsContent value="pendentes" className="mt-4 space-y-4">
+        <div className="mt-4 space-y-4">
             <div>
               <Label className="text-xs text-muted-foreground">Pesquise o lançamento bancário</Label>
               <div className="mt-1 flex flex-wrap items-center gap-2">
