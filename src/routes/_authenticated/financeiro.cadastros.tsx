@@ -180,14 +180,26 @@ function CadastrosPage() {
         {/* Categorias */}
         <TabsContent value="categorias" className="mt-4">
           <div className="mb-3 flex justify-end">
-            <Button size="sm" onClick={() => { setCatForm({ nome: "", tipo: "pagar", parent_id: "none" }); setCatOpen(true); }}>
+        <TabsContent value="categorias" className="mt-4">
+          <div className="mb-3 flex items-center justify-between gap-3">
+            <Tabs value={catTipoTab} onValueChange={(v) => setCatTipoTab(v as "pagar" | "receber")}>
+              <TabsList>
+                <TabsTrigger value="pagar">Despesas</TabsTrigger>
+                <TabsTrigger value="receber">Receitas</TabsTrigger>
+              </TabsList>
+            </Tabs>
+            <Button size="sm" onClick={() => { setCatForm({ nome: "", tipo: catTipoTab, parent_id: "none" }); setCatOpen(true); }}>
               <Plus className="mr-1 h-4 w-4" />Nova categoria
             </Button>
           </div>
           {loadingCat ? (
             <div className="space-y-2">{Array.from({ length: 4 }).map((_, i) => <div key={i} className="h-12 animate-pulse rounded-md bg-muted/30" />)}</div>
-          ) : !categorias?.length ? (
-            <EmptyState icon={FolderCog} title="Nenhuma categoria" description="Crie a primeira categoria financeira." />
+          ) : !categoriasFiltradas.length ? (
+            <EmptyState
+              icon={FolderCog}
+              title={catTipoTab === "pagar" ? "Nenhuma categoria de despesa" : "Nenhuma categoria de receita"}
+              description="Crie a primeira categoria financeira deste tipo."
+            />
           ) : (
             <Card className="overflow-hidden shadow-panel">
               <Table>
@@ -200,7 +212,7 @@ function CadastrosPage() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {categorias.map((c) => (
+                  {categoriasFiltradas.map((c) => (
                     <TableRow key={c.id}>
                       <TableCell className={c.parent_id ? "pl-8 text-muted-foreground" : "font-medium"}>{c.nome}</TableCell>
                       <TableCell>
@@ -227,7 +239,6 @@ function CadastrosPage() {
           )}
         </TabsContent>
 
-        {/* Centros de custo */}
         <TabsContent value="centros" className="mt-4">
           <div className="mb-3 flex justify-end">
             <Button size="sm" onClick={() => { setCcForm({ nome: "", codigo: "", descricao: "", ativo: true }); setCcOpen(true); }}>
