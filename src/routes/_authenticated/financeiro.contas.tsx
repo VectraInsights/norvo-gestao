@@ -1065,8 +1065,6 @@ function ReconcileDialog({ contaId, conta, empresaId, autoConciliar, onClose }: 
             )}
           </div>
         </div>
-          </div>
-        </div>
       </div>
     </div>
   );
