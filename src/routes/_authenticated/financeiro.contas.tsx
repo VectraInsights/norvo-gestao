@@ -834,7 +834,15 @@ function ReconcileDialog({ contaId, conta, empresaId, autoConciliar, onClose }: 
   if (!open) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex flex-col bg-background">
+    <div
+      className="fixed inset-0 z-50 flex flex-col bg-background"
+      onKeyDown={(e) => {
+        if (e.key === "Escape") {
+          e.preventDefault();
+          onClose();
+        }
+      }}
+    >
       <div className="sticky top-0 z-10 flex items-center justify-between gap-3 border-b bg-background/95 px-4 py-3 backdrop-blur">
         <h2 className="text-xl font-semibold">{titulo}</h2>
         <div className="flex items-center gap-2">
