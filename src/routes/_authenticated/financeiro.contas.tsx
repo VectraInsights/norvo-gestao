@@ -10,7 +10,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import { Banknote, Plus, Upload, Loader2, Link2, Check, Landmark, Wallet, CreditCard, TrendingUp, PiggyBank, DollarSign, Database, Coins, Trash2, Search, Archive } from "lucide-react";
+import { Banknote, Plus, Upload, Loader2, Link2, Check, Landmark, Wallet, CreditCard, TrendingUp, PiggyBank, DollarSign, Database, Coins, Trash2, Search, Archive, X } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
 import { useEffect, useRef, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
@@ -831,30 +831,37 @@ function ReconcileDialog({ contaId, conta, empresaId, autoConciliar, onClose }: 
 
   const titulo = conta ? `Contas financeiras — ${conta.nome ?? conta.banco ?? ""}` : "Conciliação bancária";
 
+  if (!open) return null;
+
   return (
-    <Dialog open={open} onOpenChange={(v) => { if (!v) onClose(); }}>
-      <DialogContent className="max-h-[92vh] overflow-y-auto sm:max-w-[1200px]">
-        <DialogHeader>
-          <div className="flex items-start justify-between gap-3">
-            <DialogTitle className="text-xl">{titulo}</DialogTitle>
-            {txs && txs.length > 0 && (
-              <Button
-                variant="outline"
-                size="sm"
-                className="mr-6 text-destructive hover:text-destructive"
-                disabled={excluirExtrato.isPending}
-                onClick={() => {
-                  if (window.confirm("Excluir todo o extrato OFX importado desta conta?\n\nSerão apagados TODOS os lançamentos criados/conciliados a partir dele, mesmo os já conciliados. Esta ação não pode ser desfeita.")) {
-                    excluirExtrato.mutate();
-                  }
-                }}
-              >
-                {excluirExtrato.isPending ? <Loader2 className="mr-1 h-3 w-3 animate-spin" /> : <Trash2 className="mr-1 h-3 w-3" />}
-                Excluir extrato importado
-              </Button>
-            )}
-          </div>
-        </DialogHeader>
+    <div className="fixed inset-0 z-50 flex flex-col bg-background">
+      <div className="sticky top-0 z-10 flex items-center justify-between gap-3 border-b bg-background/95 px-4 py-3 backdrop-blur">
+        <h2 className="text-xl font-semibold">{titulo}</h2>
+        <div className="flex items-center gap-2">
+          {txs && txs.length > 0 && (
+            <Button
+              variant="outline"
+              size="sm"
+              className="text-destructive hover:text-destructive"
+              disabled={excluirExtrato.isPending}
+              onClick={() => {
+                if (window.confirm("Excluir todo o extrato OFX importado desta conta?\n\nSerão apagados TODOS os lançamentos criados/conciliados a partir dele, mesmo os já conciliados. Esta ação não pode ser desfeita.")) {
+                  excluirExtrato.mutate();
+                }
+              }}
+            >
+              {excluirExtrato.isPending ? <Loader2 className="mr-1 h-3 w-3 animate-spin" /> : <Trash2 className="mr-1 h-3 w-3" />}
+              Excluir extrato importado
+            </Button>
+          )}
+          <Button variant="ghost" size="icon" onClick={onClose} aria-label="Fechar">
+            <X className="h-5 w-5" />
+          </Button>
+        </div>
+      </div>
+
+      <div className="flex-1 overflow-y-auto px-4 py-4">
+
 
         <div className="w-full">
           <div className="mb-3 flex items-center gap-2 text-sm font-medium">
@@ -1058,8 +1065,8 @@ function ReconcileDialog({ contaId, conta, empresaId, autoConciliar, onClose }: 
             )}
           </div>
         </div>
-      </DialogContent>
-    </Dialog>
+      </div>
+    </div>
   );
 }
 
