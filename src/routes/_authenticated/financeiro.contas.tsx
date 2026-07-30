@@ -12,7 +12,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Banknote, Plus, Upload, Loader2, Link2, Check, Landmark, Wallet, CreditCard, TrendingUp, PiggyBank, DollarSign, Database, Coins, Trash2, Search, X } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
-import { useEffect, useRef, useState } from "react";
+import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEmpresaAtual } from "@/hooks/use-empresa";
@@ -582,6 +582,8 @@ type RowState = {
   lancamento_id: string;
 };
 
+const PAGE_SIZE = 25;
+
 const emptyRow = (memo: string | null): RowState => ({
   descricao: memo ?? "", categoria_id: "", contato_id: "", centro_custo_id: "", lancamento_id: "",
 });
@@ -592,9 +594,16 @@ function ReconcileDialog({ contaId, conta, empresaId, autoConciliar, importing, 
   const open = !!contaId;
 
   const [busca, setBusca] = useState("");
+  const [buscaDebounced, setBuscaDebounced] = useState("");
   const [filtro, setFiltro] = useState<"todos" | "recebimentos" | "pagamentos">("todos");
   const [ordem, setOrdem] = useState<"recentes" | "antigos" | "maior" | "menor">("recentes");
   const [mes, setMes] = useState("todos");
+  const [pagina, setPagina] = useState(1);
+
+  useEffect(() => {
+    const id = setTimeout(() => setBuscaDebounced(busca), 250);
+    return () => clearTimeout(id);
+  }, [busca]);
 
   const [sel, setSel] = useState<Set<string>>(new Set());
   const [rows, setRows] = useState<Record<string, RowState>>({});
@@ -815,9 +824,15 @@ function ReconcileDialog({ contaId, conta, empresaId, autoConciliar, importing, 
     onError: (e: Error) => toast.error(e.message),
   });
 
-  const pendentes = (txs ?? []).filter((t) => t.status !== "conciliada" && t.status !== "arquivada");
+  const pendentes = useMemo(
+    () => (txs ?? []).filter((t) => t.status !== "conciliada" && t.status !== "arquivada"),
+    [txs],
+  );
 
-  const mesesDisponiveis = Array.from(new Set(pendentes.map((t) => (t.data_transacao ?? "").slice(0, 7)).filter(Boolean))).sort((a, b) => b.localeCompare(a));
+  const mesesDisponiveis = useMemo(
+    () => Array.from(new Set(pendentes.map((t) => (t.data_transacao ?? "").slice(0, 7)).filter(Boolean))).sort((a, b) => b.localeCompare(a)),
+    [pendentes],
+  );
   const labelMes = (m: string) => {
     const [y, mm] = m.split("-");
     const nomes = ["janeiro", "fevereiro", "março", "abril", "maio", "junho", "julho", "agosto", "setembro", "outubro", "novembro", "dezembro"];
@@ -825,29 +840,53 @@ function ReconcileDialog({ contaId, conta, empresaId, autoConciliar, importing, 
     return `${n.charAt(0).toUpperCase()}${n.slice(1)}/${y}`;
   };
 
-  const porMes = pendentes.filter((t) => mes === "todos" || (t.data_transacao ?? "").slice(0, 7) === mes);
+  const porMes = useMemo(
+    () => pendentes.filter((t) => mes === "todos" || (t.data_transacao ?? "").slice(0, 7) === mes),
+    [pendentes, mes],
+  );
 
-  const recebimentos = porMes.filter((t) => t.valor >= 0).length;
+  const recebimentos = useMemo(() => porMes.filter((t) => t.valor >= 0).length, [porMes]);
   const pagamentos = porMes.length - recebimentos;
 
-  const q = busca.trim().toLowerCase();
-  const visiveis = porMes
-    .filter((t) => filtro === "todos" || (filtro === "recebimentos" ? t.valor >= 0 : t.valor < 0))
-    .filter((t) => !q || (t.memo ?? "").toLowerCase().includes(q) || String(t.valor).includes(q.replace(",", ".")))
-    .sort((a, b) => {
+  const q = buscaDebounced.trim().toLowerCase();
+  const visiveis = useMemo(() => {
+    return porMes
+      .filter((t) => filtro === "todos" || (filtro === "recebimentos" ? t.valor >= 0 : t.valor < 0))
+      .filter((t) => !q || (t.memo ?? "").toLowerCase().includes(q) || String(t.valor).includes(q.replace(",", ".")))
+      .sort((a, b) => {
+        if (ordem === "recentes") return b.data_transacao.localeCompare(a.data_transacao);
+        if (ordem === "antigos") return a.data_transacao.localeCompare(b.data_transacao);
+        if (ordem === "maior") return Math.abs(b.valor) - Math.abs(a.valor);
+        return Math.abs(a.valor) - Math.abs(b.valor);
+      });
+  }, [porMes, filtro, q, ordem]);
 
-      if (ordem === "recentes") return b.data_transacao.localeCompare(a.data_transacao);
-      if (ordem === "antigos") return a.data_transacao.localeCompare(b.data_transacao);
-      if (ordem === "maior") return Math.abs(b.valor) - Math.abs(a.valor);
-      return Math.abs(a.valor) - Math.abs(b.valor);
-    });
+  // Paginação: renderizar centenas de cards de uma vez trava a tela.
+  const totalPaginas = Math.max(1, Math.ceil(visiveis.length / PAGE_SIZE));
+  const paginaAtual = Math.min(pagina, totalPaginas);
+  useEffect(() => { setPagina(1); }, [q, filtro, ordem, mes, contaId]);
+  const daPagina = useMemo(
+    () => visiveis.slice((paginaAtual - 1) * PAGE_SIZE, paginaAtual * PAGE_SIZE),
+    [visiveis, paginaAtual],
+  );
 
-  const getRow = (tx: OfxRow) => rows[tx.id] ?? emptyRow(tx.memo);
-  const setRow = (id: string, patch: Partial<RowState>) =>
-    setRows((prev) => ({ ...prev, [id]: { ...(prev[id] ?? emptyRow(null)), ...patch } }));
+  const catsReceber = useMemo(() => (categorias ?? []).filter((c) => c.tipo === "receber"), [categorias]);
+  const catsPagar = useMemo(() => (categorias ?? []).filter((c) => c.tipo === "pagar"), [categorias]);
 
-  const toggleSel = (id: string) =>
-    setSel((prev) => { const n = new Set(prev); n.has(id) ? n.delete(id) : n.add(id); return n; });
+  const getRow = useCallback(
+    (tx: OfxRow) => rows[tx.id] ?? emptyRow(tx.memo),
+    [rows],
+  );
+  const setRow = useCallback((id: string, patch: Partial<RowState>) =>
+    setRows((prev) => ({ ...prev, [id]: { ...(prev[id] ?? emptyRow(null)), ...patch } })), []);
+
+  const toggleSel = useCallback((id: string) =>
+    setSel((prev) => { const n = new Set(prev); n.has(id) ? n.delete(id) : n.add(id); return n; }), []);
+
+  const setModoBusca = useCallback((id: string, v: boolean) => {
+    setBuscarModo((p) => ({ ...p, [id]: v }));
+    if (!v) setRow(id, { lancamento_id: "" });
+  }, [setRow]);
 
   const conciliarSelecionados = async () => {
     const alvos = visiveis.filter((t) => sel.has(t.id));
@@ -855,6 +894,7 @@ function ReconcileDialog({ contaId, conta, empresaId, autoConciliar, importing, 
     for (const tx of alvos) await criarEConciliar.mutateAsync({ tx, r: getRow(tx) }).catch(() => null);
     setSel(new Set());
   };
+
 
   const titulo = conta ? `Contas financeiras — ${conta.nome ?? conta.banco ?? ""}` : "Conciliação bancária";
 
@@ -989,123 +1029,40 @@ function ReconcileDialog({ contaId, conta, empresaId, autoConciliar, importing, 
               <div className="py-8 text-center text-sm text-muted-foreground">Tudo conciliado. 🎉</div>
             ) : (
               <div className="space-y-4">
-                {visiveis.map((tx) => {
-                  const r = getRow(tx);
-                  const modoBusca = !!buscarModo[tx.id];
-                  return (
-                    <div key={tx.id} className="grid grid-cols-1 items-center gap-3 md:grid-cols-[1fr_auto_1fr]">
-                      {/* banco */}
-                      <Card className="overflow-hidden">
-                        <div className="flex items-center justify-between gap-2 border-b px-4 py-3">
-                          <div className="flex items-center gap-3">
-                            <Checkbox checked={sel.has(tx.id)} onCheckedChange={() => toggleSel(tx.id)} />
-                            <span className="text-sm font-semibold">{format(new Date(tx.data_transacao + "T00:00:00"), "dd/MM/yyyy")}</span>
-                            <span className="text-xs text-muted-foreground capitalize">
-                              {format(new Date(tx.data_transacao + "T00:00:00"), "EEEE")}
-                            </span>
-                          </div>
-                          <span className={cn("text-tabular font-semibold", tx.valor < 0 ? "text-destructive" : "text-success")}>
-                            {brl(tx.valor)}
-                          </span>
-                        </div>
-                        <div className="space-y-1 px-4 py-3 text-sm">
-                          <div className="font-medium">{tx.memo ?? "—"}</div>
-                          <div className="text-muted-foreground"><span className="font-medium text-foreground">Cliente:</span> {r.contato_id ? (contatos?.find((c) => c.id === r.contato_id)?.nome ?? "—") : "Informação não recebida"}</div>
-                          <div className="text-muted-foreground"><span className="font-medium text-foreground">CPF/CNPJ:</span> Informação não recebida</div>
-                        </div>
-                        <div className="flex items-center justify-between border-t bg-muted/30 px-4 py-2">
-                          <Badge variant="secondary" className="text-xs">Integração manual</Badge>
-                          <Button variant="outline" size="sm" onClick={() => excluirTx.mutate([tx.id])} disabled={excluirTx.isPending}>
-                            <Trash2 className="mr-1 h-3 w-3" />Excluir
+                {daPagina.map((tx) => (
+                  <ReconcileRow
+                    key={tx.id}
+                    tx={tx}
+                    r={getRow(tx)}
+                    modoBusca={!!buscarModo[tx.id]}
+                    selected={sel.has(tx.id)}
+                    categorias={tx.valor >= 0 ? catsReceber : catsPagar}
+                    contatos={contatos ?? EMPTY}
+                    centros={centros ?? EMPTY}
+                    lancamentosAbertos={lancamentosAbertos ?? EMPTY_LANC}
+                    conciliando={criarEConciliar.isPending}
+                    excluindo={excluirTx.isPending}
+                    onToggleSel={toggleSel}
+                    onSetRow={setRow}
+                    onSetModoBusca={setModoBusca}
+                    onConciliar={(t, r) => criarEConciliar.mutate({ tx: t, r })}
+                    onExcluir={(id) => excluirTx.mutate([id])}
+                  />
+                ))}
 
-                          </Button>
-                        </div>
-                      </Card>
-
-                      <div className="flex justify-center">
-                        <Button
-                          disabled={criarEConciliar.isPending}
-                          onClick={() => criarEConciliar.mutate({ tx, r })}
-                        >
-                          {criarEConciliar.isPending ? <Loader2 className="mr-1 h-4 w-4 animate-spin" /> : <Check className="mr-1 h-4 w-4" />}
-                          Conciliar
-                        </Button>
-                      </div>
-
-                      {/* sistema */}
-                      <Card className="overflow-hidden">
-                        <div className="flex items-center justify-between gap-2 border-b px-4 py-3">
-                          <div className="flex gap-1">
-                            <Button size="sm" variant={modoBusca ? "outline" : "default"}
-                              onClick={() => { setBuscarModo((p) => ({ ...p, [tx.id]: false })); setRow(tx.id, { lancamento_id: "" }); }}>
-                              Novo lançamento
-                            </Button>
-                            <Button size="sm" variant={modoBusca ? "default" : "outline"}
-                              onClick={() => setBuscarModo((p) => ({ ...p, [tx.id]: true }))}>
-                              <Search className="mr-1 h-3 w-3" />Buscar lançamento
-                            </Button>
-                          </div>
-                        </div>
-                        <div className="px-4 py-3">
-                          {modoBusca ? (
-                            <div className="space-y-1">
-                              <Label className="text-xs">Lançamento existente</Label>
-                              <Select value={r.lancamento_id} onValueChange={(v) => setRow(tx.id, { lancamento_id: v })}>
-                                <SelectTrigger><SelectValue placeholder="Selecione um lançamento em aberto" /></SelectTrigger>
-                                <SelectContent>
-                                  {(lancamentosAbertos ?? [])
-                                    .slice()
-                                    .sort((a, b) => Math.abs(Number(a.valor) - Math.abs(tx.valor)) - Math.abs(Number(b.valor) - Math.abs(tx.valor)))
-                                    .map((l) => (
-                                      <SelectItem key={l.id} value={l.id}>
-                                        {format(new Date(l.data_vencimento + "T00:00:00"), "dd/MM")} — {l.descricao} ({brl(Number(l.valor))})
-                                      </SelectItem>
-                                    ))}
-                                </SelectContent>
-                              </Select>
-                            </div>
-                          ) : (
-                            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-                              <div className="space-y-1">
-                                <Label className="text-xs">Descrição <span className="text-destructive">*</span></Label>
-                                <Input value={r.descricao} onChange={(e) => setRow(tx.id, { descricao: e.target.value })} placeholder="Descrição" />
-                              </div>
-                              <div className="space-y-1">
-                                <Label className="text-xs">Categoria <span className="text-destructive">*</span></Label>
-                                <Select value={r.categoria_id} onValueChange={(v) => setRow(tx.id, { categoria_id: v })}>
-                                  <SelectTrigger><SelectValue placeholder="Selecione" /></SelectTrigger>
-                                  <SelectContent>
-                                    {(categorias ?? [])
-                                      .filter((c) => c.tipo === (tx.valor >= 0 ? "receber" : "pagar"))
-                                      .map((c) => <SelectItem key={c.id} value={c.id}>{c.nome}</SelectItem>)}
-                                  </SelectContent>
-                                </Select>
-                              </div>
-                              <div className="space-y-1">
-                                <Label className="text-xs">{tx.valor >= 0 ? "Cliente" : "Fornecedor"}</Label>
-                                <Select value={r.contato_id} onValueChange={(v) => setRow(tx.id, { contato_id: v })}>
-                                  <SelectTrigger><SelectValue placeholder="Selecione" /></SelectTrigger>
-                                  <SelectContent>
-                                    {(contatos ?? []).map((c) => <SelectItem key={c.id} value={c.id}>{c.nome}</SelectItem>)}
-                                  </SelectContent>
-                                </Select>
-                              </div>
-                              <div className="space-y-1">
-                                <Label className="text-xs">Centro de custo</Label>
-                                <Select value={r.centro_custo_id} onValueChange={(v) => setRow(tx.id, { centro_custo_id: v })}>
-                                  <SelectTrigger><SelectValue placeholder="Selecione" /></SelectTrigger>
-                                  <SelectContent>
-                                    {(centros ?? []).map((c) => <SelectItem key={c.id} value={c.id}>{c.nome}</SelectItem>)}
-                                  </SelectContent>
-                                </Select>
-                              </div>
-                            </div>
-                          )}
-                        </div>
-                      </Card>
-                    </div>
-                  );
-                })}
+                {totalPaginas > 1 && (
+                  <div className="flex items-center justify-center gap-3 py-4 text-sm">
+                    <Button variant="outline" size="sm" disabled={paginaAtual <= 1} onClick={() => setPagina(paginaAtual - 1)}>
+                      Anterior
+                    </Button>
+                    <span className="text-muted-foreground">
+                      Página {paginaAtual} de {totalPaginas} — {visiveis.length} lançamentos
+                    </span>
+                    <Button variant="outline" size="sm" disabled={paginaAtual >= totalPaginas} onClick={() => setPagina(paginaAtual + 1)}>
+                      Próxima
+                    </Button>
+                  </div>
+                )}
               </div>
             )}
           </div>
@@ -1114,4 +1071,139 @@ function ReconcileDialog({ contaId, conta, empresaId, autoConciliar, importing, 
     </div>
   );
 }
+
+const EMPTY: { id: string; nome: string }[] = [];
+const EMPTY_LANC: { id: string; descricao: string; valor: number; tipo: string; data_vencimento: string }[] = [];
+
+type Opcao = { id: string; nome: string };
+
+const ReconcileRow = memo(function ReconcileRow({
+  tx, r, modoBusca, selected, categorias, contatos, centros, lancamentosAbertos,
+  conciliando, excluindo, onToggleSel, onSetRow, onSetModoBusca, onConciliar, onExcluir,
+}: {
+  tx: OfxRow;
+  r: RowState;
+  modoBusca: boolean;
+  selected: boolean;
+  categorias: Opcao[];
+  contatos: Opcao[];
+  centros: Opcao[];
+  lancamentosAbertos: { id: string; descricao: string; valor: number; data_vencimento: string }[];
+  conciliando: boolean;
+  excluindo: boolean;
+  onToggleSel: (id: string) => void;
+  onSetRow: (id: string, patch: Partial<RowState>) => void;
+  onSetModoBusca: (id: string, v: boolean) => void;
+  onConciliar: (tx: OfxRow, r: RowState) => void;
+  onExcluir: (id: string) => void;
+}) {
+  const data = new Date(tx.data_transacao + "T00:00:00");
+  const nomeContato = r.contato_id ? (contatos.find((c) => c.id === r.contato_id)?.nome ?? "—") : "Informação não recebida";
+
+  return (
+    <div className="grid grid-cols-1 items-center gap-3 md:grid-cols-[1fr_auto_1fr]">
+      {/* banco */}
+      <Card className="overflow-hidden">
+        <div className="flex items-center justify-between gap-2 border-b px-4 py-3">
+          <div className="flex items-center gap-3">
+            <Checkbox checked={selected} onCheckedChange={() => onToggleSel(tx.id)} />
+            <span className="text-sm font-semibold">{format(data, "dd/MM/yyyy")}</span>
+            <span className="text-xs text-muted-foreground capitalize">{format(data, "EEEE")}</span>
+          </div>
+          <span className={cn("text-tabular font-semibold", tx.valor < 0 ? "text-destructive" : "text-success")}>
+            {brl(tx.valor)}
+          </span>
+        </div>
+        <div className="space-y-1 px-4 py-3 text-sm">
+          <div className="font-medium">{tx.memo ?? "—"}</div>
+          <div className="text-muted-foreground"><span className="font-medium text-foreground">Cliente:</span> {nomeContato}</div>
+          <div className="text-muted-foreground"><span className="font-medium text-foreground">CPF/CNPJ:</span> Informação não recebida</div>
+        </div>
+        <div className="flex items-center justify-between border-t bg-muted/30 px-4 py-2">
+          <Badge variant="secondary" className="text-xs">Integração manual</Badge>
+          <Button variant="outline" size="sm" onClick={() => onExcluir(tx.id)} disabled={excluindo}>
+            <Trash2 className="mr-1 h-3 w-3" />Excluir
+          </Button>
+        </div>
+      </Card>
+
+      <div className="flex justify-center">
+        <Button disabled={conciliando} onClick={() => onConciliar(tx, r)}>
+          {conciliando ? <Loader2 className="mr-1 h-4 w-4 animate-spin" /> : <Check className="mr-1 h-4 w-4" />}
+          Conciliar
+        </Button>
+      </div>
+
+      {/* sistema */}
+      <Card className="overflow-hidden">
+        <div className="flex items-center justify-between gap-2 border-b px-4 py-3">
+          <div className="flex gap-1">
+            <Button size="sm" variant={modoBusca ? "outline" : "default"} onClick={() => onSetModoBusca(tx.id, false)}>
+              Novo lançamento
+            </Button>
+            <Button size="sm" variant={modoBusca ? "default" : "outline"} onClick={() => onSetModoBusca(tx.id, true)}>
+              <Search className="mr-1 h-3 w-3" />Buscar lançamento
+            </Button>
+          </div>
+        </div>
+        <div className="px-4 py-3">
+          {modoBusca ? (
+            <div className="space-y-1">
+              <Label className="text-xs">Lançamento existente</Label>
+              <Select value={r.lancamento_id} onValueChange={(v) => onSetRow(tx.id, { lancamento_id: v })}>
+                <SelectTrigger><SelectValue placeholder="Selecione um lançamento em aberto" /></SelectTrigger>
+                <SelectContent>
+                  {lancamentosAbertos
+                    .slice()
+                    .sort((a, b) => Math.abs(Number(a.valor) - Math.abs(tx.valor)) - Math.abs(Number(b.valor) - Math.abs(tx.valor)))
+                    .slice(0, 100)
+                    .map((l) => (
+                      <SelectItem key={l.id} value={l.id}>
+                        {format(new Date(l.data_vencimento + "T00:00:00"), "dd/MM")} — {l.descricao} ({brl(Number(l.valor))})
+                      </SelectItem>
+                    ))}
+                </SelectContent>
+              </Select>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+              <div className="space-y-1">
+                <Label className="text-xs">Descrição <span className="text-destructive">*</span></Label>
+                <Input value={r.descricao} onChange={(e) => onSetRow(tx.id, { descricao: e.target.value })} placeholder="Descrição" />
+              </div>
+              <div className="space-y-1">
+                <Label className="text-xs">Categoria <span className="text-destructive">*</span></Label>
+                <Select value={r.categoria_id} onValueChange={(v) => onSetRow(tx.id, { categoria_id: v })}>
+                  <SelectTrigger><SelectValue placeholder="Selecione" /></SelectTrigger>
+                  <SelectContent>
+                    {categorias.map((c) => <SelectItem key={c.id} value={c.id}>{c.nome}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-1">
+                <Label className="text-xs">{tx.valor >= 0 ? "Cliente" : "Fornecedor"}</Label>
+                <Select value={r.contato_id} onValueChange={(v) => onSetRow(tx.id, { contato_id: v })}>
+                  <SelectTrigger><SelectValue placeholder="Selecione" /></SelectTrigger>
+                  <SelectContent>
+                    {contatos.map((c) => <SelectItem key={c.id} value={c.id}>{c.nome}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-1">
+                <Label className="text-xs">Centro de custo</Label>
+                <Select value={r.centro_custo_id} onValueChange={(v) => onSetRow(tx.id, { centro_custo_id: v })}>
+                  <SelectTrigger><SelectValue placeholder="Selecione" /></SelectTrigger>
+                  <SelectContent>
+                    {centros.map((c) => <SelectItem key={c.id} value={c.id}>{c.nome}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+          )}
+        </div>
+      </Card>
+    </div>
+  );
+});
+
 
