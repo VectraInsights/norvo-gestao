@@ -109,11 +109,18 @@ export function PeriodoFilter({ value, onChange }: { value: Periodo; onChange: (
   const applyCustom = () => {
     const f = parseBR(fromStr); const t = parseBR(toStr);
     if (!f || !t) return;
+    setActivePreset(null);
     onChange({ from: startOfDay(f), to: endOfDay(t), label: `${fromStr} — ${toStr}` });
     setOpen(false);
   };
 
   return (
+    <div className="inline-flex items-center gap-1">
+      {podeNavegar && (
+        <Button size="sm" variant="outline" className="px-2" aria-label="Período anterior" onClick={() => navegar(-1)}>
+          <ChevronLeft className="h-4 w-4" />
+        </Button>
+      )}
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>
         <Button size="sm" variant="outline">
