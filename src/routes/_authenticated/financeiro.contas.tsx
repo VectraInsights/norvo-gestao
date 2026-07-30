@@ -816,15 +816,26 @@ function ReconcileDialog({ contaId, conta, empresaId, autoConciliar, importing, 
   });
 
   const pendentes = (txs ?? []).filter((t) => t.status !== "conciliada" && t.status !== "arquivada");
-  
-  const recebimentos = pendentes.filter((t) => t.valor >= 0).length;
-  const pagamentos = pendentes.length - recebimentos;
+
+  const mesesDisponiveis = Array.from(new Set(pendentes.map((t) => (t.data_transacao ?? "").slice(0, 7)).filter(Boolean))).sort((a, b) => b.localeCompare(a));
+  const labelMes = (m: string) => {
+    const [y, mm] = m.split("-");
+    const nomes = ["janeiro", "fevereiro", "março", "abril", "maio", "junho", "julho", "agosto", "setembro", "outubro", "novembro", "dezembro"];
+    const n = nomes[Number(mm) - 1] ?? mm;
+    return `${n.charAt(0).toUpperCase()}${n.slice(1)}/${y}`;
+  };
+
+  const porMes = pendentes.filter((t) => mes === "todos" || (t.data_transacao ?? "").slice(0, 7) === mes);
+
+  const recebimentos = porMes.filter((t) => t.valor >= 0).length;
+  const pagamentos = porMes.length - recebimentos;
 
   const q = busca.trim().toLowerCase();
-  const visiveis = pendentes
+  const visiveis = porMes
     .filter((t) => filtro === "todos" || (filtro === "recebimentos" ? t.valor >= 0 : t.valor < 0))
     .filter((t) => !q || (t.memo ?? "").toLowerCase().includes(q) || String(t.valor).includes(q.replace(",", ".")))
     .sort((a, b) => {
+
       if (ordem === "recentes") return b.data_transacao.localeCompare(a.data_transacao);
       if (ordem === "antigos") return a.data_transacao.localeCompare(b.data_transacao);
       if (ordem === "maior") return Math.abs(b.valor) - Math.abs(a.valor);
