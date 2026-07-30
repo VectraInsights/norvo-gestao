@@ -594,6 +594,8 @@ function ReconcileDialog({ contaId, conta, empresaId, autoConciliar, importing, 
   const [busca, setBusca] = useState("");
   const [filtro, setFiltro] = useState<"todos" | "recebimentos" | "pagamentos">("todos");
   const [ordem, setOrdem] = useState<"recentes" | "antigos" | "maior" | "menor">("recentes");
+  const [mes, setMes] = useState("todos");
+
   const [sel, setSel] = useState<Set<string>>(new Set());
   const [rows, setRows] = useState<Record<string, RowState>>({});
   const [buscarModo, setBuscarModo] = useState<Record<string, boolean>>({});
