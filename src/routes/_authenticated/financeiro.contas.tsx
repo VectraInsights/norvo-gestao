@@ -594,6 +594,8 @@ function ReconcileDialog({ contaId, conta, empresaId, autoConciliar, importing, 
   const [busca, setBusca] = useState("");
   const [filtro, setFiltro] = useState<"todos" | "recebimentos" | "pagamentos">("todos");
   const [ordem, setOrdem] = useState<"recentes" | "antigos" | "maior" | "menor">("recentes");
+  const [mes, setMes] = useState("todos");
+
   const [sel, setSel] = useState<Set<string>>(new Set());
   const [rows, setRows] = useState<Record<string, RowState>>({});
   const [buscarModo, setBuscarModo] = useState<Record<string, boolean>>({});
@@ -814,15 +816,26 @@ function ReconcileDialog({ contaId, conta, empresaId, autoConciliar, importing, 
   });
 
   const pendentes = (txs ?? []).filter((t) => t.status !== "conciliada" && t.status !== "arquivada");
-  
-  const recebimentos = pendentes.filter((t) => t.valor >= 0).length;
-  const pagamentos = pendentes.length - recebimentos;
+
+  const mesesDisponiveis = Array.from(new Set(pendentes.map((t) => (t.data_transacao ?? "").slice(0, 7)).filter(Boolean))).sort((a, b) => b.localeCompare(a));
+  const labelMes = (m: string) => {
+    const [y, mm] = m.split("-");
+    const nomes = ["janeiro", "fevereiro", "março", "abril", "maio", "junho", "julho", "agosto", "setembro", "outubro", "novembro", "dezembro"];
+    const n = nomes[Number(mm) - 1] ?? mm;
+    return `${n.charAt(0).toUpperCase()}${n.slice(1)}/${y}`;
+  };
+
+  const porMes = pendentes.filter((t) => mes === "todos" || (t.data_transacao ?? "").slice(0, 7) === mes);
+
+  const recebimentos = porMes.filter((t) => t.valor >= 0).length;
+  const pagamentos = porMes.length - recebimentos;
 
   const q = busca.trim().toLowerCase();
-  const visiveis = pendentes
+  const visiveis = porMes
     .filter((t) => filtro === "todos" || (filtro === "recebimentos" ? t.valor >= 0 : t.valor < 0))
     .filter((t) => !q || (t.memo ?? "").toLowerCase().includes(q) || String(t.valor).includes(q.replace(",", ".")))
     .sort((a, b) => {
+
       if (ordem === "recentes") return b.data_transacao.localeCompare(a.data_transacao);
       if (ordem === "antigos") return a.data_transacao.localeCompare(b.data_transacao);
       if (ordem === "maior") return Math.abs(b.valor) - Math.abs(a.valor);
@@ -897,15 +910,25 @@ function ReconcileDialog({ contaId, conta, empresaId, autoConciliar, importing, 
                   <Search className="pointer-events-none absolute left-2 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                   <Input className="pl-8" placeholder="Descrição ou valor" value={busca} onChange={(e) => setBusca(e.target.value)} />
                 </div>
-                <Button variant="ghost" size="sm" onClick={() => { setBusca(""); setFiltro("todos"); }}>
+                <Select value={mes} onValueChange={setMes}>
+                  <SelectTrigger className="w-[180px]"><SelectValue placeholder="Mês" /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="todos">Todos os meses</SelectItem>
+                    {mesesDisponiveis.map((m) => (
+                      <SelectItem key={m} value={m}>{labelMes(m)}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <Button variant="ghost" size="sm" onClick={() => { setBusca(""); setFiltro("todos"); setMes("todos"); }}>
                   <Trash2 className="mr-1 h-3 w-3" />Limpar filtros
                 </Button>
+
               </div>
             </div>
 
             <div className="grid grid-cols-3 overflow-hidden rounded-md border">
               {([
-                { k: "todos", label: "Todos", n: pendentes.length, cls: "text-primary" },
+                { k: "todos", label: "Todos", n: porMes.length, cls: "text-primary" },
                 { k: "recebimentos", label: "Recebimentos", n: recebimentos, cls: "text-success" },
                 { k: "pagamentos", label: "Pagamentos", n: pagamentos, cls: "text-destructive" },
               ] as const).map((c) => (
