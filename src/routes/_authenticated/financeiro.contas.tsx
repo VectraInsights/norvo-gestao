@@ -586,7 +586,7 @@ const emptyRow = (memo: string | null): RowState => ({
   descricao: memo ?? "", categoria_id: "", contato_id: "", centro_custo_id: "", lancamento_id: "",
 });
 
-function ReconcileDialog({ contaId, conta, empresaId, autoConciliar, onClose }: { contaId: string | null; conta: ContaBancaria | null; empresaId: string | null; autoConciliar: boolean; onClose: () => void }) {
+function ReconcileDialog({ contaId, conta, empresaId, autoConciliar, importing, onImport, onClose }: { contaId: string | null; conta: ContaBancaria | null; empresaId: string | null; autoConciliar: boolean; importing: boolean; onImport: () => void; onClose: () => void }) {
   const autoRunRef = useRef<Set<string>>(new Set());
   const qc = useQueryClient();
   const open = !!contaId;
