@@ -549,6 +549,7 @@ function ContasFinanceiras() {
 
       <ReconcileDialog
         contaId={reconcilingId}
+        conta={contas?.find((c) => c.id === reconcilingId) ?? null}
         empresaId={empresa?.id ?? null}
         autoConciliar={autoConciliar}
         onClose={() => setReconcilingId(null)}
