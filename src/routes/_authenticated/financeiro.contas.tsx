@@ -1063,28 +1063,7 @@ function ReconcileDialog({ contaId, conta, empresaId, autoConciliar, onClose }: 
           </TabsContent>
 
           <TabsContent value="movimentacoes" className="mt-4">
-            {!conciliadas.length ? (
-              <div className="rounded-lg border border-dashed py-10 text-center text-sm text-muted-foreground">
-                Nenhuma movimentação conciliada nesta conta.
-              </div>
-            ) : (
-              <Table>
-                <TableHeader><TableRow>
-                  <TableHead>Data</TableHead><TableHead>Descrição</TableHead>
-                  <TableHead className="text-right">Valor</TableHead><TableHead>Situação</TableHead>
-                </TableRow></TableHeader>
-                <TableBody>
-                  {conciliadas.map((t) => (
-                    <TableRow key={t.id}>
-                      <TableCell className="text-tabular whitespace-nowrap">{format(new Date(t.data_transacao + "T00:00:00"), "dd/MM/yyyy")}</TableCell>
-                      <TableCell className="text-sm">{t.memo ?? "—"}</TableCell>
-                      <TableCell className={cn("text-right text-tabular", t.valor < 0 ? "text-destructive" : "text-success")}>{brl(t.valor)}</TableCell>
-                      <TableCell><Badge variant="secondary">Conciliada</Badge></TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            )}
+            <MovimentacoesConta contaId={contaId} empresaId={empresaId} saldoAtual={conta?.saldo_atual ?? 0} />
           </TabsContent>
         </Tabs>
       </DialogContent>
