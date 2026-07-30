@@ -520,12 +520,6 @@ function ContasFinanceiras() {
                   <TableCell className="text-tabular">{c.agencia ?? "—"}/{c.conta ?? "—"}</TableCell>
                   <TableCell className="text-right text-tabular font-medium">{brl(c.saldo_atual)}</TableCell>
                   <TableCell className="text-right whitespace-nowrap">
-                    {c.tipo === "corrente" && (
-                      <Button variant="ghost" size="sm" disabled={importing === c.id} onClick={() => triggerUpload(c.id)}>
-                        {importing === c.id ? <Loader2 className="mr-1 h-3 w-3 animate-spin" /> : <Upload className="mr-1 h-3 w-3" />}
-                        Importar OFX
-                      </Button>
-                    )}
                     <Button variant="ghost" size="sm" onClick={() => setReconcilingId(c.id)}>
                       <Link2 className="mr-1 h-3 w-3" />Conciliar
                     </Button>
