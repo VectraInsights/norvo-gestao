@@ -1057,12 +1057,8 @@ function ReconcileDialog({ contaId, conta, empresaId, autoConciliar, onClose }: 
                 })}
               </div>
             )}
-          </TabsContent>
-
-          <TabsContent value="movimentacoes" className="mt-4">
-            <MovimentacoesConta contaId={contaId} empresaId={empresaId} saldoAtual={conta?.saldo_atual ?? 0} />
-          </TabsContent>
-        </Tabs>
+          </div>
+        </div>
       </DialogContent>
     </Dialog>
   );
