@@ -12,6 +12,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Banknote, Plus, Upload, Loader2, Link2, Check, Landmark, Wallet, CreditCard, TrendingUp, PiggyBank, DollarSign, Database, Coins, Trash2, Search, X } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -1217,20 +1219,12 @@ const ReconcileRow = memo(function ReconcileRow({
           {modoBusca ? (
             <div className="space-y-1">
               <Label className="text-xs">Lançamento existente</Label>
-              <Select value={r.lancamento_id} onValueChange={(v) => onSetRow(tx.id, { lancamento_id: v })}>
-                <SelectTrigger><SelectValue placeholder="Selecione um lançamento em aberto" /></SelectTrigger>
-                <SelectContent>
-                  {lancamentosAbertos
-                    .slice()
-                    .sort((a, b) => Math.abs(Number(a.valor) - Math.abs(tx.valor)) - Math.abs(Number(b.valor) - Math.abs(tx.valor)))
-                    .slice(0, 100)
-                    .map((l) => (
-                      <SelectItem key={l.id} value={l.id}>
-                        {format(new Date(l.data_vencimento + "T00:00:00"), "dd/MM")} — {l.descricao} ({brl(Number(l.valor))})
-                      </SelectItem>
-                    ))}
-                </SelectContent>
-              </Select>
+              <LancamentoPicker
+                valorRef={Math.abs(tx.valor)}
+                lancamentos={lancamentosAbertos}
+                value={r.lancamento_id}
+                onChange={(v) => onSetRow(tx.id, { lancamento_id: v })}
+              />
             </div>
           ) : (
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
@@ -1274,3 +1268,77 @@ const ReconcileRow = memo(function ReconcileRow({
 });
 
 
+
+type LancOpt = { id: string; descricao: string; valor: number; data_vencimento: string };
+
+function LancamentoPicker({ valorRef, lancamentos, value, onChange }: {
+  valorRef: number;
+  lancamentos: LancOpt[];
+  value: string;
+  onChange: (v: string) => void;
+}) {
+  const [open, setOpen] = useState(false);
+  const [q, setQ] = useState("");
+
+  const selecionado = value ? lancamentos.find((l) => l.id === value) : undefined;
+
+  const lista = useMemo(() => {
+    const termo = q.trim().toLowerCase();
+    const digitos = termo.replace(/[^\d]/g, "");
+    const base = lancamentos.filter((l) => {
+      if (!termo) return true;
+      const valorTxt = Number(l.valor).toFixed(2);
+      const valorBr = brl(Number(l.valor)).toLowerCase();
+      const dataTxt = format(new Date(l.data_vencimento + "T00:00:00"), "dd/MM/yyyy");
+      return (
+        (l.descricao ?? "").toLowerCase().includes(termo) ||
+        valorTxt.includes(termo) ||
+        valorBr.includes(termo) ||
+        dataTxt.includes(termo) ||
+        (digitos.length >= 2 && valorTxt.replace(".", "").includes(digitos))
+      );
+    });
+    return base
+      .slice()
+      .sort((a, b) => Math.abs(Number(a.valor) - valorRef) - Math.abs(Number(b.valor) - valorRef))
+      .slice(0, 80);
+  }, [lancamentos, q, valorRef]);
+
+  const label = selecionado
+    ? `${format(new Date(selecionado.data_vencimento + "T00:00:00"), "dd/MM")} — ${selecionado.descricao} (${brl(Number(selecionado.valor))})`
+    : "Pesquise por valor, descrição ou data";
+
+  return (
+    <Popover open={open} onOpenChange={setOpen}>
+      <PopoverTrigger asChild>
+        <Button variant="outline" role="combobox" className="w-full justify-between font-normal">
+          <span className={cn("truncate", !selecionado && "text-muted-foreground")}>{label}</span>
+          <Search className="ml-2 h-4 w-4 shrink-0 opacity-60" />
+        </Button>
+      </PopoverTrigger>
+      <PopoverContent className="w-[min(28rem,90vw)] p-0" align="start">
+        <Command shouldFilter={false}>
+          <CommandInput value={q} onValueChange={setQ} placeholder="Digite valor, nome ou descrição..." />
+          <CommandList className="max-h-72">
+            <CommandEmpty>Nenhum lançamento encontrado.</CommandEmpty>
+            <CommandGroup>
+              {lista.map((l) => (
+                <CommandItem
+                  key={l.id}
+                  value={l.id}
+                  onSelect={() => { onChange(l.id); setOpen(false); }}
+                >
+                  <Check className={cn("mr-2 h-4 w-4", value === l.id ? "opacity-100" : "opacity-0")} />
+                  <span className="truncate">
+                    {format(new Date(l.data_vencimento + "T00:00:00"), "dd/MM")} — {l.descricao}
+                  </span>
+                  <span className="ml-auto pl-2 text-tabular text-xs text-muted-foreground">{brl(Number(l.valor))}</span>
+                </CommandItem>
+              ))}
+            </CommandGroup>
+          </CommandList>
+        </Command>
+      </PopoverContent>
+    </Popover>
+  );
+}
