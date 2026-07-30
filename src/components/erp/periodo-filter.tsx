@@ -191,5 +191,11 @@ export function PeriodoFilter({ value, onChange }: { value: Periodo; onChange: (
         </div>
       </PopoverContent>
     </Popover>
+      {podeNavegar && (
+        <Button size="sm" variant="outline" className="px-2" aria-label="Próximo período" onClick={() => navegar(1)}>
+          <ChevronRight className="h-4 w-4" />
+        </Button>
+      )}
+    </div>
   );
 }
