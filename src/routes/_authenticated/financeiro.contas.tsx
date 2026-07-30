@@ -11,7 +11,7 @@ import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogT
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import { Banknote, Plus, Upload, Loader2, Link2, Check, Landmark, Wallet, CreditCard, TrendingUp, PiggyBank, DollarSign, Database, Coins, Trash2 } from "lucide-react";
+import { Banknote, Plus, Upload, Loader2, Link2, Check, Landmark, Wallet, CreditCard, TrendingUp, PiggyBank, DollarSign, Database, Coins, Trash2, Search, Archive } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
 import { useEffect, useRef, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
@@ -549,6 +549,7 @@ function ContasFinanceiras() {
 
       <ReconcileDialog
         contaId={reconcilingId}
+        conta={contas?.find((c) => c.id === reconcilingId) ?? null}
         empresaId={empresa?.id ?? null}
         autoConciliar={autoConciliar}
         onClose={() => setReconcilingId(null)}
@@ -578,10 +579,31 @@ function TipoCard({ t, selected, onSelect }: { t: { value: TipoConta; label: str
   );
 }
 
-function ReconcileDialog({ contaId, empresaId, autoConciliar, onClose }: { contaId: string | null; empresaId: string | null; autoConciliar: boolean; onClose: () => void }) {
+type RowState = {
+  descricao: string;
+  categoria_id: string;
+  contato_id: string;
+  centro_custo_id: string;
+  lancamento_id: string;
+};
+
+const emptyRow = (memo: string | null): RowState => ({
+  descricao: memo ?? "", categoria_id: "", contato_id: "", centro_custo_id: "", lancamento_id: "",
+});
+
+function ReconcileDialog({ contaId, conta, empresaId, autoConciliar, onClose }: { contaId: string | null; conta: ContaBancaria | null; empresaId: string | null; autoConciliar: boolean; onClose: () => void }) {
   const autoRunRef = useRef<Set<string>>(new Set());
   const qc = useQueryClient();
   const open = !!contaId;
+
+  const [busca, setBusca] = useState("");
+  const [filtro, setFiltro] = useState<"todos" | "recebimentos" | "pagamentos">("todos");
+  const [ordem, setOrdem] = useState<"recentes" | "antigos" | "maior" | "menor">("recentes");
+  const [sel, setSel] = useState<Set<string>>(new Set());
+  const [rows, setRows] = useState<Record<string, RowState>>({});
+  const [buscarModo, setBuscarModo] = useState<Record<string, boolean>>({});
+
+  useEffect(() => { if (!open) { setBusca(""); setFiltro("todos"); setSel(new Set()); setRows({}); setBuscarModo({}); } }, [open]);
 
   const { data: txs, isLoading } = useQuery({
     enabled: open && !!empresaId,
@@ -603,6 +625,39 @@ function ReconcileDialog({ contaId, empresaId, autoConciliar, onClose }: { conta
         .select("id,descricao,valor,tipo,data_vencimento")
         .eq("empresa_id", empresaId!).in("status", ["aberto", "vencido", "parcial"])
         .order("data_vencimento").limit(200);
+      if (error) throw error;
+      return data ?? [];
+    },
+  });
+
+  const { data: categorias } = useQuery({
+    enabled: open && !!empresaId,
+    queryKey: ["categorias-conc", empresaId] as const,
+    queryFn: async () => {
+      const { data, error } = await supabase.from("categorias_financeiras")
+        .select("id,nome,tipo").eq("empresa_id", empresaId!).order("nome");
+      if (error) throw error;
+      return data ?? [];
+    },
+  });
+
+  const { data: contatos } = useQuery({
+    enabled: open && !!empresaId,
+    queryKey: ["contatos-conc", empresaId] as const,
+    queryFn: async () => {
+      const { data, error } = await supabase.from("contatos")
+        .select("id,nome").eq("empresa_id", empresaId!).eq("ativo", true).order("nome").limit(500);
+      if (error) throw error;
+      return data ?? [];
+    },
+  });
+
+  const { data: centros } = useQuery({
+    enabled: open && !!empresaId,
+    queryKey: ["centros-conc", empresaId] as const,
+    queryFn: async () => {
+      const { data, error } = await supabase.from("centros_custo")
+        .select("id,nome").eq("empresa_id", empresaId!).eq("ativo", true).order("nome");
       if (error) throw error;
       return data ?? [];
     },
@@ -667,19 +722,30 @@ function ReconcileDialog({ contaId, empresaId, autoConciliar, onClose }: { conta
     })();
   }, [autoConciliar, txs, lancamentosAbertos, contaId, empresaId, qc]);
 
-
-  const [novoTx, setNovoTx] = useState<OfxRow | null>(null);
-  const [novaDescricao, setNovaDescricao] = useState("");
-
-  const criarLanc = useMutation({
-    mutationFn: async ({ tx, descricao }: { tx: OfxRow; descricao: string }) => {
+  const criarEConciliar = useMutation({
+    mutationFn: async ({ tx, r }: { tx: OfxRow; r: RowState }) => {
       if (!empresaId || !contaId) throw new Error("Empresa não selecionada");
+      if (r.lancamento_id) {
+        const { error: e1 } = await supabase.from("lancamentos_financeiros")
+          .update({ status: "pago", valor_pago: Math.abs(tx.valor), data_pagamento: tx.data_transacao, conta_bancaria_id: contaId })
+          .eq("id", r.lancamento_id);
+        if (e1) throw e1;
+        const { error: e2 } = await supabase.from("ofx_transacoes")
+          .update({ status: "conciliada", lancamento_id: r.lancamento_id }).eq("id", tx.id);
+        if (e2) throw e2;
+        return;
+      }
+      if (!r.descricao.trim()) throw new Error("Informe a descrição");
+      if (!r.categoria_id) throw new Error("Selecione a categoria");
       const tipo = tx.valor >= 0 ? "receber" : "pagar";
       const { data: lanc, error } = await supabase.from("lancamentos_financeiros").insert({
-        empresa_id: empresaId, tipo, descricao: descricao || tx.memo || "Importado OFX",
+        empresa_id: empresaId, tipo, descricao: r.descricao.trim(),
         valor: Math.abs(tx.valor), valor_pago: Math.abs(tx.valor),
         data_emissao: tx.data_transacao, data_vencimento: tx.data_transacao,
         data_pagamento: tx.data_transacao, status: "pago", conta_bancaria_id: contaId,
+        categoria_id: r.categoria_id || null,
+        contato_id: r.contato_id || null,
+        centro_custo_id: r.centro_custo_id || null,
       }).select("id").single();
       if (error) throw error;
       const { error: e2 } = await supabase.from("ofx_transacoes")
@@ -687,10 +753,23 @@ function ReconcileDialog({ contaId, empresaId, autoConciliar, onClose }: { conta
       if (e2) throw e2;
     },
     onSuccess: () => {
-      toast.success("Lançamento criado e conciliado");
-      setNovoTx(null); setNovaDescricao("");
+      toast.success("Lançamento conciliado");
       qc.invalidateQueries({ queryKey: ["ofx", contaId] });
+      qc.invalidateQueries({ queryKey: ["lanc-abertos", empresaId] });
       qc.invalidateQueries({ queryKey: ["lancamentos"] });
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+  const arquivar = useMutation({
+    mutationFn: async (ids: string[]) => {
+      const { error } = await supabase.from("ofx_transacoes").update({ status: "arquivada" }).in("id", ids);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      toast.success("Lançamento(s) arquivado(s)");
+      setSel(new Set());
+      qc.invalidateQueries({ queryKey: ["ofx", contaId] });
     },
     onError: (e: Error) => toast.error(e.message),
   });
@@ -698,15 +777,12 @@ function ReconcileDialog({ contaId, empresaId, autoConciliar, onClose }: { conta
   const excluirExtrato = useMutation({
     mutationFn: async () => {
       if (!contaId) throw new Error("Conta não selecionada");
-      // 1) coleta ids de lançamentos vinculados ao extrato desta conta
       const { data: vinculos, error: eSel } = await supabase.from("ofx_transacoes")
         .select("lancamento_id").eq("conta_bancaria_id", contaId).not("lancamento_id", "is", null);
       if (eSel) throw eSel;
       const lancIds = Array.from(new Set((vinculos ?? []).map((v) => v.lancamento_id).filter(Boolean) as string[]));
-      // 2) apaga todas as transações OFX da conta
       const { error: eDel } = await supabase.from("ofx_transacoes").delete().eq("conta_bancaria_id", contaId);
       if (eDel) throw eDel;
-      // 3) apaga os lançamentos que estavam conciliados a este extrato
       if (lancIds.length) {
         const { error: eLanc } = await supabase.from("lancamentos_financeiros").delete().in("id", lancIds);
         if (eLanc) throw eLanc;
@@ -724,17 +800,49 @@ function ReconcileDialog({ contaId, empresaId, autoConciliar, onClose }: { conta
     onError: (e: Error) => toast.error(e.message),
   });
 
+  const pendentes = (txs ?? []).filter((t) => t.status !== "conciliada" && t.status !== "arquivada");
+  const conciliadas = (txs ?? []).filter((t) => t.status === "conciliada");
+  const recebimentos = pendentes.filter((t) => t.valor >= 0).length;
+  const pagamentos = pendentes.length - recebimentos;
+
+  const q = busca.trim().toLowerCase();
+  const visiveis = pendentes
+    .filter((t) => filtro === "todos" || (filtro === "recebimentos" ? t.valor >= 0 : t.valor < 0))
+    .filter((t) => !q || (t.memo ?? "").toLowerCase().includes(q) || String(t.valor).includes(q.replace(",", ".")))
+    .sort((a, b) => {
+      if (ordem === "recentes") return b.data_transacao.localeCompare(a.data_transacao);
+      if (ordem === "antigos") return a.data_transacao.localeCompare(b.data_transacao);
+      if (ordem === "maior") return Math.abs(b.valor) - Math.abs(a.valor);
+      return Math.abs(a.valor) - Math.abs(b.valor);
+    });
+
+  const getRow = (tx: OfxRow) => rows[tx.id] ?? emptyRow(tx.memo);
+  const setRow = (id: string, patch: Partial<RowState>) =>
+    setRows((prev) => ({ ...prev, [id]: { ...(prev[id] ?? emptyRow(null)), ...patch } }));
+
+  const toggleSel = (id: string) =>
+    setSel((prev) => { const n = new Set(prev); n.has(id) ? n.delete(id) : n.add(id); return n; });
+
+  const conciliarSelecionados = async () => {
+    const alvos = visiveis.filter((t) => sel.has(t.id));
+    if (!alvos.length) { toast.error("Selecione ao menos um lançamento"); return; }
+    for (const tx of alvos) await criarEConciliar.mutateAsync({ tx, r: getRow(tx) }).catch(() => null);
+    setSel(new Set());
+  };
+
+  const titulo = conta ? `Contas financeiras — ${conta.nome ?? conta.banco ?? ""}` : "Conciliação bancária";
+
   return (
     <Dialog open={open} onOpenChange={(v) => { if (!v) onClose(); }}>
-      <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-3xl">
+      <DialogContent className="max-h-[92vh] overflow-y-auto sm:max-w-[1200px]">
         <DialogHeader>
           <div className="flex items-start justify-between gap-3">
-            <DialogTitle>Conciliação bancária</DialogTitle>
+            <DialogTitle className="text-xl">{titulo}</DialogTitle>
             {txs && txs.length > 0 && (
               <Button
                 variant="outline"
                 size="sm"
-                className="text-destructive hover:text-destructive"
+                className="mr-6 text-destructive hover:text-destructive"
                 disabled={excluirExtrato.isPending}
                 onClick={() => {
                   if (window.confirm("Excluir todo o extrato OFX importado desta conta?\n\nSerão apagados TODOS os lançamentos criados/conciliados a partir dele, mesmo os já conciliados. Esta ação não pode ser desfeita.")) {
@@ -748,100 +856,238 @@ function ReconcileDialog({ contaId, empresaId, autoConciliar, onClose }: { conta
             )}
           </div>
         </DialogHeader>
+
         <Tabs defaultValue="pendentes" className="w-full">
           <TabsList>
             <TabsTrigger value="pendentes">
               Conciliações pendentes
-              {txs && ` (${txs.filter((t) => t.status !== "conciliada").length})`}
+              <Badge variant="secondary" className="ml-2">{pendentes.length}</Badge>
             </TabsTrigger>
             <TabsTrigger value="movimentacoes">Movimentações</TabsTrigger>
           </TabsList>
 
-          <TabsContent value="pendentes" className="mt-4">
+          <TabsContent value="pendentes" className="mt-4 space-y-4">
+            <div>
+              <Label className="text-xs text-muted-foreground">Pesquise o lançamento bancário</Label>
+              <div className="mt-1 flex flex-wrap items-center gap-2">
+                <div className="relative w-full max-w-sm">
+                  <Search className="pointer-events-none absolute left-2 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                  <Input className="pl-8" placeholder="Descrição ou valor" value={busca} onChange={(e) => setBusca(e.target.value)} />
+                </div>
+                <Button variant="ghost" size="sm" onClick={() => { setBusca(""); setFiltro("todos"); }}>
+                  <Trash2 className="mr-1 h-3 w-3" />Limpar filtros
+                </Button>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-3 overflow-hidden rounded-md border">
+              {([
+                { k: "todos", label: "Todos", n: pendentes.length, cls: "text-primary" },
+                { k: "recebimentos", label: "Recebimentos", n: recebimentos, cls: "text-success" },
+                { k: "pagamentos", label: "Pagamentos", n: pagamentos, cls: "text-destructive" },
+              ] as const).map((c) => (
+                <button
+                  key={c.k}
+                  type="button"
+                  onClick={() => setFiltro(c.k)}
+                  className={cn(
+                    "border-r px-4 py-3 text-center last:border-r-0 transition-colors hover:bg-muted/50",
+                    filtro === c.k && "border-t-2 border-t-primary bg-muted/40"
+                  )}
+                >
+                  <div className="text-sm text-muted-foreground">{c.label}</div>
+                  <div className={cn("text-lg font-semibold", c.cls)}>{c.n}</div>
+                </button>
+              ))}
+            </div>
+
+            <div className="flex flex-wrap items-center gap-2">
+              <Button variant="outline" size="sm"
+                onClick={() => setSel(sel.size === visiveis.length ? new Set() : new Set(visiveis.map((t) => t.id)))}>
+                {sel.size === visiveis.length && visiveis.length > 0 ? "Limpar seleção" : "Selecionar lançamentos"}
+              </Button>
+              <Button variant="outline" size="sm" disabled={!sel.size || criarEConciliar.isPending} onClick={conciliarSelecionados}>
+                {criarEConciliar.isPending && <Loader2 className="mr-1 h-3 w-3 animate-spin" />}Conciliar
+              </Button>
+              <Button variant="outline" size="sm" disabled={!sel.size || arquivar.isPending}
+                onClick={() => arquivar.mutate(Array.from(sel))}>
+                <Archive className="mr-1 h-3 w-3" />Arquivar
+              </Button>
+              <div className="ml-auto">
+                <Select value={ordem} onValueChange={(v) => setOrdem(v as typeof ordem)}>
+                  <SelectTrigger className="h-8 w-[170px]"><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="recentes">Mais recentes</SelectItem>
+                    <SelectItem value="antigos">Mais antigos</SelectItem>
+                    <SelectItem value="maior">Maior valor</SelectItem>
+                    <SelectItem value="menor">Menor valor</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 gap-3 text-sm font-medium md:grid-cols-[1fr_auto_1fr]">
+              <div className="flex items-center gap-2"><span className="rounded bg-destructive px-1.5 text-xs text-destructive-foreground">B</span>Lançamentos do banco</div>
+              <div />
+              <div className="flex items-center gap-2"><Link2 className="h-4 w-4 text-primary" />Lançamentos do sistema</div>
+            </div>
+
             {isLoading ? (
               <div className="py-6 text-center text-sm text-muted-foreground">Carregando…</div>
             ) : !txs?.length ? (
               <div className="py-6 text-center text-sm text-muted-foreground">
                 Nenhuma transação importada. Use "Importar OFX" para começar.
               </div>
-            ) : txs.filter((t) => t.status !== "conciliada").length === 0 ? (
-              <div className="py-8 text-center text-sm text-muted-foreground">
-                Tudo conciliado. 🎉
+            ) : !visiveis.length ? (
+              <div className="py-8 text-center text-sm text-muted-foreground">Tudo conciliado. 🎉</div>
+            ) : (
+              <div className="space-y-4">
+                {visiveis.map((tx) => {
+                  const r = getRow(tx);
+                  const modoBusca = !!buscarModo[tx.id];
+                  return (
+                    <div key={tx.id} className="grid grid-cols-1 items-center gap-3 md:grid-cols-[1fr_auto_1fr]">
+                      {/* banco */}
+                      <Card className="overflow-hidden">
+                        <div className="flex items-center justify-between gap-2 border-b px-4 py-3">
+                          <div className="flex items-center gap-3">
+                            <Checkbox checked={sel.has(tx.id)} onCheckedChange={() => toggleSel(tx.id)} />
+                            <span className="text-sm font-semibold">{format(new Date(tx.data_transacao + "T00:00:00"), "dd/MM/yyyy")}</span>
+                            <span className="text-xs text-muted-foreground capitalize">
+                              {format(new Date(tx.data_transacao + "T00:00:00"), "EEEE")}
+                            </span>
+                          </div>
+                          <span className={cn("text-tabular font-semibold", tx.valor < 0 ? "text-destructive" : "text-success")}>
+                            {brl(tx.valor)}
+                          </span>
+                        </div>
+                        <div className="space-y-1 px-4 py-3 text-sm">
+                          <div className="font-medium">{tx.memo ?? "—"}</div>
+                          <div className="text-muted-foreground"><span className="font-medium text-foreground">Cliente:</span> {r.contato_id ? (contatos?.find((c) => c.id === r.contato_id)?.nome ?? "—") : "Informação não recebida"}</div>
+                          <div className="text-muted-foreground"><span className="font-medium text-foreground">CPF/CNPJ:</span> Informação não recebida</div>
+                        </div>
+                        <div className="flex items-center justify-between border-t bg-muted/30 px-4 py-2">
+                          <Badge variant="secondary" className="text-xs">Integração manual</Badge>
+                          <Button variant="outline" size="sm" onClick={() => arquivar.mutate([tx.id])} disabled={arquivar.isPending}>
+                            <Archive className="mr-1 h-3 w-3" />Arquivar
+                          </Button>
+                        </div>
+                      </Card>
+
+                      <div className="flex justify-center">
+                        <Button
+                          disabled={criarEConciliar.isPending}
+                          onClick={() => criarEConciliar.mutate({ tx, r })}
+                        >
+                          {criarEConciliar.isPending ? <Loader2 className="mr-1 h-4 w-4 animate-spin" /> : <Check className="mr-1 h-4 w-4" />}
+                          Conciliar
+                        </Button>
+                      </div>
+
+                      {/* sistema */}
+                      <Card className="overflow-hidden">
+                        <div className="flex items-center justify-between gap-2 border-b px-4 py-3">
+                          <div className="flex gap-1">
+                            <Button size="sm" variant={modoBusca ? "outline" : "default"}
+                              onClick={() => { setBuscarModo((p) => ({ ...p, [tx.id]: false })); setRow(tx.id, { lancamento_id: "" }); }}>
+                              Novo lançamento
+                            </Button>
+                            <Button size="sm" variant={modoBusca ? "default" : "outline"}
+                              onClick={() => setBuscarModo((p) => ({ ...p, [tx.id]: true }))}>
+                              <Search className="mr-1 h-3 w-3" />Buscar lançamento
+                            </Button>
+                          </div>
+                        </div>
+                        <div className="px-4 py-3">
+                          {modoBusca ? (
+                            <div className="space-y-1">
+                              <Label className="text-xs">Lançamento existente</Label>
+                              <Select value={r.lancamento_id} onValueChange={(v) => setRow(tx.id, { lancamento_id: v })}>
+                                <SelectTrigger><SelectValue placeholder="Selecione um lançamento em aberto" /></SelectTrigger>
+                                <SelectContent>
+                                  {(lancamentosAbertos ?? [])
+                                    .slice()
+                                    .sort((a, b) => Math.abs(Number(a.valor) - Math.abs(tx.valor)) - Math.abs(Number(b.valor) - Math.abs(tx.valor)))
+                                    .map((l) => (
+                                      <SelectItem key={l.id} value={l.id}>
+                                        {format(new Date(l.data_vencimento + "T00:00:00"), "dd/MM")} — {l.descricao} ({brl(Number(l.valor))})
+                                      </SelectItem>
+                                    ))}
+                                </SelectContent>
+                              </Select>
+                            </div>
+                          ) : (
+                            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                              <div className="space-y-1">
+                                <Label className="text-xs">Descrição <span className="text-destructive">*</span></Label>
+                                <Input value={r.descricao} onChange={(e) => setRow(tx.id, { descricao: e.target.value })} placeholder="Descrição" />
+                              </div>
+                              <div className="space-y-1">
+                                <Label className="text-xs">Categoria <span className="text-destructive">*</span></Label>
+                                <Select value={r.categoria_id} onValueChange={(v) => setRow(tx.id, { categoria_id: v })}>
+                                  <SelectTrigger><SelectValue placeholder="Selecione" /></SelectTrigger>
+                                  <SelectContent>
+                                    {(categorias ?? [])
+                                      .filter((c) => c.tipo === (tx.valor >= 0 ? "receber" : "pagar"))
+                                      .map((c) => <SelectItem key={c.id} value={c.id}>{c.nome}</SelectItem>)}
+                                  </SelectContent>
+                                </Select>
+                              </div>
+                              <div className="space-y-1">
+                                <Label className="text-xs">{tx.valor >= 0 ? "Cliente" : "Fornecedor"}</Label>
+                                <Select value={r.contato_id} onValueChange={(v) => setRow(tx.id, { contato_id: v })}>
+                                  <SelectTrigger><SelectValue placeholder="Selecione" /></SelectTrigger>
+                                  <SelectContent>
+                                    {(contatos ?? []).map((c) => <SelectItem key={c.id} value={c.id}>{c.nome}</SelectItem>)}
+                                  </SelectContent>
+                                </Select>
+                              </div>
+                              <div className="space-y-1">
+                                <Label className="text-xs">Centro de custo</Label>
+                                <Select value={r.centro_custo_id} onValueChange={(v) => setRow(tx.id, { centro_custo_id: v })}>
+                                  <SelectTrigger><SelectValue placeholder="Selecione" /></SelectTrigger>
+                                  <SelectContent>
+                                    {(centros ?? []).map((c) => <SelectItem key={c.id} value={c.id}>{c.nome}</SelectItem>)}
+                                  </SelectContent>
+                                </Select>
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      </Card>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </TabsContent>
+
+          <TabsContent value="movimentacoes" className="mt-4">
+            {!conciliadas.length ? (
+              <div className="rounded-lg border border-dashed py-10 text-center text-sm text-muted-foreground">
+                Nenhuma movimentação conciliada nesta conta.
               </div>
             ) : (
               <Table>
                 <TableHeader><TableRow>
-                  <TableHead>Data</TableHead><TableHead>Memo</TableHead>
-                  <TableHead className="text-right">Valor</TableHead>
-                  <TableHead>Vincular</TableHead>
+                  <TableHead>Data</TableHead><TableHead>Descrição</TableHead>
+                  <TableHead className="text-right">Valor</TableHead><TableHead>Situação</TableHead>
                 </TableRow></TableHeader>
                 <TableBody>
-                  {txs.filter((t) => t.status !== "conciliada").map((tx) => (
-                    <TableRow key={tx.id}>
-                      <TableCell className="text-tabular whitespace-nowrap">
-                        {format(new Date(tx.data_transacao), "dd/MM/yyyy")}
-                      </TableCell>
-                      <TableCell className="text-sm">{tx.memo ?? "—"}</TableCell>
-                      <TableCell className={`text-right text-tabular ${tx.valor < 0 ? "text-destructive" : "text-success"}`}>
-                        {brl(tx.valor)}
-                      </TableCell>
-                      <TableCell>
-                        <div className="flex gap-2">
-                          <Select onValueChange={(v) => conciliar.mutate({ ofxId: tx.id, lancamentoId: v, valor: tx.valor })}>
-                            <SelectTrigger className="h-8 w-[220px]"><SelectValue placeholder="Vincular lançamento" /></SelectTrigger>
-                            <SelectContent>
-                              {lancamentosAbertos?.filter((l) => Math.abs(Number(l.valor) - Math.abs(tx.valor)) < 0.01)
-                                .concat(lancamentosAbertos?.filter((l) => Math.abs(Number(l.valor) - Math.abs(tx.valor)) >= 0.01) ?? [])
-                                .map((l) => (
-                                  <SelectItem key={l.id} value={l.id}>
-                                    {format(new Date(l.data_vencimento), "dd/MM")} — {l.descricao} ({brl(Number(l.valor))})
-                                  </SelectItem>
-                                ))}
-                            </SelectContent>
-                          </Select>
-                          <Button variant="outline" size="sm" onClick={() => { setNovoTx(tx); setNovaDescricao(tx.memo ?? ""); }}>
-                            Novo
-                          </Button>
-                        </div>
-                      </TableCell>
+                  {conciliadas.map((t) => (
+                    <TableRow key={t.id}>
+                      <TableCell className="text-tabular whitespace-nowrap">{format(new Date(t.data_transacao + "T00:00:00"), "dd/MM/yyyy")}</TableCell>
+                      <TableCell className="text-sm">{t.memo ?? "—"}</TableCell>
+                      <TableCell className={cn("text-right text-tabular", t.valor < 0 ? "text-destructive" : "text-success")}>{brl(t.valor)}</TableCell>
+                      <TableCell><Badge variant="secondary">Conciliada</Badge></TableCell>
                     </TableRow>
                   ))}
                 </TableBody>
               </Table>
             )}
           </TabsContent>
-
-          <TabsContent value="movimentacoes" className="mt-4">
-            <div className="py-10 text-center text-sm text-muted-foreground border border-dashed border-border rounded-lg">
-              Em breve: histórico de movimentações da conta.
-            </div>
-          </TabsContent>
         </Tabs>
       </DialogContent>
-
-
-      <Dialog open={!!novoTx} onOpenChange={(v) => { if (!v) { setNovoTx(null); setNovaDescricao(""); } }}>
-        <DialogContent>
-          <DialogHeader><DialogTitle>Novo lançamento a partir do extrato</DialogTitle></DialogHeader>
-          {novoTx && (
-            <form onSubmit={(e) => { e.preventDefault(); criarLanc.mutate({ tx: novoTx, descricao: novaDescricao }); }} className="space-y-3">
-              <div className="grid grid-cols-2 gap-3 text-sm text-muted-foreground">
-                <div>Data: <span className="text-foreground">{format(new Date(novoTx.data_transacao), "dd/MM/yyyy")}</span></div>
-                <div>Valor: <span className={novoTx.valor < 0 ? "text-destructive" : "text-success"}>{brl(novoTx.valor)}</span></div>
-              </div>
-              <div>
-                <Label>Descrição</Label>
-                <Input required autoFocus value={novaDescricao} onChange={(e) => setNovaDescricao(e.target.value)} placeholder="Descrição do lançamento" />
-              </div>
-              <DialogFooter>
-                <Button type="submit" disabled={criarLanc.isPending}>
-                  {criarLanc.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}Criar e conciliar
-                </Button>
-              </DialogFooter>
-            </form>
-          )}
-        </DialogContent>
-      </Dialog>
     </Dialog>
   );
 }
