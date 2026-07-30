@@ -815,9 +815,15 @@ function ReconcileDialog({ contaId, conta, empresaId, autoConciliar, importing, 
     onError: (e: Error) => toast.error(e.message),
   });
 
-  const pendentes = (txs ?? []).filter((t) => t.status !== "conciliada" && t.status !== "arquivada");
+  const pendentes = useMemo(
+    () => (txs ?? []).filter((t) => t.status !== "conciliada" && t.status !== "arquivada"),
+    [txs],
+  );
 
-  const mesesDisponiveis = Array.from(new Set(pendentes.map((t) => (t.data_transacao ?? "").slice(0, 7)).filter(Boolean))).sort((a, b) => b.localeCompare(a));
+  const mesesDisponiveis = useMemo(
+    () => Array.from(new Set(pendentes.map((t) => (t.data_transacao ?? "").slice(0, 7)).filter(Boolean))).sort((a, b) => b.localeCompare(a)),
+    [pendentes],
+  );
   const labelMes = (m: string) => {
     const [y, mm] = m.split("-");
     const nomes = ["janeiro", "fevereiro", "março", "abril", "maio", "junho", "julho", "agosto", "setembro", "outubro", "novembro", "dezembro"];
@@ -825,29 +831,53 @@ function ReconcileDialog({ contaId, conta, empresaId, autoConciliar, importing, 
     return `${n.charAt(0).toUpperCase()}${n.slice(1)}/${y}`;
   };
 
-  const porMes = pendentes.filter((t) => mes === "todos" || (t.data_transacao ?? "").slice(0, 7) === mes);
+  const porMes = useMemo(
+    () => pendentes.filter((t) => mes === "todos" || (t.data_transacao ?? "").slice(0, 7) === mes),
+    [pendentes, mes],
+  );
 
-  const recebimentos = porMes.filter((t) => t.valor >= 0).length;
+  const recebimentos = useMemo(() => porMes.filter((t) => t.valor >= 0).length, [porMes]);
   const pagamentos = porMes.length - recebimentos;
 
-  const q = busca.trim().toLowerCase();
-  const visiveis = porMes
-    .filter((t) => filtro === "todos" || (filtro === "recebimentos" ? t.valor >= 0 : t.valor < 0))
-    .filter((t) => !q || (t.memo ?? "").toLowerCase().includes(q) || String(t.valor).includes(q.replace(",", ".")))
-    .sort((a, b) => {
+  const q = buscaDebounced.trim().toLowerCase();
+  const visiveis = useMemo(() => {
+    return porMes
+      .filter((t) => filtro === "todos" || (filtro === "recebimentos" ? t.valor >= 0 : t.valor < 0))
+      .filter((t) => !q || (t.memo ?? "").toLowerCase().includes(q) || String(t.valor).includes(q.replace(",", ".")))
+      .sort((a, b) => {
+        if (ordem === "recentes") return b.data_transacao.localeCompare(a.data_transacao);
+        if (ordem === "antigos") return a.data_transacao.localeCompare(b.data_transacao);
+        if (ordem === "maior") return Math.abs(b.valor) - Math.abs(a.valor);
+        return Math.abs(a.valor) - Math.abs(b.valor);
+      });
+  }, [porMes, filtro, q, ordem]);
 
-      if (ordem === "recentes") return b.data_transacao.localeCompare(a.data_transacao);
-      if (ordem === "antigos") return a.data_transacao.localeCompare(b.data_transacao);
-      if (ordem === "maior") return Math.abs(b.valor) - Math.abs(a.valor);
-      return Math.abs(a.valor) - Math.abs(b.valor);
-    });
+  // Paginação: renderizar centenas de cards de uma vez trava a tela.
+  const totalPaginas = Math.max(1, Math.ceil(visiveis.length / PAGE_SIZE));
+  const paginaAtual = Math.min(pagina, totalPaginas);
+  useEffect(() => { setPagina(1); }, [q, filtro, ordem, mes, contaId]);
+  const daPagina = useMemo(
+    () => visiveis.slice((paginaAtual - 1) * PAGE_SIZE, paginaAtual * PAGE_SIZE),
+    [visiveis, paginaAtual],
+  );
 
-  const getRow = (tx: OfxRow) => rows[tx.id] ?? emptyRow(tx.memo);
-  const setRow = (id: string, patch: Partial<RowState>) =>
-    setRows((prev) => ({ ...prev, [id]: { ...(prev[id] ?? emptyRow(null)), ...patch } }));
+  const catsReceber = useMemo(() => (categorias ?? []).filter((c) => c.tipo === "receber"), [categorias]);
+  const catsPagar = useMemo(() => (categorias ?? []).filter((c) => c.tipo === "pagar"), [categorias]);
 
-  const toggleSel = (id: string) =>
-    setSel((prev) => { const n = new Set(prev); n.has(id) ? n.delete(id) : n.add(id); return n; });
+  const getRow = useCallback(
+    (tx: OfxRow) => rows[tx.id] ?? emptyRow(tx.memo),
+    [rows],
+  );
+  const setRow = useCallback((id: string, patch: Partial<RowState>) =>
+    setRows((prev) => ({ ...prev, [id]: { ...(prev[id] ?? emptyRow(null)), ...patch } })), []);
+
+  const toggleSel = useCallback((id: string) =>
+    setSel((prev) => { const n = new Set(prev); n.has(id) ? n.delete(id) : n.add(id); return n; }), []);
+
+  const setModoBusca = useCallback((id: string, v: boolean) => {
+    setBuscarModo((p) => ({ ...p, [id]: v }));
+    if (!v) setRow(id, { lancamento_id: "" });
+  }, [setRow]);
 
   const conciliarSelecionados = async () => {
     const alvos = visiveis.filter((t) => sel.has(t.id));
@@ -855,6 +885,7 @@ function ReconcileDialog({ contaId, conta, empresaId, autoConciliar, importing, 
     for (const tx of alvos) await criarEConciliar.mutateAsync({ tx, r: getRow(tx) }).catch(() => null);
     setSel(new Set());
   };
+
 
   const titulo = conta ? `Contas financeiras — ${conta.nome ?? conta.banco ?? ""}` : "Conciliação bancária";
 
