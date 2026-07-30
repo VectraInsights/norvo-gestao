@@ -772,18 +772,20 @@ function ReconcileDialog({ contaId, conta, empresaId, autoConciliar, importing, 
     onError: (e: Error) => toast.error(e.message),
   });
 
-  const arquivar = useMutation({
+  const excluirTx = useMutation({
     mutationFn: async (ids: string[]) => {
-      const { error } = await supabase.from("ofx_transacoes").update({ status: "arquivada" }).in("id", ids);
+      const { error } = await supabase.from("ofx_transacoes")
+        .delete().in("id", ids).neq("status", "conciliada");
       if (error) throw error;
     },
     onSuccess: () => {
-      toast.success("Lançamento(s) arquivado(s)");
+      toast.success("Lançamento(s) excluído(s) do extrato");
       setSel(new Set());
       qc.invalidateQueries({ queryKey: ["ofx", contaId] });
     },
     onError: (e: Error) => toast.error(e.message),
   });
+
 
   const excluirExtrato = useMutation({
     mutationFn: async () => {
