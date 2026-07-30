@@ -520,12 +520,6 @@ function ContasFinanceiras() {
                   <TableCell className="text-tabular">{c.agencia ?? "—"}/{c.conta ?? "—"}</TableCell>
                   <TableCell className="text-right text-tabular font-medium">{brl(c.saldo_atual)}</TableCell>
                   <TableCell className="text-right whitespace-nowrap">
-                    {c.tipo === "corrente" && (
-                      <Button variant="ghost" size="sm" disabled={importing === c.id} onClick={() => triggerUpload(c.id)}>
-                        {importing === c.id ? <Loader2 className="mr-1 h-3 w-3 animate-spin" /> : <Upload className="mr-1 h-3 w-3" />}
-                        Importar OFX
-                      </Button>
-                    )}
                     <Button variant="ghost" size="sm" onClick={() => setReconcilingId(c.id)}>
                       <Link2 className="mr-1 h-3 w-3" />Conciliar
                     </Button>
@@ -551,6 +545,8 @@ function ContasFinanceiras() {
         conta={contas?.find((c) => c.id === reconcilingId) ?? null}
         empresaId={empresa?.id ?? null}
         autoConciliar={autoConciliar}
+        importing={reconcilingId ? importing === reconcilingId : false}
+        onImport={() => reconcilingId && triggerUpload(reconcilingId)}
         onClose={() => setReconcilingId(null)}
       />
     </>
@@ -590,7 +586,7 @@ const emptyRow = (memo: string | null): RowState => ({
   descricao: memo ?? "", categoria_id: "", contato_id: "", centro_custo_id: "", lancamento_id: "",
 });
 
-function ReconcileDialog({ contaId, conta, empresaId, autoConciliar, onClose }: { contaId: string | null; conta: ContaBancaria | null; empresaId: string | null; autoConciliar: boolean; onClose: () => void }) {
+function ReconcileDialog({ contaId, conta, empresaId, autoConciliar, importing, onImport, onClose }: { contaId: string | null; conta: ContaBancaria | null; empresaId: string | null; autoConciliar: boolean; importing: boolean; onImport: () => void; onClose: () => void }) {
   const autoRunRef = useRef<Set<string>>(new Set());
   const qc = useQueryClient();
   const open = !!contaId;
@@ -854,6 +850,12 @@ function ReconcileDialog({ contaId, conta, empresaId, autoConciliar, onClose }: 
       <div className="sticky top-0 z-10 flex items-center justify-between gap-3 border-b bg-background/95 px-4 py-3 backdrop-blur">
         <h2 className="text-xl font-semibold">{titulo}</h2>
         <div className="flex items-center gap-2">
+          {conta?.tipo === "corrente" && (
+            <Button variant="default" size="sm" disabled={importing} onClick={onImport}>
+              {importing ? <Loader2 className="mr-1 h-3 w-3 animate-spin" /> : <Upload className="mr-1 h-3 w-3" />}
+              Importar OFX
+            </Button>
+          )}
           {txs && txs.length > 0 && (
             <Button
               variant="outline"
