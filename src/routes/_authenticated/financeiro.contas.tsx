@@ -992,8 +992,9 @@ function ReconcileDialog({ contaId, conta, empresaId, autoConciliar, importing, 
                         </div>
                         <div className="flex items-center justify-between border-t bg-muted/30 px-4 py-2">
                           <Badge variant="secondary" className="text-xs">Integração manual</Badge>
-                          <Button variant="outline" size="sm" onClick={() => arquivar.mutate([tx.id])} disabled={arquivar.isPending}>
-                            <Archive className="mr-1 h-3 w-3" />Arquivar
+                          <Button variant="outline" size="sm" onClick={() => excluirTx.mutate([tx.id])} disabled={excluirTx.isPending}>
+                            <Trash2 className="mr-1 h-3 w-3" />Excluir
+
                           </Button>
                         </div>
                       </Card>
