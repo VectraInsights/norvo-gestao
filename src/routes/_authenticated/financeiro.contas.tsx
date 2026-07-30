@@ -850,6 +850,12 @@ function ReconcileDialog({ contaId, conta, empresaId, autoConciliar, importing, 
       <div className="sticky top-0 z-10 flex items-center justify-between gap-3 border-b bg-background/95 px-4 py-3 backdrop-blur">
         <h2 className="text-xl font-semibold">{titulo}</h2>
         <div className="flex items-center gap-2">
+          {conta?.tipo === "corrente" && (
+            <Button variant="default" size="sm" disabled={importing} onClick={onImport}>
+              {importing ? <Loader2 className="mr-1 h-3 w-3 animate-spin" /> : <Upload className="mr-1 h-3 w-3" />}
+              Importar OFX
+            </Button>
+          )}
           {txs && txs.length > 0 && (
             <Button
               variant="outline"
