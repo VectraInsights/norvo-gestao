@@ -801,7 +801,7 @@ function ReconcileDialog({ contaId, conta, empresaId, autoConciliar, onClose }: 
   });
 
   const pendentes = (txs ?? []).filter((t) => t.status !== "conciliada" && t.status !== "arquivada");
-  const conciliadas = (txs ?? []).filter((t) => t.status === "conciliada");
+  
   const recebimentos = pendentes.filter((t) => t.valor >= 0).length;
   const pagamentos = pendentes.length - recebimentos;
 
