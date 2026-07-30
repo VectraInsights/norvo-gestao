@@ -592,9 +592,16 @@ function ReconcileDialog({ contaId, conta, empresaId, autoConciliar, importing, 
   const open = !!contaId;
 
   const [busca, setBusca] = useState("");
+  const [buscaDebounced, setBuscaDebounced] = useState("");
   const [filtro, setFiltro] = useState<"todos" | "recebimentos" | "pagamentos">("todos");
   const [ordem, setOrdem] = useState<"recentes" | "antigos" | "maior" | "menor">("recentes");
   const [mes, setMes] = useState("todos");
+  const [pagina, setPagina] = useState(1);
+
+  useEffect(() => {
+    const id = setTimeout(() => setBuscaDebounced(busca), 250);
+    return () => clearTimeout(id);
+  }, [busca]);
 
   const [sel, setSel] = useState<Set<string>>(new Set());
   const [rows, setRows] = useState<Record<string, RowState>>({});
