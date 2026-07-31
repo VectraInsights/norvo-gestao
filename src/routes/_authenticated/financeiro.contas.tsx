@@ -602,12 +602,6 @@ function ContasFinanceiras() {
                   <TableCell className="text-tabular">{c.agencia ?? "—"}/{c.conta ?? "—"}</TableCell>
                   <TableCell className="text-right text-tabular font-medium">{brl(c.saldo_atual)}</TableCell>
                   <TableCell className="text-right whitespace-nowrap">
-                    <Button variant="ghost" size="sm" disabled={preparando === c.id} onClick={() => abrirConciliacao(c.id)}>
-                      {preparando === c.id
-                        ? <Loader2 className="mr-1 h-3 w-3 animate-spin" />
-                        : <Link2 className="mr-1 h-3 w-3" />}
-                      {preparando === c.id ? "Conciliando..." : "Conciliar"}
-                    </Button>
                     <Button variant="ghost" size="sm" className="text-destructive hover:text-destructive"
                       disabled={excluir.isPending}
                       onClick={() => {
