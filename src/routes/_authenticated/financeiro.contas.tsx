@@ -25,11 +25,15 @@ import { cn } from "@/lib/utils";
 import { detectBancoByNome, detectBancoByCodigo, formatContaComDigito, normalizaContaNumero } from "@/lib/bancos";
 
 export const Route = createFileRoute("/_authenticated/financeiro/contas")({
+  validateSearch: (search: Record<string, unknown>): { conciliar?: string } => ({
+    conciliar: typeof search.conciliar === "string" ? search.conciliar : undefined,
+  }),
   component: ContasFinanceiras,
   errorComponent: ({ error }) => (
     <div className="p-6 text-sm text-destructive" role="alert">Falha: {error.message}</div>
   ),
 });
+
 
 const brl = (n: number) => Number(n).toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 
