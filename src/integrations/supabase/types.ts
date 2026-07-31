@@ -14,6 +14,73 @@ export type Database = {
   }
   public: {
     Tables: {
+      adiantamentos: {
+        Row: {
+          colaborador_id: string | null
+          created_at: string
+          created_by: string | null
+          data: string
+          empresa_id: string
+          id: string
+          lancamento_id: string | null
+          motivo: string | null
+          parcelas_desconto: number
+          status: Database["public"]["Enums"]["adiantamento_status"]
+          updated_at: string
+          valor: number
+        }
+        Insert: {
+          colaborador_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          data?: string
+          empresa_id: string
+          id?: string
+          lancamento_id?: string | null
+          motivo?: string | null
+          parcelas_desconto?: number
+          status?: Database["public"]["Enums"]["adiantamento_status"]
+          updated_at?: string
+          valor?: number
+        }
+        Update: {
+          colaborador_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          data?: string
+          empresa_id?: string
+          id?: string
+          lancamento_id?: string | null
+          motivo?: string | null
+          parcelas_desconto?: number
+          status?: Database["public"]["Enums"]["adiantamento_status"]
+          updated_at?: string
+          valor?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "adiantamentos_colaborador_id_fkey"
+            columns: ["colaborador_id"]
+            isOneToOne: false
+            referencedRelation: "colaboradores"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "adiantamentos_empresa_id_fkey"
+            columns: ["empresa_id"]
+            isOneToOne: false
+            referencedRelation: "empresas"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "adiantamentos_lancamento_id_fkey"
+            columns: ["lancamento_id"]
+            isOneToOne: false
+            referencedRelation: "lancamentos_financeiros"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       alertas: {
         Row: {
           created_at: string
@@ -214,6 +281,86 @@ export type Database = {
             columns: ["empresa_id"]
             isOneToOne: false
             referencedRelation: "empresas"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      comissoes: {
+        Row: {
+          base_valor: number
+          colaborador_id: string | null
+          competencia: string
+          created_at: string
+          created_by: string | null
+          descricao: string | null
+          empresa_id: string
+          id: string
+          lancamento_id: string | null
+          percentual: number
+          status: Database["public"]["Enums"]["comissao_status"]
+          updated_at: string
+          valor: number
+          venda_id: string | null
+        }
+        Insert: {
+          base_valor?: number
+          colaborador_id?: string | null
+          competencia?: string
+          created_at?: string
+          created_by?: string | null
+          descricao?: string | null
+          empresa_id: string
+          id?: string
+          lancamento_id?: string | null
+          percentual?: number
+          status?: Database["public"]["Enums"]["comissao_status"]
+          updated_at?: string
+          valor?: number
+          venda_id?: string | null
+        }
+        Update: {
+          base_valor?: number
+          colaborador_id?: string | null
+          competencia?: string
+          created_at?: string
+          created_by?: string | null
+          descricao?: string | null
+          empresa_id?: string
+          id?: string
+          lancamento_id?: string | null
+          percentual?: number
+          status?: Database["public"]["Enums"]["comissao_status"]
+          updated_at?: string
+          valor?: number
+          venda_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "comissoes_colaborador_id_fkey"
+            columns: ["colaborador_id"]
+            isOneToOne: false
+            referencedRelation: "colaboradores"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "comissoes_empresa_id_fkey"
+            columns: ["empresa_id"]
+            isOneToOne: false
+            referencedRelation: "empresas"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "comissoes_lancamento_id_fkey"
+            columns: ["lancamento_id"]
+            isOneToOne: false
+            referencedRelation: "lancamentos_financeiros"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "comissoes_venda_id_fkey"
+            columns: ["venda_id"]
+            isOneToOne: false
+            referencedRelation: "vendas"
             referencedColumns: ["id"]
           },
         ]
@@ -680,6 +827,155 @@ export type Database = {
         }
         Relationships: []
       }
+      emprestimo_parcelas: {
+        Row: {
+          created_at: string
+          data_vencimento: string
+          empresa_id: string
+          emprestimo_id: string
+          id: string
+          lancamento_id: string | null
+          numero: number
+          status: Database["public"]["Enums"]["parcela_status"]
+          updated_at: string
+          valor: number
+          valor_amortizacao: number
+          valor_juros: number
+        }
+        Insert: {
+          created_at?: string
+          data_vencimento: string
+          empresa_id: string
+          emprestimo_id: string
+          id?: string
+          lancamento_id?: string | null
+          numero: number
+          status?: Database["public"]["Enums"]["parcela_status"]
+          updated_at?: string
+          valor?: number
+          valor_amortizacao?: number
+          valor_juros?: number
+        }
+        Update: {
+          created_at?: string
+          data_vencimento?: string
+          empresa_id?: string
+          emprestimo_id?: string
+          id?: string
+          lancamento_id?: string | null
+          numero?: number
+          status?: Database["public"]["Enums"]["parcela_status"]
+          updated_at?: string
+          valor?: number
+          valor_amortizacao?: number
+          valor_juros?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "emprestimo_parcelas_empresa_id_fkey"
+            columns: ["empresa_id"]
+            isOneToOne: false
+            referencedRelation: "empresas"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "emprestimo_parcelas_emprestimo_id_fkey"
+            columns: ["emprestimo_id"]
+            isOneToOne: false
+            referencedRelation: "emprestimos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "emprestimo_parcelas_lancamento_id_fkey"
+            columns: ["lancamento_id"]
+            isOneToOne: false
+            referencedRelation: "lancamentos_financeiros"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      emprestimos: {
+        Row: {
+          categoria_id: string | null
+          conta_credito_id: string | null
+          created_at: string
+          created_by: string | null
+          credor: string | null
+          data_contratacao: string
+          descricao: string
+          empresa_id: string
+          id: string
+          observacoes: string | null
+          parcelas: number
+          primeiro_vencimento: string | null
+          status: Database["public"]["Enums"]["emprestimo_status"]
+          taxa_juros_mensal: number
+          tipo: Database["public"]["Enums"]["emprestimo_tipo"]
+          updated_at: string
+          valor_principal: number
+        }
+        Insert: {
+          categoria_id?: string | null
+          conta_credito_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          credor?: string | null
+          data_contratacao?: string
+          descricao: string
+          empresa_id: string
+          id?: string
+          observacoes?: string | null
+          parcelas?: number
+          primeiro_vencimento?: string | null
+          status?: Database["public"]["Enums"]["emprestimo_status"]
+          taxa_juros_mensal?: number
+          tipo?: Database["public"]["Enums"]["emprestimo_tipo"]
+          updated_at?: string
+          valor_principal?: number
+        }
+        Update: {
+          categoria_id?: string | null
+          conta_credito_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          credor?: string | null
+          data_contratacao?: string
+          descricao?: string
+          empresa_id?: string
+          id?: string
+          observacoes?: string | null
+          parcelas?: number
+          primeiro_vencimento?: string | null
+          status?: Database["public"]["Enums"]["emprestimo_status"]
+          taxa_juros_mensal?: number
+          tipo?: Database["public"]["Enums"]["emprestimo_tipo"]
+          updated_at?: string
+          valor_principal?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "emprestimos_categoria_id_fkey"
+            columns: ["categoria_id"]
+            isOneToOne: false
+            referencedRelation: "categorias_financeiras"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "emprestimos_conta_credito_id_fkey"
+            columns: ["conta_credito_id"]
+            isOneToOne: false
+            referencedRelation: "contas_bancarias"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "emprestimos_empresa_id_fkey"
+            columns: ["empresa_id"]
+            isOneToOne: false
+            referencedRelation: "empresas"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       folha_pagamento: {
         Row: {
           beneficios: number
@@ -784,6 +1080,7 @@ export type Database = {
           observacoes: string | null
           status: Database["public"]["Enums"]["lancamento_status"]
           tipo: Database["public"]["Enums"]["lancamento_tipo"]
+          transferencia_id: string | null
           updated_at: string
           valor: number
           valor_pago: number
@@ -806,6 +1103,7 @@ export type Database = {
           observacoes?: string | null
           status?: Database["public"]["Enums"]["lancamento_status"]
           tipo: Database["public"]["Enums"]["lancamento_tipo"]
+          transferencia_id?: string | null
           updated_at?: string
           valor: number
           valor_pago?: number
@@ -828,6 +1126,7 @@ export type Database = {
           observacoes?: string | null
           status?: Database["public"]["Enums"]["lancamento_status"]
           tipo?: Database["public"]["Enums"]["lancamento_tipo"]
+          transferencia_id?: string | null
           updated_at?: string
           valor?: number
           valor_pago?: number
@@ -866,6 +1165,13 @@ export type Database = {
             columns: ["empresa_id"]
             isOneToOne: false
             referencedRelation: "empresas"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "lancamentos_financeiros_transferencia_id_fkey"
+            columns: ["transferencia_id"]
+            isOneToOne: false
+            referencedRelation: "transferencias_contas"
             referencedColumns: ["id"]
           },
         ]
@@ -1493,6 +1799,70 @@ export type Database = {
           },
         ]
       }
+      transferencias_contas: {
+        Row: {
+          conta_destino_id: string
+          conta_origem_id: string
+          created_at: string
+          created_by: string | null
+          data: string
+          descricao: string
+          empresa_id: string
+          id: string
+          observacoes: string | null
+          updated_at: string
+          valor: number
+        }
+        Insert: {
+          conta_destino_id: string
+          conta_origem_id: string
+          created_at?: string
+          created_by?: string | null
+          data?: string
+          descricao?: string
+          empresa_id: string
+          id?: string
+          observacoes?: string | null
+          updated_at?: string
+          valor: number
+        }
+        Update: {
+          conta_destino_id?: string
+          conta_origem_id?: string
+          created_at?: string
+          created_by?: string | null
+          data?: string
+          descricao?: string
+          empresa_id?: string
+          id?: string
+          observacoes?: string | null
+          updated_at?: string
+          valor?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "transferencias_contas_conta_destino_id_fkey"
+            columns: ["conta_destino_id"]
+            isOneToOne: false
+            referencedRelation: "contas_bancarias"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "transferencias_contas_conta_origem_id_fkey"
+            columns: ["conta_origem_id"]
+            isOneToOne: false
+            referencedRelation: "contas_bancarias"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "transferencias_contas_empresa_id_fkey"
+            columns: ["empresa_id"]
+            isOneToOne: false
+            referencedRelation: "empresas"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       venda_itens: {
         Row: {
           created_at: string
@@ -1700,6 +2070,7 @@ export type Database = {
       recalc_saldo_conta: { Args: { _conta_id: string }; Returns: undefined }
     }
     Enums: {
+      adiantamento_status: "aberto" | "descontado" | "cancelado"
       app_role:
         | "owner"
         | "admin"
@@ -1709,6 +2080,7 @@ export type Database = {
         | "fiscal"
         | "viewer"
       colaborador_status: "ativo" | "ferias" | "afastado" | "demitido"
+      comissao_status: "prevista" | "aprovada" | "paga" | "cancelada"
       conta_financeira_tipo:
         | "corrente"
         | "caixa"
@@ -1718,6 +2090,8 @@ export type Database = {
         | "aplicacao_automatica"
         | "outras"
       contato_tipo: "cliente" | "fornecedor" | "ambos" | "transportadora"
+      emprestimo_status: "ativo" | "quitado" | "cancelado"
+      emprestimo_tipo: "emprestimo" | "financiamento"
       estoque_movimento: "entrada" | "saida" | "ajuste" | "transferencia"
       folha_status: "aberta" | "paga" | "cancelada"
       lancamento_status: "aberto" | "pago" | "parcial" | "vencido" | "cancelado"
@@ -1738,6 +2112,7 @@ export type Database = {
         | "concluida"
         | "cancelada"
         | "faturada"
+      parcela_status: "aberta" | "paga" | "cancelada"
       projeto_status:
         | "planejado"
         | "em_andamento"
@@ -1877,6 +2252,7 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
+      adiantamento_status: ["aberto", "descontado", "cancelado"],
       app_role: [
         "owner",
         "admin",
@@ -1887,6 +2263,7 @@ export const Constants = {
         "viewer",
       ],
       colaborador_status: ["ativo", "ferias", "afastado", "demitido"],
+      comissao_status: ["prevista", "aprovada", "paga", "cancelada"],
       conta_financeira_tipo: [
         "corrente",
         "caixa",
@@ -1897,6 +2274,8 @@ export const Constants = {
         "outras",
       ],
       contato_tipo: ["cliente", "fornecedor", "ambos", "transportadora"],
+      emprestimo_status: ["ativo", "quitado", "cancelado"],
+      emprestimo_tipo: ["emprestimo", "financiamento"],
       estoque_movimento: ["entrada", "saida", "ajuste", "transferencia"],
       folha_status: ["aberta", "paga", "cancelada"],
       lancamento_status: ["aberto", "pago", "parcial", "vencido", "cancelado"],
@@ -1919,6 +2298,7 @@ export const Constants = {
         "cancelada",
         "faturada",
       ],
+      parcela_status: ["aberta", "paga", "cancelada"],
       projeto_status: [
         "planejado",
         "em_andamento",
