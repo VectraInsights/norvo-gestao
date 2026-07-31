@@ -322,13 +322,10 @@ function ContasFinanceiras() {
   return (
     <>
       <input ref={fileRef} type="file" accept=".ofx,.OFX,text/plain" className="hidden" onChange={handleFile} />
-      <PageHeader eyebrow="Financeiro" title="Contas financeiras" description="Cadastro de contas, importação OFX e conciliação."
+      <PageHeader eyebrow="Financeiro" title="Contas financeiras" description="Cadastro e gestão das contas financeiras da empresa."
         actions={
           <div className="flex items-center gap-3">
-            <label className="flex items-center gap-2 text-xs text-muted-foreground cursor-pointer">
-              <Checkbox checked={autoConciliar} onCheckedChange={(v) => setAutoConciliar(!!v)} />
-              Conciliar automaticamente (mesmo valor e data)
-            </label>
+
             <Dialog open={open} onOpenChange={(v) => { if (!criar.isPending) { setOpen(v); if (!v) resetWizard(); } }}>
               <DialogTrigger asChild><Button><Plus className="mr-1 h-4 w-4" />Nova conta</Button></DialogTrigger>
               <DialogContent className="sm:max-w-4xl max-h-[90vh] overflow-y-auto">
