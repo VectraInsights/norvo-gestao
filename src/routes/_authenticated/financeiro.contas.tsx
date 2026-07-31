@@ -157,6 +157,18 @@ function ContasFinanceiras() {
     }
   };
 
+  // abre automaticamente a conciliação quando vindo de /financeiro/conciliacao
+  const { conciliar: conciliarParam } = Route.useSearch();
+  const conciliarAberto = useRef(false);
+  useEffect(() => {
+    if (!conciliarParam || conciliarAberto.current || !empresa?.id) return;
+    conciliarAberto.current = true;
+    void abrirConciliacao(conciliarParam);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [conciliarParam, empresa?.id]);
+
+
+
   const [importing, setImporting] = useState<string | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
   const [uploadContaId, setUploadContaId] = useState<string | null>(null);
