@@ -2,6 +2,7 @@ import {
   LayoutDashboard, ReceiptText, Boxes, FileText,
   Wallet, TrendingUp, Banknote, ShoppingCart, UserSquare2, Package,
   Kanban, Briefcase, Wrench, UsersRound, ListTree, FolderCog,
+  ArrowLeftRight, Link2, PieChart, BarChart3, Percent, HandCoins,
 } from "lucide-react";
 
 export type NavItem = { to: string; label: string; icon: typeof LayoutDashboard };
@@ -19,6 +20,11 @@ const RAW_NAV: NavGroup[] = [
     { to: "/financeiro/pagar",   label: "Contas a pagar",   icon: ReceiptText },
     { to: "/financeiro/fluxo",   label: "Fluxo de caixa",   icon: Wallet },
     { to: "/financeiro/contas",  label: "Contas financeiras", icon: Banknote },
+    { to: "/financeiro/conciliacao", label: "Conciliação bancária", icon: Link2 },
+    { to: "/financeiro/transferencias", label: "Transferências entre contas", icon: ArrowLeftRight },
+    { to: "/financeiro/emprestimos", label: "Empréstimos e financiamentos", icon: Banknote },
+    { to: "/financeiro/dre", label: "DRE / Resultado", icon: PieChart },
+    { to: "/financeiro/relatorios", label: "Relatórios financeiros", icon: BarChart3 },
     { to: "/financeiro/extrato", label: "Extrato de movimentações", icon: ListTree },
     { to: "/financeiro/cadastros", label: "Cadastros", icon: FolderCog },
   ]},
@@ -38,14 +44,17 @@ const RAW_NAV: NavGroup[] = [
     { to: "/projetos/projetos", label: "Projetos", icon: Briefcase },
     { to: "/projetos/os", label: "Ordens de serviço", icon: Wrench },
   ]},
-  { label: "RH", icon: UsersRound, items: [
+  { label: "DP / RH", icon: UsersRound, items: [
     { to: "/rh/colaboradores", label: "Colaboradores", icon: UsersRound },
     { to: "/rh/folha", label: "Folha de pagamento", icon: Wallet },
+    { to: "/rh/comissoes", label: "Comissões", icon: Percent },
+    { to: "/rh/adiantamentos", label: "Adiantamentos", icon: HandCoins },
   ]},
   { label: "Fiscal", icon: FileText, items: [
     { to: "/fiscal/notas", label: "Notas fiscais", icon: FileText },
   ]},
 ];
+
 
 export const OVERVIEW_LABEL = "Visão geral";
 export const FAVORITES_LABEL = "Favoritos";
