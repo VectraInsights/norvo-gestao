@@ -20,15 +20,22 @@ import { Route as AuthenticatedVendasPedidosRouteImport } from './routes/_authen
 import { Route as AuthenticatedVendasCrmRouteImport } from './routes/_authenticated/vendas.crm'
 import { Route as AuthenticatedVendasClientesRouteImport } from './routes/_authenticated/vendas.clientes'
 import { Route as AuthenticatedRhFolhaRouteImport } from './routes/_authenticated/rh.folha'
+import { Route as AuthenticatedRhComissoesRouteImport } from './routes/_authenticated/rh.comissoes'
 import { Route as AuthenticatedRhColaboradoresRouteImport } from './routes/_authenticated/rh.colaboradores'
+import { Route as AuthenticatedRhAdiantamentosRouteImport } from './routes/_authenticated/rh.adiantamentos'
 import { Route as AuthenticatedProjetosProjetosRouteImport } from './routes/_authenticated/projetos.projetos'
 import { Route as AuthenticatedProjetosOsRouteImport } from './routes/_authenticated/projetos.os'
 import { Route as AuthenticatedFiscalNotasRouteImport } from './routes/_authenticated/fiscal.notas'
+import { Route as AuthenticatedFinanceiroTransferenciasRouteImport } from './routes/_authenticated/financeiro.transferencias'
+import { Route as AuthenticatedFinanceiroRelatoriosRouteImport } from './routes/_authenticated/financeiro.relatorios'
 import { Route as AuthenticatedFinanceiroReceberRouteImport } from './routes/_authenticated/financeiro.receber'
 import { Route as AuthenticatedFinanceiroPagarRouteImport } from './routes/_authenticated/financeiro.pagar'
 import { Route as AuthenticatedFinanceiroFluxoRouteImport } from './routes/_authenticated/financeiro.fluxo'
 import { Route as AuthenticatedFinanceiroExtratoRouteImport } from './routes/_authenticated/financeiro.extrato'
+import { Route as AuthenticatedFinanceiroEmprestimosRouteImport } from './routes/_authenticated/financeiro.emprestimos'
+import { Route as AuthenticatedFinanceiroDreRouteImport } from './routes/_authenticated/financeiro.dre'
 import { Route as AuthenticatedFinanceiroContasRouteImport } from './routes/_authenticated/financeiro.contas'
+import { Route as AuthenticatedFinanceiroConciliacaoRouteImport } from './routes/_authenticated/financeiro.conciliacao'
 import { Route as AuthenticatedFinanceiroCadastrosRouteImport } from './routes/_authenticated/financeiro.cadastros'
 import { Route as AuthenticatedEstoqueProdutosRouteImport } from './routes/_authenticated/estoque.produtos'
 import { Route as AuthenticatedEstoqueMovimentacoesRouteImport } from './routes/_authenticated/estoque.movimentacoes'
@@ -94,10 +101,22 @@ const AuthenticatedRhFolhaRoute = AuthenticatedRhFolhaRouteImport.update({
   path: '/rh/folha',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedRhComissoesRoute =
+  AuthenticatedRhComissoesRouteImport.update({
+    id: '/rh/comissoes',
+    path: '/rh/comissoes',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedRhColaboradoresRoute =
   AuthenticatedRhColaboradoresRouteImport.update({
     id: '/rh/colaboradores',
     path: '/rh/colaboradores',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedRhAdiantamentosRoute =
+  AuthenticatedRhAdiantamentosRouteImport.update({
+    id: '/rh/adiantamentos',
+    path: '/rh/adiantamentos',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
 const AuthenticatedProjetosProjetosRoute =
@@ -115,6 +134,18 @@ const AuthenticatedFiscalNotasRoute =
   AuthenticatedFiscalNotasRouteImport.update({
     id: '/fiscal/notas',
     path: '/fiscal/notas',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedFinanceiroTransferenciasRoute =
+  AuthenticatedFinanceiroTransferenciasRouteImport.update({
+    id: '/financeiro/transferencias',
+    path: '/financeiro/transferencias',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedFinanceiroRelatoriosRoute =
+  AuthenticatedFinanceiroRelatoriosRouteImport.update({
+    id: '/financeiro/relatorios',
+    path: '/financeiro/relatorios',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
 const AuthenticatedFinanceiroReceberRoute =
@@ -141,10 +172,28 @@ const AuthenticatedFinanceiroExtratoRoute =
     path: '/financeiro/extrato',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedFinanceiroEmprestimosRoute =
+  AuthenticatedFinanceiroEmprestimosRouteImport.update({
+    id: '/financeiro/emprestimos',
+    path: '/financeiro/emprestimos',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedFinanceiroDreRoute =
+  AuthenticatedFinanceiroDreRouteImport.update({
+    id: '/financeiro/dre',
+    path: '/financeiro/dre',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedFinanceiroContasRoute =
   AuthenticatedFinanceiroContasRouteImport.update({
     id: '/financeiro/contas',
     path: '/financeiro/contas',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedFinanceiroConciliacaoRoute =
+  AuthenticatedFinanceiroConciliacaoRouteImport.update({
+    id: '/financeiro/conciliacao',
+    path: '/financeiro/conciliacao',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
 const AuthenticatedFinanceiroCadastrosRoute =
@@ -195,15 +244,22 @@ export interface FileRoutesByFullPath {
   '/estoque/movimentacoes': typeof AuthenticatedEstoqueMovimentacoesRoute
   '/estoque/produtos': typeof AuthenticatedEstoqueProdutosRoute
   '/financeiro/cadastros': typeof AuthenticatedFinanceiroCadastrosRoute
+  '/financeiro/conciliacao': typeof AuthenticatedFinanceiroConciliacaoRoute
   '/financeiro/contas': typeof AuthenticatedFinanceiroContasRoute
+  '/financeiro/dre': typeof AuthenticatedFinanceiroDreRoute
+  '/financeiro/emprestimos': typeof AuthenticatedFinanceiroEmprestimosRoute
   '/financeiro/extrato': typeof AuthenticatedFinanceiroExtratoRoute
   '/financeiro/fluxo': typeof AuthenticatedFinanceiroFluxoRoute
   '/financeiro/pagar': typeof AuthenticatedFinanceiroPagarRoute
   '/financeiro/receber': typeof AuthenticatedFinanceiroReceberRoute
+  '/financeiro/relatorios': typeof AuthenticatedFinanceiroRelatoriosRoute
+  '/financeiro/transferencias': typeof AuthenticatedFinanceiroTransferenciasRoute
   '/fiscal/notas': typeof AuthenticatedFiscalNotasRoute
   '/projetos/os': typeof AuthenticatedProjetosOsRoute
   '/projetos/projetos': typeof AuthenticatedProjetosProjetosRoute
+  '/rh/adiantamentos': typeof AuthenticatedRhAdiantamentosRoute
   '/rh/colaboradores': typeof AuthenticatedRhColaboradoresRoute
+  '/rh/comissoes': typeof AuthenticatedRhComissoesRoute
   '/rh/folha': typeof AuthenticatedRhFolhaRoute
   '/vendas/clientes': typeof AuthenticatedVendasClientesRoute
   '/vendas/crm': typeof AuthenticatedVendasCrmRoute
@@ -222,15 +278,22 @@ export interface FileRoutesByTo {
   '/estoque/movimentacoes': typeof AuthenticatedEstoqueMovimentacoesRoute
   '/estoque/produtos': typeof AuthenticatedEstoqueProdutosRoute
   '/financeiro/cadastros': typeof AuthenticatedFinanceiroCadastrosRoute
+  '/financeiro/conciliacao': typeof AuthenticatedFinanceiroConciliacaoRoute
   '/financeiro/contas': typeof AuthenticatedFinanceiroContasRoute
+  '/financeiro/dre': typeof AuthenticatedFinanceiroDreRoute
+  '/financeiro/emprestimos': typeof AuthenticatedFinanceiroEmprestimosRoute
   '/financeiro/extrato': typeof AuthenticatedFinanceiroExtratoRoute
   '/financeiro/fluxo': typeof AuthenticatedFinanceiroFluxoRoute
   '/financeiro/pagar': typeof AuthenticatedFinanceiroPagarRoute
   '/financeiro/receber': typeof AuthenticatedFinanceiroReceberRoute
+  '/financeiro/relatorios': typeof AuthenticatedFinanceiroRelatoriosRoute
+  '/financeiro/transferencias': typeof AuthenticatedFinanceiroTransferenciasRoute
   '/fiscal/notas': typeof AuthenticatedFiscalNotasRoute
   '/projetos/os': typeof AuthenticatedProjetosOsRoute
   '/projetos/projetos': typeof AuthenticatedProjetosProjetosRoute
+  '/rh/adiantamentos': typeof AuthenticatedRhAdiantamentosRoute
   '/rh/colaboradores': typeof AuthenticatedRhColaboradoresRoute
+  '/rh/comissoes': typeof AuthenticatedRhComissoesRoute
   '/rh/folha': typeof AuthenticatedRhFolhaRoute
   '/vendas/clientes': typeof AuthenticatedVendasClientesRoute
   '/vendas/crm': typeof AuthenticatedVendasCrmRoute
@@ -251,15 +314,22 @@ export interface FileRoutesById {
   '/_authenticated/estoque/movimentacoes': typeof AuthenticatedEstoqueMovimentacoesRoute
   '/_authenticated/estoque/produtos': typeof AuthenticatedEstoqueProdutosRoute
   '/_authenticated/financeiro/cadastros': typeof AuthenticatedFinanceiroCadastrosRoute
+  '/_authenticated/financeiro/conciliacao': typeof AuthenticatedFinanceiroConciliacaoRoute
   '/_authenticated/financeiro/contas': typeof AuthenticatedFinanceiroContasRoute
+  '/_authenticated/financeiro/dre': typeof AuthenticatedFinanceiroDreRoute
+  '/_authenticated/financeiro/emprestimos': typeof AuthenticatedFinanceiroEmprestimosRoute
   '/_authenticated/financeiro/extrato': typeof AuthenticatedFinanceiroExtratoRoute
   '/_authenticated/financeiro/fluxo': typeof AuthenticatedFinanceiroFluxoRoute
   '/_authenticated/financeiro/pagar': typeof AuthenticatedFinanceiroPagarRoute
   '/_authenticated/financeiro/receber': typeof AuthenticatedFinanceiroReceberRoute
+  '/_authenticated/financeiro/relatorios': typeof AuthenticatedFinanceiroRelatoriosRoute
+  '/_authenticated/financeiro/transferencias': typeof AuthenticatedFinanceiroTransferenciasRoute
   '/_authenticated/fiscal/notas': typeof AuthenticatedFiscalNotasRoute
   '/_authenticated/projetos/os': typeof AuthenticatedProjetosOsRoute
   '/_authenticated/projetos/projetos': typeof AuthenticatedProjetosProjetosRoute
+  '/_authenticated/rh/adiantamentos': typeof AuthenticatedRhAdiantamentosRoute
   '/_authenticated/rh/colaboradores': typeof AuthenticatedRhColaboradoresRoute
+  '/_authenticated/rh/comissoes': typeof AuthenticatedRhComissoesRoute
   '/_authenticated/rh/folha': typeof AuthenticatedRhFolhaRoute
   '/_authenticated/vendas/clientes': typeof AuthenticatedVendasClientesRoute
   '/_authenticated/vendas/crm': typeof AuthenticatedVendasCrmRoute
@@ -280,15 +350,22 @@ export interface FileRouteTypes {
     | '/estoque/movimentacoes'
     | '/estoque/produtos'
     | '/financeiro/cadastros'
+    | '/financeiro/conciliacao'
     | '/financeiro/contas'
+    | '/financeiro/dre'
+    | '/financeiro/emprestimos'
     | '/financeiro/extrato'
     | '/financeiro/fluxo'
     | '/financeiro/pagar'
     | '/financeiro/receber'
+    | '/financeiro/relatorios'
+    | '/financeiro/transferencias'
     | '/fiscal/notas'
     | '/projetos/os'
     | '/projetos/projetos'
+    | '/rh/adiantamentos'
     | '/rh/colaboradores'
+    | '/rh/comissoes'
     | '/rh/folha'
     | '/vendas/clientes'
     | '/vendas/crm'
@@ -307,15 +384,22 @@ export interface FileRouteTypes {
     | '/estoque/movimentacoes'
     | '/estoque/produtos'
     | '/financeiro/cadastros'
+    | '/financeiro/conciliacao'
     | '/financeiro/contas'
+    | '/financeiro/dre'
+    | '/financeiro/emprestimos'
     | '/financeiro/extrato'
     | '/financeiro/fluxo'
     | '/financeiro/pagar'
     | '/financeiro/receber'
+    | '/financeiro/relatorios'
+    | '/financeiro/transferencias'
     | '/fiscal/notas'
     | '/projetos/os'
     | '/projetos/projetos'
+    | '/rh/adiantamentos'
     | '/rh/colaboradores'
+    | '/rh/comissoes'
     | '/rh/folha'
     | '/vendas/clientes'
     | '/vendas/crm'
@@ -335,15 +419,22 @@ export interface FileRouteTypes {
     | '/_authenticated/estoque/movimentacoes'
     | '/_authenticated/estoque/produtos'
     | '/_authenticated/financeiro/cadastros'
+    | '/_authenticated/financeiro/conciliacao'
     | '/_authenticated/financeiro/contas'
+    | '/_authenticated/financeiro/dre'
+    | '/_authenticated/financeiro/emprestimos'
     | '/_authenticated/financeiro/extrato'
     | '/_authenticated/financeiro/fluxo'
     | '/_authenticated/financeiro/pagar'
     | '/_authenticated/financeiro/receber'
+    | '/_authenticated/financeiro/relatorios'
+    | '/_authenticated/financeiro/transferencias'
     | '/_authenticated/fiscal/notas'
     | '/_authenticated/projetos/os'
     | '/_authenticated/projetos/projetos'
+    | '/_authenticated/rh/adiantamentos'
     | '/_authenticated/rh/colaboradores'
+    | '/_authenticated/rh/comissoes'
     | '/_authenticated/rh/folha'
     | '/_authenticated/vendas/clientes'
     | '/_authenticated/vendas/crm'
@@ -438,11 +529,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedRhFolhaRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/rh/comissoes': {
+      id: '/_authenticated/rh/comissoes'
+      path: '/rh/comissoes'
+      fullPath: '/rh/comissoes'
+      preLoaderRoute: typeof AuthenticatedRhComissoesRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/rh/colaboradores': {
       id: '/_authenticated/rh/colaboradores'
       path: '/rh/colaboradores'
       fullPath: '/rh/colaboradores'
       preLoaderRoute: typeof AuthenticatedRhColaboradoresRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/rh/adiantamentos': {
+      id: '/_authenticated/rh/adiantamentos'
+      path: '/rh/adiantamentos'
+      fullPath: '/rh/adiantamentos'
+      preLoaderRoute: typeof AuthenticatedRhAdiantamentosRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/projetos/projetos': {
@@ -464,6 +569,20 @@ declare module '@tanstack/react-router' {
       path: '/fiscal/notas'
       fullPath: '/fiscal/notas'
       preLoaderRoute: typeof AuthenticatedFiscalNotasRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/financeiro/transferencias': {
+      id: '/_authenticated/financeiro/transferencias'
+      path: '/financeiro/transferencias'
+      fullPath: '/financeiro/transferencias'
+      preLoaderRoute: typeof AuthenticatedFinanceiroTransferenciasRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/financeiro/relatorios': {
+      id: '/_authenticated/financeiro/relatorios'
+      path: '/financeiro/relatorios'
+      fullPath: '/financeiro/relatorios'
+      preLoaderRoute: typeof AuthenticatedFinanceiroRelatoriosRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/financeiro/receber': {
@@ -494,11 +613,32 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedFinanceiroExtratoRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/financeiro/emprestimos': {
+      id: '/_authenticated/financeiro/emprestimos'
+      path: '/financeiro/emprestimos'
+      fullPath: '/financeiro/emprestimos'
+      preLoaderRoute: typeof AuthenticatedFinanceiroEmprestimosRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/financeiro/dre': {
+      id: '/_authenticated/financeiro/dre'
+      path: '/financeiro/dre'
+      fullPath: '/financeiro/dre'
+      preLoaderRoute: typeof AuthenticatedFinanceiroDreRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/financeiro/contas': {
       id: '/_authenticated/financeiro/contas'
       path: '/financeiro/contas'
       fullPath: '/financeiro/contas'
       preLoaderRoute: typeof AuthenticatedFinanceiroContasRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/financeiro/conciliacao': {
+      id: '/_authenticated/financeiro/conciliacao'
+      path: '/financeiro/conciliacao'
+      fullPath: '/financeiro/conciliacao'
+      preLoaderRoute: typeof AuthenticatedFinanceiroConciliacaoRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/financeiro/cadastros': {
@@ -554,15 +694,22 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedEstoqueMovimentacoesRoute: typeof AuthenticatedEstoqueMovimentacoesRoute
   AuthenticatedEstoqueProdutosRoute: typeof AuthenticatedEstoqueProdutosRoute
   AuthenticatedFinanceiroCadastrosRoute: typeof AuthenticatedFinanceiroCadastrosRoute
+  AuthenticatedFinanceiroConciliacaoRoute: typeof AuthenticatedFinanceiroConciliacaoRoute
   AuthenticatedFinanceiroContasRoute: typeof AuthenticatedFinanceiroContasRoute
+  AuthenticatedFinanceiroDreRoute: typeof AuthenticatedFinanceiroDreRoute
+  AuthenticatedFinanceiroEmprestimosRoute: typeof AuthenticatedFinanceiroEmprestimosRoute
   AuthenticatedFinanceiroExtratoRoute: typeof AuthenticatedFinanceiroExtratoRoute
   AuthenticatedFinanceiroFluxoRoute: typeof AuthenticatedFinanceiroFluxoRoute
   AuthenticatedFinanceiroPagarRoute: typeof AuthenticatedFinanceiroPagarRoute
   AuthenticatedFinanceiroReceberRoute: typeof AuthenticatedFinanceiroReceberRoute
+  AuthenticatedFinanceiroRelatoriosRoute: typeof AuthenticatedFinanceiroRelatoriosRoute
+  AuthenticatedFinanceiroTransferenciasRoute: typeof AuthenticatedFinanceiroTransferenciasRoute
   AuthenticatedFiscalNotasRoute: typeof AuthenticatedFiscalNotasRoute
   AuthenticatedProjetosOsRoute: typeof AuthenticatedProjetosOsRoute
   AuthenticatedProjetosProjetosRoute: typeof AuthenticatedProjetosProjetosRoute
+  AuthenticatedRhAdiantamentosRoute: typeof AuthenticatedRhAdiantamentosRoute
   AuthenticatedRhColaboradoresRoute: typeof AuthenticatedRhColaboradoresRoute
+  AuthenticatedRhComissoesRoute: typeof AuthenticatedRhComissoesRoute
   AuthenticatedRhFolhaRoute: typeof AuthenticatedRhFolhaRoute
   AuthenticatedVendasClientesRoute: typeof AuthenticatedVendasClientesRoute
   AuthenticatedVendasCrmRoute: typeof AuthenticatedVendasCrmRoute
@@ -581,15 +728,26 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
     AuthenticatedEstoqueMovimentacoesRoute,
   AuthenticatedEstoqueProdutosRoute: AuthenticatedEstoqueProdutosRoute,
   AuthenticatedFinanceiroCadastrosRoute: AuthenticatedFinanceiroCadastrosRoute,
+  AuthenticatedFinanceiroConciliacaoRoute:
+    AuthenticatedFinanceiroConciliacaoRoute,
   AuthenticatedFinanceiroContasRoute: AuthenticatedFinanceiroContasRoute,
+  AuthenticatedFinanceiroDreRoute: AuthenticatedFinanceiroDreRoute,
+  AuthenticatedFinanceiroEmprestimosRoute:
+    AuthenticatedFinanceiroEmprestimosRoute,
   AuthenticatedFinanceiroExtratoRoute: AuthenticatedFinanceiroExtratoRoute,
   AuthenticatedFinanceiroFluxoRoute: AuthenticatedFinanceiroFluxoRoute,
   AuthenticatedFinanceiroPagarRoute: AuthenticatedFinanceiroPagarRoute,
   AuthenticatedFinanceiroReceberRoute: AuthenticatedFinanceiroReceberRoute,
+  AuthenticatedFinanceiroRelatoriosRoute:
+    AuthenticatedFinanceiroRelatoriosRoute,
+  AuthenticatedFinanceiroTransferenciasRoute:
+    AuthenticatedFinanceiroTransferenciasRoute,
   AuthenticatedFiscalNotasRoute: AuthenticatedFiscalNotasRoute,
   AuthenticatedProjetosOsRoute: AuthenticatedProjetosOsRoute,
   AuthenticatedProjetosProjetosRoute: AuthenticatedProjetosProjetosRoute,
+  AuthenticatedRhAdiantamentosRoute: AuthenticatedRhAdiantamentosRoute,
   AuthenticatedRhColaboradoresRoute: AuthenticatedRhColaboradoresRoute,
+  AuthenticatedRhComissoesRoute: AuthenticatedRhComissoesRoute,
   AuthenticatedRhFolhaRoute: AuthenticatedRhFolhaRoute,
   AuthenticatedVendasClientesRoute: AuthenticatedVendasClientesRoute,
   AuthenticatedVendasCrmRoute: AuthenticatedVendasCrmRoute,
@@ -610,13 +768,3 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}

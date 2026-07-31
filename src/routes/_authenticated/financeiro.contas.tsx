@@ -25,11 +25,15 @@ import { cn } from "@/lib/utils";
 import { detectBancoByNome, detectBancoByCodigo, formatContaComDigito, normalizaContaNumero } from "@/lib/bancos";
 
 export const Route = createFileRoute("/_authenticated/financeiro/contas")({
+  validateSearch: (search: Record<string, unknown>): { conciliar?: string } => ({
+    conciliar: typeof search.conciliar === "string" ? search.conciliar : undefined,
+  }),
   component: ContasFinanceiras,
   errorComponent: ({ error }) => (
     <div className="p-6 text-sm text-destructive" role="alert">Falha: {error.message}</div>
   ),
 });
+
 
 const brl = (n: number) => Number(n).toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 
@@ -152,6 +156,18 @@ function ContasFinanceiras() {
       setReconcilingId(id);
     }
   };
+
+  // abre automaticamente a conciliação quando vindo de /financeiro/conciliacao
+  const { conciliar: conciliarParam } = Route.useSearch();
+  const conciliarAberto = useRef(false);
+  useEffect(() => {
+    if (!conciliarParam || conciliarAberto.current || !empresa?.id) return;
+    conciliarAberto.current = true;
+    void abrirConciliacao(conciliarParam);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [conciliarParam, empresa?.id]);
+
+
 
   const [importing, setImporting] = useState<string | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
