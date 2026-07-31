@@ -134,7 +134,7 @@ function ContasFinanceiras() {
   const [step, setStep] = useState<1 | 2 | 3>(1);
   const [tipo, setTipo] = useState<TipoConta>("corrente");
   const [form, setForm] = useState<FormState>(initialForm("corrente"));
-  const [autoConciliar, setAutoConciliar] = useState(true);
+  const autoConciliar = true;
   const [reconcilingId, setReconcilingId] = useState<string | null>(null);
   const [preparando, setPreparando] = useState<string | null>(null);
 
@@ -322,13 +322,10 @@ function ContasFinanceiras() {
   return (
     <>
       <input ref={fileRef} type="file" accept=".ofx,.OFX,text/plain" className="hidden" onChange={handleFile} />
-      <PageHeader eyebrow="Financeiro" title="Contas financeiras" description="Cadastro de contas, importação OFX e conciliação."
+      <PageHeader eyebrow="Financeiro" title="Contas financeiras" description="Cadastro e gestão das contas financeiras da empresa."
         actions={
           <div className="flex items-center gap-3">
-            <label className="flex items-center gap-2 text-xs text-muted-foreground cursor-pointer">
-              <Checkbox checked={autoConciliar} onCheckedChange={(v) => setAutoConciliar(!!v)} />
-              Conciliar automaticamente (mesmo valor e data)
-            </label>
+
             <Dialog open={open} onOpenChange={(v) => { if (!criar.isPending) { setOpen(v); if (!v) resetWizard(); } }}>
               <DialogTrigger asChild><Button><Plus className="mr-1 h-4 w-4" />Nova conta</Button></DialogTrigger>
               <DialogContent className="sm:max-w-4xl max-h-[90vh] overflow-y-auto">
@@ -602,12 +599,6 @@ function ContasFinanceiras() {
                   <TableCell className="text-tabular">{c.agencia ?? "—"}/{c.conta ?? "—"}</TableCell>
                   <TableCell className="text-right text-tabular font-medium">{brl(c.saldo_atual)}</TableCell>
                   <TableCell className="text-right whitespace-nowrap">
-                    <Button variant="ghost" size="sm" disabled={preparando === c.id} onClick={() => abrirConciliacao(c.id)}>
-                      {preparando === c.id
-                        ? <Loader2 className="mr-1 h-3 w-3 animate-spin" />
-                        : <Link2 className="mr-1 h-3 w-3" />}
-                      {preparando === c.id ? "Conciliando..." : "Conciliar"}
-                    </Button>
                     <Button variant="ghost" size="sm" className="text-destructive hover:text-destructive"
                       disabled={excluir.isPending}
                       onClick={() => {
@@ -667,7 +658,7 @@ type RowState = {
   lancamento_id: string;
 };
 
-const PAGE_SIZE = 25;
+const PAGE_SIZE = 10;
 
 const emptyRow = (memo: string | null): RowState => ({
   descricao: memo ?? "", categoria_id: "", contato_id: "", centro_custo_id: "", lancamento_id: "",
