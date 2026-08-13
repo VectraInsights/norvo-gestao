@@ -96,7 +96,34 @@ function ConfigFiscais() {
   const [cnae, setCnae] = useState("");
   const [natOp, setNatOp] = useState("");
 
-  // Sincronizar states locais com a query
+  // Sincronizar states locais com a query e localStorage
+  useEffect(() => {
+    if (empresa?.id) {
+      const savedCfops = localStorage.getItem(`norvo_cfops_${empresa.id}`);
+      if (savedCfops) {
+        try { setCfops(JSON.parse(savedCfops)); } catch (e) { console.error(e); }
+      }
+      const savedCert = localStorage.getItem(`norvo_cert_${empresa.id}`);
+      if (savedCert) {
+        try {
+          const parsed = JSON.parse(savedCert);
+          setHasCertificado(parsed.hasCertificado);
+          setCertFile(parsed.certFile);
+        } catch (e) { console.error(e); }
+      }
+      const savedRates = localStorage.getItem(`norvo_rates_${empresa.id}`);
+      if (savedRates) {
+        try {
+          const parsed = JSON.parse(savedRates);
+          setIssRate(parsed.issRate || "2.5");
+          setIcmsRate(parsed.icmsRate || "18.0");
+          setPisRate(parsed.pisRate || "0.65");
+          setCofinsRate(parsed.cofinsRate || "3.0");
+        } catch (e) { console.error(e); }
+      }
+    }
+  }, [empresa?.id]);
+
   useEffect(() => {
     if (config) {
       setAmbiente((config.ambiente as "homologacao" | "producao") ?? "homologacao");
@@ -126,16 +153,22 @@ function ConfigFiscais() {
     mutationFn: async () => {
       if (!empresa) throw new Error("Empresa não selecionada");
       
-      const { error } = await supabase.from("nfe_config").update({
+      const { error } = await supabase.from("nfe_config").upsert({
+        empresa_id: empresa.id,
         ambiente,
         serie: parseInt(serie) || 1,
         proximo_numero: parseInt(proximoNumero) || 1,
         regime_tributario: regime,
         cnae: cnae || null,
         natureza_operacao: natOp || null
-      }).eq("empresa_id", empresa.id);
+      }, { onConflict: "empresa_id" });
 
       if (error) throw error;
+
+      // Persistir alíquotas locais por empresa
+      localStorage.setItem(`norvo_rates_${empresa.id}`, JSON.stringify({
+        issRate, icmsRate, pisRate, cofinsRate
+      }));
     },
     onSuccess: () => {
       toast.success("Configurações tributárias salvas com sucesso!");
@@ -153,7 +186,11 @@ function ConfigFiscais() {
     setTimeout(() => {
       setIsUploadingCert(false);
       setHasCertificado(true);
-      setCertFile("certificado_norvo_empresa_A1.pfx");
+      const name = "certificado_norvo_empresa_A1.pfx";
+      setCertFile(name);
+      if (empresa?.id) {
+        localStorage.setItem(`norvo_cert_${empresa.id}`, JSON.stringify({ hasCertificado: true, certFile: name }));
+      }
       toast.success("Certificado Digital A1 enviado e validado com sucesso!");
     }, 1800);
   };
@@ -163,6 +200,9 @@ function ConfigFiscais() {
       setHasCertificado(false);
       setCertFile(null);
       setCertPassword("");
+      if (empresa?.id) {
+        localStorage.setItem(`norvo_cert_${empresa.id}`, JSON.stringify({ hasCertificado: false, certFile: null }));
+      }
       toast.success("Certificado digital excluído.");
     }
   };
@@ -173,17 +213,23 @@ function ConfigFiscais() {
       return toast.error("Preencha o nome e o código CFOP.");
     }
 
+    let nextCfops: CFOPRule[];
     if (editingCfopId) {
-      setCfops(prev => prev.map(c => c.id === editingCfopId ? {
+      nextCfops = cfops.map(c => c.id === editingCfopId ? {
         id: editingCfopId, nome: cfopNome, cfop: cfopValor, tipo: cfopTipo, descricao: cfopDesc
-      } : c));
+      } : c);
       toast.success("Regra CFOP atualizada!");
     } else {
       const novo: CFOPRule = {
         id: String(Date.now()), nome: cfopNome, cfop: cfopValor, tipo: cfopTipo, descricao: cfopDesc
       };
-      setCfops(prev => [...prev, novo]);
+      nextCfops = [...cfops, novo];
       toast.success("Regra CFOP adicionada com sucesso!");
+    }
+
+    setCfops(nextCfops);
+    if (empresa?.id) {
+      localStorage.setItem(`norvo_cfops_${empresa.id}`, JSON.stringify(nextCfops));
     }
 
     // Reset modal states
@@ -196,7 +242,11 @@ function ConfigFiscais() {
 
   const handleExcluirCFOP = (id: string) => {
     if (confirm("Deseja mesmo excluir esta regra CFOP?")) {
-      setCfops(prev => prev.filter(c => c.id !== id));
+      const nextCfops = cfops.filter(c => c.id !== id);
+      setCfops(nextCfops);
+      if (empresa?.id) {
+        localStorage.setItem(`norvo_cfops_${empresa.id}`, JSON.stringify(nextCfops));
+      }
       toast.success("Regra CFOP removida.");
     }
   };
