@@ -3,6 +3,7 @@ import {
   Wallet, TrendingUp, Banknote, ShoppingCart, UserSquare2, Package,
   Kanban, Briefcase, Wrench, UsersRound, ListTree, FolderCog,
   ArrowLeftRight, Link2, PieChart, BarChart3, Percent, HandCoins,
+  FileDown, Handshake,
 } from "lucide-react";
 
 export type NavItem = { to: string; label: string; icon: typeof LayoutDashboard };
@@ -51,7 +52,11 @@ const RAW_NAV: NavGroup[] = [
     { to: "/rh/adiantamentos", label: "Adiantamentos", icon: HandCoins },
   ]},
   { label: "Fiscal", icon: FileText, items: [
-    { to: "/fiscal/notas", label: "Notas fiscais", icon: FileText },
+    { to: "/fiscal/emitidas", label: "Notas Emitidas (NFS-e / NF-e / NFC-e)", icon: FileText },
+    { to: "/fiscal/recebidas", label: "Notas Recebidas (Entradas & XMLs)", icon: FileDown },
+    { to: "/fiscal/relatorios", label: "Relatórios Fiscais", icon: BarChart3 },
+    { to: "/fiscal/contador", label: "Painel do Contador / Exportação", icon: Handshake },
+    { to: "/fiscal/configuracoes", label: "Configurações Fiscais (Certificado & Alíquotas)", icon: FolderCog },
   ]},
 ];
 
@@ -63,6 +68,6 @@ export const NAV: NavGroup[] = [...RAW_NAV]
   .sort((a, b) =>
     a.label === OVERVIEW_LABEL ? -1 : b.label === OVERVIEW_LABEL ? 1 : byLabel(a, b),
   )
-  .map((g) => ({ ...g, items: [...g.items].sort(byLabel) }));
+  .map((g) => ({ ...g, items: g.label === "Fiscal" ? [...g.items] : [...g.items].sort(byLabel) }));
 
 export const ALL_NAV_ITEMS: NavItem[] = NAV.flatMap((g) => g.items);
