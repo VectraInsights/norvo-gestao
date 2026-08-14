@@ -3,7 +3,7 @@ import {
   Wallet, TrendingUp, Banknote, ShoppingCart, UserSquare2, Package,
   Kanban, Briefcase, Wrench, UsersRound, ListTree, FolderCog,
   ArrowLeftRight, Link2, PieChart, BarChart3, Percent, HandCoins,
-  FileDown, Handshake,
+  FileDown, Handshake, FileSearch, Settings2, FileOutput, FileInput
 } from "lucide-react";
 
 export type NavItem = { to: string; label: string; icon: typeof LayoutDashboard };
@@ -52,11 +52,11 @@ const RAW_NAV: NavGroup[] = [
     { to: "/rh/adiantamentos", label: "Adiantamentos", icon: HandCoins },
   ]},
   { label: "Fiscal", icon: FileText, items: [
-    { to: "/fiscal/emitidas", label: "Notas Emitidas (NFS-e / NF-e / NFC-e)", icon: FileText },
-    { to: "/fiscal/recebidas", label: "Notas Recebidas (Entradas & XMLs)", icon: FileDown },
-    { to: "/fiscal/relatorios", label: "Relatórios Fiscais", icon: BarChart3 },
-    { to: "/fiscal/contador", label: "Painel do Contador / Exportação", icon: Handshake },
-    { to: "/fiscal/configuracoes", label: "Configurações Fiscais (Certificado & Alíquotas)", icon: FolderCog },
+    { to: "/fiscal/emitidas", label: "Notas Emitidas", icon: FileOutput },
+    { to: "/fiscal/recebidas", label: "Notas Recebidas", icon: FileInput },
+    { to: "/fiscal/relatorios", label: "Relatórios e Dashboards", icon: BarChart3 },
+    { to: "/fiscal/contador", label: "Painel do Contador", icon: Handshake },
+    { to: "/fiscal/configuracoes", label: "Configurações Fiscais", icon: Settings2 },
   ]},
 ];
 

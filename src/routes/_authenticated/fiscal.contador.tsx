@@ -166,9 +166,9 @@ function PainelContador() {
   return (
     <>
       <PageHeader 
-        eyebrow="Fiscal" 
-        title="Painel do Contador / Exportação" 
-        description="Exporte relatórios e envie pacotes consolidados de arquivos XML e PDF do mês diretamente para a sua contabilidade." 
+        eyebrow="Gestão Fiscal" 
+        title="Painel do Contador" 
+        description="Facilite o trabalho da sua contabilidade exportando XMLs e relatórios de forma organizada." 
       />
 
       <div className="mt-6 grid gap-6 lg:grid-cols-3">

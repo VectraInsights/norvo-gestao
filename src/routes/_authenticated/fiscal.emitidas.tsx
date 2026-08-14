@@ -313,9 +313,9 @@ function NotasEmitidas() {
     <>
       <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
         <PageHeader 
-          eyebrow="Fiscal" 
-          title="Notas Emitidas" 
-          description="Gestão de documentos fiscais emitidos (NF-e, NFS-e, NFC-e, CT-e, MDF-e)." 
+          eyebrow="Gestão Fiscal" 
+          title="Notas de Saída" 
+          description="Controle e emissão de notas fiscais de venda e prestação de serviços (NF-e, NFS-e, NFC-e)." 
         />
         
         <Dialog open={modalOpen} onOpenChange={setModalOpen}>
