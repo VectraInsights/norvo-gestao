@@ -169,6 +169,13 @@ function CadastrosPage() {
         eyebrow="Financeiro"
         title="Cadastros"
         description="Gerencie as categorias financeiras e os centros de custo utilizados nos lançamentos."
+        actions={
+          <div className="flex items-center gap-2">
+            <Button variant="outline" size="sm">
+              Adicionar trilha de auditoria
+            </Button>
+          </div>
+        }
       />
 
       <Tabs defaultValue="categorias">

@@ -320,11 +320,15 @@ export function LancamentosPage({ tipo }: { tipo: "receber" | "pagar" }) {
         title={titulo}
         description={desc}
         actions={
-          <Dialog open={open} onOpenChange={(v) => { if (!criar.isPending) setOpen(v); }}>
-            <DialogTrigger asChild>
-              <Button><Plus className="mr-1 h-4 w-4" />Novo lançamento</Button>
-            </DialogTrigger>
-            <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-lg">
+          <div className="flex items-center gap-2">
+            <Button variant="outline" size="sm" className="h-9">
+              Adicionar trilha de auditoria
+            </Button>
+            <Dialog open={open} onOpenChange={(v) => { if (!criar.isPending) setOpen(v); }}>
+              <DialogTrigger asChild>
+                <Button><Plus className="mr-1 h-4 w-4" />Novo lançamento</Button>
+              </DialogTrigger>
+              <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-lg">
               <DialogHeader><DialogTitle>Novo lançamento — {titulo}</DialogTitle></DialogHeader>
               <form onSubmit={(e) => { e.preventDefault(); criar.mutate(form); }} className="space-y-3">
                 <div>
@@ -401,7 +405,8 @@ export function LancamentosPage({ tipo }: { tipo: "receber" | "pagar" }) {
                 </DialogFooter>
               </form>
             </DialogContent>
-          </Dialog>
+            </Dialog>
+          </div>
         }
       />
 

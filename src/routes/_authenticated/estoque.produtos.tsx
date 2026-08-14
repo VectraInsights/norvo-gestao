@@ -124,11 +124,15 @@ function Produtos() {
         title="Produtos"
         description="Cadastro de produtos, preços e saldos."
         actions={
-          <Dialog open={open} onOpenChange={(v) => { if (!criarMut.isPending) setOpen(v); }}>
-            <DialogTrigger asChild>
-              <Button><Plus className="mr-1 h-4 w-4" />Novo produto</Button>
-            </DialogTrigger>
-            <DialogContent>
+          <div className="flex items-center gap-2">
+            <Button variant="outline" size="sm">
+              Adicionar trilha de auditoria
+            </Button>
+            <Dialog open={open} onOpenChange={(v) => { if (!criarMut.isPending) setOpen(v); }}>
+              <DialogTrigger asChild>
+                <Button><Plus className="mr-1 h-4 w-4" />Novo produto</Button>
+              </DialogTrigger>
+              <DialogContent>
               <DialogHeader><DialogTitle>Novo produto</DialogTitle></DialogHeader>
               <form onSubmit={submit} className="space-y-3">
                 <div className="grid grid-cols-[1fr_2fr] gap-3">
@@ -152,7 +156,8 @@ function Produtos() {
                 </DialogFooter>
               </form>
             </DialogContent>
-          </Dialog>
+            </Dialog>
+          </div>
         }
       />
 
