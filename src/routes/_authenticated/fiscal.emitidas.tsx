@@ -334,10 +334,7 @@ function NotasEmitidas() {
                 <Plus className="mr-2 h-4 w-4" /> Nova Emissão
               </Button>
             </DialogTrigger>
-          </Dialog>
-        </div>
-      </div>
-          <DialogContent className="sm:max-w-[480px]">
+            <DialogContent className="sm:max-w-[480px]">
             <DialogHeader>
               <DialogTitle>Emitir Nota Fiscal (Rascunho)</DialogTitle>
               <DialogDescription>

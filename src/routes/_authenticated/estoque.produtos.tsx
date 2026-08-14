@@ -132,11 +132,7 @@ function Produtos() {
               <DialogTrigger asChild>
                 <Button><Plus className="mr-1 h-4 w-4" />Novo produto</Button>
               </DialogTrigger>
-            </Dialog>
-          </div>
-        }
-      />
-            <DialogContent>
+              <DialogContent>
               <DialogHeader><DialogTitle>Novo produto</DialogTitle></DialogHeader>
               <form onSubmit={submit} className="space-y-3">
                 <div className="grid grid-cols-[1fr_2fr] gap-3">
