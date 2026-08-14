@@ -264,9 +264,9 @@ function ConfigFiscais() {
   return (
     <>
       <PageHeader 
-        eyebrow="Fiscal" 
+        eyebrow="Gestão Fiscal" 
         title="Configurações Fiscais" 
-        description="Gerencie os parâmetros tributários, certificado digital da empresa e regras de CFOP para emissões." 
+        description="Gerencie seu certificado digital A1, configure alíquotas de impostos e parâmetros de emissão." 
       />
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="mt-6 space-y-6">
