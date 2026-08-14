@@ -261,7 +261,7 @@ function NotasRecebidas() {
             empresa_id: empresa.id,
             nome: importResults.emitente,
             cnpj_cpf: importResults.cnpj,
-            tipo: "fornecedor"
+            tipo: "fornecedor" as any
           })
           .select("id")
           .single();
@@ -620,7 +620,7 @@ function NotasRecebidas() {
                   <div>
                     <CardTitle className="text-lg">Resultado da Análise do XML</CardTitle>
                     <CardDescription className="text-foreground/80 mt-1">
-                      Fornecedor: <strong className="font-semibold">{importResults.fornecedor}</strong>
+                      Fornecedor: <strong className="font-semibold">{importResults.emitente}</strong>
                     </CardDescription>
                   </div>
                   <div className="text-right">
@@ -676,7 +676,7 @@ function NotasRecebidas() {
                     <div>
                       <h4 className="text-sm font-semibold text-foreground">Financeiro Programado</h4>
                       <p className="text-xs text-muted-foreground mt-0.5">
-                        Será gerado 1 título a pagar para o fornecedor {importResults.fornecedor} no valor de {brl(importResults.total)} com vencimento em 30 dias.
+                        Será gerado 1 título a pagar para o fornecedor {importResults.emitente} no valor de {brl(importResults.total)} com vencimento em 30 dias.
                       </p>
                     </div>
                   </div>
