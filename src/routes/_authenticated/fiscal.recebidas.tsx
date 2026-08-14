@@ -382,9 +382,9 @@ function NotasRecebidas() {
   return (
     <>
       <PageHeader 
-        eyebrow="Fiscal" 
-        title="Notas Recebidas" 
-        description="Consulte notas de compras emitidas contra sua empresa (SEFAZ) e faça a importação de arquivos XML." 
+        eyebrow="Gestão Fiscal" 
+        title="Notas de Entrada" 
+        description="Gerencie notas de compra, realize manifestação do destinatário e importe XMLs para o estoque e financeiro." 
       />
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
