@@ -663,7 +663,7 @@ function NotasRecebidas() {
               </CardHeader>
               <CardContent className="p-6 space-y-6">
                 <div className="space-y-3">
-                  <h4 className="text-sm font-semibold text-foreground">Itens do XML mapeados para o estoque:</h4>
+                  <h4 className="text-sm font-semibold text-foreground">os itens importados estão errados, não tem isso em nenhuma das notas</h4>
                   <div className="border rounded-md overflow-hidden bg-background/50">
                     <Table>
                       <TableHeader className="bg-muted/40">
