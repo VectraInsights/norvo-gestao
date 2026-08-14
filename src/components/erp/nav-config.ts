@@ -3,7 +3,7 @@ import {
   Wallet, TrendingUp, Banknote, ShoppingCart, UserSquare2, Package,
   Kanban, Briefcase, Wrench, UsersRound, ListTree, FolderCog,
   ArrowLeftRight, Link2, PieChart, BarChart3, Percent, HandCoins,
-  FileDown, Handshake,
+  FileDown, Handshake, FileSearch, Settings2, FileOutput, FileInput
 } from "lucide-react";
 
 export type NavItem = { to: string; label: string; icon: typeof LayoutDashboard };
