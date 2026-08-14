@@ -17,7 +17,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEmpresaAtual } from "@/hooks/use-empresa";
 import { toast } from "sonner";
 import { brl, dateBR } from "@/lib/format";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
 export const Route = createFileRoute("/_authenticated/fiscal/emitidas")({
   component: NotasEmitidas,
@@ -356,7 +356,7 @@ function NotasEmitidas() {
                     {contatos?.map((c) => (
                       <SelectItem key={c.id} value={c.id}>{c.nome}</SelectItem>
                     ))}
-                    {!contatos?.length && (
+                    {(!contatos || contatos.length === 0) && (
                       <SelectItem value="none" disabled>Nenhum cliente cadastrado</SelectItem>
                     )}
                   </SelectContent>
