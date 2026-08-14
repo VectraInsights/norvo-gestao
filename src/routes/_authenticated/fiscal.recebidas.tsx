@@ -101,6 +101,7 @@ function NotasRecebidas() {
   const [isProcessing, setIsProcessing] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [importResults, setImportResults] = useState<ParsedXMLResult | null>(null);
+  const [validarXML, setValidarXML] = useState(true);
 
   // Ações de manifestação
   const handleManifestar = (chave: string, acao: "ciencia" | "confirmada" | "desconhecida") => {
@@ -568,7 +569,19 @@ function NotasRecebidas() {
                         </div>
                       ))}
                     </div>
-                    <div className="flex justify-end">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center space-x-2">
+                        <input
+                          type="checkbox"
+                          id="validar-xml"
+                          className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary"
+                          checked={validarXML}
+                          onChange={(e) => setValidarXML(e.target.checked)}
+                        />
+                        <label htmlFor="validar-xml" className="text-xs font-medium text-foreground cursor-pointer">
+                          Validar XML antes de importar
+                        </label>
+                      </div>
                       <Button 
                         onClick={handleProcessarImportacao} 
                         disabled={isProcessing}
