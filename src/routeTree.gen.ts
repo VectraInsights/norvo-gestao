@@ -25,7 +25,12 @@ import { Route as AuthenticatedRhColaboradoresRouteImport } from './routes/_auth
 import { Route as AuthenticatedRhAdiantamentosRouteImport } from './routes/_authenticated/rh.adiantamentos'
 import { Route as AuthenticatedProjetosProjetosRouteImport } from './routes/_authenticated/projetos.projetos'
 import { Route as AuthenticatedProjetosOsRouteImport } from './routes/_authenticated/projetos.os'
+import { Route as AuthenticatedFiscalRelatoriosRouteImport } from './routes/_authenticated/fiscal.relatorios'
+import { Route as AuthenticatedFiscalRecebidasRouteImport } from './routes/_authenticated/fiscal.recebidas'
 import { Route as AuthenticatedFiscalNotasRouteImport } from './routes/_authenticated/fiscal.notas'
+import { Route as AuthenticatedFiscalEmitidasRouteImport } from './routes/_authenticated/fiscal.emitidas'
+import { Route as AuthenticatedFiscalContadorRouteImport } from './routes/_authenticated/fiscal.contador'
+import { Route as AuthenticatedFiscalConfiguracoesRouteImport } from './routes/_authenticated/fiscal.configuracoes'
 import { Route as AuthenticatedFinanceiroTransferenciasRouteImport } from './routes/_authenticated/financeiro.transferencias'
 import { Route as AuthenticatedFinanceiroRelatoriosRouteImport } from './routes/_authenticated/financeiro.relatorios'
 import { Route as AuthenticatedFinanceiroReceberRouteImport } from './routes/_authenticated/financeiro.receber'
@@ -130,10 +135,40 @@ const AuthenticatedProjetosOsRoute = AuthenticatedProjetosOsRouteImport.update({
   path: '/projetos/os',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedFiscalRelatoriosRoute =
+  AuthenticatedFiscalRelatoriosRouteImport.update({
+    id: '/fiscal/relatorios',
+    path: '/fiscal/relatorios',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedFiscalRecebidasRoute =
+  AuthenticatedFiscalRecebidasRouteImport.update({
+    id: '/fiscal/recebidas',
+    path: '/fiscal/recebidas',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedFiscalNotasRoute =
   AuthenticatedFiscalNotasRouteImport.update({
     id: '/fiscal/notas',
     path: '/fiscal/notas',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedFiscalEmitidasRoute =
+  AuthenticatedFiscalEmitidasRouteImport.update({
+    id: '/fiscal/emitidas',
+    path: '/fiscal/emitidas',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedFiscalContadorRoute =
+  AuthenticatedFiscalContadorRouteImport.update({
+    id: '/fiscal/contador',
+    path: '/fiscal/contador',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedFiscalConfiguracoesRoute =
+  AuthenticatedFiscalConfiguracoesRouteImport.update({
+    id: '/fiscal/configuracoes',
+    path: '/fiscal/configuracoes',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
 const AuthenticatedFinanceiroTransferenciasRoute =
@@ -254,7 +289,12 @@ export interface FileRoutesByFullPath {
   '/financeiro/receber': typeof AuthenticatedFinanceiroReceberRoute
   '/financeiro/relatorios': typeof AuthenticatedFinanceiroRelatoriosRoute
   '/financeiro/transferencias': typeof AuthenticatedFinanceiroTransferenciasRoute
+  '/fiscal/configuracoes': typeof AuthenticatedFiscalConfiguracoesRoute
+  '/fiscal/contador': typeof AuthenticatedFiscalContadorRoute
+  '/fiscal/emitidas': typeof AuthenticatedFiscalEmitidasRoute
   '/fiscal/notas': typeof AuthenticatedFiscalNotasRoute
+  '/fiscal/recebidas': typeof AuthenticatedFiscalRecebidasRoute
+  '/fiscal/relatorios': typeof AuthenticatedFiscalRelatoriosRoute
   '/projetos/os': typeof AuthenticatedProjetosOsRoute
   '/projetos/projetos': typeof AuthenticatedProjetosProjetosRoute
   '/rh/adiantamentos': typeof AuthenticatedRhAdiantamentosRoute
@@ -288,7 +328,12 @@ export interface FileRoutesByTo {
   '/financeiro/receber': typeof AuthenticatedFinanceiroReceberRoute
   '/financeiro/relatorios': typeof AuthenticatedFinanceiroRelatoriosRoute
   '/financeiro/transferencias': typeof AuthenticatedFinanceiroTransferenciasRoute
+  '/fiscal/configuracoes': typeof AuthenticatedFiscalConfiguracoesRoute
+  '/fiscal/contador': typeof AuthenticatedFiscalContadorRoute
+  '/fiscal/emitidas': typeof AuthenticatedFiscalEmitidasRoute
   '/fiscal/notas': typeof AuthenticatedFiscalNotasRoute
+  '/fiscal/recebidas': typeof AuthenticatedFiscalRecebidasRoute
+  '/fiscal/relatorios': typeof AuthenticatedFiscalRelatoriosRoute
   '/projetos/os': typeof AuthenticatedProjetosOsRoute
   '/projetos/projetos': typeof AuthenticatedProjetosProjetosRoute
   '/rh/adiantamentos': typeof AuthenticatedRhAdiantamentosRoute
@@ -324,7 +369,12 @@ export interface FileRoutesById {
   '/_authenticated/financeiro/receber': typeof AuthenticatedFinanceiroReceberRoute
   '/_authenticated/financeiro/relatorios': typeof AuthenticatedFinanceiroRelatoriosRoute
   '/_authenticated/financeiro/transferencias': typeof AuthenticatedFinanceiroTransferenciasRoute
+  '/_authenticated/fiscal/configuracoes': typeof AuthenticatedFiscalConfiguracoesRoute
+  '/_authenticated/fiscal/contador': typeof AuthenticatedFiscalContadorRoute
+  '/_authenticated/fiscal/emitidas': typeof AuthenticatedFiscalEmitidasRoute
   '/_authenticated/fiscal/notas': typeof AuthenticatedFiscalNotasRoute
+  '/_authenticated/fiscal/recebidas': typeof AuthenticatedFiscalRecebidasRoute
+  '/_authenticated/fiscal/relatorios': typeof AuthenticatedFiscalRelatoriosRoute
   '/_authenticated/projetos/os': typeof AuthenticatedProjetosOsRoute
   '/_authenticated/projetos/projetos': typeof AuthenticatedProjetosProjetosRoute
   '/_authenticated/rh/adiantamentos': typeof AuthenticatedRhAdiantamentosRoute
@@ -360,7 +410,12 @@ export interface FileRouteTypes {
     | '/financeiro/receber'
     | '/financeiro/relatorios'
     | '/financeiro/transferencias'
+    | '/fiscal/configuracoes'
+    | '/fiscal/contador'
+    | '/fiscal/emitidas'
     | '/fiscal/notas'
+    | '/fiscal/recebidas'
+    | '/fiscal/relatorios'
     | '/projetos/os'
     | '/projetos/projetos'
     | '/rh/adiantamentos'
@@ -394,7 +449,12 @@ export interface FileRouteTypes {
     | '/financeiro/receber'
     | '/financeiro/relatorios'
     | '/financeiro/transferencias'
+    | '/fiscal/configuracoes'
+    | '/fiscal/contador'
+    | '/fiscal/emitidas'
     | '/fiscal/notas'
+    | '/fiscal/recebidas'
+    | '/fiscal/relatorios'
     | '/projetos/os'
     | '/projetos/projetos'
     | '/rh/adiantamentos'
@@ -429,7 +489,12 @@ export interface FileRouteTypes {
     | '/_authenticated/financeiro/receber'
     | '/_authenticated/financeiro/relatorios'
     | '/_authenticated/financeiro/transferencias'
+    | '/_authenticated/fiscal/configuracoes'
+    | '/_authenticated/fiscal/contador'
+    | '/_authenticated/fiscal/emitidas'
     | '/_authenticated/fiscal/notas'
+    | '/_authenticated/fiscal/recebidas'
+    | '/_authenticated/fiscal/relatorios'
     | '/_authenticated/projetos/os'
     | '/_authenticated/projetos/projetos'
     | '/_authenticated/rh/adiantamentos'
@@ -564,11 +629,46 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedProjetosOsRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/fiscal/relatorios': {
+      id: '/_authenticated/fiscal/relatorios'
+      path: '/fiscal/relatorios'
+      fullPath: '/fiscal/relatorios'
+      preLoaderRoute: typeof AuthenticatedFiscalRelatoriosRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/fiscal/recebidas': {
+      id: '/_authenticated/fiscal/recebidas'
+      path: '/fiscal/recebidas'
+      fullPath: '/fiscal/recebidas'
+      preLoaderRoute: typeof AuthenticatedFiscalRecebidasRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/fiscal/notas': {
       id: '/_authenticated/fiscal/notas'
       path: '/fiscal/notas'
       fullPath: '/fiscal/notas'
       preLoaderRoute: typeof AuthenticatedFiscalNotasRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/fiscal/emitidas': {
+      id: '/_authenticated/fiscal/emitidas'
+      path: '/fiscal/emitidas'
+      fullPath: '/fiscal/emitidas'
+      preLoaderRoute: typeof AuthenticatedFiscalEmitidasRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/fiscal/contador': {
+      id: '/_authenticated/fiscal/contador'
+      path: '/fiscal/contador'
+      fullPath: '/fiscal/contador'
+      preLoaderRoute: typeof AuthenticatedFiscalContadorRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/fiscal/configuracoes': {
+      id: '/_authenticated/fiscal/configuracoes'
+      path: '/fiscal/configuracoes'
+      fullPath: '/fiscal/configuracoes'
+      preLoaderRoute: typeof AuthenticatedFiscalConfiguracoesRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/financeiro/transferencias': {
@@ -704,7 +804,12 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedFinanceiroReceberRoute: typeof AuthenticatedFinanceiroReceberRoute
   AuthenticatedFinanceiroRelatoriosRoute: typeof AuthenticatedFinanceiroRelatoriosRoute
   AuthenticatedFinanceiroTransferenciasRoute: typeof AuthenticatedFinanceiroTransferenciasRoute
+  AuthenticatedFiscalConfiguracoesRoute: typeof AuthenticatedFiscalConfiguracoesRoute
+  AuthenticatedFiscalContadorRoute: typeof AuthenticatedFiscalContadorRoute
+  AuthenticatedFiscalEmitidasRoute: typeof AuthenticatedFiscalEmitidasRoute
   AuthenticatedFiscalNotasRoute: typeof AuthenticatedFiscalNotasRoute
+  AuthenticatedFiscalRecebidasRoute: typeof AuthenticatedFiscalRecebidasRoute
+  AuthenticatedFiscalRelatoriosRoute: typeof AuthenticatedFiscalRelatoriosRoute
   AuthenticatedProjetosOsRoute: typeof AuthenticatedProjetosOsRoute
   AuthenticatedProjetosProjetosRoute: typeof AuthenticatedProjetosProjetosRoute
   AuthenticatedRhAdiantamentosRoute: typeof AuthenticatedRhAdiantamentosRoute
@@ -742,7 +847,12 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
     AuthenticatedFinanceiroRelatoriosRoute,
   AuthenticatedFinanceiroTransferenciasRoute:
     AuthenticatedFinanceiroTransferenciasRoute,
+  AuthenticatedFiscalConfiguracoesRoute: AuthenticatedFiscalConfiguracoesRoute,
+  AuthenticatedFiscalContadorRoute: AuthenticatedFiscalContadorRoute,
+  AuthenticatedFiscalEmitidasRoute: AuthenticatedFiscalEmitidasRoute,
   AuthenticatedFiscalNotasRoute: AuthenticatedFiscalNotasRoute,
+  AuthenticatedFiscalRecebidasRoute: AuthenticatedFiscalRecebidasRoute,
+  AuthenticatedFiscalRelatoriosRoute: AuthenticatedFiscalRelatoriosRoute,
   AuthenticatedProjetosOsRoute: AuthenticatedProjetosOsRoute,
   AuthenticatedProjetosProjetosRoute: AuthenticatedProjetosProjetosRoute,
   AuthenticatedRhAdiantamentosRoute: AuthenticatedRhAdiantamentosRoute,
@@ -768,3 +878,13 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { startInstance } from './start.ts'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
+  }
+}
