@@ -328,6 +328,10 @@ export function LancamentosPage({ tipo }: { tipo: "receber" | "pagar" }) {
               <DialogTrigger asChild>
                 <Button><Plus className="mr-1 h-4 w-4" />Novo lançamento</Button>
               </DialogTrigger>
+            </Dialog>
+          </div>
+        }
+      />
             <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-lg">
               <DialogHeader><DialogTitle>Novo lançamento — {titulo}</DialogTitle></DialogHeader>
               <form onSubmit={(e) => { e.preventDefault(); criar.mutate(form); }} className="space-y-3">
