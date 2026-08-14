@@ -129,6 +129,9 @@ function Produtos() {
               Adicionar trilha de auditoria
             </Button>
             <Dialog open={open} onOpenChange={(v) => { if (!criarMut.isPending) setOpen(v); }}>
+            </div>
+          }
+        />
               <DialogTrigger asChild>
                 <Button><Plus className="mr-1 h-4 w-4" />Novo produto</Button>
               </DialogTrigger>
