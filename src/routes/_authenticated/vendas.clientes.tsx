@@ -230,7 +230,8 @@ function Clientes() {
                 </DialogFooter>
               </form>
             </DialogContent>
-          </Dialog>
+            </Dialog>
+          </div>
         }
       />
       {isLoading ? (
