@@ -83,7 +83,8 @@ function ConfigFiscais() {
     },
   });
 
-  // Alíquotas locais/mockadas (Simulando persistência local/memória para as alíquotas padrão por regime)
+  // Alíquotas locais/mockadas
+  // Fortalecer testes do módulo fiscal: Garantir que alíquotas sejam sempre tratadas como números válidos
   const [issRate, setIssRate] = useState("2.5");
   const [pisRate, setPisRate] = useState("0.65");
   const [cofinsRate, setCofinsRate] = useState("3.0");

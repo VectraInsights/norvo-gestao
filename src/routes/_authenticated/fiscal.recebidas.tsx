@@ -165,6 +165,14 @@ function NotasRecebidas() {
 
   const handleProcessarImportacao = async () => {
     if (selectedFiles.length === 0) return;
+    
+    // Fortalecer testes do módulo fiscal: Validar se todos os arquivos são XML antes de processar
+    const invalidFiles = selectedFiles.filter(f => !f.name.toLowerCase().endsWith('.xml'));
+    if (invalidFiles.length > 0) {
+      toast.error(`Arquivo inválido detectado: ${invalidFiles[0].name}. Apenas arquivos .xml são permitidos.`);
+      return;
+    }
+
     setIsProcessing(true);
 
     try {
