@@ -325,9 +325,6 @@ export function LancamentosPage({ tipo }: { tipo: "receber" | "pagar" }) {
               Adicionar trilha de auditoria
             </Button>
             <Dialog open={open} onOpenChange={(v) => { if (!criar.isPending) setOpen(v); }}>
-            </div>
-          }
-        />
             <DialogTrigger asChild>
               <Button><Plus className="mr-1 h-4 w-4" />Novo lançamento</Button>
             </DialogTrigger>

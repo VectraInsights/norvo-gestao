@@ -329,8 +329,6 @@ function NotasEmitidas() {
             Adicionar trilha de auditoria
           </Button>
           <Dialog open={modalOpen} onOpenChange={setModalOpen}>
-          </div>
-        </div>
             <DialogTrigger asChild>
               <Button onClick={() => setModalOpen(true)} className="w-full sm:w-auto shadow-sm transition-transform hover:scale-[1.02] active:scale-[0.98]">
                 <Plus className="mr-2 h-4 w-4" /> Nova Emissão

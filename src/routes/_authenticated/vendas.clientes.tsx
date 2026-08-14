@@ -173,9 +173,6 @@ function Clientes() {
               Adicionar trilha de auditoria
             </Button>
             <Dialog open={open} onOpenChange={(v) => { if (!criar.isPending) setOpen(v); }}>
-            </div>
-          }
-        />
               <DialogTrigger asChild><Button><Plus className="mr-1 h-4 w-4" />Novo contato</Button></DialogTrigger>
             <DialogContent className="max-h-[90vh] overflow-y-auto">
               <DialogHeader><DialogTitle>Novo contato</DialogTitle></DialogHeader>
