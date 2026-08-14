@@ -405,7 +405,8 @@ export function LancamentosPage({ tipo }: { tipo: "receber" | "pagar" }) {
                 </DialogFooter>
               </form>
             </DialogContent>
-          </Dialog>
+            </Dialog>
+          </div>
         }
       />
 
