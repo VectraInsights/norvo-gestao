@@ -243,7 +243,9 @@ function NotasRecebidas() {
       toast.success("XML analisado e mapeado com sucesso! Verifique os itens antes de confirmar.");
     } catch (e: any) {
       setIsProcessing(false);
-      toast.error("Falha ao analisar o arquivo XML: " + e.message);
+      toast.error("Erro na leitura do XML", {
+        description: "Verifique se o arquivo está no formato padrão da SEFAZ ou se não está corrompido. " + e.message
+      });
     }
   };
 
@@ -375,7 +377,9 @@ function NotasRecebidas() {
       setSelectedFiles([]);
       setImportResults(null);
     } catch (err: any) {
-      toast.error("Erro ao salvar entrada no banco de dados: " + err.message);
+      toast.error("Falha na gravação", {
+        description: "Ocorreu um erro ao salvar os dados no sistema. Por favor, verifique sua conexão ou tente novamente. " + err.message
+      });
     } finally {
       setIsSaving(false);
     }

@@ -49,11 +49,17 @@ interface NfeConfig {
 
 function FiscalError({ error, reset }: { error: Error; reset: () => void }) {
   return (
-    <div className="flex flex-col items-center gap-3 rounded-lg border border-destructive/40 bg-destructive/5 p-8 text-center">
-      <AlertTriangle className="h-8 w-8 text-destructive" />
-      <div className="text-sm font-medium">Falha ao carregar módulo fiscal</div>
-      <div className="text-xs text-muted-foreground">{error.message}</div>
-      <Button size="sm" variant="outline" onClick={reset}>Tentar novamente</Button>
+    <div className="flex flex-col items-center gap-3 rounded-lg border border-destructive/20 bg-destructive/5 p-8 text-center animate-in fade-in zoom-in duration-300">
+      <div className="flex h-12 w-12 items-center justify-center rounded-full bg-destructive/10">
+        <AlertTriangle className="h-6 w-6 text-destructive" />
+      </div>
+      <div className="text-base font-semibold text-foreground">Ops! Ocorreu um problema no módulo fiscal</div>
+      <div className="max-w-[300px] text-xs leading-relaxed text-muted-foreground">
+        Não conseguimos carregar os dados das notas fiscais agora. Detalhes técnicos: <code className="bg-muted px-1 py-0.5 rounded">{error.message}</code>
+      </div>
+      <Button size="sm" variant="outline" onClick={reset} className="mt-2">
+        Tentar novamente
+      </Button>
     </div>
   );
 }
