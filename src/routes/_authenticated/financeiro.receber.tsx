@@ -320,7 +320,11 @@ export function LancamentosPage({ tipo }: { tipo: "receber" | "pagar" }) {
         title={titulo}
         description={desc}
         actions={
-          <Dialog open={open} onOpenChange={(v) => { if (!criar.isPending) setOpen(v); }}>
+          <div className="flex items-center gap-2">
+            <Button variant="outline" size="sm" className="h-9">
+              Adicionar trilha de auditoria
+            </Button>
+            <Dialog open={open} onOpenChange={(v) => { if (!criar.isPending) setOpen(v); }}>
             <DialogTrigger asChild>
               <Button><Plus className="mr-1 h-4 w-4" />Novo lançamento</Button>
             </DialogTrigger>

@@ -324,12 +324,16 @@ function NotasEmitidas() {
           description="Controle e emissão de notas fiscais de venda e prestação de serviços (NF-e, NFS-e, NFC-e)." 
         />
         
-        <Dialog open={modalOpen} onOpenChange={setModalOpen}>
-          <DialogTrigger asChild>
-            <Button onClick={() => setModalOpen(true)} className="w-full sm:w-auto shadow-sm transition-transform hover:scale-[1.02] active:scale-[0.98]">
-              <Plus className="mr-2 h-4 w-4" /> Nova Emissão
-            </Button>
-          </DialogTrigger>
+        <div className="flex items-center gap-2">
+          <Button variant="outline" size="sm">
+            Adicionar trilha de auditoria
+          </Button>
+          <Dialog open={modalOpen} onOpenChange={setModalOpen}>
+            <DialogTrigger asChild>
+              <Button onClick={() => setModalOpen(true)} className="w-full sm:w-auto shadow-sm transition-transform hover:scale-[1.02] active:scale-[0.98]">
+                <Plus className="mr-2 h-4 w-4" /> Nova Emissão
+              </Button>
+            </DialogTrigger>
           <DialogContent className="sm:max-w-[480px]">
             <DialogHeader>
               <DialogTitle>Emitir Nota Fiscal (Rascunho)</DialogTitle>

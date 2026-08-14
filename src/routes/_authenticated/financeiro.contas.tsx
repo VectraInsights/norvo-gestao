@@ -325,6 +325,9 @@ function ContasFinanceiras() {
       <PageHeader eyebrow="Financeiro" title="Contas financeiras" description="Cadastro e gestão das contas financeiras da empresa."
         actions={
           <div className="flex items-center gap-3">
+            <Button variant="outline" size="sm">
+              Adicionar trilha de auditoria
+            </Button>
 
             <Dialog open={open} onOpenChange={(v) => { if (!criar.isPending) { setOpen(v); if (!v) resetWizard(); } }}>
               <DialogTrigger asChild><Button><Plus className="mr-1 h-4 w-4" />Nova conta</Button></DialogTrigger>

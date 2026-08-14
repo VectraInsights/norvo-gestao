@@ -398,6 +398,11 @@ function NotasRecebidas() {
         eyebrow="Gestão Fiscal" 
         title="Notas de Entrada" 
         description="Gerencie notas de compra, realize manifestação do destinatário e importe XMLs para o estoque e financeiro." 
+        actions={
+          <Button variant="outline" size="sm">
+            Adicionar trilha de auditoria
+          </Button>
+        }
       />
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
