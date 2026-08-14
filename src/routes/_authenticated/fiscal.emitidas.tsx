@@ -356,7 +356,7 @@ function NotasEmitidas() {
                     {contatos?.map((c) => (
                       <SelectItem key={c.id} value={c.id}>{c.nome}</SelectItem>
                     ))}
-                    {!contatos?.length && (
+                    {(!contatos || contatos.length === 0) && (
                       <SelectItem value="none" disabled>Nenhum cliente cadastrado</SelectItem>
                     )}
                   </SelectContent>
