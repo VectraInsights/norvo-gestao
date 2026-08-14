@@ -260,7 +260,7 @@ function NotasRecebidas() {
           .insert({
             empresa_id: empresa.id,
             nome: importResults.emitente,
-            cnpj_cpf: importResults.cnpj,
+            documento: importResults.cnpj,
             tipo: "fornecedor" as any
           })
           .select("id")
