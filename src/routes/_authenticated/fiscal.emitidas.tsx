@@ -413,7 +413,8 @@ function NotasEmitidas() {
               </Button>
             </DialogFooter>
           </DialogContent>
-        </Dialog>
+          </Dialog>
+        </div>
       </div>
 
       {config && (
