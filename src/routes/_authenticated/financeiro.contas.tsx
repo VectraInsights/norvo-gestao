@@ -565,9 +565,13 @@ function ContasFinanceiras() {
                           {criar.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}Salvar
                         </Button>
                       </DialogFooter>
-                    </form>
                   </Card>
                 )}
+              </DialogContent>
+            </Dialog>
+          </div>
+        }
+      />
               </DialogContent>
             </Dialog>
           </div>
