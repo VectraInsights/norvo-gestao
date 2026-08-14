@@ -91,9 +91,9 @@ function RelatoriosFiscais() {
     <>
       <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
         <PageHeader 
-          eyebrow="Fiscal" 
-          title="Relatórios Fiscais" 
-          description="Acompanhe o faturamento fiscal mensal da sua empresa, impostos declarados e notas fiscais emitidas." 
+          eyebrow="Gestão Fiscal" 
+          title="Relatórios e Dashboards" 
+          description="Análise detalhada de faturamento fiscal, impostos e resumos de operações." 
         />
         
         <div className="flex items-center gap-2">
