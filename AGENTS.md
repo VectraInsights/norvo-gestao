@@ -13,6 +13,7 @@
 
 ERP web (financeiro, vendas, estoque, fiscal, RH, projetos) com backend Supabase.
 Dono do projeto: VectraInsights. Conversas com o agente podem ser em português.
+> Contexto narrativo e histórico de decisões: leia também `HISTORICO.md`.
 
 ## Stack
 
