@@ -10,6 +10,8 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
+import { Route as RedefinirRouteImport } from './routes/redefinir'
+import { Route as RecuperarRouteImport } from './routes/recuperar'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
 import { Route as IndexRouteImport } from './routes/index'
@@ -51,6 +53,16 @@ import { Route as AuthenticatedConfiguracoesEmpresasRouteImport } from './routes
 const SitemapDotxmlRoute = SitemapDotxmlRouteImport.update({
   id: '/sitemap.xml',
   path: '/sitemap.xml',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const RedefinirRoute = RedefinirRouteImport.update({
+  id: '/redefinir',
+  path: '/redefinir',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const RecuperarRoute = RecuperarRouteImport.update({
+  id: '/recuperar',
+  path: '/recuperar',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AuthRoute = AuthRouteImport.update({
@@ -271,6 +283,8 @@ const AuthenticatedConfiguracoesEmpresasRoute =
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
+  '/recuperar': typeof RecuperarRoute
+  '/redefinir': typeof RedefinirRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/configuracoes/empresas': typeof AuthenticatedConfiguracoesEmpresasRoute
@@ -310,6 +324,8 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
+  '/recuperar': typeof RecuperarRoute
+  '/redefinir': typeof RedefinirRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/configuracoes/empresas': typeof AuthenticatedConfiguracoesEmpresasRoute
@@ -351,6 +367,8 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/_authenticated': typeof AuthenticatedRouteRouteWithChildren
   '/auth': typeof AuthRoute
+  '/recuperar': typeof RecuperarRoute
+  '/redefinir': typeof RedefinirRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/_authenticated/dashboard': typeof AuthenticatedDashboardRoute
   '/_authenticated/configuracoes/empresas': typeof AuthenticatedConfiguracoesEmpresasRoute
@@ -392,6 +410,8 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/auth'
+    | '/recuperar'
+    | '/redefinir'
     | '/sitemap.xml'
     | '/dashboard'
     | '/configuracoes/empresas'
@@ -431,6 +451,8 @@ export interface FileRouteTypes {
   to:
     | '/'
     | '/auth'
+    | '/recuperar'
+    | '/redefinir'
     | '/sitemap.xml'
     | '/dashboard'
     | '/configuracoes/empresas'
@@ -471,6 +493,8 @@ export interface FileRouteTypes {
     | '/'
     | '/_authenticated'
     | '/auth'
+    | '/recuperar'
+    | '/redefinir'
     | '/sitemap.xml'
     | '/_authenticated/dashboard'
     | '/_authenticated/configuracoes/empresas'
@@ -512,6 +536,8 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AuthenticatedRouteRoute: typeof AuthenticatedRouteRouteWithChildren
   AuthRoute: typeof AuthRoute
+  RecuperarRoute: typeof RecuperarRoute
+  RedefinirRoute: typeof RedefinirRoute
   SitemapDotxmlRoute: typeof SitemapDotxmlRoute
 }
 
@@ -522,6 +548,20 @@ declare module '@tanstack/react-router' {
       path: '/sitemap.xml'
       fullPath: '/sitemap.xml'
       preLoaderRoute: typeof SitemapDotxmlRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/redefinir': {
+      id: '/redefinir'
+      path: '/redefinir'
+      fullPath: '/redefinir'
+      preLoaderRoute: typeof RedefinirRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/recuperar': {
+      id: '/recuperar'
+      path: '/recuperar'
+      fullPath: '/recuperar'
+      preLoaderRoute: typeof RecuperarRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/auth': {
@@ -873,6 +913,8 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AuthenticatedRouteRoute: AuthenticatedRouteRouteWithChildren,
   AuthRoute: AuthRoute,
+  RecuperarRoute: RecuperarRoute,
+  RedefinirRoute: RedefinirRoute,
   SitemapDotxmlRoute: SitemapDotxmlRoute,
 }
 export const routeTree = rootRouteImport

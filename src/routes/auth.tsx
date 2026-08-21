@@ -17,7 +17,7 @@ const isDesktop =
   typeof window !== "undefined" &&
   ["127.0.0.1", "localhost"].includes(window.location.hostname);
 
-function friendlyAuthError(error: { message?: string } | null | undefined): string {
+export function friendlyAuthError(error: { message?: string } | null | undefined): string {
   const msg = error?.message ?? "";
   const m = msg.toLowerCase();
   if (m.includes("weak_password") || m.includes("pwned"))
@@ -137,6 +137,14 @@ function AuthPage() {
                 <Button type="submit" className="w-full" disabled={loading}>
                   {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}Entrar
                 </Button>
+                <div className="text-right">
+                  <Link
+                    to="/recuperar"
+                    className="text-xs text-muted-foreground underline underline-offset-4 hover:text-foreground"
+                  >
+                    Esqueci minha senha
+                  </Link>
+                </div>
               </form>
             </TabsContent>
             <TabsContent value="signup" className="mt-4">
