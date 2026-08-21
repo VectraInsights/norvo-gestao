@@ -12,6 +12,7 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
 import { Route as RedefinirRouteImport } from './routes/redefinir'
 import { Route as RecuperarRouteImport } from './routes/recuperar'
+import { Route as OnboardingRouteImport } from './routes/onboarding'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
 import { Route as IndexRouteImport } from './routes/index'
@@ -63,6 +64,11 @@ const RedefinirRoute = RedefinirRouteImport.update({
 const RecuperarRoute = RecuperarRouteImport.update({
   id: '/recuperar',
   path: '/recuperar',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const OnboardingRoute = OnboardingRouteImport.update({
+  id: '/onboarding',
+  path: '/onboarding',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AuthRoute = AuthRouteImport.update({
@@ -283,6 +289,7 @@ const AuthenticatedConfiguracoesEmpresasRoute =
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
+  '/onboarding': typeof OnboardingRoute
   '/recuperar': typeof RecuperarRoute
   '/redefinir': typeof RedefinirRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
@@ -324,6 +331,7 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
+  '/onboarding': typeof OnboardingRoute
   '/recuperar': typeof RecuperarRoute
   '/redefinir': typeof RedefinirRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
@@ -367,6 +375,7 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/_authenticated': typeof AuthenticatedRouteRouteWithChildren
   '/auth': typeof AuthRoute
+  '/onboarding': typeof OnboardingRoute
   '/recuperar': typeof RecuperarRoute
   '/redefinir': typeof RedefinirRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
@@ -410,6 +419,7 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/auth'
+    | '/onboarding'
     | '/recuperar'
     | '/redefinir'
     | '/sitemap.xml'
@@ -451,6 +461,7 @@ export interface FileRouteTypes {
   to:
     | '/'
     | '/auth'
+    | '/onboarding'
     | '/recuperar'
     | '/redefinir'
     | '/sitemap.xml'
@@ -493,6 +504,7 @@ export interface FileRouteTypes {
     | '/'
     | '/_authenticated'
     | '/auth'
+    | '/onboarding'
     | '/recuperar'
     | '/redefinir'
     | '/sitemap.xml'
@@ -536,6 +548,7 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AuthenticatedRouteRoute: typeof AuthenticatedRouteRouteWithChildren
   AuthRoute: typeof AuthRoute
+  OnboardingRoute: typeof OnboardingRoute
   RecuperarRoute: typeof RecuperarRoute
   RedefinirRoute: typeof RedefinirRoute
   SitemapDotxmlRoute: typeof SitemapDotxmlRoute
@@ -562,6 +575,13 @@ declare module '@tanstack/react-router' {
       path: '/recuperar'
       fullPath: '/recuperar'
       preLoaderRoute: typeof RecuperarRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/onboarding': {
+      id: '/onboarding'
+      path: '/onboarding'
+      fullPath: '/onboarding'
+      preLoaderRoute: typeof OnboardingRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/auth': {
@@ -913,6 +933,7 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AuthenticatedRouteRoute: AuthenticatedRouteRouteWithChildren,
   AuthRoute: AuthRoute,
+  OnboardingRoute: OnboardingRoute,
   RecuperarRoute: RecuperarRoute,
   RedefinirRoute: RedefinirRoute,
   SitemapDotxmlRoute: SitemapDotxmlRoute,

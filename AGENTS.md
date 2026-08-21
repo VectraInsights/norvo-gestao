@@ -60,6 +60,14 @@ sobrescreve fora do sandbox deles (ex.: `node-server`, `vercel`).
 - Confirmação de email está ATIVA no Supabase e o SMTP padrão tem limite baixo — emails de
   confirmação podem não chegar. Recomendado desativar "Confirm email" ou configurar SMTP próprio.
 
+## Onboarding
+
+- Usuário sem nenhuma empresa visível é levado a `/onboarding` (guarda `RequireEmpresa` em
+  `_authenticated/route.tsx`, query `["empresas"]`). A rota `/onboarding` fica FORA do layout
+  `_authenticated` e redireciona ao `/dashboard` se o usuário já tem empresa — não criar loop.
+- A criação de empresa depende do trigger/RLS existentes (`created_by = auth.uid()`; o criador
+  vira owner automaticamente via trigger no banco).
+
 ## Armadilhas conhecidas
 
 - `src/integrations/supabase/client.server.ts` exige `SUPABASE_SERVICE_ROLE_KEY` (só existe na

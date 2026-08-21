@@ -42,6 +42,16 @@ Registro condensado da evolução do Norvo Gestão fora do editor Lovable.
    - Emails de reset usam o SMTP padrão do Supabase (limite baixo) — configurar SMTP próprio
      no painel se o volume incomodar.
 
+9. **Onboarding da 1ª empresa** — fluxo de primeiro acesso implementado:
+   - Nova rota `/onboarding` (`src/routes/onboarding.tsx`, ssr:false): tela "Bem-vindo" com
+     formulário curto (CNPJ opcional com busca na Receita via BrasilAPI, nome fantasia obrigatório,
+     razão social/email/telefone opcionais). Cria a empresa, seleciona automaticamente no
+     switcher (`setSelectedEmpresaId`) e leva ao `/dashboard`.
+   - Guarda `RequireEmpresa` em `_authenticated/route.tsx`: enquanto a query `["empresas"]`
+     carrega mostra spinner; se o usuário não tem nenhuma empresa visível, redireciona para
+     `/onboarding`. A própria rota `/onboarding` redireciona de volta ao dashboard se o usuário
+     já possui empresa (sem loop: ela fica fora do layout `_authenticated`).
+
 ## Pendências conhecidas
 
 - `SUPABASE_SERVICE_ROLE_KEY` do novo projeto ainda não está configurada em lugar nenhum;
