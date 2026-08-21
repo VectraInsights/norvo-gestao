@@ -20,6 +20,10 @@ dist-ssr
 .wrangler/
 .dev.vars
 
+# Desktop (Electron)
+desktop/release
+desktop/node_modules
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json

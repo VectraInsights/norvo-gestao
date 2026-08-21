@@ -1,0 +1,40 @@
+{
+  "name": "norvo-gestao-desktop",
+  "productName": "Norvo Gestão",
+  "version": "1.0.0",
+  "private": true,
+  "main": "main.js",
+  "author": "Norvo",
+  "description": "ERP Norvo - gestão financeira, vendas, estoque e fiscal",
+  "scripts": {
+    "dist": "electron-builder --win portable"
+  },
+  "devDependencies": {
+    "electron": "^39.8.6",
+    "electron-builder": "^26.15.3"
+  },
+  "build": {
+    "appId": "com.norvo.gestao",
+    "productName": "Norvo Gestão",
+    "directories": {
+      "output": "release"
+    },
+    "files": [
+      "main.js",
+      "package.json"
+    ],
+    "win": {
+      "target": [
+        {
+          "target": "portable",
+          "arch": [
+            "x64"
+          ]
+        }
+      ]
+    },
+    "portable": {
+      "artifactName": "NorvoGestao-Portable.exe"
+    }
+  }
+}

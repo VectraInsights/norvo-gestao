@@ -14,6 +14,28 @@ export const Route = createFileRoute("/auth")({
   component: AuthPage,
 });
 
+const isDesktop =
+  typeof window !== "undefined" &&
+  ["127.0.0.1", "localhost"].includes(window.location.hostname);
+
+function friendlyAuthError(error: { message?: string } | null | undefined): string {
+  const msg = error?.message ?? "";
+  const m = msg.toLowerCase();
+  if (m.includes("weak_password") || m.includes("pwned"))
+    return "Senha fraca ou já exposta em vazamentos conhecidos. Use uma senha mais forte: 12+ caracteres misturando letras maiúsculas, minúsculas, números e símbolos.";
+  if (m.includes("rate_limit") || m.includes("too many") || m.includes("over_"))
+    return "Muitas tentativas em pouco tempo. Aguarde alguns minutos e tente novamente.";
+  if (m.includes("already exists") || m.includes("already registered"))
+    return "Já existe uma conta com este email. Tente entrar ou recuperar a senha.";
+  if (m.includes("invalid login credentials"))
+    return "Email ou senha incorretos.";
+  if (m.includes("email not confirmed"))
+    return "Confirme seu email antes de entrar. Verifique a caixa de entrada e a pasta de spam/lixo eletrônico.";
+  if (m.includes("signup") && (m.includes("not allowed") || m.includes("disabled")))
+    return "Novos cadastros estão desativados neste projeto.";
+  return msg || "Ocorreu um erro inesperado. Tente novamente.";
+}
+
 function AuthPage() {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
@@ -28,6 +50,13 @@ function AuthPage() {
   }, [navigate]);
 
   const handleGoogle = async () => {
+    if (isDesktop) {
+      toast.info(
+        "Entrar com Google está disponível apenas na versão web do Norvo. Neste aplicativo, use email e senha.",
+        { duration: 8000 }
+      );
+      return;
+    }
     setLoading(true);
     const res = await lovable.auth.signInWithOAuth("google", { redirect_uri: window.location.origin + "/auth" });
     if (res.error) { toast.error("Falha ao entrar com Google"); setLoading(false); return; }
@@ -40,7 +69,7 @@ function AuthPage() {
     setLoading(true);
     const { error } = await supabase.auth.signInWithPassword({ email, password });
     setLoading(false);
-    if (error) return toast.error(error.message);
+    if (error) return toast.error(friendlyAuthError(error));
     navigate({ to: "/dashboard", replace: true });
   };
 
@@ -52,7 +81,7 @@ function AuthPage() {
       options: { emailRedirectTo: window.location.origin + "/dashboard", data: { full_name: nome } },
     });
     setLoading(false);
-    if (error) return toast.error(error.message);
+    if (error) return toast.error(friendlyAuthError(error));
     toast.success("Conta criada! Verifique seu email para confirmar.");
   };
 
