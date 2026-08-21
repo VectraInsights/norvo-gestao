@@ -1,7 +1,6 @@
 import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { lovable } from "@/integrations/lovable/index";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -58,10 +57,17 @@ function AuthPage() {
       return;
     }
     setLoading(true);
-    const res = await lovable.auth.signInWithOAuth("google", { redirect_uri: window.location.origin + "/auth" });
-    if (res.error) { toast.error("Falha ao entrar com Google"); setLoading(false); return; }
-    if (res.redirected) return;
-    navigate({ to: "/dashboard", replace: true });
+    const { error } = await supabase.auth.signInWithOAuth({
+      provider: "google",
+      options: {
+        redirectTo: window.location.origin + "/auth",
+        queryParams: { prompt: "select_account" },
+      },
+    });
+    if (error) {
+      setLoading(false);
+      toast.error(friendlyAuthError(error));
+    }
   };
 
   const handleLogin = async (e: React.FormEvent) => {
