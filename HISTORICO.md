@@ -34,6 +34,14 @@ Registro condensado da evolução do Norvo Gestão fora do editor Lovable.
 7. **Estado final** — login por email com sessão imediata (Confirm email DESATIVADO no painel),
    login Google funcional no site Vercel; exe carrega `https://norvo-gestao.vercel.app`.
 
+8. **Recuperação de senha** (commit 630a293) — fluxo completo implementado:
+   - Link "Esqueci minha senha" na tela de login → rota `/recuperar` (envia email via
+     `resetPasswordForEmail` com redirectTo `/redefinir`) → rota `/redefinir` (define nova senha,
+     detecta o evento PASSWORD_RECOVERY do supabase-js).
+   - Requer `https://norvo-gestao.vercel.app/redefinir` nas Redirect URLs do Supabase.
+   - Emails de reset usam o SMTP padrão do Supabase (limite baixo) — configurar SMTP próprio
+     no painel se o volume incomodar.
+
 ## Pendências conhecidas
 
 - `SUPABASE_SERVICE_ROLE_KEY` do novo projeto ainda não está configurada em lugar nenhum;
