@@ -1,7 +1,7 @@
 const { app, BrowserWindow, shell } = require("electron");
 const path = require("path");
 
-const APP_URL = "https://norvo-gestao.lovable.app";
+const APP_URL = "https://norvo-gestao.vercel.app";
 let mainWindow = null;
 
 function createWindow() {

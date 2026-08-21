@@ -38,8 +38,11 @@ sobrescreve fora do sandbox deles (ex.: `node-server`, `vercel`).
 ## Deploy e distribuição
 
 - **Vercel**: conectada ao GitHub (`VectraInsights/norvo-gestao`, branch main). Todo push em main publica sozinho.
-- **Site legado**: https://norvo-gestao.lovable.app (publicado pela Lovable, sincroniza com este repo).
-- **Exe Windows**: wrapper Electron em `desktop/`. Carrega a URL publicada numa janela própria.
+- **Site principal**: https://norvo-gestao.vercel.app (Vercel, auto-deploy do GitHub main).
+- **Site legado**: https://norvo-gestao.lovable.app (publicado pela Lovable; pode ficar desatualizado).
+- **Backend**: projeto próprio `lfxhimtbuazezjkjlddj` (us-east-1), dono é o usuário. Google provider
+  configurado lá. O antigo projeto Lovable (`tuylnxtnvwirqtgshmtu`) está abandonado.
+- **Exe Windows**: wrapper Electron em `desktop/`. Carrega a URL da VERCEL numa janela própria.
   Rebuild: `cd desktop && npm install && npx electron-builder --win nsis` → saída em `desktop/release/`.
   Instalador portátil (target "portable") travava na extração nesta máquina — usar NSIS.
 - Repo é **privado**: pull/push exigem PAT fine-grained com Contents Read/Write no repo
