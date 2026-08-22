@@ -20,7 +20,8 @@ Dono do projeto: VectraInsights. Conversas com o agente podem ser em português.
 - TanStack Start (SSR) + Vite 8 + React 19 + TypeScript
 - Estilização: Tailwind CSS 4 (`@tailwindcss/vite`) + shadcn/ui (pasta `src/components/ui`)
 - Rotas: file-based em `src/routes` (TanStack Router; `routeTree.gen.ts` é gerado, não editar)
-- Backend: Supabase (auth, Postgres, storage). Credenciais públicas em `.env`
+- Backend: Supabase (auth, Postgres, storage). Credenciais em `.env` LOCAL (não versionado;
+  ver `.env.example`). Na Vercel as env vars são configuradas no dashboard do projeto.
 - Build via plugin `@lovable.dev/vite-tanstack-config` (não adicionar plugins duplicados manualmente)
 
 ## Comandos
@@ -70,8 +71,9 @@ sobrescreve fora do sandbox deles (ex.: `node-server`, `vercel`).
 
 ## Armadilhas conhecidas
 
-- `src/integrations/supabase/client.server.ts` exige `SUPABASE_SERVICE_ROLE_KEY` (só existe na
-  nuvem da Lovable). Se algum server function usar admin client, vai quebrar fora da Lovable.
+- `src/integrations/supabase/client.server.ts` exige `SUPABASE_SERVICE_ROLE_KEY` (secret
+  `sb_secret_...`). Configurada no `.env` local; na Vercel deve existir como env var.
+  Se algum server function usar admin client sem ela, vai quebrar em runtime.
 - `routeTree.gen.ts` e arquivos em `src/integrations/lovable` são gerenciados por ferramentas.
 - Ao testar o exe localmente: matar SEMPRE a árvore inteira de processos (o app usa
   single-instance lock; órfãos seguram o lock e fazem novas instâncias saírem em silêncio).
