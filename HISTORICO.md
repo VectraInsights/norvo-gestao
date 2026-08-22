@@ -82,6 +82,15 @@ Registro condensado da evolução do Norvo Gestão fora do editor Lovable.
     envDefine de VITE_*). Deps `@lovable.dev/*` eliminadas; `bun.lock` deletado (apontava para
     registry privado da Lovable). Validado localmente: build `NITRO_PRESET=node-server` OK e
     smoke test HTTP 200 nas rotas `/` e `/auth`.
+16. **Módulo Férias (DP/RH)** — migration `20260822120000`: tabelas `ferias_periodos` (aquisitivo
+    12m + limite de concessão 18m calculados das datas) e `ferias_concessoes` (gozo, abono
+    pecuniário ≤10 dias, adiantar 13º, `dias` gerado no banco), com RLS `is_empresa_member`,
+    grants e triggers no padrão do projeto. Aplicada via Management API. Rota `/rh/ferias`
+    seguindo o padrão visual das demais páginas: alertas de concessão vencendo (60 dias) e
+    vencida (risco de pagamento em dobro, CLT art. 137), validação de saldo, gozo mínimo de
+    5 dias e venda máxima de 10. Menu lateral + Ctrl+K atualizados.
+    **Fora de escopo por enquanto (conforme decisão de produto):** integração eSocial,
+    cálculo automático de verbas rescisórias, banco de horas/ponto.
 
 ## Regras de segurança
 

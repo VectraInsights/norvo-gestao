@@ -1,9 +1,33 @@
 import {
-  LayoutDashboard, ReceiptText, Boxes, FileText,
-  Wallet, TrendingUp, Banknote, ShoppingCart, UserSquare2, Package,
-  Kanban, Briefcase, Wrench, UsersRound, ListTree, FolderCog,
-  ArrowLeftRight, Link2, PieChart, BarChart3, Percent, HandCoins,
-  FileDown, Handshake, FileSearch, Settings2, FileOutput, FileInput
+  LayoutDashboard,
+  ReceiptText,
+  Boxes,
+  FileText,
+  Wallet,
+  TrendingUp,
+  Banknote,
+  ShoppingCart,
+  UserSquare2,
+  Package,
+  Kanban,
+  Briefcase,
+  Wrench,
+  UsersRound,
+  ListTree,
+  FolderCog,
+  ArrowLeftRight,
+  Link2,
+  PieChart,
+  BarChart3,
+  Percent,
+  HandCoins,
+  FileDown,
+  Handshake,
+  FileSearch,
+  Settings2,
+  FileOutput,
+  FileInput,
+  Sun,
 } from "lucide-react";
 
 export type NavItem = { to: string; label: string; icon: typeof LayoutDashboard };
@@ -13,53 +37,83 @@ const byLabel = (a: { label: string }, b: { label: string }) =>
   a.label.localeCompare(b.label, "pt-BR", { sensitivity: "base" });
 
 const RAW_NAV: NavGroup[] = [
-  { label: "Visão geral", icon: LayoutDashboard, items: [
-    { to: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
-  ]},
-  { label: "Financeiro", icon: Wallet, items: [
-    { to: "/financeiro/receber", label: "Contas a receber", icon: TrendingUp },
-    { to: "/financeiro/pagar",   label: "Contas a pagar",   icon: ReceiptText },
-    { to: "/financeiro/fluxo",   label: "Fluxo de caixa",   icon: Wallet },
-    { to: "/financeiro/contas",  label: "Contas financeiras", icon: Banknote },
-    { to: "/financeiro/conciliacao", label: "Conciliação bancária", icon: Link2 },
-    { to: "/financeiro/transferencias", label: "Transferências entre contas", icon: ArrowLeftRight },
-    { to: "/financeiro/emprestimos", label: "Empréstimos e financiamentos", icon: Banknote },
-    { to: "/financeiro/dre", label: "DRE / Resultado", icon: PieChart },
-    { to: "/financeiro/relatorios", label: "Relatórios financeiros", icon: BarChart3 },
-    { to: "/financeiro/extrato", label: "Extrato de movimentações", icon: ListTree },
-    { to: "/financeiro/cadastros", label: "Cadastros", icon: FolderCog },
-  ]},
-  { label: "Vendas & CRM", icon: ShoppingCart, items: [
-    { to: "/vendas/crm",      label: "Funil (CRM)", icon: Kanban },
-    { to: "/vendas/clientes", label: "Clientes",  icon: UserSquare2 },
-    { to: "/vendas/vendas",   label: "Vendas",    icon: ShoppingCart },
-    { to: "/vendas/pedidos",  label: "Orçamentos", icon: ShoppingCart },
-  ]},
-  { label: "Estoque", icon: Boxes, items: [
-    { to: "/estoque/produtos", label: "Produtos", icon: Package },
-    { to: "/estoque/fornecedores", label: "Fornecedores", icon: UserSquare2 },
-    { to: "/estoque/compras", label: "Ordens de compra", icon: ShoppingCart },
-    { to: "/estoque/movimentacoes", label: "Movimentações", icon: Boxes },
-  ]},
-  { label: "Projetos", icon: Briefcase, items: [
-    { to: "/projetos/projetos", label: "Projetos", icon: Briefcase },
-    { to: "/projetos/os", label: "Ordens de serviço", icon: Wrench },
-  ]},
-  { label: "DP / RH", icon: UsersRound, items: [
-    { to: "/rh/colaboradores", label: "Colaboradores", icon: UsersRound },
-    { to: "/rh/folha", label: "Folha de pagamento", icon: Wallet },
-    { to: "/rh/comissoes", label: "Comissões", icon: Percent },
-    { to: "/rh/adiantamentos", label: "Adiantamentos", icon: HandCoins },
-  ]},
-  { label: "Fiscal", icon: FileText, items: [
-    { to: "/fiscal/emitidas", label: "Notas Emitidas", icon: FileOutput },
-    { to: "/fiscal/recebidas", label: "Notas Recebidas", icon: FileInput },
-    { to: "/fiscal/relatorios", label: "Relatórios e Dashboards", icon: BarChart3 },
-    { to: "/fiscal/contador", label: "Painel do Contador", icon: Handshake },
-    { to: "/fiscal/configuracoes", label: "Configurações Fiscais", icon: Settings2 },
-  ]},
+  {
+    label: "Visão geral",
+    icon: LayoutDashboard,
+    items: [{ to: "/dashboard", label: "Dashboard", icon: LayoutDashboard }],
+  },
+  {
+    label: "Financeiro",
+    icon: Wallet,
+    items: [
+      { to: "/financeiro/receber", label: "Contas a receber", icon: TrendingUp },
+      { to: "/financeiro/pagar", label: "Contas a pagar", icon: ReceiptText },
+      { to: "/financeiro/fluxo", label: "Fluxo de caixa", icon: Wallet },
+      { to: "/financeiro/contas", label: "Contas financeiras", icon: Banknote },
+      { to: "/financeiro/conciliacao", label: "Conciliação bancária", icon: Link2 },
+      {
+        to: "/financeiro/transferencias",
+        label: "Transferências entre contas",
+        icon: ArrowLeftRight,
+      },
+      { to: "/financeiro/emprestimos", label: "Empréstimos e financiamentos", icon: Banknote },
+      { to: "/financeiro/dre", label: "DRE / Resultado", icon: PieChart },
+      { to: "/financeiro/relatorios", label: "Relatórios financeiros", icon: BarChart3 },
+      { to: "/financeiro/extrato", label: "Extrato de movimentações", icon: ListTree },
+      { to: "/financeiro/cadastros", label: "Cadastros", icon: FolderCog },
+    ],
+  },
+  {
+    label: "Vendas & CRM",
+    icon: ShoppingCart,
+    items: [
+      { to: "/vendas/crm", label: "Funil (CRM)", icon: Kanban },
+      { to: "/vendas/clientes", label: "Clientes", icon: UserSquare2 },
+      { to: "/vendas/vendas", label: "Vendas", icon: ShoppingCart },
+      { to: "/vendas/pedidos", label: "Orçamentos", icon: ShoppingCart },
+    ],
+  },
+  {
+    label: "Estoque",
+    icon: Boxes,
+    items: [
+      { to: "/estoque/produtos", label: "Produtos", icon: Package },
+      { to: "/estoque/fornecedores", label: "Fornecedores", icon: UserSquare2 },
+      { to: "/estoque/compras", label: "Ordens de compra", icon: ShoppingCart },
+      { to: "/estoque/movimentacoes", label: "Movimentações", icon: Boxes },
+    ],
+  },
+  {
+    label: "Projetos",
+    icon: Briefcase,
+    items: [
+      { to: "/projetos/projetos", label: "Projetos", icon: Briefcase },
+      { to: "/projetos/os", label: "Ordens de serviço", icon: Wrench },
+    ],
+  },
+  {
+    label: "DP / RH",
+    icon: UsersRound,
+    items: [
+      { to: "/rh/colaboradores", label: "Colaboradores", icon: UsersRound },
+      { to: "/rh/folha", label: "Folha de pagamento", icon: Wallet },
+      { to: "/rh/ferias", label: "Férias", icon: Sun },
+      { to: "/rh/comissoes", label: "Comissões", icon: Percent },
+      { to: "/rh/adiantamentos", label: "Adiantamentos", icon: HandCoins },
+    ],
+  },
+  {
+    label: "Fiscal",
+    icon: FileText,
+    items: [
+      { to: "/fiscal/emitidas", label: "Notas Emitidas", icon: FileOutput },
+      { to: "/fiscal/recebidas", label: "Notas Recebidas", icon: FileInput },
+      { to: "/fiscal/relatorios", label: "Relatórios e Dashboards", icon: BarChart3 },
+      { to: "/fiscal/contador", label: "Painel do Contador", icon: Handshake },
+      { to: "/fiscal/configuracoes", label: "Configurações Fiscais", icon: Settings2 },
+    ],
+  },
 ];
-
 
 export const OVERVIEW_LABEL = "Visão geral";
 export const FAVORITES_LABEL = "Favoritos";

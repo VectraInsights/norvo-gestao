@@ -23,6 +23,7 @@ import { Route as AuthenticatedVendasPedidosRouteImport } from './routes/_authen
 import { Route as AuthenticatedVendasCrmRouteImport } from './routes/_authenticated/vendas.crm'
 import { Route as AuthenticatedVendasClientesRouteImport } from './routes/_authenticated/vendas.clientes'
 import { Route as AuthenticatedRhFolhaRouteImport } from './routes/_authenticated/rh.folha'
+import { Route as AuthenticatedRhFeriasRouteImport } from './routes/_authenticated/rh.ferias'
 import { Route as AuthenticatedRhComissoesRouteImport } from './routes/_authenticated/rh.comissoes'
 import { Route as AuthenticatedRhColaboradoresRouteImport } from './routes/_authenticated/rh.colaboradores'
 import { Route as AuthenticatedRhAdiantamentosRouteImport } from './routes/_authenticated/rh.adiantamentos'
@@ -122,6 +123,11 @@ const AuthenticatedVendasClientesRoute =
 const AuthenticatedRhFolhaRoute = AuthenticatedRhFolhaRouteImport.update({
   id: '/rh/folha',
   path: '/rh/folha',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedRhFeriasRoute = AuthenticatedRhFeriasRouteImport.update({
+  id: '/rh/ferias',
+  path: '/rh/ferias',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
 const AuthenticatedRhComissoesRoute =
@@ -321,6 +327,7 @@ export interface FileRoutesByFullPath {
   '/rh/adiantamentos': typeof AuthenticatedRhAdiantamentosRoute
   '/rh/colaboradores': typeof AuthenticatedRhColaboradoresRoute
   '/rh/comissoes': typeof AuthenticatedRhComissoesRoute
+  '/rh/ferias': typeof AuthenticatedRhFeriasRoute
   '/rh/folha': typeof AuthenticatedRhFolhaRoute
   '/vendas/clientes': typeof AuthenticatedVendasClientesRoute
   '/vendas/crm': typeof AuthenticatedVendasCrmRoute
@@ -363,6 +370,7 @@ export interface FileRoutesByTo {
   '/rh/adiantamentos': typeof AuthenticatedRhAdiantamentosRoute
   '/rh/colaboradores': typeof AuthenticatedRhColaboradoresRoute
   '/rh/comissoes': typeof AuthenticatedRhComissoesRoute
+  '/rh/ferias': typeof AuthenticatedRhFeriasRoute
   '/rh/folha': typeof AuthenticatedRhFolhaRoute
   '/vendas/clientes': typeof AuthenticatedVendasClientesRoute
   '/vendas/crm': typeof AuthenticatedVendasCrmRoute
@@ -407,6 +415,7 @@ export interface FileRoutesById {
   '/_authenticated/rh/adiantamentos': typeof AuthenticatedRhAdiantamentosRoute
   '/_authenticated/rh/colaboradores': typeof AuthenticatedRhColaboradoresRoute
   '/_authenticated/rh/comissoes': typeof AuthenticatedRhComissoesRoute
+  '/_authenticated/rh/ferias': typeof AuthenticatedRhFeriasRoute
   '/_authenticated/rh/folha': typeof AuthenticatedRhFolhaRoute
   '/_authenticated/vendas/clientes': typeof AuthenticatedVendasClientesRoute
   '/_authenticated/vendas/crm': typeof AuthenticatedVendasCrmRoute
@@ -451,6 +460,7 @@ export interface FileRouteTypes {
     | '/rh/adiantamentos'
     | '/rh/colaboradores'
     | '/rh/comissoes'
+    | '/rh/ferias'
     | '/rh/folha'
     | '/vendas/clientes'
     | '/vendas/crm'
@@ -493,6 +503,7 @@ export interface FileRouteTypes {
     | '/rh/adiantamentos'
     | '/rh/colaboradores'
     | '/rh/comissoes'
+    | '/rh/ferias'
     | '/rh/folha'
     | '/vendas/clientes'
     | '/vendas/crm'
@@ -536,6 +547,7 @@ export interface FileRouteTypes {
     | '/_authenticated/rh/adiantamentos'
     | '/_authenticated/rh/colaboradores'
     | '/_authenticated/rh/comissoes'
+    | '/_authenticated/rh/ferias'
     | '/_authenticated/rh/folha'
     | '/_authenticated/vendas/clientes'
     | '/_authenticated/vendas/crm'
@@ -652,6 +664,13 @@ declare module '@tanstack/react-router' {
       path: '/rh/folha'
       fullPath: '/rh/folha'
       preLoaderRoute: typeof AuthenticatedRhFolhaRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/rh/ferias': {
+      id: '/_authenticated/rh/ferias'
+      path: '/rh/ferias'
+      fullPath: '/rh/ferias'
+      preLoaderRoute: typeof AuthenticatedRhFeriasRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/rh/comissoes': {
@@ -875,6 +894,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedRhAdiantamentosRoute: typeof AuthenticatedRhAdiantamentosRoute
   AuthenticatedRhColaboradoresRoute: typeof AuthenticatedRhColaboradoresRoute
   AuthenticatedRhComissoesRoute: typeof AuthenticatedRhComissoesRoute
+  AuthenticatedRhFeriasRoute: typeof AuthenticatedRhFeriasRoute
   AuthenticatedRhFolhaRoute: typeof AuthenticatedRhFolhaRoute
   AuthenticatedVendasClientesRoute: typeof AuthenticatedVendasClientesRoute
   AuthenticatedVendasCrmRoute: typeof AuthenticatedVendasCrmRoute
@@ -918,6 +938,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedRhAdiantamentosRoute: AuthenticatedRhAdiantamentosRoute,
   AuthenticatedRhColaboradoresRoute: AuthenticatedRhColaboradoresRoute,
   AuthenticatedRhComissoesRoute: AuthenticatedRhComissoesRoute,
+  AuthenticatedRhFeriasRoute: AuthenticatedRhFeriasRoute,
   AuthenticatedRhFolhaRoute: AuthenticatedRhFolhaRoute,
   AuthenticatedVendasClientesRoute: AuthenticatedVendasClientesRoute,
   AuthenticatedVendasCrmRoute: AuthenticatedVendasCrmRoute,

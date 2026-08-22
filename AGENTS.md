@@ -69,5 +69,8 @@ sobrescrito pela env `NITRO_PRESET` (ex.: `node-server`, `vercel`).
 - `routeTree.gen.ts` é gerado pelo TanStack Router (não editar).
 - Ao testar o exe localmente: matar SEMPRE a árvore inteira de processos (o app usa
   single-instance lock; órfãos seguram o lock e fazem novas instâncias saírem em silêncio).
+- Tabelas criadas após o export do `types.ts` (ex.: `ferias_periodos`, `ferias_concessoes`) não
+  constam no tipo `Database`. Padrão adotado nas páginas de RH: `supabase.from("tabela" as never)`
+  + casts `any` com `eslint-disable @typescript-eslint/no-explicit-any` no topo do arquivo.
 - Commits devem usar o autor `vectrainsights@users.noreply.github.com` (config local do clone);
   outro email faz a Vercel Hobby bloquear o deploy.
