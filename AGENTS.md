@@ -77,5 +77,10 @@ sobrescrito pela env `NITRO_PRESET` (ex.: `node-server`, `vercel`).
   funções SECURITY DEFINER no projeto Supabase, SEMPRE conceder
   `GRANT EXECUTE ON FUNCTION ... TO authenticated;` — sem isso o erro em runtime é
   `permission denied for function ...` (já aconteceu; fix na migration `20260822120100`).
+- Férias NÃO tem tabela de períodos: ciclos aquisitivos são calculados no front a partir de
+  `colaboradores.data_admissao` (12m + 6m, CLT art. 134). `ferias_concessoes.periodo_inicio`
+  guarda o início do ciclo e tem CHECK `periodo_inicio < data_inicio_gozo`. Direito fixo 30d.
+- `colaboradores.telefone` pode conter vários números separados por " / " (UI multi-input).
+  Obrigatoriedade (nome/CPF/cargo/salário/admissão/telefone) é validada no app, não no banco.
 - Commits devem usar o autor `vectrainsights@users.noreply.github.com` (config local do clone);
   outro email faz a Vercel Hobby bloquear o deploy.

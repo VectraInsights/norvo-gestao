@@ -95,6 +95,25 @@ Registro condensado da evolução do Norvo Gestão fora do editor Lovable.
     (não array) — corrigido acesso que deixava o nome em branco na tabela; adicionada edição
     do período aquisitivo (reabre o diálogo preenchido; colaborador fica travado, datas
     recalculam fim/limite, direito não pode ficar abaixo do já utilizado).
+18. **Redesign Férias: controle automático** — a pedido do dono ("não é mais fácil mostrar
+    todos os trabalhadores com situação de férias?"), os períodos aquisitivos passaram a ser
+    DERIVADOS da `data_admissao` (ciclos de 12m + 6m para conceder, CLT art. 134). A tabela
+    manual `ferias_periodos` foi REMOVIDA (migration `20260822120200`: 1 registro de teste,
+    0 concessões na época) e `ferias_concessoes` passou a identificar o ciclo pela coluna
+    `periodo_inicio` (com CHECK `periodo_inicio < data_inicio_gozo`). A página `/rh/ferias`
+    agora lista um colaborador por linha: admissão, períodos em aberto, saldo total,
+    "conceder até" (prazo mais próximo) e situação (Vencida / vence em 60d / Em dia /
+    Sem data de admissão), com banners de alerta. Conceder abre diálogo com escolha do ciclo
+    aberto, datas de gozo (mín. 5d, após fim do ciclo), abono ≤10d e 13º adiantado; concessões
+    existentes listadas com status editável. Direito fixo em 30 dias no MVP (proporcional
+    fica para depois).
+19. **Cadastro de colaboradores endurecido** — obrigatórios: nome, CPF (11 dígitos),
+    cargo, salário >0, data de admissão (insumo das férias automáticas) e ao menos um
+    telefone — múltiplos números permitidos, salvos juntos no campo texto `telefone`
+    separados por " / " (migração para tabela própria quando houver integração WhatsApp/SMS).
+    Campo data de demissão adicionado ao formulário (obrigatório quando status = demitido;
+    coluna já existia). Validações são no app, sem NOT NULL no banco (linha real anterior
+    ficaria inválida).
 17. **Fix RLS "permission denied for function is_empresa_member"** — ao criar o primeiro
     colaborador no projeto novo, todo INSERT/SELECT em tabelas cujas policies usam a versão
     pública da função (colaboradores, comissoes, adiantamentos, emprestimos, folha_pagamento,
