@@ -91,6 +91,13 @@ Registro condensado da evolução do Norvo Gestão fora do editor Lovable.
     5 dias e venda máxima de 10. Menu lateral + Ctrl+K atualizados.
     **Fora de escopo por enquanto (conforme decisão de produto):** integração eSocial,
     cálculo automático de verbas rescisórias, banco de horas/ponto.
+17. **Fix RLS "permission denied for function is_empresa_member"** — ao criar o primeiro
+    colaborador no projeto novo, todo INSERT/SELECT em tabelas cujas policies usam a versão
+    pública da função (colaboradores, comissoes, adiantamentos, emprestimos, folha_pagamento,
+    crm_*, ferias_*) falhava: a função foi recriada com ACL restrita (só postgres/service_role),
+    sem grant para `authenticated` (a versão `private.` sempre teve o grant certo).
+    Corrigido com `GRANT EXECUTE ... TO authenticated` (migration
+    `20260822120100`) e validado simulando o role via `SET ROLE authenticated`.
 
 ## Regras de segurança
 

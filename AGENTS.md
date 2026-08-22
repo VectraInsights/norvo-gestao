@@ -72,5 +72,10 @@ sobrescrito pela env `NITRO_PRESET` (ex.: `node-server`, `vercel`).
 - Tabelas criadas após o export do `types.ts` (ex.: `ferias_periodos`, `ferias_concessoes`) não
   constam no tipo `Database`. Padrão adotado nas páginas de RH: `supabase.from("tabela" as never)`
   + casts `any` com `eslint-disable @typescript-eslint/no-explicit-any` no topo do arquivo.
+- Policies usam duas variantes da mesma função: `private.is_empresa_member` (maioria, criada
+  nas migrações originais) e `public.is_empresa_member` (tabelas RH/CRM/férias). Ao recriar
+  funções SECURITY DEFINER no projeto Supabase, SEMPRE conceder
+  `GRANT EXECUTE ON FUNCTION ... TO authenticated;` — sem isso o erro em runtime é
+  `permission denied for function ...` (já aconteceu; fix na migration `20260822120100`).
 - Commits devem usar o autor `vectrainsights@users.noreply.github.com` (config local do clone);
   outro email faz a Vercel Hobby bloquear o deploy.
