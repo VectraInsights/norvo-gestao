@@ -70,6 +70,18 @@ Registro condensado da evolução do Norvo Gestão fora do editor Lovable.
     abandonado e fora de escopo.
 12. **Commits passaram a usar** `vectrainsights@users.noreply.github.com` como autor — a Vercel
     Hobby bloqueia deploys de commits cujo email não está associado à conta GitHub.
+13. **Incidente de env vars na Vercel** — ao tirar o `.env` do repo, o site quebrou em produção
+    ("Algo saiu do trilho"): as chaves públicas só existiam no arquivo versionado. Corrigido
+    cadastrando as 6 vars no dashboard da Vercel. Lição: TODA env var que o app lê deve existir
+    no painel da Vercel; `.env` local serve só para desenvolvimento.
+14. **"Confirm email" verificado DESATIVADO** — `mailer_autoconfirm: true` confirmado via
+    Management API (22/08/2026); AGENTS.md dizia o contrário e foi corrigido.
+15. **Último resquício da Lovable removido: o plugin de build.** `vite.config.ts` reescrito com
+    config nativa (tailwindcss + tsConfigPaths + tanstackStart com `server.entry = "server"` +
+    nitro `defaultPreset: "cloudflare-module"` + viteReact, alias `@`, dedupe, lightningcss,
+    envDefine de VITE_*). Deps `@lovable.dev/*` eliminadas; `bun.lock` deletado (apontava para
+    registry privado da Lovable). Validado localmente: build `NITRO_PRESET=node-server` OK e
+    smoke test HTTP 200 nas rotas `/` e `/auth`.
 
 ## Regras de segurança
 

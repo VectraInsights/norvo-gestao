@@ -11,21 +11,22 @@ Dono do projeto: VectraInsights. Conversas com o agente podem ser em português.
 - Rotas: file-based em `src/routes` (TanStack Router; `routeTree.gen.ts` é gerado, não editar)
 - Backend: Supabase (auth, Postgres, storage). Credenciais em `.env` LOCAL (não versionado;
   ver `.env.example`). Na Vercel as env vars são configuradas no dashboard do projeto.
-- Build via plugin `@lovable.dev/vite-tanstack-config` (herança da fase Lovable; substituí-lo
-  exige reescrever o pipeline Vite/Nitro — tarefa futura, não fazer sem testar o build)
+- Build: `vite.config.ts` nativo (tailwindcss + tsConfigPaths + tanstackStart + nitro + viteReact).
+  Ordem importa: `tanstackStart` ANTES de `viteReact`. O preset do nitro é controlado pela env
+  `NITRO_PRESET` (padrão do config: `cloudflare-module`).
 
 ## Comandos
 
 ```bash
-npm install                # deps (existe package-lock; bun.lock também existe mas usamos npm)
+npm install                # deps (package-lock; usamos npm — não existe bun.lock)
 npm run dev                # dev server
 NITRO_PRESET=node-server npm run build   # build SSR local -> .output/server/index.mjs
                            # roda com: PORT=xxxx node .output/server/index.mjs
 node .output/server/index.mjs            # precisa das env vars SUPABASE_URL e SUPABASE_PUBLISHABLE_KEY
 ```
 
-O preset padrão do nitro é cloudflare (via plugin Lovable). A env `NITRO_PRESET`
-sobrescreve fora do sandbox deles (ex.: `node-server`, `vercel`).
+O preset do nitro vem do `vite.config.ts` (`defaultPreset: "cloudflare-module"`) e pode ser
+sobrescrito pela env `NITRO_PRESET` (ex.: `node-server`, `vercel`).
 
 ## Deploy e distribuição
 
@@ -48,8 +49,9 @@ sobrescreve fora do sandbox deles (ex.: `node-server`, `vercel`).
   Historicamente passava pelo broker da Lovable (`/~oauth/initiate`), que só existe na hospedagem
   deles. Para funcionar na Vercel/exe, configurar Google provider direto no painel do Supabase
   (Authentication → Providers → Google) e permitir os domínios em Redirect URLs.
-- Confirmação de email está ATIVA no Supabase e o SMTP padrão tem limite baixo — emails de
-  confirmação podem não chegar. Recomendado desativar "Confirm email" ou configurar SMTP próprio.
+- Confirmação de email está DESATIVADA no painel (`mailer_autoconfirm: true`, verificado via
+  Management API em 22/08/2026): login por email cria sessão imediata. O SMTP padrão do
+  Supabase tem limite baixo — configurar SMTP próprio (Resend + domínio) antes de produção.
 
 ## Onboarding
 
