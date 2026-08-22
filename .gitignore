@@ -34,3 +34,6 @@ desktop/node_modules
 *.njsproj
 *.sln
 *.sw?
+
+# Environment (contem secrets - nunca versionar)
+.env
