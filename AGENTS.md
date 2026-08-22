@@ -77,5 +77,5 @@ sobrescreve fora do sandbox deles (ex.: `node-server`, `vercel`).
 - `routeTree.gen.ts` e arquivos em `src/integrations/lovable` são gerenciados por ferramentas.
 - Ao testar o exe localmente: matar SEMPRE a árvore inteira de processos (o app usa
   single-instance lock; órfãos seguram o lock e fazem novas instâncias saírem em silêncio).
-- Existe um usuário de teste criado por diagnóstico (`teste-diagnostico-*@exemplo.com`) que pode
-  ser removido no painel do Supabase.
+- Commits devem usar o autor `vectrainsights@users.noreply.github.com` (config local do clone);
+  outro email faz a Vercel Hobby bloquear o deploy.

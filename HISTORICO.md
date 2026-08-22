@@ -54,10 +54,22 @@ Registro condensado da evolução do Norvo Gestão fora do editor Lovable.
 
 ## Pendências conhecidas
 
-- `SUPABASE_SERVICE_ROLE_KEY` do novo projeto ainda não está configurada em lugar nenhum;
-  features que usem `client.server.ts` (admin) falharão até ser adicionada ao ambiente.
-- Usuários de teste `teste-diagnostico-*@exemplo.com` existem nos dois projetos (podem ser apagados).
+- **SMTP próprio (Resend) adiado de propósito**: para testes o SMTP padrão do Supabase
+  atende. Para produção, registrar domínio (~R$ 40/ano), verificar no Resend e configurar
+  em Authentication → SMTP (host `smtp.resend.com`, porta 465, usuário `resend`,
+  senha = API key). Sem domínio verificado, o Resend só entrega ao próprio email do dono.
 - O site `norvo-gestao.lovable.app` é legado e pode ficar dessincronizado — não usar como referência.
+
+## Registro de manutenção
+
+10. **Service role key configurada** - `.env` saiu do versionamento (gitignore + `.env.example`
+    como modelo); a secret `sb_secret_...` existe no `.env` local e nas env vars da Vercel.
+    Nada no código usa `supabaseAdmin` ainda — configuração preventiva.
+11. **Limpeza de usuários de teste** - apagados via Auth Admin API no projeto atual; restou
+    apenas a conta real do dono (`sptn201169@gmail.com`). O projeto antigo da Lovable está
+    abandonado e fora de escopo.
+12. **Commits passaram a usar** `vectrainsights@users.noreply.github.com` como autor — a Vercel
+    Hobby bloqueia deploys de commits cujo email não está associado à conta GitHub.
 
 ## Regras de segurança
 
