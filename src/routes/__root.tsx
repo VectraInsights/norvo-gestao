@@ -19,7 +19,6 @@ import { useEffect, type ReactNode } from "react";
 import { Toaster } from "@/components/ui/sonner";
 
 import appCss from "../styles.css?url";
-import { reportLovableError } from "../lib/lovable-error-reporting";
 import { supabase } from "@/integrations/supabase/client";
 
 function NotFoundComponent() {
@@ -47,9 +46,6 @@ function NotFoundComponent() {
 function ErrorComponent({ error, reset }: { error: Error; reset: () => void }) {
   console.error(error);
   const router = useRouter();
-  useEffect(() => {
-    reportLovableError(error, { boundary: "tanstack_root_error_component" });
-  }, [error]);
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-background px-4">
@@ -60,7 +56,10 @@ function ErrorComponent({ error, reset }: { error: Error; reset: () => void }) {
         </p>
         <div className="mt-6 flex flex-wrap justify-center gap-2">
           <button
-            onClick={() => { router.invalidate(); reset(); }}
+            onClick={() => {
+              router.invalidate();
+              reset();
+            }}
             className="inline-flex items-center justify-center rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:opacity-90"
           >
             Tentar novamente
@@ -83,16 +82,26 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
       { title: "Norvo — Gestão financeira, vendas, estoque e fiscal" },
-      { name: "description", content: "ERP na nuvem para pequenas e médias empresas brasileiras: financeiro, CRM, estoque e emissão fiscal em um único painel." },
+      {
+        name: "description",
+        content:
+          "ERP na nuvem para pequenas e médias empresas brasileiras: financeiro, CRM, estoque e emissão fiscal em um único painel.",
+      },
       { name: "author", content: "Norvo" },
       { property: "og:title", content: "Norvo — Gestão financeira, vendas, estoque e fiscal" },
-      { property: "og:description", content: "ERP na nuvem para pequenas e médias empresas brasileiras: financeiro, CRM, estoque e emissão fiscal em um único painel." },
+      {
+        property: "og:description",
+        content:
+          "ERP na nuvem para pequenas e médias empresas brasileiras: financeiro, CRM, estoque e emissão fiscal em um único painel.",
+      },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
       { name: "twitter:title", content: "Norvo — Gestão financeira, vendas, estoque e fiscal" },
-      { name: "twitter:description", content: "ERP na nuvem para pequenas e médias empresas brasileiras: financeiro, CRM, estoque e emissão fiscal em um único painel." },
-      { property: "og:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/c48dbefb-c8c5-4862-88e2-96f8ca5733c1/id-preview-2756bd33--b7a3380c-0b3f-4d64-b463-d1afc8dbd4ad.lovable.app-1783079803681.png" },
-      { name: "twitter:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/c48dbefb-c8c5-4862-88e2-96f8ca5733c1/id-preview-2756bd33--b7a3380c-0b3f-4d64-b463-d1afc8dbd4ad.lovable.app-1783079803681.png" },
+      {
+        name: "twitter:description",
+        content:
+          "ERP na nuvem para pequenas e médias empresas brasileiras: financeiro, CRM, estoque e emissão fiscal em um único painel.",
+      },
     ],
     links: [
       { rel: "stylesheet", href: appCss },
@@ -108,7 +117,9 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
 function RootShell({ children }: { children: ReactNode }) {
   return (
     <html lang="pt-BR">
-      <head><HeadContent /></head>
+      <head>
+        <HeadContent />
+      </head>
       <body>
         {children}
         <Scripts />

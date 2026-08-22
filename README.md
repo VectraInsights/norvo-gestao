@@ -1,26 +1,32 @@
-# Norvo
+# Norvo Gestão
 
-CRIE O ESQUELETO DE UM ERP NA NUVEM, COM TODAS AS FUNCIONALIDADES DE OMIE E CONTA AZUL
+ERP na nuvem para pequenas e médias empresas brasileiras: financeiro, CRM, estoque,
+fiscal, RH e projetos em um único painel.
 
-This project was built with [Lovable](https://lovable.dev).
+**Site (produção)**: https://norvo-gestao.vercel.app
+**Desktop**: wrapper Electron Windows (`desktop/`, instalador NSIS)
 
-**Live app**: https://norvo-gestao.lovable.app
+## Stack
 
-## Build with Lovable
+- [TanStack Start](https://tanstack.com/start) (SSR) + Vite + React 19 + TypeScript
+- Tailwind CSS 4 + shadcn/ui
+- Backend: [Supabase](https://supabase.com) (auth, Postgres, storage)
 
-Continue developing this project in the [Lovable editor](https://lovable.dev/projects/b7a3380c-0b3f-4d64-b463-d1afc8dbd4ad).
+## Desenvolvimento local
 
-- **Ship faster**: describe what you want to build and Lovable handles the code.
-- **Stay in sync**: every change made in Lovable is committed straight to this repository.
-- **Full ownership**: this code is yours. Push to `main` on GitHub and your changes sync back into Lovable, ready for your next prompt.
-
-## Development
-
-Prefer working locally? You need Node.js and npm — [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating).
+Requisitos: Node.js LTS + npm.
 
 ```sh
-git clone <this-repository-url>
-cd <repository-name>
-npm i
+git clone https://github.com/VectraInsights/norvo-gestao.git
+cd norvo-gestao
+npm install
+cp .env.example .env   # preencha com as credenciais do projeto Supabase
 npm run dev
 ```
+
+> O `.env` não é versionado. Peça as credenciais ao dono do projeto.
+
+## Documentação interna
+
+- `AGENTS.md` — arquitetura, comandos, deploy e armadilhas conhecidas.
+- `HISTORICO.md` — histórico de decisões do projeto.

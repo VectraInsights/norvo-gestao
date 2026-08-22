@@ -1,14 +1,3 @@
-<!-- LOVABLE:BEGIN -->
-> [!IMPORTANT]
-> This project is connected to [Lovable](https://lovable.dev). Avoid rewriting
-> published git history — force pushing, or rebasing/amending/squashing commits
-> that are already pushed — as it rewrites history on Lovable's side and the
-> user will likely lose their project history.
->
-> Commits you push to the connected branch sync back to Lovable and show up in
-> the editor, so keep the branch in a working state.
-<!-- LOVABLE:END -->
-
 # Norvo Gestão
 
 ERP web (financeiro, vendas, estoque, fiscal, RH, projetos) com backend Supabase.
@@ -22,7 +11,8 @@ Dono do projeto: VectraInsights. Conversas com o agente podem ser em português.
 - Rotas: file-based em `src/routes` (TanStack Router; `routeTree.gen.ts` é gerado, não editar)
 - Backend: Supabase (auth, Postgres, storage). Credenciais em `.env` LOCAL (não versionado;
   ver `.env.example`). Na Vercel as env vars são configuradas no dashboard do projeto.
-- Build via plugin `@lovable.dev/vite-tanstack-config` (não adicionar plugins duplicados manualmente)
+- Build via plugin `@lovable.dev/vite-tanstack-config` (herança da fase Lovable; substituí-lo
+  exige reescrever o pipeline Vite/Nitro — tarefa futura, não fazer sem testar o build)
 
 ## Comandos
 
@@ -74,7 +64,7 @@ sobrescreve fora do sandbox deles (ex.: `node-server`, `vercel`).
 - `src/integrations/supabase/client.server.ts` exige `SUPABASE_SERVICE_ROLE_KEY` (secret
   `sb_secret_...`). Configurada no `.env` local; na Vercel deve existir como env var.
   Se algum server function usar admin client sem ela, vai quebrar em runtime.
-- `routeTree.gen.ts` e arquivos em `src/integrations/lovable` são gerenciados por ferramentas.
+- `routeTree.gen.ts` é gerado pelo TanStack Router (não editar).
 - Ao testar o exe localmente: matar SEMPRE a árvore inteira de processos (o app usa
   single-instance lock; órfãos seguram o lock e fazem novas instâncias saírem em silêncio).
 - Commits devem usar o autor `vectrainsights@users.noreply.github.com` (config local do clone);
