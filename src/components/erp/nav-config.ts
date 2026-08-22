@@ -28,6 +28,7 @@ import {
   FileOutput,
   FileInput,
   Sun,
+  ShieldCheck,
 } from "lucide-react";
 
 export type NavItem = { to: string; label: string; icon: typeof LayoutDashboard };
@@ -112,6 +113,11 @@ const RAW_NAV: NavGroup[] = [
       { to: "/fiscal/contador", label: "Painel do Contador", icon: Handshake },
       { to: "/fiscal/configuracoes", label: "Configurações Fiscais", icon: Settings2 },
     ],
+  },
+  {
+    label: "Acessos",
+    icon: ShieldCheck,
+    items: [{ to: "/configuracoes/usuarios", label: "Usuários e acessos", icon: ShieldCheck }],
   },
 ];
 

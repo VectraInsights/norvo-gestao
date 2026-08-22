@@ -114,6 +114,30 @@ Registro condensado da evolução do Norvo Gestão fora do editor Lovable.
     Campo data de demissão adicionado ao formulário (obrigatório quando status = demitido;
     coluna já existia). Validações são no app, sem NOT NULL no banco (linha real anterior
     ficaria inválida).
+20. **Modelo de acesso em 3 níveis (modo "aluguel"/SaaS)** — decisão do dono: ele é o
+    SUPER ADMIN da plataforma (cria as empresas-cliente/aluguéis); cada empresa pagante tem
+    um ADMIN que cria os usuários do próprio CNPJ com senha padrão e define módulos; membros
+    veem apenas os módulos marcados. Implementação:
+    - Migration `20260822120300`: tabela `super_admins` (sem policies, só service role;
+      helper `private.is_super_admin`), dono inserido; policy de INSERT em `empresas`
+      trocada para exigir super admin (antes qualquer um criava CNPJ);
+      `empresa_users.modulos text[]` (vazio em membro = só Dashboard) + colunas denormalizadas
+      `nome`/`email`.
+    - Server functions (`src/lib/usuarios-api.ts`, createServerFn + service role):
+      `criarUsuarioEmpresaFn` (auth.admin.createUser com email_confirm + insert em
+      empresa_users, com rollback), `resetarSenhaUsuarioFn`, `souSuperAdminFn`. Todas validam
+      que o chamador é super admin ou owner/admin da empresa.
+    - Página `/configuracoes/usuarios`: lista membros, criar acesso (nome/email/senha
+      padrão `Norvo@2026`/papel/módulos), editar permissões (client-side, RLS
+      `empresa_users_manage_admins` autoriza), resetar senha, remover acesso. Owner não é
+      editável.
+    - Filtro de menu/Ctrl+K por permissão (`usePermissoes` + `moduloDaRota`) e bloqueio de
+      página ("Sem acesso a este módulo"). "Alterar senha" no menu Minha conta
+      (`AlterarSenhaDialog`). "+ Nova empresa" visível só ao super admin.
+    - Cadastro público DESABILITADO no Supabase (`disable_signup: true` via Management API):
+      ninguém se auto-registra; todo acesso nasce de convite interno do admin.
+    - Limitações MVP: restrição por módulo é na UI (RLS continua isolando por EMPRESA,
+      não por módulo); super admin não vê empresas onde não é membro (gerenciar via SQL).
 17. **Fix RLS "permission denied for function is_empresa_member"** — ao criar o primeiro
     colaborador no projeto novo, todo INSERT/SELECT em tabelas cujas policies usam a versão
     pública da função (colaboradores, comissoes, adiantamentos, emprestimos, folha_pagamento,

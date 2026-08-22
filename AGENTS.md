@@ -53,6 +53,22 @@ sobrescrito pela env `NITRO_PRESET` (ex.: `node-server`, `vercel`).
   Management API em 22/08/2026): login por email cria sessão imediata. O SMTP padrão do
   Supabase tem limite baixo — configurar SMTP próprio (Resend + domínio) antes de produção.
 
+## Permissões (3 níveis)
+
+- **Super admin da plataforma** (tabela `super_admins`, dono do projeto): único que cria
+  empresas. Verificação server-side em `src/lib/usuarios-api.ts`; client consulta via
+  `souSuperAdminFn` (hook `usePermissoes`).
+- **Admin da empresa** (`empresa_users.role` = owner/admin): gerencia usuários e módulos
+  do próprio CNPJ na página `/configuracoes/usuarios`. RLS `empresa_users_manage_admins`
+  autoriza os updates client-side.
+- **Membro** (role viewer): vê apenas os módulos marcados em `empresa_users.modulos`
+  (array vazio = nenhum; Dashboard sempre visível). Restrição aplicada no menu/Ctrl+K e
+  com tela "Sem acesso" em `app-shell.tsx` via `moduloDaRota()` — NÃO é enforced por RLS.
+- Cadastro público desabilitado (`disable_signup: true`): usuários nascem de
+  `criarUsuarioEmpresaFn` com senha padrão `Norvo@2026`, trocável em "Minha conta".
+- Server functions seguem o padrão: `createServerFn` em arquivo comum (NÃO `.server.ts`),
+  import dinâmico do `client.server` DENTRO do handler, token JWT passado no `data`.
+
 ## Onboarding
 
 - Usuário sem nenhuma empresa visível é levado a `/onboarding` (guarda `RequireEmpresa` em

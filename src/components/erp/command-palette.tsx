@@ -8,6 +8,8 @@ import { Button } from "@/components/ui/button";
 import { Search } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useSelectedEmpresaId } from "@/hooks/use-empresa";
+import { usePermissoes } from "@/hooks/use-permissoes";
+import { moduloDaRota } from "@/lib/permissoes";
 
 const ROUTES: { label: string; to: string; hint?: string }[] = [
   { label: "Dashboard", to: "/dashboard" },
@@ -53,6 +55,12 @@ export function CommandPalette() {
 
   const term = q.trim();
   const enabled = open && !!empresaId && term.length >= 2;
+
+  const { pode, ehAdmin } = usePermissoes();
+  const rotaVisivel = (to: string) => {
+    if (to === "/configuracoes/usuarios") return ehAdmin;
+    return pode(moduloDaRota(to));
+  };
 
   const { data: contatos } = useQuery({
     queryKey: ["cmd-contatos", empresaId, term],
@@ -107,12 +115,16 @@ export function CommandPalette() {
           <CommandEmpty>{term.length < 2 ? "Digite ao menos 2 caracteres." : "Nada encontrado."}</CommandEmpty>
 
           <CommandGroup heading="Páginas">
-            {ROUTES.filter((r) => !term || r.label.toLowerCase().includes(term.toLowerCase())).map((r) => (
-              <CommandItem key={r.to} value={r.label} onSelect={() => go(r.to)}>{r.label}</CommandItem>
-            ))}
+            {ROUTES.filter((r) => rotaVisivel(r.to))
+              .filter((r) => !term || r.label.toLowerCase().includes(term.toLowerCase()))
+              .map((r) => (
+                <CommandItem key={r.to} value={r.label} onSelect={() => go(r.to)}>
+                  {r.label}
+                </CommandItem>
+              ))}
           </CommandGroup>
 
-          {contatos && contatos.length > 0 && (
+          {contatos && contatos.length > 0 && (pode("vendas") || pode("estoque")) && (
             <>
               <CommandSeparator />
               <CommandGroup heading="Clientes / Fornecedores">
@@ -127,7 +139,7 @@ export function CommandPalette() {
             </>
           )}
 
-          {produtos && produtos.length > 0 && (
+          {produtos && produtos.length > 0 && pode("estoque") && (
             <>
               <CommandSeparator />
               <CommandGroup heading="Produtos">
@@ -141,7 +153,7 @@ export function CommandPalette() {
             </>
           )}
 
-          {lancamentos && lancamentos.length > 0 && (
+          {lancamentos && lancamentos.length > 0 && pode("financeiro") && (
             <>
               <CommandSeparator />
               <CommandGroup heading="Lançamentos">
