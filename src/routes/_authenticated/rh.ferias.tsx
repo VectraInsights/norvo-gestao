@@ -42,7 +42,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-import { Sun, Plus, Trash2, CalendarClock, AlertTriangle } from "lucide-react";
+import { Sun, Plus, Trash2, CalendarClock, AlertTriangle, Pencil } from "lucide-react";
 import { useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -82,7 +82,7 @@ type PeriodoRow = {
   limite_concessao: string;
   dias_direito: number;
   observacoes: string | null;
-  colaboradores?: { nome?: string }[] | null;
+  colaboradores?: { nome?: string } | null;
   ferias_concessoes?: Concessao[] | null;
 };
 
@@ -154,7 +154,7 @@ function FeriasPage() {
       const abono = conc.reduce((s, c) => s + (c.abono_dias ?? 0), 0);
       return {
         ...p,
-        nome: p.colaboradores?.[0]?.nome ?? "—",
+        nome: p.colaboradores?.nome ?? "—",
         gozados,
         abono,
         saldo: Math.max(0, p.dias_direito - gozados - abono),
@@ -173,9 +173,26 @@ function FeriasPage() {
     };
   }, [enriquecidos]);
 
-  // ---- Novo período ----
+  // ---- Novo / editar período ----
   const [openPeriodo, setOpenPeriodo] = useState(false);
+  const [editId, setEditId] = useState<string | null>(null);
   const [formP, setFormP] = useState({ colaborador_id: "", data_inicio: "", dias_direito: "30" });
+
+  const abrirNovoPeriodo = () => {
+    setEditId(null);
+    setFormP({ colaborador_id: "", data_inicio: "", dias_direito: "30" });
+    setOpenPeriodo(true);
+  };
+
+  const abrirEdicaoPeriodo = (p: PeriodoRow) => {
+    setEditId(p.id);
+    setFormP({
+      colaborador_id: p.colaborador_id,
+      data_inicio: p.data_inicio,
+      dias_direito: String(p.dias_direito),
+    });
+    setOpenPeriodo(true);
+  };
 
   const savePeriodo = useMutation({
     mutationFn: async () => {
@@ -188,20 +205,45 @@ function FeriasPage() {
       const fim = new Date(d.getTime() - 86400000).toISOString().slice(0, 10);
       d.setMonth(d.getMonth() + 6);
       const limite = d.toISOString().slice(0, 10);
-      const { error } = await (supabase.from("ferias_periodos" as never) as any).insert({
-        empresa_id: empresa.id,
-        colaborador_id: formP.colaborador_id,
-        data_inicio: ini,
-        data_fim: fim,
-        limite_concessao: limite,
-        dias_direito: Number(formP.dias_direito) || 30,
-      });
-      if (error) throw error;
+      const direito = Number(formP.dias_direito) || 30;
+
+      if (editId) {
+        const atual = (periodos ?? []).find((p) => p.id === editId);
+        if (atual) {
+          const usado = (atual.ferias_concessoes ?? [])
+            .filter((c) => c.status !== "cancelada")
+            .reduce((s, c) => s + (c.dias ?? 0) + (c.abono_dias ?? 0), 0);
+          if (direito < usado)
+            throw new Error(
+              `Dias de direito não pode ser menor que os ${usado} dia(s) já utilizados`,
+            );
+        }
+        const { error } = await (supabase.from("ferias_periodos" as never) as any)
+          .update({
+            data_inicio: ini,
+            data_fim: fim,
+            limite_concessao: limite,
+            dias_direito: direito,
+          })
+          .eq("id", editId);
+        if (error) throw error;
+      } else {
+        const { error } = await (supabase.from("ferias_periodos" as never) as any).insert({
+          empresa_id: empresa.id,
+          colaborador_id: formP.colaborador_id,
+          data_inicio: ini,
+          data_fim: fim,
+          limite_concessao: limite,
+          dias_direito: direito,
+        });
+        if (error) throw error;
+      }
     },
     onSuccess: () => {
-      toast.success("Período aquisitivo criado");
+      toast.success(editId ? "Período atualizado" : "Período aquisitivo criado");
       qc.invalidateQueries({ queryKey: ["ferias_periodos"] });
       setOpenPeriodo(false);
+      setEditId(null);
       setFormP({ colaborador_id: "", data_inicio: "", dias_direito: "30" });
     },
     onError: (e: Error) => toast.error(e.message),
@@ -314,24 +356,30 @@ function FeriasPage() {
             open={openPeriodo}
             onOpenChange={(o) => {
               setOpenPeriodo(o);
-              if (!o) setFormP({ colaborador_id: "", data_inicio: "", dias_direito: "30" });
+              if (!o) {
+                setEditId(null);
+                setFormP({ colaborador_id: "", data_inicio: "", dias_direito: "30" });
+              }
             }}
           >
             <DialogTrigger asChild>
-              <Button size="sm">
+              <Button size="sm" onClick={abrirNovoPeriodo}>
                 <Plus className="h-4 w-4 mr-1" />
                 Novo período
               </Button>
             </DialogTrigger>
             <DialogContent>
               <DialogHeader>
-                <DialogTitle>Novo período aquisitivo</DialogTitle>
+                <DialogTitle>
+                  {editId ? "Editar período aquisitivo" : "Novo período aquisitivo"}
+                </DialogTitle>
               </DialogHeader>
               <div className="grid gap-3">
                 <div>
                   <Label>Colaborador *</Label>
                   <Select
                     value={formP.colaborador_id}
+                    disabled={!!editId}
                     onValueChange={(v) => setFormP((f) => ({ ...f, colaborador_id: v }))}
                   >
                     <SelectTrigger>
@@ -479,6 +527,14 @@ function FeriasPage() {
                         >
                           Conceder
                         </Button>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-8 w-8"
+                          onClick={() => abrirEdicaoPeriodo(p)}
+                        >
+                          <Pencil className="h-4 w-4" />
+                        </Button>
                         <AlertDialog>
                           <AlertDialogTrigger asChild>
                             <Button variant="ghost" size="icon" className="h-8 w-8">
@@ -514,7 +570,7 @@ function FeriasPage() {
       <Dialog open={openConc} onOpenChange={setOpenConc}>
         <DialogContent className="max-w-xl">
           <DialogHeader>
-            <DialogTitle>Férias de {concPeriodo?.colaboradores?.[0]?.nome ?? ""}</DialogTitle>
+            <DialogTitle>Férias de {concPeriodo?.colaboradores?.nome ?? ""}</DialogTitle>
           </DialogHeader>
 
           {concPeriodo &&

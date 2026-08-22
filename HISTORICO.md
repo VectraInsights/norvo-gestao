@@ -91,6 +91,10 @@ Registro condensado da evolução do Norvo Gestão fora do editor Lovable.
     5 dias e venda máxima de 10. Menu lateral + Ctrl+K atualizados.
     **Fora de escopo por enquanto (conforme decisão de produto):** integração eSocial,
     cálculo automático de verbas rescisórias, banco de horas/ponto.
+    Ajustes pós-teste (22/08): embed PostgREST `colaboradores` em many-to-one retorna OBJETO
+    (não array) — corrigido acesso que deixava o nome em branco na tabela; adicionada edição
+    do período aquisitivo (reabre o diálogo preenchido; colaborador fica travado, datas
+    recalculam fim/limite, direito não pode ficar abaixo do já utilizado).
 17. **Fix RLS "permission denied for function is_empresa_member"** — ao criar o primeiro
     colaborador no projeto novo, todo INSERT/SELECT em tabelas cujas policies usam a versão
     pública da função (colaboradores, comissoes, adiantamentos, emprestimos, folha_pagamento,
