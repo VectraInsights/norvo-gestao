@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any -- tabelas novas ainda não estão em types.ts; padrão do projeto é cast as never/as any */
 import { createFileRoute } from "@tanstack/react-router";
 import { PageHeader } from "@/components/erp/page-header";
 import { EmptyState } from "@/components/erp/empty-state";
@@ -9,19 +10,40 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Textarea } from "@/components/ui/textarea";
 import { MoneyInput } from "@/components/erp/money-input";
 import {
-  Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
 } from "@/components/ui/table";
 import {
-  Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogTrigger,
+  Dialog,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
 } from "@/components/ui/dialog";
 import {
-  Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
 } from "@/components/ui/select";
 import {
-  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
-  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger,
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-import { Users, Plus, Trash2 } from "lucide-react";
+import { Users, Plus, Trash2, X } from "lucide-react";
 import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -32,42 +54,93 @@ import { brl, dateBR } from "@/lib/format";
 export const Route = createFileRoute("/_authenticated/rh/colaboradores")({
   component: ColaboradoresPage,
   errorComponent: ({ error }) => (
-    <div role="alert" className="rounded-md border border-destructive/40 bg-destructive/5 p-4 text-sm text-destructive">
+    <div
+      role="alert"
+      className="rounded-md border border-destructive/40 bg-destructive/5 p-4 text-sm text-destructive"
+    >
       Erro: {error.message}
     </div>
   ),
 });
 
 type Colab = {
-  id: string; nome: string; cpf: string | null; cargo: string | null;
-  email: string | null; telefone: string | null; salario_base: number;
-  data_admissao: string | null; data_demissao: string | null;
-  status: string; pix: string | null; banco: string | null;
-  agencia: string | null; conta: string | null; observacoes: string | null;
+  id: string;
+  nome: string;
+  cpf: string | null;
+  cargo: string | null;
+  email: string | null;
+  telefone: string | null;
+  salario_base: number;
+  data_admissao: string | null;
+  data_demissao: string | null;
+  status: string;
+  pix: string | null;
+  banco: string | null;
+  agencia: string | null;
+  conta: string | null;
+  observacoes: string | null;
 };
 
 const STATUS: Record<string, string> = {
-  ativo: "Ativo", ferias: "Férias", afastado: "Afastado", demitido: "Demitido",
+  ativo: "Ativo",
+  ferias: "Férias",
+  afastado: "Afastado",
+  demitido: "Demitido",
 };
+
+const soDigitos = (s: string) => s.replace(/\D/g, "");
+
+function validarForm(form: ReturnType<typeof formInicial>) {
+  if (!form.nome.trim()) throw new Error("Nome é obrigatório");
+  if (soDigitos(form.cpf).length !== 11) throw new Error("CPF deve ter 11 dígitos");
+  if (!form.cargo.trim()) throw new Error("Cargo é obrigatório");
+  const tels = form.telefones.map((t) => t.trim()).filter(Boolean);
+  if (tels.length === 0) throw new Error("Informe pelo menos um telefone");
+  for (const t of tels)
+    if (soDigitos(t).length < 10) throw new Error(`Telefone inválido: "${t}" (use DDD + número)`);
+  if (!(Number(form.salario_base) > 0)) throw new Error("Salário base é obrigatório");
+  if (!form.data_admissao) throw new Error("Data de admissão é obrigatória");
+  if (form.status === "demitido" && !form.data_demissao)
+    throw new Error("Informe a data de demissão para colaboradores demitidos");
+}
+
+function formInicial() {
+  return {
+    nome: "",
+    cpf: "",
+    cargo: "",
+    email: "",
+    telefones: [""] as string[],
+    salario_base: "0",
+    data_admissao: "",
+    data_demissao: "",
+    status: "ativo",
+    pix: "",
+    banco: "",
+    agencia: "",
+    conta: "",
+    observacoes: "",
+  };
+}
 
 function ColaboradoresPage() {
   const { data: empresa } = useEmpresaAtual();
   const qc = useQueryClient();
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState<Colab | null>(null);
-  const [form, setForm] = useState({
-    nome: "", cpf: "", cargo: "", email: "", telefone: "",
-    salario_base: "0", data_admissao: "", status: "ativo",
-    pix: "", banco: "", agencia: "", conta: "", observacoes: "",
-  });
-  const set = <K extends keyof typeof form>(k: K, v: (typeof form)[K]) => setForm((f) => ({ ...f, [k]: v }));
+  const [form, setForm] = useState(formInicial);
+  const set = <K extends keyof typeof form>(k: K, v: (typeof form)[K]) =>
+    setForm((f) => ({ ...f, [k]: v }));
 
   const { data: colabs, isLoading } = useQuery({
     enabled: !!empresa,
     queryKey: ["colaboradores", empresa?.id],
     queryFn: async () => {
-      const { data, error } = await supabase.from("colaboradores" as never)
-        .select("*").eq("empresa_id", empresa!.id).order("nome");
+      const { data, error } = await supabase
+        .from("colaboradores" as never)
+        .select("*")
+        .eq("empresa_id", empresa!.id)
+        .order("nome");
       if (error) throw error;
       return (data ?? []) as unknown as Colab[];
     },
@@ -75,22 +148,26 @@ function ColaboradoresPage() {
 
   const reset = () => {
     setEditing(null);
-    setForm({
-      nome: "", cpf: "", cargo: "", email: "", telefone: "",
-      salario_base: "0", data_admissao: "", status: "ativo",
-      pix: "", banco: "", agencia: "", conta: "", observacoes: "",
-    });
+    setForm(formInicial());
   };
 
   const openEdit = (c: Colab) => {
     setEditing(c);
     setForm({
-      nome: c.nome, cpf: c.cpf ?? "", cargo: c.cargo ?? "",
-      email: c.email ?? "", telefone: c.telefone ?? "",
+      nome: c.nome,
+      cpf: c.cpf ?? "",
+      cargo: c.cargo ?? "",
+      email: c.email ?? "",
+      telefones: (c.telefone ?? "").split(" / ").filter(Boolean) || [""],
       salario_base: String(c.salario_base ?? 0),
-      data_admissao: c.data_admissao ?? "", status: c.status,
-      pix: c.pix ?? "", banco: c.banco ?? "", agencia: c.agencia ?? "",
-      conta: c.conta ?? "", observacoes: c.observacoes ?? "",
+      data_admissao: c.data_admissao ?? "",
+      data_demissao: c.data_demissao ?? "",
+      status: c.status,
+      pix: c.pix ?? "",
+      banco: c.banco ?? "",
+      agencia: c.agencia ?? "",
+      conta: c.conta ?? "",
+      observacoes: c.observacoes ?? "",
     });
     setOpen(true);
   };
@@ -98,15 +175,26 @@ function ColaboradoresPage() {
   const save = useMutation({
     mutationFn: async () => {
       if (!empresa) throw new Error("Selecione uma empresa");
-      if (!form.nome.trim()) throw new Error("Nome é obrigatório");
+      validarForm(form);
       const payload: any = {
-        empresa_id: empresa.id, nome: form.nome.trim(),
-        cpf: form.cpf || null, cargo: form.cargo || null,
-        email: form.email || null, telefone: form.telefone || null,
+        empresa_id: empresa.id,
+        nome: form.nome.trim(),
+        cpf: form.cpf || null,
+        cargo: form.cargo.trim() || null,
+        email: form.email || null,
+        telefone:
+          form.telefones
+            .map((t) => t.trim())
+            .filter(Boolean)
+            .join(" / ") || null,
         salario_base: Number(form.salario_base) || 0,
-        data_admissao: form.data_admissao || null, status: form.status,
-        pix: form.pix || null, banco: form.banco || null,
-        agencia: form.agencia || null, conta: form.conta || null,
+        data_admissao: form.data_admissao || null,
+        data_demissao: form.data_demissao || null,
+        status: form.status,
+        pix: form.pix || null,
+        banco: form.banco || null,
+        agencia: form.agencia || null,
+        conta: form.conta || null,
         observacoes: form.observacoes || null,
       };
       const tbl = supabase.from("colaboradores" as never) as any;
@@ -121,14 +209,18 @@ function ColaboradoresPage() {
     onSuccess: () => {
       toast.success(editing ? "Colaborador atualizado" : "Colaborador cadastrado");
       qc.invalidateQueries({ queryKey: ["colaboradores"] });
-      setOpen(false); reset();
+      setOpen(false);
+      reset();
     },
     onError: (e: Error) => toast.error(e.message),
   });
 
   const del = useMutation({
     mutationFn: async (id: string) => {
-      const { error } = await supabase.from("colaboradores" as never).delete().eq("id", id);
+      const { error } = await supabase
+        .from("colaboradores" as never)
+        .delete()
+        .eq("id", id);
       if (error) throw error;
     },
     onSuccess: () => {
@@ -144,50 +236,177 @@ function ColaboradoresPage() {
         title="Colaboradores"
         description="Cadastro de funcionários, cargos e dados de pagamento."
         actions={
-          <Dialog open={open} onOpenChange={(o) => { setOpen(o); if (!o) reset(); }}>
+          <Dialog
+            open={open}
+            onOpenChange={(o) => {
+              setOpen(o);
+              if (!o) reset();
+            }}
+          >
             <DialogTrigger asChild>
-              <Button size="sm"><Plus className="h-4 w-4 mr-1" />Novo colaborador</Button>
+              <Button size="sm">
+                <Plus className="h-4 w-4 mr-1" />
+                Novo colaborador
+              </Button>
             </DialogTrigger>
             <DialogContent className="max-w-xl">
-              <DialogHeader><DialogTitle>{editing ? "Editar colaborador" : "Novo colaborador"}</DialogTitle></DialogHeader>
+              <DialogHeader>
+                <DialogTitle>{editing ? "Editar colaborador" : "Novo colaborador"}</DialogTitle>
+              </DialogHeader>
               <div className="grid gap-3 max-h-[70vh] overflow-y-auto pr-1">
                 <div className="grid grid-cols-2 gap-3">
-                  <div><Label>Nome *</Label><Input value={form.nome} onChange={(e) => set("nome", e.target.value)} /></div>
-                  <div><Label>CPF</Label><Input value={form.cpf} onChange={(e) => set("cpf", e.target.value)} /></div>
+                  <div>
+                    <Label>Nome *</Label>
+                    <Input value={form.nome} onChange={(e) => set("nome", e.target.value)} />
+                  </div>
+                  <div>
+                    <Label>CPF *</Label>
+                    <Input
+                      placeholder="000.000.000-00"
+                      value={form.cpf}
+                      onChange={(e) => set("cpf", e.target.value)}
+                    />
+                  </div>
                 </div>
                 <div className="grid grid-cols-2 gap-3">
-                  <div><Label>Cargo</Label><Input value={form.cargo} onChange={(e) => set("cargo", e.target.value)} /></div>
+                  <div>
+                    <Label>Cargo *</Label>
+                    <Input value={form.cargo} onChange={(e) => set("cargo", e.target.value)} />
+                  </div>
                   <div>
                     <Label>Status</Label>
                     <Select value={form.status} onValueChange={(v) => set("status", v)}>
-                      <SelectTrigger><SelectValue /></SelectTrigger>
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
                       <SelectContent>
-                        {Object.entries(STATUS).map(([k, v]) => <SelectItem key={k} value={k}>{v}</SelectItem>)}
+                        {Object.entries(STATUS).map(([k, v]) => (
+                          <SelectItem key={k} value={k}>
+                            {v}
+                          </SelectItem>
+                        ))}
                       </SelectContent>
                     </Select>
                   </div>
                 </div>
                 <div className="grid grid-cols-2 gap-3">
-                  <div><Label>E-mail</Label><Input type="email" value={form.email} onChange={(e) => set("email", e.target.value)} /></div>
-                  <div><Label>Telefone</Label><Input value={form.telefone} onChange={(e) => set("telefone", e.target.value)} /></div>
+                  <div>
+                    <Label>E-mail</Label>
+                    <Input
+                      type="email"
+                      value={form.email}
+                      onChange={(e) => set("email", e.target.value)}
+                    />
+                  </div>
+                  <div>
+                    <Label>Telefone(s) *</Label>
+                    <div className="space-y-2">
+                      {form.telefones.map((tel, i) => (
+                        <div key={i} className="flex gap-1">
+                          <Input
+                            placeholder="(00) 00000-0000"
+                            value={tel}
+                            onChange={(e) =>
+                              set(
+                                "telefones",
+                                form.telefones.map((t, j) => (j === i ? e.target.value : t)),
+                              )
+                            }
+                          />
+                          {form.telefones.length > 1 && (
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="icon"
+                              className="h-10 w-10 shrink-0"
+                              onClick={() =>
+                                set(
+                                  "telefones",
+                                  form.telefones.filter((_, j) => j !== i),
+                                )
+                              }
+                            >
+                              <X className="h-4 w-4" />
+                            </Button>
+                          )}
+                        </div>
+                      ))}
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={() => set("telefones", [...form.telefones, ""])}
+                      >
+                        <Plus className="h-4 w-4 mr-1" />
+                        Outro número
+                      </Button>
+                    </div>
+                  </div>
                 </div>
                 <div className="grid grid-cols-2 gap-3">
-                  <div><Label>Salário base</Label><MoneyInput value={form.salario_base} onChange={(v) => set("salario_base", v)} /></div>
-                  <div><Label>Data de admissão</Label><Input type="date" value={form.data_admissao} onChange={(e) => set("data_admissao", e.target.value)} /></div>
+                  <div>
+                    <Label>Salário base *</Label>
+                    <MoneyInput
+                      value={form.salario_base}
+                      onChange={(v) => set("salario_base", v)}
+                    />
+                  </div>
+                  <div>
+                    <Label>Data de admissão *</Label>
+                    <Input
+                      type="date"
+                      value={form.data_admissao}
+                      onChange={(e) => set("data_admissao", e.target.value)}
+                    />
+                  </div>
                 </div>
                 <div className="grid grid-cols-2 gap-3">
-                  <div><Label>PIX</Label><Input value={form.pix} onChange={(e) => set("pix", e.target.value)} /></div>
-                  <div><Label>Banco</Label><Input value={form.banco} onChange={(e) => set("banco", e.target.value)} /></div>
+                  <div>
+                    <Label>Data de demissão</Label>
+                    <Input
+                      type="date"
+                      value={form.data_demissao}
+                      onChange={(e) => set("data_demissao", e.target.value)}
+                    />
+                  </div>
+                  <div></div>
                 </div>
                 <div className="grid grid-cols-2 gap-3">
-                  <div><Label>Agência</Label><Input value={form.agencia} onChange={(e) => set("agencia", e.target.value)} /></div>
-                  <div><Label>Conta</Label><Input value={form.conta} onChange={(e) => set("conta", e.target.value)} /></div>
+                  <div>
+                    <Label>PIX</Label>
+                    <Input value={form.pix} onChange={(e) => set("pix", e.target.value)} />
+                  </div>
+                  <div>
+                    <Label>Banco</Label>
+                    <Input value={form.banco} onChange={(e) => set("banco", e.target.value)} />
+                  </div>
                 </div>
-                <div><Label>Observações</Label><Textarea rows={2} value={form.observacoes} onChange={(e) => set("observacoes", e.target.value)} /></div>
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <Label>Agência</Label>
+                    <Input value={form.agencia} onChange={(e) => set("agencia", e.target.value)} />
+                  </div>
+                  <div>
+                    <Label>Conta</Label>
+                    <Input value={form.conta} onChange={(e) => set("conta", e.target.value)} />
+                  </div>
+                </div>
+                <div>
+                  <Label>Observações</Label>
+                  <Textarea
+                    rows={2}
+                    value={form.observacoes}
+                    onChange={(e) => set("observacoes", e.target.value)}
+                  />
+                </div>
               </div>
               <DialogFooter>
-                <Button variant="outline" onClick={() => setOpen(false)}>Cancelar</Button>
-                <Button onClick={() => save.mutate()} disabled={save.isPending}>Salvar</Button>
+                <Button variant="outline" onClick={() => setOpen(false)}>
+                  Cancelar
+                </Button>
+                <Button onClick={() => save.mutate()} disabled={save.isPending}>
+                  Salvar
+                </Button>
               </DialogFooter>
             </DialogContent>
           </Dialog>
@@ -196,9 +415,15 @@ function ColaboradoresPage() {
 
       <Card className="p-0 overflow-hidden">
         {isLoading ? (
-          <div className="p-6"><Skeleton className="h-32 w-full" /></div>
+          <div className="p-6">
+            <Skeleton className="h-32 w-full" />
+          </div>
         ) : !colabs || colabs.length === 0 ? (
-          <EmptyState icon={Users} title="Nenhum colaborador ainda" description="Cadastre o primeiro colaborador." />
+          <EmptyState
+            icon={Users}
+            title="Nenhum colaborador ainda"
+            description="Cadastre o primeiro colaborador."
+          />
         ) : (
           <Table>
             <TableHeader>
@@ -218,20 +443,28 @@ function ColaboradoresPage() {
                   <TableCell>{c.cargo ?? "—"}</TableCell>
                   <TableCell>{STATUS[c.status] ?? c.status}</TableCell>
                   <TableCell>{c.data_admissao ? dateBR(c.data_admissao) : "—"}</TableCell>
-                  <TableCell className="text-right text-tabular">{brl(c.salario_base ?? 0)}</TableCell>
+                  <TableCell className="text-right text-tabular">
+                    {brl(c.salario_base ?? 0)}
+                  </TableCell>
                   <TableCell onClick={(e) => e.stopPropagation()}>
                     <AlertDialog>
                       <AlertDialogTrigger asChild>
-                        <Button variant="ghost" size="icon" className="h-8 w-8"><Trash2 className="h-4 w-4" /></Button>
+                        <Button variant="ghost" size="icon" className="h-8 w-8">
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
                       </AlertDialogTrigger>
                       <AlertDialogContent>
                         <AlertDialogHeader>
                           <AlertDialogTitle>Excluir colaborador?</AlertDialogTitle>
-                          <AlertDialogDescription>As folhas vinculadas também serão removidas.</AlertDialogDescription>
+                          <AlertDialogDescription>
+                            As folhas vinculadas também serão removidas.
+                          </AlertDialogDescription>
                         </AlertDialogHeader>
                         <AlertDialogFooter>
                           <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                          <AlertDialogAction onClick={() => del.mutate(c.id)}>Excluir</AlertDialogAction>
+                          <AlertDialogAction onClick={() => del.mutate(c.id)}>
+                            Excluir
+                          </AlertDialogAction>
                         </AlertDialogFooter>
                       </AlertDialogContent>
                     </AlertDialog>
