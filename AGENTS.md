@@ -102,9 +102,19 @@ sobrescrito pela env `NITRO_PRESET` (ex.: `node-server`, `vercel`).
 - Relatórios de estoque (`/estoque/relatorios`: curva ABC, giro, parados) e a sugestão de
   reposição são calculados NO FRONT (produtos + movimentações de 12 meses). Consumo valorado
   ao `preco_custo` — o trigger de venda grava preço DE VENDA em `custo_unitario`.
-- `ordens_compra`/`ordens_compra_itens` não estão em `types.ts` (padrão `"as never"` já usado
-  em `estoque.compras.tsx` e `estoque.reposicao.tsx`). Receber OC dispara entrada em estoque
-  + conta a pagar via trigger `tg_oc_recebida`.
+- `ordens_compra`/`ordens_compra_itens`, `veiculos`, `viagens` e `viagem_despesas` não estão
+  em `types.ts` (padrão `"as never"` já usado em estoque/frota). Receber OC dispara entrada em
+  estoque + conta a pagar via trigger `tg_oc_recebida`.
+- Frota & Viagens: despesa em `viagem_despesas` gera CONTA A PAGAR automática (trigger
+  `tg_viagem_despesa_pagar`, categoria %combust%/frota%/transporte% senão a 1ª de pagar);
+  concluir viagem gera RECEITA única (trigger `tg_viagem_receita`, só na transição para
+  'concluida' — editar viagem concluída não duplica). Enum é `'receber'`/`'pagar'`
+  (NÃO existe valor 'receita'). Placa de veículo é única por empresa.
+- Módulos novos exigem entrada em `MODULOS` (`src/lib/permissoes.ts`) — `moduloDaRota()`
+  deriva o módulo do primeiro segmento da rota. Membros existentes só veem o menu novo após
+  o admin marcar o módulo em Configurações → Usuários (owner/admin sempre veem tudo).
+- Colunas novas fora do types.ts (ex.: `produtos.categoria`, CNH em colaboradores) pedem
+  cast duplo no retorno de queries tipadas: `(data ?? []) as unknown as Tipo[]`.
 - `colaboradores.telefone` pode conter vários números separados por " / " (UI multi-input).
   Obrigatoriedade (nome/CPF/cargo/salário/admissão/telefone) é validada no app, não no banco.
 - Commits devem usar o autor `vectrainsights@users.noreply.github.com` (config local do clone);

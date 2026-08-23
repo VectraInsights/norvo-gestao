@@ -158,13 +158,32 @@ Registro condensado da evolução do Norvo Gestão fora do editor Lovable.
       curva ABC 80/95 e itens parados (janela 60/90/180d). Tudo calculado no front.
     - Movimentações: dialog "Transferir" via RPC + coluna Depósito; opção "transferencia"
       removida do form simples (era inerte — trigger dá delta 0).
-17. **Fix RLS "permission denied for function is_empresa_member"** — ao criar o primeiro
+22. **Fix RLS "permission denied for function is_empresa_member"** — ao criar o primeiro
     colaborador no projeto novo, todo INSERT/SELECT em tabelas cujas policies usam a versão
     pública da função (colaboradores, comissoes, adiantamentos, emprestimos, folha_pagamento,
     crm_*, ferias_*) falhava: a função foi recriada com ACL restrita (só postgres/service_role),
     sem grant para `authenticated` (a versão `private.` sempre teve o grant certo).
     Corrigido com `GRANT EXECUTE ... TO authenticated` (migration
     `20260822120100`) e validado simulando o role via `SET ROLE authenticated`.
+23. **Quick wins transportadora (categoria + CNH)** — migration `20260822131000`: coluna
+    `produtos.categoria` (índice empresa+categoria) e `colaboradores.cnh_numero/
+    cnh_categoria/cnh_validade`. Produtos ganhou campo categoria com datalist e filtro;
+    RH ganhou seção CNH opcional no formulário; o Dashboard lista motoristas com CNH
+    vencida ou vencendo em até 30 dias junto dos alertas de estoque.
+24. **Módulo Frota & Viagens** — núcleo operacional da transportadora (migration
+    `20260822132000`, tabelas `veiculos`, `viagens`, `viagem_despesas`; tipos
+    veiculo_status e viagem_status; placa única por empresa):
+    - `/frota/veiculos`: CRUD de caminhões (placa, modelo, tipo, ano, RNTRC, KM, status).
+    - `/frota/viagens`: fretes com cliente/motorista/veículo, rota cidade+UF, datas,
+      valor do frete e KM; KPIs do mês (em trânsito, fretes, resultado = frete − despesas);
+      fluxo planejada → em trânsito → concluída (ou cancelada).
+    - Automação financeira: cada despesa da viagem (diesel/pedágio/manutenção/outros)
+      gera CONTA A PAGAR automática (categoria tenta %combust%/frota%/transporte%, senão
+      a primeira de pagar) e fica vinculada por `lancamento_id`; concluir a viagem gera
+      RECEITA única no contas a receber (trigger dispara só na transição de status).
+    - Testado ponta a ponta via SQL: despesa→pagar ✓, vínculo ✓, conclusão→receita ✓,
+      sem duplicação ✓, limpeza ✓. Módulo 'frota' adicionado às permissões (membros
+      existentes precisam ter o módulo marcado pelo admin para ver o menu).
 
 ## Regras de segurança
 

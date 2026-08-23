@@ -31,6 +31,7 @@ import {
   ShieldCheck,
   ClipboardList,
   PackagePlus,
+  Truck,
 } from "lucide-react";
 
 export type NavItem = { to: string; label: string; icon: typeof LayoutDashboard };
@@ -87,6 +88,14 @@ const RAW_NAV: NavGroup[] = [
       { to: "/estoque/inventario", label: "Inventário", icon: ClipboardList },
       { to: "/estoque/reposicao", label: "Reposição", icon: PackagePlus },
       { to: "/estoque/relatorios", label: "Relatórios de estoque", icon: BarChart3 },
+    ],
+  },
+  {
+    label: "Frota & Viagens",
+    icon: Truck,
+    items: [
+      { to: "/frota/viagens", label: "Viagens", icon: ArrowLeftRight },
+      { to: "/frota/veiculos", label: "Veículos", icon: Truck },
     ],
   },
   {

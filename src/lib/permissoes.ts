@@ -1,9 +1,11 @@
-export type ModuloKey = "financeiro" | "vendas" | "estoque" | "projetos" | "rh" | "fiscal";
+export type ModuloKey =
+  "financeiro" | "vendas" | "estoque" | "frota" | "projetos" | "rh" | "fiscal";
 
 export const MODULOS: { key: ModuloKey; label: string }[] = [
   { key: "financeiro", label: "Financeiro" },
   { key: "vendas", label: "Vendas & CRM" },
   { key: "estoque", label: "Estoque" },
+  { key: "frota", label: "Frota & Viagens" },
   { key: "projetos", label: "Projetos" },
   { key: "rh", label: "DP / RH" },
   { key: "fiscal", label: "Fiscal" },
