@@ -558,7 +558,7 @@ function ColaboradoresPage() {
                             <SelectValue placeholder="Selecione" />
                           </SelectTrigger>
                           <SelectContent>
-                            {["ACC", "A", "B", "AB", "C", "D", "E"].map((c) => (
+                            {["A", "B", "AB", "C", "D", "E", "AC", "AD", "AE"].map((c) => (
                               <SelectItem key={c} value={c}>
                                 {c}
                               </SelectItem>
