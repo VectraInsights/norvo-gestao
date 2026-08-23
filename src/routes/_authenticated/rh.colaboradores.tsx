@@ -97,6 +97,12 @@ function validarForm(form: ReturnType<typeof formInicial>) {
   if (!form.nome.trim()) throw new Error("Nome é obrigatório");
   if (soDigitos(form.cpf).length !== 11) throw new Error("CPF deve ter 11 dígitos");
   if (!form.cargo.trim()) throw new Error("Cargo é obrigatório");
+  if (form.cargo.toLowerCase().includes("motorist")) {
+    if (!form.cnh_numero.trim())
+      throw new Error("Para o cargo de motorista, informe o número da CNH");
+    if (!form.cnh_categoria.trim())
+      throw new Error("Para o cargo de motorista, informe a categoria da CNH");
+  }
   const tels = form.telefones.map((t) => t.trim()).filter(Boolean);
   if (tels.length === 0) throw new Error("Informe pelo menos um telefone");
   for (const t of tels)
@@ -526,29 +532,39 @@ function ColaboradoresPage() {
                   </div>
                   <div className="rounded-md border bg-muted/30 p-3">
                     <div className="mb-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-                      CNH (motoristas — opcional)
+                      {form.cargo.toLowerCase().includes("motorist")
+                        ? "CNH (obrigatória para motoristas)"
+                        : "CNH (motoristas — opcional)"}
                     </div>
                     <div className="grid grid-cols-3 gap-3">
                       <div>
-                        <Label>Nº da CNH</Label>
+                        <Label>
+                          Nº da CNH {form.cargo.toLowerCase().includes("motorist") ? "*" : ""}
+                        </Label>
                         <Input
                           value={form.cnh_numero}
                           onChange={(e) => set("cnh_numero", e.target.value)}
                         />
                       </div>
                       <div>
-                        <Label>Categoria</Label>
-                        <Input
-                          list="categorias-cnh"
-                          placeholder="C, D, E…"
-                          value={form.cnh_categoria}
-                          onChange={(e) => set("cnh_categoria", e.target.value)}
-                        />
-                        <datalist id="categorias-cnh">
-                          {["A", "B", "AB", "C", "D", "E"].map((c) => (
-                            <option key={c} value={c} />
-                          ))}
-                        </datalist>
+                        <Label>
+                          Categoria {form.cargo.toLowerCase().includes("motorist") ? "*" : ""}
+                        </Label>
+                        <Select
+                          value={form.cnh_categoria || undefined}
+                          onValueChange={(v) => set("cnh_categoria", v)}
+                        >
+                          <SelectTrigger>
+                            <SelectValue placeholder="Selecione" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {["ACC", "A", "B", "AB", "C", "D", "E"].map((c) => (
+                              <SelectItem key={c} value={c}>
+                                {c}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
                       </div>
                       <div>
                         <Label>Validade</Label>

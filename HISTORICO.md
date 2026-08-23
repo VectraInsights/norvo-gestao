@@ -191,7 +191,8 @@ Registro condensado da evolução do Norvo Gestão fora do editor Lovable.
     cargos por empresa. O formulário de RH usa dropdown; botão "Cargos" na página cria/
     exclui cargos da empresa — permitido SOMENTE a owner/admin ou super admin (RLS).
     Nas viagens, aparecem como motoristas apenas os colaboradores ativos com cargo
-    contendo "Motorist".
+    contendo "Motorist". Para esses cargos, nº da CNH e categoria são OBRIGATÓRIOS
+    (validação no app) e a categoria virou dropdown (ACC, A, B, AB, C, D, E).
 
 ## Regras de segurança
 
