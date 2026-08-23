@@ -79,6 +79,9 @@ type Colab = {
   agencia: string | null;
   conta: string | null;
   observacoes: string | null;
+  cnh_numero: string | null;
+  cnh_categoria: string | null;
+  cnh_validade: string | null;
 };
 
 const STATUS: Record<string, string> = {
@@ -120,6 +123,9 @@ function formInicial() {
     agencia: "",
     conta: "",
     observacoes: "",
+    cnh_numero: "",
+    cnh_categoria: "",
+    cnh_validade: "",
   };
 }
 
@@ -168,6 +174,9 @@ function ColaboradoresPage() {
       agencia: c.agencia ?? "",
       conta: c.conta ?? "",
       observacoes: c.observacoes ?? "",
+      cnh_numero: c.cnh_numero ?? "",
+      cnh_categoria: c.cnh_categoria ?? "",
+      cnh_validade: c.cnh_validade ?? "",
     });
     setOpen(true);
   };
@@ -196,6 +205,9 @@ function ColaboradoresPage() {
         agencia: form.agencia || null,
         conta: form.conta || null,
         observacoes: form.observacoes || null,
+        cnh_numero: form.cnh_numero.trim() || null,
+        cnh_categoria: form.cnh_categoria.trim() || null,
+        cnh_validade: form.cnh_validade || null,
       };
       const tbl = supabase.from("colaboradores" as never) as any;
       if (editing) {
@@ -379,6 +391,42 @@ function ColaboradoresPage() {
                   <div>
                     <Label>Banco</Label>
                     <Input value={form.banco} onChange={(e) => set("banco", e.target.value)} />
+                  </div>
+                </div>
+                <div className="rounded-md border bg-muted/30 p-3">
+                  <div className="mb-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                    CNH (motoristas — opcional)
+                  </div>
+                  <div className="grid grid-cols-3 gap-3">
+                    <div>
+                      <Label>Nº da CNH</Label>
+                      <Input
+                        value={form.cnh_numero}
+                        onChange={(e) => set("cnh_numero", e.target.value)}
+                      />
+                    </div>
+                    <div>
+                      <Label>Categoria</Label>
+                      <Input
+                        list="categorias-cnh"
+                        placeholder="C, D, E…"
+                        value={form.cnh_categoria}
+                        onChange={(e) => set("cnh_categoria", e.target.value)}
+                      />
+                      <datalist id="categorias-cnh">
+                        {["A", "B", "AB", "C", "D", "E"].map((c) => (
+                          <option key={c} value={c} />
+                        ))}
+                      </datalist>
+                    </div>
+                    <div>
+                      <Label>Validade</Label>
+                      <Input
+                        type="date"
+                        value={form.cnh_validade}
+                        onChange={(e) => set("cnh_validade", e.target.value)}
+                      />
+                    </div>
                   </div>
                 </div>
                 <div className="grid grid-cols-2 gap-3">
