@@ -29,6 +29,8 @@ import {
   FileInput,
   Sun,
   ShieldCheck,
+  ClipboardList,
+  PackagePlus,
 } from "lucide-react";
 
 export type NavItem = { to: string; label: string; icon: typeof LayoutDashboard };
@@ -82,6 +84,9 @@ const RAW_NAV: NavGroup[] = [
       { to: "/estoque/fornecedores", label: "Fornecedores", icon: UserSquare2 },
       { to: "/estoque/compras", label: "Ordens de compra", icon: ShoppingCart },
       { to: "/estoque/movimentacoes", label: "Movimentações", icon: Boxes },
+      { to: "/estoque/inventario", label: "Inventário", icon: ClipboardList },
+      { to: "/estoque/reposicao", label: "Reposição", icon: PackagePlus },
+      { to: "/estoque/relatorios", label: "Relatórios de estoque", icon: BarChart3 },
     ],
   },
   {

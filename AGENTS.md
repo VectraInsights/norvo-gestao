@@ -96,6 +96,15 @@ sobrescrito pela env `NITRO_PRESET` (ex.: `node-server`, `vercel`).
 - Férias NÃO tem tabela de períodos: ciclos aquisitivos são calculados no front a partir de
   `colaboradores.data_admissao` (12m + 6m, CLT art. 134). `ferias_concessoes.periodo_inicio`
   guarda o início do ciclo e tem CHECK `periodo_inicio < data_inicio_gozo`. Direito fixo 30d.
+- Transferência entre depósitos SÓ pela RPC `public.transferir_estoque` (par
+  entrada+saída atômico; estoque global não muda). O enum `transferencia` é inerte no
+  trigger (delta 0) — não criar movimentações soltas com esse tipo.
+- Relatórios de estoque (`/estoque/relatorios`: curva ABC, giro, parados) e a sugestão de
+  reposição são calculados NO FRONT (produtos + movimentações de 12 meses). Consumo valorado
+  ao `preco_custo` — o trigger de venda grava preço DE VENDA em `custo_unitario`.
+- `ordens_compra`/`ordens_compra_itens` não estão em `types.ts` (padrão `"as never"` já usado
+  em `estoque.compras.tsx` e `estoque.reposicao.tsx`). Receber OC dispara entrada em estoque
+  + conta a pagar via trigger `tg_oc_recebida`.
 - `colaboradores.telefone` pode conter vários números separados por " / " (UI multi-input).
   Obrigatoriedade (nome/CPF/cargo/salário/admissão/telefone) é validada no app, não no banco.
 - Commits devem usar o autor `vectrainsights@users.noreply.github.com` (config local do clone);

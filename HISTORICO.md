@@ -138,6 +138,26 @@ Registro condensado da evolução do Norvo Gestão fora do editor Lovable.
       ninguém se auto-registra; todo acesso nasce de convite interno do admin.
     - Limitações MVP: restrição por módulo é na UI (RLS continua isolando por EMPRESA,
       não por módulo); super admin não vê empresas onde não é membro (gerenciar via SQL).
+
+21. **Estoque focado em transportadora** — análise do texto com sugestões genéricas de
+    gestão de estoque contra o contexto real (MVP, cliente-tipo transportadora: pneus,
+    peças, óleo, ARLA): ADIAR lotes/validade, nº série, endereçamento, reservas,
+    romaneio e código de barras; implementar o que fecha o ciclo operacional barato:
+    - Migration `20260822130000`: RPC `public.transferir_estoque(produto, qtd, origem,
+      destino, obs)` SECURITY DEFINER — valida papel owner/admin/estoque, depósitos da
+      mesma empresa e saldo; grava o PAR entrada(destino)+saída(origem) numa transação
+      (entrada primeiro evita alerta falso de estoque baixo). Estoque global não muda.
+    - `/estoque/inventario`: contagem física por produto; divergências viram ajustes com
+      sinal ao custo padrão, opcionalmente ligadas a um depósito; filtro "somente
+      divergências" e impacto em R$ nos filtros.
+    - `/estoque/reposicao`: itens com atual <= mínimo, sugestão max(2×mín − atual, mín)
+      editável; gera ordem de compra rascunho (fornecedor obrigatório, conta/depósito/
+      previsão opcionais). Receber a OC segue gerando entrada + conta a pagar.
+    - `/estoque/relatorios`: valor em estoque, consumo 12m valorado ao CUSTO PADRÃO (o
+      trigger de venda grava PREÇO de venda em custo_unitario — não usar), giro anual,
+      curva ABC 80/95 e itens parados (janela 60/90/180d). Tudo calculado no front.
+    - Movimentações: dialog "Transferir" via RPC + coluna Depósito; opção "transferencia"
+      removida do form simples (era inerte — trigger dá delta 0).
 17. **Fix RLS "permission denied for function is_empresa_member"** — ao criar o primeiro
     colaborador no projeto novo, todo INSERT/SELECT em tabelas cujas policies usam a versão
     pública da função (colaboradores, comissoes, adiantamentos, emprestimos, folha_pagamento,
