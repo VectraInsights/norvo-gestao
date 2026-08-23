@@ -184,6 +184,14 @@ Registro condensado da evolução do Norvo Gestão fora do editor Lovable.
     - Testado ponta a ponta via SQL: despesa→pagar ✓, vínculo ✓, conclusão→receita ✓,
       sem duplicação ✓, limpeza ✓. Módulo 'frota' adicionado às permissões (membros
       existentes precisam ter o módulo marcado pelo admin para ver o menu).
+25. **Catálogo de cargos + filtro de motoristas** — substituiu (no mesmo dia) uma marcação
+    "é motorista" que havia sido criada: agora existe a tabela `cargos` com 10 cargos
+    padrão de transportadora (Motorista, Motorista Carreteiro, Ajudante, Mecânico,
+    Estoquista, Administrativo, Financeiro, Atendimento, Comercial, Gerente) e suporte a
+    cargos por empresa. O formulário de RH usa dropdown; botão "Cargos" na página cria/
+    exclui cargos da empresa — permitido SOMENTE a owner/admin ou super admin (RLS).
+    Nas viagens, aparecem como motoristas apenas os colaboradores ativos com cargo
+    contendo "Motorist".
 
 ## Regras de segurança
 

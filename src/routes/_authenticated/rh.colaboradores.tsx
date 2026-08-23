@@ -152,6 +152,59 @@ function ColaboradoresPage() {
     },
   });
 
+  const { data: cargos = [] } = useQuery({
+    enabled: !!empresa,
+    queryKey: ["cargos", empresa?.id],
+    queryFn: async ({ signal }) => {
+      const { data, error } = await supabase
+        .from("cargos" as never)
+        .select("id,nome,empresa_id")
+        .or(`empresa_id.is.null,empresa_id.eq.${empresa!.id}`)
+        .order("empresa_id", { ascending: false })
+        .order("nome")
+        .abortSignal(signal);
+      if (error) throw error;
+      return (data ?? []) as unknown as { id: string; nome: string; empresa_id: string | null }[];
+    },
+  });
+
+  const [cargosOpen, setCargosOpen] = useState(false);
+  const [novoCargo, setNovoCargo] = useState("");
+
+  const criarCargo = useMutation({
+    mutationFn: async () => {
+      if (!empresa) throw new Error("Selecione uma empresa");
+      const nome = novoCargo.trim();
+      if (!nome) throw new Error("Informe o nome do cargo");
+      const tbl = supabase.from("cargos" as never) as any;
+      const { error } = await tbl.insert({ empresa_id: empresa.id, nome });
+      if (error) {
+        if (String(error.message).toLowerCase().includes("duplicate"))
+          throw new Error("Já existe um cargo com esse nome");
+        throw error;
+      }
+    },
+    onSuccess: () => {
+      toast.success("Cargo criado");
+      setNovoCargo("");
+      qc.invalidateQueries({ queryKey: ["cargos"] });
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+  const excluirCargo = useMutation({
+    mutationFn: async (id: string) => {
+      const tbl = supabase.from("cargos" as never) as any;
+      const { error } = await tbl.delete().eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      toast.success("Cargo excluído");
+      qc.invalidateQueries({ queryKey: ["cargos"] });
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
   const reset = () => {
     setEditing(null);
     setForm(formInicial());
@@ -248,216 +301,298 @@ function ColaboradoresPage() {
         title="Colaboradores"
         description="Cadastro de funcionários, cargos e dados de pagamento."
         actions={
-          <Dialog
-            open={open}
-            onOpenChange={(o) => {
-              setOpen(o);
-              if (!o) reset();
-            }}
-          >
-            <DialogTrigger asChild>
-              <Button size="sm">
-                <Plus className="h-4 w-4 mr-1" />
-                Novo colaborador
-              </Button>
-            </DialogTrigger>
-            <DialogContent className="max-w-xl">
-              <DialogHeader>
-                <DialogTitle>{editing ? "Editar colaborador" : "Novo colaborador"}</DialogTitle>
-              </DialogHeader>
-              <div className="grid gap-3 max-h-[70vh] overflow-y-auto pr-1">
-                <div className="grid grid-cols-2 gap-3">
-                  <div>
-                    <Label>Nome *</Label>
-                    <Input value={form.nome} onChange={(e) => set("nome", e.target.value)} />
-                  </div>
-                  <div>
-                    <Label>CPF *</Label>
+          <div className="flex gap-2">
+            <Dialog open={cargosOpen} onOpenChange={setCargosOpen}>
+              <DialogTrigger asChild>
+                <Button size="sm" variant="outline">
+                  Cargos
+                </Button>
+              </DialogTrigger>
+              <DialogContent className="max-w-md">
+                <DialogHeader>
+                  <DialogTitle>Cargos</DialogTitle>
+                </DialogHeader>
+                <div className="flex items-end gap-2">
+                  <div className="flex-1">
+                    <Label>Novo cargo</Label>
                     <Input
-                      placeholder="000.000.000-00"
-                      value={form.cpf}
-                      onChange={(e) => set("cpf", e.target.value)}
+                      placeholder="Ex.: Motorista Operador"
+                      value={novoCargo}
+                      onChange={(e) => setNovoCargo(e.target.value)}
                     />
                   </div>
+                  <Button onClick={() => criarCargo.mutate()} disabled={criarCargo.isPending}>
+                    {criarCargo.isPending ? "Criando…" : "Criar"}
+                  </Button>
                 </div>
-                <div className="grid grid-cols-2 gap-3">
-                  <div>
-                    <Label>Cargo *</Label>
-                    <Input value={form.cargo} onChange={(e) => set("cargo", e.target.value)} />
-                  </div>
-                  <div>
-                    <Label>Status</Label>
-                    <Select value={form.status} onValueChange={(v) => set("status", v)}>
-                      <SelectTrigger>
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {Object.entries(STATUS).map(([k, v]) => (
-                          <SelectItem key={k} value={k}>
-                            {v}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                </div>
-                <div className="grid grid-cols-2 gap-3">
-                  <div>
-                    <Label>E-mail</Label>
-                    <Input
-                      type="email"
-                      value={form.email}
-                      onChange={(e) => set("email", e.target.value)}
-                    />
-                  </div>
-                  <div>
-                    <Label>Telefone(s) *</Label>
-                    <div className="space-y-2">
-                      {form.telefones.map((tel, i) => (
-                        <div key={i} className="flex gap-1">
-                          <Input
-                            placeholder="(00) 00000-0000"
-                            value={tel}
-                            onChange={(e) =>
-                              set(
-                                "telefones",
-                                form.telefones.map((t, j) => (j === i ? e.target.value : t)),
-                              )
-                            }
-                          />
-                          {form.telefones.length > 1 && (
+                <div className="max-h-64 overflow-y-auto rounded-md border">
+                  {!cargos.length ? (
+                    <p className="p-3 text-sm text-muted-foreground">Nenhum cargo disponível.</p>
+                  ) : (
+                    <ul className="divide-y text-sm">
+                      {cargos.map((c) => (
+                        <li key={c.id} className="flex items-center justify-between px-3 py-2">
+                          <span>
+                            {c.nome}
+                            {!c.empresa_id && (
+                              <span className="ml-2 rounded bg-muted px-1.5 py-0.5 text-xs text-muted-foreground">
+                                padrão
+                              </span>
+                            )}
+                          </span>
+                          {c.empresa_id && (
                             <Button
-                              type="button"
                               variant="ghost"
                               size="icon"
-                              className="h-10 w-10 shrink-0"
-                              onClick={() =>
-                                set(
-                                  "telefones",
-                                  form.telefones.filter((_, j) => j !== i),
-                                )
-                              }
+                              className="h-7 w-7"
+                              onClick={() => excluirCargo.mutate(c.id)}
                             >
-                              <X className="h-4 w-4" />
+                              <Trash2 className="h-3.5 w-3.5" />
                             </Button>
                           )}
-                        </div>
+                        </li>
                       ))}
-                      <Button
-                        type="button"
-                        variant="outline"
-                        size="sm"
-                        onClick={() => set("telefones", [...form.telefones, ""])}
+                    </ul>
+                  )}
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  Cargos marcados como "padrão" são do sistema e não podem ser excluídos. Viagens
+                  consideram motoristas todos os colaboradores com cargo contendo "Motorista".
+                </p>
+              </DialogContent>
+            </Dialog>
+            <Dialog
+              open={open}
+              onOpenChange={(o) => {
+                setOpen(o);
+                if (!o) reset();
+              }}
+            >
+              <DialogTrigger asChild>
+                <Button size="sm">
+                  <Plus className="h-4 w-4 mr-1" />
+                  Novo colaborador
+                </Button>
+              </DialogTrigger>
+              <DialogContent className="max-w-xl">
+                <DialogHeader>
+                  <DialogTitle>{editing ? "Editar colaborador" : "Novo colaborador"}</DialogTitle>
+                </DialogHeader>
+                <div className="grid gap-3 max-h-[70vh] overflow-y-auto pr-1">
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <Label>Nome *</Label>
+                      <Input value={form.nome} onChange={(e) => set("nome", e.target.value)} />
+                    </div>
+                    <div>
+                      <Label>CPF *</Label>
+                      <Input
+                        placeholder="000.000.000-00"
+                        value={form.cpf}
+                        onChange={(e) => set("cpf", e.target.value)}
+                      />
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <Label>Cargo *</Label>
+                      <Select
+                        value={form.cargo || undefined}
+                        onValueChange={(v) => set("cargo", v)}
                       >
-                        <Plus className="h-4 w-4 mr-1" />
-                        Outro número
-                      </Button>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Selecione o cargo" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {(cargos.some((c) => c.nome === form.cargo)
+                            ? cargos
+                            : [{ id: "__atual", nome: form.cargo, empresa_id: null }, ...cargos]
+                          ).map((c) => (
+                            <SelectItem key={c.id} value={c.nome}>
+                              {c.nome}
+                              {!c.empresa_id && c.id !== "__atual" ? " (padrão)" : ""}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div>
+                      <Label>Status</Label>
+                      <Select value={form.status} onValueChange={(v) => set("status", v)}>
+                        <SelectTrigger>
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {Object.entries(STATUS).map(([k, v]) => (
+                            <SelectItem key={k} value={k}>
+                              {v}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
                     </div>
                   </div>
-                </div>
-                <div className="grid grid-cols-2 gap-3">
-                  <div>
-                    <Label>Salário base *</Label>
-                    <MoneyInput
-                      value={form.salario_base}
-                      onChange={(v) => set("salario_base", v)}
-                    />
-                  </div>
-                  <div>
-                    <Label>Data de admissão *</Label>
-                    <Input
-                      type="date"
-                      value={form.data_admissao}
-                      onChange={(e) => set("data_admissao", e.target.value)}
-                    />
-                  </div>
-                </div>
-                <div className="grid grid-cols-2 gap-3">
-                  <div>
-                    <Label>Data de demissão</Label>
-                    <Input
-                      type="date"
-                      value={form.data_demissao}
-                      onChange={(e) => set("data_demissao", e.target.value)}
-                    />
-                  </div>
-                  <div></div>
-                </div>
-                <div className="grid grid-cols-2 gap-3">
-                  <div>
-                    <Label>PIX</Label>
-                    <Input value={form.pix} onChange={(e) => set("pix", e.target.value)} />
-                  </div>
-                  <div>
-                    <Label>Banco</Label>
-                    <Input value={form.banco} onChange={(e) => set("banco", e.target.value)} />
-                  </div>
-                </div>
-                <div className="rounded-md border bg-muted/30 p-3">
-                  <div className="mb-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-                    CNH (motoristas — opcional)
-                  </div>
-                  <div className="grid grid-cols-3 gap-3">
+                  <div className="grid grid-cols-2 gap-3">
                     <div>
-                      <Label>Nº da CNH</Label>
+                      <Label>E-mail</Label>
                       <Input
-                        value={form.cnh_numero}
-                        onChange={(e) => set("cnh_numero", e.target.value)}
+                        type="email"
+                        value={form.email}
+                        onChange={(e) => set("email", e.target.value)}
                       />
                     </div>
                     <div>
-                      <Label>Categoria</Label>
-                      <Input
-                        list="categorias-cnh"
-                        placeholder="C, D, E…"
-                        value={form.cnh_categoria}
-                        onChange={(e) => set("cnh_categoria", e.target.value)}
-                      />
-                      <datalist id="categorias-cnh">
-                        {["A", "B", "AB", "C", "D", "E"].map((c) => (
-                          <option key={c} value={c} />
+                      <Label>Telefone(s) *</Label>
+                      <div className="space-y-2">
+                        {form.telefones.map((tel, i) => (
+                          <div key={i} className="flex gap-1">
+                            <Input
+                              placeholder="(00) 00000-0000"
+                              value={tel}
+                              onChange={(e) =>
+                                set(
+                                  "telefones",
+                                  form.telefones.map((t, j) => (j === i ? e.target.value : t)),
+                                )
+                              }
+                            />
+                            {form.telefones.length > 1 && (
+                              <Button
+                                type="button"
+                                variant="ghost"
+                                size="icon"
+                                className="h-10 w-10 shrink-0"
+                                onClick={() =>
+                                  set(
+                                    "telefones",
+                                    form.telefones.filter((_, j) => j !== i),
+                                  )
+                                }
+                              >
+                                <X className="h-4 w-4" />
+                              </Button>
+                            )}
+                          </div>
                         ))}
-                      </datalist>
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          onClick={() => set("telefones", [...form.telefones, ""])}
+                        >
+                          <Plus className="h-4 w-4 mr-1" />
+                          Outro número
+                        </Button>
+                      </div>
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <Label>Salário base *</Label>
+                      <MoneyInput
+                        value={form.salario_base}
+                        onChange={(v) => set("salario_base", v)}
+                      />
                     </div>
                     <div>
-                      <Label>Validade</Label>
+                      <Label>Data de admissão *</Label>
                       <Input
                         type="date"
-                        value={form.cnh_validade}
-                        onChange={(e) => set("cnh_validade", e.target.value)}
+                        value={form.data_admissao}
+                        onChange={(e) => set("data_admissao", e.target.value)}
                       />
                     </div>
                   </div>
-                </div>
-                <div className="grid grid-cols-2 gap-3">
-                  <div>
-                    <Label>Agência</Label>
-                    <Input value={form.agencia} onChange={(e) => set("agencia", e.target.value)} />
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <Label>Data de demissão</Label>
+                      <Input
+                        type="date"
+                        value={form.data_demissao}
+                        onChange={(e) => set("data_demissao", e.target.value)}
+                      />
+                    </div>
+                    <div></div>
+                  </div>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <Label>PIX</Label>
+                      <Input value={form.pix} onChange={(e) => set("pix", e.target.value)} />
+                    </div>
+                    <div>
+                      <Label>Banco</Label>
+                      <Input value={form.banco} onChange={(e) => set("banco", e.target.value)} />
+                    </div>
+                  </div>
+                  <div className="rounded-md border bg-muted/30 p-3">
+                    <div className="mb-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                      CNH (motoristas — opcional)
+                    </div>
+                    <div className="grid grid-cols-3 gap-3">
+                      <div>
+                        <Label>Nº da CNH</Label>
+                        <Input
+                          value={form.cnh_numero}
+                          onChange={(e) => set("cnh_numero", e.target.value)}
+                        />
+                      </div>
+                      <div>
+                        <Label>Categoria</Label>
+                        <Input
+                          list="categorias-cnh"
+                          placeholder="C, D, E…"
+                          value={form.cnh_categoria}
+                          onChange={(e) => set("cnh_categoria", e.target.value)}
+                        />
+                        <datalist id="categorias-cnh">
+                          {["A", "B", "AB", "C", "D", "E"].map((c) => (
+                            <option key={c} value={c} />
+                          ))}
+                        </datalist>
+                      </div>
+                      <div>
+                        <Label>Validade</Label>
+                        <Input
+                          type="date"
+                          value={form.cnh_validade}
+                          onChange={(e) => set("cnh_validade", e.target.value)}
+                        />
+                      </div>
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <Label>Agência</Label>
+                      <Input
+                        value={form.agencia}
+                        onChange={(e) => set("agencia", e.target.value)}
+                      />
+                    </div>
+                    <div>
+                      <Label>Conta</Label>
+                      <Input value={form.conta} onChange={(e) => set("conta", e.target.value)} />
+                    </div>
                   </div>
                   <div>
-                    <Label>Conta</Label>
-                    <Input value={form.conta} onChange={(e) => set("conta", e.target.value)} />
+                    <Label>Observações</Label>
+                    <Textarea
+                      rows={2}
+                      value={form.observacoes}
+                      onChange={(e) => set("observacoes", e.target.value)}
+                    />
                   </div>
                 </div>
-                <div>
-                  <Label>Observações</Label>
-                  <Textarea
-                    rows={2}
-                    value={form.observacoes}
-                    onChange={(e) => set("observacoes", e.target.value)}
-                  />
-                </div>
-              </div>
-              <DialogFooter>
-                <Button variant="outline" onClick={() => setOpen(false)}>
-                  Cancelar
-                </Button>
-                <Button onClick={() => save.mutate()} disabled={save.isPending}>
-                  Salvar
-                </Button>
-              </DialogFooter>
-            </DialogContent>
-          </Dialog>
+                <DialogFooter>
+                  <Button variant="outline" onClick={() => setOpen(false)}>
+                    Cancelar
+                  </Button>
+                  <Button onClick={() => save.mutate()} disabled={save.isPending}>
+                    Salvar
+                  </Button>
+                </DialogFooter>
+              </DialogContent>
+            </Dialog>
+          </div>
         }
       />
 

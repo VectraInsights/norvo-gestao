@@ -113,6 +113,11 @@ sobrescrito pela env `NITRO_PRESET` (ex.: `node-server`, `vercel`).
 - Módulos novos exigem entrada em `MODULOS` (`src/lib/permissoes.ts`) — `moduloDaRota()`
   deriva o módulo do primeiro segmento da rota. Membros existentes só veem o menu novo após
   o admin marcar o módulo em Configurações → Usuários (owner/admin sempre veem tudo).
+- Catálogo de `cargos` (migration `20260822133000`): tabela global com linhas padrão
+  (`empresa_id IS NULL`, imutáveis pelo app) + cargos por empresa; leitura para qualquer
+  membro, criar/excluir só owner/admin da empresa ou super_admin (policies). Cargo no RH é
+  dropdown; VIAGENS consideram motoristas os colaboradores ativos cujo cargo contém
+  "Motorist" (ILIKE) — não existe mais coluna `eh_motorista`.
 - Colunas novas fora do types.ts (ex.: `produtos.categoria`, CNH em colaboradores) pedem
   cast duplo no retorno de queries tipadas: `(data ?? []) as unknown as Tipo[]`.
 - `colaboradores.telefone` pode conter vários números separados por " / " (UI multi-input).

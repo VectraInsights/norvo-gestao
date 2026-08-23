@@ -257,6 +257,7 @@ function Viagens() {
         .select("id,nome")
         .eq("empresa_id", empresa!.id)
         .eq("status", "ativo")
+        .ilike("cargo", "%motorist%")
         .order("nome")
         .abortSignal(signal);
       if (error) throw error;
