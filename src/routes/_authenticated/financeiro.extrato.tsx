@@ -34,6 +34,13 @@ export const Route = createFileRoute("/_authenticated/financeiro/extrato")({
 
 const brl = (n: number) => Number(n).toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 
+// Datas "YYYY-MM-DD" (colunas DATE) precisam virar meia-noite LOCAL — new Date() direto
+// interpreta como UTC e, no fuso -3, mostra o dia anterior.
+const parseDia = (s: string) => {
+  const [y, m, d] = s.slice(0, 10).split("-").map(Number);
+  return new Date(y, m - 1, d);
+};
+
 type Mov = {
   id: string;
   descricao: string;
@@ -137,7 +144,7 @@ function ExtratoPage() {
         if (contaId !== "todas" && (m.conta?.nome ?? "") !== (contas?.find((c) => c.id === contaId)?.nome ?? "")) return false;
         if (categoriaId !== "todas" && (m.categoria?.nome ?? "") !== (categorias?.find((c) => c.id === categoriaId)?.nome ?? "")) return false;
         if (centroId !== "todos" && (m.centro?.nome ?? "") !== (centros?.find((c) => c.id === centroId)?.nome ?? "")) return false;
-        const d = new Date(dataRef(m));
+        const d = parseDia(dataRef(m));
         if (periodo.from && d < periodo.from) return false;
         if (periodo.to && d > periodo.to) return false;
         if (q && !`${m.descricao} ${m.contato?.nome ?? ""} ${m.documento ?? ""}`.toLowerCase().includes(q)) return false;
@@ -162,7 +169,7 @@ function ExtratoPage() {
   const exportarCsv = () => {
     const head = ["Data", "Descrição", "Contato", "Categoria", "Centro de custo", "Conta", "Documento", "Forma", "Entrada", "Saída", "Saldo", "Lançado por", "Lançado em"];
     const rows = linhas.map(({ m, assinado, saldo }) => [
-      format(new Date(dataRef(m)), "dd/MM/yyyy"),
+      format(parseDia(dataRef(m)), "dd/MM/yyyy"),
       m.descricao, m.contato?.nome ?? "", m.categoria?.nome ?? "", m.centro?.nome ?? "",
       m.conta?.nome ?? "", m.documento ?? "", m.forma_pagamento ?? "",
       assinado > 0 ? assinado.toFixed(2) : "", assinado < 0 ? Math.abs(assinado).toFixed(2) : "",
@@ -305,7 +312,7 @@ function ExtratoPage() {
             <TableBody>
               {linhas.map(({ m, assinado, saldo }) => (
                 <TableRow key={m.id}>
-                  <TableCell className="text-tabular whitespace-nowrap">{format(new Date(dataRef(m)), "dd/MM/yyyy")}</TableCell>
+                  <TableCell className="text-tabular whitespace-nowrap">{format(parseDia(dataRef(m)), "dd/MM/yyyy")}</TableCell>
                   <TableCell className="font-medium">
                     {m.descricao}
                     {m.status !== "pago" && (

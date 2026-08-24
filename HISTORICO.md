@@ -224,6 +224,25 @@ Registro condensado da evolução do Norvo Gestão fora do editor Lovable.
     - Migração aplicada localmente via pooler (`scripts/apply-migration.cjs`, usa env
       DATABASE_URL); teste da automação/trigger rodou em transação revertida.
 
+## Registro de manutenção — 24/08/2026 (tarde): adiantamentos e extrato
+
+- **Geração imediata**: ao cadastrar adiantamento recorrente, a 1ª conta a pagar nasce na
+  hora (UI chama a função de geração; `GRANT EXECUTE` para authenticated na migration
+  `20260824150000`). O pg_cron noturno continua como fallback dos meses seguintes.
+- **Dia útil** (migration `20260824170000`): vencimento que cair em sábado/domingo
+  antecipa para a sexta anterior. Lançamento existente do Victor (dia 20 → dom 20/09)
+  foi corrigido no banco para 18/09.
+- **Descrição/categoria**: lançamento de adiantamento (recorrente OU gerado na UI) fica
+  com descrição = nome do colaborador e categoria "Adiantamentos" (tipo pagar; criada
+  automaticamente por empresa se não existir). Sem prefixo "Adiantamento recorrente -".
+- **Bug de fuso no extrato**: colunas DATE ("YYYY-MM-DD") formatadas com date-fns direto
+  apareciam um dia a menos no fuso -3 (ex.: 20/09 mostrava 19/09). Corrigido com helper
+  `parseDia` (meia-noite local) no filtro, na tabela e no CSV.
+- Checkbox de recorrência simplificado para apenas "Recorrente" (sem texto explicativo).
+- DateInput: ícone nativo do input de data escondido (`::-webkit-calendar-picker-indicator`)
+  para não duplicar com o ícone do calendário pop-up. Import faltando corrigido em
+  rh.colaboradores.tsx; contas a pagar/receber voltaram ao input nativo (decisão do dono).
+
 ## Regras de segurança
 
 - NUNCA commitar tokens/senhas (GitHub PAT, senhas de banco, service keys).

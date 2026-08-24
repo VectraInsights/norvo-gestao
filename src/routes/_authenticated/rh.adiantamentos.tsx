@@ -119,11 +119,26 @@ function AdiantamentosPage() {
     mutationFn: async (a: Adiantamento) => {
       if (!empresa) throw new Error("Selecione uma empresa");
       if (a.lancamento_id) throw new Error("Adiantamento já lançado no financeiro");
+      const nome = a.colaboradores?.nome ?? "colaborador";
+      // categoria "Adiantamentos" (cria se não existir)
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const { data: cats } = await (supabase.from("categorias_financeiras") as any)
+        .select("id").eq("empresa_id", empresa.id).eq("tipo", "pagar").eq("nome", "Adiantamentos").limit(1);
+      let catId: string | null = cats?.[0]?.id ?? null;
+      if (!catId) {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const { data: nc, error: eCat } = await (supabase.from("categorias_financeiras") as any)
+          .insert({ empresa_id: empresa.id, nome: "Adiantamentos", tipo: "pagar" })
+          .select("id").single();
+        if (eCat) throw eCat;
+        catId = nc.id;
+      }
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const { data: lanc, error } = await (supabase.from("lancamentos_financeiros") as any).insert({
         empresa_id: empresa.id, tipo: "pagar", status: "aberto",
-        descricao: `Adiantamento — ${a.colaboradores?.nome ?? "colaborador"}`,
+        descricao: nome,
         valor: a.valor, data_emissao: a.data, data_vencimento: a.data,
+        categoria_id: catId,
       }).select("id").single();
       if (error) throw error;
       const { error: e2 } = await supabase.from("adiantamentos" as never)

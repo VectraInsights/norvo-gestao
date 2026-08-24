@@ -123,9 +123,13 @@ sobrescrito pela env `NITRO_PRESET` (ex.: `node-server`, `vercel`).
   A UI chama `public.gerar_adiantamentos_recorrentes()` logo após o INSERT (1ª conta na
   hora; se o dia do mês já passou, a 1ª conta é a do mês seguinte) e o pg_cron diário
   ('adiantamentos-recorrentes') é fallback para os meses seguintes — idempotente por
-  `ultimo_mes_gerado`. O STATUS do adiantamento é espelho do lançamento
-  vinculado: trigger `tg_lancamento_sync_adiantamento` marca 'descontado' (= pago) quando o
-  lancamento vai a 'pago' e reverte se reabrir — NUNCA setar esse status na mão pela UI.
+  `ultimo_mes_gerado`. Regras do lançamento gerado (`20260824170000`): vencimento em
+  sábado/domingo antecipa para a sexta anterior; descrição = NOME do colaborador (sem
+  prefixo); categoria = "Adiantamentos" (tipo pagar, criada por empresa se não existir).
+  Geração manual na UI segue as mesmas regras. O STATUS do adiantamento é espelho do
+  lançamento vinculado: trigger `tg_lancamento_sync_adiantamento` marca 'descontado'
+  (= pago) quando o lancamento vai a 'pago' e reverte se reabrir — NUNCA setar esse status
+  na mão pela UI.
 - Campos de data usam `<DateInput>` (`src/components/erp/date-input.tsx`: input nativo +
   popover de calendário pt-BR). Não criar `<Input type="date">` solto em páginas novas.
   EXCEÇÃO (decisão do dono): financeiro/contas e financeiro/receber usam input nativo.
@@ -133,6 +137,10 @@ sobrescrito pela env `NITRO_PRESET` (ex.: `node-server`, `vercel`).
   completo do art. 134 com folga; NÃO é +6 meses). Cálculo em `ciclosAteHoje()` no front.
 - Colunas novas fora do types.ts (ex.: `produtos.categoria`, CNH em colaboradores) pedem
   cast duplo no retorno de queries tipadas: `(data ?? []) as unknown as Tipo[]`.
+- Colunas DATE ("YYYY-MM-DD") NÃO podem ir direto para `new Date()` quando o resultado é
+  formatado em fuso local (date-fns `format`, comparação com limites de mês etc.): UTC-3
+  desloca para o dia anterior. Usar `parseDia` (extrato) ou `new Date(s + "T00:00:00")`
+  (contas) ou `dateBR` (`src/lib/format`, que força timeZone UTC). Já deu bug real no extrato.
 - `colaboradores.telefone` pode conter vários números separados por " / " (UI multi-input).
   Obrigatoriedade (nome/CPF/cargo/salário/admissão/telefone) é validada no app, não no banco.
 - Commits devem usar o autor `vectrainsights@users.noreply.github.com` (config local do clone);
