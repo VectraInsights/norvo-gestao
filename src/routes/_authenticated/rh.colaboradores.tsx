@@ -199,19 +199,14 @@ function ColaboradoresPage() {
 
   const [cargosOpen, setCargosOpen] = useState(false);
   const [novoCargo, setNovoCargo] = useState("");
-  const [novoCargoFoco, setNovoCargoFoco] = useState(false);
   const [cargoEditId, setCargoEditId] = useState<string | null>(null);
   const [cargoEditNome, setCargoEditNome] = useState("");
 
-  // sugestões para o campo "Novo cargo" (filtra existentes conforme digita)
-  const novoCargoSugestoes = useMemo(() => {
+  // filtra a lista de cargos conforme o campo "novo cargo" (vazio = mostra todos)
+  const cargosFiltrados = useMemo(() => {
     const q = novoCargo.trim().toLowerCase();
-    if (!q) return [];
-    return cargos
-      .filter((c) => c.nome.toLowerCase().includes(q))
-      .map((c) => c.nome)
-      .filter((nome, i, arr) => arr.findIndex((n) => n.toLowerCase() === nome.toLowerCase()) === i)
-      .slice(0, 12);
+    if (!q) return cargos;
+    return cargos.filter((c) => c.nome.toLowerCase().includes(q));
   }, [cargos, novoCargo]);
 
   const criarCargo = useMutation({
@@ -375,59 +370,25 @@ function ColaboradoresPage() {
                 <DialogHeader>
                   <DialogTitle>Cargos</DialogTitle>
                 </DialogHeader>
-                <div className="relative flex items-end gap-2">
-                  <div className="relative flex-1">
+                <div className="flex items-end gap-2">
+                  <div className="flex-1">
                     <Label>Novo cargo</Label>
                     <Input
-                      placeholder="Digite o nome do cargo"
+                      placeholder="Digite para filtrar ou criar"
                       value={novoCargo}
                       onChange={(e) => setNovoCargo(e.target.value)}
-                      onFocus={() => setNovoCargoFoco(true)}
-                      onBlur={() => setTimeout(() => setNovoCargoFoco(false), 150)}
-                      autoComplete="off"
                     />
-                    {novoCargoFoco && novoCargo.trim() !== "" && novoCargoSugestoes.length > 0 && (
-                      <div className="absolute z-30 mt-1 max-h-56 w-full overflow-y-auto rounded-md border bg-popover shadow-md">
-                        {novoCargoSugestoes.map((nome) => (
-                          <button
-                            type="button"
-                            key={nome}
-                            className="w-full px-3 py-2 text-left text-sm hover:bg-muted"
-                            onMouseDown={(e) => {
-                              e.preventDefault();
-                              setNovoCargo(nome);
-                            }}
-                          >
-                            {nome}
-                          </button>
-                        ))}
-                        {!novoCargoSugestoes.some(
-                          (n) => n.toLowerCase() === novoCargo.trim().toLowerCase(),
-                        ) && (
-                          <button
-                            type="button"
-                            className="w-full border-t px-3 py-2 text-left text-sm font-medium text-primary hover:bg-muted"
-                            onMouseDown={(e) => {
-                              e.preventDefault();
-                              criarCargo.mutate();
-                            }}
-                          >
-                            Criar "{novoCargo.trim()}"
-                          </button>
-                        )}
-                      </div>
-                    )}
                   </div>
                   <Button onClick={() => criarCargo.mutate()} disabled={criarCargo.isPending}>
                     {criarCargo.isPending ? "Criando…" : "Criar"}
                   </Button>
                 </div>
                 <div className="max-h-64 overflow-y-auto rounded-md border">
-                  {!cargos.length ? (
+                  {!cargosFiltrados.length && !novoCargo.trim() ? (
                     <p className="p-3 text-sm text-muted-foreground">Nenhum cargo cadastrado.</p>
                   ) : (
                     <ul className="divide-y text-sm">
-                      {cargos.map((c) => {
+                      {cargosFiltrados.map((c) => {
                         const usos = usoCargo(c.nome);
                         const emEdicao = cargoEditId === c.id;
                         return (
@@ -487,6 +448,22 @@ function ColaboradoresPage() {
                           </li>
                         );
                       })}
+                      {novoCargo.trim() !== "" && !cargos.some(
+                        (c) => c.nome.toLowerCase() === novoCargo.trim().toLowerCase(),
+                      ) && (
+                        <li className="px-3 py-2">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="w-full justify-start text-primary"
+                            onClick={() => criarCargo.mutate()}
+                            disabled={criarCargo.isPending}
+                          >
+                            <Plus className="mr-2 h-4 w-4" />
+                            Criar "{novoCargo.trim()}"
+                          </Button>
+                        </li>
+                      )}
                     </ul>
                   )}
                 </div>
