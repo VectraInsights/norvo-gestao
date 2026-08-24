@@ -352,9 +352,6 @@ function FeriasPage() {
                                           <span className="text-muted-foreground">
                                             limite {dateBR(ciclo.limite)}
                                           </span>
-                                          <span className="text-tabular font-medium">
-                                            saldo {saldo}d
-                                          </span>
                                           {vencido && <Badge variant="secondary" className="bg-destructive/10 text-destructive">vencido</Badge>}
                                           {venceBreve && <Badge variant="secondary" className="bg-sky-500/15 text-sky-600">vence em breve</Badge>}
                                         </div>
