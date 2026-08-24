@@ -494,9 +494,16 @@ function FeriasPage() {
                       <Label>Início do gozo *</Label>
                       <DateInput
                         value={formC.data_inicio_gozo}
-                        onChange={(v) =>
-                          setFormC((f) => ({ ...f, data_inicio_gozo: v }))
-                        }
+                        onChange={(v) => {
+                          setFormC((f) => {
+                            const fim = v ? (() => {
+                              const d = new Date(v + "T00:00:00");
+                              d.setDate(d.getDate() + 29);
+                              return d.toISOString().slice(0, 10);
+                            })() : "";
+                            return { ...f, data_inicio_gozo: v, data_fim_gozo: fim };
+                          });
+                        }}
                       />
                     </div>
                     <div>
