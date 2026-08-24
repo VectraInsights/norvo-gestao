@@ -266,11 +266,11 @@ function FolhaPage() {
                 {/* INSS / IRRF calculados automaticamente */}
                 <div className="grid grid-cols-2 gap-3">
                   <div className="rounded-md border bg-muted/30 px-3 py-2 text-sm">
-                    <span className="text-muted-foreground">INSS (auto)</span>
+                    <span className="text-muted-foreground">INSS</span>
                     <span className="float-right font-semibold text-tabular">{brl(inssCalc)}</span>
                   </div>
                   <div className="rounded-md border bg-muted/30 px-3 py-2 text-sm">
-                    <span className="text-muted-foreground">IRRF (auto)</span>
+                    <span className="text-muted-foreground">IRRF</span>
                     <span className="float-right font-semibold text-tabular">{brl(irrfCalc)}</span>
                   </div>
                 </div>
