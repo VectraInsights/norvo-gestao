@@ -108,7 +108,7 @@ function ciclosAteHoje(admissao: string): Ciclo[] {
     const ini = addAnos(adm, y);
     if (ini > hojeD) break;
     const fim = addDias(toISO(addAnos(adm, y + 1)), -1);
-    const limite = toISO(addDias(toISO(addMesesClamp(new Date(fim + "T00:00:00"), 12)), -30));
+    const limite = addDias(toISO(addMesesClamp(new Date(fim + "T00:00:00"), 12)), -30);
     out.push({ inicio: toISO(ini), fim, limite });
   }
   return out;

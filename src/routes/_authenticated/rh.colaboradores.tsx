@@ -298,6 +298,14 @@ function ColaboradoresPage() {
     mutationFn: async () => {
       if (!empresa) throw new Error("Selecione uma empresa");
       validarForm(form);
+      if (form.cpf) {
+        const tbl2 = supabase.from("colaboradores" as never) as any;
+        const q = tbl2.select("id").eq("empresa_id", empresa.id).eq("cpf", form.cpf.trim()).limit(1);
+        const { data: existente } = await (editing ? q.neq("id", editing.id) : q);
+        if (existente && existente.length > 0) {
+          throw new Error("Já existe um colaborador com esse CPF nesta empresa");
+        }
+      }
       const payload: any = {
         empresa_id: empresa.id,
         nome: form.nome.trim(),

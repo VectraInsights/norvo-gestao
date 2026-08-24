@@ -12,7 +12,7 @@ import { MoneyInput } from "@/components/erp/money-input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Banknote, Plus, ChevronRight, Trash2, CheckCircle2 } from "lucide-react";
+import { Banknote, Plus, ChevronRight, Trash2, HandCoins } from "lucide-react";
 import { useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -318,7 +318,7 @@ function EmprestimosPage() {
                       onClick={() => gerarContasPagar.mutate(emprestimoSel.id)}
                       disabled={gerarContasPagar.isPending}
                     >
-                      <CheckCircle2 className="mr-1.5 h-4 w-4" /> Gerar contas a pagar
+                      <HandCoins className="mr-1.5 h-4 w-4" /> Gerar contas a pagar
                     </Button>
                     <Button size="sm" variant="ghost" aria-label="Excluir contrato" onClick={() => excluir.mutate(emprestimoSel.id)}>
                       <Trash2 className="h-4 w-4" />

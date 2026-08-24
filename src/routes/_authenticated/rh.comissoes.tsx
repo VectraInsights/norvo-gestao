@@ -11,7 +11,7 @@ import { MoneyInput } from "@/components/erp/money-input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Percent, Plus, Trash2, CheckCircle2 } from "lucide-react";
+import { Percent, Plus, Trash2, HandCoins } from "lucide-react";
 import { useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -112,12 +112,27 @@ function ComissoesPage() {
     mutationFn: async (c: Comissao) => {
       if (!empresa) throw new Error("Selecione uma empresa");
       if (c.lancamento_id) throw new Error("Comissão já lançada no financeiro");
+      const nome = c.colaboradores?.nome ?? "colaborador";
+      // categoria "Comissões" (cria se não existir)
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const { data: cats } = await (supabase.from("categorias_financeiras") as any)
+        .select("id").eq("empresa_id", empresa.id).eq("tipo", "pagar").eq("nome", "Comissões").limit(1);
+      let catId: string | null = cats?.[0]?.id ?? null;
+      if (!catId) {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const { data: nc, error: eCat } = await (supabase.from("categorias_financeiras") as any)
+          .insert({ empresa_id: empresa.id, nome: "Comissões", tipo: "pagar" })
+          .select("id").single();
+        if (eCat) throw eCat;
+        catId = nc.id;
+      }
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const { data: lanc, error } = await (supabase.from("lancamentos_financeiros") as any).insert({
         empresa_id: empresa.id, tipo: "pagar", status: "aberto",
-        descricao: `Comissão ${c.colaboradores?.nome ?? ""} — ${MESES[mes - 1]}/${ano}`.trim(),
+        descricao: `${nome} — ${MESES[mes - 1]}/${ano}`.trim(),
         valor: c.valor, data_emissao: format(new Date(), "yyyy-MM-dd"),
         data_vencimento: format(new Date(ano, mes, 5), "yyyy-MM-dd"),
+        categoria_id: catId,
       }).select("id").single();
       if (error) throw error;
       const { error: e2 } = await supabase.from("comissoes" as never)
@@ -257,7 +272,7 @@ function ComissoesPage() {
                       disabled={!!c.lancamento_id || gerarPagamento.isPending}
                       onClick={() => gerarPagamento.mutate(c)}
                     >
-                      <CheckCircle2 className="h-4 w-4" />
+                      <HandCoins className="h-4 w-4" />
                     </Button>
                     <Button size="icon" variant="ghost" aria-label="Excluir" onClick={() => excluir.mutate(c.id)}>
                       <Trash2 className="h-4 w-4" />
