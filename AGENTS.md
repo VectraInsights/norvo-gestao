@@ -126,6 +126,7 @@ sobrescrito pela env `NITRO_PRESET` (ex.: `node-server`, `vercel`).
   lancamento vai a 'pago' e reverte se reabrir — NUNCA setar esse status na mão pela UI.
 - Campos de data usam `<DateInput>` (`src/components/erp/date-input.tsx`: input nativo +
   popover de calendário pt-BR). Não criar `<Input type="date">` solto em páginas novas.
+  EXCEÇÃO (decisão do dono): financeiro/contas e financeiro/receber usam input nativo.
 - Férias: prazo de concessão = fim do período aquisitivo +12 meses −30 dias (concessivo
   completo do art. 134 com folga; NÃO é +6 meses). Cálculo em `ciclosAteHoje()` no front.
 - Colunas novas fora do types.ts (ex.: `produtos.categoria`, CNH em colaboradores) pedem

@@ -207,7 +207,8 @@ Registro condensado da evolução do Norvo Gestão fora do editor Lovable.
       Botão manual "Descontado" removido da UI.
     - **Calendário em todos os campos de data**: componente `DateInput`
       (`src/components/erp/date-input.tsx`) = input nativo + ícone que abre calendário
-      pt-BR. Substituiu os 23 `type="date"` espalhados por 13 páginas.
+      pt-BR. Substituiu os campos de data de 11 páginas. Exceção pedida pelo dono:
+      contas a pagar e a receber seguem com o input nativo simples.
     - **Catálogo de cargos efetivos** (migration `20260824120000`): saíram os genéricos
       ("Administrativo", "Financeiro", etc.); entraram ~47 cargos reais de transportadora
       (Gerente/Supervisor/Encarregado/Analista/Assistente/Auxiliar de Transportes,
