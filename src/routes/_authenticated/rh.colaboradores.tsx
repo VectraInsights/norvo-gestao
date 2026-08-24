@@ -483,7 +483,7 @@ function ColaboradoresPage() {
                 <DialogHeader>
                   <DialogTitle>{editing ? "Editar colaborador" : "Novo colaborador"}</DialogTitle>
                 </DialogHeader>
-                <div className="grid gap-3 max-h-[70vh] overflow-y-auto pr-1">
+                <div className="grid gap-3 max-h-[70vh] overflow-y-auto p-1">
                   <div className="grid grid-cols-2 gap-3">
                     <div className="space-y-1">
                       <Label>Nome *</Label>
