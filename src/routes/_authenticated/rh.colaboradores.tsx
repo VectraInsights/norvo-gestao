@@ -214,6 +214,8 @@ function ColaboradoresPage() {
       if (!empresa) throw new Error("Selecione uma empresa");
       const nome = novoCargo.trim();
       if (!nome) throw new Error("Informe o nome do cargo");
+      const existe = cargos.some((c) => c.nome.toLowerCase() === nome.toLowerCase());
+      if (existe) throw new Error("Já existe um cargo com esse nome");
       const tbl = supabase.from("cargos" as never) as any;
       const { error } = await tbl.insert({ empresa_id: empresa.id, nome });
       if (error) {
@@ -377,6 +379,12 @@ function ColaboradoresPage() {
                       placeholder="Digite para filtrar ou criar"
                       value={novoCargo}
                       onChange={(e) => setNovoCargo(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter" && novoCargo.trim()) {
+                          e.preventDefault();
+                          criarCargo.mutate();
+                        }
+                      }}
                     />
                   </div>
                   <Button onClick={() => criarCargo.mutate()} disabled={criarCargo.isPending}>
