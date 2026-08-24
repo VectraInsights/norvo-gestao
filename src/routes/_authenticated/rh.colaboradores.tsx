@@ -485,11 +485,11 @@ function ColaboradoresPage() {
                 </DialogHeader>
                 <div className="grid gap-3 max-h-[70vh] overflow-y-auto pr-1">
                   <div className="grid grid-cols-2 gap-3">
-                    <div>
+                    <div className="space-y-1">
                       <Label>Nome *</Label>
                       <Input value={form.nome} onChange={(e) => set("nome", e.target.value)} />
                     </div>
-                    <div>
+                    <div className="space-y-1">
                       <Label>CPF *</Label>
                       <Input
                         placeholder="000.000.000-00"
@@ -499,7 +499,7 @@ function ColaboradoresPage() {
                     </div>
                   </div>
                   <div className="grid grid-cols-2 gap-3">
-                    <div>
+                    <div className="space-y-1">
                       <Label>Cargo *</Label>
                       <div className="relative">
                         <Input
@@ -530,7 +530,7 @@ function ColaboradoresPage() {
                         )}
                       </div>
                     </div>
-                    <div>
+                    <div className="space-y-1">
                       <Label>Status</Label>
                       <Select value={form.status} onValueChange={(v) => set("status", v)}>
                         <SelectTrigger>
@@ -547,7 +547,7 @@ function ColaboradoresPage() {
                     </div>
                   </div>
                   <div className="grid grid-cols-2 gap-3">
-                    <div>
+                    <div className="space-y-1">
                       <Label>E-mail</Label>
                       <Input
                         type="email"
@@ -555,7 +555,7 @@ function ColaboradoresPage() {
                         onChange={(e) => set("email", e.target.value)}
                       />
                     </div>
-                    <div>
+                    <div className="space-y-1">
                       <Label>Telefone(s) *</Label>
                       <div className="space-y-2">
                         {form.telefones.map((tel, i) => (
@@ -601,14 +601,14 @@ function ColaboradoresPage() {
                     </div>
                   </div>
                   <div className="grid grid-cols-2 gap-3">
-                    <div>
+                    <div className="space-y-1">
                       <Label>Salário base *</Label>
                       <MoneyInput
                         value={form.salario_base}
                         onChange={(v) => set("salario_base", v)}
                       />
                     </div>
-                    <div>
+                    <div className="space-y-1">
                       <Label>Data de admissão *</Label>
                       <DateInput
                         value={form.data_admissao}
@@ -617,7 +617,7 @@ function ColaboradoresPage() {
                     </div>
                   </div>
                   <div className="grid grid-cols-2 gap-3">
-                    <div>
+                    <div className="space-y-1">
                       <Label>Data de demissão</Label>
                       <DateInput
                         value={form.data_demissao}
@@ -627,11 +627,11 @@ function ColaboradoresPage() {
                     <div></div>
                   </div>
                   <div className="grid grid-cols-2 gap-3">
-                    <div>
+                    <div className="space-y-1">
                       <Label>PIX</Label>
                       <Input value={form.pix} onChange={(e) => set("pix", e.target.value)} />
                     </div>
-                    <div>
+                    <div className="space-y-1">
                       <Label>Banco</Label>
                       <Input value={form.banco} onChange={(e) => set("banco", e.target.value)} />
                     </div>
@@ -641,7 +641,7 @@ function ColaboradoresPage() {
                       CNH
                     </div>
                     <div className="grid grid-cols-3 gap-3">
-                      <div>
+                      <div className="space-y-1">
                         <Label>
                           Nº da CNH {form.cargo.toLowerCase().includes("motorist") ? "*" : ""}
                         </Label>
@@ -650,7 +650,7 @@ function ColaboradoresPage() {
                           onChange={(e) => set("cnh_numero", e.target.value)}
                         />
                       </div>
-                      <div>
+                      <div className="space-y-1">
                         <Label>
                           Categoria {form.cargo.toLowerCase().includes("motorist") ? "*" : ""}
                         </Label>
@@ -670,7 +670,7 @@ function ColaboradoresPage() {
                           </SelectContent>
                         </Select>
                       </div>
-                      <div>
+                      <div className="space-y-1">
                         <Label>Validade</Label>
                         <DateInput
                           value={form.cnh_validade}
@@ -680,19 +680,19 @@ function ColaboradoresPage() {
                     </div>
                   </div>
                   <div className="grid grid-cols-2 gap-3">
-                    <div>
+                    <div className="space-y-1">
                       <Label>Agência</Label>
                       <Input
                         value={form.agencia}
                         onChange={(e) => set("agencia", e.target.value)}
                       />
                     </div>
-                    <div>
+                    <div className="space-y-1">
                       <Label>Conta</Label>
                       <Input value={form.conta} onChange={(e) => set("conta", e.target.value)} />
                     </div>
                   </div>
-                  <div>
+                  <div className="space-y-1">
                     <Label>Observações</Label>
                     <Textarea
                       rows={2}
