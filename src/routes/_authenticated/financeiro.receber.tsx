@@ -13,7 +13,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { Loader2, Plus, TrendingUp, Trash2, MoreHorizontal, Check, RotateCcw, Ban, ArrowUp, ArrowDown, ArrowUpDown, Search, X } from "lucide-react";
+import { Loader2, Plus, TrendingUp, Trash2, MoreHorizontal, Check, RotateCcw, Ban, ArrowUp, ArrowDown, ArrowUpDown, Search, X, Pencil } from "lucide-react";
 import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -518,7 +518,7 @@ export function LancamentosPage({ tipo }: { tipo: "receber" | "pagar" }) {
                     <TableCell onClick={(e) => e.stopPropagation()}>
                       <Checkbox checked={selected.has(l.id)} onCheckedChange={() => toggle(l.id)} aria-label="Selecionar" />
                     </TableCell>
-                    <TableCell className="font-medium cursor-pointer hover:underline" onClick={() => abrirEdicao(l.id)}>{l.descricao}</TableCell>
+                    <TableCell className="font-medium">{l.descricao}</TableCell>
                     <TableCell className="text-muted-foreground">{l.contato?.nome ?? "—"}</TableCell>
                     <TableCell className="text-tabular">{format(new Date(l.data_vencimento + "T00:00:00"), "dd/MM/yyyy")}</TableCell>
                     <TableCell className="text-right text-tabular font-medium">{brl(l.valor)}</TableCell>
@@ -533,6 +533,9 @@ export function LancamentosPage({ tipo }: { tipo: "receber" | "pagar" }) {
                           </Button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end">
+                          <DropdownMenuItem onClick={() => abrirEdicao(l.id)}>
+                            <Pencil className="mr-2 h-4 w-4" />Editar
+                          </DropdownMenuItem>
                           {l.status !== "pago" && (
                             <DropdownMenuItem disabled={emAndamento} onClick={() => marcarPago.mutate({ id: l.id, valor: l.valor })}>
                               <Check className="mr-2 h-4 w-4" />Informar pagamento

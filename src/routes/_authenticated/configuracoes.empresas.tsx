@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Plus, Loader2, Search, Trash2 } from "lucide-react";
+import { Plus, Loader2, Search, Trash2, Pencil } from "lucide-react";
 import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
@@ -211,14 +211,19 @@ function EmpresasPage() {
       />
       <Card className="overflow-hidden shadow-panel">
         <Table>
-          <TableHeader><TableRow><TableHead>Nome fantasia</TableHead><TableHead>Razão social</TableHead><TableHead>CNPJ</TableHead><TableHead>Cidade</TableHead></TableRow></TableHeader>
+          <TableHeader><TableRow><TableHead>Nome fantasia</TableHead><TableHead>Razão social</TableHead><TableHead>CNPJ</TableHead><TableHead>Cidade</TableHead><TableHead className="w-10"></TableHead></TableRow></TableHeader>
           <TableBody>
             {empresas?.map((e) => (
-              <TableRow key={e.id} className="cursor-pointer" onClick={() => openEdit(e)}>
+              <TableRow key={e.id}>
                 <TableCell className="font-medium">{e.nome_fantasia}</TableCell>
                 <TableCell className="text-muted-foreground">{e.razao_social ?? "—"}</TableCell>
                 <TableCell className="text-tabular">{e.cnpj ?? "—"}</TableCell>
                 <TableCell className="text-muted-foreground">{e.cidade ? `${e.cidade}/${e.uf ?? ""}` : "—"}</TableCell>
+                <TableCell className="w-10">
+                  <Button variant="ghost" size="icon" className="h-8 w-8" title="Editar" onClick={() => openEdit(e)}>
+                    <Pencil className="h-4 w-4" />
+                  </Button>
+                </TableCell>
               </TableRow>
             ))}
           </TableBody>

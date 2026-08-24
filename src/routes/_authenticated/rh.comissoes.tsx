@@ -11,7 +11,7 @@ import { MoneyInput } from "@/components/erp/money-input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Percent, Plus, Trash2, HandCoins } from "lucide-react";
+import { Percent, Plus, Trash2, HandCoins, Pencil } from "lucide-react";
 import { useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -47,6 +47,7 @@ function ComissoesPage() {
   const [mes, setMes] = useState(now.getMonth() + 1);
   const [ano, setAno] = useState(now.getFullYear());
   const [open, setOpen] = useState(false);
+  const [editing, setEditing] = useState<Comissao | null>(null);
 
   const [colaborador, setColaborador] = useState("");
   const [descricao, setDescricao] = useState("");
@@ -58,6 +59,17 @@ function ComissoesPage() {
     () => ((Number(base) || 0) * (Number(percentual) || 0)) / 100,
     [base, percentual],
   );
+
+  const reset = () => { setEditing(null); setColaborador(""); setDescricao(""); setBase("0"); setPercentual("0"); };
+
+  const abrirEdicao = (c: Comissao) => {
+    setEditing(c);
+    setColaborador(c.colaborador_id ?? "");
+    setDescricao(c.descricao ?? "");
+    setBase(String(c.base_valor));
+    setPercentual(String(c.percentual));
+    setOpen(true);
+  };
 
   // Comissão é de motorista/freteiro: lista apenas colaboradores com cargo de motorista
   const { data: colabs = [] } = useQuery({
@@ -85,23 +97,28 @@ function ComissoesPage() {
   });
 
   const total = (lista ?? []).reduce((s, c) => s + Number(c.valor), 0);
-  const reset = () => { setColaborador(""); setDescricao(""); setBase("0"); setPercentual("0"); };
 
   const criar = useMutation({
     mutationFn: async () => {
       if (!empresa) throw new Error("Selecione uma empresa");
       if (!colaborador) throw new Error("Selecione o colaborador");
       if (valor <= 0) throw new Error("Informe base e percentual");
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const { error } = await (supabase.from("comissoes" as never) as any).insert({
+      const payload: any = {
         empresa_id: empresa.id, colaborador_id: colaborador, competencia,
         descricao: descricao || null, base_valor: Number(base) || 0,
         percentual: Number(percentual) || 0, valor,
-      });
-      if (error) throw error;
+      };
+      const tbl = supabase.from("comissoes" as never) as any;
+      if (editing) {
+        const { error } = await tbl.update(payload).eq("id", editing.id);
+        if (error) throw error;
+      } else {
+        const { error } = await tbl.insert(payload);
+        if (error) throw error;
+      }
     },
     onSuccess: () => {
-      toast.success("Comissão lançada");
+      toast.success(editing ? "Comissão atualizada" : "Comissão lançada");
       qc.invalidateQueries({ queryKey: ["comissoes"] });
       setOpen(false); reset();
     },
@@ -181,12 +198,12 @@ function ComissoesPage() {
                 ))}
               </SelectContent>
             </Select>
-            <Dialog open={open} onOpenChange={(o) => { setOpen(o); if (!o) reset(); }}>
+              <Dialog open={open} onOpenChange={(o) => { setOpen(o); if (!o) reset(); }}>
               <DialogTrigger asChild>
                 <Button><Plus className="mr-1.5 h-4 w-4" /> Nova comissão</Button>
               </DialogTrigger>
               <DialogContent className="sm:max-w-md">
-                <DialogHeader><DialogTitle>Nova comissão · {MESES[mes - 1]}/{ano}</DialogTitle></DialogHeader>
+                <DialogHeader><DialogTitle>{editing ? "Editar comissão" : `Nova comissão · ${MESES[mes - 1]}/${ano}`}</DialogTitle></DialogHeader>
                 <div className="grid gap-4">
                   <div className="space-y-1.5">
                     <Label>Colaborador (motoristas)</Label>
@@ -222,7 +239,7 @@ function ComissoesPage() {
                 </div>
                 <DialogFooter>
                   <Button onClick={() => criar.mutate()} disabled={criar.isPending}>
-                    {criar.isPending ? "Salvando..." : "Lançar"}
+                    {criar.isPending ? "Salvando..." : editing ? "Salvar" : "Lançar"}
                   </Button>
                 </DialogFooter>
               </DialogContent>
@@ -269,10 +286,16 @@ function ComissoesPage() {
                   <TableCell className="text-right">
                     <Button
                       size="icon" variant="ghost" aria-label="Gerar conta a pagar"
+                      title={c.lancamento_id ? "Já lançado no financeiro" : "Gerar conta a pagar"}
                       disabled={!!c.lancamento_id || gerarPagamento.isPending}
                       onClick={() => gerarPagamento.mutate(c)}
                     >
                       <HandCoins className="h-4 w-4" />
+                    </Button>
+                    <Button size="icon" variant="ghost" aria-label="Editar" title="Editar"
+                      disabled={!!c.lancamento_id}
+                      onClick={() => abrirEdicao(c)}>
+                      <Pencil className="h-4 w-4" />
                     </Button>
                     <Button size="icon" variant="ghost" aria-label="Excluir" onClick={() => excluir.mutate(c.id)}>
                       <Trash2 className="h-4 w-4" />

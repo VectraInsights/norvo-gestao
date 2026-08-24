@@ -16,6 +16,7 @@ import {
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { Wallet, Plus, Pencil, Trash2, HandCoins } from "lucide-react";
 import { useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
@@ -387,9 +388,14 @@ function FolhaPage() {
                         <Button variant="ghost" size="icon" className="h-7 w-7" title="Excluir" onClick={() => excluir.mutate(f.id)}>
                           <Trash2 className="h-3.5 w-3.5" />
                         </Button>
-                        <Button variant="ghost" size="sm" onClick={() => pay.mutate(f.id)} disabled={pay.isPending}>
-                          <HandCoins className="h-4 w-4 mr-1" />Pagar
-                        </Button>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => pay.mutate(f.id)} disabled={pay.isPending}>
+                              <HandCoins className="h-3.5 w-3.5" />
+                            </Button>
+                          </TooltipTrigger>
+                          <TooltipContent>Pagar e gerar conta a pagar</TooltipContent>
+                        </Tooltip>
                       </>
                     )}
                   </TableCell>

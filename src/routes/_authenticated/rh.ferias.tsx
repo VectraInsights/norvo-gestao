@@ -483,8 +483,7 @@ function FeriasPage() {
                       <SelectContent>
                         {linhaSelecionada.abertos.map((ciclo) => (
                           <SelectItem key={ciclo.inicio} value={ciclo.inicio}>
-                            {dateBR(ciclo.inicio)} → {dateBR(ciclo.fim)} · vence{" "}
-                            {dateBR(ciclo.limite)} · saldo {DIAS_DIREITO - ciclo.usado}d
+                            Período aquisitivo: {dateBR(ciclo.inicio)} → {dateBR(ciclo.fim)} · Data limite: {dateBR(ciclo.limite)}
                           </SelectItem>
                         ))}
                       </SelectContent>
