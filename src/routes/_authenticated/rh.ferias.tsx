@@ -21,7 +21,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEmpresaAtual } from "@/hooks/use-empresa";
 import { toast } from "sonner";
-import { dateBR } from "@/lib/format";
+import { dateBR, brl } from "@/lib/format";
 
 export const Route = createFileRoute("/_authenticated/rh/ferias")({
   component: FeriasPage,
@@ -34,7 +34,7 @@ export const Route = createFileRoute("/_authenticated/rh/ferias")({
 
 type ColabRow = {
   id: string; nome: string; cargo: string | null;
-  data_admissao: string | null; status: string;
+  data_admissao: string | null; status: string; salario_base: number;
 };
 
 type Concessao = {
@@ -116,7 +116,7 @@ function FeriasPage() {
     queryKey: ["colaboradores", empresa?.id],
     queryFn: async () => {
       const { data, error } = await supabase.from("colaboradores" as never)
-        .select("id, nome, cargo, data_admissao, status")
+        .select("id, nome, cargo, data_admissao, status, salario_base")
         .eq("empresa_id", empresa!.id).neq("status", "demitido").order("nome");
       if (error) throw error;
       return (data ?? []) as unknown as ColabRow[];
@@ -174,6 +174,25 @@ function FeriasPage() {
   };
 
   const linhaExpandida = linhas.find((l) => l.colab.id === expandido);
+
+  const calculoFerias = useMemo(() => {
+    if (!linhaExpandida || !formInicio || !formFim) return null;
+    const salario = Number(linhaExpandida.colab.salario_base) || 0;
+    if (salario <= 0) return null;
+    const diasGozo = Math.round(
+      (new Date(formFim + "T00:00:00").getTime() - new Date(formInicio + "T00:00:00").getTime()) / 86400000
+    ) + 1;
+    if (diasGozo < 1) return null;
+    const abono = Number(formAbono) || 0;
+    const proporcional = (salario / 30) * diasGozo;
+    const terco = proporcional / 3;
+    const totalFerias = proporcional + terco;
+    const valorAbono = abono > 0 ? (salario / 30) * abono : 0;
+    const tercoAbono = abono > 0 ? valorAbono / 3 : 0;
+    const totalAbono = abono > 0 ? valorAbono + tercoAbono : 0;
+    const decimo = formDecimo ? (salario / 30) * diasGozo : 0;
+    return { salario, diasGozo, abono, proporcional, terco, totalFerias, valorAbono, tercoAbono, totalAbono, decimo, total: totalFerias + totalAbono + decimo };
+  }, [linhaExpandida, formInicio, formFim, formAbono, formDecimo]);
 
   const saveConcessao = useMutation({
     mutationFn: async () => {
@@ -425,6 +444,25 @@ function FeriasPage() {
                                                   Adiantar 1ª parcela do 13º
                                                 </label>
                                               </div>
+                                              {calculoFerias && (
+                                                <div className="rounded-md border bg-muted/30 p-3 text-sm space-y-1">
+                                                  <p className="font-medium text-muted-foreground mb-2">Prévia do cálculo</p>
+                                                  <div className="flex justify-between"><span>Férias ({calculoFerias.diasGozo}d × 1/30)</span><span className="text-tabular">{brl(calculoFerias.proporcional)}</span></div>
+                                                  <div className="flex justify-between"><span>Adicional constitucional (⅓)</span><span className="text-tabular">{brl(calculoFerias.terco)}</span></div>
+                                                  <div className="flex justify-between font-medium"><span>Total férias</span><span className="text-tabular">{brl(calculoFerias.totalFerias)}</span></div>
+                                                  {calculoFerias.abono > 0 && <>
+                                                    <div className="border-t pt-1 mt-1" />
+                                                    <div className="flex justify-between"><span>Abono pecuniário ({calculoFerias.abono}d)</span><span className="text-tabular">{brl(calculoFerias.valorAbono)}</span></div>
+                                                    <div className="flex justify-between"><span>Adicional abono (⅓)</span><span className="text-tabular">{brl(calculoFerias.tercoAbono)}</span></div>
+                                                    <div className="flex justify-between font-medium"><span>Total abono</span><span className="text-tabular">{brl(calculoFerias.totalAbono)}</span></div>
+                                                  </>}
+                                                  {calculoFerias.decimo > 0 && <>
+                                                    <div className="border-t pt-1 mt-1" />
+                                                    <div className="flex justify-between"><span>13º adiantado</span><span className="text-tabular">{brl(calculoFerias.decimo)}</span></div>
+                                                  </>}
+                                                  <div className="border-t pt-1 mt-1 flex justify-between font-semibold text-base"><span>Total a pagar</span><span className="text-tabular">{brl(calculoFerias.total)}</span></div>
+                                                </div>
+                                              )}
                                               <div className="flex justify-end gap-2">
                                                 <Button variant="outline" size="sm" onClick={() => setCicloSel(null)}>Cancelar</Button>
                                                 <Button size="sm" onClick={() => saveConcessao.mutate()} disabled={saveConcessao.isPending}>
