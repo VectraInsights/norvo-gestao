@@ -126,7 +126,12 @@ sobrescrito pela env `NITRO_PRESET` (ex.: `node-server`, `vercel`).
   `ultimo_mes_gerado`. Regras do lançamento gerado (`20260824170000`): vencimento em
   sábado/domingo antecipa para a sexta anterior; descrição = NOME do colaborador (sem
   prefixo); categoria = "Adiantamentos" (tipo pagar, criada por empresa se não existir).
-  Geração manual na UI segue as mesmas regras. O STATUS do adiantamento é espelho do
+  Geração manual na UI segue as mesmas regras. EXCLUIR um adiantamento remove junto as
+  contas a pagar em aberto geradas por ele (vinculada via `lancamento_id` ou, no caso
+  recorrente, por observações="Gerado automaticamente pelo adiantamento recorrente" +
+  descrição = nome; as já PAGAS ficam). Adiantamento só é editável enquanto NÃO tem
+  `lancamento_id`; depois disso o valor muda pela tela financeira. O STATUS do
+  adiantamento é espelho do
   lançamento vinculado: trigger `tg_lancamento_sync_adiantamento` marca 'descontado'
   (= pago) quando o lancamento vai a 'pago' e reverte se reabrir — NUNCA setar esse status
   na mão pela UI.

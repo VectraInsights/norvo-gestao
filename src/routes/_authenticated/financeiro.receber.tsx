@@ -60,6 +60,8 @@ const emptyForm = () => ({
   data_vencimento: format(new Date(), "yyyy-MM-dd"),
   contato_id: "", categoria_id: "", conta_bancaria_id: "",
   documento: "", observacoes: "", forma_pagamento: "",
+  created_by: null as string | null,
+  created_at: "",
 });
 
 export function LancamentosPage({ tipo }: { tipo: "receber" | "pagar" }) {
@@ -214,7 +216,7 @@ export function LancamentosPage({ tipo }: { tipo: "receber" | "pagar" }) {
   const [editing, setEditing] = useState<null | { id: string } & ReturnType<typeof emptyForm>>(null);
   const abrirEdicao = async (id: string) => {
     const { data, error } = await supabase.from("lancamentos_financeiros")
-      .select("id,descricao,valor,data_emissao,data_vencimento,contato_id,categoria_id,conta_bancaria_id,documento,observacoes,forma_pagamento")
+      .select("id,descricao,valor,data_emissao,data_vencimento,contato_id,categoria_id,conta_bancaria_id,documento,observacoes,forma_pagamento,created_by,created_at")
       .eq("id", id).maybeSingle();
     if (error || !data) { toast.error(error?.message ?? "Não encontrado"); return; }
     setEditing({
@@ -229,6 +231,8 @@ export function LancamentosPage({ tipo }: { tipo: "receber" | "pagar" }) {
       documento: data.documento ?? "",
       observacoes: data.observacoes ?? "",
       forma_pagamento: (data as { forma_pagamento?: string | null }).forma_pagamento ?? "",
+      created_by: (data as { created_by?: string | null }).created_by ?? null,
+      created_at: (data as { created_at?: string | null }).created_at ?? "",
     });
   };
   const salvarEdicao = useMutation({

@@ -12,7 +12,7 @@ import { MoneyInput } from "@/components/erp/money-input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { HandCoins, Plus, Trash2 } from "lucide-react";
+import { HandCoins, Pencil, Plus, Trash2 } from "lucide-react";
 import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -51,6 +51,7 @@ function AdiantamentosPage() {
   const [motivo, setMotivo] = useState("");
   const [recorrente, setRecorrente] = useState(false);
   const [diaRec, setDiaRec] = useState("20");
+  const [editando, setEditando] = useState<Adiantamento | null>(null);
 
   const { data: colabs = [] } = useQuery({
     enabled: !!empresa,
@@ -81,6 +82,19 @@ function AdiantamentosPage() {
     setColaborador(""); setValor("0"); setMotivo("");
     setRecorrente(false); setDiaRec("20");
     setData(format(new Date(), "yyyy-MM-dd"));
+  };
+
+  const fecharDialog = () => { setOpen(false); setEditando(null); reset(); };
+
+  const abrirEdicaoAdiant = (a: Adiantamento) => {
+    setEditando(a);
+    setColaborador(a.colaborador_id ?? "");
+    setData(a.data);
+    setValor(String(a.valor));
+    setMotivo(a.motivo ?? "");
+    setRecorrente(!!a.recorrente);
+    setDiaRec(a.dia_recorrente ? String(a.dia_recorrente) : "20");
+    setOpen(true);
   };
 
   const criar = useMutation({
@@ -153,14 +167,64 @@ function AdiantamentosPage() {
     onError: (e: Error) => toast.error(e.message),
   });
 
-  const excluir = useMutation({
-    mutationFn: async (id: string) => {
-      const { error } = await supabase.from("adiantamentos" as never).delete().eq("id", id);
+  const salvarEdicao = useMutation({
+    mutationFn: async () => {
+      if (!editando) throw new Error("Nada para salvar");
+      if (!colaborador) throw new Error("Selecione o colaborador");
+      if ((Number(valor) || 0) <= 0) throw new Error("Informe o valor");
+      if (recorrente && !(Number(diaRec) >= 1 && Number(diaRec) <= 31))
+        throw new Error("Escolha o dia do mês do adiantamento recorrente");
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const { error } = await (supabase.from("adiantamentos" as never) as any).update({
+        colaborador_id: colaborador, data,
+        valor: Number(valor) || 0, motivo: motivo || null,
+        recorrente,
+        dia_recorrente: recorrente ? Number(diaRec) : null,
+      }).eq("id", editando.id);
       if (error) throw error;
     },
     onSuccess: () => {
-      toast.success("Adiantamento excluído");
+      toast.success("Adiantamento atualizado");
       qc.invalidateQueries({ queryKey: ["adiantamentos"] });
+      fecharDialog();
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+  const excluir = useMutation({
+    mutationFn: async (a: Adiantamento) => {
+      if (!empresa) throw new Error("Selecione uma empresa");
+      // Remove a conta a pagar vinculada manualmente (se não estiver paga)
+      if (a.lancamento_id) {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const { data: lanc } = await (supabase.from("lancamentos_financeiros") as any)
+          .select("status").eq("id", a.lancamento_id).maybeSingle();
+        if (lanc && lanc.status !== "pago") {
+          const { error: eDel } = await supabase.from("lancamentos_financeiros")
+            .delete().eq("id", a.lancamento_id);
+          if (eDel) throw eDel;
+        }
+      }
+      // Recorrente: remove contas geradas automaticamente que ainda estejam em aberto
+      if (a.recorrente) {
+        const nome = a.colaboradores?.nome ?? "";
+        if (nome) {
+          const { error: eDel } = await supabase.from("lancamentos_financeiros")
+            .delete()
+            .eq("empresa_id", empresa.id)
+            .eq("observacoes", "Gerado automaticamente pelo adiantamento recorrente")
+            .eq("descricao", nome)
+            .neq("status", "pago");
+          if (eDel) throw eDel;
+        }
+      }
+      const { error } = await supabase.from("adiantamentos" as never).delete().eq("id", a.id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      toast.success("Adiantamento excluído — contas a pagar em aberto dele também foram removidas");
+      qc.invalidateQueries({ queryKey: ["adiantamentos"] });
+      qc.invalidateQueries({ queryKey: ["lancamentos"] });
     },
     onError: (e: Error) => toast.error(e.message),
   });
@@ -172,12 +236,19 @@ function AdiantamentosPage() {
         title="Adiantamentos"
         description="Adiantamentos a colaboradores com integração automática ao contas a pagar — o status acompanha a baixa/conciliação do lançamento."
         actions={
-          <Dialog open={open} onOpenChange={(o) => { setOpen(o); if (!o) reset(); }}>
+          <Dialog open={open} onOpenChange={(o) => { if (!o) fecharDialog(); else setOpen(true); }}>
             <DialogTrigger asChild>
               <Button><Plus className="mr-1.5 h-4 w-4" /> Novo adiantamento</Button>
             </DialogTrigger>
             <DialogContent className="sm:max-w-md">
-              <DialogHeader><DialogTitle>Novo adiantamento</DialogTitle></DialogHeader>
+              <DialogHeader>
+                <DialogTitle>{editando ? "Editar adiantamento" : "Novo adiantamento"}</DialogTitle>
+                {editando && (
+                  <p className="text-xs text-muted-foreground">
+                    Depois de gerado no contas a pagar, edite o valor pela tela financeira.
+                  </p>
+                )}
+              </DialogHeader>
               <div className="grid gap-4">
                 <div className="space-y-1.5">
                   <Label>Colaborador</Label>
@@ -230,8 +301,11 @@ function AdiantamentosPage() {
                 </div>
               </div>
               <DialogFooter>
-                <Button onClick={() => criar.mutate()} disabled={criar.isPending}>
-                  {criar.isPending ? "Salvando..." : "Registrar"}
+                <Button
+                  onClick={() => (editando ? salvarEdicao.mutate() : criar.mutate())}
+                  disabled={criar.isPending || salvarEdicao.isPending}
+                >
+                  {criar.isPending || salvarEdicao.isPending ? "Salvando..." : editando ? "Salvar alterações" : "Registrar"}
                 </Button>
               </DialogFooter>
             </DialogContent>
@@ -281,17 +355,34 @@ function AdiantamentosPage() {
                   </TableCell>
                   <TableCell><Badge variant="secondary">{STATUS_LABEL[a.status] ?? a.status}</Badge></TableCell>
                   <TableCell className="text-right">
+                    {!a.recorrente && !a.lancamento_id && (
+                      <Button
+                        size="icon" variant="ghost" aria-label="Gerar conta a pagar"
+                        title={a.lancamento_id ? "Já lançado no financeiro" : "Gerar conta a pagar"}
+                        disabled={!!a.lancamento_id || gerarPagamento.isPending}
+                        onClick={() => gerarPagamento.mutate(a)}
+                      >
+                        <HandCoins className="h-4 w-4" />
+                      </Button>
+                    )}
                     <Button
-                      size="icon" variant="ghost" aria-label="Gerar conta a pagar"
-                      title={a.recorrente
-                        ? "Recorrente: as contas são geradas automaticamente pelo sistema"
-                        : a.lancamento_id ? "Já lançado no financeiro" : "Gerar conta a pagar"}
-                      disabled={!!a.lancamento_id || a.recorrente || gerarPagamento.isPending}
-                      onClick={() => gerarPagamento.mutate(a)}
+                      size="icon" variant="ghost" aria-label="Editar"
+                      title={a.lancamento_id ? "Já enviado ao contas a pagar — edite o valor pela tela financeira" : "Editar"}
+                      disabled={!!a.lancamento_id}
+                      onClick={() => abrirEdicaoAdiant(a)}
                     >
-                      <HandCoins className="h-4 w-4" />
+                      <Pencil className="h-4 w-4" />
                     </Button>
-                    <Button size="icon" variant="ghost" aria-label="Excluir" onClick={() => excluir.mutate(a.id)}>
+                    <Button
+                      size="icon" variant="ghost" aria-label="Excluir"
+                      title={a.recorrente ? "Exclui o adiantamento e as contas em aberto geradas por ele" : "Excluir"}
+                      onClick={() => {
+                        if (confirm(a.recorrente
+                          ? "Excluir este adiantamento recorrente?\n\nAs contas a pagar EM ABERTO geradas por ele também serão removidas (as já pagas ficam no histórico)."
+                          : "Excluir este adiantamento?" + (a.lancamento_id ? "\n\nA conta a pagar vinculada também será removida." : "")))
+                          excluir.mutate(a);
+                      }}
+                    >
                       <Trash2 className="h-4 w-4" />
                     </Button>
                   </TableCell>

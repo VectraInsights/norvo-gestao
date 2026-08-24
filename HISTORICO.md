@@ -242,6 +242,12 @@ Registro condensado da evolução do Norvo Gestão fora do editor Lovable.
 - DateInput: ícone nativo do input de data escondido (`::-webkit-calendar-picker-indicator`)
   para não duplicar com o ícone do calendário pop-up. Import faltando corrigido em
   rh.colaboradores.tsx; contas a pagar/receber voltaram ao input nativo (decisão do dono).
+- **Contas a pagar/receber**: "Lançado por" saiu da lista e aparece só dentro do diálogo
+  do lançamento (bug: a reconsulta de edição não pedia `created_by/created_at` — autor
+  nunca aparecia); vencimento da lista tinha o mesmo bug de fuso (17/09 → 18/09).
+- **Adiantamentos**: excluir agora remove também as contas a pagar EM ABERTO geradas por
+  ele (as pagas ficam no histórico); botão Editar habilitado enquanto o adiantamento não
+  foi enviado ao contas a pagar; recorrente sem lançamento vinculado também edita.
 
 ## Regras de segurança
 
