@@ -250,7 +250,7 @@ function FolhaPage() {
       if (error) throw error;
     },
     onSuccess: () => {
-      toast.success("Conta a pagar criada — aguarda conciliação bancária");
+      toast.success("Conta a pagar criada");
       qc.invalidateQueries({ queryKey: ["folha"] });
       qc.invalidateQueries({ queryKey: ["lancamentos"] });
     },
@@ -275,7 +275,7 @@ function FolhaPage() {
     <div className="space-y-6">
       <PageHeader
         title="Folha de pagamento"
-        description="Gere a folha mensal por colaborador. INSS e IRRF são calculados automaticamente. Ao criar, um lançamento é gerado em Contas a pagar (pendente de conciliação)."
+        description="Gere a folha mensal por colaborador. INSS e IRRF são calculados automaticamente. Ao criar, um lançamento é gerado em Contas a pagar."
         actions={
           <Dialog open={open} onOpenChange={(o) => { setOpen(o); if (!o) reset(); }}>
             <DialogTrigger asChild>
@@ -438,22 +438,28 @@ function FolhaPage() {
                     }`}>{f.status}</span>
                   </TableCell>
                   <TableCell className="text-right">
-                    {f.status !== "paga" && f.status !== "lançada" && (
+                    {f.status !== "cancelada" && (
                       <>
-                        <Button variant="ghost" size="icon" className="h-7 w-7" title="Editar" onClick={() => abrirEdicao(f)}>
-                          <Pencil className="h-3.5 w-3.5" />
-                        </Button>
-                        <Button variant="ghost" size="icon" className="h-7 w-7" title="Excluir" onClick={() => excluir.mutate(f.id)}>
+                        {f.status !== "paga" && f.status !== "lançada" && (
+                          <Button variant="ghost" size="icon" className="h-7 w-7" title="Editar" onClick={() => abrirEdicao(f)}>
+                            <Pencil className="h-3.5 w-3.5" />
+                          </Button>
+                        )}
+                        <Button variant="ghost" size="icon" className="h-7 w-7" title="Excluir" onClick={() => {
+                          if (confirm("Excluir este lançamento da folha?")) excluir.mutate(f.id);
+                        }}>
                           <Trash2 className="h-3.5 w-3.5" />
                         </Button>
-                        <Tooltip>
-                          <TooltipTrigger asChild>
-                            <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => pay.mutate(f.id)} disabled={pay.isPending}>
-                              <HandCoins className="h-3.5 w-3.5" />
-                            </Button>
-                          </TooltipTrigger>
-                          <TooltipContent>Gerar conta a pagar (pendente de conciliação)</TooltipContent>
-                        </Tooltip>
+                        {f.status !== "paga" && f.status !== "lançada" && (
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => pay.mutate(f.id)} disabled={pay.isPending}>
+                                <HandCoins className="h-3.5 w-3.5" />
+                              </Button>
+                            </TooltipTrigger>
+                            <TooltipContent>Gerar conta a pagar</TooltipContent>
+                          </Tooltip>
+                        )}
                       </>
                     )}
                   </TableCell>
