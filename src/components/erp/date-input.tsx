@@ -30,7 +30,7 @@ export function DateInput({ value, onChange, required, disabled, className, id }
         value={value ?? ""}
         disabled={disabled}
         onChange={(e) => onChange(e.target.value)}
-        className="pr-9"
+        className="pr-9 [&::-webkit-calendar-picker-indicator]:hidden"
       />
       <Popover open={open} onOpenChange={setOpen}>
         <PopoverTrigger asChild>
