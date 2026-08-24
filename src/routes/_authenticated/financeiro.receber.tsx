@@ -128,6 +128,7 @@ export function LancamentosPage({ tipo }: { tipo: "receber" | "pagar" }) {
     qc.invalidateQueries({ queryKey: ["lancamentos"] });
     qc.invalidateQueries({ queryKey: ["dashboard-stats"] });
     qc.invalidateQueries({ queryKey: ["fluxo"] });
+    qc.invalidateQueries({ queryKey: ["folha"] });
   };
 
   // useMutation dá: guard de in-flight (impede double-submit / double-click),
@@ -187,6 +188,10 @@ export function LancamentosPage({ tipo }: { tipo: "receber" | "pagar" }) {
 
   const excluirLote = useMutation({
     mutationFn: async (ids: string[]) => {
+      // Desvincula folhas vinculadas (fallback se trigger não disparar via client)
+      await supabase.from("folha_pagamento" as never)
+        .update({ status: "aberta", lancamento_id: null, data_pagamento: null } as never)
+        .in("lancamento_id", ids);
       // Desvincula das transações OFX antes de excluir — a transação bancária
       // volta para "aberto" (podendo ser reconciliada novamente), mas não é apagada.
       const { error: eOfx } = await supabase.from("ofx_transacoes")
