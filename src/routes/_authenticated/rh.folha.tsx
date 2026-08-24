@@ -50,9 +50,9 @@ const MESES = ["Jan","Fev","Mar","Abr","Mai","Jun","Jul","Ago","Set","Out","Nov"
 
 /* ─── Tabelas INSS 2026 (alíquota progressiva) ─── */
 const INSS_FAIXAS = [
-  { limite: 1412.79, aliquota: 0.075 },
-  { limite: 2122.01, aliquota: 0.09 },
-  { limite: 3309.01, aliquota: 0.12 },
+  { limite: 1517.13, aliquota: 0.075 },
+  { limite: 2272.92, aliquota: 0.09 },
+  { limite: 3406.93, aliquota: 0.12 },
   { limite: Infinity,  aliquota: 0.14 },
 ];
 
@@ -68,22 +68,32 @@ function calcINSS(salarioBruto: number): number {
   return Math.round(inss * 100) / 100;
 }
 
-/* ─── Tabelas IRRF 2026 (alíquota progressiva, dedução) ─── */
+/* ─── Tabelas IRRF 2026 (Lei 15.270/2025 — alíquota progressiva, dedução) ─── */
 const IRRF_FAIXAS = [
-  { limite: 2259.20,  aliquota: 0,      deducao: 0 },
-  { limite: 2826.65,  aliquota: 0.075,  deducao: 169.44 },
-  { limite: 3751.05,  aliquota: 0.15,   deducao: 381.44 },
-  { limite: 4664.68,  aliquota: 0.225,  deducao: 662.77 },
-  { limite: Infinity,  aliquota: 0.275,  deducao: 896.00 },
+  { limite: 2428.80,  aliquota: 0,      deducao: 0 },
+  { limite: 2826.65,  aliquota: 0.075,  deducao: 182.16 },
+  { limite: 3751.05,  aliquota: 0.15,   deducao: 394.16 },
+  { limite: 4664.68,  aliquota: 0.225,  deducao: 675.49 },
+  { limite: Infinity,  aliquota: 0.275,  deducao: 908.73 },
 ];
 
-function calcIRRF(baseCalculo: number): number {
+function calcIRRF(baseCalculo: number, salarioBruto: number): number {
+  let imposto = 0;
   for (const faixa of IRRF_FAIXAS) {
     if (baseCalculo <= faixa.limite) {
-      return Math.round((baseCalculo * faixa.aliquota - faixa.deducao) * 100) / 100;
+      imposto = Math.max(0, baseCalculo * faixa.aliquota - faixa.deducao);
+      break;
     }
   }
-  return 0;
+  if (imposto <= 0) return 0;
+  // Lei 15.270/2025 — redução do imposto
+  if (salarioBruto <= 5000) {
+    return 0;
+  } else if (salarioBruto <= 7350) {
+    const reducao = 978.62 - (0.133145 * salarioBruto);
+    return Math.round(Math.max(0, imposto - reducao) * 100) / 100;
+  }
+  return Math.round(imposto * 100) / 100;
 }
 
 function FolhaPage() {
@@ -108,8 +118,8 @@ function FolhaPage() {
     queryKey: ["colaboradores-ativos", empresa?.id],
     queryFn: async () => {
       const { data } = await supabase.from("colaboradores" as never)
-        .select("id,nome,salario_base").eq("empresa_id", empresa!.id).eq("status", "ativo").order("nome");
-      return (data ?? []) as unknown as { id: string; nome: string; salario_base: number }[];
+        .select("id,nome,salario_base,optante_vt").eq("empresa_id", empresa!.id).eq("status", "ativo").order("nome");
+      return (data ?? []) as unknown as { id: string; nome: string; salario_base: number; optante_vt: boolean }[];
     },
   });
 
@@ -136,7 +146,7 @@ function FolhaPage() {
   const inssCalc = useMemo(() => calcINSS(n(salario)), [salario]);
   const irrfCalc = useMemo(() => {
     const base = n(salario) - inssCalc;
-    return base > 0 ? calcIRRF(base) : 0;
+    return base > 0 ? calcIRRF(base, n(salario)) : 0;
   }, [salario, inssCalc]);
 
   const liquido = useMemo(() => {
@@ -249,11 +259,26 @@ function FolhaPage() {
                   <Select value={colaborador} onValueChange={(v) => {
                     setColaborador(v);
                     const c = colabs.find((x) => x.id === v);
-                    if (c && !editing) setSalario(String(c.salario_base ?? 0));
+                    if (c && !editing) {
+                      setSalario(String(c.salario_base ?? 0));
+                      // auto-adiciona VT se optante
+                      setDescontosItens((prev) => {
+                        const semVT = prev.filter((d) => d.nome !== "Vale-Transporte");
+                        if (c.optante_vt && c.salario_base > 0) {
+                          const vt = Math.round(c.salario_base * 0.06 * 100) / 100;
+                          return [...semVT, { nome: "Vale-Transporte", valor: vt }];
+                        }
+                        return semVT;
+                      });
+                    }
                   }}>
                     <SelectTrigger><SelectValue placeholder="Selecione" /></SelectTrigger>
                     <SelectContent>
-                      {colabs.map((c) => <SelectItem key={c.id} value={c.id}>{c.nome}</SelectItem>)}
+                      {colabs.map((c) => (
+                        <SelectItem key={c.id} value={c.id}>
+                          {c.nome}{c.optante_vt ? " (VT)" : ""}
+                        </SelectItem>
+                      ))}
                     </SelectContent>
                   </Select>
                 </div>

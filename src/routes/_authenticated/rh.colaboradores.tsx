@@ -83,6 +83,7 @@ type Colab = {
   cnh_numero: string | null;
   cnh_categoria: string | null;
   cnh_validade: string | null;
+  optante_vt: boolean;
 };
 
 const STATUS: Record<string, string> = {
@@ -133,6 +134,7 @@ function formInicial() {
     cnh_numero: "",
     cnh_categoria: "",
     cnh_validade: "",
+    optante_vt: false,
   };
 }
 
@@ -290,6 +292,7 @@ function ColaboradoresPage() {
       cnh_numero: c.cnh_numero ?? "",
       cnh_categoria: c.cnh_categoria ?? "",
       cnh_validade: c.cnh_validade ?? "",
+      optante_vt: c.optante_vt ?? false,
     });
     setOpen(true);
   };
@@ -329,6 +332,7 @@ function ColaboradoresPage() {
         cnh_numero: form.cnh_numero.trim() || null,
         cnh_categoria: form.cnh_categoria.trim() || null,
         cnh_validade: form.cnh_validade || null,
+        optante_vt: form.optante_vt,
       };
       const tbl = supabase.from("colaboradores" as never) as any;
       if (editing) {
@@ -700,6 +704,14 @@ function ColaboradoresPage() {
                       <Input value={form.conta} onChange={(e) => set("conta", e.target.value)} />
                     </div>
                   </div>
+                  <label className="flex items-center gap-2 text-sm">
+                    <input
+                      type="checkbox"
+                      checked={form.optante_vt}
+                      onChange={(e) => set("optante_vt", e.target.checked)}
+                    />
+                    Optante pelo Vale-Transporte (desconto de 6% sobre salário base na folha)
+                  </label>
                   <div className="space-y-1">
                     <Label>Observações</Label>
                     <Textarea
