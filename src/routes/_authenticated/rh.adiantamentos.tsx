@@ -178,18 +178,13 @@ function AdiantamentosPage() {
                     <MoneyInput value={valor} onChange={setValor} />
                   </div>
                 </div>
-                <label className="flex items-center gap-2 rounded-md border bg-muted/30 p-3 text-sm">
+                <label className="flex items-center gap-2 text-sm">
                   <input
                     type="checkbox"
                     checked={recorrente}
                     onChange={(e) => setRecorrente(e.target.checked)}
                   />
-                  <span>
-                    Recorrente mensal
-                    <span className="block text-xs text-muted-foreground">
-                      Gera automaticamente a conta a pagar todo mês no dia escolhido (ex.: adiantamento previsto em CLT/contrato).
-                    </span>
-                  </span>
+                  Recorrente
                 </label>
                 {recorrente && (
                   <div className="space-y-1.5">
