@@ -66,6 +66,49 @@ const addMesesClamp = (d: Date, n: number) => {
   return x;
 };
 
+/* ─── Tabelas INSS 2026 ─── */
+const INSS_FAIXAS = [
+  { limite: 1621.00, aliquota: 0.075 },
+  { limite: 2902.84, aliquota: 0.09 },
+  { limite: 4354.27, aliquota: 0.12 },
+  { limite: 8475.55, aliquota: 0.14 },
+];
+function calcINSS(base: number): number {
+  let inss = 0, anterior = 0;
+  for (const fx of INSS_FAIXAS) {
+    const parcela = Math.min(base, fx.limite) - anterior;
+    if (parcela <= 0) break;
+    inss += parcela * fx.aliquota;
+    anterior = fx.limite;
+  }
+  return Math.min(Math.round(inss * 100) / 100, 988.09);
+}
+
+/* ─── Tabelas IRRF 2026 (Lei 15.270/2025) ─── */
+const IRRF_FAIXAS = [
+  { limite: 2428.80,  aliquota: 0,      deducao: 0 },
+  { limite: 2826.65,  aliquota: 0.075,  deducao: 182.16 },
+  { limite: 3751.05,  aliquota: 0.15,   deducao: 394.16 },
+  { limite: 4664.68,  aliquota: 0.225,  deducao: 675.49 },
+  { limite: Infinity,  aliquota: 0.275,  deducao: 908.73 },
+];
+function calcIRRF(baseCalculo: number, salarioBruto: number): number {
+  let imposto = 0;
+  for (const fx of IRRF_FAIXAS) {
+    if (baseCalculo <= fx.limite) {
+      imposto = Math.max(0, baseCalculo * fx.aliquota - fx.deducao);
+      break;
+    }
+  }
+  if (imposto <= 0) return 0;
+  if (salarioBruto <= 5000) return 0;
+  if (salarioBruto <= 7350) {
+    const reducao = 978.62 - (0.133145 * salarioBruto);
+    return Math.round(Math.max(0, imposto - reducao) * 100) / 100;
+  }
+  return Math.round(imposto * 100) / 100;
+}
+
 function ciclosAteHoje(admissao: string): Ciclo[] {
   const adm = new Date(admissao + "T00:00:00");
   const hojeD = new Date(HOJE() + "T00:00:00");
@@ -184,14 +227,34 @@ function FeriasPage() {
     ) + 1;
     if (diasGozo < 1) return null;
     const abono = Number(formAbono) || 0;
+
+    // Férias + 1/3 (base para INSS/IRRF)
     const proporcional = (salario / 30) * diasGozo;
     const terco = proporcional / 3;
-    const totalFerias = proporcional + terco;
+    const brutoFerias = proporcional + terco;
+    const inssFerias = calcINSS(brutoFerias);
+    const irrfFerias = calcIRRF(brutoFerias - inssFerias, salario);
+    const liquidoFerias = brutoFerias - inssFerias - irrfFerias;
+
+    // Abono pecuniário — ISENTO de INSS e IRRF
     const valorAbono = abono > 0 ? (salario / 30) * abono : 0;
-    const tercoAbono = abono > 0 ? valorAbono / 3 : 0;
-    const totalAbono = abono > 0 ? valorAbono + tercoAbono : 0;
-    const decimo = formDecimo ? (salario / 30) * diasGozo : 0;
-    return { salario, diasGozo, abono, proporcional, terco, totalFerias, valorAbono, tercoAbono, totalAbono, decimo, total: totalFerias + totalAbono + decimo };
+
+    // 13º adiantado — INSS e IRRF incidem
+    const decimoBruto = formDecimo ? (salario / 30) * diasGozo : 0;
+    const inssDecimo = formDecimo ? calcINSS(decimoBruto) : 0;
+    const irrfDecimo = formDecimo ? calcIRRF(decimoBruto - inssDecimo, salario) : 0;
+    const liquidoDecimo = decimoBruto - inssDecimo - irrfDecimo;
+
+    const totalDescontos = inssFerias + irrfFerias + inssDecimo + irrfDecimo;
+    const totalReceber = liquidoFerias + valorAbono + liquidoDecimo;
+
+    return {
+      salario, diasGozo, abono,
+      proporcional, terco, brutoFerias, inssFerias, irrfFerias, liquidoFerias,
+      valorAbono,
+      decimoBruto, inssDecimo, irrfDecimo, liquidoDecimo,
+      totalDescontos, totalReceber,
+    };
   }, [linhaExpandida, formInicio, formFim, formAbono, formDecimo]);
 
   const saveConcessao = useMutation({
@@ -449,18 +512,23 @@ function FeriasPage() {
                                                   <p className="font-medium text-muted-foreground mb-2">Prévia do cálculo</p>
                                                   <div className="flex justify-between"><span>Férias ({calculoFerias.diasGozo}d × 1/30)</span><span className="text-tabular">{brl(calculoFerias.proporcional)}</span></div>
                                                   <div className="flex justify-between"><span>Adicional constitucional (⅓)</span><span className="text-tabular">{brl(calculoFerias.terco)}</span></div>
-                                                  <div className="flex justify-between font-medium"><span>Total férias</span><span className="text-tabular">{brl(calculoFerias.totalFerias)}</span></div>
+                                                  <div className="flex justify-between text-muted-foreground"><span>− INSS</span><span className="text-tabular">−{brl(calculoFerias.inssFerias)}</span></div>
+                                                  <div className="flex justify-between text-muted-foreground"><span>− IRRF</span><span className="text-tabular">−{brl(calculoFerias.irrfFerias)}</span></div>
+                                                  <div className="flex justify-between font-medium"><span>Líquido férias</span><span className="text-tabular">{brl(calculoFerias.liquidoFerias)}</span></div>
                                                   {calculoFerias.abono > 0 && <>
                                                     <div className="border-t pt-1 mt-1" />
                                                     <div className="flex justify-between"><span>Abono pecuniário ({calculoFerias.abono}d)</span><span className="text-tabular">{brl(calculoFerias.valorAbono)}</span></div>
-                                                    <div className="flex justify-between"><span>Adicional abono (⅓)</span><span className="text-tabular">{brl(calculoFerias.tercoAbono)}</span></div>
-                                                    <div className="flex justify-between font-medium"><span>Total abono</span><span className="text-tabular">{brl(calculoFerias.totalAbono)}</span></div>
+                                                    <p className="text-xs text-muted-foreground">Isento de INSS e IRRF</p>
                                                   </>}
-                                                  {calculoFerias.decimo > 0 && <>
+                                                  {calculoFerias.decimoBruto > 0 && <>
                                                     <div className="border-t pt-1 mt-1" />
-                                                    <div className="flex justify-between"><span>13º adiantado</span><span className="text-tabular">{brl(calculoFerias.decimo)}</span></div>
+                                                    <div className="flex justify-between"><span>13º adiantado (bruto)</span><span className="text-tabular">{brl(calculoFerias.decimoBruto)}</span></div>
+                                                    <div className="flex justify-between text-muted-foreground"><span>− INSS 13º</span><span className="text-tabular">−{brl(calculoFerias.inssDecimo)}</span></div>
+                                                    <div className="flex justify-between text-muted-foreground"><span>− IRRF 13º</span><span className="text-tabular">−{brl(calculoFerias.irrfDecimo)}</span></div>
+                                                    <div className="flex justify-between font-medium"><span>Líquido 13º</span><span className="text-tabular">{brl(calculoFerias.liquidoDecimo)}</span></div>
                                                   </>}
-                                                  <div className="border-t pt-1 mt-1 flex justify-between font-semibold text-base"><span>Total a pagar</span><span className="text-tabular">{brl(calculoFerias.total)}</span></div>
+                                                  <div className="border-t pt-1 mt-1 flex justify-between text-muted-foreground"><span>Total descontos</span><span className="text-tabular">−{brl(calculoFerias.totalDescontos)}</span></div>
+                                                  <div className="flex justify-between font-semibold text-base"><span>Total a receber</span><span className="text-tabular">{brl(calculoFerias.totalReceber)}</span></div>
                                                 </div>
                                               )}
                                               <div className="flex justify-end gap-2">
