@@ -373,7 +373,7 @@ function ColaboradoresPage() {
                   <DialogTitle>Cargos</DialogTitle>
                 </DialogHeader>
                 <div className="flex items-end gap-2">
-                  <div className="flex-1">
+                  <div className="flex-1 space-y-1">
                     <Label>Novo cargo</Label>
                     <Input
                       placeholder="Digite para filtrar ou criar"
