@@ -488,8 +488,9 @@ function ColaboradoresPage() {
                   <div className="grid grid-cols-2 gap-3">
                     <div>
                       <Label>Cargo *</Label>
-                      <div className="relative">
+                      <div className="relative rounded-md ring-offset-background focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-2">
                         <Input
+                          className="rounded-md border-input focus-visible:ring-0 focus-visible:ring-offset-0"
                           placeholder="Digite para buscar o cargo"
                           value={form.cargo}
                           onChange={(e) => set("cargo", e.target.value)}
