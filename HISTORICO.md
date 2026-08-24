@@ -266,6 +266,15 @@ Registro condensado da evolução do Norvo Gestão fora do editor Lovable.
   `tg_cargo_guard`; em cargos padrão considera todas as empresas). Diálogo no RH mostra
   "padrão", contagem de funcionários por cargo, renomear inline e excluir.
 
+- **Folha de pagamento — status "paga" só após conciliação** (migration
+  `20260825030000`, commit `dbe7af4`): fluxo antigo marcava folha como "paga" e o trigger
+  `tg_folha_paga` criava o lançamento financeiro já quitado — sem passar pela conciliação
+  bancária. Agora: botão "Pagar" cria `lancamentos_financeiros` com `status: "aberto"` e seta
+  folha como `"lançada"` (novo valor no enum `folha_status`). Quando o lançamento é conciliado
+  via extrato bancário, o novo trigger `tg_lancamento_pago_sincroniza_folha` sincroniza a folha
+  para "paga". Trigger antigo removido. Badge "lançada" em sky na UI; botões de edição/
+  exclusão ocultos para status "lançada" e "paga".
+
 ## Regras de segurança
 
 - NUNCA commitar tokens/senhas (GitHub PAT, senhas de banco, service keys).
