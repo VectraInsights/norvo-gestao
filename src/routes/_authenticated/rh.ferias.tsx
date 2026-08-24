@@ -344,86 +344,88 @@ function FeriasPage() {
                                     const vencido = hoje > ciclo.limite;
                                     const venceBreve = !vencido && ciclo.limite <= limite60;
                                     return (
-                                      <div key={ciclo.inicio} className="flex items-center justify-between rounded-md border px-3 py-2 text-sm">
-                                        <div className="flex items-center gap-3">
-                                          <span className="text-tabular whitespace-nowrap">
-                                            {dateBR(ciclo.inicio)} → {dateBR(ciclo.fim)}
-                                          </span>
-                                          <span className="text-muted-foreground">
-                                            limite {dateBR(ciclo.limite)}
-                                          </span>
-                                          {vencido && <Badge variant="secondary" className="bg-destructive/10 text-destructive">vencido</Badge>}
-                                          {venceBreve && <Badge variant="secondary" className="bg-sky-500/15 text-sky-600">vence em breve</Badge>}
+                                      <div key={ciclo.inicio}>
+                                        <div className="flex items-center justify-between rounded-md border px-3 py-2 text-sm">
+                                          <div className="flex items-center gap-3">
+                                            <span className="text-tabular whitespace-nowrap">
+                                              {dateBR(ciclo.inicio)} → {dateBR(ciclo.fim)}
+                                            </span>
+                                            <span className="text-muted-foreground">
+                                              limite {dateBR(ciclo.limite)}
+                                            </span>
+                                            {vencido && <Badge variant="secondary" className="bg-destructive/10 text-destructive">vencido</Badge>}
+                                            {venceBreve && <Badge variant="secondary" className="bg-sky-500/15 text-sky-600">vence em breve</Badge>}
+                                          </div>
+                                          <div>
+                                            {saldo > 0 && (
+                                              <Button
+                                                variant="outline" size="sm"
+                                                onClick={() => {
+                                                  setCicloSel(ciclo.inicio);
+                                                  setFormInicio(""); setFormFim(""); setFormAbono("0"); setFormDecimo(false);
+                                                }}
+                                              >
+                                                Conceder
+                                              </Button>
+                                            )}
+                                          </div>
                                         </div>
-                                        <div>
-                                          {saldo > 0 && (
-                                            <Button
-                                              variant="outline" size="sm"
-                                              onClick={() => {
-                                                setCicloSel(ciclo.inicio);
-                                                setFormInicio(""); setFormFim(""); setFormAbono("0"); setFormDecimo(false);
-                                              }}
-                                            >
-                                              Conceder
-                                            </Button>
-                                          )}
-                                        </div>
+
+                                        {/* Formulário de concessão inline — abaixo do período selecionado */}
+                                        {cicloSel === ciclo.inicio && (
+                                          <div className="mt-2 rounded-md border border-primary/30 bg-background p-4">
+                                            <p className="mb-3 text-sm font-medium">
+                                              Conceder férias — período {dateBR(cicloSel)}
+                                            </p>
+                                            <div className="grid gap-3">
+                                              <div className="grid grid-cols-2 gap-3">
+                                                <div>
+                                                  <Label>Início do gozo *</Label>
+                                                  <DateInput
+                                                    value={formInicio}
+                                                    onChange={(v) => {
+                                                      setFormInicio(v);
+                                                      if (v) {
+                                                        const d = new Date(v + "T00:00:00");
+                                                        d.setDate(d.getDate() + 29);
+                                                        setFormFim(d.toISOString().slice(0, 10));
+                                                      } else {
+                                                        setFormFim("");
+                                                      }
+                                                    }}
+                                                  />
+                                                </div>
+                                                <div>
+                                                  <Label>Fim do gozo *</Label>
+                                                  <DateInput value={formFim} onChange={setFormFim} />
+                                                </div>
+                                                <div>
+                                                  <Label>Venda (abono pecuniário)</Label>
+                                                  <Input type="number" min={0} max={10} value={formAbono}
+                                                    onChange={(e) => setFormAbono(e.target.value)} />
+                                                  <p className="mt-1 text-xs text-muted-foreground">Máx. 10 dias (CLT art. 143).</p>
+                                                </div>
+                                                <label className="flex items-end gap-2 pb-1 text-sm">
+                                                  <input type="checkbox" checked={formDecimo}
+                                                    onChange={(e) => setFormDecimo(e.target.checked)} />
+                                                  Adiantar 1ª parcela do 13º
+                                                </label>
+                                              </div>
+                                              <div className="flex justify-end gap-2">
+                                                <Button variant="outline" size="sm" onClick={() => setCicloSel(null)}>Cancelar</Button>
+                                                <Button size="sm" onClick={() => saveConcessao.mutate()} disabled={saveConcessao.isPending}>
+                                                  {saveConcessao.isPending ? "Agendando..." : "Agendar férias"}
+                                                </Button>
+                                              </div>
+                                            </div>
+                                          </div>
+                                        )}
                                       </div>
                                     );
                                   })}
                                 </div>
                               )}
                             </div>
-
-                            {/* Formulário de concessão inline */}
-                            {cicloSel && l.colab.id === expandido && (
-                              <div className="rounded-md border border-primary/30 bg-background p-4">
-                                <p className="mb-3 text-sm font-medium">
-                                  Conceder férias — período {dateBR(cicloSel)}
-                                </p>
-                                <div className="grid gap-3">
-                                  <div className="grid grid-cols-2 gap-3">
-                                    <div>
-                                      <Label>Início do gozo *</Label>
-                                      <DateInput
-                                        value={formInicio}
-                                        onChange={(v) => {
-                                          setFormInicio(v);
-                                          if (v) {
-                                            const d = new Date(v + "T00:00:00");
-                                            d.setDate(d.getDate() + 29);
-                                            setFormFim(d.toISOString().slice(0, 10));
-                                          } else {
-                                            setFormFim("");
-                                          }
-                                        }}
-                                      />
-                                    </div>
-                                    <div>
-                                      <Label>Fim do gozo *</Label>
-                                      <DateInput value={formFim} onChange={setFormFim} />
-                                    </div>
-                                    <div>
-                                      <Label>Venda (abono pecuniário)</Label>
-                                      <Input type="number" min={0} max={10} value={formAbono}
-                                        onChange={(e) => setFormAbono(e.target.value)} />
-                                      <p className="mt-1 text-xs text-muted-foreground">Máx. 10 dias (CLT art. 143).</p>
-                                    </div>
-                                    <label className="flex items-end gap-2 pb-1 text-sm">
-                                      <input type="checkbox" checked={formDecimo}
-                                        onChange={(e) => setFormDecimo(e.target.checked)} />
-                                      Adiantar 1ª parcela do 13º
-                                    </label>
-                                  </div>
-                                  <div className="flex justify-end gap-2">
-                                    <Button variant="outline" size="sm" onClick={() => setCicloSel(null)}>Cancelar</Button>
-                                    <Button size="sm" onClick={() => saveConcessao.mutate()} disabled={saveConcessao.isPending}>
-                                      {saveConcessao.isPending ? "Agendando..." : "Agendar férias"}
-                                    </Button>
-                                  </div>
-                                </div>
-                              </div>
-                            )}
 
                             {/* Concessões já feitas */}
                             {minhasConcessoes.length > 0 && (
