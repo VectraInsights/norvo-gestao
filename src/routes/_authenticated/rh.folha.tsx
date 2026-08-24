@@ -212,13 +212,45 @@ function FolhaPage() {
 
   const pay = useMutation({
     mutationFn: async (id: string) => {
+      const f = folhas?.find((x) => x.id === id);
+      if (!f) throw new Error("Lançamento não encontrado");
+      if (!empresa?.id) throw new Error("Empresa não selecionada");
+
+      // Buscar/criar categoria "Folha de Pagamento"
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const { data: cats } = await (supabase.from("categorias_financeiras") as any)
+        .select("id").eq("empresa_id", empresa.id)
+        .eq("tipo", "pagar").ilike("nome", "%folha%").limit(1);
+      let catId: string | null = cats?.[0]?.id ?? null;
+      if (!catId) {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const { data: nc, error: eCat } = await (supabase.from("categorias_financeiras") as any)
+          .insert({ empresa_id: empresa.id, nome: "Folha de Pagamento", tipo: "pagar" })
+          .select("id").single();
+        if (eCat) throw eCat;
+        catId = nc.id;
+      }
+
+      const hoje = new Date().toISOString().slice(0, 10);
+
+      // Criar lançamento como "aberto" (pendente de conciliação)
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const { data: lanc, error: eLanc } = await (supabase.from("lancamentos_financeiros") as any).insert({
+        empresa_id: empresa.id, tipo: "pagar", status: "aberto",
+        descricao: `Folha ${String(f.competencia_mes).padStart(2, "0")}/${f.competencia_ano} — ${f.colaboradores?.nome ?? ""}`,
+        valor: f.liquido, data_emissao: hoje, data_vencimento: hoje,
+        categoria_id: catId,
+      }).select("id").single();
+      if (eLanc) throw eLanc;
+
+      // Atualizar folha para "lançada" e vincular ao lançamento
       const { error } = await (supabase.from("folha_pagamento" as never) as any)
-        .update({ status: "paga", data_pagamento: new Date().toISOString().slice(0, 10) })
+        .update({ status: "lançada", lancamento_id: lanc.id })
         .eq("id", id);
       if (error) throw error;
     },
     onSuccess: () => {
-      toast.success("Folha paga — lançamento criado em Contas a pagar");
+      toast.success("Conta a pagar criada — aguarda conciliação bancária");
       qc.invalidateQueries({ queryKey: ["folha"] });
       qc.invalidateQueries({ queryKey: ["lancamentos"] });
     },
@@ -243,7 +275,7 @@ function FolhaPage() {
     <div className="space-y-6">
       <PageHeader
         title="Folha de pagamento"
-        description="Gere a folha mensal por colaborador. INSS e IRRF são calculados automaticamente. Ao marcar como paga, um lançamento é criado em Contas a pagar."
+        description="Gere a folha mensal por colaborador. INSS e IRRF são calculados automaticamente. Ao criar, um lançamento é gerado em Contas a pagar (pendente de conciliação)."
         actions={
           <Dialog open={open} onOpenChange={(o) => { setOpen(o); if (!o) reset(); }}>
             <DialogTrigger asChild>
@@ -401,11 +433,12 @@ function FolhaPage() {
                     <span className={`rounded-md px-2 py-0.5 text-xs ${
                       f.status === "paga" ? "bg-emerald-500/10 text-emerald-600" :
                       f.status === "cancelada" ? "bg-rose-500/10 text-rose-600" :
+                      f.status === "lançada" ? "bg-sky-500/10 text-sky-600" :
                       "bg-amber-500/10 text-amber-600"
                     }`}>{f.status}</span>
                   </TableCell>
                   <TableCell className="text-right">
-                    {f.status !== "paga" && (
+                    {f.status !== "paga" && f.status !== "lançada" && (
                       <>
                         <Button variant="ghost" size="icon" className="h-7 w-7" title="Editar" onClick={() => abrirEdicao(f)}>
                           <Pencil className="h-3.5 w-3.5" />
@@ -419,7 +452,7 @@ function FolhaPage() {
                               <HandCoins className="h-3.5 w-3.5" />
                             </Button>
                           </TooltipTrigger>
-                          <TooltipContent>Pagar e gerar conta a pagar</TooltipContent>
+                          <TooltipContent>Gerar conta a pagar (pendente de conciliação)</TooltipContent>
                         </Tooltip>
                       </>
                     )}
