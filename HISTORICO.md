@@ -275,6 +275,35 @@ Registro condensado da evolução do Norvo Gestão fora do editor Lovable.
   para "paga". Trigger antigo removido. Badge "lançada" em sky na UI; botões de edição/
   exclusão ocultos para status "lançada" e "paga".
 
+- **Folha — excluir lançamento reverte status** (migration `20260825040000`, commit
+  `2b08a4b`): trigger `tg_lancamento_delete_sincroniza_folha` ao deletar
+  `lancamentos_financeiros` reverte folha para "aberta" e limpa `lancamento_id`. Fallback
+  no front (`financeiro.receber.tsx`) atualiza folha via client antes do DELETE + invalida
+  query `["folha"]`.
+
+- **Folha — descrição e categoria** (commit `cd940db`): descrição do lançamento agora é
+  `Nome — MM/AAAA` (antes `Folha MM/AAAA — Nome`). Categoria criada/busca por "Salário"
+  (antes "Folha de Pagamento"). Texto "pendente de conciliação" removido de tooltip/header/
+  toast. Botão excluir visível para todos os status (com confirm).
+
+- **Férias — formulário de concessão inline** (commit `1d87e9c`): formulário abre logo
+  abaixo do período selecionado (antes ficava no final da lista). Removido `({dias}d)` das
+  concessões.
+
+- **Férias — abono pecuniário** (commits `07ca74f`, `0947d4d`): campo começa vazio,
+  setinhas do input numérico removidas (`appearance:textfield`), pré-cálculo desconta abono
+  na data fim (30 − abono dias).
+
+- **Férias — prévia salarial com impostos** (commits `1f59520`, `ee124a0`, `d756d75`):
+  card de preview mostra férias bruto + ⅓, INSS progressivo 2026 (até R$ 988,09), IRRF
+  Lei 15.270/2025 (isento até R$ 5.000 do bruto, não do salário base). Abono pecuniário
+  isento de INSS/IRRF. 13º adiantado com desconto próprio.
+
+- **Férias — transição automática de status** (migration `20260825050000`, commit
+  `1f59520`): pg_cron diário (`ferias-status-automatico`, 00:05 UTC) roda
+  `atualizar_status_ferias()` que muda `agendada → em_gozo` (quando `data_inicio_gozo <=`
+  hoje) e `em_gozo → concluída` (quando `data_fim_gozo < hoje`). Função SECURITY DEFINER.
+
 ## Regras de segurança
 
 - NUNCA commitar tokens/senhas (GitHub PAT, senhas de banco, service keys).

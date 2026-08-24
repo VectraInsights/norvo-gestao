@@ -146,6 +146,16 @@ sobrescrito pela env `NITRO_PRESET` (ex.: `node-server`, `vercel`).
   EXCEÇÃO (decisão do dono): financeiro/contas e financeiro/receber usam input nativo.
 - Férias: prazo de concessão = fim do período aquisitivo +12 meses −30 dias (concessivo
   completo do art. 134 com folga; NÃO é +6 meses). Cálculo em `ciclosAteHoje()` no front.
+- Folha de pagamento: fluxo de pagamento via botão HandCoins cria `lancamentos_financeiros`
+  com `status: "aberto"` e seta folha como `"lançada"` (enum `folha_status`). Lançamento
+  é conciliado via extrato bancário → trigger `tg_lancamento_pago_sincroniza_folha` seta
+  folha como `"paga"`. Excluir o lançamento reverte folha para `"aberta"` (trigger
+  `trg_lancamento_delete_folha` + fallback no front). Categoria = "Salário". Descrição =
+  `Nome — MM/AAAA`. Prévia salarial inclui INSS progressivo 2026 e IRRF Lei 15.270/2025;
+  abono pecuniário é isento de INSS/IRRF.
+- Férias — status automático: pg_cron diário (`ferias-status-automatico`, 00:05 UTC) muda
+  `agendada → em_gozo` (quando `data_inicio_gozo <= hoje`) e `em_gozo → concluída`
+  (quando `data_fim_gozo < hoje`). Função `atualizar_status_ferias()` SECURITY DEFINER.
 - Colunas novas fora do types.ts (ex.: `produtos.categoria`, CNH em colaboradores) pedem
   cast duplo no retorno de queries tipadas: `(data ?? []) as unknown as Tipo[]`.
 - Colunas DATE ("YYYY-MM-DD") NÃO podem ir direto para `new Date()` quando o resultado é
