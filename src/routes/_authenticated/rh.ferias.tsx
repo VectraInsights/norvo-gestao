@@ -108,7 +108,7 @@ function FeriasPage() {
   const [cicloSel, setCicloSel] = useState<string | null>(null);
   const [formInicio, setFormInicio] = useState("");
   const [formFim, setFormFim] = useState("");
-  const [formAbono, setFormAbono] = useState("0");
+  const [formAbono, setFormAbono] = useState("");
   const [formDecimo, setFormDecimo] = useState(false);
 
   const { data: colabs, isLoading: loadingColabs } = useQuery({
@@ -170,7 +170,7 @@ function FeriasPage() {
   const toggleExpandido = (id: string) => {
     setExpandido((prev) => prev === id ? null : id);
     setCicloSel(null);
-    setFormInicio(""); setFormFim(""); setFormAbono("0"); setFormDecimo(false);
+    setFormInicio(""); setFormFim(""); setFormAbono(""); setFormDecimo(false);
   };
 
   const linhaExpandida = linhas.find((l) => l.colab.id === expandido);
@@ -361,8 +361,8 @@ function FeriasPage() {
                                               <Button
                                                 variant="outline" size="sm"
                                                 onClick={() => {
-                                                  setCicloSel(ciclo.inicio);
-                                                  setFormInicio(""); setFormFim(""); setFormAbono("0"); setFormDecimo(false);
+                                                setCicloSel(ciclo.inicio);
+                                                setFormInicio(""); setFormFim(""); setFormAbono(""); setFormDecimo(false);
                                                 }}
                                               >
                                                 Conceder
@@ -404,7 +404,8 @@ function FeriasPage() {
                                                 <div>
                                                   <Label>Venda (abono pecuniário)</Label>
                                                   <Input type="number" min={0} max={10} value={formAbono}
-                                                    className="h-9"
+                                                    placeholder="0"
+                                                    className="h-9 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                                                     onChange={(e) => {
                                                       const v = e.target.value;
                                                       setFormAbono(v);
