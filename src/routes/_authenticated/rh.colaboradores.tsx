@@ -44,7 +44,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-import { Users, Plus, Trash2, X } from "lucide-react";
+import { Users, Pencil, Plus, Trash2, X } from "lucide-react";
 import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -166,8 +166,7 @@ function ColaboradoresPage() {
       const { data, error } = await supabase
         .from("cargos" as never)
         .select("id,nome,empresa_id")
-        .or(`empresa_id.is.null,empresa_id.eq.${empresa!.id}`)
-        .order("empresa_id", { ascending: false })
+        .eq("empresa_id", empresa!.id)
         .order("nome")
         .abortSignal(signal);
       if (error) throw error;
@@ -175,8 +174,16 @@ function ColaboradoresPage() {
     },
   });
 
+  // quantos funcionários usam cada cargo (vínculo pelo NOME do cargo)
+  const usoCargo = (nome: string) =>
+    (colabs ?? []).filter(
+      (x) => (x.cargo ?? "").trim().toLowerCase() === nome.trim().toLowerCase(),
+    ).length;
+
   const [cargosOpen, setCargosOpen] = useState(false);
   const [novoCargo, setNovoCargo] = useState("");
+  const [cargoEditId, setCargoEditId] = useState<string | null>(null);
+  const [cargoEditNome, setCargoEditNome] = useState("");
 
   const criarCargo = useMutation({
     mutationFn: async () => {
@@ -194,6 +201,26 @@ function ColaboradoresPage() {
     onSuccess: () => {
       toast.success("Cargo criado");
       setNovoCargo("");
+      qc.invalidateQueries({ queryKey: ["cargos"] });
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+  const renomearCargo = useMutation({
+    mutationFn: async ({ id, nome }: { id: string; nome: string }) => {
+      const novo = nome.trim();
+      if (!novo) throw new Error("Informe o nome do cargo");
+      const tbl = supabase.from("cargos" as never) as any;
+      const { error } = await tbl.update({ nome: novo }).eq("id", id);
+      if (error) {
+        if (String(error.message).toLowerCase().includes("duplicate"))
+          throw new Error("Já existe um cargo com esse nome");
+        throw error;
+      }
+    },
+    onSuccess: () => {
+      toast.success("Cargo atualizado");
+      setCargoEditId(null);
       qc.invalidateQueries({ queryKey: ["cargos"] });
     },
     onError: (e: Error) => toast.error(e.message),
@@ -334,37 +361,76 @@ function ColaboradoresPage() {
                 </div>
                 <div className="max-h-64 overflow-y-auto rounded-md border">
                   {!cargos.length ? (
-                    <p className="p-3 text-sm text-muted-foreground">Nenhum cargo disponível.</p>
+                    <p className="p-3 text-sm text-muted-foreground">Nenhum cargo cadastrado.</p>
                   ) : (
                     <ul className="divide-y text-sm">
-                      {cargos.map((c) => (
-                        <li key={c.id} className="flex items-center justify-between px-3 py-2">
-                          <span>
-                            {c.nome}
-                            {!c.empresa_id && (
-                              <span className="ml-2 rounded bg-muted px-1.5 py-0.5 text-xs text-muted-foreground">
-                                padrão
-                              </span>
+                      {cargos.map((c) => {
+                        const usos = usoCargo(c.nome);
+                        const emEdicao = cargoEditId === c.id;
+                        return (
+                          <li key={c.id} className="flex items-center justify-between gap-2 px-3 py-2">
+                            {emEdicao ? (
+                              <form
+                                className="flex flex-1 items-center gap-2"
+                                onSubmit={(e) => {
+                                  e.preventDefault();
+                                  renomearCargo.mutate({ id: c.id, nome: cargoEditNome });
+                                }}
+                              >
+                                <Input
+                                  autoFocus
+                                  value={cargoEditNome}
+                                  onChange={(e) => setCargoEditNome(e.target.value)}
+                                  onBlur={() => setCargoEditId(null)}
+                                />
+                                <Button type="submit" size="sm" disabled={renomearCargo.isPending}>
+                                  Salvar
+                                </Button>
+                              </form>
+                            ) : (
+                              <>
+                                <span>
+                                  {c.nome}
+                                  {usos > 0 && (
+                                    <span className="ml-2 text-xs text-muted-foreground">
+                                      {usos} funcionário{usos > 1 ? "s" : ""}
+                                    </span>
+                                  )}
+                                </span>
+                                <span className="flex shrink-0 gap-1">
+                                  <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    className="h-7 w-7"
+                                    aria-label="Renomear"
+                                    onClick={() => { setCargoEditId(c.id); setCargoEditNome(c.nome); }}
+                                  >
+                                    <Pencil className="h-3.5 w-3.5" />
+                                  </Button>
+                                  <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    className="h-7 w-7"
+                                    aria-label="Excluir"
+                                    title={usos > 0 ? "Vinculado a funcionário(s) — não pode ser excluído" : "Excluir"}
+                                    disabled={usos > 0}
+                                    onClick={() => excluirCargo.mutate(c.id)}
+                                  >
+                                    <Trash2 className="h-3.5 w-3.5" />
+                                  </Button>
+                                </span>
+                              </>
                             )}
-                          </span>
-                          {c.empresa_id && (
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              className="h-7 w-7"
-                              onClick={() => excluirCargo.mutate(c.id)}
-                            >
-                              <Trash2 className="h-3.5 w-3.5" />
-                            </Button>
-                          )}
-                        </li>
-                      ))}
+                          </li>
+                        );
+                      })}
                     </ul>
                   )}
                 </div>
                 <p className="text-xs text-muted-foreground">
-                  Cargos marcados como "padrão" são do sistema e não podem ser excluídos. Viagens
-                  consideram motoristas todos os colaboradores com cargo contendo "Motorista".
+                  Crie, renomeie e exclua cargos livremente. Só não é possível excluir um cargo
+                  vinculado ao cadastro de algum funcionário. Viagens consideram motoristas todos
+                  os colaboradores com cargo contendo "Motorista".
                 </p>
               </DialogContent>
             </Dialog>
