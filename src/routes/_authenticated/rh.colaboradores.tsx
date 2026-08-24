@@ -484,7 +484,6 @@ function ColaboradoresPage() {
                           ).map((c) => (
                             <SelectItem key={c.id} value={c.nome}>
                               {c.nome}
-                              {!c.empresa_id && c.id !== "__atual" ? " (padrão)" : ""}
                             </SelectItem>
                           ))}
                         </SelectContent>
