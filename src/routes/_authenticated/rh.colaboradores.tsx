@@ -181,22 +181,20 @@ function ColaboradoresPage() {
       (x) => (x.cargo ?? "").trim().toLowerCase() === nome.trim().toLowerCase(),
     ).length;
 
-  // autocomplete do campo cargo: sugere conforme digita (sem duplicar nomes)
+  // autocomplete do campo cargo: mostra todos ao focar, filtra conforme digita
   const [cargoFoco, setCargoFoco] = useState(false);
   const cargoSugestoes = useMemo(() => {
     const q = form.cargo.trim().toLowerCase();
-    if (!q) return [];
     const nomes: string[] = [];
     for (const c of cargos) {
       if (
-        c.nome.toLowerCase().includes(q) &&
+        (!q || c.nome.toLowerCase().includes(q)) &&
         !nomes.some((n) => n.toLowerCase() === c.nome.toLowerCase())
       ) {
         nomes.push(c.nome);
-        if (nomes.length >= 12) break;
       }
     }
-    return nomes;
+    return nomes.slice(0, 12);
   }, [cargos, form.cargo]);
 
   const [cargosOpen, setCargosOpen] = useState(false);
@@ -534,17 +532,16 @@ function ColaboradoresPage() {
                   <div className="grid grid-cols-2 gap-3">
                     <div>
                       <Label>Cargo *</Label>
-                      <div className="relative rounded-md ring-offset-background focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-2">
+                      <div className="relative">
                         <Input
-                          className="rounded-md border-input focus-visible:ring-0 focus-visible:ring-offset-0"
-                          placeholder="Digite para buscar o cargo"
+                          placeholder="Digite ou selecione o cargo"
                           value={form.cargo}
                           onChange={(e) => set("cargo", e.target.value)}
                           onFocus={() => setCargoFoco(true)}
-                          onBlur={() => setTimeout(() => setCargoFoco(false), 150)}
+                          onBlur={() => setTimeout(() => setCargoFoco(false), 200)}
                           autoComplete="off"
                         />
-                        {cargoFoco && form.cargo.trim() !== "" && cargoSugestoes.length > 0 && (
+                        {cargoFoco && cargoSugestoes.length > 0 && (
                           <div className="absolute z-20 mt-1 max-h-56 w-full overflow-y-auto rounded-md border bg-popover shadow-md">
                             {cargoSugestoes.map((nome) => (
                               <button
