@@ -202,11 +202,11 @@ function ColaboradoresPage() {
   const [cargoEditId, setCargoEditId] = useState<string | null>(null);
   const [cargoEditNome, setCargoEditNome] = useState("");
 
-  // filtra a lista de cargos conforme o campo "novo cargo" (vazio = mostra todos)
+  // filtra a lista de cargos conforme o campo "novo cargo" (vazio = mostra todos), ordem alfabética
   const cargosFiltrados = useMemo(() => {
     const q = novoCargo.trim().toLowerCase();
-    if (!q) return cargos;
-    return cargos.filter((c) => c.nome.toLowerCase().includes(q));
+    const base = q ? cargos.filter((c) => c.nome.toLowerCase().includes(q)) : [...cargos];
+    return base.sort((a, b) => a.nome.localeCompare(b.nome, "pt-BR"));
   }, [cargos, novoCargo]);
 
   const criarCargo = useMutation({
@@ -448,22 +448,6 @@ function ColaboradoresPage() {
                           </li>
                         );
                       })}
-                      {novoCargo.trim() !== "" && !cargos.some(
-                        (c) => c.nome.toLowerCase() === novoCargo.trim().toLowerCase(),
-                      ) && (
-                        <li className="px-3 py-2">
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            className="w-full justify-start text-primary"
-                            onClick={() => criarCargo.mutate()}
-                            disabled={criarCargo.isPending}
-                          >
-                            <Plus className="mr-2 h-4 w-4" />
-                            Criar "{novoCargo.trim()}"
-                          </Button>
-                        </li>
-                      )}
                     </ul>
                   )}
                 </div>
