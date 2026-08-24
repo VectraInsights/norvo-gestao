@@ -258,6 +258,13 @@ Registro condensado da evolução do Norvo Gestão fora do editor Lovable.
   o adiantamento (vinculada + automáticas da recorrência; pagas permanecem). Testado em
   transação revertida: gerou → excluiu → conta sumiu. Órfãs deixadas por testes anteriores
   foram removidas manualmente.
+- **Cargos 100% customizáveis** (migration `20260824210000`): catálogo padrão global
+  (52 cargos `empresa_id IS NULL`) foi APAGADO; policies só aceitam cargos da empresa;
+  nova policy de UPDATE libera renomear; trigger `tg_cargo_guard` bloqueia exclusão no
+  banco somente quando o nome do cargo está vinculado a algum funcionário. Diálogo de
+  cargos no RH: lista quantos funcionários usam cada cargo, botão de renomear e excluir
+  desabilitado quando vinculado. Cargos em uso pelos funcionários existentes foram
+  recriados como cargos da empresa ("Administrativo", "Financeiro").
 
 ## Regras de segurança
 

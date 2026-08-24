@@ -113,11 +113,14 @@ sobrescrito pela env `NITRO_PRESET` (ex.: `node-server`, `vercel`).
 - Módulos novos exigem entrada em `MODULOS` (`src/lib/permissoes.ts`) — `moduloDaRota()`
   deriva o módulo do primeiro segmento da rota. Membros existentes só veem o menu novo após
   o admin marcar o módulo em Configurações → Usuários (owner/admin sempre veem tudo).
-- Catálogo de `cargos` (migrations `20260822133000` + `20260824120000`): tabela global com
-  52 linhas padrão de transportadora (`empresa_id IS NULL`, imutáveis pelo app) + cargos por
-  empresa; leitura para qualquer membro, criar/excluir só owner/admin da empresa ou
-  super_admin (policies). Cargo no RH é dropdown; VIAGENS e COMISSÕES consideram motoristas
-  os colaboradores ativos cujo cargo contém "Motorist" (ILIKE) — não existe coluna
+- Catálogo de `cargos` (migrations `20260822133000` + `20260824120000` + `20260824210000`):
+  100% customizável — NÃO existe mais catálogo global padrão (`empresa_id IS NULL` foi
+  apagado e policies só aceitam cargos da própria empresa). Owner/admin (ou super_admin)
+  cria, RENOMEIA (policy de UPDATE nova) e exclui; a exclusão é bloqueada NO BANCO pelo
+  trigger `tg_cargo_guard` quando algum `colaboradores.cargo` usa o nome do cargo
+  (colaboradores.cargo é TEXTO com o nome, não FK). A UI mostra quantos funcionários usam
+  cada cargo. Cargo no RH é dropdown; VIAGENS e COMISSÕES consideram motoristas os
+  colaboradores ativos cujo cargo contém "Motorist" (ILIKE) — não existe coluna
   `eh_motorista`.
 - Adiantamentos (migration `20260824120000`): campo "recorrente" gera conta a pagar mensal.
   A UI chama `public.gerar_adiantamentos_recorrentes()` logo após o INSERT (1ª conta na
