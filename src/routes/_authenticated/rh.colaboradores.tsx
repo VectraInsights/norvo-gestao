@@ -166,7 +166,8 @@ function ColaboradoresPage() {
       const { data, error } = await supabase
         .from("cargos" as never)
         .select("id,nome,empresa_id")
-        .eq("empresa_id", empresa!.id)
+        .or(`empresa_id.is.null,empresa_id.eq.${empresa!.id}`)
+        .order("empresa_id", { ascending: false })
         .order("nome")
         .abortSignal(signal);
       if (error) throw error;
@@ -391,6 +392,11 @@ function ColaboradoresPage() {
                               <>
                                 <span>
                                   {c.nome}
+                                  {!c.empresa_id && (
+                                    <span className="ml-2 rounded bg-muted px-1.5 py-0.5 text-xs text-muted-foreground">
+                                      padrão
+                                    </span>
+                                  )}
                                   {usos > 0 && (
                                     <span className="ml-2 text-xs text-muted-foreground">
                                       {usos} funcionário{usos > 1 ? "s" : ""}
@@ -428,9 +434,10 @@ function ColaboradoresPage() {
                   )}
                 </div>
                 <p className="text-xs text-muted-foreground">
-                  Crie, renomeie e exclua cargos livremente. Só não é possível excluir um cargo
-                  vinculado ao cadastro de algum funcionário. Viagens consideram motoristas todos
-                  os colaboradores com cargo contendo "Motorista".
+                  Crie, renomeie e exclua qualquer cargo — inclusive os padrão (compartilhados
+                  entre empresas). Só não é possível excluir um cargo vinculado ao cadastro de
+                  algum funcionário. Viagens consideram motoristas todos os colaboradores com
+                  cargo contendo "Motorista".
                 </p>
               </DialogContent>
             </Dialog>
