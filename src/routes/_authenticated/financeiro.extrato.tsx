@@ -53,6 +53,7 @@ type Mov = {
   data_pagamento: string | null;
   created_at: string;
   created_by: string | null;
+  observacoes: string | null;
   documento: string | null;
   forma_pagamento: string | null;
   contato: { nome: string } | null;
@@ -86,7 +87,7 @@ function ExtratoPage() {
       const { data, error } = await supabase
         .from("lancamentos_financeiros")
         .select(
-          "id,descricao,tipo,valor,valor_pago,status,data_emissao,data_vencimento,data_pagamento,created_at,created_by,documento,forma_pagamento," +
+          "id,descricao,tipo,valor,valor_pago,status,data_emissao,data_vencimento,data_pagamento,created_at,created_by,documento,forma_pagamento,observacoes," +
             "contato:contatos(nome),categoria:categorias_financeiras(nome),conta:contas_bancarias(nome),centro:centros_custo(nome)",
         )
         .eq("empresa_id", empresa!.id)
@@ -135,6 +136,14 @@ function ExtratoPage() {
     base === "pagamento" ? (m.data_pagamento ?? m.data_vencimento)
       : base === "emissao" ? m.data_emissao : m.data_vencimento;
 
+  // Autor + origem: lançamentos de adiantamento recorrente mostram o criador da recorrência
+  const autorComOrigem = (m: Mov) => {
+    const rec = (m.observacoes ?? "").includes("adiantamento recorrente");
+    const nome = m.created_by ? (perfis[m.created_by] ?? "—") : null;
+    if (!nome) return rec ? "Recorrência (sistema)" : "—";
+    return rec ? `${nome} (recorrência)` : nome;
+  };
+
   const filtrados = useMemo(() => {
     const q = busca.trim().toLowerCase();
     return (movs ?? [])
@@ -174,7 +183,7 @@ function ExtratoPage() {
       m.conta?.nome ?? "", m.documento ?? "", m.forma_pagamento ?? "",
       assinado > 0 ? assinado.toFixed(2) : "", assinado < 0 ? Math.abs(assinado).toFixed(2) : "",
       saldo.toFixed(2),
-      m.created_by ? (perfis[m.created_by] ?? "—") : "—",
+      autorComOrigem(m),
       format(new Date(m.created_at), "dd/MM/yyyy HH:mm"),
     ]);
     const csv = [head, ...rows].map((r) => r.map((c) => `"${String(c).replace(/"/g, '""')}"`).join(";")).join("\n");
@@ -327,7 +336,7 @@ function ExtratoPage() {
                   <TableCell className="text-right text-tabular text-destructive">{assinado < 0 ? brl(Math.abs(assinado)) : ""}</TableCell>
                   <TableCell className="text-right text-tabular font-medium">{brl(saldo)}</TableCell>
                   <TableCell className="whitespace-nowrap text-xs text-muted-foreground">
-                    {m.created_by ? (perfis[m.created_by] ?? "—") : "—"}
+                    {autorComOrigem(m)}
                     <br />
                     {format(new Date(m.created_at), "dd/MM/yyyy HH:mm")}
                   </TableCell>

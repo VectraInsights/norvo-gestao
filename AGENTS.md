@@ -128,10 +128,11 @@ sobrescrito pela env `NITRO_PRESET` (ex.: `node-server`, `vercel`).
   colaborador + sufixo " (recorrência)"; categoria = "Adiantamentos" (tipo pagar, criada
   por empresa se não existir); AUTORIA = criador do adiantamento (`adiantamentos.created_by`,
   que tem DEFAULT auth.uid() desde `20260824180000`) — as contas da madrugada ficam com o
-  nome de quem cadastrou a recorrência. EXCLUIR um adiantamento remove junto as
-  contas a pagar em aberto geradas por ele (vinculada via `lancamento_id` ou, no caso
-  recorrente, por observações="Gerado automaticamente pelo adiantamento recorrente" +
-  descrição = nome; as já PAGAS ficam). Adiantamento só é editável enquanto NÃO tem
+  nome de quem cadastrou a recorrência. EXCLUIR um adiantamento limpa as contas a
+  pagar NO BANCO via trigger `tg_adiantamento_delete` (`20260824200000`, SECURITY DEFINER):
+  remove a vinculada (`lancamento_id`) e as automáticas em aberto da recorrência
+  (observações + descrição = nome do colaborador + mesmo valor); as já PAGAS ficam.
+  Adiantamento só é editável enquanto NÃO tem
   `lancamento_id`; depois disso o valor muda pela tela financeira. O STATUS do
   adiantamento é espelho do
   lançamento vinculado: trigger `tg_lancamento_sync_adiantamento` marca 'descontado'

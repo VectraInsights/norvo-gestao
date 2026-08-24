@@ -250,8 +250,14 @@ Registro condensado da evolução do Norvo Gestão fora do editor Lovable.
   foi enviado ao contas a pagar; recorrente sem lançamento vinculado também edita.
 - **Autoria das contas de recorrência** (migration `20260824180000`): `adiantamentos.created_by`
   ganhou DEFAULT auth.uid() e a função de geração replica esse criador no lançamento —
-  contas geradas até de madrugada ficam com o nome de quem cadastrou a recorrência, e a
-  descrição ganhou sufixo " (recorrência)" para identificar a origem.
+  contas geradas até de madrugada ficam com o nome de quem cadastrou a recorrência.
+  O marcador de recorrência fica JUNTO AO AUTOR na UI (não na descrição, que ficou só
+  com o nome do colaborador — migration `20260824190000` reverteu o sufixo).
+- **Limpeza garantida no banco** (migration `20260824200000`): trigger
+  `tg_adiantamento_delete` em adiantamentos remove as contas a pagar EM ABERTO ao excluir
+  o adiantamento (vinculada + automáticas da recorrência; pagas permanecem). Testado em
+  transação revertida: gerou → excluiu → conta sumiu. Órfãs deixadas por testes anteriores
+  foram removidas manualmente.
 
 ## Regras de segurança
 

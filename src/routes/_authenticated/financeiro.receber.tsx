@@ -569,11 +569,16 @@ export function LancamentosPage({ tipo }: { tipo: "receber" | "pagar" }) {
           <DialogHeader><DialogTitle>Editar lançamento</DialogTitle></DialogHeader>
           {editing && (
             <form onSubmit={(e) => { e.preventDefault(); salvarEdicao.mutate(editing); }} className="space-y-3">
-              {editing.created_by && (
-                <p className="text-xs text-muted-foreground">
-                  Lançado por <span className="font-medium">{perfis[editing.created_by] ?? "—"}</span>
-                  {" · "}
-                  {format(new Date(editing.created_at), "dd/MM/yyyy HH:mm")}
+              {(editing.created_by || (editing.observacoes ?? "").includes("adiantamento recorrente")) && (
+                <p className="flex items-center gap-2 text-xs text-muted-foreground">
+                  <span>
+                    {editing.created_by
+                      ? <>Lançado por <span className="font-medium">{perfis[editing.created_by] ?? "—"}</span> · {format(new Date(editing.created_at), "dd/MM/yyyy HH:mm")}</>
+                      : "Lançado pelo sistema"}
+                  </span>
+                  {(editing.observacoes ?? "").includes("adiantamento recorrente") && (
+                    <span className="rounded bg-muted px-1.5 py-0.5 text-[10px] uppercase tracking-wide">recorrência</span>
+                  )}
                 </p>
               )}
               <div>
