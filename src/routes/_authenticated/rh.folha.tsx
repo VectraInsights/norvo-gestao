@@ -216,16 +216,16 @@ function FolhaPage() {
       if (!f) throw new Error("Lançamento não encontrado");
       if (!empresa?.id) throw new Error("Empresa não selecionada");
 
-      // Buscar/criar categoria "Folha de Pagamento"
+      // Buscar/criar categoria "Salário"
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const { data: cats } = await (supabase.from("categorias_financeiras") as any)
         .select("id").eq("empresa_id", empresa.id)
-        .eq("tipo", "pagar").ilike("nome", "%folha%").limit(1);
+        .eq("tipo", "pagar").ilike("nome", "%sal%C3%A1rio%").limit(1);
       let catId: string | null = cats?.[0]?.id ?? null;
       if (!catId) {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const { data: nc, error: eCat } = await (supabase.from("categorias_financeiras") as any)
-          .insert({ empresa_id: empresa.id, nome: "Folha de Pagamento", tipo: "pagar" })
+          .insert({ empresa_id: empresa.id, nome: "Salário", tipo: "pagar" })
           .select("id").single();
         if (eCat) throw eCat;
         catId = nc.id;
@@ -233,11 +233,11 @@ function FolhaPage() {
 
       const hoje = new Date().toISOString().slice(0, 10);
 
-      // Criar lançamento como "aberto" (pendente de conciliação)
+      // Criar lançamento como "aberto"
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const { data: lanc, error: eLanc } = await (supabase.from("lancamentos_financeiros") as any).insert({
         empresa_id: empresa.id, tipo: "pagar", status: "aberto",
-        descricao: `Folha ${String(f.competencia_mes).padStart(2, "0")}/${f.competencia_ano} — ${f.colaboradores?.nome ?? ""}`,
+        descricao: `${f.colaboradores?.nome ?? ""} — ${String(f.competencia_mes).padStart(2, "0")}/${f.competencia_ano}`,
         valor: f.liquido, data_emissao: hoje, data_vencimento: hoje,
         categoria_id: catId,
       }).select("id").single();
