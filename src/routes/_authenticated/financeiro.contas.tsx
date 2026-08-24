@@ -1,4 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { DateInput } from "@/components/erp/date-input";
 import { PageHeader } from "@/components/erp/page-header";
 import { EmptyState } from "@/components/erp/empty-state";
 import { Button } from "@/components/ui/button";
@@ -520,7 +521,7 @@ function ContasFinanceiras() {
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                         <div>
                           <Label>Início dos lançamentos *</Label>
-                          <Input required type="date" value={form.data_inicio_lancamentos} onChange={(e) => setForm({ ...form, data_inicio_lancamentos: e.target.value })} />
+                          <DateInput required value={form.data_inicio_lancamentos} onChange={(v) => setForm({ ...form, data_inicio_lancamentos: v })} />
                           <p className="text-xs text-muted-foreground mt-1">Informe uma data até hoje</p>
                         </div>
                         <div>

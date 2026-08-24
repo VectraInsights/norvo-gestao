@@ -194,6 +194,35 @@ Registro condensado da evolução do Norvo Gestão fora do editor Lovable.
     contendo "Motorist". Para esses cargos, nº da CNH e categoria são OBRIGATÓRIOS
     (validação no app) e a categoria virou dropdown (ACC, A, B, AB, C, D, E).
 
+26. **Pacote de melhorias de DP/RH e UX (24/08/2026)** — feedback do dono após testar:
+    - **Adiantamento recorrente mensal**: campo "Parcelas" REMOVIDO (gerava 1 lançamento com
+      o total — bug). No lugar, checkbox "Recorrente mensal" + dia do pagamento (1–31).
+      Um job pg_cron (`adiantamentos-recorrentes`, diário 03:15 UTC) chama a função
+      `public.gerar_adiantamentos_recorrentes()`, que cria a conta a pagar do mês quando o
+      dia chega (idempotente via `ultimo_mes_gerado`; dia ≥29 cai no último dia do mês).
+      Avulsos continuam com botão manual de gerar conta.
+    - **Amarração adiantamento ↔ financeiro**: trigger `tg_lancamento_sync_adiantamento`
+      marca o adiantamento como PAGO automaticamente quando o lançamento vinculado é quitado
+      (baixa manual ou conciliação bancária); se o lançamento reabrir, volta a Em aberto.
+      Botão manual "Descontado" removido da UI.
+    - **Calendário em todos os campos de data**: componente `DateInput`
+      (`src/components/erp/date-input.tsx`) = input nativo + ícone que abre calendário
+      pt-BR. Substituiu os 23 `type="date"` espalhados por 13 páginas.
+    - **Catálogo de cargos efetivos** (migration `20260824120000`): saíram os genéricos
+      ("Administrativo", "Financeiro", etc.); entraram ~47 cargos reais de transportadora
+      (Gerente/Supervisor/Encarregado/Analista/Assistente/Auxiliar de Transportes,
+      Logística, Frota, Pátio, Expedição..., Eletricista, Conferente, Operador de
+      Empilhadeira). Mantidos Motorista, Motorista Carreteiro, Mecânico, Ajudante,
+      Estoquista. 52 cargos padrão no total.
+    - **Comissões só para motoristas**: lista de colaboradores filtrada por cargo
+      ILIKE '%motorist%' (query própria, sem afetar adiantamentos/folha).
+    - **Férias: prazo concessivo corrigido** — antes era fim do aquisitivo +6m; agora o
+      período concessivo completo (+12m) com folga de 30 dias: limite = fim + 12m − 30d
+      (admissão 19/02/2024 → conceder até 19/01/2026).
+    - Título da seção CNH no cadastro virou apenas "CNH".
+    - Migração aplicada localmente via pooler (`scripts/apply-migration.cjs`, usa env
+      DATABASE_URL); teste da automação/trigger rodou em transação revertida.
+
 ## Regras de segurança
 
 - NUNCA commitar tokens/senhas (GitHub PAT, senhas de banco, service keys).

@@ -1,5 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { createFileRoute } from "@tanstack/react-router";
+import { DateInput } from "@/components/erp/date-input";
 import { PageHeader } from "@/components/erp/page-header";
 import { EmptyState } from "@/components/erp/empty-state";
 import { Button } from "@/components/ui/button";
@@ -513,18 +514,16 @@ function Viagens() {
                 <div className="grid grid-cols-2 gap-3">
                   <div>
                     <Label>Data de saída</Label>
-                    <Input
-                      type="date"
+                    <DateInput
                       value={form.data_saida}
-                      onChange={(e) => set("data_saida", e.target.value)}
+                      onChange={(v) => set("data_saida", v)}
                     />
                   </div>
                   <div>
                     <Label>Previsão de chegada</Label>
-                    <Input
-                      type="date"
+                    <DateInput
                       value={form.data_chegada}
-                      onChange={(e) => set("data_chegada", e.target.value)}
+                      onChange={(v) => set("data_chegada", v)}
                     />
                   </div>
                 </div>
@@ -753,10 +752,9 @@ function Viagens() {
               </div>
               <div>
                 <Label>Data</Label>
-                <Input
-                  type="date"
+                <DateInput
                   value={despForm.data}
-                  onChange={(e) => setDespForm((f) => ({ ...f, data: e.target.value }))}
+                  onChange={(v) => setDespForm((f) => ({ ...f, data: v }))}
                 />
               </div>
             </div>

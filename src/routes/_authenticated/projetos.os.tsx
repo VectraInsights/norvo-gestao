@@ -1,4 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { DateInput } from "@/components/erp/date-input";
 import { PageHeader } from "@/components/erp/page-header";
 import { EmptyState } from "@/components/erp/empty-state";
 import { Button } from "@/components/ui/button";
@@ -232,7 +233,7 @@ function OSPage() {
                   </div>
                 </div>
                 <div className="grid grid-cols-2 gap-3">
-                  <div><Label>Previsão</Label><Input type="date" value={dataPrev} onChange={(e) => setDataPrev(e.target.value)} /></div>
+                  <div><Label>Previsão</Label><DateInput value={dataPrev} onChange={setDataPrev} /></div>
                   <div><Label>Valor</Label><MoneyInput value={valor} onChange={setValor} /></div>
                 </div>
                 <div><Label>Observações</Label><Textarea rows={2} value={obs} onChange={(e) => setObs(e.target.value)} /></div>

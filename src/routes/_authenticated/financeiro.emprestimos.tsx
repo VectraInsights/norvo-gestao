@@ -1,4 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { DateInput } from "@/components/erp/date-input";
 import { PageHeader } from "@/components/erp/page-header";
 import { EmptyState } from "@/components/erp/empty-state";
 import { Button } from "@/components/ui/button";
@@ -232,11 +233,11 @@ function EmprestimosPage() {
                 <div className="grid gap-2 sm:grid-cols-2">
                   <div className="space-y-1.5">
                     <Label>Contratação</Label>
-                    <Input type="date" value={contratacao} onChange={(e) => setContratacao(e.target.value)} />
+                    <DateInput value={contratacao} onChange={setContratacao} />
                   </div>
                   <div className="space-y-1.5">
                     <Label>1º vencimento</Label>
-                    <Input type="date" value={primeiro} onChange={(e) => setPrimeiro(e.target.value)} />
+                    <DateInput value={primeiro} onChange={setPrimeiro} />
                   </div>
                 </div>
                 {previa && (

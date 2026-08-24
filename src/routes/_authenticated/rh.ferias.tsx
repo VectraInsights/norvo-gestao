@@ -1,5 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any -- tabelas novas ainda não estão em types.ts; padrão do projeto é cast as never/as any */
 import { createFileRoute } from "@tanstack/react-router";
+import { DateInput } from "@/components/erp/date-input";
 import { PageHeader } from "@/components/erp/page-header";
 import { EmptyState } from "@/components/erp/empty-state";
 import { Button } from "@/components/ui/button";
@@ -95,8 +96,10 @@ const addMesesClamp = (d: Date, n: number) => {
   return x;
 };
 
-/** Ciclos aquisitivos já iniciados: aniversário da admissão +12m para adquirir,
- *  +6m adicionais para conceder (CLT art. 134). */
+/** Ciclos aquisitivos já iniciados: aniversário da admissão +12m para adquirir.
+ *  Prazo para conceder: o período concessivo completo (12m seguintes ao aquisitivo,
+ *  CLT art. 134) com folga de 30 dias antes do fim — ou seja, limite = fim + 12m − 30d.
+ *  Ex.: admissão 19/02/2024 → aquisitivo 19/02/2024–18/02/2025 → conceder até 19/01/2026. */
 function ciclosAteHoje(admissao: string): Ciclo[] {
   const adm = new Date(admissao + "T00:00:00");
   const hojeD = new Date(HOJE() + "T00:00:00");
@@ -105,7 +108,7 @@ function ciclosAteHoje(admissao: string): Ciclo[] {
     const ini = addAnos(adm, y);
     if (ini > hojeD) break;
     const fim = addDias(toISO(addAnos(adm, y + 1)), -1);
-    const limite = toISO(addMesesClamp(new Date(fim + "T00:00:00"), 6));
+    const limite = toISO(addDias(toISO(addMesesClamp(new Date(fim + "T00:00:00"), 12)), -30));
     out.push({ inicio: toISO(ini), fim, limite });
   }
   return out;
@@ -490,20 +493,18 @@ function FeriasPage() {
                   <div className="grid grid-cols-2 gap-3">
                     <div>
                       <Label>Início do gozo *</Label>
-                      <Input
-                        type="date"
+                      <DateInput
                         value={formC.data_inicio_gozo}
-                        onChange={(e) =>
-                          setFormC((f) => ({ ...f, data_inicio_gozo: e.target.value }))
+                        onChange={(v) =>
+                          setFormC((f) => ({ ...f, data_inicio_gozo: v }))
                         }
                       />
                     </div>
                     <div>
                       <Label>Fim do gozo *</Label>
-                      <Input
-                        type="date"
+                      <DateInput
                         value={formC.data_fim_gozo}
-                        onChange={(e) => setFormC((f) => ({ ...f, data_fim_gozo: e.target.value }))}
+                        onChange={(v) => setFormC((f) => ({ ...f, data_fim_gozo: v }))}
                       />
                     </div>
                     <div>

@@ -59,12 +59,14 @@ function ComissoesPage() {
     [base, percentual],
   );
 
+  // Comissão é de motorista/freteiro: lista apenas colaboradores com cargo de motorista
   const { data: colabs = [] } = useQuery({
     enabled: !!empresa,
-    queryKey: ["colaboradores-ativos", empresa?.id],
+    queryKey: ["colaboradores-motoristas", empresa?.id],
     queryFn: async () => {
       const { data } = await supabase.from("colaboradores" as never)
-        .select("id,nome").eq("empresa_id", empresa!.id).eq("status", "ativo").order("nome");
+        .select("id,nome").eq("empresa_id", empresa!.id).eq("status", "ativo")
+        .ilike("cargo", "%motorist%").order("nome");
       return (data ?? []) as unknown as { id: string; nome: string }[];
     },
   });
@@ -172,13 +174,18 @@ function ComissoesPage() {
                 <DialogHeader><DialogTitle>Nova comissão · {MESES[mes - 1]}/{ano}</DialogTitle></DialogHeader>
                 <div className="grid gap-4">
                   <div className="space-y-1.5">
-                    <Label>Colaborador</Label>
+                    <Label>Colaborador (motoristas)</Label>
                     <Select value={colaborador} onValueChange={setColaborador}>
                       <SelectTrigger><SelectValue placeholder="Selecione" /></SelectTrigger>
                       <SelectContent>
                         {colabs.map((c) => <SelectItem key={c.id} value={c.id}>{c.nome}</SelectItem>)}
                       </SelectContent>
                     </Select>
+                    {colabs.length === 0 && (
+                      <p className="text-xs text-muted-foreground">
+                        Nenhum motorista ativo com cargo cadastrado — cadastre em DP → Colaboradores.
+                      </p>
+                    )}
                   </div>
                   <div className="space-y-1.5">
                     <Label>Descrição</Label>

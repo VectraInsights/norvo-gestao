@@ -502,20 +502,18 @@ function ColaboradoresPage() {
                     </div>
                     <div>
                       <Label>Data de admissão *</Label>
-                      <Input
-                        type="date"
+                      <DateInput
                         value={form.data_admissao}
-                        onChange={(e) => set("data_admissao", e.target.value)}
+                        onChange={(v) => set("data_admissao", v)}
                       />
                     </div>
                   </div>
                   <div className="grid grid-cols-2 gap-3">
                     <div>
                       <Label>Data de demissão</Label>
-                      <Input
-                        type="date"
+                      <DateInput
                         value={form.data_demissao}
-                        onChange={(e) => set("data_demissao", e.target.value)}
+                        onChange={(v) => set("data_demissao", v)}
                       />
                     </div>
                     <div></div>
@@ -532,9 +530,7 @@ function ColaboradoresPage() {
                   </div>
                   <div className="rounded-md border bg-muted/30 p-3">
                     <div className="mb-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-                      {form.cargo.toLowerCase().includes("motorist")
-                        ? "CNH (obrigatória para motoristas)"
-                        : "CNH (motoristas — opcional)"}
+                      CNH
                     </div>
                     <div className="grid grid-cols-3 gap-3">
                       <div>
@@ -568,10 +564,9 @@ function ColaboradoresPage() {
                       </div>
                       <div>
                         <Label>Validade</Label>
-                        <Input
-                          type="date"
+                        <DateInput
                           value={form.cnh_validade}
-                          onChange={(e) => set("cnh_validade", e.target.value)}
+                          onChange={(v) => set("cnh_validade", v)}
                         />
                       </div>
                     </div>
