@@ -386,8 +386,10 @@ function FeriasPage() {
                                                     onChange={(v) => {
                                                       setFormInicio(v);
                                                       if (v) {
+                                                        const abono = Number(formAbono) || 0;
+                                                        const diasFerias = 30 - abono;
                                                         const d = new Date(v + "T00:00:00");
-                                                        d.setDate(d.getDate() + 29);
+                                                        d.setDate(d.getDate() + diasFerias - 1);
                                                         setFormFim(d.toISOString().slice(0, 10));
                                                       } else {
                                                         setFormFim("");
@@ -402,7 +404,18 @@ function FeriasPage() {
                                                 <div>
                                                   <Label>Venda (abono pecuniário)</Label>
                                                   <Input type="number" min={0} max={10} value={formAbono}
-                                                    onChange={(e) => setFormAbono(e.target.value)} />
+                                                    className="h-9"
+                                                    onChange={(e) => {
+                                                      const v = e.target.value;
+                                                      setFormAbono(v);
+                                                      if (formInicio) {
+                                                        const abono = Number(v) || 0;
+                                                        const diasFerias = 30 - abono;
+                                                        const d = new Date(formInicio + "T00:00:00");
+                                                        d.setDate(d.getDate() + diasFerias - 1);
+                                                        setFormFim(d.toISOString().slice(0, 10));
+                                                      }
+                                                    }} />
                                                   <p className="mt-1 text-xs text-muted-foreground">Máx. 10 dias (CLT art. 143).</p>
                                                 </div>
                                                 <label className="flex items-end gap-2 pb-1 text-sm">
@@ -436,7 +449,7 @@ function FeriasPage() {
                                     <div key={c.id} className={`rounded-md border px-3 py-2 text-sm ${c.status === "cancelada" ? "opacity-50" : ""}`}>
                                       <div className="flex items-center justify-between gap-2">
                                         <span className="text-tabular whitespace-nowrap">
-                                          {dateBR(c.data_inicio_gozo)} → {dateBR(c.data_fim_gozo)} ({c.dias}d)
+                                          {dateBR(c.data_inicio_gozo)} → {dateBR(c.data_fim_gozo)}
                                           <span className="ml-1 text-xs text-muted-foreground">
                                             ciclo {dateBR(c.periodo_inicio)}
                                           </span>
