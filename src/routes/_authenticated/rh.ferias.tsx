@@ -233,7 +233,7 @@ function FeriasPage() {
     const terco = proporcional / 3;
     const brutoFerias = proporcional + terco;
     const inssFerias = calcINSS(brutoFerias);
-    const irrfFerias = calcIRRF(brutoFerias - inssFerias, salario);
+    const irrfFerias = calcIRRF(brutoFerias - inssFerias, brutoFerias);
     const liquidoFerias = brutoFerias - inssFerias - irrfFerias;
 
     // Abono pecuniário — ISENTO de INSS e IRRF
@@ -242,7 +242,7 @@ function FeriasPage() {
     // 13º adiantado — INSS e IRRF incidem
     const decimoBruto = formDecimo ? (salario / 30) * diasGozo : 0;
     const inssDecimo = formDecimo ? calcINSS(decimoBruto) : 0;
-    const irrfDecimo = formDecimo ? calcIRRF(decimoBruto - inssDecimo, salario) : 0;
+    const irrfDecimo = formDecimo ? calcIRRF(decimoBruto - inssDecimo, decimoBruto) : 0;
     const liquidoDecimo = decimoBruto - inssDecimo - irrfDecimo;
 
     const totalDescontos = inssFerias + irrfFerias + inssDecimo + irrfDecimo;
