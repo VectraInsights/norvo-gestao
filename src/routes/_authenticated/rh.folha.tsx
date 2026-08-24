@@ -50,10 +50,10 @@ const MESES = ["Jan","Fev","Mar","Abr","Mai","Jun","Jul","Ago","Set","Out","Nov"
 
 /* ─── Tabelas INSS 2026 (alíquota progressiva) ─── */
 const INSS_FAIXAS = [
-  { limite: 1517.13, aliquota: 0.075 },
-  { limite: 2272.92, aliquota: 0.09 },
-  { limite: 3406.93, aliquota: 0.12 },
-  { limite: Infinity,  aliquota: 0.14 },
+  { limite: 1621.00, aliquota: 0.075 },
+  { limite: 2902.84, aliquota: 0.09 },
+  { limite: 4354.27, aliquota: 0.12 },
+  { limite: 8475.55, aliquota: 0.14 },
 ];
 
 function calcINSS(salarioBruto: number): number {
@@ -65,7 +65,7 @@ function calcINSS(salarioBruto: number): number {
     inss += base * faixa.aliquota;
     anterior = faixa.limite;
   }
-  return Math.round(inss * 100) / 100;
+  return Math.min(Math.round(inss * 100) / 100, 988.09);
 }
 
 /* ─── Tabelas IRRF 2026 (Lei 15.270/2025 — alíquota progressiva, dedução) ─── */
