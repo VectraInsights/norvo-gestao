@@ -45,7 +45,7 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { Users, Pencil, Plus, Trash2, X } from "lucide-react";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEmpresaAtual } from "@/hooks/use-empresa";
@@ -180,6 +180,24 @@ function ColaboradoresPage() {
     (colabs ?? []).filter(
       (x) => (x.cargo ?? "").trim().toLowerCase() === nome.trim().toLowerCase(),
     ).length;
+
+  // autocomplete do campo cargo: sugere conforme digita (sem duplicar nomes)
+  const [cargoFoco, setCargoFoco] = useState(false);
+  const cargoSugestoes = useMemo(() => {
+    const q = form.cargo.trim().toLowerCase();
+    if (!q) return [];
+    const nomes: string[] = [];
+    for (const c of cargos) {
+      if (
+        c.nome.toLowerCase().includes(q) &&
+        !nomes.some((n) => n.toLowerCase() === c.nome.toLowerCase())
+      ) {
+        nomes.push(c.nome);
+        if (nomes.length >= 12) break;
+      }
+    }
+    return nomes;
+  }, [cargos, form.cargo]);
 
   const [cargosOpen, setCargosOpen] = useState(false);
   const [novoCargo, setNovoCargo] = useState("");
@@ -470,24 +488,34 @@ function ColaboradoresPage() {
                   <div className="grid grid-cols-2 gap-3">
                     <div>
                       <Label>Cargo *</Label>
-                      <Select
-                        value={form.cargo || undefined}
-                        onValueChange={(v) => set("cargo", v)}
-                      >
-                        <SelectTrigger>
-                          <SelectValue placeholder="Selecione o cargo" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {(cargos.some((c) => c.nome === form.cargo)
-                            ? cargos
-                            : [{ id: "__atual", nome: form.cargo, empresa_id: null }, ...cargos]
-                          ).map((c) => (
-                            <SelectItem key={c.id} value={c.nome}>
-                              {c.nome}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
+                      <div className="relative">
+                        <Input
+                          placeholder="Digite para buscar o cargo"
+                          value={form.cargo}
+                          onChange={(e) => set("cargo", e.target.value)}
+                          onFocus={() => setCargoFoco(true)}
+                          onBlur={() => setTimeout(() => setCargoFoco(false), 150)}
+                          autoComplete="off"
+                        />
+                        {cargoFoco && form.cargo.trim() !== "" && cargoSugestoes.length > 0 && (
+                          <div className="absolute z-20 mt-1 max-h-56 w-full overflow-y-auto rounded-md border bg-popover shadow-md">
+                            {cargoSugestoes.map((nome) => (
+                              <button
+                                type="button"
+                                key={nome}
+                                className="w-full px-3 py-2 text-left text-sm hover:bg-muted"
+                                onMouseDown={(e) => {
+                                  e.preventDefault();
+                                  set("cargo", nome);
+                                  setCargoFoco(false);
+                                }}
+                              >
+                                {nome}
+                              </button>
+                            ))}
+                          </div>
+                        )}
+                      </div>
                     </div>
                     <div>
                       <Label>Status</Label>
