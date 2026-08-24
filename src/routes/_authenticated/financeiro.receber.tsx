@@ -503,7 +503,6 @@ export function LancamentosPage({ tipo }: { tipo: "receber" | "pagar" }) {
                 <SortHead k="data_vencimento">Vencimento</SortHead>
                 <SortHead k="valor" className="text-right">Valor</SortHead>
                 <SortHead k="status">Status</SortHead>
-                <TableHead>Lançado por</TableHead>
                 <TableHead />
               </TableRow>
             </TableHeader>
@@ -517,15 +516,10 @@ export function LancamentosPage({ tipo }: { tipo: "receber" | "pagar" }) {
                     </TableCell>
                     <TableCell className="font-medium cursor-pointer hover:underline" onClick={() => abrirEdicao(l.id)}>{l.descricao}</TableCell>
                     <TableCell className="text-muted-foreground">{l.contato?.nome ?? "—"}</TableCell>
-                    <TableCell className="text-tabular">{format(new Date(l.data_vencimento), "dd/MM/yyyy")}</TableCell>
+                    <TableCell className="text-tabular">{format(new Date(l.data_vencimento + "T00:00:00"), "dd/MM/yyyy")}</TableCell>
                     <TableCell className="text-right text-tabular font-medium">{brl(l.valor)}</TableCell>
                     <TableCell>
                       <Badge className={STATUS_TONE[l.status] ?? ""} variant="secondary">{l.status}</Badge>
-                    </TableCell>
-                    <TableCell className="whitespace-nowrap text-xs text-muted-foreground">
-                      {l.created_by ? (perfis[l.created_by] ?? "—") : "—"}
-                      <br />
-                      {format(new Date(l.created_at), "dd/MM/yyyy HH:mm")}
                     </TableCell>
                     <TableCell className="text-right">
                       <DropdownMenu>
@@ -571,6 +565,13 @@ export function LancamentosPage({ tipo }: { tipo: "receber" | "pagar" }) {
           <DialogHeader><DialogTitle>Editar lançamento</DialogTitle></DialogHeader>
           {editing && (
             <form onSubmit={(e) => { e.preventDefault(); salvarEdicao.mutate(editing); }} className="space-y-3">
+              {editing.created_by && (
+                <p className="text-xs text-muted-foreground">
+                  Lançado por <span className="font-medium">{perfis[editing.created_by] ?? "—"}</span>
+                  {" · "}
+                  {format(new Date(editing.created_at), "dd/MM/yyyy HH:mm")}
+                </p>
+              )}
               <div>
                 <Label>Descrição *</Label>
                 <Input required value={editing.descricao} onChange={(e) => setEditing({ ...editing, descricao: e.target.value })} />
