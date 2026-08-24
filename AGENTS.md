@@ -119,9 +119,11 @@ sobrescrito pela env `NITRO_PRESET` (ex.: `node-server`, `vercel`).
   super_admin (policies). Cargo no RH é dropdown; VIAGENS e COMISSÕES consideram motoristas
   os colaboradores ativos cujo cargo contém "Motorist" (ILIKE) — não existe coluna
   `eh_motorista`.
-- Adiantamentos (migration `20260824120000`): campo "recorrente" gera conta a pagar mensal
-  via pg_cron (`cron.job` 'adiantamentos-recorrentes' → `public.gerar_adiantamentos_recorrentes()`,
-  idempotente por `ultimo_mes_gerado`). O STATUS do adiantamento é espelho do lançamento
+- Adiantamentos (migration `20260824120000`): campo "recorrente" gera conta a pagar mensal.
+  A UI chama `public.gerar_adiantamentos_recorrentes()` logo após o INSERT (1ª conta na
+  hora; se o dia do mês já passou, a 1ª conta é a do mês seguinte) e o pg_cron diário
+  ('adiantamentos-recorrentes') é fallback para os meses seguintes — idempotente por
+  `ultimo_mes_gerado`. O STATUS do adiantamento é espelho do lançamento
   vinculado: trigger `tg_lancamento_sync_adiantamento` marca 'descontado' (= pago) quando o
   lancamento vai a 'pago' e reverte se reabrir — NUNCA setar esse status na mão pela UI.
 - Campos de data usam `<DateInput>` (`src/components/erp/date-input.tsx`: input nativo +
