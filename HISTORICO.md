@@ -248,6 +248,10 @@ Registro condensado da evolução do Norvo Gestão fora do editor Lovable.
 - **Adiantamentos**: excluir agora remove também as contas a pagar EM ABERTO geradas por
   ele (as pagas ficam no histórico); botão Editar habilitado enquanto o adiantamento não
   foi enviado ao contas a pagar; recorrente sem lançamento vinculado também edita.
+- **Autoria das contas de recorrência** (migration `20260824180000`): `adiantamentos.created_by`
+  ganhou DEFAULT auth.uid() e a função de geração replica esse criador no lançamento —
+  contas geradas até de madrugada ficam com o nome de quem cadastrou a recorrência, e a
+  descrição ganhou sufixo " (recorrência)" para identificar a origem.
 
 ## Regras de segurança
 

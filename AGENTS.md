@@ -123,10 +123,12 @@ sobrescrito pela env `NITRO_PRESET` (ex.: `node-server`, `vercel`).
   A UI chama `public.gerar_adiantamentos_recorrentes()` logo após o INSERT (1ª conta na
   hora; se o dia do mês já passou, a 1ª conta é a do mês seguinte) e o pg_cron diário
   ('adiantamentos-recorrentes') é fallback para os meses seguintes — idempotente por
-  `ultimo_mes_gerado`. Regras do lançamento gerado (`20260824170000`): vencimento em
-  sábado/domingo antecipa para a sexta anterior; descrição = NOME do colaborador (sem
-  prefixo); categoria = "Adiantamentos" (tipo pagar, criada por empresa se não existir).
-  Geração manual na UI segue as mesmas regras. EXCLUIR um adiantamento remove junto as
+  `ultimo_mes_gerado`. Regras do lançamento gerado (`20260824170000` + `20260824180000`):
+  vencimento em sábado/domingo antecipa para a sexta anterior; descrição = NOME do
+  colaborador + sufixo " (recorrência)"; categoria = "Adiantamentos" (tipo pagar, criada
+  por empresa se não existir); AUTORIA = criador do adiantamento (`adiantamentos.created_by`,
+  que tem DEFAULT auth.uid() desde `20260824180000`) — as contas da madrugada ficam com o
+  nome de quem cadastrou a recorrência. EXCLUIR um adiantamento remove junto as
   contas a pagar em aberto geradas por ele (vinculada via `lancamento_id` ou, no caso
   recorrente, por observações="Gerado automaticamente pelo adiantamento recorrente" +
   descrição = nome; as já PAGAS ficam). Adiantamento só é editável enquanto NÃO tem
