@@ -242,11 +242,15 @@ function ConfigFiscais() {
         const certBags = p12.getBags({ bagType: "1.2.840.113549.1.12.10.1.3" });
         const cert = certBags["1.2.840.113549.1.12.10.1.3"]?.[0]?.cert;
         if (cert) {
-          validade = (cert.validity.notAfter as unknown as Date).toISOString().split("T")[0];
+          const na = cert.validity.notAfter;
+          const y = na.getFullYear();
+          const m = String(na.getMonth() + 1).padStart(2, "0");
+          const d = String(na.getDate()).padStart(2, "0");
+          validade = `${y}-${m}-${d}`;
           thumbprint = forge.md.sha1.create().update(forge.asn1.toDer(forge.pki.certificateToAsn1(cert)).getBytes()).digest().toHex();
         }
-      } catch {
-        // Se falhar o parse, continua sem validade
+      } catch (e) {
+        console.error("Erro ao extrair validade do certificado:", e);
       }
 
       // Upload para Supabase Storage
