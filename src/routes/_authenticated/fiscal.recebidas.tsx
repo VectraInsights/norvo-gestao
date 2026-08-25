@@ -16,6 +16,7 @@ import { brl, dateBR } from "@/lib/format";
 import { supabase } from "@/integrations/supabase/client";
 import { useEmpresaAtual } from "@/hooks/use-empresa";
 import { useQueryClient } from "@tanstack/react-query";
+import { consultarNFeDestinatarioFn, manifestarNFeFn } from "@/lib/sefaz-server";
 
 export const Route = createFileRoute("/_authenticated/fiscal/recebidas")({
   component: NotasRecebidas,
@@ -46,44 +47,7 @@ interface SelectedFileItem {
   size: number;
 }
 
-const INITIAL_RECEBIDAS: NotaRecebida[] = [
-  {
-    chave: "35260845997418000109550010002041921827364501",
-    emitente: "Distribuidora de Papéis e Embalagens Ltda",
-    cnpj: "45.997.418/0001-09",
-    valor: 1450.90,
-    data_emissao: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(),
-    manifesto: "pendente",
-    situacao_sefaz: "autorizada"
-  },
-  {
-    chave: "35260812345678000199550010001847121098765432",
-    emitente: "Tech Connect Importadora de Equipamentos",
-    cnpj: "12.345.678/0001-99",
-    valor: 8900.00,
-    data_emissao: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString(),
-    manifesto: "ciencia",
-    situacao_sefaz: "autorizada"
-  },
-  {
-    chave: "35260898765432000188550010000958171234567890",
-    emitente: "Office Depot Soluções Corporativas",
-    cnpj: "98.765.432/0001-88",
-    valor: 345.15,
-    data_emissao: new Date(Date.now() - 8 * 24 * 60 * 60 * 1000).toISOString(),
-    manifesto: "confirmada",
-    situacao_sefaz: "autorizada"
-  },
-  {
-    chave: "35260811223344000177550010000041231876543210",
-    emitente: "Serviços Logísticos Rapidez",
-    cnpj: "11.223.344/0001-77",
-    valor: 1200.00,
-    data_emissao: new Date(Date.now() - 12 * 24 * 60 * 60 * 1000).toISOString(),
-    manifesto: "desconhecida",
-    situacao_sefaz: "cancelada"
-  }
-];
+const INITIAL_RECEBIDAS: NotaRecebida[] = [];
 
 function NotasRecebidas() {
   const { data: empresa } = useEmpresaAtual();
@@ -104,24 +68,77 @@ function NotasRecebidas() {
   const [validarXML, setValidarXML] = useState(true);
 
   // Ações de manifestação
-  const handleManifestar = (chave: string, acao: "ciencia" | "confirmada" | "desconhecida") => {
-    setNotas(prev => prev.map(n => n.chave === chave ? { ...n, manifesto: acao } : n));
+  const handleManifestar = async (chave: string, acao: "ciencia" | "confirmada" | "desconhecida") => {
+    if (!empresa) return toast.error("Empresa não selecionada");
     
-    const acoesLabels = {
-      ciencia: "Ciência da Emissão",
-      confirmada: "Confirmação da Operação",
-      desconhecida: "Desconhecimento da Operação"
+    const tipoMap: Record<string, "210200" | "210210" | "210220"> = {
+      ciencia: "210200",
+      confirmada: "210210",
+      desconhecida: "210220",
     };
 
-    toast.success(`Manifestação '${acoesLabels[acao]}' registrada com sucesso na SEFAZ!`);
+    try {
+      const result = await manifestarNFeFn({
+        data: {
+          empresaId: empresa.id,
+          chave,
+          tipoEvento: tipoMap[acao],
+        },
+      });
+
+      if (result.sucesso) {
+        setNotas(prev => prev.map(n => n.chave === chave ? { ...n, manifesto: acao } : n));
+        const acoesLabels: Record<string, string> = {
+          ciencia: "Ciência da Emissão",
+          confirmada: "Confirmação da Operação",
+          desconhecida: "Desconhecimento da Operação",
+        };
+        toast.success(`Manifestação '${acoesLabels[acao]}' registrada na SEFAZ! (${result.codigo})`);
+      } else {
+        toast.error("Falha ao registrar manifestação", { description: result.motivo });
+      }
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : String(err);
+      toast.error("Erro ao manifestar", { description: msg });
+    }
   };
 
-  const handleSincronizarSefaz = () => {
+  const handleSincronizarSefaz = async () => {
+    if (!empresa) return toast.error("Empresa não selecionada");
     setIsRefreshing(true);
-    setTimeout(() => {
+    try {
+      const result = await consultarNFeDestinatarioFn({ data: { empresaId: empresa.id } });
+      if (result.notas.length > 0) {
+        const novasNotas: NotaRecebida[] = result.notas.map(n => ({
+          chave: n.chave,
+          emitente: n.emitente || "Emitente via SEFAZ",
+          cnpj: n.cnpj || "",
+          valor: n.valor,
+          data_emissao: n.data,
+          manifesto: "pendente",
+          situacao_sefaz: "autorizada",
+        }));
+        setNotas(prev => {
+          const chavesExistentes = new Set(prev.map(n => n.chave));
+          const filtradas = novasNotas.filter(n => !chavesExistentes.has(n.chave));
+          return [...filtradas, ...prev];
+        });
+        toast.success(`Consulta à SEFAZ concluída! ${result.notas.length} nota(s) encontrada(s).`);
+      } else {
+        toast.success("Consulta à SEFAZ concluída! Nenhuma nova nota fiscal emitida contra o seu CNPJ.");
+      }
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : String(err);
+      if (msg.includes("Nenhum certificado")) {
+        toast.error("Nenhum certificado digital cadastrado", {
+          description: "Cadastre um certificado em Configurações > Certificado Digital antes de sincronizar com a SEFAZ.",
+        });
+      } else {
+        toast.error("Falha na consulta à SEFAZ", { description: msg });
+      }
+    } finally {
       setIsRefreshing(false);
-      toast.success("Consulta à SEFAZ concluída! Nenhuma nova nota fiscal emitida contra o seu CNPJ.");
-    }, 1500);
+    }
   };
 
   // Importação XML actions

@@ -13,11 +13,12 @@ import {
   FolderCog, Shield, Landmark, Scale, FileText, CheckCircle2, 
   Upload, Key, AlertTriangle, HelpCircle, Plus, Edit2, Trash2, Check 
 } from "lucide-react";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEmpresaAtual } from "@/hooks/use-empresa";
 import { toast } from "sonner";
+import { dateBR } from "@/lib/format";
 
 export const Route = createFileRoute("/_authenticated/fiscal/configuracoes")({
   component: ConfigFiscais,
@@ -30,6 +31,18 @@ interface NfeConfig {
   regime_tributario: string | null;
   cnae: string | null;
   natureza_operacao: string | null;
+}
+
+interface CertificadoDigital {
+  id: string;
+  empresa_id: string;
+  nome: string;
+  arquivo_path: string;
+  arquivo_nome: string;
+  thumbprint: string | null;
+  validade: string | null;
+  ativo: boolean;
+  created_at: string;
 }
 
 interface CFOPRule {
@@ -54,9 +67,9 @@ function ConfigFiscais() {
   const [activeTab, setActiveTab] = useState<string>("certificado");
 
   // Certificado Digital state
-  const [hasCertificado, setHasCertificado] = useState(true);
-  const [certFile, setCertFile] = useState<string | null>("certificado_norvo_associados_2026.pfx");
-  const [certPassword, setCertPassword] = useState("••••••••••••");
+  const certFileRef = useRef<HTMLInputElement>(null);
+  const [certFile, setCertFile] = useState<File | null>(null);
+  const [certPassword, setCertPassword] = useState("");
   const [isUploadingCert, setIsUploadingCert] = useState(false);
 
   // CFOP / Naturezas state
@@ -98,20 +111,28 @@ function ConfigFiscais() {
   const [cnae, setCnae] = useState("");
   const [natOp, setNatOp] = useState("");
 
-  // Sincronizar states locais com a query e localStorage
+  // Query de Certificado Digital
+  const { data: certificado, isLoading: loadingCert } = useQuery({
+    enabled: !!empresa,
+    queryKey: ["certificado-digital", empresa?.id],
+    queryFn: async ({ signal }) => {
+      const { data, error } = await supabase.from("certificados_digitais" as never)
+        .select("id, empresa_id, nome, arquivo_path, arquivo_nome, thumbprint, validade, ativo, created_at")
+        .eq("empresa_id", empresa!.id)
+        .eq("ativo", true)
+        .abortSignal(signal)
+        .maybeSingle();
+      if (error) throw error;
+      return data as unknown as CertificadoDigital | null;
+    },
+  });
+
+  // Sincronizar CFOPs do localStorage
   useEffect(() => {
     if (empresa?.id) {
       const savedCfops = localStorage.getItem(`norvo_cfops_${empresa.id}`);
       if (savedCfops) {
         try { setCfops(JSON.parse(savedCfops)); } catch (e) { console.error(e); }
-      }
-      const savedCert = localStorage.getItem(`norvo_cert_${empresa.id}`);
-      if (savedCert) {
-        try {
-          const parsed = JSON.parse(savedCert);
-          setHasCertificado(parsed.hasCertificado);
-          setCertFile(parsed.certFile);
-        } catch (e) { console.error(e); }
       }
       const savedRates = localStorage.getItem(`norvo_rates_${empresa.id}`);
       if (savedRates) {
@@ -179,33 +200,89 @@ function ConfigFiscais() {
     onError: (e: Error) => toast.error(e.message)
   });
 
-  // Simular upload de certificado digital
-  const handleUploadCertificado = (e: React.FormEvent) => {
+  // Upload de certificado digital — real para Supabase Storage + tabela
+  const handleUploadCertificado = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!certFile) return toast.error("Selecione um arquivo .pfx ou .p12");
     if (!certPassword) return toast.error("Digite a senha do certificado");
-    
-    setIsUploadingCert(true);
-    setTimeout(() => {
-      setIsUploadingCert(false);
-      setHasCertificado(true);
-      const name = "certificado_norvo_empresa_A1.pfx";
-      setCertFile(name);
-      if (empresa?.id) {
-        localStorage.setItem(`norvo_cert_${empresa.id}`, JSON.stringify({ hasCertificado: true, certFile: name }));
-      }
-      toast.success("Certificado Digital A1 enviado e validado com sucesso!");
-    }, 1800);
-  };
+    if (!empresa) return toast.error("Empresa não selecionada");
 
-  const handleExcluirCertificado = () => {
-    if (confirm("Tem certeza que deseja excluir o certificado digital ativo?")) {
-      setHasCertificado(false);
+    const ext = certFile.name.split(".").pop()?.toLowerCase();
+    if (ext !== "pfx" && ext !== "p12") {
+      return toast.error("Formato inválido. Use apenas arquivos .pfx ou .p12");
+    }
+
+    // Verificar CNPJ duplicado (outro certificado ativo para empresa com mesmo CNPJ)
+    if (empresa.cnpj) {
+      const { data: certCnpj } = await supabase
+        .from("certificados_digitais" as never)
+        .select("id, empresa_id!inner(cnpj)")
+        .eq("ativo", true)
+        .neq("empresa_id", empresa.id)
+        .maybeSingle();
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const certAny = certCnpj as any;
+      if (certAny?.empresa_id?.cnpj === empresa.cnpj) {
+        return toast.error("Já existe um certificado ativo para este CNPJ. Exclua o certificado anterior antes de cadastrar um novo.");
+      }
+    }
+
+    setIsUploadingCert(true);
+    try {
+      const storagePath = `${empresa.id}/${Date.now()}_${certFile.name}`;
+
+      // Upload para Supabase Storage
+      const { error: uploadErr } = await supabase.storage
+        .from("certificados")
+        .upload(storagePath, certFile, { contentType: "application/x-pkcs12", upsert: false });
+      if (uploadErr) throw uploadErr;
+
+      // Inserir metadados na tabela (senha em texto plano — Worker acessa via service role)
+      const { error: insertErr } = await supabase
+        .from("certificados_digitais" as never)
+        .insert({
+          empresa_id: empresa.id,
+          nome: certFile.name.replace(/\.(pfx|p12)$/i, ""),
+          arquivo_path: storagePath,
+          arquivo_nome: certFile.name,
+          senha_cript: certPassword,
+          ativo: true,
+        } as never);
+      if (insertErr) {
+        await supabase.storage.from("certificados").remove([storagePath]);
+        throw insertErr;
+      }
+
+      toast.success("Certificado Digital enviado e validado com sucesso!");
       setCertFile(null);
       setCertPassword("");
-      if (empresa?.id) {
-        localStorage.setItem(`norvo_cert_${empresa.id}`, JSON.stringify({ hasCertificado: false, certFile: null }));
-      }
+      if (certFileRef.current) certFileRef.current.value = "";
+      qc.invalidateQueries({ queryKey: ["certificado-digital"] });
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : String(err);
+      toast.error("Falha no upload do certificado", { description: msg });
+    } finally {
+      setIsUploadingCert(false);
+    }
+  };
+
+  // Excluir certificado — remove do Storage + marca como inativo
+  const handleExcluirCertificado = async (cert: CertificadoDigital) => {
+    if (!confirm("Tem certeza que deseja excluir o certificado digital ativo?")) return;
+
+    try {
+      await supabase.storage.from("certificados").remove([cert.arquivo_path]);
+      const { error } = await supabase
+        .from("certificados_digitais" as never)
+        .update({ ativo: false } as never)
+        .eq("id", cert.id);
+      if (error) throw error;
+
       toast.success("Certificado digital excluído.");
+      qc.invalidateQueries({ queryKey: ["certificado-digital"] });
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : String(err);
+      toast.error("Falha ao excluir certificado", { description: msg });
     }
   };
 
@@ -288,7 +365,11 @@ function ConfigFiscais() {
                 </CardDescription>
               </CardHeader>
               <CardContent>
-                {hasCertificado ? (
+                {loadingCert ? (
+                  <div className="space-y-3">
+                    <Skeleton className="h-16 w-full" />
+                  </div>
+                ) : certificado ? (
                   <div className="space-y-6">
                     <div className="flex gap-4 items-start rounded-lg border border-emerald-500/20 bg-emerald-500/5 p-4">
                       <CheckCircle2 className="h-6 w-6 text-emerald-500 shrink-0 mt-0.5" />
@@ -298,15 +379,15 @@ function ConfigFiscais() {
                         
                         <div className="grid gap-x-6 gap-y-1.5 grid-cols-2 pt-3 text-xs">
                           <div><span className="text-muted-foreground">CNPJ Associado:</span> <strong className="text-foreground">{empresa?.cnpj ?? "—"}</strong></div>
-                          <div><span className="text-muted-foreground">Razão Social:</span> <strong className="text-foreground">{empresa?.nome_fantasia ?? "—"}</strong></div>
-                          <div><span className="text-muted-foreground">Arquivo:</span> <strong className="text-foreground">{certFile}</strong></div>
-                          <div><span className="text-muted-foreground">Vencimento:</span> <strong className="text-foreground">15/09/2027 (398 dias restantes)</strong></div>
+                          <div><span className="text-muted-foreground">Empresa:</span> <strong className="text-foreground">{empresa?.nome_fantasia ?? "—"}</strong></div>
+                          <div><span className="text-muted-foreground">Arquivo:</span> <strong className="text-foreground">{certificado.arquivo_nome}</strong></div>
+                          <div><span className="text-muted-foreground">Vencimento:</span> <strong className="text-foreground">{certificado.validade ? dateBR(certificado.validade) : "—"}</strong></div>
                         </div>
                       </div>
                     </div>
 
                     <div className="flex justify-end">
-                      <Button variant="outline" className="text-destructive hover:bg-destructive/10" onClick={handleExcluirCertificado}>
+                      <Button variant="outline" className="text-destructive hover:bg-destructive/10" onClick={() => handleExcluirCertificado(certificado)}>
                         Excluir Certificado
                       </Button>
                     </div>
@@ -316,10 +397,22 @@ function ConfigFiscais() {
                     <div className="border-2 border-dashed border-muted hover:border-primary/50 rounded-lg p-8 flex flex-col items-center justify-center transition-colors">
                       <Upload className="h-10 w-10 text-muted-foreground mb-3" />
                       <p className="text-sm font-medium text-foreground text-center">Selecione o arquivo do Certificado A1 (.pfx ou .p12)</p>
-                      <input type="file" accept=".pfx,.p12" className="hidden" id="cert-upload" />
-                      <label htmlFor="cert-upload" className="mt-3 inline-flex items-center rounded bg-primary px-3 py-1.5 text-xs font-semibold text-primary-foreground shadow-sm hover:bg-primary/90 cursor-pointer">
-                        Selecionar Arquivo
-                      </label>
+                      <input
+                        ref={certFileRef}
+                        type="file"
+                        accept=".pfx,.p12"
+                        className="hidden"
+                        onChange={(e) => setCertFile(e.target.files?.[0] ?? null)}
+                      />
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        className="mt-3"
+                        onClick={() => certFileRef.current?.click()}
+                      >
+                        {certFile ? certFile.name : "Selecionar Arquivo"}
+                      </Button>
                     </div>
 
                     <div className="grid gap-2 max-w-sm">
@@ -337,7 +430,7 @@ function ConfigFiscais() {
                       </div>
                     </div>
 
-                    <Button type="submit" disabled={isUploadingCert} className="w-full sm:w-auto h-10">
+                    <Button type="submit" disabled={isUploadingCert || !certFile} className="w-full sm:w-auto h-10">
                       {isUploadingCert ? "Validando e Salvando..." : "Salvar Certificado"}
                     </Button>
                   </form>
