@@ -304,6 +304,52 @@ Registro condensado da evolução do Norvo Gestão fora do editor Lovable.
   `atualizar_status_ferias()` que muda `agendada → em_gozo` (quando `data_inicio_gozo <=`
   hoje) e `em_gozo → concluída` (quando `data_fim_gozo < hoje`). Função SECURITY DEFINER.
 
+## Registro de manutenção — 25/08/2026: Módulo Fiscal — SEFAZ (NFe) completo
+
+- **Certificado digital multi-tenant** (migration `20260825060000`): tabela `certificados_digitais`
+  (empresa_id, arquivo_path, thumbprint, validade, senha_cript, ativo) + bucket Storage `certificados`
+  (RLS por empresa). Upload de `.pfx` em `/configuracoes/fiscal` → validação via node-forge
+  (thumbprint, validade, subject/issuer) + inserção atômica. Senha armazenada criptografada
+  (service role); visualização de thumbprint/validade na UI sem expor o arquivo.
+
+- **Serviço SEFAZ core** (`src/lib/sefaz.ts`):
+  - Parse PKCS#12 (node-forge) → extrai chave privada + cadeia X.509
+  - Assinatura XML W3C (enveloped signature, SHA-1, canonicalização C14N exclusiva)
+  - SOAP 1.2 sobre HTTPS com mTLS (node-forge `https.Agent` com PFX + senha)
+  - Endpoints homologação por UF: SP (próprio), MG (próprio), GO, AM, PR, SC, BA, CE, PE, RS,
+    DEFAULT/SVRS para demais; NFeDistribuicaoDFe + RecepcaoEvento nacionais (Ambiente Nacional)
+  - Operações: `consultarDestinatario` (NFeDistribuicaoDFe), `enviarEventoManifestacao`
+    (210200/210210/210220), `emitirNFe` (NFeAutorizacao)
+
+- **Server functions** (`src/lib/sefaz-server.ts`):
+  - `consultarNFeDestinatarioFn`, `manifestarNFeFn`, `emitirNFeFn`, `verificarStatusServicoFn`
+  - Modo direto (Vercel/Node.js): `createServerFn` + mTLS direto (busca certificado no Supabase,
+    baixa do Storage, assina/envia)
+  - Modo proxy (Cloudflare Worker): env var `SEFAZ_URL` (ou `VITE_SEFAZ_URL`) apontando para
+    `/api/sefaz` no Vercel → o Worker chama o proxy via HTTP + Bearer service role key
+
+- **Proxy SEFAZ no Vercel** (`src/server.ts` intercepta `POST /api/sefaz` ANTES do TanStack Start):
+  - Handler puro Web APIs (`src/lib/sefaz-proxy.ts`, sem h3/Nitro)
+  - Autentica via `Authorization: Bearer <SUPABASE_SERVICE_ROLE_KEY>`
+  - Executa a mesma lógica mTLS das server functions
+  - Evita rota Nitro `server/api/sefaz.post.ts` (não registrava — TanStack Start captura entry)
+
+- **Frontend integrado**:
+  - `/fiscal/recebidas`: botões "Sincronizar" (consulta destinatário) e "Manifestar"
+    (Ciência/Confirmação/Desconhecimento) reais
+  - `/fiscal/emitidas`: "Emitir" real (assinatura + envio) com fallback simplificado
+  - `/fiscal/configuracoes`: upload `.pfx` → validação + preview thumbprint/validade
+
+- **Cloudflare Worker** (`norvo-gestao-cf`): preset `cloudflare-module`, env vars
+  `VITE_SEFAZ_URL=https://norvo-gestao.vercel.app/api/sefaz`,
+  `VITE_SUPABASE_URL`, `VITE_SUPABASE_PUBLISHABLE_KEY`, `VITE_SUPABASE_SERVICE_ROLE_KEY`.
+  Deploy automático no push (GitHub Actions via Wrangler). Worker NÃO faz mTLS (limitação
+  da plataforma) — delega ao Vercel.
+
+- **Commits**: `034c29c` (proxy), `81b767e` (endpoints corrigidos SVRS), `04e6de4` (todos estados).
+
+---
+
 ## Regras de segurança
 
 - NUNCA commitar tokens/senhas (GitHub PAT, senhas de banco, service keys).

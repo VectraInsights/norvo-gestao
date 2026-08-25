@@ -166,3 +166,32 @@ sobrescrito pela env `NITRO_PRESET` (ex.: `node-server`, `vercel`).
   Obrigatoriedade (nome/CPF/cargo/salário/admissão/telefone) é validada no app, não no banco.
 - Commits devem usar o autor `vectrainsights@users.noreply.github.com` (config local do clone);
   outro email faz a Vercel Hobby bloquear o deploy.
+
+## Integração SEFAZ (NFe) — detalhes técnicos
+
+- **Arquivo core**: `src/lib/sefaz.ts` — parse PKCS#12 (node-forge), assinatura XML W3C, SOAP 1.2, mTLS
+  via `https.Agent(pfx, passphrase)`. Endpoints homologação por UF em `SEFAZ_ENDPOINTS` (SP, MG, GO,
+  AM, PR, SC, BA, CE, PE, RS, DEFAULT/SVRS). Serviços nacionais `NFeDistribuicaoDFe` e
+  `NFeRecepcaoEvento4` em `hom.nfe.fazenda.gov.br`.
+
+- **Server functions**: `src/lib/sefaz-server.ts` — `createServerFn` que escolhe modo:
+  - `SEFAZ_URL` ausente (Vercel/Node.js): mTLS direto (busca certificado no Supabase via service role,
+    baixa do Storage, chama `sefaz.ts`)
+  - `SEFAZ_URL` presente (Cloudflare Worker): `POST ${SEFAZ_URL}` com body `{action, empresaId, ...}`
+    + header `Authorization: Bearer <SUPABASE_SERVICE_ROLE_KEY>`
+
+- **Proxy Vercel**: `src/server.ts` intercepta `POST /api/sefaz` ANTES do handler TanStack Start.
+  Chama `src/lib/sefaz-proxy.ts` (handler puro Web APIs, sem h3/Nitro) que valida Bearer token e
+  executa a lógica mTLS idêntica. Rota Nitro `server/api/sefaz.post.ts` REMOVIDA (não registrava).
+
+- **Cloudflare Worker** (`norvo-gestao-cf`): preset `cloudflare-module`, env `VITE_SEFAZ_URL`
+  apontando para o proxy Vercel. Worker NÃO suporta mTLS (limitação da plataforma). Deploy
+  automático via GitHub Actions (Wrangler) no push em main.
+
+- **Certificados**: tabela `certificados_digitais` + bucket Storage `certificados` (RLS por empresa).
+  Upload em `/configuracoes/fiscal` → valida thumbprint/validade via node-forge → inserção atômica.
+  Senha armazenada em `senha_cript` (service role). Busca via `buscarCertificadoAtivo(empresaId)`
+  retorna `{pfx, senha, cnpj, uf}`.
+
+- **Frontend**: `/fiscal/recebidas` (consultar + manifestar), `/fiscal/emitidas` (emitir),
+  `/fiscal/configuracoes` (upload/preview). CT-e/MDF-e mockados REMOVIDOS.
