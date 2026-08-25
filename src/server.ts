@@ -46,6 +46,22 @@ function isH3SwallowedErrorBody(body: string): boolean {
 
 export default {
   async fetch(request: Request, env: unknown, ctx: unknown) {
+    // Proxy SEFAZ — roda no Vercel (Node.js com mTLS).
+    // No CF Worker, esta roda nunca é atingida (o Worker chama o Vercel).
+    const url = new URL(request.url);
+    if (url.pathname === "/api/sefaz" && request.method === "POST") {
+      try {
+        const { handleSefazProxy } = await import("./lib/sefaz-proxy");
+        return await handleSefazProxy(request);
+      } catch (error) {
+        console.error("[sefaz-proxy]", error);
+        return new Response(JSON.stringify({ error: String(error) }), {
+          status: 500,
+          headers: { "Content-Type": "application/json" },
+        });
+      }
+    }
+
     try {
       const handler = await getServerEntry();
       const response = await handler.fetch(request, env, ctx);
