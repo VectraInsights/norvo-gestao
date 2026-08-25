@@ -53,14 +53,14 @@ DROP POLICY IF EXISTS "certificados_select_members" ON public.certificados_digit
 CREATE POLICY "certificados_select_members"
   ON public.certificados_digitais
   FOR SELECT TO authenticated
-  USING (public.is_empresa_member(empresa_id));
+  USING (private.is_empresa_member(empresa_id, auth.uid()));
 
 DROP POLICY IF EXISTS "certificados_insert_admin" ON public.certificados_digitais;
 CREATE POLICY "certificados_insert_admin"
   ON public.certificados_digitais
   FOR INSERT TO authenticated
   WITH CHECK (
-    public.has_empresa_role(empresa_id, auth.uid(), ARRAY['owner','admin','fiscal']::public.app_role[])
+    private.has_empresa_role(empresa_id, auth.uid(), ARRAY['owner','admin','fiscal']::public.app_role[])
   );
 
 DROP POLICY IF EXISTS "certificados_update_admin" ON public.certificados_digitais;
@@ -68,7 +68,7 @@ CREATE POLICY "certificados_update_admin"
   ON public.certificados_digitais
   FOR UPDATE TO authenticated
   USING (
-    public.has_empresa_role(empresa_id, auth.uid(), ARRAY['owner','admin','fiscal']::public.app_role[])
+    private.has_empresa_role(empresa_id, auth.uid(), ARRAY['owner','admin','fiscal']::public.app_role[])
   );
 
 DROP POLICY IF EXISTS "certificados_delete_admin" ON public.certificados_digitais;
@@ -76,7 +76,7 @@ CREATE POLICY "certificados_delete_admin"
   ON public.certificados_digitais
   FOR DELETE TO authenticated
   USING (
-    public.has_empresa_role(empresa_id, auth.uid(), ARRAY['owner','admin','fiscal']::public.app_role[])
+    private.has_empresa_role(empresa_id, auth.uid(), ARRAY['owner','admin','fiscal']::public.app_role[])
   );
 
 -- 5. Storage RLS — service role acessa tudo; authenticated only via Worker
