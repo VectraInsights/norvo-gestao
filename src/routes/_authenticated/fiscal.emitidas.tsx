@@ -11,7 +11,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { FileText, Send, Ban, Download, AlertTriangle, Plus, Search, FileDown, CheckCircle, Truck } from "lucide-react";
+import { FileText, Send, Ban, Download, AlertTriangle, Plus, Search, FileDown, CheckCircle } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEmpresaAtual } from "@/hooks/use-empresa";
@@ -64,34 +64,6 @@ function FiscalError({ error, reset }: { error: Error; reset: () => void }) {
     </div>
   );
 }
-
-// Notas de Transporte mockadas (CT-e e MDF-e) já que a empresa/banco de dados real do ERP não os possui no enum nf_tipo.
-const MOCK_TRANSPORTE_NOTES = (empresaId: string): Nota[] => [
-  {
-    id: `mock-cte-1-${empresaId}`,
-    numero: "1042",
-    serie: "1",
-    status: "autorizada",
-    valor_total: 4500.00,
-    data_emissao: new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString(),
-    chave: "35260812345678901234570010000010421234567890",
-    tipo: "cte",
-    contato: { nome: "Transportadora Rápida S.A." },
-    venda: null
-  },
-  {
-    id: `mock-mdfe-1-${empresaId}`,
-    numero: "85",
-    serie: "1",
-    status: "autorizada",
-    valor_total: 0.00,
-    data_emissao: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString(),
-    chave: "35260812345678901234580010000000851234567890",
-    tipo: "mdfe",
-    contato: { nome: "MDF-e Consolidado Regional" },
-    venda: null
-  }
-];
 
 function NotasEmitidas() {
   const { data: empresa } = useEmpresaAtual();
@@ -377,11 +349,7 @@ function NotasEmitidas() {
     URL.revokeObjectURL(url);
   };
 
-  // Combinar notas reais com notas de transporte mockadas
-  const todasNotas = [
-    ...(notasReais ?? []),
-    ...(empresa ? MOCK_TRANSPORTE_NOTES(empresa.id) : [])
-  ];
+  const todasNotas = notasReais ?? [];
 
   // Aplicar filtros
   const notasFiltradas = todasNotas.filter((n) => {
@@ -389,7 +357,6 @@ function NotasEmitidas() {
     if (activeTab === "nfe" && n.tipo !== "nfe") return false;
     if (activeTab === "nfse" && n.tipo !== "nfse") return false;
     if (activeTab === "nfce" && n.tipo !== "nfce") return false;
-    if (activeTab === "transporte" && n.tipo !== "cte" && n.tipo !== "mdfe") return false;
 
     // Filtro de Status
     if (statusFilter !== "todos" && n.status !== statusFilter) return false;
@@ -537,16 +504,11 @@ function NotasEmitidas() {
       {/* Filtros e Busca */}
       <div className="mb-6 flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full md:w-auto">
-          <TabsList className="grid grid-cols-5 md:w-auto bg-muted/80 p-1">
+          <TabsList className="grid grid-cols-4 md:w-auto bg-muted/80 p-1">
             <TabsTrigger value="todas" className="text-xs">Todas</TabsTrigger>
             <TabsTrigger value="nfe" className="text-xs">NF-e</TabsTrigger>
             <TabsTrigger value="nfse" className="text-xs">NFS-e</TabsTrigger>
             <TabsTrigger value="nfce" className="text-xs">NFC-e</TabsTrigger>
-            <TabsTrigger value="transporte" className="text-xs flex gap-1 items-center">
-              <Truck className="h-3 w-3" />
-              <span className="hidden md:inline">CT-e/MDF-e</span>
-              <span className="md:hidden">Log.</span>
-            </TabsTrigger>
           </TabsList>
         </Tabs>
 
@@ -616,8 +578,7 @@ function NotasEmitidas() {
                       case "nfe": return <span className="rounded bg-sky-500/10 text-sky-600 dark:text-sky-400 px-1.5 py-0.5 text-[11px] font-bold uppercase">NF-e</span>;
                       case "nfse": return <span className="rounded bg-amber-500/10 text-amber-600 dark:text-amber-400 px-1.5 py-0.5 text-[11px] font-bold uppercase">NFS-e</span>;
                       case "nfce": return <span className="rounded bg-purple-500/10 text-purple-600 dark:text-purple-400 px-1.5 py-0.5 text-[11px] font-bold uppercase">NFC-e</span>;
-                      case "cte": return <span className="rounded bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 px-1.5 py-0.5 text-[11px] font-bold uppercase">CT-e</span>;
-                      case "mdfe": return <span className="rounded bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 px-1.5 py-0.5 text-[11px] font-bold uppercase">MDF-e</span>;
+                      default: return <span className="rounded bg-muted px-1.5 py-0.5 text-[11px] font-bold uppercase">{n.tipo.toUpperCase()}</span>;
                     }
                   };
 
@@ -637,7 +598,7 @@ function NotasEmitidas() {
                         {dateBR(n.data_emissao)}
                       </TableCell>
                       <TableCell className="text-right text-tabular font-medium text-foreground">
-                        {n.tipo === "mdfe" ? "—" : brl(n.valor_total)}
+                        {brl(n.valor_total)}
                       </TableCell>
                       <TableCell>
                         <StatusBadge status={n.status} />

@@ -35,13 +35,13 @@ const SEFAZ_ENDPOINTS: Record<string, { nfeAutorizacao: string; nfeRetAutorizaca
     nfeDistribuicaoDFe: "https://hnfe.fazenda.mg.gov.br/nfe2/services/NfeDistribuicaoDFe",
     receptEventos: "https://hnfe.fazenda.mg.gov.br/nfe2/services/NReceptEventos4",
   },
-  // Padrão nacional (fallback)
+  // Padrão nacional (fallback) — SVRS (Sefaz Virtual do Rio Grande do Sul)
   DEFAULT: {
-    nfeAutorizacao: "https://homologacao.nfe.fazenda.gov.br/NfeAutorizacao4/NfeAutorizacao4.asmx",
-    nfeRetAutorizacao: "https://homologacao.nfe.fazenda.gov.br/NfeRetAutorizacao4/NfeRetAutorizacao4.asmx",
-    nfeStatusServico: "https://homologacao.nfe.fazenda.gov.br/NfeStatusServico4/NfeStatusServico4.asmx",
-    nfeDistribuicaoDFe: "https://homologacao.nfe.fazenda.gov.br/NFeDistribuicaoDFe/NFeDistribuicaoDFe.asmx",
-    receptEventos: "https://homologacao.nfe.fazenda.gov.br/NFeRecepcaoEvento4/NFeRecepcaoEvento4.asmx",
+    nfeAutorizacao: "https://nfe-homologacao.svrs.rs.gov.br/WsNfeAutorizacao4/NFeAutorizacao4.asmx",
+    nfeRetAutorizacao: "https://nfe-homologacao.svrs.rs.gov.br/WsNFeRetAutorizacao4/NFeRetAutorizacao4.asmx",
+    nfeStatusServico: "https://nfe-homologacao.svrs.rs.gov.br/WsNFeStatusServico4/NFeStatusServico4.asmx",
+    nfeDistribuicaoDFe: "https://nfe-homologacao.svrs.rs.gov.br/NFeDistribuicaoDFe/NFeDistribuicaoDFe.asmx",
+    receptEventos: "https://nfe-homologacao.svrs.rs.gov.br/WsNFeRecepcaoEvento4/NFeRecepcaoEvento4.asmx",
   },
 };
 
