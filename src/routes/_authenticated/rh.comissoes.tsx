@@ -184,6 +184,46 @@ function ComissoesPage() {
     onError: (e: Error) => toast.error(e.message),
   });
 
+  const gerarEmLote = useMutation({
+    mutationFn: async () => {
+      if (!empresa) throw new Error("Selecione uma empresa");
+      const pendentes = (lista ?? []).filter((c) => !c.lancamento_id && c.status !== "cancelada");
+      if (pendentes.length === 0) throw new Error("Nenhuma comissão pendente para gerar conta a pagar");
+
+      const { data: cats } = await (supabase.from("categorias_financeiras") as any)
+        .select("id").eq("empresa_id", empresa.id).eq("tipo", "pagar").eq("nome", "Comissões").limit(1);
+      let catId: string | null = cats?.[0]?.id ?? null;
+      if (!catId) {
+        const { data: nc, error: eCat } = await (supabase.from("categorias_financeiras") as any)
+          .insert({ empresa_id: empresa.id, nome: "Comissões", tipo: "pagar" })
+          .select("id").single();
+        if (eCat) throw eCat;
+        catId = nc.id;
+      }
+
+      for (const c of pendentes) {
+        const nome = c.colaboradores?.nome ?? "colaborador";
+        const { data: lanc, error } = await (supabase.from("lancamentos_financeiros") as any).insert({
+          empresa_id: empresa.id, tipo: "pagar", status: "aberto",
+          descricao: `${nome} — ${MESES[mes - 1]}/${ano}`.trim(),
+          valor: c.valor, data_emissao: format(new Date(), "yyyy-MM-dd"),
+          data_vencimento: format(new Date(ano, mes, 5), "yyyy-MM-dd"),
+          categoria_id: catId,
+        }).select("id").single();
+        if (error) throw error;
+        const { error: e2 } = await supabase.from("comissoes" as never)
+          .update({ lancamento_id: lanc.id, status: "aprovada" } as never).eq("id", c.id);
+        if (e2) throw e2;
+      }
+    },
+    onSuccess: () => {
+      toast.success("Contas a pagar geradas");
+      qc.invalidateQueries({ queryKey: ["comissoes"] });
+      qc.invalidateQueries({ queryKey: ["lancamentos"] });
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
   return (
     <>
       <PageHeader
@@ -206,6 +246,10 @@ function ComissoesPage() {
                 ))}
               </SelectContent>
             </Select>
+            <Button variant="outline" disabled={gerarEmLote.isPending || !(lista ?? []).some(c => !c.lancamento_id && c.status !== "cancelada")}
+              onClick={() => { if (confirm(`Gerar conta(s) a pagar para ${(lista ?? []).filter(c => !c.lancamento_id && c.status !== "cancelada").length} comissão(õe)s pendente(s)?`)) gerarEmLote.mutate(); }}>
+              <HandCoins className="h-4 w-4 mr-1" />Gerar contas a pagar
+            </Button>
               <Dialog open={open} onOpenChange={(o) => { setOpen(o); if (!o) reset(); }}>
               <DialogTrigger asChild>
                 <Button><Plus className="mr-1.5 h-4 w-4" /> Nova comissão</Button>

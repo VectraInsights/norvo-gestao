@@ -278,6 +278,46 @@ function FolhaPage() {
     onError: (e: Error) => toast.error(e.message),
   });
 
+  const gerarEmLote = useMutation({
+    mutationFn: async () => {
+      if (!empresa) throw new Error("Selecione uma empresa");
+      const abertas = (folhas ?? []).filter((f) => f.status === "aberta" && !f.lancamento_id);
+      if (abertas.length === 0) throw new Error("Nenhum lançamento aberto para gerar conta a pagar");
+
+      const { data: cats } = await (supabase.from("categorias_financeiras") as any)
+        .select("id").eq("empresa_id", empresa.id)
+        .eq("tipo", "pagar").ilike("nome", "%sal%C3%A1rio%").limit(1);
+      let catId: string | null = cats?.[0]?.id ?? null;
+      if (!catId) {
+        const { data: nc, error: eCat } = await (supabase.from("categorias_financeiras") as any)
+          .insert({ empresa_id: empresa.id, nome: "Salário", tipo: "pagar" })
+          .select("id").single();
+        if (eCat) throw eCat;
+        catId = nc.id;
+      }
+
+      const hoje = new Date().toISOString().slice(0, 10);
+      for (const f of abertas) {
+        const { data: lanc, error: eLanc } = await (supabase.from("lancamentos_financeiros") as any).insert({
+          empresa_id: empresa.id, tipo: "pagar", status: "aberto",
+          descricao: `${f.colaboradores?.nome ?? ""} — ${String(f.competencia_mes).padStart(2, "0")}/${f.competencia_ano}`,
+          valor: f.liquido, data_emissao: hoje, data_vencimento: hoje,
+          categoria_id: catId,
+        }).select("id").single();
+        if (eLanc) throw eLanc;
+        const { error } = await (supabase.from("folha_pagamento" as never) as any)
+          .update({ status: "lançada", lancamento_id: lanc.id }).eq("id", f.id);
+        if (error) throw error;
+      }
+    },
+    onSuccess: (_, vars) => {
+      toast.success(`${vars.length} conta(s) a pagar gerada(s)`);
+      qc.invalidateQueries({ queryKey: ["folha"] });
+      qc.invalidateQueries({ queryKey: ["lancamentos"] });
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
   const total = folhas?.reduce((s, f) => s + Number(f.liquido || 0), 0) ?? 0;
 
   return (
@@ -286,7 +326,12 @@ function FolhaPage() {
         title="Folha de pagamento"
         description="Gere a folha mensal por colaborador. INSS e IRRF são calculados automaticamente. Ao criar, um lançamento é gerado em Contas a pagar."
         actions={
-          <Dialog open={open} onOpenChange={(o) => { setOpen(o); if (!o) reset(); }}>
+          <div className="flex gap-2">
+            <Button size="sm" variant="outline" disabled={gerarEmLote.isPending || !(folhas ?? []).some(f => f.status === "aberta" && !f.lancamento_id)}
+              onClick={() => { if (confirm(`Gerar conta(s) a pagar para ${(folhas ?? []).filter(f => f.status === "aberta" && !f.lancamento_id).length} lançamento(s) aberto(s)?`)) gerarEmLote.mutate([]); }}>
+              <HandCoins className="h-4 w-4 mr-1" />Gerar contas a pagar
+            </Button>
+            <Dialog open={open} onOpenChange={(o) => { setOpen(o); if (!o) reset(); }}>
             <DialogTrigger asChild>
               <Button size="sm"><Plus className="h-4 w-4 mr-1" />Novo lançamento</Button>
             </DialogTrigger>
@@ -390,6 +435,7 @@ function FolhaPage() {
               </DialogFooter>
             </DialogContent>
           </Dialog>
+          </div>
         }
       />
 

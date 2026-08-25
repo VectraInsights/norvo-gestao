@@ -229,6 +229,45 @@ function AdiantamentosPage() {
     onError: (e: Error) => toast.error(e.message),
   });
 
+  const gerarEmLote = useMutation({
+    mutationFn: async () => {
+      if (!empresa) throw new Error("Selecione uma empresa");
+      const pendentes = (lista ?? []).filter((a) => !a.lancamento_id && !a.recorrente && a.status !== "cancelado");
+      if (pendentes.length === 0) throw new Error("Nenhum adiantamento pendente para gerar conta a pagar");
+
+      const { data: cats } = await (supabase.from("categorias_financeiras") as any)
+        .select("id").eq("empresa_id", empresa.id).eq("tipo", "pagar").eq("nome", "Adiantamentos").limit(1);
+      let catId: string | null = cats?.[0]?.id ?? null;
+      if (!catId) {
+        const { data: nc, error: eCat } = await (supabase.from("categorias_financeiras") as any)
+          .insert({ empresa_id: empresa.id, nome: "Adiantamentos", tipo: "pagar" })
+          .select("id").single();
+        if (eCat) throw eCat;
+        catId = nc.id;
+      }
+
+      for (const a of pendentes) {
+        const nome = a.colaboradores?.nome ?? "colaborador";
+        const { data: lanc, error } = await (supabase.from("lancamentos_financeiros") as any).insert({
+          empresa_id: empresa.id, tipo: "pagar", status: "aberto",
+          descricao: nome,
+          valor: a.valor, data_emissao: a.data, data_vencimento: a.data,
+          categoria_id: catId,
+        }).select("id").single();
+        if (error) throw error;
+        const { error: e2 } = await supabase.from("adiantamentos" as never)
+          .update({ lancamento_id: lanc.id } as never).eq("id", a.id);
+        if (e2) throw e2;
+      }
+    },
+    onSuccess: () => {
+      toast.success("Contas a pagar geradas");
+      qc.invalidateQueries({ queryKey: ["adiantamentos"] });
+      qc.invalidateQueries({ queryKey: ["lancamentos"] });
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
   return (
     <>
       <PageHeader
@@ -236,7 +275,12 @@ function AdiantamentosPage() {
         title="Adiantamentos"
         description="Adiantamentos a colaboradores com integração automática ao contas a pagar — o status acompanha a baixa/conciliação do lançamento."
         actions={
-          <Dialog open={open} onOpenChange={(o) => { if (!o) fecharDialog(); else setOpen(true); }}>
+          <div className="flex gap-2">
+            <Button variant="outline" disabled={gerarEmLote.isPending || !(lista ?? []).some(a => !a.lancamento_id && !a.recorrente && a.status !== "cancelado")}
+              onClick={() => { if (confirm(`Gerar conta(s) a pagar para ${(lista ?? []).filter(a => !a.lancamento_id && !a.recorrente && a.status !== "cancelado").length} adiantamento(s) pendente(s)?`)) gerarEmLote.mutate(); }}>
+              <HandCoins className="h-4 w-4 mr-1" />Gerar contas a pagar
+            </Button>
+            <Dialog open={open} onOpenChange={(o) => { if (!o) fecharDialog(); else setOpen(true); }}>
             <DialogTrigger asChild>
               <Button><Plus className="mr-1.5 h-4 w-4" /> Novo adiantamento</Button>
             </DialogTrigger>
@@ -310,6 +354,7 @@ function AdiantamentosPage() {
               </DialogFooter>
             </DialogContent>
           </Dialog>
+          </div>
         }
       />
 
