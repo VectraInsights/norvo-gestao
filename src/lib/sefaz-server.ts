@@ -15,9 +15,21 @@ import { createServerFn } from "@tanstack/react-start";
 // Ex: SEFAZ_URL="https://norvo-gestao.vercel.app/api/sefaz"
 // ============================================================
 
-const SEFAZ_URL = typeof process !== "undefined"
-  ? (process.env.SEFAZ_URL || process.env.VITE_SEFAZ_URL || "")
-  : "";
+const SEFAZ_URL = (() => {
+  // Cloudflare Workers: import.meta.env é injetado no build pelo Vite
+  // Vercel/Node: process.env funciona normalmente
+  try {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const imp = typeof import.meta !== "undefined" ? (import.meta as any).env : undefined;
+    const fromImport = imp?.SEFAZ_URL || imp?.VITE_SEFAZ_URL || "";
+    const fromProcess = typeof process !== "undefined"
+      ? (process.env.SEFAZ_URL || process.env.VITE_SEFAZ_URL || "")
+      : "";
+    return fromImport || fromProcess;
+  } catch {
+    return "";
+  }
+})();
 
 // ============================================================
 // Helper: chamar proxy SEFAZ no Vercel via HTTP (modo CF Worker)
