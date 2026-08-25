@@ -1,108 +1,65 @@
 /**
  * Server functions para integração SEFAZ
- * Chamadas pelo frontend via createServerFn
+ * 
+ * Modo de operação:
+ * - Se SEFAZ_URL estiver configurada → chama o microserviço norvo-sefaz (Cloudflare/qualquer host)
+ * - Se não → usa createServerFn local (Vercel, Node.js puro)
+ * 
+ * Isso permite que o mesmo código funcione em qualquer部署.
  */
 
 import { createServerFn } from "@tanstack/react-start";
-import { createClient } from "@supabase/supabase-js";
 
 // ============================================================
-// Helper: Supabase Admin (service role)
+// URL do microserviço SEFAZ (configurar no .env)
+// Ex: SEFAZ_URL="https://norvo-sefaz.seudominio.com"
 // ============================================================
 
-function getSupabaseAdmin() {
-  const url = process.env.SUPABASE_URL;
-  const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
-  if (!url || !key) throw new Error("SUPABASE_URL e SUPABASE_SERVICE_ROLE_KEY são obrigatórios");
-  return createClient(url, key);
+const SEFAZ_URL = typeof process !== "undefined"
+  ? (process.env.SEFAZ_URL || process.env.VITE_SEFAZ_URL || "")
+  : "";
+
+// ============================================================
+// Helper: chamar microserviço SEFAZ via HTTP
+// ============================================================
+
+async function callSefazService(action: string, body: Record<string, unknown>) {
+  if (!SEFAZ_URL) {
+    throw new Error(
+      "Microserviço SEFAZ não configurado. " +
+      "Configure SEFAZ_URL no .env ou deploy norvo-sefaz (ver norvo-sefaz/README.md)"
+    );
+  }
+
+  const res = await fetch(`${SEFAZ_URL}/${action}`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "Authorization": `Bearer ${process.env.SEFAZ_API_SECRET || process.env.SUPABASE_SERVICE_ROLE_KEY || ""}`,
+    },
+    body: JSON.stringify(body),
+  });
+
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({ error: `HTTP ${res.status}` }));
+    throw new Error(err.error || `Falha na chamada SEFAZ (${res.status})`);
+  }
+
+  return res.json();
 }
 
 // ============================================================
-// Buscar certificado ativo da empresa
-// ============================================================
-
-export const buscarCertificadoFn = createServerFn({ method: "POST" })
-  .validator((data: { empresaId: string }) => data)
-  .handler(async ({ data }) => {
-    const supabase = getSupabaseAdmin();
-
-    // 1. Buscar metadados do certificado
-    const { data: cert, error: certErr } = await supabase
-      .from("certificados_digitais")
-      .select("id, arquivo_path, arquivo_nome, thumbprint, validade, nome")
-      .eq("empresa_id", data.empresaId)
-      .eq("ativo", true)
-      .single();
-
-    if (certErr || !cert) {
-      throw new Error("Nenhum certificado digital ativo encontrado para esta empresa");
-    }
-
-    // 2. Download do arquivo do Storage
-    const { data: fileData, error: dlErr } = await supabase.storage
-      .from("certificados")
-      .download(cert.arquivo_path);
-
-    if (dlErr || !fileData) {
-      throw new Error("Falha ao baixar o certificado do storage");
-    }
-
-    const pfxBytes = Buffer.from(await fileData.arrayBuffer());
-
-    // 3. Buscar senha (campo senha_cript)
-    const { data: certSenha } = await supabase
-      .from("certificados_digitais")
-      .select("senha_cript")
-      .eq("id", cert.id)
-      .single();
-
-    if (!certSenha?.senha_cript) {
-      throw new Error("Senha do certificado não encontrada");
-    }
-
-    // 4. Buscar CNPJ da empresa
-    const { data: empresa } = await supabase
-      .from("empresas")
-      .select("cnpj, uf")
-      .eq("id", data.empresaId)
-      .single();
-
-    return {
-      pfxBase64: pfxBytes.toString("base64"),
-      senha: certSenha.senha_cript,
-      thumbprint: cert.thumbprint,
-      validade: cert.validade,
-      nome: cert.nome,
-      cnpj: empresa?.cnpj || "",
-      uf: empresa?.uf || "SP",
-    };
-  });
-
-// ============================================================
-// Consultar NFe emitidas contra o CNPJ (Manifestação Destinatário)
+// Consultar NFe destinatário
 // ============================================================
 
 export const consultarNFeDestinatarioFn = createServerFn({ method: "POST" })
   .validator((data: { empresaId: string }) => data)
   .handler(async ({ data }) => {
-    // Dynamic import para não sobrecarregar o bundle do client
-    const { consultarDestinatario } = await import("@/lib/sefaz");
-    const cert = await buscarCertificadoFn({ data: { empresaId: data.empresaId } });
-
-    const pfxBytes = Buffer.from(cert.pfxBase64, "base64");
-    const result = await consultarDestinatario(
-      pfxBytes,
-      cert.senha,
-      cert.cnpj,
-      cert.uf,
-      "homologacao",
-    );
-
-    return result;
+    return callSefazService("consultar", { empresaId: data.empresaId });
   });
 
 // ============================================================
-// Registrar Manifestação (Ciência / Confirmação / Desconhecimento)
+// Manifestar NFe (Ciência / Confirmação / Desconhecimento)
 // ============================================================
 
 export const manifestarNFeFn = createServerFn({ method: "POST" })
@@ -113,60 +70,33 @@ export const manifestarNFeFn = createServerFn({ method: "POST" })
     justificativa?: string;
   }) => data)
   .handler(async ({ data }) => {
-    const { enviarEventoManifestacao } = await import("@/lib/sefaz");
-    const cert = await buscarCertificadoFn({ data: { empresaId: data.empresaId } });
-
-    const pfxBytes = Buffer.from(cert.pfxBase64, "base64");
-    const result = await enviarEventoManifestacao(
-      pfxBytes,
-      cert.senha,
-      data.chave,
-      data.tipoEvento,
-      cert.cnpj,
-      cert.uf,
-      "homologacao",
-      data.justificativa,
-    );
-
-    return result;
+    return callSefazService("manifestar", {
+      empresaId: data.empresaId,
+      chave: data.chave,
+      tipoEvento: data.tipoEvento,
+      justificativa: data.justificativa,
+    });
   });
 
 // ============================================================
-// Emitir NF-e (assinar e enviar para autorização)
+// Emitir NFe
 // ============================================================
 
 export const emitirNFeFn = createServerFn({ method: "POST" })
   .validator((data: { empresaId: string; xml: string }) => data)
   .handler(async ({ data }) => {
-    const { emitirNFe } = await import("@/lib/sefaz");
-    const cert = await buscarCertificadoFn({ data: { empresaId: data.empresaId } });
-
-    const pfxBytes = Buffer.from(cert.pfxBase64, "base64");
-    const result = await emitirNFe(
-      pfxBytes,
-      cert.senha,
-      data.xml,
-      cert.uf,
-      "homologacao",
-    );
-
-    return result;
+    return callSefazService("emitir", {
+      empresaId: data.empresaId,
+      xml: data.xml,
+    });
   });
 
 // ============================================================
-// Verificar Status do Serviço SEFAZ
+// Verificar Status Serviço
 // ============================================================
 
 export const verificarStatusServicoFn = createServerFn({ method: "POST" })
   .validator((data: { empresaId: string }) => data)
   .handler(async ({ data }) => {
-    const cert = await buscarCertificadoFn({ data: { empresaId: data.empresaId } });
-    // Por enquanto, retorna status mockado
-    // TODO: implementar chamada real ao NfeStatusServico4
-    return {
-      status: "OK",
-      uf: cert.uf,
-      ambiente: "homologacao",
-      motivo: "Serviço operacional",
-    };
+    return callSefazService("status", { empresaId: data.empresaId });
   });
