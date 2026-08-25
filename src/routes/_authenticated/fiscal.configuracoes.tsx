@@ -19,6 +19,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEmpresaAtual } from "@/hooks/use-empresa";
 import { toast } from "sonner";
 import { dateBR } from "@/lib/format";
+import forge from "node-forge";
 
 export const Route = createFileRoute("/_authenticated/fiscal/configuracoes")({
   component: ConfigFiscais,
@@ -231,6 +232,23 @@ function ConfigFiscais() {
     try {
       const storagePath = `${empresa.id}/${Date.now()}_${certFile.name}`;
 
+      // Extrair validade do certificado via node-forge
+      let validade: string | null = null;
+      let thumbprint: string | null = null;
+      try {
+        const fileBytes = await certFile.arrayBuffer();
+        const p12Asn1 = forge.asn1.fromDer(forge.util.encode64(new Uint8Array(fileBytes)));
+        const p12 = forge.pkcs12.pkcs12FromAsn1(p12Asn1, certPassword);
+        const certBags = p12.getBags({ bagType: "1.2.840.113549.1.12.10.1.3" });
+        const cert = certBags["1.2.840.113549.1.12.10.1.3"]?.[0]?.cert;
+        if (cert) {
+          validade = (cert.validity.notAfter as unknown as Date).toISOString().split("T")[0];
+          thumbprint = forge.md.sha1.create().update(forge.asn1.toDer(forge.pki.certificateToAsn1(cert)).getBytes()).digest().toHex();
+        }
+      } catch {
+        // Se falhar o parse, continua sem validade
+      }
+
       // Upload para Supabase Storage
       const { error: uploadErr } = await supabase.storage
         .from("certificados")
@@ -246,6 +264,8 @@ function ConfigFiscais() {
           arquivo_path: storagePath,
           arquivo_nome: certFile.name,
           senha_cript: certPassword,
+          validade,
+          thumbprint,
           ativo: true,
         } as never);
       if (insertErr) {
