@@ -11,10 +11,23 @@
  */
 
 import forge from "node-forge";
+import https from "node:https";
 
 // OID constants for PKCS#12 bags
 const OID_PKCS8_SHROUDED_KEY_BAG = "1.2.840.113549.1.12.10.1.2";
 const OID_CERT_BAG = "1.2.840.113549.1.12.10.1.3";
+
+// ============================================================
+// Agent HTTPS com certificado cliente (mTLS)
+// ============================================================
+
+function createSefazAgent(pfxBytes: Buffer, senha: string): https.Agent {
+  return new https.Agent({
+    pfx: pfxBytes,
+    passphrase: senha,
+    rejectUnauthorized: false, // SEFAZ homologação usa cadeia própria
+  });
+}
 
 // ============================================================
 // Configuração de endpoints SEFAZ por UF (homologação)
@@ -171,7 +184,7 @@ export function signXml(
 // Chamadas SOAP à SEFAZ
 // ============================================================
 
-async function soapRequest(url: string, soapBody: string, action: string): Promise<string> {
+async function soapRequest(url: string, soapBody: string, action: string, agent?: https.Agent): Promise<string> {
   const envelope = `<?xml version="1.0" encoding="utf-8"?>
 <soap12:Envelope xmlns:soap12="http://www.w3.org/2003/05/soap-envelope">
   <soap12:Body>
@@ -179,6 +192,39 @@ async function soapRequest(url: string, soapBody: string, action: string): Promi
   </soap12:Body>
 </soap12:Envelope>`;
 
+  // Usar https.request com agent mTLS quando fornecido
+  if (agent) {
+    const parsedUrl = new URL(url);
+    return new Promise<string>((resolve, reject) => {
+      const req = https.request({
+        hostname: parsedUrl.hostname,
+        port: parsedUrl.port || 443,
+        path: parsedUrl.pathname,
+        method: "POST",
+        agent,
+        headers: {
+          "Content-Type": "application/soap+xml; charset=utf-8",
+          SOAPAction: action,
+          "Content-Length": Buffer.byteLength(envelope),
+        },
+      }, (res) => {
+        let data = "";
+        res.on("data", (chunk) => data += chunk);
+        res.on("end", () => {
+          if (res.statusCode && res.statusCode >= 400) {
+            reject(new Error(`SEFAZ HTTP ${res.statusCode}: ${data.substring(0, 500)}`));
+          } else {
+            resolve(data);
+          }
+        });
+      });
+      req.on("error", reject);
+      req.write(envelope);
+      req.end();
+    });
+  }
+
+  // Fallback sem agent (não deveria chegar aqui para SEFAZ)
   const res = await fetch(url, {
     method: "POST",
     headers: {
@@ -208,6 +254,7 @@ export async function consultarDestinatario(
 ): Promise<{ notas: Array<{ chave: string; emitente: string; cnpj: string; valor: number; data: string }> }> {
   const endpoints = getEndpoints(uf);
   const ns = "http://www.portalfiscal.inf.br/nfe";
+  const agent = createSefazAgent(pfxBytes, senha);
 
   // Montar XML da consulta
   const xmlConsulta = `<consSitNFe xmlns="${ns}" versao="1.00">
@@ -230,6 +277,7 @@ export async function consultarDestinatario(
     endpoints.nfeDistribuicaoDFe,
     xmlBody,
     `${ns}/NFeDistribuicaoDFe/NFeDistribuicaoDFe/consultar`,
+    agent,
   );
 
   // Parse da resposta (simplificado - em produção, usar parser XML robusto)
@@ -268,6 +316,7 @@ export async function enviarEventoManifestacao(
 ): Promise<{ sucesso: boolean; codigo: string; motivo: string }> {
   const endpoints = getEndpoints(uf);
   const ns = "http://www.portalfiscal.inf.br/nfe";
+  const agent = createSefazAgent(pfxBytes, senha);
   const dataHora = new Date().toISOString().replace(/\.\d{3}Z$/, "");
 
   // Número sequencial do evento (1 para primeiro evento da chave)
@@ -304,6 +353,7 @@ export async function enviarEventoManifestacao(
     endpoints.receptEventos,
     xmlBody,
     `${ns}/NFeRecepcaoEvento/NFeRecepcaoEvento/recepcaoEvento`,
+    agent,
   );
 
   // Parse da resposta
@@ -330,6 +380,7 @@ export async function emitirNFe(
 ): Promise<{ sucesso: boolean; chave: string; numero: string; codigo: string; motivo: string }> {
   const endpoints = getEndpoints(uf);
   const ns = "http://www.portalfiscal.inf.br/nfe";
+  const agent = createSefazAgent(pfxBytes, senha);
 
   // Assinar o XML da NFe
   const xmlAssinado = signXml(xmlNFe, pfxBytes, senha);
@@ -345,6 +396,7 @@ export async function emitirNFe(
     endpoints.nfeAutorizacao,
     xmlBody,
     `${ns}/NFeAutorizacao/NFeAutorizacao/nfeAutorizacaoLote`,
+    agent,
   );
 
   // Parse da resposta
