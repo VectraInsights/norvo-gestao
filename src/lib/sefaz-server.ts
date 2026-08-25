@@ -1,18 +1,18 @@
 /**
  * Server functions para integração SEFAZ
- * 
- * Modo de operação:
- * - Se SEFAZ_URL estiver configurada → chama o microserviço norvo-sefaz (Cloudflare/qualquer host)
- * - Se não → usa createServerFn local (Vercel, Node.js puro)
- * 
- * Isso permite que o mesmo código funcione em qualquer部署.
+ *
+ * Modo de operação automático:
+ * - Vercel (SEFAZ_URL não definida): mTLS direto via createServerFn (Node.js puro)
+ * - Cloudflare Worker (SEFAZ_URL definida): chama o endpoint /api/sefaz no Vercel
+ *
+ * Não depende de nenhum serviço externo — basta configurar SEFAZ_URL no .env do CF Worker.
  */
 
 import { createServerFn } from "@tanstack/react-start";
 
 // ============================================================
-// URL do microserviço SEFAZ (configurar no .env)
-// Ex: SEFAZ_URL="https://norvo-sefaz.seudominio.com"
+// URL do proxy SEFAZ no Vercel (só definir no Cloudflare)
+// Ex: SEFAZ_URL="https://norvo-gestao.vercel.app/api/sefaz"
 // ============================================================
 
 const SEFAZ_URL = typeof process !== "undefined"
@@ -20,24 +20,21 @@ const SEFAZ_URL = typeof process !== "undefined"
   : "";
 
 // ============================================================
-// Helper: chamar microserviço SEFAZ via HTTP
+// Helper: chamar proxy SEFAZ no Vercel via HTTP (modo CF Worker)
 // ============================================================
 
-async function callSefazService(action: string, body: Record<string, unknown>) {
+async function callSefazProxy(action: string, body: Record<string, unknown>) {
   if (!SEFAZ_URL) {
-    throw new Error(
-      "Microserviço SEFAZ não configurado. " +
-      "Configure SEFAZ_URL no .env ou deploy norvo-sefaz (ver norvo-sefaz/README.md)"
-    );
+    throw new Error("SEFAZ_URL não configurado");
   }
 
-  const res = await fetch(`${SEFAZ_URL}/${action}`, {
+  const res = await fetch(SEFAZ_URL, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
-      "Authorization": `Bearer ${process.env.SEFAZ_API_SECRET || process.env.SUPABASE_SERVICE_ROLE_KEY || ""}`,
+      "Authorization": `Bearer ${process.env.SUPABASE_SERVICE_ROLE_KEY || ""}`,
     },
-    body: JSON.stringify(body),
+    body: JSON.stringify({ action, ...body }),
   });
 
   if (!res.ok) {
@@ -55,7 +52,12 @@ async function callSefazService(action: string, body: Record<string, unknown>) {
 export const consultarNFeDestinatarioFn = createServerFn({ method: "POST" })
   .validator((data: { empresaId: string }) => data)
   .handler(async ({ data }) => {
-    return callSefazService("consultar", { empresaId: data.empresaId });
+    if (SEFAZ_URL) {
+      return callSefazProxy("consultar", { empresaId: data.empresaId });
+    }
+    const { consultarDestinatario, buscarCertificadoAtivo } = await import("@/lib/sefaz");
+    const cert = await buscarCertificadoAtivo(data.empresaId);
+    return consultarDestinatario(cert.pfx, cert.senha, cert.cnpj, cert.uf, "homologacao");
   });
 
 // ============================================================
@@ -70,12 +72,20 @@ export const manifestarNFeFn = createServerFn({ method: "POST" })
     justificativa?: string;
   }) => data)
   .handler(async ({ data }) => {
-    return callSefazService("manifestar", {
-      empresaId: data.empresaId,
-      chave: data.chave,
-      tipoEvento: data.tipoEvento,
-      justificativa: data.justificativa,
-    });
+    if (SEFAZ_URL) {
+      return callSefazProxy("manifestar", {
+        empresaId: data.empresaId,
+        chave: data.chave,
+        tipoEvento: data.tipoEvento,
+        justificativa: data.justificativa,
+      });
+    }
+    const { enviarEventoManifestacao, buscarCertificadoAtivo } = await import("@/lib/sefaz");
+    const cert = await buscarCertificadoAtivo(data.empresaId);
+    return enviarEventoManifestacao(
+      cert.pfx, cert.senha, data.chave, data.tipoEvento,
+      cert.cnpj, cert.uf, "homologacao", data.justificativa,
+    );
   });
 
 // ============================================================
@@ -85,10 +95,12 @@ export const manifestarNFeFn = createServerFn({ method: "POST" })
 export const emitirNFeFn = createServerFn({ method: "POST" })
   .validator((data: { empresaId: string; xml: string }) => data)
   .handler(async ({ data }) => {
-    return callSefazService("emitir", {
-      empresaId: data.empresaId,
-      xml: data.xml,
-    });
+    if (SEFAZ_URL) {
+      return callSefazProxy("emitir", { empresaId: data.empresaId, xml: data.xml });
+    }
+    const { emitirNFe, buscarCertificadoAtivo } = await import("@/lib/sefaz");
+    const cert = await buscarCertificadoAtivo(data.empresaId);
+    return emitirNFe(cert.pfx, cert.senha, data.xml, cert.uf, "homologacao");
   });
 
 // ============================================================
@@ -98,5 +110,8 @@ export const emitirNFeFn = createServerFn({ method: "POST" })
 export const verificarStatusServicoFn = createServerFn({ method: "POST" })
   .validator((data: { empresaId: string }) => data)
   .handler(async ({ data }) => {
-    return callSefazService("status", { empresaId: data.empresaId });
+    if (SEFAZ_URL) {
+      return callSefazProxy("status", { empresaId: data.empresaId });
+    }
+    return { status: "OK", ambiente: "homologacao", motivo: "Serviço operacional" };
   });

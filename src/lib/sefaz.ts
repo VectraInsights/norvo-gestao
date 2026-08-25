@@ -416,3 +416,53 @@ export async function emitirNFe(
 
   return { sucesso: false, chave: "", numero: "", codigo: "ERRO", motivo: "Resposta inválida da SEFAZ" };
 }
+
+// ============================================================
+// Buscar certificado ativo (usado pelo modo direto no Vercel)
+// ============================================================
+
+export async function buscarCertificadoAtivo(empresaId: string) {
+  const { createClient } = await import("@supabase/supabase-js");
+  const url = process.env.SUPABASE_URL;
+  const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  if (!url || !key) throw new Error("SUPABASE_URL e SUPABASE_SERVICE_ROLE_KEY são obrigatórios");
+  const supabase = createClient(url, key);
+
+  const { data: cert, error: certErr } = await supabase
+    .from("certificados_digitais")
+    .select("id, arquivo_path, thumbprint, validade, nome")
+    .eq("empresa_id", empresaId)
+    .eq("ativo", true)
+    .single();
+
+  if (certErr || !cert) throw new Error("Nenhum certificado ativo encontrado");
+
+  const { data: fileData, error: dlErr } = await supabase.storage
+    .from("certificados")
+    .download(cert.arquivo_path);
+
+  if (dlErr || !fileData) throw new Error("Falha ao baixar certificado");
+
+  const pfx = Buffer.from(await fileData.arrayBuffer());
+
+  const { data: certSenha } = await supabase
+    .from("certificados_digitais")
+    .select("senha_cript")
+    .eq("id", cert.id)
+    .single();
+
+  if (!certSenha?.senha_cript) throw new Error("Senha do certificado não encontrada");
+
+  const { data: empresa } = await supabase
+    .from("empresas")
+    .select("cnpj, uf")
+    .eq("id", empresaId)
+    .single();
+
+  return {
+    pfx,
+    senha: certSenha.senha_cript,
+    cnpj: empresa?.cnpj || "",
+    uf: empresa?.uf || "SP",
+  };
+}
