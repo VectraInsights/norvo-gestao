@@ -259,7 +259,6 @@ function ComissoesPage() {
       ) : (
         <Card className="shadow-panel">
           <div className="flex items-center justify-between border-b border-border/60 px-4 py-3 text-sm">
-            <span className="text-muted-foreground">{lista.length} comissão(ões)</span>
             <span className="font-semibold">Total: {brl(total)}</span>
           </div>
           <Table>
@@ -284,22 +283,24 @@ function ComissoesPage() {
                   <TableCell className="text-right font-medium">{brl(c.valor)}</TableCell>
                   <TableCell><Badge variant="secondary">{STATUS_LABEL[c.status] ?? c.status}</Badge></TableCell>
                   <TableCell className="text-right">
-                    <Button
-                      size="icon" variant="ghost" aria-label="Gerar conta a pagar"
-                      title={c.lancamento_id ? "Já lançado no financeiro" : "Gerar conta a pagar"}
-                      disabled={!!c.lancamento_id || gerarPagamento.isPending}
-                      onClick={() => gerarPagamento.mutate(c)}
-                    >
-                      <HandCoins className="h-4 w-4" />
-                    </Button>
-                    <Button size="icon" variant="ghost" aria-label="Editar" title="Editar"
-                      disabled={!!c.lancamento_id}
-                      onClick={() => abrirEdicao(c)}>
-                      <Pencil className="h-4 w-4" />
-                    </Button>
-                    <Button size="icon" variant="ghost" aria-label="Excluir" onClick={() => excluir.mutate(c.id)}>
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
+                    <div className="flex items-center justify-end gap-1">
+                      <Button
+                        size="icon" variant="ghost" aria-label="Gerar conta a pagar"
+                        title={c.lancamento_id ? "Já lançado no financeiro" : "Gerar conta a pagar"}
+                        disabled={!!c.lancamento_id || gerarPagamento.isPending}
+                        onClick={() => gerarPagamento.mutate(c)}
+                      >
+                        <HandCoins className="h-4 w-4" />
+                      </Button>
+                      <Button size="icon" variant="ghost" aria-label="Editar" title="Editar"
+                        disabled={!!c.lancamento_id}
+                        onClick={() => abrirEdicao(c)}>
+                        <Pencil className="h-4 w-4" />
+                      </Button>
+                      <Button size="icon" variant="ghost" aria-label="Excluir" onClick={() => excluir.mutate(c.id)}>
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </div>
                   </TableCell>
                 </TableRow>
               ))}

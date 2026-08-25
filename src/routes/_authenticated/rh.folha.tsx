@@ -438,30 +438,32 @@ function FolhaPage() {
                     }`}>{f.status}</span>
                   </TableCell>
                   <TableCell className="text-right">
-                    {f.status !== "cancelada" && (
-                      <>
-                        {f.status !== "paga" && f.status !== "lançada" && (
-                          <Button variant="ghost" size="icon" className="h-7 w-7" title="Editar" onClick={() => abrirEdicao(f)}>
-                            <Pencil className="h-3.5 w-3.5" />
+                    <div className="flex items-center justify-end gap-1">
+                      {f.status !== "cancelada" && (
+                        <>
+                          {f.status !== "paga" && f.status !== "lançada" && (
+                            <Button variant="ghost" size="icon" className="h-7 w-7" title="Editar" onClick={() => abrirEdicao(f)}>
+                              <Pencil className="h-3.5 w-3.5" />
+                            </Button>
+                          )}
+                          <Button variant="ghost" size="icon" className="h-7 w-7" title="Excluir" onClick={() => {
+                            if (confirm("Excluir este lançamento da folha?")) excluir.mutate(f.id);
+                          }}>
+                            <Trash2 className="h-3.5 w-3.5" />
                           </Button>
-                        )}
-                        <Button variant="ghost" size="icon" className="h-7 w-7" title="Excluir" onClick={() => {
-                          if (confirm("Excluir este lançamento da folha?")) excluir.mutate(f.id);
-                        }}>
-                          <Trash2 className="h-3.5 w-3.5" />
-                        </Button>
-                        {f.status !== "paga" && f.status !== "lançada" && (
-                          <Tooltip>
-                            <TooltipTrigger asChild>
-                              <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => pay.mutate(f.id)} disabled={pay.isPending}>
-                                <HandCoins className="h-3.5 w-3.5" />
-                              </Button>
-                            </TooltipTrigger>
-                            <TooltipContent>Gerar conta a pagar</TooltipContent>
-                          </Tooltip>
-                        )}
-                      </>
-                    )}
+                          {f.status !== "paga" && f.status !== "lançada" && (
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => pay.mutate(f.id)} disabled={pay.isPending}>
+                                  <HandCoins className="h-3.5 w-3.5" />
+                                </Button>
+                              </TooltipTrigger>
+                              <TooltipContent>Gerar conta a pagar</TooltipContent>
+                            </Tooltip>
+                          )}
+                        </>
+                      )}
+                    </div>
                   </TableCell>
                 </TableRow>
               ))}

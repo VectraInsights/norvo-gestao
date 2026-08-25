@@ -324,7 +324,6 @@ function AdiantamentosPage() {
       ) : (
         <Card className="shadow-panel">
           <div className="flex items-center justify-between border-b border-border/60 px-4 py-3 text-sm">
-            <span className="text-muted-foreground">{lista.length} registro(s)</span>
             <span className="font-semibold">Em aberto: {brl(emAberto)}</span>
           </div>
           <Table>
@@ -355,36 +354,38 @@ function AdiantamentosPage() {
                   </TableCell>
                   <TableCell><Badge variant="secondary">{STATUS_LABEL[a.status] ?? a.status}</Badge></TableCell>
                   <TableCell className="text-right">
-                    {!a.recorrente && !a.lancamento_id && (
+                    <div className="flex items-center justify-end gap-1">
+                      {!a.recorrente && !a.lancamento_id && (
+                        <Button
+                          size="icon" variant="ghost" aria-label="Gerar conta a pagar"
+                          title={a.lancamento_id ? "Já lançado no financeiro" : "Gerar conta a pagar"}
+                          disabled={!!a.lancamento_id || gerarPagamento.isPending}
+                          onClick={() => gerarPagamento.mutate(a)}
+                        >
+                          <HandCoins className="h-4 w-4" />
+                        </Button>
+                      )}
                       <Button
-                        size="icon" variant="ghost" aria-label="Gerar conta a pagar"
-                        title={a.lancamento_id ? "Já lançado no financeiro" : "Gerar conta a pagar"}
-                        disabled={!!a.lancamento_id || gerarPagamento.isPending}
-                        onClick={() => gerarPagamento.mutate(a)}
+                        size="icon" variant="ghost" aria-label="Editar"
+                        title={a.lancamento_id ? "Já enviado ao contas a pagar — edite o valor pela tela financeira" : "Editar"}
+                        disabled={!!a.lancamento_id}
+                        onClick={() => abrirEdicaoAdiant(a)}
                       >
-                        <HandCoins className="h-4 w-4" />
+                        <Pencil className="h-4 w-4" />
                       </Button>
-                    )}
-                    <Button
-                      size="icon" variant="ghost" aria-label="Editar"
-                      title={a.lancamento_id ? "Já enviado ao contas a pagar — edite o valor pela tela financeira" : "Editar"}
-                      disabled={!!a.lancamento_id}
-                      onClick={() => abrirEdicaoAdiant(a)}
-                    >
-                      <Pencil className="h-4 w-4" />
-                    </Button>
-                    <Button
-                      size="icon" variant="ghost" aria-label="Excluir"
-                      title={a.recorrente ? "Exclui o adiantamento e as contas em aberto geradas por ele" : "Excluir"}
-                      onClick={() => {
-                        if (confirm(a.recorrente
-                          ? "Excluir este adiantamento recorrente?\n\nAs contas a pagar EM ABERTO geradas por ele também serão removidas (as já pagas ficam no histórico)."
-                          : "Excluir este adiantamento?" + (a.lancamento_id ? "\n\nA conta a pagar vinculada também será removida." : "")))
-                          excluir.mutate(a);
-                      }}
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
+                      <Button
+                        size="icon" variant="ghost" aria-label="Excluir"
+                        title={a.recorrente ? "Exclui o adiantamento e as contas em aberto geradas por ele" : "Excluir"}
+                        onClick={() => {
+                          if (confirm(a.recorrente
+                            ? "Excluir este adiantamento recorrente?\n\nAs contas a pagar EM ABERTO geradas por ele também serão removidas (as já pagas ficam no histórico)."
+                            : "Excluir este adiantamento?" + (a.lancamento_id ? "\n\nA conta a pagar vinculada também será removida." : "")))
+                            excluir.mutate(a);
+                        }}
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </div>
                   </TableCell>
                 </TableRow>
               ))}
