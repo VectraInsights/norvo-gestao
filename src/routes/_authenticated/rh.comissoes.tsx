@@ -165,8 +165,16 @@ function ComissoesPage() {
   });
 
   const excluir = useMutation({
-    mutationFn: async (id: string) => {
-      const { error } = await supabase.from("comissoes" as never).delete().eq("id", id);
+    mutationFn: async (c: { id: string; lancamento_id: string | null }) => {
+      if (c.lancamento_id) {
+        const { data: lanc } = await supabase.from("lancamentos_financeiros" as never)
+          .select("status").eq("id", c.lancamento_id).maybeSingle();
+        if (lanc && lanc.status !== "pago") {
+          const { error: eDel } = await supabase.from("lancamentos_financeiros").delete().eq("id", c.lancamento_id);
+          if (eDel) throw eDel;
+        }
+      }
+      const { error } = await supabase.from("comissoes" as never).delete().eq("id", c.id);
       if (error) throw error;
     },
     onSuccess: () => {
@@ -297,7 +305,10 @@ function ComissoesPage() {
                         onClick={() => abrirEdicao(c)}>
                         <Pencil className="h-4 w-4" />
                       </Button>
-                      <Button size="icon" variant="ghost" aria-label="Excluir" onClick={() => excluir.mutate(c.id)}>
+                      <Button size="icon" variant="ghost" aria-label="Excluir" onClick={() => {
+                        if (confirm(c.lancamento_id ? "Excluir esta comissão?\n\nA conta a pagar vinculada também será removida." : "Excluir esta comissão?"))
+                          excluir.mutate(c);
+                      }}>
                         <Trash2 className="h-4 w-4" />
                       </Button>
                     </div>

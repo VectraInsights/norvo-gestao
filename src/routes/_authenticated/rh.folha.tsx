@@ -40,6 +40,7 @@ type Folha = {
   salario: number; horas_extras: number; beneficios: number;
   descontos: number; inss: number; irrf: number; liquido: number;
   status: string; data_pagamento: string | null;
+  lancamento_id: string | null;
   descontos_detalhe: Array<{ nome: string; valor: number }> | null;
   colaboradores?: { nome: string; salario_base: number } | null;
 };
@@ -258,8 +259,16 @@ function FolhaPage() {
   });
 
   const excluir = useMutation({
-    mutationFn: async (id: string) => {
-      const { error } = await supabase.from("folha_pagamento" as never).delete().eq("id", id);
+    mutationFn: async (f: Folha) => {
+      if (f.lancamento_id) {
+        const { data: lanc } = await supabase.from("lancamentos_financeiros" as never)
+          .select("status").eq("id", f.lancamento_id).maybeSingle();
+        if (lanc && lanc.status !== "pago") {
+          const { error: eDel } = await supabase.from("lancamentos_financeiros").delete().eq("id", f.lancamento_id);
+          if (eDel) throw eDel;
+        }
+      }
+      const { error } = await supabase.from("folha_pagamento" as never).delete().eq("id", f.id);
       if (error) throw error;
     },
     onSuccess: () => {
@@ -457,7 +466,7 @@ function FolhaPage() {
                             </Button>
                           )}
                           <Button variant="ghost" size="icon" className="h-7 w-7" title="Excluir" onClick={() => {
-                            if (confirm("Excluir este lançamento da folha?")) excluir.mutate(f.id);
+                            if (confirm(f.lancamento_id ? "Excluir este lançamento da folha?\n\nA conta a pagar vinculada também será removida." : "Excluir este lançamento da folha?")) excluir.mutate(f);
                           }}>
                             <Trash2 className="h-3.5 w-3.5" />
                           </Button>
