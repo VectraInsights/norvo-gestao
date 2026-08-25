@@ -442,16 +442,6 @@ function FolhaPage() {
                       {f.status !== "cancelada" && (
                         <>
                           {f.status !== "paga" && f.status !== "lançada" && (
-                            <Button variant="ghost" size="icon" className="h-7 w-7" title="Editar" onClick={() => abrirEdicao(f)}>
-                              <Pencil className="h-3.5 w-3.5" />
-                            </Button>
-                          )}
-                          <Button variant="ghost" size="icon" className="h-7 w-7" title="Excluir" onClick={() => {
-                            if (confirm("Excluir este lançamento da folha?")) excluir.mutate(f.id);
-                          }}>
-                            <Trash2 className="h-3.5 w-3.5" />
-                          </Button>
-                          {f.status !== "paga" && f.status !== "lançada" && (
                             <Tooltip>
                               <TooltipTrigger asChild>
                                 <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => pay.mutate(f.id)} disabled={pay.isPending}>
@@ -461,6 +451,16 @@ function FolhaPage() {
                               <TooltipContent>Gerar conta a pagar</TooltipContent>
                             </Tooltip>
                           )}
+                          {f.status !== "paga" && f.status !== "lançada" && (
+                            <Button variant="ghost" size="icon" className="h-7 w-7" title="Editar" onClick={() => abrirEdicao(f)}>
+                              <Pencil className="h-3.5 w-3.5" />
+                            </Button>
+                          )}
+                          <Button variant="ghost" size="icon" className="h-7 w-7" title="Excluir" onClick={() => {
+                            if (confirm("Excluir este lançamento da folha?")) excluir.mutate(f.id);
+                          }}>
+                            <Trash2 className="h-3.5 w-3.5" />
+                          </Button>
                         </>
                       )}
                     </div>
