@@ -12,8 +12,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, Dialog
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { Loader2, Plus, TrendingUp, Trash2, MoreHorizontal, Check, RotateCcw, Ban, ArrowUp, ArrowDown, ArrowUpDown, Search, X, Pencil } from "lucide-react";
+import { Loader2, Plus, TrendingUp, Trash2, Check, RotateCcw, Ban, ArrowUp, ArrowDown, ArrowUpDown, Search, X, Pencil } from "lucide-react";
 import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -50,6 +49,7 @@ type Lancamento = {
   created_at: string;
   created_by: string | null;
   contato: { nome: string } | null;
+  categoria_id: string | null;
 };
 
 const FORMAS_PAGAMENTO = ["Pix", "Boleto", "Cartão de crédito", "Cartão de débito", "Dinheiro", "Transferência", "Cheque", "Outros"] as const;
@@ -79,7 +79,7 @@ export function LancamentosPage({ tipo }: { tipo: "receber" | "pagar" }) {
     queryFn: async ({ signal }): Promise<Lancamento[]> => {
       const { data, error } = await supabase
         .from("lancamentos_financeiros")
-        .select("id,descricao,valor,status,data_vencimento,created_at,created_by,contato:contatos(nome)")
+        .select("id,descricao,valor,status,data_vencimento,created_at,created_by,contato:contatos(nome),categoria_id")
         .eq("empresa_id", empresa!.id)
         .eq("tipo", tipo)
         .order("data_vencimento", { ascending: false })
@@ -523,7 +523,10 @@ export function LancamentosPage({ tipo }: { tipo: "receber" | "pagar" }) {
                     <TableCell onClick={(e) => e.stopPropagation()}>
                       <Checkbox checked={selected.has(l.id)} onCheckedChange={() => toggle(l.id)} aria-label="Selecionar" />
                     </TableCell>
-                    <TableCell className="font-medium">{l.descricao}</TableCell>
+                    <TableCell className="font-medium">
+                      <div>{l.descricao}</div>
+                      {l.categoria_id && <div className="text-xs text-muted-foreground font-normal mt-0.5">{categoriasOpt?.find(c => c.id === l.categoria_id)?.nome}</div>}
+                    </TableCell>
                     <TableCell className="text-muted-foreground">{l.contato?.nome ?? "—"}</TableCell>
                     <TableCell className="text-tabular">{format(new Date(l.data_vencimento + "T00:00:00"), "dd/MM/yyyy")}</TableCell>
                     <TableCell className="text-right text-tabular font-medium">{brl(l.valor)}</TableCell>
@@ -531,38 +534,33 @@ export function LancamentosPage({ tipo }: { tipo: "receber" | "pagar" }) {
                       <Badge className={STATUS_TONE[l.status] ?? ""} variant="secondary">{l.status}</Badge>
                     </TableCell>
                     <TableCell className="text-right">
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <Button variant="ghost" size="icon" aria-label="Ações">
-                            <MoreHorizontal className="h-4 w-4" />
+                      <div className="flex items-center justify-end gap-1">
+                        <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => abrirEdicao(l.id)}>
+                          <Pencil className="h-3.5 w-3.5" />
+                        </Button>
+                        {l.status !== "pago" && (
+                          <Button variant="ghost" size="icon" className="h-7 w-7" disabled={emAndamento}
+                            onClick={() => marcarPago.mutate({ id: l.id, valor: l.valor })}>
+                            <Check className="h-3.5 w-3.5" />
                           </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end">
-                          <DropdownMenuItem onClick={() => abrirEdicao(l.id)}>
-                            <Pencil className="mr-2 h-4 w-4" />Editar
-                          </DropdownMenuItem>
-                          {l.status !== "pago" && (
-                            <DropdownMenuItem disabled={emAndamento} onClick={() => marcarPago.mutate({ id: l.id, valor: l.valor })}>
-                              <Check className="mr-2 h-4 w-4" />Informar pagamento
-                            </DropdownMenuItem>
-                          )}
-                          {l.status !== "aberto" && (
-                            <DropdownMenuItem onClick={() => alterarStatusLote.mutate({ ids: [l.id], status: "aberto" })}>
-                              <RotateCcw className="mr-2 h-4 w-4" />Voltar para aberto
-                            </DropdownMenuItem>
-                          )}
-                          {l.status !== "cancelado" && (
-                            <DropdownMenuItem onClick={() => alterarStatusLote.mutate({ ids: [l.id], status: "cancelado" })}>
-                              <Ban className="mr-2 h-4 w-4" />Cancelar
-                            </DropdownMenuItem>
-                          )}
-                          <DropdownMenuSeparator />
-                          <DropdownMenuItem className="text-destructive focus:text-destructive"
-                            onClick={() => { if (confirm('Excluir lançamento?\n\nSe estiver conciliado, a transação do extrato voltará para "em aberto" (não será apagada).')) excluirLote.mutate([l.id]); }}>
-                            <Trash2 className="mr-2 h-4 w-4" />Excluir
-                          </DropdownMenuItem>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
+                        )}
+                        {l.status !== "aberto" && (
+                          <Button variant="ghost" size="icon" className="h-7 w-7"
+                            onClick={() => alterarStatusLote.mutate({ ids: [l.id], status: "aberto" })}>
+                            <RotateCcw className="h-3.5 w-3.5" />
+                          </Button>
+                        )}
+                        {l.status !== "cancelado" && (
+                          <Button variant="ghost" size="icon" className="h-7 w-7"
+                            onClick={() => alterarStatusLote.mutate({ ids: [l.id], status: "cancelado" })}>
+                            <Ban className="h-3.5 w-3.5" />
+                          </Button>
+                        )}
+                        <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive hover:text-destructive"
+                          onClick={() => { if (confirm('Excluir lançamento?\n\nSe estiver conciliado, a transação do extrato voltará para "em aberto" (não será apagada).')) excluirLote.mutate([l.id]); }}>
+                          <Trash2 className="h-3.5 w-3.5" />
+                        </Button>
+                      </div>
                     </TableCell>
                   </TableRow>
                 );
