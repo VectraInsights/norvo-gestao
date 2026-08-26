@@ -62,6 +62,20 @@ export default {
       }
     }
 
+    // Cron SEFAZ — busca notas automaticamente 2x/dia
+    if (url.pathname === "/api/sefaz-cron" && request.method === "GET") {
+      try {
+        const { handleSefazCron } = await import("./lib/sefaz-cron");
+        return await handleSefazCron();
+      } catch (error) {
+        console.error("[sefaz-cron]", error);
+        return new Response(JSON.stringify({ error: String(error) }), {
+          status: 500,
+          headers: { "Content-Type": "application/json" },
+        });
+      }
+    }
+
     try {
       const handler = await getServerEntry();
       const response = await handler.fetch(request, env, ctx);
