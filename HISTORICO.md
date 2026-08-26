@@ -348,6 +348,13 @@ Registro condensado da evolução do Norvo Gestão fora do editor Lovable.
 
 - **Commits**: `034c29c` (proxy), `81b767e` (endpoints corrigidos SVRS), `04e6de4` (todos estados).
 
+18. **Fix endpoints SEFAZ Nacionais (HTTP 404)**:
+   - O endpoint de **produção** `NFeDistribuicaoDFe` estava errado: `www.nfe.fazenda.gov.br` → `www1.nfe.fazenda.gov.br` (fonte: lista oficial SP Fazenda).
+   - O endpoint de **homologação** também estava errado: `www1.nfe.fazenda.gov.br` → `hom.nfe.fazenda.gov.br`.
+   - `NFeRecepcaoEvento4` em homologação: `www.nfe.fazenda.gov.br` → `hom.nfe.fazenda.gov.br`.
+   - Versão do `distDFeInt`: `1.01` → `1.00` (conforme WSDL e NT 2014.002).
+   - Commits: `b23580a` (Vercel), `e542dde` (CF).
+
 ---
 
 ## Regras de segurança
