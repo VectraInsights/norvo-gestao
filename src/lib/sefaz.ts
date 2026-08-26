@@ -128,6 +128,19 @@ function getEndpoints(uf: string) {
   return SEFAZ_ENDPOINTS[uf] || SEFAZ_ENDPOINTS.DEFAULT;
 }
 
+// Código da UF IBGE (obrigatório no distDFeInt)
+const UF_CODIGO: Record<string, string> = {
+  AC: "12", AL: "27", AM: "13", AP: "16", BA: "29", CE: "23",
+  DF: "53", ES: "32", GO: "52", MA: "21", MG: "31", MS: "50",
+  MT: "51", PA: "15", PB: "25", PE: "26", PI: "22", PR: "41",
+  RJ: "33", RN: "24", RO: "11", RR: "14", RS: "43", SC: "42",
+  SE: "28", SP: "35", TO: "17",
+};
+
+function getCodigoUf(uf: string): string {
+  return UF_CODIGO[uf] || UF_CODIGO.SP;
+}
+
 // ============================================================
 // Parse de certificado PKCS#12
 // ============================================================
@@ -331,13 +344,17 @@ export async function consultarDestinatario(
 
   // Para manifestação do destinatário, usamos NFeDistribuicaoDFe
   // Namespace WSDL nos wrapper, namespace schema no distDFeInt
+  // distNSU com ultNSU=0 retorna todas as notas disponíveis para o CNPJ
   const nsWdsl = "http://www.portalfiscal.inf.br/nfe/wsdl/NFeDistribuicaoDFe";
   const xmlBody = `<nfeDistDFeInteresse xmlns="${nsWdsl}">
   <nfeDadosMsg xmlns="${nsWdsl}">
     <distDFeInt xmlns="${ns}" versao="1.01">
       <tpAmb>${ambiente === "producao" ? "1" : "2"}</tpAmb>
-      <xServ>CONSULTAR</xServ>
+      <cUFAutor>${getCodigoUf(uf)}</cUFAutor>
       <CNPJ>${cnpj}</CNPJ>
+      <distNSU>
+        <ultNSU>000000000000000</ultNSU>
+      </distNSU>
     </distDFeInt>
   </nfeDadosMsg>
 </nfeDistDFeInteresse>`;
@@ -395,7 +412,6 @@ export async function enviarEventoManifestacao(
   const eventoXml = `<eventoNFe xmlns="${ns}" versao="1.00">
   <infEvento Id="ID${tipoEvento}${chave}${nSeqEvento}">
     <tpAmb>${ambiente === "producao" ? "1" : "2"}</tpAmb>
-    <xServ>VERIFICAR ASSINATURA</xServ>
     <CNPJ>${cnpj}</CNPJ>
     <chNFe>${chave}</chNFe>
     <dhEvento>${dataHora}</dhEvento>
