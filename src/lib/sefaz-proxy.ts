@@ -65,19 +65,18 @@ export async function handleSefazProxy(request: Request): Promise<Response> {
     }
 
     const pfxBytes = Buffer.from(await fileData.arrayBuffer());
+    const first2 = pfxBytes.slice(0, 2).toString("hex");
     const first4 = pfxBytes.slice(0, 4).toString("hex");
-    console.log("[sefaz-proxy] PFX bytes:", pfxBytes.length, "hex:", first4);
+    console.log("[sefaz-proxy] PFX bytes:", pfxBytes.length, "header:", first4);
 
-    // Validação: PFX/PKCS#12 começa com SEQUENCE (30 82) ou OCTET STRING (04 82)
+    // Validação: PFX/PKCS#12 começa com SEQUENCE (30 82/80) ou OCTET STRING (04 82/80)
     if (pfxBytes.length < 100) {
       console.error("[sefaz-proxy] PFX muito pequeno — provavelmente não é um certificado válido");
       return json({ error: "Arquivo de certificado inválido (tamanho muito pequeno)" }, 500);
     }
-    if (first4 !== "3082" && first4 !== "0482" && first4 !== "3080") {
-      // Pode ser HTML de erro do Storage
+    if (first2 !== "3082" && first2 !== "0482" && first2 !== "3080") {
       const preview = pfxBytes.slice(0, 200).toString("utf8");
       console.error("[sefaz-proxy] PFX header inesperado:", first4, "preview:", preview);
-      // Se parece HTML, retorna erro mais claro
       if (preview.includes("<!") || preview.includes("<html")) {
         return json({ error: "Storage retornou HTML em vez do certificado — verifique as permissões do bucket" }, 500);
       }
