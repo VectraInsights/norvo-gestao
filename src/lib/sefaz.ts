@@ -23,37 +23,20 @@ const OID_CERT_BAG = "1.2.840.113549.1.12.10.1.3";
 // ============================================================
 
 function createSefazAgent(pfxBytes: Buffer, senha: string): https.Agent {
-  // Testar se o PFX é parseável pelo OpenSSL (Node.js https.Agent)
-  let pfxValido = false;
-  try {
-    (crypto as unknown as { createPrivateKey: (opts: { key: Buffer; format: string; type: string; passphrase: string }) => crypto.KeyObject }).createPrivateKey({
-      key: pfxBytes,
-      format: "der",
-      type: "pkcs12",
-      passphrase: senha,
-    });
-    pfxValido = true;
-  } catch {
-    pfxValido = false;
-  }
-
-  if (pfxValido) {
-    return new https.Agent({
-      pfx: pfxBytes,
-      passphrase: senha,
-      rejectUnauthorized: false,
-    });
-  }
-
-  // Fallback: extrair key + cert via crypto nativo e passar separadamente
-  console.log("[sefaz] PFX não suportado pelo https.Agent, extraindo key+cert via crypto nativo");
+  // Sempre extrair key + cert via crypto nativo.
+  // O https.Agent com pfx: Buffer não suporta todos os algoritmos PKCS12
+  // (ex: AES-256-CBC + SHA256 HMAC de certos A1 brasileiros).
+  console.log("[sefaz] extraindo key+cert via crypto nativo para mTLS");
   const { privateKey, certChain } = extractPkcs12Native(pfxBytes, senha);
+
   const certPem = certChain.map((der) => {
     const b64 = der.toString("base64");
     const lines = b64.match(/.{1,64}/g) || [];
     return "-----BEGIN CERTIFICATE-----\n" + lines.join("\n") + "\n-----END CERTIFICATE-----";
   }).join("\n");
+
   const keyPem = privateKey.export({ type: "pkcs8", format: "pem" }) as string;
+
   return new https.Agent({
     key: keyPem,
     cert: certPem,
