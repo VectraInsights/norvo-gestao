@@ -105,7 +105,7 @@ function ConfigFiscais() {
   const [icmsRate, setIcmsRate] = useState("18.0");
 
   // Local config form states
-  const [ambiente, setAmbiente] = useState<"homologacao" | "producao">("homologacao");
+  const [ambiente, setAmbiente] = useState<"homologacao" | "producao">("producao");
   const [serie, setSerie] = useState("1");
   const [proximoNumero, setProximoNumero] = useState("1");
   const [regime, setRegime] = useState("simples");

@@ -535,57 +535,20 @@ async function soapRequest(url: string, soapBody: string, action: string, agent?
 // Consulta Destinatário (Manifestação)
 // ============================================================
 
-export async function consultarDestinatario(
-  pfxBytes: Buffer,
-  senha: string,
-  cnpj: string,
-  uf: string,
-  ambiente: "homologacao" | "producao" = "homologacao",
-): Promise<{ notas: Array<{ chave: string; emitente: string; cnpj: string; valor: number; data: string }> }> {
-  const endpoints = getEndpoints(uf);
-  const ns = "http://www.portalfiscal.inf.br/nfe";
-  const agent = createSefazAgent(pfxBytes, senha);
-
-  const nsWdsl = "http://www.portalfiscal.inf.br/nfe/wsdl/NFeDistribuicaoDFe";
-
-  // cUFAutor=91 (Ambiente Nacional) para consulta por CNPJ do destinatário
-  // Sem AN, a SEFAZ filtra por UF do emitente e pode não retornar notas de outros estados
-  const cnpjLimpo = cnpj.replace(/\D/g, "");
-  const xmlBody = `<nfeDistDFeInteresse xmlns="${nsWdsl}">
-  <nfeDadosMsg xmlns="${nsWdsl}">
-    <distDFeInt xmlns="${ns}" versao="1.01">
-      <tpAmb>${ambiente === "producao" ? "1" : "2"}</tpAmb>
-      <cUFAutor>91</cUFAutor>
-      <CNPJ>${cnpjLimpo}</CNPJ>
-      <distNSU>
-        <ultNSU>000000000000000</ultNSU>
-      </distNSU>
-    </distDFeInt>
-  </nfeDadosMsg>
-</nfeDistDFeInteresse>`;
-
-  console.log("[sefaz] consultarDestinatario CNPJ:", cnpj, "UF:", uf, "endpoint:", endpoints.nfeDistribuicaoDFe);
-
-  const response = await soapRequest(
-    endpoints.nfeDistribuicaoDFe,
-    xmlBody,
-    `${ns}/wsdl/NFeDistribuicaoDFe/nfeDistDFeInteresse`,
-    agent,
-  );
-
-  console.log("[sefaz] resposta NFeDistribuicaoDFe (1000 chars):", response.substring(0, 1000));
-
-  const notas: Array<{ chave: string; emitente: string; cnpj: string; valor: number; data: string }> = [];
-
-  // Extrair cStat/xMotivo da resposta
+function parseDistribuicaoResponse(response: string): {
+  cStat: string;
+  xMotivo: string;
+  ultNSU: string;
+  maxNSU: string;
+  notas: Array<{ chave: string; emitente: string; cnpj: string; valor: number; data: string; nsu: string }>;
+} {
   const cStat = response.match(/<cStat>(\d+)<\/cStat>/)?.[1] || "";
   const xMotivo = response.match(/<xMotivo>([^<]+)<\/xMotivo>/)?.[1] || "";
   const ultNSU = response.match(/<ultNSU>(\d+)<\/ultNSU>/)?.[1] || "";
   const maxNSU = response.match(/<maxNSU>(\d+)<\/maxNSU>/)?.[1] || "";
-  console.log("[sefaz] cStat:", cStat, "xMotivo:", xMotivo, "ultNSU:", ultNSU, "maxNSU:", maxNSU);
 
-  // NFeDistribuicaoDFe retorna notas em <docZip> com conteúdo base64
-  // Cada docZip contém resNFe ou resEvento em base64
+  const notas: Array<{ chave: string; emitente: string; cnpj: string; valor: number; data: string; nsu: string }> = [];
+
   const docZipMatches = response.matchAll(/<docZip[^>]*NSU="(\d+)"[^>]*>([\s\S]*?)<\/docZip>/g);
 
   for (const match of docZipMatches) {
@@ -595,7 +558,6 @@ export async function consultarDestinatario(
     try {
       const decodedXml = Buffer.from(base64Content, "base64").toString("utf8");
 
-      // Extrair dados do resNFe
       const chave = decodedXml.match(/<chNFe>(\d{44})<\/chNFe>/)?.[1] || "";
       const cnpjEmitente = decodedXml.match(/<CNPJCPF>(\d{14})<\/CNPJCPF>/)?.[1] || "";
       const xNome = decodedXml.match(/<xNome>([^<]+)<\/xNome>/)?.[1] || "";
@@ -609,30 +571,92 @@ export async function consultarDestinatario(
           cnpj: cnpjEmitente,
           valor: parseFloat(vNF) || 0,
           data: dhEmi || new Date().toISOString(),
+          nsu,
         });
-        console.log("[sefaz] nota encontrada NSU:", nsu, "chave:", chave, "emitente:", xNome);
       }
-    } catch (e) {
-      console.error("[sefaz] erro ao decodificar docZip NSU:", nsu, e);
+    } catch {
+      // docZip não é resNFe (pode ser resEvento ou outro tipo)
     }
   }
 
-  // Fallback: se não encontrou docZip, tenta regex direta (resposta sem codificação)
-  if (notas.length === 0) {
-    const chavesMatch = response.matchAll(/<chNFe>(\d{44})<\/chNFe>/g);
-    for (const match of chavesMatch) {
-      notas.push({
-        chave: match[1],
-        emitente: "Consulta SEFAZ",
-        cnpj: "",
-        valor: 0,
-        data: new Date().toISOString(),
-      });
-    }
-  }
+  return { cStat, xMotivo, ultNSU, maxNSU, notas };
+}
 
-  console.log("[sefaz] total notas encontradas:", notas.length);
-  return { notas };
+export async function consultarDestinatario(
+  pfxBytes: Buffer,
+  senha: string,
+  cnpj: string,
+  uf: string,
+  ambiente: "homologacao" | "producao" = "homologacao",
+): Promise<{ notas: Array<{ chave: string; emitente: string; cnpj: string; valor: number; data: string }> }> {
+  const endpoints = getEndpoints(uf);
+  const ns = "http://www.portalfiscal.inf.br/nfe";
+  const agent = createSefazAgent(pfxBytes, senha);
+
+  const nsWdsl = "http://www.portalfiscal.inf.br/nfe/wsdl/NFeDistribuicaoDFe";
+  const cnpjLimpo = cnpj.replace(/\D/g, "");
+  const tpAmb = ambiente === "producao" ? "1" : "2";
+
+  console.log("[sefaz] consultarDestinatario CNPJ:", cnpjLimpo, "UF:", uf, "ambiente:", ambiente);
+
+  const allNotas: Array<{ chave: string; emitente: string; cnpj: string; valor: number; data: string }> = [];
+  let ultNSU = "000000000000000";
+  let maxNSU = "";
+  let page = 0;
+  const MAX_PAGES = 10; // segurança: no máximo 10 páginas (500 notas)
+
+  do {
+    page++;
+    const xmlBody = `<nfeDistDFeInteresse xmlns="${nsWdsl}">
+  <nfeDadosMsg xmlns="${nsWdsl}">
+    <distDFeInt xmlns="${ns}" versao="1.01">
+      <tpAmb>${tpAmb}</tpAmb>
+      <cUFAutor>91</cUFAutor>
+      <CNPJ>${cnpjLimpo}</CNPJ>
+      <distNSU>
+        <ultNSU>${ultNSU}</ultNSU>
+      </distNSU>
+    </distDFeInt>
+  </nfeDadosMsg>
+</nfeDistDFeInteresse>`;
+
+    console.log("[sefaz] página", page, "ultNSU:", ultNSU);
+
+    const response = await soapRequest(
+      endpoints.nfeDistribuicaoDFe,
+      xmlBody,
+      `${ns}/wsdl/NFeDistribuicaoDFe/nfeDistDFeInteresse`,
+      agent,
+    );
+
+    const parsed = parseDistribuicaoResponse(response);
+    console.log("[sefaz] cStat:", parsed.cStat, "xMotivo:", parsed.xMotivo,
+      "ultNSU:", parsed.ultNSU, "maxNSU:", parsed.maxNSU, "notas página:", parsed.notas.length);
+
+    if (parsed.cStat !== "138" && parsed.cStat !== "137") {
+      // cStat 138 = documento localizado, 137 = nenhum documento
+      console.error("[sefaz] erro SEFAZ:", parsed.cStat, parsed.xMotivo);
+      break;
+    }
+
+    allNotas.push(...parsed.notas);
+
+    maxNSU = parsed.maxNSU;
+    // Próxima página: ultNSU da resposta + 1
+    if (parsed.ultNSU && parsed.ultNSU !== "0") {
+      ultNSU = String(Number(parsed.ultNSU) + 1).padStart(15, "0");
+    }
+
+    console.log("[sefaz] total acumulado:", allNotas.length, "próx ultNSU:", ultNSU, "maxNSU:", maxNSU);
+
+    // Parar se: não tem mais notas, ou ultNSU >= maxNSU, ou atingiu limite de páginas
+    if (parsed.notas.length === 0 || !maxNSU || ultNSU > maxNSU || page >= MAX_PAGES) {
+      break;
+    }
+  } while (true);
+
+  console.log("[sefaz] TOTAL final notas encontradas:", allNotas.length);
+  return { notas: allNotas };
 }
 
 // ============================================================
