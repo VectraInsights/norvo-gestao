@@ -125,7 +125,9 @@ function NotasRecebidas() {
         });
         toast.success(`Consulta à SEFAZ concluída! ${result.notas.length} nota(s) encontrada(s).`);
       } else {
-        toast.success("Consulta à SEFAZ concluída! Nenhuma nova nota fiscal emitida contra o seu CNPJ. Verifique se o ambiente (produção/homologação) está correto nas Configurações Fiscais.");
+        const d = result.debug;
+        const debugInfo = d ? `\n\nDebug: cStat=${d.cStat} | ${d.xMotivo}\nEndpoint: ${d.endpoint}\nAmbiente: ${d.tpAmb === "1" ? "produção" : "homologação"}\nCNJP: ${d.cnpj} | cUFAutor: ${d.cUFAutor}` : "";
+        toast.success(`Consulta à SEFAZ concluída! Nenhuma nota encontrada.${debugInfo}`, { description: "Verifique se o ambiente e o certificado estão corretos nas Configurações Fiscais.", duration: 15000 });
       }
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : String(err);

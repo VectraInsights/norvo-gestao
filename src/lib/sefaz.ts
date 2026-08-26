@@ -594,7 +594,7 @@ export async function consultarDestinatario(
   cnpj: string,
   uf: string,
   ambiente: "homologacao" | "producao" = "homologacao",
-): Promise<{ notas: Array<{ chave: string; emitente: string; cnpj: string; valor: number; data: string }> }> {
+): Promise<{ notas: Array<{ chave: string; emitente: string; cnpj: string; valor: number; data: string }>; debug?: { cStat: string; xMotivo: string; endpoint: string; tpAmb: string; cUFAutor: string; cnpj: string } }> {
   const endpoints = getEndpoints(uf, ambiente);
   const ns = "http://www.portalfiscal.inf.br/nfe";
   const agent = createSefazAgent(pfxBytes, senha);
@@ -610,7 +610,9 @@ export async function consultarDestinatario(
   let ultNSU = "000000000000000";
   let maxNSU = "";
   let page = 0;
-  const MAX_PAGES = 10; // segurança: no máximo 10 páginas (500 notas)
+  const MAX_PAGES = 10;
+  let lastCStat = "";
+  let lastXMotivo = "";
 
   do {
     page++;
@@ -637,6 +639,8 @@ export async function consultarDestinatario(
     );
 
     const parsed = parseDistribuicaoResponse(response);
+    lastCStat = parsed.cStat;
+    lastXMotivo = parsed.xMotivo;
     console.log("[sefaz] cStat:", parsed.cStat, "xMotivo:", parsed.xMotivo,
       "ultNSU:", parsed.ultNSU, "maxNSU:", parsed.maxNSU, "notas página:", parsed.notas.length);
 
@@ -663,7 +667,17 @@ export async function consultarDestinatario(
   } while (true);
 
   console.log("[sefaz] TOTAL final notas encontradas:", allNotas.length);
-  return { notas: allNotas };
+  return {
+    notas: allNotas,
+    debug: {
+      cStat: lastCStat,
+      xMotivo: lastXMotivo,
+      endpoint: endpoints.nfeDistribuicaoDFe,
+      tpAmb,
+      cUFAutor,
+      cnpj: cnpjLimpo,
+    },
+  };
 }
 
 // ============================================================
