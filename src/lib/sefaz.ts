@@ -258,6 +258,9 @@ async function soapRequest(url: string, soapBody: string, action: string, agent?
   </soap12:Body>
 </soap12:Envelope>`;
 
+  // SOAP 1.2: action vai NO Content-Type, não como header SOAPAction separado
+  const contentType = `application/soap+xml; charset=utf-8; action="${action}"`;
+
   // Usar https.request com agent mTLS quando fornecido
   if (agent) {
     const parsedUrl = new URL(url);
@@ -269,8 +272,7 @@ async function soapRequest(url: string, soapBody: string, action: string, agent?
         method: "POST",
         agent,
         headers: {
-          "Content-Type": "application/soap+xml; charset=utf-8",
-          SOAPAction: action,
+          "Content-Type": contentType,
           "Content-Length": Buffer.byteLength(envelope),
         },
       }, (res) => {
@@ -294,8 +296,7 @@ async function soapRequest(url: string, soapBody: string, action: string, agent?
   const res = await fetch(url, {
     method: "POST",
     headers: {
-      "Content-Type": "application/soap+xml; charset=utf-8",
-      SOAPAction: action,
+      "Content-Type": contentType,
     },
     body: envelope,
   });
