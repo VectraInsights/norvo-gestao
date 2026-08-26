@@ -330,13 +330,15 @@ export async function consultarDestinatario(
 </consSitNFe>`;
 
   // Para manifestação do destinatário, usamos NFeDistribuicaoDFe
-  const xmlBody = `<nfeDistDFeInteresse xmlns="${ns}">
-  <nfeDadosMsg>
-    <distDFeInteresse xmlns="${ns}" versao="1.01">
+  // Namespace WSDL nos wrapper, namespace schema no distDFeInt
+  const nsWdsl = "http://www.portalfiscal.inf.br/nfe/wsdl/NFeDistribuicaoDFe";
+  const xmlBody = `<nfeDistDFeInteresse xmlns="${nsWdsl}">
+  <nfeDadosMsg xmlns="${nsWdsl}">
+    <distDFeInt xmlns="${ns}" versao="1.01">
       <tpAmb>${ambiente === "producao" ? "1" : "2"}</tpAmb>
       <xServ>CONSULTAR</xServ>
       <CNPJ>${cnpj}</CNPJ>
-    </distDFeInteresse>
+    </distDFeInt>
   </nfeDadosMsg>
 </nfeDistDFeInteresse>`;
 
@@ -409,9 +411,10 @@ export async function enviarEventoManifestacao(
   // Assinar o XML do evento
   const eventoAssinado = signXml(eventoXml, pfxBytes, senha);
 
-  // Enviar via SOAP
-  const xmlBody = `<nfeRecepcaoEvento xmlns="${ns}">
-  <nfeDadosMsg>
+  // Enviar via SOAP — namespace WSDL nos wrapper
+  const nsWdslRecepcao = "http://www.portalfiscal.inf.br/nfe/wsdl/NFeRecepcaoEvento4";
+  const xmlBody = `<nfeRecepcaoEvento xmlns="${nsWdslRecepcao}">
+  <nfeDadosMsg xmlns="${nsWdslRecepcao}">
     ${eventoAssinado}
   </nfeDadosMsg>
 </nfeRecepcaoEvento>`;
@@ -452,9 +455,10 @@ export async function emitirNFe(
   // Assinar o XML da NFe
   const xmlAssinado = signXml(xmlNFe, pfxBytes, senha);
 
-  // Envolver em SOAP
-  const xmlBody = `<nfeAutorizacao xmlns="${ns}">
-  <nfeDadosMsg>
+  // Envolver em SOAP — namespace WSDL nos wrapper
+  const nsWdslAutorizacao = "http://www.portalfiscal.inf.br/nfe/wsdl/NFeAutorizacao4";
+  const xmlBody = `<nfeAutorizacao xmlns="${nsWdslAutorizacao}">
+  <nfeDadosMsg xmlns="${nsWdslAutorizacao}">
     ${xmlAssinado}
   </nfeDadosMsg>
 </nfeAutorizacao>`;
