@@ -4,13 +4,14 @@ import { useQuery } from "@tanstack/react-query";
 import { Loader2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { AppShell } from "@/components/erp/app-shell";
+import { getServerSessionFn } from "@/lib/auth-server";
 
 export const Route = createFileRoute("/_authenticated")({
-  ssr: false,
-  beforeLoad: async () => {
-    const { data, error } = await supabase.auth.getUser();
-    if (error || !data.user) throw redirect({ to: "/auth" });
-    return { user: data.user };
+  ssr: true,
+  loader: async () => {
+    const session = await getServerSessionFn();
+    if (!session) throw redirect({ to: "/auth" });
+    return { user: session.user };
   },
   component: () => (
     <AppShell>
