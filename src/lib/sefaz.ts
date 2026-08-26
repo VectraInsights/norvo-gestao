@@ -23,11 +23,32 @@ const OID_CERT_BAG = "1.2.840.113549.1.12.10.1.3";
 // ============================================================
 
 function createSefazAgent(pfxBytes: Buffer, senha: string): https.Agent {
-  return new https.Agent({
-    pfx: pfxBytes,
-    passphrase: senha,
-    rejectUnauthorized: false, // SEFAZ homologação usa cadeia própria
-  });
+  try {
+    // Tentar PFX direto (funciona para a maioria dos certificados)
+    const agent = new https.Agent({
+      pfx: pfxBytes,
+      passphrase: senha,
+      rejectUnauthorized: false,
+    });
+    // Testar se o PFX é parseável pelo Node.js fazendo uma operação
+    agent.createConnection({ host: "test" });
+    return agent;
+  } catch {
+    // Fallback: extrair key + cert via crypto nativo e passar separadamente
+    console.log("[sefaz] PFX não suportado pelo https.Agent, extraindo key+cert via crypto nativo");
+    const { privateKey, certChain } = extractPkcs12Native(pfxBytes, senha);
+    const certPem = certChain.map((der) => {
+      const b64 = der.toString("base64");
+      const lines = b64.match(/.{1,64}/g) || [];
+      return "-----BEGIN CERTIFICATE-----\n" + lines.join("\n") + "\n-----END CERTIFICATE-----";
+    }).join("\n");
+    const keyPem = privateKey.export({ type: "pkcs8", format: "pem" }) as string;
+    return new https.Agent({
+      key: keyPem,
+      cert: certPem,
+      rejectUnauthorized: false,
+    });
+  }
 }
 
 // ============================================================
