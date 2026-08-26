@@ -594,7 +594,8 @@ export async function consultarDestinatario(
   cnpj: string,
   uf: string,
   ambiente: "homologacao" | "producao" = "homologacao",
-): Promise<{ notas: Array<{ chave: string; emitente: string; cnpj: string; valor: number; data: string }>; debug?: { cStat: string; xMotivo: string; endpoint: string; tpAmb: string; cUFAutor: string; cnpj: string } }> {
+  startNsu?: string,
+): Promise<{ notas: Array<{ chave: string; emitente: string; cnpj: string; valor: number; data: string }>; debug?: { cStat: string; xMotivo: string; endpoint: string; tpAmb: string; cUFAutor: string; cnpj: string }; maxNsuObtido?: string; resetouCursor?: boolean }> {
   const endpoints = getEndpoints(uf, ambiente);
   const ns = "http://www.portalfiscal.inf.br/nfe";
   const agent = createSefazAgent(pfxBytes, senha);
@@ -604,19 +605,20 @@ export async function consultarDestinatario(
   const tpAmb = ambiente === "producao" ? "1" : "2";
   const cUFAutor = getCodigoUf(uf);
 
-  console.log("[sefaz] consultarDestinatario CNPJ:", cnpjLimpo, "UF:", uf, "codUF:", cUFAutor, "ambiente:", ambiente, "endpoint:", endpoints.nfeDistribuicaoDFe);
+  console.log("[sefaz] consultarDestinatario CNPJ:", cnpjLimpo, "UF:", uf, "codUF:", cUFAutor, "ambiente:", ambiente, "endpoint:", endpoints.nfeDistribuicaoDFe, "startNsu:", startNsu || "(zero)");
 
-  const allNotas: Array<{ chave: string; emitente: string; cnpj: string; valor: number; data: string }> = [];
-  let ultNSU = "000000000000000";
-  let maxNSU = "";
-  let page = 0;
-  const MAX_PAGES = 10;
-  let lastCStat = "";
-  let lastXMotivo = "";
+  async function executarConsulta(nsuInicial: string) {
+    let allNotas: Array<{ chave: string; emitente: string; cnpj: string; valor: number; data: string }> = [];
+    let ultNSU = nsuInicial;
+    let maxNSU = "";
+    let page = 0;
+    const MAX_PAGES = 10;
+    let cStat = "";
+    let xMotivo = "";
 
-  do {
-    page++;
-    const xmlBody = `<nfeDistDFeInteresse xmlns="${nsWdsl}">
+    do {
+      page++;
+      const xmlBody = `<nfeDistDFeInteresse xmlns="${nsWdsl}">
   <nfeDadosMsg xmlns="${nsWdsl}">
     <distDFeInt xmlns="${ns}" versao="1.00">
       <tpAmb>${tpAmb}</tpAmb>
@@ -629,49 +631,62 @@ export async function consultarDestinatario(
   </nfeDadosMsg>
 </nfeDistDFeInteresse>`;
 
-    console.log("[sefaz] página", page, "ultNSU:", ultNSU);
+      console.log("[sefaz] página", page, "ultNSU:", ultNSU);
 
-    const response = await soapRequest(
-      endpoints.nfeDistribuicaoDFe,
-      xmlBody,
-      `${ns}/wsdl/NFeDistribuicaoDFe/nfeDistDFeInteresse`,
-      agent,
-    );
+      const response = await soapRequest(
+        endpoints.nfeDistribuicaoDFe,
+        xmlBody,
+        `${ns}/wsdl/NFeDistribuicaoDFe/nfeDistDFeInteresse`,
+        agent,
+      );
 
-    const parsed = parseDistribuicaoResponse(response);
-    lastCStat = parsed.cStat;
-    lastXMotivo = parsed.xMotivo;
-    console.log("[sefaz] cStat:", parsed.cStat, "xMotivo:", parsed.xMotivo,
-      "ultNSU:", parsed.ultNSU, "maxNSU:", parsed.maxNSU, "notas página:", parsed.notas.length);
+      const parsed = parseDistribuicaoResponse(response);
+      cStat = parsed.cStat;
+      xMotivo = parsed.xMotivo;
+      console.log("[sefaz] cStat:", cStat, "xMotivo:", xMotivo,
+        "ultNSU:", parsed.ultNSU, "maxNSU:", parsed.maxNSU, "notas página:", parsed.notas.length);
 
-    if (parsed.cStat !== "138" && parsed.cStat !== "137") {
-      // cStat 138 = documento localizado, 137 = nenhum documento
-      console.error("[sefaz] erro SEFAZ:", parsed.cStat, parsed.xMotivo);
-      break;
-    }
+      if (cStat !== "138" && cStat !== "137") {
+        console.error("[sefaz] erro SEFAZ:", cStat, xMotivo);
+        break;
+      }
 
-    allNotas.push(...parsed.notas);
+      allNotas.push(...parsed.notas);
+      maxNSU = parsed.maxNSU;
 
-    maxNSU = parsed.maxNSU;
-    // Próxima página: ultNSU da resposta + 1
-    if (parsed.ultNSU && parsed.ultNSU !== "0") {
-      ultNSU = String(Number(parsed.ultNSU) + 1).padStart(15, "0");
-    }
+      if (parsed.ultNSU && parsed.ultNSU !== "0") {
+        ultNSU = String(Number(parsed.ultNSU) + 1).padStart(15, "0");
+      }
 
-    console.log("[sefaz] total acumulado:", allNotas.length, "próx ultNSU:", ultNSU, "maxNSU:", maxNSU);
+      console.log("[sefaz] total acumulado:", allNotas.length, "próx ultNSU:", ultNSU, "maxNSU:", maxNSU);
 
-    // Parar se: não tem mais notas, ou ultNSU >= maxNSU, ou atingiu limite de páginas
-    if (parsed.notas.length === 0 || !maxNSU || ultNSU > maxNSU || page >= MAX_PAGES) {
-      break;
-    }
-  } while (true);
+      if (parsed.notas.length === 0 || !maxNSU || ultNSU > maxNSU || page >= MAX_PAGES) {
+        break;
+      }
+    } while (true);
 
-  console.log("[sefaz] TOTAL final notas encontradas:", allNotas.length);
+    return { allNotas, maxNSU, cStat, xMotivo };
+  }
+
+  // Tentar com o cursor salvo
+  let resultado = await executarConsulta(startNsu || "000000000000000");
+  let resetouCursor = false;
+
+  // cStat 656 = Consumo Indevido (outro sistema avançou o cursor) → reseta automaticamente
+  if (resultado.cStat === "656" && startNsu) {
+    console.log("[sefaz] cStat 656 detectado — resetando cursor para zero e tentando novamente...");
+    resultado = await executarConsulta("000000000000000");
+    resetouCursor = true;
+  }
+
+  console.log("[sefaz] TOTAL final notas encontradas:", resultado.allNotas.length);
   return {
-    notas: allNotas,
+    notas: resultado.allNotas,
+    maxNsuObtido: resultado.maxNSU || undefined,
+    resetouCursor,
     debug: {
-      cStat: lastCStat,
-      xMotivo: lastXMotivo,
+      cStat: resultado.cStat,
+      xMotivo: resultado.xMotivo,
       endpoint: endpoints.nfeDistribuicaoDFe,
       tpAmb,
       cUFAutor,

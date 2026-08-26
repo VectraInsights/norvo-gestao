@@ -45,13 +45,20 @@ export const consultarNFeDestinatarioFn = createServerFn({ method: "POST" })
     const { consultarDestinatario, buscarCertificadoAtivo } = await import("@/lib/sefaz");
     const cert = await buscarCertificadoAtivo(data.empresaId);
 
-    // Buscar ambiente da config fiscal (default: produção)
     const { createClient } = await import("@supabase/supabase-js");
     const supabase = createClient(process.env.SUPABASE_URL || "", process.env.SUPABASE_SERVICE_ROLE_KEY || "");
-    const { data: nfeConfig } = await supabase.from("nfe_config").select("ambiente").eq("empresa_id", data.empresaId).maybeSingle();
+    const { data: nfeConfig } = await supabase.from("nfe_config").select("ambiente, last_nsu").eq("empresa_id", data.empresaId).maybeSingle();
     const ambiente = nfeConfig?.ambiente === "homologacao" ? "homologacao" : "producao";
+    const startNsu = nfeConfig?.last_nsu || undefined;
 
-    return consultarDestinatario(cert.pfx, cert.senha, cert.cnpj, cert.uf, ambiente);
+    const result = await consultarDestinatario(cert.pfx, cert.senha, cert.cnpj, cert.uf, ambiente, startNsu);
+
+    // Salvar maxNSU para próxima consulta (evita cStat 656)
+    if (result.maxNsuObtido) {
+      await supabase.from("nfe_config").update({ last_nsu: result.maxNsuObtido }).eq("empresa_id", data.empresaId);
+    }
+
+    return result;
   });
 
 export const manifestarNFeFn = createServerFn({ method: "POST" })

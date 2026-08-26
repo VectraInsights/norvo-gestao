@@ -102,13 +102,14 @@ export async function handleSefazProxy(request: Request): Promise<Response> {
     // Buscar config fiscal da empresa (ambiente: homologação ou produção)
     const { data: nfeConfig } = await supabase
       .from("nfe_config")
-      .select("ambiente")
+      .select("ambiente, last_nsu")
       .eq("empresa_id", empresaId)
       .maybeSingle();
 
     // Default: produção (onde ficam as notas reais)
     const ambiente = nfeConfig?.ambiente === "homologacao" ? "homologacao" : "producao";
-    console.log("[sefaz-proxy] ambiente:", ambiente, "cnpj:", cnpj, "uf:", uf);
+    const startNsu = nfeConfig?.last_nsu || undefined;
+    console.log("[sefaz-proxy] ambiente:", ambiente, "cnpj:", cnpj, "uf:", uf, "startNsu:", startNsu || "(zero)");
 
     // Import dinâmico de sefaz (usa node:https — só funciona no Node.js)
     const { consultarDestinatario, enviarEventoManifestacao, emitirNFe } = await import("@/lib/sefaz");
@@ -117,7 +118,12 @@ export async function handleSefazProxy(request: Request): Promise<Response> {
 
     switch (action) {
       case "consultar":
-        result = await consultarDestinatario(pfxBytes, senha, cnpj, uf, ambiente);
+        result = await consultarDestinatario(pfxBytes, senha, cnpj, uf, ambiente, startNsu);
+        // Salvar maxNSU para próxima consulta (evita cStat 656)
+        const r = result as { maxNsuObtido?: string };
+        if (r.maxNsuObtido) {
+          await supabase.from("nfe_config").update({ last_nsu: r.maxNsuObtido }).eq("empresa_id", empresaId);
+        }
         break;
       case "manifestar":
         result = await enviarEventoManifestacao(

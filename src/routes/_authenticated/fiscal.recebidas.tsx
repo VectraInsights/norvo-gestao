@@ -123,11 +123,15 @@ function NotasRecebidas() {
           const filtradas = novasNotas.filter(n => !chavesExistentes.has(n.chave));
           return [...filtradas, ...prev];
         });
-        toast.success(`Consulta à SEFAZ concluída! ${result.notas.length} nota(s) encontrada(s).`);
+        const msgReset = result.resetouCursor ? " (cursor reiniciado automaticamente)" : "";
+        toast.success(`${result.notas.length} nota(s) encontrada(s) na SEFAZ!${msgReset}`);
       } else {
         const d = result.debug;
-        const debugInfo = d ? `\n\nDebug: cStat=${d.cStat} | ${d.xMotivo}\nEndpoint: ${d.endpoint}\nAmbiente: ${d.tpAmb === "1" ? "produção" : "homologação"}\nCNJP: ${d.cnpj} | cUFAutor: ${d.cUFAutor}` : "";
-        toast.success(`Consulta à SEFAZ concluída! Nenhuma nota encontrada.${debugInfo}`, { description: "Verifique se o ambiente e o certificado estão corretos nas Configurações Fiscais.", duration: 15000 });
+        if (d && d.cStat === "656") {
+          toast.error("Consumo Indevido pela SEFAZ", { description: "Aguarde 1 hora e tente novamente.", duration: 10000 });
+        } else {
+          toast.success("Nenhuma nota encontrada na SEFAZ.", { description: "Verifique o ambiente (produção/homologação) nas Configurações Fiscais.", duration: 8000 });
+        }
       }
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : String(err);
