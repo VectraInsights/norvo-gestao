@@ -50,11 +50,11 @@ const SEFAZ_ENDPOINTS: Record<string, { nfeAutorizacao: string; nfeRetAutorizaca
     ...NACIONAL_HOMOLOGACAO,
   },
   MG: {
-    nfeAutorizacao: "https://hnfe.fazenda.mg.gov.br/nfe2/services/NFeAutorizacao4",
-    nfeRetAutorizacao: "https://hnfe.fazenda.mg.gov.br/nfe2/services/NFeRetAutorizacao4",
-    nfeStatusServico: "https://hnfe.fazenda.mg.gov.br/nfe2/services/NFeStatusServico4",
+    nfeAutorizacao: "https://nfe.fazenda.mg.gov.br/nfe2/services/NFeAutorizacao4",
+    nfeRetAutorizacao: "https://nfe.fazenda.mg.gov.br/nfe2/services/NFeRetAutorizacao4",
+    nfeStatusServico: "https://nfe.fazenda.mg.gov.br/nfe2/services/NFeStatusServico4",
     nfeDistribuicaoDFe: NACIONAL_HOMOLOGACAO.nfeDistribuicaoDFe,
-    receptEventos: "https://hnfe.fazenda.mg.gov.br/nfe2/services/NFeRecepcaoEvento4",
+    receptEventos: "https://nfe.fazenda.mg.gov.br/nfe2/services/NFeRecepcaoEvento4",
   },
   GO: {
     nfeAutorizacao: "https://homolog.sefaz.go.gov.br/nfe/services/NFeAutorizacao4",
