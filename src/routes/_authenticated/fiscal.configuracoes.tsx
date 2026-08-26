@@ -150,7 +150,7 @@ function ConfigFiscais() {
 
   useEffect(() => {
     if (config) {
-      setAmbiente((config.ambiente as "homologacao" | "producao") ?? "homologacao");
+      setAmbiente((config.ambiente as "homologacao" | "producao") ?? "producao");
       setSerie(String(config.serie ?? 1));
       setProximoNumero(String(config.proximo_numero ?? 1));
       setRegime(config.regime_tributario ?? "simples");
@@ -499,6 +499,22 @@ function ConfigFiscais() {
               ) : (
                 <div className="grid gap-6 sm:grid-cols-2">
                   <div className="space-y-4">
+                    <div className="grid gap-2">
+                      <Label htmlFor="ambiente">Ambiente SEFAZ</Label>
+                      <Select value={ambiente} onValueChange={(v: "homologacao" | "producao") => setAmbiente(v)}>
+                        <SelectTrigger id="ambiente">
+                          <SelectValue placeholder="Selecione o ambiente" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="producao">Produção (notas reais)</SelectItem>
+                          <SelectItem value="homologacao">Homologação (testes)</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      <p className="text-[11px] text-muted-foreground">
+                        Produção: notas fiscais reais. Homologação: ambiente de testes da SEFAZ.
+                      </p>
+                    </div>
+
                     <div className="grid gap-2">
                       <Label htmlFor="regime">Regime Tributário</Label>
                       <Select value={regime} onValueChange={setRegime}>
