@@ -355,6 +355,37 @@ Registro condensado da evolução do Norvo Gestão fora do editor Lovable.
    - Versão do `distDFeInt`: `1.01` → `1.00` (conforme WSDL e NT 2014.002).
    - Commits: `b23580a` (Vercel), `e542dde` (CF).
 
+19. **Fix cUFAutor (cStat 137)**: código `91` hardcoded → código IBGE da UF da empresa via `getCodigoUf(uf)`.
+    Commits: `361bc6e`, `f48be91`.
+
+20. **Persistência do cursor SEFAZ (cStat 656 "Consumo Indevido")**:
+    - Coluna `last_nsu` adicionada à tabela `nfe_config` (migration `20260826150000`).
+    - Após cada consulta, `maxNSU` é salvo para retomar de onde parou.
+    - Se cStat 656 (outro sistema avançou o cursor), reseta automaticamente para zero e refaz.
+    - Toast exibe info de debug (cStat, endpoint, ambiente, CNPJ, cUFAutor).
+    Commits: `427283b`, `3aeaad1`.
+
+21. **Cron job SEFAZ 2x/dia** (`vercel.json` + `src/lib/sefaz-cron.ts`):
+    - Vercel Cron roda às 8h e 20h BRT (`0 11,23 * * *` UTC).
+    - Busca notas de todas as empresas com certificado ativo, 2s de pausa entre cada uma.
+    - Endpoint manual: `GET /api/sefaz-cron`.
+    - Commits: `eedf18b`, `b8007d1`.
+
+22. **PFX fallback para mTLS (LCP TRANSPORTES)**:
+    - Certificados A1 brasileiros com AES-256 + SHA-256 HMAC não são suportados pelo
+      `https.Agent` do Node.js (mesmo que `crypto.createPrivateKey` funcione).
+    - Solução: `createSefazAgent` agora **sempre** extrai key+cert via `extractPkcs12Native`
+      e passa separadamente ao Agent (nunca passa o PFX direto).
+    - Commits: `7063153`, `e7ff5bc`.
+
+23. **Olho na senha do certificado**: toggle show/hide no campo de senha do upload de PFX
+    em `/configuracoes/fiscal`. Commit: `17ffc72`.
+
+**Problema pendente**: LCP TRANSPORTES (CNPJ 01666018000190) ainda retorna
+"Unsupported PKCS12 PFX data". O fallback de extração via crypto nativo pode estar falhando
+no parse ASN.1 da cadeia de certificados (`extractCertChainFromPkcs12`). Investigar se o
+certificado tem estrutura PKCS12 não padrão ou se `extractPkcs12Native` precisa de ajuste.
+
 ---
 
 ## Regras de segurança
