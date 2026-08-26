@@ -342,7 +342,7 @@ export async function consultarDestinatario(
   const response = await soapRequest(
     endpoints.nfeDistribuicaoDFe,
     xmlBody,
-    `${ns}/NFeDistribuicaoDFe/NFeDistribuicaoDFe/consultar`,
+    `${ns}/wsdl/NFeDistribuicaoDFe/nfeDistDFeInteresse`,
     agent,
   );
 
@@ -418,7 +418,7 @@ export async function enviarEventoManifestacao(
   const response = await soapRequest(
     endpoints.receptEventos,
     xmlBody,
-    `${ns}/NFeRecepcaoEvento/NFeRecepcaoEvento/recepcaoEvento`,
+    `${ns}/wsdl/NFeRecepcaoEvento4/nfeRecepcaoEvento`,
     agent,
   );
 
@@ -461,7 +461,7 @@ export async function emitirNFe(
   const response = await soapRequest(
     endpoints.nfeAutorizacao,
     xmlBody,
-    `${ns}/NFeAutorizacao/NFeAutorizacao/nfeAutorizacaoLote`,
+    `${ns}/wsdl/NFeAutorizacao4/nfeAutorizacaoLote`,
     agent,
   );
 
