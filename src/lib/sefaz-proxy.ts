@@ -19,18 +19,6 @@ function createServiceClient() {
   if (!url || !key) throw new Error("SUPABASE_URL e SUPABASE_SERVICE_ROLE_KEY são obrigatórios");
 
   return createClient(url, key, {
-    global: {
-      fetch: (input, init) => {
-        const headers = new Headers(
-          typeof Request !== "undefined" && input instanceof Request ? input.headers : undefined,
-        );
-        if (init?.headers) {
-          new Headers(init.headers).forEach((v, k) => headers.set(k, v));
-        }
-        headers.set("apikey", key);
-        return fetch(input, { ...init, headers });
-      },
-    },
     auth: { persistSession: false, autoRefreshToken: false },
   });
 }
@@ -72,12 +60,29 @@ export async function handleSefazProxy(request: Request): Promise<Response> {
       .download(cert.arquivo_path);
 
     if (dlErr || !fileData) {
-      console.error("[sefaz-proxy] storage download error:", dlErr);
+      console.error("[sefaz-proxy] storage download error:", JSON.stringify(dlErr));
       return json({ error: `Falha ao baixar certificado: ${dlErr?.message || "unknown"}` }, 500);
     }
 
     const pfxBytes = Buffer.from(await fileData.arrayBuffer());
-    console.log("[sefaz-proxy] PFX bytes:", pfxBytes.length, "hex:", pfxBytes.slice(0, 4).toString("hex"));
+    const first4 = pfxBytes.slice(0, 4).toString("hex");
+    console.log("[sefaz-proxy] PFX bytes:", pfxBytes.length, "hex:", first4);
+
+    // Validação: PFX/PKCS#12 começa com SEQUENCE (30 82) ou OCTET STRING (04 82)
+    if (pfxBytes.length < 100) {
+      console.error("[sefaz-proxy] PFX muito pequeno — provavelmente não é um certificado válido");
+      return json({ error: "Arquivo de certificado inválido (tamanho muito pequeno)" }, 500);
+    }
+    if (first4 !== "3082" && first4 !== "0482" && first4 !== "3080") {
+      // Pode ser HTML de erro do Storage
+      const preview = pfxBytes.slice(0, 200).toString("utf8");
+      console.error("[sefaz-proxy] PFX header inesperado:", first4, "preview:", preview);
+      // Se parece HTML, retorna erro mais claro
+      if (preview.includes("<!") || preview.includes("<html")) {
+        return json({ error: "Storage retornou HTML em vez do certificado — verifique as permissões do bucket" }, 500);
+      }
+      return json({ error: `Formato de certificado inválido (header: ${first4})` }, 500);
+    }
 
     const senha = cert.senha_cript;
 
@@ -99,6 +104,17 @@ export async function handleSefazProxy(request: Request): Promise<Response> {
     const { consultarDestinatario, enviarEventoManifestacao, emitirNFe } = await import("@/lib/sefaz");
 
     let result: unknown;
+
+    // Pré-validar o certificado antes de chamar SEFAZ
+    try {
+      const { parseCertificate } = await import("@/lib/sefaz");
+      const info = parseCertificate(pfxBytes, senha);
+      console.log("[sefaz-proxy] cert OK:", info.subjectName, "validade:", info.validade.toISOString());
+    } catch (parseErr) {
+      const msg = parseErr instanceof Error ? parseErr.message : String(parseErr);
+      console.error("[sefaz-proxy] PKCS12 parse error:", msg);
+      return json({ error: `Certificado inválido: ${msg}` }, 500);
+    }
 
     switch (action) {
       case "consultar":
