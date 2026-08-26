@@ -36,97 +36,103 @@ function createSefazAgent(pfxBytes: Buffer, senha: string): https.Agent {
 
 // Endereços NACIONAIS — Ambiente Nacional (AN) para serviços comuns
 // Fonte: portal NF-e (https://www.nfe.fazenda.gov.br/portal/webServices.aspx?tipoConteudo=Wak0FwB7dKs=)
-const NACIONAL_HOMOLOGACAO = {
-  nfeDistribuicaoDFe: "https://www1.nfe.fazenda.gov.br/NFeDistribuicaoDFe/NFeDistribuicaoDFe.asmx",
-  receptEventos: "https://www.nfe.fazenda.gov.br/NFeRecepcaoEvento4/NFeRecepcaoEvento4.asmx",
+const NACIONAL = {
+  homologacao: {
+    nfeDistribuicaoDFe: "https://www1.nfe.fazenda.gov.br/NFeDistribuicaoDFe/NFeDistribuicaoDFe.asmx",
+    receptEventos: "https://www.nfe.fazenda.gov.br/NFeRecepcaoEvento4/NFeRecepcaoEvento4.asmx",
+  },
+  producao: {
+    nfeDistribuicaoDFe: "https://www.nfe.fazenda.gov.br/NFeDistribuicaoDFe/NFeDistribuicaoDFe.asmx",
+    receptEventos: "https://www.nfe.fazenda.gov.br/NFeRecepcaoEvento4/NFeRecepcaoEvento4.asmx",
+  },
 };
 
-// Endereços por UF — Homologação (NF-e 4.00)
-// Fonte: portais SEFAZ estaduais oficiais (lista que você enviou)
-// Obs: URLs sem "?wsdl" — o SOAP usa o endpoint base
-const SEFAZ_ENDPOINTS: Record<string, { nfeAutorizacao: string; nfeRetAutorizacao: string; nfeStatusServico: string; nfeDistribuicaoDFe: string; receptEventos: string }> = {
+// Endereços por UF — NF-e 4.00 (endereços estaduais são iguais em hom/prod)
+const SEFAZ_ENDPOINTS: Record<string, { nfeAutorizacao: string; nfeRetAutorizacao: string; nfeStatusServico: string; receptEventos: string }> = {
   // Estados com SEFAZ própria (autorizadoras)
   SP: {
     nfeAutorizacao: "https://nfe.fazenda.sp.gov.br/ws/nfeautorizacao4.asmx",
     nfeRetAutorizacao: "https://nfe.fazenda.sp.gov.br/ws/nferetautorizacao4.asmx",
     nfeStatusServico: "https://nfe.fazenda.sp.gov.br/ws/nfestatusservico4.asmx",
-    ...NACIONAL_HOMOLOGACAO,
+    receptEventos: NACIONAL.homologacao.receptEventos,
   },
   MG: {
     nfeAutorizacao: "https://nfe.fazenda.mg.gov.br/nfe2/services/NFeAutorizacao4",
     nfeRetAutorizacao: "https://nfe.fazenda.mg.gov.br/nfe2/services/NFeRetAutorizacao4",
     nfeStatusServico: "https://nfe.fazenda.mg.gov.br/nfe2/services/NFeStatusServico4",
-    nfeDistribuicaoDFe: NACIONAL_HOMOLOGACAO.nfeDistribuicaoDFe,
     receptEventos: "https://nfe.fazenda.mg.gov.br/nfe2/services/NFeRecepcaoEvento4",
   },
   GO: {
     nfeAutorizacao: "https://nfe.sefaz.go.gov.br/nfe/services/NFeAutorizacao4",
     nfeRetAutorizacao: "https://nfe.sefaz.go.gov.br/nfe/services/NFeRetAutorizacao4",
     nfeStatusServico: "https://nfe.sefaz.go.gov.br/nfe/services/NFeStatusServico4",
-    ...NACIONAL_HOMOLOGACAO,
+    receptEventos: NACIONAL.homologacao.receptEventos,
   },
   AM: {
     nfeAutorizacao: "https://nfe.sefaz.am.gov.br/services2/services/NfeAutorizacao4",
     nfeRetAutorizacao: "https://nfe.sefaz.am.gov.br/services2/services/NfeRetAutorizacao4",
     nfeStatusServico: "https://nfe.sefaz.am.gov.br/services2/services/NfeStatusServico4",
-    ...NACIONAL_HOMOLOGACAO,
+    receptEventos: NACIONAL.homologacao.receptEventos,
   },
   PR: {
     nfeAutorizacao: "https://nfe.sefa.pr.gov.br/nfe/NFeAutorizacao4",
     nfeRetAutorizacao: "https://nfe.sefa.pr.gov.br/nfe/NFeRetAutorizacao4",
     nfeStatusServico: "https://nfe.sefa.pr.gov.br/nfe/NFeStatusServico4",
-    ...NACIONAL_HOMOLOGACAO,
+    receptEventos: NACIONAL.homologacao.receptEventos,
   },
   BA: {
     nfeAutorizacao: "https://nfe.sefaz.ba.gov.br/webservices/NFeAutorizacao4/NFeAutorizacao4.asmx",
     nfeRetAutorizacao: "https://nfe.sefaz.ba.gov.br/webservices/NFeRetAutorizacao4/NFeRetAutorizacao4.asmx",
     nfeStatusServico: "https://nfe.sefaz.ba.gov.br/webservices/NFeStatusServico4/NFeStatusServico4.asmx",
-    ...NACIONAL_HOMOLOGACAO,
+    receptEventos: NACIONAL.homologacao.receptEventos,
   },
   CE: {
-    // CE usa SVRS (fallback DEFAULT)
     nfeAutorizacao: "https://nfe-homologacao.svrs.rs.gov.br/ws/NfeAutorizacao/NFeAutorizacao4.asmx",
     nfeRetAutorizacao: "https://nfe-homologacao.svrs.rs.gov.br/ws/NfeRetAutorizacao/NFeRetAutorizacao4.asmx",
     nfeStatusServico: "https://nfe-homologacao.svrs.rs.gov.br/ws/NfeStatusServico/NfeStatusServico4.asmx",
-    ...NACIONAL_HOMOLOGACAO,
+    receptEventos: NACIONAL.homologacao.receptEventos,
   },
   PE: {
     nfeAutorizacao: "https://nfe.sefaz.pe.gov.br/nfe-service/services/NFeAutorizacao4",
     nfeRetAutorizacao: "https://nfe.sefaz.pe.gov.br/nfe-service/services/NFeRetAutorizacao4",
     nfeStatusServico: "https://nfe.sefaz.pe.gov.br/nfe-service/services/NFeStatusServico4",
-    ...NACIONAL_HOMOLOGACAO,
+    receptEventos: NACIONAL.homologacao.receptEventos,
   },
   RS: {
-    // RS usa SVRS
     nfeAutorizacao: "https://nfe.svrs.rs.gov.br/ws/NfeAutorizacao/NFeAutorizacao4.asmx",
     nfeRetAutorizacao: "https://nfe.svrs.rs.gov.br/ws/NfeRetAutorizacao/NFeRetAutorizacao4.asmx",
     nfeStatusServico: "https://nfe.svrs.rs.gov.br/ws/NfeStatusServico/NfeStatusServico4.asmx",
-    ...NACIONAL_HOMOLOGACAO,
+    receptEventos: NACIONAL.homologacao.receptEventos,
   },
   MS: {
     nfeAutorizacao: "https://nfe.sefaz.ms.gov.br/ws/NFeAutorizacao4",
     nfeRetAutorizacao: "https://nfe.sefaz.ms.gov.br/ws/NFeRetAutorizacao4",
     nfeStatusServico: "https://nfe.sefaz.ms.gov.br/ws/NFeStatusServico4",
-    ...NACIONAL_HOMOLOGACAO,
+    receptEventos: NACIONAL.homologacao.receptEventos,
   },
   MT: {
     nfeAutorizacao: "https://nfe.sefaz.mt.gov.br/nfews/v2/services/NfeAutorizacao4",
     nfeRetAutorizacao: "https://nfe.sefaz.mt.gov.br/nfews/v2/services/NfeRetAutorizacao4",
     nfeStatusServico: "https://nfe.sefaz.mt.gov.br/nfews/v2/services/NfeStatusServico4",
-    ...NACIONAL_HOMOLOGACAO,
+    receptEventos: NACIONAL.homologacao.receptEventos,
   },
-  // Padrão nacional (fallback) — SVRS (Sefaz Virtual do Rio Grande do Sul) HOMOLOGAÇÃO
-  // Usado por: AC, AL, AP, DF, ES, MA, PA, PB, PI, RJ, RN, RO, RR, SE, TO + CE
+  // Padrão nacional (fallback) — SVRS
   DEFAULT: {
     nfeAutorizacao: "https://nfe-homologacao.svrs.rs.gov.br/ws/NfeAutorizacao/NFeAutorizacao4.asmx",
     nfeRetAutorizacao: "https://nfe-homologacao.svrs.rs.gov.br/ws/NfeRetAutorizacao/NFeRetAutorizacao4.asmx",
     nfeStatusServico: "https://nfe-homologacao.svrs.rs.gov.br/ws/NfeStatusServico/NfeStatusServico4.asmx",
-    ...NACIONAL_HOMOLOGACAO,
+    receptEventos: NACIONAL.homologacao.receptEventos,
   },
 };
 
-function getEndpoints(uf: string) {
-  return SEFAZ_ENDPOINTS[uf] || SEFAZ_ENDPOINTS.DEFAULT;
+function getEndpoints(uf: string, ambiente: "homologacao" | "producao" = "homologacao") {
+  const base = SEFAZ_ENDPOINTS[uf] || SEFAZ_ENDPOINTS.DEFAULT;
+  const nacional = ambiente === "producao" ? NACIONAL.producao : NACIONAL.homologacao;
+  return {
+    ...base,
+    nfeDistribuicaoDFe: nacional.nfeDistribuicaoDFe,
+    receptEventos: nacional.receptEventos,
+  };
 }
 
 // Código da UF IBGE (obrigatório no distDFeInt)
@@ -589,7 +595,7 @@ export async function consultarDestinatario(
   uf: string,
   ambiente: "homologacao" | "producao" = "homologacao",
 ): Promise<{ notas: Array<{ chave: string; emitente: string; cnpj: string; valor: number; data: string }> }> {
-  const endpoints = getEndpoints(uf);
+  const endpoints = getEndpoints(uf, ambiente);
   const ns = "http://www.portalfiscal.inf.br/nfe";
   const agent = createSefazAgent(pfxBytes, senha);
 
@@ -597,7 +603,7 @@ export async function consultarDestinatario(
   const cnpjLimpo = cnpj.replace(/\D/g, "");
   const tpAmb = ambiente === "producao" ? "1" : "2";
 
-  console.log("[sefaz] consultarDestinatario CNPJ:", cnpjLimpo, "UF:", uf, "ambiente:", ambiente);
+  console.log("[sefaz] consultarDestinatario CNPJ:", cnpjLimpo, "UF:", uf, "ambiente:", ambiente, "endpoint:", endpoints.nfeDistribuicaoDFe);
 
   const allNotas: Array<{ chave: string; emitente: string; cnpj: string; valor: number; data: string }> = [];
   let ultNSU = "000000000000000";
@@ -675,7 +681,7 @@ export async function enviarEventoManifestacao(
   ambiente: "homologacao" | "producao" = "homologacao",
   justificativa?: string,
 ): Promise<{ sucesso: boolean; codigo: string; motivo: string }> {
-  const endpoints = getEndpoints(uf);
+  const endpoints = getEndpoints(uf, ambiente);
   const ns = "http://www.portalfiscal.inf.br/nfe";
   const agent = createSefazAgent(pfxBytes, senha);
   const dataHora = new Date().toISOString().replace(/\.\d{3}Z$/, "");
@@ -740,7 +746,7 @@ export async function emitirNFe(
   uf: string,
   ambiente: "homologacao" | "producao" = "homologacao",
 ): Promise<{ sucesso: boolean; chave: string; numero: string; codigo: string; motivo: string }> {
-  const endpoints = getEndpoints(uf);
+  const endpoints = getEndpoints(uf, ambiente);
   const ns = "http://www.portalfiscal.inf.br/nfe";
   const agent = createSefazAgent(pfxBytes, senha);
 
