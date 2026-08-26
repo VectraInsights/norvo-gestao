@@ -4,12 +4,34 @@
  * Não usa h3/Nitro — apenas Web standard APIs (Request/Response).
  */
 
-import { supabaseAdmin } from "@/integrations/supabase/client.server";
+import { createClient } from "@supabase/supabase-js";
 
 function json(data: unknown, status = 200) {
   return new Response(JSON.stringify(data), {
     status,
     headers: { "Content-Type": "application/json" },
+  });
+}
+
+function createServiceClient() {
+  const url = process.env.SUPABASE_URL;
+  const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  if (!url || !key) throw new Error("SUPABASE_URL e SUPABASE_SERVICE_ROLE_KEY são obrigatórios");
+
+  return createClient(url, key, {
+    global: {
+      fetch: (input, init) => {
+        const headers = new Headers(
+          typeof Request !== "undefined" && input instanceof Request ? input.headers : undefined,
+        );
+        if (init?.headers) {
+          new Headers(init.headers).forEach((v, k) => headers.set(k, v));
+        }
+        headers.set("apikey", key);
+        return fetch(input, { ...init, headers });
+      },
+    },
+    auth: { persistSession: false, autoRefreshToken: false },
   });
 }
 
@@ -28,8 +50,10 @@ export async function handleSefazProxy(request: Request): Promise<Response> {
       return json({ error: "action e empresaId são obrigatórios" }, 400);
     }
 
+    const supabase = createServiceClient();
+
     // Buscar certificado ativo
-    const { data: cert, error: certErr } = await supabaseAdmin
+    const { data: cert, error: certErr } = await supabase
       .from("certificados_digitais")
       .select("id, arquivo_path, senha_cript")
       .eq("empresa_id", empresaId)
@@ -40,8 +64,10 @@ export async function handleSefazProxy(request: Request): Promise<Response> {
       return json({ error: "Nenhum certificado ativo encontrado" }, 404);
     }
 
+    console.log("[sefaz-proxy] cert path:", cert.arquivo_path);
+
     // Download do certificado
-    const { data: fileData, error: dlErr } = await supabaseAdmin.storage
+    const { data: fileData, error: dlErr } = await supabase.storage
       .from("certificados")
       .download(cert.arquivo_path);
 
@@ -51,7 +77,7 @@ export async function handleSefazProxy(request: Request): Promise<Response> {
     }
 
     const pfxBytes = Buffer.from(await fileData.arrayBuffer());
-    console.log("[sefaz-proxy] PFX download OK, bytes:", pfxBytes.length, "path:", cert.arquivo_path);
+    console.log("[sefaz-proxy] PFX bytes:", pfxBytes.length, "hex:", pfxBytes.slice(0, 4).toString("hex"));
 
     const senha = cert.senha_cript;
 
@@ -60,7 +86,7 @@ export async function handleSefazProxy(request: Request): Promise<Response> {
     }
 
     // Buscar empresa
-    const { data: empresa } = await supabaseAdmin
+    const { data: empresa } = await supabase
       .from("empresas")
       .select("cnpj, uf")
       .eq("id", empresaId)
