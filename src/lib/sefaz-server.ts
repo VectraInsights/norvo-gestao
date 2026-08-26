@@ -44,7 +44,14 @@ export const consultarNFeDestinatarioFn = createServerFn({ method: "POST" })
     if (SEFAZ_URL) return callSefazProxy("consultar", { empresaId: data.empresaId });
     const { consultarDestinatario, buscarCertificadoAtivo } = await import("@/lib/sefaz");
     const cert = await buscarCertificadoAtivo(data.empresaId);
-    return consultarDestinatario(cert.pfx, cert.senha, cert.cnpj, cert.uf, "homologacao");
+
+    // Buscar ambiente da config fiscal (default: produção)
+    const { createClient } = await import("@supabase/supabase-js");
+    const supabase = createClient(process.env.SUPABASE_URL || "", process.env.SUPABASE_SERVICE_ROLE_KEY || "");
+    const { data: nfeConfig } = await supabase.from("nfe_config").select("ambiente").eq("empresa_id", data.empresaId).maybeSingle();
+    const ambiente = nfeConfig?.ambiente === "homologacao" ? "homologacao" : "producao";
+
+    return consultarDestinatario(cert.pfx, cert.senha, cert.cnpj, cert.uf, ambiente);
   });
 
 export const manifestarNFeFn = createServerFn({ method: "POST" })
@@ -53,7 +60,11 @@ export const manifestarNFeFn = createServerFn({ method: "POST" })
     if (SEFAZ_URL) return callSefazProxy("manifestar", { empresaId: data.empresaId, chave: data.chave, tipoEvento: data.tipoEvento, justificativa: data.justificativa });
     const { enviarEventoManifestacao, buscarCertificadoAtivo } = await import("@/lib/sefaz");
     const cert = await buscarCertificadoAtivo(data.empresaId);
-    return enviarEventoManifestacao(cert.pfx, cert.senha, data.chave, data.tipoEvento, cert.cnpj, cert.uf, "homologacao", data.justificativa);
+    const { createClient } = await import("@supabase/supabase-js");
+    const supabase = createClient(process.env.SUPABASE_URL || "", process.env.SUPABASE_SERVICE_ROLE_KEY || "");
+    const { data: nfeConfig } = await supabase.from("nfe_config").select("ambiente").eq("empresa_id", data.empresaId).maybeSingle();
+    const ambiente = nfeConfig?.ambiente === "homologacao" ? "homologacao" : "producao";
+    return enviarEventoManifestacao(cert.pfx, cert.senha, data.chave, data.tipoEvento, cert.cnpj, cert.uf, ambiente, data.justificativa);
   });
 
 export const emitirNFeFn = createServerFn({ method: "POST" })
@@ -62,7 +73,11 @@ export const emitirNFeFn = createServerFn({ method: "POST" })
     if (SEFAZ_URL) return callSefazProxy("emitir", { empresaId: data.empresaId, xml: data.xml });
     const { emitirNFe, buscarCertificadoAtivo } = await import("@/lib/sefaz");
     const cert = await buscarCertificadoAtivo(data.empresaId);
-    return emitirNFe(cert.pfx, cert.senha, data.xml, cert.uf, "homologacao");
+    const { createClient } = await import("@supabase/supabase-js");
+    const supabase = createClient(process.env.SUPABASE_URL || "", process.env.SUPABASE_SERVICE_ROLE_KEY || "");
+    const { data: nfeConfig } = await supabase.from("nfe_config").select("ambiente").eq("empresa_id", data.empresaId).maybeSingle();
+    const ambiente = nfeConfig?.ambiente === "homologacao" ? "homologacao" : "producao";
+    return emitirNFe(cert.pfx, cert.senha, data.xml, cert.uf, ambiente);
   });
 
 export const verificarStatusServicoFn = createServerFn({ method: "POST" })

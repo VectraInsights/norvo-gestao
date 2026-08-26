@@ -54,7 +54,7 @@ function NotasRecebidas() {
   const qc = useQueryClient();
   const [activeTab, setActiveTab] = useState<string>("manifesto");
   
-  // Manifestação Destinatário State
+  // Notas Recebidas State
   const [notas, setNotas] = useState<NotaRecebida[]>(INITIAL_RECEBIDAS);
   const [search, setSearch] = useState("");
   const [isRefreshing, setIsRefreshing] = useState(false);
@@ -67,7 +67,7 @@ function NotasRecebidas() {
   const [importResults, setImportResults] = useState<ParsedXMLResult | null>(null);
   const [validarXML, setValidarXML] = useState(true);
 
-  // Ações de manifestação
+  // Ações de manifestação do destinatário (ciência, confirmação, desconhecimento)
   const handleManifestar = async (chave: string, acao: "ciencia" | "confirmada" | "desconhecida") => {
     if (!empresa) return toast.error("Empresa não selecionada");
     
@@ -125,7 +125,7 @@ function NotasRecebidas() {
         });
         toast.success(`Consulta à SEFAZ concluída! ${result.notas.length} nota(s) encontrada(s).`);
       } else {
-        toast.success("Consulta à SEFAZ concluída! Nenhuma nova nota fiscal emitida contra o seu CNPJ.");
+        toast.success("Consulta à SEFAZ concluída! Nenhuma nova nota fiscal emitida contra o seu CNPJ. Verifique se o ambiente (produção/homologação) está correto nas Configurações Fiscais.");
       }
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : String(err);
@@ -402,7 +402,7 @@ function NotasRecebidas() {
     }
   };
 
-  // Filtrar manifestações
+  // Filtrar notas recebidas
   const filteredNotas = notas.filter(n => 
     n.emitente.toLowerCase().includes(search.toLowerCase()) || 
     n.chave.includes(search) || 
@@ -414,7 +414,7 @@ function NotasRecebidas() {
       <PageHeader 
         eyebrow="Gestão Fiscal" 
         title="Notas de Entrada" 
-        description="Gerencie notas de compra, realize manifestação do destinatário e importe XMLs para o estoque e financeiro." 
+        description="Consulte notas fiscais emitidas contra seu CNPJ, manifeste-se (ciência/confirmar/desconhecer) e importe XMLs para o estoque e financeiro." 
         actions={
           <div className="flex items-center gap-2">
             <Button variant="outline" size="sm">
@@ -426,7 +426,7 @@ function NotasRecebidas() {
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
         <TabsList className="bg-muted/80 p-1 w-full max-w-[400px]">
-          <TabsTrigger value="manifesto" className="flex-1 text-xs sm:text-sm">Manifestação Destinatário</TabsTrigger>
+          <TabsTrigger value="manifesto" className="flex-1 text-xs sm:text-sm">Notas Recebidas</TabsTrigger>
           <TabsTrigger value="xml" className="flex-1 text-xs sm:text-sm">Importação de XML</TabsTrigger>
         </TabsList>
 

@@ -99,6 +99,17 @@ export async function handleSefazProxy(request: Request): Promise<Response> {
     const cnpj = empresa?.cnpj || "";
     const uf = empresa?.uf || "SP";
 
+    // Buscar config fiscal da empresa (ambiente: homologação ou produção)
+    const { data: nfeConfig } = await supabase
+      .from("nfe_config")
+      .select("ambiente")
+      .eq("empresa_id", empresaId)
+      .maybeSingle();
+
+    // Default: produção (onde ficam as notas reais)
+    const ambiente = nfeConfig?.ambiente === "homologacao" ? "homologacao" : "producao";
+    console.log("[sefaz-proxy] ambiente:", ambiente, "cnpj:", cnpj, "uf:", uf);
+
     // Import dinâmico de sefaz (usa node:https — só funciona no Node.js)
     const { consultarDestinatario, enviarEventoManifestacao, emitirNFe } = await import("@/lib/sefaz");
 
@@ -106,15 +117,15 @@ export async function handleSefazProxy(request: Request): Promise<Response> {
 
     switch (action) {
       case "consultar":
-        result = await consultarDestinatario(pfxBytes, senha, cnpj, uf, "homologacao");
+        result = await consultarDestinatario(pfxBytes, senha, cnpj, uf, ambiente);
         break;
       case "manifestar":
         result = await enviarEventoManifestacao(
-          pfxBytes, senha, body.chave, body.tipoEvento, cnpj, uf, "homologacao", body.justificativa,
+          pfxBytes, senha, body.chave, body.tipoEvento, cnpj, uf, ambiente, body.justificativa,
         );
         break;
       case "emitir":
-        result = await emitirNFe(pfxBytes, senha, body.xml, uf, "homologacao");
+        result = await emitirNFe(pfxBytes, senha, body.xml, uf, ambiente);
         break;
       default:
         return json({ error: `Ação desconhecida: ${action}` }, 400);
