@@ -4,7 +4,7 @@
  * Não usa h3/Nitro — apenas Web standard APIs (Request/Response).
  */
 
-import { createClient } from "@supabase/supabase-js";
+import { supabaseAdmin } from "@/integrations/supabase/client.server";
 
 function json(data: unknown, status = 200) {
   return new Response(JSON.stringify(data), {
@@ -28,15 +28,8 @@ export async function handleSefazProxy(request: Request): Promise<Response> {
       return json({ error: "action e empresaId são obrigatórios" }, 400);
     }
 
-    const url = process.env.SUPABASE_URL;
-    const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
-    if (!url || !key) {
-      return json({ error: "SUPABASE_URL e SUPABASE_SERVICE_ROLE_KEY são obrigatórios" }, 500);
-    }
-    const supabase = createClient(url, key);
-
     // Buscar certificado ativo
-    const { data: cert, error: certErr } = await supabase
+    const { data: cert, error: certErr } = await supabaseAdmin
       .from("certificados_digitais")
       .select("id, arquivo_path, senha_cript")
       .eq("empresa_id", empresaId)
@@ -48,15 +41,18 @@ export async function handleSefazProxy(request: Request): Promise<Response> {
     }
 
     // Download do certificado
-    const { data: fileData, error: dlErr } = await supabase.storage
+    const { data: fileData, error: dlErr } = await supabaseAdmin.storage
       .from("certificados")
       .download(cert.arquivo_path);
 
     if (dlErr || !fileData) {
-      return json({ error: "Falha ao baixar certificado" }, 500);
+      console.error("[sefaz-proxy] storage download error:", dlErr);
+      return json({ error: `Falha ao baixar certificado: ${dlErr?.message || "unknown"}` }, 500);
     }
 
     const pfxBytes = Buffer.from(await fileData.arrayBuffer());
+    console.log("[sefaz-proxy] PFX download OK, bytes:", pfxBytes.length, "path:", cert.arquivo_path);
+
     const senha = cert.senha_cript;
 
     if (!senha) {
@@ -64,7 +60,7 @@ export async function handleSefazProxy(request: Request): Promise<Response> {
     }
 
     // Buscar empresa
-    const { data: empresa } = await supabase
+    const { data: empresa } = await supabaseAdmin
       .from("empresas")
       .select("cnpj, uf")
       .eq("id", empresaId)
