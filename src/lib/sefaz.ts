@@ -38,11 +38,11 @@ function createSefazAgent(pfxBytes: Buffer, senha: string): https.Agent {
 // Fonte: portal NF-e (https://www.nfe.fazenda.gov.br/portal/webServices.aspx?tipoConteudo=Wak0FwB7dKs=)
 const NACIONAL = {
   homologacao: {
-    nfeDistribuicaoDFe: "https://www1.nfe.fazenda.gov.br/NFeDistribuicaoDFe/NFeDistribuicaoDFe.asmx",
-    receptEventos: "https://www.nfe.fazenda.gov.br/NFeRecepcaoEvento4/NFeRecepcaoEvento4.asmx",
+    nfeDistribuicaoDFe: "https://hom.nfe.fazenda.gov.br/NFeDistribuicaoDFe/NFeDistribuicaoDFe.asmx",
+    receptEventos: "https://hom.nfe.fazenda.gov.br/NFeRecepcaoEvento4/NFeRecepcaoEvento4.asmx",
   },
   producao: {
-    nfeDistribuicaoDFe: "https://www.nfe.fazenda.gov.br/NFeDistribuicaoDFe/NFeDistribuicaoDFe.asmx",
+    nfeDistribuicaoDFe: "https://www1.nfe.fazenda.gov.br/NFeDistribuicaoDFe/NFeDistribuicaoDFe.asmx",
     receptEventos: "https://www.nfe.fazenda.gov.br/NFeRecepcaoEvento4/NFeRecepcaoEvento4.asmx",
   },
 };
@@ -615,7 +615,7 @@ export async function consultarDestinatario(
     page++;
     const xmlBody = `<nfeDistDFeInteresse xmlns="${nsWdsl}">
   <nfeDadosMsg xmlns="${nsWdsl}">
-    <distDFeInt xmlns="${ns}" versao="1.01">
+    <distDFeInt xmlns="${ns}" versao="1.00">
       <tpAmb>${tpAmb}</tpAmb>
       <cUFAutor>91</cUFAutor>
       <CNPJ>${cnpjLimpo}</CNPJ>
