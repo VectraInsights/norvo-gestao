@@ -546,28 +546,25 @@ export async function consultarDestinatario(
   const ns = "http://www.portalfiscal.inf.br/nfe";
   const agent = createSefazAgent(pfxBytes, senha);
 
-  // Montar XML da consulta
-  const xmlConsulta = `<consSitNFe xmlns="${ns}" versao="1.00">
-  <tpAmb>${ambiente === "producao" ? "1" : "2"}</tpAmb>
-  <xServ>CONSULTAR</xServ>
-</consSitNFe>`;
-
-  // Para manifestação do destinatário, usamos NFeDistribuicaoDFe
-  // Namespace WSDL nos wrapper, namespace schema no distDFeInt
-  // distNSU com ultNSU=0 retorna todas as notas disponíveis para o CNPJ
   const nsWdsl = "http://www.portalfiscal.inf.br/nfe/wsdl/NFeDistribuicaoDFe";
+
+  // cUFAutor=91 (Ambiente Nacional) para consulta por CNPJ do destinatário
+  // Sem AN, a SEFAZ filtra por UF do emitente e pode não retornar notas de outros estados
+  const cnpjLimpo = cnpj.replace(/\D/g, "");
   const xmlBody = `<nfeDistDFeInteresse xmlns="${nsWdsl}">
   <nfeDadosMsg xmlns="${nsWdsl}">
     <distDFeInt xmlns="${ns}" versao="1.01">
       <tpAmb>${ambiente === "producao" ? "1" : "2"}</tpAmb>
-      <cUFAutor>${getCodigoUf(uf)}</cUFAutor>
-      <CNPJ>${cnpj}</CNPJ>
+      <cUFAutor>91</cUFAutor>
+      <CNPJ>${cnpjLimpo}</CNPJ>
       <distNSU>
         <ultNSU>000000000000000</ultNSU>
       </distNSU>
     </distDFeInt>
   </nfeDadosMsg>
 </nfeDistDFeInteresse>`;
+
+  console.log("[sefaz] consultarDestinatario CNPJ:", cnpj, "UF:", uf, "endpoint:", endpoints.nfeDistribuicaoDFe);
 
   const response = await soapRequest(
     endpoints.nfeDistribuicaoDFe,
@@ -576,21 +573,65 @@ export async function consultarDestinatario(
     agent,
   );
 
-  // Parse da resposta (simplificado - em produção, usar parser XML robusto)
+  console.log("[sefaz] resposta NFeDistribuicaoDFe (1000 chars):", response.substring(0, 1000));
+
   const notas: Array<{ chave: string; emitente: string; cnpj: string; valor: number; data: string }> = [];
-  
-  // Regex para extrair chaves de acesso da resposta
-  const chavesMatch = response.matchAll(/<chNFe>(\d{44})<\/chNFe>/g);
-  for (const match of chavesMatch) {
-    notas.push({
-      chave: match[1],
-      emitente: "Consulta SEFAZ",
-      cnpj: "",
-      valor: 0,
-      data: new Date().toISOString(),
-    });
+
+  // Extrair cStat/xMotivo da resposta
+  const cStat = response.match(/<cStat>(\d+)<\/cStat>/)?.[1] || "";
+  const xMotivo = response.match(/<xMotivo>([^<]+)<\/xMotivo>/)?.[1] || "";
+  const ultNSU = response.match(/<ultNSU>(\d+)<\/ultNSU>/)?.[1] || "";
+  const maxNSU = response.match(/<maxNSU>(\d+)<\/maxNSU>/)?.[1] || "";
+  console.log("[sefaz] cStat:", cStat, "xMotivo:", xMotivo, "ultNSU:", ultNSU, "maxNSU:", maxNSU);
+
+  // NFeDistribuicaoDFe retorna notas em <docZip> com conteúdo base64
+  // Cada docZip contém resNFe ou resEvento em base64
+  const docZipMatches = response.matchAll(/<docZip[^>]*NSU="(\d+)"[^>]*>([\s\S]*?)<\/docZip>/g);
+
+  for (const match of docZipMatches) {
+    const nsu = match[1];
+    const base64Content = match[2].trim();
+
+    try {
+      const decodedXml = Buffer.from(base64Content, "base64").toString("utf8");
+
+      // Extrair dados do resNFe
+      const chave = decodedXml.match(/<chNFe>(\d{44})<\/chNFe>/)?.[1] || "";
+      const cnpjEmitente = decodedXml.match(/<CNPJCPF>(\d{14})<\/CNPJCPF>/)?.[1] || "";
+      const xNome = decodedXml.match(/<xNome>([^<]+)<\/xNome>/)?.[1] || "";
+      const vNF = decodedXml.match(/<vNF>([^<]+)<\/vNF>/)?.[1] || "0";
+      const dhEmi = decodedXml.match(/<dhEmi>([^<]+)<\/dhEmi>/)?.[1] || "";
+
+      if (chave) {
+        notas.push({
+          chave,
+          emitente: xNome || "Emitente desconhecido",
+          cnpj: cnpjEmitente,
+          valor: parseFloat(vNF) || 0,
+          data: dhEmi || new Date().toISOString(),
+        });
+        console.log("[sefaz] nota encontrada NSU:", nsu, "chave:", chave, "emitente:", xNome);
+      }
+    } catch (e) {
+      console.error("[sefaz] erro ao decodificar docZip NSU:", nsu, e);
+    }
   }
 
+  // Fallback: se não encontrou docZip, tenta regex direta (resposta sem codificação)
+  if (notas.length === 0) {
+    const chavesMatch = response.matchAll(/<chNFe>(\d{44})<\/chNFe>/g);
+    for (const match of chavesMatch) {
+      notas.push({
+        chave: match[1],
+        emitente: "Consulta SEFAZ",
+        cnpj: "",
+        valor: 0,
+        data: new Date().toISOString(),
+      });
+    }
+  }
+
+  console.log("[sefaz] total notas encontradas:", notas.length);
   return { notas };
 }
 
@@ -614,6 +655,7 @@ export async function enviarEventoManifestacao(
   const ns = "http://www.portalfiscal.inf.br/nfe";
   const agent = createSefazAgent(pfxBytes, senha);
   const dataHora = new Date().toISOString().replace(/\.\d{3}Z$/, "");
+  const cnpjLimpo = cnpj.replace(/\D/g, "");
 
   // Número sequencial do evento (1 para primeiro evento da chave)
   const nSeqEvento = "1";
@@ -622,7 +664,7 @@ export async function enviarEventoManifestacao(
   const eventoXml = `<eventoNFe xmlns="${ns}" versao="1.00">
   <infEvento Id="ID${tipoEvento}${chave}${nSeqEvento}">
     <tpAmb>${ambiente === "producao" ? "1" : "2"}</tpAmb>
-    <CNPJ>${cnpj}</CNPJ>
+    <CNPJ>${cnpjLimpo}</CNPJ>
     <chNFe>${chave}</chNFe>
     <dhEvento>${dataHora}</dhEvento>
     <tpEvento>${tipoEvento}</tpEvento>
