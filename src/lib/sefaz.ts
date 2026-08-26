@@ -33,20 +33,22 @@ function createSefazAgent(pfxBytes: Buffer, senha: string): https.Agent {
 // Configuração de endpoints SEFAZ por UF (homologação)
 // ============================================================
 
-// Endereços NACIONAIS (usados por todos os estados para serviços comuns)
+// Endereços NACIONAIS — Ambiente Nacional (AN) para serviços comuns
+// Fonte: portal NF-e (https://www.nfe.fazenda.gov.br/portal/webServices.aspx?tipoConteudo=Wak0FwB7dKs=)
 const NACIONAL_HOMOLOGACAO = {
-  nfeDistribuicaoDFe: "https://hom.nfe.fazenda.gov.br/NFeDistribuicaoDFe/NFeDistribuicaoDFe.asmx",
-  receptEventos: "https://hom.nfe.fazenda.gov.br/NFeRecepcaoEvento4/NFeRecepcaoEvento4.asmx",
+  nfeDistribuicaoDFe: "https://www1.nfe.fazenda.gov.br/NFeDistribuicaoDFe/NFeDistribuicaoDFe.asmx",
+  receptEventos: "https://www.nfe.fazenda.gov.br/NFeRecepcaoEvento4/NFeRecepcaoEvento4.asmx",
 };
 
 // Endereços por UF — Homologação (NF-e 4.00)
-// Fonte: portais SEFAZ estaduais + SVRS + Ambiente Nacional
+// Fonte: portais SEFAZ estaduais oficiais (lista que você enviou)
+// Obs: URLs sem "?wsdl" — o SOAP usa o endpoint base
 const SEFAZ_ENDPOINTS: Record<string, { nfeAutorizacao: string; nfeRetAutorizacao: string; nfeStatusServico: string; nfeDistribuicaoDFe: string; receptEventos: string }> = {
   // Estados com SEFAZ própria (autorizadoras)
   SP: {
-    nfeAutorizacao: "https://homologacao.nfe.fazenda.sp.gov.br/ws/nfeautorizacao4.asmx",
-    nfeRetAutorizacao: "https://homologacao.nfe.fazenda.sp.gov.br/ws/nferetautorizacao4.asmx",
-    nfeStatusServico: "https://homologacao.nfe.fazenda.sp.gov.br/ws/nfestatusservico4.asmx",
+    nfeAutorizacao: "https://nfe.fazenda.sp.gov.br/ws/nfeautorizacao4.asmx",
+    nfeRetAutorizacao: "https://nfe.fazenda.sp.gov.br/ws/nferetautorizacao4.asmx",
+    nfeStatusServico: "https://nfe.fazenda.sp.gov.br/ws/nfestatusservico4.asmx",
     ...NACIONAL_HOMOLOGACAO,
   },
   MG: {
@@ -57,56 +59,63 @@ const SEFAZ_ENDPOINTS: Record<string, { nfeAutorizacao: string; nfeRetAutorizaca
     receptEventos: "https://nfe.fazenda.mg.gov.br/nfe2/services/NFeRecepcaoEvento4",
   },
   GO: {
-    nfeAutorizacao: "https://homolog.sefaz.go.gov.br/nfe/services/NFeAutorizacao4",
-    nfeRetAutorizacao: "https://homolog.sefaz.go.gov.br/nfe/services/NFeRetAutorizacao4",
-    nfeStatusServico: "https://homolog.sefaz.go.gov.br/nfe/services/NFeStatusServico4",
+    nfeAutorizacao: "https://nfe.sefaz.go.gov.br/nfe/services/NFeAutorizacao4",
+    nfeRetAutorizacao: "https://nfe.sefaz.go.gov.br/nfe/services/NFeRetAutorizacao4",
+    nfeStatusServico: "https://nfe.sefaz.go.gov.br/nfe/services/NFeStatusServico4",
     ...NACIONAL_HOMOLOGACAO,
   },
   AM: {
-    nfeAutorizacao: "https://homnfe.sefaz.am.gov.br/services2/services/NfeAutorizacao4",
-    nfeRetAutorizacao: "https://homnfe.sefaz.am.gov.br/services2/services/NfeRetAutorizacao4",
-    nfeStatusServico: "https://homnfe.sefaz.am.gov.br/services2/services/NfeStatusServico4",
+    nfeAutorizacao: "https://nfe.sefaz.am.gov.br/services2/services/NfeAutorizacao4",
+    nfeRetAutorizacao: "https://nfe.sefaz.am.gov.br/services2/services/NfeRetAutorizacao4",
+    nfeStatusServico: "https://nfe.sefaz.am.gov.br/services2/services/NfeStatusServico4",
     ...NACIONAL_HOMOLOGACAO,
   },
   PR: {
-    nfeAutorizacao: "https://homologacao.nfe.fazenda.pr.gov.br/nfe/services/NFeAutorizacao4",
-    nfeRetAutorizacao: "https://homologacao.nfe.fazenda.pr.gov.br/nfe/services/NFeRetAutorizacao4",
-    nfeStatusServico: "https://homologacao.nfe.fazenda.pr.gov.br/nfe/services/NFeStatusServico4",
-    ...NACIONAL_HOMOLOGACAO,
-  },
-  SC: {
-    nfeAutorizacao: "https://hom.nfe.fazenda.sc.gov.br/nfe/services/NFeAutorizacao4",
-    nfeRetAutorizacao: "https://hom.nfe.fazenda.sc.gov.br/nfe/services/NFeRetAutorizacao4",
-    nfeStatusServico: "https://hom.nfe.fazenda.sc.gov.br/nfe/services/NFeStatusServico4",
+    nfeAutorizacao: "https://nfe.sefa.pr.gov.br/nfe/NFeAutorizacao4",
+    nfeRetAutorizacao: "https://nfe.sefa.pr.gov.br/nfe/NFeRetAutorizacao4",
+    nfeStatusServico: "https://nfe.sefa.pr.gov.br/nfe/NFeStatusServico4",
     ...NACIONAL_HOMOLOGACAO,
   },
   BA: {
-    nfeAutorizacao: "https://homologacao.sefaz.ba.gov.br/nfe/services/NFeAutorizacao4",
-    nfeRetAutorizacao: "https://homologacao.sefaz.ba.gov.br/nfe/services/NFeRetAutorizacao4",
-    nfeStatusServico: "https://homologacao.sefaz.ba.gov.br/nfe/services/NFeStatusServico4",
+    nfeAutorizacao: "https://nfe.sefaz.ba.gov.br/webservices/NFeAutorizacao4/NFeAutorizacao4.asmx",
+    nfeRetAutorizacao: "https://nfe.sefaz.ba.gov.br/webservices/NFeRetAutorizacao4/NFeRetAutorizacao4.asmx",
+    nfeStatusServico: "https://nfe.sefaz.ba.gov.br/webservices/NFeStatusServico4/NFeStatusServico4.asmx",
     ...NACIONAL_HOMOLOGACAO,
   },
   CE: {
-    nfeAutorizacao: "https://homologacao.sefaz.ce.gov.br/nfe/services/NFeAutorizacao4",
-    nfeRetAutorizacao: "https://homologacao.sefaz.ce.gov.br/nfe/services/NFeRetAutorizacao4",
-    nfeStatusServico: "https://homologacao.sefaz.ce.gov.br/nfe/services/NFeStatusServico4",
-    ...NACIONAL_HOMOLOGACAO,
-  },
-  PE: {
-    nfeAutorizacao: "https://homologacao.sefaz.pe.gov.br/nfe/services/NFeAutorizacao4",
-    nfeRetAutorizacao: "https://homologacao.sefaz.pe.gov.br/nfe/services/NFeRetAutorizacao4",
-    nfeStatusServico: "https://homologacao.sefaz.pe.gov.br/nfe/services/NFeStatusServico4",
-    ...NACIONAL_HOMOLOGACAO,
-  },
-  RS: {
-    // RS usa SVRS como autorizadora (mesmo endpoint do DEFAULT)
+    // CE usa SVRS (fallback DEFAULT)
     nfeAutorizacao: "https://nfe-homologacao.svrs.rs.gov.br/ws/NfeAutorizacao/NFeAutorizacao4.asmx",
     nfeRetAutorizacao: "https://nfe-homologacao.svrs.rs.gov.br/ws/NfeRetAutorizacao/NFeRetAutorizacao4.asmx",
     nfeStatusServico: "https://nfe-homologacao.svrs.rs.gov.br/ws/NfeStatusServico/NfeStatusServico4.asmx",
     ...NACIONAL_HOMOLOGACAO,
   },
-  // Padrão nacional (fallback) — SVRS (Sefaz Virtual do Rio Grande do Sul)
-  // Usado por: AC, AL, AP, DF, ES, MA, MT, MS, PA, PB, PI, RJ, RN, RO, RR, SE, TO
+  PE: {
+    nfeAutorizacao: "https://nfe.sefaz.pe.gov.br/nfe-service/services/NFeAutorizacao4",
+    nfeRetAutorizacao: "https://nfe.sefaz.pe.gov.br/nfe-service/services/NFeRetAutorizacao4",
+    nfeStatusServico: "https://nfe.sefaz.pe.gov.br/nfe-service/services/NFeStatusServico4",
+    ...NACIONAL_HOMOLOGACAO,
+  },
+  RS: {
+    // RS usa SVRS
+    nfeAutorizacao: "https://nfe.svrs.rs.gov.br/ws/NfeAutorizacao/NFeAutorizacao4.asmx",
+    nfeRetAutorizacao: "https://nfe.svrs.rs.gov.br/ws/NfeRetAutorizacao/NFeRetAutorizacao4.asmx",
+    nfeStatusServico: "https://nfe.svrs.rs.gov.br/ws/NfeStatusServico/NfeStatusServico4.asmx",
+    ...NACIONAL_HOMOLOGACAO,
+  },
+  MS: {
+    nfeAutorizacao: "https://nfe.sefaz.ms.gov.br/ws/NFeAutorizacao4",
+    nfeRetAutorizacao: "https://nfe.sefaz.ms.gov.br/ws/NFeRetAutorizacao4",
+    nfeStatusServico: "https://nfe.sefaz.ms.gov.br/ws/NFeStatusServico4",
+    ...NACIONAL_HOMOLOGACAO,
+  },
+  MT: {
+    nfeAutorizacao: "https://nfe.sefaz.mt.gov.br/nfews/v2/services/NfeAutorizacao4",
+    nfeRetAutorizacao: "https://nfe.sefaz.mt.gov.br/nfews/v2/services/NfeRetAutorizacao4",
+    nfeStatusServico: "https://nfe.sefaz.mt.gov.br/nfews/v2/services/NfeStatusServico4",
+    ...NACIONAL_HOMOLOGACAO,
+  },
+  // Padrão nacional (fallback) — SVRS (Sefaz Virtual do Rio Grande do Sul) HOMOLOGAÇÃO
+  // Usado por: AC, AL, AP, DF, ES, MA, PA, PB, PI, RJ, RN, RO, RR, SE, TO + CE
   DEFAULT: {
     nfeAutorizacao: "https://nfe-homologacao.svrs.rs.gov.br/ws/NfeAutorizacao/NFeAutorizacao4.asmx",
     nfeRetAutorizacao: "https://nfe-homologacao.svrs.rs.gov.br/ws/NfeRetAutorizacao/NFeRetAutorizacao4.asmx",
