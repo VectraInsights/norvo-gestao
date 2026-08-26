@@ -104,17 +104,6 @@ export async function handleSefazProxy(request: Request): Promise<Response> {
 
     let result: unknown;
 
-    // Pré-validar o certificado antes de chamar SEFAZ
-    try {
-      const { parseCertificate } = await import("@/lib/sefaz");
-      const info = parseCertificate(pfxBytes, senha);
-      console.log("[sefaz-proxy] cert OK:", info.subjectName, "validade:", info.validade.toISOString());
-    } catch (parseErr) {
-      const msg = parseErr instanceof Error ? parseErr.message : String(parseErr);
-      console.error("[sefaz-proxy] PKCS12 parse error:", msg);
-      return json({ error: `Certificado inválido: ${msg}` }, 500);
-    }
-
     switch (action) {
       case "consultar":
         result = await consultarDestinatario(pfxBytes, senha, cnpj, uf, "homologacao");
