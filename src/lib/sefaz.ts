@@ -602,8 +602,9 @@ export async function consultarDestinatario(
   const nsWdsl = "http://www.portalfiscal.inf.br/nfe/wsdl/NFeDistribuicaoDFe";
   const cnpjLimpo = cnpj.replace(/\D/g, "");
   const tpAmb = ambiente === "producao" ? "1" : "2";
+  const cUFAutor = getCodigoUf(uf);
 
-  console.log("[sefaz] consultarDestinatario CNPJ:", cnpjLimpo, "UF:", uf, "ambiente:", ambiente, "endpoint:", endpoints.nfeDistribuicaoDFe);
+  console.log("[sefaz] consultarDestinatario CNPJ:", cnpjLimpo, "UF:", uf, "codUF:", cUFAutor, "ambiente:", ambiente, "endpoint:", endpoints.nfeDistribuicaoDFe);
 
   const allNotas: Array<{ chave: string; emitente: string; cnpj: string; valor: number; data: string }> = [];
   let ultNSU = "000000000000000";
@@ -617,7 +618,7 @@ export async function consultarDestinatario(
   <nfeDadosMsg xmlns="${nsWdsl}">
     <distDFeInt xmlns="${ns}" versao="1.00">
       <tpAmb>${tpAmb}</tpAmb>
-      <cUFAutor>91</cUFAutor>
+      <cUFAutor>${cUFAutor}</cUFAutor>
       <CNPJ>${cnpjLimpo}</CNPJ>
       <distNSU>
         <ultNSU>${ultNSU}</ultNSU>
