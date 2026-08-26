@@ -4,38 +4,18 @@ import { useQuery } from "@tanstack/react-query";
 import { Loader2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { AppShell } from "@/components/erp/app-shell";
-import { createClient } from "@supabase/supabase-js";
-import type { Database } from "@/integrations/supabase/types";
-
-function getSupabaseFromRequest(request: Request) {
-  const url = process.env.SUPABASE_URL!;
-  const key = process.env.SUPABASE_PUBLISHABLE_KEY!;
-  const cookieHeader = request.headers.get("cookie") || "";
-  const match = cookieHeader.match(/sb-[^=]+-auth-token=([^;]+)/);
-  const accessToken = match ? decodeURIComponent(match[1]) : null;
-
-  const client = createClient<Database>(url, key, {
-    global: { fetch: (input, init) => fetch(input, init) },
-    auth: { persistSession: false, autoRefreshToken: false },
-  });
-
-  if (accessToken) {
-    client.auth.setSession({ access_token: accessToken, refresh_token: "" });
-  }
-  return client;
-}
 
 export const Route = createFileRoute("/_authenticated")({
-  ssr: true,
-  loader: async ({ context }) => {
-    const request = (context as { request?: Request }).request;
-    if (!request) throw redirect({ to: "/auth" });
-
-    const supabaseServer = getSupabaseFromRequest(request);
-    const { data, error } = await supabaseServer.auth.getUser();
+  ssr: false,
+  beforeLoad: async () => {
+    const { data, error } = await supabase.auth.getUser();
     if (error || !data.user) throw redirect({ to: "/auth" });
-    return { user: data.user };
   },
+  pendingComponent: () => (
+    <div className="grid h-screen place-items-center">
+      <Loader2 className="h-8 w-8 animate-spin text-primary" />
+    </div>
+  ),
   component: () => (
     <AppShell>
       <RequireEmpresa>
