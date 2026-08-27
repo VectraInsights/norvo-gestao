@@ -1,8 +1,3 @@
 {
-  "crons": [
-    {
-      "path": "/api/sefaz-cron",
-      "schedule": "*/20 3-9 * * *"
-    }
-  ]
+  "crons": []
 }
