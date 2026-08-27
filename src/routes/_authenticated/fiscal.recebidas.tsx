@@ -2,12 +2,13 @@ import { createFileRoute } from "@tanstack/react-router";
 import { PageHeader } from "@/components/erp/page-header";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { 
   FileDown, Search, CheckCircle2, AlertCircle, XCircle, 
-  UploadCloud, FileCode, Check, ArrowRight, RefreshCw, Archive, Calendar
+  UploadCloud, FileCode, Check, ArrowRight, RefreshCw, Archive, Calendar, KeyRound
 } from "lucide-react";
 import { useState, useMemo } from "react";
 import { toast } from "sonner";
@@ -16,7 +17,7 @@ import { brl, dateBR } from "@/lib/format";
 import { supabase } from "@/integrations/supabase/client";
 import { useEmpresaAtual } from "@/hooks/use-empresa";
 import { useQueryClient } from "@tanstack/react-query";
-import { consultarNFeDestinatarioFn, manifestarNFeFn } from "@/lib/sefaz-server";
+import { consultarNFeDestinatarioFn, manifestarNFeFn, consultarNFePorChaveFn } from "@/lib/sefaz-server";
 
 export const Route = createFileRoute("/_authenticated/fiscal/recebidas")({
   component: NotasRecebidas,
@@ -69,6 +70,9 @@ function NotasRecebidas() {
   const [validarXML, setValidarXML] = useState(true);
 
   // Ações de manifestação do destinatário (ciência, confirmação, desconhecimento)
+  const [chaveImportModal, setChaveImportModal] = useState(false);
+  const [chaveInput, setChaveInput] = useState("");
+  const [isImportingByKey, setIsImportingByKey] = useState(false);
   const handleManifestar = async (chave: string, acao: "ciencia" | "confirmada" | "desconhecida") => {
     if (!empresa) return toast.error("Empresa não selecionada");
     
@@ -168,6 +172,54 @@ function NotasRecebidas() {
       }
     } finally {
       setIsRefreshing(false);
+    }
+  };
+
+  const handleImportarPorChave = async () => {
+    if (!empresa) return toast.error("Empresa não selecionada");
+    const chave = chaveInput.replace(/\D/g, "");
+    if (chave.length !== 44) {
+      toast.error("Chave de acesso inválida", { description: "A chave deve conter 44 dígitos numéricos." });
+      return;
+    }
+
+    setIsImportingByKey(true);
+    try {
+      const result = await consultarNFePorChaveFn({ data: { empresaId: empresa.id, chave } });
+
+      if (result.nota) {
+        const novaNota: NotaRecebida = {
+          chave: result.nota.chave,
+          emitente: result.nota.emitente,
+          cnpj: result.nota.cnpj,
+          valor: result.nota.valor,
+          data_emissao: result.nota.data,
+          manifesto: "pendente",
+          situacao_sefaz: "autorizada",
+        };
+        setNotas(prev => {
+          const chavesExistentes = new Set(prev.map(n => n.chave));
+          if (chavesExistentes.has(novaNota.chave)) {
+            toast.info("Nota já está na lista.");
+            return prev;
+          }
+          return [novaNota, ...prev];
+        });
+        toast.success(`Nota ${result.nota.chave.slice(0, 8)}... importada com sucesso!`);
+        setChaveImportModal(false);
+        setChaveInput("");
+      } else {
+        const d = result.debug;
+        toast.error("Nota não encontrada", {
+          description: d ? `${d.xMotivo} (cStat: ${d.cStat})` : "Verifique a chave de acesso e tente novamente.",
+          duration: 8000,
+        });
+      }
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : String(err);
+      toast.error("Erro ao consultar chave", { description: msg });
+    } finally {
+      setIsImportingByKey(false);
     }
   };
 
@@ -507,6 +559,14 @@ function NotasRecebidas() {
               <RefreshCw className={`mr-2 h-4 w-4 ${isRefreshing ? 'animate-spin' : ''}`} />
               Sincronizar SEFAZ
             </Button>
+            <Button 
+              variant="outline" 
+              onClick={() => setChaveImportModal(true)}
+              className="w-full sm:w-auto h-9"
+            >
+              <KeyRound className="mr-2 h-4 w-4" />
+              Importar por Chave
+            </Button>
           </div>
 
           <Card className="overflow-hidden border-muted shadow-panel bg-card/60 backdrop-blur-sm">
@@ -805,6 +865,59 @@ function NotasRecebidas() {
           )}
         </TabsContent>
       </Tabs>
+
+      <Dialog open={chaveImportModal} onOpenChange={setChaveImportModal}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Importar NF-e por Chave de Acesso</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 py-2">
+            <p className="text-sm text-muted-foreground">
+              Digite a chave de acesso de 44 dígitos da nota fiscal que deseja importar.
+            </p>
+            <Input
+              placeholder="0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000"
+              value={chaveInput}
+              onChange={(e) => {
+                const v = e.target.value.replace(/[^\d\s]/g, "");
+                setChaveInput(v);
+              }}
+              maxLength={59}
+              className="font-mono text-sm tracking-wider"
+              autoFocus
+              onKeyDown={(e) => {
+                if (e.key === "Enter" && chaveInput.replace(/\D/g, "").length === 44) {
+                  handleImportarPorChave();
+                }
+              }}
+            />
+            <p className="text-xs text-muted-foreground">
+              {chaveInput.replace(/\D/g, "").length}/44 dígitos
+            </p>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => { setChaveImportModal(false); setChaveInput(""); }}>
+              Cancelar
+            </Button>
+            <Button
+              onClick={handleImportarPorChave}
+              disabled={isImportingByKey || chaveInput.replace(/\D/g, "").length !== 44}
+            >
+              {isImportingByKey ? (
+                <>
+                  <RefreshCw className="mr-2 h-4 w-4 animate-spin" />
+                  Consultando SEFAZ...
+                </>
+              ) : (
+                <>
+                  <KeyRound className="mr-2 h-4 w-4" />
+                  Importar
+                </>
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </>
   );
 }

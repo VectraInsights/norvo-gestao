@@ -137,7 +137,7 @@ export async function handleSefazProxy(request: Request): Promise<Response> {
     }
 
     // Import dinâmico de sefaz (usa node:https — só funciona no Node.js)
-    const { consultarDestinatario, enviarEventoManifestacao, emitirNFe } = await import("@/lib/sefaz");
+    const { consultarDestinatario, enviarEventoManifestacao, emitirNFe, consultarPorChave } = await import("@/lib/sefaz");
 
     let result: unknown;
 
@@ -177,6 +177,9 @@ export async function handleSefazProxy(request: Request): Promise<Response> {
         break;
       case "emitir":
         result = await emitirNFe(pfxBytes, senha, body.xml, uf, ambiente);
+        break;
+      case "consultarChave":
+        result = await consultarPorChave(pfxBytes, senha, body.chave, cnpj, uf, ambiente);
         break;
       default:
         return json({ error: `Ação desconhecida: ${action}` }, 400);

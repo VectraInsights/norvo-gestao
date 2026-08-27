@@ -136,3 +136,19 @@ export const verificarStatusServicoFn = createServerFn({ method: "POST" })
     if (SEFAZ_URL) return callSefazProxy("status", { empresaId: data.empresaId });
     return { status: "OK", ambiente: "homologacao", motivo: "Serviço operacional" };
   });
+
+export const consultarNFePorChaveFn = createServerFn({ method: "POST" })
+  .validator((data: { empresaId: string; chave: string }) => data)
+  .handler(async ({ data }) => {
+    if (SEFAZ_URL) return callSefazProxy("consultarChave", { empresaId: data.empresaId, chave: data.chave });
+
+    const { consultarPorChave, buscarCertificadoAtivo } = await import("@/lib/sefaz");
+    const cert = await buscarCertificadoAtivo(data.empresaId);
+
+    const { createClient } = await import("@supabase/supabase-js");
+    const supabase = createClient(process.env.SUPABASE_URL || "", process.env.SUPABASE_SERVICE_ROLE_KEY || "");
+    const { data: nfeConfig } = await supabase.from("nfe_config").select("ambiente").eq("empresa_id", data.empresaId).maybeSingle();
+    const ambiente = nfeConfig?.ambiente === "homologacao" ? "homologacao" : "producao";
+
+    return consultarPorChave(cert.pfx, cert.senha, data.chave, cert.cnpj, cert.uf, ambiente);
+  });

@@ -866,3 +866,83 @@ export async function buscarCertificadoAtivo(empresaId: string) {
     uf: empresa?.uf || "SP",
   };
 }
+
+// ============================================================
+// Consulta por Chave de Acesso (consChNFe)
+// ============================================================
+
+export async function consultarPorChave(
+  pfxBytes: Buffer,
+  senha: string,
+  chave: string,
+  cnpj: string,
+  uf: string,
+  ambiente: "homologacao" | "producao" = "homologacao",
+): Promise<{ nota: { chave: string; emitente: string; cnpj: string; valor: number; data: string; xml: string } | null; debug?: { cStat: string; xMotivo: string; endpoint: string } }> {
+  const endpoints = getEndpoints(uf, ambiente);
+  const ns = "http://www.portalfiscal.inf.br/nfe";
+  const nsWdsl = "http://www.portalfiscal.inf.br/nfe/wsdl/NFeDistribuicaoDFe";
+  const agent = createSefazAgent(pfxBytes, senha);
+  const tpAmb = ambiente === "producao" ? "1" : "2";
+  const chaveLimpa = chave.replace(/\D/g, "");
+
+  if (chaveLimpa.length !== 44) {
+    return { nota: null, debug: { cStat: "ERRO", xMotivo: "Chave de acesso deve ter 44 dígitos", endpoint: endpoints.nfeDistribuicaoDFe } };
+  }
+
+  const xmlBody = `<nfeDistDFeInteresse xmlns="${nsWdsl}">
+  <nfeDadosMsg xmlns="${nsWdsl}">
+    <distDFeInt xmlns="${ns}" versao="1.00">
+      <tpAmb>${tpAmb}</tpAmb>
+      <CNPJ>${cnpj.replace(/\D/g, "")}</CNPJ>
+      <consChNFe>
+        <chNFe>${chaveLimpa}</chNFe>
+      </consChNFe>
+    </distDFeInt>
+  </nfeDadosMsg>
+</nfeDistDFeInteresse>`;
+
+  console.log("[sefaz] consultarPorChave:", chaveLimpa, "endpoint:", endpoints.nfeDistribuicaoDFe);
+
+  const response = await soapRequest(
+    endpoints.nfeDistribuicaoDFe,
+    xmlBody,
+    `${ns}/wsdl/NFeDistribuicaoDFe/nfeDistDFeInteresse`,
+    agent,
+  );
+
+  const cStat = response.match(/<cStat>(\d+)<\/cStat>/)?.[1] || "";
+  const xMotivo = response.match(/<xMotivo>([^<]+)<\/xMotivo>/)?.[1] || "";
+
+  console.log("[sefaz] consultarPorChave cStat:", cStat, "xMotivo:", xMotivo);
+
+  if (cStat !== "138") {
+    return { nota: null, debug: { cStat, xMotivo, endpoint: endpoints.nfeDistribuicaoDFe } };
+  }
+
+  // Extrair docZip
+  const docZipMatch = response.match(/<docZip[^>]*>([\s\S]*?)<\/docZip>/);
+  if (!docZipMatch) {
+    return { nota: null, debug: { cStat, xMotivo, endpoint: endpoints.nfeDistribuicaoDFe } };
+  }
+
+  const base64Content = docZipMatch[1].trim();
+  const decodedXml = Buffer.from(base64Content, "base64").toString("utf8");
+
+  const emitCNPJ = decodedXml.match(/<emit>[\s\S]*?<CNPJ>(\d{14})<\/CNPJ>[\s\S]*?<\/emit>/)?.[1] || "";
+  const emitXNome = decodedXml.match(/<emit>[\s\S]*?<xNome>([^<]+)<\/xNome>[\s\S]*?<\/emit>/)?.[1] || "";
+  const vNF = decodedXml.match(/<vNF>([^<]+)<\/vNF>/)?.[1] || "0";
+  const dhEmi = decodedXml.match(/<dhEmi>([^<]+)<\/dhEmi>/)?.[1] || "";
+
+  return {
+    nota: {
+      chave: chaveLimpa,
+      emitente: emitXNome || "Emitente desconhecido",
+      cnpj: emitCNPJ,
+      valor: parseFloat(vNF) || 0,
+      data: dhEmi || new Date().toISOString(),
+      xml: decodedXml,
+    },
+    debug: { cStat, xMotivo, endpoint: endpoints.nfeDistribuicaoDFe },
+  };
+}

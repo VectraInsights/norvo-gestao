@@ -1,9 +1,12 @@
 /**
- * Cron job SEFAZ — roda 2x/dia (8h e 12h BRT) via Vercel Cron.
+ * Cron job SEFAZ — roda a cada 20min (00:00–07:00 BRT) via Vercel Cron.
  * Busca notas recebidas para todas as empresas com certificado ativo.
+ * Pula empresa se última consulta bem-sucedida < 1h (evita cStat 656).
  */
 
 import { createClient } from "@supabase/supabase-js";
+
+const COOLDOWN_MS = 60 * 60 * 1000; // 1 hora
 
 export async function handleSefazCron(): Promise<Response> {
   const url = process.env.SUPABASE_URL;
@@ -14,7 +17,6 @@ export async function handleSefazCron(): Promise<Response> {
 
   const supabase = createClient(url, key, { auth: { persistSession: false } });
 
-  // Buscar todas as empresas com certificado ativo
   const { data: certs, error: certErr } = await supabase
     .from("certificados_digitais")
     .select("empresa_id")
@@ -30,39 +32,50 @@ export async function handleSefazCron(): Promise<Response> {
 
   const { consultarDestinatario, buscarCertificadoAtivo } = await import("@/lib/sefaz");
   let processed = 0;
+  let skipped = 0;
   let errors = 0;
 
   for (const empresaId of empresaIds) {
     try {
-      // Buscar certificado + dados da empresa
       const cert = await buscarCertificadoAtivo(empresaId);
 
-      // Buscar ambiente e cursor
       const { data: nfeConfig } = await supabase
         .from("nfe_config")
-        .select("ambiente, last_nsu")
+        .select("ambiente, last_nsu, last_query_at")
         .eq("empresa_id", empresaId)
         .maybeSingle();
 
       const ambiente = nfeConfig?.ambiente === "homologacao" ? "homologacao" : "producao";
       const startNsu = nfeConfig?.last_nsu || undefined;
 
+      // Pular se última consulta < 1h (evita cStat 656)
+      if (nfeConfig?.last_query_at) {
+        const elapsed = Date.now() - new Date(nfeConfig.last_query_at).getTime();
+        if (elapsed < COOLDOWN_MS) {
+          const remainingMin = Math.ceil((COOLDOWN_MS - elapsed) / 60000);
+          console.log(`[sefaz-cron] ${empresaId}: pulando (cooldown, restam ~${remainingMin}min)`);
+          skipped++;
+          continue;
+        }
+      }
+
       const result = await consultarDestinatario(
         cert.pfx, cert.senha, cert.cnpj, cert.uf, ambiente, startNsu,
       );
 
-      // Salvar cursor
-      if (result.maxNsuObtido) {
-        await supabase
-          .from("nfe_config")
-          .update({ last_nsu: result.maxNsuObtido })
-          .eq("empresa_id", empresaId);
+      // Salvar cursor + timestamp APENAS em sucesso
+      if (result.debug?.cStat === "138" || result.debug?.cStat === "137") {
+        const now = new Date().toISOString();
+        const update: Record<string, unknown> = { last_query_at: now };
+        if (result.maxNsuObtido) {
+          update.last_nsu = result.maxNsuObtido;
+        }
+        await supabase.from("nfe_config").update(update).eq("empresa_id", empresaId);
       }
 
-      console.log(`[sefaz-cron] ${empresaId}: ${result.notas.length} notas, cursor: ${result.maxNsuObtido || "none"}`);
+      console.log(`[sefaz-cron] ${empresaId}: ${result.notas.length} notas, cStat: ${result.debug?.cStat}`);
       processed++;
 
-      // Pequena pausa entre empresas para não sobrecarregar
       await new Promise((r) => setTimeout(r, 2000));
     } catch (err) {
       console.error(`[sefaz-cron] Erro empresa ${empresaId}:`, err);
@@ -70,5 +83,5 @@ export async function handleSefazCron(): Promise<Response> {
     }
   }
 
-  return new Response(JSON.stringify({ ok: true, processed, errors }));
+  return new Response(JSON.stringify({ ok: true, processed, skipped, errors }));
 }
