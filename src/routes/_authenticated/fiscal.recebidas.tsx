@@ -912,7 +912,7 @@ function NotasRecebidas() {
 
       {/* Modal de detalhes da nota importada por chave */}
       <Dialog open={!!notaDetalhe} onOpenChange={(open) => { if (!open) setNotaDetalhe(null); }}>
-        <DialogContent className="sm:max-w-2xl max-h-[85vh] overflow-y-auto">
+        <DialogContent className="sm:max-w-4xl max-h-[85vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Detalhes da NF-e</DialogTitle>
           </DialogHeader>
@@ -1001,7 +1001,7 @@ function NotasRecebidas() {
                     <Table>
                       <TableHeader className="bg-muted/40">
                         <TableRow>
-                          <TableHead className="text-xs w-16">Nº</TableHead>
+                          <TableHead className="text-xs w-20">Nº</TableHead>
                           <TableHead className="text-xs">Vencimento</TableHead>
                           <TableHead className="text-xs text-right">Valor</TableHead>
                           <TableHead className="text-xs w-10" />
