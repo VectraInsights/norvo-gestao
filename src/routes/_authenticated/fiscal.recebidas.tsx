@@ -129,6 +129,49 @@ function NotasRecebidas() {
     },
   });
   
+  // Criação inline de categoria (para o Select de categoria dos produtos importados)
+  const [novaCatOpen, setNovaCatOpen] = useState(false);
+  const [novaCatNome, setNovaCatNome] = useState("");
+  const [novaCatContext, setNovaCatContext] = useState<{ origem: "import" | "detalhe"; index: number } | null>(null);
+  const criarCategoriaInline = useMutation({
+    mutationFn: async (nome: string) => {
+      if (!empresa) throw new Error("Empresa não selecionada");
+      const n = nome.trim();
+      if (!n) throw new Error("Informe o nome da categoria");
+      const { data, error } = await supabase
+        .from("categorias_financeiras")
+        .insert({ empresa_id: empresa.id, nome: n, tipo: "pagar" } as any)
+        .select("id, nome")
+        .single();
+      if (error) {
+        if ((error as any).code === "23505") throw new Error("Já existe uma categoria com esse nome");
+        throw error;
+      }
+      return data as { id: string; nome: string };
+    },
+    onSuccess: (cat) => {
+      qc.invalidateQueries({ queryKey: ["categorias-financeiras-pagar", empresa?.id] });
+      qc.invalidateQueries({ queryKey: ["cadastros-categorias", empresa?.id] });
+      qc.invalidateQueries({ queryKey: ["categorias-opt", empresa?.id] });
+      if (novaCatContext) {
+        if (novaCatContext.origem === "import" && importResults) {
+          const novas = [...importResults.produtos];
+          novas[novaCatContext.index] = { ...novas[novaCatContext.index], categoria: cat.nome };
+          setImportResults({ ...importResults, produtos: novas });
+        } else if (novaCatContext.origem === "detalhe" && notaDetalhe) {
+          const novas = [...notaDetalhe.produtos];
+          novas[novaCatContext.index] = { ...novas[novaCatContext.index], categoria: cat.nome };
+          setNotaDetalhe({ ...notaDetalhe, produtos: novas });
+        }
+      }
+      toast.success(`Categoria "${cat.nome}" criada`);
+      setNovaCatOpen(false);
+      setNovaCatNome("");
+      setNovaCatContext(null);
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
   // Notas Recebidas State
   const [notas, setNotas] = useState<NotaRecebida[]>(INITIAL_RECEBIDAS);
   const [search, setSearch] = useState("");
@@ -1369,6 +1412,12 @@ ${transportadora ? `<div class="section"><div class="section-title">TRANSPORTE</
                               <Select
                                 value={p.categoria || "__none__"}
                                 onValueChange={(v) => {
+                                  if (v === "__nova__") {
+                                    setNovaCatContext({ origem: "import", index: i });
+                                    setNovaCatNome("");
+                                    setNovaCatOpen(true);
+                                    return;
+                                  }
                                   const novas = [...importResults.produtos];
                                   novas[i] = { ...novas[i], categoria: v === "__none__" ? "" : v };
                                   setImportResults({ ...importResults, produtos: novas });
@@ -1382,6 +1431,7 @@ ${transportadora ? `<div class="section"><div class="section-title">TRANSPORTE</
                                   {catsFinanceiras.map((c) => (
                                     <SelectItem key={c.id} value={c.nome}>{c.nome}</SelectItem>
                                   ))}
+                                  <SelectItem value="__nova__" className="text-primary font-medium border-t mt-1">+ Nova categoria</SelectItem>
                                 </SelectContent>
                               </Select>
                             </TableCell>
@@ -1563,6 +1613,12 @@ ${transportadora ? `<div class="section"><div class="section-title">TRANSPORTE</
                               <Select
                                 value={p.categoria || "__none__"}
                                 onValueChange={(v) => {
+                                  if (v === "__nova__") {
+                                    setNovaCatContext({ origem: "detalhe", index: i });
+                                    setNovaCatNome("");
+                                    setNovaCatOpen(true);
+                                    return;
+                                  }
                                   const novas = [...notaDetalhe.produtos];
                                   novas[i] = { ...novas[i], categoria: v === "__none__" ? "" : v };
                                   setNotaDetalhe({ ...notaDetalhe, produtos: novas });
@@ -1576,6 +1632,7 @@ ${transportadora ? `<div class="section"><div class="section-title">TRANSPORTE</
                                   {catsFinanceiras.map((c) => (
                                     <SelectItem key={c.id} value={c.nome}>{c.nome}</SelectItem>
                                   ))}
+                                  <SelectItem value="__nova__" className="text-primary font-medium border-t mt-1">+ Nova categoria</SelectItem>
                                 </SelectContent>
                               </Select>
                             </TableCell>
@@ -1704,6 +1761,31 @@ ${transportadora ? `<div class="section"><div class="section-title">TRANSPORTE</
               </div>
             </div>
           )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Dialog criar categoria inline */}
+      <Dialog open={novaCatOpen} onOpenChange={(o) => { if (!o) { setNovaCatOpen(false); setNovaCatNome(""); setNovaCatContext(null); } }}>
+        <DialogContent className="sm:max-w-sm">
+          <DialogHeader><DialogTitle>Nova categoria (Despesa)</DialogTitle></DialogHeader>
+          <div className="space-y-3">
+            <div>
+              <label className="text-sm font-medium">Nome *</label>
+              <Input
+                autoFocus
+                placeholder="Ex: Peças, Combustível..."
+                value={novaCatNome}
+                onChange={(e) => setNovaCatNome(e.target.value)}
+                onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); if (novaCatNome.trim()) criarCategoriaInline.mutate(novaCatNome); } }}
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => { setNovaCatOpen(false); setNovaCatNome(""); setNovaCatContext(null); }}>Cancelar</Button>
+            <Button disabled={criarCategoriaInline.isPending || !novaCatNome.trim()} onClick={() => criarCategoriaInline.mutate(novaCatNome)}>
+              {criarCategoriaInline.isPending ? <><RefreshCw className="mr-2 h-4 w-4 animate-spin" /> Salvando...</> : "Criar categoria"}
+            </Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
     </>
