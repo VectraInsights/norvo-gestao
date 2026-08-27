@@ -109,6 +109,10 @@ function NotasRecebidas() {
     setIsRefreshing(true);
     try {
       const result = await consultarNFeDestinatarioFn({ data: { empresaId: empresa.id } });
+      if (result.cooldown) {
+        toast.error("Aguarde antes de sincronizar", { description: `Próxima consulta disponível em ${result.cooldownMinutos} minuto(s). A SEFAZ exige intervalo mínimo entre consultas.`, duration: 10000 });
+        return;
+      }
       if (result.notas.length > 0) {
         const novasNotas: NotaRecebida[] = result.notas.map(n => ({
           chave: n.chave,

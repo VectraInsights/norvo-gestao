@@ -21,6 +21,8 @@ const SEFAZ_URL = (() => {
   }
 })();
 
+const COOLDOWN_MS = 5 * 60 * 1000; // 5 minutos
+
 async function callSefazProxy(action: string, body: Record<string, unknown>) {
   if (!SEFAZ_URL) throw new Error("SEFAZ_URL não configurado");
   const res = await fetch(SEFAZ_URL, {
@@ -42,18 +44,45 @@ export const consultarNFeDestinatarioFn = createServerFn({ method: "POST" })
   .validator((data: { empresaId: string }) => data)
   .handler(async ({ data }) => {
     if (SEFAZ_URL) return callSefazProxy("consultar", { empresaId: data.empresaId });
+
     const { consultarDestinatario, buscarCertificadoAtivo } = await import("@/lib/sefaz");
     const cert = await buscarCertificadoAtivo(data.empresaId);
 
     const { createClient } = await import("@supabase/supabase-js");
     const supabase = createClient(process.env.SUPABASE_URL || "", process.env.SUPABASE_SERVICE_ROLE_KEY || "");
-    const { data: nfeConfig } = await supabase.from("nfe_config").select("ambiente, last_nsu").eq("empresa_id", data.empresaId).maybeSingle();
+    const { data: nfeConfig } = await supabase.from("nfe_config").select("ambiente, last_nsu, last_query_at").eq("empresa_id", data.empresaId).maybeSingle();
     const ambiente = nfeConfig?.ambiente === "homologacao" ? "homologacao" : "producao";
     const startNsu = nfeConfig?.last_nsu || undefined;
 
+    // Cooldown
+    if (nfeConfig?.last_query_at) {
+      const elapsed = Date.now() - new Date(nfeConfig.last_query_at).getTime();
+      if (elapsed < COOLDOWN_MS) {
+        const remainingMin = Math.ceil((COOLDOWN_MS - elapsed) / 60000);
+        return {
+          notas: [],
+          maxNsuObtido: startNsu,
+          resetouCursor: false,
+          cooldown: true,
+          cooldownMinutos: remainingMin,
+          debug: {
+            cStat: "656",
+            xMotivo: `Cooldown entre consultas — aguarde ${remainingMin} minuto(s)`,
+            endpoint: "",
+            tpAmb: ambiente === "producao" ? "1" : "2",
+            cUFAutor: "",
+            cnpj: cert.cnpj,
+          },
+        };
+      }
+    }
+
+    // Marcar timestamp antes da consulta
+    await supabase.from("nfe_config").update({ last_query_at: new Date().toISOString() }).eq("empresa_id", data.empresaId);
+
     const result = await consultarDestinatario(cert.pfx, cert.senha, cert.cnpj, cert.uf, ambiente, startNsu);
 
-    // Salvar maxNSU para próxima consulta (evita cStat 656)
+    // Salvar maxNSU para próxima consulta
     if (result.maxNsuObtido) {
       await supabase.from("nfe_config").update({ last_nsu: result.maxNsuObtido }).eq("empresa_id", data.empresaId);
     }

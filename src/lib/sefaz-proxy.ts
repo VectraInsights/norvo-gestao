@@ -23,6 +23,8 @@ function createServiceClient() {
   });
 }
 
+const COOLDOWN_MS = 5 * 60 * 1000; // 5 minutos
+
 export async function handleSefazProxy(request: Request): Promise<Response> {
   try {
     const authHeader = request.headers.get("Authorization");
@@ -69,7 +71,6 @@ export async function handleSefazProxy(request: Request): Promise<Response> {
     const first4 = pfxBytes.slice(0, 4).toString("hex");
     console.log("[sefaz-proxy] PFX bytes:", pfxBytes.length, "header:", first4);
 
-    // Validação: PFX/PKCS#12 começa com SEQUENCE (30 82/80) ou OCTET STRING (04 82/80)
     if (pfxBytes.length < 100) {
       console.error("[sefaz-proxy] PFX muito pequeno — provavelmente não é um certificado válido");
       return json({ error: "Arquivo de certificado inválido (tamanho muito pequeno)" }, 500);
@@ -99,17 +100,41 @@ export async function handleSefazProxy(request: Request): Promise<Response> {
     const cnpj = empresa?.cnpj || "";
     const uf = empresa?.uf || "SP";
 
-    // Buscar config fiscal da empresa (ambiente: homologação ou produção)
+    // Buscar config fiscal da empresa (ambiente + last_nsu + last_query_at)
     const { data: nfeConfig } = await supabase
       .from("nfe_config")
-      .select("ambiente, last_nsu")
+      .select("ambiente, last_nsu, last_query_at")
       .eq("empresa_id", empresaId)
       .maybeSingle();
 
-    // Default: produção (onde ficam as notas reais)
     const ambiente = nfeConfig?.ambiente === "homologacao" ? "homologacao" : "producao";
     const startNsu = nfeConfig?.last_nsu || undefined;
     console.log("[sefaz-proxy] ambiente:", ambiente, "cnpj:", cnpj, "uf:", uf, "startNsu:", startNsu || "(zero)");
+
+    // Cooldown: verificar se já passou o tempo mínimo entre consultas
+    if (action === "consultar" && nfeConfig?.last_query_at) {
+      const lastQuery = new Date(nfeConfig.last_query_at).getTime();
+      const elapsed = Date.now() - lastQuery;
+      if (elapsed < COOLDOWN_MS) {
+        const remainingMin = Math.ceil((COOLDOWN_MS - elapsed) / 60000);
+        console.log("[sefaz-proxy] cooldown ativo, restam ~", remainingMin, "minutos");
+        return json({
+          notas: [],
+          maxNsuObtido: startNsu,
+          resetouCursor: false,
+          cooldown: true,
+          cooldownMinutos: remainingMin,
+          debug: {
+            cStat: "656",
+            xMotivo: `Cooldown entre consultas — aguarde ${remainingMin} minuto(s)`,
+            endpoint: "",
+            tpAmb: ambiente === "producao" ? "1" : "2",
+            cUFAutor: "",
+            cnpj,
+          },
+        });
+      }
+    }
 
     // Import dinâmico de sefaz (usa node:https — só funciona no Node.js)
     const { consultarDestinatario, enviarEventoManifestacao, emitirNFe } = await import("@/lib/sefaz");
@@ -118,8 +143,10 @@ export async function handleSefazProxy(request: Request): Promise<Response> {
 
     switch (action) {
       case "consultar":
+        // Marcar timestamp ANTES da consulta (para cooldown)
+        await supabase.from("nfe_config").update({ last_query_at: new Date().toISOString() }).eq("empresa_id", empresaId);
         result = await consultarDestinatario(pfxBytes, senha, cnpj, uf, ambiente, startNsu);
-        // Salvar maxNSU para próxima consulta (evita cStat 656)
+        // Salvar maxNSU para próxima consulta
         const r = result as { maxNsuObtido?: string };
         if (r.maxNsuObtido) {
           await supabase.from("nfe_config").update({ last_nsu: r.maxNsuObtido }).eq("empresa_id", empresaId);
