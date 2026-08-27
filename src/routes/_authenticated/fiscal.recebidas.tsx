@@ -997,73 +997,56 @@ function NotasRecebidas() {
                   <p className="text-xs text-muted-foreground mb-2">Nenhuma parcela no XML. Adicione parcelas manualmente ou deixe vazio para lançar como pagamento único.</p>
                 )}
                 {notaDetalhe.parcelas.length > 0 && (
-                  <div className="border rounded-md overflow-hidden">
-                    <Table>
-                      <TableHeader className="bg-muted/40">
-                        <TableRow>
-                          <TableHead className="text-xs w-20">Nº</TableHead>
-                          <TableHead className="text-xs">Vencimento</TableHead>
-                          <TableHead className="text-xs text-right">Valor</TableHead>
-                          <TableHead className="text-xs w-10" />
-                        </TableRow>
-                      </TableHeader>
-                      <TableBody>
-                        {notaDetalhe.parcelas.map((p, i) => (
-                          <TableRow key={i}>
-                            <TableCell>
-                              <Input
-                                className="h-7 text-xs font-mono"
-                                value={p.numero}
-                                onChange={(e) => {
-                                  const novas = [...notaDetalhe.parcelas];
-                                  novas[i] = { ...novas[i], numero: e.target.value };
-                                  setNotaDetalhe({ ...notaDetalhe, parcelas: novas });
-                                }}
-                              />
-                            </TableCell>
-                            <TableCell>
-                              <Input
-                                type="date"
-                                className="h-7 text-xs"
-                                value={p.dataVencimento}
-                                onChange={(e) => {
-                                  const novas = [...notaDetalhe.parcelas];
-                                  novas[i] = { ...novas[i], dataVencimento: e.target.value };
-                                  setNotaDetalhe({ ...notaDetalhe, parcelas: novas });
-                                }}
-                              />
-                            </TableCell>
-                            <TableCell>
-                              <Input
-                                type="number"
-                                className="h-7 text-xs text-right"
-                                step="0.01"
-                                value={p.valor || ""}
-                                placeholder="0,00"
-                                onChange={(e) => {
-                                  const novas = [...notaDetalhe.parcelas];
-                                  novas[i] = { ...novas[i], valor: parseFloat(e.target.value) || 0 };
-                                  setNotaDetalhe({ ...notaDetalhe, parcelas: novas });
-                                }}
-                              />
-                            </TableCell>
-                            <TableCell>
-                              <Button
-                                size="sm"
-                                variant="ghost"
-                                className="h-7 w-7 p-0 text-destructive hover:bg-destructive/10"
-                                onClick={() => {
-                                  const novas = notaDetalhe.parcelas.filter((_, idx) => idx !== i);
-                                  setNotaDetalhe({ ...notaDetalhe, parcelas: novas });
-                                }}
-                              >
-                                <XCircle className="h-3.5 w-3.5" />
-                              </Button>
-                            </TableCell>
-                          </TableRow>
-                        ))}
-                      </TableBody>
-                    </Table>
+                  <div className="space-y-2">
+                    {notaDetalhe.parcelas.map((p, i) => (
+                      <div key={i} className="flex items-center gap-2">
+                        <Input
+                          className="h-8 w-16 text-xs font-mono text-center shrink-0"
+                          value={p.numero}
+                          onChange={(e) => {
+                            const novas = [...notaDetalhe.parcelas];
+                            novas[i] = { ...novas[i], numero: e.target.value };
+                            setNotaDetalhe({ ...notaDetalhe, parcelas: novas });
+                          }}
+                        />
+                        <Input
+                          type="date"
+                          className="h-8 text-xs shrink-0 w-[150px]"
+                          value={p.dataVencimento}
+                          onChange={(e) => {
+                            const novas = [...notaDetalhe.parcelas];
+                            novas[i] = { ...novas[i], dataVencimento: e.target.value };
+                            setNotaDetalhe({ ...notaDetalhe, parcelas: novas });
+                          }}
+                        />
+                        <div className="relative flex-1 max-w-[160px]">
+                          <span className="absolute left-2 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">R$</span>
+                          <Input
+                            type="number"
+                            className="h-8 text-xs text-right pl-7"
+                            step="0.01"
+                            value={p.valor || ""}
+                            placeholder="0,00"
+                            onChange={(e) => {
+                              const novas = [...notaDetalhe.parcelas];
+                              novas[i] = { ...novas[i], valor: parseFloat(e.target.value) || 0 };
+                              setNotaDetalhe({ ...notaDetalhe, parcelas: novas });
+                            }}
+                          />
+                        </div>
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          className="h-8 w-8 p-0 text-destructive hover:bg-destructive/10 shrink-0"
+                          onClick={() => {
+                            const novas = notaDetalhe.parcelas.filter((_, idx) => idx !== i);
+                            setNotaDetalhe({ ...notaDetalhe, parcelas: novas });
+                          }}
+                        >
+                          <XCircle className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    ))}
                   </div>
                 )}
                 {notaDetalhe.parcelas.length > 0 && (
