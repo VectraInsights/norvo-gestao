@@ -386,6 +386,16 @@ Registro condensado da evolução do Norvo Gestão fora do editor Lovable.
 no parse ASN.1 da cadeia de certificados (`extractCertChainFromPkcs12`). Investigar se o
 certificado tem estrutura PKCS12 não padrão ou se `extractPkcs12Native` precisa de ajuste.
 
+24. **Fix createSefazAgent — type pkcs12 inválido**: `crypto.createPrivateKey` do Node.js v24
+    não aceita `type: "pkcs12"`. Revertido para usar `pfx` direto no `https.Agent` (método
+    nativo correto). Commits: `3b9c687` (Vercel) / `4e33f83` (CF).
+
+25. **Cooldown 5 minutos entre consultas SEFAZ**: coluna `last_query_at` em `nfe_config`
+    (migration `20260827150000`). Proxy e server function verificam intervalo mínimo antes de
+    consultar. Se menos de 5min, retorna `cooldown: true` com `cooldownMinutos`. Front-end
+    mostra "Aguarde antes de sincronizar" com tempo restante. Evita cStat 656 "Consumo Indevido"
+    por consultas muito frequentes. Commits: `64e223a` (Vercel) / `df1d39d` (CF).
+
 ---
 
 ## Regras de segurança
