@@ -396,6 +396,19 @@ certificado tem estrutura PKCS12 não padrão ou se `extractPkcs12Native` precis
     mostra "Aguarde antes de sincronizar" com tempo restante. Evita cStat 656 "Consumo Indevido"
     por consultas muito frequentes. Commits: `64e223a` (Vercel) / `df1d39d` (CF).
 
+26. **Timer de retry correto (cStat 656)**: `last_query_at` agora só é atualizado em consulta
+    SUCESSO (cStat 138/137). cStat 656 não mexe no timer — a contagem de 1h começa da última
+    vez que *conseguimos* consultar, não do último clique. Commits: `7a21484` / `2a53277`.
+
+27. **Cron job SEFAZ a cada 20min (00:00–07:00 BRT)**: `vercel.json` com
+    `*/20 3-9 * * *`. Cron pula empresa se `last_query_at` < 1h (evita cStat 656).
+    Commit: `c996d9e`.
+
+28. **Importar NF-e por chave de acesso**: nova função `consultarPorChave` usa `consChNFe`
+    (mesmo endpoint NFeDistribuicaoDFe). Botão "Importar por Chave" abre modal com input de
+    44 dígitos. Consulta SEFAZ, retorna dados da nota e adiciona à lista. Server function
+    `consultarNFePorChaveFn` + proxy handler `consultarChave`. Commit: `c996d9e`.
+
 ---
 
 ## Regras de segurança
