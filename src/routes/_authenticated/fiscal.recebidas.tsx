@@ -478,35 +478,33 @@ function NotasRecebidas() {
         });
       }
 
-      // 5. Lançar parcelas no contas a pagar
-      const parcelasLancar = notaDetalhe.parcelas.length > 0
-        ? notaDetalhe.parcelas
-        : [{ numero: "001", dataVencimento: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split("T")[0], valor: notaDetalhe.valor }];
+      // 5. Lançar parcelas no contas a pagar (só se houver parcelas)
+      if (notaDetalhe.parcelas.length > 0) {
+        for (const parc of notaDetalhe.parcelas) {
+          const { data: lanc } = await supabase
+            .from("lancamentos_financeiros")
+            .insert({
+              empresa_id: empresa.id,
+              tipo: "pagar",
+              status: "aberto",
+              descricao: `NF-e ${notaDetalhe.nNF} ${notaDetalhe.emitente} (${parc.numero}/${notaDetalhe.parcelas.length})`,
+              valor: parc.valor,
+              data_vencimento: parc.dataVencimento,
+              contato_id: fornecedorId,
+              observacoes: `Chave: ${notaDetalhe.chave} | Parcela ${parc.numero}`,
+            })
+            .select("id")
+            .single();
 
-      for (const parc of parcelasLancar) {
-        const { data: lanc } = await supabase
-          .from("lancamentos_financeiros")
-          .insert({
-            empresa_id: empresa.id,
-            tipo: "pagar",
-            status: "aberto",
-            descricao: `NF-e ${notaDetalhe.nNF} ${notaDetalhe.emitente} (${parc.numero}/${parcelasLancar.length})`,
-            valor: parc.valor,
-            data_vencimento: parc.dataVencimento,
-            contato_id: fornecedorId,
-            observacoes: `Chave: ${notaDetalhe.chave} | Parcela ${parc.numero}`,
-          })
-          .select("id")
-          .single();
-
-        if (notaId && lanc) {
-          await supabase.from("notas_importadas_parcelas" as never).insert({
-            nota_id: notaId,
-            numero: parc.numero,
-            data_vencimento: parc.dataVencimento,
-            valor: parc.valor,
-            lancamento_id: lanc.id,
-          } as any);
+          if (notaId && lanc) {
+            await supabase.from("notas_importadas_parcelas" as never).insert({
+              nota_id: notaId,
+              numero: parc.numero,
+              data_vencimento: parc.dataVencimento,
+              valor: parc.valor,
+              lancamento_id: lanc.id,
+            } as any);
+          }
         }
       }
 
@@ -527,7 +525,10 @@ function NotasRecebidas() {
       qc.invalidateQueries({ queryKey: ["lancamentos"] });
       qc.invalidateQueries({ queryKey: ["dashboard-stats"] });
 
-      toast.success(`Nota lançada! ${notaDetalhe.produtos.length} produtos (${totalQtd} un.) e ${parcelasLancar.length} parcela(s) no contas a pagar.`);
+      const msgParcelas = notaDetalhe.parcelas.length > 0
+        ? ` e ${notaDetalhe.parcelas.length} parcela(s) no contas a pagar`
+        : " (sem parcelas — estoque atualizado)";
+      toast.success(`Nota lançada! ${notaDetalhe.produtos.length} produtos (${totalQtd} un.)${msgParcelas}.`);
       setNotaDetalhe(null);
     } catch (err: any) {
       toast.error("Falha ao lançar nota", { description: err.message });
@@ -972,31 +973,112 @@ function NotasRecebidas() {
                 </div>
               )}
 
-              {notaDetalhe.parcelas.length > 0 && (
-                <div>
-                  <h4 className="text-sm font-medium mb-2">Parcelas ({notaDetalhe.parcelas.length})</h4>
+              <div>
+                <div className="flex items-center justify-between mb-2">
+                  <h4 className="text-sm font-medium">Parcelas</h4>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="h-7 text-xs"
+                    onClick={() => {
+                      const novas = [...notaDetalhe.parcelas];
+                      novas.push({
+                        numero: String(novas.length + 1).padStart(3, "0"),
+                        dataVencimento: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split("T")[0],
+                        valor: 0,
+                      });
+                      setNotaDetalhe({ ...notaDetalhe, parcelas: novas });
+                    }}
+                  >
+                    + Adicionar Parcela
+                  </Button>
+                </div>
+                {notaDetalhe.parcelas.length === 0 && (
+                  <p className="text-xs text-muted-foreground mb-2">Nenhuma parcela no XML. Adicione parcelas manualmente ou deixe vazio para lançar como pagamento único.</p>
+                )}
+                {notaDetalhe.parcelas.length > 0 && (
                   <div className="border rounded-md overflow-hidden">
                     <Table>
                       <TableHeader className="bg-muted/40">
                         <TableRow>
-                          <TableHead className="text-xs">Parcela</TableHead>
+                          <TableHead className="text-xs w-16">Nº</TableHead>
                           <TableHead className="text-xs">Vencimento</TableHead>
                           <TableHead className="text-xs text-right">Valor</TableHead>
+                          <TableHead className="text-xs w-10" />
                         </TableRow>
                       </TableHeader>
                       <TableBody>
                         {notaDetalhe.parcelas.map((p, i) => (
                           <TableRow key={i}>
-                            <TableCell className="text-xs">{p.numero}</TableCell>
-                            <TableCell className="text-xs">{dateBR(p.dataVencimento)}</TableCell>
-                            <TableCell className="text-right text-xs font-medium">{brl(p.valor)}</TableCell>
+                            <TableCell>
+                              <Input
+                                className="h-7 text-xs font-mono"
+                                value={p.numero}
+                                onChange={(e) => {
+                                  const novas = [...notaDetalhe.parcelas];
+                                  novas[i] = { ...novas[i], numero: e.target.value };
+                                  setNotaDetalhe({ ...notaDetalhe, parcelas: novas });
+                                }}
+                              />
+                            </TableCell>
+                            <TableCell>
+                              <Input
+                                type="date"
+                                className="h-7 text-xs"
+                                value={p.dataVencimento}
+                                onChange={(e) => {
+                                  const novas = [...notaDetalhe.parcelas];
+                                  novas[i] = { ...novas[i], dataVencimento: e.target.value };
+                                  setNotaDetalhe({ ...notaDetalhe, parcelas: novas });
+                                }}
+                              />
+                            </TableCell>
+                            <TableCell>
+                              <Input
+                                type="number"
+                                className="h-7 text-xs text-right"
+                                step="0.01"
+                                value={p.valor || ""}
+                                placeholder="0,00"
+                                onChange={(e) => {
+                                  const novas = [...notaDetalhe.parcelas];
+                                  novas[i] = { ...novas[i], valor: parseFloat(e.target.value) || 0 };
+                                  setNotaDetalhe({ ...notaDetalhe, parcelas: novas });
+                                }}
+                              />
+                            </TableCell>
+                            <TableCell>
+                              <Button
+                                size="sm"
+                                variant="ghost"
+                                className="h-7 w-7 p-0 text-destructive hover:bg-destructive/10"
+                                onClick={() => {
+                                  const novas = notaDetalhe.parcelas.filter((_, idx) => idx !== i);
+                                  setNotaDetalhe({ ...notaDetalhe, parcelas: novas });
+                                }}
+                              >
+                                <XCircle className="h-3.5 w-3.5" />
+                              </Button>
+                            </TableCell>
                           </TableRow>
                         ))}
                       </TableBody>
                     </Table>
                   </div>
-                </div>
-              )}
+                )}
+                {notaDetalhe.parcelas.length > 0 && (
+                  <div className="flex justify-end mt-1">
+                    <span className="text-xs text-muted-foreground">
+                      Total parcelas: {brl(notaDetalhe.parcelas.reduce((acc, p) => acc + p.valor, 0))}
+                      {notaDetalhe.parcelas.reduce((acc, p) => acc + p.valor, 0) !== notaDetalhe.valor && (
+                        <span className="text-destructive ml-2">
+                          (diferente do total da NF-e: {brl(notaDetalhe.valor)})
+                        </span>
+                      )}
+                    </span>
+                  </div>
+                )}
+              </div>
 
               <div className="flex items-center justify-between border-t pt-3">
                 <div>
