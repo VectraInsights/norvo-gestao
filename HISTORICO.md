@@ -443,6 +443,25 @@ certificado tem estrutura PKCS12 não padrão ou se `extractPkcs12Native` precis
       a coluna já havia sido removida da tabela. Todas categorias agora são principais
       (`parent_id = null`); hierarquia existente preservada no banco mas não editável na UI.
 
+31. **Criação inline de categoria no import de Notas de Compra — 27/08/2026** (commit `0cee988`):
+    - Coluna **Categoria** em `fiscal.recebidas.tsx:1368,1562` ganhou opção **"+ Nova categoria"**
+      no `Select` (importResults e notaDetalhe). Selecionar abre dialog (`novaCatOpen`) que faz
+      `INSERT categorias_financeiras (tipo pagar)` e já preenche o produto com a nova categoria,
+      invalidando `categorias-financeiras-pagar`/`cadastros-categorias`/`categorias-opt`.
+    - Mutation `criarCategoriaInline` com tratamento `23505` e `toast`.
+
+32. **Fix categoria não persistia no produto — 27/08/2026** (este commit):
+    - `handleConfirmarXmlUpload` criava produto com `insert {codigo, nome, un, preco...}` sem
+      `categoria` (`fiscal.recebidas.tsx:574`) e o `update` de produto existente ignorava
+      categoria (`:571`). Produto "PASTILHA FREIO" aparecia como "Sem categoria" na edição
+      (screenshot `estoque.produtos`).
+    - Correção: `insert` agora inclui `categoria: p.categoria || null`; `update` inclui
+      `categoria: p.categoria || categoria_existente`; `select` passou a buscar `categoria`
+      nos dois fluxos (`handleConfirmarXmlUpload:561` e `handleLancarNota:834`). Validação
+      `semCategoria` já existia, agora efetivamente salva.
+    - Produtos já criados sem categoria precisam ser corrigidos manualmente em Estoque → Produtos
+      (ou via SQL). Novos imports já salvam corretamente.
+
 ---
 
 ## Regras de segurança

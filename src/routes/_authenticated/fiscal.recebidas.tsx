@@ -568,11 +568,11 @@ function NotasRecebidas() {
         let prodId: string;
         if (prodExistente) {
           prodId = prodExistente.id;
-          await supabase.from("produtos").update({ estoque_atual: (Number(prodExistente.estoque_atual) || 0) + p.qtd, preco_custo: p.valor }).eq("id", prodId);
+          await supabase.from("produtos").update({ estoque_atual: (Number(prodExistente.estoque_atual) || 0) + p.qtd, preco_custo: p.valor, categoria: p.categoria || (prodExistente as any).categoria || null }).eq("id", prodId);
         } else {
           const { data: novoProd } = await supabase
             .from("produtos")
-            .insert({ empresa_id: empresa.id, codigo: p.codigo, nome: p.nome, unidade: p.un, preco_custo: p.valor, preco_venda: p.valor * 1.4, estoque_atual: p.qtd, ativo: true })
+            .insert({ empresa_id: empresa.id, codigo: p.codigo, nome: p.nome, unidade: p.un, preco_custo: p.valor, preco_venda: p.valor * 1.4, estoque_atual: p.qtd, ativo: true, categoria: p.categoria || null } as any)
             .select("id").single();
           prodId = novoProd!.id;
         }
@@ -833,7 +833,7 @@ function NotasRecebidas() {
         totalQtd += p.qtd;
         const { data: prodExistente } = await supabase
           .from("produtos")
-          .select("id, estoque_atual")
+          .select("id, estoque_atual, categoria")
           .eq("empresa_id", empresa.id)
           .or(`codigo.eq.${p.codigo},nome.ilike.%${p.nome.slice(0, 10)}%`)
           .maybeSingle();
@@ -841,7 +841,7 @@ function NotasRecebidas() {
         let prodId: string;
         if (prodExistente) {
           prodId = prodExistente.id;
-          await supabase.from("produtos").update({ estoque_atual: (Number(prodExistente.estoque_atual) || 0) + p.qtd, preco_custo: p.valorUnit }).eq("id", prodId);
+          await supabase.from("produtos").update({ estoque_atual: (Number(prodExistente.estoque_atual) || 0) + p.qtd, preco_custo: p.valorUnit, categoria: p.categoria || (prodExistente as any).categoria || null }).eq("id", prodId);
         } else {
           const { data: novoProd } = await (supabase
             .from("produtos")
