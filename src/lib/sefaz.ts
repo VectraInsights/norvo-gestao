@@ -563,10 +563,17 @@ function parseDistribuicaoResponse(response: string): {
     const base64Content = match[2].trim();
 
     try {
-      const decodedXml = Buffer.from(base64Content, "base64").toString("utf8");
+      const compressedBuffer = Buffer.from(base64Content, "base64");
+      let decodedXml: string;
+      try {
+        const { gunzipSync } = await import("zlib");
+        decodedXml = gunzipSync(compressedBuffer).toString("utf8");
+      } catch {
+        decodedXml = compressedBuffer.toString("utf8");
+      }
 
       const chave = decodedXml.match(/<chNFe>(\d{44})<\/chNFe>/)?.[1] || "";
-      const cnpjEmitente = decodedXml.match(/<CNPJCPF>(\d{14})<\/CNPJCPF>/)?.[1] || "";
+      const cnpjEmitente = decodedXml.match(/<CNPJCPF>(\d{14})<\/CNPJCPF>/)?.[1] || decodedXml.match(/<CNPJ>(\d{14})<\/CNPJ>/)?.[1] || "";
       const xNome = decodedXml.match(/<xNome>([^<]+)<\/xNome>/)?.[1] || "";
       const vNF = decodedXml.match(/<vNF>([^<]+)<\/vNF>/)?.[1] || "0";
       const dhEmi = decodedXml.match(/<dhEmi>([^<]+)<\/dhEmi>/)?.[1] || "";
@@ -927,7 +934,16 @@ export async function consultarPorChave(
   }
 
   const base64Content = docZipMatch[1].trim();
-  const decodedXml = Buffer.from(base64Content, "base64").toString("utf8");
+  const compressedBuffer = Buffer.from(base64Content, "base64");
+  let decodedXml: string;
+  try {
+    const { gunzipSync } = await import("zlib");
+    decodedXml = gunzipSync(compressedBuffer).toString("utf8");
+  } catch {
+    decodedXml = compressedBuffer.toString("utf8");
+  }
+
+  console.log("[sefaz] consultarPorChave decodedXml (first 500):", decodedXml.slice(0, 500));
 
   const emitCNPJ = decodedXml.match(/<emit>[\s\S]*?<CNPJ>(\d{14})<\/CNPJ>[\s\S]*?<\/emit>/)?.[1] || "";
   const emitXNome = decodedXml.match(/<emit>[\s\S]*?<xNome>([^<]+)<\/xNome>[\s\S]*?<\/emit>/)?.[1] || "";
