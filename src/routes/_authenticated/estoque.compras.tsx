@@ -168,6 +168,12 @@ function Compras() {
     onSuccess: () => {
       toast.success("Ordem excluída");
       qc.invalidateQueries({ queryKey: ["ordens_compra"] });
+      qc.invalidateQueries({ queryKey: ["produtos"] });
+      qc.invalidateQueries({ queryKey: ["produtos-inventario"] });
+      qc.invalidateQueries({ queryKey: ["movs"] });
+      qc.invalidateQueries({ queryKey: ["produtos-select-mov"] });
+      qc.invalidateQueries({ queryKey: ["lancamentos"] });
+      qc.invalidateQueries({ queryKey: ["dashboard-stats"] });
     },
   });
 

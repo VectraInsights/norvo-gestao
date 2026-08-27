@@ -103,7 +103,6 @@ function CadastrosPage() {
   });
 
   const pais = (categorias ?? []).filter((c) => !c.parent_id);
-  const nomePai = (id: string | null) => pais.find((p) => p.id === id)?.nome ?? "—";
   const [catTipoTab, setCatTipoTab] = useState<"pagar" | "receber">("pagar");
   const categoriasFiltradas = (categorias ?? []).filter((c) => c.tipo === catTipoTab);
 
@@ -212,7 +211,6 @@ function CadastrosPage() {
                   <TableRow>
                     <TableHead>Nome</TableHead>
                     <TableHead>Tipo</TableHead>
-                    <TableHead>Categoria pai</TableHead>
                     <TableHead />
                   </TableRow>
                 </TableHeader>
@@ -225,7 +223,6 @@ function CadastrosPage() {
                           {c.tipo === "receber" ? "Receita" : "Despesa"}
                         </Badge>
                       </TableCell>
-                      <TableCell className="text-muted-foreground">{c.parent_id ? nomePai(c.parent_id) : "—"}</TableCell>
                       <TableCell className="text-right">
                         <Button variant="ghost" size="icon" aria-label="Editar"
                           onClick={() => { setCatForm({ id: c.id, nome: c.nome, tipo: c.tipo, parent_id: c.parent_id ?? "none" }); setCatOpen(true); }}>

@@ -70,22 +70,31 @@ function Fornecedores() {
     if (digits.length !== 14) return toast.error("CNPJ deve ter 14 dígitos");
     setLookingUp(true);
     try {
-      const res = await fetch(`https://brasilapi.com.br/api/cnpj/v1/${digits}`);
-      if (!res.ok) throw new Error("CNPJ não encontrado");
-      const d = await res.json();
+      let d: any = null;
+      // Tenta BrasilAPI primeiro, depois ReceitaWS como fallback
+      for (const url of [
+        `https://brasilapi.com.br/api/cnpj/v1/${digits}`,
+        `https://receitaws.com.br/v1/cnpj/${digits}`,
+      ]) {
+        try {
+          const res = await fetch(url, { signal: AbortSignal.timeout(8000) });
+          if (res.ok) { d = await res.json(); break; }
+        } catch { /* tenta próxima */ }
+      }
+      if (!d) throw new Error("CNPJ não encontrado nas APIs públicas");
       setForm((f) => ({
         ...f,
         documento: digits,
-        nome: d.razao_social || d.nome_fantasia || f.nome,
+        nome: d.razao_social || d.nome || d.nome_fantasia || f.nome,
         email: d.email ?? f.email,
-        telefone: d.ddd_telefone_1 ?? f.telefone,
+        telefone: d.ddd_telefone_1 || d.telefone || f.telefone,
         cep: d.cep ?? f.cep,
         logradouro: d.logradouro ?? f.logradouro,
         numero: d.numero ?? f.numero,
         complemento: d.complemento ?? f.complemento,
         bairro: d.bairro ?? f.bairro,
-        cidade: d.municipio ?? f.cidade,
-        uf: d.uf ?? f.uf,
+        cidade: d.municipio || d.city || f.cidade,
+        uf: d.uf || d.state || f.uf,
       }));
       toast.success("Dados preenchidos a partir da Receita");
     } catch (err) {
@@ -243,7 +252,8 @@ function Fornecedores() {
             <div>
               <Label>CNPJ</Label>
               <div className="flex gap-2">
-                <Input value={form.documento} onChange={(e) => setForm({ ...form, documento: e.target.value })} />
+                <Input value={form.documento} onChange={(e) => setForm({ ...form, documento: e.target.value })}
+                  onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); lookupCnpj(); } }} />
                 <Button type="button" variant="outline" onClick={lookupCnpj} disabled={lookingUp || !form.documento}>
                   {lookingUp ? <Loader2 className="h-4 w-4 animate-spin" /> : <Search className="h-4 w-4" />}
                 </Button>

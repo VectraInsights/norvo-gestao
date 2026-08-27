@@ -109,6 +109,23 @@ function NotasRecebidas() {
       return [...new Set((data ?? []).map((p: any) => p.categoria).filter(Boolean))].sort() as string[];
     },
   });
+
+  // Categorias financeiras (pagar) para Select no modal
+  const { data: catsFinanceiras = [] } = useQuery({
+    enabled: !!empresa,
+    queryKey: ["categorias-financeiras-pagar", empresa?.id],
+    queryFn: async ({ signal }) => {
+      const { data, error } = await supabase
+        .from("categorias_financeiras")
+        .select("id, nome")
+        .eq("empresa_id", empresa!.id)
+        .eq("tipo", "pagar")
+        .order("nome")
+        .abortSignal(signal);
+      if (error) throw error;
+      return (data ?? []) as { id: string; nome: string }[];
+    },
+  });
   
   // Notas Recebidas State
   const [notas, setNotas] = useState<NotaRecebida[]>(INITIAL_RECEBIDAS);
@@ -946,7 +963,7 @@ ${transportadora ? `<div class="section"><div class="section-title">TRANSPORTE</
     <>
       <PageHeader 
         eyebrow="Gestão Fiscal" 
-        title="Notas de Compra" 
+        title="Notas Recebidas" 
         description="Consulte notas fiscais emitidas contra seu CNPJ e importe XMLs para o estoque e financeiro." 
         actions={
           <div className="flex items-center gap-2">
@@ -959,7 +976,7 @@ ${transportadora ? `<div class="section"><div class="section-title">TRANSPORTE</
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
         <TabsList className="bg-muted/80 p-1 w-full max-w-[400px]">
-          <TabsTrigger value="manifesto" className="flex-1 text-xs sm:text-sm">Notas de Compra</TabsTrigger>
+          <TabsTrigger value="manifesto" className="flex-1 text-xs sm:text-sm">Notas Recebidas</TabsTrigger>
           <TabsTrigger value="xml" className="flex-1 text-xs sm:text-sm">Importação de XML</TabsTrigger>
         </TabsList>
 
@@ -1405,27 +1422,29 @@ ${transportadora ? `<div class="section"><div class="section-title">TRANSPORTE</
                             <TableCell className="text-right text-xs">{brl(p.valorUnit)}</TableCell>
                             <TableCell className="text-right text-xs font-medium">{brl(p.valorTotal)}</TableCell>
                             <TableCell>
-                              <Input
-                                className="h-7 text-xs"
-                                placeholder="Categoria"
-                                value={p.categoria}
-                                onChange={(e) => {
+                              <Select
+                                value={p.categoria || "__none__"}
+                                onValueChange={(v) => {
                                   const novas = [...notaDetalhe.produtos];
-                                  novas[i] = { ...novas[i], categoria: e.target.value };
+                                  novas[i] = { ...novas[i], categoria: v === "__none__" ? "" : v };
                                   setNotaDetalhe({ ...notaDetalhe, produtos: novas });
                                 }}
-                                list="cat-modal"
-                              />
+                              >
+                                <SelectTrigger className="h-7 text-xs">
+                                  <SelectValue placeholder="Selecione" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  <SelectItem value="__none__">Sem categoria</SelectItem>
+                                  {catsFinanceiras.map((c) => (
+                                    <SelectItem key={c.id} value={c.nome}>{c.nome}</SelectItem>
+                                  ))}
+                                </SelectContent>
+                              </Select>
                             </TableCell>
                           </TableRow>
                         ))}
                       </TableBody>
                     </Table>
-                    <datalist id="cat-modal">
-                      {categoriasExistentes.map((c) => (
-                        <option key={c} value={c} />
-                      ))}
-                    </datalist>
                   </div>
                 </div>
               )}

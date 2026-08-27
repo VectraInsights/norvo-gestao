@@ -195,6 +195,8 @@ function Produtos() {
       setDeleting(null);
       qc.invalidateQueries({ queryKey: ["produtos"] });
       qc.invalidateQueries({ queryKey: ["produtos-select-mov"] });
+      qc.invalidateQueries({ queryKey: ["produtos-inventario"] });
+      qc.invalidateQueries({ queryKey: ["movs"] });
       qc.invalidateQueries({ queryKey: ["dashboard-stats"] });
     },
     onError: (e: Error) => toast.error(e.message),
@@ -296,7 +298,7 @@ function Produtos() {
                       onValueChange={(v) => setForm({ ...form, categoria: v === "__none__" ? "" : v })}
                     >
                       <SelectTrigger className="w-full">
-                        <SelectValue placeholder="Selecione ou digite abaixo" />
+                        <SelectValue placeholder="Selecione uma categoria" />
                       </SelectTrigger>
                       <SelectContent>
                         <SelectItem value="__none__">Sem categoria</SelectItem>
@@ -305,12 +307,6 @@ function Produtos() {
                         ))}
                       </SelectContent>
                     </Select>
-                    <Input
-                      className="mt-1.5"
-                      placeholder="Ou digite uma nova categoria"
-                      value={form.categoria}
-                      onChange={(e) => setForm({ ...form, categoria: e.target.value })}
-                    />
                   </div>
                   <div className="grid grid-cols-3 gap-3">
                     <div>

@@ -64,22 +64,30 @@ function Clientes() {
         toast.error(`Já cadastrado: ${existente.nome}`);
         return;
       }
-      const res = await fetch(`https://brasilapi.com.br/api/cnpj/v1/${digits}`);
-      if (!res.ok) throw new Error("CNPJ não encontrado");
-      const d = await res.json();
+      let d: any = null;
+      for (const url of [
+        `https://brasilapi.com.br/api/cnpj/v1/${digits}`,
+        `https://receitaws.com.br/v1/cnpj/${digits}`,
+      ]) {
+        try {
+          const res = await fetch(url, { signal: AbortSignal.timeout(8000) });
+          if (res.ok) { d = await res.json(); break; }
+        } catch { /* tenta próxima */ }
+      }
+      if (!d) throw new Error("CNPJ não encontrado nas APIs públicas");
       setForm((f) => ({
         ...f,
         documento: digits,
-        nome: d.razao_social || d.nome_fantasia || f.nome,
+        nome: d.razao_social || d.nome || d.nome_fantasia || f.nome,
         email: d.email ?? f.email,
-        telefone: d.ddd_telefone_1 ?? f.telefone,
+        telefone: d.ddd_telefone_1 || d.telefone || f.telefone,
         cep: d.cep ?? f.cep,
         logradouro: d.logradouro ?? f.logradouro,
         numero: d.numero ?? f.numero,
         complemento: d.complemento ?? f.complemento,
         bairro: d.bairro ?? f.bairro,
-        cidade: d.municipio ?? f.cidade,
-        uf: d.uf ?? f.uf,
+        cidade: d.municipio || d.city || f.cidade,
+        uf: d.uf || d.state || f.uf,
       }));
       toast.success("Dados preenchidos a partir da Receita");
     } catch (err) {
