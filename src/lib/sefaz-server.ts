@@ -78,13 +78,19 @@ export const consultarNFeDestinatarioFn = createServerFn({ method: "POST" })
     }
 
     // Marcar timestamp antes da consulta
-    await supabase.from("nfe_config").update({ last_query_at: new Date().toISOString() }).eq("empresa_id", data.empresaId);
+    const now = new Date().toISOString();
+    await supabase.from("nfe_config").update({ last_query_at: now }).eq("empresa_id", data.empresaId);
 
     const result = await consultarDestinatario(cert.pfx, cert.senha, cert.cnpj, cert.uf, ambiente, startNsu);
 
     // Salvar maxNSU para próxima consulta
     if (result.maxNsuObtido) {
       await supabase.from("nfe_config").update({ last_nsu: result.maxNsuObtido }).eq("empresa_id", data.empresaId);
+    }
+
+    // Se cStat 656, incluir last_query_at para o front calcular retry
+    if (result.debug?.cStat === "656") {
+      (result as Record<string, unknown>).lastQueryAt = now;
     }
 
     return result;

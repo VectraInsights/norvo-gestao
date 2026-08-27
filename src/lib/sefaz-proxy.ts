@@ -144,12 +144,17 @@ export async function handleSefazProxy(request: Request): Promise<Response> {
     switch (action) {
       case "consultar":
         // Marcar timestamp ANTES da consulta (para cooldown)
-        await supabase.from("nfe_config").update({ last_query_at: new Date().toISOString() }).eq("empresa_id", empresaId);
+        const now = new Date().toISOString();
+        await supabase.from("nfe_config").update({ last_query_at: now }).eq("empresa_id", empresaId);
         result = await consultarDestinatario(pfxBytes, senha, cnpj, uf, ambiente, startNsu);
         // Salvar maxNSU para próxima consulta
-        const r = result as { maxNsuObtido?: string };
+        const r = result as { maxNsuObtido?: string; debug?: { cStat?: string } };
         if (r.maxNsuObtido) {
           await supabase.from("nfe_config").update({ last_nsu: r.maxNsuObtido }).eq("empresa_id", empresaId);
+        }
+        // Se cStat 656, incluir last_query_at no retorno para o front calcular retry
+        if (r.debug?.cStat === "656") {
+          (r as Record<string, unknown>).lastQueryAt = now;
         }
         break;
       case "manifestar":
