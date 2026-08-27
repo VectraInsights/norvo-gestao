@@ -142,21 +142,32 @@ export async function handleSefazProxy(request: Request): Promise<Response> {
     let result: unknown;
 
     switch (action) {
-      case "consultar":
-        // Marcar timestamp ANTES da consulta (para cooldown)
-        const now = new Date().toISOString();
-        await supabase.from("nfe_config").update({ last_query_at: now }).eq("empresa_id", empresaId);
+      case "consultar": {
+        // Buscar last_query_at atual ANTES de consultar (para não resetar timer em caso de erro)
+        const { data: configAntes } = await supabase
+          .from("nfe_config")
+          .select("last_query_at")
+          .eq("empresa_id", empresaId)
+          .maybeSingle();
+        const lastQueryAntes = configAntes?.last_query_at;
+
         result = await consultarDestinatario(pfxBytes, senha, cnpj, uf, ambiente, startNsu);
-        // Salvar maxNSU para próxima consulta
         const r = result as { maxNsuObtido?: string; debug?: { cStat?: string } };
-        if (r.maxNsuObtido) {
-          await supabase.from("nfe_config").update({ last_nsu: r.maxNsuObtido }).eq("empresa_id", empresaId);
-        }
-        // Se cStat 656, incluir last_query_at no retorno para o front calcular retry
-        if (r.debug?.cStat === "656") {
-          (r as Record<string, unknown>).lastQueryAt = now;
+
+        // Salvar last_query_at APENAS se cStat NÃO for 656 (sucesso ou outro erro)
+        // Se cStat 656, manter o timestamp anterior para o timer de 1h não reiniciar
+        if (r.debug?.cStat !== "656") {
+          const now = new Date().toISOString();
+          await supabase.from("nfe_config").update({ last_query_at: now }).eq("empresa_id", empresaId);
+          if (r.maxNsuObtido) {
+            await supabase.from("nfe_config").update({ last_nsu: r.maxNsuObtido }).eq("empresa_id", empresaId);
+          }
+        } else {
+          // cStat 656: incluir o last_query_at ORIGINAL no retorno para o front calcular retry
+          (r as Record<string, unknown>).lastQueryAt = lastQueryAntes;
         }
         break;
+      }
       case "manifestar":
         result = await enviarEventoManifestacao(
           pfxBytes, senha, body.chave, body.tipoEvento, cnpj, uf, ambiente, body.justificativa,
