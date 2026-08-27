@@ -7,9 +7,9 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { 
   FileDown, Search, CheckCircle2, AlertCircle, XCircle, 
-  UploadCloud, FileCode, Check, ArrowRight, RefreshCw, Archive
+  UploadCloud, FileCode, Check, ArrowRight, RefreshCw, Archive, Calendar
 } from "lucide-react";
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { toast } from "sonner";
 import { brl, dateBR } from "@/lib/format";
 
@@ -57,6 +57,7 @@ function NotasRecebidas() {
   // Notas Recebidas State
   const [notas, setNotas] = useState<NotaRecebida[]>(INITIAL_RECEBIDAS);
   const [search, setSearch] = useState("");
+  const [filtroMes, setFiltroMes] = useState<string>("todos");
   const [isRefreshing, setIsRefreshing] = useState(false);
 
   // Importação XML State
@@ -409,11 +410,23 @@ function NotasRecebidas() {
   };
 
   // Filtrar notas recebidas
-  const filteredNotas = notas.filter(n => 
-    n.emitente.toLowerCase().includes(search.toLowerCase()) || 
-    n.chave.includes(search) || 
-    n.cnpj.includes(search)
-  );
+  const mesesDisponiveis = useMemo(() => {
+    const meses = new Set<string>();
+    notas.forEach(n => {
+      if (n.data_emissao) {
+        meses.add(n.data_emissao.slice(0, 7)); // "YYYY-MM"
+      }
+    });
+    return Array.from(meses).sort().reverse();
+  }, [notas]);
+
+  const filteredNotas = notas.filter(n => {
+    const matchSearch = n.emitente.toLowerCase().includes(search.toLowerCase()) || 
+      n.chave.includes(search) || 
+      n.cnpj.includes(search);
+    const matchMes = filtroMes === "todos" || (n.data_emissao || "").startsWith(filtroMes);
+    return matchSearch && matchMes;
+  });
 
   return (
     <>
@@ -438,14 +451,28 @@ function NotasRecebidas() {
 
         <TabsContent value="manifesto" className="space-y-4">
           <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-            <div className="relative flex-1 max-w-md">
-              <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-              <Input
-                placeholder="Buscar por emitente, CNPJ ou chave..."
-                className="pl-9 h-9"
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-              />
+            <div className="flex flex-1 gap-2 max-w-md">
+              <div className="relative flex-1">
+                <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+                <Input
+                  placeholder="Buscar por emitente, CNPJ ou chave..."
+                  className="pl-9 h-9"
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+                />
+              </div>
+              <select
+                value={filtroMes}
+                onChange={(e) => setFiltroMes(e.target.value)}
+                className="h-9 rounded-md border border-input bg-background px-3 text-sm"
+              >
+                <option value="todos">Todos os meses</option>
+                {mesesDisponiveis.map(m => {
+                  const [ano, mes] = m.split("-");
+                  const nomesMes = ["Jan","Fev","Mar","Abr","Mai","Jun","Jul","Ago","Set","Out","Nov","Dez"];
+                  return <option key={m} value={m}>{nomesMes[parseInt(mes)-1]}/{ano}</option>;
+                })}
+              </select>
             </div>
             
             <Button 
