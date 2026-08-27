@@ -9,7 +9,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
-import { Loader2, Plus, Search, Trash2, Users } from "lucide-react";
+import { Loader2, Plus, Search, Trash2, Users, Pencil } from "lucide-react";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
@@ -47,6 +47,8 @@ function Clientes() {
   const [form, setForm] = useState(emptyForm);
   const [lookingUp, setLookingUp] = useState(false);
   const [selected, setSelected] = useState<Set<string>>(new Set());
+  const [editing, setEditing] = useState<Contato | null>(null);
+  const [deleting, setDeleting] = useState<Contato | null>(null);
   const toggleOne = (id: string) => setSelected((s) => { const n = new Set(s); n.has(id) ? n.delete(id) : n.add(id); return n; });
 
   const lookupCnpj = async () => {
@@ -149,6 +151,49 @@ function Clientes() {
     onError: (e: Error) => toast.error(e.message),
   });
 
+  const editar = useMutation({
+    mutationFn: async (input: ReturnType<typeof emptyForm> & { id: string }) => {
+      if (!empresa) throw new Error("Empresa não selecionada");
+      if (!input.isCliente && !input.isFornecedor) {
+        throw new Error("Selecione ao menos um tipo: Cliente ou Fornecedor");
+      }
+      const tipo: TipoContato =
+        input.isCliente && input.isFornecedor ? "ambos"
+        : input.isCliente ? "cliente" : "fornecedor";
+
+      const doc = onlyDigits(input.documento);
+      if (doc) {
+        const { data: existente, error: errBusca } = await supabase.from("contatos")
+          .select("id,nome").eq("empresa_id", empresa.id).eq("documento", doc).neq("id", input.id).maybeSingle();
+        if (errBusca) throw errBusca;
+        if (existente) throw new Error(`Já existe outro contato com este CPF/CNPJ: ${existente.nome}`);
+      }
+
+      const { error } = await supabase.from("contatos").update({
+        nome: input.nome,
+        tipo,
+        documento: doc || null,
+        email: input.email || null,
+        telefone: input.telefone || null,
+        cep: input.cep || null,
+        logradouro: input.logradouro || null,
+        numero: input.numero || null,
+        complemento: input.complemento || null,
+        bairro: input.bairro || null,
+        cidade: input.cidade || null,
+        uf: input.uf || null,
+        observacoes: input.observacoes || null,
+      }).eq("id", input.id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      toast.success("Contato atualizado");
+      setOpen(false); setEditing(null); setForm(emptyForm());
+      qc.invalidateQueries({ queryKey: ["contatos"] });
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
   const excluir = useMutation({
     mutationFn: async (ids: string[]) => {
       if (!ids.length) return;
@@ -164,6 +209,27 @@ function Clientes() {
     onError: (e: Error) => toast.error(e.message),
   });
 
+  const openEdit = (c: Contato) => {
+    setEditing(c);
+    setForm({
+      nome: c.nome,
+      documento: c.documento ?? "",
+      email: c.email ?? "",
+      telefone: c.telefone ?? "",
+      cep: "", logradouro: "", numero: "", complemento: "",
+      bairro: "", cidade: "", uf: "", observacoes: "",
+      isCliente: c.tipo === "cliente" || c.tipo === "ambos",
+      isFornecedor: c.tipo === "fornecedor" || c.tipo === "ambos",
+    });
+    setOpen(true);
+  };
+
+  const openCreate = () => {
+    setEditing(null);
+    setForm(emptyForm());
+    setOpen(true);
+  };
+
   return (
     <>
       <PageHeader eyebrow="Vendas & CRM" title="Clientes e fornecedores" description="Cadastro unificado de contatos."
@@ -172,11 +238,11 @@ function Clientes() {
             <Button variant="outline" size="sm">
               Adicionar trilha de auditoria
             </Button>
-            <Dialog open={open} onOpenChange={(v) => { if (!criar.isPending) setOpen(v); }}>
-              <DialogTrigger asChild><Button><Plus className="mr-1 h-4 w-4" />Novo contato</Button></DialogTrigger>
+            <Dialog open={open} onOpenChange={(v) => { if (!criar.isPending && !editar.isPending) { setOpen(v); if (!v) { setEditing(null); setForm(emptyForm()); } } }}>
+              <DialogTrigger asChild><Button onClick={openCreate}><Plus className="mr-1 h-4 w-4" />Novo contato</Button></DialogTrigger>
               <DialogContent className="max-h-[90vh] overflow-y-auto">
-              <DialogHeader><DialogTitle>Novo contato</DialogTitle></DialogHeader>
-              <form onSubmit={(e) => { e.preventDefault(); criar.mutate(form); }} className="space-y-3">
+              <DialogHeader><DialogTitle>{editing ? "Editar contato" : "Novo contato"}</DialogTitle></DialogHeader>
+              <form onSubmit={(e) => { e.preventDefault(); if (editing) { editar.mutate({ ...form, id: editing.id }); } else { criar.mutate(form); } }} className="space-y-3">
                 <div>
                   <Label>CPF/CNPJ</Label>
                   <div className="flex gap-2">
@@ -224,8 +290,8 @@ function Clientes() {
                   <Textarea rows={3} value={form.observacoes} onChange={(e) => setForm({ ...form, observacoes: e.target.value })} />
                 </div>
                 <DialogFooter>
-                  <Button type="submit" disabled={criar.isPending || (!form.isCliente && !form.isFornecedor)}>
-                    {criar.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}Salvar
+                  <Button type="submit" disabled={criar.isPending || editar.isPending || (!form.isCliente && !form.isFornecedor)}>
+                    {(criar.isPending || editar.isPending) && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}Salvar
                   </Button>
                 </DialogFooter>
               </form>
@@ -274,7 +340,7 @@ function Clientes() {
                     aria-label="Selecionar todos"
                   />
                 </TableHead>
-                <TableHead>Nome</TableHead><TableHead>Tipo</TableHead><TableHead>Documento</TableHead><TableHead>Contato</TableHead>
+                <TableHead>Nome</TableHead><TableHead>Tipo</TableHead><TableHead>Documento</TableHead><TableHead>Contato</TableHead><TableHead className="w-20" />
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -287,12 +353,42 @@ function Clientes() {
                   <TableCell className="capitalize text-muted-foreground">{c.tipo}</TableCell>
                   <TableCell className="text-tabular">{c.documento ?? "—"}</TableCell>
                   <TableCell className="text-muted-foreground">{c.email ?? c.telefone ?? "—"}</TableCell>
+                  <TableCell className="text-right">
+                    <div className="flex items-center justify-end gap-1">
+                      <Button size="sm" variant="ghost" className="h-7 w-7 p-0" onClick={() => openEdit(c)}>
+                        <Pencil className="h-3.5 w-3.5" />
+                      </Button>
+                      <Button size="sm" variant="ghost" className="h-7 w-7 p-0 text-destructive hover:bg-destructive/10" onClick={() => setDeleting(c)}>
+                        <Trash2 className="h-3.5 w-3.5" />
+                      </Button>
+                    </div>
+                  </TableCell>
                 </TableRow>
               ))}
             </TableBody>
           </Table>
         </Card>
       )}
+
+      <AlertDialog open={!!deleting} onOpenChange={(v) => { if (!v) setDeleting(null); }}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Excluir contato</AlertDialogTitle>
+            <AlertDialogDescription>
+              Tem certeza que deseja excluir <strong>{deleting?.nome}</strong>? Esta ação não pode ser desfeita.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              onClick={() => deleting && excluir.mutate([deleting.id])}
+            >
+              Excluir
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </>
   );
 }
