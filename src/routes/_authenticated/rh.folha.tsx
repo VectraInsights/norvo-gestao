@@ -217,19 +217,26 @@ function FolhaPage() {
       if (!f) throw new Error("Lançamento não encontrado");
       if (!empresa?.id) throw new Error("Empresa não selecionada");
 
-      // Buscar/criar categoria "Salário"
+      // Buscar/criar categoria "Salário" (ilike estava com %sal%C3%A1rio% url-encoded e nunca casava)
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const { data: cats } = await (supabase.from("categorias_financeiras") as any)
         .select("id").eq("empresa_id", empresa.id)
-        .eq("tipo", "pagar").ilike("nome", "%sal%C3%A1rio%").limit(1);
+        .eq("tipo", "pagar").ilike("nome", "%Salário%").limit(1);
       let catId: string | null = cats?.[0]?.id ?? null;
       if (!catId) {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const { data: nc, error: eCat } = await (supabase.from("categorias_financeiras") as any)
           .insert({ empresa_id: empresa.id, nome: "Salário", tipo: "pagar" })
           .select("id").single();
-        if (eCat) throw eCat;
-        catId = nc.id;
+        if (eCat) {
+          // Se já existe (race / duplicata), tenta buscar novamente
+          if ((eCat as any).code === "23505") {
+            const { data: retry } = await (supabase.from("categorias_financeiras") as any)
+              .select("id").eq("empresa_id", empresa.id).eq("tipo", "pagar").ilike("nome", "%Salário%").limit(1);
+            if (retry?.[0]?.id) catId = retry[0].id;
+            else throw new Error("Já existe uma categoria com esse nome");
+          } else throw eCat;
+        } else catId = nc.id;
       }
 
       const hoje = new Date().toISOString().slice(0, 10);
@@ -286,14 +293,20 @@ function FolhaPage() {
 
       const { data: cats } = await (supabase.from("categorias_financeiras") as any)
         .select("id").eq("empresa_id", empresa.id)
-        .eq("tipo", "pagar").ilike("nome", "%sal%C3%A1rio%").limit(1);
+        .eq("tipo", "pagar").ilike("nome", "%Salário%").limit(1);
       let catId: string | null = cats?.[0]?.id ?? null;
       if (!catId) {
         const { data: nc, error: eCat } = await (supabase.from("categorias_financeiras") as any)
           .insert({ empresa_id: empresa.id, nome: "Salário", tipo: "pagar" })
           .select("id").single();
-        if (eCat) throw eCat;
-        catId = nc.id;
+        if (eCat) {
+          if ((eCat as any).code === "23505") {
+            const { data: retry } = await (supabase.from("categorias_financeiras") as any)
+              .select("id").eq("empresa_id", empresa.id).eq("tipo", "pagar").ilike("nome", "%Salário%").limit(1);
+            if (retry?.[0]?.id) catId = retry[0].id;
+            else throw new Error("Já existe uma categoria com esse nome");
+          } else throw eCat;
+        } else catId = nc.id;
       }
 
       const hoje = new Date().toISOString().slice(0, 10);

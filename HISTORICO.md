@@ -409,6 +409,40 @@ certificado tem estrutura PKCS12 não padrão ou se `extractPkcs12Native` precis
     44 dígitos. Consulta SEFAZ, retorna dados da nota e adiciona à lista. Server function
     `consultarNFePorChaveFn` + proxy handler `consultarChave`. Commit: `c996d9e`.
 
+29. **Fiscal — Notas Recebidas → Notas de Compra + correções de importação** (commits `5fbf1ce`, `e9f9cb3`, `ee6a98a`):
+    - Rename: `nav-config`/`breadcrumbs`/`command-palette`/`fiscal.relatorios`/`fiscal.contador` de
+      "Notas Recebidas" para **"Notas de Compra"** (revertido 1x por engano, voltado ao final).
+    - Fix exclusão de nota: cascade delete trocou ordem — parcelas são excluídas ANTES dos
+      `lancamentos_financeiros` para não violar FK `notas_importadas_parcelas.lancamento_id`
+      (`fiscal.recebidas.tsx`).
+    - Categoria obrigatória no import XML: `Input` + `datalist` (vazio quando sem produtos
+      categorizados) trocado por `Select` alimentado por `categorias_financeiras` (tipo pagar)
+      tanto no card `importResults` quanto no modal `notaDetalhe`. Validação `semCategoria` mantida.
+    - Financeiro programado: `handleConfirmarXmlUpload` agora parseia `cobr/dup` do XML (`parseParcelasDoXml`
+      inline), estende `ParsedXMLResult` com `parcelas`, exibe lista de parcelas no card (nDup/dVenc/vDup)
+      e na confirmação cria 1 lançamento por parcela (com `lancamento_id` linkado em `notas_importadas_parcelas`);
+      fallback cria 1 título 30d se XML sem dup. Antes criava 1 título fixo 30d ignorando o XML.
+    - Fix crash "Algo saiu do trilho": import `Select` faltava em `fiscal.recebidas.tsx` (Vite buildou,
+      runtime quebrou). Adicionado `Select, SelectContent, SelectItem, SelectTrigger, SelectValue`.
+
+30. **Deduplicação de categorias financeiras + Categoria pai removida** (commit `dedup` + este):
+    - Bug raiz: `rh.folha.tsx` buscava categoria Salário com `ilike "%sal%C3%A1rio%"` (URL-encoded)
+      que nunca casava no Postgres, então cada lançamento de folha fazia `INSERT "Salário"`,
+      gerando 8 duplicatas idênticas (screenshot). Sem constraint no banco, duplicava livremente.
+      Outras duplicatas: `Fornecedores` (2 empresas).
+    - Correção no código: `ilike "%Salário%"` + tratamento `23505` (unique violation) com retry
+      select; `financeiro.cadastros.tsx` validação de duplicata passou a considerar `tipo`
+      (`norm(c.nome) + c.tipo`) e também trata `23505` do banco.
+    - Banco: função `public.immutable_unaccent(text)` (wrapper IMMUTABLE do `unaccent`) +
+      índices únicos `uq_categorias_empresa_tipo_nome_unaccent` e `uq_categorias_empresa_tipo_nome_lower`
+      em `(empresa_id, tipo, lower(...trim(nome)))` — bloqueia duplicata case/acento-insensível
+      dentro do mesmo tipo. Deduplicação via `UPDATE lancamentos/parent_id + DELETE` já executada
+      em produção (8 Salário → 1, Fornecedores duplicados removidos).
+    - Migration `20260828000000_dedup_categorias_financeiras.sql` espelha o fix para novos ambientes.
+    - UI: campo **"Categoria pai"** removido do dialog de categoria (`financeiro.cadastros.tsx`);
+      a coluna já havia sido removida da tabela. Todas categorias agora são principais
+      (`parent_id = null`); hierarquia existente preservada no banco mas não editável na UI.
+
 ---
 
 ## Regras de segurança
