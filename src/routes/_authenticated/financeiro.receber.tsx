@@ -12,12 +12,15 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, Dialog
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { Loader2, Plus, TrendingUp, Trash2, Check, RotateCcw, Ban, ArrowUp, ArrowDown, ArrowUpDown, Search, X, Pencil } from "lucide-react";
 import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEmpresaAtual } from "@/hooks/use-empresa";
 import { toast } from "sonner";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
+import { useNavigate } from "@tanstack/react-router";
 import { format } from "date-fns";
 import { LancamentosToolbar } from "@/components/erp/lancamentos-toolbar";
 import { PeriodoFilter, periodoProx7, type Periodo } from "@/components/erp/periodo-filter";
@@ -68,8 +71,10 @@ export function LancamentosPage({ tipo }: { tipo: "receber" | "pagar" }) {
   const { data: empresa } = useEmpresaAtual();
   const perfis = usePerfisMap(!!empresa);
   const qc = useQueryClient();
+  const navigate = useNavigate();
   const [open, setOpen] = useState(false);
   const [form, setForm] = useState(emptyForm);
+  const [lancamentoBloqueado, setLancamentoBloqueado] = useState<{ id: string; descricao: string } | null>(null);
 
   const listKey = ["lancamentos", empresa?.id, tipo] as const;
 
@@ -82,7 +87,7 @@ export function LancamentosPage({ tipo }: { tipo: "receber" | "pagar" }) {
         .select("id,descricao,valor,status,data_vencimento,created_at,created_by,contato:contatos(nome),categoria_id")
         .eq("empresa_id", empresa!.id)
         .eq("tipo", tipo)
-        .order("data_vencimento", { ascending: false })
+        .order("data_vencimento", { ascending: true })
         .limit(2000)
         .abortSignal(signal);
       if (error) throw error;
@@ -529,7 +534,10 @@ export function LancamentosPage({ tipo }: { tipo: "receber" | "pagar" }) {
                     </TableCell>
                     <TableCell className="font-medium">
                       <div>{l.descricao}</div>
-                      {l.categoria_id && <div className="text-xs text-muted-foreground font-normal mt-0.5">{categoriasOpt?.find(c => c.id === l.categoria_id)?.nome}</div>}
+                      {l.categoria_id && (() => {
+                        const cat = categoriasOpt?.find(c => c.id === l.categoria_id);
+                        return cat ? <Badge variant="outline" className="mt-0.5 text-[10px] font-normal border-muted-foreground/30 text-muted-foreground">{cat.nome}</Badge> : null;
+                      })()}
                     </TableCell>
                     <TableCell className="text-muted-foreground">{l.contato?.nome ?? "—"}</TableCell>
                     <TableCell className="text-tabular">{format(new Date(l.data_vencimento + "T00:00:00"), "dd/MM/yyyy")}</TableCell>
@@ -539,31 +547,77 @@ export function LancamentosPage({ tipo }: { tipo: "receber" | "pagar" }) {
                     </TableCell>
                     <TableCell className="text-right">
                       <div className="flex items-center justify-end gap-1">
-                        <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => abrirEdicao(l.id)}>
-                          <Pencil className="h-3.5 w-3.5" />
-                        </Button>
+                        <TooltipProvider>
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => abrirEdicao(l.id)}>
+                                <Pencil className="h-3.5 w-3.5" />
+                              </Button>
+                            </TooltipTrigger>
+                            <TooltipContent>Editar</TooltipContent>
+                          </Tooltip>
+                        </TooltipProvider>
                         {l.status !== "pago" && (
-                          <Button variant="ghost" size="icon" className="h-7 w-7" disabled={emAndamento}
-                            onClick={() => marcarPago.mutate({ id: l.id, valor: l.valor })}>
-                            <Check className="h-3.5 w-3.5" />
-                          </Button>
+                          <TooltipProvider>
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <Button variant="ghost" size="icon" className="h-7 w-7" disabled={emAndamento}
+                                  onClick={() => marcarPago.mutate({ id: l.id, valor: l.valor })}>
+                                  <Check className="h-3.5 w-3.5" />
+                                </Button>
+                              </TooltipTrigger>
+                              <TooltipContent>Marcar como pago</TooltipContent>
+                            </Tooltip>
+                          </TooltipProvider>
                         )}
                         {l.status !== "aberto" && (
-                          <Button variant="ghost" size="icon" className="h-7 w-7"
-                            onClick={() => alterarStatusLote.mutate({ ids: [l.id], status: "aberto" })}>
-                            <RotateCcw className="h-3.5 w-3.5" />
-                          </Button>
+                          <TooltipProvider>
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <Button variant="ghost" size="icon" className="h-7 w-7"
+                                  onClick={() => alterarStatusLote.mutate({ ids: [l.id], status: "aberto" })}>
+                                  <RotateCcw className="h-3.5 w-3.5" />
+                                </Button>
+                              </TooltipTrigger>
+                              <TooltipContent>Reabrir</TooltipContent>
+                            </Tooltip>
+                          </TooltipProvider>
                         )}
                         {l.status !== "cancelado" && (
-                          <Button variant="ghost" size="icon" className="h-7 w-7"
-                            onClick={() => alterarStatusLote.mutate({ ids: [l.id], status: "cancelado" })}>
-                            <Ban className="h-3.5 w-3.5" />
-                          </Button>
+                          <TooltipProvider>
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <Button variant="ghost" size="icon" className="h-7 w-7"
+                                  onClick={() => alterarStatusLote.mutate({ ids: [l.id], status: "cancelado" })}>
+                                  <Ban className="h-3.5 w-3.5" />
+                                </Button>
+                              </TooltipTrigger>
+                              <TooltipContent>Cancelar</TooltipContent>
+                            </Tooltip>
+                          </TooltipProvider>
                         )}
-                        <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive hover:text-destructive"
-                          onClick={() => { if (confirm('Excluir lançamento?\n\nSe estiver conciliado, a transação do extrato voltará para "em aberto" (não será apagada).')) excluirLote.mutate([l.id]); }}>
-                          <Trash2 className="h-3.5 w-3.5" />
-                        </Button>
+                        <TooltipProvider>
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive hover:text-destructive"
+                                onClick={async () => {
+                                  const { data: vinculada } = await supabase
+                                    .from("notas_importadas_parcelas" as never)
+                                    .select("id")
+                                    .eq("lancamento_id", l.id)
+                                    .maybeSingle();
+                                  if (vinculada) {
+                                    setLancamentoBloqueado({ id: l.id, descricao: l.descricao });
+                                    return;
+                                  }
+                                  if (confirm('Excluir lançamento?\n\nSe estiver conciliado, a transação do extrato voltará para "em aberto" (não será apagada).')) excluirLote.mutate([l.id]);
+                                }}>
+                                <Trash2 className="h-3.5 w-3.5" />
+                              </Button>
+                            </TooltipTrigger>
+                            <TooltipContent>Excluir</TooltipContent>
+                          </Tooltip>
+                        </TooltipProvider>
                       </div>
                     </TableCell>
                   </TableRow>
@@ -667,6 +721,27 @@ export function LancamentosPage({ tipo }: { tipo: "receber" | "pagar" }) {
           )}
         </DialogContent>
       </Dialog>
+
+      <AlertDialog open={!!lancamentoBloqueado} onOpenChange={(v) => { if (!v) setLancamentoBloqueado(null); }}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Lançamento vinculado a nota fiscal</AlertDialogTitle>
+            <AlertDialogDescription>
+              Não é possível excluir este lançamento diretamente por aqui, pois ele foi gerado automaticamente a partir de uma nota fiscal importada.
+              As alterações devem ser feitas em <strong>Fiscal → Notas de Compra</strong>.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction onClick={() => {
+              setLancamentoBloqueado(null);
+              navigate({ to: "/fiscal/recebidas" });
+            }}>
+              Ir para Notas de Compra
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </>
   );
 }
