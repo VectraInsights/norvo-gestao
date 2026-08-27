@@ -17,7 +17,7 @@ import { brl, dateBR } from "@/lib/format";
 import { supabase } from "@/integrations/supabase/client";
 import { useEmpresaAtual } from "@/hooks/use-empresa";
 import { useQueryClient } from "@tanstack/react-query";
-import { consultarNFeDestinatarioFn, manifestarNFeFn, consultarNFePorChaveFn } from "@/lib/sefaz-server";
+import { consultarNFePorChaveFn, manifestarNFeFn } from "@/lib/sefaz-server";
 
 export const Route = createFileRoute("/_authenticated/fiscal/recebidas")({
   component: NotasRecebidas,
@@ -59,7 +59,6 @@ function NotasRecebidas() {
   const [notas, setNotas] = useState<NotaRecebida[]>(INITIAL_RECEBIDAS);
   const [search, setSearch] = useState("");
   const [filtroMes, setFiltroMes] = useState<string>("todos");
-  const [isRefreshing, setIsRefreshing] = useState(false);
 
   // Importação XML State
   const [dragging, setDragging] = useState(false);
@@ -105,73 +104,6 @@ function NotasRecebidas() {
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : String(err);
       toast.error("Erro ao manifestar", { description: msg });
-    }
-  };
-
-  const handleSincronizarSefaz = async () => {
-    if (!empresa) return toast.error("Empresa não selecionada");
-    setIsRefreshing(true);
-    try {
-      const result = await consultarNFeDestinatarioFn({ data: { empresaId: empresa.id } });
-      if (result.cooldown) {
-        const now = new Date();
-        const fim = new Date(now.getTime() + (result.cooldownMinutos || 5) * 60000);
-        const horarioLiberacao = fim.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" });
-        toast.error("Aguarde antes de sincronizar", { description: `Disponível às ${horarioLiberacao} (${result.cooldownMinutos || 5} min restantes). A SEFAZ exige intervalo mínimo entre consultas.`, duration: 12000 });
-        return;
-      }
-      if (result.notas.length > 0) {
-        const novasNotas: NotaRecebida[] = result.notas.map(n => ({
-          chave: n.chave,
-          emitente: n.emitente || "Emitente via SEFAZ",
-          cnpj: n.cnpj || "",
-          valor: n.valor,
-          data_emissao: n.data,
-          manifesto: "pendente",
-          situacao_sefaz: "autorizada",
-        }));
-        setNotas(prev => {
-          const chavesExistentes = new Set(prev.map(n => n.chave));
-          const filtradas = novasNotas.filter(n => !chavesExistentes.has(n.chave));
-          return [...filtradas, ...prev];
-        });
-        const msgReset = result.resetouCursor ? " (cursor reiniciado automaticamente)" : "";
-        toast.success(`${result.notas.length} nota(s) encontrada(s) na SEFAZ!${msgReset}`);
-      } else {
-        const d = result.debug;
-        if (d && d.cStat === "656") {
-          const cooldownMin = 60;
-          const lastQuery = result.lastQueryAt ? new Date(result.lastQueryAt) : null;
-          if (lastQuery) {
-            const fim = new Date(lastQuery.getTime() + cooldownMin * 60000);
-            const horarioLiberacao = fim.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" });
-            const agora = new Date();
-            const minutosRestantes = Math.max(1, Math.ceil((fim.getTime() - agora.getTime()) / 60000));
-            toast.error("Consumo Indevido pela SEFAZ", {
-              description: `Tente novamente às ${horarioLiberacao} (${minutosRestantes} min restantes). Última consulta bem-sucedida: ${lastQuery.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}.`,
-              duration: 12000,
-            });
-          } else {
-            toast.error("Consumo Indevido pela SEFAZ", {
-              description: "Aguarde 1 hora e tente novamente.",
-              duration: 12000,
-            });
-          }
-        } else {
-          toast.success("Nenhuma nota encontrada na SEFAZ.", { description: "Verifique o ambiente (produção/homologação) nas Configurações Fiscais.", duration: 8000 });
-        }
-      }
-    } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : String(err);
-      if (msg.includes("Nenhum certificado")) {
-        toast.error("Nenhum certificado digital cadastrado", {
-          description: "Cadastre um certificado em Configurações > Certificado Digital antes de sincronizar com a SEFAZ.",
-        });
-      } else {
-        toast.error("Falha na consulta à SEFAZ", { description: msg });
-      }
-    } finally {
-      setIsRefreshing(false);
     }
   };
 
@@ -550,15 +482,6 @@ function NotasRecebidas() {
               </select>
             </div>
             
-            <Button 
-              variant="outline" 
-              onClick={handleSincronizarSefaz}
-              disabled={isRefreshing}
-              className="w-full sm:w-auto h-9"
-            >
-              <RefreshCw className={`mr-2 h-4 w-4 ${isRefreshing ? 'animate-spin' : ''}`} />
-              Sincronizar SEFAZ
-            </Button>
             <Button 
               variant="outline" 
               onClick={() => setChaveImportModal(true)}
