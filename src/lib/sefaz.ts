@@ -13,6 +13,7 @@
 import forge from "node-forge";
 import https from "node:https";
 import crypto from "node:crypto";
+import { gunzipSync } from "zlib";
 
 // OID constants for PKCS#12 bags
 const OID_PKCS8_SHROUDED_KEY_BAG = "1.2.840.113549.1.12.10.1.2";
@@ -566,7 +567,6 @@ function parseDistribuicaoResponse(response: string): {
       const compressedBuffer = Buffer.from(base64Content, "base64");
       let decodedXml: string;
       try {
-        const { gunzipSync } = await import("zlib");
         decodedXml = gunzipSync(compressedBuffer).toString("utf8");
       } catch {
         decodedXml = compressedBuffer.toString("utf8");
@@ -937,7 +937,6 @@ export async function consultarPorChave(
   const compressedBuffer = Buffer.from(base64Content, "base64");
   let decodedXml: string;
   try {
-    const { gunzipSync } = await import("zlib");
     decodedXml = gunzipSync(compressedBuffer).toString("utf8");
   } catch {
     decodedXml = compressedBuffer.toString("utf8");
