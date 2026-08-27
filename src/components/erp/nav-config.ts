@@ -122,7 +122,7 @@ const RAW_NAV: NavGroup[] = [
     icon: FileText,
     items: [
       { to: "/fiscal/emitidas", label: "Notas Emitidas", icon: FileOutput },
-      { to: "/fiscal/recebidas", label: "Notas Recebidas", icon: FileInput },
+      { to: "/fiscal/recebidas", label: "Notas de Compra", icon: FileInput },
       { to: "/fiscal/relatorios", label: "Relatórios e Dashboards", icon: BarChart3 },
       { to: "/fiscal/contador", label: "Painel do Contador", icon: Handshake },
       { to: "/fiscal/configuracoes", label: "Configurações Fiscais", icon: Settings2 },

@@ -45,6 +45,7 @@ interface ParsedXMLResult {
   nNF: string;
   total: number;
   produtos: { codigo: string; nome: string; qtd: number; un: string; valor: number; categoria: string }[];
+  parcelas: { numero: string; dataVencimento: string; valor: number }[];
 }
 
 interface SelectedFileItem {
@@ -411,13 +412,22 @@ function NotasRecebidas() {
 
       const totalCalculado = vNF || parsedProdutos.reduce((acc, p) => acc + (p.qtd * p.valor), 0);
 
+      // Parse parcelas do XML (cobr/dup)
+      const dupNodes = Array.from(doc.querySelectorAll("cobr > dup"));
+      const parsedParcelas = dupNodes.map((dup) => ({
+        numero: dup.querySelector("nDup")?.textContent || "",
+        dataVencimento: dup.querySelector("dVenc")?.textContent || "",
+        valor: parseFloat(dup.querySelector("vDup")?.textContent || "0"),
+      }));
+
       setImportResults({
         chave: parsedChave,
         emitente: parsedEmitente,
         cnpj,
         nNF,
         total: totalCalculado,
-        produtos: parsedProdutos
+        produtos: parsedProdutos,
+        parcelas: parsedParcelas,
       });
 
       setIsProcessing(false);
@@ -529,8 +539,42 @@ function NotasRecebidas() {
         });
       }
 
-      const vencimento = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split("T")[0];
-      // Buscar categoria financeira correspondente
+      // 5. Salvar nota no banco
+      const { data: notaSalva } = await supabase
+        .from("notas_importadas" as never)
+        .insert({
+          empresa_id: empresa.id,
+          chave_acesso: importResults.chave,
+          emitente: importResults.emitente,
+          cnpj_emitente: importResults.cnpj,
+          numero_nf: importResults.nNF,
+          data_emissao: new Date().toISOString().split("T")[0],
+          valor_total: importResults.total,
+          situacao: "lancada",
+          xml_completo: null,
+        } as any)
+        .select("id")
+        .single();
+
+      const notaId = (notaSalva as any)?.id;
+
+      // 6. Salvar itens no banco
+      if (notaId && importResults.produtos.length > 0) {
+        await supabase.from("notas_importadas_itens" as never).insert(
+          importResults.produtos.map(p => ({
+            nota_id: notaId,
+            codigo: p.codigo,
+            nome: p.nome,
+            quantidade: p.qtd,
+            unidade: p.un,
+            valor_unitario: p.valor,
+            valor_total: p.qtd * p.valor,
+            categoria: p.categoria || null,
+          })) as any
+        );
+      }
+
+      // 7. Buscar categoria financeira correspondente
       let categoriaFinanceiraId: string | null = null;
       const primeiraCategoria = importResults.produtos[0]?.categoria;
       if (primeiraCategoria) {
@@ -542,13 +586,65 @@ function NotasRecebidas() {
           .maybeSingle();
         if (cat) categoriaFinanceiraId = cat.id;
       }
-      await supabase.from("lancamentos_financeiros").insert({
-        empresa_id: empresa.id, tipo: "pagar", status: "aberto",
-        descricao: `Compra NF-e ${importResults.nNF} - ${importResults.emitente}`,
-        valor: importResults.total, data_vencimento: vencimento, contato_id: fornecedorId,
-        categoria_id: categoriaFinanceiraId,
-        observacoes: `Importação de XML (Chave ${importResults.chave})`
-      });
+
+      // 8. Lançar parcelas no contas a pagar
+      if (importResults.parcelas.length > 0) {
+        for (const parc of importResults.parcelas) {
+          const { data: lanc } = await supabase
+            .from("lancamentos_financeiros")
+            .insert({
+              empresa_id: empresa.id,
+              tipo: "pagar",
+              status: "aberto",
+              descricao: `NF-e ${importResults.nNF} ${importResults.emitente} (${parc.numero}/${importResults.parcelas.length})`,
+              valor: parc.valor,
+              data_vencimento: parc.dataVencimento,
+              contato_id: fornecedorId,
+              categoria_id: categoriaFinanceiraId,
+              observacoes: `Chave: ${importResults.chave} | Parcela ${parc.numero}`,
+            })
+            .select("id")
+            .single();
+
+          if (notaId && lanc) {
+            await supabase.from("notas_importadas_parcelas" as never).insert({
+              nota_id: notaId,
+              numero: parc.numero,
+              data_vencimento: parc.dataVencimento,
+              valor: parc.valor,
+              lancamento_id: lanc.id,
+            } as any);
+          }
+        }
+      } else {
+        // Sem parcelas no XML → criar 1 título com vencimento em 30 dias
+        const vencimento = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split("T")[0];
+        const { data: lanc } = await supabase
+          .from("lancamentos_financeiros")
+          .insert({
+            empresa_id: empresa.id,
+            tipo: "pagar",
+            status: "aberto",
+            descricao: `Compra NF-e ${importResults.nNF} - ${importResults.emitente}`,
+            valor: importResults.total,
+            data_vencimento: vencimento,
+            contato_id: fornecedorId,
+            categoria_id: categoriaFinanceiraId,
+            observacoes: `Chave: ${importResults.chave}`,
+          })
+          .select("id")
+          .single();
+
+        if (notaId && lanc) {
+          await supabase.from("notas_importadas_parcelas" as never).insert({
+            nota_id: notaId,
+            numero: "Única",
+            data_vencimento: vencimento,
+            valor: importResults.total,
+            lancamento_id: lanc.id,
+          } as any);
+        }
+      }
 
       const storageKey = `imported_xml_chaves_${empresa.id}`;
       const chavesJaImportadas: string[] = JSON.parse(localStorage.getItem(storageKey) || "[]");
@@ -566,7 +662,10 @@ function NotasRecebidas() {
       qc.invalidateQueries({ queryKey: ["lancamentos"] });
       qc.invalidateQueries({ queryKey: ["dashboard-stats"] });
 
-      toast.success(`Importação Concluída! ${importResults.produtos.length} produtos (${totalQtd} un.) e 1 conta a pagar de ${brl(importResults.total)} gerada.`);
+      const msgParcelas = importResults.parcelas.length > 0
+        ? ` e ${importResults.parcelas.length} parcela(s) no contas a pagar`
+        : " e 1 conta a pagar (venc. 30 dias)";
+      toast.success(`Importação Concluída! ${importResults.produtos.length} produtos (${totalQtd} un.)${msgParcelas}.`);
       setSelectedFiles([]);
       setImportResults(null);
     } catch (err: any) {
@@ -963,7 +1062,7 @@ ${transportadora ? `<div class="section"><div class="section-title">TRANSPORTE</
     <>
       <PageHeader 
         eyebrow="Gestão Fiscal" 
-        title="Notas Recebidas" 
+        title="Notas de Compra" 
         description="Consulte notas fiscais emitidas contra seu CNPJ e importe XMLs para o estoque e financeiro." 
         actions={
           <div className="flex items-center gap-2">
@@ -976,7 +1075,7 @@ ${transportadora ? `<div class="section"><div class="section-title">TRANSPORTE</
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
         <TabsList className="bg-muted/80 p-1 w-full max-w-[400px]">
-          <TabsTrigger value="manifesto" className="flex-1 text-xs sm:text-sm">Notas Recebidas</TabsTrigger>
+          <TabsTrigger value="manifesto" className="flex-1 text-xs sm:text-sm">Notas de Compra</TabsTrigger>
           <TabsTrigger value="xml" className="flex-1 text-xs sm:text-sm">Importação de XML</TabsTrigger>
         </TabsList>
 
@@ -1242,7 +1341,7 @@ ${transportadora ? `<div class="section"><div class="section-title">TRANSPORTE</
               </CardHeader>
               <CardContent className="p-6 space-y-6">
                 <div className="space-y-3">
-                  <h4 className="text-sm font-semibold text-foreground">os itens importados estão errados, não tem isso em nenhuma das notas</h4>
+                  <h4 className="text-sm font-semibold text-foreground">Produtos Importados</h4>
                   <div className="border rounded-md overflow-hidden bg-background/50">
                     <Table>
                       <TableHeader className="bg-muted/40">
@@ -1253,10 +1352,11 @@ ${transportadora ? `<div class="section"><div class="section-title">TRANSPORTE</
                           <TableHead className="text-center">UN</TableHead>
                           <TableHead className="text-right">Unitário</TableHead>
                           <TableHead className="text-right">Subtotal</TableHead>
+                          <TableHead className="w-[160px]">Categoria</TableHead>
                         </TableRow>
                       </TableHeader>
                       <TableBody>
-                        {importResults.produtos.map((p) => (
+                        {importResults.produtos.map((p, i) => (
                           <TableRow key={p.codigo} className="text-xs">
                             <TableCell className="font-mono text-muted-foreground">{p.codigo}</TableCell>
                             <TableCell className="font-medium text-foreground">{p.nome}</TableCell>
@@ -1264,6 +1364,26 @@ ${transportadora ? `<div class="section"><div class="section-title">TRANSPORTE</
                             <TableCell className="text-center">{p.un}</TableCell>
                             <TableCell className="text-right text-tabular">{brl(p.valor)}</TableCell>
                             <TableCell className="text-right text-tabular font-medium text-foreground">{brl(p.qtd * p.valor)}</TableCell>
+                            <TableCell>
+                              <Select
+                                value={p.categoria || "__none__"}
+                                onValueChange={(v) => {
+                                  const novas = [...importResults.produtos];
+                                  novas[i] = { ...novas[i], categoria: v === "__none__" ? "" : v };
+                                  setImportResults({ ...importResults, produtos: novas });
+                                }}
+                              >
+                                <SelectTrigger className="h-7 text-xs">
+                                  <SelectValue placeholder="Selecione" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  <SelectItem value="__none__">Sem categoria</SelectItem>
+                                  {catsFinanceiras.map((c) => (
+                                    <SelectItem key={c.id} value={c.nome}>{c.nome}</SelectItem>
+                                  ))}
+                                </SelectContent>
+                              </Select>
+                            </TableCell>
                           </TableRow>
                         ))}
                       </TableBody>
@@ -1286,9 +1406,26 @@ ${transportadora ? `<div class="section"><div class="section-title">TRANSPORTE</
                     <Archive className="h-5 w-5 text-sky-500 shrink-0" />
                     <div>
                       <h4 className="text-sm font-semibold text-foreground">Financeiro Programado</h4>
-                      <p className="text-xs text-muted-foreground mt-0.5">
-                        Será gerado 1 título a pagar para o fornecedor {importResults.emitente} no valor de {brl(importResults.total)} com vencimento em 30 dias.
-                      </p>
+                      {importResults.parcelas.length > 0 ? (
+                        <div className="mt-1 space-y-1">
+                          <p className="text-xs text-muted-foreground">
+                            {importResults.parcelas.length} parcela(s) serão geradas para {importResults.emitente}:
+                          </p>
+                          {importResults.parcelas.map((parc, i) => (
+                            <div key={i} className="flex justify-between text-xs">
+                              <span className="text-muted-foreground">{parc.numero} — {dateBR(parc.dataVencimento)}</span>
+                              <span className="font-medium text-tabular">{brl(parc.valor)}</span>
+                            </div>
+                          ))}
+                          <p className="text-xs text-muted-foreground pt-1 border-t">
+                            Total: <span className="font-medium">{brl(importResults.parcelas.reduce((acc, p) => acc + p.valor, 0))}</span>
+                          </p>
+                        </div>
+                      ) : (
+                        <p className="text-xs text-muted-foreground mt-0.5">
+                          Será gerado 1 título a pagar para o fornecedor {importResults.emitente} no valor de {brl(importResults.total)} com vencimento em 30 dias.
+                        </p>
+                      )}
                     </div>
                   </div>
                 </div>

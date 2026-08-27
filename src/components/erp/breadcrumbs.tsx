@@ -20,7 +20,7 @@ const LABELS: Record<string, string> = {
   fiscal: "Fiscal",
   notas: "Notas fiscais",
   emitidas: "Notas emitidas",
-  recebidas: "Notas recebidas",
+  recebidas: "Notas de compra",
   relatorios: "Relatórios fiscais",
   contador: "Painel do contador",
   configuracoes: "Configurações",

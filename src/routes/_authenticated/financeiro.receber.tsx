@@ -728,7 +728,7 @@ export function LancamentosPage({ tipo }: { tipo: "receber" | "pagar" }) {
             <AlertDialogTitle>Lançamento vinculado a nota fiscal</AlertDialogTitle>
             <AlertDialogDescription>
               Não é possível excluir este lançamento diretamente por aqui, pois ele foi gerado automaticamente a partir de uma nota fiscal importada.
-              As alterações devem ser feitas em <strong>Fiscal → Notas Recebidas</strong>.
+              As alterações devem ser feitas em <strong>Fiscal → Notas de Compra</strong>.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
@@ -737,7 +737,7 @@ export function LancamentosPage({ tipo }: { tipo: "receber" | "pagar" }) {
               setLancamentoBloqueado(null);
               navigate({ to: "/fiscal/recebidas" });
             }}>
-              Ir para Notas Recebidas
+              Ir para Notas de Compra
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

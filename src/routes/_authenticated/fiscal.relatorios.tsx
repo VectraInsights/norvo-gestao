@@ -140,7 +140,7 @@ function RelatoriosFiscais() {
         <PageHeader 
           eyebrow="Gestão Fiscal" 
           title="Relatórios e Dashboards" 
-          description="Análise detalhada de notas recebidas, fornecedores e resumo de operações." 
+          description="Análise detalhada de notas de compra, fornecedores e resumo de operações." 
         />
         <div className="flex items-center gap-2">
           <select
@@ -215,7 +215,7 @@ function RelatoriosFiscais() {
           <div className="mt-6 grid gap-6 md:grid-cols-3">
             <Card className="md:col-span-2 border-muted bg-card/60 backdrop-blur-sm shadow-panel">
               <CardHeader>
-                <CardTitle>Evolução de Notas Recebidas</CardTitle>
+                <CardTitle>Evolução de Notas de Compra</CardTitle>
                 <CardDescription>Valor total de notas recebidas nos últimos 6 meses.</CardDescription>
               </CardHeader>
               <CardContent>

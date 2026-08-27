@@ -24,7 +24,7 @@ const ROUTES: { label: string; to: string; hint?: string }[] = [
   { label: "Fornecedores", to: "/estoque/fornecedores" },
   { label: "Movimentações", to: "/estoque/movimentacoes" },
   { label: "Notas emitidas (NFS-e / NF-e / NFC-e)", to: "/fiscal/emitidas" },
-  { label: "Notas Recebidas (Entradas & XMLs)", to: "/fiscal/recebidas" },
+  { label: "Notas de compra (Entradas & XMLs)", to: "/fiscal/recebidas" },
   { label: "Relatórios fiscais", to: "/fiscal/relatorios" },
   { label: "Painel do contador / Exportação", to: "/fiscal/contador" },
   { label: "Configurações fiscais (Certificado & Alíquotas)", to: "/fiscal/configuracoes" },

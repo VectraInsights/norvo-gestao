@@ -246,7 +246,7 @@ function PainelContador() {
                     onCheckedChange={(checked) => setExportEntradas(!!checked)} 
                   />
                   <Label htmlFor="entradas" className="text-xs sm:text-sm font-medium leading-none cursor-pointer flex flex-col gap-1">
-                    <span>XMLs de Entrada (Notas Recebidas)</span>
+                    <span>XMLs de Entrada (Notas de Compra)</span>
                     <span className="text-xs font-normal text-muted-foreground">Documentos emitidos por fornecedores contra sua empresa</span>
                   </Label>
                 </div>
