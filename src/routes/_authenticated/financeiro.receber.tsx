@@ -188,6 +188,10 @@ export function LancamentosPage({ tipo }: { tipo: "receber" | "pagar" }) {
 
   const excluirLote = useMutation({
     mutationFn: async (ids: string[]) => {
+      // Desvincula parcelas de notas importadas antes de excluir
+      await supabase.from("notas_importadas_parcelas" as never)
+        .update({ lancamento_id: null } as never)
+        .in("lancamento_id", ids);
       // Desvincula folhas vinculadas (fallback se trigger não disparar via client)
       await supabase.from("folha_pagamento" as never)
         .update({ status: "aberta", lancamento_id: null, data_pagamento: null } as never)

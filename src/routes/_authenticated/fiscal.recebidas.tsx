@@ -8,8 +8,10 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { 
   FileDown, Search, CheckCircle2, AlertCircle, XCircle, 
-  UploadCloud, FileCode, Check, ArrowRight, RefreshCw, Archive, Calendar, KeyRound
+  UploadCloud, FileCode, Check, ArrowRight, RefreshCw, Archive, Calendar, KeyRound,
+  Eye, Download, FileText
 } from "lucide-react";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { useState, useMemo, useEffect } from "react";
 import { toast } from "sonner";
 import { brl, dateBR } from "@/lib/format";
@@ -24,12 +26,15 @@ export const Route = createFileRoute("/_authenticated/fiscal/recebidas")({
 });
 
 interface NotaRecebida {
+  id?: string;
   chave: string;
   emitente: string;
   cnpj: string;
   valor: number;
   data_emissao: string;
   situacao_sefaz: "autorizada" | "cancelada";
+  numero_nf?: string;
+  xml_completo?: string;
 }
 
 interface ParsedXMLResult {
@@ -49,6 +54,39 @@ interface SelectedFileItem {
 
 const INITIAL_RECEBIDAS: NotaRecebida[] = [];
 
+function parseProdutosDoXml(xml: string) {
+  try {
+    const parser = new DOMParser();
+    const doc = parser.parseFromString(xml, "text/xml");
+    const detNodes = Array.from(doc.querySelectorAll("det"));
+    return detNodes.map((det) => ({
+      codigo: det.querySelector("prod > cProd")?.textContent || "",
+      nome: det.querySelector("prod > xProd")?.textContent || "",
+      qtd: parseFloat(det.querySelector("prod > qCom")?.textContent || "0"),
+      un: det.querySelector("prod > uCom")?.textContent || "UN",
+      valorUnit: parseFloat(det.querySelector("prod > vUnCom")?.textContent || "0"),
+      valorTotal: parseFloat(det.querySelector("prod > vProd")?.textContent || "0"),
+    }));
+  } catch {
+    return [];
+  }
+}
+
+function parseParcelasDoXml(xml: string) {
+  try {
+    const parser = new DOMParser();
+    const doc = parser.parseFromString(xml, "text/xml");
+    const dupNodes = Array.from(doc.querySelectorAll("cobr > dup"));
+    return dupNodes.map((dup) => ({
+      numero: dup.querySelector("nDup")?.textContent || "",
+      dataVencimento: dup.querySelector("dVenc")?.textContent || "",
+      valor: parseFloat(dup.querySelector("vDup")?.textContent || "0"),
+    }));
+  } catch {
+    return [];
+  }
+}
+
 function NotasRecebidas() {
   const { data: empresa } = useEmpresaAtual();
   const qc = useQueryClient();
@@ -57,7 +95,10 @@ function NotasRecebidas() {
   // Notas Recebidas State
   const [notas, setNotas] = useState<NotaRecebida[]>(INITIAL_RECEBIDAS);
   const [search, setSearch] = useState("");
-  const [filtroMes, setFiltroMes] = useState<string>("todos");
+  const [filtroMes, setFiltroMes] = useState<string>(() => {
+    const now = new Date();
+    return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
+  });
 
   // Importação XML State
   const [dragging, setDragging] = useState(false);
@@ -83,12 +124,15 @@ function NotasRecebidas() {
         .order("created_at", { ascending: false });
       if (notasDb && Array.isArray(notasDb)) {
         setNotas((notasDb as any[]).map(n => ({
+          id: n.id,
           chave: n.chave_acesso,
           emitente: n.emitente,
           cnpj: n.cnpj_emitente,
           valor: Number(n.valor_total) || 0,
           data_emissao: n.data_emissao || "",
           situacao_sefaz: "autorizada" as const,
+          numero_nf: n.numero_nf || "",
+          xml_completo: n.xml_completo || "",
         })));
       }
     })();
@@ -551,10 +595,75 @@ function NotasRecebidas() {
   const filteredNotas = notas.filter(n => {
     const matchSearch = n.emitente.toLowerCase().includes(search.toLowerCase()) || 
       n.chave.includes(search) || 
+      (n.numero_nf && n.numero_nf.includes(search)) ||
       n.cnpj.includes(search);
     const matchMes = filtroMes === "todos" || (n.data_emissao || "").startsWith(filtroMes);
     return matchSearch && matchMes;
   });
+
+  const handleVerNota = async (n: NotaRecebida) => {
+    if (n.xml_completo) {
+      const xml = n.xml_completo;
+      const produtos = parseProdutosDoXml(xml);
+      const parser = new DOMParser();
+      const doc = parser.parseFromString(xml, "text/xml");
+      const nNF = doc.querySelector("nNF")?.textContent || "";
+      const parcelas = parseParcelasDoXml(xml);
+      setNotaDetalhe({
+        id: n.id,
+        chave: n.chave,
+        emitente: n.emitente,
+        cnpj: n.cnpj,
+        nNF,
+        data: n.data_emissao,
+        valor: n.valor,
+        produtos,
+        parcelas,
+        xml,
+      });
+      return;
+    }
+    if (!empresa) return;
+    toast.info("Buscando detalhes da nota na SEFAZ...");
+    try {
+      const result = await consultarNFePorChaveFn({ data: { empresaId: empresa.id, chave: n.chave } });
+      if (result.sucesso && result.xml) {
+        const xml = result.xml;
+        const produtos = parseProdutosDoXml(xml);
+        const parser = new DOMParser();
+        const doc = parser.parseFromString(xml, "text/xml");
+        const nNF = doc.querySelector("nNF")?.textContent || "";
+        const parcelas = parseParcelasDoXml(xml);
+        setNotaDetalhe({
+          id: n.id,
+          chave: n.chave,
+          emitente: n.emitente,
+          cnpj: n.cnpj,
+          nNF,
+          data: n.data_emissao,
+          valor: n.valor,
+          produtos,
+          parcelas,
+          xml,
+        });
+      } else {
+        toast.error(result.erro || "Não foi possível buscar detalhes");
+      }
+    } catch {
+      toast.error("Erro ao consultar SEFAZ");
+    }
+  };
+
+  const handleBaixarXml = (n: NotaRecebida) => {
+    if (!n.xml_completo) return;
+    const blob = new Blob([n.xml_completo], { type: "application/xml" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `NFe_${n.numero_nf || n.chave.slice(0, 44)}.xml`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
 
   return (
     <>
@@ -619,10 +728,11 @@ function NotasRecebidas() {
                 <TableHeader className="bg-muted/40">
                   <TableRow>
                     <TableHead className="font-semibold text-foreground">Emitente</TableHead>
-                    <TableHead className="font-semibold text-foreground">Chave de Acesso</TableHead>
+                    <TableHead className="font-semibold text-foreground">NF-e</TableHead>
                     <TableHead className="font-semibold text-foreground">Emissão</TableHead>
                     <TableHead className="text-right font-semibold text-foreground">Valor</TableHead>
-                    <TableHead className="font-semibold text-foreground">Situação SEFAZ</TableHead>
+                    <TableHead className="font-semibold text-foreground">Situação</TableHead>
+                    <TableHead className="w-24" />
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -640,17 +750,44 @@ function NotasRecebidas() {
                     };
 
                     return (
-                      <TableRow key={n.chave} className="transition-colors hover:bg-muted/30">
+                      <TableRow key={n.chave} className="transition-colors hover:bg-muted/30 cursor-pointer" onClick={() => handleVerNota(n)}>
                         <TableCell className="max-w-[220px]">
                           <div className="font-medium text-foreground truncate">{n.emitente}</div>
                           <div className="text-xs text-muted-foreground">{n.cnpj}</div>
                         </TableCell>
-                        <TableCell className="font-mono text-xs text-muted-foreground max-w-[200px] truncate">
-                          {n.chave}
+                        <TableCell className="text-tabular text-muted-foreground">
+                          <div className="font-mono text-xs">{n.numero_nf || "—"}</div>
+                          <div className="font-mono text-[10px] text-muted-foreground/60 truncate max-w-[140px]">{n.chave}</div>
                         </TableCell>
                         <TableCell className="text-tabular text-muted-foreground">{dateBR(n.data_emissao)}</TableCell>
                         <TableCell className="text-right text-tabular font-medium text-foreground">{brl(n.valor)}</TableCell>
                         <TableCell>{getSefazBadge(n.situacao_sefaz)}</TableCell>
+                        <TableCell className="text-right">
+                          <div className="flex items-center justify-end gap-0.5" onClick={(e) => e.stopPropagation()}>
+                            <TooltipProvider>
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <Button size="sm" variant="ghost" className="h-7 w-7 p-0" onClick={() => handleVerNota(n)}>
+                                    <Eye className="h-3.5 w-3.5" />
+                                  </Button>
+                                </TooltipTrigger>
+                                <TooltipContent>Ver detalhes</TooltipContent>
+                              </Tooltip>
+                            </TooltipProvider>
+                            {n.xml_completo && (
+                              <TooltipProvider>
+                                <Tooltip>
+                                  <TooltipTrigger asChild>
+                                    <Button size="sm" variant="ghost" className="h-7 w-7 p-0" onClick={() => handleBaixarXml(n)}>
+                                      <FileCode className="h-3.5 w-3.5" />
+                                    </Button>
+                                  </TooltipTrigger>
+                                  <TooltipContent>Baixar XML</TooltipContent>
+                                </Tooltip>
+                              </TooltipProvider>
+                            )}
+                          </div>
+                        </TableCell>
                       </TableRow>
                     );
                   })}
@@ -1034,17 +1171,24 @@ function NotasRecebidas() {
                             }}
                           />
                         </div>
-                        <Button
-                          size="sm"
-                          variant="ghost"
-                          className="h-8 w-8 p-0 text-destructive hover:bg-destructive/10 shrink-0"
-                          onClick={() => {
-                            const novas = notaDetalhe.parcelas.filter((_, idx) => idx !== i);
-                            setNotaDetalhe({ ...notaDetalhe, parcelas: novas });
-                          }}
-                        >
-                          <XCircle className="h-4 w-4" />
-                        </Button>
+                        <TooltipProvider>
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <Button
+                                size="sm"
+                                variant="ghost"
+                                className="h-8 w-8 p-0 text-destructive hover:bg-destructive/10 shrink-0"
+                                onClick={() => {
+                                  const novas = notaDetalhe.parcelas.filter((_, idx) => idx !== i);
+                                  setNotaDetalhe({ ...notaDetalhe, parcelas: novas });
+                                }}
+                              >
+                                <XCircle className="h-4 w-4" />
+                              </Button>
+                            </TooltipTrigger>
+                            <TooltipContent>Remover parcela</TooltipContent>
+                          </Tooltip>
+                        </TooltipProvider>
                       </div>
                     ))}
                   </div>
