@@ -9,7 +9,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { 
   FileDown, Search, CheckCircle2, AlertCircle, XCircle, 
   UploadCloud, FileCode, Check, ArrowRight, RefreshCw, Archive, Calendar, KeyRound,
-  Eye, Download, FileText
+  Eye, Download, FileText, Trash2
 } from "lucide-react";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { useState, useMemo, useEffect } from "react";
@@ -18,6 +18,7 @@ import { brl, dateBR } from "@/lib/format";
 
 import { supabase } from "@/integrations/supabase/client";
 import { useEmpresaAtual } from "@/hooks/use-empresa";
+import { useMutation } from "@tanstack/react-query";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { consultarNFePorChaveFn } from "@/lib/sefaz-server";
 
@@ -43,7 +44,7 @@ interface ParsedXMLResult {
   cnpj: string;
   nNF: string;
   total: number;
-  produtos: { codigo: string; nome: string; qtd: number; un: string; valor: number }[];
+  produtos: { codigo: string; nome: string; qtd: number; un: string; valor: number; categoria: string }[];
 }
 
 interface SelectedFileItem {
@@ -155,6 +156,36 @@ function NotasRecebidas() {
     })();
   }, [empresa?.id]);
 
+  // Mutation para excluir nota importada
+  const excluirNota = useMutation({
+    mutationFn: async (nota: NotaRecebida) => {
+      if (!nota.id) throw new Error("Nota sem ID");
+      // Buscar lançamentos vinculados
+      const { data: vinculadas } = await supabase
+        .from("notas_importadas_parcelas" as never)
+        .select("lancamento_id")
+        .eq("nota_id", nota.id);
+      // Excluir parcelas PRIMEIRO (remove FK reference para lancamentos_financeiros)
+      await supabase.from("notas_importadas_parcelas" as never).delete().eq("nota_id", nota.id);
+      // Excluir itens
+      await supabase.from("notas_importadas_itens" as never).delete().eq("nota_id", nota.id);
+      // Excluir lançamentos financeiros vinculados (agora sem FK bloqueando)
+      const lancIds = (vinculadas ?? []).map((v: any) => v.lancamento_id).filter(Boolean);
+      if (lancIds.length > 0) {
+        await supabase.from("lancamentos_financeiros").delete().in("id", lancIds);
+      }
+      // Excluir a nota
+      const { error } = await supabase.from("notas_importadas" as never).delete().eq("id", nota.id);
+      if (error) throw error;
+    },
+    onSuccess: (_data: unknown, nota: NotaRecebida) => {
+      setNotas(prev => prev.filter(n => n.chave !== nota.chave));
+      qc.invalidateQueries({ queryKey: ["lancamentos"] });
+      toast.success("Nota e lançamentos vinculados excluídos com sucesso.");
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
   // Modal de detalhes da nota importada por chave
   const [notaDetalhe, setNotaDetalhe] = useState<{
     id?: string;
@@ -183,7 +214,7 @@ function NotasRecebidas() {
 
       if (result.nota) {
         const xml = result.nota.xml;
-        let produtos: { codigo: string; nome: string; qtd: number; un: string; valorUnit: number; valorTotal: number }[] = [];
+        let produtos: { codigo: string; nome: string; qtd: number; un: string; valorUnit: number; valorTotal: number; categoria: string }[] = [];
         let parcelas: { numero: string; dataVencimento: string; valor: number }[] = [];
         let nNF = "";
 
@@ -313,7 +344,7 @@ function NotasRecebidas() {
 
       let parsedChave = chNFe;
       let parsedEmitente = emit;
-      let parsedProdutos: { codigo: string; nome: string; qtd: number; un: string; valor: number }[] = [];
+      let parsedProdutos: { codigo: string; nome: string; qtd: number; un: string; valor: number; categoria: string }[] = [];
 
       if (detNodes.length > 0) {
         parsedProdutos = detNodes.map((det) => {
@@ -322,7 +353,7 @@ function NotasRecebidas() {
           const qCom = parseFloat(det.querySelector("prod > qCom")?.textContent || "1");
           const uCom = det.querySelector("prod > uCom")?.textContent || "UN";
           const vUnCom = parseFloat(det.querySelector("prod > vUnCom")?.textContent || "100");
-          return { codigo: cProd, nome: xProd, qtd: qCom, un: uCom, valor: vUnCom };
+          return { codigo: cProd, nome: xProd, qtd: qCom, un: uCom, valor: vUnCom, categoria: "" };
         });
       } else {
         // Fallback estruturado baseado no arquivo caso não seja XML padrão SEFAZ
@@ -330,20 +361,35 @@ function NotasRecebidas() {
         parsedChave = "352608" + fileHash.padStart(38, "0").slice(-38);
         parsedEmitente = fileItem.name.replace(/\.[^/.]+$/, "").replace(/[-_]/g, " ").toUpperCase() + " LTDA";
         parsedProdutos = [
-          { codigo: "PROD-" + fileHash.slice(0, 4), nome: `Item ${fileItem.name.replace(/\.xml$/i, "")} Wireless`, qtd: 5, un: "UN", valor: 150.00 },
-          { codigo: "PROD-" + fileHash.slice(4, 8), nome: `Acessório ${fileItem.name.replace(/\.xml$/i, "")} Pro`, qtd: 3, un: "UN", valor: 110.00 },
-          { codigo: "PROD-" + fileHash.slice(8, 12), nome: `Componente IPS ${fileItem.name.replace(/\.xml$/i, "")}`, qtd: 2, un: "UN", valor: 450.00 }
+          { codigo: "PROD-" + fileHash.slice(0, 4), nome: `Item ${fileItem.name.replace(/\.xml$/i, "")} Wireless`, qtd: 5, un: "UN", valor: 150.00, categoria: "" },
+          { codigo: "PROD-" + fileHash.slice(4, 8), nome: `Acessório ${fileItem.name.replace(/\.xml$/i, "")} Pro`, qtd: 3, un: "UN", valor: 110.00, categoria: "" },
+          { codigo: "PROD-" + fileHash.slice(8, 12), nome: `Componente IPS ${fileItem.name.replace(/\.xml$/i, "")}`, qtd: 2, un: "UN", valor: 450.00, categoria: "" }
         ];
       }
 
-      // Verificar se a chave já foi importada anteriormente para evitar duplicidade
+      // Verificar se a chave já foi importada (localStorage + banco)
       const storageKey = `imported_xml_chaves_${empresa?.id || "default"}`;
       const chavesJaImportadas: string[] = JSON.parse(localStorage.getItem(storageKey) || "[]");
 
       if (chavesJaImportadas.includes(parsedChave)) {
         setIsProcessing(false);
-        toast.error(`Atenção: O XML da Nota Fiscal (Chave ${parsedChave.slice(0, 14)}...) já foi importado anteriormente! Importação duplicada cancelada.`);
+        toast.error(`Nota ${parsedChave.slice(0, 14)}... já importada anteriormente. Ignorando.`);
         return;
+      }
+
+      // Verificar no banco de dados
+      if (empresa && parsedChave) {
+        const { data: existente } = await supabase
+          .from("notas_importadas" as never)
+          .select("id")
+          .eq("empresa_id", empresa.id)
+          .eq("chave_acesso", parsedChave)
+          .maybeSingle();
+        if (existente) {
+          setIsProcessing(false);
+          toast.error(`Nota ${parsedChave.slice(0, 14)}... já existe no sistema. Ignorando.`);
+          return;
+        }
       }
 
       const totalCalculado = vNF || parsedProdutos.reduce((acc, p) => acc + (p.qtd * p.valor), 0);
@@ -372,6 +418,19 @@ function NotasRecebidas() {
     setIsSaving(true);
 
     try {
+      // Verificar duplicidade
+      const { data: existente } = await supabase
+        .from("notas_importadas" as never)
+        .select("id")
+        .eq("empresa_id", empresa.id)
+        .eq("chave_acesso", importResults.chave)
+        .maybeSingle();
+      if (existente) {
+        toast.error("Esta nota já foi importada anteriormente.");
+        setIsSaving(false);
+        return;
+      }
+
       let fornecedorId: string | null = null;
       const { data: contatosExistentes } = await supabase
         .from("contatos")
@@ -383,11 +442,46 @@ function NotasRecebidas() {
       if (contatosExistentes) {
         fornecedorId = contatosExistentes.id;
       } else {
+        let dadosApi: any = null;
+        const cnpjDigits = importResults.cnpj.replace(/\D/g, "");
+        if (cnpjDigits.length === 14) {
+          for (const url of [
+            `https://brasilapi.com.br/api/cnpj/v1/${cnpjDigits}`,
+            `https://receitaws.com.br/v1/cnpj/${cnpjDigits}`,
+          ]) {
+            try {
+              const res = await fetch(url, { signal: AbortSignal.timeout(8000) });
+              if (res.ok) { dadosApi = await res.json(); break; }
+            } catch { /* tenta próxima */ }
+          }
+        }
         const { data: novoContato } = await supabase
           .from("contatos")
-          .insert({ empresa_id: empresa.id, nome: importResults.emitente, documento: importResults.cnpj, tipo: "fornecedor" as any })
+          .insert({
+            empresa_id: empresa.id,
+            nome: dadosApi?.razao_social || dadosApi?.nome || importResults.emitente,
+            documento: importResults.cnpj,
+            tipo: "fornecedor" as any,
+            email: dadosApi?.email || null,
+            telefone: dadosApi?.ddd_telefone_1 || dadosApi?.telefone || null,
+            cep: dadosApi?.cep || null,
+            logradouro: dadosApi?.logradouro || null,
+            numero: dadosApi?.numero || null,
+            complemento: dadosApi?.complemento || null,
+            bairro: dadosApi?.bairro || null,
+            cidade: dadosApi?.municipio || dadosApi?.city || null,
+            uf: dadosApi?.uf || dadosApi?.state || null,
+          } as any)
           .select("id").single();
         if (novoContato) fornecedorId = novoContato.id;
+      }
+
+      // Validar categorias obrigatórias
+      const semCategoria = importResults.produtos.filter(p => !p.categoria || p.categoria.trim() === "");
+      if (semCategoria.length > 0) {
+        toast.error(`Categoria obrigatória: ${semCategoria.map(p => p.nome).join(", ")}`);
+        setIsSaving(false);
+        return;
       }
 
       let totalQtd = 0;
@@ -419,10 +513,23 @@ function NotasRecebidas() {
       }
 
       const vencimento = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split("T")[0];
+      // Buscar categoria financeira correspondente
+      let categoriaFinanceiraId: string | null = null;
+      const primeiraCategoria = importResults.produtos[0]?.categoria;
+      if (primeiraCategoria) {
+        const { data: cat } = await supabase
+          .from("categorias_financeiras")
+          .select("id")
+          .eq("empresa_id", empresa.id)
+          .ilike("nome", `%${primeiraCategoria}%`)
+          .maybeSingle();
+        if (cat) categoriaFinanceiraId = cat.id;
+      }
       await supabase.from("lancamentos_financeiros").insert({
         empresa_id: empresa.id, tipo: "pagar", status: "aberto",
         descricao: `Compra NF-e ${importResults.nNF} - ${importResults.emitente}`,
         valor: importResults.total, data_vencimento: vencimento, contato_id: fornecedorId,
+        categoria_id: categoriaFinanceiraId,
         observacoes: `Importação de XML (Chave ${importResults.chave})`
       });
 
@@ -457,7 +564,20 @@ function NotasRecebidas() {
     setIsSaving(true);
 
     try {
-      // 1. Salvar nota no banco (previne duplicidade)
+      // 0. Verificar se a nota já foi importada
+      const { data: existente } = await supabase
+        .from("notas_importadas" as never)
+        .select("id")
+        .eq("empresa_id", empresa.id)
+        .eq("chave_acesso", notaDetalhe.chave)
+        .maybeSingle();
+      if (existente) {
+        toast.error("Esta nota já foi importada anteriormente.");
+        setIsSaving(false);
+        return;
+      }
+
+      // 1. Salvar nota no banco
       const { data: notaSalva } = await supabase
         .from("notas_importadas" as never)
         .insert({
@@ -504,14 +624,50 @@ function NotasRecebidas() {
       if (contatosExistentes) {
         fornecedorId = contatosExistentes.id;
       } else {
+        // Buscar dados do CNPJ via APIs públicas para preencher o cadastro
+        let dadosApi: any = null;
+        const cnpjDigits = notaDetalhe.cnpj.replace(/\D/g, "");
+        if (cnpjDigits.length === 14) {
+          for (const url of [
+            `https://brasilapi.com.br/api/cnpj/v1/${cnpjDigits}`,
+            `https://receitaws.com.br/v1/cnpj/${cnpjDigits}`,
+          ]) {
+            try {
+              const res = await fetch(url, { signal: AbortSignal.timeout(8000) });
+              if (res.ok) { dadosApi = await res.json(); break; }
+            } catch { /* tenta próxima */ }
+          }
+        }
         const { data: novoContato } = await supabase
           .from("contatos")
-          .insert({ empresa_id: empresa.id, nome: notaDetalhe.emitente, documento: notaDetalhe.cnpj, tipo: "fornecedor" as any })
+          .insert({
+            empresa_id: empresa.id,
+            nome: dadosApi?.razao_social || dadosApi?.nome || notaDetalhe.emitente,
+            documento: notaDetalhe.cnpj,
+            tipo: "fornecedor" as any,
+            email: dadosApi?.email || null,
+            telefone: dadosApi?.ddd_telefone_1 || dadosApi?.telefone || null,
+            cep: dadosApi?.cep || null,
+            logradouro: dadosApi?.logradouro || null,
+            numero: dadosApi?.numero || null,
+            complemento: dadosApi?.complemento || null,
+            bairro: dadosApi?.bairro || null,
+            cidade: dadosApi?.municipio || dadosApi?.city || null,
+            uf: dadosApi?.uf || dadosApi?.state || null,
+          } as any)
           .select("id").single();
         if (novoContato) fornecedorId = novoContato.id;
       }
 
       // 4. Atualizar ou criar produtos e registrar movimentações
+      // Validar categorias obrigatórias
+      const semCategoria = notaDetalhe.produtos.filter(p => !p.categoria || p.categoria.trim() === "");
+      if (semCategoria.length > 0) {
+        toast.error(`Categoria obrigatória: ${semCategoria.map(p => p.nome).join(", ")}`);
+        setIsSaving(false);
+        return;
+      }
+
       let totalQtd = 0;
       for (const p of notaDetalhe.produtos) {
         totalQtd += p.qtd;
@@ -527,10 +683,10 @@ function NotasRecebidas() {
           prodId = prodExistente.id;
           await supabase.from("produtos").update({ estoque_atual: (Number(prodExistente.estoque_atual) || 0) + p.qtd, preco_custo: p.valorUnit }).eq("id", prodId);
         } else {
-          const { data: novoProd } = await supabase
+          const { data: novoProd } = await (supabase
             .from("produtos")
-            .insert({ empresa_id: empresa.id, codigo: p.codigo, nome: p.nome, unidade: p.un, preco_custo: p.valorUnit, preco_venda: p.valorUnit * 1.4, estoque_atual: p.qtd, ativo: true, categoria: p.categoria || null })
-            .select("id").single();
+            .insert({ empresa_id: empresa.id, codigo: p.codigo, nome: p.nome, unidade: p.un, preco_custo: p.valorUnit, preco_venda: p.valorUnit * 1.4, estoque_atual: p.qtd, ativo: true, categoria: p.categoria || null } as any)
+            .select("id") as any).single();
           prodId = novoProd!.id;
         }
 
@@ -541,6 +697,19 @@ function NotasRecebidas() {
       }
 
       // 5. Lançar parcelas no contas a pagar (só se houver parcelas)
+      // Buscar categoria financeira correspondente ao produto (primeiro produto da nota)
+      let categoriaFinanceiraId: string | null = null;
+      const primeiraCategoria = notaDetalhe.produtos[0]?.categoria;
+      if (primeiraCategoria) {
+        const { data: cat } = await supabase
+          .from("categorias_financeiras")
+          .select("id")
+          .eq("empresa_id", empresa.id)
+          .ilike("nome", `%${primeiraCategoria}%`)
+          .maybeSingle();
+        if (cat) categoriaFinanceiraId = cat.id;
+      }
+
       if (notaDetalhe.parcelas.length > 0) {
         for (const parc of notaDetalhe.parcelas) {
           const { data: lanc } = await supabase
@@ -553,6 +722,7 @@ function NotasRecebidas() {
               valor: parc.valor,
               data_vencimento: parc.dataVencimento,
               contato_id: fornecedorId,
+              categoria_id: categoriaFinanceiraId,
               observacoes: `Chave: ${notaDetalhe.chave} | Parcela ${parc.numero}`,
             })
             .select("id")
@@ -683,11 +853,100 @@ function NotasRecebidas() {
     URL.revokeObjectURL(url);
   };
 
+  const handleBaixarPdf = (n: NotaRecebida) => {
+    // Parse XML para extrair dados detalhados
+    let produtos: { codigo: string; nome: string; qtd: number; un: string; valorUnit: number; valorTotal: number }[] = [];
+    let destinatario = { nome: "", cnpj: "", endereco: "" };
+    let transportadora = "";
+    if (n.xml_completo) {
+      try {
+        const parser = new DOMParser();
+        const doc = parser.parseFromString(n.xml_completo, "text/xml");
+        const detNodes = Array.from(doc.querySelectorAll("det"));
+        produtos = detNodes.map((det) => ({
+          codigo: det.querySelector("prod > cProd")?.textContent || "",
+          nome: det.querySelector("prod > xProd")?.textContent || "",
+          qtd: parseFloat(det.querySelector("prod > qCom")?.textContent || "0"),
+          un: det.querySelector("prod > uCom")?.textContent || "UN",
+          valorUnit: parseFloat(det.querySelector("prod > vUnCom")?.textContent || "0"),
+          valorTotal: parseFloat(det.querySelector("prod > vProd")?.textContent || "0"),
+        }));
+        destinatario = {
+          nome: doc.querySelector("dest > xNome")?.textContent || "",
+          cnpj: doc.querySelector("dest > CNPJ")?.textContent || doc.querySelector("dest > CPF")?.textContent || "",
+          endereco: [doc.querySelector("dest > enderDest > xLgr")?.textContent, doc.querySelector("dest > enderDest > nro")?.textContent, doc.querySelector("dest > enderDest > xBairro")?.textContent].filter(Boolean).join(", "),
+        };
+        transportadora = doc.querySelector("transp > transp > xNome")?.textContent || "";
+      } catch { /* XML parse error */ }
+    }
+    const nNF = n.numero_nf || "";
+    const dataEmissao = n.data_emissao ? dateBR(n.data_emissao) : "—";
+    const chaveFormatada = n.chave.replace(/(\d{4})/g, "$1 ").trim();
+
+    const html = `<!DOCTYPE html><html><head><meta charset="utf-8"><title>NF-e ${nNF}</title>
+<style>
+  *{margin:0;padding:0;box-sizing:border-box}
+  body{font-family:"Arial",sans-serif;font-size:11px;color:#000;background:#fff;padding:10px}
+  .nf-header{background:#1a1a2e;color:#fff;padding:8px 12px;display:flex;justify-content:space-between;align-items:center;margin-bottom:6px}
+  .nf-header h1{font-size:13px;letter-spacing:1px}
+  .nf-header .num{font-size:11px;opacity:.8}
+  .section{border:1px solid #999;margin-bottom:6px;padding:6px 8px}
+  .section-title{background:#e8e8e8;padding:2px 6px;font-weight:bold;font-size:10px;text-transform:uppercase;margin-bottom:4px;letter-spacing:.5px}
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:0 16px}
+  .field{margin-bottom:3px}.label{font-weight:bold;font-size:9px;text-transform:uppercase;color:#444}.val{font-size:11px}
+  table{width:100%;border-collapse:collapse;margin-top:4px}
+  th{background:#e8e8e8;border:1px solid #999;padding:3px 5px;font-size:9px;text-transform:uppercase;text-align:left}
+  td{border:1px solid #ccc;padding:3px 5px;font-size:10px}
+  .text-right{text-align:right}.text-center{text-align:center}
+  .total-row{font-weight:bold;background:#f5f5f5}
+  .chave{background:#f0f0f0;padding:6px 8px;border:1px solid #999;margin-top:6px;text-align:center;font-size:10px;letter-spacing:1px}
+  .chave strong{display:block;font-size:9px;margin-bottom:2px;color:#444}
+  .footer{margin-top:8px;text-align:center;font-size:8px;color:#666}
+  @media print{body{padding:0}.nf-header{background:#1a1a2e!important;-webkit-print-color-adjust:exact;print-color-adjust:exact}}
+</style></head><body>
+<div class="nf-header"><h1>NOTA FISCAL ELETRÔNICA — NF-e</h1><div class="num">Nº ${nNF}</div></div>
+<div class="section">
+  <div class="grid2">
+    <div class="field"><div class="label">Documento Fiscal</div><div class="val">NF-e — Modelo 55</div></div>
+    <div class="field"><div class="label">Data de Emissão</div><div class="val">${dataEmissao}</div></div>
+  </div>
+</div>
+<div class="section">
+  <div class="section-title">EMITENTE</div>
+  <div class="grid2">
+    <div><div class="field"><div class="label">Razão Social</div><div class="val">${n.emitente}</div></div>
+    <div class="field"><div class="label">CNPJ</div><div class="val">${n.cnpj}</div></div></div>
+    <div><div class="field"><div class="label">Situação</div><div class="val">${n.situacao_sefaz === "autorizada" ? "Autorizada" : "Cancelada"}</div></div></div>
+  </div>
+</div>
+${destinatario.nome ? `<div class="section"><div class="section-title">DESTINATÁRIO</div>
+<div class="grid2"><div><div class="field"><div class="label">Razão Social</div><div class="val">${destinatario.nome}</div></div>
+<div class="field"><div class="label">CNPJ/CPF</div><div class="val">${destinatario.cnpj}</div></div></div>
+<div><div class="field"><div class="label">Endereço</div><div class="val">${destinatario.endereco}</div></div></div></div></div>` : ""}
+<div class="section">
+  <div class="section-title">PRODUTOS / SERVIÇOS</div>
+  <table>
+    <thead><tr><th>Código</th><th>Descrição</th><th class="text-center">Qtd</th><th class="text-center">UN</th><th class="text-right">Valor Unit.</th><th class="text-right">Valor Total</th></tr></thead>
+    <tbody>
+      ${produtos.length > 0 ? produtos.map(p => `<tr><td>${p.codigo}</td><td>${p.nome}</td><td class="text-center">${p.qtd}</td><td class="text-center">${p.un}</td><td class="text-right">${brl(p.valorUnit)}</td><td class="text-right">${brl(p.valorTotal)}</td></tr>`).join("") : `<tr><td colspan="6" style="text-align:center;color:#666">Produto(s) do XML</td></tr>`}
+      <tr class="total-row"><td colspan="5" class="text-right">VALOR TOTAL</td><td class="text-right">${brl(n.valor)}</td></tr>
+    </tbody>
+  </table>
+</div>
+${transportadora ? `<div class="section"><div class="section-title">TRANSPORTE</div><div class="field"><div class="label">Transportadora</div><div class="val">${transportadora}</div></div></div>` : ""}
+<div class="chave"><strong>CHAVE DE ACESSO</strong>${chaveFormatada}</div>
+<div class="footer">Documento gerado pelo sistema Norvo Gestão — ${new Date().toLocaleString("pt-BR")}</div>
+<script>window.onload=()=>{window.print();window.onafterprint=()=>window.close()}</script>
+</body></html>`;
+    const w = window.open("", "_blank");
+    if (w) { w.document.write(html); w.document.close(); }
+  };
+
   return (
     <>
       <PageHeader 
         eyebrow="Gestão Fiscal" 
-        title="Notas de Entrada" 
+        title="Notas de Compra" 
         description="Consulte notas fiscais emitidas contra seu CNPJ e importe XMLs para o estoque e financeiro." 
         actions={
           <div className="flex items-center gap-2">
@@ -700,7 +959,7 @@ function NotasRecebidas() {
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
         <TabsList className="bg-muted/80 p-1 w-full max-w-[400px]">
-          <TabsTrigger value="manifesto" className="flex-1 text-xs sm:text-sm">Notas Recebidas</TabsTrigger>
+          <TabsTrigger value="manifesto" className="flex-1 text-xs sm:text-sm">Notas de Compra</TabsTrigger>
           <TabsTrigger value="xml" className="flex-1 text-xs sm:text-sm">Importação de XML</TabsTrigger>
         </TabsList>
 
@@ -804,6 +1063,30 @@ function NotasRecebidas() {
                                 </Tooltip>
                               </TooltipProvider>
                             )}
+                            <TooltipProvider>
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <Button size="sm" variant="ghost" className="h-7 w-7 p-0" onClick={() => handleBaixarPdf(n)}>
+                                    <FileText className="h-3.5 w-3.5" />
+                                  </Button>
+                                </TooltipTrigger>
+                                <TooltipContent>Baixar PDF</TooltipContent>
+                              </Tooltip>
+                            </TooltipProvider>
+                            <TooltipProvider>
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <Button size="sm" variant="ghost" className="h-7 w-7 p-0 text-destructive hover:text-destructive"
+                                    disabled={excluirNota.isPending}
+                                    onClick={() => {
+                                      if (confirm("Excluir esta nota e todos os lançamentos financeiros vinculados?")) excluirNota.mutate(n);
+                                    }}>
+                                    <Trash2 className="h-3.5 w-3.5" />
+                                  </Button>
+                                </TooltipTrigger>
+                                <TooltipContent>Excluir nota</TooltipContent>
+                              </Tooltip>
+                            </TooltipProvider>
                           </div>
                         </TableCell>
                       </TableRow>
