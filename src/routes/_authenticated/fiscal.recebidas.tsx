@@ -137,15 +137,22 @@ function NotasRecebidas() {
         const d = result.debug;
         if (d && d.cStat === "656") {
           const cooldownMin = 60;
-          const lastQuery = result.lastQueryAt ? new Date(result.lastQueryAt) : new Date();
-          const fim = new Date(lastQuery.getTime() + cooldownMin * 60000);
-          const horarioLiberacao = fim.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" });
-          const agora = new Date();
-          const minutosRestantes = Math.max(1, Math.ceil((fim.getTime() - agora.getTime()) / 60000));
-          toast.error("Consumo Indevido pela SEFAZ", {
-            description: `Tente novamente às ${horarioLiberacao} (${minutosRestantes} min restantes). Última consulta: ${lastQuery.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}.`,
-            duration: 12000,
-          });
+          const lastQuery = result.lastQueryAt ? new Date(result.lastQueryAt) : null;
+          if (lastQuery) {
+            const fim = new Date(lastQuery.getTime() + cooldownMin * 60000);
+            const horarioLiberacao = fim.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" });
+            const agora = new Date();
+            const minutosRestantes = Math.max(1, Math.ceil((fim.getTime() - agora.getTime()) / 60000));
+            toast.error("Consumo Indevido pela SEFAZ", {
+              description: `Tente novamente às ${horarioLiberacao} (${minutosRestantes} min restantes). Última consulta bem-sucedida: ${lastQuery.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}.`,
+              duration: 12000,
+            });
+          } else {
+            toast.error("Consumo Indevido pela SEFAZ", {
+              description: "Aguarde 1 hora e tente novamente.",
+              duration: 12000,
+            });
+          }
         } else {
           toast.success("Nenhuma nota encontrada na SEFAZ.", { description: "Verifique o ambiente (produção/homologação) nas Configurações Fiscais.", duration: 8000 });
         }

@@ -143,7 +143,7 @@ export async function handleSefazProxy(request: Request): Promise<Response> {
 
     switch (action) {
       case "consultar": {
-        // Buscar last_query_at atual ANTES de consultar (para não resetar timer em caso de erro)
+        // Buscar last_query_at atual ANTES de consultar
         const { data: configAntes } = await supabase
           .from("nfe_config")
           .select("last_query_at")
@@ -154,16 +154,18 @@ export async function handleSefazProxy(request: Request): Promise<Response> {
         result = await consultarDestinatario(pfxBytes, senha, cnpj, uf, ambiente, startNsu);
         const r = result as { maxNsuObtido?: string; debug?: { cStat?: string } };
 
-        // Salvar last_query_at APENAS se cStat NÃO for 656 (sucesso ou outro erro)
-        // Se cStat 656, manter o timestamp anterior para o timer de 1h não reiniciar
-        if (r.debug?.cStat !== "656") {
+        if (r.debug?.cStat === "138" || r.debug?.cStat === "137") {
+          // Sucesso: atualizar last_query_at e last_nsu
           const now = new Date().toISOString();
           await supabase.from("nfe_config").update({ last_query_at: now }).eq("empresa_id", empresaId);
           if (r.maxNsuObtido) {
             await supabase.from("nfe_config").update({ last_nsu: r.maxNsuObtido }).eq("empresa_id", empresaId);
           }
-        } else {
-          // cStat 656: incluir o last_query_at ORIGINAL no retorno para o front calcular retry
+        }
+        // cStat 656 ou qualquer erro: NÃO atualizar last_query_at — timer conta da última sucesso
+
+        // Para cStat 656: enviar lastQueryAt ORIGINAL para o front calcular retry
+        if (r.debug?.cStat === "656") {
           (r as Record<string, unknown>).lastQueryAt = lastQueryAntes;
         }
         break;

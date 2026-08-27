@@ -77,7 +77,7 @@ export const consultarNFeDestinatarioFn = createServerFn({ method: "POST" })
       }
     }
 
-    // Buscar last_query_at ANTES de consultar (para não resetar timer em caso de erro)
+    // Buscar last_query_at ANTES de consultar
     const { data: configAntes } = await supabase
       .from("nfe_config")
       .select("last_query_at")
@@ -87,15 +87,17 @@ export const consultarNFeDestinatarioFn = createServerFn({ method: "POST" })
 
     const result = await consultarDestinatario(cert.pfx, cert.senha, cert.cnpj, cert.uf, ambiente, startNsu);
 
-    // Salvar last_query_at APENAS se cStat NÃO for 656
-    if (result.debug?.cStat !== "656") {
+    if (result.debug?.cStat === "138" || result.debug?.cStat === "137") {
+      // Sucesso: atualizar last_query_at e last_nsu
       const now = new Date().toISOString();
       await supabase.from("nfe_config").update({ last_query_at: now }).eq("empresa_id", data.empresaId);
       if (result.maxNsuObtido) {
         await supabase.from("nfe_config").update({ last_nsu: result.maxNsuObtido }).eq("empresa_id", data.empresaId);
       }
-    } else {
-      // cStat 656: incluir last_query_at ORIGINAL para o front calcular retry
+    }
+    // cStat 656 ou erro: NÃO atualizar last_query_at
+
+    if (result.debug?.cStat === "656") {
       (result as Record<string, unknown>).lastQueryAt = lastQueryAntes;
     }
 
