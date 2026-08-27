@@ -17,7 +17,7 @@ import { brl, dateBR } from "@/lib/format";
 import { supabase } from "@/integrations/supabase/client";
 import { useEmpresaAtual } from "@/hooks/use-empresa";
 import { useQueryClient } from "@tanstack/react-query";
-import { consultarNFePorChaveFn, manifestarNFeFn } from "@/lib/sefaz-server";
+import { consultarNFePorChaveFn } from "@/lib/sefaz-server";
 
 export const Route = createFileRoute("/_authenticated/fiscal/recebidas")({
   component: NotasRecebidas,
@@ -29,7 +29,6 @@ interface NotaRecebida {
   cnpj: string;
   valor: number;
   data_emissao: string;
-  manifesto: "pendente" | "ciencia" | "confirmada" | "desconhecida";
   situacao_sefaz: "autorizada" | "cancelada";
 }
 
@@ -72,40 +71,18 @@ function NotasRecebidas() {
   const [chaveImportModal, setChaveImportModal] = useState(false);
   const [chaveInput, setChaveInput] = useState("");
   const [isImportingByKey, setIsImportingByKey] = useState(false);
-  const handleManifestar = async (chave: string, acao: "ciencia" | "confirmada" | "desconhecida") => {
-    if (!empresa) return toast.error("Empresa não selecionada");
-    
-    const tipoMap: Record<string, "210200" | "210210" | "210220"> = {
-      ciencia: "210200",
-      confirmada: "210210",
-      desconhecida: "210220",
-    };
 
-    try {
-      const result = await manifestarNFeFn({
-        data: {
-          empresaId: empresa.id,
-          chave,
-          tipoEvento: tipoMap[acao],
-        },
-      });
-
-      if (result.sucesso) {
-        setNotas(prev => prev.map(n => n.chave === chave ? { ...n, manifesto: acao } : n));
-        const acoesLabels: Record<string, string> = {
-          ciencia: "Ciência da Emissão",
-          confirmada: "Confirmação da Operação",
-          desconhecida: "Desconhecimento da Operação",
-        };
-        toast.success(`Manifestação '${acoesLabels[acao]}' registrada na SEFAZ! (${result.codigo})`);
-      } else {
-        toast.error("Falha ao registrar manifestação", { description: result.motivo });
-      }
-    } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : String(err);
-      toast.error("Erro ao manifestar", { description: msg });
-    }
-  };
+  // Modal de detalhes da nota importada por chave
+  const [notaDetalhe, setNotaDetalhe] = useState<{
+    chave: string;
+    emitente: string;
+    cnpj: string;
+    valor: number;
+    data: string;
+    nNF: string;
+    produtos: { codigo: string; nome: string; qtd: number; un: string; valorUnit: number; valorTotal: number }[];
+    xml: string;
+  } | null>(null);
 
   const handleImportarPorChave = async () => {
     if (!empresa) return toast.error("Empresa não selecionada");
@@ -120,24 +97,40 @@ function NotasRecebidas() {
       const result = await consultarNFePorChaveFn({ data: { empresaId: empresa.id, chave } });
 
       if (result.nota) {
-        const novaNota: NotaRecebida = {
+        const xml = result.nota.xml;
+        let produtos: { codigo: string; nome: string; qtd: number; un: string; valorUnit: number; valorTotal: number }[] = [];
+        let nNF = "";
+
+        if (xml) {
+          try {
+            const parser = new DOMParser();
+            const doc = parser.parseFromString(xml, "text/xml");
+            nNF = doc.querySelector("ide > nNF")?.textContent || "";
+            const detNodes = Array.from(doc.querySelectorAll("det"));
+            produtos = detNodes.map((det) => {
+              const cProd = det.querySelector("prod > cProd")?.textContent || "";
+              const xProd = det.querySelector("prod > xProd")?.textContent || "";
+              const qCom = parseFloat(det.querySelector("prod > qCom")?.textContent || "0");
+              const uCom = det.querySelector("prod > uCom")?.textContent || "UN";
+              const vUnCom = parseFloat(det.querySelector("prod > vUnCom")?.textContent || "0");
+              const vProd = parseFloat(det.querySelector("prod > vProd")?.textContent || "0");
+              return { codigo: cProd, nome: xProd, qtd: qCom, un: uCom, valorUnit: vUnCom, valorTotal: vProd };
+            });
+          } catch {
+            // XML não parseável
+          }
+        }
+
+        setNotaDetalhe({
           chave: result.nota.chave,
           emitente: result.nota.emitente,
           cnpj: result.nota.cnpj,
           valor: result.nota.valor,
-          data_emissao: result.nota.data,
-          manifesto: "pendente",
-          situacao_sefaz: "autorizada",
-        };
-        setNotas(prev => {
-          const chavesExistentes = new Set(prev.map(n => n.chave));
-          if (chavesExistentes.has(novaNota.chave)) {
-            toast.info("Nota já está na lista.");
-            return prev;
-          }
-          return [novaNota, ...prev];
+          data: result.nota.data,
+          nNF,
+          produtos,
+          xml: xml || "",
         });
-        toast.success(`Nota ${result.nota.chave.slice(0, 8)}... importada com sucesso!`);
         setChaveImportModal(false);
         setChaveInput("");
       } else {
@@ -280,12 +273,11 @@ function NotasRecebidas() {
     }
   };
 
-  const handleConfirmarEstoqueFinanceiro = async () => {
+  const handleConfirmarXmlUpload = async () => {
     if (!importResults || !empresa) return;
     setIsSaving(true);
 
     try {
-      // 1. Obter ou criar fornecedor em contatos
       let fornecedorId: string | null = null;
       const { data: contatosExistentes } = await supabase
         .from("contatos")
@@ -299,10 +291,96 @@ function NotasRecebidas() {
       } else {
         const { data: novoContato } = await supabase
           .from("contatos")
+          .insert({ empresa_id: empresa.id, nome: importResults.emitente, documento: importResults.cnpj, tipo: "fornecedor" as any })
+          .select("id").single();
+        if (novoContato) fornecedorId = novoContato.id;
+      }
+
+      let totalQtd = 0;
+      for (const p of importResults.produtos) {
+        totalQtd += p.qtd;
+        const { data: prodExistente } = await supabase
+          .from("produtos")
+          .select("id, estoque_atual")
+          .eq("empresa_id", empresa.id)
+          .or(`codigo.eq.${p.codigo},nome.ilike.%${p.nome.slice(0, 10)}%`)
+          .maybeSingle();
+
+        let prodId: string;
+        if (prodExistente) {
+          prodId = prodExistente.id;
+          await supabase.from("produtos").update({ estoque_atual: (Number(prodExistente.estoque_atual) || 0) + p.qtd, preco_custo: p.valor }).eq("id", prodId);
+        } else {
+          const { data: novoProd } = await supabase
+            .from("produtos")
+            .insert({ empresa_id: empresa.id, codigo: p.codigo, nome: p.nome, unidade: p.un, preco_custo: p.valor, preco_venda: p.valor * 1.4, estoque_atual: p.qtd, ativo: true })
+            .select("id").single();
+          prodId = novoProd!.id;
+        }
+
+        await supabase.from("movimentacoes_estoque").insert({
+          empresa_id: empresa.id, produto_id: prodId, tipo: "entrada", quantidade: p.qtd,
+          custo_unitario: p.valor, observacoes: `Entrada via Importação de XML (Chave: ${importResults.chave})`
+        });
+      }
+
+      const vencimento = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split("T")[0];
+      await supabase.from("lancamentos_financeiros").insert({
+        empresa_id: empresa.id, tipo: "pagar", status: "aberto",
+        descricao: `Compra NF-e ${importResults.nNF} - ${importResults.emitente}`,
+        valor: importResults.total, data_vencimento: vencimento, contato_id: fornecedorId,
+        observacoes: `Importação de XML (Chave ${importResults.chave})`
+      });
+
+      const storageKey = `imported_xml_chaves_${empresa.id}`;
+      const chavesJaImportadas: string[] = JSON.parse(localStorage.getItem(storageKey) || "[]");
+      chavesJaImportadas.push(importResults.chave);
+      localStorage.setItem(storageKey, JSON.stringify(chavesJaImportadas));
+
+      setNotas(prev => [{
+        chave: importResults.chave, emitente: importResults.emitente, cnpj: importResults.cnpj,
+        valor: importResults.total, data_emissao: new Date().toISOString(), situacao_sefaz: "autorizada"
+      }, ...prev]);
+
+      qc.invalidateQueries({ queryKey: ["produtos"] });
+      qc.invalidateQueries({ queryKey: ["movs"] });
+      qc.invalidateQueries({ queryKey: ["produtos-select-mov"] });
+      qc.invalidateQueries({ queryKey: ["lancamentos"] });
+      qc.invalidateQueries({ queryKey: ["dashboard-stats"] });
+
+      toast.success(`Importação Concluída! ${importResults.produtos.length} produtos (${totalQtd} un.) e 1 conta a pagar de ${brl(importResults.total)} gerada.`);
+      setSelectedFiles([]);
+      setImportResults(null);
+    } catch (err: any) {
+      toast.error("Falha na gravação", { description: err.message });
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const handleLancarNota = async () => {
+    if (!notaDetalhe || !empresa) return;
+    setIsSaving(true);
+
+    try {
+      // 1. Obter ou criar fornecedor em contatos
+      let fornecedorId: string | null = null;
+      const { data: contatosExistentes } = await supabase
+        .from("contatos")
+        .select("id")
+        .eq("empresa_id", empresa.id)
+        .ilike("nome", `%${notaDetalhe.emitente.slice(0, 15)}%`)
+        .maybeSingle();
+
+      if (contatosExistentes) {
+        fornecedorId = contatosExistentes.id;
+      } else {
+        const { data: novoContato } = await supabase
+          .from("contatos")
           .insert({
             empresa_id: empresa.id,
-            nome: importResults.emitente,
-            documento: importResults.cnpj,
+            nome: notaDetalhe.emitente,
+            documento: notaDetalhe.cnpj,
             tipo: "fornecedor" as any
           })
           .select("id")
@@ -312,7 +390,7 @@ function NotasRecebidas() {
 
       // 2. Atualizar ou Criar produtos e registrar movimentações de estoque
       let totalQtd = 0;
-      for (const p of importResults.produtos) {
+      for (const p of notaDetalhe.produtos) {
         totalQtd += p.qtd;
         const { data: prodExistente } = await supabase
           .from("produtos")
@@ -328,10 +406,7 @@ function NotasRecebidas() {
           const novoEstoque = (Number(prodExistente.estoque_atual) || 0) + p.qtd;
           await supabase
             .from("produtos")
-            .update({
-              estoque_atual: novoEstoque,
-              preco_custo: p.valor
-            })
+            .update({ estoque_atual: novoEstoque, preco_custo: p.valorUnit })
             .eq("id", prodId);
         } else {
           const { data: novoProd } = await supabase
@@ -341,8 +416,8 @@ function NotasRecebidas() {
               codigo: p.codigo,
               nome: p.nome,
               unidade: p.un,
-              preco_custo: p.valor,
-              preco_venda: p.valor * 1.4,
+              preco_custo: p.valorUnit,
+              preco_venda: p.valorUnit * 1.4,
               estoque_atual: p.qtd,
               ativo: true
             })
@@ -351,7 +426,6 @@ function NotasRecebidas() {
           prodId = novoProd!.id;
         }
 
-        // Registrar a movimentação de estoque
         await supabase
           .from("movimentacoes_estoque")
           .insert({
@@ -359,8 +433,8 @@ function NotasRecebidas() {
             produto_id: prodId,
             tipo: "entrada",
             quantidade: p.qtd,
-            custo_unitario: p.valor,
-            observacoes: `Entrada via Importação de XML (Chave: ${importResults.chave})`
+            custo_unitario: p.valorUnit,
+            observacoes: `Entrada via Importação por Chave (Chave: ${notaDetalhe.chave})`
           });
       }
 
@@ -372,45 +446,34 @@ function NotasRecebidas() {
           empresa_id: empresa.id,
           tipo: "pagar",
           status: "aberto",
-          descricao: `Compra NF-e ${importResults.nNF} - ${importResults.emitente}`,
-          valor: importResults.total,
+          descricao: `Compra NF-e ${notaDetalhe.nNF} - ${notaDetalhe.emitente}`,
+          valor: notaDetalhe.valor,
           data_vencimento: vencimento,
           contato_id: fornecedorId,
-          observacoes: `Importação de XML (Chave ${importResults.chave})`
+          observacoes: `Importação por Chave (${notaDetalhe.chave})`
         });
 
-      // 4. Salvar chave na lista de XMLs importados para impedir duplicidade
-      const storageKey = `imported_xml_chaves_${empresa.id}`;
-      const chavesJaImportadas: string[] = JSON.parse(localStorage.getItem(storageKey) || "[]");
-      chavesJaImportadas.push(importResults.chave);
-      localStorage.setItem(storageKey, JSON.stringify(chavesJaImportadas));
-
-      // 5. Adicionar à lista local de notas recebidas
+      // 4. Adicionar à lista local de notas recebidas
       setNotas(prev => [{
-        chave: importResults.chave,
-        emitente: importResults.emitente,
-        cnpj: importResults.cnpj,
-        valor: importResults.total,
-        data_emissao: new Date().toISOString(),
-        manifesto: "confirmada",
+        chave: notaDetalhe.chave,
+        emitente: notaDetalhe.emitente,
+        cnpj: notaDetalhe.cnpj,
+        valor: notaDetalhe.valor,
+        data_emissao: notaDetalhe.data,
         situacao_sefaz: "autorizada"
       }, ...prev]);
 
-      // 6. Invalidação de React Query
+      // 5. Invalidação de React Query
       qc.invalidateQueries({ queryKey: ["produtos"] });
       qc.invalidateQueries({ queryKey: ["movs"] });
       qc.invalidateQueries({ queryKey: ["produtos-select-mov"] });
       qc.invalidateQueries({ queryKey: ["lancamentos"] });
       qc.invalidateQueries({ queryKey: ["dashboard-stats"] });
 
-      toast.success(`Importação Concluída com Sucesso! ${importResults.produtos.length} produtos atualizados (${totalQtd} unidades no estoque) e 1 conta a pagar de ${brl(importResults.total)} gerada.`);
-
-      setSelectedFiles([]);
-      setImportResults(null);
+      toast.success(`Nota lançada! ${notaDetalhe.produtos.length} produtos (${totalQtd} un.) e 1 conta a pagar de ${brl(notaDetalhe.valor)} gerada.`);
+      setNotaDetalhe(null);
     } catch (err: any) {
-      toast.error("Falha na gravação", {
-        description: "Ocorreu um erro ao salvar os dados no sistema. Por favor, verifique sua conexão ou tente novamente. " + err.message
-      });
+      toast.error("Falha ao lançar nota", { description: err.message });
     } finally {
       setIsSaving(false);
     }
@@ -440,7 +503,7 @@ function NotasRecebidas() {
       <PageHeader 
         eyebrow="Gestão Fiscal" 
         title="Notas de Entrada" 
-        description="Consulte notas fiscais emitidas contra seu CNPJ, manifeste-se (ciência/confirmar/desconhecer) e importe XMLs para o estoque e financeiro." 
+        description="Consulte notas fiscais emitidas contra seu CNPJ e importe XMLs para o estoque e financeiro." 
         actions={
           <div className="flex items-center gap-2">
             <Button variant="outline" size="sm">
@@ -502,25 +565,10 @@ function NotasRecebidas() {
                     <TableHead className="font-semibold text-foreground">Emissão</TableHead>
                     <TableHead className="text-right font-semibold text-foreground">Valor</TableHead>
                     <TableHead className="font-semibold text-foreground">Situação SEFAZ</TableHead>
-                    <TableHead className="font-semibold text-foreground">Manifesto</TableHead>
-                    <TableHead className="text-right" />
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {filteredNotas.map((n) => {
-                    const getManifestoBadge = (status: typeof n.manifesto) => {
-                      switch (status) {
-                        case "pendente":
-                          return <span className="inline-flex items-center rounded-full bg-yellow-500/10 px-2 py-0.5 text-xs font-medium text-yellow-600 dark:text-yellow-400">Pendente</span>;
-                        case "ciencia":
-                          return <span className="inline-flex items-center rounded-full bg-blue-500/10 px-2 py-0.5 text-xs font-medium text-blue-600 dark:text-blue-400">Ciência Registrada</span>;
-                        case "confirmada":
-                          return <span className="inline-flex items-center rounded-full bg-emerald-500/10 px-2 py-0.5 text-xs font-medium text-emerald-600 dark:text-emerald-400">Operação Confirmada</span>;
-                        case "desconhecida":
-                          return <span className="inline-flex items-center rounded-full bg-destructive/10 px-2 py-0.5 text-xs font-medium text-destructive">Desconhecida</span>;
-                      }
-                    };
-
                     const getSefazBadge = (status: typeof n.situacao_sefaz) => {
                       return status === "autorizada" ? (
                         <span className="inline-flex items-center text-[11px] font-medium text-emerald-600 dark:text-emerald-400">
@@ -545,44 +593,6 @@ function NotasRecebidas() {
                         <TableCell className="text-tabular text-muted-foreground">{dateBR(n.data_emissao)}</TableCell>
                         <TableCell className="text-right text-tabular font-medium text-foreground">{brl(n.valor)}</TableCell>
                         <TableCell>{getSefazBadge(n.situacao_sefaz)}</TableCell>
-                        <TableCell>{getManifestoBadge(n.manifesto)}</TableCell>
-                        <TableCell className="text-right">
-                          <div className="flex justify-end gap-1.5">
-                            {n.manifesto === "pendente" && (
-                              <Button 
-                                size="sm" 
-                                variant="ghost" 
-                                className="h-8 text-blue-600 hover:text-blue-700 hover:bg-blue-500/10"
-                                onClick={() => handleManifestar(n.chave, "ciencia")}
-                              >
-                                Dar Ciência
-                              </Button>
-                            )}
-                            {n.manifesto === "ciencia" && (
-                              <>
-                                <Button 
-                                  size="sm" 
-                                  variant="ghost" 
-                                  className="h-8 text-emerald-600 hover:text-emerald-700 hover:bg-emerald-500/10"
-                                  onClick={() => handleManifestar(n.chave, "confirmada")}
-                                >
-                                  Confirmar
-                                </Button>
-                                <Button 
-                                  size="sm" 
-                                  variant="ghost" 
-                                  className="h-8 text-destructive hover:bg-destructive/10"
-                                  onClick={() => handleManifestar(n.chave, "desconhecida")}
-                                >
-                                  Desconhecer
-                                </Button>
-                              </>
-                            )}
-                            {n.manifesto !== "pendente" && n.manifesto !== "ciencia" && (
-                              <span className="text-xs text-muted-foreground px-3 py-1">SEFAZ Notificada</span>
-                            )}
-                          </div>
-                        </TableCell>
                       </TableRow>
                     );
                   })}
@@ -772,7 +782,7 @@ function NotasRecebidas() {
 
                 <div className="flex justify-end gap-2 pt-2">
                   <Button variant="outline" disabled={isSaving} onClick={() => setImportResults(null)}>Cancelar</Button>
-                  <Button onClick={handleConfirmarEstoqueFinanceiro} disabled={isSaving} className="bg-emerald-600 hover:bg-emerald-700 text-white">
+                  <Button onClick={handleConfirmarXmlUpload} disabled={isSaving} className="bg-emerald-600 hover:bg-emerald-700 text-white">
                     {isSaving ? (
                       <>
                         <RefreshCw className="mr-2 h-4 w-4 animate-spin" />
@@ -839,6 +849,92 @@ function NotasRecebidas() {
               )}
             </Button>
           </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Modal de detalhes da nota importada por chave */}
+      <Dialog open={!!notaDetalhe} onOpenChange={(open) => { if (!open) setNotaDetalhe(null); }}>
+        <DialogContent className="sm:max-w-2xl max-h-[85vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Detalhes da NF-e</DialogTitle>
+          </DialogHeader>
+          {notaDetalhe && (
+            <div className="space-y-4">
+              <div className="grid grid-cols-2 gap-3 text-sm">
+                <div>
+                  <span className="text-muted-foreground">Emitente:</span>
+                  <p className="font-medium">{notaDetalhe.emitente}</p>
+                </div>
+                <div>
+                  <span className="text-muted-foreground">CNPJ:</span>
+                  <p className="font-mono">{notaDetalhe.cnpj}</p>
+                </div>
+                <div>
+                  <span className="text-muted-foreground">Nº NF-e:</span>
+                  <p className="font-medium">{notaDetalhe.nNF || "—"}</p>
+                </div>
+                <div>
+                  <span className="text-muted-foreground">Data Emissão:</span>
+                  <p>{dateBR(notaDetalhe.data)}</p>
+                </div>
+                <div className="col-span-2">
+                  <span className="text-muted-foreground">Chave de Acesso:</span>
+                  <p className="font-mono text-xs">{notaDetalhe.chave}</p>
+                </div>
+              </div>
+
+              {notaDetalhe.produtos.length > 0 && (
+                <div>
+                  <h4 className="text-sm font-medium mb-2">Produtos ({notaDetalhe.produtos.length} itens)</h4>
+                  <div className="border rounded-md overflow-hidden">
+                    <Table>
+                      <TableHeader className="bg-muted/40">
+                        <TableRow>
+                          <TableHead className="text-xs">Código</TableHead>
+                          <TableHead className="text-xs">Produto</TableHead>
+                          <TableHead className="text-xs text-right">Qtd</TableHead>
+                          <TableHead className="text-xs">Un.</TableHead>
+                          <TableHead className="text-xs text-right">V. Unit.</TableHead>
+                          <TableHead className="text-xs text-right">V. Total</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {notaDetalhe.produtos.map((p, i) => (
+                          <TableRow key={i}>
+                            <TableCell className="font-mono text-xs">{p.codigo}</TableCell>
+                            <TableCell className="text-xs">{p.nome}</TableCell>
+                            <TableCell className="text-right text-xs">{p.qtd}</TableCell>
+                            <TableCell className="text-xs">{p.un}</TableCell>
+                            <TableCell className="text-right text-xs">{brl(p.valorUnit)}</TableCell>
+                            <TableCell className="text-right text-xs font-medium">{brl(p.valorTotal)}</TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  </div>
+                </div>
+              )}
+
+              <div className="flex items-center justify-between border-t pt-3">
+                <div>
+                  <span className="text-muted-foreground text-sm">Valor Total:</span>
+                  <p className="text-lg font-bold">{brl(notaDetalhe.valor)}</p>
+                </div>
+                <div className="flex gap-2">
+                  <Button variant="outline" onClick={() => setNotaDetalhe(null)}>
+                    Cancelar
+                  </Button>
+                  <Button onClick={handleLancarNota} disabled={isSaving}>
+                    {isSaving ? (
+                      <><RefreshCw className="mr-2 h-4 w-4 animate-spin" /> Lançando...</>
+                    ) : (
+                      <><Check className="mr-2 h-4 w-4" /> Lançar Nota</>
+                    )}
+                  </Button>
+                </div>
+              </div>
+            </div>
+          )}
         </DialogContent>
       </Dialog>
     </>
