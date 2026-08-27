@@ -18,7 +18,7 @@ import { brl, dateBR } from "@/lib/format";
 
 import { supabase } from "@/integrations/supabase/client";
 import { useEmpresaAtual } from "@/hooks/use-empresa";
-import { useQueryClient } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { consultarNFePorChaveFn } from "@/lib/sefaz-server";
 
 export const Route = createFileRoute("/_authenticated/fiscal/recebidas")({
@@ -66,6 +66,7 @@ function parseProdutosDoXml(xml: string) {
       un: det.querySelector("prod > uCom")?.textContent || "UN",
       valorUnit: parseFloat(det.querySelector("prod > vUnCom")?.textContent || "0"),
       valorTotal: parseFloat(det.querySelector("prod > vProd")?.textContent || "0"),
+      categoria: "",
     }));
   } catch {
     return [];
@@ -91,6 +92,22 @@ function NotasRecebidas() {
   const { data: empresa } = useEmpresaAtual();
   const qc = useQueryClient();
   const [activeTab, setActiveTab] = useState<string>("manifesto");
+  
+  // Categorias existentes para autocomplete
+  const { data: categoriasExistentes = [] } = useQuery({
+    enabled: !!empresa,
+    queryKey: ["categorias-produtos", empresa?.id],
+    queryFn: async ({ signal }) => {
+      const { data, error } = await supabase
+        .from("produtos")
+        .select("categoria")
+        .eq("empresa_id", empresa!.id)
+        .not("categoria", "is", null)
+        .abortSignal(signal);
+      if (error) throw error;
+      return [...new Set((data ?? []).map((p: any) => p.categoria).filter(Boolean))].sort() as string[];
+    },
+  });
   
   // Notas Recebidas State
   const [notas, setNotas] = useState<NotaRecebida[]>(INITIAL_RECEBIDAS);
@@ -147,7 +164,7 @@ function NotasRecebidas() {
     valor: number;
     data: string;
     nNF: string;
-    produtos: { codigo: string; nome: string; qtd: number; un: string; valorUnit: number; valorTotal: number }[];
+    produtos: { codigo: string; nome: string; qtd: number; un: string; valorUnit: number; valorTotal: number; categoria: string }[];
     parcelas: { numero: string; dataVencimento: string; valor: number }[];
     xml: string;
   } | null>(null);
@@ -183,7 +200,7 @@ function NotasRecebidas() {
               const uCom = det.querySelector("prod > uCom")?.textContent || "UN";
               const vUnCom = parseFloat(det.querySelector("prod > vUnCom")?.textContent || "0");
               const vProd = parseFloat(det.querySelector("prod > vProd")?.textContent || "0");
-              return { codigo: cProd, nome: xProd, qtd: qCom, un: uCom, valorUnit: vUnCom, valorTotal: vProd };
+              return { codigo: cProd, nome: xProd, qtd: qCom, un: uCom, valorUnit: vUnCom, valorTotal: vProd, categoria: "" };
             });
             // Extrair parcelas (cobr/dup)
             const dupNodes = Array.from(doc.querySelectorAll("cobr > dup"));
@@ -470,6 +487,7 @@ function NotasRecebidas() {
             unidade: p.un,
             valor_unitario: p.valorUnit,
             valor_total: p.valorTotal,
+            categoria: p.categoria || null,
           })) as any
         );
       }
@@ -511,7 +529,7 @@ function NotasRecebidas() {
         } else {
           const { data: novoProd } = await supabase
             .from("produtos")
-            .insert({ empresa_id: empresa.id, codigo: p.codigo, nome: p.nome, unidade: p.un, preco_custo: p.valorUnit, preco_venda: p.valorUnit * 1.4, estoque_atual: p.qtd, ativo: true })
+            .insert({ empresa_id: empresa.id, codigo: p.codigo, nome: p.nome, unidade: p.un, preco_custo: p.valorUnit, preco_venda: p.valorUnit * 1.4, estoque_atual: p.qtd, ativo: true, categoria: p.categoria || null })
             .select("id").single();
           prodId = novoProd!.id;
         }
@@ -1091,6 +1109,7 @@ function NotasRecebidas() {
                           <TableHead className="text-xs">Un.</TableHead>
                           <TableHead className="text-xs text-right">V. Unit.</TableHead>
                           <TableHead className="text-xs text-right">V. Total</TableHead>
+                          <TableHead className="text-xs w-[160px]">Categoria</TableHead>
                         </TableRow>
                       </TableHeader>
                       <TableBody>
@@ -1102,10 +1121,28 @@ function NotasRecebidas() {
                             <TableCell className="text-xs">{p.un}</TableCell>
                             <TableCell className="text-right text-xs">{brl(p.valorUnit)}</TableCell>
                             <TableCell className="text-right text-xs font-medium">{brl(p.valorTotal)}</TableCell>
+                            <TableCell>
+                              <Input
+                                className="h-7 text-xs"
+                                placeholder="Categoria"
+                                value={p.categoria}
+                                onChange={(e) => {
+                                  const novas = [...notaDetalhe.produtos];
+                                  novas[i] = { ...novas[i], categoria: e.target.value };
+                                  setNotaDetalhe({ ...notaDetalhe, produtos: novas });
+                                }}
+                                list="cat-modal"
+                              />
+                            </TableCell>
                           </TableRow>
                         ))}
                       </TableBody>
                     </Table>
+                    <datalist id="cat-modal">
+                      {categoriasExistentes.map((c) => (
+                        <option key={c} value={c} />
+                      ))}
+                    </datalist>
                   </div>
                 </div>
               )}

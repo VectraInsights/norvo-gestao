@@ -31,6 +31,13 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { AlertTriangle, Package, Plus, Pencil, Trash2 } from "lucide-react";
 import { useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
@@ -291,17 +298,26 @@ function Produtos() {
                   </div>
                   <div>
                     <Label>Categoria</Label>
+                    <Select
+                      value={form.categoria || "__none__"}
+                      onValueChange={(v) => setForm({ ...form, categoria: v === "__none__" ? "" : v })}
+                    >
+                      <SelectTrigger className="w-full">
+                        <SelectValue placeholder="Selecione ou digite abaixo" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="__none__">Sem categoria</SelectItem>
+                        {categorias.map((c) => (
+                          <SelectItem key={c} value={c}>{c}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
                     <Input
-                      list="categorias-produto"
-                      placeholder="Ex.: Pneus, Peças, Lubrificantes…"
+                      className="mt-1.5"
+                      placeholder="Ou digite uma nova categoria"
                       value={form.categoria}
                       onChange={(e) => setForm({ ...form, categoria: e.target.value })}
                     />
-                    <datalist id="categorias-produto">
-                      {categorias.map((c) => (
-                        <option key={c} value={c} />
-                      ))}
-                    </datalist>
                   </div>
                   <div className="grid grid-cols-3 gap-3">
                     <div>
