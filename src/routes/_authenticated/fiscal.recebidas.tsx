@@ -10,7 +10,7 @@ import {
   FileDown, Search, CheckCircle2, AlertCircle, XCircle, 
   UploadCloud, FileCode, Check, ArrowRight, RefreshCw, Archive, Calendar, KeyRound
 } from "lucide-react";
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { toast } from "sonner";
 import { brl, dateBR } from "@/lib/format";
 
@@ -72,8 +72,31 @@ function NotasRecebidas() {
   const [chaveInput, setChaveInput] = useState("");
   const [isImportingByKey, setIsImportingByKey] = useState(false);
 
+  // Carregar notas do banco ao montar
+  useEffect(() => {
+    if (!empresa) return;
+    (async () => {
+      const { data: notasDb } = await supabase
+        .from("notas_importadas" as never)
+        .select("*")
+        .eq("empresa_id", empresa.id)
+        .order("created_at", { ascending: false });
+      if (notasDb && Array.isArray(notasDb)) {
+        setNotas((notasDb as any[]).map(n => ({
+          chave: n.chave_acesso,
+          emitente: n.emitente,
+          cnpj: n.cnpj_emitente,
+          valor: Number(n.valor_total) || 0,
+          data_emissao: n.data_emissao || "",
+          situacao_sefaz: "autorizada" as const,
+        })));
+      }
+    })();
+  }, [empresa?.id]);
+
   // Modal de detalhes da nota importada por chave
   const [notaDetalhe, setNotaDetalhe] = useState<{
+    id?: string;
     chave: string;
     emitente: string;
     cnpj: string;
@@ -81,6 +104,7 @@ function NotasRecebidas() {
     data: string;
     nNF: string;
     produtos: { codigo: string; nome: string; qtd: number; un: string; valorUnit: number; valorTotal: number }[];
+    parcelas: { numero: string; dataVencimento: string; valor: number }[];
     xml: string;
   } | null>(null);
 
@@ -99,6 +123,7 @@ function NotasRecebidas() {
       if (result.nota) {
         const xml = result.nota.xml;
         let produtos: { codigo: string; nome: string; qtd: number; un: string; valorUnit: number; valorTotal: number }[] = [];
+        let parcelas: { numero: string; dataVencimento: string; valor: number }[] = [];
         let nNF = "";
 
         if (xml) {
@@ -116,6 +141,13 @@ function NotasRecebidas() {
               const vProd = parseFloat(det.querySelector("prod > vProd")?.textContent || "0");
               return { codigo: cProd, nome: xProd, qtd: qCom, un: uCom, valorUnit: vUnCom, valorTotal: vProd };
             });
+            // Extrair parcelas (cobr/dup)
+            const dupNodes = Array.from(doc.querySelectorAll("cobr > dup"));
+            parcelas = dupNodes.map((dup) => ({
+              numero: dup.querySelector("nDup")?.textContent || "",
+              dataVencimento: dup.querySelector("dVenc")?.textContent || "",
+              valor: parseFloat(dup.querySelector("vDup")?.textContent || "0"),
+            }));
           } catch {
             // XML não parseável
           }
@@ -129,6 +161,7 @@ function NotasRecebidas() {
           data: result.nota.data,
           nNF,
           produtos,
+          parcelas,
           xml: xml || "",
         });
         setChaveImportModal(false);
@@ -363,7 +396,41 @@ function NotasRecebidas() {
     setIsSaving(true);
 
     try {
-      // 1. Obter ou criar fornecedor em contatos
+      // 1. Salvar nota no banco (previne duplicidade)
+      const { data: notaSalva } = await supabase
+        .from("notas_importadas" as never)
+        .insert({
+          empresa_id: empresa.id,
+          chave_acesso: notaDetalhe.chave,
+          emitente: notaDetalhe.emitente,
+          cnpj_emitente: notaDetalhe.cnpj,
+          numero_nf: notaDetalhe.nNF,
+          data_emissao: notaDetalhe.data,
+          valor_total: notaDetalhe.valor,
+          situacao: "lancada",
+          xml_completo: notaDetalhe.xml,
+        } as any)
+        .select("id")
+        .single();
+
+      const notaId = (notaSalva as any)?.id;
+
+      // 2. Salvar itens no banco
+      if (notaId && notaDetalhe.produtos.length > 0) {
+        await supabase.from("notas_importadas_itens" as never).insert(
+          notaDetalhe.produtos.map(p => ({
+            nota_id: notaId,
+            codigo: p.codigo,
+            nome: p.nome,
+            quantidade: p.qtd,
+            unidade: p.un,
+            valor_unitario: p.valorUnit,
+            valor_total: p.valorTotal,
+          })) as any
+        );
+      }
+
+      // 3. Obter ou criar fornecedor
       let fornecedorId: string | null = null;
       const { data: contatosExistentes } = await supabase
         .from("contatos")
@@ -377,18 +444,12 @@ function NotasRecebidas() {
       } else {
         const { data: novoContato } = await supabase
           .from("contatos")
-          .insert({
-            empresa_id: empresa.id,
-            nome: notaDetalhe.emitente,
-            documento: notaDetalhe.cnpj,
-            tipo: "fornecedor" as any
-          })
-          .select("id")
-          .single();
+          .insert({ empresa_id: empresa.id, nome: notaDetalhe.emitente, documento: notaDetalhe.cnpj, tipo: "fornecedor" as any })
+          .select("id").single();
         if (novoContato) fornecedorId = novoContato.id;
       }
 
-      // 2. Atualizar ou Criar produtos e registrar movimentações de estoque
+      // 4. Atualizar ou criar produtos e registrar movimentações
       let totalQtd = 0;
       for (const p of notaDetalhe.produtos) {
         totalQtd += p.qtd;
@@ -400,60 +461,56 @@ function NotasRecebidas() {
           .maybeSingle();
 
         let prodId: string;
-
         if (prodExistente) {
           prodId = prodExistente.id;
-          const novoEstoque = (Number(prodExistente.estoque_atual) || 0) + p.qtd;
-          await supabase
-            .from("produtos")
-            .update({ estoque_atual: novoEstoque, preco_custo: p.valorUnit })
-            .eq("id", prodId);
+          await supabase.from("produtos").update({ estoque_atual: (Number(prodExistente.estoque_atual) || 0) + p.qtd, preco_custo: p.valorUnit }).eq("id", prodId);
         } else {
           const { data: novoProd } = await supabase
             .from("produtos")
-            .insert({
-              empresa_id: empresa.id,
-              codigo: p.codigo,
-              nome: p.nome,
-              unidade: p.un,
-              preco_custo: p.valorUnit,
-              preco_venda: p.valorUnit * 1.4,
-              estoque_atual: p.qtd,
-              ativo: true
-            })
-            .select("id")
-            .single();
+            .insert({ empresa_id: empresa.id, codigo: p.codigo, nome: p.nome, unidade: p.un, preco_custo: p.valorUnit, preco_venda: p.valorUnit * 1.4, estoque_atual: p.qtd, ativo: true })
+            .select("id").single();
           prodId = novoProd!.id;
         }
 
-        await supabase
-          .from("movimentacoes_estoque")
-          .insert({
-            empresa_id: empresa.id,
-            produto_id: prodId,
-            tipo: "entrada",
-            quantidade: p.qtd,
-            custo_unitario: p.valorUnit,
-            observacoes: `Entrada via Importação por Chave (Chave: ${notaDetalhe.chave})`
-          });
+        await supabase.from("movimentacoes_estoque").insert({
+          empresa_id: empresa.id, produto_id: prodId, tipo: "entrada", quantidade: p.qtd,
+          custo_unitario: p.valorUnit, observacoes: `Entrada NF-e ${notaDetalhe.nNF} (Chave: ${notaDetalhe.chave})`
+        });
       }
 
-      // 3. Criar lançamento financeiro no contas a pagar
-      const vencimento = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split("T")[0];
-      await supabase
-        .from("lancamentos_financeiros")
-        .insert({
-          empresa_id: empresa.id,
-          tipo: "pagar",
-          status: "aberto",
-          descricao: `Compra NF-e ${notaDetalhe.nNF} - ${notaDetalhe.emitente}`,
-          valor: notaDetalhe.valor,
-          data_vencimento: vencimento,
-          contato_id: fornecedorId,
-          observacoes: `Importação por Chave (${notaDetalhe.chave})`
-        });
+      // 5. Lançar parcelas no contas a pagar
+      const parcelasLancar = notaDetalhe.parcelas.length > 0
+        ? notaDetalhe.parcelas
+        : [{ numero: "001", dataVencimento: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split("T")[0], valor: notaDetalhe.valor }];
 
-      // 4. Adicionar à lista local de notas recebidas
+      for (const parc of parcelasLancar) {
+        const { data: lanc } = await supabase
+          .from("lancamentos_financeiros")
+          .insert({
+            empresa_id: empresa.id,
+            tipo: "pagar",
+            status: "aberto",
+            descricao: `NF-e ${notaDetalhe.nNF} ${notaDetalhe.emitente} (${parc.numero}/${parcelasLancar.length})`,
+            valor: parc.valor,
+            data_vencimento: parc.dataVencimento,
+            contato_id: fornecedorId,
+            observacoes: `Chave: ${notaDetalhe.chave} | Parcela ${parc.numero}`,
+          })
+          .select("id")
+          .single();
+
+        if (notaId && lanc) {
+          await supabase.from("notas_importadas_parcelas" as never).insert({
+            nota_id: notaId,
+            numero: parc.numero,
+            data_vencimento: parc.dataVencimento,
+            valor: parc.valor,
+            lancamento_id: lanc.id,
+          } as any);
+        }
+      }
+
+      // 6. Adicionar à lista local
       setNotas(prev => [{
         chave: notaDetalhe.chave,
         emitente: notaDetalhe.emitente,
@@ -463,14 +520,14 @@ function NotasRecebidas() {
         situacao_sefaz: "autorizada"
       }, ...prev]);
 
-      // 5. Invalidação de React Query
+      // 7. Invalidação de React Query
       qc.invalidateQueries({ queryKey: ["produtos"] });
       qc.invalidateQueries({ queryKey: ["movs"] });
       qc.invalidateQueries({ queryKey: ["produtos-select-mov"] });
       qc.invalidateQueries({ queryKey: ["lancamentos"] });
       qc.invalidateQueries({ queryKey: ["dashboard-stats"] });
 
-      toast.success(`Nota lançada! ${notaDetalhe.produtos.length} produtos (${totalQtd} un.) e 1 conta a pagar de ${brl(notaDetalhe.valor)} gerada.`);
+      toast.success(`Nota lançada! ${notaDetalhe.produtos.length} produtos (${totalQtd} un.) e ${parcelasLancar.length} parcela(s) no contas a pagar.`);
       setNotaDetalhe(null);
     } catch (err: any) {
       toast.error("Falha ao lançar nota", { description: err.message });
@@ -907,6 +964,32 @@ function NotasRecebidas() {
                             <TableCell className="text-xs">{p.un}</TableCell>
                             <TableCell className="text-right text-xs">{brl(p.valorUnit)}</TableCell>
                             <TableCell className="text-right text-xs font-medium">{brl(p.valorTotal)}</TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  </div>
+                </div>
+              )}
+
+              {notaDetalhe.parcelas.length > 0 && (
+                <div>
+                  <h4 className="text-sm font-medium mb-2">Parcelas ({notaDetalhe.parcelas.length})</h4>
+                  <div className="border rounded-md overflow-hidden">
+                    <Table>
+                      <TableHeader className="bg-muted/40">
+                        <TableRow>
+                          <TableHead className="text-xs">Parcela</TableHead>
+                          <TableHead className="text-xs">Vencimento</TableHead>
+                          <TableHead className="text-xs text-right">Valor</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {notaDetalhe.parcelas.map((p, i) => (
+                          <TableRow key={i}>
+                            <TableCell className="text-xs">{p.numero}</TableCell>
+                            <TableCell className="text-xs">{dateBR(p.dataVencimento)}</TableCell>
+                            <TableCell className="text-right text-xs font-medium">{brl(p.valor)}</TableCell>
                           </TableRow>
                         ))}
                       </TableBody>
