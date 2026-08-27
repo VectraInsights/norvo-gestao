@@ -892,7 +892,7 @@ export async function consultarPorChave(
 
   const xmlBody = `<nfeDistDFeInteresse xmlns="${nsWdsl}">
   <nfeDadosMsg xmlns="${nsWdsl}">
-    <distDFeInt xmlns="${ns}" versao="1.00">
+    <distDFeInt xmlns="${ns}" versao="1.01">
       <tpAmb>${tpAmb}</tpAmb>
       <CNPJ>${cnpj.replace(/\D/g, "")}</CNPJ>
       <consChNFe>
