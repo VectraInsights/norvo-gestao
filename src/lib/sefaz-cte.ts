@@ -86,6 +86,7 @@ export interface CteInputCompleto {
   obs?: string;
   infCTeNorm?: { proPred?: string; xOutCat?: string };
   modalRod?: { rntrc: string; ciot?: string; veiculos?: Array<{ placa: string; uf: string; rntrc?: string }> };
+  chavesNFe?: string[]; // múltiplas NF-e da carga — infDoc com vários infNFe
 }
 
 export function buildCteXml(input: CteInputCompleto): { xml: string; chave: string } {
@@ -121,7 +122,7 @@ export function buildCteXml(input: CteInputCompleto): { xml: string; chave: stri
     <imp><ICMS><ICMS00><CST>00</CST><vBC>${input.vPrest.toFixed(2)}</vBC><pICMS>0.00</pICMS><vICMS>0.00</vICMS></ICMS00></ICMS></imp>
     <infCTeNorm>
       <infCarga><vCarga>${input.vCarga.toFixed(2)}</vCarga><proPred>${input.infCTeNorm?.proPred || "CARGA GERAL"}</proPred><infQ><cUnid>01</cUnid><tpMed>00</tpMed><qCarga>${input.pesoKg.toFixed(3)}</qCarga></infQ></infCarga>
-      <infDoc><infNFe><chave>00000000000000000000000000000000000000000000</chave></infNFe></infDoc>
+      <infDoc>${(input.chavesNFe && input.chavesNFe.length > 0) ? input.chavesNFe.map(ch => `<infNFe><chave>${ch.replace(/\D/g,"")}</chave></infNFe>`).join("") : `<infNFe><chave>00000000000000000000000000000000000000000000</chave></infNFe>`}</infDoc>
       ${input.tomador.toma === "4" ? `<toma4><toma>4</toma><CNPJ>${(input.tomador.cnpj||"").replace(/\D/g,"")}</CNPJ><xNome>${input.tomador.xNome}</xNome></toma4>` : ""}
     </infCTeNorm>
     <infModal versaoModal="4.00"><rodo><RNTRC>${(input.modalRod?.rntrc||"").replace(/\D/g,"")}</RNTRC></rodo></infModal>

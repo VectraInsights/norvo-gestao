@@ -1,14 +1,16 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { PageHeader } from "@/components/erp/page-header";
 import { EmptyState } from "@/components/erp/empty-state";
-import { Card } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
-import { Truck, Plus, FileText, Search, Ban, UploadCloud, FileCode, UsersRound, MapPin, Package, DollarSign, Building2, Route as RouteIcon } from "lucide-react";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Truck, Plus, FileText, Search, Ban, UploadCloud, FileCode, UsersRound, MapPin, Package, DollarSign, Building2, Route as RouteIcon, Trash2, Filter, Calendar, CheckCircle2 } from "lucide-react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useEmpresaAtual } from "@/hooks/use-empresa";
@@ -30,8 +32,12 @@ function CtePage() {
   const qc = useQueryClient();
   const search = Route.useSearch();
   const [prefillBanner, setPrefillBanner] = useState<string | null>(null);
-  const [nfeFile, setNfeFile] = useState<File | null>(null);
   const [isParsing, setIsParsing] = useState(false);
+  const [mercadorias, setMercadorias] = useState<Array<{ chave: string; nNF: string; serie: string; emit: string; emitCnpj: string; dest: string; destCnpj: string; valor: number; peso: number; data: string; tomador: string }>>([]);
+  const [filtroEmpresa] = useState("ROSE TRANSPORTES");
+  const [filtroRemetente, setFiltroRemetente] = useState("TODOS REMETENTES");
+  const [filtroDestinatario, setFiltroDestinatario] = useState("TODOS OS DESTINATÁRIOS");
+
   const { data: docs, isLoading } = useQuery({
     enabled: !!empresa,
     queryKey: ["cte-documentos", empresa?.id],
@@ -45,43 +51,57 @@ function CtePage() {
   const [open, setOpen] = useState(false);
   const [form, setForm] = useState({ toma: "3", cnpjTomador: "", xNomeTomador: "", ufTomador: "MG", cMunTomador: "3106200", xMunTomador: "BELO HORIZONTE", cfop: "5353", vPrest: "1000.00", vCarga: "10000.00", peso: "5000", rntrc: "", cMunEnv: "3106200", xMunEnv: "BELO HORIZONTE", ufEnv: "MG", cMunIni: "3106200", xMunIni: "BELO HORIZONTE", ufIni: "MG", cMunFim: "3550308", xMunFim: "SAO PAULO", ufFim: "SP" });
 
-  const handleImportNFeXml = async (file: File) => {
-    if (!file.name.toLowerCase().endsWith(".xml")) { toast.error("Apenas XML"); return; }
+  const handleImportNFeXml = async (files: FileList | File[]) => {
+    const list = Array.from(files as any as File[]);
+    const xmls = list.filter(f => f.name.toLowerCase().endsWith(".xml"));
+    if (xmls.length === 0) { toast.error("Selecione XMLs de NF-e"); return; }
     setIsParsing(true);
     try {
-      const text = await file.text();
-      const parser = new DOMParser();
-      const doc = parser.parseFromString(text, "text/xml");
-      const destCnpj = doc.querySelector("dest > CNPJ")?.textContent || doc.querySelector("dest > CPF")?.textContent || "";
-      const destXNome = doc.querySelector("dest > xNome")?.textContent || "";
-      const destUF = doc.querySelector("dest > enderDest > UF")?.textContent || "";
-      const destCMun = doc.querySelector("dest > enderDest > cMun")?.textContent || "";
-      const destXMun = doc.querySelector("dest > enderDest > xMun")?.textContent || "";
-      const vNF = doc.querySelector("total > ICMSTot > vNF")?.textContent || doc.querySelector("vNF")?.textContent || "0";
-      const pesoB = doc.querySelector("transp > vol > pesoB")?.textContent || doc.querySelector("vol > pesoB")?.textContent || "";
-      const nNF = doc.querySelector("ide > nNF")?.textContent || "";
-      const chave = doc.querySelector("infNFe")?.getAttribute("Id")?.replace(/^NFe/, "") || doc.querySelector("chNFe")?.textContent || "";
-      const peso = pesoB ? parseFloat(pesoB) : 1000;
-      const vCarga = parseFloat(vNF) || 0;
-      setForm(f => ({
-        ...f,
-        cnpjTomador: destCnpj || f.cnpjTomador,
-        xNomeTomador: destXNome || f.xNomeTomador,
-        ufTomador: destUF || f.ufTomador,
-        cMunTomador: destCMun || f.cMunTomador,
-        xMunTomador: destXMun || f.xMunTomador,
-        vCarga: vCarga ? vCarga.toFixed(2) : f.vCarga,
-        peso: peso ? String(peso) : f.peso,
-        vPrest: vCarga ? (vCarga * 0.1).toFixed(2) : f.vPrest,
-      }));
-      setPrefillBanner(chave ? `NF-e ${nNF} (${chave.slice(0,12)}...) carregada` : `NF-e ${nNF} carregada`);
-      setOpen(true);
-      toast.success(`XML NF-e ${nNF} importado — dados da carga preenchidos`);
+      let added = 0;
+      const novas: typeof mercadorias = [];
+      for (const file of xmls) {
+        const text = await file.text();
+        const parser = new DOMParser();
+        const doc = parser.parseFromString(text, "text/xml");
+        const emitCnpj = doc.querySelector("emit > CNPJ")?.textContent || "";
+        const emitXNome = doc.querySelector("emit > xNome")?.textContent || "";
+        const destCnpj = doc.querySelector("dest > CNPJ")?.textContent || doc.querySelector("dest > CPF")?.textContent || "";
+        const destXNome = doc.querySelector("dest > xNome")?.textContent || "";
+        const destUF = doc.querySelector("dest > enderDest > UF")?.textContent || "";
+        const destCMun = doc.querySelector("dest > enderDest > cMun")?.textContent || "";
+        const destXMun = doc.querySelector("dest > enderDest > xMun")?.textContent || "";
+        const vNF = doc.querySelector("total > ICMSTot > vNF")?.textContent || doc.querySelector("vNF")?.textContent || "0";
+        const pesoB = doc.querySelector("transp > vol > pesoB")?.textContent || doc.querySelector("vol > pesoB")?.textContent || "";
+        const nNF = doc.querySelector("ide > nNF")?.textContent || file.name.replace(/\.xml$/i, "");
+        const serie = doc.querySelector("ide > serie")?.textContent || "1";
+        const dhEmi = doc.querySelector("ide > dhEmi")?.textContent || "";
+        const chave = doc.querySelector("infNFe")?.getAttribute("Id")?.replace(/^NFe/, "") || doc.querySelector("chNFe")?.textContent || `${Date.now()}${added}`;
+        const chaveNorm = chave.replace(/\D/g, "");
+        if (mercadorias.some(m => m.chave === chaveNorm) || novas.some(m => m.chave === chaveNorm)) continue;
+        const peso = pesoB ? parseFloat(pesoB) : 1000;
+        const valor = parseFloat(vNF) || 0;
+        novas.push({ chave: chaveNorm, nNF, serie, emit: emitXNome, emitCnpj, dest: destXNome, destCnpj, valor, peso, data: dhEmi.slice(0,10), tomador: destXNome });
+        // Preenche tomador com o primeiro
+        if (added === 0 && mercadorias.length === 0) {
+          setForm(f => ({ ...f, cnpjTomador: destCnpj || f.cnpjTomador, xNomeTomador: destXNome || f.xNomeTomador, ufTomador: destUF || f.ufTomador, cMunTomador: destCMun || f.cMunTomador, xMunTomador: destXMun || f.xMunTomador }));
+        }
+        added++;
+      }
+      if (novas.length > 0) {
+        const merged = [...mercadorias, ...novas];
+        setMercadorias(merged);
+        const somaV = merged.reduce((a, m) => a + (m.valor || 0), 0);
+        const somaP = merged.reduce((a, m) => a + (m.peso || 0), 0);
+        setForm(f => ({ ...f, vCarga: somaV.toFixed(2), peso: String(somaP), vPrest: (somaV * 0.1).toFixed(2) }));
+        setPrefillBanner(`${novas.length} NF-e(s) importada(s) — ${merged.length} no total`);
+        toast.success(`${novas.length} XML(s) importado(s)`);
+      } else {
+        toast.info("Nenhum XML novo (chaves já importadas)");
+      }
     } catch (e: any) {
       toast.error("Falha ao ler XML", { description: e.message });
     } finally {
       setIsParsing(false);
-      setNfeFile(null);
     }
   };
 
@@ -90,18 +110,8 @@ function CtePage() {
     if (raw) {
       try {
         const p = JSON.parse(raw);
-        setForm(f => ({
-          ...f,
-          cnpjTomador: p.destCnpj || f.cnpjTomador,
-          xNomeTomador: p.destXNome || f.xNomeTomador,
-          ufTomador: p.destUF || f.ufTomador,
-          cMunTomador: p.destCMun || f.cMunTomador,
-          xMunTomador: p.destXMun || f.xMunTomador,
-          vCarga: p.vCarga ? String(p.vCarga) : f.vCarga,
-          peso: p.peso ? String(p.peso) : f.peso,
-          vPrest: p.vCarga ? (Number(p.vCarga) * 0.1).toFixed(2) : f.vPrest,
-        }));
-        setPrefillBanner(p.nNF ? `NF-e ${p.nNF} → CT-e (carga R$ ${Number(p.vCarga||0).toLocaleString("pt-BR",{minimumFractionDigits:2})})` : `NF-e ${p.fromNFe?.slice(0,12)}... → CT-e`);
+        setForm(f => ({ ...f, cnpjTomador: p.destCnpj || f.cnpjTomador, xNomeTomador: p.destXNome || f.xNomeTomador, ufTomador: p.destUF || f.ufTomador, cMunTomador: p.destCMun || f.cMunTomador, xMunTomador: p.destXMun || f.xMunTomador, vCarga: p.vCarga ? String(p.vCarga) : f.vCarga, peso: p.peso ? String(p.peso) : f.peso, vPrest: p.vCarga ? (Number(p.vCarga) * 0.1).toFixed(2) : f.vPrest }));
+        setPrefillBanner(p.nNF ? `NF-e ${p.nNF} → CT-e` : `NF-e → CT-e`);
         setOpen(true);
         localStorage.removeItem("prefill_cte_from_nfe");
       } catch {}
@@ -122,11 +132,12 @@ function CtePage() {
         serie: "1",
         tomador: { toma: form.toma as any, cnpj: form.cnpjTomador, xNome: form.xNomeTomador, uf: form.ufTomador, cMun: form.cMunTomador, xMun: form.xMunTomador },
         emit: { xNome: form.xNomeTomador, ie: "ISENTO", cMun: form.cMunEnv, xMun: form.xMunEnv } as any,
+        chavesNFe: mercadorias.map(m => m.chave),
       } } });
       return ret;
     },
     onSuccess: (ret: any) => {
-      if (ret.sucesso) { toast.success(`CT-e ${ret.chave} autorizado` + (ret.protocolo ? ` prot ${ret.protocolo}` : "")); setOpen(false); }
+      if (ret.sucesso) { toast.success(`CT-e ${ret.chave} autorizado` + (ret.protocolo ? ` prot ${ret.protocolo}` : "")); setOpen(false); setMercadorias([]); }
       else toast.error(ret.xMotivo || ret.motivo || "Rejeitado");
       qc.invalidateQueries({ queryKey: ["cte-documentos"] });
     },
@@ -158,31 +169,142 @@ function CtePage() {
   });
 
   return (
-    <div className="p-6 space-y-6">
-      <PageHeader eyebrow="Fiscal" title="CT-e" description="Conhecimento de Transporte Eletrônico (57) — fase 2: emissão, consulta e cancelamento. Reaproveita seu certificado A1." actions={<Button size="sm" onClick={() => setOpen(true)}><Plus className="mr-1 h-4 w-4" /> Novo CT-e</Button>} />
+    <div className="p-6 space-y-4">
+      <PageHeader eyebrow="Fiscal" title="CT-e" description="Conhecimento de Transporte Eletrônico (57) — emissão robusta estilo STM, com múltiplas NF-es por CT-e." actions={<Button size="sm" onClick={() => setOpen(true)}><Plus className="mr-1 h-4 w-4" /> Novo CT-e</Button>} />
       {prefillBanner && (
         <Card className="p-3 bg-sky-500/10 border-sky-500/30 text-sm flex items-center justify-between">
-          <span className="flex items-center gap-2"><Truck className="h-4 w-4 text-sky-600" /> {prefillBanner} — dados da NF-e pré-preenchidos. Confira e emita.</span>
+          <span className="flex items-center gap-2"><Truck className="h-4 w-4 text-sky-600" /> {prefillBanner}</span>
           <Button variant="ghost" size="sm" className="h-7" onClick={() => setPrefillBanner(null)}>×</Button>
         </Card>
       )}
-      <Card className="p-4 bg-emerald-500/10 border-emerald-500/30 text-sm">
-        <strong>Fase 2 — CT-e ativo:</strong> builder 4.00 (<code>sefaz-cte.ts</code>), assinatura <code>infCte</code>, SOAP mTLS SVRS. Em homologação teste com RNTRC fictício; em produção a SEFAZ valida IE/RNTRC e CFOP.
-      </Card>
-      <Card className="p-4">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-          <div>
-            <h4 className="text-sm font-semibold flex items-center gap-2"><FileCode className="h-4 w-4" /> Importar NF-e (XML) para CT-e</h4>
-            <p className="text-xs text-muted-foreground">Selecione o XML da NF-e que será a carga — preenche tomador, valores e peso automaticamente.</p>
-          </div>
-          <div className="flex items-center gap-2">
-            <Input type="file" accept=".xml" className="w-[260px]" onChange={e => { const f = e.target.files?.[0]; if (f) handleImportNFeXml(f); e.currentTarget.value = ""; }} />
-            {isParsing && <span className="text-xs text-muted-foreground">Lendo...</span>}
-          </div>
+
+      {/* Cadastro de Mercadorias para Embarque — estilo STM */}
+      <Card className="overflow-hidden border-2 border-primary/20 shadow-panel">
+        <div className="bg-primary text-primary-foreground px-3 py-2 flex items-center justify-between">
+          <h3 className="text-sm font-semibold flex items-center gap-2"><Package className="h-4 w-4" /> Cadastro de Mercadorias para Embarque</h3>
+          <span className="text-xs opacity-80">CT-e Avulso • Sem Mercadoria/Percurso</span>
         </div>
+        <CardContent className="p-3 space-y-3 bg-muted/20">
+          {/* Filtros topo */}
+          <div className="grid grid-cols-1 md:grid-cols-5 gap-2">
+            <div><Label className="text-xs">Nome Empresa</Label><div className="flex gap-1"><Input value={filtroEmpresa} readOnly className="h-7 text-xs bg-amber-100 dark:bg-amber-900/30 font-medium" /><Button size="icon" variant="outline" className="h-7 w-7 shrink-0"><Search className="h-3 w-3" /></Button></div></div>
+            <div><Label className="text-xs">Remetente</Label><div className="flex gap-1"><Input value={filtroRemetente} onChange={e=>setFiltroRemetente(e.target.value)} className="h-7 text-xs" /><Button size="icon" variant="outline" className="h-7 w-7 shrink-0"><Search className="h-3 w-3" /></Button></div></div>
+            <div><Label className="text-xs">Destinatário</Label><div className="flex gap-1"><Input value={filtroDestinatario} onChange={e=>setFiltroDestinatario(e.target.value)} className="h-7 text-xs" /><Button size="icon" variant="outline" className="h-7 w-7 shrink-0"><Search className="h-3 w-3" /></Button></div></div>
+            <div><Label className="text-xs">Placa Veículo</Label><div className="flex gap-1"><Input placeholder="TODAS" className="h-7 text-xs" /><Button size="icon" variant="outline" className="h-7 w-7 shrink-0"><Search className="h-3 w-3" /></Button></div></div>
+            <div><Label className="text-xs">Mercadoria</Label><div className="flex gap-1"><Input placeholder="TODAS AS MERCADORIAS" className="h-7 text-xs" /><Button size="icon" variant="outline" className="h-7 w-7 shrink-0"><Search className="h-3 w-3" /></Button></div></div>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-3 border rounded p-2 bg-background">
+            <div>
+              <Label className="text-xs font-semibold text-primary">Embarque via CT-e</Label>
+              <div className="flex flex-col gap-1 mt-1 text-xs">
+                <label className="flex items-center gap-1"><input type="radio" checked readOnly /> CT-e Avulso</label>
+                <label className="flex items-center gap-1 opacity-60"><input type="radio" disabled /> CT-e Redes­pacho</label>
+              </div>
+            </div>
+            <div>
+              <Label className="text-xs font-semibold text-primary">Situação de Embarque</Label>
+              <div className="flex flex-col gap-1 mt-1 text-xs">
+                <label className="flex items-center gap-1"><input type="radio" checked readOnly /> Pendentes de Liberação</label>
+                <label className="flex items-center gap-1 opacity-60"><input type="radio" disabled /> Embarques Liberados</label>
+              </div>
+            </div>
+            <div>
+              <Label className="text-xs font-semibold text-primary">Período de Entrada</Label>
+              <div className="flex items-center gap-2 mt-1">
+                <Input type="date" className="h-7 text-xs" defaultValue="2026-08-21" />
+                <span className="text-xs">Até</span>
+                <Input type="date" className="h-7 text-xs" defaultValue="2026-08-28" />
+                <Button size="sm" variant="outline" className="h-7 text-xs"><Calendar className="h-3 w-3 mr-1" />Consulta</Button>
+              </div>
+            </div>
+            <div className="flex items-end">
+              <div className="text-xs text-muted-foreground">Qtde NF-e: <span className="font-bold text-foreground">{mercadorias.length}</span> • Peso Bruto: <span className="font-bold">{mercadorias.reduce((a,m)=>a+m.peso,0).toFixed(2)} kg</span> • Valor: <span className="font-bold">{brl(mercadorias.reduce((a,m)=>a+m.valor,0))}</span></div>
+            </div>
+          </div>
+
+          {/* Listagem das Notas Fiscais */}
+          <div className="border rounded overflow-hidden bg-background">
+            <div className="bg-sky-600 text-white px-2 py-1 flex items-center justify-between">
+              <span className="text-xs font-semibold">Listagem das Notas Fiscais</span>
+              <span className="text-xs">Qtde NF-e: {mercadorias.length}</span>
+            </div>
+            <div className="overflow-x-auto max-h-[220px]">
+              <Table>
+                <TableHeader className="sticky top-0 bg-muted">
+                  <TableRow>
+                    <TableHead className="w-6"><input type="checkbox" checked readOnly /></TableHead>
+                    <TableHead className="text-xs">Código</TableHead>
+                    <TableHead className="text-xs">Remetente</TableHead>
+                    <TableHead className="text-xs">Destinatário</TableHead>
+                    <TableHead className="text-xs">Nº NF-e</TableHead>
+                    <TableHead className="text-xs">Série</TableHead>
+                    <TableHead className="text-xs">Data Emissão</TableHead>
+                    <TableHead className="text-xs">Valor</TableHead>
+                    <TableHead className="text-xs">Peso</TableHead>
+                    <TableHead className="text-xs">Chave</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {mercadorias.length === 0 ? (
+                    <TableRow><TableCell colSpan={10} className="text-center text-xs text-muted-foreground py-8">Nenhuma NF-e importada. Use “Importar NF-e (XML)” abaixo.</TableCell></TableRow>
+                  ) : (
+                    mercadorias.map((m, i) => (
+                      <TableRow key={m.chave} className="text-xs">
+                        <TableCell><input type="checkbox" checked readOnly /></TableCell>
+                        <TableCell className="font-mono">18837</TableCell>
+                        <TableCell className="truncate max-w-[160px]">{m.emit}</TableCell>
+                        <TableCell className="truncate max-w-[160px]">{m.dest}</TableCell>
+                        <TableCell className="font-mono">{m.nNF}</TableCell>
+                        <TableCell>1</TableCell>
+                        <TableCell>{m.data || "—"}</TableCell>
+                        <TableCell className="text-right">{brl(m.valor)}</TableCell>
+                        <TableCell className="text-right">{m.peso.toFixed(2)}</TableCell>
+                        <TableCell className="font-mono truncate max-w-[180px]" title={m.chave}>{m.chave.slice(0,22)}...</TableCell>
+                      </TableRow>
+                    ))
+                  )}
+                </TableBody>
+              </Table>
+            </div>
+          </div>
+
+          {/* Listagem de Mercadorias */}
+          <div className="border rounded overflow-hidden bg-background">
+            <div className="bg-amber-600 text-white px-2 py-1 text-xs font-semibold">Listagem de Mercadorias</div>
+            <div className="overflow-x-auto max-h-[160px]">
+              <Table>
+                <TableHeader><TableRow><TableHead className="text-xs">Mercadoria Genérica</TableHead><TableHead className="text-xs">NCM</TableHead><TableHead className="text-xs">Qtde</TableHead><TableHead className="text-xs">Vlr Mercadoria</TableHead></TableRow></TableHeader>
+                <TableBody>
+                  {mercadorias.length === 0 ? (
+                    <TableRow><TableCell colSpan={4} className="text-center text-xs text-muted-foreground py-6">Aguardando NF-es</TableCell></TableRow>
+                  ) : (
+                    mercadorias.map(m => (
+                      <TableRow key={m.chave} className="text-xs"><TableCell>CARGA GERAL</TableCell><TableCell>0000.00.00</TableCell><TableCell>{m.peso.toFixed(2)}</TableCell><TableCell className="text-right">{brl(m.valor)}</TableCell></TableRow>
+                    ))
+                  )}
+                </TableBody>
+              </Table>
+            </div>
+          </div>
+
+          {/* Ações de importação múltipla */}
+          <div className="flex flex-wrap gap-2">
+            <label className="flex items-center gap-2 px-3 py-2 border rounded bg-amber-100 dark:bg-amber-900/30 cursor-pointer hover:bg-amber-200 text-xs font-medium">
+              <UploadCloud className="h-4 w-4" /> Importar NF-e (múltiplos XML)
+              <input type="file" accept=".xml" multiple className="hidden" onChange={e => { if (e.target.files) handleImportNFeXml(e.target.files); e.currentTarget.value = ""; }} />
+            </label>
+            <Button variant="outline" size="sm" onClick={() => setMercadorias([])} disabled={mercadorias.length===0}><Trash2 className="mr-1 h-3 w-3" /> Limpar</Button>
+            <div className="ml-auto flex gap-2">
+              <Button variant="outline" size="sm" onClick={() => setOpen(true)} disabled={mercadorias.length===0}>Gerar CT-e com {mercadorias.length} NF-e(s)</Button>
+              <Button size="sm" onClick={() => setOpen(true)}><Plus className="mr-1 h-3 w-3" /> Novo CT-e avulso</Button>
+            </div>
+          </div>
+        </CardContent>
       </Card>
+
       {isLoading ? <div className="text-sm text-muted-foreground">Carregando…</div> : !docs?.length ? (
-        <EmptyState icon={Truck} title="Nenhum CT-e" description="Clique em Novo CT-e para emitir. O CT-e ficará vinculado à viagem (quando informada) e ao financeiro." />
+        <EmptyState icon={Truck} title="Nenhum CT-e" description="Os CT-es emitidos aparecerão aqui." />
       ) : (
         <Card className="overflow-hidden">
           <Table>
@@ -199,7 +321,7 @@ function CtePage() {
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent className="sm:max-w-4xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle className="flex items-center gap-2"><Truck className="h-5 w-5 text-primary" /> Novo CT-e (57) — 4.00</DialogTitle>
+            <DialogTitle className="flex items-center gap-2"><Truck className="h-5 w-5 text-primary" /> Novo CT-e (57) — 4.00 {mercadorias.length > 0 && <Badge variant="outline" className="ml-2">{mercadorias.length} NF-e(s)</Badge>}</DialogTitle>
             <p className="text-sm text-muted-foreground">Preencha os dados do transporte. O XML será assinado e enviado à SEFAZ via mTLS. Em homologação o RNTRC pode ser fictício.</p>
           </DialogHeader>
 
@@ -250,7 +372,7 @@ function CtePage() {
                 <div className="h-7 w-7 rounded bg-amber-500/10 grid place-items-center"><Package className="h-4 w-4 text-amber-600" /></div>
                 <div>
                   <h4 className="text-sm font-semibold">Carga, valores e fiscal</h4>
-                  <p className="text-xs text-muted-foreground">CFOP, RNTRC e valores declarados</p>
+                  <p className="text-xs text-muted-foreground">CFOP, RNTRC e valores declarados {mercadorias.length > 0 && `• ${mercadorias.length} NF-e(s) • ${brl(Number(form.vCarga))} • ${form.peso} kg`}</p>
                 </div>
               </div>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
@@ -261,13 +383,23 @@ function CtePage() {
                 <div><Label>Valor Carga (R$)</Label><Input value={form.vCarga} onChange={e=>setForm({...form,vCarga:e.target.value})} placeholder="10000.00" /></div>
                 <div><Label>Peso (kg)</Label><Input value={form.peso} onChange={e=>setForm({...form,peso:e.target.value})} placeholder="5000" /></div>
               </div>
+              {mercadorias.length > 0 && (
+                <div className="mt-3 border rounded p-2 bg-muted/30 max-h-[120px] overflow-y-auto">
+                  <p className="text-xs font-medium mb-1">NF-es vinculadas ({mercadorias.length}):</p>
+                  <div className="flex flex-wrap gap-1">
+                    {mercadorias.map(m => (
+                      <Badge key={m.chave} variant="outline" className="text-[10px] font-mono">{m.nNF} • {m.chave.slice(-8)}</Badge>
+                    ))}
+                  </div>
+                </div>
+              )}
             </Card>
           </div>
 
           <DialogFooter className="gap-2">
             <Button variant="outline" onClick={()=>setOpen(false)}>Cancelar</Button>
             <Button onClick={()=>emitir.mutate()} disabled={emitir.isPending || !form.cnpjTomador || !form.xNomeTomador}>
-              {emitir.isPending ? "Emitindo..." : "Emitir CT-e"}
+              {emitir.isPending ? "Emitindo..." : `Emitir CT-e ${mercadorias.length > 0 ? `(${mercadorias.length} NF-e)` : ""}`}
             </Button>
           </DialogFooter>
           <p className="text-xs text-muted-foreground text-center">Chave gerada automaticamente (cUF + AAMM + CNPJ + mod 57 + série + nCT + cCT + DV). O XML será assinado com seu certificado A1 via mTLS.</p>
