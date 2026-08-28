@@ -450,6 +450,26 @@ certificado tem estrutura PKCS12 não padrão ou se `extractPkcs12Native` precis
       invalidando `categorias-financeiras-pagar`/`cadastros-categorias`/`categorias-opt`.
     - Mutation `criarCategoriaInline` com tratamento `23505` e `toast`.
 
+33. **Estrutura CT-e / MDF-e — 28/08/2026** (este commit):
+    - Emissão CT-e (57) e MDF-e (58) adiada anteriormente (~2–3 semanas) agora com **fase 1
+      de estrutura** para desbloquear implantação incremental:
+    - Migration `20260828010000_cte_mdf_estrutura.sql` já aplicada em prod: tabelas
+      `cte_documentos` (rascunho/assinado/autorizado/rejeitado/cancelado/denegado, FK viagem/veículo/tomador,
+      xml_assinado/protocolo) + `mdf_documentos` (rascunho/autorizado/cancelado/encerrado, veículo tração,
+      motorista, UF carga/descarga) + `mdf_cte_vinculos` (N:N), RLS `is_empresa_member`, índices, triggers `updated_at`.
+    - Libs `src/lib/sefaz-cte.ts` e `sefaz-mdf.ts` com `ENDPOINTS` hom/prod (AN/SVRS), builders
+      `buildCteXmlBase`/`buildMdfXmlBase` (esqueleto 4.00/3.00), stubs `signCteXml`/`signMdfXml`
+      (fase 2 reaproveita `signXml` com `<infCte Id>`/`<infMDFe Id>`) e funções stub `emitir*`.
+    - Server fns `sefaz-cte-server.ts`/`sefaz-mdf-server.ts` (createServerFn) delegando via
+      `SEFAZ_URL` → proxy Vercel (`/api/sefaz`) quando em CF, senão stub fase 1.
+    - Proxy `sefaz-proxy.ts` com cases `emitirCte/consultarCte/cancelarCte/emitirMdf/encerrarMdf/cancelarMdf`
+      retornando `{fase:1}` até mTLS.
+    - Rotas `fiscal.cte.tsx` e `fiscal.mdf.tsx` (cards fase 1, EmptyState, listagem Supabase).
+    - Nav `Fiscal` com itens **CT-e** e **MDF-e** (`nav-config.ts:121`).
+    - Fase 2 (próximos): builders completos CT-e 4.00/MDF-e 3.00, assinatura W3C exclusiva,
+      SOAP mTLS por UF (validar URLs SP/MG/RS × SVRS), server fns reais, UI de emissão vinculada
+      a Viagens/Veículos.
+
 32. **Fix categoria não persistia no produto — 27/08/2026** (este commit):
     - `handleConfirmarXmlUpload` criava produto com `insert {codigo, nome, un, preco...}` sem
       `categoria` (`fiscal.recebidas.tsx:574`) e o `update` de produto existente ignorava

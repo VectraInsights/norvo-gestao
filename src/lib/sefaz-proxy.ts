@@ -142,6 +142,14 @@ export async function handleSefazProxy(request: Request): Promise<Response> {
     let result: unknown;
 
     switch (action) {
+      // CT-e / MDF-e fase 1 — stub (sem mTLS ainda)
+      case "emitirCte":
+      case "consultarCte":
+      case "cancelarCte":
+      case "emitirMdf":
+      case "encerrarMdf":
+      case "cancelarMdf":
+        return json({ sucesso: false, fase: 1, motivo: `${action}: estrutura fase 1 — SEFAZ na fase 2`, debug: { ambiente, cnpj, uf } });
       case "consultar": {
         // Buscar last_query_at atual ANTES de consultar
         const { data: configAntes } = await supabase

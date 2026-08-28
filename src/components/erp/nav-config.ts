@@ -32,6 +32,7 @@ import {
   ClipboardList,
   PackagePlus,
   Truck,
+  Route,
 } from "lucide-react";
 
 export type NavItem = { to: string; label: string; icon: typeof LayoutDashboard };
@@ -123,6 +124,8 @@ const RAW_NAV: NavGroup[] = [
     items: [
       { to: "/fiscal/emitidas", label: "Notas Emitidas", icon: FileOutput },
       { to: "/fiscal/recebidas", label: "Notas de Compra", icon: FileInput },
+      { to: "/fiscal/cte", label: "CT-e", icon: Truck },
+      { to: "/fiscal/mdf", label: "MDF-e", icon: Route },
       { to: "/fiscal/relatorios", label: "Relatórios e Dashboards", icon: BarChart3 },
       { to: "/fiscal/contador", label: "Painel do Contador", icon: Handshake },
       { to: "/fiscal/configuracoes", label: "Configurações Fiscais", icon: Settings2 },
