@@ -12,22 +12,45 @@ export type Ambiente = "homologacao" | "producao";
 
 export const CTE_ENDPOINTS = {
   homologacao: {
-    recepcao: "https://cte-homologacao.svrs.rs.gov.br/ws/CteRecepcao/CteRecepcao.asmx",
-    retRecepcao: "https://cte-homologacao.svrs.rs.gov.br/ws/CteRetRecepcao/CteRetRecepcao.asmx",
-    consulta: "https://cte-homologacao.svrs.rs.gov.br/ws/CteConsulta/CteConsulta.asmx",
-    statusServico: "https://cte-homologacao.svrs.rs.gov.br/ws/CteStatusServico/CteStatusServico.asmx",
-    recepcaoEvento: "https://cte-homologacao.svrs.rs.gov.br/ws/CteRecepcaoEvento/CteRecepcaoEvento.asmx",
+    // SVRS V4 — usado por AC, AL, AM, BA, CE, DF, ES, GO, MA, PA, PB, PI, RJ, RN, RO, SC, SE, TO e também PA (caso do print)
+    recepcao: "https://cte-homologacao.svrs.rs.gov.br/ws/CTeRecepcaoSincV4/CTeRecepcaoSincV4.asmx",
+    retRecepcao: "https://cte-homologacao.svrs.rs.gov.br/ws/CTeRetRecepcao/CTeRetRecepcao.asmx",
+    consulta: "https://cte-homologacao.svrs.rs.gov.br/ws/CTeConsultaV4/CTeConsultaV4.asmx",
+    statusServico: "https://cte-homologacao.svrs.rs.gov.br/ws/CTeStatusServicoV4/CTeStatusServicoV4.asmx",
+    recepcaoEvento: "https://cte-homologacao.svrs.rs.gov.br/ws/CTeRecepcaoEventoV4/CTeRecepcaoEventoV4.asmx",
+    // MG tem autorizador próprio
+    mg_recepcao: "https://hcte.fazenda.mg.gov.br/cte/services/CTeRecepcaoSincV4",
+    mg_consulta: "https://hcte.fazenda.mg.gov.br/cte/services/CTeConsultaV4",
+    mg_status: "https://hcte.fazenda.mg.gov.br/cte/services/CTeStatusServicoV4",
+    mg_evento: "https://hcte.fazenda.mg.gov.br/cte/services/CTeRecepcaoEventoV4",
   },
   producao: {
-    recepcao: "https://cte.svrs.rs.gov.br/ws/CteRecepcao/CteRecepcao.asmx",
-    retRecepcao: "https://cte.svrs.rs.gov.br/ws/CteRetRecepcao/CteRetRecepcao.asmx",
-    consulta: "https://cte.svrs.rs.gov.br/ws/CteConsulta/CteConsulta.asmx",
-    statusServico: "https://cte.svrs.rs.gov.br/ws/CteStatusServico/CteStatusServico.asmx",
-    recepcaoEvento: "https://cte.svrs.rs.gov.br/ws/CteRecepcaoEvento/CteRecepcaoEvento.asmx",
+    recepcao: "https://cte.svrs.rs.gov.br/ws/CTeRecepcaoSincV4/CTeRecepcaoSincV4.asmx",
+    retRecepcao: "https://cte.svrs.rs.gov.br/ws/CTeRetRecepcao/CTeRetRecepcao.asmx",
+    consulta: "https://cte.svrs.rs.gov.br/ws/CTeConsultaV4/CTeConsultaV4.asmx",
+    statusServico: "https://cte.svrs.rs.gov.br/ws/CTeStatusServicoV4/CTeStatusServicoV4.asmx",
+    recepcaoEvento: "https://cte.svrs.rs.gov.br/ws/CTeRecepcaoEventoV4/CTeRecepcaoEventoV4.asmx",
+    mg_recepcao: "https://cte.fazenda.mg.gov.br/cte/services/CTeRecepcaoSincV4",
+    mg_consulta: "https://cte.fazenda.mg.gov.br/cte/services/CTeConsultaV4",
+    mg_status: "https://cte.fazenda.mg.gov.br/cte/services/CTeStatusServicoV4",
+    mg_evento: "https://cte.fazenda.mg.gov.br/cte/services/CTeRecepcaoEventoV4",
   },
 } as const;
 
-function getCteEndpoints(ambiente: Ambiente) { return ambiente === "producao" ? CTE_ENDPOINTS.producao : CTE_ENDPOINTS.homologacao; }
+function getCteEndpoints(ambiente: Ambiente, uf?: string) {
+  const base = ambiente === "producao" ? CTE_ENDPOINTS.producao : CTE_ENDPOINTS.homologacao;
+  // MG usa autorizador próprio
+  if (uf?.toUpperCase() === "MG") {
+    return {
+      recepcao: (base as any).mg_recepcao,
+      retRecepcao: base.retRecepcao,
+      consulta: (base as any).mg_consulta,
+      statusServico: (base as any).mg_status,
+      recepcaoEvento: (base as any).mg_evento,
+    };
+  }
+  return base;
+}
 
 // IBGE UF
 const UF_COD: Record<string,string> = { AC:"12",AL:"27",AM:"13",AP:"16",BA:"29",CE:"23",DF:"53",ES:"32",GO:"52",MA:"21",MG:"31",MS:"50",MT:"51",PA:"15",PB:"25",PE:"26",PI:"22",PR:"41",RJ:"33",RN:"24",RO:"11",RR:"14",RS:"43",SC:"42",SE:"28",SP:"35",TO:"17" };
@@ -122,32 +145,35 @@ async function soapRequest(url:string, body:string, action:string, agent?:https.
   return r.text();
 }
 
-export async function emitirCte(pfx:Buffer, senha:string, xml:string, ambiente:Ambiente): Promise<{ sucesso:boolean; cStat:string; xMotivo:string; chave?:string; protocolo?:string; xmlRet?:string }>{
-  const ep=getCteEndpoints(ambiente);
+export async function emitirCte(pfx:Buffer, senha:string, xml:string, ambiente:Ambiente, uf?: string): Promise<{ sucesso:boolean; cStat:string; xMotivo:string; chave?:string; protocolo?:string; xmlRet?:string }>{
+  const ep=getCteEndpoints(ambiente, uf);
   const xmlAss = signXml(xml, pfx, senha);
-  const body=`<cteRecepcao xmlns="http://www.portalfiscal.inf.br/cte/wsdl/CteRecepcao"><cteDadosMsg xmlns="http://www.portalfiscal.inf.br/cte/wsdl/CteRecepcao">${xmlAss}</cteDadosMsg></cteRecepcao>`;
-  const ret=await soapRequest(ep.recepcao, body, "http://www.portalfiscal.inf.br/cte/wsdl/CteRecepcao/cteRecepcao", createSefazAgent(pfx,senha));
-  const cStat=ret.match(/<cStat>(\d+)<\/cStat>/)?.[1]||""; const xMotivo=ret.match(/<xMotivo>([^<]+)<\/xMotivo>/)?.[1]||""; const ch=ret.match(/<chCTe>(\d{44})<\/chCTe>/)?.[1]||xml.match(/Id="CTe(\d{44})"/)?.[1]; const prot=ret.match(/<nProt>(\d+)<\/nProt>/)?.[1];
-  return { sucesso: cStat==="103"||cStat==="104", cStat, xMotivo, chave: ch, protocolo: prot, xmlRet: ret };
+  // V4 Sinc — SVRS e MG usam CTeRecepcaoSincV4
+  const body=`<CTeRecepcaoSincV4 xmlns="http://www.portalfiscal.inf.br/cte/wsdl/CTeRecepcaoSincV4"><cteDadosMsg xmlns="http://www.portalfiscal.inf.br/cte/wsdl/CTeRecepcaoSincV4">${xmlAss}</cteDadosMsg></CTeRecepcaoSincV4>`;
+  const ret=await soapRequest(ep.recepcao, body, "http://www.portalfiscal.inf.br/cte/wsdl/CTeRecepcaoSincV4/cteRecepcaoSinc", createSefazAgent(pfx,senha));
+  const cStat=ret.match(/<cStat>(\d+)<\/cStat>/)?.[1]||""; const xMotivo=ret.match(/<xMotivo>([^<]+)<\/xMotivo>/)?.[1]||""; const ch=ret.match(/<chCTe>(\d{44})<\/chCTe>/)?.[1]||xml.match(/Id="CTe(\d{44})"/)?.[1]; const prot=ret.match(/<nProt>(\d+)<\/nProt>/)?.[1]||ret.match(/<protCTe[^>]*>[\s\S]*?<nProt>(\d+)<\/nProt>/)?.[1];
+  // V4 retorna 104 (processado) com prot, ou 100 (autorizado) no sinc
+  return { sucesso: cStat==="100"||cStat==="104"||cStat==="103", cStat, xMotivo, chave: ch, protocolo: prot, xmlRet: ret };
 }
 
-export async function consultarCte(pfx:Buffer, senha:string, chave:string, ambiente:Ambiente): Promise<{ cStat:string; xMotivo:string; xml?:string }>{
-  const ep=getCteEndpoints(ambiente);
-  const body=`<cteConsultaCT xmlns="http://www.portalfiscal.inf.br/cte/wsdl/CteConsulta"><cteDadosMsg xmlns="http://www.portalfiscal.inf.br/cte/wsdl/CteConsulta"><consSitCTe xmlns="http://www.portalfiscal.inf.br/cte" versao="4.00"><tpAmb>${ambiente==="producao"?"1":"2"}</tpAmb><xServ>CONSULTAR</xServ><chCTe>${chave}</chCTe></consSitCTe></cteDadosMsg></cteConsultaCT>`;
-  const ret=await soapRequest(ep.consulta, body, "http://www.portalfiscal.inf.br/cte/wsdl/CteConsulta/cteConsultaCT", createSefazAgent(pfx,senha));
+export async function consultarCte(pfx:Buffer, senha:string, chave:string, ambiente:Ambiente, uf?: string): Promise<{ cStat:string; xMotivo:string; xml?:string }>{
+  const ep=getCteEndpoints(ambiente, uf);
+  const body=`<CTeConsultaV4 xmlns="http://www.portalfiscal.inf.br/cte/wsdl/CTeConsultaV4"><cteDadosMsg xmlns="http://www.portalfiscal.inf.br/cte/wsdl/CTeConsultaV4"><consSitCTe xmlns="http://www.portalfiscal.inf.br/cte" versao="4.00"><tpAmb>${ambiente==="producao"?"1":"2"}</tpAmb><xServ>CONSULTAR</xServ><chCTe>${chave}</chCTe></consSitCTe></cteDadosMsg></CTeConsultaV4>`;
+  const ret=await soapRequest(ep.consulta, body, "http://www.portalfiscal.inf.br/cte/wsdl/CTeConsultaV4/cteConsultaCT", createSefazAgent(pfx,senha));
   const cStat=ret.match(/<cStat>(\d+)<\/cStat>/)?.[1]||""; const xMotivo=ret.match(/<xMotivo>([^<]+)<\/xMotivo>/)?.[1]||"";
   return { cStat, xMotivo, xml: ret };
 }
 
-export async function cancelarCte(pfx:Buffer, senha:string, chave:string, justificativa:string, ambiente:Ambiente, cnpj:string):Promise<{ sucesso:boolean; cStat:string; xMotivo:string }>{
-  const ep=getCteEndpoints(ambiente);
+export async function cancelarCte(pfx:Buffer, senha:string, chave:string, justificativa:string, ambiente:Ambiente, cnpj:string, uf?: string):Promise<{ sucesso:boolean; cStat:string; xMotivo:string }>{
+  const ep=getCteEndpoints(ambiente, uf);
   const dhEvento=new Date().toISOString().replace(/\.\d{3}Z$/,"");
   const nSeq="1";
   const tpEvento="110111";
-  const evento=`<eventoCTe xmlns="http://www.portalfiscal.inf.br/cte" versao="4.00"><infEvento Id="ID${tpEvento}${chave}${nSeq}"><cOrgao>35</cOrgao><tpAmb>${ambiente==="producao"?"1":"2"}</tpAmb><CNPJ>${cnpj.replace(/\D/g,"")}</CNPJ><chCTe>${chave}</chCTe><dhEvento>${dhEvento}</dhEvento><tpEvento>${tpEvento}</tpEvento><nSeqEvento>${nSeq}</nSeqEvento><detEvento versaoEvento="4.00"><evCancCTe><descEvento>Cancelamento</descEvento><nProt>0</nProt><xJust>${justificativa}</xJust></evCancCTe></detEvento></infEvento></eventoCTe>`;
+  const cOrgao = codigoUF(uf || "SP");
+  const evento=`<eventoCTe xmlns="http://www.portalfiscal.inf.br/cte" versao="4.00"><infEvento Id="ID${tpEvento}${chave}${nSeq}"><cOrgao>${cOrgao}</cOrgao><tpAmb>${ambiente==="producao"?"1":"2"}</tpAmb><CNPJ>${cnpj.replace(/\D/g,"")}</CNPJ><chCTe>${chave}</chCTe><dhEvento>${dhEvento}</dhEvento><tpEvento>${tpEvento}</tpEvento><nSeqEvento>${nSeq}</nSeqEvento><detEvento versaoEvento="4.00"><evCancCTe><descEvento>Cancelamento</descEvento><nProt>0</nProt><xJust>${justificativa}</xJust></evCancCTe></detEvento></infEvento></eventoCTe>`;
   const ass=signXml(evento, pfx, senha);
-  const body=`<cteRecepcaoEvento xmlns="http://www.portalfiscal.inf.br/cte/wsdl/CteRecepcaoEvento"><cteDadosMsg xmlns="http://www.portalfiscal.inf.br/cte/wsdl/CteRecepcaoEvento">${ass}</cteDadosMsg></cteRecepcaoEvento>`;
-  const ret=await soapRequest(ep.recepcaoEvento, body, "http://www.portalfiscal.inf.br/cte/wsdl/CteRecepcaoEvento/cteRecepcaoEvento", createSefazAgent(pfx,senha));
+  const body=`<CTeRecepcaoEventoV4 xmlns="http://www.portalfiscal.inf.br/cte/wsdl/CTeRecepcaoEventoV4"><cteDadosMsg xmlns="http://www.portalfiscal.inf.br/cte/wsdl/CTeRecepcaoEventoV4">${ass}</cteDadosMsg></CTeRecepcaoEventoV4>`;
+  const ret=await soapRequest(ep.recepcaoEvento, body, "http://www.portalfiscal.inf.br/cte/wsdl/CTeRecepcaoEventoV4/cteRecepcaoEvento", createSefazAgent(pfx,senha));
   const cStat=ret.match(/<cStat>(\d+)<\/cStat>/)?.[1]||""; const xMotivo=ret.match(/<xMotivo>([^<]+)<\/xMotivo>/)?.[1]||"";
   return { sucesso: cStat==="135"||cStat==="155", cStat, xMotivo };
 }

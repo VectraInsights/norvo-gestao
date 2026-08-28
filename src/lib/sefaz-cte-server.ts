@@ -19,7 +19,7 @@ export const emitirCteFn = createServerFn({ method: "POST" }).validator((d: { em
   const proximo = String((parseInt((ultimo as any)?.numero || "0",10)+1));
   const input = { ...data.input, ambiente, numero: proximo, serie: data.input.serie || "1", emit: { cnpj: emp?.cnpj, xNome: data.input.emit?.xNome || "EMITENTE", ie: data.input.emit?.ie || "ISENTO", uf: emp?.uf || "MG", cMun: data.input.emit?.cMun || "3106200", xMun: data.input.emit?.xMun || "BELO HORIZONTE" } };
   const { xml, chave } = buildCteXml(input);
-  const ret = await emitirCte(cert.pfx, cert.senha, xml, ambiente);
+  const ret = await emitirCte(cert.pfx, cert.senha, xml, ambiente, cert.uf);
   if (ret.sucesso) {
     await supa.from("cte_documentos").insert({ empresa_id: data.empresaId, chave_acesso: chave, numero: proximo, serie: input.serie, status: "autorizado", xml_assinado: xml, protocolo_sefaz: ret.protocolo, ambiente, data_autorizacao: new Date().toISOString(), valor_servico: input.vPrest, peso_carga: input.pesoKg } as any);
   } else {
@@ -35,7 +35,7 @@ export const consultarCteFn = createServerFn({ method: "POST" }).validator((d:{e
   const supa=createClient(process.env.SUPABASE_URL||"",process.env.SUPABASE_SERVICE_ROLE_KEY||"");
   const { data: cfg}=await supa.from("nfe_config").select("ambiente").eq("empresa_id",data.empresaId).maybeSingle();
   const ambiente=cfg?.ambiente==="homologacao"?"homologacao":"producao";
-  return consultarCte(cert.pfx, cert.senha, data.chave, ambiente);
+  return consultarCte(cert.pfx, cert.senha, data.chave, ambiente, cert.uf);
 });
 export const cancelarCteFn = createServerFn({ method: "POST" }).validator((d:{empresaId:string;chave:string;justificativa:string})=>d).handler(async ({data})=>{
   if(SEFAZ_URL) return callProxy("cancelarCte", data);
@@ -45,7 +45,7 @@ export const cancelarCteFn = createServerFn({ method: "POST" }).validator((d:{em
   const supa=createClient(process.env.SUPABASE_URL||"",process.env.SUPABASE_SERVICE_ROLE_KEY||"");
   const { data: cfg}=await supa.from("nfe_config").select("ambiente").eq("empresa_id",data.empresaId).maybeSingle();
   const ambiente=cfg?.ambiente==="homologacao"?"homologacao":"producao";
-  const ret=await cancelarCte(cert.pfx, cert.senha, data.chave, data.justificativa, ambiente, cert.cnpj);
+  const ret=await cancelarCte(cert.pfx, cert.senha, data.chave, data.justificativa, ambiente, cert.cnpj, cert.uf);
   if(ret.sucesso) await supa.from("cte_documentos").update({status:"cancelado"} as any).eq("chave_acesso",data.chave);
   return ret;
 });
