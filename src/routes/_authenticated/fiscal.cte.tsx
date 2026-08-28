@@ -40,6 +40,8 @@ function CtePage() {
   const [filtroEmpresa] = useState("ROSE TRANSPORTES");
   const [filtroRemetente, setFiltroRemetente] = useState("TODOS REMETENTES");
   const [filtroDestinatario, setFiltroDestinatario] = useState("TODOS OS DESTINATÁRIOS");
+  const [periodoIni, setPeriodoIni] = useState("2026-08-21");
+  const [periodoFim, setPeriodoFim] = useState("2026-08-28");
 
   const { data: docs, isLoading } = useQuery({
     enabled: !!empresa,
@@ -206,32 +208,38 @@ function CtePage() {
           <span className="text-xs opacity-80">CT-e Avulso • Sem Mercadoria/Percurso</span>
         </div>
         <CardContent className="p-3 space-y-3 bg-muted/20 overflow-visible">
-          <div className="grid grid-cols-1 lg:grid-cols-4 gap-3 border rounded p-2 bg-background">
-            <div>
-              <Label className="text-xs font-semibold text-primary">Embarque via CT-e</Label>
-              <div className="flex flex-col gap-1 mt-1 text-xs">
-                <label className="flex items-center gap-1"><input type="radio" checked readOnly /> CT-e Avulso</label>
-                <label className="flex items-center gap-1 opacity-60"><input type="radio" disabled /> CT-e Redes­pacho</label>
+          <div className="border rounded p-2 bg-background space-y-2">
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-3">
+              <div>
+                <Label className="text-xs font-semibold text-primary">Embarque via CT-e</Label>
+                <div className="flex flex-col gap-1 mt-1 text-xs">
+                  <label className="flex items-center gap-1"><input type="radio" checked readOnly /> CT-e Avulso</label>
+                  <label className="flex items-center gap-1 opacity-60"><input type="radio" disabled /> CT-e Redes­pacho</label>
+                </div>
+              </div>
+              <div>
+                <Label className="text-xs font-semibold text-primary">Situação de Embarque</Label>
+                <div className="flex flex-col gap-1 mt-1 text-xs">
+                  <label className="flex items-center gap-1"><input type="radio" checked readOnly /> Pendentes de Liberação</label>
+                  <label className="flex items-center gap-1 opacity-60"><input type="radio" disabled /> Embarques Liberados</label>
+                </div>
+              </div>
+              <div>
+                <Label className="text-xs font-semibold text-primary">Período de Entrada</Label>
+                <div className="flex items-center gap-1.5 mt-1">
+                  <DateInput value={periodoIni} onChange={setPeriodoIni} className="h-7 text-xs flex-1" />
+                  <span className="text-xs shrink-0">Até</span>
+                  <DateInput value={periodoFim} onChange={setPeriodoFim} className="h-7 text-xs flex-1" />
+                  <Button size="sm" variant="outline" className="h-7 text-xs shrink-0"><Calendar className="h-3 w-3 mr-1" />Consulta</Button>
+                </div>
               </div>
             </div>
-            <div>
-              <Label className="text-xs font-semibold text-primary">Situação de Embarque</Label>
-              <div className="flex flex-col gap-1 mt-1 text-xs">
-                <label className="flex items-center gap-1"><input type="radio" checked readOnly /> Pendentes de Liberação</label>
-                <label className="flex items-center gap-1 opacity-60"><input type="radio" disabled /> Embarques Liberados</label>
-              </div>
-            </div>
-            <div>
-              <Label className="text-xs font-semibold text-primary">Período de Entrada</Label>
-              <div className="flex items-center gap-2 mt-1">
-                <Input type="date" className="h-7 text-xs" defaultValue="2026-08-21" />
-                <span className="text-xs">Até</span>
-                <Input type="date" className="h-7 text-xs" defaultValue="2026-08-28" />
-                <Button size="sm" variant="outline" className="h-7 text-xs"><Calendar className="h-3 w-3 mr-1" />Consulta</Button>
-              </div>
-            </div>
-            <div className="flex items-end">
-              <div className="text-xs text-muted-foreground">Qtde NF-e: <span className="font-bold text-foreground">{mercadorias.length}</span> • Peso Bruto: <span className="font-bold">{mercadorias.reduce((a,m)=>a+m.peso,0).toFixed(2)} kg</span> • Valor: <span className="font-bold">{brl(mercadorias.reduce((a,m)=>a+m.valor,0))}</span></div>
+            <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted-foreground border-t pt-2">
+              <span>Qtde NF-e: <span className="font-bold text-foreground">{mercadorias.length}</span></span>
+              <span className="text-muted-foreground/40">•</span>
+              <span>Peso Bruto: <span className="font-bold text-foreground">{mercadorias.reduce((a,m)=>a+m.peso,0).toFixed(2)} kg</span></span>
+              <span className="text-muted-foreground/40">•</span>
+              <span>Valor: <span className="font-bold text-foreground">{brl(mercadorias.reduce((a,m)=>a+m.valor,0))}</span></span>
             </div>
           </div>
 
