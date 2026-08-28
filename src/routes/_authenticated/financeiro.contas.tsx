@@ -14,6 +14,7 @@ import { Banknote, Plus, Upload, Loader2, Link2, Check, Landmark, Wallet, Credit
 import { Checkbox } from "@/components/ui/checkbox";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
+import { DateInput } from "@/components/erp/date-input";
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -520,7 +521,8 @@ function ContasFinanceiras() {
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                         <div>
                           <Label>Início dos lançamentos *</Label>
-                          <Input required type="date" value={form.data_inicio_lancamentos} onChange={(e) => setForm({ ...form, data_inicio_lancamentos: e.target.value })} />                          <p className="text-xs text-muted-foreground mt-1">Informe uma data até hoje</p>
+                          <DateInput required maxToday value={form.data_inicio_lancamentos} onChange={(v) => setForm({ ...form, data_inicio_lancamentos: v })} />
+                          <p className="text-xs text-muted-foreground mt-1">Informe uma data até hoje</p>
                         </div>
                         <div>
                           <Label>Saldo final da conta no dia anterior *</Label>
