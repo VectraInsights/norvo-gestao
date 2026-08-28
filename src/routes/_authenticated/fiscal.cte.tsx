@@ -395,8 +395,8 @@ function CtePage() {
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent className="sm:max-w-4xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle className="flex items-center gap-2"><Truck className="h-5 w-5 text-primary" /> Novo CT-e (57) — 4.00 {mercadorias.length > 0 && <Badge variant="outline" className="ml-2">{mercadorias.length} NF-e(s)</Badge>}</DialogTitle>
-            <p className="text-sm text-muted-foreground">Preencha os dados do transporte. O XML será assinado e enviado à SEFAZ via mTLS. Em homologação o RNTRC pode ser fictício.</p>
+            <DialogTitle className="flex items-center gap-2"><Truck className="h-5 w-5 text-primary" /> Novo CT-e (57) — 4.00 {(selecionadas.size || mercadorias.length) > 0 && <Badge variant="outline" className="ml-2">{selecionadas.size > 0 ? selecionadas.size : mercadorias.length} NF-e(s) {selecionadas.size>0 ? "selecionada(s)" : ""}</Badge>}</DialogTitle>
+            <p className="text-sm text-muted-foreground">Preencha os dados do transporte. Apenas as NF-es selecionadas na lista anterior entrarão no CT-e. O XML será assinado e enviado à SEFAZ via mTLS.</p>
           </DialogHeader>
 
           <div className="space-y-4">
@@ -413,8 +413,7 @@ function CtePage() {
                 <div><Label>Tomador CNPJ *</Label><Input value={form.cnpjTomador} onChange={e=>setForm({...form,cnpjTomador:e.target.value})} placeholder="00.000.000/0000-00" /></div>
                 <div className="md:col-span-2"><Label>Nome / Razão social *</Label><Input value={form.xNomeTomador} onChange={e=>setForm({...form,xNomeTomador:e.target.value})} placeholder="Nome do tomador" /></div>
                 <div><Label>UF</Label><Input value={form.ufTomador} onChange={e=>setForm({...form,ufTomador:e.target.value.toUpperCase()})} maxLength={2} placeholder="MG" /></div>
-                <div><Label>cMun (IBGE)</Label><Input value={form.cMunTomador} onChange={e=>setForm({...form,cMunTomador:e.target.value})} placeholder="3106200" /></div>
-                <div><Label>Município</Label><Input value={form.xMunTomador} onChange={e=>setForm({...form,xMunTomador:e.target.value})} placeholder="Belo Horizonte" /></div>
+                <div className="md:col-span-2"><Label>Município</Label><Input value={form.xMunTomador} onChange={e=>setForm({...form,xMunTomador:e.target.value})} placeholder="Belo Horizonte" /></div>
               </div>
             </Card>
 
@@ -428,15 +427,15 @@ function CtePage() {
                 </div>
               </div>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-                <div><Label><MapPin className="mr-1 h-3 w-3 inline" />cMun Env</Label><Input value={form.cMunEnv} onChange={e=>setForm({...form,cMunEnv:e.target.value})} placeholder="3106200" /></div>
-                <div><Label>xMun Env</Label><Input value={form.xMunEnv} onChange={e=>setForm({...form,xMunEnv:e.target.value})} /></div>
-                <div><Label>UF Env</Label><Input value={form.ufEnv} onChange={e=>setForm({...form,ufEnv:e.target.value.toUpperCase()})} /></div>
-                <div><Label>cMun Ini</Label><Input value={form.cMunIni} onChange={e=>setForm({...form,cMunIni:e.target.value})} /></div>
-                <div><Label>xMun Ini</Label><Input value={form.xMunIni} onChange={e=>setForm({...form,xMunIni:e.target.value})} /></div>
-                <div><Label>UF Ini</Label><Input value={form.ufIni} onChange={e=>setForm({...form,ufIni:e.target.value.toUpperCase()})} /></div>
-                <div><Label>cMun Fim</Label><Input value={form.cMunFim} onChange={e=>setForm({...form,cMunFim:e.target.value})} /></div>
-                <div><Label>xMun Fim</Label><Input value={form.xMunFim} onChange={e=>setForm({...form,xMunFim:e.target.value})} /></div>
-                <div><Label>UF Fim</Label><Input value={form.ufFim} onChange={e=>setForm({...form,ufFim:e.target.value.toUpperCase()})} /></div>
+                <div><Label><MapPin className="mr-1 h-3 w-3 inline" />Município Env</Label><Input value={form.xMunEnv} onChange={e=>setForm({...form,xMunEnv:e.target.value})} placeholder="Belo Horizonte" /></div>
+                <div><Label>UF Env</Label><Input value={form.ufEnv} onChange={e=>setForm({...form,ufEnv:e.target.value.toUpperCase()})} maxLength={2} placeholder="MG" /></div>
+                <div><Label>CEP Env</Label><Input placeholder="00000-000" disabled className="opacity-60" /></div>
+                <div><Label>Município Coleta (Ini)</Label><Input value={form.xMunIni} onChange={e=>setForm({...form,xMunIni:e.target.value})} placeholder="Belo Horizonte" /></div>
+                <div><Label>UF Ini</Label><Input value={form.ufIni} onChange={e=>setForm({...form,ufIni:e.target.value.toUpperCase()})} maxLength={2} /></div>
+                <div><Label>Data Coleta</Label><Input type="date" className="h-9" /></div>
+                <div><Label>Município Entrega (Fim)</Label><Input value={form.xMunFim} onChange={e=>setForm({...form,xMunFim:e.target.value})} placeholder="São Paulo" /></div>
+                <div><Label>UF Fim</Label><Input value={form.ufFim} onChange={e=>setForm({...form,ufFim:e.target.value.toUpperCase()})} maxLength={2} /></div>
+                <div><Label>Previsão Entrega</Label><Input type="date" className="h-9" /></div>
               </div>
             </Card>
 
@@ -446,7 +445,7 @@ function CtePage() {
                 <div className="h-7 w-7 rounded bg-amber-500/10 grid place-items-center"><Package className="h-4 w-4 text-amber-600" /></div>
                 <div>
                   <h4 className="text-sm font-semibold">Carga, valores e fiscal</h4>
-                  <p className="text-xs text-muted-foreground">CFOP, RNTRC e valores declarados {mercadorias.length > 0 && `• ${mercadorias.length} NF-e(s) • ${brl(Number(form.vCarga))} • ${form.peso} kg`}</p>
+                  <p className="text-xs text-muted-foreground">CFOP, RNTRC e valores declarados {(selecionadas.size || mercadorias.length) > 0 && `• ${selecionadas.size || mercadorias.length} NF-e(s) • ${brl(Number(form.vCarga))} • ${form.peso} kg`}</p>
                 </div>
               </div>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
@@ -457,16 +456,32 @@ function CtePage() {
                 <div><Label>Valor Carga (R$)</Label><Input value={form.vCarga} onChange={e=>setForm({...form,vCarga:e.target.value})} placeholder="10000.00" /></div>
                 <div><Label>Peso (kg)</Label><Input value={form.peso} onChange={e=>setForm({...form,peso:e.target.value})} placeholder="5000" /></div>
               </div>
-              {mercadorias.length > 0 && (
-                <div className="mt-3 border rounded p-2 bg-muted/30 max-h-[120px] overflow-y-auto">
-                  <p className="text-xs font-medium mb-1">NF-es vinculadas ({mercadorias.length}):</p>
-                  <div className="flex flex-wrap gap-1">
-                    {mercadorias.map(m => (
-                      <Badge key={m.chave} variant="outline" className="text-[10px] font-mono">{m.nNF} • {m.chave.slice(-8)}</Badge>
-                    ))}
+              {(selecionadas.size > 0 ? mercadorias.filter(m => selecionadas.has(m.chave)) : mercadorias).length > 0 && (
+                <div className="mt-3 border rounded overflow-hidden">
+                  <div className="bg-muted px-2 py-1 text-xs font-semibold">Documentos da carga — NF-es selecionadas ({selecionadas.size || mercadorias.length})</div>
+                  <div className="max-h-[140px] overflow-y-auto">
+                    <Table>
+                      <TableHeader><TableRow><TableHead className="text-xs">Nº NF-e</TableHead><TableHead className="text-xs">Chave</TableHead><TableHead className="text-xs text-right">Valor</TableHead><TableHead className="text-xs text-right">Peso</TableHead></TableRow></TableHeader>
+                      <TableBody>
+                        {(selecionadas.size > 0 ? mercadorias.filter(m => selecionadas.has(m.chave)) : mercadorias).map(m => (
+                          <TableRow key={m.chave} className="text-xs"><TableCell className="font-mono">{m.nNF}</TableCell><TableCell className="font-mono text-[10px]">{m.chave.slice(0,22)}...</TableCell><TableCell className="text-right">{brl(m.valor)}</TableCell><TableCell className="text-right">{m.peso.toFixed(2)}</TableCell></TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
                   </div>
                 </div>
               )}
+            </Card>
+
+            {/* Observações e totais — estilo STM */}
+            <Card className="p-4 bg-muted/10">
+              <h4 className="text-xs font-semibold text-primary mb-2">Observações do Conhecimento &amp; Totais</h4>
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-2 text-xs">
+                <div className="col-span-2"><Label className="text-xs">Observações</Label><Input placeholder="Ex: Protocolo Pedidos: 70891" className="h-7 text-xs" /></div>
+                <div><Label className="text-xs">Base Cálculo ICMS</Label><Input value={form.vCarga} readOnly className="h-7 text-xs bg-muted" /></div>
+                <div><Label className="text-xs">Valor Serviço</Label><Input value={form.vPrest} readOnly className="h-7 text-xs bg-muted font-medium" /></div>
+              </div>
+              <p className="text-[10px] text-muted-foreground mt-2">Sem aba Mercadoria/Percursos. Valores e NF-es acima compõem o infCarga/infDoc do XML 4.00.</p>
             </Card>
           </div>
 
