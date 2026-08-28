@@ -81,7 +81,25 @@ function CtePage() {
         if (mercadorias.some(m => m.chave === chaveNorm) || novas.some(m => m.chave === chaveNorm)) continue;
         const peso = pesoB ? parseFloat(pesoB) : 1000;
         const valor = parseFloat(vNF) || 0;
-        novas.push({ chave: chaveNorm, nNF, serie, emit: emitXNome, emitCnpj, dest: destXNome, destCnpj, valor, peso, data: dhEmi.slice(0,10), tomador: destXNome, tomadorCnpj: destCnpj });
+        // Tomador conforme XML: modFrete define quem paga o frete (0=Remetente, 1=Destinatário, 2=Terceiros)
+        const modFrete = doc.querySelector("transp > modFrete")?.textContent || "";
+        let tomadorNome = destXNome;
+        let tomadorCnpj = destCnpj;
+        let tomadorUF = destUF;
+        let tomadorCMun = destCMun;
+        let tomadorXMun = destXMun;
+        if (modFrete === "0") {
+          tomadorNome = emitXNome; tomadorCnpj = emitCnpj;
+          tomadorUF = doc.querySelector("emit > enderEmit > UF")?.textContent || "";
+          tomadorCMun = doc.querySelector("emit > enderEmit > cMun")?.textContent || "";
+          tomadorXMun = doc.querySelector("emit > enderEmit > xMun")?.textContent || "";
+        } else if (modFrete === "2") {
+          // Terceiros: tenta transporta
+          const transpCnpj = doc.querySelector("transp > transporta > CNPJ")?.textContent || "";
+          const transpXNome = doc.querySelector("transp > transporta > xNome")?.textContent || "";
+          if (transpCnpj || transpXNome) { tomadorNome = transpXNome || tomadorNome; tomadorCnpj = transpCnpj || tomadorCnpj; }
+        }
+        novas.push({ chave: chaveNorm, nNF, serie, emit: emitXNome, emitCnpj, dest: destXNome, destCnpj, valor, peso, data: dhEmi.slice(0,10), tomador: tomadorNome, tomadorCnpj });
         // Preenche tomador com o primeiro (se ainda vazio)
         if (added === 0 && mercadorias.length === 0 && !form.cnpjTomador) {
           setForm(f => ({ ...f, cnpjTomador: destCnpj || f.cnpjTomador, xNomeTomador: destXNome || f.xNomeTomador, ufTomador: destUF || f.ufTomador, cMunTomador: destCMun || f.cMunTomador, xMunTomador: destXMun || f.xMunTomador }));
@@ -193,15 +211,6 @@ function CtePage() {
           <span className="text-xs opacity-80">CT-e Avulso • Sem Mercadoria/Percurso</span>
         </div>
         <CardContent className="p-3 space-y-3 bg-muted/20 overflow-visible">
-          {/* Filtros topo — 5 colunas com min-w-0 para não estourar */}
-          <div className="grid grid-cols-2 lg:grid-cols-5 gap-2">
-            <div className="min-w-0"><Label className="text-xs">Nome Empresa</Label><div className="flex gap-1 mt-1"><Input value={filtroEmpresa} readOnly className="h-7 text-xs bg-amber-100 dark:bg-amber-900/30 font-medium flex-1 min-w-0 truncate" /><Button size="icon" variant="outline" className="h-7 w-7 shrink-0"><Search className="h-3 w-3" /></Button></div></div>
-            <div className="min-w-0"><Label className="text-xs">Remetente</Label><div className="flex gap-1 mt-1"><Input value={filtroRemetente} onChange={e=>setFiltroRemetente(e.target.value)} className="h-7 text-xs flex-1 min-w-0 truncate" /><Button size="icon" variant="outline" className="h-7 w-7 shrink-0"><Search className="h-3 w-3" /></Button></div></div>
-            <div className="min-w-0"><Label className="text-xs">Destinatário</Label><div className="flex gap-1 mt-1"><Input value={filtroDestinatario} onChange={e=>setFiltroDestinatario(e.target.value)} className="h-7 text-xs flex-1 min-w-0 truncate" /><Button size="icon" variant="outline" className="h-7 w-7 shrink-0"><Search className="h-3 w-3" /></Button></div></div>
-            <div className="min-w-0"><Label className="text-xs">Placa Veículo</Label><div className="flex gap-1 mt-1"><Input placeholder="TODAS" className="h-7 text-xs flex-1 min-w-0" /><Button size="icon" variant="outline" className="h-7 w-7 shrink-0"><Search className="h-3 w-3" /></Button></div></div>
-            <div className="min-w-0"><Label className="text-xs">Mercadoria</Label><div className="flex gap-1 mt-1"><Input placeholder="TODAS AS MERCADORIAS" className="h-7 text-xs flex-1 min-w-0 truncate" /><Button size="icon" variant="outline" className="h-7 w-7 shrink-0"><Search className="h-3 w-3" /></Button></div></div>
-          </div>
-
           <div className="grid grid-cols-1 lg:grid-cols-4 gap-3 border rounded p-2 bg-background">
             <div>
               <Label className="text-xs font-semibold text-primary">Embarque via CT-e</Label>

@@ -521,6 +521,12 @@ certificado tem estrutura PKCS12 não padrão ou se `extractPkcs12Native` precis
     - **Múltiplos XMLs:** `handleImportNFeXml` agora aceita `FileList` `multiple`, deduplica por `chave`, acumula `mercadorias[]` (`chave, nNF, serie, emit, valor, peso, data`), soma `vCarga`/`peso` e `vPrest`, mostra `Badge` por NF-e e tabela completa. Botão `Importar NF-e (múltiplos XML)` com `multiple`, `Limpar` e `Gerar CT-e com N NF-e(s)`. `buildCteXml` com `chavesNFe[]` gera múltiplos `<infNFe><chave>` em `<infDoc>`.
     - Dialog `Novo CT-e` com 3 `Card`s seccionados e ícones: **Tomador** (`UsersRound`), **Rota** (`RouteIcon`/`MapPin` com Env/Ini/Fim), **Carga, valores e fiscal** (`Package`/`DollarSign`/`Building2`, CFOP/RNTRC, `vPrest`/`vCarga`/`peso` + badges das NF-es vinculadas).
 
+40. **CT-e por partes + cabeçalho removido + Tomador do XML — 28/08/2026** (este commit):
+    - Cabeçalho **Nome Empresa / Remetente / Destinatário / Placa / Mercadoria** removido de `fiscal.cte.tsx` (`CardContent` `grid-cols-5`) conforme seta — agora inicia direto em `Embarque via CT-e`.
+    - `handleImportNFeXml` com `tomador` via `transp>modFrete` do XML: `0`→Remetente (`emit`), `1`→Destinatário (`dest`), `2`→Transportadora (`transp>transporta`), preenchendo `mercadorias[].tomador`/`tomadorCnpj` e `Listagem das Notas Fiscais` coluna **Tomador** (amarelo) corretamente — antes fixo `dest`.
+    - Coluna **Tomador** adicionada na `Listagem das Notas Fiscais` (após Destinatário), checkbox desmarcado por padrão (`selecionadas: Set` vazio, usuário escolhe), validação `Gerar CT-e` só com selecionadas e bloqueio se `Set(destCnpj)` ou `Set(tomadorCnpj)` >1 ("destinos diferentes").
+    - Botão renomeado `Importar NF-e (múltiplos XML)` → **`Importar NFes (XML)`** (`UploadCloud`, `multiple`).
+
 ---
 
 ## Regras de segurança
