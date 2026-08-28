@@ -33,7 +33,8 @@ function CtePage() {
   const search = Route.useSearch();
   const [prefillBanner, setPrefillBanner] = useState<string | null>(null);
   const [isParsing, setIsParsing] = useState(false);
-  const [mercadorias, setMercadorias] = useState<Array<{ chave: string; nNF: string; serie: string; emit: string; emitCnpj: string; dest: string; destCnpj: string; valor: number; peso: number; data: string; tomador: string }>>([]);
+  const [mercadorias, setMercadorias] = useState<Array<{ chave: string; nNF: string; serie: string; emit: string; emitCnpj: string; dest: string; destCnpj: string; valor: number; peso: number; data: string; tomador: string; tomadorCnpj: string }>>([]);
+  const [selecionadas, setSelecionadas] = useState<Set<string>>(new Set());
   const [filtroEmpresa] = useState("ROSE TRANSPORTES");
   const [filtroRemetente, setFiltroRemetente] = useState("TODOS REMETENTES");
   const [filtroDestinatario, setFiltroDestinatario] = useState("TODOS OS DESTINATÁRIOS");
@@ -80,9 +81,9 @@ function CtePage() {
         if (mercadorias.some(m => m.chave === chaveNorm) || novas.some(m => m.chave === chaveNorm)) continue;
         const peso = pesoB ? parseFloat(pesoB) : 1000;
         const valor = parseFloat(vNF) || 0;
-        novas.push({ chave: chaveNorm, nNF, serie, emit: emitXNome, emitCnpj, dest: destXNome, destCnpj, valor, peso, data: dhEmi.slice(0,10), tomador: destXNome });
-        // Preenche tomador com o primeiro
-        if (added === 0 && mercadorias.length === 0) {
+        novas.push({ chave: chaveNorm, nNF, serie, emit: emitXNome, emitCnpj, dest: destXNome, destCnpj, valor, peso, data: dhEmi.slice(0,10), tomador: destXNome, tomadorCnpj: destCnpj });
+        // Preenche tomador com o primeiro (se ainda vazio)
+        if (added === 0 && mercadorias.length === 0 && !form.cnpjTomador) {
           setForm(f => ({ ...f, cnpjTomador: destCnpj || f.cnpjTomador, xNomeTomador: destXNome || f.xNomeTomador, ufTomador: destUF || f.ufTomador, cMunTomador: destCMun || f.cMunTomador, xMunTomador: destXMun || f.xMunTomador }));
         }
         added++;
@@ -90,11 +91,12 @@ function CtePage() {
       if (novas.length > 0) {
         const merged = [...mercadorias, ...novas];
         setMercadorias(merged);
+        // Não seleciona automaticamente — usuário escolhe
         const somaV = merged.reduce((a, m) => a + (m.valor || 0), 0);
         const somaP = merged.reduce((a, m) => a + (m.peso || 0), 0);
         setForm(f => ({ ...f, vCarga: somaV.toFixed(2), peso: String(somaP), vPrest: (somaV * 0.1).toFixed(2) }));
-        setPrefillBanner(`${novas.length} NF-e(s) importada(s) — ${merged.length} no total`);
-        toast.success(`${novas.length} XML(s) importado(s)`);
+        setPrefillBanner(`${novas.length} NF-e(s) importada(s) — ${merged.length} no total (selecione quais usar)`);
+        toast.success(`${novas.length} XML(s) importado(s) — selecione os que irão no CT-e`);
       } else {
         toast.info("Nenhum XML novo (chaves já importadas)");
       }
@@ -125,6 +127,12 @@ function CtePage() {
     mutationFn: async () => {
       if (!empresa) throw new Error("Empresa não selecionada");
       if (!form.xNomeTomador || !form.cnpjTomador) throw new Error("Informe tomador");
+      const chaves = selecionadas.size > 0 ? Array.from(selecionadas) : mercadorias.map(m => m.chave);
+      if (chaves.length > 0) {
+        const sel = mercadorias.filter(m => chaves.includes(m.chave));
+        const dests = new Set(sel.map(m => m.destCnpj || m.dest));
+        if (dests.size > 1) throw new Error("CT-e não pode ter destinos diferentes. Selecione NF-es do mesmo destinatário.");
+      }
       const ret: any = await emitirCteFn({ data: { empresaId: empresa.id, input: {
         toma: form.toma, cnpjTomador: form.cnpjTomador, xNomeTomador: form.xNomeTomador, ufTomador: form.ufTomador, cMunTomador: form.cMunTomador, xMunTomador: form.xMunTomador,
         cfop: form.cfop, vPrest: parseFloat(form.vPrest)||0, vCarga: parseFloat(form.vCarga)||0, pesoKg: parseFloat(form.peso)||0, rntrc: form.rntrc,
@@ -132,7 +140,7 @@ function CtePage() {
         serie: "1",
         tomador: { toma: form.toma as any, cnpj: form.cnpjTomador, xNome: form.xNomeTomador, uf: form.ufTomador, cMun: form.cMunTomador, xMun: form.xMunTomador },
         emit: { xNome: form.xNomeTomador, ie: "ISENTO", cMun: form.cMunEnv, xMun: form.xMunEnv } as any,
-        chavesNFe: mercadorias.map(m => m.chave),
+        chavesNFe: chaves,
       } } });
       return ret;
     },
@@ -184,17 +192,17 @@ function CtePage() {
           <h3 className="text-sm font-semibold flex items-center gap-2"><Package className="h-4 w-4" /> Cadastro de Mercadorias para Embarque</h3>
           <span className="text-xs opacity-80">CT-e Avulso • Sem Mercadoria/Percurso</span>
         </div>
-        <CardContent className="p-3 space-y-3 bg-muted/20">
-          {/* Filtros topo */}
-          <div className="grid grid-cols-1 md:grid-cols-5 gap-2">
-            <div><Label className="text-xs">Nome Empresa</Label><div className="flex gap-1"><Input value={filtroEmpresa} readOnly className="h-7 text-xs bg-amber-100 dark:bg-amber-900/30 font-medium" /><Button size="icon" variant="outline" className="h-7 w-7 shrink-0"><Search className="h-3 w-3" /></Button></div></div>
-            <div><Label className="text-xs">Remetente</Label><div className="flex gap-1"><Input value={filtroRemetente} onChange={e=>setFiltroRemetente(e.target.value)} className="h-7 text-xs" /><Button size="icon" variant="outline" className="h-7 w-7 shrink-0"><Search className="h-3 w-3" /></Button></div></div>
-            <div><Label className="text-xs">Destinatário</Label><div className="flex gap-1"><Input value={filtroDestinatario} onChange={e=>setFiltroDestinatario(e.target.value)} className="h-7 text-xs" /><Button size="icon" variant="outline" className="h-7 w-7 shrink-0"><Search className="h-3 w-3" /></Button></div></div>
-            <div><Label className="text-xs">Placa Veículo</Label><div className="flex gap-1"><Input placeholder="TODAS" className="h-7 text-xs" /><Button size="icon" variant="outline" className="h-7 w-7 shrink-0"><Search className="h-3 w-3" /></Button></div></div>
-            <div><Label className="text-xs">Mercadoria</Label><div className="flex gap-1"><Input placeholder="TODAS AS MERCADORIAS" className="h-7 text-xs" /><Button size="icon" variant="outline" className="h-7 w-7 shrink-0"><Search className="h-3 w-3" /></Button></div></div>
+        <CardContent className="p-3 space-y-3 bg-muted/20 overflow-visible">
+          {/* Filtros topo — 5 colunas com min-w-0 para não estourar */}
+          <div className="grid grid-cols-2 lg:grid-cols-5 gap-2">
+            <div className="min-w-0"><Label className="text-xs">Nome Empresa</Label><div className="flex gap-1 mt-1"><Input value={filtroEmpresa} readOnly className="h-7 text-xs bg-amber-100 dark:bg-amber-900/30 font-medium flex-1 min-w-0 truncate" /><Button size="icon" variant="outline" className="h-7 w-7 shrink-0"><Search className="h-3 w-3" /></Button></div></div>
+            <div className="min-w-0"><Label className="text-xs">Remetente</Label><div className="flex gap-1 mt-1"><Input value={filtroRemetente} onChange={e=>setFiltroRemetente(e.target.value)} className="h-7 text-xs flex-1 min-w-0 truncate" /><Button size="icon" variant="outline" className="h-7 w-7 shrink-0"><Search className="h-3 w-3" /></Button></div></div>
+            <div className="min-w-0"><Label className="text-xs">Destinatário</Label><div className="flex gap-1 mt-1"><Input value={filtroDestinatario} onChange={e=>setFiltroDestinatario(e.target.value)} className="h-7 text-xs flex-1 min-w-0 truncate" /><Button size="icon" variant="outline" className="h-7 w-7 shrink-0"><Search className="h-3 w-3" /></Button></div></div>
+            <div className="min-w-0"><Label className="text-xs">Placa Veículo</Label><div className="flex gap-1 mt-1"><Input placeholder="TODAS" className="h-7 text-xs flex-1 min-w-0" /><Button size="icon" variant="outline" className="h-7 w-7 shrink-0"><Search className="h-3 w-3" /></Button></div></div>
+            <div className="min-w-0"><Label className="text-xs">Mercadoria</Label><div className="flex gap-1 mt-1"><Input placeholder="TODAS AS MERCADORIAS" className="h-7 text-xs flex-1 min-w-0 truncate" /><Button size="icon" variant="outline" className="h-7 w-7 shrink-0"><Search className="h-3 w-3" /></Button></div></div>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-3 border rounded p-2 bg-background">
+          <div className="grid grid-cols-1 lg:grid-cols-4 gap-3 border rounded p-2 bg-background">
             <div>
               <Label className="text-xs font-semibold text-primary">Embarque via CT-e</Label>
               <div className="flex flex-col gap-1 mt-1 text-xs">
@@ -233,10 +241,20 @@ function CtePage() {
               <Table>
                 <TableHeader className="sticky top-0 bg-muted">
                   <TableRow>
-                    <TableHead className="w-6"><input type="checkbox" checked readOnly /></TableHead>
+                    <TableHead className="w-6">
+                      <input
+                        type="checkbox"
+                        checked={mercadorias.length > 0 && selecionadas.size === mercadorias.length}
+                        onChange={e => {
+                          if (e.target.checked) setSelecionadas(new Set(mercadorias.map(m => m.chave)));
+                          else setSelecionadas(new Set());
+                        }}
+                      />
+                    </TableHead>
                     <TableHead className="text-xs">Código</TableHead>
                     <TableHead className="text-xs">Remetente</TableHead>
                     <TableHead className="text-xs">Destinatário</TableHead>
+                    <TableHead className="text-xs">Tomador</TableHead>
                     <TableHead className="text-xs">Nº NF-e</TableHead>
                     <TableHead className="text-xs">Série</TableHead>
                     <TableHead className="text-xs">Data Emissão</TableHead>
@@ -247,20 +265,32 @@ function CtePage() {
                 </TableHeader>
                 <TableBody>
                   {mercadorias.length === 0 ? (
-                    <TableRow><TableCell colSpan={10} className="text-center text-xs text-muted-foreground py-8">Nenhuma NF-e importada. Use “Importar NF-e (XML)” abaixo.</TableCell></TableRow>
+                    <TableRow><TableCell colSpan={11} className="text-center text-xs text-muted-foreground py-8">Nenhuma NF-e importada. Use “Importar NFes (XML)” abaixo.</TableCell></TableRow>
                   ) : (
-                    mercadorias.map((m, i) => (
-                      <TableRow key={m.chave} className="text-xs">
-                        <TableCell><input type="checkbox" checked readOnly /></TableCell>
+                    mercadorias.map((m) => (
+                      <TableRow key={m.chave} className="text-xs" data-selected={selecionadas.has(m.chave)}>
+                        <TableCell>
+                          <input
+                            type="checkbox"
+                            checked={selecionadas.has(m.chave)}
+                            onChange={e => {
+                              const next = new Set(selecionadas);
+                              if (e.target.checked) next.add(m.chave);
+                              else next.delete(m.chave);
+                              setSelecionadas(next);
+                            }}
+                          />
+                        </TableCell>
                         <TableCell className="font-mono">18837</TableCell>
-                        <TableCell className="truncate max-w-[160px]">{m.emit}</TableCell>
-                        <TableCell className="truncate max-w-[160px]">{m.dest}</TableCell>
+                        <TableCell className="truncate max-w-[130px]" title={m.emit}>{m.emit}</TableCell>
+                        <TableCell className="truncate max-w-[130px]" title={m.dest}>{m.dest}</TableCell>
+                        <TableCell className="truncate max-w-[130px] text-amber-700" title={m.tomador}>{m.tomador || "—"}</TableCell>
                         <TableCell className="font-mono">{m.nNF}</TableCell>
-                        <TableCell>1</TableCell>
+                        <TableCell>{m.serie}</TableCell>
                         <TableCell>{m.data || "—"}</TableCell>
                         <TableCell className="text-right">{brl(m.valor)}</TableCell>
                         <TableCell className="text-right">{m.peso.toFixed(2)}</TableCell>
-                        <TableCell className="font-mono truncate max-w-[180px]" title={m.chave}>{m.chave.slice(0,22)}...</TableCell>
+                        <TableCell className="font-mono truncate max-w-[160px]" title={m.chave}>{m.chave.slice(0,22)}...</TableCell>
                       </TableRow>
                     ))
                   )}
@@ -291,12 +321,30 @@ function CtePage() {
           {/* Ações de importação múltipla */}
           <div className="flex flex-wrap gap-2">
             <label className="flex items-center gap-2 px-3 py-2 border rounded bg-amber-100 dark:bg-amber-900/30 cursor-pointer hover:bg-amber-200 text-xs font-medium">
-              <UploadCloud className="h-4 w-4" /> Importar NF-e (múltiplos XML)
+              <UploadCloud className="h-4 w-4" /> Importar NFes (XML)
               <input type="file" accept=".xml" multiple className="hidden" onChange={e => { if (e.target.files) handleImportNFeXml(e.target.files); e.currentTarget.value = ""; }} />
             </label>
-            <Button variant="outline" size="sm" onClick={() => setMercadorias([])} disabled={mercadorias.length===0}><Trash2 className="mr-1 h-3 w-3" /> Limpar</Button>
+            <Button variant="outline" size="sm" onClick={() => { setMercadorias([]); setSelecionadas(new Set()); }} disabled={mercadorias.length===0}><Trash2 className="mr-1 h-3 w-3" /> Limpar</Button>
             <div className="ml-auto flex gap-2">
-              <Button variant="outline" size="sm" onClick={() => setOpen(true)} disabled={mercadorias.length===0}>Gerar CT-e com {mercadorias.length} NF-e(s)</Button>
+              <Button
+                variant="outline"
+                size="sm"
+                disabled={selecionadas.size===0}
+                onClick={() => {
+                  if (selecionadas.size===0) { toast.error("Selecione ao menos uma NF-e"); return; }
+                  const sel = mercadorias.filter(m => selecionadas.has(m.chave));
+                  const dests = new Set(sel.map(m => m.destCnpj || m.dest));
+                  if (dests.size > 1) { toast.error("Não pode emitir o mesmo CT-e para destinos diferentes"); return; }
+                  const somaV = sel.reduce((a,m)=>a+m.valor,0);
+                  const somaP = sel.reduce((a,m)=>a+m.peso,0);
+                  const first = sel[0];
+                  setForm(f => ({ ...f, cnpjTomador: first.destCnpj || f.cnpjTomador, xNomeTomador: first.dest || f.xNomeTomador, vCarga: somaV.toFixed(2), peso: String(somaP), vPrest: (somaV*0.1).toFixed(2) }));
+                  setPrefillBanner(`${sel.length} NF-e(s) selecionada(s) • Destino: ${first.dest} • ${brl(somaV)}`);
+                  setOpen(true);
+                }}
+              >
+                Gerar CT-e com {selecionadas.size || 0} selecionada(s)
+              </Button>
               <Button size="sm" onClick={() => setOpen(true)}><Plus className="mr-1 h-3 w-3" /> Novo CT-e avulso</Button>
             </div>
           </div>
