@@ -511,6 +511,11 @@ certificado tem estrutura PKCS12 não padrão ou se `extractPkcs12Native` precis
     - `fiscal.recebidas.tsx` `handleConfirmarXmlUpload`/`handleLancarNota`/`handleAlterarNota` descrição agora só `NF-e ${nNF}` (ou `CT-e`), fornecedor vai na coluna `Fornecedor` via `contato_id` (criado/buscado por emitente). Antes ia `NF-e 12189 PIPEL PICOS... (001/1)` na descrição e `Fornecedor —`.
     - Screenshot "NF-e 12189 PIPEL PICOS..." com `Fornecedor —` agora corrigido: novo lançamento salva `descricao: NF-e 12189` e `contato: PIPEL PICOS...`.
 
+38. **Valor da parcela com máscara direita→esquerda + CT-e a partir da NF-e — 28/08/2026** (este commit):
+    - `MoneyInput` (`src/components/erp/money-input.tsx:13`) com `text-right`, `moveCaretToEnd` em `onFocus`/`onClick` e `onKeyDown` que força caret no fim e re-insere dígito no fim — digitar `1` → `0,01`, `12` → `0,12`, `719` → `7,19` empurrando para esquerda, igual ao `financeiro`. Parcela em `fiscal.recebidas.tsx:1838` trocada de `Input type=number` para `MoneyInput` com `R$`.
+    - `fiscal.recebidas.tsx` botão **Emitir CT-e** no footer do modal `Detalhes da NF-e` (`:1962`, `Truck`): `handleEmitirCteFromNFe` parseia `dest`/`peso` do XML, monta `prefill` (`destCnpj/xNome/UF/cMun, vCarga, peso`) em `localStorage prefill_cte_from_nfe` e `navigate /fiscal/cte?fromNFe=chave`. `fiscal.cte.tsx` com `validateSearch` + `useEffect` que preenche `form` (tomador, vCarga/peso/vPrest) e abre dialog com banner `NF-e 12189 → CT-e`.
+    - Varredura calendários já em `DateInput` mantida.
+
 ---
 
 ## Regras de segurança

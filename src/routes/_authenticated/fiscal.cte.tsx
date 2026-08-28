@@ -13,13 +13,14 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useEmpresaAtual } from "@/hooks/use-empresa";
 import { brl } from "@/lib/format";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { toast } from "sonner";
 import { emitirCteFn, consultarCteFn, cancelarCteFn } from "@/lib/sefaz-cte-server";
 
 export const Route = createFileRoute("/_authenticated/fiscal/cte")({
   component: CtePage,
   head: () => ({ meta: [{ title: "CT-e — Norvo" }] }),
+  validateSearch: (search: Record<string, unknown>) => ({ fromNFe: (search.fromNFe as string) || undefined }),
 });
 
 type CteDoc = { id: string; numero: string | null; serie: string | null; status: string; valor_servico: number | null; chave_acesso: string | null; created_at: string; motivo_rejeicao: string | null; protocolo_sefaz: string | null };
@@ -27,6 +28,8 @@ type CteDoc = { id: string; numero: string | null; serie: string | null; status:
 function CtePage() {
   const { data: empresa } = useEmpresaAtual();
   const qc = useQueryClient();
+  const search = Route.useSearch();
+  const [prefillBanner, setPrefillBanner] = useState<string | null>(null);
   const { data: docs, isLoading } = useQuery({
     enabled: !!empresa,
     queryKey: ["cte-documentos", empresa?.id],
@@ -39,6 +42,32 @@ function CtePage() {
 
   const [open, setOpen] = useState(false);
   const [form, setForm] = useState({ toma: "3", cnpjTomador: "", xNomeTomador: "", ufTomador: "MG", cMunTomador: "3106200", xMunTomador: "BELO HORIZONTE", cfop: "5353", vPrest: "1000.00", vCarga: "10000.00", peso: "5000", rntrc: "", cMunEnv: "3106200", xMunEnv: "BELO HORIZONTE", ufEnv: "MG", cMunIni: "3106200", xMunIni: "BELO HORIZONTE", ufIni: "MG", cMunFim: "3550308", xMunFim: "SAO PAULO", ufFim: "SP" });
+
+  useEffect(() => {
+    const raw = localStorage.getItem("prefill_cte_from_nfe");
+    if (raw) {
+      try {
+        const p = JSON.parse(raw);
+        setForm(f => ({
+          ...f,
+          cnpjTomador: p.destCnpj || f.cnpjTomador,
+          xNomeTomador: p.destXNome || f.xNomeTomador,
+          ufTomador: p.destUF || f.ufTomador,
+          cMunTomador: p.destCMun || f.cMunTomador,
+          xMunTomador: p.destXMun || f.xMunTomador,
+          vCarga: p.vCarga ? String(p.vCarga) : f.vCarga,
+          peso: p.peso ? String(p.peso) : f.peso,
+          vPrest: p.vCarga ? (Number(p.vCarga) * 0.1).toFixed(2) : f.vPrest,
+        }));
+        setPrefillBanner(p.nNF ? `NF-e ${p.nNF} → CT-e (carga R$ ${Number(p.vCarga||0).toLocaleString("pt-BR",{minimumFractionDigits:2})})` : `NF-e ${p.fromNFe?.slice(0,12)}... → CT-e`);
+        setOpen(true);
+        localStorage.removeItem("prefill_cte_from_nfe");
+      } catch {}
+    } else if (search.fromNFe) {
+      setPrefillBanner(`NF-e ${search.fromNFe.slice(0,12)}... → CT-e`);
+      setOpen(true);
+    }
+  }, [search.fromNFe]);
 
   const emitir = useMutation({
     mutationFn: async () => {
@@ -89,6 +118,12 @@ function CtePage() {
   return (
     <div className="p-6 space-y-6">
       <PageHeader eyebrow="Fiscal" title="CT-e" description="Conhecimento de Transporte Eletrônico (57) — fase 2: emissão, consulta e cancelamento. Reaproveita seu certificado A1." actions={<Button size="sm" onClick={() => setOpen(true)}><Plus className="mr-1 h-4 w-4" /> Novo CT-e</Button>} />
+      {prefillBanner && (
+        <Card className="p-3 bg-sky-500/10 border-sky-500/30 text-sm flex items-center justify-between">
+          <span className="flex items-center gap-2"><Truck className="h-4 w-4 text-sky-600" /> {prefillBanner} — dados da NF-e pré-preenchidos. Confira e emita.</span>
+          <Button variant="ghost" size="sm" className="h-7" onClick={() => setPrefillBanner(null)}>×</Button>
+        </Card>
+      )}
       <Card className="p-4 bg-emerald-500/10 border-emerald-500/30 text-sm">
         <strong>Fase 2 — CT-e ativo:</strong> builder 4.00 (<code>sefaz-cte.ts</code>), assinatura <code>infCte</code>, SOAP mTLS SVRS. Em homologação teste com RNTRC fictício; em produção a SEFAZ valida IE/RNTRC e CFOP.
       </Card>

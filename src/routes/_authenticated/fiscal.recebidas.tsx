@@ -1,4 +1,4 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { PageHeader } from "@/components/erp/page-header";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -12,7 +12,7 @@ import { MoneyInput } from "@/components/erp/money-input";
 import { 
   FileDown, Search, CheckCircle2, AlertCircle, XCircle, 
   UploadCloud, FileCode, Check, ArrowRight, RefreshCw, Archive, Calendar, KeyRound,
-  Eye, Download, FileText, Trash2, Pencil
+  Eye, Download, FileText, Trash2, Pencil, Truck
 } from "lucide-react";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { useState, useMemo, useEffect } from "react";
@@ -100,6 +100,7 @@ function parseParcelasDoXml(xml: string) {
 function NotasRecebidas() {
   const { data: empresa } = useEmpresaAtual();
   const qc = useQueryClient();
+  const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState<string>("manifesto");
   
   // Categorias existentes para autocomplete
@@ -1056,6 +1057,43 @@ function NotasRecebidas() {
     }
   };
 
+  const handleEmitirCteFromNFe = () => {
+    if (!notaDetalhe || !notaDetalhe.xml) {
+      toast.error("XML da NF-e não disponível para gerar CT-e");
+      return;
+    }
+    try {
+      const parser = new DOMParser();
+      const doc = parser.parseFromString(notaDetalhe.xml, "text/xml");
+      const destCnpj = doc.querySelector("dest > CNPJ")?.textContent || doc.querySelector("dest > CPF")?.textContent || "";
+      const destXNome = doc.querySelector("dest > xNome")?.textContent || "";
+      const destUF = doc.querySelector("dest > enderDest > UF")?.textContent || doc.querySelector("dest > UF")?.textContent || "";
+      const destCMun = doc.querySelector("dest > enderDest > cMun")?.textContent || "";
+      const destXMun = doc.querySelector("dest > enderDest > xMun")?.textContent || "";
+      const emitCnpj = doc.querySelector("emit > CNPJ")?.textContent || "";
+      const emitXNome = doc.querySelector("emit > xNome")?.textContent || "";
+      const vNF = notaDetalhe.valor;
+      // peso: tenta <vol><pesoB> ou soma qtd como fallback
+      const pesoB = doc.querySelector("transp > vol > pesoB")?.textContent || doc.querySelector("vol > pesoB")?.textContent || "";
+      const peso = pesoB ? parseFloat(pesoB) : notaDetalhe.produtos.reduce((a, p) => a + (Number(p.qtd) || 0), 0) * 10;
+      const prefill = {
+        fromNFe: notaDetalhe.chave,
+        nNF: notaDetalhe.nNF,
+        chaveNFe: notaDetalhe.chave,
+        emitCnpj, emitXNome,
+        destCnpj, destXNome, destUF, destCMun, destXMun,
+        vCarga: vNF,
+        peso,
+      };
+      localStorage.setItem("prefill_cte_from_nfe", JSON.stringify(prefill));
+      setNotaDetalhe(null);
+      navigate({ to: "/fiscal/cte", search: { fromNFe: notaDetalhe.chave } as any });
+      toast.success("Dados da NF-e carregados para o CT-e");
+    } catch (e: any) {
+      toast.error("Falha ao preparar CT-e", { description: e.message });
+    }
+  };
+
   // Filtrar notas recebidas
   const mesesDisponiveis = useMemo(() => {
     const meses = new Set<string>();
@@ -1922,6 +1960,9 @@ ${transportadora ? `<div class="section"><div class="section-title">TRANSPORTE</
                   <p className="text-lg font-bold">{brl(notaDetalhe.valor)}</p>
                 </div>
                 <div className="flex gap-2">
+                  <Button variant="outline" onClick={handleEmitirCteFromNFe} disabled={!notaDetalhe.xml} title={!notaDetalhe.xml ? "XML não disponível" : "Gerar CT-e a partir desta NF-e"}>
+                    <Truck className="mr-2 h-4 w-4" /> Emitir CT-e
+                  </Button>
                   <Button variant="outline" onClick={() => setNotaDetalhe(null)}>
                     Cancelar
                   </Button>
