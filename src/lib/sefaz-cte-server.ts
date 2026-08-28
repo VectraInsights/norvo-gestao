@@ -1,48 +1,51 @@
-/**
- * Server functions CT-e — fase 1 (stub)
- * Mesma estratégia de `sefaz-server.ts`: se SEFAZ_URL existe (CF) vai via proxy Vercel.
- */
 import { createServerFn } from "@tanstack/react-start";
-
-const SEFAZ_URL = (() => {
-  try {
-    // @ts-ignore
-    const imp = typeof import.meta !== "undefined" ? (import.meta as any).env : undefined;
-    const fromImport = imp?.SEFAZ_URL || imp?.VITE_SEFAZ_URL || "";
-    const fromProcess = typeof process !== "undefined" ? (process.env.SEFAZ_URL || process.env.VITE_SEFAZ_URL || "") : "";
-    return fromImport || fromProcess;
-  } catch { return ""; }
-})();
-
+const SEFAZ_URL = (() => { try { const imp = typeof import.meta !== "undefined" ? (import.meta as any).env : undefined; const a = imp?.SEFAZ_URL || imp?.VITE_SEFAZ_URL || ""; const b = typeof process !== "undefined" ? (process.env.SEFAZ_URL || process.env.VITE_SEFAZ_URL || "") : ""; return a || b; } catch { return ""; } })();
 async function callProxy(action: string, body: Record<string, unknown>) {
-  if (!SEFAZ_URL) throw new Error("SEFAZ_URL não configurado — CT-e fase 1");
-  const res = await fetch(SEFAZ_URL, {
-    method: "POST",
-    headers: { "Content-Type": "application/json", Authorization: `Bearer ${process.env.SUPABASE_SERVICE_ROLE_KEY || ""}` },
-    body: JSON.stringify({ action, ...body }),
-  });
+  const res = await fetch(SEFAZ_URL, { method: "POST", headers: { "Content-Type": "application/json", Authorization: `Bearer ${process.env.SUPABASE_SERVICE_ROLE_KEY || ""}` }, body: JSON.stringify({ action, ...body }) });
   if (!res.ok) throw new Error((await res.json().catch(() => ({ error: `HTTP ${res.status}` }))).error);
   return res.json();
 }
-
-export const emitirCteFn = createServerFn({ method: "POST" })
-  .validator((d: { empresaId: string; input: unknown }) => d)
-  .handler(async ({ data }) => {
-    if (SEFAZ_URL) return callProxy("emitirCte", { empresaId: data.empresaId, input: data.input });
-    // Fase 1: sem SEFAZ — salva rascunho local
-    return { sucesso: false, fase: 1, motivo: "CT-e fase 1: estrutura criada, emissão SEFAZ na fase 2" };
-  });
-
-export const consultarCteFn = createServerFn({ method: "POST" })
-  .validator((d: { empresaId: string; chave: string }) => d)
-  .handler(async ({ data }) => {
-    if (SEFAZ_URL) return callProxy("consultarCte", data);
-    return { status: "rascunho", fase: 1 };
-  });
-
-export const cancelarCteFn = createServerFn({ method: "POST" })
-  .validator((d: { empresaId: string; chave: string; justificativa: string }) => d)
-  .handler(async ({ data }) => {
-    if (SEFAZ_URL) return callProxy("cancelarCte", data);
-    return { sucesso: false, fase: 1 };
-  });
+export const emitirCteFn = createServerFn({ method: "POST" }).validator((d: { empresaId: string; input: any }) => d).handler(async ({ data }) => {
+  if (SEFAZ_URL) return callProxy("emitirCte", data);
+  const { buscarCertificadoAtivo, buildCteXml, emitirCte } = await import("@/lib/sefaz-cte");
+  const cert = await buscarCertificadoAtivo(data.empresaId);
+  const { createClient } = await import("@supabase/supabase-js");
+  const supa = createClient(process.env.SUPABASE_URL||"", process.env.SUPABASE_SERVICE_ROLE_KEY||"");
+  const { data: emp } = await supa.from("empresas").select("cnpj, uf").eq("id", data.empresaId).single();
+  const { data: cfg } = await supa.from("nfe_config").select("ambiente").eq("empresa_id", data.empresaId).maybeSingle();
+  const ambiente = cfg?.ambiente==="homologacao"?"homologacao":"producao";
+  // Próximo número
+  const { data: ultimo } = await supa.from("cte_documentos").select("numero").eq("empresa_id", data.empresaId).order("created_at",{ascending:false}).limit(1).maybeSingle();
+  const proximo = String((parseInt((ultimo as any)?.numero || "0",10)+1));
+  const input = { ...data.input, ambiente, numero: proximo, serie: data.input.serie || "1", emit: { cnpj: emp?.cnpj, xNome: data.input.emit?.xNome || "EMITENTE", ie: data.input.emit?.ie || "ISENTO", uf: emp?.uf || "MG", cMun: data.input.emit?.cMun || "3106200", xMun: data.input.emit?.xMun || "BELO HORIZONTE" } };
+  const { xml, chave } = buildCteXml(input);
+  const ret = await emitirCte(cert.pfx, cert.senha, xml, ambiente);
+  if (ret.sucesso) {
+    await supa.from("cte_documentos").insert({ empresa_id: data.empresaId, chave_acesso: chave, numero: proximo, serie: input.serie, status: "autorizado", xml_assinado: xml, protocolo_sefaz: ret.protocolo, ambiente, data_autorizacao: new Date().toISOString(), valor_servico: input.vPrest, peso_carga: input.pesoKg } as any);
+  } else {
+    await supa.from("cte_documentos").insert({ empresa_id: data.empresaId, chave_acesso: chave, numero: proximo, serie: input.serie, status: "rejeitado", xml_assinado: xml, motivo_rejeicao: ret.xMotivo, ambiente } as any);
+  }
+  return { ...ret, chave, xml };
+});
+export const consultarCteFn = createServerFn({ method: "POST" }).validator((d:{empresaId:string;chave:string})=>d).handler(async ({data})=>{
+  if(SEFAZ_URL) return callProxy("consultarCte", data);
+  const { buscarCertificadoAtivo, consultarCte } = await import("@/lib/sefaz-cte");
+  const cert=await buscarCertificadoAtivo(data.empresaId);
+  const { createClient }=await import("@supabase/supabase-js");
+  const supa=createClient(process.env.SUPABASE_URL||"",process.env.SUPABASE_SERVICE_ROLE_KEY||"");
+  const { data: cfg}=await supa.from("nfe_config").select("ambiente").eq("empresa_id",data.empresaId).maybeSingle();
+  const ambiente=cfg?.ambiente==="homologacao"?"homologacao":"producao";
+  return consultarCte(cert.pfx, cert.senha, data.chave, ambiente);
+});
+export const cancelarCteFn = createServerFn({ method: "POST" }).validator((d:{empresaId:string;chave:string;justificativa:string})=>d).handler(async ({data})=>{
+  if(SEFAZ_URL) return callProxy("cancelarCte", data);
+  const { buscarCertificadoAtivo, cancelarCte } = await import("@/lib/sefaz-cte");
+  const cert=await buscarCertificadoAtivo(data.empresaId);
+  const { createClient }=await import("@supabase/supabase-js");
+  const supa=createClient(process.env.SUPABASE_URL||"",process.env.SUPABASE_SERVICE_ROLE_KEY||"");
+  const { data: cfg}=await supa.from("nfe_config").select("ambiente").eq("empresa_id",data.empresaId).maybeSingle();
+  const ambiente=cfg?.ambiente==="homologacao"?"homologacao":"producao";
+  const ret=await cancelarCte(cert.pfx, cert.senha, data.chave, data.justificativa, ambiente, cert.cnpj);
+  if(ret.sucesso) await supa.from("cte_documentos").update({status:"cancelado"} as any).eq("chave_acesso",data.chave);
+  return ret;
+});

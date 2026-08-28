@@ -466,7 +466,16 @@ certificado tem estrutura PKCS12 não padrão ou se `extractPkcs12Native` precis
       retornando `{fase:1}` até mTLS.
     - Rotas `fiscal.cte.tsx` e `fiscal.mdf.tsx` (cards fase 1, EmptyState, listagem Supabase).
     - Nav `Fiscal` com itens **CT-e** e **MDF-e** (`nav-config.ts:121`).
-    - Fase 2 (próximos): builders completos CT-e 4.00/MDF-e 3.00, assinatura W3C exclusiva,
+    - Fase 2 (iniciada neste commit): `sefaz.ts` exporta `createSefazAgent` + `signXml` genérico
+      para `<infNFe|infCte|infMDFe Id>` e insere `<Signature>` em `</CTe>`/`</MDFe>`; `sefaz-cte.ts`
+      reescrito com `CTE_ENDPOINTS` SVRS hom/prod reais, `gerarChaveCte`/DV mod11, `buildCteXml`
+      completo (ide/emit/rem/dest/vPrest/imp/infCTeNorm/rodoviário RNTRC) e `emitirCte`/`consultarCte`/`cancelarCte`
+      via SOAP 1.2 mTLS; `sefaz-cte-server.ts` e `sefaz-proxy.ts` agora executam emissão real
+      (numeração sequencial `cte_documentos`, insert `autorizado`/`rejeitado` com protocolo),
+      delegando CF→Vercel quando `SEFAZ_URL` presente. UI `fiscal.cte.tsx` com dialog Novo CT-e,
+      consulta e cancelamento. MDF-e permanece stub até CT-e homologado.
+    - Fase 2 (próximos): homologação SVRS com RNTRC real, testes CFOP/ICMS, vinculação Viagem→CT-e,
+      MDF-e completo e encerramento.
       SOAP mTLS por UF (validar URLs SP/MG/RS × SVRS), server fns reais, UI de emissão vinculada
       a Viagens/Veículos.
 

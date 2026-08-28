@@ -23,13 +23,16 @@ const OID_CERT_BAG = "1.2.840.113549.1.12.10.1.3";
 // Agent HTTPS com certificado cliente (mTLS)
 // ============================================================
 
-function createSefazAgent(pfxBytes: Buffer, senha: string): https.Agent {
+export function createSefazAgent(pfxBytes: Buffer, senha: string): https.Agent {
   // Usar pfx direto — é o método nativo do Node.js para PKCS#12
   return new https.Agent({
     pfx: pfxBytes,
     passphrase: senha,
     rejectUnauthorized: false,
   });
+}
+export function soapEnvelope12(body: string): string {
+  return `<?xml version="1.0" encoding="utf-8"?><soap12:Envelope xmlns:soap12="http://www.w3.org/2003/05/soap-envelope"><soap12:Body>${body}</soap12:Body></soap12:Envelope>`;
 }
 
 // ============================================================
@@ -350,8 +353,8 @@ function signXmlWithForge(
   const certDer = forge.asn1.toDer(forge.pki.certificateToAsn1(certificate)).getBytes();
   const certB64 = forge.util.encode64(certDer);
 
-  // ID do elemento a assinar (infNFe com atributo Id)
-  const matchId = xml.match(/<infNFe\s+Id="([^"]+)"/);
+  // ID do elemento a assinar (infNFe/infCte/infMDFe com atributo Id)
+  const matchId = xml.match(/<inf(?:NFe|Cte|MDFe)\s+Id="([^"]+)"/);
   const uri = matchId ? `#${matchId[1]}` : "#NFe";
 
   // Canonicalização simplificada (C14N exclusive - suficiente para SEFAZ)
@@ -393,10 +396,14 @@ function signXmlWithForge(
   </KeyInfo>
 </Signature>`;
 
-  // Inserir antes do </NFe> ou antes de </infNFe>
+  // Inserir antes do fechamento do documento ou inf
+  if (xml.includes("</CTe>")) return xml.replace("</CTe>", signature + "</CTe>");
+  if (xml.includes("</MDFe>")) return xml.replace("</MDFe>", signature + "</MDFe>");
   if (xml.includes("</NFe>")) {
     return xml.replace("</NFe>", signature + "</NFe>");
   }
+  if (xml.includes("</infCte>")) return xml.replace("</infCte>", signature + "</infCte>");
+  if (xml.includes("</infMDFe>")) return xml.replace("</infMDFe>", signature + "</infMDFe>");
   return xml.replace("</infNFe>", signature + "</infNFe>");
 }
 
@@ -418,7 +425,7 @@ function signXmlNative(xml: string, pfxBytes: Buffer, senha: string): string {
   const certificate = forge.pki.certificateFromAsn1(certAsn1);
 
   // ID do elemento a assinar
-  const matchId = xml.match(/<infNFe\s+Id="([^"]+)"/);
+  const matchId = xml.match(/<inf(?:NFe|Cte|MDFe)\s+Id="([^"]+)"/);
   const uri = matchId ? `#${matchId[1]}` : "#NFe";
 
   // SHA-1 digest do conteúdo
@@ -457,9 +464,11 @@ function signXmlNative(xml: string, pfxBytes: Buffer, senha: string): string {
   </KeyInfo>
 </Signature>`;
 
-  if (xml.includes("</NFe>")) {
-    return xml.replace("</NFe>", signature + "</NFe>");
-  }
+  if (xml.includes("</CTe>")) return xml.replace("</CTe>", signature + "</CTe>");
+  if (xml.includes("</MDFe>")) return xml.replace("</MDFe>", signature + "</MDFe>");
+  if (xml.includes("</NFe>")) return xml.replace("</NFe>", signature + "</NFe>");
+  if (xml.includes("</infCte>")) return xml.replace("</infCte>", signature + "</infCte>");
+  if (xml.includes("</infMDFe>")) return xml.replace("</infMDFe>", signature + "</infMDFe>");
   return xml.replace("</infNFe>", signature + "</infNFe>");
 }
 
