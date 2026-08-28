@@ -522,10 +522,22 @@ certificado tem estrutura PKCS12 não padrão ou se `extractPkcs12Native` precis
     - Dialog `Novo CT-e` com 3 `Card`s seccionados e ícones: **Tomador** (`UsersRound`), **Rota** (`RouteIcon`/`MapPin` com Env/Ini/Fim), **Carga, valores e fiscal** (`Package`/`DollarSign`/`Building2`, CFOP/RNTRC, `vPrest`/`vCarga`/`peso` + badges das NF-es vinculadas).
 
 40. **CT-e por partes + cabeçalho removido + Tomador do XML — 28/08/2026** (este commit):
-    - Cabeçalho **Nome Empresa / Remetente / Destinatário / Placa / Mercadoria** removido de `fiscal.cte.tsx` (`CardContent` `grid-cols-5`) conforme seta — agora inicia direto em `Embarque via CT-e`.
-    - `handleImportNFeXml` com `tomador` via `transp>modFrete` do XML: `0`→Remetente (`emit`), `1`→Destinatário (`dest`), `2`→Transportadora (`transp>transporta`), preenchendo `mercadorias[].tomador`/`tomadorCnpj` e `Listagem das Notas Fiscais` coluna **Tomador** (amarelo) corretamente — antes fixo `dest`.
-    - Coluna **Tomador** adicionada na `Listagem das Notas Fiscais` (após Destinatário), checkbox desmarcado por padrão (`selecionadas: Set` vazio, usuário escolhe), validação `Gerar CT-e` só com selecionadas e bloqueio se `Set(destCnpj)` ou `Set(tomadorCnpj)` >1 ("destinos diferentes").
-    - Botão renomeado `Importar NF-e (múltiplos XML)` → **`Importar NFes (XML)`** (`UploadCloud`, `multiple`).
+     - Cabeçalho **Nome Empresa / Remetente / Destinatário / Placa / Mercadoria** removido de `fiscal.cte.tsx` (`CardContent` `grid-cols-5`) conforme seta — agora inicia direto em `Embarque via CT-e`.
+     - `handleImportNFeXml` com `tomador` via `transp>modFrete` do XML: `0`→Remetente (`emit`), `1`→Destinatário (`dest`), `2`→Transportadora (`transp>transporta`), preenchendo `mercadorias[].tomador`/`tomadorCnpj` e `Listagem das Notas Fiscais` coluna **Tomador** (amarelo) corretamente — antes fixo `dest`.
+     - Coluna **Tomador** adicionada na `Listagem das Notas Fiscais` (após Destinatário), checkbox desmarcado por padrão (`selecionadas: Set` vazio, usuário escolhe), validação `Gerar CT-e` só com selecionadas e bloqueio se `Set(destCnpj)` ou `Set(tomadorCnpj)` >1 ("destinos diferentes").
+     - Botão renomeado `Importar NF-e (múltiplos XML)` → **`Importar NFes (XML)`** (`UploadCloud`, `multiple`).
+
+41. **CT-e dialog robusto estilo STM + CFOPs compartilhados — 28/08/2026** (commits `d8fc2b3`/`b849fc9`):
+     - Removida **Listagem de Mercadorias** (CARGA GERAL/NCM) e banner azul `prefillBanner` da tela principal (`fiscal.cte.tsx`).
+     - Dialog **Conhecimento de Transporte Avulso** reescrito com 4 abas estilo STM: **Remetente/Destinatário** (cards Remetente/Destinatário auto puxados, Tomador, Rota Coleta/Entrega), **Doc Mercadorias** (tabela Modelo/Chave/Remetente/Destinatário/Nº/Série/Data/Peso/Valor), **Seguros/Veículos** (Seguradora/Apólice/Base Calc/RCTR-C/RCF-DC/Responsável dropdown, Motorista/CIOT/Placas), **Taxas/Despesas Acessórias** (Pedágio 3 eixos/Ad Valorem/GRIS/Taxas + Forma Pagamento Pedágio).
+     - Header do dialog com **N° Conhecimento, Data Emissão (DateInput), CFOP Saída** (dropdown); removidos **Espécie Veículo** e **Base Cálculo Frete** conforme pedido (grid 5→3).
+     - Criado `src/lib/cfops-transporte.ts:1` com `CFOPS_TODOS` (~500 códigos oficiais 1.xxx–7.xxx exatos do PDF), `CFOPS_TRANSPORTE`/`MOD_FRETE_OPTIONS` (0 CIF,1 FOB,2 Terceiros,3 Próprio Remetente,4 Próprio Destinatário,9 Sem Ocorrência) e `RESPONSAVEL_CTE_OPTIONS` (0 Remetente a 5 Tomador de Serviço), compartilhado entre CT-e e NF. Doc Mercadorias no dialog agora filtra `selecionadas.size>0 ? filtradas : todas` para não mostrar todas as 4 quando só 2 selecionadas.
+
+42. **CFOPs separados por uso + calendário e Tomador corrigidos — 28/08/2026** (commits `800e480`/`b862a27`, `7df5eb5`/`5dfdb83`, `49a076f`/`f71d94d`):
+     - `cfops-transporte.ts:640` split: `CFOPS_CTE` (19 códigos de transporte: 5.351–5.360 estaduais, 6.351–6.360 interestaduais, 7.358 internacional) exclusivo do **CT-e** (`fiscal.cte.tsx:21` import `CFOPS_CTE`), `CFOPS_TODOS`/`CFOPS_NOTAS` mantidos para **Notas de Compra/Devolução**.
+     - **Calendário padrão ERP**: `DateInput` (`date-input.tsx:22`, `Calendar` dropdown pt-BR, `maxToday`, ícone popover) no **Data Emissão** do dialog (`fiscal.cte.tsx:385`, `form.dataEmissao`) e no **Período de Entrada** da listagem (`periodoIni`/`periodoFim` useState, `DateInput` flex-1), trocando `Input type=date` nativo.
+     - **Tomador corrigido para modFrete 0**: `mercadorias` estendida com `tomadorUF/CMun/XMun/modFrete` (`:37`), `handleImportNFeXml` com `tomaByMod {"0":"0","1":"3","2":"4","3":"0","4":"3","9":"4"}` para preencher `toma` correto, `Gerar CT-e` (`:340`) agora usa `tomadorCnpj/tomador/tomadorUF` em vez de `destCnpj/dest` — NF com `FRETE 0-Por conta do Rem` (imagem 3) agora puxa `TECNO2000...` (Remetente) correto, não `INSTITUTO NACIONAL DO SEGURO SOCIAL` (imagem 4 corrigida). Screenshot `INSTITUTO NA...` com frete CIF validado.
+     - **Período de Entrada layout**: grid 4→ `border rounded` com `grid lg:grid-cols-3` + linha resumo `Qtde NF-e • Peso Bruto • Valor` com `border-t pt-2 flex-wrap gap-x-3` sem sobreposição com botão **Consulta** (`:209`).
 
 ---
 
