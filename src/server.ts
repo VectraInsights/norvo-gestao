@@ -45,6 +45,17 @@ function isH3SwallowedErrorBody(body: string): boolean {
 }
 
 export default {
+  async scheduled(_event: unknown, env: Record<string, string>, ctx: { waitUntil: (p: Promise<unknown>) => void }) {
+    // Cloudflare Cron: 03–09 UTC (00–06 BRT) — reaproveita handleSefazCron
+    // Injeta env do Worker em process.env para o helper ler SUPABASE_URL/KEY
+    try {
+      if (typeof process !== "undefined" && env) {
+        for (const [k, v] of Object.entries(env)) (process.env as any)[k] = v;
+      }
+      const { handleSefazCron } = await import("./lib/sefaz-cron");
+      ctx.waitUntil(handleSefazCron().then(r => r.text().then(t => console.log("[scheduled] sefaz-cron", t)).catch(e => console.error("[scheduled] err", e))));
+    } catch (e) { console.error("[scheduled] fail", e); }
+  },
   async fetch(request: Request, env: unknown, ctx: unknown) {
     // Proxy SEFAZ — roda no Vercel (Node.js com mTLS).
     // No CF Worker, esta roda nunca é atingida (o Worker chama o Vercel).

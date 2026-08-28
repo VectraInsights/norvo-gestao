@@ -169,13 +169,16 @@ export async function handleSefazProxy(request: Request): Promise<Response> {
           if (r.maxNsuObtido) {
             await supabase.from("nfe_config").update({ last_nsu: r.maxNsuObtido }).eq("empresa_id", empresaId);
           }
-        }
-        // cStat 656 ou qualquer erro: NÃO atualizar last_query_at — timer conta da última sucesso
-
-        // Para cStat 656: enviar lastQueryAt ORIGINAL para o front calcular retry
-        if (r.debug?.cStat === "656") {
+        } else if (r.debug?.cStat === "656") {
+          // Consumo Indevido: SEFAZ pede 1h + usar ultNSU — salva para respeitar cooldown e avançar cursor
+          const now = new Date().toISOString();
+          const ult = (r as any).ultNSU || (r as any).maxNsuObtido;
+          const upd: Record<string, unknown> = { last_query_at: now };
+          if (ult) upd.last_nsu = ult;
+          await supabase.from("nfe_config").update(upd).eq("empresa_id", empresaId);
           (r as Record<string, unknown>).lastQueryAt = lastQueryAntes;
         }
+        // outros erros: NÃO atualizar last_query_at — timer conta da última sucesso
         break;
       }
       case "manifestar":

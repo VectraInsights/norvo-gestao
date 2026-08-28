@@ -94,12 +94,15 @@ export const consultarNFeDestinatarioFn = createServerFn({ method: "POST" })
       if (result.maxNsuObtido) {
         await supabase.from("nfe_config").update({ last_nsu: result.maxNsuObtido }).eq("empresa_id", data.empresaId);
       }
-    }
-    // cStat 656 ou erro: NÃO atualizar last_query_at
-
-    if (result.debug?.cStat === "656") {
+    } else if (result.debug?.cStat === "656") {
+      const now = new Date().toISOString();
+      const ult = (result as any).ultNSU || (result as any).maxNsuObtido;
+      const upd: Record<string, unknown> = { last_query_at: now };
+      if (ult) upd.last_nsu = ult;
+      await supabase.from("nfe_config").update(upd).eq("empresa_id", data.empresaId);
       (result as Record<string, unknown>).lastQueryAt = lastQueryAntes;
     }
+    // outros erros: NÃO atualizar last_query_at
 
     return result;
   });

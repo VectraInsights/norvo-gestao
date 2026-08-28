@@ -603,7 +603,7 @@ export async function consultarDestinatario(
   uf: string,
   ambiente: "homologacao" | "producao" = "homologacao",
   startNsu?: string,
-): Promise<{ notas: Array<{ chave: string; emitente: string; cnpj: string; valor: number; data: string }>; debug?: { cStat: string; xMotivo: string; endpoint: string; tpAmb: string; cUFAutor: string; cnpj: string }; maxNsuObtido?: string; resetouCursor?: boolean }> {
+): Promise<{ notas: Array<{ chave: string; emitente: string; cnpj: string; valor: number; data: string }>; debug?: { cStat: string; xMotivo: string; endpoint: string; tpAmb: string; cUFAutor: string; cnpj: string }; maxNsuObtido?: string; ultNSU?: string; resetouCursor?: boolean }> {
   const endpoints = getEndpoints(uf, ambiente);
   const ns = "http://www.portalfiscal.inf.br/nfe";
   const agent = createSefazAgent(pfxBytes, senha);
@@ -673,7 +673,7 @@ export async function consultarDestinatario(
       }
     } while (true);
 
-    return { allNotas, maxNSU, cStat, xMotivo };
+    return { allNotas, maxNSU, cStat, xMotivo, ultNSU };
   }
 
   // Tentar com o cursor salvo
@@ -681,9 +681,16 @@ export async function consultarDestinatario(
   let resetouCursor = false;
 
   // cStat 656 = Consumo Indevido (outro sistema avançou o cursor) → reseta automaticamente
+  // Se veio de um cursor salvo, tenta do zero; se veio do zero, mantém o ultNSU para o caller salvar
   if (resultado.cStat === "656" && startNsu) {
     console.log("[sefaz] cStat 656 detectado — resetando cursor para zero e tentando novamente...");
-    resultado = await executarConsulta("000000000000000");
+    const retry = await executarConsulta("000000000000000");
+    // Se o retry também deu 656, preserva o ultNSU original para o caller salvar e aguardar 1h
+    if (retry.cStat === "656" && (retry as any).ultNSU) {
+      (resultado as any).ultNSU = (retry as any).ultNSU || (resultado as any).ultNSU;
+    } else {
+      resultado = retry;
+    }
     resetouCursor = true;
   }
 
@@ -691,6 +698,7 @@ export async function consultarDestinatario(
   return {
     notas: resultado.allNotas,
     maxNsuObtido: resultado.maxNSU || undefined,
+    ultNSU: (resultado as any).ultNSU || undefined,
     resetouCursor,
     debug: {
       cStat: resultado.cStat,
