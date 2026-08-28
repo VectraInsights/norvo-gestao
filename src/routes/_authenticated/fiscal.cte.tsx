@@ -20,6 +20,7 @@ import { toast } from "sonner";
 import { emitirCteFn, consultarCteFn, cancelarCteFn } from "@/lib/sefaz-cte-server";
 import { CFOPS_TODOS, MOD_FRETE_OPTIONS, RESPONSAVEL_CTE_OPTIONS } from "@/lib/cfops-transporte";
 import { Textarea } from "@/components/ui/textarea";
+import { DateInput } from "@/components/erp/date-input";
 
 export const Route = createFileRoute("/_authenticated/fiscal/cte")({
   component: CtePage,
@@ -34,7 +35,7 @@ function CtePage() {
   const qc = useQueryClient();
   const search = Route.useSearch();
   const [isParsing, setIsParsing] = useState(false);
-  const [mercadorias, setMercadorias] = useState<Array<{ chave: string; nNF: string; serie: string; emit: string; emitCnpj: string; dest: string; destCnpj: string; valor: number; peso: number; data: string; tomador: string; tomadorCnpj: string }>>([]);
+  const [mercadorias, setMercadorias] = useState<Array<{ chave: string; nNF: string; serie: string; emit: string; emitCnpj: string; dest: string; destCnpj: string; valor: number; peso: number; data: string; tomador: string; tomadorCnpj: string; tomadorUF: string; tomadorCMun: string; tomadorXMun: string; modFrete: string }>>([]);
   const [selecionadas, setSelecionadas] = useState<Set<string>>(new Set());
   const [filtroEmpresa] = useState("ROSE TRANSPORTES");
   const [filtroRemetente, setFiltroRemetente] = useState("TODOS REMETENTES");
@@ -51,7 +52,7 @@ function CtePage() {
   });
 
   const [open, setOpen] = useState(false);
-  const [form, setForm] = useState({ toma: "3", cnpjTomador: "", xNomeTomador: "", ufTomador: "MG", cMunTomador: "3106200", xMunTomador: "BELO HORIZONTE", cfop: "5353", vPrest: "1000.00", vCarga: "10000.00", peso: "5000", rntrc: "", cMunEnv: "3106200", xMunEnv: "BELO HORIZONTE", ufEnv: "MG", cMunIni: "3106200", xMunIni: "BELO HORIZONTE", ufIni: "MG", cMunFim: "3550308", xMunFim: "SAO PAULO", ufFim: "SP" });
+  const [form, setForm] = useState({ toma: "3", cnpjTomador: "", xNomeTomador: "", ufTomador: "MG", cMunTomador: "3106200", xMunTomador: "BELO HORIZONTE", cfop: "5353", vPrest: "1000.00", vCarga: "10000.00", peso: "5000", rntrc: "", cMunEnv: "3106200", xMunEnv: "BELO HORIZONTE", ufEnv: "MG", cMunIni: "3106200", xMunIni: "BELO HORIZONTE", ufIni: "MG", cMunFim: "3550308", xMunFim: "SAO PAULO", ufFim: "SP", dataEmissao: new Date().toISOString().slice(0,10) });
 
   const handleImportNFeXml = async (files: FileList | File[]) => {
     const list = Array.from(files as any as File[]);
@@ -100,10 +101,12 @@ function CtePage() {
           const transpXNome = doc.querySelector("transp > transporta > xNome")?.textContent || "";
           if (transpCnpj || transpXNome) { tomadorNome = transpXNome || tomadorNome; tomadorCnpj = transpCnpj || tomadorCnpj; }
         }
-        novas.push({ chave: chaveNorm, nNF, serie, emit: emitXNome, emitCnpj, dest: destXNome, destCnpj, valor, peso, data: dhEmi.slice(0,10), tomador: tomadorNome, tomadorCnpj });
-        // Preenche tomador com o primeiro (se ainda vazio)
+        novas.push({ chave: chaveNorm, nNF, serie, emit: emitXNome, emitCnpj, dest: destXNome, destCnpj, valor, peso, data: dhEmi.slice(0,10), tomador: tomadorNome, tomadorCnpj, tomadorUF, tomadorCMun, tomadorXMun, modFrete });
+        // Preenche tomador com o primeiro (se ainda vazio) — usa tomador correto pelo modFrete
         if (added === 0 && mercadorias.length === 0 && !form.cnpjTomador) {
-          setForm(f => ({ ...f, cnpjTomador: destCnpj || f.cnpjTomador, xNomeTomador: destXNome || f.xNomeTomador, ufTomador: destUF || f.ufTomador, cMunTomador: destCMun || f.cMunTomador, xMunTomador: destXMun || f.xMunTomador }));
+          const tomaByMod: Record<string,string> = { "0":"0", "1":"3", "2":"4", "3":"0", "4":"3", "9":"4" };
+          const tomaIni = tomaByMod[modFrete] ?? "3";
+          setForm(f => ({ ...f, toma: tomaIni, cnpjTomador: tomadorCnpj || f.cnpjTomador, xNomeTomador: tomadorNome || f.xNomeTomador, ufTomador: tomadorUF || f.ufTomador, cMunTomador: tomadorCMun || f.cMunTomador, xMunTomador: tomadorXMun || f.xMunTomador }));
         }
         added++;
       }
@@ -336,8 +339,10 @@ function CtePage() {
                   if (dests.size > 1) { toast.error("Não pode emitir o mesmo CT-e para destinos diferentes"); return; }
                   const somaV = sel.reduce((a,m)=>a+m.valor,0);
                   const somaP = sel.reduce((a,m)=>a+m.peso,0);
-                  const first = sel[0];
-                  setForm(f => ({ ...f, cnpjTomador: first.destCnpj || f.cnpjTomador, xNomeTomador: first.dest || f.xNomeTomador, vCarga: somaV.toFixed(2), peso: String(somaP), vPrest: (somaV*0.1).toFixed(2) }));
+                  const first = sel[0] as typeof sel[0] & { modFrete?: string; tomadorUF?: string; tomadorCMun?: string; tomadorXMun?: string };
+                  const tomaByMod: Record<string,string> = { "0":"0", "1":"3", "2":"4", "3":"0", "4":"3", "9":"4" };
+                  const tomaSel = (first as any).modFrete ? (tomaByMod[(first as any).modFrete] ?? "3") : "3";
+                  setForm(f => ({ ...f, toma: tomaSel, cnpjTomador: (first as any).tomadorCnpj || first.destCnpj || f.cnpjTomador, xNomeTomador: (first as any).tomador || first.dest || f.xNomeTomador, ufTomador: (first as any).tomadorUF || f.ufTomador, cMunTomador: (first as any).tomadorCMun || f.cMunTomador, xMunTomador: (first as any).tomadorXMun || f.xMunTomador, vCarga: somaV.toFixed(2), peso: String(somaP), vPrest: (somaV*0.1).toFixed(2) }));
                   setOpen(true);
                 }}
               >
@@ -382,7 +387,7 @@ function CtePage() {
             {/* Header: Nº Conhecimento, Data, CFOP */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-2 border rounded-b-md rounded-tr-md p-3 bg-muted/20">
               <div><Label className="text-[10px] text-muted-foreground">N° Conhecimento</Label><Input className="h-7 text-xs font-mono" value="— aguardando emissão —" readOnly /></div>
-              <div><Label className="text-[10px] text-muted-foreground">Data Emissão</Label><Input type="date" className="h-7 text-xs" defaultValue={new Date().toISOString().slice(0,10)} /></div>
+              <div><Label className="text-[10px] text-muted-foreground">Data Emissão</Label><DateInput value={form.dataEmissao} onChange={v => setForm({...form, dataEmissao: v})} className="h-7 text-xs" /></div>
               <div>
                 <Label className="text-[10px] text-muted-foreground">CFOP Saída</Label>
                 <Select value={form.cfop} onValueChange={v => setForm({...form, cfop: v})}>
