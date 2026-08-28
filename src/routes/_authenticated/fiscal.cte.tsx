@@ -8,7 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
-import { Truck, Plus, FileText, Search, Ban, UploadCloud, FileCode } from "lucide-react";
+import { Truck, Plus, FileText, Search, Ban, UploadCloud, FileCode, UsersRound, MapPin, Package, DollarSign, Building2, Route as RouteIcon } from "lucide-react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useEmpresaAtual } from "@/hooks/use-empresa";
@@ -197,27 +197,80 @@ function CtePage() {
         </Card>
       )}
       <Dialog open={open} onOpenChange={setOpen}>
-        <DialogContent className="sm:max-w-3xl max-h-[90vh] overflow-y-auto">
-          <DialogHeader><DialogTitle>Novo CT-e (57) — 4.00</DialogTitle></DialogHeader>
-          <div className="grid grid-cols-2 gap-3">
-            <div className="col-span-2 text-xs font-semibold text-muted-foreground">Tomador (toma {form.toma})</div>
-            <div><Label>Tomador CNPJ *</Label><Input value={form.cnpjTomador} onChange={e=>setForm({...form,cnpjTomador:e.target.value})} placeholder="00000000000000" /></div>
-            <div><Label>Nome *</Label><Input value={form.xNomeTomador} onChange={e=>setForm({...form,xNomeTomador:e.target.value})} /></div>
-            <div><Label>UF</Label><Input value={form.ufTomador} onChange={e=>setForm({...form,ufTomador:e.target.value})} /></div>
-            <div><Label>cMun</Label><Input value={form.cMunTomador} onChange={e=>setForm({...form,cMunTomador:e.target.value})} /></div>
-            <div className="col-span-2"><Label>xMun</Label><Input value={form.xMunTomador} onChange={e=>setForm({...form,xMunTomador:e.target.value})} /></div>
-            <div><Label>CFOP</Label><Input value={form.cfop} onChange={e=>setForm({...form,cfop:e.target.value})} /></div>
-            <div><Label>RNTRC</Label><Input value={form.rntrc} onChange={e=>setForm({...form,rntrc:e.target.value})} placeholder="8 dígitos" /></div>
-            <div><Label>Valor Serviço</Label><Input value={form.vPrest} onChange={e=>setForm({...form,vPrest:e.target.value})} /></div>
-            <div><Label>Valor Carga</Label><Input value={form.vCarga} onChange={e=>setForm({...form,vCarga:e.target.value})} /></div>
-            <div><Label>Peso (kg)</Label><Input value={form.peso} onChange={e=>setForm({...form,peso:e.target.value})} /></div>
-            <div><Label>cMun Ini</Label><Input value={form.cMunIni} onChange={e=>setForm({...form,cMunIni:e.target.value})} /></div>
-            <div><Label>xMun Ini / UF</Label><div className="flex gap-2"><Input value={form.xMunIni} onChange={e=>setForm({...form,xMunIni:e.target.value})} /><Input className="w-20" value={form.ufIni} onChange={e=>setForm({...form,ufIni:e.target.value})} /></div></div>
-            <div><Label>cMun Fim</Label><Input value={form.cMunFim} onChange={e=>setForm({...form,cMunFim:e.target.value})} /></div>
-            <div><Label>xMun Fim / UF</Label><div className="flex gap-2"><Input value={form.xMunFim} onChange={e=>setForm({...form,xMunFim:e.target.value})} /><Input className="w-20" value={form.ufFim} onChange={e=>setForm({...form,ufFim:e.target.value})} /></div></div>
+        <DialogContent className="sm:max-w-4xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2"><Truck className="h-5 w-5 text-primary" /> Novo CT-e (57) — 4.00</DialogTitle>
+            <p className="text-sm text-muted-foreground">Preencha os dados do transporte. O XML será assinado e enviado à SEFAZ via mTLS. Em homologação o RNTRC pode ser fictício.</p>
+          </DialogHeader>
+
+          <div className="space-y-4">
+            {/* Tomador */}
+            <Card className="p-4">
+              <div className="flex items-center gap-2 mb-3">
+                <div className="h-7 w-7 rounded bg-primary/10 grid place-items-center"><UsersRound className="h-4 w-4 text-primary" /></div>
+                <div>
+                  <h4 className="text-sm font-semibold">Tomador do serviço</h4>
+                  <p className="text-xs text-muted-foreground">Quem contratou o frete (toma {form.toma} — 0 Remetente, 1 Expedidor, 2 Recebedor, 3 Destinatário, 4 Outros)</p>
+                </div>
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                <div><Label>Tomador CNPJ *</Label><Input value={form.cnpjTomador} onChange={e=>setForm({...form,cnpjTomador:e.target.value})} placeholder="00.000.000/0000-00" /></div>
+                <div className="md:col-span-2"><Label>Nome / Razão social *</Label><Input value={form.xNomeTomador} onChange={e=>setForm({...form,xNomeTomador:e.target.value})} placeholder="Nome do tomador" /></div>
+                <div><Label>UF</Label><Input value={form.ufTomador} onChange={e=>setForm({...form,ufTomador:e.target.value.toUpperCase()})} maxLength={2} placeholder="MG" /></div>
+                <div><Label>cMun (IBGE)</Label><Input value={form.cMunTomador} onChange={e=>setForm({...form,cMunTomador:e.target.value})} placeholder="3106200" /></div>
+                <div><Label>Município</Label><Input value={form.xMunTomador} onChange={e=>setForm({...form,xMunTomador:e.target.value})} placeholder="Belo Horizonte" /></div>
+              </div>
+            </Card>
+
+            {/* Rota */}
+            <Card className="p-4">
+              <div className="flex items-center gap-2 mb-3">
+                <div className="h-7 w-7 rounded bg-sky-500/10 grid place-items-center"><RouteIcon className="h-4 w-4 text-sky-600" /></div>
+                <div>
+                  <h4 className="text-sm font-semibold">Rota e origem/destino</h4>
+                  <p className="text-xs text-muted-foreground">Municípios de carregamento, coleta e entrega</p>
+                </div>
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                <div><Label><MapPin className="mr-1 h-3 w-3 inline" />cMun Env</Label><Input value={form.cMunEnv} onChange={e=>setForm({...form,cMunEnv:e.target.value})} placeholder="3106200" /></div>
+                <div><Label>xMun Env</Label><Input value={form.xMunEnv} onChange={e=>setForm({...form,xMunEnv:e.target.value})} /></div>
+                <div><Label>UF Env</Label><Input value={form.ufEnv} onChange={e=>setForm({...form,ufEnv:e.target.value.toUpperCase()})} /></div>
+                <div><Label>cMun Ini</Label><Input value={form.cMunIni} onChange={e=>setForm({...form,cMunIni:e.target.value})} /></div>
+                <div><Label>xMun Ini</Label><Input value={form.xMunIni} onChange={e=>setForm({...form,xMunIni:e.target.value})} /></div>
+                <div><Label>UF Ini</Label><Input value={form.ufIni} onChange={e=>setForm({...form,ufIni:e.target.value.toUpperCase()})} /></div>
+                <div><Label>cMun Fim</Label><Input value={form.cMunFim} onChange={e=>setForm({...form,cMunFim:e.target.value})} /></div>
+                <div><Label>xMun Fim</Label><Input value={form.xMunFim} onChange={e=>setForm({...form,xMunFim:e.target.value})} /></div>
+                <div><Label>UF Fim</Label><Input value={form.ufFim} onChange={e=>setForm({...form,ufFim:e.target.value.toUpperCase()})} /></div>
+              </div>
+            </Card>
+
+            {/* Carga e valores */}
+            <Card className="p-4">
+              <div className="flex items-center gap-2 mb-3">
+                <div className="h-7 w-7 rounded bg-amber-500/10 grid place-items-center"><Package className="h-4 w-4 text-amber-600" /></div>
+                <div>
+                  <h4 className="text-sm font-semibold">Carga, valores e fiscal</h4>
+                  <p className="text-xs text-muted-foreground">CFOP, RNTRC e valores declarados</p>
+                </div>
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                <div><Label><Building2 className="mr-1 h-3 w-3 inline" />CFOP</Label><Input value={form.cfop} onChange={e=>setForm({...form,cfop:e.target.value})} placeholder="5353" /></div>
+                <div><Label>RNTRC (ANTT)</Label><Input value={form.rntrc} onChange={e=>setForm({...form,rntrc:e.target.value.replace(/\D/g,"").slice(0,8)})} placeholder="8 dígitos" /></div>
+                <div className="flex items-end"><p className="text-xs text-muted-foreground">Homologação aceita RNTRC fictício. Produção valida ANTT.</p></div>
+                <div><Label><DollarSign className="mr-1 h-3 w-3 inline" />Valor Serviço (R$)</Label><Input value={form.vPrest} onChange={e=>setForm({...form,vPrest:e.target.value})} placeholder="1000.00" /></div>
+                <div><Label>Valor Carga (R$)</Label><Input value={form.vCarga} onChange={e=>setForm({...form,vCarga:e.target.value})} placeholder="10000.00" /></div>
+                <div><Label>Peso (kg)</Label><Input value={form.peso} onChange={e=>setForm({...form,peso:e.target.value})} placeholder="5000" /></div>
+              </div>
+            </Card>
           </div>
-          <DialogFooter><Button variant="outline" onClick={()=>setOpen(false)}>Cancelar</Button><Button onClick={()=>emitir.mutate()} disabled={emitir.isPending}>{emitir.isPending?"Emitindo...":"Emitir CT-e"}</Button></DialogFooter>
-          <p className="text-xs text-muted-foreground">Em homologação a SEFAZ aceita RNTRC fictício; em produção use RNTRC/ANTT válido. A chave é gerada (cUF + AAMM + CNPJ + mod + série + nCT + cCT + DV).</p>
+
+          <DialogFooter className="gap-2">
+            <Button variant="outline" onClick={()=>setOpen(false)}>Cancelar</Button>
+            <Button onClick={()=>emitir.mutate()} disabled={emitir.isPending || !form.cnpjTomador || !form.xNomeTomador}>
+              {emitir.isPending ? "Emitindo..." : "Emitir CT-e"}
+            </Button>
+          </DialogFooter>
+          <p className="text-xs text-muted-foreground text-center">Chave gerada automaticamente (cUF + AAMM + CNPJ + mod 57 + série + nCT + cCT + DV). O XML será assinado com seu certificado A1 via mTLS.</p>
         </DialogContent>
       </Dialog>
     </div>

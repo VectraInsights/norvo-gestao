@@ -12,18 +12,18 @@ export type Ambiente = "homologacao" | "producao";
 
 export const CTE_ENDPOINTS = {
   homologacao: {
-    recepcao: "https://cte-homologacao.svrs.rs.gov.br/ws/cterecepcao/CteRecepcao.asmx",
-    retRecepcao: "https://cte-homologacao.svrs.rs.gov.br/ws/cteretrecepcao/CteRetRecepcao.asmx",
-    consulta: "https://cte-homologacao.svrs.rs.gov.br/ws/cteconsulta/CteConsulta.asmx",
-    statusServico: "https://cte-homologacao.svrs.rs.gov.br/ws/ctestatusservico/CteStatusServico.asmx",
-    recepcaoEvento: "https://cte-homologacao.svrs.rs.gov.br/ws/cterecepcaoevento/CteRecepcaoEvento.asmx",
+    recepcao: "https://cte-homologacao.svrs.rs.gov.br/ws/CteRecepcao/CteRecepcao.asmx",
+    retRecepcao: "https://cte-homologacao.svrs.rs.gov.br/ws/CteRetRecepcao/CteRetRecepcao.asmx",
+    consulta: "https://cte-homologacao.svrs.rs.gov.br/ws/CteConsulta/CteConsulta.asmx",
+    statusServico: "https://cte-homologacao.svrs.rs.gov.br/ws/CteStatusServico/CteStatusServico.asmx",
+    recepcaoEvento: "https://cte-homologacao.svrs.rs.gov.br/ws/CteRecepcaoEvento/CteRecepcaoEvento.asmx",
   },
   producao: {
-    recepcao: "https://cte.svrs.rs.gov.br/ws/cterecepcao/CteRecepcao.asmx",
-    retRecepcao: "https://cte.svrs.rs.gov.br/ws/cteretrecepcao/CteRetRecepcao.asmx",
-    consulta: "https://cte.svrs.rs.gov.br/ws/cteconsulta/CteConsulta.asmx",
-    statusServico: "https://cte.svrs.rs.gov.br/ws/ctestatusservico/CteStatusServico.asmx",
-    recepcaoEvento: "https://cte.svrs.rs.gov.br/ws/cterecepcaoevento/CteRecepcaoEvento.asmx",
+    recepcao: "https://cte.svrs.rs.gov.br/ws/CteRecepcao/CteRecepcao.asmx",
+    retRecepcao: "https://cte.svrs.rs.gov.br/ws/CteRetRecepcao/CteRetRecepcao.asmx",
+    consulta: "https://cte.svrs.rs.gov.br/ws/CteConsulta/CteConsulta.asmx",
+    statusServico: "https://cte.svrs.rs.gov.br/ws/CteStatusServico/CteStatusServico.asmx",
+    recepcaoEvento: "https://cte.svrs.rs.gov.br/ws/CteRecepcaoEvento/CteRecepcaoEvento.asmx",
   },
 } as const;
 
