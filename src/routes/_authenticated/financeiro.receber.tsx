@@ -517,8 +517,8 @@ export function LancamentosPage({ tipo }: { tipo: "receber" | "pagar" }) {
                 <TableHead className="w-10">
                   <Checkbox checked={allChecked} onCheckedChange={toggleAll} aria-label="Selecionar todos" />
                 </TableHead>
-                <SortHead k="descricao">Descrição</SortHead>
                 <SortHead k="contato">{tipo === "pagar" ? "Fornecedor" : "Cliente"}</SortHead>
+                <SortHead k="descricao">Descrição</SortHead>
                 <SortHead k="data_vencimento">Vencimento</SortHead>
                 <SortHead k="valor" className="text-right">Valor</SortHead>
                 <SortHead k="status">Status</SortHead>
@@ -533,6 +533,7 @@ export function LancamentosPage({ tipo }: { tipo: "receber" | "pagar" }) {
                     <TableCell onClick={(e) => e.stopPropagation()}>
                       <Checkbox checked={selected.has(l.id)} onCheckedChange={() => toggle(l.id)} aria-label="Selecionar" />
                     </TableCell>
+                    <TableCell className="text-muted-foreground font-medium">{l.contato?.nome ?? "—"}</TableCell>
                     <TableCell className="font-medium">
                       <div>{l.descricao}</div>
                       {l.categoria_id && (() => {
@@ -540,7 +541,6 @@ export function LancamentosPage({ tipo }: { tipo: "receber" | "pagar" }) {
                         return cat ? <Badge variant="outline" className="mt-0.5 text-[10px] font-normal border-muted-foreground/30 text-muted-foreground">{cat.nome}</Badge> : null;
                       })()}
                     </TableCell>
-                    <TableCell className="text-muted-foreground">{l.contato?.nome ?? "—"}</TableCell>
                     <TableCell className="text-tabular">{format(new Date(l.data_vencimento + "T00:00:00"), "dd/MM/yyyy")}</TableCell>
                     <TableCell className="text-right text-tabular font-medium">{brl(l.valor)}</TableCell>
                     <TableCell>

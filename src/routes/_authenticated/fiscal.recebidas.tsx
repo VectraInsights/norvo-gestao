@@ -656,7 +656,7 @@ function NotasRecebidas() {
         if (cat) categoriaFinanceiraId = cat.id;
       }
 
-      // 8. Lançar parcelas no contas a pagar
+      // 8. Lançar parcelas no contas a pagar — fornecedor vai na coluna Fornecedor, descrição só NF-e
       if (importResults.parcelas.length > 0) {
         for (const parc of importResults.parcelas) {
           const { data: lanc } = await supabase
@@ -665,7 +665,7 @@ function NotasRecebidas() {
               empresa_id: empresa.id,
               tipo: "pagar",
               status: "aberto",
-              descricao: `NF-e ${importResults.nNF} ${importResults.emitente} (${parc.numero}/${importResults.parcelas.length})`,
+              descricao: `NF-e ${importResults.nNF}`,
               valor: parc.valor,
               data_vencimento: parc.dataVencimento,
               contato_id: fornecedorId,
@@ -696,7 +696,7 @@ function NotasRecebidas() {
             empresa_id: empresa.id,
             tipo: "pagar",
             status: "aberto",
-            descricao: `Compra NF-e ${importResults.nNF} - ${importResults.emitente}`,
+            descricao: `NF-e ${importResults.nNF}`,
             valor: importResults.total,
             data_vencimento: vencimento,
             contato_id: fornecedorId,
@@ -907,7 +907,7 @@ function NotasRecebidas() {
               empresa_id: empresa.id,
               tipo: "pagar",
               status: "aberto",
-              descricao: `NF-e ${notaDetalhe.nNF} ${notaDetalhe.emitente} (${parc.numero}/${notaDetalhe.parcelas.length})`,
+              descricao: `NF-e ${notaDetalhe.nNF}`,
               valor: parc.valor,
               data_vencimento: parc.dataVencimento,
               contato_id: fornecedorId,
@@ -1034,10 +1034,10 @@ function NotasRecebidas() {
       if (lancIdsAntigos.length > 0) {
         await supabase.from("lancamentos_financeiros").delete().in("id", lancIdsAntigos);
       }
-      // Recriar parcelas/lançamentos com dados atuais (forma/banco)
+      // Recriar parcelas/lançamentos com dados atuais (forma/banco) — descrição só NF-e, fornecedor na coluna
       if (notaDetalhe.parcelas.length > 0) {
         for (const parc of notaDetalhe.parcelas) {
-          const { data: lanc } = await supabase.from("lancamentos_financeiros").insert({ empresa_id: empresa.id, tipo: "pagar", status: "aberto", descricao: `NF-e ${notaDetalhe.nNF} ${notaDetalhe.emitente} (${parc.numero}/${notaDetalhe.parcelas.length})`, valor: parc.valor, data_vencimento: parc.dataVencimento, contato_id: fornecedorId, categoria_id: categoriaFinanceiraId, observacoes: `Chave: ${notaDetalhe.chave} | Parcela ${parc.numero}`, forma_pagamento: (parc as any).forma_pagamento || "Boleto", conta_bancaria_id: (parc as any).conta_bancaria_id || null } as any).select("id").single();
+          const { data: lanc } = await supabase.from("lancamentos_financeiros").insert({ empresa_id: empresa.id, tipo: "pagar", status: "aberto", descricao: `NF-e ${notaDetalhe.nNF}`, valor: parc.valor, data_vencimento: parc.dataVencimento, contato_id: fornecedorId, categoria_id: categoriaFinanceiraId, observacoes: `Chave: ${notaDetalhe.chave} | Parcela ${parc.numero}`, forma_pagamento: (parc as any).forma_pagamento || "Boleto", conta_bancaria_id: (parc as any).conta_bancaria_id || null } as any).select("id").single();
           if (lanc) await supabase.from("notas_importadas_parcelas" as never).insert({ nota_id: notaDetalhe.id, numero: parc.numero, data_vencimento: parc.dataVencimento, valor: parc.valor, lancamento_id: (lanc as any).id } as any);
         }
       }
@@ -1076,26 +1076,43 @@ function NotasRecebidas() {
   });
 
   const handleVerNota = async (n: NotaRecebida) => {
-    if (n.xml_completo) {
-      const xml = n.xml_completo;
-      const produtos = parseProdutosDoXml(xml);
-      const parser = new DOMParser();
-      const doc = parser.parseFromString(xml, "text/xml");
-      const nNF = doc.querySelector("nNF")?.textContent || "";
-      const parcelas = parseParcelasDoXml(xml);
-      setNotaDetalhe({
-        id: n.id,
-        chave: n.chave,
-        emitente: n.emitente,
-        cnpj: n.cnpj,
-        nNF,
-        data: n.data_emissao,
-        valor: n.valor,
-        produtos,
-        parcelas,
-        xml,
-      });
-      return;
+    if (n.xml_completo || n.id) {
+      // Se já lançada, prioriza dados salvos (categoria e parcelas editadas)
+      if (n.id) {
+        const { data: itens } = await supabase.from("notas_importadas_itens" as never).select("codigo, nome, quantidade, unidade, valor_unitario, valor_total, categoria").eq("nota_id", n.id as any);
+        const { data: parcelasDB } = await supabase.from("notas_importadas_parcelas" as never).select("numero, data_vencimento, valor, lancamento_id").eq("nota_id", n.id as any);
+        if (itens && (itens as any).length > 0) {
+          const produtos = (itens as any).map((it: any) => ({ codigo: it.codigo, nome: it.nome, qtd: Number(it.quantidade), un: it.unidade, valorUnit: Number(it.valor_unitario), valorTotal: Number(it.valor_total), categoria: it.categoria || "" }));
+          let parcelas: { numero: string; dataVencimento: string; valor: number; forma_pagamento: string; conta_bancaria_id: string }[] = [];
+          if (parcelasDB && (parcelasDB as any).length > 0) {
+            const lancIds = (parcelasDB as any[]).map((p: any) => p.lancamento_id).filter(Boolean);
+            let lancMap = new Map<string, any>();
+            if (lancIds.length > 0) {
+              const { data: lancs } = await supabase.from("lancamentos_financeiros").select("id, forma_pagamento, conta_bancaria_id").in("id", lancIds);
+              (lancs as any[] || []).forEach((l: any) => lancMap.set(l.id, l));
+            }
+            parcelas = (parcelasDB as any[]).map((p: any) => {
+              const lanc = lancMap.get(p.lancamento_id);
+              return { numero: p.numero, dataVencimento: p.data_vencimento, valor: Number(p.valor), forma_pagamento: lanc?.forma_pagamento || "Boleto", conta_bancaria_id: lanc?.conta_bancaria_id || "" };
+            });
+          }
+          const xml = n.xml_completo || "";
+          const nNF = n.numero_nf || "";
+          setNotaDetalhe({ id: n.id, chave: n.chave, emitente: n.emitente, cnpj: n.cnpj, nNF, data: n.data_emissao, valor: n.valor, produtos, parcelas, xml });
+          return;
+        }
+      }
+      // Fallback: parse do XML quando ainda não há itens salvos ou nota não lançada
+      const xml = n.xml_completo || "";
+      if (xml) {
+        const produtos = parseProdutosDoXml(xml);
+        const parser = new DOMParser();
+        const doc = parser.parseFromString(xml, "text/xml");
+        const nNF = doc.querySelector("nNF")?.textContent || n.numero_nf || "";
+        const parcelas = parseParcelasDoXml(xml);
+        setNotaDetalhe({ id: n.id, chave: n.chave, emitente: n.emitente, cnpj: n.cnpj, nNF, data: n.data_emissao, valor: n.valor, produtos, parcelas, xml });
+        return;
+      }
     }
     if (!empresa) return;
     toast.info("Buscando detalhes da nota na SEFAZ...");

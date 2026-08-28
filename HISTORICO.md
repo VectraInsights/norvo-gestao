@@ -501,9 +501,15 @@ certificado tem estrutura PKCS12 não padrão ou se `extractPkcs12Native` precis
     - `financeiro.contas.tsx:522` e `fiscal.recebidas.tsx:1716` (parcelas) e `financeiro.receber.tsx:364` trocados de `Input type=date` para `DateInput` — varredura completa, 0 `type="date"` restante.
     - Bradesco/Itaú regenerados sem padding branco extra (PAD 8 → preenche tudo), `public/bancos` atualizado para mesmo tamanho (512) e exibição com `object-contain`/`bg-white` ajustado.
 
-36. **Notas já lançadas editáveis (Alterar) + formas em ordem alfabética — 28/08/2026** (este commit):
+36. **Notas já lançadas editáveis (Alterar) + formas em ordem alfabética — 28/08/2026**:
     - `fiscal.recebidas.tsx` `FORMAS_PARCELA` e `financeiro.receber.tsx:59` `FORMAS_PAGAMENTO` ordenadas alfabeticamente `pt-BR` com `Outros` sempre último (Boleto, Cartão de crédito, Cartão de débito, Cheque, Dinheiro, Duplicata, Pix, Transferência, Outros).
     - Bug "Esta nota já foi importada anteriormente." ao tentar editar: `handleLancarNota` bloqueava duplicata. Criado `handleAlterarNota` (`:960`): atualiza `notas_importadas`, recalcula estoque por delta (mapa antigo vs novo), recria `notas_importadas_itens`, deleta/recria `notas_importadas_parcelas` + `lancamentos_financeiros` com forma/banco, invalida queries. Botão no modal agora é **Alterar** (âmbar, `Pencil`) quando `notaDetalhe.id` existe, senão **Lançar Nota**.
+    - `handleVerNota` para notas já lançadas agora carrega `notas_importadas_itens`/`parcelas` + `lancamentos` (categoria e parcelas com forma/banco) em vez de re-parsear XML zerado — modal mostra "Sem categoria" só se realmente sem.
+
+37. **Contas a pagar: fornecedor, descrição e ordem + fix edição — 28/08/2026** (este commit):
+    - `financeiro.receber.tsx:520` header trocado para **Fornecedor | Descrição | Vencimento | Valor | Status** (antes Descrição | Fornecedor) e `TableCell` idem — atende pedido `fornecedor, descrição, vencimento, valor, status`.
+    - `fiscal.recebidas.tsx` `handleConfirmarXmlUpload`/`handleLancarNota`/`handleAlterarNota` descrição agora só `NF-e ${nNF}` (ou `CT-e`), fornecedor vai na coluna `Fornecedor` via `contato_id` (criado/buscado por emitente). Antes ia `NF-e 12189 PIPEL PICOS... (001/1)` na descrição e `Fornecedor —`.
+    - Screenshot "NF-e 12189 PIPEL PICOS..." com `Fornecedor —` agora corrigido: novo lançamento salva `descricao: NF-e 12189` e `contato: PIPEL PICOS...`.
 
 ---
 
