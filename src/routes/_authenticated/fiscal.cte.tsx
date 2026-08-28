@@ -18,6 +18,7 @@ import { brl } from "@/lib/format";
 import { useState, useEffect } from "react";
 import { toast } from "sonner";
 import { emitirCteFn, consultarCteFn, cancelarCteFn } from "@/lib/sefaz-cte-server";
+import { CFOPS_TRANSPORTE, MOD_FRETE_OPTIONS, RESPONSAVEL_CTE_OPTIONS } from "@/lib/cfops-transporte";
 import { Textarea } from "@/components/ui/textarea";
 
 export const Route = createFileRoute("/_authenticated/fiscal/cte")({
@@ -378,8 +379,8 @@ function CtePage() {
               <TabsTrigger value="taxas" className="rounded-t-md rounded-b-none text-xs data-[state=active]:bg-background data-[state=active]:shadow-sm"><DollarSign className="mr-1 h-3 w-3" />Taxas/Despesas Acessórias</TabsTrigger>
             </TabsList>
 
-            {/* Header: Nº Conhecimento, Data, CFOP, Veículo, Base */}
-            <div className="grid grid-cols-2 md:grid-cols-5 gap-2 border rounded-b-md rounded-tr-md p-3 bg-muted/20">
+            {/* Header: Nº Conhecimento, Data, CFOP */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-2 border rounded-b-md rounded-tr-md p-3 bg-muted/20">
               <div><Label className="text-[10px] text-muted-foreground">N° Conhecimento</Label><Input className="h-7 text-xs font-mono" value="— aguardando emissão —" readOnly /></div>
               <div><Label className="text-[10px] text-muted-foreground">Data Emissão</Label><Input type="date" className="h-7 text-xs" defaultValue={new Date().toISOString().slice(0,10)} /></div>
               <div>
@@ -387,29 +388,12 @@ function CtePage() {
                 <Select value={form.cfop} onValueChange={v => setForm({...form, cfop: v})}>
                   <SelectTrigger className="h-7 text-xs"><SelectValue /></SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="6352">6.352 — Remetente</SelectItem>
-                    <SelectItem value="5352">5.352 — Remetente (Dentro UF)</SelectItem>
-                    <SelectItem value="6353">6.353 — Destinatário</SelectItem>
-                    <SelectItem value="5353">5.353 — Destinatário (Dentro UF)</SelectItem>
-                    <SelectItem value="6356">6.356 — Expedidor</SelectItem>
-                    <SelectItem value="6357">6.357 — Recebedor</SelectItem>
+                    {CFOPS_TRANSPORTE.map(cf => (
+                      <SelectItem key={cf.codigo} value={cf.codigo}>{cf.descricao}</SelectItem>
+                    ))}
                   </SelectContent>
                 </Select>
               </div>
-              <div>
-                <Label className="text-[10px] text-muted-foreground">Espécie Veículo</Label>
-                <Select defaultValue="truck">
-                  <SelectTrigger className="h-7 text-xs"><SelectValue /></SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="truck">CAMINHÃO TRUCK</SelectItem>
-                    <SelectItem value="toco">CAMINHÃO TOCO</SelectItem>
-                    <SelectItem value="bitruck">BITRUCK</SelectItem>
-                    <SelectItem value="carreta">CARRETA</SelectItem>
-                    <SelectItem value="van">VAN / UTILITÁRIO</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              <div><Label className="text-[10px] text-muted-foreground">Base Cálculo Frete</Label><Input className="h-7 text-xs" value="999 — LIVRE NEGOCIAÇÃO" readOnly /></div>
             </div>
 
             {/* === TAB: Remetente/Destinatário === */}
@@ -455,11 +439,9 @@ function CtePage() {
                   <Select value={form.toma} onValueChange={v => setForm({...form, toma: v})}>
                     <SelectTrigger className="h-7 text-xs"><SelectValue /></SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="0">0 — Remetente</SelectItem>
-                      <SelectItem value="1">1 — Expedidor</SelectItem>
-                      <SelectItem value="2">2 — Recebedor</SelectItem>
-                      <SelectItem value="3">3 — Destinatário</SelectItem>
-                      <SelectItem value="4">4 — Outros</SelectItem>
+                      {MOD_FRETE_OPTIONS.map(opt => (
+                        <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>
+                      ))}
                     </SelectContent>
                   </Select>
                   <Input className="h-7 text-xs" placeholder="CNPJ *" value={form.cnpjTomador} onChange={e=>setForm({...form,cnpjTomador:e.target.value})} />
@@ -513,7 +495,7 @@ function CtePage() {
                     <TableBody>
                       {mercadorias.length === 0 ? (
                         <TableRow><TableCell colSpan={10} className="text-center text-xs text-muted-foreground py-8">Nenhuma NF-e importada</TableCell></TableRow>
-                      ) : mercadorias.map(m => (
+                      ) : (selecionadas.size > 0 ? mercadorias.filter(m => selecionadas.has(m.chave)) : mercadorias).map(m => (
                         <TableRow key={m.chave} className="text-[11px]" data-selected={selecionadas.has(m.chave)}>
                           <TableCell>
                             <input type="checkbox" checked={selecionadas.has(m.chave)} onChange={e => {
@@ -562,7 +544,16 @@ function CtePage() {
                         <label className="flex items-center gap-1 text-[10px] pb-1"><input type="checkbox" /> Repassar</label>
                       </div>
                     </div>
-                    <div><Label className="text-[10px] text-muted-foreground">Responsável</Label><Input className="h-7 text-xs" value="4 — Emitente do CT-e" readOnly /></div>
+                    <div><Label className="text-[10px] text-muted-foreground">Responsável</Label>
+                      <Select defaultValue="4">
+                        <SelectTrigger className="h-7 text-xs"><SelectValue /></SelectTrigger>
+                        <SelectContent>
+                          {RESPONSAVEL_CTE_OPTIONS.map(opt => (
+                            <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
                     <div><Label className="text-[10px] text-muted-foreground">Nº Averbação</Label><Input className="h-7 text-xs" placeholder="Nº Averbação (opcional)" /></div>
                   </div>
                 </Card>
