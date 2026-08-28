@@ -23,6 +23,7 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { useNavigate } from "@tanstack/react-router";
 import { format } from "date-fns";
 import { LancamentosToolbar } from "@/components/erp/lancamentos-toolbar";
+import { DateInput } from "@/components/erp/date-input";
 import { PeriodoFilter, periodoProx7, type Periodo } from "@/components/erp/periodo-filter";
 import { usePerfisMap } from "@/hooks/use-perfis";
 
@@ -360,11 +361,11 @@ export function LancamentosPage({ tipo }: { tipo: "receber" | "pagar" }) {
                   </div>
                   <div>
                     <Label>Emissão</Label>
-                    <Input type="date" value={form.data_emissao} onChange={(e) => setForm({ ...form, data_emissao: e.target.value })} />
+                    <DateInput value={form.data_emissao} onChange={(v) => setForm({ ...form, data_emissao: v })} />
                   </div>
                   <div>
                     <Label>Vencimento *</Label>
-                    <Input required type="date" value={form.data_vencimento} onChange={(e) => setForm({ ...form, data_vencimento: e.target.value })} />
+                    <DateInput required value={form.data_vencimento} onChange={(v) => setForm({ ...form, data_vencimento: v })} />
                   </div>
                 </div>
                 <div>
@@ -656,11 +657,11 @@ export function LancamentosPage({ tipo }: { tipo: "receber" | "pagar" }) {
                 </div>
                 <div>
                   <Label>Emissão</Label>
-                  <Input type="date" value={editing.data_emissao} onChange={(e) => setEditing({ ...editing, data_emissao: e.target.value })} />
+                  <DateInput value={editing.data_emissao} onChange={(v) => setEditing({ ...editing, data_emissao: v })} />
                 </div>
                 <div>
                   <Label>Vencimento *</Label>
-                  <Input required type="date" value={editing.data_vencimento} onChange={(e) => setEditing({ ...editing, data_vencimento: e.target.value })} />
+                  <DateInput required value={editing.data_vencimento} onChange={(v) => setEditing({ ...editing, data_vencimento: v })} />
                 </div>
               </div>
               <div>

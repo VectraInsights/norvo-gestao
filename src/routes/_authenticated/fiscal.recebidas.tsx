@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { DateInput } from "@/components/erp/date-input";
 import { 
   FileDown, Search, CheckCircle2, AlertCircle, XCircle, 
   UploadCloud, FileCode, Check, ArrowRight, RefreshCw, Archive, Calendar, KeyRound,
@@ -1712,13 +1713,12 @@ ${transportadora ? `<div class="section"><div class="section-title">TRANSPORTE</
                             setNotaDetalhe({ ...notaDetalhe, parcelas: novas });
                           }}
                         />
-                        <Input
-                          type="date"
-                          className="h-8 text-xs shrink-0 w-[135px]"
+                        <DateInput
+                          className="h-8 text-xs shrink-0 w-[160px]"
                           value={p.dataVencimento}
-                          onChange={(e) => {
+                          onChange={(v) => {
                             const novas = [...notaDetalhe.parcelas];
-                            novas[i] = { ...novas[i], dataVencimento: e.target.value };
+                            novas[i] = { ...novas[i], dataVencimento: v };
                             setNotaDetalhe({ ...notaDetalhe, parcelas: novas });
                           }}
                         />
