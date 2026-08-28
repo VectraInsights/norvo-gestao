@@ -18,6 +18,7 @@ import { brl } from "@/lib/format";
 import { useState, useEffect } from "react";
 import { toast } from "sonner";
 import { emitirCteFn, consultarCteFn, cancelarCteFn } from "@/lib/sefaz-cte-server";
+import { Textarea } from "@/components/ui/textarea";
 
 export const Route = createFileRoute("/_authenticated/fiscal/cte")({
   component: CtePage,
@@ -31,7 +32,6 @@ function CtePage() {
   const { data: empresa } = useEmpresaAtual();
   const qc = useQueryClient();
   const search = Route.useSearch();
-  const [prefillBanner, setPrefillBanner] = useState<string | null>(null);
   const [isParsing, setIsParsing] = useState(false);
   const [mercadorias, setMercadorias] = useState<Array<{ chave: string; nNF: string; serie: string; emit: string; emitCnpj: string; dest: string; destCnpj: string; valor: number; peso: number; data: string; tomador: string; tomadorCnpj: string }>>([]);
   const [selecionadas, setSelecionadas] = useState<Set<string>>(new Set());
@@ -113,7 +113,6 @@ function CtePage() {
         const somaV = merged.reduce((a, m) => a + (m.valor || 0), 0);
         const somaP = merged.reduce((a, m) => a + (m.peso || 0), 0);
         setForm(f => ({ ...f, vCarga: somaV.toFixed(2), peso: String(somaP), vPrest: (somaV * 0.1).toFixed(2) }));
-        setPrefillBanner(`${novas.length} NF-e(s) importada(s) — ${merged.length} no total (selecione quais usar)`);
         toast.success(`${novas.length} XML(s) importado(s) — selecione os que irão no CT-e`);
       } else {
         toast.info("Nenhum XML novo (chaves já importadas)");
@@ -131,12 +130,10 @@ function CtePage() {
       try {
         const p = JSON.parse(raw);
         setForm(f => ({ ...f, cnpjTomador: p.destCnpj || f.cnpjTomador, xNomeTomador: p.destXNome || f.xNomeTomador, ufTomador: p.destUF || f.ufTomador, cMunTomador: p.destCMun || f.cMunTomador, xMunTomador: p.destXMun || f.xMunTomador, vCarga: p.vCarga ? String(p.vCarga) : f.vCarga, peso: p.peso ? String(p.peso) : f.peso, vPrest: p.vCarga ? (Number(p.vCarga) * 0.1).toFixed(2) : f.vPrest }));
-        setPrefillBanner(p.nNF ? `NF-e ${p.nNF} → CT-e` : `NF-e → CT-e`);
         setOpen(true);
         localStorage.removeItem("prefill_cte_from_nfe");
       } catch {}
     } else if (search.fromNFe) {
-      setPrefillBanner(`NF-e ${search.fromNFe.slice(0,12)}... → CT-e`);
       setOpen(true);
     }
   }, [search.fromNFe]);
@@ -197,12 +194,6 @@ function CtePage() {
   return (
     <div className="p-6 space-y-4">
       <PageHeader eyebrow="Fiscal" title="CT-e" description="Conhecimento de Transporte Eletrônico (57) — emissão robusta estilo STM, com múltiplas NF-es por CT-e." actions={<Button size="sm" onClick={() => setOpen(true)}><Plus className="mr-1 h-4 w-4" /> Novo CT-e</Button>} />
-      {prefillBanner && (
-        <Card className="p-3 bg-sky-500/10 border-sky-500/30 text-sm flex items-center justify-between">
-          <span className="flex items-center gap-2"><Truck className="h-4 w-4 text-sky-600" /> {prefillBanner}</span>
-          <Button variant="ghost" size="sm" className="h-7" onClick={() => setPrefillBanner(null)}>×</Button>
-        </Card>
-      )}
 
       {/* Cadastro de Mercadorias para Embarque — estilo STM */}
       <Card className="overflow-hidden border-2 border-primary/20 shadow-panel">
@@ -325,25 +316,6 @@ function CtePage() {
             </div>
           </div>
 
-          {/* Listagem de Mercadorias */}
-          <div className="border rounded overflow-hidden bg-background">
-            <div className="bg-amber-600 text-white px-2 py-1 text-xs font-semibold">Listagem de Mercadorias</div>
-            <div className="overflow-x-auto max-h-[160px]">
-              <Table>
-                <TableHeader><TableRow><TableHead className="text-xs">Mercadoria Genérica</TableHead><TableHead className="text-xs">NCM</TableHead><TableHead className="text-xs">Qtde</TableHead><TableHead className="text-xs">Vlr Mercadoria</TableHead></TableRow></TableHeader>
-                <TableBody>
-                  {mercadorias.length === 0 ? (
-                    <TableRow><TableCell colSpan={4} className="text-center text-xs text-muted-foreground py-6">Aguardando NF-es</TableCell></TableRow>
-                  ) : (
-                    mercadorias.map(m => (
-                      <TableRow key={m.chave} className="text-xs"><TableCell>CARGA GERAL</TableCell><TableCell>0000.00.00</TableCell><TableCell>{m.peso.toFixed(2)}</TableCell><TableCell className="text-right">{brl(m.valor)}</TableCell></TableRow>
-                    ))
-                  )}
-                </TableBody>
-              </Table>
-            </div>
-          </div>
-
           {/* Ações de importação múltipla */}
           <div className="flex flex-wrap gap-2">
             <label className="flex items-center gap-2 px-3 py-2 border rounded bg-amber-100 dark:bg-amber-900/30 cursor-pointer hover:bg-amber-200 text-xs font-medium">
@@ -365,7 +337,6 @@ function CtePage() {
                   const somaP = sel.reduce((a,m)=>a+m.peso,0);
                   const first = sel[0];
                   setForm(f => ({ ...f, cnpjTomador: first.destCnpj || f.cnpjTomador, xNomeTomador: first.dest || f.xNomeTomador, vCarga: somaV.toFixed(2), peso: String(somaP), vPrest: (somaV*0.1).toFixed(2) }));
-                  setPrefillBanner(`${sel.length} NF-e(s) selecionada(s) • Destino: ${first.dest} • ${brl(somaV)}`);
                   setOpen(true);
                 }}
               >
@@ -393,105 +364,298 @@ function CtePage() {
         </Card>
       )}
       <Dialog open={open} onOpenChange={setOpen}>
-        <DialogContent className="sm:max-w-4xl max-h-[90vh] overflow-y-auto">
+        <DialogContent className="sm:max-w-5xl max-h-[92vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle className="flex items-center gap-2"><Truck className="h-5 w-5 text-primary" /> Novo CT-e (57) — 4.00 {(selecionadas.size || mercadorias.length) > 0 && <Badge variant="outline" className="ml-2">{selecionadas.size > 0 ? selecionadas.size : mercadorias.length} NF-e(s) {selecionadas.size>0 ? "selecionada(s)" : ""}</Badge>}</DialogTitle>
-            <p className="text-sm text-muted-foreground">Preencha os dados do transporte. Apenas as NF-es selecionadas na lista anterior entrarão no CT-e. O XML será assinado e enviado à SEFAZ via mTLS.</p>
+            <DialogTitle className="flex items-center gap-2"><Truck className="h-5 w-5 text-primary" /> Conhecimento de Transporte Avulso</DialogTitle>
+            <p className="text-sm text-muted-foreground">Emissão de CT-e (57) — versão 4.00 via mTLS SEFAZ.</p>
           </DialogHeader>
 
-          <div className="space-y-4">
-            {/* Tomador */}
-            <Card className="p-4">
-              <div className="flex items-center gap-2 mb-3">
-                <div className="h-7 w-7 rounded bg-primary/10 grid place-items-center"><UsersRound className="h-4 w-4 text-primary" /></div>
-                <div>
-                  <h4 className="text-sm font-semibold">Tomador do serviço</h4>
-                  <p className="text-xs text-muted-foreground">Quem contratou o frete (toma {form.toma} — 0 Remetente, 1 Expedidor, 2 Recebedor, 3 Destinatário, 4 Outros)</p>
-                </div>
-              </div>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-                <div><Label>Tomador CNPJ *</Label><Input value={form.cnpjTomador} onChange={e=>setForm({...form,cnpjTomador:e.target.value})} placeholder="00.000.000/0000-00" /></div>
-                <div className="md:col-span-2"><Label>Nome / Razão social *</Label><Input value={form.xNomeTomador} onChange={e=>setForm({...form,xNomeTomador:e.target.value})} placeholder="Nome do tomador" /></div>
-                <div><Label>UF</Label><Input value={form.ufTomador} onChange={e=>setForm({...form,ufTomador:e.target.value.toUpperCase()})} maxLength={2} placeholder="MG" /></div>
-                <div className="md:col-span-2"><Label>Município</Label><Input value={form.xMunTomador} onChange={e=>setForm({...form,xMunTomador:e.target.value})} placeholder="Belo Horizonte" /></div>
-              </div>
-            </Card>
+          <Tabs defaultValue="tomador" className="w-full">
+            <TabsList className="w-full justify-start gap-0 bg-muted/50 rounded-t-md">
+              <TabsTrigger value="tomador" className="rounded-t-md rounded-b-none text-xs data-[state=active]:bg-background data-[state=active]:shadow-sm"><UsersRound className="mr-1 h-3 w-3" />Remetente/Destinatário</TabsTrigger>
+              <TabsTrigger value="docs" className="rounded-t-md rounded-b-none text-xs data-[state=active]:bg-background data-[state=active]:shadow-sm"><FileText className="mr-1 h-3 w-3" />Doc Mercadorias</TabsTrigger>
+              <TabsTrigger value="seguros" className="rounded-t-md rounded-b-none text-xs data-[state=active]:bg-background data-[state=active]:shadow-sm"><Truck className="mr-1 h-3 w-3" />Seguros/Veículos</TabsTrigger>
+              <TabsTrigger value="taxas" className="rounded-t-md rounded-b-none text-xs data-[state=active]:bg-background data-[state=active]:shadow-sm"><DollarSign className="mr-1 h-3 w-3" />Taxas/Despesas Acessórias</TabsTrigger>
+            </TabsList>
 
-            {/* Rota */}
-            <Card className="p-4">
-              <div className="flex items-center gap-2 mb-3">
-                <div className="h-7 w-7 rounded bg-sky-500/10 grid place-items-center"><RouteIcon className="h-4 w-4 text-sky-600" /></div>
-                <div>
-                  <h4 className="text-sm font-semibold">Rota e origem/destino</h4>
-                  <p className="text-xs text-muted-foreground">Municípios de carregamento, coleta e entrega</p>
-                </div>
+            {/* Header: Nº Conhecimento, Data, CFOP, Veículo, Base */}
+            <div className="grid grid-cols-2 md:grid-cols-5 gap-2 border rounded-b-md rounded-tr-md p-3 bg-muted/20">
+              <div><Label className="text-[10px] text-muted-foreground">N° Conhecimento</Label><Input className="h-7 text-xs font-mono" value="— aguardando emissão —" readOnly /></div>
+              <div><Label className="text-[10px] text-muted-foreground">Data Emissão</Label><Input type="date" className="h-7 text-xs" defaultValue={new Date().toISOString().slice(0,10)} /></div>
+              <div>
+                <Label className="text-[10px] text-muted-foreground">CFOP Saída</Label>
+                <Select value={form.cfop} onValueChange={v => setForm({...form, cfop: v})}>
+                  <SelectTrigger className="h-7 text-xs"><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="6352">6.352 — Remetente</SelectItem>
+                    <SelectItem value="5352">5.352 — Remetente (Dentro UF)</SelectItem>
+                    <SelectItem value="6353">6.353 — Destinatário</SelectItem>
+                    <SelectItem value="5353">5.353 — Destinatário (Dentro UF)</SelectItem>
+                    <SelectItem value="6356">6.356 — Expedidor</SelectItem>
+                    <SelectItem value="6357">6.357 — Recebedor</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-                <div><Label><MapPin className="mr-1 h-3 w-3 inline" />Município Env</Label><Input value={form.xMunEnv} onChange={e=>setForm({...form,xMunEnv:e.target.value})} placeholder="Belo Horizonte" /></div>
-                <div><Label>UF Env</Label><Input value={form.ufEnv} onChange={e=>setForm({...form,ufEnv:e.target.value.toUpperCase()})} maxLength={2} placeholder="MG" /></div>
-                <div><Label>CEP Env</Label><Input placeholder="00000-000" disabled className="opacity-60" /></div>
-                <div><Label>Município Coleta (Ini)</Label><Input value={form.xMunIni} onChange={e=>setForm({...form,xMunIni:e.target.value})} placeholder="Belo Horizonte" /></div>
-                <div><Label>UF Ini</Label><Input value={form.ufIni} onChange={e=>setForm({...form,ufIni:e.target.value.toUpperCase()})} maxLength={2} /></div>
-                <div><Label>Data Coleta</Label><Input type="date" className="h-9" /></div>
-                <div><Label>Município Entrega (Fim)</Label><Input value={form.xMunFim} onChange={e=>setForm({...form,xMunFim:e.target.value})} placeholder="São Paulo" /></div>
-                <div><Label>UF Fim</Label><Input value={form.ufFim} onChange={e=>setForm({...form,ufFim:e.target.value.toUpperCase()})} maxLength={2} /></div>
-                <div><Label>Previsão Entrega</Label><Input type="date" className="h-9" /></div>
+              <div>
+                <Label className="text-[10px] text-muted-foreground">Espécie Veículo</Label>
+                <Select defaultValue="truck">
+                  <SelectTrigger className="h-7 text-xs"><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="truck">CAMINHÃO TRUCK</SelectItem>
+                    <SelectItem value="toco">CAMINHÃO TOCO</SelectItem>
+                    <SelectItem value="bitruck">BITRUCK</SelectItem>
+                    <SelectItem value="carreta">CARRETA</SelectItem>
+                    <SelectItem value="van">VAN / UTILITÁRIO</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
-            </Card>
+              <div><Label className="text-[10px] text-muted-foreground">Base Cálculo Frete</Label><Input className="h-7 text-xs" value="999 — LIVRE NEGOCIAÇÃO" readOnly /></div>
+            </div>
 
-            {/* Carga e valores */}
-            <Card className="p-4">
-              <div className="flex items-center gap-2 mb-3">
-                <div className="h-7 w-7 rounded bg-amber-500/10 grid place-items-center"><Package className="h-4 w-4 text-amber-600" /></div>
-                <div>
-                  <h4 className="text-sm font-semibold">Carga, valores e fiscal</h4>
-                  <p className="text-xs text-muted-foreground">CFOP, RNTRC e valores declarados {(selecionadas.size || mercadorias.length) > 0 && `• ${selecionadas.size || mercadorias.length} NF-e(s) • ${brl(Number(form.vCarga))} • ${form.peso} kg`}</p>
-                </div>
-              </div>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-                <div><Label><Building2 className="mr-1 h-3 w-3 inline" />CFOP</Label><Input value={form.cfop} onChange={e=>setForm({...form,cfop:e.target.value})} placeholder="5353" /></div>
-                <div><Label>RNTRC (ANTT)</Label><Input value={form.rntrc} onChange={e=>setForm({...form,rntrc:e.target.value.replace(/\D/g,"").slice(0,8)})} placeholder="8 dígitos" /></div>
-                <div className="flex items-end"><p className="text-xs text-muted-foreground">Homologação aceita RNTRC fictício. Produção valida ANTT.</p></div>
-                <div><Label><DollarSign className="mr-1 h-3 w-3 inline" />Valor Serviço (R$)</Label><Input value={form.vPrest} onChange={e=>setForm({...form,vPrest:e.target.value})} placeholder="1000.00" /></div>
-                <div><Label>Valor Carga (R$)</Label><Input value={form.vCarga} onChange={e=>setForm({...form,vCarga:e.target.value})} placeholder="10000.00" /></div>
-                <div><Label>Peso (kg)</Label><Input value={form.peso} onChange={e=>setForm({...form,peso:e.target.value})} placeholder="5000" /></div>
-              </div>
-              {(selecionadas.size > 0 ? mercadorias.filter(m => selecionadas.has(m.chave)) : mercadorias).length > 0 && (
-                <div className="mt-3 border rounded overflow-hidden">
-                  <div className="bg-muted px-2 py-1 text-xs font-semibold">Documentos da carga — NF-es selecionadas ({selecionadas.size || mercadorias.length})</div>
-                  <div className="max-h-[140px] overflow-y-auto">
-                    <Table>
-                      <TableHeader><TableRow><TableHead className="text-xs">Nº NF-e</TableHead><TableHead className="text-xs">Chave</TableHead><TableHead className="text-xs text-right">Valor</TableHead><TableHead className="text-xs text-right">Peso</TableHead></TableRow></TableHeader>
-                      <TableBody>
-                        {(selecionadas.size > 0 ? mercadorias.filter(m => selecionadas.has(m.chave)) : mercadorias).map(m => (
-                          <TableRow key={m.chave} className="text-xs"><TableCell className="font-mono">{m.nNF}</TableCell><TableCell className="font-mono text-[10px]">{m.chave.slice(0,22)}...</TableCell><TableCell className="text-right">{brl(m.valor)}</TableCell><TableCell className="text-right">{m.peso.toFixed(2)}</TableCell></TableRow>
-                        ))}
-                      </TableBody>
-                    </Table>
+            {/* === TAB: Remetente/Destinatário === */}
+            <TabsContent value="tomador" className="mt-3 space-y-3">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                {/* Remetente (emitente da NF-e) */}
+                <Card className="p-3">
+                  <div className="flex items-center gap-2 mb-2">
+                    <div className="h-6 w-6 rounded bg-emerald-500/10 grid place-items-center"><UploadCloud className="h-3.5 w-3.5 text-emerald-600" /></div>
+                    <h5 className="text-xs font-semibold">Remetente</h5>
                   </div>
-                </div>
-              )}
-            </Card>
+                  {mercadorias.length > 0 ? (
+                    <div className="space-y-1 text-xs">
+                      <p className="font-medium">{mercadorias[0].emit || "—"}</p>
+                      <p className="text-muted-foreground font-mono text-[10px]">{mercadorias[0].emitCnpj ? mercadorias[0].emitCnpj.replace(/(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})/, "$1.$2.$3/$4-$5") : "—"}</p>
+                    </div>
+                  ) : <p className="text-xs text-muted-foreground">Importe NF-es para preencher</p>}
+                </Card>
 
-            {/* Observações e totais — estilo STM */}
-            <Card className="p-4 bg-muted/10">
-              <h4 className="text-xs font-semibold text-primary mb-2">Observações do Conhecimento &amp; Totais</h4>
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-2 text-xs">
-                <div className="col-span-2"><Label className="text-xs">Observações</Label><Input placeholder="Ex: Protocolo Pedidos: 70891" className="h-7 text-xs" /></div>
-                <div><Label className="text-xs">Base Cálculo ICMS</Label><Input value={form.vCarga} readOnly className="h-7 text-xs bg-muted" /></div>
-                <div><Label className="text-xs">Valor Serviço</Label><Input value={form.vPrest} readOnly className="h-7 text-xs bg-muted font-medium" /></div>
+                {/* Destinatário */}
+                <Card className="p-3">
+                  <div className="flex items-center gap-2 mb-2">
+                    <div className="h-6 w-6 rounded bg-sky-500/10 grid place-items-center"><Package className="h-3.5 w-3.5 text-sky-600" /></div>
+                    <h5 className="text-xs font-semibold">Destinatário</h5>
+                  </div>
+                  {mercadorias.length > 0 ? (
+                    <div className="space-y-1 text-xs">
+                      <p className="font-medium">{mercadorias[0].dest || "—"}</p>
+                      <p className="text-muted-foreground font-mono text-[10px]">{mercadorias[0].destCnpj ? mercadorias[0].destCnpj.replace(/(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})/, "$1.$2.$3/$4-$5") : "—"}</p>
+                    </div>
+                  ) : <p className="text-xs text-muted-foreground">Importe NF-es para preencher</p>}
+                </Card>
               </div>
-              <p className="text-[10px] text-muted-foreground mt-2">Sem aba Mercadoria/Percursos. Valores e NF-es acima compõem o infCarga/infDoc do XML 4.00.</p>
-            </Card>
+
+              {/* Tomador */}
+              <Card className="p-3">
+                <div className="flex items-center gap-2 mb-2">
+                  <div className="h-6 w-6 rounded bg-primary/10 grid place-items-center"><UsersRound className="h-3.5 w-3.5 text-primary" /></div>
+                  <h5 className="text-xs font-semibold">Tomador do Serviço</h5>
+                  <span className="text-[10px] text-muted-foreground">(toma {form.toma})</span>
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-4 gap-2">
+                  <Select value={form.toma} onValueChange={v => setForm({...form, toma: v})}>
+                    <SelectTrigger className="h-7 text-xs"><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="0">0 — Remetente</SelectItem>
+                      <SelectItem value="1">1 — Expedidor</SelectItem>
+                      <SelectItem value="2">2 — Recebedor</SelectItem>
+                      <SelectItem value="3">3 — Destinatário</SelectItem>
+                      <SelectItem value="4">4 — Outros</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <Input className="h-7 text-xs" placeholder="CNPJ *" value={form.cnpjTomador} onChange={e=>setForm({...form,cnpjTomador:e.target.value})} />
+                  <Input className="h-7 text-xs md:col-span-2" placeholder="Nome / Razão Social *" value={form.xNomeTomador} onChange={e=>setForm({...form,xNomeTomador:e.target.value})} />
+                </div>
+                <div className="grid grid-cols-3 gap-2 mt-2">
+                  <Input className="h-7 text-xs" placeholder="UF" value={form.ufTomador} onChange={e=>setForm({...form,ufTomador:e.target.value.toUpperCase()})} maxLength={2} />
+                  <Input className="h-7 text-xs md:col-span-2" placeholder="Município" value={form.xMunTomador} onChange={e=>setForm({...form,xMunTomador:e.target.value})} />
+                </div>
+              </Card>
+
+              {/* Rota: Origem / Destino */}
+              <Card className="p-3">
+                <div className="flex items-center gap-2 mb-2">
+                  <div className="h-6 w-6 rounded bg-sky-500/10 grid place-items-center"><RouteIcon className="h-3.5 w-3.5 text-sky-600" /></div>
+                  <h5 className="text-xs font-semibold">Rota — Local Coleta / Local Entrega</h5>
+                </div>
+                <div className="grid grid-cols-2 md:grid-cols-6 gap-2">
+                  <Input className="h-7 text-xs md:col-span-2" placeholder="Local Coleta" value={form.xMunIni} onChange={e=>setForm({...form,xMunIni:e.target.value})} />
+                  <Input className="h-7 text-xs" placeholder="UF" value={form.ufIni} onChange={e=>setForm({...form,ufIni:e.target.value.toUpperCase()})} maxLength={2} />
+                  <Input className="h-7 text-xs md:col-span-2" placeholder="Local Entrega" value={form.xMunFim} onChange={e=>setForm({...form,xMunFim:e.target.value})} />
+                  <Input className="h-7 text-xs" placeholder="UF" value={form.ufFim} onChange={e=>setForm({...form,ufFim:e.target.value.toUpperCase()})} maxLength={2} />
+                </div>
+              </Card>
+            </TabsContent>
+
+            {/* === TAB: Doc Mercadorias === */}
+            <TabsContent value="docs" className="mt-3">
+              <Card className="overflow-hidden">
+                <div className="bg-sky-600 text-white px-3 py-1.5 text-xs font-semibold">Mercadorias Transportadas — {mercadorias.filter(m => selecionadas.has(m.chave)).length || mercadorias.length} NF-e(s)</div>
+                <div className="overflow-x-auto max-h-[240px]">
+                  <Table>
+                    <TableHeader className="sticky top-0 bg-muted">
+                      <TableRow>
+                        <TableHead className="w-6">
+                          <input type="checkbox" checked={mercadorias.length > 0 && selecionadas.size === mercadorias.length} onChange={e => {
+                            if (e.target.checked) { const dests = new Set(mercadorias.map(m => m.destCnpj || m.dest)); if (dests.size > 1) { toast.error("Destinos diferentes"); return; } setSelecionadas(new Set(mercadorias.map(m => m.chave))); } else setSelecionadas(new Set());
+                          }} />
+                        </TableHead>
+                        <TableHead className="text-[10px]">Modelo</TableHead>
+                        <TableHead className="text-[10px]">Chave NFe</TableHead>
+                        <TableHead className="text-[10px]">Remetente</TableHead>
+                        <TableHead className="text-[10px]">Destinatário</TableHead>
+                        <TableHead className="text-[10px]">Nº NF-e</TableHead>
+                        <TableHead className="text-[10px]">Série</TableHead>
+                        <TableHead className="text-[10px]">Data Doc</TableHead>
+                        <TableHead className="text-[10px] text-right">Qtde Peso</TableHead>
+                        <TableHead className="text-[10px] text-right">Valor</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {mercadorias.length === 0 ? (
+                        <TableRow><TableCell colSpan={10} className="text-center text-xs text-muted-foreground py-8">Nenhuma NF-e importada</TableCell></TableRow>
+                      ) : mercadorias.map(m => (
+                        <TableRow key={m.chave} className="text-[11px]" data-selected={selecionadas.has(m.chave)}>
+                          <TableCell>
+                            <input type="checkbox" checked={selecionadas.has(m.chave)} onChange={e => {
+                              const next = new Set(selecionadas);
+                              if (e.target.checked) { next.add(m.chave); const sel = mercadorias.filter(x => next.has(x.chave)); const dests = new Set(sel.map(x => x.destCnpj || x.dest)); if (dests.size > 1) { toast.error("Destinos diferentes"); next.delete(m.chave); } } else next.delete(m.chave);
+                              setSelecionadas(next);
+                            }} />
+                          </TableCell>
+                          <TableCell>NFe</TableCell>
+                          <TableCell className="font-mono text-[9px] max-w-[120px] truncate" title={m.chave}>{m.chave}</TableCell>
+                          <TableCell className="truncate max-w-[100px]" title={m.emit}>{m.emit}</TableCell>
+                          <TableCell className="truncate max-w-[100px]" title={m.dest}>{m.dest}</TableCell>
+                          <TableCell className="font-mono">{m.nNF}</TableCell>
+                          <TableCell>{m.serie}</TableCell>
+                          <TableCell>{m.data || "—"}</TableCell>
+                          <TableCell className="text-right">{m.peso.toFixed(2)}</TableCell>
+                          <TableCell className="text-right font-medium">{brl(m.valor)}</TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </div>
+              </Card>
+            </TabsContent>
+
+            {/* === TAB: Seguros/Veículos === */}
+            <TabsContent value="seguros" className="mt-3 space-y-3">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                <Card className="p-3">
+                  <h5 className="text-xs font-semibold mb-2">Seguro da Carga</h5>
+                  <div className="space-y-2">
+                    <div><Label className="text-[10px] text-muted-foreground">Seguradora</Label><Input className="h-7 text-xs" placeholder="Ex: CHUBB SEGUROS BRASIL" /></div>
+                    <div className="grid grid-cols-2 gap-2">
+                      <div><Label className="text-[10px] text-muted-foreground">Apólice</Label><Input className="h-7 text-xs" placeholder="Nº Apólice" /></div>
+                      <div><Label className="text-[10px] text-muted-foreground">Base Calc. Seg.</Label><Input className="h-7 text-xs" value={form.vCarga} readOnly /></div>
+                    </div>
+                    <div className="grid grid-cols-3 gap-2">
+                      <div><Label className="text-[10px] text-muted-foreground">Valor Doc.</Label><Input className="h-7 text-xs" value={form.vCarga} readOnly /></div>
+                      <div><Label className="text-[10px] text-muted-foreground">RCTR-C</Label><Input className="h-7 text-xs" placeholder="0.00" /></div>
+                      <div><Label className="text-[10px] text-muted-foreground">RCF-DC</Label><Input className="h-7 text-xs" placeholder="0.00" /></div>
+                    </div>
+                    <div className="grid grid-cols-2 gap-2">
+                      <div><Label className="text-[10px] text-muted-foreground">Valor Adicional</Label><Input className="h-7 text-xs" placeholder="0.00" /></div>
+                      <div className="flex items-end gap-2">
+                        <div className="flex-1"><Label className="text-[10px] text-muted-foreground">Total Seguro</Label><Input className="h-7 text-xs" placeholder="0.00" /></div>
+                        <label className="flex items-center gap-1 text-[10px] pb-1"><input type="checkbox" /> Repassar</label>
+                      </div>
+                    </div>
+                    <div><Label className="text-[10px] text-muted-foreground">Responsável</Label><Input className="h-7 text-xs" value="4 — Emitente do CT-e" readOnly /></div>
+                    <div><Label className="text-[10px] text-muted-foreground">Nº Averbação</Label><Input className="h-7 text-xs" placeholder="Nº Averbação (opcional)" /></div>
+                  </div>
+                </Card>
+
+                <Card className="p-3">
+                  <h5 className="text-xs font-semibold mb-2">Dados do Veículo / Motorista</h5>
+                  <div className="space-y-2">
+                    <div><Label className="text-[10px] text-muted-foreground">Nome Motorista</Label><Input className="h-7 text-xs" placeholder="Nome completo" /></div>
+                    <div className="grid grid-cols-2 gap-2">
+                      <div><Label className="text-[10px] text-muted-foreground">CIOT</Label><Input className="h-7 text-xs" placeholder="Nº CIOT" /></div>
+                      <div><Label className="text-[10px] text-muted-foreground">% Agregados</Label><Input className="h-7 text-xs" placeholder="0.00" /></div>
+                    </div>
+                    <div className="grid grid-cols-2 gap-2">
+                      <div><Label className="text-[10px] text-muted-foreground">Placa Veículo</Label><Input className="h-7 text-xs font-mono uppercase" placeholder="ABC-1234" maxLength={8} /></div>
+                      <div><Label className="text-[10px] text-muted-foreground">Placa Reboque</Label><Input className="h-7 text-xs font-mono uppercase" placeholder="ABC-1234" maxLength={8} /></div>
+                    </div>
+                    <div className="grid grid-cols-2 gap-2">
+                      <div><Label className="text-[10px] text-muted-foreground">Semi Reboque 1</Label><Input className="h-7 text-xs font-mono uppercase" placeholder="ABC-1234" maxLength={8} /></div>
+                      <div><Label className="text-[10px] text-muted-foreground">Semi Reboque 2</Label><Input className="h-7 text-xs font-mono uppercase" placeholder="ABC-1234" maxLength={8} /></div>
+                    </div>
+                    <label className="flex items-center gap-2 text-[10px]"><input type="checkbox" /> Possui Segundo Motorista</label>
+                  </div>
+                </Card>
+              </div>
+            </TabsContent>
+
+            {/* === TAB: Taxas/Despesas Acessórias === */}
+            <TabsContent value="taxas" className="mt-3 space-y-3">
+              <Card className="p-3">
+                <h5 className="text-xs font-semibold mb-2">Pedágio / Taxas / Despesas Acessórias</h5>
+                <div className="grid grid-cols-3 md:grid-cols-6 gap-2">
+                  <div><Label className="text-[10px] text-muted-foreground">Pedágio (3 Eixos)</Label><Input className="h-7 text-xs" placeholder="0.00" /></div>
+                  <div><Label className="text-[10px] text-muted-foreground">Sec/Cat</Label><Input className="h-7 text-xs" placeholder="0.00" /></div>
+                  <div><Label className="text-[10px] text-muted-foreground">Adicional</Label><Input className="h-7 text-xs" placeholder="0.00" /></div>
+                  <div><Label className="text-[10px] text-muted-foreground">Desconto</Label><Input className="h-7 text-xs" placeholder="0.00" /></div>
+                  <div><Label className="text-[10px] text-muted-foreground">Outros</Label><Input className="h-7 text-xs" placeholder="0.00" /></div>
+                  <div><Label className="text-[10px] text-muted-foreground">Total Mercadorias</Label><Input className="h-7 text-xs" value={form.vCarga} readOnly /></div>
+                </div>
+                <div className="grid grid-cols-3 md:grid-cols-5 gap-2 mt-2">
+                  <div><Label className="text-[10px] text-muted-foreground">Ad Valorem</Label><Input className="h-7 text-xs" placeholder="0.00" /></div>
+                  <div><Label className="text-[10px] text-muted-foreground">GRIS</Label><Input className="h-7 text-xs" placeholder="0.00" /></div>
+                  <div><Label className="text-[10px] text-muted-foreground">Taxa Coleta</Label><Input className="h-7 text-xs" placeholder="0.00" /></div>
+                  <div><Label className="text-[10px] text-muted-foreground">Taxa Entrega</Label><Input className="h-7 text-xs" placeholder="0.00" /></div>
+                  <div><Label className="text-[10px] text-muted-foreground">Valor Serviço</Label><Input className="h-7 text-xs font-medium" value={form.vPrest} readOnly /></div>
+                </div>
+              </Card>
+
+              <Card className="p-3">
+                <h5 className="text-xs font-semibold mb-2">Forma de Pagamento do Pedágio</h5>
+                <div className="flex flex-wrap gap-3 text-[11px]">
+                  <label className="flex items-center gap-1"><input type="radio" name="pedagio_pagto" defaultChecked /> Free Flow</label>
+                  <label className="flex items-center gap-1"><input type="radio" name="pedagio_pagto" /> TAG Transportador</label>
+                  <label className="flex items-center gap-1"><input type="radio" name="pedagio_pagto" /> TAG Tomador</label>
+                  <label className="flex items-center gap-1"><input type="radio" name="pedagio_pagto" /> Sem Pagto Pedágio</label>
+                </div>
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-2 mt-2">
+                  <div><Label className="text-[10px] text-muted-foreground">Operadora</Label><Input className="h-7 text-xs" placeholder="Ex: SEM PARAR" /></div>
+                  <div><Label className="text-[10px] text-muted-foreground">CNPJ Operadora</Label><Input className="h-7 text-xs" placeholder="00.000.000/0000-00" /></div>
+                  <div><Label className="text-[10px] text-muted-foreground">Vale Pedágio (R$)</Label><Input className="h-7 text-xs" placeholder="0.00" /></div>
+                  <div><Label className="text-[10px] text-muted-foreground">Nº TAG</Label><Input className="h-7 text-xs" placeholder="Nº TAG" /></div>
+                </div>
+              </Card>
+            </TabsContent>
+          </Tabs>
+
+          {/* Cálculos do Serviço — Rodapé */}
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-2 border rounded p-3 bg-muted/20">
+            <div className="text-center"><p className="text-[10px] text-muted-foreground">Base Cálculo ICMS</p><p className="text-xs font-mono font-medium">{brl(Number(form.vCarga))}</p></div>
+            <div className="text-center"><p className="text-[10px] text-muted-foreground">Valor Serviço</p><p className="text-xs font-mono font-medium text-primary">{brl(Number(form.vPrest))}</p></div>
+            <div className="text-center"><p className="text-[10px] text-muted-foreground">Total Despesas</p><p className="text-xs font-mono">R$ 0,00</p></div>
+            <div className="text-center"><p className="text-[10px] text-muted-foreground">Total Prestação</p><p className="text-xs font-mono font-bold">{brl(Number(form.vPrest))}</p></div>
           </div>
 
+          {/* Observações */}
+          <Card className="p-3">
+            <h5 className="text-xs font-semibold mb-1">Observações do Conhecimento</h5>
+            <div className="border rounded overflow-hidden">
+              <div className="grid grid-cols-[28px_1fr_60px] bg-muted text-[10px] font-semibold">
+                <div className="px-1 py-1 text-center">Linha</div>
+                <div className="px-1 py-1 border-l">Descrição da Observação</div>
+                <div className="px-1 py-1 border-l text-right">Tamanho</div>
+              </div>
+              <Textarea className="min-h-[60px] rounded-none border-0 border-t text-xs font-mono resize-none focus-visible:ring-0" placeholder={"01 — \n02 — \n03 — Protocolo Pedidos:"} />
+            </div>
+          </Card>
+
           <DialogFooter className="gap-2">
-            <Button variant="outline" onClick={()=>setOpen(false)}>Cancelar</Button>
-            <Button onClick={()=>emitir.mutate()} disabled={emitir.isPending || !form.cnpjTomador || !form.xNomeTomador}>
-              {emitir.isPending ? "Emitindo..." : `Emitir CT-e ${mercadorias.length > 0 ? `(${mercadorias.length} NF-e)` : ""}`}
+            <Button variant="outline" onClick={() => setOpen(false)}><Ban className="mr-1 h-3.5 w-3.5" /> Cancelar</Button>
+            <Button variant="outline" disabled><FileText className="mr-1 h-3.5 w-3.5" /> Pré Visualizar</Button>
+            <Button onClick={() => emitir.mutate()} disabled={emitir.isPending || !form.cnpjTomador || !form.xNomeTomador}>
+              {emitir.isPending ? "Enviando..." : <><Truck className="mr-1 h-3.5 w-3.5" /> Enviar Doc-e</>}
             </Button>
           </DialogFooter>
-          <p className="text-xs text-muted-foreground text-center">Chave gerada automaticamente (cUF + AAMM + CNPJ + mod 57 + série + nCT + cCT + DV). O XML será assinado com seu certificado A1 via mTLS.</p>
         </DialogContent>
       </Dialog>
     </div>
