@@ -18,7 +18,7 @@ import { brl } from "@/lib/format";
 import { useState, useEffect } from "react";
 import { toast } from "sonner";
 import { emitirCteFn, consultarCteFn, cancelarCteFn } from "@/lib/sefaz-cte-server";
-import { CFOPS_TODOS, MOD_FRETE_OPTIONS, RESPONSAVEL_CTE_OPTIONS } from "@/lib/cfops-transporte";
+import { CFOPS_CTE, MOD_FRETE_OPTIONS, RESPONSAVEL_CTE_OPTIONS } from "@/lib/cfops-transporte";
 import { Textarea } from "@/components/ui/textarea";
 import { DateInput } from "@/components/erp/date-input";
 
@@ -393,7 +393,7 @@ function CtePage() {
                 <Select value={form.cfop} onValueChange={v => setForm({...form, cfop: v})}>
                   <SelectTrigger className="h-7 text-xs"><SelectValue /></SelectTrigger>
                   <SelectContent>
-                    {CFOPS_TODOS.map(cf => (
+                    {CFOPS_CTE.map(cf => (
                       <SelectItem key={cf.codigo} value={cf.codigo}>{cf.descricao}</SelectItem>
                     ))}
                   </SelectContent>

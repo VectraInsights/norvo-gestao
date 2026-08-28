@@ -637,6 +637,34 @@ export const CFOPS_TODOS: CodigoCfop[] = [
   { codigo: "7.949", descricao: "7.949 — Outra saída de mercadoria ou prestação de serviço não especificado" },
 ];
 
+export const CFOPS_CTE: CodigoCfop[] = [
+  // Estaduais
+  { codigo: "5351", descricao: "5.351 — Prestação de serviço de transporte a indústria" },
+  { codigo: "5352", descricao: "5.352 — Prestação de serviço de transporte a comércio" },
+  { codigo: "5353", descricao: "5.353 — Prestação de serviço de transporte a produtor rural" },
+  { codigo: "5354", descricao: "5.354 — Prestação de serviço de transporte a prestador de serviço" },
+  { codigo: "5355", descricao: "5.355 — Prestação de serviço de transporte a não contribuinte" },
+  { codigo: "5356", descricao: "5.356 — Prestação de serviço de transporte a contribuinte substituído (operações com substituição tributária)" },
+  { codigo: "5357", descricao: "5.357 — Prestação de serviço de transporte a órgão público" },
+  { codigo: "5359", descricao: "5.359 — Prestação de serviço de transporte de carga iniciada em outra UF" },
+  { codigo: "5360", descricao: "5.360 — Prestação de serviço de transporte decorrente de subcontratação" },
+  // Interestaduais
+  { codigo: "6351", descricao: "6.351 — Prestação de serviço de transporte a indústria" },
+  { codigo: "6352", descricao: "6.352 — Prestação de serviço de transporte a comércio" },
+  { codigo: "6353", descricao: "6.353 — Prestação de serviço de transporte a produtor rural" },
+  { codigo: "6354", descricao: "6.354 — Prestação de serviço de transporte a prestador de serviço" },
+  { codigo: "6355", descricao: "6.355 — Prestação de serviço de transporte a não contribuinte" },
+  { codigo: "6356", descricao: "6.356 — Prestação de serviço de transporte a contribuinte substituído" },
+  { codigo: "6357", descricao: "6.357 — Prestação de serviço de transporte a órgão público" },
+  { codigo: "6359", descricao: "6.359 — Prestação de serviço de transporte de carga iniciada em outra UF (passagem ou redespacho complexo)" },
+  { codigo: "6360", descricao: "6.360 — Prestação de serviço de transporte decorrente de subcontratação" },
+  // Internacionais
+  { codigo: "7358", descricao: "7.358 — Prestação de serviço de transporte destinado ao exterior" },
+];
+
+// Alias para notas de compra/devolução (tabela completa)
+export const CFOPS_NOTAS = CFOPS_TODOS;
+
 export const MOD_FRETE_OPTIONS = [
   { value: "0", label: "0 — Contratação do Frete por conta do Remetente (CIF)" },
   { value: "1", label: "1 — Contratação do Frete por conta do Destinatário (FOB)" },
