@@ -8,6 +8,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { DateInput } from "@/components/erp/date-input";
+import { MoneyInput } from "@/components/erp/money-input";
 import { 
   FileDown, Search, CheckCircle2, AlertCircle, XCircle, 
   UploadCloud, FileCode, Check, ArrowRight, RefreshCw, Archive, Calendar, KeyRound,
@@ -1834,21 +1835,16 @@ ${transportadora ? `<div class="section"><div class="section-title">TRANSPORTE</
                             setNotaDetalhe({ ...notaDetalhe, parcelas: novas });
                           }}
                         />
-                        <div className="relative w-[130px] shrink-0">
-                          <span className="absolute left-2 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">R$</span>
-                          <Input
-                            type="number"
-                            className="h-8 text-xs text-right pl-7"
-                            step="0.01"
-                            value={p.valor || ""}
-                            placeholder="0,00"
-                            onChange={(e) => {
-                              const novas = [...notaDetalhe.parcelas];
-                              novas[i] = { ...novas[i], valor: parseFloat(e.target.value) || 0 };
-                              setNotaDetalhe({ ...notaDetalhe, parcelas: novas });
-                            }}
-                          />
-                        </div>
+                        <MoneyInput
+                          value={String(p.valor ?? 0)}
+                          onChange={(v) => {
+                            const novas = [...notaDetalhe.parcelas];
+                            novas[i] = { ...novas[i], valor: parseFloat(v) || 0 };
+                            setNotaDetalhe({ ...notaDetalhe, parcelas: novas });
+                          }}
+                          className="h-8 text-xs text-right w-[140px] shrink-0"
+                          placeholder="0,00"
+                        />
                         <Select
                           value={(p as any).forma_pagamento || "Boleto"}
                           onValueChange={(v) => {
