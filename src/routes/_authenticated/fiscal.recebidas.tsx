@@ -11,7 +11,7 @@ import { DateInput } from "@/components/erp/date-input";
 import { 
   FileDown, Search, CheckCircle2, AlertCircle, XCircle, 
   UploadCloud, FileCode, Check, ArrowRight, RefreshCw, Archive, Calendar, KeyRound,
-  Eye, Download, FileText, Trash2
+  Eye, Download, FileText, Trash2, Pencil
 } from "lucide-react";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { useState, useMemo, useEffect } from "react";
@@ -40,7 +40,7 @@ interface NotaRecebida {
   xml_completo?: string;
 }
 
-const FORMAS_PARCELA = ["Boleto", "Pix", "Cartão de crédito", "Cartão de débito", "Dinheiro", "Transferência", "Cheque", "Duplicata", "Outros"] as const;
+const FORMAS_PARCELA = ["Boleto", "Cartão de crédito", "Cartão de débito", "Cheque", "Dinheiro", "Duplicata", "Pix", "Transferência", "Outros"] as const;
 
 interface ParsedXMLResult {
   chave: string;
@@ -960,6 +960,101 @@ function NotasRecebidas() {
     }
   };
 
+  const handleAlterarNota = async () => {
+    if (!notaDetalhe?.id || !empresa) return;
+    setIsSaving(true);
+    try {
+      const semCategoria = notaDetalhe.produtos.filter(p => !p.categoria || p.categoria.trim() === "");
+      if (semCategoria.length > 0) {
+        toast.error(`Categoria obrigatória: ${semCategoria.map(p => p.nome).join(", ")}`);
+        setIsSaving(false);
+        return;
+      }
+
+      // Buscar itens antigos para calcular delta de estoque
+      const { data: itensAntigos } = await supabase.from("notas_importadas_itens" as never).select("codigo, quantidade").eq("nota_id", notaDetalhe.id as any);
+      const mapaAntigo = new Map<string, number>();
+      (itensAntigos as any[] || []).forEach((it: any) => mapaAntigo.set(it.codigo, Number(it.quantidade) || 0));
+
+      // 1. Atualizar nota
+      await supabase.from("notas_importadas" as never).update({ valor_total: notaDetalhe.valor, situacao: "lancada" } as any).eq("id", notaDetalhe.id as any);
+
+      // 2. Atualizar estoque por delta e recriar itens
+      for (const p of notaDetalhe.produtos) {
+        const qtdAntiga = mapaAntigo.get(p.codigo) ?? 0;
+        const delta = p.qtd - qtdAntiga;
+        const { data: prodExistente } = await supabase.from("produtos").select("id, estoque_atual, categoria").eq("empresa_id", empresa.id).or(`codigo.eq.${p.codigo},nome.ilike.%${p.nome.slice(0, 10)}%`).maybeSingle();
+        let prodId: string | null = prodExistente ? (prodExistente as any).id : null;
+        if (prodExistente) {
+          prodId = (prodExistente as any).id;
+          const novoEstoque = (Number((prodExistente as any).estoque_atual) || 0) + delta;
+          await supabase.from("produtos").update({ estoque_atual: novoEstoque, preco_custo: p.valorUnit, categoria: p.categoria || (prodExistente as any).categoria || null }).eq("id", prodId);
+          if (delta !== 0) {
+            await supabase.from("movimentacoes_estoque").insert({ empresa_id: empresa.id, produto_id: prodId, tipo: delta > 0 ? "entrada" : "saida", quantidade: Math.abs(delta), custo_unitario: p.valorUnit, observacoes: `Ajuste NF-e ${notaDetalhe.nNF} alterada (Chave: ${notaDetalhe.chave})` });
+          }
+        } else {
+          const { data: novoProd } = await (supabase.from("produtos").insert({ empresa_id: empresa.id, codigo: p.codigo, nome: p.nome, unidade: p.un, preco_custo: p.valorUnit, preco_venda: p.valorUnit * 1.4, estoque_atual: p.qtd, ativo: true, categoria: p.categoria || null } as any).select("id") as any).single();
+          prodId = novoProd!.id;
+          await supabase.from("movimentacoes_estoque").insert({ empresa_id: empresa.id, produto_id: prodId, tipo: "entrada", quantidade: p.qtd, custo_unitario: p.valorUnit, observacoes: `Entrada NF-e ${notaDetalhe.nNF} alterada (Chave: ${notaDetalhe.chave})` });
+        }
+      }
+      // Itens removidos: devolver estoque
+      for (const [codigo, qtdAntiga] of mapaAntigo.entries()) {
+        if (!notaDetalhe.produtos.some(p => p.codigo === codigo)) {
+          const { data: prod } = await supabase.from("produtos").select("id, estoque_atual").eq("empresa_id", empresa.id).eq("codigo", codigo).maybeSingle();
+          if (prod) {
+            await supabase.from("produtos").update({ estoque_atual: (Number((prod as any).estoque_atual) || 0) - qtdAntiga }).eq("id", (prod as any).id);
+            await supabase.from("movimentacoes_estoque").insert({ empresa_id: empresa.id, produto_id: (prod as any).id, tipo: "saida", quantidade: qtdAntiga, custo_unitario: 0, observacoes: `Remoção produto NF-e ${notaDetalhe.nNF} alterada` });
+          }
+        }
+      }
+      // Recriar itens
+      await supabase.from("notas_importadas_itens" as never).delete().eq("nota_id", notaDetalhe.id as any);
+      if (notaDetalhe.produtos.length > 0) {
+        await supabase.from("notas_importadas_itens" as never).insert(notaDetalhe.produtos.map(p => ({ nota_id: notaDetalhe.id, codigo: p.codigo, nome: p.nome, quantidade: p.qtd, unidade: p.un, valor_unitario: p.valorUnit, valor_total: p.valorTotal, categoria: p.categoria || null })) as any);
+      }
+
+      // 3. Parcelas/lançamentos: reaproveita ou recria
+      const { data: parcelasAntigas } = await supabase.from("notas_importadas_parcelas" as never).select("id, lancamento_id").eq("nota_id", notaDetalhe.id as any);
+      const lancIdsAntigos = ((parcelasAntigas as any[]) || []).map((pa: any) => pa.lancamento_id).filter(Boolean);
+      // Buscar categoria financeira
+      let categoriaFinanceiraId: string | null = null;
+      const primeiraCategoria = notaDetalhe.produtos[0]?.categoria;
+      if (primeiraCategoria) {
+        const { data: cat } = await supabase.from("categorias_financeiras").select("id").eq("empresa_id", empresa.id).ilike("nome", `%${primeiraCategoria}%`).maybeSingle();
+        if (cat) categoriaFinanceiraId = (cat as any).id;
+      }
+      // Buscar fornecedor id atual
+      let fornecedorId: string | null = null;
+      const { data: cont } = await supabase.from("contatos").select("id").eq("empresa_id", empresa.id).ilike("nome", `%${notaDetalhe.emitente.slice(0, 15)}%`).maybeSingle();
+      if (cont) fornecedorId = (cont as any).id;
+
+      // Deletar parcelas antigas e lançamentos antigos
+      await supabase.from("notas_importadas_parcelas" as never).delete().eq("nota_id", notaDetalhe.id as any);
+      if (lancIdsAntigos.length > 0) {
+        await supabase.from("lancamentos_financeiros").delete().in("id", lancIdsAntigos);
+      }
+      // Recriar parcelas/lançamentos com dados atuais (forma/banco)
+      if (notaDetalhe.parcelas.length > 0) {
+        for (const parc of notaDetalhe.parcelas) {
+          const { data: lanc } = await supabase.from("lancamentos_financeiros").insert({ empresa_id: empresa.id, tipo: "pagar", status: "aberto", descricao: `NF-e ${notaDetalhe.nNF} ${notaDetalhe.emitente} (${parc.numero}/${notaDetalhe.parcelas.length})`, valor: parc.valor, data_vencimento: parc.dataVencimento, contato_id: fornecedorId, categoria_id: categoriaFinanceiraId, observacoes: `Chave: ${notaDetalhe.chave} | Parcela ${parc.numero}`, forma_pagamento: (parc as any).forma_pagamento || "Boleto", conta_bancaria_id: (parc as any).conta_bancaria_id || null } as any).select("id").single();
+          if (lanc) await supabase.from("notas_importadas_parcelas" as never).insert({ nota_id: notaDetalhe.id, numero: parc.numero, data_vencimento: parc.dataVencimento, valor: parc.valor, lancamento_id: (lanc as any).id } as any);
+        }
+      }
+
+      qc.invalidateQueries({ queryKey: ["produtos"] });
+      qc.invalidateQueries({ queryKey: ["movs"] });
+      qc.invalidateQueries({ queryKey: ["lancamentos"] });
+      qc.invalidateQueries({ queryKey: ["dashboard-stats"] });
+      toast.success("Nota alterada com sucesso");
+      setNotaDetalhe(null);
+    } catch (err: any) {
+      toast.error("Falha ao alterar nota", { description: err.message });
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
   // Filtrar notas recebidas
   const mesesDisponiveis = useMemo(() => {
     const meses = new Set<string>();
@@ -1817,9 +1912,11 @@ ${transportadora ? `<div class="section"><div class="section-title">TRANSPORTE</
                   <Button variant="outline" onClick={() => setNotaDetalhe(null)}>
                     Cancelar
                   </Button>
-                  <Button onClick={handleLancarNota} disabled={isSaving}>
+                  <Button onClick={notaDetalhe.id ? handleAlterarNota : handleLancarNota} disabled={isSaving} className={notaDetalhe.id ? "bg-amber-600 hover:bg-amber-700 text-white" : ""}>
                     {isSaving ? (
-                      <><RefreshCw className="mr-2 h-4 w-4 animate-spin" /> Lançando...</>
+                      <><RefreshCw className="mr-2 h-4 w-4 animate-spin" /> {notaDetalhe.id ? "Salvando..." : "Lançando..."}</>
+                    ) : notaDetalhe.id ? (
+                      <><Pencil className="mr-2 h-4 w-4" /> Alterar</>
                     ) : (
                       <><Check className="mr-2 h-4 w-4" /> Lançar Nota</>
                     )}

@@ -491,6 +491,20 @@ certificado tem estrutura PKCS12 não padrão ou se `extractPkcs12Native` precis
     - Produtos já criados sem categoria precisam ser corrigidos manualmente em Estoque → Produtos
       (ou via SQL). Novos imports já salvam corretamente.
 
+34. **Parcelas com forma de pagamento e conta bancária + logos normalizados — 28/08/2026**:
+    - NF-e `fiscal.recebidas.tsx:41` `FORMAS_PARCELA` pré-cadastradas (Boleto, Pix, Cartão de crédito/débito, Dinheiro, Transferência, Cheque, Duplicata, Outros) com ordenação alfabética (Outros último). Ao adicionar parcela, selects para **forma** e **banco** (`contas_bancarias`).
+    - `ParsedXMLResult`/`notaDetalhe` estendidos com `forma_pagamento`/`conta_bancaria_id`; `parseParcelasDoXml` default Boleto; `handleConfirmarXmlUpload`/`handleLancarNota` gravam `lancamentos_financeiros.forma_pagamento`/`conta_bancaria_id`.
+    - Logos `public/bancos/*.png` normalizados 512×512 mesmo canvas (PAD 8, `Pillow`), 9 bancos: bradesco, itau, sicoob, caixa, santander, nubank, inter (077), bb (001), daycoval (707). `src/lib/bancos.ts` migrado para `/bancos/*.png`.
+
+35. **Calendários padronizados + Bradesco/Itaú sem fundo branco — 28/08/2026**:
+    - `DateInput` (`src/components/erp/date-input.tsx:13`) com `captionLayout="dropdown"`, bloqueio datas futuras (`maxToday`), footer Hoje + Usar hoje.
+    - `financeiro.contas.tsx:522` e `fiscal.recebidas.tsx:1716` (parcelas) e `financeiro.receber.tsx:364` trocados de `Input type=date` para `DateInput` — varredura completa, 0 `type="date"` restante.
+    - Bradesco/Itaú regenerados sem padding branco extra (PAD 8 → preenche tudo), `public/bancos` atualizado para mesmo tamanho (512) e exibição com `object-contain`/`bg-white` ajustado.
+
+36. **Notas já lançadas editáveis (Alterar) + formas em ordem alfabética — 28/08/2026** (este commit):
+    - `fiscal.recebidas.tsx` `FORMAS_PARCELA` e `financeiro.receber.tsx:59` `FORMAS_PAGAMENTO` ordenadas alfabeticamente `pt-BR` com `Outros` sempre último (Boleto, Cartão de crédito, Cartão de débito, Cheque, Dinheiro, Duplicata, Pix, Transferência, Outros).
+    - Bug "Esta nota já foi importada anteriormente." ao tentar editar: `handleLancarNota` bloqueava duplicata. Criado `handleAlterarNota` (`:960`): atualiza `notas_importadas`, recalcula estoque por delta (mapa antigo vs novo), recria `notas_importadas_itens`, deleta/recria `notas_importadas_parcelas` + `lancamentos_financeiros` com forma/banco, invalida queries. Botão no modal agora é **Alterar** (âmbar, `Pencil`) quando `notaDetalhe.id` existe, senão **Lançar Nota**.
+
 ---
 
 ## Regras de segurança

@@ -56,7 +56,7 @@ type Lancamento = {
   categoria_id: string | null;
 };
 
-const FORMAS_PAGAMENTO = ["Pix", "Boleto", "Cartão de crédito", "Cartão de débito", "Dinheiro", "Transferência", "Cheque", "Outros"] as const;
+const FORMAS_PAGAMENTO = ["Boleto", "Cartão de crédito", "Cartão de débito", "Cheque", "Dinheiro", "Duplicata", "Pix", "Transferência", "Outros"] as const;
 
 const emptyForm = () => ({
   descricao: "", valor: "",
