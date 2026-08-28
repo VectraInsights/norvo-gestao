@@ -255,14 +255,22 @@ function CtePage() {
                         type="checkbox"
                         checked={mercadorias.length > 0 && selecionadas.size === mercadorias.length}
                         onChange={e => {
-                          if (e.target.checked) setSelecionadas(new Set(mercadorias.map(m => m.chave)));
-                          else setSelecionadas(new Set());
+                          if (e.target.checked) {
+                            const dests = new Set(mercadorias.map(m => m.destCnpj || m.dest));
+                            if (dests.size > 1) {
+                              toast.error("Não pode selecionar NF-es com destinos diferentes");
+                              return;
+                            }
+                            setSelecionadas(new Set(mercadorias.map(m => m.chave)));
+                          } else setSelecionadas(new Set());
                         }}
                       />
                     </TableHead>
                     <TableHead className="text-xs">Código</TableHead>
                     <TableHead className="text-xs">Remetente</TableHead>
+                    <TableHead className="text-xs">CNPJ Remetente</TableHead>
                     <TableHead className="text-xs">Destinatário</TableHead>
+                    <TableHead className="text-xs">CNPJ Destinatário</TableHead>
                     <TableHead className="text-xs">Tomador</TableHead>
                     <TableHead className="text-xs">Nº NF-e</TableHead>
                     <TableHead className="text-xs">Série</TableHead>
@@ -274,7 +282,7 @@ function CtePage() {
                 </TableHeader>
                 <TableBody>
                   {mercadorias.length === 0 ? (
-                    <TableRow><TableCell colSpan={11} className="text-center text-xs text-muted-foreground py-8">Nenhuma NF-e importada. Use “Importar NFes (XML)” abaixo.</TableCell></TableRow>
+                    <TableRow><TableCell colSpan={13} className="text-center text-xs text-muted-foreground py-8">Nenhuma NF-e importada. Use “Importar NFes (XML)” abaixo.</TableCell></TableRow>
                   ) : (
                     mercadorias.map((m) => (
                       <TableRow key={m.chave} className="text-xs" data-selected={selecionadas.has(m.chave)}>
@@ -284,22 +292,31 @@ function CtePage() {
                             checked={selecionadas.has(m.chave)}
                             onChange={e => {
                               const next = new Set(selecionadas);
-                              if (e.target.checked) next.add(m.chave);
-                              else next.delete(m.chave);
+                              if (e.target.checked) {
+                                next.add(m.chave);
+                                const sel = mercadorias.filter(x => next.has(x.chave));
+                                const dests = new Set(sel.map(x => x.destCnpj || x.dest));
+                                if (dests.size > 1) {
+                                  toast.error("Não pode emitir o mesmo CT-e para destinos diferentes");
+                                  next.delete(m.chave);
+                                }
+                              } else next.delete(m.chave);
                               setSelecionadas(next);
                             }}
                           />
                         </TableCell>
                         <TableCell className="font-mono">18837</TableCell>
-                        <TableCell className="truncate max-w-[130px]" title={m.emit}>{m.emit}</TableCell>
-                        <TableCell className="truncate max-w-[130px]" title={m.dest}>{m.dest}</TableCell>
-                        <TableCell className="truncate max-w-[130px] text-amber-700" title={m.tomador}>{m.tomador || "—"}</TableCell>
+                        <TableCell className="truncate max-w-[110px]" title={m.emit}>{m.emit}</TableCell>
+                        <TableCell className="font-mono text-[10px]">{m.emitCnpj ? m.emitCnpj.replace(/(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})/, "$1.$2.$3/$4-$5") : "—"}</TableCell>
+                        <TableCell className="truncate max-w-[110px]" title={m.dest}>{m.dest}</TableCell>
+                        <TableCell className="font-mono text-[10px]">{m.destCnpj ? m.destCnpj.replace(/(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})/, "$1.$2.$3/$4-$5") : "—"}</TableCell>
+                        <TableCell className="truncate max-w-[110px] text-amber-700" title={m.tomador}>{m.tomador || "—"}</TableCell>
                         <TableCell className="font-mono">{m.nNF}</TableCell>
                         <TableCell>{m.serie}</TableCell>
                         <TableCell>{m.data || "—"}</TableCell>
                         <TableCell className="text-right">{brl(m.valor)}</TableCell>
                         <TableCell className="text-right">{m.peso.toFixed(2)}</TableCell>
-                        <TableCell className="font-mono truncate max-w-[160px]" title={m.chave}>{m.chave.slice(0,22)}...</TableCell>
+                        <TableCell className="font-mono truncate max-w-[140px]" title={m.chave}>{m.chave.slice(0,22)}...</TableCell>
                       </TableRow>
                     ))
                   )}
