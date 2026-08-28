@@ -8,7 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
-import { Truck, Plus, FileText, Search, Ban } from "lucide-react";
+import { Truck, Plus, FileText, Search, Ban, UploadCloud, FileCode } from "lucide-react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useEmpresaAtual } from "@/hooks/use-empresa";
@@ -30,6 +30,8 @@ function CtePage() {
   const qc = useQueryClient();
   const search = Route.useSearch();
   const [prefillBanner, setPrefillBanner] = useState<string | null>(null);
+  const [nfeFile, setNfeFile] = useState<File | null>(null);
+  const [isParsing, setIsParsing] = useState(false);
   const { data: docs, isLoading } = useQuery({
     enabled: !!empresa,
     queryKey: ["cte-documentos", empresa?.id],
@@ -42,6 +44,46 @@ function CtePage() {
 
   const [open, setOpen] = useState(false);
   const [form, setForm] = useState({ toma: "3", cnpjTomador: "", xNomeTomador: "", ufTomador: "MG", cMunTomador: "3106200", xMunTomador: "BELO HORIZONTE", cfop: "5353", vPrest: "1000.00", vCarga: "10000.00", peso: "5000", rntrc: "", cMunEnv: "3106200", xMunEnv: "BELO HORIZONTE", ufEnv: "MG", cMunIni: "3106200", xMunIni: "BELO HORIZONTE", ufIni: "MG", cMunFim: "3550308", xMunFim: "SAO PAULO", ufFim: "SP" });
+
+  const handleImportNFeXml = async (file: File) => {
+    if (!file.name.toLowerCase().endsWith(".xml")) { toast.error("Apenas XML"); return; }
+    setIsParsing(true);
+    try {
+      const text = await file.text();
+      const parser = new DOMParser();
+      const doc = parser.parseFromString(text, "text/xml");
+      const destCnpj = doc.querySelector("dest > CNPJ")?.textContent || doc.querySelector("dest > CPF")?.textContent || "";
+      const destXNome = doc.querySelector("dest > xNome")?.textContent || "";
+      const destUF = doc.querySelector("dest > enderDest > UF")?.textContent || "";
+      const destCMun = doc.querySelector("dest > enderDest > cMun")?.textContent || "";
+      const destXMun = doc.querySelector("dest > enderDest > xMun")?.textContent || "";
+      const vNF = doc.querySelector("total > ICMSTot > vNF")?.textContent || doc.querySelector("vNF")?.textContent || "0";
+      const pesoB = doc.querySelector("transp > vol > pesoB")?.textContent || doc.querySelector("vol > pesoB")?.textContent || "";
+      const nNF = doc.querySelector("ide > nNF")?.textContent || "";
+      const chave = doc.querySelector("infNFe")?.getAttribute("Id")?.replace(/^NFe/, "") || doc.querySelector("chNFe")?.textContent || "";
+      const peso = pesoB ? parseFloat(pesoB) : 1000;
+      const vCarga = parseFloat(vNF) || 0;
+      setForm(f => ({
+        ...f,
+        cnpjTomador: destCnpj || f.cnpjTomador,
+        xNomeTomador: destXNome || f.xNomeTomador,
+        ufTomador: destUF || f.ufTomador,
+        cMunTomador: destCMun || f.cMunTomador,
+        xMunTomador: destXMun || f.xMunTomador,
+        vCarga: vCarga ? vCarga.toFixed(2) : f.vCarga,
+        peso: peso ? String(peso) : f.peso,
+        vPrest: vCarga ? (vCarga * 0.1).toFixed(2) : f.vPrest,
+      }));
+      setPrefillBanner(chave ? `NF-e ${nNF} (${chave.slice(0,12)}...) carregada` : `NF-e ${nNF} carregada`);
+      setOpen(true);
+      toast.success(`XML NF-e ${nNF} importado — dados da carga preenchidos`);
+    } catch (e: any) {
+      toast.error("Falha ao ler XML", { description: e.message });
+    } finally {
+      setIsParsing(false);
+      setNfeFile(null);
+    }
+  };
 
   useEffect(() => {
     const raw = localStorage.getItem("prefill_cte_from_nfe");
@@ -126,6 +168,18 @@ function CtePage() {
       )}
       <Card className="p-4 bg-emerald-500/10 border-emerald-500/30 text-sm">
         <strong>Fase 2 — CT-e ativo:</strong> builder 4.00 (<code>sefaz-cte.ts</code>), assinatura <code>infCte</code>, SOAP mTLS SVRS. Em homologação teste com RNTRC fictício; em produção a SEFAZ valida IE/RNTRC e CFOP.
+      </Card>
+      <Card className="p-4">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <div>
+            <h4 className="text-sm font-semibold flex items-center gap-2"><FileCode className="h-4 w-4" /> Importar NF-e (XML) para CT-e</h4>
+            <p className="text-xs text-muted-foreground">Selecione o XML da NF-e que será a carga — preenche tomador, valores e peso automaticamente.</p>
+          </div>
+          <div className="flex items-center gap-2">
+            <Input type="file" accept=".xml" className="w-[260px]" onChange={e => { const f = e.target.files?.[0]; if (f) handleImportNFeXml(f); e.currentTarget.value = ""; }} />
+            {isParsing && <span className="text-xs text-muted-foreground">Lendo...</span>}
+          </div>
+        </div>
       </Card>
       {isLoading ? <div className="text-sm text-muted-foreground">Carregando…</div> : !docs?.length ? (
         <EmptyState icon={Truck} title="Nenhum CT-e" description="Clique em Novo CT-e para emitir. O CT-e ficará vinculado à viagem (quando informada) e ao financeiro." />
