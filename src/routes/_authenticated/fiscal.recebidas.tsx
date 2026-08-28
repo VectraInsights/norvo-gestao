@@ -39,6 +39,8 @@ interface NotaRecebida {
   xml_completo?: string;
 }
 
+const FORMAS_PARCELA = ["Boleto", "Pix", "Cartão de crédito", "Cartão de débito", "Dinheiro", "Transferência", "Cheque", "Duplicata", "Outros"] as const;
+
 interface ParsedXMLResult {
   chave: string;
   emitente: string;
@@ -46,7 +48,7 @@ interface ParsedXMLResult {
   nNF: string;
   total: number;
   produtos: { codigo: string; nome: string; qtd: number; un: string; valor: number; categoria: string }[];
-  parcelas: { numero: string; dataVencimento: string; valor: number }[];
+  parcelas: { numero: string; dataVencimento: string; valor: number; forma_pagamento: string; conta_bancaria_id: string }[];
 }
 
 interface SelectedFileItem {
@@ -85,6 +87,8 @@ function parseParcelasDoXml(xml: string) {
       numero: dup.querySelector("nDup")?.textContent || "",
       dataVencimento: dup.querySelector("dVenc")?.textContent || "",
       valor: parseFloat(dup.querySelector("vDup")?.textContent || "0"),
+      forma_pagamento: "Boleto",
+      conta_bancaria_id: "",
     }));
   } catch {
     return [];
@@ -109,6 +113,22 @@ function NotasRecebidas() {
         .abortSignal(signal);
       if (error) throw error;
       return [...new Set((data ?? []).map((p: any) => p.categoria).filter(Boolean))].sort() as string[];
+    },
+  });
+
+  // Contas financeiras para seleção de banco
+  const { data: contasBancarias = [] } = useQuery({
+    enabled: !!empresa,
+    queryKey: ["contas-bancarias-opts", empresa?.id],
+    queryFn: async ({ signal }) => {
+      const { data, error } = await supabase
+        .from("contas_bancarias")
+        .select("id, nome")
+        .eq("empresa_id", empresa!.id)
+        .order("nome")
+        .abortSignal(signal);
+      if (error) throw error;
+      return (data ?? []) as { id: string; nome: string }[];
     },
   });
 
@@ -258,7 +278,7 @@ function NotasRecebidas() {
     data: string;
     nNF: string;
     produtos: { codigo: string; nome: string; qtd: number; un: string; valorUnit: number; valorTotal: number; categoria: string }[];
-    parcelas: { numero: string; dataVencimento: string; valor: number }[];
+    parcelas: { numero: string; dataVencimento: string; valor: number; forma_pagamento: string; conta_bancaria_id: string }[];
     xml: string;
   } | null>(null);
 
@@ -277,7 +297,7 @@ function NotasRecebidas() {
       if (result.nota) {
         const xml = result.nota.xml;
         let produtos: { codigo: string; nome: string; qtd: number; un: string; valorUnit: number; valorTotal: number; categoria: string }[] = [];
-        let parcelas: { numero: string; dataVencimento: string; valor: number }[] = [];
+        let parcelas: { numero: string; dataVencimento: string; valor: number; forma_pagamento: string; conta_bancaria_id: string }[] = [];
         let nNF = "";
 
         if (xml) {
@@ -301,6 +321,8 @@ function NotasRecebidas() {
               numero: dup.querySelector("nDup")?.textContent || "",
               dataVencimento: dup.querySelector("dVenc")?.textContent || "",
               valor: parseFloat(dup.querySelector("vDup")?.textContent || "0"),
+              forma_pagamento: "Boleto",
+              conta_bancaria_id: "",
             }));
           } catch {
             // XML não parseável
@@ -462,6 +484,8 @@ function NotasRecebidas() {
         numero: dup.querySelector("nDup")?.textContent || "",
         dataVencimento: dup.querySelector("dVenc")?.textContent || "",
         valor: parseFloat(dup.querySelector("vDup")?.textContent || "0"),
+        forma_pagamento: "Boleto",
+        conta_bancaria_id: "",
       }));
 
       setImportResults({
@@ -646,7 +670,9 @@ function NotasRecebidas() {
               contato_id: fornecedorId,
               categoria_id: categoriaFinanceiraId,
               observacoes: `Chave: ${importResults.chave} | Parcela ${parc.numero}`,
-            })
+              forma_pagamento: (parc as any).forma_pagamento || "Boleto",
+              conta_bancaria_id: (parc as any).conta_bancaria_id || null,
+            } as any)
             .select("id")
             .single();
 
@@ -675,7 +701,9 @@ function NotasRecebidas() {
             contato_id: fornecedorId,
             categoria_id: categoriaFinanceiraId,
             observacoes: `Chave: ${importResults.chave}`,
-          })
+            forma_pagamento: "Boleto",
+            conta_bancaria_id: null,
+          } as any)
           .select("id")
           .single();
 
@@ -884,7 +912,9 @@ function NotasRecebidas() {
               contato_id: fornecedorId,
               categoria_id: categoriaFinanceiraId,
               observacoes: `Chave: ${notaDetalhe.chave} | Parcela ${parc.numero}`,
-            })
+              forma_pagamento: (parc as any).forma_pagamento || "Boleto",
+              conta_bancaria_id: (parc as any).conta_bancaria_id || null,
+            } as any)
             .select("id")
             .single();
 
@@ -1657,6 +1687,8 @@ ${transportadora ? `<div class="section"><div class="section-title">TRANSPORTE</
                         numero: String(novas.length + 1).padStart(3, "0"),
                         dataVencimento: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split("T")[0],
                         valor: 0,
+                        forma_pagamento: "Boleto",
+                        conta_bancaria_id: "",
                       });
                       setNotaDetalhe({ ...notaDetalhe, parcelas: novas });
                     }}
@@ -1670,7 +1702,7 @@ ${transportadora ? `<div class="section"><div class="section-title">TRANSPORTE</
                 {notaDetalhe.parcelas.length > 0 && (
                   <div className="space-y-2">
                     {notaDetalhe.parcelas.map((p, i) => (
-                      <div key={i} className="flex items-center gap-2">
+                      <div key={i} className="flex flex-wrap items-center gap-2">
                         <Input
                           className="h-8 w-16 text-xs font-mono text-center shrink-0"
                           value={p.numero}
@@ -1682,7 +1714,7 @@ ${transportadora ? `<div class="section"><div class="section-title">TRANSPORTE</
                         />
                         <Input
                           type="date"
-                          className="h-8 text-xs shrink-0 w-[150px]"
+                          className="h-8 text-xs shrink-0 w-[135px]"
                           value={p.dataVencimento}
                           onChange={(e) => {
                             const novas = [...notaDetalhe.parcelas];
@@ -1690,7 +1722,7 @@ ${transportadora ? `<div class="section"><div class="section-title">TRANSPORTE</
                             setNotaDetalhe({ ...notaDetalhe, parcelas: novas });
                           }}
                         />
-                        <div className="relative flex-1 max-w-[160px]">
+                        <div className="relative w-[130px] shrink-0">
                           <span className="absolute left-2 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">R$</span>
                           <Input
                             type="number"
@@ -1705,6 +1737,41 @@ ${transportadora ? `<div class="section"><div class="section-title">TRANSPORTE</
                             }}
                           />
                         </div>
+                        <Select
+                          value={(p as any).forma_pagamento || "Boleto"}
+                          onValueChange={(v) => {
+                            const novas = [...notaDetalhe.parcelas];
+                            novas[i] = { ...novas[i], forma_pagamento: v } as any;
+                            setNotaDetalhe({ ...notaDetalhe, parcelas: novas });
+                          }}
+                        >
+                          <SelectTrigger className="h-8 text-xs w-[150px] shrink-0">
+                            <SelectValue placeholder="Forma" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {FORMAS_PARCELA.map((f) => (
+                              <SelectItem key={f} value={f}>{f}</SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                        <Select
+                          value={(p as any).conta_bancaria_id || "__none__"}
+                          onValueChange={(v) => {
+                            const novas = [...notaDetalhe.parcelas];
+                            novas[i] = { ...novas[i], conta_bancaria_id: v === "__none__" ? "" : v } as any;
+                            setNotaDetalhe({ ...notaDetalhe, parcelas: novas });
+                          }}
+                        >
+                          <SelectTrigger className="h-8 text-xs w-[150px] shrink-0">
+                            <SelectValue placeholder="Banco/Caixa" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="__none__">Sem conta</SelectItem>
+                            {contasBancarias.map((c) => (
+                              <SelectItem key={c.id} value={c.id}>{c.nome}</SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
                         <TooltipProvider>
                           <Tooltip>
                             <TooltipTrigger asChild>
