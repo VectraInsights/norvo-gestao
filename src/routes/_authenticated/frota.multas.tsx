@@ -54,8 +54,10 @@ import {
   RefreshCw,
   RotateCcw,
   Search,
+  Settings2,
   Trash2,
 } from "lucide-react";
+import { Switch } from "@/components/ui/switch";
 import { useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -93,6 +95,14 @@ type Multa = {
 };
 
 type VeiculoOpcao = { id: string; placa: string; renavam: string | null };
+type ConfigSENATRAN = {
+  empresa_id: string;
+  endpoint: string | null;
+  usuario: string | null;
+  senha: string | null;
+  ativo: boolean;
+  ultima_sync: string | null;
+};
 
 const STATUS_COR: Record<string, string> = {
   aberta: "bg-warning/20 text-warning-foreground",
@@ -128,6 +138,15 @@ function Multas() {
   const [busca, setBusca] = useState("");
   const [filtroStatus, setFiltroStatus] = useState("todas");
   const [form, setForm] = useState(formVazio);
+  const [configOpen, setConfigOpen] = useState(false);
+  const [configForm, setConfigForm] = useState({
+    endpoint: "",
+    usuario: "",
+    senha: "",
+    ativo: false,
+  });
+  const setConfig = <K extends keyof typeof configForm>(k: K, v: (typeof configForm)[K]) =>
+    setConfigForm((f) => ({ ...f, [k]: v }));
   const set = <K extends keyof typeof form>(k: K, v: (typeof form)[K]) =>
     setForm((f) => ({ ...f, [k]: v }));
 
@@ -166,6 +185,58 @@ function Multas() {
       if (error) throw error;
       return (data ?? []) as unknown as VeiculoOpcao[];
     },
+  });
+
+  const { data: configSENATRAN } = useQuery({
+    enabled: !!empresa,
+    queryKey: ["multas-config", empresa?.id],
+    queryFn: async ({ signal }) => {
+      const { data, error } = await supabase
+        .from("multas_config" as never)
+        .select("*")
+        .eq("empresa_id", empresa!.id)
+        .abortSignal(signal)
+        .maybeSingle();
+      if (error) throw error;
+      return (data ?? null) as unknown as ConfigSENATRAN | null;
+    },
+  });
+
+  const openConfig = () => {
+    setConfigForm({
+      endpoint: configSENATRAN?.endpoint ?? "",
+      usuario: configSENATRAN?.usuario ?? "",
+      senha: configSENATRAN?.senha ?? "",
+      ativo: configSENATRAN?.ativo ?? false,
+    });
+    setConfigOpen(true);
+  };
+
+  const salvarConfig = useMutation({
+    mutationFn: async () => {
+      if (!empresa) throw new Error("Selecione uma empresa");
+      const payload: any = {
+        empresa_id: empresa.id,
+        endpoint: configForm.endpoint.trim() || null,
+        usuario: configForm.usuario.trim() || null,
+        senha: configForm.senha.trim() || null,
+        ativo: configForm.ativo,
+      };
+      const tbl = supabase.from("multas_config" as never) as any;
+      if (configSENATRAN) {
+        const { error } = await tbl.update(payload).eq("empresa_id", empresa.id);
+        if (error) throw error;
+      } else {
+        const { error } = await tbl.insert(payload);
+        if (error) throw error;
+      }
+    },
+    onSuccess: () => {
+      toast.success("Configuração SENATRAN salva");
+      setConfigOpen(false);
+      qc.invalidateQueries({ queryKey: ["multas-config"] });
+    },
+    onError: (e: Error) => toast.error(e.message),
   });
 
   const totalEmAberto = useMemo(() => {
@@ -312,10 +383,14 @@ function Multas() {
         description="Autos de infração dos veículos — cadastro manual ou sincronização SENATRAN."
         actions={
           <div className="flex gap-2">
+            <Button variant="outline" onClick={openConfig}>
+              <Settings2 className="mr-1 h-4 w-4" />
+              Configuração SENATRAN
+            </Button>
             <Button
               variant="outline"
               onClick={() => sincronizar.mutate()}
-              disabled={sincronizar.isPending}
+              disabled={sincronizar.isPending || !configSENATRAN?.ativo}
             >
               <RefreshCw
                 className={`mr-1 h-4 w-4 ${sincronizar.isPending ? "animate-spin" : ""}`}
@@ -620,6 +695,59 @@ function Multas() {
           </Table>
         </Card>
       )}
+
+      <Dialog open={configOpen} onOpenChange={setConfigOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Configuração SENATRAN</DialogTitle>
+          </DialogHeader>
+          <div className="grid gap-3">
+            <div className="flex items-center gap-2">
+              <Switch
+                checked={configForm.ativo}
+                onCheckedChange={(v) => setConfig("ativo", v)}
+              />
+              <Label>Integração ativa</Label>
+            </div>
+            <div>
+              <Label>Endpoint da API</Label>
+              <Input
+                placeholder="https://exemplo.com/api/multas"
+                value={configForm.endpoint}
+                onChange={(e) => setConfig("endpoint", e.target.value)}
+              />
+            </div>
+            <div>
+              <Label>Usuário</Label>
+              <Input
+                value={configForm.usuario}
+                onChange={(e) => setConfig("usuario", e.target.value)}
+              />
+            </div>
+            <div>
+              <Label>Senha</Label>
+              <Input
+                type="password"
+                value={configForm.senha}
+                onChange={(e) => setConfig("senha", e.target.value)}
+              />
+            </div>
+            {configSENATRAN?.ultima_sync && (
+              <p className="text-xs text-muted-foreground">
+                Última sincronização: {dateBR(configSENATRAN.ultima_sync)}
+              </p>
+            )}
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setConfigOpen(false)}>
+              Cancelar
+            </Button>
+            <Button onClick={() => salvarConfig.mutate()} disabled={salvarConfig.isPending}>
+              {salvarConfig.isPending ? "Salvando…" : "Salvar"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </>
   );
 }
