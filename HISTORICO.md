@@ -569,7 +569,18 @@ certificado tem estrutura PKCS12 não padrão ou se `extractPkcs12Native` precis
       abertas/contestadas vencidas ou vencendo em 30 dias; menu Frota ganhou Multas.
     - Pendente para ligar o automático: credencial do provedor SENATRAN (endpoint, usuário e
       senha em `multas_config` com ativo=true) e, se desejado, pg_cron — hoje a sincronização
-      é manual.
+      é manual.
+46. **Configuração SENATRAN na UI + fix git global — 29/08/2026**:
+    - Dialog de configuração SENATRAN na página `/frota/multas`: endpoint, usuário, senha,
+      toggle ativo, exibição da última sincronização. Botão Sincronizar só habilitado quando
+      a integração está ativa.
+    - Fix definitivo do login repetido no git: helper global `manager` (GCM) removido,
+      `credential.https://github.com.helper=wincred` mantido globalmente, `GCM_INTERACTIVE=never`
+      setado na env do usuário. Push/pull silenciosos em qualquer terminal.
+    - `.gitattributes` com `* text=auto eol=lf` (+ binários) — checkout sempre LF, fim dos
+      avisos e modificações fantasmas.
+    - `tsc --noEmit` limpo: 20 erros TS pré-existentes do remoto corrigidos (fiscal.*,
+      rh.adiantamentos, rh.comissoes, rh.folha).
 ---
 
 ## Regras de segurança

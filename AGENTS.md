@@ -128,8 +128,10 @@ sobrescrito pela env `NITRO_PRESET` (ex.: `node-server`, `vercel`).
   o connector `sincronizarMultasSENATRANFn` (`src/lib/multas-server.ts`) faz `GET {endpoint}`
   com Basic auth esperando `{ autuacoes: [{placa, renavam?, orgao_autuador?, auto_infracao?,
   data_infracao?, descricao?, valor?, data_vencimento?, pontos?}] }` e grava via RPC
-  `registrar_multas_senatran` (upsert por `auto_infracao`). Sem credencial configurada o botão
-  avisa e o cadastro manual cobre o dia a dia.
+  `registrar_multas_senatran` (upsert por `auto_infracao`). Dialog de configuração SENATRAN
+  na UI (`/frota/multas`: endpoint, usuário, senha, toggle ativo). Botão Sincronizar só
+  habilitado quando a integração está ativa. Sem credencial configurada o cadastro manual
+  cobre o dia a dia.
 - Módulos novos exigem entrada em `MODULOS` (`src/lib/permissoes.ts`) — `moduloDaRota()`
   deriva o módulo do primeiro segmento da rota. Membros existentes só veem o menu novo após
   o admin marcar o módulo em Configurações → Usuários (owner/admin sempre veem tudo).
