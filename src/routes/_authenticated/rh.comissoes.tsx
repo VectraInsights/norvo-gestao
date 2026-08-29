@@ -167,8 +167,8 @@ function ComissoesPage() {
   const excluir = useMutation({
     mutationFn: async (c: { id: string; lancamento_id: string | null }) => {
       if (c.lancamento_id) {
-        const { data: lanc } = await supabase.from("lancamentos_financeiros" as never)
-          .select("status").eq("id", c.lancamento_id).maybeSingle();
+        const { data: lanc } = await (supabase.from("lancamentos_financeiros" as never)
+          .select("status").eq("id", c.lancamento_id).maybeSingle() as any);
         if (lanc && lanc.status !== "pago") {
           const { error: eDel } = await supabase.from("lancamentos_financeiros").delete().eq("id", c.lancamento_id);
           if (eDel) throw eDel;

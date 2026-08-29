@@ -544,7 +544,8 @@ certificado tem estrutura PKCS12 não padrão ou se `extractPkcs12Native` precis
     - RH → Colaboradores: seção de motorista com **Último exame toxicológico** (obrigatório p/ cargos motorista, junto com nº/categoria da CNH) + campo read-only **Validade do toxicológico** (exame + 30 meses) com aviso quando vencendo/vencido.
     - Dashboard: alerta "Alertas & estoque baixo" lista separadamente **CNH** e **Toxicológico** por motorista ativo (vencido/vencendo em 30 dias).
     - Frota → Viagens: select de motorista exibe ⚠ (CNH/toxicológico vencendo em 30 dias) e **bloqueia salvar** quando a documentação está vencida.
-    - Merge com o remoto: unidos 160 commits (CT-e/MDF-e, CFOPs, financeiro, adiantamentos, cargos customizáveis) — conflito resolvido em `rh.colaboradores.tsx` (mantidos `toxico_exame` + `optante_vt`). Revisão pendente: erros TS pré-existentes do remoto em fiscal.*, rh.adiantamentos, rh.comissoes, rh.folha (não typecheckados no fluxo da outra sessão; build/smoke OK).
+    - Merge com o remoto: unidos 160 commits (CT-e/MDF-e, CFOPs, financeiro, adiantamentos, cargos customizáveis) — conflito resolvido em `rh.colaboradores.tsx` (mantidos `toxico_exame` + `optante_vt`).
+- Limpeza de tipagem: zerado o `tsc --noEmit` dos erros pré-existentes do remoto — casts `as unknown as`/`as any` em fiscal.cte/mdf/recebidas, `binary.raw.encode` p/ node-forge (fiscal.configuracoes), `rpc(... as never)` (rh.adiantamentos) e correção do `gerarEmLote` em rh.folha (contador real no toast em vez de `vars.length` sempre 0).
 
 ---
 

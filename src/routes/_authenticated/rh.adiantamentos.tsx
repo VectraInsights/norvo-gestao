@@ -114,7 +114,7 @@ function AdiantamentosPage() {
       if (error) throw error;
       // Recorrente: gera a primeira conta a pagar imediatamente (o cron diário é só fallback)
       if (recorrente) {
-        const { error: eGen } = await supabase.rpc("gerar_adiantamentos_recorrentes");
+        const { error: eGen } = await supabase.rpc("gerar_adiantamentos_recorrentes" as never);
         if (eGen) throw new Error(`Conta futura não gerada: ${eGen.message}`);
       }
     },

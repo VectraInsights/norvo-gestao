@@ -594,7 +594,7 @@ function NotasRecebidas() {
         let prodId: string;
         if (prodExistente) {
           prodId = prodExistente.id;
-          await supabase.from("produtos").update({ estoque_atual: (Number(prodExistente.estoque_atual) || 0) + p.qtd, preco_custo: p.valor, categoria: p.categoria || (prodExistente as any).categoria || null }).eq("id", prodId);
+          await (supabase.from("produtos") as any).update({ estoque_atual: (Number(prodExistente.estoque_atual) || 0) + p.qtd, preco_custo: p.valor, categoria: p.categoria || (prodExistente as any).categoria || null }).eq("id", prodId);
         } else {
           const { data: novoProd } = await supabase
             .from("produtos")
@@ -862,7 +862,7 @@ function NotasRecebidas() {
       for (const p of notaDetalhe.produtos) {
         totalQtd += p.qtd;
         const { data: prodExistente } = await supabase
-          .from("produtos")
+          .from("produtos" as any)
           .select("id, estoque_atual, categoria")
           .eq("empresa_id", empresa.id)
           .or(`codigo.eq.${p.codigo},nome.ilike.%${p.nome.slice(0, 10)}%`)
@@ -870,8 +870,8 @@ function NotasRecebidas() {
 
         let prodId: string;
         if (prodExistente) {
-          prodId = prodExistente.id;
-          await supabase.from("produtos").update({ estoque_atual: (Number(prodExistente.estoque_atual) || 0) + p.qtd, preco_custo: p.valorUnit, categoria: p.categoria || (prodExistente as any).categoria || null }).eq("id", prodId);
+          prodId = (prodExistente as any).id;
+          await (supabase.from("produtos") as any).update({ estoque_atual: (Number((prodExistente as any).estoque_atual) || 0) + p.qtd, preco_custo: p.valorUnit, categoria: p.categoria || (prodExistente as any).categoria || null }).eq("id", prodId);
         } else {
           const { data: novoProd } = await (supabase
             .from("produtos")
@@ -978,7 +978,7 @@ function NotasRecebidas() {
       (itensAntigos as any[] || []).forEach((it: any) => mapaAntigo.set(it.codigo, Number(it.quantidade) || 0));
 
       // 1. Atualizar nota
-      await supabase.from("notas_importadas" as never).update({ valor_total: notaDetalhe.valor, situacao: "lancada" } as any).eq("id", notaDetalhe.id as any);
+      await (supabase.from("notas_importadas" as never) as any).update({ valor_total: notaDetalhe.valor, situacao: "lancada" } as any).eq("id", notaDetalhe.id);
 
       // 2. Atualizar estoque por delta e recriar itens
       for (const p of notaDetalhe.produtos) {
@@ -989,14 +989,14 @@ function NotasRecebidas() {
         if (prodExistente) {
           prodId = (prodExistente as any).id;
           const novoEstoque = (Number((prodExistente as any).estoque_atual) || 0) + delta;
-          await supabase.from("produtos").update({ estoque_atual: novoEstoque, preco_custo: p.valorUnit, categoria: p.categoria || (prodExistente as any).categoria || null }).eq("id", prodId);
+          await (supabase.from("produtos") as any).update({ estoque_atual: novoEstoque, preco_custo: p.valorUnit, categoria: p.categoria || (prodExistente as any).categoria || null }).eq("id", prodId);
           if (delta !== 0) {
-            await supabase.from("movimentacoes_estoque").insert({ empresa_id: empresa.id, produto_id: prodId, tipo: delta > 0 ? "entrada" : "saida", quantidade: Math.abs(delta), custo_unitario: p.valorUnit, observacoes: `Ajuste NF-e ${notaDetalhe.nNF} alterada (Chave: ${notaDetalhe.chave})` });
+            await supabase.from("movimentacoes_estoque").insert({ empresa_id: empresa.id, produto_id: prodId!, tipo: delta > 0 ? "entrada" : "saida", quantidade: Math.abs(delta), custo_unitario: p.valorUnit, observacoes: `Ajuste NF-e ${notaDetalhe.nNF} alterada (Chave: ${notaDetalhe.chave})` });
           }
         } else {
           const { data: novoProd } = await (supabase.from("produtos").insert({ empresa_id: empresa.id, codigo: p.codigo, nome: p.nome, unidade: p.un, preco_custo: p.valorUnit, preco_venda: p.valorUnit * 1.4, estoque_atual: p.qtd, ativo: true, categoria: p.categoria || null } as any).select("id") as any).single();
           prodId = novoProd!.id;
-          await supabase.from("movimentacoes_estoque").insert({ empresa_id: empresa.id, produto_id: prodId, tipo: "entrada", quantidade: p.qtd, custo_unitario: p.valorUnit, observacoes: `Entrada NF-e ${notaDetalhe.nNF} alterada (Chave: ${notaDetalhe.chave})` });
+          await supabase.from("movimentacoes_estoque").insert({ empresa_id: empresa.id, produto_id: prodId!, tipo: "entrada", quantidade: p.qtd, custo_unitario: p.valorUnit, observacoes: `Entrada NF-e ${notaDetalhe.nNF} alterada (Chave: ${notaDetalhe.chave})` });
         }
       }
       // Itens removidos: devolver estoque

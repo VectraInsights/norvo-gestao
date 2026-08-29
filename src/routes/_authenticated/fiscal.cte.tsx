@@ -49,7 +49,7 @@ function CtePage() {
     queryFn: async (): Promise<CteDoc[]> => {
       const { data, error } = await supabase.from("cte_documentos" as any).select("id,numero,serie,status,valor_servico,chave_acesso,created_at,motivo_rejeicao,protocolo_sefaz").eq("empresa_id", empresa!.id).order("created_at", { ascending: false }).limit(100);
       if (error) throw error;
-      return (data ?? []) as CteDoc[];
+      return (data ?? []) as unknown as CteDoc[];
     },
   });
 
