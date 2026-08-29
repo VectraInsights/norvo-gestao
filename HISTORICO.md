@@ -555,6 +555,21 @@ certificado tem estrutura PKCS12 não padrão ou se `extractPkcs12Native` precis
     - `.gitattributes` com `* text=auto eol=lf` (+ binários): checkout sempre LF, fim dos
       avisos "LF will be replaced by CRLF" e das modificações fantasmas (ex.: `routeTree.gen.ts`).
 
+45. **Multas de trânsito na Frota (Base + integração SENATRAN) — 29/08/2026**:
+    - Migration `20260829100000`: `veiculos.renavam` (único por empresa) + tabela `multas`
+      (auto de infração único por empresa, placa/renavam/órgão/valor/vencimento/pontos,
+      status `aberta|paga|contestada`, origem `manual|senatran`) + `multas_config` (acesso só
+      service_role) + RPC `registrar_multas_senatran` (upsert por auto de infração).
+    - Página `/frota/multas`: CRUD manual completo, cards de totais (em aberto, vencidas,
+      pontos ativos), filtros por busca/situação, marcar paga/reabrir, exclusão com confirmação
+      e badge SENATRAN em autos sincronizados. Botão Sincronizar SENATRAN chama
+      `sincronizarMultasSENATRANFn` (connector GET no endpoint com Basic auth, contrato
+      documentado) — sem credencial configurada avisa e segue no cadastro manual.
+    - RENAVAM entrou no cadastro/tabela de veículos; Dashboard passa a alertar multas
+      abertas/contestadas vencidas ou vencendo em 30 dias; menu Frota ganhou Multas.
+    - Pendente para ligar o automático: credencial do provedor SENATRAN (endpoint, usuário e
+      senha em `multas_config` com ativo=true) e, se desejado, pg_cron — hoje a sincronização
+      é manual.
 ---
 
 ## Regras de segurança

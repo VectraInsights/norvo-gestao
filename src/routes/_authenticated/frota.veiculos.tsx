@@ -70,6 +70,7 @@ type Veiculo = {
   tipo: string | null;
   ano: number | null;
   rntrc: string | null;
+  renavam: string | null;
   km_atual: number | null;
   status: string;
   observacoes: string | null;
@@ -88,6 +89,7 @@ function formVazio() {
     tipo: "",
     ano: "",
     rntrc: "",
+    renavam: "",
     km_atual: "0",
     status: "ativo",
     observacoes: "",
@@ -134,6 +136,7 @@ function Veiculos() {
       tipo: v.tipo ?? "",
       ano: v.ano ? String(v.ano) : "",
       rntrc: v.rntrc ?? "",
+      renavam: v.renavam ?? "",
       km_atual: String(v.km_atual ?? 0),
       status: v.status,
       observacoes: v.observacoes ?? "",
@@ -153,6 +156,7 @@ function Veiculos() {
         tipo: form.tipo || null,
         ano: form.ano ? Number(form.ano) : null,
         rntrc: form.rntrc.trim() || null,
+        renavam: form.renavam.trim() || null,
         km_atual: Number(form.km_atual) || 0,
         status: form.status,
         observacoes: form.observacoes.trim() || null,
@@ -263,7 +267,7 @@ function Veiculos() {
                     onChange={(e) => set("marca_modelo", e.target.value)}
                   />
                 </div>
-                <div className="grid grid-cols-2 gap-3">
+                <div className="grid grid-cols-3 gap-3">
                   <div>
                     <Label>Tipo</Label>
                     <Input
@@ -280,6 +284,10 @@ function Veiculos() {
                   <div>
                     <Label>RNTRC</Label>
                     <Input value={form.rntrc} onChange={(e) => set("rntrc", e.target.value)} />
+                  </div>
+                  <div>
+                    <Label>RENAVAM</Label>
+                    <Input value={form.renavam} onChange={(e) => set("renavam", e.target.value)} />
                   </div>
                 </div>
                 <div>
@@ -348,6 +356,7 @@ function Veiculos() {
                 <TableHead>Tipo</TableHead>
                 <TableHead>Ano</TableHead>
                 <TableHead>RNTRC</TableHead>
+                <TableHead>RENAVAM</TableHead>
                 <TableHead className="text-right">KM</TableHead>
                 <TableHead>Status</TableHead>
                 <TableHead className="text-right">Ações</TableHead>
@@ -361,6 +370,7 @@ function Veiculos() {
                   <TableCell>{v.tipo ?? "—"}</TableCell>
                   <TableCell>{v.ano ?? "—"}</TableCell>
                   <TableCell className="text-tabular">{v.rntrc ?? "—"}</TableCell>
+                  <TableCell className="text-tabular">{v.renavam ?? "—"}</TableCell>
                   <TableCell className="text-right text-tabular">{num(v.km_atual ?? 0)}</TableCell>
                   <TableCell>
                     <Badge variant="secondary" className={STATUS_COR[v.status] ?? ""}>

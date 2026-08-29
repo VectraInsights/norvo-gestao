@@ -69,6 +69,13 @@ type CnhRow = {
   cnh_validade: string;
   toxico_exame: string | null;
 };
+type MultaAlertaRow = {
+  id: string;
+  placa: string;
+  valor: number;
+  data_vencimento: string;
+  auto_infracao: string | null;
+};
 
 function friendlyEmpresaError(error: { message?: string; code?: string }) {
   if (error.code === "23505" || error.message?.toLowerCase().includes("duplicate key")) {
@@ -243,6 +250,30 @@ function Dashboard() {
     },
   });
 
+  const { data: multasVencendo } = useQuery({
+    enabled: !!empresa,
+    queryKey: ["multas-vencendo", empresa?.id],
+    queryFn: async ({ signal }) => {
+      const limite = new Date(Date.now() + 31 * 86400_000).toISOString().slice(0, 10);
+      const { data, error } = await supabase
+        .from("multas" as never)
+        .select("id,placa,valor,data_vencimento,auto_infracao")
+        .eq("empresa_id", empresa!.id)
+        .in("status", ["aberta", "contestada"])
+        .not("data_vencimento", "is", null)
+        .lte("data_vencimento", limite)
+        .order("data_vencimento")
+        .abortSignal(signal);
+      if (error) throw error;
+      const rows = (data ?? []) as unknown as MultaAlertaRow[];
+      return rows.filter(
+        (m) =>
+          (new Date(m.data_vencimento + "T12:00:00").getTime() - Date.now()) / 86400_000 <=
+          30,
+      );
+    },
+  });
+
   const { data: proximosReceber } = useQuery({
     enabled: !!empresa,
     queryKey: ["proximos-receber", empresa?.id],
@@ -378,7 +409,10 @@ function Dashboard() {
               <h3 className="font-semibold">Alertas & estoque baixo</h3>
               <AlertTriangle className="h-4 w-4 text-warning-foreground" />
             </div>
-            {!alertas?.length && !stats?.estoqueBaixo?.length && !cnhVencendo?.length ? (
+            {!alertas?.length &&
+            !stats?.estoqueBaixo?.length &&
+            !cnhVencendo?.length &&
+            !multasVencendo?.length ? (
               <p className="text-sm text-muted-foreground">Nenhum alerta ativo. 🎉</p>
             ) : (
               <ul className="space-y-2">
@@ -436,6 +470,31 @@ function Dashboard() {
                       </Badge>
                     </li>
                   ))}
+                {multasVencendo?.map((m) => {
+                  const dias = Math.ceil(
+                    (new Date(m.data_vencimento + "T12:00:00").getTime() - Date.now()) /
+                      86400_000,
+                  );
+                  return (
+                    <li key={m.id} className="flex items-center justify-between text-sm">
+                      <span className="truncate">
+                        <strong>{m.placa}</strong> — multa{" "}
+                        {m.auto_infracao ? `auto ${m.auto_infracao}` : ""} {dias < 0 ? "vencida em" : "vence em"}{" "}
+                        {dateBR(m.data_vencimento)}
+                      </span>
+                      <Badge
+                        variant="secondary"
+                        className={
+                          dias < 0
+                            ? "bg-destructive/10 text-destructive"
+                            : "bg-warning/20 text-warning-foreground"
+                        }
+                      >
+                        {dias < 0 ? `${-dias}d atrás` : `${dias}d`}
+                      </Badge>
+                    </li>
+                  );
+                })}
                 {stats?.estoqueBaixo?.slice(0, 5).map((p) => (
                   <li key={p.id} className="flex items-center justify-between text-sm">
                     <span className="truncate">
