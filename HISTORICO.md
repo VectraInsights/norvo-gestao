@@ -547,7 +547,13 @@ certificado tem estrutura PKCS12 não padrão ou se `extractPkcs12Native` precis
     - Merge com o remoto: unidos 160 commits (CT-e/MDF-e, CFOPs, financeiro, adiantamentos, cargos customizáveis) — conflito resolvido em `rh.colaboradores.tsx` (mantidos `toxico_exame` + `optante_vt`).
 - Limpeza de tipagem: zerado o `tsc --noEmit` dos erros pré-existentes do remoto — casts `as unknown as`/`as any` em fiscal.cte/mdf/recebidas, `binary.raw.encode` p/ node-forge (fiscal.configuracoes), `rpc(... as never)` (rh.adiantamentos) e correção do `gerarEmLote` em rh.folha (contador real no toast em vez de `vars.length` sempre 0).
 
----
+44. **Git sem login repetido + fim de linha padronizado — 28/08/2026**:
+    - O PAT fine-grained saiu da URL do remote e foi para o **Windows Credential Manager**
+      (`cmdkey /generic:git:https://github.com`) com helper `wincred` só para o GitHub
+      (`credential.https://github.com.helper wincred`) — elimina as janelas do Git Credential
+      Manager e o token não fica mais exposto no `.git/config`.
+    - `.gitattributes` com `* text=auto eol=lf` (+ binários): checkout sempre LF, fim dos
+      avisos "LF will be replaced by CRLF" e das modificações fantasmas (ex.: `routeTree.gen.ts`).
 
 ---
 

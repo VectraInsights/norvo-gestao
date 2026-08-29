@@ -38,8 +38,11 @@ sobrescrito pela env `NITRO_PRESET` (ex.: `node-server`, `vercel`).
 - **Exe Windows**: wrapper Electron em `desktop/`. Carrega a URL da VERCEL numa janela própria.
   Rebuild: `cd desktop && npm install && npx electron-builder --win nsis` → saída em `desktop/release/`.
   Instalador portátil (target "portable") travava na extração nesta máquina — usar NSIS.
-- Repo é **privado**: pull/push exigem PAT fine-grained com Contents Read/Write no repo
-  (token fica embutido na URL do remote `.git/config`). NUNCA commitar tokens.
+- Repo é **privado**: pull/push exigem PAT fine-grained com Contents Read/Write no repo.
+  O PAT está guardado no **Windows Credential Manager** (helper `wincred`, configurado via
+  `git config credential.https://github.com.helper wincred`) — a URL do remote NÃO contém
+  token (`.git/config` só tem `https://github.com/VectraInsights/norvo-gestao.git`).
+  NUNCA commitar tokens nem colá-los na URL.
 
 ## Autenticação
 
