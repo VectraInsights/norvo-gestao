@@ -1,4 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { DateInput } from "@/components/erp/date-input";
 import { PageHeader } from "@/components/erp/page-header";
 import { EmptyState } from "@/components/erp/empty-state";
 import { Button } from "@/components/ui/button";
@@ -145,7 +146,7 @@ function TransferenciasPage() {
                 <div className="grid gap-2 sm:grid-cols-2">
                   <div className="space-y-1.5">
                     <Label>Data</Label>
-                    <Input type="date" value={data} onChange={(e) => setData(e.target.value)} />
+                    <DateInput value={data} onChange={setData} />
                   </div>
                   <div className="space-y-1.5">
                     <Label>Valor</Label>

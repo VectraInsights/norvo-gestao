@@ -1,5 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any -- tabelas novas ainda não estão em types.ts; padrão do projeto é cast as never/as any */
 import { createFileRoute } from "@tanstack/react-router";
+import { DateInput } from "@/components/erp/date-input";
 import { PageHeader } from "@/components/erp/page-header";
 import { EmptyState } from "@/components/erp/empty-state";
 import { Button } from "@/components/ui/button";
@@ -43,8 +44,8 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-import { Users, Plus, Trash2, X } from "lucide-react";
-import { useState } from "react";
+import { Users, Pencil, Plus, Trash2, X } from "lucide-react";
+import { useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEmpresaAtual } from "@/hooks/use-empresa";
@@ -83,6 +84,7 @@ type Colab = {
   cnh_categoria: string | null;
   cnh_validade: string | null;
   toxico_exame: string | null;
+  optante_vt: boolean;
 };
 
 const STATUS: Record<string, string> = {
@@ -155,6 +157,7 @@ function formInicial() {
     cnh_validade: "",
     toxico_exame: "",
     toxico_validade: "",
+    optante_vt: false,
   };
 }
 
@@ -197,14 +200,47 @@ function ColaboradoresPage() {
     },
   });
 
+  // quantos funcionários usam cada cargo (vínculo pelo NOME do cargo)
+  const usoCargo = (nome: string) =>
+    (colabs ?? []).filter(
+      (x) => (x.cargo ?? "").trim().toLowerCase() === nome.trim().toLowerCase(),
+    ).length;
+
+  // autocomplete do campo cargo: mostra todos ao focar, filtra conforme digita
+  const [cargoFoco, setCargoFoco] = useState(false);
+  const cargoSugestoes = useMemo(() => {
+    const q = form.cargo.trim().toLowerCase();
+    const nomes: string[] = [];
+    for (const c of cargos) {
+      if (
+        (!q || c.nome.toLowerCase().includes(q)) &&
+        !nomes.some((n) => n.toLowerCase() === c.nome.toLowerCase())
+      ) {
+        nomes.push(c.nome);
+      }
+    }
+    return nomes.slice(0, 12);
+  }, [cargos, form.cargo]);
+
   const [cargosOpen, setCargosOpen] = useState(false);
   const [novoCargo, setNovoCargo] = useState("");
+  const [cargoEditId, setCargoEditId] = useState<string | null>(null);
+  const [cargoEditNome, setCargoEditNome] = useState("");
+
+  // filtra a lista de cargos conforme o campo "novo cargo" (vazio = mostra todos), ordem alfabética
+  const cargosFiltrados = useMemo(() => {
+    const q = novoCargo.trim().toLowerCase();
+    const base = q ? cargos.filter((c) => c.nome.toLowerCase().includes(q)) : [...cargos];
+    return base.sort((a, b) => a.nome.localeCompare(b.nome, "pt-BR"));
+  }, [cargos, novoCargo]);
 
   const criarCargo = useMutation({
     mutationFn: async () => {
       if (!empresa) throw new Error("Selecione uma empresa");
       const nome = novoCargo.trim();
       if (!nome) throw new Error("Informe o nome do cargo");
+      const existe = cargos.some((c) => c.nome.toLowerCase() === nome.toLowerCase());
+      if (existe) throw new Error("Já existe um cargo com esse nome");
       const tbl = supabase.from("cargos" as never) as any;
       const { error } = await tbl.insert({ empresa_id: empresa.id, nome });
       if (error) {
@@ -216,6 +252,26 @@ function ColaboradoresPage() {
     onSuccess: () => {
       toast.success("Cargo criado");
       setNovoCargo("");
+      qc.invalidateQueries({ queryKey: ["cargos"] });
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+  const renomearCargo = useMutation({
+    mutationFn: async ({ id, nome }: { id: string; nome: string }) => {
+      const novo = nome.trim();
+      if (!novo) throw new Error("Informe o nome do cargo");
+      const tbl = supabase.from("cargos" as never) as any;
+      const { error } = await tbl.update({ nome: novo }).eq("id", id);
+      if (error) {
+        if (String(error.message).toLowerCase().includes("duplicate"))
+          throw new Error("Já existe um cargo com esse nome");
+        throw error;
+      }
+    },
+    onSuccess: () => {
+      toast.success("Cargo atualizado");
+      setCargoEditId(null);
       qc.invalidateQueries({ queryKey: ["cargos"] });
     },
     onError: (e: Error) => toast.error(e.message),
@@ -261,6 +317,7 @@ function ColaboradoresPage() {
       cnh_validade: c.cnh_validade ?? "",
       toxico_exame: c.toxico_exame ?? "",
       toxico_validade: c.toxico_exame ? soma30meses(c.toxico_exame) : "",
+      optante_vt: c.optante_vt ?? false,
     });
     setOpen(true);
   };
@@ -269,6 +326,14 @@ function ColaboradoresPage() {
     mutationFn: async () => {
       if (!empresa) throw new Error("Selecione uma empresa");
       validarForm(form);
+      if (form.cpf) {
+        const tbl2 = supabase.from("colaboradores" as never) as any;
+        const q = tbl2.select("id").eq("empresa_id", empresa.id).eq("cpf", form.cpf.trim()).limit(1);
+        const { data: existente } = await (editing ? q.neq("id", editing.id) : q);
+        if (existente && existente.length > 0) {
+          throw new Error("Já existe um colaborador com esse CPF nesta empresa");
+        }
+      }
       const payload: any = {
         empresa_id: empresa.id,
         nome: form.nome.trim(),
@@ -293,6 +358,7 @@ function ColaboradoresPage() {
         cnh_categoria: form.cnh_categoria.trim() || null,
         cnh_validade: form.cnh_validade || null,
         toxico_exame: form.toxico_exame || null,
+        optante_vt: form.optante_vt,
       };
       const tbl = supabase.from("colaboradores" as never) as any;
       if (editing) {
@@ -345,12 +411,18 @@ function ColaboradoresPage() {
                   <DialogTitle>Cargos</DialogTitle>
                 </DialogHeader>
                 <div className="flex items-end gap-2">
-                  <div className="flex-1">
+                  <div className="flex-1 space-y-1">
                     <Label>Novo cargo</Label>
                     <Input
-                      placeholder="Ex.: Motorista Operador"
+                      placeholder="Digite para filtrar ou criar"
                       value={novoCargo}
                       onChange={(e) => setNovoCargo(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter" && novoCargo.trim()) {
+                          e.preventDefault();
+                          criarCargo.mutate();
+                        }
+                      }}
                     />
                   </div>
                   <Button onClick={() => criarCargo.mutate()} disabled={criarCargo.isPending}>
@@ -358,38 +430,77 @@ function ColaboradoresPage() {
                   </Button>
                 </div>
                 <div className="max-h-64 overflow-y-auto rounded-md border">
-                  {!cargos.length ? (
-                    <p className="p-3 text-sm text-muted-foreground">Nenhum cargo disponível.</p>
+                  {!cargosFiltrados.length && !novoCargo.trim() ? (
+                    <p className="p-3 text-sm text-muted-foreground">Nenhum cargo cadastrado.</p>
                   ) : (
                     <ul className="divide-y text-sm">
-                      {cargos.map((c) => (
-                        <li key={c.id} className="flex items-center justify-between px-3 py-2">
-                          <span>
-                            {c.nome}
-                            {!c.empresa_id && (
-                              <span className="ml-2 rounded bg-muted px-1.5 py-0.5 text-xs text-muted-foreground">
-                                padrão
-                              </span>
+                      {cargosFiltrados.map((c) => {
+                        const usos = usoCargo(c.nome);
+                        const emEdicao = cargoEditId === c.id;
+                        return (
+                          <li key={c.id} className="flex items-center justify-between gap-2 px-3 py-2">
+                            {emEdicao ? (
+                              <form
+                                className="flex flex-1 items-center gap-2"
+                                onSubmit={(e) => {
+                                  e.preventDefault();
+                                  renomearCargo.mutate({ id: c.id, nome: cargoEditNome });
+                                }}
+                              >
+                                <Input
+                                  autoFocus
+                                  value={cargoEditNome}
+                                  onChange={(e) => setCargoEditNome(e.target.value)}
+                                  onBlur={() => setCargoEditId(null)}
+                                />
+                                <Button type="submit" size="sm" disabled={renomearCargo.isPending}>
+                                  Salvar
+                                </Button>
+                              </form>
+                            ) : (
+                              <>
+                                <span>
+                                  {c.nome}
+                                  {usos > 0 && (
+                                    <span className="ml-2 text-xs text-muted-foreground">
+                                      {usos} funcionário{usos > 1 ? "s" : ""}
+                                    </span>
+                                  )}
+                                </span>
+                                <span className="flex shrink-0 gap-1">
+                                  <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    className="h-7 w-7"
+                                    aria-label="Renomear"
+                                    onClick={() => { setCargoEditId(c.id); setCargoEditNome(c.nome); }}
+                                  >
+                                    <Pencil className="h-3.5 w-3.5" />
+                                  </Button>
+                                  <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    className="h-7 w-7"
+                                    aria-label="Excluir"
+                                    title={usos > 0 ? "Vinculado a funcionário(s) — não pode ser excluído" : "Excluir"}
+                                    disabled={usos > 0}
+                                    onClick={() => excluirCargo.mutate(c.id)}
+                                  >
+                                    <Trash2 className="h-3.5 w-3.5" />
+                                  </Button>
+                                </span>
+                              </>
                             )}
-                          </span>
-                          {c.empresa_id && (
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              className="h-7 w-7"
-                              onClick={() => excluirCargo.mutate(c.id)}
-                            >
-                              <Trash2 className="h-3.5 w-3.5" />
-                            </Button>
-                          )}
-                        </li>
-                      ))}
+                          </li>
+                        );
+                      })}
                     </ul>
                   )}
                 </div>
                 <p className="text-xs text-muted-foreground">
-                  Cargos marcados como "padrão" são do sistema e não podem ser excluídos. Viagens
-                  consideram motoristas todos os colaboradores com cargo contendo "Motorista".
+                  Crie, renomeie e exclua qualquer cargo. Só não é possível excluir um cargo
+                  vinculado ao cadastro de algum funcionário. Viagens consideram motoristas
+                  todos os colaboradores com cargo contendo "Motorista".
                 </p>
               </DialogContent>
             </Dialog>
@@ -410,13 +521,13 @@ function ColaboradoresPage() {
                 <DialogHeader>
                   <DialogTitle>{editing ? "Editar colaborador" : "Novo colaborador"}</DialogTitle>
                 </DialogHeader>
-                <div className="grid gap-3 max-h-[70vh] overflow-y-auto pr-1">
+                <div className="grid gap-3 max-h-[70vh] overflow-y-auto p-1">
                   <div className="grid grid-cols-2 gap-3">
-                    <div>
+                    <div className="space-y-1">
                       <Label>Nome *</Label>
                       <Input value={form.nome} onChange={(e) => set("nome", e.target.value)} />
                     </div>
-                    <div>
+                    <div className="space-y-1">
                       <Label>CPF *</Label>
                       <Input
                         placeholder="000.000.000-00"
@@ -426,29 +537,38 @@ function ColaboradoresPage() {
                     </div>
                   </div>
                   <div className="grid grid-cols-2 gap-3">
-                    <div>
+                    <div className="space-y-1">
                       <Label>Cargo *</Label>
-                      <Select
-                        value={form.cargo || undefined}
-                        onValueChange={(v) => set("cargo", v)}
-                      >
-                        <SelectTrigger>
-                          <SelectValue placeholder="Selecione o cargo" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {(cargos.some((c) => c.nome === form.cargo)
-                            ? cargos
-                            : [{ id: "__atual", nome: form.cargo, empresa_id: null }, ...cargos]
-                          ).map((c) => (
-                            <SelectItem key={c.id} value={c.nome}>
-                              {c.nome}
-                              {!c.empresa_id && c.id !== "__atual" ? " (padrão)" : ""}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
+                      <div className="relative">
+                        <Input
+                          placeholder="Digite ou selecione o cargo"
+                          value={form.cargo}
+                          onChange={(e) => set("cargo", e.target.value)}
+                          onFocus={() => setCargoFoco(true)}
+                          onBlur={() => setTimeout(() => setCargoFoco(false), 200)}
+                          autoComplete="off"
+                        />
+                        {cargoFoco && cargoSugestoes.length > 0 && (
+                          <div className="absolute z-20 mt-1 max-h-56 w-full overflow-y-auto rounded-md border bg-popover shadow-md">
+                            {cargoSugestoes.map((nome) => (
+                              <button
+                                type="button"
+                                key={nome}
+                                className="w-full px-3 py-2 text-left text-sm hover:bg-muted"
+                                onMouseDown={(e) => {
+                                  e.preventDefault();
+                                  set("cargo", nome);
+                                  setCargoFoco(false);
+                                }}
+                              >
+                                {nome}
+                              </button>
+                            ))}
+                          </div>
+                        )}
+                      </div>
                     </div>
-                    <div>
+                    <div className="space-y-1">
                       <Label>Status</Label>
                       <Select value={form.status} onValueChange={(v) => set("status", v)}>
                         <SelectTrigger>
@@ -465,7 +585,7 @@ function ColaboradoresPage() {
                     </div>
                   </div>
                   <div className="grid grid-cols-2 gap-3">
-                    <div>
+                    <div className="space-y-1">
                       <Label>E-mail</Label>
                       <Input
                         type="email"
@@ -473,7 +593,7 @@ function ColaboradoresPage() {
                         onChange={(e) => set("email", e.target.value)}
                       />
                     </div>
-                    <div>
+                    <div className="space-y-1">
                       <Label>Telefone(s) *</Label>
                       <div className="space-y-2">
                         {form.telefones.map((tel, i) => (
@@ -519,51 +639,47 @@ function ColaboradoresPage() {
                     </div>
                   </div>
                   <div className="grid grid-cols-2 gap-3">
-                    <div>
+                    <div className="space-y-1">
                       <Label>Salário base *</Label>
                       <MoneyInput
                         value={form.salario_base}
                         onChange={(v) => set("salario_base", v)}
                       />
                     </div>
-                    <div>
+                    <div className="space-y-1">
                       <Label>Data de admissão *</Label>
-                      <Input
-                        type="date"
+                      <DateInput
                         value={form.data_admissao}
-                        onChange={(e) => set("data_admissao", e.target.value)}
+                        onChange={(v) => set("data_admissao", v)}
                       />
                     </div>
                   </div>
                   <div className="grid grid-cols-2 gap-3">
-                    <div>
+                    <div className="space-y-1">
                       <Label>Data de demissão</Label>
-                      <Input
-                        type="date"
+                      <DateInput
                         value={form.data_demissao}
-                        onChange={(e) => set("data_demissao", e.target.value)}
+                        onChange={(v) => set("data_demissao", v)}
                       />
                     </div>
                     <div></div>
                   </div>
                   <div className="grid grid-cols-2 gap-3">
-                    <div>
+                    <div className="space-y-1">
                       <Label>PIX</Label>
                       <Input value={form.pix} onChange={(e) => set("pix", e.target.value)} />
                     </div>
-                    <div>
+                    <div className="space-y-1">
                       <Label>Banco</Label>
                       <Input value={form.banco} onChange={(e) => set("banco", e.target.value)} />
                     </div>
                   </div>
                   <div className="rounded-md border bg-muted/30 p-3">
                     <div className="mb-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-                      {form.cargo.toLowerCase().includes("motorist")
-                        ? "CNH (obrigatória para motoristas)"
-                        : "CNH (motoristas — opcional)"}
+                      CNH
                     </div>
                     <div className="grid grid-cols-3 gap-3">
-                      <div>
+                      <div className="space-y-1">
                         <Label>
                           Nº da CNH {form.cargo.toLowerCase().includes("motorist") ? "*" : ""}
                         </Label>
@@ -572,7 +688,7 @@ function ColaboradoresPage() {
                           onChange={(e) => set("cnh_numero", e.target.value)}
                         />
                       </div>
-                      <div>
+                      <div className="space-y-1">
                         <Label>
                           Categoria {form.cargo.toLowerCase().includes("motorist") ? "*" : ""}
                         </Label>
@@ -592,12 +708,11 @@ function ColaboradoresPage() {
                           </SelectContent>
                         </Select>
                       </div>
-                      <div>
+                      <div className="space-y-1">
                         <Label>Validade</Label>
-                        <Input
-                          type="date"
+                        <DateInput
                           value={form.cnh_validade}
-                          onChange={(e) => set("cnh_validade", e.target.value)}
+                          onChange={(v) => set("cnh_validade", v)}
                         />
                       </div>
                     </div>
@@ -638,19 +753,27 @@ function ColaboradoresPage() {
                     )}
                   </div>
                   <div className="grid grid-cols-2 gap-3">
-                    <div>
+                    <div className="space-y-1">
                       <Label>Agência</Label>
                       <Input
                         value={form.agencia}
                         onChange={(e) => set("agencia", e.target.value)}
                       />
                     </div>
-                    <div>
+                    <div className="space-y-1">
                       <Label>Conta</Label>
                       <Input value={form.conta} onChange={(e) => set("conta", e.target.value)} />
                     </div>
                   </div>
-                  <div>
+                  <label className="flex items-center gap-2 text-sm">
+                    <input
+                      type="checkbox"
+                      checked={form.optante_vt}
+                      onChange={(e) => set("optante_vt", e.target.checked)}
+                    />
+                    Optante pelo Vale-Transporte (desconto de 6% sobre salário base na folha)
+                  </label>
+                  <div className="space-y-1">
                     <Label>Observações</Label>
                     <Textarea
                       rows={2}
@@ -698,7 +821,7 @@ function ColaboradoresPage() {
             </TableHeader>
             <TableBody>
               {colabs.map((c) => (
-                <TableRow key={c.id} className="cursor-pointer" onClick={() => openEdit(c)}>
+                <TableRow key={c.id}>
                   <TableCell className="font-medium">{c.nome}</TableCell>
                   <TableCell>{c.cargo ?? "—"}</TableCell>
                   <TableCell>{STATUS[c.status] ?? c.status}</TableCell>
@@ -706,28 +829,33 @@ function ColaboradoresPage() {
                   <TableCell className="text-right text-tabular">
                     {brl(c.salario_base ?? 0)}
                   </TableCell>
-                  <TableCell onClick={(e) => e.stopPropagation()}>
-                    <AlertDialog>
-                      <AlertDialogTrigger asChild>
-                        <Button variant="ghost" size="icon" className="h-8 w-8">
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      </AlertDialogTrigger>
-                      <AlertDialogContent>
-                        <AlertDialogHeader>
-                          <AlertDialogTitle>Excluir colaborador?</AlertDialogTitle>
-                          <AlertDialogDescription>
-                            As folhas vinculadas também serão removidas.
-                          </AlertDialogDescription>
-                        </AlertDialogHeader>
-                        <AlertDialogFooter>
-                          <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                          <AlertDialogAction onClick={() => del.mutate(c.id)}>
-                            Excluir
-                          </AlertDialogAction>
-                        </AlertDialogFooter>
-                      </AlertDialogContent>
-                    </AlertDialog>
+                  <TableCell>
+                    <span className="flex justify-end gap-1">
+                      <Button variant="ghost" size="icon" className="h-8 w-8" title="Editar" onClick={() => openEdit(c)}>
+                        <Pencil className="h-4 w-4" />
+                      </Button>
+                      <AlertDialog>
+                        <AlertDialogTrigger asChild>
+                          <Button variant="ghost" size="icon" className="h-8 w-8">
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </AlertDialogTrigger>
+                        <AlertDialogContent>
+                          <AlertDialogHeader>
+                            <AlertDialogTitle>Excluir colaborador?</AlertDialogTitle>
+                            <AlertDialogDescription>
+                              As folhas vinculadas também serão removidas.
+                            </AlertDialogDescription>
+                          </AlertDialogHeader>
+                          <AlertDialogFooter>
+                            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                            <AlertDialogAction onClick={() => del.mutate(c.id)}>
+                              Excluir
+                            </AlertDialogAction>
+                          </AlertDialogFooter>
+                        </AlertDialogContent>
+                      </AlertDialog>
+                    </span>
                   </TableCell>
                 </TableRow>
               ))}

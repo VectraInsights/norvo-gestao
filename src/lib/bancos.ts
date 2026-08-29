@@ -1,11 +1,4 @@
-import bradesco from "@/assets/bancos/bradesco.png.asset.json";
-import itau from "@/assets/bancos/itau.png.asset.json";
-import sicoob from "@/assets/bancos/sicoob.png.asset.json";
 import c6 from "@/assets/bancos/c6.png.asset.json";
-import bb from "@/assets/bancos/bb.png.asset.json";
-import caixa from "@/assets/bancos/caixa.png.asset.json";
-import nubank from "@/assets/bancos/nubank.png.asset.json";
-import santander from "@/assets/bancos/santander.png.asset.json";
 import pagbank from "@/assets/bancos/pagbank.png.asset.json";
 import mercadopago from "@/assets/bancos/mercadopago.png.asset.json";
 
@@ -19,16 +12,19 @@ export type Banco = {
   logo: string;
 };
 
+// Logos normalizados: 512x512, fundo branco, mesmo canvas (public/bancos/*.png)
 // Ordem importa (mais específico primeiro na busca por alias)
 export const BANCOS: Banco[] = [
-  { slug: "bradesco",    nome: "Bradesco",       codigos: ["237"], aliases: ["bradesco"],                              logo: bradesco.url },
-  { slug: "itau",        nome: "Itaú",           codigos: ["341"], aliases: ["itau", "itaú", "itaú unibanco"],         logo: itau.url },
-  { slug: "sicoob",      nome: "Sicoob",         codigos: ["756", "748"], aliases: ["sicoob"],                         logo: sicoob.url },
+  { slug: "bradesco",    nome: "Bradesco",       codigos: ["237"], aliases: ["bradesco"],                              logo: "/bancos/bradesco.png" },
+  { slug: "itau",        nome: "Itaú",           codigos: ["341"], aliases: ["itau", "itaú", "itaú unibanco"],         logo: "/bancos/itau.png" },
+  { slug: "sicoob",      nome: "Sicoob",         codigos: ["756", "748"], aliases: ["sicoob"],                         logo: "/bancos/sicoob.png" },
+  { slug: "caixa",       nome: "Caixa",          codigos: ["104"], aliases: ["caixa", "caixa econômica", "cef"],       logo: "/bancos/caixa.png" },
+  { slug: "santander",   nome: "Santander",      codigos: ["033"], aliases: ["santander"],                             logo: "/bancos/santander.png" },
+  { slug: "nubank",      nome: "Nubank",         codigos: ["260"], aliases: ["nubank", "nu pagamentos"],               logo: "/bancos/nubank.png" },
+  { slug: "inter",       nome: "Inter",          codigos: ["077"], aliases: ["inter", "banco inter"],                  logo: "/bancos/inter.png" },
+  { slug: "bb",          nome: "Banco do Brasil",codigos: ["001"], aliases: ["banco do brasil", "bb", "bco brasil"],   logo: "/bancos/bb.png" },
+  { slug: "daycoval",    nome: "Daycoval",       codigos: ["707"], aliases: ["daycoval"],                               logo: "/bancos/daycoval.png" },
   { slug: "c6",          nome: "C6 Bank",        codigos: ["336"], aliases: ["c6", "c6 bank"],                         logo: c6.url },
-  { slug: "bb",          nome: "Banco do Brasil",codigos: ["001"], aliases: ["banco do brasil", "bb", "bco brasil"],   logo: bb.url },
-  { slug: "caixa",       nome: "Caixa",          codigos: ["104"], aliases: ["caixa", "caixa econômica", "cef"],       logo: caixa.url },
-  { slug: "nubank",      nome: "Nubank",         codigos: ["260"], aliases: ["nubank", "nu pagamentos"],               logo: nubank.url },
-  { slug: "santander",   nome: "Santander",      codigos: ["033"], aliases: ["santander"],                             logo: santander.url },
   { slug: "pagbank",     nome: "PagBank",        codigos: ["290"], aliases: ["pagbank", "pagseguro"],                  logo: pagbank.url },
   { slug: "mercadopago", nome: "Mercado Pago",   codigos: ["323"], aliases: ["mercado pago", "mercadopago"],           logo: mercadopago.url },
 ];

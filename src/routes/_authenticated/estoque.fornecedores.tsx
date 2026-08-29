@@ -1,12 +1,22 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { PageHeader } from "@/components/erp/page-header";
 import { EmptyState } from "@/components/erp/empty-state";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { Card } from "@/components/ui/card";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Users } from "lucide-react";
+import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Textarea } from "@/components/ui/textarea";
+import { Loader2, Plus, Search, Trash2, Users, Pencil } from "lucide-react";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEmpresaAtual } from "@/hooks/use-empresa";
+import { toast } from "sonner";
 
 export const Route = createFileRoute("/_authenticated/estoque/fornecedores")({
   component: Fornecedores,
@@ -15,35 +25,187 @@ export const Route = createFileRoute("/_authenticated/estoque/fornecedores")({
   ),
 });
 
+type Contato = {
+  id: string; nome: string; tipo: string;
+  documento: string | null; email: string | null; telefone: string | null;
+  cep: string | null; logradouro: string | null; numero: string | null;
+  complemento: string | null; bairro: string | null; cidade: string | null;
+  uf: string | null; observacoes: string | null;
+};
+
+const emptyForm = () => ({
+  nome: "", documento: "", email: "", telefone: "",
+  cep: "", logradouro: "", numero: "", complemento: "",
+  bairro: "", cidade: "", uf: "", observacoes: "",
+  isCliente: false, isFornecedor: true,
+});
+
+function onlyDigits(s: string) { return s.replace(/\D/g, ""); }
+
 function Fornecedores() {
   const { data: empresa } = useEmpresaAtual();
+  const qc = useQueryClient();
+  const [open, setOpen] = useState(false);
+  const [form, setForm] = useState(emptyForm);
+  const [editing, setEditing] = useState<Contato | null>(null);
+  const [deleting, setDeleting] = useState<Contato | null>(null);
+  const [lookingUp, setLookingUp] = useState(false);
+
   const { data: contatos, isLoading } = useQuery({
     enabled: !!empresa,
     queryKey: ["fornecedores", empresa?.id] as const,
     queryFn: async ({ signal }) => {
       const { data, error } = await supabase.from("contatos")
-        .select("id,nome,tipo,documento,email,telefone")
+        .select("id,nome,tipo,documento,email,telefone,cep,logradouro,numero,complemento,bairro,cidade,uf,observacoes")
         .eq("empresa_id", empresa!.id)
         .in("tipo", ["fornecedor", "ambos"])
         .order("nome").abortSignal(signal);
       if (error) throw error;
-      return data ?? [];
+      return (data ?? []) as Contato[];
     },
   });
 
+  const lookupCnpj = async () => {
+    const digits = onlyDigits(form.documento);
+    if (digits.length !== 14) return toast.error("CNPJ deve ter 14 dígitos");
+    setLookingUp(true);
+    try {
+      let d: any = null;
+      // Tenta BrasilAPI primeiro, depois ReceitaWS como fallback
+      for (const url of [
+        `https://brasilapi.com.br/api/cnpj/v1/${digits}`,
+        `https://receitaws.com.br/v1/cnpj/${digits}`,
+      ]) {
+        try {
+          const res = await fetch(url, { signal: AbortSignal.timeout(8000) });
+          if (res.ok) { d = await res.json(); break; }
+        } catch { /* tenta próxima */ }
+      }
+      if (!d) throw new Error("CNPJ não encontrado nas APIs públicas");
+      setForm((f) => ({
+        ...f,
+        documento: digits,
+        nome: d.razao_social || d.nome || d.nome_fantasia || f.nome,
+        email: d.email ?? f.email,
+        telefone: d.ddd_telefone_1 || d.telefone || f.telefone,
+        cep: d.cep ?? f.cep,
+        logradouro: d.logradouro ?? f.logradouro,
+        numero: d.numero ?? f.numero,
+        complemento: d.complemento ?? f.complemento,
+        bairro: d.bairro ?? f.bairro,
+        cidade: d.municipio || d.city || f.cidade,
+        uf: d.uf || d.state || f.uf,
+      }));
+      toast.success("Dados preenchidos a partir da Receita");
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Falha ao consultar CNPJ");
+    } finally {
+      setLookingUp(false);
+    }
+  };
+
+  const criar = useMutation({
+    mutationFn: async (input: ReturnType<typeof emptyForm>) => {
+      if (!empresa) throw new Error("Empresa não selecionada");
+      const tipo = input.isCliente && input.isFornecedor ? "ambos" : input.isFornecedor ? "fornecedor" : "cliente";
+      const doc = onlyDigits(input.documento);
+      if (doc) {
+        const { data: existente } = await supabase.from("contatos")
+          .select("id,nome").eq("empresa_id", empresa.id).eq("documento", doc).maybeSingle();
+        if (existente) throw new Error(`Já cadastrado: ${existente.nome}`);
+      }
+      const { error } = await supabase.from("contatos").insert({
+        empresa_id: empresa.id, nome: input.nome, tipo,
+        documento: doc || null, email: input.email || null, telefone: input.telefone || null,
+        cep: input.cep || null, logradouro: input.logradouro || null, numero: input.numero || null,
+        complemento: input.complemento || null, bairro: input.bairro || null,
+        cidade: input.cidade || null, uf: input.uf || null, observacoes: input.observacoes || null,
+      });
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      toast.success("Fornecedor criado");
+      setOpen(false); setForm(emptyForm());
+      qc.invalidateQueries({ queryKey: ["fornecedores"] });
+      qc.invalidateQueries({ queryKey: ["contatos"] });
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+  const editar = useMutation({
+    mutationFn: async (input: ReturnType<typeof emptyForm> & { id: string }) => {
+      if (!empresa) throw new Error("Empresa não selecionada");
+      const tipo = input.isCliente && input.isFornecedor ? "ambos" : input.isFornecedor ? "fornecedor" : "cliente";
+      const doc = onlyDigits(input.documento);
+      if (doc) {
+        const { data: existente } = await supabase.from("contatos")
+          .select("id,nome").eq("empresa_id", empresa.id).eq("documento", doc).neq("id", input.id).maybeSingle();
+        if (existente) throw new Error(`Já existe outro contato com este CPF/CNPJ: ${existente.nome}`);
+      }
+      const { error } = await supabase.from("contatos").update({
+        nome: input.nome, tipo,
+        documento: doc || null, email: input.email || null, telefone: input.telefone || null,
+        cep: input.cep || null, logradouro: input.logradouro || null, numero: input.numero || null,
+        complemento: input.complemento || null, bairro: input.bairro || null,
+        cidade: input.cidade || null, uf: input.uf || null, observacoes: input.observacoes || null,
+      }).eq("id", input.id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      toast.success("Fornecedor atualizado");
+      setOpen(false); setEditing(null); setForm(emptyForm());
+      qc.invalidateQueries({ queryKey: ["fornecedores"] });
+      qc.invalidateQueries({ queryKey: ["contatos"] });
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+  const excluir = useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase.from("contatos").delete().eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      toast.success("Fornecedor excluído");
+      setDeleting(null);
+      qc.invalidateQueries({ queryKey: ["fornecedores"] });
+      qc.invalidateQueries({ queryKey: ["contatos"] });
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+  const openEdit = (c: Contato) => {
+    setEditing(c);
+    setForm({
+      nome: c.nome, documento: c.documento ?? "", email: c.email ?? "", telefone: c.telefone ?? "",
+      cep: c.cep ?? "", logradouro: c.logradouro ?? "", numero: c.numero ?? "",
+      complemento: c.complemento ?? "", bairro: c.bairro ?? "", cidade: c.cidade ?? "",
+      uf: c.uf ?? "", observacoes: c.observacoes ?? "",
+      isCliente: c.tipo === "cliente" || c.tipo === "ambos",
+      isFornecedor: c.tipo === "fornecedor" || c.tipo === "ambos",
+    });
+    setOpen(true);
+  };
+
+  const openCreate = () => { setEditing(null); setForm(emptyForm()); setOpen(true); };
+
   return (
     <>
-      <PageHeader eyebrow="Estoque" title="Fornecedores" description="Fornecedores cadastrados para compras e reposição de estoque." />
+      <PageHeader eyebrow="Estoque" title="Fornecedores" description="Fornecedores cadastrados para compras e reposição de estoque."
+        actions={
+          <Button onClick={openCreate}><Plus className="mr-1 h-4 w-4" />Novo fornecedor</Button>
+        }
+      />
       {isLoading ? (
         <div className="space-y-2">{Array.from({ length: 4 }).map((_, i) => <div key={i} className="h-12 animate-pulse rounded-md bg-muted/30" />)}</div>
       ) : !contatos?.length ? (
-        <EmptyState icon={Users} title="Nenhum fornecedor" description="Cadastre fornecedores em Vendas & CRM › Clientes marcando o tipo Fornecedor." />
+        <EmptyState icon={Users} title="Nenhum fornecedor" description="Cadastre seu primeiro fornecedor." />
       ) : (
         <Card className="overflow-hidden shadow-panel">
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>Nome</TableHead><TableHead>Documento</TableHead><TableHead>Contato</TableHead>
+                <TableHead>Nome</TableHead><TableHead>Documento</TableHead><TableHead>Contato</TableHead><TableHead className="w-20" />
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -52,12 +214,109 @@ function Fornecedores() {
                   <TableCell className="font-medium">{c.nome}</TableCell>
                   <TableCell className="text-tabular">{c.documento ?? "—"}</TableCell>
                   <TableCell className="text-muted-foreground">{c.email ?? c.telefone ?? "—"}</TableCell>
+                  <TableCell className="text-right">
+                    <div className="flex items-center justify-end gap-1">
+                      <TooltipProvider>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Button size="sm" variant="ghost" className="h-7 w-7 p-0" onClick={() => openEdit(c)}>
+                              <Pencil className="h-3.5 w-3.5" />
+                            </Button>
+                          </TooltipTrigger>
+                          <TooltipContent>Editar</TooltipContent>
+                        </Tooltip>
+                      </TooltipProvider>
+                      <TooltipProvider>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Button size="sm" variant="ghost" className="h-7 w-7 p-0 text-destructive hover:bg-destructive/10" onClick={() => setDeleting(c)}>
+                              <Trash2 className="h-3.5 w-3.5" />
+                            </Button>
+                          </TooltipTrigger>
+                          <TooltipContent>Excluir</TooltipContent>
+                        </Tooltip>
+                      </TooltipProvider>
+                    </div>
+                  </TableCell>
                 </TableRow>
               ))}
             </TableBody>
           </Table>
         </Card>
       )}
+
+      <Dialog open={open} onOpenChange={(v) => { if (!criar.isPending && !editar.isPending) { setOpen(v); if (!v) { setEditing(null); setForm(emptyForm()); } } }}>
+        <DialogContent className="max-h-[90vh] overflow-y-auto">
+          <DialogHeader><DialogTitle>{editing ? "Editar fornecedor" : "Novo fornecedor"}</DialogTitle></DialogHeader>
+          <form onSubmit={(e) => { e.preventDefault(); if (editing) { editar.mutate({ ...form, id: editing.id }); } else { criar.mutate(form); } }} className="space-y-3">
+            <div>
+              <Label>CNPJ</Label>
+              <div className="flex gap-2">
+                <Input value={form.documento} onChange={(e) => setForm({ ...form, documento: e.target.value })}
+                  onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); lookupCnpj(); } }} />
+                <Button type="button" variant="outline" onClick={lookupCnpj} disabled={lookingUp || !form.documento}>
+                  {lookingUp ? <Loader2 className="h-4 w-4 animate-spin" /> : <Search className="h-4 w-4" />}
+                </Button>
+              </div>
+            </div>
+            <div><Label>Nome / Razão social *</Label><Input required value={form.nome} onChange={(e) => setForm({ ...form, nome: e.target.value })} /></div>
+            <div>
+              <Label>Tipo</Label>
+              <div className="flex gap-4 mt-2">
+                <label className="flex items-center gap-2 text-sm cursor-pointer">
+                  <Checkbox checked={form.isCliente} onCheckedChange={(v) => setForm({ ...form, isCliente: v === true })} /> Cliente
+                </label>
+                <label className="flex items-center gap-2 text-sm cursor-pointer">
+                  <Checkbox checked={form.isFornecedor} onCheckedChange={(v) => setForm({ ...form, isFornecedor: v === true })} /> Fornecedor
+                </label>
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div><Label>Email</Label><Input type="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} /></div>
+              <div><Label>Telefone</Label><Input value={form.telefone} onChange={(e) => setForm({ ...form, telefone: e.target.value })} /></div>
+            </div>
+            <div className="grid grid-cols-3 gap-3">
+              <div><Label>CEP</Label><Input value={form.cep} onChange={(e) => setForm({ ...form, cep: e.target.value })} /></div>
+              <div className="col-span-2"><Label>Logradouro</Label><Input value={form.logradouro} onChange={(e) => setForm({ ...form, logradouro: e.target.value })} /></div>
+            </div>
+            <div className="grid grid-cols-3 gap-3">
+              <div><Label>Número</Label><Input value={form.numero} onChange={(e) => setForm({ ...form, numero: e.target.value })} /></div>
+              <div className="col-span-2"><Label>Complemento</Label><Input value={form.complemento} onChange={(e) => setForm({ ...form, complemento: e.target.value })} /></div>
+            </div>
+            <div className="grid grid-cols-3 gap-3">
+              <div><Label>Bairro</Label><Input value={form.bairro} onChange={(e) => setForm({ ...form, bairro: e.target.value })} /></div>
+              <div><Label>Cidade</Label><Input value={form.cidade} onChange={(e) => setForm({ ...form, cidade: e.target.value })} /></div>
+              <div><Label>UF</Label><Input maxLength={2} value={form.uf} onChange={(e) => setForm({ ...form, uf: e.target.value.toUpperCase() })} /></div>
+            </div>
+            <div><Label>Observações</Label><Textarea rows={3} value={form.observacoes} onChange={(e) => setForm({ ...form, observacoes: e.target.value })} /></div>
+            <DialogFooter>
+              <Button type="submit" disabled={criar.isPending || editar.isPending}>
+                {(criar.isPending || editar.isPending) && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}Salvar
+              </Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
+
+      <AlertDialog open={!!deleting} onOpenChange={(v) => { if (!v) setDeleting(null); }}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Excluir fornecedor</AlertDialogTitle>
+            <AlertDialogDescription>
+              Tem certeza que deseja excluir <strong>{deleting?.nome}</strong>? Esta ação não pode ser desfeita.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              onClick={() => deleting && excluir.mutate(deleting.id)}
+            >
+              Excluir
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </>
   );
 }

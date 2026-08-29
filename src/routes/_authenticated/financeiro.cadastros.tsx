@@ -66,9 +66,9 @@ function CadastrosPage() {
       const norm = (s: string) =>
         s.trim().toLocaleLowerCase("pt-BR").normalize("NFD").replace(/\p{Diacritic}/gu, "");
       const duplicada = (categorias ?? []).some(
-        (c) => c.id !== catForm.id && norm(c.nome) === norm(catForm.nome),
+        (c) => c.id !== catForm.id && c.tipo === catForm.tipo && norm(c.nome) === norm(catForm.nome),
       );
-      if (duplicada) throw new Error("Já existe uma categoria com esse nome");
+      if (duplicada) throw new Error("Já existe uma categoria com esse nome para este tipo");
       const payload = {
         empresa_id: empresa.id,
         nome: catForm.nome.trim(),
@@ -78,7 +78,10 @@ function CadastrosPage() {
       const { error } = catForm.id
         ? await supabase.from("categorias_financeiras").update(payload).eq("id", catForm.id)
         : await supabase.from("categorias_financeiras").insert(payload);
-      if (error) throw error;
+      if (error) {
+        if ((error as any).code === "23505") throw new Error("Já existe uma categoria com esse nome para este tipo");
+        throw error;
+      }
     },
     onSuccess: () => {
       toast.success("Categoria salva");
@@ -103,7 +106,6 @@ function CadastrosPage() {
   });
 
   const pais = (categorias ?? []).filter((c) => !c.parent_id);
-  const nomePai = (id: string | null) => pais.find((p) => p.id === id)?.nome ?? "—";
   const [catTipoTab, setCatTipoTab] = useState<"pagar" | "receber">("pagar");
   const categoriasFiltradas = (categorias ?? []).filter((c) => c.tipo === catTipoTab);
 
@@ -212,7 +214,6 @@ function CadastrosPage() {
                   <TableRow>
                     <TableHead>Nome</TableHead>
                     <TableHead>Tipo</TableHead>
-                    <TableHead>Categoria pai</TableHead>
                     <TableHead />
                   </TableRow>
                 </TableHeader>
@@ -225,7 +226,6 @@ function CadastrosPage() {
                           {c.tipo === "receber" ? "Receita" : "Despesa"}
                         </Badge>
                       </TableCell>
-                      <TableCell className="text-muted-foreground">{c.parent_id ? nomePai(c.parent_id) : "—"}</TableCell>
                       <TableCell className="text-right">
                         <Button variant="ghost" size="icon" aria-label="Editar"
                           onClick={() => { setCatForm({ id: c.id, nome: c.nome, tipo: c.tipo, parent_id: c.parent_id ?? "none" }); setCatOpen(true); }}>
@@ -312,18 +312,6 @@ function CadastrosPage() {
                 <SelectContent>
                   <SelectItem value="receber">Receita</SelectItem>
                   <SelectItem value="pagar">Despesa</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <div>
-              <Label>Categoria pai</Label>
-              <Select value={catForm.parent_id} onValueChange={(v) => setCatForm({ ...catForm, parent_id: v })}>
-                <SelectTrigger><SelectValue placeholder="Nenhuma (categoria principal)" /></SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="none">Nenhuma (categoria principal)</SelectItem>
-                  {pais.filter((p) => p.tipo === catForm.tipo && p.id !== catForm.id).map((p) => (
-                    <SelectItem key={p.id} value={p.id}>{p.nome}</SelectItem>
-                  ))}
                 </SelectContent>
               </Select>
             </div>

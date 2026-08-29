@@ -1,4 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { DateInput } from "@/components/erp/date-input";
 import { PageHeader } from "@/components/erp/page-header";
 import { EmptyState } from "@/components/erp/empty-state";
 import { Button } from "@/components/ui/button";
@@ -11,7 +12,7 @@ import { MoneyInput } from "@/components/erp/money-input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Banknote, Plus, ChevronRight, Trash2, CheckCircle2 } from "lucide-react";
+import { Banknote, Plus, ChevronRight, Trash2, HandCoins } from "lucide-react";
 import { useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -232,11 +233,11 @@ function EmprestimosPage() {
                 <div className="grid gap-2 sm:grid-cols-2">
                   <div className="space-y-1.5">
                     <Label>Contratação</Label>
-                    <Input type="date" value={contratacao} onChange={(e) => setContratacao(e.target.value)} />
+                    <DateInput value={contratacao} onChange={setContratacao} />
                   </div>
                   <div className="space-y-1.5">
                     <Label>1º vencimento</Label>
-                    <Input type="date" value={primeiro} onChange={(e) => setPrimeiro(e.target.value)} />
+                    <DateInput value={primeiro} onChange={setPrimeiro} />
                   </div>
                 </div>
                 {previa && (
@@ -317,7 +318,7 @@ function EmprestimosPage() {
                       onClick={() => gerarContasPagar.mutate(emprestimoSel.id)}
                       disabled={gerarContasPagar.isPending}
                     >
-                      <CheckCircle2 className="mr-1.5 h-4 w-4" /> Gerar contas a pagar
+                      <HandCoins className="mr-1.5 h-4 w-4" /> Gerar contas a pagar
                     </Button>
                     <Button size="sm" variant="ghost" aria-label="Excluir contrato" onClick={() => excluir.mutate(emprestimoSel.id)}>
                       <Trash2 className="h-4 w-4" />

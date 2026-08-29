@@ -34,7 +34,9 @@ import { Route as AuthenticatedFrotaVeiculosRouteImport } from './routes/_authen
 import { Route as AuthenticatedFiscalRelatoriosRouteImport } from './routes/_authenticated/fiscal.relatorios'
 import { Route as AuthenticatedFiscalRecebidasRouteImport } from './routes/_authenticated/fiscal.recebidas'
 import { Route as AuthenticatedFiscalNotasRouteImport } from './routes/_authenticated/fiscal.notas'
+import { Route as AuthenticatedFiscalMdfRouteImport } from './routes/_authenticated/fiscal.mdf'
 import { Route as AuthenticatedFiscalEmitidasRouteImport } from './routes/_authenticated/fiscal.emitidas'
+import { Route as AuthenticatedFiscalCteRouteImport } from './routes/_authenticated/fiscal.cte'
 import { Route as AuthenticatedFiscalContadorRouteImport } from './routes/_authenticated/fiscal.contador'
 import { Route as AuthenticatedFiscalConfiguracoesRouteImport } from './routes/_authenticated/fiscal.configuracoes'
 import { Route as AuthenticatedFinanceiroTransferenciasRouteImport } from './routes/_authenticated/financeiro.transferencias'
@@ -195,12 +197,22 @@ const AuthenticatedFiscalNotasRoute =
     path: '/fiscal/notas',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedFiscalMdfRoute = AuthenticatedFiscalMdfRouteImport.update({
+  id: '/fiscal/mdf',
+  path: '/fiscal/mdf',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
 const AuthenticatedFiscalEmitidasRoute =
   AuthenticatedFiscalEmitidasRouteImport.update({
     id: '/fiscal/emitidas',
     path: '/fiscal/emitidas',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedFiscalCteRoute = AuthenticatedFiscalCteRouteImport.update({
+  id: '/fiscal/cte',
+  path: '/fiscal/cte',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
 const AuthenticatedFiscalContadorRoute =
   AuthenticatedFiscalContadorRouteImport.update({
     id: '/fiscal/contador',
@@ -364,7 +376,9 @@ export interface FileRoutesByFullPath {
   '/financeiro/transferencias': typeof AuthenticatedFinanceiroTransferenciasRoute
   '/fiscal/configuracoes': typeof AuthenticatedFiscalConfiguracoesRoute
   '/fiscal/contador': typeof AuthenticatedFiscalContadorRoute
+  '/fiscal/cte': typeof AuthenticatedFiscalCteRoute
   '/fiscal/emitidas': typeof AuthenticatedFiscalEmitidasRoute
+  '/fiscal/mdf': typeof AuthenticatedFiscalMdfRoute
   '/fiscal/notas': typeof AuthenticatedFiscalNotasRoute
   '/fiscal/recebidas': typeof AuthenticatedFiscalRecebidasRoute
   '/fiscal/relatorios': typeof AuthenticatedFiscalRelatoriosRoute
@@ -413,7 +427,9 @@ export interface FileRoutesByTo {
   '/financeiro/transferencias': typeof AuthenticatedFinanceiroTransferenciasRoute
   '/fiscal/configuracoes': typeof AuthenticatedFiscalConfiguracoesRoute
   '/fiscal/contador': typeof AuthenticatedFiscalContadorRoute
+  '/fiscal/cte': typeof AuthenticatedFiscalCteRoute
   '/fiscal/emitidas': typeof AuthenticatedFiscalEmitidasRoute
+  '/fiscal/mdf': typeof AuthenticatedFiscalMdfRoute
   '/fiscal/notas': typeof AuthenticatedFiscalNotasRoute
   '/fiscal/recebidas': typeof AuthenticatedFiscalRecebidasRoute
   '/fiscal/relatorios': typeof AuthenticatedFiscalRelatoriosRoute
@@ -464,7 +480,9 @@ export interface FileRoutesById {
   '/_authenticated/financeiro/transferencias': typeof AuthenticatedFinanceiroTransferenciasRoute
   '/_authenticated/fiscal/configuracoes': typeof AuthenticatedFiscalConfiguracoesRoute
   '/_authenticated/fiscal/contador': typeof AuthenticatedFiscalContadorRoute
+  '/_authenticated/fiscal/cte': typeof AuthenticatedFiscalCteRoute
   '/_authenticated/fiscal/emitidas': typeof AuthenticatedFiscalEmitidasRoute
+  '/_authenticated/fiscal/mdf': typeof AuthenticatedFiscalMdfRoute
   '/_authenticated/fiscal/notas': typeof AuthenticatedFiscalNotasRoute
   '/_authenticated/fiscal/recebidas': typeof AuthenticatedFiscalRecebidasRoute
   '/_authenticated/fiscal/relatorios': typeof AuthenticatedFiscalRelatoriosRoute
@@ -515,7 +533,9 @@ export interface FileRouteTypes {
     | '/financeiro/transferencias'
     | '/fiscal/configuracoes'
     | '/fiscal/contador'
+    | '/fiscal/cte'
     | '/fiscal/emitidas'
+    | '/fiscal/mdf'
     | '/fiscal/notas'
     | '/fiscal/recebidas'
     | '/fiscal/relatorios'
@@ -564,7 +584,9 @@ export interface FileRouteTypes {
     | '/financeiro/transferencias'
     | '/fiscal/configuracoes'
     | '/fiscal/contador'
+    | '/fiscal/cte'
     | '/fiscal/emitidas'
+    | '/fiscal/mdf'
     | '/fiscal/notas'
     | '/fiscal/recebidas'
     | '/fiscal/relatorios'
@@ -614,7 +636,9 @@ export interface FileRouteTypes {
     | '/_authenticated/financeiro/transferencias'
     | '/_authenticated/fiscal/configuracoes'
     | '/_authenticated/fiscal/contador'
+    | '/_authenticated/fiscal/cte'
     | '/_authenticated/fiscal/emitidas'
+    | '/_authenticated/fiscal/mdf'
     | '/_authenticated/fiscal/notas'
     | '/_authenticated/fiscal/recebidas'
     | '/_authenticated/fiscal/relatorios'
@@ -821,11 +845,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedFiscalNotasRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/fiscal/mdf': {
+      id: '/_authenticated/fiscal/mdf'
+      path: '/fiscal/mdf'
+      fullPath: '/fiscal/mdf'
+      preLoaderRoute: typeof AuthenticatedFiscalMdfRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/fiscal/emitidas': {
       id: '/_authenticated/fiscal/emitidas'
       path: '/fiscal/emitidas'
       fullPath: '/fiscal/emitidas'
       preLoaderRoute: typeof AuthenticatedFiscalEmitidasRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/fiscal/cte': {
+      id: '/_authenticated/fiscal/cte'
+      path: '/fiscal/cte'
+      fullPath: '/fiscal/cte'
+      preLoaderRoute: typeof AuthenticatedFiscalCteRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/fiscal/contador': {
@@ -1009,7 +1047,9 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedFinanceiroTransferenciasRoute: typeof AuthenticatedFinanceiroTransferenciasRoute
   AuthenticatedFiscalConfiguracoesRoute: typeof AuthenticatedFiscalConfiguracoesRoute
   AuthenticatedFiscalContadorRoute: typeof AuthenticatedFiscalContadorRoute
+  AuthenticatedFiscalCteRoute: typeof AuthenticatedFiscalCteRoute
   AuthenticatedFiscalEmitidasRoute: typeof AuthenticatedFiscalEmitidasRoute
+  AuthenticatedFiscalMdfRoute: typeof AuthenticatedFiscalMdfRoute
   AuthenticatedFiscalNotasRoute: typeof AuthenticatedFiscalNotasRoute
   AuthenticatedFiscalRecebidasRoute: typeof AuthenticatedFiscalRecebidasRoute
   AuthenticatedFiscalRelatoriosRoute: typeof AuthenticatedFiscalRelatoriosRoute
@@ -1060,7 +1100,9 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
     AuthenticatedFinanceiroTransferenciasRoute,
   AuthenticatedFiscalConfiguracoesRoute: AuthenticatedFiscalConfiguracoesRoute,
   AuthenticatedFiscalContadorRoute: AuthenticatedFiscalContadorRoute,
+  AuthenticatedFiscalCteRoute: AuthenticatedFiscalCteRoute,
   AuthenticatedFiscalEmitidasRoute: AuthenticatedFiscalEmitidasRoute,
+  AuthenticatedFiscalMdfRoute: AuthenticatedFiscalMdfRoute,
   AuthenticatedFiscalNotasRoute: AuthenticatedFiscalNotasRoute,
   AuthenticatedFiscalRecebidasRoute: AuthenticatedFiscalRecebidasRoute,
   AuthenticatedFiscalRelatoriosRoute: AuthenticatedFiscalRelatoriosRoute,

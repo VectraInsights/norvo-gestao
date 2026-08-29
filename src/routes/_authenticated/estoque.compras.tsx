@@ -1,4 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { DateInput } from "@/components/erp/date-input";
 import { PageHeader } from "@/components/erp/page-header";
 import { EmptyState } from "@/components/erp/empty-state";
 import { StatusBadge } from "@/components/erp/status-badge";
@@ -167,6 +168,12 @@ function Compras() {
     onSuccess: () => {
       toast.success("Ordem excluída");
       qc.invalidateQueries({ queryKey: ["ordens_compra"] });
+      qc.invalidateQueries({ queryKey: ["produtos"] });
+      qc.invalidateQueries({ queryKey: ["produtos-inventario"] });
+      qc.invalidateQueries({ queryKey: ["movs"] });
+      qc.invalidateQueries({ queryKey: ["produtos-select-mov"] });
+      qc.invalidateQueries({ queryKey: ["lancamentos"] });
+      qc.invalidateQueries({ queryKey: ["dashboard-stats"] });
     },
   });
 
@@ -202,7 +209,7 @@ function Compras() {
                   </div>
                   <div>
                     <Label>Previsão de entrega</Label>
-                    <Input type="date" value={dataPrev} onChange={(e) => setDataPrev(e.target.value)} />
+                    <DateInput value={dataPrev} onChange={setDataPrev} />
                   </div>
                   <div>
                     <Label>Conta p/ pagamento</Label>

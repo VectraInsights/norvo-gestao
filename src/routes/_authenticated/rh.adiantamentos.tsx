@@ -1,6 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { PageHeader } from "@/components/erp/page-header";
 import { EmptyState } from "@/components/erp/empty-state";
+import { DateInput } from "@/components/erp/date-input";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -11,7 +12,7 @@ import { MoneyInput } from "@/components/erp/money-input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { HandCoins, Plus, Trash2, CheckCircle2 } from "lucide-react";
+import { HandCoins, Pencil, Plus, Trash2 } from "lucide-react";
 import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -31,12 +32,13 @@ export const Route = createFileRoute("/_authenticated/rh/adiantamentos")({
 
 type Adiantamento = {
   id: string; colaborador_id: string | null; data: string; valor: number;
-  motivo: string | null; parcelas_desconto: number; status: string; lancamento_id: string | null;
+  motivo: string | null; recorrente: boolean; dia_recorrente: number | null;
+  status: string; lancamento_id: string | null;
   colaboradores?: { nome: string } | null;
 };
 
 const STATUS_LABEL: Record<string, string> = {
-  aberto: "Em aberto", descontado: "Descontado", cancelado: "Cancelado",
+  aberto: "Em aberto", descontado: "Pago", cancelado: "Cancelado",
 };
 
 function AdiantamentosPage() {
@@ -47,7 +49,9 @@ function AdiantamentosPage() {
   const [data, setData] = useState(format(new Date(), "yyyy-MM-dd"));
   const [valor, setValor] = useState("0");
   const [motivo, setMotivo] = useState("");
-  const [parcelas, setParcelas] = useState("1");
+  const [recorrente, setRecorrente] = useState(false);
+  const [diaRec, setDiaRec] = useState("20");
+  const [editando, setEditando] = useState<Adiantamento | null>(null);
 
   const { data: colabs = [] } = useQuery({
     enabled: !!empresa,
@@ -75,8 +79,22 @@ function AdiantamentosPage() {
     .reduce((s, a) => s + Number(a.valor), 0);
 
   const reset = () => {
-    setColaborador(""); setValor("0"); setMotivo(""); setParcelas("1");
+    setColaborador(""); setValor("0"); setMotivo("");
+    setRecorrente(false); setDiaRec("20");
     setData(format(new Date(), "yyyy-MM-dd"));
+  };
+
+  const fecharDialog = () => { setOpen(false); setEditando(null); reset(); };
+
+  const abrirEdicaoAdiant = (a: Adiantamento) => {
+    setEditando(a);
+    setColaborador(a.colaborador_id ?? "");
+    setData(a.data);
+    setValor(String(a.valor));
+    setMotivo(a.motivo ?? "");
+    setRecorrente(!!a.recorrente);
+    setDiaRec(a.dia_recorrente ? String(a.dia_recorrente) : "20");
+    setOpen(true);
   };
 
   const criar = useMutation({
@@ -84,17 +102,28 @@ function AdiantamentosPage() {
       if (!empresa) throw new Error("Selecione uma empresa");
       if (!colaborador) throw new Error("Selecione o colaborador");
       if ((Number(valor) || 0) <= 0) throw new Error("Informe o valor");
+      if (recorrente && !(Number(diaRec) >= 1 && Number(diaRec) <= 31))
+        throw new Error("Escolha o dia do mês do adiantamento recorrente");
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const { error } = await (supabase.from("adiantamentos" as never) as any).insert({
         empresa_id: empresa.id, colaborador_id: colaborador, data,
         valor: Number(valor) || 0, motivo: motivo || null,
-        parcelas_desconto: Math.max(1, Number(parcelas) || 1),
+        recorrente,
+        dia_recorrente: recorrente ? Number(diaRec) : null,
       });
       if (error) throw error;
+      // Recorrente: gera a primeira conta a pagar imediatamente (o cron diário é só fallback)
+      if (recorrente) {
+        const { error: eGen } = await supabase.rpc("gerar_adiantamentos_recorrentes");
+        if (eGen) throw new Error(`Conta futura não gerada: ${eGen.message}`);
+      }
     },
     onSuccess: () => {
-      toast.success("Adiantamento registrado");
+      toast.success(recorrente
+        ? `Adiantamento recorrente criado — conta gerada automaticamente todo dia ${diaRec}`
+        : "Adiantamento registrado");
       qc.invalidateQueries({ queryKey: ["adiantamentos"] });
+      qc.invalidateQueries({ queryKey: ["lancamentos"] });
       setOpen(false); reset();
     },
     onError: (e: Error) => toast.error(e.message),
@@ -104,11 +133,26 @@ function AdiantamentosPage() {
     mutationFn: async (a: Adiantamento) => {
       if (!empresa) throw new Error("Selecione uma empresa");
       if (a.lancamento_id) throw new Error("Adiantamento já lançado no financeiro");
+      const nome = a.colaboradores?.nome ?? "colaborador";
+      // categoria "Adiantamentos" (cria se não existir)
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const { data: cats } = await (supabase.from("categorias_financeiras") as any)
+        .select("id").eq("empresa_id", empresa.id).eq("tipo", "pagar").eq("nome", "Adiantamentos").limit(1);
+      let catId: string | null = cats?.[0]?.id ?? null;
+      if (!catId) {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const { data: nc, error: eCat } = await (supabase.from("categorias_financeiras") as any)
+          .insert({ empresa_id: empresa.id, nome: "Adiantamentos", tipo: "pagar" })
+          .select("id").single();
+        if (eCat) throw eCat;
+        catId = nc.id;
+      }
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const { data: lanc, error } = await (supabase.from("lancamentos_financeiros") as any).insert({
         empresa_id: empresa.id, tipo: "pagar", status: "aberto",
-        descricao: `Adiantamento — ${a.colaboradores?.nome ?? "colaborador"}`,
+        descricao: nome,
         valor: a.valor, data_emissao: a.data, data_vencimento: a.data,
+        categoria_id: catId,
       }).select("id").single();
       if (error) throw error;
       const { error: e2 } = await supabase.from("adiantamentos" as never)
@@ -123,27 +167,103 @@ function AdiantamentosPage() {
     onError: (e: Error) => toast.error(e.message),
   });
 
-  const marcarDescontado = useMutation({
-    mutationFn: async (id: string) => {
-      const { error } = await supabase.from("adiantamentos" as never)
-        .update({ status: "descontado" } as never).eq("id", id);
+  const salvarEdicao = useMutation({
+    mutationFn: async () => {
+      if (!editando) throw new Error("Nada para salvar");
+      if (!colaborador) throw new Error("Selecione o colaborador");
+      if ((Number(valor) || 0) <= 0) throw new Error("Informe o valor");
+      if (recorrente && !(Number(diaRec) >= 1 && Number(diaRec) <= 31))
+        throw new Error("Escolha o dia do mês do adiantamento recorrente");
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const { error } = await (supabase.from("adiantamentos" as never) as any).update({
+        colaborador_id: colaborador, data,
+        valor: Number(valor) || 0, motivo: motivo || null,
+        recorrente,
+        dia_recorrente: recorrente ? Number(diaRec) : null,
+      }).eq("id", editando.id);
       if (error) throw error;
     },
     onSuccess: () => {
-      toast.success("Adiantamento marcado como descontado");
+      toast.success("Adiantamento atualizado");
       qc.invalidateQueries({ queryKey: ["adiantamentos"] });
+      fecharDialog();
     },
     onError: (e: Error) => toast.error(e.message),
   });
 
   const excluir = useMutation({
-    mutationFn: async (id: string) => {
-      const { error } = await supabase.from("adiantamentos" as never).delete().eq("id", id);
+    mutationFn: async (a: Adiantamento) => {
+      if (!empresa) throw new Error("Selecione uma empresa");
+      // Remove a conta a pagar vinculada manualmente (se não estiver paga)
+      if (a.lancamento_id) {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const { data: lanc } = await (supabase.from("lancamentos_financeiros") as any)
+          .select("status").eq("id", a.lancamento_id).maybeSingle();
+        if (lanc && lanc.status !== "pago") {
+          const { error: eDel } = await supabase.from("lancamentos_financeiros")
+            .delete().eq("id", a.lancamento_id);
+          if (eDel) throw eDel;
+        }
+      }
+      // Recorrente: remove contas geradas automaticamente que ainda estejam em aberto
+      if (a.recorrente) {
+        const nome = a.colaboradores?.nome ?? "";
+        if (nome) {
+          const { error: eDel } = await supabase.from("lancamentos_financeiros")
+            .delete()
+            .eq("empresa_id", empresa.id)
+            .eq("observacoes", "Gerado automaticamente pelo adiantamento recorrente")
+            .eq("descricao", nome)
+            .neq("status", "pago");
+          if (eDel) throw eDel;
+        }
+      }
+      const { error } = await supabase.from("adiantamentos" as never).delete().eq("id", a.id);
       if (error) throw error;
     },
     onSuccess: () => {
-      toast.success("Adiantamento excluído");
+      toast.success("Adiantamento excluído — contas a pagar em aberto dele também foram removidas");
       qc.invalidateQueries({ queryKey: ["adiantamentos"] });
+      qc.invalidateQueries({ queryKey: ["lancamentos"] });
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+  const gerarEmLote = useMutation({
+    mutationFn: async () => {
+      if (!empresa) throw new Error("Selecione uma empresa");
+      const pendentes = (lista ?? []).filter((a) => !a.lancamento_id && !a.recorrente && a.status !== "cancelado");
+      if (pendentes.length === 0) throw new Error("Nenhum adiantamento pendente para gerar conta a pagar");
+
+      const { data: cats } = await (supabase.from("categorias_financeiras") as any)
+        .select("id").eq("empresa_id", empresa.id).eq("tipo", "pagar").eq("nome", "Adiantamentos").limit(1);
+      let catId: string | null = cats?.[0]?.id ?? null;
+      if (!catId) {
+        const { data: nc, error: eCat } = await (supabase.from("categorias_financeiras") as any)
+          .insert({ empresa_id: empresa.id, nome: "Adiantamentos", tipo: "pagar" })
+          .select("id").single();
+        if (eCat) throw eCat;
+        catId = nc.id;
+      }
+
+      for (const a of pendentes) {
+        const nome = a.colaboradores?.nome ?? "colaborador";
+        const { data: lanc, error } = await (supabase.from("lancamentos_financeiros") as any).insert({
+          empresa_id: empresa.id, tipo: "pagar", status: "aberto",
+          descricao: nome,
+          valor: a.valor, data_emissao: a.data, data_vencimento: a.data,
+          categoria_id: catId,
+        }).select("id").single();
+        if (error) throw error;
+        const { error: e2 } = await supabase.from("adiantamentos" as never)
+          .update({ lancamento_id: lanc.id } as never).eq("id", a.id);
+        if (e2) throw e2;
+      }
+    },
+    onSuccess: () => {
+      toast.success("Contas a pagar geradas");
+      qc.invalidateQueries({ queryKey: ["adiantamentos"] });
+      qc.invalidateQueries({ queryKey: ["lancamentos"] });
     },
     onError: (e: Error) => toast.error(e.message),
   });
@@ -153,14 +273,26 @@ function AdiantamentosPage() {
       <PageHeader
         eyebrow="DP"
         title="Adiantamentos"
-        description="Adiantamentos a colaboradores, com desconto parcelado e integração com contas a pagar."
+        description="Adiantamentos a colaboradores com integração automática ao contas a pagar — o status acompanha a baixa/conciliação do lançamento."
         actions={
-          <Dialog open={open} onOpenChange={(o) => { setOpen(o); if (!o) reset(); }}>
+          <div className="flex gap-2">
+            <Button variant="outline" disabled={gerarEmLote.isPending || !(lista ?? []).some(a => !a.lancamento_id && !a.recorrente && a.status !== "cancelado")}
+              onClick={() => { if (confirm(`Gerar conta(s) a pagar para ${(lista ?? []).filter(a => !a.lancamento_id && !a.recorrente && a.status !== "cancelado").length} adiantamento(s) pendente(s)?`)) gerarEmLote.mutate(); }}>
+              <HandCoins className="h-4 w-4 mr-1" />Gerar contas a pagar
+            </Button>
+            <Dialog open={open} onOpenChange={(o) => { if (!o) fecharDialog(); else setOpen(true); }}>
             <DialogTrigger asChild>
               <Button><Plus className="mr-1.5 h-4 w-4" /> Novo adiantamento</Button>
             </DialogTrigger>
             <DialogContent className="sm:max-w-md">
-              <DialogHeader><DialogTitle>Novo adiantamento</DialogTitle></DialogHeader>
+              <DialogHeader>
+                <DialogTitle>{editando ? "Editar adiantamento" : "Novo adiantamento"}</DialogTitle>
+                {editando && (
+                  <p className="text-xs text-muted-foreground">
+                    Depois de gerado no contas a pagar, edite o valor pela tela financeira.
+                  </p>
+                )}
+              </DialogHeader>
               <div className="grid gap-4">
                 <div className="space-y-1.5">
                   <Label>Colaborador</Label>
@@ -171,32 +303,58 @@ function AdiantamentosPage() {
                     </SelectContent>
                   </Select>
                 </div>
-                <div className="grid gap-2 sm:grid-cols-3">
+                <div className="grid gap-2 sm:grid-cols-2">
                   <div className="space-y-1.5">
                     <Label>Data</Label>
-                    <Input type="date" value={data} onChange={(e) => setData(e.target.value)} />
+                    <DateInput value={data} onChange={setData} />
                   </div>
                   <div className="space-y-1.5">
                     <Label>Valor</Label>
                     <MoneyInput value={valor} onChange={setValor} />
                   </div>
-                  <div className="space-y-1.5">
-                    <Label>Parcelas</Label>
-                    <Input type="number" min={1} value={parcelas} onChange={(e) => setParcelas(e.target.value)} />
-                  </div>
                 </div>
+                <label className="flex items-center gap-2 text-sm">
+                  <input
+                    type="checkbox"
+                    checked={recorrente}
+                    onChange={(e) => setRecorrente(e.target.checked)}
+                  />
+                  Recorrente
+                </label>
+                {recorrente && (
+                  <div className="space-y-1.5">
+                    <Label>Dia do pagamento</Label>
+                    <Select value={diaRec} onValueChange={setDiaRec}>
+                      <SelectTrigger><SelectValue /></SelectTrigger>
+                      <SelectContent className="max-h-56">
+                        {Array.from({ length: 31 }, (_, i) => i + 1).map((d) => (
+                          <SelectItem key={d} value={String(d)}>Todo dia {d}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    {Number(diaRec) >= 29 && (
+                      <p className="text-xs text-muted-foreground">
+                        Em meses sem dia {diaRec}, a conta é gerada no último dia do mês.
+                      </p>
+                    )}
+                  </div>
+                )}
                 <div className="space-y-1.5">
                   <Label>Motivo</Label>
                   <Input value={motivo} onChange={(e) => setMotivo(e.target.value)} placeholder="Opcional" />
                 </div>
               </div>
               <DialogFooter>
-                <Button onClick={() => criar.mutate()} disabled={criar.isPending}>
-                  {criar.isPending ? "Salvando..." : "Registrar"}
+                <Button
+                  onClick={() => (editando ? salvarEdicao.mutate() : criar.mutate())}
+                  disabled={criar.isPending || salvarEdicao.isPending}
+                >
+                  {criar.isPending || salvarEdicao.isPending ? "Salvando..." : editando ? "Salvar alterações" : "Registrar"}
                 </Button>
               </DialogFooter>
             </DialogContent>
           </Dialog>
+          </div>
         }
       />
 
@@ -206,12 +364,11 @@ function AdiantamentosPage() {
         <EmptyState
           icon={HandCoins}
           title="Nenhum adiantamento"
-          description="Registre adiantamentos salariais e acompanhe o desconto em folha."
+          description="Registre adiantamentos salariais — avulsos ou recorrentes mensais."
         />
       ) : (
         <Card className="shadow-panel">
           <div className="flex items-center justify-between border-b border-border/60 px-4 py-3 text-sm">
-            <span className="text-muted-foreground">{lista.length} registro(s)</span>
             <span className="font-semibold">Em aberto: {brl(emAberto)}</span>
           </div>
           <Table>
@@ -221,7 +378,7 @@ function AdiantamentosPage() {
                 <TableHead>Data</TableHead>
                 <TableHead>Motivo</TableHead>
                 <TableHead className="text-right">Valor</TableHead>
-                <TableHead className="text-right">Parcelas</TableHead>
+                <TableHead>Recorrência</TableHead>
                 <TableHead>Situação</TableHead>
                 <TableHead className="w-32" />
               </TableRow>
@@ -233,26 +390,47 @@ function AdiantamentosPage() {
                   <TableCell>{dateBR(a.data)}</TableCell>
                   <TableCell className="max-w-[200px] truncate text-muted-foreground">{a.motivo ?? "—"}</TableCell>
                   <TableCell className="text-right font-medium">{brl(a.valor)}</TableCell>
-                  <TableCell className="text-right text-muted-foreground">{a.parcelas_desconto}x</TableCell>
+                  <TableCell>
+                    {a.recorrente ? (
+                      <Badge variant="secondary">Todo dia {a.dia_recorrente}</Badge>
+                    ) : (
+                      <span className="text-muted-foreground">Avulso</span>
+                    )}
+                  </TableCell>
                   <TableCell><Badge variant="secondary">{STATUS_LABEL[a.status] ?? a.status}</Badge></TableCell>
                   <TableCell className="text-right">
-                    <Button
-                      size="icon" variant="ghost" aria-label="Gerar conta a pagar"
-                      disabled={!!a.lancamento_id || gerarPagamento.isPending}
-                      onClick={() => gerarPagamento.mutate(a)}
-                    >
-                      <HandCoins className="h-4 w-4" />
-                    </Button>
-                    <Button
-                      size="icon" variant="ghost" aria-label="Marcar como descontado"
-                      disabled={a.status !== "aberto"}
-                      onClick={() => marcarDescontado.mutate(a.id)}
-                    >
-                      <CheckCircle2 className="h-4 w-4" />
-                    </Button>
-                    <Button size="icon" variant="ghost" aria-label="Excluir" onClick={() => excluir.mutate(a.id)}>
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
+                    <div className="flex items-center justify-end gap-1">
+                      {!a.recorrente && !a.lancamento_id && (
+                        <Button
+                          size="icon" variant="ghost" aria-label="Gerar conta a pagar"
+                          title={a.lancamento_id ? "Já lançado no financeiro" : "Gerar conta a pagar"}
+                          disabled={!!a.lancamento_id || gerarPagamento.isPending}
+                          onClick={() => gerarPagamento.mutate(a)}
+                        >
+                          <HandCoins className="h-4 w-4" />
+                        </Button>
+                      )}
+                      <Button
+                        size="icon" variant="ghost" aria-label="Editar"
+                        title={a.lancamento_id ? "Já enviado ao contas a pagar — edite o valor pela tela financeira" : "Editar"}
+                        disabled={!!a.lancamento_id}
+                        onClick={() => abrirEdicaoAdiant(a)}
+                      >
+                        <Pencil className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        size="icon" variant="ghost" aria-label="Excluir"
+                        title={a.recorrente ? "Exclui o adiantamento e as contas em aberto geradas por ele" : "Excluir"}
+                        onClick={() => {
+                          if (confirm(a.recorrente
+                            ? "Excluir este adiantamento recorrente?\n\nAs contas a pagar EM ABERTO geradas por ele também serão removidas (as já pagas ficam no histórico)."
+                            : "Excluir este adiantamento?" + (a.lancamento_id ? "\n\nA conta a pagar vinculada também será removida." : "")))
+                            excluir.mutate(a);
+                        }}
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </div>
                   </TableCell>
                 </TableRow>
               ))}

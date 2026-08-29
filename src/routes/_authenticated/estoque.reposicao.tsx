@@ -1,4 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { DateInput } from "@/components/erp/date-input";
 import { PageHeader } from "@/components/erp/page-header";
 import { EmptyState } from "@/components/erp/empty-state";
 import { Button } from "@/components/ui/button";
@@ -303,7 +304,7 @@ function Reposicao() {
             </div>
             <div>
               <Label>Previsão de entrega</Label>
-              <Input type="date" value={dataPrev} onChange={(e) => setDataPrev(e.target.value)} />
+              <DateInput value={dataPrev} onChange={setDataPrev} />
             </div>
           </Card>
 

@@ -45,7 +45,48 @@ function isH3SwallowedErrorBody(body: string): boolean {
 }
 
 export default {
+  async scheduled(_event: unknown, env: Record<string, string>, ctx: { waitUntil: (p: Promise<unknown>) => void }) {
+    // Cloudflare Cron: 03–09 UTC (00–06 BRT) — reaproveita handleSefazCron
+    // Injeta env do Worker em process.env para o helper ler SUPABASE_URL/KEY
+    try {
+      if (typeof process !== "undefined" && env) {
+        for (const [k, v] of Object.entries(env)) (process.env as any)[k] = v;
+      }
+      const { handleSefazCron } = await import("./lib/sefaz-cron");
+      ctx.waitUntil(handleSefazCron().then(r => r.text().then(t => console.log("[scheduled] sefaz-cron", t)).catch(e => console.error("[scheduled] err", e))));
+    } catch (e) { console.error("[scheduled] fail", e); }
+  },
   async fetch(request: Request, env: unknown, ctx: unknown) {
+    // Proxy SEFAZ — roda no Vercel (Node.js com mTLS).
+    // No CF Worker, esta roda nunca é atingida (o Worker chama o Vercel).
+    const url = new URL(request.url);
+    if (url.pathname === "/api/sefaz" && request.method === "POST") {
+      try {
+        const { handleSefazProxy } = await import("./lib/sefaz-proxy");
+        return await handleSefazProxy(request);
+      } catch (error) {
+        console.error("[sefaz-proxy]", error);
+        return new Response(JSON.stringify({ error: String(error) }), {
+          status: 500,
+          headers: { "Content-Type": "application/json" },
+        });
+      }
+    }
+
+    // Cron SEFAZ — busca notas automaticamente 2x/dia
+    if (url.pathname === "/api/sefaz-cron" && request.method === "GET") {
+      try {
+        const { handleSefazCron } = await import("./lib/sefaz-cron");
+        return await handleSefazCron();
+      } catch (error) {
+        console.error("[sefaz-cron]", error);
+        return new Response(JSON.stringify({ error: String(error) }), {
+          status: 500,
+          headers: { "Content-Type": "application/json" },
+        });
+      }
+    }
+
     try {
       const handler = await getServerEntry();
       const response = await handler.fetch(request, env, ctx);

@@ -194,6 +194,353 @@ Registro condensado da evolução do Norvo Gestão fora do editor Lovable.
     contendo "Motorist". Para esses cargos, nº da CNH e categoria são OBRIGATÓRIOS
     (validação no app) e a categoria virou dropdown (ACC, A, B, AB, C, D, E).
 
+26. **Pacote de melhorias de DP/RH e UX (24/08/2026)** — feedback do dono após testar:
+    - **Adiantamento recorrente mensal**: campo "Parcelas" REMOVIDO (gerava 1 lançamento com
+      o total — bug). No lugar, checkbox "Recorrente mensal" + dia do pagamento (1–31).
+      Um job pg_cron (`adiantamentos-recorrentes`, diário 03:15 UTC) chama a função
+      `public.gerar_adiantamentos_recorrentes()`, que cria a conta a pagar do mês quando o
+      dia chega (idempotente via `ultimo_mes_gerado`; dia ≥29 cai no último dia do mês).
+      Avulsos continuam com botão manual de gerar conta.
+    - **Amarração adiantamento ↔ financeiro**: trigger `tg_lancamento_sync_adiantamento`
+      marca o adiantamento como PAGO automaticamente quando o lançamento vinculado é quitado
+      (baixa manual ou conciliação bancária); se o lançamento reabrir, volta a Em aberto.
+      Botão manual "Descontado" removido da UI.
+    - **Calendário em todos os campos de data**: componente `DateInput`
+      (`src/components/erp/date-input.tsx`) = input nativo + ícone que abre calendário
+      pt-BR. Substituiu os campos de data de 11 páginas. Exceção pedida pelo dono:
+      contas a pagar e a receber seguem com o input nativo simples.
+    - **Catálogo de cargos efetivos** (migration `20260824120000`): saíram os genéricos
+      ("Administrativo", "Financeiro", etc.); entraram ~47 cargos reais de transportadora
+      (Gerente/Supervisor/Encarregado/Analista/Assistente/Auxiliar de Transportes,
+      Logística, Frota, Pátio, Expedição..., Eletricista, Conferente, Operador de
+      Empilhadeira). Mantidos Motorista, Motorista Carreteiro, Mecânico, Ajudante,
+      Estoquista. 52 cargos padrão no total.
+    - **Comissões só para motoristas**: lista de colaboradores filtrada por cargo
+      ILIKE '%motorist%' (query própria, sem afetar adiantamentos/folha).
+    - **Férias: prazo concessivo corrigido** — antes era fim do aquisitivo +6m; agora o
+      período concessivo completo (+12m) com folga de 30 dias: limite = fim + 12m − 30d
+      (admissão 19/02/2024 → conceder até 19/01/2026).
+    - Título da seção CNH no cadastro virou apenas "CNH".
+    - Migração aplicada localmente via pooler (`scripts/apply-migration.cjs`, usa env
+      DATABASE_URL); teste da automação/trigger rodou em transação revertida.
+
+## Registro de manutenção — 24/08/2026 (tarde): adiantamentos e extrato
+
+- **Geração imediata**: ao cadastrar adiantamento recorrente, a 1ª conta a pagar nasce na
+  hora (UI chama a função de geração; `GRANT EXECUTE` para authenticated na migration
+  `20260824150000`). O pg_cron noturno continua como fallback dos meses seguintes.
+- **Dia útil** (migration `20260824170000`): vencimento que cair em sábado/domingo
+  antecipa para a sexta anterior. Lançamento existente do Victor (dia 20 → dom 20/09)
+  foi corrigido no banco para 18/09.
+- **Descrição/categoria**: lançamento de adiantamento (recorrente OU gerado na UI) fica
+  com descrição = nome do colaborador e categoria "Adiantamentos" (tipo pagar; criada
+  automaticamente por empresa se não existir). Sem prefixo "Adiantamento recorrente -".
+- **Bug de fuso no extrato**: colunas DATE ("YYYY-MM-DD") formatadas com date-fns direto
+  apareciam um dia a menos no fuso -3 (ex.: 20/09 mostrava 19/09). Corrigido com helper
+  `parseDia` (meia-noite local) no filtro, na tabela e no CSV.
+- Checkbox de recorrência simplificado para apenas "Recorrente" (sem texto explicativo).
+- DateInput: ícone nativo do input de data escondido (`::-webkit-calendar-picker-indicator`)
+  para não duplicar com o ícone do calendário pop-up. Import faltando corrigido em
+  rh.colaboradores.tsx; contas a pagar/receber voltaram ao input nativo (decisão do dono).
+- **Contas a pagar/receber**: "Lançado por" saiu da lista e aparece só dentro do diálogo
+  do lançamento (bug: a reconsulta de edição não pedia `created_by/created_at` — autor
+  nunca aparecia); vencimento da lista tinha o mesmo bug de fuso (17/09 → 18/09).
+- **Adiantamentos**: excluir agora remove também as contas a pagar EM ABERTO geradas por
+  ele (as pagas ficam no histórico); botão Editar habilitado enquanto o adiantamento não
+  foi enviado ao contas a pagar; recorrente sem lançamento vinculado também edita.
+- **Autoria das contas de recorrência** (migration `20260824180000`): `adiantamentos.created_by`
+  ganhou DEFAULT auth.uid() e a função de geração replica esse criador no lançamento —
+  contas geradas até de madrugada ficam com o nome de quem cadastrou a recorrência.
+  O marcador de recorrência fica JUNTO AO AUTOR na UI (não na descrição, que ficou só
+  com o nome do colaborador — migration `20260824190000` reverteu o sufixo).
+- **Limpeza garantida no banco** (migration `20260824200000`): trigger
+  `tg_adiantamento_delete` em adiantamentos remove as contas a pagar EM ABERTO ao excluir
+  o adiantamento (vinculada + automáticas da recorrência; pagas permanecem). Testado em
+  transação revertida: gerou → excluiu → conta sumiu. Órfãs deixadas por testes anteriores
+  foram removidas manualmente.
+- **Cargos customizáveis** (migrations `20260824210000` + `20260824220000`): dono pediu
+  liberdade total — primeiro o padrão foi apagado por engano de interpretação e RESTAURADO
+  em seguida (com acentos corrigidos; o arquivo original da 121200 estava com mojibake).
+  Estado final: catálogo padrão existe, mas TUDO é renomeável/excluível; exclusão bloqueada
+  no banco apenas quando o nome está vinculado a algum funcionário (trigger
+  `tg_cargo_guard`; em cargos padrão considera todas as empresas). Diálogo no RH mostra
+  "padrão", contagem de funcionários por cargo, renomear inline e excluir.
+
+- **Folha de pagamento — status "paga" só após conciliação** (migration
+  `20260825030000`, commit `dbe7af4`): fluxo antigo marcava folha como "paga" e o trigger
+  `tg_folha_paga` criava o lançamento financeiro já quitado — sem passar pela conciliação
+  bancária. Agora: botão "Pagar" cria `lancamentos_financeiros` com `status: "aberto"` e seta
+  folha como `"lançada"` (novo valor no enum `folha_status`). Quando o lançamento é conciliado
+  via extrato bancário, o novo trigger `tg_lancamento_pago_sincroniza_folha` sincroniza a folha
+  para "paga". Trigger antigo removido. Badge "lançada" em sky na UI; botões de edição/
+  exclusão ocultos para status "lançada" e "paga".
+
+- **Folha — excluir lançamento reverte status** (migration `20260825040000`, commit
+  `2b08a4b`): trigger `tg_lancamento_delete_sincroniza_folha` ao deletar
+  `lancamentos_financeiros` reverte folha para "aberta" e limpa `lancamento_id`. Fallback
+  no front (`financeiro.receber.tsx`) atualiza folha via client antes do DELETE + invalida
+  query `["folha"]`.
+
+- **Folha — descrição e categoria** (commit `cd940db`): descrição do lançamento agora é
+  `Nome — MM/AAAA` (antes `Folha MM/AAAA — Nome`). Categoria criada/busca por "Salário"
+  (antes "Folha de Pagamento"). Texto "pendente de conciliação" removido de tooltip/header/
+  toast. Botão excluir visível para todos os status (com confirm).
+
+- **Férias — formulário de concessão inline** (commit `1d87e9c`): formulário abre logo
+  abaixo do período selecionado (antes ficava no final da lista). Removido `({dias}d)` das
+  concessões.
+
+- **Férias — abono pecuniário** (commits `07ca74f`, `0947d4d`): campo começa vazio,
+  setinhas do input numérico removidas (`appearance:textfield`), pré-cálculo desconta abono
+  na data fim (30 − abono dias).
+
+- **Férias — prévia salarial com impostos** (commits `1f59520`, `ee124a0`, `d756d75`):
+  card de preview mostra férias bruto + ⅓, INSS progressivo 2026 (até R$ 988,09), IRRF
+  Lei 15.270/2025 (isento até R$ 5.000 do bruto, não do salário base). Abono pecuniário
+  isento de INSS/IRRF. 13º adiantado com desconto próprio.
+
+- **Férias — transição automática de status** (migration `20260825050000`, commit
+  `1f59520`): pg_cron diário (`ferias-status-automatico`, 00:05 UTC) roda
+  `atualizar_status_ferias()` que muda `agendada → em_gozo` (quando `data_inicio_gozo <=`
+  hoje) e `em_gozo → concluída` (quando `data_fim_gozo < hoje`). Função SECURITY DEFINER.
+
+## Registro de manutenção — 25/08/2026: Módulo Fiscal — SEFAZ (NFe) completo
+
+- **Certificado digital multi-tenant** (migration `20260825060000`): tabela `certificados_digitais`
+  (empresa_id, arquivo_path, thumbprint, validade, senha_cript, ativo) + bucket Storage `certificados`
+  (RLS por empresa). Upload de `.pfx` em `/configuracoes/fiscal` → validação via node-forge
+  (thumbprint, validade, subject/issuer) + inserção atômica. Senha armazenada criptografada
+  (service role); visualização de thumbprint/validade na UI sem expor o arquivo.
+
+- **Serviço SEFAZ core** (`src/lib/sefaz.ts`):
+  - Parse PKCS#12 (node-forge) → extrai chave privada + cadeia X.509
+  - Assinatura XML W3C (enveloped signature, SHA-1, canonicalização C14N exclusiva)
+  - SOAP 1.2 sobre HTTPS com mTLS (node-forge `https.Agent` com PFX + senha)
+  - Endpoints homologação por UF: SP (próprio), MG (próprio), GO, AM, PR, SC, BA, CE, PE, RS,
+    DEFAULT/SVRS para demais; NFeDistribuicaoDFe + RecepcaoEvento nacionais (Ambiente Nacional)
+  - Operações: `consultarDestinatario` (NFeDistribuicaoDFe), `enviarEventoManifestacao`
+    (210200/210210/210220), `emitirNFe` (NFeAutorizacao)
+
+- **Server functions** (`src/lib/sefaz-server.ts`):
+  - `consultarNFeDestinatarioFn`, `manifestarNFeFn`, `emitirNFeFn`, `verificarStatusServicoFn`
+  - Modo direto (Vercel/Node.js): `createServerFn` + mTLS direto (busca certificado no Supabase,
+    baixa do Storage, assina/envia)
+  - Modo proxy (Cloudflare Worker): env var `SEFAZ_URL` (ou `VITE_SEFAZ_URL`) apontando para
+    `/api/sefaz` no Vercel → o Worker chama o proxy via HTTP + Bearer service role key
+
+- **Proxy SEFAZ no Vercel** (`src/server.ts` intercepta `POST /api/sefaz` ANTES do TanStack Start):
+  - Handler puro Web APIs (`src/lib/sefaz-proxy.ts`, sem h3/Nitro)
+  - Autentica via `Authorization: Bearer <SUPABASE_SERVICE_ROLE_KEY>`
+  - Executa a mesma lógica mTLS das server functions
+  - Evita rota Nitro `server/api/sefaz.post.ts` (não registrava — TanStack Start captura entry)
+
+- **Frontend integrado**:
+  - `/fiscal/recebidas`: botões "Sincronizar" (consulta destinatário) e "Manifestar"
+    (Ciência/Confirmação/Desconhecimento) reais
+  - `/fiscal/emitidas`: "Emitir" real (assinatura + envio) com fallback simplificado
+  - `/fiscal/configuracoes`: upload `.pfx` → validação + preview thumbprint/validade
+
+- **Cloudflare Worker** (`norvo-gestao-cf`): preset `cloudflare-module`, env vars
+  `VITE_SEFAZ_URL=https://norvo-gestao.vercel.app/api/sefaz`,
+  `VITE_SUPABASE_URL`, `VITE_SUPABASE_PUBLISHABLE_KEY`, `VITE_SUPABASE_SERVICE_ROLE_KEY`.
+  Deploy automático no push (GitHub Actions via Wrangler). Worker NÃO faz mTLS (limitação
+  da plataforma) — delega ao Vercel.
+
+- **Commits**: `034c29c` (proxy), `81b767e` (endpoints corrigidos SVRS), `04e6de4` (todos estados).
+
+18. **Fix endpoints SEFAZ Nacionais (HTTP 404)**:
+   - O endpoint de **produção** `NFeDistribuicaoDFe` estava errado: `www.nfe.fazenda.gov.br` → `www1.nfe.fazenda.gov.br` (fonte: lista oficial SP Fazenda).
+   - O endpoint de **homologação** também estava errado: `www1.nfe.fazenda.gov.br` → `hom.nfe.fazenda.gov.br`.
+   - `NFeRecepcaoEvento4` em homologação: `www.nfe.fazenda.gov.br` → `hom.nfe.fazenda.gov.br`.
+   - Versão do `distDFeInt`: `1.01` → `1.00` (conforme WSDL e NT 2014.002).
+   - Commits: `b23580a` (Vercel), `e542dde` (CF).
+
+19. **Fix cUFAutor (cStat 137)**: código `91` hardcoded → código IBGE da UF da empresa via `getCodigoUf(uf)`.
+    Commits: `361bc6e`, `f48be91`.
+
+20. **Persistência do cursor SEFAZ (cStat 656 "Consumo Indevido")**:
+    - Coluna `last_nsu` adicionada à tabela `nfe_config` (migration `20260826150000`).
+    - Após cada consulta, `maxNSU` é salvo para retomar de onde parou.
+    - Se cStat 656 (outro sistema avançou o cursor), reseta automaticamente para zero e refaz.
+    - Toast exibe info de debug (cStat, endpoint, ambiente, CNPJ, cUFAutor).
+    Commits: `427283b`, `3aeaad1`.
+
+21. **Cron job SEFAZ 2x/dia** (`vercel.json` + `src/lib/sefaz-cron.ts`):
+    - Vercel Cron roda às 8h e 20h BRT (`0 11,23 * * *` UTC).
+    - Busca notas de todas as empresas com certificado ativo, 2s de pausa entre cada uma.
+    - Endpoint manual: `GET /api/sefaz-cron`.
+    - Commits: `eedf18b`, `b8007d1`.
+
+22. **PFX fallback para mTLS (LCP TRANSPORTES)**:
+    - Certificados A1 brasileiros com AES-256 + SHA-256 HMAC não são suportados pelo
+      `https.Agent` do Node.js (mesmo que `crypto.createPrivateKey` funcione).
+    - Solução: `createSefazAgent` agora **sempre** extrai key+cert via `extractPkcs12Native`
+      e passa separadamente ao Agent (nunca passa o PFX direto).
+    - Commits: `7063153`, `e7ff5bc`.
+
+23. **Olho na senha do certificado**: toggle show/hide no campo de senha do upload de PFX
+    em `/configuracoes/fiscal`. Commit: `17ffc72`.
+
+**Problema pendente**: LCP TRANSPORTES (CNPJ 01666018000190) ainda retorna
+"Unsupported PKCS12 PFX data". O fallback de extração via crypto nativo pode estar falhando
+no parse ASN.1 da cadeia de certificados (`extractCertChainFromPkcs12`). Investigar se o
+certificado tem estrutura PKCS12 não padrão ou se `extractPkcs12Native` precisa de ajuste.
+
+24. **Fix createSefazAgent — type pkcs12 inválido**: `crypto.createPrivateKey` do Node.js v24
+    não aceita `type: "pkcs12"`. Revertido para usar `pfx` direto no `https.Agent` (método
+    nativo correto). Commits: `3b9c687` (Vercel) / `4e33f83` (CF).
+
+25. **Cooldown 5 minutos entre consultas SEFAZ**: coluna `last_query_at` em `nfe_config`
+    (migration `20260827150000`). Proxy e server function verificam intervalo mínimo antes de
+    consultar. Se menos de 5min, retorna `cooldown: true` com `cooldownMinutos`. Front-end
+    mostra "Aguarde antes de sincronizar" com tempo restante. Evita cStat 656 "Consumo Indevido"
+    por consultas muito frequentes. Commits: `64e223a` (Vercel) / `df1d39d` (CF).
+
+26. **Timer de retry correto (cStat 656)**: `last_query_at` agora só é atualizado em consulta
+    SUCESSO (cStat 138/137). cStat 656 não mexe no timer — a contagem de 1h começa da última
+    vez que *conseguimos* consultar, não do último clique. Commits: `7a21484` / `2a53277`.
+
+27. **Cron job SEFAZ a cada 20min (00:00–07:00 BRT)**: `vercel.json` com
+    `*/20 3-9 * * *`. Cron pula empresa se `last_query_at` < 1h (evita cStat 656).
+    Commit: `c996d9e`.
+
+28. **Importar NF-e por chave de acesso**: nova função `consultarPorChave` usa `consChNFe`
+    (mesmo endpoint NFeDistribuicaoDFe). Botão "Importar por Chave" abre modal com input de
+    44 dígitos. Consulta SEFAZ, retorna dados da nota e adiciona à lista. Server function
+    `consultarNFePorChaveFn` + proxy handler `consultarChave`. Commit: `c996d9e`.
+
+29. **Fiscal — Notas Recebidas → Notas de Compra + correções de importação** (commits `5fbf1ce`, `e9f9cb3`, `ee6a98a`):
+    - Rename: `nav-config`/`breadcrumbs`/`command-palette`/`fiscal.relatorios`/`fiscal.contador` de
+      "Notas Recebidas" para **"Notas de Compra"** (revertido 1x por engano, voltado ao final).
+    - Fix exclusão de nota: cascade delete trocou ordem — parcelas são excluídas ANTES dos
+      `lancamentos_financeiros` para não violar FK `notas_importadas_parcelas.lancamento_id`
+      (`fiscal.recebidas.tsx`).
+    - Categoria obrigatória no import XML: `Input` + `datalist` (vazio quando sem produtos
+      categorizados) trocado por `Select` alimentado por `categorias_financeiras` (tipo pagar)
+      tanto no card `importResults` quanto no modal `notaDetalhe`. Validação `semCategoria` mantida.
+    - Financeiro programado: `handleConfirmarXmlUpload` agora parseia `cobr/dup` do XML (`parseParcelasDoXml`
+      inline), estende `ParsedXMLResult` com `parcelas`, exibe lista de parcelas no card (nDup/dVenc/vDup)
+      e na confirmação cria 1 lançamento por parcela (com `lancamento_id` linkado em `notas_importadas_parcelas`);
+      fallback cria 1 título 30d se XML sem dup. Antes criava 1 título fixo 30d ignorando o XML.
+    - Fix crash "Algo saiu do trilho": import `Select` faltava em `fiscal.recebidas.tsx` (Vite buildou,
+      runtime quebrou). Adicionado `Select, SelectContent, SelectItem, SelectTrigger, SelectValue`.
+
+30. **Deduplicação de categorias financeiras + Categoria pai removida** (commit `dedup` + este):
+    - Bug raiz: `rh.folha.tsx` buscava categoria Salário com `ilike "%sal%C3%A1rio%"` (URL-encoded)
+      que nunca casava no Postgres, então cada lançamento de folha fazia `INSERT "Salário"`,
+      gerando 8 duplicatas idênticas (screenshot). Sem constraint no banco, duplicava livremente.
+      Outras duplicatas: `Fornecedores` (2 empresas).
+    - Correção no código: `ilike "%Salário%"` + tratamento `23505` (unique violation) com retry
+      select; `financeiro.cadastros.tsx` validação de duplicata passou a considerar `tipo`
+      (`norm(c.nome) + c.tipo`) e também trata `23505` do banco.
+    - Banco: função `public.immutable_unaccent(text)` (wrapper IMMUTABLE do `unaccent`) +
+      índices únicos `uq_categorias_empresa_tipo_nome_unaccent` e `uq_categorias_empresa_tipo_nome_lower`
+      em `(empresa_id, tipo, lower(...trim(nome)))` — bloqueia duplicata case/acento-insensível
+      dentro do mesmo tipo. Deduplicação via `UPDATE lancamentos/parent_id + DELETE` já executada
+      em produção (8 Salário → 1, Fornecedores duplicados removidos).
+    - Migration `20260828000000_dedup_categorias_financeiras.sql` espelha o fix para novos ambientes.
+    - UI: campo **"Categoria pai"** removido do dialog de categoria (`financeiro.cadastros.tsx`);
+      a coluna já havia sido removida da tabela. Todas categorias agora são principais
+      (`parent_id = null`); hierarquia existente preservada no banco mas não editável na UI.
+
+31. **Criação inline de categoria no import de Notas de Compra — 27/08/2026** (commit `0cee988`):
+    - Coluna **Categoria** em `fiscal.recebidas.tsx:1368,1562` ganhou opção **"+ Nova categoria"**
+      no `Select` (importResults e notaDetalhe). Selecionar abre dialog (`novaCatOpen`) que faz
+      `INSERT categorias_financeiras (tipo pagar)` e já preenche o produto com a nova categoria,
+      invalidando `categorias-financeiras-pagar`/`cadastros-categorias`/`categorias-opt`.
+    - Mutation `criarCategoriaInline` com tratamento `23505` e `toast`.
+
+33. **Estrutura CT-e / MDF-e — 28/08/2026** (este commit):
+    - Emissão CT-e (57) e MDF-e (58) adiada anteriormente (~2–3 semanas) agora com **fase 1
+      de estrutura** para desbloquear implantação incremental:
+    - Migration `20260828010000_cte_mdf_estrutura.sql` já aplicada em prod: tabelas
+      `cte_documentos` (rascunho/assinado/autorizado/rejeitado/cancelado/denegado, FK viagem/veículo/tomador,
+      xml_assinado/protocolo) + `mdf_documentos` (rascunho/autorizado/cancelado/encerrado, veículo tração,
+      motorista, UF carga/descarga) + `mdf_cte_vinculos` (N:N), RLS `is_empresa_member`, índices, triggers `updated_at`.
+    - Libs `src/lib/sefaz-cte.ts` e `sefaz-mdf.ts` com `ENDPOINTS` hom/prod (AN/SVRS), builders
+      `buildCteXmlBase`/`buildMdfXmlBase` (esqueleto 4.00/3.00), stubs `signCteXml`/`signMdfXml`
+      (fase 2 reaproveita `signXml` com `<infCte Id>`/`<infMDFe Id>`) e funções stub `emitir*`.
+    - Server fns `sefaz-cte-server.ts`/`sefaz-mdf-server.ts` (createServerFn) delegando via
+      `SEFAZ_URL` → proxy Vercel (`/api/sefaz`) quando em CF, senão stub fase 1.
+    - Proxy `sefaz-proxy.ts` com cases `emitirCte/consultarCte/cancelarCte/emitirMdf/encerrarMdf/cancelarMdf`
+      retornando `{fase:1}` até mTLS.
+    - Rotas `fiscal.cte.tsx` e `fiscal.mdf.tsx` (cards fase 1, EmptyState, listagem Supabase).
+    - Nav `Fiscal` com itens **CT-e** e **MDF-e** (`nav-config.ts:121`).
+    - Fase 2 (iniciada neste commit): `sefaz.ts` exporta `createSefazAgent` + `signXml` genérico
+      para `<infNFe|infCte|infMDFe Id>` e insere `<Signature>` em `</CTe>`/`</MDFe>`; `sefaz-cte.ts`
+      reescrito com `CTE_ENDPOINTS` SVRS hom/prod reais, `gerarChaveCte`/DV mod11, `buildCteXml`
+      completo (ide/emit/rem/dest/vPrest/imp/infCTeNorm/rodoviário RNTRC) e `emitirCte`/`consultarCte`/`cancelarCte`
+      via SOAP 1.2 mTLS; `sefaz-cte-server.ts` e `sefaz-proxy.ts` agora executam emissão real
+      (numeração sequencial `cte_documentos`, insert `autorizado`/`rejeitado` com protocolo),
+      delegando CF→Vercel quando `SEFAZ_URL` presente. UI `fiscal.cte.tsx` com dialog Novo CT-e,
+      consulta e cancelamento. MDF-e permanece stub até CT-e homologado.
+    - Fase 2 (próximos): homologação SVRS com RNTRC real, testes CFOP/ICMS, vinculação Viagem→CT-e,
+      MDF-e completo e encerramento.
+      SOAP mTLS por UF (validar URLs SP/MG/RS × SVRS), server fns reais, UI de emissão vinculada
+      a Viagens/Veículos.
+
+32. **Fix categoria não persistia no produto — 27/08/2026** (este commit):
+    - `handleConfirmarXmlUpload` criava produto com `insert {codigo, nome, un, preco...}` sem
+      `categoria` (`fiscal.recebidas.tsx:574`) e o `update` de produto existente ignorava
+      categoria (`:571`). Produto "PASTILHA FREIO" aparecia como "Sem categoria" na edição
+      (screenshot `estoque.produtos`).
+    - Correção: `insert` agora inclui `categoria: p.categoria || null`; `update` inclui
+      `categoria: p.categoria || categoria_existente`; `select` passou a buscar `categoria`
+      nos dois fluxos (`handleConfirmarXmlUpload:561` e `handleLancarNota:834`). Validação
+      `semCategoria` já existia, agora efetivamente salva.
+    - Produtos já criados sem categoria precisam ser corrigidos manualmente em Estoque → Produtos
+      (ou via SQL). Novos imports já salvam corretamente.
+
+34. **Parcelas com forma de pagamento e conta bancária + logos normalizados — 28/08/2026**:
+    - NF-e `fiscal.recebidas.tsx:41` `FORMAS_PARCELA` pré-cadastradas (Boleto, Pix, Cartão de crédito/débito, Dinheiro, Transferência, Cheque, Duplicata, Outros) com ordenação alfabética (Outros último). Ao adicionar parcela, selects para **forma** e **banco** (`contas_bancarias`).
+    - `ParsedXMLResult`/`notaDetalhe` estendidos com `forma_pagamento`/`conta_bancaria_id`; `parseParcelasDoXml` default Boleto; `handleConfirmarXmlUpload`/`handleLancarNota` gravam `lancamentos_financeiros.forma_pagamento`/`conta_bancaria_id`.
+    - Logos `public/bancos/*.png` normalizados 512×512 mesmo canvas (PAD 8, `Pillow`), 9 bancos: bradesco, itau, sicoob, caixa, santander, nubank, inter (077), bb (001), daycoval (707). `src/lib/bancos.ts` migrado para `/bancos/*.png`.
+
+35. **Calendários padronizados + Bradesco/Itaú sem fundo branco — 28/08/2026**:
+    - `DateInput` (`src/components/erp/date-input.tsx:13`) com `captionLayout="dropdown"`, bloqueio datas futuras (`maxToday`), footer Hoje + Usar hoje.
+    - `financeiro.contas.tsx:522` e `fiscal.recebidas.tsx:1716` (parcelas) e `financeiro.receber.tsx:364` trocados de `Input type=date` para `DateInput` — varredura completa, 0 `type="date"` restante.
+    - Bradesco/Itaú regenerados sem padding branco extra (PAD 8 → preenche tudo), `public/bancos` atualizado para mesmo tamanho (512) e exibição com `object-contain`/`bg-white` ajustado.
+
+36. **Notas já lançadas editáveis (Alterar) + formas em ordem alfabética — 28/08/2026**:
+    - `fiscal.recebidas.tsx` `FORMAS_PARCELA` e `financeiro.receber.tsx:59` `FORMAS_PAGAMENTO` ordenadas alfabeticamente `pt-BR` com `Outros` sempre último (Boleto, Cartão de crédito, Cartão de débito, Cheque, Dinheiro, Duplicata, Pix, Transferência, Outros).
+    - Bug "Esta nota já foi importada anteriormente." ao tentar editar: `handleLancarNota` bloqueava duplicata. Criado `handleAlterarNota` (`:960`): atualiza `notas_importadas`, recalcula estoque por delta (mapa antigo vs novo), recria `notas_importadas_itens`, deleta/recria `notas_importadas_parcelas` + `lancamentos_financeiros` com forma/banco, invalida queries. Botão no modal agora é **Alterar** (âmbar, `Pencil`) quando `notaDetalhe.id` existe, senão **Lançar Nota**.
+    - `handleVerNota` para notas já lançadas agora carrega `notas_importadas_itens`/`parcelas` + `lancamentos` (categoria e parcelas com forma/banco) em vez de re-parsear XML zerado — modal mostra "Sem categoria" só se realmente sem.
+
+37. **Contas a pagar: fornecedor, descrição e ordem + fix edição — 28/08/2026** (este commit):
+    - `financeiro.receber.tsx:520` header trocado para **Fornecedor | Descrição | Vencimento | Valor | Status** (antes Descrição | Fornecedor) e `TableCell` idem — atende pedido `fornecedor, descrição, vencimento, valor, status`.
+    - `fiscal.recebidas.tsx` `handleConfirmarXmlUpload`/`handleLancarNota`/`handleAlterarNota` descrição agora só `NF-e ${nNF}` (ou `CT-e`), fornecedor vai na coluna `Fornecedor` via `contato_id` (criado/buscado por emitente). Antes ia `NF-e 12189 PIPEL PICOS... (001/1)` na descrição e `Fornecedor —`.
+    - Screenshot "NF-e 12189 PIPEL PICOS..." com `Fornecedor —` agora corrigido: novo lançamento salva `descricao: NF-e 12189` e `contato: PIPEL PICOS...`.
+
+38. **Valor da parcela direita→esquerda + CT-e com importação de XML — 28/08/2026**:
+    - `MoneyInput` (`src/components/erp/money-input.tsx:13`) com `text-right`, `moveCaretToEnd` em `onFocus`/`onClick` e `onKeyDown` que força caret no fim — digitar `1` → `0,01`, `71` → `0,71`, `719` → `7,19` empurrando para esquerda. Parcela em `fiscal.recebidas.tsx:1838` trocada de `Input type=number` para `MoneyInput` com `R$`.
+    - **CT-e via XML (corrigido):** removido botão `Emitir CT-e` de `fiscal.recebidas.tsx` (não é a partir de Notas de Compra). Novo fluxo em `fiscal.cte.tsx`: Card **Importar NF-e (XML) para CT-e** (`FileCode`, `Input type=file .xml` single) com `handleImportNFeXml` que lê `dest/CNPJ/xNome/UF/cMun, vNF, pesoB` do XML, preenche `form` (`cnpjTomador/xNomeTomador, vCarga, peso, vPrest`) e abre `Novo CT-e` com banner `NF-e 12189 carregada`.
+
+39. **CT-e robusto estilo STM + múltiplos XMLs — 28/08/2026** (este commit):
+    - **CT-e 404 corrigido:** `CTE_ENDPOINTS` V3 `cterecepcao/CteRecepcao.asmx` → **V4** `CTeRecepcaoSincV4/CTeRecepcaoSincV4.asmx` (SVRS `cte-homologacao.svrs.rs.gov.br`/`cte.svrs.rs.gov.br` e MG `hcte.fazenda.mg.gov.br`/`cte.fazenda.mg.gov.br`), `getCteEndpoints(ambiente, uf)` com split MG, SOAP `CTeRecepcaoSincV4/cteRecepcaoSinc` (`consultar` → `CTeConsultaV4`, `evento` → `CTeRecepcaoEventoV4`), `codigoUF` para `cOrgao`. Código `cStat 100|104|103` como sucesso. `sefaz-cte-server`/`sefaz-proxy` repassam `cert.uf`.
+    - **Tela CT-e robusta (sem aba Mercadoria/Percursos):** `fiscal.cte.tsx` reescrito com **Cadastro de Mercadorias para Embarque** estilo STM: filtros (Nome Empresa, Remetente, Destinatário, Placa, Mercadoria), `Embarque via CT-e` (Avulso), `Situação` (Pendentes/Liberados), `Período`, **Listagem das Notas Fiscais** (Código, Remetente, Destinatário, Nº NF-e, Série, Data, Valor, Peso, Chave) e **Listagem de Mercadorias** (Mercadoria Genérica, NCM, Qtde, Vlr), com contadores `Qtde NF-e / Peso Bruto / Valor`.
+    - **Múltiplos XMLs:** `handleImportNFeXml` agora aceita `FileList` `multiple`, deduplica por `chave`, acumula `mercadorias[]` (`chave, nNF, serie, emit, valor, peso, data`), soma `vCarga`/`peso` e `vPrest`, mostra `Badge` por NF-e e tabela completa. Botão `Importar NF-e (múltiplos XML)` com `multiple`, `Limpar` e `Gerar CT-e com N NF-e(s)`. `buildCteXml` com `chavesNFe[]` gera múltiplos `<infNFe><chave>` em `<infDoc>`.
+    - Dialog `Novo CT-e` com 3 `Card`s seccionados e ícones: **Tomador** (`UsersRound`), **Rota** (`RouteIcon`/`MapPin` com Env/Ini/Fim), **Carga, valores e fiscal** (`Package`/`DollarSign`/`Building2`, CFOP/RNTRC, `vPrest`/`vCarga`/`peso` + badges das NF-es vinculadas).
+
+40. **CT-e por partes + cabeçalho removido + Tomador do XML — 28/08/2026** (este commit):
+     - Cabeçalho **Nome Empresa / Remetente / Destinatário / Placa / Mercadoria** removido de `fiscal.cte.tsx` (`CardContent` `grid-cols-5`) conforme seta — agora inicia direto em `Embarque via CT-e`.
+     - `handleImportNFeXml` com `tomador` via `transp>modFrete` do XML: `0`→Remetente (`emit`), `1`→Destinatário (`dest`), `2`→Transportadora (`transp>transporta`), preenchendo `mercadorias[].tomador`/`tomadorCnpj` e `Listagem das Notas Fiscais` coluna **Tomador** (amarelo) corretamente — antes fixo `dest`.
+     - Coluna **Tomador** adicionada na `Listagem das Notas Fiscais` (após Destinatário), checkbox desmarcado por padrão (`selecionadas: Set` vazio, usuário escolhe), validação `Gerar CT-e` só com selecionadas e bloqueio se `Set(destCnpj)` ou `Set(tomadorCnpj)` >1 ("destinos diferentes").
+     - Botão renomeado `Importar NF-e (múltiplos XML)` → **`Importar NFes (XML)`** (`UploadCloud`, `multiple`).
+
+41. **CT-e dialog robusto estilo STM + CFOPs compartilhados — 28/08/2026** (commits `d8fc2b3`/`b849fc9`):
+     - Removida **Listagem de Mercadorias** (CARGA GERAL/NCM) e banner azul `prefillBanner` da tela principal (`fiscal.cte.tsx`).
+     - Dialog **Conhecimento de Transporte Avulso** reescrito com 4 abas estilo STM: **Remetente/Destinatário** (cards Remetente/Destinatário auto puxados, Tomador, Rota Coleta/Entrega), **Doc Mercadorias** (tabela Modelo/Chave/Remetente/Destinatário/Nº/Série/Data/Peso/Valor), **Seguros/Veículos** (Seguradora/Apólice/Base Calc/RCTR-C/RCF-DC/Responsável dropdown, Motorista/CIOT/Placas), **Taxas/Despesas Acessórias** (Pedágio 3 eixos/Ad Valorem/GRIS/Taxas + Forma Pagamento Pedágio).
+     - Header do dialog com **N° Conhecimento, Data Emissão (DateInput), CFOP Saída** (dropdown); removidos **Espécie Veículo** e **Base Cálculo Frete** conforme pedido (grid 5→3).
+     - Criado `src/lib/cfops-transporte.ts:1` com `CFOPS_TODOS` (~500 códigos oficiais 1.xxx–7.xxx exatos do PDF), `CFOPS_TRANSPORTE`/`MOD_FRETE_OPTIONS` (0 CIF,1 FOB,2 Terceiros,3 Próprio Remetente,4 Próprio Destinatário,9 Sem Ocorrência) e `RESPONSAVEL_CTE_OPTIONS` (0 Remetente a 5 Tomador de Serviço), compartilhado entre CT-e e NF. Doc Mercadorias no dialog agora filtra `selecionadas.size>0 ? filtradas : todas` para não mostrar todas as 4 quando só 2 selecionadas.
+
+42. **CFOPs separados por uso + calendário e Tomador corrigidos — 28/08/2026** (commits `800e480`/`b862a27`, `7df5eb5`/`5dfdb83`, `49a076f`/`f71d94d`):
+     - `cfops-transporte.ts:640` split: `CFOPS_CTE` (19 códigos de transporte: 5.351–5.360 estaduais, 6.351–6.360 interestaduais, 7.358 internacional) exclusivo do **CT-e** (`fiscal.cte.tsx:21` import `CFOPS_CTE`), `CFOPS_TODOS`/`CFOPS_NOTAS` mantidos para **Notas de Compra/Devolução**.
+     - **Calendário padrão ERP**: `DateInput` (`date-input.tsx:22`, `Calendar` dropdown pt-BR, `maxToday`, ícone popover) no **Data Emissão** do dialog (`fiscal.cte.tsx:385`, `form.dataEmissao`) e no **Período de Entrada** da listagem (`periodoIni`/`periodoFim` useState, `DateInput` flex-1), trocando `Input type=date` nativo.
+     - **Tomador corrigido para modFrete 0**: `mercadorias` estendida com `tomadorUF/CMun/XMun/modFrete` (`:37`), `handleImportNFeXml` com `tomaByMod {"0":"0","1":"3","2":"4","3":"0","4":"3","9":"4"}` para preencher `toma` correto, `Gerar CT-e` (`:340`) agora usa `tomadorCnpj/tomador/tomadorUF` em vez de `destCnpj/dest` — NF com `FRETE 0-Por conta do Rem` (imagem 3) agora puxa `TECNO2000...` (Remetente) correto, não `INSTITUTO NACIONAL DO SEGURO SOCIAL` (imagem 4 corrigida). Screenshot `INSTITUTO NA...` com frete CIF validado.
+     - **Período de Entrada layout**: grid 4→ `border rounded` com `grid lg:grid-cols-3` + linha resumo `Qtde NF-e • Peso Bruto • Valor` com `border-t pt-2 flex-wrap gap-x-3` sem sobreposição com botão **Consulta** (`:209`).
+
+---
+
 ## Regras de segurança
 
 - NUNCA commitar tokens/senhas (GitHub PAT, senhas de banco, service keys).

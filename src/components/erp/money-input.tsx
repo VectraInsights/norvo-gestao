@@ -13,7 +13,7 @@ type Props = Omit<React.InputHTMLAttributes<HTMLInputElement>, "value" | "onChan
  * Emits the raw decimal string (e.g. "1234.56" or "-1234.56") via onChange.
  */
 export const MoneyInput = forwardRef<HTMLInputElement, Props>(function MoneyInput(
-  { value, onChange, allowNegative = false, prefix = "R$", className, ...rest },
+  { value, onChange, allowNegative = false, prefix = "R$", className, onFocus, onClick, ...rest },
   ref,
 ) {
   const raw = value === null || value === undefined ? "" : String(value);
@@ -24,6 +24,15 @@ export const MoneyInput = forwardRef<HTMLInputElement, Props>(function MoneyInpu
     if (isNaN(n)) return "";
     return n.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
   })();
+
+  const moveCaretToEnd = (el: HTMLInputElement | null) => {
+    if (!el) return;
+    const len = el.value.length;
+    // Defer para após o browser posicionar o caret
+    requestAnimationFrame(() => {
+      try { el.setSelectionRange(len, len); } catch {}
+    });
+  };
 
   return (
     <div className="relative">
@@ -36,9 +45,37 @@ export const MoneyInput = forwardRef<HTMLInputElement, Props>(function MoneyInpu
         ref={ref}
         type="text"
         inputMode="decimal"
-        className={`${prefix ? "pl-9" : ""} ${className ?? ""}`}
+        className={`${prefix ? "pl-9" : ""} text-right ${className ?? ""}`}
         value={display}
+        onFocus={(e) => {
+          moveCaretToEnd(e.currentTarget);
+          (onFocus as any)?.(e);
+        }}
+        onClick={(e) => {
+          moveCaretToEnd(e.currentTarget);
+          (onClick as any)?.(e);
+        }}
         onKeyDown={(e) => {
+          // Sempre manter caret no fim antes de processar a tecla — garante empurrão para esquerda
+          const el = e.currentTarget as HTMLInputElement;
+          if (el.selectionStart !== el.value.length || el.selectionEnd !== el.value.length) {
+            e.preventDefault();
+            moveCaretToEnd(el);
+            // Re-dispara o dígito como se tivesse sido digitado no fim
+            if (/^\d$/.test(e.key)) {
+              const digits = (display.replace(/\D/g, "") + e.key).slice(-12);
+              const val = (Number(digits) / 100).toFixed(2);
+              onChange(allowNegative && negative ? `-${val}` : val);
+            } else if (e.key === "Backspace") {
+              const digits = display.replace(/\D/g, "").slice(0, -1);
+              if (!digits) { onChange(allowNegative && negative ? "-" : ""); }
+              else {
+                const val = (Number(digits) / 100).toFixed(2);
+                onChange(allowNegative && negative ? `-${val}` : val);
+              }
+            }
+            return;
+          }
           if (allowNegative && e.key === "-") {
             e.preventDefault();
             if (raw === "" || raw === "0") onChange("-");
@@ -51,6 +88,8 @@ export const MoneyInput = forwardRef<HTMLInputElement, Props>(function MoneyInpu
           if (!digits) { onChange(allowNegative && negative ? "-" : ""); return; }
           const val = (Number(digits) / 100).toFixed(2);
           onChange(allowNegative && negative ? `-${val}` : val);
+          // Após formatar, garante caret no fim
+          requestAnimationFrame(() => moveCaretToEnd(e.target as HTMLInputElement));
         }}
         {...rest}
       />

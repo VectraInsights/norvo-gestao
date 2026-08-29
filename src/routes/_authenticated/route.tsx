@@ -10,8 +10,12 @@ export const Route = createFileRoute("/_authenticated")({
   beforeLoad: async () => {
     const { data, error } = await supabase.auth.getUser();
     if (error || !data.user) throw redirect({ to: "/auth" });
-    return { user: data.user };
   },
+  pendingComponent: () => (
+    <div className="grid h-screen place-items-center">
+      <Loader2 className="h-8 w-8 animate-spin text-primary" />
+    </div>
+  ),
   component: () => (
     <AppShell>
       <RequireEmpresa>

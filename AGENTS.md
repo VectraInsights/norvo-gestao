@@ -113,14 +113,85 @@ sobrescrito pela env `NITRO_PRESET` (ex.: `node-server`, `vercel`).
 - Módulos novos exigem entrada em `MODULOS` (`src/lib/permissoes.ts`) — `moduloDaRota()`
   deriva o módulo do primeiro segmento da rota. Membros existentes só veem o menu novo após
   o admin marcar o módulo em Configurações → Usuários (owner/admin sempre veem tudo).
-- Catálogo de `cargos` (migration `20260822133000`): tabela global com linhas padrão
-  (`empresa_id IS NULL`, imutáveis pelo app) + cargos por empresa; leitura para qualquer
-  membro, criar/excluir só owner/admin da empresa ou super_admin (policies). Cargo no RH é
-  dropdown; VIAGENS consideram motoristas os colaboradores ativos cujo cargo contém
-  "Motorist" (ILIKE) — não existe mais coluna `eh_motorista`.
+- Catálogo de `cargos` (migrations `20260822133000` + `20260824120000` + `20260824210000`
+  + `20260824220000`): customizável — os 52 cargos PADRÃO (`empresa_id IS NULL`) existem e
+  podem ser renomeados/excluídos como qualquer outro (em padrão, basta ser owner/admin de
+  alguma empresa; em cargo de empresa, owner/admin DELA). A ÚNICA restrição é excluir cargo
+  vinculado a funcionário: trigger `tg_cargo_guard` bloqueia no banco comparando
+  `colaboradores.cargo` (TEXTO com o nome) — em padrão, considera funcionários de TODAS as
+  empresas. A UI mostra "padrão" nos globais e quantos funcionários usam cada cargo.
+  Cargo no RH é dropdown; VIAGENS e COMISSÕES consideram motoristas os colaboradores
+  ativos cujo cargo contém "Motorist" (ILIKE) — não existe coluna `eh_motorista`.
+- Adiantamentos (migration `20260824120000`): campo "recorrente" gera conta a pagar mensal.
+  A UI chama `public.gerar_adiantamentos_recorrentes()` logo após o INSERT (1ª conta na
+  hora; se o dia do mês já passou, a 1ª conta é a do mês seguinte) e o pg_cron diário
+  ('adiantamentos-recorrentes') é fallback para os meses seguintes — idempotente por
+  `ultimo_mes_gerado`. Regras do lançamento gerado (`20260824170000` + `20260824180000`):
+  vencimento em sábado/domingo antecipa para a sexta anterior; descrição = NOME do
+  colaborador + sufixo " (recorrência)"; categoria = "Adiantamentos" (tipo pagar, criada
+  por empresa se não existir); AUTORIA = criador do adiantamento (`adiantamentos.created_by`,
+  que tem DEFAULT auth.uid() desde `20260824180000`) — as contas da madrugada ficam com o
+  nome de quem cadastrou a recorrência. EXCLUIR um adiantamento limpa as contas a
+  pagar NO BANCO via trigger `tg_adiantamento_delete` (`20260824200000`, SECURITY DEFINER):
+  remove a vinculada (`lancamento_id`) e as automáticas em aberto da recorrência
+  (observações + descrição = nome do colaborador + mesmo valor); as já PAGAS ficam.
+  Adiantamento só é editável enquanto NÃO tem
+  `lancamento_id`; depois disso o valor muda pela tela financeira. O STATUS do
+  adiantamento é espelho do
+  lançamento vinculado: trigger `tg_lancamento_sync_adiantamento` marca 'descontado'
+  (= pago) quando o lancamento vai a 'pago' e reverte se reabrir — NUNCA setar esse status
+  na mão pela UI.
+- Campos de data usam `<DateInput>` (`src/components/erp/date-input.tsx`: input nativo +
+  popover de calendário pt-BR). Não criar `<Input type="date">` solto em páginas novas.
+  EXCEÇÃO (decisão do dono): financeiro/contas e financeiro/receber usam input nativo.
+- Férias: prazo de concessão = fim do período aquisitivo +12 meses −30 dias (concessivo
+  completo do art. 134 com folga; NÃO é +6 meses). Cálculo em `ciclosAteHoje()` no front.
+- Folha de pagamento: fluxo de pagamento via botão HandCoins cria `lancamentos_financeiros`
+  com `status: "aberto"` e seta folha como `"lançada"` (enum `folha_status`). Lançamento
+  é conciliado via extrato bancário → trigger `tg_lancamento_pago_sincroniza_folha` seta
+  folha como `"paga"`. Excluir o lançamento reverte folha para `"aberta"` (trigger
+  `trg_lancamento_delete_folha` + fallback no front). Categoria = "Salário". Descrição =
+  `Nome — MM/AAAA`. Prévia salarial inclui INSS progressivo 2026 e IRRF Lei 15.270/2025;
+  abono pecuniário é isento de INSS/IRRF.
+- Férias — status automático: pg_cron diário (`ferias-status-automatico`, 00:05 UTC) muda
+  `agendada → em_gozo` (quando `data_inicio_gozo <= hoje`) e `em_gozo → concluída`
+  (quando `data_fim_gozo < hoje`). Função `atualizar_status_ferias()` SECURITY DEFINER.
 - Colunas novas fora do types.ts (ex.: `produtos.categoria`, CNH em colaboradores) pedem
   cast duplo no retorno de queries tipadas: `(data ?? []) as unknown as Tipo[]`.
+- Colunas DATE ("YYYY-MM-DD") NÃO podem ir direto para `new Date()` quando o resultado é
+  formatado em fuso local (date-fns `format`, comparação com limites de mês etc.): UTC-3
+  desloca para o dia anterior. Usar `parseDia` (extrato) ou `new Date(s + "T00:00:00")`
+  (contas) ou `dateBR` (`src/lib/format`, que força timeZone UTC). Já deu bug real no extrato.
 - `colaboradores.telefone` pode conter vários números separados por " / " (UI multi-input).
   Obrigatoriedade (nome/CPF/cargo/salário/admissão/telefone) é validada no app, não no banco.
 - Commits devem usar o autor `vectrainsights@users.noreply.github.com` (config local do clone);
   outro email faz a Vercel Hobby bloquear o deploy.
+
+## Integração SEFAZ (NFe) — detalhes técnicos
+
+- **Arquivo core**: `src/lib/sefaz.ts` — parse PKCS#12 (node-forge), assinatura XML W3C, SOAP 1.2, mTLS
+  via `https.Agent(pfx, passphrase)`. Endpoints homologação por UF em `SEFAZ_ENDPOINTS` (SP, MG, GO,
+  AM, PR, SC, BA, CE, PE, RS, DEFAULT/SVRS). Serviços nacionais `NFeDistribuicaoDFe` e
+  `NFeRecepcaoEvento4` em `hom.nfe.fazenda.gov.br`.
+
+- **Server functions**: `src/lib/sefaz-server.ts` — `createServerFn` que escolhe modo:
+  - `SEFAZ_URL` ausente (Vercel/Node.js): mTLS direto (busca certificado no Supabase via service role,
+    baixa do Storage, chama `sefaz.ts`)
+  - `SEFAZ_URL` presente (Cloudflare Worker): `POST ${SEFAZ_URL}` com body `{action, empresaId, ...}`
+    + header `Authorization: Bearer <SUPABASE_SERVICE_ROLE_KEY>`
+
+- **Proxy Vercel**: `src/server.ts` intercepta `POST /api/sefaz` ANTES do handler TanStack Start.
+  Chama `src/lib/sefaz-proxy.ts` (handler puro Web APIs, sem h3/Nitro) que valida Bearer token e
+  executa a lógica mTLS idêntica. Rota Nitro `server/api/sefaz.post.ts` REMOVIDA (não registrava).
+
+- **Cloudflare Worker** (`norvo-gestao-cf`): preset `cloudflare-module`, env `VITE_SEFAZ_URL`
+  apontando para o proxy Vercel. Worker NÃO suporta mTLS (limitação da plataforma). Deploy
+  automático via GitHub Actions (Wrangler) no push em main.
+
+- **Certificados**: tabela `certificados_digitais` + bucket Storage `certificados` (RLS por empresa).
+  Upload em `/configuracoes/fiscal` → valida thumbprint/validade via node-forge → inserção atômica.
+  Senha armazenada em `senha_cript` (service role). Busca via `buscarCertificadoAtivo(empresaId)`
+  retorna `{pfx, senha, cnpj, uf}`.
+
+- **Frontend**: `/fiscal/recebidas` (consultar + manifestar), `/fiscal/emitidas` (emitir),
+  `/fiscal/configuracoes` (upload/preview). CT-e/MDF-e mockados REMOVIDOS.

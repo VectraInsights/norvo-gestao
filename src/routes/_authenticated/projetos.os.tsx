@@ -1,4 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { DateInput } from "@/components/erp/date-input";
 import { PageHeader } from "@/components/erp/page-header";
 import { EmptyState } from "@/components/erp/empty-state";
 import { Button } from "@/components/ui/button";
@@ -22,7 +23,7 @@ import {
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Wrench, Plus, Trash2 } from "lucide-react";
+import { Wrench, Plus, Trash2, Pencil } from "lucide-react";
 import { useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -232,7 +233,7 @@ function OSPage() {
                   </div>
                 </div>
                 <div className="grid grid-cols-2 gap-3">
-                  <div><Label>Previsão</Label><Input type="date" value={dataPrev} onChange={(e) => setDataPrev(e.target.value)} /></div>
+                  <div><Label>Previsão</Label><DateInput value={dataPrev} onChange={setDataPrev} /></div>
                   <div><Label>Valor</Label><MoneyInput value={valor} onChange={setValor} /></div>
                 </div>
                 <div><Label>Observações</Label><Textarea rows={2} value={obs} onChange={(e) => setObs(e.target.value)} /></div>
@@ -277,7 +278,7 @@ function OSPage() {
             </TableHeader>
             <TableBody>
               {filtered.map((o) => (
-                <TableRow key={o.id} className="cursor-pointer" onClick={() => openEdit(o)}>
+                <TableRow key={o.id}>
                   <TableCell className="text-tabular">#{o.numero}</TableCell>
                   <TableCell className="font-medium">{o.titulo}</TableCell>
                   <TableCell>{o.contatos?.nome ?? "—"}</TableCell>
@@ -297,22 +298,27 @@ function OSPage() {
                   </TableCell>
                   <TableCell>{o.data_prevista ? dateBR(o.data_prevista) : "—"}</TableCell>
                   <TableCell className="text-right text-tabular">{brl(o.valor ?? 0)}</TableCell>
-                  <TableCell onClick={(e) => e.stopPropagation()}>
-                    <AlertDialog>
-                      <AlertDialogTrigger asChild>
-                        <Button variant="ghost" size="icon" className="h-8 w-8"><Trash2 className="h-4 w-4" /></Button>
-                      </AlertDialogTrigger>
-                      <AlertDialogContent>
-                        <AlertDialogHeader>
-                          <AlertDialogTitle>Excluir OS #{o.numero}?</AlertDialogTitle>
-                          <AlertDialogDescription>Esta ação não pode ser desfeita.</AlertDialogDescription>
-                        </AlertDialogHeader>
-                        <AlertDialogFooter>
-                          <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                          <AlertDialogAction onClick={() => del.mutate(o.id)}>Excluir</AlertDialogAction>
-                        </AlertDialogFooter>
-                      </AlertDialogContent>
-                    </AlertDialog>
+                  <TableCell>
+                    <span className="flex justify-end gap-1">
+                      <Button variant="ghost" size="icon" className="h-8 w-8" title="Editar" onClick={() => openEdit(o)}>
+                        <Pencil className="h-4 w-4" />
+                      </Button>
+                      <AlertDialog>
+                        <AlertDialogTrigger asChild>
+                          <Button variant="ghost" size="icon" className="h-8 w-8"><Trash2 className="h-4 w-4" /></Button>
+                        </AlertDialogTrigger>
+                        <AlertDialogContent>
+                          <AlertDialogHeader>
+                            <AlertDialogTitle>Excluir OS #{o.numero}?</AlertDialogTitle>
+                            <AlertDialogDescription>Esta ação não pode ser desfeita.</AlertDialogDescription>
+                          </AlertDialogHeader>
+                          <AlertDialogFooter>
+                            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                            <AlertDialogAction onClick={() => del.mutate(o.id)}>Excluir</AlertDialogAction>
+                          </AlertDialogFooter>
+                        </AlertDialogContent>
+                      </AlertDialog>
+                    </span>
                   </TableCell>
                 </TableRow>
               ))}

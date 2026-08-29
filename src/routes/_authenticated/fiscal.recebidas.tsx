@@ -2,34 +2,46 @@ import { createFileRoute } from "@tanstack/react-router";
 import { PageHeader } from "@/components/erp/page-header";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { DateInput } from "@/components/erp/date-input";
+import { MoneyInput } from "@/components/erp/money-input";
 import { 
   FileDown, Search, CheckCircle2, AlertCircle, XCircle, 
-  UploadCloud, FileCode, Check, ArrowRight, RefreshCw, Archive
+  UploadCloud, FileCode, Check, ArrowRight, RefreshCw, Archive, Calendar, KeyRound,
+  Eye, Download, FileText, Trash2, Pencil
 } from "lucide-react";
-import { useState } from "react";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { useState, useMemo, useEffect } from "react";
 import { toast } from "sonner";
 import { brl, dateBR } from "@/lib/format";
 
 import { supabase } from "@/integrations/supabase/client";
 import { useEmpresaAtual } from "@/hooks/use-empresa";
-import { useQueryClient } from "@tanstack/react-query";
+import { useMutation } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { consultarNFePorChaveFn } from "@/lib/sefaz-server";
 
 export const Route = createFileRoute("/_authenticated/fiscal/recebidas")({
   component: NotasRecebidas,
 });
 
 interface NotaRecebida {
+  id?: string;
   chave: string;
   emitente: string;
   cnpj: string;
   valor: number;
   data_emissao: string;
-  manifesto: "pendente" | "ciencia" | "confirmada" | "desconhecida";
   situacao_sefaz: "autorizada" | "cancelada";
+  numero_nf?: string;
+  xml_completo?: string;
 }
+
+const FORMAS_PARCELA = ["Boleto", "Cartão de crédito", "Cartão de débito", "Cheque", "Dinheiro", "Duplicata", "Pix", "Transferência", "Outros"] as const;
 
 interface ParsedXMLResult {
   chave: string;
@@ -37,7 +49,8 @@ interface ParsedXMLResult {
   cnpj: string;
   nNF: string;
   total: number;
-  produtos: { codigo: string; nome: string; qtd: number; un: string; valor: number }[];
+  produtos: { codigo: string; nome: string; qtd: number; un: string; valor: number; categoria: string }[];
+  parcelas: { numero: string; dataVencimento: string; valor: number; forma_pagamento: string; conta_bancaria_id: string }[];
 }
 
 interface SelectedFileItem {
@@ -46,54 +59,148 @@ interface SelectedFileItem {
   size: number;
 }
 
-const INITIAL_RECEBIDAS: NotaRecebida[] = [
-  {
-    chave: "35260845997418000109550010002041921827364501",
-    emitente: "Distribuidora de Papéis e Embalagens Ltda",
-    cnpj: "45.997.418/0001-09",
-    valor: 1450.90,
-    data_emissao: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(),
-    manifesto: "pendente",
-    situacao_sefaz: "autorizada"
-  },
-  {
-    chave: "35260812345678000199550010001847121098765432",
-    emitente: "Tech Connect Importadora de Equipamentos",
-    cnpj: "12.345.678/0001-99",
-    valor: 8900.00,
-    data_emissao: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString(),
-    manifesto: "ciencia",
-    situacao_sefaz: "autorizada"
-  },
-  {
-    chave: "35260898765432000188550010000958171234567890",
-    emitente: "Office Depot Soluções Corporativas",
-    cnpj: "98.765.432/0001-88",
-    valor: 345.15,
-    data_emissao: new Date(Date.now() - 8 * 24 * 60 * 60 * 1000).toISOString(),
-    manifesto: "confirmada",
-    situacao_sefaz: "autorizada"
-  },
-  {
-    chave: "35260811223344000177550010000041231876543210",
-    emitente: "Serviços Logísticos Rapidez",
-    cnpj: "11.223.344/0001-77",
-    valor: 1200.00,
-    data_emissao: new Date(Date.now() - 12 * 24 * 60 * 60 * 1000).toISOString(),
-    manifesto: "desconhecida",
-    situacao_sefaz: "cancelada"
+const INITIAL_RECEBIDAS: NotaRecebida[] = [];
+
+function parseProdutosDoXml(xml: string) {
+  try {
+    const parser = new DOMParser();
+    const doc = parser.parseFromString(xml, "text/xml");
+    const detNodes = Array.from(doc.querySelectorAll("det"));
+    return detNodes.map((det) => ({
+      codigo: det.querySelector("prod > cProd")?.textContent || "",
+      nome: det.querySelector("prod > xProd")?.textContent || "",
+      qtd: parseFloat(det.querySelector("prod > qCom")?.textContent || "0"),
+      un: det.querySelector("prod > uCom")?.textContent || "UN",
+      valorUnit: parseFloat(det.querySelector("prod > vUnCom")?.textContent || "0"),
+      valorTotal: parseFloat(det.querySelector("prod > vProd")?.textContent || "0"),
+      categoria: "",
+    }));
+  } catch {
+    return [];
   }
-];
+}
+
+function parseParcelasDoXml(xml: string) {
+  try {
+    const parser = new DOMParser();
+    const doc = parser.parseFromString(xml, "text/xml");
+    const dupNodes = Array.from(doc.querySelectorAll("cobr > dup"));
+    return dupNodes.map((dup) => ({
+      numero: dup.querySelector("nDup")?.textContent || "",
+      dataVencimento: dup.querySelector("dVenc")?.textContent || "",
+      valor: parseFloat(dup.querySelector("vDup")?.textContent || "0"),
+      forma_pagamento: "Boleto",
+      conta_bancaria_id: "",
+    }));
+  } catch {
+    return [];
+  }
+}
 
 function NotasRecebidas() {
   const { data: empresa } = useEmpresaAtual();
   const qc = useQueryClient();
   const [activeTab, setActiveTab] = useState<string>("manifesto");
   
-  // Manifestação Destinatário State
+  // Categorias existentes para autocomplete
+  const { data: categoriasExistentes = [] } = useQuery({
+    enabled: !!empresa,
+    queryKey: ["categorias-produtos", empresa?.id],
+    queryFn: async ({ signal }) => {
+      const { data, error } = await supabase
+        .from("produtos")
+        .select("categoria")
+        .eq("empresa_id", empresa!.id)
+        .not("categoria", "is", null)
+        .abortSignal(signal);
+      if (error) throw error;
+      return [...new Set((data ?? []).map((p: any) => p.categoria).filter(Boolean))].sort() as string[];
+    },
+  });
+
+  // Contas financeiras para seleção de banco
+  const { data: contasBancarias = [] } = useQuery({
+    enabled: !!empresa,
+    queryKey: ["contas-bancarias-opts", empresa?.id],
+    queryFn: async ({ signal }) => {
+      const { data, error } = await supabase
+        .from("contas_bancarias")
+        .select("id, nome")
+        .eq("empresa_id", empresa!.id)
+        .order("nome")
+        .abortSignal(signal);
+      if (error) throw error;
+      return (data ?? []) as { id: string; nome: string }[];
+    },
+  });
+
+  // Categorias financeiras (pagar) para Select no modal
+  const { data: catsFinanceiras = [] } = useQuery({
+    enabled: !!empresa,
+    queryKey: ["categorias-financeiras-pagar", empresa?.id],
+    queryFn: async ({ signal }) => {
+      const { data, error } = await supabase
+        .from("categorias_financeiras")
+        .select("id, nome")
+        .eq("empresa_id", empresa!.id)
+        .eq("tipo", "pagar")
+        .order("nome")
+        .abortSignal(signal);
+      if (error) throw error;
+      return (data ?? []) as { id: string; nome: string }[];
+    },
+  });
+  
+  // Criação inline de categoria (para o Select de categoria dos produtos importados)
+  const [novaCatOpen, setNovaCatOpen] = useState(false);
+  const [novaCatNome, setNovaCatNome] = useState("");
+  const [novaCatContext, setNovaCatContext] = useState<{ origem: "import" | "detalhe"; index: number } | null>(null);
+  const criarCategoriaInline = useMutation({
+    mutationFn: async (nome: string) => {
+      if (!empresa) throw new Error("Empresa não selecionada");
+      const n = nome.trim();
+      if (!n) throw new Error("Informe o nome da categoria");
+      const { data, error } = await supabase
+        .from("categorias_financeiras")
+        .insert({ empresa_id: empresa.id, nome: n, tipo: "pagar" } as any)
+        .select("id, nome")
+        .single();
+      if (error) {
+        if ((error as any).code === "23505") throw new Error("Já existe uma categoria com esse nome");
+        throw error;
+      }
+      return data as { id: string; nome: string };
+    },
+    onSuccess: (cat) => {
+      qc.invalidateQueries({ queryKey: ["categorias-financeiras-pagar", empresa?.id] });
+      qc.invalidateQueries({ queryKey: ["cadastros-categorias", empresa?.id] });
+      qc.invalidateQueries({ queryKey: ["categorias-opt", empresa?.id] });
+      if (novaCatContext) {
+        if (novaCatContext.origem === "import" && importResults) {
+          const novas = [...importResults.produtos];
+          novas[novaCatContext.index] = { ...novas[novaCatContext.index], categoria: cat.nome };
+          setImportResults({ ...importResults, produtos: novas });
+        } else if (novaCatContext.origem === "detalhe" && notaDetalhe) {
+          const novas = [...notaDetalhe.produtos];
+          novas[novaCatContext.index] = { ...novas[novaCatContext.index], categoria: cat.nome };
+          setNotaDetalhe({ ...notaDetalhe, produtos: novas });
+        }
+      }
+      toast.success(`Categoria "${cat.nome}" criada`);
+      setNovaCatOpen(false);
+      setNovaCatNome("");
+      setNovaCatContext(null);
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+  // Notas Recebidas State
   const [notas, setNotas] = useState<NotaRecebida[]>(INITIAL_RECEBIDAS);
   const [search, setSearch] = useState("");
-  const [isRefreshing, setIsRefreshing] = useState(false);
+  const [filtroMes, setFiltroMes] = useState<string>(() => {
+    const now = new Date();
+    return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
+  });
 
   // Importação XML State
   const [dragging, setDragging] = useState(false);
@@ -103,25 +210,153 @@ function NotasRecebidas() {
   const [importResults, setImportResults] = useState<ParsedXMLResult | null>(null);
   const [validarXML, setValidarXML] = useState(true);
 
-  // Ações de manifestação
-  const handleManifestar = (chave: string, acao: "ciencia" | "confirmada" | "desconhecida") => {
-    setNotas(prev => prev.map(n => n.chave === chave ? { ...n, manifesto: acao } : n));
-    
-    const acoesLabels = {
-      ciencia: "Ciência da Emissão",
-      confirmada: "Confirmação da Operação",
-      desconhecida: "Desconhecimento da Operação"
-    };
+  // Ações de manifestação do destinatário (ciência, confirmação, desconhecimento)
+  const [chaveImportModal, setChaveImportModal] = useState(false);
+  const [chaveInput, setChaveInput] = useState("");
+  const [isImportingByKey, setIsImportingByKey] = useState(false);
 
-    toast.success(`Manifestação '${acoesLabels[acao]}' registrada com sucesso na SEFAZ!`);
-  };
+  // Carregar notas do banco ao montar
+  useEffect(() => {
+    if (!empresa) return;
+    (async () => {
+      const { data: notasDb } = await supabase
+        .from("notas_importadas" as never)
+        .select("*")
+        .eq("empresa_id", empresa.id)
+        .order("created_at", { ascending: false });
+      if (notasDb && Array.isArray(notasDb)) {
+        setNotas((notasDb as any[]).map(n => ({
+          id: n.id,
+          chave: n.chave_acesso,
+          emitente: n.emitente,
+          cnpj: n.cnpj_emitente,
+          valor: Number(n.valor_total) || 0,
+          data_emissao: n.data_emissao || "",
+          situacao_sefaz: "autorizada" as const,
+          numero_nf: n.numero_nf || "",
+          xml_completo: n.xml_completo || "",
+        })));
+      }
+    })();
+  }, [empresa?.id]);
 
-  const handleSincronizarSefaz = () => {
-    setIsRefreshing(true);
-    setTimeout(() => {
-      setIsRefreshing(false);
-      toast.success("Consulta à SEFAZ concluída! Nenhuma nova nota fiscal emitida contra o seu CNPJ.");
-    }, 1500);
+  // Mutation para excluir nota importada
+  const excluirNota = useMutation({
+    mutationFn: async (nota: NotaRecebida) => {
+      if (!nota.id) throw new Error("Nota sem ID");
+      // Buscar lançamentos vinculados
+      const { data: vinculadas } = await supabase
+        .from("notas_importadas_parcelas" as never)
+        .select("lancamento_id")
+        .eq("nota_id", nota.id);
+      // Excluir parcelas PRIMEIRO (remove FK reference para lancamentos_financeiros)
+      await supabase.from("notas_importadas_parcelas" as never).delete().eq("nota_id", nota.id);
+      // Excluir itens
+      await supabase.from("notas_importadas_itens" as never).delete().eq("nota_id", nota.id);
+      // Excluir lançamentos financeiros vinculados (agora sem FK bloqueando)
+      const lancIds = (vinculadas ?? []).map((v: any) => v.lancamento_id).filter(Boolean);
+      if (lancIds.length > 0) {
+        await supabase.from("lancamentos_financeiros").delete().in("id", lancIds);
+      }
+      // Excluir a nota
+      const { error } = await supabase.from("notas_importadas" as never).delete().eq("id", nota.id);
+      if (error) throw error;
+    },
+    onSuccess: (_data: unknown, nota: NotaRecebida) => {
+      setNotas(prev => prev.filter(n => n.chave !== nota.chave));
+      qc.invalidateQueries({ queryKey: ["lancamentos"] });
+      toast.success("Nota e lançamentos vinculados excluídos com sucesso.");
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+  // Modal de detalhes da nota importada por chave
+  const [notaDetalhe, setNotaDetalhe] = useState<{
+    id?: string;
+    chave: string;
+    emitente: string;
+    cnpj: string;
+    valor: number;
+    data: string;
+    nNF: string;
+    produtos: { codigo: string; nome: string; qtd: number; un: string; valorUnit: number; valorTotal: number; categoria: string }[];
+    parcelas: { numero: string; dataVencimento: string; valor: number; forma_pagamento: string; conta_bancaria_id: string }[];
+    xml: string;
+  } | null>(null);
+
+  const handleImportarPorChave = async () => {
+    if (!empresa) return toast.error("Empresa não selecionada");
+    const chave = chaveInput.replace(/\D/g, "");
+    if (chave.length !== 44) {
+      toast.error("Chave de acesso inválida", { description: "A chave deve conter 44 dígitos numéricos." });
+      return;
+    }
+
+    setIsImportingByKey(true);
+    try {
+      const result = await consultarNFePorChaveFn({ data: { empresaId: empresa.id, chave } });
+
+      if (result.nota) {
+        const xml = result.nota.xml;
+        let produtos: { codigo: string; nome: string; qtd: number; un: string; valorUnit: number; valorTotal: number; categoria: string }[] = [];
+        let parcelas: { numero: string; dataVencimento: string; valor: number; forma_pagamento: string; conta_bancaria_id: string }[] = [];
+        let nNF = "";
+
+        if (xml) {
+          try {
+            const parser = new DOMParser();
+            const doc = parser.parseFromString(xml, "text/xml");
+            nNF = doc.querySelector("ide > nNF")?.textContent || "";
+            const detNodes = Array.from(doc.querySelectorAll("det"));
+            produtos = detNodes.map((det) => {
+              const cProd = det.querySelector("prod > cProd")?.textContent || "";
+              const xProd = det.querySelector("prod > xProd")?.textContent || "";
+              const qCom = parseFloat(det.querySelector("prod > qCom")?.textContent || "0");
+              const uCom = det.querySelector("prod > uCom")?.textContent || "UN";
+              const vUnCom = parseFloat(det.querySelector("prod > vUnCom")?.textContent || "0");
+              const vProd = parseFloat(det.querySelector("prod > vProd")?.textContent || "0");
+              return { codigo: cProd, nome: xProd, qtd: qCom, un: uCom, valorUnit: vUnCom, valorTotal: vProd, categoria: "" };
+            });
+            // Extrair parcelas (cobr/dup)
+            const dupNodes = Array.from(doc.querySelectorAll("cobr > dup"));
+            parcelas = dupNodes.map((dup) => ({
+              numero: dup.querySelector("nDup")?.textContent || "",
+              dataVencimento: dup.querySelector("dVenc")?.textContent || "",
+              valor: parseFloat(dup.querySelector("vDup")?.textContent || "0"),
+              forma_pagamento: "Boleto",
+              conta_bancaria_id: "",
+            }));
+          } catch {
+            // XML não parseável
+          }
+        }
+
+        setNotaDetalhe({
+          chave: result.nota.chave,
+          emitente: result.nota.emitente,
+          cnpj: result.nota.cnpj,
+          valor: result.nota.valor,
+          data: result.nota.data,
+          nNF,
+          produtos,
+          parcelas,
+          xml: xml || "",
+        });
+        setChaveImportModal(false);
+        setChaveInput("");
+      } else {
+        const d = result.debug;
+        toast.error("Nota não encontrada", {
+          description: d ? `${d.xMotivo} (cStat: ${d.cStat})` : "Verifique a chave de acesso e tente novamente.",
+          duration: 8000,
+        });
+      }
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : String(err);
+      toast.error("Erro ao consultar chave", { description: msg });
+    } finally {
+      setIsImportingByKey(false);
+    }
   };
 
   // Importação XML actions
@@ -195,7 +430,7 @@ function NotasRecebidas() {
 
       let parsedChave = chNFe;
       let parsedEmitente = emit;
-      let parsedProdutos: { codigo: string; nome: string; qtd: number; un: string; valor: number }[] = [];
+      let parsedProdutos: { codigo: string; nome: string; qtd: number; un: string; valor: number; categoria: string }[] = [];
 
       if (detNodes.length > 0) {
         parsedProdutos = detNodes.map((det) => {
@@ -204,7 +439,7 @@ function NotasRecebidas() {
           const qCom = parseFloat(det.querySelector("prod > qCom")?.textContent || "1");
           const uCom = det.querySelector("prod > uCom")?.textContent || "UN";
           const vUnCom = parseFloat(det.querySelector("prod > vUnCom")?.textContent || "100");
-          return { codigo: cProd, nome: xProd, qtd: qCom, un: uCom, valor: vUnCom };
+          return { codigo: cProd, nome: xProd, qtd: qCom, un: uCom, valor: vUnCom, categoria: "" };
         });
       } else {
         // Fallback estruturado baseado no arquivo caso não seja XML padrão SEFAZ
@@ -212,23 +447,48 @@ function NotasRecebidas() {
         parsedChave = "352608" + fileHash.padStart(38, "0").slice(-38);
         parsedEmitente = fileItem.name.replace(/\.[^/.]+$/, "").replace(/[-_]/g, " ").toUpperCase() + " LTDA";
         parsedProdutos = [
-          { codigo: "PROD-" + fileHash.slice(0, 4), nome: `Item ${fileItem.name.replace(/\.xml$/i, "")} Wireless`, qtd: 5, un: "UN", valor: 150.00 },
-          { codigo: "PROD-" + fileHash.slice(4, 8), nome: `Acessório ${fileItem.name.replace(/\.xml$/i, "")} Pro`, qtd: 3, un: "UN", valor: 110.00 },
-          { codigo: "PROD-" + fileHash.slice(8, 12), nome: `Componente IPS ${fileItem.name.replace(/\.xml$/i, "")}`, qtd: 2, un: "UN", valor: 450.00 }
+          { codigo: "PROD-" + fileHash.slice(0, 4), nome: `Item ${fileItem.name.replace(/\.xml$/i, "")} Wireless`, qtd: 5, un: "UN", valor: 150.00, categoria: "" },
+          { codigo: "PROD-" + fileHash.slice(4, 8), nome: `Acessório ${fileItem.name.replace(/\.xml$/i, "")} Pro`, qtd: 3, un: "UN", valor: 110.00, categoria: "" },
+          { codigo: "PROD-" + fileHash.slice(8, 12), nome: `Componente IPS ${fileItem.name.replace(/\.xml$/i, "")}`, qtd: 2, un: "UN", valor: 450.00, categoria: "" }
         ];
       }
 
-      // Verificar se a chave já foi importada anteriormente para evitar duplicidade
+      // Verificar se a chave já foi importada (localStorage + banco)
       const storageKey = `imported_xml_chaves_${empresa?.id || "default"}`;
       const chavesJaImportadas: string[] = JSON.parse(localStorage.getItem(storageKey) || "[]");
 
       if (chavesJaImportadas.includes(parsedChave)) {
         setIsProcessing(false);
-        toast.error(`Atenção: O XML da Nota Fiscal (Chave ${parsedChave.slice(0, 14)}...) já foi importado anteriormente! Importação duplicada cancelada.`);
+        toast.error(`Nota ${parsedChave.slice(0, 14)}... já importada anteriormente. Ignorando.`);
         return;
       }
 
+      // Verificar no banco de dados
+      if (empresa && parsedChave) {
+        const { data: existente } = await supabase
+          .from("notas_importadas" as never)
+          .select("id")
+          .eq("empresa_id", empresa.id)
+          .eq("chave_acesso", parsedChave)
+          .maybeSingle();
+        if (existente) {
+          setIsProcessing(false);
+          toast.error(`Nota ${parsedChave.slice(0, 14)}... já existe no sistema. Ignorando.`);
+          return;
+        }
+      }
+
       const totalCalculado = vNF || parsedProdutos.reduce((acc, p) => acc + (p.qtd * p.valor), 0);
+
+      // Parse parcelas do XML (cobr/dup)
+      const dupNodes = Array.from(doc.querySelectorAll("cobr > dup"));
+      const parsedParcelas = dupNodes.map((dup) => ({
+        numero: dup.querySelector("nDup")?.textContent || "",
+        dataVencimento: dup.querySelector("dVenc")?.textContent || "",
+        valor: parseFloat(dup.querySelector("vDup")?.textContent || "0"),
+        forma_pagamento: "Boleto",
+        conta_bancaria_id: "",
+      }));
 
       setImportResults({
         chave: parsedChave,
@@ -236,7 +496,8 @@ function NotasRecebidas() {
         cnpj,
         nNF,
         total: totalCalculado,
-        produtos: parsedProdutos
+        produtos: parsedProdutos,
+        parcelas: parsedParcelas,
       });
 
       setIsProcessing(false);
@@ -249,12 +510,24 @@ function NotasRecebidas() {
     }
   };
 
-  const handleConfirmarEstoqueFinanceiro = async () => {
+  const handleConfirmarXmlUpload = async () => {
     if (!importResults || !empresa) return;
     setIsSaving(true);
 
     try {
-      // 1. Obter ou criar fornecedor em contatos
+      // Verificar duplicidade
+      const { data: existente } = await supabase
+        .from("notas_importadas" as never)
+        .select("id")
+        .eq("empresa_id", empresa.id)
+        .eq("chave_acesso", importResults.chave)
+        .maybeSingle();
+      if (existente) {
+        toast.error("Esta nota já foi importada anteriormente.");
+        setIsSaving(false);
+        return;
+      }
+
       let fornecedorId: string | null = null;
       const { data: contatosExistentes } = await supabase
         .from("contatos")
@@ -266,20 +539,48 @@ function NotasRecebidas() {
       if (contatosExistentes) {
         fornecedorId = contatosExistentes.id;
       } else {
+        let dadosApi: any = null;
+        const cnpjDigits = importResults.cnpj.replace(/\D/g, "");
+        if (cnpjDigits.length === 14) {
+          for (const url of [
+            `https://brasilapi.com.br/api/cnpj/v1/${cnpjDigits}`,
+            `https://receitaws.com.br/v1/cnpj/${cnpjDigits}`,
+          ]) {
+            try {
+              const res = await fetch(url, { signal: AbortSignal.timeout(8000) });
+              if (res.ok) { dadosApi = await res.json(); break; }
+            } catch { /* tenta próxima */ }
+          }
+        }
         const { data: novoContato } = await supabase
           .from("contatos")
           .insert({
             empresa_id: empresa.id,
-            nome: importResults.emitente,
+            nome: dadosApi?.razao_social || dadosApi?.nome || importResults.emitente,
             documento: importResults.cnpj,
-            tipo: "fornecedor" as any
-          })
-          .select("id")
-          .single();
+            tipo: "fornecedor" as any,
+            email: dadosApi?.email || null,
+            telefone: dadosApi?.ddd_telefone_1 || dadosApi?.telefone || null,
+            cep: dadosApi?.cep || null,
+            logradouro: dadosApi?.logradouro || null,
+            numero: dadosApi?.numero || null,
+            complemento: dadosApi?.complemento || null,
+            bairro: dadosApi?.bairro || null,
+            cidade: dadosApi?.municipio || dadosApi?.city || null,
+            uf: dadosApi?.uf || dadosApi?.state || null,
+          } as any)
+          .select("id").single();
         if (novoContato) fornecedorId = novoContato.id;
       }
 
-      // 2. Atualizar ou Criar produtos e registrar movimentações de estoque
+      // Validar categorias obrigatórias
+      const semCategoria = importResults.produtos.filter(p => !p.categoria || p.categoria.trim() === "");
+      if (semCategoria.length > 0) {
+        toast.error(`Categoria obrigatória: ${semCategoria.map(p => p.nome).join(", ")}`);
+        setIsSaving(false);
+        return;
+      }
+
       let totalQtd = 0;
       for (const p of importResults.produtos) {
         totalQtd += p.qtd;
@@ -291,113 +592,666 @@ function NotasRecebidas() {
           .maybeSingle();
 
         let prodId: string;
-
         if (prodExistente) {
           prodId = prodExistente.id;
-          const novoEstoque = (Number(prodExistente.estoque_atual) || 0) + p.qtd;
-          await supabase
-            .from("produtos")
-            .update({
-              estoque_atual: novoEstoque,
-              preco_custo: p.valor
-            })
-            .eq("id", prodId);
+          await supabase.from("produtos").update({ estoque_atual: (Number(prodExistente.estoque_atual) || 0) + p.qtd, preco_custo: p.valor, categoria: p.categoria || (prodExistente as any).categoria || null }).eq("id", prodId);
         } else {
           const { data: novoProd } = await supabase
             .from("produtos")
-            .insert({
-              empresa_id: empresa.id,
-              codigo: p.codigo,
-              nome: p.nome,
-              unidade: p.un,
-              preco_custo: p.valor,
-              preco_venda: p.valor * 1.4,
-              estoque_atual: p.qtd,
-              ativo: true
-            })
-            .select("id")
-            .single();
+            .insert({ empresa_id: empresa.id, codigo: p.codigo, nome: p.nome, unidade: p.un, preco_custo: p.valor, preco_venda: p.valor * 1.4, estoque_atual: p.qtd, ativo: true, categoria: p.categoria || null } as any)
+            .select("id").single();
           prodId = novoProd!.id;
         }
 
-        // Registrar a movimentação de estoque
-        await supabase
-          .from("movimentacoes_estoque")
-          .insert({
-            empresa_id: empresa.id,
-            produto_id: prodId,
-            tipo: "entrada",
-            quantidade: p.qtd,
-            custo_unitario: p.valor,
-            observacoes: `Entrada via Importação de XML (Chave: ${importResults.chave})`
-          });
+        await supabase.from("movimentacoes_estoque").insert({
+          empresa_id: empresa.id, produto_id: prodId, tipo: "entrada", quantidade: p.qtd,
+          custo_unitario: p.valor, observacoes: `Entrada via Importação de XML (Chave: ${importResults.chave})`
+        });
       }
 
-      // 3. Criar lançamento financeiro no contas a pagar
-      const vencimento = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split("T")[0];
-      await supabase
-        .from("lancamentos_financeiros")
+      // 5. Salvar nota no banco
+      const { data: notaSalva } = await supabase
+        .from("notas_importadas" as never)
         .insert({
           empresa_id: empresa.id,
-          tipo: "pagar",
-          status: "aberto",
-          descricao: `Compra NF-e ${importResults.nNF} - ${importResults.emitente}`,
-          valor: importResults.total,
-          data_vencimento: vencimento,
-          contato_id: fornecedorId,
-          observacoes: `Importação de XML (Chave ${importResults.chave})`
-        });
+          chave_acesso: importResults.chave,
+          emitente: importResults.emitente,
+          cnpj_emitente: importResults.cnpj,
+          numero_nf: importResults.nNF,
+          data_emissao: new Date().toISOString().split("T")[0],
+          valor_total: importResults.total,
+          situacao: "lancada",
+          xml_completo: null,
+        } as any)
+        .select("id")
+        .single();
 
-      // 4. Salvar chave na lista de XMLs importados para impedir duplicidade
+      const notaId = (notaSalva as any)?.id;
+
+      // 6. Salvar itens no banco
+      if (notaId && importResults.produtos.length > 0) {
+        await supabase.from("notas_importadas_itens" as never).insert(
+          importResults.produtos.map(p => ({
+            nota_id: notaId,
+            codigo: p.codigo,
+            nome: p.nome,
+            quantidade: p.qtd,
+            unidade: p.un,
+            valor_unitario: p.valor,
+            valor_total: p.qtd * p.valor,
+            categoria: p.categoria || null,
+          })) as any
+        );
+      }
+
+      // 7. Buscar categoria financeira correspondente
+      let categoriaFinanceiraId: string | null = null;
+      const primeiraCategoria = importResults.produtos[0]?.categoria;
+      if (primeiraCategoria) {
+        const { data: cat } = await supabase
+          .from("categorias_financeiras")
+          .select("id")
+          .eq("empresa_id", empresa.id)
+          .ilike("nome", `%${primeiraCategoria}%`)
+          .maybeSingle();
+        if (cat) categoriaFinanceiraId = cat.id;
+      }
+
+      // 8. Lançar parcelas no contas a pagar — fornecedor vai na coluna Fornecedor, descrição só NF-e
+      if (importResults.parcelas.length > 0) {
+        for (const parc of importResults.parcelas) {
+          const { data: lanc } = await supabase
+            .from("lancamentos_financeiros")
+            .insert({
+              empresa_id: empresa.id,
+              tipo: "pagar",
+              status: "aberto",
+              descricao: `NF-e ${importResults.nNF}`,
+              valor: parc.valor,
+              data_vencimento: parc.dataVencimento,
+              contato_id: fornecedorId,
+              categoria_id: categoriaFinanceiraId,
+              observacoes: `Chave: ${importResults.chave} | Parcela ${parc.numero}`,
+              forma_pagamento: (parc as any).forma_pagamento || "Boleto",
+              conta_bancaria_id: (parc as any).conta_bancaria_id || null,
+            } as any)
+            .select("id")
+            .single();
+
+          if (notaId && lanc) {
+            await supabase.from("notas_importadas_parcelas" as never).insert({
+              nota_id: notaId,
+              numero: parc.numero,
+              data_vencimento: parc.dataVencimento,
+              valor: parc.valor,
+              lancamento_id: lanc.id,
+            } as any);
+          }
+        }
+      } else {
+        // Sem parcelas no XML → criar 1 título com vencimento em 30 dias
+        const vencimento = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split("T")[0];
+        const { data: lanc } = await supabase
+          .from("lancamentos_financeiros")
+          .insert({
+            empresa_id: empresa.id,
+            tipo: "pagar",
+            status: "aberto",
+            descricao: `NF-e ${importResults.nNF}`,
+            valor: importResults.total,
+            data_vencimento: vencimento,
+            contato_id: fornecedorId,
+            categoria_id: categoriaFinanceiraId,
+            observacoes: `Chave: ${importResults.chave}`,
+            forma_pagamento: "Boleto",
+            conta_bancaria_id: null,
+          } as any)
+          .select("id")
+          .single();
+
+        if (notaId && lanc) {
+          await supabase.from("notas_importadas_parcelas" as never).insert({
+            nota_id: notaId,
+            numero: "Única",
+            data_vencimento: vencimento,
+            valor: importResults.total,
+            lancamento_id: lanc.id,
+          } as any);
+        }
+      }
+
       const storageKey = `imported_xml_chaves_${empresa.id}`;
       const chavesJaImportadas: string[] = JSON.parse(localStorage.getItem(storageKey) || "[]");
       chavesJaImportadas.push(importResults.chave);
       localStorage.setItem(storageKey, JSON.stringify(chavesJaImportadas));
 
-      // 5. Adicionar à lista local de notas recebidas
       setNotas(prev => [{
-        chave: importResults.chave,
-        emitente: importResults.emitente,
-        cnpj: importResults.cnpj,
-        valor: importResults.total,
-        data_emissao: new Date().toISOString(),
-        manifesto: "confirmada",
-        situacao_sefaz: "autorizada"
+        chave: importResults.chave, emitente: importResults.emitente, cnpj: importResults.cnpj,
+        valor: importResults.total, data_emissao: new Date().toISOString(), situacao_sefaz: "autorizada"
       }, ...prev]);
 
-      // 6. Invalidação de React Query
       qc.invalidateQueries({ queryKey: ["produtos"] });
       qc.invalidateQueries({ queryKey: ["movs"] });
       qc.invalidateQueries({ queryKey: ["produtos-select-mov"] });
       qc.invalidateQueries({ queryKey: ["lancamentos"] });
       qc.invalidateQueries({ queryKey: ["dashboard-stats"] });
 
-      toast.success(`Importação Concluída com Sucesso! ${importResults.produtos.length} produtos atualizados (${totalQtd} unidades no estoque) e 1 conta a pagar de ${brl(importResults.total)} gerada.`);
-
+      const msgParcelas = importResults.parcelas.length > 0
+        ? ` e ${importResults.parcelas.length} parcela(s) no contas a pagar`
+        : " e 1 conta a pagar (venc. 30 dias)";
+      toast.success(`Importação Concluída! ${importResults.produtos.length} produtos (${totalQtd} un.)${msgParcelas}.`);
       setSelectedFiles([]);
       setImportResults(null);
     } catch (err: any) {
-      toast.error("Falha na gravação", {
-        description: "Ocorreu um erro ao salvar os dados no sistema. Por favor, verifique sua conexão ou tente novamente. " + err.message
-      });
+      toast.error("Falha na gravação", { description: err.message });
     } finally {
       setIsSaving(false);
     }
   };
 
-  // Filtrar manifestações
-  const filteredNotas = notas.filter(n => 
-    n.emitente.toLowerCase().includes(search.toLowerCase()) || 
-    n.chave.includes(search) || 
-    n.cnpj.includes(search)
-  );
+  const handleLancarNota = async () => {
+    if (!notaDetalhe || !empresa) return;
+    setIsSaving(true);
+
+    try {
+      // 0. Verificar se a nota já foi importada
+      const { data: existente } = await supabase
+        .from("notas_importadas" as never)
+        .select("id")
+        .eq("empresa_id", empresa.id)
+        .eq("chave_acesso", notaDetalhe.chave)
+        .maybeSingle();
+      if (existente) {
+        toast.error("Esta nota já foi importada anteriormente.");
+        setIsSaving(false);
+        return;
+      }
+
+      // 1. Salvar nota no banco
+      const { data: notaSalva } = await supabase
+        .from("notas_importadas" as never)
+        .insert({
+          empresa_id: empresa.id,
+          chave_acesso: notaDetalhe.chave,
+          emitente: notaDetalhe.emitente,
+          cnpj_emitente: notaDetalhe.cnpj,
+          numero_nf: notaDetalhe.nNF,
+          data_emissao: notaDetalhe.data,
+          valor_total: notaDetalhe.valor,
+          situacao: "lancada",
+          xml_completo: notaDetalhe.xml,
+        } as any)
+        .select("id")
+        .single();
+
+      const notaId = (notaSalva as any)?.id;
+
+      // 2. Salvar itens no banco
+      if (notaId && notaDetalhe.produtos.length > 0) {
+        await supabase.from("notas_importadas_itens" as never).insert(
+          notaDetalhe.produtos.map(p => ({
+            nota_id: notaId,
+            codigo: p.codigo,
+            nome: p.nome,
+            quantidade: p.qtd,
+            unidade: p.un,
+            valor_unitario: p.valorUnit,
+            valor_total: p.valorTotal,
+            categoria: p.categoria || null,
+          })) as any
+        );
+      }
+
+      // 3. Obter ou criar fornecedor
+      let fornecedorId: string | null = null;
+      const { data: contatosExistentes } = await supabase
+        .from("contatos")
+        .select("id")
+        .eq("empresa_id", empresa.id)
+        .ilike("nome", `%${notaDetalhe.emitente.slice(0, 15)}%`)
+        .maybeSingle();
+
+      if (contatosExistentes) {
+        fornecedorId = contatosExistentes.id;
+      } else {
+        // Buscar dados do CNPJ via APIs públicas para preencher o cadastro
+        let dadosApi: any = null;
+        const cnpjDigits = notaDetalhe.cnpj.replace(/\D/g, "");
+        if (cnpjDigits.length === 14) {
+          for (const url of [
+            `https://brasilapi.com.br/api/cnpj/v1/${cnpjDigits}`,
+            `https://receitaws.com.br/v1/cnpj/${cnpjDigits}`,
+          ]) {
+            try {
+              const res = await fetch(url, { signal: AbortSignal.timeout(8000) });
+              if (res.ok) { dadosApi = await res.json(); break; }
+            } catch { /* tenta próxima */ }
+          }
+        }
+        const { data: novoContato } = await supabase
+          .from("contatos")
+          .insert({
+            empresa_id: empresa.id,
+            nome: dadosApi?.razao_social || dadosApi?.nome || notaDetalhe.emitente,
+            documento: notaDetalhe.cnpj,
+            tipo: "fornecedor" as any,
+            email: dadosApi?.email || null,
+            telefone: dadosApi?.ddd_telefone_1 || dadosApi?.telefone || null,
+            cep: dadosApi?.cep || null,
+            logradouro: dadosApi?.logradouro || null,
+            numero: dadosApi?.numero || null,
+            complemento: dadosApi?.complemento || null,
+            bairro: dadosApi?.bairro || null,
+            cidade: dadosApi?.municipio || dadosApi?.city || null,
+            uf: dadosApi?.uf || dadosApi?.state || null,
+          } as any)
+          .select("id").single();
+        if (novoContato) fornecedorId = novoContato.id;
+      }
+
+      // 4. Atualizar ou criar produtos e registrar movimentações
+      // Validar categorias obrigatórias
+      const semCategoria = notaDetalhe.produtos.filter(p => !p.categoria || p.categoria.trim() === "");
+      if (semCategoria.length > 0) {
+        toast.error(`Categoria obrigatória: ${semCategoria.map(p => p.nome).join(", ")}`);
+        setIsSaving(false);
+        return;
+      }
+
+      let totalQtd = 0;
+      for (const p of notaDetalhe.produtos) {
+        totalQtd += p.qtd;
+        const { data: prodExistente } = await supabase
+          .from("produtos")
+          .select("id, estoque_atual, categoria")
+          .eq("empresa_id", empresa.id)
+          .or(`codigo.eq.${p.codigo},nome.ilike.%${p.nome.slice(0, 10)}%`)
+          .maybeSingle();
+
+        let prodId: string;
+        if (prodExistente) {
+          prodId = prodExistente.id;
+          await supabase.from("produtos").update({ estoque_atual: (Number(prodExistente.estoque_atual) || 0) + p.qtd, preco_custo: p.valorUnit, categoria: p.categoria || (prodExistente as any).categoria || null }).eq("id", prodId);
+        } else {
+          const { data: novoProd } = await (supabase
+            .from("produtos")
+            .insert({ empresa_id: empresa.id, codigo: p.codigo, nome: p.nome, unidade: p.un, preco_custo: p.valorUnit, preco_venda: p.valorUnit * 1.4, estoque_atual: p.qtd, ativo: true, categoria: p.categoria || null } as any)
+            .select("id") as any).single();
+          prodId = novoProd!.id;
+        }
+
+        await supabase.from("movimentacoes_estoque").insert({
+          empresa_id: empresa.id, produto_id: prodId, tipo: "entrada", quantidade: p.qtd,
+          custo_unitario: p.valorUnit, observacoes: `Entrada NF-e ${notaDetalhe.nNF} (Chave: ${notaDetalhe.chave})`
+        });
+      }
+
+      // 5. Lançar parcelas no contas a pagar (só se houver parcelas)
+      // Buscar categoria financeira correspondente ao produto (primeiro produto da nota)
+      let categoriaFinanceiraId: string | null = null;
+      const primeiraCategoria = notaDetalhe.produtos[0]?.categoria;
+      if (primeiraCategoria) {
+        const { data: cat } = await supabase
+          .from("categorias_financeiras")
+          .select("id")
+          .eq("empresa_id", empresa.id)
+          .ilike("nome", `%${primeiraCategoria}%`)
+          .maybeSingle();
+        if (cat) categoriaFinanceiraId = cat.id;
+      }
+
+      if (notaDetalhe.parcelas.length > 0) {
+        for (const parc of notaDetalhe.parcelas) {
+          const { data: lanc } = await supabase
+            .from("lancamentos_financeiros")
+            .insert({
+              empresa_id: empresa.id,
+              tipo: "pagar",
+              status: "aberto",
+              descricao: `NF-e ${notaDetalhe.nNF}`,
+              valor: parc.valor,
+              data_vencimento: parc.dataVencimento,
+              contato_id: fornecedorId,
+              categoria_id: categoriaFinanceiraId,
+              observacoes: `Chave: ${notaDetalhe.chave} | Parcela ${parc.numero}`,
+              forma_pagamento: (parc as any).forma_pagamento || "Boleto",
+              conta_bancaria_id: (parc as any).conta_bancaria_id || null,
+            } as any)
+            .select("id")
+            .single();
+
+          if (notaId && lanc) {
+            await supabase.from("notas_importadas_parcelas" as never).insert({
+              nota_id: notaId,
+              numero: parc.numero,
+              data_vencimento: parc.dataVencimento,
+              valor: parc.valor,
+              lancamento_id: lanc.id,
+            } as any);
+          }
+        }
+      }
+
+      // 6. Adicionar à lista local
+      setNotas(prev => [{
+        chave: notaDetalhe.chave,
+        emitente: notaDetalhe.emitente,
+        cnpj: notaDetalhe.cnpj,
+        valor: notaDetalhe.valor,
+        data_emissao: notaDetalhe.data,
+        situacao_sefaz: "autorizada"
+      }, ...prev]);
+
+      // 7. Invalidação de React Query
+      qc.invalidateQueries({ queryKey: ["produtos"] });
+      qc.invalidateQueries({ queryKey: ["movs"] });
+      qc.invalidateQueries({ queryKey: ["produtos-select-mov"] });
+      qc.invalidateQueries({ queryKey: ["lancamentos"] });
+      qc.invalidateQueries({ queryKey: ["dashboard-stats"] });
+
+      const msgParcelas = notaDetalhe.parcelas.length > 0
+        ? ` e ${notaDetalhe.parcelas.length} parcela(s) no contas a pagar`
+        : " (sem parcelas — estoque atualizado)";
+      toast.success(`Nota lançada! ${notaDetalhe.produtos.length} produtos (${totalQtd} un.)${msgParcelas}.`);
+      setNotaDetalhe(null);
+    } catch (err: any) {
+      toast.error("Falha ao lançar nota", { description: err.message });
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const handleAlterarNota = async () => {
+    if (!notaDetalhe?.id || !empresa) return;
+    setIsSaving(true);
+    try {
+      const semCategoria = notaDetalhe.produtos.filter(p => !p.categoria || p.categoria.trim() === "");
+      if (semCategoria.length > 0) {
+        toast.error(`Categoria obrigatória: ${semCategoria.map(p => p.nome).join(", ")}`);
+        setIsSaving(false);
+        return;
+      }
+
+      // Buscar itens antigos para calcular delta de estoque
+      const { data: itensAntigos } = await supabase.from("notas_importadas_itens" as never).select("codigo, quantidade").eq("nota_id", notaDetalhe.id as any);
+      const mapaAntigo = new Map<string, number>();
+      (itensAntigos as any[] || []).forEach((it: any) => mapaAntigo.set(it.codigo, Number(it.quantidade) || 0));
+
+      // 1. Atualizar nota
+      await supabase.from("notas_importadas" as never).update({ valor_total: notaDetalhe.valor, situacao: "lancada" } as any).eq("id", notaDetalhe.id as any);
+
+      // 2. Atualizar estoque por delta e recriar itens
+      for (const p of notaDetalhe.produtos) {
+        const qtdAntiga = mapaAntigo.get(p.codigo) ?? 0;
+        const delta = p.qtd - qtdAntiga;
+        const { data: prodExistente } = await supabase.from("produtos").select("id, estoque_atual, categoria").eq("empresa_id", empresa.id).or(`codigo.eq.${p.codigo},nome.ilike.%${p.nome.slice(0, 10)}%`).maybeSingle();
+        let prodId: string | null = prodExistente ? (prodExistente as any).id : null;
+        if (prodExistente) {
+          prodId = (prodExistente as any).id;
+          const novoEstoque = (Number((prodExistente as any).estoque_atual) || 0) + delta;
+          await supabase.from("produtos").update({ estoque_atual: novoEstoque, preco_custo: p.valorUnit, categoria: p.categoria || (prodExistente as any).categoria || null }).eq("id", prodId);
+          if (delta !== 0) {
+            await supabase.from("movimentacoes_estoque").insert({ empresa_id: empresa.id, produto_id: prodId, tipo: delta > 0 ? "entrada" : "saida", quantidade: Math.abs(delta), custo_unitario: p.valorUnit, observacoes: `Ajuste NF-e ${notaDetalhe.nNF} alterada (Chave: ${notaDetalhe.chave})` });
+          }
+        } else {
+          const { data: novoProd } = await (supabase.from("produtos").insert({ empresa_id: empresa.id, codigo: p.codigo, nome: p.nome, unidade: p.un, preco_custo: p.valorUnit, preco_venda: p.valorUnit * 1.4, estoque_atual: p.qtd, ativo: true, categoria: p.categoria || null } as any).select("id") as any).single();
+          prodId = novoProd!.id;
+          await supabase.from("movimentacoes_estoque").insert({ empresa_id: empresa.id, produto_id: prodId, tipo: "entrada", quantidade: p.qtd, custo_unitario: p.valorUnit, observacoes: `Entrada NF-e ${notaDetalhe.nNF} alterada (Chave: ${notaDetalhe.chave})` });
+        }
+      }
+      // Itens removidos: devolver estoque
+      for (const [codigo, qtdAntiga] of mapaAntigo.entries()) {
+        if (!notaDetalhe.produtos.some(p => p.codigo === codigo)) {
+          const { data: prod } = await supabase.from("produtos").select("id, estoque_atual").eq("empresa_id", empresa.id).eq("codigo", codigo).maybeSingle();
+          if (prod) {
+            await supabase.from("produtos").update({ estoque_atual: (Number((prod as any).estoque_atual) || 0) - qtdAntiga }).eq("id", (prod as any).id);
+            await supabase.from("movimentacoes_estoque").insert({ empresa_id: empresa.id, produto_id: (prod as any).id, tipo: "saida", quantidade: qtdAntiga, custo_unitario: 0, observacoes: `Remoção produto NF-e ${notaDetalhe.nNF} alterada` });
+          }
+        }
+      }
+      // Recriar itens
+      await supabase.from("notas_importadas_itens" as never).delete().eq("nota_id", notaDetalhe.id as any);
+      if (notaDetalhe.produtos.length > 0) {
+        await supabase.from("notas_importadas_itens" as never).insert(notaDetalhe.produtos.map(p => ({ nota_id: notaDetalhe.id, codigo: p.codigo, nome: p.nome, quantidade: p.qtd, unidade: p.un, valor_unitario: p.valorUnit, valor_total: p.valorTotal, categoria: p.categoria || null })) as any);
+      }
+
+      // 3. Parcelas/lançamentos: reaproveita ou recria
+      const { data: parcelasAntigas } = await supabase.from("notas_importadas_parcelas" as never).select("id, lancamento_id").eq("nota_id", notaDetalhe.id as any);
+      const lancIdsAntigos = ((parcelasAntigas as any[]) || []).map((pa: any) => pa.lancamento_id).filter(Boolean);
+      // Buscar categoria financeira
+      let categoriaFinanceiraId: string | null = null;
+      const primeiraCategoria = notaDetalhe.produtos[0]?.categoria;
+      if (primeiraCategoria) {
+        const { data: cat } = await supabase.from("categorias_financeiras").select("id").eq("empresa_id", empresa.id).ilike("nome", `%${primeiraCategoria}%`).maybeSingle();
+        if (cat) categoriaFinanceiraId = (cat as any).id;
+      }
+      // Buscar fornecedor id atual
+      let fornecedorId: string | null = null;
+      const { data: cont } = await supabase.from("contatos").select("id").eq("empresa_id", empresa.id).ilike("nome", `%${notaDetalhe.emitente.slice(0, 15)}%`).maybeSingle();
+      if (cont) fornecedorId = (cont as any).id;
+
+      // Deletar parcelas antigas e lançamentos antigos
+      await supabase.from("notas_importadas_parcelas" as never).delete().eq("nota_id", notaDetalhe.id as any);
+      if (lancIdsAntigos.length > 0) {
+        await supabase.from("lancamentos_financeiros").delete().in("id", lancIdsAntigos);
+      }
+      // Recriar parcelas/lançamentos com dados atuais (forma/banco) — descrição só NF-e, fornecedor na coluna
+      if (notaDetalhe.parcelas.length > 0) {
+        for (const parc of notaDetalhe.parcelas) {
+          const { data: lanc } = await supabase.from("lancamentos_financeiros").insert({ empresa_id: empresa.id, tipo: "pagar", status: "aberto", descricao: `NF-e ${notaDetalhe.nNF}`, valor: parc.valor, data_vencimento: parc.dataVencimento, contato_id: fornecedorId, categoria_id: categoriaFinanceiraId, observacoes: `Chave: ${notaDetalhe.chave} | Parcela ${parc.numero}`, forma_pagamento: (parc as any).forma_pagamento || "Boleto", conta_bancaria_id: (parc as any).conta_bancaria_id || null } as any).select("id").single();
+          if (lanc) await supabase.from("notas_importadas_parcelas" as never).insert({ nota_id: notaDetalhe.id, numero: parc.numero, data_vencimento: parc.dataVencimento, valor: parc.valor, lancamento_id: (lanc as any).id } as any);
+        }
+      }
+
+      qc.invalidateQueries({ queryKey: ["produtos"] });
+      qc.invalidateQueries({ queryKey: ["movs"] });
+      qc.invalidateQueries({ queryKey: ["lancamentos"] });
+      qc.invalidateQueries({ queryKey: ["dashboard-stats"] });
+      toast.success("Nota alterada com sucesso");
+      setNotaDetalhe(null);
+    } catch (err: any) {
+      toast.error("Falha ao alterar nota", { description: err.message });
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  // Filtrar notas recebidas
+  const mesesDisponiveis = useMemo(() => {
+    const meses = new Set<string>();
+    notas.forEach(n => {
+      if (n.data_emissao) {
+        meses.add(n.data_emissao.slice(0, 7)); // "YYYY-MM"
+      }
+    });
+    return Array.from(meses).sort().reverse();
+  }, [notas]);
+
+  const filteredNotas = notas.filter(n => {
+    const matchSearch = n.emitente.toLowerCase().includes(search.toLowerCase()) || 
+      n.chave.includes(search) || 
+      (n.numero_nf && n.numero_nf.includes(search)) ||
+      n.cnpj.includes(search);
+    const matchMes = filtroMes === "todos" || (n.data_emissao || "").startsWith(filtroMes);
+    return matchSearch && matchMes;
+  });
+
+  const handleVerNota = async (n: NotaRecebida) => {
+    if (n.xml_completo || n.id) {
+      // Se já lançada, prioriza dados salvos (categoria e parcelas editadas)
+      if (n.id) {
+        const { data: itens } = await supabase.from("notas_importadas_itens" as never).select("codigo, nome, quantidade, unidade, valor_unitario, valor_total, categoria").eq("nota_id", n.id as any);
+        const { data: parcelasDB } = await supabase.from("notas_importadas_parcelas" as never).select("numero, data_vencimento, valor, lancamento_id").eq("nota_id", n.id as any);
+        if (itens && (itens as any).length > 0) {
+          const produtos = (itens as any).map((it: any) => ({ codigo: it.codigo, nome: it.nome, qtd: Number(it.quantidade), un: it.unidade, valorUnit: Number(it.valor_unitario), valorTotal: Number(it.valor_total), categoria: it.categoria || "" }));
+          let parcelas: { numero: string; dataVencimento: string; valor: number; forma_pagamento: string; conta_bancaria_id: string }[] = [];
+          if (parcelasDB && (parcelasDB as any).length > 0) {
+            const lancIds = (parcelasDB as any[]).map((p: any) => p.lancamento_id).filter(Boolean);
+            let lancMap = new Map<string, any>();
+            if (lancIds.length > 0) {
+              const { data: lancs } = await supabase.from("lancamentos_financeiros").select("id, forma_pagamento, conta_bancaria_id").in("id", lancIds);
+              (lancs as any[] || []).forEach((l: any) => lancMap.set(l.id, l));
+            }
+            parcelas = (parcelasDB as any[]).map((p: any) => {
+              const lanc = lancMap.get(p.lancamento_id);
+              return { numero: p.numero, dataVencimento: p.data_vencimento, valor: Number(p.valor), forma_pagamento: lanc?.forma_pagamento || "Boleto", conta_bancaria_id: lanc?.conta_bancaria_id || "" };
+            });
+          }
+          const xml = n.xml_completo || "";
+          const nNF = n.numero_nf || "";
+          setNotaDetalhe({ id: n.id, chave: n.chave, emitente: n.emitente, cnpj: n.cnpj, nNF, data: n.data_emissao, valor: n.valor, produtos, parcelas, xml });
+          return;
+        }
+      }
+      // Fallback: parse do XML quando ainda não há itens salvos ou nota não lançada
+      const xml = n.xml_completo || "";
+      if (xml) {
+        const produtos = parseProdutosDoXml(xml);
+        const parser = new DOMParser();
+        const doc = parser.parseFromString(xml, "text/xml");
+        const nNF = doc.querySelector("nNF")?.textContent || n.numero_nf || "";
+        const parcelas = parseParcelasDoXml(xml);
+        setNotaDetalhe({ id: n.id, chave: n.chave, emitente: n.emitente, cnpj: n.cnpj, nNF, data: n.data_emissao, valor: n.valor, produtos, parcelas, xml });
+        return;
+      }
+    }
+    if (!empresa) return;
+    toast.info("Buscando detalhes da nota na SEFAZ...");
+    try {
+      const result = await consultarNFePorChaveFn({ data: { empresaId: empresa.id, chave: n.chave } });
+      if (result.sucesso && result.xml) {
+        const xml = result.xml;
+        const produtos = parseProdutosDoXml(xml);
+        const parser = new DOMParser();
+        const doc = parser.parseFromString(xml, "text/xml");
+        const nNF = doc.querySelector("nNF")?.textContent || "";
+        const parcelas = parseParcelasDoXml(xml);
+        setNotaDetalhe({
+          id: n.id,
+          chave: n.chave,
+          emitente: n.emitente,
+          cnpj: n.cnpj,
+          nNF,
+          data: n.data_emissao,
+          valor: n.valor,
+          produtos,
+          parcelas,
+          xml,
+        });
+      } else {
+        toast.error(result.erro || "Não foi possível buscar detalhes");
+      }
+    } catch {
+      toast.error("Erro ao consultar SEFAZ");
+    }
+  };
+
+  const handleBaixarXml = (n: NotaRecebida) => {
+    if (!n.xml_completo) return;
+    const blob = new Blob([n.xml_completo], { type: "application/xml" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `NFe_${n.numero_nf || n.chave.slice(0, 44)}.xml`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
+  const handleBaixarPdf = (n: NotaRecebida) => {
+    // Parse XML para extrair dados detalhados
+    let produtos: { codigo: string; nome: string; qtd: number; un: string; valorUnit: number; valorTotal: number }[] = [];
+    let destinatario = { nome: "", cnpj: "", endereco: "" };
+    let transportadora = "";
+    if (n.xml_completo) {
+      try {
+        const parser = new DOMParser();
+        const doc = parser.parseFromString(n.xml_completo, "text/xml");
+        const detNodes = Array.from(doc.querySelectorAll("det"));
+        produtos = detNodes.map((det) => ({
+          codigo: det.querySelector("prod > cProd")?.textContent || "",
+          nome: det.querySelector("prod > xProd")?.textContent || "",
+          qtd: parseFloat(det.querySelector("prod > qCom")?.textContent || "0"),
+          un: det.querySelector("prod > uCom")?.textContent || "UN",
+          valorUnit: parseFloat(det.querySelector("prod > vUnCom")?.textContent || "0"),
+          valorTotal: parseFloat(det.querySelector("prod > vProd")?.textContent || "0"),
+        }));
+        destinatario = {
+          nome: doc.querySelector("dest > xNome")?.textContent || "",
+          cnpj: doc.querySelector("dest > CNPJ")?.textContent || doc.querySelector("dest > CPF")?.textContent || "",
+          endereco: [doc.querySelector("dest > enderDest > xLgr")?.textContent, doc.querySelector("dest > enderDest > nro")?.textContent, doc.querySelector("dest > enderDest > xBairro")?.textContent].filter(Boolean).join(", "),
+        };
+        transportadora = doc.querySelector("transp > transp > xNome")?.textContent || "";
+      } catch { /* XML parse error */ }
+    }
+    const nNF = n.numero_nf || "";
+    const dataEmissao = n.data_emissao ? dateBR(n.data_emissao) : "—";
+    const chaveFormatada = n.chave.replace(/(\d{4})/g, "$1 ").trim();
+
+    const html = `<!DOCTYPE html><html><head><meta charset="utf-8"><title>NF-e ${nNF}</title>
+<style>
+  *{margin:0;padding:0;box-sizing:border-box}
+  body{font-family:"Arial",sans-serif;font-size:11px;color:#000;background:#fff;padding:10px}
+  .nf-header{background:#1a1a2e;color:#fff;padding:8px 12px;display:flex;justify-content:space-between;align-items:center;margin-bottom:6px}
+  .nf-header h1{font-size:13px;letter-spacing:1px}
+  .nf-header .num{font-size:11px;opacity:.8}
+  .section{border:1px solid #999;margin-bottom:6px;padding:6px 8px}
+  .section-title{background:#e8e8e8;padding:2px 6px;font-weight:bold;font-size:10px;text-transform:uppercase;margin-bottom:4px;letter-spacing:.5px}
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:0 16px}
+  .field{margin-bottom:3px}.label{font-weight:bold;font-size:9px;text-transform:uppercase;color:#444}.val{font-size:11px}
+  table{width:100%;border-collapse:collapse;margin-top:4px}
+  th{background:#e8e8e8;border:1px solid #999;padding:3px 5px;font-size:9px;text-transform:uppercase;text-align:left}
+  td{border:1px solid #ccc;padding:3px 5px;font-size:10px}
+  .text-right{text-align:right}.text-center{text-align:center}
+  .total-row{font-weight:bold;background:#f5f5f5}
+  .chave{background:#f0f0f0;padding:6px 8px;border:1px solid #999;margin-top:6px;text-align:center;font-size:10px;letter-spacing:1px}
+  .chave strong{display:block;font-size:9px;margin-bottom:2px;color:#444}
+  .footer{margin-top:8px;text-align:center;font-size:8px;color:#666}
+  @media print{body{padding:0}.nf-header{background:#1a1a2e!important;-webkit-print-color-adjust:exact;print-color-adjust:exact}}
+</style></head><body>
+<div class="nf-header"><h1>NOTA FISCAL ELETRÔNICA — NF-e</h1><div class="num">Nº ${nNF}</div></div>
+<div class="section">
+  <div class="grid2">
+    <div class="field"><div class="label">Documento Fiscal</div><div class="val">NF-e — Modelo 55</div></div>
+    <div class="field"><div class="label">Data de Emissão</div><div class="val">${dataEmissao}</div></div>
+  </div>
+</div>
+<div class="section">
+  <div class="section-title">EMITENTE</div>
+  <div class="grid2">
+    <div><div class="field"><div class="label">Razão Social</div><div class="val">${n.emitente}</div></div>
+    <div class="field"><div class="label">CNPJ</div><div class="val">${n.cnpj}</div></div></div>
+    <div><div class="field"><div class="label">Situação</div><div class="val">${n.situacao_sefaz === "autorizada" ? "Autorizada" : "Cancelada"}</div></div></div>
+  </div>
+</div>
+${destinatario.nome ? `<div class="section"><div class="section-title">DESTINATÁRIO</div>
+<div class="grid2"><div><div class="field"><div class="label">Razão Social</div><div class="val">${destinatario.nome}</div></div>
+<div class="field"><div class="label">CNPJ/CPF</div><div class="val">${destinatario.cnpj}</div></div></div>
+<div><div class="field"><div class="label">Endereço</div><div class="val">${destinatario.endereco}</div></div></div></div></div>` : ""}
+<div class="section">
+  <div class="section-title">PRODUTOS / SERVIÇOS</div>
+  <table>
+    <thead><tr><th>Código</th><th>Descrição</th><th class="text-center">Qtd</th><th class="text-center">UN</th><th class="text-right">Valor Unit.</th><th class="text-right">Valor Total</th></tr></thead>
+    <tbody>
+      ${produtos.length > 0 ? produtos.map(p => `<tr><td>${p.codigo}</td><td>${p.nome}</td><td class="text-center">${p.qtd}</td><td class="text-center">${p.un}</td><td class="text-right">${brl(p.valorUnit)}</td><td class="text-right">${brl(p.valorTotal)}</td></tr>`).join("") : `<tr><td colspan="6" style="text-align:center;color:#666">Produto(s) do XML</td></tr>`}
+      <tr class="total-row"><td colspan="5" class="text-right">VALOR TOTAL</td><td class="text-right">${brl(n.valor)}</td></tr>
+    </tbody>
+  </table>
+</div>
+${transportadora ? `<div class="section"><div class="section-title">TRANSPORTE</div><div class="field"><div class="label">Transportadora</div><div class="val">${transportadora}</div></div></div>` : ""}
+<div class="chave"><strong>CHAVE DE ACESSO</strong>${chaveFormatada}</div>
+<div class="footer">Documento gerado pelo sistema Norvo Gestão — ${new Date().toLocaleString("pt-BR")}</div>
+<script>window.onload=()=>{window.print();window.onafterprint=()=>window.close()}</script>
+</body></html>`;
+    const w = window.open("", "_blank");
+    if (w) { w.document.write(html); w.document.close(); }
+  };
 
   return (
     <>
       <PageHeader 
         eyebrow="Gestão Fiscal" 
-        title="Notas de Entrada" 
-        description="Gerencie notas de compra, realize manifestação do destinatário e importe XMLs para o estoque e financeiro." 
+        title="Notas de Compra" 
+        description="Consulte notas fiscais emitidas contra seu CNPJ e importe XMLs para o estoque e financeiro." 
         actions={
           <div className="flex items-center gap-2">
             <Button variant="outline" size="sm">
@@ -409,30 +1263,43 @@ function NotasRecebidas() {
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
         <TabsList className="bg-muted/80 p-1 w-full max-w-[400px]">
-          <TabsTrigger value="manifesto" className="flex-1 text-xs sm:text-sm">Manifestação Destinatário</TabsTrigger>
+          <TabsTrigger value="manifesto" className="flex-1 text-xs sm:text-sm">Notas de Compra</TabsTrigger>
           <TabsTrigger value="xml" className="flex-1 text-xs sm:text-sm">Importação de XML</TabsTrigger>
         </TabsList>
 
         <TabsContent value="manifesto" className="space-y-4">
           <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-            <div className="relative flex-1 max-w-md">
-              <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-              <Input
-                placeholder="Buscar por emitente, CNPJ ou chave..."
-                className="pl-9 h-9"
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-              />
+            <div className="flex flex-1 gap-2 max-w-md">
+              <div className="relative flex-1">
+                <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+                <Input
+                  placeholder="Buscar por emitente, CNPJ ou chave..."
+                  className="pl-9 h-9"
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+                />
+              </div>
+              <select
+                value={filtroMes}
+                onChange={(e) => setFiltroMes(e.target.value)}
+                className="h-9 rounded-md border border-input bg-background px-3 text-sm"
+              >
+                <option value="todos">Todos os meses</option>
+                {mesesDisponiveis.map(m => {
+                  const [ano, mes] = m.split("-");
+                  const nomesMes = ["Jan","Fev","Mar","Abr","Mai","Jun","Jul","Ago","Set","Out","Nov","Dez"];
+                  return <option key={m} value={m}>{nomesMes[parseInt(mes)-1]}/{ano}</option>;
+                })}
+              </select>
             </div>
             
             <Button 
               variant="outline" 
-              onClick={handleSincronizarSefaz}
-              disabled={isRefreshing}
+              onClick={() => setChaveImportModal(true)}
               className="w-full sm:w-auto h-9"
             >
-              <RefreshCw className={`mr-2 h-4 w-4 ${isRefreshing ? 'animate-spin' : ''}`} />
-              Sincronizar SEFAZ
+              <KeyRound className="mr-2 h-4 w-4" />
+              Importar por Chave
             </Button>
           </div>
 
@@ -442,29 +1309,15 @@ function NotasRecebidas() {
                 <TableHeader className="bg-muted/40">
                   <TableRow>
                     <TableHead className="font-semibold text-foreground">Emitente</TableHead>
-                    <TableHead className="font-semibold text-foreground">Chave de Acesso</TableHead>
+                    <TableHead className="font-semibold text-foreground">NF-e</TableHead>
                     <TableHead className="font-semibold text-foreground">Emissão</TableHead>
                     <TableHead className="text-right font-semibold text-foreground">Valor</TableHead>
-                    <TableHead className="font-semibold text-foreground">Situação SEFAZ</TableHead>
-                    <TableHead className="font-semibold text-foreground">Manifesto</TableHead>
-                    <TableHead className="text-right" />
+                    <TableHead className="font-semibold text-foreground">Situação</TableHead>
+                    <TableHead className="w-24" />
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {filteredNotas.map((n) => {
-                    const getManifestoBadge = (status: typeof n.manifesto) => {
-                      switch (status) {
-                        case "pendente":
-                          return <span className="inline-flex items-center rounded-full bg-yellow-500/10 px-2 py-0.5 text-xs font-medium text-yellow-600 dark:text-yellow-400">Pendente</span>;
-                        case "ciencia":
-                          return <span className="inline-flex items-center rounded-full bg-blue-500/10 px-2 py-0.5 text-xs font-medium text-blue-600 dark:text-blue-400">Ciência Registrada</span>;
-                        case "confirmada":
-                          return <span className="inline-flex items-center rounded-full bg-emerald-500/10 px-2 py-0.5 text-xs font-medium text-emerald-600 dark:text-emerald-400">Operação Confirmada</span>;
-                        case "desconhecida":
-                          return <span className="inline-flex items-center rounded-full bg-destructive/10 px-2 py-0.5 text-xs font-medium text-destructive">Desconhecida</span>;
-                      }
-                    };
-
                     const getSefazBadge = (status: typeof n.situacao_sefaz) => {
                       return status === "autorizada" ? (
                         <span className="inline-flex items-center text-[11px] font-medium text-emerald-600 dark:text-emerald-400">
@@ -478,53 +1331,66 @@ function NotasRecebidas() {
                     };
 
                     return (
-                      <TableRow key={n.chave} className="transition-colors hover:bg-muted/30">
+                      <TableRow key={n.chave} className="transition-colors hover:bg-muted/30 cursor-pointer" onClick={() => handleVerNota(n)}>
                         <TableCell className="max-w-[220px]">
                           <div className="font-medium text-foreground truncate">{n.emitente}</div>
                           <div className="text-xs text-muted-foreground">{n.cnpj}</div>
                         </TableCell>
-                        <TableCell className="font-mono text-xs text-muted-foreground max-w-[200px] truncate">
-                          {n.chave}
+                        <TableCell className="text-tabular text-muted-foreground">
+                          <div className="font-mono text-xs">{n.numero_nf || "—"}</div>
+                          <div className="font-mono text-[10px] text-muted-foreground/60 truncate max-w-[140px]">{n.chave}</div>
                         </TableCell>
                         <TableCell className="text-tabular text-muted-foreground">{dateBR(n.data_emissao)}</TableCell>
                         <TableCell className="text-right text-tabular font-medium text-foreground">{brl(n.valor)}</TableCell>
                         <TableCell>{getSefazBadge(n.situacao_sefaz)}</TableCell>
-                        <TableCell>{getManifestoBadge(n.manifesto)}</TableCell>
                         <TableCell className="text-right">
-                          <div className="flex justify-end gap-1.5">
-                            {n.manifesto === "pendente" && (
-                              <Button 
-                                size="sm" 
-                                variant="ghost" 
-                                className="h-8 text-blue-600 hover:text-blue-700 hover:bg-blue-500/10"
-                                onClick={() => handleManifestar(n.chave, "ciencia")}
-                              >
-                                Dar Ciência
-                              </Button>
+                          <div className="flex items-center justify-end gap-0.5" onClick={(e) => e.stopPropagation()}>
+                            <TooltipProvider>
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <Button size="sm" variant="ghost" className="h-7 w-7 p-0" onClick={() => handleVerNota(n)}>
+                                    <Eye className="h-3.5 w-3.5" />
+                                  </Button>
+                                </TooltipTrigger>
+                                <TooltipContent>Ver detalhes</TooltipContent>
+                              </Tooltip>
+                            </TooltipProvider>
+                            {n.xml_completo && (
+                              <TooltipProvider>
+                                <Tooltip>
+                                  <TooltipTrigger asChild>
+                                    <Button size="sm" variant="ghost" className="h-7 w-7 p-0" onClick={() => handleBaixarXml(n)}>
+                                      <FileCode className="h-3.5 w-3.5" />
+                                    </Button>
+                                  </TooltipTrigger>
+                                  <TooltipContent>Baixar XML</TooltipContent>
+                                </Tooltip>
+                              </TooltipProvider>
                             )}
-                            {n.manifesto === "ciencia" && (
-                              <>
-                                <Button 
-                                  size="sm" 
-                                  variant="ghost" 
-                                  className="h-8 text-emerald-600 hover:text-emerald-700 hover:bg-emerald-500/10"
-                                  onClick={() => handleManifestar(n.chave, "confirmada")}
-                                >
-                                  Confirmar
-                                </Button>
-                                <Button 
-                                  size="sm" 
-                                  variant="ghost" 
-                                  className="h-8 text-destructive hover:bg-destructive/10"
-                                  onClick={() => handleManifestar(n.chave, "desconhecida")}
-                                >
-                                  Desconhecer
-                                </Button>
-                              </>
-                            )}
-                            {n.manifesto !== "pendente" && n.manifesto !== "ciencia" && (
-                              <span className="text-xs text-muted-foreground px-3 py-1">SEFAZ Notificada</span>
-                            )}
+                            <TooltipProvider>
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <Button size="sm" variant="ghost" className="h-7 w-7 p-0" onClick={() => handleBaixarPdf(n)}>
+                                    <FileText className="h-3.5 w-3.5" />
+                                  </Button>
+                                </TooltipTrigger>
+                                <TooltipContent>Baixar PDF</TooltipContent>
+                              </Tooltip>
+                            </TooltipProvider>
+                            <TooltipProvider>
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <Button size="sm" variant="ghost" className="h-7 w-7 p-0 text-destructive hover:text-destructive"
+                                    disabled={excluirNota.isPending}
+                                    onClick={() => {
+                                      if (confirm("Excluir esta nota e todos os lançamentos financeiros vinculados?")) excluirNota.mutate(n);
+                                    }}>
+                                    <Trash2 className="h-3.5 w-3.5" />
+                                  </Button>
+                                </TooltipTrigger>
+                                <TooltipContent>Excluir nota</TooltipContent>
+                              </Tooltip>
+                            </TooltipProvider>
                           </div>
                         </TableCell>
                       </TableRow>
@@ -663,7 +1529,7 @@ function NotasRecebidas() {
               </CardHeader>
               <CardContent className="p-6 space-y-6">
                 <div className="space-y-3">
-                  <h4 className="text-sm font-semibold text-foreground">os itens importados estão errados, não tem isso em nenhuma das notas</h4>
+                  <h4 className="text-sm font-semibold text-foreground">Produtos Importados</h4>
                   <div className="border rounded-md overflow-hidden bg-background/50">
                     <Table>
                       <TableHeader className="bg-muted/40">
@@ -674,10 +1540,11 @@ function NotasRecebidas() {
                           <TableHead className="text-center">UN</TableHead>
                           <TableHead className="text-right">Unitário</TableHead>
                           <TableHead className="text-right">Subtotal</TableHead>
+                          <TableHead className="w-[160px]">Categoria</TableHead>
                         </TableRow>
                       </TableHeader>
                       <TableBody>
-                        {importResults.produtos.map((p) => (
+                        {importResults.produtos.map((p, i) => (
                           <TableRow key={p.codigo} className="text-xs">
                             <TableCell className="font-mono text-muted-foreground">{p.codigo}</TableCell>
                             <TableCell className="font-medium text-foreground">{p.nome}</TableCell>
@@ -685,6 +1552,33 @@ function NotasRecebidas() {
                             <TableCell className="text-center">{p.un}</TableCell>
                             <TableCell className="text-right text-tabular">{brl(p.valor)}</TableCell>
                             <TableCell className="text-right text-tabular font-medium text-foreground">{brl(p.qtd * p.valor)}</TableCell>
+                            <TableCell>
+                              <Select
+                                value={p.categoria || "__none__"}
+                                onValueChange={(v) => {
+                                  if (v === "__nova__") {
+                                    setNovaCatContext({ origem: "import", index: i });
+                                    setNovaCatNome("");
+                                    setNovaCatOpen(true);
+                                    return;
+                                  }
+                                  const novas = [...importResults.produtos];
+                                  novas[i] = { ...novas[i], categoria: v === "__none__" ? "" : v };
+                                  setImportResults({ ...importResults, produtos: novas });
+                                }}
+                              >
+                                <SelectTrigger className="h-7 text-xs">
+                                  <SelectValue placeholder="Selecione" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  <SelectItem value="__none__">Sem categoria</SelectItem>
+                                  {catsFinanceiras.map((c) => (
+                                    <SelectItem key={c.id} value={c.nome}>{c.nome}</SelectItem>
+                                  ))}
+                                  <SelectItem value="__nova__" className="text-primary font-medium border-t mt-1">+ Nova categoria</SelectItem>
+                                </SelectContent>
+                              </Select>
+                            </TableCell>
                           </TableRow>
                         ))}
                       </TableBody>
@@ -707,16 +1601,33 @@ function NotasRecebidas() {
                     <Archive className="h-5 w-5 text-sky-500 shrink-0" />
                     <div>
                       <h4 className="text-sm font-semibold text-foreground">Financeiro Programado</h4>
-                      <p className="text-xs text-muted-foreground mt-0.5">
-                        Será gerado 1 título a pagar para o fornecedor {importResults.emitente} no valor de {brl(importResults.total)} com vencimento em 30 dias.
-                      </p>
+                      {importResults.parcelas.length > 0 ? (
+                        <div className="mt-1 space-y-1">
+                          <p className="text-xs text-muted-foreground">
+                            {importResults.parcelas.length} parcela(s) serão geradas para {importResults.emitente}:
+                          </p>
+                          {importResults.parcelas.map((parc, i) => (
+                            <div key={i} className="flex justify-between text-xs">
+                              <span className="text-muted-foreground">{parc.numero} — {dateBR(parc.dataVencimento)}</span>
+                              <span className="font-medium text-tabular">{brl(parc.valor)}</span>
+                            </div>
+                          ))}
+                          <p className="text-xs text-muted-foreground pt-1 border-t">
+                            Total: <span className="font-medium">{brl(importResults.parcelas.reduce((acc, p) => acc + p.valor, 0))}</span>
+                          </p>
+                        </div>
+                      ) : (
+                        <p className="text-xs text-muted-foreground mt-0.5">
+                          Será gerado 1 título a pagar para o fornecedor {importResults.emitente} no valor de {brl(importResults.total)} com vencimento em 30 dias.
+                        </p>
+                      )}
                     </div>
                   </div>
                 </div>
 
                 <div className="flex justify-end gap-2 pt-2">
                   <Button variant="outline" disabled={isSaving} onClick={() => setImportResults(null)}>Cancelar</Button>
-                  <Button onClick={handleConfirmarEstoqueFinanceiro} disabled={isSaving} className="bg-emerald-600 hover:bg-emerald-700 text-white">
+                  <Button onClick={handleConfirmarXmlUpload} disabled={isSaving} className="bg-emerald-600 hover:bg-emerald-700 text-white">
                     {isSaving ? (
                       <>
                         <RefreshCw className="mr-2 h-4 w-4 animate-spin" />
@@ -732,6 +1643,328 @@ function NotasRecebidas() {
           )}
         </TabsContent>
       </Tabs>
+
+      <Dialog open={chaveImportModal} onOpenChange={setChaveImportModal}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Importar NF-e por Chave de Acesso</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 py-2">
+            <p className="text-sm text-muted-foreground">
+              Digite a chave de acesso de 44 dígitos da nota fiscal que deseja importar.
+            </p>
+            <Input
+              placeholder="0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000"
+              value={chaveInput}
+              onChange={(e) => {
+                const v = e.target.value.replace(/[^\d\s]/g, "");
+                setChaveInput(v);
+              }}
+              maxLength={59}
+              className="font-mono text-sm tracking-wider"
+              autoFocus
+              onKeyDown={(e) => {
+                if (e.key === "Enter" && chaveInput.replace(/\D/g, "").length === 44) {
+                  handleImportarPorChave();
+                }
+              }}
+            />
+            <p className="text-xs text-muted-foreground">
+              {chaveInput.replace(/\D/g, "").length}/44 dígitos
+            </p>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => { setChaveImportModal(false); setChaveInput(""); }}>
+              Cancelar
+            </Button>
+            <Button
+              onClick={handleImportarPorChave}
+              disabled={isImportingByKey || chaveInput.replace(/\D/g, "").length !== 44}
+            >
+              {isImportingByKey ? (
+                <>
+                  <RefreshCw className="mr-2 h-4 w-4 animate-spin" />
+                  Consultando SEFAZ...
+                </>
+              ) : (
+                <>
+                  <KeyRound className="mr-2 h-4 w-4" />
+                  Importar
+                </>
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Modal de detalhes da nota importada por chave */}
+      <Dialog open={!!notaDetalhe} onOpenChange={(open) => { if (!open) setNotaDetalhe(null); }}>
+        <DialogContent className="sm:max-w-4xl max-h-[85vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Detalhes da NF-e</DialogTitle>
+          </DialogHeader>
+          {notaDetalhe && (
+            <div className="space-y-4">
+              <div className="grid grid-cols-2 gap-3 text-sm">
+                <div>
+                  <span className="text-muted-foreground">Emitente:</span>
+                  <p className="font-medium">{notaDetalhe.emitente}</p>
+                </div>
+                <div>
+                  <span className="text-muted-foreground">CNPJ:</span>
+                  <p className="font-mono">{notaDetalhe.cnpj}</p>
+                </div>
+                <div>
+                  <span className="text-muted-foreground">Nº NF-e:</span>
+                  <p className="font-medium">{notaDetalhe.nNF || "—"}</p>
+                </div>
+                <div>
+                  <span className="text-muted-foreground">Data Emissão:</span>
+                  <p>{dateBR(notaDetalhe.data)}</p>
+                </div>
+                <div className="col-span-2">
+                  <span className="text-muted-foreground">Chave de Acesso:</span>
+                  <p className="font-mono text-xs">{notaDetalhe.chave}</p>
+                </div>
+              </div>
+
+              {notaDetalhe.produtos.length > 0 && (
+                <div>
+                  <h4 className="text-sm font-medium mb-2">Produtos ({notaDetalhe.produtos.length} itens)</h4>
+                  <div className="border rounded-md overflow-hidden">
+                    <Table>
+                      <TableHeader className="bg-muted/40">
+                        <TableRow>
+                          <TableHead className="text-xs">Código</TableHead>
+                          <TableHead className="text-xs">Produto</TableHead>
+                          <TableHead className="text-xs text-right">Qtd</TableHead>
+                          <TableHead className="text-xs">Un.</TableHead>
+                          <TableHead className="text-xs text-right">V. Unit.</TableHead>
+                          <TableHead className="text-xs text-right">V. Total</TableHead>
+                          <TableHead className="text-xs w-[160px]">Categoria</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {notaDetalhe.produtos.map((p, i) => (
+                          <TableRow key={i}>
+                            <TableCell className="font-mono text-xs">{p.codigo}</TableCell>
+                            <TableCell className="text-xs">{p.nome}</TableCell>
+                            <TableCell className="text-right text-xs">{p.qtd}</TableCell>
+                            <TableCell className="text-xs">{p.un}</TableCell>
+                            <TableCell className="text-right text-xs">{brl(p.valorUnit)}</TableCell>
+                            <TableCell className="text-right text-xs font-medium">{brl(p.valorTotal)}</TableCell>
+                            <TableCell>
+                              <Select
+                                value={p.categoria || "__none__"}
+                                onValueChange={(v) => {
+                                  if (v === "__nova__") {
+                                    setNovaCatContext({ origem: "detalhe", index: i });
+                                    setNovaCatNome("");
+                                    setNovaCatOpen(true);
+                                    return;
+                                  }
+                                  const novas = [...notaDetalhe.produtos];
+                                  novas[i] = { ...novas[i], categoria: v === "__none__" ? "" : v };
+                                  setNotaDetalhe({ ...notaDetalhe, produtos: novas });
+                                }}
+                              >
+                                <SelectTrigger className="h-7 text-xs">
+                                  <SelectValue placeholder="Selecione" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  <SelectItem value="__none__">Sem categoria</SelectItem>
+                                  {catsFinanceiras.map((c) => (
+                                    <SelectItem key={c.id} value={c.nome}>{c.nome}</SelectItem>
+                                  ))}
+                                  <SelectItem value="__nova__" className="text-primary font-medium border-t mt-1">+ Nova categoria</SelectItem>
+                                </SelectContent>
+                              </Select>
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  </div>
+                </div>
+              )}
+
+              <div>
+                <div className="flex items-center justify-between mb-2">
+                  <h4 className="text-sm font-medium">Parcelas</h4>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="h-7 text-xs"
+                    onClick={() => {
+                      const novas = [...notaDetalhe.parcelas];
+                      novas.push({
+                        numero: String(novas.length + 1).padStart(3, "0"),
+                        dataVencimento: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split("T")[0],
+                        valor: 0,
+                        forma_pagamento: "Boleto",
+                        conta_bancaria_id: "",
+                      });
+                      setNotaDetalhe({ ...notaDetalhe, parcelas: novas });
+                    }}
+                  >
+                    + Adicionar Parcela
+                  </Button>
+                </div>
+                {notaDetalhe.parcelas.length === 0 && (
+                  <p className="text-xs text-muted-foreground mb-2">Nenhuma parcela no XML. Adicione parcelas manualmente ou deixe vazio para lançar como pagamento único.</p>
+                )}
+                {notaDetalhe.parcelas.length > 0 && (
+                  <div className="space-y-2">
+                    {notaDetalhe.parcelas.map((p, i) => (
+                      <div key={i} className="flex flex-wrap items-center gap-2">
+                        <Input
+                          className="h-8 w-16 text-xs font-mono text-center shrink-0"
+                          value={p.numero}
+                          onChange={(e) => {
+                            const novas = [...notaDetalhe.parcelas];
+                            novas[i] = { ...novas[i], numero: e.target.value };
+                            setNotaDetalhe({ ...notaDetalhe, parcelas: novas });
+                          }}
+                        />
+                        <DateInput
+                          className="h-8 text-xs shrink-0 w-[160px]"
+                          value={p.dataVencimento}
+                          onChange={(v) => {
+                            const novas = [...notaDetalhe.parcelas];
+                            novas[i] = { ...novas[i], dataVencimento: v };
+                            setNotaDetalhe({ ...notaDetalhe, parcelas: novas });
+                          }}
+                        />
+                        <MoneyInput
+                          value={String(p.valor ?? 0)}
+                          onChange={(v) => {
+                            const novas = [...notaDetalhe.parcelas];
+                            novas[i] = { ...novas[i], valor: parseFloat(v) || 0 };
+                            setNotaDetalhe({ ...notaDetalhe, parcelas: novas });
+                          }}
+                          className="h-8 text-xs text-right w-[140px] shrink-0"
+                          placeholder="0,00"
+                        />
+                        <Select
+                          value={(p as any).forma_pagamento || "Boleto"}
+                          onValueChange={(v) => {
+                            const novas = [...notaDetalhe.parcelas];
+                            novas[i] = { ...novas[i], forma_pagamento: v } as any;
+                            setNotaDetalhe({ ...notaDetalhe, parcelas: novas });
+                          }}
+                        >
+                          <SelectTrigger className="h-8 text-xs w-[150px] shrink-0">
+                            <SelectValue placeholder="Forma" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {FORMAS_PARCELA.map((f) => (
+                              <SelectItem key={f} value={f}>{f}</SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                        <Select
+                          value={(p as any).conta_bancaria_id || "__none__"}
+                          onValueChange={(v) => {
+                            const novas = [...notaDetalhe.parcelas];
+                            novas[i] = { ...novas[i], conta_bancaria_id: v === "__none__" ? "" : v } as any;
+                            setNotaDetalhe({ ...notaDetalhe, parcelas: novas });
+                          }}
+                        >
+                          <SelectTrigger className="h-8 text-xs w-[150px] shrink-0">
+                            <SelectValue placeholder="Banco/Caixa" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="__none__">Sem conta</SelectItem>
+                            {contasBancarias.map((c) => (
+                              <SelectItem key={c.id} value={c.id}>{c.nome}</SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                        <TooltipProvider>
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <Button
+                                size="sm"
+                                variant="ghost"
+                                className="h-8 w-8 p-0 text-destructive hover:bg-destructive/10 shrink-0"
+                                onClick={() => {
+                                  const novas = notaDetalhe.parcelas.filter((_, idx) => idx !== i);
+                                  setNotaDetalhe({ ...notaDetalhe, parcelas: novas });
+                                }}
+                              >
+                                <XCircle className="h-4 w-4" />
+                              </Button>
+                            </TooltipTrigger>
+                            <TooltipContent>Remover parcela</TooltipContent>
+                          </Tooltip>
+                        </TooltipProvider>
+                      </div>
+                    ))}
+                  </div>
+                )}
+                {notaDetalhe.parcelas.length > 0 && (
+                  <div className="flex justify-end mt-1">
+                    <span className="text-xs text-muted-foreground">
+                      Total parcelas: {brl(notaDetalhe.parcelas.reduce((acc, p) => acc + p.valor, 0))}
+                      {notaDetalhe.parcelas.reduce((acc, p) => acc + p.valor, 0) !== notaDetalhe.valor && (
+                        <span className="text-destructive ml-2">
+                          (diferente do total da NF-e: {brl(notaDetalhe.valor)})
+                        </span>
+                      )}
+                    </span>
+                  </div>
+                )}
+              </div>
+
+              <div className="flex items-center justify-between border-t pt-3">
+                <div>
+                  <span className="text-muted-foreground text-sm">Valor Total:</span>
+                  <p className="text-lg font-bold">{brl(notaDetalhe.valor)}</p>
+                </div>
+                <div className="flex gap-2">
+                  <Button variant="outline" onClick={() => setNotaDetalhe(null)}>
+                    Cancelar
+                  </Button>
+                  <Button onClick={notaDetalhe.id ? handleAlterarNota : handleLancarNota} disabled={isSaving} className={notaDetalhe.id ? "bg-amber-600 hover:bg-amber-700 text-white" : ""}>
+                    {isSaving ? (
+                      <><RefreshCw className="mr-2 h-4 w-4 animate-spin" /> {notaDetalhe.id ? "Salvando..." : "Lançando..."}</>
+                    ) : notaDetalhe.id ? (
+                      <><Pencil className="mr-2 h-4 w-4" /> Alterar</>
+                    ) : (
+                      <><Check className="mr-2 h-4 w-4" /> Lançar Nota</>
+                    )}
+                  </Button>
+                </div>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Dialog criar categoria inline */}
+      <Dialog open={novaCatOpen} onOpenChange={(o) => { if (!o) { setNovaCatOpen(false); setNovaCatNome(""); setNovaCatContext(null); } }}>
+        <DialogContent className="sm:max-w-sm">
+          <DialogHeader><DialogTitle>Nova categoria (Despesa)</DialogTitle></DialogHeader>
+          <div className="space-y-3">
+            <div>
+              <label className="text-sm font-medium">Nome *</label>
+              <Input
+                autoFocus
+                placeholder="Ex: Peças, Combustível..."
+                value={novaCatNome}
+                onChange={(e) => setNovaCatNome(e.target.value)}
+                onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); if (novaCatNome.trim()) criarCategoriaInline.mutate(novaCatNome); } }}
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => { setNovaCatOpen(false); setNovaCatNome(""); setNovaCatContext(null); }}>Cancelar</Button>
+            <Button disabled={criarCategoriaInline.isPending || !novaCatNome.trim()} onClick={() => criarCategoriaInline.mutate(novaCatNome)}>
+              {criarCategoriaInline.isPending ? <><RefreshCw className="mr-2 h-4 w-4 animate-spin" /> Salvando...</> : "Criar categoria"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </>
   );
 }

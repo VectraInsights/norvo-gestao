@@ -12,15 +12,18 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, Dialog
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { Loader2, Plus, TrendingUp, Trash2, MoreHorizontal, Check, RotateCcw, Ban, ArrowUp, ArrowDown, ArrowUpDown, Search, X } from "lucide-react";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { Loader2, Plus, TrendingUp, Trash2, Check, RotateCcw, Ban, ArrowUp, ArrowDown, ArrowUpDown, Search, X, Pencil } from "lucide-react";
 import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEmpresaAtual } from "@/hooks/use-empresa";
 import { toast } from "sonner";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
+import { useNavigate } from "@tanstack/react-router";
 import { format } from "date-fns";
 import { LancamentosToolbar } from "@/components/erp/lancamentos-toolbar";
+import { DateInput } from "@/components/erp/date-input";
 import { PeriodoFilter, periodoProx7, type Periodo } from "@/components/erp/periodo-filter";
 import { usePerfisMap } from "@/hooks/use-perfis";
 
@@ -50,9 +53,10 @@ type Lancamento = {
   created_at: string;
   created_by: string | null;
   contato: { nome: string } | null;
+  categoria_id: string | null;
 };
 
-const FORMAS_PAGAMENTO = ["Pix", "Boleto", "Cartão de crédito", "Cartão de débito", "Dinheiro", "Transferência", "Cheque", "Outros"] as const;
+const FORMAS_PAGAMENTO = ["Boleto", "Cartão de crédito", "Cartão de débito", "Cheque", "Dinheiro", "Duplicata", "Pix", "Transferência", "Outros"] as const;
 
 const emptyForm = () => ({
   descricao: "", valor: "",
@@ -60,14 +64,18 @@ const emptyForm = () => ({
   data_vencimento: format(new Date(), "yyyy-MM-dd"),
   contato_id: "", categoria_id: "", conta_bancaria_id: "",
   documento: "", observacoes: "", forma_pagamento: "",
+  created_by: null as string | null,
+  created_at: "",
 });
 
 export function LancamentosPage({ tipo }: { tipo: "receber" | "pagar" }) {
   const { data: empresa } = useEmpresaAtual();
   const perfis = usePerfisMap(!!empresa);
   const qc = useQueryClient();
+  const navigate = useNavigate();
   const [open, setOpen] = useState(false);
   const [form, setForm] = useState(emptyForm);
+  const [lancamentoBloqueado, setLancamentoBloqueado] = useState<{ id: string; descricao: string } | null>(null);
 
   const listKey = ["lancamentos", empresa?.id, tipo] as const;
 
@@ -77,10 +85,10 @@ export function LancamentosPage({ tipo }: { tipo: "receber" | "pagar" }) {
     queryFn: async ({ signal }): Promise<Lancamento[]> => {
       const { data, error } = await supabase
         .from("lancamentos_financeiros")
-        .select("id,descricao,valor,status,data_vencimento,created_at,created_by,contato:contatos(nome)")
+        .select("id,descricao,valor,status,data_vencimento,created_at,created_by,contato:contatos(nome),categoria_id")
         .eq("empresa_id", empresa!.id)
         .eq("tipo", tipo)
-        .order("data_vencimento", { ascending: false })
+        .order("data_vencimento", { ascending: true })
         .limit(2000)
         .abortSignal(signal);
       if (error) throw error;
@@ -126,6 +134,7 @@ export function LancamentosPage({ tipo }: { tipo: "receber" | "pagar" }) {
     qc.invalidateQueries({ queryKey: ["lancamentos"] });
     qc.invalidateQueries({ queryKey: ["dashboard-stats"] });
     qc.invalidateQueries({ queryKey: ["fluxo"] });
+    qc.invalidateQueries({ queryKey: ["folha"] });
   };
 
   // useMutation dá: guard de in-flight (impede double-submit / double-click),
@@ -185,6 +194,14 @@ export function LancamentosPage({ tipo }: { tipo: "receber" | "pagar" }) {
 
   const excluirLote = useMutation({
     mutationFn: async (ids: string[]) => {
+      // Desvincula parcelas de notas importadas antes de excluir
+      await supabase.from("notas_importadas_parcelas" as never)
+        .update({ lancamento_id: null } as never)
+        .in("lancamento_id", ids);
+      // Desvincula folhas vinculadas (fallback se trigger não disparar via client)
+      await supabase.from("folha_pagamento" as never)
+        .update({ status: "aberta", lancamento_id: null, data_pagamento: null } as never)
+        .in("lancamento_id", ids);
       // Desvincula das transações OFX antes de excluir — a transação bancária
       // volta para "aberto" (podendo ser reconciliada novamente), mas não é apagada.
       const { error: eOfx } = await supabase.from("ofx_transacoes")
@@ -214,7 +231,7 @@ export function LancamentosPage({ tipo }: { tipo: "receber" | "pagar" }) {
   const [editing, setEditing] = useState<null | { id: string } & ReturnType<typeof emptyForm>>(null);
   const abrirEdicao = async (id: string) => {
     const { data, error } = await supabase.from("lancamentos_financeiros")
-      .select("id,descricao,valor,data_emissao,data_vencimento,contato_id,categoria_id,conta_bancaria_id,documento,observacoes,forma_pagamento")
+      .select("id,descricao,valor,data_emissao,data_vencimento,contato_id,categoria_id,conta_bancaria_id,documento,observacoes,forma_pagamento,created_by,created_at")
       .eq("id", id).maybeSingle();
     if (error || !data) { toast.error(error?.message ?? "Não encontrado"); return; }
     setEditing({
@@ -229,6 +246,8 @@ export function LancamentosPage({ tipo }: { tipo: "receber" | "pagar" }) {
       documento: data.documento ?? "",
       observacoes: data.observacoes ?? "",
       forma_pagamento: (data as { forma_pagamento?: string | null }).forma_pagamento ?? "",
+      created_by: (data as { created_by?: string | null }).created_by ?? null,
+      created_at: (data as { created_at?: string | null }).created_at ?? "",
     });
   };
   const salvarEdicao = useMutation({
@@ -342,11 +361,11 @@ export function LancamentosPage({ tipo }: { tipo: "receber" | "pagar" }) {
                   </div>
                   <div>
                     <Label>Emissão</Label>
-                    <Input type="date" value={form.data_emissao} onChange={(e) => setForm({ ...form, data_emissao: e.target.value })} />
+                    <DateInput value={form.data_emissao} onChange={(v) => setForm({ ...form, data_emissao: v })} />
                   </div>
                   <div>
                     <Label>Vencimento *</Label>
-                    <Input required type="date" value={form.data_vencimento} onChange={(e) => setForm({ ...form, data_vencimento: e.target.value })} />
+                    <DateInput required value={form.data_vencimento} onChange={(v) => setForm({ ...form, data_vencimento: v })} />
                   </div>
                 </div>
                 <div>
@@ -498,12 +517,11 @@ export function LancamentosPage({ tipo }: { tipo: "receber" | "pagar" }) {
                 <TableHead className="w-10">
                   <Checkbox checked={allChecked} onCheckedChange={toggleAll} aria-label="Selecionar todos" />
                 </TableHead>
-                <SortHead k="descricao">Descrição</SortHead>
                 <SortHead k="contato">{tipo === "pagar" ? "Fornecedor" : "Cliente"}</SortHead>
+                <SortHead k="descricao">Descrição</SortHead>
                 <SortHead k="data_vencimento">Vencimento</SortHead>
                 <SortHead k="valor" className="text-right">Valor</SortHead>
                 <SortHead k="status">Status</SortHead>
-                <TableHead>Lançado por</TableHead>
                 <TableHead />
               </TableRow>
             </TableHeader>
@@ -515,48 +533,93 @@ export function LancamentosPage({ tipo }: { tipo: "receber" | "pagar" }) {
                     <TableCell onClick={(e) => e.stopPropagation()}>
                       <Checkbox checked={selected.has(l.id)} onCheckedChange={() => toggle(l.id)} aria-label="Selecionar" />
                     </TableCell>
-                    <TableCell className="font-medium cursor-pointer hover:underline" onClick={() => abrirEdicao(l.id)}>{l.descricao}</TableCell>
-                    <TableCell className="text-muted-foreground">{l.contato?.nome ?? "—"}</TableCell>
-                    <TableCell className="text-tabular">{format(new Date(l.data_vencimento), "dd/MM/yyyy")}</TableCell>
+                    <TableCell className="text-muted-foreground font-medium">{l.contato?.nome ?? "—"}</TableCell>
+                    <TableCell className="font-medium">
+                      <div>{l.descricao}</div>
+                      {l.categoria_id && (() => {
+                        const cat = categoriasOpt?.find(c => c.id === l.categoria_id);
+                        return cat ? <Badge variant="outline" className="mt-0.5 text-[10px] font-normal border-muted-foreground/30 text-muted-foreground">{cat.nome}</Badge> : null;
+                      })()}
+                    </TableCell>
+                    <TableCell className="text-tabular">{format(new Date(l.data_vencimento + "T00:00:00"), "dd/MM/yyyy")}</TableCell>
                     <TableCell className="text-right text-tabular font-medium">{brl(l.valor)}</TableCell>
                     <TableCell>
                       <Badge className={STATUS_TONE[l.status] ?? ""} variant="secondary">{l.status}</Badge>
                     </TableCell>
-                    <TableCell className="whitespace-nowrap text-xs text-muted-foreground">
-                      {l.created_by ? (perfis[l.created_by] ?? "—") : "—"}
-                      <br />
-                      {format(new Date(l.created_at), "dd/MM/yyyy HH:mm")}
-                    </TableCell>
                     <TableCell className="text-right">
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <Button variant="ghost" size="icon" aria-label="Ações">
-                            <MoreHorizontal className="h-4 w-4" />
-                          </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end">
-                          {l.status !== "pago" && (
-                            <DropdownMenuItem disabled={emAndamento} onClick={() => marcarPago.mutate({ id: l.id, valor: l.valor })}>
-                              <Check className="mr-2 h-4 w-4" />Informar pagamento
-                            </DropdownMenuItem>
-                          )}
-                          {l.status !== "aberto" && (
-                            <DropdownMenuItem onClick={() => alterarStatusLote.mutate({ ids: [l.id], status: "aberto" })}>
-                              <RotateCcw className="mr-2 h-4 w-4" />Voltar para aberto
-                            </DropdownMenuItem>
-                          )}
-                          {l.status !== "cancelado" && (
-                            <DropdownMenuItem onClick={() => alterarStatusLote.mutate({ ids: [l.id], status: "cancelado" })}>
-                              <Ban className="mr-2 h-4 w-4" />Cancelar
-                            </DropdownMenuItem>
-                          )}
-                          <DropdownMenuSeparator />
-                          <DropdownMenuItem className="text-destructive focus:text-destructive"
-                            onClick={() => { if (confirm('Excluir lançamento?\n\nSe estiver conciliado, a transação do extrato voltará para "em aberto" (não será apagada).')) excluirLote.mutate([l.id]); }}>
-                            <Trash2 className="mr-2 h-4 w-4" />Excluir
-                          </DropdownMenuItem>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
+                      <div className="flex items-center justify-end gap-1">
+                        <TooltipProvider>
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => abrirEdicao(l.id)}>
+                                <Pencil className="h-3.5 w-3.5" />
+                              </Button>
+                            </TooltipTrigger>
+                            <TooltipContent>Editar</TooltipContent>
+                          </Tooltip>
+                        </TooltipProvider>
+                        {l.status !== "pago" && (
+                          <TooltipProvider>
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <Button variant="ghost" size="icon" className="h-7 w-7" disabled={emAndamento}
+                                  onClick={() => marcarPago.mutate({ id: l.id, valor: l.valor })}>
+                                  <Check className="h-3.5 w-3.5" />
+                                </Button>
+                              </TooltipTrigger>
+                              <TooltipContent>Marcar como pago</TooltipContent>
+                            </Tooltip>
+                          </TooltipProvider>
+                        )}
+                        {l.status !== "aberto" && (
+                          <TooltipProvider>
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <Button variant="ghost" size="icon" className="h-7 w-7"
+                                  onClick={() => alterarStatusLote.mutate({ ids: [l.id], status: "aberto" })}>
+                                  <RotateCcw className="h-3.5 w-3.5" />
+                                </Button>
+                              </TooltipTrigger>
+                              <TooltipContent>Reabrir</TooltipContent>
+                            </Tooltip>
+                          </TooltipProvider>
+                        )}
+                        {l.status !== "cancelado" && (
+                          <TooltipProvider>
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <Button variant="ghost" size="icon" className="h-7 w-7"
+                                  onClick={() => alterarStatusLote.mutate({ ids: [l.id], status: "cancelado" })}>
+                                  <Ban className="h-3.5 w-3.5" />
+                                </Button>
+                              </TooltipTrigger>
+                              <TooltipContent>Cancelar</TooltipContent>
+                            </Tooltip>
+                          </TooltipProvider>
+                        )}
+                        <TooltipProvider>
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive hover:text-destructive"
+                                onClick={async () => {
+                                  const { data: vinculada } = await supabase
+                                    .from("notas_importadas_parcelas" as never)
+                                    .select("id")
+                                    .eq("lancamento_id", l.id)
+                                    .maybeSingle();
+                                  if (vinculada) {
+                                    setLancamentoBloqueado({ id: l.id, descricao: l.descricao });
+                                    return;
+                                  }
+                                  if (confirm('Excluir lançamento?\n\nSe estiver conciliado, a transação do extrato voltará para "em aberto" (não será apagada).')) excluirLote.mutate([l.id]);
+                                }}>
+                                <Trash2 className="h-3.5 w-3.5" />
+                              </Button>
+                            </TooltipTrigger>
+                            <TooltipContent>Excluir</TooltipContent>
+                          </Tooltip>
+                        </TooltipProvider>
+                      </div>
                     </TableCell>
                   </TableRow>
                 );
@@ -571,6 +634,18 @@ export function LancamentosPage({ tipo }: { tipo: "receber" | "pagar" }) {
           <DialogHeader><DialogTitle>Editar lançamento</DialogTitle></DialogHeader>
           {editing && (
             <form onSubmit={(e) => { e.preventDefault(); salvarEdicao.mutate(editing); }} className="space-y-3">
+              {(editing.created_by || (editing.observacoes ?? "").includes("adiantamento recorrente")) && (
+                <p className="flex items-center gap-2 text-xs text-muted-foreground">
+                  <span>
+                    {editing.created_by
+                      ? <>Lançado por <span className="font-medium">{perfis[editing.created_by] ?? "—"}</span> · {format(new Date(editing.created_at), "dd/MM/yyyy HH:mm")}</>
+                      : "Lançado pelo sistema"}
+                  </span>
+                  {(editing.observacoes ?? "").includes("adiantamento recorrente") && (
+                    <span className="rounded bg-muted px-1.5 py-0.5 text-[10px] uppercase tracking-wide">recorrência</span>
+                  )}
+                </p>
+              )}
               <div>
                 <Label>Descrição *</Label>
                 <Input required value={editing.descricao} onChange={(e) => setEditing({ ...editing, descricao: e.target.value })} />
@@ -582,11 +657,11 @@ export function LancamentosPage({ tipo }: { tipo: "receber" | "pagar" }) {
                 </div>
                 <div>
                   <Label>Emissão</Label>
-                  <Input type="date" value={editing.data_emissao} onChange={(e) => setEditing({ ...editing, data_emissao: e.target.value })} />
+                  <DateInput value={editing.data_emissao} onChange={(v) => setEditing({ ...editing, data_emissao: v })} />
                 </div>
                 <div>
                   <Label>Vencimento *</Label>
-                  <Input required type="date" value={editing.data_vencimento} onChange={(e) => setEditing({ ...editing, data_vencimento: e.target.value })} />
+                  <DateInput required value={editing.data_vencimento} onChange={(v) => setEditing({ ...editing, data_vencimento: v })} />
                 </div>
               </div>
               <div>
@@ -647,6 +722,27 @@ export function LancamentosPage({ tipo }: { tipo: "receber" | "pagar" }) {
           )}
         </DialogContent>
       </Dialog>
+
+      <AlertDialog open={!!lancamentoBloqueado} onOpenChange={(v) => { if (!v) setLancamentoBloqueado(null); }}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Lançamento vinculado a nota fiscal</AlertDialogTitle>
+            <AlertDialogDescription>
+              Não é possível excluir este lançamento diretamente por aqui, pois ele foi gerado automaticamente a partir de uma nota fiscal importada.
+              As alterações devem ser feitas em <strong>Fiscal → Notas de Compra</strong>.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction onClick={() => {
+              setLancamentoBloqueado(null);
+              navigate({ to: "/fiscal/recebidas" });
+            }}>
+              Ir para Notas de Compra
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </>
   );
 }
