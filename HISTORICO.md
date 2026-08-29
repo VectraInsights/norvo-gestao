@@ -539,6 +539,15 @@ certificado tem estrutura PKCS12 não padrão ou se `extractPkcs12Native` precis
      - **Tomador corrigido para modFrete 0**: `mercadorias` estendida com `tomadorUF/CMun/XMun/modFrete` (`:37`), `handleImportNFeXml` com `tomaByMod {"0":"0","1":"3","2":"4","3":"0","4":"3","9":"4"}` para preencher `toma` correto, `Gerar CT-e` (`:340`) agora usa `tomadorCnpj/tomador/tomadorUF` em vez de `destCnpj/dest` — NF com `FRETE 0-Por conta do Rem` (imagem 3) agora puxa `TECNO2000...` (Remetente) correto, não `INSTITUTO NACIONAL DO SEGURO SOCIAL` (imagem 4 corrigida). Screenshot `INSTITUTO NA...` com frete CIF validado.
      - **Período de Entrada layout**: grid 4→ `border rounded` com `grid lg:grid-cols-3` + linha resumo `Qtde NF-e • Peso Bruto • Valor` com `border-t pt-2 flex-wrap gap-x-3` sem sobreposição com botão **Consulta** (`:209`).
 
+43. **Controle de CNH + toxicológico dos motoristas — 28/08/2026** (commit `e3b5574`, merge `197c940`):
+    - Migration `20260828110000_b7c4e9a2-5d8f-4a1b-9e6c-3f2a8d4b7c91.sql` (aplicada): coluna `colaboradores.toxico_exame DATE` (último exame; validade = exame + 2 anos e 6 meses, CTB art. 148-A).
+    - RH → Colaboradores: seção de motorista com **Último exame toxicológico** (obrigatório p/ cargos motorista, junto com nº/categoria da CNH) + campo read-only **Validade do toxicológico** (exame + 30 meses) com aviso quando vencendo/vencido.
+    - Dashboard: alerta "Alertas & estoque baixo" lista separadamente **CNH** e **Toxicológico** por motorista ativo (vencido/vencendo em 30 dias).
+    - Frota → Viagens: select de motorista exibe ⚠ (CNH/toxicológico vencendo em 30 dias) e **bloqueia salvar** quando a documentação está vencida.
+    - Merge com o remoto: unidos 160 commits (CT-e/MDF-e, CFOPs, financeiro, adiantamentos, cargos customizáveis) — conflito resolvido em `rh.colaboradores.tsx` (mantidos `toxico_exame` + `optante_vt`). Revisão pendente: erros TS pré-existentes do remoto em fiscal.*, rh.adiantamentos, rh.comissoes, rh.folha (não typecheckados no fluxo da outra sessão; build/smoke OK).
+
+---
+
 ---
 
 ## Regras de segurança
