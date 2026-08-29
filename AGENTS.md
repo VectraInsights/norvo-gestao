@@ -39,9 +39,10 @@ sobrescrito pela env `NITRO_PRESET` (ex.: `node-server`, `vercel`).
   Rebuild: `cd desktop && npm install && npx electron-builder --win nsis` → saída em `desktop/release/`.
   Instalador portátil (target "portable") travava na extração nesta máquina — usar NSIS.
 - Repo é **privado**: pull/push exigem PAT fine-grained com Contents Read/Write no repo.
-  O PAT está guardado no **Windows Credential Manager** (helper `wincred`, configurado via
-  `git config credential.https://github.com.helper wincred`) — a URL do remote NÃO contém
-  token (`.git/config` só tem `https://github.com/VectraInsights/norvo-gestao.git`).
+  O PAT está guardado no **Windows Credential Manager** com helper `wincred` configurado
+  **no escopo global para o GitHub** (`git config --global credential.https://github.com.helper wincred`)
+  — a URL do remote NÃO contém token (`.git/config` só tem
+  `https://github.com/VectraInsights/norvo-gestao.git`). Vale para todos os repos/diretórios.
   NUNCA commitar tokens nem colá-los na URL.
 
 ## Autenticação
