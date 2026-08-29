@@ -103,6 +103,37 @@ type Despesa = {
 };
 
 type Opcao = { id: string; nome: string };
+type Motorista = {
+  id: string;
+  nome: string;
+  cnh_validade: string | null;
+  toxico_exame: string | null;
+};
+
+function soma30meses(d: string) {
+  const dt = new Date(d + "T12:00:00");
+  dt.setMonth(dt.getMonth() + 30);
+  return dt.toISOString().slice(0, 10);
+}
+
+function avisoDoc(m: Motorista) {
+  const hoje = Date.now();
+  const avisos: string[] = [];
+  if (m.cnh_validade) {
+    const dias = Math.ceil((new Date(m.cnh_validade + "T12:00:00").getTime() - hoje) / 86400_000);
+    if (dias < 0) avisos.push("CNH vencida");
+    else if (dias <= 30) avisos.push(`CNH vence em ${dias}d`);
+  }
+  if (m.toxico_exame) {
+    const t = soma30meses(m.toxico_exame);
+    if (t) {
+      const dias = Math.ceil((new Date(t + "T12:00:00").getTime() - hoje) / 86400_000);
+      if (dias < 0) avisos.push("Toxicológico vencido");
+      else if (dias <= 30) avisos.push(`Toxicológico vence em ${dias}d`);
+    }
+  }
+  return avisos;
+}
 
 const STATUS_COR: Record<string, string> = {
   planejada: "bg-primary/15 text-primary",
@@ -254,14 +285,14 @@ function Viagens() {
     queryFn: async ({ signal }) => {
       const { data, error } = await supabase
         .from("colaboradores" as never)
-        .select("id,nome")
+        .select("id,nome,cnh_validade,toxico_exame")
         .eq("empresa_id", empresa!.id)
         .eq("status", "ativo")
         .ilike("cargo", "%motorist%")
         .order("nome")
         .abortSignal(signal);
       if (error) throw error;
-      return (data ?? []) as unknown as Opcao[];
+      return (data ?? []) as unknown as Motorista[];
     },
   });
 
@@ -321,6 +352,13 @@ function Viagens() {
       if (!empresa) throw new Error("Selecione uma empresa");
       if (!form.origem_cidade.trim() || !form.destino_cidade.trim())
         throw new Error("Informe origem e destino");
+      if (form.motorista_id) {
+        const mot = motoristas.find((m) => m.id === form.motorista_id);
+        if (mot && avisoDoc(mot).some((a) => a.includes("vencid")))
+          throw new Error(
+            `${mot.nome} está com documentação vencida (${avisoDoc(mot).join(", ")}). Atualize em RH → Colaboradores.`,
+          );
+      }
       const payload: any = {
         empresa_id: empresa.id,
         cliente_id: form.cliente_id || null,
@@ -447,11 +485,20 @@ function Viagens() {
                         <SelectValue placeholder="Selecione…" />
                       </SelectTrigger>
                       <SelectContent>
-                        {motoristas.map((m) => (
-                          <SelectItem key={m.id} value={m.id}>
-                            {m.nome}
-                          </SelectItem>
-                        ))}
+                        {motoristas.map((m) => {
+                          const avisos = avisoDoc(m);
+                          return (
+                            <SelectItem key={m.id} value={m.id}>
+                              {m.nome}
+                              {avisos.length > 0 && (
+                                <span className="text-warning-foreground">
+                                  {" "}
+                                  ⚠ {avisos.join(" · ")}
+                                </span>
+                              )}
+                            </SelectItem>
+                          );
+                        })}
                       </SelectContent>
                     </Select>
                   </div>
