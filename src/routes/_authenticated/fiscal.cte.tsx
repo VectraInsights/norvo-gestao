@@ -12,7 +12,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
-import { Truck, Plus, FileText, Search, Ban, UploadCloud, FileCode, UsersRound, MapPin, Package, DollarSign, Building2, Route as RouteIcon, Trash2, Filter, Calendar, CheckCircle2, ChevronsUpDown, Check } from "lucide-react";
+import { Truck, Plus, FileText, Search, Ban, UploadCloud, FileCode, UsersRound, MapPin, Package, DollarSign, Building2, Route as RouteIcon, Trash2, Filter, Calendar, CheckCircle2, ChevronsUpDown, Check, ReceiptText } from "lucide-react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useEmpresaAtual } from "@/hooks/use-empresa";
@@ -56,9 +56,25 @@ function CtePage() {
   });
 
   const [open, setOpen] = useState(false);
-  const [form, setForm] = useState({ toma: "3", cnpjTomador: "", xNomeTomador: "", ufTomador: "MG", cMunTomador: "3106200", xMunTomador: "BELO HORIZONTE", cfop: "5353", vPrest: "1000.00", vCarga: "10000.00", peso: "5000", rntrc: "", cMunEnv: "3106200", xMunEnv: "BELO HORIZONTE", ufEnv: "MG", cMunIni: "3106200", xMunIni: "BELO HORIZONTE", ufIni: "MG", cMunFim: "3550308", xMunFim: "SAO PAULO", ufFim: "SP", dataEmissao: new Date().toISOString().slice(0,10) });
+  const [form, setForm] = useState({
+    toma: "3", cnpjTomador: "", xNomeTomador: "", ufTomador: "MG", cMunTomador: "3106200", xMunTomador: "BELO HORIZONTE", cfop: "5353",
+    vPrest: "1000.00", vCarga: "10000.00", peso: "5000", rntrc: "",
+    // Impostos — base e alíquotas editáveis (corrigido: base padrão = vPrest, não vCarga)
+    icmsCST: "00", icmsBase: "1000.00", icmsAliq: "0.00", icmsValor: "0.00",
+    pisAliq: "0.00", cofinsAliq: "0.00", irAliq: "0.00", inssAliq: "0.00", csllAliq: "0.00",
+    cMunEnv: "3106200", xMunEnv: "BELO HORIZONTE", ufEnv: "MG", cMunIni: "3106200", xMunIni: "BELO HORIZONTE", ufIni: "MG", cMunFim: "3550308", xMunFim: "SAO PAULO", ufFim: "SP", dataEmissao: new Date().toISOString().slice(0,10),
+  });
   const [cfopOpen, setCfopOpen] = useState(false);
   const [cfopQuery, setCfopQuery] = useState("");
+
+  // Auto-calcula ICMS: vICMS = base * aliquota / 100
+  useEffect(() => {
+    const base = parseFloat(form.icmsBase) || 0;
+    const aliq = parseFloat(form.icmsAliq) || 0;
+    const calc = (base * aliq / 100).toFixed(2);
+    if (calc !== form.icmsValor) setForm(f => ({ ...f, icmsValor: calc }));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [form.icmsBase, form.icmsAliq]);
 
   // NF-es pendentes persistidas (sobrevivem a F5/troca de tela) — dedup global por chave
   const { data: pendentesDB } = useQuery({
@@ -183,24 +199,34 @@ function CtePage() {
     onError: (e: Error) => toast.error(e.message),
   });
   const aplicarTemplate = (t: CteTemplate) => {
+    const d = (t.dados as any) || {};
     setForm(f => ({
       ...f,
-      toma: t.toma || f.toma,
-      cnpjTomador: t.cnpj_tomador || f.cnpjTomador,
-      xNomeTomador: t.x_nome_tomador || f.xNomeTomador,
-      ufTomador: t.uf_tomador || f.ufTomador,
-      cMunTomador: t.c_mun_tomador || f.cMunTomador,
-      xMunTomador: t.x_mun_tomador || f.xMunTomador,
-      cfop: t.cfop || f.cfop,
-      rntrc: t.rntrc ?? f.rntrc,
-      cMunEnv: t.c_mun_env || f.cMunEnv,
-      xMunEnv: t.x_mun_env || f.xMunEnv,
-      ufEnv: t.uf_env || f.ufEnv,
-      cMunIni: t.c_mun_ini || f.cMunIni,
-      xMunIni: t.x_mun_ini || f.xMunIni,
-      ufIni: t.uf_ini || f.ufIni,
-      cMunFim: t.c_mun_fim || f.cMunFim,
-      xMunFim: t.x_mun_fim || f.xMunFim,
+      toma: t.toma || (d.toma as string) || f.toma,
+      cnpjTomador: t.cnpj_tomador || (d.cnpjTomador as string) || f.cnpjTomador,
+      xNomeTomador: t.x_nome_tomador || (d.xNomeTomador as string) || f.xNomeTomador,
+      ufTomador: t.uf_tomador || (d.ufTomador as string) || f.ufTomador,
+      cMunTomador: t.c_mun_tomador || (d.cMunTomador as string) || f.cMunTomador,
+      xMunTomador: t.x_mun_tomador || (d.xMunTomador as string) || f.xMunTomador,
+      cfop: t.cfop || (d.cfop as string) || f.cfop,
+      rntrc: t.rntrc ?? (d.rntrc as string) ?? f.rntrc,
+      icmsCST: (d.icmsCST as string) || (t as any).icms_cst || f.icmsCST,
+      icmsBase: (d.icmsBase as string) || (t as any).icms_base || f.icmsBase,
+      icmsAliq: (d.icmsAliq as string) || (t as any).icms_aliq || f.icmsAliq,
+      icmsValor: (d.icmsValor as string) || (t as any).icms_valor || f.icmsValor,
+      pisAliq: (d.pisAliq as string) || f.pisAliq,
+      cofinsAliq: (d.cofinsAliq as string) || f.cofinsAliq,
+      irAliq: (d.irAliq as string) || f.irAliq,
+      inssAliq: (d.inssAliq as string) || f.inssAliq,
+      csllAliq: (d.csllAliq as string) || f.csllAliq,
+      cMunEnv: t.c_mun_env || (d.cMunEnv as string) || f.cMunEnv,
+      xMunEnv: t.x_mun_env || (d.xMunEnv as string) || f.xMunEnv,
+      ufEnv: t.uf_env || (d.ufEnv as string) || f.ufEnv,
+      cMunIni: t.c_mun_ini || (d.cMunIni as string) || f.cMunIni,
+      xMunIni: t.x_mun_ini || (d.xMunIni as string) || f.xMunIni,
+      ufIni: t.uf_ini || (d.ufIni as string) || f.ufIni,
+      cMunFim: t.c_mun_fim || (d.cMunFim as string) || f.cMunFim,
+      xMunFim: t.x_mun_fim || (d.xMunFim as string) || f.xMunFim,
       ufFim: t.uf_fim || f.ufFim,
     }));
     toast.success(`Template "${t.nome}" aplicado`);
@@ -320,7 +346,8 @@ function CtePage() {
         setMercadorias(merged);
         const somaV = merged.reduce((a, m) => a + (m.valor || 0), 0);
         const somaP = merged.reduce((a, m) => a + (m.peso || 0), 0);
-        setForm(f => ({ ...f, vCarga: somaV.toFixed(2), peso: String(somaP), vPrest: (somaV * 0.1).toFixed(2) }));
+        const vPrestCalc = (somaV * 0.1).toFixed(2);
+        setForm(f => ({ ...f, vCarga: somaV.toFixed(2), peso: String(somaP), vPrest: vPrestCalc, icmsBase: vPrestCalc }));
         qc.invalidateQueries({ queryKey: ["cte-nfes-pendentes", empresa!.id] });
         if (duplicadas > 0) toast.success(`${added} importada(s), ${duplicadas} já existiam (chave duplicada bloqueada)`);
         else toast.success(`${added} XML(s) importado(s) — selecione os que irão no CT-e`);
@@ -364,6 +391,8 @@ function CtePage() {
         toma: form.toma, cnpjTomador: form.cnpjTomador, xNomeTomador: form.xNomeTomador, ufTomador: form.ufTomador, cMunTomador: form.cMunTomador, xMunTomador: form.xMunTomador,
         cfop: form.cfop, vPrest: parseFloat(form.vPrest)||0, vCarga: parseFloat(form.vCarga)||0, pesoKg: parseFloat(form.peso)||0, rntrc: form.rntrc,
         cMunEnv: form.cMunEnv, xMunEnv: form.xMunEnv, ufEnv: form.ufEnv, cMunIni: form.cMunIni, xMunIni: form.xMunIni, ufIni: form.ufIni, cMunFim: form.cMunFim, xMunFim: form.xMunFim, ufFim: form.ufFim,
+        icms: { CST: form.icmsCST, vBC: parseFloat(form.icmsBase)||0, pICMS: parseFloat(form.icmsAliq)||0, vICMS: parseFloat(form.icmsValor)||0 },
+        impostos: { pisAliq: parseFloat(form.pisAliq)||0, cofinsAliq: parseFloat(form.cofinsAliq)||0, irAliq: parseFloat(form.irAliq)||0, inssAliq: parseFloat(form.inssAliq)||0, csllAliq: parseFloat(form.csllAliq)||0 },
         serie: "1",
         tomador: { toma: form.toma as any, cnpj: form.cnpjTomador, xNome: form.xNomeTomador, uf: form.ufTomador, cMun: form.cMunTomador, xMun: form.xMunTomador },
         emit: { xNome: form.xNomeTomador, ie: "ISENTO", cMun: form.cMunEnv, xMun: form.xMunEnv } as any,
@@ -585,6 +614,7 @@ function CtePage() {
                     vCarga: somaV.toFixed(2),
                     peso: String(somaP),
                     vPrest: (somaV*0.1).toFixed(2),
+                    icmsBase: (somaV*0.1).toFixed(2),
                   }));
                   setOpen(true);
                 }}
@@ -651,7 +681,8 @@ function CtePage() {
               <TabsTrigger value="tomador" className="rounded-t-md rounded-b-none text-xs data-[state=active]:bg-background data-[state=active]:shadow-sm"><UsersRound className="mr-1 h-3 w-3" />Remetente/Destinatário</TabsTrigger>
               <TabsTrigger value="docs" className="rounded-t-md rounded-b-none text-xs data-[state=active]:bg-background data-[state=active]:shadow-sm"><FileText className="mr-1 h-3 w-3" />Doc Mercadorias</TabsTrigger>
               <TabsTrigger value="seguros" className="rounded-t-md rounded-b-none text-xs data-[state=active]:bg-background data-[state=active]:shadow-sm"><Truck className="mr-1 h-3 w-3" />Seguros/Veículos</TabsTrigger>
-              <TabsTrigger value="taxas" className="rounded-t-md rounded-b-none text-xs data-[state=active]:bg-background data-[state=active]:shadow-sm"><DollarSign className="mr-1 h-3 w-3" />Taxas/Despesas Acessórias</TabsTrigger>
+              <TabsTrigger value="taxas" className="rounded-t-md rounded-b-none text-xs data-[state=active]:bg-background data-[state=active]:shadow-sm"><DollarSign className="mr-1 h-3 w-3" />Taxas/Despesas</TabsTrigger>
+              <TabsTrigger value="impostos" className="rounded-t-md rounded-b-none text-xs data-[state=active]:bg-background data-[state=active]:shadow-sm"><ReceiptText className="mr-1 h-3 w-3" />Impostos</TabsTrigger>
             </TabsList>
 
             {/* Header: Nº Conhecimento, Data, CFOP */}
@@ -917,13 +948,49 @@ function CtePage() {
                 </div>
               </Card>
             </TabsContent>
+
+            {/* === TAB: Impostos === */}
+            <TabsContent value="impostos" className="mt-3 space-y-3">
+              <Card className="p-3">
+                <h5 className="text-xs font-semibold mb-2 flex items-center gap-1.5"><ReceiptText className="h-3.5 w-3.5 text-primary" /> ICMS</h5>
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+                  <div><Label className="text-[10px] text-muted-foreground">CST</Label>
+                    <Select value={form.icmsCST} onValueChange={v => setForm({ ...form, icmsCST: v })}>
+                      <SelectTrigger className="h-7 text-xs"><SelectValue /></SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="00">00 — Tributação normal</SelectItem>
+                        <SelectItem value="20">20 — Com redução</SelectItem>
+                        <SelectItem value="45">45 — Isento</SelectItem>
+                        <SelectItem value="60">60 — ICMS cobrado por ST</SelectItem>
+                        <SelectItem value="90">90 — Outras</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div><Label className="text-[10px] text-muted-foreground">Base Cálculo (R$)</Label><Input className="h-7 text-xs" value={form.icmsBase} onChange={e => setForm({ ...form, icmsBase: e.target.value.replace(",", ".") })} placeholder="0.00" /></div>
+                  <div><Label className="text-[10px] text-muted-foreground">Alíquota ICMS (%)</Label><Input className="h-7 text-xs" value={form.icmsAliq} onChange={e => setForm({ ...form, icmsAliq: e.target.value.replace(",", ".") })} placeholder="0.00" /></div>
+                  <div><Label className="text-[10px] text-muted-foreground">Valor ICMS (R$)</Label><Input className="h-7 text-xs bg-muted" value={form.icmsValor} readOnly placeholder="0.00" /></div>
+                </div>
+                <p className="text-[9px] text-muted-foreground mt-1">Base padrão = Valor do Serviço. Alíquota calcula Valor automaticamente (base × alíquota /100). Edite base ou alíquota para corrigir.</p>
+              </Card>
+              <Card className="p-3">
+                <h5 className="text-xs font-semibold mb-2">Outros Impostos — Alíquotas (%)</h5>
+                <div className="grid grid-cols-2 md:grid-cols-5 gap-2">
+                  <div><Label className="text-[10px] text-muted-foreground">PIS (%)</Label><Input className="h-7 text-xs" value={form.pisAliq} onChange={e => setForm({ ...form, pisAliq: e.target.value.replace(",", ".") })} placeholder="0.00" /></div>
+                  <div><Label className="text-[10px] text-muted-foreground">COFINS (%)</Label><Input className="h-7 text-xs" value={form.cofinsAliq} onChange={e => setForm({ ...form, cofinsAliq: e.target.value.replace(",", ".") })} placeholder="0.00" /></div>
+                  <div><Label className="text-[10px] text-muted-foreground">IR (%)</Label><Input className="h-7 text-xs" value={form.irAliq} onChange={e => setForm({ ...form, irAliq: e.target.value.replace(",", ".") })} placeholder="0.00" /></div>
+                  <div><Label className="text-[10px] text-muted-foreground">INSS (%)</Label><Input className="h-7 text-xs" value={form.inssAliq} onChange={e => setForm({ ...form, inssAliq: e.target.value.replace(",", ".") })} placeholder="0.00" /></div>
+                  <div><Label className="text-[10px] text-muted-foreground">CSLL (%)</Label><Input className="h-7 text-xs" value={form.csllAliq} onChange={e => setForm({ ...form, csllAliq: e.target.value.replace(",", ".") })} placeholder="0.00" /></div>
+                </div>
+              </Card>
+            </TabsContent>
           </Tabs>
 
-          {/* Cálculos do Serviço — Rodapé */}
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-2 border rounded p-3 bg-muted/20">
-            <div className="text-center"><p className="text-[10px] text-muted-foreground">Base Cálculo ICMS</p><p className="text-xs font-mono font-medium">{brl(Number(form.vCarga))}</p></div>
-            <div className="text-center"><p className="text-[10px] text-muted-foreground">Valor Serviço</p><p className="text-xs font-mono font-medium text-primary">{brl(Number(form.vPrest))}</p></div>
-            <div className="text-center"><p className="text-[10px] text-muted-foreground">Total Despesas</p><p className="text-xs font-mono">R$ 0,00</p></div>
+          {/* Cálculos do Serviço — Rodapé (corrigido: base = icmsBase editável, não vCarga) */}
+          <div className="grid grid-cols-2 md:grid-cols-5 gap-2 border rounded p-3 bg-muted/20">
+            <div className="text-center"><p className="text-[10px] text-muted-foreground">Base Cálculo ICMS</p><p className="text-xs font-mono font-medium">{brl(Number(form.icmsBase))}</p><p className="text-[8px] text-muted-foreground">editável em Impostos</p></div>
+            <div className="text-center"><p className="text-[10px] text-muted-foreground">Alíquota ICMS</p><p className="text-xs font-mono">{Number(form.icmsAliq).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}%</p></div>
+            <div className="text-center"><p className="text-[10px] text-muted-foreground">Valor ICMS</p><p className="text-xs font-mono font-medium text-primary">{brl(Number(form.icmsValor))}</p></div>
+            <div className="text-center"><p className="text-[10px] text-muted-foreground">Valor Serviço</p><p className="text-xs font-mono font-medium">{brl(Number(form.vPrest))}</p></div>
             <div className="text-center"><p className="text-[10px] text-muted-foreground">Total Prestação</p><p className="text-xs font-mono font-bold">{brl(Number(form.vPrest))}</p></div>
           </div>
 

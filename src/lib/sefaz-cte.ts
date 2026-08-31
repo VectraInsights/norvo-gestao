@@ -87,6 +87,9 @@ export interface CteInputCompleto {
   infCTeNorm?: { proPred?: string; xOutCat?: string };
   modalRod?: { rntrc: string; ciot?: string; veiculos?: Array<{ placa: string; uf: string; rntrc?: string }> };
   chavesNFe?: string[]; // múltiplas NF-e da carga — infDoc com vários infNFe
+  // Impostos editáveis
+  icms?: { CST: string; vBC: number; pICMS: number; vICMS: number };
+  impostos?: { pisAliq?: number; cofinsAliq?: number; irAliq?: number; inssAliq?: number; csllAliq?: number };
 }
 
 export function buildCteXml(input: CteInputCompleto): { xml: string; chave: string } {
@@ -119,7 +122,18 @@ export function buildCteXml(input: CteInputCompleto): { xml: string; chave: stri
     ${input.rem ? `<rem><CNPJ>${(input.rem.cnpj||"").replace(/\D/g,"")}</CNPJ><xNome>${input.rem.xNome}</xNome><enderReme><xLgr>RUA</xLgr><nro>SN</nro><xBairro>CENTRO</xBairro><cMun>${input.rem.cMun}</cMun><xMun>${input.rem.xMun}</xMun><CEP>00000000</CEP><UF>${input.rem.uf}</UF></enderReme></rem>` : ""}
     ${input.dest ? `<dest><CNPJ>${(input.dest.cnpj||"").replace(/\D/g,"")}</CNPJ><xNome>${input.dest.xNome}</xNome><enderDest><xLgr>RUA</xLgr><nro>SN</nro><xBairro>CENTRO</xBairro><cMun>${input.dest.cMun}</cMun><xMun>${input.dest.xMun}</xMun><CEP>00000000</CEP><UF>${input.dest.uf}</UF></enderDest></dest>` : ""}
     <vPrest><vTPrest>${input.vPrest.toFixed(2)}</vTPrest><vRec>${input.vPrest.toFixed(2)}</vRec><Comp><xNome>VALOR DO FRETE</xNome><vComp>${input.vPrest.toFixed(2)}</vComp></Comp></vPrest>
-    <imp><ICMS><ICMS00><CST>00</CST><vBC>${input.vPrest.toFixed(2)}</vBC><pICMS>0.00</pICMS><vICMS>0.00</vICMS></ICMS00></ICMS></imp>
+    ${(() => {
+      const icms = input.icms || { CST: "00", vBC: input.vPrest, pICMS: 0, vICMS: 0 };
+      const cst = (icms.CST || "00").padStart(2,"0");
+      const vBC = Number(icms.vBC ?? input.vPrest).toFixed(2);
+      const pICMS = Number(icms.pICMS ?? 0).toFixed(2);
+      const vICMS = Number(icms.vICMS ?? 0).toFixed(2);
+      if (cst === "00") return `<imp><ICMS><ICMS00><CST>00</CST><vBC>${vBC}</vBC><pICMS>${pICMS}</pICMS><vICMS>${vICMS}</vICMS></ICMS00></ICMS></imp>`;
+      if (cst === "20") return `<imp><ICMS><ICMS20><CST>20</CST><pRedBC>0.00</pRedBC><vBC>${vBC}</vBC><pICMS>${pICMS}</pICMS><vICMS>${vICMS}</vICMS></ICMS20></ICMS></imp>`;
+      if (cst === "45") return `<imp><ICMS><ICMS45><CST>45</CST></ICMS45></ICMS></imp>`;
+      if (cst === "60") return `<imp><ICMS><ICMS60><CST>60</CST><vBCSTRet>0.00</vBCSTRet><vICMSSTRet>0.00</vICMSSTRet><pICMSSTRet>0.00</pICMSSTRet><vCred>0.00</vCred></ICMS60></ICMS></imp>`;
+      return `<imp><ICMS><ICMS90><CST>${cst}</CST><pRedBC>0.00</pRedBC><vBC>${vBC}</vBC><pICMS>${pICMS}</pICMS><vICMS>${vICMS}</vICMS><vCred>0.00</vCred></ICMS90></ICMS></imp>`;
+    })()}
     <infCTeNorm>
       <infCarga><vCarga>${input.vCarga.toFixed(2)}</vCarga><proPred>${input.infCTeNorm?.proPred || "CARGA GERAL"}</proPred><infQ><cUnid>01</cUnid><tpMed>00</tpMed><qCarga>${input.pesoKg.toFixed(3)}</qCarga></infQ></infCarga>
       <infDoc>${(input.chavesNFe && input.chavesNFe.length > 0) ? input.chavesNFe.map(ch => `<infNFe><chave>${ch.replace(/\D/g,"")}</chave></infNFe>`).join("") : `<infNFe><chave>00000000000000000000000000000000000000000000</chave></infNFe>`}</infDoc>
