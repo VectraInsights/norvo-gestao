@@ -14,7 +14,7 @@ import { Truck, Plus, FileText, Search, Ban, UploadCloud, FileCode, UsersRound, 
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useEmpresaAtual } from "@/hooks/use-empresa";
-import { brl } from "@/lib/format";
+import { brl, dateBR, num } from "@/lib/format";
 import { useState, useEffect } from "react";
 import { toast } from "sonner";
 import { emitirCteFn, consultarCteFn, cancelarCteFn } from "@/lib/sefaz-cte-server";
@@ -35,7 +35,7 @@ function CtePage() {
   const qc = useQueryClient();
   const search = Route.useSearch();
   const [isParsing, setIsParsing] = useState(false);
-  const [mercadorias, setMercadorias] = useState<Array<{ chave: string; nNF: string; serie: string; emit: string; emitCnpj: string; dest: string; destCnpj: string; valor: number; peso: number; data: string; tomador: string; tomadorCnpj: string; tomadorUF: string; tomadorCMun: string; tomadorXMun: string; modFrete: string }>>([]);
+  const [mercadorias, setMercadorias] = useState<Array<{ chave: string; nNF: string; serie: string; emit: string; emitCnpj: string; emitUF: string; emitCMun: string; emitXMun: string; dest: string; destCnpj: string; destUF: string; destCMun: string; destXMun: string; valor: number; peso: number; data: string; tomador: string; tomadorCnpj: string; tomadorUF: string; tomadorCMun: string; tomadorXMun: string; modFrete: string }>>([]);
   const [selecionadas, setSelecionadas] = useState<Set<string>>(new Set());
   const [filtroEmpresa] = useState("ROSE TRANSPORTES");
   const [filtroRemetente, setFiltroRemetente] = useState("TODOS REMETENTES");
@@ -156,6 +156,9 @@ function CtePage() {
         const doc = parser.parseFromString(text, "text/xml");
         const emitCnpj = doc.querySelector("emit > CNPJ")?.textContent || "";
         const emitXNome = doc.querySelector("emit > xNome")?.textContent || "";
+        const emitUF = doc.querySelector("emit > enderEmit > UF")?.textContent || "";
+        const emitCMun = doc.querySelector("emit > enderEmit > cMun")?.textContent || "";
+        const emitXMun = doc.querySelector("emit > enderEmit > xMun")?.textContent || "";
         const destCnpj = doc.querySelector("dest > CNPJ")?.textContent || doc.querySelector("dest > CPF")?.textContent || "";
         const destXNome = doc.querySelector("dest > xNome")?.textContent || "";
         const destUF = doc.querySelector("dest > enderDest > UF")?.textContent || "";
@@ -189,12 +192,30 @@ function CtePage() {
           const transpXNome = doc.querySelector("transp > transporta > xNome")?.textContent || "";
           if (transpCnpj || transpXNome) { tomadorNome = transpXNome || tomadorNome; tomadorCnpj = transpCnpj || tomadorCnpj; }
         }
-        novas.push({ chave: chaveNorm, nNF, serie, emit: emitXNome, emitCnpj, dest: destXNome, destCnpj, valor, peso, data: dhEmi.slice(0,10), tomador: tomadorNome, tomadorCnpj, tomadorUF, tomadorCMun, tomadorXMun, modFrete });
-        // Preenche tomador com o primeiro (se ainda vazio) — usa tomador correto pelo modFrete
-        if (added === 0 && mercadorias.length === 0 && !form.cnpjTomador) {
+        novas.push({ chave: chaveNorm, nNF, serie, emit: emitXNome, emitCnpj, emitUF, emitCMun, emitXMun, dest: destXNome, destCnpj, destUF, destCMun, destXMun, valor, peso, data: dhEmi.slice(0,10), tomador: tomadorNome, tomadorCnpj, tomadorUF, tomadorCMun, tomadorXMun, modFrete });
+        // Preenche tomador e rota com o primeiro XML — rota vem do emit (coleta) e dest (entrega)
+        if (added === 0 && mercadorias.length === 0) {
           const tomaByMod: Record<string,string> = { "0":"0", "1":"3", "2":"4", "3":"0", "4":"3", "9":"4" };
           const tomaIni = tomaByMod[modFrete] ?? "3";
-          setForm(f => ({ ...f, toma: tomaIni, cnpjTomador: tomadorCnpj || f.cnpjTomador, xNomeTomador: tomadorNome || f.xNomeTomador, ufTomador: tomadorUF || f.ufTomador, cMunTomador: tomadorCMun || f.cMunTomador, xMunTomador: tomadorXMun || f.xMunTomador }));
+          setForm(f => ({
+            ...f,
+            toma: !f.cnpjTomador ? tomaIni : f.toma,
+            cnpjTomador: tomadorCnpj || f.cnpjTomador,
+            xNomeTomador: tomadorNome || f.xNomeTomador,
+            ufTomador: tomadorUF || f.ufTomador,
+            cMunTomador: tomadorCMun || f.cMunTomador,
+            xMunTomador: tomadorXMun || f.xMunTomador,
+            // origem/destino do CT-e: coleta = municipio do emitente, entrega = municipio do destinatario
+            cMunIni: emitCMun || f.cMunIni,
+            xMunIni: emitXMun || f.xMunIni,
+            ufIni: emitUF || f.ufIni,
+            cMunFim: destCMun || f.cMunFim,
+            xMunFim: destXMun || f.xMunFim,
+            ufFim: destUF || f.ufFim,
+            cMunEnv: emitCMun || f.cMunEnv,
+            xMunEnv: emitXMun || f.xMunEnv,
+            ufEnv: emitUF || f.ufEnv,
+          }));
         }
         added++;
       }
@@ -323,7 +344,7 @@ function CtePage() {
             <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted-foreground border-t pt-2">
               <span>Qtde NF-e: <span className="font-bold text-foreground">{mercadorias.length}</span></span>
               <span className="text-muted-foreground/40">•</span>
-              <span>Peso Bruto: <span className="font-bold text-foreground">{mercadorias.reduce((a,m)=>a+m.peso,0).toFixed(2)} kg</span></span>
+              <span>Peso Bruto: <span className="font-bold text-foreground">{Number(mercadorias.reduce((a,m)=>a+m.peso,0)).toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} kg</span></span>
               <span className="text-muted-foreground/40">•</span>
               <span>Valor: <span className="font-bold text-foreground">{brl(mercadorias.reduce((a,m)=>a+m.valor,0))}</span></span>
             </div>
@@ -402,9 +423,9 @@ function CtePage() {
                         <TableCell className="truncate max-w-[110px] text-amber-700" title={m.tomador}>{m.tomador || "—"}</TableCell>
                         <TableCell className="font-mono">{m.nNF}</TableCell>
                         <TableCell>{m.serie}</TableCell>
-                        <TableCell>{m.data || "—"}</TableCell>
+                        <TableCell>{m.data ? dateBR(m.data) : "—"}</TableCell>
                         <TableCell className="text-right">{brl(m.valor)}</TableCell>
-                        <TableCell className="text-right">{m.peso.toFixed(2)}</TableCell>
+                        <TableCell className="text-right">{Number(m.peso).toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</TableCell>
                         <TableCell className="font-mono truncate max-w-[140px]" title={m.chave}>{m.chave.slice(0,22)}...</TableCell>
                       </TableRow>
                     ))
@@ -433,10 +454,30 @@ function CtePage() {
                   if (dests.size > 1) { toast.error("Não pode emitir o mesmo CT-e para destinos diferentes"); return; }
                   const somaV = sel.reduce((a,m)=>a+m.valor,0);
                   const somaP = sel.reduce((a,m)=>a+m.peso,0);
-                  const first = sel[0] as typeof sel[0] & { modFrete?: string; tomadorUF?: string; tomadorCMun?: string; tomadorXMun?: string };
+                  const first = sel[0] as typeof sel[0] & { modFrete?: string; tomadorUF?: string; tomadorCMun?: string; tomadorXMun?: string; emitUF?: string; emitCMun?: string; emitXMun?: string; destUF?: string; destCMun?: string; destXMun?: string };
                   const tomaByMod: Record<string,string> = { "0":"0", "1":"3", "2":"4", "3":"0", "4":"3", "9":"4" };
                   const tomaSel = (first as any).modFrete ? (tomaByMod[(first as any).modFrete] ?? "3") : "3";
-                  setForm(f => ({ ...f, toma: tomaSel, cnpjTomador: (first as any).tomadorCnpj || first.destCnpj || f.cnpjTomador, xNomeTomador: (first as any).tomador || first.dest || f.xNomeTomador, ufTomador: (first as any).tomadorUF || f.ufTomador, cMunTomador: (first as any).tomadorCMun || f.cMunTomador, xMunTomador: (first as any).tomadorXMun || f.xMunTomador, vCarga: somaV.toFixed(2), peso: String(somaP), vPrest: (somaV*0.1).toFixed(2) }));
+                  setForm(f => ({
+                    ...f,
+                    toma: tomaSel,
+                    cnpjTomador: (first as any).tomadorCnpj || first.destCnpj || f.cnpjTomador,
+                    xNomeTomador: (first as any).tomador || first.dest || f.xNomeTomador,
+                    ufTomador: (first as any).tomadorUF || f.ufTomador,
+                    cMunTomador: (first as any).tomadorCMun || f.cMunTomador,
+                    xMunTomador: (first as any).tomadorXMun || f.xMunTomador,
+                    cMunIni: (first as any).emitCMun || f.cMunIni,
+                    xMunIni: (first as any).emitXMun || f.xMunIni,
+                    ufIni: (first as any).emitUF || f.ufIni,
+                    cMunFim: (first as any).destCMun || f.cMunFim,
+                    xMunFim: (first as any).destXMun || f.xMunFim,
+                    ufFim: (first as any).destUF || f.ufFim,
+                    cMunEnv: (first as any).emitCMun || f.cMunEnv,
+                    xMunEnv: (first as any).emitXMun || f.xMunEnv,
+                    ufEnv: (first as any).emitUF || f.ufEnv,
+                    vCarga: somaV.toFixed(2),
+                    peso: String(somaP),
+                    vPrest: (somaV*0.1).toFixed(2),
+                  }));
                   setOpen(true);
                 }}
               >
@@ -636,8 +677,8 @@ function CtePage() {
                           <TableCell className="truncate max-w-[100px]" title={m.dest}>{m.dest}</TableCell>
                           <TableCell className="font-mono">{m.nNF}</TableCell>
                           <TableCell>{m.serie}</TableCell>
-                          <TableCell>{m.data || "—"}</TableCell>
-                          <TableCell className="text-right">{m.peso.toFixed(2)}</TableCell>
+                          <TableCell>{m.data ? dateBR(m.data) : "—"}</TableCell>
+                          <TableCell className="text-right">{Number(m.peso).toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</TableCell>
                           <TableCell className="text-right font-medium">{brl(m.valor)}</TableCell>
                         </TableRow>
                       ))}
