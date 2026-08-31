@@ -43,13 +43,15 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-import { Truck, Plus, Pencil, Trash2, Search } from "lucide-react";
+import { Truck, Plus, Pencil, Trash2, Search, ChevronsUpDown, Check, Upload, FileText } from "lucide-react";
 import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEmpresaAtual } from "@/hooks/use-empresa";
 import { toast } from "sonner";
 import { num } from "@/lib/format";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
 
 export const Route = createFileRoute("/_authenticated/frota/veiculos")({
   component: Veiculos,
@@ -71,7 +73,9 @@ type Veiculo = {
   ano: number | null;
   rntrc: string | null;
   renavam: string | null;
-  km_atual: number | null;
+  proprietario: string | null;
+  quantidade_eixos: number | null;
+  categoria: string | null;
   status: string;
   observacoes: string | null;
 };
@@ -90,13 +94,16 @@ function formVazio() {
     ano: "",
     rntrc: "",
     renavam: "",
-    km_atual: "0",
+    proprietario: "",
+    quantidade_eixos: "",
+    categoria: "",
     status: "ativo",
     observacoes: "",
   };
 }
 
 const TIPOS = ["Caminhão 3/4", "Toco", "Truck", "Carreta", "Bitrem", "Van/Furgão"];
+const CATEGORIAS = ["Particular", "Aluguel", "Agregado", "Terceiro"];
 
 function Veiculos() {
   const { data: empresa } = useEmpresaAtual();
@@ -107,6 +114,62 @@ function Veiculos() {
   const [form, setForm] = useState(formVazio);
   const set = <K extends keyof typeof form>(k: K, v: (typeof form)[K]) =>
     setForm((f) => ({ ...f, [k]: v }));
+  const [tipoOpen, setTipoOpen] = useState(false);
+  const [tipoQuery, setTipoQuery] = useState("");
+  const [isParsingPdf, setIsParsingPdf] = useState(false);
+
+  const handleCrlvPdf = async (file: File) => {
+    setIsParsingPdf(true);
+    try {
+      const { getDocument, GlobalWorkerOptions } = await import("pdfjs-dist");
+      // @ts-ignore
+      const pdfjsVersion = await import("pdfjs-dist/package.json");
+      GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${(pdfjsVersion as any).default?.version || "4.4.168"}/pdf.worker.min.js`;
+      const buf = await file.arrayBuffer();
+      const pdf = await getDocument({ data: buf }).promise;
+      let text = "";
+      for (let i = 1; i <= pdf.numPages; i++) {
+        const page = await pdf.getPage(i);
+        const content = await page.getTextContent();
+        text += (content.items as any[]).map((it: any) => it.str).join(" ") + "\n";
+      }
+      const upper = text.toUpperCase();
+      const placaMatch = upper.match(/PLACA[:\s]*([A-Z]{3}[0-9][A-Z0-9][0-9]{2})/) || upper.match(/([A-Z]{3}[ -]?[0-9][A-Z0-9][0-9]{2})/);
+      const renavamMatch = upper.match(/RENAVAM[:\s]*([0-9]{9,11})/) || upper.match(/([0-9]{11})/);
+      const chassiMatch = upper.match(/CHASSI[:\s]*([A-Z0-9]{17})/);
+      const anoMatch = upper.match(/ANO(?:\s*FABRICA[ÇC]AO)?[:\s]*([0-9]{4})/);
+      const marcaMatch = upper.match(/MARCA\/MODELO[:\s]*([A-Z0-9 \/\-]+)/);
+      const catMatch = upper.match(/CATEGORIA[:\s]*([A-Z]+)/);
+      const propMatch = upper.match(/NOME\s+DO\s+PROPRIET[ÁA]RIO[:\s]*([A-Z ]+)/);
+      const eixosMatch = upper.match(/EIXOS[:\s]*([0-9])/);
+      const updates: Partial<typeof form> = {};
+      if (placaMatch) updates.placa = placaMatch[1].replace(/[^A-Z0-9]/g, "").toUpperCase();
+      if (renavamMatch) updates.renavam = renavamMatch[1].replace(/\D/g, "");
+      if (chassiMatch) updates.observacoes = `Chassi: ${chassiMatch[1]}`;
+      if (anoMatch) updates.ano = anoMatch[1];
+      if (marcaMatch) updates.marca_modelo = marcaMatch[1].trim().slice(0, 60);
+      if (catMatch) {
+        const cat = catMatch[1].trim().toLowerCase();
+        if (["ALUGUEL", "PARTICULAR", "AGREGADO", "TERCEIRO"].some(c => cat.includes(c.toLowerCase()))) {
+          updates.categoria = cat.charAt(0).toUpperCase() + cat.slice(1).toLowerCase();
+          if (updates.categoria.toLowerCase() === "aluguel") updates.categoria = "Aluguel";
+          if (updates.categoria.toLowerCase() === "particular") updates.categoria = "Particular";
+        }
+      }
+      if (propMatch) updates.proprietario = propMatch[1].trim();
+      if (eixosMatch) updates.quantidade_eixos = eixosMatch[1];
+      if (Object.keys(updates).length === 0) {
+        toast.error("Não foi possível extrair dados do PDF. Verifique se é o CRLV digital.");
+      } else {
+        setForm(f => ({ ...f, ...updates }));
+        toast.success("Dados do CRLV importados — confira e salve");
+      }
+    } catch (e: any) {
+      toast.error("Falha ao ler PDF", { description: e.message });
+    } finally {
+      setIsParsingPdf(false);
+    }
+  };
 
   const { data: veiculos, isLoading } = useQuery({
     enabled: !!empresa,
@@ -137,7 +200,9 @@ function Veiculos() {
       ano: v.ano ? String(v.ano) : "",
       rntrc: v.rntrc ?? "",
       renavam: v.renavam ?? "",
-      km_atual: String(v.km_atual ?? 0),
+      proprietario: (v as any).proprietario ?? "",
+      quantidade_eixos: (v as any).quantidade_eixos ? String((v as any).quantidade_eixos) : "",
+      categoria: (v as any).categoria ?? "",
       status: v.status,
       observacoes: v.observacoes ?? "",
     });
@@ -157,7 +222,9 @@ function Veiculos() {
         ano: form.ano ? Number(form.ano) : null,
         rntrc: form.rntrc.trim() || null,
         renavam: form.renavam.trim() || null,
-        km_atual: Number(form.km_atual) || 0,
+        proprietario: form.proprietario.trim() || null,
+        quantidade_eixos: form.quantidade_eixos ? Number(form.quantidade_eixos) : null,
+        categoria: form.categoria || null,
         status: form.status,
         observacoes: form.observacoes.trim() || null,
       };
@@ -199,7 +266,7 @@ function Veiculos() {
   const lista = (veiculos ?? []).filter((v) => {
     if (!busca.trim()) return true;
     const s = busca.toLowerCase();
-    return [v.placa, v.marca_modelo, v.tipo, v.rntrc].some((x) =>
+    return [v.placa, v.marca_modelo, v.tipo, v.rntrc, (v as any).proprietario, (v as any).categoria].some((x) =>
       (x ?? "").toLowerCase().includes(s),
     );
   });
@@ -229,6 +296,14 @@ function Veiculos() {
                 <DialogTitle>{editing ? `Editar ${editing.placa}` : "Novo veículo"}</DialogTitle>
               </DialogHeader>
               <div className="grid gap-3">
+                <div className="flex gap-2">
+                  <label className="flex items-center gap-2 px-3 py-2 border rounded bg-amber-100 dark:bg-amber-900/30 cursor-pointer hover:bg-amber-200 text-xs font-medium">
+                    <FileText className="h-4 w-4" /> Importar CRLV (PDF)
+                    <input type="file" accept=".pdf" className="hidden" onChange={e => { const f = e.target.files?.[0]; if (f) handleCrlvPdf(f); e.currentTarget.value = ""; }} />
+                  </label>
+                  {isParsingPdf && <span className="text-xs text-muted-foreground self-center">Lendo PDF…</span>}
+                  <span className="text-[10px] text-muted-foreground self-center">Preenche placa, RENAVAM, chassi e modelo automaticamente</span>
+                </div>
                 <div className="grid grid-cols-3 gap-3">
                   <div>
                     <Label>Placa *</Label>
@@ -270,16 +345,35 @@ function Veiculos() {
                 <div className="grid grid-cols-3 gap-3">
                   <div>
                     <Label>Tipo</Label>
-                    <Input
-                      list="tipos-veiculo"
-                      value={form.tipo}
-                      onChange={(e) => set("tipo", e.target.value)}
-                    />
-                    <datalist id="tipos-veiculo">
-                      {TIPOS.map((t) => (
-                        <option key={t} value={t} />
-                      ))}
-                    </datalist>
+                    <Popover open={tipoOpen} onOpenChange={setTipoOpen}>
+                      <PopoverTrigger asChild>
+                        <Button variant="outline" role="combobox" aria-expanded={tipoOpen} className="h-10 w-full justify-between font-normal">
+                          <span className="truncate">{form.tipo || "Selecione tipo"}</span>
+                          <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                        </Button>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-[320px] p-0" align="start">
+                        <Command shouldFilter={false}>
+                          <CommandInput placeholder="Buscar tipo..." value={tipoQuery} onValueChange={setTipoQuery} />
+                          <CommandList>
+                            <CommandEmpty>Nenhum tipo encontrado.</CommandEmpty>
+                            <CommandGroup>
+                              {TIPOS.filter(t => !tipoQuery || t.toLowerCase().includes(tipoQuery.toLowerCase())).map(t => (
+                                <CommandItem key={t} value={t} onSelect={() => { set("tipo", t); setTipoOpen(false); setTipoQuery(""); }}>
+                                  <Check className={"mr-2 h-4 w-4 " + (form.tipo === t ? "opacity-100" : "opacity-0")} />
+                                  {t}
+                                </CommandItem>
+                              ))}
+                              {tipoQuery && !TIPOS.some(t => t.toLowerCase() === tipoQuery.toLowerCase()) && (
+                                <CommandItem value={tipoQuery} onSelect={() => { set("tipo", tipoQuery); setTipoOpen(false); setTipoQuery(""); }}>
+                                  Usar &quot;{tipoQuery}&quot;
+                                </CommandItem>
+                              )}
+                            </CommandGroup>
+                          </CommandList>
+                        </Command>
+                      </PopoverContent>
+                    </Popover>
                   </div>
                   <div>
                     <Label>RNTRC</Label>
@@ -290,15 +384,26 @@ function Veiculos() {
                     <Input value={form.renavam} onChange={(e) => set("renavam", e.target.value)} />
                   </div>
                 </div>
-                <div>
-                  <Label>KM atual</Label>
-                  <Input
-                    type="number"
-                    step="0.1"
-                    min="0"
-                    value={form.km_atual}
-                    onChange={(e) => set("km_atual", e.target.value)}
-                  />
+                <div className="grid grid-cols-3 gap-3">
+                  <div>
+                    <Label>Proprietário</Label>
+                    <Input value={form.proprietario} onChange={(e) => set("proprietario", e.target.value)} placeholder="Nome do proprietário" />
+                  </div>
+                  <div>
+                    <Label>Qtd. Eixos</Label>
+                    <Input type="number" min="2" max="9" value={form.quantidade_eixos} onChange={(e) => set("quantidade_eixos", e.target.value)} placeholder="Ex: 2" />
+                  </div>
+                  <div>
+                    <Label>Categoria</Label>
+                    <Select value={form.categoria} onValueChange={v => set("categoria", v)}>
+                      <SelectTrigger><SelectValue placeholder="Selecione" /></SelectTrigger>
+                      <SelectContent>
+                        {CATEGORIAS.map(c => (
+                          <SelectItem key={c} value={c.toLowerCase()}>{c}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
                 </div>
                 <div>
                   <Label>Observações</Label>
@@ -355,9 +460,9 @@ function Veiculos() {
                 <TableHead>Modelo</TableHead>
                 <TableHead>Tipo</TableHead>
                 <TableHead>Ano</TableHead>
-                <TableHead>RNTRC</TableHead>
-                <TableHead>RENAVAM</TableHead>
-                <TableHead className="text-right">KM</TableHead>
+                <TableHead>Proprietário</TableHead>
+                <TableHead className="text-center">Eixos</TableHead>
+                <TableHead>Categoria</TableHead>
                 <TableHead>Status</TableHead>
                 <TableHead className="text-right">Ações</TableHead>
               </TableRow>
@@ -369,9 +474,9 @@ function Veiculos() {
                   <TableCell>{v.marca_modelo ?? "—"}</TableCell>
                   <TableCell>{v.tipo ?? "—"}</TableCell>
                   <TableCell>{v.ano ?? "—"}</TableCell>
-                  <TableCell className="text-tabular">{v.rntrc ?? "—"}</TableCell>
-                  <TableCell className="text-tabular">{v.renavam ?? "—"}</TableCell>
-                  <TableCell className="text-right text-tabular">{num(v.km_atual ?? 0)}</TableCell>
+                  <TableCell className="truncate max-w-[140px]">{(v as any).proprietario ?? "—"}</TableCell>
+                  <TableCell className="text-center">{(v as any).quantidade_eixos ?? "—"}</TableCell>
+                  <TableCell className="capitalize">{(v as any).categoria ?? "—"}</TableCell>
                   <TableCell>
                     <Badge variant="secondary" className={STATUS_COR[v.status] ?? ""}>
                       {v.status === "manutencao" ? "manutenção" : v.status}

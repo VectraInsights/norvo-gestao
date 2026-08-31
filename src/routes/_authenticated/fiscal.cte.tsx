@@ -63,6 +63,10 @@ function CtePage() {
     // Impostos — base e alíquotas editáveis (corrigido: base padrão = vPrest, não vCarga)
     icmsCST: "00", icmsBase: "1000.00", icmsAliq: "0.00", icmsValor: "0.00",
     pisAliq: "0.00", cofinsAliq: "0.00", irAliq: "0.00", inssAliq: "0.00", csllAliq: "0.00",
+    // Veículo / Motorista / Seguro — menus tipo CFOP
+    motoristaNome: "", motoristaId: "", ciot: "",
+    placaVeiculo: "", placaReboque: "", semiReboque1: "", semiReboque2: "",
+    seguradoraNome: "", seguradoraId: "", apolice: "", averbacao: "",
     cMunEnv: "3106200", xMunEnv: "BELO HORIZONTE", ufEnv: "MG", cMunIni: "3106200", xMunIni: "BELO HORIZONTE", ufIni: "MG", cMunFim: "3550308", xMunFim: "SAO PAULO", ufFim: "SP", dataEmissao: new Date().toISOString().slice(0,10),
   });
   const [cfopOpen, setCfopOpen] = useState(false);
@@ -136,6 +140,41 @@ function CtePage() {
       }
     }
   }, [pendentesDB]);
+
+  // Motoristas (cargo contém Motorista), Veículos e Seguradoras para menus tipo CFOP
+  const [motoristaOpen, setMotoristaOpen] = useState(false);
+  const [motoristaQuery, setMotoristaQuery] = useState("");
+  const [veiculoOpen, setVeiculoOpen] = useState<string | null>(null);
+  const [veiculoQuery, setVeiculoQuery] = useState("");
+  const [seguradoraOpen, setSeguradoraOpen] = useState(false);
+  const [seguradoraQuery, setSeguradoraQuery] = useState("");
+  const { data: motoristas } = useQuery({
+    enabled: !!empresa,
+    queryKey: ["cte-motoristas", empresa?.id],
+    queryFn: async () => {
+      const { data, error } = await supabase.from("colaboradores" as never).select("id,nome,cargo,cpf").eq("empresa_id", empresa!.id).eq("status", "ativo").ilike("cargo", "%motorist%").order("nome").limit(100);
+      if (error) throw error;
+      return (data ?? []) as unknown as Array<{ id: string; nome: string; cargo: string; cpf: string | null }>;
+    },
+  });
+  const { data: veiculos } = useQuery({
+    enabled: !!empresa,
+    queryKey: ["veiculos-cte", empresa?.id],
+    queryFn: async () => {
+      const { data, error } = await supabase.from("veiculos" as never).select("id,placa,marca_modelo,tipo").eq("empresa_id", empresa!.id).order("placa").limit(100);
+      if (error) throw error;
+      return (data ?? []) as unknown as Array<{ id: string; placa: string; marca_modelo: string | null; tipo: string | null }>;
+    },
+  });
+  const { data: seguradoras } = useQuery({
+    enabled: !!empresa,
+    queryKey: ["seguradoras", empresa?.id],
+    queryFn: async () => {
+      const { data, error } = await supabase.from("seguradoras" as never).select("id,nome,cnpj,apolice_numero,averbacao").eq("empresa_id", empresa!.id).eq("ativo", true).order("nome").limit(100);
+      if (error) throw error;
+      return (data ?? []) as unknown as Array<{ id: string; nome: string; cnpj: string | null; apolice_numero: string | null; averbacao: string | null }>;
+    },
+  });
 
   // PIS/COFINS automático conforme regime da empresa
   const { data: regimeData } = useQuery({
@@ -892,9 +931,38 @@ function CtePage() {
                 <Card className="p-3">
                   <h5 className="text-xs font-semibold mb-2">Seguro da Carga</h5>
                   <div className="space-y-2">
-                    <div><Label className="text-[10px] text-muted-foreground">Seguradora</Label><Input className="h-7 text-xs" placeholder="Ex: CHUBB SEGUROS BRASIL" /></div>
+                    <div><Label className="text-[10px] text-muted-foreground">Seguradora</Label>
+                      <Popover open={seguradoraOpen} onOpenChange={setSeguradoraOpen}>
+                        <PopoverTrigger asChild>
+                          <Button variant="outline" role="combobox" aria-expanded={seguradoraOpen} className="h-7 text-xs justify-between w-full font-normal">
+                            <span className="truncate">{form.seguradoraNome || "Selecione seguradora"}</span>
+                            <ChevronsUpDown className="ml-2 h-3 w-3 shrink-0 opacity-50" />
+                          </Button>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-[360px] p-0" align="start">
+                          <Command shouldFilter={false}>
+                            <CommandInput placeholder="Buscar seguradora..." value={seguradoraQuery} onValueChange={setSeguradoraQuery} />
+                            <CommandList>
+                              <CommandEmpty>{seguradoras?.length ? "Nenhuma seguradora encontrada." : "Nenhuma seguradora cadastrada. Cadastre em Configurações."}</CommandEmpty>
+                              <CommandGroup>
+                                {(seguradoras ?? []).filter(s => {
+                                  if (!seguradoraQuery) return true;
+                                  const q = seguradoraQuery.toLowerCase();
+                                  return s.nome.toLowerCase().includes(q) || (s.cnpj || "").toLowerCase().includes(q) || (s.apolice_numero || "").toLowerCase().includes(q);
+                                }).map(s => (
+                                  <CommandItem key={s.id} value={s.id} onSelect={() => { setForm(f => ({ ...f, seguradoraId: s.id, seguradoraNome: s.nome, apolice: s.apolice_numero || f.apolice, averbacao: s.averbacao || f.averbacao })); setSeguradoraOpen(false); setSeguradoraQuery(""); }}>
+                                    <Check className={"mr-2 h-3 w-3 " + (form.seguradoraId === s.id ? "opacity-100" : "opacity-0")} />
+                                    <div className="flex flex-col"><span className="text-xs">{s.nome}</span><span className="text-[10px] text-muted-foreground">{s.cnpj || ""} {s.apolice_numero ? `• Apólice ${s.apolice_numero}` : ""}</span></div>
+                                  </CommandItem>
+                                ))}
+                              </CommandGroup>
+                            </CommandList>
+                          </Command>
+                        </PopoverContent>
+                      </Popover>
+                    </div>
                     <div className="grid grid-cols-2 gap-2">
-                      <div><Label className="text-[10px] text-muted-foreground">Apólice</Label><Input className="h-7 text-xs" placeholder="Nº Apólice" /></div>
+                      <div><Label className="text-[10px] text-muted-foreground">Apólice</Label><Input className="h-7 text-xs" placeholder="Nº Apólice" value={form.apolice} onChange={e => setForm({ ...form, apolice: e.target.value })} /></div>
                       <div><Label className="text-[10px] text-muted-foreground">Base Calc. Seg.</Label><Input className="h-7 text-xs" value={form.vCarga} readOnly /></div>
                     </div>
                     <div className="grid grid-cols-3 gap-2">
@@ -919,25 +987,190 @@ function CtePage() {
                         </SelectContent>
                       </Select>
                     </div>
-                    <div><Label className="text-[10px] text-muted-foreground">Nº Averbação</Label><Input className="h-7 text-xs" placeholder="Nº Averbação (opcional)" /></div>
+                    <div><Label className="text-[10px] text-muted-foreground">Nº Averbação</Label><Input className="h-7 text-xs" placeholder="Nº Averbação (opcional)" value={form.averbacao} onChange={e => setForm({ ...form, averbacao: e.target.value })} /></div>
                   </div>
                 </Card>
 
                 <Card className="p-3">
                   <h5 className="text-xs font-semibold mb-2">Dados do Veículo / Motorista</h5>
                   <div className="space-y-2">
-                    <div><Label className="text-[10px] text-muted-foreground">Nome Motorista</Label><Input className="h-7 text-xs" placeholder="Nome completo" /></div>
+                    <div><Label className="text-[10px] text-muted-foreground">Nome Motorista</Label>
+                      <Popover open={motoristaOpen} onOpenChange={setMotoristaOpen}>
+                        <PopoverTrigger asChild>
+                          <Button variant="outline" role="combobox" aria-expanded={motoristaOpen} className="h-7 text-xs justify-between w-full font-normal">
+                            <span className="truncate">{form.motoristaNome || "Selecione motorista"}</span>
+                            <ChevronsUpDown className="ml-2 h-3 w-3 shrink-0 opacity-50" />
+                          </Button>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-[360px] p-0" align="start">
+                          <Command shouldFilter={false}>
+                            <CommandInput placeholder="Buscar motorista..." value={motoristaQuery} onValueChange={setMotoristaQuery} />
+                            <CommandList>
+                              <CommandEmpty>{motoristas?.length ? "Nenhum motorista encontrado." : "Nenhum colaborador com cargo Motorista. Cadastre em RH."}</CommandEmpty>
+                              <CommandGroup>
+                                {(motoristas ?? []).filter(m => {
+                                  if (!motoristaQuery) return true;
+                                  const q = motoristaQuery.toLowerCase();
+                                  return m.nome.toLowerCase().includes(q) || m.cargo.toLowerCase().includes(q) || (m.cpf || "").includes(q);
+                                }).map(m => (
+                                  <CommandItem key={m.id} value={m.id} onSelect={() => { setForm(f => ({ ...f, motoristaId: m.id, motoristaNome: m.nome })); setMotoristaOpen(false); setMotoristaQuery(""); }}>
+                                    <Check className={"mr-2 h-3 w-3 " + (form.motoristaId === m.id ? "opacity-100" : "opacity-0")} />
+                                    <div className="flex flex-col"><span className="text-xs">{m.nome}</span><span className="text-[10px] text-muted-foreground">{m.cargo}</span></div>
+                                  </CommandItem>
+                                ))}
+                              </CommandGroup>
+                            </CommandList>
+                          </Command>
+                        </PopoverContent>
+                      </Popover>
+                    </div>
                     <div className="grid grid-cols-2 gap-2">
                       <div><Label className="text-[10px] text-muted-foreground">CIOT</Label><Input className="h-7 text-xs" placeholder="Nº CIOT" /></div>
                       <div><Label className="text-[10px] text-muted-foreground">% Agregados</Label><Input className="h-7 text-xs" placeholder="0.00" /></div>
                     </div>
                     <div className="grid grid-cols-2 gap-2">
-                      <div><Label className="text-[10px] text-muted-foreground">Placa Veículo</Label><Input className="h-7 text-xs font-mono uppercase" placeholder="ABC-1234" maxLength={8} /></div>
-                      <div><Label className="text-[10px] text-muted-foreground">Placa Reboque</Label><Input className="h-7 text-xs font-mono uppercase" placeholder="ABC-1234" maxLength={8} /></div>
+                      <div><Label className="text-[10px] text-muted-foreground">Placa Veículo</Label>
+                        <Popover open={veiculoOpen === "placaVeiculo"} onOpenChange={v => { setVeiculoOpen(v ? "placaVeiculo" : null); if (v) setVeiculoQuery(""); }}>
+                          <PopoverTrigger asChild>
+                            <Button variant="outline" role="combobox" aria-expanded={veiculoOpen === "placaVeiculo"} className="h-7 text-xs justify-between w-full font-mono uppercase font-normal">
+                              <span className="truncate">{form.placaVeiculo || "ABC-1234"}</span>
+                              <ChevronsUpDown className="ml-2 h-3 w-3 shrink-0 opacity-50" />
+                            </Button>
+                          </PopoverTrigger>
+                          <PopoverContent className="w-[320px] p-0" align="start">
+                            <Command shouldFilter={false}>
+                              <CommandInput placeholder="Buscar placa..." value={veiculoQuery} onValueChange={setVeiculoQuery} />
+                              <CommandList>
+                                <CommandEmpty>{veiculos?.length ? "Nenhum veículo encontrado." : "Nenhum veículo cadastrado."}</CommandEmpty>
+                                <CommandGroup>
+                                  {(veiculos ?? []).filter(v => {
+                                    if (!veiculoQuery) return true;
+                                    const q = veiculoQuery.toLowerCase();
+                                    return v.placa.toLowerCase().includes(q) || (v.marca_modelo || "").toLowerCase().includes(q);
+                                  }).map(v => (
+                                    <CommandItem key={v.id} value={v.placa} onSelect={() => { setForm(f => ({ ...f, placaVeiculo: v.placa.toUpperCase() })); setVeiculoOpen(null); setVeiculoQuery(""); }}>
+                                      <Check className={"mr-2 h-3 w-3 " + (form.placaVeiculo === v.placa ? "opacity-100" : "opacity-0")} />
+                                      <div className="flex flex-col"><span className="text-xs font-mono">{v.placa}</span><span className="text-[10px] text-muted-foreground">{v.marca_modelo || v.tipo || ""}</span></div>
+                                    </CommandItem>
+                                  ))}
+                                  {veiculoQuery && !veiculos?.some(v => v.placa.toLowerCase() === veiculoQuery.toLowerCase()) && (
+                                    <CommandItem value={veiculoQuery} onSelect={() => { setForm(f => ({ ...f, placaVeiculo: veiculoQuery.toUpperCase() })); setVeiculoOpen(null); setVeiculoQuery(""); }}>
+                                      Usar &quot;{veiculoQuery.toUpperCase()}&quot;
+                                    </CommandItem>
+                                  )}
+                                </CommandGroup>
+                              </CommandList>
+                            </Command>
+                          </PopoverContent>
+                        </Popover>
+                      </div>
+                      <div><Label className="text-[10px] text-muted-foreground">Placa Reboque</Label>
+                        <Popover open={veiculoOpen === "placaReboque"} onOpenChange={v => { setVeiculoOpen(v ? "placaReboque" : null); if (v) setVeiculoQuery(""); }}>
+                          <PopoverTrigger asChild>
+                            <Button variant="outline" role="combobox" aria-expanded={veiculoOpen === "placaReboque"} className="h-7 text-xs justify-between w-full font-mono uppercase font-normal">
+                              <span className="truncate">{form.placaReboque || "ABC-1234"}</span>
+                              <ChevronsUpDown className="ml-2 h-3 w-3 shrink-0 opacity-50" />
+                            </Button>
+                          </PopoverTrigger>
+                          <PopoverContent className="w-[320px] p-0" align="start">
+                            <Command shouldFilter={false}>
+                              <CommandInput placeholder="Buscar placa..." value={veiculoQuery} onValueChange={setVeiculoQuery} />
+                              <CommandList>
+                                <CommandEmpty>{veiculos?.length ? "Nenhum veículo encontrado." : "Nenhum veículo cadastrado."}</CommandEmpty>
+                                <CommandGroup>
+                                  {(veiculos ?? []).filter(v => {
+                                    if (!veiculoQuery) return true;
+                                    const q = veiculoQuery.toLowerCase();
+                                    return v.placa.toLowerCase().includes(q) || (v.marca_modelo || "").toLowerCase().includes(q);
+                                  }).map(v => (
+                                    <CommandItem key={v.id} value={v.placa} onSelect={() => { setForm(f => ({ ...f, placaReboque: v.placa.toUpperCase() })); setVeiculoOpen(null); setVeiculoQuery(""); }}>
+                                      <Check className={"mr-2 h-3 w-3 " + (form.placaReboque === v.placa ? "opacity-100" : "opacity-0")} />
+                                      <div className="flex flex-col"><span className="text-xs font-mono">{v.placa}</span><span className="text-[10px] text-muted-foreground">{v.marca_modelo || v.tipo || ""}</span></div>
+                                    </CommandItem>
+                                  ))}
+                                  {veiculoQuery && !veiculos?.some(v => v.placa.toLowerCase() === veiculoQuery.toLowerCase()) && (
+                                    <CommandItem value={veiculoQuery} onSelect={() => { setForm(f => ({ ...f, placaReboque: veiculoQuery.toUpperCase() })); setVeiculoOpen(null); setVeiculoQuery(""); }}>
+                                      Usar &quot;{veiculoQuery.toUpperCase()}&quot;
+                                    </CommandItem>
+                                  )}
+                                </CommandGroup>
+                              </CommandList>
+                            </Command>
+                          </PopoverContent>
+                        </Popover>
+                      </div>
                     </div>
                     <div className="grid grid-cols-2 gap-2">
-                      <div><Label className="text-[10px] text-muted-foreground">Semi Reboque 1</Label><Input className="h-7 text-xs font-mono uppercase" placeholder="ABC-1234" maxLength={8} /></div>
-                      <div><Label className="text-[10px] text-muted-foreground">Semi Reboque 2</Label><Input className="h-7 text-xs font-mono uppercase" placeholder="ABC-1234" maxLength={8} /></div>
+                      <div><Label className="text-[10px] text-muted-foreground">Semi Reboque 1</Label>
+                        <Popover open={veiculoOpen === "semi1"} onOpenChange={v => { setVeiculoOpen(v ? "semi1" : null); if (v) setVeiculoQuery(""); }}>
+                          <PopoverTrigger asChild>
+                            <Button variant="outline" role="combobox" aria-expanded={veiculoOpen === "semi1"} className="h-7 text-xs justify-between w-full font-mono uppercase font-normal">
+                              <span className="truncate">{form.semiReboque1 || "ABC-1234"}</span>
+                              <ChevronsUpDown className="ml-2 h-3 w-3 shrink-0 opacity-50" />
+                            </Button>
+                          </PopoverTrigger>
+                          <PopoverContent className="w-[320px] p-0" align="start">
+                            <Command shouldFilter={false}>
+                              <CommandInput placeholder="Buscar placa..." value={veiculoQuery} onValueChange={setVeiculoQuery} />
+                              <CommandList>
+                                <CommandEmpty>{veiculos?.length ? "Nenhum veículo encontrado." : "Nenhum veículo cadastrado."}</CommandEmpty>
+                                <CommandGroup>
+                                  {(veiculos ?? []).filter(v => {
+                                    if (!veiculoQuery) return true;
+                                    const q = veiculoQuery.toLowerCase();
+                                    return v.placa.toLowerCase().includes(q) || (v.marca_modelo || "").toLowerCase().includes(q);
+                                  }).map(v => (
+                                    <CommandItem key={v.id} value={v.placa} onSelect={() => { setForm(f => ({ ...f, semiReboque1: v.placa.toUpperCase() })); setVeiculoOpen(null); setVeiculoQuery(""); }}>
+                                      <Check className={"mr-2 h-3 w-3 " + (form.semiReboque1 === v.placa ? "opacity-100" : "opacity-0")} />
+                                      <div className="flex flex-col"><span className="text-xs font-mono">{v.placa}</span><span className="text-[10px] text-muted-foreground">{v.marca_modelo || v.tipo || ""}</span></div>
+                                    </CommandItem>
+                                  ))}
+                                  {veiculoQuery && !veiculos?.some(v => v.placa.toLowerCase() === veiculoQuery.toLowerCase()) && (
+                                    <CommandItem value={veiculoQuery} onSelect={() => { setForm(f => ({ ...f, semiReboque1: veiculoQuery.toUpperCase() })); setVeiculoOpen(null); setVeiculoQuery(""); }}>
+                                      Usar &quot;{veiculoQuery.toUpperCase()}&quot;
+                                    </CommandItem>
+                                  )}
+                                </CommandGroup>
+                              </CommandList>
+                            </Command>
+                          </PopoverContent>
+                        </Popover>
+                      </div>
+                      <div><Label className="text-[10px] text-muted-foreground">Semi Reboque 2</Label>
+                        <Popover open={veiculoOpen === "semi2"} onOpenChange={v => { setVeiculoOpen(v ? "semi2" : null); if (v) setVeiculoQuery(""); }}>
+                          <PopoverTrigger asChild>
+                            <Button variant="outline" role="combobox" aria-expanded={veiculoOpen === "semi2"} className="h-7 text-xs justify-between w-full font-mono uppercase font-normal">
+                              <span className="truncate">{form.semiReboque2 || "ABC-1234"}</span>
+                              <ChevronsUpDown className="ml-2 h-3 w-3 shrink-0 opacity-50" />
+                            </Button>
+                          </PopoverTrigger>
+                          <PopoverContent className="w-[320px] p-0" align="start">
+                            <Command shouldFilter={false}>
+                              <CommandInput placeholder="Buscar placa..." value={veiculoQuery} onValueChange={setVeiculoQuery} />
+                              <CommandList>
+                                <CommandEmpty>{veiculos?.length ? "Nenhum veículo encontrado." : "Nenhum veículo cadastrado."}</CommandEmpty>
+                                <CommandGroup>
+                                  {(veiculos ?? []).filter(v => {
+                                    if (!veiculoQuery) return true;
+                                    const q = veiculoQuery.toLowerCase();
+                                    return v.placa.toLowerCase().includes(q) || (v.marca_modelo || "").toLowerCase().includes(q);
+                                  }).map(v => (
+                                    <CommandItem key={v.id} value={v.placa} onSelect={() => { setForm(f => ({ ...f, semiReboque2: v.placa.toUpperCase() })); setVeiculoOpen(null); setVeiculoQuery(""); }}>
+                                      <Check className={"mr-2 h-3 w-3 " + (form.semiReboque2 === v.placa ? "opacity-100" : "opacity-0")} />
+                                      <div className="flex flex-col"><span className="text-xs font-mono">{v.placa}</span><span className="text-[10px] text-muted-foreground">{v.marca_modelo || v.tipo || ""}</span></div>
+                                    </CommandItem>
+                                  ))}
+                                  {veiculoQuery && !veiculos?.some(v => v.placa.toLowerCase() === veiculoQuery.toLowerCase()) && (
+                                    <CommandItem value={veiculoQuery} onSelect={() => { setForm(f => ({ ...f, semiReboque2: veiculoQuery.toUpperCase() })); setVeiculoOpen(null); setVeiculoQuery(""); }}>
+                                      Usar &quot;{veiculoQuery.toUpperCase()}&quot;
+                                    </CommandItem>
+                                  )}
+                                </CommandGroup>
+                              </CommandList>
+                            </Command>
+                          </PopoverContent>
+                        </Popover>
+                      </div>
                     </div>
                     <label className="flex items-center gap-2 text-[10px]"><input type="checkbox" /> Possui Segundo Motorista</label>
                   </div>
