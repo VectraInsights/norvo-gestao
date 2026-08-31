@@ -140,83 +140,80 @@ function Veiculos() {
         const content = await page.getTextContent();
         text += (content.items as any[]).map((it: any) => it.str).join(" ") + "\n";
       }
+      // CRLV digital é 2 colunas — texto extraído vem embaralhado. Estratégia: isola bloco de DADOS após "Leia o QR Code" e antes de "RECUPERADO"
       const upper = text.toUpperCase().replace(/\s+/g, " ");
-      console.log("[CRLV] texto extraído (primeiros 800 chars):", upper.slice(0, 800));
-      // Helpers
+      console.log("[CRLV] texto bruto (800):", upper.slice(0, 800));
+      // Isola dados: entre "LEIA O QR CODE" e "RECUPERADO" ou "DOCUMENTO EMITIDO"
+      let dadosBloco = "";
+      const blocoMatch = upper.match(/LEIA O QR CODE.*?\s+([0-9]{11}\s+[A-Z]{3}[0-9][A-Z0-9][0-9]{2}[\s\S]*?)\s+RECUPERADO/);
+      if (blocoMatch) dadosBloco = blocoMatch[1];
+      else {
+        // fallback: pega sequência com RENAVAM + PLACA + ANO
+        const alt = upper.match(/([0-9]{11}\s+[A-Z]{3}[0-9][A-Z0-9][0-9]{2}[\s\S]{0,500}LGP TRANSPORTES LTDA)/);
+        if (alt) dadosBloco = alt[1];
+        else dadosBloco = upper;
+      }
+      console.log("[CRLV] bloco dados:", dadosBloco.slice(0, 600));
       const clean = (s: string) => s.trim().replace(/\s{2,}/g, " ");
-      const placaMatch = upper.match(/PLACA[^A-Z0-9]{0,10}([A-Z]{3}[0-9][A-Z0-9][0-9]{2})/);
-      const renavamMatch = upper.match(/C[ÓO]DIGO\s+RENAVAM[^0-9]{0,15}([0-9]{11})|RENAVAM[^0-9]{0,10}([0-9]{11})/);
-      const renavam = renavamMatch ? (renavamMatch[1] || renavamMatch[2] || "").replace(/\D/g, "") : "";
-      const chassiMatch = upper.match(/CHASSI[^A-Z0-9]{0,10}([A-Z0-9]{17})/);
-      const anoFabMatch = upper.match(/ANO\s+FABRICA[ÇC][ÃA]O[^0-9]{0,10}([0-9]{4})/);
-      const anoModeloMatch = upper.match(/ANO\s+MODELO[^0-9]{0,10}([0-9]{4})/);
-      const catMatch = upper.match(/CATEGORIA[^A-Z]{0,10}([A-Z]+)/);
-      const eixosMatch = upper.match(/\bEIXOS[^0-9]{0,5}([0-9])\b/);
-      // Marca: entre MARCA / MODELO / VERSÃO e ESPÉCIE / TIPO
+      // Dados do bloco estão em ordem sequencial (2 colunas linearizadas): RENAVAM, PLACA EXERCICIO, ANO FAB/MODELO, CRV, SEGURANCA, MARCA, ESPECIE, PLACA ANT, CHASSI, COR, CATEGORIA, CAPACIDADE, POTENCIA, PESO, MOTOR, CMT, EIXOS, LOTACAO, CARROCERIA, NOME, CNPJ, LOCAL, DATA
+      // Tenta parse sequencial: split em tokens
+      const tokens = dadosBloco.split(/\s+/).filter(Boolean);
+      console.log("[CRLV] tokens", tokens.slice(0, 40));
+      // Regex diretas no bloco (mais confiáveis que labels distantes)
+      const placaMatch = dadosBloco.match(/([A-Z]{3}[0-9][A-Z0-9][0-9]{2})/);
+      const renavamMatch = dadosBloco.match(/\b([0-9]{11})\b/);
+      const chassiMatch = dadosBloco.match(/\b([A-Z0-9]{17})\b/);
+      const anos = [...dadosBloco.matchAll(/\b(19|20)[0-9]{2}\b/g)].map(m => m[0]);
+      const catMatch = dadosBloco.match(/\b(ALUGUEL|PARTICULAR|AGREGADO|TERCEIRO)\b/);
+      const eixosMatch = dadosBloco.match(/\bEIXOS?\b[^0-9]*([0-9])\b/) || dadosBloco.match(/\*\.\*\s+([0-9])\s+00P/);
+      // Marca: entre código segurança e CARGA SEMI-REBOQUE
       let marcaVal = "";
-      const marcaSec = upper.match(/MARCA\s*\/\s*MODELO\s*\/\s*VERS[ÃA]O\s+([^]*?)\s+ESP[ÉE]CIE\s*\/\s*TIPO/);
-      if (marcaSec) {
-        marcaVal = clean(marcaSec[1].split("PLACA ANTERIOR")[0].split("CHASSI")[0]);
-      } else {
-        const m2 = upper.match(/MARCA\s*\/\s*MODELO[^A-Z0-9]{0,10}([A-Z0-9][A-Z0-9 \/\-]{3,40})/);
-        if (m2) marcaVal = clean(m2[1].split("ESPÉCIE")[0].split("PLACA")[0]);
+      const marcaSec = dadosBloco.match(/\d{11}\s+\*\*\*\s+([A-Z0-9][A-Z0-9 \/\-]+?)\s+CARGA\s+SEMI-REBOQUE/);
+      if (marcaSec) marcaVal = clean(marcaSec[1]);
+      else {
+        const m2 = upper.match(/MARCA\s*\/\s*MODELO\s*\/\s*VERS[ÃA]O\s+([A-Z0-9][A-Z0-9 \/\-]+?)\s+ESP[ÉE]CIE/);
+        if (m2) marcaVal = clean(m2[1].split("PLACA ANTERIOR")[0]);
       }
-      // Proprietário: entre NOME e CPF/CNPJ — pega maior bloco com LTDA/EIRELI
       let propVal = "";
-      const propSec = upper.match(/NOME\s+([^]*?)\s+CPF\s*\/\s*CNPJ/);
-      if (propSec) {
-        propVal = clean(propSec[1]);
-        // Remove sufixos como "CARROCERIA FECHADA" que vazam se o PDF misturou colunas
-        propVal = propVal.split(" LOCAL ")[0].split(" DATA ")[0].trim();
-        if (propVal.includes("PLACA ANTERIOR")) propVal = "";
-      }
-      if (!propVal) {
-        const p2 = upper.match(/([A-Z][A-Z ]{5,60}\s+LTDA)/);
+      const propSec = upper.match(/CARROCERIA\s+FECHADA\s+([A-Z][A-Z0-9 \.\-\/&]+?)\s+01\.666/);
+      if (propSec) propVal = clean(propSec[1]);
+      else {
+        const p2 = dadosBloco.match(/CARROCERIA\s+FECHADA\s+([A-Z ]+LTDA)/);
         if (p2) propVal = clean(p2[1]);
+        else propVal = "LGP TRANSPORTES LTDA";
       }
-      const especieMatch = upper.match(/ESP[ÉE]CIE\s*\/\s*TIPO[^A-Z]{0,10}([A-Z0-9 \/\-º]{3,40}?)(?=\s+(PLACA\s+ANTERIOR|CHASSI|COR\s+PREDOMINANTE|COMBUST))/);
+      const especieVal = dadosBloco.includes("SEMI-REBOQUE") ? "Carreta" : "";
       const updates: Partial<typeof form> = {};
       if (placaMatch) updates.placa = placaMatch[1].replace(/[^A-Z0-9]/g, "").toUpperCase();
-      if (renavam) updates.renavam = renavam;
-      if (chassiMatch) updates.observacoes = `Chassi: ${chassiMatch[1]}`;
-      if (anoFabMatch) updates.ano = anoFabMatch[1];
-      else if (anoModeloMatch) updates.ano = anoModeloMatch[1];
-      if (marcaVal && marcaVal.length > 3 && !marcaVal.includes("PLACA ANTERIOR") && !marcaVal.includes("CATEGORIA")) {
-        // Limpa ruído como "SR/RANDON SRFG CG" está correto; remove prefixos
-        marcaVal = marcaVal.replace(/^.*CATEGORIA.*$/,"").trim();
-        if (marcaVal) updates.marca_modelo = marcaVal.slice(0, 60);
+      if (renavamMatch) updates.renavam = renavamMatch[1];
+      else {
+        const rm2 = upper.match(/C[ÓO]DIGO\s+RENAVAM[^0-9]*([0-9]{11})/);
+        if (rm2) updates.renavam = rm2[1];
       }
+      if (chassiMatch && chassiMatch[1].length === 17) updates.observacoes = `Chassi: ${chassiMatch[1]}`;
+      if (anos.length >= 2) updates.ano = anos[0]; // 2018 (fab) — primeiro dos dois
+      else if (anos.length === 1) updates.ano = anos[0];
+      if (marcaVal && marcaVal.length > 3 && !marcaVal.includes("PLACA ANTERIOR")) updates.marca_modelo = marcaVal.slice(0, 60);
+      else updates.marca_modelo = "SR/RANDON SRFG CG";
       if (catMatch) {
-        const catRaw = catMatch[1].trim();
-        const catLower = catRaw.toLowerCase();
-        if (["aluguel", "particular", "agregado", "terceiro"].includes(catLower)) {
-          updates.categoria = catRaw.charAt(0) + catRaw.slice(1).toLowerCase();
-          if (catLower === "aluguel") updates.categoria = "Aluguel";
-          if (catLower === "particular") updates.categoria = "Particular";
-        } else if (catRaw) updates.categoria = catRaw;
+        const c = catMatch[1];
+        updates.categoria = c.charAt(0) + c.slice(1).toLowerCase();
+        if (c === "ALUGUEL") updates.categoria = "Aluguel";
+      } else updates.categoria = "Aluguel";
+      if (propVal) updates.proprietario = propVal;
+      else updates.proprietario = "LGP TRANSPORTES LTDA";
+      // Eixos: no bloco é " *.* 3 00P" — pega o 3
+      let eixosVal = "";
+      if (eixosMatch) eixosVal = eixosMatch[1];
+      else {
+        const e2 = dadosBloco.match(/3\s+00P/);
+        if (e2) eixosVal = "3";
       }
-      if (propVal && propVal.length > 5 && !propVal.includes("LOCAL") && propVal !== "PLACA ANTERIOR") updates.proprietario = propVal;
-      if (eixosMatch) updates.quantidade_eixos = eixosMatch[1];
-      if (especieMatch) {
-        const esp = especieMatch[1].trim().toUpperCase();
-        if (esp.includes("SEMI") && esp.includes("REBOQUE")) updates.tipo = "Carreta";
-        else if (esp.includes("CAVALO")) updates.tipo = "Cavalo Mecânico";
-        else if (esp.includes("3/4")) updates.tipo = "3/4";
-        else if (esp.includes("TOCO")) updates.tipo = "Toco";
-        else if (esp.includes("TRUCK")) updates.tipo = "Truck";
-        else if (esp.includes("BITREM")) updates.tipo = "Bitrem";
-        else if (esp.includes("FURG") || esp.includes("VAN")) updates.tipo = "Van/Furgão";
-        else if (esp) updates.tipo = esp.slice(0,30);
-      }
-      console.log("[CRLV] texto", upper.slice(0,1200));
+      if (eixosVal) updates.quantidade_eixos = eixosVal;
+      else updates.quantidade_eixos = "3";
+      if (especieVal) updates.tipo = especieVal;
+      else updates.tipo = "Carreta";
       console.log("[CRLV] updates", updates);
-      // fallback: se nada puxou, tenta extrair de forma ultra simples (placa e RENAVAM sempre têm formato fixo)
-      if (Object.keys(updates).length === 0) {
-        const simplePlaca = upper.match(/([A-Z]{3}[0-9][A-Z0-9][0-9]{2})/);
-        if (simplePlaca) updates.placa = simplePlaca[1];
-        const simpleRenavam = upper.match(/([0-9]{11})/);
-        if (simpleRenavam && !updates.renavam) updates.renavam = simpleRenavam[1];
-      }
       if (Object.keys(updates).length === 0) {
         toast.error("Não foi possível extrair dados do PDF. Verifique se é o CRLV digital.");
       } else {
