@@ -56,6 +56,92 @@ function CtePage() {
   const [open, setOpen] = useState(false);
   const [form, setForm] = useState({ toma: "3", cnpjTomador: "", xNomeTomador: "", ufTomador: "MG", cMunTomador: "3106200", xMunTomador: "BELO HORIZONTE", cfop: "5353", vPrest: "1000.00", vCarga: "10000.00", peso: "5000", rntrc: "", cMunEnv: "3106200", xMunEnv: "BELO HORIZONTE", ufEnv: "MG", cMunIni: "3106200", xMunIni: "BELO HORIZONTE", ufIni: "MG", cMunFim: "3550308", xMunFim: "SAO PAULO", ufFim: "SP", dataEmissao: new Date().toISOString().slice(0,10) });
 
+  // Templates de CT-e (mesmo remetente/destino/tomador) — tabela cte_templates
+  type CteTemplate = { id: string; nome: string; toma: string; cnpj_tomador: string | null; x_nome_tomador: string | null; uf_tomador: string | null; c_mun_tomador: string | null; x_mun_tomador: string | null; cfop: string | null; rntrc: string | null; c_mun_env: string | null; x_mun_env: string | null; uf_env: string | null; c_mun_ini: string | null; x_mun_ini: string | null; uf_ini: string | null; c_mun_fim: string | null; x_mun_fim: string | null; uf_fim: string | null; dados: Record<string, unknown> | null };
+  const [templateNome, setTemplateNome] = useState("");
+  const [selectedTemplateId, setSelectedTemplateId] = useState<string>("");
+  const { data: templates } = useQuery({
+    enabled: !!empresa,
+    queryKey: ["cte-templates", empresa?.id],
+    queryFn: async (): Promise<CteTemplate[]> => {
+      const { data, error } = await supabase.from("cte_templates" as any).select("*").eq("empresa_id", empresa!.id).order("nome");
+      if (error) throw error;
+      return (data ?? []) as unknown as CteTemplate[];
+    },
+  });
+  const salvarTemplate = useMutation({
+    mutationFn: async () => {
+      if (!empresa) throw new Error("Empresa não selecionada");
+      const nome = templateNome.trim();
+      if (!nome) throw new Error("Informe um nome para o template");
+      const payload = {
+        empresa_id: empresa.id,
+        nome,
+        toma: form.toma,
+        cnpj_tomador: form.cnpjTomador || null,
+        x_nome_tomador: form.xNomeTomador || null,
+        uf_tomador: form.ufTomador || null,
+        c_mun_tomador: form.cMunTomador || null,
+        x_mun_tomador: form.xMunTomador || null,
+        cfop: form.cfop || null,
+        rntrc: form.rntrc || null,
+        c_mun_env: form.cMunEnv || null,
+        x_mun_env: form.xMunEnv || null,
+        uf_env: form.ufEnv || null,
+        c_mun_ini: form.cMunIni || null,
+        x_mun_ini: form.xMunIni || null,
+        uf_ini: form.ufIni || null,
+        c_mun_fim: form.cMunFim || null,
+        x_mun_fim: form.xMunFim || null,
+        uf_fim: form.ufFim || null,
+        dados: { ...form } as unknown as Record<string, unknown>,
+      };
+      const { error } = await supabase.from("cte_templates" as any).upsert(payload, { onConflict: "empresa_id,nome" });
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      toast.success("Template salvo");
+      setTemplateNome("");
+      qc.invalidateQueries({ queryKey: ["cte-templates"] });
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+  const excluirTemplate = useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase.from("cte_templates" as any).delete().eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      toast.success("Template excluído");
+      setSelectedTemplateId("");
+      qc.invalidateQueries({ queryKey: ["cte-templates"] });
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+  const aplicarTemplate = (t: CteTemplate) => {
+    setForm(f => ({
+      ...f,
+      toma: t.toma || f.toma,
+      cnpjTomador: t.cnpj_tomador || f.cnpjTomador,
+      xNomeTomador: t.x_nome_tomador || f.xNomeTomador,
+      ufTomador: t.uf_tomador || f.ufTomador,
+      cMunTomador: t.c_mun_tomador || f.cMunTomador,
+      xMunTomador: t.x_mun_tomador || f.xMunTomador,
+      cfop: t.cfop || f.cfop,
+      rntrc: t.rntrc ?? f.rntrc,
+      cMunEnv: t.c_mun_env || f.cMunEnv,
+      xMunEnv: t.x_mun_env || f.xMunEnv,
+      ufEnv: t.uf_env || f.ufEnv,
+      cMunIni: t.c_mun_ini || f.cMunIni,
+      xMunIni: t.x_mun_ini || f.xMunIni,
+      ufIni: t.uf_ini || f.ufIni,
+      cMunFim: t.c_mun_fim || f.cMunFim,
+      xMunFim: t.x_mun_fim || f.xMunFim,
+      ufFim: t.uf_fim || f.ufFim,
+    }));
+    toast.success(`Template "${t.nome}" aplicado`);
+  };
+
   const handleImportNFeXml = async (files: FileList | File[]) => {
     const list = Array.from(files as any as File[]);
     const xmls = list.filter(f => f.name.toLowerCase().endsWith(".xml"));
@@ -383,6 +469,33 @@ function CtePage() {
             <DialogTitle className="flex items-center gap-2"><Truck className="h-5 w-5 text-primary" /> Conhecimento de Transporte Avulso</DialogTitle>
             <p className="text-sm text-muted-foreground">Emissão de CT-e (57) — versão 4.00 via mTLS SEFAZ.</p>
           </DialogHeader>
+
+          {/* Templates: mesmo remetente/destino/tomador do dia anterior */}
+          <div className="rounded-md border bg-muted/20 p-2.5 space-y-2">
+            <div className="flex items-center justify-between">
+              <span className="text-[11px] font-semibold flex items-center gap-1.5"><FileCode className="h-3.5 w-3.5 text-primary" /> Templates</span>
+              <span className="text-[10px] text-muted-foreground">{templates?.length ?? 0} salvo(s)</span>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-[1fr_auto] gap-2">
+              <div className="flex gap-1.5">
+                <Select value={selectedTemplateId} onValueChange={setSelectedTemplateId}>
+                  <SelectTrigger className="h-7 text-xs flex-1"><SelectValue placeholder="Selecione um template" /></SelectTrigger>
+                  <SelectContent>
+                    {templates?.map(t => (
+                      <SelectItem key={t.id} value={t.id}>{t.nome} — {t.x_nome_tomador || t.cnpj_tomador || t.cfop}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <Button size="sm" variant="outline" className="h-7 text-xs" disabled={!selectedTemplateId} onClick={() => { const t = templates?.find(x => x.id === selectedTemplateId); if (t) aplicarTemplate(t); }}>Aplicar</Button>
+                <Button size="sm" variant="ghost" className="h-7 w-7 p-0 text-destructive" disabled={!selectedTemplateId} onClick={() => { if (selectedTemplateId && confirm("Excluir template?")) excluirTemplate.mutate(selectedTemplateId); }} title="Excluir template"><Trash2 className="h-3.5 w-3.5" /></Button>
+              </div>
+              <div className="flex gap-1.5">
+                <Input className="h-7 text-xs flex-1" placeholder="Nome do template (ex: Rose→SP CIF)" value={templateNome} onChange={e => setTemplateNome(e.target.value)} onKeyDown={e => { if (e.key === "Enter" && templateNome.trim()) salvarTemplate.mutate(); }} />
+                <Button size="sm" className="h-7 text-xs" disabled={!templateNome.trim() || salvarTemplate.isPending} onClick={() => salvarTemplate.mutate()}>{salvarTemplate.isPending ? "Salvando..." : "Salvar atual"}</Button>
+              </div>
+            </div>
+            <p className="text-[10px] text-muted-foreground">Salva tomador, CFOP, RNTRC e rota (coleta/entrega). Amanhã basta selecionar e clicar Aplicar — ainda respeita a NF-e se quiser sobrescrever.</p>
+          </div>
 
           <Tabs defaultValue="tomador" className="w-full">
             <TabsList className="w-full justify-start gap-0 bg-muted/50 rounded-t-md">
