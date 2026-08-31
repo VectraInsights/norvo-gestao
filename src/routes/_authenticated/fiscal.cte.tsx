@@ -10,7 +10,9 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Truck, Plus, FileText, Search, Ban, UploadCloud, FileCode, UsersRound, MapPin, Package, DollarSign, Building2, Route as RouteIcon, Trash2, Filter, Calendar, CheckCircle2 } from "lucide-react";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
+import { Truck, Plus, FileText, Search, Ban, UploadCloud, FileCode, UsersRound, MapPin, Package, DollarSign, Building2, Route as RouteIcon, Trash2, Filter, Calendar, CheckCircle2, ChevronsUpDown, Check } from "lucide-react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useEmpresaAtual } from "@/hooks/use-empresa";
@@ -55,6 +57,8 @@ function CtePage() {
 
   const [open, setOpen] = useState(false);
   const [form, setForm] = useState({ toma: "3", cnpjTomador: "", xNomeTomador: "", ufTomador: "MG", cMunTomador: "3106200", xMunTomador: "BELO HORIZONTE", cfop: "5353", vPrest: "1000.00", vCarga: "10000.00", peso: "5000", rntrc: "", cMunEnv: "3106200", xMunEnv: "BELO HORIZONTE", ufEnv: "MG", cMunIni: "3106200", xMunIni: "BELO HORIZONTE", ufIni: "MG", cMunFim: "3550308", xMunFim: "SAO PAULO", ufFim: "SP", dataEmissao: new Date().toISOString().slice(0,10) });
+  const [cfopOpen, setCfopOpen] = useState(false);
+  const [cfopQuery, setCfopQuery] = useState("");
 
   // Templates de CT-e (mesmo remetente/destino/tomador) — tabela cte_templates
   type CteTemplate = { id: string; nome: string; toma: string; cnpj_tomador: string | null; x_nome_tomador: string | null; uf_tomador: string | null; c_mun_tomador: string | null; x_mun_tomador: string | null; cfop: string | null; rntrc: string | null; c_mun_env: string | null; x_mun_env: string | null; uf_env: string | null; c_mun_ini: string | null; x_mun_ini: string | null; uf_ini: string | null; c_mun_fim: string | null; x_mun_fim: string | null; uf_fim: string | null; dados: Record<string, unknown> | null };
@@ -552,14 +556,39 @@ function CtePage() {
               <div><Label className="text-[10px] text-muted-foreground">Data Emissão</Label><DateInput value={form.dataEmissao} onChange={v => setForm({...form, dataEmissao: v})} className="h-7 text-xs" /></div>
               <div>
                 <Label className="text-[10px] text-muted-foreground">CFOP Saída</Label>
-                <Select value={form.cfop} onValueChange={v => setForm({...form, cfop: v})}>
-                  <SelectTrigger className="h-7 text-xs"><SelectValue /></SelectTrigger>
-                  <SelectContent>
-                    {CFOPS_CTE.map(cf => (
-                      <SelectItem key={cf.codigo} value={cf.codigo}>{cf.descricao}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <Popover open={cfopOpen} onOpenChange={setCfopOpen}>
+                  <PopoverTrigger asChild>
+                    <Button variant="outline" role="combobox" aria-expanded={cfopOpen} className="h-7 text-xs justify-between w-full font-normal">
+                      <span className="truncate text-left">{CFOPS_CTE.find(c => c.codigo === form.cfop)?.descricao || CFOPS_CTE.find(c => c.codigo.replace(/\D/g,"") === form.cfop.replace(/\D/g,""))?.descricao || form.cfop || "Selecione CFOP"}</span>
+                      <ChevronsUpDown className="ml-2 h-3 w-3 shrink-0 opacity-50" />
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-[480px] p-0" align="start">
+                    <Command shouldFilter={false}>
+                      <CommandInput placeholder="Digite 5352 ou 5.352 ou comércio..." value={cfopQuery} onValueChange={setCfopQuery} />
+                      <CommandList>
+                        <CommandEmpty>Nenhum CFOP encontrado.</CommandEmpty>
+                        <CommandGroup>
+                          {CFOPS_CTE.filter(cf => {
+                            if (!cfopQuery) return true;
+                            const q = cfopQuery.toLowerCase();
+                            const qDigits = q.replace(/\D/g, "");
+                            const codeDigits = cf.codigo.replace(/\D/g, "");
+                            const descLower = cf.descricao.toLowerCase();
+                            const descDigits = cf.descricao.replace(/\D/g, "");
+                            return (qDigits && (codeDigits.includes(qDigits) || descDigits.includes(qDigits))) || descLower.includes(q) || cf.codigo.includes(cfopQuery);
+                          }).map(cf => (
+                            <CommandItem key={cf.codigo} value={cf.codigo} onSelect={() => { setForm({ ...form, cfop: cf.codigo }); setCfopOpen(false); setCfopQuery(""); }}>
+                              <Check className={"mr-2 h-3 w-3 " + (form.cfop === cf.codigo ? "opacity-100" : "opacity-0")} />
+                              {cf.descricao}
+                            </CommandItem>
+                          ))}
+                        </CommandGroup>
+                      </CommandList>
+                    </Command>
+                  </PopoverContent>
+                </Popover>
+                <p className="text-[9px] text-muted-foreground mt-1">Digite só números (5352) — salva com ponto (5.352) na descrição.</p>
               </div>
             </div>
 
