@@ -137,6 +137,39 @@ function CtePage() {
     }
   }, [pendentesDB]);
 
+  // PIS/COFINS automático conforme regime da empresa
+  const { data: regimeData } = useQuery({
+    enabled: !!empresa,
+    queryKey: ["empresa-regime", empresa?.id],
+    queryFn: async () => {
+      const { data: cfg } = await supabase.from("nfe_config").select("regime_tributario").eq("empresa_id", empresa!.id).maybeSingle();
+      if ((cfg as any)?.regime_tributario) return String((cfg as any).regime_tributario);
+      const { data: emp } = await supabase.from("empresas").select("regime_tributario").eq("id", empresa!.id).maybeSingle();
+      return String((emp as any)?.regime_tributario || "simples");
+    },
+  });
+  useEffect(() => {
+    if (!regimeData || !empresa) return;
+    const map: Record<string, { pis: string; cofins: string }> = {
+      simples: { pis: "0.00", cofins: "0.00" },
+      mei: { pis: "0.00", cofins: "0.00" },
+      lucro_presumido: { pis: "0.65", cofins: "3.00" },
+      lucro_real: { pis: "1.65", cofins: "7.60" },
+    };
+    const target = map[regimeData] || map["simples"];
+    setForm(f => {
+      const isDefaultPis = f.pisAliq === "0.00" || f.pisAliq === "" || f.pisAliq === "0";
+      const isDefaultCofins = f.cofinsAliq === "0.00" || f.cofinsAliq === "" || f.cofinsAliq === "0";
+      // só auto-preenche se ainda estiver no padrão (não sobrescreve edição manual)
+      if (!isDefaultPis && !isDefaultCofins) return f;
+      return {
+        ...f,
+        pisAliq: isDefaultPis ? target.pis : f.pisAliq,
+        cofinsAliq: isDefaultCofins ? target.cofins : f.cofinsAliq,
+      };
+    });
+  }, [regimeData, empresa?.id]);
+
   // Templates de CT-e (mesmo remetente/destino/tomador) — tabela cte_templates
   type CteTemplate = { id: string; nome: string; toma: string; cnpj_tomador: string | null; x_nome_tomador: string | null; uf_tomador: string | null; c_mun_tomador: string | null; x_mun_tomador: string | null; cfop: string | null; rntrc: string | null; c_mun_env: string | null; x_mun_env: string | null; uf_env: string | null; c_mun_ini: string | null; x_mun_ini: string | null; uf_ini: string | null; c_mun_fim: string | null; x_mun_fim: string | null; uf_fim: string | null; dados: Record<string, unknown> | null };
   const [templateNome, setTemplateNome] = useState("");
