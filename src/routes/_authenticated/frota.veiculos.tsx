@@ -121,12 +121,18 @@ function Veiculos() {
   const handleCrlvPdf = async (file: File) => {
     setIsParsingPdf(true);
     try {
-      const { getDocument, GlobalWorkerOptions } = await import("pdfjs-dist");
-      // @ts-ignore
-      const pdfjsVersion = await import("pdfjs-dist/package.json");
-      GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${(pdfjsVersion as any).default?.version || "4.4.168"}/pdf.worker.min.js`;
+      const pdfjsLib: any = await import("pdfjs-dist");
+      // Desativa worker externo (evita fetch CDN bloqueado no Workers) — usa modo sem worker para CRLV
+      // pdfjs 4.x suporta disableWorker via getDocument options
       const buf = await file.arrayBuffer();
-      const pdf = await getDocument({ data: buf }).promise;
+      let pdf: any;
+      try {
+        pdf = await pdfjsLib.getDocument({ data: buf, useWorkerFetch: false, isEvalSupported: false, disableWorker: true, verbosity: 0 } as any).promise;
+      } catch {
+        // fallback: tenta com legacy build se o primeiro falhar
+        const legacy: any = await import("pdfjs-dist/legacy/build/pdf.mjs");
+        pdf = await legacy.getDocument({ data: buf, verbosity: 0 } as any).promise;
+      }
       let text = "";
       for (let i = 1; i <= pdf.numPages; i++) {
         const page = await pdf.getPage(i);
