@@ -102,7 +102,7 @@ function formVazio() {
   };
 }
 
-const TIPOS = ["Caminhão 3/4", "Toco", "Truck", "Carreta", "Bitrem", "Van/Furgão"];
+const TIPOS = ["3/4", "Toco", "Truck", "Cavalo Mecânico", "Carreta", "Bitrem", "Van/Furgão"];
 const CATEGORIAS = ["Particular", "Aluguel", "Agregado", "Terceiro"];
 
 function Veiculos() {
