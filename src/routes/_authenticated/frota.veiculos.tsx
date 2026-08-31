@@ -122,17 +122,18 @@ function Veiculos() {
     setIsParsingPdf(true);
     try {
       const pdfjsLib: any = await import("pdfjs-dist");
-      // Desativa worker externo (evita fetch CDN bloqueado no Workers) — usa modo sem worker para CRLV
-      // pdfjs 4.x suporta disableWorker via getDocument options
-      const buf = await file.arrayBuffer();
-      let pdf: any;
+      // Worker local via Vite ?url — evita CDN bloqueado no Cloudflare Workers (erro anterior: Failed to fetch pdf.worker.min.js)
       try {
-        pdf = await pdfjsLib.getDocument({ data: buf, useWorkerFetch: false, isEvalSupported: false, disableWorker: true, verbosity: 0 } as any).promise;
+        const workerMod: any = await import("pdfjs-dist/build/pdf.worker.min.mjs?url");
+        pdfjsLib.GlobalWorkerOptions.workerSrc = workerMod.default || workerMod;
       } catch {
-        // fallback: tenta com legacy build se o primeiro falhar
-        const legacy: any = await import("pdfjs-dist/legacy/build/pdf.mjs");
-        pdf = await legacy.getDocument({ data: buf, verbosity: 0 } as any).promise;
+        try {
+          const w2: any = await import("pdfjs-dist/build/pdf.worker.mjs?url");
+          pdfjsLib.GlobalWorkerOptions.workerSrc = w2.default || w2;
+        } catch {}
       }
+      const buf = await file.arrayBuffer();
+      const pdf = await pdfjsLib.getDocument({ data: buf, verbosity: 0 } as any).promise;
       let text = "";
       for (let i = 1; i <= pdf.numPages; i++) {
         const page = await pdf.getPage(i);
