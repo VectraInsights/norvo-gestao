@@ -60,6 +60,66 @@ function CtePage() {
   const [cfopOpen, setCfopOpen] = useState(false);
   const [cfopQuery, setCfopQuery] = useState("");
 
+  // NF-es pendentes persistidas (sobrevivem a F5/troca de tela) — dedup global por chave
+  const { data: pendentesDB } = useQuery({
+    enabled: !!empresa,
+    queryKey: ["cte-nfes-pendentes", empresa?.id],
+    queryFn: async () => {
+      const { data, error } = await supabase.from("cte_nfes_pendentes" as any).select("*").eq("empresa_id", empresa!.id).eq("status", "pendente").order("created_at");
+      if (error) throw error;
+      return (data ?? []) as unknown as Array<{
+        chave: string; n_nf: string | null; serie: string | null; emit_nome: string | null; emit_cnpj: string | null; emit_uf: string | null; emit_cmun: string | null; emit_xmun: string | null;
+        dest_nome: string | null; dest_cnpj: string | null; dest_uf: string | null; dest_cmun: string | null; dest_xmun: string | null;
+        valor: number | null; peso: number | null; data_emissao: string | null;
+        tomador_nome: string | null; tomador_cnpj: string | null; tomador_uf: string | null; tomador_cmun: string | null; tomador_xmun: string | null; mod_frete: string | null;
+      }>;
+    },
+  });
+  useEffect(() => {
+    if (pendentesDB) {
+      const mapped = pendentesDB.map(r => ({
+        chave: r.chave,
+        nNF: r.n_nf || "",
+        serie: r.serie || "1",
+        emit: r.emit_nome || "",
+        emitCnpj: r.emit_cnpj || "",
+        emitUF: r.emit_uf || "",
+        emitCMun: r.emit_cmun || "",
+        emitXMun: r.emit_xmun || "",
+        dest: r.dest_nome || "",
+        destCnpj: r.dest_cnpj || "",
+        destUF: r.dest_uf || "",
+        destCMun: r.dest_cmun || "",
+        destXMun: r.dest_xmun || "",
+        valor: Number(r.valor ?? 0),
+        peso: Number(r.peso ?? 0),
+        data: r.data_emissao ? String(r.data_emissao).slice(0, 10) : "",
+        tomador: r.tomador_nome || "",
+        tomadorCnpj: r.tomador_cnpj || "",
+        tomadorUF: r.tomador_uf || "",
+        tomadorCMun: r.tomador_cmun || "",
+        tomadorXMun: r.tomador_xmun || "",
+        modFrete: r.mod_frete || "",
+      }));
+      setMercadorias(mapped);
+      if (mapped.length > 0 && mapped[0].emitCMun) {
+        const first = mapped[0];
+        setForm(f => ({
+          ...f,
+          cMunIni: first.emitCMun || f.cMunIni,
+          xMunIni: first.emitXMun || f.xMunIni,
+          ufIni: first.emitUF || f.ufIni,
+          cMunFim: first.destCMun || f.cMunFim,
+          xMunFim: first.destXMun || f.xMunFim,
+          ufFim: first.destUF || f.ufFim,
+          cMunEnv: first.emitCMun || f.cMunEnv,
+          xMunEnv: first.emitXMun || f.xMunEnv,
+          ufEnv: first.emitUF || f.ufEnv,
+        }));
+      }
+    }
+  }, [pendentesDB]);
+
   // Templates de CT-e (mesmo remetente/destino/tomador) — tabela cte_templates
   type CteTemplate = { id: string; nome: string; toma: string; cnpj_tomador: string | null; x_nome_tomador: string | null; uf_tomador: string | null; c_mun_tomador: string | null; x_mun_tomador: string | null; cfop: string | null; rntrc: string | null; c_mun_env: string | null; x_mun_env: string | null; uf_env: string | null; c_mun_ini: string | null; x_mun_ini: string | null; uf_ini: string | null; c_mun_fim: string | null; x_mun_fim: string | null; uf_fim: string | null; dados: Record<string, unknown> | null };
   const [templateNome, setTemplateNome] = useState("");
@@ -147,12 +207,14 @@ function CtePage() {
   };
 
   const handleImportNFeXml = async (files: FileList | File[]) => {
+    if (!empresa) { toast.error("Selecione uma empresa"); return; }
     const list = Array.from(files as any as File[]);
     const xmls = list.filter(f => f.name.toLowerCase().endsWith(".xml"));
     if (xmls.length === 0) { toast.error("Selecione XMLs de NF-e"); return; }
     setIsParsing(true);
     try {
       let added = 0;
+      let duplicadas = 0;
       const novas: typeof mercadorias = [];
       for (const file of xmls) {
         const text = await file.text();
@@ -175,10 +237,10 @@ function CtePage() {
         const dhEmi = doc.querySelector("ide > dhEmi")?.textContent || "";
         const chave = doc.querySelector("infNFe")?.getAttribute("Id")?.replace(/^NFe/, "") || doc.querySelector("chNFe")?.textContent || `${Date.now()}${added}`;
         const chaveNorm = chave.replace(/\D/g, "");
-        if (mercadorias.some(m => m.chave === chaveNorm) || novas.some(m => m.chave === chaveNorm)) continue;
+        if (!chaveNorm || chaveNorm.length < 20) { duplicadas++; continue; }
+        if (novas.some(m => m.chave === chaveNorm)) { duplicadas++; continue; }
         const peso = pesoB ? parseFloat(pesoB) : 1000;
         const valor = parseFloat(vNF) || 0;
-        // Tomador conforme XML: modFrete define quem paga o frete (0=Remetente, 1=Destinatário, 2=Terceiros)
         const modFrete = doc.querySelector("transp > modFrete")?.textContent || "";
         let tomadorNome = destXNome;
         let tomadorCnpj = destCnpj;
@@ -187,19 +249,50 @@ function CtePage() {
         let tomadorXMun = destXMun;
         if (modFrete === "0") {
           tomadorNome = emitXNome; tomadorCnpj = emitCnpj;
-          tomadorUF = doc.querySelector("emit > enderEmit > UF")?.textContent || "";
-          tomadorCMun = doc.querySelector("emit > enderEmit > cMun")?.textContent || "";
-          tomadorXMun = doc.querySelector("emit > enderEmit > xMun")?.textContent || "";
+          tomadorUF = emitUF; tomadorCMun = emitCMun; tomadorXMun = emitXMun;
         } else if (modFrete === "2") {
-          // Terceiros: tenta transporta
           const transpCnpj = doc.querySelector("transp > transporta > CNPJ")?.textContent || "";
           const transpXNome = doc.querySelector("transp > transporta > xNome")?.textContent || "";
           if (transpCnpj || transpXNome) { tomadorNome = transpXNome || tomadorNome; tomadorCnpj = transpCnpj || tomadorCnpj; }
         }
-        novas.push({ chave: chaveNorm, nNF, serie, emit: emitXNome, emitCnpj, emitUF, emitCMun, emitXMun, dest: destXNome, destCnpj, destUF, destCMun, destXMun, valor, peso, data: dhEmi.slice(0,10), tomador: tomadorNome, tomadorCnpj, tomadorUF, tomadorCMun, tomadorXMun, modFrete });
-        // Preenche tomador e rota com o primeiro XML — rota vem do emit (coleta) e dest (entrega)
+        const payload = {
+          empresa_id: empresa!.id,
+          chave: chaveNorm,
+          n_nf: nNF,
+          serie,
+          emit_nome: emitXNome,
+          emit_cnpj: emitCnpj,
+          emit_uf: emitUF || null,
+          emit_cmun: emitCMun || null,
+          emit_xmun: emitXMun || null,
+          dest_nome: destXNome,
+          dest_cnpj: destCnpj,
+          dest_uf: destUF || null,
+          dest_cmun: destCMun || null,
+          dest_xmun: destXMun || null,
+          valor,
+          peso,
+          data_emissao: dhEmi ? dhEmi.slice(0, 10) : null,
+          tomador_nome: tomadorNome,
+          tomador_cnpj: tomadorCnpj,
+          tomador_uf: tomadorUF || null,
+          tomador_cmun: tomadorCMun || null,
+          tomador_xmun: tomadorXMun || null,
+          mod_frete: modFrete || null,
+          status: "pendente" as const,
+        };
+        const { error } = await supabase.from("cte_nfes_pendentes" as any).insert(payload);
+        if (error) {
+          if ((error as any).code === "23505" || String(error.message).toLowerCase().includes("duplicate")) {
+            duplicadas++;
+            continue;
+          }
+          toast.error(`Falha ao salvar NF ${nNF}: ${error.message}`);
+          continue;
+        }
+        novas.push({ chave: chaveNorm, nNF, serie, emit: emitXNome, emitCnpj, emitUF, emitCMun, emitXMun, dest: destXNome, destCnpj, destUF, destCMun, destXMun, valor, peso, data: dhEmi.slice(0, 10), tomador: tomadorNome, tomadorCnpj, tomadorUF, tomadorCMun, tomadorXMun, modFrete });
         if (added === 0 && mercadorias.length === 0) {
-          const tomaByMod: Record<string,string> = { "0":"0", "1":"3", "2":"4", "3":"0", "4":"3", "9":"4" };
+          const tomaByMod: Record<string, string> = { "0": "0", "1": "3", "2": "4", "3": "0", "4": "3", "9": "4" };
           const tomaIni = tomaByMod[modFrete] ?? "3";
           setForm(f => ({
             ...f,
@@ -209,7 +302,6 @@ function CtePage() {
             ufTomador: tomadorUF || f.ufTomador,
             cMunTomador: tomadorCMun || f.cMunTomador,
             xMunTomador: tomadorXMun || f.xMunTomador,
-            // origem/destino do CT-e: coleta = municipio do emitente, entrega = municipio do destinatario
             cMunIni: emitCMun || f.cMunIni,
             xMunIni: emitXMun || f.xMunIni,
             ufIni: emitUF || f.ufIni,
@@ -223,16 +315,19 @@ function CtePage() {
         }
         added++;
       }
-      if (novas.length > 0) {
+      if (added > 0) {
         const merged = [...mercadorias, ...novas];
         setMercadorias(merged);
-        // Não seleciona automaticamente — usuário escolhe
         const somaV = merged.reduce((a, m) => a + (m.valor || 0), 0);
         const somaP = merged.reduce((a, m) => a + (m.peso || 0), 0);
         setForm(f => ({ ...f, vCarga: somaV.toFixed(2), peso: String(somaP), vPrest: (somaV * 0.1).toFixed(2) }));
-        toast.success(`${novas.length} XML(s) importado(s) — selecione os que irão no CT-e`);
+        qc.invalidateQueries({ queryKey: ["cte-nfes-pendentes", empresa!.id] });
+        if (duplicadas > 0) toast.success(`${added} importada(s), ${duplicadas} já existiam (chave duplicada bloqueada)`);
+        else toast.success(`${added} XML(s) importado(s) — selecione os que irão no CT-e`);
+      } else if (duplicadas > 0) {
+        toast.info(`${duplicadas} NF-e(s) já importadas anteriormente — dedup por chave (independe de CT-e)`);
       } else {
-        toast.info("Nenhum XML novo (chaves já importadas)");
+        toast.info("Nenhum XML novo");
       }
     } catch (e: any) {
       toast.error("Falha ao ler XML", { description: e.message });
@@ -276,9 +371,18 @@ function CtePage() {
       } } });
       return ret;
     },
-    onSuccess: (ret: any) => {
-      if (ret.sucesso) { toast.success(`CT-e ${ret.chave} autorizado` + (ret.protocolo ? ` prot ${ret.protocolo}` : "")); setOpen(false); setMercadorias([]); }
-      else toast.error(ret.xMotivo || ret.motivo || "Rejeitado");
+    onSuccess: async (ret: any) => {
+      if (ret.sucesso) {
+        toast.success(`CT-e ${ret.chave} autorizado` + (ret.protocolo ? ` prot ${ret.protocolo}` : ""));
+        setOpen(false);
+        // marca NF-es usadas como embarcadas (dedup global continua bloqueando re-import)
+        const chavesUsadas = selecionadas.size > 0 ? Array.from(selecionadas) : mercadorias.map(m => m.chave);
+        if (empresa && chavesUsadas.length > 0) {
+          await supabase.from("cte_nfes_pendentes" as any).update({ status: "embarcada" }).in("chave", chavesUsadas).eq("empresa_id", empresa.id);
+          qc.invalidateQueries({ queryKey: ["cte-nfes-pendentes", empresa.id] });
+          setSelecionadas(new Set());
+        }
+      } else toast.error(ret.xMotivo || ret.motivo || "Rejeitado");
       qc.invalidateQueries({ queryKey: ["cte-documentos"] });
     },
     onError: (e: Error) => toast.error(e.message),
@@ -445,7 +549,7 @@ function CtePage() {
               <UploadCloud className="h-4 w-4" /> Importar NFes (XML)
               <input type="file" accept=".xml" multiple className="hidden" onChange={e => { if (e.target.files) handleImportNFeXml(e.target.files); e.currentTarget.value = ""; }} />
             </label>
-            <Button variant="outline" size="sm" onClick={() => { setMercadorias([]); setSelecionadas(new Set()); }} disabled={mercadorias.length===0}><Trash2 className="mr-1 h-3 w-3" /> Limpar</Button>
+            <Button variant="outline" size="sm" onClick={async () => { if (!empresa) return; if (mercadorias.length === 0) return; if (!confirm(`Remover ${mercadorias.length} NF-e(s) pendentes?`)) return; const { error } = await supabase.from("cte_nfes_pendentes" as any).delete().eq("empresa_id", empresa.id).eq("status", "pendente"); if (error) toast.error(error.message); else { setMercadorias([]); setSelecionadas(new Set()); qc.invalidateQueries({ queryKey: ["cte-nfes-pendentes", empresa.id] }); toast.success("Pendentes removidos"); } }} disabled={mercadorias.length===0}><Trash2 className="mr-1 h-3 w-3" /> Limpar</Button>
             <div className="ml-auto flex gap-2">
               <Button
                 variant="outline"
