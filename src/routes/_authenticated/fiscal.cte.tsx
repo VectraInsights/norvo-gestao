@@ -23,6 +23,7 @@ import { emitirCteFn, consultarCteFn, cancelarCteFn } from "@/lib/sefaz-cte-serv
 import { CFOPS_CTE, MOD_FRETE_OPTIONS, RESPONSAVEL_CTE_OPTIONS } from "@/lib/cfops-transporte";
 import { Textarea } from "@/components/ui/textarea";
 import { DateInput } from "@/components/erp/date-input";
+import { MoneyInput } from "@/components/erp/money-input";
 
 export const Route = createFileRoute("/_authenticated/fiscal/cte")({
   component: CtePage,
@@ -966,20 +967,20 @@ function CtePage() {
                       </SelectContent>
                     </Select>
                   </div>
-                  <div><Label className="text-[10px] text-muted-foreground">Base Cálculo (R$)</Label><Input className="h-7 text-xs" value={form.icmsBase} onChange={e => setForm({ ...form, icmsBase: e.target.value.replace(",", ".") })} placeholder="0.00" /></div>
-                  <div><Label className="text-[10px] text-muted-foreground">Alíquota ICMS (%)</Label><Input className="h-7 text-xs" value={form.icmsAliq} onChange={e => setForm({ ...form, icmsAliq: e.target.value.replace(",", ".") })} placeholder="0.00" /></div>
-                  <div><Label className="text-[10px] text-muted-foreground">Valor ICMS (R$)</Label><Input className="h-7 text-xs bg-muted" value={form.icmsValor} readOnly placeholder="0.00" /></div>
+                  <div><Label className="text-[10px] text-muted-foreground">Base Cálculo (R$)</Label><MoneyInput className="h-7 text-xs" value={form.icmsBase} onChange={v => setForm({ ...form, icmsBase: v })} placeholder="0,00" /></div>
+                  <div><Label className="text-[10px] text-muted-foreground">Alíquota ICMS (%)</Label><MoneyInput className="h-7 text-xs" prefix="" value={form.icmsAliq} onChange={v => setForm({ ...form, icmsAliq: v })} placeholder="0,00" /></div>
+                  <div><Label className="text-[10px] text-muted-foreground">Valor ICMS (R$)</Label><MoneyInput className="h-7 text-xs bg-muted" value={form.icmsValor} onChange={() => {}} placeholder="0,00" /></div>
                 </div>
-                <p className="text-[9px] text-muted-foreground mt-1">Base padrão = Valor do Serviço. Alíquota calcula Valor automaticamente (base × alíquota /100). Edite base ou alíquota para corrigir.</p>
+                <p className="text-[9px] text-muted-foreground mt-1">Digite só números — vírgula preenche automaticamente. Ponto só para milhares. Base padrão = Valor do Serviço.</p>
               </Card>
               <Card className="p-3">
                 <h5 className="text-xs font-semibold mb-2">Outros Impostos — Alíquotas (%)</h5>
                 <div className="grid grid-cols-2 md:grid-cols-5 gap-2">
-                  <div><Label className="text-[10px] text-muted-foreground">PIS (%)</Label><Input className="h-7 text-xs" value={form.pisAliq} onChange={e => setForm({ ...form, pisAliq: e.target.value.replace(",", ".") })} placeholder="0.00" /></div>
-                  <div><Label className="text-[10px] text-muted-foreground">COFINS (%)</Label><Input className="h-7 text-xs" value={form.cofinsAliq} onChange={e => setForm({ ...form, cofinsAliq: e.target.value.replace(",", ".") })} placeholder="0.00" /></div>
-                  <div><Label className="text-[10px] text-muted-foreground">IR (%)</Label><Input className="h-7 text-xs" value={form.irAliq} onChange={e => setForm({ ...form, irAliq: e.target.value.replace(",", ".") })} placeholder="0.00" /></div>
-                  <div><Label className="text-[10px] text-muted-foreground">INSS (%)</Label><Input className="h-7 text-xs" value={form.inssAliq} onChange={e => setForm({ ...form, inssAliq: e.target.value.replace(",", ".") })} placeholder="0.00" /></div>
-                  <div><Label className="text-[10px] text-muted-foreground">CSLL (%)</Label><Input className="h-7 text-xs" value={form.csllAliq} onChange={e => setForm({ ...form, csllAliq: e.target.value.replace(",", ".") })} placeholder="0.00" /></div>
+                  <div><Label className="text-[10px] text-muted-foreground">PIS (%)</Label><MoneyInput className="h-7 text-xs" prefix="" value={form.pisAliq} onChange={v => setForm({ ...form, pisAliq: v })} placeholder="0,00" /></div>
+                  <div><Label className="text-[10px] text-muted-foreground">COFINS (%)</Label><MoneyInput className="h-7 text-xs" prefix="" value={form.cofinsAliq} onChange={v => setForm({ ...form, cofinsAliq: v })} placeholder="0,00" /></div>
+                  <div><Label className="text-[10px] text-muted-foreground">IR (%)</Label><MoneyInput className="h-7 text-xs" prefix="" value={form.irAliq} onChange={v => setForm({ ...form, irAliq: v })} placeholder="0,00" /></div>
+                  <div><Label className="text-[10px] text-muted-foreground">INSS (%)</Label><MoneyInput className="h-7 text-xs" prefix="" value={form.inssAliq} onChange={v => setForm({ ...form, inssAliq: v })} placeholder="0,00" /></div>
+                  <div><Label className="text-[10px] text-muted-foreground">CSLL (%)</Label><MoneyInput className="h-7 text-xs" prefix="" value={form.csllAliq} onChange={v => setForm({ ...form, csllAliq: v })} placeholder="0,00" /></div>
                 </div>
               </Card>
             </TabsContent>
