@@ -140,33 +140,37 @@ function Veiculos() {
         const content = await page.getTextContent();
         text += (content.items as any[]).map((it: any) => it.str).join(" ") + "\n";
       }
-      // Texto bruto já vem em upper, normaliza espaços para regex robusta
       const upper = text.toUpperCase().replace(/\s+/g, " ");
+      // Regex com lookahead específico para CRLV digital (evita capturar labels vizinhos)
       const placaMatch = upper.match(/PLACA[^A-Z0-9]*([A-Z]{3}[0-9][A-Z0-9][0-9]{2})/);
-      const renavamMatch = upper.match(/C[ÓO]DIGO\s+RENAVAM[^0-9]*([0-9]{9,11})/) || upper.match(/RENAVAM[^0-9]*([0-9]{9,11})/);
+      const renavamMatch = upper.match(/C[ÓO]DIGO\s+RENAVAM[^0-9]*([0-9]{9,11})/);
       const chassiMatch = upper.match(/CHASSI[^A-Z0-9]*([A-Z0-9]{17})/);
       const anoFabMatch = upper.match(/ANO\s+FABRICA[ÇC][ÃA]O[^0-9]*([0-9]{4})/);
-      const anoModeloMatch = upper.match(/ANO\s+MODELO[^0-9]*([0-9]{4})/);
-      const anoMatch = anoFabMatch || anoModeloMatch;
-      const marcaMatch = upper.match(/MARCA\s*\/\s*MODELO(?:\s*\/\s*VERS[ÃA]O)?[^A-Z0-9]*([A-Z0-9][A-Z0-9 \/\-]*?)(?=\s+(PLACA|CHASSI|COR|CATEGORIA|ESP[ÉE]CIE|COMBUST|ANO|C[ÓO]DIGO|NOME|LOCAL)\b)/);
       const catMatch = upper.match(/CATEGORIA[^A-Z]*([A-Z]+)/);
-      // NOME do proprietário vem após "NOME" ou "NOME DO PROPRIETÁRIO" — pega linha com LTDA/EIRELI/ME/EPP ou CNPJ
-      let propMatch: RegExpMatchArray | null = upper.match(/NOME[^A-Z]*(?:DO\s+PROPRIET[ÁA]RIO)?[^A-Z]*([A-Z][A-Z0-9 \.\-\/]+(?:LTDA|EIRELI|ME|EPP|SA|S\/A)?)/);
-      // fallback: procura por padrão "LGP TRANSPORTES LTDA" seguido de CNPJ
-      if (!propMatch) propMatch = upper.match(/([A-Z][A-Z ]+\s+LTDA)/);
       const eixosMatch = upper.match(/\bEIXOS[^0-9]*([0-9])\b/);
-      // Tipo vem de ESPÉCIE / TIPO — mapeia para TIPOS do sistema
-      const especieMatch = upper.match(/ESP[ÉE]CIE\s*\/\s*TIPO[^A-Z]*([A-Z \/\-]+?)(?=\s+(PLACA|CHASSI|COR|CATEGORIA|COMBUST|MARCA)\b)/);
+      // MARCA / MODELO / VERSÃO está em linha isolada; pega conteúdo até ESPÉCIE / TIPO
+      let marcaMatch: RegExpMatchArray | null = null;
+      const marcaSection = upper.match(/MARCA\s*\/\s*MODELO\s*\/\s*VERS[ÃA]O\s+([A-Z0-9][A-Z0-9 \/\-]+?)\s+ESP[ÉE]CIE\s*\/\s*TIPO/);
+      if (marcaSection) marcaMatch = ["", marcaSection[1]] as any;
+      else marcaMatch = upper.match(/MARCA\s*\/\s*MODELO[^A-Z0-9]*([A-Z0-9][A-Z0-9 \/\-]*?)(?=\s+ESP[ÉE]CIE)/);
+      // Proprietário: entre "NOME" e "CPF / CNPJ" — ex: "NOME LGP TRANSPORTES LTDA CPF / CNPJ 01.666..."
+      let propMatch: RegExpMatchArray | null = upper.match(/NOME\s+([A-Z][A-Z0-9 \.\-\/&]+?)\s+CPF\s*\/\s*CNPJ/);
+      if (!propMatch) propMatch = upper.match(/NOME[^A-Z]*([A-Z][A-Z0-9 \.\-]+\s+LTDA(?:\s+[A-Z]+)?)/);
+      const especieMatch = upper.match(/ESP[ÉE]CIE\s*\/\s*TIPO[^A-Z]*([A-Z \/º\-]+?)(?=\s+PLACA\s+ANTERIOR|\s+CHASSI|\s+COR)/);
       const updates: Partial<typeof form> = {};
       if (placaMatch) updates.placa = placaMatch[1].replace(/[^A-Z0-9]/g, "").toUpperCase();
       if (renavamMatch) updates.renavam = renavamMatch[1].replace(/\D/g, "");
       if (chassiMatch) updates.observacoes = `Chassi: ${chassiMatch[1]}`;
-      if (anoMatch) updates.ano = anoMatch[1];
+      if (anoFabMatch) updates.ano = anoFabMatch[1];
+      else {
+        const anoAlt = upper.match(/ANO\s+MODELO[^0-9]*([0-9]{4})/);
+        if (anoAlt) updates.ano = anoAlt[1];
+      }
       if (marcaMatch) {
-        let m = marcaMatch[1].trim().replace(/\s{2,}/g, " ").slice(0, 60).trim();
-        // limpa sufixos como "CARGA" que vêm da próxima seção
-        m = m.replace(/\s+CARG.*$/, "").trim();
-        if (m) updates.marca_modelo = m;
+        let m = (marcaMatch[1] || "").trim().replace(/\s{2,}/g, " ").slice(0, 60).trim();
+        // Remove sufixos que vazam do layout (ex: "SR/RANDON SRFG CG ESPÉCIE" já isolado, mas garante)
+        m = m.replace(/\s+ESP[ÉE]CIE.*$/, "").trim();
+        if (m && !m.includes("PLACA ANTERIOR") && m.length > 3) updates.marca_modelo = m;
       }
       if (catMatch) {
         const catRaw = catMatch[1].trim();
@@ -178,24 +182,22 @@ function Veiculos() {
           else if (catLower.includes("agregado")) norm = "Agregado";
           else if (catLower.includes("terceiro")) norm = "Terceiro";
           updates.categoria = norm;
-        } else if (catRaw) {
+        } else if (catRaw && catRaw.length < 20) {
           updates.categoria = catRaw.charAt(0) + catRaw.slice(1).toLowerCase();
         }
       }
       if (propMatch) {
         let nome = propMatch[1].trim().replace(/\s{2,}/g, " ");
-        // remove CNPJ que pode ter sido capturado junto
-        nome = nome.replace(/\s+\d{2}\.\d{3}\.\d{3}\/\d{4}-\d{2}.*$/, "").trim();
-        nome = nome.replace(/\s+CONTAGEM.*$/, "").trim();
-        if (nome.length > 5) updates.proprietario = nome;
+        nome = nome.replace(/\s+CPF.*$/, "").trim();
+        nome = nome.replace(/\s+LOCAL.*$/, "").trim();
+        if (nome.length > 5 && !nome.includes("LOCAL") && !nome.includes("DATA")) updates.proprietario = nome;
       }
       if (eixosMatch) updates.quantidade_eixos = eixosMatch[1];
-      // Tipo: mapeia ESPÉCIE para TIPOS do sistema
       if (especieMatch) {
         const esp = especieMatch[1].trim().toUpperCase();
         if (esp.includes("SEMI") && esp.includes("REBOQUE")) updates.tipo = "Carreta";
         else if (esp.includes("CAVALO")) updates.tipo = "Cavalo Mecânico";
-        else if (esp.includes("3/4") || esp.includes("3.4")) updates.tipo = "3/4";
+        else if (esp.includes("3/4")) updates.tipo = "3/4";
         else if (esp.includes("TOCO")) updates.tipo = "Toco";
         else if (esp.includes("TRUCK")) updates.tipo = "Truck";
         else if (esp.includes("BITREM")) updates.tipo = "Bitrem";
