@@ -208,7 +208,15 @@ function Veiculos() {
         else if (esp.includes("FURG") || esp.includes("VAN")) updates.tipo = "Van/Furgão";
         else if (esp) updates.tipo = esp.slice(0,30);
       }
+      console.log("[CRLV] texto", upper.slice(0,1200));
       console.log("[CRLV] updates", updates);
+      // fallback: se nada puxou, tenta extrair de forma ultra simples (placa e RENAVAM sempre têm formato fixo)
+      if (Object.keys(updates).length === 0) {
+        const simplePlaca = upper.match(/([A-Z]{3}[0-9][A-Z0-9][0-9]{2})/);
+        if (simplePlaca) updates.placa = simplePlaca[1];
+        const simpleRenavam = upper.match(/([0-9]{11})/);
+        if (simpleRenavam && !updates.renavam) updates.renavam = simpleRenavam[1];
+      }
       if (Object.keys(updates).length === 0) {
         toast.error("Não foi possível extrair dados do PDF. Verifique se é o CRLV digital.");
       } else {
