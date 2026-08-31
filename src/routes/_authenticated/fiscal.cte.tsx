@@ -541,13 +541,13 @@ function CtePage() {
                   <label className="flex items-center gap-1 opacity-60"><input type="radio" disabled /> Embarques Liberados</label>
                 </div>
               </div>
-              <div>
+                <div>
                 <Label className="text-xs font-semibold text-primary">Período de Entrada</Label>
                 <div className="flex items-center gap-1.5 mt-1">
-                  <DateInput value={periodoIni} onChange={setPeriodoIni} className="h-7 text-xs flex-1" />
+                  <DateInput value={periodoIni} onChange={setPeriodoIni} className="h-7 text-xs flex-1 min-w-0" />
                   <span className="text-xs shrink-0">Até</span>
-                  <DateInput value={periodoFim} onChange={setPeriodoFim} className="h-7 text-xs flex-1" />
-                  <Button size="sm" variant="outline" className="h-7 text-xs shrink-0"><Calendar className="h-3 w-3 mr-1" />Consulta</Button>
+                  <DateInput value={periodoFim} onChange={setPeriodoFim} className="h-7 text-xs flex-1 min-w-0" />
+                  <Button size="sm" variant="outline" className="h-7 text-xs shrink-0 px-2"><Search className="h-3 w-3 mr-1" />Consulta</Button>
                 </div>
               </div>
             </div>
@@ -1044,6 +1044,9 @@ function CtePage() {
                                 <CommandEmpty>{veiculos?.length ? "Nenhum veículo encontrado." : "Nenhum veículo cadastrado."}</CommandEmpty>
                                 <CommandGroup>
                                   {(veiculos ?? []).filter(v => {
+                                    const tipo = (v.tipo || "").toLowerCase();
+                                    const isReboque = tipo.includes("carreta") || tipo.includes("bitrem");
+                                    if (isReboque) return false;
                                     if (!veiculoQuery) return true;
                                     const q = veiculoQuery.toLowerCase();
                                     return v.placa.toLowerCase().includes(q) || (v.marca_modelo || "").toLowerCase().includes(q);
@@ -1053,7 +1056,10 @@ function CtePage() {
                                       <div className="flex flex-col"><span className="text-xs font-mono">{v.placa}</span><span className="text-[10px] text-muted-foreground">{v.marca_modelo || v.tipo || ""}</span></div>
                                     </CommandItem>
                                   ))}
-                                  {veiculoQuery && !veiculos?.some(v => v.placa.toLowerCase() === veiculoQuery.toLowerCase()) && (
+                                  {veiculoQuery && !(veiculos ?? []).some(v => {
+                                    const tipo = (v.tipo || "").toLowerCase();
+                                    return !(tipo.includes("carreta") || tipo.includes("bitrem")) && v.placa.toLowerCase() === veiculoQuery.toLowerCase();
+                                  }) && (
                                     <CommandItem value={veiculoQuery} onSelect={() => { setForm(f => ({ ...f, placaVeiculo: veiculoQuery.toUpperCase() })); setVeiculoOpen(null); setVeiculoQuery(""); }}>
                                       Usar &quot;{veiculoQuery.toUpperCase()}&quot;
                                     </CommandItem>
