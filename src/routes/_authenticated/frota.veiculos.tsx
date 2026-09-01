@@ -248,14 +248,8 @@ function Veiculos() {
         if (p2) propVal = clean(p2[1]);
         else propVal = "LGP TRANSPORTES LTDA";
       }
-      const especieVal = dadosBloco.includes("CAVALO MECÂNICO") ? "Cavalo Mecânico"
-        : dadosBloco.includes("CAVALO MECANICO") ? "Cavalo Mecânico"
-        : dadosBloco.includes("SEMI-REBOQUE") ? "Carreta"
-        : dadosBloco.includes("TRATOR DE RODAS") ? "Trator"
-        : dadosBloco.includes("CAMINHÃO") ? "Caminhão"
-        : dadosBloco.includes("CAMINHAO") ? "Caminhão"
-        : dadosBloco.includes("AUTOMÓVEL") ? "Automóvel"
-        : dadosBloco.includes("AUTOMOVEL") ? "Automóvel"
+      const especieVal = dadosBloco.includes("SEMI-REBOQUE") || dadosBloco.includes("CARGA") ? "Carreta"
+        : dadosBloco.includes("TRACAO") || dadosBloco.includes("CAMINHÃO") || dadosBloco.includes("CAMINHAO") || dadosBloco.includes("TRATOR") ? "Cavalo Mecânico"
         : "";
       const updates: Partial<typeof form> = {};
       if (placaMatch) updates.placa = placaMatch[1].replace(/[^A-Z0-9]/g, "").toUpperCase();
