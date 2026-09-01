@@ -46,6 +46,7 @@ export default defineConfig(({ mode, command }) => {
         "react-dom/client",
         "react/jsx-runtime",
         "react/jsx-dev-runtime",
+        "pdfjs-dist",
       ],
     },
     plugins: [
