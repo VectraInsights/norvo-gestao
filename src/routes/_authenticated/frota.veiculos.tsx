@@ -461,16 +461,16 @@ function Veiculos() {
                 </Select>
               </div>
             </div>
-            <div className="grid grid-cols-10 gap-3">
-              <div className="col-span-5">
-                <Label>Marca / modelo</Label>
-                <Input
-                  value={form.marca_modelo}
-                  onChange={(e) => set("marca_modelo", e.target.value)}
-                />
-              </div>
-              <div className="col-span-3">
-                <Label>Tipo</Label>
+                <div className="grid grid-cols-10 gap-3">
+                  <div className="col-span-4">
+                    <Label>Marca / modelo</Label>
+                    <Input
+                      value={form.marca_modelo}
+                      onChange={(e) => set("marca_modelo", e.target.value)}
+                    />
+                  </div>
+                  <div className="col-span-4">
+                    <Label>Tipo</Label>
                 <Popover open={tipoOpen} onOpenChange={setTipoOpen}>
                   <PopoverTrigger asChild>
                     <Button variant="outline" role="combobox" aria-expanded={tipoOpen} className="h-10 w-full justify-between font-normal">
