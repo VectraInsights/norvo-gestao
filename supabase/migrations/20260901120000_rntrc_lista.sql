@@ -3,7 +3,7 @@ CREATE TABLE IF NOT EXISTS public.rntrc_lista (
   empresa_id uuid NOT NULL REFERENCES public.empresas(id) ON DELETE CASCADE,
   rntrc text NOT NULL,
   nome text NOT NULL DEFAULT '',
-  cnpj text,
+  cnpj text NOT NULL,
   categoria text,
   created_at timestamptz DEFAULT now()
 );
