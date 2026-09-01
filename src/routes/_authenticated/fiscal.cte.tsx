@@ -72,14 +72,14 @@ function CtePage() {
   const [cfopOpen, setCfopOpen] = useState(false);
   const [cfopQuery, setCfopQuery] = useState("");
 
-  // Auto-calcula ICMS: vICMS = base * aliquota / 100
+  // Auto-calcula ICMS: vICMS = vPrest (base) * aliquota / 100
   useEffect(() => {
-    const base = parseFloat(form.icmsBase) || 0;
+    const base = parseFloat(form.vPrest) || 0;
     const aliq = parseFloat(form.icmsAliq) || 0;
     const calc = (base * aliq / 100).toFixed(2);
     if (calc !== form.icmsValor) setForm(f => ({ ...f, icmsValor: calc }));
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [form.icmsBase, form.icmsAliq]);
+  }, [form.vPrest, form.icmsAliq]);
 
   // NF-es pendentes persistidas (sobrevivem a F5/troca de tela) — dedup global por chave
   const { data: pendentesDB } = useQuery({
@@ -463,7 +463,7 @@ function CtePage() {
         toma: form.toma, cnpjTomador: form.cnpjTomador, xNomeTomador: form.xNomeTomador, ufTomador: form.ufTomador, cMunTomador: form.cMunTomador, xMunTomador: form.xMunTomador,
         cfop: form.cfop, vPrest: parseFloat(form.vPrest)||0, vCarga: parseFloat(form.vCarga)||0, pesoKg: parseFloat(form.peso)||0, rntrc: form.rntrc,
         cMunEnv: form.cMunEnv, xMunEnv: form.xMunEnv, ufEnv: form.ufEnv, cMunIni: form.cMunIni, xMunIni: form.xMunIni, ufIni: form.ufIni, cMunFim: form.cMunFim, xMunFim: form.xMunFim, ufFim: form.ufFim,
-        icms: { CST: form.icmsCST, vBC: parseFloat(form.icmsBase)||0, pICMS: parseFloat(form.icmsAliq)||0, vICMS: parseFloat(form.icmsValor)||0 },
+        icms: { CST: form.icmsCST, vBC: parseFloat(form.vPrest)||0, pICMS: parseFloat(form.icmsAliq)||0, vICMS: parseFloat(form.icmsValor)||0 },
         impostos: { pisAliq: parseFloat(form.pisAliq)||0, cofinsAliq: parseFloat(form.cofinsAliq)||0, irAliq: parseFloat(form.irAliq)||0, inssAliq: parseFloat(form.inssAliq)||0, csllAliq: parseFloat(form.csllAliq)||0 },
         serie: "1",
         tomador: { toma: form.toma as any, cnpj: form.cnpjTomador, xNome: form.xNomeTomador, uf: form.ufTomador, cMun: form.cMunTomador, xMun: form.xMunTomador },
@@ -1255,7 +1255,7 @@ function CtePage() {
                       </SelectContent>
                     </Select>
                   </div>
-                  <div><Label className="text-[10px] text-muted-foreground">Base Cálculo (R$)</Label><MoneyInput className="h-7 text-xs" value={form.icmsBase} onChange={v => setForm({ ...form, icmsBase: v })} placeholder="0,00" /></div>
+                  <div><Label className="text-[10px] text-muted-foreground">Base Cálculo (R$)</Label><MoneyInput className="h-7 text-xs bg-muted" value={form.vPrest} onChange={() => {}} placeholder="0,00" /></div>
                   <div><Label className="text-[10px] text-muted-foreground">Alíquota ICMS (%)</Label><MoneyInput className="h-7 text-xs" prefix="" value={form.icmsAliq} onChange={v => setForm({ ...form, icmsAliq: v })} placeholder="0,00" /></div>
                   <div><Label className="text-[10px] text-muted-foreground">Valor ICMS (R$)</Label><MoneyInput className="h-7 text-xs bg-muted" value={form.icmsValor} onChange={() => {}} placeholder="0,00" /></div>
                 </div>
@@ -1276,7 +1276,7 @@ function CtePage() {
 
           {/* Cálculos do Serviço — Rodapé (corrigido: base = icmsBase editável, não vCarga) */}
           <div className="grid grid-cols-2 md:grid-cols-5 gap-2 border rounded p-3 bg-muted/20">
-            <div className="text-center"><p className="text-[10px] text-muted-foreground">Base Cálculo ICMS</p><p className="text-xs font-mono font-medium">{brl(Number(form.icmsBase))}</p><p className="text-[8px] text-muted-foreground">editável em Impostos</p></div>
+            <div className="text-center"><p className="text-[10px] text-muted-foreground">Base Cálculo ICMS</p><p className="text-xs font-mono font-medium">{brl(Number(form.vPrest))}</p><p className="text-[8px] text-muted-foreground">igual ao Valor do Serviço</p></div>
             <div className="text-center"><p className="text-[10px] text-muted-foreground">Alíquota ICMS</p><p className="text-xs font-mono">{Number(form.icmsAliq).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}%</p></div>
             <div className="text-center"><p className="text-[10px] text-muted-foreground">Valor ICMS</p><p className="text-xs font-mono font-medium text-primary">{brl(Number(form.icmsValor))}</p></div>
             <div className="text-center"><p className="text-[10px] text-muted-foreground">Valor Serviço</p><p className="text-xs font-mono font-medium">{brl(Number(form.vPrest))}</p></div>
