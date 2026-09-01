@@ -461,7 +461,7 @@ function Veiculos() {
                 </Select>
               </div>
             </div>
-                <div className="grid grid-cols-[1fr_1fr_auto] gap-3 items-end">
+                <div className="grid grid-cols-[1fr_auto_auto] gap-3 items-end">
                   <div>
                     <Label>Marca / modelo</Label>
                     <Input
@@ -469,7 +469,7 @@ function Veiculos() {
                       onChange={(e) => set("marca_modelo", e.target.value)}
                     />
                   </div>
-                  <div>
+                  <div className="w-44">
                     <Label>Tipo</Label>
                     <Popover open={tipoOpen} onOpenChange={setTipoOpen}>
                       <PopoverTrigger asChild>
