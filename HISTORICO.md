@@ -631,6 +631,8 @@ certificado tem estrutura PKCS12 não padrão ou se `extractPkcs12Native` precis
     - Fix parser CRLV: eixos agora pega dígito antes de 03P/00P sem confundir com CMT; tipo "CARGA CAMINHAO" → Cavalo Mecânico; proprietário aceita EIRELI.
     - CT-e: dropdowns Placa Reboque/Semi Reboque só mostram veículos tipo Carreta/Bitrem (exclui Cavalo Mecânico).
     - CT-e: campo "Valor Serviço" agora é editável (era readOnly).
+    - CT-e: fix SOAP body — elemento raiz agora usa nome da operação (`cteRecepcaoSinc`, `cteConsultaCT`, `cteRecepcaoEvento`) em vez do nome do serviço; corrige erro "Cannot find dispatch method".
+    - CT-e: adicionado botão "Salvar Rascunho" ao lado de "Enviar Doc-e"; salva CT-e no Supabase com status `rascunho` sem enviar à SEFAZ.
 
 ---
 ## Regras de segurança
