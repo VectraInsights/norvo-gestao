@@ -232,6 +232,31 @@ function RntrcTab({ empresaId }: { empresaId: string }) {
   const [nome, setNome] = useState("");
   const [cnpj, setCnpj] = useState("");
   const [categoria, setCategoria] = useState("");
+  const [lookingUp, setLookingUp] = useState(false);
+
+  const formatCnpj = (v: string) => {
+    const d = v.replace(/\D/g, "").slice(0, 14);
+    if (d.length <= 2) return d;
+    if (d.length <= 5) return d.slice(0, 2) + "." + d.slice(2);
+    if (d.length <= 8) return d.slice(0, 2) + "." + d.slice(2, 5) + "." + d.slice(5);
+    if (d.length <= 12) return d.slice(0, 2) + "." + d.slice(2, 5) + "." + d.slice(5, 8) + "/" + d.slice(8);
+    return d.slice(0, 2) + "." + d.slice(2, 5) + "." + d.slice(5, 8) + "/" + d.slice(8, 12) + "-" + d.slice(12);
+  };
+
+  const lookupCnpj = async (val: string) => {
+    const digits = val.replace(/\D/g, "");
+    if (digits.length !== 14) return;
+    setLookingUp(true);
+    try {
+      const res = await fetch(`https://brasilapi.com.br/api/cnpj/v1/${digits}`);
+      if (res.ok) {
+        const data = await res.json();
+        setNome(data.razao_social || "");
+        toast.success("Nome puxado automaticamente");
+      }
+    } catch {}
+    setLookingUp(false);
+  };
 
   const { data } = useQuery({
     queryKey: ["rntrc_lista", empresaId],
@@ -261,7 +286,18 @@ function RntrcTab({ empresaId }: { empresaId: string }) {
       <div className="mb-3 grid grid-cols-[1fr_2fr_1.5fr_1fr_auto] gap-2">
         <Input placeholder="RNTRC" value={rntrc} onChange={(e) => setRntrc(e.target.value.toUpperCase())} className="uppercase" />
         <Input placeholder="Nome / Razão Social *" value={nome} onChange={(e) => setNome(e.target.value)} />
-        <Input placeholder="CNPJ (opcional)" value={cnpj} onChange={(e) => setCnpj(e.target.value)} />
+        <Input
+          placeholder="CNPJ (opcional)"
+          value={cnpj}
+          onChange={(e) => {
+            const formatted = formatCnpj(e.target.value);
+            setCnpj(formatted);
+            const digits = formatted.replace(/\D/g, "");
+            if (digits.length === 14 && !nome.trim()) lookupCnpj(formatted);
+          }}
+          onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); const digits = cnpj.replace(/\D/g, ""); if (digits.length === 14 && !nome.trim()) lookupCnpj(cnpj); } }}
+          disabled={lookingUp}
+        />
         <Select value={categoria} onValueChange={setCategoria}>
           <SelectTrigger className="h-9"><SelectValue placeholder="Categoria" /></SelectTrigger>
           <SelectContent>
@@ -270,7 +306,7 @@ function RntrcTab({ empresaId }: { empresaId: string }) {
             <SelectItem value="CTC">CTC</SelectItem>
           </SelectContent>
         </Select>
-        <Button onClick={add}><Plus className="mr-1 h-4 w-4" />Adicionar</Button>
+        <Button onClick={add} disabled={lookingUp}><Plus className="mr-1 h-4 w-4" />Adicionar</Button>
       </div>
       <Table>
         <TableHeader><TableRow><TableHead>RNTRC</TableHead><TableHead>Nome</TableHead><TableHead>CNPJ</TableHead><TableHead>Categoria</TableHead><TableHead /></TableRow></TableHeader>
