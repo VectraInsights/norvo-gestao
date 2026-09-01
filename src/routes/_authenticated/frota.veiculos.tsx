@@ -232,26 +232,31 @@ function Veiculos() {
         || dadosBloco.match(/(PARTICULAR)/i);
       console.log("[CRLV] catMatch:", catMatch ? catMatch[1] : "NENHUM", "| dadosBloco snippet:", dadosBloco.slice(0, 300));
       const eixosMatch = dadosBloco.match(/\bEIXOS?\b[^0-9]*([0-9])\b/) || dadosBloco.match(/\*\.\*\s+([0-9])\s+00P/);
-      // Marca: entre código segurança e palavra-chave de espécie (CARGA, SEMI-REBOQUE, TRACAO, CAMINHAO, TRATOR, etc.)
+      // Marca: entre "***" e palavra-chave de espécie
       let marcaVal = "";
-      const marcaSec = dadosBloco.match(/\d{11}\s+\*\*\*\s+([A-Z0-9][A-Z0-9 \/\-]+?)\s+(?:CARGA|SEMI-REBOQUE|TRACAO|TRAC.AO|CAMINH.AO|TRATOR|PASSEIO|UTILIT.ARIO|MICROONIBUS|ONIBUS|Motocicleta)/i);
+      const marcaSec = dadosBloco.match(/\*\*\*\s+\d+\s+\*\*\*\s+([A-Z0-9][A-Z0-9 \/\.\-]+?)\s+(?:TRACAO|TRAC.AO|CARGA|SEMI-REBOQUE|CAMINH.AO|TRATOR|PASSEIO|UTILIT.ARIO)/i);
       if (marcaSec) marcaVal = clean(marcaSec[1]);
       else {
-        const m2 = upper.match(/MARCA\s*\/\s*MODELO\s*\/\s*VERS[ÃA]O\s+([A-Z0-9][A-Z0-9 \/\-]+?)\s+ESP[ÉE]CIE/);
+        const m2 = upper.match(/MARCA\s*\/\s*MODELO\s*\/\s*VERS[ÃA]O\s+([A-Z0-9][A-Z0-9 \/\.\-]+?)\s+ESP[ÉE]CIE/);
         if (m2) marcaVal = clean(m2[1].split("PLACA ANTERIOR")[0]);
         else {
-          // Fallback: pega texto entre "***" e primeira palavra-chave conhecida
-          const m3 = dadosBloco.match(/\*\*\*\s+([A-Z0-9][A-Z0-9 \/\-]{5,}?)\s+(?:CARGA|SEMI|TRAC|CAMINH|TRATOR|PASSEIO|UTILIT|MARC|ESP|COR|CHASSI|PLACA|CATEG)/i);
+          const m3 = dadosBloco.match(/\*\*\*\s+([A-Z0-9][A-Z0-9 \/\.\-]{5,}?)\s+(?:TRACAO|CARGA|SEMI|CAMINH|TRATOR|COR|CHASSI|PLACA|ESP)/i);
           if (m3) marcaVal = clean(m3[1]);
         }
       }
       let propVal = "";
-      const propSec = upper.match(/CARROCERIA\s+FECHADA\s+([A-Z][A-Z0-9 \.\-\/&]+?)\s+01\.666/);
+      // Padrão 1: após "00P" + 2 palavras (NÃO APLICAVEL), nome + CNPJ
+      const propSec = dadosBloco.match(/00P\s+\S+\s+\S+\s+([A-Z][A-Z0-9 \.\-\/&]+?)\s+\d{2}\.\d{3}\.\d{3}/);
       if (propSec) propVal = clean(propSec[1]);
       else {
-        const p2 = dadosBloco.match(/CARROCERIA\s+FECHADA\s+([A-Z ]+LTDA)/);
-        if (p2) propVal = clean(p2[1]);
-        else propVal = "LGP TRANSPORTES LTDA";
+        // Padrão 2: após "00P" + 1 palavra, nome + EPP/LTDA + CNPJ
+        const p1b = dadosBloco.match(/00P\s+\S+\s+([A-Z][A-Z0-9 \.\-\/&]+?)\s+(?:EPP|LTDA|MEI)\s+\d/);
+        if (p1b) propVal = clean(p1b[1]);
+        else {
+          // Padrão 3: CARROCERIA FECHADA + nome (formato antigo)
+          const p2 = dadosBloco.match(/CARROCERIA\s+FECHADA\s+([A-Z ]+LTDA)/);
+          if (p2) propVal = clean(p2[1]);
+        }
       }
       const especieVal = dadosBloco.includes("SEMI-REBOQUE") || dadosBloco.includes("CARGA") ? "Carreta"
         : dadosBloco.includes("TRACAO") || dadosBloco.includes("CAMINHÃO") || dadosBloco.includes("CAMINHAO") || dadosBloco.includes("TRATOR") ? "Cavalo Mecânico"
@@ -275,12 +280,13 @@ function Veiculos() {
       } else updates.categoria = "aluguel";
       if (propVal) updates.proprietario = propVal;
       else updates.proprietario = "LGP TRANSPORTES LTDA";
-      // Eixos: no bloco é " *.* 3 00P" — pega o 3
+      // Eixos: número antes de "00P" (ex: "80.0   2   00P" ou "*.* 3 00P")
       let eixosVal = "";
-      if (eixosMatch) eixosVal = eixosMatch[1];
+      const eixosMatch2 = dadosBloco.match(/\b(\d)\s+00P\b/);
+      if (eixosMatch2) eixosVal = eixosMatch2[1];
       else {
-        const e2 = dadosBloco.match(/3\s+00P/);
-        if (e2) eixosVal = "3";
+        const e2 = dadosBloco.match(/\*\.\*\s+(\d)\s+00P/);
+        if (e2) eixosVal = e2[1];
       }
       if (eixosVal) updates.quantidade_eixos = eixosVal;
       else updates.quantidade_eixos = "3";
