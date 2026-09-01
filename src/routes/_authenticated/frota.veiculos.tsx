@@ -461,7 +461,7 @@ function Veiculos() {
                 </Select>
               </div>
             </div>
-                <div className="grid grid-cols-3 gap-3">
+                <div className="grid grid-cols-[1fr_1fr_auto] gap-3 items-end">
                   <div>
                     <Label>Marca / modelo</Label>
                     <Input
@@ -508,7 +508,7 @@ function Veiculos() {
                   </div>
                   <div>
                     <Label>Eixos</Label>
-                    <Input type="number" min="2" max="9" value={form.quantidade_eixos} onChange={(e) => set("quantidade_eixos", e.target.value)} placeholder="2" className="w-full" />
+                    <Input type="number" min="2" max="9" value={form.quantidade_eixos} onChange={(e) => set("quantidade_eixos", e.target.value)} placeholder="2" className="w-16" />
                   </div>
                 </div>
             <div className="grid grid-cols-3 gap-3">
