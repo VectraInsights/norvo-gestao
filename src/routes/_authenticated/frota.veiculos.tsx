@@ -605,7 +605,6 @@ function Veiculos() {
           </div>
         </DialogContent>
       </Dialog>
-      />
 
       <div className="relative mb-4 max-w-sm">
         <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
