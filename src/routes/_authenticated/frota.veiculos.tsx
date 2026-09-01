@@ -220,6 +220,8 @@ function Veiculos() {
       qc.invalidateQueries({ queryKey: ["rntrc_lista"] });
     },
   });
+
+  const criarTipo = useMutation({
     mutationFn: async () => {
       if (!empresa) throw new Error("Selecione uma empresa");
       const nome = novoTipo.trim();
