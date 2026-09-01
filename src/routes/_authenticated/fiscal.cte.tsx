@@ -1219,7 +1219,7 @@ function CtePage() {
                   <div><Label className="text-[10px] text-muted-foreground">GRIS</Label><Input className="h-7 text-xs" placeholder="0.00" /></div>
                   <div><Label className="text-[10px] text-muted-foreground">Taxa Coleta</Label><Input className="h-7 text-xs" placeholder="0.00" /></div>
                   <div><Label className="text-[10px] text-muted-foreground">Taxa Entrega</Label><Input className="h-7 text-xs" placeholder="0.00" /></div>
-                  <div><Label className="text-[10px] text-muted-foreground">Valor Serviço</Label><Input className="h-7 text-xs font-medium" value={form.vPrest} readOnly /></div>
+                  <div><Label className="text-[10px] text-muted-foreground">Valor Serviço</Label><Input className="h-7 text-xs font-medium" value={form.vPrest} onChange={e => setForm(f => ({ ...f, vPrest: e.target.value }))} /></div>
                 </div>
               </Card>
 
