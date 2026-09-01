@@ -233,6 +233,11 @@ function RntrcTab({ empresaId }: { empresaId: string }) {
   const [cnpj, setCnpj] = useState("");
   const [categoria, setCategoria] = useState("");
   const [lookingUp, setLookingUp] = useState(false);
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editRntrc, setEditRntrc] = useState("");
+  const [editNome, setEditNome] = useState("");
+  const [editCnpj, setEditCnpj] = useState("");
+  const [editCategoria, setEditCategoria] = useState("");
 
   const formatCnpj = (v: string) => {
     const d = v.replace(/\D/g, "").slice(0, 14);
@@ -274,6 +279,29 @@ function RntrcTab({ empresaId }: { empresaId: string }) {
     qc.invalidateQueries({ queryKey: ["rntrc_lista"] });
     toast.success("RNTRC cadastrado");
   };
+
+  const startEdit = (r: any) => {
+    setEditingId(r.id);
+    setEditRntrc(r.rntrc);
+    setEditNome(r.nome);
+    setEditCnpj(r.cnpj || "");
+    setEditCategoria(r.categoria || "");
+  };
+
+  const saveEdit = async (id: string) => {
+    if (!editRntrc.trim() || !editNome.trim() || !editCnpj.trim()) return;
+    const { error } = await supabase.from("rntrc_lista" as never).update({ rntrc: editRntrc.trim().toUpperCase(), nome: editNome.trim(), cnpj: editCnpj.trim(), categoria: editCategoria || null }).eq("id", id);
+    if (error) {
+      if (String(error.message).toLowerCase().includes("duplicate")) return toast.error("Este RNTRC já está cadastrado");
+      return toast.error(error.message);
+    }
+    setEditingId(null);
+    qc.invalidateQueries({ queryKey: ["rntrc_lista"] });
+    toast.success("RNTRC atualizado");
+  };
+
+  const cancelEdit = () => setEditingId(null);
+
   const remove = async (id: string) => {
     const { error } = await supabase.from("rntrc_lista" as never).delete().eq("id", id);
     if (error) return toast.error(error.message);
@@ -312,13 +340,38 @@ function RntrcTab({ empresaId }: { empresaId: string }) {
         <TableHeader><TableRow><TableHead>RNTRC</TableHead><TableHead>CNPJ</TableHead><TableHead>Nome</TableHead><TableHead>Categoria</TableHead><TableHead /></TableRow></TableHeader>
         <TableBody>
           {data?.map((r: any) => (
-            <TableRow key={r.id}>
-              <TableCell className="font-medium uppercase">{r.rntrc}</TableCell>
-              <TableCell className="text-muted-foreground">{r.cnpj || "—"}</TableCell>
-              <TableCell>{r.nome}</TableCell>
-              <TableCell>{r.categoria || "—"}</TableCell>
-              <TableCell className="text-right"><Button variant="ghost" size="icon" onClick={() => remove(r.id)}><Trash2 className="h-4 w-4" /></Button></TableCell>
-            </TableRow>
+            editingId === r.id ? (
+              <TableRow key={r.id}>
+                <TableCell><Input value={editRntrc} onChange={(e) => setEditRntrc(e.target.value.toUpperCase())} className="h-8 uppercase" /></TableCell>
+                <TableCell><Input value={editCnpj} onChange={(e) => setEditCnpj(formatCnpj(e.target.value))} className="h-8" /></TableCell>
+                <TableCell><Input value={editNome} onChange={(e) => setEditNome(e.target.value)} className="h-8" /></TableCell>
+                <TableCell>
+                  <Select value={editCategoria} onValueChange={setEditCategoria}>
+                    <SelectTrigger className="h-8"><SelectValue placeholder="Categoria" /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="ETC">ETC</SelectItem>
+                      <SelectItem value="TAC">TAC</SelectItem>
+                      <SelectItem value="CTC">CTC</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </TableCell>
+                <TableCell className="text-right gap-1">
+                  <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => saveEdit(r.id)}><Check className="h-4 w-4" /></Button>
+                  <Button variant="ghost" size="icon" className="h-8 w-8" onClick={cancelEdit}><X className="h-4 w-4" /></Button>
+                </TableCell>
+              </TableRow>
+            ) : (
+              <TableRow key={r.id}>
+                <TableCell className="font-medium uppercase">{r.rntrc}</TableCell>
+                <TableCell className="text-muted-foreground">{r.cnpj || "—"}</TableCell>
+                <TableCell>{r.nome}</TableCell>
+                <TableCell>{r.categoria || "—"}</TableCell>
+                <TableCell className="text-right gap-1">
+                  <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => startEdit(r)}><Pencil className="h-4 w-4" /></Button>
+                  <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => remove(r.id)}><Trash2 className="h-4 w-4" /></Button>
+                </TableCell>
+              </TableRow>
+            )
           ))}
           {data?.length === 0 && <TableRow><TableCell colSpan={5} className="text-center text-muted-foreground text-sm">Nenhum RNTRC cadastrado</TableCell></TableRow>}
         </TableBody>
