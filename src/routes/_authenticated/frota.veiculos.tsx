@@ -152,12 +152,12 @@ function Veiculos() {
     queryFn: async ({ signal }) => {
       const { data, error } = await supabase
         .from("rntrc_lista" as never)
-        .select("id, rntrc, descricao")
+        .select("id, rntrc, nome, cnpj, categoria")
         .eq("empresa_id", empresa!.id)
         .order("rntrc")
         .abortSignal(signal);
       if (error) throw error;
-      return (data ?? []) as { id: string; rntrc: string; descricao: string | null }[];
+      return (data ?? []) as { id: string; rntrc: string; nome: string; cnpj: string | null; categoria: string | null }[];
     },
   });
 
@@ -189,10 +189,10 @@ function Veiculos() {
 
   // RNTRCs disponíveis: lista pré-cadastrada + histórico de veículos
   const rntrcDisponiveis = useMemo(() => {
-    const set = new Set<string>();
-    for (const r of rntrcLista ?? []) set.add(r.rntrc);
-    for (const v of veiculosExistentes ?? []) if (v.rntrc) set.add(v.rntrc);
-    return [...set].sort();
+    const map = new Map<string, { rntrc: string; nome: string }>();
+    for (const r of rntrcLista ?? []) map.set(r.rntrc, { rntrc: r.rntrc, nome: r.nome });
+    for (const v of veiculosExistentes ?? []) if (v.rntrc && !map.has(v.rntrc)) map.set(v.rntrc, { rntrc: v.rntrc, nome: "" });
+    return [...map.values()].sort((a, b) => a.rntrc.localeCompare(b.rntrc));
   }, [rntrcLista, veiculosExistentes]);
 
   // Auto-preencher RNTRC quando seleciona proprietário
@@ -504,7 +504,7 @@ function Veiculos() {
         }}
       >
         <DialogTrigger asChild>
-          <Button className="mb-4">
+          <Button className="mb-4" onClick={() => { reset(); setOpen(true); }}>
             <Plus className="mr-1 h-4 w-4" />
             Novo veículo
           </Button>
@@ -617,13 +617,15 @@ function Veiculos() {
                 <Popover>
                   <PopoverTrigger asChild>
                     <Button variant="outline" role="combobox" className="h-10 w-full justify-between font-normal">
-                      <span className="truncate">{form.rntrc || "Selecione ou digite"}</span>
+                      <span className="truncate">
+                        {form.rntrc ? `${form.rntrc}${rntrcDisponiveis.find(r => r.rntrc === form.rntrc)?.nome ? ` — ${rntrcDisponiveis.find(r => r.rntrc === form.rntrc)?.nome}` : ""}` : "Selecione ou digite"}
+                      </span>
                       <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                     </Button>
                   </PopoverTrigger>
-                  <PopoverContent className="w-[280px] p-0" align="start">
+                  <PopoverContent className="w-[350px] p-0" align="start">
                     <Command>
-                      <CommandInput placeholder="Buscar RNTRC..." />
+                      <CommandInput placeholder="Buscar RNTRC ou nome..." />
                       <CommandList>
                         <CommandEmpty>
                           <Button variant="ghost" size="sm" className="w-full justify-start text-xs" onClick={() => { if (form.rntrc) criarRntrc.mutate(form.rntrc); }}>
@@ -632,9 +634,10 @@ function Veiculos() {
                         </CommandEmpty>
                         <CommandGroup>
                           {rntrcDisponiveis.map((r) => (
-                            <CommandItem key={r} value={r} onSelect={() => set("rntrc", r)}>
-                              <Check className={"mr-2 h-4 w-4 " + (form.rntrc === r ? "opacity-100" : "opacity-0")} />
-                              {r}
+                            <CommandItem key={r.rntrc} value={`${r.rntrc} ${r.nome}`} onSelect={() => set("rntrc", r.rntrc)}>
+                              <Check className={"mr-2 h-4 w-4 " + (form.rntrc === r.rntrc ? "opacity-100" : "opacity-0")} />
+                              <span className="font-medium">{r.rntrc}</span>
+                              {r.nome && <span className="ml-2 text-muted-foreground">— {r.nome}</span>}
                             </CommandItem>
                           ))}
                         </CommandGroup>
