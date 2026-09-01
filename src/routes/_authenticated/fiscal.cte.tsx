@@ -1195,22 +1195,6 @@ function CtePage() {
                           </PopoverContent>
                         </Popover>
                       </div>
-                                    <CommandItem key={v.id} value={v.placa} onSelect={() => { setForm(f => ({ ...f, semiReboque2: v.placa.toUpperCase() })); setVeiculoOpen(null); setVeiculoQuery(""); }}>
-                                      <Check className={"mr-2 h-3 w-3 " + (form.semiReboque2 === v.placa ? "opacity-100" : "opacity-0")} />
-                                      <div className="flex flex-col"><span className="text-xs font-mono">{v.placa}</span><span className="text-[10px] text-muted-foreground">{v.marca_modelo || v.tipo || ""}</span></div>
-                                    </CommandItem>
-                                  ))}
-                                  {veiculoQuery && !veiculos?.some(v => v.placa.toLowerCase() === veiculoQuery.toLowerCase()) && (
-                                    <CommandItem value={veiculoQuery} onSelect={() => { setForm(f => ({ ...f, semiReboque2: veiculoQuery.toUpperCase() })); setVeiculoOpen(null); setVeiculoQuery(""); }}>
-                                      Usar &quot;{veiculoQuery.toUpperCase()}&quot;
-                                    </CommandItem>
-                                  )}
-                                </CommandGroup>
-                              </CommandList>
-                            </Command>
-                          </PopoverContent>
-                        </Popover>
-                      </div>
                     </div>
                     <label className="flex items-center gap-2 text-[10px]"><input type="checkbox" /> Possui Segundo Motorista</label>
                   </div>
