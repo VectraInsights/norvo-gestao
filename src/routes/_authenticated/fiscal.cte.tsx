@@ -59,7 +59,7 @@ function CtePage() {
   const [open, setOpen] = useState(false);
   const [form, setForm] = useState({
     toma: "3", cnpjTomador: "", xNomeTomador: "", ufTomador: "MG", cMunTomador: "3106200", xMunTomador: "BELO HORIZONTE", cfop: "5353",
-    vPrest: "1000.00", vCarga: "10000.00", peso: "5000", rntrc: "",
+    vPrest: "0.00", vCarga: "0.00", peso: "0", rntrc: "",
     // Impostos — base e alíquotas editáveis (corrigido: base padrão = vPrest, não vCarga)
     icmsCST: "00", icmsBase: "1000.00", icmsAliq: "0.00", icmsValor: "0.00",
     pisAliq: "0.00", cofinsAliq: "0.00", irAliq: "0.00", inssAliq: "0.00", csllAliq: "0.00",
@@ -419,8 +419,7 @@ function CtePage() {
         setMercadorias(merged);
         const somaV = merged.reduce((a, m) => a + (m.valor || 0), 0);
         const somaP = merged.reduce((a, m) => a + (m.peso || 0), 0);
-        const vPrestCalc = (somaV * 0.1).toFixed(2);
-        setForm(f => ({ ...f, vCarga: somaV.toFixed(2), peso: String(somaP), vPrest: vPrestCalc, icmsBase: vPrestCalc }));
+        setForm(f => ({ ...f, vCarga: somaV.toFixed(2), peso: String(somaP), icmsBase: f.vPrest || "0.00" }));
         qc.invalidateQueries({ queryKey: ["cte-nfes-pendentes", empresa!.id] });
         if (duplicadas > 0) toast.success(`${added} importada(s), ${duplicadas} já existiam (chave duplicada bloqueada)`);
         else toast.success(`${added} XML(s) importado(s) — selecione os que irão no CT-e`);
@@ -441,7 +440,7 @@ function CtePage() {
     if (raw) {
       try {
         const p = JSON.parse(raw);
-        setForm(f => ({ ...f, cnpjTomador: p.destCnpj || f.cnpjTomador, xNomeTomador: p.destXNome || f.xNomeTomador, ufTomador: p.destUF || f.ufTomador, cMunTomador: p.destCMun || f.cMunTomador, xMunTomador: p.destXMun || f.xMunTomador, vCarga: p.vCarga ? String(p.vCarga) : f.vCarga, peso: p.peso ? String(p.peso) : f.peso, vPrest: p.vCarga ? (Number(p.vCarga) * 0.1).toFixed(2) : f.vPrest }));
+        setForm(f => ({ ...f, cnpjTomador: p.destCnpj || f.cnpjTomador, xNomeTomador: p.destXNome || f.xNomeTomador, ufTomador: p.destUF || f.ufTomador, cMunTomador: p.destCMun || f.cMunTomador, xMunTomador: p.destXMun || f.xMunTomador, vCarga: p.vCarga ? String(p.vCarga) : f.vCarga, peso: p.peso ? String(p.peso) : f.peso }));
         setOpen(true);
         localStorage.removeItem("prefill_cte_from_nfe");
       } catch {}
@@ -686,8 +685,7 @@ function CtePage() {
                     ufEnv: (first as any).emitUF || f.ufEnv,
                     vCarga: somaV.toFixed(2),
                     peso: String(somaP),
-                    vPrest: (somaV*0.1).toFixed(2),
-                    icmsBase: (somaV*0.1).toFixed(2),
+                    icmsBase: f.vPrest || "0.00",
                   }));
                   setOpen(true);
                 }}
