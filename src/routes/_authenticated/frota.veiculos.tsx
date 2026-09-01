@@ -355,7 +355,7 @@ function Veiculos() {
       if (!form.ano) throw new Error("Ano é obrigatório");
       if (!form.renavam.trim()) throw new Error("RENAVAM é obrigatório");
       if (!form.chassi.trim()) throw new Error("Chassi é obrigatório");
-      if (!proprietario.trim()) throw new Error("Proprietário é obrigatório");
+      if (!form.proprietario.trim()) throw new Error("Proprietário é obrigatório");
       if (!form.categoria) throw new Error("Categoria é obrigatória");
       if (!form.quantidade_eixos) throw new Error("Quantidade de eixos é obrigatória");
       const payload: any = {
