@@ -231,6 +231,7 @@ function RntrcTab({ empresaId }: { empresaId: string }) {
   const [rntrc, setRntrc] = useState("");
   const [nome, setNome] = useState("");
   const [cnpj, setCnpj] = useState("");
+  const [categoria, setCategoria] = useState("");
 
   const { data } = useQuery({
     queryKey: ["rntrc_lista", empresaId],
@@ -239,12 +240,12 @@ function RntrcTab({ empresaId }: { empresaId: string }) {
 
   const add = async () => {
     if (!rntrc.trim() || !nome.trim()) return;
-    const { error } = await supabase.from("rntrc_lista" as never).insert({ empresa_id: empresaId, rntrc: rntrc.trim().toUpperCase(), nome: nome.trim(), cnpj: cnpj.trim() || null });
+    const { error } = await supabase.from("rntrc_lista" as never).insert({ empresa_id: empresaId, rntrc: rntrc.trim().toUpperCase(), nome: nome.trim(), cnpj: cnpj.trim() || null, categoria: categoria || null });
     if (error) {
       if (String(error.message).toLowerCase().includes("duplicate")) return toast.error("Este RNTRC já está cadastrado");
       return toast.error(error.message);
     }
-    setRntrc(""); setNome(""); setCnpj("");
+    setRntrc(""); setNome(""); setCnpj(""); setCategoria("");
     qc.invalidateQueries({ queryKey: ["rntrc_lista"] });
     toast.success("RNTRC cadastrado");
   };
@@ -257,24 +258,33 @@ function RntrcTab({ empresaId }: { empresaId: string }) {
   return (
     <Card className="mt-4 shadow-panel"><CardContent className="p-4">
       <p className="text-xs text-muted-foreground mb-3">RNTRCs pré-cadastrados aparecem como opções ao preencher veículos.</p>
-      <div className="mb-3 grid grid-cols-[1fr_2fr_1.5fr_auto] gap-2">
+      <div className="mb-3 grid grid-cols-[1fr_2fr_1.5fr_1fr_auto] gap-2">
         <Input placeholder="RNTRC" value={rntrc} onChange={(e) => setRntrc(e.target.value.toUpperCase())} className="uppercase" />
         <Input placeholder="Nome / Razão Social *" value={nome} onChange={(e) => setNome(e.target.value)} />
         <Input placeholder="CNPJ (opcional)" value={cnpj} onChange={(e) => setCnpj(e.target.value)} />
+        <Select value={categoria} onValueChange={setCategoria}>
+          <SelectTrigger className="h-9"><SelectValue placeholder="Categoria" /></SelectTrigger>
+          <SelectContent>
+            <SelectItem value="ETC">ETC</SelectItem>
+            <SelectItem value="TAC">TAC</SelectItem>
+            <SelectItem value="CTC">CTC</SelectItem>
+          </SelectContent>
+        </Select>
         <Button onClick={add}><Plus className="mr-1 h-4 w-4" />Adicionar</Button>
       </div>
       <Table>
-        <TableHeader><TableRow><TableHead>RNTRC</TableHead><TableHead>Nome</TableHead><TableHead>CNPJ</TableHead><TableHead /></TableRow></TableHeader>
+        <TableHeader><TableRow><TableHead>RNTRC</TableHead><TableHead>Nome</TableHead><TableHead>CNPJ</TableHead><TableHead>Categoria</TableHead><TableHead /></TableRow></TableHeader>
         <TableBody>
           {data?.map((r: any) => (
             <TableRow key={r.id}>
               <TableCell className="font-medium uppercase">{r.rntrc}</TableCell>
               <TableCell>{r.nome}</TableCell>
               <TableCell className="text-muted-foreground">{r.cnpj || "—"}</TableCell>
+              <TableCell>{r.categoria || "—"}</TableCell>
               <TableCell className="text-right"><Button variant="ghost" size="icon" onClick={() => remove(r.id)}><Trash2 className="h-4 w-4" /></Button></TableCell>
             </TableRow>
           ))}
-          {data?.length === 0 && <TableRow><TableCell colSpan={4} className="text-center text-muted-foreground text-sm">Nenhum RNTRC cadastrado</TableCell></TableRow>}
+          {data?.length === 0 && <TableRow><TableCell colSpan={5} className="text-center text-muted-foreground text-sm">Nenhum RNTRC cadastrado</TableCell></TableRow>}
         </TableBody>
       </Table>
     </CardContent></Card>
