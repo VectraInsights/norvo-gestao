@@ -625,7 +625,7 @@ function Veiculos() {
                   </PopoverTrigger>
                   <PopoverContent className="w-[350px] p-0" align="start">
                     <Command>
-                      <CommandInput placeholder="Buscar RNTRC ou nome..." />
+                      <CommandInput placeholder="Buscar RNTRC ou nome..." value={form.rntrc} onValueChange={(v) => set("rntrc", v.toUpperCase())} />
                       <CommandList>
                         <CommandEmpty>
                           <Button variant="ghost" size="sm" className="w-full justify-start text-xs" onClick={() => { if (form.rntrc) criarRntrc.mutate(form.rntrc); }}>
@@ -645,7 +645,6 @@ function Veiculos() {
                     </Command>
                   </PopoverContent>
                 </Popover>
-                <Input value={form.rntrc} onChange={(e) => set("rntrc", e.target.value.toUpperCase())} placeholder="Ou digite diretamente" className="mt-1" />
               </div>
             </div>
             <div className="grid grid-cols-2 gap-3">
