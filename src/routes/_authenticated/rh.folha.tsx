@@ -268,8 +268,8 @@ function FolhaPage() {
   const excluir = useMutation({
     mutationFn: async (f: Folha) => {
       if (f.lancamento_id) {
-        const { data: lanc } = await supabase.from("lancamentos_financeiros" as never)
-          .select("status").eq("id", f.lancamento_id).maybeSingle();
+        const { data: lanc } = await (supabase.from("lancamentos_financeiros" as never)
+          .select("status").eq("id", f.lancamento_id).maybeSingle() as any);
         if (lanc && lanc.status !== "pago") {
           const { error: eDel } = await supabase.from("lancamentos_financeiros").delete().eq("id", f.lancamento_id);
           if (eDel) throw eDel;
@@ -286,7 +286,7 @@ function FolhaPage() {
   });
 
   const gerarEmLote = useMutation({
-    mutationFn: async () => {
+    mutationFn: async (_seed: number): Promise<number> => {
       if (!empresa) throw new Error("Selecione uma empresa");
       const abertas = (folhas ?? []).filter((f) => f.status === "aberta" && !f.lancamento_id);
       if (abertas.length === 0) throw new Error("Nenhum lançamento aberto para gerar conta a pagar");
@@ -310,6 +310,7 @@ function FolhaPage() {
       }
 
       const hoje = new Date().toISOString().slice(0, 10);
+      let geradas = 0;
       for (const f of abertas) {
         const { data: lanc, error: eLanc } = await (supabase.from("lancamentos_financeiros") as any).insert({
           empresa_id: empresa.id, tipo: "pagar", status: "aberto",
@@ -321,10 +322,12 @@ function FolhaPage() {
         const { error } = await (supabase.from("folha_pagamento" as never) as any)
           .update({ status: "lançada", lancamento_id: lanc.id }).eq("id", f.id);
         if (error) throw error;
+        geradas++;
       }
+      return geradas;
     },
     onSuccess: (_, vars) => {
-      toast.success(`${vars.length} conta(s) a pagar gerada(s)`);
+      toast.success(`${vars} conta(s) a pagar gerada(s)`);
       qc.invalidateQueries({ queryKey: ["folha"] });
       qc.invalidateQueries({ queryKey: ["lancamentos"] });
     },
@@ -341,7 +344,7 @@ function FolhaPage() {
         actions={
           <div className="flex gap-2">
             <Button size="sm" variant="outline" disabled={gerarEmLote.isPending || !(folhas ?? []).some(f => f.status === "aberta" && !f.lancamento_id)}
-              onClick={() => { if (confirm(`Gerar conta(s) a pagar para ${(folhas ?? []).filter(f => f.status === "aberta" && !f.lancamento_id).length} lançamento(s) aberto(s)?`)) gerarEmLote.mutate([]); }}>
+              onClick={() => { if (confirm(`Gerar conta(s) a pagar para ${(folhas ?? []).filter(f => f.status === "aberta" && !f.lancamento_id).length} lançamento(s) aberto(s)?`)) gerarEmLote.mutate(0); }}>
               <HandCoins className="h-4 w-4 mr-1" />Gerar contas a pagar
             </Button>
             <Dialog open={open} onOpenChange={(o) => { setOpen(o); if (!o) reset(); }}>

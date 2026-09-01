@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 export const Route = createFileRoute("/onboarding")({
   ssr: false,
@@ -22,8 +23,22 @@ export const Route = createFileRoute("/onboarding")({
 });
 
 const emptyForm = {
-  cnpj: "", nome_fantasia: "", razao_social: "", email: "", telefone: "",
+  cnpj: "", nome_fantasia: "", razao_social: "", email: "", telefone: "", regime_tributario: "simples" as string,
 };
+
+function regimeFromBrasilApi(d: any): string {
+  if (d.opcao_pelo_mei) return "mei";
+  if (d.opcao_pelo_simples) return "simples";
+  const arr = Array.isArray(d.regime_tributario) ? d.regime_tributario : [];
+  if (arr.length > 0) {
+    const sorted = [...arr].sort((a: any, b: any) => (b.ano || 0) - (a.ano || 0));
+    const forma = String(sorted[0].forma_de_tributacao || "").toLowerCase();
+    if (forma.includes("lucro real")) return "lucro_real";
+    if (forma.includes("lucro presumido")) return "lucro_presumido";
+    if (forma.includes("simples")) return "simples";
+  }
+  return "lucro_presumido";
+}
 
 function OnboardingPage() {
   const navigate = useNavigate();
@@ -47,8 +62,9 @@ function OnboardingPage() {
         nome_fantasia: d.nome_fantasia || d.razao_social || f.nome_fantasia,
         email: d.email ?? f.email,
         telefone: [d.ddd_telefone_1].filter(Boolean).join("") || f.telefone,
+        regime_tributario: regimeFromBrasilApi(d) || f.regime_tributario,
       }));
-      toast.success("Dados preenchidos a partir da Receita");
+      toast.success("Dados preenchidos a partir da Receita (regime detectado)");
     } catch (err: any) {
       toast.error(err.message ?? "Falha ao consultar CNPJ");
     } finally {
@@ -71,6 +87,7 @@ function OnboardingPage() {
         email: form.email.trim() || null,
         telefone: form.telefone.trim() || null,
         cnpj: cnpjDigits || null,
+        regime_tributario: (form.regime_tributario as string) || "simples",
         created_by: u.user.id,
       };
       const { data: criada, error } = await supabase
@@ -84,7 +101,17 @@ function OnboardingPage() {
         }
         throw new Error(error.message);
       }
-      if (criada?.id) setSelectedEmpresaId(criada.id);
+      if (criada?.id) {
+        setSelectedEmpresaId(criada.id);
+        // cria nfe_config com regime para PIS/COFINS automático no CT-e
+        await supabase.from("nfe_config").upsert({
+          empresa_id: criada.id,
+          regime_tributario: (form.regime_tributario as string) || "simples",
+          ambiente: "homologacao",
+          serie: 1,
+          proximo_numero: 1,
+        } as any, { onConflict: "empresa_id" });
+      }
       await qc.invalidateQueries({ queryKey: ["empresas"] });
       toast.success(`Bem-vindo(a), ${nome}!`);
       navigate({ to: "/dashboard", replace: true });
@@ -131,6 +158,19 @@ function OnboardingPage() {
               <Label>Razão social</Label>
               <Input value={form.razao_social}
                 onChange={(e) => setForm({ ...form, razao_social: e.target.value })} />
+            </div>
+            <div>
+              <Label>Regime tributário <span className="text-muted-foreground text-xs">(usado p/ PIS/COFINS no CT-e)</span></Label>
+              <Select value={form.regime_tributario} onValueChange={v => setForm({ ...form, regime_tributario: v })}>
+                <SelectTrigger><SelectValue placeholder="Selecione" /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="simples">Simples Nacional</SelectItem>
+                  <SelectItem value="lucro_presumido">Lucro Presumido</SelectItem>
+                  <SelectItem value="lucro_real">Lucro Real</SelectItem>
+                  <SelectItem value="mei">MEI</SelectItem>
+                </SelectContent>
+              </Select>
+              <p className="text-[10px] text-muted-foreground mt-1">Preenchido automaticamente ao buscar CNPJ. PIS 0,65%/3% (Presumido) ou 1,65%/7,6% (Real) será aplicado no CT-e.</p>
             </div>
             <div className="grid grid-cols-2 gap-3">
               <div>

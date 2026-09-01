@@ -23,6 +23,12 @@ import { lazy, Suspense, useState } from "react";
 import { useSelectedEmpresaId } from "@/hooks/use-empresa";
 import { toast } from "sonner";
 import { brl, dateBR } from "@/lib/format";
+
+function soma30meses(d: string) {
+  const dt = new Date(d + "T12:00:00");
+  dt.setMonth(dt.getMonth() + 30);
+  return dt.toISOString().slice(0, 10);
+}
 import type { ReceitaPoint } from "@/components/erp/receita-chart";
 
 // recharts (~120KB gz) fica em chunk separado, carregado só quando o dashboard renderiza.
@@ -56,7 +62,20 @@ type ProximoReceberRow = {
   contato: { nome: string | null } | null;
 };
 type AlertaRow = { id: string; titulo: string; mensagem: string | null };
-type CnhRow = { id: string; nome: string; cnh_categoria: string | null; cnh_validade: string };
+type CnhRow = {
+  id: string;
+  nome: string;
+  cnh_categoria: string | null;
+  cnh_validade: string;
+  toxico_exame: string | null;
+};
+type MultaAlertaRow = {
+  id: string;
+  placa: string;
+  valor: number;
+  data_vencimento: string;
+  auto_infracao: string | null;
+};
 
 function friendlyEmpresaError(error: { message?: string; code?: string }) {
   if (error.code === "23505" || error.message?.toLowerCase().includes("duplicate key")) {
@@ -207,18 +226,51 @@ function Dashboard() {
     enabled: !!empresa,
     queryKey: ["cnh-vencendo", empresa?.id],
     queryFn: async ({ signal }) => {
-      const limite = new Date(Date.now() + 30 * 86400_000).toISOString().slice(0, 10);
+      const limite = new Date(Date.now() + 31 * 86400_000).toISOString().slice(0, 10);
       const { data, error } = await supabase
         .from("colaboradores" as never)
-        .select("id,nome,cnh_categoria,cnh_validade")
+        .select("id,nome,cnh_categoria,cnh_validade,toxico_exame")
         .eq("empresa_id", empresa!.id)
         .eq("status", "ativo")
-        .not("cnh_validade", "is", null)
-        .lte("cnh_validade", limite)
+        .or(`cnh_validade.lte.${limite},toxico_exame.lte.${limite}`)
         .order("cnh_validade")
         .abortSignal(signal);
       if (error) throw error;
-      return (data ?? []) as unknown as CnhRow[];
+      const rows = (data ?? []) as unknown as CnhRow[];
+      return rows.filter(
+        (c) =>
+          (c.cnh_validade &&
+            (new Date(c.cnh_validade + "T12:00:00").getTime() - Date.now()) / 86400_000 <= 30) ||
+          (c.toxico_exame &&
+            soma30meses(c.toxico_exame) &&
+            (new Date(soma30meses(c.toxico_exame) + "T12:00:00").getTime() - Date.now()) /
+              86400_000 <=
+              30),
+      );
+    },
+  });
+
+  const { data: multasVencendo } = useQuery({
+    enabled: !!empresa,
+    queryKey: ["multas-vencendo", empresa?.id],
+    queryFn: async ({ signal }) => {
+      const limite = new Date(Date.now() + 31 * 86400_000).toISOString().slice(0, 10);
+      const { data, error } = await supabase
+        .from("multas" as never)
+        .select("id,placa,valor,data_vencimento,auto_infracao")
+        .eq("empresa_id", empresa!.id)
+        .in("status", ["aberta", "contestada"])
+        .not("data_vencimento", "is", null)
+        .lte("data_vencimento", limite)
+        .order("data_vencimento")
+        .abortSignal(signal);
+      if (error) throw error;
+      const rows = (data ?? []) as unknown as MultaAlertaRow[];
+      return rows.filter(
+        (m) =>
+          (new Date(m.data_vencimento + "T12:00:00").getTime() - Date.now()) / 86400_000 <=
+          30,
+      );
     },
   });
 
@@ -357,20 +409,78 @@ function Dashboard() {
               <h3 className="font-semibold">Alertas & estoque baixo</h3>
               <AlertTriangle className="h-4 w-4 text-warning-foreground" />
             </div>
-            {!alertas?.length && !stats?.estoqueBaixo?.length && !cnhVencendo?.length ? (
+            {!alertas?.length &&
+            !stats?.estoqueBaixo?.length &&
+            !cnhVencendo?.length &&
+            !multasVencendo?.length ? (
               <p className="text-sm text-muted-foreground">Nenhum alerta ativo. 🎉</p>
             ) : (
               <ul className="space-y-2">
-                {cnhVencendo?.map((c) => {
+                {cnhVencendo
+                  ?.flatMap((c) => {
+                    const itens: {
+                      key: string;
+                      tipo: string;
+                      data: string;
+                      dias: number;
+                    }[] = [];
+                    if (c.cnh_validade) {
+                      itens.push({
+                        key: c.id + "-cnh",
+                        tipo: `CNH${c.cnh_categoria ? ` cat. ${c.cnh_categoria}` : ""}`,
+                        data: c.cnh_validade,
+                        dias: Math.ceil(
+                          (new Date(c.cnh_validade + "T12:00:00").getTime() - Date.now()) /
+                            86400_000,
+                        ),
+                      });
+                    }
+                    if (c.toxico_exame) {
+                      const t = soma30meses(c.toxico_exame);
+                      if (t) {
+                        itens.push({
+                          key: c.id + "-toxico",
+                          tipo: "Toxicológico",
+                          data: t,
+                          dias: Math.ceil(
+                            (new Date(t + "T12:00:00").getTime() - Date.now()) / 86400_000,
+                          ),
+                        });
+                      }
+                    }
+                    return itens;
+                  })
+                  .map((a) => (
+                    <li key={a.key} className="flex items-center justify-between text-sm">
+                      <span className="truncate">
+                        <strong>
+                          {cnhVencendo?.find((c) => c.id === a.key.split("-")[0])?.nome}
+                        </strong>{" "}
+                        — {a.tipo} {a.dias < 0 ? "vencida em" : "vence em"} {dateBR(a.data)}
+                      </span>
+                      <Badge
+                        variant="secondary"
+                        className={
+                          a.dias < 0
+                            ? "bg-destructive/10 text-destructive"
+                            : "bg-warning/20 text-warning-foreground"
+                        }
+                      >
+                        {a.dias < 0 ? `${-a.dias}d atrás` : `${a.dias}d`}
+                      </Badge>
+                    </li>
+                  ))}
+                {multasVencendo?.map((m) => {
                   const dias = Math.ceil(
-                    (new Date(c.cnh_validade + "T12:00:00").getTime() - Date.now()) / 86400_000,
+                    (new Date(m.data_vencimento + "T12:00:00").getTime() - Date.now()) /
+                      86400_000,
                   );
                   return (
-                    <li key={c.id} className="flex items-center justify-between text-sm">
+                    <li key={m.id} className="flex items-center justify-between text-sm">
                       <span className="truncate">
-                        <strong>{c.nome}</strong> — CNH
-                        {c.cnh_categoria ? ` cat. ${c.cnh_categoria}` : ""}{" "}
-                        {dias < 0 ? "vencida em" : "vence em"} {dateBR(c.cnh_validade)}
+                        <strong>{m.placa}</strong> — multa{" "}
+                        {m.auto_infracao ? `auto ${m.auto_infracao}` : ""} {dias < 0 ? "vencida em" : "vence em"}{" "}
+                        {dateBR(m.data_vencimento)}
                       </span>
                       <Badge
                         variant="secondary"

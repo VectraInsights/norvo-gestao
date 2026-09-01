@@ -31,6 +31,7 @@ import { Route as AuthenticatedProjetosProjetosRouteImport } from './routes/_aut
 import { Route as AuthenticatedProjetosOsRouteImport } from './routes/_authenticated/projetos.os'
 import { Route as AuthenticatedFrotaViagensRouteImport } from './routes/_authenticated/frota.viagens'
 import { Route as AuthenticatedFrotaVeiculosRouteImport } from './routes/_authenticated/frota.veiculos'
+import { Route as AuthenticatedFrotaMultasRouteImport } from './routes/_authenticated/frota.multas'
 import { Route as AuthenticatedFiscalRelatoriosRouteImport } from './routes/_authenticated/fiscal.relatorios'
 import { Route as AuthenticatedFiscalRecebidasRouteImport } from './routes/_authenticated/fiscal.recebidas'
 import { Route as AuthenticatedFiscalNotasRouteImport } from './routes/_authenticated/fiscal.notas'
@@ -177,6 +178,12 @@ const AuthenticatedFrotaVeiculosRoute =
   AuthenticatedFrotaVeiculosRouteImport.update({
     id: '/frota/veiculos',
     path: '/frota/veiculos',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedFrotaMultasRoute =
+  AuthenticatedFrotaMultasRouteImport.update({
+    id: '/frota/multas',
+    path: '/frota/multas',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
 const AuthenticatedFiscalRelatoriosRoute =
@@ -382,6 +389,7 @@ export interface FileRoutesByFullPath {
   '/fiscal/notas': typeof AuthenticatedFiscalNotasRoute
   '/fiscal/recebidas': typeof AuthenticatedFiscalRecebidasRoute
   '/fiscal/relatorios': typeof AuthenticatedFiscalRelatoriosRoute
+  '/frota/multas': typeof AuthenticatedFrotaMultasRoute
   '/frota/veiculos': typeof AuthenticatedFrotaVeiculosRoute
   '/frota/viagens': typeof AuthenticatedFrotaViagensRoute
   '/projetos/os': typeof AuthenticatedProjetosOsRoute
@@ -433,6 +441,7 @@ export interface FileRoutesByTo {
   '/fiscal/notas': typeof AuthenticatedFiscalNotasRoute
   '/fiscal/recebidas': typeof AuthenticatedFiscalRecebidasRoute
   '/fiscal/relatorios': typeof AuthenticatedFiscalRelatoriosRoute
+  '/frota/multas': typeof AuthenticatedFrotaMultasRoute
   '/frota/veiculos': typeof AuthenticatedFrotaVeiculosRoute
   '/frota/viagens': typeof AuthenticatedFrotaViagensRoute
   '/projetos/os': typeof AuthenticatedProjetosOsRoute
@@ -486,6 +495,7 @@ export interface FileRoutesById {
   '/_authenticated/fiscal/notas': typeof AuthenticatedFiscalNotasRoute
   '/_authenticated/fiscal/recebidas': typeof AuthenticatedFiscalRecebidasRoute
   '/_authenticated/fiscal/relatorios': typeof AuthenticatedFiscalRelatoriosRoute
+  '/_authenticated/frota/multas': typeof AuthenticatedFrotaMultasRoute
   '/_authenticated/frota/veiculos': typeof AuthenticatedFrotaVeiculosRoute
   '/_authenticated/frota/viagens': typeof AuthenticatedFrotaViagensRoute
   '/_authenticated/projetos/os': typeof AuthenticatedProjetosOsRoute
@@ -539,6 +549,7 @@ export interface FileRouteTypes {
     | '/fiscal/notas'
     | '/fiscal/recebidas'
     | '/fiscal/relatorios'
+    | '/frota/multas'
     | '/frota/veiculos'
     | '/frota/viagens'
     | '/projetos/os'
@@ -590,6 +601,7 @@ export interface FileRouteTypes {
     | '/fiscal/notas'
     | '/fiscal/recebidas'
     | '/fiscal/relatorios'
+    | '/frota/multas'
     | '/frota/veiculos'
     | '/frota/viagens'
     | '/projetos/os'
@@ -642,6 +654,7 @@ export interface FileRouteTypes {
     | '/_authenticated/fiscal/notas'
     | '/_authenticated/fiscal/recebidas'
     | '/_authenticated/fiscal/relatorios'
+    | '/_authenticated/frota/multas'
     | '/_authenticated/frota/veiculos'
     | '/_authenticated/frota/viagens'
     | '/_authenticated/projetos/os'
@@ -822,6 +835,13 @@ declare module '@tanstack/react-router' {
       path: '/frota/veiculos'
       fullPath: '/frota/veiculos'
       preLoaderRoute: typeof AuthenticatedFrotaVeiculosRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/frota/multas': {
+      id: '/_authenticated/frota/multas'
+      path: '/frota/multas'
+      fullPath: '/frota/multas'
+      preLoaderRoute: typeof AuthenticatedFrotaMultasRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/fiscal/relatorios': {
@@ -1053,6 +1073,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedFiscalNotasRoute: typeof AuthenticatedFiscalNotasRoute
   AuthenticatedFiscalRecebidasRoute: typeof AuthenticatedFiscalRecebidasRoute
   AuthenticatedFiscalRelatoriosRoute: typeof AuthenticatedFiscalRelatoriosRoute
+  AuthenticatedFrotaMultasRoute: typeof AuthenticatedFrotaMultasRoute
   AuthenticatedFrotaVeiculosRoute: typeof AuthenticatedFrotaVeiculosRoute
   AuthenticatedFrotaViagensRoute: typeof AuthenticatedFrotaViagensRoute
   AuthenticatedProjetosOsRoute: typeof AuthenticatedProjetosOsRoute
@@ -1106,6 +1127,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedFiscalNotasRoute: AuthenticatedFiscalNotasRoute,
   AuthenticatedFiscalRecebidasRoute: AuthenticatedFiscalRecebidasRoute,
   AuthenticatedFiscalRelatoriosRoute: AuthenticatedFiscalRelatoriosRoute,
+  AuthenticatedFrotaMultasRoute: AuthenticatedFrotaMultasRoute,
   AuthenticatedFrotaVeiculosRoute: AuthenticatedFrotaVeiculosRoute,
   AuthenticatedFrotaViagensRoute: AuthenticatedFrotaViagensRoute,
   AuthenticatedProjetosOsRoute: AuthenticatedProjetosOsRoute,

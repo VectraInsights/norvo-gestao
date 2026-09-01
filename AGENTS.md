@@ -38,8 +38,12 @@ sobrescrito pela env `NITRO_PRESET` (ex.: `node-server`, `vercel`).
 - **Exe Windows**: wrapper Electron em `desktop/`. Carrega a URL da VERCEL numa janela própria.
   Rebuild: `cd desktop && npm install && npx electron-builder --win nsis` → saída em `desktop/release/`.
   Instalador portátil (target "portable") travava na extração nesta máquina — usar NSIS.
-- Repo é **privado**: pull/push exigem PAT fine-grained com Contents Read/Write no repo
-  (token fica embutido na URL do remote `.git/config`). NUNCA commitar tokens.
+- Repo é **privado**: pull/push exigem PAT fine-grained com Contents Read/Write no repo.
+  O PAT está guardado no **Windows Credential Manager** com helper `wincred` configurado
+  **no escopo global para o GitHub** (`git config --global credential.https://github.com.helper wincred`)
+  — a URL do remote NÃO contém token (`.git/config` só tem
+  `https://github.com/VectraInsights/norvo-gestao.git`). Vale para todos os repos/diretórios.
+  NUNCA commitar tokens nem colá-los na URL.
 
 ## Autenticação
 
@@ -110,6 +114,24 @@ sobrescrito pela env `NITRO_PRESET` (ex.: `node-server`, `vercel`).
   concluir viagem gera RECEITA única (trigger `tg_viagem_receita`, só na transição para
   'concluida' — editar viagem concluída não duplica). Enum é `'receber'`/`'pagar'`
   (NÃO existe valor 'receita'). Placa de veículo é única por empresa.
+- CNH e toxicológico dos motoristas: `colaboradores.toxico_exame` (último exame;
+  validade = exame + 2 anos e 6 meses, CTB art. 148-A — migration `20260828110000`).
+  RH exige nº/categoria da CNH + data do exame p/ cargos com "Motorist"; Dashboard alerta
+  CNH e toxicológico de ativos vencidos/vencendo em 30 dias; Frota → Viagens BLOQUEIA salvar
+  viagem com motorista de documentação VENCIDA (aviso ⚠ já nos 30 dias).
+- Multas de trânsito (`/frota/multas`, migration `20260829100000`): tabela `multas`
+  (auto de infração único por empresa, placa/renavam denormalizados, órgão autuador,
+  valor, vencimento, status `aberta|paga|contestada`, origem `manual|senatran`) + RLS/trigger
+  padrão. `veiculos.renavam` é único por empresa e alimenta a consulta SENATRAN. Dashboard
+  alerta multas abertas/contestadas vencidas ou vencendo em 30 dias. Integração SENATRAN:
+  config em `multas_config` (acesso SÓ service_role, RLS sem políticas p/ anon/authenticated);
+  o connector `sincronizarMultasSENATRANFn` (`src/lib/multas-server.ts`) faz `GET {endpoint}`
+  com Basic auth esperando `{ autuacoes: [{placa, renavam?, orgao_autuador?, auto_infracao?,
+  data_infracao?, descricao?, valor?, data_vencimento?, pontos?}] }` e grava via RPC
+  `registrar_multas_senatran` (upsert por `auto_infracao`). Dialog de configuração SENATRAN
+  na UI (`/frota/multas`: endpoint, usuário, senha, toggle ativo). Botão Sincronizar só
+  habilitado quando a integração está ativa. Sem credencial configurada o cadastro manual
+  cobre o dia a dia.
 - Módulos novos exigem entrada em `MODULOS` (`src/lib/permissoes.ts`) — `moduloDaRota()`
   deriva o módulo do primeiro segmento da rota. Membros existentes só veem o menu novo após
   o admin marcar o módulo em Configurações → Usuários (owner/admin sempre veem tudo).

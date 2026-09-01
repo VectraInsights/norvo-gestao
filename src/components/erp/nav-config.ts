@@ -33,6 +33,7 @@ import {
   PackagePlus,
   Truck,
   Route,
+  OctagonAlert,
 } from "lucide-react";
 
 export type NavItem = { to: string; label: string; icon: typeof LayoutDashboard };
@@ -97,6 +98,7 @@ const RAW_NAV: NavGroup[] = [
     items: [
       { to: "/frota/viagens", label: "Viagens", icon: ArrowLeftRight },
       { to: "/frota/veiculos", label: "Veículos", icon: Truck },
+      { to: "/frota/multas", label: "Multas", icon: OctagonAlert },
     ],
   },
   {

@@ -83,6 +83,7 @@ type Colab = {
   cnh_numero: string | null;
   cnh_categoria: string | null;
   cnh_validade: string | null;
+  toxico_exame: string | null;
   optante_vt: boolean;
 };
 
@@ -95,6 +96,24 @@ const STATUS: Record<string, string> = {
 
 const soDigitos = (s: string) => s.replace(/\D/g, "");
 
+const soma30meses = (d: string) => {
+  const dt = new Date(d + "T00:00:00");
+  dt.setMonth(dt.getMonth() + 30);
+  return dt.toISOString().slice(0, 10);
+};
+
+function avisoToxico(validade: string | null | undefined) {
+  if (!validade) return null;
+  const hoje = new Date();
+  hoje.setHours(0, 0, 0, 0);
+  const v = new Date(validade + "T00:00:00");
+  const dias = Math.round((v.getTime() - hoje.getTime()) / 86400000);
+  if (dias < 0) return `Toxicológico VENCIDO há ${-dias} dias`;
+  if (dias === 0) return "Toxicológico vence HOJE";
+  if (dias <= 60) return `Toxicológico vence em ${dias} dias`;
+  return null;
+}
+
 function validarForm(form: ReturnType<typeof formInicial>) {
   if (!form.nome.trim()) throw new Error("Nome é obrigatório");
   if (soDigitos(form.cpf).length !== 11) throw new Error("CPF deve ter 11 dígitos");
@@ -104,6 +123,8 @@ function validarForm(form: ReturnType<typeof formInicial>) {
       throw new Error("Para o cargo de motorista, informe o número da CNH");
     if (!form.cnh_categoria.trim())
       throw new Error("Para o cargo de motorista, informe a categoria da CNH");
+    if (!form.toxico_exame)
+      throw new Error("Para o cargo de motorista, informe a data do último exame toxicológico");
   }
   const tels = form.telefones.map((t) => t.trim()).filter(Boolean);
   if (tels.length === 0) throw new Error("Informe pelo menos um telefone");
@@ -134,6 +155,8 @@ function formInicial() {
     cnh_numero: "",
     cnh_categoria: "",
     cnh_validade: "",
+    toxico_exame: "",
+    toxico_validade: "",
     optante_vt: false,
   };
 }
@@ -292,6 +315,8 @@ function ColaboradoresPage() {
       cnh_numero: c.cnh_numero ?? "",
       cnh_categoria: c.cnh_categoria ?? "",
       cnh_validade: c.cnh_validade ?? "",
+      toxico_exame: c.toxico_exame ?? "",
+      toxico_validade: c.toxico_exame ? soma30meses(c.toxico_exame) : "",
       optante_vt: c.optante_vt ?? false,
     });
     setOpen(true);
@@ -332,6 +357,7 @@ function ColaboradoresPage() {
         cnh_numero: form.cnh_numero.trim() || null,
         cnh_categoria: form.cnh_categoria.trim() || null,
         cnh_validade: form.cnh_validade || null,
+        toxico_exame: form.toxico_exame || null,
         optante_vt: form.optante_vt,
       };
       const tbl = supabase.from("colaboradores" as never) as any;
@@ -690,6 +716,41 @@ function ColaboradoresPage() {
                         />
                       </div>
                     </div>
+                    <div className="mt-3 grid grid-cols-2 gap-3">
+                      <div>
+                        <Label>
+                          Último exame toxicológico{" "}
+                          {form.cargo.toLowerCase().includes("motorist") ? "*" : ""}
+                        </Label>
+                        <Input
+                          type="date"
+                          value={form.toxico_exame}
+                          onChange={(e) =>
+                            setForm((f) => ({
+                              ...f,
+                              toxico_exame: e.target.value,
+                              toxico_validade: e.target.value ? soma30meses(e.target.value) : "",
+                            }))
+                          }
+                        />
+                      </div>
+                      <div>
+                        <Label>Validade do toxicológico</Label>
+                        <Input value={form.toxico_validade} readOnly />
+                        <p className="mt-1 text-xs text-muted-foreground">
+                          {form.toxico_exame
+                            ? "2 anos e 6 meses após o exame (CTB art. 148-A)"
+                            : form.cargo.toLowerCase().includes("motorist")
+                              ? "Obrigatório para motoristas de categoria C/D/E"
+                              : "Exame obrigatório apenas para categorias C/D/E"}
+                        </p>
+                      </div>
+                    </div>
+                    {avisoToxico(form.toxico_validade) && (
+                      <p className="mt-2 text-xs text-warning-foreground">
+                        ⚠ {avisoToxico(form.toxico_validade)}
+                      </p>
+                    )}
                   </div>
                   <div className="grid grid-cols-2 gap-3">
                     <div className="space-y-1">

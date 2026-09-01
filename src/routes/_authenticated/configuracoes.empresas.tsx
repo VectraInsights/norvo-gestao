@@ -20,7 +20,22 @@ export const Route = createFileRoute("/_authenticated/configuracoes/empresas")({
 const emptyForm = {
   cnpj: "", nome_fantasia: "", razao_social: "", email: "", telefone: "",
   logradouro: "", numero: "", complemento: "", bairro: "", cidade: "", uf: "", cep: "",
+  regime_tributario: "simples",
 };
+
+function regimeFromBrasilApi(d: any): string {
+  if (d.opcao_pelo_mei) return "mei";
+  if (d.opcao_pelo_simples) return "simples";
+  const arr = Array.isArray(d.regime_tributario) ? d.regime_tributario : [];
+  if (arr.length > 0) {
+    const sorted = [...arr].sort((a: any, b: any) => (b.ano || 0) - (a.ano || 0));
+    const forma = String(sorted[0].forma_de_tributacao || "").toLowerCase();
+    if (forma.includes("lucro real")) return "lucro_real";
+    if (forma.includes("lucro presumido")) return "lucro_presumido";
+    if (forma.includes("simples")) return "simples";
+  }
+  return "lucro_presumido";
+}
 
 type Empresa = typeof emptyForm & { id: string; created_by?: string; created_at?: string; updated_at?: string };
 
@@ -67,6 +82,7 @@ function EmpresasPage() {
       cidade: empresa.cidade ?? "",
       uf: empresa.uf ?? "",
       cep: empresa.cep ?? "",
+      regime_tributario: (empresa as any).regime_tributario ?? "simples",
     });
     setOpen(true);
   };
@@ -103,8 +119,9 @@ function EmpresasPage() {
         cidade: d.municipio ?? "",
         uf: d.uf ?? "",
         cep: d.cep ?? "",
+        regime_tributario: regimeFromBrasilApi(d),
       }));
-      toast.success("Dados preenchidos a partir da Receita");
+      toast.success("Dados preenchidos a partir da Receita (regime detectado)");
     } catch (err: any) {
       toast.error(err.message ?? "Falha ao consultar CNPJ");
     } finally {
@@ -133,14 +150,26 @@ function EmpresasPage() {
       if (dup) return toast.error("Já existe uma empresa cadastrada com este CNPJ");
     }
     const payload = { ...form, nome_fantasia: nome, cnpj: cnpjDigits || null };
-    const { error } = editing
-      ? await supabase.from("empresas").update(payload).eq("id", editing.id)
-      : await supabase.from("empresas").insert({ ...payload, created_by: u.user.id });
-    if (error) return toast.error(friendlyEmpresaError(error));
+    let targetId: string | null = editing?.id ?? null;
+    if (editing) {
+      const { error } = await supabase.from("empresas").update(payload).eq("id", editing.id);
+      if (error) return toast.error(friendlyEmpresaError(error));
+    } else {
+      const { data: inserted, error } = await supabase.from("empresas").insert({ ...payload, created_by: u.user.id }).select("id").single();
+      if (error) return toast.error(friendlyEmpresaError(error));
+      targetId = (inserted as any)?.id ?? null;
+    }
+    // sincroniza regime para nfe_config (usado no CT-e para PIS/COFINS)
+    try {
+      if (targetId) {
+        await supabase.from("nfe_config").upsert({ empresa_id: targetId, regime_tributario: (form as any).regime_tributario || "simples" } as any, { onConflict: "empresa_id" });
+      }
+    } catch {}
     toast.success(editing ? "Empresa atualizada" : "Empresa criada");
     setOpen(false); setEditing(null); setForm(emptyForm);
     await qc.invalidateQueries({ queryKey: ["empresas"] });
     await qc.invalidateQueries({ queryKey: ["dashboard-stats"] });
+    await qc.invalidateQueries({ queryKey: ["nfe-config"] });
   };
 
   const deleteEmpresa = async () => {
@@ -179,6 +208,18 @@ function EmpresasPage() {
                 </div>
                 <div><Label>Nome da empresa <span className="text-destructive">*</span></Label><Input required value={form.nome_fantasia} onChange={(e) => setForm({ ...form, nome_fantasia: e.target.value })} /></div>
                 <div><Label>Razão social</Label><Input value={form.razao_social} onChange={(e) => setForm({ ...form, razao_social: e.target.value })} /></div>
+                <div><Label>Regime tributário</Label>
+                  <Select value={(form as any).regime_tributario} onValueChange={v => setForm({ ...form, regime_tributario: v } as any)}>
+                    <SelectTrigger><SelectValue placeholder="Selecione" /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="simples">Simples Nacional</SelectItem>
+                      <SelectItem value="lucro_presumido">Lucro Presumido</SelectItem>
+                      <SelectItem value="lucro_real">Lucro Real</SelectItem>
+                      <SelectItem value="mei">MEI</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <p className="text-[10px] text-muted-foreground mt-1">Usado para PIS/COFINS automático no CT-e.</p>
+                </div>
                 <div className="grid grid-cols-2 gap-3">
                   <div><Label>Email</Label><Input type="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} /></div>
                   <div><Label>Telefone</Label><Input value={form.telefone} onChange={(e) => setForm({ ...form, telefone: e.target.value })} /></div>

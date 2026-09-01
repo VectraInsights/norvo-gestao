@@ -23,7 +23,7 @@ function MdfPage() {
     queryFn: async (): Promise<MdfDoc[]> => {
       const { data, error } = await supabase.from("mdf_documentos" as any).select("id,numero,serie,status,qtd_cte,chave_acesso,created_at").eq("empresa_id", empresa!.id).order("created_at", { ascending: false }).limit(100);
       if (error) throw error;
-      return (data ?? []) as MdfDoc[];
+      return (data ?? []) as unknown as MdfDoc[];
     },
   });
   return (

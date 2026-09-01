@@ -237,7 +237,7 @@ function ConfigFiscais() {
       let thumbprint: string | null = null;
       try {
         const fileBytes = await certFile.arrayBuffer();
-        const p12Asn1 = forge.asn1.fromDer(forge.util.encode64(new Uint8Array(fileBytes)));
+        const p12Asn1 = forge.asn1.fromDer(forge.util.encode64(forge.util.binary.raw.encode(new Uint8Array(fileBytes))));
         const p12 = forge.pkcs12.pkcs12FromAsn1(p12Asn1, certPassword);
         const certBags = p12.getBags({ bagType: "1.2.840.113549.1.12.10.1.3" });
         const cert = certBags["1.2.840.113549.1.12.10.1.3"]?.[0]?.cert;
