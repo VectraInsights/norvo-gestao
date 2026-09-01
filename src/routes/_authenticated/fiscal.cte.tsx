@@ -453,25 +453,16 @@ function CtePage() {
     mutationFn: async () => {
       if (!empresa) throw new Error("Empresa não selecionada");
       const chaves = selecionadas.size > 0 ? Array.from(selecionadas) : mercadorias.map(m => m.chave);
+      const proximo = 1;
       const { error } = await supabase.from("cte_documentos" as any).insert({
         empresa_id: empresa.id,
         status: "rascunho",
-        tomador_nome: form.xNomeTomador,
-        tomador_cnpj: form.cnpjTomador,
-        cfop: form.cfop,
-        v_prest: parseFloat(form.vPrest) || 0,
-        v_carga: parseFloat(form.vCarga) || 0,
-        peso_kg: parseFloat(form.peso) || 0,
-        rntrc: form.rntrc || null,
-        uf_envio: form.ufEnv,
-        municipio_envio: form.xMunEnv,
-        uf_inicio: form.ufIni,
-        municipio_inicio: form.xMunIni,
-        uf_fim: form.ufFim,
-        municipio_fim: form.xMunFim,
-        dados_json: JSON.stringify(form),
-        chaves_nfe: chaves,
-      });
+        numero: proximo,
+        serie: "1",
+        valor_servico: parseFloat(form.vPrest) || 0,
+        peso_carga: parseFloat(form.peso) || 0,
+        xml_assinado: JSON.stringify({ form, chavesNFe: chaves }),
+      } as any);
       if (error) throw error;
     },
     onSuccess: () => {
