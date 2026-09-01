@@ -402,166 +402,165 @@ function Veiculos() {
         eyebrow="Frota"
         title="Veículos"
         description="Caminhões e implementos da transportadora."
-        actions={
-          <Dialog
-            open={open}
-            onOpenChange={(v) => {
-              setOpen(v);
-              if (!v) reset();
-            }}
-          >
-            <DialogTrigger asChild>
-              <Button>
-                <Plus className="mr-1 h-4 w-4" />
-                Novo veículo
-              </Button>
-            </DialogTrigger>
-            <DialogContent className="max-w-2xl">
-              <DialogHeader>
-                <DialogTitle>{editing ? `Editar ${editing.placa}` : "Novo veículo"}</DialogTitle>
-              </DialogHeader>
-              <div className="grid gap-3">
-                <div className="flex gap-2">
-                  <label className="flex items-center gap-2 px-3 py-2 border rounded bg-amber-100 dark:bg-amber-900/30 cursor-pointer hover:bg-amber-200 text-xs font-medium">
-                    <FileText className="h-4 w-4" /> Importar CRLV (PDF)
-                    <input type="file" accept=".pdf" className="hidden" onChange={e => { const f = e.target.files?.[0]; if (f) handleCrlvPdf(f); e.currentTarget.value = ""; }} />
-                  </label>
-                  {isParsingPdf && <span className="text-xs text-muted-foreground self-center">Lendo PDF…</span>}
-                  <span className="text-[10px] text-muted-foreground self-center">Preenche placa, RENAVAM, chassi e modelo automaticamente</span>
-                </div>
-                <div className="grid grid-cols-3 gap-3">
-                  <div>
-                    <Label>Placa *</Label>
-                    <Input
-                      className="uppercase"
-                      value={form.placa}
-                      onChange={(e) => set("placa", e.target.value)}
-                    />
-                  </div>
-                  <div>
-                    <Label>Ano</Label>
-                    <Input
-                      type="number"
-                      value={form.ano}
-                      onChange={(e) => set("ano", e.target.value)}
-                    />
-                  </div>
-                  <div>
-                    <Label>Status</Label>
-                    <Select value={form.status} onValueChange={(v) => set("status", v)}>
-                      <SelectTrigger>
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="ativo">Ativo</SelectItem>
-                        <SelectItem value="manutencao">Em manutenção</SelectItem>
-                        <SelectItem value="inativo">Inativo</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                </div>
-                <div className="grid grid-cols-10 gap-3">
-                  <div className="col-span-5">
-                    <Label>Marca / modelo</Label>
-                    <Input
-                      value={form.marca_modelo}
-                      onChange={(e) => set("marca_modelo", e.target.value)}
-                    />
-                  </div>
-                  <div className="col-span-3">
-                    <Label>Tipo</Label>
-                    <Popover open={tipoOpen} onOpenChange={setTipoOpen}>
-                      <PopoverTrigger asChild>
-                        <Button variant="outline" role="combobox" aria-expanded={tipoOpen} className="h-10 w-full justify-between font-normal">
-                          <span className="truncate">{form.tipo || "Selecione"}</span>
-                          <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                        </Button>
-                      </PopoverTrigger>
-                      <PopoverContent className="w-[320px] p-0" align="start">
-                        <Command shouldFilter={false}>
-                          <CommandInput placeholder="Buscar tipo..." value={tipoQuery} onValueChange={setTipoQuery} />
-                          <CommandList>
-                            <CommandEmpty>Nenhum tipo encontrado.</CommandEmpty>
-                            <CommandGroup>
-                              {tipos.filter(t => !tipoQuery || t.toLowerCase().includes(tipoQuery.toLowerCase())).map(t => (
-                                <CommandItem key={t} value={t} onSelect={() => { set("tipo", t); setTipoOpen(false); setTipoQuery(""); }}>
-                                  <Check className={"mr-2 h-4 w-4 " + (form.tipo === t ? "opacity-100" : "opacity-0")} />
-                                  {t}
-                                </CommandItem>
-                              ))}
-                              {tipoQuery && !tipos.some(t => t.toLowerCase() === tipoQuery.toLowerCase()) && (
-                                <CommandItem value={tipoQuery} onSelect={() => { set("tipo", tipoQuery); setTipoOpen(false); setTipoQuery(""); }}>
-                                  Usar &quot;{tipoQuery}&quot;
-                                </CommandItem>
-                              )}
-                            </CommandGroup>
-                          </CommandList>
-                          <div className="border-t p-1">
-                            <Button variant="ghost" size="sm" className="w-full justify-start text-xs" onClick={() => { setTipoOpen(false); setTiposOpen(true); }}>
-                              <Plus className="mr-1 h-3 w-3" /> Gerenciar tipos
-                            </Button>
-                          </div>
-                        </Command>
-                      </PopoverContent>
-                    </Popover>
-                  </div>
-                  <div className="col-span-2">
-                    <Label>Eixos</Label>
-                    <Input type="number" min="2" max="9" value={form.quantidade_eixos} onChange={(e) => set("quantidade_eixos", e.target.value)} placeholder="2" className="w-16" />
-                  </div>
-                </div>
-                <div className="grid grid-cols-3 gap-3">
-                  <div>
-                    <Label>RENAVAM</Label>
-                    <Input value={form.renavam} onChange={(e) => set("renavam", e.target.value)} />
-                  </div>
-                  <div>
-                    <Label>Chassi</Label>
-                    <Input value={form.chassi} onChange={(e) => set("chassi", e.target.value.toUpperCase())} placeholder="17 caracteres" maxLength={17} className="uppercase font-mono text-xs" />
-                  </div>
-                  <div>
-                    <Label>RNTRC</Label>
-                    <Input value={form.rntrc} onChange={(e) => set("rntrc", e.target.value)} />
-                  </div>
-                </div>
-                <div className="grid grid-cols-2 gap-3">
-                  <div>
-                    <Label>Proprietário</Label>
-                    <Input value={form.proprietario} onChange={(e) => set("proprietario", e.target.value)} placeholder="Nome do proprietário" />
-                  </div>
-                  <div>
-                    <Label>Categoria</Label>
-                    <Select value={form.categoria} onValueChange={v => set("categoria", v)}>
-                      <SelectTrigger><SelectValue placeholder="Selecione" /></SelectTrigger>
-                      <SelectContent>
-                        {CATEGORIAS.map(c => (
-                          <SelectItem key={c} value={c.toLowerCase()}>{c}</SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                </div>
-                <div>
-                  <Label>Observações</Label>
-                  <Textarea
-                    rows={2}
-                    value={form.observacoes}
-                    onChange={(e) => set("observacoes", e.target.value)}
-                  />
-                </div>
-              </div>
-              <DialogFooter>
-                <Button variant="outline" onClick={() => setOpen(false)}>
-                  Cancelar
-                </Button>
-                <Button onClick={() => save.mutate()} disabled={save.isPending}>
-                  {save.isPending ? "Salvando…" : "Salvar"}
-                </Button>
-              </DialogFooter>
-            </DialogContent>
-          </Dialog>
-        }
       />
+
+      <Dialog
+        open={open}
+        onOpenChange={(v) => {
+          setOpen(v);
+          if (!v) reset();
+        }}
+      >
+        <DialogTrigger asChild>
+          <Button className="mb-4">
+            <Plus className="mr-1 h-4 w-4" />
+            Novo veículo
+          </Button>
+        </DialogTrigger>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>{editing ? `Editar ${editing.placa}` : "Novo veículo"}</DialogTitle>
+          </DialogHeader>
+          <div className="grid gap-3">
+            <div className="flex gap-2">
+              <label className="flex items-center gap-2 px-3 py-2 border rounded bg-amber-100 dark:bg-amber-900/30 cursor-pointer hover:bg-amber-200 text-xs font-medium">
+                <FileText className="h-4 w-4" /> Importar CRLV (PDF)
+                <input type="file" accept=".pdf" className="hidden" onChange={e => { const f = e.target.files?.[0]; if (f) handleCrlvPdf(f); e.currentTarget.value = ""; }} />
+              </label>
+              {isParsingPdf && <span className="text-xs text-muted-foreground self-center">Lendo PDF…</span>}
+              <span className="text-[10px] text-muted-foreground self-center">Preenche placa, RENAVAM, chassi e modelo automaticamente</span>
+            </div>
+            <div className="grid grid-cols-3 gap-3">
+              <div>
+                <Label>Placa *</Label>
+                <Input
+                  className="uppercase"
+                  value={form.placa}
+                  onChange={(e) => set("placa", e.target.value)}
+                />
+              </div>
+              <div>
+                <Label>Ano</Label>
+                <Input
+                  type="number"
+                  value={form.ano}
+                  onChange={(e) => set("ano", e.target.value)}
+                />
+              </div>
+              <div>
+                <Label>Status</Label>
+                <Select value={form.status} onValueChange={(v) => set("status", v)}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="ativo">Ativo</SelectItem>
+                    <SelectItem value="manutencao">Em manutenção</SelectItem>
+                    <SelectItem value="inativo">Inativo</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+            <div className="grid grid-cols-10 gap-3">
+              <div className="col-span-5">
+                <Label>Marca / modelo</Label>
+                <Input
+                  value={form.marca_modelo}
+                  onChange={(e) => set("marca_modelo", e.target.value)}
+                />
+              </div>
+              <div className="col-span-3">
+                <Label>Tipo</Label>
+                <Popover open={tipoOpen} onOpenChange={setTipoOpen}>
+                  <PopoverTrigger asChild>
+                    <Button variant="outline" role="combobox" aria-expanded={tipoOpen} className="h-10 w-full justify-between font-normal">
+                      <span className="truncate">{form.tipo || "Selecione"}</span>
+                      <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-[320px] p-0" align="start">
+                    <Command shouldFilter={false}>
+                      <CommandInput placeholder="Buscar tipo..." value={tipoQuery} onValueChange={setTipoQuery} />
+                      <CommandList>
+                        <CommandEmpty>Nenhum tipo encontrado.</CommandEmpty>
+                        <CommandGroup>
+                          {tipos.filter(t => !tipoQuery || t.toLowerCase().includes(tipoQuery.toLowerCase())).map(t => (
+                            <CommandItem key={t} value={t} onSelect={() => { set("tipo", t); setTipoOpen(false); setTipoQuery(""); }}>
+                              <Check className={"mr-2 h-4 w-4 " + (form.tipo === t ? "opacity-100" : "opacity-0")} />
+                              {t}
+                            </CommandItem>
+                          ))}
+                          {tipoQuery && !tipos.some(t => t.toLowerCase() === tipoQuery.toLowerCase()) && (
+                            <CommandItem value={tipoQuery} onSelect={() => { set("tipo", tipoQuery); setTipoOpen(false); setTipoQuery(""); }}>
+                              Usar &quot;{tipoQuery}&quot;
+                            </CommandItem>
+                          )}
+                        </CommandGroup>
+                      </CommandList>
+                      <div className="border-t p-1">
+                        <Button variant="ghost" size="sm" className="w-full justify-start text-xs" onClick={() => { setTipoOpen(false); setTiposOpen(true); }}>
+                          <Plus className="mr-1 h-3 w-3" /> Gerenciar tipos
+                        </Button>
+                      </div>
+                    </Command>
+                  </PopoverContent>
+                </Popover>
+              </div>
+              <div className="col-span-2">
+                <Label>Eixos</Label>
+                <Input type="number" min="2" max="9" value={form.quantidade_eixos} onChange={(e) => set("quantidade_eixos", e.target.value)} placeholder="2" className="w-16" />
+              </div>
+            </div>
+            <div className="grid grid-cols-3 gap-3">
+              <div>
+                <Label>RENAVAM</Label>
+                <Input value={form.renavam} onChange={(e) => set("renavam", e.target.value)} />
+              </div>
+              <div>
+                <Label>Chassi</Label>
+                <Input value={form.chassi} onChange={(e) => set("chassi", e.target.value.toUpperCase())} placeholder="17 caracteres" maxLength={17} className="uppercase font-mono text-xs" />
+              </div>
+              <div>
+                <Label>RNTRC</Label>
+                <Input value={form.rntrc} onChange={(e) => set("rntrc", e.target.value)} />
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <Label>Proprietário</Label>
+                <Input value={form.proprietario} onChange={(e) => set("proprietario", e.target.value)} placeholder="Nome do proprietário" />
+              </div>
+              <div>
+                <Label>Categoria</Label>
+                <Select value={form.categoria} onValueChange={v => set("categoria", v)}>
+                  <SelectTrigger><SelectValue placeholder="Selecione" /></SelectTrigger>
+                  <SelectContent>
+                    {CATEGORIAS.map(c => (
+                      <SelectItem key={c} value={c.toLowerCase()}>{c}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+            <div>
+              <Label>Observações</Label>
+              <Textarea
+                rows={2}
+                value={form.observacoes}
+                onChange={(e) => set("observacoes", e.target.value)}
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setOpen(false)}>
+              Cancelar
+            </Button>
+            <Button onClick={() => save.mutate()} disabled={save.isPending}>
+              {save.isPending ? "Salvando…" : "Salvar"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       {/* Dialog gerenciar tipos */}
       <Dialog open={tiposOpen} onOpenChange={setTiposOpen}>
