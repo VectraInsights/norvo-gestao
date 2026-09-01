@@ -635,6 +635,13 @@ certificado tem estrutura PKCS12 não padrão ou se `extractPkcs12Native` precis
     - CT-e: adicionado botão "Salvar Rascunho" ao lado de "Enviar Doc-e"; salva CT-e no Supabase com status `rascunho` sem enviar à SEFAZ (colunas válidas: empresa_id, status, numero, serie, valor_servico, peso_carga, xml_assinado).
     - CT-e: fix salvarRascunho — removido `cfop` e outras colunas inexistentes da tabela `cte_documentos`.
 
+55. **MDF-e Fase 2 — implementação completa** - 01/09/2026 (commit `bce4767`):
+    - `sefaz-mdf.ts` reescrito: XML 3.00 completo (ide/emit/infModal rodoviário/infDoc/infMunCarrega/infPercurso/veicTrac/condutor/lacres), geração de chave com DV mod11, assinatura reutiliza `signXml`, funções `emitirMdf`/`consultarMdf`/`encerrarMdf`/`cancelarMdf` via SOAP 1.2 mTLS.
+    - Endpoints SVRS homologação/produção para todos os serviços (recepção, ret-recepção, consulta, status, evento, distribuição DF-e).
+    - `sefaz-mdf-server.ts`: server functions `emitirMdfFn`/`consultarMdfFn`/`encerrarMdfFn`/`cancelarMdfFn` seguindo padrão de `sefaz-server.ts` (mTLS direto no Vercel ou proxy Cloudflare).
+    - `fiscal.mdf.tsx` reescrito: tabela listagem com status/filtro período, dialog Novo MDF-e com 3 abas (CT-e vinculados, Veículo/Motorista, Rota/UF), botões Encerrar (evento 110112) e Cancelar (evento 110111) com confirmação, badges de status.
+    - Vinculação CT-e → MDF-e: seleção de CT-e autorizados com checkbox, cálculo automático de peso/valor total.
+
 ---
 ## Regras de segurança
 
