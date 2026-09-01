@@ -624,8 +624,8 @@ certificado tem estrutura PKCS12 não padrão ou se `extractPkcs12Native` precis
 54. **RNTRC com Nome, CNPJ e Categoria** - 01/09/2026:
     - Migration aplicada: coluna `descricao` removida, `nome` e `cnpj` (ambos obrigatórios) adicionados a `rntrc_lista`.
     - Campo **Categoria** adicionado com dropdown (ETC / TAC / CTC).
-    - CNPJ com formatação automática (XX.XXX.XXX/XXXX-XX) e ordenado antes do Nome na UI.
-    - UI atualizada: grid 4 colunas (RNTRC, CNPJ, Nome, Categoria) no form e na tabela.
+    - CNPJ com formatação automática (XX.XXX.XXX/XXXX-XX) e busca de nome via BrasilAPI.
+    - Dados editáveis inline na tabela (ícone lápis + confirmar/cancelar).
 
 ---
 ## Regras de segurança
