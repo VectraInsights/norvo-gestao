@@ -120,6 +120,7 @@ function Veiculos() {
   const [tipoQuery, setTipoQuery] = useState("");
   const [isParsingPdf, setIsParsingPdf] = useState(false);
   const [tiposOpen, setTiposOpen] = useState(false);
+  const [rntrcOpen, setRntrcOpen] = useState(false);
   const [novoTipo, setNovoTipo] = useState("");
 
   // Busca tipos do banco (ordem alfabética)
@@ -614,7 +615,7 @@ function Veiculos() {
               </div>
               <div>
                 <Label>RNTRC</Label>
-                <Popover>
+                <Popover open={rntrcOpen} onOpenChange={setRntrcOpen}>
                   <PopoverTrigger asChild>
                     <Button variant="outline" role="combobox" className="h-10 w-full justify-between font-normal">
                       <span className="truncate">
@@ -628,13 +629,13 @@ function Veiculos() {
                       <CommandInput placeholder="Buscar RNTRC ou nome..." value={form.rntrc} onValueChange={(v) => set("rntrc", v.toUpperCase())} />
                       <CommandList>
                         <CommandEmpty>
-                          <Button variant="ghost" size="sm" className="w-full justify-start text-xs" onClick={() => { if (form.rntrc) criarRntrc.mutate(form.rntrc); }}>
+                          <Button variant="ghost" size="sm" className="w-full justify-start text-xs" onClick={() => { if (form.rntrc) { criarRntrc.mutate(form.rntrc); setRntrcOpen(false); } }}>
                             <Plus className="mr-1 h-3 w-3" /> Salvar &quot;{form.rntrc}&quot;
                           </Button>
                         </CommandEmpty>
                         <CommandGroup>
                           {rntrcDisponiveis.map((r) => (
-                            <CommandItem key={r.rntrc} value={`${r.rntrc} ${r.nome}`} onSelect={() => set("rntrc", r.rntrc)}>
+                            <CommandItem key={r.rntrc} value={`${r.rntrc} ${r.nome}`} onSelect={() => { set("rntrc", r.rntrc); setRntrcOpen(false); }}>
                               <Check className={"mr-2 h-4 w-4 " + (form.rntrc === r.rntrc ? "opacity-100" : "opacity-0")} />
                               <span className="font-medium">{r.rntrc}</span>
                               {r.nome && <span className="ml-2 text-muted-foreground">— {r.nome}</span>}
