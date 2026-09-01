@@ -582,7 +582,51 @@ certificado tem estrutura PKCS12 não padrão ou se `extractPkcs12Native` precis
     - `tsc --noEmit` limpo: 20 erros TS pré-existentes do remoto corrigidos (fiscal.*,
       rh.adiantamentos, rh.comissoes, rh.folha).
 ---
+47. **Veiculos - CRLV PDF + campos proprietario/eixos/categoria** - 30/08/2026:
+    - Migration 20260829120000_seguradoras.sql: tabela seguradoras (empresa_id, nome, cnpj/telefone) + eiculos.seguradora_id FK.
+    - Migration 20260829130000_veiculos_extras.sql: colunas proprietario, eixos, categoria (tipo veicular 1-8 conforme CRLV) em eiculos.
+    - Campo km REMOVIDO do formulario e da tabela de veiculos (conforme decisao do dono).
+    - Import PDF CRLV via pdfjs-dist (parser robusto extrai proprietario, eixos, categoria, marca, ano, fabricacao, renavam). Fallback para placa/RENAVAM quando parser primario nao encontra.
+    - Tipo veicular virou dropdown (Caminhao, Carreta, Semi-reboque, Cavalo Mecanico, Utilitario, Van, Caminhonete, Automovel, Motocicleta) - tipo mapeado automaticamente do CRLV.
+    - CT-e: campos motorista, placa e seguradora agora sao dropdowns tipo CFOP (autocomplete).
 
+48. **CT-e: NF-e pendentes persistidas no Supabase** - 30/08/2026:
+    - Tabela cte_nfes_pendentes (empresa_id, chave, nNF, serie, emitente, destinatario, valor, peso, data_emissao, selecionada) com UNIQUE empresa+chave.
+    - handleImportNFeXml agora persiste no banco (upsert por chave) + dedup global - sobrevive F5, troca de tela e atualizacao da pagina.
+    - Botao "Limpar" remove todas as pendentes da empresa.
+
+49. **CT-e: templates de emissao** - 30/08/2026:
+    - Tabela cte_templates (empresa_id, nome, cnpj_tomador, razao_tomador, cfop, mod_frete, respondavel, observacoes) - reuso rapido de dados de remetente/destino/tomador e rota.
+    - UI: botao "Salvar como Template" no dialog de emissao + select para aplicar template existente + excluir template.
+    - Dados persistem entre sessoes.
+
+50. **CT-e: CFOPs e impostos editaveis** - 30/08/2026:
+    - CFOP de saida virou campo editavel com autocomplete (filtra sem ponto: 5352 -> 5.352, salva com ponto na descricao).
+    - Nova aba **Impostos** no dialog CT-e: ICMS (base editavel, aliquota %), PIS, COFINS, IR, INSS, CSLL - todos editaveis com MoneyInput auto-virgula.
+    - Base do ICMS corrigida para Prest (era Carga).
+
+51. **CT-e: correcoes rota e data** - 30/08/2026:
+    - Origem/destino da rota agora puxa do XML (emit -> coleta, dest -> entrega) em vez de campos manuais.
+    - Data de emissao formatada em DD/MM/AAAA pt-BR.
+    - Peso bruto formatado em pt-BR.
+
+52. **CRLV parser robusto** - 30/08/2026 (commits b6f9a8, e8615e3, d9b39a2):
+    - Parser reescrito para isolar bloco de dados (EEY3C60) e extrair proprietario, marca, categoria com regex robusta.
+    - Fallback sequencial quando parser primario falha (placa/RENAVAM de localizacoes alternativas).
+    - Logs de debug para amostras problematicas (LGP TRANSPORTES, RANDON SRFG CG).
+
+53. **Sync geral + limpeza de TypeScript** - 30/08/2026:
+    - Merge de 160+ commits do remoto com conflitos resolvidos (fiscal, frota, rh, financeiro).
+    - 	sc --noEmit zerado: casts  s unknown as/ s any corrigidos em fiscal.cte, fiscal.mdf, fiscal.recebidas, rh.adiantamentos, rh.comissoes, rh.folha.
+    - inary.raw.encode p/ node-forge (fiscal.configuracoes) corrigido.
+    - gerarEmLote em rh.folha corrigido (contador real no toast em vez de  ars.length sempre 0).
+
+54. **RNTRC com Nome, CNPJ e Categoria** - 01/09/2026:
+    - Migration aplicada: coluna `descricao` removida, `nome` (obrigatório) e `cnpj` adicionados a `rntrc_lista`.
+    - Campo **Categoria** adicionado com dropdown (ETC / TAC / CTC).
+    - UI atualizada: grid 4 colunas (RNTRC, Nome, CNPJ, Categoria) no form e na tabela.
+
+---
 ## Regras de segurança
 
 - NUNCA commitar tokens/senhas (GitHub PAT, senhas de banco, service keys).
