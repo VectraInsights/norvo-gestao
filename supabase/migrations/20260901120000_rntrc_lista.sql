@@ -2,7 +2,8 @@ CREATE TABLE IF NOT EXISTS public.rntrc_lista (
   id uuid DEFAULT gen_random_uuid() PRIMARY KEY,
   empresa_id uuid NOT NULL REFERENCES public.empresas(id) ON DELETE CASCADE,
   rntrc text NOT NULL,
-  descricao text,
+  nome text NOT NULL DEFAULT '',
+  cnpj text,
   created_at timestamptz DEFAULT now()
 );
 
