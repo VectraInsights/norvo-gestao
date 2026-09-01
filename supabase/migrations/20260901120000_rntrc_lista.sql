@@ -4,6 +4,7 @@ CREATE TABLE IF NOT EXISTS public.rntrc_lista (
   rntrc text NOT NULL,
   nome text NOT NULL DEFAULT '',
   cnpj text,
+  categoria text,
   created_at timestamptz DEFAULT now()
 );
 
