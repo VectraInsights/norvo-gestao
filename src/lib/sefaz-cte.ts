@@ -87,6 +87,9 @@ export interface CteInputCompleto {
   infCTeNorm?: { proPred?: string; xOutCat?: string };
   modalRod?: { rntrc: string; ciot?: string; veiculos?: Array<{ placa: string; uf: string; rntrc?: string }> };
   chavesNFe?: string[]; // múltiplas NF-e da carga — infDoc com vários infNFe
+  // Impostos editáveis
+  icms?: { CST: string; vBC: number; pICMS: number; vICMS: number };
+  impostos?: { pisAliq?: number; cofinsAliq?: number; irAliq?: number; inssAliq?: number; csllAliq?: number };
 }
 
 export function buildCteXml(input: CteInputCompleto): { xml: string; chave: string } {
@@ -119,7 +122,18 @@ export function buildCteXml(input: CteInputCompleto): { xml: string; chave: stri
     ${input.rem ? `<rem><CNPJ>${(input.rem.cnpj||"").replace(/\D/g,"")}</CNPJ><xNome>${input.rem.xNome}</xNome><enderReme><xLgr>RUA</xLgr><nro>SN</nro><xBairro>CENTRO</xBairro><cMun>${input.rem.cMun}</cMun><xMun>${input.rem.xMun}</xMun><CEP>00000000</CEP><UF>${input.rem.uf}</UF></enderReme></rem>` : ""}
     ${input.dest ? `<dest><CNPJ>${(input.dest.cnpj||"").replace(/\D/g,"")}</CNPJ><xNome>${input.dest.xNome}</xNome><enderDest><xLgr>RUA</xLgr><nro>SN</nro><xBairro>CENTRO</xBairro><cMun>${input.dest.cMun}</cMun><xMun>${input.dest.xMun}</xMun><CEP>00000000</CEP><UF>${input.dest.uf}</UF></enderDest></dest>` : ""}
     <vPrest><vTPrest>${input.vPrest.toFixed(2)}</vTPrest><vRec>${input.vPrest.toFixed(2)}</vRec><Comp><xNome>VALOR DO FRETE</xNome><vComp>${input.vPrest.toFixed(2)}</vComp></Comp></vPrest>
-    <imp><ICMS><ICMS00><CST>00</CST><vBC>${input.vPrest.toFixed(2)}</vBC><pICMS>0.00</pICMS><vICMS>0.00</vICMS></ICMS00></ICMS></imp>
+    ${(() => {
+      const icms = input.icms || { CST: "00", vBC: input.vPrest, pICMS: 0, vICMS: 0 };
+      const cst = (icms.CST || "00").padStart(2,"0");
+      const vBC = Number(icms.vBC ?? input.vPrest).toFixed(2);
+      const pICMS = Number(icms.pICMS ?? 0).toFixed(2);
+      const vICMS = Number(icms.vICMS ?? 0).toFixed(2);
+      if (cst === "00") return `<imp><ICMS><ICMS00><CST>00</CST><vBC>${vBC}</vBC><pICMS>${pICMS}</pICMS><vICMS>${vICMS}</vICMS></ICMS00></ICMS></imp>`;
+      if (cst === "20") return `<imp><ICMS><ICMS20><CST>20</CST><pRedBC>0.00</pRedBC><vBC>${vBC}</vBC><pICMS>${pICMS}</pICMS><vICMS>${vICMS}</vICMS></ICMS20></ICMS></imp>`;
+      if (cst === "45") return `<imp><ICMS><ICMS45><CST>45</CST></ICMS45></ICMS></imp>`;
+      if (cst === "60") return `<imp><ICMS><ICMS60><CST>60</CST><vBCSTRet>0.00</vBCSTRet><vICMSSTRet>0.00</vICMSSTRet><pICMSSTRet>0.00</pICMSSTRet><vCred>0.00</vCred></ICMS60></ICMS></imp>`;
+      return `<imp><ICMS><ICMS90><CST>${cst}</CST><pRedBC>0.00</pRedBC><vBC>${vBC}</vBC><pICMS>${pICMS}</pICMS><vICMS>${vICMS}</vICMS><vCred>0.00</vCred></ICMS90></ICMS></imp>`;
+    })()}
     <infCTeNorm>
       <infCarga><vCarga>${input.vCarga.toFixed(2)}</vCarga><proPred>${input.infCTeNorm?.proPred || "CARGA GERAL"}</proPred><infQ><cUnid>01</cUnid><tpMed>00</tpMed><qCarga>${input.pesoKg.toFixed(3)}</qCarga></infQ></infCarga>
       <infDoc>${(input.chavesNFe && input.chavesNFe.length > 0) ? input.chavesNFe.map(ch => `<infNFe><chave>${ch.replace(/\D/g,"")}</chave></infNFe>`).join("") : `<infNFe><chave>00000000000000000000000000000000000000000000</chave></infNFe>`}</infDoc>
@@ -150,7 +164,7 @@ export async function emitirCte(pfx:Buffer, senha:string, xml:string, ambiente:A
   const ep=getCteEndpoints(ambiente, uf);
   const xmlAss = signXml(xml, pfx, senha);
   // V4 Sinc — SVRS e MG usam CTeRecepcaoSincV4
-  const body=`<CTeRecepcaoSincV4 xmlns="http://www.portalfiscal.inf.br/cte/wsdl/CTeRecepcaoSincV4"><cteDadosMsg xmlns="http://www.portalfiscal.inf.br/cte/wsdl/CTeRecepcaoSincV4">${xmlAss}</cteDadosMsg></CTeRecepcaoSincV4>`;
+  const body=`<cteRecepcaoSinc xmlns="http://www.portalfiscal.inf.br/cte/wsdl/CTeRecepcaoSincV4"><cteDadosMsg xmlns="http://www.portalfiscal.inf.br/cte/wsdl/CTeRecepcaoSincV4">${xmlAss}</cteDadosMsg></cteRecepcaoSinc>`;
   const ret=await soapRequest(ep.recepcao, body, "http://www.portalfiscal.inf.br/cte/wsdl/CTeRecepcaoSincV4/cteRecepcaoSinc", createSefazAgent(pfx,senha));
   const cStat=ret.match(/<cStat>(\d+)<\/cStat>/)?.[1]||""; const xMotivo=ret.match(/<xMotivo>([^<]+)<\/xMotivo>/)?.[1]||""; const ch=ret.match(/<chCTe>(\d{44})<\/chCTe>/)?.[1]||xml.match(/Id="CTe(\d{44})"/)?.[1]; const prot=ret.match(/<nProt>(\d+)<\/nProt>/)?.[1]||ret.match(/<protCTe[^>]*>[\s\S]*?<nProt>(\d+)<\/nProt>/)?.[1];
   // V4 retorna 104 (processado) com prot, ou 100 (autorizado) no sinc
@@ -159,7 +173,7 @@ export async function emitirCte(pfx:Buffer, senha:string, xml:string, ambiente:A
 
 export async function consultarCte(pfx:Buffer, senha:string, chave:string, ambiente:Ambiente, uf?: string): Promise<{ cStat:string; xMotivo:string; xml?:string }>{
   const ep=getCteEndpoints(ambiente, uf);
-  const body=`<CTeConsultaV4 xmlns="http://www.portalfiscal.inf.br/cte/wsdl/CTeConsultaV4"><cteDadosMsg xmlns="http://www.portalfiscal.inf.br/cte/wsdl/CTeConsultaV4"><consSitCTe xmlns="http://www.portalfiscal.inf.br/cte" versao="4.00"><tpAmb>${ambiente==="producao"?"1":"2"}</tpAmb><xServ>CONSULTAR</xServ><chCTe>${chave}</chCTe></consSitCTe></cteDadosMsg></CTeConsultaV4>`;
+  const body=`<cteConsultaCT xmlns="http://www.portalfiscal.inf.br/cte/wsdl/CTeConsultaV4"><cteDadosMsg xmlns="http://www.portalfiscal.inf.br/cte/wsdl/CTeConsultaV4"><consSitCTe xmlns="http://www.portalfiscal.inf.br/cte" versao="4.00"><tpAmb>${ambiente==="producao"?"1":"2"}</tpAmb><xServ>CONSULTAR</xServ><chCTe>${chave}</chCTe></consSitCTe></cteDadosMsg></cteConsultaCT>`;
   const ret=await soapRequest(ep.consulta, body, "http://www.portalfiscal.inf.br/cte/wsdl/CTeConsultaV4/cteConsultaCT", createSefazAgent(pfx,senha));
   const cStat=ret.match(/<cStat>(\d+)<\/cStat>/)?.[1]||""; const xMotivo=ret.match(/<xMotivo>([^<]+)<\/xMotivo>/)?.[1]||"";
   return { cStat, xMotivo, xml: ret };
@@ -173,7 +187,7 @@ export async function cancelarCte(pfx:Buffer, senha:string, chave:string, justif
   const cOrgao = codigoUF(uf || "SP");
   const evento=`<eventoCTe xmlns="http://www.portalfiscal.inf.br/cte" versao="4.00"><infEvento Id="ID${tpEvento}${chave}${nSeq}"><cOrgao>${cOrgao}</cOrgao><tpAmb>${ambiente==="producao"?"1":"2"}</tpAmb><CNPJ>${cnpj.replace(/\D/g,"")}</CNPJ><chCTe>${chave}</chCTe><dhEvento>${dhEvento}</dhEvento><tpEvento>${tpEvento}</tpEvento><nSeqEvento>${nSeq}</nSeqEvento><detEvento versaoEvento="4.00"><evCancCTe><descEvento>Cancelamento</descEvento><nProt>0</nProt><xJust>${justificativa}</xJust></evCancCTe></detEvento></infEvento></eventoCTe>`;
   const ass=signXml(evento, pfx, senha);
-  const body=`<CTeRecepcaoEventoV4 xmlns="http://www.portalfiscal.inf.br/cte/wsdl/CTeRecepcaoEventoV4"><cteDadosMsg xmlns="http://www.portalfiscal.inf.br/cte/wsdl/CTeRecepcaoEventoV4">${ass}</cteDadosMsg></CTeRecepcaoEventoV4>`;
+  const body=`<cteRecepcaoEvento xmlns="http://www.portalfiscal.inf.br/cte/wsdl/CTeRecepcaoEventoV4"><cteDadosMsg xmlns="http://www.portalfiscal.inf.br/cte/wsdl/CTeRecepcaoEventoV4">${ass}</cteDadosMsg></cteRecepcaoEvento>`;
   const ret=await soapRequest(ep.recepcaoEvento, body, "http://www.portalfiscal.inf.br/cte/wsdl/CTeRecepcaoEventoV4/cteRecepcaoEvento", createSefazAgent(pfx,senha));
   const cStat=ret.match(/<cStat>(\d+)<\/cStat>/)?.[1]||""; const xMotivo=ret.match(/<xMotivo>([^<]+)<\/xMotivo>/)?.[1]||"";
   return { sucesso: cStat==="135"||cStat==="155", cStat, xMotivo };

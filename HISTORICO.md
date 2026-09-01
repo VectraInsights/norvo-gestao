@@ -539,8 +539,102 @@ certificado tem estrutura PKCS12 não padrão ou se `extractPkcs12Native` precis
      - **Tomador corrigido para modFrete 0**: `mercadorias` estendida com `tomadorUF/CMun/XMun/modFrete` (`:37`), `handleImportNFeXml` com `tomaByMod {"0":"0","1":"3","2":"4","3":"0","4":"3","9":"4"}` para preencher `toma` correto, `Gerar CT-e` (`:340`) agora usa `tomadorCnpj/tomador/tomadorUF` em vez de `destCnpj/dest` — NF com `FRETE 0-Por conta do Rem` (imagem 3) agora puxa `TECNO2000...` (Remetente) correto, não `INSTITUTO NACIONAL DO SEGURO SOCIAL` (imagem 4 corrigida). Screenshot `INSTITUTO NA...` com frete CIF validado.
      - **Período de Entrada layout**: grid 4→ `border rounded` com `grid lg:grid-cols-3` + linha resumo `Qtde NF-e • Peso Bruto • Valor` com `border-t pt-2 flex-wrap gap-x-3` sem sobreposição com botão **Consulta** (`:209`).
 
----
+43. **Controle de CNH + toxicológico dos motoristas — 28/08/2026** (commit `e3b5574`, merge `197c940`):
+    - Migration `20260828110000_b7c4e9a2-5d8f-4a1b-9e6c-3f2a8d4b7c91.sql` (aplicada): coluna `colaboradores.toxico_exame DATE` (último exame; validade = exame + 2 anos e 6 meses, CTB art. 148-A).
+    - RH → Colaboradores: seção de motorista com **Último exame toxicológico** (obrigatório p/ cargos motorista, junto com nº/categoria da CNH) + campo read-only **Validade do toxicológico** (exame + 30 meses) com aviso quando vencendo/vencido.
+    - Dashboard: alerta "Alertas & estoque baixo" lista separadamente **CNH** e **Toxicológico** por motorista ativo (vencido/vencendo em 30 dias).
+    - Frota → Viagens: select de motorista exibe ⚠ (CNH/toxicológico vencendo em 30 dias) e **bloqueia salvar** quando a documentação está vencida.
+    - Merge com o remoto: unidos 160 commits (CT-e/MDF-e, CFOPs, financeiro, adiantamentos, cargos customizáveis) — conflito resolvido em `rh.colaboradores.tsx` (mantidos `toxico_exame` + `optante_vt`).
+- Limpeza de tipagem: zerado o `tsc --noEmit` dos erros pré-existentes do remoto — casts `as unknown as`/`as any` em fiscal.cte/mdf/recebidas, `binary.raw.encode` p/ node-forge (fiscal.configuracoes), `rpc(... as never)` (rh.adiantamentos) e correção do `gerarEmLote` em rh.folha (contador real no toast em vez de `vars.length` sempre 0).
 
+44. **Git sem login repetido + fim de linha padronizado — 28/08/2026**:
+    - O PAT fine-grained saiu da URL do remote e foi para o **Windows Credential Manager**
+      (`cmdkey /generic:git:https://github.com`) com helper `wincred` só para o GitHub
+      (`credential.https://github.com.helper wincred`) — elimina as janelas do Git Credential
+      Manager e o token não fica mais exposto no `.git/config`.
+    - `.gitattributes` com `* text=auto eol=lf` (+ binários): checkout sempre LF, fim dos
+      avisos "LF will be replaced by CRLF" e das modificações fantasmas (ex.: `routeTree.gen.ts`).
+
+45. **Multas de trânsito na Frota (Base + integração SENATRAN) — 29/08/2026**:
+    - Migration `20260829100000`: `veiculos.renavam` (único por empresa) + tabela `multas`
+      (auto de infração único por empresa, placa/renavam/órgão/valor/vencimento/pontos,
+      status `aberta|paga|contestada`, origem `manual|senatran`) + `multas_config` (acesso só
+      service_role) + RPC `registrar_multas_senatran` (upsert por auto de infração).
+    - Página `/frota/multas`: CRUD manual completo, cards de totais (em aberto, vencidas,
+      pontos ativos), filtros por busca/situação, marcar paga/reabrir, exclusão com confirmação
+      e badge SENATRAN em autos sincronizados. Botão Sincronizar SENATRAN chama
+      `sincronizarMultasSENATRANFn` (connector GET no endpoint com Basic auth, contrato
+      documentado) — sem credencial configurada avisa e segue no cadastro manual.
+    - RENAVAM entrou no cadastro/tabela de veículos; Dashboard passa a alertar multas
+      abertas/contestadas vencidas ou vencendo em 30 dias; menu Frota ganhou Multas.
+    - Pendente para ligar o automático: credencial do provedor SENATRAN (endpoint, usuário e
+      senha em `multas_config` com ativo=true) e, se desejado, pg_cron — hoje a sincronização
+      é manual.
+46. **Configuração SENATRAN na UI + fix git global — 29/08/2026**:
+    - Dialog de configuração SENATRAN na página `/frota/multas`: endpoint, usuário, senha,
+      toggle ativo, exibição da última sincronização. Botão Sincronizar só habilitado quando
+      a integração está ativa.
+    - Fix definitivo do login repetido no git: helper global `manager` (GCM) removido,
+      `credential.https://github.com.helper=wincred` mantido globalmente, `GCM_INTERACTIVE=never`
+      setado na env do usuário. Push/pull silenciosos em qualquer terminal.
+    - `.gitattributes` com `* text=auto eol=lf` (+ binários) — checkout sempre LF, fim dos
+      avisos e modificações fantasmas.
+    - `tsc --noEmit` limpo: 20 erros TS pré-existentes do remoto corrigidos (fiscal.*,
+      rh.adiantamentos, rh.comissoes, rh.folha).
+---
+47. **Veiculos - CRLV PDF + campos proprietario/eixos/categoria** - 30/08/2026:
+    - Migration 20260829120000_seguradoras.sql: tabela seguradoras (empresa_id, nome, cnpj/telefone) + eiculos.seguradora_id FK.
+    - Migration 20260829130000_veiculos_extras.sql: colunas proprietario, eixos, categoria (tipo veicular 1-8 conforme CRLV) em eiculos.
+    - Campo km REMOVIDO do formulario e da tabela de veiculos (conforme decisao do dono).
+    - Import PDF CRLV via pdfjs-dist (parser robusto extrai proprietario, eixos, categoria, marca, ano, fabricacao, renavam). Fallback para placa/RENAVAM quando parser primario nao encontra.
+    - Tipo veicular virou dropdown (Caminhao, Carreta, Semi-reboque, Cavalo Mecanico, Utilitario, Van, Caminhonete, Automovel, Motocicleta) - tipo mapeado automaticamente do CRLV.
+    - CT-e: campos motorista, placa e seguradora agora sao dropdowns tipo CFOP (autocomplete).
+
+48. **CT-e: NF-e pendentes persistidas no Supabase** - 30/08/2026:
+    - Tabela cte_nfes_pendentes (empresa_id, chave, nNF, serie, emitente, destinatario, valor, peso, data_emissao, selecionada) com UNIQUE empresa+chave.
+    - handleImportNFeXml agora persiste no banco (upsert por chave) + dedup global - sobrevive F5, troca de tela e atualizacao da pagina.
+    - Botao "Limpar" remove todas as pendentes da empresa.
+
+49. **CT-e: templates de emissao** - 30/08/2026:
+    - Tabela cte_templates (empresa_id, nome, cnpj_tomador, razao_tomador, cfop, mod_frete, respondavel, observacoes) - reuso rapido de dados de remetente/destino/tomador e rota.
+    - UI: botao "Salvar como Template" no dialog de emissao + select para aplicar template existente + excluir template.
+    - Dados persistem entre sessoes.
+
+50. **CT-e: CFOPs e impostos editaveis** - 30/08/2026:
+    - CFOP de saida virou campo editavel com autocomplete (filtra sem ponto: 5352 -> 5.352, salva com ponto na descricao).
+    - Nova aba **Impostos** no dialog CT-e: ICMS (base editavel, aliquota %), PIS, COFINS, IR, INSS, CSLL - todos editaveis com MoneyInput auto-virgula.
+    - Base do ICMS corrigida para Prest (era Carga).
+
+51. **CT-e: correcoes rota e data** - 30/08/2026:
+    - Origem/destino da rota agora puxa do XML (emit -> coleta, dest -> entrega) em vez de campos manuais.
+    - Data de emissao formatada em DD/MM/AAAA pt-BR.
+    - Peso bruto formatado em pt-BR.
+
+52. **CRLV parser robusto** - 30/08/2026 (commits b6f9a8, e8615e3, d9b39a2):
+    - Parser reescrito para isolar bloco de dados (EEY3C60) e extrair proprietario, marca, categoria com regex robusta.
+    - Fallback sequencial quando parser primario falha (placa/RENAVAM de localizacoes alternativas).
+    - Logs de debug para amostras problematicas (LGP TRANSPORTES, RANDON SRFG CG).
+
+53. **Sync geral + limpeza de TypeScript** - 30/08/2026:
+    - Merge de 160+ commits do remoto com conflitos resolvidos (fiscal, frota, rh, financeiro).
+    - 	sc --noEmit zerado: casts  s unknown as/ s any corrigidos em fiscal.cte, fiscal.mdf, fiscal.recebidas, rh.adiantamentos, rh.comissoes, rh.folha.
+    - inary.raw.encode p/ node-forge (fiscal.configuracoes) corrigido.
+    - gerarEmLote em rh.folha corrigido (contador real no toast em vez de  ars.length sempre 0).
+
+54. **RNTRC com Nome, CNPJ e Categoria** - 01/09/2026:
+    - Migration aplicada: coluna `descricao` removida, `nome` e `cnpj` (ambos obrigatórios) adicionados a `rntrc_lista`.
+    - Campo **Categoria** adicionado com dropdown (ETC / TAC / CTC).
+    - CNPJ com formatação automática (XX.XXX.XXX/XXXX-XX) e busca de nome via BrasilAPI.
+    - Dados editáveis inline na tabela (ícone lápis + confirmar/cancelar).
+    - RNTRC no veículo: combobox único que mostra RNTRC + nome da transportadora, com busca.
+    - Fix: ao clicar "Novo veículo" após editar, formulário é resetado corretamente.
+    - Fix parser CRLV: eixos agora pega dígito antes de 03P/00P sem confundir com CMT; tipo "CARGA CAMINHAO" → Cavalo Mecânico; proprietário aceita EIRELI.
+    - CT-e: dropdowns Placa Reboque/Semi Reboque só mostram veículos tipo Carreta/Bitrem (exclui Cavalo Mecânico).
+    - CT-e: campo "Valor Serviço" agora é editável (era readOnly).
+    - CT-e: fix SOAP body — elemento raiz agora usa nome da operação (`cteRecepcaoSinc`, `cteConsultaCT`, `cteRecepcaoEvento`) em vez do nome do serviço; corrige erro "Cannot find dispatch method".
+    - CT-e: adicionado botão "Salvar Rascunho" ao lado de "Enviar Doc-e"; salva CT-e no Supabase com status `rascunho` sem enviar à SEFAZ.
+
+---
 ## Regras de segurança
 
 - NUNCA commitar tokens/senhas (GitHub PAT, senhas de banco, service keys).
