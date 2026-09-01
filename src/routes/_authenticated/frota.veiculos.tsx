@@ -145,7 +145,81 @@ function Veiculos() {
     return todos.sort((a, b) => a.localeCompare(b, "pt-BR"));
   }, [tiposDb]);
 
-  const criarTipo = useMutation({
+  // Busca RNTRCs pré-cadastrados
+  const { data: rntrcLista } = useQuery({
+    enabled: !!empresa,
+    queryKey: ["rntrc_lista", empresa?.id],
+    queryFn: async ({ signal }) => {
+      const { data, error } = await supabase
+        .from("rntrc_lista" as never)
+        .select("id, rntrc, descricao")
+        .eq("empresa_id", empresa!.id)
+        .order("rntrc")
+        .abortSignal(signal);
+      if (error) throw error;
+      return (data ?? []) as { id: string; rntrc: string; descricao: string | null }[];
+    },
+  });
+
+  // Busca veículos existentes para auto-preencher RNTRC por proprietário
+  const { data: veiculosExistentes } = useQuery({
+    enabled: !!empresa,
+    queryKey: ["veiculos_rntrc_map", empresa?.id],
+    queryFn: async ({ signal }) => {
+      const { data, error } = await supabase
+        .from("veiculos" as never)
+        .select("proprietario, rntrc")
+        .eq("empresa_id", empresa!.id)
+        .not("rntrc", "is", null)
+        .not("proprietario", "is", null)
+        .abortSignal(signal);
+      if (error) throw error;
+      return (data ?? []) as { proprietario: string; rntrc: string }[];
+    },
+  });
+
+  // Mapa proprietário -> RNTRC (último registrado)
+  const proprietarioRntrcMap = useMemo(() => {
+    const map: Record<string, string> = {};
+    for (const v of veiculosExistentes ?? []) {
+      if (v.proprietario && v.rntrc) map[v.proprietario.toUpperCase()] = v.rntrc;
+    }
+    return map;
+  }, [veiculosExistentes]);
+
+  // RNTRCs disponíveis: lista pré-cadastrada + histórico de veículos
+  const rntrcDisponiveis = useMemo(() => {
+    const set = new Set<string>();
+    for (const r of rntrcLista ?? []) set.add(r.rntrc);
+    for (const v of veiculosExistentes ?? []) if (v.rntrc) set.add(v.rntrc);
+    return [...set].sort();
+  }, [rntrcLista, veiculosExistentes]);
+
+  // Auto-preencher RNTRC quando seleciona proprietário
+  const handleProprietarioChange = (value: string) => {
+    set("proprietario", value);
+    const upper = value.toUpperCase();
+    if (proprietarioRntrcMap[upper] && !form.rntrc) {
+      set("rntrc", proprietarioRntrcMap[upper]);
+    }
+  };
+
+  // Criar RNTRC na lista
+  const criarRntrc = useMutation({
+    mutationFn: async (rntrc: string) => {
+      if (!empresa) throw new Error("Selecione uma empresa");
+      const tbl = supabase.from("rntrc_lista" as never) as any;
+      const { error } = await tbl.insert({ empresa_id: empresa.id, rntrc: rntrc.trim() });
+      if (error) {
+        if (String(error.message).toLowerCase().includes("duplicate"))
+          throw new Error("Este RNTRC já está na lista");
+        throw error;
+      }
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["rntrc_lista"] });
+    },
+  });
     mutationFn: async () => {
       if (!empresa) throw new Error("Selecione uma empresa");
       const nome = novoTipo.trim();
@@ -538,13 +612,41 @@ function Veiculos() {
               </div>
               <div>
                 <Label>RNTRC</Label>
-                <Input value={form.rntrc} onChange={(e) => set("rntrc", e.target.value)} />
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button variant="outline" role="combobox" className="h-10 w-full justify-between font-normal">
+                      <span className="truncate">{form.rntrc || "Selecione ou digite"}</span>
+                      <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-[280px] p-0" align="start">
+                    <Command>
+                      <CommandInput placeholder="Buscar RNTRC..." />
+                      <CommandList>
+                        <CommandEmpty>
+                          <Button variant="ghost" size="sm" className="w-full justify-start text-xs" onClick={() => { if (form.rntrc) criarRntrc.mutate(form.rntrc); }}>
+                            <Plus className="mr-1 h-3 w-3" /> Salvar &quot;{form.rntrc}&quot;
+                          </Button>
+                        </CommandEmpty>
+                        <CommandGroup>
+                          {rntrcDisponiveis.map((r) => (
+                            <CommandItem key={r} value={r} onSelect={() => set("rntrc", r)}>
+                              <Check className={"mr-2 h-4 w-4 " + (form.rntrc === r ? "opacity-100" : "opacity-0")} />
+                              {r}
+                            </CommandItem>
+                          ))}
+                        </CommandGroup>
+                      </CommandList>
+                    </Command>
+                  </PopoverContent>
+                </Popover>
+                <Input value={form.rntrc} onChange={(e) => set("rntrc", e.target.value.toUpperCase())} placeholder="Ou digite diretamente" className="mt-1" />
               </div>
             </div>
             <div className="grid grid-cols-2 gap-3">
               <div>
                 <Label>Proprietário *</Label>
-                <Input value={form.proprietario} onChange={(e) => set("proprietario", e.target.value)} placeholder="Nome do proprietário" />
+                <Input value={form.proprietario} onChange={(e) => handleProprietarioChange(e.target.value)} placeholder="Nome do proprietário" />
               </div>
               <div>
                 <Label>Categoria *</Label>
