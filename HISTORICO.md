@@ -628,6 +628,7 @@ certificado tem estrutura PKCS12 não padrão ou se `extractPkcs12Native` precis
     - Dados editáveis inline na tabela (ícone lápis + confirmar/cancelar).
     - RNTRC no veículo: combobox único que mostra RNTRC + nome da transportadora, com busca.
     - Fix: ao clicar "Novo veículo" após editar, formulário é resetado corretamente.
+    - Fix parser CRLV: eixos agora pega dígito antes de 03P/00P sem confundir com CMT; tipo "CARGA CAMINHAO" → Cavalo Mecânico; proprietário aceita EIRELI.
 
 ---
 ## Regras de segurança
