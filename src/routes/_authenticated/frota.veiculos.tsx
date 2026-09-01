@@ -232,13 +232,18 @@ function Veiculos() {
         || dadosBloco.match(/(PARTICULAR)/i);
       console.log("[CRLV] catMatch:", catMatch ? catMatch[1] : "NENHUM", "| dadosBloco snippet:", dadosBloco.slice(0, 300));
       const eixosMatch = dadosBloco.match(/\bEIXOS?\b[^0-9]*([0-9])\b/) || dadosBloco.match(/\*\.\*\s+([0-9])\s+00P/);
-      // Marca: entre código segurança e CARGA SEMI-REBOQUE
+      // Marca: entre código segurança e palavra-chave de espécie (CARGA, SEMI-REBOQUE, TRACAO, CAMINHAO, TRATOR, etc.)
       let marcaVal = "";
-      const marcaSec = dadosBloco.match(/\d{11}\s+\*\*\*\s+([A-Z0-9][A-Z0-9 \/\-]+?)\s+CARGA\s+SEMI-REBOQUE/);
+      const marcaSec = dadosBloco.match(/\d{11}\s+\*\*\*\s+([A-Z0-9][A-Z0-9 \/\-]+?)\s+(?:CARGA|SEMI-REBOQUE|TRACAO|TRAC.AO|CAMINH.AO|TRATOR|PASSEIO|UTILIT.ARIO|MICROONIBUS|ONIBUS|Motocicleta)/i);
       if (marcaSec) marcaVal = clean(marcaSec[1]);
       else {
         const m2 = upper.match(/MARCA\s*\/\s*MODELO\s*\/\s*VERS[ÃA]O\s+([A-Z0-9][A-Z0-9 \/\-]+?)\s+ESP[ÉE]CIE/);
         if (m2) marcaVal = clean(m2[1].split("PLACA ANTERIOR")[0]);
+        else {
+          // Fallback: pega texto entre "***" e primeira palavra-chave conhecida
+          const m3 = dadosBloco.match(/\*\*\*\s+([A-Z0-9][A-Z0-9 \/\-]{5,}?)\s+(?:CARGA|SEMI|TRAC|CAMINH|TRATOR|PASSEIO|UTILIT|MARC|ESP|COR|CHASSI|PLACA|CATEG)/i);
+          if (m3) marcaVal = clean(m3[1]);
+        }
       }
       let propVal = "";
       const propSec = upper.match(/CARROCERIA\s+FECHADA\s+([A-Z][A-Z0-9 \.\-\/&]+?)\s+01\.666/);
