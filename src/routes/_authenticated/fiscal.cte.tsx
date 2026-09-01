@@ -1082,9 +1082,12 @@ function CtePage() {
                             <Command shouldFilter={false}>
                               <CommandInput placeholder="Buscar placa..." value={veiculoQuery} onValueChange={setVeiculoQuery} />
                               <CommandList>
-                                <CommandEmpty>{veiculos?.length ? "Nenhum veículo encontrado." : "Nenhum veículo cadastrado."}</CommandEmpty>
+                                <CommandEmpty>{veiculos?.length ? "Nenhum reboque encontrado." : "Nenhum veículo cadastrado."}</CommandEmpty>
                                 <CommandGroup>
                                   {(veiculos ?? []).filter(v => {
+                                    const tipo = (v.tipo || "").toLowerCase();
+                                    const isReboque = tipo.includes("carreta") || tipo.includes("bitrem") || tipo.includes("semi");
+                                    if (!isReboque) return false;
                                     if (!veiculoQuery) return true;
                                     const q = veiculoQuery.toLowerCase();
                                     return v.placa.toLowerCase().includes(q) || (v.marca_modelo || "").toLowerCase().includes(q);
@@ -1094,7 +1097,10 @@ function CtePage() {
                                       <div className="flex flex-col"><span className="text-xs font-mono">{v.placa}</span><span className="text-[10px] text-muted-foreground">{v.marca_modelo || v.tipo || ""}</span></div>
                                     </CommandItem>
                                   ))}
-                                  {veiculoQuery && !veiculos?.some(v => v.placa.toLowerCase() === veiculoQuery.toLowerCase()) && (
+                                  {veiculoQuery && !(veiculos ?? []).some(v => {
+                                    const tipo = (v.tipo || "").toLowerCase();
+                                    return (tipo.includes("carreta") || tipo.includes("bitrem") || tipo.includes("semi")) && v.placa.toLowerCase() === veiculoQuery.toLowerCase();
+                                  }) && (
                                     <CommandItem value={veiculoQuery} onSelect={() => { setForm(f => ({ ...f, placaReboque: veiculoQuery.toUpperCase() })); setVeiculoOpen(null); setVeiculoQuery(""); }}>
                                       Usar &quot;{veiculoQuery.toUpperCase()}&quot;
                                     </CommandItem>
@@ -1119,9 +1125,12 @@ function CtePage() {
                             <Command shouldFilter={false}>
                               <CommandInput placeholder="Buscar placa..." value={veiculoQuery} onValueChange={setVeiculoQuery} />
                               <CommandList>
-                                <CommandEmpty>{veiculos?.length ? "Nenhum veículo encontrado." : "Nenhum veículo cadastrado."}</CommandEmpty>
+                                <CommandEmpty>{veiculos?.length ? "Nenhum reboque encontrado." : "Nenhum veículo cadastrado."}</CommandEmpty>
                                 <CommandGroup>
                                   {(veiculos ?? []).filter(v => {
+                                    const tipo = (v.tipo || "").toLowerCase();
+                                    const isReboque = tipo.includes("carreta") || tipo.includes("bitrem") || tipo.includes("semi");
+                                    if (!isReboque) return false;
                                     if (!veiculoQuery) return true;
                                     const q = veiculoQuery.toLowerCase();
                                     return v.placa.toLowerCase().includes(q) || (v.marca_modelo || "").toLowerCase().includes(q);
@@ -1131,7 +1140,10 @@ function CtePage() {
                                       <div className="flex flex-col"><span className="text-xs font-mono">{v.placa}</span><span className="text-[10px] text-muted-foreground">{v.marca_modelo || v.tipo || ""}</span></div>
                                     </CommandItem>
                                   ))}
-                                  {veiculoQuery && !veiculos?.some(v => v.placa.toLowerCase() === veiculoQuery.toLowerCase()) && (
+                                  {veiculoQuery && !(veiculos ?? []).some(v => {
+                                    const tipo = (v.tipo || "").toLowerCase();
+                                    return (tipo.includes("carreta") || tipo.includes("bitrem") || tipo.includes("semi")) && v.placa.toLowerCase() === veiculoQuery.toLowerCase();
+                                  }) && (
                                     <CommandItem value={veiculoQuery} onSelect={() => { setForm(f => ({ ...f, semiReboque1: veiculoQuery.toUpperCase() })); setVeiculoOpen(null); setVeiculoQuery(""); }}>
                                       Usar &quot;{veiculoQuery.toUpperCase()}&quot;
                                     </CommandItem>
@@ -1154,13 +1166,35 @@ function CtePage() {
                             <Command shouldFilter={false}>
                               <CommandInput placeholder="Buscar placa..." value={veiculoQuery} onValueChange={setVeiculoQuery} />
                               <CommandList>
-                                <CommandEmpty>{veiculos?.length ? "Nenhum veículo encontrado." : "Nenhum veículo cadastrado."}</CommandEmpty>
+                                <CommandEmpty>{veiculos?.length ? "Nenhum reboque encontrado." : "Nenhum veículo cadastrado."}</CommandEmpty>
                                 <CommandGroup>
                                   {(veiculos ?? []).filter(v => {
+                                    const tipo = (v.tipo || "").toLowerCase();
+                                    const isReboque = tipo.includes("carreta") || tipo.includes("bitrem") || tipo.includes("semi");
+                                    if (!isReboque) return false;
                                     if (!veiculoQuery) return true;
                                     const q = veiculoQuery.toLowerCase();
                                     return v.placa.toLowerCase().includes(q) || (v.marca_modelo || "").toLowerCase().includes(q);
                                   }).map(v => (
+                                    <CommandItem key={v.id} value={v.placa} onSelect={() => { setForm(f => ({ ...f, semiReboque2: v.placa.toUpperCase() })); setVeiculoOpen(null); setVeiculoQuery(""); }}>
+                                      <Check className={"mr-2 h-3 w-3 " + (form.semiReboque2 === v.placa ? "opacity-100" : "opacity-0")} />
+                                      <div className="flex flex-col"><span className="text-xs font-mono">{v.placa}</span><span className="text-[10px] text-muted-foreground">{v.marca_modelo || v.tipo || ""}</span></div>
+                                    </CommandItem>
+                                  ))}
+                                  {veiculoQuery && !(veiculos ?? []).some(v => {
+                                    const tipo = (v.tipo || "").toLowerCase();
+                                    return (tipo.includes("carreta") || tipo.includes("bitrem") || tipo.includes("semi")) && v.placa.toLowerCase() === veiculoQuery.toLowerCase();
+                                  }) && (
+                                    <CommandItem value={veiculoQuery} onSelect={() => { setForm(f => ({ ...f, semiReboque2: veiculoQuery.toUpperCase() })); setVeiculoOpen(null); setVeiculoQuery(""); }}>
+                                      Usar &quot;{veiculoQuery.toUpperCase()}&quot;
+                                    </CommandItem>
+                                  )}
+                                </CommandGroup>
+                              </CommandList>
+                            </Command>
+                          </PopoverContent>
+                        </Popover>
+                      </div>
                                     <CommandItem key={v.id} value={v.placa} onSelect={() => { setForm(f => ({ ...f, semiReboque2: v.placa.toUpperCase() })); setVeiculoOpen(null); setVeiculoQuery(""); }}>
                                       <Check className={"mr-2 h-3 w-3 " + (form.semiReboque2 === v.placa ? "opacity-100" : "opacity-0")} />
                                       <div className="flex flex-col"><span className="text-xs font-mono">{v.placa}</span><span className="text-[10px] text-muted-foreground">{v.marca_modelo || v.tipo || ""}</span></div>
