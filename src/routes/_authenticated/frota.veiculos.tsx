@@ -461,56 +461,56 @@ function Veiculos() {
                 </Select>
               </div>
             </div>
-                <div className="grid grid-cols-10 gap-3">
-                  <div className="col-span-4">
+                <div className="grid grid-cols-3 gap-3">
+                  <div>
                     <Label>Marca / modelo</Label>
                     <Input
                       value={form.marca_modelo}
                       onChange={(e) => set("marca_modelo", e.target.value)}
                     />
                   </div>
-                  <div className="col-span-4">
+                  <div>
                     <Label>Tipo</Label>
-                <Popover open={tipoOpen} onOpenChange={setTipoOpen}>
-                  <PopoverTrigger asChild>
-                    <Button variant="outline" role="combobox" aria-expanded={tipoOpen} className="h-10 w-full justify-between font-normal">
-                      <span className="truncate">{form.tipo || "Selecione"}</span>
-                      <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                    </Button>
-                  </PopoverTrigger>
-                  <PopoverContent className="w-[320px] p-0" align="start">
-                    <Command shouldFilter={false}>
-                      <CommandInput placeholder="Buscar tipo..." value={tipoQuery} onValueChange={setTipoQuery} />
-                      <CommandList>
-                        <CommandEmpty>Nenhum tipo encontrado.</CommandEmpty>
-                        <CommandGroup>
-                          {tipos.filter(t => !tipoQuery || t.toLowerCase().includes(tipoQuery.toLowerCase())).map(t => (
-                            <CommandItem key={t} value={t} onSelect={() => { set("tipo", t); setTipoOpen(false); setTipoQuery(""); }}>
-                              <Check className={"mr-2 h-4 w-4 " + (form.tipo === t ? "opacity-100" : "opacity-0")} />
-                              {t}
-                            </CommandItem>
-                          ))}
-                          {tipoQuery && !tipos.some(t => t.toLowerCase() === tipoQuery.toLowerCase()) && (
-                            <CommandItem value={tipoQuery} onSelect={() => { set("tipo", tipoQuery); setTipoOpen(false); setTipoQuery(""); }}>
-                              Usar &quot;{tipoQuery}&quot;
-                            </CommandItem>
-                          )}
-                        </CommandGroup>
-                      </CommandList>
-                      <div className="border-t p-1">
-                        <Button variant="ghost" size="sm" className="w-full justify-start text-xs" onClick={() => { setTipoOpen(false); setTiposOpen(true); }}>
-                          <Plus className="mr-1 h-3 w-3" /> Gerenciar tipos
+                    <Popover open={tipoOpen} onOpenChange={setTipoOpen}>
+                      <PopoverTrigger asChild>
+                        <Button variant="outline" role="combobox" aria-expanded={tipoOpen} className="h-10 w-full justify-between font-normal">
+                          <span className="truncate">{form.tipo || "Selecione"}</span>
+                          <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                         </Button>
-                      </div>
-                    </Command>
-                  </PopoverContent>
-                </Popover>
-              </div>
-              <div className="col-span-2">
-                <Label>Eixos</Label>
-                <Input type="number" min="2" max="9" value={form.quantidade_eixos} onChange={(e) => set("quantidade_eixos", e.target.value)} placeholder="2" className="w-16" />
-              </div>
-            </div>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-[320px] p-0" align="start">
+                        <Command shouldFilter={false}>
+                          <CommandInput placeholder="Buscar tipo..." value={tipoQuery} onValueChange={setTipoQuery} />
+                          <CommandList>
+                            <CommandEmpty>Nenhum tipo encontrado.</CommandEmpty>
+                            <CommandGroup>
+                              {tipos.filter(t => !tipoQuery || t.toLowerCase().includes(tipoQuery.toLowerCase())).map(t => (
+                                <CommandItem key={t} value={t} onSelect={() => { set("tipo", t); setTipoOpen(false); setTipoQuery(""); }}>
+                                  <Check className={"mr-2 h-4 w-4 " + (form.tipo === t ? "opacity-100" : "opacity-0")} />
+                                  {t}
+                                </CommandItem>
+                              ))}
+                              {tipoQuery && !tipos.some(t => t.toLowerCase() === tipoQuery.toLowerCase()) && (
+                                <CommandItem value={tipoQuery} onSelect={() => { set("tipo", tipoQuery); setTipoOpen(false); setTipoQuery(""); }}>
+                                  Usar &quot;{tipoQuery}&quot;
+                                </CommandItem>
+                              )}
+                            </CommandGroup>
+                          </CommandList>
+                          <div className="border-t p-1">
+                            <Button variant="ghost" size="sm" className="w-full justify-start text-xs" onClick={() => { setTipoOpen(false); setTiposOpen(true); }}>
+                              <Plus className="mr-1 h-3 w-3" /> Gerenciar tipos
+                            </Button>
+                          </div>
+                        </Command>
+                      </PopoverContent>
+                    </Popover>
+                  </div>
+                  <div>
+                    <Label>Eixos</Label>
+                    <Input type="number" min="2" max="9" value={form.quantidade_eixos} onChange={(e) => set("quantidade_eixos", e.target.value)} placeholder="2" className="w-full" />
+                  </div>
+                </div>
             <div className="grid grid-cols-3 gap-3">
               <div>
                 <Label>RENAVAM</Label>
