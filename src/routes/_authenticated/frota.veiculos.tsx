@@ -474,7 +474,7 @@ function Veiculos() {
                     <Popover open={tipoOpen} onOpenChange={setTipoOpen}>
                       <PopoverTrigger asChild>
                         <Button variant="outline" role="combobox" aria-expanded={tipoOpen} className="h-10 w-full justify-between font-normal">
-                          <span className="truncate">{form.tipo || "Selecione"}</span>
+                          <span>{form.tipo || "Selecione"}</span>
                           <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                         </Button>
                       </PopoverTrigger>
