@@ -339,18 +339,27 @@ function Veiculos() {
       if (!empresa) throw new Error("Selecione uma empresa");
       const placa = form.placa.trim().toUpperCase();
       if (!placa) throw new Error("Placa é obrigatória");
+      if (!form.marca_modelo.trim()) throw new Error("Marca/modelo é obrigatório");
+      if (!form.tipo) throw new Error("Tipo é obrigatório");
+      if (!form.ano) throw new Error("Ano é obrigatório");
+      if (!form.renavam.trim()) throw new Error("RENAVAM é obrigatório");
+      if (!form.chassi.trim()) throw new Error("Chassi é obrigatório");
+      if (!form.rntrc.trim()) throw new Error("RNTRC é obrigatório");
+      if (!form.proprietario.trim()) throw new Error("Proprietário é obrigatório");
+      if (!form.categoria) throw new Error("Categoria é obrigatória");
+      if (!form.quantidade_eixos) throw new Error("Quantidade de eixos é obrigatória");
       const payload: any = {
         empresa_id: empresa.id,
         placa,
-        marca_modelo: form.marca_modelo.trim() || null,
-        tipo: form.tipo || null,
-        ano: form.ano ? Number(form.ano) : null,
-        rntrc: form.rntrc.trim() || null,
-        renavam: form.renavam.trim() || null,
-        proprietario: form.proprietario.trim() || null,
-        quantidade_eixos: form.quantidade_eixos ? Number(form.quantidade_eixos) : null,
-        categoria: form.categoria || null,
-        chassi: form.chassi.trim() || null,
+        marca_modelo: form.marca_modelo.trim(),
+        tipo: form.tipo,
+        ano: Number(form.ano),
+        rntrc: form.rntrc.trim(),
+        renavam: form.renavam.trim(),
+        proprietario: form.proprietario.trim(),
+        quantidade_eixos: Number(form.quantidade_eixos),
+        categoria: form.categoria,
+        chassi: form.chassi.trim().toUpperCase(),
         status: form.status,
         observacoes: form.observacoes.trim() || null,
       };
@@ -441,7 +450,7 @@ function Veiculos() {
                 />
               </div>
               <div>
-                <Label>Ano</Label>
+                <Label>Ano *</Label>
                 <Input
                   type="number"
                   value={form.ano}
@@ -449,7 +458,7 @@ function Veiculos() {
                 />
               </div>
               <div>
-                <Label>Status</Label>
+                <Label>Status *</Label>
                 <Select value={form.status} onValueChange={(v) => set("status", v)}>
                   <SelectTrigger>
                     <SelectValue />
@@ -464,14 +473,14 @@ function Veiculos() {
             </div>
                 <div className="grid grid-cols-[1fr_auto_auto] gap-3 items-end">
                   <div>
-                    <Label>Marca / modelo</Label>
+                    <Label>Marca / modelo *</Label>
                     <Input
                       value={form.marca_modelo}
                       onChange={(e) => set("marca_modelo", e.target.value)}
                     />
                   </div>
                   <div className="w-44">
-                    <Label>Tipo</Label>
+                    <Label>Tipo *</Label>
                     <Popover open={tipoOpen} onOpenChange={setTipoOpen}>
                       <PopoverTrigger asChild>
                         <Button variant="outline" role="combobox" aria-expanded={tipoOpen} className="h-10 w-full justify-between font-normal">
@@ -508,31 +517,31 @@ function Veiculos() {
                     </Popover>
                   </div>
                   <div>
-                    <Label>Eixos</Label>
+                    <Label>Eixos *</Label>
                     <Input type="number" min="2" max="9" value={form.quantidade_eixos} onChange={(e) => set("quantidade_eixos", e.target.value)} placeholder="2" className="w-16" />
                   </div>
                 </div>
             <div className="grid grid-cols-3 gap-3">
               <div>
-                <Label>RENAVAM</Label>
+                <Label>RENAVAM *</Label>
                 <Input value={form.renavam} onChange={(e) => set("renavam", e.target.value)} />
               </div>
               <div>
-                <Label>Chassi</Label>
+                <Label>Chassi *</Label>
                 <Input value={form.chassi} onChange={(e) => set("chassi", e.target.value.toUpperCase())} placeholder="17 caracteres" maxLength={17} className="uppercase font-mono text-xs" />
               </div>
               <div>
-                <Label>RNTRC</Label>
+                <Label>RNTRC *</Label>
                 <Input value={form.rntrc} onChange={(e) => set("rntrc", e.target.value)} />
               </div>
             </div>
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <Label>Proprietário</Label>
+                <Label>Proprietário *</Label>
                 <Input value={form.proprietario} onChange={(e) => set("proprietario", e.target.value)} placeholder="Nome do proprietário" />
               </div>
               <div>
-                <Label>Categoria</Label>
+                <Label>Categoria *</Label>
                 <Select value={form.categoria} onValueChange={v => set("categoria", v)}>
                   <SelectTrigger><SelectValue placeholder="Selecione" /></SelectTrigger>
                   <SelectContent>
