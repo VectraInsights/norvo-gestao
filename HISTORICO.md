@@ -626,6 +626,8 @@ certificado tem estrutura PKCS12 não padrão ou se `extractPkcs12Native` precis
     - Campo **Categoria** adicionado com dropdown (ETC / TAC / CTC).
     - CNPJ com formatação automática (XX.XXX.XXX/XXXX-XX) e busca de nome via BrasilAPI.
     - Dados editáveis inline na tabela (ícone lápis + confirmar/cancelar).
+    - RNTRC no veículo: combobox único que mostra RNTRC + nome da transportadora, com busca.
+    - Fix: ao clicar "Novo veículo" após editar, formulário é resetado corretamente.
 
 ---
 ## Regras de segurança
