@@ -248,7 +248,15 @@ function Veiculos() {
         if (p2) propVal = clean(p2[1]);
         else propVal = "LGP TRANSPORTES LTDA";
       }
-      const especieVal = dadosBloco.includes("SEMI-REBOQUE") ? "Carreta" : "";
+      const especieVal = dadosBloco.includes("CAVALO MECÂNICO") ? "Cavalo Mecânico"
+        : dadosBloco.includes("CAVALO MECANICO") ? "Cavalo Mecânico"
+        : dadosBloco.includes("SEMI-REBOQUE") ? "Carreta"
+        : dadosBloco.includes("TRATOR DE RODAS") ? "Trator"
+        : dadosBloco.includes("CAMINHÃO") ? "Caminhão"
+        : dadosBloco.includes("CAMINHAO") ? "Caminhão"
+        : dadosBloco.includes("AUTOMÓVEL") ? "Automóvel"
+        : dadosBloco.includes("AUTOMOVEL") ? "Automóvel"
+        : "";
       const updates: Partial<typeof form> = {};
       if (placaMatch) updates.placa = placaMatch[1].replace(/[^A-Z0-9]/g, "").toUpperCase();
       if (renavamMatch) updates.renavam = renavamMatch[1];
@@ -278,7 +286,6 @@ function Veiculos() {
       if (eixosVal) updates.quantidade_eixos = eixosVal;
       else updates.quantidade_eixos = "3";
       if (especieVal) updates.tipo = especieVal;
-      else updates.tipo = "Carreta";
       updates.observacoes = ""; // chassi agora tem campo proprio
       console.log("[CRLV] updates", updates);
       if (Object.keys(updates).length === 0) {
