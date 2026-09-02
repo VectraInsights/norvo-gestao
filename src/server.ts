@@ -87,6 +87,30 @@ export default {
       }
     }
 
+    // Assistente AI — chat com Workers AI + tools de consulta ao banco
+    if (url.pathname === "/api/ai/chat" && request.method === "POST") {
+      try {
+        const body = await request.json() as { messages: Array<{ role: string; content: string }>; empresaId: string };
+        if (!body.messages || !body.empresaId) {
+          return new Response(JSON.stringify({ error: "messages e empresaId são obrigatórios" }), {
+            status: 400,
+            headers: { "Content-Type": "application/json" },
+          });
+        }
+        const { handleAiChat } = await import("./lib/ai-chat");
+        const result = await handleAiChat(env as Record<string, string>, body.messages, body.empresaId);
+        return new Response(JSON.stringify(result), {
+          headers: { "Content-Type": "application/json" },
+        });
+      } catch (error) {
+        console.error("[ai-chat]", error);
+        return new Response(JSON.stringify({ error: String(error) }), {
+          status: 500,
+          headers: { "Content-Type": "application/json" },
+        });
+      }
+    }
+
     try {
       const handler = await getServerEntry();
       const response = await handler.fetch(request, env, ctx);

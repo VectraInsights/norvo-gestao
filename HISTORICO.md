@@ -660,6 +660,14 @@ certificado tem estrutura PKCS12 não padrão ou se `extractPkcs12Native` precis
     - Pesquisa revelou: MG tem histórico de problemas com CT-e 4.00 (usuários ACBr reportam retorno em branco em homologação/produção; alguns só conseguem via SVC-SP contingency).
     - SOAP Header (`cteCabecMsg`) removido do CT-e 4.00 síncrono conforme MOC atualizado.
 
+58. **Assistente AI Norvo — chat flutuante** - 02/09/2026:
+    - Widget flutuante (canto inferior direito) com chat de IA para auxiliar usuários no ERP.
+    - Cloudflare Workers AI (`@cf/meta/llama-3.1-8b-instruct-fp8-fast`) — plano free com 10k neurons/dia.
+    - 11 tools de consulta somente leitura: clientes, produtos, fornecedores, financeiro, veículos, motoristas, NF-e, CT-e, empresa.
+    - Rota `/api/ai/chat` no Cloudflare Worker com tool calling (máx 3 rodadas).
+    - System prompt em pt-BR com contexto dos módulos do sistema.
+    - Sugestões de perguntas na primeira abertura do chat.
+
 ---
 ## Regras de segurança
 

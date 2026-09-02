@@ -28,6 +28,7 @@ import { ShortcutsDialog } from "@/components/erp/shortcuts-dialog";
 import { CommandPalette } from "@/components/erp/command-palette";
 import { NotificationsBell } from "@/components/erp/notifications-bell";
 import { Breadcrumbs } from "@/components/erp/breadcrumbs";
+import { AIChat } from "@/components/erp/ai-chat";
 import { MenuSettingsDialog } from "@/components/erp/menu-settings-dialog";
 import { useMenuPrefs } from "@/hooks/use-menu-prefs";
 import { useFavorites } from "@/hooks/use-favorites";
@@ -580,6 +581,7 @@ export function AppShell({ children }: { children: ReactNode }) {
           </main>
         </div>
         <AlterarSenhaDialog open={senhaOpen} onOpenChange={setSenhaOpen} />
+        <AIChat />
       </div>
     </TooltipProvider>
   );
