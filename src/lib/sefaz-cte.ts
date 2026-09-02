@@ -19,11 +19,11 @@ export const CTE_ENDPOINTS = {
     consulta: "https://cte-homologacao.svrs.rs.gov.br/ws/CTeConsultaV4/CTeConsultaV4.asmx",
     statusServico: "https://cte-homologacao.svrs.rs.gov.br/ws/CTeStatusServicoV4/CTeStatusServicoV4.asmx",
     recepcaoEvento: "https://cte-homologacao.svrs.rs.gov.br/ws/CTeRecepcaoEventoV4/CTeRecepcaoEventoV4.asmx",
-    // MG usa SVRS para CT-e 4.00 (CTeRecepcaoSincronizacao)
-    mg_recepcao: "https://cte-homologacao.svrs.rs.gov.br/ws/CTeRecepcaoSincronizacao/CTeRecepcaoSincronizacao.asmx",
-    mg_consulta: "https://cte-homologacao.svrs.rs.gov.br/ws/CTeConsultaV4/CTeConsultaV4.asmx",
-    mg_status: "https://cte-homologacao.svrs.rs.gov.br/ws/CTeStatusServicoV4/CTeStatusServicoV4.asmx",
-    mg_evento: "https://cte-homologacao.svrs.rs.gov.br/ws/CTeRecepcaoEventoV4/CTeRecepcaoEventoV4.asmx",
+    // MG tem autorizador próprio
+    mg_recepcao: "https://hcte.fazenda.mg.gov.br/cte/services/CTeRecepcaoSincV4",
+    mg_consulta: "https://hcte.fazenda.mg.gov.br/cte/services/CTeConsultaV4",
+    mg_status: "https://hcte.fazenda.mg.gov.br/cte/services/CTeStatusServicoV4",
+    mg_evento: "https://hcte.fazenda.mg.gov.br/cte/services/CTeRecepcaoEventoV4",
   },
   producao: {
     recepcao: "https://cte.svrs.rs.gov.br/ws/CTeRecepcaoSincV4/CTeRecepcaoSincV4.asmx",
@@ -31,10 +31,10 @@ export const CTE_ENDPOINTS = {
     consulta: "https://cte.svrs.rs.gov.br/ws/CTeConsultaV4/CTeConsultaV4.asmx",
     statusServico: "https://cte.svrs.rs.gov.br/ws/CTeStatusServicoV4/CTeStatusServicoV4.asmx",
     recepcaoEvento: "https://cte.svrs.rs.gov.br/ws/CTeRecepcaoEventoV4/CTeRecepcaoEventoV4.asmx",
-    mg_recepcao: "https://cte.svrs.rs.gov.br/ws/CTeRecepcaoSincronizacao/CTeRecepcaoSincronizacao.asmx",
-    mg_consulta: "https://cte.svrs.rs.gov.br/ws/CTeConsultaV4/CTeConsultaV4.asmx",
-    mg_status: "https://cte.svrs.rs.gov.br/ws/CTeStatusServicoV4/CTeStatusServicoV4.asmx",
-    mg_evento: "https://cte.svrs.rs.gov.br/ws/CTeRecepcaoEventoV4/CTeRecepcaoEventoV4.asmx",
+    mg_recepcao: "https://cte.fazenda.mg.gov.br/cte/services/CTeRecepcaoSincV4",
+    mg_consulta: "https://cte.fazenda.mg.gov.br/cte/services/CTeConsultaV4",
+    mg_status: "https://cte.fazenda.mg.gov.br/cte/services/CTeStatusServicoV4",
+    mg_evento: "https://cte.fazenda.mg.gov.br/cte/services/CTeRecepcaoEventoV4",
   },
 } as const;
 
@@ -169,10 +169,20 @@ export async function emitirCte(pfx:Buffer, senha:string, xml:string, ambiente:A
   const dadosBase64 = compressed.toString("base64");
   const isMG = uf?.toUpperCase() === "MG";
   if (isMG) {
-    // MG usa SVRS com CTeRecepcaoSincronizacao
-    const ns = "http://www.portalfiscal.inf.br/cte/wsdl/CTeRecepcaoSincronizacao";
+    // MG: tenta SOAP 1.1 (text/xml) com SOAPAction header separado
+    const ns = "http://www.portalfiscal.inf.br/cte/wsdl/CTeRecepcaoSincV4";
     const body=`<cteDadosMsg xmlns="${ns}">${dadosBase64}</cteDadosMsg>`;
-    const ret=await soapRequest(ep.recepcao, body, `${ns}/cteRecepcaoSincronizacao`, createSefazAgent(pfx,senha));
+    const envelope = `<?xml version="1.0" encoding="utf-8"?><soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/"><soap:Body>${body}</soap:Body></soap:Envelope>`;
+    const u=new URL(ep.recepcao);
+    const agent = createSefazAgent(pfx,senha);
+    const ret = await new Promise<string>((resolve,reject)=>{
+      const req=https.request({hostname:u.hostname, port:443, path:u.pathname, method:"POST", agent, headers:{
+        "Content-Type": "text/xml; charset=utf-8",
+        "SOAPAction": `${ns}/cteRecepcao`,
+        "Content-Length": Buffer.byteLength(envelope)
+      }},res=>{let d="";res.on("data",c=>d+=c);res.on("end",()=>res.statusCode&&res.statusCode>=400?reject(new Error(`CTe HTTP ${res.statusCode}: ${d.slice(0,500)}`)):resolve(d));});
+      req.on("error",reject); req.write(envelope); req.end();
+    });
     const cStat=ret.match(/<cStat>(\d+)<\/cStat>/)?.[1]||""; const xMotivo=ret.match(/<xMotivo>([^<]+)<\/xMotivo>/)?.[1]||""; const ch=ret.match(/<chCTe>(\d{44})<\/chCTe>/)?.[1]||xml.match(/Id="CTe(\d{44})"/)?.[1]; const prot=ret.match(/<nProt>(\d+)<\/nProt>/)?.[1]||ret.match(/<protCTe[^>]*>[\s\S]*?<nProt>(\d+)<\/nProt>/)?.[1];
     return { sucesso: cStat==="100"||cStat==="104"||cStat==="103", cStat, xMotivo, chave: ch, protocolo: prot, xmlRet: ret };
   }
