@@ -1013,7 +1013,6 @@ function CtePage() {
                 <div className="flex items-center gap-2 mb-1">
                   <div className="h-5 w-5 rounded bg-amber-500/10 grid place-items-center"><Building2 className="h-3 w-3 text-amber-600" /></div>
                   <h5 className="text-xs font-semibold">Consignatário</h5>
-                  <span className="text-[10px] text-muted-foreground">(opcional)</span>
                 </div>
                 <div className="grid grid-cols-6 gap-1">
                   <Input className="h-6 text-[10px] col-span-2" placeholder="CNPJ" value={form.cnpjConsignatario || ""} onChange={e=>setForm({...form,cnpjConsignatario:e.target.value})} />
@@ -1033,7 +1032,6 @@ function CtePage() {
                 <div className="flex items-center gap-2 mb-1">
                   <div className="h-5 w-5 rounded bg-violet-500/10 grid place-items-center"><Truck className="h-3 w-3 text-violet-600" /></div>
                   <h5 className="text-xs font-semibold">Redespacho</h5>
-                  <span className="text-[10px] text-muted-foreground">(opcional)</span>
                 </div>
                 <div className="grid grid-cols-6 gap-1">
                   <Input className="h-6 text-[10px] col-span-2" placeholder="CNPJ" value={form.cnpjRedespacho || ""} onChange={e=>setForm({...form,cnpjRedespacho:e.target.value})} />
