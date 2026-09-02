@@ -12,7 +12,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
-import { Truck, Plus, FileText, Search, Ban, UploadCloud, FileCode, UsersRound, MapPin, Package, DollarSign, Building2, Route as RouteIcon, Trash2, Filter, Calendar, CheckCircle2, ChevronsUpDown, Check, ReceiptText } from "lucide-react";
+import { Truck, Plus, FileText, Search, Ban, UploadCloud, FileCode, UsersRound, MapPin, Package, DollarSign, Building2, Route as RouteIcon, Trash2, Filter, Calendar, CheckCircle2, ChevronsUpDown, Check, ReceiptText, Pencil } from "lucide-react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useEmpresaAtual } from "@/hooks/use-empresa";
@@ -31,7 +31,7 @@ export const Route = createFileRoute("/_authenticated/fiscal/cte")({
   validateSearch: (search: Record<string, unknown>) => ({ fromNFe: (search.fromNFe as string) || undefined }),
 });
 
-type CteDoc = { id: string; numero: string | null; serie: string | null; status: string; valor_servico: number | null; chave_acesso: string | null; created_at: string; motivo_rejeicao: string | null; protocolo_sefaz: string | null };
+type CteDoc = { id: string; numero: string | null; serie: string | null; status: string; valor_servico: number | null; chave_acesso: string | null; created_at: string; motivo_rejeicao: string | null; protocolo_sefaz: string | null; xml_assinado: string | null };
 
 function CtePage() {
   const { data: empresa } = useEmpresaAtual();
@@ -50,7 +50,7 @@ function CtePage() {
     enabled: !!empresa,
     queryKey: ["cte-documentos", empresa?.id],
     queryFn: async (): Promise<CteDoc[]> => {
-      const { data, error } = await supabase.from("cte_documentos" as any).select("id,numero,serie,status,valor_servico,chave_acesso,created_at,motivo_rejeicao,protocolo_sefaz").eq("empresa_id", empresa!.id).order("created_at", { ascending: false }).limit(100);
+      const { data, error } = await supabase.from("cte_documentos" as any).select("id,numero,serie,status,valor_servico,chave_acesso,created_at,motivo_rejeicao,protocolo_sefaz,xml_assinado").eq("empresa_id", empresa!.id).order("created_at", { ascending: false }).limit(100);
       if (error) throw error;
       return (data ?? []) as unknown as CteDoc[];
     },
@@ -449,10 +449,39 @@ function CtePage() {
     }
   }, [search.fromNFe]);
 
+  const editarRascunho = async (doc: CteDoc) => {
+    if (!empresa) return;
+    try {
+      const parsed = JSON.parse(doc.xml_assinado || "{}");
+      if (parsed.form) setForm(parsed.form);
+      if (parsed.chavesNFe && parsed.chavesNFe.length > 0) {
+        const { data: nfs } = await supabase.from("cte_nfes_pendentes" as any).select("*").eq("empresa_id", empresa.id).in("chave", parsed.chavesNFe);
+        if (nfs && nfs.length > 0) {
+          const mapped = nfs.map((r: any) => ({
+            chave: r.chave, nNF: r.n_nf || "", serie: r.serie || "1",
+            emit: r.emit_nome || "", emitCnpj: r.emit_cnpj || "", emitUF: r.emit_uf || "", emitCMun: r.emit_cmun || "", emitXMun: r.emit_xmun || "",
+            dest: r.dest_nome || "", destCnpj: r.dest_cnpj || "", destUF: r.dest_uf || "", destCMun: r.dest_cmun || "", destXMun: r.dest_xmun || "",
+            valor: Number(r.valor ?? 0), peso: Number(r.peso ?? 0), data: r.data_emissao ? String(r.data_emissao).slice(0, 10) : "",
+            tomador: r.tomador_nome || "", tomadorCnpj: r.tomador_cnpj || "", tomadorUF: r.tomador_uf || "", tomadorCMun: r.tomador_cmun || "", tomadorXMun: r.tomador_xmun || "",
+            modFrete: r.mod_frete || "",
+          }));
+          setMercadorias(mapped);
+          setSelecionadas(new Set(parsed.chavesNFe));
+        }
+      }
+      await supabase.from("cte_documentos" as any).delete().eq("id", doc.id);
+      setOpen(true);
+      qc.invalidateQueries({ queryKey: ["cte-documentos"] });
+    } catch (e: any) {
+      toast.error("Erro ao carregar rascunho", { description: e.message });
+    }
+  };
+
   const salvarRascunho = useMutation({
     mutationFn: async () => {
       if (!empresa) throw new Error("Empresa não selecionada");
       const chaves = selecionadas.size > 0 ? Array.from(selecionadas) : mercadorias.map(m => m.chave);
+      const nNFs = mercadorias.filter(m => chaves.includes(m.chave)).map(m => m.nNF).filter(Boolean);
       const proximo = 1;
       const { error } = await supabase.from("cte_documentos" as any).insert({
         empresa_id: empresa.id,
@@ -464,10 +493,17 @@ function CtePage() {
         xml_assinado: JSON.stringify({ form, chavesNFe: chaves }),
       } as any);
       if (error) throw error;
+      if (empresa && chaves.length > 0) {
+        await supabase.from("cte_nfes_pendentes" as any).update({ status: "rascunho" }).in("chave", chaves).eq("empresa_id", empresa.id);
+      }
     },
     onSuccess: () => {
       toast.success("Rascunho salvo");
+      setMercadorias([]);
+      setSelecionadas(new Set());
       qc.invalidateQueries({ queryKey: ["cte-documentos"] });
+      qc.invalidateQueries({ queryKey: ["cte-nfes-pendentes", empresa!.id] });
+      setOpen(false);
     },
     onError: (e: Error) => toast.error(e.message),
   });
@@ -726,13 +762,21 @@ function CtePage() {
       ) : (
         <Card className="overflow-hidden">
           <Table>
-            <TableHeader><TableRow><TableHead>Número</TableHead><TableHead>Série</TableHead><TableHead>Status</TableHead><TableHead className="text-right">Valor</TableHead><TableHead>Chave</TableHead><TableHead>Ações</TableHead></TableRow></TableHeader>
-            <TableBody>{docs.map(d => (
-              <TableRow key={d.id}><TableCell className="font-mono">{d.numero ?? "—"}</TableCell><TableCell>{d.serie ?? "—"}</TableCell><TableCell><Badge variant="secondary" className={d.status==="autorizado"?"bg-emerald-500/15 text-emerald-600":d.status==="rejeitado"?"bg-destructive/15 text-destructive":""}>{d.status}</Badge></TableCell><TableCell className="text-right">{brl(Number(d.valor_servico ?? 0))}</TableCell><TableCell className="font-mono text-xs truncate max-w-[220px]" title={d.chave_acesso||""}>{d.chave_acesso ?? "—"}</TableCell><TableCell className="flex gap-1">
-                <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => d.chave_acesso && consultar.mutate(d.chave_acesso)} title="Consultar SEFAZ"><Search className="h-3.5 w-3.5" /></Button>
+            <TableHeader><TableRow><TableHead>Número</TableHead><TableHead>Série</TableHead><TableHead>Status</TableHead><TableHead>Notas Fiscais</TableHead><TableHead className="text-right">Valor</TableHead><TableHead>Chave</TableHead><TableHead>Ações</TableHead></TableRow></TableHeader>
+            <TableBody>{docs.map(d => {
+              const nNFs = (() => { try { const j = JSON.parse(d.xml_assinado || "{}"); return (j.chavesNFe || []).length; } catch { return 0; } })();
+              const isRascunho = d.status === "rascunho";
+              return (
+              <TableRow key={d.id} className={isRascunho ? "bg-muted/30" : ""}><TableCell className="font-mono">{d.numero ?? "—"}</TableCell><TableCell>{d.serie ?? "—"}</TableCell><TableCell><Badge variant="secondary" className={d.status==="autorizado"?"bg-emerald-500/15 text-emerald-600":d.status==="rejeitado"?"bg-destructive/15 text-destructive":isRascunho?"bg-amber-500/15 text-amber-600":""}>{d.status}</Badge></TableCell><TableCell className="text-xs">{isRascunho && nNFs > 0 ? `${nNFs} NF-e(s)` : d.chave_acesso ? "1" : "—"}</TableCell><TableCell className="text-right">{brl(Number(d.valor_servico ?? 0))}</TableCell><TableCell className="font-mono text-xs truncate max-w-[220px]" title={d.chave_acesso||""}>{d.chave_acesso ?? "—"}</TableCell><TableCell className="flex gap-1">
+                {isRascunho ? (
+                  <Button size="icon" variant="ghost" className="h-7 w-7 text-primary" onClick={() => editarRascunho(d)} title="Editar rascunho"><Pencil className="h-3.5 w-3.5" /></Button>
+                ) : (
+                  <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => d.chave_acesso && consultar.mutate(d.chave_acesso)} title="Consultar SEFAZ"><Search className="h-3.5 w-3.5" /></Button>
+                )}
                 <Button size="icon" variant="ghost" className="h-7 w-7 text-destructive" disabled={d.status!=="autorizado"} onClick={() => d.chave_acesso && cancelar.mutate(d.chave_acesso)} title="Cancelar"><Ban className="h-3.5 w-3.5" /></Button>
               </TableCell></TableRow>
-            ))}</TableBody>
+              );
+            })}</TableBody>
           </Table>
         </Card>
       )}
