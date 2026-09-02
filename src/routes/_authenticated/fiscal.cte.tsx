@@ -449,6 +449,32 @@ function CtePage() {
     }
   }, [search.fromNFe]);
 
+  const excluirRascunho = async (doc: CteDoc) => {
+    if (!empresa) return;
+    if (!confirm("Excluir este rascunho? As NF-e voltam para pendentes.")) return;
+    try {
+      const parsed = JSON.parse(doc.xml_assinado || "{}");
+      await supabase.from("cte_documentos" as any).delete().eq("id", doc.id);
+      if (parsed.nfs && parsed.nfs.length > 0) {
+        for (const nf of parsed.nfs) {
+          await supabase.from("cte_nfes_pendentes" as any).upsert({
+            empresa_id: empresa.id, chave: nf.chave, n_nf: nf.nNF, serie: nf.serie,
+            emit_nome: nf.emit, emit_cnpj: nf.emitCnpj, emit_uf: nf.emitUF, emit_cmun: nf.emitCMun, emit_xmun: nf.emitXMun,
+            dest_nome: nf.dest, dest_cnpj: nf.destCnpj, dest_uf: nf.destUF, dest_cmun: nf.destCMun, dest_xmun: nf.destXMun,
+            valor: nf.valor, peso: nf.peso, data_emissao: nf.data || null,
+            tomador_nome: nf.tomador, tomador_cnpj: nf.tomadorCnpj, tomador_uf: nf.tomadorUF, tomador_cmun: nf.tomadorCMun, tomador_xmun: nf.tomadorXMun,
+            mod_frete: nf.modFrete, status: "pendente",
+          }, { onConflict: "empresa_id,chave" });
+        }
+      }
+      toast.success("Rascunho excluído — NF-e voltaram para pendentes");
+      qc.invalidateQueries({ queryKey: ["cte-documentos"] });
+      qc.invalidateQueries({ queryKey: ["cte-nfes-pendentes", empresa.id] });
+    } catch (e: any) {
+      toast.error("Erro ao excluir rascunho", { description: e.message });
+    }
+  };
+
   const editarRascunho = async (doc: CteDoc) => {
     if (!empresa) return;
     try {
@@ -784,7 +810,10 @@ function CtePage() {
               return (
               <TableRow key={d.id} className={isRascunho ? "bg-muted/30" : ""}><TableCell className="font-mono">{d.numero ?? "—"}</TableCell><TableCell>{d.serie ?? "—"}</TableCell><TableCell><Badge variant="secondary" className={d.status==="autorizado"?"bg-emerald-500/15 text-emerald-600":d.status==="rejeitado"?"bg-destructive/15 text-destructive":isRascunho?"bg-amber-500/15 text-amber-600":""}>{d.status}</Badge></TableCell><TableCell className="text-xs">{isRascunho && nNFs.length > 0 ? `NF-e ${nNFs.join(", ")}` : d.chave_acesso ? "1" : "—"}</TableCell><TableCell className="text-right">{brl(Number(d.valor_servico ?? 0))}</TableCell><TableCell className="font-mono text-xs truncate max-w-[220px]" title={d.chave_acesso||""}>{d.chave_acesso ?? "—"}</TableCell><TableCell className="flex gap-1">
                 {isRascunho ? (
-                  <Button size="icon" variant="ghost" className="h-7 w-7 text-primary" onClick={() => editarRascunho(d)} title="Editar rascunho"><Pencil className="h-3.5 w-3.5" /></Button>
+                  <>
+                    <Button size="icon" variant="ghost" className="h-7 w-7 text-primary" onClick={() => editarRascunho(d)} title="Editar rascunho"><Pencil className="h-3.5 w-3.5" /></Button>
+                    <Button size="icon" variant="ghost" className="h-7 w-7 text-destructive" onClick={() => excluirRascunho(d)} title="Excluir rascunho"><Trash2 className="h-3.5 w-3.5" /></Button>
+                  </>
                 ) : (
                   <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => d.chave_acesso && consultar.mutate(d.chave_acesso)} title="Consultar SEFAZ"><Search className="h-3.5 w-3.5" /></Button>
                 )}
