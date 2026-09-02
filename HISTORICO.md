@@ -634,6 +634,10 @@ certificado tem estrutura PKCS12 não padrão ou se `extractPkcs12Native` precis
     - CT-e: fix SOAP body e SOAPAction — usava `<cteRecepcaoSinc>` (lowercase) mas o WSDL SVRS espera `<CTeRecepcaoSincV4>` com action `.../CTeRecepcaoSincV4/CTeRecepcaoSincV4`; mesma correção para Consulta e Evento.
     - CT-e: adicionado botão "Salvar Rascunho" ao lado de "Enviar Doc-e"; salva CT-e no Supabase com status `rascunho` sem enviar à SEFAZ (colunas válidas: empresa_id, status, numero, serie, valor_servico, peso_carga, xml_assinado).
     - CT-e: fix salvarRascunho — removido `cfop` e outras colunas inexistentes da tabela `cte_documentos`.
+    - CT-e: fix SOAP operation names — corpo e SOAPAction agora usam `cteRecepcao`/`cteConsultaCT`/`cteRecepcaoEvento` (lowercase, conforme WSDL SVRS via ACBr).
+    - CT-e rascunho: listagem mostra Nº de NF-e vinculadas, badge âmbar para rascunho, botão Editar (lápis) que carrega form + NF-e e exclui o rascunho antigo para reenvio.
+    - CT-e rascunho: NF-e marcadas como `status = "rascunho"` no `cte_nfes_pendentes` ao salvar; somem da listagem de pendentes. Ao editar, voltam para `pendente`.
+    - CT-e rascunho: ao salvar fecha dialog e limpa estado.
 
 55. **MDF-e Fase 2 — implementação completa** - 01/09/2026 (commit `bce4767`):
     - `sefaz-mdf.ts` reescrito: XML 3.00 completo (ide/emit/infModal rodoviário/infDoc/infMunCarrega/infPercurso/veicTrac/condutor/lacres), geração de chave com DV mod11, assinatura reutiliza `signXml`, funções `emitirMdf`/`consultarMdf`/`encerrarMdf`/`cancelarMdf` via SOAP 1.2 mTLS.
