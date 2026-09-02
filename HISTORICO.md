@@ -668,6 +668,11 @@ certificado tem estrutura PKCS12 não padrão ou se `extractPkcs12Native` precis
     - System prompt em pt-BR com contexto dos módulos do sistema.
     - Sugestões de perguntas na primeira abertura do chat.
 
+59. **CT-e: listagem NF-e ordenável** - 02/09/2026:
+    - NF-e listadas em ordem crescente por número (Nº NF-e).
+    - Cabeçalho da tabela clicável para ordenar por qualquer coluna (asc/desc).
+    - Coluna "Código" hardcoded removida; coluna "Chave" removida da visualização.
+
 ---
 ## Regras de segurança
 

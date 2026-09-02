@@ -17,7 +17,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useEmpresaAtual } from "@/hooks/use-empresa";
 import { brl, dateBR, num } from "@/lib/format";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { toast } from "sonner";
 import { emitirCteFn, consultarCteFn, cancelarCteFn, previewCteXmlFn } from "@/lib/sefaz-cte-server";
 import { CFOPS_CTE, MOD_FRETE_OPTIONS, RESPONSAVEL_CTE_OPTIONS } from "@/lib/cfops-transporte";
@@ -58,6 +58,22 @@ function CtePage() {
   const [filtroDestinatario, setFiltroDestinatario] = useState("TODOS OS DESTINATÁRIOS");
   const [periodoIni, setPeriodoIni] = useState("2026-08-21");
   const [periodoFim, setPeriodoFim] = useState("2026-08-28");
+  const [sortConfig, setSortConfig] = useState<{ key: string; dir: "asc" | "desc" }>({ key: "nNF", dir: "asc" });
+
+  const mercadoriasSorted = useMemo(() => {
+    const arr = [...mercadorias];
+    arr.sort((a, b) => {
+      const va = (a as any)[sortConfig.key] ?? "";
+      const vb = (b as any)[sortConfig.key] ?? "";
+      if (typeof va === "number" && typeof vb === "number") return sortConfig.dir === "asc" ? va - vb : vb - va;
+      const sa = String(va).toLowerCase();
+      const sb = String(vb).toLowerCase();
+      if (sa < sb) return sortConfig.dir === "asc" ? -1 : 1;
+      if (sa > sb) return sortConfig.dir === "asc" ? 1 : -1;
+      return 0;
+    });
+    return arr;
+  }, [mercadorias, sortConfig]);
 
   const { data: docs, isLoading } = useQuery({
     enabled: !!empresa,
@@ -723,25 +739,34 @@ function CtePage() {
                         }}
                       />
                     </TableHead>
-                    <TableHead className="text-xs">Código</TableHead>
-                    <TableHead className="text-xs">Remetente</TableHead>
-                    <TableHead className="text-xs">CNPJ Remetente</TableHead>
-                    <TableHead className="text-xs">Destinatário</TableHead>
-                    <TableHead className="text-xs">CNPJ Destinatário</TableHead>
-                    <TableHead className="text-xs">Tomador</TableHead>
-                    <TableHead className="text-xs">Nº NF-e</TableHead>
-                    <TableHead className="text-xs">Série</TableHead>
-                    <TableHead className="text-xs">Data Emissão</TableHead>
-                    <TableHead className="text-xs">Valor</TableHead>
-                    <TableHead className="text-xs">Peso</TableHead>
-                    <TableHead className="text-xs">Chave</TableHead>
+                    {([
+                      { key: "emit", label: "Remetente" },
+                      { key: "emitCnpj", label: "CNPJ Remetente" },
+                      { key: "dest", label: "Destinatário" },
+                      { key: "destCnpj", label: "CNPJ Destinatário" },
+                      { key: "tomador", label: "Tomador" },
+                      { key: "nNF", label: "Nº NF-e" },
+                      { key: "serie", label: "Série" },
+                      { key: "data", label: "Data Emissão" },
+                      { key: "valor", label: "Valor" },
+                      { key: "peso", label: "Peso" },
+                    ] as const).map(col => (
+                      <TableHead
+                        key={col.key}
+                        className="text-xs cursor-pointer select-none hover:bg-muted/80"
+                        onClick={() => setSortConfig(s => s.key === col.key ? { key: col.key, dir: s.dir === "asc" ? "desc" : "asc" } : { key: col.key, dir: "asc" })}
+                      >
+                        {col.label}
+                        {sortConfig.key === col.key && <span className="ml-1">{sortConfig.dir === "asc" ? "▲" : "▼"}</span>}
+                      </TableHead>
+                    ))}
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {mercadorias.length === 0 ? (
-                    <TableRow><TableCell colSpan={13} className="text-center text-xs text-muted-foreground py-8">Nenhuma NF-e importada. Use “Importar NFes (XML)” abaixo.</TableCell></TableRow>
+                    <TableRow><TableCell colSpan={12} className="text-center text-xs text-muted-foreground py-8">Nenhuma NF-e importada. Use "Importar NFes (XML)" abaixo.</TableCell></TableRow>
                   ) : (
-                    mercadorias.map((m) => (
+                    mercadoriasSorted.map((m) => (
                       <TableRow key={m.chave} className="text-xs" data-selected={selecionadas.has(m.chave)}>
                         <TableCell>
                           <input
@@ -762,7 +787,6 @@ function CtePage() {
                             }}
                           />
                         </TableCell>
-                        <TableCell className="font-mono">18837</TableCell>
                         <TableCell className="truncate max-w-[110px]" title={m.emit}>{m.emit}</TableCell>
                         <TableCell className="font-mono text-[10px]">{m.emitCnpj ? m.emitCnpj.replace(/(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})/, "$1.$2.$3/$4-$5") : "—"}</TableCell>
                         <TableCell className="truncate max-w-[110px]" title={m.dest}>{m.dest}</TableCell>
@@ -773,7 +797,6 @@ function CtePage() {
                         <TableCell>{m.data ? dateBR(m.data) : "—"}</TableCell>
                         <TableCell className="text-right">{brl(m.valor)}</TableCell>
                         <TableCell className="text-right">{Number(m.peso).toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</TableCell>
-                        <TableCell className="font-mono truncate max-w-[140px]" title={m.chave}>{m.chave.slice(0,22)}...</TableCell>
                       </TableRow>
                     ))
                   )}
