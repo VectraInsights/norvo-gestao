@@ -48,7 +48,7 @@ export const previewCteXmlFn = createServerFn({ method: "POST" }).validator((d: 
   const proximo = String((parseInt((ultimo as any)?.numero || "0",10)+1));
   const input = { ...data.input, ambiente, numero: proximo, serie: data.input.serie || "1", emit: { cnpj: emp?.cnpj, xNome: data.input.emit?.xNome || "EMITENTE", ie: data.input.emit?.ie || "ISENTO", uf: emp?.uf || "MG", cMun: data.input.emit?.cMun || "3106200", xMun: data.input.emit?.xMun || "BELO HORIZONTE" } };
   const { xml, chave } = buildCteXml(input);
-  return { xml, chave, proximo, ambiente };
+  return { xml, chave, proximo, ambiente, form: data.input };
 });
 
 export const cancelarCteFn = createServerFn({ method: "POST" }).validator((d:{empresaId:string;chave:string;justificativa:string})=>d).handler(async ({data})=>{

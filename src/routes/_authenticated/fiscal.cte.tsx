@@ -21,6 +21,7 @@ import { useState, useEffect, useMemo } from "react";
 import { toast } from "sonner";
 import { emitirCteFn, consultarCteFn, cancelarCteFn, previewCteXmlFn } from "@/lib/sefaz-cte-server";
 import { CFOPS_CTE, MOD_FRETE_OPTIONS, RESPONSAVEL_CTE_OPTIONS } from "@/lib/cfops-transporte";
+import { gerarDactePdf } from "@/lib/dacte-pdf";
 import { Textarea } from "@/components/ui/textarea";
 import { DateInput } from "@/components/erp/date-input";
 import { MoneyInput } from "@/components/erp/money-input";
@@ -30,19 +31,6 @@ export const Route = createFileRoute("/_authenticated/fiscal/cte")({
   head: () => ({ meta: [{ title: "CT-e — Norvo" }] }),
   validateSearch: (search: Record<string, unknown>) => ({ fromNFe: (search.fromNFe as string) || undefined }),
 });
-
-function formatXml(xml: string): string {
-  let indent = 0;
-  const lines = xml.replace(/>\s*</g, ">\n<").split("\n");
-  return lines.map(line => {
-    const trimmed = line.trim();
-    if (!trimmed) return "";
-    if (trimmed.startsWith("</")) indent = Math.max(0, indent - 1);
-    const result = "  ".repeat(indent) + trimmed;
-    if (trimmed.startsWith("<") && !trimmed.startsWith("</") && !trimmed.startsWith("<?") && !trimmed.endsWith("/>") && !/<\//.test(trimmed)) indent++;
-    return result;
-  }).join("\n");
-}
 
 type CteDoc = { id: string; numero: string | null; serie: string | null; status: string; valor_servico: number | null; chave_acesso: string | null; created_at: string; motivo_rejeicao: string | null; protocolo_sefaz: string | null; xml_assinado: string | null };
 
@@ -643,7 +631,7 @@ function CtePage() {
   });
 
   const [previewOpen, setPreviewOpen] = useState(false);
-  const [previewData, setPreviewData] = useState<{ xml: string; chave: string; proximo: string; ambiente: string } | null>(null);
+  const [previewData, setPreviewData] = useState<{ xml: string; chave: string; proximo: string; ambiente: string; form: any } | null>(null);
   const previewXml = useMutation({
     mutationFn: async () => {
       if (!empresa) throw new Error("Empresa não selecionada");
@@ -1483,12 +1471,12 @@ function CtePage() {
         </DialogContent>
       </Dialog>
 
-      {/* Dialog de Pré-Visualização do XML CT-e */}
+      {/* Dialog de Pré-Visualização DACTE */}
       <Dialog open={previewOpen} onOpenChange={setPreviewOpen}>
-        <DialogContent className="max-w-3xl max-h-[80vh] flex flex-col">
-          <DialogHeader>
+        <DialogContent className="max-w-4xl max-h-[90vh] flex flex-col p-0">
+          <DialogHeader className="px-4 pt-4 pb-2">
             <DialogTitle className="flex items-center gap-2">
-              <FileText className="h-4 w-4" /> Pré-Visualização CT-e
+              <FileText className="h-4 w-4" /> Pré-Visualização DACTE
               {previewData && (
                 <Badge variant="outline" className="ml-2 text-[10px]">
                   Nº {previewData.proximo} • {previewData.ambiente === "homologacao" ? "Homologação" : "Produção"}
@@ -1496,18 +1484,55 @@ function CtePage() {
               )}
             </DialogTitle>
           </DialogHeader>
-          {previewData && (
-            <div className="flex-1 overflow-auto border rounded bg-muted/30">
-              <pre className="p-3 text-[11px] font-mono whitespace-pre-wrap break-all leading-tight">
-                {formatXml(previewData.xml)}
-              </pre>
-            </div>
-          )}
-          <div className="flex items-center justify-between text-[10px] text-muted-foreground">
+          {previewData && (() => {
+            const f = previewData.form;
+            const nFes = (f.nFes || []).map((n: any) => ({ nNF: n.nNF || n.numero || "", serie: n.serie || "1", valor: n.valor || 0 }));
+            const pdfBlob = gerarDactePdf({
+              chave: previewData.chave,
+              numero: previewData.proximo,
+              serie: f.serie || "1",
+              ambiente: previewData.ambiente,
+              dataEmissao: new Date().toISOString(),
+              emitCnpj: f.emit?.cnpj || "",
+              emitNome: f.emit?.xNome || f.xNomeTomador || "",
+              emitEndereco: "",
+              emitCidade: f.xMunEnv || "",
+              emitUF: f.ufEnv || "",
+              emitIE: f.emit?.ie || "ISENTO",
+              tomadorCnpj: f.cnpjTomador || "",
+              tomadorNome: f.xNomeTomador || "",
+              tomadorEndereco: "",
+              tomadorCidade: f.xMunTomador || "",
+              tomadorUF: f.ufTomador || "",
+              remCnpj: f.rem?.cnpj || "",
+              remNome: f.rem?.xNome || "",
+              remCidade: f.rem?.xMun || "",
+              remUF: f.rem?.uf || "",
+              destCnpj: f.dest?.cnpj || "",
+              destNome: f.dest?.xNome || "",
+              destCidade: f.dest?.xMun || "",
+              destUF: f.dest?.uf || "",
+              cfop: f.cfop || "5353",
+              valorServico: f.vPrest || 0,
+              valorCarga: f.vCarga || 0,
+              pesoKg: f.pesoKg || 0,
+              icmsCST: f.icmsCST || "00",
+              icmsBase: f.icms?.vBC || f.vPrest || 0,
+              icmsAliq: f.icms?.pICMS || 0,
+              icmsValor: f.icms?.vICMS || 0,
+              nFes,
+              placa: f.placaVeiculo || "",
+              placaReboque: f.placaReboque || "",
+              rntrc: f.rntrc || "",
+              obs: f.obs || "",
+            });
+            const url = URL.createObjectURL(pdfBlob);
+            return <iframe src={url} className="flex-1 w-full min-h-[500px] border-0" />;
+          })()}
+          <div className="flex items-center justify-between px-4 py-2 border-t text-[10px] text-muted-foreground">
             <span>Chave: {previewData?.chave || "—"}</span>
-            <span>{previewData?.xml.length.toLocaleString("pt-BR")} caracteres</span>
           </div>
-          <DialogFooter>
+          <DialogFooter className="px-4 pb-4">
             <Button variant="outline" onClick={() => setPreviewOpen(false)}>Fechar</Button>
             <Button onClick={() => { setPreviewOpen(false); emitir.mutate(); }} disabled={emitir.isPending || !form.cnpjTomador || !form.xNomeTomador}>
               {emitir.isPending ? "Enviando..." : <><Truck className="mr-1 h-3.5 w-3.5" /> Enviar Doc-e</>}
