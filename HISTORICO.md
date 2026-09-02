@@ -673,6 +673,20 @@ certificado tem estrutura PKCS12 não padrão ou se `extractPkcs12Native` precis
     - Cabeçalho da tabela clicável para ordenar por qualquer coluna (asc/desc).
     - Coluna "Código" hardcoded removida; coluna "Chave" removida da visualização.
 
+60. **CT-e: migração para CTeSimp + novo DACTE** - 02/09/2026:
+    - **MUDANÇA CRÍTICA**: MG usa TCTeSimp (CT-e Simplificado), não TCTe normal.
+    - Root element mudou de `<CTe>` para `<CTeSimp>` (XSD `cteSimp_v4.00.xsd`).
+    - `<toma>` agora é filho direto de `<infCte>` com dados inline (CNPJ, IE, xNome, enderToma).
+    - Removidos `<rem>` e `<dest>` (não existem em TCTeSimp).
+    - Removido wrapper `<infCTeNorm>` — `<infCarga>`, `<det>`, `<infModal>` são filhos diretos.
+    - `<det nItem="X">` substitui `<infDoc>` com cMunIni/Fim, vPrest, vRec, infNFe.
+    - `<total>` substitui `<vPrest>` — agora com vTPrest/vTRec.
+    - `<ide>` não tem mais cMunIni/xMunIni/cMunFim/xMunFim/indIEToma.
+    - Tomador agora inclui endereço completo (logradouro, nro, bairro, cep, ie, fone, email).
+    - DACTE PDF redesenhado: layout completo estilo bsoft/nstech com todas as seções
+      (cabeçalho, chave de acesso, protocolo, remetente/destinatário, tomador, documentos
+      originários, componentes de valor, impostos, modal rodoviário, declaração).
+
 ---
 ## Regras de segurança
 
