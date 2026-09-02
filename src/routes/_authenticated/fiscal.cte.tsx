@@ -47,6 +47,7 @@ function CtePage() {
   const [periodoIni, setPeriodoIni] = useState(() => { const d = new Date(); d.setDate(d.getDate() - 14); return d.toISOString().slice(0, 10); });
   const [periodoFim, setPeriodoFim] = useState(() => new Date().toISOString().slice(0, 10));
   const [sortConfig, setSortConfig] = useState<{ key: string; dir: "asc" | "desc" }>({ key: "nNF", dir: "asc" });
+  const [editingRascunhoId, setEditingRascunhoId] = useState<string | null>(null);
 
   const mercadoriasSorted = useMemo(() => {
     const arr = [...mercadorias];
@@ -519,7 +520,7 @@ function CtePage() {
           }, { onConflict: "empresa_id,chave" });
         }
       }
-      await supabase.from("cte_documentos" as any).delete().eq("id", doc.id);
+      setEditingRascunhoId(doc.id);
       setOpen(true);
       qc.invalidateQueries({ queryKey: ["cte-documentos"] });
       qc.invalidateQueries({ queryKey: ["cte-nfes-pendentes", empresa.id] });
@@ -551,6 +552,9 @@ function CtePage() {
         xml_assinado: JSON.stringify({ form, chavesNFe: chaves, nfs: nfsSalvas }),
       } as any);
       if (error) throw error;
+      if (editingRascunhoId) {
+        await supabase.from("cte_documentos" as any).delete().eq("id", editingRascunhoId);
+      }
       if (empresa && chaves.length > 0) {
         await supabase.from("cte_nfes_pendentes" as any).delete().in("chave", chaves).eq("empresa_id", empresa.id);
       }
@@ -559,6 +563,7 @@ function CtePage() {
       toast.success("Rascunho salvo");
       setMercadorias([]);
       setSelecionadas(new Set());
+      setEditingRascunhoId(null);
       qc.invalidateQueries({ queryKey: ["cte-documentos"] });
       qc.invalidateQueries({ queryKey: ["cte-nfes-pendentes", empresa!.id] });
       setOpen(false);
@@ -593,6 +598,10 @@ function CtePage() {
       if (ret.sucesso) {
         toast.success(`CT-e ${ret.chave} autorizado` + (ret.protocolo ? ` prot ${ret.protocolo}` : ""));
         setOpen(false);
+        if (editingRascunhoId) {
+          await supabase.from("cte_documentos" as any).delete().eq("id", editingRascunhoId);
+          setEditingRascunhoId(null);
+        }
         // marca NF-es usadas como embarcadas (dedup global continua bloqueando re-import)
         const chavesUsadas = selecionadas.size > 0 ? Array.from(selecionadas) : mercadorias.map(m => m.chave);
         if (empresa && chavesUsadas.length > 0) {
@@ -1457,7 +1466,7 @@ function CtePage() {
           </Card>
 
           <DialogFooter className="gap-2">
-            <Button variant="outline" onClick={() => setOpen(false)}><Ban className="mr-1 h-3.5 w-3.5" /> Cancelar</Button>
+            <Button variant="outline" onClick={() => { setOpen(false); setEditingRascunhoId(null); setMercadorias([]); setSelecionadas(new Set()); qc.invalidateQueries({ queryKey: ["cte-documentos"] }); qc.invalidateQueries({ queryKey: ["cte-nfes-pendentes", empresa?.id] }); }}><Ban className="mr-1 h-3.5 w-3.5" /> Cancelar</Button>
             <Button variant="outline" onClick={() => salvarRascunho.mutate()} disabled={salvarRascunho.isPending}>
               {salvarRascunho.isPending ? "Salvando..." : <><FileText className="mr-1 h-3.5 w-3.5" /> Salvar Rascunho</>}
             </Button>
