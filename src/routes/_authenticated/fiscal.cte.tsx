@@ -56,8 +56,8 @@ function CtePage() {
   const [filtroEmpresa] = useState("ROSE TRANSPORTES");
   const [filtroRemetente, setFiltroRemetente] = useState("TODOS REMETENTES");
   const [filtroDestinatario, setFiltroDestinatario] = useState("TODOS OS DESTINATÁRIOS");
-  const [periodoIni, setPeriodoIni] = useState("2026-08-21");
-  const [periodoFim, setPeriodoFim] = useState("2026-08-28");
+  const [periodoIni, setPeriodoIni] = useState(() => { const d = new Date(); d.setDate(d.getDate() - 14); return d.toISOString().slice(0, 10); });
+  const [periodoFim, setPeriodoFim] = useState(() => new Date().toISOString().slice(0, 10));
   const [sortConfig, setSortConfig] = useState<{ key: string; dir: "asc" | "desc" }>({ key: "nNF", dir: "asc" });
 
   const mercadoriasSorted = useMemo(() => {
