@@ -11,13 +11,25 @@ export const emitirCteFn = createServerFn({ method: "POST" }).validator((d: { em
   const cert = await buscarCertificadoAtivo(data.empresaId);
   const { createClient } = await import("@supabase/supabase-js");
   const supa = createClient(process.env.SUPABASE_URL||"", process.env.SUPABASE_SERVICE_ROLE_KEY||"");
-  const { data: emp } = await supa.from("empresas").select("cnpj, uf").eq("id", data.empresaId).single();
+  const { data: emp } = await supa.from("empresas").select("cnpj, uf, ie, nome_fantasia, razao_social, logradouro, numero, bairro, cidade, cep, regime_tributario").eq("id", data.empresaId).single();
   const { data: cfg } = await supa.from("nfe_config").select("ambiente").eq("empresa_id", data.empresaId).maybeSingle();
   const ambiente = cfg?.ambiente==="homologacao"?"homologacao":"producao";
-  // Próximo número
   const { data: ultimo } = await supa.from("cte_documentos").select("numero").eq("empresa_id", data.empresaId).order("created_at",{ascending:false}).limit(1).maybeSingle();
   const proximo = String((parseInt((ultimo as any)?.numero || "0",10)+1));
-  const input = { ...data.input, ambiente, numero: proximo, serie: data.input.serie || "1", emit: { cnpj: emp?.cnpj, xNome: data.input.emit?.xNome || "EMITENTE", ie: data.input.emit?.ie || "ISENTO", uf: emp?.uf || "MG", cMun: data.input.emit?.cMun || "3106200", xMun: data.input.emit?.xMun || "BELO HORIZONTE" } };
+  const cli = data.input.emit || {};
+  const input = { ...data.input, ambiente, numero: proximo, serie: data.input.serie || "1", emit: {
+    cnpj: emp?.cnpj || cli.cnpj,
+    xNome: cli.xNome || emp?.razao_social || emp?.nome_fantasia || "EMITENTE",
+    ie: cli.ie || emp?.ie || "ISENTO",
+    uf: emp?.uf || cli.uf || "MG",
+    cMun: cli.cMun || "3106200",
+    xMun: cli.xMun || emp?.cidade || "BELO HORIZONTE",
+    crt: cli.crt || emp?.regime_tributario || "3",
+    logradouro: cli.logradouro || emp?.logradouro || "RUA",
+    nro: cli.nro || emp?.numero || "SN",
+    bairro: cli.bairro || emp?.bairro || "CENTRO",
+    cep: cli.cep || emp?.cep || "00000000",
+  } };
   const { xml, chave } = buildCteXml(input);
   const ret = await emitirCte(cert.pfx, cert.senha, xml, ambiente, cert.uf);
   if (ret.sucesso) {
@@ -41,12 +53,25 @@ export const previewCteXmlFn = createServerFn({ method: "POST" }).validator((d: 
   const { buildCteXml } = await import("@/lib/sefaz-cte");
   const { createClient } = await import("@supabase/supabase-js");
   const supa = createClient(process.env.SUPABASE_URL||"", process.env.SUPABASE_SERVICE_ROLE_KEY||"");
-  const { data: emp } = await supa.from("empresas").select("cnpj, uf").eq("id", data.empresaId).single();
+  const { data: emp } = await supa.from("empresas").select("cnpj, uf, ie, nome_fantasia, razao_social, logradouro, numero, bairro, cidade, cep, regime_tributario").eq("id", data.empresaId).single();
   const { data: cfg } = await supa.from("nfe_config").select("ambiente").eq("empresa_id", data.empresaId).maybeSingle();
   const ambiente = cfg?.ambiente==="homologacao"?"homologacao":"producao";
   const { data: ultimo } = await supa.from("cte_documentos").select("numero").eq("empresa_id", data.empresaId).order("created_at",{ascending:false}).limit(1).maybeSingle();
   const proximo = String((parseInt((ultimo as any)?.numero || "0",10)+1));
-  const input = { ...data.input, ambiente, numero: proximo, serie: data.input.serie || "1", emit: { cnpj: emp?.cnpj, xNome: data.input.emit?.xNome || "EMITENTE", ie: data.input.emit?.ie || "ISENTO", uf: emp?.uf || "MG", cMun: data.input.emit?.cMun || "3106200", xMun: data.input.emit?.xMun || "BELO HORIZONTE" } };
+  const cli = data.input.emit || {};
+  const input = { ...data.input, ambiente, numero: proximo, serie: data.input.serie || "1", emit: {
+    cnpj: emp?.cnpj || cli.cnpj,
+    xNome: cli.xNome || emp?.razao_social || emp?.nome_fantasia || "EMITENTE",
+    ie: cli.ie || emp?.ie || "ISENTO",
+    uf: emp?.uf || cli.uf || "MG",
+    cMun: cli.cMun || "3106200",
+    xMun: cli.xMun || emp?.cidade || "BELO HORIZONTE",
+    crt: cli.crt || emp?.regime_tributario || "3",
+    logradouro: cli.logradouro || emp?.logradouro || "RUA",
+    nro: cli.nro || emp?.numero || "SN",
+    bairro: cli.bairro || emp?.bairro || "CENTRO",
+    cep: cli.cep || emp?.cep || "00000000",
+  } };
   const { xml, chave } = buildCteXml(input);
   return { xml, chave, proximo, ambiente, form: data.input };
 });

@@ -579,7 +579,7 @@ function CtePage() {
         impostos: { pisAliq: parseFloat(form.pisAliq)||0, cofinsAliq: parseFloat(form.cofinsAliq)||0, irAliq: parseFloat(form.irAliq)||0, inssAliq: parseFloat(form.inssAliq)||0, csllAliq: parseFloat(form.csllAliq)||0 },
         serie: "1",
         tomador: { toma: form.toma as any, cnpj: form.cnpjTomador, xNome: form.xNomeTomador, uf: form.ufTomador, cMun: form.cMunTomador, xMun: form.xMunTomador },
-        emit: { xNome: form.xNomeTomador, ie: "ISENTO", cMun: form.cMunEnv, xMun: form.xMunEnv } as any,
+        emit: { xNome: empresa.razao_social || empresa.nome_fantasia, ie: empresa.ie || "ISENTO", cMun: form.cMunEnv, xMun: form.xMunEnv, uf: empresa.uf || "MG", cnpj: empresa.cnpj, crt: empresa.regime_tributario || "3", logradouro: empresa.logradouro, nro: empresa.numero, bairro: empresa.bairro, cep: empresa.cep } as any,
         chavesNFe: chaves,
       } } });
       return ret;
@@ -643,7 +643,7 @@ function CtePage() {
         impostos: { pisAliq: parseFloat(form.pisAliq)||0, cofinsAliq: parseFloat(form.cofinsAliq)||0, irAliq: parseFloat(form.irAliq)||0, inssAliq: parseFloat(form.inssAliq)||0, csllAliq: parseFloat(form.csllAliq)||0 },
         serie: "1",
         tomador: { toma: form.toma as any, cnpj: form.cnpjTomador, xNome: form.xNomeTomador, uf: form.ufTomador, cMun: form.cMunTomador, xMun: form.xMunTomador },
-        emit: { xNome: form.xNomeTomador, ie: "ISENTO", cMun: form.cMunEnv, xMun: form.xMunEnv } as any,
+        emit: { xNome: empresa.razao_social || empresa.nome_fantasia, ie: empresa.ie || "ISENTO", cMun: form.cMunEnv, xMun: form.xMunEnv, uf: empresa.uf || "MG", cnpj: empresa.cnpj, crt: empresa.regime_tributario || "3", logradouro: empresa.logradouro, nro: empresa.numero, bairro: empresa.bairro, cep: empresa.cep } as any,
         chavesNFe: chaves,
       } } });
     },
@@ -1494,9 +1494,9 @@ function CtePage() {
               dataEmissao: new Date().toISOString(),
               emitCnpj: f.emit?.cnpj || "",
               emitNome: f.emit?.xNome || f.xNomeTomador || "",
-              emitEndereco: "",
-              emitCidade: f.xMunEnv || "",
-              emitUF: f.ufEnv || "",
+              emitEndereco: `${f.emit?.logradouro || ""} ${f.emit?.nro || ""} ${f.emit?.bairro || ""}`.trim(),
+              emitCidade: f.emit?.xMun || f.xMunEnv || "",
+              emitUF: f.emit?.uf || f.ufEnv || "",
               emitIE: f.emit?.ie || "ISENTO",
               tomadorCnpj: f.cnpjTomador || "",
               tomadorNome: f.xNomeTomador || "",

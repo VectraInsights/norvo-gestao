@@ -68,8 +68,8 @@ export function gerarChaveCte(cUF:string, aamm:string, cnpj:string, mod:string, 
   return base + calcDV(base);
 }
 
-export interface EmitenteCte { cnpj: string; ie: string; xNome: string; xFant?: string; uf: string; cMun: string; xMun: string; cep?: string; logradouro?: string; nro?: string; bairro?: string; }
-export interface TomadorCte { toma: "0"|"1"|"2"|"3"|"4"; cnpj?: string; cpf?: string; ie?: string; xNome: string; uf: string; cMun: string; xMun: string; }
+export interface EmitenteCte { cnpj: string; ie: string; xNome: string; xFant?: string; uf: string; cMun: string; xMun: string; cep?: string; logradouro?: string; nro?: string; bairro?: string; crt?: string; }
+export interface TomadorCte { toma: "0"|"1"|"2"|"3"|"4"; cnpj?: string; cpf?: string; ie?: string; xNome: string; uf: string; cMun: string; xMun: string; cep?: string; logradouro?: string; nro?: string; bairro?: string; fone?: string; email?: string; }
 export interface CteInputCompleto {
   empresaId: string;
   ambiente: Ambiente;
@@ -80,15 +80,14 @@ export interface CteInputCompleto {
   cMunIni: string; xMunIni: string; ufIni: string;
   cMunFim: string; xMunFim: string; ufFim: string;
   emit: EmitenteCte;
-  rem?: { cnpj?:string; cpf?:string; xNome:string; uf:string; cMun:string; xMun:string; ie?:string };
-  dest?: { cnpj?:string; cpf?:string; xNome:string; uf:string; cMun:string; xMun:string; ie?:string };
+  rem?: { cnpj?:string; cpf?:string; xNome:string; uf:string; cMun:string; xMun:string; ie?:string; cep?:string; logradouro?:string; nro?:string; bairro?:string };
+  dest?: { cnpj?:string; cpf?:string; xNome:string; uf:string; cMun:string; xMun:string; ie?:string; cep?:string; logradouro?:string; nro?:string; bairro?:string };
   tomador: TomadorCte;
   vPrest: number; vCarga: number; pesoKg: number; cfop: string;
   obs?: string;
   infCTeNorm?: { proPred?: string; xOutCat?: string };
   modalRod?: { rntrc: string; ciot?: string; veiculos?: Array<{ placa: string; uf: string; rntrc?: string }> };
-  chavesNFe?: string[]; // múltiplas NF-e da carga — infDoc com vários infNFe
-  // Impostos editáveis
+  chavesNFe?: string[];
   icms?: { CST: string; vBC: number; pICMS: number; vICMS: number };
   impostos?: { pisAliq?: number; cofinsAliq?: number; irAliq?: number; inssAliq?: number; csllAliq?: number };
 }
@@ -96,7 +95,7 @@ export interface CteInputCompleto {
 export function buildCteXml(input: CteInputCompleto): { xml: string; chave: string } {
   const dhEmi = new Date().toISOString();
   const cUF = codigoUF(input.ufEnv || input.emit.uf);
-  const aamm = dhEmi.slice(2,4) + dhEmi.slice(5,7); // AAMM
+  const aamm = dhEmi.slice(2,4) + dhEmi.slice(5,7);
   const cnpjLimpo = input.emit.cnpj.replace(/\D/g,"").padStart(14,"0");
   const serie = input.serie.padStart(3,"0");
   const nCT = input.numero.padStart(9,"0");
@@ -104,8 +103,55 @@ export function buildCteXml(input: CteInputCompleto): { xml: string; chave: stri
   const chave = gerarChaveCte(cUF, aamm, cnpjLimpo, "57", serie, nCT, "1", cCT);
   const id = `CTe${chave}`;
   const natOp = input.natOp || "PRESTACAO DE SERVICO DE TRANSPORTE";
-  const tomaMap: Record<string,string> = { "0":"Remetente","1":"Expedidor","2":"Recebedor","3":"Destinatario","4":"Outros" };
-  // cDV already in chave last digit
+  const toma = input.tomador.toma;
+  const crt = input.emit.crt || "3"; // 1=SN, 2=SN excesso, 3=Normal, 4=MEI
+
+  // Toma3 (0-3) ou Toma4 (4) — OBRIGATÓRIO no schema v4.00, vai dentro de <ide>
+  let tomaXml: string;
+  if (toma === "4") {
+    const cnpjToma = (input.tomador.cnpj || "").replace(/\D/g,"").padStart(14,"0");
+    const cepToma = (input.tomador.cep || "00000000").replace(/\D/g,"").padStart(8,"0");
+    tomaXml = `<toma4><toma>4</toma><CNPJ>${cnpjToma}</CNPJ>${input.tomador.ie ? `<IE>${input.tomador.ie}</IE>` : ""}<xNome>${input.tomador.xNome}</xNome>${input.tomador.fone ? `<fone>${input.tomador.fone}</fone>` : ""}<enderToma><xLgr>${input.tomador.logradouro || "RUA"}</xLgr><nro>${input.tomador.nro || "SN"}</nro><xBairro>${input.tomador.bairro || "CENTRO"}</xBairro><cMun>${input.tomador.cMun}</cMun><xMun>${input.tomador.xMun}</xMun><UF>${input.tomador.uf}</UF><CEP>${cepToma}</CEP></enderToma>${input.tomador.email ? `<email>${input.tomador.email}</email>` : ""}</toma4>`;
+  } else {
+    tomaXml = `<toma3><toma>${toma}</toma></toma3>`;
+  }
+
+  // enderEmit
+  const cepEmit = (input.emit.cep || "00000000").replace(/\D/g,"").padStart(8,"0");
+  const enderEmit = `<enderEmit><xLgr>${input.emit.logradouro || "RUA"}</xLgr><nro>${input.emit.nro || "SN"}</nro><xBairro>${input.emit.bairro || "CENTRO"}</xBairro><cMun>${input.emit.cMun}</cMun><xMun>${input.emit.xMun}</xMun><UF>${input.emit.uf}</UF><CEP>${cepEmit}</CEP></enderEmit>`;
+
+  // enderReme
+  let enderReme = "";
+  if (input.rem) {
+    const cepRem = (input.rem.cep || "00000000").replace(/\D/g,"").padStart(8,"0");
+    enderReme = `<enderReme><xLgr>${input.rem.logradouro || "RUA"}</xLgr><nro>${input.rem.nro || "SN"}</nro><xBairro>${input.rem.bairro || "CENTRO"}</xBairro><cMun>${input.rem.cMun}</cMun><xMun>${input.rem.xMun}</xMun><UF>${input.rem.uf}</UF><CEP>${cepRem}</CEP></enderReme>`;
+  }
+
+  // enderDest
+  let enderDest = "";
+  if (input.dest) {
+    const cepDest = (input.dest.cep || "00000000").replace(/\D/g,"").padStart(8,"0");
+    enderDest = `<enderDest><xLgr>${input.dest.logradouro || "RUA"}</xLgr><nro>${input.dest.nro || "SN"}</nro><xBairro>${input.dest.bairro || "CENTRO"}</xBairro><cMun>${input.dest.cMun}</cMun><xMun>${input.dest.xMun}</xMun><UF>${input.dest.uf}</UF><CEP>${cepDest}</CEP></enderDest>`;
+  }
+
+  // ICMS
+  const icms = input.icms || { CST: "00", vBC: input.vPrest, pICMS: 0, vICMS: 0 };
+  const cst = (icms.CST || "00").padStart(2,"0");
+  const vBC = Number(icms.vBC ?? input.vPrest).toFixed(2);
+  const pICMS = Number(icms.pICMS ?? 0).toFixed(2);
+  const vICMS = Number(icms.vICMS ?? 0).toFixed(2);
+  let impXml: string;
+  if (cst === "00") impXml = `<imp><ICMS><ICMS00><CST>00</CST><vBC>${vBC}</vBC><pICMS>${pICMS}</pICMS><vICMS>${vICMS}</vICMS></ICMS00></ICMS></imp>`;
+  else if (cst === "20") impXml = `<imp><ICMS><ICMS20><CST>20</CST><pRedBC>0.00</pRedBC><vBC>${vBC}</vBC><pICMS>${pICMS}</pICMS><vICMS>${vICMS}</vICMS></ICMS20></ICMS></imp>`;
+  else if (cst === "45") impXml = `<imp><ICMS><ICMS45><CST>45</CST></ICMS45></ICMS></imp>`;
+  else if (cst === "60") impXml = `<imp><ICMS><ICMS60><CST>60</CST><vBCSTRet>0.00</vBCSTRet><vICMSSTRet>0.00</vICMSSTRet><pICMSSTRet>0.00</pICMSSTRet><vCred>0.00</vCred></ICMS60></ICMS></imp>`;
+  else impXml = `<imp><ICMS><ICMS90><CST>${cst}</CST><pRedBC>0.00</pRedBC><vBC>${vBC}</vBC><pICMS>${pICMS}</pICMS><vICMS>${vICMS}</vICMS><vCred>0.00</vCred></ICMS90></ICMS></imp>`;
+
+  // infNFe
+  const infNFeXml = (input.chavesNFe && input.chavesNFe.length > 0)
+    ? input.chavesNFe.map(ch => `<infNFe><chave>${ch.replace(/\D/g,"")}</chave></infNFe>`).join("")
+    : `<infNFe><chave>00000000000000000000000000000000000000000000</chave></infNFe>`;
+
   const xml = `<?xml version="1.0" encoding="UTF-8"?>
 <CTe xmlns="http://www.portalfiscal.inf.br/cte" versao="4.00">
   <infCte Id="${id}" versao="4.00">
@@ -117,28 +163,16 @@ export function buildCteXml(input: CteInputCompleto): { xml: string; chave: stri
       <cMunIni>${input.cMunIni}</cMunIni><xMunIni>${input.xMunIni}</xMunIni><UFIni>${input.ufIni}</UFIni>
       <cMunFim>${input.cMunFim}</cMunFim><xMunFim>${input.xMunFim}</xMunFim><UFFim>${input.ufFim}</UFFim>
       <retira>1</retira><indIEToma>1</indIEToma>
-      ${input.obs ? `<xObs>${input.obs}</xObs>` : ""}
+      ${tomaXml}
     </ide>
-    <emit><CNPJ>${cnpjLimpo}</CNPJ><IE>${input.emit.ie || "ISENTO"}</IE><xNome>${input.emit.xNome}</xNome>${input.emit.xFant ? `<xFant>${input.emit.xFant}</xFant>` : ""}<enderEmit><xLgr>${input.emit.logradouro||"RUA"}</xLgr><nro>${input.emit.nro||"SN"}</nro><xBairro>${input.emit.bairro||"CENTRO"}</xBairro><cMun>${input.emit.cMun}</cMun><xMun>${input.emit.xMun}</xMun><CEP>${(input.emit.cep||"00000000").replace(/\D/g,"")}</CEP><UF>${input.emit.uf}</UF></enderEmit></emit>
-    ${input.rem ? `<rem><CNPJ>${(input.rem.cnpj||"").replace(/\D/g,"")}</CNPJ><xNome>${input.rem.xNome}</xNome><enderReme><xLgr>RUA</xLgr><nro>SN</nro><xBairro>CENTRO</xBairro><cMun>${input.rem.cMun}</cMun><xMun>${input.rem.xMun}</xMun><CEP>00000000</CEP><UF>${input.rem.uf}</UF></enderReme></rem>` : ""}
-    ${input.dest ? `<dest><CNPJ>${(input.dest.cnpj||"").replace(/\D/g,"")}</CNPJ><xNome>${input.dest.xNome}</xNome><enderDest><xLgr>RUA</xLgr><nro>SN</nro><xBairro>CENTRO</xBairro><cMun>${input.dest.cMun}</cMun><xMun>${input.dest.xMun}</xMun><CEP>00000000</CEP><UF>${input.dest.uf}</UF></enderDest></dest>` : ""}
+    <emit><CNPJ>${cnpjLimpo}</CNPJ><IE>${input.emit.ie || "ISENTO"}</IE><xNome>${input.emit.xNome}</xNome>${input.emit.xFant ? `<xFant>${input.emit.xFant}</xFant>` : ""}${enderEmit}<CRT>${crt}</CRT></emit>
+    ${input.rem ? `<rem><CNPJ>${(input.rem.cnpj||"").replace(/\D/g,"")}</CNPJ>${input.rem.ie ? `<IE>${input.rem.ie}</IE>` : ""}<xNome>${input.rem.xNome}</xNome>${enderReme}</rem>` : ""}
+    ${input.dest ? `<dest><CNPJ>${(input.dest.cnpj||"").replace(/\D/g,"")}</CNPJ>${input.dest.ie ? `<IE>${input.dest.ie}</IE>` : ""}<xNome>${input.dest.xNome}</xNome>${enderDest}</dest>` : ""}
     <vPrest><vTPrest>${input.vPrest.toFixed(2)}</vTPrest><vRec>${input.vPrest.toFixed(2)}</vRec><Comp><xNome>VALOR DO FRETE</xNome><vComp>${input.vPrest.toFixed(2)}</vComp></Comp></vPrest>
-    ${(() => {
-      const icms = input.icms || { CST: "00", vBC: input.vPrest, pICMS: 0, vICMS: 0 };
-      const cst = (icms.CST || "00").padStart(2,"0");
-      const vBC = Number(icms.vBC ?? input.vPrest).toFixed(2);
-      const pICMS = Number(icms.pICMS ?? 0).toFixed(2);
-      const vICMS = Number(icms.vICMS ?? 0).toFixed(2);
-      if (cst === "00") return `<imp><ICMS><ICMS00><CST>00</CST><vBC>${vBC}</vBC><pICMS>${pICMS}</pICMS><vICMS>${vICMS}</vICMS></ICMS00></ICMS></imp>`;
-      if (cst === "20") return `<imp><ICMS><ICMS20><CST>20</CST><pRedBC>0.00</pRedBC><vBC>${vBC}</vBC><pICMS>${pICMS}</pICMS><vICMS>${vICMS}</vICMS></ICMS20></ICMS></imp>`;
-      if (cst === "45") return `<imp><ICMS><ICMS45><CST>45</CST></ICMS45></ICMS></imp>`;
-      if (cst === "60") return `<imp><ICMS><ICMS60><CST>60</CST><vBCSTRet>0.00</vBCSTRet><vICMSSTRet>0.00</vICMSSTRet><pICMSSTRet>0.00</pICMSSTRet><vCred>0.00</vCred></ICMS60></ICMS></imp>`;
-      return `<imp><ICMS><ICMS90><CST>${cst}</CST><pRedBC>0.00</pRedBC><vBC>${vBC}</vBC><pICMS>${pICMS}</pICMS><vICMS>${vICMS}</vICMS><vCred>0.00</vCred></ICMS90></ICMS></imp>`;
-    })()}
+    ${impXml}
     <infCTeNorm>
       <infCarga><vCarga>${input.vCarga.toFixed(2)}</vCarga><proPred>${input.infCTeNorm?.proPred || "CARGA GERAL"}</proPred><infQ><cUnid>01</cUnid><tpMed>00</tpMed><qCarga>${input.pesoKg.toFixed(3)}</qCarga></infQ></infCarga>
-      <infDoc>${(input.chavesNFe && input.chavesNFe.length > 0) ? input.chavesNFe.map(ch => `<infNFe><chave>${ch.replace(/\D/g,"")}</chave></infNFe>`).join("") : `<infNFe><chave>00000000000000000000000000000000000000000000</chave></infNFe>`}</infDoc>
-      ${input.tomador.toma === "4" ? `<toma4><toma>4</toma><CNPJ>${(input.tomador.cnpj||"").replace(/\D/g,"")}</CNPJ><xNome>${input.tomador.xNome}</xNome></toma4>` : ""}
+      <infDoc>${infNFeXml}</infDoc>
     </infCTeNorm>
     <infModal versaoModal="4.00"><rodo><RNTRC>${(input.modalRod?.rntrc||"").replace(/\D/g,"")}</RNTRC></rodo></infModal>
   </infCte>
