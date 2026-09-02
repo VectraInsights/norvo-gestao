@@ -93,7 +93,6 @@ export interface CteInputCompleto {
 }
 
 export function buildCteXml(input: CteInputCompleto): { xml: string; chave: string } {
-  // dhEmi: schema exige formato AAAA-MM-DDTHH:MM:SS±hh:mm (timezone local, sem milissegundos)
   const now = new Date();
   const tzOffset = -now.getTimezoneOffset();
   const tzH = String(Math.floor(Math.abs(tzOffset) / 60)).padStart(2, "0");
@@ -124,37 +123,14 @@ export function buildCteXml(input: CteInputCompleto): { xml: string; chave: stri
   // G024: MG NÃO aceita indIEToma=2 (Isento) → usar 9
   const indIEToma = input.tomador.ie && input.tomador.ie !== "ISENTO" ? "1" : (input.ufEnv === "MG" ? "9" : "2");
 
-  // Toma3 (0-3) ou Toma4 (4) — OBRIGATÓRIO no schema v4.00, vai dentro de <ide>
-  let tomaXml: string;
-  if (toma === "4") {
-    const cnpjToma = (input.tomador.cnpj || "").replace(/\D/g,"").padStart(14,"0");
-    const cepToma = (input.tomador.cep || "00000000").replace(/\D/g,"").padStart(8,"0");
-    tomaXml = `<toma4><toma>4</toma><CNPJ>${cnpjToma}</CNPJ>${input.tomador.ie ? `<IE>${input.tomador.ie}</IE>` : ""}<xNome>${input.tomador.xNome}</xNome>${input.tomador.fone ? `<fone>${input.tomador.fone}</fone>` : ""}<enderToma><xLgr>${input.tomador.logradouro || "RUA"}</xLgr><nro>${input.tomador.nro || "SN"}</nro><xBairro>${input.tomador.bairro || "CENTRO"}</xBairro><cMun>${input.tomador.cMun}</cMun><xMun>${input.tomador.xMun}</xMun><UF>${input.tomador.uf}</UF><CEP>${cepToma}</CEP></enderToma>${input.tomador.email ? `<email>${input.tomador.email}</email>` : ""}</toma4>`;
-  } else {
-    tomaXml = `<toma3><toma>${toma}</toma></toma3>`;
-  }
+  // CT-e Simplificado (CTeSimp): <toma> é filho direto de <infCte>, não <toma3>/<toma4> em <ide>
+  const cnpjToma = (input.tomador.cnpj || "").replace(/\D/g,"").padStart(14,"0");
+  const cepToma = (input.tomador.cep || "00000000").replace(/\D/g,"").padStart(8,"0");
+  const indIEDest = indIEToma; // same logic
 
   // enderEmit
   const cepEmit = (input.emit.cep || "00000000").replace(/\D/g,"").padStart(8,"0");
   const enderEmit = `<enderEmit><xLgr>${input.emit.logradouro || "RUA"}</xLgr><nro>${input.emit.nro || "SN"}</nro><xBairro>${input.emit.bairro || "CENTRO"}</xBairro><cMun>${input.emit.cMun}</cMun><xMun>${input.emit.xMun}</xMun><UF>${input.emit.uf}</UF><CEP>${cepEmit}</CEP></enderEmit>`;
-
-  // enderReme
-  let enderReme = "";
-  let remXNome = input.rem?.xNome || "";
-  if (input.rem) {
-    if (isHmg) remXNome = HOMOLOG_XNOME; // G002
-    const cepRem = (input.rem.cep || "00000000").replace(/\D/g,"").padStart(8,"0");
-    enderReme = `<enderReme><xLgr>${input.rem.logradouro || "RUA"}</xLgr><nro>${input.rem.nro || "SN"}</nro><xBairro>${input.rem.bairro || "CENTRO"}</xBairro><cMun>${input.rem.cMun}</cMun><xMun>${input.rem.xMun}</xMun><UF>${input.rem.uf}</UF><CEP>${cepRem}</CEP></enderReme>`;
-  }
-
-  // enderDest
-  let enderDest = "";
-  let destXNome = input.dest?.xNome || "";
-  if (input.dest) {
-    if (isHmg) destXNome = HOMOLOG_XNOME; // G005
-    const cepDest = (input.dest.cep || "00000000").replace(/\D/g,"").padStart(8,"0");
-    enderDest = `<enderDest><xLgr>${input.dest.logradouro || "RUA"}</xLgr><nro>${input.dest.nro || "SN"}</nro><xBairro>${input.dest.bairro || "CENTRO"}</xBairro><cMun>${input.dest.cMun}</cMun><xMun>${input.dest.xMun}</xMun><UF>${input.dest.uf}</UF><CEP>${cepDest}</CEP></enderDest>`;
-  }
 
   // ICMS
   const icms = input.icms || { CST: "00", vBC: input.vPrest, pICMS: 0, vICMS: 0 };
@@ -171,36 +147,40 @@ export function buildCteXml(input: CteInputCompleto): { xml: string; chave: stri
 
   // infNFe — schema exige <chNFe>, não <chave>
   const infNFeXml = (input.chavesNFe && input.chavesNFe.length > 0)
-    ? input.chavesNFe.map(ch => `<infNFe><chNFe>${ch.replace(/\D/g,"")}</chNFe></infNFe>`).join("")
-    : `<infNFe><chNFe>00000000000000000000000000000000000000000000</chNFe></infNFe>`;
+    ? input.chavesNFe.map((ch, i) => `<det nItem="${i+1}"><cMunIni>${input.cMunIni}</cMunIni><xMunIni>${input.xMunIni}</xMunIni><cMunFim>${input.cMunFim}</cMunFim><xMunFim>${input.xMunFim}</xMunFim><vPrest>${input.vPrest.toFixed(2)}</vPrest><vRec>${input.vPrest.toFixed(2)}</vRec><infNFe><chNFe>${ch.replace(/\D/g,"")}</chNFe></infNFe></det>`).join("")
+    : `<det nItem="1"><cMunIni>${input.cMunIni}</cMunIni><xMunIni>${input.xMunIni}</xMunIni><cMunFim>${input.cMunFim}</cMunFim><xMunFim>${input.xMunFim}</xMunFim><vPrest>${input.vPrest.toFixed(2)}</vPrest><vRec>${input.vPrest.toFixed(2)}</vRec><infNFe><chNFe>00000000000000000000000000000000000000000000</chNFe></infNFe></det>`;
 
+  // CTeSimp — root element <CTeSimp>, not <CTe>
   const xml = `<?xml version="1.0" encoding="UTF-8"?>
-<CTe xmlns="http://www.portalfiscal.inf.br/cte" versao="4.00">
+<CTeSimp xmlns="http://www.portalfiscal.inf.br/cte" versao="4.00">
   <infCte Id="${id}" versao="4.00">
     <ide>
       <cUF>${cUF}</cUF><cCT>${cCT}</cCT><CFOP>${input.cfop}</CFOP><natOp>${natOp}</natOp><mod>57</mod><serie>${serie}</serie><nCT>${nCT}</nCT><dhEmi>${dhEmi}</dhEmi>
       <tpImp>1</tpImp><tpEmis>1</tpEmis><cDV>${chave.slice(-1)}</cDV><tpAmb>${input.ambiente==="producao"?"1":"2"}</tpAmb><tpCTe>0</tpCTe><procEmi>0</procEmi><verProc>NORVO_1.0</verProc>
       <cMunEnv>${input.cMunEnv}</cMunEnv><xMunEnv>${input.xMunEnv}</xMunEnv><UFEnv>${input.ufEnv}</UFEnv>
       <modal>01</modal><tpServ>0</tpServ>
-      <cMunIni>${input.cMunIni}</cMunIni><xMunIni>${input.xMunIni}</xMunIni><UFIni>${input.ufIni}</UFIni>
-      <cMunFim>${input.cMunFim}</cMunFim><xMunFim>${input.xMunFim}</xMunFim><UFFim>${input.ufFim}</UFFim>
-      <retira>1</retira><indIEToma>${indIEToma}</indIEToma>
-      ${tomaXml}
+      <UFIni>${input.ufIni}</UFIni><UFFim>${input.ufFim}</UFFim>
+      <retira>1</retira>
     </ide>
-    <emit><CNPJ>${cnpjLimpo}</CNPJ><IE>${input.emit.ie || "ISENTO"}</IE><xNome>${input.emit.xNome}</xNome>${input.emit.xFant ? `<xFant>${input.emit.xFant}</xFant>` : ""}${enderEmit}<CRT>${crt}</CRT></emit>
-    ${input.rem ? `<rem><CNPJ>${(input.rem.cnpj||"").replace(/\D/g,"")}</CNPJ>${input.rem.ie ? `<IE>${input.rem.ie}</IE>` : ""}<xNome>${remXNome}</xNome>${enderReme}</rem>` : ""}
-    ${input.dest ? `<dest><CNPJ>${(input.dest.cnpj||"").replace(/\D/g,"")}</CNPJ>${input.dest.ie ? `<IE>${input.dest.ie}</IE>` : ""}<xNome>${destXNome}</xNome>${enderDest}</dest>` : ""}
-    <vPrest><vTPrest>${input.vPrest.toFixed(2)}</vTPrest><vRec>${input.vPrest.toFixed(2)}</vRec><Comp><xNome>VALOR DO FRETE</xNome><vComp>${input.vPrest.toFixed(2)}</vComp></Comp></vPrest>
+    <emit>
+      <CNPJ>${cnpjLimpo}</CNPJ><IE>${input.emit.ie || "ISENTO"}</IE><xNome>${input.emit.xNome}</xNome>${input.emit.xFant ? `<xFant>${input.emit.xFant}</xFant>` : ""}${enderEmit}<CRT>${crt}</CRT>
+    </emit>
+    <toma>
+      <toma>${toma}</toma><indIEToma>${indIEToma}</indIEToma><CNPJ>${cnpjToma}</CNPJ>${input.tomador.ie ? `<IE>${input.tomador.ie}</IE>` : ""}<xNome>${input.tomador.xNome}</xNome>${input.tomador.fone ? `<fone>${input.tomador.fone}</fone>` : ""}
+      <enderToma><xLgr>${input.tomador.logradouro || "RUA"}</xLgr><nro>${input.tomador.nro || "SN"}</nro><xBairro>${input.tomador.bairro || "CENTRO"}</xBairro><cMun>${input.tomador.cMun}</cMun><xMun>${input.tomador.xMun}</xMun><UF>${input.tomador.uf}</UF><CEP>${cepToma}</CEP></enderToma>
+      ${input.tomador.email ? `<email>${input.tomador.email}</email>` : ""}
+    </toma>
+    <infCarga>
+      <vCarga>${input.vCarga.toFixed(2)}</vCarga><proPred>${input.infCTeNorm?.proPred || "CARGA GERAL"}</proPred>
+      <infQ><cUnid>01</cUnid><tpMed>00</tpMed><qCarga>${input.pesoKg.toFixed(3)}</qCarga></infQ>
+    </infCarga>
+    ${infNFeXml}
+    <infModal versaoModal="4.00"><rodo><RNTRC>${(input.modalRod?.rntrc||"").replace(/\D/g,"")}</RNTRC></rodo></infModal>
     ${impXml}
-    <infCTeNorm>
-      <infCarga><vCarga>${input.vCarga.toFixed(2)}</vCarga><proPred>${input.infCTeNorm?.proPred || "CARGA GERAL"}</proPred><infQ><cUnid>01</cUnid><tpMed>00</tpMed><qCarga>${input.pesoKg.toFixed(3)}</qCarga></infQ></infCarga>
-      <infDoc>${infNFeXml}</infDoc>
-      <infModal versaoModal="4.00"><rodo><RNTRC>${(input.modalRod?.rntrc||"").replace(/\D/g,"")}</RNTRC></rodo></infModal>
-    </infCTeNorm>
     <total><vTPrest>${input.vPrest.toFixed(2)}</vTPrest><vTRec>${input.vPrest.toFixed(2)}</vTRec></total>
   </infCte>
   <infCTeSupl><qrCodCTe>HTTPS://dfeportal.svrs.rs.gov.br/cteQrCode?qrcode=${chave}&amp;tpAmb=${input.ambiente==="producao"?"1":"2"}</qrCodCTe></infCTeSupl>
-</CTe>`;
+</CTeSimp>`;
   return { xml, chave };
 }
 

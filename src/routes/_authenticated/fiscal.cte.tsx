@@ -76,7 +76,7 @@ function CtePage() {
 
   const [open, setOpen] = useState(false);
   const [form, setForm] = useState({
-    toma: "3", cnpjTomador: "", xNomeTomador: "", ufTomador: "MG", cMunTomador: "3106200", xMunTomador: "BELO HORIZONTE", cfop: "5353",
+    toma: "3", cnpjTomador: "", xNomeTomador: "", ufTomador: "MG", cMunTomador: "3106200", xMunTomador: "BELO HORIZONTE", ieTomador: "", logradouroTomador: "", nroTomador: "", bairroTomador: "", cepTomador: "", foneTomador: "", emailTomador: "", cfop: "5353",
     vPrest: "0.00", vCarga: "0.00", peso: "0", rntrc: "",
     // Impostos — base e alíquotas editáveis (corrigido: base padrão = vPrest, não vCarga)
     icmsCST: "00", icmsBase: "1000.00", icmsAliq: "0.00", icmsValor: "0.00",
@@ -578,10 +578,8 @@ function CtePage() {
         icms: { CST: form.icmsCST, vBC: parseFloat(form.vPrest)||0, pICMS: parseFloat(form.icmsAliq)||0, vICMS: parseFloat(form.icmsValor)||0 },
         impostos: { pisAliq: parseFloat(form.pisAliq)||0, cofinsAliq: parseFloat(form.cofinsAliq)||0, irAliq: parseFloat(form.irAliq)||0, inssAliq: parseFloat(form.inssAliq)||0, csllAliq: parseFloat(form.csllAliq)||0 },
         serie: "1",
-        tomador: { toma: form.toma as any, cnpj: form.cnpjTomador, xNome: form.xNomeTomador, uf: form.ufTomador, cMun: form.cMunTomador, xMun: form.xMunTomador, ie: form.ufTomador === empresa.uf ? (empresa.ie || "ISENTO") : undefined },
+        tomador: { toma: form.toma as any, cnpj: form.cnpjTomador, xNome: form.xNomeTomador, uf: form.ufTomador, cMun: form.cMunTomador, xMun: form.xMunTomador, ie: form.ieTomador || (form.ufTomador === empresa.uf ? (empresa.ie || "ISENTO") : undefined), logradouro: form.logradouroTomador || undefined, nro: form.nroTomador || undefined, bairro: form.bairroTomador || undefined, cep: form.cepTomador || undefined, fone: form.foneTomador || undefined, email: form.emailTomador || undefined },
         emit: { xNome: empresa.razao_social || empresa.nome_fantasia, ie: empresa.ie || "ISENTO", cMun: form.cMunEnv, xMun: form.xMunEnv, uf: empresa.uf || "MG", cnpj: empresa.cnpj, crt: empresa.regime_tributario || "3", logradouro: empresa.logradouro, nro: empresa.numero, bairro: empresa.bairro, cep: empresa.cep } as any,
-        rem: (() => { const first = mercadorias.find(m => chaves.includes(m.chave)); return first ? { cnpj: first.emitCnpj, xNome: first.emit, uf: first.emitUF, cMun: first.emitCMun, xMun: first.emitXMun } : undefined; })(),
-        dest: (() => { const first = mercadorias.find(m => chaves.includes(m.chave)); return first ? { cnpj: first.destCnpj, xNome: first.dest, uf: first.destUF, cMun: first.destCMun, xMun: first.destXMun } : undefined; })(),
         chavesNFe: chaves,
       } } });
       return ret;
@@ -644,10 +642,8 @@ function CtePage() {
         icms: { CST: form.icmsCST, vBC: parseFloat(form.vPrest)||0, pICMS: parseFloat(form.icmsAliq)||0, vICMS: parseFloat(form.icmsValor)||0 },
         impostos: { pisAliq: parseFloat(form.pisAliq)||0, cofinsAliq: parseFloat(form.cofinsAliq)||0, irAliq: parseFloat(form.irAliq)||0, inssAliq: parseFloat(form.inssAliq)||0, csllAliq: parseFloat(form.csllAliq)||0 },
         serie: "1",
-        tomador: { toma: form.toma as any, cnpj: form.cnpjTomador, xNome: form.xNomeTomador, uf: form.ufTomador, cMun: form.cMunTomador, xMun: form.xMunTomador, ie: form.ufTomador === empresa.uf ? (empresa.ie || "ISENTO") : undefined },
+        tomador: { toma: form.toma as any, cnpj: form.cnpjTomador, xNome: form.xNomeTomador, uf: form.ufTomador, cMun: form.cMunTomador, xMun: form.xMunTomador, ie: form.ieTomador || (form.ufTomador === empresa.uf ? (empresa.ie || "ISENTO") : undefined), logradouro: form.logradouroTomador || undefined, nro: form.nroTomador || undefined, bairro: form.bairroTomador || undefined, cep: form.cepTomador || undefined, fone: form.foneTomador || undefined, email: form.emailTomador || undefined },
         emit: { xNome: empresa.razao_social || empresa.nome_fantasia, ie: empresa.ie || "ISENTO", cMun: form.cMunEnv, xMun: form.xMunEnv, uf: empresa.uf || "MG", cnpj: empresa.cnpj, crt: empresa.regime_tributario || "3", logradouro: empresa.logradouro, nro: empresa.numero, bairro: empresa.bairro, cep: empresa.cep } as any,
-        rem: (() => { const first = mercadorias.find(m => chaves.includes(m.chave)); return first ? { cnpj: first.emitCnpj, xNome: first.emit, uf: first.emitUF, cMun: first.emitCMun, xMun: first.emitXMun } : undefined; })(),
-        dest: (() => { const first = mercadorias.find(m => chaves.includes(m.chave)); return first ? { cnpj: first.destCnpj, xNome: first.dest, uf: first.destUF, cMun: first.destCMun, xMun: first.destXMun } : undefined; })(),
         chavesNFe: chaves,
       } } });
     },
@@ -1015,6 +1011,19 @@ function CtePage() {
                 <div className="grid grid-cols-3 gap-2 mt-2">
                   <Input className="h-7 text-xs" placeholder="UF" value={form.ufTomador} onChange={e=>setForm({...form,ufTomador:e.target.value.toUpperCase()})} maxLength={2} />
                   <Input className="h-7 text-xs md:col-span-2" placeholder="Município" value={form.xMunTomador} onChange={e=>setForm({...form,xMunTomador:e.target.value})} />
+                </div>
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-2 mt-2">
+                  <Input className="h-7 text-xs" placeholder="IE" value={form.ieTomador} onChange={e=>setForm({...form,ieTomador:e.target.value})} />
+                  <Input className="h-7 text-xs" placeholder="CEP" value={form.cepTomador} onChange={e=>setForm({...form,cepTomador:e.target.value})} maxLength={8} />
+                  <Input className="h-7 text-xs" placeholder="Telefone" value={form.foneTomador} onChange={e=>setForm({...form,foneTomador:e.target.value})} />
+                  <Input className="h-7 text-xs" placeholder="E-mail" value={form.emailTomador} onChange={e=>setForm({...form,emailTomador:e.target.value})} />
+                </div>
+                <div className="grid grid-cols-2 md:grid-cols-3 gap-2 mt-2">
+                  <Input className="h-7 text-xs md:col-span-2" placeholder="Logradouro" value={form.logradouroTomador} onChange={e=>setForm({...form,logradouroTomador:e.target.value})} />
+                  <Input className="h-7 text-xs" placeholder="Nº" value={form.nroTomador} onChange={e=>setForm({...form,nroTomador:e.target.value})} />
+                </div>
+                <div className="grid grid-cols-1 gap-2 mt-2">
+                  <Input className="h-7 text-xs" placeholder="Bairro" value={form.bairroTomador} onChange={e=>setForm({...form,bairroTomador:e.target.value})} />
                 </div>
               </Card>
 
@@ -1504,18 +1513,29 @@ function CtePage() {
               emitIE: f.emit?.ie || "ISENTO",
               tomadorCnpj: f.cnpjTomador || "",
               tomadorNome: f.xNomeTomador || "",
-              tomadorEndereco: "",
+              tomadorEndereco: `${f.logradouroTomador || ""} ${f.nroTomador || ""} ${f.bairroTomador || ""}`.trim(),
               tomadorCidade: f.xMunTomador || "",
               tomadorUF: f.ufTomador || "",
               remCnpj: f.rem?.cnpj || "",
               remNome: f.rem?.xNome || "",
               remCidade: f.rem?.xMun || "",
               remUF: f.rem?.uf || "",
+              remEndereco: f.rem?.logradouro || "",
+              remBairro: f.rem?.bairro || "",
+              remCEP: f.rem?.cep || "",
               destCnpj: f.dest?.cnpj || "",
               destNome: f.dest?.xNome || "",
               destCidade: f.dest?.xMun || "",
               destUF: f.dest?.uf || "",
+              destEndereco: f.dest?.logradouro || "",
+              destBairro: f.dest?.bairro || "",
+              destCEP: f.dest?.cep || "",
               cfop: f.cfop || "5353",
+              naturezaOperacao: "TRANSPORTE INTERESTADUAL - INDUSTRIAL",
+              origemCidade: f.xMunIni || "",
+              origemUF: f.ufIni || "",
+              destinoCidade: f.xMunFim || "",
+              destinoUF: f.ufFim || "",
               valorServico: f.vPrest || 0,
               valorCarga: f.vCarga || 0,
               pesoKg: f.pesoKg || 0,
@@ -1528,6 +1548,7 @@ function CtePage() {
               placaReboque: f.placaReboque || "",
               rntrc: f.rntrc || "",
               obs: f.obs || "",
+              protocolo: "",
             });
             const url = URL.createObjectURL(pdfBlob);
             return <iframe src={url} className="flex-1 w-full min-h-[500px] border-0" />;
