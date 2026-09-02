@@ -39,7 +39,7 @@ function CtePage() {
   const qc = useQueryClient();
   const search = Route.useSearch();
   const [isParsing, setIsParsing] = useState(false);
-  const [mercadorias, setMercadorias] = useState<Array<{ chave: string; nNF: string; serie: string; emit: string; emitCnpj: string; emitUF: string; emitCMun: string; emitXMun: string; dest: string; destCnpj: string; destUF: string; destCMun: string; destXMun: string; valor: number; peso: number; data: string; tomador: string; tomadorCnpj: string; tomadorUF: string; tomadorCMun: string; tomadorXMun: string; modFrete: string }>>([]);
+  const [mercadorias, setMercadorias] = useState<Array<{ chave: string; nNF: string; serie: string; emit: string; emitCnpj: string; emitUF: string; emitCMun: string; emitXMun: string; emitIE?: string; emitLogradouro?: string; emitBairro?: string; emitCEP?: string; emitFone?: string; dest: string; destCnpj: string; destUF: string; destCMun: string; destXMun: string; destIE?: string; destLogradouro?: string; destBairro?: string; destCEP?: string; destFone?: string; valor: number; peso: number; data: string; tomador: string; tomadorCnpj: string; tomadorUF: string; tomadorCMun: string; tomadorXMun: string; modFrete: string }>>([]);
   const [selecionadas, setSelecionadas] = useState<Set<string>>(new Set());
   const [filtroEmpresa] = useState("ROSE TRANSPORTES");
   const [filtroRemetente, setFiltroRemetente] = useState("TODOS REMETENTES");
@@ -76,7 +76,12 @@ function CtePage() {
 
   const [open, setOpen] = useState(false);
   const [form, setForm] = useState({
-    toma: "3", cnpjTomador: "", xNomeTomador: "", ufTomador: "MG", cMunTomador: "3106200", xMunTomador: "BELO HORIZONTE", ieTomador: "", logradouroTomador: "", nroTomador: "", bairroTomador: "", cepTomador: "", foneTomador: "", emailTomador: "", cfop: "5353",
+    toma: "3", cnpjTomador: "", xNomeTomador: "", ufTomador: "MG", cMunTomador: "3106200", xMunTomador: "BELO HORIZONTE", ieTomador: "", logradouroTomador: "", nroTomador: "", bairroTomador: "", cepTomador: "", foneTomador: "", emailTomador: "",
+    // Consignatário
+    cnpjConsignatario: "", xNomeConsignatario: "", ieConsignatario: "", ufConsignatario: "", xMunConsignatario: "", cepConsignatario: "", logradouroConsignatario: "", nroConsignatario: "", bairroConsignatario: "",
+    // Redespacho
+    cnpjRedespacho: "", xNomeRedespacho: "", ieRedespacho: "", ufRedespacho: "", xMunRedespacho: "", cepRedespacho: "", logradouroRedespacho: "", nroRedespacho: "", bairroRedespacho: "",
+    cfop: "5353",
     vPrest: "0.00", vCarga: "0.00", peso: "0", rntrc: "",
     // Impostos — base e alíquotas editáveis (corrigido: base padrão = vPrest, não vCarga)
     icmsCST: "00", icmsBase: "1000.00", icmsAliq: "0.00", icmsValor: "0.00",
@@ -339,14 +344,24 @@ function CtePage() {
         const doc = parser.parseFromString(text, "text/xml");
         const emitCnpj = doc.querySelector("emit > CNPJ")?.textContent || "";
         const emitXNome = doc.querySelector("emit > xNome")?.textContent || "";
+        const emitIE = doc.querySelector("emit > IE")?.textContent || "";
         const emitUF = doc.querySelector("emit > enderEmit > UF")?.textContent || "";
         const emitCMun = doc.querySelector("emit > enderEmit > cMun")?.textContent || "";
         const emitXMun = doc.querySelector("emit > enderEmit > xMun")?.textContent || "";
+        const emitLgr = doc.querySelector("emit > enderEmit > xLgr")?.textContent || "";
+        const emitBairro = doc.querySelector("emit > enderEmit > xBairro")?.textContent || "";
+        const emitCEP = doc.querySelector("emit > enderEmit > CEP")?.textContent || "";
+        const emitFone = doc.querySelector("emit > enderEmit > fone")?.textContent || "";
         const destCnpj = doc.querySelector("dest > CNPJ")?.textContent || doc.querySelector("dest > CPF")?.textContent || "";
         const destXNome = doc.querySelector("dest > xNome")?.textContent || "";
+        const destIE = doc.querySelector("dest > IE")?.textContent || "";
         const destUF = doc.querySelector("dest > enderDest > UF")?.textContent || "";
         const destCMun = doc.querySelector("dest > enderDest > cMun")?.textContent || "";
         const destXMun = doc.querySelector("dest > enderDest > xMun")?.textContent || "";
+        const destLgr = doc.querySelector("dest > enderDest > xLgr")?.textContent || "";
+        const destBairro = doc.querySelector("dest > enderDest > xBairro")?.textContent || "";
+        const destCEP = doc.querySelector("dest > enderDest > CEP")?.textContent || "";
+        const destFone = doc.querySelector("dest > enderDest > fone")?.textContent || "";
         const vNF = doc.querySelector("total > ICMSTot > vNF")?.textContent || doc.querySelector("vNF")?.textContent || "0";
         const pesoB = doc.querySelector("transp > vol > pesoB")?.textContent || doc.querySelector("vol > pesoB")?.textContent || "";
         const nNF = doc.querySelector("ide > nNF")?.textContent || file.name.replace(/\.xml$/i, "");
@@ -407,7 +422,7 @@ function CtePage() {
           toast.error(`Falha ao salvar NF ${nNF}: ${error.message}`);
           continue;
         }
-        novas.push({ chave: chaveNorm, nNF, serie, emit: emitXNome, emitCnpj, emitUF, emitCMun, emitXMun, dest: destXNome, destCnpj, destUF, destCMun, destXMun, valor, peso, data: dhEmi.slice(0, 10), tomador: tomadorNome, tomadorCnpj, tomadorUF, tomadorCMun, tomadorXMun, modFrete });
+        novas.push({ chave: chaveNorm, nNF, serie, emit: emitXNome, emitCnpj, emitUF, emitCMun, emitXMun, emitIE, emitLogradouro: emitLgr, emitBairro, emitCEP, emitFone, dest: destXNome, destCnpj, destUF, destCMun, destXMun, destIE, destLogradouro: destLgr, destBairro, destCEP, destFone, valor, peso, data: dhEmi.slice(0, 10), tomador: tomadorNome, tomadorCnpj, tomadorUF, tomadorCMun, tomadorXMun, modFrete });
         if (added === 0 && mercadorias.length === 0) {
           const tomaByMod: Record<string, string> = { "0": "0", "1": "3", "2": "4", "3": "0", "4": "3", "9": "4" };
           const tomaIni = tomaByMod[modFrete] ?? "3";
@@ -959,35 +974,91 @@ function CtePage() {
 
             {/* === TAB: Remetente/Destinatário === */}
             <TabsContent value="tomador" className="mt-3 space-y-3">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                {/* Remetente (emitente da NF-e) */}
-                <Card className="p-3">
-                  <div className="flex items-center gap-2 mb-2">
-                    <div className="h-6 w-6 rounded bg-emerald-500/10 grid place-items-center"><UploadCloud className="h-3.5 w-3.5 text-emerald-600" /></div>
-                    <h5 className="text-xs font-semibold">Remetente</h5>
-                  </div>
-                  {mercadorias.length > 0 ? (
+              {mercadorias.length > 0 ? (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                  {/* Remetente */}
+                  <Card className="p-3">
+                    <div className="flex items-center gap-2 mb-2">
+                      <div className="h-6 w-6 rounded bg-emerald-500/10 grid place-items-center"><UploadCloud className="h-3.5 w-3.5 text-emerald-600" /></div>
+                      <h5 className="text-xs font-semibold">Remetente</h5>
+                    </div>
                     <div className="space-y-1 text-xs">
                       <p className="font-medium">{mercadorias[0].emit || "—"}</p>
-                      <p className="text-muted-foreground font-mono text-[10px]">{mercadorias[0].emitCnpj ? mercadorias[0].emitCnpj.replace(/(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})/, "$1.$2.$3/$4-$5") : "—"}</p>
+                      <p className="text-muted-foreground font-mono text-[10px]">CNPJ: {mercadorias[0].emitCnpj ? mercadorias[0].emitCnpj.replace(/(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})/, "$1.$2.$3/$4-$5") : "—"} {mercadorias[0].emitIE ? `IE: ${mercadorias[0].emitIE}` : ""}</p>
+                      <p className="text-muted-foreground text-[10px]">{[mercadorias[0].emitLogradouro, mercadorias[0].emitBairro].filter(Boolean).join(", ") || "—"}</p>
+                      <p className="text-muted-foreground text-[10px]">{mercadorias[0].emitXMun || "—"}-{mercadorias[0].emitUF || "—"} {mercadorias[0].emitCEP ? `CEP: ${mercadorias[0].emitCEP}` : ""}</p>
+                      {mercadorias[0].emitFone && <p className="text-muted-foreground text-[10px]">Fone: {mercadorias[0].emitFone}</p>}
                     </div>
-                  ) : <p className="text-xs text-muted-foreground">Importe NF-es para preencher</p>}
-                </Card>
+                  </Card>
 
-                {/* Destinatário */}
-                <Card className="p-3">
-                  <div className="flex items-center gap-2 mb-2">
-                    <div className="h-6 w-6 rounded bg-sky-500/10 grid place-items-center"><Package className="h-3.5 w-3.5 text-sky-600" /></div>
-                    <h5 className="text-xs font-semibold">Destinatário</h5>
-                  </div>
-                  {mercadorias.length > 0 ? (
+                  {/* Destinatário */}
+                  <Card className="p-3">
+                    <div className="flex items-center gap-2 mb-2">
+                      <div className="h-6 w-6 rounded bg-sky-500/10 grid place-items-center"><Package className="h-3.5 w-3.5 text-sky-600" /></div>
+                      <h5 className="text-xs font-semibold">Destinatário</h5>
+                    </div>
                     <div className="space-y-1 text-xs">
                       <p className="font-medium">{mercadorias[0].dest || "—"}</p>
-                      <p className="text-muted-foreground font-mono text-[10px]">{mercadorias[0].destCnpj ? mercadorias[0].destCnpj.replace(/(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})/, "$1.$2.$3/$4-$5") : "—"}</p>
+                      <p className="text-muted-foreground font-mono text-[10px]">CNPJ: {mercadorias[0].destCnpj ? mercadorias[0].destCnpj.replace(/(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})/, "$1.$2.$3/$4-$5") : "—"} {mercadorias[0].destIE ? `IE: ${mercadorias[0].destIE}` : ""}</p>
+                      <p className="text-muted-foreground text-[10px]">{[mercadorias[0].destLogradouro, mercadorias[0].destBairro].filter(Boolean).join(", ") || "—"}</p>
+                      <p className="text-muted-foreground text-[10px]">{mercadorias[0].destXMun || "—"}-{mercadorias[0].destUF || "—"} {mercadorias[0].destCEP ? `CEP: ${mercadorias[0].destCEP}` : ""}</p>
+                      {mercadorias[0].destFone && <p className="text-muted-foreground text-[10px]">Fone: {mercadorias[0].destFone}</p>}
                     </div>
-                  ) : <p className="text-xs text-muted-foreground">Importe NF-es para preencher</p>}
-                </Card>
-              </div>
+                  </Card>
+                </div>
+              ) : <p className="text-xs text-muted-foreground">Importe NF-es para preencher remetente e destinatário</p>}
+
+              {/* Consignatário */}
+              <Card className="p-3">
+                <div className="flex items-center gap-2 mb-2">
+                  <div className="h-6 w-6 rounded bg-amber-500/10 grid place-items-center"><Building2 className="h-3.5 w-3.5 text-amber-600" /></div>
+                  <h5 className="text-xs font-semibold">Consignatário</h5>
+                  <span className="text-[10px] text-muted-foreground">(opcional)</span>
+                </div>
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+                  <Input className="h-7 text-xs" placeholder="CNPJ" value={form.cnpjConsignatario || ""} onChange={e=>setForm({...form,cnpjConsignatario:e.target.value})} />
+                  <Input className="h-7 text-xs md:col-span-2" placeholder="Nome / Razão Social" value={form.xNomeConsignatario || ""} onChange={e=>setForm({...form,xNomeConsignatario:e.target.value})} />
+                  <Input className="h-7 text-xs" placeholder="IE" value={form.ieConsignatario || ""} onChange={e=>setForm({...form,ieConsignatario:e.target.value})} />
+                </div>
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-2 mt-2">
+                  <Input className="h-7 text-xs" placeholder="UF" value={form.ufConsignatario || ""} onChange={e=>setForm({...form,ufConsignatario:e.target.value.toUpperCase()})} maxLength={2} />
+                  <Input className="h-7 text-xs md:col-span-2" placeholder="Município" value={form.xMunConsignatario || ""} onChange={e=>setForm({...form,xMunConsignatario:e.target.value})} />
+                  <Input className="h-7 text-xs" placeholder="CEP" value={form.cepConsignatario || ""} onChange={e=>setForm({...form,cepConsignatario:e.target.value})} maxLength={8} />
+                </div>
+                <div className="grid grid-cols-2 md:grid-cols-3 gap-2 mt-2">
+                  <Input className="h-7 text-xs md:col-span-2" placeholder="Logradouro" value={form.logradouroConsignatario || ""} onChange={e=>setForm({...form,logradouroConsignatario:e.target.value})} />
+                  <Input className="h-7 text-xs" placeholder="Nº" value={form.nroConsignatario || ""} onChange={e=>setForm({...form,nroConsignatario:e.target.value})} />
+                </div>
+                <div className="grid grid-cols-1 gap-2 mt-2">
+                  <Input className="h-7 text-xs" placeholder="Bairro" value={form.bairroConsignatario || ""} onChange={e=>setForm({...form,bairroConsignatario:e.target.value})} />
+                </div>
+              </Card>
+
+              {/* Redespacho */}
+              <Card className="p-3">
+                <div className="flex items-center gap-2 mb-2">
+                  <div className="h-6 w-6 rounded bg-violet-500/10 grid place-items-center"><Truck className="h-3.5 w-3.5 text-violet-600" /></div>
+                  <h5 className="text-xs font-semibold">Redespacho</h5>
+                  <span className="text-[10px] text-muted-foreground">(opcional)</span>
+                </div>
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+                  <Input className="h-7 text-xs" placeholder="CNPJ" value={form.cnpjRedespacho || ""} onChange={e=>setForm({...form,cnpjRedespacho:e.target.value})} />
+                  <Input className="h-7 text-xs md:col-span-2" placeholder="Nome / Razão Social" value={form.xNomeRedespacho || ""} onChange={e=>setForm({...form,xNomeRedespacho:e.target.value})} />
+                  <Input className="h-7 text-xs" placeholder="IE" value={form.ieRedespacho || ""} onChange={e=>setForm({...form,ieRedespacho:e.target.value})} />
+                </div>
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-2 mt-2">
+                  <Input className="h-7 text-xs" placeholder="UF" value={form.ufRedespacho || ""} onChange={e=>setForm({...form,ufRedespacho:e.target.value.toUpperCase()})} maxLength={2} />
+                  <Input className="h-7 text-xs md:col-span-2" placeholder="Município" value={form.xMunRedespacho || ""} onChange={e=>setForm({...form,xMunRedespacho:e.target.value})} />
+                  <Input className="h-7 text-xs" placeholder="CEP" value={form.cepRedespacho || ""} onChange={e=>setForm({...form,cepRedespacho:e.target.value})} maxLength={8} />
+                </div>
+                <div className="grid grid-cols-2 md:grid-cols-3 gap-2 mt-2">
+                  <Input className="h-7 text-xs md:col-span-2" placeholder="Logradouro" value={form.logradouroRedespacho || ""} onChange={e=>setForm({...form,logradouroRedespacho:e.target.value})} />
+                  <Input className="h-7 text-xs" placeholder="Nº" value={form.nroRedespacho || ""} onChange={e=>setForm({...form,nroRedespacho:e.target.value})} />
+                </div>
+                <div className="grid grid-cols-1 gap-2 mt-2">
+                  <Input className="h-7 text-xs" placeholder="Bairro" value={form.bairroRedespacho || ""} onChange={e=>setForm({...form,bairroRedespacho:e.target.value})} />
+                </div>
+              </Card>
 
               {/* Tomador */}
               <Card className="p-3">
@@ -1499,6 +1570,7 @@ function CtePage() {
           {previewData && (() => {
             const f = previewData.form;
             const nFes = (f.nFes || []).map((n: any) => ({ nNF: n.nNF || n.numero || "", serie: n.serie || "1", valor: n.valor || 0 }));
+            const first = mercadorias[0] || {} as any;
             const pdfBlob = gerarDactePdf({
               chave: previewData.chave,
               numero: previewData.proximo,
@@ -1516,20 +1588,24 @@ function CtePage() {
               tomadorEndereco: `${f.logradouroTomador || ""} ${f.nroTomador || ""} ${f.bairroTomador || ""}`.trim(),
               tomadorCidade: f.xMunTomador || "",
               tomadorUF: f.ufTomador || "",
-              remCnpj: f.rem?.cnpj || "",
-              remNome: f.rem?.xNome || "",
-              remCidade: f.rem?.xMun || "",
-              remUF: f.rem?.uf || "",
-              remEndereco: f.rem?.logradouro || "",
-              remBairro: f.rem?.bairro || "",
-              remCEP: f.rem?.cep || "",
-              destCnpj: f.dest?.cnpj || "",
-              destNome: f.dest?.xNome || "",
-              destCidade: f.dest?.xMun || "",
-              destUF: f.dest?.uf || "",
-              destEndereco: f.dest?.logradouro || "",
-              destBairro: f.dest?.bairro || "",
-              destCEP: f.dest?.cep || "",
+              remCnpj: first.emitCnpj || "",
+              remNome: first.emit || "",
+              remCidade: first.emitXMun || "",
+              remUF: first.emitUF || "",
+              remEndereco: first.emitLogradouro || "",
+              remBairro: first.emitBairro || "",
+              remCEP: first.emitCEP || "",
+              remIE: first.emitIE || "",
+              remFone: first.emitFone || "",
+              destCnpj: first.destCnpj || "",
+              destNome: first.dest || "",
+              destCidade: first.destXMun || "",
+              destUF: first.destUF || "",
+              destEndereco: first.destLogradouro || "",
+              destBairro: first.destBairro || "",
+              destCEP: first.destCEP || "",
+              destIE: first.destIE || "",
+              destFone: first.destFone || "",
               cfop: f.cfop || "5353",
               naturezaOperacao: "TRANSPORTE INTERESTADUAL - INDUSTRIAL",
               origemCidade: f.xMunIni || "",
