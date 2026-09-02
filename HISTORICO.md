@@ -638,6 +638,10 @@ certificado tem estrutura PKCS12 não padrão ou se `extractPkcs12Native` precis
     - CT-e rascunho: listagem mostra Nº de NF-e vinculadas, badge âmbar para rascunho, botão Editar (lápis) que carrega form + NF-e e exclui o rascunho antigo para reenvio.
     - CT-e rascunho: NF-e marcadas como `status = "rascunho"` no `cte_nfes_pendentes` ao salvar; somem da listagem de pendentes. Ao editar, voltam para `pendente`.
     - CT-e rascunho: ao salvar fecha dialog e limpa estado.
+    - CT-e rascunho fix: listagem mostra Nº das NF-e (ex: "NF-e 123, 456") ao invés de só quantidade.
+    - CT-e rascunho fix: NF-e são DELETADAS do `cte_nfes_pendentes` ao salvar rascunho (CHECK constraint só aceita pendente/embarcada); re-inseridas ao editar.
+    - CT-e rascunho fix: JSON salva dados completos das NF-e (nfs array) para reconstrução sem consulta ao banco.
+    - CT-e SOAP fix V4: body element `CTeRecepcaoSinc` (não `cteRecepcao`), dados comprimidos com GZip + Base64 conforme MOC CT-e 4.00.
 
 55. **MDF-e Fase 2 — implementação completa** - 01/09/2026 (commit `bce4767`):
     - `sefaz-mdf.ts` reescrito: XML 3.00 completo (ide/emit/infModal rodoviário/infDoc/infMunCarrega/infPercurso/veicTrac/condutor/lacres), geração de chave com DV mod11, assinatura reutiliza `signXml`, funções `emitirMdf`/`consultarMdf`/`encerrarMdf`/`cancelarMdf` via SOAP 1.2 mTLS.
