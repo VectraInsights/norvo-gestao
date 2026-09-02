@@ -650,6 +650,16 @@ certificado tem estrutura PKCS12 não padrão ou se `extractPkcs12Native` precis
     - `fiscal.mdf.tsx` reescrito: tabela listagem com status/filtro período, dialog Novo MDF-e com 3 abas (CT-e vinculados, Veículo/Motorista, Rota/UF), botões Encerrar (evento 110112) e Cancelar (evento 110111) com confirmação, badges de status.
     - Vinculação CT-e → MDF-e: seleção de CT-e autorizados com checkbox, cálculo automático de peso/valor total.
 
+56. **CT-e: pré-visualização XML** - 02/09/2026:
+    - Botão "Pré Visualizar" no dialog de CT-e agora funcional (antes era placeholder desabilitado).
+    - `previewCteXmlFn` em `sefaz-cte-server.ts`: gera o XML sem enviar para SEFAZ, retorna XML formatado, chave e número.
+    - Dialog de pré-visualização com XML indentado e legível, botão "Enviar Doc-e" direto do preview.
+
+57. **CT-e: fix MG SOAP (tentativa 5)** - 02/09/2026:
+    - Body simplificado para MG: `<cteRecepcao>{base64}</cteRecepcao>` (sem wrapper `cteDadosMsg`, sem xmlns).
+    - Pesquisa revelou: MG tem histórico de problemas com CT-e 4.00 (usuários ACBr reportam retorno em branco em homologação/produção; alguns só conseguem via SVC-SP contingency).
+    - SOAP Header (`cteCabecMsg`) removido do CT-e 4.00 síncrono conforme MOC atualizado.
+
 ---
 ## Regras de segurança
 

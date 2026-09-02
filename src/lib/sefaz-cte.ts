@@ -169,9 +169,9 @@ export async function emitirCte(pfx:Buffer, senha:string, xml:string, ambiente:A
   const dadosBase64 = compressed.toString("base64");
   const isMG = uf?.toUpperCase() === "MG";
   if (isMG) {
-    // MG usa body `cteRecepcao` + SOAPAction `cteRecepcao` (lowercase)
-    const nsMg = "http://www.portalfiscal.inf.br/cte/wsdl/CTeRecepcaoSincV4";
-    const body=`<cteRecepcao xmlns="${nsMg}"><cteDadosMsg xmlns="${nsMg}">${dadosBase64}</cteDadosMsg></cteRecepcao>`;
+    // MG autorizador próprio — tenta body sem wrapper cteDadosMsg (direto Base64 no body)
+    // MG pode seguir padrão mais simples que SVRS
+    const body=`<cteRecepcao>${dadosBase64}</cteRecepcao>`;
     const ret=await soapRequest(ep.recepcao, body, "cteRecepcao", createSefazAgent(pfx,senha));
     const cStat=ret.match(/<cStat>(\d+)<\/cStat>/)?.[1]||""; const xMotivo=ret.match(/<xMotivo>([^<]+)<\/xMotivo>/)?.[1]||""; const ch=ret.match(/<chCTe>(\d{44})<\/chCTe>/)?.[1]||xml.match(/Id="CTe(\d{44})"/)?.[1]; const prot=ret.match(/<nProt>(\d+)<\/nProt>/)?.[1]||ret.match(/<protCTe[^>]*>[\s\S]*?<nProt>(\d+)<\/nProt>/)?.[1];
     return { sucesso: cStat==="100"||cStat==="104"||cStat==="103", cStat, xMotivo, chave: ch, protocolo: prot, xmlRet: ret };

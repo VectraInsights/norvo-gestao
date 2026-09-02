@@ -37,6 +37,20 @@ export const consultarCteFn = createServerFn({ method: "POST" }).validator((d:{e
   const ambiente=cfg?.ambiente==="homologacao"?"homologacao":"producao";
   return consultarCte(cert.pfx, cert.senha, data.chave, ambiente, cert.uf);
 });
+export const previewCteXmlFn = createServerFn({ method: "POST" }).validator((d: { empresaId: string; input: any }) => d).handler(async ({ data }) => {
+  const { buildCteXml } = await import("@/lib/sefaz-cte");
+  const { createClient } = await import("@supabase/supabase-js");
+  const supa = createClient(process.env.SUPABASE_URL||"", process.env.SUPABASE_SERVICE_ROLE_KEY||"");
+  const { data: emp } = await supa.from("empresas").select("cnpj, uf").eq("id", data.empresaId).single();
+  const { data: cfg } = await supa.from("nfe_config").select("ambiente").eq("empresa_id", data.empresaId).maybeSingle();
+  const ambiente = cfg?.ambiente==="homologacao"?"homologacao":"producao";
+  const { data: ultimo } = await supa.from("cte_documentos").select("numero").eq("empresa_id", data.empresaId).order("created_at",{ascending:false}).limit(1).maybeSingle();
+  const proximo = String((parseInt((ultimo as any)?.numero || "0",10)+1));
+  const input = { ...data.input, ambiente, numero: proximo, serie: data.input.serie || "1", emit: { cnpj: emp?.cnpj, xNome: data.input.emit?.xNome || "EMITENTE", ie: data.input.emit?.ie || "ISENTO", uf: emp?.uf || "MG", cMun: data.input.emit?.cMun || "3106200", xMun: data.input.emit?.xMun || "BELO HORIZONTE" } };
+  const { xml, chave } = buildCteXml(input);
+  return { xml, chave, proximo, ambiente };
+});
+
 export const cancelarCteFn = createServerFn({ method: "POST" }).validator((d:{empresaId:string;chave:string;justificativa:string})=>d).handler(async ({data})=>{
   if(SEFAZ_URL) return callProxy("cancelarCte", data);
   const { buscarCertificadoAtivo, cancelarCte } = await import("@/lib/sefaz-cte");

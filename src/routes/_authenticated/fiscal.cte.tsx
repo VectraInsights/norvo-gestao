@@ -19,7 +19,7 @@ import { useEmpresaAtual } from "@/hooks/use-empresa";
 import { brl, dateBR, num } from "@/lib/format";
 import { useState, useEffect } from "react";
 import { toast } from "sonner";
-import { emitirCteFn, consultarCteFn, cancelarCteFn } from "@/lib/sefaz-cte-server";
+import { emitirCteFn, consultarCteFn, cancelarCteFn, previewCteXmlFn } from "@/lib/sefaz-cte-server";
 import { CFOPS_CTE, MOD_FRETE_OPTIONS, RESPONSAVEL_CTE_OPTIONS } from "@/lib/cfops-transporte";
 import { Textarea } from "@/components/ui/textarea";
 import { DateInput } from "@/components/erp/date-input";
@@ -30,6 +30,19 @@ export const Route = createFileRoute("/_authenticated/fiscal/cte")({
   head: () => ({ meta: [{ title: "CT-e — Norvo" }] }),
   validateSearch: (search: Record<string, unknown>) => ({ fromNFe: (search.fromNFe as string) || undefined }),
 });
+
+function formatXml(xml: string): string {
+  let indent = 0;
+  const lines = xml.replace(/>\s*</g, ">\n<").split("\n");
+  return lines.map(line => {
+    const trimmed = line.trim();
+    if (!trimmed) return "";
+    if (trimmed.startsWith("</")) indent = Math.max(0, indent - 1);
+    const result = "  ".repeat(indent) + trimmed;
+    if (trimmed.startsWith("<") && !trimmed.startsWith("</") && !trimmed.startsWith("<?") && !trimmed.endsWith("/>") && !/<\//.test(trimmed)) indent++;
+    return result;
+  }).join("\n");
+}
 
 type CteDoc = { id: string; numero: string | null; serie: string | null; status: string; valor_servico: number | null; chave_acesso: string | null; created_at: string; motivo_rejeicao: string | null; protocolo_sefaz: string | null; xml_assinado: string | null };
 
@@ -609,6 +622,31 @@ function CtePage() {
       if ((ret as any).sucesso) toast.success("CT-e cancelado");
       else toast.error((ret as any).xMotivo || "Falha ao cancelar");
       qc.invalidateQueries({ queryKey: ["cte-documentos"] });
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+  const [previewOpen, setPreviewOpen] = useState(false);
+  const [previewData, setPreviewData] = useState<{ xml: string; chave: string; proximo: string; ambiente: string } | null>(null);
+  const previewXml = useMutation({
+    mutationFn: async () => {
+      if (!empresa) throw new Error("Empresa não selecionada");
+      const chaves = selecionadas.size > 0 ? Array.from(selecionadas) : mercadorias.map(m => m.chave);
+      return previewCteXmlFn({ data: { empresaId: empresa.id, input: {
+        toma: form.toma, cnpjTomador: form.cnpjTomador, xNomeTomador: form.xNomeTomador, ufTomador: form.ufTomador, cMunTomador: form.cMunTomador, xMunTomador: form.xMunTomador,
+        cfop: form.cfop, vPrest: parseFloat(form.vPrest)||0, vCarga: parseFloat(form.vCarga)||0, pesoKg: parseFloat(form.peso)||0, rntrc: form.rntrc,
+        cMunEnv: form.cMunEnv, xMunEnv: form.xMunEnv, ufEnv: form.ufEnv, cMunIni: form.cMunIni, xMunIni: form.xMunIni, ufIni: form.ufIni, cMunFim: form.cMunFim, xMunFim: form.xMunFim, ufFim: form.ufFim,
+        icms: { CST: form.icmsCST, vBC: parseFloat(form.vPrest)||0, pICMS: parseFloat(form.icmsAliq)||0, vICMS: parseFloat(form.icmsValor)||0 },
+        impostos: { pisAliq: parseFloat(form.pisAliq)||0, cofinsAliq: parseFloat(form.cofinsAliq)||0, irAliq: parseFloat(form.irAliq)||0, inssAliq: parseFloat(form.inssAliq)||0, csllAliq: parseFloat(form.csllAliq)||0 },
+        serie: "1",
+        tomador: { toma: form.toma as any, cnpj: form.cnpjTomador, xNome: form.xNomeTomador, uf: form.ufTomador, cMun: form.cMunTomador, xMun: form.xMunTomador },
+        emit: { xNome: form.xNomeTomador, ie: "ISENTO", cMun: form.cMunEnv, xMun: form.xMunEnv } as any,
+        chavesNFe: chaves,
+      } } });
+    },
+    onSuccess: (ret: any) => {
+      setPreviewData(ret);
+      setPreviewOpen(true);
     },
     onError: (e: Error) => toast.error(e.message),
   });
@@ -1412,8 +1450,43 @@ function CtePage() {
             <Button variant="outline" onClick={() => salvarRascunho.mutate()} disabled={salvarRascunho.isPending}>
               {salvarRascunho.isPending ? "Salvando..." : <><FileText className="mr-1 h-3.5 w-3.5" /> Salvar Rascunho</>}
             </Button>
-            <Button variant="outline" disabled><FileText className="mr-1 h-3.5 w-3.5" /> Pré Visualizar</Button>
+            <Button variant="outline" onClick={() => previewXml.mutate()} disabled={previewXml.isPending || !form.cnpjTomador || !form.xNomeTomador}>
+              {previewXml.isPending ? "Gerando..." : <><FileText className="mr-1 h-3.5 w-3.5" /> Pré Visualizar</>}
+            </Button>
             <Button onClick={() => emitir.mutate()} disabled={emitir.isPending || !form.cnpjTomador || !form.xNomeTomador}>
+              {emitir.isPending ? "Enviando..." : <><Truck className="mr-1 h-3.5 w-3.5" /> Enviar Doc-e</>}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Dialog de Pré-Visualização do XML CT-e */}
+      <Dialog open={previewOpen} onOpenChange={setPreviewOpen}>
+        <DialogContent className="max-w-3xl max-h-[80vh] flex flex-col">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <FileText className="h-4 w-4" /> Pré-Visualização CT-e
+              {previewData && (
+                <Badge variant="outline" className="ml-2 text-[10px]">
+                  Nº {previewData.proximo} • {previewData.ambiente === "homologacao" ? "Homologação" : "Produção"}
+                </Badge>
+              )}
+            </DialogTitle>
+          </DialogHeader>
+          {previewData && (
+            <div className="flex-1 overflow-auto border rounded bg-muted/30">
+              <pre className="p-3 text-[11px] font-mono whitespace-pre-wrap break-all leading-tight">
+                {formatXml(previewData.xml)}
+              </pre>
+            </div>
+          )}
+          <div className="flex items-center justify-between text-[10px] text-muted-foreground">
+            <span>Chave: {previewData?.chave || "—"}</span>
+            <span>{previewData?.xml.length.toLocaleString("pt-BR")} caracteres</span>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setPreviewOpen(false)}>Fechar</Button>
+            <Button onClick={() => { setPreviewOpen(false); emitir.mutate(); }} disabled={emitir.isPending || !form.cnpjTomador || !form.xNomeTomador}>
               {emitir.isPending ? "Enviando..." : <><Truck className="mr-1 h-3.5 w-3.5" /> Enviar Doc-e</>}
             </Button>
           </DialogFooter>
