@@ -335,6 +335,13 @@ function CtePage() {
     if (xmls.length === 0) { toast.error("Selecione XMLs de NF-e"); return; }
     setIsParsing(true);
     try {
+      const upsertContatoFromNfe = async (cnpj: string, nome: string, ie: string, uf: string, cidade: string, logradouro: string, bairro: string, cep: string, fone: string, tipo: "cliente" | "fornecedor" | "transportadora" | "ambos") => {
+        const doc = (cnpj || "").replace(/\D/g, "");
+        if (!doc || doc.length < 11 || !nome) return;
+        const { data: existente } = await supabase.from("contatos" as any).select("id").eq("empresa_id", empresa!.id).eq("documento", doc).maybeSingle();
+        if (existente) return;
+        await supabase.from("contatos" as any).insert({ empresa_id: empresa!.id, nome, tipo, documento: doc, uf: uf || null, cidade: cidade || null, logradouro: logradouro || null, bairro: bairro || null, cep: cep || null, telefone: fone || null });
+      };
       let added = 0;
       let duplicadas = 0;
       const novas: typeof mercadorias = [];
@@ -423,6 +430,8 @@ function CtePage() {
           continue;
         }
         novas.push({ chave: chaveNorm, nNF, serie, emit: emitXNome, emitCnpj, emitUF, emitCMun, emitXMun, emitIE, emitLogradouro: emitLgr, emitBairro, emitCEP, emitFone, dest: destXNome, destCnpj, destUF, destCMun, destXMun, destIE, destLogradouro: destLgr, destBairro, destCEP, destFone, valor, peso, data: dhEmi.slice(0, 10), tomador: tomadorNome, tomadorCnpj, tomadorUF, tomadorCMun, tomadorXMun, modFrete });
+        upsertContatoFromNfe(emitCnpj, emitXNome, emitIE, emitUF, emitXMun, emitLgr, emitBairro, emitCEP, emitFone, "fornecedor").catch(() => {});
+        upsertContatoFromNfe(destCnpj, destXNome, destIE, destUF, destXMun, destLgr, destBairro, destCEP, destFone, "cliente").catch(() => {});
         if (added === 0 && mercadorias.length === 0) {
           const tomaByMod: Record<string, string> = { "0": "0", "1": "3", "2": "4", "3": "0", "4": "3", "9": "4" };
           const tomaIni = tomaByMod[modFrete] ?? "3";
@@ -982,12 +991,12 @@ function CtePage() {
                       <div className="h-6 w-6 rounded bg-emerald-500/10 grid place-items-center"><UploadCloud className="h-3.5 w-3.5 text-emerald-600" /></div>
                       <h5 className="text-xs font-semibold">Remetente</h5>
                     </div>
-                    <div className="space-y-1 text-xs">
-                      <p className="font-medium">{mercadorias[0].emit || "—"}</p>
-                      <p className="text-muted-foreground font-mono text-[10px]">CNPJ: {mercadorias[0].emitCnpj ? mercadorias[0].emitCnpj.replace(/(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})/, "$1.$2.$3/$4-$5") : "—"} {mercadorias[0].emitIE ? `IE: ${mercadorias[0].emitIE}` : ""}</p>
-                      <p className="text-muted-foreground text-[10px]">{[mercadorias[0].emitLogradouro, mercadorias[0].emitBairro].filter(Boolean).join(", ") || "—"}</p>
-                      <p className="text-muted-foreground text-[10px]">{mercadorias[0].emitXMun || "—"}-{mercadorias[0].emitUF || "—"} {mercadorias[0].emitCEP ? `CEP: ${mercadorias[0].emitCEP}` : ""}</p>
-                      {mercadorias[0].emitFone && <p className="text-muted-foreground text-[10px]">Fone: {mercadorias[0].emitFone}</p>}
+                    <div className="space-y-0.5 text-[10px]">
+                      <p className="font-medium text-xs">{mercadorias[0].emit || "—"}</p>
+                      <p className="text-muted-foreground">CNPJ: {mercadorias[0].emitCnpj ? mercadorias[0].emitCnpj.replace(/(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})/, "$1.$2.$3/$4-$5") : "—"} {mercadorias[0].emitIE ? `IE: ${mercadorias[0].emitIE}` : ""}</p>
+                      <p className="text-muted-foreground">{[mercadorias[0].emitLogradouro, mercadorias[0].emitBairro].filter(Boolean).join(", ") || "—"}</p>
+                      <p className="text-muted-foreground">{mercadorias[0].emitXMun || "—"}-{mercadorias[0].emitUF || "—"} {mercadorias[0].emitCEP ? `CEP: ${mercadorias[0].emitCEP}` : ""}</p>
+                      {mercadorias[0].emitFone && <p className="text-muted-foreground">Fone: {mercadorias[0].emitFone}</p>}
                     </div>
                   </Card>
 
@@ -997,12 +1006,12 @@ function CtePage() {
                       <div className="h-6 w-6 rounded bg-sky-500/10 grid place-items-center"><Package className="h-3.5 w-3.5 text-sky-600" /></div>
                       <h5 className="text-xs font-semibold">Destinatário</h5>
                     </div>
-                    <div className="space-y-1 text-xs">
-                      <p className="font-medium">{mercadorias[0].dest || "—"}</p>
-                      <p className="text-muted-foreground font-mono text-[10px]">CNPJ: {mercadorias[0].destCnpj ? mercadorias[0].destCnpj.replace(/(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})/, "$1.$2.$3/$4-$5") : "—"} {mercadorias[0].destIE ? `IE: ${mercadorias[0].destIE}` : ""}</p>
-                      <p className="text-muted-foreground text-[10px]">{[mercadorias[0].destLogradouro, mercadorias[0].destBairro].filter(Boolean).join(", ") || "—"}</p>
-                      <p className="text-muted-foreground text-[10px]">{mercadorias[0].destXMun || "—"}-{mercadorias[0].destUF || "—"} {mercadorias[0].destCEP ? `CEP: ${mercadorias[0].destCEP}` : ""}</p>
-                      {mercadorias[0].destFone && <p className="text-muted-foreground text-[10px]">Fone: {mercadorias[0].destFone}</p>}
+                    <div className="space-y-0.5 text-[10px]">
+                      <p className="font-medium text-xs">{mercadorias[0].dest || "—"}</p>
+                      <p className="text-muted-foreground">CNPJ: {mercadorias[0].destCnpj ? mercadorias[0].destCnpj.replace(/(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})/, "$1.$2.$3/$4-$5") : "—"} {mercadorias[0].destIE ? `IE: ${mercadorias[0].destIE}` : ""}</p>
+                      <p className="text-muted-foreground">{[mercadorias[0].destLogradouro, mercadorias[0].destBairro].filter(Boolean).join(", ") || "—"}</p>
+                      <p className="text-muted-foreground">{mercadorias[0].destXMun || "—"}-{mercadorias[0].destUF || "—"} {mercadorias[0].destCEP ? `CEP: ${mercadorias[0].destCEP}` : ""}</p>
+                      {mercadorias[0].destFone && <p className="text-muted-foreground">Fone: {mercadorias[0].destFone}</p>}
                     </div>
                   </Card>
                 </div>
@@ -1046,33 +1055,15 @@ function CtePage() {
                 </div>
               </Card>
 
-              {/* Tomador */}
+              {/* Tomador — apenas responsável */}
               <Card className="p-2">
-                <div className="flex items-center gap-2 mb-1">
+                <div className="flex items-center gap-2">
                   <div className="h-5 w-5 rounded bg-primary/10 grid place-items-center"><UsersRound className="h-3 w-3 text-primary" /></div>
                   <h5 className="text-xs font-semibold">Tomador do Serviço</h5>
-                  <span className="text-[10px] text-muted-foreground">(toma {form.toma})</span>
-                </div>
-                <div className="grid grid-cols-6 gap-1">
-                  <Select value={form.toma} onValueChange={v => setForm({...form, toma: v})}>
-                    <SelectTrigger className="h-6 text-[10px] col-span-2"><SelectValue /></SelectTrigger>
-                    <SelectContent>
-                      {MOD_FRETE_OPTIONS.map(opt => (
-                        <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  <Input className="h-6 text-[10px] col-span-2" placeholder="CNPJ *" value={form.cnpjTomador} onChange={e=>setForm({...form,cnpjTomador:e.target.value})} />
-                  <Input className="h-6 text-[10px] col-span-2" placeholder="Nome / Razão Social *" value={form.xNomeTomador} onChange={e=>setForm({...form,xNomeTomador:e.target.value})} />
-                  <Input className="h-6 text-[10px]" placeholder="UF" value={form.ufTomador} onChange={e=>setForm({...form,ufTomador:e.target.value.toUpperCase()})} maxLength={2} />
-                  <Input className="h-6 text-[10px] col-span-2" placeholder="Município" value={form.xMunTomador} onChange={e=>setForm({...form,xMunTomador:e.target.value})} />
-                  <Input className="h-6 text-[10px]" placeholder="IE" value={form.ieTomador} onChange={e=>setForm({...form,ieTomador:e.target.value})} />
-                  <Input className="h-6 text-[10px]" placeholder="CEP" value={form.cepTomador} onChange={e=>setForm({...form,cepTomador:e.target.value})} maxLength={8} />
-                  <Input className="h-6 text-[10px] col-span-3" placeholder="Logradouro" value={form.logradouroTomador} onChange={e=>setForm({...form,logradouroTomador:e.target.value})} />
-                  <Input className="h-6 text-[10px]" placeholder="Nº" value={form.nroTomador} onChange={e=>setForm({...form,nroTomador:e.target.value})} />
-                  <Input className="h-6 text-[10px]" placeholder="Bairro" value={form.bairroTomador} onChange={e=>setForm({...form,bairroTomador:e.target.value})} />
-                  <Input className="h-6 text-[10px] col-span-2" placeholder="Telefone" value={form.foneTomador} onChange={e=>setForm({...form,foneTomador:e.target.value})} />
-                  <Input className="h-6 text-[10px] col-span-2" placeholder="E-mail" value={form.emailTomador} onChange={e=>setForm({...form,emailTomador:e.target.value})} />
+                  <label className="flex items-center gap-1.5 ml-2 cursor-pointer">
+                    <input type="checkbox" checked={form.toma === "0"} onChange={e => setForm({...form, toma: e.target.checked ? "0" : "3"})} className="rounded border-gray-300 h-3.5 w-3.5" />
+                    <span className="text-[10px]">Contratação do Frete por conta do Remetente (toma 0)</span>
+                  </label>
                 </div>
               </Card>
 

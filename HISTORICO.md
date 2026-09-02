@@ -687,6 +687,13 @@ certificado tem estrutura PKCS12 não padrão ou se `extractPkcs12Native` precis
       (cabeçalho, chave de acesso, protocolo, remetente/destinatário, tomador, documentos
       originários, componentes de valor, impostos, modal rodoviário, declaração).
 
+61. **CT-e: auto-cadastro de contatos + simplificação Tomador** - 02/09/2026:
+    - Ao importar XML de NF-e, emitente e destinatário são cadastrados automaticamente
+      na tabela `contatos` (se o CNPJ não existir para a empresa), com endereço completo.
+    - Tab "Remetente/Destinatário" agora exibe dados completos (logradouro, bairro, CEP, IE, fone).
+    - Seção "Tomador do Serviço" simplificada: apenas checkbox "Contratação do Frete por
+      conta do Remetente (toma 0)" ao invés de formulário completo.
+
 ---
 ## Regras de segurança
 
