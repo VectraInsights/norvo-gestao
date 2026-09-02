@@ -1009,92 +1009,72 @@ function CtePage() {
               ) : <p className="text-xs text-muted-foreground">Importe NF-es para preencher remetente e destinatário</p>}
 
               {/* Consignatário */}
-              <Card className="p-3">
-                <div className="flex items-center gap-2 mb-2">
-                  <div className="h-6 w-6 rounded bg-amber-500/10 grid place-items-center"><Building2 className="h-3.5 w-3.5 text-amber-600" /></div>
+              <Card className="p-2">
+                <div className="flex items-center gap-2 mb-1">
+                  <div className="h-5 w-5 rounded bg-amber-500/10 grid place-items-center"><Building2 className="h-3 w-3 text-amber-600" /></div>
                   <h5 className="text-xs font-semibold">Consignatário</h5>
                   <span className="text-[10px] text-muted-foreground">(opcional)</span>
                 </div>
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
-                  <Input className="h-7 text-xs" placeholder="CNPJ" value={form.cnpjConsignatario || ""} onChange={e=>setForm({...form,cnpjConsignatario:e.target.value})} />
-                  <Input className="h-7 text-xs md:col-span-2" placeholder="Nome / Razão Social" value={form.xNomeConsignatario || ""} onChange={e=>setForm({...form,xNomeConsignatario:e.target.value})} />
-                  <Input className="h-7 text-xs" placeholder="IE" value={form.ieConsignatario || ""} onChange={e=>setForm({...form,ieConsignatario:e.target.value})} />
-                </div>
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-2 mt-2">
-                  <Input className="h-7 text-xs" placeholder="UF" value={form.ufConsignatario || ""} onChange={e=>setForm({...form,ufConsignatario:e.target.value.toUpperCase()})} maxLength={2} />
-                  <Input className="h-7 text-xs md:col-span-2" placeholder="Município" value={form.xMunConsignatario || ""} onChange={e=>setForm({...form,xMunConsignatario:e.target.value})} />
-                  <Input className="h-7 text-xs" placeholder="CEP" value={form.cepConsignatario || ""} onChange={e=>setForm({...form,cepConsignatario:e.target.value})} maxLength={8} />
-                </div>
-                <div className="grid grid-cols-2 md:grid-cols-3 gap-2 mt-2">
-                  <Input className="h-7 text-xs md:col-span-2" placeholder="Logradouro" value={form.logradouroConsignatario || ""} onChange={e=>setForm({...form,logradouroConsignatario:e.target.value})} />
-                  <Input className="h-7 text-xs" placeholder="Nº" value={form.nroConsignatario || ""} onChange={e=>setForm({...form,nroConsignatario:e.target.value})} />
-                </div>
-                <div className="grid grid-cols-1 gap-2 mt-2">
-                  <Input className="h-7 text-xs" placeholder="Bairro" value={form.bairroConsignatario || ""} onChange={e=>setForm({...form,bairroConsignatario:e.target.value})} />
+                <div className="grid grid-cols-6 gap-1">
+                  <Input className="h-6 text-[10px] col-span-2" placeholder="CNPJ" value={form.cnpjConsignatario || ""} onChange={e=>setForm({...form,cnpjConsignatario:e.target.value})} />
+                  <Input className="h-6 text-[10px] col-span-3" placeholder="Nome / Razão Social" value={form.xNomeConsignatario || ""} onChange={e=>setForm({...form,xNomeConsignatario:e.target.value})} />
+                  <Input className="h-6 text-[10px]" placeholder="IE" value={form.ieConsignatario || ""} onChange={e=>setForm({...form,ieConsignatario:e.target.value})} />
+                  <Input className="h-6 text-[10px]" placeholder="UF" value={form.ufConsignatario || ""} onChange={e=>setForm({...form,ufConsignatario:e.target.value.toUpperCase()})} maxLength={2} />
+                  <Input className="h-6 text-[10px] col-span-3" placeholder="Município" value={form.xMunConsignatario || ""} onChange={e=>setForm({...form,xMunConsignatario:e.target.value})} />
+                  <Input className="h-6 text-[10px]" placeholder="CEP" value={form.cepConsignatario || ""} onChange={e=>setForm({...form,cepConsignatario:e.target.value})} maxLength={8} />
+                  <Input className="h-6 text-[10px] col-span-4" placeholder="Logradouro" value={form.logradouroConsignatario || ""} onChange={e=>setForm({...form,logradouroConsignatario:e.target.value})} />
+                  <Input className="h-6 text-[10px]" placeholder="Nº" value={form.nroConsignatario || ""} onChange={e=>setForm({...form,nroConsignatario:e.target.value})} />
+                  <Input className="h-6 text-[10px]" placeholder="Bairro" value={form.bairroConsignatario || ""} onChange={e=>setForm({...form,bairroConsignatario:e.target.value})} />
                 </div>
               </Card>
 
               {/* Redespacho */}
-              <Card className="p-3">
-                <div className="flex items-center gap-2 mb-2">
-                  <div className="h-6 w-6 rounded bg-violet-500/10 grid place-items-center"><Truck className="h-3.5 w-3.5 text-violet-600" /></div>
+              <Card className="p-2">
+                <div className="flex items-center gap-2 mb-1">
+                  <div className="h-5 w-5 rounded bg-violet-500/10 grid place-items-center"><Truck className="h-3 w-3 text-violet-600" /></div>
                   <h5 className="text-xs font-semibold">Redespacho</h5>
                   <span className="text-[10px] text-muted-foreground">(opcional)</span>
                 </div>
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
-                  <Input className="h-7 text-xs" placeholder="CNPJ" value={form.cnpjRedespacho || ""} onChange={e=>setForm({...form,cnpjRedespacho:e.target.value})} />
-                  <Input className="h-7 text-xs md:col-span-2" placeholder="Nome / Razão Social" value={form.xNomeRedespacho || ""} onChange={e=>setForm({...form,xNomeRedespacho:e.target.value})} />
-                  <Input className="h-7 text-xs" placeholder="IE" value={form.ieRedespacho || ""} onChange={e=>setForm({...form,ieRedespacho:e.target.value})} />
-                </div>
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-2 mt-2">
-                  <Input className="h-7 text-xs" placeholder="UF" value={form.ufRedespacho || ""} onChange={e=>setForm({...form,ufRedespacho:e.target.value.toUpperCase()})} maxLength={2} />
-                  <Input className="h-7 text-xs md:col-span-2" placeholder="Município" value={form.xMunRedespacho || ""} onChange={e=>setForm({...form,xMunRedespacho:e.target.value})} />
-                  <Input className="h-7 text-xs" placeholder="CEP" value={form.cepRedespacho || ""} onChange={e=>setForm({...form,cepRedespacho:e.target.value})} maxLength={8} />
-                </div>
-                <div className="grid grid-cols-2 md:grid-cols-3 gap-2 mt-2">
-                  <Input className="h-7 text-xs md:col-span-2" placeholder="Logradouro" value={form.logradouroRedespacho || ""} onChange={e=>setForm({...form,logradouroRedespacho:e.target.value})} />
-                  <Input className="h-7 text-xs" placeholder="Nº" value={form.nroRedespacho || ""} onChange={e=>setForm({...form,nroRedespacho:e.target.value})} />
-                </div>
-                <div className="grid grid-cols-1 gap-2 mt-2">
-                  <Input className="h-7 text-xs" placeholder="Bairro" value={form.bairroRedespacho || ""} onChange={e=>setForm({...form,bairroRedespacho:e.target.value})} />
+                <div className="grid grid-cols-6 gap-1">
+                  <Input className="h-6 text-[10px] col-span-2" placeholder="CNPJ" value={form.cnpjRedespacho || ""} onChange={e=>setForm({...form,cnpjRedespacho:e.target.value})} />
+                  <Input className="h-6 text-[10px] col-span-3" placeholder="Nome / Razão Social" value={form.xNomeRedespacho || ""} onChange={e=>setForm({...form,xNomeRedespacho:e.target.value})} />
+                  <Input className="h-6 text-[10px]" placeholder="IE" value={form.ieRedespacho || ""} onChange={e=>setForm({...form,ieRedespacho:e.target.value})} />
+                  <Input className="h-6 text-[10px]" placeholder="UF" value={form.ufRedespacho || ""} onChange={e=>setForm({...form,ufRedespacho:e.target.value.toUpperCase()})} maxLength={2} />
+                  <Input className="h-6 text-[10px] col-span-3" placeholder="Município" value={form.xMunRedespacho || ""} onChange={e=>setForm({...form,xMunRedespacho:e.target.value})} />
+                  <Input className="h-6 text-[10px]" placeholder="CEP" value={form.cepRedespacho || ""} onChange={e=>setForm({...form,cepRedespacho:e.target.value})} maxLength={8} />
+                  <Input className="h-6 text-[10px] col-span-4" placeholder="Logradouro" value={form.logradouroRedespacho || ""} onChange={e=>setForm({...form,logradouroRedespacho:e.target.value})} />
+                  <Input className="h-6 text-[10px]" placeholder="Nº" value={form.nroRedespacho || ""} onChange={e=>setForm({...form,nroRedespacho:e.target.value})} />
+                  <Input className="h-6 text-[10px]" placeholder="Bairro" value={form.bairroRedespacho || ""} onChange={e=>setForm({...form,bairroRedespacho:e.target.value})} />
                 </div>
               </Card>
 
               {/* Tomador */}
-              <Card className="p-3">
-                <div className="flex items-center gap-2 mb-2">
-                  <div className="h-6 w-6 rounded bg-primary/10 grid place-items-center"><UsersRound className="h-3.5 w-3.5 text-primary" /></div>
+              <Card className="p-2">
+                <div className="flex items-center gap-2 mb-1">
+                  <div className="h-5 w-5 rounded bg-primary/10 grid place-items-center"><UsersRound className="h-3 w-3 text-primary" /></div>
                   <h5 className="text-xs font-semibold">Tomador do Serviço</h5>
                   <span className="text-[10px] text-muted-foreground">(toma {form.toma})</span>
                 </div>
-                <div className="grid grid-cols-1 md:grid-cols-4 gap-2">
+                <div className="grid grid-cols-6 gap-1">
                   <Select value={form.toma} onValueChange={v => setForm({...form, toma: v})}>
-                    <SelectTrigger className="h-7 text-xs"><SelectValue /></SelectTrigger>
+                    <SelectTrigger className="h-6 text-[10px] col-span-2"><SelectValue /></SelectTrigger>
                     <SelectContent>
                       {MOD_FRETE_OPTIONS.map(opt => (
                         <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
-                  <Input className="h-7 text-xs" placeholder="CNPJ *" value={form.cnpjTomador} onChange={e=>setForm({...form,cnpjTomador:e.target.value})} />
-                  <Input className="h-7 text-xs md:col-span-2" placeholder="Nome / Razão Social *" value={form.xNomeTomador} onChange={e=>setForm({...form,xNomeTomador:e.target.value})} />
-                </div>
-                <div className="grid grid-cols-3 gap-2 mt-2">
-                  <Input className="h-7 text-xs" placeholder="UF" value={form.ufTomador} onChange={e=>setForm({...form,ufTomador:e.target.value.toUpperCase()})} maxLength={2} />
-                  <Input className="h-7 text-xs md:col-span-2" placeholder="Município" value={form.xMunTomador} onChange={e=>setForm({...form,xMunTomador:e.target.value})} />
-                </div>
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-2 mt-2">
-                  <Input className="h-7 text-xs" placeholder="IE" value={form.ieTomador} onChange={e=>setForm({...form,ieTomador:e.target.value})} />
-                  <Input className="h-7 text-xs" placeholder="CEP" value={form.cepTomador} onChange={e=>setForm({...form,cepTomador:e.target.value})} maxLength={8} />
-                  <Input className="h-7 text-xs" placeholder="Telefone" value={form.foneTomador} onChange={e=>setForm({...form,foneTomador:e.target.value})} />
-                  <Input className="h-7 text-xs" placeholder="E-mail" value={form.emailTomador} onChange={e=>setForm({...form,emailTomador:e.target.value})} />
-                </div>
-                <div className="grid grid-cols-2 md:grid-cols-3 gap-2 mt-2">
-                  <Input className="h-7 text-xs md:col-span-2" placeholder="Logradouro" value={form.logradouroTomador} onChange={e=>setForm({...form,logradouroTomador:e.target.value})} />
-                  <Input className="h-7 text-xs" placeholder="Nº" value={form.nroTomador} onChange={e=>setForm({...form,nroTomador:e.target.value})} />
-                </div>
-                <div className="grid grid-cols-1 gap-2 mt-2">
-                  <Input className="h-7 text-xs" placeholder="Bairro" value={form.bairroTomador} onChange={e=>setForm({...form,bairroTomador:e.target.value})} />
+                  <Input className="h-6 text-[10px] col-span-2" placeholder="CNPJ *" value={form.cnpjTomador} onChange={e=>setForm({...form,cnpjTomador:e.target.value})} />
+                  <Input className="h-6 text-[10px] col-span-2" placeholder="Nome / Razão Social *" value={form.xNomeTomador} onChange={e=>setForm({...form,xNomeTomador:e.target.value})} />
+                  <Input className="h-6 text-[10px]" placeholder="UF" value={form.ufTomador} onChange={e=>setForm({...form,ufTomador:e.target.value.toUpperCase()})} maxLength={2} />
+                  <Input className="h-6 text-[10px] col-span-2" placeholder="Município" value={form.xMunTomador} onChange={e=>setForm({...form,xMunTomador:e.target.value})} />
+                  <Input className="h-6 text-[10px]" placeholder="IE" value={form.ieTomador} onChange={e=>setForm({...form,ieTomador:e.target.value})} />
+                  <Input className="h-6 text-[10px]" placeholder="CEP" value={form.cepTomador} onChange={e=>setForm({...form,cepTomador:e.target.value})} maxLength={8} />
+                  <Input className="h-6 text-[10px] col-span-3" placeholder="Logradouro" value={form.logradouroTomador} onChange={e=>setForm({...form,logradouroTomador:e.target.value})} />
+                  <Input className="h-6 text-[10px]" placeholder="Nº" value={form.nroTomador} onChange={e=>setForm({...form,nroTomador:e.target.value})} />
+                  <Input className="h-6 text-[10px]" placeholder="Bairro" value={form.bairroTomador} onChange={e=>setForm({...form,bairroTomador:e.target.value})} />
+                  <Input className="h-6 text-[10px] col-span-2" placeholder="Telefone" value={form.foneTomador} onChange={e=>setForm({...form,foneTomador:e.target.value})} />
+                  <Input className="h-6 text-[10px] col-span-2" placeholder="E-mail" value={form.emailTomador} onChange={e=>setForm({...form,emailTomador:e.target.value})} />
                 </div>
               </Card>
 
