@@ -164,8 +164,8 @@ export async function emitirCte(pfx:Buffer, senha:string, xml:string, ambiente:A
   const ep=getCteEndpoints(ambiente, uf);
   const xmlAss = signXml(xml, pfx, senha);
   // V4 Sinc — SVRS e MG usam CTeRecepcaoSincV4
-  const body=`<CTeRecepcaoSincV4 xmlns="http://www.portalfiscal.inf.br/cte/wsdl/CTeRecepcaoSincV4"><cteDadosMsg xmlns="http://www.portalfiscal.inf.br/cte/wsdl/CTeRecepcaoSincV4">${xmlAss}</cteDadosMsg></CTeRecepcaoSincV4>`;
-  const ret=await soapRequest(ep.recepcao, body, "http://www.portalfiscal.inf.br/cte/wsdl/CTeRecepcaoSincV4/CTeRecepcaoSincV4", createSefazAgent(pfx,senha));
+  const body=`<cteRecepcao xmlns="http://www.portalfiscal.inf.br/cte/wsdl/CTeRecepcaoSincV4"><cteDadosMsg xmlns="http://www.portalfiscal.inf.br/cte/wsdl/CTeRecepcaoSincV4">${xmlAss}</cteDadosMsg></cteRecepcao>`;
+  const ret=await soapRequest(ep.recepcao, body, "http://www.portalfiscal.inf.br/cte/wsdl/CTeRecepcaoSincV4/cteRecepcao", createSefazAgent(pfx,senha));
   const cStat=ret.match(/<cStat>(\d+)<\/cStat>/)?.[1]||""; const xMotivo=ret.match(/<xMotivo>([^<]+)<\/xMotivo>/)?.[1]||""; const ch=ret.match(/<chCTe>(\d{44})<\/chCTe>/)?.[1]||xml.match(/Id="CTe(\d{44})"/)?.[1]; const prot=ret.match(/<nProt>(\d+)<\/nProt>/)?.[1]||ret.match(/<protCTe[^>]*>[\s\S]*?<nProt>(\d+)<\/nProt>/)?.[1];
   // V4 retorna 104 (processado) com prot, ou 100 (autorizado) no sinc
   return { sucesso: cStat==="100"||cStat==="104"||cStat==="103", cStat, xMotivo, chave: ch, protocolo: prot, xmlRet: ret };
@@ -174,7 +174,7 @@ export async function emitirCte(pfx:Buffer, senha:string, xml:string, ambiente:A
 export async function consultarCte(pfx:Buffer, senha:string, chave:string, ambiente:Ambiente, uf?: string): Promise<{ cStat:string; xMotivo:string; xml?:string }>{
   const ep=getCteEndpoints(ambiente, uf);
   const body=`<CTeConsultaV4 xmlns="http://www.portalfiscal.inf.br/cte/wsdl/CTeConsultaV4"><cteDadosMsg xmlns="http://www.portalfiscal.inf.br/cte/wsdl/CTeConsultaV4"><consSitCTe xmlns="http://www.portalfiscal.inf.br/cte" versao="4.00"><tpAmb>${ambiente==="producao"?"1":"2"}</tpAmb><xServ>CONSULTAR</xServ><chCTe>${chave}</chCTe></consSitCTe></cteDadosMsg></CTeConsultaV4>`;
-  const ret=await soapRequest(ep.consulta, body, "http://www.portalfiscal.inf.br/cte/wsdl/CTeConsultaV4/CTeConsultaV4", createSefazAgent(pfx,senha));
+  const ret=await soapRequest(ep.consulta, body, "http://www.portalfiscal.inf.br/cte/wsdl/CTeConsultaV4/cteConsultaCT", createSefazAgent(pfx,senha));
   const cStat=ret.match(/<cStat>(\d+)<\/cStat>/)?.[1]||""; const xMotivo=ret.match(/<xMotivo>([^<]+)<\/xMotivo>/)?.[1]||"";
   return { cStat, xMotivo, xml: ret };
 }
@@ -188,7 +188,7 @@ export async function cancelarCte(pfx:Buffer, senha:string, chave:string, justif
   const evento=`<eventoCTe xmlns="http://www.portalfiscal.inf.br/cte" versao="4.00"><infEvento Id="ID${tpEvento}${chave}${nSeq}"><cOrgao>${cOrgao}</cOrgao><tpAmb>${ambiente==="producao"?"1":"2"}</tpAmb><CNPJ>${cnpj.replace(/\D/g,"")}</CNPJ><chCTe>${chave}</chCTe><dhEvento>${dhEvento}</dhEvento><tpEvento>${tpEvento}</tpEvento><nSeqEvento>${nSeq}</nSeqEvento><detEvento versaoEvento="4.00"><evCancCTe><descEvento>Cancelamento</descEvento><nProt>0</nProt><xJust>${justificativa}</xJust></evCancCTe></detEvento></infEvento></eventoCTe>`;
   const ass=signXml(evento, pfx, senha);
   const body=`<CTeRecepcaoEventoV4 xmlns="http://www.portalfiscal.inf.br/cte/wsdl/CTeRecepcaoEventoV4"><cteDadosMsg xmlns="http://www.portalfiscal.inf.br/cte/wsdl/CTeRecepcaoEventoV4">${ass}</cteDadosMsg></CTeRecepcaoEventoV4>`;
-  const ret=await soapRequest(ep.recepcaoEvento, body, "http://www.portalfiscal.inf.br/cte/wsdl/CTeRecepcaoEventoV4/CTeRecepcaoEventoV4", createSefazAgent(pfx,senha));
+  const ret=await soapRequest(ep.recepcaoEvento, body, "http://www.portalfiscal.inf.br/cte/wsdl/CTeRecepcaoEventoV4/cteRecepcaoEvento", createSefazAgent(pfx,senha));
   const cStat=ret.match(/<cStat>(\d+)<\/cStat>/)?.[1]||""; const xMotivo=ret.match(/<xMotivo>([^<]+)<\/xMotivo>/)?.[1]||"";
   return { sucesso: cStat==="135"||cStat==="155", cStat, xMotivo };
 }
