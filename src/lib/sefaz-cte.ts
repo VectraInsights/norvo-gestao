@@ -167,11 +167,20 @@ export async function emitirCte(pfx:Buffer, senha:string, xml:string, ambiente:A
   // V4 Sinc — MOC exige GZip + Base64 no cteDadosMsg
   const compressed = zlib.gzipSync(Buffer.from(xmlAss, "utf-8"));
   const dadosBase64 = compressed.toString("base64");
+  const isMG = uf?.toUpperCase() === "MG";
+  if (isMG) {
+    // MG usa body `cteRecepcao` + SOAPAction `cteRecepcao` (lowercase)
+    const nsMg = "http://www.portalfiscal.inf.br/cte/wsdl/CTeRecepcaoSincV4";
+    const body=`<cteRecepcao xmlns="${nsMg}"><cteDadosMsg xmlns="${nsMg}">${dadosBase64}</cteDadosMsg></cteRecepcao>`;
+    const ret=await soapRequest(ep.recepcao, body, "cteRecepcao", createSefazAgent(pfx,senha));
+    const cStat=ret.match(/<cStat>(\d+)<\/cStat>/)?.[1]||""; const xMotivo=ret.match(/<xMotivo>([^<]+)<\/xMotivo>/)?.[1]||""; const ch=ret.match(/<chCTe>(\d{44})<\/chCTe>/)?.[1]||xml.match(/Id="CTe(\d{44})"/)?.[1]; const prot=ret.match(/<nProt>(\d+)<\/nProt>/)?.[1]||ret.match(/<protCTe[^>]*>[\s\S]*?<nProt>(\d+)<\/nProt>/)?.[1];
+    return { sucesso: cStat==="100"||cStat==="104"||cStat==="103", cStat, xMotivo, chave: ch, protocolo: prot, xmlRet: ret };
+  }
+  // SVRS usa body `CTeRecepcaoSinc` + SOAPAction com namespace
   const ns = "http://www.portalfiscal.inf.br/cte/wsdl/CTeRecepcaoSincV4";
   const body=`<CTeRecepcaoSinc xmlns="${ns}"><cteDadosMsg xmlns="${ns}">${dadosBase64}</cteDadosMsg></CTeRecepcaoSinc>`;
   const ret=await soapRequest(ep.recepcao, body, `${ns}/CTeRecepcaoSinc`, createSefazAgent(pfx,senha));
   const cStat=ret.match(/<cStat>(\d+)<\/cStat>/)?.[1]||""; const xMotivo=ret.match(/<xMotivo>([^<]+)<\/xMotivo>/)?.[1]||""; const ch=ret.match(/<chCTe>(\d{44})<\/chCTe>/)?.[1]||xml.match(/Id="CTe(\d{44})"/)?.[1]; const prot=ret.match(/<nProt>(\d+)<\/nProt>/)?.[1]||ret.match(/<protCTe[^>]*>[\s\S]*?<nProt>(\d+)<\/nProt>/)?.[1];
-  // V4 retorna 104 (processado) com prot, ou 100 (autorizado) no sinc
   return { sucesso: cStat==="100"||cStat==="104"||cStat==="103", cStat, xMotivo, chave: ch, protocolo: prot, xmlRet: ret };
 }
 
