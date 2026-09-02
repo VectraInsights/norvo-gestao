@@ -509,16 +509,6 @@ function CtePage() {
         }));
         setMercadorias(mapped);
         setSelecionadas(new Set(parsed.chavesNFe || []));
-        for (const nf of parsed.nfs) {
-          await supabase.from("cte_nfes_pendentes" as any).upsert({
-            empresa_id: empresa.id, chave: nf.chave, n_nf: nf.nNF, serie: nf.serie,
-            emit_nome: nf.emit, emit_cnpj: nf.emitCnpj, emit_uf: nf.emitUF, emit_cmun: nf.emitCMun, emit_xmun: nf.emitXMun,
-            dest_nome: nf.dest, dest_cnpj: nf.destCnpj, dest_uf: nf.destUF, dest_cmun: nf.destCMun, dest_xmun: nf.destXMun,
-            valor: nf.valor, peso: nf.peso, data_emissao: nf.data || null,
-            tomador_nome: nf.tomador, tomador_cnpj: nf.tomadorCnpj, tomador_uf: nf.tomadorUF, tomador_cmun: nf.tomadorCMun, tomador_xmun: nf.tomadorXMun,
-            mod_frete: nf.modFrete, status: "pendente",
-          }, { onConflict: "empresa_id,chave" });
-        }
       }
       setEditingRascunhoId(doc.id);
       setOpen(true);
