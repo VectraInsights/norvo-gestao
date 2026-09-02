@@ -578,8 +578,10 @@ function CtePage() {
         icms: { CST: form.icmsCST, vBC: parseFloat(form.vPrest)||0, pICMS: parseFloat(form.icmsAliq)||0, vICMS: parseFloat(form.icmsValor)||0 },
         impostos: { pisAliq: parseFloat(form.pisAliq)||0, cofinsAliq: parseFloat(form.cofinsAliq)||0, irAliq: parseFloat(form.irAliq)||0, inssAliq: parseFloat(form.inssAliq)||0, csllAliq: parseFloat(form.csllAliq)||0 },
         serie: "1",
-        tomador: { toma: form.toma as any, cnpj: form.cnpjTomador, xNome: form.xNomeTomador, uf: form.ufTomador, cMun: form.cMunTomador, xMun: form.xMunTomador },
+        tomador: { toma: form.toma as any, cnpj: form.cnpjTomador, xNome: form.xNomeTomador, uf: form.ufTomador, cMun: form.cMunTomador, xMun: form.xMunTomador, ie: form.ufTomador === empresa.uf ? (empresa.ie || "ISENTO") : undefined },
         emit: { xNome: empresa.razao_social || empresa.nome_fantasia, ie: empresa.ie || "ISENTO", cMun: form.cMunEnv, xMun: form.xMunEnv, uf: empresa.uf || "MG", cnpj: empresa.cnpj, crt: empresa.regime_tributario || "3", logradouro: empresa.logradouro, nro: empresa.numero, bairro: empresa.bairro, cep: empresa.cep } as any,
+        rem: (() => { const first = mercadorias.find(m => chaves.includes(m.chave)); return first ? { cnpj: first.emitCnpj, xNome: first.emit, uf: first.emitUF, cMun: first.emitCMun, xMun: first.emitXMun } : undefined; })(),
+        dest: (() => { const first = mercadorias.find(m => chaves.includes(m.chave)); return first ? { cnpj: first.destCnpj, xNome: first.dest, uf: first.destUF, cMun: first.destCMun, xMun: first.destXMun } : undefined; })(),
         chavesNFe: chaves,
       } } });
       return ret;
@@ -642,8 +644,10 @@ function CtePage() {
         icms: { CST: form.icmsCST, vBC: parseFloat(form.vPrest)||0, pICMS: parseFloat(form.icmsAliq)||0, vICMS: parseFloat(form.icmsValor)||0 },
         impostos: { pisAliq: parseFloat(form.pisAliq)||0, cofinsAliq: parseFloat(form.cofinsAliq)||0, irAliq: parseFloat(form.irAliq)||0, inssAliq: parseFloat(form.inssAliq)||0, csllAliq: parseFloat(form.csllAliq)||0 },
         serie: "1",
-        tomador: { toma: form.toma as any, cnpj: form.cnpjTomador, xNome: form.xNomeTomador, uf: form.ufTomador, cMun: form.cMunTomador, xMun: form.xMunTomador },
+        tomador: { toma: form.toma as any, cnpj: form.cnpjTomador, xNome: form.xNomeTomador, uf: form.ufTomador, cMun: form.cMunTomador, xMun: form.xMunTomador, ie: form.ufTomador === empresa.uf ? (empresa.ie || "ISENTO") : undefined },
         emit: { xNome: empresa.razao_social || empresa.nome_fantasia, ie: empresa.ie || "ISENTO", cMun: form.cMunEnv, xMun: form.xMunEnv, uf: empresa.uf || "MG", cnpj: empresa.cnpj, crt: empresa.regime_tributario || "3", logradouro: empresa.logradouro, nro: empresa.numero, bairro: empresa.bairro, cep: empresa.cep } as any,
+        rem: (() => { const first = mercadorias.find(m => chaves.includes(m.chave)); return first ? { cnpj: first.emitCnpj, xNome: first.emit, uf: first.emitUF, cMun: first.emitCMun, xMun: first.emitXMun } : undefined; })(),
+        dest: (() => { const first = mercadorias.find(m => chaves.includes(m.chave)); return first ? { cnpj: first.destCnpj, xNome: first.dest, uf: first.destUF, cMun: first.destCMun, xMun: first.destXMun } : undefined; })(),
         chavesNFe: chaves,
       } } });
     },
