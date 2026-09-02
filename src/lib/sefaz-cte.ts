@@ -169,17 +169,17 @@ export async function emitirCte(pfx:Buffer, senha:string, xml:string, ambiente:A
   const dadosBase64 = compressed.toString("base64");
   const isMG = uf?.toUpperCase() === "MG";
   if (isMG) {
-    // MG autorizador próprio — segue padrão ACBr: body cteDadosMsg sem xmlns, SOAPAction = URL WSDL + /cteRecepcao
-    const body=`<cteDadosMsg>${dadosBase64}</cteDadosMsg>`;
-    const soapAction = `${ep.recepcao}/cteRecepcao`;
-    const ret=await soapRequest(ep.recepcao, body, soapAction, createSefazAgent(pfx,senha));
+    // MG usa namespace v3 (CTeRecepcaoSinc) mesmo na v4 — SEF/MG segue MOC ao pé da letra
+    const ns = "http://www.portalfiscal.inf.br/cte/wsdl/CTeRecepcaoSinc";
+    const body=`<cteDadosMsg xmlns="${ns}">${dadosBase64}</cteDadosMsg>`;
+    const ret=await soapRequest(ep.recepcao, body, `${ns}/cteRecepcao`, createSefazAgent(pfx,senha));
     const cStat=ret.match(/<cStat>(\d+)<\/cStat>/)?.[1]||""; const xMotivo=ret.match(/<xMotivo>([^<]+)<\/xMotivo>/)?.[1]||""; const ch=ret.match(/<chCTe>(\d{44})<\/chCTe>/)?.[1]||xml.match(/Id="CTe(\d{44})"/)?.[1]; const prot=ret.match(/<nProt>(\d+)<\/nProt>/)?.[1]||ret.match(/<protCTe[^>]*>[\s\S]*?<nProt>(\d+)<\/nProt>/)?.[1];
     return { sucesso: cStat==="100"||cStat==="104"||cStat==="103", cStat, xMotivo, chave: ch, protocolo: prot, xmlRet: ret };
   }
-  // SVRS — segue padrão ACBr: body cteDadosMsg sem xmlns, SOAPAction = URL WSDL + /cteRecepcao
-  const body=`<cteDadosMsg>${dadosBase64}</cteDadosMsg>`;
-  const soapAction = `${ep.recepcao}/cteRecepcao`;
-  const ret=await soapRequest(ep.recepcao, body, soapAction, createSefazAgent(pfx,senha));
+  // SVRS usa namespace v4 (CTeRecepcaoSincV4)
+  const ns = "http://www.portalfiscal.inf.br/cte/wsdl/CTeRecepcaoSincV4";
+  const body=`<cteDadosMsg xmlns="${ns}">${dadosBase64}</cteDadosMsg>`;
+  const ret=await soapRequest(ep.recepcao, body, `${ns}/cteRecepcao`, createSefazAgent(pfx,senha));
   const cStat=ret.match(/<cStat>(\d+)<\/cStat>/)?.[1]||""; const xMotivo=ret.match(/<xMotivo>([^<]+)<\/xMotivo>/)?.[1]||""; const ch=ret.match(/<chCTe>(\d{44})<\/chCTe>/)?.[1]||xml.match(/Id="CTe(\d{44})"/)?.[1]; const prot=ret.match(/<nProt>(\d+)<\/nProt>/)?.[1]||ret.match(/<protCTe[^>]*>[\s\S]*?<nProt>(\d+)<\/nProt>/)?.[1];
   return { sucesso: cStat==="100"||cStat==="104"||cStat==="103", cStat, xMotivo, chave: ch, protocolo: prot, xmlRet: ret };
 }
