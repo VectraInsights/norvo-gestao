@@ -454,24 +454,32 @@ function CtePage() {
     try {
       const parsed = JSON.parse(doc.xml_assinado || "{}");
       if (parsed.form) setForm(parsed.form);
-      if (parsed.chavesNFe && parsed.chavesNFe.length > 0) {
-        const { data: nfs } = await supabase.from("cte_nfes_pendentes" as any).select("*").eq("empresa_id", empresa.id).in("chave", parsed.chavesNFe);
-        if (nfs && nfs.length > 0) {
-          const mapped = nfs.map((r: any) => ({
-            chave: r.chave, nNF: r.n_nf || "", serie: r.serie || "1",
-            emit: r.emit_nome || "", emitCnpj: r.emit_cnpj || "", emitUF: r.emit_uf || "", emitCMun: r.emit_cmun || "", emitXMun: r.emit_xmun || "",
-            dest: r.dest_nome || "", destCnpj: r.dest_cnpj || "", destUF: r.dest_uf || "", destCMun: r.dest_cmun || "", destXMun: r.dest_xmun || "",
-            valor: Number(r.valor ?? 0), peso: Number(r.peso ?? 0), data: r.data_emissao ? String(r.data_emissao).slice(0, 10) : "",
-            tomador: r.tomador_nome || "", tomadorCnpj: r.tomador_cnpj || "", tomadorUF: r.tomador_uf || "", tomadorCMun: r.tomador_cmun || "", tomadorXMun: r.tomador_xmun || "",
-            modFrete: r.mod_frete || "",
-          }));
-          setMercadorias(mapped);
-          setSelecionadas(new Set(parsed.chavesNFe));
+      if (parsed.nfs && parsed.nfs.length > 0) {
+        const mapped = parsed.nfs.map((r: any) => ({
+          chave: r.chave, nNF: r.nNF || "", serie: r.serie || "1",
+          emit: r.emit || "", emitCnpj: r.emitCnpj || "", emitUF: r.emitUF || "", emitCMun: r.emitCMun || "", emitXMun: r.emitXMun || "",
+          dest: r.dest || "", destCnpj: r.destCnpj || "", destUF: r.destUF || "", destCMun: r.destCMun || "", destXMun: r.destXMun || "",
+          valor: Number(r.valor ?? 0), peso: Number(r.peso ?? 0), data: r.data || "",
+          tomador: r.tomador || "", tomadorCnpj: r.tomadorCnpj || "", tomadorUF: r.tomadorUF || "", tomadorCMun: r.tomadorCMun || "", tomadorXMun: r.tomadorXMun || "",
+          modFrete: r.modFrete || "",
+        }));
+        setMercadorias(mapped);
+        setSelecionadas(new Set(parsed.chavesNFe || []));
+        for (const nf of parsed.nfs) {
+          await supabase.from("cte_nfes_pendentes" as any).upsert({
+            empresa_id: empresa.id, chave: nf.chave, n_nf: nf.nNF, serie: nf.serie,
+            emit_nome: nf.emit, emit_cnpj: nf.emitCnpj, emit_uf: nf.emitUF, emit_cmun: nf.emitCMun, emit_xmun: nf.emitXMun,
+            dest_nome: nf.dest, dest_cnpj: nf.destCnpj, dest_uf: nf.destUF, dest_cmun: nf.destCMun, dest_xmun: nf.destXMun,
+            valor: nf.valor, peso: nf.peso, data_emissao: nf.data || null,
+            tomador_nome: nf.tomador, tomador_cnpj: nf.tomadorCnpj, tomador_uf: nf.tomadorUF, tomador_cmun: nf.tomadorCMun, tomador_xmun: nf.tomadorXMun,
+            mod_frete: nf.modFrete, status: "pendente",
+          }, { onConflict: "empresa_id,chave" });
         }
       }
       await supabase.from("cte_documentos" as any).delete().eq("id", doc.id);
       setOpen(true);
       qc.invalidateQueries({ queryKey: ["cte-documentos"] });
+      qc.invalidateQueries({ queryKey: ["cte-nfes-pendentes", empresa.id] });
     } catch (e: any) {
       toast.error("Erro ao carregar rascunho", { description: e.message });
     }
@@ -481,7 +489,14 @@ function CtePage() {
     mutationFn: async () => {
       if (!empresa) throw new Error("Empresa não selecionada");
       const chaves = selecionadas.size > 0 ? Array.from(selecionadas) : mercadorias.map(m => m.chave);
-      const nNFs = mercadorias.filter(m => chaves.includes(m.chave)).map(m => m.nNF).filter(Boolean);
+      const nfsSalvas = mercadorias.filter(m => chaves.includes(m.chave)).map(m => ({
+        chave: m.chave, nNF: m.nNF, serie: m.serie,
+        emit: m.emit, emitCnpj: m.emitCnpj, emitUF: m.emitUF, emitCMun: m.emitCMun, emitXMun: m.emitXMun,
+        dest: m.dest, destCnpj: m.destCnpj, destUF: m.destUF, destCMun: m.destCMun, destXMun: m.destXMun,
+        valor: m.valor, peso: m.peso, data: m.data,
+        tomador: m.tomador, tomadorCnpj: m.tomadorCnpj, tomadorUF: m.tomadorUF, tomadorCMun: m.tomadorCMun, tomadorXMun: m.tomadorXMun,
+        modFrete: m.modFrete,
+      }));
       const proximo = 1;
       const { error } = await supabase.from("cte_documentos" as any).insert({
         empresa_id: empresa.id,
@@ -490,11 +505,11 @@ function CtePage() {
         serie: "1",
         valor_servico: parseFloat(form.vPrest) || 0,
         peso_carga: parseFloat(form.peso) || 0,
-        xml_assinado: JSON.stringify({ form, chavesNFe: chaves }),
+        xml_assinado: JSON.stringify({ form, chavesNFe: chaves, nfs: nfsSalvas }),
       } as any);
       if (error) throw error;
       if (empresa && chaves.length > 0) {
-        await supabase.from("cte_nfes_pendentes" as any).update({ status: "rascunho" }).in("chave", chaves).eq("empresa_id", empresa.id);
+        await supabase.from("cte_nfes_pendentes" as any).delete().in("chave", chaves).eq("empresa_id", empresa.id);
       }
     },
     onSuccess: () => {
@@ -764,10 +779,10 @@ function CtePage() {
           <Table>
             <TableHeader><TableRow><TableHead>Número</TableHead><TableHead>Série</TableHead><TableHead>Status</TableHead><TableHead>Notas Fiscais</TableHead><TableHead className="text-right">Valor</TableHead><TableHead>Chave</TableHead><TableHead>Ações</TableHead></TableRow></TableHeader>
             <TableBody>{docs.map(d => {
-              const nNFs = (() => { try { const j = JSON.parse(d.xml_assinado || "{}"); return (j.chavesNFe || []).length; } catch { return 0; } })();
+              const nNFs = (() => { try { const j = JSON.parse(d.xml_assinado || "{}"); return j.nfs?.map((n: any) => n.nNF).filter(Boolean) || []; } catch { return []; } })();
               const isRascunho = d.status === "rascunho";
               return (
-              <TableRow key={d.id} className={isRascunho ? "bg-muted/30" : ""}><TableCell className="font-mono">{d.numero ?? "—"}</TableCell><TableCell>{d.serie ?? "—"}</TableCell><TableCell><Badge variant="secondary" className={d.status==="autorizado"?"bg-emerald-500/15 text-emerald-600":d.status==="rejeitado"?"bg-destructive/15 text-destructive":isRascunho?"bg-amber-500/15 text-amber-600":""}>{d.status}</Badge></TableCell><TableCell className="text-xs">{isRascunho && nNFs > 0 ? `${nNFs} NF-e(s)` : d.chave_acesso ? "1" : "—"}</TableCell><TableCell className="text-right">{brl(Number(d.valor_servico ?? 0))}</TableCell><TableCell className="font-mono text-xs truncate max-w-[220px]" title={d.chave_acesso||""}>{d.chave_acesso ?? "—"}</TableCell><TableCell className="flex gap-1">
+              <TableRow key={d.id} className={isRascunho ? "bg-muted/30" : ""}><TableCell className="font-mono">{d.numero ?? "—"}</TableCell><TableCell>{d.serie ?? "—"}</TableCell><TableCell><Badge variant="secondary" className={d.status==="autorizado"?"bg-emerald-500/15 text-emerald-600":d.status==="rejeitado"?"bg-destructive/15 text-destructive":isRascunho?"bg-amber-500/15 text-amber-600":""}>{d.status}</Badge></TableCell><TableCell className="text-xs">{isRascunho && nNFs.length > 0 ? `NF-e ${nNFs.join(", ")}` : d.chave_acesso ? "1" : "—"}</TableCell><TableCell className="text-right">{brl(Number(d.valor_servico ?? 0))}</TableCell><TableCell className="font-mono text-xs truncate max-w-[220px]" title={d.chave_acesso||""}>{d.chave_acesso ?? "—"}</TableCell><TableCell className="flex gap-1">
                 {isRascunho ? (
                   <Button size="icon" variant="ghost" className="h-7 w-7 text-primary" onClick={() => editarRascunho(d)} title="Editar rascunho"><Pencil className="h-3.5 w-3.5" /></Button>
                 ) : (

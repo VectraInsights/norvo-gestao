@@ -5,6 +5,7 @@
  * Ref: https://www.cte.fazenda.gov.br/portal/webServices.aspx
  */
 import https from "node:https";
+import zlib from "node:zlib";
 import { createSefazAgent, signXml, buscarCertificadoAtivo } from "./sefaz";
 export { buscarCertificadoAtivo };
 
@@ -163,9 +164,12 @@ async function soapRequest(url:string, body:string, action:string, agent?:https.
 export async function emitirCte(pfx:Buffer, senha:string, xml:string, ambiente:Ambiente, uf?: string): Promise<{ sucesso:boolean; cStat:string; xMotivo:string; chave?:string; protocolo?:string; xmlRet?:string }>{
   const ep=getCteEndpoints(ambiente, uf);
   const xmlAss = signXml(xml, pfx, senha);
-  // V4 Sinc — SVRS e MG usam CTeRecepcaoSincV4
-  const body=`<cteRecepcao xmlns="http://www.portalfiscal.inf.br/cte/wsdl/CTeRecepcaoSincV4"><cteDadosMsg xmlns="http://www.portalfiscal.inf.br/cte/wsdl/CTeRecepcaoSincV4">${xmlAss}</cteDadosMsg></cteRecepcao>`;
-  const ret=await soapRequest(ep.recepcao, body, "http://www.portalfiscal.inf.br/cte/wsdl/CTeRecepcaoSincV4/cteRecepcao", createSefazAgent(pfx,senha));
+  // V4 Sinc — MOC exige GZip + Base64 no cteDadosMsg
+  const compressed = zlib.gzipSync(Buffer.from(xmlAss, "utf-8"));
+  const dadosBase64 = compressed.toString("base64");
+  const ns = "http://www.portalfiscal.inf.br/cte/wsdl/CTeRecepcaoSincV4";
+  const body=`<CTeRecepcaoSinc xmlns="${ns}"><cteDadosMsg xmlns="${ns}">${dadosBase64}</cteDadosMsg></CTeRecepcaoSinc>`;
+  const ret=await soapRequest(ep.recepcao, body, `${ns}/CTeRecepcaoSinc`, createSefazAgent(pfx,senha));
   const cStat=ret.match(/<cStat>(\d+)<\/cStat>/)?.[1]||""; const xMotivo=ret.match(/<xMotivo>([^<]+)<\/xMotivo>/)?.[1]||""; const ch=ret.match(/<chCTe>(\d{44})<\/chCTe>/)?.[1]||xml.match(/Id="CTe(\d{44})"/)?.[1]; const prot=ret.match(/<nProt>(\d+)<\/nProt>/)?.[1]||ret.match(/<protCTe[^>]*>[\s\S]*?<nProt>(\d+)<\/nProt>/)?.[1];
   // V4 retorna 104 (processado) com prot, ou 100 (autorizado) no sinc
   return { sucesso: cStat==="100"||cStat==="104"||cStat==="103", cStat, xMotivo, chave: ch, protocolo: prot, xmlRet: ret };
