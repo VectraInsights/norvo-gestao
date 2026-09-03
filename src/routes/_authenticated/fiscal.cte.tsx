@@ -335,6 +335,12 @@ function CtePage() {
     if (xmls.length === 0) { toast.error("Selecione XMLs de NF-e"); return; }
     setIsParsing(true);
     try {
+      const lookupContato = async (cnpj: string) => {
+        const doc = (cnpj || "").replace(/\D/g, "");
+        if (!doc || doc.length < 11) return null;
+        const { data } = await supabase.from("contatos" as any).select("nome,logradouro,numero,bairro,cidade,uf,cep,telefone").eq("empresa_id", empresa!.id).eq("documento", doc).maybeSingle();
+        return data || null;
+      };
       const upsertContatoFromNfe = async (cnpj: string, nome: string, ie: string, uf: string, cidade: string, logradouro: string, bairro: string, cep: string, fone: string, tipo: "cliente" | "fornecedor" | "transportadora" | "ambos") => {
         const doc = (cnpj || "").replace(/\D/g, "");
         if (!doc || doc.length < 11 || !nome) return;
@@ -381,6 +387,24 @@ function CtePage() {
         const peso = pesoB ? parseFloat(pesoB) : 1000;
         const valor = parseFloat(vNF) || 0;
         const modFrete = doc.querySelector("transp > modFrete")?.textContent || "";
+
+        // Lookup endereço no cadastro de contatos (XML de NF-e pode não trazer endereço)
+        const [emitContato, destContato] = await Promise.all([lookupContato(emitCnpj), lookupContato(destCnpj)]);
+        const emitLog = emitLgr || (emitContato as any)?.logradouro || "";
+        const emitNro = (emitContato as any)?.numero || "";
+        const emitBai = emitBairro || (emitContato as any)?.bairro || "";
+        const emitCepFin = emitCEP || (emitContato as any)?.cep || "";
+        const emitCidFin = emitXMun || (emitContato as any)?.cidade || "";
+        const emitUfFin = emitUF || (emitContato as any)?.uf || "";
+        const emitFoneFin = emitFone || (emitContato as any)?.telefone || "";
+        const destLog = destLgr || (destContato as any)?.logradouro || "";
+        const destNro = (destContato as any)?.numero || "";
+        const destBai = destBairro || (destContato as any)?.bairro || "";
+        const destCepFin = destCEP || (destContato as any)?.cep || "";
+        const destCidFin = destXMun || (destContato as any)?.cidade || "";
+        const destUfFin = destUF || (destContato as any)?.uf || "";
+        const destFoneFin = destFone || (destContato as any)?.telefone || "";
+
         let tomadorNome = destXNome;
         let tomadorCnpj = destCnpj;
         let tomadorUF = destUF;
@@ -429,7 +453,7 @@ function CtePage() {
           toast.error(`Falha ao salvar NF ${nNF}: ${error.message}`);
           continue;
         }
-        novas.push({ chave: chaveNorm, nNF, serie, emit: emitXNome, emitCnpj, emitUF, emitCMun, emitXMun, emitIE, emitLogradouro: emitLgr, emitBairro, emitCEP, emitFone, dest: destXNome, destCnpj, destUF, destCMun, destXMun, destIE, destLogradouro: destLgr, destBairro, destCEP, destFone, valor, peso, data: dhEmi.slice(0, 10), tomador: tomadorNome, tomadorCnpj, tomadorUF, tomadorCMun, tomadorXMun, modFrete });
+        novas.push({ chave: chaveNorm, nNF, serie, emit: emitXNome, emitCnpj, emitUF: emitUfFin, emitCMun, emitXMun: emitCidFin, emitIE, emitLogradouro: emitLog, emitBairro: emitBai, emitCEP: emitCepFin, emitFone: emitFoneFin, dest: destXNome, destCnpj, destUF: destUfFin, destCMun, destXMun: destCidFin, destIE, destLogradouro: destLog, destBairro: destBai, destCEP: destCepFin, destFone: destFoneFin, valor, peso, data: dhEmi.slice(0, 10), tomador: tomadorNome, tomadorCnpj, tomadorUF, tomadorCMun, tomadorXMun, modFrete });
         upsertContatoFromNfe(emitCnpj, emitXNome, emitIE, emitUF, emitXMun, emitLgr, emitBairro, emitCEP, emitFone, "fornecedor").catch(() => {});
         upsertContatoFromNfe(destCnpj, destXNome, destIE, destUF, destXMun, destLgr, destBairro, destCEP, destFone, "cliente").catch(() => {});
         if (added === 0 && mercadorias.length === 0) {
