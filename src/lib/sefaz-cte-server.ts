@@ -17,27 +17,59 @@ export const emitirCteFn = createServerFn({ method: "POST" }).validator((d: { em
   const { data: ultimo } = await supa.from("cte_documentos").select("numero").eq("empresa_id", data.empresaId).order("created_at",{ascending:false}).limit(1).maybeSingle();
   const proximo = String((parseInt((ultimo as any)?.numero || "0",10)+1));
   const cli = data.input.emit || {};
+  const form = (data.input as any).form || {};
   const emitCnpj = emp?.cnpj || cli.cnpj || "";
   const emitUf = emp?.uf || cli.uf || "MG";
   console.log("[CTE-DEBUG] empCnpj:", emp?.cnpj, "empUf:", emp?.uf, "emitCnpj:", emitCnpj, "emitUf:", emitUf);
-  console.log("[CTE-DEBUG] emp Completo:", JSON.stringify(emp));
-  console.log("[CTE-DEBUG] input原始:", JSON.stringify(data.input));
-  console.log("[CTE-DEBUG] Toma from input:", JSON.stringify(data.input?.tomador));
-  console.log("[CTE-DEBUG] Endereco from input:", JSON.stringify({ logradouro: data.input?.tomador?.logradouro, nro: data.input?.tomador?.nro, bairro: data.input?.tomador?.bairro, cep: data.input?.tomador?.cep }));
-  const input = { ...data.input, ambiente, numero: proximo, serie: data.input.serie || "1", emit: {
-    cnpj: emitCnpj,
-    xNome: cli.xNome || emp?.razao_social || emp?.nome_fantasia || "EMITENTE",
-    ie: cli.ie || emp?.ie || "ISENTO",
-    uf: emitUf,
-    cMun: cli.cMun || "3106200",
-    xMun: cli.xMun || emp?.cidade || "BELO HORIZONTE",
-    crt: cli.crt || emp?.regime_tributario || "3",
-    logradouro: cli.logradouro || emp?.logradouro || "RUA",
-    nro: cli.nro || emp?.numero || "SN",
-    complemento: cli.complemento || emp?.complemento || "",
-    bairro: cli.bairro || emp?.bairro || "CENTRO",
-    cep: cli.cep || emp?.cep || "00000000",
-  } };
+  console.log("[CTE-DEBUG] form:", JSON.stringify(form));
+  const input = { ...data.input, ambiente, numero: proximo, serie: data.input.serie || "1",
+    cfop: data.input.cfop || form.cfop || "6352",
+    vPrest: Number(data.input.vPrest || form.vPrest || 0),
+    vCarga: Number(data.input.vCarga || form.vCarga || 0),
+    pesoKg: Number(data.input.pesoKg || form.peso || 0),
+    cMunEnv: data.input.cMunEnv || form.cMunEnv || "3106209",
+    xMunEnv: data.input.xMunEnv || form.xMunEnv || "FORMIGA",
+    ufEnv: data.input.ufEnv || form.ufEnv || "MG",
+    cMunIni: data.input.cMunIni || form.cMunIni || "3106209",
+    xMunIni: data.input.xMunIni || form.xMunIni || "FORMIGA",
+    ufIni: data.input.ufIni || form.ufIni || "MG",
+    cMunFim: data.input.cMunFim || form.cMunFim || "3106209",
+    xMunFim: data.input.xMunFim || form.xMunFim || "FORMIGA",
+    ufFim: data.input.ufFim || form.ufFim || "MG",
+    chavesNFe: data.input.chavesNFe || [],
+    tomador: data.input.tomador || {
+      toma: form.toma || "0",
+      cnpj: (form.cnpjTomador || "").replace(/\D/g,""),
+      xNome: form.xNomeTomador || "",
+      ie: form.ieTomador || "",
+      uf: form.ufTomador || "MG",
+      cMun: form.cMunTomador || "3106209",
+      xMun: form.xMunTomador || "",
+      cep: form.cepTomador || "",
+      logradouro: form.logradouroTomador || "",
+      nro: form.nroTomador || "",
+      bairro: form.bairroTomador || "",
+      fone: form.foneTomador || "",
+      email: form.emailTomador || "",
+    },
+    emit: {
+      cnpj: emitCnpj,
+      xNome: cli.xNome || emp?.razao_social || emp?.nome_fantasia || "EMITENTE",
+      ie: cli.ie || emp?.ie || "ISENTO",
+      uf: emitUf,
+      cMun: cli.cMun || "3106200",
+      xMun: cli.xMun || emp?.cidade || "BELO HORIZONTE",
+      crt: cli.crt || emp?.regime_tributario || "3",
+      logradouro: cli.logradouro || emp?.logradouro || "RUA",
+      nro: cli.nro || emp?.numero || "SN",
+      complemento: cli.complemento || emp?.complemento || "",
+      bairro: cli.bairro || emp?.bairro || "CENTRO",
+      cep: cli.cep || emp?.cep || "00000000",
+    },
+    modalRod: data.input.modalRod || { rntrc: form.rntrc || "ISENTO" },
+    icms: data.input.icms || { CST: form.icmsCST || "00", vBC: Number(form.icmsBase || 0), pICMS: Number(form.icmsAliq || 7), vICMS: Number(form.icmsValor || 0) },
+  };
+  console.log("[CTE-DEBUG] tomador:", JSON.stringify(input.tomador));
   const { xml, chave } = buildCteXml(input);
   console.log("[CTE-DEBUG] XML gerado:", xml);
   console.log("[CTE-DEBUG] Toma input:", JSON.stringify(input.tomador));
