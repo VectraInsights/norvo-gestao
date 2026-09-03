@@ -697,6 +697,12 @@ certificado tem estrutura PKCS12 não padrão ou se `extractPkcs12Native` precis
     - Seção "Tomador do Serviço" simplificada: apenas checkbox "Contratação do Frete por
       conta do Remetente (toma 0)" ao invés de formulário completo.
 
+62. **CT-e: correção endpoints MG CT-e Simplificado** - 03/09/2026:
+    - Endpoint MG corrigido de `CTeRecepcaoSinc` para `CTeRecepcaoSimpV4` (CT-e Simplificado).
+    - URL homologação: `https://hcte.fazenda.mg.gov.br/cte/services/CTeRecepcaoSimpV4`
+    - URL produção: `https://cte.fazenda.mg.gov.br/cte/services/CTeRecepcaoSimpV4`
+    - Namespace SOAP corrigido para `CTeRecepcaoSimpV4` (era `CTeRecepcaoSinc`).
+
 ---
 ## Regras de segurança
 
