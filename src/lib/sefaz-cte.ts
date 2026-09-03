@@ -234,7 +234,28 @@ export async function emitirCte(pfx:Buffer, senha:string, xml:string, ambiente:A
 
 export async function consultarCte(pfx:Buffer, senha:string, chave:string, ambiente:Ambiente, uf?: string): Promise<{ cStat:string; xMotivo:string; xml?:string }>{
   const ep=getCteEndpoints(ambiente, uf);
-  const body=`<CTeConsultaV4 xmlns="http://www.portalfiscal.inf.br/cte/wsdl/CTeConsultaV4"><cteDadosMsg xmlns="http://www.portalfiscal.inf.br/cte/wsdl/CTeConsultaV4"><consSitCTe xmlns="http://www.portalfiscal.inf.br/cte" versao="4.00"><tpAmb>${ambiente==="producao"?"1":"2"}</tpAmb><xServ>CONSULTAR</xServ><chCTe>${chave}</chCTe></consSitCTe></cteDadosMsg></CTeConsultaV4>`;
+  const consSit=`<consSitCTe xmlns="http://www.portalfiscal.inf.br/cte" versao="4.00"><tpAmb>${ambiente==="producao"?"1":"2"}</tpAmb><xServ>CONSULTAR</xServ><chCTe>${chave}</chCTe></consSitCTe>`;
+  const compressed = zlib.gzipSync(Buffer.from(consSit, "utf-8"));
+  const dadosBase64 = compressed.toString("base64");
+  const isMG = uf?.toUpperCase() === "MG";
+  if (isMG) {
+    const ns = "http://www.portalfiscal.inf.br/cte/wsdl/CTeConsultaV4";
+    const body=`<cteDadosMsg xmlns="${ns}">${dadosBase64}</cteDadosMsg>`;
+    const envelope = `<?xml version="1.0" encoding="utf-8"?><soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/"><soap:Body>${body}</soap:Body></soap:Envelope>`;
+    const u=new URL(ep.consulta);
+    const agent = createSefazAgent(pfx,senha);
+    const ret = await new Promise<string>((resolve,reject)=>{
+      const req=https.request({hostname:u.hostname, port:443, path:u.pathname, method:"POST", agent, headers:{
+        "Content-Type": "text/xml; charset=utf-8",
+        "SOAPAction": `${ns}/cteConsultaCT`,
+        "Content-Length": Buffer.byteLength(envelope)
+      }},res=>{let d="";res.on("data",c=>d+=c);res.on("end",()=>res.statusCode&&res.statusCode>=400?reject(new Error(`CTe HTTP ${res.statusCode}: ${d.slice(0,500)}`)):resolve(d));});
+      req.on("error",reject); req.write(envelope); req.end();
+    });
+    const cStat=ret.match(/<cStat>(\d+)<\/cStat>/)?.[1]||""; const xMotivo=ret.match(/<xMotivo>([^<]+)<\/xMotivo>/)?.[1]||"";
+    return { cStat, xMotivo, xml: ret };
+  }
+  const body=`<CTeConsultaV4 xmlns="http://www.portalfiscal.inf.br/cte/wsdl/CTeConsultaV4"><cteDadosMsg xmlns="http://www.portalfiscal.inf.br/cte/wsdl/CTeConsultaV4">${dadosBase64}</cteDadosMsg></CTeConsultaV4>`;
   const ret=await soapRequest(ep.consulta, body, "http://www.portalfiscal.inf.br/cte/wsdl/CTeConsultaV4/cteConsultaCT", createSefazAgent(pfx,senha));
   const cStat=ret.match(/<cStat>(\d+)<\/cStat>/)?.[1]||""; const xMotivo=ret.match(/<xMotivo>([^<]+)<\/xMotivo>/)?.[1]||"";
   return { cStat, xMotivo, xml: ret };
@@ -248,8 +269,26 @@ export async function cancelarCte(pfx:Buffer, senha:string, chave:string, justif
   const cOrgao = codigoUF(uf || "SP");
   const evento=`<eventoCTe xmlns="http://www.portalfiscal.inf.br/cte" versao="4.00"><infEvento Id="ID${tpEvento}${chave}${nSeq}"><cOrgao>${cOrgao}</cOrgao><tpAmb>${ambiente==="producao"?"1":"2"}</tpAmb><CNPJ>${cnpj.replace(/\D/g,"")}</CNPJ><chCTe>${chave}</chCTe><dhEvento>${dhEvento}</dhEvento><tpEvento>${tpEvento}</tpEvento><nSeqEvento>${nSeq}</nSeqEvento><detEvento versaoEvento="4.00"><evCancCTe><descEvento>Cancelamento</descEvento><nProt>0</nProt><xJust>${justificativa}</xJust></evCancCTe></detEvento></infEvento></eventoCTe>`;
   const ass=signXml(evento, pfx, senha);
+  const isMG = uf?.toUpperCase() === "MG";
+  if (isMG) {
+    const ns = "http://www.portalfiscal.inf.br/cte/wsdl/CTeRecepcaoEventoV4";
+    const body=`<cteDadosMsg xmlns="${ns}">${ass}</cteDadosMsg>`;
+    const envelope = `<?xml version="1.0" encoding="utf-8"?><soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/"><soap:Body>${body}</soap:Body></soap:Envelope>`;
+    const u=new URL(ep.recepcaoEvento);
+    const agent = createSefazAgent(pfx,senha);
+    const ret = await new Promise<string>((resolve,reject)=>{
+      const req=https.request({hostname:u.hostname, port:443, path:u.pathname, method:"POST", agent, headers:{
+        "Content-Type": "text/xml; charset=utf-8",
+        "SOAPAction": `${ns}/cteRecepcaoEvento`,
+        "Content-Length": Buffer.byteLength(envelope)
+      }},res=>{let d="";res.on("data",c=>d+=c);res.on("end",()=>res.statusCode&&res.statusCode>=400?reject(new Error(`CTe HTTP ${res.statusCode}: ${d.slice(0,500)}`)):resolve(d));});
+      req.on("error",reject); req.write(envelope); req.end();
+    });
+    const cStat=ret.match(/<cStat>(\d+)<\/cStat>/)?.[1]||""; const xMotivo=ret.match(/<xMotivo>([^<]+)<\/xMotivo>/)?.[1]||"";
+    return { sucesso:cStat==="135"||cStat==="155", cStat, xMotivo };
+  }
   const body=`<CTeRecepcaoEventoV4 xmlns="http://www.portalfiscal.inf.br/cte/wsdl/CTeRecepcaoEventoV4"><cteDadosMsg xmlns="http://www.portalfiscal.inf.br/cte/wsdl/CTeRecepcaoEventoV4">${ass}</cteDadosMsg></CTeRecepcaoEventoV4>`;
   const ret=await soapRequest(ep.recepcaoEvento, body, "http://www.portalfiscal.inf.br/cte/wsdl/CTeRecepcaoEventoV4/cteRecepcaoEvento", createSefazAgent(pfx,senha));
   const cStat=ret.match(/<cStat>(\d+)<\/cStat>/)?.[1]||""; const xMotivo=ret.match(/<xMotivo>([^<]+)<\/xMotivo>/)?.[1]||"";
-  return { sucesso: cStat==="135"||cStat==="155", cStat, xMotivo };
+  return { sucesso:cStat==="135"||cStat==="155", cStat, xMotivo };
 }

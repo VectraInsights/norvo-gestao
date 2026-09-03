@@ -708,6 +708,11 @@ certificado tem estrutura PKCS12 não padrão ou se `extractPkcs12Native` precis
     - Botão "Limpar Rejeitados" para excluir CT-e com status rejeitado do banco.
     - Badge de rejeição mostra o motivo (cortado em 60 chars) com tooltip completo.
 
+64. **CT-e: correção consulta/cancelamento MG (SOAP 1.1)** - 03/09/2026:
+    - Consulta e cancelamento MG agora usam SOAP 1.1 (não SOAP 1.2 do SVRS).
+    - MG não aceita `<CTeConsultaV4>` wrapper — usa `cteDadosMsg` + Base64 GZip direto.
+    - Mesma abordagem da emissão: envelope SOAP 1.1 + SOAPAction customizado.
+
 ---
 ## Regras de segurança
 
