@@ -748,6 +748,22 @@ Fix (commit `d9fa9b9` cf / `4592eff` vercel):
 
 ---
 
+## CT-e: correção QR code URL + ordem fone/enderToma - 03/09/2026
+
+Correções de compliance com XSD CTeSimp (`cteTiposBasico_v4.00.xsd`):
+
+1. **QR code URL** (provável causa raiz do erro 225):
+   - Parâmetro `?qrcode=` trocado por `?chCTe=` (XSD line 2753 exige `chCTe`)
+   - URL base para MG: `portalcte.fazenda.mg.gov.br/portalcte/sistema/qrcode.xhtml` (antes usava SVRS)
+   - Outros estados continuam com `dfeportal.svrs.rs.gov.br/cteQrCode`
+
+2. **toma element order**: `<fone>` movido de DEPOIS de `<enderToma>` para ANTES, conforme
+   sequência XSD: `toma → indIEToma → CNPJ → IE(opt) → xNome → fone(opt) → enderToma → email(opt)`
+
+Commits: `b2eeb50` cf / `a0d8460` vercel
+
+---
+
 ## Regras de segurança
 
 - NUNCA commitar tokens/senhas (GitHub PAT, senhas de banco, service keys).
