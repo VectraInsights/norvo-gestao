@@ -397,6 +397,7 @@ function signXmlWithForge(
 </Signature>`;
 
   // Inserir antes do fechamento do documento ou inf
+  if (xml.includes("</CTeSimp>")) return xml.replace("</CTeSimp>", signature + "</CTeSimp>");
   if (xml.includes("</CTe>")) return xml.replace("</CTe>", signature + "</CTe>");
   if (xml.includes("</MDFe>")) return xml.replace("</MDFe>", signature + "</MDFe>");
   if (xml.includes("</NFe>")) {
@@ -464,6 +465,7 @@ function signXmlNative(xml: string, pfxBytes: Buffer, senha: string): string {
   </KeyInfo>
 </Signature>`;
 
+  if (xml.includes("</CTeSimp>")) return xml.replace("</CTeSimp>", signature + "</CTeSimp>");
   if (xml.includes("</CTe>")) return xml.replace("</CTe>", signature + "</CTe>");
   if (xml.includes("</MDFe>")) return xml.replace("</MDFe>", signature + "</MDFe>");
   if (xml.includes("</NFe>")) return xml.replace("</NFe>", signature + "</NFe>");
