@@ -168,10 +168,7 @@ export function buildCteXml(input: CteInputCompleto): { xml: string; chave: stri
       <CNPJ>${cnpjLimpo}</CNPJ>${input.emit.ie && /^\d{2,14}$/.test(input.emit.ie) ? `<IE>${input.emit.ie}</IE>` : ""}<xNome>${input.emit.xNome}</xNome>${input.emit.xFant && input.emit.xFant.length >= 2 ? `<xFant>${input.emit.xFant}</xFant>` : ""}${enderEmit}<CRT>${crt}</CRT>
     </emit>
     <toma>
-      <toma>${toma}</toma><indIEToma>${indIEToma}</indIEToma><CNPJ>${cnpjToma}</CNPJ>${indIEToma !== "9" && input.tomador.ie && input.tomador.ie !== "ISENTO" ? `<IE>${input.tomador.ie}</IE>` : ""}<xNome>${input.tomador.xNome}</xNome>
-      ${input.tomador.fone ? `<fone>${input.tomador.fone}</fone>` : ""}
-      <enderToma><xLgr>${(input.tomador.logradouro || "RUA").length >= 2 ? (input.tomador.logradouro || "RUA") : "RUA GERAL"}</xLgr><nro>${input.tomador.nro || "SN"}</nro><xBairro>${(input.tomador.bairro || "CENTRO").length >= 2 ? (input.tomador.bairro || "CENTRO") : "CENTRO"}</xBairro><cMun>${input.tomador.cMun}</cMun><xMun>${input.tomador.xMun}</xMun><CEP>${cepToma}</CEP><UF>${input.tomador.uf}</UF></enderToma>
-      ${input.tomador.email ? `<email>${input.tomador.email}</email>` : ""}
+      <toma>${toma}</toma><indIEToma>${indIEToma}</indIEToma><CNPJ>${cnpjToma}</CNPJ>${indIEToma !== "9" && input.tomador.ie && input.tomador.ie !== "ISENTO" ? `<IE>${input.tomador.ie}</IE>` : ""}<xNome>${input.tomador.xNome}</xNome><enderToma><xLgr>${(input.tomador.logradouro || "RUA").length >= 2 ? (input.tomador.logradouro || "RUA") : "RUA GERAL"}</xLgr><nro>${input.tomador.nro || "SN"}</nro><xBairro>${(input.tomador.bairro || "CENTRO").length >= 2 ? (input.tomador.bairro || "CENTRO") : "CENTRO"}</xBairro><cMun>${input.tomador.cMun}</cMun><xMun>${input.tomador.xMun}</xMun><CEP>${cepToma}</CEP><UF>${input.tomador.uf}</UF></enderToma>${input.tomador.fone ? `<fone>${input.tomador.fone}</fone>` : ""}${input.tomador.email ? `<email>${input.tomador.email}</email>` : ""}
     </toma>
     <infCarga>
       <vCarga>${input.vCarga.toFixed(2)}</vCarga><proPred>${input.infCTeNorm?.proPred || "CARGA GERAL"}</proPred>
@@ -205,27 +202,32 @@ async function soapRequest(url:string, body:string, action:string, agent?:https.
 export async function emitirCte(pfx:Buffer, senha:string, xml:string, ambiente:Ambiente, uf?: string): Promise<{ sucesso:boolean; cStat:string; xMotivo:string; chave?:string; protocolo?:string; xmlRet?:string }>{
   const ep=getCteEndpoints(ambiente, uf);
   const xmlAss = signXml(xml, pfx, senha);
+  console.log("[CTE-SEFAZ] XML ASSINADO COMPLETO:", xmlAss);
   // V4 Sinc — MOC exige GZip + Base64 no cteDadosMsg
   const compressed = zlib.gzipSync(Buffer.from(xmlAss, "utf-8"));
   const dadosBase64 = compressed.toString("base64");
+  console.log("[CTE-SEFAZ] Base64 comprimido (primeiros 200):", dadosBase64.slice(0, 200));
   const isMG = uf?.toUpperCase() === "MG";
+  console.log("[CTE-SEFAZ] UF:", uf, "isMG:", isMG, "ambiente:", ambiente, "endpoint:", isMG ? ep.recepcao : ep.recepcao);
   if (isMG) {
     // MG CT-e Simplificado: namespace CTeRecepcaoSimpV4
     const ns = "http://www.portalfiscal.inf.br/cte/wsdl/CTeRecepcaoSimpV4";
     const body=`<cteDadosMsg xmlns="${ns}">${dadosBase64}</cteDadosMsg>`;
     const envelope = `<?xml version="1.0" encoding="utf-8"?><soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/"><soap:Body>${body}</soap:Body></soap:Envelope>`;
+    console.log("[CTE-SEFAZ] Envelope SOAP (tamanho):", Buffer.byteLength(envelope));
     const u=new URL(ep.recepcao);
+    console.log("[CTE-SEFAZ] Endpoint URL:", ep.recepcao);
     const agent = createSefazAgent(pfx,senha);
     const ret = await new Promise<string>((resolve,reject)=>{
       const req=https.request({hostname:u.hostname, port:443, path:u.pathname, method:"POST", agent, headers:{
         "Content-Type": "text/xml; charset=utf-8",
         "SOAPAction": `${ns}/cteRecepcao`,
         "Content-Length": Buffer.byteLength(envelope)
-      }},res=>{let d="";res.on("data",c=>d+=c);res.on("end",()=>res.statusCode&&res.statusCode>=400?reject(new Error(`CTe HTTP ${res.statusCode}: ${d.slice(0,500)}`)):resolve(d));});
+      }},res=>{let d="";res.on("data",c=>d+=c);res.on("end",()=>{console.log("[CTE-SEFAZ] HTTP status:", res.statusCode);console.log("[CTE-SEFAZ] Resposta SEFAZ COMPLETA:", d);res.statusCode&&res.statusCode>=400?reject(new Error(`CTe HTTP ${res.statusCode}: ${d.slice(0,500)}`)):resolve(d));});
       req.on("error",reject); req.write(envelope); req.end();
     });
     const cStat=ret.match(/<cStat>(\d+)<\/cStat>/)?.[1]||""; const xMotivo=ret.match(/<xMotivo>([^<]+)<\/xMotivo>/)?.[1]||""; const ch=ret.match(/<chCTe>(\d{44})<\/chCTe>/)?.[1]||xml.match(/Id="CTe(\d{44})"/)?.[1]; const prot=ret.match(/<nProt>(\d+)<\/nProt>/)?.[1]||ret.match(/<protCTe[^>]*>[\s\S]*?<nProt>(\d+)<\/nProt>/)?.[1];
-    console.log("[CTE-SEFAZ-RESP] cStat:", cStat, "xMotivo:", xMotivo, "ret:", ret.slice(0, 2000));
+    console.log("[CTE-SEFAZ-RESP] cStat:", cStat, "xMotivo:", xMotivo, "chave:", ch, "protocolo:", prot);
     return { sucesso: cStat==="100"||cStat==="104"||cStat==="103", cStat, xMotivo, chave: ch, protocolo: prot, xmlRet: ret };
   }
   // SVRS usa namespace v4 (CTeRecepcaoSincV4)

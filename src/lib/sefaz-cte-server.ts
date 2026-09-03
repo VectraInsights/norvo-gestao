@@ -20,6 +20,10 @@ export const emitirCteFn = createServerFn({ method: "POST" }).validator((d: { em
   const emitCnpj = emp?.cnpj || cli.cnpj || "";
   const emitUf = emp?.uf || cli.uf || "MG";
   console.log("[CTE-DEBUG] empCnpj:", emp?.cnpj, "empUf:", emp?.uf, "emitCnpj:", emitCnpj, "emitUf:", emitUf);
+  console.log("[CTE-DEBUG] emp Completo:", JSON.stringify(emp));
+  console.log("[CTE-DEBUG] input原始:", JSON.stringify(data.input));
+  console.log("[CTE-DEBUG] Toma from input:", JSON.stringify(data.input?.tomador));
+  console.log("[CTE-DEBUG] Endereco from input:", JSON.stringify({ logradouro: data.input?.tomador?.logradouro, nro: data.input?.tomador?.nro, bairro: data.input?.tomador?.bairro, cep: data.input?.tomador?.cep }));
   const input = { ...data.input, ambiente, numero: proximo, serie: data.input.serie || "1", emit: {
     cnpj: emitCnpj,
     xNome: cli.xNome || emp?.razao_social || emp?.nome_fantasia || "EMITENTE",
@@ -36,6 +40,8 @@ export const emitirCteFn = createServerFn({ method: "POST" }).validator((d: { em
   } };
   const { xml, chave } = buildCteXml(input);
   console.log("[CTE-DEBUG] XML gerado:", xml);
+  console.log("[CTE-DEBUG] Toma input:", JSON.stringify(input.tomador));
+  console.log("[CTE-DEBUG] Emit input:", JSON.stringify(input.emit));
   const ret = await emitirCte(cert.pfx, cert.senha, xml, ambiente, cert.uf);
   if (ret.sucesso) {
     await supa.from("cte_documentos").insert({ empresa_id: data.empresaId, chave_acesso: chave, numero: proximo, serie: input.serie, status: "autorizado", xml_assinado: xml, protocolo_sefaz: ret.protocolo, ambiente, data_autorizacao: new Date().toISOString(), valor_servico: input.vPrest, peso_carga: input.pesoKg } as any);
