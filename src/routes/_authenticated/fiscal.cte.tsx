@@ -19,7 +19,7 @@ import { useEmpresaAtual } from "@/hooks/use-empresa";
 import { brl, dateBR, num } from "@/lib/format";
 import { useState, useEffect, useMemo } from "react";
 import { toast } from "sonner";
-import { emitirCteFn, consultarCteFn, cancelarCteFn, previewCteXmlFn } from "@/lib/sefaz-cte-server";
+import { emitirCteFn, consultarCteFn, cancelarCteFn, previewCteXmlFn, excluirRejeitadosCteFn } from "@/lib/sefaz-cte-server";
 import { CFOPS_CTE, MOD_FRETE_OPTIONS, RESPONSAVEL_CTE_OPTIONS } from "@/lib/cfops-transporte";
 import { gerarDactePdf } from "@/lib/dacte-pdf";
 import { Textarea } from "@/components/ui/textarea";
@@ -847,6 +847,7 @@ function CtePage() {
               <input type="file" accept=".xml" multiple className="hidden" onChange={e => { if (e.target.files) handleImportNFeXml(e.target.files); e.currentTarget.value = ""; }} />
             </label>
             <Button variant="outline" size="sm" onClick={async () => { if (!empresa) return; if (mercadorias.length === 0) return; if (!confirm(`Remover ${mercadorias.length} NF-e(s) pendentes?`)) return; const { error } = await supabase.from("cte_nfes_pendentes" as any).delete().eq("empresa_id", empresa.id).eq("status", "pendente"); if (error) toast.error(error.message); else { setMercadorias([]); setSelecionadas(new Set()); qc.invalidateQueries({ queryKey: ["cte-nfes-pendentes", empresa.id] }); toast.success("Pendentes removidos"); } }} disabled={mercadorias.length===0}><Trash2 className="mr-1 h-3 w-3" /> Limpar</Button>
+            <Button variant="outline" size="sm" onClick={async () => { if (!empresa) return; try { await excluirRejeitadosCteFn({ data: { empresaId: empresa.id } }); toast.success("CT-e rejeitados excluídos"); qc.invalidateQueries({ queryKey: ["cte-documentos"] }); } catch(e:any) { toast.error(e.message); } }}><Trash2 className="mr-1 h-3 w-3" /> Limpar Rejeitados</Button>
             <div className="ml-auto flex gap-2">
               <Button
                 variant="outline"
@@ -904,7 +905,7 @@ function CtePage() {
               const nNFs = (() => { try { const j = JSON.parse(d.xml_assinado || "{}"); return j.nfs?.map((n: any) => n.nNF).filter(Boolean) || []; } catch { return []; } })();
               const isRascunho = d.status === "rascunho";
               return (
-              <TableRow key={d.id} className={isRascunho ? "bg-muted/30" : ""}><TableCell className="font-mono">{d.numero ?? "—"}</TableCell><TableCell>{d.serie ?? "—"}</TableCell><TableCell><Badge variant="secondary" className={d.status==="autorizado"?"bg-emerald-500/15 text-emerald-600":d.status==="rejeitado"?"bg-destructive/15 text-destructive":isRascunho?"bg-amber-500/15 text-amber-600":""}>{d.status}</Badge></TableCell><TableCell className="text-xs">{isRascunho && nNFs.length > 0 ? `NF-e ${nNFs.join(", ")}` : d.chave_acesso ? "1" : "—"}</TableCell><TableCell className="text-right">{brl(Number(d.valor_servico ?? 0))}</TableCell><TableCell className="font-mono text-xs truncate max-w-[220px]" title={d.chave_acesso||""}>{d.chave_acesso ?? "—"}</TableCell><TableCell className="flex gap-1">
+              <TableRow key={d.id} className={isRascunho ? "bg-muted/30" : ""}><TableCell className="font-mono">{d.numero ?? "—"}</TableCell><TableCell>{d.serie ?? "—"}</TableCell><TableCell title={d.status==="rejeitado" && d.motivo_rejeicao ? d.motivo_rejeicao : ""}><Badge variant="secondary" className={d.status==="autorizado"?"bg-emerald-500/15 text-emerald-600":d.status==="rejeitado"?"bg-destructive/15 text-destructive":isRascunho?"bg-amber-500/15 text-amber-600":""}>{d.status}{d.status==="rejeitado" && d.motivo_rejeicao ? ` — ${d.motivo_rejeicao.slice(0,60)}` : ""}</Badge></TableCell><TableCell className="text-xs">{isRascunho && nNFs.length > 0 ? `NF-e ${nNFs.join(", ")}` : d.chave_acesso ? "1" : "—"}</TableCell><TableCell className="text-right">{brl(Number(d.valor_servico ?? 0))}</TableCell><TableCell className="font-mono text-xs truncate max-w-[220px]" title={d.chave_acesso||""}>{d.chave_acesso ?? "—"}</TableCell><TableCell className="flex gap-1">
                 {isRascunho ? (
                   <>
                     <Button size="icon" variant="ghost" className="h-7 w-7 text-primary" onClick={() => editarRascunho(d)} title="Editar rascunho"><Pencil className="h-3.5 w-3.5" /></Button>
@@ -1079,15 +1080,33 @@ function CtePage() {
                 </div>
               </Card>
 
-              {/* Tomador — apenas responsável */}
+              {/* Tomador */}
               <Card className="p-2">
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2 mb-1">
                   <div className="h-5 w-5 rounded bg-primary/10 grid place-items-center"><UsersRound className="h-3 w-3 text-primary" /></div>
                   <h5 className="text-xs font-semibold">Tomador do Serviço</h5>
-                  <label className="flex items-center gap-1.5 ml-2 cursor-pointer">
-                    <input type="checkbox" checked={form.toma === "0"} onChange={e => setForm({...form, toma: e.target.checked ? "0" : "3"})} className="rounded border-gray-300 h-3.5 w-3.5" />
-                    <span className="text-[10px]">Contratação do Frete por conta do Remetente (toma 0)</span>
-                  </label>
+                  <span className="text-[10px] text-muted-foreground">(toma {form.toma})</span>
+                </div>
+                <div className="grid grid-cols-6 gap-1">
+                  <Select value={form.toma} onValueChange={v => setForm({...form, toma: v})}>
+                    <SelectTrigger className="h-6 text-[10px] col-span-2"><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      {MOD_FRETE_OPTIONS.map(opt => (
+                        <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <Input className="h-6 text-[10px] col-span-2" placeholder="CNPJ *" value={form.cnpjTomador} onChange={e=>setForm({...form,cnpjTomador:e.target.value})} />
+                  <Input className="h-6 text-[10px] col-span-2" placeholder="Nome / Razão Social *" value={form.xNomeTomador} onChange={e=>setForm({...form,xNomeTomador:e.target.value})} />
+                  <Input className="h-6 text-[10px]" placeholder="UF" value={form.ufTomador} onChange={e=>setForm({...form,ufTomador:e.target.value.toUpperCase()})} maxLength={2} />
+                  <Input className="h-6 text-[10px] col-span-2" placeholder="Município" value={form.xMunTomador} onChange={e=>setForm({...form,xMunTomador:e.target.value})} />
+                  <Input className="h-6 text-[10px]" placeholder="IE" value={form.ieTomador} onChange={e=>setForm({...form,ieTomador:e.target.value})} />
+                  <Input className="h-6 text-[10px]" placeholder="CEP" value={form.cepTomador} onChange={e=>setForm({...form,cepTomador:e.target.value})} maxLength={8} />
+                  <Input className="h-6 text-[10px] col-span-3" placeholder="Logradouro" value={form.logradouroTomador} onChange={e=>setForm({...form,logradouroTomador:e.target.value})} />
+                  <Input className="h-6 text-[10px]" placeholder="Nº" value={form.nroTomador} onChange={e=>setForm({...form,nroTomador:e.target.value})} />
+                  <Input className="h-6 text-[10px]" placeholder="Bairro" value={form.bairroTomador} onChange={e=>setForm({...form,bairroTomador:e.target.value})} />
+                  <Input className="h-6 text-[10px] col-span-2" placeholder="Telefone" value={form.foneTomador} onChange={e=>setForm({...form,foneTomador:e.target.value})} />
+                  <Input className="h-6 text-[10px] col-span-2" placeholder="E-mail" value={form.emailTomador} onChange={e=>setForm({...form,emailTomador:e.target.value})} />
                 </div>
               </Card>
 

@@ -88,3 +88,11 @@ export const cancelarCteFn = createServerFn({ method: "POST" }).validator((d:{em
   if(ret.sucesso) await supa.from("cte_documentos").update({status:"cancelado"} as any).eq("chave_acesso",data.chave);
   return ret;
 });
+
+export const excluirRejeitadosCteFn = createServerFn({ method: "POST" }).validator((d:{empresaId:string})=>d).handler(async ({data})=>{
+  const { createClient }=await import("@supabase/supabase-js");
+  const supa=createClient(process.env.SUPABASE_URL||"",process.env.SUPABASE_SERVICE_ROLE_KEY||"");
+  const { error }=await supa.from("cte_documentos" as any).delete().eq("empresa_id",data.empresaId).eq("status","rejeitado");
+  if(error) throw new Error(error.message);
+  return { ok:true };
+});

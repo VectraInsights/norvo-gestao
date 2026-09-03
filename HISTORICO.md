@@ -703,6 +703,11 @@ certificado tem estrutura PKCS12 não padrão ou se `extractPkcs12Native` precis
     - URL produção: `https://cte.fazenda.mg.gov.br/cte/services/CTeRecepcaoSimpV4`
     - Namespace SOAP corrigido para `CTeRecepcaoSimpV4` (era `CTeRecepcaoSinc`).
 
+63. **CT-e: Tomador editável + limpar rejeitados + motivo rejeição** - 03/09/2026:
+    - Tomador restaurado com Select (toma 0/3/4) + campos de endereço completos.
+    - Botão "Limpar Rejeitados" para excluir CT-e com status rejeitado do banco.
+    - Badge de rejeição mostra o motivo (cortado em 60 chars) com tooltip completo.
+
 ---
 ## Regras de segurança
 
