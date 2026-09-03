@@ -714,6 +714,40 @@ certificado tem estrutura PKCS12 não padrão ou se `extractPkcs12Native` precis
     - Mesma abordagem da emissão: envelope SOAP 1.1 + SOAPAction customizado.
 
 ---
+## 03/09/2026 — CT-e: raiz da rejeição = CNPJ errado na empresa
+
+Decodificando a chave de acesso das CT-e rejeitadas (`31260983919614000160...`),
+o CNPJ embutido é `83919614000160` — diferente do CNPJ correto da TECNO2000
+(`21306287000152`). O problema é DADO: a tabela `empresas` tem o CNPJ errado.
+
+- `buildCteXml` usa `input.emit.cnpj` que vem de `empresas.cnpj` → CNPJ errado na chave e no XML.
+- A SEFAZ rejeita porque o CNPJ no XML não bate com o CNPJ do certificado A1.
+- **Fix imediato**: rodar SQL no Supabase para corrigir o CNPJ na tabela `empresas`.
+- **Fix de longo prazo**: migration `20260903100000_certificados_cnpj_uf.sql` adiciona
+  colunas `cnpj`/`uf` em `certificados_digitais` para usar como fonte autoritativa
+  (futuramente o código priorizará `cert.cnpj` sobre `emp.cnpj`).
+
+Mudanças no código (commits `df2d23b` cf / `fb0dff8` vercel):
+- `complemento` adicionado ao emit em `emitirCteFn`, `previewCteXmlFn` e proxy.
+- Logs de debug `[CTE-DEBUG]` e `[CTE-PROXY-DEBUG]` com CNPJ/UF.
+- `emitirCte` no proxy agora recebe `emitUf` em vez de `uf` genérica.
+---
+
+## CT-e: correção ordem toma + logging detalhado SEFAZ - 03/09/2026
+
+Analisando o XSD do CTeSimp (`cteTiposBasico_v4.00.xsd`), o `<toma>` tem ordem estrita:
+`toma → indIEToma → CNPJ/CPF → IE(opt) → xNome → enderToma → fone(opt) → email(opt)`
+
+O XML rejeitado tinha `<fone>` ANTES de `<enderToma>` — violação de schema (cStat 225).
+
+Fix (commit `d9fa9b9` cf / `4592eff` vercel):
+- `<enderToma>` movido para ANTES de `<fone>` (antes: fone → enderToma; agora: enderToma → fone)
+- Logging detalhado adicionado: XML assinado completo, Base64 comprimido, endpoint URL,
+  resposta SEFAZ COMPLETA (não truncada), dados de input (toma, emit, endereços)
+- Logs visíveis no Cloudflare Worker dashboard e nos logs do Vercel
+
+---
+
 ## Regras de segurança
 
 - NUNCA commitar tokens/senhas (GitHub PAT, senhas de banco, service keys).
