@@ -17,16 +17,20 @@ export const emitirCteFn = createServerFn({ method: "POST" }).validator((d: { em
   const { data: ultimo } = await supa.from("cte_documentos").select("numero").eq("empresa_id", data.empresaId).order("created_at",{ascending:false}).limit(1).maybeSingle();
   const proximo = String((parseInt((ultimo as any)?.numero || "0",10)+1));
   const cli = data.input.emit || {};
+  const emitCnpj = emp?.cnpj || cli.cnpj || "";
+  const emitUf = emp?.uf || cli.uf || "MG";
+  console.log("[CTE-DEBUG] empCnpj:", emp?.cnpj, "empUf:", emp?.uf, "emitCnpj:", emitCnpj, "emitUf:", emitUf);
   const input = { ...data.input, ambiente, numero: proximo, serie: data.input.serie || "1", emit: {
-    cnpj: emp?.cnpj || cli.cnpj,
+    cnpj: emitCnpj,
     xNome: cli.xNome || emp?.razao_social || emp?.nome_fantasia || "EMITENTE",
     ie: cli.ie || emp?.ie || "ISENTO",
-    uf: emp?.uf || cli.uf || "MG",
+    uf: emitUf,
     cMun: cli.cMun || "3106200",
     xMun: cli.xMun || emp?.cidade || "BELO HORIZONTE",
     crt: cli.crt || emp?.regime_tributario || "3",
     logradouro: cli.logradouro || emp?.logradouro || "RUA",
     nro: cli.nro || emp?.numero || "SN",
+    complemento: cli.complemento || emp?.complemento || "",
     bairro: cli.bairro || emp?.bairro || "CENTRO",
     cep: cli.cep || emp?.cep || "00000000",
   } };
@@ -54,22 +58,25 @@ export const previewCteXmlFn = createServerFn({ method: "POST" }).validator((d: 
   const { buildCteXml } = await import("@/lib/sefaz-cte");
   const { createClient } = await import("@supabase/supabase-js");
   const supa = createClient(process.env.SUPABASE_URL||"", process.env.SUPABASE_SERVICE_ROLE_KEY||"");
-  const { data: emp } = await supa.from("empresas").select("cnpj, uf, ie, nome_fantasia, razao_social, logradouro, numero, bairro, cidade, cep, regime_tributario").eq("id", data.empresaId).single();
+  const { data: emp } = await supa.from("empresas").select("cnpj, uf, ie, nome_fantasia, razao_social, logradouro, numero, complemento, bairro, cidade, cep, regime_tributario").eq("id", data.empresaId).single();
   const { data: cfg } = await supa.from("nfe_config").select("ambiente").eq("empresa_id", data.empresaId).maybeSingle();
   const ambiente = cfg?.ambiente==="homologacao"?"homologacao":"producao";
   const { data: ultimo } = await supa.from("cte_documentos").select("numero").eq("empresa_id", data.empresaId).order("created_at",{ascending:false}).limit(1).maybeSingle();
   const proximo = String((parseInt((ultimo as any)?.numero || "0",10)+1));
   const cli = data.input.emit || {};
+  const emitCnpj = emp?.cnpj || cli.cnpj || "";
+  const emitUf = emp?.uf || cli.uf || "MG";
   const input = { ...data.input, ambiente, numero: proximo, serie: data.input.serie || "1", emit: {
-    cnpj: emp?.cnpj || cli.cnpj,
+    cnpj: emitCnpj,
     xNome: cli.xNome || emp?.razao_social || emp?.nome_fantasia || "EMITENTE",
     ie: cli.ie || emp?.ie || "ISENTO",
-    uf: emp?.uf || cli.uf || "MG",
+    uf: emitUf,
     cMun: cli.cMun || "3106200",
     xMun: cli.xMun || emp?.cidade || "BELO HORIZONTE",
     crt: cli.crt || emp?.regime_tributario || "3",
     logradouro: cli.logradouro || emp?.logradouro || "RUA",
     nro: cli.nro || emp?.numero || "SN",
+    complemento: cli.complemento || emp?.complemento || "",
     bairro: cli.bairro || emp?.bairro || "CENTRO",
     cep: cli.cep || emp?.cep || "00000000",
   } };

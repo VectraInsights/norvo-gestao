@@ -146,27 +146,31 @@ export async function handleSefazProxy(request: Request): Promise<Response> {
         const { buildCteXml, emitirCte } = await import("@/lib/sefaz-cte");
         const { createClient: createClient2 } = await import("@supabase/supabase-js");
         const supa2 = createClient2(process.env.SUPABASE_URL||"", process.env.SUPABASE_SERVICE_ROLE_KEY||"");
-        const { data: emp } = await supa2.from("empresas").select("cnpj, uf, ie, razao_social, nome_fantasia, logradouro, numero, bairro, cidade, cep, regime_tributario").eq("id", empresaId).single();
+        const { data: emp } = await supa2.from("empresas").select("cnpj, uf, ie, razao_social, nome_fantasia, logradouro, numero, complemento, bairro, cidade, cep, regime_tributario").eq("id", empresaId).single();
         const inp = (body as any).input || {};
         const { data: ultimo } = await supa2.from("cte_documentos").select("numero").eq("empresa_id", empresaId).order("created_at",{ascending:false}).limit(1).maybeSingle();
         const proximo = String((parseInt((ultimo as any)?.numero || "0",10)+1));
         const cli = inp.emit || {};
+        const emitCnpj = cli.cnpj || emp?.cnpj || "";
+        const emitUf = emp?.uf || cli.uf || uf;
+        console.log("[CTE-PROXY-DEBUG] empCnpj:", emp?.cnpj, "empUf:", emp?.uf, "emitCnpj:", emitCnpj, "emitUf:", emitUf);
         const input = { ...inp, ambiente, numero: proximo, serie: inp.serie || "1", emit: {
-          cnpj: cli.cnpj || emp?.cnpj,
+          cnpj: emitCnpj,
           xNome: cli.xNome || emp?.razao_social || emp?.nome_fantasia || "EMITENTE",
           ie: cli.ie || emp?.ie || "ISENTO",
-          uf: emp?.uf || cli.uf || uf,
+          uf: emitUf,
           cMun: cli.cMun || "3106200",
           xMun: cli.xMun || emp?.cidade || "BELO HORIZONTE",
           crt: cli.crt || emp?.regime_tributario || "3",
           logradouro: cli.logradouro || emp?.logradouro || "RUA",
           nro: cli.nro || emp?.numero || "SN",
+          complemento: cli.complemento || emp?.complemento || "",
           bairro: cli.bairro || emp?.bairro || "CENTRO",
           cep: cli.cep || emp?.cep || "00000000",
         } };
         const { xml, chave } = buildCteXml(input);
         console.log("[CTE-PROXY-DEBUG] XML gerado:", xml);
-        const ret = await emitirCte(pfxBytes, senha, xml, ambiente, uf);
+        const ret = await emitirCte(pfxBytes, senha, xml, ambiente, emitUf);
         const supa3 = createClient(process.env.SUPABASE_URL||"", process.env.SUPABASE_SERVICE_ROLE_KEY||"");
         if (ret.sucesso) await supa3.from("cte_documentos").insert({ empresa_id: empresaId, chave_acesso: chave, numero: proximo, serie: input.serie, status: "autorizado", xml_assinado: xml, protocolo_sefaz: ret.protocolo, ambiente, data_autorizacao: new Date().toISOString(), valor_servico: input.vPrest } as any);
         else await supa3.from("cte_documentos").insert({ empresa_id: empresaId, chave_acesso: chave, numero: proximo, serie: input.serie, status: "rejeitado", xml_assinado: xml, motivo_rejeicao: ret.xMotivo, ambiente } as any);
