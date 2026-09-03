@@ -94,10 +94,12 @@ export interface CteInputCompleto {
 
 export function buildCteXml(input: CteInputCompleto): { xml: string; chave: string } {
   const now = new Date();
-  const tzOffset = -now.getTimezoneOffset();
+  const tzOffset = now.getTimezoneOffset(); // minutes; negative for UTC+ (e.g. UTC-3 → +180)
   const tzH = String(Math.floor(Math.abs(tzOffset) / 60)).padStart(2, "0");
   const tzM = String(Math.abs(tzOffset) % 60).padStart(2, "0");
-  const tzSign = tzOffset >= 0 ? "+" : "-";
+  // XSD TDateTimeUTC: TZD = +hh:mm or -hh:mm
+  // getTimezoneOffset: positive = west of UTC (e.g. 180 = UTC-3 → "+03:00")
+  const tzSign = tzOffset <= 0 ? "+" : "-";
   const dhEmi = now.getFullYear() + "-" +
     String(now.getMonth() + 1).padStart(2, "0") + "-" +
     String(now.getDate()).padStart(2, "0") + "T" +
@@ -130,7 +132,7 @@ export function buildCteXml(input: CteInputCompleto): { xml: string; chave: stri
 
   // enderEmit
   const cepEmit = (input.emit.cep || "00000000").replace(/\D/g,"").padStart(8,"0");
-  const enderEmit = `<enderEmit><xLgr>${input.emit.logradouro || "RUA"}</xLgr><nro>${input.emit.nro || "SN"}</nro><xBairro>${input.emit.bairro || "CENTRO"}</xBairro><cMun>${input.emit.cMun}</cMun><xMun>${input.emit.xMun}</xMun><CEP>${cepEmit}</CEP><UF>${input.emit.uf}</UF></enderEmit>`;
+  const enderEmit = `<enderEmit><xLgr>${(input.emit.logradouro || "RUA").length >= 2 ? (input.emit.logradouro || "RUA") : "RUA GERAL"}</xLgr><nro>${input.emit.nro || "SN"}</nro>${input.emit.complemento ? `<xCpl>${input.emit.complemento}</xCpl>` : ""}<xBairro>${(input.emit.bairro || "CENTRO").length >= 2 ? (input.emit.bairro || "CENTRO") : "CENTRO"}</xBairro><cMun>${input.emit.cMun}</cMun><xMun>${input.emit.xMun}</xMun><CEP>${cepEmit}</CEP><UF>${input.emit.uf}</UF></enderEmit>`;
 
   // ICMS
   const icms = input.icms || { CST: "00", vBC: input.vPrest, pICMS: 0, vICMS: 0 };
@@ -163,16 +165,17 @@ export function buildCteXml(input: CteInputCompleto): { xml: string; chave: stri
       <retira>1</retira>
     </ide>
     <emit>
-      <CNPJ>${cnpjLimpo}</CNPJ><IE>${input.emit.ie || "ISENTO"}</IE><xNome>${input.emit.xNome}</xNome>${input.emit.xFant ? `<xFant>${input.emit.xFant}</xFant>` : ""}${enderEmit}<CRT>${crt}</CRT>
+      <CNPJ>${cnpjLimpo}</CNPJ>${input.emit.ie && /^\d{2,14}$/.test(input.emit.ie) ? `<IE>${input.emit.ie}</IE>` : ""}<xNome>${input.emit.xNome}</xNome>${input.emit.xFant && input.emit.xFant.length >= 2 ? `<xFant>${input.emit.xFant}</xFant>` : ""}${enderEmit}<CRT>${crt}</CRT>
     </emit>
     <toma>
-      <toma>${toma}</toma><indIEToma>${indIEToma}</indIEToma><CNPJ>${cnpjToma}</CNPJ>${input.tomador.ie ? `<IE>${input.tomador.ie}</IE>` : ""}<xNome>${input.tomador.xNome}</xNome>${input.tomador.fone ? `<fone>${input.tomador.fone}</fone>` : ""}
-      <enderToma><xLgr>${input.tomador.logradouro || "RUA"}</xLgr><nro>${input.tomador.nro || "SN"}</nro><xBairro>${input.tomador.bairro || "CENTRO"}</xBairro><cMun>${input.tomador.cMun}</cMun><xMun>${input.tomador.xMun}</xMun><CEP>${cepToma}</CEP><UF>${input.tomador.uf}</UF></enderToma>
+      <toma>${toma}</toma><indIEToma>${indIEToma}</indIEToma><CNPJ>${cnpjToma}</CNPJ>${indIEToma !== "9" && input.tomador.ie && input.tomador.ie !== "ISENTO" ? `<IE>${input.tomador.ie}</IE>` : ""}<xNome>${input.tomador.xNome}</xNome>
+      <enderToma><xLgr>${(input.tomador.logradouro || "RUA").length >= 2 ? (input.tomador.logradouro || "RUA") : "RUA GERAL"}</xLgr><nro>${input.tomador.nro || "SN"}</nro><xBairro>${(input.tomador.bairro || "CENTRO").length >= 2 ? (input.tomador.bairro || "CENTRO") : "CENTRO"}</xBairro><cMun>${input.tomador.cMun}</cMun><xMun>${input.tomador.xMun}</xMun><CEP>${cepToma}</CEP><UF>${input.tomador.uf}</UF></enderToma>
+      ${input.tomador.fone ? `<fone>${input.tomador.fone}</fone>` : ""}
       ${input.tomador.email ? `<email>${input.tomador.email}</email>` : ""}
     </toma>
     <infCarga>
       <vCarga>${input.vCarga.toFixed(2)}</vCarga><proPred>${input.infCTeNorm?.proPred || "CARGA GERAL"}</proPred>
-      <infQ><cUnid>01</cUnid><tpMed>00</tpMed><qCarga>${input.pesoKg.toFixed(3)}</qCarga></infQ>
+      <infQ><cUnid>01</cUnid><tpMed>00</tpMed><qCarga>${input.pesoKg.toFixed(4)}</qCarga></infQ>
     </infCarga>
     ${infNFeXml}
     <infModal versaoModal="4.00"><rodo><RNTRC>${(input.modalRod?.rntrc||"").replace(/\D/g,"")}</RNTRC></rodo></infModal>
