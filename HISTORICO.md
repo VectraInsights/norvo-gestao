@@ -764,6 +764,16 @@ Commits: `b2eeb50` cf / `a0d8460` vercel
 
 ---
 
+## CT-e: correção assinatura CTeSimp — Signature dentro de infCte (03/09/2026)
+
+**Causa raiz do erro 225 (Falha no Schema XML)**: o `signXml` não tratava `</CTeSimp>` — só tinha casos para `</CTe>`, `</MDFe>`, `</NFe>`. Como o XML raiz é `<CTeSimp>`, caía no fallback `</infCte>` e inseria `<Signature>` DENTRO de `<infCte>`, violando o XSD.
+
+**Fix**: adicionado `if (xml.includes("</CTeSimp>"))` ANTES dos outros casos, tanto em `tryForgeSignXml` quanto em `signXmlNative`. A assinatura agora fica FORA de `<infCte>`, entre `</infCte>` e `<infCTeSupl>`.
+
+Commit: `02782ee`
+
+---
+
 ## Regras de segurança
 
 - NUNCA commitar tokens/senhas (GitHub PAT, senhas de banco, service keys).
