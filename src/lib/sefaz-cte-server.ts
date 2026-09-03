@@ -31,6 +31,7 @@ export const emitirCteFn = createServerFn({ method: "POST" }).validator((d: { em
     cep: cli.cep || emp?.cep || "00000000",
   } };
   const { xml, chave } = buildCteXml(input);
+  console.log("[CTE-DEBUG] XML gerado:", xml);
   const ret = await emitirCte(cert.pfx, cert.senha, xml, ambiente, cert.uf);
   if (ret.sucesso) {
     await supa.from("cte_documentos").insert({ empresa_id: data.empresaId, chave_acesso: chave, numero: proximo, serie: input.serie, status: "autorizado", xml_assinado: xml, protocolo_sefaz: ret.protocolo, ambiente, data_autorizacao: new Date().toISOString(), valor_servico: input.vPrest, peso_carga: input.pesoKg } as any);

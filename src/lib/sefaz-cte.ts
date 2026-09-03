@@ -225,6 +225,7 @@ export async function emitirCte(pfx:Buffer, senha:string, xml:string, ambiente:A
       req.on("error",reject); req.write(envelope); req.end();
     });
     const cStat=ret.match(/<cStat>(\d+)<\/cStat>/)?.[1]||""; const xMotivo=ret.match(/<xMotivo>([^<]+)<\/xMotivo>/)?.[1]||""; const ch=ret.match(/<chCTe>(\d{44})<\/chCTe>/)?.[1]||xml.match(/Id="CTe(\d{44})"/)?.[1]; const prot=ret.match(/<nProt>(\d+)<\/nProt>/)?.[1]||ret.match(/<protCTe[^>]*>[\s\S]*?<nProt>(\d+)<\/nProt>/)?.[1];
+    console.log("[CTE-SEFAZ-RESP] cStat:", cStat, "xMotivo:", xMotivo, "ret:", ret.slice(0, 2000));
     return { sucesso: cStat==="100"||cStat==="104"||cStat==="103", cStat, xMotivo, chave: ch, protocolo: prot, xmlRet: ret };
   }
   // SVRS usa namespace v4 (CTeRecepcaoSincV4)
