@@ -130,7 +130,7 @@ export function buildCteXml(input: CteInputCompleto): { xml: string; chave: stri
 
   // enderEmit
   const cepEmit = (input.emit.cep || "00000000").replace(/\D/g,"").padStart(8,"0");
-  const enderEmit = `<enderEmit><xLgr>${input.emit.logradouro || "RUA"}</xLgr><nro>${input.emit.nro || "SN"}</nro><xBairro>${input.emit.bairro || "CENTRO"}</xBairro><cMun>${input.emit.cMun}</cMun><xMun>${input.emit.xMun}</xMun><UF>${input.emit.uf}</UF><CEP>${cepEmit}</CEP></enderEmit>`;
+  const enderEmit = `<enderEmit><xLgr>${input.emit.logradouro || "RUA"}</xLgr><nro>${input.emit.nro || "SN"}</nro><xBairro>${input.emit.bairro || "CENTRO"}</xBairro><cMun>${input.emit.cMun}</cMun><xMun>${input.emit.xMun}</xMun><CEP>${cepEmit}</CEP><UF>${input.emit.uf}</UF></enderEmit>`;
 
   // ICMS
   const icms = input.icms || { CST: "00", vBC: input.vPrest, pICMS: 0, vICMS: 0 };
@@ -156,7 +156,7 @@ export function buildCteXml(input: CteInputCompleto): { xml: string; chave: stri
   <infCte Id="${id}" versao="4.00">
     <ide>
       <cUF>${cUF}</cUF><cCT>${cCT}</cCT><CFOP>${input.cfop}</CFOP><natOp>${natOp}</natOp><mod>57</mod><serie>${serie}</serie><nCT>${nCT}</nCT><dhEmi>${dhEmi}</dhEmi>
-      <tpImp>1</tpImp><tpEmis>1</tpEmis><cDV>${chave.slice(-1)}</cDV><tpAmb>${input.ambiente==="producao"?"1":"2"}</tpAmb><tpCTe>0</tpCTe><procEmi>0</procEmi><verProc>NORVO_1.0</verProc>
+      <tpImp>1</tpImp><tpEmis>1</tpEmis><cDV>${chave.slice(-1)}</cDV><tpAmb>${input.ambiente==="producao"?"1":"2"}</tpAmb><tpCTe>5</tpCTe><procEmi>0</procEmi><verProc>NORVO_1.0</verProc>
       <cMunEnv>${input.cMunEnv}</cMunEnv><xMunEnv>${input.xMunEnv}</xMunEnv><UFEnv>${input.ufEnv}</UFEnv>
       <modal>01</modal><tpServ>0</tpServ>
       <UFIni>${input.ufIni}</UFIni><UFFim>${input.ufFim}</UFFim>
@@ -167,7 +167,7 @@ export function buildCteXml(input: CteInputCompleto): { xml: string; chave: stri
     </emit>
     <toma>
       <toma>${toma}</toma><indIEToma>${indIEToma}</indIEToma><CNPJ>${cnpjToma}</CNPJ>${input.tomador.ie ? `<IE>${input.tomador.ie}</IE>` : ""}<xNome>${input.tomador.xNome}</xNome>${input.tomador.fone ? `<fone>${input.tomador.fone}</fone>` : ""}
-      <enderToma><xLgr>${input.tomador.logradouro || "RUA"}</xLgr><nro>${input.tomador.nro || "SN"}</nro><xBairro>${input.tomador.bairro || "CENTRO"}</xBairro><cMun>${input.tomador.cMun}</cMun><xMun>${input.tomador.xMun}</xMun><UF>${input.tomador.uf}</UF><CEP>${cepToma}</CEP></enderToma>
+      <enderToma><xLgr>${input.tomador.logradouro || "RUA"}</xLgr><nro>${input.tomador.nro || "SN"}</nro><xBairro>${input.tomador.bairro || "CENTRO"}</xBairro><cMun>${input.tomador.cMun}</cMun><xMun>${input.tomador.xMun}</xMun><CEP>${cepToma}</CEP><UF>${input.tomador.uf}</UF></enderToma>
       ${input.tomador.email ? `<email>${input.tomador.email}</email>` : ""}
     </toma>
     <infCarga>
