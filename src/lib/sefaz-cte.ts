@@ -161,7 +161,8 @@ export function buildCteXml(input: CteInputCompleto): { xml: string; chave: stri
       <tpImp>1</tpImp><tpEmis>1</tpEmis><cDV>${chave.slice(-1)}</cDV><tpAmb>${input.ambiente==="producao"?"1":"2"}</tpAmb><tpCTe>5</tpCTe><procEmi>0</procEmi><verProc>NORVO_1.0</verProc>
       <cMunEnv>${input.cMunEnv}</cMunEnv><xMunEnv>${input.xMunEnv}</xMunEnv><UFEnv>${input.ufEnv}</UFEnv>
       <modal>01</modal><tpServ>0</tpServ>
-      <UFIni>${input.ufIni}</UFIni><UFFim>${input.ufFim}</UFFim>
+      <cMunIni>${input.cMunIni}</cMunIni><xMunIni>${input.xMunIni}</xMunIni><UFIni>${input.ufIni}</UFIni>
+      <cMunFim>${input.cMunFim}</cMunFim><xMunFim>${input.xMunFim}</xMunFim><UFFim>${input.ufFim}</UFFim>
       <retira>1</retira>
     </ide>
     <emit>
@@ -169,8 +170,8 @@ export function buildCteXml(input: CteInputCompleto): { xml: string; chave: stri
     </emit>
     <toma>
       <toma>${toma}</toma><indIEToma>${indIEToma}</indIEToma><CNPJ>${cnpjToma}</CNPJ>${indIEToma !== "9" && input.tomador.ie && input.tomador.ie !== "ISENTO" ? `<IE>${input.tomador.ie}</IE>` : ""}<xNome>${input.tomador.xNome}</xNome>
-      <enderToma><xLgr>${(input.tomador.logradouro || "RUA").length >= 2 ? (input.tomador.logradouro || "RUA") : "RUA GERAL"}</xLgr><nro>${input.tomador.nro || "SN"}</nro><xBairro>${(input.tomador.bairro || "CENTRO").length >= 2 ? (input.tomador.bairro || "CENTRO") : "CENTRO"}</xBairro><cMun>${input.tomador.cMun}</cMun><xMun>${input.tomador.xMun}</xMun><CEP>${cepToma}</CEP><UF>${input.tomador.uf}</UF></enderToma>
       ${input.tomador.fone ? `<fone>${input.tomador.fone}</fone>` : ""}
+      <enderToma><xLgr>${(input.tomador.logradouro || "RUA").length >= 2 ? (input.tomador.logradouro || "RUA") : "RUA GERAL"}</xLgr><nro>${input.tomador.nro || "SN"}</nro><xBairro>${(input.tomador.bairro || "CENTRO").length >= 2 ? (input.tomador.bairro || "CENTRO") : "CENTRO"}</xBairro><cMun>${input.tomador.cMun}</cMun><xMun>${input.tomador.xMun}</xMun><CEP>${cepToma}</CEP><UF>${input.tomador.uf}</UF></enderToma>
       ${input.tomador.email ? `<email>${input.tomador.email}</email>` : ""}
     </toma>
     <infCarga>
