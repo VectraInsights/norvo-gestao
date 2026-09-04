@@ -277,11 +277,14 @@ export async function cancelarCte(pfx:Buffer, senha:string, chave:string, justif
   const nSeq="1";
   const tpEvento="110111";
   const cOrgao = codigoUF(uf || "MG");
+  const chaveFmt = chave.replace(/\D/g, "").padStart(44, "0");
   const nProtFmt = (protocolo || "0").replace(/\D/g,"").padStart(15,"0");
   const cnpjFmt = cnpj.replace(/\D/g,"").padStart(14,"0");
-  const evento=`<eventoCTe xmlns="http://www.portalfiscal.inf.br/cte" versao="4.00"><infEvento Id="ID${tpEvento}${chave}${nSeq}"><cOrgao>${cOrgao}</cOrgao><tpAmb>${ambiente==="producao"?"1":"2"}</tpAmb><CNPJ>${cnpjFmt}</CNPJ><chCTe>${chave}</chCTe><dhEvento>${dhEvento}</dhEvento><tpEvento>${tpEvento}</tpEvento><nSeqEvento>${nSeq}</nSeqEvento><detEvento versaoEvento="4.00"><evCancCTe><descEvento>Cancelamento</descEvento><nProt>${nProtFmt}</nProt><xJust>${justificativa}</xJust></evCancCTe></detEvento></infEvento></eventoCTe>`;
+  const evento=`<eventoCTe xmlns="http://www.portalfiscal.inf.br/cte" versao="4.00"><infEvento Id="ID${tpEvento}${chaveFmt}${nSeq}"><cOrgao>${cOrgao}</cOrgao><tpAmb>${ambiente==="producao"?"1":"2"}</tpAmb><CNPJ>${cnpjFmt}</CNPJ><chCTe>${chaveFmt}</chCTe><dhEvento>${dhEvento}</dhEvento><tpEvento>${tpEvento}</tpEvento><nSeqEvento>${nSeq}</nSeqEvento><detEvento versaoEvento="4.00"><evCancCTe><descEvento>Cancelamento</descEvento><nProt>${nProtFmt}</nProt><xJust>${justificativa}</xJust></evCancCTe></detEvento></infEvento></eventoCTe>`;
   console.log("[CTE-CANCEL] evento XML:", evento);
   const ass=signXml(evento, pfx, senha);
+  console.log("[CTE-CANCEL] XML assinado (500 chars):", ass.slice(0, 500));
+  console.log("[CTE-CANCEL] URI na assinatura:", ass.match(/URI="([^"]+)"/)?.[1] || "NAO_ENCONTRADO");
   const isMG = uf?.toUpperCase() === "MG";
   if (isMG) {
     const ns = "http://www.portalfiscal.inf.br/cte/wsdl/CTeRecepcaoEventoV4";
@@ -297,6 +300,7 @@ export async function cancelarCte(pfx:Buffer, senha:string, chave:string, justif
       }},res=>{let d="";res.on("data",c=>d+=c);res.on("end",()=>res.statusCode&&res.statusCode>=400?reject(new Error(`CTe HTTP ${res.statusCode}: ${d.slice(0,500)}`)):resolve(d));});
       req.on("error",reject); req.write(envelope); req.end();
     });
+    console.log("[CTE-CANCEL] Resposta MG:", ret.slice(0, 1000));
     const cStat=ret.match(/<cStat>(\d+)<\/cStat>/)?.[1]||""; const xMotivo=ret.match(/<xMotivo>([^<]+)<\/xMotivo>/)?.[1]||"";
     return { sucesso:cStat==="135"||cStat==="155", cStat, xMotivo };
   }
