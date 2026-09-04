@@ -784,6 +784,16 @@ Commits: `7e26539` (code) + deploy Vercel `dpl_HdAyjxK5qcZczMK84kMw95xsrmRG` + d
 
 ---
 
+## CT-e: remoção de `versao` do root `<CTeSimp>` (04/09/2026)
+
+**Causa raiz do erro 225 (Falha no Schema XML)**: o elemento raiz `<CTeSimp>` estava com o atributo `versao="4.00"`, mas o XSD do CTe Simplificado não define esse atributo no root — ele pertence apenas ao `<infCte>`. A SEFAZ valida contra o XSD e rejeita atributos extras.
+
+**Fix**: removido `versao="4.00"` de `<CTeSimp>` em `src/lib/sefaz-cte.ts:157`. O `<infCte>` continua com `versao="4.00"`.
+
+Commits: `5f04fb9` (push) + CF Worker `460ab7c5`
+
+---
+
 ## Regras de segurança
 
 - NUNCA commitar tokens/senhas (GitHub PAT, senhas de banco, service keys).
