@@ -9,6 +9,7 @@ import { Label } from "@/components/ui/label";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
@@ -32,7 +33,7 @@ export const Route = createFileRoute("/_authenticated/fiscal/cte")({
   validateSearch: (search: Record<string, unknown>) => ({ fromNFe: (search.fromNFe as string) || undefined }),
 });
 
-type CteDoc = { id: string; numero: string | null; serie: string | null; status: string; valor_servico: number | null; chave_acesso: string | null; created_at: string; motivo_rejeicao: string | null; protocolo_sefaz: string | null; xml_assinado: string | null };
+type CteDoc = { id: string; numero: string | null; serie: string | null; status: string; valor_servico: number | null; chave_acesso: string | null; created_at: string; motivo_rejeicao: string | null; protocolo_sefaz: string | null; xml_assinado: string | null; ambiente: string | null };
 
 function CtePage() {
   const { data: empresa } = useEmpresaAtual();
@@ -69,7 +70,7 @@ function CtePage() {
     enabled: !!empresa,
     queryKey: ["cte-documentos", empresa?.id],
     queryFn: async (): Promise<CteDoc[]> => {
-      const { data, error } = await supabase.from("cte_documentos" as any).select("id,numero,serie,status,valor_servico,chave_acesso,created_at,motivo_rejeicao,protocolo_sefaz,xml_assinado").eq("empresa_id", empresa!.id).order("created_at", { ascending: false }).limit(100);
+      const { data, error } = await supabase.from("cte_documentos" as any)        .select("id,numero,serie,status,valor_servico,chave_acesso,created_at,motivo_rejeicao,protocolo_sefaz,xml_assinado,ambiente").eq("empresa_id", empresa!.id).order("created_at", { ascending: false }).limit(100);
       if (error) throw error;
       return (data ?? []) as unknown as CteDoc[];
     },
@@ -131,7 +132,7 @@ function CtePage() {
         chave: doc.chave_acesso || "",
         numero: doc.numero || "",
         serie: doc.serie || "1",
-        ambiente: "producao",
+        ambiente: doc.ambiente || "producao",
         dataEmissao: doc.created_at,
         emitCnpj: tag("infCte > emit > CNPJ") || "",
         emitNome: tag("infCte > emit > xNome") || "",
@@ -189,6 +190,7 @@ function CtePage() {
     cnpjConsignatario: "", xNomeConsignatario: "", ieConsignatario: "", ufConsignatario: "", xMunConsignatario: "", cepConsignatario: "", logradouroConsignatario: "", nroConsignatario: "", bairroConsignatario: "",
     // Redespacho
     cnpjRedespacho: "", xNomeRedespacho: "", ieRedespacho: "", ufRedespacho: "", xMunRedespacho: "", cepRedespacho: "", logradouroRedespacho: "", nroRedespacho: "", bairroRedespacho: "",
+    ambiente: "producao" as "homologacao" | "producao",
     cfop: "5353",
     vPrest: "0.00", vCarga: "0.00", peso: "0", rntrc: "",
     // Impostos — base e alíquotas editáveis (corrigido: base padrão = vPrest, não vCarga)
@@ -728,6 +730,7 @@ function CtePage() {
         if (dests.size > 1) throw new Error("CT-e não pode ter destinos diferentes. Selecione NF-es do mesmo destinatário.");
       }
       const ret: any = await emitirCteFn({ data: { empresaId: empresa.id, input: {
+        ambiente: form.ambiente,
         toma: form.toma, cnpjTomador: form.cnpjTomador, xNomeTomador: form.xNomeTomador, ufTomador: form.ufTomador, cMunTomador: form.cMunTomador, xMunTomador: form.xMunTomador,
         cfop: form.cfop, vPrest: parseFloat(form.vPrest)||0, vCarga: parseFloat(form.vCarga)||0, pesoKg: parseFloat(form.peso)||0, rntrc: form.rntrc,
         cMunEnv: form.cMunEnv, xMunEnv: form.xMunEnv, ufEnv: form.ufEnv, cMunIni: form.cMunIni, xMunIni: form.xMunIni, ufIni: form.ufIni, cMunFim: form.cMunFim, xMunFim: form.xMunFim, ufFim: form.ufFim,
@@ -803,6 +806,7 @@ function CtePage() {
       if (!empresa) throw new Error("Empresa não selecionada");
       const chaves = selecionadas.size > 0 ? Array.from(selecionadas) : mercadorias.map(m => m.chave);
       return previewCteXmlFn({ data: { empresaId: empresa.id, input: {
+        ambiente: form.ambiente,
         toma: form.toma, cnpjTomador: form.cnpjTomador, xNomeTomador: form.xNomeTomador, ufTomador: form.ufTomador, cMunTomador: form.cMunTomador, xMunTomador: form.xMunTomador,
         cfop: form.cfop, vPrest: parseFloat(form.vPrest)||0, vCarga: parseFloat(form.vCarga)||0, pesoKg: parseFloat(form.peso)||0, rntrc: form.rntrc,
         cMunEnv: form.cMunEnv, xMunEnv: form.xMunEnv, ufEnv: form.ufEnv, cMunIni: form.cMunIni, xMunIni: form.xMunIni, ufIni: form.ufIni, cMunFim: form.cMunFim, xMunFim: form.xMunFim, ufFim: form.ufFim,
@@ -1102,7 +1106,14 @@ function CtePage() {
             </TabsList>
 
             {/* Header: Nº Conhecimento, Data, CFOP */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-2 border rounded-b-md rounded-tr-md p-3 bg-muted/20">
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-2 border rounded-b-md rounded-tr-md p-3 bg-muted/20">
+              <div>
+                <Label className="text-[10px] text-muted-foreground">Ambiente</Label>
+                <ToggleGroup type="single" value={form.ambiente} onValueChange={v => { if (v) setForm({...form, ambiente: v as "homologacao" | "producao"}); }} className="bg-background border rounded-md h-7 mt-0.5">
+                  <ToggleGroupItem value="homologacao" className="h-6 text-[10px] px-2 data-[state=on]:bg-primary/10 data-[state=on]:text-primary">Homologação</ToggleGroupItem>
+                  <ToggleGroupItem value="producao" className="h-6 text-[10px] px-2 data-[state=on]:bg-green-600/10 data-[state=on]:text-green-700">Produção</ToggleGroupItem>
+                </ToggleGroup>
+              </div>
               <div><Label className="text-[10px] text-muted-foreground">N° Conhecimento</Label><Input className="h-7 text-xs font-mono" value="— aguardando emissão —" readOnly /></div>
               <div><Label className="text-[10px] text-muted-foreground">Data Emissão</Label><DateInput value={form.dataEmissao} onChange={v => setForm({...form, dataEmissao: v})} className="h-7 text-xs" /></div>
               <div>

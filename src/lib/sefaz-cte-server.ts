@@ -13,7 +13,7 @@ export const emitirCteFn = createServerFn({ method: "POST" }).validator((d: { em
   const supa = createClient(process.env.SUPABASE_URL||"", process.env.SUPABASE_SERVICE_ROLE_KEY||"");
   const { data: emp } = await supa.from("empresas").select("cnpj, uf, ie, nome_fantasia, razao_social, logradouro, numero, bairro, cidade, cep, regime_tributario").eq("id", data.empresaId).single();
   const { data: cfg } = await supa.from("nfe_config").select("ambiente").eq("empresa_id", data.empresaId).maybeSingle();
-  const ambiente = cfg?.ambiente==="homologacao"?"homologacao":"producao";
+  const ambiente = (data.input as any).ambiente === "homologacao" ? "homologacao" : (cfg?.ambiente==="homologacao"?"homologacao":"producao");
   const { data: ultimo } = await supa.from("cte_documentos").select("numero").eq("empresa_id", data.empresaId).order("numero",{ascending:false}).limit(1).maybeSingle();
   const baseNum = parseInt((ultimo as any)?.numero || "0",10);
   const proximo = String(baseNum >= 900000 ? baseNum + 1 : Math.max(baseNum + 1, 900000));
@@ -21,7 +21,7 @@ export const emitirCteFn = createServerFn({ method: "POST" }).validator((d: { em
   const form = (data.input as any).form || {};
   const emitCnpj = emp?.cnpj || cli.cnpj || "";
   const emitUf = emp?.uf || cli.uf || "MG";
-  console.log("[CTE-DEBUG] empCnpj:", emp?.cnpj, "empUf:", emp?.uf, "emitCnpj:", emitCnpj, "emitUf:", emitUf);
+  console.log("[CTE-DEBUG] empCnpj:", emp?.cnpj, "empUf:", emp?.uf, "emitCnpj:", emitCnpj, "emitUf:", emitUf, "ambiente:", ambiente);
   console.log("[CTE-DEBUG] form:", JSON.stringify(form));
   const input = { ...data.input, ambiente, numero: proximo, serie: data.input.serie || "1",
     cfop: data.input.cfop || form.cfop || "6352",
@@ -99,7 +99,7 @@ export const previewCteXmlFn = createServerFn({ method: "POST" }).validator((d: 
   const supa = createClient(process.env.SUPABASE_URL||"", process.env.SUPABASE_SERVICE_ROLE_KEY||"");
   const { data: emp } = await supa.from("empresas").select("cnpj, uf, ie, nome_fantasia, razao_social, logradouro, numero, complemento, bairro, cidade, cep, regime_tributario").eq("id", data.empresaId).single();
   const { data: cfg } = await supa.from("nfe_config").select("ambiente").eq("empresa_id", data.empresaId).maybeSingle();
-  const ambiente = cfg?.ambiente==="homologacao"?"homologacao":"producao";
+  const ambiente = (data.input as any).ambiente === "homologacao" ? "homologacao" : (cfg?.ambiente==="homologacao"?"homologacao":"producao");
   const { data: ultimo } = await supa.from("cte_documentos").select("numero").eq("empresa_id", data.empresaId).order("numero",{ascending:false}).limit(1).maybeSingle();
   const baseNum = parseInt((ultimo as any)?.numero || "0",10);
   const proximo = String(baseNum >= 900000 ? baseNum + 1 : Math.max(baseNum + 1, 900000));
