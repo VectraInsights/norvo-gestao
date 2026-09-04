@@ -209,7 +209,7 @@ function CtePage() {
         chave: string; n_nf: string | null; serie: string | null; emit_nome: string | null; emit_cnpj: string | null; emit_uf: string | null; emit_cmun: string | null; emit_xmun: string | null;
         dest_nome: string | null; dest_cnpj: string | null; dest_uf: string | null; dest_cmun: string | null; dest_xmun: string | null;
         valor: number | null; peso: number | null; data_emissao: string | null;
-        tomador_nome: string | null; tomador_cnpj: string | null; tomador_uf: string | null; tomador_cmun: string | null; tomador_xmun: string | null; mod_frete: string | null;
+        tomador_nome: string | null; tomador_cnpj: string | null; tomador_uf: string | null; tomador_cmun: string | null; tomador_xmun: string | null; tomador_ie: string | null; tomador_logradouro: string | null; tomador_bairro: string | null; tomador_cep: string | null; mod_frete: string | null;
       }>;
     },
   });
@@ -237,6 +237,10 @@ function CtePage() {
         tomadorUF: r.tomador_uf || "",
         tomadorCMun: r.tomador_cmun || "",
         tomadorXMun: r.tomador_xmun || "",
+        tomadorIE: r.tomador_ie || "",
+        tomadorLogradouro: r.tomador_logradouro || "",
+        tomadorBairro: r.tomador_bairro || "",
+        tomadorCEP: r.tomador_cep || "",
         modFrete: r.mod_frete || "",
       }));
       setMercadorias(mapped);
@@ -541,6 +545,10 @@ function CtePage() {
           tomador_uf: tomadorUF || null,
           tomador_cmun: tomadorCMun || null,
           tomador_xmun: tomadorXMun || null,
+          tomador_ie: tomadorIE || null,
+          tomador_logradouro: tomadorLog || null,
+          tomador_bairro: tomadorBai || null,
+          tomador_cep: tomadorCep || null,
           mod_frete: modFrete || null,
           status: "pendente" as const,
         };
@@ -1001,6 +1009,10 @@ function CtePage() {
                     ufTomador: (first as any).tomadorUF || f.ufTomador,
                     cMunTomador: (first as any).tomadorCMun || f.cMunTomador,
                     xMunTomador: (first as any).tomadorXMun || f.xMunTomador,
+                    ieTomador: (first as any).tomadorIE || f.ieTomador,
+                    logradouroTomador: (first as any).tomadorLogradouro || f.logradouroTomador,
+                    bairroTomador: (first as any).tomadorBairro || f.bairroTomador,
+                    cepTomador: (first as any).tomadorCEP || f.cepTomador,
                     cMunIni: (first as any).emitCMun || f.cMunIni,
                     xMunIni: (first as any).emitXMun || f.xMunIni,
                     ufIni: (first as any).emitUF || f.ufIni,
