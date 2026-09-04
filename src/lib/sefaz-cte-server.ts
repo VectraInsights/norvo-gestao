@@ -16,7 +16,7 @@ export const emitirCteFn = createServerFn({ method: "POST" }).validator((d: { em
   const ambiente = cfg?.ambiente==="homologacao"?"homologacao":"producao";
   const { data: ultimo } = await supa.from("cte_documentos").select("numero").eq("empresa_id", data.empresaId).order("numero",{ascending:false}).limit(1).maybeSingle();
   const baseNum = parseInt((ultimo as any)?.numero || "0",10);
-  const proximo = String(baseNum >= 10000 ? baseNum + 1 : Math.max(baseNum + 1, 10000));
+  const proximo = String(baseNum >= 900000 ? baseNum + 1 : Math.max(baseNum + 1, 900000));
   const cli = data.input.emit || {};
   const form = (data.input as any).form || {};
   const emitCnpj = emp?.cnpj || cli.cnpj || "";
@@ -102,7 +102,7 @@ export const previewCteXmlFn = createServerFn({ method: "POST" }).validator((d: 
   const ambiente = cfg?.ambiente==="homologacao"?"homologacao":"producao";
   const { data: ultimo } = await supa.from("cte_documentos").select("numero").eq("empresa_id", data.empresaId).order("numero",{ascending:false}).limit(1).maybeSingle();
   const baseNum = parseInt((ultimo as any)?.numero || "0",10);
-  const proximo = String(baseNum >= 10000 ? baseNum + 1 : Math.max(baseNum + 1, 10000));
+  const proximo = String(baseNum >= 900000 ? baseNum + 1 : Math.max(baseNum + 1, 900000));
   const cli = data.input.emit || {};
   const emitCnpj = emp?.cnpj || cli.cnpj || "";
   const emitUf = emp?.uf || cli.uf || "MG";
