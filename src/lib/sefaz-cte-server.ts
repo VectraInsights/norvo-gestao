@@ -130,8 +130,9 @@ export const cancelarCteFn = createServerFn({ method: "POST" }).validator((d:{em
   const cert=await buscarCertificadoAtivo(data.empresaId);
   const { createClient }=await import("@supabase/supabase-js");
   const supa=createClient(process.env.SUPABASE_URL||"",process.env.SUPABASE_SERVICE_ROLE_KEY||"");
-  const { data:cfg }=await supa.from("nfe_config").select("ambiente").eq("empresa_id",data.empresaId).maybeSingle();
-  const ambiente=(cfg as any)?.ambiente==="producao"?"producao":"homologacao";
+  const { data:doc }=await supa.from("cte_documentos").select("ambiente").eq("chave_acesso",data.chave).maybeSingle();
+  const ambiente=(doc as any)?.ambiente==="producao"?"producao":"homologacao";
+  console.log("[CTE-CANCEL] ambiente:", ambiente, "chave:", data.chave, "protocolo:", data.protocolo);
   const ret=await cancelarCte(cert.pfx, cert.senha, data.chave, data.justificativa, ambiente, cert.cnpj, cert.uf, data.protocolo);
   if(ret.sucesso) await supa.from("cte_documentos").update({status:"cancelado"} as any).eq("chave_acesso",data.chave);
   return ret;

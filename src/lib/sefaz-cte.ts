@@ -276,8 +276,11 @@ export async function cancelarCte(pfx:Buffer, senha:string, chave:string, justif
   const dhEvento=new Date().toISOString().replace(/\.\d{3}Z$/,"-03:00");
   const nSeq="1";
   const tpEvento="110111";
-  const cOrgao = codigoUF(uf || "SP");
-  const evento=`<eventoCTe xmlns="http://www.portalfiscal.inf.br/cte" versao="4.00"><infEvento Id="ID${tpEvento}${chave}${nSeq}"><cOrgao>${cOrgao}</cOrgao><tpAmb>${ambiente==="producao"?"1":"2"}</tpAmb><CNPJ>${cnpj.replace(/\D/g,"")}</CNPJ><chCTe>${chave}</chCTe><dhEvento>${dhEvento}</dhEvento><tpEvento>${tpEvento}</tpEvento><nSeqEvento>${nSeq}</nSeqEvento><detEvento versaoEvento="4.00"><evCancCTe><descEvento>Cancelamento</descEvento><nProt>${protocolo || "0"}</nProt><xJust>${justificativa}</xJust></evCancCTe></detEvento></infEvento></eventoCTe>`;
+  const cOrgao = codigoUF(uf || "MG");
+  const nProtFmt = (protocolo || "0").replace(/\D/g,"").padStart(15,"0");
+  const cnpjFmt = cnpj.replace(/\D/g,"").padStart(14,"0");
+  const evento=`<eventoCTe xmlns="http://www.portalfiscal.inf.br/cte" versao="4.00"><infEvento Id="ID${tpEvento}${chave}${nSeq}"><cOrgao>${cOrgao}</cOrgao><tpAmb>${ambiente==="producao"?"1":"2"}</tpAmb><CNPJ>${cnpjFmt}</CNPJ><chCTe>${chave}</chCTe><dhEvento>${dhEvento}</dhEvento><tpEvento>${tpEvento}</tpEvento><nSeqEvento>${nSeq}</nSeqEvento><detEvento versaoEvento="4.00"><evCancCTe><descEvento>Cancelamento</descEvento><nProt>${nProtFmt}</nProt><xJust>${justificativa}</xJust></evCancCTe></detEvento></infEvento></eventoCTe>`;
+  console.log("[CTE-CANCEL] evento XML:", evento);
   const ass=signXml(evento, pfx, senha);
   const isMG = uf?.toUpperCase() === "MG";
   if (isMG) {
