@@ -153,8 +153,9 @@ export function buildCteXml(input: CteInputCompleto): { xml: string; chave: stri
     : `<det nItem="1"><cMunIni>${input.cMunIni}</cMunIni><xMunIni>${input.xMunIni}</xMunIni><cMunFim>${input.cMunFim}</cMunFim><xMunFim>${input.xMunFim}</xMunFim><vPrest>${input.vPrest.toFixed(2)}</vPrest><vRec>${input.vPrest.toFixed(2)}</vRec><infNFe><chNFe>00000000000000000000000000000000000000000000</chNFe></infNFe></det>`;
 
   // CTeSimp — root element <CTeSimp>, not <CTe>
+  // versao goes ONLY on <infCte>, NOT on <CTeSimp> per XSD
   const xml = `<?xml version="1.0" encoding="UTF-8"?>
-<CTeSimp xmlns="http://www.portalfiscal.inf.br/cte" versao="4.00">
+<CTeSimp xmlns="http://www.portalfiscal.inf.br/cte">
   <infCte Id="${id}" versao="4.00">
     <ide>
       <cUF>${cUF}</cUF><cCT>${cCT}</cCT><CFOP>${input.cfop}</CFOP><natOp>${natOp}</natOp><mod>57</mod><serie>${serie}</serie><nCT>${nCT}</nCT><dhEmi>${dhEmi}</dhEmi>
