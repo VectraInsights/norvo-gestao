@@ -273,7 +273,7 @@ export async function consultarCte(pfx:Buffer, senha:string, chave:string, ambie
 
 export async function cancelarCte(pfx:Buffer, senha:string, chave:string, justificativa:string, ambiente:Ambiente, cnpj:string, uf?: string, protocolo?: string):Promise<{ sucesso:boolean; cStat:string; xMotivo:string }>{
   const ep=getCteEndpoints(ambiente, uf);
-  const dhEvento=new Date().toISOString().replace(/\.\d{3}Z$/,"");
+  const dhEvento=new Date().toISOString().replace(/\.\d{3}Z$/,"-03:00");
   const nSeq="1";
   const tpEvento="110111";
   const cOrgao = codigoUF(uf || "SP");
