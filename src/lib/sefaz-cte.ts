@@ -179,7 +179,6 @@ export function buildCteXml(input: CteInputCompleto): { xml: string; chave: stri
     <infModal versaoModal="4.00"><rodo><RNTRC>${(input.modalRod?.rntrc || input.rntrc || "ISENTO").replace(/\D/g,"") || "ISENTO"}</RNTRC></rodo></infModal>
     ${impXml}
     <total><vTPrest>${input.vPrest.toFixed(2)}</vTPrest><vTRec>${input.vPrest.toFixed(2)}</vTRec></total>
-    <infCTeSupl><qrCodCTe>HTTPS://${(input.ufEnv || input.emit.uf)?.toUpperCase() === "MG" ? "portalcte.fazenda.mg.gov.br/portalcte/sistema/qrcode.xhtml" : "dfeportal.svrs.rs.gov.br/cteQrCode"}?chCTe=${chave}&amp;tpAmb=${input.ambiente==="producao"?"1":"2"}</qrCodCTe></infCTeSupl>
   </infCte>
 </CTeSimp>`;
   return { xml, chave };
