@@ -397,11 +397,8 @@ function signXmlWithForge(
 </Signature>`;
 
   // Inserir assinatura no local correto conforme o tipo de documento
-  // CTeSimp: entre </infCte> e <infCTeSupl>
-  if (xml.includes("</CTeSimp>") && xml.includes("<infCTeSupl>")) {
-    return xml.replace("<infCTeSupl>", signature + "\n  <infCTeSupl>");
-  }
-  if (xml.includes("</CTeSimp>")) return xml.replace("</CTeSimp>", signature + "</CTeSimp>");
+  // CTeSimp: infCTeSupl é filho de infCte; Signature é filho de CTeSimp, após infCTeSupl
+  if (xml.includes("</CTeSimp>")) return xml.replace("</infCTeSupl>", "</infCTeSupl>\n" + signature);
   if (xml.includes("</CTe>")) return xml.replace("</CTe>", signature + "</CTe>");
   if (xml.includes("</MDFe>")) return xml.replace("</MDFe>", signature + "</MDFe>");
   if (xml.includes("</NFe>")) {
@@ -469,11 +466,8 @@ function signXmlNative(xml: string, pfxBytes: Buffer, senha: string): string {
   </KeyInfo>
 </Signature>`;
 
-  // CTeSimp: entre </infCte> e <infCTeSupl>
-  if (xml.includes("</CTeSimp>") && xml.includes("<infCTeSupl>")) {
-    return xml.replace("<infCTeSupl>", signature + "\n  <infCTeSupl>");
-  }
-  if (xml.includes("</CTeSimp>")) return xml.replace("</CTeSimp>", signature + "</CTeSimp>");
+  // CTeSimp: infCTeSupl é filho de infCte; Signature é filho de CTeSimp, após infCTeSupl
+  if (xml.includes("</CTeSimp>")) return xml.replace("</infCTeSupl>", "</infCTeSupl>\n" + signature);
   if (xml.includes("</CTe>")) return xml.replace("</CTe>", signature + "</CTe>");
   if (xml.includes("</MDFe>")) return xml.replace("</MDFe>", signature + "</MDFe>");
   if (xml.includes("</NFe>")) return xml.replace("</NFe>", signature + "</NFe>");
