@@ -774,6 +774,16 @@ Commit: `02782ee`
 
 ---
 
+## CT-e: assinatura CTeSimp entre infCte e infCTeSupl (04/09/2026)
+
+O fix anterior (`</CTeSimp>` replacement) não funcionou — a assinatura continuava fora do elemento. Causa provável: `replace` não encontrava `</CTeSimp>` por algum motivo (encoding, cache de build).
+
+**Nova abordagem**: em vez de substituir `</CTeSimp>`, o `signXml` agora busca `<infCTeSupl>` e insere a assinatura ANTES dele (`xml.replace("<infCTeSupl>", signature + "\n  <infCTeSupl>")`). Isso garante que a assinatura fica entre `</infCte>` e `<infCTeSupl>`, que é a posição correta no XSD CTeSimp.
+
+Commits: `7e26539` (code) + deploy Vercel `dpl_HdAyjxK5qcZczMK84kMw95xsrmRG` + deploy CF Worker `e4c7065a`
+
+---
+
 ## Regras de segurança
 
 - NUNCA commitar tokens/senhas (GitHub PAT, senhas de banco, service keys).
