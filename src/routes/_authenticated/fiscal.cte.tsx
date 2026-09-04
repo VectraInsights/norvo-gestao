@@ -787,9 +787,13 @@ function CtePage() {
         // Reverter NF-es de "embarcada" para "pendente"
         if (empresa && ret.chave) {
           const { data: doc } = await supabase.from("cte_documentos" as any).select("xml_assinado").eq("chave_acesso", ret.chave).maybeSingle();
-          const chavesNfe = [...(doc?.xml_assinado||"").matchAll(/<chNFe>(\d{44})<\/chNFe>/g)].map((m: any)=>m[1]);
+          let xmlStr = doc?.xml_assinado || "";
+          try { const p = JSON.parse(xmlStr); if (p.xml) xmlStr = p.xml; } catch {}
+          const chavesNfe = [...xmlStr.matchAll(/<chNFe>(\d{44})<\/chNFe>/g)].map((m: any)=>m[1]);
+          console.log("[CTE-CANCEL-REVERT] chave:", ret.chave, "chavesNfe:", chavesNfe);
           if (chavesNfe.length > 0) {
-            await supabase.from("cte_nfes_pendentes" as any).update({ status: "pendente" }).in("chave", chavesNfe).eq("empresa_id", empresa.id);
+            const { error } = await supabase.from("cte_nfes_pendentes" as any).update({ status: "pendente" }).in("chave", chavesNfe).eq("empresa_id", empresa.id);
+            console.log("[CTE-CANCEL-REVERT] update error:", error);
             qc.invalidateQueries({ queryKey: ["cte-nfes-pendentes", empresa.id] });
           }
         }
