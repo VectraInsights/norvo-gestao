@@ -70,7 +70,7 @@ export const emitirCteFn = createServerFn({ method: "POST" }).validator((d: { em
     modalRod: data.input.modalRod || { rntrc: form.rntrc || "ISENTO" },
     icms: data.input.icms || { CST: form.icmsCST || "00", vBC: Number(form.icmsBase || 0), pICMS: Number(form.icmsAliq || 7), vICMS: Number(form.icmsValor || 0) },
   };
-  console.log("[CTE-DEBUG] tomador xNome:", input.tomador?.xNome, "CNPJ:", input.tomador?.cnpj);
+  console.log("[CTE-DEBUG] tomador xNome:", input.tomador?.xNome, "CNPJ:", input.tomador?.cnpj, "hex:", Buffer.from(input.tomador?.xNome||"").toString("hex"));
   const { xml, chave } = buildCteXml(input);
   console.log("[CTE-DEBUG] XML gerado:", xml);
   console.log("[CTE-DEBUG] Toma input:", JSON.stringify(input.tomador));

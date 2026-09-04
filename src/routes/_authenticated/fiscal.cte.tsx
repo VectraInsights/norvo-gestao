@@ -40,7 +40,7 @@ function CtePage() {
   const qc = useQueryClient();
   const search = Route.useSearch();
   const [isParsing, setIsParsing] = useState(false);
-  const [mercadorias, setMercadorias] = useState<Array<{ chave: string; nNF: string; serie: string; emit: string; emitCnpj: string; emitUF: string; emitCMun: string; emitXMun: string; emitIE?: string; emitLogradouro?: string; emitBairro?: string; emitCEP?: string; emitFone?: string; dest: string; destCnpj: string; destUF: string; destCMun: string; destXMun: string; destIE?: string; destLogradouro?: string; destBairro?: string; destCEP?: string; destFone?: string; valor: number; peso: number; data: string; tomador: string; tomadorCnpj: string; tomadorUF: string; tomadorCMun: string; tomadorXMun: string; modFrete: string }>>([]);
+  const [mercadorias, setMercadorias] = useState<Array<{ chave: string; nNF: string; serie: string; emit: string; emitCnpj: string; emitUF: string; emitCMun: string; emitXMun: string; emitIE?: string; emitLogradouro?: string; emitBairro?: string; emitCEP?: string; emitFone?: string; dest: string; destCnpj: string; destUF: string; destCMun: string; destXMun: string; destIE?: string; destLogradouro?: string; destBairro?: string; destCEP?: string; destFone?: string; valor: number; peso: number; data: string; tomador: string; tomadorCnpj: string; tomadorUF: string; tomadorCMun: string; tomadorXMun: string; tomadorIE?: string; tomadorLogradouro?: string; tomadorBairro?: string; tomadorCEP?: string; modFrete: string }>>([]);
   const [selecionadas, setSelecionadas] = useState<Set<string>>(new Set());
   const [filtroEmpresa] = useState("ROSE TRANSPORTES");
   const [filtroRemetente, setFiltroRemetente] = useState("TODOS REMETENTES");
@@ -520,13 +520,19 @@ function CtePage() {
         let tomadorUF = destUF;
         let tomadorCMun = destCMun;
         let tomadorXMun = destXMun;
+        let tomadorIE = destIE;
+        let tomadorLog = destLgr;
+        let tomadorBai = destBairro;
+        let tomadorCep = destCEP;
         if (modFrete === "0") {
           tomadorNome = emitXNome; tomadorCnpj = emitCnpj;
           tomadorUF = emitUF; tomadorCMun = emitCMun; tomadorXMun = emitXMun;
+          tomadorIE = emitIE; tomadorLog = emitLgr; tomadorBai = emitBairro; tomadorCep = emitCEP;
         } else if (modFrete === "2") {
           const transpCnpj = doc.querySelector("transp > transporta > CNPJ")?.textContent || "";
           const transpXNome = doc.querySelector("transp > transporta > xNome")?.textContent || "";
-          if (transpCnpj || transpXNome) { tomadorNome = transpXNome || tomadorNome; tomadorCnpj = transpCnpj || tomadorCnpj; }
+          const transpIE = doc.querySelector("transp > transporta > IE")?.textContent || "";
+          if (transpCnpj || transpXNome) { tomadorNome = transpXNome || tomadorNome; tomadorCnpj = transpCnpj || tomadorCnpj; tomadorIE = transpIE || tomadorIE; }
         }
         const payload = {
           empresa_id: empresa!.id,
@@ -563,7 +569,7 @@ function CtePage() {
           toast.error(`Falha ao salvar NF ${nNF}: ${error.message}`);
           continue;
         }
-        novas.push({ chave: chaveNorm, nNF, serie, emit: emitXNome, emitCnpj, emitUF: emitUfFin, emitCMun, emitXMun: emitCidFin, emitIE, emitLogradouro: emitLog, emitBairro: emitBai, emitCEP: emitCepFin, emitFone: emitFoneFin, dest: destXNome, destCnpj, destUF: destUfFin, destCMun, destXMun: destCidFin, destIE, destLogradouro: destLog, destBairro: destBai, destCEP: destCepFin, destFone: destFoneFin, valor, peso, data: dhEmi.slice(0, 10), tomador: tomadorNome, tomadorCnpj, tomadorUF, tomadorCMun, tomadorXMun, modFrete });
+        novas.push({ chave: chaveNorm, nNF, serie, emit: emitXNome, emitCnpj, emitUF: emitUfFin, emitCMun, emitXMun: emitCidFin, emitIE, emitLogradouro: emitLog, emitBairro: emitBai, emitCEP: emitCepFin, emitFone: emitFoneFin, dest: destXNome, destCnpj, destUF: destUfFin, destCMun, destXMun: destCidFin, destIE, destLogradouro: destLog, destBairro: destBai, destCEP: destCepFin, destFone: destFoneFin, valor, peso, data: dhEmi.slice(0, 10), tomador: tomadorNome, tomadorCnpj, tomadorUF, tomadorCMun, tomadorXMun, tomadorIE, tomadorLogradouro: tomadorLog, tomadorBairro: tomadorBai, tomadorCEP: tomadorCep, modFrete });
         upsertContatoFromNfe(emitCnpj, emitXNome, emitIE, emitUF, emitXMun, emitLgr, emitBairro, emitCEP, emitFone, "fornecedor").catch(() => {});
         upsertContatoFromNfe(destCnpj, destXNome, destIE, destUF, destXMun, destLgr, destBairro, destCEP, destFone, "cliente").catch(() => {});
         if (added === 0 && mercadorias.length === 0) {
@@ -581,6 +587,9 @@ function CtePage() {
             ufTomador: tomadorUF || f.ufTomador,
             cMunTomador: tomadorCMun || f.cMunTomador,
             xMunTomador: tomadorXMun || f.xMunTomador,
+            logradouroTomador: tomadorLog || f.logradouroTomador,
+            bairroTomador: tomadorBai || f.bairroTomador,
+            cepTomador: tomadorCep || f.cepTomador,
             cMunIni: emitCMun || f.cMunIni,
             xMunIni: emitXMun || f.xMunIni,
             ufIni: emitUF || f.ufIni,
@@ -748,7 +757,7 @@ function CtePage() {
       } } });
     },
     onSuccess: async (ret: any) => {
-      if (ret.sucesso) {
+      if (ret?.sucesso) {
         toast.success(`CT-e ${ret.chave} autorizado` + (ret.protocolo ? ` prot ${ret.protocolo}` : ""));
         setOpen(false);
         if (editingRascunhoId) {
@@ -786,7 +795,7 @@ function CtePage() {
       return { ...ret, chave };
     },
     onSuccess: async (ret: any) => {
-      if ((ret as any).sucesso) {
+      if ((ret as any)?.sucesso) {
         toast.success("CT-e cancelado");
         // Reverter NF-es de "embarcada" para "pendente"
         if (empresa && ret.chave) {
