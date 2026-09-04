@@ -184,24 +184,8 @@ function CtePage() {
   };
 
   const [open, setOpen] = useState(false);
-  const [form, setForm] = useState({
-    toma: "3", cnpjTomador: "", xNomeTomador: "", ufTomador: "MG", cMunTomador: "3106200", xMunTomador: "BELO HORIZONTE", ieTomador: "", logradouroTomador: "", nroTomador: "", bairroTomador: "", cepTomador: "", foneTomador: "", emailTomador: "",
-    // Consignatário
-    cnpjConsignatario: "", xNomeConsignatario: "", ieConsignatario: "", ufConsignatario: "", xMunConsignatario: "", cepConsignatario: "", logradouroConsignatario: "", nroConsignatario: "", bairroConsignatario: "",
-    // Redespacho
-    cnpjRedespacho: "", xNomeRedespacho: "", ieRedespacho: "", ufRedespacho: "", xMunRedespacho: "", cepRedespacho: "", logradouroRedespacho: "", nroRedespacho: "", bairroRedespacho: "",
-    ambiente: "producao" as "homologacao" | "producao",
-    cfop: "5353",
-    vPrest: "0.00", vCarga: "0.00", peso: "0", rntrc: "",
-    // Impostos — base e alíquotas editáveis (corrigido: base padrão = vPrest, não vCarga)
-    icmsCST: "00", icmsBase: "1000.00", icmsAliq: "0.00", icmsValor: "0.00",
-    pisAliq: "0.00", cofinsAliq: "0.00", irAliq: "0.00", inssAliq: "0.00", csllAliq: "0.00",
-    // Veículo / Motorista / Seguro — menus tipo CFOP
-    motoristaNome: "", motoristaId: "", ciot: "",
-    placaVeiculo: "", placaReboque: "", semiReboque1: "", semiReboque2: "",
-    seguradoraNome: "", seguradoraId: "", apolice: "", averbacao: "",
-    cMunEnv: "3106200", xMunEnv: "BELO HORIZONTE", ufEnv: "MG", cMunIni: "3106200", xMunIni: "BELO HORIZONTE", ufIni: "MG", cMunFim: "3550308", xMunFim: "SAO PAULO", ufFim: "SP", dataEmissao: new Date().toISOString().slice(0,10),
-  });
+  const emptyForm = { toma: "3", cnpjTomador: "", xNomeTomador: "", ufTomador: "MG", cMunTomador: "3106200", xMunTomador: "BELO HORIZONTE", ieTomador: "", logradouroTomador: "", nroTomador: "", bairroTomador: "", cepTomador: "", foneTomador: "", emailTomador: "", cnpjConsignatario: "", xNomeConsignatario: "", ieConsignatario: "", ufConsignatario: "", xMunConsignatario: "", cepConsignatario: "", logradouroConsignatario: "", nroConsignatario: "", bairroConsignatario: "", cnpjRedespacho: "", xNomeRedespacho: "", ieRedespacho: "", ufRedespacho: "", xMunRedespacho: "", cepRedespacho: "", logradouroRedespacho: "", nroRedespacho: "", bairroRedespacho: "", ambiente: "producao" as "homologacao" | "producao", cfop: "5353", vPrest: "0.00", vCarga: "0.00", peso: "0", rntrc: "", icmsCST: "00", icmsBase: "1000.00", icmsAliq: "0.00", icmsValor: "0.00", pisAliq: "0.00", cofinsAliq: "0.00", irAliq: "0.00", inssAliq: "0.00", csllAliq: "0.00", motoristaNome: "", motoristaId: "", ciot: "", placaVeiculo: "", placaReboque: "", semiReboque1: "", semiReboque2: "", seguradoraNome: "", seguradoraId: "", apolice: "", averbacao: "", cMunEnv: "3106200", xMunEnv: "BELO HORIZONTE", ufEnv: "MG", cMunIni: "3106200", xMunIni: "BELO HORIZONTE", ufIni: "MG", cMunFim: "3550308", xMunFim: "SAO PAULO", ufFim: "SP", dataEmissao: new Date().toISOString().slice(0,10) };
+  const [form, setForm] = useState(emptyForm);
   const [cfopOpen, setCfopOpen] = useState(false);
   const [cfopQuery, setCfopQuery] = useState("");
 
@@ -846,7 +830,7 @@ function CtePage() {
 
   return (
     <div className="p-6 space-y-4">
-      <PageHeader eyebrow="Fiscal" title="CT-e" description="Conhecimento de Transporte Eletrônico (57) — emissão robusta estilo STM, com múltiplas NF-es por CT-e." actions={<Button size="sm" onClick={() => setOpen(true)}><Plus className="mr-1 h-4 w-4" /> Novo CT-e</Button>} />
+      <PageHeader eyebrow="Fiscal" title="CT-e" description="Conhecimento de Transporte Eletrônico (57) — emissão robusta estilo STM, com múltiplas NF-es por CT-e." actions={<Button size="sm" onClick={() => { setForm(emptyForm); setSelecionadas(new Set()); setOpen(true); }}><Plus className="mr-1 h-4 w-4" /> Novo CT-e</Button>} />
 
       {/* Cadastro de Mercadorias para Embarque — estilo STM */}
       <Card className="overflow-hidden border-2 border-primary/20 shadow-panel">
@@ -1035,7 +1019,7 @@ function CtePage() {
               >
                 Gerar CT-e com {selecionadas.size || 0} selecionada(s)
               </Button>
-              <Button size="sm" onClick={() => setOpen(true)}><Plus className="mr-1 h-3 w-3" /> Novo CT-e avulso</Button>
+              <Button size="sm" onClick={() => { setForm(emptyForm); setSelecionadas(new Set()); setOpen(true); }}><Plus className="mr-1 h-3 w-3" /> Novo CT-e avulso</Button>
             </div>
           </div>
         </CardContent>
@@ -1179,7 +1163,10 @@ function CtePage() {
 
             {/* === TAB: Remetente/Destinatário === */}
             <TabsContent value="tomador" className="mt-3 space-y-3">
-              {mercadorias.length > 0 ? (
+              {mercadorias.length > 0 ? (() => {
+                const sel = mercadorias.filter(m => selecionadas.has(m.chave));
+                const active = sel.length > 0 ? sel[0] : mercadorias[0];
+                return (
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                   {/* Remetente */}
                   <Card className="p-3">
@@ -1188,11 +1175,11 @@ function CtePage() {
                       <h5 className="text-xs font-semibold">Remetente</h5>
                     </div>
                     <div className="space-y-0.5 text-[10px]">
-                      <p className="font-medium text-xs">{mercadorias[0].emit || "—"}</p>
-                      <p className="text-muted-foreground">CNPJ: {mercadorias[0].emitCnpj ? mercadorias[0].emitCnpj.replace(/(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})/, "$1.$2.$3/$4-$5") : "—"} {mercadorias[0].emitIE ? `IE: ${mercadorias[0].emitIE}` : ""}</p>
-                      <p className="text-muted-foreground">{[mercadorias[0].emitLogradouro, mercadorias[0].emitBairro].filter(Boolean).join(", ") || "—"}</p>
-                      <p className="text-muted-foreground">{mercadorias[0].emitXMun || "—"}-{mercadorias[0].emitUF || "—"} {mercadorias[0].emitCEP ? `CEP: ${mercadorias[0].emitCEP}` : ""}</p>
-                      {mercadorias[0].emitFone && <p className="text-muted-foreground">Fone: {mercadorias[0].emitFone}</p>}
+                      <p className="font-medium text-xs">{active.emit || "—"}</p>
+                      <p className="text-muted-foreground">CNPJ: {active.emitCnpj ? active.emitCnpj.replace(/(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})/, "$1.$2.$3/$4-$5") : "—"} {active.emitIE ? `IE: ${active.emitIE}` : ""}</p>
+                      <p className="text-muted-foreground">{[active.emitLogradouro, active.emitBairro].filter(Boolean).join(", ") || "—"}</p>
+                      <p className="text-muted-foreground">{active.emitXMun || "—"}-{active.emitUF || "—"} {active.emitCEP ? `CEP: ${active.emitCEP}` : ""}</p>
+                      {active.emitFone && <p className="text-muted-foreground">Fone: {active.emitFone}</p>}
                     </div>
                   </Card>
 
@@ -1203,15 +1190,16 @@ function CtePage() {
                       <h5 className="text-xs font-semibold">Destinatário</h5>
                     </div>
                     <div className="space-y-0.5 text-[10px]">
-                      <p className="font-medium text-xs">{mercadorias[0].dest || "—"}</p>
-                      <p className="text-muted-foreground">CNPJ: {mercadorias[0].destCnpj ? mercadorias[0].destCnpj.replace(/(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})/, "$1.$2.$3/$4-$5") : "—"} {mercadorias[0].destIE ? `IE: ${mercadorias[0].destIE}` : ""}</p>
-                      <p className="text-muted-foreground">{[mercadorias[0].destLogradouro, mercadorias[0].destBairro].filter(Boolean).join(", ") || "—"}</p>
-                      <p className="text-muted-foreground">{mercadorias[0].destXMun || "—"}-{mercadorias[0].destUF || "—"} {mercadorias[0].destCEP ? `CEP: ${mercadorias[0].destCEP}` : ""}</p>
-                      {mercadorias[0].destFone && <p className="text-muted-foreground">Fone: {mercadorias[0].destFone}</p>}
+                      <p className="font-medium text-xs">{active.dest || "—"}</p>
+                      <p className="text-muted-foreground">CNPJ: {active.destCnpj ? active.destCnpj.replace(/(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})/, "$1.$2.$3/$4-$5") : "—"} {active.destIE ? `IE: ${active.destIE}` : ""}</p>
+                      <p className="text-muted-foreground">{[active.destLogradouro, active.destBairro].filter(Boolean).join(", ") || "—"}</p>
+                      <p className="text-muted-foreground">{active.destXMun || "—"}-{active.destUF || "—"} {active.destCEP ? `CEP: ${active.destCEP}` : ""}</p>
+                      {active.destFone && <p className="text-muted-foreground">Fone: {active.destFone}</p>}
                     </div>
                   </Card>
                 </div>
-              ) : <p className="text-xs text-muted-foreground">Importe NF-es para preencher remetente e destinatário</p>}
+                );
+              })() : <p className="text-xs text-muted-foreground">Importe NF-es para preencher remetente e destinatário</p>}
 
               {/* Consignatário */}
               <Card className="p-2">
