@@ -353,8 +353,8 @@ function signXmlWithForge(
   const certDer = forge.asn1.toDer(forge.pki.certificateToAsn1(certificate)).getBytes();
   const certB64 = forge.util.encode64(certDer);
 
-  // ID do elemento a assinar (infNFe/infCte/infMDFe com atributo Id)
-  const matchId = xml.match(/<inf(?:NFe|Cte|MDFe)\s+Id="([^"]+)"/);
+  // ID do elemento a assinar (infNFe/infCte/infEvento/infMDFe com atributo Id)
+  const matchId = xml.match(/<inf(?:NFe|Cte|Evento|MDFe)\s+Id="([^"]+)"/);
   const uri = matchId ? `#${matchId[1]}` : "#NFe";
 
   // Canonicalização simplificada (C14N exclusive - suficiente para SEFAZ)
@@ -397,6 +397,8 @@ function signXmlWithForge(
 </Signature>`;
 
   // Inserir assinatura no local correto conforme o tipo de documento
+  // EventoCTe: Signature goes inside <eventoCTe> before </eventoCTe>
+  if (xml.includes("</eventoCTe>")) return xml.replace("</eventoCTe>", signature + "\n</eventoCTe>");
   // CTeSimp: XSD order is infCte → infCTeSupl → ds:Signature. Place Signature before </CTeSimp>
   if (xml.includes("</CTeSimp>")) return xml.replace("</CTeSimp>", signature + "\n</CTeSimp>");
   if (xml.includes("</CTe>")) return xml.replace("</CTe>", signature + "</CTe>");
@@ -427,7 +429,7 @@ function signXmlNative(xml: string, pfxBytes: Buffer, senha: string): string {
   const certificate = forge.pki.certificateFromAsn1(certAsn1);
 
   // ID do elemento a assinar
-  const matchId = xml.match(/<inf(?:NFe|Cte|MDFe)\s+Id="([^"]+)"/);
+  const matchId = xml.match(/<inf(?:NFe|Cte|Evento|MDFe)\s+Id="([^"]+)"/);
   const uri = matchId ? `#${matchId[1]}` : "#NFe";
 
   // SHA-1 digest do conteúdo
@@ -466,6 +468,8 @@ function signXmlNative(xml: string, pfxBytes: Buffer, senha: string): string {
   </KeyInfo>
 </Signature>`;
 
+  // EventoCTe: Signature goes inside <eventoCTe> before </eventoCTe>
+  if (xml.includes("</eventoCTe>")) return xml.replace("</eventoCTe>", signature + "\n</eventoCTe>");
   // CTeSimp: XSD order is infCte → infCTeSupl → ds:Signature. Place Signature before </CTeSimp>
   if (xml.includes("</CTeSimp>")) return xml.replace("</CTeSimp>", signature + "\n</CTeSimp>");
   if (xml.includes("</CTe>")) return xml.replace("</CTe>", signature + "</CTe>");
