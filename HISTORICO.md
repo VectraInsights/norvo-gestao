@@ -794,6 +794,21 @@ Commits: `5f04fb9` (push) + CF Worker `460ab7c5`
 
 ---
 
+## 37. **CT-e: abas por status + download XML/DACTE PDF** (04/09/2026)
+
+Após o primeiro CT-e autorizado, implementado:
+
+- **Abas de filtragem por status**: Autorizados, Rejeitados, Cancelados, Rascunhos — cada aba mostra contagem e lista filtrada.
+- **Botão de download XML** (ícone FileCode azul) — disponível apenas para CT-es autorizados; extrai o XML assinado do `xml_assinado` (ou JSON com campo `xml`) e dispara download como `CTe_{numero}.xml`.
+- **Botão de download DACTE PDF** (ícone Download âmbar) — disponível apenas para CT-es autorizados; parseia o XML assinado via DOMParser para extrair dados do emitente/tomador/remetente/destinatário/carga e gera o PDF via `gerarDactePdf()`; download como `DACTE_{numero}.pdf`.
+- Badge de status "cancelado" com cor orange (distinta de autorizado=emerald e rejeitado=red).
+
+Arquivo: `src/routes/_authenticated/fiscal.cte.tsx`
+
+Commits: `dd48d3b` (CF deploy `2bb0163e`) + Vercel `65d9010`
+
+---
+
 ## Regras de segurança
 
 - NUNCA commitar tokens/senhas (GitHub PAT, senhas de banco, service keys).

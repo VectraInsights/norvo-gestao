@@ -12,7 +12,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
-import { Truck, Plus, FileText, Search, Ban, UploadCloud, FileCode, UsersRound, MapPin, Package, DollarSign, Building2, Route as RouteIcon, Trash2, Filter, Calendar, CheckCircle2, ChevronsUpDown, Check, ReceiptText, Pencil } from "lucide-react";
+import { Truck, Plus, FileText, Search, Ban, UploadCloud, FileCode, UsersRound, MapPin, Package, DollarSign, Building2, Route as RouteIcon, Trash2, Filter, Calendar, CheckCircle2, ChevronsUpDown, Check, ReceiptText, Pencil, Download } from "lucide-react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useEmpresaAtual } from "@/hooks/use-empresa";
@@ -48,6 +48,7 @@ function CtePage() {
   const [periodoFim, setPeriodoFim] = useState(() => new Date().toISOString().slice(0, 10));
   const [sortConfig, setSortConfig] = useState<{ key: string; dir: "asc" | "desc" }>({ key: "nNF", dir: "asc" });
   const [editingRascunhoId, setEditingRascunhoId] = useState<string | null>(null);
+  const [statusTab, setStatusTab] = useState("autorizados");
 
   const mercadoriasSorted = useMemo(() => {
     const arr = [...mercadorias];
@@ -73,6 +74,113 @@ function CtePage() {
       return (data ?? []) as unknown as CteDoc[];
     },
   });
+
+  const docsByStatus = useMemo(() => {
+    if (!docs) return { autorizados: [], rejeitados: [], cancelados: [], rascunhos: [] };
+    return {
+      autorizados: docs.filter(d => d.status === "autorizado"),
+      rejeitados: docs.filter(d => d.status === "rejeitado"),
+      cancelados: docs.filter(d => d.status === "cancelado"),
+      rascunhos: docs.filter(d => d.status === "rascunho"),
+    };
+  }, [docs]);
+
+  const filteredDocs = useMemo(() => {
+    switch (statusTab) {
+      case "autorizados": return docsByStatus.autorizados;
+      case "rejeitados": return docsByStatus.rejeitados;
+      case "cancelados": return docsByStatus.cancelados;
+      case "rascunhos": return docsByStatus.rascunhos;
+      default: return docs ?? [];
+    }
+  }, [statusTab, docsByStatus, docs]);
+
+  const downloadXml = (doc: CteDoc) => {
+    if (!doc.xml_assinado) { toast.error("XML não disponível"); return; }
+    let xmlContent = doc.xml_assinado;
+    try {
+      const parsed = JSON.parse(doc.xml_assinado);
+      if (parsed.xml) xmlContent = parsed.xml;
+    } catch {}
+    if (!xmlContent || !xmlContent.includes("<")) { toast.error("XML não encontrado no registro"); return; }
+    const blob = new Blob([xmlContent], { type: "application/xml" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `CTe_${doc.numero || "0"}.xml`;
+    a.click();
+    URL.revokeObjectURL(url);
+    toast.success("XML baixado");
+  };
+
+  const downloadPdf = (doc: CteDoc) => {
+    if (!doc.xml_assinado) { toast.error("XML não disponível para gerar PDF"); return; }
+    try {
+      const parser = new DOMParser();
+      let xmlStr = doc.xml_assinado;
+      try { const p = JSON.parse(doc.xml_assinado); if (p.xml) xmlStr = p.xml; } catch {}
+      if (!xmlStr.includes("<")) { toast.error("XML inválido"); return; }
+      const xmlDoc = parser.parseFromString(xmlStr, "text/xml");
+      const tag = (sel: string) => xmlDoc.querySelector(sel)?.textContent || "";
+      const nFes = Array.from(xmlDoc.querySelectorAll("det")).map(det => ({
+        nNF: det.querySelector("infNFe > ide > nNF")?.textContent || "",
+        serie: det.querySelector("infNFe > ide > serie")?.textContent || "1",
+        valor: parseFloat(det.querySelector("infNFe > total > ICMSTot > vNF")?.textContent || "0"),
+      }));
+      const pdfBlob = gerarDactePdf({
+        chave: doc.chave_acesso || "",
+        numero: doc.numero || "",
+        serie: doc.serie || "1",
+        ambiente: "producao",
+        dataEmissao: doc.created_at,
+        emitCnpj: tag("infCte > emit > CNPJ") || "",
+        emitNome: tag("infCte > emit > xNome") || "",
+        emitEndereco: `${tag("infCte > emit > enderEmit > xLgr")} ${tag("infCte > emit > enderEmit > nro")}`.trim(),
+        emitCidade: tag("infCte > emit > enderEmit > xMun") || "",
+        emitUF: tag("infCte > emit > enderEmit > UF") || "",
+        emitIE: tag("infCte > emit > IE") || "",
+        tomadorCnpj: tag("infCte > toma > CNPJ") || "",
+        tomadorNome: tag("infCte > toma > xNome") || "",
+        tomadorEndereco: `${tag("infCte > toma > enderToma > xLgr")} ${tag("infCte > toma > enderToma > nro")}`.trim(),
+        tomadorCidade: tag("infCte > toma > enderToma > xMun") || "",
+        tomadorUF: tag("infCte > toma > enderToma > UF") || "",
+        remCnpj: tag("infCte > emit > CNPJ") || "",
+        remNome: tag("infCte > emit > xNome") || "",
+        remCidade: tag("infCte > emit > enderEmit > xMun") || "",
+        remUF: tag("infCte > emit > enderEmit > UF") || "",
+        destCnpj: tag("infCte > toma > CNPJ") || "",
+        destNome: tag("infCte > toma > xNome") || "",
+        destCidade: tag("infCte > toma > enderToma > xMun") || "",
+        destUF: tag("infCte > toma > enderToma > UF") || "",
+        cfop: tag("infCte > infCarga > infQ > tpUnid") || "5353",
+        naturezaOperacao: "TRANSPORTE",
+        origemCidade: tag("infCte > ide > xMunIni") || "",
+        origemUF: tag("infCte > ide > UFIni") || "",
+        destinoCidade: tag("infCte > ide > xMunFim") || "",
+        destinoUF: tag("infCte > ide > UFFim") || "",
+        valorServico: parseFloat(tag("infCte > vPrest > vTPrest")) || Number(doc.valor_servico) || 0,
+        valorCarga: parseFloat(tag("infCte > infCarga > vMerc")) || 0,
+        pesoKg: parseFloat(tag("infCte > infCarga > qCarga")) || 0,
+        icmsCST: tag("infCte > imp > ICMS > ICMS00 > CST") || "00",
+        icmsBase: parseFloat(tag("infCte > imp > ICMS > ICMS00 > vBC")) || 0,
+        icmsAliq: parseFloat(tag("infCte > imp > ICMS > ICMS00 > pICMS")) || 0,
+        icmsValor: parseFloat(tag("infCte > imp > ICMS > ICMS00 > vICMS")) || 0,
+        nFes,
+        placa: tag("infModal > rodo > veic > placa") || "",
+        rntrc: tag("infModal > rodo > RNTRC") || "",
+        protocolo: doc.protocolo_sefaz || "",
+      });
+      const url = URL.createObjectURL(pdfBlob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `DACTE_${doc.numero || "0"}.pdf`;
+      a.click();
+      URL.revokeObjectURL(url);
+      toast.success("PDF baixado");
+    } catch (e: any) {
+      toast.error("Erro ao gerar PDF", { description: e.message });
+    }
+  };
 
   const [open, setOpen] = useState(false);
   const [form, setForm] = useState({
@@ -895,31 +1003,49 @@ function CtePage() {
         </CardContent>
       </Card>
 
-      {isLoading ? <div className="text-sm text-muted-foreground">Carregando…</div> : !docs?.length ? (
-        <EmptyState icon={Truck} title="Nenhum CT-e" description="Os CT-es emitidos aparecerão aqui." />
-      ) : (
-        <Card className="overflow-hidden">
-          <Table>
-            <TableHeader><TableRow><TableHead>Número</TableHead><TableHead>Série</TableHead><TableHead>Status</TableHead><TableHead>Notas Fiscais</TableHead><TableHead className="text-right">Valor</TableHead><TableHead>Chave</TableHead><TableHead>Ações</TableHead></TableRow></TableHeader>
-            <TableBody>{docs.map(d => {
-              const nNFs = (() => { try { const j = JSON.parse(d.xml_assinado || "{}"); return j.nfs?.map((n: any) => n.nNF).filter(Boolean) || []; } catch { return []; } })();
-              const isRascunho = d.status === "rascunho";
-              return (
-              <TableRow key={d.id} className={isRascunho ? "bg-muted/30" : ""}><TableCell className="font-mono">{d.numero ?? "—"}</TableCell><TableCell>{d.serie ?? "—"}</TableCell><TableCell title={d.status==="rejeitado" && d.motivo_rejeicao ? d.motivo_rejeicao : ""}><Badge variant="secondary" className={d.status==="autorizado"?"bg-emerald-500/15 text-emerald-600":d.status==="rejeitado"?"bg-destructive/15 text-destructive":isRascunho?"bg-amber-500/15 text-amber-600":""}>{d.status}{d.status==="rejeitado" && d.motivo_rejeicao ? ` — ${d.motivo_rejeicao.slice(0,60)}` : ""}</Badge></TableCell><TableCell className="text-xs">{isRascunho && nNFs.length > 0 ? `NF-e ${nNFs.join(", ")}` : d.chave_acesso ? "1" : "—"}</TableCell><TableCell className="text-right">{brl(Number(d.valor_servico ?? 0))}</TableCell><TableCell className="font-mono text-xs truncate max-w-[220px]" title={d.chave_acesso||""}>{d.chave_acesso ?? "—"}</TableCell><TableCell className="flex gap-1">
-                {isRascunho ? (
-                  <>
-                    <Button size="icon" variant="ghost" className="h-7 w-7 text-primary" onClick={() => editarRascunho(d)} title="Editar rascunho"><Pencil className="h-3.5 w-3.5" /></Button>
-                    <Button size="icon" variant="ghost" className="h-7 w-7 text-destructive" onClick={() => excluirRascunho(d)} title="Excluir rascunho"><Trash2 className="h-3.5 w-3.5" /></Button>
-                  </>
-                ) : (
-                  <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => d.chave_acesso && consultar.mutate(d.chave_acesso)} title="Consultar SEFAZ"><Search className="h-3.5 w-3.5" /></Button>
-                )}
-                {!isRascunho && <Button size="icon" variant="ghost" className="h-7 w-7 text-destructive" disabled={d.status!=="autorizado"} onClick={() => d.chave_acesso && cancelar.mutate(d.chave_acesso)} title="Cancelar"><Ban className="h-3.5 w-3.5" /></Button>}
-              </TableCell></TableRow>
-              );
-            })}</TableBody>
-          </Table>
-        </Card>
+      {isLoading ? <div className="text-sm text-muted-foreground">Carregando…</div> : (
+        <Tabs value={statusTab} onValueChange={setStatusTab}>
+          <TabsList className="mb-2">
+            <TabsTrigger value="autorizados" className="text-xs">Autorizados ({docsByStatus.autorizados.length})</TabsTrigger>
+            <TabsTrigger value="rejeitados" className="text-xs">Rejeitados ({docsByStatus.rejeitados.length})</TabsTrigger>
+            <TabsTrigger value="cancelados" className="text-xs">Cancelados ({docsByStatus.cancelados.length})</TabsTrigger>
+            <TabsTrigger value="rascunhos" className="text-xs">Rascunhos ({docsByStatus.rascunhos.length})</TabsTrigger>
+          </TabsList>
+          {filteredDocs.length === 0 ? (
+            <EmptyState icon={Truck} title="Nenhum CT-e" description={`Nenhum CT-e ${statusTab}.`} />
+          ) : (
+            <Card className="overflow-hidden">
+              <Table>
+                <TableHeader><TableRow><TableHead>Número</TableHead><TableHead>Série</TableHead><TableHead>Status</TableHead><TableHead>Notas Fiscais</TableHead><TableHead className="text-right">Valor</TableHead><TableHead>Chave</TableHead><TableHead>Ações</TableHead></TableRow></TableHeader>
+                <TableBody>{filteredDocs.map(d => {
+                  const nNFs = (() => { try { const j = JSON.parse(d.xml_assinado || "{}"); return j.nfs?.map((n: any) => n.nNF).filter(Boolean) || []; } catch { return []; } })();
+                  const isRascunho = d.status === "rascunho";
+                  return (
+                  <TableRow key={d.id} className={isRascunho ? "bg-muted/30" : ""}><TableCell className="font-mono">{d.numero ?? "—"}</TableCell><TableCell>{d.serie ?? "—"}</TableCell><TableCell title={d.status==="rejeitado" && d.motivo_rejeicao ? d.motivo_rejeicao : ""}><Badge variant="secondary" className={d.status==="autorizado"?"bg-emerald-500/15 text-emerald-600":d.status==="rejeitado"?"bg-destructive/15 text-destructive":d.status==="cancelado"?"bg-orange-500/15 text-orange-600":isRascunho?"bg-amber-500/15 text-amber-600":""}>{d.status}{d.status==="rejeitado" && d.motivo_rejeicao ? ` — ${d.motivo_rejeicao.slice(0,60)}` : ""}</Badge></TableCell><TableCell className="text-xs">{isRascunho && nNFs.length > 0 ? `NF-e ${nNFs.join(", ")}` : d.chave_acesso ? "1" : "—"}</TableCell><TableCell className="text-right">{brl(Number(d.valor_servico ?? 0))}</TableCell><TableCell className="font-mono text-xs truncate max-w-[220px]" title={d.chave_acesso||""}>{d.chave_acesso ?? "—"}</TableCell><TableCell className="flex gap-1">
+                    {isRascunho ? (
+                      <>
+                        <Button size="icon" variant="ghost" className="h-7 w-7 text-primary" onClick={() => editarRascunho(d)} title="Editar rascunho"><Pencil className="h-3.5 w-3.5" /></Button>
+                        <Button size="icon" variant="ghost" className="h-7 w-7 text-destructive" onClick={() => excluirRascunho(d)} title="Excluir rascunho"><Trash2 className="h-3.5 w-3.5" /></Button>
+                      </>
+                    ) : (
+                      <>
+                        <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => d.chave_acesso && consultar.mutate(d.chave_acesso)} title="Consultar SEFAZ"><Search className="h-3.5 w-3.5" /></Button>
+                        {d.status === "autorizado" && (
+                          <>
+                            <Button size="icon" variant="ghost" className="h-7 w-7 text-sky-600" onClick={() => downloadXml(d)} title="Baixar XML"><FileCode className="h-3.5 w-3.5" /></Button>
+                            <Button size="icon" variant="ghost" className="h-7 w-7 text-amber-600" onClick={() => downloadPdf(d)} title="Baixar DACTE (PDF)"><Download className="h-3.5 w-3.5" /></Button>
+                          </>
+                        )}
+                      </>
+                    )}
+                    {!isRascunho && <Button size="icon" variant="ghost" className="h-7 w-7 text-destructive" disabled={d.status!=="autorizado"} onClick={() => d.chave_acesso && cancelar.mutate(d.chave_acesso)} title="Cancelar"><Ban className="h-3.5 w-3.5" /></Button>}
+                  </TableCell></TableRow>
+                  );
+                })}</TableBody>
+              </Table>
+            </Card>
+          )}
+        </Tabs>
       )}
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent className="sm:max-w-5xl max-h-[92vh] overflow-y-auto">
