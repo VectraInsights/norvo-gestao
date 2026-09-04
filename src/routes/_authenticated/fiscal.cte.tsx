@@ -771,11 +771,11 @@ function CtePage() {
   });
 
   const cancelar = useMutation({
-    mutationFn: async (chave: string) => {
+    mutationFn: async ({ chave, protocolo }: { chave: string; protocolo?: string }) => {
       if (!empresa) throw new Error("Empresa não selecionada");
       const just = prompt("Justificativa de cancelamento (mín. 15 caracteres):") || "";
       if (just.length < 15) throw new Error("Justificativa muito curta");
-      return cancelarCteFn({ data: { empresaId: empresa.id, chave, justificativa: just } });
+      return cancelarCteFn({ data: { empresaId: empresa.id, chave, justificativa: just, protocolo } });
     },
     onSuccess: (ret: any) => {
       if ((ret as any).sucesso) toast.success("CT-e cancelado");
@@ -1038,7 +1038,7 @@ function CtePage() {
                         )}
                       </>
                     )}
-                    {!isRascunho && <Button size="icon" variant="ghost" className="h-7 w-7 text-destructive" disabled={d.status!=="autorizado"} onClick={() => d.chave_acesso && cancelar.mutate(d.chave_acesso)} title="Cancelar"><Ban className="h-3.5 w-3.5" /></Button>}
+                    {!isRascunho && <Button size="icon" variant="ghost" className="h-7 w-7 text-destructive" disabled={d.status!=="autorizado"} onClick={() => d.chave_acesso && cancelar.mutate({ chave: d.chave_acesso, protocolo: d.protocolo_sefaz || undefined })} title="Cancelar"><Ban className="h-3.5 w-3.5" /></Button>}
                   </TableCell></TableRow>
                   );
                 })}</TableBody>

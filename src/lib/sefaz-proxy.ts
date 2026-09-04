@@ -148,67 +148,28 @@ export async function handleSefazProxy(request: Request): Promise<Response> {
         const supa2 = createClient2(process.env.SUPABASE_URL||"", process.env.SUPABASE_SERVICE_ROLE_KEY||"");
         const { data: emp } = await supa2.from("empresas").select("cnpj, uf, ie, razao_social, nome_fantasia, logradouro, numero, complemento, bairro, cidade, cep, regime_tributario").eq("id", empresaId).single();
         const inp = (body as any).input || {};
-        const form = inp.form || {};
         const { data: ultimo } = await supa2.from("cte_documentos").select("numero").eq("empresa_id", empresaId).order("created_at",{ascending:false}).limit(1).maybeSingle();
         const proximo = String((parseInt((ultimo as any)?.numero || "0",10)+1));
         const cli = inp.emit || {};
         const emitCnpj = cli.cnpj || emp?.cnpj || "";
         const emitUf = emp?.uf || cli.uf || uf;
         console.log("[CTE-PROXY-DEBUG] empCnpj:", emp?.cnpj, "empUf:", emp?.uf, "emitCnpj:", emitCnpj, "emitUf:", emitUf);
-        console.log("[CTE-PROXY-DEBUG] form raw:", JSON.stringify(form));
-        console.log("[CTE-PROXY-DEBUG] inp keys:", Object.keys(inp));
-        const input = { ...inp, ambiente, numero: proximo, serie: inp.serie || "1",
-          cfop: inp.cfop || form.cfop || "6352",
-          vPrest: Number(inp.vPrest || form.vPrest || 0),
-          vCarga: Number(inp.vCarga || form.vCarga || 0),
-          pesoKg: Number(inp.pesoKg || form.peso || 0),
-          cMunEnv: inp.cMunEnv || form.cMunEnv || "3106209",
-          xMunEnv: inp.xMunEnv || form.xMunEnv || "FORMIGA",
-          ufEnv: inp.ufEnv || form.ufEnv || "MG",
-          cMunIni: inp.cMunIni || form.cMunIni || "3106209",
-          xMunIni: inp.xMunIni || form.xMunIni || "FORMIGA",
-          ufIni: inp.ufIni || form.ufIni || "MG",
-          cMunFim: inp.cMunFim || form.cMunFim || "3106209",
-          xMunFim: inp.xMunFim || form.xMunFim || "FORMIGA",
-          ufFim: inp.ufFim || form.ufFim || "MG",
-          chavesNFe: inp.chavesNFe || [],
-          tomador: inp.tomador || {
-            toma: form.toma || "0",
-            cnpj: (form.cnpjTomador || "").replace(/\D/g,""),
-            xNome: form.xNomeTomador || "",
-            ie: form.ieTomador || "",
-            uf: form.ufTomador || "MG",
-            cMun: form.cMunTomador || "3106209",
-            xMun: form.xMunTomador || "",
-            cep: form.cepTomador || "",
-            logradouro: form.logradouroTomador || "",
-            nro: form.nroTomador || "",
-            bairro: form.bairroTomador || "",
-            fone: form.foneTomador || "",
-            email: form.emailTomador || "",
-          },
-          emit: {
-            cnpj: emitCnpj,
-            xNome: cli.xNome || emp?.razao_social || emp?.nome_fantasia || "EMITENTE",
-            ie: cli.ie || emp?.ie || "ISENTO",
-            uf: emitUf,
-            cMun: cli.cMun || "3106200",
-            xMun: cli.xMun || emp?.cidade || "BELO HORIZONTE",
-            crt: cli.crt || emp?.regime_tributario || "3",
-            logradouro: cli.logradouro || emp?.logradouro || "RUA",
-            nro: cli.nro || emp?.numero || "SN",
-            complemento: cli.complemento || emp?.complemento || "",
-            bairro: cli.bairro || emp?.bairro || "CENTRO",
-            cep: cli.cep || emp?.cep || "00000000",
-          },
-          modalRod: inp.modalRod || { rntrc: form.rntrc || "ISENTO" },
-          icms: inp.icms || { CST: form.icmsCST || "00", vBC: Number(form.icmsBase || 0), pICMS: Number(form.icmsAliq || 7), vICMS: Number(form.icmsValor || 0) },
-        };
-        console.log("[CTE-PROXY-DEBUG] tomador mapped:", JSON.stringify(input.tomador));
+        const input = { ...inp, ambiente, numero: proximo, serie: inp.serie || "1", emit: {
+          cnpj: emitCnpj,
+          xNome: cli.xNome || emp?.razao_social || emp?.nome_fantasia || "EMITENTE",
+          ie: cli.ie || emp?.ie || "ISENTO",
+          uf: emitUf,
+          cMun: cli.cMun || "3106200",
+          xMun: cli.xMun || emp?.cidade || "BELO HORIZONTE",
+          crt: cli.crt || emp?.regime_tributario || "3",
+          logradouro: cli.logradouro || emp?.logradouro || "RUA",
+          nro: cli.nro || emp?.numero || "SN",
+          complemento: cli.complemento || emp?.complemento || "",
+          bairro: cli.bairro || emp?.bairro || "CENTRO",
+          cep: cli.cep || emp?.cep || "00000000",
+        } };
         const { xml, chave } = buildCteXml(input);
         console.log("[CTE-PROXY-DEBUG] XML gerado:", xml);
-        console.log("[CTE-PROXY-DEBUG] Toma input:", JSON.stringify(input.tomador));
-        console.log("[CTE-PROXY-DEBUG] Emit input:", JSON.stringify(input.emit));
         const ret = await emitirCte(pfxBytes, senha, xml, ambiente, emitUf);
         const supa3 = createClient(process.env.SUPABASE_URL||"", process.env.SUPABASE_SERVICE_ROLE_KEY||"");
         if (ret.sucesso) await supa3.from("cte_documentos").insert({ empresa_id: empresaId, chave_acesso: chave, numero: proximo, serie: input.serie, status: "autorizado", xml_assinado: xml, protocolo_sefaz: ret.protocolo, ambiente, data_autorizacao: new Date().toISOString(), valor_servico: input.vPrest } as any);
@@ -222,7 +183,7 @@ export async function handleSefazProxy(request: Request): Promise<Response> {
       }
       case "cancelarCte": {
         const { cancelarCte } = await import("@/lib/sefaz-cte");
-        result = await cancelarCte(pfxBytes, senha, (body as any).chave, (body as any).justificativa, ambiente, cnpj, uf);
+        result = await cancelarCte(pfxBytes, senha, (body as any).chave, (body as any).justificativa, ambiente, cnpj, uf, (body as any).protocolo);
         if ((result as any).sucesso) {
           const { createClient: cc } = await import("@supabase/supabase-js");
           const s = cc(process.env.SUPABASE_URL||"", process.env.SUPABASE_SERVICE_ROLE_KEY||"");
