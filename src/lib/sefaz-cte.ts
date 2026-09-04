@@ -110,11 +110,12 @@ export function buildCteXml(input: CteInputCompleto): { xml: string; chave: stri
   const cUF = codigoUF(input.ufEnv || input.emit.uf);
   const aamm = dhEmi.slice(2,4) + dhEmi.slice(5,7);
   const cnpjLimpo = input.emit.cnpj.replace(/\D/g,"").padStart(14,"0");
-  const serie = input.serie.padStart(3,"0");
+  const serie = String(parseInt(input.serie || "1", 10)); // TSerie: 0|[1-9]{1}[0-9]{0,2} - sem zeros à esquerda
+  const seriePadded = serie.padStart(3,"0"); // chave exige 3 dígitos com zeros
   const nCT = String(parseInt(input.numero || "1", 10)); // TNF: [1-9]{1}[0-9]{0,8} - sem zeros à esquerda
   const nCTPadded = nCT.padStart(9,"0"); // chave exige 9 dígitos com zeros
   const cCT = String(Math.floor(Math.random()*100000000)).padStart(8,"0");
-  const chave = gerarChaveCte(cUF, aamm, cnpjLimpo, "57", serie, nCTPadded, "1", cCT);
+  const chave = gerarChaveCte(cUF, aamm, cnpjLimpo, "57", seriePadded, nCTPadded, "1", cCT);
   const id = `CTe${chave}`;
   const natOp = input.natOp || "PRESTACAO DE SERVICO DE TRANSPORTE";
   const toma = input.tomador.toma;
