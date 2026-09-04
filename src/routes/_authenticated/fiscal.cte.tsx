@@ -775,11 +775,22 @@ function CtePage() {
       if (!empresa) throw new Error("Empresa não selecionada");
       const just = prompt("Justificativa de cancelamento (mín. 15 caracteres):") || "";
       if (just.length < 15) throw new Error("Justificativa muito curta");
-      return cancelarCteFn({ data: { empresaId: empresa.id, chave, justificativa: just, protocolo } });
+      const ret = await cancelarCteFn({ data: { empresaId: empresa.id, chave, justificativa: just, protocolo } });
+      return { ...ret, chave };
     },
-    onSuccess: (ret: any) => {
-      if ((ret as any).sucesso) toast.success("CT-e cancelado");
-      else toast.error((ret as any).xMotivo || "Falha ao cancelar");
+    onSuccess: async (ret: any) => {
+      if ((ret as any).sucesso) {
+        toast.success("CT-e cancelado");
+        // Reverter NF-es de "embarcada" para "pendente"
+        if (empresa && ret.chave) {
+          const { data: doc } = await supabase.from("cte_documentos" as any).select("xml_assinado").eq("chave_acesso", ret.chave).maybeSingle();
+          const chavesNfe = [...(doc?.xml_assinado||"").matchAll(/<chNFe>(\d{44})<\/chNFe>/g)].map((m: any)=>m[1]);
+          if (chavesNfe.length > 0) {
+            await supabase.from("cte_nfes_pendentes" as any).update({ status: "pendente" }).in("chave", chavesNfe).eq("empresa_id", empresa.id);
+            qc.invalidateQueries({ queryKey: ["cte-nfes-pendentes", empresa.id] });
+          }
+        }
+      } else toast.error((ret as any).xMotivo || "Falha ao cancelar");
       qc.invalidateQueries({ queryKey: ["cte-documentos"] });
     },
     onError: (e: Error) => toast.error(e.message),
@@ -1018,10 +1029,10 @@ function CtePage() {
               <Table>
                 <TableHeader><TableRow><TableHead>Número</TableHead><TableHead>Série</TableHead><TableHead>Status</TableHead><TableHead>Notas Fiscais</TableHead><TableHead className="text-right">Valor</TableHead><TableHead>Chave</TableHead><TableHead>Ações</TableHead></TableRow></TableHeader>
                 <TableBody>{filteredDocs.map(d => {
-                  const nNFs = (() => { try { const j = JSON.parse(d.xml_assinado || "{}"); return j.nfs?.map((n: any) => n.nNF).filter(Boolean) || []; } catch { return []; } })();
+                  const nNFs = (() => { try { const j = JSON.parse(d.xml_assinado || "{}"); return j.nfs?.map((n: any) => n.nNF).filter(Boolean) || []; } catch { } try { const chaves = [...(d.xml_assinado||"").matchAll(/<chNFe>(\d{44})<\/chNFe>/g)].map(m=>m[1]); if (chaves.length===0) return []; return chaves.map(ch=>ch.slice(25,34).replace(/^0+/,"") || "0"); } catch { return []; } })();
                   const isRascunho = d.status === "rascunho";
                   return (
-                  <TableRow key={d.id} className={isRascunho ? "bg-muted/30" : ""}><TableCell className="font-mono">{d.numero ?? "—"}</TableCell><TableCell>{d.serie ?? "—"}</TableCell><TableCell title={d.status==="rejeitado" && d.motivo_rejeicao ? d.motivo_rejeicao : ""}><Badge variant="secondary" className={d.status==="autorizado"?"bg-emerald-500/15 text-emerald-600":d.status==="rejeitado"?"bg-destructive/15 text-destructive":d.status==="cancelado"?"bg-orange-500/15 text-orange-600":isRascunho?"bg-amber-500/15 text-amber-600":""}>{d.status}{d.status==="rejeitado" && d.motivo_rejeicao ? ` — ${d.motivo_rejeicao.slice(0,60)}` : ""}</Badge></TableCell><TableCell className="text-xs">{isRascunho && nNFs.length > 0 ? `NF-e ${nNFs.join(", ")}` : d.chave_acesso ? "1" : "—"}</TableCell><TableCell className="text-right">{brl(Number(d.valor_servico ?? 0))}</TableCell><TableCell className="font-mono text-xs truncate max-w-[220px]" title={d.chave_acesso||""}>{d.chave_acesso ?? "—"}</TableCell><TableCell className="flex gap-1">
+                  <TableRow key={d.id} className={isRascunho ? "bg-muted/30" : ""}><TableCell className="font-mono">{d.numero ?? "—"}</TableCell><TableCell>{d.serie ?? "—"}</TableCell><TableCell title={d.status==="rejeitado" && d.motivo_rejeicao ? d.motivo_rejeicao : ""}><Badge variant="secondary" className={d.status==="autorizado"?"bg-emerald-500/15 text-emerald-600":d.status==="rejeitado"?"bg-destructive/15 text-destructive":d.status==="cancelado"?"bg-orange-500/15 text-orange-600":isRascunho?"bg-amber-500/15 text-amber-600":""}>{d.status}{d.status==="rejeitado" && d.motivo_rejeicao ? ` — ${d.motivo_rejeicao.slice(0,60)}` : ""}</Badge></TableCell>                  <TableCell className="text-xs">{nNFs.length > 0 ? nNFs.join(", ") : d.chave_acesso ? "1" : "—"}</TableCell><TableCell className="text-right">{brl(Number(d.valor_servico ?? 0))}</TableCell><TableCell className="font-mono text-xs truncate max-w-[220px]" title={d.chave_acesso||""}>{d.chave_acesso ?? "—"}</TableCell><TableCell className="flex gap-1">
                     {isRascunho ? (
                       <>
                         <Button size="icon" variant="ghost" className="h-7 w-7 text-primary" onClick={() => editarRascunho(d)} title="Editar rascunho"><Pencil className="h-3.5 w-3.5" /></Button>
