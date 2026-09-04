@@ -809,6 +809,65 @@ Commits: `dd48d3b` (CF deploy `2bb0163e`) + Vercel `65d9010`
 
 ---
 
+## Cancelamento CT-e — fix de assinatura
+
+Após a correção do QR code e autorização do CT-e em produção, o cancelamento continuava falhando com "Rejeição: Falha no Schema XML do CT-e". Análise revelou dois bugs na função `signXml` / `signXmlNative`:
+
+1. **Regex `matchId` não reconhece `infEvento`**: O padrão `/inf(?:NFe|Cte|MDFe)/` não casava `<infEvento Id="ID...">` do evento de cancelamento. O URI da referência ficava `"#NFe"` em vez de `"#ID110111..."`, invalidando a assinatura.
+2. **Posicionamento da assinatura**: Para `<eventoCTe>`, a assinatura XML precisa estar DENTRO do elemento `<eventoCTe>` (antes de `</eventoCTe>`), mas não existia branch `</eventoCTe>` — o código ia direto para `</CTeSimp>`.
+
+**Correções aplicadas em `src/lib/sefaz.ts`:**
+- Regex: `/<inf(?:NFe|Cte|MDFe)/` → `/<inf(?:NFe|Cte|Evento|MDFe)/` (ambas `tryForgeSignXml` e `signXmlNative`)
+- Placement: adicionar `</eventoCTe>` como **primeiro** check antes de `</CTeSimp>` em ambas funções
+
+Commits: CF `a96eba4` (deploy `71fd7307`) + Vercel `3157be9`
+
+---
+
+## Cancelamento CT-e — sessão de debugging completa (04/09/2026)
+
+Sessão longa de debugging do cancelamento CT-e Simplificado MG. Foram encontrados **5 bugs** encadeados:
+
+1. **Regex `matchId` não reconhece `infEvento`** (seção anterior)
+2. **Posicionamento da assinatura** (seção anterior)
+3. **`nSeqEvento` com 1 dígito no Id**: O XSD exige `ID[0-9]{12}[A-Z0-9]{12}[0-9]{29}` = 55 chars. Com `nSeq="1"`, o Id ficava com 53 chars. **Fix**: `nSeq="001"` (3 dígitos).
+4. **Quebras de linha `\n` na assinatura**: O SEFAZ rejeita "caracteres de edição" entre tags. **Fix**: remover `\n` na inserção da assinatura.
+5. **`dhEvento` com offset -03:00**: `toISOString()` retorna UTC, mas o código trocava `.000Z` por `-03:00`, adiantando 3 horas. SEFAZ rejeitava como "data futura". **Fix**: usar `+00:00` (UTC real).
+
+**Resultado final**: SEFAZ retornou `cStat=135` "Evento registrado e vinculado a CTe". Cancelamento aceito com sucesso.
+
+Commits finais: CF `8e040dd` + Vercel `a4bff0a`
+
+---
+
+## CT-e: seletor de ambiente (homologação/produção) — 04/09/2026
+
+Adicionado ToggleGroup no formulário de emissão de CT-e para escolher entre **Homologação** e **Produção** antes de enviar. O ambiente selecionado é passado do form para `emitirCteFn` / `previewCteXmlFn` / proxy, que o utilizam ao invés de ler sempre de `nfe_config`. Badge no preview DACTE também reflete o ambiente escolhido. `CteDoc` passou a incluir campo `ambiente` na query.
+
+---
+
+## CT-e: validação de NF-es + correções diversas — 04/09/2026
+
+Sessão de correções no fluxo de emissão CT-e:
+
+1. **Validação de NF-es iguais**: Agora valida que todas as NF-es selecionadas têm o mesmo **remetente**, **destinatário** e **tomador** — tanto no botão "Gerar CT-e" quanto nos checkboxes (individual e "selecionar todos"). Bloqueia com toast se houver divergência.
+
+2. **Null checks em `ret?.sucesso`**: Todos os callbacks `onSuccess` de emitir/consultar/cancelar CT-e agora usam optional chaining (`ret?.sucesso`, `ret?.xMotivo`). Se o server function retornar `undefined`, não quebra mais com "Cannot read properties of undefined".
+
+3. **Cabeçalho Remetente/Destinatário usa NF-e selecionada**: Antes o dialog sempre mostrava `mercadorias[0]` (primeira da lista). Agora usa a primeira NF-e **selecionada** (`selecionadas`), ou a primeira se nenhuma selecionada.
+
+4. **Reset do form ao abrir "Novo CT-e"**: Botões "Novo CT-e" e "Novo CT-e avulso" agora chamam `setForm(emptyForm)` + `setSelecionadas(new Set())` antes de abrir o dialog. Não carrega mais dados de CT-e anterior.
+
+5. **Default ambiente = Homologação**: O CT-e agora inicia com ambiente "Homologação" por padrão (antes era "Produção").
+
+6. **IE do tomador extraído do XML da NF-e**: O IE do tomador agora é extraído do XML importado (`destIE` para CIF, `emitIE` para FOB, `transp IE` para terceiros), salvo no banco (`tomador_ie` em `cte_nfes_pendentes`), e carregado automaticamente no form. Migration aplicada: `20260904153000_add_tomador_ie_to_nfes.sql` (colunas `tomador_ie`, `tomador_logradouro`, `tomador_bairro`, `tomador_cep`).
+
+7. **Numeração separada por ambiente**: Homologação usa números 900000+ (para teste sem afetar a real), produção usa sequencial real baseado no último CT-e do banco. A query de "próximo número" filtra por `ambiente`.
+
+Commits: CF `2621c5e` → `bab9d3d` → `7db03b6` → `e283493` → `d436038` → `8f6005a` + Vercel `feb77d6` → `65d17bf` → `a37ef59` → `061ab47` → `6420a5c` → `feedb43`
+
+---
+
 ## Regras de segurança
 
 - NUNCA commitar tokens/senhas (GitHub PAT, senhas de banco, service keys).
