@@ -398,9 +398,9 @@ function signXmlWithForge(
 
   // Inserir assinatura no local correto conforme o tipo de documento
   // EventoCTe: Signature goes inside <eventoCTe> before </eventoCTe>
-  if (xml.includes("</eventoCTe>")) return xml.replace("</eventoCTe>", signature + "\n</eventoCTe>");
+  if (xml.includes("</eventoCTe>")) return xml.replace("</eventoCTe>", signature + "</eventoCTe>");
   // CTeSimp: XSD order is infCte → infCTeSupl → ds:Signature. Place Signature before </CTeSimp>
-  if (xml.includes("</CTeSimp>")) return xml.replace("</CTeSimp>", signature + "\n</CTeSimp>");
+  if (xml.includes("</CTeSimp>")) return xml.replace("</CTeSimp>", signature + "</CTeSimp>");
   if (xml.includes("</CTe>")) return xml.replace("</CTe>", signature + "</CTe>");
   if (xml.includes("</MDFe>")) return xml.replace("</MDFe>", signature + "</MDFe>");
   if (xml.includes("</NFe>")) {
@@ -469,9 +469,9 @@ function signXmlNative(xml: string, pfxBytes: Buffer, senha: string): string {
 </Signature>`;
 
   // EventoCTe: Signature goes inside <eventoCTe> before </eventoCTe>
-  if (xml.includes("</eventoCTe>")) return xml.replace("</eventoCTe>", signature + "\n</eventoCTe>");
+  if (xml.includes("</eventoCTe>")) return xml.replace("</eventoCTe>", signature + "</eventoCTe>");
   // CTeSimp: XSD order is infCte → infCTeSupl → ds:Signature. Place Signature before </CTeSimp>
-  if (xml.includes("</CTeSimp>")) return xml.replace("</CTeSimp>", signature + "\n</CTeSimp>");
+  if (xml.includes("</CTeSimp>")) return xml.replace("</CTeSimp>", signature + "</CTeSimp>");
   if (xml.includes("</CTe>")) return xml.replace("</CTe>", signature + "</CTe>");
   if (xml.includes("</MDFe>")) return xml.replace("</MDFe>", signature + "</MDFe>");
   if (xml.includes("</NFe>")) return xml.replace("</NFe>", signature + "</NFe>");
