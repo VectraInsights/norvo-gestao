@@ -569,11 +569,15 @@ function CtePage() {
         if (added === 0 && mercadorias.length === 0) {
           const tomaByMod: Record<string, string> = { "0": "0", "1": "3", "2": "4", "3": "0", "4": "3", "9": "4" };
           const tomaIni = tomaByMod[modFrete] ?? "3";
+          let tomadorIE = destIE;
+          if (modFrete === "0") tomadorIE = emitIE;
+          else if (modFrete === "2") tomadorIE = doc.querySelector("transp > transporta > IE")?.textContent || destIE;
           setForm(f => ({
             ...f,
             toma: !f.cnpjTomador ? tomaIni : f.toma,
             cnpjTomador: tomadorCnpj || f.cnpjTomador,
             xNomeTomador: tomadorNome || f.xNomeTomador,
+            ieTomador: tomadorIE || f.ieTomador,
             ufTomador: tomadorUF || f.ufTomador,
             cMunTomador: tomadorCMun || f.cMunTomador,
             xMunTomador: tomadorXMun || f.xMunTomador,
@@ -723,6 +727,7 @@ function CtePage() {
     mutationFn: async () => {
       if (!empresa) throw new Error("Empresa não selecionada");
       if (!form.xNomeTomador || !form.cnpjTomador) throw new Error("Informe tomador");
+      if (!form.ieTomador) toast.warning("IE do tomador não informado — o SEFAZ pode rejeitar");
       const chaves = selecionadas.size > 0 ? Array.from(selecionadas) : mercadorias.map(m => m.chave);
       if (chaves.length > 0) {
         const sel = mercadorias.filter(m => chaves.includes(m.chave));
@@ -737,11 +742,10 @@ function CtePage() {
         icms: { CST: form.icmsCST, vBC: parseFloat(form.vPrest)||0, pICMS: parseFloat(form.icmsAliq)||0, vICMS: parseFloat(form.icmsValor)||0 },
         impostos: { pisAliq: parseFloat(form.pisAliq)||0, cofinsAliq: parseFloat(form.cofinsAliq)||0, irAliq: parseFloat(form.irAliq)||0, inssAliq: parseFloat(form.inssAliq)||0, csllAliq: parseFloat(form.csllAliq)||0 },
         serie: "1",
-        tomador: { toma: form.toma as any, cnpj: form.cnpjTomador, xNome: form.xNomeTomador, uf: form.ufTomador, cMun: form.cMunTomador, xMun: form.xMunTomador, ie: form.ieTomador || (form.ufTomador === empresa.uf ? (empresa.ie || "ISENTO") : undefined), logradouro: form.logradouroTomador || undefined, nro: form.nroTomador || undefined, bairro: form.bairroTomador || undefined, cep: form.cepTomador || undefined, fone: form.foneTomador || undefined, email: form.emailTomador || undefined },
+        tomador: { toma: form.toma as any, cnpj: form.cnpjTomador, xNome: form.xNomeTomador, uf: form.ufTomador, cMun: form.cMunTomador, xMun: form.xMunTomador, ie: form.ieTomador || undefined, logradouro: form.logradouroTomador || undefined, nro: form.nroTomador || undefined, bairro: form.bairroTomador || undefined, cep: form.cepTomador || undefined, fone: form.foneTomador || undefined, email: form.emailTomador || undefined },
         emit: { xNome: empresa.razao_social || empresa.nome_fantasia, ie: empresa.ie || "ISENTO", cMun: form.cMunEnv, xMun: form.xMunEnv, uf: empresa.uf || "MG", cnpj: empresa.cnpj, crt: empresa.regime_tributario || "3", logradouro: empresa.logradouro, nro: empresa.numero, bairro: empresa.bairro, cep: empresa.cep } as any,
         chavesNFe: chaves,
       } } });
-      return ret;
     },
     onSuccess: async (ret: any) => {
       if (ret.sucesso) {
@@ -817,7 +821,7 @@ function CtePage() {
         icms: { CST: form.icmsCST, vBC: parseFloat(form.vPrest)||0, pICMS: parseFloat(form.icmsAliq)||0, vICMS: parseFloat(form.icmsValor)||0 },
         impostos: { pisAliq: parseFloat(form.pisAliq)||0, cofinsAliq: parseFloat(form.cofinsAliq)||0, irAliq: parseFloat(form.irAliq)||0, inssAliq: parseFloat(form.inssAliq)||0, csllAliq: parseFloat(form.csllAliq)||0 },
         serie: "1",
-        tomador: { toma: form.toma as any, cnpj: form.cnpjTomador, xNome: form.xNomeTomador, uf: form.ufTomador, cMun: form.cMunTomador, xMun: form.xMunTomador, ie: form.ieTomador || (form.ufTomador === empresa.uf ? (empresa.ie || "ISENTO") : undefined), logradouro: form.logradouroTomador || undefined, nro: form.nroTomador || undefined, bairro: form.bairroTomador || undefined, cep: form.cepTomador || undefined, fone: form.foneTomador || undefined, email: form.emailTomador || undefined },
+        tomador: { toma: form.toma as any, cnpj: form.cnpjTomador, xNome: form.xNomeTomador, uf: form.ufTomador, cMun: form.cMunTomador, xMun: form.xMunTomador, ie: form.ieTomador || undefined, logradouro: form.logradouroTomador || undefined, nro: form.nroTomador || undefined, bairro: form.bairroTomador || undefined, cep: form.cepTomador || undefined, fone: form.foneTomador || undefined, email: form.emailTomador || undefined },
         emit: { xNome: empresa.razao_social || empresa.nome_fantasia, ie: empresa.ie || "ISENTO", cMun: form.cMunEnv, xMun: form.xMunEnv, uf: empresa.uf || "MG", cnpj: empresa.cnpj, crt: empresa.regime_tributario || "3", logradouro: empresa.logradouro, nro: empresa.numero, bairro: empresa.bairro, cep: empresa.cep } as any,
         chavesNFe: chaves,
       } } });
