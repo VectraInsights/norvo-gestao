@@ -741,7 +741,11 @@ function CtePage() {
       if (chaves.length > 0) {
         const sel = mercadorias.filter(m => chaves.includes(m.chave));
         const dests = new Set(sel.map(m => m.destCnpj || m.dest));
-        if (dests.size > 1) throw new Error("CT-e não pode ter destinos diferentes. Selecione NF-es do mesmo destinatário.");
+        const emits = new Set(sel.map(m => m.emitCnpj || m.emit));
+        const tomads = new Set(sel.map(m => m.tomadorCnpj || m.tomador));
+        if (emits.size > 1) throw new Error("CT-e não pode ter remetentes diferentes. Selecione NF-es do mesmo remetente.");
+        if (dests.size > 1) throw new Error("CT-e não pode ter destinatários diferentes. Selecione NF-es do mesmo destinatário.");
+        if (tomads.size > 1) throw new Error("CT-e não pode ter tomadores diferentes. Selecione NF-es do mesmo tomador.");
       }
       const ret: any = await emitirCteFn({ data: { empresaId: empresa.id, input: {
         ambiente: form.ambiente,
@@ -764,14 +768,13 @@ function CtePage() {
           await supabase.from("cte_documentos" as any).delete().eq("id", editingRascunhoId);
           setEditingRascunhoId(null);
         }
-        // marca NF-es usadas como embarcadas (dedup global continua bloqueando re-import)
         const chavesUsadas = selecionadas.size > 0 ? Array.from(selecionadas) : mercadorias.map(m => m.chave);
         if (empresa && chavesUsadas.length > 0) {
           await supabase.from("cte_nfes_pendentes" as any).update({ status: "embarcada" }).in("chave", chavesUsadas).eq("empresa_id", empresa.id);
           qc.invalidateQueries({ queryKey: ["cte-nfes-pendentes", empresa.id] });
           setSelecionadas(new Set());
         }
-      } else toast.error(ret.xMotivo || ret.motivo || "Rejeitado");
+      } else toast.error(ret?.xMotivo || ret?.motivo || "Rejeitado");
       qc.invalidateQueries({ queryKey: ["cte-documentos"] });
     },
     onError: (e: Error) => toast.error(e.message),
@@ -782,7 +785,7 @@ function CtePage() {
       if (!empresa) throw new Error("Empresa não selecionada");
       return consultarCteFn({ data: { empresaId: empresa.id, chave } });
     },
-    onSuccess: (ret: any) => toast.success(`Consulta: ${ret.cStat} ${ret.xMotivo}`),
+    onSuccess: (ret: any) => toast.success(`Consulta: ${ret?.cStat || "?"} ${ret?.xMotivo || ""}`),
     onError: (e: Error) => toast.error(e.message),
   });
 
@@ -797,8 +800,7 @@ function CtePage() {
     onSuccess: async (ret: any) => {
       if ((ret as any)?.sucesso) {
         toast.success("CT-e cancelado");
-        // Reverter NF-es de "embarcada" para "pendente"
-        if (empresa && ret.chave) {
+        if (empresa && ret?.chave) {
           const { data: doc } = await supabase.from("cte_documentos" as any).select("xml_assinado").eq("chave_acesso", ret.chave).maybeSingle();
           let xmlStr = doc?.xml_assinado || "";
           try { const p = JSON.parse(xmlStr); if (p.xml) xmlStr = p.xml; } catch {}
@@ -997,7 +999,11 @@ function CtePage() {
                   if (selecionadas.size===0) { toast.error("Selecione ao menos uma NF-e"); return; }
                   const sel = mercadorias.filter(m => selecionadas.has(m.chave));
                   const dests = new Set(sel.map(m => m.destCnpj || m.dest));
-                  if (dests.size > 1) { toast.error("Não pode emitir o mesmo CT-e para destinos diferentes"); return; }
+                  const emits = new Set(sel.map(m => m.emitCnpj || m.emit));
+                  const tomads = new Set(sel.map(m => m.tomadorCnpj || m.tomador));
+                  if (emits.size > 1) { toast.error("Remetentes diferentes"); return; }
+                  if (dests.size > 1) { toast.error("Destinatários diferentes"); return; }
+                  if (tomads.size > 1) { toast.error("Tomadores diferentes"); return; }
                   const somaV = sel.reduce((a,m)=>a+m.valor,0);
                   const somaP = sel.reduce((a,m)=>a+m.peso,0);
                   const first = sel[0] as typeof sel[0] & { modFrete?: string; tomadorUF?: string; tomadorCMun?: string; tomadorXMun?: string; emitUF?: string; emitCMun?: string; emitXMun?: string; destUF?: string; destCMun?: string; destXMun?: string };
@@ -1300,7 +1306,7 @@ function CtePage() {
                       <TableRow>
                         <TableHead className="w-6">
                           <input type="checkbox" checked={mercadorias.length > 0 && selecionadas.size === mercadorias.length} onChange={e => {
-                            if (e.target.checked) { const dests = new Set(mercadorias.map(m => m.destCnpj || m.dest)); if (dests.size > 1) { toast.error("Destinos diferentes"); return; } setSelecionadas(new Set(mercadorias.map(m => m.chave))); } else setSelecionadas(new Set());
+                            if (e.target.checked) { const emits = new Set(mercadorias.map(m => m.emitCnpj || m.emit)); const dests = new Set(mercadorias.map(m => m.destCnpj || m.dest)); const tomads = new Set(mercadorias.map(m => m.tomadorCnpj || m.tomador)); if (emits.size > 1) { toast.error("Remetentes diferentes"); return; } if (dests.size > 1) { toast.error("Destinatários diferentes"); return; } if (tomads.size > 1) { toast.error("Tomadores diferentes"); return; } setSelecionadas(new Set(mercadorias.map(m => m.chave))); } else setSelecionadas(new Set());
                           }} />
                         </TableHead>
                         <TableHead className="text-[10px]">Modelo</TableHead>
@@ -1322,7 +1328,7 @@ function CtePage() {
                           <TableCell>
                             <input type="checkbox" checked={selecionadas.has(m.chave)} onChange={e => {
                               const next = new Set(selecionadas);
-                              if (e.target.checked) { next.add(m.chave); const sel = mercadorias.filter(x => next.has(x.chave)); const dests = new Set(sel.map(x => x.destCnpj || x.dest)); if (dests.size > 1) { toast.error("Destinos diferentes"); next.delete(m.chave); } } else next.delete(m.chave);
+                              if (e.target.checked) { next.add(m.chave); const sel = mercadorias.filter(x => next.has(x.chave)); const emits = new Set(sel.map(x => x.emitCnpj || x.emit)); const dests = new Set(sel.map(x => x.destCnpj || x.dest)); const tomads = new Set(sel.map(x => x.tomadorCnpj || x.tomador)); if (emits.size > 1) { toast.error("Remetentes diferentes"); next.delete(m.chave); } else if (dests.size > 1) { toast.error("Destinatários diferentes"); next.delete(m.chave); } else if (tomads.size > 1) { toast.error("Tomadores diferentes"); next.delete(m.chave); } } else next.delete(m.chave);
                               setSelecionadas(next);
                             }} />
                           </TableCell>
