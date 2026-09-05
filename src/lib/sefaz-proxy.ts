@@ -176,6 +176,12 @@ export async function handleSefazProxy(request: Request): Promise<Response> {
         const supa3 = createClient(process.env.SUPABASE_URL||"", process.env.SUPABASE_SERVICE_ROLE_KEY||"");
         if (ret.sucesso) await supa3.from("cte_documentos").insert({ empresa_id: empresaId, chave_acesso: chave, numero: proximo, serie: input.serie, status: "autorizado", xml_assinado: xml, protocolo_sefaz: ret.protocolo, ambiente: cteAmbiente, data_autorizacao: new Date().toISOString(), valor_servico: input.vPrest } as any);
         else await supa3.from("cte_documentos").insert({ empresa_id: empresaId, chave_acesso: chave, numero: proximo, serie: input.serie, status: "rejeitado", xml_assinado: xml, motivo_rejeicao: ret.xMotivo, ambiente: cteAmbiente } as any);
+        if (ret.sucesso) {
+          try {
+            const chs = ((input as any).chavesNFe || []) as string[];
+            if (chs.length > 0) await supa3.from("cte_nfes_pendentes").update({ status: "embarcada" } as any).in("chave", chs).eq("empresa_id", empresaId);
+          } catch (e) { console.log("[CTE-EMBARCADA-ERR]", e); }
+        }
         return json({ ...ret, chave, xml });
       }
       case "consultarCte": {

@@ -80,6 +80,11 @@ export const emitirCteFn = createServerFn({ method: "POST" }).validator((d: { em
   const ret = await emitirCte(cert.pfx, cert.senha, xml, ambiente, cert.uf);
   if (ret.sucesso) {
     await supa.from("cte_documentos").insert({ empresa_id: data.empresaId, chave_acesso: chave, numero: proximo, serie: input.serie, status: "autorizado", xml_assinado: xml, protocolo_sefaz: ret.protocolo, ambiente, data_autorizacao: new Date().toISOString(), valor_servico: input.vPrest, peso_carga: input.pesoKg } as any);
+    // baixa das NF-es no servidor (vale mesmo se o cliente perder a resposta)
+    try {
+      const chs = (input.chavesNFe || []) as string[];
+      if (chs.length > 0) await supa.from("cte_nfes_pendentes").update({ status: "embarcada" } as any).in("chave", chs).eq("empresa_id", data.empresaId);
+    } catch (e) { console.log("[CTE-EMBARCADA-ERR]", e); }
   } else {
     await supa.from("cte_documentos").insert({ empresa_id: data.empresaId, chave_acesso: chave, numero: proximo, serie: input.serie, status: "rejeitado", xml_assinado: xml, motivo_rejeicao: ret.xMotivo, ambiente } as any);
   }
