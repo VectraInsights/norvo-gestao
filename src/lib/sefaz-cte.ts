@@ -153,9 +153,16 @@ export function buildCteXml(input: CteInputCompleto): { xml: string; chave: stri
 
   // IBS/CBS — NT 2026.002 obrigatório para CRT=3 em homologação (desde 01/07/2026)
   // XSD cteSimp_v4.00: imp termina em IBSCBS; vTotDFe vai em <total> após vTRec
-  const vIbsUf = 0; const vIbsMun = 0; const vIbs = vIbsUf + vIbsMun;
+  // Alíquotas transição LC 214/25 (rej. 316/317 se divergir do ano de emissão):
+  // 2026 → IBS UF 0,10% / IBS Mun 0% / CBS 0,90% (Art. 343); 2027-2028 → IBS UF 0,05% (Art. 344)
+  const anoEmi = Number(dhEmi.slice(0, 4)) || new Date().getFullYear();
+  const pIbsUf = anoEmi <= 2026 ? 0.10 : anoEmi <= 2028 ? 0.05 : 0.10;
+  const pIbsMun = 0.00;
+  const vIbsUf = Number((Number(vBC) * pIbsUf / 100).toFixed(2));
+  const vIbsMun = Number((Number(vBC) * pIbsMun / 100).toFixed(2));
+  const vIbs = Number((vIbsUf + vIbsMun).toFixed(2));
   const vCbs = Number((Number(vBC) * 0.009).toFixed(2));
-  const ibsCbsXml = `<IBSCBS><CST>000</CST><cClassTrib>000001</cClassTrib><gIBSCBS><vBC>${vBC}</vBC><gIBSUF><pIBSUF>0.00</pIBSUF><vIBSUF>${vIbsUf.toFixed(2)}</vIBSUF></gIBSUF><gIBSMun><pIBSMun>0.00</pIBSMun><vIBSMun>${vIbsMun.toFixed(2)}</vIBSMun></gIBSMun><vIBS>${vIbs.toFixed(2)}</vIBS><gCBS><pCBS>0.90</pCBS><vCBS>${vCbs.toFixed(2)}</vCBS></gCBS></gIBSCBS></IBSCBS></imp>`;
+  const ibsCbsXml = `<IBSCBS><CST>000</CST><cClassTrib>000001</cClassTrib><gIBSCBS><vBC>${vBC}</vBC><gIBSUF><pIBSUF>${pIbsUf.toFixed(2)}</pIBSUF><vIBSUF>${vIbsUf.toFixed(2)}</vIBSUF></gIBSUF><gIBSMun><pIBSMun>${pIbsMun.toFixed(2)}</pIBSMun><vIBSMun>${vIbsMun.toFixed(2)}</vIBSMun></gIBSMun><vIBS>${vIbs.toFixed(2)}</vIBS><gCBS><pCBS>0.90</pCBS><vCBS>${vCbs.toFixed(2)}</vCBS></gCBS></gIBSCBS></IBSCBS></imp>`;
   impXml += ibsCbsXml;
   // vTotDFe em 2026 = vPrest (sem somar IBS+CBS) — vai no grupo <total>
 
