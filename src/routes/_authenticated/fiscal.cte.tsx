@@ -1130,23 +1130,13 @@ function CtePage() {
             </TabsList>
 
             {/* Header: Nº Conhecimento, Data, CFOP */}
-            <div className="grid grid-cols-1 md:grid-cols-5 gap-2 border rounded-b-md rounded-tr-md p-3 bg-muted/20">
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-2 border rounded-b-md rounded-tr-md p-3 bg-muted/20">
               <div>
                 <Label className="text-[10px] text-muted-foreground">Ambiente</Label>
                 <ToggleGroup type="single" value={form.ambiente} onValueChange={v => { if (v) setForm({...form, ambiente: v as "homologacao" | "producao"}); }} className="bg-background border rounded-md h-7 mt-0.5">
                   <ToggleGroupItem value="homologacao" className="h-6 text-[10px] px-2 data-[state=on]:bg-primary/10 data-[state=on]:text-primary">Homologação</ToggleGroupItem>
                   <ToggleGroupItem value="producao" className="h-6 text-[10px] px-2 data-[state=on]:bg-green-600/10 data-[state=on]:text-green-700">Produção</ToggleGroupItem>
                 </ToggleGroup>
-              </div>
-              <div>
-                <Label className="text-[10px] text-muted-foreground">Modelo</Label>
-                <Select value={form.modelo} onValueChange={v => setForm({...form, modelo: v})}>
-                  <SelectTrigger className="h-7 text-xs mt-0.5"><SelectValue /></SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="57">57 — CT-e</SelectItem>
-                    <SelectItem value="65">65 — NFC-e (CT-e)</SelectItem>
-                  </SelectContent>
-                </Select>
               </div>
               <div><Label className="text-[10px] text-muted-foreground">N° Conhecimento</Label><Input className="h-7 text-xs font-mono" value="— aguardando emissão —" readOnly /></div>
               <div><Label className="text-[10px] text-muted-foreground">Data Emissão</Label><DateInput value={form.dataEmissao} onChange={v => setForm({...form, dataEmissao: v})} className="h-7 text-xs" /></div>
@@ -1347,7 +1337,7 @@ function CtePage() {
                               setSelecionadas(next);
                             }} />
                           </TableCell>
-                          <TableCell>{form.modelo === "65" ? "NFC-e" : "NF-e"}</TableCell>
+                          <TableCell>NF-e</TableCell>
                           <TableCell className="font-mono text-[9px] max-w-[120px] truncate" title={m.chave}>{m.chave}</TableCell>
                           <TableCell className="truncate max-w-[100px]" title={m.emit}>{m.emit}</TableCell>
                           <TableCell className="truncate max-w-[100px]" title={m.dest}>{m.dest}</TableCell>
