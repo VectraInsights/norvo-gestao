@@ -152,10 +152,12 @@ export function buildCteXml(input: CteInputCompleto): { xml: string; chave: stri
   else impXml = `<imp><ICMS><ICMS90><CST>${cst}</CST><pRedBC>0.00</pRedBC><vBC>${vBC}</vBC><pICMS>${pICMS}</pICMS><vICMS>${vICMS}</vICMS><vCred>0.00</vCred></ICMS90></ICMS>`;
 
   // IBS/CBS — NT 2026.002 obrigatório para CRT=3 em homologação (desde 01/07/2026)
+  // XSD cteSimp_v4.00: imp termina em IBSCBS; vTotDFe vai em <total> após vTRec
   const vIbsUf = 0; const vIbsMun = 0; const vIbs = vIbsUf + vIbsMun;
   const vCbs = Number((Number(vBC) * 0.009).toFixed(2));
-  const ibsCbsXml = `<IBSCBS><CST>000</CST><cClassTrib>000001</cClassTrib><gIBSCBS><vBC>${vBC}</vBC><gIBSUF><pIBSUF>0.00</pIBSUF><vIBSUF>${vIbsUf.toFixed(2)}</vIBSUF></gIBSUF><gIBSMun><pIBSMun>0.00</pIBSMun><vIBSMun>${vIbsMun.toFixed(2)}</vIBSMun></gIBSMun><vIBS>${vIbs.toFixed(2)}</vIBS><gCBS><pCBS>0.90</pCBS><vCBS>${vCbs.toFixed(2)}</vCBS></gCBS></gIBSCBS></IBSCBS><vTotDFe>${Number(vBC).toFixed(2)}</vTotDFe></imp>`;
+  const ibsCbsXml = `<IBSCBS><CST>000</CST><cClassTrib>000001</cClassTrib><gIBSCBS><vBC>${vBC}</vBC><gIBSUF><pIBSUF>0.00</pIBSUF><vIBSUF>${vIbsUf.toFixed(2)}</vIBSUF></gIBSUF><gIBSMun><pIBSMun>0.00</pIBSMun><vIBSMun>${vIbsMun.toFixed(2)}</vIBSMun></gIBSMun><vIBS>${vIbs.toFixed(2)}</vIBS><gCBS><pCBS>0.90</pCBS><vCBS>${vCbs.toFixed(2)}</vCBS></gCBS></gIBSCBS></IBSCBS></imp>`;
   impXml += ibsCbsXml;
+  // vTotDFe em 2026 = vPrest (sem somar IBS+CBS) — vai no grupo <total>
 
   // infNFe — schema exige <chNFe>, não <chave>
   const infNFeXml = (input.chavesNFe && input.chavesNFe.length > 0)
@@ -169,7 +171,7 @@ export function buildCteXml(input: CteInputCompleto): { xml: string; chave: stri
   <infCte Id="${id}" versao="4.00">
     <ide>
       <cUF>${cUF}</cUF><cCT>${cCT}</cCT><CFOP>${input.cfop}</CFOP><natOp>${natOp}</natOp><mod>${modelo}</mod><serie>${serie}</serie><nCT>${nCT}</nCT><dhEmi>${dhEmi}</dhEmi>
-      <tpImp>1</tpImp><tpEmis>1</tpEmis><cDV>${chave.slice(-1)}</cDV><tpAmb>${input.ambiente==="producao"?"1":"2"}</tpAmb><tpCTe>0</tpCTe><procEmi>0</procEmi><verProc>NORVO_1.0</verProc>
+      <tpImp>1</tpImp><tpEmis>1</tpEmis><cDV>${chave.slice(-1)}</cDV><tpAmb>${input.ambiente==="producao"?"1":"2"}</tpAmb><tpCTe>5</tpCTe><procEmi>0</procEmi><verProc>NORVO_1.0</verProc>
       <cMunEnv>${input.cMunEnv}</cMunEnv><xMunEnv>${input.xMunEnv}</xMunEnv><UFEnv>${input.ufEnv}</UFEnv>
       <modal>01</modal><tpServ>0</tpServ>
       <UFIni>${input.ufIni}</UFIni><UFFim>${input.ufFim}</UFFim>
@@ -188,7 +190,7 @@ export function buildCteXml(input: CteInputCompleto): { xml: string; chave: stri
     ${infNFeXml}
     <infModal versaoModal="4.00"><rodo><RNTRC>${(input.modalRod?.rntrc || input.rntrc || "ISENTO").replace(/\D/g,"") || "ISENTO"}</RNTRC></rodo></infModal>
     ${impXml}
-    <total><vTPrest>${input.vPrest.toFixed(2)}</vTPrest><vTRec>${input.vPrest.toFixed(2)}</vTRec></total>
+    <total><vTPrest>${input.vPrest.toFixed(2)}</vTPrest><vTRec>${input.vPrest.toFixed(2)}</vTRec><vTotDFe>${input.vPrest.toFixed(2)}</vTotDFe></total>
     <infRespTec><CNPJ>${cnpjLimpo}</CNPJ><xContato>SUPORTE TECNICO</xContato><email>suporte@vectrainsights.com.br</email><fone>3139952572</fone></infRespTec>
   </infCte>
   <infCTeSupl><qrCodCTe>https://${(input.ufEnv || input.emit.uf)?.toUpperCase() === "MG" ? "portalcte.fazenda.mg.gov.br/portalcte/sistema/qrcode.xhtml" : "dfeportal.svrs.rs.gov.br/cteQrCode"}?chCTe=${chave}&amp;tpAmb=${input.ambiente==="producao"?"1":"2"}</qrCodCTe></infCTeSupl>
