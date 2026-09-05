@@ -152,7 +152,9 @@ export function buildCteXml(input: CteInputCompleto): { xml: string; chave: stri
   else impXml = `<imp><ICMS><ICMS90><CST>${cst}</CST><pRedBC>0.00</pRedBC><vBC>${vBC}</vBC><pICMS>${pICMS}</pICMS><vICMS>${vICMS}</vICMS><vCred>0.00</vCred></ICMS90></ICMS>`;
 
   // IBS/CBS — NT 2026.002 obrigatório para CRT=3 em homologação (desde 01/07/2026)
-  const ibsCbsXml = `<IBSCBS><CST>000</CST><cClassTrib>100101</cClassTrib><gIBSCBS><vBC>${vBC}</vBC><gIBSUF><pIBSUF>0.00</pIBSUF><vIBSUF>0.00</vIBSUF></gIBSUF><gIBSMun><pIBSMun>0.00</pIBSMun><vIBSMun>0.00</vIBSMun></gIBSMun><gCBS><pCBS>0.90</pCBS><vCBS>${(Number(vBC) * 0.009).toFixed(2)}</vCBS></gCBS></gIBSCBS></IBSCBS></imp>`;
+  const vIbsUf = 0; const vIbsMun = 0; const vIbs = vIbsUf + vIbsMun;
+  const vCbs = Number((Number(vBC) * 0.009).toFixed(2));
+  const ibsCbsXml = `<IBSCBS><CST>000</CST><cClassTrib>000001</cClassTrib><gIBSCBS><vBC>${vBC}</vBC><gIBSUF><pIBSUF>0.00</pIBSUF><vIBSUF>${vIbsUf.toFixed(2)}</vIBSUF></gIBSUF><gIBSMun><pIBSMun>0.00</pIBSMun><vIBSMun>${vIbsMun.toFixed(2)}</vIBSMun></gIBSMun><vIBS>${vIbs.toFixed(2)}</vIBS><gCBS><pCBS>0.90</pCBS><vCBS>${vCbs.toFixed(2)}</vCBS></gCBS></gIBSCBS></IBSCBS><vTotDFe>${Number(vBC).toFixed(2)}</vTotDFe></imp>`;
   impXml += ibsCbsXml;
 
   // infNFe — schema exige <chNFe>, não <chave>
