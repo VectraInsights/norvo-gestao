@@ -75,6 +75,7 @@ export interface CteInputCompleto {
   ambiente: Ambiente;
   serie: string;
   numero: string; // nCT
+  modelo?: string; // 57=CT-e, 65=NFC-e (CT-e)
   natOp?: string;
   cMunEnv: string; xMunEnv: string; ufEnv: string;
   cMunIni: string; xMunIni: string; ufIni: string;
@@ -115,7 +116,8 @@ export function buildCteXml(input: CteInputCompleto): { xml: string; chave: stri
   const nCT = String(parseInt(input.numero || "1", 10)); // TNF: [1-9]{1}[0-9]{0,8} - sem zeros à esquerda
   const nCTPadded = nCT.padStart(9,"0"); // chave exige 9 dígitos com zeros
   const cCT = String(Math.floor(Math.random()*100000000)).padStart(8,"0");
-  const chave = gerarChaveCte(cUF, aamm, cnpjLimpo, "57", seriePadded, nCTPadded, "1", cCT);
+  const modelo = input.modelo || "57";
+  const chave = gerarChaveCte(cUF, aamm, cnpjLimpo, modelo, seriePadded, nCTPadded, "1", cCT);
   const id = `CTe${chave}`;
   const natOp = input.natOp || "PRESTACAO DE SERVICO DE TRANSPORTE";
   const toma = input.tomador.toma;
@@ -160,7 +162,7 @@ export function buildCteXml(input: CteInputCompleto): { xml: string; chave: stri
 <CTeSimp xmlns="http://www.portalfiscal.inf.br/cte">
   <infCte Id="${id}" versao="4.00">
     <ide>
-      <cUF>${cUF}</cUF><cCT>${cCT}</cCT><CFOP>${input.cfop}</CFOP><natOp>${natOp}</natOp><mod>57</mod><serie>${serie}</serie><nCT>${nCT}</nCT><dhEmi>${dhEmi}</dhEmi>
+      <cUF>${cUF}</cUF><cCT>${cCT}</cCT><CFOP>${input.cfop}</CFOP><natOp>${natOp}</natOp><mod>${modelo}</mod><serie>${serie}</serie><nCT>${nCT}</nCT><dhEmi>${dhEmi}</dhEmi>
       <tpImp>1</tpImp><tpEmis>1</tpEmis><cDV>${chave.slice(-1)}</cDV><tpAmb>${input.ambiente==="producao"?"1":"2"}</tpAmb><tpCTe>5</tpCTe><procEmi>0</procEmi><verProc>NORVO_1.0</verProc>
       <cMunEnv>${input.cMunEnv}</cMunEnv><xMunEnv>${input.xMunEnv}</xMunEnv><UFEnv>${input.ufEnv}</UFEnv>
       <modal>01</modal><tpServ>0</tpServ>
@@ -168,7 +170,7 @@ export function buildCteXml(input: CteInputCompleto): { xml: string; chave: stri
       <retira>1</retira>
     </ide>
     <emit>
-      <CNPJ>${cnpjLimpo}</CNPJ>${input.emit.ie && /^\d{2,14}$/.test(input.emit.ie) ? `<IE>${input.emit.ie}</IE>` : ""}<xNome>${input.emit.xNome}</xNome>${input.emit.xFant && input.emit.xFant.length >= 2 ? `<xFant>${input.emit.xFant}</xFant>` : ""}${enderEmit}<CRT>${crt}</CRT>
+      <CNPJ>${cnpjLimpo}</CNPJ>${input.emit.ie ? `<IE>${input.emit.ie}</IE>` : ""}<xNome>${input.emit.xNome}</xNome>${input.emit.xFant && input.emit.xFant.length >= 2 ? `<xFant>${input.emit.xFant}</xFant>` : ""}${enderEmit}<CRT>${crt}</CRT>
     </emit>
     <toma>
       <toma>${toma}</toma><indIEToma>${indIEToma}</indIEToma><CNPJ>${cnpjToma}</CNPJ>${indIEToma !== "9" && input.tomador.ie && input.tomador.ie !== "ISENTO" ? `<IE>${input.tomador.ie}</IE>` : ""}<xNome>${input.tomador.xNome}</xNome>${input.tomador.fone ? `<fone>${input.tomador.fone}</fone>` : ""}<enderToma><xLgr>${(input.tomador.logradouro || "RUA").length >= 2 ? (input.tomador.logradouro || "RUA") : "RUA GERAL"}</xLgr><nro>${input.tomador.nro || "SN"}</nro><xBairro>${(input.tomador.bairro || "CENTRO").length >= 2 ? (input.tomador.bairro || "CENTRO") : "CENTRO"}</xBairro><cMun>${input.tomador.cMun}</cMun><xMun>${input.tomador.xMun}</xMun><CEP>${cepToma}</CEP><UF>${input.tomador.uf}</UF></enderToma>${input.tomador.email ? `<email>${input.tomador.email}</email>` : ""}

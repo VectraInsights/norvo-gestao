@@ -132,6 +132,7 @@ function CtePage() {
         chave: doc.chave_acesso || "",
         numero: doc.numero || "",
         serie: doc.serie || "1",
+        modelo: form.modelo || "57",
         ambiente: doc.ambiente || "producao",
         dataEmissao: doc.created_at,
         emitCnpj: tag("infCte > emit > CNPJ") || "",
@@ -147,25 +148,29 @@ function CtePage() {
         tomadorUF: tag("infCte > toma > enderToma > UF") || "",
         remCnpj: tag("infCte > emit > CNPJ") || "",
         remNome: tag("infCte > emit > xNome") || "",
+        remEndereco: `${tag("infCte > emit > enderEmit > xLgr")} ${tag("infCte > emit > enderEmit > nro")}`.trim(),
         remCidade: tag("infCte > emit > enderEmit > xMun") || "",
         remUF: tag("infCte > emit > enderEmit > UF") || "",
+        remCEP: tag("infCte > emit > enderEmit > CEP") || "",
         destCnpj: tag("infCte > toma > CNPJ") || "",
         destNome: tag("infCte > toma > xNome") || "",
+        destEndereco: `${tag("infCte > toma > enderToma > xLgr")} ${tag("infCte > toma > enderToma > nro")}`.trim(),
         destCidade: tag("infCte > toma > enderToma > xMun") || "",
         destUF: tag("infCte > toma > enderToma > UF") || "",
-        cfop: tag("infCte > infCarga > infQ > tpUnid") || "5353",
-        naturezaOperacao: "TRANSPORTE",
+        destCEP: tag("infCte > toma > enderToma > CEP") || "",
+        cfop: tag("infCte > ide > CFOP") || "5353",
+        naturezaOperacao: tag("infCte > ide > natOp") || "TRANSPORTE",
         origemCidade: tag("infCte > ide > xMunIni") || "",
         origemUF: tag("infCte > ide > UFIni") || "",
         destinoCidade: tag("infCte > ide > xMunFim") || "",
         destinoUF: tag("infCte > ide > UFFim") || "",
         valorServico: parseFloat(tag("infCte > vPrest > vTPrest")) || Number(doc.valor_servico) || 0,
-        valorCarga: parseFloat(tag("infCte > infCarga > vMerc")) || 0,
-        pesoKg: parseFloat(tag("infCte > infCarga > qCarga")) || 0,
-        icmsCST: tag("infCte > imp > ICMS > ICMS00 > CST") || "00",
-        icmsBase: parseFloat(tag("infCte > imp > ICMS > ICMS00 > vBC")) || 0,
-        icmsAliq: parseFloat(tag("infCte > imp > ICMS > ICMS00 > pICMS")) || 0,
-        icmsValor: parseFloat(tag("infCte > imp > ICMS > ICMS00 > vICMS")) || 0,
+        valorCarga: parseFloat(tag("infCte > infCarga > vCarga")) || 0,
+        pesoKg: parseFloat(tag("infCte > infCarga > infQ > qCarga")) || 0,
+        icmsCST: tag("infCte > imp > ICMS > ICMS00 > CST") || tag("infCte > imp > ICMS > ICMS90 > CST") || "00",
+        icmsBase: parseFloat(tag("infCte > imp > ICMS > ICMS00 > vBC") || tag("infCte > imp > ICMS > ICMS90 > vBC") || "0"),
+        icmsAliq: parseFloat(tag("infCte > imp > ICMS > ICMS00 > pICMS") || tag("infCte > imp > ICMS > ICMS90 > pICMS") || "0"),
+        icmsValor: parseFloat(tag("infCte > imp > ICMS > ICMS00 > vICMS") || tag("infCte > imp > ICMS > ICMS90 > vICMS") || "0"),
         nFes,
         placa: tag("infModal > rodo > veic > placa") || "",
         rntrc: tag("infModal > rodo > RNTRC") || "",
@@ -184,7 +189,7 @@ function CtePage() {
   };
 
   const [open, setOpen] = useState(false);
-  const emptyForm = { toma: "3", cnpjTomador: "", xNomeTomador: "", ufTomador: "MG", cMunTomador: "3106200", xMunTomador: "BELO HORIZONTE", ieTomador: "", logradouroTomador: "", nroTomador: "", bairroTomador: "", cepTomador: "", foneTomador: "", emailTomador: "", cnpjConsignatario: "", xNomeConsignatario: "", ieConsignatario: "", ufConsignatario: "", xMunConsignatario: "", cepConsignatario: "", logradouroConsignatario: "", nroConsignatario: "", bairroConsignatario: "", cnpjRedespacho: "", xNomeRedespacho: "", ieRedespacho: "", ufRedespacho: "", xMunRedespacho: "", cepRedespacho: "", logradouroRedespacho: "", nroRedespacho: "", bairroRedespacho: "", ambiente: "homologacao" as "homologacao" | "producao", cfop: "5353", vPrest: "0.00", vCarga: "0.00", peso: "0", rntrc: "", icmsCST: "00", icmsBase: "1000.00", icmsAliq: "0.00", icmsValor: "0.00", pisAliq: "0.00", cofinsAliq: "0.00", irAliq: "0.00", inssAliq: "0.00", csllAliq: "0.00", motoristaNome: "", motoristaId: "", ciot: "", placaVeiculo: "", placaReboque: "", semiReboque1: "", semiReboque2: "", seguradoraNome: "", seguradoraId: "", apolice: "", averbacao: "", cMunEnv: "3106200", xMunEnv: "BELO HORIZONTE", ufEnv: "MG", cMunIni: "3106200", xMunIni: "BELO HORIZONTE", ufIni: "MG", cMunFim: "3550308", xMunFim: "SAO PAULO", ufFim: "SP", dataEmissao: new Date().toISOString().slice(0,10) };
+  const emptyForm = { toma: "3", cnpjTomador: "", xNomeTomador: "", ufTomador: "MG", cMunTomador: "3106200", xMunTomador: "BELO HORIZONTE", ieTomador: "", logradouroTomador: "", nroTomador: "", bairroTomador: "", cepTomador: "", foneTomador: "", emailTomador: "", cnpjConsignatario: "", xNomeConsignatario: "", ieConsignatario: "", ufConsignatario: "", xMunConsignatario: "", cepConsignatario: "", logradouroConsignatario: "", nroConsignatario: "", bairroConsignatario: "", cnpjRedespacho: "", xNomeRedespacho: "", ieRedespacho: "", ufRedespacho: "", xMunRedespacho: "", cepRedespacho: "", logradouroRedespacho: "", nroRedespacho: "", bairroRedespacho: "", ambiente: "homologacao" as "homologacao" | "producao", modelo: "57", cfop: "5353", vPrest: "0.00", vCarga: "0.00", peso: "0", rntrc: "", icmsCST: "00", icmsBase: "1000.00", icmsAliq: "0.00", icmsValor: "0.00", pisAliq: "0.00", cofinsAliq: "0.00", irAliq: "0.00", inssAliq: "0.00", csllAliq: "0.00", motoristaNome: "", motoristaId: "", ciot: "", placaVeiculo: "", placaReboque: "", semiReboque1: "", semiReboque2: "", seguradoraNome: "", seguradoraId: "", apolice: "", averbacao: "", cMunEnv: "3106200", xMunEnv: "BELO HORIZONTE", ufEnv: "MG", cMunIni: "3106200", xMunIni: "BELO HORIZONTE", ufIni: "MG", cMunFim: "3550308", xMunFim: "SAO PAULO", ufFim: "SP", dataEmissao: new Date().toISOString().slice(0,10) };
   const [form, setForm] = useState(emptyForm);
   const [cfopOpen, setCfopOpen] = useState(false);
   const [cfopQuery, setCfopQuery] = useState("");
@@ -740,7 +745,7 @@ function CtePage() {
         if (tomads.size > 1) throw new Error("CT-e não pode ter tomadores diferentes. Selecione NF-es do mesmo tomador.");
       }
       const ret: any = await emitirCteFn({ data: { empresaId: empresa.id, input: {
-        ambiente: form.ambiente,
+        ambiente: form.ambiente, modelo: form.modelo,
         toma: form.toma, cnpjTomador: form.cnpjTomador, xNomeTomador: form.xNomeTomador, ufTomador: form.ufTomador, cMunTomador: form.cMunTomador, xMunTomador: form.xMunTomador,
         cfop: form.cfop, vPrest: parseFloat(form.vPrest)||0, vCarga: parseFloat(form.vCarga)||0, pesoKg: parseFloat(form.peso)||0, rntrc: form.rntrc,
         cMunEnv: form.cMunEnv, xMunEnv: form.xMunEnv, ufEnv: form.ufEnv, cMunIni: form.cMunIni, xMunIni: form.xMunIni, ufIni: form.ufIni, cMunFim: form.cMunFim, xMunFim: form.xMunFim, ufFim: form.ufFim,
@@ -817,7 +822,7 @@ function CtePage() {
       if (!empresa) throw new Error("Empresa não selecionada");
       const chaves = selecionadas.size > 0 ? Array.from(selecionadas) : mercadorias.map(m => m.chave);
       return previewCteXmlFn({ data: { empresaId: empresa.id, input: {
-        ambiente: form.ambiente,
+        ambiente: form.ambiente, modelo: form.modelo,
         toma: form.toma, cnpjTomador: form.cnpjTomador, xNomeTomador: form.xNomeTomador, ufTomador: form.ufTomador, cMunTomador: form.cMunTomador, xMunTomador: form.xMunTomador,
         cfop: form.cfop, vPrest: parseFloat(form.vPrest)||0, vCarga: parseFloat(form.vCarga)||0, pesoKg: parseFloat(form.peso)||0, rntrc: form.rntrc,
         cMunEnv: form.cMunEnv, xMunEnv: form.xMunEnv, ufEnv: form.ufEnv, cMunIni: form.cMunIni, xMunIni: form.xMunIni, ufIni: form.ufIni, cMunFim: form.cMunFim, xMunFim: form.xMunFim, ufFim: form.ufFim,
@@ -1125,13 +1130,23 @@ function CtePage() {
             </TabsList>
 
             {/* Header: Nº Conhecimento, Data, CFOP */}
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-2 border rounded-b-md rounded-tr-md p-3 bg-muted/20">
+            <div className="grid grid-cols-1 md:grid-cols-5 gap-2 border rounded-b-md rounded-tr-md p-3 bg-muted/20">
               <div>
                 <Label className="text-[10px] text-muted-foreground">Ambiente</Label>
                 <ToggleGroup type="single" value={form.ambiente} onValueChange={v => { if (v) setForm({...form, ambiente: v as "homologacao" | "producao"}); }} className="bg-background border rounded-md h-7 mt-0.5">
                   <ToggleGroupItem value="homologacao" className="h-6 text-[10px] px-2 data-[state=on]:bg-primary/10 data-[state=on]:text-primary">Homologação</ToggleGroupItem>
                   <ToggleGroupItem value="producao" className="h-6 text-[10px] px-2 data-[state=on]:bg-green-600/10 data-[state=on]:text-green-700">Produção</ToggleGroupItem>
                 </ToggleGroup>
+              </div>
+              <div>
+                <Label className="text-[10px] text-muted-foreground">Modelo</Label>
+                <Select value={form.modelo} onValueChange={v => setForm({...form, modelo: v})}>
+                  <SelectTrigger className="h-7 text-xs mt-0.5"><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="57">57 — CT-e</SelectItem>
+                    <SelectItem value="65">65 — NFC-e (CT-e)</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
               <div><Label className="text-[10px] text-muted-foreground">N° Conhecimento</Label><Input className="h-7 text-xs font-mono" value="— aguardando emissão —" readOnly /></div>
               <div><Label className="text-[10px] text-muted-foreground">Data Emissão</Label><DateInput value={form.dataEmissao} onChange={v => setForm({...form, dataEmissao: v})} className="h-7 text-xs" /></div>
@@ -1332,7 +1347,7 @@ function CtePage() {
                               setSelecionadas(next);
                             }} />
                           </TableCell>
-                          <TableCell>NFe</TableCell>
+                          <TableCell>{form.modelo === "65" ? "NFC-e" : "NF-e"}</TableCell>
                           <TableCell className="font-mono text-[9px] max-w-[120px] truncate" title={m.chave}>{m.chave}</TableCell>
                           <TableCell className="truncate max-w-[100px]" title={m.emit}>{m.emit}</TableCell>
                           <TableCell className="truncate max-w-[100px]" title={m.dest}>{m.dest}</TableCell>
