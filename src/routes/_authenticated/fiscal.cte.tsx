@@ -767,9 +767,12 @@ function CtePage() {
         }
         const chavesUsadas = selecionadas.size > 0 ? Array.from(selecionadas) : mercadorias.map(m => m.chave);
         if (empresa && chavesUsadas.length > 0) {
-          await supabase.from("cte_nfes_pendentes" as any).update({ status: "embarcada" }).in("chave", chavesUsadas).eq("empresa_id", empresa.id);
-          qc.invalidateQueries({ queryKey: ["cte-nfes-pendentes", empresa.id] });
+          const { error: embErr } = await supabase.from("cte_nfes_pendentes" as any).update({ status: "embarcada" }).in("chave", chavesUsadas).eq("empresa_id", empresa.id);
+          if (embErr) toast.error(`CT-e autorizado, mas falha ao baixar NF-e da lista: ${embErr.message}`);
+          // remove da listagem na hora (não depende do refetch)
+          setMercadorias(prev => prev.filter(m => !chavesUsadas.includes(m.chave)));
           setSelecionadas(new Set());
+          qc.invalidateQueries({ queryKey: ["cte-nfes-pendentes", empresa.id] });
         }
       } else toast.error(ret?.xMotivo || ret?.motivo || "Rejeitado");
       qc.invalidateQueries({ queryKey: ["cte-documentos"] });
