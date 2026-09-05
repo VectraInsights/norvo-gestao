@@ -18,7 +18,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useEmpresaAtual } from "@/hooks/use-empresa";
 import { brl, dateBR, num } from "@/lib/format";
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useRef } from "react";
 import { toast } from "sonner";
 import { emitirCteFn, consultarCteFn, cancelarCteFn, previewCteXmlFn, excluirRejeitadosCteFn } from "@/lib/sefaz-cte-server";
 import { CFOPS_CTE, MOD_FRETE_OPTIONS, RESPONSAVEL_CTE_OPTIONS } from "@/lib/cfops-transporte";
@@ -746,12 +746,48 @@ function CtePage() {
     onError: (e: Error) => toast.error(e.message),
   });
 
+  // Reconciliação pós-emissão: se a resposta se perder no transporte, a verdade
+  // está em cte_documentos. Procura doc criado a partir do início da tentativa.
+  const emitT0 = useRef(0);
+  const emitChaves = useRef<string[]>([]);
+  const reconciliarEmissao = async (erroOriginal?: string) => {
+    await new Promise(r => setTimeout(r, 2500));
+    if (!empresa) { toast.error(erroOriginal || "Sem retorno do servidor"); return; }
+    try {
+      const { data } = await supabase.from("cte_documentos" as any)
+        .select("chave_acesso,status,motivo_rejeicao,protocolo_sefaz,numero,created_at")
+        .eq("empresa_id", empresa.id).eq("ambiente", form.ambiente)
+        .order("created_at", { ascending: false }).limit(1).maybeSingle();
+      const doc: any = data;
+      if (doc && new Date(doc.created_at).getTime() >= emitT0.current - 5000) {
+        if (doc.status === "autorizado") {
+          toast.success(`CT-e ${doc.chave_acesso} autorizado` + (doc.protocolo_sefaz ? ` prot ${doc.protocolo_sefaz}` : ""));
+          const chavesUsadas = emitChaves.current;
+          if (chavesUsadas.length > 0) setMercadorias(prev => prev.filter(m => !chavesUsadas.includes(m.chave)));
+          setSelecionadas(new Set());
+        } else if (doc.status === "rejeitado") {
+          toast.error(doc.motivo_rejeicao || "Rejeitado pela SEFAZ");
+        } else {
+          toast.info(`CT-e ${doc.numero ?? ""} está como "${doc.status}" — verifique a lista.`);
+        }
+      } else {
+        toast.error(erroOriginal || "Sem retorno do servidor e nenhum CT-e novo — verifique a lista.");
+      }
+    } catch {
+      toast.error(erroOriginal || "Sem retorno do servidor — verifique a lista.");
+    }
+    qc.invalidateQueries({ queryKey: ["cte-documentos"] });
+    qc.invalidateQueries({ queryKey: ["cte-nfes-pendentes", empresa.id] });
+  };
+
   const emitir = useMutation({
     mutationFn: async () => {
       if (!empresa) throw new Error("Empresa não selecionada");
       if (!form.xNomeTomador || !form.cnpjTomador) throw new Error("Informe tomador");
       if (!form.ieTomador) toast.warning("IE do tomador não informado — o SEFAZ pode rejeitar");
       const chaves = selecionadas.size > 0 ? Array.from(selecionadas) : mercadorias.map(m => m.chave);
+      emitT0.current = Date.now();
+      emitChaves.current = chaves;
       if (chaves.length > 0) {
         const sel = mercadorias.filter(m => chaves.includes(m.chave));
         const dests = new Set(sel.map(m => m.destCnpj || m.dest));
@@ -792,15 +828,18 @@ function CtePage() {
           setSelecionadas(new Set());
           qc.invalidateQueries({ queryKey: ["cte-nfes-pendentes", empresa.id] });
         }
-      } else toast.error([ret?.cStat, ret?.xMotivo || ret?.motivo].filter(Boolean).join(" ") || "Rejeitado sem retorno do servidor — abra o console (F12) e me mande a linha [CTE-EMITIR-RESP]");
+      } else {
+        // resposta vazia: reconcilia com o banco (fonte da verdade)
+        await reconciliarEmissao();
+        return;
+      }
       qc.invalidateQueries({ queryKey: ["cte-documentos"] });
     },
     onError: (e: Error) => {
       console.error("[CTE-EMITIR-ERR]", e);
-      toast.error(`Falha no envio: ${e.message}`);
-      // sucesso pode ter ocorrido no servidor mesmo com erro de transporte — recarrega a lista
-      qc.invalidateQueries({ queryKey: ["cte-documentos"] });
-      qc.invalidateQueries({ queryKey: ["cte-nfes-pendentes", empresa?.id] });
+      // pode ser erro de validação (sem ida ao servidor) ou transporte perdido:
+      // a reconciliação decide — mostra a mensagem original se nada novo existir
+      void reconciliarEmissao(`Falha no envio: ${e.message}`);
     },
   });
 
