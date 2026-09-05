@@ -750,6 +750,7 @@ function CtePage() {
   // está em cte_documentos. Procura doc criado a partir do início da tentativa.
   const emitT0 = useRef(0);
   const emitChaves = useRef<string[]>([]);
+  const emitRascunhoId = useRef<string | null>(null);
   const reconciliarEmissao = async (erroOriginal?: string) => {
     await new Promise(r => setTimeout(r, 2500));
     if (!empresa) { toast.error(erroOriginal || "Sem retorno do servidor"); return; }
@@ -762,6 +763,12 @@ function CtePage() {
       if (doc && new Date(doc.created_at).getTime() >= emitT0.current - 5000) {
         if (doc.status === "autorizado") {
           toast.success(`CT-e ${doc.chave_acesso} autorizado` + (doc.protocolo_sefaz ? ` prot ${doc.protocolo_sefaz}` : ""));
+          const rid = emitRascunhoId.current;
+          if (rid) {
+            await supabase.from("cte_documentos" as any).delete().eq("id", rid);
+            emitRascunhoId.current = null;
+            setEditingRascunhoId(null);
+          }
           const chavesUsadas = emitChaves.current;
           if (chavesUsadas.length > 0) setMercadorias(prev => prev.filter(m => !chavesUsadas.includes(m.chave)));
           setSelecionadas(new Set());
@@ -788,6 +795,7 @@ function CtePage() {
       const chaves = selecionadas.size > 0 ? Array.from(selecionadas) : mercadorias.map(m => m.chave);
       emitT0.current = Date.now();
       emitChaves.current = chaves;
+      emitRascunhoId.current = editingRascunhoId;
       if (chaves.length > 0) {
         const sel = mercadorias.filter(m => chaves.includes(m.chave));
         const dests = new Set(sel.map(m => m.destCnpj || m.dest));
@@ -1128,7 +1136,7 @@ function CtePage() {
                   const nNFs = (() => { try { const j = JSON.parse(d.xml_assinado || "{}"); return j.nfs?.map((n: any) => n.nNF).filter(Boolean) || []; } catch { } try { const chaves = [...(d.xml_assinado||"").matchAll(/<chNFe>(\d{44})<\/chNFe>/g)].map(m=>m[1]); if (chaves.length===0) return []; return chaves.map(ch=>ch.slice(25,34).replace(/^0+/,"") || "0"); } catch { return []; } })();
                   const isRascunho = d.status === "rascunho";
                   return (
-                  <TableRow key={d.id} className={isRascunho ? "bg-muted/30" : ""}><TableCell className="font-mono">{d.numero ?? "—"}</TableCell><TableCell>{d.serie ?? "—"}</TableCell><TableCell title={d.status==="rejeitado" && d.motivo_rejeicao ? d.motivo_rejeicao : ""}><Badge variant="secondary" className={d.status==="autorizado"?"bg-emerald-500/15 text-emerald-600":d.status==="rejeitado"?"bg-destructive/15 text-destructive":d.status==="cancelado"?"bg-orange-500/15 text-orange-600":isRascunho?"bg-amber-500/15 text-amber-600":""}>{d.status}{d.status==="rejeitado" && d.motivo_rejeicao ? ` — ${d.motivo_rejeicao.slice(0,60)}` : ""}</Badge></TableCell>                  <TableCell className="text-xs">{nNFs.length > 0 ? nNFs.join(", ") : d.chave_acesso ? "1" : "—"}</TableCell><TableCell className="text-right">{brl(Number(d.valor_servico ?? 0))}</TableCell><TableCell className="font-mono text-xs truncate max-w-[220px]" title={d.chave_acesso||""}>{d.chave_acesso ?? "—"}</TableCell><TableCell className="flex gap-1">
+                  <TableRow key={d.id} className={isRascunho ? "bg-muted/30" : ""}><TableCell className="font-mono">{d.numero ?? "—"}</TableCell><TableCell>{d.serie ?? "—"}</TableCell><TableCell title={d.status==="rejeitado" && d.motivo_rejeicao ? d.motivo_rejeicao : ""}><Badge variant="secondary" className={d.status==="autorizado"?"bg-emerald-500/15 text-emerald-600":d.status==="rejeitado"?"bg-destructive/15 text-destructive":d.status==="cancelado"?"bg-orange-500/15 text-orange-600":isRascunho?"bg-amber-500/15 text-amber-600":""}>{d.status}{d.status==="rejeitado" && d.motivo_rejeicao ? ` — ${d.motivo_rejeicao.slice(0,60)}` : ""}</Badge></TableCell>                  <TableCell className="text-xs">{nNFs.length > 0 ? nNFs.join(", ") : d.chave_acesso ? "1" : "—"}</TableCell><TableCell className="text-right">{brl(Number(d.valor_servico ?? 0))}</TableCell><TableCell className="font-mono text-xs break-all" title={d.chave_acesso||""}>{d.chave_acesso ?? "—"}</TableCell><TableCell className="flex gap-1">
                     {isRascunho ? (
                       <>
                         <Button size="icon" variant="ghost" className="h-7 w-7 text-primary" onClick={() => editarRascunho(d)} title="Editar rascunho"><Pencil className="h-3.5 w-3.5" /></Button>
