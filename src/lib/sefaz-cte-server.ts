@@ -88,7 +88,9 @@ export const emitirCteFn = createServerFn({ method: "POST" }).validator((d: { em
   } else {
     await supa.from("cte_documentos").insert({ empresa_id: data.empresaId, chave_acesso: chave, numero: proximo, serie: input.serie, status: "rejeitado", xml_assinado: xml, motivo_rejeicao: ret.xMotivo, ambiente } as any);
   }
-  return { ...ret, chave, xml };
+  // Retorno enxuto: a tela só usa sucesso/cStat/xMotivo/chave/protocolo.
+  // O XML completo já está salvo em cte_documentos (evita payload grande na volta).
+  return { sucesso: ret.sucesso, cStat: ret.cStat, xMotivo: ret.xMotivo, chave, protocolo: ret.protocolo };
 });
 export const consultarCteFn = createServerFn({ method: "POST" }).validator((d:{empresaId:string;chave:string})=>d).handler(async ({data})=>{
   if(SEFAZ_URL) return callProxy("consultarCte", data);

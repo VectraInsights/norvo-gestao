@@ -182,7 +182,7 @@ export async function handleSefazProxy(request: Request): Promise<Response> {
             if (chs.length > 0) await supa3.from("cte_nfes_pendentes").update({ status: "embarcada" } as any).in("chave", chs).eq("empresa_id", empresaId);
           } catch (e) { console.log("[CTE-EMBARCADA-ERR]", e); }
         }
-        return json({ ...ret, chave, xml });
+        return json({ sucesso: ret.sucesso, cStat: ret.cStat, xMotivo: ret.xMotivo, chave, protocolo: ret.protocolo });
       }
       case "consultarCte": {
         const { consultarCte } = await import("@/lib/sefaz-cte");
