@@ -101,6 +101,20 @@ function CtePage() {
     };
   }, [docs]);
 
+  // NF-es reservadas em rascunhos: continuam "pendente" no banco (não são deletadas),
+  // mas ficam ocultas da listagem para não serem reutilizadas em outro CT-e.
+  const chavesEmRascunho = useMemo(() => {
+    const s = new Set<string>();
+    for (const d of (docs ?? [])) {
+      if ((d as any).status !== "rascunho") continue;
+      try {
+        const p = JSON.parse((d as any).xml_assinado || "{}");
+        for (const c of (p.chavesNFe || [])) if (c) s.add(String(c));
+      } catch {}
+    }
+    return s;
+  }, [docs]);
+
   const filteredDocs = useMemo(() => {
     switch (statusTab) {
       case "autorizados": return docsByStatus.autorizados;
@@ -235,7 +249,7 @@ function CtePage() {
   });
   useEffect(() => {
     if (pendentesDB) {
-      const mapped = pendentesDB.map(r => ({
+      const mapped = pendentesDB.filter(r => !chavesEmRascunho.has(r.chave)).map(r => ({
         chave: r.chave,
         nNF: r.n_nf || "",
         serie: r.serie || "1",
@@ -280,7 +294,7 @@ function CtePage() {
         }));
       }
     }
-  }, [pendentesDB]);
+  }, [pendentesDB, chavesEmRascunho]);
 
   // Motoristas (cargo contém Motorista), Veículos e Seguradoras para menus tipo CFOP
   const [motoristaOpen, setMotoristaOpen] = useState(false);
@@ -652,23 +666,11 @@ function CtePage() {
 
   const excluirRascunho = async (doc: CteDoc) => {
     if (!empresa) return;
-    if (!confirm("Excluir este rascunho? As NF-e voltam para pendentes.")) return;
+    if (!confirm("Excluir este rascunho? As NF-e reservadas nele voltam para a lista.")) return;
     try {
-      const parsed = JSON.parse(doc.xml_assinado || "{}");
       await supabase.from("cte_documentos" as any).delete().eq("id", doc.id);
-      if (parsed.nfs && parsed.nfs.length > 0) {
-        for (const nf of parsed.nfs) {
-          await supabase.from("cte_nfes_pendentes" as any).upsert({
-            empresa_id: empresa.id, chave: nf.chave, n_nf: nf.nNF, serie: nf.serie,
-            emit_nome: nf.emit, emit_cnpj: nf.emitCnpj, emit_uf: nf.emitUF, emit_cmun: nf.emitCMun, emit_xmun: nf.emitXMun,
-            dest_nome: nf.dest, dest_cnpj: nf.destCnpj, dest_uf: nf.destUF, dest_cmun: nf.destCMun, dest_xmun: nf.destXMun,
-            valor: nf.valor, peso: nf.peso, data_emissao: nf.data || null,
-            tomador_nome: nf.tomador, tomador_cnpj: nf.tomadorCnpj, tomador_uf: nf.tomadorUF, tomador_cmun: nf.tomadorCMun, tomador_xmun: nf.tomadorXMun,
-            mod_frete: nf.modFrete, status: "pendente",
-          }, { onConflict: "empresa_id,chave" });
-        }
-      }
-      toast.success("Rascunho excluído — NF-e voltaram para pendentes");
+      // NF-es nunca saíram do "pendente" (reserva, não delete) — só reaparecem na lista
+      toast.success("Rascunho excluído — NF-e liberadas para uso");
       qc.invalidateQueries({ queryKey: ["cte-documentos"] });
       qc.invalidateQueries({ queryKey: ["cte-nfes-pendentes", empresa.id] });
     } catch (e: any) {
@@ -728,9 +730,9 @@ function CtePage() {
       if (editingRascunhoId) {
         await supabase.from("cte_documentos" as any).delete().eq("id", editingRascunhoId);
       }
-      if (empresa && chaves.length > 0) {
-        await supabase.from("cte_nfes_pendentes" as any).delete().in("chave", chaves).eq("empresa_id", empresa.id);
-      }
+      // NÃO deleta as NF-es: elas continuam "pendente" no banco e ficam ocultas
+      // da listagem via chavesEmRascunho (reserva). Assim emissão/cancelamento
+      // sempre encontram as linhas para embarcar/reverter.
     },
     onSuccess: () => {
       toast.success("Rascunho salvo");
@@ -829,8 +831,10 @@ function CtePage() {
           const chavesNfe = [...xmlStr.matchAll(/<chNFe>(\d{44})<\/chNFe>/g)].map((m: any)=>m[1]);
           console.log("[CTE-CANCEL-REVERT] chave:", ret.chave, "chavesNfe:", chavesNfe);
           if (chavesNfe.length > 0) {
-            const { error } = await supabase.from("cte_nfes_pendentes" as any).update({ status: "pendente" }).in("chave", chavesNfe).eq("empresa_id", empresa.id);
-            console.log("[CTE-CANCEL-REVERT] update error:", error);
+            const { data: revertidas, error } = await supabase.from("cte_nfes_pendentes" as any).update({ status: "pendente" }).in("chave", chavesNfe).eq("empresa_id", empresa.id).select("id");
+            console.log("[CTE-CANCEL-REVERT] revertidas:", revertidas?.length, "update error:", error);
+            if (error) toast.error(`CT-e cancelado, mas falha ao devolver NF-e: ${error.message}`);
+            else if ((revertidas?.length || 0) < chavesNfe.length) toast.info("CT-e cancelado. Algumas NF-es não estavam mais na base — reimporte o XML se precisar.");
             qc.invalidateQueries({ queryKey: ["cte-nfes-pendentes", empresa.id] });
           }
         }
@@ -1010,7 +1014,7 @@ function CtePage() {
               <UploadCloud className="h-4 w-4" /> Importar NFes (XML)
               <input type="file" accept=".xml" multiple className="hidden" onChange={e => { if (e.target.files) handleImportNFeXml(e.target.files); e.currentTarget.value = ""; }} />
             </label>
-            <Button variant="outline" size="sm" onClick={async () => { if (!empresa) return; if (mercadorias.length === 0) return; if (!confirm(`Remover ${mercadorias.length} NF-e(s) pendentes?`)) return; const { error } = await supabase.from("cte_nfes_pendentes" as any).delete().eq("empresa_id", empresa.id).eq("status", "pendente"); if (error) toast.error(error.message); else { setMercadorias([]); setSelecionadas(new Set()); qc.invalidateQueries({ queryKey: ["cte-nfes-pendentes", empresa.id] }); toast.success("Pendentes removidos"); } }} disabled={mercadorias.length===0}><Trash2 className="mr-1 h-3 w-3" /> Limpar</Button>
+            <Button variant="outline" size="sm" onClick={async () => { if (!empresa) return; const visiveis = mercadorias.map(m => m.chave); if (visiveis.length === 0) return; if (!confirm(`Remover ${visiveis.length} NF-e(s) pendentes? (as reservadas em rascunho são mantidas)`)) return; const { error } = await supabase.from("cte_nfes_pendentes" as any).delete().in("chave", visiveis).eq("empresa_id", empresa.id).eq("status", "pendente"); if (error) toast.error(error.message); else { setMercadorias([]); setSelecionadas(new Set()); qc.invalidateQueries({ queryKey: ["cte-nfes-pendentes", empresa.id] }); toast.success("Pendentes removidos"); } }} disabled={mercadorias.length===0}><Trash2 className="mr-1 h-3 w-3" /> Limpar</Button>
             <Button variant="outline" size="sm" onClick={async () => { if (!empresa) return; try { await excluirRejeitadosCteFn({ data: { empresaId: empresa.id } }); toast.success("CT-e rejeitados excluídos"); qc.invalidateQueries({ queryKey: ["cte-documentos"] }); } catch(e:any) { toast.error(e.message); } }}><Trash2 className="mr-1 h-3 w-3" /> Limpar Rejeitados</Button>
             <div className="ml-auto flex gap-2">
               <Button
