@@ -758,6 +758,7 @@ function CtePage() {
       } } });
     },
     onSuccess: async (ret: any) => {
+      console.log("[CTE-EMITIR-RESP]", JSON.stringify({ sucesso: ret?.sucesso, cStat: ret?.cStat, xMotivo: ret?.xMotivo, motivo: ret?.motivo, chave: ret?.chave, protocolo: ret?.protocolo }));
       if (ret?.sucesso) {
         toast.success(`CT-e ${ret.chave} autorizado` + (ret.protocolo ? ` prot ${ret.protocolo}` : ""));
         setOpen(false);
@@ -774,10 +775,16 @@ function CtePage() {
           setSelecionadas(new Set());
           qc.invalidateQueries({ queryKey: ["cte-nfes-pendentes", empresa.id] });
         }
-      } else toast.error(ret?.xMotivo || ret?.motivo || "Rejeitado");
+      } else toast.error([ret?.cStat, ret?.xMotivo || ret?.motivo].filter(Boolean).join(" ") || "Rejeitado sem retorno do servidor — abra o console (F12) e me mande a linha [CTE-EMITIR-RESP]");
       qc.invalidateQueries({ queryKey: ["cte-documentos"] });
     },
-    onError: (e: Error) => toast.error(e.message),
+    onError: (e: Error) => {
+      console.error("[CTE-EMITIR-ERR]", e);
+      toast.error(`Falha no envio: ${e.message}`);
+      // sucesso pode ter ocorrido no servidor mesmo com erro de transporte — recarrega a lista
+      qc.invalidateQueries({ queryKey: ["cte-documentos"] });
+      qc.invalidateQueries({ queryKey: ["cte-nfes-pendentes", empresa?.id] });
+    },
   });
 
   const consultar = useMutation({
