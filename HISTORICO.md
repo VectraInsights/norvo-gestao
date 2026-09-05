@@ -868,6 +868,27 @@ Commits: CF `2621c5e` → `bab9d3d` → `7db03b6` → `e283493` → `d436038` �
 
 ---
 
+## CT-e: correções IE, modelo, DACTE PDF e default ambiente (04/09/2026)
+
+Sessão de correções no fluxo de emissão CT-e:
+
+1. **IE emitente "Indisponível"**: o regex `/^\d{2,14}$/` excluía valores como "ISENTO" do XML. Removido — agora `<IE>` é incluído sempre que `input.emit.ie` existe (inclusive "ISENTO").
+
+2. **Modelo "65" (NFC-e) hardcoded**: adicionado campo `modelo` ao `CteInputCompleto`, ao `emptyForm` (default "57"), ao build do XML (`<mod>`) e à geração da chave de acesso. Select no formulário permite alternar entre 57 (CT-e) e 65 (NFC-e CT-e). Tabela mostra modelo dinâmico.
+
+3. **DACTE PDF com campos errados**: seletores XML no `downloadPdf` estavam errados:
+   - CFOP: lido de `infCarga > infQ > tpUnid` → corrigido para `ide > CFOP`
+   - vCarga: lido de `infCarga > vMerc` → corrigido para `infCarga > vCarga`
+   - qCarga: lido de `infCarga > qCarga` → corrigido para `infCarga > infQ > qCarga`
+   - Remetente/Destinatário: adicionados endereço, CEP, IE completos
+   - Natureza da operação: lida do XML (`ide > natOp`) em vez de hardcoded
+
+4. **Default ambiente**: confirmado "Homologação" (já estava correto)
+
+Commits: `eadcf5a` + CF Worker `de541e6e`
+
+---
+
 ## Regras de segurança
 
 - NUNCA commitar tokens/senhas (GitHub PAT, senhas de banco, service keys).
