@@ -145,11 +145,15 @@ export function buildCteXml(input: CteInputCompleto): { xml: string; chave: stri
   const pICMS = Number(icms.pICMS ?? 0).toFixed(2);
   const vICMS = Number(icms.vICMS ?? 0).toFixed(2);
   let impXml: string;
-  if (cst === "00") impXml = `<imp><ICMS><ICMS00><CST>00</CST><vBC>${vBC}</vBC><pICMS>${pICMS}</pICMS><vICMS>${vICMS}</vICMS></ICMS00></ICMS></imp>`;
-  else if (cst === "20") impXml = `<imp><ICMS><ICMS20><CST>20</CST><pRedBC>0.00</pRedBC><vBC>${vBC}</vBC><pICMS>${pICMS}</pICMS><vICMS>${vICMS}</vICMS></ICMS20></ICMS></imp>`;
-  else if (cst === "45") impXml = `<imp><ICMS><ICMS45><CST>45</CST></ICMS45></ICMS></imp>`;
-  else if (cst === "60") impXml = `<imp><ICMS><ICMS60><CST>60</CST><vBCSTRet>0.00</vBCSTRet><vICMSSTRet>0.00</vICMSSTRet><pICMSSTRet>0.00</pICMSSTRet><vCred>0.00</vCred></ICMS60></ICMS></imp>`;
-  else impXml = `<imp><ICMS><ICMS90><CST>${cst}</CST><pRedBC>0.00</pRedBC><vBC>${vBC}</vBC><pICMS>${pICMS}</pICMS><vICMS>${vICMS}</vICMS><vCred>0.00</vCred></ICMS90></ICMS></imp>`;
+  if (cst === "00") impXml = `<imp><ICMS><ICMS00><CST>00</CST><vBC>${vBC}</vBC><pICMS>${pICMS}</pICMS><vICMS>${vICMS}</vICMS></ICMS00></ICMS>`;
+  else if (cst === "20") impXml = `<imp><ICMS><ICMS20><CST>20</CST><pRedBC>0.00</pRedBC><vBC>${vBC}</vBC><pICMS>${pICMS}</pICMS><vICMS>${vICMS}</vICMS></ICMS20></ICMS>`;
+  else if (cst === "45") impXml = `<imp><ICMS><ICMS45><CST>45</CST></ICMS45></ICMS>`;
+  else if (cst === "60") impXml = `<imp><ICMS><ICMS60><CST>60</CST><vBCSTRet>0.00</vBCSTRet><vICMSSTRet>0.00</vICMSSTRet><pICMSSTRet>0.00</pICMSSTRet><vCred>0.00</vCred></ICMS60></ICMS>`;
+  else impXml = `<imp><ICMS><ICMS90><CST>${cst}</CST><pRedBC>0.00</pRedBC><vBC>${vBC}</vBC><pICMS>${pICMS}</pICMS><vICMS>${vICMS}</vICMS><vCred>0.00</vCred></ICMS90></ICMS>`;
+
+  // IBS/CBS — NT 2026.002 obrigatório para CRT=3 em homologação (desde 01/07/2026)
+  const ibsCbsXml = `<IBSCBS><CST>000</CST><cClassTrib>100101</cClassTrib><gIBSCBS><vBC>${vBC}</vBC><gIBSUF><pIBSUF>0.00</pIBSUF><vIBSUF>0.00</vIBSUF></gIBSUF><gIBSMun><pIBSMun>0.00</pIBSMun><vIBSMun>0.00</vIBSMun></gIBSMun><gCBS><pCBS>0.90</pCBS><vCBS>${(Number(vBC) * 0.009).toFixed(2)}</vCBS></gCBS></gIBSCBS></IBSCBS></imp>`;
+  impXml += ibsCbsXml;
 
   // infNFe — schema exige <chNFe>, não <chave>
   const infNFeXml = (input.chavesNFe && input.chavesNFe.length > 0)
