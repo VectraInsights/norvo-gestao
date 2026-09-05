@@ -51,6 +51,21 @@ function CtePage() {
   const [editingRascunhoId, setEditingRascunhoId] = useState<string | null>(null);
   const [statusTab, setStatusTab] = useState("autorizados");
 
+  // Cancelamento: justificativas pré-salvas (SEFAZ exige mín. 15 caracteres).
+  // A última usada fica salva e já vem selecionada na próxima vez.
+  const JUSTIFICATIVAS_CANCELAMENTO = [
+    "Cancelamento por emissão incorreta do CT-e",
+    "CT-e emitido com erro de preenchimento dos dados",
+    "Valor da prestação informado incorretamente",
+    "Dados do tomador informados incorretamente",
+    "CT-e emitido em duplicidade",
+  ];
+  const [cancelTarget, setCancelTarget] = useState<{ chave: string; protocolo?: string; numero?: string | null } | null>(null);
+  const [cancelJust, setCancelJust] = useState(() => {
+    try { return localStorage.getItem("norvo_cte_cancel_just") || JUSTIFICATIVAS_CANCELAMENTO[0]; }
+    catch { return JUSTIFICATIVAS_CANCELAMENTO[0]; }
+  });
+
   const mercadoriasSorted = useMemo(() => {
     const arr = [...mercadorias];
     arr.sort((a, b) => {
@@ -797,10 +812,10 @@ function CtePage() {
   });
 
   const cancelar = useMutation({
-    mutationFn: async ({ chave, protocolo }: { chave: string; protocolo?: string }) => {
+    mutationFn: async ({ chave, protocolo, justificativa }: { chave: string; protocolo?: string; justificativa: string }) => {
       if (!empresa) throw new Error("Empresa não selecionada");
-      const just = prompt("Justificativa de cancelamento (mín. 15 caracteres):") || "";
-      if (just.length < 15) throw new Error("Justificativa muito curta");
+      const just = (justificativa || "").trim();
+      if (just.length < 15) throw new Error("Justificativa muito curta (mín. 15 caracteres)");
       const ret = await cancelarCteFn({ data: { empresaId: empresa.id, chave, justificativa: just, protocolo } });
       return { ...ret, chave };
     },
@@ -1087,7 +1102,7 @@ function CtePage() {
                         )}
                       </>
                     )}
-                    {!isRascunho && <Button size="icon" variant="ghost" className="h-7 w-7 text-destructive" disabled={d.status!=="autorizado"} onClick={() => d.chave_acesso && cancelar.mutate({ chave: d.chave_acesso, protocolo: d.protocolo_sefaz || undefined })} title="Cancelar"><Ban className="h-3.5 w-3.5" /></Button>}
+                    {!isRascunho && <Button size="icon" variant="ghost" className="h-7 w-7 text-destructive" disabled={d.status!=="autorizado"} onClick={() => d.chave_acesso && setCancelTarget({ chave: d.chave_acesso, protocolo: d.protocolo_sefaz || undefined, numero: (d as any).numero ?? null })} title="Cancelar"><Ban className="h-3.5 w-3.5" /></Button>}
                   </TableCell></TableRow>
                   );
                 })}</TableBody>
@@ -1834,6 +1849,49 @@ function CtePage() {
             <Button variant="outline" onClick={() => setPreviewOpen(false)}>Fechar</Button>
             <Button onClick={() => { setPreviewOpen(false); emitir.mutate(); }} disabled={emitir.isPending || !form.cnpjTomador || !form.xNomeTomador}>
               {emitir.isPending ? "Enviando..." : <><Truck className="mr-1 h-3.5 w-3.5" /> Enviar Doc-e</>}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+      <Dialog open={!!cancelTarget} onOpenChange={(o) => { if (!o) setCancelTarget(null); }}>
+        <DialogContent className="max-w-md">
+          <DialogHeader><DialogTitle>Cancelar CT-e {cancelTarget?.numero ?? ""}</DialogTitle></DialogHeader>
+          <div className="space-y-3">
+            <div className="space-y-1">
+              <Label>Motivo pré-salvo</Label>
+              <Select
+                value={JUSTIFICATIVAS_CANCELAMENTO.includes(cancelJust) ? cancelJust : "__custom"}
+                onValueChange={(v) => { if (v !== "__custom") setCancelJust(v); }}
+              >
+                <SelectTrigger><SelectValue placeholder="Escolha o motivo" /></SelectTrigger>
+                <SelectContent>
+                  {JUSTIFICATIVAS_CANCELAMENTO.map(j => <SelectItem key={j} value={j}>{j}</SelectItem>)}
+                  <SelectItem value="__custom">Outro (digitar abaixo)</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-1">
+              <Label>Justificativa (mín. 15 caracteres)</Label>
+              <Textarea rows={3} value={cancelJust} onChange={(e) => setCancelJust(e.target.value)} />
+              <p className={`text-xs ${cancelJust.trim().length >= 15 ? "text-emerald-600" : "text-muted-foreground"}`}>
+                {cancelJust.trim().length} caracteres (mín. 15)
+              </p>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setCancelTarget(null)}>Voltar</Button>
+            <Button
+              variant="destructive"
+              disabled={cancelar.isPending || cancelJust.trim().length < 15}
+              onClick={() => {
+                if (!cancelTarget) return;
+                const just = cancelJust.trim();
+                try { localStorage.setItem("norvo_cte_cancel_just", just); } catch {}
+                cancelar.mutate({ chave: cancelTarget.chave, protocolo: cancelTarget.protocolo, justificativa: just });
+                setCancelTarget(null);
+              }}
+            >
+              {cancelar.isPending ? "Cancelando..." : "Confirmar cancelamento"}
             </Button>
           </DialogFooter>
         </DialogContent>
