@@ -1199,7 +1199,7 @@ Commits: CF `9cb5ba6` + Vercel `d68234b`
   (nome, CNPJ com busca BrasilAPI, apólice, averbação; edição inline, exclusão).
   CT-e passa a listar na aba Transporte.
 
-Commits: CF `[pendente]` + Vercel `[pendente]`
+Commits: CF `e3f9901` + Vercel `914662a`
 
 ---
 
