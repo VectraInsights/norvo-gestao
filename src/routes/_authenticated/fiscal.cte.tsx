@@ -1446,21 +1446,6 @@ function CtePage() {
                 </div>
               </Card>
 
-              {/* Componentes do Valor do Serviço */}
-              <Card className="p-2">
-                <h5 className="text-xs font-semibold mb-1">Componentes do Valor do Serviço</h5>
-                <div className="border rounded overflow-hidden">
-                  <div className="grid grid-cols-[1fr_140px] bg-muted text-[10px] font-semibold">
-                    <div className="px-2 py-1">NOME</div>
-                    <div className="px-2 py-1 border-l text-right">VALOR</div>
-                  </div>
-                  <div className="grid grid-cols-[1fr_140px] border-t text-xs">
-                    <div className="px-2 py-1.5 font-medium">FRETE</div>
-                    <div className="px-1 py-1 border-l"><MoneyInput className="h-6 text-xs text-right" value={form.vPrest} onChange={v => setForm({ ...form, vPrest: v })} placeholder="0,00" /></div>
-                  </div>
-                </div>
-              </Card>
-
               {/* Rota: Origem / Destino */}
               <Card className="p-3">
                 <div className="flex items-center gap-2 mb-2">
