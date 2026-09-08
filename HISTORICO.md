@@ -907,7 +907,7 @@ Commits: CF `30a5bc2` + Vercel `538f4e1`
   spinner durante a busca. IE continua editável inline (BrasilAPI não retorna IE).
 - `buildCteXml` não usa esses campos (CTeSimp não tem exped/receb) — só tela/rascunho.
 
-Commits: CF `[pendente]` + Vercel `[pendente]`
+Commits: CF `e05db7a` + Vercel `ec1f93f`
 
 ---
 
