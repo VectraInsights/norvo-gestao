@@ -1003,6 +1003,17 @@ Commits: CF `2dd07ae` + Vercel `b523319`
 
 ---
 
+## CT-e Geral: Mod/Série compacto + Tomador de volta p/ baixo (08/09/2026)
+
+- Mod/Série com largura fixa (92px, centralizado, coluna `auto`).
+- Ordem restaurada: Remetente/Destinatário → Consignatário/Redespacho → Tomador →
+  Componentes do Valor → Rota.
+- Removido `(toma X)` do título do Tomador.
+
+Commits: CF `[pendente]` + Vercel `[pendente]`
+
+---
+
 ## Regras de segurança
 
 - NUNCA commitar tokens/senhas (GitHub PAT, senhas de banco, service keys).

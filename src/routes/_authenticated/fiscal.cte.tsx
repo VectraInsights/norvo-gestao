@@ -1210,7 +1210,7 @@ function CtePage() {
             {/* === TAB: Geral === */}
             <TabsContent value="geral" className="mt-3 space-y-3">
               {/* Header: Ambiente, Nº Conhecimento, Data, CFOP, Mod/Ser */}
-              <div className="grid grid-cols-2 md:grid-cols-5 gap-2 border rounded p-3 bg-muted/20">
+              <div className="grid grid-cols-2 md:grid-cols-[1fr_1fr_1fr_1fr_auto] gap-2 border rounded p-3 bg-muted/20">
                 <div>
                   <Label className="text-[10px] text-muted-foreground">Ambiente</Label>
                   <ToggleGroup type="single" value={form.ambiente} onValueChange={v => { if (v) setForm({...form, ambiente: v as "homologacao" | "producao"}); }} className="bg-background border rounded-md h-7 mt-0.5">
@@ -1256,60 +1256,9 @@ function CtePage() {
                   </Popover>
                   <p className="text-[9px] text-muted-foreground mt-1">Digite só números (5352) — salva com ponto (5.352) na descrição.</p>
                 </div>
-                <div><Label className="text-[10px] text-muted-foreground">Mod / Série</Label><Input className="h-7 text-xs font-mono" value="57 / 001" readOnly /></div>
+                <div><Label className="text-[10px] text-muted-foreground">Mod / Série</Label><Input className="h-7 text-xs font-mono w-[92px] text-center px-1" value="57 / 001" readOnly /></div>
               </div>
 
-              {/* Tomador */}
-              <Card className="p-2">
-                <div className="flex items-center gap-2 mb-1">
-                  <div className="h-5 w-5 rounded bg-primary/10 grid place-items-center"><UsersRound className="h-3 w-3 text-primary" /></div>
-                  <h5 className="text-xs font-semibold">Tomador do Serviço</h5>
-                  <span className="text-[10px] text-muted-foreground">(toma {form.toma})</span>
-                </div>
-                <div className="grid grid-cols-6 gap-1">
-                  <Select value={form.toma} onValueChange={v => aplicarTomadorPorToma(v)}>
-                    <SelectTrigger className="h-6 text-[10px] col-span-2"><SelectValue /></SelectTrigger>
-                    <SelectContent>
-                      {MOD_FRETE_OPTIONS.map(opt => (
-                        <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  <div className="col-span-2 flex gap-1">
-                    <Input className="h-6 text-[10px] font-mono" placeholder="CNPJ *" value={fmtCnpjInput(form.cnpjTomador || "")} onChange={e => {
-                      const digits = e.target.value.replace(/\D/g, "").slice(0, 14);
-                      setForm({ ...form, cnpjTomador: digits });
-                      if (digits.length === 14 && digits !== lastLookupTomador.current) { lastLookupTomador.current = digits; lookupTomador(digits); }
-                    }} maxLength={18} />
-                    <Button type="button" size="icon" variant="ghost" className="h-6 w-6 shrink-0" disabled={lookingUpTomador} onClick={() => { const d = (form.cnpjTomador || "").replace(/\D/g, ""); if (d.length !== 14) { toast.error("CNPJ deve ter 14 dígitos"); return; } lastLookupTomador.current = d; lookupTomador(d); }} title="Buscar CNPJ">{lookingUpTomador ? <Loader2 className="h-3 w-3 animate-spin" /> : <Search className="h-3 w-3" />}</Button>
-                  </div>
-                  <Input className="h-6 text-[10px] col-span-2" placeholder="Nome / Razão Social *" value={form.xNomeTomador} onChange={e=>setForm({...form,xNomeTomador:e.target.value})} />
-                  <Input className="h-6 text-[10px]" placeholder="UF" value={form.ufTomador} onChange={e=>setForm({...form,ufTomador:e.target.value.toUpperCase()})} maxLength={2} />
-                  <Input className="h-6 text-[10px] col-span-2" placeholder="Município" value={form.xMunTomador} onChange={e=>setForm({...form,xMunTomador:e.target.value})} />
-                  <Input className="h-6 text-[10px]" placeholder="IE" value={form.ieTomador} onChange={e=>setForm({...form,ieTomador:e.target.value})} />
-                  <Input className="h-6 text-[10px]" placeholder="CEP" value={form.cepTomador} onChange={e=>setForm({...form,cepTomador:e.target.value})} maxLength={8} />
-                  <Input className="h-6 text-[10px] col-span-3" placeholder="Logradouro" value={form.logradouroTomador} onChange={e=>setForm({...form,logradouroTomador:e.target.value})} />
-                  <Input className="h-6 text-[10px]" placeholder="Nº" value={form.nroTomador} onChange={e=>setForm({...form,nroTomador:e.target.value})} />
-                  <Input className="h-6 text-[10px]" placeholder="Bairro" value={form.bairroTomador} onChange={e=>setForm({...form,bairroTomador:e.target.value})} />
-                  <Input className="h-6 text-[10px] col-span-2" placeholder="Telefone" value={form.foneTomador} onChange={e=>setForm({...form,foneTomador:e.target.value})} />
-                  <Input className="h-6 text-[10px] col-span-2" placeholder="E-mail" value={form.emailTomador} onChange={e=>setForm({...form,emailTomador:e.target.value})} />
-                </div>
-              </Card>
-
-              {/* Componentes do Valor do Serviço */}
-              <Card className="p-2">
-                <h5 className="text-xs font-semibold mb-1">Componentes do Valor do Serviço</h5>
-                <div className="border rounded overflow-hidden">
-                  <div className="grid grid-cols-[1fr_140px] bg-muted text-[10px] font-semibold">
-                    <div className="px-2 py-1">NOME</div>
-                    <div className="px-2 py-1 border-l text-right">VALOR</div>
-                  </div>
-                  <div className="grid grid-cols-[1fr_140px] border-t text-xs">
-                    <div className="px-2 py-1.5 font-medium">FRETE</div>
-                    <div className="px-1 py-1 border-l"><MoneyInput className="h-6 text-xs text-right" value={form.vPrest} onChange={v => setForm({ ...form, vPrest: v })} placeholder="0,00" /></div>
-                  </div>
-                </div>
-              </Card>
               {mercadorias.length > 0 ? (() => {
                 const sel = mercadorias.filter(m => selecionadas.has(m.chave));
                 const active = sel.length > 0 ? sel[0] : mercadorias[0];
@@ -1419,6 +1368,57 @@ function CtePage() {
                 ) : <p className="text-[10px] text-muted-foreground">Digite o CNPJ para buscar os dados automaticamente</p>}
               </Card>
               </div>
+
+              {/* Tomador */}
+              <Card className="p-2">
+                <div className="flex items-center gap-2 mb-1">
+                  <div className="h-5 w-5 rounded bg-primary/10 grid place-items-center"><UsersRound className="h-3 w-3 text-primary" /></div>
+                  <h5 className="text-xs font-semibold">Tomador do Serviço</h5>
+                </div>
+                <div className="grid grid-cols-6 gap-1">
+                  <Select value={form.toma} onValueChange={v => aplicarTomadorPorToma(v)}>
+                    <SelectTrigger className="h-6 text-[10px] col-span-2"><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      {MOD_FRETE_OPTIONS.map(opt => (
+                        <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <div className="col-span-2 flex gap-1">
+                    <Input className="h-6 text-[10px] font-mono" placeholder="CNPJ *" value={fmtCnpjInput(form.cnpjTomador || "")} onChange={e => {
+                      const digits = e.target.value.replace(/\D/g, "").slice(0, 14);
+                      setForm({ ...form, cnpjTomador: digits });
+                      if (digits.length === 14 && digits !== lastLookupTomador.current) { lastLookupTomador.current = digits; lookupTomador(digits); }
+                    }} maxLength={18} />
+                    <Button type="button" size="icon" variant="ghost" className="h-6 w-6 shrink-0" disabled={lookingUpTomador} onClick={() => { const d = (form.cnpjTomador || "").replace(/\D/g, ""); if (d.length !== 14) { toast.error("CNPJ deve ter 14 dígitos"); return; } lastLookupTomador.current = d; lookupTomador(d); }} title="Buscar CNPJ">{lookingUpTomador ? <Loader2 className="h-3 w-3 animate-spin" /> : <Search className="h-3 w-3" />}</Button>
+                  </div>
+                  <Input className="h-6 text-[10px] col-span-2" placeholder="Nome / Razão Social *" value={form.xNomeTomador} onChange={e=>setForm({...form,xNomeTomador:e.target.value})} />
+                  <Input className="h-6 text-[10px]" placeholder="UF" value={form.ufTomador} onChange={e=>setForm({...form,ufTomador:e.target.value.toUpperCase()})} maxLength={2} />
+                  <Input className="h-6 text-[10px] col-span-2" placeholder="Município" value={form.xMunTomador} onChange={e=>setForm({...form,xMunTomador:e.target.value})} />
+                  <Input className="h-6 text-[10px]" placeholder="IE" value={form.ieTomador} onChange={e=>setForm({...form,ieTomador:e.target.value})} />
+                  <Input className="h-6 text-[10px]" placeholder="CEP" value={form.cepTomador} onChange={e=>setForm({...form,cepTomador:e.target.value})} maxLength={8} />
+                  <Input className="h-6 text-[10px] col-span-3" placeholder="Logradouro" value={form.logradouroTomador} onChange={e=>setForm({...form,logradouroTomador:e.target.value})} />
+                  <Input className="h-6 text-[10px]" placeholder="Nº" value={form.nroTomador} onChange={e=>setForm({...form,nroTomador:e.target.value})} />
+                  <Input className="h-6 text-[10px]" placeholder="Bairro" value={form.bairroTomador} onChange={e=>setForm({...form,bairroTomador:e.target.value})} />
+                  <Input className="h-6 text-[10px] col-span-2" placeholder="Telefone" value={form.foneTomador} onChange={e=>setForm({...form,foneTomador:e.target.value})} />
+                  <Input className="h-6 text-[10px] col-span-2" placeholder="E-mail" value={form.emailTomador} onChange={e=>setForm({...form,emailTomador:e.target.value})} />
+                </div>
+              </Card>
+
+              {/* Componentes do Valor do Serviço */}
+              <Card className="p-2">
+                <h5 className="text-xs font-semibold mb-1">Componentes do Valor do Serviço</h5>
+                <div className="border rounded overflow-hidden">
+                  <div className="grid grid-cols-[1fr_140px] bg-muted text-[10px] font-semibold">
+                    <div className="px-2 py-1">NOME</div>
+                    <div className="px-2 py-1 border-l text-right">VALOR</div>
+                  </div>
+                  <div className="grid grid-cols-[1fr_140px] border-t text-xs">
+                    <div className="px-2 py-1.5 font-medium">FRETE</div>
+                    <div className="px-1 py-1 border-l"><MoneyInput className="h-6 text-xs text-right" value={form.vPrest} onChange={v => setForm({ ...form, vPrest: v })} placeholder="0,00" /></div>
+                  </div>
+                </div>
+              </Card>
 
               {/* Rota: Origem / Destino */}
               <Card className="p-3">
