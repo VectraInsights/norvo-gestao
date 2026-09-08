@@ -873,7 +873,7 @@ function CtePage() {
   const cancelar = useMutation({
     mutationFn: async ({ chave, protocolo }: { chave: string; protocolo?: string }) => {
       if (!empresa) throw new Error("Empresa não selecionada");
-      const just = prompt("Justificativa de cancelamento (mín. 15 caracteres):") || "";
+      const just = prompt("Justificativa de cancelamento (mín. 15 caracteres):", "CT-e cancelado por erro nos dados da prestação do serviço") || "";
       if (just.length < 15) throw new Error("Justificativa muito curta");
       const ret = await cancelarCteFn({ data: { empresaId: empresa.id, chave, justificativa: just, protocolo } });
       return { ...ret, chave };
