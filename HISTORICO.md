@@ -1071,6 +1071,16 @@ Commits: CF `41efded` + Vercel `f044351`
 
 ---
 
+## CT-e: fix erro 360 — IBSCBSTot no total (08/09/2026)
+
+- Após o fix do 310, SEFAZ retornou **360 "Total do DFe de preenchimento obrigatório"**.
+- Fix: `<IBSCBSTot>` (vBCIBSCBS, gIBS/vIBSUF/vIBSMun, vIBS, gCBS/vCBS) dentro do
+  `<total>`, com os mesmos valores do grupo IBSCBS do `<imp>`.
+
+Commits: CF `[pendente]` + Vercel `[pendente]`
+
+---
+
 ## Regras de segurança
 
 - NUNCA commitar tokens/senhas (GitHub PAT, senhas de banco, service keys).

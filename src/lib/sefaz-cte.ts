@@ -191,7 +191,7 @@ export function buildCteXml(input: CteInputCompleto): { xml: string; chave: stri
     ${infNFeXml}
     <infModal versaoModal="4.00"><rodo><RNTRC>${(input.modalRod?.rntrc || input.rntrc || "ISENTO").replace(/\D/g,"") || "ISENTO"}</RNTRC></rodo></infModal>
     ${impXml}
-    <total><vTPrest>${input.vPrest.toFixed(2)}</vTPrest><vTRec>${input.vPrest.toFixed(2)}</vTRec></total>
+    <total><vTPrest>${input.vPrest.toFixed(2)}</vTPrest><vTRec>${input.vPrest.toFixed(2)}</vTRec><IBSCBSTot><vBCIBSCBS>${vBC}</vBCIBSCBS><gIBS><vIBSUF>${vIBSUF.toFixed(2)}</vIBSUF><vIBSMun>0.00</vIBSMun></gIBS><vIBS>${vIBSUF.toFixed(2)}</vIBS><gCBS><vCBS>${vCBS.toFixed(2)}</vCBS></gCBS></IBSCBSTot></total>
     <infRespTec><CNPJ>${cnpjLimpo}</CNPJ><xContato>SUPORTE TECNICO</xContato><email>suporte@vectrainsights.com.br</email><fone>3139952572</fone></infRespTec>
   </infCte>
   <infCTeSupl><qrCodCTe>https://${(input.ufEnv || input.emit.uf)?.toUpperCase() === "MG" ? "portalcte.fazenda.mg.gov.br/portalcte/sistema/qrcode.xhtml" : "dfeportal.svrs.rs.gov.br/cteQrCode"}?chCTe=${chave}&amp;tpAmb=${input.ambiente==="producao"?"1":"2"}</qrCodCTe></infCTeSupl>
