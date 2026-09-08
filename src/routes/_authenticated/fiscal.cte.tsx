@@ -13,7 +13,7 @@ import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
-import { Truck, Plus, FileText, Search, Ban, UploadCloud, FileCode, UsersRound, MapPin, Package, DollarSign, Building2, Route as RouteIcon, Trash2, Filter, Calendar, CheckCircle2, ChevronsUpDown, Check, ReceiptText, Pencil, Download, Settings2, X, Loader2 } from "lucide-react";
+import { Truck, Plus, FileText, Search, Ban, UploadCloud, FileCode, UsersRound, MapPin, Package, Building2, Route as RouteIcon, Trash2, Filter, Calendar, CheckCircle2, ChevronsUpDown, Check, ReceiptText, Pencil, Download, Settings2, X, Loader2, ClipboardList } from "lucide-react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useEmpresaAtual } from "@/hooks/use-empresa";
@@ -184,7 +184,14 @@ function CtePage() {
   };
 
   const [open, setOpen] = useState(false);
-  const emptyForm = { toma: "3", cnpjTomador: "", xNomeTomador: "", ufTomador: "MG", cMunTomador: "3106200", xMunTomador: "BELO HORIZONTE", ieTomador: "", logradouroTomador: "", nroTomador: "", bairroTomador: "", cepTomador: "", foneTomador: "", emailTomador: "", cnpjConsignatario: "", xNomeConsignatario: "", ieConsignatario: "", ufConsignatario: "", xMunConsignatario: "", cepConsignatario: "", logradouroConsignatario: "", nroConsignatario: "", bairroConsignatario: "", cnpjRedespacho: "", xNomeRedespacho: "", ieRedespacho: "", ufRedespacho: "", xMunRedespacho: "", cepRedespacho: "", logradouroRedespacho: "", nroRedespacho: "", bairroRedespacho: "", ambiente: "homologacao" as "homologacao" | "producao", cfop: "5353", vPrest: "0.00", vCarga: "0.00", peso: "0", rntrc: "", icmsCST: "00", icmsBase: "1000.00", icmsAliq: "0.00", icmsValor: "0.00", pisAliq: "0.00", cofinsAliq: "0.00", irAliq: "0.00", inssAliq: "0.00", csllAliq: "0.00", motoristaNome: "", motoristaId: "", ciot: "", placaVeiculo: "", placaReboque: "", semiReboque1: "", semiReboque2: "", seguradoraNome: "", seguradoraId: "", apolice: "", averbacao: "", cMunEnv: "3106200", xMunEnv: "BELO HORIZONTE", ufEnv: "MG", cMunIni: "3106200", xMunIni: "BELO HORIZONTE", ufIni: "MG", cMunFim: "3550308", xMunFim: "SAO PAULO", ufFim: "SP", dataEmissao: new Date().toISOString().slice(0,10) };
+  const emptyForm = { toma: "3", cnpjTomador: "", xNomeTomador: "", ufTomador: "MG", cMunTomador: "3106200", xMunTomador: "BELO HORIZONTE", ieTomador: "", logradouroTomador: "", nroTomador: "", bairroTomador: "", cepTomador: "", foneTomador: "", emailTomador: "", cnpjConsignatario: "", xNomeConsignatario: "", ieConsignatario: "", ufConsignatario: "", xMunConsignatario: "", cepConsignatario: "", logradouroConsignatario: "", nroConsignatario: "", bairroConsignatario: "", cnpjRedespacho: "", xNomeRedespacho: "", ieRedespacho: "", ufRedespacho: "", xMunRedespacho: "", cepRedespacho: "", logradouroRedespacho: "", nroRedespacho: "", bairroRedespacho: "", ambiente: "homologacao" as "homologacao" | "producao", cfop: "5353", vPrest: "0.00", vCarga: "0.00", peso: "0", rntrc: "", icmsCST: "00", icmsBase: "1000.00", icmsAliq: "0.00", icmsValor: "0.00", reducaoBase: "0.00", creditoOutorgado: "0.00", pisAliq: "0.00", cofinsAliq: "0.00", irAliq: "0.00", inssAliq: "0.00", csllAliq: "0.00", motoristaNome: "", motoristaId: "", ciot: "", placaVeiculo: "", placaReboque: "", semiReboque1: "", semiReboque2: "", seguradoraNome: "", seguradoraId: "", apolice: "", averbacao: "", cMunEnv: "3106200", xMunEnv: "BELO HORIZONTE", ufEnv: "MG", cMunIni: "3106200", xMunIni: "BELO HORIZONTE", ufIni: "MG", cMunFim: "3550308", xMunFim: "SAO PAULO", ufFim: "SP", dataEmissao: new Date().toISOString().slice(0,10),
+    produtoPredominante: "", outrasCaracteristicas: "",
+    formaPagamento: "Outros", finalidadeEmissao: "Normal", tipoServico: "Normal", formaEmissao: "Normal",
+    cteReferenciado: "", chaveCompAnulacao: "", dataDeclaracao: "",
+    docAntTranspCnpj: "", docAntTranspNome: "", docAntTranspIE: "", docAntTipo: "Papel",
+    docAnteriores: [] as Array<{ tipoDoc: string; serie: string; subSerie: string; numero: string; dataEmissao: string }>,
+    obsGerais: "", obsAnulacao: "", obsGlobalizado: "",
+  };
   const [form, setForm] = useState(emptyForm);
   const [cfopOpen, setCfopOpen] = useState(false);
   const [cfopQuery, setCfopQuery] = useState("");
@@ -427,6 +434,8 @@ function CtePage() {
   // Tomador: troca de toma recalcula remetente/destinatário; CNPJ manual busca dados
   const [lookingUpTomador, setLookingUpTomador] = useState(false);
   const lastLookupTomador = useRef("");
+  const [lookingUpDocAnt, setLookingUpDocAnt] = useState(false);
+  const lastLookupDocAnt = useRef("");
   const lookupTomador = async (digits: string) => {
     if (digits.length !== 14 || !empresa) return;
     setLookingUpTomador(true);
@@ -1183,17 +1192,17 @@ function CtePage() {
           <Tabs defaultValue="geral" className="w-full">
             <TabsList className="w-full justify-start gap-0 bg-muted/50 rounded-t-md">
               <TabsTrigger value="geral" className="rounded-t-md rounded-b-none text-xs data-[state=active]:bg-background data-[state=active]:shadow-sm"><Settings2 className="mr-1 h-3 w-3" />Geral</TabsTrigger>
+              <TabsTrigger value="impostos" className="rounded-t-md rounded-b-none text-xs data-[state=active]:bg-background data-[state=active]:shadow-sm"><ReceiptText className="mr-1 h-3 w-3" />Tributação</TabsTrigger>
               <TabsTrigger value="docs" className="rounded-t-md rounded-b-none text-xs data-[state=active]:bg-background data-[state=active]:shadow-sm"><FileText className="mr-1 h-3 w-3" />Carga</TabsTrigger>
               <TabsTrigger value="seguros" className="rounded-t-md rounded-b-none text-xs data-[state=active]:bg-background data-[state=active]:shadow-sm"><Truck className="mr-1 h-3 w-3" />Veículos</TabsTrigger>
-              <TabsTrigger value="taxas" className="rounded-t-md rounded-b-none text-xs data-[state=active]:bg-background data-[state=active]:shadow-sm"><DollarSign className="mr-1 h-3 w-3" />Taxas</TabsTrigger>
-              <TabsTrigger value="impostos" className="rounded-t-md rounded-b-none text-xs data-[state=active]:bg-background data-[state=active]:shadow-sm"><ReceiptText className="mr-1 h-3 w-3" />Tributação</TabsTrigger>
+              <TabsTrigger value="status" className="rounded-t-md rounded-b-none text-xs data-[state=active]:bg-background data-[state=active]:shadow-sm"><ClipboardList className="mr-1 h-3 w-3" />Status</TabsTrigger>
               <TabsTrigger value="obs" className="rounded-t-md rounded-b-none text-xs data-[state=active]:bg-background data-[state=active]:shadow-sm"><FileCode className="mr-1 h-3 w-3" />Observações</TabsTrigger>
             </TabsList>
 
             {/* === TAB: Geral === */}
             <TabsContent value="geral" className="mt-3 space-y-3">
-              {/* Header: Ambiente, Nº Conhecimento, Data, CFOP */}
-              <div className="grid grid-cols-1 md:grid-cols-4 gap-2 border rounded p-3 bg-muted/20">
+              {/* Header: Ambiente, Nº Conhecimento, Data, CFOP, Mod/Ser */}
+              <div className="grid grid-cols-2 md:grid-cols-5 gap-2 border rounded p-3 bg-muted/20">
                 <div>
                   <Label className="text-[10px] text-muted-foreground">Ambiente</Label>
                   <ToggleGroup type="single" value={form.ambiente} onValueChange={v => { if (v) setForm({...form, ambiente: v as "homologacao" | "producao"}); }} className="bg-background border rounded-md h-7 mt-0.5">
@@ -1239,7 +1248,60 @@ function CtePage() {
                   </Popover>
                   <p className="text-[9px] text-muted-foreground mt-1">Digite só números (5352) — salva com ponto (5.352) na descrição.</p>
                 </div>
+                <div><Label className="text-[10px] text-muted-foreground">Mod / Série</Label><Input className="h-7 text-xs font-mono" value="57 / 001" readOnly /></div>
               </div>
+
+              {/* Tomador */}
+              <Card className="p-2">
+                <div className="flex items-center gap-2 mb-1">
+                  <div className="h-5 w-5 rounded bg-primary/10 grid place-items-center"><UsersRound className="h-3 w-3 text-primary" /></div>
+                  <h5 className="text-xs font-semibold">Tomador do Serviço</h5>
+                  <span className="text-[10px] text-muted-foreground">(toma {form.toma})</span>
+                </div>
+                <div className="grid grid-cols-6 gap-1">
+                  <Select value={form.toma} onValueChange={v => aplicarTomadorPorToma(v)}>
+                    <SelectTrigger className="h-6 text-[10px] col-span-2"><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      {MOD_FRETE_OPTIONS.map(opt => (
+                        <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <div className="col-span-2 flex gap-1">
+                    <Input className="h-6 text-[10px] font-mono" placeholder="CNPJ *" value={fmtCnpjInput(form.cnpjTomador || "")} onChange={e => {
+                      const digits = e.target.value.replace(/\D/g, "").slice(0, 14);
+                      setForm({ ...form, cnpjTomador: digits });
+                      if (digits.length === 14 && digits !== lastLookupTomador.current) { lastLookupTomador.current = digits; lookupTomador(digits); }
+                    }} maxLength={18} />
+                    <Button type="button" size="icon" variant="ghost" className="h-6 w-6 shrink-0" disabled={lookingUpTomador} onClick={() => { const d = (form.cnpjTomador || "").replace(/\D/g, ""); if (d.length !== 14) { toast.error("CNPJ deve ter 14 dígitos"); return; } lastLookupTomador.current = d; lookupTomador(d); }} title="Buscar CNPJ">{lookingUpTomador ? <Loader2 className="h-3 w-3 animate-spin" /> : <Search className="h-3 w-3" />}</Button>
+                  </div>
+                  <Input className="h-6 text-[10px] col-span-2" placeholder="Nome / Razão Social *" value={form.xNomeTomador} onChange={e=>setForm({...form,xNomeTomador:e.target.value})} />
+                  <Input className="h-6 text-[10px]" placeholder="UF" value={form.ufTomador} onChange={e=>setForm({...form,ufTomador:e.target.value.toUpperCase()})} maxLength={2} />
+                  <Input className="h-6 text-[10px] col-span-2" placeholder="Município" value={form.xMunTomador} onChange={e=>setForm({...form,xMunTomador:e.target.value})} />
+                  <Input className="h-6 text-[10px]" placeholder="IE" value={form.ieTomador} onChange={e=>setForm({...form,ieTomador:e.target.value})} />
+                  <Input className="h-6 text-[10px]" placeholder="CEP" value={form.cepTomador} onChange={e=>setForm({...form,cepTomador:e.target.value})} maxLength={8} />
+                  <Input className="h-6 text-[10px] col-span-3" placeholder="Logradouro" value={form.logradouroTomador} onChange={e=>setForm({...form,logradouroTomador:e.target.value})} />
+                  <Input className="h-6 text-[10px]" placeholder="Nº" value={form.nroTomador} onChange={e=>setForm({...form,nroTomador:e.target.value})} />
+                  <Input className="h-6 text-[10px]" placeholder="Bairro" value={form.bairroTomador} onChange={e=>setForm({...form,bairroTomador:e.target.value})} />
+                  <Input className="h-6 text-[10px] col-span-2" placeholder="Telefone" value={form.foneTomador} onChange={e=>setForm({...form,foneTomador:e.target.value})} />
+                  <Input className="h-6 text-[10px] col-span-2" placeholder="E-mail" value={form.emailTomador} onChange={e=>setForm({...form,emailTomador:e.target.value})} />
+                </div>
+              </Card>
+
+              {/* Componentes do Valor do Serviço */}
+              <Card className="p-2">
+                <h5 className="text-xs font-semibold mb-1">Componentes do Valor do Serviço</h5>
+                <div className="border rounded overflow-hidden">
+                  <div className="grid grid-cols-[1fr_140px] bg-muted text-[10px] font-semibold">
+                    <div className="px-2 py-1">NOME</div>
+                    <div className="px-2 py-1 border-l text-right">VALOR</div>
+                  </div>
+                  <div className="grid grid-cols-[1fr_140px] border-t text-xs">
+                    <div className="px-2 py-1.5 font-medium">FRETE</div>
+                    <div className="px-1 py-1 border-l"><MoneyInput className="h-6 text-xs text-right" value={form.vPrest} onChange={v => setForm({ ...form, vPrest: v })} placeholder="0,00" /></div>
+                  </div>
+                </div>
+              </Card>
               {mercadorias.length > 0 ? (() => {
                 const sel = mercadorias.filter(m => selecionadas.has(m.chave));
                 const active = sel.length > 0 ? sel[0] : mercadorias[0];
@@ -1350,43 +1412,6 @@ function CtePage() {
               </Card>
               </div>
 
-              {/* Tomador */}
-              <Card className="p-2">
-                <div className="flex items-center gap-2 mb-1">
-                  <div className="h-5 w-5 rounded bg-primary/10 grid place-items-center"><UsersRound className="h-3 w-3 text-primary" /></div>
-                  <h5 className="text-xs font-semibold">Tomador do Serviço</h5>
-                  <span className="text-[10px] text-muted-foreground">(toma {form.toma})</span>
-                </div>
-                <div className="grid grid-cols-6 gap-1">
-                  <Select value={form.toma} onValueChange={v => aplicarTomadorPorToma(v)}>
-                    <SelectTrigger className="h-6 text-[10px] col-span-2"><SelectValue /></SelectTrigger>
-                    <SelectContent>
-                      {MOD_FRETE_OPTIONS.map(opt => (
-                        <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  <div className="col-span-2 flex gap-1">
-                    <Input className="h-6 text-[10px] font-mono" placeholder="CNPJ *" value={fmtCnpjInput(form.cnpjTomador || "")} onChange={e => {
-                      const digits = e.target.value.replace(/\D/g, "").slice(0, 14);
-                      setForm({ ...form, cnpjTomador: digits });
-                      if (digits.length === 14 && digits !== lastLookupTomador.current) { lastLookupTomador.current = digits; lookupTomador(digits); }
-                    }} maxLength={18} />
-                    <Button type="button" size="icon" variant="ghost" className="h-6 w-6 shrink-0" disabled={lookingUpTomador} onClick={() => { const d = (form.cnpjTomador || "").replace(/\D/g, ""); if (d.length !== 14) { toast.error("CNPJ deve ter 14 dígitos"); return; } lastLookupTomador.current = d; lookupTomador(d); }} title="Buscar CNPJ">{lookingUpTomador ? <Loader2 className="h-3 w-3 animate-spin" /> : <Search className="h-3 w-3" />}</Button>
-                  </div>
-                  <Input className="h-6 text-[10px] col-span-2" placeholder="Nome / Razão Social *" value={form.xNomeTomador} onChange={e=>setForm({...form,xNomeTomador:e.target.value})} />
-                  <Input className="h-6 text-[10px]" placeholder="UF" value={form.ufTomador} onChange={e=>setForm({...form,ufTomador:e.target.value.toUpperCase()})} maxLength={2} />
-                  <Input className="h-6 text-[10px] col-span-2" placeholder="Município" value={form.xMunTomador} onChange={e=>setForm({...form,xMunTomador:e.target.value})} />
-                  <Input className="h-6 text-[10px]" placeholder="IE" value={form.ieTomador} onChange={e=>setForm({...form,ieTomador:e.target.value})} />
-                  <Input className="h-6 text-[10px]" placeholder="CEP" value={form.cepTomador} onChange={e=>setForm({...form,cepTomador:e.target.value})} maxLength={8} />
-                  <Input className="h-6 text-[10px] col-span-3" placeholder="Logradouro" value={form.logradouroTomador} onChange={e=>setForm({...form,logradouroTomador:e.target.value})} />
-                  <Input className="h-6 text-[10px]" placeholder="Nº" value={form.nroTomador} onChange={e=>setForm({...form,nroTomador:e.target.value})} />
-                  <Input className="h-6 text-[10px]" placeholder="Bairro" value={form.bairroTomador} onChange={e=>setForm({...form,bairroTomador:e.target.value})} />
-                  <Input className="h-6 text-[10px] col-span-2" placeholder="Telefone" value={form.foneTomador} onChange={e=>setForm({...form,foneTomador:e.target.value})} />
-                  <Input className="h-6 text-[10px] col-span-2" placeholder="E-mail" value={form.emailTomador} onChange={e=>setForm({...form,emailTomador:e.target.value})} />
-                </div>
-              </Card>
-
               {/* Rota: Origem / Destino */}
               <Card className="p-3">
                 <div className="flex items-center gap-2 mb-2">
@@ -1403,7 +1428,29 @@ function CtePage() {
             </TabsContent>
 
             {/* === TAB: Doc Mercadorias === */}
-            <TabsContent value="docs" className="mt-3">
+            <TabsContent value="docs" className="mt-3 space-y-3">
+              {/* Quantidades da Carga */}
+              <Card className="p-2">
+                <h5 className="text-xs font-semibold mb-1">Quantidades da Carga</h5>
+                <div className="border rounded overflow-hidden">
+                  <div className="grid grid-cols-[1fr_1fr_140px] bg-muted text-[10px] font-semibold">
+                    <div className="px-2 py-1">UNIDADE DE MEDIDA</div>
+                    <div className="px-2 py-1 border-l">TIPO DA MEDIDA</div>
+                    <div className="px-2 py-1 border-l text-right">QUANTIDADE DE CARGA</div>
+                  </div>
+                  {(() => {
+                    const base = selecionadas.size > 0 ? mercadorias.filter(m => selecionadas.has(m.chave)) : mercadorias;
+                    const totP = base.reduce((a, m) => a + Number(m.peso || 0), 0);
+                    return (
+                      <div className="grid grid-cols-[1fr_1fr_140px] border-t text-xs">
+                        <div className="px-2 py-1.5">KG</div>
+                        <div className="px-2 py-1.5 border-l">PESO BRUTO</div>
+                        <div className="px-2 py-1.5 border-l text-right font-mono">{totP.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
+                      </div>
+                    );
+                  })()}
+                </div>
+              </Card>
               <Card className="overflow-hidden">
                 <div className="bg-sky-600 text-white px-3 py-1.5 text-xs font-semibold">Mercadorias Transportadas — {mercadorias.filter(m => selecionadas.has(m.chave)).length || mercadorias.length} NF-e(s)</div>
                 <div className="overflow-x-auto max-h-[240px]">
@@ -1452,6 +1499,83 @@ function CtePage() {
                     </TableBody>
                   </Table>
                 </div>
+              </Card>
+
+              {/* Produto Predominante */}
+              <Card className="p-2 space-y-2">
+                <div className="grid grid-cols-1 md:grid-cols-[180px_1fr] gap-1 items-center">
+                  <Label className="text-[10px] text-muted-foreground">* Produto Predominante</Label>
+                  <Input className="h-6 text-[10px]" placeholder="Ex: POSTE MADEIRA TRATADA" value={(form as any).produtoPredominante || ""} onChange={e=>setForm({...form, produtoPredominante: e.target.value} as any)} />
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-[180px_1fr] gap-1 items-center">
+                  <Label className="text-[10px] text-muted-foreground">Outras Características do Produto</Label>
+                  <Input className="h-6 text-[10px]" value={(form as any).outrasCaracteristicas || ""} onChange={e=>setForm({...form, outrasCaracteristicas: e.target.value} as any)} />
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-[180px_200px] gap-1 items-center">
+                  <Label className="text-[10px] text-muted-foreground">Valor Mercadoria</Label>
+                  <Input className="h-6 text-[10px] font-mono bg-muted" value={brl(Number(form.vCarga) || 0)} readOnly />
+                </div>
+              </Card>
+
+              {/* Documentos Anteriores (subcontratação) */}
+              <Card className="p-2 space-y-2">
+                <h5 className="text-xs font-semibold">Documentos Anteriores <span className="text-[9px] font-normal text-muted-foreground">— subcontratação (salvo no rascunho)</span></h5>
+                <div className="grid grid-cols-1 md:grid-cols-[160px_1fr] gap-1 items-center">
+                  <Label className="text-[10px] text-muted-foreground">Tipo Documento</Label>
+                  <Select value={(form as any).docAntTipo || "Papel"} onValueChange={v => setForm({ ...form, docAntTipo: v } as any)}>
+                    <SelectTrigger className="h-6 text-[10px]"><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="Papel">Papel</SelectItem>
+                      <SelectItem value="Eletronico">Eletrônico</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-[160px_1fr] gap-1 items-center">
+                  <Label className="text-[10px] text-muted-foreground">Transportadora Anterior</Label>
+                  <div className="flex gap-1">
+                    <Input className="h-6 text-[10px] w-40 font-mono" placeholder="CNPJ" value={fmtCnpjInput((form as any).docAntTranspCnpj || "")} onChange={e => {
+                      const digits = e.target.value.replace(/\D/g, "").slice(0, 14);
+                      setForm({ ...form, docAntTranspCnpj: digits } as any);
+                      if (digits.length === 14 && digits !== lastLookupDocAnt.current) {
+                        lastLookupDocAnt.current = digits;
+                        (async () => {
+                          setLookingUpDocAnt(true);
+                          try {
+                            const d = await buscarDadosCnpj(digits);
+                            if (d) setForm(f => ({ ...f, docAntTranspNome: d.nome || (f as any).docAntTranspNome, docAntTranspIE: (d as any).ie || (f as any).docAntTranspIE } as any));
+                            else toast.error("CNPJ não encontrado");
+                          } finally { setLookingUpDocAnt(false); }
+                        })();
+                      }
+                    }} maxLength={18} />
+                    <Input className="h-6 text-[10px]" placeholder="Nome da transportadora" value={(form as any).docAntTranspNome || ""} onChange={e=>setForm({...form, docAntTranspNome: e.target.value} as any)} />
+                    <Input className="h-6 text-[10px] w-32" placeholder="IE" value={(form as any).docAntTranspIE || ""} onChange={e=>setForm({...form, docAntTranspIE: e.target.value} as any)} />
+                    {lookingUpDocAnt && <Loader2 className="h-4 w-4 animate-spin self-center" />}
+                  </div>
+                </div>
+                <div className="border rounded overflow-hidden">
+                  <div className="grid grid-cols-[40px_1fr_70px_70px_90px_110px_28px] bg-muted text-[10px] font-semibold">
+                    <div className="px-1 py-1 text-center">ITEM</div>
+                    <div className="px-1 py-1 border-l">TIPO DOCUMENTO</div>
+                    <div className="px-1 py-1 border-l">SÉRIE</div>
+                    <div className="px-1 py-1 border-l">SUB-SÉRIE</div>
+                    <div className="px-1 py-1 border-l">NÚMERO</div>
+                    <div className="px-1 py-1 border-l">DATA EMISSÃO</div>
+                    <div className="px-1 py-1 border-l"></div>
+                  </div>
+                  {((form as any).docAnteriores || []).map((r: any, i: number) => (
+                    <div key={i} className="grid grid-cols-[40px_1fr_70px_70px_90px_110px_28px] border-t">
+                      <div className="px-1 py-1 text-center text-[10px] text-muted-foreground self-center">{i + 1}</div>
+                      <Input className="h-6 text-[10px] rounded-none border-0 border-l" value={r.tipoDoc || ""} onChange={e => { const arr = [...((form as any).docAnteriores || [])]; arr[i] = { ...arr[i], tipoDoc: e.target.value }; setForm({ ...form, docAnteriores: arr } as any); }} />
+                      <Input className="h-6 text-[10px] rounded-none border-0 border-l" value={r.serie || ""} onChange={e => { const arr = [...((form as any).docAnteriores || [])]; arr[i] = { ...arr[i], serie: e.target.value }; setForm({ ...form, docAnteriores: arr } as any); }} />
+                      <Input className="h-6 text-[10px] rounded-none border-0 border-l" value={r.subSerie || ""} onChange={e => { const arr = [...((form as any).docAnteriores || [])]; arr[i] = { ...arr[i], subSerie: e.target.value }; setForm({ ...form, docAnteriores: arr } as any); }} />
+                      <Input className="h-6 text-[10px] rounded-none border-0 border-l" value={r.numero || ""} onChange={e => { const arr = [...((form as any).docAnteriores || [])]; arr[i] = { ...arr[i], numero: e.target.value }; setForm({ ...form, docAnteriores: arr } as any); }} />
+                      <Input className="h-6 text-[10px] rounded-none border-0 border-l" value={r.dataEmissao || ""} onChange={e => { const arr = [...((form as any).docAnteriores || [])]; arr[i] = { ...arr[i], dataEmissao: e.target.value }; setForm({ ...form, docAnteriores: arr } as any); }} placeholder="AAAA-MM-DD" />
+                      <Button type="button" size="icon" variant="ghost" className="h-6 w-7 text-destructive" onClick={() => { const arr = [...((form as any).docAnteriores || [])]; arr.splice(i, 1); setForm({ ...form, docAnteriores: arr } as any); }} title="Remover"><Trash2 className="h-3 w-3" /></Button>
+                    </div>
+                  ))}
+                </div>
+                <Button type="button" size="sm" variant="outline" className="h-6 text-[10px]" onClick={() => setForm({ ...form, docAnteriores: [...((form as any).docAnteriores || []), { tipoDoc: "", serie: "", subSerie: "", numero: "", dataEmissao: "" }] } as any)}><Plus className="mr-1 h-3 w-3" /> Adicionar documento</Button>
               </Card>
             </TabsContent>
 
@@ -1730,10 +1854,8 @@ function CtePage() {
                   </div>
                 </Card>
               </div>
-            </TabsContent>
 
-            {/* === TAB: Taxas/Despesas Acessórias === */}
-            <TabsContent value="taxas" className="mt-3 space-y-3">
+              {/* Pedágio / Taxas / Despesas Acessórias (ex-aba Taxas) */}
               <Card className="p-3">
                 <h5 className="text-xs font-semibold mb-2">Pedágio / Taxas / Despesas Acessórias</h5>
                 <div className="grid grid-cols-3 md:grid-cols-6 gap-2">
@@ -1770,12 +1892,12 @@ function CtePage() {
               </Card>
             </TabsContent>
 
-            {/* === TAB: Impostos === */}
+            {/* === TAB: Tributação === */}
             <TabsContent value="impostos" className="mt-3 space-y-3">
               <Card className="p-3">
                 <h5 className="text-xs font-semibold mb-2 flex items-center gap-1.5"><ReceiptText className="h-3.5 w-3.5 text-primary" /> ICMS</h5>
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
-                  <div><Label className="text-[10px] text-muted-foreground">CST</Label>
+                  <div><Label className="text-[10px] text-muted-foreground">* CST</Label>
                     <Select value={form.icmsCST} onValueChange={v => setForm({ ...form, icmsCST: v })}>
                       <SelectTrigger className="h-7 text-xs"><SelectValue /></SelectTrigger>
                       <SelectContent>
@@ -1787,11 +1909,13 @@ function CtePage() {
                       </SelectContent>
                     </Select>
                   </div>
-                  <div><Label className="text-[10px] text-muted-foreground">Base Cálculo (R$)</Label><MoneyInput className="h-7 text-xs bg-muted" value={form.vPrest} onChange={() => {}} placeholder="0,00" /></div>
+                  <div><Label className="text-[10px] text-muted-foreground">Redução de Base (%)</Label><MoneyInput className="h-7 text-xs" prefix="" value={(form as any).reducaoBase || "0.00"} onChange={v => setForm({ ...form, reducaoBase: v } as any)} placeholder="0,00" /></div>
                   <div><Label className="text-[10px] text-muted-foreground">Alíquota ICMS (%)</Label><MoneyInput className="h-7 text-xs" prefix="" value={form.icmsAliq} onChange={v => setForm({ ...form, icmsAliq: v })} placeholder="0,00" /></div>
+                  <div><Label className="text-[10px] text-muted-foreground">Base Cálculo (R$)</Label><MoneyInput className="h-7 text-xs bg-muted" value={form.vPrest} onChange={() => {}} placeholder="0,00" /></div>
                   <div><Label className="text-[10px] text-muted-foreground">Valor ICMS (R$)</Label><MoneyInput className="h-7 text-xs bg-muted" value={form.icmsValor} onChange={() => {}} placeholder="0,00" /></div>
+                  <div className="md:col-span-3"><Label className="text-[10px] text-muted-foreground">Valor do crédito outorgado/presumido (R$)</Label><MoneyInput className="h-7 text-xs" value={(form as any).creditoOutorgado || "0.00"} onChange={v => setForm({ ...form, creditoOutorgado: v } as any)} placeholder="0,00" /></div>
                 </div>
-                <p className="text-[9px] text-muted-foreground mt-1">Digite só números — vírgula preenche automaticamente. Ponto só para milhares. Base padrão = Valor do Serviço.</p>
+                <p className="text-[9px] text-muted-foreground mt-1">Digite só números — vírgula preenche automaticamente. Ponto só para milhares. Base padrão = Valor do Serviço. Redução/crédito salvos no rascunho.</p>
               </Card>
               <Card className="p-3">
                 <h5 className="text-xs font-semibold mb-2">Outros Impostos — Alíquotas (%)</h5>
@@ -1805,18 +1929,105 @@ function CtePage() {
               </Card>
             </TabsContent>
 
-            {/* === TAB: Observações === */}
-            <TabsContent value="obs" className="mt-3">
+            {/* === TAB: Status === */}
+            <TabsContent value="status" className="mt-3 space-y-3">
               <Card className="p-3">
-                <h5 className="text-xs font-semibold mb-1">Observações do Conhecimento</h5>
-                <div className="border rounded overflow-hidden">
-                  <div className="grid grid-cols-[28px_1fr_60px] bg-muted text-[10px] font-semibold">
-                    <div className="px-1 py-1 text-center">Linha</div>
-                    <div className="px-1 py-1 border-l">Descrição da Observação</div>
-                    <div className="px-1 py-1 border-l text-right">Tamanho</div>
+                <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
+                  <div><Label className="text-[10px] text-muted-foreground">* Modal</Label>
+                    <Select value="RODOVIARIO" onValueChange={() => {}}>
+                      <SelectTrigger className="h-7 text-xs"><SelectValue /></SelectTrigger>
+                      <SelectContent><SelectItem value="RODOVIARIO">RODOVIÁRIO</SelectItem></SelectContent>
+                    </Select>
                   </div>
-                  <Textarea className="min-h-[120px] rounded-none border-0 border-t text-xs font-mono resize-none focus-visible:ring-0" placeholder={"01 — \n02 — \n03 — Protocolo Pedidos:"} />
+                  <div><Label className="text-[10px] text-muted-foreground">* Tomador</Label><Input className="h-7 text-xs bg-muted" value={{ "0": "REMETENTE", "1": "DESTINATÁRIO", "2": "OUTROS", "3": "REMETENTE", "4": "DESTINATÁRIO", "9": "OUTROS" }[form.toma] || "OUTROS"} readOnly /></div>
+                  <div><Label className="text-[10px] text-muted-foreground">* Forma de Pagamento</Label>
+                    <Select value={(form as any).formaPagamento || "Outros"} onValueChange={v => setForm({ ...form, formaPagamento: v } as any)}>
+                      <SelectTrigger className="h-7 text-xs"><SelectValue /></SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="A Vista">À VISTA</SelectItem>
+                        <SelectItem value="A Prazo">A PRAZO</SelectItem>
+                        <SelectItem value="Outros">OUTROS</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div><Label className="text-[10px] text-muted-foreground">* Finalidade de Emissão</Label>
+                    <Select value={(form as any).finalidadeEmissao || "Normal"} onValueChange={v => setForm({ ...form, finalidadeEmissao: v } as any)}>
+                      <SelectTrigger className="h-7 text-xs"><SelectValue /></SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="Normal">NORMAL</SelectItem>
+                        <SelectItem value="Complemento">COMPLEMENTO</SelectItem>
+                        <SelectItem value="Anulacao">ANULAÇÃO</SelectItem>
+                        <SelectItem value="Substituicao">SUBSTITUIÇÃO</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div><Label className="text-[10px] text-muted-foreground">* Tipo de Serviço</Label>
+                    <Select value={(form as any).tipoServico || "Normal"} onValueChange={v => setForm({ ...form, tipoServico: v } as any)}>
+                      <SelectTrigger className="h-7 text-xs"><SelectValue /></SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="Normal">NORMAL</SelectItem>
+                        <SelectItem value="Subcontratacao">SUBCONTRATAÇÃO</SelectItem>
+                        <SelectItem value="Redespacho">REDESPACHO</SelectItem>
+                        <SelectItem value="Redespacho Intermediario">REDESPACHO INTERMEDIÁRIO</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div><Label className="text-[10px] text-muted-foreground">* Forma de Emissão</Label>
+                    <Select value={(form as any).formaEmissao || "Normal"} onValueChange={v => setForm({ ...form, formaEmissao: v } as any)}>
+                      <SelectTrigger className="h-7 text-xs"><SelectValue /></SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="Normal">NORMAL</SelectItem>
+                        <SelectItem value="EPEC">EPEC</SelectItem>
+                        <SelectItem value="FSDA">FSDA</SelectItem>
+                        <SelectItem value="SVC">SVC-SP / SVC-RS</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
                 </div>
+                <p className="text-[9px] text-muted-foreground mt-1">CT-e Simplificado MG transmite sempre como Normal / Rodoviário; demais opções ficam salvas no rascunho.</p>
+              </Card>
+              <Card className="p-3 space-y-2">
+                <div className="grid grid-cols-1 md:grid-cols-[180px_1fr] gap-1 items-center">
+                  <Label className="text-[10px] text-muted-foreground">CT-e Referenciado</Label>
+                  <Input className="h-6 text-[10px] font-mono" placeholder="Chave de acesso do CT-e substituído (44 dígitos)" value={(form as any).cteReferenciado || ""} onChange={e=>setForm({...form, cteReferenciado: e.target.value.replace(/\D/g, "").slice(0, 44)} as any)} maxLength={44} />
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-[180px_1fr] gap-1 items-center">
+                  <Label className="text-[10px] text-muted-foreground">Complemento / Anulação</Label>
+                  <Input className="h-6 text-[10px] font-mono" placeholder="Chave do CT-e complementado/anulado (44 dígitos)" value={(form as any).chaveCompAnulacao || ""} onChange={e=>setForm({...form, chaveCompAnulacao: e.target.value.replace(/\D/g, "").slice(0, 44)} as any)} maxLength={44} />
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-[180px_200px] gap-1 items-center">
+                  <Label className="text-[10px] text-muted-foreground">Data Declaração</Label>
+                  <DateInput value={(form as any).dataDeclaracao || ""} onChange={v => setForm({ ...form, dataDeclaracao: v } as any)} className="h-6 text-[10px]" />
+                </div>
+              </Card>
+              <Card className="p-3">
+                <h5 className="text-xs font-semibold mb-2">Situação do CT-e</h5>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                  <div><Label className="text-[10px] text-muted-foreground">Chave de Acesso</Label><Input className="h-6 text-[10px] font-mono bg-muted" value="— aguardando emissão —" readOnly /></div>
+                  <div><Label className="text-[10px] text-muted-foreground">Protocolo de Envio</Label><Input className="h-6 text-[10px] font-mono bg-muted" value="— aguardando emissão —" readOnly /></div>
+                  <div><Label className="text-[10px] text-muted-foreground">Data Hora Envio</Label><Input className="h-6 text-[10px] bg-muted" value="— aguardando emissão —" readOnly /></div>
+                  <div><Label className="text-[10px] text-muted-foreground">Motivo Envio</Label><Input className="h-6 text-[10px] bg-muted" value="— aguardando emissão —" readOnly /></div>
+                  <div><Label className="text-[10px] text-muted-foreground">Protocolo Cancelamento</Label><Input className="h-6 text-[10px] font-mono bg-muted" value="—" readOnly /></div>
+                  <div><Label className="text-[10px] text-muted-foreground">Data Hora Cancelamento</Label><Input className="h-6 text-[10px] bg-muted" value="—" readOnly /></div>
+                  <div className="md:col-span-2"><Label className="text-[10px] text-muted-foreground">Motivo Cancelamento</Label><Input className="h-6 text-[10px] bg-muted" value="—" readOnly /></div>
+                </div>
+                <p className="text-[9px] text-muted-foreground mt-1">Preenchidos automaticamente após transmissão/cancelamento.</p>
+              </Card>
+            </TabsContent>
+
+            {/* === TAB: Observações === */}
+            <TabsContent value="obs" className="mt-3 space-y-3">
+              <Card className="p-3">
+                <h5 className="text-xs font-semibold mb-1">Observações Gerais</h5>
+                <Textarea className="min-h-[120px] text-xs font-mono resize-y" placeholder={"01 — \n02 — \n03 — Protocolo Pedidos:"} value={(form as any).obsGerais || ""} onChange={e=>setForm({...form, obsGerais: e.target.value} as any)} />
+              </Card>
+              <Card className="p-3">
+                <h5 className="text-xs font-semibold mb-1">Observações CT-e Anulação/Substituição</h5>
+                <Textarea className="min-h-[60px] text-xs font-mono resize-y" value={(form as any).obsAnulacao || ""} onChange={e=>setForm({...form, obsAnulacao: e.target.value} as any)} />
+              </Card>
+              <Card className="p-3">
+                <h5 className="text-xs font-semibold mb-1">Observações CT-e Globalizado</h5>
+                <Textarea className="min-h-[60px] text-xs font-mono resize-y" value={(form as any).obsGlobalizado || ""} onChange={e=>setForm({...form, obsGlobalizado: e.target.value} as any)} />
               </Card>
             </TabsContent>
           </Tabs>

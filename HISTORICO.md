@@ -966,6 +966,28 @@ Commits: CF `6108d60` + Vercel `3459b4e`
 
 ---
 
+## CT-e: diálogo reestruturado modelo Eagle Gestão (08/09/2026)
+
+Abas na ordem Eagle: **Geral, Tributação, Carga, Veículos, Status, Observações**
+(aba Taxas fundida em Veículos; Escrituração fora do escopo — SPED).
+
+- **Geral**: Tomador movido p/ o topo + Mod/Série (57/001) no cabeçalho +
+  **Componentes do Valor do Serviço** (FRETE = Valor do Serviço, editável).
+- **Carga**: **Quantidades da Carga** (KG/PESO BRUTO auto das NF-es) +
+  **Produto Predominante** + Outras Características + Valor Mercadoria (auto) +
+  **Documentos Anteriores** (transportadora com busca CNPJ + tabela de docs p/ subcontratação).
+- **Tributação**: CST em destaque + **Redução de Base (%)** + **Crédito outorgado/presumido**.
+- **Status** (nova): Modal (Rodoviário fixo), Tomador (auto do toma), Forma Pagamento,
+  Finalidade, Tipo Serviço, Forma Emissão, CT-e Referenciado, Complemento/Anulação,
+  Data Declaração, Situação (somente leitura, pós-transmissão).
+- **Observações**: 3 campos vinculados ao form (Gerais, Anulação/Substituição, Globalizado).
+- Novos campos persistem no rascunho (JSON do form); transmissão SEFAZ inalterada
+  (CTeSimp MG: Normal/Rodoviário — demais opções ficam salvas no rascunho).
+
+Commits: CF `[pendente]` + Vercel `[pendente]`
+
+---
+
 ## Regras de segurança
 
 - NUNCA commitar tokens/senhas (GitHub PAT, senhas de banco, service keys).
