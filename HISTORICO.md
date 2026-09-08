@@ -988,6 +988,21 @@ Commits: CF `d6cb74b` + Vercel `e75e0bf`
 
 ---
 
+## DACTE modelo Eagle + logo Juvenal (08/09/2026)
+
+- **Documentos Originários**: `NF-E {número}` + **chave 44 dígitos** (antes: CNPJ/série-nº).
+- **Imposto**: CST rotulado (`00 - NORMAL` etc.) + coluna **% RED BC CALC** com valor do form.
+- **Observações**: marca d'água **"AMBIENTE DE HOMOLOGAÇÃO - SEM VALOR FISCAL"** em homologação.
+- **Modal**: `RNTRC DA EMPRESA` + `DATA PREVISTA DE ENTREGA` + texto da legislação.
+- Rodapé: "Norvo Gestão" (era `www.norrvo.com.br`).
+- Preview usa NF-es reais (com chave), obs dos 3 campos, redução e produto predominante.
+- **Logo Juvenal** no cabeçalho do DACTE (`src/lib/juvenal-logo.ts` base64 de
+  `src/assets/juvenal-logo.png`; vazio = só nome).
+
+Commits: CF `[pendente]` + Vercel `[pendente]`
+
+---
+
 ## Regras de segurança
 
 - NUNCA commitar tokens/senhas (GitHub PAT, senhas de banco, service keys).

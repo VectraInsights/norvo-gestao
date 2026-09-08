@@ -57,7 +57,8 @@ interface DacteData {
   icmsBase: number;
   icmsAliq: number;
   icmsValor: number;
-  nFes: Array<{ nNF: string; serie: string; valor: number }>;
+  reducaoBase?: number | string;
+  nFes: Array<{ nNF: string; serie: string; valor: number; chave?: string }>;
   placa: string;
   placaReboque: string;
   rntrc: string;
@@ -75,6 +76,7 @@ interface DacteData {
   protocolo?: string;
   modelo?: string;
   fl?: string;
+  logoDataUrl?: string;
 }
 
 function fmtCnpj(v: string): string {
@@ -90,6 +92,18 @@ function fmtBrl(v: number): string {
 
 function fmtChave(chave: string): string {
   return (chave || "").replace(/\D/g, "").replace(/(\d{4})/g, "$1 ").trim();
+}
+
+function cstLabel(cst: string): string {
+  const c = (cst || "").replace(/\D/g, "").padStart(2, "0");
+  const map: Record<string, string> = {
+    "00": "00 - NORMAL",
+    "20": "20 - COM REDUÇÃO",
+    "45": "45 - ISENTO",
+    "60": "60 - ICMS ST",
+    "90": "90 - OUTRAS",
+  };
+  return map[c] || (c ? `${c} - OUTRAS` : "90 - OUTRAS");
 }
 
 export function gerarDactePdf(data: DacteData): Blob {
@@ -164,8 +178,12 @@ export function gerarDactePdf(data: DacteData): Blob {
   headerBg();
   doc.rect(M, y, CW, 10, "F");
   white();
+  const hasLogo = !!data.logoDataUrl;
+  if (hasLogo) {
+    try { doc.addImage(data.logoDataUrl as string, "PNG", M + 1.5, y + 1, 24, 8); } catch { /* mantém só o nome */ }
+  }
   setFont("bold", 10);
-  doc.text(data.emitNome || "EMPRESA", M + 2, y + 5);
+  doc.text(data.emitNome || "EMPRESA", (hasLogo ? M + 27 : M + 2), y + 5);
   setFont("bold", 11);
   doc.text("DACTE", W / 2 - 10, y + 4);
   setFont("normal", 5.5);
@@ -435,13 +453,14 @@ export function gerarDactePdf(data: DacteData): Blob {
   doc.text("BASE DE CÁLCULO", M + 55, y + 3);
   doc.text("ALÍQ. ICMS (%)", M + 95, y + 3);
   doc.text("VALOR ICMS", M + 125, y + 3);
-  doc.text("RED. BC ICMS ST", M + 155, y + 3);
+  doc.text("% RED BC CALC", M + 155, y + 3);
   setFont("normal", 5.5);
-  doc.text(data.icmsCST || "90 - SIMPLES NACIONAL", M + 2, y + 6);
+  doc.text(cstLabel(data.icmsCST), M + 2, y + 6);
   doc.text(fmtBrl(data.icmsBase), M + 55, y + 6);
   doc.text(`${data.icmsAliq}%`, M + 95, y + 6);
   doc.text(fmtBrl(data.icmsValor), M + 125, y + 6);
-  doc.text("—", M + 155, y + 6);
+  const redBc = Number(data.reducaoBase ?? 0) || 0;
+  doc.text(`${redBc.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}%`, M + 155, y + 6);
   y += 8;
 
   // ═══════════════════════════════════════════════════
@@ -452,29 +471,30 @@ export function gerarDactePdf(data: DacteData): Blob {
   drawBox(M, y, CW, 6);
   setFont("bold", 4.5);
   doc.text("TP DOC.", M + 2, y + 4);
-  doc.text("CNPJ/CPF EMITENTE", M + 22, y + 4);
-  doc.text("SÉRIE / NÚMERO DOCUMENTO", M + 68, y + 4);
+  doc.text("CHAVE DO DOCUMENTO", M + 30, y + 4);
   doc.text("TP DOC.", M + 115, y + 4);
-  doc.text("CNPJ/CPF EMITENTE", M + 132, y + 4);
-  doc.text("SÉRIE / NÚMERO DOCUMENTO", M + 170, y + 4);
+  doc.text("CHAVE DO DOCUMENTO", M + 143, y + 4);
   y += 6.5;
 
   if (data.nFes.length > 0) {
     const perRow = 2;
     const rows = Math.min(Math.ceil(data.nFes.length / perRow), 4);
     for (let r = 0; r < rows; r++) {
-      drawBox(M, y, CW, 6);
+      drawBox(M, y, CW, 8.5);
       setFont("normal", 5);
       for (let c = 0; c < perRow; c++) {
         const idx = r * perRow + c;
         if (idx >= data.nFes.length) break;
         const nf = data.nFes[idx];
         const ox = c === 0 ? M + 2 : M + 115;
-        doc.text("Outros", ox, y + 4);
-        doc.text(fmtCnpj(data.remCnpj || ""), ox + 20, y + 4);
-        doc.text(`${nf.serie || "1"}/${nf.nNF || "—"}`, ox + 68, y + 4);
+        doc.text(`NF-E ${nf.nNF || "—"}`, ox, y + 3.5);
+        if (nf.chave) {
+          setFont("normal", 4.5);
+          doc.text(fmtChave(nf.chave), ox, y + 7);
+          setFont("normal", 5);
+        }
       }
-      y += 6.5;
+      y += 9;
     }
   } else {
     drawBox(M, y, CW, 6);
@@ -489,13 +509,21 @@ export function gerarDactePdf(data: DacteData): Blob {
   // ═══════════════════════════════════════════════════
   sectionTitle(M, y, CW, "OBSERVAÇÕES");
   y += 5;
-  drawBox(M, y, CW, 14);
+  const obsH = 16;
+  drawBox(M, y, CW, obsH);
   if (data.obs) {
     setFont("normal", 5);
+    black();
     const lines = doc.splitTextToSize(data.obs, CW - 4);
-    doc.text(lines.slice(0, 3), M + 2, y + 4);
+    doc.text(lines.slice(0, 2), M + 2, y + 4);
   }
-  y += 15;
+  if ((data.ambiente || "") === "homologacao") {
+    doc.setTextColor(170, 170, 170);
+    setFont("bold", 13);
+    doc.text("AMBIENTE DE HOMOLOGAÇÃO - SEM VALOR FISCAL", W / 2, y + obsH / 2 + 5, { align: "center" });
+    black();
+  }
+  y += obsH + 1;
 
   // ═══════════════════════════════════════════════════
   // DADOS ESPECÍFICOS DO MODAL RODOVIÁRIO
@@ -504,10 +532,12 @@ export function gerarDactePdf(data: DacteData): Blob {
   y += 5;
   drawBox(M, y, CW, 7);
   setFont("bold", 4.5);
-  doc.text("ENTR. DA EMPRESA", M + 2, y + 3);
-  doc.text("ESSE CONHECIMENTO DE TRANSPORTE ATENDE À LEGISLAÇÃO DE TRANSPORTE RODOVIÁRIO EM VIGOR", M + 40, y + 3);
+  doc.text("RNTRC DA EMPRESA", M + 2, y + 3);
+  doc.text("DATA PREVISTA DE ENTREGA", M + 42, y + 3);
+  doc.text("ESTE CONHECIMENTO DE TRANSPORTE ATENDE À LEGISLAÇÃO DE TRANSPORTE RODOVIÁRIO EM VIGOR", M + 88, y + 3);
   setFont("normal", 6);
   doc.text(data.rntrc || "00000000", M + 2, y + 6);
+  doc.text("—", M + 42, y + 6);
   y += 8;
 
   // ═══════════════════════════════════════════════════
@@ -527,7 +557,7 @@ export function gerarDactePdf(data: DacteData): Blob {
   dkGray();
   setFont("normal", 4.5);
   doc.text(`DATA E HORA DA IMPRESSÃO: ${new Date().toLocaleString("pt-BR")}`, M, y + 2);
-  doc.text("www.norrvo.com.br", W - M - 28, y + 2);
+  doc.text("Norvo Gestão", W - M - 22, y + 2);
   y += 5;
 
   // declaração

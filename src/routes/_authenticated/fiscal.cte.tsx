@@ -23,6 +23,7 @@ import { toast } from "sonner";
 import { emitirCteFn, consultarCteFn, cancelarCteFn, previewCteXmlFn, excluirRejeitadosCteFn } from "@/lib/sefaz-cte-server";
 import { CFOPS_CTE, MOD_FRETE_OPTIONS, RESPONSAVEL_CTE_OPTIONS } from "@/lib/cfops-transporte";
 import { gerarDactePdf } from "@/lib/dacte-pdf";
+import { JUVENAL_LOGO } from "@/lib/juvenal-logo";
 import { Textarea } from "@/components/ui/textarea";
 import { DateInput } from "@/components/erp/date-input";
 import { MoneyInput } from "@/components/erp/money-input";
@@ -127,6 +128,7 @@ function CtePage() {
         nNF: det.querySelector("infNFe > ide > nNF")?.textContent || "",
         serie: det.querySelector("infNFe > ide > serie")?.textContent || "1",
         valor: parseFloat(det.querySelector("infNFe > total > ICMSTot > vNF")?.textContent || "0"),
+        chave: det.querySelector("chNFe")?.textContent || "",
       }));
       const pdfBlob = gerarDactePdf({
         chave: doc.chave_acesso || "",
@@ -168,8 +170,11 @@ function CtePage() {
         icmsValor: parseFloat(tag("infCte > imp > ICMS > ICMS00 > vICMS")) || 0,
         nFes,
         placa: tag("infModal > rodo > veic > placa") || "",
+        placaReboque: "",
         rntrc: tag("infModal > rodo > RNTRC") || "",
         protocolo: doc.protocolo_sefaz || "",
+        obs: "",
+        logoDataUrl: JUVENAL_LOGO || undefined,
       });
       const url = URL.createObjectURL(pdfBlob);
       const a = document.createElement("a");
@@ -916,6 +921,9 @@ function CtePage() {
         ambiente: form.ambiente,
         toma: form.toma, cnpjTomador: form.cnpjTomador, xNomeTomador: form.xNomeTomador, ufTomador: form.ufTomador, cMunTomador: form.cMunTomador, xMunTomador: form.xMunTomador,
         cfop: form.cfop, vPrest: parseFloat(form.vPrest)||0, vCarga: parseFloat(form.vCarga)||0, pesoKg: parseFloat(form.peso)||0, rntrc: form.rntrc,
+        obsGerais: (form as any).obsGerais || "", obsAnulacao: (form as any).obsAnulacao || "", obsGlobalizado: (form as any).obsGlobalizado || "",
+        reducaoBase: parseFloat((form as any).reducaoBase)||0,
+        produtoPredominante: (form as any).produtoPredominante || "", outrasCaracteristicas: (form as any).outrasCaracteristicas || "",
         cMunEnv: form.cMunEnv, xMunEnv: form.xMunEnv, ufEnv: form.ufEnv, cMunIni: form.cMunIni, xMunIni: form.xMunIni, ufIni: form.ufIni, cMunFim: form.cMunFim, xMunFim: form.xMunFim, ufFim: form.ufFim,
         icms: { CST: form.icmsCST, vBC: parseFloat(form.vPrest)||0, pICMS: parseFloat(form.icmsAliq)||0, vICMS: parseFloat(form.icmsValor)||0 },
         impostos: { pisAliq: parseFloat(form.pisAliq)||0, cofinsAliq: parseFloat(form.cofinsAliq)||0, irAliq: parseFloat(form.irAliq)||0, inssAliq: parseFloat(form.inssAliq)||0, csllAliq: parseFloat(form.csllAliq)||0 },
@@ -2071,7 +2079,8 @@ function CtePage() {
           </DialogHeader>
           {previewData && (() => {
             const f = previewData.form;
-            const nFes = (f.nFes || []).map((n: any) => ({ nNF: n.nNF || n.numero || "", serie: n.serie || "1", valor: n.valor || 0 }));
+            const baseNfes = selecionadas.size > 0 ? mercadorias.filter(m => selecionadas.has(m.chave)) : mercadorias;
+            const nFes = baseNfes.map((m: any) => ({ nNF: m.nNF || "", serie: m.serie || "1", valor: m.valor || 0, chave: m.chave || "" }));
             const first = mercadorias[0] || {} as any;
             const cRem = contatoByDoc.get(((first as any).emitCnpj || "").replace(/\D/g, "")) || {};
             const cDst = contatoByDoc.get(((first as any).destCnpj || "").replace(/\D/g, "")) || {};
@@ -2123,12 +2132,16 @@ function CtePage() {
               icmsBase: f.icms?.vBC || f.vPrest || 0,
               icmsAliq: f.icms?.pICMS || 0,
               icmsValor: f.icms?.vICMS || 0,
+              reducaoBase: (f as any).reducaoBase || 0,
+              produtoPredominante: (f as any).produtoPredominante || "",
+              outrasCaract: (f as any).outrasCaracteristicas || "",
               nFes,
               placa: f.placaVeiculo || "",
               placaReboque: f.placaReboque || "",
               rntrc: f.rntrc || "",
-              obs: f.obs || "",
+              obs: [(f as any).obsGerais, (f as any).obsAnulacao, (f as any).obsGlobalizado].filter(Boolean).join(" • ") || "",
               protocolo: "",
+              logoDataUrl: JUVENAL_LOGO || undefined,
             });
             const url = URL.createObjectURL(pdfBlob);
             return <iframe src={url} className="flex-1 w-full min-h-[500px] border-0" />;
