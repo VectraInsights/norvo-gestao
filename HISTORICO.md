@@ -962,7 +962,7 @@ Commits: CF `f26ec03` + Vercel `5eb0a70`
   ReceitaWS, máscara, lupa, spinner — igual Consignatário/Redespacho.
 - "Gerar CT-e" também mescla cadastro (IE, nº, fone, cidade/UF/CEP/logradouro).
 
-Commits: CF `[pendente]` + Vercel `[pendente]`
+Commits: CF `6108d60` + Vercel `3459b4e`
 
 ---
 
