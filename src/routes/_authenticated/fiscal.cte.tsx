@@ -345,10 +345,11 @@ function CtePage() {
   };
   const buscarDadosCnpj = async (digits: string) => {
     if (empresa) {
-      const { data } = await supabase.from("contatos" as any).select("nome,logradouro,numero,bairro,cidade,uf,cep,telefone").eq("empresa_id", empresa.id).eq("documento", digits).maybeSingle();
+      // select * p/ incluir `ie` quando a migration 20260908_contatos_ie já foi aplicada
+      const { data } = await supabase.from("contatos" as any).select("*").eq("empresa_id", empresa.id).eq("documento", digits).maybeSingle();
       if (data) {
         const c = data as any;
-        return { nome: c.nome || "", logradouro: c.logradouro || "", numero: c.numero || "", bairro: c.bairro || "", cidade: c.cidade || "", uf: c.uf || "", cep: (c.cep || "").replace(/\D/g, ""), fone: c.telefone || "" };
+        return { nome: c.nome || "", logradouro: c.logradouro || "", numero: c.numero || "", bairro: c.bairro || "", cidade: c.cidade || "", uf: c.uf || "", cep: String(c.cep || "").replace(/\D/g, ""), fone: c.telefone || "", ie: c.ie || "", fromContatos: true };
       }
     }
     let d: any = null;
@@ -368,7 +369,17 @@ function CtePage() {
       uf: d.uf || d.state || "",
       cep: String(d.cep || d.zip || "").replace(/\D/g, ""),
       fone: d.ddd_telefone_1 || d.telefone || d.phone || "",
+      ie: "",
+      fromContatos: false,
     };
+  };
+  // Insert resiliente: tenta com `ie`, se a migration ainda não foi aplicada reinsere sem
+  const insertContatoResiliente = async (row: Record<string, unknown>) => {
+    const { error } = await supabase.from("contatos" as any).insert(row as any);
+    if (error && /ie/i.test(error.message || "")) {
+      const { ie: _omit, ...semIe } = row;
+      await supabase.from("contatos" as any).insert(semIe as any);
+    }
   };
   const lookupConsignatario = async (digits: string) => {
     if (digits.length !== 14 || !empresa) return;
@@ -376,7 +387,10 @@ function CtePage() {
     try {
       const d = await buscarDadosCnpj(digits);
       if (!d) { toast.error("CNPJ não encontrado"); return; }
-      setForm(f => ({ ...f, cnpjConsignatario: digits, xNomeConsignatario: d.nome || f.xNomeConsignatario, ufConsignatario: d.uf || f.ufConsignatario, xMunConsignatario: d.cidade || f.xMunConsignatario, cepConsignatario: d.cep || f.cepConsignatario, logradouroConsignatario: d.logradouro || f.logradouroConsignatario, nroConsignatario: d.numero || f.nroConsignatario, bairroConsignatario: d.bairro || f.bairroConsignatario }));
+      setForm(f => ({ ...f, cnpjConsignatario: digits, xNomeConsignatario: d.nome || f.xNomeConsignatario, ieConsignatario: (d as any).ie || f.ieConsignatario, ufConsignatario: d.uf || f.ufConsignatario, xMunConsignatario: d.cidade || f.xMunConsignatario, cepConsignatario: d.cep || f.cepConsignatario, logradouroConsignatario: d.logradouro || f.logradouroConsignatario, nroConsignatario: d.numero || f.nroConsignatario, bairroConsignatario: d.bairro || f.bairroConsignatario }));
+      if (!(d as any).fromContatos && d.nome) {
+        await insertContatoResiliente({ empresa_id: empresa.id, nome: d.nome, tipo: "cliente", documento: digits, uf: d.uf || null, cidade: d.cidade || null, logradouro: d.logradouro || null, numero: d.numero || null, bairro: d.bairro || null, cep: d.cep || null, telefone: d.fone || null });
+      }
       toast.success("Consignatário localizado");
     } catch (e: any) { toast.error(e.message || "Falha ao buscar CNPJ"); }
     finally { setLookingUpConsig(false); }
@@ -387,7 +401,10 @@ function CtePage() {
     try {
       const d = await buscarDadosCnpj(digits);
       if (!d) { toast.error("CNPJ não encontrado"); return; }
-      setForm(f => ({ ...f, cnpjRedespacho: digits, xNomeRedespacho: d.nome || f.xNomeRedespacho, ufRedespacho: d.uf || f.ufRedespacho, xMunRedespacho: d.cidade || f.xMunRedespacho, cepRedespacho: d.cep || f.cepRedespacho, logradouroRedespacho: d.logradouro || f.logradouroRedespacho, nroRedespacho: d.numero || f.nroRedespacho, bairroRedespacho: d.bairro || f.bairroRedespacho }));
+      setForm(f => ({ ...f, cnpjRedespacho: digits, xNomeRedespacho: d.nome || f.xNomeRedespacho, ieRedespacho: (d as any).ie || f.ieRedespacho, ufRedespacho: d.uf || f.ufRedespacho, xMunRedespacho: d.cidade || f.xMunRedespacho, cepRedespacho: d.cep || f.cepRedespacho, logradouroRedespacho: d.logradouro || f.logradouroRedespacho, nroRedespacho: d.numero || f.nroRedespacho, bairroRedespacho: d.bairro || f.bairroRedespacho }));
+      if (!(d as any).fromContatos && d.nome) {
+        await insertContatoResiliente({ empresa_id: empresa.id, nome: d.nome, tipo: "cliente", documento: digits, uf: d.uf || null, cidade: d.cidade || null, logradouro: d.logradouro || null, numero: d.numero || null, bairro: d.bairro || null, cep: d.cep || null, telefone: d.fone || null });
+      }
       toast.success("Redespacho localizado");
     } catch (e: any) { toast.error(e.message || "Falha ao buscar CNPJ"); }
     finally { setLookingUpRedesp(false); }
@@ -411,7 +428,10 @@ function CtePage() {
         if (!doc || doc.length < 11 || !nome) return;
         const { data: existente } = await supabase.from("contatos" as any).select("id").eq("empresa_id", empresa!.id).eq("documento", doc).maybeSingle();
         if (existente) return;
-        await supabase.from("contatos" as any).insert({ empresa_id: empresa!.id, nome, tipo, documento: doc, uf: uf || null, cidade: cidade || null, logradouro: logradouro || null, bairro: bairro || null, cep: cep || null, telefone: fone || null });
+        const { error } = await supabase.from("contatos" as any).insert({ empresa_id: empresa!.id, nome, tipo, documento: doc, ie: ie || null, uf: uf || null, cidade: cidade || null, logradouro: logradouro || null, bairro: bairro || null, cep: cep || null, telefone: fone || null });
+        if (error && /ie/i.test(error.message || "")) {
+          await supabase.from("contatos" as any).insert({ empresa_id: empresa!.id, nome, tipo, documento: doc, uf: uf || null, cidade: cidade || null, logradouro: logradouro || null, bairro: bairro || null, cep: cep || null, telefone: fone || null });
+        }
       };
       let added = 0;
       let duplicadas = 0;
@@ -1184,6 +1204,7 @@ function CtePage() {
                 );
               })() : <p className="text-xs text-muted-foreground">Importe NF-es para preencher remetente e destinatário</p>}
 
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
               {/* Consignatário */}
               <Card className="p-3">
                 <div className="flex items-center gap-2 mb-2">
@@ -1235,6 +1256,7 @@ function CtePage() {
                   </div>
                 ) : <p className="text-[10px] text-muted-foreground">Digite o CNPJ para buscar os dados automaticamente</p>}
               </Card>
+              </div>
 
               {/* Tomador */}
               <Card className="p-2">

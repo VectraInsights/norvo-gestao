@@ -911,6 +911,22 @@ Commits: CF `e05db7a` + Vercel `ec1f93f`
 
 ---
 
+## CT-e: Consignatário/Redespacho lado a lado + IE do cadastro (08/09/2026)
+
+- Cards de **Consignatário** e **Redespacho** agora lado a lado (`md:grid-cols-2`),
+  mesmo tamanho dos cards Remetente/Destinatário.
+- **IE puxa do cadastro**: migration `20260908120000_contatos_ie.sql` adiciona coluna
+  `ie` em `contatos`; importação de NF-e salva a IE; lookup preenche a IE se existir
+  (não apaga IE digitada se o cadastro não tiver). **Aplicar via dashboard SQL Editor**
+  (exec_sql não existe).
+- CNPJ novo buscado na API é auto-cadastrado em `contatos` p/ próximas buscas instantâneas.
+- Código resiliente: funciona com ou sem a coluna `ie` (fallback sem IE).
+- `select *` no lookup p/ não quebrar antes da migration aplicada.
+
+Commits: CF `[pendente]` + Vercel `[pendente]`
+
+---
+
 ## Regras de segurança
 
 - NUNCA commitar tokens/senhas (GitHub PAT, senhas de banco, service keys).
