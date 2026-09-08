@@ -1193,6 +1193,16 @@ Commits: CF `9cb5ba6` + Vercel `d68234b`
 
 ---
 
+## Configurações: aba Seguradoras (08/09/2026)
+
+- Tabela `seguradoras` existia mas sem tela de cadastro. Nova aba em Configurações
+  (nome, CNPJ com busca BrasilAPI, apólice, averbação; edição inline, exclusão).
+  CT-e passa a listar na aba Transporte.
+
+Commits: CF `[pendente]` + Vercel `[pendente]`
+
+---
+
 ## Regras de segurança
 
 - NUNCA commitar tokens/senhas (GitHub PAT, senhas de banco, service keys).

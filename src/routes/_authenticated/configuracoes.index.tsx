@@ -38,11 +38,13 @@ function Configuracoes() {
             <TabsTrigger value="categorias">Categorias financeiras</TabsTrigger>
             <TabsTrigger value="condicoes">Condições de pagamento</TabsTrigger>
             <TabsTrigger value="rntrc">RNTRC</TabsTrigger>
+            <TabsTrigger value="seguradoras">Seguradoras</TabsTrigger>
             <TabsTrigger value="nfe">Configuração NF-e</TabsTrigger>
           </TabsList>
           <TabsContent value="categorias"><CategoriasTab empresaId={empresa.id} /></TabsContent>
           <TabsContent value="condicoes"><CondicoesTab empresaId={empresa.id} /></TabsContent>
           <TabsContent value="rntrc"><RntrcTab empresaId={empresa.id} /></TabsContent>
+          <TabsContent value="seguradoras"><SeguradorasTab empresaId={empresa.id} /></TabsContent>
           <TabsContent value="nfe"><NFeConfigTab empresaId={empresa.id} /></TabsContent>
         </Tabs>
       )}
@@ -374,6 +376,137 @@ function RntrcTab({ empresaId }: { empresaId: string }) {
             )
           ))}
           {data?.length === 0 && <TableRow><TableCell colSpan={5} className="text-center text-muted-foreground text-sm">Nenhum RNTRC cadastrado</TableCell></TableRow>}
+        </TableBody>
+      </Table>
+    </CardContent></Card>
+  );
+}
+
+function SeguradorasTab({ empresaId }: { empresaId: string }) {
+  const qc = useQueryClient();
+  const [nome, setNome] = useState("");
+  const [cnpj, setCnpj] = useState("");
+  const [apolice, setApolice] = useState("");
+  const [averbacao, setAverbacao] = useState("");
+  const [lookingUp, setLookingUp] = useState(false);
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editNome, setEditNome] = useState("");
+  const [editCnpj, setEditCnpj] = useState("");
+  const [editApolice, setEditApolice] = useState("");
+  const [editAverbacao, setEditAverbacao] = useState("");
+
+  const formatCnpj = (v: string) => {
+    const d = v.replace(/\D/g, "").slice(0, 14);
+    if (d.length <= 2) return d;
+    if (d.length <= 5) return d.slice(0, 2) + "." + d.slice(2);
+    if (d.length <= 8) return d.slice(0, 2) + "." + d.slice(2, 5) + "." + d.slice(5);
+    if (d.length <= 12) return d.slice(0, 2) + "." + d.slice(2, 5) + "." + d.slice(5, 8) + "/" + d.slice(8);
+    return d.slice(0, 2) + "." + d.slice(2, 5) + "." + d.slice(5, 8) + "/" + d.slice(8, 12) + "-" + d.slice(12);
+  };
+
+  const lookupCnpj = async (val: string, setNomeFn: (v: string) => void) => {
+    const digits = val.replace(/\D/g, "");
+    if (digits.length !== 14) return;
+    setLookingUp(true);
+    try {
+      const res = await fetch(`https://brasilapi.com.br/api/cnpj/v1/${digits}`);
+      if (res.ok) {
+        const data = await res.json();
+        setNomeFn(data.razao_social || "");
+        toast.success("Nome puxado automaticamente");
+      }
+    } catch {}
+    setLookingUp(false);
+  };
+
+  const { data } = useQuery({
+    queryKey: ["seguradoras", empresaId],
+    queryFn: async () => (await supabase.from("seguradoras" as never).select("*").eq("empresa_id", empresaId).order("nome")).data ?? [],
+  });
+
+  const add = async () => {
+    if (!nome.trim()) return toast.error("Informe o nome da seguradora");
+    const { error } = await supabase.from("seguradoras" as never).insert({ empresa_id: empresaId, nome: nome.trim(), cnpj: cnpj.replace(/\D/g, "") || null, apolice_numero: apolice.trim() || null, averbacao: averbacao.trim() || null, ativo: true });
+    if (error) return toast.error(error.message);
+    setNome(""); setCnpj(""); setApolice(""); setAverbacao("");
+    qc.invalidateQueries({ queryKey: ["seguradoras"] });
+    toast.success("Seguradora cadastrada");
+  };
+
+  const startEdit = (r: any) => {
+    setEditingId(r.id);
+    setEditNome(r.nome || "");
+    setEditCnpj(r.cnpj || "");
+    setEditApolice(r.apolice_numero || "");
+    setEditAverbacao(r.averbacao || "");
+  };
+
+  const saveEdit = async (id: string) => {
+    if (!editNome.trim()) return toast.error("Informe o nome da seguradora");
+    const { error } = await supabase.from("seguradoras" as never).update({ nome: editNome.trim(), cnpj: editCnpj.replace(/\D/g, "") || null, apolice_numero: editApolice.trim() || null, averbacao: editAverbacao.trim() || null }).eq("id", id);
+    if (error) return toast.error(error.message);
+    setEditingId(null);
+    qc.invalidateQueries({ queryKey: ["seguradoras"] });
+    toast.success("Seguradora atualizada");
+  };
+
+  const cancelEdit = () => setEditingId(null);
+
+  const remove = async (id: string) => {
+    if (!confirm("Excluir esta seguradora?")) return;
+    const { error } = await supabase.from("seguradoras" as never).delete().eq("id", id);
+    if (error) return toast.error(error.message);
+    qc.invalidateQueries({ queryKey: ["seguradoras"] });
+  };
+
+  return (
+    <Card className="mt-4 shadow-panel"><CardContent className="p-4">
+      <p className="text-xs text-muted-foreground mb-3">Seguradoras e apólices aparecem como opções na aba Transporte do CT-e.</p>
+      <div className="mb-3 grid grid-cols-[1.5fr_2fr_1fr_1fr_auto] gap-2">
+        <Input placeholder="Nome *" value={nome} onChange={(e) => setNome(e.target.value)} />
+        <Input
+          placeholder="CNPJ"
+          value={cnpj}
+          onChange={(e) => {
+            const formatted = formatCnpj(e.target.value);
+            setCnpj(formatted);
+            if (formatted.replace(/\D/g, "").length === 14 && !nome.trim()) lookupCnpj(formatted, setNome);
+          }}
+          disabled={lookingUp}
+        />
+        <Input placeholder="Nº Apólice" value={apolice} onChange={(e) => setApolice(e.target.value)} />
+        <Input placeholder="Averbação" value={averbacao} onChange={(e) => setAverbacao(e.target.value)} />
+        <Button onClick={add} disabled={lookingUp}><Plus className="mr-1 h-4 w-4" />Adicionar</Button>
+      </div>
+      <Table>
+        <TableHeader><TableRow><TableHead>Nome</TableHead><TableHead>CNPJ</TableHead><TableHead>Apólice</TableHead><TableHead>Averbação</TableHead><TableHead /></TableRow></TableHeader>
+        <TableBody>
+          {data?.map((r: any) => (
+            editingId === r.id ? (
+              <TableRow key={r.id}>
+                <TableCell><Input value={editNome} onChange={(e) => setEditNome(e.target.value)} className="h-8" /></TableCell>
+                <TableCell><Input value={editCnpj} onChange={(e) => setEditCnpj(formatCnpj(e.target.value))} className="h-8" /></TableCell>
+                <TableCell><Input value={editApolice} onChange={(e) => setEditApolice(e.target.value)} className="h-8" /></TableCell>
+                <TableCell><Input value={editAverbacao} onChange={(e) => setEditAverbacao(e.target.value)} className="h-8" /></TableCell>
+                <TableCell className="text-right gap-1">
+                  <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => saveEdit(r.id)}><Check className="h-4 w-4" /></Button>
+                  <Button variant="ghost" size="icon" className="h-8 w-8" onClick={cancelEdit}><X className="h-4 w-4" /></Button>
+                </TableCell>
+              </TableRow>
+            ) : (
+              <TableRow key={r.id}>
+                <TableCell className="font-medium">{r.nome}</TableCell>
+                <TableCell className="text-muted-foreground">{r.cnpj ? formatCnpj(r.cnpj) : "—"}</TableCell>
+                <TableCell>{r.apolice_numero || "—"}</TableCell>
+                <TableCell>{r.averbacao || "—"}</TableCell>
+                <TableCell className="text-right gap-1">
+                  <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => startEdit(r)}><Pencil className="h-4 w-4" /></Button>
+                  <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => remove(r.id)}><Trash2 className="h-4 w-4" /></Button>
+                </TableCell>
+              </TableRow>
+            )
+          ))}
+          {data?.length === 0 && <TableRow><TableCell colSpan={5} className="text-center text-muted-foreground text-sm">Nenhuma seguradora cadastrada</TableCell></TableRow>}
         </TableBody>
       </Table>
     </CardContent></Card>
