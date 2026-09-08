@@ -1081,6 +1081,17 @@ Commits: CF `94061c5` + Vercel `917a70b`
 
 ---
 
+## CT-e: fix 225 — vTotDFe no imp, não IBSCBSTot (08/09/2026)
+
+- NT 2025.001 RTC: o total do DFe é `<imp><vTotDFe>` após o IBSCBS (não existe
+  `<total><IBSCBSTot>` no CT-e). Em 2026, `vTotDFe = vTPrest` (sem somar IBS/CBS,
+  senão erro 365). Meu `IBSCBSTot` anterior causou o 225.
+- Fix: `vTotDFe` injetado no `<imp>`; `<total>` voltou ao original.
+
+Commits: CF `[pendente]` + Vercel `[pendente]`
+
+---
+
 ## Regras de segurança
 
 - NUNCA commitar tokens/senhas (GitHub PAT, senhas de banco, service keys).

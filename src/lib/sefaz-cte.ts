@@ -158,7 +158,9 @@ export function buildCteXml(input: CteInputCompleto): { xml: string; chave: stri
   const vIBSUF = Math.round(vBCNum * 0.001 * 100) / 100;
   const vCBS = Math.round(vBCNum * 0.009 * 100) / 100;
   const ibsXml = `<IBSCBS><CST>000</CST><cClassTrib>000001</cClassTrib><gIBSCBS><vBC>${vBC}</vBC><gIBSUF><pIBSUF>0.10</pIBSUF><vIBSUF>${vIBSUF.toFixed(2)}</vIBSUF></gIBSUF><gIBSMun><pIBSMun>0.00</pIBSMun><vIBSMun>0.00</vIBSMun></gIBSMun><vIBS>${vIBSUF.toFixed(2)}</vIBS><gCBS><pCBS>0.90</pCBS><vCBS>${vCBS.toFixed(2)}</vCBS></gCBS></gIBSCBS></IBSCBS>`;
-  impXml = impXml.replace(/<\/imp>$/, `${ibsXml}</imp>`);
+  // NT 2025.001 RTC: vTotDFe dentro do <imp>, após o IBSCBS. Em 2026, vTotDFe = vTPrest (sem somar IBS/CBS).
+  const vTotDFe = input.vPrest.toFixed(2);
+  impXml = impXml.replace(/<\/imp>$/, `${ibsXml}<vTotDFe>${vTotDFe}</vTotDFe></imp>`);
 
   // infNFe — schema exige <chNFe>, não <chave>
   const infNFeXml = (input.chavesNFe && input.chavesNFe.length > 0)
@@ -191,7 +193,7 @@ export function buildCteXml(input: CteInputCompleto): { xml: string; chave: stri
     ${infNFeXml}
     <infModal versaoModal="4.00"><rodo><RNTRC>${(input.modalRod?.rntrc || input.rntrc || "ISENTO").replace(/\D/g,"") || "ISENTO"}</RNTRC></rodo></infModal>
     ${impXml}
-    <total><vTPrest>${input.vPrest.toFixed(2)}</vTPrest><vTRec>${input.vPrest.toFixed(2)}</vTRec><IBSCBSTot><vBCIBSCBS>${vBC}</vBCIBSCBS><gIBS><vIBSUF>${vIBSUF.toFixed(2)}</vIBSUF><vIBSMun>0.00</vIBSMun></gIBS><vIBS>${vIBSUF.toFixed(2)}</vIBS><gCBS><vCBS>${vCBS.toFixed(2)}</vCBS></gCBS></IBSCBSTot></total>
+    <total><vTPrest>${input.vPrest.toFixed(2)}</vTPrest><vTRec>${input.vPrest.toFixed(2)}</vTRec></total>
     <infRespTec><CNPJ>${cnpjLimpo}</CNPJ><xContato>SUPORTE TECNICO</xContato><email>suporte@vectrainsights.com.br</email><fone>3139952572</fone></infRespTec>
   </infCte>
   <infCTeSupl><qrCodCTe>https://${(input.ufEnv || input.emit.uf)?.toUpperCase() === "MG" ? "portalcte.fazenda.mg.gov.br/portalcte/sistema/qrcode.xhtml" : "dfeportal.svrs.rs.gov.br/cteQrCode"}?chCTe=${chave}&amp;tpAmb=${input.ambiente==="producao"?"1":"2"}</qrCodCTe></infCTeSupl>
