@@ -999,7 +999,7 @@ Commits: CF `d6cb74b` + Vercel `e75e0bf`
 - **Logo Juvenal** no cabeçalho do DACTE (`src/lib/juvenal-logo.ts` base64 de
   `src/assets/juvenal-logo.png`; vazio = só nome).
 
-Commits: CF `[pendente]` + Vercel `[pendente]`
+Commits: CF `2dd07ae` + Vercel `b523319`
 
 ---
 
