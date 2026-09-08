@@ -1045,6 +1045,20 @@ Commits: CF `aee3acf` + Vercel `abbdaf0`
 
 ---
 
+## CT-e: fix erro 938 homologação — razão social de teste (08/09/2026)
+
+- Causa raiz (log 08/09 14:14): SEFAZ-MG exige em homologação o tomador com razão
+  social literal `CTE EMITIDO EM AMBIENTE DE HOMOLOGACAO - SEM VALORFISCAL` (sem
+  espaço em VALORFISCAL, 60 chars). Havia const local com o texto errado e nunca usada.
+- Fix: `HOMOLOG_TOMADOR_NOME` exportado em `sefaz-cte.ts`; `buildCteXml` usa no
+  `<toma><xNome>` quando `ambiente=homologacao` (vale p/ emissão e preview XML).
+  Preview DACTE usa o mesmo texto; aviso âmbar no card Tomador em homologação.
+  Produção inalterada (nome real do cadastro).
+
+Commits: CF `[pendente]` + Vercel `[pendente]`
+
+---
+
 ## Regras de segurança
 
 - NUNCA commitar tokens/senhas (GitHub PAT, senhas de banco, service keys).

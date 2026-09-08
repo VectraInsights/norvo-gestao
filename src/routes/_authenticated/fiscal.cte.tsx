@@ -1368,6 +1368,7 @@ function CtePage() {
                 <div className="flex items-center gap-2 mb-1">
                   <div className="h-5 w-5 rounded bg-primary/10 grid place-items-center"><UsersRound className="h-3 w-3 text-primary" /></div>
                   <h5 className="text-xs font-semibold">Tomador do Serviço</h5>
+                  {form.ambiente === "homologacao" && <span className="text-[9px] text-amber-600">XML sai com razão social de teste (exigência SEFAZ-MG)</span>}
                 </div>
                 <div className="grid grid-cols-6 gap-1">
                   <Select value={form.toma} onValueChange={v => aplicarTomadorPorToma(v)}>
@@ -2005,7 +2006,8 @@ function CtePage() {
               emitUF: f.emit?.uf || f.ufEnv || "",
               emitIE: f.emit?.ie || "ISENTO",
               tomadorCnpj: f.cnpjTomador || "",
-              tomadorNome: f.xNomeTomador || "",
+              // Manter igual a HOMOLOG_TOMADOR_NOME em sefaz-cte.ts (SEFAZ-MG exige em homologação, erro 938)
+              tomadorNome: previewData.ambiente === "homologacao" ? "CTE EMITIDO EM AMBIENTE DE HOMOLOGACAO - SEM VALORFISCAL" : (f.xNomeTomador || ""),
               tomadorEndereco: `${f.logradouroTomador || ""} ${f.nroTomador || ""} ${f.bairroTomador || ""}`.trim(),
               tomadorCidade: f.xMunTomador || "",
               tomadorUF: f.ufTomador || "",

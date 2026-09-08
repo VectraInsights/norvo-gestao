@@ -11,6 +11,10 @@ export { buscarCertificadoAtivo };
 
 export type Ambiente = "homologacao" | "producao";
 
+// SEFAZ-MG exige em homologação (erro 938) que a razão social do tomador seja
+// literalmente este texto. Manter sincronizado com o preview em fiscal.cte.tsx.
+export const HOMOLOG_TOMADOR_NOME = "CTE EMITIDO EM AMBIENTE DE HOMOLOGACAO - SEM VALORFISCAL";
+
 export const CTE_ENDPOINTS = {
   homologacao: {
     // SVRS V4 — usado por AC, AL, AM, BA, CE, DF, ES, GO, MA, PA, PB, PI, RJ, RN, RO, SC, SE, TO
@@ -120,8 +124,7 @@ export function buildCteXml(input: CteInputCompleto): { xml: string; chave: stri
   const natOp = input.natOp || "PRESTACAO DE SERVICO DE TRANSPORTE";
   const toma = input.tomador.toma;
   const crt = input.emit.crt || "3";
-  const isHmg = input.ambiente === "homologacao";
-  const HOMOLOG_XNOME = "CTE EMITIDO EM AMBIENTE DE HOMOLOGACAO - SEM VALOR FISCAL";
+  const xNomeToma = input.ambiente === "homologacao" ? HOMOLOG_TOMADOR_NOME : input.tomador.xNome;
 
   // indIEToma: 1=Contribuinte, 2=Isento, 9=Nao Contribuinte
   // G024: MG NÃO aceita indIEToma=2 (Isento) → usar 9
@@ -171,7 +174,7 @@ export function buildCteXml(input: CteInputCompleto): { xml: string; chave: stri
       <CNPJ>${cnpjLimpo}</CNPJ>${input.emit.ie && /^\d{2,14}$/.test(input.emit.ie) ? `<IE>${input.emit.ie}</IE>` : ""}<xNome>${input.emit.xNome}</xNome>${input.emit.xFant && input.emit.xFant.length >= 2 ? `<xFant>${input.emit.xFant}</xFant>` : ""}${enderEmit}<CRT>${crt}</CRT>
     </emit>
     <toma>
-      <toma>${toma}</toma><indIEToma>${indIEToma}</indIEToma><CNPJ>${cnpjToma}</CNPJ>${indIEToma !== "9" && input.tomador.ie && input.tomador.ie !== "ISENTO" ? `<IE>${input.tomador.ie}</IE>` : ""}<xNome>${input.tomador.xNome}</xNome>${input.tomador.fone ? `<fone>${input.tomador.fone}</fone>` : ""}<enderToma><xLgr>${(input.tomador.logradouro || "RUA").length >= 2 ? (input.tomador.logradouro || "RUA") : "RUA GERAL"}</xLgr><nro>${input.tomador.nro || "SN"}</nro><xBairro>${(input.tomador.bairro || "CENTRO").length >= 2 ? (input.tomador.bairro || "CENTRO") : "CENTRO"}</xBairro><cMun>${input.tomador.cMun}</cMun><xMun>${input.tomador.xMun}</xMun><CEP>${cepToma}</CEP><UF>${input.tomador.uf}</UF></enderToma>${input.tomador.email ? `<email>${input.tomador.email}</email>` : ""}
+      <toma>${toma}</toma><indIEToma>${indIEToma}</indIEToma><CNPJ>${cnpjToma}</CNPJ>${indIEToma !== "9" && input.tomador.ie && input.tomador.ie !== "ISENTO" ? `<IE>${input.tomador.ie}</IE>` : ""}<xNome>${xNomeToma}</xNome>${input.tomador.fone ? `<fone>${input.tomador.fone}</fone>` : ""}<enderToma><xLgr>${(input.tomador.logradouro || "RUA").length >= 2 ? (input.tomador.logradouro || "RUA") : "RUA GERAL"}</xLgr><nro>${input.tomador.nro || "SN"}</nro><xBairro>${(input.tomador.bairro || "CENTRO").length >= 2 ? (input.tomador.bairro || "CENTRO") : "CENTRO"}</xBairro><cMun>${input.tomador.cMun}</cMun><xMun>${input.tomador.xMun}</xMun><CEP>${cepToma}</CEP><UF>${input.tomador.uf}</UF></enderToma>${input.tomador.email ? `<email>${input.tomador.email}</email>` : ""}
     </toma>
     <infCarga>
       <vCarga>${input.vCarga.toFixed(2)}</vCarga><proPred>${input.infCTeNorm?.proPred || "CARGA GERAL"}</proPred>
