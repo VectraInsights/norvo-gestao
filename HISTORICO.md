@@ -1059,6 +1059,18 @@ Commits: CF `f11248e` + Vercel `f83f741`
 
 ---
 
+## CT-e: fix erro 310 — grupo IBS/CBS obrigatório (08/09/2026)
+
+- Após o fix do 938, SEFAZ retornou **310 "IBS / CBS não informado"** (reforma
+  tributária, obrigatório em 2026).
+- Fix em `buildCteXml`: grupo `<IBSCBS>` (CST 000, cClassTrib 000001) injetado no
+  `<imp>` em todos os CSTs, com alíquotas de teste 2026 (IBS 0,10% / CBS 0,90%)
+  calculadas sobre a vBC com arredondamento 2dp.
+
+Commits: CF `[pendente]` + Vercel `[pendente]`
+
+---
+
 ## Regras de segurança
 
 - NUNCA commitar tokens/senhas (GitHub PAT, senhas de banco, service keys).

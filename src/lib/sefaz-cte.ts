@@ -152,6 +152,14 @@ export function buildCteXml(input: CteInputCompleto): { xml: string; chave: stri
   else if (cst === "60") impXml = `<imp><ICMS><ICMS60><CST>60</CST><vBCSTRet>0.00</vBCSTRet><vICMSSTRet>0.00</vICMSSTRet><pICMSSTRet>0.00</pICMSSTRet><vCred>0.00</vCred></ICMS60></ICMS></imp>`;
   else impXml = `<imp><ICMS><ICMS90><CST>${cst}</CST><pRedBC>0.00</pRedBC><vBC>${vBC}</vBC><pICMS>${pICMS}</pICMS><vICMS>${vICMS}</vICMS><vCred>0.00</vCred></ICMS90></ICMS></imp>`;
 
+  // IBS/CBS (reforma tributária, obrigatório desde 2026 — erro 310 se ausente).
+  // Alíquotas de teste 2026 (LC 214): IBS 0,10% / CBS 0,90%, calculadas sobre a vBC.
+  const vBCNum = Number(vBC);
+  const vIBSUF = Math.round(vBCNum * 0.001 * 100) / 100;
+  const vCBS = Math.round(vBCNum * 0.009 * 100) / 100;
+  const ibsXml = `<IBSCBS><CST>000</CST><cClassTrib>000001</cClassTrib><gIBSCBS><vBC>${vBC}</vBC><gIBSUF><pIBSUF>0.10</pIBSUF><vIBSUF>${vIBSUF.toFixed(2)}</vIBSUF></gIBSUF><gIBSMun><pIBSMun>0.00</pIBSMun><vIBSMun>0.00</vIBSMun></gIBSMun><vIBS>${vIBSUF.toFixed(2)}</vIBS><gCBS><pCBS>0.90</pCBS><vCBS>${vCBS.toFixed(2)}</vCBS></gCBS></gIBSCBS></IBSCBS>`;
+  impXml = impXml.replace(/<\/imp>$/, `${ibsXml}</imp>`);
+
   // infNFe — schema exige <chNFe>, não <chave>
   const infNFeXml = (input.chavesNFe && input.chavesNFe.length > 0)
     ? input.chavesNFe.map((ch, i) => `<det nItem="${i+1}"><cMunIni>${input.cMunIni}</cMunIni><xMunIni>${input.xMunIni}</xMunIni><cMunFim>${input.cMunFim}</cMunFim><xMunFim>${input.xMunFim}</xMunFim><vPrest>${input.vPrest.toFixed(2)}</vPrest><vRec>${input.vPrest.toFixed(2)}</vRec><infNFe><chNFe>${ch.replace(/\D/g,"")}</chNFe></infNFe></det>`).join("")
