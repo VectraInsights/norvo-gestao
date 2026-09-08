@@ -1161,6 +1161,18 @@ Commits: CF `584eb83` + Vercel `1af180f`
 
 ---
 
+## CT-e: transições de NF no servidor (08/09/2026)
+
+- NF 59156 ficou `pendente` após CT-e autorizado: UPDATE do front falhou em
+  silêncio (sem toast). Corrigido na hora via API (→ `embarcada`).
+- Baixa (`embarcada`) e devolução (`pendente`) agora acontecem no **servidor**
+  (service_role) em `emitirCteFn`/`cancelarCteFn` + proxy; front mantém fallback
+  e ganhou toasts de erro nos updates (chega de falha silenciosa).
+
+Commits: CF `[pendente]` + Vercel `[pendente]`
+
+---
+
 ## Regras de segurança
 
 - NUNCA commitar tokens/senhas (GitHub PAT, senhas de banco, service keys).

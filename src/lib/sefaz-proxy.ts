@@ -176,6 +176,10 @@ export async function handleSefazProxy(request: Request): Promise<Response> {
         const supa3 = createClient(process.env.SUPABASE_URL||"", process.env.SUPABASE_SERVICE_ROLE_KEY||"");
         if (ret.sucesso) await supa3.from("cte_documentos").insert({ empresa_id: empresaId, chave_acesso: chave, numero: proximo, serie: input.serie, status: "autorizado", xml_assinado: xml, protocolo_sefaz: ret.protocolo, ambiente: cteAmbiente, data_autorizacao: new Date().toISOString(), valor_servico: input.vPrest } as any);
         else await supa3.from("cte_documentos").insert({ empresa_id: empresaId, chave_acesso: chave, numero: proximo, serie: input.serie, status: "rejeitado", xml_assinado: xml, motivo_rejeicao: ret.xMotivo, ambiente: cteAmbiente } as any);
+        if (ret.sucesso) {
+          const chUsadas = ((inp as any).chavesNFe || []).map((c: any) => String(c).replace(/\D/g, "")).filter(Boolean);
+          if (chUsadas.length > 0) await supa3.from("cte_nfes_pendentes" as any).update({ status: "embarcada" }).in("chave", chUsadas).eq("empresa_id", empresaId);
+        }
         return json({ ...ret, chave, xml });
       }
       case "consultarCte": {
@@ -195,6 +199,11 @@ export async function handleSefazProxy(request: Request): Promise<Response> {
           const { createClient: cc } = await import("@supabase/supabase-js");
           const s = cc(process.env.SUPABASE_URL||"", process.env.SUPABASE_SERVICE_ROLE_KEY||"");
           await s.from("cte_documentos").update({ status: "cancelado" } as any).eq("chave_acesso", (body as any).chave);
+          const { data: docXml } = await s.from("cte_documentos").select("xml_assinado").eq("chave_acesso", (body as any).chave).maybeSingle();
+          let xmlStr = (docXml as any)?.xml_assinado || "";
+          try { const p = JSON.parse(xmlStr); if (p.xml) xmlStr = p.xml; } catch {}
+          const chavesNfe = [...xmlStr.matchAll(/<chNFe>(\d{44})<\/chNFe>/g)].map(m => m[1]);
+          if (chavesNfe.length > 0) await s.from("cte_nfes_pendentes" as any).update({ status: "pendente" }).in("chave", chavesNfe).eq("empresa_id", empresaId);
         }
         return json(result);
       }

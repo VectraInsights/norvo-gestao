@@ -80,6 +80,9 @@ export const emitirCteFn = createServerFn({ method: "POST" }).validator((d: { em
   const ret = await emitirCte(cert.pfx, cert.senha, xml, ambiente, cert.uf);
   if (ret.sucesso) {
     await supa.from("cte_documentos").insert({ empresa_id: data.empresaId, chave_acesso: chave, numero: proximo, serie: input.serie, status: "autorizado", xml_assinado: xml, protocolo_sefaz: ret.protocolo, ambiente, data_autorizacao: new Date().toISOString(), valor_servico: input.vPrest, peso_carga: input.pesoKg } as any);
+    // Baixa as NF-es (fonte da verdade no servidor — front repete por segurança)
+    const chUsadas = (input.chavesNFe || []).map((c: any) => String(c).replace(/\D/g, "")).filter(Boolean);
+    if (chUsadas.length > 0) await supa.from("cte_nfes_pendentes" as any).update({ status: "embarcada" }).in("chave", chUsadas).eq("empresa_id", data.empresaId);
   } else {
     await supa.from("cte_documentos").insert({ empresa_id: data.empresaId, chave_acesso: chave, numero: proximo, serie: input.serie, status: "rejeitado", xml_assinado: xml, motivo_rejeicao: ret.xMotivo, ambiente } as any);
   }
@@ -148,7 +151,15 @@ export const cancelarCteFn = createServerFn({ method: "POST" }).validator((d:{em
   const ambiente=(doc as any)?.ambiente==="producao"?"producao":"homologacao";
   console.log("[CTE-CANCEL] ambiente:", ambiente, "chave:", data.chave, "protocolo:", data.protocolo);
   const ret=await cancelarCte(cert.pfx, cert.senha, data.chave, data.justificativa, ambiente, cert.cnpj, cert.uf, data.protocolo);
-  if(ret.sucesso) await supa.from("cte_documentos").update({status:"cancelado"} as any).eq("chave_acesso",data.chave);
+  if(ret.sucesso) {
+    await supa.from("cte_documentos").update({status:"cancelado"} as any).eq("chave_acesso",data.chave);
+    // Devolve as NF-es para pendentes (fonte da verdade no servidor)
+    const { data: docXml } = await supa.from("cte_documentos").select("xml_assinado").eq("chave_acesso", data.chave).maybeSingle();
+    let xmlStr = (docXml as any)?.xml_assinado || "";
+    try { const p = JSON.parse(xmlStr); if (p.xml) xmlStr = p.xml; } catch {}
+    const chavesNfe = [...xmlStr.matchAll(/<chNFe>(\d{44})<\/chNFe>/g)].map(m => m[1]);
+    if (chavesNfe.length > 0) await supa.from("cte_nfes_pendentes" as any).update({ status: "pendente" }).in("chave", chavesNfe).eq("empresa_id", data.empresaId);
+  }
   return ret;
 });
 

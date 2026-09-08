@@ -874,7 +874,8 @@ function CtePage() {
         }
         const chavesUsadas = selecionadas.size > 0 ? Array.from(selecionadas) : mercadorias.map(m => m.chave);
         if (empresa && chavesUsadas.length > 0) {
-          const { count } = await supabase.from("cte_nfes_pendentes" as any).update({ status: "embarcada" }).in("chave", chavesUsadas).eq("empresa_id", empresa.id).select("chave", { count: "exact", head: true });
+          const { count, error: embErr } = await supabase.from("cte_nfes_pendentes" as any).update({ status: "embarcada" }).in("chave", chavesUsadas).eq("empresa_id", empresa.id).select("chave", { count: "exact", head: true });
+          if (embErr) toast.error(`CT-e autorizado, mas falha ao baixar NF-e: ${embErr.message}`);
           if (!count || count === 0) {
             for (const nf of rascunhoNfs) {
               if (!nf?.chave || !chavesUsadas.includes(nf.chave)) continue;
@@ -925,8 +926,9 @@ function CtePage() {
           const chavesNfe = [...xmlStr.matchAll(/<chNFe>(\d{44})<\/chNFe>/g)].map((m: any)=>m[1]);
           console.log("[CTE-CANCEL-REVERT] chave:", ret.chave, "chavesNfe:", chavesNfe, "rascunhoNfs:", rascunhoNfs.length);
           if (chavesNfe.length > 0) {
-            const { count } = await supabase.from("cte_nfes_pendentes" as any).update({ status: "pendente" }).in("chave", chavesNfe).eq("empresa_id", empresa.id).select("chave", { count: "exact", head: true });
+            const { count, error: revErr } = await supabase.from("cte_nfes_pendentes" as any).update({ status: "pendente" }).in("chave", chavesNfe).eq("empresa_id", empresa.id).select("chave", { count: "exact", head: true });
             console.log("[CTE-CANCEL-REVERT] update count:", count);
+            if (revErr) toast.error(`CT-e cancelado, mas falha ao devolver NF-e: ${revErr.message}`);
             if (!count || count === 0) {
               for (const nf of rascunhoNfs) {
                 if (!nf?.chave) continue;
