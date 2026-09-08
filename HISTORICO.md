@@ -1077,7 +1077,7 @@ Commits: CF `41efded` + Vercel `f044351`
 - Fix: `<IBSCBSTot>` (vBCIBSCBS, gIBS/vIBSUF/vIBSMun, vIBS, gCBS/vCBS) dentro do
   `<total>`, com os mesmos valores do grupo IBSCBS do `<imp>`.
 
-Commits: CF `[pendente]` + Vercel `[pendente]`
+Commits: CF `94061c5` + Vercel `917a70b`
 
 ---
 
