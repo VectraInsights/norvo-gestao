@@ -13,7 +13,7 @@ import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
-import { Truck, Plus, FileText, Search, Ban, UploadCloud, FileCode, UsersRound, MapPin, Package, Building2, Trash2, Filter, Calendar, CheckCircle2, ChevronsUpDown, Check, ReceiptText, Pencil, Download, Settings2, X, Loader2, ClipboardList } from "lucide-react";
+import { Truck, Plus, FileText, Search, Ban, UploadCloud, FileCode, MapPin, Package, Building2, Trash2, Filter, Calendar, CheckCircle2, ChevronsUpDown, Check, ReceiptText, Pencil, Download, Settings2, X, Loader2, ClipboardList } from "lucide-react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useEmpresaAtual } from "@/hooks/use-empresa";
@@ -21,7 +21,7 @@ import { brl, dateBR, num } from "@/lib/format";
 import { useState, useEffect, useMemo, useRef } from "react";
 import { toast } from "sonner";
 import { emitirCteFn, consultarCteFn, cancelarCteFn, previewCteXmlFn, excluirRejeitadosCteFn } from "@/lib/sefaz-cte-server";
-import { CFOPS_CTE, MOD_FRETE_OPTIONS, RESPONSAVEL_CTE_OPTIONS } from "@/lib/cfops-transporte";
+import { CFOPS_CTE, RESPONSAVEL_CTE_OPTIONS } from "@/lib/cfops-transporte";
 import { gerarDactePdf } from "@/lib/dacte-pdf";
 import { JUVENAL_LOGO } from "@/lib/juvenal-logo";
 import { Textarea } from "@/components/ui/textarea";
@@ -449,7 +449,7 @@ function CtePage() {
     enabled: !!empresa,
     queryKey: ["contatos-cte", empresa?.id],
     queryFn: async (): Promise<any[]> => {
-      const { data } = await supabase.from("contatos" as any).select("documento,ie,logradouro,numero,bairro,cidade,uf,cep,telefone").eq("empresa_id", empresa!.id);
+      const { data } = await supabase.from("contatos" as any).select("documento,nome,ie,logradouro,numero,bairro,cidade,uf,cep,telefone").eq("empresa_id", empresa!.id);
       return (data ?? []) as any[];
     },
   });
@@ -461,6 +461,8 @@ function CtePage() {
   // Tomador: troca de toma recalcula remetente/destinatário; CNPJ manual busca dados
   const [lookingUpTomador, setLookingUpTomador] = useState(false);
   const lastLookupTomador = useRef("");
+  const [tomadorOpen, setTomadorOpen] = useState(false);
+  const [tomadorQuery, setTomadorQuery] = useState("");
   const lookupTomador = async (digits: string) => {
     if (digits.length !== 14 || !empresa) return;
     setLookingUpTomador(true);
@@ -474,6 +476,23 @@ function CtePage() {
       toast.success("Tomador localizado");
     } catch (e: any) { toast.error(e.message || "Falha ao buscar CNPJ"); }
     finally { setLookingUpTomador(false); }
+  };
+  // Emitente/destinatário da NF-e ativa (p/ opções do dropdown de tomador)
+  const activeEmitDest = useMemo(() => {
+    const sel = mercadorias.filter(m => selecionadas.has(m.chave));
+    const a = sel.length > 0 ? sel[0] : mercadorias[0];
+    if (!a) return { emit: "", emitNome: "", dest: "", destNome: "" };
+    return { emit: (a.emitCnpj || "").replace(/\D/g, ""), emitNome: a.emit || "", dest: (a.destCnpj || "").replace(/\D/g, ""), destNome: a.dest || "" };
+  }, [mercadorias, selecionadas]);
+  // Escolheu contato no dropdown: define toma (0 emit / 1 dest / 2 terceiros) e busca dados
+  const onPickContatoTomador = (digits: string) => {
+    const d = (digits || "").replace(/\D/g, "");
+    if (d.length !== 14) return;
+    setForm(f => ({ ...f, toma: d && d === activeEmitDest.emit ? "0" : d && d === activeEmitDest.dest ? "1" : "2" }));
+    lastLookupTomador.current = d;
+    lookupTomador(d);
+    setTomadorOpen(false);
+    setTomadorQuery("");
   };
   const aplicarTomadorPorToma = (v: string) => {
     const sel = mercadorias.filter(m => selecionadas.has(m.chave));
@@ -1249,8 +1268,8 @@ function CtePage() {
 
             {/* === TAB: Geral === */}
             <TabsContent value="geral" className="mt-3 space-y-3">
-              {/* Header: Ambiente, Nº Conhecimento, Data, CFOP, Mod/Ser */}
-              <div className="grid grid-cols-2 md:grid-cols-[1fr_1fr_1fr_1fr_auto] gap-2 border rounded p-3 bg-muted/20">
+              {/* Header: Ambiente, Nº, Data, Tomador, Mod/Ser + CFOP */}
+              <div className="grid grid-cols-2 md:grid-cols-[auto_auto_auto_minmax(0,1fr)_auto] gap-2 border rounded p-3 bg-muted/20">
                 <div>
                   <Label className="text-[10px] text-muted-foreground">Ambiente</Label>
                   <ToggleGroup type="single" value={form.ambiente} onValueChange={v => { if (v) setForm({...form, ambiente: v as "homologacao" | "producao"}); }} className="bg-background border rounded-md h-7 mt-0.5">
@@ -1258,8 +1277,66 @@ function CtePage() {
                     <ToggleGroupItem value="producao" className="h-6 text-[10px] px-2 data-[state=on]:bg-green-600/10 data-[state=on]:text-green-700">Produção</ToggleGroupItem>
                   </ToggleGroup>
                 </div>
-                <div><Label className="text-[10px] text-muted-foreground">N° Conhecimento</Label><Input className="h-7 text-xs font-mono" value="— aguardando emissão —" readOnly /></div>
-                <div><Label className="text-[10px] text-muted-foreground">Data Emissão</Label><DateInput value={form.dataEmissao} onChange={v => setForm({...form, dataEmissao: v})} className="h-7 text-xs" /></div>
+                <div className="w-44"><Label className="text-[10px] text-muted-foreground">N° Conhecimento</Label><Input className="h-7 text-xs font-mono" value="— aguardando emissão —" readOnly /></div>
+                <div className="w-[136px]"><Label className="text-[10px] text-muted-foreground">Data Emissão</Label><DateInput value={form.dataEmissao} onChange={v => setForm({...form, dataEmissao: v})} className="h-7 text-xs" /></div>
+                <div className="min-w-0">
+                  <Label className="text-[10px] text-muted-foreground">Tomador do Serviço{form.ambiente === "homologacao" ? " (XML: razão teste)" : ""}</Label>
+                  <Popover open={tomadorOpen} onOpenChange={setTomadorOpen}>
+                    <PopoverTrigger asChild>
+                      <Button variant="outline" role="combobox" aria-expanded={tomadorOpen} className="h-7 text-xs justify-between w-full font-normal">
+                        <span className="truncate text-left">{form.cnpjTomador ? `${fmtCnpjInput(form.cnpjTomador)} — ${form.xNomeTomador || ""}` : "Selecione o tomador"}</span>
+                        {lookingUpTomador ? <Loader2 className="ml-2 h-3 w-3 shrink-0 animate-spin" /> : <ChevronsUpDown className="ml-2 h-3 w-3 shrink-0 opacity-50" />}
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-[480px] p-0" align="start">
+                      <Command shouldFilter={false}>
+                        <CommandInput placeholder="Buscar nome/CNPJ ou digite o CNPJ..." value={tomadorQuery} onValueChange={v => {
+                          setTomadorQuery(v);
+                          const digits = v.replace(/\D/g, "").slice(0, 14);
+                          if (digits.length === 14 && digits !== lastLookupTomador.current) { lastLookupTomador.current = digits; lookupTomador(digits); setTomadorOpen(false); setTomadorQuery(""); }
+                        }} />
+                        <CommandList>
+                          <CommandEmpty>Nenhum contato encontrado.</CommandEmpty>
+                          {(activeEmitDest.emit || activeEmitDest.dest) && (
+                            <CommandGroup heading="Da NF-e">
+                              {activeEmitDest.emit && (
+                                <CommandItem value={`toma0 ${activeEmitDest.emit}`} onSelect={() => { aplicarTomadorPorToma("0"); setTomadorOpen(false); setTomadorQuery(""); }}>
+                                  <Check className={"mr-2 h-3 w-3 " + (form.toma === "0" ? "opacity-100" : "opacity-0")} />
+                                  <span className="truncate">0 — Remetente (CIF): {activeEmitDest.emitNome}</span>
+                                </CommandItem>
+                              )}
+                              {activeEmitDest.dest && (
+                                <CommandItem value={`toma1 ${activeEmitDest.dest}`} onSelect={() => { aplicarTomadorPorToma("1"); setTomadorOpen(false); setTomadorQuery(""); }}>
+                                  <Check className={"mr-2 h-3 w-3 " + (form.toma === "1" ? "opacity-100" : "opacity-0")} />
+                                  <span className="truncate">1 — Destinatário (FOB): {activeEmitDest.destNome}</span>
+                                </CommandItem>
+                              )}
+                            </CommandGroup>
+                          )}
+                          <CommandGroup heading="Contatos">
+                            {(contatosCte ?? []).filter((c: any) => {
+                              if (!tomadorQuery) return true;
+                              const q = tomadorQuery.toLowerCase();
+                              const qd = tomadorQuery.replace(/\D/g, "");
+                              return ((c.nome || "").toLowerCase().includes(q)) || (qd !== "" && String(c.documento || "").replace(/\D/g, "").includes(qd));
+                            }).slice(0, 30).map((c: any) => {
+                              const digits = String(c.documento || "").replace(/\D/g, "");
+                              return (
+                                <CommandItem key={c.documento} value={c.documento} onSelect={() => onPickContatoTomador(digits)}>
+                                  <Check className={"mr-2 h-3 w-3 " + (form.cnpjTomador === digits ? "opacity-100" : "opacity-0")} />
+                                  <span className="truncate">{fmtCnpjInput(digits)} — {c.nome || ""}</span>
+                                </CommandItem>
+                              );
+                            })}
+                          </CommandGroup>
+                        </CommandList>
+                      </Command>
+                    </PopoverContent>
+                  </Popover>
+                </div>
+                <div><Label className="text-[10px] text-muted-foreground">Mod / Série</Label><Input className="h-7 text-xs font-mono w-[92px] text-center px-1" value="57 / 001" readOnly /></div>
+              </div>
+              <div className="border rounded p-3 bg-muted/20">
                 <div>
                   <Label className="text-[10px] text-muted-foreground">CFOP Saída</Label>
                   <Popover open={cfopOpen} onOpenChange={setCfopOpen}>
@@ -1296,7 +1373,6 @@ function CtePage() {
                   </Popover>
                   <p className="text-[9px] text-muted-foreground mt-1">Digite só números (5352) — salva com ponto (5.352) na descrição.</p>
                 </div>
-                <div><Label className="text-[10px] text-muted-foreground">Mod / Série</Label><Input className="h-7 text-xs font-mono w-[92px] text-center px-1" value="57 / 001" readOnly /></div>
               </div>
               {/* Rota compacta no cabeçalho: coleta + entrega */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-2 border rounded p-2.5 bg-muted/20">
@@ -1421,43 +1497,6 @@ function CtePage() {
                 ) : <p className="text-[10px] text-muted-foreground">Digite o CNPJ para buscar os dados automaticamente</p>}
               </Card>
               </div>
-
-              {/* Tomador */}
-              <Card className="p-2">
-                <div className="flex items-center gap-2 mb-1">
-                  <div className="h-5 w-5 rounded bg-primary/10 grid place-items-center"><UsersRound className="h-3 w-3 text-primary" /></div>
-                  <h5 className="text-xs font-semibold">Tomador do Serviço</h5>
-                  {form.ambiente === "homologacao" && <span className="text-[9px] text-amber-600">XML sai com razão social de teste (exigência SEFAZ-MG)</span>}
-                </div>
-                <div className="grid grid-cols-6 gap-1">
-                  <Select value={form.toma} onValueChange={v => aplicarTomadorPorToma(v)}>
-                    <SelectTrigger className="h-6 text-[10px] col-span-2"><SelectValue /></SelectTrigger>
-                    <SelectContent>
-                      {MOD_FRETE_OPTIONS.map(opt => (
-                        <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  <div className="col-span-2 flex gap-1">
-                    <Input className="h-6 text-[10px] font-mono" placeholder="CNPJ *" value={fmtCnpjInput(form.cnpjTomador || "")} onChange={e => {
-                      const digits = e.target.value.replace(/\D/g, "").slice(0, 14);
-                      setForm({ ...form, cnpjTomador: digits });
-                      if (digits.length === 14 && digits !== lastLookupTomador.current) { lastLookupTomador.current = digits; lookupTomador(digits); }
-                    }} maxLength={18} />
-                    <Button type="button" size="icon" variant="ghost" className="h-6 w-6 shrink-0" disabled={lookingUpTomador} onClick={() => { const d = (form.cnpjTomador || "").replace(/\D/g, ""); if (d.length !== 14) { toast.error("CNPJ deve ter 14 dígitos"); return; } lastLookupTomador.current = d; lookupTomador(d); }} title="Buscar CNPJ">{lookingUpTomador ? <Loader2 className="h-3 w-3 animate-spin" /> : <Search className="h-3 w-3" />}</Button>
-                  </div>
-                  <Input className="h-6 text-[10px] col-span-2" placeholder="Nome / Razão Social *" value={form.xNomeTomador} onChange={e=>setForm({...form,xNomeTomador:e.target.value})} />
-                  <Input className="h-6 text-[10px]" placeholder="UF" value={form.ufTomador} onChange={e=>setForm({...form,ufTomador:e.target.value.toUpperCase()})} maxLength={2} />
-                  <Input className="h-6 text-[10px] col-span-2" placeholder="Município" value={form.xMunTomador} onChange={e=>setForm({...form,xMunTomador:e.target.value})} />
-                  <Input className="h-6 text-[10px]" placeholder="IE" value={form.ieTomador} onChange={e=>setForm({...form,ieTomador:e.target.value})} />
-                  <Input className="h-6 text-[10px]" placeholder="CEP" value={form.cepTomador} onChange={e=>setForm({...form,cepTomador:e.target.value})} maxLength={8} />
-                  <Input className="h-6 text-[10px] col-span-3" placeholder="Logradouro" value={form.logradouroTomador} onChange={e=>setForm({...form,logradouroTomador:e.target.value})} />
-                  <Input className="h-6 text-[10px]" placeholder="Nº" value={form.nroTomador} onChange={e=>setForm({...form,nroTomador:e.target.value})} />
-                  <Input className="h-6 text-[10px]" placeholder="Bairro" value={form.bairroTomador} onChange={e=>setForm({...form,bairroTomador:e.target.value})} />
-                  <Input className="h-6 text-[10px] col-span-2" placeholder="Telefone" value={form.foneTomador} onChange={e=>setForm({...form,foneTomador:e.target.value})} />
-                  <Input className="h-6 text-[10px] col-span-2" placeholder="E-mail" value={form.emailTomador} onChange={e=>setForm({...form,emailTomador:e.target.value})} />
-                </div>
-              </Card>
             </TabsContent>
 
             {/* === TAB: Doc Mercadorias === */}

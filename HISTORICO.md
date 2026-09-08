@@ -1173,6 +1173,17 @@ Commits: CF `bdb8d11` + Vercel `f3ce8ba`
 
 ---
 
+## CT-e: Tomador vira dropdown no cabeçalho (08/09/2026)
+
+- Card Tomador removido; entra dropdown na linha da Data (compacta, 136px):
+  opções da NF-e (0 Remetente CIF / 1 Destinatário FOB) + contatos buscáveis;
+  digitar CNPJ busca sozinho; toma definido auto (0/1/2).
+- CFOP foi p/ linha própria abaixo. Cabeçalho: Ambiente | Nº | Data | Tomador | Mod/Ser.
+
+Commits: CF `[pendente]` + Vercel `[pendente]`
+
+---
+
 ## Regras de segurança
 
 - NUNCA commitar tokens/senhas (GitHub PAT, senhas de banco, service keys).
