@@ -13,12 +13,12 @@ import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
-import { Truck, Plus, FileText, Search, Ban, UploadCloud, FileCode, UsersRound, MapPin, Package, DollarSign, Building2, Route as RouteIcon, Trash2, Filter, Calendar, CheckCircle2, ChevronsUpDown, Check, ReceiptText, Pencil, Download } from "lucide-react";
+import { Truck, Plus, FileText, Search, Ban, UploadCloud, FileCode, UsersRound, MapPin, Package, DollarSign, Building2, Route as RouteIcon, Trash2, Filter, Calendar, CheckCircle2, ChevronsUpDown, Check, ReceiptText, Pencil, Download, Settings2 } from "lucide-react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useEmpresaAtual } from "@/hooks/use-empresa";
 import { brl, dateBR, num } from "@/lib/format";
-import { useState, useEffect, useMemo, useRef } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { toast } from "sonner";
 import { emitirCteFn, consultarCteFn, cancelarCteFn, previewCteXmlFn, excluirRejeitadosCteFn } from "@/lib/sefaz-cte-server";
 import { CFOPS_CTE, MOD_FRETE_OPTIONS, RESPONSAVEL_CTE_OPTIONS } from "@/lib/cfops-transporte";
@@ -50,21 +50,6 @@ function CtePage() {
   const [sortConfig, setSortConfig] = useState<{ key: string; dir: "asc" | "desc" }>({ key: "nNF", dir: "asc" });
   const [editingRascunhoId, setEditingRascunhoId] = useState<string | null>(null);
   const [statusTab, setStatusTab] = useState("autorizados");
-
-  // Cancelamento: justificativas pré-salvas (SEFAZ exige mín. 15 caracteres).
-  // A última usada fica salva e já vem selecionada na próxima vez.
-  const JUSTIFICATIVAS_CANCELAMENTO = [
-    "Cancelamento por emissão incorreta do CT-e",
-    "CT-e emitido com erro de preenchimento dos dados",
-    "Valor da prestação informado incorretamente",
-    "Dados do tomador informados incorretamente",
-    "CT-e emitido em duplicidade",
-  ];
-  const [cancelTarget, setCancelTarget] = useState<{ chave: string; protocolo?: string; numero?: string | null } | null>(null);
-  const [cancelJust, setCancelJust] = useState(() => {
-    try { return localStorage.getItem("norvo_cte_cancel_just") || JUSTIFICATIVAS_CANCELAMENTO[0]; }
-    catch { return JUSTIFICATIVAS_CANCELAMENTO[0]; }
-  });
 
   const mercadoriasSorted = useMemo(() => {
     const arr = [...mercadorias];
@@ -99,20 +84,6 @@ function CtePage() {
       cancelados: docs.filter(d => d.status === "cancelado"),
       rascunhos: docs.filter(d => d.status === "rascunho"),
     };
-  }, [docs]);
-
-  // NF-es reservadas em rascunhos: continuam "pendente" no banco (não são deletadas),
-  // mas ficam ocultas da listagem para não serem reutilizadas em outro CT-e.
-  const chavesEmRascunho = useMemo(() => {
-    const s = new Set<string>();
-    for (const d of (docs ?? [])) {
-      if ((d as any).status !== "rascunho") continue;
-      try {
-        const p = JSON.parse((d as any).xml_assinado || "{}");
-        for (const c of (p.chavesNFe || [])) if (c) s.add(String(c));
-      } catch {}
-    }
-    return s;
   }, [docs]);
 
   const filteredDocs = useMemo(() => {
@@ -161,7 +132,6 @@ function CtePage() {
         chave: doc.chave_acesso || "",
         numero: doc.numero || "",
         serie: doc.serie || "1",
-        modelo: form.modelo || "57",
         ambiente: doc.ambiente || "producao",
         dataEmissao: doc.created_at,
         emitCnpj: tag("infCte > emit > CNPJ") || "",
@@ -177,29 +147,25 @@ function CtePage() {
         tomadorUF: tag("infCte > toma > enderToma > UF") || "",
         remCnpj: tag("infCte > emit > CNPJ") || "",
         remNome: tag("infCte > emit > xNome") || "",
-        remEndereco: `${tag("infCte > emit > enderEmit > xLgr")} ${tag("infCte > emit > enderEmit > nro")}`.trim(),
         remCidade: tag("infCte > emit > enderEmit > xMun") || "",
         remUF: tag("infCte > emit > enderEmit > UF") || "",
-        remCEP: tag("infCte > emit > enderEmit > CEP") || "",
         destCnpj: tag("infCte > toma > CNPJ") || "",
         destNome: tag("infCte > toma > xNome") || "",
-        destEndereco: `${tag("infCte > toma > enderToma > xLgr")} ${tag("infCte > toma > enderToma > nro")}`.trim(),
         destCidade: tag("infCte > toma > enderToma > xMun") || "",
         destUF: tag("infCte > toma > enderToma > UF") || "",
-        destCEP: tag("infCte > toma > enderToma > CEP") || "",
-        cfop: tag("infCte > ide > CFOP") || "5353",
-        naturezaOperacao: tag("infCte > ide > natOp") || "TRANSPORTE",
+        cfop: tag("infCte > infCarga > infQ > tpUnid") || "5353",
+        naturezaOperacao: "TRANSPORTE",
         origemCidade: tag("infCte > ide > xMunIni") || "",
         origemUF: tag("infCte > ide > UFIni") || "",
         destinoCidade: tag("infCte > ide > xMunFim") || "",
         destinoUF: tag("infCte > ide > UFFim") || "",
         valorServico: parseFloat(tag("infCte > vPrest > vTPrest")) || Number(doc.valor_servico) || 0,
-        valorCarga: parseFloat(tag("infCte > infCarga > vCarga")) || 0,
-        pesoKg: parseFloat(tag("infCte > infCarga > infQ > qCarga")) || 0,
-        icmsCST: tag("infCte > imp > ICMS > ICMS00 > CST") || tag("infCte > imp > ICMS > ICMS90 > CST") || "00",
-        icmsBase: parseFloat(tag("infCte > imp > ICMS > ICMS00 > vBC") || tag("infCte > imp > ICMS > ICMS90 > vBC") || "0"),
-        icmsAliq: parseFloat(tag("infCte > imp > ICMS > ICMS00 > pICMS") || tag("infCte > imp > ICMS > ICMS90 > pICMS") || "0"),
-        icmsValor: parseFloat(tag("infCte > imp > ICMS > ICMS00 > vICMS") || tag("infCte > imp > ICMS > ICMS90 > vICMS") || "0"),
+        valorCarga: parseFloat(tag("infCte > infCarga > vMerc")) || 0,
+        pesoKg: parseFloat(tag("infCte > infCarga > qCarga")) || 0,
+        icmsCST: tag("infCte > imp > ICMS > ICMS00 > CST") || "00",
+        icmsBase: parseFloat(tag("infCte > imp > ICMS > ICMS00 > vBC")) || 0,
+        icmsAliq: parseFloat(tag("infCte > imp > ICMS > ICMS00 > pICMS")) || 0,
+        icmsValor: parseFloat(tag("infCte > imp > ICMS > ICMS00 > vICMS")) || 0,
         nFes,
         placa: tag("infModal > rodo > veic > placa") || "",
         rntrc: tag("infModal > rodo > RNTRC") || "",
@@ -218,7 +184,7 @@ function CtePage() {
   };
 
   const [open, setOpen] = useState(false);
-  const emptyForm = { toma: "3", cnpjTomador: "", xNomeTomador: "", ufTomador: "MG", cMunTomador: "3106200", xMunTomador: "BELO HORIZONTE", ieTomador: "", logradouroTomador: "", nroTomador: "", bairroTomador: "", cepTomador: "", foneTomador: "", emailTomador: "", cnpjConsignatario: "", xNomeConsignatario: "", ieConsignatario: "", ufConsignatario: "", xMunConsignatario: "", cepConsignatario: "", logradouroConsignatario: "", nroConsignatario: "", bairroConsignatario: "", cnpjRedespacho: "", xNomeRedespacho: "", ieRedespacho: "", ufRedespacho: "", xMunRedespacho: "", cepRedespacho: "", logradouroRedespacho: "", nroRedespacho: "", bairroRedespacho: "", ambiente: "homologacao" as "homologacao" | "producao", modelo: "57", cfop: "5353", vPrest: "0.00", vCarga: "0.00", peso: "0", rntrc: "", icmsCST: "00", icmsBase: "1000.00", icmsAliq: "0.00", icmsValor: "0.00", pisAliq: "0.00", cofinsAliq: "0.00", irAliq: "0.00", inssAliq: "0.00", csllAliq: "0.00", motoristaNome: "", motoristaId: "", ciot: "", placaVeiculo: "", placaReboque: "", semiReboque1: "", semiReboque2: "", seguradoraNome: "", seguradoraId: "", apolice: "", averbacao: "", cMunEnv: "3106200", xMunEnv: "BELO HORIZONTE", ufEnv: "MG", cMunIni: "3106200", xMunIni: "BELO HORIZONTE", ufIni: "MG", cMunFim: "3550308", xMunFim: "SAO PAULO", ufFim: "SP", dataEmissao: new Date().toISOString().slice(0,10) };
+  const emptyForm = { toma: "3", cnpjTomador: "", xNomeTomador: "", ufTomador: "MG", cMunTomador: "3106200", xMunTomador: "BELO HORIZONTE", ieTomador: "", logradouroTomador: "", nroTomador: "", bairroTomador: "", cepTomador: "", foneTomador: "", emailTomador: "", cnpjConsignatario: "", xNomeConsignatario: "", ieConsignatario: "", ufConsignatario: "", xMunConsignatario: "", cepConsignatario: "", logradouroConsignatario: "", nroConsignatario: "", bairroConsignatario: "", cnpjRedespacho: "", xNomeRedespacho: "", ieRedespacho: "", ufRedespacho: "", xMunRedespacho: "", cepRedespacho: "", logradouroRedespacho: "", nroRedespacho: "", bairroRedespacho: "", ambiente: "homologacao" as "homologacao" | "producao", cfop: "5353", vPrest: "0.00", vCarga: "0.00", peso: "0", rntrc: "", icmsCST: "00", icmsBase: "1000.00", icmsAliq: "0.00", icmsValor: "0.00", pisAliq: "0.00", cofinsAliq: "0.00", irAliq: "0.00", inssAliq: "0.00", csllAliq: "0.00", motoristaNome: "", motoristaId: "", ciot: "", placaVeiculo: "", placaReboque: "", semiReboque1: "", semiReboque2: "", seguradoraNome: "", seguradoraId: "", apolice: "", averbacao: "", cMunEnv: "3106200", xMunEnv: "BELO HORIZONTE", ufEnv: "MG", cMunIni: "3106200", xMunIni: "BELO HORIZONTE", ufIni: "MG", cMunFim: "3550308", xMunFim: "SAO PAULO", ufFim: "SP", dataEmissao: new Date().toISOString().slice(0,10) };
   const [form, setForm] = useState(emptyForm);
   const [cfopOpen, setCfopOpen] = useState(false);
   const [cfopQuery, setCfopQuery] = useState("");
@@ -249,7 +215,7 @@ function CtePage() {
   });
   useEffect(() => {
     if (pendentesDB) {
-      const mapped = pendentesDB.filter(r => !chavesEmRascunho.has(r.chave)).map(r => ({
+      const mapped = pendentesDB.map(r => ({
         chave: r.chave,
         nNF: r.n_nf || "",
         serie: r.serie || "1",
@@ -294,7 +260,7 @@ function CtePage() {
         }));
       }
     }
-  }, [pendentesDB, chavesEmRascunho]);
+  }, [pendentesDB]);
 
   // Motoristas (cargo contém Motorista), Veículos e Seguradoras para menus tipo CFOP
   const [motoristaOpen, setMotoristaOpen] = useState(false);
@@ -363,102 +329,6 @@ function CtePage() {
       };
     });
   }, [regimeData, empresa?.id]);
-
-  // Templates de CT-e (mesmo remetente/destino/tomador) — tabela cte_templates
-  type CteTemplate = { id: string; nome: string; toma: string; cnpj_tomador: string | null; x_nome_tomador: string | null; uf_tomador: string | null; c_mun_tomador: string | null; x_mun_tomador: string | null; cfop: string | null; rntrc: string | null; c_mun_env: string | null; x_mun_env: string | null; uf_env: string | null; c_mun_ini: string | null; x_mun_ini: string | null; uf_ini: string | null; c_mun_fim: string | null; x_mun_fim: string | null; uf_fim: string | null; dados: Record<string, unknown> | null };
-  const [templateNome, setTemplateNome] = useState("");
-  const [selectedTemplateId, setSelectedTemplateId] = useState<string>("");
-  const { data: templates } = useQuery({
-    enabled: !!empresa,
-    queryKey: ["cte-templates", empresa?.id],
-    queryFn: async (): Promise<CteTemplate[]> => {
-      const { data, error } = await supabase.from("cte_templates" as any).select("*").eq("empresa_id", empresa!.id).order("nome");
-      if (error) throw error;
-      return (data ?? []) as unknown as CteTemplate[];
-    },
-  });
-  const salvarTemplate = useMutation({
-    mutationFn: async () => {
-      if (!empresa) throw new Error("Empresa não selecionada");
-      const nome = templateNome.trim();
-      if (!nome) throw new Error("Informe um nome para o template");
-      const payload = {
-        empresa_id: empresa.id,
-        nome,
-        toma: form.toma,
-        cnpj_tomador: form.cnpjTomador || null,
-        x_nome_tomador: form.xNomeTomador || null,
-        uf_tomador: form.ufTomador || null,
-        c_mun_tomador: form.cMunTomador || null,
-        x_mun_tomador: form.xMunTomador || null,
-        cfop: form.cfop || null,
-        rntrc: form.rntrc || null,
-        c_mun_env: form.cMunEnv || null,
-        x_mun_env: form.xMunEnv || null,
-        uf_env: form.ufEnv || null,
-        c_mun_ini: form.cMunIni || null,
-        x_mun_ini: form.xMunIni || null,
-        uf_ini: form.ufIni || null,
-        c_mun_fim: form.cMunFim || null,
-        x_mun_fim: form.xMunFim || null,
-        uf_fim: form.ufFim || null,
-        dados: { ...form } as unknown as Record<string, unknown>,
-      };
-      const { error } = await supabase.from("cte_templates" as any).upsert(payload, { onConflict: "empresa_id,nome" });
-      if (error) throw error;
-    },
-    onSuccess: () => {
-      toast.success("Template salvo");
-      setTemplateNome("");
-      qc.invalidateQueries({ queryKey: ["cte-templates"] });
-    },
-    onError: (e: Error) => toast.error(e.message),
-  });
-  const excluirTemplate = useMutation({
-    mutationFn: async (id: string) => {
-      const { error } = await supabase.from("cte_templates" as any).delete().eq("id", id);
-      if (error) throw error;
-    },
-    onSuccess: () => {
-      toast.success("Template excluído");
-      setSelectedTemplateId("");
-      qc.invalidateQueries({ queryKey: ["cte-templates"] });
-    },
-    onError: (e: Error) => toast.error(e.message),
-  });
-  const aplicarTemplate = (t: CteTemplate) => {
-    const d = (t.dados as any) || {};
-    setForm(f => ({
-      ...f,
-      toma: t.toma || (d.toma as string) || f.toma,
-      cnpjTomador: t.cnpj_tomador || (d.cnpjTomador as string) || f.cnpjTomador,
-      xNomeTomador: t.x_nome_tomador || (d.xNomeTomador as string) || f.xNomeTomador,
-      ufTomador: t.uf_tomador || (d.ufTomador as string) || f.ufTomador,
-      cMunTomador: t.c_mun_tomador || (d.cMunTomador as string) || f.cMunTomador,
-      xMunTomador: t.x_mun_tomador || (d.xMunTomador as string) || f.xMunTomador,
-      cfop: t.cfop || (d.cfop as string) || f.cfop,
-      rntrc: t.rntrc ?? (d.rntrc as string) ?? f.rntrc,
-      icmsCST: (d.icmsCST as string) || (t as any).icms_cst || f.icmsCST,
-      icmsBase: (d.icmsBase as string) || (t as any).icms_base || f.icmsBase,
-      icmsAliq: (d.icmsAliq as string) || (t as any).icms_aliq || f.icmsAliq,
-      icmsValor: (d.icmsValor as string) || (t as any).icms_valor || f.icmsValor,
-      pisAliq: (d.pisAliq as string) || f.pisAliq,
-      cofinsAliq: (d.cofinsAliq as string) || f.cofinsAliq,
-      irAliq: (d.irAliq as string) || f.irAliq,
-      inssAliq: (d.inssAliq as string) || f.inssAliq,
-      csllAliq: (d.csllAliq as string) || f.csllAliq,
-      cMunEnv: t.c_mun_env || (d.cMunEnv as string) || f.cMunEnv,
-      xMunEnv: t.x_mun_env || (d.xMunEnv as string) || f.xMunEnv,
-      ufEnv: t.uf_env || (d.ufEnv as string) || f.ufEnv,
-      cMunIni: t.c_mun_ini || (d.cMunIni as string) || f.cMunIni,
-      xMunIni: t.x_mun_ini || (d.xMunIni as string) || f.xMunIni,
-      ufIni: t.uf_ini || (d.ufIni as string) || f.ufIni,
-      cMunFim: t.c_mun_fim || (d.cMunFim as string) || f.cMunFim,
-      xMunFim: t.x_mun_fim || (d.xMunFim as string) || f.xMunFim,
-      ufFim: t.uf_fim || f.ufFim,
-    }));
-    toast.success(`Template "${t.nome}" aplicado`);
-  };
 
   const handleImportNFeXml = async (files: FileList | File[]) => {
     if (!empresa) { toast.error("Selecione uma empresa"); return; }
@@ -666,11 +536,23 @@ function CtePage() {
 
   const excluirRascunho = async (doc: CteDoc) => {
     if (!empresa) return;
-    if (!confirm("Excluir este rascunho? As NF-e reservadas nele voltam para a lista.")) return;
+    if (!confirm("Excluir este rascunho? As NF-e voltam para pendentes.")) return;
     try {
+      const parsed = JSON.parse(doc.xml_assinado || "{}");
       await supabase.from("cte_documentos" as any).delete().eq("id", doc.id);
-      // NF-es nunca saíram do "pendente" (reserva, não delete) — só reaparecem na lista
-      toast.success("Rascunho excluído — NF-e liberadas para uso");
+      if (parsed.nfs && parsed.nfs.length > 0) {
+        for (const nf of parsed.nfs) {
+          await supabase.from("cte_nfes_pendentes" as any).upsert({
+            empresa_id: empresa.id, chave: nf.chave, n_nf: nf.nNF, serie: nf.serie,
+            emit_nome: nf.emit, emit_cnpj: nf.emitCnpj, emit_uf: nf.emitUF, emit_cmun: nf.emitCMun, emit_xmun: nf.emitXMun,
+            dest_nome: nf.dest, dest_cnpj: nf.destCnpj, dest_uf: nf.destUF, dest_cmun: nf.destCMun, dest_xmun: nf.destXMun,
+            valor: nf.valor, peso: nf.peso, data_emissao: nf.data || null,
+            tomador_nome: nf.tomador, tomador_cnpj: nf.tomadorCnpj, tomador_uf: nf.tomadorUF, tomador_cmun: nf.tomadorCMun, tomador_xmun: nf.tomadorXMun,
+            mod_frete: nf.modFrete, status: "pendente",
+          }, { onConflict: "empresa_id,chave" });
+        }
+      }
+      toast.success("Rascunho excluído — NF-e voltaram para pendentes");
       qc.invalidateQueries({ queryKey: ["cte-documentos"] });
       qc.invalidateQueries({ queryKey: ["cte-nfes-pendentes", empresa.id] });
     } catch (e: any) {
@@ -730,9 +612,9 @@ function CtePage() {
       if (editingRascunhoId) {
         await supabase.from("cte_documentos" as any).delete().eq("id", editingRascunhoId);
       }
-      // NÃO deleta as NF-es: elas continuam "pendente" no banco e ficam ocultas
-      // da listagem via chavesEmRascunho (reserva). Assim emissão/cancelamento
-      // sempre encontram as linhas para embarcar/reverter.
+      if (empresa && chaves.length > 0) {
+        await supabase.from("cte_nfes_pendentes" as any).delete().in("chave", chaves).eq("empresa_id", empresa.id);
+      }
     },
     onSuccess: () => {
       toast.success("Rascunho salvo");
@@ -746,56 +628,12 @@ function CtePage() {
     onError: (e: Error) => toast.error(e.message),
   });
 
-  // Reconciliação pós-emissão: se a resposta se perder no transporte, a verdade
-  // está em cte_documentos. Procura doc criado a partir do início da tentativa.
-  const emitT0 = useRef(0);
-  const emitChaves = useRef<string[]>([]);
-  const emitRascunhoId = useRef<string | null>(null);
-  const reconciliarEmissao = async (erroOriginal?: string) => {
-    await new Promise(r => setTimeout(r, 2500));
-    if (!empresa) { toast.error(erroOriginal || "Sem retorno do servidor"); return; }
-    try {
-      const { data } = await supabase.from("cte_documentos" as any)
-        .select("chave_acesso,status,motivo_rejeicao,protocolo_sefaz,numero,created_at")
-        .eq("empresa_id", empresa.id).eq("ambiente", form.ambiente)
-        .order("created_at", { ascending: false }).limit(1).maybeSingle();
-      const doc: any = data;
-      if (doc && new Date(doc.created_at).getTime() >= emitT0.current - 5000) {
-        if (doc.status === "autorizado") {
-          toast.success(`CT-e ${doc.chave_acesso} autorizado` + (doc.protocolo_sefaz ? ` prot ${doc.protocolo_sefaz}` : ""));
-          const rid = emitRascunhoId.current;
-          if (rid) {
-            await supabase.from("cte_documentos" as any).delete().eq("id", rid);
-            emitRascunhoId.current = null;
-            setEditingRascunhoId(null);
-          }
-          const chavesUsadas = emitChaves.current;
-          if (chavesUsadas.length > 0) setMercadorias(prev => prev.filter(m => !chavesUsadas.includes(m.chave)));
-          setSelecionadas(new Set());
-        } else if (doc.status === "rejeitado") {
-          toast.error(doc.motivo_rejeicao || "Rejeitado pela SEFAZ");
-        } else {
-          toast.info(`CT-e ${doc.numero ?? ""} está como "${doc.status}" — verifique a lista.`);
-        }
-      } else {
-        toast.error(erroOriginal || "Sem retorno do servidor e nenhum CT-e novo — verifique a lista.");
-      }
-    } catch {
-      toast.error(erroOriginal || "Sem retorno do servidor — verifique a lista.");
-    }
-    qc.invalidateQueries({ queryKey: ["cte-documentos"] });
-    qc.invalidateQueries({ queryKey: ["cte-nfes-pendentes", empresa.id] });
-  };
-
   const emitir = useMutation({
     mutationFn: async () => {
       if (!empresa) throw new Error("Empresa não selecionada");
       if (!form.xNomeTomador || !form.cnpjTomador) throw new Error("Informe tomador");
       if (!form.ieTomador) toast.warning("IE do tomador não informado — o SEFAZ pode rejeitar");
       const chaves = selecionadas.size > 0 ? Array.from(selecionadas) : mercadorias.map(m => m.chave);
-      emitT0.current = Date.now();
-      emitChaves.current = chaves;
-      emitRascunhoId.current = editingRascunhoId;
       if (chaves.length > 0) {
         const sel = mercadorias.filter(m => chaves.includes(m.chave));
         const dests = new Set(sel.map(m => m.destCnpj || m.dest));
@@ -806,7 +644,7 @@ function CtePage() {
         if (tomads.size > 1) throw new Error("CT-e não pode ter tomadores diferentes. Selecione NF-es do mesmo tomador.");
       }
       const ret: any = await emitirCteFn({ data: { empresaId: empresa.id, input: {
-        ambiente: form.ambiente, modelo: form.modelo,
+        ambiente: form.ambiente,
         toma: form.toma, cnpjTomador: form.cnpjTomador, xNomeTomador: form.xNomeTomador, ufTomador: form.ufTomador, cMunTomador: form.cMunTomador, xMunTomador: form.xMunTomador,
         cfop: form.cfop, vPrest: parseFloat(form.vPrest)||0, vCarga: parseFloat(form.vCarga)||0, pesoKg: parseFloat(form.peso)||0, rntrc: form.rntrc,
         cMunEnv: form.cMunEnv, xMunEnv: form.xMunEnv, ufEnv: form.ufEnv, cMunIni: form.cMunIni, xMunIni: form.xMunIni, ufIni: form.ufIni, cMunFim: form.cMunFim, xMunFim: form.xMunFim, ufFim: form.ufFim,
@@ -819,7 +657,6 @@ function CtePage() {
       } } });
     },
     onSuccess: async (ret: any) => {
-      console.log("[CTE-EMITIR-RESP]", JSON.stringify({ sucesso: ret?.sucesso, cStat: ret?.cStat, xMotivo: ret?.xMotivo, motivo: ret?.motivo, chave: ret?.chave, protocolo: ret?.protocolo }));
       if (ret?.sucesso) {
         toast.success(`CT-e ${ret.chave} autorizado` + (ret.protocolo ? ` prot ${ret.protocolo}` : ""));
         setOpen(false);
@@ -846,24 +683,13 @@ function CtePage() {
               }, { onConflict: "empresa_id,chave" });
             }
           }
-          // remove da listagem na hora (não depende do refetch)
-          setMercadorias(prev => prev.filter(m => !chavesUsadas.includes(m.chave)));
-          setSelecionadas(new Set());
           qc.invalidateQueries({ queryKey: ["cte-nfes-pendentes", empresa.id] });
+          setSelecionadas(new Set());
         }
-      } else {
-        // resposta vazia: reconcilia com o banco (fonte da verdade)
-        await reconciliarEmissao();
-        return;
-      }
+      } else toast.error(ret?.xMotivo || ret?.motivo || "Rejeitado");
       qc.invalidateQueries({ queryKey: ["cte-documentos"] });
     },
-    onError: (e: Error) => {
-      console.error("[CTE-EMITIR-ERR]", e);
-      // pode ser erro de validação (sem ida ao servidor) ou transporte perdido:
-      // a reconciliação decide — mostra a mensagem original se nada novo existir
-      void reconciliarEmissao(`Falha no envio: ${e.message}`);
-    },
+    onError: (e: Error) => toast.error(e.message),
   });
 
   const consultar = useMutation({
@@ -876,10 +702,10 @@ function CtePage() {
   });
 
   const cancelar = useMutation({
-    mutationFn: async ({ chave, protocolo, justificativa }: { chave: string; protocolo?: string; justificativa: string }) => {
+    mutationFn: async ({ chave, protocolo }: { chave: string; protocolo?: string }) => {
       if (!empresa) throw new Error("Empresa não selecionada");
-      const just = (justificativa || "").trim();
-      if (just.length < 15) throw new Error("Justificativa muito curta (mín. 15 caracteres)");
+      const just = prompt("Justificativa de cancelamento (mín. 15 caracteres):") || "";
+      if (just.length < 15) throw new Error("Justificativa muito curta");
       const ret = await cancelarCteFn({ data: { empresaId: empresa.id, chave, justificativa: just, protocolo } });
       return { ...ret, chave };
     },
@@ -926,7 +752,7 @@ function CtePage() {
       if (!empresa) throw new Error("Empresa não selecionada");
       const chaves = selecionadas.size > 0 ? Array.from(selecionadas) : mercadorias.map(m => m.chave);
       return previewCteXmlFn({ data: { empresaId: empresa.id, input: {
-        ambiente: form.ambiente, modelo: form.modelo,
+        ambiente: form.ambiente,
         toma: form.toma, cnpjTomador: form.cnpjTomador, xNomeTomador: form.xNomeTomador, ufTomador: form.ufTomador, cMunTomador: form.cMunTomador, xMunTomador: form.xMunTomador,
         cfop: form.cfop, vPrest: parseFloat(form.vPrest)||0, vCarga: parseFloat(form.vCarga)||0, pesoKg: parseFloat(form.peso)||0, rntrc: form.rntrc,
         cMunEnv: form.cMunEnv, xMunEnv: form.xMunEnv, ufEnv: form.ufEnv, cMunIni: form.cMunIni, xMunIni: form.xMunIni, ufIni: form.ufIni, cMunFim: form.cMunFim, xMunFim: form.xMunFim, ufFim: form.ufFim,
@@ -1089,7 +915,7 @@ function CtePage() {
               <UploadCloud className="h-4 w-4" /> Importar NFes (XML)
               <input type="file" accept=".xml" multiple className="hidden" onChange={e => { if (e.target.files) handleImportNFeXml(e.target.files); e.currentTarget.value = ""; }} />
             </label>
-            <Button variant="outline" size="sm" onClick={async () => { if (!empresa) return; const visiveis = mercadorias.map(m => m.chave); if (visiveis.length === 0) return; if (!confirm(`Remover ${visiveis.length} NF-e(s) pendentes? (as reservadas em rascunho são mantidas)`)) return; const { error } = await supabase.from("cte_nfes_pendentes" as any).delete().in("chave", visiveis).eq("empresa_id", empresa.id).eq("status", "pendente"); if (error) toast.error(error.message); else { setMercadorias([]); setSelecionadas(new Set()); qc.invalidateQueries({ queryKey: ["cte-nfes-pendentes", empresa.id] }); toast.success("Pendentes removidos"); } }} disabled={mercadorias.length===0}><Trash2 className="mr-1 h-3 w-3" /> Limpar</Button>
+            <Button variant="outline" size="sm" onClick={async () => { if (!empresa) return; if (mercadorias.length === 0) return; if (!confirm(`Remover ${mercadorias.length} NF-e(s) pendentes?`)) return; const { error } = await supabase.from("cte_nfes_pendentes" as any).delete().eq("empresa_id", empresa.id).eq("status", "pendente"); if (error) toast.error(error.message); else { setMercadorias([]); setSelecionadas(new Set()); qc.invalidateQueries({ queryKey: ["cte-nfes-pendentes", empresa.id] }); toast.success("Pendentes removidos"); } }} disabled={mercadorias.length===0}><Trash2 className="mr-1 h-3 w-3" /> Limpar</Button>
             <Button variant="outline" size="sm" onClick={async () => { if (!empresa) return; try { await excluirRejeitadosCteFn({ data: { empresaId: empresa.id } }); toast.success("CT-e rejeitados excluídos"); qc.invalidateQueries({ queryKey: ["cte-documentos"] }); } catch(e:any) { toast.error(e.message); } }}><Trash2 className="mr-1 h-3 w-3" /> Limpar Rejeitados</Button>
             <div className="ml-auto flex gap-2">
               <Button
@@ -1164,7 +990,7 @@ function CtePage() {
                   const nNFs = (() => { try { const j = JSON.parse(d.xml_assinado || "{}"); return j.nfs?.map((n: any) => n.nNF).filter(Boolean) || []; } catch { } try { const chaves = [...(d.xml_assinado||"").matchAll(/<chNFe>(\d{44})<\/chNFe>/g)].map(m=>m[1]); if (chaves.length===0) return []; return chaves.map(ch=>ch.slice(25,34).replace(/^0+/,"") || "0"); } catch { return []; } })();
                   const isRascunho = d.status === "rascunho";
                   return (
-                  <TableRow key={d.id} className={isRascunho ? "bg-muted/30" : ""}><TableCell className="font-mono">{d.numero ?? "—"}</TableCell><TableCell>{d.serie ?? "—"}</TableCell><TableCell title={d.status==="rejeitado" && d.motivo_rejeicao ? d.motivo_rejeicao : ""}><Badge variant="secondary" className={d.status==="autorizado"?"bg-emerald-500/15 text-emerald-600":d.status==="rejeitado"?"bg-destructive/15 text-destructive":d.status==="cancelado"?"bg-orange-500/15 text-orange-600":isRascunho?"bg-amber-500/15 text-amber-600":""}>{d.status}{d.status==="rejeitado" && d.motivo_rejeicao ? ` — ${d.motivo_rejeicao.slice(0,60)}` : ""}</Badge></TableCell>                  <TableCell className="text-xs">{nNFs.length > 0 ? nNFs.join(", ") : d.chave_acesso ? "1" : "—"}</TableCell><TableCell className="text-right">{brl(Number(d.valor_servico ?? 0))}</TableCell><TableCell className="font-mono text-xs break-all" title={d.chave_acesso||""}>{d.chave_acesso ?? "—"}</TableCell><TableCell className="flex gap-1">
+                  <TableRow key={d.id} className={isRascunho ? "bg-muted/30" : ""}><TableCell className="font-mono">{d.numero ?? "—"}</TableCell><TableCell>{d.serie ?? "—"}</TableCell><TableCell title={d.status==="rejeitado" && d.motivo_rejeicao ? d.motivo_rejeicao : ""}><Badge variant="secondary" className={d.status==="autorizado"?"bg-emerald-500/15 text-emerald-600":d.status==="rejeitado"?"bg-destructive/15 text-destructive":d.status==="cancelado"?"bg-orange-500/15 text-orange-600":isRascunho?"bg-amber-500/15 text-amber-600":""}>{d.status}{d.status==="rejeitado" && d.motivo_rejeicao ? ` — ${d.motivo_rejeicao.slice(0,60)}` : ""}</Badge></TableCell>                  <TableCell className="text-xs">{nNFs.length > 0 ? nNFs.join(", ") : d.chave_acesso ? "1" : "—"}</TableCell><TableCell className="text-right">{brl(Number(d.valor_servico ?? 0))}</TableCell><TableCell className="font-mono text-xs truncate max-w-[220px]" title={d.chave_acesso||""}>{d.chave_acesso ?? "—"}</TableCell><TableCell className="flex gap-1">
                     {isRascunho ? (
                       <>
                         <Button size="icon" variant="ghost" className="h-7 w-7 text-primary" onClick={() => editarRascunho(d)} title="Editar rascunho"><Pencil className="h-3.5 w-3.5" /></Button>
@@ -1181,7 +1007,7 @@ function CtePage() {
                         )}
                       </>
                     )}
-                    {!isRascunho && <Button size="icon" variant="ghost" className="h-7 w-7 text-destructive" disabled={d.status!=="autorizado"} onClick={() => d.chave_acesso && setCancelTarget({ chave: d.chave_acesso, protocolo: d.protocolo_sefaz || undefined, numero: (d as any).numero ?? null })} title="Cancelar"><Ban className="h-3.5 w-3.5" /></Button>}
+                    {!isRascunho && <Button size="icon" variant="ghost" className="h-7 w-7 text-destructive" disabled={d.status!=="autorizado"} onClick={() => d.chave_acesso && cancelar.mutate({ chave: d.chave_acesso, protocolo: d.protocolo_sefaz || undefined })} title="Cancelar"><Ban className="h-3.5 w-3.5" /></Button>}
                   </TableCell></TableRow>
                   );
                 })}</TableBody>
@@ -1197,93 +1023,66 @@ function CtePage() {
             <p className="text-sm text-muted-foreground">Emissão de CT-e (57) — versão 4.00 via mTLS SEFAZ.</p>
           </DialogHeader>
 
-          {/* Templates: mesmo remetente/destino/tomador do dia anterior */}
-          <div className="rounded-md border bg-muted/20 p-2.5 space-y-2">
-            <div className="flex items-center justify-between">
-              <span className="text-[11px] font-semibold flex items-center gap-1.5"><FileCode className="h-3.5 w-3.5 text-primary" /> Templates</span>
-              <span className="text-[10px] text-muted-foreground">{templates?.length ?? 0} salvo(s)</span>
-            </div>
-            <div className="grid grid-cols-1 md:grid-cols-[1fr_auto] gap-2">
-              <div className="flex gap-1.5">
-                <Select value={selectedTemplateId} onValueChange={setSelectedTemplateId}>
-                  <SelectTrigger className="h-7 text-xs flex-1"><SelectValue placeholder="Selecione um template" /></SelectTrigger>
-                  <SelectContent>
-                    {templates?.map(t => (
-                      <SelectItem key={t.id} value={t.id}>{t.nome} — {t.x_nome_tomador || t.cnpj_tomador || t.cfop}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                <Button size="sm" variant="outline" className="h-7 text-xs" disabled={!selectedTemplateId} onClick={() => { const t = templates?.find(x => x.id === selectedTemplateId); if (t) aplicarTemplate(t); }}>Aplicar</Button>
-                <Button size="sm" variant="ghost" className="h-7 w-7 p-0 text-destructive" disabled={!selectedTemplateId} onClick={() => { if (selectedTemplateId && confirm("Excluir template?")) excluirTemplate.mutate(selectedTemplateId); }} title="Excluir template"><Trash2 className="h-3.5 w-3.5" /></Button>
-              </div>
-              <div className="flex gap-1.5">
-                <Input className="h-7 text-xs flex-1" placeholder="Nome do template (ex: Rose→SP CIF)" value={templateNome} onChange={e => setTemplateNome(e.target.value)} onKeyDown={e => { if (e.key === "Enter" && templateNome.trim()) salvarTemplate.mutate(); }} />
-                <Button size="sm" className="h-7 text-xs" disabled={!templateNome.trim() || salvarTemplate.isPending} onClick={() => salvarTemplate.mutate()}>{salvarTemplate.isPending ? "Salvando..." : "Salvar atual"}</Button>
-              </div>
-            </div>
-            <p className="text-[10px] text-muted-foreground">Salva tomador, CFOP, RNTRC e rota (coleta/entrega). Amanhã basta selecionar e clicar Aplicar — ainda respeita a NF-e se quiser sobrescrever.</p>
-          </div>
-
-          <Tabs defaultValue="tomador" className="w-full">
+          <Tabs defaultValue="geral" className="w-full">
             <TabsList className="w-full justify-start gap-0 bg-muted/50 rounded-t-md">
-              <TabsTrigger value="tomador" className="rounded-t-md rounded-b-none text-xs data-[state=active]:bg-background data-[state=active]:shadow-sm"><UsersRound className="mr-1 h-3 w-3" />Remetente/Destinatário</TabsTrigger>
-              <TabsTrigger value="docs" className="rounded-t-md rounded-b-none text-xs data-[state=active]:bg-background data-[state=active]:shadow-sm"><FileText className="mr-1 h-3 w-3" />Doc Mercadorias</TabsTrigger>
-              <TabsTrigger value="seguros" className="rounded-t-md rounded-b-none text-xs data-[state=active]:bg-background data-[state=active]:shadow-sm"><Truck className="mr-1 h-3 w-3" />Seguros/Veículos</TabsTrigger>
-              <TabsTrigger value="taxas" className="rounded-t-md rounded-b-none text-xs data-[state=active]:bg-background data-[state=active]:shadow-sm"><DollarSign className="mr-1 h-3 w-3" />Taxas/Despesas</TabsTrigger>
-              <TabsTrigger value="impostos" className="rounded-t-md rounded-b-none text-xs data-[state=active]:bg-background data-[state=active]:shadow-sm"><ReceiptText className="mr-1 h-3 w-3" />Impostos</TabsTrigger>
+              <TabsTrigger value="geral" className="rounded-t-md rounded-b-none text-xs data-[state=active]:bg-background data-[state=active]:shadow-sm"><Settings2 className="mr-1 h-3 w-3" />Geral</TabsTrigger>
+              <TabsTrigger value="docs" className="rounded-t-md rounded-b-none text-xs data-[state=active]:bg-background data-[state=active]:shadow-sm"><FileText className="mr-1 h-3 w-3" />Carga</TabsTrigger>
+              <TabsTrigger value="seguros" className="rounded-t-md rounded-b-none text-xs data-[state=active]:bg-background data-[state=active]:shadow-sm"><Truck className="mr-1 h-3 w-3" />Veículos</TabsTrigger>
+              <TabsTrigger value="taxas" className="rounded-t-md rounded-b-none text-xs data-[state=active]:bg-background data-[state=active]:shadow-sm"><DollarSign className="mr-1 h-3 w-3" />Taxas</TabsTrigger>
+              <TabsTrigger value="impostos" className="rounded-t-md rounded-b-none text-xs data-[state=active]:bg-background data-[state=active]:shadow-sm"><ReceiptText className="mr-1 h-3 w-3" />Tributação</TabsTrigger>
+              <TabsTrigger value="obs" className="rounded-t-md rounded-b-none text-xs data-[state=active]:bg-background data-[state=active]:shadow-sm"><FileCode className="mr-1 h-3 w-3" />Observações</TabsTrigger>
             </TabsList>
 
-            {/* Header: Nº Conhecimento, Data, CFOP */}
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-2 border rounded-b-md rounded-tr-md p-3 bg-muted/20">
-              <div>
-                <Label className="text-[10px] text-muted-foreground">Ambiente</Label>
-                <ToggleGroup type="single" value={form.ambiente} onValueChange={v => { if (v) setForm({...form, ambiente: v as "homologacao" | "producao"}); }} className="bg-background border rounded-md h-7 mt-0.5">
-                  <ToggleGroupItem value="homologacao" className="h-6 text-[10px] px-2 data-[state=on]:bg-primary/10 data-[state=on]:text-primary">Homologação</ToggleGroupItem>
-                  <ToggleGroupItem value="producao" className="h-6 text-[10px] px-2 data-[state=on]:bg-green-600/10 data-[state=on]:text-green-700">Produção</ToggleGroupItem>
-                </ToggleGroup>
+            {/* === TAB: Geral === */}
+            <TabsContent value="geral" className="mt-3 space-y-3">
+              {/* Header: Ambiente, Nº Conhecimento, Data, CFOP */}
+              <div className="grid grid-cols-1 md:grid-cols-4 gap-2 border rounded p-3 bg-muted/20">
+                <div>
+                  <Label className="text-[10px] text-muted-foreground">Ambiente</Label>
+                  <ToggleGroup type="single" value={form.ambiente} onValueChange={v => { if (v) setForm({...form, ambiente: v as "homologacao" | "producao"}); }} className="bg-background border rounded-md h-7 mt-0.5">
+                    <ToggleGroupItem value="homologacao" className="h-6 text-[10px] px-2 data-[state=on]:bg-primary/10 data-[state=on]:text-primary">Homologação</ToggleGroupItem>
+                    <ToggleGroupItem value="producao" className="h-6 text-[10px] px-2 data-[state=on]:bg-green-600/10 data-[state=on]:text-green-700">Produção</ToggleGroupItem>
+                  </ToggleGroup>
+                </div>
+                <div><Label className="text-[10px] text-muted-foreground">N° Conhecimento</Label><Input className="h-7 text-xs font-mono" value="— aguardando emissão —" readOnly /></div>
+                <div><Label className="text-[10px] text-muted-foreground">Data Emissão</Label><DateInput value={form.dataEmissao} onChange={v => setForm({...form, dataEmissao: v})} className="h-7 text-xs" /></div>
+                <div>
+                  <Label className="text-[10px] text-muted-foreground">CFOP Saída</Label>
+                  <Popover open={cfopOpen} onOpenChange={setCfopOpen}>
+                    <PopoverTrigger asChild>
+                      <Button variant="outline" role="combobox" aria-expanded={cfopOpen} className="h-7 text-xs justify-between w-full font-normal">
+                        <span className="truncate text-left">{CFOPS_CTE.find(c => c.codigo === form.cfop)?.descricao || CFOPS_CTE.find(c => c.codigo.replace(/\D/g,"") === form.cfop.replace(/\D/g,""))?.descricao || form.cfop || "Selecione CFOP"}</span>
+                        <ChevronsUpDown className="ml-2 h-3 w-3 shrink-0 opacity-50" />
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-[480px] p-0" align="start">
+                      <Command shouldFilter={false}>
+                        <CommandInput placeholder="Digite 5352 ou 5.352 ou comércio..." value={cfopQuery} onValueChange={setCfopQuery} />
+                        <CommandList>
+                          <CommandEmpty>Nenhum CFOP encontrado.</CommandEmpty>
+                          <CommandGroup>
+                            {CFOPS_CTE.filter(cf => {
+                              if (!cfopQuery) return true;
+                              const q = cfopQuery.toLowerCase();
+                              const qDigits = q.replace(/\D/g, "");
+                              const codeDigits = cf.codigo.replace(/\D/g, "");
+                              const descLower = cf.descricao.toLowerCase();
+                              const descDigits = cf.descricao.replace(/\D/g, "");
+                              return (qDigits && (codeDigits.includes(qDigits) || descDigits.includes(qDigits))) || descLower.includes(q) || cf.codigo.includes(cfopQuery);
+                            }).map(cf => (
+                              <CommandItem key={cf.codigo} value={cf.codigo} onSelect={() => { setForm({ ...form, cfop: cf.codigo }); setCfopOpen(false); setCfopQuery(""); }}>
+                                <Check className={"mr-2 h-3 w-3 " + (form.cfop === cf.codigo ? "opacity-100" : "opacity-0")} />
+                                {cf.descricao}
+                              </CommandItem>
+                            ))}
+                          </CommandGroup>
+                        </CommandList>
+                      </Command>
+                    </PopoverContent>
+                  </Popover>
+                  <p className="text-[9px] text-muted-foreground mt-1">Digite só números (5352) — salva com ponto (5.352) na descrição.</p>
+                </div>
               </div>
-              <div><Label className="text-[10px] text-muted-foreground">N° Conhecimento</Label><Input className="h-7 text-xs font-mono" value="— aguardando emissão —" readOnly /></div>
-              <div><Label className="text-[10px] text-muted-foreground">Data Emissão</Label><DateInput value={form.dataEmissao} onChange={v => setForm({...form, dataEmissao: v})} className="h-7 text-xs" /></div>
-              <div>
-                <Label className="text-[10px] text-muted-foreground">CFOP Saída</Label>
-                <Popover open={cfopOpen} onOpenChange={setCfopOpen}>
-                  <PopoverTrigger asChild>
-                    <Button variant="outline" role="combobox" aria-expanded={cfopOpen} className="h-7 text-xs justify-between w-full font-normal">
-                      <span className="truncate text-left">{CFOPS_CTE.find(c => c.codigo === form.cfop)?.descricao || CFOPS_CTE.find(c => c.codigo.replace(/\D/g,"") === form.cfop.replace(/\D/g,""))?.descricao || form.cfop || "Selecione CFOP"}</span>
-                      <ChevronsUpDown className="ml-2 h-3 w-3 shrink-0 opacity-50" />
-                    </Button>
-                  </PopoverTrigger>
-                  <PopoverContent className="w-[480px] p-0" align="start">
-                    <Command shouldFilter={false}>
-                      <CommandInput placeholder="Digite 5352 ou 5.352 ou comércio..." value={cfopQuery} onValueChange={setCfopQuery} />
-                      <CommandList>
-                        <CommandEmpty>Nenhum CFOP encontrado.</CommandEmpty>
-                        <CommandGroup>
-                          {CFOPS_CTE.filter(cf => {
-                            if (!cfopQuery) return true;
-                            const q = cfopQuery.toLowerCase();
-                            const qDigits = q.replace(/\D/g, "");
-                            const codeDigits = cf.codigo.replace(/\D/g, "");
-                            const descLower = cf.descricao.toLowerCase();
-                            const descDigits = cf.descricao.replace(/\D/g, "");
-                            return (qDigits && (codeDigits.includes(qDigits) || descDigits.includes(qDigits))) || descLower.includes(q) || cf.codigo.includes(cfopQuery);
-                          }).map(cf => (
-                            <CommandItem key={cf.codigo} value={cf.codigo} onSelect={() => { setForm({ ...form, cfop: cf.codigo }); setCfopOpen(false); setCfopQuery(""); }}>
-                              <Check className={"mr-2 h-3 w-3 " + (form.cfop === cf.codigo ? "opacity-100" : "opacity-0")} />
-                              {cf.descricao}
-                            </CommandItem>
-                          ))}
-                        </CommandGroup>
-                      </CommandList>
-                    </Command>
-                  </PopoverContent>
-                </Popover>
-                <p className="text-[9px] text-muted-foreground mt-1">Digite só números (5352) — salva com ponto (5.352) na descrição.</p>
-              </div>
-            </div>
-
-            {/* === TAB: Remetente/Destinatário === */}
-            <TabsContent value="tomador" className="mt-3 space-y-3">
               {mercadorias.length > 0 ? (() => {
                 const sel = mercadorias.filter(m => selecionadas.has(m.chave));
                 const active = sel.length > 0 ? sel[0] : mercadorias[0];
@@ -1441,7 +1240,7 @@ function CtePage() {
                               setSelecionadas(next);
                             }} />
                           </TableCell>
-                          <TableCell>NF-e</TableCell>
+                          <TableCell>NFe</TableCell>
                           <TableCell className="font-mono text-[9px] max-w-[120px] truncate" title={m.chave}>{m.chave}</TableCell>
                           <TableCell className="truncate max-w-[100px]" title={m.emit}>{m.emit}</TableCell>
                           <TableCell className="truncate max-w-[100px]" title={m.dest}>{m.dest}</TableCell>
@@ -1807,6 +1606,21 @@ function CtePage() {
                 </div>
               </Card>
             </TabsContent>
+
+            {/* === TAB: Observações === */}
+            <TabsContent value="obs" className="mt-3">
+              <Card className="p-3">
+                <h5 className="text-xs font-semibold mb-1">Observações do Conhecimento</h5>
+                <div className="border rounded overflow-hidden">
+                  <div className="grid grid-cols-[28px_1fr_60px] bg-muted text-[10px] font-semibold">
+                    <div className="px-1 py-1 text-center">Linha</div>
+                    <div className="px-1 py-1 border-l">Descrição da Observação</div>
+                    <div className="px-1 py-1 border-l text-right">Tamanho</div>
+                  </div>
+                  <Textarea className="min-h-[120px] rounded-none border-0 border-t text-xs font-mono resize-none focus-visible:ring-0" placeholder={"01 — \n02 — \n03 — Protocolo Pedidos:"} />
+                </div>
+              </Card>
+            </TabsContent>
           </Tabs>
 
           {/* Cálculos do Serviço — Rodapé (corrigido: base = icmsBase editável, não vCarga) */}
@@ -1817,19 +1631,6 @@ function CtePage() {
             <div className="text-center"><p className="text-[10px] text-muted-foreground">Valor Serviço</p><p className="text-xs font-mono font-medium">{brl(Number(form.vPrest))}</p></div>
             <div className="text-center"><p className="text-[10px] text-muted-foreground">Total Prestação</p><p className="text-xs font-mono font-bold">{brl(Number(form.vPrest))}</p></div>
           </div>
-
-          {/* Observações */}
-          <Card className="p-3">
-            <h5 className="text-xs font-semibold mb-1">Observações do Conhecimento</h5>
-            <div className="border rounded overflow-hidden">
-              <div className="grid grid-cols-[28px_1fr_60px] bg-muted text-[10px] font-semibold">
-                <div className="px-1 py-1 text-center">Linha</div>
-                <div className="px-1 py-1 border-l">Descrição da Observação</div>
-                <div className="px-1 py-1 border-l text-right">Tamanho</div>
-              </div>
-              <Textarea className="min-h-[60px] rounded-none border-0 border-t text-xs font-mono resize-none focus-visible:ring-0" placeholder={"01 — \n02 — \n03 — Protocolo Pedidos:"} />
-            </div>
-          </Card>
 
           <DialogFooter className="gap-2">
             <Button variant="outline" onClick={() => { setOpen(false); setEditingRascunhoId(null); setMercadorias([]); setSelecionadas(new Set()); qc.invalidateQueries({ queryKey: ["cte-documentos"] }); qc.invalidateQueries({ queryKey: ["cte-nfes-pendentes", empresa?.id] }); }}><Ban className="mr-1 h-3.5 w-3.5" /> Cancelar</Button>
@@ -1928,49 +1729,6 @@ function CtePage() {
             <Button variant="outline" onClick={() => setPreviewOpen(false)}>Fechar</Button>
             <Button onClick={() => { setPreviewOpen(false); emitir.mutate(); }} disabled={emitir.isPending || !form.cnpjTomador || !form.xNomeTomador}>
               {emitir.isPending ? "Enviando..." : <><Truck className="mr-1 h-3.5 w-3.5" /> Enviar Doc-e</>}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-      <Dialog open={!!cancelTarget} onOpenChange={(o) => { if (!o) setCancelTarget(null); }}>
-        <DialogContent className="max-w-md">
-          <DialogHeader><DialogTitle>Cancelar CT-e {cancelTarget?.numero ?? ""}</DialogTitle></DialogHeader>
-          <div className="space-y-3">
-            <div className="space-y-1">
-              <Label>Motivo pré-salvo</Label>
-              <Select
-                value={JUSTIFICATIVAS_CANCELAMENTO.includes(cancelJust) ? cancelJust : "__custom"}
-                onValueChange={(v) => { if (v !== "__custom") setCancelJust(v); }}
-              >
-                <SelectTrigger><SelectValue placeholder="Escolha o motivo" /></SelectTrigger>
-                <SelectContent>
-                  {JUSTIFICATIVAS_CANCELAMENTO.map(j => <SelectItem key={j} value={j}>{j}</SelectItem>)}
-                  <SelectItem value="__custom">Outro (digitar abaixo)</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="space-y-1">
-              <Label>Justificativa (mín. 15 caracteres)</Label>
-              <Textarea rows={3} value={cancelJust} onChange={(e) => setCancelJust(e.target.value)} />
-              <p className={`text-xs ${cancelJust.trim().length >= 15 ? "text-emerald-600" : "text-muted-foreground"}`}>
-                {cancelJust.trim().length} caracteres (mín. 15)
-              </p>
-            </div>
-          </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setCancelTarget(null)}>Voltar</Button>
-            <Button
-              variant="destructive"
-              disabled={cancelar.isPending || cancelJust.trim().length < 15}
-              onClick={() => {
-                if (!cancelTarget) return;
-                const just = cancelJust.trim();
-                try { localStorage.setItem("norvo_cte_cancel_just", just); } catch {}
-                cancelar.mutate({ chave: cancelTarget.chave, protocolo: cancelTarget.protocolo, justificativa: just });
-                setCancelTarget(null);
-              }}
-            >
-              {cancelar.isPending ? "Cancelando..." : "Confirmar cancelamento"}
             </Button>
           </DialogFooter>
         </DialogContent>

@@ -868,27 +868,6 @@ Commits: CF `2621c5e` → `bab9d3d` → `7db03b6` → `e283493` → `d436038` �
 
 ---
 
-## CT-e: correções IE, modelo, DACTE PDF e default ambiente (04/09/2026)
-
-Sessão de correções no fluxo de emissão CT-e:
-
-1. **IE emitente "Indisponível"**: o regex `/^\d{2,14}$/` excluía valores como "ISENTO" do XML. Removido — agora `<IE>` é incluído sempre que `input.emit.ie` existe (inclusive "ISENTO").
-
-2. **Modelo "65" (NFC-e) hardcoded**: adicionado campo `modelo` ao `CteInputCompleto`, ao `emptyForm` (default "57"), ao build do XML (`<mod>`) e à geração da chave de acesso. Select no formulário permite alternar entre 57 (CT-e) e 65 (NFC-e CT-e). Tabela mostra modelo dinâmico.
-
-3. **DACTE PDF com campos errados**: seletores XML no `downloadPdf` estavam errados:
-   - CFOP: lido de `infCarga > infQ > tpUnid` → corrigido para `ide > CFOP`
-   - vCarga: lido de `infCarga > vMerc` → corrigido para `infCarga > vCarga`
-   - qCarga: lido de `infCarga > qCarga` → corrigido para `infCarga > infQ > qCarga`
-   - Remetente/Destinatário: adicionados endereço, CEP, IE completos
-   - Natureza da operação: lida do XML (`ide > natOp`) em vez de hardcoded
-
-4. **Default ambiente**: confirmado "Homologação" (já estava correto)
-
-Commits: `eadcf5a` + CF Worker `de541e6e`
-
----
-
 ## CT-e: fix cancel NF-e revert — re-insert from rascunho JSON (04/09/2026)
 
 Ao salvar rascunho, NF-e são DELETADAS do `cte_nfes_pendentes`. Quando o CT-e é emitido e
@@ -900,6 +879,21 @@ então as NF-e nunca voltavam para a lista.
 também falhava ao editar rascunho e emitir).
 
 Commits: CF `8bf6f29` + Vercel `67d88f4`
+
+---
+
+## CT-e: template removido + abas reorganizadas (Eagle Gestão) — 04/09/2026
+
+- **Template removido**: seção inteira (type, state, query, mutations, UI) deletada — não era utilizada.
+- **Abas reorganizadas** conforme modelo Eagle Gestão:
+  - "Remetente/Destinatário" → **Geral** (com Ambiente, Nº Conhecimento, Data, CFOP integrados)
+  - "Doc Mercadorias" → **Carga**
+  - "Seguros/Veículos" → **Veículos**
+  - "Taxas/Despesas" → **Taxas**
+  - "Impostos" → **Tributação**
+  - Nova aba **Observações** (movida do rodapé para dentro do dialog)
+
+Commits: CF `[pendente]` + Vercel `[pendente]`
 
 ---
 
