@@ -1088,7 +1088,7 @@ Commits: CF `94061c5` + Vercel `917a70b`
   senão erro 365). Meu `IBSCBSTot` anterior causou o 225.
 - Fix: `vTotDFe` injetado no `<imp>`; `<total>` voltou ao original.
 
-Commits: CF `[pendente]` + Vercel `[pendente]`
+Commits: CF `ea5bc46` + Vercel `4fe7336`
 
 ---
 
