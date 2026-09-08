@@ -1180,7 +1180,7 @@ Commits: CF `bdb8d11` + Vercel `f3ce8ba`
   digitar CNPJ busca sozinho; toma definido auto (0/1/2).
 - CFOP foi p/ linha própria abaixo. Cabeçalho: Ambiente | Nº | Data | Tomador | Mod/Ser.
 
-Commits: CF `[pendente]` + Vercel `[pendente]`
+Commits: CF `cd4b357` + Vercel `bcadf1e`
 
 ---
 
