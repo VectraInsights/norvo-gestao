@@ -1055,7 +1055,7 @@ Commits: CF `aee3acf` + Vercel `abbdaf0`
   Preview DACTE usa o mesmo texto; aviso âmbar no card Tomador em homologação.
   Produção inalterada (nome real do cadastro).
 
-Commits: CF `[pendente]` + Vercel `[pendente]`
+Commits: CF `f11248e` + Vercel `f83f741`
 
 ---
 
