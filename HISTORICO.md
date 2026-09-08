@@ -1146,7 +1146,7 @@ Commits: CF `a597ac9` + Vercel `0de9ce3`
   concorrente caía no else e mostrava "Rejeitado" sem ter rejeição real.
 - Fix: trava retorna `{ignored:true}` e onSuccess ignora em silêncio (sem toast).
 
-Commits: CF `[pendente]` + Vercel `[pendente]`
+Commits: CF `4c42487` + Vercel `aeb82d3`
 
 ---
 
