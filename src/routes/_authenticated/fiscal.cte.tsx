@@ -1310,8 +1310,8 @@ function CtePage() {
                 <div><Label className="text-[10px] text-muted-foreground">Mod / Série</Label><Input className="h-7 text-xs font-mono w-[92px] text-center px-1" value="57 / 001" readOnly /></div>
               </div>
               <div className="border rounded p-3 bg-muted/20">
-                <div className="flex flex-wrap items-end gap-x-3 gap-y-2">
-                <div className="flex-1 min-w-[240px]">
+                <div className="flex flex-wrap items-start gap-x-3 gap-y-2">
+                <div className="flex-[3_1_260px] min-w-0">
                   <Label className="text-[10px] text-muted-foreground">CFOP Saída</Label>
                   <Popover open={cfopOpen} onOpenChange={setCfopOpen}>
                     <PopoverTrigger asChild>
@@ -1322,8 +1322,8 @@ function CtePage() {
                     </PopoverTrigger>
                     <PopoverContent className="w-[480px] p-0" align="start">
                       <Command shouldFilter={false}>
-                        <CommandInput placeholder="Digite 5352 ou 5.352 ou comércio..." value={cfopQuery} onValueChange={setCfopQuery} />
-                        <CommandList>
+                      <CommandInput placeholder="Digite 5352 ou 5.352 ou comércio..." value={cfopQuery} onValueChange={setCfopQuery} />
+                      <CommandList onWheelCapture={(e) => e.stopPropagation()}>
                           <CommandEmpty>Nenhum CFOP encontrado.</CommandEmpty>
                           <CommandGroup>
                             {CFOPS_CTE.filter(cf => {
@@ -1347,18 +1347,18 @@ function CtePage() {
                   </Popover>
                   <p className="text-[9px] text-muted-foreground mt-1">Digite só números (5352) — salva com ponto (5.352) na descrição.</p>
                 </div>
-                <div className="shrink-0">
+                <div className="flex-[1_1_160px] min-w-0">
                   <Label className="text-[10px] text-muted-foreground">Coleta</Label>
                   <div className="flex gap-1">
-                    <Input className="h-7 text-xs w-36" placeholder="Município" value={form.xMunIni} onChange={e=>setForm({...form,xMunIni:e.target.value})} />
-                    <Input className="h-7 text-xs w-14 text-center" placeholder="UF" value={form.ufIni} onChange={e=>setForm({...form,ufIni:e.target.value.toUpperCase()})} maxLength={2} />
+                    <Input className="h-7 text-xs flex-1 min-w-0" placeholder="Município" value={form.xMunIni} onChange={e=>setForm({...form,xMunIni:e.target.value})} />
+                    <Input className="h-7 text-xs w-14 text-center shrink-0" placeholder="UF" value={form.ufIni} onChange={e=>setForm({...form,ufIni:e.target.value.toUpperCase()})} maxLength={2} />
                   </div>
                 </div>
-                <div className="shrink-0">
+                <div className="flex-[1_1_160px] min-w-0">
                   <Label className="text-[10px] text-muted-foreground">Entrega</Label>
                   <div className="flex gap-1">
-                    <Input className="h-7 text-xs w-36" placeholder="Município" value={form.xMunFim} onChange={e=>setForm({...form,xMunFim:e.target.value})} />
-                    <Input className="h-7 text-xs w-14 text-center" placeholder="UF" value={form.ufFim} onChange={e=>setForm({...form,ufFim:e.target.value.toUpperCase()})} maxLength={2} />
+                    <Input className="h-7 text-xs flex-1 min-w-0" placeholder="Município" value={form.xMunFim} onChange={e=>setForm({...form,xMunFim:e.target.value})} />
+                    <Input className="h-7 text-xs w-14 text-center shrink-0" placeholder="UF" value={form.ufFim} onChange={e=>setForm({...form,ufFim:e.target.value.toUpperCase()})} maxLength={2} />
                   </div>
                 </div>
                 </div>
