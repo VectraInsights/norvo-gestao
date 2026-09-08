@@ -889,6 +889,20 @@ Commits: `eadcf5a` + CF Worker `de541e6e`
 
 ---
 
+## CT-e: fix cancel NF-e revert — re-insert from rascunho JSON (04/09/2026)
+
+Ao salvar rascunho, NF-e são DELETADAS do `cte_nfes_pendentes`. Quando o CT-e é emitido e
+depois cancelado, o `UPDATE status = "pendente"` casava 0 linhas (NF-e não existiam mais),
+então as NF-e nunca voltavam para a lista.
+
+**Fix**: após o update, se 0 linhas afetadas, re-inserir NF-e do JSON salvo no rascunho
+(`xml_assinado` campo `nfs`). Mesmo fix aplicado ao fluxo de emissão (update para "embarcada"
+também falhava ao editar rascunho e emitir).
+
+Commits: CF `8bf6f29` + Vercel `67d88f4`
+
+---
+
 ## Regras de segurança
 
 - NUNCA commitar tokens/senhas (GitHub PAT, senhas de banco, service keys).
