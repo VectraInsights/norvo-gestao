@@ -13,7 +13,7 @@ import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
-import { Truck, Plus, FileText, Search, Ban, UploadCloud, FileCode, UsersRound, MapPin, Package, Building2, Route as RouteIcon, Trash2, Filter, Calendar, CheckCircle2, ChevronsUpDown, Check, ReceiptText, Pencil, Download, Settings2, X, Loader2, ClipboardList } from "lucide-react";
+import { Truck, Plus, FileText, Search, Ban, UploadCloud, FileCode, UsersRound, MapPin, Package, Building2, Trash2, Filter, Calendar, CheckCircle2, ChevronsUpDown, Check, ReceiptText, Pencil, Download, Settings2, X, Loader2, ClipboardList } from "lucide-react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useEmpresaAtual } from "@/hooks/use-empresa";
@@ -1015,8 +1015,8 @@ function CtePage() {
                   <DateInput value={periodoFim} onChange={setPeriodoFim} className="h-7 text-xs flex-1 min-w-0" />
                   <Button size="sm" variant="outline" className="h-7 text-xs shrink-0 px-2"><Search className="h-3 w-3 mr-1" />Consulta</Button>
                 </div>
+                </div>
               </div>
-            </div>
             <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted-foreground border-t pt-2">
               <span>Qtde NF-e: <span className="font-bold text-foreground">{mercadorias.length}</span></span>
               <span className="text-muted-foreground/40">•</span>
@@ -1298,6 +1298,19 @@ function CtePage() {
                 </div>
                 <div><Label className="text-[10px] text-muted-foreground">Mod / Série</Label><Input className="h-7 text-xs font-mono w-[92px] text-center px-1" value="57 / 001" readOnly /></div>
               </div>
+              {/* Rota compacta no cabeçalho: coleta + entrega */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-2 border rounded p-2.5 bg-muted/20">
+                <div className="flex items-center gap-1.5">
+                  <Label className="text-[10px] text-muted-foreground whitespace-nowrap">Coleta</Label>
+                  <Input className="h-7 text-xs flex-1 min-w-0" placeholder="Município coleta" value={form.xMunIni} onChange={e=>setForm({...form,xMunIni:e.target.value})} />
+                  <Input className="h-7 text-xs w-14 text-center shrink-0" placeholder="UF" value={form.ufIni} onChange={e=>setForm({...form,ufIni:e.target.value.toUpperCase()})} maxLength={2} />
+                </div>
+                <div className="flex items-center gap-1.5">
+                  <Label className="text-[10px] text-muted-foreground whitespace-nowrap">Entrega</Label>
+                  <Input className="h-7 text-xs flex-1 min-w-0" placeholder="Município entrega" value={form.xMunFim} onChange={e=>setForm({...form,xMunFim:e.target.value})} />
+                  <Input className="h-7 text-xs w-14 text-center shrink-0" placeholder="UF" value={form.ufFim} onChange={e=>setForm({...form,ufFim:e.target.value.toUpperCase()})} maxLength={2} />
+                </div>
+              </div>
 
               {mercadorias.length > 0 ? (() => {
                 const sel = mercadorias.filter(m => selecionadas.has(m.chave));
@@ -1443,20 +1456,6 @@ function CtePage() {
                   <Input className="h-6 text-[10px]" placeholder="Bairro" value={form.bairroTomador} onChange={e=>setForm({...form,bairroTomador:e.target.value})} />
                   <Input className="h-6 text-[10px] col-span-2" placeholder="Telefone" value={form.foneTomador} onChange={e=>setForm({...form,foneTomador:e.target.value})} />
                   <Input className="h-6 text-[10px] col-span-2" placeholder="E-mail" value={form.emailTomador} onChange={e=>setForm({...form,emailTomador:e.target.value})} />
-                </div>
-              </Card>
-
-              {/* Rota: Origem / Destino */}
-              <Card className="p-3">
-                <div className="flex items-center gap-2 mb-2">
-                  <div className="h-6 w-6 rounded bg-sky-500/10 grid place-items-center"><RouteIcon className="h-3.5 w-3.5 text-sky-600" /></div>
-                  <h5 className="text-xs font-semibold">Rota — Local Coleta / Local Entrega</h5>
-                </div>
-                <div className="grid grid-cols-2 md:grid-cols-6 gap-2">
-                  <Input className="h-7 text-xs md:col-span-2" placeholder="Local Coleta" value={form.xMunIni} onChange={e=>setForm({...form,xMunIni:e.target.value})} />
-                  <Input className="h-7 text-xs" placeholder="UF" value={form.ufIni} onChange={e=>setForm({...form,ufIni:e.target.value.toUpperCase()})} maxLength={2} />
-                  <Input className="h-7 text-xs md:col-span-2" placeholder="Local Entrega" value={form.xMunFim} onChange={e=>setForm({...form,xMunFim:e.target.value})} />
-                  <Input className="h-7 text-xs" placeholder="UF" value={form.ufFim} onChange={e=>setForm({...form,ufFim:e.target.value.toUpperCase()})} maxLength={2} />
                 </div>
               </Card>
             </TabsContent>
