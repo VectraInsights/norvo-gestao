@@ -1150,6 +1150,17 @@ Commits: CF `4c42487` + Vercel `aeb82d3`
 
 ---
 
+## CT-e: Novo CT-e preserva dados fiscais (08/09/2026)
+
+- "Novo CT-e" / "Novo CT-e avulso" zeravam o form inteiro (`emptyForm`), apagando
+  CFOP, alíquotas e impostos digitados. Agora preservam CFOP, vPrest, ICMS
+  (CST/alíq/redução/crédito), PIS/COFINS/IR/INSS/CSLL, ambiente e campos de Status;
+  só limpam dados da NF (tomador, rota, consignatário, motorista, etc.).
+
+Commits: CF `[pendente]` + Vercel `[pendente]`
+
+---
+
 ## Regras de segurança
 
 - NUNCA commitar tokens/senhas (GitHub PAT, senhas de banco, service keys).

@@ -209,6 +209,17 @@ function CtePage() {
     obsGerais: "", obsAnulacao: "", obsGlobalizado: "",
   };
   const [form, setForm] = useState(emptyForm);
+  // Novo CT-e preservando dados fiscais (CFOP, impostos, status) — só limpa dados da NF/tomador/rota
+  const novoCtePreservandoFiscal = () => {
+    setForm(f => {
+      const keep: any = {};
+      for (const k of ["ambiente", "cfop", "vPrest", "icmsCST", "icmsAliq", "reducaoBase", "creditoOutorgado", "pisAliq", "cofinsAliq", "irAliq", "inssAliq", "csllAliq", "formaPagamento", "finalidadeEmissao", "tipoServico", "formaEmissao"]) keep[k] = (f as any)[k];
+      return { ...emptyForm, ...keep };
+    });
+    setSelecionadas(new Set());
+    setEditingRascunhoId(null);
+    setOpen(true);
+  };
   const [cfopOpen, setCfopOpen] = useState(false);
   const [cfopQuery, setCfopQuery] = useState("");
 
@@ -969,7 +980,7 @@ function CtePage() {
 
   return (
     <div className="p-6 space-y-4">
-      <PageHeader eyebrow="Fiscal" title="CT-e" description="Conhecimento de Transporte Eletrônico (57) — emissão robusta estilo STM, com múltiplas NF-es por CT-e." actions={<Button size="sm" onClick={() => { setForm(emptyForm); setSelecionadas(new Set()); setOpen(true); }}><Plus className="mr-1 h-4 w-4" /> Novo CT-e</Button>} />
+      <PageHeader eyebrow="Fiscal" title="CT-e" description="Conhecimento de Transporte Eletrônico (57) — emissão robusta estilo STM, com múltiplas NF-es por CT-e." actions={<Button size="sm" onClick={() => novoCtePreservandoFiscal()}><Plus className="mr-1 h-4 w-4" /> Novo CT-e</Button>} />
 
       {/* Cadastro de Mercadorias para Embarque — estilo STM */}
       <Card className="overflow-hidden border-2 border-primary/20 shadow-panel">
@@ -1167,7 +1178,7 @@ function CtePage() {
               >
                 Gerar CT-e com {selecionadas.size || 0} selecionada(s)
               </Button>
-              <Button size="sm" onClick={() => { setForm(emptyForm); setSelecionadas(new Set()); setOpen(true); }}><Plus className="mr-1 h-3 w-3" /> Novo CT-e avulso</Button>
+              <Button size="sm" onClick={() => novoCtePreservandoFiscal()}><Plus className="mr-1 h-3 w-3" /> Novo CT-e avulso</Button>
             </div>
           </div>
         </CardContent>
