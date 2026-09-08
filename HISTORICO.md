@@ -1099,7 +1099,7 @@ Commits: CF `ea5bc46` + Vercel `4fe7336`
   meu erro anterior). IBSCBS e toma conferidos e corretos no XSD.
 - Fix: `vTotDFe` (= vTPrest em 2026) movido para dentro do `<total>`.
 
-Commits: CF `[pendente]` + Vercel `[pendente]`
+Commits: CF `0537490` + Vercel `03fd9c3`
 
 ---
 
