@@ -97,6 +97,20 @@ function CtePage() {
     }
   }, [statusTab, docsByStatus, docs]);
 
+  // Chaves reservadas em rascunhos (inclui rascunhos antigos, cujas NF-es foram deletadas do banco)
+  const chavesEmRascunho = useMemo(() => {
+    const s = new Set<string>();
+    for (const d of (docs ?? [])) {
+      if ((d as any).status !== "rascunho") continue;
+      try {
+        const p = JSON.parse((d as any).xml_assinado || "{}");
+        for (const c of (p.chavesNFe || [])) if (c) s.add(String(c).replace(/\D/g, ""));
+        for (const nf of (p.nfs || [])) if (nf?.chave) s.add(String(nf.chave).replace(/\D/g, ""));
+      } catch {}
+    }
+    return s;
+  }, [docs]);
+
   const downloadXml = (doc: CteDoc) => {
     if (!doc.xml_assinado) { toast.error("XML não disponível"); return; }
     let xmlContent = doc.xml_assinado;
@@ -513,7 +527,11 @@ function CtePage() {
       };
       let added = 0;
       let duplicadas = 0;
+      let reservadas = 0;
       const novas: typeof mercadorias = [];
+      // Status atual no banco p/ bloquear reimport de NF reservada (rascunho) ou embarcada
+      const { data: existentes } = await supabase.from("cte_nfes_pendentes" as any).select("chave,status").eq("empresa_id", empresa!.id);
+      const statusPorChave = new Map<string, string>((existentes as any[] || []).map(r => [String(r.chave).replace(/\D/g, ""), String(r.status)]));
       for (const file of xmls) {
         const text = await file.text();
         const parser = new DOMParser();
@@ -547,6 +565,9 @@ function CtePage() {
         const chaveNorm = chave.replace(/\D/g, "");
         if (!chaveNorm || chaveNorm.length < 20) { duplicadas++; continue; }
         if (novas.some(m => m.chave === chaveNorm)) { duplicadas++; continue; }
+        // Bloqueia NF já reservada em rascunho ou embarcada em CT-e (evita duplicidade)
+        const stExistente = statusPorChave.get(chaveNorm);
+        if (chavesEmRascunho.has(chaveNorm) || (stExistente && stExistente !== "pendente")) { reservadas++; continue; }
         const peso = pesoB ? parseFloat(pesoB) : 1000;
         const valor = parseFloat(vNF) || 0;
         const modFrete = doc.querySelector("transp > modFrete")?.textContent || "";
@@ -667,10 +688,11 @@ function CtePage() {
         const somaP = merged.reduce((a, m) => a + (m.peso || 0), 0);
         setForm(f => ({ ...f, vCarga: somaV.toFixed(2), peso: String(somaP), icmsBase: f.vPrest || "0.00" }));
         qc.invalidateQueries({ queryKey: ["cte-nfes-pendentes", empresa!.id] });
-        if (duplicadas > 0) toast.success(`${added} importada(s), ${duplicadas} já existiam (chave duplicada bloqueada)`);
-        else toast.success(`${added} XML(s) importado(s) — selecione os que irão no CT-e`);
-      } else if (duplicadas > 0) {
-        toast.info(`${duplicadas} NF-e(s) já importadas anteriormente — dedup por chave (independe de CT-e)`);
+        const extra = reservadas > 0 ? `, ${reservadas} bloqueada(s) (em rascunho/CT-e)` : "";
+        if (duplicadas > 0) toast.success(`${added} importada(s), ${duplicadas} já existiam (chave duplicada bloqueada)${extra}`);
+        else toast.success(`${added} XML(s) importado(s) — selecione os que irão no CT-e${extra}`);
+      } else if (duplicadas > 0 || reservadas > 0) {
+        toast.info(`${duplicadas} NF-e(s) já importadas; ${reservadas} bloqueada(s) por estar(em) em rascunho ou CT-e`);
       } else {
         toast.info("Nenhum XML novo");
       }
@@ -774,7 +796,8 @@ function CtePage() {
         await supabase.from("cte_documentos" as any).delete().eq("id", editingRascunhoId);
       }
       if (empresa && chaves.length > 0) {
-        await supabase.from("cte_nfes_pendentes" as any).delete().in("chave", chaves).eq("empresa_id", empresa.id);
+        // Reserva as NF-es no rascunho SEM deletar (status rascunho): voltam sozinhas ao emitir/cancelar/excluir
+        await supabase.from("cte_nfes_pendentes" as any).update({ status: "rascunho" }).in("chave", chaves).eq("empresa_id", empresa.id);
       }
     },
     onSuccess: () => {

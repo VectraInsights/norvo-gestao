@@ -1127,6 +1127,19 @@ Commits: CF `9fec488` + Vercel `244936b`
 
 ---
 
+## CT-e: rascunho reserva NF (sem deletar) + bloqueio duplicidade (08/09/2026)
+
+- Raiz do "cancelado foi p/ rascunho": salvar rascunho **deletava** as NF-es; depois
+  nada as encontrava e a lista esvaziava. Migration `20260908140000` (aplicada via
+  API): status aceita `rascunho`; salvar rascunho agora faz UPDATE p/ `rascunho`
+  em vez de DELETE — emitir/cancelar/excluir revertem sozinhas.
+- Import agora **bloqueia NF em rascunho ou embarcada** (toast "bloqueada(s)"),
+  acabando com a duplicidade lista × rascunho. Lista segue filtrando só `pendente`.
+
+Commits: CF `[pendente]` + Vercel `[pendente]`
+
+---
+
 ## Regras de segurança
 
 - NUNCA commitar tokens/senhas (GitHub PAT, senhas de banco, service keys).
