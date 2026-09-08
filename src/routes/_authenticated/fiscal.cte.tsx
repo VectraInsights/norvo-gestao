@@ -1310,7 +1310,8 @@ function CtePage() {
                 <div><Label className="text-[10px] text-muted-foreground">Mod / Série</Label><Input className="h-7 text-xs font-mono w-[92px] text-center px-1" value="57 / 001" readOnly /></div>
               </div>
               <div className="border rounded p-3 bg-muted/20">
-                <div>
+                <div className="flex flex-wrap items-end gap-x-3 gap-y-2">
+                <div className="flex-1 min-w-[240px]">
                   <Label className="text-[10px] text-muted-foreground">CFOP Saída</Label>
                   <Popover open={cfopOpen} onOpenChange={setCfopOpen}>
                     <PopoverTrigger asChild>
@@ -1346,18 +1347,20 @@ function CtePage() {
                   </Popover>
                   <p className="text-[9px] text-muted-foreground mt-1">Digite só números (5352) — salva com ponto (5.352) na descrição.</p>
                 </div>
-              </div>
-              {/* Rota compacta no cabeçalho: coleta + entrega */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-2 border rounded p-2.5 bg-muted/20">
-                <div className="flex items-center gap-1.5">
-                  <Label className="text-[10px] text-muted-foreground whitespace-nowrap">Coleta</Label>
-                  <Input className="h-7 text-xs flex-1 min-w-0" placeholder="Município coleta" value={form.xMunIni} onChange={e=>setForm({...form,xMunIni:e.target.value})} />
-                  <Input className="h-7 text-xs w-14 text-center shrink-0" placeholder="UF" value={form.ufIni} onChange={e=>setForm({...form,ufIni:e.target.value.toUpperCase()})} maxLength={2} />
+                <div className="shrink-0">
+                  <Label className="text-[10px] text-muted-foreground">Coleta</Label>
+                  <div className="flex gap-1">
+                    <Input className="h-7 text-xs w-36" placeholder="Município" value={form.xMunIni} onChange={e=>setForm({...form,xMunIni:e.target.value})} />
+                    <Input className="h-7 text-xs w-14 text-center" placeholder="UF" value={form.ufIni} onChange={e=>setForm({...form,ufIni:e.target.value.toUpperCase()})} maxLength={2} />
+                  </div>
                 </div>
-                <div className="flex items-center gap-1.5">
-                  <Label className="text-[10px] text-muted-foreground whitespace-nowrap">Entrega</Label>
-                  <Input className="h-7 text-xs flex-1 min-w-0" placeholder="Município entrega" value={form.xMunFim} onChange={e=>setForm({...form,xMunFim:e.target.value})} />
-                  <Input className="h-7 text-xs w-14 text-center shrink-0" placeholder="UF" value={form.ufFim} onChange={e=>setForm({...form,ufFim:e.target.value.toUpperCase()})} maxLength={2} />
+                <div className="shrink-0">
+                  <Label className="text-[10px] text-muted-foreground">Entrega</Label>
+                  <div className="flex gap-1">
+                    <Input className="h-7 text-xs w-36" placeholder="Município" value={form.xMunFim} onChange={e=>setForm({...form,xMunFim:e.target.value})} />
+                    <Input className="h-7 text-xs w-14 text-center" placeholder="UF" value={form.ufFim} onChange={e=>setForm({...form,ufFim:e.target.value.toUpperCase()})} maxLength={2} />
+                  </div>
+                </div>
                 </div>
               </div>
 
@@ -1990,15 +1993,6 @@ function CtePage() {
               </Card>
             </TabsContent>
           </Tabs>
-
-          {/* Cálculos do Serviço — Rodapé (corrigido: base = icmsBase editável, não vCarga) */}
-          <div className="grid grid-cols-2 md:grid-cols-5 gap-2 border rounded p-3 bg-muted/20">
-            <div className="text-center"><p className="text-[10px] text-muted-foreground">Base Cálculo ICMS</p><p className="text-xs font-mono font-medium">{brl(Number(form.vPrest))}</p><p className="text-[8px] text-muted-foreground">igual ao Valor do Serviço</p></div>
-            <div className="text-center"><p className="text-[10px] text-muted-foreground">Alíquota ICMS</p><p className="text-xs font-mono">{Number(form.icmsAliq).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}%</p></div>
-            <div className="text-center"><p className="text-[10px] text-muted-foreground">Valor ICMS</p><p className="text-xs font-mono font-medium text-primary">{brl(Number(form.icmsValor))}</p></div>
-            <div className="text-center"><p className="text-[10px] text-muted-foreground">Valor Serviço</p><p className="text-xs font-mono font-medium">{brl(Number(form.vPrest))}</p></div>
-            <div className="text-center"><p className="text-[10px] text-muted-foreground">Total Prestação</p><p className="text-xs font-mono font-bold">{brl(Number(form.vPrest))}</p></div>
-          </div>
 
           <DialogFooter className="gap-2">
             <Button variant="outline" onClick={() => { setOpen(false); setEditingRascunhoId(null); setMercadorias([]); setSelecionadas(new Set()); qc.invalidateQueries({ queryKey: ["cte-documentos"] }); qc.invalidateQueries({ queryKey: ["cte-nfes-pendentes", empresa?.id] }); }}><Ban className="mr-1 h-3.5 w-3.5" /> Cancelar</Button>
