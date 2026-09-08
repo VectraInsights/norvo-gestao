@@ -1136,7 +1136,7 @@ Commits: CF `9fec488` + Vercel `244936b`
 - Import agora **bloqueia NF em rascunho ou embarcada** (toast "bloqueada(s)"),
   acabando com a duplicidade lista × rascunho. Lista segue filtrando só `pendente`.
 
-Commits: CF `[pendente]` + Vercel `[pendente]`
+Commits: CF `a597ac9` + Vercel `0de9ce3`
 
 ---
 
