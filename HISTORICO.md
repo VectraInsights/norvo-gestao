@@ -953,6 +953,19 @@ Commits: CF `f26ec03` + Vercel `5eb0a70`
 
 ---
 
+## CT-e: Tomador recalcula no toma + CNPJ com busca (08/09/2026)
+
+- Trocar o **toma** (0/CIF, 1/FOB, 3/4, 2/9) **recalcula o tomador**: emitente p/
+  0 e 3, destinatário p/ 1 e 4 (com fallback do cadastro p/ IE/nº/fone), limpa tudo
+  p/ 2 (terceiros) e 9.
+- **CNPJ do tomador com busca automática** (14 dígitos): contatos → BrasilAPI →
+  ReceitaWS, máscara, lupa, spinner — igual Consignatário/Redespacho.
+- "Gerar CT-e" também mescla cadastro (IE, nº, fone, cidade/UF/CEP/logradouro).
+
+Commits: CF `[pendente]` + Vercel `[pendente]`
+
+---
+
 ## Regras de segurança
 
 - NUNCA commitar tokens/senhas (GitHub PAT, senhas de banco, service keys).

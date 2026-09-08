@@ -424,6 +424,60 @@ function CtePage() {
     for (const c of contatosCte ?? []) if ((c as any).documento) m.set(String((c as any).documento).replace(/\D/g, ""), c);
     return m;
   }, [contatosCte]);
+  // Tomador: troca de toma recalcula remetente/destinatário; CNPJ manual busca dados
+  const [lookingUpTomador, setLookingUpTomador] = useState(false);
+  const lastLookupTomador = useRef("");
+  const lookupTomador = async (digits: string) => {
+    if (digits.length !== 14 || !empresa) return;
+    setLookingUpTomador(true);
+    try {
+      const d = await buscarDadosCnpj(digits);
+      if (!d) { toast.error("CNPJ não encontrado"); return; }
+      setForm(f => ({ ...f, cnpjTomador: digits, xNomeTomador: d.nome || f.xNomeTomador, ieTomador: (d as any).ie || f.ieTomador, ufTomador: d.uf || f.ufTomador, xMunTomador: d.cidade || f.xMunTomador, cepTomador: d.cep || f.cepTomador, logradouroTomador: d.logradouro || f.logradouroTomador, nroTomador: d.numero || f.nroTomador, bairroTomador: d.bairro || f.bairroTomador, foneTomador: (d as any).fone || f.foneTomador }));
+      if (!(d as any).fromContatos && d.nome) {
+        await insertContatoResiliente({ empresa_id: empresa.id, nome: d.nome, tipo: "cliente", documento: digits, uf: d.uf || null, cidade: d.cidade || null, logradouro: d.logradouro || null, numero: d.numero || null, bairro: d.bairro || null, cep: d.cep || null, telefone: (d as any).fone || null });
+      }
+      toast.success("Tomador localizado");
+    } catch (e: any) { toast.error(e.message || "Falha ao buscar CNPJ"); }
+    finally { setLookingUpTomador(false); }
+  };
+  const aplicarTomadorPorToma = (v: string) => {
+    const sel = mercadorias.filter(m => selecionadas.has(m.chave));
+    const first = (sel.length > 0 ? sel[0] : mercadorias[0]) as any;
+    if (!first) { setForm(f => ({ ...f, toma: v })); return; }
+    const isEmit = v === "0" || v === "3";
+    const isDest = v === "1" || v === "4";
+    if (!isEmit && !isDest) {
+      lastLookupTomador.current = "";
+      setForm(f => ({ ...f, toma: v, cnpjTomador: "", xNomeTomador: "", ieTomador: "", ufTomador: "", cMunTomador: "", xMunTomador: "", cepTomador: "", logradouroTomador: "", nroTomador: "", bairroTomador: "", foneTomador: "", emailTomador: "" }));
+      return;
+    }
+    const src = {
+      cnpj: isEmit ? first.emitCnpj : first.destCnpj,
+      nome: isEmit ? first.emit : first.dest,
+      ie: isEmit ? first.emitIE : first.destIE,
+      uf: isEmit ? first.emitUF : first.destUF,
+      cMun: isEmit ? first.emitCMun : first.destCMun,
+      xMun: isEmit ? first.emitXMun : first.destXMun,
+      cep: isEmit ? first.emitCEP : first.destCEP,
+      lgr: isEmit ? first.emitLogradouro : first.destLogradouro,
+      bai: isEmit ? first.emitBairro : first.destBairro,
+      fone: isEmit ? first.emitFone : first.destFone,
+    };
+    const c = contatoByDoc.get((src.cnpj || "").replace(/\D/g, "")) || {};
+    const digits = (src.cnpj || "").replace(/\D/g, "");
+    lastLookupTomador.current = digits;
+    setForm(f => ({ ...f, toma: v,
+      cnpjTomador: digits, xNomeTomador: src.nome || f.xNomeTomador,
+      ieTomador: src.ie || c.ie || f.ieTomador,
+      ufTomador: src.uf || c.uf || f.ufTomador,
+      cMunTomador: src.cMun || f.cMunTomador, xMunTomador: src.xMun || c.cidade || f.xMunTomador,
+      cepTomador: src.cep || (c.cep || "").replace(/\D/g, "") || f.cepTomador,
+      logradouroTomador: src.lgr || c.logradouro || f.logradouroTomador,
+      nroTomador: c.numero || f.nroTomador, bairroTomador: src.bai || c.bairro || f.bairroTomador,
+      foneTomador: src.fone || c.telefone || f.foneTomador,
+    }));
+  };
 
   const handleImportNFeXml = async (files: FileList | File[]) => {
     if (!empresa) { toast.error("Selecione uma empresa"); return; }
@@ -1034,18 +1088,23 @@ function CtePage() {
                   const first = sel[0] as typeof sel[0] & { modFrete?: string; tomadorUF?: string; tomadorCMun?: string; tomadorXMun?: string; emitUF?: string; emitCMun?: string; emitXMun?: string; destUF?: string; destCMun?: string; destXMun?: string };
                   const tomaByMod: Record<string,string> = { "0":"0", "1":"3", "2":"4", "3":"0", "4":"3", "9":"4" };
                   const tomaSel = (first as any).modFrete ? (tomaByMod[(first as any).modFrete] ?? "3") : "3";
+                  const tomCnpjDigits = (((first as any).tomadorCnpj || first.destCnpj || "") as string).replace(/\D/g, "");
+                  const cTom = contatoByDoc.get(tomCnpjDigits) || {};
+                  lastLookupTomador.current = tomCnpjDigits;
                   setForm(f => ({
                     ...f,
                     toma: tomaSel,
                     cnpjTomador: (first as any).tomadorCnpj || first.destCnpj || f.cnpjTomador,
                     xNomeTomador: (first as any).tomador || first.dest || f.xNomeTomador,
-                    ufTomador: (first as any).tomadorUF || f.ufTomador,
+                    ufTomador: (first as any).tomadorUF || cTom.uf || f.ufTomador,
                     cMunTomador: (first as any).tomadorCMun || f.cMunTomador,
-                    xMunTomador: (first as any).tomadorXMun || f.xMunTomador,
-                    ieTomador: (first as any).tomadorIE || f.ieTomador,
-                    logradouroTomador: (first as any).tomadorLogradouro || f.logradouroTomador,
-                    bairroTomador: (first as any).tomadorBairro || f.bairroTomador,
-                    cepTomador: (first as any).tomadorCEP || f.cepTomador,
+                    xMunTomador: (first as any).tomadorXMun || cTom.cidade || f.xMunTomador,
+                    ieTomador: (first as any).tomadorIE || cTom.ie || f.ieTomador,
+                    logradouroTomador: (first as any).tomadorLogradouro || cTom.logradouro || f.logradouroTomador,
+                    nroTomador: cTom.numero || (f as any).nroTomador || "",
+                    bairroTomador: (first as any).tomadorBairro || cTom.bairro || f.bairroTomador,
+                    cepTomador: (first as any).tomadorCEP || (cTom.cep || "").replace(/\D/g, "") || f.cepTomador,
+                    foneTomador: cTom.telefone || (f as any).foneTomador || "",
                     cMunIni: (first as any).emitCMun || f.cMunIni,
                     xMunIni: (first as any).emitXMun || f.xMunIni,
                     ufIni: (first as any).emitUF || f.ufIni,
@@ -1299,7 +1358,7 @@ function CtePage() {
                   <span className="text-[10px] text-muted-foreground">(toma {form.toma})</span>
                 </div>
                 <div className="grid grid-cols-6 gap-1">
-                  <Select value={form.toma} onValueChange={v => setForm({...form, toma: v})}>
+                  <Select value={form.toma} onValueChange={v => aplicarTomadorPorToma(v)}>
                     <SelectTrigger className="h-6 text-[10px] col-span-2"><SelectValue /></SelectTrigger>
                     <SelectContent>
                       {MOD_FRETE_OPTIONS.map(opt => (
@@ -1307,7 +1366,14 @@ function CtePage() {
                       ))}
                     </SelectContent>
                   </Select>
-                  <Input className="h-6 text-[10px] col-span-2" placeholder="CNPJ *" value={form.cnpjTomador} onChange={e=>setForm({...form,cnpjTomador:e.target.value})} />
+                  <div className="col-span-2 flex gap-1">
+                    <Input className="h-6 text-[10px] font-mono" placeholder="CNPJ *" value={fmtCnpjInput(form.cnpjTomador || "")} onChange={e => {
+                      const digits = e.target.value.replace(/\D/g, "").slice(0, 14);
+                      setForm({ ...form, cnpjTomador: digits });
+                      if (digits.length === 14 && digits !== lastLookupTomador.current) { lastLookupTomador.current = digits; lookupTomador(digits); }
+                    }} maxLength={18} />
+                    <Button type="button" size="icon" variant="ghost" className="h-6 w-6 shrink-0" disabled={lookingUpTomador} onClick={() => { const d = (form.cnpjTomador || "").replace(/\D/g, ""); if (d.length !== 14) { toast.error("CNPJ deve ter 14 dígitos"); return; } lastLookupTomador.current = d; lookupTomador(d); }} title="Buscar CNPJ">{lookingUpTomador ? <Loader2 className="h-3 w-3 animate-spin" /> : <Search className="h-3 w-3" />}</Button>
+                  </div>
                   <Input className="h-6 text-[10px] col-span-2" placeholder="Nome / Razão Social *" value={form.xNomeTomador} onChange={e=>setForm({...form,xNomeTomador:e.target.value})} />
                   <Input className="h-6 text-[10px]" placeholder="UF" value={form.ufTomador} onChange={e=>setForm({...form,ufTomador:e.target.value.toUpperCase()})} maxLength={2} />
                   <Input className="h-6 text-[10px] col-span-2" placeholder="Município" value={form.xMunTomador} onChange={e=>setForm({...form,xMunTomador:e.target.value})} />
