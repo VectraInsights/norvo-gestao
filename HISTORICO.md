@@ -923,7 +923,7 @@ Commits: CF `e05db7a` + Vercel `ec1f93f`
 - Código resiliente: funciona com ou sem a coluna `ie` (fallback sem IE).
 - `select *` no lookup p/ não quebrar antes da migration aplicada.
 
-Commits: CF `[pendente]` + Vercel `[pendente]`
+Commits: CF `23c97b0` + Vercel `51938b8`
 
 ---
 
