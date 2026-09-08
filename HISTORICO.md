@@ -1092,6 +1092,17 @@ Commits: CF `ea5bc46` + Vercel `4fe7336`
 
 ---
 
+## CT-e: fix 225 — vTotDFe no total do Simp (08/09/2026)
+
+- Com os schemas oficiais (NT 2026.002, Desktop): no **CTeSimp** o `imp` termina no
+  IBSCBS e o `vTotDFe` é filho do **`total`** (no CT-e normal/OS é no `imp` — daí
+  meu erro anterior). IBSCBS e toma conferidos e corretos no XSD.
+- Fix: `vTotDFe` (= vTPrest em 2026) movido para dentro do `<total>`.
+
+Commits: CF `[pendente]` + Vercel `[pendente]`
+
+---
+
 ## Regras de segurança
 
 - NUNCA commitar tokens/senhas (GitHub PAT, senhas de banco, service keys).
