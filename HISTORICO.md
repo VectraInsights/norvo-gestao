@@ -1157,7 +1157,7 @@ Commits: CF `4c42487` + Vercel `aeb82d3`
   (CST/alíq/redução/crédito), PIS/COFINS/IR/INSS/CSLL, ambiente e campos de Status;
   só limpam dados da NF (tomador, rota, consignatário, motorista, etc.).
 
-Commits: CF `[pendente]` + Vercel `[pendente]`
+Commits: CF `584eb83` + Vercel `1af180f`
 
 ---
 
