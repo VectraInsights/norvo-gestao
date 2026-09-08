@@ -518,6 +518,7 @@ export type Database = {
           email: string | null
           empresa_id: string
           id: string
+          ie: string | null
           logradouro: string | null
           nome: string
           numero: string | null
@@ -538,6 +539,7 @@ export type Database = {
           email?: string | null
           empresa_id: string
           id?: string
+          ie?: string | null
           logradouro?: string | null
           nome: string
           numero?: string | null
@@ -558,6 +560,7 @@ export type Database = {
           email?: string | null
           empresa_id?: string
           id?: string
+          ie?: string | null
           logradouro?: string | null
           nome?: string
           numero?: string | null

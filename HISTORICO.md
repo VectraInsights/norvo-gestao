@@ -927,6 +927,21 @@ Commits: CF `23c97b0` + Vercel `51938b8`
 
 ---
 
+## Clientes: lupa atualiza existente + campo IE + backfill XML (08/09/2026)
+
+- **Lupa não bloqueia mais**: editando um contato, a lupa busca na Receita e preenche
+  o form (era "Já cadastrado" sem atualizar). Criando novo com CNPJ existente, orienta
+  a editar o contato.
+- **Campo IE** no cadastro (form, dialog, criar/editar, types.ts).
+- **Editar carrega tudo**: `openEdit` trazia só nome/doc/email/tel (endereço vinha vazio)
+  — agora carrega endereço + IE + observações (query ampliada).
+- **Backfill via API**: contatos com campos vazios preenchidos dos dados de tomador
+  das NF-es importadas (ex: TECNO2000 ← IE 2614310460066, FORMIGA/MG).
+
+Commits: CF `[pendente]` + Vercel `[pendente]`
+
+---
+
 ## Regras de segurança
 
 - NUNCA commitar tokens/senhas (GitHub PAT, senhas de banco, service keys).

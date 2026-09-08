@@ -23,6 +23,9 @@ type TipoContato = Database["public"]["Enums"]["contato_tipo"];
 type Contato = {
   id: string; nome: string; tipo: TipoContato;
   documento: string | null; email: string | null; telefone: string | null;
+  ie: string | null; cep: string | null; logradouro: string | null;
+  numero: string | null; complemento: string | null; bairro: string | null;
+  cidade: string | null; uf: string | null; observacoes: string | null;
 };
 
 export const Route = createFileRoute("/_authenticated/vendas/clientes")({
@@ -33,7 +36,7 @@ export const Route = createFileRoute("/_authenticated/vendas/clientes")({
 });
 
 const emptyForm = () => ({
-  nome: "", documento: "", email: "", telefone: "",
+  nome: "", documento: "", email: "", telefone: "", ie: "",
   cep: "", logradouro: "", numero: "", complemento: "",
   bairro: "", cidade: "", uf: "", observacoes: "",
   isCliente: true, isFornecedor: false,
@@ -60,8 +63,9 @@ function Clientes() {
     try {
       const { data: existente } = await supabase.from("contatos")
         .select("id,nome").eq("empresa_id", empresa.id).eq("documento", digits).maybeSingle();
-      if (existente) {
-        toast.error(`Já cadastrado: ${existente.nome}`);
+      // Se é outro contato (não o que está sendo editado), bloqueia; se é o próprio, atualiza
+      if (existente && (!editing || existente.id !== editing.id)) {
+        toast.error(`Já cadastrado: ${existente.nome} — abra a edição dele para atualizar`);
         return;
       }
       let d: any = null;
@@ -74,22 +78,22 @@ function Clientes() {
           if (res.ok) { d = await res.json(); break; }
         } catch { /* tenta próxima */ }
       }
-      if (!d) throw new Error("CNPJ não encontrado nas APIs públicas");
+      if (!d || d.status === "ERROR") throw new Error("CNPJ não encontrado nas APIs públicas");
       setForm((f) => ({
         ...f,
         documento: digits,
         nome: d.razao_social || d.nome || d.nome_fantasia || f.nome,
-        email: d.email ?? f.email,
-        telefone: d.ddd_telefone_1 || d.telefone || f.telefone,
-        cep: d.cep ?? f.cep,
-        logradouro: d.logradouro ?? f.logradouro,
-        numero: d.numero ?? f.numero,
-        complemento: d.complemento ?? f.complemento,
-        bairro: d.bairro ?? f.bairro,
+        email: d.email || f.email,
+        telefone: d.ddd_telefone_1 || d.telefone || d.phone || f.telefone,
+        cep: String(d.cep ?? d.zip ?? f.cep ?? "").replace(/\D/g, "") || f.cep,
+        logradouro: d.logradouro || d.street || f.logradouro,
+        numero: String(d.numero ?? d.number ?? f.numero ?? "") || f.numero,
+        complemento: d.complemento || f.complemento,
+        bairro: d.bairro || d.district || f.bairro,
         cidade: d.municipio || d.city || f.cidade,
         uf: d.uf || d.state || f.uf,
       }));
-      toast.success("Dados preenchidos a partir da Receita");
+      toast.success(editing ? "Dados atualizados da Receita — clique Salvar" : "Dados preenchidos a partir da Receita");
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Falha ao consultar CNPJ");
     } finally {
@@ -108,7 +112,7 @@ function Clientes() {
     queryKey: ["contatos", empresa?.id] as const,
     queryFn: async ({ signal }): Promise<Contato[]> => {
       const { data, error } = await supabase.from("contatos")
-        .select("id,nome,tipo,documento,email,telefone")
+        .select("id,nome,tipo,documento,email,telefone,ie,cep,logradouro,numero,complemento,bairro,cidade,uf,observacoes")
         .eq("empresa_id", empresa!.id).order("nome").abortSignal(signal);
       if (error) throw error;
       return (data ?? []) as Contato[];
@@ -140,6 +144,7 @@ function Clientes() {
         documento: doc || null,
         email: input.email || null,
         telefone: input.telefone || null,
+        ie: input.ie || null,
         cep: input.cep || null,
         logradouro: input.logradouro || null,
         numero: input.numero || null,
@@ -184,6 +189,7 @@ function Clientes() {
         documento: doc || null,
         email: input.email || null,
         telefone: input.telefone || null,
+        ie: input.ie || null,
         cep: input.cep || null,
         logradouro: input.logradouro || null,
         numero: input.numero || null,
@@ -225,8 +231,15 @@ function Clientes() {
       documento: c.documento ?? "",
       email: c.email ?? "",
       telefone: c.telefone ?? "",
-      cep: "", logradouro: "", numero: "", complemento: "",
-      bairro: "", cidade: "", uf: "", observacoes: "",
+      ie: c.ie ?? "",
+      cep: c.cep ?? "",
+      logradouro: c.logradouro ?? "",
+      numero: c.numero ?? "",
+      complemento: c.complemento ?? "",
+      bairro: c.bairro ?? "",
+      cidade: c.cidade ?? "",
+      uf: c.uf ?? "",
+      observacoes: c.observacoes ?? "",
       isCliente: c.tipo === "cliente" || c.tipo === "ambos",
       isFornecedor: c.tipo === "fornecedor" || c.tipo === "ambos",
     });
@@ -263,7 +276,10 @@ function Clientes() {
                     </Button>
                   </div>
                 </div>
-                <div><Label>Nome / Razão social *</Label><Input required value={form.nome} onChange={(e) => setForm({ ...form, nome: e.target.value })} /></div>
+                <div className="grid grid-cols-3 gap-3">
+                  <div className="col-span-2"><Label>Nome / Razão social *</Label><Input required value={form.nome} onChange={(e) => setForm({ ...form, nome: e.target.value })} /></div>
+                  <div><Label>IE</Label><Input value={form.ie} onChange={(e) => setForm({ ...form, ie: e.target.value })} placeholder="ISENTO" /></div>
+                </div>
                 <div>
                   <Label>Tipo *</Label>
                   <div className="flex gap-4 mt-2">
