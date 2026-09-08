@@ -1103,6 +1103,16 @@ Commits: CF `0537490` + Vercel `03fd9c3`
 
 ---
 
+## CT-e homologação AUTORIZADO (cStat 100) — 08/09/2026
+
+- Sequência de erros vencida na homologação MG: 938 (razão social de teste) →
+  310 (grupo IBSCBS) → 360 (total DFe) → 225 (vTotDFe no `total`, não no `imp`)
+  → **100 "Autorizado o uso do CT-e"**, protocolo `131260005246387`,
+  chave `31260903919614000160570010009000101789090457` (nCT 900010).
+- Layout RTC validado de ponta a ponta contra XSD oficial NT 2026.002.
+
+---
+
 ## Regras de segurança
 
 - NUNCA commitar tokens/senhas (GitHub PAT, senhas de banco, service keys).
