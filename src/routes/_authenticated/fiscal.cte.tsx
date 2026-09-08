@@ -789,8 +789,13 @@ function CtePage() {
     onError: (e: Error) => toast.error(e.message),
   });
 
+  const emittingRef = useRef(false);
   const emitir = useMutation({
     mutationFn: async () => {
+      // Trava contra duplo clique: duas emissões concorrentes calculariam o mesmo número
+      if (emittingRef.current) throw new Error("Emissão já em andamento — aguarde");
+      emittingRef.current = true;
+      try {
       if (!empresa) throw new Error("Empresa não selecionada");
       if (!form.xNomeTomador || !form.cnpjTomador) throw new Error("Informe tomador");
       if (!form.ieTomador) toast.warning("IE do tomador não informado — o SEFAZ pode rejeitar");
@@ -816,6 +821,9 @@ function CtePage() {
         emit: { xNome: empresa.razao_social || empresa.nome_fantasia, ie: empresa.ie || "ISENTO", cMun: form.cMunEnv, xMun: form.xMunEnv, uf: empresa.uf || "MG", cnpj: empresa.cnpj, crt: empresa.regime_tributario || "3", logradouro: empresa.logradouro, nro: empresa.numero, bairro: empresa.bairro, cep: empresa.cep } as any,
         chavesNFe: chaves,
       } } });
+      } finally {
+        emittingRef.current = false;
+      }
     },
     onSuccess: async (ret: any) => {
       if (ret?.sucesso) {

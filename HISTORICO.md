@@ -1113,6 +1113,20 @@ Commits: CF `0537490` + Vercel `03fd9c3`
 
 ---
 
+## CT-e: trava duplo-clique + SPED homologação (08/09/2026)
+
+- **Duplo registro (rejeitado+autorizado)**: duplo clique no "Enviar Doc-e" (há dois
+  botões: diálogo + preview) disparava 2 emissões concorrentes com o mesmo número —
+  SEFAZ autorizava a 1ª e rejeitava a 2ª. Fix: `emittingRef` bloqueia emissão
+  concorrente. Rejeitados antigos são histórico de tentativa — limpar com o botão
+  "Limpar Rejeitados".
+- **Autorizado não aparece no SPED MG**: esperado — homologação não tem valor fiscal
+  e nunca vai p/ SPED. Documentos reais só em Produção.
+
+Commits: CF `[pendente]` + Vercel `[pendente]`
+
+---
+
 ## Regras de segurança
 
 - NUNCA commitar tokens/senhas (GitHub PAT, senhas de banco, service keys).
