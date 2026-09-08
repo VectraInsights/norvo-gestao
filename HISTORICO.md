@@ -949,7 +949,7 @@ Commits: CF `3680c1b` + Vercel `9d1e67e`
   prioritário. Mesmo formato de exibição do Consignatário (`rua, nº — bairro`).
 - Preview do DACTE (`gerarDactePdf`) também usa o fallback p/ rem/dest.
 
-Commits: CF `[pendente]` + Vercel `[pendente]`
+Commits: CF `f26ec03` + Vercel `5eb0a70`
 
 ---
 
