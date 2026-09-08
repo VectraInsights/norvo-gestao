@@ -1014,6 +1014,21 @@ Commits: CF `d0f118b` + Vercel `d8fa38f`
 
 ---
 
+## CT-e: Carga enxuta + Docs Anteriores com busca SEFAZ (08/09/2026)
+
+- Tabela NF-e com rodapé **TOTAL** (peso + valor); card Quantidades e campo Valor
+  Mercadoria removidos (duplicados).
+- Docs Anteriores: removidos Tipo/Sub-série (só existe CT-e eletrônico); tabela agora
+  ITEM | **CHAVE (44, com lupa)** | SÉRIE | NÚMERO | DATA EMISSÃO.
+- **Busca do CT-e anterior pela chave** (`CTeDistribuicaoDFe` nacional, `consChNFe`):
+  nova `consultarCtePorChave` em `sefaz-cte.ts` + `consultarCteChaveFn` + action
+  `consultarCteChave` no proxy. Preenche transportadora (CNPJ/nome/IE) + série,
+  número e emissão da linha. Resposta: sim — digitando a chave, os dados vêm da SEFAZ.
+
+Commits: CF `[pendente]` + Vercel `[pendente]`
+
+---
+
 ## Regras de segurança
 
 - NUNCA commitar tokens/senhas (GitHub PAT, senhas de banco, service keys).

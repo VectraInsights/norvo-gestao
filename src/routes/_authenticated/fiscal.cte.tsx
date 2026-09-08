@@ -20,7 +20,7 @@ import { useEmpresaAtual } from "@/hooks/use-empresa";
 import { brl, dateBR, num } from "@/lib/format";
 import { useState, useEffect, useMemo, useRef } from "react";
 import { toast } from "sonner";
-import { emitirCteFn, consultarCteFn, cancelarCteFn, previewCteXmlFn, excluirRejeitadosCteFn } from "@/lib/sefaz-cte-server";
+import { emitirCteFn, consultarCteFn, cancelarCteFn, previewCteXmlFn, excluirRejeitadosCteFn, consultarCteChaveFn } from "@/lib/sefaz-cte-server";
 import { CFOPS_CTE, MOD_FRETE_OPTIONS, RESPONSAVEL_CTE_OPTIONS } from "@/lib/cfops-transporte";
 import { gerarDactePdf } from "@/lib/dacte-pdf";
 import { JUVENAL_LOGO } from "@/lib/juvenal-logo";
@@ -441,6 +441,30 @@ function CtePage() {
   const lastLookupTomador = useRef("");
   const [lookingUpDocAnt, setLookingUpDocAnt] = useState(false);
   const lastLookupDocAnt = useRef("");
+  const [fetchingChaveIdx, setFetchingChaveIdx] = useState<number | null>(null);
+  // Busca CT-e anterior pela chave (distribuição nacional) e preenche linha + transportadora
+  const fetchDocAnterior = async (idx: number, chaveRaw: string) => {
+    const digits = (chaveRaw || "").replace(/\D/g, "");
+    if (digits.length !== 44) { toast.error("Chave deve ter 44 dígitos"); return; }
+    if (!empresa) { toast.error("Empresa não selecionada"); return; }
+    setFetchingChaveIdx(idx);
+    try {
+      const ret: any = await consultarCteChaveFn({ data: { empresaId: empresa.id, chave: digits } });
+      if (!ret?.sucesso) { toast.error(ret?.xMotivo || `CT-e não localizado (cStat ${ret?.cStat || "?"})`); return; }
+      const arr = [...((form as any).docAnteriores || [])];
+      arr[idx] = { ...arr[idx], chave: digits, serie: ret.serie || arr[idx]?.serie || "", numero: ret.nCT || arr[idx]?.numero || "", dataEmissao: (ret.dhEmi || "").slice(0, 10) || arr[idx]?.dataEmissao || "" };
+      const patch: any = { docAnteriores: arr };
+      if (ret.emitCnpj) {
+        patch.docAntTranspCnpj = ret.emitCnpj.replace(/\D/g, "");
+        patch.docAntTranspNome = ret.emitNome || (form as any).docAntTranspNome;
+        patch.docAntTranspIE = ret.emitIE || (form as any).docAntTranspIE;
+        lastLookupDocAnt.current = patch.docAntTranspCnpj;
+      }
+      setForm({ ...form, ...patch });
+      toast.success(`CT-e ${ret.nCT} localizado — ${ret.emitNome || ""}`);
+    } catch (e: any) { toast.error(e.message || "Falha ao consultar chave"); }
+    finally { setFetchingChaveIdx(null); }
+  };
   const lookupTomador = async (digits: string) => {
     if (digits.length !== 14 || !empresa) return;
     setLookingUpTomador(true);
@@ -1437,28 +1461,6 @@ function CtePage() {
 
             {/* === TAB: Doc Mercadorias === */}
             <TabsContent value="docs" className="mt-3 space-y-3">
-              {/* Quantidades da Carga */}
-              <Card className="p-2">
-                <h5 className="text-xs font-semibold mb-1">Quantidades da Carga</h5>
-                <div className="border rounded overflow-hidden">
-                  <div className="grid grid-cols-[1fr_1fr_140px] bg-muted text-[10px] font-semibold">
-                    <div className="px-2 py-1">UNIDADE DE MEDIDA</div>
-                    <div className="px-2 py-1 border-l">TIPO DA MEDIDA</div>
-                    <div className="px-2 py-1 border-l text-right">QUANTIDADE DE CARGA</div>
-                  </div>
-                  {(() => {
-                    const base = selecionadas.size > 0 ? mercadorias.filter(m => selecionadas.has(m.chave)) : mercadorias;
-                    const totP = base.reduce((a, m) => a + Number(m.peso || 0), 0);
-                    return (
-                      <div className="grid grid-cols-[1fr_1fr_140px] border-t text-xs">
-                        <div className="px-2 py-1.5">KG</div>
-                        <div className="px-2 py-1.5 border-l">PESO BRUTO</div>
-                        <div className="px-2 py-1.5 border-l text-right font-mono">{totP.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
-                      </div>
-                    );
-                  })()}
-                </div>
-              </Card>
               <Card className="overflow-hidden">
                 <div className="bg-sky-600 text-white px-3 py-1.5 text-xs font-semibold">Mercadorias Transportadas — {mercadorias.filter(m => selecionadas.has(m.chave)).length || mercadorias.length} NF-e(s)</div>
                 <div className="overflow-x-auto max-h-[240px]">
@@ -1507,6 +1509,18 @@ function CtePage() {
                     </TableBody>
                   </Table>
                 </div>
+                {(() => {
+                  const base = selecionadas.size > 0 ? mercadorias.filter(m => selecionadas.has(m.chave)) : mercadorias;
+                  const totP = base.reduce((a, m) => a + Number(m.peso || 0), 0);
+                  const totV = base.reduce((a, m) => a + Number(m.valor || 0), 0);
+                  return (
+                    <div className="grid grid-cols-[1fr_110px_130px] border-t bg-muted/40 text-xs font-semibold">
+                      <div className="px-2 py-1.5">TOTAL — {base.length} NF-e(s) • KG / PESO BRUTO</div>
+                      <div className="px-2 py-1.5 text-right font-mono">{totP.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
+                      <div className="px-2 py-1.5 text-right font-mono">{brl(totV)}</div>
+                    </div>
+                  );
+                })()}
               </Card>
 
               {/* Produto Predominante */}
@@ -1519,25 +1533,11 @@ function CtePage() {
                   <Label className="text-[10px] text-muted-foreground">Outras Características do Produto</Label>
                   <Input className="h-6 text-[10px]" value={(form as any).outrasCaracteristicas || ""} onChange={e=>setForm({...form, outrasCaracteristicas: e.target.value} as any)} />
                 </div>
-                <div className="grid grid-cols-1 md:grid-cols-[180px_200px] gap-1 items-center">
-                  <Label className="text-[10px] text-muted-foreground">Valor Mercadoria</Label>
-                  <Input className="h-6 text-[10px] font-mono bg-muted" value={brl(Number(form.vCarga) || 0)} readOnly />
-                </div>
               </Card>
 
               {/* Documentos Anteriores (subcontratação) */}
               <Card className="p-2 space-y-2">
                 <h5 className="text-xs font-semibold">Documentos Anteriores <span className="text-[9px] font-normal text-muted-foreground">— subcontratação (salvo no rascunho)</span></h5>
-                <div className="grid grid-cols-1 md:grid-cols-[160px_1fr] gap-1 items-center">
-                  <Label className="text-[10px] text-muted-foreground">Tipo Documento</Label>
-                  <Select value={(form as any).docAntTipo || "Papel"} onValueChange={v => setForm({ ...form, docAntTipo: v } as any)}>
-                    <SelectTrigger className="h-6 text-[10px]"><SelectValue /></SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="Papel">Papel</SelectItem>
-                      <SelectItem value="Eletronico">Eletrônico</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
                 <div className="grid grid-cols-1 md:grid-cols-[160px_1fr] gap-1 items-center">
                   <Label className="text-[10px] text-muted-foreground">Transportadora Anterior</Label>
                   <div className="flex gap-1">
@@ -1562,28 +1562,34 @@ function CtePage() {
                   </div>
                 </div>
                 <div className="border rounded overflow-hidden">
-                  <div className="grid grid-cols-[40px_1fr_70px_70px_90px_110px_28px] bg-muted text-[10px] font-semibold">
+                  <div className="grid grid-cols-[40px_1fr_70px_90px_110px_28px] bg-muted text-[10px] font-semibold">
                     <div className="px-1 py-1 text-center">ITEM</div>
-                    <div className="px-1 py-1 border-l">TIPO DOCUMENTO</div>
+                    <div className="px-1 py-1 border-l">CHAVE DE ACESSO (44)</div>
                     <div className="px-1 py-1 border-l">SÉRIE</div>
-                    <div className="px-1 py-1 border-l">SUB-SÉRIE</div>
                     <div className="px-1 py-1 border-l">NÚMERO</div>
                     <div className="px-1 py-1 border-l">DATA EMISSÃO</div>
                     <div className="px-1 py-1 border-l"></div>
                   </div>
                   {((form as any).docAnteriores || []).map((r: any, i: number) => (
-                    <div key={i} className="grid grid-cols-[40px_1fr_70px_70px_90px_110px_28px] border-t">
+                    <div key={i} className="grid grid-cols-[40px_1fr_70px_90px_110px_28px] border-t">
                       <div className="px-1 py-1 text-center text-[10px] text-muted-foreground self-center">{i + 1}</div>
-                      <Input className="h-6 text-[10px] rounded-none border-0 border-l" value={r.tipoDoc || ""} onChange={e => { const arr = [...((form as any).docAnteriores || [])]; arr[i] = { ...arr[i], tipoDoc: e.target.value }; setForm({ ...form, docAnteriores: arr } as any); }} />
+                      <div className="flex items-center gap-1 border-l pl-1">
+                        <Input className="h-6 text-[10px] font-mono rounded-none border-0 px-1" placeholder="Digite a chave p/ buscar" value={r.chave || ""} onChange={e => {
+                          const digits = e.target.value.replace(/\D/g, "").slice(0, 44);
+                          const arr = [...((form as any).docAnteriores || [])]; arr[i] = { ...arr[i], chave: digits }; setForm({ ...form, docAnteriores: arr } as any);
+                          if (digits.length === 44) fetchDocAnterior(i, digits);
+                        }} maxLength={44} />
+                        <Button type="button" size="icon" variant="ghost" className="h-6 w-6 shrink-0" disabled={fetchingChaveIdx === i} onClick={() => fetchDocAnterior(i, r.chave || "")} title="Buscar CT-e pela chave">{fetchingChaveIdx === i ? <Loader2 className="h-3 w-3 animate-spin" /> : <Search className="h-3 w-3" />}</Button>
+                      </div>
                       <Input className="h-6 text-[10px] rounded-none border-0 border-l" value={r.serie || ""} onChange={e => { const arr = [...((form as any).docAnteriores || [])]; arr[i] = { ...arr[i], serie: e.target.value }; setForm({ ...form, docAnteriores: arr } as any); }} />
-                      <Input className="h-6 text-[10px] rounded-none border-0 border-l" value={r.subSerie || ""} onChange={e => { const arr = [...((form as any).docAnteriores || [])]; arr[i] = { ...arr[i], subSerie: e.target.value }; setForm({ ...form, docAnteriores: arr } as any); }} />
                       <Input className="h-6 text-[10px] rounded-none border-0 border-l" value={r.numero || ""} onChange={e => { const arr = [...((form as any).docAnteriores || [])]; arr[i] = { ...arr[i], numero: e.target.value }; setForm({ ...form, docAnteriores: arr } as any); }} />
                       <Input className="h-6 text-[10px] rounded-none border-0 border-l" value={r.dataEmissao || ""} onChange={e => { const arr = [...((form as any).docAnteriores || [])]; arr[i] = { ...arr[i], dataEmissao: e.target.value }; setForm({ ...form, docAnteriores: arr } as any); }} placeholder="AAAA-MM-DD" />
                       <Button type="button" size="icon" variant="ghost" className="h-6 w-7 text-destructive" onClick={() => { const arr = [...((form as any).docAnteriores || [])]; arr.splice(i, 1); setForm({ ...form, docAnteriores: arr } as any); }} title="Remover"><Trash2 className="h-3 w-3" /></Button>
                     </div>
                   ))}
                 </div>
-                <Button type="button" size="sm" variant="outline" className="h-6 text-[10px]" onClick={() => setForm({ ...form, docAnteriores: [...((form as any).docAnteriores || []), { tipoDoc: "", serie: "", subSerie: "", numero: "", dataEmissao: "" }] } as any)}><Plus className="mr-1 h-3 w-3" /> Adicionar documento</Button>
+                <p className="text-[9px] text-muted-foreground">Digite a chave de acesso do CT-e: transportadora, série, número e emissão são puxados da SEFAZ.</p>
+                <Button type="button" size="sm" variant="outline" className="h-6 text-[10px]" onClick={() => setForm({ ...form, docAnteriores: [...((form as any).docAnteriores || []), { chave: "", serie: "", numero: "", dataEmissao: "" }] } as any)}><Plus className="mr-1 h-3 w-3" /> Adicionar documento</Button>
               </Card>
             </TabsContent>
 

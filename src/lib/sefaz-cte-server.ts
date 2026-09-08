@@ -80,17 +80,10 @@ export const emitirCteFn = createServerFn({ method: "POST" }).validator((d: { em
   const ret = await emitirCte(cert.pfx, cert.senha, xml, ambiente, cert.uf);
   if (ret.sucesso) {
     await supa.from("cte_documentos").insert({ empresa_id: data.empresaId, chave_acesso: chave, numero: proximo, serie: input.serie, status: "autorizado", xml_assinado: xml, protocolo_sefaz: ret.protocolo, ambiente, data_autorizacao: new Date().toISOString(), valor_servico: input.vPrest, peso_carga: input.pesoKg } as any);
-    // baixa das NF-es no servidor (vale mesmo se o cliente perder a resposta)
-    try {
-      const chs = (input.chavesNFe || []) as string[];
-      if (chs.length > 0) await supa.from("cte_nfes_pendentes").update({ status: "embarcada" } as any).in("chave", chs).eq("empresa_id", data.empresaId);
-    } catch (e) { console.log("[CTE-EMBARCADA-ERR]", e); }
   } else {
     await supa.from("cte_documentos").insert({ empresa_id: data.empresaId, chave_acesso: chave, numero: proximo, serie: input.serie, status: "rejeitado", xml_assinado: xml, motivo_rejeicao: ret.xMotivo, ambiente } as any);
   }
-  // Retorno enxuto: a tela só usa sucesso/cStat/xMotivo/chave/protocolo.
-  // O XML completo já está salvo em cte_documentos (evita payload grande na volta).
-  return { sucesso: ret.sucesso, cStat: ret.cStat, xMotivo: ret.xMotivo, chave, protocolo: ret.protocolo };
+  return { ...ret, chave, xml };
 });
 export const consultarCteFn = createServerFn({ method: "POST" }).validator((d:{empresaId:string;chave:string})=>d).handler(async ({data})=>{
   if(SEFAZ_URL) return callProxy("consultarCte", data);
@@ -101,6 +94,16 @@ export const consultarCteFn = createServerFn({ method: "POST" }).validator((d:{e
   const { data: cfg}=await supa.from("nfe_config").select("ambiente").eq("empresa_id",data.empresaId).maybeSingle();
   const ambiente=cfg?.ambiente==="homologacao"?"homologacao":"producao";
   return consultarCte(cert.pfx, cert.senha, data.chave, ambiente, cert.uf);
+});
+export const consultarCteChaveFn = createServerFn({ method: "POST" }).validator((d:{empresaId:string;chave:string})=>d).handler(async ({data})=>{
+  if(SEFAZ_URL) return callProxy("consultarCteChave", data);
+  const { buscarCertificadoAtivo, consultarCtePorChave } = await import("@/lib/sefaz-cte");
+  const cert=await buscarCertificadoAtivo(data.empresaId);
+  const { createClient }=await import("@supabase/supabase-js");
+  const supa=createClient(process.env.SUPABASE_URL||"",process.env.SUPABASE_SERVICE_ROLE_KEY||"");
+  const { data: cfg}=await supa.from("nfe_config").select("ambiente").eq("empresa_id",data.empresaId).maybeSingle();
+  const ambiente=cfg?.ambiente==="homologacao"?"homologacao":"producao";
+  return consultarCtePorChave(cert.pfx, cert.senha, data.chave, ambiente, cert.cnpj, cert.uf);
 });
 export const previewCteXmlFn = createServerFn({ method: "POST" }).validator((d: { empresaId: string; input: any }) => d).handler(async ({ data }) => {
   const { buildCteXml } = await import("@/lib/sefaz-cte");

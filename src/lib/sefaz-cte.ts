@@ -75,7 +75,6 @@ export interface CteInputCompleto {
   ambiente: Ambiente;
   serie: string;
   numero: string; // nCT
-  modelo?: string; // 57=CT-e, 65=NFC-e (CT-e)
   natOp?: string;
   cMunEnv: string; xMunEnv: string; ufEnv: string;
   cMunIni: string; xMunIni: string; ufIni: string;
@@ -116,8 +115,7 @@ export function buildCteXml(input: CteInputCompleto): { xml: string; chave: stri
   const nCT = String(parseInt(input.numero || "1", 10)); // TNF: [1-9]{1}[0-9]{0,8} - sem zeros à esquerda
   const nCTPadded = nCT.padStart(9,"0"); // chave exige 9 dígitos com zeros
   const cCT = String(Math.floor(Math.random()*100000000)).padStart(8,"0");
-  const modelo = input.modelo || "57";
-  const chave = gerarChaveCte(cUF, aamm, cnpjLimpo, modelo, seriePadded, nCTPadded, "1", cCT);
+  const chave = gerarChaveCte(cUF, aamm, cnpjLimpo, "57", seriePadded, nCTPadded, "1", cCT);
   const id = `CTe${chave}`;
   const natOp = input.natOp || "PRESTACAO DE SERVICO DE TRANSPORTE";
   const toma = input.tomador.toma;
@@ -145,26 +143,11 @@ export function buildCteXml(input: CteInputCompleto): { xml: string; chave: stri
   const pICMS = Number(icms.pICMS ?? 0).toFixed(2);
   const vICMS = Number(icms.vICMS ?? 0).toFixed(2);
   let impXml: string;
-  if (cst === "00") impXml = `<imp><ICMS><ICMS00><CST>00</CST><vBC>${vBC}</vBC><pICMS>${pICMS}</pICMS><vICMS>${vICMS}</vICMS></ICMS00></ICMS>`;
-  else if (cst === "20") impXml = `<imp><ICMS><ICMS20><CST>20</CST><pRedBC>0.00</pRedBC><vBC>${vBC}</vBC><pICMS>${pICMS}</pICMS><vICMS>${vICMS}</vICMS></ICMS20></ICMS>`;
-  else if (cst === "45") impXml = `<imp><ICMS><ICMS45><CST>45</CST></ICMS45></ICMS>`;
-  else if (cst === "60") impXml = `<imp><ICMS><ICMS60><CST>60</CST><vBCSTRet>0.00</vBCSTRet><vICMSSTRet>0.00</vICMSSTRet><pICMSSTRet>0.00</pICMSSTRet><vCred>0.00</vCred></ICMS60></ICMS>`;
-  else impXml = `<imp><ICMS><ICMS90><CST>${cst}</CST><pRedBC>0.00</pRedBC><vBC>${vBC}</vBC><pICMS>${pICMS}</pICMS><vICMS>${vICMS}</vICMS><vCred>0.00</vCred></ICMS90></ICMS>`;
-
-  // IBS/CBS — NT 2026.002 obrigatório para CRT=3 em homologação (desde 01/07/2026)
-  // XSD cteSimp_v4.00: imp termina em IBSCBS; vTotDFe vai em <total> após vTRec
-  // Alíquotas transição LC 214/25 (rej. 316/317 se divergir do ano de emissão):
-  // 2026 → IBS UF 0,10% / IBS Mun 0% / CBS 0,90% (Art. 343); 2027-2028 → IBS UF 0,05% (Art. 344)
-  const anoEmi = Number(dhEmi.slice(0, 4)) || new Date().getFullYear();
-  const pIbsUf = anoEmi <= 2026 ? 0.10 : anoEmi <= 2028 ? 0.05 : 0.10;
-  const pIbsMun = 0.00;
-  const vIbsUf = Number((Number(vBC) * pIbsUf / 100).toFixed(2));
-  const vIbsMun = Number((Number(vBC) * pIbsMun / 100).toFixed(2));
-  const vIbs = Number((vIbsUf + vIbsMun).toFixed(2));
-  const vCbs = Number((Number(vBC) * 0.009).toFixed(2));
-  const ibsCbsXml = `<IBSCBS><CST>000</CST><cClassTrib>000001</cClassTrib><gIBSCBS><vBC>${vBC}</vBC><gIBSUF><pIBSUF>${pIbsUf.toFixed(2)}</pIBSUF><vIBSUF>${vIbsUf.toFixed(2)}</vIBSUF></gIBSUF><gIBSMun><pIBSMun>${pIbsMun.toFixed(2)}</pIBSMun><vIBSMun>${vIbsMun.toFixed(2)}</vIBSMun></gIBSMun><vIBS>${vIbs.toFixed(2)}</vIBS><gCBS><pCBS>0.90</pCBS><vCBS>${vCbs.toFixed(2)}</vCBS></gCBS></gIBSCBS></IBSCBS></imp>`;
-  impXml += ibsCbsXml;
-  // vTotDFe em 2026 = vPrest (sem somar IBS+CBS) — vai no grupo <total>
+  if (cst === "00") impXml = `<imp><ICMS><ICMS00><CST>00</CST><vBC>${vBC}</vBC><pICMS>${pICMS}</pICMS><vICMS>${vICMS}</vICMS></ICMS00></ICMS></imp>`;
+  else if (cst === "20") impXml = `<imp><ICMS><ICMS20><CST>20</CST><pRedBC>0.00</pRedBC><vBC>${vBC}</vBC><pICMS>${pICMS}</pICMS><vICMS>${vICMS}</vICMS></ICMS20></ICMS></imp>`;
+  else if (cst === "45") impXml = `<imp><ICMS><ICMS45><CST>45</CST></ICMS45></ICMS></imp>`;
+  else if (cst === "60") impXml = `<imp><ICMS><ICMS60><CST>60</CST><vBCSTRet>0.00</vBCSTRet><vICMSSTRet>0.00</vICMSSTRet><pICMSSTRet>0.00</pICMSSTRet><vCred>0.00</vCred></ICMS60></ICMS></imp>`;
+  else impXml = `<imp><ICMS><ICMS90><CST>${cst}</CST><pRedBC>0.00</pRedBC><vBC>${vBC}</vBC><pICMS>${pICMS}</pICMS><vICMS>${vICMS}</vICMS><vCred>0.00</vCred></ICMS90></ICMS></imp>`;
 
   // infNFe — schema exige <chNFe>, não <chave>
   const infNFeXml = (input.chavesNFe && input.chavesNFe.length > 0)
@@ -177,7 +160,7 @@ export function buildCteXml(input: CteInputCompleto): { xml: string; chave: stri
 <CTeSimp xmlns="http://www.portalfiscal.inf.br/cte">
   <infCte Id="${id}" versao="4.00">
     <ide>
-      <cUF>${cUF}</cUF><cCT>${cCT}</cCT><CFOP>${input.cfop}</CFOP><natOp>${natOp}</natOp><mod>${modelo}</mod><serie>${serie}</serie><nCT>${nCT}</nCT><dhEmi>${dhEmi}</dhEmi>
+      <cUF>${cUF}</cUF><cCT>${cCT}</cCT><CFOP>${input.cfop}</CFOP><natOp>${natOp}</natOp><mod>57</mod><serie>${serie}</serie><nCT>${nCT}</nCT><dhEmi>${dhEmi}</dhEmi>
       <tpImp>1</tpImp><tpEmis>1</tpEmis><cDV>${chave.slice(-1)}</cDV><tpAmb>${input.ambiente==="producao"?"1":"2"}</tpAmb><tpCTe>5</tpCTe><procEmi>0</procEmi><verProc>NORVO_1.0</verProc>
       <cMunEnv>${input.cMunEnv}</cMunEnv><xMunEnv>${input.xMunEnv}</xMunEnv><UFEnv>${input.ufEnv}</UFEnv>
       <modal>01</modal><tpServ>0</tpServ>
@@ -185,10 +168,10 @@ export function buildCteXml(input: CteInputCompleto): { xml: string; chave: stri
       <retira>1</retira>
     </ide>
     <emit>
-      <CNPJ>${cnpjLimpo}</CNPJ>${input.emit.ie ? `<IE>${input.emit.ie}</IE>` : ""}<xNome>${isHmg ? HOMOLOG_XNOME : input.emit.xNome}</xNome>${input.emit.xFant && input.emit.xFant.length >= 2 ? `<xFant>${input.emit.xFant}</xFant>` : ""}${enderEmit}<CRT>${crt}</CRT>
+      <CNPJ>${cnpjLimpo}</CNPJ>${input.emit.ie && /^\d{2,14}$/.test(input.emit.ie) ? `<IE>${input.emit.ie}</IE>` : ""}<xNome>${input.emit.xNome}</xNome>${input.emit.xFant && input.emit.xFant.length >= 2 ? `<xFant>${input.emit.xFant}</xFant>` : ""}${enderEmit}<CRT>${crt}</CRT>
     </emit>
     <toma>
-      <toma>${toma}</toma><indIEToma>${indIEToma}</indIEToma><CNPJ>${cnpjToma}</CNPJ>${indIEToma !== "9" && input.tomador.ie && input.tomador.ie !== "ISENTO" ? `<IE>${input.tomador.ie}</IE>` : ""}<xNome>${isHmg ? HOMOLOG_XNOME : input.tomador.xNome}</xNome>${input.tomador.fone ? `<fone>${input.tomador.fone}</fone>` : ""}<enderToma><xLgr>${(input.tomador.logradouro || "RUA").length >= 2 ? (input.tomador.logradouro || "RUA") : "RUA GERAL"}</xLgr><nro>${input.tomador.nro || "SN"}</nro><xBairro>${(input.tomador.bairro || "CENTRO").length >= 2 ? (input.tomador.bairro || "CENTRO") : "CENTRO"}</xBairro><cMun>${input.tomador.cMun}</cMun><xMun>${input.tomador.xMun}</xMun><CEP>${cepToma}</CEP><UF>${input.tomador.uf}</UF></enderToma>${input.tomador.email ? `<email>${input.tomador.email}</email>` : ""}
+      <toma>${toma}</toma><indIEToma>${indIEToma}</indIEToma><CNPJ>${cnpjToma}</CNPJ>${indIEToma !== "9" && input.tomador.ie && input.tomador.ie !== "ISENTO" ? `<IE>${input.tomador.ie}</IE>` : ""}<xNome>${input.tomador.xNome}</xNome>${input.tomador.fone ? `<fone>${input.tomador.fone}</fone>` : ""}<enderToma><xLgr>${(input.tomador.logradouro || "RUA").length >= 2 ? (input.tomador.logradouro || "RUA") : "RUA GERAL"}</xLgr><nro>${input.tomador.nro || "SN"}</nro><xBairro>${(input.tomador.bairro || "CENTRO").length >= 2 ? (input.tomador.bairro || "CENTRO") : "CENTRO"}</xBairro><cMun>${input.tomador.cMun}</cMun><xMun>${input.tomador.xMun}</xMun><CEP>${cepToma}</CEP><UF>${input.tomador.uf}</UF></enderToma>${input.tomador.email ? `<email>${input.tomador.email}</email>` : ""}
     </toma>
     <infCarga>
       <vCarga>${input.vCarga.toFixed(2)}</vCarga><proPred>${input.infCTeNorm?.proPred || "CARGA GERAL"}</proPred>
@@ -197,7 +180,7 @@ export function buildCteXml(input: CteInputCompleto): { xml: string; chave: stri
     ${infNFeXml}
     <infModal versaoModal="4.00"><rodo><RNTRC>${(input.modalRod?.rntrc || input.rntrc || "ISENTO").replace(/\D/g,"") || "ISENTO"}</RNTRC></rodo></infModal>
     ${impXml}
-    <total><vTPrest>${input.vPrest.toFixed(2)}</vTPrest><vTRec>${input.vPrest.toFixed(2)}</vTRec><vTotDFe>${input.vPrest.toFixed(2)}</vTotDFe></total>
+    <total><vTPrest>${input.vPrest.toFixed(2)}</vTPrest><vTRec>${input.vPrest.toFixed(2)}</vTRec></total>
     <infRespTec><CNPJ>${cnpjLimpo}</CNPJ><xContato>SUPORTE TECNICO</xContato><email>suporte@vectrainsights.com.br</email><fone>3139952572</fone></infRespTec>
   </infCte>
   <infCTeSupl><qrCodCTe>https://${(input.ufEnv || input.emit.uf)?.toUpperCase() === "MG" ? "portalcte.fazenda.mg.gov.br/portalcte/sistema/qrcode.xhtml" : "dfeportal.svrs.rs.gov.br/cteQrCode"}?chCTe=${chave}&amp;tpAmb=${input.ambiente==="producao"?"1":"2"}</qrCodCTe></infCTeSupl>
@@ -286,6 +269,39 @@ export async function consultarCte(pfx:Buffer, senha:string, chave:string, ambie
   const ret=await soapRequest(ep.consulta, body, "http://www.portalfiscal.inf.br/cte/wsdl/CTeConsultaV4/cteConsultaCT", createSefazAgent(pfx,senha));
   const cStat=ret.match(/<cStat>(\d+)<\/cStat>/)?.[1]||""; const xMotivo=ret.match(/<xMotivo>([^<]+)<\/xMotivo>/)?.[1]||"";
   return { cStat, xMotivo, xml: ret };
+}
+
+export async function consultarCtePorChave(pfx:Buffer, senha:string, chave:string, ambiente:Ambiente, cnpjAutor:string, ufAutor?: string): Promise<{ sucesso:boolean; cStat:string; xMotivo:string; chave?:string; emitCnpj?:string; emitNome?:string; emitIE?:string; dhEmi?:string; nCT?:string; serie?:string; modelo?:string }>{
+  const ch = (chave || "").replace(/\D/g, "");
+  if (ch.length !== 44) return { sucesso:false, cStat:"", xMotivo:"Chave deve ter 44 dígitos" };
+  const url = ambiente==="producao"
+    ? "https://www1.cte.fazenda.gov.br/CTeDistribuicaoDFe/CTeDistribuicaoDFe.asmx"
+    : "https://hom1.cte.fazenda.gov.br/CTeDistribuicaoDFe/CTeDistribuicaoDFe.asmx";
+  const ns = "http://www.portalfiscal.inf.br/cte/wsdl/CTeDistribuicaoDFe";
+  const tpAmb = ambiente==="producao"?"1":"2";
+  const payload = `<distDFeInt versao="1.01" xmlns="http://www.portalfiscal.inf.br/cte"><tpAmb>${tpAmb}</tpAmb><cUFAutor>${codigoUF(ufAutor||"MG")}</cUFAutor><CNPJ>${(cnpjAutor||"").replace(/\D/g,"")}</CNPJ><consChNFe><chCTe>${ch}</chCTe></consChNFe></distDFeInt>`;
+  const body = `<cteDistDFeInteresse xmlns="${ns}"><cteDadosMsg xmlns="${ns}">${payload}</cteDadosMsg></cteDistDFeInteresse>`;
+  const ret = await soapRequest(url, body, `${ns}/cteDistDFeInteresse`, createSefazAgent(pfx,senha));
+  const cStat = ret.match(/<cStat>(\d+)<\/cStat>/)?.[1] || "";
+  const xMotivo = ret.match(/<xMotivo>([^<]+)<\/xMotivo>/)?.[1] || "";
+  if (cStat !== "138") return { sucesso:false, cStat, xMotivo };
+  const zipB64 = ret.match(/<docZip[^>]*>([^<]+)<\/docZip>/)?.[1] || "";
+  if (!zipB64) return { sucesso:false, cStat, xMotivo: "Resposta sem documento" };
+  const buf = Buffer.from(zipB64.replace(/\s/g, ""), "base64");
+  let xmlDoc = "";
+  try { xmlDoc = zlib.inflateSync(buf).toString("utf-8"); }
+  catch { try { xmlDoc = zlib.gunzipSync(buf).toString("utf-8"); } catch { xmlDoc = buf.toString("utf-8"); } }
+  const tag = (t:string) => xmlDoc.match(new RegExp(`<${t}>([^<]*)<\/${t}>`))?.[1] || "";
+  const isResumo = /<resCTe[\s>]/.test(xmlDoc);
+  const emitCnpj = tag("CNPJ") || tag("CPF");
+  const emitNome = tag("xNome");
+  const emitIE = tag("IE");
+  const dhEmi = tag("dhEmi");
+  // nCT/serie/modelo decodificados da chave (posições 21-34: mod 21-22, serie 23-25, nCT 26-34)
+  const modelo = ch.slice(20,22), serie = String(parseInt(ch.slice(22,25),10)), nCT = String(parseInt(ch.slice(25,34),10));
+  console.log("[CTE-DIST] resumo:", isResumo, "emit:", emitCnpj, emitNome, "dhEmi:", dhEmi);
+  if (!emitCnpj) return { sucesso:false, cStat, xMotivo: "Documento sem emitente identificável" };
+  return { sucesso:true, cStat, xMotivo, chave: ch, emitCnpj, emitNome, emitIE, dhEmi, nCT, serie, modelo };
 }
 
 export async function cancelarCte(pfx:Buffer, senha:string, chave:string, justificativa:string, ambiente:Ambiente, cnpj:string, uf?: string, protocolo?: string):Promise<{ sucesso:boolean; cStat:string; xMotivo:string }>{
