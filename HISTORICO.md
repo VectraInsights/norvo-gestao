@@ -1041,7 +1041,7 @@ Commits: CF `953c1e9` + Vercel `46decbb`
   Worker (`wrangler secret put SUPABASE_SERVICE_ROLE_KEY` com a mesma chave, p/ o
   Bearer do proxy continuar válido).
 
-Commits: CF `[pendente]` + Vercel `[pendente]`
+Commits: CF `aee3acf` + Vercel `abbdaf0`
 
 ---
 
