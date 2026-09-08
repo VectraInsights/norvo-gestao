@@ -984,7 +984,7 @@ Abas na ordem Eagle: **Geral, Tributação, Carga, Veículos, Status, Observaç�
 - Novos campos persistem no rascunho (JSON do form); transmissão SEFAZ inalterada
   (CTeSimp MG: Normal/Rodoviário — demais opções ficam salvas no rascunho).
 
-Commits: CF `[pendente]` + Vercel `[pendente]`
+Commits: CF `d6cb74b` + Vercel `e75e0bf`
 
 ---
 
