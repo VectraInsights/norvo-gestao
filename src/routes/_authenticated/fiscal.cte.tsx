@@ -13,12 +13,12 @@ import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
-import { Truck, Plus, FileText, Search, Ban, UploadCloud, FileCode, UsersRound, MapPin, Package, DollarSign, Building2, Route as RouteIcon, Trash2, Filter, Calendar, CheckCircle2, ChevronsUpDown, Check, ReceiptText, Pencil, Download, Settings2 } from "lucide-react";
+import { Truck, Plus, FileText, Search, Ban, UploadCloud, FileCode, UsersRound, MapPin, Package, DollarSign, Building2, Route as RouteIcon, Trash2, Filter, Calendar, CheckCircle2, ChevronsUpDown, Check, ReceiptText, Pencil, Download, Settings2, X, Loader2 } from "lucide-react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useEmpresaAtual } from "@/hooks/use-empresa";
 import { brl, dateBR, num } from "@/lib/format";
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useRef } from "react";
 import { toast } from "sonner";
 import { emitirCteFn, consultarCteFn, cancelarCteFn, previewCteXmlFn, excluirRejeitadosCteFn } from "@/lib/sefaz-cte-server";
 import { CFOPS_CTE, MOD_FRETE_OPTIONS, RESPONSAVEL_CTE_OPTIONS } from "@/lib/cfops-transporte";
@@ -329,6 +329,69 @@ function CtePage() {
       };
     });
   }, [regimeData, empresa?.id]);
+
+  // Lookup CNPJ p/ Consignatário/Redespacho: contatos → BrasilAPI → ReceitaWS
+  const [lookingUpConsig, setLookingUpConsig] = useState(false);
+  const [lookingUpRedesp, setLookingUpRedesp] = useState(false);
+  const lastLookupConsig = useRef("");
+  const lastLookupRedesp = useRef("");
+  const fmtCnpjInput = (v: string) => {
+    const d = (v || "").replace(/\D/g, "").slice(0, 14);
+    return d
+      .replace(/^(\d{2})(\d)/, "$1.$2")
+      .replace(/^(\d{2})\.(\d{3})(\d)/, "$1.$2.$3")
+      .replace(/\.(\d{3})(\d)/, ".$1/$2")
+      .replace(/(\d{4})(\d)/, "$1-$2");
+  };
+  const buscarDadosCnpj = async (digits: string) => {
+    if (empresa) {
+      const { data } = await supabase.from("contatos" as any).select("nome,logradouro,numero,bairro,cidade,uf,cep,telefone").eq("empresa_id", empresa.id).eq("documento", digits).maybeSingle();
+      if (data) {
+        const c = data as any;
+        return { nome: c.nome || "", logradouro: c.logradouro || "", numero: c.numero || "", bairro: c.bairro || "", cidade: c.cidade || "", uf: c.uf || "", cep: (c.cep || "").replace(/\D/g, ""), fone: c.telefone || "" };
+      }
+    }
+    let d: any = null;
+    for (const url of [`https://brasilapi.com.br/api/cnpj/v1/${digits}`, `https://receitaws.com.br/v1/cnpj/${digits}`]) {
+      try {
+        const res = await fetch(url, { signal: AbortSignal.timeout(8000) });
+        if (res.ok) { d = await res.json(); break; }
+      } catch { /* tenta próxima */ }
+    }
+    if (!d || d.status === "ERROR") return null;
+    return {
+      nome: d.razao_social || d.nome || d.nome_fantasia || "",
+      logradouro: d.logradouro || d.street || "",
+      numero: String(d.numero || d.number || ""),
+      bairro: d.bairro || d.district || "",
+      cidade: d.municipio || d.city || "",
+      uf: d.uf || d.state || "",
+      cep: String(d.cep || d.zip || "").replace(/\D/g, ""),
+      fone: d.ddd_telefone_1 || d.telefone || d.phone || "",
+    };
+  };
+  const lookupConsignatario = async (digits: string) => {
+    if (digits.length !== 14 || !empresa) return;
+    setLookingUpConsig(true);
+    try {
+      const d = await buscarDadosCnpj(digits);
+      if (!d) { toast.error("CNPJ não encontrado"); return; }
+      setForm(f => ({ ...f, cnpjConsignatario: digits, xNomeConsignatario: d.nome || f.xNomeConsignatario, ufConsignatario: d.uf || f.ufConsignatario, xMunConsignatario: d.cidade || f.xMunConsignatario, cepConsignatario: d.cep || f.cepConsignatario, logradouroConsignatario: d.logradouro || f.logradouroConsignatario, nroConsignatario: d.numero || f.nroConsignatario, bairroConsignatario: d.bairro || f.bairroConsignatario }));
+      toast.success("Consignatário localizado");
+    } catch (e: any) { toast.error(e.message || "Falha ao buscar CNPJ"); }
+    finally { setLookingUpConsig(false); }
+  };
+  const lookupRedespacho = async (digits: string) => {
+    if (digits.length !== 14 || !empresa) return;
+    setLookingUpRedesp(true);
+    try {
+      const d = await buscarDadosCnpj(digits);
+      if (!d) { toast.error("CNPJ não encontrado"); return; }
+      setForm(f => ({ ...f, cnpjRedespacho: digits, xNomeRedespacho: d.nome || f.xNomeRedespacho, ufRedespacho: d.uf || f.ufRedespacho, xMunRedespacho: d.cidade || f.xMunRedespacho, cepRedespacho: d.cep || f.cepRedespacho, logradouroRedespacho: d.logradouro || f.logradouroRedespacho, nroRedespacho: d.numero || f.nroRedespacho, bairroRedespacho: d.bairro || f.bairroRedespacho }));
+      toast.success("Redespacho localizado");
+    } catch (e: any) { toast.error(e.message || "Falha ao buscar CNPJ"); }
+    finally { setLookingUpRedesp(false); }
+  };
 
   const handleImportNFeXml = async (files: FileList | File[]) => {
     if (!empresa) { toast.error("Selecione uma empresa"); return; }
@@ -1122,41 +1185,55 @@ function CtePage() {
               })() : <p className="text-xs text-muted-foreground">Importe NF-es para preencher remetente e destinatário</p>}
 
               {/* Consignatário */}
-              <Card className="p-2">
-                <div className="flex items-center gap-2 mb-1">
-                  <div className="h-5 w-5 rounded bg-amber-500/10 grid place-items-center"><Building2 className="h-3 w-3 text-amber-600" /></div>
+              <Card className="p-3">
+                <div className="flex items-center gap-2 mb-2">
+                  <div className="h-6 w-6 rounded bg-amber-500/10 grid place-items-center"><Building2 className="h-3.5 w-3.5 text-amber-600" /></div>
                   <h5 className="text-xs font-semibold">Consignatário</h5>
+                  <span className="text-[9px] text-muted-foreground hidden md:inline">opcional</span>
+                  <div className="ml-auto flex items-center gap-1">
+                    <Input className="h-6 text-[10px] w-44 font-mono" placeholder="CNPJ — digite p/ buscar" value={fmtCnpjInput(form.cnpjConsignatario || "")} onChange={e => {
+                      const digits = e.target.value.replace(/\D/g, "").slice(0, 14);
+                      setForm({ ...form, cnpjConsignatario: digits });
+                      if (digits.length === 14 && digits !== lastLookupConsig.current) { lastLookupConsig.current = digits; lookupConsignatario(digits); }
+                    }} maxLength={18} />
+                    <Button size="icon" variant="ghost" className="h-6 w-6" disabled={lookingUpConsig} onClick={() => { const d = (form.cnpjConsignatario || "").replace(/\D/g, ""); if (d.length !== 14) { toast.error("CNPJ deve ter 14 dígitos"); return; } lastLookupConsig.current = d; lookupConsignatario(d); }} title="Buscar CNPJ">{lookingUpConsig ? <Loader2 className="h-3 w-3 animate-spin" /> : <Search className="h-3 w-3" />}</Button>
+                    {form.cnpjConsignatario && <Button size="icon" variant="ghost" className="h-6 w-6 text-muted-foreground" onClick={() => { lastLookupConsig.current = ""; setForm({ ...form, cnpjConsignatario: "", xNomeConsignatario: "", ieConsignatario: "", ufConsignatario: "", xMunConsignatario: "", cepConsignatario: "", logradouroConsignatario: "", nroConsignatario: "", bairroConsignatario: "" }); }} title="Limpar"><X className="h-3 w-3" /></Button>}
+                  </div>
                 </div>
-                <div className="grid grid-cols-6 gap-1">
-                  <Input className="h-6 text-[10px] col-span-2" placeholder="CNPJ" value={form.cnpjConsignatario || ""} onChange={e=>setForm({...form,cnpjConsignatario:e.target.value})} />
-                  <Input className="h-6 text-[10px] col-span-3" placeholder="Nome / Razão Social" value={form.xNomeConsignatario || ""} onChange={e=>setForm({...form,xNomeConsignatario:e.target.value})} />
-                  <Input className="h-6 text-[10px]" placeholder="IE" value={form.ieConsignatario || ""} onChange={e=>setForm({...form,ieConsignatario:e.target.value})} />
-                  <Input className="h-6 text-[10px]" placeholder="UF" value={form.ufConsignatario || ""} onChange={e=>setForm({...form,ufConsignatario:e.target.value.toUpperCase()})} maxLength={2} />
-                  <Input className="h-6 text-[10px] col-span-3" placeholder="Município" value={form.xMunConsignatario || ""} onChange={e=>setForm({...form,xMunConsignatario:e.target.value})} />
-                  <Input className="h-6 text-[10px]" placeholder="CEP" value={form.cepConsignatario || ""} onChange={e=>setForm({...form,cepConsignatario:e.target.value})} maxLength={8} />
-                  <Input className="h-6 text-[10px] col-span-4" placeholder="Logradouro" value={form.logradouroConsignatario || ""} onChange={e=>setForm({...form,logradouroConsignatario:e.target.value})} />
-                  <Input className="h-6 text-[10px]" placeholder="Nº" value={form.nroConsignatario || ""} onChange={e=>setForm({...form,nroConsignatario:e.target.value})} />
-                  <Input className="h-6 text-[10px]" placeholder="Bairro" value={form.bairroConsignatario || ""} onChange={e=>setForm({...form,bairroConsignatario:e.target.value})} />
-                </div>
+                {(form.xNomeConsignatario || form.cnpjConsignatario) ? (
+                  <div className="space-y-0.5 text-[10px]">
+                    <p className="font-medium text-xs">{form.xNomeConsignatario || "—"}</p>
+                    <p className="text-muted-foreground flex items-center gap-1 flex-wrap">CNPJ: {form.cnpjConsignatario ? fmtCnpjInput(form.cnpjConsignatario) : "—"} <span className="inline-flex items-center gap-1">IE: <Input className="h-5 w-32 text-[10px] px-1" placeholder="ISENTO" value={form.ieConsignatario || ""} onChange={e=>setForm({...form,ieConsignatario:e.target.value})} /></span></p>
+                    <p className="text-muted-foreground">{[form.logradouroConsignatario && `${form.logradouroConsignatario}${form.nroConsignatario ? `, ${form.nroConsignatario}` : ""}`, form.bairroConsignatario].filter(Boolean).join(" — ") || "—"}</p>
+                    <p className="text-muted-foreground">{form.xMunConsignatario || "—"}-{form.ufConsignatario || "—"} {form.cepConsignatario ? `CEP: ${form.cepConsignatario}` : ""}</p>
+                  </div>
+                ) : <p className="text-[10px] text-muted-foreground">Digite o CNPJ para buscar os dados automaticamente</p>}
               </Card>
 
               {/* Redespacho */}
-              <Card className="p-2">
-                <div className="flex items-center gap-2 mb-1">
-                  <div className="h-5 w-5 rounded bg-violet-500/10 grid place-items-center"><Truck className="h-3 w-3 text-violet-600" /></div>
+              <Card className="p-3">
+                <div className="flex items-center gap-2 mb-2">
+                  <div className="h-6 w-6 rounded bg-violet-500/10 grid place-items-center"><Truck className="h-3.5 w-3.5 text-violet-600" /></div>
                   <h5 className="text-xs font-semibold">Redespacho</h5>
+                  <span className="text-[9px] text-muted-foreground hidden md:inline">opcional</span>
+                  <div className="ml-auto flex items-center gap-1">
+                    <Input className="h-6 text-[10px] w-44 font-mono" placeholder="CNPJ — digite p/ buscar" value={fmtCnpjInput(form.cnpjRedespacho || "")} onChange={e => {
+                      const digits = e.target.value.replace(/\D/g, "").slice(0, 14);
+                      setForm({ ...form, cnpjRedespacho: digits });
+                      if (digits.length === 14 && digits !== lastLookupRedesp.current) { lastLookupRedesp.current = digits; lookupRedespacho(digits); }
+                    }} maxLength={18} />
+                    <Button size="icon" variant="ghost" className="h-6 w-6" disabled={lookingUpRedesp} onClick={() => { const d = (form.cnpjRedespacho || "").replace(/\D/g, ""); if (d.length !== 14) { toast.error("CNPJ deve ter 14 dígitos"); return; } lastLookupRedesp.current = d; lookupRedespacho(d); }} title="Buscar CNPJ">{lookingUpRedesp ? <Loader2 className="h-3 w-3 animate-spin" /> : <Search className="h-3 w-3" />}</Button>
+                    {form.cnpjRedespacho && <Button size="icon" variant="ghost" className="h-6 w-6 text-muted-foreground" onClick={() => { lastLookupRedesp.current = ""; setForm({ ...form, cnpjRedespacho: "", xNomeRedespacho: "", ieRedespacho: "", ufRedespacho: "", xMunRedespacho: "", cepRedespacho: "", logradouroRedespacho: "", nroRedespacho: "", bairroRedespacho: "" }); }} title="Limpar"><X className="h-3 w-3" /></Button>}
+                  </div>
                 </div>
-                <div className="grid grid-cols-6 gap-1">
-                  <Input className="h-6 text-[10px] col-span-2" placeholder="CNPJ" value={form.cnpjRedespacho || ""} onChange={e=>setForm({...form,cnpjRedespacho:e.target.value})} />
-                  <Input className="h-6 text-[10px] col-span-3" placeholder="Nome / Razão Social" value={form.xNomeRedespacho || ""} onChange={e=>setForm({...form,xNomeRedespacho:e.target.value})} />
-                  <Input className="h-6 text-[10px]" placeholder="IE" value={form.ieRedespacho || ""} onChange={e=>setForm({...form,ieRedespacho:e.target.value})} />
-                  <Input className="h-6 text-[10px]" placeholder="UF" value={form.ufRedespacho || ""} onChange={e=>setForm({...form,ufRedespacho:e.target.value.toUpperCase()})} maxLength={2} />
-                  <Input className="h-6 text-[10px] col-span-3" placeholder="Município" value={form.xMunRedespacho || ""} onChange={e=>setForm({...form,xMunRedespacho:e.target.value})} />
-                  <Input className="h-6 text-[10px]" placeholder="CEP" value={form.cepRedespacho || ""} onChange={e=>setForm({...form,cepRedespacho:e.target.value})} maxLength={8} />
-                  <Input className="h-6 text-[10px] col-span-4" placeholder="Logradouro" value={form.logradouroRedespacho || ""} onChange={e=>setForm({...form,logradouroRedespacho:e.target.value})} />
-                  <Input className="h-6 text-[10px]" placeholder="Nº" value={form.nroRedespacho || ""} onChange={e=>setForm({...form,nroRedespacho:e.target.value})} />
-                  <Input className="h-6 text-[10px]" placeholder="Bairro" value={form.bairroRedespacho || ""} onChange={e=>setForm({...form,bairroRedespacho:e.target.value})} />
-                </div>
+                {(form.xNomeRedespacho || form.cnpjRedespacho) ? (
+                  <div className="space-y-0.5 text-[10px]">
+                    <p className="font-medium text-xs">{form.xNomeRedespacho || "—"}</p>
+                    <p className="text-muted-foreground flex items-center gap-1 flex-wrap">CNPJ: {form.cnpjRedespacho ? fmtCnpjInput(form.cnpjRedespacho) : "—"} <span className="inline-flex items-center gap-1">IE: <Input className="h-5 w-32 text-[10px] px-1" placeholder="ISENTO" value={form.ieRedespacho || ""} onChange={e=>setForm({...form,ieRedespacho:e.target.value})} /></span></p>
+                    <p className="text-muted-foreground">{[form.logradouroRedespacho && `${form.logradouroRedespacho}${form.nroRedespacho ? `, ${form.nroRedespacho}` : ""}`, form.bairroRedespacho].filter(Boolean).join(" — ") || "—"}</p>
+                    <p className="text-muted-foreground">{form.xMunRedespacho || "—"}-{form.ufRedespacho || "—"} {form.cepRedespacho ? `CEP: ${form.cepRedespacho}` : ""}</p>
+                  </div>
+                ) : <p className="text-[10px] text-muted-foreground">Digite o CNPJ para buscar os dados automaticamente</p>}
               </Card>
 
               {/* Tomador */}

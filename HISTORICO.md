@@ -893,6 +893,20 @@ Commits: CF `8bf6f29` + Vercel `67d88f4`
   - "Impostos" → **Tributação**
   - Nova aba **Observações** (movida do rodapé para dentro do dialog)
 
+Commits: CF `30a5bc2` + Vercel `538f4e1`
+
+---
+
+## CT-e: Consignatário/Redespacho compactos + busca CNPJ (04/09/2026)
+
+- Cards de **Consignatário** e **Redespacho** redesenhados no estilo Remetente/Destinatário:
+  compactos, só exibem dados (nome, CNPJ+IE, endereço, cidade-UF+CEP).
+- **Busca automática ao digitar o CNPJ** (14 dígitos): consulta `contatos` da empresa
+  primeiro, senão BrasilAPI com fallback ReceitaWS; preenche nome, endereço, cidade, UF, CEP.
+- Botão lupa p/ buscar manualmente, X p/ limpar, máscara `XX.XXX.XXX/XXXX-XX`,
+  spinner durante a busca. IE continua editável inline (BrasilAPI não retorna IE).
+- `buildCteXml` não usa esses campos (CTeSimp não tem exped/receb) — só tela/rascunho.
+
 Commits: CF `[pendente]` + Vercel `[pendente]`
 
 ---
