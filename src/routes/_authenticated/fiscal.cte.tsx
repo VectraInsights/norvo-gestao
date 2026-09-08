@@ -20,7 +20,7 @@ import { useEmpresaAtual } from "@/hooks/use-empresa";
 import { brl, dateBR, num } from "@/lib/format";
 import { useState, useEffect, useMemo, useRef } from "react";
 import { toast } from "sonner";
-import { emitirCteFn, consultarCteFn, cancelarCteFn, previewCteXmlFn, excluirRejeitadosCteFn, consultarCteChaveFn } from "@/lib/sefaz-cte-server";
+import { emitirCteFn, consultarCteFn, cancelarCteFn, previewCteXmlFn, excluirRejeitadosCteFn } from "@/lib/sefaz-cte-server";
 import { CFOPS_CTE, MOD_FRETE_OPTIONS, RESPONSAVEL_CTE_OPTIONS } from "@/lib/cfops-transporte";
 import { gerarDactePdf } from "@/lib/dacte-pdf";
 import { JUVENAL_LOGO } from "@/lib/juvenal-logo";
@@ -189,12 +189,9 @@ function CtePage() {
   };
 
   const [open, setOpen] = useState(false);
-  const emptyForm = { toma: "3", cnpjTomador: "", xNomeTomador: "", ufTomador: "MG", cMunTomador: "3106200", xMunTomador: "BELO HORIZONTE", ieTomador: "", logradouroTomador: "", nroTomador: "", bairroTomador: "", cepTomador: "", foneTomador: "", emailTomador: "", cnpjConsignatario: "", xNomeConsignatario: "", ieConsignatario: "", ufConsignatario: "", xMunConsignatario: "", cepConsignatario: "", logradouroConsignatario: "", nroConsignatario: "", bairroConsignatario: "", cnpjRedespacho: "", xNomeRedespacho: "", ieRedespacho: "", ufRedespacho: "", xMunRedespacho: "", cepRedespacho: "", logradouroRedespacho: "", nroRedespacho: "", bairroRedespacho: "", ambiente: "homologacao" as "homologacao" | "producao", cfop: "5353", vPrest: "0.00", vCarga: "0.00", peso: "0", rntrc: "", icmsCST: "00", icmsBase: "1000.00", icmsAliq: "0.00", icmsValor: "0.00", reducaoBase: "0.00", creditoOutorgado: "0.00", pisAliq: "0.00", cofinsAliq: "0.00", irAliq: "0.00", inssAliq: "0.00", csllAliq: "0.00", motoristaNome: "", motoristaId: "", ciot: "", placaVeiculo: "", placaReboque: "", semiReboque1: "", semiReboque2: "", seguradoraNome: "", seguradoraId: "", apolice: "", averbacao: "", cMunEnv: "3106200", xMunEnv: "BELO HORIZONTE", ufEnv: "MG", cMunIni: "3106200", xMunIni: "BELO HORIZONTE", ufIni: "MG", cMunFim: "3550308", xMunFim: "SAO PAULO", ufFim: "SP", dataEmissao: new Date().toISOString().slice(0,10),
-    produtoPredominante: "", outrasCaracteristicas: "",
+  const emptyForm = { toma: "3", cnpjTomador: "", xNomeTomador: "", ufTomador: "MG", cMunTomador: "3106200", xMunTomador: "BELO HORIZONTE", ieTomador: "", logradouroTomador: "", nroTomador: "", bairroTomador: "", cepTomador: "", foneTomador: "", emailTomador: "", cnpjConsignatario: "", xNomeConsignatario: "", ieConsignatario: "", ufConsignatario: "", xMunConsignatario: "", cepConsignatario: "", logradouroConsignatario: "", nroConsignatario: "", bairroConsignatario: "", cnpjRedespacho: "", xNomeRedespacho: "", ieRedespacho: "", ufRedespacho: "", xMunRedespacho: "", cepRedespacho: "", logradouroRedespacho: "", nroRedespacho: "", bairroRedespacho: "", ambiente: "homologacao" as "homologacao" | "producao", cfop: "5353", vPrest: "0.00", vCarga: "0.00", peso: "0", rntrc: "", icmsCST: "00", icmsBase: "1000.00", icmsAliq: "0.00", icmsValor: "0.00", reducaoBase: "0.00", creditoOutorgado: "0.00", pisAliq: "0.00", cofinsAliq: "0.00", irAliq: "0.00", inssAliq: "0.00", csllAliq: "0.00", motoristaNome: "", motoristaId: "", ciot: "", placaVeiculo: "", placaReboque: "", semiReboque1: "", semiReboque2: "", seguradoraNome: "", seguradoraId: "", apolice: "", averbacao: "", cMunEnv: "3106200", xMunEnv: "BELO HORIZONTE", ufEnv: "MG", cMunIni: "3106200", xMunIni: "BELO HORIZONTE", ufIni: "MG", cMunFim: "3550308", xMunFim: "SAO PAULO", ufFim: "SP",     dataEmissao: new Date().toISOString().slice(0,10),
     formaPagamento: "Outros", finalidadeEmissao: "Normal", tipoServico: "Normal", formaEmissao: "Normal",
     cteReferenciado: "", chaveCompAnulacao: "", dataDeclaracao: "",
-    docAntTranspCnpj: "", docAntTranspNome: "", docAntTranspIE: "", docAntTipo: "Papel",
-    docAnteriores: [] as Array<{ tipoDoc: string; serie: string; subSerie: string; numero: string; dataEmissao: string }>,
     obsGerais: "", obsAnulacao: "", obsGlobalizado: "",
   };
   const [form, setForm] = useState(emptyForm);
@@ -439,32 +436,6 @@ function CtePage() {
   // Tomador: troca de toma recalcula remetente/destinatário; CNPJ manual busca dados
   const [lookingUpTomador, setLookingUpTomador] = useState(false);
   const lastLookupTomador = useRef("");
-  const [lookingUpDocAnt, setLookingUpDocAnt] = useState(false);
-  const lastLookupDocAnt = useRef("");
-  const [fetchingChaveIdx, setFetchingChaveIdx] = useState<number | null>(null);
-  // Busca CT-e anterior pela chave (distribuição nacional) e preenche linha + transportadora
-  const fetchDocAnterior = async (idx: number, chaveRaw: string) => {
-    const digits = (chaveRaw || "").replace(/\D/g, "");
-    if (digits.length !== 44) { toast.error("Chave deve ter 44 dígitos"); return; }
-    if (!empresa) { toast.error("Empresa não selecionada"); return; }
-    setFetchingChaveIdx(idx);
-    try {
-      const ret: any = await consultarCteChaveFn({ data: { empresaId: empresa.id, chave: digits } });
-      if (!ret?.sucesso) { toast.error(ret?.xMotivo || `CT-e não localizado (cStat ${ret?.cStat || "?"})`); return; }
-      const arr = [...((form as any).docAnteriores || [])];
-      arr[idx] = { ...arr[idx], chave: digits, serie: ret.serie || arr[idx]?.serie || "", numero: ret.nCT || arr[idx]?.numero || "", dataEmissao: (ret.dhEmi || "").slice(0, 10) || arr[idx]?.dataEmissao || "" };
-      const patch: any = { docAnteriores: arr };
-      if (ret.emitCnpj) {
-        patch.docAntTranspCnpj = ret.emitCnpj.replace(/\D/g, "");
-        patch.docAntTranspNome = ret.emitNome || (form as any).docAntTranspNome;
-        patch.docAntTranspIE = ret.emitIE || (form as any).docAntTranspIE;
-        lastLookupDocAnt.current = patch.docAntTranspCnpj;
-      }
-      setForm({ ...form, ...patch });
-      toast.success(`CT-e ${ret.nCT} localizado — ${ret.emitNome || ""}`);
-    } catch (e: any) { toast.error(e.message || "Falha ao consultar chave"); }
-    finally { setFetchingChaveIdx(null); }
-  };
   const lookupTomador = async (digits: string) => {
     if (digits.length !== 14 || !empresa) return;
     setLookingUpTomador(true);
@@ -947,7 +918,6 @@ function CtePage() {
         cfop: form.cfop, vPrest: parseFloat(form.vPrest)||0, vCarga: parseFloat(form.vCarga)||0, pesoKg: parseFloat(form.peso)||0, rntrc: form.rntrc,
         obsGerais: (form as any).obsGerais || "", obsAnulacao: (form as any).obsAnulacao || "", obsGlobalizado: (form as any).obsGlobalizado || "",
         reducaoBase: parseFloat((form as any).reducaoBase)||0,
-        produtoPredominante: (form as any).produtoPredominante || "", outrasCaracteristicas: (form as any).outrasCaracteristicas || "",
         cMunEnv: form.cMunEnv, xMunEnv: form.xMunEnv, ufEnv: form.ufEnv, cMunIni: form.cMunIni, xMunIni: form.xMunIni, ufIni: form.ufIni, cMunFim: form.cMunFim, xMunFim: form.xMunFim, ufFim: form.ufFim,
         icms: { CST: form.icmsCST, vBC: parseFloat(form.vPrest)||0, pICMS: parseFloat(form.icmsAliq)||0, vICMS: parseFloat(form.icmsValor)||0 },
         impostos: { pisAliq: parseFloat(form.pisAliq)||0, cofinsAliq: parseFloat(form.cofinsAliq)||0, irAliq: parseFloat(form.irAliq)||0, inssAliq: parseFloat(form.inssAliq)||0, csllAliq: parseFloat(form.csllAliq)||0 },
@@ -1523,74 +1493,6 @@ function CtePage() {
                 })()}
               </Card>
 
-              {/* Produto Predominante */}
-              <Card className="p-2 space-y-2">
-                <div className="grid grid-cols-1 md:grid-cols-[180px_1fr] gap-1 items-center">
-                  <Label className="text-[10px] text-muted-foreground">* Produto Predominante</Label>
-                  <Input className="h-6 text-[10px]" placeholder="Ex: POSTE MADEIRA TRATADA" value={(form as any).produtoPredominante || ""} onChange={e=>setForm({...form, produtoPredominante: e.target.value} as any)} />
-                </div>
-                <div className="grid grid-cols-1 md:grid-cols-[180px_1fr] gap-1 items-center">
-                  <Label className="text-[10px] text-muted-foreground">Outras Características do Produto</Label>
-                  <Input className="h-6 text-[10px]" value={(form as any).outrasCaracteristicas || ""} onChange={e=>setForm({...form, outrasCaracteristicas: e.target.value} as any)} />
-                </div>
-              </Card>
-
-              {/* Documentos Anteriores (subcontratação) */}
-              <Card className="p-2 space-y-2">
-                <h5 className="text-xs font-semibold">Documentos Anteriores <span className="text-[9px] font-normal text-muted-foreground">— subcontratação (salvo no rascunho)</span></h5>
-                <div className="grid grid-cols-1 md:grid-cols-[160px_1fr] gap-1 items-center">
-                  <Label className="text-[10px] text-muted-foreground">Transportadora Anterior</Label>
-                  <div className="flex gap-1">
-                    <Input className="h-6 text-[10px] w-40 font-mono" placeholder="CNPJ" value={fmtCnpjInput((form as any).docAntTranspCnpj || "")} onChange={e => {
-                      const digits = e.target.value.replace(/\D/g, "").slice(0, 14);
-                      setForm({ ...form, docAntTranspCnpj: digits } as any);
-                      if (digits.length === 14 && digits !== lastLookupDocAnt.current) {
-                        lastLookupDocAnt.current = digits;
-                        (async () => {
-                          setLookingUpDocAnt(true);
-                          try {
-                            const d = await buscarDadosCnpj(digits);
-                            if (d) setForm(f => ({ ...f, docAntTranspNome: d.nome || (f as any).docAntTranspNome, docAntTranspIE: (d as any).ie || (f as any).docAntTranspIE } as any));
-                            else toast.error("CNPJ não encontrado");
-                          } finally { setLookingUpDocAnt(false); }
-                        })();
-                      }
-                    }} maxLength={18} />
-                    <Input className="h-6 text-[10px]" placeholder="Nome da transportadora" value={(form as any).docAntTranspNome || ""} onChange={e=>setForm({...form, docAntTranspNome: e.target.value} as any)} />
-                    <Input className="h-6 text-[10px] w-32" placeholder="IE" value={(form as any).docAntTranspIE || ""} onChange={e=>setForm({...form, docAntTranspIE: e.target.value} as any)} />
-                    {lookingUpDocAnt && <Loader2 className="h-4 w-4 animate-spin self-center" />}
-                  </div>
-                </div>
-                <div className="border rounded overflow-hidden">
-                  <div className="grid grid-cols-[40px_1fr_70px_90px_110px_28px] bg-muted text-[10px] font-semibold">
-                    <div className="px-1 py-1 text-center">ITEM</div>
-                    <div className="px-1 py-1 border-l">CHAVE DE ACESSO (44)</div>
-                    <div className="px-1 py-1 border-l">SÉRIE</div>
-                    <div className="px-1 py-1 border-l">NÚMERO</div>
-                    <div className="px-1 py-1 border-l">DATA EMISSÃO</div>
-                    <div className="px-1 py-1 border-l"></div>
-                  </div>
-                  {((form as any).docAnteriores || []).map((r: any, i: number) => (
-                    <div key={i} className="grid grid-cols-[40px_1fr_70px_90px_110px_28px] border-t">
-                      <div className="px-1 py-1 text-center text-[10px] text-muted-foreground self-center">{i + 1}</div>
-                      <div className="flex items-center gap-1 border-l pl-1">
-                        <Input className="h-6 text-[10px] font-mono rounded-none border-0 px-1" placeholder="Digite a chave p/ buscar" value={r.chave || ""} onChange={e => {
-                          const digits = e.target.value.replace(/\D/g, "").slice(0, 44);
-                          const arr = [...((form as any).docAnteriores || [])]; arr[i] = { ...arr[i], chave: digits }; setForm({ ...form, docAnteriores: arr } as any);
-                          if (digits.length === 44) fetchDocAnterior(i, digits);
-                        }} maxLength={44} />
-                        <Button type="button" size="icon" variant="ghost" className="h-6 w-6 shrink-0" disabled={fetchingChaveIdx === i} onClick={() => fetchDocAnterior(i, r.chave || "")} title="Buscar CT-e pela chave">{fetchingChaveIdx === i ? <Loader2 className="h-3 w-3 animate-spin" /> : <Search className="h-3 w-3" />}</Button>
-                      </div>
-                      <Input className="h-6 text-[10px] rounded-none border-0 border-l" value={r.serie || ""} onChange={e => { const arr = [...((form as any).docAnteriores || [])]; arr[i] = { ...arr[i], serie: e.target.value }; setForm({ ...form, docAnteriores: arr } as any); }} />
-                      <Input className="h-6 text-[10px] rounded-none border-0 border-l" value={r.numero || ""} onChange={e => { const arr = [...((form as any).docAnteriores || [])]; arr[i] = { ...arr[i], numero: e.target.value }; setForm({ ...form, docAnteriores: arr } as any); }} />
-                      <Input className="h-6 text-[10px] rounded-none border-0 border-l" value={r.dataEmissao || ""} onChange={e => { const arr = [...((form as any).docAnteriores || [])]; arr[i] = { ...arr[i], dataEmissao: e.target.value }; setForm({ ...form, docAnteriores: arr } as any); }} placeholder="AAAA-MM-DD" />
-                      <Button type="button" size="icon" variant="ghost" className="h-6 w-7 text-destructive" onClick={() => { const arr = [...((form as any).docAnteriores || [])]; arr.splice(i, 1); setForm({ ...form, docAnteriores: arr } as any); }} title="Remover"><Trash2 className="h-3 w-3" /></Button>
-                    </div>
-                  ))}
-                </div>
-                <p className="text-[9px] text-muted-foreground">Digite a chave de acesso do CT-e: transportadora, série, número e emissão são puxados da SEFAZ.</p>
-                <Button type="button" size="sm" variant="outline" className="h-6 text-[10px]" onClick={() => setForm({ ...form, docAnteriores: [...((form as any).docAnteriores || []), { chave: "", serie: "", numero: "", dataEmissao: "" }] } as any)}><Plus className="mr-1 h-3 w-3" /> Adicionar documento</Button>
-              </Card>
             </TabsContent>
 
             {/* === TAB: Seguros/Veículos === */}

@@ -1029,6 +1029,22 @@ Commits: CF `953c1e9` + Vercel `46decbb`
 
 ---
 
+## CT-e: removidos Produto/Docs Anteriores + erro certificado (08/09/2026)
+
+- Removidos cards **Produto Predominante** e **Documentos Anteriores** da aba Carga
+  (a pedido). Backend da busca por chave mantido (`consultarCtePorChave`).
+- **Erro "Nenhum certificado ativo encontrado"**: diagnosticado — certificados existem
+  no banco (1 ativo/empresa); a chave `sb_secret_HUKG...` retorna **401** (rotacionada).
+  A Vercel ainda usa a chave antiga em `SUPABASE_SERVICE_ROLE_KEY` → toda chamada
+  service-role falha. **Ação do usuário**: copiar a nova `sb_secret` (Supabase →
+  Settings → API) e atualizar em Vercel (norvo-gestao → Env Vars → redeploy) e no
+  Worker (`wrangler secret put SUPABASE_SERVICE_ROLE_KEY` com a mesma chave, p/ o
+  Bearer do proxy continuar válido).
+
+Commits: CF `[pendente]` + Vercel `[pendente]`
+
+---
+
 ## Regras de segurança
 
 - NUNCA commitar tokens/senhas (GitHub PAT, senhas de banco, service keys).
