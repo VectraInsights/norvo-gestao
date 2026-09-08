@@ -823,14 +823,29 @@ function CtePage() {
       if (ret?.sucesso) {
         toast.success(`CT-e ${ret.chave} autorizado` + (ret.protocolo ? ` prot ${ret.protocolo}` : ""));
         setOpen(false);
+        let rascunhoNfs: any[] = [];
         if (editingRascunhoId) {
+          const { data: rascDoc } = await supabase.from("cte_documentos" as any).select("xml_assinado").eq("id", editingRascunhoId).maybeSingle();
+          try { const p = JSON.parse(rascDoc?.xml_assinado || "{}"); if (p.nfs) rascunhoNfs = p.nfs; } catch {}
           await supabase.from("cte_documentos" as any).delete().eq("id", editingRascunhoId);
           setEditingRascunhoId(null);
         }
         const chavesUsadas = selecionadas.size > 0 ? Array.from(selecionadas) : mercadorias.map(m => m.chave);
         if (empresa && chavesUsadas.length > 0) {
-          const { error: embErr } = await supabase.from("cte_nfes_pendentes" as any).update({ status: "embarcada" }).in("chave", chavesUsadas).eq("empresa_id", empresa.id);
-          if (embErr) toast.error(`CT-e autorizado, mas falha ao baixar NF-e da lista: ${embErr.message}`);
+          const { count } = await supabase.from("cte_nfes_pendentes" as any).update({ status: "embarcada" }).in("chave", chavesUsadas).eq("empresa_id", empresa.id).select("chave", { count: "exact", head: true });
+          if (!count || count === 0) {
+            for (const nf of rascunhoNfs) {
+              if (!nf?.chave || !chavesUsadas.includes(nf.chave)) continue;
+              await supabase.from("cte_nfes_pendentes" as any).upsert({
+                empresa_id: empresa.id, chave: nf.chave, n_nf: nf.nNF, serie: nf.serie || "1",
+                emit_nome: nf.emit || "", emit_cnpj: nf.emitCnpj || "", emit_uf: nf.emitUF || "", emit_cmun: nf.emitCMun || "", emit_xmun: nf.emitXMun || "",
+                dest_nome: nf.dest || "", dest_cnpj: nf.destCnpj || "", dest_uf: nf.destUF || "", dest_cmun: nf.destCMun || "", dest_xmun: nf.destXMun || "",
+                valor: nf.valor || 0, peso: nf.peso || 0, data_emissao: nf.data || null,
+                tomador_nome: nf.tomador || "", tomador_cnpj: nf.tomadorCnpj || "", tomador_uf: nf.tomadorUF || "", tomador_cmun: nf.tomadorCMun || "", tomador_xmun: nf.tomadorXMun || "",
+                mod_frete: nf.modFrete || "", status: "embarcada",
+              }, { onConflict: "empresa_id,chave" });
+            }
+          }
           // remove da listagem na hora (não depende do refetch)
           setMercadorias(prev => prev.filter(m => !chavesUsadas.includes(m.chave)));
           setSelecionadas(new Set());
@@ -874,14 +889,27 @@ function CtePage() {
         if (empresa && ret?.chave) {
           const { data: doc } = await supabase.from("cte_documentos" as any).select("xml_assinado").eq("chave_acesso", ret.chave).maybeSingle();
           let xmlStr = doc?.xml_assinado || "";
-          try { const p = JSON.parse(xmlStr); if (p.xml) xmlStr = p.xml; } catch {}
+          let rascunhoNfs: any[] = [];
+          try { const p = JSON.parse(xmlStr); if (p.xml) xmlStr = p.xml; if (p.nfs) rascunhoNfs = p.nfs; } catch {}
           const chavesNfe = [...xmlStr.matchAll(/<chNFe>(\d{44})<\/chNFe>/g)].map((m: any)=>m[1]);
-          console.log("[CTE-CANCEL-REVERT] chave:", ret.chave, "chavesNfe:", chavesNfe);
+          console.log("[CTE-CANCEL-REVERT] chave:", ret.chave, "chavesNfe:", chavesNfe, "rascunhoNfs:", rascunhoNfs.length);
           if (chavesNfe.length > 0) {
-            const { data: revertidas, error } = await supabase.from("cte_nfes_pendentes" as any).update({ status: "pendente" }).in("chave", chavesNfe).eq("empresa_id", empresa.id).select("id");
-            console.log("[CTE-CANCEL-REVERT] revertidas:", revertidas?.length, "update error:", error);
-            if (error) toast.error(`CT-e cancelado, mas falha ao devolver NF-e: ${error.message}`);
-            else if ((revertidas?.length || 0) < chavesNfe.length) toast.info("CT-e cancelado. Algumas NF-es não estavam mais na base — reimporte o XML se precisar.");
+            const { count } = await supabase.from("cte_nfes_pendentes" as any).update({ status: "pendente" }).in("chave", chavesNfe).eq("empresa_id", empresa.id).select("chave", { count: "exact", head: true });
+            console.log("[CTE-CANCEL-REVERT] update count:", count);
+            if (!count || count === 0) {
+              for (const nf of rascunhoNfs) {
+                if (!nf?.chave) continue;
+                await supabase.from("cte_nfes_pendentes" as any).upsert({
+                  empresa_id: empresa.id, chave: nf.chave, n_nf: nf.nNF, serie: nf.serie || "1",
+                  emit_nome: nf.emit || "", emit_cnpj: nf.emitCnpj || "", emit_uf: nf.emitUF || "", emit_cmun: nf.emitCMun || "", emit_xmun: nf.emitXMun || "",
+                  dest_nome: nf.dest || "", dest_cnpj: nf.destCnpj || "", dest_uf: nf.destUF || "", dest_cmun: nf.destCMun || "", dest_xmun: nf.destXMun || "",
+                  valor: nf.valor || 0, peso: nf.peso || 0, data_emissao: nf.data || null,
+                  tomador_nome: nf.tomador || "", tomador_cnpj: nf.tomadorCnpj || "", tomador_uf: nf.tomadorUF || "", tomador_cmun: nf.tomadorCMun || "", tomador_xmun: nf.tomadorXMun || "",
+                  mod_frete: nf.modFrete || "", status: "pendente",
+                }, { onConflict: "empresa_id,chave" });
+              }
+              console.log("[CTE-CANCEL-REVERT] re-inserted", rascunhoNfs.length, "NF-e from rascunho JSON");
+            }
             qc.invalidateQueries({ queryKey: ["cte-nfes-pendentes", empresa.id] });
           }
         }
