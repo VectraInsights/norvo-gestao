@@ -1025,7 +1025,7 @@ Commits: CF `d0f118b` + Vercel `d8fa38f`
   `consultarCteChave` no proxy. Preenche transportadora (CNPJ/nome/IE) + série,
   número e emissão da linha. Resposta: sim — digitando a chave, os dados vêm da SEFAZ.
 
-Commits: CF `[pendente]` + Vercel `[pendente]`
+Commits: CF `953c1e9` + Vercel `46decbb`
 
 ---
 
