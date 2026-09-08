@@ -1256,9 +1256,8 @@ function CtePage() {
           <Tabs defaultValue="geral" className="w-full">
             <TabsList className="w-full justify-start gap-0 bg-muted/50 rounded-t-md">
               <TabsTrigger value="geral" className="rounded-t-md rounded-b-none text-xs data-[state=active]:bg-background data-[state=active]:shadow-sm"><Settings2 className="mr-1 h-3 w-3" />Geral</TabsTrigger>
-              <TabsTrigger value="impostos" className="rounded-t-md rounded-b-none text-xs data-[state=active]:bg-background data-[state=active]:shadow-sm"><ReceiptText className="mr-1 h-3 w-3" />Tributação</TabsTrigger>
-              <TabsTrigger value="docs" className="rounded-t-md rounded-b-none text-xs data-[state=active]:bg-background data-[state=active]:shadow-sm"><FileText className="mr-1 h-3 w-3" />Carga</TabsTrigger>
               <TabsTrigger value="seguros" className="rounded-t-md rounded-b-none text-xs data-[state=active]:bg-background data-[state=active]:shadow-sm"><Truck className="mr-1 h-3 w-3" />Veículos</TabsTrigger>
+              <TabsTrigger value="docs" className="rounded-t-md rounded-b-none text-xs data-[state=active]:bg-background data-[state=active]:shadow-sm"><FileText className="mr-1 h-3 w-3" />Tributação e Carga</TabsTrigger>
               <TabsTrigger value="status" className="rounded-t-md rounded-b-none text-xs data-[state=active]:bg-background data-[state=active]:shadow-sm"><ClipboardList className="mr-1 h-3 w-3" />Status</TabsTrigger>
               <TabsTrigger value="obs" className="rounded-t-md rounded-b-none text-xs data-[state=active]:bg-background data-[state=active]:shadow-sm"><FileCode className="mr-1 h-3 w-3" />Observações</TabsTrigger>
             </TabsList>
@@ -1536,6 +1535,41 @@ function CtePage() {
                     </div>
                   );
                 })()}
+              </Card>
+
+              {/* Tributação (fundida nesta aba) */}
+              <Card className="p-3">
+                <h5 className="text-xs font-semibold mb-2 flex items-center gap-1.5"><ReceiptText className="h-3.5 w-3.5 text-primary" /> ICMS</h5>
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+                  <div><Label className="text-[10px] text-muted-foreground">* CST</Label>
+                    <Select value={form.icmsCST} onValueChange={v => setForm({ ...form, icmsCST: v })}>
+                      <SelectTrigger className="h-7 text-xs"><SelectValue /></SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="00">00 — Tributação normal</SelectItem>
+                        <SelectItem value="20">20 — Com redução</SelectItem>
+                        <SelectItem value="45">45 — Isento</SelectItem>
+                        <SelectItem value="60">60 — ICMS cobrado por ST</SelectItem>
+                        <SelectItem value="90">90 — Outras</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div><Label className="text-[10px] text-muted-foreground">Redução de Base (%)</Label><MoneyInput className="h-7 text-xs" prefix="" value={(form as any).reducaoBase || "0.00"} onChange={v => setForm({ ...form, reducaoBase: v } as any)} placeholder="0,00" /></div>
+                  <div><Label className="text-[10px] text-muted-foreground">Alíquota ICMS (%)</Label><MoneyInput className="h-7 text-xs" prefix="" value={form.icmsAliq} onChange={v => setForm({ ...form, icmsAliq: v })} placeholder="0,00" /></div>
+                  <div><Label className="text-[10px] text-muted-foreground">Base Cálculo (R$)</Label><MoneyInput className="h-7 text-xs bg-muted" value={form.vPrest} onChange={() => {}} placeholder="0,00" /></div>
+                  <div><Label className="text-[10px] text-muted-foreground">Valor ICMS (R$)</Label><MoneyInput className="h-7 text-xs bg-muted" value={form.icmsValor} onChange={() => {}} placeholder="0,00" /></div>
+                  <div className="md:col-span-3"><Label className="text-[10px] text-muted-foreground">Valor do crédito outorgado/presumido (R$)</Label><MoneyInput className="h-7 text-xs" value={(form as any).creditoOutorgado || "0.00"} onChange={v => setForm({ ...form, creditoOutorgado: v } as any)} placeholder="0,00" /></div>
+                </div>
+                <p className="text-[9px] text-muted-foreground mt-1">Digite só números — vírgula preenche automaticamente. Ponto só para milhares. Base padrão = Valor do Serviço. Redução/crédito salvos no rascunho.</p>
+              </Card>
+              <Card className="p-3">
+                <h5 className="text-xs font-semibold mb-2">Outros Impostos — Alíquotas (%)</h5>
+                <div className="grid grid-cols-2 md:grid-cols-5 gap-2">
+                  <div><Label className="text-[10px] text-muted-foreground">PIS (%)</Label><MoneyInput className="h-7 text-xs" prefix="" value={form.pisAliq} onChange={v => setForm({ ...form, pisAliq: v })} placeholder="0,00" /></div>
+                  <div><Label className="text-[10px] text-muted-foreground">COFINS (%)</Label><MoneyInput className="h-7 text-xs" prefix="" value={form.cofinsAliq} onChange={v => setForm({ ...form, cofinsAliq: v })} placeholder="0,00" /></div>
+                  <div><Label className="text-[10px] text-muted-foreground">IR (%)</Label><MoneyInput className="h-7 text-xs" prefix="" value={form.irAliq} onChange={v => setForm({ ...form, irAliq: v })} placeholder="0,00" /></div>
+                  <div><Label className="text-[10px] text-muted-foreground">INSS (%)</Label><MoneyInput className="h-7 text-xs" prefix="" value={form.inssAliq} onChange={v => setForm({ ...form, inssAliq: v })} placeholder="0,00" /></div>
+                  <div><Label className="text-[10px] text-muted-foreground">CSLL (%)</Label><MoneyInput className="h-7 text-xs" prefix="" value={form.csllAliq} onChange={v => setForm({ ...form, csllAliq: v })} placeholder="0,00" /></div>
+                </div>
               </Card>
 
             </TabsContent>
@@ -1849,43 +1883,6 @@ function CtePage() {
                   <div><Label className="text-[10px] text-muted-foreground">CNPJ Operadora</Label><Input className="h-7 text-xs" placeholder="00.000.000/0000-00" /></div>
                   <div><Label className="text-[10px] text-muted-foreground">Vale Pedágio (R$)</Label><Input className="h-7 text-xs" placeholder="0.00" /></div>
                   <div><Label className="text-[10px] text-muted-foreground">Nº TAG</Label><Input className="h-7 text-xs" placeholder="Nº TAG" /></div>
-                </div>
-              </Card>
-            </TabsContent>
-
-            {/* === TAB: Tributação === */}
-            <TabsContent value="impostos" className="mt-3 space-y-3">
-              <Card className="p-3">
-                <h5 className="text-xs font-semibold mb-2 flex items-center gap-1.5"><ReceiptText className="h-3.5 w-3.5 text-primary" /> ICMS</h5>
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
-                  <div><Label className="text-[10px] text-muted-foreground">* CST</Label>
-                    <Select value={form.icmsCST} onValueChange={v => setForm({ ...form, icmsCST: v })}>
-                      <SelectTrigger className="h-7 text-xs"><SelectValue /></SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="00">00 — Tributação normal</SelectItem>
-                        <SelectItem value="20">20 — Com redução</SelectItem>
-                        <SelectItem value="45">45 — Isento</SelectItem>
-                        <SelectItem value="60">60 — ICMS cobrado por ST</SelectItem>
-                        <SelectItem value="90">90 — Outras</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div><Label className="text-[10px] text-muted-foreground">Redução de Base (%)</Label><MoneyInput className="h-7 text-xs" prefix="" value={(form as any).reducaoBase || "0.00"} onChange={v => setForm({ ...form, reducaoBase: v } as any)} placeholder="0,00" /></div>
-                  <div><Label className="text-[10px] text-muted-foreground">Alíquota ICMS (%)</Label><MoneyInput className="h-7 text-xs" prefix="" value={form.icmsAliq} onChange={v => setForm({ ...form, icmsAliq: v })} placeholder="0,00" /></div>
-                  <div><Label className="text-[10px] text-muted-foreground">Base Cálculo (R$)</Label><MoneyInput className="h-7 text-xs bg-muted" value={form.vPrest} onChange={() => {}} placeholder="0,00" /></div>
-                  <div><Label className="text-[10px] text-muted-foreground">Valor ICMS (R$)</Label><MoneyInput className="h-7 text-xs bg-muted" value={form.icmsValor} onChange={() => {}} placeholder="0,00" /></div>
-                  <div className="md:col-span-3"><Label className="text-[10px] text-muted-foreground">Valor do crédito outorgado/presumido (R$)</Label><MoneyInput className="h-7 text-xs" value={(form as any).creditoOutorgado || "0.00"} onChange={v => setForm({ ...form, creditoOutorgado: v } as any)} placeholder="0,00" /></div>
-                </div>
-                <p className="text-[9px] text-muted-foreground mt-1">Digite só números — vírgula preenche automaticamente. Ponto só para milhares. Base padrão = Valor do Serviço. Redução/crédito salvos no rascunho.</p>
-              </Card>
-              <Card className="p-3">
-                <h5 className="text-xs font-semibold mb-2">Outros Impostos — Alíquotas (%)</h5>
-                <div className="grid grid-cols-2 md:grid-cols-5 gap-2">
-                  <div><Label className="text-[10px] text-muted-foreground">PIS (%)</Label><MoneyInput className="h-7 text-xs" prefix="" value={form.pisAliq} onChange={v => setForm({ ...form, pisAliq: v })} placeholder="0,00" /></div>
-                  <div><Label className="text-[10px] text-muted-foreground">COFINS (%)</Label><MoneyInput className="h-7 text-xs" prefix="" value={form.cofinsAliq} onChange={v => setForm({ ...form, cofinsAliq: v })} placeholder="0,00" /></div>
-                  <div><Label className="text-[10px] text-muted-foreground">IR (%)</Label><MoneyInput className="h-7 text-xs" prefix="" value={form.irAliq} onChange={v => setForm({ ...form, irAliq: v })} placeholder="0,00" /></div>
-                  <div><Label className="text-[10px] text-muted-foreground">INSS (%)</Label><MoneyInput className="h-7 text-xs" prefix="" value={form.inssAliq} onChange={v => setForm({ ...form, inssAliq: v })} placeholder="0,00" /></div>
-                  <div><Label className="text-[10px] text-muted-foreground">CSLL (%)</Label><MoneyInput className="h-7 text-xs" prefix="" value={form.csllAliq} onChange={v => setForm({ ...form, csllAliq: v })} placeholder="0,00" /></div>
                 </div>
               </Card>
             </TabsContent>
