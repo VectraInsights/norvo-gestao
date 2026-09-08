@@ -1169,7 +1169,7 @@ Commits: CF `584eb83` + Vercel `1af180f`
   (service_role) em `emitirCteFn`/`cancelarCteFn` + proxy; front mantém fallback
   e ganhou toasts de erro nos updates (chega de falha silenciosa).
 
-Commits: CF `[pendente]` + Vercel `[pendente]`
+Commits: CF `bdb8d11` + Vercel `f3ce8ba`
 
 ---
 
