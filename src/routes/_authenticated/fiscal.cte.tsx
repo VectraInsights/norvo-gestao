@@ -815,8 +815,9 @@ function CtePage() {
   const emittingRef = useRef(false);
   const emitir = useMutation({
     mutationFn: async () => {
-      // Trava contra duplo clique: duas emissões concorrentes calculariam o mesmo número
-      if (emittingRef.current) throw new Error("Emissão já em andamento — aguarde");
+      // Trava contra duplo clique: duas emissões concorrentes calculariam o mesmo número.
+      // Retorna marcador silencioso (sem toast de erro) em vez de throw.
+      if (emittingRef.current) return { ignored: true };
       emittingRef.current = true;
       try {
       if (!empresa) throw new Error("Empresa não selecionada");
@@ -849,6 +850,7 @@ function CtePage() {
       }
     },
     onSuccess: async (ret: any) => {
+      if ((ret as any)?.ignored) return;
       if (ret?.sucesso) {
         toast.success(`CT-e ${ret.chave} autorizado` + (ret.protocolo ? ` prot ${ret.protocolo}` : ""));
         setOpen(false);

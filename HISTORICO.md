@@ -1140,6 +1140,16 @@ Commits: CF `a597ac9` + Vercel `0de9ce3`
 
 ---
 
+## CT-e: trava silenciosa + toast fantasma (08/09/2026)
+
+- 900011 autorizado mas com toast de erro e sem linha de rejeitado: 2º clique
+  concorrente caía no else e mostrava "Rejeitado" sem ter rejeição real.
+- Fix: trava retorna `{ignored:true}` e onSuccess ignora em silêncio (sem toast).
+
+Commits: CF `[pendente]` + Vercel `[pendente]`
+
+---
+
 ## Regras de segurança
 
 - NUNCA commitar tokens/senhas (GitHub PAT, senhas de banco, service keys).
