@@ -21,7 +21,7 @@ import { brl, dateBR, num } from "@/lib/format";
 import { useState, useEffect, useMemo, useRef } from "react";
 import { toast } from "sonner";
 import { emitirCteFn, consultarCteFn, cancelarCteFn, previewCteXmlFn, excluirRejeitadosCteFn } from "@/lib/sefaz-cte-server";
-import { CFOPS_CTE, RESPONSAVEL_CTE_OPTIONS } from "@/lib/cfops-transporte";
+import { CFOPS_CTE, MOD_FRETE_OPTIONS, RESPONSAVEL_CTE_OPTIONS } from "@/lib/cfops-transporte";
 import { gerarDactePdf } from "@/lib/dacte-pdf";
 import { JUVENAL_LOGO } from "@/lib/juvenal-logo";
 import { Textarea } from "@/components/ui/textarea";
@@ -477,18 +477,15 @@ function CtePage() {
     } catch (e: any) { toast.error(e.message || "Falha ao buscar CNPJ"); }
     finally { setLookingUpTomador(false); }
   };
-  // Emitente/destinatário da NF-e ativa (p/ opções do dropdown de tomador)
-  const activeEmitDest = useMemo(() => {
-    const sel = mercadorias.filter(m => selecionadas.has(m.chave));
-    const a = sel.length > 0 ? sel[0] : mercadorias[0];
-    if (!a) return { emit: "", emitNome: "", dest: "", destNome: "" };
-    return { emit: (a.emitCnpj || "").replace(/\D/g, ""), emitNome: a.emit || "", dest: (a.destCnpj || "").replace(/\D/g, ""), destNome: a.dest || "" };
-  }, [mercadorias, selecionadas]);
-  // Escolheu contato no dropdown: define toma (0 emit / 1 dest / 2 terceiros) e busca dados
+  // Escolheu/digitou CNPJ no dropdown: define toma (0 emit / 1 dest / 2 terceiros) e busca dados
   const onPickContatoTomador = (digits: string) => {
     const d = (digits || "").replace(/\D/g, "");
     if (d.length !== 14) return;
-    setForm(f => ({ ...f, toma: d && d === activeEmitDest.emit ? "0" : d && d === activeEmitDest.dest ? "1" : "2" }));
+    const sel = mercadorias.filter(m => selecionadas.has(m.chave));
+    const a = sel.length > 0 ? sel[0] : mercadorias[0];
+    const emitD = a ? (a.emitCnpj || "").replace(/\D/g, "") : "";
+    const destD = a ? (a.destCnpj || "").replace(/\D/g, "") : "";
+    setForm(f => ({ ...f, toma: d && d === emitD ? "0" : d && d === destD ? "1" : "2" }));
     lastLookupTomador.current = d;
     lookupTomador(d);
     setTomadorOpen(false);
@@ -1290,44 +1287,20 @@ function CtePage() {
                     </PopoverTrigger>
                     <PopoverContent className="w-[480px] p-0" align="start">
                       <Command shouldFilter={false}>
-                        <CommandInput placeholder="Buscar nome/CNPJ ou digite o CNPJ..." value={tomadorQuery} onValueChange={v => {
+                        <CommandInput placeholder="Ou digite o CNPJ do tomador..." value={tomadorQuery} onValueChange={v => {
                           setTomadorQuery(v);
                           const digits = v.replace(/\D/g, "").slice(0, 14);
-                          if (digits.length === 14 && digits !== lastLookupTomador.current) { lastLookupTomador.current = digits; lookupTomador(digits); setTomadorOpen(false); setTomadorQuery(""); }
+                          if (digits.length === 14 && digits !== lastLookupTomador.current) { onPickContatoTomador(digits); }
                         }} />
                         <CommandList>
-                          <CommandEmpty>Nenhum contato encontrado.</CommandEmpty>
-                          {(activeEmitDest.emit || activeEmitDest.dest) && (
-                            <CommandGroup heading="Da NF-e">
-                              {activeEmitDest.emit && (
-                                <CommandItem value={`toma0 ${activeEmitDest.emit}`} onSelect={() => { aplicarTomadorPorToma("0"); setTomadorOpen(false); setTomadorQuery(""); }}>
-                                  <Check className={"mr-2 h-3 w-3 " + (form.toma === "0" ? "opacity-100" : "opacity-0")} />
-                                  <span className="truncate">0 — Remetente (CIF): {activeEmitDest.emitNome}</span>
-                                </CommandItem>
-                              )}
-                              {activeEmitDest.dest && (
-                                <CommandItem value={`toma1 ${activeEmitDest.dest}`} onSelect={() => { aplicarTomadorPorToma("1"); setTomadorOpen(false); setTomadorQuery(""); }}>
-                                  <Check className={"mr-2 h-3 w-3 " + (form.toma === "1" ? "opacity-100" : "opacity-0")} />
-                                  <span className="truncate">1 — Destinatário (FOB): {activeEmitDest.destNome}</span>
-                                </CommandItem>
-                              )}
-                            </CommandGroup>
-                          )}
-                          <CommandGroup heading="Contatos">
-                            {(contatosCte ?? []).filter((c: any) => {
-                              if (!tomadorQuery) return true;
-                              const q = tomadorQuery.toLowerCase();
-                              const qd = tomadorQuery.replace(/\D/g, "");
-                              return ((c.nome || "").toLowerCase().includes(q)) || (qd !== "" && String(c.documento || "").replace(/\D/g, "").includes(qd));
-                            }).slice(0, 30).map((c: any) => {
-                              const digits = String(c.documento || "").replace(/\D/g, "");
-                              return (
-                                <CommandItem key={c.documento} value={c.documento} onSelect={() => onPickContatoTomador(digits)}>
-                                  <Check className={"mr-2 h-3 w-3 " + (form.cnpjTomador === digits ? "opacity-100" : "opacity-0")} />
-                                  <span className="truncate">{fmtCnpjInput(digits)} — {c.nome || ""}</span>
-                                </CommandItem>
-                              );
-                            })}
+                          <CommandEmpty>Nenhuma opção.</CommandEmpty>
+                          <CommandGroup heading="Tipo do tomador">
+                            {MOD_FRETE_OPTIONS.map(opt => (
+                              <CommandItem key={opt.value} value={opt.value} onSelect={() => { aplicarTomadorPorToma(opt.value); setTomadorOpen(false); setTomadorQuery(""); }}>
+                                <Check className={"mr-2 h-3 w-3 " + (form.toma === opt.value ? "opacity-100" : "opacity-0")} />
+                                <span className="truncate">{opt.label}</span>
+                              </CommandItem>
+                            ))}
                           </CommandGroup>
                         </CommandList>
                       </Command>

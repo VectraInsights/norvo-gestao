@@ -1184,6 +1184,15 @@ Commits: CF `cd4b357` + Vercel `bcadf1e`
 
 ---
 
+## CT-e: dropdown tomador com 6 tipos (08/09/2026)
+
+- Dropdown do Tomador lista os 6 tipos de antes (0 CIF, 1 FOB, 2 Terceiros, 3/4
+  próprio, 9 sem ocorrência); digitar CNPJ busca e define o toma sozinho.
+
+Commits: CF `[pendente]` + Vercel `[pendente]`
+
+---
+
 ## Regras de segurança
 
 - NUNCA commitar tokens/senhas (GitHub PAT, senhas de banco, service keys).
