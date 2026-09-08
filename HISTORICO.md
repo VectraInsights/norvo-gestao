@@ -1123,7 +1123,7 @@ Commits: CF `0537490` + Vercel `03fd9c3`
 - **Autorizado não aparece no SPED MG**: esperado — homologação não tem valor fiscal
   e nunca vai p/ SPED. Documentos reais só em Produção.
 
-Commits: CF `[pendente]` + Vercel `[pendente]`
+Commits: CF `9fec488` + Vercel `244936b`
 
 ---
 
