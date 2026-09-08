@@ -1311,7 +1311,7 @@ function CtePage() {
               </div>
               <div className="border rounded p-3 bg-muted/20">
                 <div className="flex flex-wrap items-start gap-x-3 gap-y-2">
-                <div className="flex-[3_1_260px] min-w-0">
+                <div className="flex-[2_1_320px] max-w-[640px] min-w-0">
                   <Label className="text-[10px] text-muted-foreground">CFOP Saída</Label>
                   <Popover open={cfopOpen} onOpenChange={setCfopOpen}>
                     <PopoverTrigger asChild>
