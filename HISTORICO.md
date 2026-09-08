@@ -1189,7 +1189,7 @@ Commits: CF `cd4b357` + Vercel `bcadf1e`
 - Dropdown do Tomador lista os 6 tipos de antes (0 CIF, 1 FOB, 2 Terceiros, 3/4
   próprio, 9 sem ocorrência); digitar CNPJ busca e define o toma sozinho.
 
-Commits: CF `[pendente]` + Vercel `[pendente]`
+Commits: CF `9cb5ba6` + Vercel `d68234b`
 
 ---
 
