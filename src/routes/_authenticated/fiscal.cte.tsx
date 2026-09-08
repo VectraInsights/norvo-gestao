@@ -1311,7 +1311,7 @@ function CtePage() {
               </div>
               <div className="border rounded p-3 bg-muted/20">
                 <div className="flex flex-wrap items-start gap-x-3 gap-y-2">
-                <div className="flex-[2_1_320px] max-w-[640px] min-w-0">
+                <div className="flex-[2_1_320px] max-w-[700px] min-w-0">
                   <Label className="text-[10px] text-muted-foreground">CFOP Saída</Label>
                   <Popover open={cfopOpen} onOpenChange={setCfopOpen}>
                     <PopoverTrigger asChild>
@@ -1345,7 +1345,6 @@ function CtePage() {
                       </Command>
                     </PopoverContent>
                   </Popover>
-                  <p className="text-[9px] text-muted-foreground mt-1">Digite só números (5352) — salva com ponto (5.352) na descrição.</p>
                 </div>
                 <div className="flex-[1_1_160px] min-w-0">
                   <Label className="text-[10px] text-muted-foreground">Coleta</Label>
