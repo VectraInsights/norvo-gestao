@@ -1277,11 +1277,11 @@ function CtePage() {
                 <div className="w-44"><Label className="text-[10px] text-muted-foreground">N° Conhecimento</Label><Input className="h-7 text-xs font-mono" value="— aguardando emissão —" readOnly /></div>
                 <div className="w-[136px]"><Label className="text-[10px] text-muted-foreground">Data Emissão</Label><DateInput value={form.dataEmissao} onChange={v => setForm({...form, dataEmissao: v})} className="h-7 text-xs" /></div>
                 <div className="min-w-0">
-                  <Label className="text-[10px] text-muted-foreground">Tomador do Serviço{form.ambiente === "homologacao" ? " (XML: razão teste)" : ""}</Label>
+                  <Label className="text-[10px] text-muted-foreground">Tomador do Serviço</Label>
                   <Popover open={tomadorOpen} onOpenChange={setTomadorOpen}>
                     <PopoverTrigger asChild>
                       <Button variant="outline" role="combobox" aria-expanded={tomadorOpen} className="h-7 text-xs justify-between w-full font-normal">
-                        <span className="truncate text-left">{form.cnpjTomador ? `${fmtCnpjInput(form.cnpjTomador)} — ${form.xNomeTomador || ""}` : "Selecione o tomador"}</span>
+                        <span className="truncate text-left">{MOD_FRETE_OPTIONS.find(o => o.value === form.toma)?.label || "Selecione o tomador"}</span>
                         {lookingUpTomador ? <Loader2 className="ml-2 h-3 w-3 shrink-0 animate-spin" /> : <ChevronsUpDown className="ml-2 h-3 w-3 shrink-0 opacity-50" />}
                       </Button>
                     </PopoverTrigger>
