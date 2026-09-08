@@ -1256,7 +1256,7 @@ function CtePage() {
           <Tabs defaultValue="geral" className="w-full">
             <TabsList className="w-full justify-start gap-0 bg-muted/50 rounded-t-md">
               <TabsTrigger value="geral" className="rounded-t-md rounded-b-none text-xs data-[state=active]:bg-background data-[state=active]:shadow-sm"><Settings2 className="mr-1 h-3 w-3" />Geral</TabsTrigger>
-              <TabsTrigger value="seguros" className="rounded-t-md rounded-b-none text-xs data-[state=active]:bg-background data-[state=active]:shadow-sm"><Truck className="mr-1 h-3 w-3" />Veículos</TabsTrigger>
+              <TabsTrigger value="seguros" className="rounded-t-md rounded-b-none text-xs data-[state=active]:bg-background data-[state=active]:shadow-sm"><Truck className="mr-1 h-3 w-3" />Transporte</TabsTrigger>
               <TabsTrigger value="docs" className="rounded-t-md rounded-b-none text-xs data-[state=active]:bg-background data-[state=active]:shadow-sm"><FileText className="mr-1 h-3 w-3" />Tributação e Carga</TabsTrigger>
               <TabsTrigger value="status" className="rounded-t-md rounded-b-none text-xs data-[state=active]:bg-background data-[state=active]:shadow-sm"><ClipboardList className="mr-1 h-3 w-3" />Status</TabsTrigger>
               <TabsTrigger value="obs" className="rounded-t-md rounded-b-none text-xs data-[state=active]:bg-background data-[state=active]:shadow-sm"><FileCode className="mr-1 h-3 w-3" />Observações</TabsTrigger>
