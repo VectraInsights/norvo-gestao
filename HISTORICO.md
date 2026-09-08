@@ -942,6 +942,17 @@ Commits: CF `3680c1b` + Vercel `9d1e67e`
 
 ---
 
+## CT-e: Remetente/Destinatário completam do cadastro (08/09/2026)
+
+- Cards de **Remetente/Destinatário** agora mesclam `contatos` (query `contatos-cte`)
+  como fallback: IE, logradouro, número, bairro, cidade, UF, CEP, fone — XML continua
+  prioritário. Mesmo formato de exibição do Consignatário (`rua, nº — bairro`).
+- Preview do DACTE (`gerarDactePdf`) também usa o fallback p/ rem/dest.
+
+Commits: CF `[pendente]` + Vercel `[pendente]`
+
+---
+
 ## Regras de segurança
 
 - NUNCA commitar tokens/senhas (GitHub PAT, senhas de banco, service keys).

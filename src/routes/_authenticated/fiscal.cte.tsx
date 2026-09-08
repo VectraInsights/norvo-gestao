@@ -410,6 +410,21 @@ function CtePage() {
     finally { setLookingUpRedesp(false); }
   };
 
+  // Contatos p/ completar Remetente/Destinatário na tela (XML pode não trazer endereço/IE)
+  const { data: contatosCte } = useQuery({
+    enabled: !!empresa,
+    queryKey: ["contatos-cte", empresa?.id],
+    queryFn: async (): Promise<any[]> => {
+      const { data } = await supabase.from("contatos" as any).select("documento,ie,logradouro,numero,bairro,cidade,uf,cep,telefone").eq("empresa_id", empresa!.id);
+      return (data ?? []) as any[];
+    },
+  });
+  const contatoByDoc = useMemo(() => {
+    const m = new Map<string, any>();
+    for (const c of contatosCte ?? []) if ((c as any).documento) m.set(String((c as any).documento).replace(/\D/g, ""), c);
+    return m;
+  }, [contatosCte]);
+
   const handleImportNFeXml = async (files: FileList | File[]) => {
     if (!empresa) { toast.error("Selecione uma empresa"); return; }
     const list = Array.from(files as any as File[]);
@@ -1169,6 +1184,24 @@ function CtePage() {
               {mercadorias.length > 0 ? (() => {
                 const sel = mercadorias.filter(m => selecionadas.has(m.chave));
                 const active = sel.length > 0 ? sel[0] : mercadorias[0];
+                const cEmit = contatoByDoc.get((active.emitCnpj || "").replace(/\D/g, "")) || {};
+                const cDest = contatoByDoc.get((active.destCnpj || "").replace(/\D/g, "")) || {};
+                const emitIE = active.emitIE || cEmit.ie || "";
+                const emitLgr = active.emitLogradouro || cEmit.logradouro || "";
+                const emitNro = cEmit.numero || "";
+                const emitBai = active.emitBairro || cEmit.bairro || "";
+                const emitCid = active.emitXMun || cEmit.cidade || "";
+                const emitUF = active.emitUF || cEmit.uf || "";
+                const emitCEP = active.emitCEP || (cEmit.cep || "").replace(/\D/g, "") || "";
+                const emitFone = active.emitFone || cEmit.telefone || "";
+                const destIE = active.destIE || cDest.ie || "";
+                const destLgr = active.destLogradouro || cDest.logradouro || "";
+                const destNro = cDest.numero || "";
+                const destBai = active.destBairro || cDest.bairro || "";
+                const destCid = active.destXMun || cDest.cidade || "";
+                const destUF = active.destUF || cDest.uf || "";
+                const destCEP = active.destCEP || (cDest.cep || "").replace(/\D/g, "") || "";
+                const destFone = active.destFone || cDest.telefone || "";
                 return (
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                   {/* Remetente */}
@@ -1179,10 +1212,10 @@ function CtePage() {
                     </div>
                     <div className="space-y-0.5 text-[10px]">
                       <p className="font-medium text-xs">{active.emit || "—"}</p>
-                      <p className="text-muted-foreground">CNPJ: {active.emitCnpj ? active.emitCnpj.replace(/(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})/, "$1.$2.$3/$4-$5") : "—"} {active.emitIE ? `IE: ${active.emitIE}` : ""}</p>
-                      <p className="text-muted-foreground">{[active.emitLogradouro, active.emitBairro].filter(Boolean).join(", ") || "—"}</p>
-                      <p className="text-muted-foreground">{active.emitXMun || "—"}-{active.emitUF || "—"} {active.emitCEP ? `CEP: ${active.emitCEP}` : ""}</p>
-                      {active.emitFone && <p className="text-muted-foreground">Fone: {active.emitFone}</p>}
+                      <p className="text-muted-foreground">CNPJ: {active.emitCnpj ? active.emitCnpj.replace(/(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})/, "$1.$2.$3/$4-$5") : "—"} {emitIE ? `IE: ${emitIE}` : ""}</p>
+                      <p className="text-muted-foreground">{[emitLgr && `${emitLgr}${emitNro ? `, ${emitNro}` : ""}`, emitBai].filter(Boolean).join(" — ") || "—"}</p>
+                      <p className="text-muted-foreground">{emitCid || "—"}-{emitUF || "—"} {emitCEP ? `CEP: ${emitCEP}` : ""}</p>
+                      {emitFone && <p className="text-muted-foreground">Fone: {emitFone}</p>}
                     </div>
                   </Card>
 
@@ -1194,10 +1227,10 @@ function CtePage() {
                     </div>
                     <div className="space-y-0.5 text-[10px]">
                       <p className="font-medium text-xs">{active.dest || "—"}</p>
-                      <p className="text-muted-foreground">CNPJ: {active.destCnpj ? active.destCnpj.replace(/(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})/, "$1.$2.$3/$4-$5") : "—"} {active.destIE ? `IE: ${active.destIE}` : ""}</p>
-                      <p className="text-muted-foreground">{[active.destLogradouro, active.destBairro].filter(Boolean).join(", ") || "—"}</p>
-                      <p className="text-muted-foreground">{active.destXMun || "—"}-{active.destUF || "—"} {active.destCEP ? `CEP: ${active.destCEP}` : ""}</p>
-                      {active.destFone && <p className="text-muted-foreground">Fone: {active.destFone}</p>}
+                      <p className="text-muted-foreground">CNPJ: {active.destCnpj ? active.destCnpj.replace(/(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})/, "$1.$2.$3/$4-$5") : "—"} {destIE ? `IE: ${destIE}` : ""}</p>
+                      <p className="text-muted-foreground">{[destLgr && `${destLgr}${destNro ? `, ${destNro}` : ""}`, destBai].filter(Boolean).join(" — ") || "—"}</p>
+                      <p className="text-muted-foreground">{destCid || "—"}-{destUF || "—"} {destCEP ? `CEP: ${destCEP}` : ""}</p>
+                      {destFone && <p className="text-muted-foreground">Fone: {destFone}</p>}
                     </div>
                   </Card>
                 </div>
@@ -1763,6 +1796,8 @@ function CtePage() {
             const f = previewData.form;
             const nFes = (f.nFes || []).map((n: any) => ({ nNF: n.nNF || n.numero || "", serie: n.serie || "1", valor: n.valor || 0 }));
             const first = mercadorias[0] || {} as any;
+            const cRem = contatoByDoc.get(((first as any).emitCnpj || "").replace(/\D/g, "")) || {};
+            const cDst = contatoByDoc.get(((first as any).destCnpj || "").replace(/\D/g, "")) || {};
             const pdfBlob = gerarDactePdf({
               chave: previewData.chave,
               numero: previewData.proximo,
@@ -1782,22 +1817,22 @@ function CtePage() {
               tomadorUF: f.ufTomador || "",
               remCnpj: first.emitCnpj || "",
               remNome: first.emit || "",
-              remCidade: first.emitXMun || "",
-              remUF: first.emitUF || "",
-              remEndereco: first.emitLogradouro || "",
-              remBairro: first.emitBairro || "",
-              remCEP: first.emitCEP || "",
-              remIE: first.emitIE || "",
-              remFone: first.emitFone || "",
+              remCidade: first.emitXMun || cRem.cidade || "",
+              remUF: first.emitUF || cRem.uf || "",
+              remEndereco: first.emitLogradouro || cRem.logradouro || "",
+              remBairro: first.emitBairro || cRem.bairro || "",
+              remCEP: first.emitCEP || (cRem.cep || "").replace(/\D/g, "") || "",
+              remIE: first.emitIE || cRem.ie || "",
+              remFone: first.emitFone || cRem.telefone || "",
               destCnpj: first.destCnpj || "",
               destNome: first.dest || "",
-              destCidade: first.destXMun || "",
-              destUF: first.destUF || "",
-              destEndereco: first.destLogradouro || "",
-              destBairro: first.destBairro || "",
-              destCEP: first.destCEP || "",
-              destIE: first.destIE || "",
-              destFone: first.destFone || "",
+              destCidade: first.destXMun || cDst.cidade || "",
+              destUF: first.destUF || cDst.uf || "",
+              destEndereco: first.destLogradouro || cDst.logradouro || "",
+              destBairro: first.destBairro || cDst.bairro || "",
+              destCEP: first.destCEP || (cDst.cep || "").replace(/\D/g, "") || "",
+              destIE: first.destIE || cDst.ie || "",
+              destFone: first.destFone || cDst.telefone || "",
               cfop: f.cfop || "5353",
               naturezaOperacao: "TRANSPORTE INTERESTADUAL - INDUSTRIAL",
               origemCidade: f.xMunIni || "",
