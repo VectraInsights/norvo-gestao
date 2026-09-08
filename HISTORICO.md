@@ -938,7 +938,7 @@ Commits: CF `23c97b0` + Vercel `51938b8`
 - **Backfill via API**: contatos com campos vazios preenchidos dos dados de tomador
   das NF-es importadas (ex: TECNO2000 ← IE 2614310460066, FORMIGA/MG).
 
-Commits: CF `[pendente]` + Vercel `[pendente]`
+Commits: CF `3680c1b` + Vercel `9d1e67e`
 
 ---
 
