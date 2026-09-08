@@ -1010,7 +1010,7 @@ Commits: CF `2dd07ae` + Vercel `b523319`
   Componentes do Valor → Rota.
 - Removido `(toma X)` do título do Tomador.
 
-Commits: CF `[pendente]` + Vercel `[pendente]`
+Commits: CF `d0f118b` + Vercel `d8fa38f`
 
 ---
 
