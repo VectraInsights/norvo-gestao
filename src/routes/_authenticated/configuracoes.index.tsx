@@ -463,29 +463,33 @@ function SeguradorasTab({ empresaId }: { empresaId: string }) {
     <Card className="mt-4 shadow-panel"><CardContent className="p-4">
       <p className="text-xs text-muted-foreground mb-3">Seguradoras e apólices aparecem como opções na aba Transporte do CT-e.</p>
       <div className="mb-3 grid grid-cols-[1.5fr_2fr_1fr_1fr_auto] gap-2">
-        <Input placeholder="Nome *" value={nome} onChange={(e) => setNome(e.target.value)} />
         <Input
-          placeholder="CNPJ"
+          placeholder="CNPJ *"
           value={cnpj}
           onChange={(e) => {
             const formatted = formatCnpj(e.target.value);
             setCnpj(formatted);
-            if (formatted.replace(/\D/g, "").length === 14 && !nome.trim()) lookupCnpj(formatted, setNome);
+            if (formatted.replace(/\D/g, "").length === 14) lookupCnpj(formatted, setNome);
           }}
           disabled={lookingUp}
         />
+        <Input placeholder="Nome / Razão Social *" value={nome} onChange={(e) => setNome(e.target.value)} />
         <Input placeholder="Nº Apólice" value={apolice} onChange={(e) => setApolice(e.target.value)} />
         <Input placeholder="Averbação" value={averbacao} onChange={(e) => setAverbacao(e.target.value)} />
         <Button onClick={add} disabled={lookingUp}><Plus className="mr-1 h-4 w-4" />Adicionar</Button>
       </div>
       <Table>
-        <TableHeader><TableRow><TableHead>Nome</TableHead><TableHead>CNPJ</TableHead><TableHead>Apólice</TableHead><TableHead>Averbação</TableHead><TableHead /></TableRow></TableHeader>
+        <TableHeader><TableRow><TableHead>CNPJ</TableHead><TableHead>Nome</TableHead><TableHead>Apólice</TableHead><TableHead>Averbação</TableHead><TableHead /></TableRow></TableHeader>
         <TableBody>
           {data?.map((r: any) => (
             editingId === r.id ? (
               <TableRow key={r.id}>
+                <TableCell><Input value={editCnpj} onChange={(e) => {
+                  const formatted = formatCnpj(e.target.value);
+                  setEditCnpj(formatted);
+                  if (formatted.replace(/\D/g, "").length === 14) lookupCnpj(formatted, setEditNome);
+                }} className="h-8" /></TableCell>
                 <TableCell><Input value={editNome} onChange={(e) => setEditNome(e.target.value)} className="h-8" /></TableCell>
-                <TableCell><Input value={editCnpj} onChange={(e) => setEditCnpj(formatCnpj(e.target.value))} className="h-8" /></TableCell>
                 <TableCell><Input value={editApolice} onChange={(e) => setEditApolice(e.target.value)} className="h-8" /></TableCell>
                 <TableCell><Input value={editAverbacao} onChange={(e) => setEditAverbacao(e.target.value)} className="h-8" /></TableCell>
                 <TableCell className="text-right gap-1">
@@ -495,8 +499,8 @@ function SeguradorasTab({ empresaId }: { empresaId: string }) {
               </TableRow>
             ) : (
               <TableRow key={r.id}>
-                <TableCell className="font-medium">{r.nome}</TableCell>
                 <TableCell className="text-muted-foreground">{r.cnpj ? formatCnpj(r.cnpj) : "—"}</TableCell>
+                <TableCell className="font-medium">{r.nome}</TableCell>
                 <TableCell>{r.apolice_numero || "—"}</TableCell>
                 <TableCell>{r.averbacao || "—"}</TableCell>
                 <TableCell className="text-right gap-1">
