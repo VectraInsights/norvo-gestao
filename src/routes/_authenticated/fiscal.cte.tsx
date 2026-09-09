@@ -1198,8 +1198,8 @@ function CtePage() {
         if (nt === hs) break;
         hs = nt;
       }
-      // Sempre arredonda para cima em dias cheios (24h): 94,3h vira 96h = 4 dias
-      hs = Math.ceil(hs / 24) * 24;
+      // Sempre arredonda para cima na hora cheia: 94,3h vira 95h
+      hs = Math.ceil(hs);
       setForm(f => ({ ...f, distanciaKm: String(km), duracaoHoras: String(hs) }));
       toast.success("Percurso calculado: " + km + " km (~" + String(hs) + " h)");
     } catch (e) { toast.error((e as Error).message); } finally { setCalculandoPercurso(false); }
