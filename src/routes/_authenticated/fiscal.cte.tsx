@@ -1589,8 +1589,8 @@ function CtePage() {
                 <Card className="p-2">
                   <h5 className="text-xs font-semibold mb-1">Seguro da Carga</h5>
                   <div className="space-y-1">
-                                        <div className="grid grid-cols-3 gap-1">
-                      <div className="col-span-2"><Label className="text-[10px] text-muted-foreground">Seguradora</Label>
+                                        <div className="grid grid-cols-12 gap-1">
+                      <div className="col-span-5"><Label className="text-[10px] text-muted-foreground">Seguradora</Label>
                       <Popover open={seguradoraOpen} onOpenChange={setSeguradoraOpen}>
                         <PopoverTrigger asChild>
                           <Button variant="outline" role="combobox" aria-expanded={seguradoraOpen} className="h-6 text-[10px] justify-between w-full font-normal">
@@ -1619,18 +1619,8 @@ function CtePage() {
                           </Command>
                         </PopoverContent>
                       </Popover></div>
-                      <div><Label className="text-[10px] text-muted-foreground">Apólice</Label><Input className="h-6 text-[10px]" placeholder="Nº Apólice" value={form.apolice} onChange={e => setForm({ ...form, apolice: e.target.value })} /></div>
-                    </div>
-                    <div className="grid grid-cols-6 gap-1">
-                      <div><Label className="text-[10px] text-muted-foreground">Base Seg.</Label><Input className="h-6 text-[10px]" value={form.vCarga} readOnly /></div>
-                      <div><Label className="text-[10px] text-muted-foreground">Valor Doc.</Label><Input className="h-6 text-[10px]" value={form.vCarga} readOnly /></div>
-                      <div><Label className="text-[10px] text-muted-foreground">RCTR-C</Label><Input className="h-6 text-[10px]" placeholder="0.00" /></div>
-                      <div><Label className="text-[10px] text-muted-foreground">RCF-DC</Label><Input className="h-6 text-[10px]" placeholder="0.00" /></div>
-                      <div><Label className="text-[10px] text-muted-foreground">V. Adicional</Label><Input className="h-6 text-[10px]" placeholder="0.00" /></div>
-                      <div className="flex-1"><Label className="text-[10px] text-muted-foreground">Total Seguro</Label><Input className="h-6 text-[10px]" placeholder="0.00" /></div>
-                    </div>
-                    <div className="grid grid-cols-3 gap-1">
-                      <div><Label className="text-[10px] text-muted-foreground">Responsável</Label>
+                      <div className="col-span-3"><Label className="text-[10px] text-muted-foreground">Apólice</Label><Input className="h-6 text-[10px]" placeholder="Nº Apólice" value={form.apolice} onChange={e => setForm({ ...form, apolice: e.target.value })} /></div>
+                    <div className="col-span-2"><Label className="text-[10px] text-muted-foreground">Responsável</Label>
                       <Select defaultValue="4">
                         <SelectTrigger className="h-6 text-[10px]"><SelectValue /></SelectTrigger>
                         <SelectContent>
@@ -1640,9 +1630,17 @@ function CtePage() {
                         </SelectContent>
                       </Select>
                     </div>
-                      <div><Label className="text-[10px] text-muted-foreground">Nº Averbação</Label><Input className="h-6 text-[10px]" placeholder="Nº Averbação" value={form.averbacao} onChange={e => setForm({ ...form, averbacao: e.target.value })} /></div>
-                      <div className="flex items-end pb-1"><label className="flex items-center gap-1 text-[10px] pb-1"><input type="checkbox" /> Repassar</label></div>
+                      <div className="col-span-2"><Label className="text-[10px] text-muted-foreground">Nº Averbação</Label><Input className="h-6 text-[10px]" placeholder="Nº Averbação" value={form.averbacao} onChange={e => setForm({ ...form, averbacao: e.target.value })} /></div>
                     </div>
+                    <div className="grid grid-cols-6 gap-1">
+                      <div><Label className="text-[10px] text-muted-foreground">Base Seg.</Label><Input className="h-6 text-[10px]" value={form.vCarga} readOnly /></div>
+                      <div><Label className="text-[10px] text-muted-foreground">Valor Doc.</Label><Input className="h-6 text-[10px]" value={form.vCarga} readOnly /></div>
+                      <div><Label className="text-[10px] text-muted-foreground">RCTR-C</Label><Input className="h-6 text-[10px]" placeholder="0.00" /></div>
+                      <div><Label className="text-[10px] text-muted-foreground">RCF-DC</Label><Input className="h-6 text-[10px]" placeholder="0.00" /></div>
+                      <div><Label className="text-[10px] text-muted-foreground">V. Adicional</Label><Input className="h-6 text-[10px]" placeholder="0.00" /></div>
+                      <div className="flex items-end gap-1"><div className="flex-1"><Label className="text-[10px] text-muted-foreground">Total Seguro</Label><Input className="h-6 text-[10px]" placeholder="0.00" /></div><label className="flex items-center gap-1 text-[10px] pb-1"><input type="checkbox" /> Repassar</label></div>
+                    </div>
+                    
                   </div>
                 </Card>
 
