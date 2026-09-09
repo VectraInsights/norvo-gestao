@@ -13,7 +13,7 @@ import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
-import { Truck, Plus, FileText, Search, Ban, UploadCloud, FileCode, MapPin, Package, Building2, Trash2, Filter, Calendar, CheckCircle2, ChevronsUpDown, Check, ReceiptText, Pencil, Download, Settings2, X, Loader2, ClipboardList } from "lucide-react";
+import { Truck, Plus, FileText, Search, Ban, UploadCloud, FileCode, MapPin, Package, Building2, Trash2, Filter, Calendar, CheckCircle2, ChevronsUpDown, Check, ReceiptText, Pencil, Download, Settings2, X, Loader2, ClipboardList, Route, Save } from "lucide-react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useEmpresaAtual } from "@/hooks/use-empresa";
@@ -993,6 +993,20 @@ function CtePage() {
 
   const [previewOpen, setPreviewOpen] = useState(false);
   const [previewData, setPreviewData] = useState<{ xml: string; chave: string; proximo: string; ambiente: string; form: any } | null>(null);
+  const [rotaNome, setRotaNome] = useState("");
+  const [rotaSelId, setRotaSelId] = useState("");
+  const rotaAplicadaKey = useRef("");
+  const { data: rotasDB, error: rotasError } = useQuery({
+    enabled: !!empresa,
+    queryKey: ["cte-rotas", empresa?.id],
+    queryFn: async () => {
+      const { data, error } = await supabase.from("cte_rotas" as any).select("*").eq("empresa_id", empresa!.id).order("nome");
+      if (error) throw error;
+      return (data ?? []) as unknown as Array<Record<string, any>>;
+    },
+    retry: false,
+  });
+  const rotas = rotasDB ?? [];
   const previewXml = useMutation({
     mutationFn: async () => {
       if (!empresa) throw new Error("Empresa não selecionada");
@@ -1020,6 +1034,93 @@ function CtePage() {
     onError: (e: Error) => toast.error(e.message),
   });
 
+  // === Rotas: remetente+destino+tomador pré-salvos (autopreenchimento) ===
+  const onlyDigitsRota = (v: any) => String(v || "").replace(/\D/g, "");
+  const docsAtuais = () => {
+    const sel = mercadorias.filter(m => selecionadas.has(m.chave));
+    const a = ((sel.length > 0 ? sel[0] : mercadorias[0]) || {}) as any;
+    return {
+      remDoc: onlyDigitsRota(a.emitCnpj), remNome: a.emit || "",
+      destDoc: onlyDigitsRota(a.destCnpj), destNome: a.dest || "",
+      tomaDoc: onlyDigitsRota(form.cnpjTomador),
+    };
+  };
+  const matchRota = (d: { remDoc: string; destDoc: string; tomaDoc: string }) => {
+    if (!rotas || rotas.length === 0 || !d.tomaDoc) return null;
+    if (d.remDoc && d.destDoc) return rotas.find(r => r.rem_cnpj === d.remDoc && r.dest_cnpj === d.destDoc && r.toma_cnpj === d.tomaDoc) || null;
+    const c = rotas.filter(r => r.toma_cnpj === d.tomaDoc);
+    return c.length === 1 ? c[0] : null;
+  };
+  const aplicarRota = (r: Record<string, any>) => {
+    setForm(f => ({ ...f,
+      toma: r.toma_tipo || f.toma,
+      cnpjTomador: r.toma_cnpj || f.cnpjTomador, xNomeTomador: r.toma_nome || f.xNomeTomador,
+      ieTomador: r.toma_ie || f.ieTomador, ufTomador: r.toma_uf || f.ufTomador,
+      cMunTomador: r.toma_cmun || f.cMunTomador, xMunTomador: r.toma_xmun || f.xMunTomador,
+      logradouroTomador: r.toma_logradouro || f.logradouroTomador, nroTomador: r.toma_nro || f.nroTomador,
+      bairroTomador: r.toma_bairro || f.bairroTomador, cepTomador: r.toma_cep || f.cepTomador,
+      foneTomador: r.toma_fone || f.foneTomador, emailTomador: r.toma_email || f.emailTomador,
+      cMunIni: r.coleta_cmun || f.cMunIni, xMunIni: r.coleta_xmun || f.xMunIni, ufIni: r.coleta_uf || f.ufIni,
+      cMunFim: r.entrega_cmun || f.cMunFim, xMunFim: r.entrega_xmun || f.xMunFim, ufFim: r.entrega_uf || f.ufFim,
+      cfop: r.cfop || f.cfop,
+    }));
+    setRotaSelId(r.id);
+    toast.success("Rota aplicada: " + r.nome);
+  };
+  const salvarRota = async () => {
+    if (!empresa) return;
+    const d = docsAtuais();
+    if (!d.tomaDoc || d.tomaDoc.length !== 14) { toast.error("Informe o tomador (CNPJ com 14 dígitos) para salvar a rota"); return; }
+    const sel = mercadorias.filter(m => selecionadas.has(m.chave));
+    const a = ((sel.length > 0 ? sel[0] : mercadorias[0]) || {}) as any;
+    const nome = (rotaNome.trim() || ((d.remNome || "Origem") + " > " + (d.destNome || "Destino"))).slice(0, 80);
+    const payload = {
+      empresa_id: empresa.id, nome,
+      rem_cnpj: d.remDoc, rem_nome: a.emit || d.remNome || "", rem_ie: a.emitIE || "", rem_uf: a.emitUF || "",
+      rem_cmun: a.emitCMun || "", rem_xmun: a.emitXMun || "", rem_logradouro: a.emitLogradouro || "",
+      rem_nro: "", rem_bairro: a.emitBairro || "", rem_cep: a.emitCEP || "", rem_fone: a.emitFone || "",
+      dest_cnpj: d.destDoc, dest_nome: a.dest || d.destNome || "", dest_ie: a.destIE || "", dest_uf: a.destUF || "",
+      dest_cmun: a.destCMun || "", dest_xmun: a.destXMun || "", dest_logradouro: a.destLogradouro || "",
+      dest_nro: "", dest_bairro: a.destBairro || "", dest_cep: a.destCEP || "", dest_fone: a.destFone || "",
+      toma_tipo: form.toma, toma_cnpj: d.tomaDoc, toma_nome: form.xNomeTomador || "", toma_ie: form.ieTomador || "",
+      toma_uf: form.ufTomador || "", toma_cmun: form.cMunTomador || "", toma_xmun: form.xMunTomador || "",
+      toma_logradouro: form.logradouroTomador || "", toma_nro: form.nroTomador || "", toma_bairro: form.bairroTomador || "",
+      toma_cep: form.cepTomador || "", toma_fone: form.foneTomador || "", toma_email: form.emailTomador || "",
+      coleta_cmun: form.cMunIni || "", coleta_xmun: form.xMunIni || "", coleta_uf: form.ufIni || "",
+      entrega_cmun: form.cMunFim || "", entrega_xmun: form.xMunFim || "", entrega_uf: form.ufFim || "",
+      cfop: form.cfop || "",
+    };
+    const { error } = await supabase.from("cte_rotas" as any).upsert(payload, { onConflict: "empresa_id,rem_cnpj,dest_cnpj,toma_cnpj" });
+    if (error) { toast.error("Falha ao salvar rota: " + error.message); return; }
+    toast.success("Rota salva: " + nome);
+    setRotaNome("");
+    qc.invalidateQueries({ queryKey: ["cte-rotas", empresa.id] });
+  };
+  const excluirRota = async () => {
+    if (!empresa || !rotaSelId) return;
+    const r = rotas.find(x => x.id === rotaSelId);
+    if (!r) return;
+    if (!window.confirm("Excluir a rota " + r.nome + "?")) return;
+    const { error } = await supabase.from("cte_rotas" as any).delete().eq("id", rotaSelId);
+    if (error) { toast.error("Falha ao excluir: " + error.message); return; }
+    toast.success("Rota excluída");
+    setRotaSelId("");
+    qc.invalidateQueries({ queryKey: ["cte-rotas", empresa.id] });
+  };
+  const rotaMatch = matchRota(docsAtuais());
+  useEffect(() => { rotaAplicadaKey.current = ""; }, [open]);
+  useEffect(() => {
+    if (!open || rotas.length === 0) return;
+    const d = docsAtuais();
+    if (!d.tomaDoc || d.tomaDoc.length !== 14) return;
+    const m = matchRota(d);
+    if (!m) return;
+    const key = m.id + "|" + d.remDoc + "|" + d.destDoc + "|" + d.tomaDoc;
+    if (rotaAplicadaKey.current === key) return;
+    rotaAplicadaKey.current = key;
+    aplicarRota(m);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open, form.cnpjTomador, mercadorias, selecionadas, rotas]);
   return (
     <div className="p-6 space-y-4">
       <PageHeader eyebrow="Fiscal" title="CT-e" description="Conhecimento de Transporte Eletrônico (57) — emissão robusta estilo STM, com múltiplas NF-es por CT-e." actions={<Button size="sm" onClick={() => novoCtePreservandoFiscal()}><Plus className="mr-1 h-4 w-4" /> Novo CT-e</Button>} />
@@ -1386,11 +1487,40 @@ function CtePage() {
                 </div>
               </div>
 
-              {mercadorias.length > 0 ? (() => {
+                            <Card className="p-3">
+                <div className="flex items-center gap-2 mb-2">
+                  <div className="h-6 w-6 rounded bg-orange-500/10 grid place-items-center"><Route className="h-3.5 w-3.5 text-orange-600" /></div>
+                  <h5 className="text-xs font-semibold">Rota</h5>
+                  {rotaMatch && <span className="text-[9px] text-emerald-600 font-medium">aplicada: {rotaMatch.nome}</span>}
+                  {rotasError && <span className="text-[9px] text-destructive">Execute a migration 20260909130000_cte_rotas.sql no SQL Editor do Supabase</span>}
+                </div>
+                <div className="flex flex-wrap items-end gap-2">
+                  <div className="flex-1 min-w-52">
+                    <Label className="text-[10px] text-muted-foreground">Rotas salvas</Label>
+                    <Select value={rotaSelId} onValueChange={setRotaSelId}>
+                      <SelectTrigger className="h-7 text-xs"><SelectValue placeholder={rotas.length ? "Selecione para aplicar" : "Nenhuma rota salva"} /></SelectTrigger>
+                      <SelectContent>
+                        {rotas.map(r => <SelectItem key={r.id} value={r.id}>{r.nome}</SelectItem>)}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <Button size="sm" variant="outline" className="h-7 text-xs" disabled={!rotaSelId} onClick={() => { const r = rotas.find(x => x.id === rotaSelId); if (r) { rotaAplicadaKey.current = "manual-" + r.id; aplicarRota(r); } }}>Aplicar</Button>
+                  {rotaSelId && <Button size="icon" variant="ghost" className="h-7 w-7 text-destructive" title="Excluir rota" onClick={excluirRota}><Trash2 className="h-3.5 w-3.5" /></Button>}
+                  <div className="flex-1 min-w-52">
+                    <Label className="text-[10px] text-muted-foreground">Nome da nova rota</Label>
+                    <Input className="h-7 text-xs" placeholder="Ex: TECNO - CHICO" value={rotaNome} onChange={e => setRotaNome(e.target.value)} />
+                  </div>
+                  <Button size="sm" className="h-7 text-xs" onClick={salvarRota}><Save className="mr-1 h-3 w-3" /> Salvar rota atual</Button>
+                </div>
+                <p className="text-[9px] text-muted-foreground mt-1">Ao puxar um XML ou digitar o tomador com remetente, destino e tomador iguais aos de uma rota salva, os dados entram automaticamente.</p>
+              </Card>
+{mercadorias.length > 0 ? (() => {
                 const sel = mercadorias.filter(m => selecionadas.has(m.chave));
                 const active = sel.length > 0 ? sel[0] : mercadorias[0];
-                const cEmit = contatoByDoc.get((active.emitCnpj || "").replace(/\D/g, "")) || {};
-                const cDest = contatoByDoc.get((active.destCnpj || "").replace(/\D/g, "")) || {};
+                const rotaRem = rotaMatch && (rotaMatch.rem_cnpj || "") === (active.emitCnpj || "").replace(/\D/g, "") && rotaMatch.rem_nome ? { ie: rotaMatch.rem_ie || "", logradouro: rotaMatch.rem_logradouro || "", numero: rotaMatch.rem_nro || "", bairro: rotaMatch.rem_bairro || "", cidade: rotaMatch.rem_xmun || "", uf: rotaMatch.rem_uf || "", cep: rotaMatch.rem_cep || "", telefone: rotaMatch.rem_fone || "" } : null;
+                const cEmit = contatoByDoc.get((active.emitCnpj || "").replace(/\D/g, "")) || rotaRem || {};
+                const rotaDes = rotaMatch && (rotaMatch.dest_cnpj || "") === (active.destCnpj || "").replace(/\D/g, "") && rotaMatch.dest_nome ? { ie: rotaMatch.dest_ie || "", logradouro: rotaMatch.dest_logradouro || "", numero: rotaMatch.dest_nro || "", bairro: rotaMatch.dest_bairro || "", cidade: rotaMatch.dest_xmun || "", uf: rotaMatch.dest_uf || "", cep: rotaMatch.dest_cep || "", telefone: rotaMatch.dest_fone || "" } : null;
+                const cDest = contatoByDoc.get((active.destCnpj || "").replace(/\D/g, "")) || rotaDes || {};
                 const emitIE = active.emitIE || cEmit.ie || "";
                 const emitLgr = active.emitLogradouro || cEmit.logradouro || "";
                 const emitNro = cEmit.numero || "";
@@ -1737,6 +1867,7 @@ function CtePage() {
                             </Command>
                           </PopoverContent>
                         </Popover>
+                        {form.placaVeiculo ? (<button type="button" className="mt-0.5 text-[9px] text-muted-foreground underline" onClick={() => setForm(f => ({ ...f, placaVeiculo: "" }))}>limpar</button>) : null}
                       </div>
                       <div><Label className="text-[10px] text-muted-foreground">Reboque 1</Label>
                         <Popover open={veiculoOpen === "semi1"} onOpenChange={v => { setVeiculoOpen(v ? "semi1" : null); if (v) setVeiculoQuery(""); }}>
@@ -1778,6 +1909,7 @@ function CtePage() {
                             </Command>
                           </PopoverContent>
                         </Popover>
+                        {form.semiReboque1 ? (<button type="button" className="mt-0.5 text-[9px] text-muted-foreground underline" onClick={() => setForm(f => ({ ...f, semiReboque1: "" }))}>limpar</button>) : null}
                       </div>
                       <div><Label className="text-[10px] text-muted-foreground">Reboque 2</Label>
                         <Popover open={veiculoOpen === "semi2"} onOpenChange={v => { setVeiculoOpen(v ? "semi2" : null); if (v) setVeiculoQuery(""); }}>
@@ -1819,6 +1951,7 @@ function CtePage() {
                             </Command>
                           </PopoverContent>
                         </Popover>
+                        {form.semiReboque2 ? (<button type="button" className="mt-0.5 text-[9px] text-muted-foreground underline" onClick={() => setForm(f => ({ ...f, semiReboque2: "" }))}>limpar</button>) : null}
                       </div>
                     </div>
                     <label className="flex items-center gap-1 text-[10px]"><input type="checkbox" /> Possui Segundo Motorista</label>
