@@ -1830,10 +1830,10 @@ function CtePage() {
               <Card className="p-2">
                 <h5 className="text-xs font-semibold mb-1">Forma de Pagamento do Pedágio</h5>
                 <div className="flex flex-wrap gap-3 text-[10px]">
-                  <label className="flex items-center gap-1"><input type="radio" name="pedagio_pagto" defaultChecked /> Free Flow</label>
+                  <label className="flex items-center gap-1"><input type="radio" name="pedagio_pagto" /> Free Flow</label>
                   <label className="flex items-center gap-1"><input type="radio" name="pedagio_pagto" /> TAG Transportador</label>
                   <label className="flex items-center gap-1"><input type="radio" name="pedagio_pagto" /> TAG Tomador</label>
-                  <label className="flex items-center gap-1"><input type="radio" name="pedagio_pagto" /> Sem Pagto Pedágio</label>
+                  <label className="flex items-center gap-1"><input type="radio" name="pedagio_pagto" defaultChecked /> Sem Pagamento de Pedágio</label>
                 </div>
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-1 mt-1">
                   <div><Label className="text-[10px] text-muted-foreground">Operadora</Label><Input className="h-6 text-[11px]" placeholder="Ex: SEM PARAR" /></div>
