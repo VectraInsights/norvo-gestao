@@ -1814,7 +1814,7 @@ function CtePage() {
               {/* Pedágio / Taxas / Despesas Acessórias (ex-aba Taxas) */}
               <Card className="p-2">
                 <h5 className="text-xs font-semibold mb-1">Componentes do Frete</h5>
-                <div className="grid grid-cols-2 md:grid-cols-5 gap-1">
+                <div className="grid grid-cols-4 md:grid-cols-8 gap-1">
                   <div><Label className="text-[10px] text-muted-foreground">Valor Serviço</Label><MoneyInput className="h-6 text-[11px] font-medium" value={form.vPrest} onChange={v => setForm(f => ({ ...f, vPrest: v }))} /></div>
                   <div><Label className="text-[10px] text-muted-foreground">Adicional</Label><MoneyInput className="h-6 text-[11px] font-medium" value={form.adicionalPed} onChange={v => setForm(f => ({ ...f, adicionalPed: v }))} /></div>
                   <div><Label className="text-[10px] text-muted-foreground">Desconto</Label><MoneyInput className="h-6 text-[11px] font-medium" value={form.descontoPed} onChange={v => setForm(f => ({ ...f, descontoPed: v }))} /></div>
