@@ -1686,8 +1686,8 @@ function CtePage() {
                       <div><Label className="text-[10px] text-muted-foreground">CIOT</Label><Input className="h-6 text-[10px]" placeholder="Nº CIOT" /></div>
                       <div><Label className="text-[10px] text-muted-foreground">% Agregados</Label><Input className="h-6 text-[10px]" placeholder="0.00" /></div>
                     </div>
-                    <div className="grid grid-cols-2 gap-1">
-                      <div><Label className="text-[10px] text-muted-foreground">Placa Veículo</Label>
+                    <div className="grid grid-cols-3 gap-1">
+                      <div><Label className="text-[10px] text-muted-foreground">Cavalo</Label>
                         <Popover open={veiculoOpen === "placaVeiculo"} onOpenChange={v => { setVeiculoOpen(v ? "placaVeiculo" : null); if (v) setVeiculoQuery(""); }}>
                           <PopoverTrigger asChild>
                             <Button variant="outline" role="combobox" aria-expanded={veiculoOpen === "placaVeiculo"} className="h-6 text-[10px] justify-between w-full font-mono uppercase font-normal">
@@ -1728,50 +1728,7 @@ function CtePage() {
                           </PopoverContent>
                         </Popover>
                       </div>
-                      <div><Label className="text-[10px] text-muted-foreground">Placa Reboque</Label>
-                        <Popover open={veiculoOpen === "placaReboque"} onOpenChange={v => { setVeiculoOpen(v ? "placaReboque" : null); if (v) setVeiculoQuery(""); }}>
-                          <PopoverTrigger asChild>
-                            <Button variant="outline" role="combobox" aria-expanded={veiculoOpen === "placaReboque"} className="h-6 text-[10px] justify-between w-full font-mono uppercase font-normal">
-                              <span className="truncate">{form.placaReboque || "Selecione placa"}</span>
-                              <ChevronsUpDown className="ml-2 h-3 w-3 shrink-0 opacity-50" />
-                            </Button>
-                          </PopoverTrigger>
-                          <PopoverContent className="w-[320px] p-0" align="start">
-                            <Command shouldFilter={false}>
-                              <CommandInput placeholder="Buscar placa..." value={veiculoQuery} onValueChange={setVeiculoQuery} />
-                              <CommandList>
-                                <CommandEmpty>{veiculos?.length ? "Nenhum reboque encontrado." : "Nenhum veículo cadastrado."}</CommandEmpty>
-                                <CommandGroup>
-                                  {(veiculos ?? []).filter(v => {
-                                    const tipo = (v.tipo || "").toLowerCase();
-                                    const isReboque = tipo.includes("carreta") || tipo.includes("bitrem") || tipo.includes("semi");
-                                    if (!isReboque) return false;
-                                    if (!veiculoQuery) return true;
-                                    const q = veiculoQuery.toLowerCase();
-                                    return v.placa.toLowerCase().includes(q) || (v.marca_modelo || "").toLowerCase().includes(q);
-                                  }).map(v => (
-                                    <CommandItem key={v.id} value={v.placa} onSelect={() => { setForm(f => ({ ...f, placaReboque: v.placa.toUpperCase() })); setVeiculoOpen(null); setVeiculoQuery(""); }}>
-                                      <Check className={"mr-2 h-3 w-3 " + (form.placaReboque === v.placa ? "opacity-100" : "opacity-0")} />
-                                      <div className="flex flex-col"><span className="text-xs font-mono">{v.placa}</span><span className="text-[10px] text-muted-foreground">{v.marca_modelo || v.tipo || ""}</span></div>
-                                    </CommandItem>
-                                  ))}
-                                  {veiculoQuery && !(veiculos ?? []).some(v => {
-                                    const tipo = (v.tipo || "").toLowerCase();
-                                    return (tipo.includes("carreta") || tipo.includes("bitrem") || tipo.includes("semi")) && v.placa.toLowerCase() === veiculoQuery.toLowerCase();
-                                  }) && (
-                                    <CommandItem value={veiculoQuery} onSelect={() => { setForm(f => ({ ...f, placaReboque: veiculoQuery.toUpperCase() })); setVeiculoOpen(null); setVeiculoQuery(""); }}>
-                                      Usar &quot;{veiculoQuery.toUpperCase()}&quot;
-                                    </CommandItem>
-                                  )}
-                                </CommandGroup>
-                              </CommandList>
-                            </Command>
-                          </PopoverContent>
-                        </Popover>
-                      </div>
-                    </div>
-                    <div className="grid grid-cols-2 gap-1">
-                      <div><Label className="text-[10px] text-muted-foreground">Semi Reboque 1</Label>
+                      <div><Label className="text-[10px] text-muted-foreground">Reboque 1</Label>
                         <Popover open={veiculoOpen === "semi1"} onOpenChange={v => { setVeiculoOpen(v ? "semi1" : null); if (v) setVeiculoQuery(""); }}>
                           <PopoverTrigger asChild>
                             <Button variant="outline" role="combobox" aria-expanded={veiculoOpen === "semi1"} className="h-6 text-[10px] justify-between w-full font-mono uppercase font-normal">
@@ -1812,7 +1769,7 @@ function CtePage() {
                           </PopoverContent>
                         </Popover>
                       </div>
-                      <div><Label className="text-[10px] text-muted-foreground">Semi Reboque 2</Label>
+                      <div><Label className="text-[10px] text-muted-foreground">Reboque 2</Label>
                         <Popover open={veiculoOpen === "semi2"} onOpenChange={v => { setVeiculoOpen(v ? "semi2" : null); if (v) setVeiculoQuery(""); }}>
                           <PopoverTrigger asChild>
                             <Button variant="outline" role="combobox" aria-expanded={veiculoOpen === "semi2"} className="h-6 text-[10px] justify-between w-full font-mono uppercase font-normal">
