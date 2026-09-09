@@ -1185,7 +1185,8 @@ function CtePage() {
       const rt = j?.routes?.[0];
       if (!rt) throw new Error("Rota rodoviária não encontrada");
       const km = Math.round(rt.distance / 1000);
-      const hs = Math.round((rt.duration / 3600) * 10) / 10;
+      // Média operacional 50 km/h (já embute os descansos regulamentares do motorista)
+      const hs = Math.round((km / 50) * 10) / 10;
       setForm(f => ({ ...f, distanciaKm: String(km), duracaoHoras: String(hs) }));
       toast.success("Percurso calculado: " + km + " km (~" + String(hs) + " h)");
     } catch (e) { toast.error((e as Error).message); } finally { setCalculandoPercurso(false); }
