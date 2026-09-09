@@ -1580,13 +1580,13 @@ function CtePage() {
             {/* === TAB: Seguros/Veículos === */}
             <TabsContent value="seguros" className="mt-3 space-y-3">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                <Card className="p-3">
-                  <h5 className="text-xs font-semibold mb-2">Seguro da Carga</h5>
-                  <div className="space-y-2">
+                <Card className="p-2">
+                  <h5 className="text-xs font-semibold mb-1">Seguro da Carga</h5>
+                  <div className="space-y-1.5">
                     <div><Label className="text-[10px] text-muted-foreground">Seguradora</Label>
                       <Popover open={seguradoraOpen} onOpenChange={setSeguradoraOpen}>
                         <PopoverTrigger asChild>
-                          <Button variant="outline" role="combobox" aria-expanded={seguradoraOpen} className="h-7 text-xs justify-between w-full font-normal">
+                          <Button variant="outline" role="combobox" aria-expanded={seguradoraOpen} className="h-6 text-[10px] justify-between w-full font-normal">
                             <span className="truncate">{form.seguradoraNome || "Selecione seguradora"}</span>
                             <ChevronsUpDown className="ml-2 h-3 w-3 shrink-0 opacity-50" />
                           </Button>
@@ -1613,25 +1613,25 @@ function CtePage() {
                         </PopoverContent>
                       </Popover>
                     </div>
-                    <div className="grid grid-cols-2 gap-2">
-                      <div><Label className="text-[10px] text-muted-foreground">Apólice</Label><Input className="h-7 text-xs" placeholder="Nº Apólice" value={form.apolice} onChange={e => setForm({ ...form, apolice: e.target.value })} /></div>
-                      <div><Label className="text-[10px] text-muted-foreground">Base Calc. Seg.</Label><Input className="h-7 text-xs" value={form.vCarga} readOnly /></div>
+                    <div className="grid grid-cols-2 gap-1">
+                      <div><Label className="text-[10px] text-muted-foreground">Apólice</Label><Input className="h-6 text-[10px]" placeholder="Nº Apólice" value={form.apolice} onChange={e => setForm({ ...form, apolice: e.target.value })} /></div>
+                      <div><Label className="text-[10px] text-muted-foreground">Base Calc. Seg.</Label><Input className="h-6 text-[10px]" value={form.vCarga} readOnly /></div>
                     </div>
-                    <div className="grid grid-cols-3 gap-2">
-                      <div><Label className="text-[10px] text-muted-foreground">Valor Doc.</Label><Input className="h-7 text-xs" value={form.vCarga} readOnly /></div>
-                      <div><Label className="text-[10px] text-muted-foreground">RCTR-C</Label><Input className="h-7 text-xs" placeholder="0.00" /></div>
-                      <div><Label className="text-[10px] text-muted-foreground">RCF-DC</Label><Input className="h-7 text-xs" placeholder="0.00" /></div>
+                    <div className="grid grid-cols-3 gap-1">
+                      <div><Label className="text-[10px] text-muted-foreground">Valor Doc.</Label><Input className="h-6 text-[10px]" value={form.vCarga} readOnly /></div>
+                      <div><Label className="text-[10px] text-muted-foreground">RCTR-C</Label><Input className="h-6 text-[10px]" placeholder="0.00" /></div>
+                      <div><Label className="text-[10px] text-muted-foreground">RCF-DC</Label><Input className="h-6 text-[10px]" placeholder="0.00" /></div>
                     </div>
-                    <div className="grid grid-cols-2 gap-2">
-                      <div><Label className="text-[10px] text-muted-foreground">Valor Adicional</Label><Input className="h-7 text-xs" placeholder="0.00" /></div>
-                      <div className="flex items-end gap-2">
-                        <div className="flex-1"><Label className="text-[10px] text-muted-foreground">Total Seguro</Label><Input className="h-7 text-xs" placeholder="0.00" /></div>
+                    <div className="grid grid-cols-2 gap-1">
+                      <div><Label className="text-[10px] text-muted-foreground">Valor Adicional</Label><Input className="h-6 text-[10px]" placeholder="0.00" /></div>
+                      <div className="flex items-end gap-1">
+                        <div className="flex-1"><Label className="text-[10px] text-muted-foreground">Total Seguro</Label><Input className="h-6 text-[10px]" placeholder="0.00" /></div>
                         <label className="flex items-center gap-1 text-[10px] pb-1"><input type="checkbox" /> Repassar</label>
                       </div>
                     </div>
                     <div><Label className="text-[10px] text-muted-foreground">Responsável</Label>
                       <Select defaultValue="4">
-                        <SelectTrigger className="h-7 text-xs"><SelectValue /></SelectTrigger>
+                        <SelectTrigger className="h-6 text-[10px]"><SelectValue /></SelectTrigger>
                         <SelectContent>
                           {RESPONSAVEL_CTE_OPTIONS.map(opt => (
                             <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>
@@ -1639,17 +1639,17 @@ function CtePage() {
                         </SelectContent>
                       </Select>
                     </div>
-                    <div><Label className="text-[10px] text-muted-foreground">Nº Averbação</Label><Input className="h-7 text-xs" placeholder="Nº Averbação (opcional)" value={form.averbacao} onChange={e => setForm({ ...form, averbacao: e.target.value })} /></div>
+                    <div><Label className="text-[10px] text-muted-foreground">Nº Averbação</Label><Input className="h-6 text-[10px]" placeholder="Nº Averbação" value={form.averbacao} onChange={e => setForm({ ...form, averbacao: e.target.value })} /></div>
                   </div>
                 </Card>
 
-                <Card className="p-3">
-                  <h5 className="text-xs font-semibold mb-2">Dados do Veículo / Motorista</h5>
-                  <div className="space-y-2">
+                <Card className="p-2">
+                  <h5 className="text-xs font-semibold mb-1">Dados do Veículo / Motorista</h5>
+                  <div className="space-y-1.5">
                     <div><Label className="text-[10px] text-muted-foreground">Nome Motorista</Label>
                       <Popover open={motoristaOpen} onOpenChange={setMotoristaOpen}>
                         <PopoverTrigger asChild>
-                          <Button variant="outline" role="combobox" aria-expanded={motoristaOpen} className="h-7 text-xs justify-between w-full font-normal">
+                          <Button variant="outline" role="combobox" aria-expanded={motoristaOpen} className="h-6 text-[10px] justify-between w-full font-normal">
                             <span className="truncate">{form.motoristaNome || "Selecione motorista"}</span>
                             <ChevronsUpDown className="ml-2 h-3 w-3 shrink-0 opacity-50" />
                           </Button>
@@ -1676,15 +1676,15 @@ function CtePage() {
                         </PopoverContent>
                       </Popover>
                     </div>
-                    <div className="grid grid-cols-2 gap-2">
-                      <div><Label className="text-[10px] text-muted-foreground">CIOT</Label><Input className="h-7 text-xs" placeholder="Nº CIOT" /></div>
-                      <div><Label className="text-[10px] text-muted-foreground">% Agregados</Label><Input className="h-7 text-xs" placeholder="0.00" /></div>
+                    <div className="grid grid-cols-2 gap-1">
+                      <div><Label className="text-[10px] text-muted-foreground">CIOT</Label><Input className="h-6 text-[10px]" placeholder="Nº CIOT" /></div>
+                      <div><Label className="text-[10px] text-muted-foreground">% Agregados</Label><Input className="h-6 text-[10px]" placeholder="0.00" /></div>
                     </div>
-                    <div className="grid grid-cols-2 gap-2">
+                    <div className="grid grid-cols-2 gap-1">
                       <div><Label className="text-[10px] text-muted-foreground">Placa Veículo</Label>
                         <Popover open={veiculoOpen === "placaVeiculo"} onOpenChange={v => { setVeiculoOpen(v ? "placaVeiculo" : null); if (v) setVeiculoQuery(""); }}>
                           <PopoverTrigger asChild>
-                            <Button variant="outline" role="combobox" aria-expanded={veiculoOpen === "placaVeiculo"} className="h-7 text-xs justify-between w-full font-mono uppercase font-normal">
+                            <Button variant="outline" role="combobox" aria-expanded={veiculoOpen === "placaVeiculo"} className="h-6 text-[10px] justify-between w-full font-mono uppercase font-normal">
                               <span className="truncate">{form.placaVeiculo || "ABC-1234"}</span>
                               <ChevronsUpDown className="ml-2 h-3 w-3 shrink-0 opacity-50" />
                             </Button>
@@ -1725,7 +1725,7 @@ function CtePage() {
                       <div><Label className="text-[10px] text-muted-foreground">Placa Reboque</Label>
                         <Popover open={veiculoOpen === "placaReboque"} onOpenChange={v => { setVeiculoOpen(v ? "placaReboque" : null); if (v) setVeiculoQuery(""); }}>
                           <PopoverTrigger asChild>
-                            <Button variant="outline" role="combobox" aria-expanded={veiculoOpen === "placaReboque"} className="h-7 text-xs justify-between w-full font-mono uppercase font-normal">
+                            <Button variant="outline" role="combobox" aria-expanded={veiculoOpen === "placaReboque"} className="h-6 text-[10px] justify-between w-full font-mono uppercase font-normal">
                               <span className="truncate">{form.placaReboque || "ABC-1234"}</span>
                               <ChevronsUpDown className="ml-2 h-3 w-3 shrink-0 opacity-50" />
                             </Button>
@@ -1764,11 +1764,11 @@ function CtePage() {
                         </Popover>
                       </div>
                     </div>
-                    <div className="grid grid-cols-2 gap-2">
+                    <div className="grid grid-cols-2 gap-1">
                       <div><Label className="text-[10px] text-muted-foreground">Semi Reboque 1</Label>
                         <Popover open={veiculoOpen === "semi1"} onOpenChange={v => { setVeiculoOpen(v ? "semi1" : null); if (v) setVeiculoQuery(""); }}>
                           <PopoverTrigger asChild>
-                            <Button variant="outline" role="combobox" aria-expanded={veiculoOpen === "semi1"} className="h-7 text-xs justify-between w-full font-mono uppercase font-normal">
+                            <Button variant="outline" role="combobox" aria-expanded={veiculoOpen === "semi1"} className="h-6 text-[10px] justify-between w-full font-mono uppercase font-normal">
                               <span className="truncate">{form.semiReboque1 || "ABC-1234"}</span>
                               <ChevronsUpDown className="ml-2 h-3 w-3 shrink-0 opacity-50" />
                             </Button>
@@ -1809,7 +1809,7 @@ function CtePage() {
                       <div><Label className="text-[10px] text-muted-foreground">Semi Reboque 2</Label>
                         <Popover open={veiculoOpen === "semi2"} onOpenChange={v => { setVeiculoOpen(v ? "semi2" : null); if (v) setVeiculoQuery(""); }}>
                           <PopoverTrigger asChild>
-                            <Button variant="outline" role="combobox" aria-expanded={veiculoOpen === "semi2"} className="h-7 text-xs justify-between w-full font-mono uppercase font-normal">
+                            <Button variant="outline" role="combobox" aria-expanded={veiculoOpen === "semi2"} className="h-6 text-[10px] justify-between w-full font-mono uppercase font-normal">
                               <span className="truncate">{form.semiReboque2 || "ABC-1234"}</span>
                               <ChevronsUpDown className="ml-2 h-3 w-3 shrink-0 opacity-50" />
                             </Button>
@@ -1848,7 +1848,7 @@ function CtePage() {
                         </Popover>
                       </div>
                     </div>
-                    <label className="flex items-center gap-2 text-[10px]"><input type="checkbox" /> Possui Segundo Motorista</label>
+                    <label className="flex items-center gap-1 text-[10px]"><input type="checkbox" /> Possui Segundo Motorista</label>
                   </div>
                 </Card>
               </div>
