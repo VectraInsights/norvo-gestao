@@ -13,7 +13,7 @@ import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
-import { Truck, Plus, FileText, Search, Ban, UploadCloud, FileCode, MapPin, Package, Building2, Trash2, Filter, Calendar, CheckCircle2, ChevronsUpDown, Check, ReceiptText, Pencil, Download, Settings2, X, Loader2, ClipboardList, Route as RouteIcon, Save } from "lucide-react";
+import { Truck, Plus, FileText, Search, Ban, UploadCloud, FileCode, MapPin, Package, Building2, Trash2, Filter, Calendar, CheckCircle2, ChevronsUpDown, Check, ReceiptText, Pencil, Download, Settings2, X, Loader2, ClipboardList, Route as RouteIcon, Save, Calculator } from "lucide-react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useEmpresaAtual } from "@/hooks/use-empresa";
@@ -996,6 +996,7 @@ function CtePage() {
   const [percursoNome, setPercursoNome] = useState("");
   const [percursoSelId, setPercursoSelId] = useState("");
   const percursoAplicadoKey = useRef("");
+  const [calculandoPercurso, setCalculandoPercurso] = useState(false);
   const { data: percursosDB, error: percursosError } = useQuery({
     enabled: !!empresa,
     queryKey: ["cte-percursos", empresa?.id],
@@ -1154,6 +1155,40 @@ function CtePage() {
     toast.success("Percurso excluído");
     setPercursoSelId("");
     qc.invalidateQueries({ queryKey: ["cte-percursos", empresa.id] });
+  };
+  const calcularDistanciaPercurso = async () => {
+    const sel = mercadorias.filter(m => selecionadas.has(m.chave));
+    const a = ((sel.length > 0 ? sel[0] : mercadorias[0]) || {}) as any;
+    const doc = (c: any) => String(c || "").replace(/\D/g, "");
+    const cEmit = contatoByDoc.get(doc(a.emitCnpj)) || {};
+    const cDest = contatoByDoc.get(doc(a.destCnpj)) || {};
+    const m = percursoMatch;
+    const cepO = (a.emitCEP || (cEmit as any).cep || (m && (m as any).rem_cep) || "").replace(/\D/g, "");
+    const cepD = (a.destCEP || (cDest as any).cep || (m && (m as any).dest_cep) || "").replace(/\D/g, "");
+    if (cepO.length !== 8 || cepD.length !== 8) { toast.error("Informe os CEPs do remetente e do destinatário para calcular a distância"); return; }
+    setCalculandoPercurso(true);
+    try {
+      const geo = async (cep: string) => {
+        const r = await fetch("https://brasilapi.com.br/api/cep/v2/" + cep);
+        if (!r.ok) throw new Error("CEP " + cep + " não encontrado");
+        const j = await r.json();
+        const co = j?.location?.coordinates;
+        const lat = co?.latitude ?? (Array.isArray(co) ? co[1] : null);
+        const lng = co?.longitude ?? (Array.isArray(co) ? co[0] : null);
+        if (lat == null || lng == null) throw new Error("CEP " + cep + " sem coordenadas");
+        return { lat, lng };
+      };
+      const [o, d] = await Promise.all([geo(cepO), geo(cepD)]);
+      const r = await fetch("https://router.project-osrm.org/route/v1/driving/" + o.lng + "," + o.lat + ";" + d.lng + "," + d.lat + "?overview=false");
+      if (!r.ok) throw new Error("Falha no cálculo da rota (OSRM)");
+      const j = await r.json();
+      const rt = j?.routes?.[0];
+      if (!rt) throw new Error("Rota rodoviária não encontrada");
+      const km = Math.round(rt.distance / 1000);
+      const hs = Math.round((rt.duration / 3600) * 10) / 10;
+      setForm(f => ({ ...f, distanciaKm: String(km), duracaoHoras: String(hs) }));
+      toast.success("Percurso calculado: " + km + " km (~" + String(hs) + " h)");
+    } catch (e) { toast.error((e as Error).message); } finally { setCalculandoPercurso(false); }
   };
   const percursoMatch = matchPercurso(docsAtuais());
   useEffect(() => { percursoAplicadoKey.current = ""; }, [open]);
@@ -1566,6 +1601,7 @@ function CtePage() {
                     <Label className="text-[10px] text-muted-foreground">Duração h</Label>
                     <Input className="h-7 text-xs" placeholder="0" value={form.duracaoHoras || ""} onChange={e => setForm({ ...form, duracaoHoras: e.target.value })} />
                   </div>
+                  <Button size="sm" variant="outline" className="h-7 text-xs" disabled={calculandoPercurso} onClick={calcularDistanciaPercurso} title="Calcular distância e duração pelos CEPs de coleta e entrega">{calculandoPercurso ? <Loader2 className="mr-1 h-3 w-3 animate-spin" /> : <Calculator className="mr-1 h-3 w-3" />} Calcular</Button>
                   <Button size="sm" className="h-7 text-xs" onClick={salvarPercurso}><Save className="mr-1 h-3 w-3" /> Salvar percurso atual</Button>
                 </div>
                 <p className="text-[9px] text-muted-foreground mt-1">Ao puxar um XML ou digitar o tomador com remetente, destino e tomador iguais aos de um percurso salvo, os dados entram automaticamente.</p>
