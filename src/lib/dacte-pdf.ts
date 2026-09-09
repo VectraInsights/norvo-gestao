@@ -62,6 +62,9 @@ interface DacteData {
   placa: string;
   placaReboque: string;
   rntrc: string;
+  seguradoraNome?: string;
+  apolice?: string;
+  averbacao?: string;
   obs: string;
   naturezaOperacao?: string;
   origemCidade?: string;
@@ -541,6 +544,20 @@ export function gerarDactePdf(data: DacteData): Blob {
   y += 8;
 
   // ═══════════════════════════════════════════════════
+  // DADOS DO SEGURO DA CARGA
+  sectionTitle(M, y, CW, "DADOS DO SEGURO DA CARGA");
+  y += 5;
+  drawBox(M, y, CW, 10);
+  setFont("bold", 4.5);
+  doc.text("SEGURADORA", M + 2, y + 3);
+  doc.text("APOLICE", M + 85, y + 3);
+  doc.text("AVERBACAO", M + 145, y + 3);
+  setFont("normal", 6);
+  doc.text((data.seguradoraNome || "-").slice(0, 45), M + 2, y + 7.5);
+  doc.text(data.apolice || "-", M + 85, y + 7.5);
+  doc.text(data.averbacao || "-", M + 145, y + 7.5);
+  y += 11;
+
   // USO EXCLUSIVO | RESERVADO AO FISCO
   // ═══════════════════════════════════════════════════
   const usoH = 16;
