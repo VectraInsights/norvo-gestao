@@ -1091,7 +1091,6 @@ function CtePage() {
       ...(r.obs_gerais ? { obsGerais: r.obs_gerais } : {}),
     }));
     setPercursoSelId(r.id);
-    toast.success("Percurso aplicado: " + r.nome);
   };
   const salvarPercurso = async () => {
     if (!empresa) return;
