@@ -1185,10 +1185,20 @@ function CtePage() {
       const rt = j?.routes?.[0];
       if (!rt) throw new Error("Rota rodoviária não encontrada");
       const km = Math.round(rt.distance / 1000);
-      // Média operacional 50 km/h (já embute os descansos regulamentares do motorista)
-      const hs = Math.round((km / 50) * 10) / 10;
+      // Direção pura a 50 km/h + descansos Lei 13.103/2015: 30min a cada 5h30 dirigidas,
+      // 11h de descanso diário a cada 24h e 35h semanais a cada 6 dias (144h)
+      const dirigindo = km / 50;
+      const pausas = 0.5 * Math.floor(dirigindo / 5.5);
+      let hs = dirigindo + pausas;
+      for (let i = 0; i < 5; i++) {
+        const nt = dirigindo + pausas + 11 * Math.floor(hs / 24) + 35 * Math.floor(hs / 144);
+        if (nt === hs) break;
+        hs = nt;
+      }
+      hs = Math.round(hs * 10) / 10;
+      const dh = Math.round(dirigindo * 10) / 10;
       setForm(f => ({ ...f, distanciaKm: String(km), duracaoHoras: String(hs) }));
-      toast.success("Percurso calculado: " + km + " km (~" + String(hs) + " h)");
+      toast.success("Percurso calculado: " + km + " km — " + String(dh) + " h dirigindo + descansos = " + String(hs) + " h totais");
     } catch (e) { toast.error((e as Error).message); } finally { setCalculandoPercurso(false); }
   };
   const percursoMatch = matchPercurso(docsAtuais());
