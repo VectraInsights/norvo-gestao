@@ -1862,8 +1862,6 @@ function CtePage() {
                   <div><Label className="text-[10px] text-muted-foreground">Adicional</Label><Input className="h-7 text-xs" placeholder="0.00" value={form.adicionalPed || ""} onChange={e=>setForm({...form, adicionalPed: e.target.value})} /></div>
                   <div><Label className="text-[10px] text-muted-foreground">Desconto</Label><Input className="h-7 text-xs" placeholder="0.00" value={form.descontoPed || ""} onChange={e=>setForm({...form, descontoPed: e.target.value})} /></div>
                   <div><Label className="text-[10px] text-muted-foreground">Outros</Label><Input className="h-7 text-xs" placeholder="0.00" value={form.outrosPed || ""} onChange={e=>setForm({...form, outrosPed: e.target.value})} /></div>
-                  <div><Label className="text-[10px] text-muted-foreground">Total Mercadorias</Label><Input className="h-7 text-xs" value={form.vCarga} readOnly /></div>
-                
                   <div><Label className="text-[10px] text-muted-foreground">Ad Valorem</Label><Input className="h-7 text-xs" placeholder="0.00" value={form.adValorem || ""} onChange={e=>setForm({...form, adValorem: e.target.value})} /></div>
                   <div><Label className="text-[10px] text-muted-foreground">GRIS</Label><Input className="h-7 text-xs" placeholder="0.00" value={form.gris || ""} onChange={e=>setForm({...form, gris: e.target.value})} /></div>
                   <div><Label className="text-[10px] text-muted-foreground">Taxa Coleta</Label><Input className="h-7 text-xs" placeholder="0.00" value={form.taxaColeta || ""} onChange={e=>setForm({...form, taxaColeta: e.target.value})} /></div>
