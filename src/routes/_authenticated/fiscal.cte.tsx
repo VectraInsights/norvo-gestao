@@ -1247,7 +1247,7 @@ function CtePage() {
         </Tabs>
       )}
       <Dialog open={open} onOpenChange={setOpen}>
-        <DialogContent className="max-w-[calc(100vw-2rem)] w-full max-h-[92vh] overflow-y-auto">
+        <DialogContent className="w-screen h-screen max-w-none max-h-none m-0 rounded-none overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2"><Truck className="h-5 w-5 text-primary" /> Conhecimento de Transporte Avulso</DialogTitle>
             <p className="text-sm text-muted-foreground">Emissão de CT-e (57) — versão 4.00 via mTLS SEFAZ.</p>
