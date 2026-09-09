@@ -1643,9 +1643,9 @@ function CtePage() {
                   </div>
                 </Card>
 
-                <Card className="p-2">
+                <Card className="p-2 flex flex-col">
                   <h5 className="text-xs font-semibold mb-1">Dados do Veículo / Motorista</h5>
-                  <div className="space-y-1.5">
+                  <div className="flex-1 flex flex-col justify-between gap-1 py-1">
                     <div><Label className="text-[10px] text-muted-foreground">Nome Motorista</Label>
                       <Popover open={motoristaOpen} onOpenChange={setMotoristaOpen}>
                         <PopoverTrigger asChild>
