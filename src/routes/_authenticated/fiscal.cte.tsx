@@ -210,6 +210,7 @@ function CtePage() {
     formaPagamento: "Outros", finalidadeEmissao: "Normal", tipoServico: "Normal", formaEmissao: "Normal",
     cteReferenciado: "", chaveCompAnulacao: "", dataDeclaracao: "",
     obsGerais: "", obsAnulacao: "", obsGlobalizado: "",
+    pedagio: "0.00", secCat: "0.00", adicionalPed: "0.00", descontoPed: "0.00", outrosPed: "0.00", adValorem: "0.00", gris: "0.00", taxaColeta: "0.00", taxaEntrega: "0.00", valePedagio: "0.00",
   };
   const [form, setForm] = useState(emptyForm);
   // Novo CT-e preservando dados fiscais (CFOP, impostos, status) — só limpa dados da NF/tomador/rota
@@ -1858,19 +1859,20 @@ function CtePage() {
                 <h5 className="text-xs font-semibold mb-2">Componentes do Frete</h5>
                 <div className="grid grid-cols-3 md:grid-cols-6 gap-2">
                   <div><Label className="text-[10px] text-muted-foreground">Valor Serviço</Label><MoneyInput className="h-7 text-xs font-medium" value={form.vPrest} onChange={v => setForm(f => ({ ...f, vPrest: v }))} /></div>
-                  <div><Label className="text-[10px] text-muted-foreground">Pedágio (3 Eixos)</Label><Input className="h-7 text-xs" placeholder="0.00" /></div>
-                  <div><Label className="text-[10px] text-muted-foreground">Sec/Cat</Label><Input className="h-7 text-xs" placeholder="0.00" /></div>
-                  <div><Label className="text-[10px] text-muted-foreground">Adicional</Label><Input className="h-7 text-xs" placeholder="0.00" /></div>
-                  <div><Label className="text-[10px] text-muted-foreground">Desconto</Label><Input className="h-7 text-xs" placeholder="0.00" /></div>
-                  <div><Label className="text-[10px] text-muted-foreground">Outros</Label><Input className="h-7 text-xs" placeholder="0.00" /></div>
+                  <div><Label className="text-[10px] text-muted-foreground">Pedágio (3 Eixos)</Label><Input className="h-7 text-xs" placeholder="0.00" value={form.pedagio || ""} onChange={e=>setForm({...form, pedagio: e.target.value})} /></div>
+                  <div><Label className="text-[10px] text-muted-foreground">Sec/Cat</Label><Input className="h-7 text-xs" placeholder="0.00" value={form.secCat || ""} onChange={e=>setForm({...form, secCat: e.target.value})} /></div>
+                  <div><Label className="text-[10px] text-muted-foreground">Adicional</Label><Input className="h-7 text-xs" placeholder="0.00" value={form.adicionalPed || ""} onChange={e=>setForm({...form, adicionalPed: e.target.value})} /></div>
+                  <div><Label className="text-[10px] text-muted-foreground">Desconto</Label><Input className="h-7 text-xs" placeholder="0.00" value={form.descontoPed || ""} onChange={e=>setForm({...form, descontoPed: e.target.value})} /></div>
+                  <div><Label className="text-[10px] text-muted-foreground">Outros</Label><Input className="h-7 text-xs" placeholder="0.00" value={form.outrosPed || ""} onChange={e=>setForm({...form, outrosPed: e.target.value})} /></div>
                   <div><Label className="text-[10px] text-muted-foreground">Total Mercadorias</Label><Input className="h-7 text-xs" value={form.vCarga} readOnly /></div>
                 </div>
                 <div className="grid grid-cols-3 md:grid-cols-5 gap-2 mt-2">
-                  <div><Label className="text-[10px] text-muted-foreground">Ad Valorem</Label><Input className="h-7 text-xs" placeholder="0.00" /></div>
-                  <div><Label className="text-[10px] text-muted-foreground">GRIS</Label><Input className="h-7 text-xs" placeholder="0.00" /></div>
-                  <div><Label className="text-[10px] text-muted-foreground">Taxa Coleta</Label><Input className="h-7 text-xs" placeholder="0.00" /></div>
-                  <div><Label className="text-[10px] text-muted-foreground">Taxa Entrega</Label><Input className="h-7 text-xs" placeholder="0.00" /></div>
+                  <div><Label className="text-[10px] text-muted-foreground">Ad Valorem</Label><Input className="h-7 text-xs" placeholder="0.00" value={form.adValorem || ""} onChange={e=>setForm({...form, adValorem: e.target.value})} /></div>
+                  <div><Label className="text-[10px] text-muted-foreground">GRIS</Label><Input className="h-7 text-xs" placeholder="0.00" value={form.gris || ""} onChange={e=>setForm({...form, gris: e.target.value})} /></div>
+                  <div><Label className="text-[10px] text-muted-foreground">Taxa Coleta</Label><Input className="h-7 text-xs" placeholder="0.00" value={form.taxaColeta || ""} onChange={e=>setForm({...form, taxaColeta: e.target.value})} /></div>
+                  <div><Label className="text-[10px] text-muted-foreground">Taxa Entrega</Label><Input className="h-7 text-xs" placeholder="0.00" value={form.taxaEntrega || ""} onChange={e=>setForm({...form, taxaEntrega: e.target.value})} /></div>
                                   </div>
+                <p className="text-[9px] text-muted-foreground mt-1">Vale-pedágio (Lei 10.209/2001, art. 2º): não integra o frete nem a BC do ICMS e não vai no CT-e — informar no MDF-e.</p>
               </Card>
 
               <Card className="p-3">
@@ -1884,7 +1886,7 @@ function CtePage() {
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-2 mt-2">
                   <div><Label className="text-[10px] text-muted-foreground">Operadora</Label><Input className="h-7 text-xs" placeholder="Ex: SEM PARAR" /></div>
                   <div><Label className="text-[10px] text-muted-foreground">CNPJ Operadora</Label><Input className="h-7 text-xs" placeholder="00.000.000/0000-00" /></div>
-                  <div><Label className="text-[10px] text-muted-foreground">Vale Pedágio (R$)</Label><Input className="h-7 text-xs" placeholder="0.00" /></div>
+                  <div><Label className="text-[10px] text-muted-foreground">Vale Pedágio (R$)</Label><Input className="h-7 text-xs" placeholder="0.00" value={form.valePedagio || ""} onChange={e=>setForm({...form, valePedagio: e.target.value})} /></div>
                   <div><Label className="text-[10px] text-muted-foreground">Nº TAG</Label><Input className="h-7 text-xs" placeholder="Nº TAG" /></div>
                 </div>
               </Card>
