@@ -210,7 +210,7 @@ function CtePage() {
     formaPagamento: "Outros", finalidadeEmissao: "Normal", tipoServico: "Normal", formaEmissao: "Normal",
     cteReferenciado: "", chaveCompAnulacao: "", dataDeclaracao: "",
     obsGerais: "", obsAnulacao: "", obsGlobalizado: "",
-    adicionalPed: "0.00", descontoPed: "0.00", outrosPed: "0.00", adValorem: "0.00", gris: "0.00", taxaColeta: "0.00", taxaEntrega: "0.00", valePedagio: "0.00", pedagioPagto: "sem-pagamento", pedagioOperadora: "", pedagioCnpj: "", pedagioTag: "",
+    adicionalPed: "0.00", descontoPed: "0.00", outrosPed: "0.00", adValorem: "0.00", gris: "0.00", taxaColeta: "0.00", taxaEntrega: "0.00", valePedagio: "0.00", pedagioPagto: "sem-pagamento", pedagioOperadora: "", pedagioCnpj: "", pedagioTag: "", distanciaKm: "", duracaoHoras: "", rctrC: "0.00", rcfDc: "0.00", segAdicional: "0.00", segTotal: "0.00", segRepassar: "", segResponsavel: "4",
   };
   const [form, setForm] = useState(emptyForm);
   // Novo CT-e preservando dados fiscais (CFOP, impostos, status) — só limpa dados da NF/tomador/rota
@@ -993,20 +993,20 @@ function CtePage() {
 
   const [previewOpen, setPreviewOpen] = useState(false);
   const [previewData, setPreviewData] = useState<{ xml: string; chave: string; proximo: string; ambiente: string; form: any } | null>(null);
-  const [rotaNome, setRotaNome] = useState("");
-  const [rotaSelId, setRotaSelId] = useState("");
-  const rotaAplicadaKey = useRef("");
-  const { data: rotasDB, error: rotasError } = useQuery({
+  const [percursoNome, setPercursoNome] = useState("");
+  const [percursoSelId, setPercursoSelId] = useState("");
+  const percursoAplicadoKey = useRef("");
+  const { data: percursosDB, error: percursosError } = useQuery({
     enabled: !!empresa,
-    queryKey: ["cte-rotas", empresa?.id],
+    queryKey: ["cte-percursos", empresa?.id],
     queryFn: async () => {
-      const { data, error } = await supabase.from("cte_rotas" as any).select("*").eq("empresa_id", empresa!.id).order("nome");
+      const { data, error } = await supabase.from("cte_percursos" as any).select("*").eq("empresa_id", empresa!.id).order("nome");
       if (error) throw error;
       return (data ?? []) as unknown as Array<Record<string, any>>;
     },
     retry: false,
   });
-  const rotas = rotasDB ?? [];
+  const percursos = percursosDB ?? [];
   const previewXml = useMutation({
     mutationFn: async () => {
       if (!empresa) throw new Error("Empresa não selecionada");
@@ -1034,24 +1034,24 @@ function CtePage() {
     onError: (e: Error) => toast.error(e.message),
   });
 
-  // === Rotas: remetente+destino+tomador pré-salvos (autopreenchimento) ===
-  const onlyDigitsRota = (v: any) => String(v || "").replace(/\D/g, "");
+  // === Percursos: remetente+destino+tomador pré-salvos (autopreenchimento) ===
+  const onlyDigitsPercurso = (v: any) => String(v || "").replace(/\D/g, "");
   const docsAtuais = () => {
     const sel = mercadorias.filter(m => selecionadas.has(m.chave));
     const a = ((sel.length > 0 ? sel[0] : mercadorias[0]) || {}) as any;
     return {
-      remDoc: onlyDigitsRota(a.emitCnpj), remNome: a.emit || "",
-      destDoc: onlyDigitsRota(a.destCnpj), destNome: a.dest || "",
-      tomaDoc: onlyDigitsRota(form.cnpjTomador),
+      remDoc: onlyDigitsPercurso(a.emitCnpj), remNome: a.emit || "",
+      destDoc: onlyDigitsPercurso(a.destCnpj), destNome: a.dest || "",
+      tomaDoc: onlyDigitsPercurso(form.cnpjTomador),
     };
   };
-  const matchRota = (d: { remDoc: string; destDoc: string; tomaDoc: string }) => {
-    if (!rotas || rotas.length === 0 || !d.tomaDoc) return null;
-    if (d.remDoc && d.destDoc) return rotas.find(r => r.rem_cnpj === d.remDoc && r.dest_cnpj === d.destDoc && r.toma_cnpj === d.tomaDoc) || null;
-    const c = rotas.filter(r => r.toma_cnpj === d.tomaDoc);
+  const matchPercurso = (d: { remDoc: string; destDoc: string; tomaDoc: string }) => {
+    if (!percursos || percursos.length === 0 || !d.tomaDoc) return null;
+    if (d.remDoc && d.destDoc) return percursos.find(r => r.rem_cnpj === d.remDoc && r.dest_cnpj === d.destDoc && r.toma_cnpj === d.tomaDoc) || null;
+    const c = percursos.filter(r => r.toma_cnpj === d.tomaDoc);
     return c.length === 1 ? c[0] : null;
   };
-  const aplicarRota = (r: Record<string, any>) => {
+  const aplicarPercurso = (r: Record<string, any>) => {
     setForm(f => ({ ...f,
       toma: r.toma_tipo || f.toma,
       cnpjTomador: r.toma_cnpj || f.cnpjTomador, xNomeTomador: r.toma_nome || f.xNomeTomador,
@@ -1063,17 +1063,47 @@ function CtePage() {
       cMunIni: r.coleta_cmun || f.cMunIni, xMunIni: r.coleta_xmun || f.xMunIni, ufIni: r.coleta_uf || f.ufIni,
       cMunFim: r.entrega_cmun || f.cMunFim, xMunFim: r.entrega_xmun || f.xMunFim, ufFim: r.entrega_uf || f.ufFim,
       cfop: r.cfop || f.cfop,
+      pedagioPagto: r.pedagio_pagto || f.pedagioPagto, pedagioOperadora: r.pedagio_operadora || f.pedagioOperadora,
+      pedagioCnpj: r.pedagio_cnpj || f.pedagioCnpj, pedagioTag: r.pedagio_tag || f.pedagioTag,
+      valePedagio: r.pedagio_vale || f.valePedagio,
+      cnpjConsignatario: r.consig_cnpj || f.cnpjConsignatario, xNomeConsignatario: r.consig_nome || f.xNomeConsignatario,
+      ieConsignatario: r.consig_ie || f.ieConsignatario, ufConsignatario: r.consig_uf || f.ufConsignatario,
+      xMunConsignatario: r.consig_xmun || f.xMunConsignatario, cepConsignatario: r.consig_cep || f.cepConsignatario,
+      logradouroConsignatario: r.consig_logradouro || f.logradouroConsignatario, nroConsignatario: r.consig_nro || f.nroConsignatario,
+      bairroConsignatario: r.consig_bairro || f.bairroConsignatario,
+      cnpjRedespacho: r.redesp_cnpj || f.cnpjRedespacho, xNomeRedespacho: r.redesp_nome || f.xNomeRedespacho,
+      ieRedespacho: r.redesp_ie || f.ieRedespacho, ufRedespacho: r.redesp_uf || f.ufRedespacho,
+      xMunRedespacho: r.redesp_xmun || f.xMunRedespacho, cepRedespacho: r.redesp_cep || f.cepRedespacho,
+      logradouroRedespacho: r.redesp_logradouro || f.logradouroRedespacho, nroRedespacho: r.redesp_nro || f.nroRedespacho,
+      bairroRedespacho: r.redesp_bairro || f.bairroRedespacho,
+      seguradoraNome: r.seg_nome || f.seguradoraNome, apolice: r.seg_apolice || f.apolice, averbacao: r.seg_averbacao || f.averbacao,
+      rctrC: r.seg_rctr_c || f.rctrC, rcfDc: r.seg_rcf_dc || f.rcfDc, segAdicional: r.seg_adicional || f.segAdicional,
+      segTotal: r.seg_total || f.segTotal, segRepassar: r.seg_repassar ? "S" : f.segRepassar, segResponsavel: r.seg_responsavel || f.segResponsavel,
+      distanciaKm: r.distancia_km || f.distanciaKm, duracaoHoras: r.duracao_horas || f.duracaoHoras,
+      icmsCST: r.icms_cst || f.icmsCST, icmsAliq: r.icms_aliq || f.icmsAliq,
+      reducaoBase: (r.reducao_base || (f as any).reducaoBase) as string, creditoOutorgado: (r.credito_outorgado || (f as any).creditoOutorgado) as string,
+      pisAliq: r.pis_aliq || f.pisAliq, cofinsAliq: r.cofins_aliq || f.cofinsAliq, irAliq: r.ir_aliq || f.irAliq,
+      inssAliq: r.inss_aliq || f.inssAliq, csllAliq: r.csll_aliq || f.csllAliq,
+      cMunEnv: r.emissao_cmun || f.cMunEnv, xMunEnv: r.emissao_xmun || f.xMunEnv, ufEnv: r.emissao_uf || f.ufEnv,
+      ...(r.obs_gerais ? { obsGerais: r.obs_gerais } : {}),
     }));
-    setRotaSelId(r.id);
-    toast.success("Rota aplicada: " + r.nome);
+    setPercursoSelId(r.id);
+    toast.success("Percurso aplicado: " + r.nome);
   };
-  const salvarRota = async () => {
+  const salvarPercurso = async () => {
     if (!empresa) return;
     const d = docsAtuais();
-    if (!d.tomaDoc || d.tomaDoc.length !== 14) { toast.error("Informe o tomador (CNPJ com 14 dígitos) para salvar a rota"); return; }
+    if (!d.tomaDoc || d.tomaDoc.length !== 14) { toast.error("Informe o tomador (CNPJ com 14 dígitos) para salvar o percurso"); return; }
     const sel = mercadorias.filter(m => selecionadas.has(m.chave));
     const a = ((sel.length > 0 ? sel[0] : mercadorias[0]) || {}) as any;
-    const nome = (rotaNome.trim() || ((d.remNome || "Origem") + " > " + (d.destNome || "Destino"))).slice(0, 80);
+    const { data: exPerc } = await supabase.from("cte_percursos" as any).select("id,codigo").eq("empresa_id", empresa.id).eq("rem_cnpj", d.remDoc).eq("dest_cnpj", d.destDoc).eq("toma_cnpj", d.tomaDoc).maybeSingle();
+    let codigoPercurso = ((exPerc as any)?.codigo || "") as string;
+    if (!codigoPercurso) {
+      const { data: mx } = await supabase.from("cte_percursos" as any).select("codigo").eq("empresa_id", empresa.id).order("codigo", { ascending: false }).limit(1);
+      const last = parseInt((((mx as any[])?.[0]?.codigo) || "0"), 10) || 0;
+      codigoPercurso = String(last + 1).padStart(4, "0");
+    }
+    const nome = (percursoNome.trim() || ((d.remNome || "Origem") + " > " + (d.destNome || "Destino"))).slice(0, 80);
     const payload = {
       empresa_id: empresa.id, nome,
       rem_cnpj: d.remDoc, rem_nome: a.emit || d.remNome || "", rem_ie: a.emitIE || "", rem_uf: a.emitUF || "",
@@ -1089,38 +1119,56 @@ function CtePage() {
       coleta_cmun: form.cMunIni || "", coleta_xmun: form.xMunIni || "", coleta_uf: form.ufIni || "",
       entrega_cmun: form.cMunFim || "", entrega_xmun: form.xMunFim || "", entrega_uf: form.ufFim || "",
       cfop: form.cfop || "",
+      codigo: codigoPercurso,
+      consig_cnpj: form.cnpjConsignatario || "", consig_nome: form.xNomeConsignatario || "", consig_ie: form.ieConsignatario || "",
+      consig_uf: form.ufConsignatario || "", consig_xmun: form.xMunConsignatario || "", consig_cep: form.cepConsignatario || "",
+      consig_logradouro: form.logradouroConsignatario || "", consig_nro: form.nroConsignatario || "", consig_bairro: form.bairroConsignatario || "",
+      redesp_cnpj: form.cnpjRedespacho || "", redesp_nome: form.xNomeRedespacho || "", redesp_ie: form.ieRedespacho || "",
+      redesp_uf: form.ufRedespacho || "", redesp_xmun: form.xMunRedespacho || "", redesp_cep: form.cepRedespacho || "",
+      redesp_logradouro: form.logradouroRedespacho || "", redesp_nro: form.nroRedespacho || "", redesp_bairro: form.bairroRedespacho || "",
+      seg_nome: form.seguradoraNome || "", seg_apolice: form.apolice || "", seg_averbacao: form.averbacao || "",
+      seg_rctr_c: form.rctrC || "", seg_rcf_dc: form.rcfDc || "", seg_adicional: form.segAdicional || "",
+      seg_total: form.segTotal || "", seg_repassar: form.segRepassar === "S", seg_responsavel: form.segResponsavel || "",
+      distancia_km: form.distanciaKm || "", duracao_horas: form.duracaoHoras || "",
+      pedagio_pagto: form.pedagioPagto || "sem-pagamento", pedagio_operadora: form.pedagioOperadora || "", pedagio_cnpj: form.pedagioCnpj || "",
+      pedagio_tag: form.pedagioTag || "", pedagio_vale: form.valePedagio || "0.00",
+      icms_cst: form.icmsCST || "", icms_aliq: form.icmsAliq || "",
+      reducao_base: (form as any).reducaoBase || "", credito_outorgado: (form as any).creditoOutorgado || "",
+      pis_aliq: form.pisAliq || "", cofins_aliq: form.cofinsAliq || "", ir_aliq: form.irAliq || "",
+      inss_aliq: form.inssAliq || "", csll_aliq: form.csllAliq || "", obs_gerais: (form as any).obsGerais || "",
+      emissao_cmun: form.cMunEnv || "", emissao_xmun: form.xMunEnv || "", emissao_uf: form.ufEnv || "",
     };
-    const { error } = await supabase.from("cte_rotas" as any).upsert(payload, { onConflict: "empresa_id,rem_cnpj,dest_cnpj,toma_cnpj" });
-    if (error) { toast.error("Falha ao salvar rota: " + error.message); return; }
-    toast.success("Rota salva: " + nome);
-    setRotaNome("");
-    qc.invalidateQueries({ queryKey: ["cte-rotas", empresa.id] });
+    const { error } = await supabase.from("cte_percursos" as any).upsert(payload, { onConflict: "empresa_id,rem_cnpj,dest_cnpj,toma_cnpj" });
+    if (error) { toast.error("Falha ao salvar percurso: " + error.message); return; }
+    toast.success("Percurso salvo: " + nome);
+    setPercursoNome("");
+    qc.invalidateQueries({ queryKey: ["cte-percursos", empresa.id] });
   };
-  const excluirRota = async () => {
-    if (!empresa || !rotaSelId) return;
-    const r = rotas.find(x => x.id === rotaSelId);
+  const excluirPercurso = async () => {
+    if (!empresa || !percursoSelId) return;
+    const r = percursos.find(x => x.id === percursoSelId);
     if (!r) return;
-    if (!window.confirm("Excluir a rota " + r.nome + "?")) return;
-    const { error } = await supabase.from("cte_rotas" as any).delete().eq("id", rotaSelId);
+    if (!window.confirm("Excluir o percurso " + r.nome + "?")) return;
+    const { error } = await supabase.from("cte_percursos" as any).delete().eq("id", percursoSelId);
     if (error) { toast.error("Falha ao excluir: " + error.message); return; }
-    toast.success("Rota excluída");
-    setRotaSelId("");
-    qc.invalidateQueries({ queryKey: ["cte-rotas", empresa.id] });
+    toast.success("Percurso excluído");
+    setPercursoSelId("");
+    qc.invalidateQueries({ queryKey: ["cte-percursos", empresa.id] });
   };
-  const rotaMatch = matchRota(docsAtuais());
-  useEffect(() => { rotaAplicadaKey.current = ""; }, [open]);
+  const percursoMatch = matchPercurso(docsAtuais());
+  useEffect(() => { percursoAplicadoKey.current = ""; }, [open]);
   useEffect(() => {
-    if (!open || rotas.length === 0) return;
+    if (!open || percursos.length === 0) return;
     const d = docsAtuais();
     if (!d.tomaDoc || d.tomaDoc.length !== 14) return;
-    const m = matchRota(d);
+    const m = matchPercurso(d);
     if (!m) return;
     const key = m.id + "|" + d.remDoc + "|" + d.destDoc + "|" + d.tomaDoc;
-    if (rotaAplicadaKey.current === key) return;
-    rotaAplicadaKey.current = key;
-    aplicarRota(m);
+    if (percursoAplicadoKey.current === key) return;
+    percursoAplicadoKey.current = key;
+    aplicarPercurso(m);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [open, form.cnpjTomador, mercadorias, selecionadas, rotas]);
+  }, [open, form.cnpjTomador, mercadorias, selecionadas, percursos]);
   return (
     <div className="p-6 space-y-4">
       <PageHeader eyebrow="Fiscal" title="CT-e" description="Conhecimento de Transporte Eletrônico (57) — emissão robusta estilo STM, com múltiplas NF-es por CT-e." actions={<Button size="sm" onClick={() => novoCtePreservandoFiscal()}><Plus className="mr-1 h-4 w-4" /> Novo CT-e</Button>} />
@@ -1490,37 +1538,45 @@ function CtePage() {
                             <Card className="p-3">
                 <div className="flex items-center gap-2 mb-2">
                   <div className="h-6 w-6 rounded bg-orange-500/10 grid place-items-center"><RouteIcon className="h-3.5 w-3.5 text-orange-600" /></div>
-                  <h5 className="text-xs font-semibold">Rota</h5>
-                  {rotaMatch && <span className="text-[9px] text-emerald-600 font-medium">aplicada: {rotaMatch.nome}</span>}
-                  {rotasError && <span className="text-[9px] text-destructive">Execute a migration 20260909130000_cte_rotas.sql no SQL Editor do Supabase</span>}
+                  <h5 className="text-xs font-semibold">Percurso</h5>
+                  {percursoMatch && <span className="text-[9px] text-emerald-600 font-medium">aplicado: {percursoMatch.nome}</span>}
+                  {percursosError && <span className="text-[9px] text-destructive">Execute as migrations 20260909130000_cte_rotas.sql e 20260909140000_cte_percursos_extend.sql no SQL Editor</span>}
                 </div>
                 <div className="flex flex-wrap items-end gap-2">
                   <div className="flex-1 min-w-52">
-                    <Label className="text-[10px] text-muted-foreground">Rotas salvas</Label>
-                    <Select value={rotaSelId} onValueChange={setRotaSelId}>
-                      <SelectTrigger className="h-7 text-xs"><SelectValue placeholder={rotas.length ? "Selecione para aplicar" : "Nenhuma rota salva"} /></SelectTrigger>
+                    <Label className="text-[10px] text-muted-foreground">Percursos salvos</Label>
+                    <Select value={percursoSelId} onValueChange={setPercursoSelId}>
+                      <SelectTrigger className="h-7 text-xs"><SelectValue placeholder={percursos.length ? "Selecione para aplicar" : "Nenhum percurso salvo"} /></SelectTrigger>
                       <SelectContent>
-                        {rotas.map(r => <SelectItem key={r.id} value={r.id}>{r.nome}</SelectItem>)}
+                        {percursos.map(r => <SelectItem key={r.id} value={r.id}>{(r.codigo ? r.codigo + " — " : "") + r.nome}</SelectItem>)}
                       </SelectContent>
                     </Select>
                   </div>
-                  <Button size="sm" variant="outline" className="h-7 text-xs" disabled={!rotaSelId} onClick={() => { const r = rotas.find(x => x.id === rotaSelId); if (r) { rotaAplicadaKey.current = "manual-" + r.id; aplicarRota(r); } }}>Aplicar</Button>
-                  {rotaSelId && <Button size="icon" variant="ghost" className="h-7 w-7 text-destructive" title="Excluir rota" onClick={excluirRota}><Trash2 className="h-3.5 w-3.5" /></Button>}
+                  <Button size="sm" variant="outline" className="h-7 text-xs" disabled={!percursoSelId} onClick={() => { const r = percursos.find(x => x.id === percursoSelId); if (r) { percursoAplicadoKey.current = "manual-" + r.id; aplicarPercurso(r); } }}>Aplicar</Button>
+                  {percursoSelId && <Button size="icon" variant="ghost" className="h-7 w-7 text-destructive" title="Excluir percurso" onClick={excluirPercurso}><Trash2 className="h-3.5 w-3.5" /></Button>}
                   <div className="flex-1 min-w-52">
-                    <Label className="text-[10px] text-muted-foreground">Nome da nova rota</Label>
-                    <Input className="h-7 text-xs" placeholder="Ex: TECNO - CHICO" value={rotaNome} onChange={e => setRotaNome(e.target.value)} />
+                    <Label className="text-[10px] text-muted-foreground">Nome do novo percurso</Label>
+                    <Input className="h-7 text-xs" placeholder="Ex: TECNO - CHICO" value={percursoNome} onChange={e => setPercursoNome(e.target.value)} />
                   </div>
-                  <Button size="sm" className="h-7 text-xs" onClick={salvarRota}><Save className="mr-1 h-3 w-3" /> Salvar rota atual</Button>
+                  <div className="w-20">
+                    <Label className="text-[10px] text-muted-foreground">Distância Km</Label>
+                    <Input className="h-7 text-xs" placeholder="0" value={form.distanciaKm || ""} onChange={e => setForm({ ...form, distanciaKm: e.target.value })} />
+                  </div>
+                  <div className="w-20">
+                    <Label className="text-[10px] text-muted-foreground">Duração h</Label>
+                    <Input className="h-7 text-xs" placeholder="0" value={form.duracaoHoras || ""} onChange={e => setForm({ ...form, duracaoHoras: e.target.value })} />
+                  </div>
+                  <Button size="sm" className="h-7 text-xs" onClick={salvarPercurso}><Save className="mr-1 h-3 w-3" /> Salvar percurso atual</Button>
                 </div>
-                <p className="text-[9px] text-muted-foreground mt-1">Ao puxar um XML ou digitar o tomador com remetente, destino e tomador iguais aos de uma rota salva, os dados entram automaticamente.</p>
+                <p className="text-[9px] text-muted-foreground mt-1">Ao puxar um XML ou digitar o tomador com remetente, destino e tomador iguais aos de um percurso salvo, os dados entram automaticamente.</p>
               </Card>
 {mercadorias.length > 0 ? (() => {
                 const sel = mercadorias.filter(m => selecionadas.has(m.chave));
                 const active = sel.length > 0 ? sel[0] : mercadorias[0];
-                const rotaRem = rotaMatch && (rotaMatch.rem_cnpj || "") === (active.emitCnpj || "").replace(/\D/g, "") && rotaMatch.rem_nome ? { ie: rotaMatch.rem_ie || "", logradouro: rotaMatch.rem_logradouro || "", numero: rotaMatch.rem_nro || "", bairro: rotaMatch.rem_bairro || "", cidade: rotaMatch.rem_xmun || "", uf: rotaMatch.rem_uf || "", cep: rotaMatch.rem_cep || "", telefone: rotaMatch.rem_fone || "" } : null;
-                const cEmit = contatoByDoc.get((active.emitCnpj || "").replace(/\D/g, "")) || rotaRem || {};
-                const rotaDes = rotaMatch && (rotaMatch.dest_cnpj || "") === (active.destCnpj || "").replace(/\D/g, "") && rotaMatch.dest_nome ? { ie: rotaMatch.dest_ie || "", logradouro: rotaMatch.dest_logradouro || "", numero: rotaMatch.dest_nro || "", bairro: rotaMatch.dest_bairro || "", cidade: rotaMatch.dest_xmun || "", uf: rotaMatch.dest_uf || "", cep: rotaMatch.dest_cep || "", telefone: rotaMatch.dest_fone || "" } : null;
-                const cDest = contatoByDoc.get((active.destCnpj || "").replace(/\D/g, "")) || rotaDes || {};
+                const percRem = percursoMatch && (percursoMatch.rem_cnpj || "") === (active.emitCnpj || "").replace(/\D/g, "") && percursoMatch.rem_nome ? { ie: percursoMatch.rem_ie || "", logradouro: percursoMatch.rem_logradouro || "", numero: percursoMatch.rem_nro || "", bairro: percursoMatch.rem_bairro || "", cidade: percursoMatch.rem_xmun || "", uf: percursoMatch.rem_uf || "", cep: percursoMatch.rem_cep || "", telefone: percursoMatch.rem_fone || "" } : null;
+                const cEmit = contatoByDoc.get((active.emitCnpj || "").replace(/\D/g, "")) || percRem || {};
+                const percDes = percursoMatch && (percursoMatch.dest_cnpj || "") === (active.destCnpj || "").replace(/\D/g, "") && percursoMatch.dest_nome ? { ie: percursoMatch.dest_ie || "", logradouro: percursoMatch.dest_logradouro || "", numero: percursoMatch.dest_nro || "", bairro: percursoMatch.dest_bairro || "", cidade: percursoMatch.dest_xmun || "", uf: percursoMatch.dest_uf || "", cep: percursoMatch.dest_cep || "", telefone: percursoMatch.dest_fone || "" } : null;
+                const cDest = contatoByDoc.get((active.destCnpj || "").replace(/\D/g, "")) || percDes || {};
                 const emitIE = active.emitIE || cEmit.ie || "";
                 const emitLgr = active.emitLogradouro || cEmit.logradouro || "";
                 const emitNro = cEmit.numero || "";
@@ -1766,7 +1822,7 @@ function CtePage() {
                       </Popover></div>
                       <div className="col-span-3"><Label className="text-[10px] text-muted-foreground">Apólice</Label><Input className="h-6 text-[10px]" placeholder="Nº Apólice" value={form.apolice} onChange={e => setForm({ ...form, apolice: e.target.value })} /></div>
                     <div className="col-span-2"><Label className="text-[10px] text-muted-foreground">Responsável</Label>
-                      <Select defaultValue="4">
+                      <Select value={form.segResponsavel || "4"} onValueChange={v => setForm({ ...form, segResponsavel: v })}>
                         <SelectTrigger className="h-6 text-[10px]"><SelectValue /></SelectTrigger>
                         <SelectContent>
                           {RESPONSAVEL_CTE_OPTIONS.map(opt => (
@@ -1780,10 +1836,10 @@ function CtePage() {
                     <div className="grid grid-cols-6 gap-1">
                       <div><Label className="text-[10px] text-muted-foreground">Base Seg.</Label><Input className="h-6 text-[10px]" value={form.vCarga} readOnly /></div>
                       <div><Label className="text-[10px] text-muted-foreground">Valor Doc.</Label><Input className="h-6 text-[10px]" value={form.vCarga} readOnly /></div>
-                      <div><Label className="text-[10px] text-muted-foreground">RCTR-C</Label><Input className="h-6 text-[10px]" placeholder="0.00" /></div>
-                      <div><Label className="text-[10px] text-muted-foreground">RCF-DC</Label><Input className="h-6 text-[10px]" placeholder="0.00" /></div>
-                      <div><Label className="text-[10px] text-muted-foreground">V. Adicional</Label><Input className="h-6 text-[10px]" placeholder="0.00" /></div>
-                      <div className="flex items-end gap-1"><div className="flex-1"><Label className="text-[10px] text-muted-foreground">Total Seguro</Label><Input className="h-6 text-[10px]" placeholder="0.00" /></div><label className="flex items-center gap-1 text-[10px] pb-1"><input type="checkbox" /> Repassar</label></div>
+                      <div><Label className="text-[10px] text-muted-foreground">RCTR-C</Label><Input className="h-6 text-[10px]" placeholder="0.00" value={form.rctrC || ""} onChange={e => setForm({ ...form, rctrC: e.target.value })} /></div>
+                      <div><Label className="text-[10px] text-muted-foreground">RCF-DC</Label><Input className="h-6 text-[10px]" placeholder="0.00" value={form.rcfDc || ""} onChange={e => setForm({ ...form, rcfDc: e.target.value })} /></div>
+                      <div><Label className="text-[10px] text-muted-foreground">V. Adicional</Label><Input className="h-6 text-[10px]" placeholder="0.00" value={form.segAdicional || ""} onChange={e => setForm({ ...form, segAdicional: e.target.value })} /></div>
+                      <div className="flex items-end gap-1"><div className="flex-1"><Label className="text-[10px] text-muted-foreground">Total Seguro</Label><Input className="h-6 text-[10px]" placeholder="0.00" value={form.segTotal || ""} onChange={e => setForm({ ...form, segTotal: e.target.value })} /></div><label className="flex items-center gap-1 text-[10px] pb-1"><input type="checkbox" checked={form.segRepassar === "S"} onChange={e => setForm({ ...form, segRepassar: e.target.checked ? "S" : "" })} /> Repassar</label></div>
                     </div>
                     
                   </div>
