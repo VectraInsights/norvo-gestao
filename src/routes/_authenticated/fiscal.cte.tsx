@@ -1198,7 +1198,7 @@ function CtePage() {
       hs = Math.round(hs * 10) / 10;
       const dh = Math.round(dirigindo * 10) / 10;
       setForm(f => ({ ...f, distanciaKm: String(km), duracaoHoras: String(hs) }));
-      toast.success("Percurso calculado: " + km + " km — " + String(dh) + " h dirigindo + descansos = " + String(hs) + " h totais");
+      toast.success("Percurso calculado: " + km + " km (~" + String(hs) + " h)");
     } catch (e) { toast.error((e as Error).message); } finally { setCalculandoPercurso(false); }
   };
   const percursoMatch = matchPercurso(docsAtuais());
