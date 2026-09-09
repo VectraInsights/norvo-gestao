@@ -13,7 +13,7 @@ import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
-import { Truck, Plus, FileText, Search, Ban, UploadCloud, FileCode, MapPin, Package, Building2, Trash2, Filter, Calendar, CheckCircle2, ChevronsUpDown, Check, ReceiptText, Pencil, Download, Settings2, X, Loader2, ClipboardList, Route, Save } from "lucide-react";
+import { Truck, Plus, FileText, Search, Ban, UploadCloud, FileCode, MapPin, Package, Building2, Trash2, Filter, Calendar, CheckCircle2, ChevronsUpDown, Check, ReceiptText, Pencil, Download, Settings2, X, Loader2, ClipboardList, Route as RouteIcon, Save } from "lucide-react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useEmpresaAtual } from "@/hooks/use-empresa";
@@ -1489,7 +1489,7 @@ function CtePage() {
 
                             <Card className="p-3">
                 <div className="flex items-center gap-2 mb-2">
-                  <div className="h-6 w-6 rounded bg-orange-500/10 grid place-items-center"><Route className="h-3.5 w-3.5 text-orange-600" /></div>
+                  <div className="h-6 w-6 rounded bg-orange-500/10 grid place-items-center"><RouteIcon className="h-3.5 w-3.5 text-orange-600" /></div>
                   <h5 className="text-xs font-semibold">Rota</h5>
                   {rotaMatch && <span className="text-[9px] text-emerald-600 font-medium">aplicada: {rotaMatch.nome}</span>}
                   {rotasError && <span className="text-[9px] text-destructive">Execute a migration 20260909130000_cte_rotas.sql no SQL Editor do Supabase</span>}
