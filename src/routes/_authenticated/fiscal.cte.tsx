@@ -1164,8 +1164,10 @@ function CtePage() {
     const cDest = contatoByDoc.get(doc(a.destCnpj)) || {};
     const m = percursoMatch;
     const cepO = (a.emitCEP || (cEmit as any).cep || (m && (m as any).rem_cep) || "").replace(/\D/g, "");
-    const cepD = (a.destCEP || (cDest as any).cep || (m && (m as any).dest_cep) || "").replace(/\D/g, "");
-    if (cepO.length !== 8 || cepD.length !== 8) { toast.error("Informe os CEPs do remetente e do destinatário para calcular a distância"); return; }
+    const temRedespacho = (form.cnpjRedespacho || "").replace(/\D/g, "").length === 14;
+    // Prioridade do destino: redespacho > destinatário
+    const cepD = temRedespacho ? (form.cepRedespacho || "").replace(/\D/g, "") : (a.destCEP || (cDest as any).cep || (m && (m as any).dest_cep) || "").replace(/\D/g, "");
+    if (cepO.length !== 8 || cepD.length !== 8) { toast.error(temRedespacho ? "Informe o CEP do redespacho para calcular a distância" : "Informe os CEPs do remetente e do destinatário para calcular a distância"); return; }
     setCalculandoPercurso(true);
     try {
       const geo = async (cep: string) => {
