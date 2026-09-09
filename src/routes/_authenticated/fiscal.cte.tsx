@@ -1685,7 +1685,7 @@ function CtePage() {
                         <Popover open={veiculoOpen === "placaVeiculo"} onOpenChange={v => { setVeiculoOpen(v ? "placaVeiculo" : null); if (v) setVeiculoQuery(""); }}>
                           <PopoverTrigger asChild>
                             <Button variant="outline" role="combobox" aria-expanded={veiculoOpen === "placaVeiculo"} className="h-6 text-[10px] justify-between w-full font-mono uppercase font-normal">
-                              <span className="truncate">{form.placaVeiculo || "ABC-1234"}</span>
+                              <span className="truncate">{form.placaVeiculo || "Selecione placa"}</span>
                               <ChevronsUpDown className="ml-2 h-3 w-3 shrink-0 opacity-50" />
                             </Button>
                           </PopoverTrigger>
@@ -1726,7 +1726,7 @@ function CtePage() {
                         <Popover open={veiculoOpen === "placaReboque"} onOpenChange={v => { setVeiculoOpen(v ? "placaReboque" : null); if (v) setVeiculoQuery(""); }}>
                           <PopoverTrigger asChild>
                             <Button variant="outline" role="combobox" aria-expanded={veiculoOpen === "placaReboque"} className="h-6 text-[10px] justify-between w-full font-mono uppercase font-normal">
-                              <span className="truncate">{form.placaReboque || "ABC-1234"}</span>
+                              <span className="truncate">{form.placaReboque || "Selecione placa"}</span>
                               <ChevronsUpDown className="ml-2 h-3 w-3 shrink-0 opacity-50" />
                             </Button>
                           </PopoverTrigger>
@@ -1769,7 +1769,7 @@ function CtePage() {
                         <Popover open={veiculoOpen === "semi1"} onOpenChange={v => { setVeiculoOpen(v ? "semi1" : null); if (v) setVeiculoQuery(""); }}>
                           <PopoverTrigger asChild>
                             <Button variant="outline" role="combobox" aria-expanded={veiculoOpen === "semi1"} className="h-6 text-[10px] justify-between w-full font-mono uppercase font-normal">
-                              <span className="truncate">{form.semiReboque1 || "ABC-1234"}</span>
+                              <span className="truncate">{form.semiReboque1 || "Selecione placa"}</span>
                               <ChevronsUpDown className="ml-2 h-3 w-3 shrink-0 opacity-50" />
                             </Button>
                           </PopoverTrigger>
@@ -1810,7 +1810,7 @@ function CtePage() {
                         <Popover open={veiculoOpen === "semi2"} onOpenChange={v => { setVeiculoOpen(v ? "semi2" : null); if (v) setVeiculoQuery(""); }}>
                           <PopoverTrigger asChild>
                             <Button variant="outline" role="combobox" aria-expanded={veiculoOpen === "semi2"} className="h-6 text-[10px] justify-between w-full font-mono uppercase font-normal">
-                              <span className="truncate">{form.semiReboque2 || "ABC-1234"}</span>
+                              <span className="truncate">{form.semiReboque2 || "Selecione placa"}</span>
                               <ChevronsUpDown className="ml-2 h-3 w-3 shrink-0 opacity-50" />
                             </Button>
                           </PopoverTrigger>
@@ -1855,8 +1855,9 @@ function CtePage() {
 
               {/* Pedágio / Taxas / Despesas Acessórias (ex-aba Taxas) */}
               <Card className="p-3">
-                <h5 className="text-xs font-semibold mb-2">Pedágio / Taxas / Despesas Acessórias</h5>
+                <h5 className="text-xs font-semibold mb-2">Componentes do Frete</h5>
                 <div className="grid grid-cols-3 md:grid-cols-6 gap-2">
+                  <div><Label className="text-[10px] text-muted-foreground">Valor Serviço</Label><MoneyInput className="h-7 text-xs font-medium" value={form.vPrest} onChange={v => setForm(f => ({ ...f, vPrest: v }))} /></div>
                   <div><Label className="text-[10px] text-muted-foreground">Pedágio (3 Eixos)</Label><Input className="h-7 text-xs" placeholder="0.00" /></div>
                   <div><Label className="text-[10px] text-muted-foreground">Sec/Cat</Label><Input className="h-7 text-xs" placeholder="0.00" /></div>
                   <div><Label className="text-[10px] text-muted-foreground">Adicional</Label><Input className="h-7 text-xs" placeholder="0.00" /></div>
@@ -1869,8 +1870,7 @@ function CtePage() {
                   <div><Label className="text-[10px] text-muted-foreground">GRIS</Label><Input className="h-7 text-xs" placeholder="0.00" /></div>
                   <div><Label className="text-[10px] text-muted-foreground">Taxa Coleta</Label><Input className="h-7 text-xs" placeholder="0.00" /></div>
                   <div><Label className="text-[10px] text-muted-foreground">Taxa Entrega</Label><Input className="h-7 text-xs" placeholder="0.00" /></div>
-                  <div><Label className="text-[10px] text-muted-foreground">Valor Serviço</Label><MoneyInput className="h-7 text-xs font-medium" value={form.vPrest} onChange={v => setForm(f => ({ ...f, vPrest: v }))} /></div>
-                </div>
+                                  </div>
               </Card>
 
               <Card className="p-3">
