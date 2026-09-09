@@ -1859,13 +1859,13 @@ function CtePage() {
                 <h5 className="text-xs font-semibold mb-2">Componentes do Frete</h5>
                 <div className="grid grid-cols-2 md:grid-cols-5 gap-2">
                   <div><Label className="text-[10px] text-muted-foreground">Valor Serviço</Label><MoneyInput className="h-7 text-xs font-medium" value={form.vPrest} onChange={v => setForm(f => ({ ...f, vPrest: v }))} /></div>
-                  <div><Label className="text-[10px] text-muted-foreground">Adicional</Label><Input className="h-7 text-xs" placeholder="0.00" value={form.adicionalPed || ""} onChange={e=>setForm({...form, adicionalPed: e.target.value})} /></div>
-                  <div><Label className="text-[10px] text-muted-foreground">Desconto</Label><Input className="h-7 text-xs" placeholder="0.00" value={form.descontoPed || ""} onChange={e=>setForm({...form, descontoPed: e.target.value})} /></div>
-                  <div><Label className="text-[10px] text-muted-foreground">Outros</Label><Input className="h-7 text-xs" placeholder="0.00" value={form.outrosPed || ""} onChange={e=>setForm({...form, outrosPed: e.target.value})} /></div>
-                  <div><Label className="text-[10px] text-muted-foreground">Ad Valorem</Label><Input className="h-7 text-xs" placeholder="0.00" value={form.adValorem || ""} onChange={e=>setForm({...form, adValorem: e.target.value})} /></div>
-                  <div><Label className="text-[10px] text-muted-foreground">GRIS</Label><Input className="h-7 text-xs" placeholder="0.00" value={form.gris || ""} onChange={e=>setForm({...form, gris: e.target.value})} /></div>
-                  <div><Label className="text-[10px] text-muted-foreground">Taxa Coleta</Label><Input className="h-7 text-xs" placeholder="0.00" value={form.taxaColeta || ""} onChange={e=>setForm({...form, taxaColeta: e.target.value})} /></div>
-                  <div><Label className="text-[10px] text-muted-foreground">Taxa Entrega</Label><Input className="h-7 text-xs" placeholder="0.00" value={form.taxaEntrega || ""} onChange={e=>setForm({...form, taxaEntrega: e.target.value})} /></div>
+                  <div><Label className="text-[10px] text-muted-foreground">Adicional</Label><MoneyInput className="h-7 text-xs font-medium" value={form.adicionalPed} onChange={v => setForm(f => ({ ...f, adicionalPed: v }))} /></div>
+                  <div><Label className="text-[10px] text-muted-foreground">Desconto</Label><MoneyInput className="h-7 text-xs font-medium" value={form.descontoPed} onChange={v => setForm(f => ({ ...f, descontoPed: v }))} /></div>
+                  <div><Label className="text-[10px] text-muted-foreground">Outros</Label><MoneyInput className="h-7 text-xs font-medium" value={form.outrosPed} onChange={v => setForm(f => ({ ...f, outrosPed: v }))} /></div>
+                  <div><Label className="text-[10px] text-muted-foreground">Ad Valorem</Label><MoneyInput className="h-7 text-xs font-medium" value={form.adValorem} onChange={v => setForm(f => ({ ...f, adValorem: v }))} /></div>
+                  <div><Label className="text-[10px] text-muted-foreground">GRIS</Label><MoneyInput className="h-7 text-xs font-medium" value={form.gris} onChange={v => setForm(f => ({ ...f, gris: v }))} /></div>
+                  <div><Label className="text-[10px] text-muted-foreground">Taxa Coleta</Label><MoneyInput className="h-7 text-xs font-medium" value={form.taxaColeta} onChange={v => setForm(f => ({ ...f, taxaColeta: v }))} /></div>
+                  <div><Label className="text-[10px] text-muted-foreground">Taxa Entrega</Label><MoneyInput className="h-7 text-xs font-medium" value={form.taxaEntrega} onChange={v => setForm(f => ({ ...f, taxaEntrega: v }))} /></div>
                                   </div>
                 <p className="text-[9px] text-muted-foreground mt-1">Vale-pedágio (Lei 10.209/2001, art. 2º): não integra o frete nem a BC do ICMS e não vai no CT-e — informar no MDF-e.</p>
               </Card>
