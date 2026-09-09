@@ -227,14 +227,19 @@ function CtePage() {
   const [cfopOpen, setCfopOpen] = useState(false);
   const [cfopQuery, setCfopQuery] = useState("");
 
-  // Auto-calcula ICMS: vICMS = vPrest (base) * aliquota / 100
+  // Total da prestação = Valor Serviço + componentes − Desconto (vale-pedágio NÃO integra: Lei 10.209/2001 art. 2º)
+  const num2 = (v: any) => parseFloat(v) || 0;
+  const totalPrestacao = (f: typeof emptyForm) =>
+    Math.max(0, num2(f.vPrest) + num2(f.adicionalPed) + num2(f.outrosPed) + num2(f.adValorem) + num2(f.gris) + num2(f.taxaColeta) + num2(f.taxaEntrega) - num2(f.descontoPed));
+
+  // Auto-calcula ICMS sobre o TOTAL da prestação: vICMS = base * aliquota / 100
   useEffect(() => {
-    const base = parseFloat(form.vPrest) || 0;
+    const base = totalPrestacao(form);
     const aliq = parseFloat(form.icmsAliq) || 0;
     const calc = (base * aliq / 100).toFixed(2);
     if (calc !== form.icmsValor) setForm(f => ({ ...f, icmsValor: calc }));
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [form.vPrest, form.icmsAliq]);
+  }, [form.vPrest, form.adicionalPed, form.descontoPed, form.outrosPed, form.adValorem, form.gris, form.taxaColeta, form.taxaEntrega, form.icmsAliq]);
 
   // NF-es pendentes persistidas (sobrevivem a F5/troca de tela) — dedup global por chave
   const { data: pendentesDB } = useQuery({
@@ -818,7 +823,7 @@ function CtePage() {
         status: "rascunho",
         numero: proximo,
         serie: "1",
-        valor_servico: parseFloat(form.vPrest) || 0,
+        valor_servico: totalPrestacao(form),
         peso_carga: parseFloat(form.peso) || 0,
         xml_assinado: JSON.stringify({ form, chavesNFe: chaves, nfs: nfsSalvas }),
       } as any);
@@ -867,9 +872,9 @@ function CtePage() {
       const ret: any = await emitirCteFn({ data: { empresaId: empresa.id, input: {
         ambiente: form.ambiente,
         toma: form.toma, cnpjTomador: form.cnpjTomador, xNomeTomador: form.xNomeTomador, ufTomador: form.ufTomador, cMunTomador: form.cMunTomador, xMunTomador: form.xMunTomador,
-        cfop: form.cfop, vPrest: parseFloat(form.vPrest)||0, vCarga: parseFloat(form.vCarga)||0, pesoKg: parseFloat(form.peso)||0, rntrc: form.rntrc,
+        cfop: form.cfop, vPrest: totalPrestacao(form), vCarga: parseFloat(form.vCarga)||0, pesoKg: parseFloat(form.peso)||0, rntrc: form.rntrc,
         cMunEnv: form.cMunEnv, xMunEnv: form.xMunEnv, ufEnv: form.ufEnv, cMunIni: form.cMunIni, xMunIni: form.xMunIni, ufIni: form.ufIni, cMunFim: form.cMunFim, xMunFim: form.xMunFim, ufFim: form.ufFim,
-        icms: { CST: form.icmsCST, vBC: parseFloat(form.vPrest)||0, pICMS: parseFloat(form.icmsAliq)||0, vICMS: parseFloat(form.icmsValor)||0 },
+        icms: { CST: form.icmsCST, vBC: totalPrestacao(form), pICMS: parseFloat(form.icmsAliq)||0, vICMS: parseFloat(form.icmsValor)||0 },
         impostos: { pisAliq: parseFloat(form.pisAliq)||0, cofinsAliq: parseFloat(form.cofinsAliq)||0, irAliq: parseFloat(form.irAliq)||0, inssAliq: parseFloat(form.inssAliq)||0, csllAliq: parseFloat(form.csllAliq)||0 },
         serie: "1",
         tomador: { toma: form.toma as any, cnpj: form.cnpjTomador, xNome: form.xNomeTomador, uf: form.ufTomador, cMun: form.cMunTomador, xMun: form.xMunTomador, ie: form.ieTomador || undefined, logradouro: form.logradouroTomador || undefined, nro: form.nroTomador || undefined, bairro: form.bairroTomador || undefined, cep: form.cepTomador || undefined, fone: form.foneTomador || undefined, email: form.emailTomador || undefined },
@@ -981,11 +986,11 @@ function CtePage() {
       return previewCteXmlFn({ data: { empresaId: empresa.id, input: {
         ambiente: form.ambiente,
         toma: form.toma, cnpjTomador: form.cnpjTomador, xNomeTomador: form.xNomeTomador, ufTomador: form.ufTomador, cMunTomador: form.cMunTomador, xMunTomador: form.xMunTomador,
-        cfop: form.cfop, vPrest: parseFloat(form.vPrest)||0, vCarga: parseFloat(form.vCarga)||0, pesoKg: parseFloat(form.peso)||0, rntrc: form.rntrc,
+        cfop: form.cfop, vPrest: totalPrestacao(form), vCarga: parseFloat(form.vCarga)||0, pesoKg: parseFloat(form.peso)||0, rntrc: form.rntrc,
         obsGerais: (form as any).obsGerais || "", obsAnulacao: (form as any).obsAnulacao || "", obsGlobalizado: (form as any).obsGlobalizado || "",
         reducaoBase: parseFloat((form as any).reducaoBase)||0,
         cMunEnv: form.cMunEnv, xMunEnv: form.xMunEnv, ufEnv: form.ufEnv, cMunIni: form.cMunIni, xMunIni: form.xMunIni, ufIni: form.ufIni, cMunFim: form.cMunFim, xMunFim: form.xMunFim, ufFim: form.ufFim,
-        icms: { CST: form.icmsCST, vBC: parseFloat(form.vPrest)||0, pICMS: parseFloat(form.icmsAliq)||0, vICMS: parseFloat(form.icmsValor)||0 },
+        icms: { CST: form.icmsCST, vBC: totalPrestacao(form), pICMS: parseFloat(form.icmsAliq)||0, vICMS: parseFloat(form.icmsValor)||0 },
         impostos: { pisAliq: parseFloat(form.pisAliq)||0, cofinsAliq: parseFloat(form.cofinsAliq)||0, irAliq: parseFloat(form.irAliq)||0, inssAliq: parseFloat(form.inssAliq)||0, csllAliq: parseFloat(form.csllAliq)||0 },
         serie: "1",
         tomador: { toma: form.toma as any, cnpj: form.cnpjTomador, xNome: form.xNomeTomador, uf: form.ufTomador, cMun: form.cMunTomador, xMun: form.xMunTomador, ie: form.ieTomador || undefined, logradouro: form.logradouroTomador || undefined, nro: form.nroTomador || undefined, bairro: form.bairroTomador || undefined, cep: form.cepTomador || undefined, fone: form.foneTomador || undefined, email: form.emailTomador || undefined },
@@ -1559,7 +1564,7 @@ function CtePage() {
                   </div>
                   <div><Label className="text-[10px] text-muted-foreground">Redução de Base (%)</Label><MoneyInput className="h-7 text-xs" prefix="" value={(form as any).reducaoBase || "0.00"} onChange={v => setForm({ ...form, reducaoBase: v } as any)} placeholder="0,00" /></div>
                   <div><Label className="text-[10px] text-muted-foreground">Alíquota ICMS (%)</Label><MoneyInput className="h-7 text-xs" prefix="" value={form.icmsAliq} onChange={v => setForm({ ...form, icmsAliq: v })} placeholder="0,00" /></div>
-                  <div><Label className="text-[10px] text-muted-foreground">Base Cálculo (R$)</Label><MoneyInput className="h-7 text-xs bg-muted" value={form.vPrest} onChange={() => {}} placeholder="0,00" /></div>
+                  <div><Label className="text-[10px] text-muted-foreground">Base Cálculo (R$)</Label><MoneyInput className="h-7 text-xs bg-muted" value={totalPrestacao(form).toFixed(2)} onChange={() => {}} placeholder="0,00" /></div>
                   <div><Label className="text-[10px] text-muted-foreground">Valor ICMS (R$)</Label><MoneyInput className="h-7 text-xs bg-muted" value={form.icmsValor} onChange={() => {}} placeholder="0,00" /></div>
                   <div className="md:col-span-3"><Label className="text-[10px] text-muted-foreground">Valor do crédito outorgado/presumido (R$)</Label><MoneyInput className="h-7 text-xs" value={(form as any).creditoOutorgado || "0.00"} onChange={v => setForm({ ...form, creditoOutorgado: v } as any)} placeholder="0,00" /></div>
                 </div>
