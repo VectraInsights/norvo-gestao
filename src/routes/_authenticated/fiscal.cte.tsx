@@ -212,13 +212,15 @@ function CtePage() {
     obsGerais: "", obsAnulacao: "", obsGlobalizado: "",
     adicionalPed: "0.00", descontoPed: "0.00", outrosPed: "0.00", adValorem: "0.00", gris: "0.00", taxaColeta: "0.00", taxaEntrega: "0.00", valePedagio: "0.00", pedagioPagto: "sem-pagamento", pedagioOperadora: "", pedagioCnpj: "", pedagioTag: "", distanciaKm: "", duracaoHoras: "", rctrC: "0.00", rcfDc: "0.00", segAdicional: "0.00", segTotal: "0.00", segRepassar: "", segResponsavel: "4",
   };
+  // Percurso NÃO guarda motorista nem frete: ao abrir um CT-e novo, esses dados de viagem zeram
+  const LIMPA_VIAGEM = { motoristaNome: "", motoristaId: "", ciot: "", placaVeiculo: "", placaReboque: "", semiReboque1: "", semiReboque2: "", vPrest: "0.00", adicionalPed: "0.00", descontoPed: "0.00", outrosPed: "0.00", adValorem: "0.00", gris: "0.00", taxaColeta: "0.00", taxaEntrega: "0.00", valePedagio: "0.00", pedagioPagto: "sem-pagamento", pedagioOperadora: "", pedagioCnpj: "", pedagioTag: "", distanciaKm: "", duracaoHoras: "" };
   const [form, setForm] = useState(emptyForm);
   // Novo CT-e preservando dados fiscais (CFOP, impostos, status) — só limpa dados da NF/tomador/rota
   const novoCtePreservandoFiscal = () => {
     setForm(f => {
       const keep: any = {};
-      for (const k of ["ambiente", "cfop", "vPrest", "icmsCST", "icmsAliq", "reducaoBase", "creditoOutorgado", "pisAliq", "cofinsAliq", "irAliq", "inssAliq", "csllAliq", "formaPagamento", "finalidadeEmissao", "tipoServico", "formaEmissao"]) keep[k] = (f as any)[k];
-      return { ...emptyForm, ...keep };
+      for (const k of ["ambiente", "cfop", "icmsCST", "icmsAliq", "reducaoBase", "creditoOutorgado", "pisAliq", "cofinsAliq", "irAliq", "inssAliq", "csllAliq", "formaPagamento", "finalidadeEmissao", "tipoServico", "formaEmissao"]) keep[k] = (f as any)[k];
+      return { ...emptyForm, ...keep, ...LIMPA_VIAGEM };
     });
     setSelecionadas(new Set());
     setEditingRascunhoId(null);
@@ -931,7 +933,7 @@ function CtePage() {
           qc.invalidateQueries({ queryKey: ["cte-nfes-pendentes", empresa.id] });
           setSelecionadas(new Set());
         }
-      } else toast.error(ret?.xMotivo || ret?.motivo || ("SEFAZ sem motivo (cStat " + (ret?.cStat || "?") + "). Chave " + (ret?.chave || "?") + " — use Consultar SEFAZ para confirmar."));
+      } else { console.error("[CTE-EMIT] resposta inesperada da emissao:", ret); toast.error(ret?.xMotivo || ret?.motivo || ("Resposta SEFAZ sem motivo (cStat " + (ret?.cStat || "?") + "). Retorno: " + (JSON.stringify(ret || null) || "").slice(0, 200))); }
       qc.invalidateQueries({ queryKey: ["cte-documentos"] });
     },
     onError: (e: Error) => toast.error(e.message),
@@ -1047,10 +1049,10 @@ function CtePage() {
     };
   };
   const matchPercurso = (d: { remDoc: string; destDoc: string; tomaDoc: string }) => {
-    if (!percursos || percursos.length === 0 || !d.tomaDoc) return null;
-    if (d.remDoc && d.destDoc) return percursos.find(r => r.rem_cnpj === d.remDoc && r.dest_cnpj === d.destDoc && r.toma_cnpj === d.tomaDoc) || null;
-    const c = percursos.filter(r => r.toma_cnpj === d.tomaDoc);
-    return c.length === 1 ? c[0] : null;
+    // Conferência estrita: só aplica com CNPJ de remetente + destinatário + tomador iguais
+    if (!percursos || percursos.length === 0) return null;
+    if (!d.remDoc || !d.destDoc || !d.tomaDoc) return null;
+    return percursos.find(r => r.rem_cnpj === d.remDoc && r.dest_cnpj === d.destDoc && r.toma_cnpj === d.tomaDoc) || null;
   };
   const aplicarPercurso = (r: Record<string, any>) => {
     setForm(f => ({ ...f,
@@ -1412,6 +1414,7 @@ function CtePage() {
                     vCarga: somaV.toFixed(2),
                     peso: String(somaP),
                     icmsBase: f.vPrest || "0.00",
+                    ...LIMPA_VIAGEM,
                   }));
                   setOpen(true);
                 }}
@@ -1618,7 +1621,7 @@ function CtePage() {
                   <Button size="sm" variant="outline" className="h-7 text-xs" disabled={calculandoPercurso} onClick={calcularDistanciaPercurso} title="Calcular distância e duração pelos CEPs de coleta e entrega">{calculandoPercurso ? <Loader2 className="mr-1 h-3 w-3 animate-spin" /> : <Calculator className="mr-1 h-3 w-3" />} Calcular</Button>
                   <Button size="sm" className="h-7 text-xs" onClick={salvarPercurso}><Save className="mr-1 h-3 w-3" /> Salvar percurso atual</Button>
                 </div>
-                <p className="text-[9px] text-muted-foreground mt-1">Ao puxar um XML ou digitar o tomador com remetente, destino e tomador iguais aos de um percurso salvo, os dados entram automaticamente.</p>
+                <p className="text-[9px] text-muted-foreground mt-1">Ao puxar um XML ou digitar o tomador com remetente, destino e tomador iguais (CNPJs) aos de um percurso salvo, os dados entram automaticamente. Sem os 3 CNPJs iguais, nada é aplicado.</p>
               </Card>
 {mercadorias.length > 0 ? (() => {
                 const sel = mercadorias.filter(m => selecionadas.has(m.chave));
