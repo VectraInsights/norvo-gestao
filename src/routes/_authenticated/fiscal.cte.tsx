@@ -1179,12 +1179,13 @@ function CtePage() {
         return { lat, lng };
       };
       const [o, d] = await Promise.all([geo(cepO), geo(cepD)]);
-      const r = await fetch("https://router.project-osrm.org/route/v1/driving/" + o.lng + "," + o.lat + ";" + d.lng + "," + d.lat + "?overview=false");
+      const r = await fetch("https://router.project-osrm.org/route/v1/driving/" + o.lng + "," + o.lat + ";" + d.lng + "," + d.lat + "?overview=false&alternatives=true");
       if (!r.ok) throw new Error("Falha no cálculo da rota (OSRM)");
       const j = await r.json();
-      const rt = j?.routes?.[0];
-      if (!rt) throw new Error("Rota rodoviária não encontrada");
-      const km = Math.round(rt.distance / 1000);
+      const dists = ((j?.routes || []) as any[]).map(x => x?.distance).filter(n => typeof n === "number" && n > 0);
+      if (dists.length === 0) throw new Error("Rota rodoviária não encontrada");
+      // Usa o menor trajeto entre as alternativas (mais próximo do Google)
+      const km = Math.round(Math.min(...dists) / 1000);
       // Direção pura a 50 km/h + descansos Lei 13.103/2015: 30min a cada 5h30 dirigidas,
       // 11h de descanso diário a cada 24h e 35h semanais a cada 6 dias (144h)
       const dirigindo = km / 50;
