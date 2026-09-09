@@ -1585,7 +1585,7 @@ function CtePage() {
 
             {/* === TAB: Seguros/Veículos === */}
             <TabsContent value="seguros" className="mt-2 space-y-2">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+              <div className="grid grid-cols-1 gap-2">
                 <Card className="p-2">
                   <h5 className="text-xs font-semibold mb-1">Seguro da Carga</h5>
                   <div className="space-y-1">
