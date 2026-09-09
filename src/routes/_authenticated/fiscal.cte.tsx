@@ -210,7 +210,7 @@ function CtePage() {
     formaPagamento: "Outros", finalidadeEmissao: "Normal", tipoServico: "Normal", formaEmissao: "Normal",
     cteReferenciado: "", chaveCompAnulacao: "", dataDeclaracao: "",
     obsGerais: "", obsAnulacao: "", obsGlobalizado: "",
-    adicionalPed: "0.00", descontoPed: "0.00", outrosPed: "0.00", adValorem: "0.00", gris: "0.00", taxaColeta: "0.00", taxaEntrega: "0.00", valePedagio: "0.00",
+    adicionalPed: "0.00", descontoPed: "0.00", outrosPed: "0.00", adValorem: "0.00", gris: "0.00", taxaColeta: "0.00", taxaEntrega: "0.00", valePedagio: "0.00", pedagioPagto: "sem-pagamento", pedagioOperadora: "", pedagioCnpj: "", pedagioTag: "",
   };
   const [form, setForm] = useState(emptyForm);
   // Novo CT-e preservando dados fiscais (CFOP, impostos, status) — só limpa dados da NF/tomador/rota
@@ -231,6 +231,19 @@ function CtePage() {
   const num2 = (v: any) => parseFloat(v) || 0;
   const totalPrestacao = (f: typeof emptyForm) =>
     Math.max(0, num2(f.vPrest) + num2(f.adicionalPed) + num2(f.outrosPed) + num2(f.adValorem) + num2(f.gris) + num2(f.taxaColeta) + num2(f.taxaEntrega) - num2(f.descontoPed));
+
+  // Pedágio: com cobrança (Free Flow / TAGs) os dados são obrigatórios — alimentam o MDF-e e barram a emissão
+  const validarPedagio = (f: typeof emptyForm) => {
+    const modo = (f.pedagioPagto || "sem-pagamento") as string;
+    if (modo === "sem-pagamento") return;
+    const rotulo = modo === "free-flow" ? "Free Flow" : modo === "tag-transportador" ? "TAG Transportador" : "TAG Tomador";
+    const errs: string[] = [];
+    if (!((f.pedagioOperadora || "").trim())) errs.push("Operadora");
+    if ((f.pedagioCnpj || "").replace(/\D/g, "").length !== 14) errs.push("CNPJ da Operadora (14 dígitos)");
+    if ((parseFloat(f.valePedagio) || 0) <= 0) errs.push("Vale Pedágio (R$) maior que zero");
+    if ((modo === "tag-transportador" || modo === "tag-tomador") && !((f.pedagioTag || "").trim())) errs.push("Nº TAG");
+    if (errs.length) throw new Error(`Pedágio obrigatório (${rotulo}): informe ${errs.join("; ")}`);
+  };
 
   // Auto-calcula ICMS sobre o TOTAL da prestação: vICMS = base * aliquota / 100
   useEffect(() => {
@@ -869,7 +882,7 @@ function CtePage() {
         if (dests.size > 1) throw new Error("CT-e não pode ter destinatários diferentes. Selecione NF-es do mesmo destinatário.");
         if (tomads.size > 1) throw new Error("CT-e não pode ter tomadores diferentes. Selecione NF-es do mesmo tomador.");
       }
-      const ret: any = await emitirCteFn({ data: { empresaId: empresa.id, input: {
+      validarPedagio(form);
         ambiente: form.ambiente,
         toma: form.toma, cnpjTomador: form.cnpjTomador, xNomeTomador: form.xNomeTomador, ufTomador: form.ufTomador, cMunTomador: form.cMunTomador, xMunTomador: form.xMunTomador,
         cfop: form.cfop, vPrest: totalPrestacao(form), vCarga: parseFloat(form.vCarga)||0, pesoKg: parseFloat(form.peso)||0, rntrc: form.rntrc,
@@ -983,7 +996,7 @@ function CtePage() {
     mutationFn: async () => {
       if (!empresa) throw new Error("Empresa não selecionada");
       const chaves = selecionadas.size > 0 ? Array.from(selecionadas) : mercadorias.map(m => m.chave);
-      return previewCteXmlFn({ data: { empresaId: empresa.id, input: {
+      validarPedagio(form);
         ambiente: form.ambiente,
         toma: form.toma, cnpjTomador: form.cnpjTomador, xNomeTomador: form.xNomeTomador, ufTomador: form.ufTomador, cMunTomador: form.cMunTomador, xMunTomador: form.xMunTomador,
         cfop: form.cfop, vPrest: totalPrestacao(form), vCarga: parseFloat(form.vCarga)||0, pesoKg: parseFloat(form.peso)||0, rntrc: form.rntrc,
@@ -1830,16 +1843,16 @@ function CtePage() {
               <Card className="p-2">
                 <h5 className="text-xs font-semibold mb-1">Forma de Pagamento do Pedágio</h5>
                 <div className="flex flex-wrap gap-3 text-[10px]">
-                  <label className="flex items-center gap-1"><input type="radio" name="pedagio_pagto" /> Free Flow</label>
-                  <label className="flex items-center gap-1"><input type="radio" name="pedagio_pagto" /> TAG Transportador</label>
-                  <label className="flex items-center gap-1"><input type="radio" name="pedagio_pagto" /> TAG Tomador</label>
-                  <label className="flex items-center gap-1"><input type="radio" name="pedagio_pagto" defaultChecked /> Sem Pagamento de Pedágio</label>
+                  <label className="flex items-center gap-1"><input type="radio" name="pedagio_pagto" checked={(form.pedagioPagto || "sem-pagamento") === "free-flow"} onChange={() => setForm({ ...form, pedagioPagto: "free-flow" })} /> Free Flow</label>
+                  <label className="flex items-center gap-1"><input type="radio" name="pedagio_pagto" checked={(form.pedagioPagto || "sem-pagamento") === "tag-transportador"} onChange={() => setForm({ ...form, pedagioPagto: "tag-transportador" })} /> TAG Transportador</label>
+                  <label className="flex items-center gap-1"><input type="radio" name="pedagio_pagto" checked={(form.pedagioPagto || "sem-pagamento") === "tag-tomador"} onChange={() => setForm({ ...form, pedagioPagto: "tag-tomador" })} /> TAG Tomador</label>
+                  <label className="flex items-center gap-1"><input type="radio" name="pedagio_pagto" checked={(form.pedagioPagto || "sem-pagamento") === "sem-pagamento"} onChange={() => setForm({ ...form, pedagioPagto: "sem-pagamento" })} /> Sem Pagamento de Pedágio</label>
                 </div>
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-1 mt-1">
-                  <div><Label className="text-[10px] text-muted-foreground">Operadora</Label><Input className="h-6 text-[11px]" placeholder="Ex: SEM PARAR" /></div>
-                  <div><Label className="text-[10px] text-muted-foreground">CNPJ Operadora</Label><Input className="h-6 text-[11px]" placeholder="00.000.000/0000-00" /></div>
+                  <div><Label className="text-[10px] text-muted-foreground">Operadora</Label><Input className="h-6 text-[11px]" placeholder="Ex: SEM PARAR" value={form.pedagioOperadora || ""} onChange={e => setForm({ ...form, pedagioOperadora: e.target.value })} /></div>
+                  <div><Label className="text-[10px] text-muted-foreground">CNPJ Operadora</Label><Input className="h-6 text-[11px]" placeholder="00.000.000/0000-00" value={form.pedagioCnpj || ""} onChange={e => setForm({ ...form, pedagioCnpj: e.target.value })} /></div>
                   <div><Label className="text-[10px] text-muted-foreground">Vale Pedágio (R$)</Label><Input className="h-6 text-[11px]" placeholder="0.00" value={form.valePedagio || ""} onChange={e=>setForm({...form, valePedagio: e.target.value})} /></div>
-                  <div><Label className="text-[10px] text-muted-foreground">Nº TAG</Label><Input className="h-6 text-[11px]" placeholder="Nº TAG" /></div>
+                  <div><Label className="text-[10px] text-muted-foreground">Nº TAG</Label><Input className="h-6 text-[11px]" placeholder="Nº TAG" value={form.pedagioTag || ""} onChange={e => setForm({ ...form, pedagioTag: e.target.value })} /></div>
                 </div>
               </Card>
             </TabsContent>
