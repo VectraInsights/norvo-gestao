@@ -217,6 +217,21 @@ async function soapRequest(url:string, body:string, action:string, agent?:https.
   return r.text();
 }
 
+// Reconciliação: a SEFAZ pode ter autorizado mesmo quando a resposta da recepção indica erro
+// (timeout, resposta ilegível, duplo envio). Antes de declarar rejeição, consulta a situação real pela chave.
+async function reconciliarEmissao(pfx: Buffer, senha: string, out: { sucesso: boolean; cStat: string; xMotivo: string; chave?: string; protocolo?: string; xmlRet?: string }, ambiente: Ambiente, uf?: string) {
+  if (out.sucesso || !out.chave) return out;
+  try {
+    const cons = await consultarCte(pfx, senha, out.chave, ambiente, uf);
+    console.log("[CTE-SEFAZ-RECONC] consSit:", cons.cStat, cons.xMotivo);
+    if (cons.cStat === "100") {
+      const prot = cons.xml?.match(/<nProt>(\d+)<\/nProt>/)?.[1] || out.protocolo;
+      return { sucesso: true, cStat: "100", xMotivo: "Autorizado o uso do CT-e (confirmado por consulta SEFAZ)", chave: out.chave, protocolo: prot, xmlRet: out.xmlRet };
+    }
+  } catch (e) { console.log("[CTE-SEFAZ-RECONC] falha na consulta:", (e as Error)?.message); }
+  return out;
+}
+
 export async function emitirCte(pfx:Buffer, senha:string, xml:string, ambiente:Ambiente, uf?: string): Promise<{ sucesso:boolean; cStat:string; xMotivo:string; chave?:string; protocolo?:string; xmlRet?:string }>{
   const ep=getCteEndpoints(ambiente, uf);
   const xmlAss = signXml(xml, pfx, senha);
@@ -246,14 +261,14 @@ export async function emitirCte(pfx:Buffer, senha:string, xml:string, ambiente:A
     });
     const cStat=ret.match(/<cStat>(\d+)<\/cStat>/)?.[1]||""; const xMotivo=ret.match(/<xMotivo>([^<]+)<\/xMotivo>/)?.[1]||""; const ch=ret.match(/<chCTe>(\d{44})<\/chCTe>/)?.[1]||xml.match(/Id="CTe(\d{44})"/)?.[1]; const prot=ret.match(/<nProt>(\d+)<\/nProt>/)?.[1]||ret.match(/<protCTe[^>]*>[\s\S]*?<nProt>(\d+)<\/nProt>/)?.[1];
     console.log("[CTE-SEFAZ-RESP] cStat:", cStat, "xMotivo:", xMotivo, "chave:", ch, "protocolo:", prot);
-    return { sucesso: cStat==="100"||cStat==="104"||cStat==="103", cStat, xMotivo, chave: ch, protocolo: prot, xmlRet: ret };
+    return reconciliarEmissao(pfx, senha, { sucesso: cStat==="100"||cStat==="104"||cStat==="103", cStat, xMotivo, chave: ch, protocolo: prot, xmlRet: ret }, ambiente, uf);
   }
   // SVRS usa namespace v4 (CTeRecepcaoSincV4)
   const ns = "http://www.portalfiscal.inf.br/cte/wsdl/CTeRecepcaoSincV4";
   const body=`<cteDadosMsg xmlns="${ns}">${dadosBase64}</cteDadosMsg>`;
   const ret=await soapRequest(ep.recepcao, body, `${ns}/cteRecepcao`, createSefazAgent(pfx,senha));
   const cStat=ret.match(/<cStat>(\d+)<\/cStat>/)?.[1]||""; const xMotivo=ret.match(/<xMotivo>([^<]+)<\/xMotivo>/)?.[1]||""; const ch=ret.match(/<chCTe>(\d{44})<\/chCTe>/)?.[1]||xml.match(/Id="CTe(\d{44})"/)?.[1]; const prot=ret.match(/<nProt>(\d+)<\/nProt>/)?.[1]||ret.match(/<protCTe[^>]*>[\s\S]*?<nProt>(\d+)<\/nProt>/)?.[1];
-  return { sucesso: cStat==="100"||cStat==="104"||cStat==="103", cStat, xMotivo, chave: ch, protocolo: prot, xmlRet: ret };
+  return reconciliarEmissao(pfx, senha, { sucesso: cStat==="100"||cStat==="104"||cStat==="103", cStat, xMotivo, chave: ch, protocolo: prot, xmlRet: ret }, ambiente, uf);
 }
 
 export async function consultarCte(pfx:Buffer, senha:string, chave:string, ambiente:Ambiente, uf?: string): Promise<{ cStat:string; xMotivo:string; xml?:string }>{

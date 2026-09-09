@@ -931,7 +931,7 @@ function CtePage() {
           qc.invalidateQueries({ queryKey: ["cte-nfes-pendentes", empresa.id] });
           setSelecionadas(new Set());
         }
-      } else toast.error(ret?.xMotivo || ret?.motivo || "Rejeitado");
+      } else toast.error(ret?.xMotivo || ret?.motivo || ("SEFAZ sem motivo (cStat " + (ret?.cStat || "?") + "). Chave " + (ret?.chave || "?") + " — use Consultar SEFAZ para confirmar."));
       qc.invalidateQueries({ queryKey: ["cte-documentos"] });
     },
     onError: (e: Error) => toast.error(e.message),
