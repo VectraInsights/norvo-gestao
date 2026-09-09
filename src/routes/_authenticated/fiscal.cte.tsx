@@ -1680,7 +1680,7 @@ function CtePage() {
                         </PopoverContent>
                       </Popover>
                       </div>
-                      <div><Label\ className="text-\[10px]\ text-muted-foreground">CIOT</Label><Input className="h-6 text-[10px]" placeholder="Nº CIOT" /></div>
+                      <div><Label className="text-[10px] text-muted-foreground">CIOT</Label><Input className="h-6 text-[10px]" placeholder="Nº CIOT" /></div>
                       <div><Label className="text-[10px] text-muted-foreground">% Agregados</Label><Input className="h-6 text-[10px]" placeholder="0.00" /></div>
                     </div>
                     <div className="grid grid-cols-3 gap-1">
