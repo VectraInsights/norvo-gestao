@@ -1201,6 +1201,71 @@ Commits: CF `9cb5ba6` + Vercel `d68234b`
 
 Commits: CF `e3f9901` + Vercel `914662a`
 
+## Configurações: Seguradoras CNPJ primeiro (08/09/2026)
+
+- Aba Seguradoras: CNPJ passa a primeiro campo (add + edição + tabela) com busca
+  BrasilAPI sempre ao completar 14 dígitos. Padrão CNPJ-primeiro+busca vale p/
+  todos os cadastros (clientes, fornecedores, empresas já seguem; RNTRC mantém
+  número como chave, busca por CNPJ preservada).
+
+Commits: CF `4807369` + Vercel `f28d8cd`
+
+---
+
+## CT-e: dropdown tomador mostra tipo (08/09/2026)
+
+- Fechado exibe a opção (`0 — Contratação do Frete por conta do Remetente (CIF)`),
+  nome só no XML/PDF. Removido sufixo "(XML: razão teste)" do label.
+
+Commits: CF `24d1ab2` + Vercel `1df9043`
+
+---
+
+## CT-e: coleta/entrega na linha do CFOP (08/09/2026)
+
+- Rota vira linha compacta no cabeçalho (Coleta mun+UF | Entrega mun+UF); card Rota
+  removido. Faixa de cálculos do rodapé removida (duplicada com Tributação).
+
+Commits: CF `66a3ca0` + Vercel `ac39a4f`
+
+---
+
+## CT-e: CFOP alinhado + scroll + largura (08/09/2026)
+
+- Labels e inputs na mesma altura; municípios flexíveis; scroll da lista CFOP
+  isolado do diálogo (`onWheelCapture stopPropagation`); largura máx 700px (cabe
+  o 5356); observação abaixo do CFOP removida.
+
+Commits: CF `306e41e`/`704ae0b`/`e385e7d` + Vercel `35f81a2`/`553b1f7`/`f85081c`
+
+---
+
+## CT-e: abas fundidas + Transporte (08/09/2026)
+
+- Tributação e Carga fundidas em **Tributação e Carga** após Veículos; aba
+  Veículos renomeada **Transporte**. Ordem: Geral, Veículos→Transporte,
+  Tributação e Carga, Status, Observações.
+
+Commits: CF `59f2cd0`/`8188bf2` + Vercel `633f32d`/`272145e`
+
+---
+
+## CT-e: diálogo full-width + rota cabeçalho + sem Componentes (08/09/2026)
+
+- Diálogo ocupa `calc(100vw - 2rem)`; card Componentes do Valor removido (Valor
+  Serviço já existe em Transporte); card Rota removido (coleta/entrega no cabeçalho).
+
+Commits: CF `3df15fd`/`4b94f40`/`2c50fcc` + Vercel `c01c2e7`/`2c45dba`/`8dbb950`
+
+---
+
+## CT-e: justificativa padrão de cancelamento (08/09/2026)
+
+- Prompt de cancelamento pré-preenchido ("CT-e cancelado por erro nos dados da
+  prestação do serviço"), editável.
+
+Commits: CF `a036d99` + Vercel `fbcf9ad`
+
 ---
 
 ## Regras de segurança
