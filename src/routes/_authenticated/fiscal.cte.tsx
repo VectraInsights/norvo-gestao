@@ -1572,7 +1572,7 @@ function CtePage() {
               </Card>
               <Card className="p-3">
                 <h5 className="text-xs font-semibold mb-2">Outros Impostos — Alíquotas (%)</h5>
-                <div className="grid grid-cols-2 md:grid-cols-5 gap-2">
+                <div className="grid grid-cols-2 md:grid-cols-5 gap-1">
                   <div><Label className="text-[10px] text-muted-foreground">PIS (%)</Label><MoneyInput className="h-7 text-xs" prefix="" value={form.pisAliq} onChange={v => setForm({ ...form, pisAliq: v })} placeholder="0,00" /></div>
                   <div><Label className="text-[10px] text-muted-foreground">COFINS (%)</Label><MoneyInput className="h-7 text-xs" prefix="" value={form.cofinsAliq} onChange={v => setForm({ ...form, cofinsAliq: v })} placeholder="0,00" /></div>
                   <div><Label className="text-[10px] text-muted-foreground">IR (%)</Label><MoneyInput className="h-7 text-xs" prefix="" value={form.irAliq} onChange={v => setForm({ ...form, irAliq: v })} placeholder="0,00" /></div>
@@ -1584,11 +1584,11 @@ function CtePage() {
             </TabsContent>
 
             {/* === TAB: Seguros/Veículos === */}
-            <TabsContent value="seguros" className="mt-3 space-y-3">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+            <TabsContent value="seguros" className="mt-2 space-y-2">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
                 <Card className="p-2">
                   <h5 className="text-xs font-semibold mb-1">Seguro da Carga</h5>
-                  <div className="space-y-1.5">
+                  <div className="space-y-1">
                     <div><Label className="text-[10px] text-muted-foreground">Seguradora</Label>
                       <Popover open={seguradoraOpen} onOpenChange={setSeguradoraOpen}>
                         <PopoverTrigger asChild>
@@ -1649,9 +1649,9 @@ function CtePage() {
                   </div>
                 </Card>
 
-                <Card className="p-2 flex flex-col">
+                <Card className="p-2">
                   <h5 className="text-xs font-semibold mb-1">Dados do Veículo / Motorista</h5>
-                  <div className="flex-1 flex flex-col justify-between gap-1 py-1">
+                  <div className="space-y-1">
                     <div><Label className="text-[10px] text-muted-foreground">Nome Motorista</Label>
                       <Popover open={motoristaOpen} onOpenChange={setMotoristaOpen}>
                         <PopoverTrigger asChild>
@@ -1817,34 +1817,34 @@ function CtePage() {
               </div>
 
               {/* Pedágio / Taxas / Despesas Acessórias (ex-aba Taxas) */}
-              <Card className="p-3">
-                <h5 className="text-xs font-semibold mb-2">Componentes do Frete</h5>
-                <div className="grid grid-cols-2 md:grid-cols-5 gap-2">
-                  <div><Label className="text-[10px] text-muted-foreground">Valor Serviço</Label><MoneyInput className="h-7 text-xs font-medium" value={form.vPrest} onChange={v => setForm(f => ({ ...f, vPrest: v }))} /></div>
-                  <div><Label className="text-[10px] text-muted-foreground">Adicional</Label><MoneyInput className="h-7 text-xs font-medium" value={form.adicionalPed} onChange={v => setForm(f => ({ ...f, adicionalPed: v }))} /></div>
-                  <div><Label className="text-[10px] text-muted-foreground">Desconto</Label><MoneyInput className="h-7 text-xs font-medium" value={form.descontoPed} onChange={v => setForm(f => ({ ...f, descontoPed: v }))} /></div>
-                  <div><Label className="text-[10px] text-muted-foreground">Outros</Label><MoneyInput className="h-7 text-xs font-medium" value={form.outrosPed} onChange={v => setForm(f => ({ ...f, outrosPed: v }))} /></div>
-                  <div><Label className="text-[10px] text-muted-foreground">Ad Valorem</Label><MoneyInput className="h-7 text-xs font-medium" value={form.adValorem} onChange={v => setForm(f => ({ ...f, adValorem: v }))} /></div>
-                  <div><Label className="text-[10px] text-muted-foreground">GRIS</Label><MoneyInput className="h-7 text-xs font-medium" value={form.gris} onChange={v => setForm(f => ({ ...f, gris: v }))} /></div>
-                  <div><Label className="text-[10px] text-muted-foreground">Taxa Coleta</Label><MoneyInput className="h-7 text-xs font-medium" value={form.taxaColeta} onChange={v => setForm(f => ({ ...f, taxaColeta: v }))} /></div>
-                  <div><Label className="text-[10px] text-muted-foreground">Taxa Entrega</Label><MoneyInput className="h-7 text-xs font-medium" value={form.taxaEntrega} onChange={v => setForm(f => ({ ...f, taxaEntrega: v }))} /></div>
+              <Card className="p-2">
+                <h5 className="text-xs font-semibold mb-1">Componentes do Frete</h5>
+                <div className="grid grid-cols-2 md:grid-cols-5 gap-1">
+                  <div><Label className="text-[10px] text-muted-foreground">Valor Serviço</Label><MoneyInput className="h-6 text-[11px] font-medium" value={form.vPrest} onChange={v => setForm(f => ({ ...f, vPrest: v }))} /></div>
+                  <div><Label className="text-[10px] text-muted-foreground">Adicional</Label><MoneyInput className="h-6 text-[11px] font-medium" value={form.adicionalPed} onChange={v => setForm(f => ({ ...f, adicionalPed: v }))} /></div>
+                  <div><Label className="text-[10px] text-muted-foreground">Desconto</Label><MoneyInput className="h-6 text-[11px] font-medium" value={form.descontoPed} onChange={v => setForm(f => ({ ...f, descontoPed: v }))} /></div>
+                  <div><Label className="text-[10px] text-muted-foreground">Outros</Label><MoneyInput className="h-6 text-[11px] font-medium" value={form.outrosPed} onChange={v => setForm(f => ({ ...f, outrosPed: v }))} /></div>
+                  <div><Label className="text-[10px] text-muted-foreground">Ad Valorem</Label><MoneyInput className="h-6 text-[11px] font-medium" value={form.adValorem} onChange={v => setForm(f => ({ ...f, adValorem: v }))} /></div>
+                  <div><Label className="text-[10px] text-muted-foreground">GRIS</Label><MoneyInput className="h-6 text-[11px] font-medium" value={form.gris} onChange={v => setForm(f => ({ ...f, gris: v }))} /></div>
+                  <div><Label className="text-[10px] text-muted-foreground">Taxa Coleta</Label><MoneyInput className="h-6 text-[11px] font-medium" value={form.taxaColeta} onChange={v => setForm(f => ({ ...f, taxaColeta: v }))} /></div>
+                  <div><Label className="text-[10px] text-muted-foreground">Taxa Entrega</Label><MoneyInput className="h-6 text-[11px] font-medium" value={form.taxaEntrega} onChange={v => setForm(f => ({ ...f, taxaEntrega: v }))} /></div>
                                   </div>
                 <p className="text-[9px] text-muted-foreground mt-1">Vale-pedágio (Lei 10.209/2001, art. 2º): não integra o frete nem a BC do ICMS e não vai no CT-e — informar no MDF-e.</p>
               </Card>
 
-              <Card className="p-3">
-                <h5 className="text-xs font-semibold mb-2">Forma de Pagamento do Pedágio</h5>
-                <div className="flex flex-wrap gap-3 text-[11px]">
+              <Card className="p-2">
+                <h5 className="text-xs font-semibold mb-1">Forma de Pagamento do Pedágio</h5>
+                <div className="flex flex-wrap gap-3 text-[10px]">
                   <label className="flex items-center gap-1"><input type="radio" name="pedagio_pagto" defaultChecked /> Free Flow</label>
                   <label className="flex items-center gap-1"><input type="radio" name="pedagio_pagto" /> TAG Transportador</label>
                   <label className="flex items-center gap-1"><input type="radio" name="pedagio_pagto" /> TAG Tomador</label>
                   <label className="flex items-center gap-1"><input type="radio" name="pedagio_pagto" /> Sem Pagto Pedágio</label>
                 </div>
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-2 mt-2">
-                  <div><Label className="text-[10px] text-muted-foreground">Operadora</Label><Input className="h-7 text-xs" placeholder="Ex: SEM PARAR" /></div>
-                  <div><Label className="text-[10px] text-muted-foreground">CNPJ Operadora</Label><Input className="h-7 text-xs" placeholder="00.000.000/0000-00" /></div>
-                  <div><Label className="text-[10px] text-muted-foreground">Vale Pedágio (R$)</Label><Input className="h-7 text-xs" placeholder="0.00" value={form.valePedagio || ""} onChange={e=>setForm({...form, valePedagio: e.target.value})} /></div>
-                  <div><Label className="text-[10px] text-muted-foreground">Nº TAG</Label><Input className="h-7 text-xs" placeholder="Nº TAG" /></div>
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-1 mt-1">
+                  <div><Label className="text-[10px] text-muted-foreground">Operadora</Label><Input className="h-6 text-[11px]" placeholder="Ex: SEM PARAR" /></div>
+                  <div><Label className="text-[10px] text-muted-foreground">CNPJ Operadora</Label><Input className="h-6 text-[11px]" placeholder="00.000.000/0000-00" /></div>
+                  <div><Label className="text-[10px] text-muted-foreground">Vale Pedágio (R$)</Label><Input className="h-6 text-[11px]" placeholder="0.00" value={form.valePedagio || ""} onChange={e=>setForm({...form, valePedagio: e.target.value})} /></div>
+                  <div><Label className="text-[10px] text-muted-foreground">Nº TAG</Label><Input className="h-6 text-[11px]" placeholder="Nº TAG" /></div>
                 </div>
               </Card>
             </TabsContent>
