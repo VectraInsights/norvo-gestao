@@ -1443,7 +1443,7 @@ function CtePage() {
                     <ToggleGroupItem value="producao" className="h-6 text-[10px] px-2 data-[state=on]:bg-green-600/10 data-[state=on]:text-green-700">Produção</ToggleGroupItem>
                   </ToggleGroup>
                 </div>
-                <div className="w-44"><Label className="text-[10px] text-muted-foreground">N° Conhecimento</Label><Input className="h-7 text-xs font-mono" value="— aguardando emissão —" readOnly /></div>
+                <div className="w-44"><Label className="text-[10px] text-muted-foreground">N° Conhecimento</Label><Input className="h-7 text-xs font-mono bg-transparent" value="— aguardando emissão —" readOnly /></div>
                 <div className="w-[136px]"><Label className="text-[10px] text-muted-foreground">Data Emissão</Label><DateInput value={form.dataEmissao} onChange={v => setForm({...form, dataEmissao: v})} className="h-7 text-xs" /></div>
                 <div className="min-w-0">
                   <Label className="text-[10px] text-muted-foreground">Tomador do Serviço</Label>
@@ -1476,8 +1476,8 @@ function CtePage() {
                     </PopoverContent>
                   </Popover>
                 </div>
-                <div><Label className="text-[10px] text-muted-foreground">Mod / Série</Label><Input className="h-7 text-xs font-mono w-[92px] text-center px-1" value="57 / 001" readOnly /></div>
-                <div><Label className="text-[10px] text-muted-foreground">Percurso</Label><Input className="h-7 text-xs font-mono w-[76px] text-center px-1" value={percursoMatch?.codigo || "—"} readOnly title={percursoMatch?.nome || "Nenhum percurso associado"} /></div>
+                <div><Label className="text-[10px] text-muted-foreground">Mod / Série</Label><Input className="h-7 text-xs font-mono w-[92px] text-center px-1 bg-transparent" value="57 / 001" readOnly /></div>
+                <div><Label className="text-[10px] text-muted-foreground">Percurso</Label><Input className="h-7 text-xs font-mono w-[76px] text-center px-1 bg-transparent" value={percursoMatch?.codigo || "—"} readOnly title={percursoMatch?.nome || "Nenhum percurso associado"} /></div>
               </div>
               <div className="border rounded p-3 bg-muted/20">
                 <div className="flex flex-wrap items-start gap-x-3 gap-y-2">
@@ -1797,8 +1797,8 @@ function CtePage() {
                       <div className="col-span-2"><Label className="text-[10px] text-muted-foreground">Nº Averbação</Label><Input className="h-6 text-[10px]" placeholder="Nº Averbação" value={form.averbacao} onChange={e => setForm({ ...form, averbacao: e.target.value })} /></div>
                     </div>
                     <div className="grid grid-cols-6 gap-1">
-                      <div><Label className="text-[10px] text-muted-foreground">Base Seg.</Label><Input className="h-6 text-[10px]" value={form.vCarga} readOnly /></div>
-                      <div><Label className="text-[10px] text-muted-foreground">Valor Doc.</Label><Input className="h-6 text-[10px]" value={form.vCarga} readOnly /></div>
+                      <div><Label className="text-[10px] text-muted-foreground">Base Seg.</Label><Input className="h-6 text-[10px] bg-transparent" value={form.vCarga} readOnly /></div>
+                      <div><Label className="text-[10px] text-muted-foreground">Valor Doc.</Label><Input className="h-6 text-[10px] bg-transparent" value={form.vCarga} readOnly /></div>
                       <div><Label className="text-[10px] text-muted-foreground">RCTR-C</Label><Input className="h-6 text-[10px]" placeholder="0.00" value={form.rctrC || ""} onChange={e => setForm({ ...form, rctrC: e.target.value })} /></div>
                       <div><Label className="text-[10px] text-muted-foreground">RCF-DC</Label><Input className="h-6 text-[10px]" placeholder="0.00" value={form.rcfDc || ""} onChange={e => setForm({ ...form, rcfDc: e.target.value })} /></div>
                       <div><Label className="text-[10px] text-muted-foreground">V. Adicional</Label><Input className="h-6 text-[10px]" placeholder="0.00" value={form.segAdicional || ""} onChange={e => setForm({ ...form, segAdicional: e.target.value })} /></div>
