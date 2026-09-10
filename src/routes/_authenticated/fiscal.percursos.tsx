@@ -179,8 +179,7 @@ async function calcDistDur(o: { cep: string; xmun: string; uf: string }, d: { ce
   const m = Math.min(...routes.map((x: any) => Number(x.distance) || Infinity));
   if (!isFinite(m)) throw new Error("Rota nao encontrada entre os CEPs");
   const km = Math.round(m / 1000);
-  const bruto = km / 50;
-  const total = Math.ceil(bruto + Math.floor(bruto / 5.5) * 0.5);
+  const total = Math.ceil((km / 700) * 24);
   return { km: String(km), h: String(total) };
 }
 function PercursosPage() {
@@ -474,7 +473,7 @@ function PercursosPage() {
                       <div className="flex-1 flex flex-col gap-1 py-0.5">
 <div className="flex items-center gap-1"><span className="text-[9px] text-muted-foreground w-12 shrink-0">Coleta</span><Input className="h-6 text-[11px] flex-1 min-w-0 bg-transparent dark:bg-transparent" readOnly value={editing.coleta_xmun || ""} onChange={e => set("coleta_xmun", e.target.value)} /><span className="text-[9px] text-muted-foreground shrink-0">UF</span><Input className="h-6 text-[11px] w-12 text-center shrink-0 bg-transparent dark:bg-transparent" readOnly value={editing.coleta_uf || ""} onChange={e => set("coleta_uf", e.target.value.toUpperCase())} maxLength={2} /></div>
 <div className="flex items-center gap-1"><span className="text-[9px] text-muted-foreground w-12 shrink-0">Entrega</span><Input className="h-6 text-[11px] flex-1 min-w-0 bg-transparent dark:bg-transparent" readOnly value={editing.entrega_xmun || ""} onChange={e => set("entrega_xmun", e.target.value)} /><span className="text-[9px] text-muted-foreground shrink-0">UF</span><Input className="h-6 text-[11px] w-12 text-center shrink-0 bg-transparent dark:bg-transparent" readOnly value={editing.entrega_uf || ""} onChange={e => set("entrega_uf", e.target.value.toUpperCase())} maxLength={2} /></div>
-<div className="flex items-center gap-1"><span className="text-[9px] text-muted-foreground shrink-0">Dist.</span><Input className="h-6 text-[11px] w-0 flex-1 min-w-0" value={editing.distancia_km || ""} onChange={e => set("distancia_km", e.target.value)} /><span className="text-[9px] text-muted-foreground shrink-0">km</span><span className="text-[9px] text-muted-foreground shrink-0">Dur.</span><Input className="h-6 text-[11px] w-0 flex-1 min-w-0" value={editing.duracao_horas || ""} onChange={e => set("duracao_horas", e.target.value)} /><span className="text-[9px] text-muted-foreground shrink-0">h</span></div>
+<div className="flex items-center gap-1"><span className="text-[9px] text-muted-foreground shrink-0">Distância</span><Input className="h-6 text-[11px] w-0 flex-1 min-w-0" value={editing.distancia_km || ""} onChange={e => set("distancia_km", e.target.value)} /><span className="text-[9px] text-muted-foreground shrink-0">km</span><span className="text-[9px] text-muted-foreground shrink-0">Duração</span><Input className="h-6 text-[11px] w-0 flex-1 min-w-0" value={editing.duracao_horas || ""} onChange={e => set("duracao_horas", e.target.value)} /><span className="text-[9px] text-muted-foreground shrink-0">h</span></div>
 </div>
                     </div>
                   </div>
