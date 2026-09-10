@@ -14,7 +14,7 @@ import { Route as RoadIcon, Pencil, Trash2, Search, Save } from "lucide-react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useEmpresaAtual } from "@/hooks/use-empresa";
-import { useState, useMemo } from "react";
+import { useState, useMemo, useRef } from "react";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/_authenticated/fiscal/percursos")({
@@ -47,11 +47,11 @@ const fmtDoc = (d: any) => {
   return s || "—";
 };
 
-function T({ label, k, ph, mono, editing, set }: { label: string; k: string; ph?: string; mono?: boolean; editing: Percurso | null; set: (k: string, v: any) => void }) {
+function T({ label, k, ph, mono, editing, set, on14 }: { label: string; k: string; ph?: string; mono?: boolean; editing: Percurso | null; set: (k: string, v: any) => void; on14?: (digits: string) => void }) {
   return (
     <div>
       <Label className="text-[10px] text-muted-foreground">{label}</Label>
-      <Input className={"h-7 text-xs" + (mono ? " font-mono" : "")} value={editing?.[k] ?? ""} onChange={e => set(k, e.target.value)} placeholder={ph} />
+      <Input className={"h-7 text-xs" + (mono ? " font-mono" : "")} value={editing?.[k] ?? ""} onChange={e => { set(k, e.target.value); if (on14 && e.target.value.replace(/\D/g, "").length === 14) on14(e.target.value.replace(/\D/g, "")); }} placeholder={ph} />
     </div>
   );
 }
@@ -98,7 +98,7 @@ function PercursosPage() {
     enabled: !!empresa,
     queryKey: ["contatos-cte", empresa?.id],
     queryFn: async (): Promise<any[]> => {
-      const { data } = await supabase.from("contatos" as any).select("documento,nome,ie,logradouro,numero,bairro,cidade,uf,cep,telefone").eq("empresa_id", empresa!.id);
+      const { data } = await supabase.from("contatos" as any).select("id,documento,nome,ie,logradouro,numero,bairro,cidade,uf,cep,telefone").eq("empresa_id", empresa!.id);
       return (data ?? []) as any[];
     },
   });
@@ -149,6 +149,44 @@ function PercursosPage() {
   const eRem = withContato("rem");
   const eDes = withContato("dest");
   const eTom = withContato("toma");
+  const lastLookupParte = useRef<Record<string, string>>({});
+  const lookupParte = async (p: "consig" | "redesp", digits: string) => {
+    const d = digits.replace(/\D/g, "").slice(0, 14);
+    if (d.length !== 14 || !empresa) return;
+    if (lastLookupParte.current[p] === d) return;
+    lastLookupParte.current[p] = d;
+    try {
+      const row = contatoByDoc.get(d);
+      let found: any = row ? { nome: row.nome || "", ie: row.ie || "", uf: row.uf || "", cidade: row.cidade || "", cep: String(row.cep || "").replace(/\D/g, ""), logradouro: row.logradouro || "", numero: row.numero || "", bairro: row.bairro || "", fone: row.telefone || "", fromContatos: true, _id: row.id } : null;
+      if (!found || !found.logradouro || !found.cidade) {
+        let j: any = null;
+        for (const url of ["https://brasilapi.com.br/api/cnpj/v1/" + d, "https://receitaws.com.br/v1/cnpj/" + d]) {
+          try { const r = await fetch(url, { signal: AbortSignal.timeout(8000) }); if (r.ok) { j = await r.json(); break; } } catch {}
+        }
+        if (j && j.status !== "ERROR") {
+          const api = { nome: j.razao_social || j.nome || "", ie: "", uf: j.uf || j.state || "", cidade: j.municipio || j.city || "", cep: String(j.cep || j.zip || "").replace(/\D/g, ""), logradouro: j.logradouro || j.street || "", numero: String(j.numero || j.number || ""), bairro: j.bairro || j.district || "", fone: j.ddd_telefone_1 || j.telefone || j.phone || "" };
+          found = { nome: (found && found.nome) || api.nome, ie: (found && found.ie) || "", uf: (found && found.uf) || api.uf, cidade: (found && found.cidade) || api.cidade, cep: (found && found.cep) || api.cep, logradouro: (found && found.logradouro) || api.logradouro, numero: (found && found.numero) || api.numero, bairro: (found && found.bairro) || api.bairro, fone: (found && found.fone) || api.fone, fromContatos: !!(found && found.nome), _id: found && (found as any)._id };
+          if (api.cidade || api.logradouro) {
+            if (found._id) { await supabase.from("contatos" as any).update({ logradouro: api.logradouro || null, numero: api.numero || null, bairro: api.bairro || null, cidade: api.cidade || null, uf: api.uf || null, cep: api.cep || null, telefone: api.fone || null }).eq("id", found._id); }
+            else if (api.nome || api.cidade) { await supabase.from("contatos" as any).insert({ empresa_id: empresa.id, nome: api.nome || d, tipo: "cliente", documento: d, uf: api.uf || null, cidade: api.cidade || null, logradouro: api.logradouro || null, numero: api.numero || null, bairro: api.bairro || null, cep: api.cep || null, telefone: api.fone || null } as any); }
+            qc.invalidateQueries({ queryKey: ["contatos-cte", empresa.id] });
+          }
+        }
+      }
+      if (!found || (!found.nome && !found.cidade && !found.logradouro)) { toast.error("CNPJ nao encontrado"); return; }
+      setEditing(e => e ? { ...e,
+        [p + "_nome"]: found.nome || (e as any)[p + "_nome"] || "",
+        [p + "_ie"]: found.ie || (e as any)[p + "_ie"] || "",
+        [p + "_uf"]: found.uf || (e as any)[p + "_uf"] || "",
+        [p + "_xmun"]: found.cidade || (e as any)[p + "_xmun"] || "",
+        [p + "_cep"]: found.cep || (e as any)[p + "_cep"] || "",
+        [p + "_logradouro"]: found.logradouro || (e as any)[p + "_logradouro"] || "",
+        [p + "_nro"]: found.numero || (e as any)[p + "_nro"] || "",
+        [p + "_bairro"]: found.bairro || (e as any)[p + "_bairro"] || "",
+      } : e);
+      toast.success(p === "consig" ? "Consignatario localizado" : "Redespacho localizado");
+    } catch (e: any) { toast.error(e.message || "Falha ao buscar CNPJ"); }
+  };
   const set = (k: string, v: any) => setEditing((e: any) => (e ? { ...e, [k]: v } : e));
   const q = busca.trim().toLowerCase();
   const lista = (percursos || []).filter(p => {
@@ -239,7 +277,7 @@ function PercursosPage() {
                     <div className="border rounded p-2 space-y-1">
                       <p className="text-[11px] font-semibold">Consignatário</p>
                       <div className="grid grid-cols-2 gap-1">
-                        <T editing={editing} set={set} label="CNPJ" k="consig_cnpj" mono />
+                        <T editing={editing} set={set} label="CNPJ" k="consig_cnpj" mono on14={(d: string) => lookupParte("consig", d)} />
                         <T editing={editing} set={set} label="Nome" k="consig_nome" />
                         <T editing={editing} set={set} label="IE" k="consig_ie" />
                         <T editing={editing} set={set} label="CEP" k="consig_cep" mono />
@@ -253,7 +291,7 @@ function PercursosPage() {
                     <div className="border rounded p-2 space-y-1">
                       <p className="text-[11px] font-semibold">Redespacho</p>
                       <div className="grid grid-cols-2 gap-1">
-                        <T editing={editing} set={set} label="CNPJ" k="redesp_cnpj" mono />
+                        <T editing={editing} set={set} label="CNPJ" k="redesp_cnpj" mono on14={(d: string) => lookupParte("redesp", d)} />
                         <T editing={editing} set={set} label="Nome" k="redesp_nome" />
                         <T editing={editing} set={set} label="IE" k="redesp_ie" />
                         <T editing={editing} set={set} label="CEP" k="redesp_cep" mono />
