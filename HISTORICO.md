@@ -1327,7 +1327,7 @@ Commits CF `5138d60..b041b1c` + Vercel espelhos.
 - Tons: editáveis com fundo visível (claro `stone-200`, escuro `muted`); dropdowns (SelectTrigger) com o mesmo tom por serem selecionáveis; só-leitura transparente nos dois temas (código/nome do percurso, Parte/Tomador/R, Tomador/Chave/protocolos do CT-e).
 - Box Coleta/Entrega: Distância/Duração por extenso na mesma linha (km/h), sem sobreposição (inputs `w-0 flex-1`, sem `justify-between`).
 - Dist/Dur automáticos no save: se vazio ou se a rota mudou (origem/destino efetivo vs. banco), recalcula — CEP em 3 fontes (BrasilAPI v2 → AwesomeAPI → Nominatim por CEP) com fallback cidade/UF → rota OSRM (menor alternativa). Botão Recalcular no box + recálculo sozinho ~1s após trocar cidade (debounce, não dispara ao abrir).
-- Regra de duração final: volante = km ÷ 60; dias = teto(volante ÷ 12); 1 dia = só o volante; mais dias = volante + 12h descanso × dias; 1 casa decimal, sem teto (ex.: 185 km = 3,1h; 2813 km = 94,9h).
+- Regra de duração final: volante = km ÷ 60; dias = teto(volante ÷ 12); 1 dia = só o volante; mais dias = volante + 12h descanso × dias; sem decimais (decimal maior que 5 arredonda p/ cima, até 5 p/ baixo; ex.: 185 km = 3h; 2813 km = 95h).
 - Save do percurso paralelizado (update + writeback consig/redesp em `Promise.all`).
 
 Commits CF `a16bf80..2aca9b8` + Vercel espelhos + Worker redeployado a cada mudança.

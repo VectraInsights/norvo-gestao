@@ -181,7 +181,7 @@ async function calcDistDur(o: { cep: string; xmun: string; uf: string }, d: { ce
   const km = Math.round(m / 1000);
   const volante = km / 60;
   const dias = Math.max(1, Math.ceil(volante / 12));
-  const total = Math.round((volante + (dias > 1 ? 12 * dias : 0)) * 10) / 10;
+  const total = Math.floor(volante + (dias > 1 ? 12 * dias : 0) + 0.4);
   return { km: String(km), h: String(total) };
 }
 function PercursosPage() {
