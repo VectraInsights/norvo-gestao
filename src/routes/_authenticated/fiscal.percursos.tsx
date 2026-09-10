@@ -50,6 +50,7 @@ function PercursosPage() {
   const { data: empresa } = useEmpresaAtual();
   const qc = useQueryClient();
   const [busca, setBusca] = useState("");
+  const [percTab, setPercTab] = useState("geral");
   const [editing, setEditing] = useState<Percurso | null>(null);
 
   const { data: percursos, isLoading } = useQuery({
@@ -171,7 +172,7 @@ function PercursosPage() {
                     <TableCell className="text-xs">{p.coleta_xmun || "—"}/{p.coleta_uf || "—"} → {p.entrega_xmun || "—"}/{p.entrega_uf || "—"}</TableCell>
                     <TableCell className="text-right">
                       <div className="flex justify-end gap-1">
-                        <Button size="icon" variant="ghost" className="h-7 w-7" title="Editar" onClick={() => setEditing({ ...p })}><Pencil className="h-3.5 w-3.5" /></Button>
+                        <Button size="icon" variant="ghost" className="h-7 w-7" title="Editar" onClick={() => { setEditing({ ...p }); setPercTab("geral"); } }><Pencil className="h-3.5 w-3.5" /></Button>
                         <Button size="icon" variant="ghost" className="h-7 w-7 text-destructive" title="Excluir" onClick={() => { if (window.confirm(`Excluir o percurso "${p.nome}"?`)) excluir.mutate(p.id); }}><Trash2 className="h-3.5 w-3.5" /></Button>
                       </div>
                     </TableCell>
@@ -185,127 +186,138 @@ function PercursosPage() {
 
       <Dialog open={!!editing} onOpenChange={v => { if (!v) setEditing(null); }}>
         <DialogContent>
-          <DialogHeader>
-            <DialogTitle className="text-sm">Editar percurso {editing?.codigo || ""} — {editing?.nome || ""}</DialogTitle>
-          </DialogHeader>
-          {editing && (
-            <div className="space-y-3">
-              <div className="grid grid-cols-[100px_1fr] gap-2">
-                <R label="Código" v={editing.codigo} />
-                <T label="Nome" k="nome" />
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
-                <Parte titulo="Remetente" p="rem" nome={editing.rem_nome} doc={editing.rem_cnpj} ie={editing.rem_ie} cid={editing.rem_xmun} uf={editing.rem_uf} />
-                <Parte titulo="Destinatário" p="dest" nome={editing.dest_nome} doc={editing.dest_cnpj} ie={editing.dest_ie} cid={editing.dest_xmun} uf={editing.dest_uf} />
-                <Parte titulo="Tomador" p="toma" nome={editing.toma_nome} doc={editing.toma_cnpj} ie={editing.toma_ie} cid={editing.toma_xmun} uf={editing.toma_uf} />
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-                <div className="border rounded p-2 space-y-1">
-                  <p className="text-[11px] font-semibold">Consignatário</p>
-                  <div className="grid grid-cols-2 gap-1">
-                    <T label="CNPJ" k="consig_cnpj" mono />
-                    <T label="Nome" k="consig_nome" />
-                    <T label="IE" k="consig_ie" />
-                    <T label="CEP" k="consig_cep" mono />
-                    <T label="Município" k="consig_xmun" />
-                    <T label="UF" k="consig_uf" />
-                    <div className="col-span-2"><T label="Logradouro" k="consig_logradouro" /></div>
-                    <T label="Número" k="consig_nro" />
-                    <T label="Bairro" k="consig_bairro" />
+          <div className="flex flex-col h-full gap-2">
+            <DialogHeader>
+              <DialogTitle className="text-sm">Editar percurso {editing?.codigo || ""} — {editing?.nome || ""}</DialogTitle>
+            </DialogHeader>
+            {editing && (
+              <Tabs value={percTab} onValueChange={setPercTab} className="flex-1 flex flex-col min-h-0">
+                <TabsList className="w-fit">
+                  <TabsTrigger value="geral" className="text-xs">Geral</TabsTrigger>
+                  <TabsTrigger value="rota" className="text-xs">Rota e Fiscal</TabsTrigger>
+                  <TabsTrigger value="seguro" className="text-xs">Seguro e Pedágio</TabsTrigger>
+                </TabsList>
+                <TabsContent value="geral" className="mt-2 space-y-2">
+                  <div className="grid grid-cols-[100px_1fr] gap-2">
+                    <R label="Código" v={editing.codigo} />
+                    <T label="Nome" k="nome" />
                   </div>
-                </div>
-                <div className="border rounded p-2 space-y-1">
-                  <p className="text-[11px] font-semibold">Redespacho</p>
-                  <div className="grid grid-cols-2 gap-1">
-                    <T label="CNPJ" k="redesp_cnpj" mono />
-                    <T label="Nome" k="redesp_nome" />
-                    <T label="IE" k="redesp_ie" />
-                    <T label="CEP" k="redesp_cep" mono />
-                    <T label="Município" k="redesp_xmun" />
-                    <T label="UF" k="redesp_uf" />
-                    <div className="col-span-2"><T label="Logradouro" k="redesp_logradouro" /></div>
-                    <T label="Número" k="redesp_nro" />
-                    <T label="Bairro" k="redesp_bairro" />
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
+                    <Parte titulo="Remetente" p="rem" nome={editing.rem_nome} doc={editing.rem_cnpj} ie={editing.rem_ie} cid={editing.rem_xmun} uf={editing.rem_uf} />
+                    <Parte titulo="Destinatário" p="dest" nome={editing.dest_nome} doc={editing.dest_cnpj} ie={editing.dest_ie} cid={editing.dest_xmun} uf={editing.dest_uf} />
+                    <Parte titulo="Tomador" p="toma" nome={editing.toma_nome} doc={editing.toma_cnpj} ie={editing.toma_ie} cid={editing.toma_xmun} uf={editing.toma_uf} />
                   </div>
-                </div>
-              </div>
-
-              <div className="border rounded p-2 space-y-1">
-                <p className="text-[11px] font-semibold">Coleta / Entrega / Fiscal</p>
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-1">
-                  <T label="Coleta município" k="coleta_xmun" />
-                  <T label="Coleta UF" k="coleta_uf" />
-                  <T label="Entrega município" k="entrega_xmun" />
-                  <T label="Entrega UF" k="entrega_uf" />
-                  <T label="CFOP" k="cfop" mono />
-                  <T label="Emissão município" k="emissao_xmun" />
-                  <T label="Emissão UF" k="emissao_uf" />
-                  <T label="Distância km" k="distancia_km" />
-                  <T label="Duração h" k="duracao_horas" />
-                </div>
-                <div className="grid grid-cols-2 md:grid-cols-5 gap-1">
-                  <T label="CST ICMS" k="icms_cst" />
-                  <T label="Alíq. ICMS %" k="icms_aliq" />
-                  <T label="Redução base %" k="reducao_base" />
-                  <T label="Crédito outorgado" k="credito_outorgado" />
-                  <T label="PIS %" k="pis_aliq" />
-                  <T label="COFINS %" k="cofins_aliq" />
-                  <T label="IR %" k="ir_aliq" />
-                  <T label="INSS %" k="inss_aliq" />
-                  <T label="CSLL %" k="csll_aliq" />
-                </div>
-                <div>
-                  <Label className="text-[10px] text-muted-foreground">Observação geral</Label>
-                  <Textarea className="text-xs" rows={2} value={editing.obs_gerais ?? ""} onChange={e => set("obs_gerais", e.target.value)} />
-                </div>
-              </div>
-
-              <div className="border rounded p-2 space-y-1">
-                <p className="text-[11px] font-semibold">Seguro</p>
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-1">
-                  <div className="col-span-2"><T label="Seguradora" k="seg_nome" /></div>
-                  <T label="Apólice" k="seg_apolice" mono />
-                  <T label="Averbação" k="seg_averbacao" mono />
-                  <T label="RCTR-C" k="seg_rctr_c" />
-                  <T label="RCF-DC" k="seg_rcf_dc" />
-                  <T label="Adicional" k="seg_adicional" />
-                  <T label="Total" k="seg_total" />
-                  <T label="Responsável" k="seg_responsavel" />
-                  <div className="flex items-end pb-1">
-                    <label className="flex items-center gap-1 text-[11px]"><input type="checkbox" checked={!!editing.seg_repassar} onChange={e => set("seg_repassar", e.target.checked)} /> Repassar</label>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                    <div className="border rounded p-2 space-y-1">
+                      <p className="text-[11px] font-semibold">Consignatário</p>
+                      <div className="grid grid-cols-2 gap-1">
+                        <T label="CNPJ" k="consig_cnpj" mono />
+                        <T label="Nome" k="consig_nome" />
+                        <T label="IE" k="consig_ie" />
+                        <T label="CEP" k="consig_cep" mono />
+                        <T label="Município" k="consig_xmun" />
+                        <T label="UF" k="consig_uf" />
+                        <div className="col-span-2"><T label="Logradouro" k="consig_logradouro" /></div>
+                        <T label="Número" k="consig_nro" />
+                        <T label="Bairro" k="consig_bairro" />
+                      </div>
+                    </div>
+                    <div className="border rounded p-2 space-y-1">
+                      <p className="text-[11px] font-semibold">Redespacho</p>
+                      <div className="grid grid-cols-2 gap-1">
+                        <T label="CNPJ" k="redesp_cnpj" mono />
+                        <T label="Nome" k="redesp_nome" />
+                        <T label="IE" k="redesp_ie" />
+                        <T label="CEP" k="redesp_cep" mono />
+                        <T label="Município" k="redesp_xmun" />
+                        <T label="UF" k="redesp_uf" />
+                        <div className="col-span-2"><T label="Logradouro" k="redesp_logradouro" /></div>
+                        <T label="Número" k="redesp_nro" />
+                        <T label="Bairro" k="redesp_bairro" />
+                      </div>
+                    </div>
                   </div>
-                </div>
-              </div>
-
-              <div className="border rounded p-2 space-y-1">
-                <p className="text-[11px] font-semibold">Pedágio</p>
-                <div className="grid grid-cols-2 md:grid-cols-5 gap-1">
-                  <div>
-                    <Label className="text-[10px] text-muted-foreground">Pagamento</Label>
-                    <Select value={editing.pedagio_pagto || "sem-pagamento"} onValueChange={v => set("pedagio_pagto", v)}>
-                      <SelectTrigger className="h-7 text-xs"><SelectValue /></SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="sem-pagamento">Sem Pagamento</SelectItem>
-                        <SelectItem value="free-flow">Free Flow</SelectItem>
-                        <SelectItem value="tag-transportador">TAG Transportador</SelectItem>
-                        <SelectItem value="tag-tomador">TAG Tomador</SelectItem>
-                      </SelectContent>
-                    </Select>
+                </TabsContent>
+                <TabsContent value="rota" className="mt-2 space-y-2">
+                  <div className="border rounded p-2 space-y-1">
+                    <p className="text-[11px] font-semibold">Coleta / Entrega / Emissão</p>
+                    <div className="grid grid-cols-2 md:grid-cols-5 gap-1">
+                      <T label="Coleta município" k="coleta_xmun" />
+                      <T label="Coleta UF" k="coleta_uf" />
+                      <T label="Entrega município" k="entrega_xmun" />
+                      <T label="Entrega UF" k="entrega_uf" />
+                      <T label="CFOP" k="cfop" mono />
+                      <T label="Emissão município" k="emissao_xmun" />
+                      <T label="Emissão UF" k="emissao_uf" />
+                      <T label="Distância km" k="distancia_km" />
+                      <T label="Duração h" k="duracao_horas" />
+                    </div>
                   </div>
-                  <T label="Operadora" k="pedagio_operadora" />
-                  <T label="CNPJ operadora" k="pedagio_cnpj" mono />
-                  <T label="Nº TAG" k="pedagio_tag" mono />
-                  <T label="Vale (R$)" k="pedagio_vale" />
-                </div>
-              </div>
-            </div>
-          )}
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setEditing(null)}>Fechar</Button>
-            <Button onClick={() => salvar.mutate()} disabled={salvar.isPending}><Save className="mr-1 h-3.5 w-3.5" /> Salvar</Button>
-          </DialogFooter>
+                  <div className="border rounded p-2 space-y-1">
+                    <p className="text-[11px] font-semibold">Fiscal</p>
+                    <div className="grid grid-cols-2 md:grid-cols-5 gap-1">
+                      <T label="CST ICMS" k="icms_cst" />
+                      <T label="Alíq. ICMS %" k="icms_aliq" />
+                      <T label="Redução base %" k="reducao_base" />
+                      <T label="Crédito outorgado" k="credito_outorgado" />
+                      <T label="PIS %" k="pis_aliq" />
+                      <T label="COFINS %" k="cofins_aliq" />
+                      <T label="IR %" k="ir_aliq" />
+                      <T label="INSS %" k="inss_aliq" />
+                      <T label="CSLL %" k="csll_aliq" />
+                    </div>
+                    <div>
+                      <Label className="text-[10px] text-muted-foreground">Observação geral</Label>
+                      <Textarea className="text-xs" rows={2} value={editing.obs_gerais ?? ""} onChange={e => set("obs_gerais", e.target.value)} />
+                    </div>
+                  </div>
+                </TabsContent>
+                <TabsContent value="seguro" className="mt-2 space-y-2">
+                  <div className="border rounded p-2 space-y-1">
+                    <p className="text-[11px] font-semibold">Seguro</p>
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-1">
+                      <div className="col-span-2"><T label="Seguradora" k="seg_nome" /></div>
+                      <T label="Apólice" k="seg_apolice" mono />
+                      <T label="Averbação" k="seg_averbacao" mono />
+                      <T label="RCTR-C" k="seg_rctr_c" />
+                      <T label="RCF-DC" k="seg_rcf_dc" />
+                      <T label="Adicional" k="seg_adicional" />
+                      <T label="Total" k="seg_total" />
+                      <T label="Responsável" k="seg_responsavel" />
+                      <div className="flex items-end pb-1">
+                        <label className="flex items-center gap-1 text-[11px]"><input type="checkbox" checked={!!editing.seg_repassar} onChange={e => set("seg_repassar", e.target.checked)} /> Repassar</label>
+                      </div>
+                    </div>
+                  </div>
+                  <div className="border rounded p-2 space-y-1">
+                    <p className="text-[11px] font-semibold">Pedágio</p>
+                    <div className="grid grid-cols-2 md:grid-cols-5 gap-1">
+                      <div>
+                        <Label className="text-[10px] text-muted-foreground">Pagamento</Label>
+                        <Select value={editing.pedagio_pagto || "sem-pagamento"} onValueChange={v => set("pedagio_pagto", v)}>
+                          <SelectTrigger className="h-7 text-xs"><SelectValue /></SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="sem-pagamento">Sem Pagamento</SelectItem>
+                            <SelectItem value="free-flow">Free Flow</SelectItem>
+                            <SelectItem value="tag-transportador">TAG Transportador</SelectItem>
+                            <SelectItem value="tag-tomador">TAG Tomador</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <T label="Operadora" k="pedagio_operadora" />
+                      <T label="CNPJ operadora" k="pedagio_cnpj" mono />
+                      <T label="Nº TAG" k="pedagio_tag" mono />
+                      <T label="Vale (R$)" k="pedagio_vale" />
+                    </div>
+                  </div>
+                </TabsContent>
+              </Tabs>
+            )}
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setEditing(null)}>Fechar</Button>
+              <Button onClick={() => salvar.mutate()} disabled={salvar.isPending}><Save className="mr-1 h-3 w-3" /> Salvar</Button>
+            </DialogFooter>
+          </div>
         </DialogContent>
       </Dialog>
     </div>
