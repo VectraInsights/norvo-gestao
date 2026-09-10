@@ -14,7 +14,7 @@ import { Route as RoadIcon, Pencil, Trash2, Search, Save } from "lucide-react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useEmpresaAtual } from "@/hooks/use-empresa";
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/_authenticated/fiscal/percursos")({
@@ -94,11 +94,29 @@ function PercursosPage() {
     },
   });
 
+  const { data: contatosCte } = useQuery({
+    enabled: !!empresa,
+    queryKey: ["contatos-cte", empresa?.id],
+    queryFn: async (): Promise<any[]> => {
+      const { data } = await supabase.from("contatos" as any).select("documento,nome,ie,logradouro,numero,bairro,cidade,uf,cep,telefone").eq("empresa_id", empresa!.id);
+      return (data ?? []) as any[];
+    },
+  });
+  const contatoByDoc = useMemo(() => {
+    const m = new Map<string, any>();
+    for (const c of contatosCte ?? []) if ((c as any).documento) m.set(String((c as any).documento).replace(/\D/g, ""), c);
+    return m;
+  }, [contatosCte]);
   const salvar = useMutation({
     mutationFn: async () => {
       if (!editing) throw new Error("Nada para salvar");
       const payload: Record<string, any> = {};
       for (const k of EDITAVEIS) payload[k] = editing[k] ?? (k === "seg_repassar" ? false : "");
+      for (const p of ["rem", "dest", "toma"]) {
+        const c = contatoByDoc.get(String(editing[p + "_cnpj"] || "").replace(/\D/g, "")) || {};
+        const fb: Record<string, any> = { ie: c.ie, logradouro: c.logradouro, nro: c.numero, bairro: c.bairro, xmun: c.cidade, uf: c.uf, cep: c.cep, fone: c.telefone };
+        for (const k of Object.keys(fb)) { const col = p + "_" + k; if (!payload[col] && fb[k]) payload[col] = fb[k]; }
+      }
       const { error } = await supabase.from("cte_percursos" as any).update(payload).eq("id", editing.id);
       if (error) throw error;
     },
@@ -122,6 +140,15 @@ function PercursosPage() {
     onError: (e: Error) => toast.error(e.message),
   });
 
+  // Completa endereço/IE com o cadastro de contatos quando o percurso não tem
+  const withContato = (p: string) => {
+    const c = contatoByDoc.get(String(editing?.[p + "_cnpj"] || "").replace(/\D/g, "")) || {};
+    const g = (k: string, ck: string) => editing?.[p + "_" + k] || (c as any)[ck] || "";
+    return { ie: g("ie", "ie"), lgr: g("logradouro", "logradouro"), nro: g("nro", "numero"), bai: g("bairro", "bairro"), cid: g("xmun", "cidade"), uf: g("uf", "uf"), cep: g("cep", "cep"), fone: g("fone", "telefone") };
+  };
+  const eRem = withContato("rem");
+  const eDes = withContato("dest");
+  const eTom = withContato("toma");
   const set = (k: string, v: any) => setEditing((e: any) => (e ? { ...e, [k]: v } : e));
   const q = busca.trim().toLowerCase();
   const lista = (percursos || []).filter(p => {
@@ -205,9 +232,9 @@ function PercursosPage() {
                     <T editing={editing} set={set} label="Nome" k="nome" />
                   </div>
                   <div className="grid grid-cols-1 gap-2">
-                    <Parte titulo="Remetente" lgr={editing.rem_logradouro} nro={editing.rem_nro} bai={editing.rem_bairro} cep={editing.rem_cep} fone={editing.rem_fone} nome={editing.rem_nome} doc={editing.rem_cnpj} ie={editing.rem_ie} cid={editing.rem_xmun} uf={editing.rem_uf} />
-                    <Parte titulo="Destinatário" lgr={editing.dest_logradouro} nro={editing.dest_nro} bai={editing.dest_bairro} cep={editing.dest_cep} fone={editing.dest_fone} nome={editing.dest_nome} doc={editing.dest_cnpj} ie={editing.dest_ie} cid={editing.dest_xmun} uf={editing.dest_uf} />
-                    <Parte titulo="Tomador" lgr={editing.toma_logradouro} nro={editing.toma_nro} bai={editing.toma_bairro} cep={editing.toma_cep} fone={editing.toma_fone} nome={editing.toma_nome} doc={editing.toma_cnpj} ie={editing.toma_ie} cid={editing.toma_xmun} uf={editing.toma_uf} />
+                    <Parte titulo="Remetente" lgr={eRem.lgr} nro={eRem.nro} bai={eRem.bai} cep={eRem.cep} fone={eRem.fone} nome={editing.rem_nome} doc={editing.rem_cnpj} ie={eRem.ie} cid={eRem.cid} uf={eRem.uf} />
+                    <Parte titulo="Destinatário" lgr={eDes.lgr} nro={eDes.nro} bai={eDes.bai} cep={eDes.cep} fone={eDes.fone} nome={editing.dest_nome} doc={editing.dest_cnpj} ie={eDes.ie} cid={eDes.cid} uf={eDes.uf} />
+                    <Parte titulo="Tomador" lgr={eTom.lgr} nro={eTom.nro} bai={eTom.bai} cep={eTom.cep} fone={eTom.fone} nome={editing.toma_nome} doc={editing.toma_cnpj} ie={eTom.ie} cid={eTom.cid} uf={eTom.uf} />
                   </div>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
                     <div className="border rounded p-2 space-y-1">
