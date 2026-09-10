@@ -326,8 +326,8 @@ function PercursosPage() {
                       <Parte titulo="Destinatário" nome={editing.dest_nome} doc={editing.dest_cnpj} />
                       <Parte titulo="Tomador" nome={editing.toma_nome} doc={editing.toma_cnpj} />
                     </div>
-                    <div className="border rounded px-2 py-1 h-full flex flex-col">
-<p className="text-[11px] font-semibold"><span className="mr-1.5 inline-block h-2 w-2 rounded-sm bg-primary" />Coleta / Entrega</p>
+                    <div className="border rounded px-2 py-1 h-full flex flex-col bg-primary/[0.04]">
+<p className="text-[11px] font-semibold">Coleta / Entrega</p>
                       <div className="flex-1 flex flex-col justify-between py-0.5">
 <div className="flex items-center gap-1"><span className="text-[9px] text-muted-foreground w-12 shrink-0">Coleta</span><Input className="h-6 text-[11px] flex-1 min-w-0" value={editing.coleta_xmun || ""} onChange={e => set("coleta_xmun", e.target.value)} /><span className="text-[9px] text-muted-foreground shrink-0">UF</span><Input className="h-6 text-[11px] w-12 text-center shrink-0" value={editing.coleta_uf || ""} onChange={e => set("coleta_uf", e.target.value.toUpperCase())} maxLength={2} /></div>
 <div className="flex items-center gap-1"><span className="text-[9px] text-muted-foreground w-12 shrink-0">Entrega</span><Input className="h-6 text-[11px] flex-1 min-w-0" value={editing.entrega_xmun || ""} onChange={e => set("entrega_xmun", e.target.value)} /><span className="text-[9px] text-muted-foreground shrink-0">UF</span><Input className="h-6 text-[11px] w-12 text-center shrink-0" value={editing.entrega_uf || ""} onChange={e => set("entrega_uf", e.target.value.toUpperCase())} maxLength={2} /></div>
@@ -339,8 +339,8 @@ function PercursosPage() {
                   
                   
                                     <div className="space-y-2">
-                    <div className="border rounded px-2 py-1 space-y-1">
-                      <p className="text-[11px] font-semibold"><span className="mr-1.5 inline-block h-2 w-2 rounded-sm bg-primary" />Consignatário</p>
+                    <div className="border rounded px-2 py-1 space-y-1 bg-primary/[0.04]">
+                      <p className="text-[11px] font-semibold">Consignatário</p>
                       <div className="grid grid-cols-12 gap-1">
                         <div className="col-span-2"><T editing={editing} set={set} label="CNPJ" k="consig_cnpj" mono on14={(d: string) => lookupParte("consig", d)} /></div>
                         <div className="col-span-4"><T editing={editing} set={set} label="Nome" k="consig_nome" /></div>
@@ -353,8 +353,8 @@ function PercursosPage() {
                         <div className="col-span-3"><T editing={editing} set={set} label="Município" k="consig_xmun" /></div>
                       </div>
                     </div>
-                    <div className="border rounded px-2 py-1 space-y-1">
-                      <p className="text-[11px] font-semibold"><span className="mr-1.5 inline-block h-2 w-2 rounded-sm bg-primary" />Redespacho</p>
+                    <div className="border rounded px-2 py-1 space-y-1 bg-primary/[0.04]">
+                      <p className="text-[11px] font-semibold">Redespacho</p>
                       <div className="grid grid-cols-12 gap-1">
                         <div className="col-span-2"><T editing={editing} set={set} label="CNPJ" k="redesp_cnpj" mono on14={(d: string) => lookupParte("redesp", d)} /></div>
                         <div className="col-span-4"><T editing={editing} set={set} label="Nome" k="redesp_nome" /></div>
@@ -368,8 +368,8 @@ function PercursosPage() {
                       </div>
                     </div>
                   </div>
-                  <div className="border rounded p-2 space-y-1">
-                    <p className="text-[11px] font-semibold"><span className="mr-1.5 inline-block h-2 w-2 rounded-sm bg-primary" />Fiscal</p>
+                  <div className="border rounded p-2 space-y-1 bg-primary/[0.04]">
+                    <p className="text-[11px] font-semibold">Fiscal</p>
                     <div className="grid grid-cols-2 md:grid-cols-5 gap-1">
                       <div>
                         <Label className="text-[10px] text-muted-foreground">CST ICMS</Label>
@@ -397,8 +397,8 @@ function PercursosPage() {
                 </TabsContent>
                 
                 <TabsContent value="seguro" className="mt-2 space-y-2">
-                  <div className="border rounded p-2 space-y-1">
-                    <p className="text-[11px] font-semibold"><span className="mr-1.5 inline-block h-2 w-2 rounded-sm bg-primary" />Seguro</p>
+                  <div className="border rounded p-2 space-y-1 bg-primary/[0.04]">
+                    <p className="text-[11px] font-semibold">Seguro</p>
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-1">
                       <div className="col-span-2"><T editing={editing} set={set} label="Seguradora" k="seg_nome" /></div>
                       <T editing={editing} set={set} label="Apólice" k="seg_apolice" mono />
@@ -413,8 +413,8 @@ function PercursosPage() {
                       </div>
                     </div>
                   </div>
-                  <div className="border rounded p-2 space-y-1">
-                    <p className="text-[11px] font-semibold"><span className="mr-1.5 inline-block h-2 w-2 rounded-sm bg-primary" />Pedágio</p>
+                  <div className="border rounded p-2 space-y-1 bg-primary/[0.04]">
+                    <p className="text-[11px] font-semibold">Pedágio</p>
                     <div className="grid grid-cols-2 md:grid-cols-5 gap-1">
                       <div>
                         <Label className="text-[10px] text-muted-foreground">Pagamento</Label>
