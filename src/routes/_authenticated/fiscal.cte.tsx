@@ -1797,8 +1797,8 @@ function CtePage() {
                       <div className="col-span-2"><Label className="text-[10px] text-muted-foreground">Nº Averbação</Label><Input className="h-6 text-[10px]" placeholder="Nº Averbação" value={form.averbacao} onChange={e => setForm({ ...form, averbacao: e.target.value })} /></div>
                     </div>
                     <div className="grid grid-cols-6 gap-1">
-                      <div><Label className="text-[10px] text-muted-foreground">Base Seg.</Label><Input className="h-6 text-[10px] bg-transparent" value={form.vCarga} readOnly /></div>
-                      <div><Label className="text-[10px] text-muted-foreground">Valor Doc.</Label><Input className="h-6 text-[10px] bg-transparent" value={form.vCarga} readOnly /></div>
+                      <div><Label className="text-[10px] text-muted-foreground">Base Seg.</Label><Input className="h-6 text-[10px] bg-transparent dark:bg-transparent" value={form.vCarga} readOnly /></div>
+                      <div><Label className="text-[10px] text-muted-foreground">Valor Doc.</Label><Input className="h-6 text-[10px] bg-transparent dark:bg-transparent" value={form.vCarga} readOnly /></div>
                       <div><Label className="text-[10px] text-muted-foreground">RCTR-C</Label><Input className="h-6 text-[10px]" placeholder="0.00" value={form.rctrC || ""} onChange={e => setForm({ ...form, rctrC: e.target.value })} /></div>
                       <div><Label className="text-[10px] text-muted-foreground">RCF-DC</Label><Input className="h-6 text-[10px]" placeholder="0.00" value={form.rcfDc || ""} onChange={e => setForm({ ...form, rcfDc: e.target.value })} /></div>
                       <div><Label className="text-[10px] text-muted-foreground">V. Adicional</Label><Input className="h-6 text-[10px]" placeholder="0.00" value={form.segAdicional || ""} onChange={e => setForm({ ...form, segAdicional: e.target.value })} /></div>
@@ -2021,7 +2021,7 @@ function CtePage() {
                       <SelectContent><SelectItem value="RODOVIARIO">RODOVIÁRIO</SelectItem></SelectContent>
                     </Select>
                   </div>
-                  <div><Label className="text-[10px] text-muted-foreground">* Tomador</Label><Input className="h-7 text-xs bg-muted" value={{ "0": "REMETENTE", "1": "DESTINATÁRIO", "2": "OUTROS", "3": "REMETENTE", "4": "DESTINATÁRIO", "9": "OUTROS" }[form.toma] || "OUTROS"} readOnly /></div>
+                  <div><Label className="text-[10px] text-muted-foreground">* Tomador</Label><Input className="h-7 text-xs bg-transparent dark:bg-transparent" value={{ "0": "REMETENTE", "1": "DESTINATÁRIO", "2": "OUTROS", "3": "REMETENTE", "4": "DESTINATÁRIO", "9": "OUTROS" }[form.toma] || "OUTROS"} readOnly /></div>
                   <div><Label className="text-[10px] text-muted-foreground">* Forma de Pagamento</Label>
                     <Select value={(form as any).formaPagamento || "Outros"} onValueChange={v => setForm({ ...form, formaPagamento: v } as any)}>
                       <SelectTrigger className="h-7 text-xs"><SelectValue /></SelectTrigger>
@@ -2085,13 +2085,13 @@ function CtePage() {
               <Card className="p-3">
                 <h5 className="text-xs font-semibold mb-2">Situação do CT-e</h5>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-                  <div><Label className="text-[10px] text-muted-foreground">Chave de Acesso</Label><Input className="h-6 text-[10px] font-mono bg-muted" value="— aguardando emissão —" readOnly /></div>
-                  <div><Label className="text-[10px] text-muted-foreground">Protocolo de Envio</Label><Input className="h-6 text-[10px] font-mono bg-muted" value="— aguardando emissão —" readOnly /></div>
-                  <div><Label className="text-[10px] text-muted-foreground">Data Hora Envio</Label><Input className="h-6 text-[10px] bg-muted" value="— aguardando emissão —" readOnly /></div>
-                  <div><Label className="text-[10px] text-muted-foreground">Motivo Envio</Label><Input className="h-6 text-[10px] bg-muted" value="— aguardando emissão —" readOnly /></div>
-                  <div><Label className="text-[10px] text-muted-foreground">Protocolo Cancelamento</Label><Input className="h-6 text-[10px] font-mono bg-muted" value="—" readOnly /></div>
-                  <div><Label className="text-[10px] text-muted-foreground">Data Hora Cancelamento</Label><Input className="h-6 text-[10px] bg-muted" value="—" readOnly /></div>
-                  <div className="md:col-span-2"><Label className="text-[10px] text-muted-foreground">Motivo Cancelamento</Label><Input className="h-6 text-[10px] bg-muted" value="—" readOnly /></div>
+                  <div><Label className="text-[10px] text-muted-foreground">Chave de Acesso</Label><Input className="h-6 text-[10px] font-mono bg-transparent dark:bg-transparent" value="— aguardando emissão —" readOnly /></div>
+                  <div><Label className="text-[10px] text-muted-foreground">Protocolo de Envio</Label><Input className="h-6 text-[10px] font-mono bg-transparent dark:bg-transparent" value="— aguardando emissão —" readOnly /></div>
+                  <div><Label className="text-[10px] text-muted-foreground">Data Hora Envio</Label><Input className="h-6 text-[10px] bg-transparent dark:bg-transparent" value="— aguardando emissão —" readOnly /></div>
+                  <div><Label className="text-[10px] text-muted-foreground">Motivo Envio</Label><Input className="h-6 text-[10px] bg-transparent dark:bg-transparent" value="— aguardando emissão —" readOnly /></div>
+                  <div><Label className="text-[10px] text-muted-foreground">Protocolo Cancelamento</Label><Input className="h-6 text-[10px] font-mono bg-transparent dark:bg-transparent" value="—" readOnly /></div>
+                  <div><Label className="text-[10px] text-muted-foreground">Data Hora Cancelamento</Label><Input className="h-6 text-[10px] bg-transparent dark:bg-transparent" value="—" readOnly /></div>
+                  <div className="md:col-span-2"><Label className="text-[10px] text-muted-foreground">Motivo Cancelamento</Label><Input className="h-6 text-[10px] bg-transparent dark:bg-transparent" value="—" readOnly /></div>
                 </div>
                 <p className="text-[9px] text-muted-foreground mt-1">Preenchidos automaticamente após transmissão/cancelamento.</p>
               </Card>

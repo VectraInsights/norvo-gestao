@@ -11,7 +11,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import { Route as RoadIcon, Pencil, Trash2, Search, Save } from "lucide-react";
+import { Route as RoadIcon, Pencil, Trash2, Search, Save, ChevronDown } from "lucide-react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useEmpresaAtual } from "@/hooks/use-empresa";
@@ -62,27 +62,66 @@ function Tc({ label, k, mono, editing, set, ro }: { label: string; k: string; mo
   return (
     <div>
       <Label className="text-[9px] text-muted-foreground">{label}</Label>
-      <Input className={"h-6 text-[11px]" + (mono ? " font-mono" : "") + (ro ? " bg-transparent" : "")} value={editing?.[k] ?? ""} onChange={e => { set(k, e.target.value.toUpperCase()); }} placeholder="" readOnly={ro} />
+      <Input className={"h-6 text-[11px]" + (mono ? " font-mono" : "") + (ro ? " bg-transparent dark:bg-transparent" : "")} value={editing?.[k] ?? ""} onChange={e => { set(k, e.target.value.toUpperCase()); }} placeholder="" readOnly={ro} />
     </div>
   );
 }function R({ label, v }: { label: string; v: any }) {
   return (
     <div>
       <Label className="text-[10px] text-muted-foreground">{label}</Label>
-      <Input className="h-7 text-xs bg-transparent" value={String(v ?? "")} readOnly />
+      <Input className="h-7 text-xs bg-transparent dark:bg-transparent" value={String(v ?? "")} readOnly />
     </div>
   );
 }
 function Parte({ titulo, nome, doc }: { titulo: string; nome: string; doc: string }) {
   return (
     <div className="grid grid-cols-12 gap-1 items-center">
-      <p className="col-span-2 text-xs font-semibold truncate border rounded px-2 py-1 bg-transparent">{titulo}</p>
-      <p className="col-span-6 text-xs font-medium truncate border rounded px-2 py-1 bg-transparent" title={nome}>{nome}</p>
-      <p className="col-span-4 text-[11px] text-muted-foreground truncate border rounded px-2 py-1 bg-transparent">CNPJ {fmtDoc(doc)}</p>
+      <p className="col-span-2 text-xs font-semibold truncate border rounded px-2 py-1 bg-transparent dark:bg-transparent">{titulo}</p>
+      <p className="col-span-6 text-xs font-medium truncate border rounded px-2 py-1 bg-transparent dark:bg-transparent" title={nome}>{nome}</p>
+      <p className="col-span-4 text-[11px] text-muted-foreground truncate border rounded px-2 py-1 bg-transparent dark:bg-transparent">CNPJ {fmtDoc(doc)}</p>
     </div>
   );
 }
 const CSTS_ICMS: Array<[string, string]> = [["00", "ICMS com Tributa\u00e7\u00e3o Integral"], ["20", "ICMS com Redu\u00e7\u00e3o de Base de C\u00e1lculo"], ["40", "ICMS Isentas"], ["41", "ICMS n\u00e3o Tributada"], ["51", "ICMS com Diferimento"], ["60", "ICMS com Pagto Antecipado Sub.Trib"], ["90", "ICMS Outras Situa\u00e7\u00f5es"], ["99", "ISSQN com Tributa\u00e7\u00e3o Integral"]];
+const normTxt = (s: any) => String(s || "").toLowerCase().normalize("NFD").replace(/[^a-z0-9 ]/g, " ").replace(/ +/g, " ").trim();
+const OPTS_CST: { v: string; label: string }[] = CSTS_ICMS.map(([v, d]) => ({ v, label: v + " - " + d }));
+const OPTS_CFOP: { v: string; label: string }[] = CFOPS_CTE.map(c => ({ v: String(c.codigo).replace(/\D/g, ""), label: c.descricao }));
+function Combo({ label, value, onPick, opts }: { label: string; value: string; onPick: (v: string) => void; opts: { v: string; label: string }[] }) {
+  const [open, setOpen] = useState(false);
+  const [txt, setTxt] = useState("");
+  const sel = opts.find(o => o.v === value);
+  const q = normTxt(txt);
+  const list = (q ? opts.filter(o => normTxt(o.label).indexOf(q) >= 0 || normTxt(o.v).indexOf(q) >= 0) : opts).slice(0, 40);
+  const snap = () => {
+    const t = normTxt(txt);
+    if (!t) return;
+    const hit = opts.find(o => {
+      const L = normTxt(o.label), V = normTxt(o.v);
+      return L === t || V === t || (t.length >= 2 && (L.indexOf(t) === 0 || V.indexOf(t) === 0));
+    });
+    if (hit) onPick(hit.v);
+  };
+  return (
+    <div>
+      <Label className="text-[10px] text-muted-foreground">{label}</Label>
+      <div className="relative">
+        <Input className="h-7 text-xs pr-6" value={open ? txt : (sel ? sel.label : (value || ""))} placeholder="Digite ou selecione"
+          onFocus={() => { setTxt(""); setOpen(true); }}
+          onChange={e => { setTxt(e.target.value); setOpen(true); }}
+          onBlur={() => { setOpen(false); snap(); }}
+          onKeyDown={e => { if (e.key === "Escape") { setOpen(false); } else if (e.key === "Enter" && list.length > 0) { e.preventDefault(); onPick(list[0].v); setOpen(false); (e.target as HTMLInputElement).blur(); } }} />
+        <ChevronDown className="pointer-events-none absolute right-1.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
+        {open && list.length > 0 && (
+          <div className="absolute left-0 right-0 top-full z-50 mt-0.5 max-h-44 overflow-auto rounded-md border bg-popover shadow-md">
+            {list.map(o => (
+              <div key={o.v} className="cursor-pointer px-2 py-1 text-[11px] hover:bg-accent" onMouseDown={e => { e.preventDefault(); onPick(o.v); setOpen(false); }}>{o.label}</div>
+            ))}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
 function PercursosPage() {
   const { data: empresa } = useEmpresaAtual();
   const qc = useQueryClient();
@@ -330,8 +369,8 @@ function PercursosPage() {
                     <div className="border rounded px-2 py-1 h-full flex flex-col">
 <p className="text-[11px] font-semibold">Coleta / Entrega</p>
                       <div className="flex-1 flex flex-col justify-between py-0.5">
-<div className="flex items-center gap-1"><span className="text-[9px] text-muted-foreground w-12 shrink-0">Coleta</span><Input className="h-6 text-[11px] flex-1 min-w-0 bg-transparent" readOnly value={editing.coleta_xmun || ""} onChange={e => set("coleta_xmun", e.target.value)} /><span className="text-[9px] text-muted-foreground shrink-0">UF</span><Input className="h-6 text-[11px] w-12 text-center shrink-0 bg-transparent" readOnly value={editing.coleta_uf || ""} onChange={e => set("coleta_uf", e.target.value.toUpperCase())} maxLength={2} /></div>
-<div className="flex items-center gap-1"><span className="text-[9px] text-muted-foreground w-12 shrink-0">Entrega</span><Input className="h-6 text-[11px] flex-1 min-w-0 bg-transparent" readOnly value={editing.entrega_xmun || ""} onChange={e => set("entrega_xmun", e.target.value)} /><span className="text-[9px] text-muted-foreground shrink-0">UF</span><Input className="h-6 text-[11px] w-12 text-center shrink-0 bg-transparent" readOnly value={editing.entrega_uf || ""} onChange={e => set("entrega_uf", e.target.value.toUpperCase())} maxLength={2} /></div>
+<div className="flex items-center gap-1"><span className="text-[9px] text-muted-foreground w-12 shrink-0">Coleta</span><Input className="h-6 text-[11px] flex-1 min-w-0 bg-transparent dark:bg-transparent" readOnly value={editing.coleta_xmun || ""} onChange={e => set("coleta_xmun", e.target.value)} /><span className="text-[9px] text-muted-foreground shrink-0">UF</span><Input className="h-6 text-[11px] w-12 text-center shrink-0 bg-transparent dark:bg-transparent" readOnly value={editing.coleta_uf || ""} onChange={e => set("coleta_uf", e.target.value.toUpperCase())} maxLength={2} /></div>
+<div className="flex items-center gap-1"><span className="text-[9px] text-muted-foreground w-12 shrink-0">Entrega</span><Input className="h-6 text-[11px] flex-1 min-w-0 bg-transparent dark:bg-transparent" readOnly value={editing.entrega_xmun || ""} onChange={e => set("entrega_xmun", e.target.value)} /><span className="text-[9px] text-muted-foreground shrink-0">UF</span><Input className="h-6 text-[11px] w-12 text-center shrink-0 bg-transparent dark:bg-transparent" readOnly value={editing.entrega_uf || ""} onChange={e => set("entrega_uf", e.target.value.toUpperCase())} maxLength={2} /></div>
 <div className="flex items-center gap-1"><span className="text-[9px] text-muted-foreground shrink-0">Dist.</span><Input className="h-6 text-[11px] flex-1 min-w-0" value={editing.distancia_km || ""} onChange={e => set("distancia_km", e.target.value)} /><span className="text-[9px] text-muted-foreground shrink-0">Dur.</span><Input className="h-6 text-[11px] flex-1 min-w-0" value={editing.duracao_horas || ""} onChange={e => set("duracao_horas", e.target.value)} /></div>
 </div>
                     </div>
@@ -372,24 +411,8 @@ function PercursosPage() {
                   <div className="border rounded p-2 space-y-1">
                     <p className="text-[11px] font-semibold">Fiscal</p>
                     <div className="grid grid-cols-2 md:grid-cols-5 gap-1">
-                      <div>
-                        <Label className="text-[10px] text-muted-foreground">CST ICMS</Label>
-                        <Select value={editing.icms_cst || "00"} onValueChange={v => set("icms_cst", v)}>
-                          <SelectTrigger className="h-7 text-xs"><SelectValue /></SelectTrigger>
-                          <SelectContent>
-                            {CSTS_ICMS.map(([v, d]) => <SelectItem key={v} value={v}>{v} - {d}</SelectItem>)}
-                          </SelectContent>
-                        </Select>
-                      </div>
-                      <div>
-                        <Label className="text-[10px] text-muted-foreground">CFOP</Label>
-                        <Select value={editing.cfop || ""} onValueChange={v => set("cfop", v)}>
-                          <SelectTrigger className="h-7 text-xs"><SelectValue placeholder="Selecione" /></SelectTrigger>
-                          <SelectContent>
-                            {CFOPS_CTE.map(c => <SelectItem key={c.codigo} value={c.codigo.replace(/\D/g, "")}>{c.descricao}</SelectItem>)}
-                          </SelectContent>
-                        </Select>
-                      </div>
+                      <Combo label="CST ICMS" value={editing.icms_cst || "00"} onPick={v => set("icms_cst", v)} opts={OPTS_CST} />
+                      <Combo label="CFOP" value={editing.cfop || ""} onPick={v => set("cfop", v)} opts={OPTS_CFOP} />
                       <T editing={editing} set={set} label="Alíq. ICMS %" k="icms_aliq" />
                       <T editing={editing} set={set} label="Redução base %" k="reducao_base" />
                       <T editing={editing} set={set} label="Crédito outorgado" k="credito_outorgado" />
