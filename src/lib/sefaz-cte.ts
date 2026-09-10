@@ -251,7 +251,9 @@ export async function emitirCte(pfx:Buffer, senha:string, xml:string, ambiente:A
     const u=new URL(ep.recepcao);
     console.log("[CTE-SEFAZ] Endpoint URL:", ep.recepcao);
     const agent = createSefazAgent(pfx,senha);
-    const ret = await new Promise<string>((resolve,reject)=>{
+    let ret: string;
+    try {
+      ret = await new Promise<string>((resolve,reject)=>{
       const req=https.request({hostname:u.hostname, port:443, path:u.pathname, method:"POST", agent, headers:{
         "Content-Type": "text/xml; charset=utf-8",
         "SOAPAction": `${ns}/cteRecepcao`,
@@ -259,6 +261,13 @@ export async function emitirCte(pfx:Buffer, senha:string, xml:string, ambiente:A
       }},res=>{let d="";res.on("data",c=>d+=c);res.on("end",()=>{console.log("[CTE-SEFAZ] HTTP status:", res.statusCode);console.log("[CTE-SEFAZ] Resposta SEFAZ COMPLETA:", d);res.statusCode&&res.statusCode>=400?reject(new Error(`CTe HTTP ${res.statusCode}: ${d.slice(0,500)}`)):resolve(d);});});
       req.on("error",reject); req.write(envelope); req.end();
     });
+    } catch (e) {
+      // Rede caiu no meio do envio (ex.: read ECONNRESET): a SEFAZ pode ter processado. Reconcilia pela chave.
+      const msg = (e as Error)?.message || "Falha de rede";
+      console.log("[CTE-SEFAZ] erro de rede no envio, reconciliando:", msg);
+      const chN = xml.match(/Id="CTe(\d{44})"/)?.[1];
+      return reconciliarEmissao(pfx, senha, { sucesso: false, cStat: "", xMotivo: msg + " (sem resposta da SEFAZ)", chave: chN, protocolo: undefined, xmlRet: "" }, ambiente, uf);
+    }
     const cStat=ret.match(/<cStat>(\d+)<\/cStat>/)?.[1]||""; const xMotivo=ret.match(/<xMotivo>([^<]+)<\/xMotivo>/)?.[1]||""; const ch=ret.match(/<chCTe>(\d{44})<\/chCTe>/)?.[1]||xml.match(/Id="CTe(\d{44})"/)?.[1]; const prot=ret.match(/<nProt>(\d+)<\/nProt>/)?.[1]||ret.match(/<protCTe[^>]*>[\s\S]*?<nProt>(\d+)<\/nProt>/)?.[1];
     console.log("[CTE-SEFAZ-RESP] cStat:", cStat, "xMotivo:", xMotivo, "chave:", ch, "protocolo:", prot);
     return reconciliarEmissao(pfx, senha, { sucesso: cStat==="100"||cStat==="104"||cStat==="103", cStat, xMotivo, chave: ch, protocolo: prot, xmlRet: ret }, ambiente, uf);
@@ -266,7 +275,15 @@ export async function emitirCte(pfx:Buffer, senha:string, xml:string, ambiente:A
   // SVRS usa namespace v4 (CTeRecepcaoSincV4)
   const ns = "http://www.portalfiscal.inf.br/cte/wsdl/CTeRecepcaoSincV4";
   const body=`<cteDadosMsg xmlns="${ns}">${dadosBase64}</cteDadosMsg>`;
-  const ret=await soapRequest(ep.recepcao, body, `${ns}/cteRecepcao`, createSefazAgent(pfx,senha));
+  let ret: string;
+  try {
+    ret=await soapRequest(ep.recepcao, body, `${ns}/cteRecepcao`, createSefazAgent(pfx,senha));
+  } catch (e) {
+    const msg=(e as Error)?.message || "Falha de rede";
+    console.log("[CTE-SEFAZ] erro de rede no envio, reconciliando:", msg);
+    const chN=xml.match(/Id="CTe(\d{44})"/)?.[1];
+    return reconciliarEmissao(pfx, senha, { sucesso: false, cStat: "", xMotivo: msg + " (sem resposta da SEFAZ)", chave: chN, protocolo: undefined, xmlRet: "" }, ambiente, uf);
+  }
   const cStat=ret.match(/<cStat>(\d+)<\/cStat>/)?.[1]||""; const xMotivo=ret.match(/<xMotivo>([^<]+)<\/xMotivo>/)?.[1]||""; const ch=ret.match(/<chCTe>(\d{44})<\/chCTe>/)?.[1]||xml.match(/Id="CTe(\d{44})"/)?.[1]; const prot=ret.match(/<nProt>(\d+)<\/nProt>/)?.[1]||ret.match(/<protCTe[^>]*>[\s\S]*?<nProt>(\d+)<\/nProt>/)?.[1];
   return reconciliarEmissao(pfx, senha, { sucesso: cStat==="100"||cStat==="104"||cStat==="103", cStat, xMotivo, chave: ch, protocolo: prot, xmlRet: ret }, ambiente, uf);
 }
@@ -354,7 +371,9 @@ export async function cancelarCte(pfx:Buffer, senha:string, chave:string, justif
     const envelope = `<?xml version="1.0" encoding="utf-8"?><soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/"><soap:Body>${body}</soap:Body></soap:Envelope>`;
     const u=new URL(ep.recepcaoEvento);
     const agent = createSefazAgent(pfx,senha);
-    const ret = await new Promise<string>((resolve,reject)=>{
+    let ret: string;
+    try {
+      ret = await new Promise<string>((resolve,reject)=>{
       const req=https.request({hostname:u.hostname, port:443, path:u.pathname, method:"POST", agent, headers:{
         "Content-Type": "text/xml; charset=utf-8",
         "SOAPAction": `${ns}/cteRecepcaoEvento`,
@@ -362,6 +381,15 @@ export async function cancelarCte(pfx:Buffer, senha:string, chave:string, justif
       }},res=>{let d="";res.on("data",c=>d+=c);res.on("end",()=>res.statusCode&&res.statusCode>=400?reject(new Error(`CTe HTTP ${res.statusCode}: ${d.slice(0,500)}`)):resolve(d));});
       req.on("error",reject); req.write(envelope); req.end();
     });
+    } catch (e) {
+      // Rede caiu no meio do cancelamento: confirma pela chave antes de declarar falha.
+      const msg = (e as Error)?.message || "Falha de rede";
+      try {
+        const cons = await consultarCte(pfx, senha, chave.replace(/\D/g, ""), ambiente, uf);
+        if (cons.cStat === "135" || cons.cStat === "155") return { sucesso: true, cStat: cons.cStat, xMotivo: cons.xMotivo || "Cancelamento confirmado por consulta SEFAZ" };
+      } catch {}
+      throw e;
+    }
     console.log("[CTE-CANCEL] Resposta MG:", ret.slice(0, 1000));
     const cStat=ret.match(/<cStat>(\d+)<\/cStat>/)?.[1]||""; const xMotivo=ret.match(/<xMotivo>([^<]+)<\/xMotivo>/)?.[1]||"";
     return { sucesso:cStat==="135"||cStat==="155", cStat, xMotivo };
