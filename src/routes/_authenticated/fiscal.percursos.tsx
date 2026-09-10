@@ -80,6 +80,7 @@ function Parte({ titulo, nome, doc }: { titulo: string; nome: string; doc: strin
     </div>
   );
 }
+const CSTS_ICMS: Array<[string, string]> = [["00", "ICMS com Tributa\u00e7\u00e3o Integral"], ["20", "ICMS com Redu\u00e7\u00e3o de Base de C\u00e1lculo"], ["40", "ICMS Isentas"], ["41", "ICMS n\u00e3o Tributada"], ["51", "ICMS com Diferimento"], ["60", "ICMS com Pagto Antecipado Sub.Trib"], ["90", "ICMS Outras Situa\u00e7\u00f5es"], ["99", "ISSQN com Tributa\u00e7\u00e3o Integral"]];
 function PercursosPage() {
   const { data: empresa } = useEmpresaAtual();
   const qc = useQueryClient();
@@ -369,7 +370,15 @@ function PercursosPage() {
                   <div className="border rounded p-2 space-y-1">
                     <p className="text-[11px] font-semibold">Fiscal</p>
                     <div className="grid grid-cols-2 md:grid-cols-5 gap-1">
-                      <T editing={editing} set={set} label="CST ICMS" k="icms_cst" />
+                      <div>
+                        <Label className="text-[10px] text-muted-foreground">CST ICMS</Label>
+                        <Select value={editing.icms_cst || "00"} onValueChange={v => set("icms_cst", v)}>
+                          <SelectTrigger className="h-7 text-xs"><SelectValue /></SelectTrigger>
+                          <SelectContent>
+                            {CSTS_ICMS.map(([v, d]) => <SelectItem key={v} value={v}>{v} - {d}</SelectItem>)}
+                          </SelectContent>
+                        </Select>
+                      </div>
                       <T editing={editing} set={set} label="Alíq. ICMS %" k="icms_aliq" />
                       <T editing={editing} set={set} label="Redução base %" k="reducao_base" />
                       <T editing={editing} set={set} label="Crédito outorgado" k="credito_outorgado" />
