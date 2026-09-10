@@ -14,7 +14,7 @@ import { Route as RoadIcon, Pencil, Trash2, Search, Save } from "lucide-react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useEmpresaAtual } from "@/hooks/use-empresa";
-import { useState, useMemo, useRef } from "react";
+import { useState, useMemo, useRef, useEffect } from "react";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/_authenticated/fiscal/percursos")({
@@ -149,6 +149,18 @@ function PercursosPage() {
   const eRem = withContato("rem");
   const eDes = withContato("dest");
   const eTom = withContato("toma");
+  // Amarracao: prioridade da entrega = redespacho > destinatario
+  useEffect(() => {
+    if (!editing) return;
+    const rx = (editing.redesp_xmun || "").trim();
+    const ru = (editing.redesp_uf || "").trim();
+    const hasRed = (editing.redesp_cnpj || "").replace(/\D/g, "").length === 14 && (rx || ru);
+    const nx = hasRed ? rx : (editing.dest_xmun || "");
+    const nu = hasRed ? ru : (editing.dest_uf || "");
+    if ((editing.entrega_xmun || "") !== nx || (editing.entrega_uf || "") !== nu) {
+      setEditing(e => (e ? { ...e, entrega_xmun: nx, entrega_uf: nu } : e));
+    }
+  }, [editing?.redesp_cnpj, editing?.redesp_xmun, editing?.redesp_uf, editing?.dest_xmun, editing?.dest_uf]);
   const lastLookupParte = useRef<Record<string, string>>({});
   const lookupParte = async (p: "consig" | "redesp", digits: string) => {
     const d = digits.replace(/\D/g, "").slice(0, 14);
