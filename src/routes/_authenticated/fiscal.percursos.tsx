@@ -289,22 +289,12 @@ function PercursosPage() {
                       <Parte titulo="Destinatário" nome={editing.dest_nome} doc={editing.dest_cnpj} />
                       <Parte titulo="Tomador" nome={editing.toma_nome} doc={editing.toma_cnpj} />
                     </div>
-                    <div className="border rounded p-2 space-y-1">
-                    <p className="text-[11px] font-semibold">Coleta / Entrega</p>
-                    <div className="grid grid-cols-3 gap-1">
-                    <div className="col-span-2"><Tc editing={editing} set={set} label="Coleta municipio" k="coleta_xmun" /></div>
-                    <Tc editing={editing} set={set} label="UF" k="coleta_uf" />
-                    </div>
-                    <div className="grid grid-cols-3 gap-1">
-                    <div className="col-span-2"><Tc editing={editing} set={set} label="Entrega municipio" k="entrega_xmun" /></div>
-                    <Tc editing={editing} set={set} label="UF" k="entrega_uf" />
-                    </div>
-                    <div className="grid grid-cols-3 gap-1">
-                    <Tc editing={editing} set={set} label="CFOP" k="cfop" mono />
-                    <Tc editing={editing} set={set} label="Dist. km" k="distancia_km" />
-                    <Tc editing={editing} set={set} label="Dur. h" k="duracao_horas" />
-                    </div>
-                    </div>
+                    <div className="border rounded px-2 py-1 space-y-1">
+<p className="text-[11px] font-semibold">Coleta / Entrega</p>
+<div className="flex items-center gap-1"><span className="text-[9px] text-muted-foreground w-12 shrink-0">Coleta</span><Input className="h-6 text-[11px] flex-1 min-w-0" value={editing.coleta_xmun || ""} onChange={e => set("coleta_xmun", e.target.value)} /><span className="text-[9px] text-muted-foreground shrink-0">UF</span><Input className="h-6 text-[11px] w-12 text-center shrink-0" value={editing.coleta_uf || ""} onChange={e => set("coleta_uf", e.target.value.toUpperCase())} maxLength={2} /></div>
+<div className="flex items-center gap-1"><span className="text-[9px] text-muted-foreground w-12 shrink-0">Entrega</span><Input className="h-6 text-[11px] flex-1 min-w-0" value={editing.entrega_xmun || ""} onChange={e => set("entrega_xmun", e.target.value)} /><span className="text-[9px] text-muted-foreground shrink-0">UF</span><Input className="h-6 text-[11px] w-12 text-center shrink-0" value={editing.entrega_uf || ""} onChange={e => set("entrega_uf", e.target.value.toUpperCase())} maxLength={2} /></div>
+<div className="flex items-center gap-1"><span className="text-[9px] text-muted-foreground w-12 shrink-0">CFOP</span><Input className="h-6 text-[11px] font-mono flex-1 min-w-0" value={editing.cfop || ""} onChange={e => set("cfop", e.target.value)} /><span className="text-[9px] text-muted-foreground shrink-0">Dist.</span><Input className="h-6 text-[11px] flex-1 min-w-0" value={editing.distancia_km || ""} onChange={e => set("distancia_km", e.target.value)} /><span className="text-[9px] text-muted-foreground shrink-0">Dur.</span><Input className="h-6 text-[11px] flex-1 min-w-0" value={editing.duracao_horas || ""} onChange={e => set("duracao_horas", e.target.value)} /></div>
+</div>
                   </div>
                   
                   
