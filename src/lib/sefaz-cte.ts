@@ -219,16 +219,36 @@ async function soapRequest(url:string, body:string, action:string, agent?:https.
 
 // Reconciliação: a SEFAZ pode ter autorizado mesmo quando a resposta da recepção indica erro
 // (timeout, resposta ilegível, duplo envio). Antes de declarar rejeição, consulta a situação real pela chave.
+const sleepSefaz = (ms: number) => new Promise(r => setTimeout(r, ms));
+// Repete erro de rede (sem resposta) até 3x com backoff; resposta HTTP (mesmo 500) não repete
+async function sendComRetry(fn: () => Promise<string>, tentativas = 3): Promise<string> {
+  let lastErr: any = new Error("Falha de rede");
+  for (let i = 1; i <= tentativas; i++) {
+    try { return await fn(); } catch (e) {
+      lastErr = e;
+      const m = String((e as Error)?.message || e);
+      if (/^CTe HTTP \d+/.test(m)) throw e;
+      console.log("[CTE-SEFAZ] tentativa " + i + "/" + tentativas + " falhou: " + m);
+      if (i < tentativas) await sleepSefaz(2000 * i);
+    }
+  }
+  throw lastErr;
+}
+
 async function reconciliarEmissao(pfx: Buffer, senha: string, out: { sucesso: boolean; cStat: string; xMotivo: string; chave?: string; protocolo?: string; xmlRet?: string }, ambiente: Ambiente, uf?: string) {
   if (out.sucesso || !out.chave) return out;
-  try {
-    const cons = await consultarCte(pfx, senha, out.chave, ambiente, uf);
+  let cons: { cStat: string; xMotivo: string; xml?: string } | null = null;
+  for (let i = 1; i <= 3; i++) {
+    try { cons = await consultarCte(pfx, senha, out.chave, ambiente, uf); break; } catch (e) { console.log("[CTE-SEFAZ-RECONC] consulta " + i + "/3 falhou:", (e as Error)?.message); if (i < 3) await sleepSefaz(2000 * i); }
+  }
+  if (cons) {
     console.log("[CTE-SEFAZ-RECONC] consSit:", cons.cStat, cons.xMotivo);
     if (cons.cStat === "100") {
       const prot = cons.xml?.match(/<nProt>(\d+)<\/nProt>/)?.[1] || out.protocolo;
       return { sucesso: true, cStat: "100", xMotivo: "Autorizado o uso do CT-e (confirmado por consulta SEFAZ)", chave: out.chave, protocolo: prot, xmlRet: out.xmlRet };
     }
-  } catch (e) { console.log("[CTE-SEFAZ-RECONC] falha na consulta:", (e as Error)?.message); }
+  }
+  if (!cons) console.log("[CTE-SEFAZ-RECONC] sem resposta da SEFAZ após 3 tentativas");
   return out;
 }
 
@@ -253,14 +273,14 @@ export async function emitirCte(pfx:Buffer, senha:string, xml:string, ambiente:A
     const agent = createSefazAgent(pfx,senha);
     let ret: string;
     try {
-      ret = await new Promise<string>((resolve,reject)=>{
+      ret = await sendComRetry(() => new Promise<string>((resolve,reject)=>{
       const req=https.request({hostname:u.hostname, port:443, path:u.pathname, method:"POST", agent, headers:{
         "Content-Type": "text/xml; charset=utf-8",
         "SOAPAction": `${ns}/cteRecepcao`,
         "Content-Length": Buffer.byteLength(envelope)
       }},res=>{let d="";res.on("data",c=>d+=c);res.on("end",()=>{console.log("[CTE-SEFAZ] HTTP status:", res.statusCode);console.log("[CTE-SEFAZ] Resposta SEFAZ COMPLETA:", d);res.statusCode&&res.statusCode>=400?reject(new Error(`CTe HTTP ${res.statusCode}: ${d.slice(0,500)}`)):resolve(d);});});
       req.on("error",reject); req.write(envelope); req.end();
-    });
+    }));
     } catch (e) {
       // Rede caiu no meio do envio (ex.: read ECONNRESET): a SEFAZ pode ter processado. Reconcilia pela chave.
       const msg = (e as Error)?.message || "Falha de rede";
@@ -277,7 +297,7 @@ export async function emitirCte(pfx:Buffer, senha:string, xml:string, ambiente:A
   const body=`<cteDadosMsg xmlns="${ns}">${dadosBase64}</cteDadosMsg>`;
   let ret: string;
   try {
-    ret=await soapRequest(ep.recepcao, body, `${ns}/cteRecepcao`, createSefazAgent(pfx,senha));
+    ret=await sendComRetry(() => soapRequest(ep.recepcao, body, `${ns}/cteRecepcao`, createSefazAgent(pfx,senha)));
   } catch (e) {
     const msg=(e as Error)?.message || "Falha de rede";
     console.log("[CTE-SEFAZ] erro de rede no envio, reconciliando:", msg);

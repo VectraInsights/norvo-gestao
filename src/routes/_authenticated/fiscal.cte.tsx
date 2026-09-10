@@ -898,6 +898,7 @@ function CtePage() {
         emit: { xNome: empresa.razao_social || empresa.nome_fantasia, ie: empresa.ie || "ISENTO", cMun: form.cMunEnv, xMun: form.xMunEnv, uf: empresa.uf || "MG", cnpj: empresa.cnpj, crt: empresa.regime_tributario || "3", logradouro: empresa.logradouro, nro: empresa.numero, bairro: empresa.bairro, cep: empresa.cep } as any,
         chavesNFe: chaves,
       } } });
+      return ret;
       } finally {
         emittingRef.current = false;
       }
