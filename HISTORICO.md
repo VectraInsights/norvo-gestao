@@ -1272,3 +1272,27 @@ Commits: CF `a036d99` + Vercel `fbcf9ad`
 
 - NUNCA commitar tokens/senhas (GitHub PAT, senhas de banco, service keys).
 - Credenciais coladas em conversas anteriores devem ser rotacionadas quando possível.
+
+---
+
+## CT-e, Percursos e robustez de emissao (09-10/09/2026)
+
+### Percursos (tabela `cte_percursos`, ex-`cte_rotas`)
+- Migrations `20260909130000_cte_rotas.sql` e `20260909140000_cte_percursos_extend.sql` aplicadas (rename + codigo + ~48 colunas: consig/redespacho, seguro, pedagio, distancia/duracao, fiscal, obs, emissao).
+- Match automatico ESTRITO por CNPJ remetente+destinatario+tomador (sem fallback); salvamento silencioso a cada emissao/rascunho; numero do percurso no cabecalho do CT-e (card removido a pedido).
+- Pagina Fiscal -> Percursos: lista + edicao em abas sem rolagem (Geral | Seguro e Pedagio); chave (rem/dest/toma) travada; busca CNPJ em consignatario/redespacho (contatos -> BrasilAPI -> ReceitaWS) com cura do cadastro; entrega amarrada em redespacho > destinatario; endereco completado via cadastro; DialogContent fullscreen por padrao (Ctrl+K preservado).
+- Percurso NUNCA guarda motorista/frete; Gerar/Novo CT-e zeram dados de viagem e nao reaproveitam tomador/coleta/entrega (edicao de rascunho preservada).
+
+### Emissao robusta (Vercel proxy + server)
+- `return ret` faltando no mutationFn fazia todo envio cair no toast de rejeitado mesmo autorizado (causa raiz do "autorizado com toast de erro").
+- Reconciliacao via consSit: resposta de erro, ECONNRESET no envio e no cancelamento (135/155); retry com backoff (3x) no envio e na consulta; toast de resposta vazia com diagnostico (console + JSON).
+- Agent mTLS fixado em TLS 1.2.
+- 10/09 ~10h35: `hcte.fazenda.mg.gov.br` passou a resetar TODAS as conexoes (envio e consulta, TLS 1.2 e 1.3, Vercel e local). Portal no ar, SVRS ok, NFe nacional ok => homologacao MG fora do ar. Numeros 900015-900017 ficaram como rejeitados locais; retomar do 900018 e limpar rejeitados.
+
+### CT-e UI (Transporte sem rolagem)
+- Dialogo maximizado; Transporte compacto (Seguro 2 linhas, Veiculo 3 campos Cavalo/Reboque 1/2 com limpar, Componentes em 1 linha MoneyInput); ICMS e vTPrest sobre o total (menos pedagio, Lei 10.209); pedagio default "Sem Pagamento" + trava obrigatoria em Free Flow/TAGs (alimenta MDF-e); DACTE com seguro; toasts enxutos (sem "Percurso aplicado").
+
+### Distancia/duracao do Percurso
+- Calculo via CEP (BrasilAPI) + rota OSRM (menor alternativa); duracao = dist/50 km/h + descansos Lei 13.103, arredonda p/ hora cheia; destino = redespacho > destinatario.
+
+Commits CF `e52f69a..0115b69` (53) + Vercel espelhos + Worker redeployado a cada mudanca.
