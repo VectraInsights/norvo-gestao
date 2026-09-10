@@ -33,6 +33,7 @@ import {
   PackagePlus,
   Truck,
   Route,
+  MapPin,
   OctagonAlert,
 } from "lucide-react";
 
@@ -128,6 +129,7 @@ const RAW_NAV: NavGroup[] = [
       { to: "/fiscal/recebidas", label: "Notas de Compra", icon: FileInput },
       { to: "/fiscal/cte", label: "CT-e", icon: Truck },
       { to: "/fiscal/mdf", label: "MDF-e", icon: Route },
+      { to: "/fiscal/percursos", label: "Percursos", icon: MapPin },
       { to: "/fiscal/relatorios", label: "Relatórios e Dashboards", icon: BarChart3 },
       { to: "/fiscal/contador", label: "Painel do Contador", icon: Handshake },
       { to: "/fiscal/configuracoes", label: "Configurações Fiscais", icon: Settings2 },
