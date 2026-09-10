@@ -1296,3 +1296,14 @@ Commits: CF `a036d99` + Vercel `fbcf9ad`
 - Calculo via CEP (BrasilAPI) + rota OSRM (menor alternativa); duracao = dist/50 km/h + descansos Lei 13.103, arredonda p/ hora cheia; destino = redespacho > destinatario.
 
 Commits CF `e52f69a..0115b69` (53) + Vercel espelhos + Worker redeployado a cada mudanca.
+
+---
+
+## Percursos: layout final + regras (10/09/2026)
+
+- Layout estilo STM: chave larga a esquerda (1 linha por parte, so nome+CNPJ, boxes com contorno) + Coleta/Entrega estreita a direita na mesma altura (flex distribuido).
+- Edicao em abas sem rolagem; DialogContent fullscreen por padrao (Ctrl+K e AlertDialog preservados).
+- Regras: IE ou ISENTO obrigatoria (pendencias agregadas num toast so); tudo maiusculo (digita + save + persist CT-e); apagar CNPJ limpa a parte em cascata; busca CNPJ com cura do cadastro; edicao volta para `contatos` (update/insert).
+- Entrega amarrada em redespacho > destinatario; emissao fora do percurso (dado do emissor).
+
+Commits CF `fd2c6c0..20d42c4` + Vercel espelhos.
