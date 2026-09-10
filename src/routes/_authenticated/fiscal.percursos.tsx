@@ -280,25 +280,30 @@ function PercursosPage() {
                     <R label="Código" v={editing.codigo} />
                     <T editing={editing} set={set} label="Nome" k="nome" />
                   </div>
-                                                      <div className="border rounded p-2 space-y-1">
-                    <p className="text-[11px] font-semibold">Coleta / Entrega</p>
-                    <div className="grid grid-cols-2 md:grid-cols-7 gap-1">
-                      <div className="md:col-span-2"><T editing={editing} set={set} label="Coleta município" k="coleta_xmun" /></div>
-                      <div><T editing={editing} set={set} label="UF" k="coleta_uf" /></div>
-                      <div className="md:col-span-2"><T editing={editing} set={set} label="Entrega município" k="entrega_xmun" /></div>
-                      <div><T editing={editing} set={set} label="UF" k="entrega_uf" /></div>
-                      <div><T editing={editing} set={set} label="CFOP" k="cfop" mono /></div>
+                                                      
+                                    <div className="grid grid-cols-1 md:grid-cols-5 gap-2">
+                    <div className="md:col-span-4 space-y-2">
+                      <Parte titulo="Remetente" lgr={eRem.lgr} nro={eRem.nro} bai={eRem.bai} cep={eRem.cep} fone={eRem.fone} nome={editing.rem_nome} doc={editing.rem_cnpj} ie={eRem.ie} cid={eRem.cid} uf={eRem.uf} />
+                      <Parte titulo="Destinatário" lgr={eDes.lgr} nro={eDes.nro} bai={eDes.bai} cep={eDes.cep} fone={eDes.fone} nome={editing.dest_nome} doc={editing.dest_cnpj} ie={eDes.ie} cid={eDes.cid} uf={eDes.uf} />
+                      <Parte titulo="Tomador" lgr={eTom.lgr} nro={eTom.nro} bai={eTom.bai} cep={eTom.cep} fone={eTom.fone} nome={editing.toma_nome} doc={editing.toma_cnpj} ie={eTom.ie} cid={eTom.cid} uf={eTom.uf} />
                     </div>
-                    <div className="grid grid-cols-2 md:grid-cols-7 gap-1">
-                      <div><T editing={editing} set={set} label="Distância km" k="distancia_km" /></div>
-                      <div><T editing={editing} set={set} label="Duração h" k="duracao_horas" /></div>
+                    <div className="border rounded p-2 space-y-1">
+                      <p className="text-[11px] font-semibold">Coleta / Entrega</p>
+                      <T editing={editing} set={set} label="Coleta município" k="coleta_xmun" />
+                      <div className="grid grid-cols-3 gap-1">
+                        <T editing={editing} set={set} label="UF" k="coleta_uf" />
+                        <T editing={editing} set={set} label="CFOP" k="cfop" mono />
+                        <div><Label className="text-[10px] text-muted-foreground"> </Label></div>
+                      </div>
+                      <T editing={editing} set={set} label="Entrega município" k="entrega_xmun" />
+                      <div className="grid grid-cols-3 gap-1">
+                        <T editing={editing} set={set} label="UF" k="entrega_uf" />
+                        <T editing={editing} set={set} label="Dist. km" k="distancia_km" />
+                        <T editing={editing} set={set} label="Dur. h" k="duracao_horas" />
+                      </div>
                     </div>
                   </div>
-                  <div className="grid grid-cols-1 gap-2">
-                    <Parte titulo="Remetente" lgr={eRem.lgr} nro={eRem.nro} bai={eRem.bai} cep={eRem.cep} fone={eRem.fone} nome={editing.rem_nome} doc={editing.rem_cnpj} ie={eRem.ie} cid={eRem.cid} uf={eRem.uf} />
-                    <Parte titulo="Destinatário" lgr={eDes.lgr} nro={eDes.nro} bai={eDes.bai} cep={eDes.cep} fone={eDes.fone} nome={editing.dest_nome} doc={editing.dest_cnpj} ie={eDes.ie} cid={eDes.cid} uf={eDes.uf} />
-                    <Parte titulo="Tomador" lgr={eTom.lgr} nro={eTom.nro} bai={eTom.bai} cep={eTom.cep} fone={eTom.fone} nome={editing.toma_nome} doc={editing.toma_cnpj} ie={eTom.ie} cid={eTom.cid} uf={eTom.uf} />
-                  </div>
+                  
                   
                   
                                     <div className="space-y-2">
