@@ -18,6 +18,7 @@ import { useEmpresaAtual } from "@/hooks/use-empresa";
 import { useState, useMemo, useRef, useEffect } from "react";
 import { toast } from "sonner";
 import { limparIE, validarIE } from "@/lib/ie";
+import { CFOPS_CTE } from "@/lib/cfops-transporte";
 
 export const Route = createFileRoute("/_authenticated/fiscal/percursos")({
   component: PercursosPage,
@@ -331,7 +332,7 @@ function PercursosPage() {
                       <div className="flex-1 flex flex-col justify-between py-0.5">
 <div className="flex items-center gap-1"><span className="text-[9px] text-muted-foreground w-12 shrink-0">Coleta</span><Input className="h-6 text-[11px] flex-1 min-w-0 bg-transparent" readOnly value={editing.coleta_xmun || ""} onChange={e => set("coleta_xmun", e.target.value)} /><span className="text-[9px] text-muted-foreground shrink-0">UF</span><Input className="h-6 text-[11px] w-12 text-center shrink-0 bg-transparent" readOnly value={editing.coleta_uf || ""} onChange={e => set("coleta_uf", e.target.value.toUpperCase())} maxLength={2} /></div>
 <div className="flex items-center gap-1"><span className="text-[9px] text-muted-foreground w-12 shrink-0">Entrega</span><Input className="h-6 text-[11px] flex-1 min-w-0 bg-transparent" readOnly value={editing.entrega_xmun || ""} onChange={e => set("entrega_xmun", e.target.value)} /><span className="text-[9px] text-muted-foreground shrink-0">UF</span><Input className="h-6 text-[11px] w-12 text-center shrink-0 bg-transparent" readOnly value={editing.entrega_uf || ""} onChange={e => set("entrega_uf", e.target.value.toUpperCase())} maxLength={2} /></div>
-<div className="flex items-center gap-1"><span className="text-[9px] text-muted-foreground w-12 shrink-0">CFOP</span><Input className="h-6 text-[11px] font-mono flex-1 min-w-0" value={editing.cfop || ""} onChange={e => set("cfop", e.target.value)} /><span className="text-[9px] text-muted-foreground shrink-0">Dist.</span><Input className="h-6 text-[11px] flex-1 min-w-0" value={editing.distancia_km || ""} onChange={e => set("distancia_km", e.target.value)} /><span className="text-[9px] text-muted-foreground shrink-0">Dur.</span><Input className="h-6 text-[11px] flex-1 min-w-0" value={editing.duracao_horas || ""} onChange={e => set("duracao_horas", e.target.value)} /></div>
+<div className="flex items-center gap-1"><span className="text-[9px] text-muted-foreground shrink-0">Dist.</span><Input className="h-6 text-[11px] flex-1 min-w-0" value={editing.distancia_km || ""} onChange={e => set("distancia_km", e.target.value)} /><span className="text-[9px] text-muted-foreground shrink-0">Dur.</span><Input className="h-6 text-[11px] flex-1 min-w-0" value={editing.duracao_horas || ""} onChange={e => set("duracao_horas", e.target.value)} /></div>
 </div>
                     </div>
                   </div>
@@ -377,6 +378,15 @@ function PercursosPage() {
                           <SelectTrigger className="h-7 text-xs"><SelectValue /></SelectTrigger>
                           <SelectContent>
                             {CSTS_ICMS.map(([v, d]) => <SelectItem key={v} value={v}>{v} - {d}</SelectItem>)}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div>
+                        <Label className="text-[10px] text-muted-foreground">CFOP</Label>
+                        <Select value={editing.cfop || ""} onValueChange={v => set("cfop", v)}>
+                          <SelectTrigger className="h-7 text-xs"><SelectValue placeholder="Selecione" /></SelectTrigger>
+                          <SelectContent>
+                            {CFOPS_CTE.map(c => <SelectItem key={c.codigo} value={c.codigo.replace(/\D/g, "")}>{c.descricao}</SelectItem>)}
                           </SelectContent>
                         </Select>
                       </div>
