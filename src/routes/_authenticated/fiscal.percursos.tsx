@@ -184,7 +184,7 @@ function PercursosPage() {
       </Card>
 
       <Dialog open={!!editing} onOpenChange={v => { if (!v) setEditing(null); }}>
-        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+        <DialogContent>
           <DialogHeader>
             <DialogTitle className="text-sm">Editar percurso {editing?.codigo || ""} — {editing?.nome || ""}</DialogTitle>
           </DialogHeader>
