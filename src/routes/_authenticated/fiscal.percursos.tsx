@@ -51,7 +51,7 @@ function T({ label, k, ph, mono, editing, set, on14 }: { label: string; k: strin
   return (
     <div>
       <Label className="text-[10px] text-muted-foreground">{label}</Label>
-      <Input className={"h-7 text-xs" + (mono ? " font-mono" : "")} value={editing?.[k] ?? ""} onChange={e => { set(k, e.target.value); if (on14 && e.target.value.replace(/\D/g, "").length === 14) on14(e.target.value.replace(/\D/g, "")); }} placeholder={ph} />
+      <Input className={"h-7 text-xs" + (mono ? " font-mono" : "")} value={editing?.[k] ?? ""} onChange={e => { set(k, e.target.value.toUpperCase()); if (on14 && e.target.value.replace(/\D/g, "").length === 14) on14(e.target.value.replace(/\D/g, "")); }} placeholder={ph} />
     </div>
   );
 }
@@ -59,7 +59,7 @@ function Tc({ label, k, mono, editing, set }: { label: string; k: string; mono?:
   return (
     <div>
       <Label className="text-[9px] text-muted-foreground">{label}</Label>
-      <Input className={"h-6 text-[11px]" + (mono ? " font-mono" : "")} value={editing?.[k] ?? ""} onChange={e => { set(k, e.target.value); }} placeholder="" />
+      <Input className={"h-6 text-[11px]" + (mono ? " font-mono" : "")} value={editing?.[k] ?? ""} onChange={e => { set(k, e.target.value.toUpperCase()); }} placeholder="" />
     </div>
   );
 }function R({ label, v }: { label: string; v: any }) {
@@ -113,8 +113,13 @@ function PercursosPage() {
   const salvar = useMutation({
     mutationFn: async () => {
       if (!editing) throw new Error("Nada para salvar");
+      for (const p of [{ k: "consig", label: "Consignatario" }, { k: "redesp", label: "Redespacho" }]) {
+        const doc = String((editing as any)[p.k + "_cnpj"] || "").replace(/\D/g, "");
+        const ie = String((editing as any)[p.k + "_ie"] || "").trim();
+        if (doc.length > 0 && !ie) throw new Error("Informe a Inscricao Estadual de " + p.label + " (ou ISENTO)");
+      }
       const payload: Record<string, any> = {};
-      for (const k of EDITAVEIS) payload[k] = editing[k] ?? (k === "seg_repassar" ? false : "");
+      for (const k of EDITAVEIS) { const v = (editing as any)[k]; payload[k] = typeof v === "string" ? v.toUpperCase() : (v ?? (k === "seg_repassar" ? false : "")); }
       for (const p of ["rem", "dest", "toma"]) {
         const c = contatoByDoc.get(String(editing[p + "_cnpj"] || "").replace(/\D/g, "")) || {};
         const fb: Record<string, any> = { ie: c.ie, logradouro: c.logradouro, nro: c.numero, bairro: c.bairro, xmun: c.cidade, uf: c.uf, cep: c.cep, fone: c.telefone };
@@ -347,7 +352,7 @@ function PercursosPage() {
                     </div>
                     <div>
                       <Label className="text-[10px] text-muted-foreground">Observação geral</Label>
-                      <Textarea className="text-xs" rows={2} value={editing.obs_gerais ?? ""} onChange={e => set("obs_gerais", e.target.value)} />
+                      <Textarea className="text-xs" rows={2} value={editing.obs_gerais ?? ""} onChange={e => set("obs_gerais", e.target.value.toUpperCase())} />
                     </div>
                   </div>
                 </TabsContent>

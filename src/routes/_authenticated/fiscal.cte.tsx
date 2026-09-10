@@ -1143,6 +1143,7 @@ function CtePage() {
       inss_aliq: form.inssAliq || "", csll_aliq: form.csllAliq || "", obs_gerais: (form as any).obsGerais || "",
 
     };
+    for (const k of Object.keys(payload)) { if (k === "empresa_id") continue; const v = (payload as any)[k]; if (typeof v === "string") (payload as any)[k] = v.toUpperCase(); }
     const { error } = await supabase.from("cte_percursos" as any).upsert(payload, { onConflict: "empresa_id,rem_cnpj,dest_cnpj,toma_cnpj" });
     if (error) return;
     qc.invalidateQueries({ queryKey: ["cte-percursos", empresa.id] });
