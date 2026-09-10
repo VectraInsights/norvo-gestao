@@ -69,10 +69,10 @@ function Parte({ titulo, nome, doc, ie, lgr, nro, bai, cid, uf, cep, fone }: { t
   return (
     <div className="border rounded px-2 py-1 bg-muted/20 grid grid-cols-12 gap-x-2 items-center" title={nome}>
       <p className="col-span-3 text-xs truncate"><span className="font-semibold">{titulo}</span><span className="text-[9px] text-muted-foreground"> (chave)</span><span className="font-medium"> {nome}</span></p>
-      <p className="col-span-2 text-[10px] text-muted-foreground truncate">CNPJ {fmtDoc(doc)}</p>
-      <p className="col-span-1 text-[10px] text-muted-foreground truncate">IE {ie || "ISENTO"}</p>
-      <p className="col-span-3 text-[10px] text-muted-foreground truncate">{ender || "--"}</p>
-      <p className="col-span-3 text-[10px] text-muted-foreground truncate">{loc}</p>
+      <p className="col-span-2 text-[11px] text-muted-foreground truncate">CNPJ {fmtDoc(doc)}</p>
+      <p className="col-span-1 text-[11px] text-muted-foreground truncate">IE {ie || "ISENTO"}</p>
+      <p className="col-span-3 text-[11px] text-muted-foreground truncate">{ender || "--"}</p>
+      <p className="col-span-3 text-[11px] text-muted-foreground truncate">{loc}</p>
     </div>
   );
 }
@@ -223,8 +223,7 @@ function PercursosPage() {
               <Tabs value={percTab} onValueChange={setPercTab} className="flex-1 flex flex-col min-h-0">
                 <TabsList className="w-fit">
                   <TabsTrigger value="geral" className="text-xs">Geral</TabsTrigger>
-                  <TabsTrigger value="rota" className="text-xs">Rota e Fiscal</TabsTrigger>
-                  <TabsTrigger value="seguro" className="text-xs">Seguro e Pedágio</TabsTrigger>
+                                    <TabsTrigger value="seguro" className="text-xs">Seguro e Pedágio</TabsTrigger>
                 </TabsList>
                 <TabsContent value="geral" className="mt-2 space-y-2">
                   <div className="grid grid-cols-[100px_1fr] gap-2">
@@ -266,9 +265,7 @@ function PercursosPage() {
                       </div>
                     </div>
                   </div>
-                </TabsContent>
-                <TabsContent value="rota" className="mt-2 space-y-2">
-                  <div className="border rounded p-2 space-y-1">
+                                  <div className="border rounded p-2 space-y-1">
                     <p className="text-[11px] font-semibold">Coleta / Entrega / Emissão</p>
                     <div className="grid grid-cols-2 md:grid-cols-5 gap-1">
                       <T editing={editing} set={set} label="Coleta município" k="coleta_xmun" />
@@ -299,6 +296,7 @@ function PercursosPage() {
                     </div>
                   </div>
                 </TabsContent>
+                
                 <TabsContent value="seguro" className="mt-2 space-y-2">
                   <div className="border rounded p-2 space-y-1">
                     <p className="text-[11px] font-semibold">Seguro</p>
