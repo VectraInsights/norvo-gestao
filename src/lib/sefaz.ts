@@ -25,10 +25,14 @@ const OID_CERT_BAG = "1.2.840.113549.1.12.10.1.3";
 
 export function createSefazAgent(pfxBytes: Buffer, senha: string): https.Agent {
   // Usar pfx direto — é o método nativo do Node.js para PKCS#12
+  // SEFAZ exige TLS 1.2 (TLS 1.3 derruba o handshake com ECONNRESET em vários endpoints)
   return new https.Agent({
     pfx: pfxBytes,
     passphrase: senha,
     rejectUnauthorized: false,
+    minVersion: "TLSv1.2",
+    maxVersion: "TLSv1.2",
+    keepAlive: false,
   });
 }
 export function soapEnvelope12(body: string): string {
