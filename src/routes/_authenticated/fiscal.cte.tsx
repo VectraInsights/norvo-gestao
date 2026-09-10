@@ -13,7 +13,7 @@ import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
-import { Truck, Plus, FileText, Search, Ban, UploadCloud, FileCode, MapPin, Package, Building2, Trash2, Filter, Calendar, CheckCircle2, ChevronsUpDown, Check, ReceiptText, Pencil, Download, Settings2, X, Loader2, ClipboardList, Route as RouteIcon, Save, Calculator } from "lucide-react";
+import { Truck, Plus, FileText, Search, Ban, UploadCloud, FileCode, MapPin, Package, Building2, Trash2, Filter, Calendar, CheckCircle2, ChevronsUpDown, Check, ReceiptText, Pencil, Download, Settings2, X, Loader2, ClipboardList } from "lucide-react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useEmpresaAtual } from "@/hooks/use-empresa";
@@ -853,6 +853,7 @@ function CtePage() {
     },
     onSuccess: () => {
       toast.success("Rascunho salvo");
+      persistirPercursoSilencioso();
       setMercadorias([]);
       setSelecionadas(new Set());
       setEditingRascunhoId(null);
@@ -906,6 +907,7 @@ function CtePage() {
       if (ret?.sucesso) {
         toast.success(`CT-e ${ret.chave} autorizado` + (ret.protocolo ? ` prot ${ret.protocolo}` : ""));
         setOpen(false);
+        persistirPercursoSilencioso();
         let rascunhoNfs: any[] = [];
         if (editingRascunhoId) {
           const { data: rascDoc } = await supabase.from("cte_documentos" as any).select("xml_assinado").eq("id", editingRascunhoId).maybeSingle();
@@ -995,11 +997,8 @@ function CtePage() {
 
   const [previewOpen, setPreviewOpen] = useState(false);
   const [previewData, setPreviewData] = useState<{ xml: string; chave: string; proximo: string; ambiente: string; form: any } | null>(null);
-  const [percursoNome, setPercursoNome] = useState("");
-  const [percursoSelId, setPercursoSelId] = useState("");
   const percursoAplicadoKey = useRef("");
-  const [calculandoPercurso, setCalculandoPercurso] = useState(false);
-  const { data: percursosDB, error: percursosError } = useQuery({
+ const { data: percursosDB, error: percursosError } = useQuery({
     enabled: !!empresa,
     queryKey: ["cte-percursos", empresa?.id],
     queryFn: async () => {
@@ -1090,12 +1089,13 @@ function CtePage() {
       cMunEnv: r.emissao_cmun || f.cMunEnv, xMunEnv: r.emissao_xmun || f.xMunEnv, ufEnv: r.emissao_uf || f.ufEnv,
       ...(r.obs_gerais ? { obsGerais: r.obs_gerais } : {}),
     }));
-    setPercursoSelId(r.id);
-  };
-  const salvarPercurso = async () => {
-    if (!empresa) return;
+ };
+  // Percurso é 100% automático e silencioso: salva/atualiza a cada emissão ou rascunho
+  const persistirPercursoSilencioso = async () => {
+    try {
+      if (!empresa) return;
     const d = docsAtuais();
-    if (!d.tomaDoc || d.tomaDoc.length !== 14) { toast.error("Informe o tomador (CNPJ com 14 dígitos) para salvar o percurso"); return; }
+    if (!d.remDoc || !d.destDoc || !d.tomaDoc || d.tomaDoc.length !== 14) return;
     const sel = mercadorias.filter(m => selecionadas.has(m.chave));
     const a = ((sel.length > 0 ? sel[0] : mercadorias[0]) || {}) as any;
     const { data: exPerc } = await supabase.from("cte_percursos" as any).select("id,codigo").eq("empresa_id", empresa.id).eq("rem_cnpj", d.remDoc).eq("dest_cnpj", d.destDoc).eq("toma_cnpj", d.tomaDoc).maybeSingle();
@@ -1105,7 +1105,7 @@ function CtePage() {
       const last = parseInt((((mx as any[])?.[0]?.codigo) || "0"), 10) || 0;
       codigoPercurso = String(last + 1).padStart(4, "0");
     }
-    const nome = (percursoNome.trim() || ((d.remNome || "Origem") + " > " + (d.destNome || "Destino"))).slice(0, 80);
+    const nome = ((((exPerc as any)?.nome) || ((d.remNome || "Origem") + " > " + (d.destNome || "Destino"))) as string).slice(0, 80);
     const payload = {
       empresa_id: empresa.id, nome,
       rem_cnpj: d.remDoc, rem_nome: a.emit || d.remNome || "", rem_ie: a.emitIE || "", rem_uf: a.emitUF || "",
@@ -1141,69 +1141,9 @@ function CtePage() {
       emissao_cmun: form.cMunEnv || "", emissao_xmun: form.xMunEnv || "", emissao_uf: form.ufEnv || "",
     };
     const { error } = await supabase.from("cte_percursos" as any).upsert(payload, { onConflict: "empresa_id,rem_cnpj,dest_cnpj,toma_cnpj" });
-    if (error) { toast.error("Falha ao salvar percurso: " + error.message); return; }
-    toast.success("Percurso salvo: " + nome);
-    setPercursoNome("");
+    if (error) return;
     qc.invalidateQueries({ queryKey: ["cte-percursos", empresa.id] });
-  };
-  const excluirPercurso = async () => {
-    if (!empresa || !percursoSelId) return;
-    const r = percursos.find(x => x.id === percursoSelId);
-    if (!r) return;
-    if (!window.confirm("Excluir o percurso " + r.nome + "?")) return;
-    const { error } = await supabase.from("cte_percursos" as any).delete().eq("id", percursoSelId);
-    if (error) { toast.error("Falha ao excluir: " + error.message); return; }
-    toast.success("Percurso excluído");
-    setPercursoSelId("");
-    qc.invalidateQueries({ queryKey: ["cte-percursos", empresa.id] });
-  };
-  const calcularDistanciaPercurso = async () => {
-    const sel = mercadorias.filter(m => selecionadas.has(m.chave));
-    const a = ((sel.length > 0 ? sel[0] : mercadorias[0]) || {}) as any;
-    const doc = (c: any) => String(c || "").replace(/\D/g, "");
-    const cEmit = contatoByDoc.get(doc(a.emitCnpj)) || {};
-    const cDest = contatoByDoc.get(doc(a.destCnpj)) || {};
-    const m = percursoMatch;
-    const cepO = (a.emitCEP || (cEmit as any).cep || (m && (m as any).rem_cep) || "").replace(/\D/g, "");
-    const temRedespacho = (form.cnpjRedespacho || "").replace(/\D/g, "").length === 14;
-    // Prioridade do destino: redespacho > destinatário
-    const cepD = temRedespacho ? (form.cepRedespacho || "").replace(/\D/g, "") : (a.destCEP || (cDest as any).cep || (m && (m as any).dest_cep) || "").replace(/\D/g, "");
-    if (cepO.length !== 8 || cepD.length !== 8) { toast.error(temRedespacho ? "Informe o CEP do redespacho para calcular a distância" : "Informe os CEPs do remetente e do destinatário para calcular a distância"); return; }
-    setCalculandoPercurso(true);
-    try {
-      const geo = async (cep: string) => {
-        const r = await fetch("https://brasilapi.com.br/api/cep/v2/" + cep);
-        if (!r.ok) throw new Error("CEP " + cep + " não encontrado");
-        const j = await r.json();
-        const co = j?.location?.coordinates;
-        const lat = co?.latitude ?? (Array.isArray(co) ? co[1] : null);
-        const lng = co?.longitude ?? (Array.isArray(co) ? co[0] : null);
-        if (lat == null || lng == null) throw new Error("CEP " + cep + " sem coordenadas");
-        return { lat, lng };
-      };
-      const [o, d] = await Promise.all([geo(cepO), geo(cepD)]);
-      const r = await fetch("https://router.project-osrm.org/route/v1/driving/" + o.lng + "," + o.lat + ";" + d.lng + "," + d.lat + "?overview=false&alternatives=true");
-      if (!r.ok) throw new Error("Falha no cálculo da rota (OSRM)");
-      const j = await r.json();
-      const dists = ((j?.routes || []) as any[]).map(x => x?.distance).filter(n => typeof n === "number" && n > 0);
-      if (dists.length === 0) throw new Error("Rota rodoviária não encontrada");
-      // Usa o menor trajeto entre as alternativas (mais próximo do Google)
-      const km = Math.round(Math.min(...dists) / 1000);
-      // Direção pura a 50 km/h + descansos Lei 13.103/2015: 30min a cada 5h30 dirigidas,
-      // 11h de descanso diário a cada 24h e 35h semanais a cada 6 dias (144h)
-      const dirigindo = km / 50;
-      const pausas = 0.5 * Math.floor(dirigindo / 5.5);
-      let hs = dirigindo + pausas;
-      for (let i = 0; i < 5; i++) {
-        const nt = dirigindo + pausas + 11 * Math.floor(hs / 24) + 35 * Math.floor(hs / 144);
-        if (nt === hs) break;
-        hs = nt;
-      }
-      // Sempre arredonda para cima na hora cheia: 94,3h vira 95h
-      hs = Math.ceil(hs);
-      setForm(f => ({ ...f, distanciaKm: String(km), duracaoHoras: String(hs) }));
-      toast.success("Percurso calculado: " + km + " km (~" + String(hs) + " h)");
-    } catch (e) { toast.error((e as Error).message); } finally { setCalculandoPercurso(false); }
+    } catch (e) { console.log("[CTE-PERCURSO] save silencioso falhou:", (e as Error)?.message); }
   };
   const percursoMatch = matchPercurso(docsAtuais());
   useEffect(() => { percursoAplicadoKey.current = ""; }, [open]);
@@ -1490,7 +1430,7 @@ function CtePage() {
             {/* === TAB: Geral === */}
             <TabsContent value="geral" className="mt-3 space-y-3">
               {/* Header: Ambiente, Nº, Data, Tomador, Mod/Ser + CFOP */}
-              <div className="grid grid-cols-2 md:grid-cols-[auto_auto_auto_minmax(0,1fr)_auto] gap-2 border rounded p-3 bg-muted/20">
+              <div className="grid grid-cols-2 md:grid-cols-[auto_auto_auto_minmax(0,1fr)_auto_auto] gap-2 border rounded p-3 bg-muted/20">
                 <div>
                   <Label className="text-[10px] text-muted-foreground">Ambiente</Label>
                   <ToggleGroup type="single" value={form.ambiente} onValueChange={v => { if (v) setForm({...form, ambiente: v as "homologacao" | "producao"}); }} className="bg-background border rounded-md h-7 mt-0.5">
@@ -1532,6 +1472,7 @@ function CtePage() {
                   </Popover>
                 </div>
                 <div><Label className="text-[10px] text-muted-foreground">Mod / Série</Label><Input className="h-7 text-xs font-mono w-[92px] text-center px-1" value="57 / 001" readOnly /></div>
+                <div><Label className="text-[10px] text-muted-foreground">Percurso</Label><Input className="h-7 text-xs font-mono w-[76px] text-center px-1" value={percursoMatch?.codigo || "—"} readOnly title={percursoMatch?.nome || "Nenhum percurso associado"} /></div>
               </div>
               <div className="border rounded p-3 bg-muted/20">
                 <div className="flex flex-wrap items-start gap-x-3 gap-y-2">
@@ -1587,43 +1528,7 @@ function CtePage() {
                 </div>
               </div>
 
-                            <Card className="p-3">
-                <div className="flex items-center gap-2 mb-2">
-                  <div className="h-6 w-6 rounded bg-orange-500/10 grid place-items-center"><RouteIcon className="h-3.5 w-3.5 text-orange-600" /></div>
-                  <h5 className="text-xs font-semibold">Percurso</h5>
-                  {percursoMatch && <span className="text-[9px] text-emerald-600 font-medium">aplicado: {percursoMatch.nome}</span>}
-                  {percursosError && <span className="text-[9px] text-destructive">Execute as migrations 20260909130000_cte_rotas.sql e 20260909140000_cte_percursos_extend.sql no SQL Editor</span>}
-                </div>
-                <div className="flex flex-wrap items-end gap-2">
-                  <div className="flex-1 min-w-52">
-                    <Label className="text-[10px] text-muted-foreground">Percursos salvos</Label>
-                    <Select value={percursoSelId} onValueChange={setPercursoSelId}>
-                      <SelectTrigger className="h-7 text-xs"><SelectValue placeholder={percursos.length ? "Selecione para aplicar" : "Nenhum percurso salvo"} /></SelectTrigger>
-                      <SelectContent>
-                        {percursos.map(r => <SelectItem key={r.id} value={r.id}>{(r.codigo ? r.codigo + " — " : "") + r.nome}</SelectItem>)}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <Button size="sm" variant="outline" className="h-7 text-xs" disabled={!percursoSelId} onClick={() => { const r = percursos.find(x => x.id === percursoSelId); if (r) { percursoAplicadoKey.current = "manual-" + r.id; aplicarPercurso(r); } }}>Aplicar</Button>
-                  {percursoSelId && <Button size="icon" variant="ghost" className="h-7 w-7 text-destructive" title="Excluir percurso" onClick={excluirPercurso}><Trash2 className="h-3.5 w-3.5" /></Button>}
-                  <div className="flex-1 min-w-52">
-                    <Label className="text-[10px] text-muted-foreground">Nome do novo percurso</Label>
-                    <Input className="h-7 text-xs" placeholder="Ex: TECNO - CHICO" value={percursoNome} onChange={e => setPercursoNome(e.target.value)} />
-                  </div>
-                  <div className="w-20">
-                    <Label className="text-[10px] text-muted-foreground">Distância Km</Label>
-                    <Input className="h-7 text-xs" placeholder="0" value={form.distanciaKm || ""} onChange={e => setForm({ ...form, distanciaKm: e.target.value })} />
-                  </div>
-                  <div className="w-20">
-                    <Label className="text-[10px] text-muted-foreground">Duração h</Label>
-                    <Input className="h-7 text-xs" placeholder="0" value={form.duracaoHoras || ""} onChange={e => setForm({ ...form, duracaoHoras: e.target.value })} />
-                  </div>
-                  <Button size="sm" variant="outline" className="h-7 text-xs" disabled={calculandoPercurso} onClick={calcularDistanciaPercurso} title="Calcular distância e duração pelos CEPs de coleta e entrega">{calculandoPercurso ? <Loader2 className="mr-1 h-3 w-3 animate-spin" /> : <Calculator className="mr-1 h-3 w-3" />} Calcular</Button>
-                  <Button size="sm" className="h-7 text-xs" onClick={salvarPercurso}><Save className="mr-1 h-3 w-3" /> Salvar percurso atual</Button>
-                </div>
-                <p className="text-[9px] text-muted-foreground mt-1">Ao puxar um XML ou digitar o tomador com remetente, destino e tomador iguais (CNPJs) aos de um percurso salvo, os dados entram automaticamente. Sem os 3 CNPJs iguais, nada é aplicado.</p>
-              </Card>
-{mercadorias.length > 0 ? (() => {
+              {mercadorias.length > 0 ? (() => {
                 const sel = mercadorias.filter(m => selecionadas.has(m.chave));
                 const active = sel.length > 0 ? sel[0] : mercadorias[0];
                 const percRem = percursoMatch && (percursoMatch.rem_cnpj || "") === (active.emitCnpj || "").replace(/\D/g, "") && percursoMatch.rem_nome ? { ie: percursoMatch.rem_ie || "", logradouro: percursoMatch.rem_logradouro || "", numero: percursoMatch.rem_nro || "", bairro: percursoMatch.rem_bairro || "", cidade: percursoMatch.rem_xmun || "", uf: percursoMatch.rem_uf || "", cep: percursoMatch.rem_cep || "", telefone: percursoMatch.rem_fone || "" } : null;
