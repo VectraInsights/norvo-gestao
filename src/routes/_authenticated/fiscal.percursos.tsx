@@ -204,7 +204,7 @@ function PercursosPage() {
                     <R label="Código" v={editing.codigo} />
                     <T editing={editing} set={set} label="Nome" k="nome" />
                   </div>
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
+                  <div className="grid grid-cols-1 gap-2">
                     <Parte titulo="Remetente" lgr={editing.rem_logradouro} nro={editing.rem_nro} bai={editing.rem_bairro} cep={editing.rem_cep} fone={editing.rem_fone} nome={editing.rem_nome} doc={editing.rem_cnpj} ie={editing.rem_ie} cid={editing.rem_xmun} uf={editing.rem_uf} />
                     <Parte titulo="Destinatário" lgr={editing.dest_logradouro} nro={editing.dest_nro} bai={editing.dest_bairro} cep={editing.dest_cep} fone={editing.dest_fone} nome={editing.dest_nome} doc={editing.dest_cnpj} ie={editing.dest_ie} cid={editing.dest_xmun} uf={editing.dest_uf} />
                     <Parte titulo="Tomador" lgr={editing.toma_logradouro} nro={editing.toma_nro} bai={editing.toma_bairro} cep={editing.toma_cep} fone={editing.toma_fone} nome={editing.toma_nome} doc={editing.toma_cnpj} ie={editing.toma_ie} cid={editing.toma_xmun} uf={editing.toma_uf} />
