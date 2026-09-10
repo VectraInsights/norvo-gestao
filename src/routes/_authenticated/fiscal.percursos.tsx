@@ -179,7 +179,9 @@ async function calcDistDur(o: { cep: string; xmun: string; uf: string }, d: { ce
   const m = Math.min(...routes.map((x: any) => Number(x.distance) || Infinity));
   if (!isFinite(m)) throw new Error("Rota nao encontrada entre os CEPs");
   const km = Math.round(m / 1000);
-  const total = Math.round((km / 60) * 2);
+  const volante = km / 60;
+  const dias = Math.max(1, Math.ceil(volante / 12));
+  const total = Math.round((volante + (dias > 1 ? 12 * dias : 0)) * 10) / 10;
   return { km: String(km), h: String(total) };
 }
 function PercursosPage() {
