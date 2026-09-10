@@ -280,11 +280,28 @@ function PercursosPage() {
                     <R label="Código" v={editing.codigo} />
                     <T editing={editing} set={set} label="Nome" k="nome" />
                   </div>
-                  <div className="grid grid-cols-1 gap-2">
-                    <Parte titulo="Remetente" lgr={eRem.lgr} nro={eRem.nro} bai={eRem.bai} cep={eRem.cep} fone={eRem.fone} nome={editing.rem_nome} doc={editing.rem_cnpj} ie={eRem.ie} cid={eRem.cid} uf={eRem.uf} />
-                    <Parte titulo="Destinatário" lgr={eDes.lgr} nro={eDes.nro} bai={eDes.bai} cep={eDes.cep} fone={eDes.fone} nome={editing.dest_nome} doc={editing.dest_cnpj} ie={eDes.ie} cid={eDes.cid} uf={eDes.uf} />
-                    <Parte titulo="Tomador" lgr={eTom.lgr} nro={eTom.nro} bai={eTom.bai} cep={eTom.cep} fone={eTom.fone} nome={editing.toma_nome} doc={editing.toma_cnpj} ie={eTom.ie} cid={eTom.cid} uf={eTom.uf} />
+                                    <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
+                    <div className="md:col-span-2 space-y-2">
+                      <Parte titulo="Remetente" lgr={eRem.lgr} nro={eRem.nro} bai={eRem.bai} cep={eRem.cep} fone={eRem.fone} nome={editing.rem_nome} doc={editing.rem_cnpj} ie={eRem.ie} cid={eRem.cid} uf={eRem.uf} />
+                      <Parte titulo="Destinatário" lgr={eDes.lgr} nro={eDes.nro} bai={eDes.bai} cep={eDes.cep} fone={eDes.fone} nome={editing.dest_nome} doc={editing.dest_cnpj} ie={eDes.ie} cid={eDes.cid} uf={eDes.uf} />
+                      <Parte titulo="Tomador" lgr={eTom.lgr} nro={eTom.nro} bai={eTom.bai} cep={eTom.cep} fone={eTom.fone} nome={editing.toma_nome} doc={editing.toma_cnpj} ie={eTom.ie} cid={eTom.cid} uf={eTom.uf} />
+                    </div>
+                    <div className="border rounded p-2 space-y-1">
+                      <p className="text-[11px] font-semibold">Coleta / Entrega</p>
+                      <div className="grid grid-cols-[1fr_64px] gap-1">
+                        <T editing={editing} set={set} label="Coleta município" k="coleta_xmun" />
+                        <T editing={editing} set={set} label="UF" k="coleta_uf" />
+                        <T editing={editing} set={set} label="Entrega município" k="entrega_xmun" />
+                        <T editing={editing} set={set} label="UF" k="entrega_uf" />
+                      </div>
+                      <T editing={editing} set={set} label="CFOP" k="cfop" mono />
+                      <div className="grid grid-cols-2 gap-1">
+                        <T editing={editing} set={set} label="Distância km" k="distancia_km" />
+                        <T editing={editing} set={set} label="Duração h" k="duracao_horas" />
+                      </div>
+                    </div>
                   </div>
+                  
                                     <div className="space-y-2">
                     <div className="border rounded px-2 py-1 space-y-1">
                       <p className="text-[11px] font-semibold">Consignatário</p>
@@ -313,19 +330,6 @@ function PercursosPage() {
                         <div className="col-span-3"><T editing={editing} set={set} label="Bairro" k="redesp_bairro" /></div>
                         <div className="col-span-3"><T editing={editing} set={set} label="Município" k="redesp_xmun" /></div>
                       </div>
-                    </div>
-                  </div>
-                  
-                                  <div className="border rounded p-2 space-y-1">
-                    <p className="text-[11px] font-semibold">Coleta / Entrega / Emissão</p>
-                    <div className="grid grid-cols-2 md:grid-cols-5 gap-1">
-                      <T editing={editing} set={set} label="Coleta município" k="coleta_xmun" />
-                      <T editing={editing} set={set} label="Coleta UF" k="coleta_uf" />
-                      <T editing={editing} set={set} label="Entrega município" k="entrega_xmun" />
-                      <T editing={editing} set={set} label="Entrega UF" k="entrega_uf" />
-                      <T editing={editing} set={set} label="CFOP" k="cfop" mono />
-                      <T editing={editing} set={set} label="Distância km" k="distancia_km" />
-                      <T editing={editing} set={set} label="Duração h" k="duracao_horas" />
                     </div>
                   </div>
                   <div className="border rounded p-2 space-y-1">
