@@ -122,6 +122,47 @@ function Combo({ label, value, onPick, opts }: { label: string; value: string; o
     </div>
   );
 }
+async function geoPorCep(cep: string): Promise<{ lat: number; lon: number } | null> {
+  const d = String(cep || "").replace(/\D/g, "");
+  if (d.length !== 8) return null;
+  try {
+    const r = await fetch("https://brasilapi.com.br/api/cep/v2/" + d);
+    if (!r.ok) return null;
+    const j = await r.json();
+    const c = j && j.location && j.location.coordinates;
+    if (c && c.latitude && c.longitude) return { lat: Number(c.latitude), lon: Number(c.longitude) };
+  } catch { return null; }
+  return null;
+}
+async function geoPorCidade(xmun: string, uf: string): Promise<{ lat: number; lon: number } | null> {
+  if (!xmun) return null;
+  try {
+    const q = new URLSearchParams({ city: xmun, state: uf || "", country: "Brasil", format: "json", limit: "1" });
+    const r = await fetch("https://nominatim.openstreetmap.org/search?" + q.toString(), { headers: { Accept: "application/json" } });
+    if (!r.ok) return null;
+    const j = await r.json();
+    if (j && j[0] && j[0].lat && j[0].lon) return { lat: Number(j[0].lat), lon: Number(j[0].lon) };
+  } catch { return null; }
+  return null;
+}
+async function calcDistDur(o: { cep: string; xmun: string; uf: string }, d: { cep: string; xmun: string; uf: string }): Promise<{ km: string; h: string } | null> {
+  const go = (await geoPorCep(o.cep)) || (await geoPorCidade(o.xmun, o.uf));
+  const gd = (await geoPorCep(d.cep)) || (await geoPorCidade(d.xmun, d.uf));
+  if (!go || !gd) return null;
+  try {
+    const r = await fetch("https://router.project-osrm.org/route/v1/driving/" + go.lon + "," + go.lat + ";" + gd.lon + "," + gd.lat + "?overview=false&alternatives=true");
+    if (!r.ok) return null;
+    const j = await r.json();
+    const routes = (j && j.routes) || [];
+    if (!routes.length) return null;
+    const m = Math.min(...routes.map((x: any) => Number(x.distance) || Infinity));
+    if (!isFinite(m)) return null;
+    const km = Math.round(m / 1000);
+    const bruto = km / 50;
+    const total = Math.ceil(bruto + Math.floor(bruto / 5.5) * 0.5);
+    return { km: String(km), h: String(total) };
+  } catch { return null; }
+}
 function PercursosPage() {
   const { data: empresa } = useEmpresaAtual();
   const qc = useQueryClient();
@@ -172,17 +213,29 @@ function PercursosPage() {
         const fb: Record<string, any> = { ie: c.ie, logradouro: c.logradouro, nro: c.numero, bairro: c.bairro, xmun: c.cidade, uf: c.uf, cep: c.cep, fone: c.telefone };
         for (const k of Object.keys(fb)) { const col = p + "_" + k; if (!payload[col] && fb[k]) payload[col] = fb[k]; }
       }
-      const { error } = await supabase.from("cte_percursos" as any).update(payload).eq("id", editing.id);
-      if (error) throw error;
       if (!empresa) throw new Error("Empresa nao selecionada");
-      for (const p of ["consig", "redesp"]) {
+      if (!payload.distancia_km || !payload.duracao_horas) {
+        const temRedesp = String(payload.redesp_cnpj || "").replace(/\D/g, "").length === 14;
+        const calc = await calcDistDur(
+          { cep: String(payload.rem_cep || ""), xmun: String(payload.coleta_xmun || payload.rem_xmun || ""), uf: String(payload.coleta_uf || payload.rem_uf || "") },
+          temRedesp
+            ? { cep: String(payload.redesp_cep || ""), xmun: String(payload.entrega_xmun || payload.redesp_xmun || ""), uf: String(payload.entrega_uf || payload.redesp_uf || "") }
+            : { cep: String(payload.dest_cep || ""), xmun: String(payload.entrega_xmun || payload.dest_xmun || ""), uf: String(payload.entrega_uf || payload.dest_uf || "") });
+        if (!calc) throw new Error("Nao foi possivel recalcular distancia/duracao (sem CEP ou cidade) — preencha manualmente");
+        if (!payload.distancia_km) payload.distancia_km = calc.km;
+        if (!payload.duracao_horas) payload.duracao_horas = calc.h;
+        setEditing(e => (e ? { ...e, distancia_km: payload.distancia_km, duracao_horas: payload.duracao_horas } : e));
+      }
+      const upd = supabase.from("cte_percursos" as any).update(payload).eq("id", editing.id).then(r => { if ((r as any).error) throw (r as any).error; });
+      const wbs = (["consig", "redesp"] as const).map(async p => {
         const doc = String(payload[p + "_cnpj"] || "").replace(/\D/g, "");
-        if (doc.length !== 14) continue;
+        if (doc.length !== 14) return;
         const crow: Record<string, any> = { nome: payload[p + "_nome"] || null, ie: payload[p + "_ie"] || null, uf: payload[p + "_uf"] || null, cidade: payload[p + "_xmun"] || null, logradouro: payload[p + "_logradouro"] || null, numero: payload[p + "_nro"] || null, bairro: payload[p + "_bairro"] || null, cep: payload[p + "_cep"] || null };
         const { data: ex } = await supabase.from("contatos" as any).select("id").eq("empresa_id", empresa.id).eq("documento", doc).maybeSingle();
         if (ex) { await supabase.from("contatos" as any).update(crow).eq("id", (ex as any).id); }
         else { await supabase.from("contatos" as any).insert({ empresa_id: empresa.id, tipo: "cliente", documento: doc, ...crow } as any); }
-      }
+      });
+      await Promise.all([upd, ...wbs]);
       qc.invalidateQueries({ queryKey: ["contatos-cte", empresa.id] });
     },
     onSuccess: () => {
