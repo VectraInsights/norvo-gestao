@@ -62,7 +62,7 @@ function Tc({ label, k, mono, editing, set, ro }: { label: string; k: string; mo
   return (
     <div>
       <Label className="text-[9px] text-muted-foreground">{label}</Label>
-      <Input className={"h-6 text-[11px]" + (mono ? " font-mono" : "") + (ro ? " bg-muted" : "")} value={editing?.[k] ?? ""} onChange={e => { set(k, e.target.value.toUpperCase()); }} placeholder="" readOnly={ro} />
+      <Input className={"h-6 text-[11px]" + (mono ? " font-mono" : "") + (ro ? " bg-transparent" : "")} value={editing?.[k] ?? ""} onChange={e => { set(k, e.target.value.toUpperCase()); }} placeholder="" readOnly={ro} />
     </div>
   );
 }function R({ label, v }: { label: string; v: any }) {
@@ -76,9 +76,9 @@ function Tc({ label, k, mono, editing, set, ro }: { label: string; k: string; mo
 function Parte({ titulo, nome, doc }: { titulo: string; nome: string; doc: string }) {
   return (
     <div className="grid grid-cols-12 gap-1 items-center">
-      <p className="col-span-2 text-xs font-semibold truncate border rounded px-2 py-1 bg-muted/20">{titulo}</p>
-      <p className="col-span-6 text-xs font-medium truncate border rounded px-2 py-1 bg-muted/20" title={nome}>{nome}</p>
-      <p className="col-span-4 text-[11px] text-muted-foreground truncate border rounded px-2 py-1 bg-muted/20">CNPJ {fmtDoc(doc)}</p>
+      <p className="col-span-2 text-xs font-semibold truncate border rounded px-2 py-1 bg-transparent">{titulo}</p>
+      <p className="col-span-6 text-xs font-medium truncate border rounded px-2 py-1 bg-transparent" title={nome}>{nome}</p>
+      <p className="col-span-4 text-[11px] text-muted-foreground truncate border rounded px-2 py-1 bg-transparent">CNPJ {fmtDoc(doc)}</p>
     </div>
   );
 }
