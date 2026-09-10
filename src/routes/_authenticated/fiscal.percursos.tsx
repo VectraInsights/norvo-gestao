@@ -16,6 +16,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useEmpresaAtual } from "@/hooks/use-empresa";
 import { useState, useMemo, useRef, useEffect } from "react";
 import { toast } from "sonner";
+import { limparIE, validarIE } from "@/lib/ie";
 
 export const Route = createFileRoute("/_authenticated/fiscal/percursos")({
   component: PercursosPage,
@@ -47,11 +48,11 @@ const fmtDoc = (d: any) => {
   return s || "—";
 };
 
-function T({ label, k, ph, mono, editing, set, on14 }: { label: string; k: string; ph?: string; mono?: boolean; editing: Percurso | null; set: (k: string, v: any) => void; on14?: (digits: string) => void }) {
+function T({ label, k, ph, mono, editing, set, on14, digits }: { label: string; k: string; ph?: string; mono?: boolean; editing: Percurso | null; set: (k: string, v: any) => void; on14?: (digits: string) => void; digits?: boolean }) {
   return (
     <div>
       <Label className="text-[10px] text-muted-foreground">{label}</Label>
-      <Input className={"h-7 text-xs" + (mono ? " font-mono" : "")} value={editing?.[k] ?? ""} onChange={e => { set(k, e.target.value.toUpperCase()); if (on14 && e.target.value.replace(/\D/g, "").length === 14) on14(e.target.value.replace(/\D/g, "")); }} placeholder={ph} />
+      <Input className={"h-7 text-xs" + (mono ? " font-mono" : "")} value={editing?.[k] ?? ""} onChange={e => { const vv = digits ? e.target.value.replace(/\D/g, "") : e.target.value.toUpperCase(); set(k, vv); if (on14 && vv.replace(/\D/g, "").length === 14) on14(vv.replace(/\D/g, "")); }} placeholder={ph} />
     </div>
   );
 }
@@ -116,12 +117,14 @@ function PercursosPage() {
       const pend: string[] = [];
       for (const p of [{ k: "consig", label: "Consignatario" }, { k: "redesp", label: "Redespacho" }]) {
         const doc = String((editing as any)[p.k + "_cnpj"] || "").replace(/\D/g, "");
-        const ie = String((editing as any)[p.k + "_ie"] || "").trim();
+        const ie = limparIE((editing as any)[p.k + "_ie"]);
+        const uf = String((editing as any)[p.k + "_uf"] || "").toUpperCase();
         if (doc.length > 0 && !ie) pend.push("Inscricao Estadual de " + p.label + " (ou ISENTO)");
+        else if (doc.length > 0 && ie) { const v = validarIE(uf, ie); if (!v.ok) pend.push("IE de " + p.label + " fora do padrao de " + (uf || "?") + " (espera " + v.esperados.join(" ou ") + " digitos, tem " + v.digitos + ")"); }
       }
       if (pend.length > 0) throw new Error("Pendencias: " + pend.join("; "));
       const payload: Record<string, any> = {};
-      for (const k of EDITAVEIS) { const v = (editing as any)[k]; payload[k] = typeof v === "string" ? v.toUpperCase() : (v ?? (k === "seg_repassar" ? false : "")); }
+      for (const k of EDITAVEIS) { const v = (editing as any)[k]; const vv = k.endsWith("_ie") ? limparIE(v) : v; payload[k] = typeof vv === "string" ? vv.toUpperCase() : (vv ?? (k === "seg_repassar" ? false : "")); }
       for (const p of ["rem", "dest", "toma"]) {
         const c = contatoByDoc.get(String(editing[p + "_cnpj"] || "").replace(/\D/g, "")) || {};
         const fb: Record<string, any> = { ie: c.ie, logradouro: c.logradouro, nro: c.numero, bairro: c.bairro, xmun: c.cidade, uf: c.uf, cep: c.cep, fone: c.telefone };
@@ -339,7 +342,7 @@ function PercursosPage() {
                       <div className="grid grid-cols-12 gap-1">
                         <div className="col-span-2"><T editing={editing} set={set} label="CNPJ" k="consig_cnpj" mono on14={(d: string) => lookupParte("consig", d)} /></div>
                         <div className="col-span-4"><T editing={editing} set={set} label="Nome" k="consig_nome" /></div>
-                        <div className="col-span-2"><T editing={editing} set={set} label="IE" k="consig_ie" /></div>
+                        <div className="col-span-2"><T editing={editing} set={set} label="IE" k="consig_ie" digits /></div>
                         <div className="col-span-2"><T editing={editing} set={set} label="CEP" k="consig_cep" mono /></div>
                         <div className="col-span-2"><T editing={editing} set={set} label="UF" k="consig_uf" /></div>
                         <div className="col-span-4"><T editing={editing} set={set} label="Logradouro" k="consig_logradouro" /></div>
@@ -353,7 +356,7 @@ function PercursosPage() {
                       <div className="grid grid-cols-12 gap-1">
                         <div className="col-span-2"><T editing={editing} set={set} label="CNPJ" k="redesp_cnpj" mono on14={(d: string) => lookupParte("redesp", d)} /></div>
                         <div className="col-span-4"><T editing={editing} set={set} label="Nome" k="redesp_nome" /></div>
-                        <div className="col-span-2"><T editing={editing} set={set} label="IE" k="redesp_ie" /></div>
+                        <div className="col-span-2"><T editing={editing} set={set} label="IE" k="redesp_ie" digits /></div>
                         <div className="col-span-2"><T editing={editing} set={set} label="CEP" k="redesp_cep" mono /></div>
                         <div className="col-span-2"><T editing={editing} set={set} label="UF" k="redesp_uf" /></div>
                         <div className="col-span-4"><T editing={editing} set={set} label="Logradouro" k="redesp_logradouro" /></div>

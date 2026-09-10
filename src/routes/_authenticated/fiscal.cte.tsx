@@ -20,6 +20,7 @@ import { useEmpresaAtual } from "@/hooks/use-empresa";
 import { brl, dateBR, num } from "@/lib/format";
 import { useState, useEffect, useMemo, useRef } from "react";
 import { toast } from "sonner";
+import { limparIE } from "@/lib/ie";
 import { emitirCteFn, consultarCteFn, cancelarCteFn, previewCteXmlFn, excluirRejeitadosCteFn } from "@/lib/sefaz-cte-server";
 import { CFOPS_CTE, MOD_FRETE_OPTIONS, RESPONSAVEL_CTE_OPTIONS } from "@/lib/cfops-transporte";
 import { gerarDactePdf } from "@/lib/dacte-pdf";
@@ -1143,7 +1144,7 @@ function CtePage() {
       inss_aliq: form.inssAliq || "", csll_aliq: form.csllAliq || "", obs_gerais: (form as any).obsGerais || "",
 
     };
-    for (const k of Object.keys(payload)) { if (k === "empresa_id") continue; const v = (payload as any)[k]; if (typeof v === "string") (payload as any)[k] = v.toUpperCase(); }
+    for (const k of Object.keys(payload)) { if (k === "empresa_id") continue; const v = (payload as any)[k]; const vv = k.endsWith("_ie") ? limparIE(v) : v; if (typeof vv === "string") (payload as any)[k] = vv.toUpperCase(); }
     const { error } = await supabase.from("cte_percursos" as any).upsert(payload, { onConflict: "empresa_id,rem_cnpj,dest_cnpj,toma_cnpj" });
     if (error) return;
     qc.invalidateQueries({ queryKey: ["cte-percursos", empresa.id] });
@@ -1610,7 +1611,7 @@ function CtePage() {
                 {(form.xNomeConsignatario || form.cnpjConsignatario) ? (
                   <div className="space-y-0.5 text-[10px]">
                     <p className="font-medium text-xs">{form.xNomeConsignatario || "—"}</p>
-                    <p className="text-muted-foreground flex items-center gap-1 flex-wrap">CNPJ: {form.cnpjConsignatario ? fmtCnpjInput(form.cnpjConsignatario) : "—"} <span className="inline-flex items-center gap-1">IE: <Input className="h-5 w-32 text-[10px] px-1" placeholder="ISENTO" value={form.ieConsignatario || ""} onChange={e=>setForm({...form,ieConsignatario:e.target.value})} /></span></p>
+                    <p className="text-muted-foreground flex items-center gap-1 flex-wrap">CNPJ: {form.cnpjConsignatario ? fmtCnpjInput(form.cnpjConsignatario) : "—"} <span className="inline-flex items-center gap-1">IE: <Input className="h-5 w-32 text-[10px] px-1" placeholder="ISENTO" value={form.ieConsignatario || ""} onChange={e=>setForm({...form,ieConsignatario:e.target.value.replace(/\D/g, "")})} /></span></p>
                     <p className="text-muted-foreground">{[form.logradouroConsignatario && `${form.logradouroConsignatario}${form.nroConsignatario ? `, ${form.nroConsignatario}` : ""}`, form.bairroConsignatario].filter(Boolean).join(" — ") || "—"}</p>
                     <p className="text-muted-foreground">{form.xMunConsignatario || "—"}-{form.ufConsignatario || "—"} {form.cepConsignatario ? `CEP: ${form.cepConsignatario}` : ""}</p>
                   </div>
@@ -1636,7 +1637,7 @@ function CtePage() {
                 {(form.xNomeRedespacho || form.cnpjRedespacho) ? (
                   <div className="space-y-0.5 text-[10px]">
                     <p className="font-medium text-xs">{form.xNomeRedespacho || "—"}</p>
-                    <p className="text-muted-foreground flex items-center gap-1 flex-wrap">CNPJ: {form.cnpjRedespacho ? fmtCnpjInput(form.cnpjRedespacho) : "—"} <span className="inline-flex items-center gap-1">IE: <Input className="h-5 w-32 text-[10px] px-1" placeholder="ISENTO" value={form.ieRedespacho || ""} onChange={e=>setForm({...form,ieRedespacho:e.target.value})} /></span></p>
+                    <p className="text-muted-foreground flex items-center gap-1 flex-wrap">CNPJ: {form.cnpjRedespacho ? fmtCnpjInput(form.cnpjRedespacho) : "—"} <span className="inline-flex items-center gap-1">IE: <Input className="h-5 w-32 text-[10px] px-1" placeholder="ISENTO" value={form.ieRedespacho || ""} onChange={e=>setForm({...form,ieRedespacho:e.target.value.replace(/\D/g, "")})} /></span></p>
                     <p className="text-muted-foreground">{[form.logradouroRedespacho && `${form.logradouroRedespacho}${form.nroRedespacho ? `, ${form.nroRedespacho}` : ""}`, form.bairroRedespacho].filter(Boolean).join(" — ") || "—"}</p>
                     <p className="text-muted-foreground">{form.xMunRedespacho || "—"}-{form.ufRedespacho || "—"} {form.cepRedespacho ? `CEP: ${form.cepRedespacho}` : ""}</p>
                   </div>
