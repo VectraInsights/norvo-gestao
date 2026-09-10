@@ -127,41 +127,50 @@ async function geoPorCep(cep: string): Promise<{ lat: number; lon: number } | nu
   if (d.length !== 8) return null;
   try {
     const r = await fetch("https://brasilapi.com.br/api/cep/v2/" + d);
-    if (!r.ok) return null;
-    const j = await r.json();
-    const c = j && j.location && j.location.coordinates;
-    if (c && c.latitude && c.longitude) return { lat: Number(c.latitude), lon: Number(c.longitude) };
-  } catch { return null; }
-  return null;
-}
-async function geoPorCidade(xmun: string, uf: string): Promise<{ lat: number; lon: number } | null> {
-  if (!xmun) return null;
+    if (r.ok) {
+      const j = await r.json();
+      const c = j && j.location && j.location.coordinates;
+      if (c && c.latitude && c.longitude) return { lat: Number(c.latitude), lon: Number(c.longitude) };
+    }
+  } catch { /* proxima fonte */ }
   try {
-    const q = new URLSearchParams({ city: xmun, state: uf || "", country: "Brasil", format: "json", limit: "1" });
+    const r = await fetch("https://cep.awesomeapi.com.br/json/" + d);
+    if (r.ok) {
+      const j = await r.json();
+      if (j && j.lat && j.lng) return { lat: Number(j.lat), lon: Number(j.lng) };
+    }
+  } catch { /* proxima fonte */ }
+  try {
+    const q = new URLSearchParams({ postalcode: d, country: "Brasil", format: "json", limit: "1" });
     const r = await fetch("https://nominatim.openstreetmap.org/search?" + q.toString(), { headers: { Accept: "application/json" } });
-    if (!r.ok) return null;
-    const j = await r.json();
-    if (j && j[0] && j[0].lat && j[0].lon) return { lat: Number(j[0].lat), lon: Number(j[0].lon) };
+    if (r.ok) {
+      const j = await r.json();
+      if (j && j[0] && j[0].lat && j[0].lon) return { lat: Number(j[0].lat), lon: Number(j[0].lon) };
+    }
   } catch { return null; }
   return null;
 }
-async function calcDistDur(o: { cep: string; xmun: string; uf: string }, d: { cep: string; xmun: string; uf: string }): Promise<{ km: string; h: string } | null> {
-  const go = (await geoPorCep(o.cep)) || (await geoPorCidade(o.xmun, o.uf));
-  const gd = (await geoPorCep(d.cep)) || (await geoPorCidade(d.xmun, d.uf));
-  if (!go || !gd) return null;
+async function calcDistDur(cepOrig: string, cepDst: string): Promise<{ km: string; h: string }> {
+  const dOrig = String(cepOrig || "").replace(/\D/g, "");
+  const dDst = String(cepDst || "").replace(/\D/g, "");
+  const go = await geoPorCep(dOrig);
+  if (!go) throw new Error("CEP de origem (" + (dOrig || "?") + ") nao localizado — confira o CEP no cadastro");
+  const gd = await geoPorCep(dDst);
+  if (!gd) throw new Error("CEP de destino (" + (dDst || "?") + ") nao localizado — confira o CEP no cadastro");
+  let j: any = null;
   try {
     const r = await fetch("https://router.project-osrm.org/route/v1/driving/" + go.lon + "," + go.lat + ";" + gd.lon + "," + gd.lat + "?overview=false&alternatives=true");
-    if (!r.ok) return null;
-    const j = await r.json();
-    const routes = (j && j.routes) || [];
-    if (!routes.length) return null;
-    const m = Math.min(...routes.map((x: any) => Number(x.distance) || Infinity));
-    if (!isFinite(m)) return null;
-    const km = Math.round(m / 1000);
-    const bruto = km / 50;
-    const total = Math.ceil(bruto + Math.floor(bruto / 5.5) * 0.5);
-    return { km: String(km), h: String(total) };
-  } catch { return null; }
+    if (!r.ok) throw new Error("x");
+    j = await r.json();
+  } catch { throw new Error("Falha no calculo da rota (OSRM)"); }
+  const routes = (j && j.routes) || [];
+  if (!routes.length) throw new Error("Rota nao encontrada entre os CEPs");
+  const m = Math.min(...routes.map((x: any) => Number(x.distance) || Infinity));
+  if (!isFinite(m)) throw new Error("Rota nao encontrada entre os CEPs");
+  const km = Math.round(m / 1000);
+  const bruto = km / 50;
+  const total = Math.ceil(bruto + Math.floor(bruto / 5.5) * 0.5);
+  return { km: String(km), h: String(total) };
 }
 function PercursosPage() {
   const { data: empresa } = useEmpresaAtual();
@@ -217,11 +226,8 @@ function PercursosPage() {
       if (!payload.distancia_km || !payload.duracao_horas) {
         const temRedesp = String(payload.redesp_cnpj || "").replace(/\D/g, "").length === 14;
         const calc = await calcDistDur(
-          { cep: String(payload.rem_cep || ""), xmun: String(payload.coleta_xmun || payload.rem_xmun || ""), uf: String(payload.coleta_uf || payload.rem_uf || "") },
-          temRedesp
-            ? { cep: String(payload.redesp_cep || ""), xmun: String(payload.entrega_xmun || payload.redesp_xmun || ""), uf: String(payload.entrega_uf || payload.redesp_uf || "") }
-            : { cep: String(payload.dest_cep || ""), xmun: String(payload.entrega_xmun || payload.dest_xmun || ""), uf: String(payload.entrega_uf || payload.dest_uf || "") });
-        if (!calc) throw new Error("Nao foi possivel recalcular distancia/duracao (sem CEP ou cidade) — preencha manualmente");
+          String(payload.rem_cep || ""),
+          temRedesp ? String(payload.redesp_cep || "") : String(payload.dest_cep || ""));
         if (!payload.distancia_km) payload.distancia_km = calc.km;
         if (!payload.duracao_horas) payload.duracao_horas = calc.h;
         setEditing(e => (e ? { ...e, distancia_km: payload.distancia_km, duracao_horas: payload.duracao_horas } : e));
