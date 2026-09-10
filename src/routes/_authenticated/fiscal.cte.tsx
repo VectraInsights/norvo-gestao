@@ -1375,10 +1375,10 @@ function CtePage() {
       {isLoading ? <div className="text-sm text-muted-foreground">Carregando…</div> : (
         <Tabs value={statusTab} onValueChange={setStatusTab}>
           <TabsList className="mb-2">
-            <TabsTrigger value="autorizados" className="text-xs">Autorizados ({docsByStatus.autorizados.length})</TabsTrigger>
-            <TabsTrigger value="rejeitados" className="text-xs">Rejeitados ({docsByStatus.rejeitados.length})</TabsTrigger>
-            <TabsTrigger value="cancelados" className="text-xs">Cancelados ({docsByStatus.cancelados.length})</TabsTrigger>
-            <TabsTrigger value="rascunhos" className="text-xs">Rascunhos ({docsByStatus.rascunhos.length})</TabsTrigger>
+            <TabsTrigger value="autorizados" className="text-xs data-[state=active]:bg-primary/10 data-[state=active]:text-primary">Autorizados ({docsByStatus.autorizados.length})</TabsTrigger>
+            <TabsTrigger value="rejeitados" className="text-xs data-[state=active]:bg-primary/10 data-[state=active]:text-primary">Rejeitados ({docsByStatus.rejeitados.length})</TabsTrigger>
+            <TabsTrigger value="cancelados" className="text-xs data-[state=active]:bg-primary/10 data-[state=active]:text-primary">Cancelados ({docsByStatus.cancelados.length})</TabsTrigger>
+            <TabsTrigger value="rascunhos" className="text-xs data-[state=active]:bg-primary/10 data-[state=active]:text-primary">Rascunhos ({docsByStatus.rascunhos.length})</TabsTrigger>
           </TabsList>
           {filteredDocs.length === 0 ? (
             <EmptyState icon={Truck} title="Nenhum CT-e" description={`Nenhum CT-e ${statusTab}.`} />
@@ -1425,11 +1425,11 @@ function CtePage() {
 
           <Tabs defaultValue="geral" className="w-full">
             <TabsList className="w-full justify-start gap-0 bg-muted/50 rounded-t-md">
-              <TabsTrigger value="geral" className="rounded-t-md rounded-b-none text-xs data-[state=active]:bg-background data-[state=active]:shadow-sm"><Settings2 className="mr-1 h-3 w-3" />Geral</TabsTrigger>
-              <TabsTrigger value="seguros" className="rounded-t-md rounded-b-none text-xs data-[state=active]:bg-background data-[state=active]:shadow-sm"><Truck className="mr-1 h-3 w-3" />Transporte</TabsTrigger>
-              <TabsTrigger value="docs" className="rounded-t-md rounded-b-none text-xs data-[state=active]:bg-background data-[state=active]:shadow-sm"><FileText className="mr-1 h-3 w-3" />Tributação e Carga</TabsTrigger>
-              <TabsTrigger value="status" className="rounded-t-md rounded-b-none text-xs data-[state=active]:bg-background data-[state=active]:shadow-sm"><ClipboardList className="mr-1 h-3 w-3" />Status</TabsTrigger>
-              <TabsTrigger value="obs" className="rounded-t-md rounded-b-none text-xs data-[state=active]:bg-background data-[state=active]:shadow-sm"><FileCode className="mr-1 h-3 w-3" />Observações</TabsTrigger>
+              <TabsTrigger value="geral" className="rounded-t-md rounded-b-none text-xs data-[state=active]:bg-background data-[state=active]:shadow-sm data-[state=active]:text-primary"><Settings2 className="mr-1 h-3 w-3" />Geral</TabsTrigger>
+              <TabsTrigger value="seguros" className="rounded-t-md rounded-b-none text-xs data-[state=active]:bg-background data-[state=active]:shadow-sm data-[state=active]:text-primary"><Truck className="mr-1 h-3 w-3" />Transporte</TabsTrigger>
+              <TabsTrigger value="docs" className="rounded-t-md rounded-b-none text-xs data-[state=active]:bg-background data-[state=active]:shadow-sm data-[state=active]:text-primary"><FileText className="mr-1 h-3 w-3" />Tributação e Carga</TabsTrigger>
+              <TabsTrigger value="status" className="rounded-t-md rounded-b-none text-xs data-[state=active]:bg-background data-[state=active]:shadow-sm data-[state=active]:text-primary"><ClipboardList className="mr-1 h-3 w-3" />Status</TabsTrigger>
+              <TabsTrigger value="obs" className="rounded-t-md rounded-b-none text-xs data-[state=active]:bg-background data-[state=active]:shadow-sm data-[state=active]:text-primary"><FileCode className="mr-1 h-3 w-3" />Observações</TabsTrigger>
             </TabsList>
 
             {/* === TAB: Geral === */}
@@ -1562,7 +1562,7 @@ function CtePage() {
                   <Card className="p-3">
                     <div className="flex items-center gap-2 mb-2">
                       <div className="h-6 w-6 rounded bg-emerald-500/10 grid place-items-center"><UploadCloud className="h-3.5 w-3.5 text-emerald-600" /></div>
-                      <h5 className="text-xs font-semibold">Remetente</h5>
+                      <h5 className="text-xs font-semibold"><span className="mr-1.5 inline-block h-2 w-2 rounded-sm bg-primary shrink-0" />Remetente</h5>
                     </div>
                     <div className="space-y-0.5 text-[10px]">
                       <p className="font-medium text-xs">{active.emit || "—"}</p>
@@ -1577,7 +1577,7 @@ function CtePage() {
                   <Card className="p-3">
                     <div className="flex items-center gap-2 mb-2">
                       <div className="h-6 w-6 rounded bg-sky-500/10 grid place-items-center"><Package className="h-3.5 w-3.5 text-sky-600" /></div>
-                      <h5 className="text-xs font-semibold">Destinatário</h5>
+                      <h5 className="text-xs font-semibold"><span className="mr-1.5 inline-block h-2 w-2 rounded-sm bg-primary shrink-0" />Destinatário</h5>
                     </div>
                     <div className="space-y-0.5 text-[10px]">
                       <p className="font-medium text-xs">{active.dest || "—"}</p>
@@ -1596,7 +1596,7 @@ function CtePage() {
               <Card className="p-3">
                 <div className="flex items-center gap-2 mb-2">
                   <div className="h-6 w-6 rounded bg-amber-500/10 grid place-items-center"><Building2 className="h-3.5 w-3.5 text-amber-600" /></div>
-                  <h5 className="text-xs font-semibold">Consignatário</h5>
+                  <h5 className="text-xs font-semibold"><span className="mr-1.5 inline-block h-2 w-2 rounded-sm bg-primary shrink-0" />Consignatário</h5>
                   <span className="text-[9px] text-muted-foreground hidden md:inline">opcional</span>
                   <div className="ml-auto flex items-center gap-1">
                     <Input className="h-6 text-[10px] w-44 font-mono" placeholder="CNPJ — digite p/ buscar" value={fmtCnpjInput(form.cnpjConsignatario || "")} onChange={e => {
@@ -1622,7 +1622,7 @@ function CtePage() {
               <Card className="p-3">
                 <div className="flex items-center gap-2 mb-2">
                   <div className="h-6 w-6 rounded bg-violet-500/10 grid place-items-center"><Truck className="h-3.5 w-3.5 text-violet-600" /></div>
-                  <h5 className="text-xs font-semibold">Redespacho</h5>
+                  <h5 className="text-xs font-semibold"><span className="mr-1.5 inline-block h-2 w-2 rounded-sm bg-primary shrink-0" />Redespacho</h5>
                   <span className="text-[9px] text-muted-foreground hidden md:inline">opcional</span>
                   <div className="ml-auto flex items-center gap-1">
                     <Input className="h-6 text-[10px] w-44 font-mono" placeholder="CNPJ — digite p/ buscar" value={fmtCnpjInput(form.cnpjRedespacho || "")} onChange={e => {
@@ -1735,7 +1735,7 @@ function CtePage() {
                 <p className="text-[9px] text-muted-foreground mt-1">Digite só números — vírgula preenche automaticamente. Ponto só para milhares. Base padrão = Valor do Serviço. Redução/crédito salvos no rascunho.</p>
               </Card>
               <Card className="p-3">
-                <h5 className="text-xs font-semibold mb-2">Outros Impostos — Alíquotas (%)</h5>
+                <h5 className="text-xs font-semibold mb-2"><span className="mr-1.5 inline-block h-2 w-2 rounded-sm bg-primary shrink-0" />Outros Impostos — Alíquotas (%)</h5>
                 <div className="grid grid-cols-2 md:grid-cols-5 gap-1">
                   <div><Label className="text-[10px] text-muted-foreground">PIS (%)</Label><MoneyInput className="h-7 text-xs" prefix="" value={form.pisAliq} onChange={v => setForm({ ...form, pisAliq: v })} placeholder="0,00" /></div>
                   <div><Label className="text-[10px] text-muted-foreground">COFINS (%)</Label><MoneyInput className="h-7 text-xs" prefix="" value={form.cofinsAliq} onChange={v => setForm({ ...form, cofinsAliq: v })} placeholder="0,00" /></div>
@@ -1751,7 +1751,7 @@ function CtePage() {
             <TabsContent value="seguros" className="mt-2 space-y-2">
               <div className="grid grid-cols-1 gap-2">
                 <Card className="p-2">
-                  <h5 className="text-xs font-semibold mb-1">Seguro da Carga</h5>
+                  <h5 className="text-xs font-semibold mb-1"><span className="mr-1.5 inline-block h-2 w-2 rounded-sm bg-primary shrink-0" />Seguro da Carga</h5>
                   <div className="space-y-1">
                                         <div className="grid grid-cols-12 gap-1">
                       <div className="col-span-5"><Label className="text-[10px] text-muted-foreground">Seguradora</Label>
@@ -1809,7 +1809,7 @@ function CtePage() {
                 </Card>
 
                 <Card className="p-2">
-                  <h5 className="text-xs font-semibold mb-1">Dados do Veículo / Motorista</h5>
+                  <h5 className="text-xs font-semibold mb-1"><span className="mr-1.5 inline-block h-2 w-2 rounded-sm bg-primary shrink-0" />Dados do Veículo / Motorista</h5>
                   <div className="space-y-1">
                     <div className="grid grid-cols-3 gap-1">
                       <div><Label className="text-[10px] text-muted-foreground">Nome Motorista</Label>
@@ -1980,7 +1980,7 @@ function CtePage() {
 
               {/* Pedágio / Taxas / Despesas Acessórias (ex-aba Taxas) */}
               <Card className="p-2">
-                <h5 className="text-xs font-semibold mb-1">Componentes do Frete</h5>
+                <h5 className="text-xs font-semibold mb-1"><span className="mr-1.5 inline-block h-2 w-2 rounded-sm bg-primary shrink-0" />Componentes do Frete</h5>
                 <div className="grid grid-cols-4 md:grid-cols-8 gap-1">
                   <div><Label className="text-[10px] text-muted-foreground">Valor Serviço</Label><MoneyInput className="h-6 text-[11px] font-medium" value={form.vPrest} onChange={v => setForm(f => ({ ...f, vPrest: v }))} /></div>
                   <div><Label className="text-[10px] text-muted-foreground">Adicional</Label><MoneyInput className="h-6 text-[11px] font-medium" value={form.adicionalPed} onChange={v => setForm(f => ({ ...f, adicionalPed: v }))} /></div>
@@ -1995,7 +1995,7 @@ function CtePage() {
               </Card>
 
               <Card className="p-2">
-                <h5 className="text-xs font-semibold mb-1">Forma de Pagamento do Pedágio</h5>
+                <h5 className="text-xs font-semibold mb-1"><span className="mr-1.5 inline-block h-2 w-2 rounded-sm bg-primary shrink-0" />Forma de Pagamento do Pedágio</h5>
                 <div className="flex flex-wrap gap-3 text-[10px]">
                   <label className="flex items-center gap-1"><input type="radio" name="pedagio_pagto" checked={(form.pedagioPagto || "sem-pagamento") === "free-flow"} onChange={() => setForm({ ...form, pedagioPagto: "free-flow" })} /> Free Flow</label>
                   <label className="flex items-center gap-1"><input type="radio" name="pedagio_pagto" checked={(form.pedagioPagto || "sem-pagamento") === "tag-transportador"} onChange={() => setForm({ ...form, pedagioPagto: "tag-transportador" })} /> TAG Transportador</label>
@@ -2083,7 +2083,7 @@ function CtePage() {
                 </div>
               </Card>
               <Card className="p-3">
-                <h5 className="text-xs font-semibold mb-2">Situação do CT-e</h5>
+                <h5 className="text-xs font-semibold mb-2"><span className="mr-1.5 inline-block h-2 w-2 rounded-sm bg-primary shrink-0" />Situação do CT-e</h5>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
                   <div><Label className="text-[10px] text-muted-foreground">Chave de Acesso</Label><Input className="h-6 text-[10px] font-mono bg-muted" value="— aguardando emissão —" readOnly /></div>
                   <div><Label className="text-[10px] text-muted-foreground">Protocolo de Envio</Label><Input className="h-6 text-[10px] font-mono bg-muted" value="— aguardando emissão —" readOnly /></div>
@@ -2100,15 +2100,15 @@ function CtePage() {
             {/* === TAB: Observações === */}
             <TabsContent value="obs" className="mt-3 space-y-3">
               <Card className="p-3">
-                <h5 className="text-xs font-semibold mb-1">Observações Gerais</h5>
+                <h5 className="text-xs font-semibold mb-1"><span className="mr-1.5 inline-block h-2 w-2 rounded-sm bg-primary shrink-0" />Observações Gerais</h5>
                 <Textarea className="min-h-[120px] text-xs font-mono resize-y" placeholder={"01 — \n02 — \n03 — Protocolo Pedidos:"} value={(form as any).obsGerais || ""} onChange={e=>setForm({...form, obsGerais: e.target.value} as any)} />
               </Card>
               <Card className="p-3">
-                <h5 className="text-xs font-semibold mb-1">Observações CT-e Anulação/Substituição</h5>
+                <h5 className="text-xs font-semibold mb-1"><span className="mr-1.5 inline-block h-2 w-2 rounded-sm bg-primary shrink-0" />Observações CT-e Anulação/Substituição</h5>
                 <Textarea className="min-h-[60px] text-xs font-mono resize-y" value={(form as any).obsAnulacao || ""} onChange={e=>setForm({...form, obsAnulacao: e.target.value} as any)} />
               </Card>
               <Card className="p-3">
-                <h5 className="text-xs font-semibold mb-1">Observações CT-e Globalizado</h5>
+                <h5 className="text-xs font-semibold mb-1"><span className="mr-1.5 inline-block h-2 w-2 rounded-sm bg-primary shrink-0" />Observações CT-e Globalizado</h5>
                 <Textarea className="min-h-[60px] text-xs font-mono resize-y" value={(form as any).obsGlobalizado || ""} onChange={e=>setForm({...form, obsGlobalizado: e.target.value} as any)} />
               </Card>
             </TabsContent>
