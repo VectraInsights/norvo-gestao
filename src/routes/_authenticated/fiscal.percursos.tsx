@@ -150,13 +150,24 @@ async function geoPorCep(cep: string): Promise<{ lat: number; lon: number } | nu
   } catch { return null; }
   return null;
 }
-async function calcDistDur(cepOrig: string, cepDst: string): Promise<{ km: string; h: string }> {
-  const dOrig = String(cepOrig || "").replace(/\D/g, "");
-  const dDst = String(cepDst || "").replace(/\D/g, "");
-  const go = await geoPorCep(dOrig);
-  if (!go) throw new Error("CEP de origem (" + (dOrig || "?") + ") nao localizado — confira o CEP no cadastro");
-  const gd = await geoPorCep(dDst);
-  if (!gd) throw new Error("CEP de destino (" + (dDst || "?") + ") nao localizado — confira o CEP no cadastro");
+async function geoPorCidade(xmun: string, uf: string): Promise<{ lat: number; lon: number } | null> {
+  if (!xmun) return null;
+  try {
+    const q = new URLSearchParams({ city: xmun, state: uf || "", country: "Brasil", format: "json", limit: "1" });
+    const r = await fetch("https://nominatim.openstreetmap.org/search?" + q.toString(), { headers: { Accept: "application/json" } });
+    if (!r.ok) return null;
+    const j = await r.json();
+    if (j && j[0] && j[0].lat && j[0].lon) return { lat: Number(j[0].lat), lon: Number(j[0].lon) };
+  } catch { return null; }
+  return null;
+}
+async function calcDistDur(o: { cep: string; xmun: string; uf: string }, d: { cep: string; xmun: string; uf: string }): Promise<{ km: string; h: string }> {
+  const dOrig = String(o.cep || "").replace(/\D/g, "");
+  const dDst = String(d.cep || "").replace(/\D/g, "");
+  const go = (await geoPorCep(dOrig)) || (await geoPorCidade(o.xmun, o.uf));
+  if (!go) throw new Error("Origem nao localizada (CEP " + (dOrig || "?") + " / " + (o.xmun || "?") + "-" + (o.uf || "?") + ") — confira o cadastro");
+  const gd = (await geoPorCep(dDst)) || (await geoPorCidade(d.xmun, d.uf));
+  if (!gd) throw new Error("Destino nao localizado (CEP " + (dDst || "?") + " / " + (d.xmun || "?") + "-" + (d.uf || "?") + ") — confira o cadastro");
   let j: any = null;
   try {
     const r = await fetch("https://router.project-osrm.org/route/v1/driving/" + go.lon + "," + go.lat + ";" + gd.lon + "," + gd.lat + "?overview=false&alternatives=true");
@@ -226,8 +237,10 @@ function PercursosPage() {
       if (!payload.distancia_km || !payload.duracao_horas) {
         const temRedesp = String(payload.redesp_cnpj || "").replace(/\D/g, "").length === 14;
         const calc = await calcDistDur(
-          String(payload.rem_cep || ""),
-          temRedesp ? String(payload.redesp_cep || "") : String(payload.dest_cep || ""));
+          { cep: String(payload.rem_cep || ""), xmun: String(payload.coleta_xmun || payload.rem_xmun || ""), uf: String(payload.coleta_uf || payload.rem_uf || "") },
+          temRedesp
+            ? { cep: String(payload.redesp_cep || ""), xmun: String(payload.entrega_xmun || payload.redesp_xmun || ""), uf: String(payload.entrega_uf || payload.redesp_uf || "") }
+            : { cep: String(payload.dest_cep || ""), xmun: String(payload.entrega_xmun || payload.dest_xmun || ""), uf: String(payload.entrega_uf || payload.dest_uf || "") });
         if (!payload.distancia_km) payload.distancia_km = calc.km;
         if (!payload.duracao_horas) payload.duracao_horas = calc.h;
         setEditing(e => (e ? { ...e, distancia_km: payload.distancia_km, duracao_horas: payload.duracao_horas } : e));
