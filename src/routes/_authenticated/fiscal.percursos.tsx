@@ -55,7 +55,14 @@ function T({ label, k, ph, mono, editing, set, on14 }: { label: string; k: strin
     </div>
   );
 }
-function R({ label, v }: { label: string; v: any }) {
+function Tc({ label, k, mono, editing, set }: { label: string; k: string; mono?: boolean; editing: Percurso | null; set: (k: string, v: any) => void }) {
+  return (
+    <div>
+      <Label className="text-[9px] text-muted-foreground">{label}</Label>
+      <Input className={"h-6 text-[11px]" + (mono ? " font-mono" : "")} value={editing?.[k] ?? ""} onChange={e => { set(k, e.target.value); }} placeholder="" />
+    </div>
+  );
+}function R({ label, v }: { label: string; v: any }) {
   return (
     <div>
       <Label className="text-[10px] text-muted-foreground">{label}</Label>
@@ -283,18 +290,20 @@ function PercursosPage() {
                       <Parte titulo="Tomador" nome={editing.toma_nome} doc={editing.toma_cnpj} />
                     </div>
                     <div className="border rounded p-2 space-y-1">
-                      <p className="text-[11px] font-semibold">Coleta / Entrega</p>
-                      <T editing={editing} set={set} label="Coleta município" k="coleta_xmun" />
-                      <div className="grid grid-cols-2 gap-1">
-                        <T editing={editing} set={set} label="UF" k="coleta_uf" />
-                        <T editing={editing} set={set} label="CFOP" k="cfop" mono />
-                      </div>
-                      <T editing={editing} set={set} label="Entrega município" k="entrega_xmun" />
-                      <div className="grid grid-cols-3 gap-1">
-                        <T editing={editing} set={set} label="UF" k="entrega_uf" />
-                        <T editing={editing} set={set} label="Dist. km" k="distancia_km" />
-                        <T editing={editing} set={set} label="Dur. h" k="duracao_horas" />
-                      </div>
+                    <p className="text-[11px] font-semibold">Coleta / Entrega</p>
+                    <div className="grid grid-cols-3 gap-1">
+                    <div className="col-span-2"><Tc editing={editing} set={set} label="Coleta municipio" k="coleta_xmun" /></div>
+                    <Tc editing={editing} set={set} label="UF" k="coleta_uf" />
+                    </div>
+                    <div className="grid grid-cols-3 gap-1">
+                    <div className="col-span-2"><Tc editing={editing} set={set} label="Entrega municipio" k="entrega_xmun" /></div>
+                    <Tc editing={editing} set={set} label="UF" k="entrega_uf" />
+                    </div>
+                    <div className="grid grid-cols-3 gap-1">
+                    <Tc editing={editing} set={set} label="CFOP" k="cfop" mono />
+                    <Tc editing={editing} set={set} label="Dist. km" k="distancia_km" />
+                    <Tc editing={editing} set={set} label="Dur. h" k="duracao_horas" />
+                    </div>
                     </div>
                   </div>
                   
