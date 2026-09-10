@@ -285,17 +285,19 @@ function PercursosPage() {
                   </div>
                                                       
                                     <div className="grid grid-cols-1 md:grid-cols-4 gap-2">
-                    <div className="md:col-span-3 space-y-2">
+                    <div className="md:col-span-3 flex flex-col justify-between gap-2">
                       <Parte titulo="Remetente" nome={editing.rem_nome} doc={editing.rem_cnpj} />
                       <Parte titulo="Destinatário" nome={editing.dest_nome} doc={editing.dest_cnpj} />
                       <Parte titulo="Tomador" nome={editing.toma_nome} doc={editing.toma_cnpj} />
                     </div>
-                    <div className="border rounded px-2 py-1 space-y-1">
+                    <div className="border rounded px-2 py-1 h-full flex flex-col">
 <p className="text-[11px] font-semibold">Coleta / Entrega</p>
+                      <div className="flex-1 flex flex-col justify-between py-0.5">
 <div className="flex items-center gap-1"><span className="text-[9px] text-muted-foreground w-12 shrink-0">Coleta</span><Input className="h-6 text-[11px] flex-1 min-w-0" value={editing.coleta_xmun || ""} onChange={e => set("coleta_xmun", e.target.value)} /><span className="text-[9px] text-muted-foreground shrink-0">UF</span><Input className="h-6 text-[11px] w-12 text-center shrink-0" value={editing.coleta_uf || ""} onChange={e => set("coleta_uf", e.target.value.toUpperCase())} maxLength={2} /></div>
 <div className="flex items-center gap-1"><span className="text-[9px] text-muted-foreground w-12 shrink-0">Entrega</span><Input className="h-6 text-[11px] flex-1 min-w-0" value={editing.entrega_xmun || ""} onChange={e => set("entrega_xmun", e.target.value)} /><span className="text-[9px] text-muted-foreground shrink-0">UF</span><Input className="h-6 text-[11px] w-12 text-center shrink-0" value={editing.entrega_uf || ""} onChange={e => set("entrega_uf", e.target.value.toUpperCase())} maxLength={2} /></div>
 <div className="flex items-center gap-1"><span className="text-[9px] text-muted-foreground w-12 shrink-0">CFOP</span><Input className="h-6 text-[11px] font-mono flex-1 min-w-0" value={editing.cfop || ""} onChange={e => set("cfop", e.target.value)} /><span className="text-[9px] text-muted-foreground shrink-0">Dist.</span><Input className="h-6 text-[11px] flex-1 min-w-0" value={editing.distancia_km || ""} onChange={e => set("distancia_km", e.target.value)} /><span className="text-[9px] text-muted-foreground shrink-0">Dur.</span><Input className="h-6 text-[11px] flex-1 min-w-0" value={editing.duracao_horas || ""} onChange={e => set("duracao_horas", e.target.value)} /></div>
 </div>
+                    </div>
                   </div>
                   
                   
