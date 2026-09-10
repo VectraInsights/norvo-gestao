@@ -234,15 +234,27 @@ function PercursosPage() {
         for (const k of Object.keys(fb)) { const col = p + "_" + k; if (!payload[col] && fb[k]) payload[col] = fb[k]; }
       }
       if (!empresa) throw new Error("Empresa nao selecionada");
-      if (!payload.distancia_km || !payload.duracao_horas) {
-        const temRedesp = String(payload.redesp_cnpj || "").replace(/\D/g, "").length === 14;
-        const calc = await calcDistDur(
-          { cep: String(payload.rem_cep || ""), xmun: String(payload.coleta_xmun || payload.rem_xmun || ""), uf: String(payload.coleta_uf || payload.rem_uf || "") },
-          temRedesp
-            ? { cep: String(payload.redesp_cep || ""), xmun: String(payload.entrega_xmun || payload.redesp_xmun || ""), uf: String(payload.entrega_uf || payload.redesp_uf || "") }
-            : { cep: String(payload.dest_cep || ""), xmun: String(payload.entrega_xmun || payload.dest_xmun || ""), uf: String(payload.entrega_uf || payload.dest_uf || "") });
-        if (!payload.distancia_km) payload.distancia_km = calc.km;
-        if (!payload.duracao_horas) payload.duracao_horas = calc.h;
+      const digits = (s: any) => String(s || "").replace(/\D/g, "");
+      const upper = (s: any) => String(s || "").trim().toUpperCase();
+      const temRedesp = digits(payload.redesp_cnpj).length === 14;
+      const sig = (cep: any, xmun: any, uf: any) => [digits(cep), upper(xmun), upper(uf)].join("/");
+      const oriOrg = { cep: String(payload.rem_cep || ""), xmun: String(payload.coleta_xmun || payload.rem_xmun || ""), uf: String(payload.coleta_uf || payload.rem_uf || "") };
+      const dstOrg = temRedesp
+        ? { cep: String(payload.redesp_cep || ""), xmun: String(payload.redesp_xmun || ""), uf: String(payload.redesp_uf || "") }
+        : { cep: String(payload.dest_cep || ""), xmun: String(payload.dest_xmun || ""), uf: String(payload.dest_uf || "") };
+      const rotaAtual = sig(oriOrg.cep, oriOrg.xmun, oriOrg.uf) + ">" + sig(dstOrg.cep, dstOrg.xmun, dstOrg.uf);
+      const { data: salvo } = await supabase.from("cte_percursos" as any).select("rem_cep,rem_xmun,coleta_xmun,coleta_uf,rem_uf,dest_cep,dest_xmun,dest_uf,redesp_cnpj,redesp_cep,redesp_xmun,redesp_uf").eq("id", editing.id).maybeSingle();
+      const sv: any = salvo || {};
+      const temRedespSv = digits(sv.redesp_cnpj).length === 14;
+      const rotaSalva = sig(sv.rem_cep, sv.coleta_xmun || sv.rem_xmun, sv.coleta_uf || sv.rem_uf) + ">" + (temRedespSv ? sig(sv.redesp_cep, sv.redesp_xmun, sv.redesp_uf) : sig(sv.dest_cep, sv.dest_xmun, sv.dest_uf));
+      const mudouRota = rotaAtual !== rotaSalva;
+      if (!payload.distancia_km || !payload.duracao_horas || mudouRota) {
+        const calc = await calcDistDur(oriOrg, dstOrg);
+        if (mudouRota) { payload.distancia_km = calc.km; payload.duracao_horas = calc.h; toast.success("Distancia recalculada: " + calc.km + " km / " + calc.h + " h"); }
+        else {
+          if (!payload.distancia_km) payload.distancia_km = calc.km;
+          if (!payload.duracao_horas) payload.duracao_horas = calc.h;
+        }
         setEditing(e => (e ? { ...e, distancia_km: payload.distancia_km, duracao_horas: payload.duracao_horas } : e));
       }
       const upd = supabase.from("cte_percursos" as any).update(payload).eq("id", editing.id).then(r => { if ((r as any).error) throw (r as any).error; });
