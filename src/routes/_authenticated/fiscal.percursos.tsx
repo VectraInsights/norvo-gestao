@@ -113,11 +113,13 @@ function PercursosPage() {
   const salvar = useMutation({
     mutationFn: async () => {
       if (!editing) throw new Error("Nada para salvar");
+      const pend: string[] = [];
       for (const p of [{ k: "consig", label: "Consignatario" }, { k: "redesp", label: "Redespacho" }]) {
         const doc = String((editing as any)[p.k + "_cnpj"] || "").replace(/\D/g, "");
         const ie = String((editing as any)[p.k + "_ie"] || "").trim();
-        if (doc.length > 0 && !ie) throw new Error("Informe a Inscricao Estadual de " + p.label + " (ou ISENTO)");
+        if (doc.length > 0 && !ie) pend.push("Inscricao Estadual de " + p.label + " (ou ISENTO)");
       }
+      if (pend.length > 0) throw new Error("Pendencias: " + pend.join("; "));
       const payload: Record<string, any> = {};
       for (const k of EDITAVEIS) { const v = (editing as any)[k]; payload[k] = typeof v === "string" ? v.toUpperCase() : (v ?? (k === "seg_repassar" ? false : "")); }
       for (const p of ["rem", "dest", "toma"]) {
@@ -157,6 +159,20 @@ function PercursosPage() {
   const eRem = withContato("rem");
   const eDes = withContato("dest");
   const eTom = withContato("toma");
+  // Apagou o CNPJ: limpa os demais dados da parte junto
+  useEffect(() => {
+    if (!editing) return;
+    const patch: Record<string, any> = {};
+    let changed = false;
+    for (const p of ["consig", "redesp"]) {
+      if (!(editing[p + "_cnpj"] || "").replace(/\D/g, "")) {
+        let has = false;
+        for (const k of ["nome", "ie", "uf", "xmun", "cep", "logradouro", "nro", "bairro"]) { if ((editing as any)[p + "_" + k]) { (patch as any)[p + "_" + k] = ""; has = true; } }
+        if (has) { changed = true; lastLookupParte.current[p] = ""; }
+      }
+    }
+    if (changed) setEditing(e => (e ? { ...e, ...patch } : e));
+  }, [editing?.consig_cnpj, editing?.redesp_cnpj]);
   // Amarracao: prioridade da entrega = redespacho > destinatario
   useEffect(() => {
     if (!editing) return;
