@@ -189,6 +189,8 @@ function PercursosPage() {
   const [percTab, setPercTab] = useState("geral");
   const [editing, setEditing] = useState<Percurso | null>(null);
   const [calcando, setCalcando] = useState(false);
+  const rotaRef = useRef<{ id: string | null; sig: string }>({ id: null, sig: "" });
+  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const { data: percursos, isLoading } = useQuery({
     enabled: !!empresa,
@@ -214,16 +216,22 @@ function PercursosPage() {
     for (const c of contatosCte ?? []) if ((c as any).documento) m.set(String((c as any).documento).replace(/\D/g, ""), c);
     return m;
   }, [contatosCte]);
+  const montarRota = (ed: Percurso) => {
+    const digits = (s: any) => String(s || "").replace(/\D/g, "");
+    const upper = (s: any) => String(s || "").trim().toUpperCase();
+    const temRedesp = digits(ed.redesp_cnpj).length === 14;
+    const fbRem = contatoByDoc.get(digits(ed.rem_cnpj)) || {};
+    const fbDst = contatoByDoc.get(digits(temRedesp ? ed.redesp_cnpj : ed.dest_cnpj)) || {};
+    const ori = { cep: String(ed.rem_cep || fbRem.cep || ""), xmun: String(ed.coleta_xmun || ed.rem_xmun || fbRem.cidade || ""), uf: String(ed.coleta_uf || ed.rem_uf || fbRem.uf || "") };
+    const dst = temRedesp
+      ? { cep: String(ed.redesp_cep || ""), xmun: String(ed.redesp_xmun || ""), uf: String(ed.redesp_uf || "") }
+      : { cep: String(ed.dest_cep || fbDst.cep || ""), xmun: String(ed.dest_xmun || fbDst.cidade || ""), uf: String(ed.dest_uf || fbDst.uf || "") };
+    const sig = [digits(ori.cep), upper(ori.xmun), upper(ori.uf)].join("/") + ">" + [digits(dst.cep), upper(dst.xmun), upper(dst.uf)].join("/");
+    return { ori, dst, sig };
+  };
   const recalcular = async () => {
     if (!editing) return;
-    const digits = (s: any) => String(s || "").replace(/\D/g, "");
-    const temRedesp = digits(editing.redesp_cnpj).length === 14;
-    const fbRem = contatoByDoc.get(digits(editing.rem_cnpj)) || {};
-    const fbDst = contatoByDoc.get(digits(temRedesp ? editing.redesp_cnpj : editing.dest_cnpj)) || {};
-    const ori = { cep: String(editing.rem_cep || fbRem.cep || ""), xmun: String(editing.coleta_xmun || editing.rem_xmun || fbRem.cidade || ""), uf: String(editing.coleta_uf || editing.rem_uf || fbRem.uf || "") };
-    const dst = temRedesp
-      ? { cep: String(editing.redesp_cep || ""), xmun: String(editing.redesp_xmun || ""), uf: String(editing.redesp_uf || "") }
-      : { cep: String(editing.dest_cep || fbDst.cep || ""), xmun: String(editing.dest_xmun || fbDst.cidade || ""), uf: String(editing.dest_uf || fbDst.uf || "") };
+    const { ori, dst } = montarRota(editing);
     setCalcando(true);
     try {
       const calc = await calcDistDur(ori, dst);
@@ -232,6 +240,25 @@ function PercursosPage() {
     } catch (e: any) { toast.error(e && e.message ? e.message : "Falha no recalculo"); }
     finally { setCalcando(false); }
   };
+  useEffect(() => {
+    if (!editing) { rotaRef.current = { id: null, sig: "" }; return; }
+    const { ori, dst, sig } = montarRota(editing);
+    if (rotaRef.current.id !== editing.id) { rotaRef.current = { id: editing.id, sig }; return; }
+    if (sig === rotaRef.current.sig) return;
+    rotaRef.current.sig = sig;
+    if (!String(dst.cep).replace(/\D/g, "") && !String(dst.xmun).trim()) return;
+    if (timerRef.current) clearTimeout(timerRef.current);
+    timerRef.current = setTimeout(async () => {
+      setCalcando(true);
+      try {
+        const calc = await calcDistDur(ori, dst);
+        setEditing(e => (e && e.id === editing.id ? { ...e, distancia_km: calc.km, duracao_horas: calc.h } : e));
+        toast.success("Distancia recalculada: " + calc.km + " km / " + calc.h + " h");
+      } catch (e: any) { toast.error(e && e.message ? e.message : "Falha no recalculo"); }
+      finally { setCalcando(false); }
+    }, 900);
+    return () => { if (timerRef.current) clearTimeout(timerRef.current); };
+  }, [editing ? editing.id : null, editing ? editing.rem_cnpj : "", editing ? editing.rem_cep : "", editing ? editing.rem_xmun : "", editing ? editing.rem_uf : "", editing ? editing.coleta_xmun : "", editing ? editing.coleta_uf : "", editing ? editing.dest_cnpj : "", editing ? editing.dest_cep : "", editing ? editing.dest_xmun : "", editing ? editing.dest_uf : "", editing ? editing.entrega_xmun : "", editing ? editing.entrega_uf : "", editing ? editing.redesp_cnpj : "", editing ? editing.redesp_cep : "", editing ? editing.redesp_xmun : "", editing ? editing.redesp_uf : ""]);
   const salvar = useMutation({
     mutationFn: async () => {
       if (!editing) throw new Error("Nada para salvar");
