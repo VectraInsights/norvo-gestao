@@ -63,20 +63,16 @@ function R({ label, v }: { label: string; v: any }) {
     </div>
   );
 }
-function Parte({ titulo, nome, doc, ie, cid, uf }: { titulo: string; nome: string; doc: string; ie: string; cid: string; uf: string }) {
+function Parte({ titulo, nome, doc, ie, lgr, nro, bai, cid, uf, cep, fone }: { titulo: string; nome: string; doc: string; ie: string; lgr: string; nro: string; bai: string; cid: string; uf: string; cep: string; fone: string }) {
+  const ender = [lgr && (lgr + (nro ? ", " + nro : "")), bai].filter(Boolean).join(" - ");
   return (
-    <div className="border rounded p-2 bg-muted/20 space-y-1">
+    <div className="border rounded p-2 bg-muted/20">
       <p className="text-[11px] font-semibold">{titulo}</p>
-      <R label="Nome" v={nome} />
-      <div className="grid grid-cols-2 gap-1">
-        <R label="CNPJ" v={fmtDoc(doc)} />
-        <R label="IE" v={ie || "ISENTO"} />
-      </div>
-      <div className="grid grid-cols-3 gap-1">
-        <div className="col-span-2"><R label="Municipio" v={cid} /></div>
-        <R label="UF" v={uf} />
-      </div>
-      <p className="text-[9px] text-muted-foreground">Chave do percurso (nao editavel).</p>
+      <p className="text-xs font-medium truncate" title={nome}>{nome}</p>
+      <p className="text-[10px] text-muted-foreground">CNPJ {fmtDoc(doc)}{ie ? " - IE " + ie : ""}</p>
+      <p className="text-[10px] text-muted-foreground truncate">{ender || "--"}</p>
+      <p className="text-[10px] text-muted-foreground">{(cid || "--") + "-" + (uf || "--")}{cep ? " - CEP " + cep : ""}{fone ? " - Fone " + fone : ""}</p>
+      <p className="text-[9px] text-muted-foreground">Chave (nao editavel).</p>
     </div>
   );
 }
@@ -209,9 +205,9 @@ function PercursosPage() {
                     <T editing={editing} set={set} label="Nome" k="nome" />
                   </div>
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
-                    <Parte titulo="Remetente" nome={editing.rem_nome} doc={editing.rem_cnpj} ie={editing.rem_ie} cid={editing.rem_xmun} uf={editing.rem_uf} />
-                    <Parte titulo="Destinatário" nome={editing.dest_nome} doc={editing.dest_cnpj} ie={editing.dest_ie} cid={editing.dest_xmun} uf={editing.dest_uf} />
-                    <Parte titulo="Tomador" nome={editing.toma_nome} doc={editing.toma_cnpj} ie={editing.toma_ie} cid={editing.toma_xmun} uf={editing.toma_uf} />
+                    <Parte titulo="Remetente" lgr={editing.rem_logradouro} nro={editing.rem_nro} bai={editing.rem_bairro} cep={editing.rem_cep} fone={editing.rem_fone} nome={editing.rem_nome} doc={editing.rem_cnpj} ie={editing.rem_ie} cid={editing.rem_xmun} uf={editing.rem_uf} />
+                    <Parte titulo="Destinatário" lgr={editing.dest_logradouro} nro={editing.dest_nro} bai={editing.dest_bairro} cep={editing.dest_cep} fone={editing.dest_fone} nome={editing.dest_nome} doc={editing.dest_cnpj} ie={editing.dest_ie} cid={editing.dest_xmun} uf={editing.dest_uf} />
+                    <Parte titulo="Tomador" lgr={editing.toma_logradouro} nro={editing.toma_nro} bai={editing.toma_bairro} cep={editing.toma_cep} fone={editing.toma_fone} nome={editing.toma_nome} doc={editing.toma_cnpj} ie={editing.toma_ie} cid={editing.toma_xmun} uf={editing.toma_uf} />
                   </div>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
                     <div className="border rounded p-2 space-y-1">
