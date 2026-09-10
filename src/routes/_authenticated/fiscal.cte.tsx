@@ -1087,7 +1087,7 @@ function CtePage() {
       reducaoBase: (r.reducao_base || (f as any).reducaoBase) as string, creditoOutorgado: (r.credito_outorgado || (f as any).creditoOutorgado) as string,
       pisAliq: r.pis_aliq || f.pisAliq, cofinsAliq: r.cofins_aliq || f.cofinsAliq, irAliq: r.ir_aliq || f.irAliq,
       inssAliq: r.inss_aliq || f.inssAliq, csllAliq: r.csll_aliq || f.csllAliq,
-      cMunEnv: r.emissao_cmun || f.cMunEnv, xMunEnv: r.emissao_xmun || f.xMunEnv, ufEnv: r.emissao_uf || f.ufEnv,
+
       ...(r.obs_gerais ? { obsGerais: r.obs_gerais } : {}),
     }));
  };
@@ -1139,7 +1139,7 @@ function CtePage() {
       reducao_base: (form as any).reducaoBase || "", credito_outorgado: (form as any).creditoOutorgado || "",
       pis_aliq: form.pisAliq || "", cofins_aliq: form.cofinsAliq || "", ir_aliq: form.irAliq || "",
       inss_aliq: form.inssAliq || "", csll_aliq: form.csllAliq || "", obs_gerais: (form as any).obsGerais || "",
-      emissao_cmun: form.cMunEnv || "", emissao_xmun: form.xMunEnv || "", emissao_uf: form.ufEnv || "",
+
     };
     const { error } = await supabase.from("cte_percursos" as any).upsert(payload, { onConflict: "empresa_id,rem_cnpj,dest_cnpj,toma_cnpj" });
     if (error) return;
