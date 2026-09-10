@@ -72,9 +72,10 @@ function Tc({ label, k, mono, editing, set }: { label: string; k: string; mono?:
 }
 function Parte({ titulo, nome, doc }: { titulo: string; nome: string; doc: string }) {
   return (
-    <div className="border rounded px-2 py-1 bg-muted/20 grid grid-cols-12 gap-x-2 items-center">
-      <p className="col-span-7 text-xs truncate"><span className="font-semibold">{titulo}</span><span className="font-medium"> {nome}</span></p>
-      <p className="col-span-5 text-[11px] text-muted-foreground truncate">CNPJ {fmtDoc(doc)}</p>
+    <div className="grid grid-cols-12 gap-1 items-center">
+      <p className="col-span-2 text-xs font-semibold truncate">{titulo}</p>
+      <p className="col-span-6 text-xs font-medium truncate border rounded px-2 py-1 bg-muted/20" title={nome}>{nome}</p>
+      <p className="col-span-4 text-[11px] text-muted-foreground truncate border rounded px-2 py-1 bg-muted/20">CNPJ {fmtDoc(doc)}</p>
     </div>
   );
 }
