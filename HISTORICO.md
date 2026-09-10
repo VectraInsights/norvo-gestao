@@ -1307,3 +1307,14 @@ Commits CF `e52f69a..0115b69` (53) + Vercel espelhos + Worker redeployado a cada
 - Entrega amarrada em redespacho > destinatario; emissao fora do percurso (dado do emissor).
 
 Commits CF `fd2c6c0..20d42c4` + Vercel espelhos.
+
+---
+
+## UI + regras Percurso (10-11/09/2026)
+
+- Lib `src/lib/ie.ts`: IE so numeros (ISENTO preservado) + digitos por UF (SINTEGRA); validacao no save do percurso agregada as pendencias.
+- CST ICMS virou dropdown com os 8 codigos do STM.
+- Nome da rota e coleta/entrega somente leitura; DialogContent fullscreen por padrao; abas ativas vivas; secoes com fundo tonalizado (depois revertido p/ campos).
+- Campos (Input/Textarea base) com fundo `bg-primary/[0.10]`; leitura neutralizados (`bg-transparent`): destaque so em editaveis, nos dois temas.
+
+Commits CF `5138d60..b041b1c` + Vercel espelhos.
