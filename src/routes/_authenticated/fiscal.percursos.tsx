@@ -63,16 +63,11 @@ function R({ label, v }: { label: string; v: any }) {
     </div>
   );
 }
-function Parte({ titulo, nome, doc, ie, lgr, nro, bai, cid, uf, cep, fone }: { titulo: string; nome: string; doc: string; ie: string; lgr: string; nro: string; bai: string; cid: string; uf: string; cep: string; fone: string }) {
-  const ender = [lgr && (lgr + (nro ? ", " + nro : "")), bai].filter(Boolean).join(" - ");
-  const loc = ((cid || "--") + "-" + (uf || "--")) + (cep ? " - CEP " + cep : "") + (fone ? " - " + fone : "");
+function Parte({ titulo, nome, doc }: { titulo: string; nome: string; doc: string }) {
   return (
-    <div className="border rounded px-2 py-1 bg-muted/20 grid grid-cols-12 gap-x-2 items-center" title={nome}>
-      <p className="col-span-3 text-xs truncate"><span className="font-semibold">{titulo}</span><span className="font-medium"> {nome}</span></p>
-      <p className="col-span-2 text-[11px] text-muted-foreground truncate">CNPJ {fmtDoc(doc)}</p>
-      <p className="col-span-1 text-[11px] text-muted-foreground truncate">IE {ie || "ISENTO"}</p>
-      <p className="col-span-3 text-[11px] text-muted-foreground truncate">{ender || "--"}</p>
-      <p className="col-span-3 text-[11px] text-muted-foreground truncate">{loc}</p>
+    <div className="border rounded px-2 py-1 bg-muted/20 grid grid-cols-12 gap-x-2 items-center">
+      <p className="col-span-7 text-xs truncate"><span className="font-semibold">{titulo}</span><span className="font-medium"> {nome}</span></p>
+      <p className="col-span-5 text-[11px] text-muted-foreground truncate">CNPJ {fmtDoc(doc)}</p>
     </div>
   );
 }
@@ -281,19 +276,18 @@ function PercursosPage() {
                     <T editing={editing} set={set} label="Nome" k="nome" />
                   </div>
                                                       
-                                    <div className="grid grid-cols-1 md:grid-cols-5 gap-2">
-                    <div className="md:col-span-4 space-y-2">
-                      <Parte titulo="Remetente" lgr={eRem.lgr} nro={eRem.nro} bai={eRem.bai} cep={eRem.cep} fone={eRem.fone} nome={editing.rem_nome} doc={editing.rem_cnpj} ie={eRem.ie} cid={eRem.cid} uf={eRem.uf} />
-                      <Parte titulo="Destinatário" lgr={eDes.lgr} nro={eDes.nro} bai={eDes.bai} cep={eDes.cep} fone={eDes.fone} nome={editing.dest_nome} doc={editing.dest_cnpj} ie={eDes.ie} cid={eDes.cid} uf={eDes.uf} />
-                      <Parte titulo="Tomador" lgr={eTom.lgr} nro={eTom.nro} bai={eTom.bai} cep={eTom.cep} fone={eTom.fone} nome={editing.toma_nome} doc={editing.toma_cnpj} ie={eTom.ie} cid={eTom.cid} uf={eTom.uf} />
+                                    <div className="grid grid-cols-1 md:grid-cols-4 gap-2">
+                    <div className="md:col-span-3 space-y-2">
+                      <Parte titulo="Remetente" nome={editing.rem_nome} doc={editing.rem_cnpj} />
+                      <Parte titulo="Destinatário" nome={editing.dest_nome} doc={editing.dest_cnpj} />
+                      <Parte titulo="Tomador" nome={editing.toma_nome} doc={editing.toma_cnpj} />
                     </div>
                     <div className="border rounded p-2 space-y-1">
                       <p className="text-[11px] font-semibold">Coleta / Entrega</p>
                       <T editing={editing} set={set} label="Coleta município" k="coleta_xmun" />
-                      <div className="grid grid-cols-3 gap-1">
+                      <div className="grid grid-cols-2 gap-1">
                         <T editing={editing} set={set} label="UF" k="coleta_uf" />
                         <T editing={editing} set={set} label="CFOP" k="cfop" mono />
-                        <div><Label className="text-[10px] text-muted-foreground"> </Label></div>
                       </div>
                       <T editing={editing} set={set} label="Entrega município" k="entrega_xmun" />
                       <div className="grid grid-cols-3 gap-1">
