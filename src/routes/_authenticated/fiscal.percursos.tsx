@@ -68,7 +68,7 @@ function Parte({ titulo, nome, doc, ie, lgr, nro, bai, cid, uf, cep, fone }: { t
   const loc = ((cid || "--") + "-" + (uf || "--")) + (cep ? " - CEP " + cep : "") + (fone ? " - " + fone : "");
   return (
     <div className="border rounded px-2 py-1 bg-muted/20 grid grid-cols-12 gap-x-2 items-center" title={nome}>
-      <p className="col-span-3 text-xs truncate"><span className="font-semibold">{titulo}</span><span className="text-[9px] text-muted-foreground"> (chave)</span><span className="font-medium"> {nome}</span></p>
+      <p className="col-span-3 text-xs truncate"><span className="font-semibold">{titulo}</span><span className="font-medium"> {nome}</span></p>
       <p className="col-span-2 text-[11px] text-muted-foreground truncate">CNPJ {fmtDoc(doc)}</p>
       <p className="col-span-1 text-[11px] text-muted-foreground truncate">IE {ie || "ISENTO"}</p>
       <p className="col-span-3 text-[11px] text-muted-foreground truncate">{ender || "--"}</p>
