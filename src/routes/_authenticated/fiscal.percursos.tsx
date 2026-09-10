@@ -129,6 +129,16 @@ function PercursosPage() {
       }
       const { error } = await supabase.from("cte_percursos" as any).update(payload).eq("id", editing.id);
       if (error) throw error;
+      if (!empresa) throw new Error("Empresa nao selecionada");
+      for (const p of ["consig", "redesp"]) {
+        const doc = String(payload[p + "_cnpj"] || "").replace(/\D/g, "");
+        if (doc.length !== 14) continue;
+        const crow: Record<string, any> = { nome: payload[p + "_nome"] || null, ie: payload[p + "_ie"] || null, uf: payload[p + "_uf"] || null, cidade: payload[p + "_xmun"] || null, logradouro: payload[p + "_logradouro"] || null, numero: payload[p + "_nro"] || null, bairro: payload[p + "_bairro"] || null, cep: payload[p + "_cep"] || null };
+        const { data: ex } = await supabase.from("contatos" as any).select("id").eq("empresa_id", empresa.id).eq("documento", doc).maybeSingle();
+        if (ex) { await supabase.from("contatos" as any).update(crow).eq("id", (ex as any).id); }
+        else { await supabase.from("contatos" as any).insert({ empresa_id: empresa.id, tipo: "cliente", documento: doc, ...crow } as any); }
+      }
+      qc.invalidateQueries({ queryKey: ["contatos-cte", empresa.id] });
     },
     onSuccess: () => {
       toast.success("Percurso atualizado");
