@@ -11,7 +11,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import { Route as RoadIcon, Pencil, Trash2, Search, Save, ChevronDown } from "lucide-react";
+import { Route as RoadIcon, Pencil, Trash2, Search, Save, ChevronDown, RefreshCw } from "lucide-react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useEmpresaAtual } from "@/hooks/use-empresa";
@@ -189,6 +189,7 @@ function PercursosPage() {
   const [busca, setBusca] = useState("");
   const [percTab, setPercTab] = useState("geral");
   const [editing, setEditing] = useState<Percurso | null>(null);
+  const [calcando, setCalcando] = useState(false);
 
   const { data: percursos, isLoading } = useQuery({
     enabled: !!empresa,
@@ -214,6 +215,24 @@ function PercursosPage() {
     for (const c of contatosCte ?? []) if ((c as any).documento) m.set(String((c as any).documento).replace(/\D/g, ""), c);
     return m;
   }, [contatosCte]);
+  const recalcular = async () => {
+    if (!editing) return;
+    const digits = (s: any) => String(s || "").replace(/\D/g, "");
+    const temRedesp = digits(editing.redesp_cnpj).length === 14;
+    const fbRem = contatoByDoc.get(digits(editing.rem_cnpj)) || {};
+    const fbDst = contatoByDoc.get(digits(temRedesp ? editing.redesp_cnpj : editing.dest_cnpj)) || {};
+    const ori = { cep: String(editing.rem_cep || fbRem.cep || ""), xmun: String(editing.coleta_xmun || editing.rem_xmun || fbRem.cidade || ""), uf: String(editing.coleta_uf || editing.rem_uf || fbRem.uf || "") };
+    const dst = temRedesp
+      ? { cep: String(editing.redesp_cep || ""), xmun: String(editing.redesp_xmun || ""), uf: String(editing.redesp_uf || "") }
+      : { cep: String(editing.dest_cep || fbDst.cep || ""), xmun: String(editing.dest_xmun || fbDst.cidade || ""), uf: String(editing.dest_uf || fbDst.uf || "") };
+    setCalcando(true);
+    try {
+      const calc = await calcDistDur(ori, dst);
+      setEditing(e => (e ? { ...e, distancia_km: calc.km, duracao_horas: calc.h } : e));
+      toast.success("Distancia recalculada: " + calc.km + " km / " + calc.h + " h");
+    } catch (e: any) { toast.error(e && e.message ? e.message : "Falha no recalculo"); }
+    finally { setCalcando(false); }
+  };
   const salvar = useMutation({
     mutationFn: async () => {
       if (!editing) throw new Error("Nada para salvar");
@@ -451,7 +470,7 @@ function PercursosPage() {
                       <Parte titulo="Tomador" nome={editing.toma_nome} doc={editing.toma_cnpj} />
                     </div>
                     <div className="border rounded px-2 py-1 h-full flex flex-col">
-<p className="text-[11px] font-semibold">Coleta / Entrega</p>
+<div className="flex items-center justify-between"><p className="text-[11px] font-semibold">Coleta / Entrega</p><Button size="icon" variant="ghost" className="h-5 w-5" title="Recalcular distancia e duracao" onClick={recalcular} disabled={calcando}><RefreshCw className={"h-3 w-3" + (calcando ? " animate-spin" : "")} /></Button></div>
                       <div className="flex-1 flex flex-col gap-1 py-0.5">
 <div className="flex items-center gap-1"><span className="text-[9px] text-muted-foreground w-12 shrink-0">Coleta</span><Input className="h-6 text-[11px] flex-1 min-w-0 bg-transparent dark:bg-transparent" readOnly value={editing.coleta_xmun || ""} onChange={e => set("coleta_xmun", e.target.value)} /><span className="text-[9px] text-muted-foreground shrink-0">UF</span><Input className="h-6 text-[11px] w-12 text-center shrink-0 bg-transparent dark:bg-transparent" readOnly value={editing.coleta_uf || ""} onChange={e => set("coleta_uf", e.target.value.toUpperCase())} maxLength={2} /></div>
 <div className="flex items-center gap-1"><span className="text-[9px] text-muted-foreground w-12 shrink-0">Entrega</span><Input className="h-6 text-[11px] flex-1 min-w-0 bg-transparent dark:bg-transparent" readOnly value={editing.entrega_xmun || ""} onChange={e => set("entrega_xmun", e.target.value)} /><span className="text-[9px] text-muted-foreground shrink-0">UF</span><Input className="h-6 text-[11px] w-12 text-center shrink-0 bg-transparent dark:bg-transparent" readOnly value={editing.entrega_uf || ""} onChange={e => set("entrega_uf", e.target.value.toUpperCase())} maxLength={2} /></div>
