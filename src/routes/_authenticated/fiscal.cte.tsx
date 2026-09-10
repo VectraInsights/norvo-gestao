@@ -1106,15 +1106,17 @@ function CtePage() {
       const last = parseInt((((mx as any[])?.[0]?.codigo) || "0"), 10) || 0;
       codigoPercurso = String(last + 1).padStart(4, "0");
     }
+    const cRemP = (contatoByDoc.get(d.remDoc) || {}) as any;
+    const cDesP = (contatoByDoc.get(d.destDoc) || {}) as any;
     const nome = ((((exPerc as any)?.nome) || ((d.remNome || "Origem") + " > " + (d.destNome || "Destino"))) as string).slice(0, 80);
     const payload = {
       empresa_id: empresa.id, nome,
-      rem_cnpj: d.remDoc, rem_nome: a.emit || d.remNome || "", rem_ie: a.emitIE || "", rem_uf: a.emitUF || "",
-      rem_cmun: a.emitCMun || "", rem_xmun: a.emitXMun || "", rem_logradouro: a.emitLogradouro || "",
-      rem_nro: "", rem_bairro: a.emitBairro || "", rem_cep: a.emitCEP || "", rem_fone: a.emitFone || "",
-      dest_cnpj: d.destDoc, dest_nome: a.dest || d.destNome || "", dest_ie: a.destIE || "", dest_uf: a.destUF || "",
-      dest_cmun: a.destCMun || "", dest_xmun: a.destXMun || "", dest_logradouro: a.destLogradouro || "",
-      dest_nro: "", dest_bairro: a.destBairro || "", dest_cep: a.destCEP || "", dest_fone: a.destFone || "",
+      rem_cnpj: d.remDoc, rem_nome: a.emit || d.remNome || "", rem_ie: a.emitIE || cRemP.ie || "", rem_uf: a.emitUF || cRemP.uf || "",
+      rem_cmun: a.emitCMun || "", rem_xmun: a.emitXMun || cRemP.cidade || "", rem_logradouro: a.emitLogradouro || cRemP.logradouro || "",
+      rem_nro: cRemP.numero || "", rem_bairro: a.emitBairro || cRemP.bairro || "", rem_cep: (a.emitCEP || cRemP.cep || "").replace(/\D/g, "") || "", rem_fone: a.emitFone || cRemP.telefone || "",
+      dest_cnpj: d.destDoc, dest_nome: a.dest || d.destNome || "", dest_ie: a.destIE || cDesP.ie || "", dest_uf: a.destUF || cDesP.uf || "",
+      dest_cmun: a.destCMun || "", dest_xmun: a.destXMun || cDesP.cidade || "", dest_logradouro: a.destLogradouro || cDesP.logradouro || "",
+      dest_nro: cDesP.numero || "", dest_bairro: a.destBairro || cDesP.bairro || "", dest_cep: (a.destCEP || cDesP.cep || "").replace(/\D/g, "") || "", dest_fone: a.destFone || cDesP.telefone || "",
       toma_tipo: form.toma, toma_cnpj: d.tomaDoc, toma_nome: form.xNomeTomador || "", toma_ie: form.ieTomador || "",
       toma_uf: form.ufTomador || "", toma_cmun: form.cMunTomador || "", toma_xmun: form.xMunTomador || "",
       toma_logradouro: form.logradouroTomador || "", toma_nro: form.nroTomador || "", toma_bairro: form.bairroTomador || "",

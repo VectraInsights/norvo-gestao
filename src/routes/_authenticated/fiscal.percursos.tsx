@@ -65,14 +65,14 @@ function R({ label, v }: { label: string; v: any }) {
 }
 function Parte({ titulo, nome, doc, ie, lgr, nro, bai, cid, uf, cep, fone }: { titulo: string; nome: string; doc: string; ie: string; lgr: string; nro: string; bai: string; cid: string; uf: string; cep: string; fone: string }) {
   const ender = [lgr && (lgr + (nro ? ", " + nro : "")), bai].filter(Boolean).join(" - ");
+  const loc = ((cid || "--") + "-" + (uf || "--")) + (cep ? " - CEP " + cep : "") + (fone ? " - " + fone : "");
   return (
-    <div className="border rounded p-2 bg-muted/20">
-      <p className="text-[11px] font-semibold">{titulo}</p>
-      <p className="text-xs font-medium truncate" title={nome}>{nome}</p>
-      <p className="text-[10px] text-muted-foreground">CNPJ {fmtDoc(doc)}{ie ? " - IE " + ie : ""}</p>
-      <p className="text-[10px] text-muted-foreground truncate">{ender || "--"}</p>
-      <p className="text-[10px] text-muted-foreground">{(cid || "--") + "-" + (uf || "--")}{cep ? " - CEP " + cep : ""}{fone ? " - Fone " + fone : ""}</p>
-      <p className="text-[9px] text-muted-foreground">Chave (nao editavel).</p>
+    <div className="border rounded px-2 py-1 bg-muted/20 grid grid-cols-12 gap-x-2 items-center" title={nome}>
+      <p className="col-span-3 text-xs truncate"><span className="font-semibold">{titulo}</span><span className="text-[9px] text-muted-foreground"> (chave)</span><span className="font-medium"> {nome}</span></p>
+      <p className="col-span-2 text-[10px] text-muted-foreground truncate">CNPJ {fmtDoc(doc)}</p>
+      <p className="col-span-1 text-[10px] text-muted-foreground truncate">IE {ie || "ISENTO"}</p>
+      <p className="col-span-3 text-[10px] text-muted-foreground truncate">{ender || "--"}</p>
+      <p className="col-span-3 text-[10px] text-muted-foreground truncate">{loc}</p>
     </div>
   );
 }
