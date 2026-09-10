@@ -1318,3 +1318,16 @@ Commits CF `fd2c6c0..20d42c4` + Vercel espelhos.
 - Campos (Input/Textarea base) com fundo `bg-primary/[0.10]`; leitura neutralizados (`bg-transparent`): destaque so em editaveis, nos dois temas.
 
 Commits CF `5138d60..b041b1c` + Vercel espelhos.
+
+---
+
+## Percursos: combos digitáveis, tons por tema e Dist/Dur auto (10-11/09/2026)
+
+- CFOP saiu do card da Coleta e foi para o Fiscal ao lado do CST (19 CFOPs de transporte); depois os dois viraram Combo digitável com dropdown (filtra por código/descrição ignorando acento, Enter escolhe o primeiro).
+- Tons: editáveis com fundo visível (claro `stone-200`, escuro `muted`); dropdowns (SelectTrigger) com o mesmo tom por serem selecionáveis; só-leitura transparente nos dois temas (código/nome do percurso, Parte/Tomador/R, Tomador/Chave/protocolos do CT-e).
+- Box Coleta/Entrega: Distância/Duração por extenso na mesma linha (km/h), sem sobreposição (inputs `w-0 flex-1`, sem `justify-between`).
+- Dist/Dur automáticos no save: se vazio ou se a rota mudou (origem/destino efetivo vs. banco), recalcula — CEP em 3 fontes (BrasilAPI v2 → AwesomeAPI → Nominatim por CEP) com fallback cidade/UF → rota OSRM (menor alternativa). Botão Recalcular no box + recálculo sozinho ~1s após trocar cidade (debounce, não dispara ao abrir).
+- Regra de duração final: volante = km ÷ 60; dias = teto(volante ÷ 12); 1 dia = só o volante; mais dias = volante + 12h descanso × dias; 1 casa decimal, sem teto (ex.: 185 km = 3,1h; 2813 km = 94,9h).
+- Save do percurso paralelizado (update + writeback consig/redesp em `Promise.all`).
+
+Commits CF `a16bf80..2aca9b8` + Vercel espelhos + Worker redeployado a cada mudança.
