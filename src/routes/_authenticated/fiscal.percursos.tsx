@@ -91,7 +91,7 @@ function Parte({ titulo, nome, doc }: { titulo: string; nome: string; doc: strin
     </div>
   );
 }
-const CSTS_ICMS: Array<[string, string]> = [["00", "ICMS com Tributa\u00e7\u00e3o Integral"], ["20", "ICMS com Redu\u00e7\u00e3o de Base de C\u00e1lculo"], ["40", "ICMS Isentas"], ["41", "ICMS n\u00e3o Tributada"], ["51", "ICMS com Diferimento"], ["60", "ICMS com Pagto Antecipado Sub.Trib"], ["90", "ICMS Outras Situa\u00e7\u00f5es"], ["99", "ISSQN com Tributa\u00e7\u00e3o Integral"]];
+const CSTS_ICMS: Array<[string, string]> = [["00", "Tributada integralmente"], ["10", "Tributada e com cobran\u00e7a do ICMS por substitui\u00e7\u00e3o tribut\u00e1ria"], ["20", "Com redu\u00e7\u00e3o de base de c\u00e1lculo"], ["30", "Isenta ou n\u00e3o tributada e com cobran\u00e7a do ICMS por substitui\u00e7\u00e3o tribut\u00e1ria"], ["40", "Isenta"], ["41", "N\u00e3o tributada"], ["50", "Suspens\u00e3o"], ["51", "Diferimento"], ["60", "ICMS cobrado anteriormente por substitui\u00e7\u00e3o tribut\u00e1ria"], ["70", "Com redu\u00e7\u00e3o de base de c\u00e1lculo e cobran\u00e7a do ICMS por substitui\u00e7\u00e3o tribut\u00e1ria"], ["90", "Outras"]];
 const normTxt = (s: any) => String(s || "").toLowerCase().normalize("NFD").replace(/[^a-z0-9 ]/g, " ").replace(/ +/g, " ").trim();
 const OPTS_CST: { v: string; label: string }[] = CSTS_ICMS.map(([v, d]) => ({ v, label: v + " - " + d }));
 const OPTS_CFOP: { v: string; label: string }[] = CFOPS_CTE.map(c => ({ v: String(c.codigo).replace(/\D/g, ""), label: c.descricao }));
