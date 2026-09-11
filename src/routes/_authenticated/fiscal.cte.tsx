@@ -320,7 +320,7 @@ function CtePage() {
   };
 
   const [open, setOpen] = useState(false);
-  const emptyForm = { toma: "3", cnpjTomador: "", xNomeTomador: "", ufTomador: "MG", cMunTomador: "3106200", xMunTomador: "BELO HORIZONTE", ieTomador: "", logradouroTomador: "", nroTomador: "", bairroTomador: "", cepTomador: "", foneTomador: "", emailTomador: "", cnpjConsignatario: "", xNomeConsignatario: "", ieConsignatario: "", ufConsignatario: "", xMunConsignatario: "", cepConsignatario: "", logradouroConsignatario: "", nroConsignatario: "", bairroConsignatario: "", cnpjRedespacho: "", xNomeRedespacho: "", ieRedespacho: "", ufRedespacho: "", xMunRedespacho: "", cepRedespacho: "", logradouroRedespacho: "", nroRedespacho: "", bairroRedespacho: "", ambiente: "homologacao" as "homologacao" | "producao", cfop: "5353", vPrest: "0.00", vCarga: "0.00", peso: "0", rntrc: "", icmsCST: "00", icmsBase: "1000.00", icmsAliq: "0.00", icmsValor: "0.00", reducaoBase: "0.00", creditoOutorgado: "0.00", pisAliq: "0.00", cofinsAliq: "0.00", irAliq: "0.00", inssAliq: "0.00", csllAliq: "0.00", motoristaNome: "", motoristaId: "", ciot: "", placaVeiculo: "", placaReboque: "", semiReboque1: "", semiReboque2: "", seguradoraNome: "", seguradoraId: "", apolice: "", averbacao: "", cMunEnv: "3106200", xMunEnv: "BELO HORIZONTE", ufEnv: "MG", cMunIni: "3106200", xMunIni: "BELO HORIZONTE", ufIni: "MG", cMunFim: "3550308", xMunFim: "SAO PAULO", ufFim: "SP",     dataEmissao: new Date().toISOString().slice(0,10),
+  const emptyForm = { toma: "3", ieDestinatario: "", cnpjTomador: "", xNomeTomador: "", ufTomador: "MG", cMunTomador: "3106200", xMunTomador: "BELO HORIZONTE", ieTomador: "", logradouroTomador: "", nroTomador: "", bairroTomador: "", cepTomador: "", foneTomador: "", emailTomador: "", cnpjConsignatario: "", xNomeConsignatario: "", ieConsignatario: "", ufConsignatario: "", xMunConsignatario: "", cepConsignatario: "", logradouroConsignatario: "", nroConsignatario: "", bairroConsignatario: "", cnpjRedespacho: "", xNomeRedespacho: "", ieRedespacho: "", ufRedespacho: "", xMunRedespacho: "", cepRedespacho: "", logradouroRedespacho: "", nroRedespacho: "", bairroRedespacho: "", ambiente: "homologacao" as "homologacao" | "producao", cfop: "5353", vPrest: "0.00", vCarga: "0.00", peso: "0", rntrc: "", icmsCST: "00", icmsBase: "1000.00", icmsAliq: "0.00", icmsValor: "0.00", reducaoBase: "0.00", creditoOutorgado: "0.00", pisAliq: "0.00", cofinsAliq: "0.00", irAliq: "0.00", inssAliq: "0.00", csllAliq: "0.00", motoristaNome: "", motoristaId: "", ciot: "", placaVeiculo: "", placaReboque: "", semiReboque1: "", semiReboque2: "", seguradoraNome: "", seguradoraId: "", apolice: "", averbacao: "", cMunEnv: "3106200", xMunEnv: "BELO HORIZONTE", ufEnv: "MG", cMunIni: "3106200", xMunIni: "BELO HORIZONTE", ufIni: "MG", cMunFim: "3550308", xMunFim: "SAO PAULO", ufFim: "SP",     dataEmissao: new Date().toISOString().slice(0,10),
     formaPagamento: "Outros", finalidadeEmissao: "Normal", tipoServico: "Normal", formaEmissao: "Normal",
     cteReferenciado: "", chaveCompAnulacao: "", dataDeclaracao: "",
     obsGerais: "", obsAnulacao: "", obsGlobalizado: "",
@@ -425,6 +425,7 @@ function CtePage() {
           xMunIni: first.emitXMun || f.xMunIni,
           ufIni: first.emitUF || f.ufIni,
           cMunFim: first.destCMun || f.cMunFim,
+          ieDestinatario: (first as any).destIE || (f as any).ieDestinatario || "",
           xMunFim: first.destXMun || f.xMunFim,
           ufFim: first.destUF || f.ufFim,
           cMunEnv: first.emitCMun || f.cMunEnv,
@@ -1004,7 +1005,7 @@ function CtePage() {
       const ieOk = (vv: any) => String(vv || "").trim().length > 0;
       if (!ieOk((empresa as any).ie)) pend.push("IE do remetente (empresa)");
       const selDocs = mercadorias.filter(m => chaves.includes(m.chave));
-      if (selDocs.filter(m => !ieOk((m as any).destIE)).length > 0) pend.push("IE do destinatario");
+      if (selDocs.filter(m => !ieOk(form.ieDestinatario || (m as any).destIE)).length > 0) pend.push("IE do destinatario");
       if (!ieOk(form.ieTomador)) pend.push("IE do tomador");
       if (String(form.cnpjConsignatario || "").replace(/\D/g, "").length === 14 && !ieOk(form.ieConsignatario)) pend.push("IE do consignatario");
       if (String(form.cnpjRedespacho || "").replace(/\D/g, "").length === 14 && !ieOk(form.ieRedespacho)) pend.push("IE do redespacho");
@@ -1253,7 +1254,7 @@ function CtePage() {
       rem_cnpj: d.remDoc, rem_nome: a.emit || d.remNome || "", rem_ie: a.emitIE || cRemP.ie || "", rem_uf: a.emitUF || cRemP.uf || "",
       rem_cmun: a.emitCMun || "", rem_xmun: a.emitXMun || cRemP.cidade || "", rem_logradouro: a.emitLogradouro || cRemP.logradouro || "",
       rem_nro: cRemP.numero || "", rem_bairro: a.emitBairro || cRemP.bairro || "", rem_cep: (a.emitCEP || cRemP.cep || "").replace(/\D/g, "") || "", rem_fone: a.emitFone || cRemP.telefone || "",
-      dest_cnpj: d.destDoc, dest_nome: a.dest || d.destNome || "", dest_ie: a.destIE || cDesP.ie || "", dest_uf: a.destUF || cDesP.uf || "",
+      dest_cnpj: d.destDoc, dest_nome: a.dest || d.destNome || "", dest_ie: form.ieDestinatario || a.destIE || cDesP.ie || "", dest_uf: a.destUF || cDesP.uf || "",
       dest_cmun: a.destCMun || "", dest_xmun: a.destXMun || cDesP.cidade || "", dest_logradouro: a.destLogradouro || cDesP.logradouro || "",
       dest_nro: cDesP.numero || "", dest_bairro: a.destBairro || cDesP.bairro || "", dest_cep: (a.destCEP || cDesP.cep || "").replace(/\D/g, "") || "", dest_fone: a.destFone || cDesP.telefone || "",
       toma_tipo: form.toma, toma_cnpj: d.tomaDoc, toma_nome: form.xNomeTomador || "", toma_ie: form.ieTomador || "",
@@ -1519,6 +1520,7 @@ function CtePage() {
                     ufIni: (first as any).emitUF || "",
                     cMunFim: (first as any).destCMun || "",
                     xMunFim: (first as any).destXMun || "",
+                    ieDestinatario: (first as any).destIE || "",
                     ufFim: (first as any).destUF || "",
                     cMunEnv: (first as any).emitCMun || "",
                     xMunEnv: (first as any).emitXMun || "",
@@ -1749,7 +1751,7 @@ function CtePage() {
                     </div>
                     <div className="space-y-0.5 text-[10px]">
                       <p className="font-medium text-xs">{active.dest || "—"}</p>
-                      <p className="text-muted-foreground">CNPJ: {active.destCnpj ? active.destCnpj.replace(/(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})/, "$1.$2.$3/$4-$5") : "—"} {destIE ? `IE: ${destIE}` : ""}</p>
+                      <p className="text-muted-foreground">CNPJ: {active.destCnpj ? active.destCnpj.replace(/(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})/, "$1.$2.$3/$4-$5") : "—"} {<span className="inline-flex items-center gap-1">IE: <Input className="h-5 w-32 text-[10px] px-1" placeholder="ISENTO" value={form.ieDestinatario || ""} onChange={e=>setForm({...form,ieDestinatario:e.target.value.replace(/\D/g, "")})} /></span>}</p>
                       <p className="text-muted-foreground">{[destLgr && `${destLgr}${destNro ? `, ${destNro}` : ""}`, destBai].filter(Boolean).join(" — ") || "—"}</p>
                       <p className="text-muted-foreground">{destCid || "—"}-{destUF || "—"} {destCEP ? `CEP: ${destCEP}` : ""}</p>
                       {destFone && <p className="text-muted-foreground">Fone: {destFone}</p>}
