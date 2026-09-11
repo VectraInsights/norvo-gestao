@@ -1,4 +1,6 @@
 import { jsPDF } from "jspdf";
+import JsBarcode from "./vendor/jsbarcode.bundle.cjs";
+import qrcode from "./vendor/qrcode.bundle.cjs";
 
 interface DacteData {
   chave: string;
@@ -80,6 +82,7 @@ interface DacteData {
   modelo?: string;
   fl?: string;
   logoDataUrl?: string;
+  qrCode?: string;
 }
 
 function fmtCnpj(v: string): string {
@@ -113,6 +116,38 @@ function cstLabel(cst: string): string {
     "90": "90 - Outras",
   };
   return map[c] || (c ? `${c} - Verificar CST` : "—");
+}
+
+// CODE-128C real da chave (MOC 4.00). Volta null fora do browser ou sem chave válida.
+function barcodePng(chave: string): string | null {
+  try {
+    const digits = (chave || "").replace(/\D/g, "");
+    if (digits.length !== 44 || typeof document === "undefined") return null;
+    const JB: any = (JsBarcode as any)?.default || JsBarcode;
+    const c = document.createElement("canvas");
+    JB(c, digits, { format: "CODE128C", displayValue: false, margin: 0, height: 48, width: 2, background: "#ffffff", lineColor: "#000000" });
+    return c.toDataURL("image/png");
+  } catch { return null; }
+}
+
+// QR Code vetorial (módulos via qrcode-generator). Retorna false se falhar.
+function drawQr(doc: any, x: number, y: number, size: number, text: string): boolean {
+  try {
+    if (!text) return false;
+    const Q: any = (qrcode as any)?.default || qrcode;
+    const qr = Q(0, "M");
+    qr.addData(text);
+    qr.make();
+    const n = qr.getModuleCount();
+    const s = size / n;
+    doc.setFillColor(0, 0, 0);
+    for (let r = 0; r < n; r++) {
+      for (let c = 0; c < n; c++) {
+        if (qr.isDark(r, c)) doc.rect(x + c * s, y + r * s, s + 0.02, s + 0.02, "F");
+      }
+    }
+    return true;
+  } catch { return false; }
 }
 
 export function gerarDactePdf(data: DacteData): Blob {
@@ -234,18 +269,49 @@ export function gerarDactePdf(data: DacteData): Blob {
   // ═══════════════════════════════════════════════════
   // BARRAS + CHAVE DE ACESSO
   // ═══════════════════════════════════════════════════
-  drawBox(M, y, CW, 14);
-  for (let bx = M + 2; bx < W - M - 2; bx += 1.1) {
-    const bh = 5 + Math.random() * 2.5;
-    doc.setFillColor(0, 0, 0);
-    doc.rect(bx, y + 1, 0.5, bh, "F");
+  const qrTxt = (data.qrCode || "").trim();
+  const barsImg = barcodePng(data.chave);
+  const drawRealBars = (x0: number, y0: number, wMax: number, h: number): number => {
+    try {
+      if (!barsImg) return -1;
+      const props = (doc as any).getImageProperties(barsImg);
+      const ratio = props.width / props.height;
+      let iw = h * ratio, ih = h;
+      if (iw > wMax) { iw = wMax; ih = iw / ratio; }
+      doc.addImage(barsImg, "PNG", x0, y0, iw, ih);
+      return ih;
+    } catch { return -1; }
+  };
+  const drawSimBars = (x0: number, y0: number, x1: number, bh: number) => {
+    for (let bx = x0; bx < x1; bx += 1.1) {
+      const h = 5 + Math.random() * bh;
+      doc.setFillColor(0, 0, 0);
+      doc.rect(bx, y0, 0.5, h, "F");
+    }
+  };
+  if (qrTxt) {
+    drawBox(M, y, CW, 30);
+    if (drawRealBars(M + 2, y + 2, 156, 9) < 0) drawSimBars(M + 2, y + 2, M + 158, 2.5);
+    black();
+    setFont("normal", 6.5);
+    doc.text(fmtChave(data.chave), M + 2, y + 15);
+    setFont("bold", 5);
+    doc.text("Chave de acesso", M + 2, y + 28);
+    if (!drawQr(doc, W - M - 29, y + 2.5, 25, qrTxt)) {
+      setFont("normal", 4.5);
+      doc.text("QR indisponível", W - M - 29, y + 15);
+    }
+    y += 31;
+  } else {
+    drawBox(M, y, CW, 15);
+    if (drawRealBars(M + 2, y + 1, CW - 4, 8) < 0) drawSimBars(M + 2, y + 1, W - M - 2, 2.5);
+    black();
+    setFont("normal", 6.5);
+    doc.text(fmtChave(data.chave), M + 2, y + 11.5);
+    setFont("bold", 5);
+    doc.text("Chave de acesso", M + 2, y + 13.5);
+    y += 16;
   }
-  black();
-  setFont("bold", 5);
-  doc.text("Chave de acesso", M + 2, y + 13);
-  setFont("normal", 6.5);
-  doc.text(fmtChave(data.chave), M + 2, y + 10);
-  y += 15;
 
   // ═══════════════════════════════════════════════════
   // TIPO CT-E | TIPO SERVIÇO | TOMADOR | IND GLOBALIZADO

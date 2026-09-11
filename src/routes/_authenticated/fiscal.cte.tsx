@@ -197,6 +197,7 @@ function CtePage() {
         averbacao: "",
         protocolo: doc.protocolo_sefaz || "",
         obs: [obsPercurso, xmlObs].filter(Boolean).join(" ") || "",
+        qrCode: tag("infCTeSupl > qrCodCTe") || tag("qrCodCTe") || "",
         logoDataUrl: JUVENAL_LOGO || undefined,
       });
       const url = URL.createObjectURL(pdfBlob);
