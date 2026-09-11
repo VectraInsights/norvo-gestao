@@ -523,28 +523,22 @@ function PercursosPage() {
                       <p className="text-[11px] font-semibold">Consignatário</p>
 <div className="grid grid-cols-12 gap-1">
                         <div className="col-span-2"><T editing={editing} set={set} label="CNPJ" k="consig_cnpj" mono on14={(d: string) => lookupParte("consig", d)} /></div>
-                        <div className="col-span-2"><T editing={editing} set={set} label="Nome" k="consig_nome" /></div>
-                        <div className="col-span-1"><T editing={editing} set={set} label="IE" k="consig_ie" digits /></div>
-                        <div className="col-span-1"><T editing={editing} set={set} label="CEP" k="consig_cep" mono /></div>
+                        <div className="col-span-3"><T editing={editing} set={set} label="Nome" k="consig_nome" /></div>
+                        <div className="col-span-2"><T editing={editing} set={set} label="IE" k="consig_ie" digits /></div>
+                        <div className="col-span-2"><T editing={editing} set={set} label="CEP" k="consig_cep" mono /></div>
                         <div className="col-span-1"><T editing={editing} set={set} label="UF" k="consig_uf" /></div>
-                        <div className="col-span-2"><T editing={editing} set={set} label="Logradouro" k="consig_logradouro" /></div>
-                        <div className="col-span-1"><T editing={editing} set={set} label="Número" k="consig_nro" /></div>
-                        <div className="col-span-1"><T editing={editing} set={set} label="Bairro" k="consig_bairro" /></div>
-                        <div className="col-span-1"><T editing={editing} set={set} label="Município" k="consig_xmun" /></div>
+                        <div className="col-span-2"><T editing={editing} set={set} label="Município" k="consig_xmun" /></div>
                       </div>
                     </div>
                     <div className="border rounded px-2 py-1 space-y-1">
                       <p className="text-[11px] font-semibold">Redespacho</p>
 <div className="grid grid-cols-12 gap-1">
                         <div className="col-span-2"><T editing={editing} set={set} label="CNPJ" k="redesp_cnpj" mono on14={(d: string) => lookupParte("redesp", d)} /></div>
-                        <div className="col-span-2"><T editing={editing} set={set} label="Nome" k="redesp_nome" /></div>
-                        <div className="col-span-1"><T editing={editing} set={set} label="IE" k="redesp_ie" digits /></div>
-                        <div className="col-span-1"><T editing={editing} set={set} label="CEP" k="redesp_cep" mono /></div>
+                        <div className="col-span-3"><T editing={editing} set={set} label="Nome" k="redesp_nome" /></div>
+                        <div className="col-span-2"><T editing={editing} set={set} label="IE" k="redesp_ie" digits /></div>
+                        <div className="col-span-2"><T editing={editing} set={set} label="CEP" k="redesp_cep" mono /></div>
                         <div className="col-span-1"><T editing={editing} set={set} label="UF" k="redesp_uf" /></div>
-                        <div className="col-span-2"><T editing={editing} set={set} label="Logradouro" k="redesp_logradouro" /></div>
-                        <div className="col-span-1"><T editing={editing} set={set} label="Número" k="redesp_nro" /></div>
-                        <div className="col-span-1"><T editing={editing} set={set} label="Bairro" k="redesp_bairro" /></div>
-                        <div className="col-span-1"><T editing={editing} set={set} label="Município" k="redesp_xmun" /></div>
+                        <div className="col-span-2"><T editing={editing} set={set} label="Município" k="redesp_xmun" /></div>
                       </div>
                     </div>
                   </div>
