@@ -1331,3 +1331,13 @@ Commits CF `5138d60..b041b1c` + Vercel espelhos.
 - Save do percurso paralelizado (update + writeback consig/redesp em `Promise.all`).
 
 Commits CF `a16bf80..2aca9b8` + Vercel espelhos + Worker redeployado a cada mudança.
+
+---
+
+## Padrão numérico pt-BR em todo o sistema (11/09/2026)
+
+- `MoneyInput` (`src/components/erp/money-input.tsx`) ganhou prop `decimals` (padrão 2): digita só números e preenche sozinho `1.234,56` (milhar com ponto, decimal com vírgula); emite string crua (`"1234.56"`) p/ banco/SEFAZ.
+- Regra: valores R$ = padrão; % = `prefix=""`; quantidades = `decimals={3}`; inteiros (parcelas, dias, pontos, eixos, km, prob.) = `decimals={0}`; identificadores (série, próximo número, ano) mantidos sem máscara.
+- Convertidos todos os `type="number"` + campos de texto do Percurso (Fiscal: 8 alíquotas; Seguro: RCTR-C/RCF-DC/Adicional/Total; Vale pedágio; Distância/Duração inteiros): config, estoque (5 telas), financeiro (contas, empréstimos), fiscal (config, emitidas, percursos), frota (multas, veículos, viagens), RH (comissões, férias), vendas (crm, pedidos).
+
+Commits CF `1f78d92` + Vercel `bb9c24d` + Worker `c78b722c`.
