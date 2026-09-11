@@ -544,20 +544,27 @@ export function gerarDactePdf(data: DacteData): Blob {
   // ═══════════════════════════════════════════════════
   // OBSERVAÇÕES (mantém mensagem de homologação aqui)
   // ═══════════════════════════════════════════════════
-  sectionTitle(M, y, CW, "OBSERVAÇÕES");
+  sectionTitle(M, y, CW, "OBSERVA\u00c7\u00d5ES");
   y += 5;
-  const obsH = 16;
+  const hasObsTxt = !!(data.obs && data.obs.trim());
+  const isHom = (data.ambiente || "") === "homologacao";
+  const obsH = hasObsTxt && isHom ? 24 : 16;
   drawBox(M, y, CW, obsH);
-  if (data.obs) {
+  if (hasObsTxt) {
     setFont("normal", 5);
     black();
     const lines = doc.splitTextToSize(data.obs, CW - 4);
-    doc.text(lines.slice(0, 3), M + 2, y + 4);
+    doc.text(lines.slice(0, isHom ? 3 : 5), M + 2, y + 4);
   }
-  if ((data.ambiente || "") === "homologacao") {
+  if (isHom) {
     doc.setTextColor(170, 170, 170);
-    setFont("bold", 13);
-    doc.text("AMBIENTE DE HOMOLOGAÇÃO - SEM VALOR FISCAL", W / 2, y + obsH / 2 + 5, { align: "center" });
+    if (hasObsTxt) {
+      setFont("bold", 9);
+      doc.text("AMBIENTE DE HOMOLOGA\u00c7\u00c3O - SEM VALOR FISCAL", W / 2, y + obsH - 3, { align: "center" });
+    } else {
+      setFont("bold", 13);
+      doc.text("AMBIENTE DE HOMOLOGA\u00c7\u00c3O - SEM VALOR FISCAL", W / 2, y + obsH / 2 + 5, { align: "center" });
+    }
     black();
   }
   y += obsH + 1;

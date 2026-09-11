@@ -167,6 +167,7 @@ function CtePage() {
           if (hit) { percObs = hit.obs_gerais || ""; percColX = hit.coleta_xmun || ""; percColU = hit.coleta_uf || ""; percEntX = hit.entrega_xmun || ""; percEntU = hit.entrega_uf || ""; }
         }
       } catch {}
+      if (!percObs && !percColX) toast.warning("Percurso nao localizado: obs e cidades ficam em branco");
       const xmlComps = Array.from(xmlDoc.querySelectorAll("vPrest > Comp")).map(cc => ({ nome: (cc.querySelector("xNome")?.textContent || "").trim(), valor: parseFloat(cc.querySelector("vComp")?.textContent || "0") || 0 })).filter(cc => cc.nome).slice(0, 8);
       const pdfBlob = gerarDactePdf({
         chave: doc.chave_acesso || "",
