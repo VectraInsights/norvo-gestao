@@ -1350,7 +1350,7 @@ Commits CF `1f78d92` + Vercel `bb9c24d` + Worker `c78b722c`.
 - Obs do percurso (`obs_gerais`) sai no DACTE: preview já levava; download de autorizado agora lê `form.obsGerais` gravado no JSON + `ObsCont/ObsFisco` do XML (antes era `""` fixo).
 - Download lê ICMS do grupo correto (ICMS00/20/45/60/90/OutraUF; antes só ICMS00) e emissor mapeia 40/41/45/51 p/ ICMS45, resto só 00/20/60/90, resto bloqueia com erro claro.
 
-Commits CF `9113282` + Vercel `eba27ef` + Worker `91291ef6`.
+Commits CF `9113282` + Vercel `eba27ef` + Worker `91291ef6` (+ fix `64b9d36`: o `.new` do layout não tinha sido movido; layout real vale deste).
 
 ---
 
