@@ -1011,7 +1011,7 @@ function CtePage() {
       if (!String(form.placaVeiculo || "").trim()) pend.push("Placa do cavalo (veiculo 1)");
       else {
         const vv = (veiculos || []).find(v => String(v.placa || "").toUpperCase() === String(form.placaVeiculo || "").toUpperCase());
-        if (vv && String(vv.tipo || "").toLowerCase().indexOf("cavalo") >= 0 && !String(form.semiReboque1 || "").trim()) pend.push("Placa do reboque (veiculo 1 e cavalo)");
+        if (vv && String(vv.tipo || "").toLowerCase().indexOf("cavalo") >= 0 && !String(form.semiReboque1 || "").trim()) pend.push("Placa do reboque (veiculo 1 cadastrado como cavalo)");
       }
       if (!(parseFloat(form.vPrest) > 0)) pend.push("Valor do servico maior que zero");
       if (!String(form.icmsCST || "").trim()) pend.push("CST do ICMS");
@@ -1164,7 +1164,7 @@ function CtePage() {
       if (!String(form.placaVeiculo || "").trim()) pend.push("Placa do cavalo (veiculo 1)");
       else {
         const vv = (veiculos || []).find(v => String(v.placa || "").toUpperCase() === String(form.placaVeiculo || "").toUpperCase());
-        if (vv && String(vv.tipo || "").toLowerCase().indexOf("cavalo") >= 0 && !String(form.semiReboque1 || "").trim()) pend.push("Placa do reboque (veiculo 1 e cavalo)");
+        if (vv && String(vv.tipo || "").toLowerCase().indexOf("cavalo") >= 0 && !String(form.semiReboque1 || "").trim()) pend.push("Placa do reboque (veiculo 1 cadastrado como cavalo)");
       }
       if (!(parseFloat(form.vPrest) > 0)) pend.push("Valor do servico maior que zero");
       if (!String(form.icmsCST || "").trim()) pend.push("CST do ICMS");
