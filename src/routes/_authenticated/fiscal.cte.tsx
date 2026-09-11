@@ -320,7 +320,7 @@ function CtePage() {
   };
 
   const [open, setOpen] = useState(false);
-  const emptyForm = { toma: "3", cnpjTomador: "", xNomeTomador: "", ufTomador: "MG", cMunTomador: "3106200", xMunTomador: "BELO HORIZONTE", ieTomador: "", logradouroTomador: "", nroTomador: "", bairroTomador: "", cepTomador: "", foneTomador: "", emailTomador: "", cnpjConsignatario: "", xNomeConsignatario: "", ieConsignatario: "", ufConsignatario: "", xMunConsignatario: "", cepConsignatario: "", logradouroConsignatario: "", nroConsignatario: "", bairroConsignatario: "", cnpjRedespacho: "", xNomeRedespacho: "", ieRedespacho: "", ufRedespacho: "", xMunRedespacho: "", cepRedespacho: "", logradouroRedespacho: "", nroRedespacho: "", bairroRedespacho: "", ambiente: "homologacao" as "homologacao" | "producao", cfop: "5353", vPrest: "0.00", vCarga: "0.00", peso: "0", rntrc: "", icmsCST: "00", icmsBase: "1000.00", icmsAliq: "0.00", icmsValor: "0.00", reducaoBase: "0.00", creditoOutorgado: "0.00", pisAliq: "0.00", cofinsAliq: "0.00", irAliq: "0.00", inssAliq: "0.00", csllAliq: "0.00", motoristaNome: "", motoristaId: "", ciot: "", placaVeiculo: "", placaReboque: "", semiReboque1: "", semiReboque2: "", seguradoraNome: "", seguradoraId: "", apolice: "", averbacao: "", cMunEnv: "3106200", xMunEnv: "BELO HORIZONTE", ufEnv: "MG", cMunIni: "3106200", xMunIni: "BELO HORIZONTE", ufIni: "MG", cMunFim: "3550308", xMunFim: "SAO PAULO", ufFim: "SP",     dataEmissao: new Date().toISOString().slice(0,10),
+  const emptyForm = { toma: "3", pedagioPagto: "sem-pagamento", cnpjTomador: "", xNomeTomador: "", ufTomador: "MG", cMunTomador: "3106200", xMunTomador: "BELO HORIZONTE", ieTomador: "", logradouroTomador: "", nroTomador: "", bairroTomador: "", cepTomador: "", foneTomador: "", emailTomador: "", cnpjConsignatario: "", xNomeConsignatario: "", ieConsignatario: "", ufConsignatario: "", xMunConsignatario: "", cepConsignatario: "", logradouroConsignatario: "", nroConsignatario: "", bairroConsignatario: "", cnpjRedespacho: "", xNomeRedespacho: "", ieRedespacho: "", ufRedespacho: "", xMunRedespacho: "", cepRedespacho: "", logradouroRedespacho: "", nroRedespacho: "", bairroRedespacho: "", ambiente: "homologacao" as "homologacao" | "producao", cfop: "5353", vPrest: "0.00", vCarga: "0.00", peso: "0", rntrc: "", icmsCST: "00", icmsBase: "1000.00", icmsAliq: "0.00", icmsValor: "0.00", reducaoBase: "0.00", creditoOutorgado: "0.00", pisAliq: "0.00", cofinsAliq: "0.00", irAliq: "0.00", inssAliq: "0.00", csllAliq: "0.00", motoristaNome: "", motoristaId: "", ciot: "", placaVeiculo: "", placaReboque: "", semiReboque1: "", semiReboque2: "", seguradoraNome: "", seguradoraId: "", apolice: "", averbacao: "", cMunEnv: "3106200", xMunEnv: "BELO HORIZONTE", ufEnv: "MG", cMunIni: "3106200", xMunIni: "BELO HORIZONTE", ufIni: "MG", cMunFim: "3550308", xMunFim: "SAO PAULO", ufFim: "SP",     dataEmissao: new Date().toISOString().slice(0,10),
     formaPagamento: "Outros", finalidadeEmissao: "Normal", tipoServico: "Normal", formaEmissao: "Normal",
     cteReferenciado: "", chaveCompAnulacao: "", dataDeclaracao: "",
     obsGerais: "", obsAnulacao: "", obsGlobalizado: "",
@@ -988,7 +988,7 @@ function CtePage() {
       try {
       if (!empresa) throw new Error("Empresa não selecionada");
       if (!form.xNomeTomador || !form.cnpjTomador) throw new Error("Informe tomador");
-      if (!form.ieTomador) toast.warning("IE do tomador não informado — o SEFAZ pode rejeitar");
+      
       const chaves = selecionadas.size > 0 ? Array.from(selecionadas) : mercadorias.map(m => m.chave);
       if (chaves.length > 0) {
         const sel = mercadorias.filter(m => chaves.includes(m.chave));
@@ -999,6 +999,28 @@ function CtePage() {
         if (dests.size > 1) throw new Error("CT-e não pode ter destinatários diferentes. Selecione NF-es do mesmo destinatário.");
         if (tomads.size > 1) throw new Error("CT-e não pode ter tomadores diferentes. Selecione NF-es do mesmo tomador.");
       }
+      const pend: string[] = [];
+      const ieOk = (vv: any) => String(vv || "").trim().length > 0;
+      if (!ieOk((empresa as any).ie)) pend.push("IE do remetente (empresa)");
+      const selDocs = mercadorias.filter(m => chaves.includes(m.chave));
+      if (selDocs.filter(m => !ieOk((m as any).destIE)).length > 0) pend.push("IE do destinatario");
+      if (!ieOk(form.ieTomador)) pend.push("IE do tomador");
+      if (String(form.cnpjConsignatario || "").replace(/\D/g, "").length === 14 && !ieOk(form.ieConsignatario)) pend.push("IE do consignatario");
+      if (String(form.cnpjRedespacho || "").replace(/\D/g, "").length === 14 && !ieOk(form.ieRedespacho)) pend.push("IE do redespacho");
+      if (!String(form.motoristaNome || "").trim()) pend.push("Motorista");
+      if (!String(form.placaVeiculo || "").trim()) pend.push("Placa do cavalo (veiculo 1)");
+      else {
+        const vv = (veiculos || []).find(v => String(v.placa || "").toUpperCase() === String(form.placaVeiculo || "").toUpperCase());
+        if (vv && String(vv.tipo || "").toLowerCase().indexOf("cavalo") >= 0 && !String(form.semiReboque1 || "").trim()) pend.push("Placa do reboque (veiculo 1 e cavalo)");
+      }
+      if (!(parseFloat(form.vPrest) > 0)) pend.push("Valor do servico maior que zero");
+      if (!String(form.icmsCST || "").trim()) pend.push("CST do ICMS");
+      if (!String(form.cfop || "").trim()) pend.push("CFOP");
+      if (!String(form.icmsAliq || "").trim()) pend.push("Aliquota do ICMS");
+      if (!String(form.seguradoraNome || "").trim()) pend.push("Seguradora");
+      if (!String(form.apolice || "").trim()) pend.push("Apolice do seguro");
+      if (!String(form.segResponsavel || "").trim()) pend.push("Responsavel do seguro");
+      if (pend.length > 0) throw new Error("Para emitir informe: " + pend.join("; "));
       validarPedagio(form);
       const ret: any = await emitirCteFn({ data: { empresaId: empresa.id, input: {
         ambiente: form.ambiente,
@@ -1130,6 +1152,28 @@ function CtePage() {
     mutationFn: async () => {
       if (!empresa) throw new Error("Empresa não selecionada");
       const chaves = selecionadas.size > 0 ? Array.from(selecionadas) : mercadorias.map(m => m.chave);
+      const pend: string[] = [];
+      const ieOk = (vv: any) => String(vv || "").trim().length > 0;
+      if (!ieOk((empresa as any).ie)) pend.push("IE do remetente (empresa)");
+      const selDocs = mercadorias.filter(m => chaves.includes(m.chave));
+      if (selDocs.filter(m => !ieOk((m as any).destIE)).length > 0) pend.push("IE do destinatario");
+      if (!ieOk(form.ieTomador)) pend.push("IE do tomador");
+      if (String(form.cnpjConsignatario || "").replace(/\D/g, "").length === 14 && !ieOk(form.ieConsignatario)) pend.push("IE do consignatario");
+      if (String(form.cnpjRedespacho || "").replace(/\D/g, "").length === 14 && !ieOk(form.ieRedespacho)) pend.push("IE do redespacho");
+      if (!String(form.motoristaNome || "").trim()) pend.push("Motorista");
+      if (!String(form.placaVeiculo || "").trim()) pend.push("Placa do cavalo (veiculo 1)");
+      else {
+        const vv = (veiculos || []).find(v => String(v.placa || "").toUpperCase() === String(form.placaVeiculo || "").toUpperCase());
+        if (vv && String(vv.tipo || "").toLowerCase().indexOf("cavalo") >= 0 && !String(form.semiReboque1 || "").trim()) pend.push("Placa do reboque (veiculo 1 e cavalo)");
+      }
+      if (!(parseFloat(form.vPrest) > 0)) pend.push("Valor do servico maior que zero");
+      if (!String(form.icmsCST || "").trim()) pend.push("CST do ICMS");
+      if (!String(form.cfop || "").trim()) pend.push("CFOP");
+      if (!String(form.icmsAliq || "").trim()) pend.push("Aliquota do ICMS");
+      if (!String(form.seguradoraNome || "").trim()) pend.push("Seguradora");
+      if (!String(form.apolice || "").trim()) pend.push("Apolice do seguro");
+      if (!String(form.segResponsavel || "").trim()) pend.push("Responsavel do seguro");
+      if (pend.length > 0) throw new Error("Para emitir informe: " + pend.join("; "));
       validarPedagio(form);
       return previewCteXmlFn({ data: { empresaId: empresa.id, input: {
         ambiente: form.ambiente,
