@@ -235,8 +235,8 @@ function PercursosPage() {
     const fbDst = contatoByDoc.get(digits(temRedesp ? ed.redesp_cnpj : ed.dest_cnpj)) || {};
     const ori = { cep: String(ed.rem_cep || fbRem.cep || ""), xmun: String(ed.coleta_xmun || ed.rem_xmun || fbRem.cidade || ""), uf: String(ed.coleta_uf || ed.rem_uf || fbRem.uf || "") };
     const dst = temRedesp
-      ? { cep: String(ed.redesp_cep || ""), xmun: String(ed.redesp_xmun || ""), uf: String(ed.redesp_uf || "") }
-      : { cep: String(ed.dest_cep || fbDst.cep || ""), xmun: String(ed.dest_xmun || fbDst.cidade || ""), uf: String(ed.dest_uf || fbDst.uf || "") };
+      ? { cep: String(ed.redesp_cep || ""), xmun: String(ed.entrega_xmun || ed.redesp_xmun || ""), uf: String(ed.entrega_uf || ed.redesp_uf || "") }
+      : { cep: String(ed.dest_cep || fbDst.cep || ""), xmun: String(ed.entrega_xmun || ed.dest_xmun || fbDst.cidade || ""), uf: String(ed.entrega_uf || ed.dest_uf || fbDst.uf || "") };
     const sig = [digits(ori.cep), upper(ori.xmun), upper(ori.uf)].join("/") + ">" + [digits(dst.cep), upper(dst.xmun), upper(dst.uf)].join("/");
     return { ori, dst, sig };
   };
@@ -296,13 +296,13 @@ function PercursosPage() {
       const sig = (cep: any, xmun: any, uf: any) => [digits(cep), upper(xmun), upper(uf)].join("/");
       const oriOrg = { cep: String(payload.rem_cep || ""), xmun: String(payload.coleta_xmun || payload.rem_xmun || ""), uf: String(payload.coleta_uf || payload.rem_uf || "") };
       const dstOrg = temRedesp
-        ? { cep: String(payload.redesp_cep || ""), xmun: String(payload.redesp_xmun || ""), uf: String(payload.redesp_uf || "") }
-        : { cep: String(payload.dest_cep || ""), xmun: String(payload.dest_xmun || ""), uf: String(payload.dest_uf || "") };
+        ? { cep: String(payload.redesp_cep || ""), xmun: String(payload.entrega_xmun || payload.redesp_xmun || ""), uf: String(payload.entrega_uf || payload.redesp_uf || "") }
+        : { cep: String(payload.dest_cep || ""), xmun: String(payload.entrega_xmun || payload.dest_xmun || ""), uf: String(payload.entrega_uf || payload.dest_uf || "") };
       const rotaAtual = sig(oriOrg.cep, oriOrg.xmun, oriOrg.uf) + ">" + sig(dstOrg.cep, dstOrg.xmun, dstOrg.uf);
       const { data: salvo } = await supabase.from("cte_percursos" as any).select("rem_cep,rem_xmun,coleta_xmun,coleta_uf,rem_uf,dest_cep,dest_xmun,dest_uf,redesp_cnpj,redesp_cep,redesp_xmun,redesp_uf").eq("id", editing.id).maybeSingle();
       const sv: any = salvo || {};
       const temRedespSv = digits(sv.redesp_cnpj).length === 14;
-      const rotaSalva = sig(sv.rem_cep, sv.coleta_xmun || sv.rem_xmun, sv.coleta_uf || sv.rem_uf) + ">" + (temRedespSv ? sig(sv.redesp_cep, sv.redesp_xmun, sv.redesp_uf) : sig(sv.dest_cep, sv.dest_xmun, sv.dest_uf));
+      const rotaSalva = sig(sv.rem_cep, sv.coleta_xmun || sv.rem_xmun, sv.coleta_uf || sv.rem_uf) + ">" + (temRedespSv ? sig(sv.redesp_cep, sv.entrega_xmun || sv.redesp_xmun, sv.entrega_uf || sv.redesp_uf) : sig(sv.dest_cep, sv.entrega_xmun || sv.dest_xmun, sv.entrega_uf || sv.dest_uf));
       const mudouRota = rotaAtual !== rotaSalva;
       if (!payload.distancia_km || !payload.duracao_horas || mudouRota) {
         const calc = await calcDistDur(oriOrg, dstOrg);
@@ -545,8 +545,8 @@ function PercursosPage() {
                   <div className="border rounded p-2 space-y-1">
                     <p className="text-[11px] font-semibold">Fiscal</p>
                     <div className="grid grid-cols-2 md:grid-cols-5 gap-1">
-                      <div className="col-span-2 md:col-span-5"><Combo label="CST ICMS" value={editing.icms_cst || "00"} onPick={v => set("icms_cst", v)} opts={OPTS_CST} /></div>
-                      <div className="col-span-2 md:col-span-5"><Combo label="CFOP" value={editing.cfop || ""} onPick={v => set("cfop", v)} opts={OPTS_CFOP} /></div>
+                      <div className="col-span-2 md:col-span-2"><Combo label="CST ICMS" value={editing.icms_cst || "00"} onPick={v => set("icms_cst", v)} opts={OPTS_CST} /></div>
+                      <div className="col-span-2 md:col-span-3"><Combo label="CFOP" value={editing.cfop || ""} onPick={v => set("cfop", v)} opts={OPTS_CFOP} /></div>
                       <Num editing={editing} set={set} label="Alíq. ICMS %" k="icms_aliq" />
                       <Num editing={editing} set={set} label="Redução base %" k="reducao_base" />
                       <Num editing={editing} set={set} label="Crédito outorgado" k="credito_outorgado" />
