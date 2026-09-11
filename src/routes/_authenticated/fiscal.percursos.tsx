@@ -544,8 +544,8 @@ function PercursosPage() {
                   </div>
                   <div className="border rounded p-2 space-y-1">
                     <p className="text-[11px] font-semibold">Fiscal</p>
-                    <div className="grid grid-cols-2 md:grid-cols-10 gap-1"><div className="col-span-2 md:col-span-4"><Combo label="CST ICMS" value={editing.icms_cst || "00"} onPick={v => set("icms_cst", v)} opts={OPTS_CST} /></div>
-                      <div className="col-span-2 md:col-span-6"><Combo label="CFOP" value={editing.cfop || ""} onPick={v => set("cfop", v)} opts={OPTS_CFOP} /></div>
+                    <div className="space-y-1"><div className="flex flex-col gap-1 md:flex-row"><div className="md:w-[45%]"><Combo label="CST ICMS" value={editing.icms_cst || "00"} onPick={v => set("icms_cst", v)} opts={OPTS_CST} /></div><div className="md:flex-1">
+                      <Combo label="CFOP" value={editing.cfop || ""} onPick={v => set("cfop", v)} opts={OPTS_CFOP} /></div></div><div className="grid grid-cols-2 md:grid-cols-8 gap-1">
                       <Num editing={editing} set={set} label="Alíq. ICMS %" k="icms_aliq" />
                       <Num editing={editing} set={set} label="Redução base %" k="reducao_base" />
                       <Num editing={editing} set={set} label="Crédito outorgado" k="credito_outorgado" />
@@ -554,7 +554,7 @@ function PercursosPage() {
                       <Num editing={editing} set={set} label="IR %" k="ir_aliq" />
                       <Num editing={editing} set={set} label="INSS %" k="inss_aliq" />
                       <Num editing={editing} set={set} label="CSLL %" k="csll_aliq" />
-                    </div>
+                    </div></div>
                     <div>
                       <Label className="text-[10px] text-muted-foreground">Observação geral</Label>
                       <Textarea className="text-xs" rows={2} value={editing.obs_gerais ?? ""} onChange={e => set("obs_gerais", e.target.value.toUpperCase())} />
