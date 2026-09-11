@@ -544,8 +544,8 @@ function PercursosPage() {
                   </div>
                   <div className="border rounded p-2 space-y-1">
                     <p className="text-[11px] font-semibold">Fiscal</p>
-                    <div className="grid grid-cols-2 md:grid-cols-8 gap-1"><div className="col-span-2 md:col-span-4"><Combo label="CST ICMS" value={editing.icms_cst || "00"} onPick={v => set("icms_cst", v)} opts={OPTS_CST} /></div>
-                      <div className="col-span-2 md:col-span-4"><Combo label="CFOP" value={editing.cfop || ""} onPick={v => set("cfop", v)} opts={OPTS_CFOP} /></div>
+                    <div className="grid grid-cols-2 md:grid-cols-10 gap-1"><div className="col-span-2 md:col-span-4"><Combo label="CST ICMS" value={editing.icms_cst || "00"} onPick={v => set("icms_cst", v)} opts={OPTS_CST} /></div>
+                      <div className="col-span-2 md:col-span-6"><Combo label="CFOP" value={editing.cfop || ""} onPick={v => set("cfop", v)} opts={OPTS_CFOP} /></div>
                       <Num editing={editing} set={set} label="Alíq. ICMS %" k="icms_aliq" />
                       <Num editing={editing} set={set} label="Redução base %" k="reducao_base" />
                       <Num editing={editing} set={set} label="Crédito outorgado" k="credito_outorgado" />
