@@ -1351,3 +1351,13 @@ Commits CF `1f78d92` + Vercel `bb9c24d` + Worker `c78b722c`.
 - Download lê ICMS do grupo correto (ICMS00/20/45/60/90/OutraUF; antes só ICMS00) e emissor mapeia 40/41/45/51 p/ ICMS45, resto só 00/20/60/90, resto bloqueia com erro claro.
 
 Commits CF `9113282` + Vercel `eba27ef` + Worker `91291ef6`.
+
+---
+
+## DACTE com barras e QR reais (11/09/2026)
+
+- Barras CODE-128C reais da chave (MOC 4.00) via JsBarcode+canvas; QR vetorial do `qrCodCTe` do XML via qrcode-generator (módulos desenhados no PDF, 25mm). Fallback p/ barras simuladas fora do browser ou sem chave.
+- Download lê `qrCodCTe` (`infCTeSupl`) do XML autorizado. Preview segue sem QR (só existe após autorizar) e com barras reais se já houver chave.
+- Libs vendorizadas em `src/lib/vendor/` (bundles oficiais jsbarcode 3.12.3 + qrcode-generator 2.0.4) porque o `package.json` está com lock de escrita — documentar ao destravar.
+
+Commits CF `f1f9062` + Vercel `5f69095` + Worker `20b4dc02`.
