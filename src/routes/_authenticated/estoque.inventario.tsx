@@ -1,3 +1,4 @@
+import { MoneyInput } from "@/components/erp/money-input";
 import { createFileRoute } from "@tanstack/react-router";
 import { PageHeader } from "@/components/erp/page-header";
 import { EmptyState } from "@/components/erp/empty-state";
@@ -259,14 +260,7 @@ function Inventario() {
                       {num(atual)} {p.unidade ?? ""}
                     </TableCell>
                     <TableCell className="text-right">
-                      <Input
-                        type="number"
-                        step="0.001"
-                        className="ml-auto h-8 w-32 text-right"
-                        placeholder="—"
-                        value={counts[p.id] ?? ""}
-                        onChange={(e) => setCounts((c) => ({ ...c, [p.id]: e.target.value }))}
-                      />
+                      <MoneyInput className="ml-auto h-8 w-32" prefix="" decimals={3} placeholder="0,000" value={counts[p.id] ?? ""} onChange={(v) => setCounts((c) => ({ ...c, [p.id]: v }))} />
                     </TableCell>
                     <TableCell className="text-right">
                       {div ? (

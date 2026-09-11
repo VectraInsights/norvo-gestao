@@ -252,8 +252,7 @@ function CRM() {
               </div>
               <div>
                 <Label>Probabilidade (%)</Label>
-                <Input type="number" min={0} max={100} value={prob}
-                  onChange={(e) => setProb(e.target.value)} />
+                <MoneyInput prefix="" decimals={0} value={prob} onChange={setProb} />
               </div>
             </div>
             <div className="grid grid-cols-2 gap-3">

@@ -1,4 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
+import { MoneyInput } from "@/components/erp/money-input";
 import { createFileRoute } from "@tanstack/react-router";
 import { PageHeader } from "@/components/erp/page-header";
 import { EmptyState } from "@/components/erp/empty-state";
@@ -603,7 +604,7 @@ function Veiculos() {
                   </div>
                   <div>
                     <Label>Eixos *</Label>
-                    <Input type="number" min="2" max="9" value={form.quantidade_eixos} onChange={(e) => set("quantidade_eixos", e.target.value)} placeholder="2" className="w-16" />
+                    <MoneyInput prefix="" decimals={0} value={form.quantidade_eixos} onChange={(v) => set("quantidade_eixos", v)} placeholder="2" className="w-16" />
                   </div>
                 </div>
             <div className="grid grid-cols-3 gap-3">

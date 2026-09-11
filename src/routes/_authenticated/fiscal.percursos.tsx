@@ -5,6 +5,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
+import { MoneyInput } from "@/components/erp/money-input";
 import { Label } from "@/components/ui/label";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
@@ -65,7 +66,15 @@ function Tc({ label, k, mono, editing, set, ro }: { label: string; k: string; mo
       <Input className={"h-6 text-[11px]" + (mono ? " font-mono" : "") + (ro ? " bg-transparent dark:bg-transparent" : "")} value={editing?.[k] ?? ""} onChange={e => { set(k, e.target.value.toUpperCase()); }} placeholder="" readOnly={ro} />
     </div>
   );
-}function R({ label, v }: { label: string; v: any }) {
+}function Num({ editing, set, label, k, dec, prefix }: { editing: any; set: (k: string, v: any) => void; label: string; k: string; dec?: number; prefix?: string }) {
+  return (
+    <div>
+      <Label className="text-[10px] text-muted-foreground">{label}</Label>
+      <MoneyInput className="h-7 text-xs" prefix={prefix ?? ""} decimals={dec ?? 2} value={(editing as any)?.[k] ?? ""} onChange={v => set(k, v)} placeholder="0,00" />
+    </div>
+  );
+}
+function R({ label, v }: { label: string; v: any }) {
   return (
     <div>
       <Label className="text-[10px] text-muted-foreground">{label}</Label>
@@ -502,7 +511,7 @@ function PercursosPage() {
                       <div className="flex-1 flex flex-col gap-1 py-0.5">
 <div className="flex items-center gap-1"><span className="text-[9px] text-muted-foreground w-12 shrink-0">Coleta</span><Input className="h-6 text-[11px] flex-1 min-w-0 bg-transparent dark:bg-transparent" readOnly value={editing.coleta_xmun || ""} onChange={e => set("coleta_xmun", e.target.value)} /><span className="text-[9px] text-muted-foreground shrink-0">UF</span><Input className="h-6 text-[11px] w-12 text-center shrink-0 bg-transparent dark:bg-transparent" readOnly value={editing.coleta_uf || ""} onChange={e => set("coleta_uf", e.target.value.toUpperCase())} maxLength={2} /></div>
 <div className="flex items-center gap-1"><span className="text-[9px] text-muted-foreground w-12 shrink-0">Entrega</span><Input className="h-6 text-[11px] flex-1 min-w-0 bg-transparent dark:bg-transparent" readOnly value={editing.entrega_xmun || ""} onChange={e => set("entrega_xmun", e.target.value)} /><span className="text-[9px] text-muted-foreground shrink-0">UF</span><Input className="h-6 text-[11px] w-12 text-center shrink-0 bg-transparent dark:bg-transparent" readOnly value={editing.entrega_uf || ""} onChange={e => set("entrega_uf", e.target.value.toUpperCase())} maxLength={2} /></div>
-<div className="flex items-center gap-1"><span className="text-[9px] text-muted-foreground shrink-0">Distância</span><Input className="h-6 text-[11px] w-0 flex-1 min-w-0" value={editing.distancia_km || ""} onChange={e => set("distancia_km", e.target.value)} /><span className="text-[9px] text-muted-foreground shrink-0">km</span><span className="text-[9px] text-muted-foreground shrink-0">Duração</span><Input className="h-6 text-[11px] w-0 flex-1 min-w-0" value={editing.duracao_horas || ""} onChange={e => set("duracao_horas", e.target.value)} /><span className="text-[9px] text-muted-foreground shrink-0">h</span></div>
+<div className="flex items-center gap-1"><span className="text-[9px] text-muted-foreground shrink-0">Distância</span><MoneyInput className="h-6 text-[11px] w-0 flex-1 min-w-0" prefix="" decimals={0} value={editing.distancia_km || ""} onChange={v => set("distancia_km", v)} /><span className="text-[9px] text-muted-foreground shrink-0">km</span><span className="text-[9px] text-muted-foreground shrink-0">Duração</span><MoneyInput className="h-6 text-[11px] w-0 flex-1 min-w-0" prefix="" decimals={0} value={editing.duracao_horas || ""} onChange={v => set("duracao_horas", v)} /><span className="text-[9px] text-muted-foreground shrink-0">h</span></div>
 </div>
                     </div>
                   </div>
@@ -544,14 +553,14 @@ function PercursosPage() {
                     <div className="grid grid-cols-2 md:grid-cols-5 gap-1">
                       <Combo label="CST ICMS" value={editing.icms_cst || "00"} onPick={v => set("icms_cst", v)} opts={OPTS_CST} />
                       <Combo label="CFOP" value={editing.cfop || ""} onPick={v => set("cfop", v)} opts={OPTS_CFOP} />
-                      <T editing={editing} set={set} label="Alíq. ICMS %" k="icms_aliq" />
-                      <T editing={editing} set={set} label="Redução base %" k="reducao_base" />
-                      <T editing={editing} set={set} label="Crédito outorgado" k="credito_outorgado" />
-                      <T editing={editing} set={set} label="PIS %" k="pis_aliq" />
-                      <T editing={editing} set={set} label="COFINS %" k="cofins_aliq" />
-                      <T editing={editing} set={set} label="IR %" k="ir_aliq" />
-                      <T editing={editing} set={set} label="INSS %" k="inss_aliq" />
-                      <T editing={editing} set={set} label="CSLL %" k="csll_aliq" />
+                      <Num editing={editing} set={set} label="Alíq. ICMS %" k="icms_aliq" />
+                      <Num editing={editing} set={set} label="Redução base %" k="reducao_base" />
+                      <Num editing={editing} set={set} label="Crédito outorgado" k="credito_outorgado" />
+                      <Num editing={editing} set={set} label="PIS %" k="pis_aliq" />
+                      <Num editing={editing} set={set} label="COFINS %" k="cofins_aliq" />
+                      <Num editing={editing} set={set} label="IR %" k="ir_aliq" />
+                      <Num editing={editing} set={set} label="INSS %" k="inss_aliq" />
+                      <Num editing={editing} set={set} label="CSLL %" k="csll_aliq" />
                     </div>
                     <div>
                       <Label className="text-[10px] text-muted-foreground">Observação geral</Label>
@@ -567,10 +576,10 @@ function PercursosPage() {
                       <div className="col-span-2"><T editing={editing} set={set} label="Seguradora" k="seg_nome" /></div>
                       <T editing={editing} set={set} label="Apólice" k="seg_apolice" mono />
                       <T editing={editing} set={set} label="Averbação" k="seg_averbacao" mono />
-                      <T editing={editing} set={set} label="RCTR-C" k="seg_rctr_c" />
-                      <T editing={editing} set={set} label="RCF-DC" k="seg_rcf_dc" />
-                      <T editing={editing} set={set} label="Adicional" k="seg_adicional" />
-                      <T editing={editing} set={set} label="Total" k="seg_total" />
+                      <Num editing={editing} set={set} label="RCTR-C" k="seg_rctr_c" prefix="R$" />
+                      <Num editing={editing} set={set} label="RCF-DC" k="seg_rcf_dc" prefix="R$" />
+                      <Num editing={editing} set={set} label="Adicional" k="seg_adicional" prefix="R$" />
+                      <Num editing={editing} set={set} label="Total" k="seg_total" prefix="R$" />
                       <T editing={editing} set={set} label="Responsável" k="seg_responsavel" />
                       <div className="flex items-end pb-1">
                         <label className="flex items-center gap-1 text-[11px]"><input type="checkbox" checked={!!editing.seg_repassar} onChange={e => set("seg_repassar", e.target.checked)} /> Repassar</label>
@@ -595,7 +604,7 @@ function PercursosPage() {
                       <T editing={editing} set={set} label="Operadora" k="pedagio_operadora" />
                       <T editing={editing} set={set} label="CNPJ operadora" k="pedagio_cnpj" mono />
                       <T editing={editing} set={set} label="Nº TAG" k="pedagio_tag" mono />
-                      <T editing={editing} set={set} label="Vale (R$)" k="pedagio_vale" />
+                      <Num editing={editing} set={set} label="Vale (R$)" k="pedagio_vale" prefix="R$" />
                     </div>
                   </div>
                 </TabsContent>

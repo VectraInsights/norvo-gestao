@@ -1,3 +1,4 @@
+import { MoneyInput } from "@/components/erp/money-input";
 import { createFileRoute } from "@tanstack/react-router";
 import { PageHeader } from "@/components/erp/page-header";
 import { EmptyState } from "@/components/erp/empty-state";
@@ -457,14 +458,7 @@ function NotasEmitidas() {
 
               <div className="grid gap-2">
                 <Label htmlFor="valor">Valor Total (R$)</Label>
-                <Input 
-                  id="valor" 
-                  type="number" 
-                  step="0.01" 
-                  placeholder="0,00" 
-                  value={novaNotaValor}
-                  onChange={(e) => setNovaNotaValor(e.target.value)}
-                />
+                <MoneyInput id="valor" prefix="" placeholder="0,00" value={novaNotaValor} onChange={setNovaNotaValor} />
               </div>
             </div>
             <DialogFooter>

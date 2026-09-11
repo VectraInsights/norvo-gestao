@@ -1,3 +1,4 @@
+import { MoneyInput } from "@/components/erp/money-input";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { PageHeader } from "@/components/erp/page-header";
 import { Card, CardContent } from "@/components/ui/card";
@@ -138,8 +139,8 @@ function CondicoesTab({ empresaId }: { empresaId: string }) {
     <Card className="mt-4 shadow-panel"><CardContent className="p-4">
       <div className="mb-3 grid grid-cols-[2fr_1fr_1fr_auto] gap-2">
         <Input placeholder="Ex.: 30/60/90" value={form.nome} onChange={(e) => setForm({ ...form, nome: e.target.value })} />
-        <Input type="number" placeholder="Parcelas" value={form.parcelas} onChange={(e) => setForm({ ...form, parcelas: e.target.value })} />
-        <Input type="number" placeholder="Intervalo (dias)" value={form.intervalo_dias} onChange={(e) => setForm({ ...form, intervalo_dias: e.target.value })} />
+        <MoneyInput placeholder="Parcelas" prefix="" decimals={0} value={form.parcelas} onChange={(v) => setForm({ ...form, parcelas: v })} />
+        <MoneyInput placeholder="Intervalo (dias)" prefix="" decimals={0} value={form.intervalo_dias} onChange={(v) => setForm({ ...form, intervalo_dias: v })} />
         <Button onClick={add}><Plus className="mr-1 h-4 w-4" />Adicionar</Button>
       </div>
       <Table>

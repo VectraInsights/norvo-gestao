@@ -244,8 +244,7 @@ function Compras() {
                             {produtos.map((p) => <SelectItem key={p.id} value={p.id}>{p.nome}</SelectItem>)}
                           </SelectContent>
                         </Select>
-                        <Input type="number" min="0" step="0.001" value={it.quantidade}
-                          onChange={(e) => setItens((r) => r.map((x, i) => i === idx ? { ...x, quantidade: e.target.value } : x))} />
+                        <MoneyInput prefix="" decimals={3} value={it.quantidade} onChange={(v) => setItens((r) => r.map((x, i) => i === idx ? { ...x, quantidade: v } : x))} />
                         <MoneyInput value={it.custo_unitario}
                           onChange={(v) => setItens((r) => r.map((x, i) => i === idx ? { ...x, custo_unitario: v } : x))} />
                         <Button type="button" variant="ghost" size="icon"

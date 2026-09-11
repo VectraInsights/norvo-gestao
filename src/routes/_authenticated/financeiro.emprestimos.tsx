@@ -223,11 +223,11 @@ function EmprestimosPage() {
                   </div>
                   <div className="space-y-1.5">
                     <Label>Juros % a.m.</Label>
-                    <Input type="number" step="0.01" value={taxa} onChange={(e) => setTaxa(e.target.value)} />
+                    <MoneyInput prefix="" value={taxa} onChange={setTaxa} />
                   </div>
                   <div className="space-y-1.5">
                     <Label>Parcelas</Label>
-                    <Input type="number" min={1} value={parcelas} onChange={(e) => setParcelas(e.target.value)} />
+                    <MoneyInput prefix="" decimals={0} value={parcelas} onChange={setParcelas} />
                   </div>
                 </div>
                 <div className="grid gap-2 sm:grid-cols-2">

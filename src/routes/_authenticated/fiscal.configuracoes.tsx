@@ -1,3 +1,4 @@
+import { MoneyInput } from "@/components/erp/money-input";
 import { createFileRoute } from "@tanstack/react-router";
 import { PageHeader } from "@/components/erp/page-header";
 import { Button } from "@/components/ui/button";
@@ -551,43 +552,19 @@ function ConfigFiscais() {
                     <div className="grid grid-cols-2 gap-4">
                       <div className="grid gap-2">
                         <Label htmlFor="iss">ISS (%) - Serviços</Label>
-                        <Input 
-                          id="iss" 
-                          type="number" 
-                          step="0.01" 
-                          value={issRate} 
-                          onChange={(e) => setIssRate(e.target.value)} 
-                        />
+                        <MoneyInput id="iss" prefix="" value={issRate} onChange={setIssRate} />
                       </div>
                       <div className="grid gap-2">
                         <Label htmlFor="icms">ICMS (%) - Vendas</Label>
-                        <Input 
-                          id="icms" 
-                          type="number" 
-                          step="0.01" 
-                          value={icmsRate} 
-                          onChange={(e) => setIcmsRate(e.target.value)} 
-                        />
+                        <MoneyInput id="icms" prefix="" value={icmsRate} onChange={setIcmsRate} />
                       </div>
                       <div className="grid gap-2">
                         <Label htmlFor="pis">PIS (%)</Label>
-                        <Input 
-                          id="pis" 
-                          type="number" 
-                          step="0.01" 
-                          value={pisRate} 
-                          onChange={(e) => setPisRate(e.target.value)} 
-                        />
+                        <MoneyInput id="pis" prefix="" value={pisRate} onChange={setPisRate} />
                       </div>
                       <div className="grid gap-2">
                         <Label htmlFor="cofins">COFINS (%)</Label>
-                        <Input 
-                          id="cofins" 
-                          type="number" 
-                          step="0.01" 
-                          value={cofinsRate} 
-                          onChange={(e) => setCofinsRate(e.target.value)} 
-                        />
+                        <MoneyInput id="cofins" prefix="" value={cofinsRate} onChange={setCofinsRate} />
                       </div>
                     </div>
 

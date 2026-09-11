@@ -452,13 +452,7 @@ function Multas() {
                     </div>
                     <div>
                       <Label>PONTOS</Label>
-                      <Input
-                        type="number"
-                        min="0"
-                        max="20"
-                        value={form.pontos}
-                        onChange={(e) => set("pontos", e.target.value)}
-                      />
+                      <MoneyInput prefix="" decimals={0} value={form.pontos} onChange={(v) => set("pontos", v)} />
                     </div>
                   </div>
                   <div className="grid grid-cols-2 gap-3">

@@ -282,7 +282,7 @@ function ComissoesPage() {
                     </div>
                     <div className="space-y-1.5">
                       <Label>Percentual (%)</Label>
-                      <Input type="number" step="0.01" value={percentual} onChange={(e) => setPercentual(e.target.value)} />
+                      <MoneyInput prefix="" value={percentual} onChange={setPercentual} />
                     </div>
                   </div>
                   <p className="rounded-md bg-muted/50 p-3 text-sm">

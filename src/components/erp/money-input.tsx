@@ -6,6 +6,7 @@ type Props = Omit<React.InputHTMLAttributes<HTMLInputElement>, "value" | "onChan
   onChange: (value: string) => void;
   allowNegative?: boolean;
   prefix?: string;
+  decimals?: number;
 };
 
 /**
@@ -13,16 +14,17 @@ type Props = Omit<React.InputHTMLAttributes<HTMLInputElement>, "value" | "onChan
  * Emits the raw decimal string (e.g. "1234.56" or "-1234.56") via onChange.
  */
 export const MoneyInput = forwardRef<HTMLInputElement, Props>(function MoneyInput(
-  { value, onChange, allowNegative = false, prefix = "R$", className, onFocus, onClick, ...rest },
+  { value, onChange, allowNegative = false, prefix = "R$", decimals = 2, className, onFocus, onClick, ...rest },
   ref,
 ) {
   const raw = value === null || value === undefined ? "" : String(value);
+  const f = Math.pow(10, decimals);
   const negative = raw.startsWith("-");
   const display = (() => {
     if (raw === "" || raw === "-") return raw;
     const n = Number(raw);
     if (isNaN(n)) return "";
-    return n.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    return n.toLocaleString("pt-BR", { minimumFractionDigits: decimals, maximumFractionDigits: decimals });
   })();
 
   const moveCaretToEnd = (el: HTMLInputElement | null) => {
@@ -64,13 +66,13 @@ export const MoneyInput = forwardRef<HTMLInputElement, Props>(function MoneyInpu
             // Re-dispara o dígito como se tivesse sido digitado no fim
             if (/^\d$/.test(e.key)) {
               const digits = (display.replace(/\D/g, "") + e.key).slice(-12);
-              const val = (Number(digits) / 100).toFixed(2);
+              const val = (Number(digits) / f).toFixed(decimals);
               onChange(allowNegative && negative ? `-${val}` : val);
             } else if (e.key === "Backspace") {
               const digits = display.replace(/\D/g, "").slice(0, -1);
               if (!digits) { onChange(allowNegative && negative ? "-" : ""); }
               else {
-                const val = (Number(digits) / 100).toFixed(2);
+                const val = (Number(digits) / f).toFixed(decimals);
                 onChange(allowNegative && negative ? `-${val}` : val);
               }
             }
@@ -86,7 +88,7 @@ export const MoneyInput = forwardRef<HTMLInputElement, Props>(function MoneyInpu
         onChange={(e) => {
           const digits = e.target.value.replace(/\D/g, "");
           if (!digits) { onChange(allowNegative && negative ? "-" : ""); return; }
-          const val = (Number(digits) / 100).toFixed(2);
+          const val = (Number(digits) / f).toFixed(decimals);
           onChange(allowNegative && negative ? `-${val}` : val);
           // Após formatar, garante caret no fim
           requestAnimationFrame(() => moveCaretToEnd(e.target as HTMLInputElement));

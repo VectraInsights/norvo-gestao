@@ -581,13 +581,7 @@ function Viagens() {
                   </div>
                   <div>
                     <Label>KM rodado</Label>
-                    <Input
-                      type="number"
-                      step="0.1"
-                      min="0"
-                      value={form.km_rodado}
-                      onChange={(e) => set("km_rodado", e.target.value)}
-                    />
+                    <MoneyInput prefix="" decimals={1} value={form.km_rodado} onChange={(v) => set("km_rodado", v)} />
                   </div>
                 </div>
                 <div>

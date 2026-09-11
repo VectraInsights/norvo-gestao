@@ -1,4 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any -- tabelas novas ainda não estão em types.ts; padrão do projeto é cast as never/as any */
+import { MoneyInput } from "@/components/erp/money-input";
 import { createFileRoute } from "@tanstack/react-router";
 import { DateInput } from "@/components/erp/date-input";
 import { PageHeader } from "@/components/erp/page-header";
@@ -485,11 +486,10 @@ function FeriasPage() {
                                                 </div>
                                                 <div>
                                                   <Label>Venda (abono pecuniário)</Label>
-                                                  <Input type="number" min={0} max={10} value={formAbono}
+                                                  <MoneyInput prefix="" decimals={0} value={formAbono}
                                                     placeholder="0"
                                                     className="h-9 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
-                                                    onChange={(e) => {
-                                                      const v = e.target.value;
+                                                    onChange={(v) => {
                                                       setFormAbono(v);
                                                       if (formInicio) {
                                                         const abono = Number(v) || 0;

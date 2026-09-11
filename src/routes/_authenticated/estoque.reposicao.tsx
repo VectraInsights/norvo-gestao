@@ -1,3 +1,4 @@
+import { MoneyInput } from "@/components/erp/money-input";
 import { createFileRoute } from "@tanstack/react-router";
 import { DateInput } from "@/components/erp/date-input";
 import { PageHeader } from "@/components/erp/page-header";
@@ -351,16 +352,7 @@ function Reposicao() {
                         {num(p.estoque_minimo ?? 0)}
                       </TableCell>
                       <TableCell className="text-right">
-                        <Input
-                          type="number"
-                          min="0"
-                          step="0.001"
-                          className="ml-auto h-8 w-28 text-right"
-                          value={l.qtd}
-                          onChange={(e) =>
-                            setLinhas((r) => ({ ...r, [p.id]: { ...l, qtd: e.target.value } }))
-                          }
-                        />
+                        <MoneyInput className="ml-auto h-8 w-28" prefix="" decimals={3} value={l.qtd} onChange={(v) => setLinhas((r) => ({ ...r, [p.id]: { ...l, qtd: v } }))} />
                       </TableCell>
                       <TableCell className="text-right text-tabular">{brl(custo)}</TableCell>
                       <TableCell className="text-right text-tabular">

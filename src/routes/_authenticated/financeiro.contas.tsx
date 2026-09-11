@@ -1,3 +1,4 @@
+import { MoneyInput } from "@/components/erp/money-input";
 import { createFileRoute } from "@tanstack/react-router";
 import { PageHeader } from "@/components/erp/page-header";
 import { EmptyState } from "@/components/erp/empty-state";
@@ -447,8 +448,8 @@ function ContasFinanceiras() {
                                 </SelectContent>
                               </Select>
                             </div>
-                            <div><Label>Dia do fechamento *</Label><Input required type="number" min={1} max={31} value={form.cartao_dia_fechamento} onChange={(e) => setForm({ ...form, cartao_dia_fechamento: e.target.value })} /></div>
-                            <div><Label>Dia do vencimento *</Label><Input required type="number" min={1} max={31} value={form.cartao_dia_vencimento} onChange={(e) => setForm({ ...form, cartao_dia_vencimento: e.target.value })} /></div>
+                            <div><Label>Dia do fechamento *</Label><MoneyInput required prefix="" decimals={0} value={form.cartao_dia_fechamento} onChange={(v) => setForm({ ...form, cartao_dia_fechamento: v })} /></div>
+                            <div><Label>Dia do vencimento *</Label><MoneyInput required prefix="" decimals={0} value={form.cartao_dia_vencimento} onChange={(v) => setForm({ ...form, cartao_dia_vencimento: v })} /></div>
                           </div>
                         </>
                       )}

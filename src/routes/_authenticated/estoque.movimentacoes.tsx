@@ -312,13 +312,7 @@ function Movimentacoes() {
                   </div>
                   <div>
                     <Label>Quantidade</Label>
-                    <Input
-                      type="number"
-                      step="0.001"
-                      min="0"
-                      value={tr.quantidade}
-                      onChange={(e) => setTr({ ...tr, quantidade: e.target.value })}
-                    />
+                    <MoneyInput prefix="" decimals={3} value={tr.quantidade} onChange={(v) => setTr({ ...tr, quantidade: v })} />
                   </div>
                   <div>
                     <Label>Observação</Label>
@@ -390,12 +384,7 @@ function Movimentacoes() {
                     </div>
                     <div>
                       <Label>Quantidade</Label>
-                      <Input
-                        type="number"
-                        step="0.001"
-                        value={form.quantidade}
-                        onChange={(e) => setForm({ ...form, quantidade: e.target.value })}
-                      />
+                      <MoneyInput prefix="" decimals={3} value={form.quantidade} onChange={(v) => setForm({ ...form, quantidade: v })} />
                     </div>
                     <div>
                       <Label>Custo unit.</Label>

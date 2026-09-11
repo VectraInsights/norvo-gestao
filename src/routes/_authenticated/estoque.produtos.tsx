@@ -336,22 +336,11 @@ function Produtos() {
                   <div className="grid grid-cols-2 gap-3">
                     <div>
                       <Label>Estoque inicial</Label>
-                      <Input
-                        type="number"
-                        step="0.001"
-                        value={form.estoque_atual}
-                        onChange={(e) => setForm({ ...form, estoque_atual: e.target.value })}
-                      />
+                      <MoneyInput prefix="" decimals={3} value={form.estoque_atual} onChange={(v) => setForm({ ...form, estoque_atual: v })} />
                     </div>
                     <div>
                       <Label>Estoque mínimo</Label>
-                      <Input
-                        type="number"
-                        step="0.001"
-                        min="0"
-                        value={form.estoque_minimo}
-                        onChange={(e) => setForm({ ...form, estoque_minimo: e.target.value })}
-                      />
+                      <MoneyInput prefix="" decimals={3} value={form.estoque_minimo} onChange={(v) => setForm({ ...form, estoque_minimo: v })} />
                     </div>
                   </div>
                   <DialogFooter>
