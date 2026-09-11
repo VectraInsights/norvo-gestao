@@ -130,7 +130,7 @@ function CtePage() {
     toast.success("XML baixado");
   };
 
-  const downloadPdf = (doc: CteDoc) => {
+  const downloadPdf = async (doc: CteDoc) => {
     if (!doc.xml_assinado) { toast.error("XML não disponível para gerar PDF"); return; }
     try {
       const parser = new DOMParser();
@@ -145,11 +145,29 @@ function CtePage() {
         valor: parseFloat(det.querySelector("infNFe > total > ICMSTot > vNF")?.textContent || "0"),
         chave: det.querySelector("chNFe")?.textContent || "",
       }));
-      let obsPercurso = '';
-      try { const pj = JSON.parse(doc.xml_assinado); obsPercurso = (pj && pj.form && (pj.form.obsGerais || "")) || ""; } catch {}
       const gIcms = ["ICMS00", "ICMS20", "ICMS45", "ICMS60", "ICMS90", "ICMSOutraUF"].find(g => tag("infCte > imp > ICMS > " + g + " > CST"));
       const tagI = (f: string) => (gIcms ? tag("infCte > imp > ICMS > " + gIcms + " > " + f) : "");
-      const xmlObs = Array.from(xmlDoc.querySelectorAll("ObsCont > xTexto, ObsFisco > xTexto")).map(e => (e.textContent || "").trim()).filter(Boolean).join(" ");
+      const xmlObs = Array.from(xmlDoc.querySelectorAll("ObsCont > xTexto, ObsFisco > xTexto")).map(e => (e.textContent || "").trim()).filter(Boolean).join(" ");      let pjForm: any = {};
+      try { const pj = JSON.parse(doc.xml_assinado); if (pj && pj.form) pjForm = pj.form; } catch {}
+      const obsPercurso = pjForm.obsGerais || "";
+      const dg = (st: any) => String(st || "").replace(/\D/g, "");
+      let percObs = "", percColX = "", percColU = "", percEntX = "", percEntU = "";
+      try {
+        const remD = dg(tag("infCte > rem > CNPJ") || tag("infCte > rem > CPF"));
+        const dstD = dg(tag("infCte > dest > CNPJ") || tag("infCte > dest > CPF"));
+        let tomaD = dg(xmlDoc.querySelector("toma4 > CNPJ")?.textContent || xmlDoc.querySelector("toma4 > CPF")?.textContent || "");
+        if (!tomaD) {
+          const t3 = (xmlDoc.querySelector("toma3 > toma")?.textContent || "").trim();
+          tomaD = t3 === "0" ? remD : t3 === "3" ? dstD : "";
+        }
+        if (empresa && remD && dstD) {
+          const { data: prcs } = await supabase.from("cte_percursos" as any).select("obs_gerais,coleta_xmun,coleta_uf,entrega_xmun,entrega_uf,rem_cnpj,dest_cnpj,toma_cnpj").eq("empresa_id", (empresa as any).id);
+          const list = ((prcs as any[]) || []);
+          const hit = list.find(pp => dg(pp.rem_cnpj) === remD && dg(pp.dest_cnpj) === dstD && (!tomaD || dg(pp.toma_cnpj) === tomaD)) || list.find(pp => dg(pp.rem_cnpj) === remD && dg(pp.dest_cnpj) === dstD) || null;
+          if (hit) { percObs = hit.obs_gerais || ""; percColX = hit.coleta_xmun || ""; percColU = hit.coleta_uf || ""; percEntX = hit.entrega_xmun || ""; percEntU = hit.entrega_uf || ""; }
+        }
+      } catch {}
+      const xmlComps = Array.from(xmlDoc.querySelectorAll("vPrest > Comp")).map(cc => ({ nome: (cc.querySelector("xNome")?.textContent || "").trim(), valor: parseFloat(cc.querySelector("vComp")?.textContent || "0") || 0 })).filter(cc => cc.nome).slice(0, 8);
       const pdfBlob = gerarDactePdf({
         chave: doc.chave_acesso || "",
         numero: doc.numero || "",
@@ -162,6 +180,9 @@ function CtePage() {
         emitCidade: tag("infCte > emit > enderEmit > xMun") || "",
         emitUF: tag("infCte > emit > enderEmit > UF") || "",
         emitIE: tag("infCte > emit > IE") || "",
+        emitBairro: tag("infCte > emit > enderEmit > xBairro") || "",
+        emitCEP: tag("infCte > emit > enderEmit > CEP") || "",
+        emitFone: "",
         tomadorCnpj: tag("infCte > toma > CNPJ") || "",
         tomadorNome: tag("infCte > toma > xNome") || "",
         tomadorEndereco: `${tag("infCte > toma > enderToma > xLgr")} ${tag("infCte > toma > enderToma > nro")}`.trim(),
@@ -177,10 +198,10 @@ function CtePage() {
         destUF: tag("infCte > toma > enderToma > UF") || "",
         cfop: tag("infCte > infCarga > infQ > tpUnid") || "5353",
         naturezaOperacao: "TRANSPORTE",
-        origemCidade: tag("infCte > ide > xMunIni") || "",
-        origemUF: tag("infCte > ide > UFIni") || "",
-        destinoCidade: tag("infCte > ide > xMunFim") || "",
-        destinoUF: tag("infCte > ide > UFFim") || "",
+        origemCidade: tag("infCte > ide > xMunIni") || pjForm.xMunIni || percColX || "",
+        origemUF: tag("infCte > ide > UFIni") || pjForm.ufIni || percColU || "",
+        destinoCidade: tag("infCte > ide > xMunFim") || pjForm.xMunFim || percEntX || "",
+        destinoUF: tag("infCte > ide > UFFim") || pjForm.ufFim || percEntU || "",
         valorServico: parseFloat(tag("infCte > vPrest > vTPrest")) || Number(doc.valor_servico) || 0,
         valorCarga: parseFloat(tag("infCte > infCarga > vMerc")) || 0,
         pesoKg: parseFloat(tag("infCte > infCarga > qCarga")) || 0,
@@ -189,6 +210,7 @@ function CtePage() {
         icmsAliq: parseFloat(tagI("pICMS")) || 0,
         icmsValor: parseFloat(tagI("vICMS")) || 0,
         nFes,
+        comps: xmlComps,
         placa: tag("infModal > rodo > veic > placa") || "",
         placaReboque: "",
         rntrc: tag("infModal > rodo > RNTRC") || "",
@@ -196,7 +218,7 @@ function CtePage() {
         apolice: "",
         averbacao: "",
         protocolo: doc.protocolo_sefaz || "",
-        obs: [obsPercurso, xmlObs].filter(Boolean).join(" ") || "",
+        obs: [...new Set([obsPercurso, percObs, xmlObs].filter(Boolean))].join(" ") || "",
         qrCode: tag("infCTeSupl > qrCodCTe") || tag("qrCodCTe") || "",
         logoDataUrl: JUVENAL_LOGO || undefined,
       });
@@ -2172,6 +2194,9 @@ function CtePage() {
               emitEndereco: `${f.emit?.logradouro || ""} ${f.emit?.nro || ""} ${f.emit?.bairro || ""}`.trim(),
               emitCidade: f.emit?.xMun || f.xMunEnv || "",
               emitUF: f.emit?.uf || f.ufEnv || "",
+              emitBairro: (f.emit as any)?.bairro || "",
+              emitCEP: (f.emit as any)?.cep || "",
+              emitFone: (f.emit as any)?.fone || "",
               emitIE: f.emit?.ie || "ISENTO",
               tomadorCnpj: f.cnpjTomador || "",
               // Manter igual a HOMOLOG_TOMADOR_NOME em sefaz-cte.ts (SEFAZ-MG exige em homologação, erro 938)
@@ -2214,6 +2239,7 @@ function CtePage() {
               produtoPredominante: (f as any).produtoPredominante || "",
               outrasCaract: (f as any).outrasCaracteristicas || "",
               nFes,
+              comps: ([['Frete Valor', f.vPrest], ['Adicional', (f as any).adicionalPed], ['Desconto', (f as any).descontoPed], ['Outros', (f as any).outrosPed], ['Ad Valorem', (f as any).adValorem], ['GRIS', (f as any).gris], ['Coleta', (f as any).taxaColeta], ['Entrega', (f as any).taxaEntrega]] as Array<[string, any]>).filter(([, vv]) => Number(vv) !== 0).map(([nn, vv]) => ({ nome: nn, valor: Number(vv) || 0 })),
               placa: f.placaVeiculo || "",
               placaReboque: f.placaReboque || "",
               rntrc: f.rntrc || "",

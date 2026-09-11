@@ -83,6 +83,10 @@ interface DacteData {
   fl?: string;
   logoDataUrl?: string;
   qrCode?: string;
+  comps?: Array<{ nome: string; valor: number }>;
+  emitBairro?: string;
+  emitCEP?: string;
+  emitFone?: string;
 }
 
 function fmtCnpj(v: string): string {
