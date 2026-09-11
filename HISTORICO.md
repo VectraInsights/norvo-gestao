@@ -1370,3 +1370,26 @@ Commits CF `f1f9062` + Vercel `5f69095` + Worker `20b4dc02`.
 - Download do DACTE lê cidades do `det` (no Simplificado não há xMunIni no `ide`), destinatário prefere grupo `dest`/percurso (não o toma com texto de homologação), lê enderDest/enderRem/exped/receb quando existirem (no Simplificado esses grupos não existem no schema) e observa aviso se percurso não casar.
 
 Commits CF `8953415` + Vercel `155cfea` + Worker `861f1175`.
+
+---
+
+## Percursos: Tabela B, linha única e diálogo sem rolagem (11/09/2026)
+
+- CST com os 11 códigos da Tabela B por extenso (saiu o 99-ISSQN); idem no CT-e, com emissor mapeando 40/41/45/51 p/ ICMS45 e bloqueando 10/30/50/70 (sem grupo no CT-e).
+- Consignatário/Redespacho sempre visíveis em linha única (CNPJ+Nome+IE+CEP+Município+UF, Município antes da UF; endereço saiu da tela, segue gravado e buscado).
+- Fiscal: CST/CFOP 45/55 em linha flex e 8 alíquotas numa linha de 8; rota efetiva (coleta/entrega da tela, não do cadastro) no cálculo, na comparação e no salvamento — fim do vai-e-volta Contagem×Belém.
+- Diálogo cabe sem rolar (saiu linha Código/Nome, obs em 1 linha, paddings) e Observação estica até o Salvar (flex, sem resize manual).
+
+Commits CF `5f84898..f48e434` + `534741e` + Vercel espelhos + Worker redeployado a cada mudança.
+
+---
+
+## CT-e: viewer, travas, IE e sincronia (11/09/2026)
+
+- Botão olho abre o DACTE embutido no sistema (tela cheia); geração separada em `gerarDacteBlob`, download mantido.
+- Travas de emissão agregadas numa mensagem só: IE de remetente/destinatário/tomador/consig/redesp (ISENTO vale), motorista, placa da tração, reboque se tração for cavalo/truck (menos bitruck), valor > 0, CST/CFOP/alíquota, seguradora/apólice/responsável; pedágio padrão sem. Rascunho/preview não travam.
+- IE editável no box do Destinatário e no cabeçalho do Tomador; quedas NF-e → contato → percurso → digitado (a tabela de NF-es não guarda IE e o reload perdia).
+- Entrega segue redespacho/destino sozinha (com IBGE p/ cMun); sem percurso para a chave, cria sozinho e avisa; destinatário via NF-e/contatos (nunca texto de homologação); consulta mira o ambiente do documento; obs sem sobrepor a marca d'água.
+- Correções: `destNomeFix` fora do `try`, ordem do lookup de contatos, gzip só na recepção, bloco de travas fora do preview.
+
+Commits CF `4b9e2aa..437fb22` + Vercel espelhos + Worker redeployado a cada mudança.
