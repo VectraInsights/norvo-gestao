@@ -526,8 +526,8 @@ function PercursosPage() {
                         <div className="col-span-3"><T editing={editing} set={set} label="Nome" k="consig_nome" /></div>
                         <div className="col-span-2"><T editing={editing} set={set} label="IE" k="consig_ie" digits /></div>
                         <div className="col-span-2"><T editing={editing} set={set} label="CEP" k="consig_cep" mono /></div>
-                        <div className="col-span-1"><T editing={editing} set={set} label="UF" k="consig_uf" /></div>
                         <div className="col-span-2"><T editing={editing} set={set} label="Município" k="consig_xmun" /></div>
+                        <div className="col-span-1"><T editing={editing} set={set} label="UF" k="consig_uf" /></div>
                       </div>
                     </div>
                     <div className="border rounded px-2 py-1 space-y-1">
@@ -537,16 +537,16 @@ function PercursosPage() {
                         <div className="col-span-3"><T editing={editing} set={set} label="Nome" k="redesp_nome" /></div>
                         <div className="col-span-2"><T editing={editing} set={set} label="IE" k="redesp_ie" digits /></div>
                         <div className="col-span-2"><T editing={editing} set={set} label="CEP" k="redesp_cep" mono /></div>
-                        <div className="col-span-1"><T editing={editing} set={set} label="UF" k="redesp_uf" /></div>
                         <div className="col-span-2"><T editing={editing} set={set} label="Município" k="redesp_xmun" /></div>
+                        <div className="col-span-1"><T editing={editing} set={set} label="UF" k="redesp_uf" /></div>
                       </div>
                     </div>
                   </div>
                   <div className="border rounded p-2 space-y-1">
                     <p className="text-[11px] font-semibold">Fiscal</p>
                     <div className="grid grid-cols-2 md:grid-cols-5 gap-1">
-                      <Combo label="CST ICMS" value={editing.icms_cst || "00"} onPick={v => set("icms_cst", v)} opts={OPTS_CST} />
-                      <Combo label="CFOP" value={editing.cfop || ""} onPick={v => set("cfop", v)} opts={OPTS_CFOP} />
+                      <div className="col-span-2 md:col-span-5"><Combo label="CST ICMS" value={editing.icms_cst || "00"} onPick={v => set("icms_cst", v)} opts={OPTS_CST} /></div>
+                      <div className="col-span-2 md:col-span-5"><Combo label="CFOP" value={editing.cfop || ""} onPick={v => set("cfop", v)} opts={OPTS_CFOP} /></div>
                       <Num editing={editing} set={set} label="Alíq. ICMS %" k="icms_aliq" />
                       <Num editing={editing} set={set} label="Redução base %" k="reducao_base" />
                       <Num editing={editing} set={set} label="Crédito outorgado" k="credito_outorgado" />
