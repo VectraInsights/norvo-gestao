@@ -202,6 +202,7 @@ function PercursosPage() {
   const [calcando, setCalcando] = useState(false);
   const rotaRef = useRef<{ id: string | null; sig: string }>({ id: null, sig: "" });
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const [partesAbertas, setPartesAbertas] = useState({ consig: true, redesp: true });
 
   const { data: percursos, isLoading } = useQuery({
     enabled: !!empresa,
@@ -270,7 +271,14 @@ function PercursosPage() {
     }, 900);
     return () => { if (timerRef.current) clearTimeout(timerRef.current); };
   }, [editing ? editing.id : null, editing ? editing.rem_cnpj : "", editing ? editing.rem_cep : "", editing ? editing.rem_xmun : "", editing ? editing.rem_uf : "", editing ? editing.coleta_xmun : "", editing ? editing.coleta_uf : "", editing ? editing.dest_cnpj : "", editing ? editing.dest_cep : "", editing ? editing.dest_xmun : "", editing ? editing.dest_uf : "", editing ? editing.entrega_xmun : "", editing ? editing.entrega_uf : "", editing ? editing.redesp_cnpj : "", editing ? editing.redesp_cep : "", editing ? editing.redesp_xmun : "", editing ? editing.redesp_uf : ""]);
-  const salvar = useMutation({
+    useEffect(() => {
+    if (!editing) return;
+    setPartesAbertas({
+      consig: String(editing.consig_cnpj || "").replace(/\D/g, "").length > 0,
+      redesp: String(editing.redesp_cnpj || "").replace(/\D/g, "").length > 0,
+    });
+  }, [editing ? editing.id : null]);
+const salvar = useMutation({
     mutationFn: async () => {
       if (!editing) throw new Error("Nada para salvar");
       const pend: string[] = [];
@@ -494,7 +502,7 @@ function PercursosPage() {
                   <TabsTrigger value="geral" className="text-xs data-[state=active]:bg-primary/10 data-[state=active]:text-primary">Geral</TabsTrigger>
                                     <TabsTrigger value="seguro" className="text-xs data-[state=active]:bg-primary/10 data-[state=active]:text-primary">Seguro e Pedágio</TabsTrigger>
                 </TabsList>
-                <TabsContent value="geral" className="mt-2 space-y-2">
+                <TabsContent value="geral" className="mt-2 space-y-1">
                   <div className="grid grid-cols-[100px_1fr] gap-2">
                     <R label="Código" v={editing.codigo} />
                     <R label="Nome" v={editing.nome} />
@@ -520,8 +528,7 @@ function PercursosPage() {
                   
                                     <div className="space-y-2">
                     <div className="border rounded px-2 py-1 space-y-1">
-                      <p className="text-[11px] font-semibold">Consignatário</p>
-                      <div className="grid grid-cols-12 gap-1">
+                      <button type="button" onClick={() => setPartesAbertas(p => ({ ...p, consig: !p.consig }))} className="flex w-full items-center gap-1 text-[11px] font-semibold"><ChevronDown className={"h-3 w-3 transition-transform" + (partesAbertas.consig ? "" : " -rotate-90")} />Consignatário{partesAbertas.consig ? null : <span className="font-normal text-muted-foreground">- vazio</span>}</button>{partesAbertas.consig && (<div className="grid grid-cols-12 gap-1">
                         <div className="col-span-2"><T editing={editing} set={set} label="CNPJ" k="consig_cnpj" mono on14={(d: string) => lookupParte("consig", d)} /></div>
                         <div className="col-span-4"><T editing={editing} set={set} label="Nome" k="consig_nome" /></div>
                         <div className="col-span-2"><T editing={editing} set={set} label="IE" k="consig_ie" digits /></div>
@@ -531,11 +538,10 @@ function PercursosPage() {
                         <div className="col-span-2"><T editing={editing} set={set} label="Número" k="consig_nro" /></div>
                         <div className="col-span-3"><T editing={editing} set={set} label="Bairro" k="consig_bairro" /></div>
                         <div className="col-span-3"><T editing={editing} set={set} label="Município" k="consig_xmun" /></div>
-                      </div>
+                      </div>)}
                     </div>
                     <div className="border rounded px-2 py-1 space-y-1">
-                      <p className="text-[11px] font-semibold">Redespacho</p>
-                      <div className="grid grid-cols-12 gap-1">
+                      <button type="button" onClick={() => setPartesAbertas(p => ({ ...p, redesp: !p.redesp }))} className="flex w-full items-center gap-1 text-[11px] font-semibold"><ChevronDown className={"h-3 w-3 transition-transform" + (partesAbertas.redesp ? "" : " -rotate-90")} />Redespacho{partesAbertas.redesp ? null : <span className="font-normal text-muted-foreground">- vazio</span>}</button>{partesAbertas.redesp && (<div className="grid grid-cols-12 gap-1">
                         <div className="col-span-2"><T editing={editing} set={set} label="CNPJ" k="redesp_cnpj" mono on14={(d: string) => lookupParte("redesp", d)} /></div>
                         <div className="col-span-4"><T editing={editing} set={set} label="Nome" k="redesp_nome" /></div>
                         <div className="col-span-2"><T editing={editing} set={set} label="IE" k="redesp_ie" digits /></div>
@@ -545,7 +551,7 @@ function PercursosPage() {
                         <div className="col-span-2"><T editing={editing} set={set} label="Número" k="redesp_nro" /></div>
                         <div className="col-span-3"><T editing={editing} set={set} label="Bairro" k="redesp_bairro" /></div>
                         <div className="col-span-3"><T editing={editing} set={set} label="Município" k="redesp_xmun" /></div>
-                      </div>
+                      </div>)}
                     </div>
                   </div>
                   <div className="border rounded p-2 space-y-1">
