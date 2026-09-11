@@ -154,18 +154,29 @@ function CtePage() {
       let percObs = "", percColX = "", percColU = "", percEntX = "", percEntU = "";
       let percDstDoc = "", percDstNome = "", percDstX = "", percDstU = "", percDstLog = "", percDstNro = "", percDstBairro = "", percDstCep = "", percDstIE = "", percDstFone = "";
       let remD = "", dstD = "", tomaD = "";
+      let hit: any = null;
       try {
         remD = dg(tag("infCte > rem > CNPJ") || tag("infCte > rem > CPF"));
         dstD = dg(tag("infCte > dest > CNPJ") || tag("infCte > dest > CPF"));
-        tomaD = dg(xmlDoc.querySelector("toma4 > CNPJ")?.textContent || xmlDoc.querySelector("toma4 > CPF")?.textContent || "");
+        tomaD = dg(xmlDoc.querySelector("toma4 > CNPJ")?.textContent || xmlDoc.querySelector("toma4 > CPF")?.textContent || xmlDoc.querySelector("infCte > toma > CNPJ")?.textContent || "");
         if (!tomaD) {
-          const t3 = (xmlDoc.querySelector("toma3 > toma")?.textContent || "").trim();
+          const t3 = (xmlDoc.querySelector("toma3 > toma")?.textContent || xmlDoc.querySelector("infCte > toma > toma")?.textContent || "").trim();
           tomaD = t3 === "0" ? remD : t3 === "3" ? dstD : "";
         }
+          if (!dstD) {
+            try {
+              const chs = nFes.map((nn: any) => dg(nn.chave)).filter((cc: string) => cc.length === 44).slice(0, 5);
+              if (empresa && chs.length > 0) {
+                const { data: nfs } = await supabase.from("cte_nfes_pendentes" as any).select("chave,dest_cnpj").eq("empresa_id", (empresa as any).id).in("chave", chs);
+                const dd = [...new Set(((nfs as any[]) || []).map((nn: any) => dg(nn.dest_cnpj)).filter(Boolean))];
+                if (dd.length === 1) dstD = dd[0];
+              }
+            } catch {}
+          }
         if (empresa && remD && dstD) {
           const { data: prcs } = await supabase.from("cte_percursos" as any).select("obs_gerais,coleta_xmun,coleta_uf,entrega_xmun,entrega_uf,rem_cnpj,dest_cnpj,toma_cnpj,dest_nome,dest_xmun,dest_uf,dest_logradouro,dest_nro,dest_bairro,dest_cep,dest_ie,dest_fone").eq("empresa_id", (empresa as any).id);
           const list = ((prcs as any[]) || []);
-          const hit = list.find(pp => dg(pp.rem_cnpj) === remD && dg(pp.dest_cnpj) === dstD && (!tomaD || dg(pp.toma_cnpj) === tomaD)) || list.find(pp => dg(pp.rem_cnpj) === remD && dg(pp.dest_cnpj) === dstD) || null;
+          hit = list.find(pp => dg(pp.rem_cnpj) === remD && dg(pp.dest_cnpj) === dstD && (!tomaD || dg(pp.toma_cnpj) === tomaD)) || list.find(pp => dg(pp.rem_cnpj) === remD && dg(pp.dest_cnpj) === dstD) || null;
           if (hit) { percObs = hit.obs_gerais || ""; percColX = hit.coleta_xmun || ""; percColU = hit.coleta_uf || ""; percEntX = hit.entrega_xmun || ""; percEntU = hit.entrega_uf || ""; percDstDoc = hit.dest_cnpj || ""; percDstNome = hit.dest_nome || ""; percDstX = hit.dest_xmun || ""; percDstU = hit.dest_uf || ""; percDstLog = hit.dest_logradouro || ""; percDstNro = hit.dest_nro || ""; percDstBairro = hit.dest_bairro || ""; percDstCep = hit.dest_cep || ""; percDstIE = hit.dest_ie || ""; percDstFone = hit.dest_fone || ""; }
         }
       } catch {}
@@ -184,7 +195,22 @@ function CtePage() {
       if (!destNomeFix || destNomeFix === "CTE EMITIDO EM AMBIENTE DE HOMOLOGACAO - SEM VALORFISCAL") destNomeFix = ctDstNome;
       if (!destNomeFix || destNomeFix === "CTE EMITIDO EM AMBIENTE DE HOMOLOGACAO - SEM VALORFISCAL") destNomeFix = tag("infCte > toma > xNome") || "";
       if (destNomeFix === "CTE EMITIDO EM AMBIENTE DE HOMOLOGACAO - SEM VALORFISCAL") destNomeFix = "";
-      if (!percObs && !percColX) toast.warning("Percurso nao localizado: obs e cidades ficam em branco");
+      let healed = false;
+      if (!hit && empresa && remD.length === 14 && dstD.length === 14 && tomaD.length === 14) {
+        try {
+          const { data: mx } = await supabase.from("cte_percursos" as any).select("codigo").eq("empresa_id", (empresa as any).id).order("codigo", { ascending: false }).limit(1);
+          const last = parseInt(((((mx as any[]) || [])[0] as any)?.codigo || "0"), 10) || 0;
+          const detX1 = tag("det > xMunIni") || "";
+          const detX2 = tag("det > xMunFim") || "";
+          const nmA = tag("infCte > emit > xNome") || remD;
+          let nmB = tag("infCte > toma > xNome") || "";
+          if (!nmB || nmB === "CTE EMITIDO EM AMBIENTE DE HOMOLOGACAO - SEM VALORFISCAL") nmB = dstD;
+          const { error: insErr } = await supabase.from("cte_percursos" as any).insert({ empresa_id: (empresa as any).id, codigo: String(last + 1).padStart(4, "0"), nome: (nmA + " > " + nmB).slice(0, 120), rem_cnpj: remD, dest_cnpj: dstD, toma_cnpj: tomaD, coleta_xmun: detX1, coleta_uf: tag("infCte > ide > UFIni") || "", entrega_xmun: detX2, entrega_uf: tag("infCte > ide > UFFim") || "", cfop: tag("infCte > ide > CFOP") || "5353", obs_gerais: "" });
+          if (!insErr) healed = true;
+        } catch {}
+      }
+      if (!healed && !percObs && !percColX) toast.warning("Percurso nao localizado: obs e cidades ficam em branco");
+      if (healed) toast.info("Percurso criado automaticamente - complete a observacao em Percursos");
       const xmlComps = Array.from(xmlDoc.querySelectorAll("vPrest > Comp")).map(cc => ({ nome: (cc.querySelector("xNome")?.textContent || "").trim(), valor: parseFloat(cc.querySelector("vComp")?.textContent || "0") || 0 })).filter(cc => cc.nome).slice(0, 8);
       const pdfBlob = gerarDactePdf({
         chave: doc.chave_acesso || "",
@@ -2329,7 +2355,7 @@ function CtePage() {
 
       {/* Dialog de Visualizacao DACTE (emitidos) */}
       <Dialog open={!!viewUrl} onOpenChange={v => { if (!v && viewUrl) { URL.revokeObjectURL(viewUrl); setViewUrl(null); } }}>
-        <DialogContent className="max-w-4xl max-h-[90vh] flex flex-col p-0">
+        <DialogContent className="flex flex-col p-2 sm:p-4">
           <DialogHeader className="px-4 pt-4 pb-2">
             <DialogTitle className="flex items-center gap-2">
               <FileText className="h-4 w-4" /> DACTE {viewNum}
