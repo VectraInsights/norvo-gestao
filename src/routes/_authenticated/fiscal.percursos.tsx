@@ -85,9 +85,9 @@ function R({ label, v }: { label: string; v: any }) {
 function Parte({ titulo, nome, doc }: { titulo: string; nome: string; doc: string }) {
   return (
     <div className="grid grid-cols-12 gap-1 items-center">
-      <p className="col-span-2 text-xs font-semibold truncate border rounded px-2 py-1 bg-transparent dark:bg-transparent">{titulo}</p>
-      <p className="col-span-6 text-xs font-medium truncate border rounded px-2 py-1 bg-transparent dark:bg-transparent" title={nome}>{nome}</p>
-      <p className="col-span-4 text-[11px] text-muted-foreground truncate border rounded px-2 py-1 bg-transparent dark:bg-transparent">CNPJ {fmtDoc(doc)}</p>
+      <p className="col-span-2 text-xs font-semibold truncate border rounded px-2 py-0.5 bg-transparent dark:bg-transparent">{titulo}</p>
+      <p className="col-span-6 text-xs font-medium truncate border rounded px-2 py-0.5 bg-transparent dark:bg-transparent" title={nome}>{nome}</p>
+      <p className="col-span-4 text-[11px] text-muted-foreground truncate border rounded px-2 py-0.5 bg-transparent dark:bg-transparent">CNPJ {fmtDoc(doc)}</p>
     </div>
   );
 }
@@ -483,22 +483,18 @@ function PercursosPage() {
       </Card>
 
       <Dialog open={!!editing} onOpenChange={v => { if (!v) setEditing(null); }}>
-        <DialogContent>
+        <DialogContent className="p-3 sm:p-4">
           <div className="flex flex-col h-full gap-2">
             <DialogHeader>
               <DialogTitle className="text-sm">Editar percurso {editing?.codigo || ""} — {editing?.nome || ""}</DialogTitle>
             </DialogHeader>
             {editing && (
               <Tabs value={percTab} onValueChange={setPercTab} className="flex-1 flex flex-col min-h-0">
-                <TabsList className="w-fit">
+                <TabsList className="w-fit h-8">
                   <TabsTrigger value="geral" className="text-xs data-[state=active]:bg-primary/10 data-[state=active]:text-primary">Geral</TabsTrigger>
                                     <TabsTrigger value="seguro" className="text-xs data-[state=active]:bg-primary/10 data-[state=active]:text-primary">Seguro e Pedágio</TabsTrigger>
                 </TabsList>
                 <TabsContent value="geral" className="mt-2 space-y-1">
-                  <div className="grid grid-cols-[100px_1fr] gap-2">
-                    <R label="Código" v={editing.codigo} />
-                    <R label="Nome" v={editing.nome} />
-                  </div>
                                                       
                                     <div className="grid grid-cols-1 md:grid-cols-4 gap-2">
                     <div className="md:col-span-3 flex flex-col justify-between gap-2">
@@ -557,7 +553,7 @@ function PercursosPage() {
                     </div></div>
                     <div>
                       <Label className="text-[10px] text-muted-foreground">Observação geral</Label>
-                      <Textarea className="text-xs" rows={2} value={editing.obs_gerais ?? ""} onChange={e => set("obs_gerais", e.target.value.toUpperCase())} />
+                      <Textarea className="text-xs" rows={1} value={editing.obs_gerais ?? ""} onChange={e => set("obs_gerais", e.target.value.toUpperCase())} />
                     </div>
                   </div>
                 </TabsContent>
