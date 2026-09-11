@@ -201,74 +201,55 @@ export function gerarDactePdf(data: DacteData): Blob {
   // ═══════════════════════════════════════════════════
   // CANHOTO: declaração de recebimento (topo)
   // ═══════════════════════════════════════════════════
-  const canhH = 17;
-  drawBox(M, y, CW, canhH);
-  border();
-  doc.line(M + 128, y, M + 128, y + canhH);
-  doc.line(M + 164, y, M + 164, y + canhH);
-  setFont("normal", 4.5);
-  const decl = doc.splitTextToSize("DECLARO QUE RECEBI OS VOLUMES DESTE CONHECIMENTO EM PERFEITO ESTADO PELO QUE DOU POR CUMPRIDO O PRESENTE CONTRATO DE TRANSPORTE", 124);
-  doc.text(decl.slice(0, 2), M + 2, y + 3.5);
-  setFont("bold", 4.5);
-  doc.text("NOME:", M + 2, y + 11);
-  doc.text("RG:", M + 62, y + 11);
-  doc.text("ASSINATURA / CARIMBO", M + 2, y + 15.5);
-  setFont("bold", 4.5);
-  doc.text("TÉRMINO DA PRESTAÇÃO - DATA/HORA", M + 130, y + 3.5);
-  setFont("bold", 6);
-  doc.text("CT-E", M + 166, y + 4);
-  setFont("normal", 5);
-  doc.text(`Nº. DOCUMENTO ${(data.numero || "—").padStart(9, "0")}`, M + 166, y + 9);
-  doc.text(`SÉRIE ${(data.serie || "001").padStart(3, "0")}`, M + 166, y + 13.5);
-  y += canhH + 1;
+  
 
   // ═══════════════════════════════════════════════════
   // LINHA 1: EMPRESA | DACTE | MODAL
   // ═══════════════════════════════════════════════════
-  drawBox(M, y, CW, 11);
+    const qrHead = (data.qrCode || "").trim();
+  const headH = 24;
+  drawBox(M, y, CW, headH);
   black();
-  const hasLogo = !!data.logoDataUrl;
-  if (hasLogo) {
-    try { doc.addImage(data.logoDataUrl as string, "PNG", M + 1.5, y + 1.5, 24, 8); } catch { /* mantém só o nome */ }
+  let ex0 = M + 2;
+  if (qrHead) {
+    drawQr(doc, M + 2, y + 2, 20, qrHead);
+    ex0 = M + 26;
+  } else if (data.logoDataUrl) {
+    try { doc.addImage(data.logoDataUrl as string, "PNG", M + 1.5, y + 2, 24, 8); } catch {}
+    ex0 = M + 27;
   }
-  setFont("bold", 10);
-  doc.text(data.emitNome || "EMPRESA", (hasLogo ? M + 27 : M + 2), y + 7);
-  setFont("bold", 12);
-  doc.text("DACTE", W / 2 - 10, y + 5);
-  setFont("normal", 5.5);
-  doc.text("Documento Auxiliar do Conhecimento de Transporte Eletrônico", W / 2 - 35, y + 9.5);
-  setFont("bold", 7);
-  doc.text("MODAL", W - M - 30, y + 4);
   setFont("bold", 9);
-  doc.text("RODOVIÁRIO", W - M - 30, y + 9);
-  y += 12;
-
-  // ═══════════════════════════════════════════════════
-  // LINHA 2: ENDEREÇO EMITENTE | DADOS DOCUMENTO
-  // ═══════════════════════════════════════════════════
-  const hw2 = CW / 2;
-  drawBox(M, y, hw2, 16);
-  drawBox(M + hw2, y, hw2, 16);
-  black();
-  setFont("normal", 6);
-  doc.text(data.emitEndereco || "—", M + 2, y + 4.5);
-  doc.text(`${data.emitCidade || "—"} - ${data.emitUF || "—"}`, M + 2, y + 8.5);
-  doc.text(`CNPJ/CPF: ${fmtCnpj(data.emitCnpj)}   Insc.Estadual: ${data.emitIE || "—"}`, M + 2, y + 12.5);
-  const dx = M + hw2 + 2;
-  setFont("bold", 4.5);
-  doc.text("MODELO", dx, y + 3);
-  doc.text("SÉRIE", dx + 14, y + 3);
-  doc.text("NÚMERO", dx + 28, y + 3);
-  doc.text("FL", dx + 55, y + 3);
-  doc.text("DATA E HORA EMISSÃO", dx + 65, y + 3);
-  setFont("normal", 7);
-  doc.text(data.modelo || "57", dx, y + 8);
-  doc.text((data.serie || "001").padStart(3, "0"), dx + 14, y + 8);
-  doc.text((data.numero || "1").padStart(9, "0"), dx + 28, y + 8);
-  doc.text(data.fl || "1/1", dx + 55, y + 8);
+  doc.text(data.emitNome || "EMPRESA", ex0, y + 5);
   setFont("normal", 5);
-  doc.text(data.dataEmissao ? new Date(data.dataEmissao).toLocaleString("pt-BR") : "—", dx + 65, y + 8);
-  y += 17;
+  doc.text(`Endere\u00e7o ${data.emitEndereco || "\u2014"}   Bairro ${data.emitBairro || "\u2014"}`, ex0, y + 9.5);
+  doc.text(`Cidade ${data.emitCidade || "\u2014"}, ${data.emitUF || "\u2014"}   CEP ${data.emitCEP || "\u2014"}   Tel. ${data.emitFone || "\u2014"}`, ex0, y + 13.5);
+  doc.text(`CPF / CNPJ ${fmtCnpj(data.emitCnpj)}   Insc. Est. ${data.emitIE || "\u2014"}`, ex0, y + 17.5);
+  setFont("bold", 12);
+  doc.text("DACTE", M + 128, y + 6);
+  setFont("normal", 5.5);
+  doc.text("Documento Auxiliar do Conhecimento de Transporte Eletr\u00f4nico", M + 106, y + 10.5);
+  setFont("bold", 7);
+  doc.text("MODAL", W - M - 30, y + 5);
+  setFont("bold", 9);
+  doc.text("RODOVI\u00c1RIO", W - M - 30, y + 10);
+  y += headH + 1;
+  drawBox(M, y, CW, 9);
+  setFont("bold", 4.5);
+  doc.text("MODELO", M + 2, y + 3);
+  doc.text("S\u00c9RIE", M + 22, y + 3);
+  doc.text("N\u00daMERO", M + 38, y + 3);
+  doc.text("FL", M + 70, y + 3);
+  doc.text("DATA E HORA EMISS\u00c3O", M + 85, y + 3);
+  doc.text("INSC. SUFRAMA DESTINAT\u00c1RIO", M + 150, y + 3);
+  setFont("normal", 7);
+  doc.text(data.modelo || "57", M + 2, y + 7.5);
+  doc.text((data.serie || "001").padStart(3, "0"), M + 22, y + 7.5);
+  doc.text((data.numero || "1").padStart(9, "0"), M + 38, y + 7.5);
+  doc.text(data.fl || "1/1", M + 70, y + 7.5);
+  setFont("normal", 5);
+  doc.text(data.dataEmissao ? new Date(data.dataEmissao).toLocaleString("pt-BR") : "\u2014", M + 85, y + 7.5);
+  doc.text("\u2014", M + 150, y + 7.5);
+  y += 10;
 
   // ═══════════════════════════════════════════════════
   // BARRAS + CHAVE DE ACESSO
@@ -377,49 +358,30 @@ export function gerarDactePdf(data: DacteData): Blob {
   // ═══════════════════════════════════════════════════
   const remDestH = 28;
   const ry = twoColSection("REMETENTE", "DESTINATÁRIO", y, remDestH);
-  addrBlock(M, ry, [
-    `ENDEREÇO: ${data.remEndereco || data.remBairro || "—"}`,
-    `MUNICÍPIO: ${data.remCidade || "—"}   UF: ${data.remUF || "—"}   CEP: ${data.remCEP || "—"}   PAÍS: ${data.remPais || "Brasil"}`,
-    `CNPJ/CPF: ${fmtCnpj(data.remCnpj)}   INSCRIÇÃO ESTADUAL: ${data.remIE || "—"}   FONE: ${data.remFone || "—"}`,
-    `NOME: ${data.remNome || "—"}`,
-  ]);
-  addrBlock(M + hw, ry, [
-    `ENDEREÇO: ${data.destEndereco || data.destBairro || "—"}`,
-    `MUNICÍPIO: ${data.destCidade || "—"}   UF: ${data.destUF || "—"}   CEP: ${data.destCEP || "—"}   PAÍS: ${data.destPais || "Brasil"}`,
-    `CNPJ/CPF: ${fmtCnpj(data.destCnpj)}   INSCRIÇÃO ESTADUAL: ${data.destIE || "—"}   FONE: ${data.destFone || "—"}`,
-    `NOME: ${data.destNome || "—"}`,
-  ]);
+    addrBlock(M, ry, [     `Remetente : ${data.remNome || "\u2014"}` ,     `Endere\u00e7o : ${data.remEndereco || "\u2014"}` ,     `Munic\u00edpio : ${data.remCidade || "\u2014"}   CEP : ${data.remCEP || "\u2014"}` ,     `Bairro : ${data.remBairro || "\u2014"}   Insc. Est : ${data.remIE || "\u2014"}` ,     `CPF / CNPJ : ${fmtCnpj(data.remCnpj)}   UF : ${data.remUF || "\u2014"}   Fone : ${data.remFone || "\u2014"}` ,     `Pa\u00eds : ${data.remPais || "Brasil"}` ,   ]);
+    addrBlock(M + hw, ry, [     `Destinat\u00e1rio : ${data.destNome || "\u2014"}` ,     `Endere\u00e7o : ${data.destEndereco || "\u2014"}` ,     `Munic\u00edpio : ${data.destCidade || "\u2014"}   CEP : ${data.destCEP || "\u2014"}` ,     `Bairro : ${data.destBairro || "\u2014"}   Insc. Est : ${data.destIE || "\u2014"}` ,     `CPF / CNPJ : ${fmtCnpj(data.destCnpj)}   UF : ${data.destUF || "\u2014"}   Fone : ${data.destFone || "\u2014"}` ,     `Pa\u00eds : ${data.destPais || "Brasil"}` ,   ]);
   y += remDestH + 1;
 
   // ═══════════════════════════════════════════════════
   // EXPEDIDOR | RECEBEDOR
   // ═══════════════════════════════════════════════════
-  const expRecH = 18;
+  const expRecH = 25;
   const ery = twoColSection("EXPEDIDOR", "RECEBEDOR", y, expRecH);
-  addrBlock(M, ery, [
-    `ENDEREÇO: ${data.expEndereco || "—"}`,
-    `MUNICÍPIO: ${data.expCidade || "—"}   UF: ${data.expUF || "—"}   CEP: —   PAÍS: Brasil`,
-    `CNPJ/CPF: ${fmtCnpj(data.expCnpj || "")}   INSCR. EST.: ${data.expIE || "—"}   FONE: —`,
-    `NOME: ${data.expNome || "—"}`,
-  ]);
-  addrBlock(M + hw, ery, [
-    `ENDEREÇO: ${data.recEndereco || "—"}`,
-    `MUNICÍPIO: ${data.recCidade || "—"}   UF: ${data.recUF || "—"}   CEP: —   PAÍS: Brasil`,
-    `CNPJ/CPF: ${fmtCnpj(data.recCnpj || "")}   INSCR. EST.: ${data.recIE || "—"}   FONE: —`,
-    `NOME: ${data.recNome || "—"}`,
-  ]);
+    addrBlock(M, ery, [     `Endere\u00e7o : ${data.expEndereco || "\u2014"}` ,     `Munic\u00edpio : ${data.expCidade || "\u2014"}   CEP : \u2014` ,     `Bairro : \u2014   Insc. Est : ${data.expIE || "\u2014"}` ,     `CPF / CNPJ : ${fmtCnpj(data.expCnpj || "")}   UF : ${data.expUF || "\u2014"}   Fone : \u2014` ,     `Pa\u00eds : Brasil` ,   ]);
+    addrBlock(M + hw, ery, [     `Endere\u00e7o : ${data.recEndereco || "\u2014"}` ,     `Munic\u00edpio : ${data.recCidade || "\u2014"}   CEP : \u2014` ,     `Bairro : \u2014   Insc. Est : ${data.recIE || "\u2014"}` ,     `CPF / CNPJ : ${fmtCnpj(data.recCnpj || "")}   UF : ${data.recUF || "\u2014"}   Fone : \u2014` ,     `Pa\u00eds : Brasil` ,   ]);
   y += expRecH + 1;
 
   // ═══════════════════════════════════════════════════
   // TOMADOR DO SERVIÇO (full width)
   // ═══════════════════════════════════════════════════
-  const tomH = 18;
+  const tomH = 22;
   sectionTitle(M, y, CW, "TOMADOR DO SERVIÇO");
   drawBox(M, y + 5, CW, tomH - 5);
-  addrBlock(M, y + 5, [
-    `NOME: ${data.tomadorNome || "—"}`,
-    `ENDEREÇO: ${data.tomadorEndereco || "—"}`,
-    `MUNICÍPIO: ${data.tomadorCidade || "—"}   UF: ${data.tomadorUF || "—"}   CEP: —   PAÍS: Brasil`,
+    addrBlock(M, y + 5, [
+    `NOME: ${data.tomadorNome || "\u2014"}` ,
+    `ENDERE\u00c7O: ${data.tomadorEndereco || "\u2014"}` ,
+    `MUNIC\u00cdPIO: ${data.tomadorCidade || "\u2014"}   UF: ${data.tomadorUF || "\u2014"}   CEP: \u2014   PA\u00cdS: Brasil` ,
+    `CNPJ/CPF: ${fmtCnpj(data.tomadorCnpj)}` ,
   ]);
   y += tomH + 1;
 
@@ -457,18 +419,28 @@ export function gerarDactePdf(data: DacteData): Blob {
   // ═══════════════════════════════════════════════════
   sectionTitle(M, y, CW, "COMPONENTES DO VALOR DA PRESTAÇÃO DE SERVIÇO");
   y += 5;
-  drawBox(M, y, CW, 5);
+    const comps = (data.comps && data.comps.length > 0 ? data.comps : [{ nome: "Frete Valor", valor: data.valorServico }]).slice(0, 8);
+  const compRows = Math.max(1, Math.ceil(comps.length / 2));
+  drawBox(M, y, CW, 5 + compRows * 5);
   setFont("bold", 4.5);
   doc.text("NOME", M + 2, y + 3.5);
-  doc.text("VALOR", M + 55, y + 3.5);
-  doc.text("NOME", M + 80, y + 3.5);
-  doc.text("VALOR", M + 125, y + 3.5);
-  doc.text("VALOR TOTAL DO SERVIÇO", W - M - 35, y + 3.5);
-  y += 5.5;
-  drawBox(M, y, CW, 5);
+  doc.text("VALOR", M + 48, y + 3.5);
+  doc.text("NOME", M + 98, y + 3.5);
+  doc.text("VALOR", M + 144, y + 3.5);
   setFont("normal", 5.5);
-  doc.text("Frete Valor", M + 2, y + 3.5);
-  doc.text(fmtBrl(data.valorServico), M + 55, y + 3.5);
+  for (let ci = 0; ci < comps.length; ci += 2) {
+    const cyy = y + 8.5 + (ci / 2) * 5;
+    doc.text(String(comps[ci].nome || "\u2014").slice(0, 26), M + 2, cyy);
+    doc.text(fmtBrl(Number(comps[ci].valor) || 0), M + 48, cyy);
+    if (comps[ci + 1]) {
+      doc.text(String(comps[ci + 1].nome || "\u2014").slice(0, 26), M + 98, cyy);
+      doc.text(fmtBrl(Number(comps[ci + 1].valor) || 0), M + 144, cyy);
+    }
+  }
+  y += 5.5 + compRows * 5;
+  drawBox(M, y, CW, 5);
+  setFont("bold", 4.5);
+  doc.text("VALOR TOTAL DO SERVI\u00c7O", W - M - 62, y + 3.5);
   setFont("bold", 6);
   doc.text(fmtBrl(data.valorServico), W - M - 25, y + 3.5);
   y += 6;
@@ -500,6 +472,32 @@ export function gerarDactePdf(data: DacteData): Blob {
   const redBc = Number(data.reducaoBase ?? 0) || 0;
   doc.text(`${redBc.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}%`, M + 152, y + 6);
   doc.text("—", M + 178, y + 6);
+  y += 8;
+  const ibsBase = Number(data.icmsBase) || 0;
+  const vCBS = ibsBase * 0.009, vIBSUf = ibsBase * 0.001;
+  sectionTitle(M, y, CW, "Tributa\u00e7\u00e3o da Reforma Tribut\u00e1ria (IBS/CBS)");
+  y += 5;
+  drawBox(M, y, CW, 7);
+  setFont("bold", 4.5);
+  doc.text("CST", M + 2, y + 3);
+  doc.text("Classifica\u00e7\u00e3o Tribut\u00e1ria", M + 12, y + 3);
+  doc.text("Base de C\u00e1lculo", M + 76, y + 3);
+  doc.text("% CBS", M + 102, y + 3);
+  doc.text("Valor CBS", M + 113, y + 3);
+  doc.text("% IBS Mun", M + 133, y + 3);
+  doc.text("Valor IBS Mun", M + 146, y + 3);
+  doc.text("% IBS UF", M + 166, y + 3);
+  doc.text("Valor IBS UF", M + 177, y + 3);
+  setFont("normal", 5);
+  doc.text("000", M + 2, y + 6);
+  doc.text("000001 - Tributadas integralmente IBS/CBS", M + 12, y + 6);
+  doc.text(fmtBrl(ibsBase), M + 76, y + 6);
+  doc.text("0,90", M + 102, y + 6);
+  doc.text(fmtBrl(vCBS), M + 113, y + 6);
+  doc.text("0,00", M + 133, y + 6);
+  doc.text(fmtBrl(0), M + 146, y + 6);
+  doc.text("0,10", M + 166, y + 6);
+  doc.text(fmtBrl(vIBSUf), M + 177, y + 6);
   y += 8;
 
   // ═══════════════════════════════════════════════════
@@ -608,7 +606,32 @@ export function gerarDactePdf(data: DacteData): Blob {
   // ═══════════════════════════════════════════════════
   // RODAPÉ
   // ═══════════════════════════════════════════════════
-  dkGray();
+    doc.saveGraphicsState();
+  try { (doc as any).setLineDashPattern([2, 2], 0); } catch {}
+  doc.line(M, y, M + CW, y);
+  doc.restoreGraphicsState();
+  border();
+  y += 2;
+  const recH = 17;
+  drawBox(M, y, CW, recH);
+  border();
+  doc.line(M + 128, y, M + 128, y + recH);
+  doc.line(M + 164, y, M + 164, y + recH);
+  setFont("normal", 4.5);
+  const decl2 = doc.splitTextToSize("DECLARO QUE RECEBI OS VOLUMES DESTE CONHECIMENTO EM PERFEITO ESTADO PELO QUE DOU POR CUMPRIDO O PRESENTE CONTRATO DE TRANSPORTE", 124);
+  doc.text(decl2.slice(0, 2), M + 2, y + 3.5);
+  setFont("bold", 4.5);
+  doc.text("NOME:", M + 2, y + 11);
+  doc.text("RG:", M + 62, y + 11);
+  doc.text("ASSINATURA / CARIMBO", M + 2, y + 15.5);
+  doc.text("T\u00c9RMINO DA PRESTA\u00c7\u00c3O - DATA/HORA", M + 130, y + 3.5);
+  setFont("bold", 6);
+  doc.text("CT-E", M + 166, y + 4);
+  setFont("normal", 5);
+  doc.text(`N\u00ba. DOCUMENTO ${(data.numero || "1").padStart(9, "0")}`, M + 166, y + 9);
+  doc.text(`S\u00c9RIE ${(data.serie || "001").padStart(3, "0")}`, M + 166, y + 13.5);
+  y += recH + 1;
+dkGray();
   setFont("normal", 4.5);
   doc.text(`DATA E HORA DA IMPRESSÃO: ${new Date().toLocaleString("pt-BR")}`, M, y + 2);
   doc.text("Norvo Gestão", W - M - 22, y + 2);
