@@ -152,6 +152,7 @@ function CtePage() {
       const obsPercurso = pjForm.obsGerais || "";
       const dg = (st: any) => String(st || "").replace(/\D/g, "");
       let percObs = "", percColX = "", percColU = "", percEntX = "", percEntU = "";
+      let percDstDoc = "", percDstNome = "", percDstX = "", percDstU = "", percDstLog = "", percDstNro = "", percDstBairro = "", percDstCep = "", percDstIE = "", percDstFone = "";
       try {
         const remD = dg(tag("infCte > rem > CNPJ") || tag("infCte > rem > CPF"));
         const dstD = dg(tag("infCte > dest > CNPJ") || tag("infCte > dest > CPF"));
@@ -161,10 +162,14 @@ function CtePage() {
           tomaD = t3 === "0" ? remD : t3 === "3" ? dstD : "";
         }
         if (empresa && remD && dstD) {
-          const { data: prcs } = await supabase.from("cte_percursos" as any).select("obs_gerais,coleta_xmun,coleta_uf,entrega_xmun,entrega_uf,rem_cnpj,dest_cnpj,toma_cnpj").eq("empresa_id", (empresa as any).id);
+          const { data: prcs } = await supabase.from("cte_percursos" as any).select("obs_gerais,coleta_xmun,coleta_uf,entrega_xmun,entrega_uf,rem_cnpj,dest_cnpj,toma_cnpj,dest_nome,dest_xmun,dest_uf,dest_logradouro,dest_nro,dest_bairro,dest_cep,dest_ie,dest_fone").eq("empresa_id", (empresa as any).id);
           const list = ((prcs as any[]) || []);
           const hit = list.find(pp => dg(pp.rem_cnpj) === remD && dg(pp.dest_cnpj) === dstD && (!tomaD || dg(pp.toma_cnpj) === tomaD)) || list.find(pp => dg(pp.rem_cnpj) === remD && dg(pp.dest_cnpj) === dstD) || null;
-          if (hit) { percObs = hit.obs_gerais || ""; percColX = hit.coleta_xmun || ""; percColU = hit.coleta_uf || ""; percEntX = hit.entrega_xmun || ""; percEntU = hit.entrega_uf || ""; }
+          if (hit) { percObs = hit.obs_gerais || ""; percColX = hit.coleta_xmun || ""; percColU = hit.coleta_uf || ""; percEntX = hit.entrega_xmun || ""; percEntU = hit.entrega_uf || ""; percDstDoc = hit.dest_cnpj || ""; percDstNome = hit.dest_nome || ""; percDstX = hit.dest_xmun || ""; percDstU = hit.dest_uf || ""; percDstLog = hit.dest_logradouro || ""; percDstNro = hit.dest_nro || ""; percDstBairro = hit.dest_bairro || ""; percDstCep = hit.dest_cep || ""; percDstIE = hit.dest_ie || ""; percDstFone = hit.dest_fone || ""; }
+          let destNomeFix = tag("infCte > dest > xNome") || "";
+          if (!destNomeFix || destNomeFix === "CTE EMITIDO EM AMBIENTE DE HOMOLOGACAO - SEM VALORFISCAL") destNomeFix = percDstNome;
+          if (!destNomeFix || destNomeFix === "CTE EMITIDO EM AMBIENTE DE HOMOLOGACAO - SEM VALORFISCAL") destNomeFix = tag("infCte > toma > xNome") || "";
+          if (destNomeFix === "CTE EMITIDO EM AMBIENTE DE HOMOLOGACAO - SEM VALORFISCAL") destNomeFix = "";
         }
       } catch {}
       if (!percObs && !percColX) toast.warning("Percurso nao localizado: obs e cidades ficam em branco");
@@ -193,15 +198,37 @@ function CtePage() {
         remNome: tag("infCte > emit > xNome") || "",
         remCidade: tag("infCte > emit > enderEmit > xMun") || "",
         remUF: tag("infCte > emit > enderEmit > UF") || "",
-        destCnpj: tag("infCte > toma > CNPJ") || "",
-        destNome: tag("infCte > toma > xNome") || "",
-        destCidade: tag("infCte > toma > enderToma > xMun") || "",
-        destUF: tag("infCte > toma > enderToma > UF") || "",
+        remEndereco: ((tag("infCte > emit > enderEmit > xLgr") || "") + " " + (tag("infCte > emit > enderEmit > nro") || "")).trim(),
+        remBairro: tag("infCte > emit > enderEmit > xBairro") || "",
+        remCEP: tag("infCte > emit > enderEmit > CEP") || "",
+        remIE: tag("infCte > emit > IE") || "",
+        remFone: "",
+        destCnpj: tag("infCte > dest > CNPJ") || percDstDoc || tag("infCte > toma > CNPJ") || "",
+        destNome: destNomeFix,
+        destCidade: tag("infCte > dest > enderDest > xMun") || percDstX || tag("infCte > toma > enderToma > xMun") || "",
+        destUF: tag("infCte > dest > enderDest > UF") || percDstU || tag("infCte > toma > enderToma > UF") || "",
+        destEndereco: ((tag("infCte > dest > enderDest > xLgr") || "") + " " + (tag("infCte > dest > enderDest > nro") || "")).trim() || ((percDstLog || "") + " " + (percDstNro || "")).trim() || "",
+        destBairro: tag("infCte > dest > enderDest > xBairro") || percDstBairro || "",
+        destCEP: tag("infCte > dest > enderDest > CEP") || percDstCep || "",
+        destIE: tag("infCte > dest > IE") || percDstIE || "",
+        destFone: percDstFone || "",
+        expCnpj: tag("infCte > exped > CNPJ") || "",
+        expNome: tag("infCte > exped > xNome") || "",
+        expCidade: tag("infCte > exped > enderExped > xMun") || "",
+        expUF: tag("infCte > exped > enderExped > UF") || "",
+        expEndereco: ((tag("infCte > exped > enderExped > xLgr") || "") + " " + (tag("infCte > exped > enderExped > nro") || "")).trim(),
+        expIE: tag("infCte > exped > IE") || "",
+        recCnpj: tag("infCte > receb > CNPJ") || "",
+        recNome: tag("infCte > receb > xNome") || "",
+        recCidade: tag("infCte > receb > enderReceb > xMun") || "",
+        recUF: tag("infCte > receb > enderReceb > UF") || "",
+        recEndereco: ((tag("infCte > receb > enderReceb > xLgr") || "") + " " + (tag("infCte > receb > enderReceb > nro") || "")).trim(),
+        recIE: tag("infCte > receb > IE") || "",
         cfop: tag("infCte > infCarga > infQ > tpUnid") || "5353",
         naturezaOperacao: "TRANSPORTE",
-        origemCidade: tag("infCte > ide > xMunIni") || pjForm.xMunIni || percColX || "",
+        origemCidade: tag("det > xMunIni") || tag("infCte > ide > xMunIni") || pjForm.xMunIni || percColX || "",
         origemUF: tag("infCte > ide > UFIni") || pjForm.ufIni || percColU || "",
-        destinoCidade: tag("infCte > ide > xMunFim") || pjForm.xMunFim || percEntX || "",
+        destinoCidade: tag("det > xMunFim") || tag("infCte > ide > xMunFim") || pjForm.xMunFim || percEntX || "",
         destinoUF: tag("infCte > ide > UFFim") || pjForm.ufFim || percEntU || "",
         valorServico: parseFloat(tag("infCte > vPrest > vTPrest")) || Number(doc.valor_servico) || 0,
         valorCarga: parseFloat(tag("infCte > infCarga > vMerc")) || 0,
