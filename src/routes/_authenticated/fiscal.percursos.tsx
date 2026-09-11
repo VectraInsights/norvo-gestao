@@ -494,7 +494,7 @@ function PercursosPage() {
                   <TabsTrigger value="geral" className="text-xs data-[state=active]:bg-primary/10 data-[state=active]:text-primary">Geral</TabsTrigger>
                                     <TabsTrigger value="seguro" className="text-xs data-[state=active]:bg-primary/10 data-[state=active]:text-primary">Seguro e Pedágio</TabsTrigger>
                 </TabsList>
-                <TabsContent value="geral" className="mt-2 space-y-1">
+                <TabsContent value="geral" className="mt-2 space-y-1 flex-1 flex flex-col min-h-0">
                                                       
                                     <div className="grid grid-cols-1 md:grid-cols-4 gap-2">
                     <div className="md:col-span-3 flex flex-col justify-between gap-2">
@@ -538,8 +538,7 @@ function PercursosPage() {
                       </div>
                     </div>
                   </div>
-                  <div className="border rounded p-2 space-y-1">
-                    <p className="text-[11px] font-semibold">Fiscal</p>
+                  <div className="border rounded p-2 space-y-1 flex flex-col flex-1"><p className="text-[11px] font-semibold">Fiscal</p>
                     <div className="space-y-1"><div className="flex flex-col gap-1 md:flex-row"><div className="md:w-[45%]"><Combo label="CST ICMS" value={editing.icms_cst || "00"} onPick={v => set("icms_cst", v)} opts={OPTS_CST} /></div><div className="md:flex-1">
                       <Combo label="CFOP" value={editing.cfop || ""} onPick={v => set("cfop", v)} opts={OPTS_CFOP} /></div></div><div className="grid grid-cols-2 md:grid-cols-8 gap-1">
                       <Num editing={editing} set={set} label="Alíq. ICMS %" k="icms_aliq" />
@@ -551,9 +550,8 @@ function PercursosPage() {
                       <Num editing={editing} set={set} label="INSS %" k="inss_aliq" />
                       <Num editing={editing} set={set} label="CSLL %" k="csll_aliq" />
                     </div></div>
-                    <div>
-                      <Label className="text-[10px] text-muted-foreground">Observação geral</Label>
-                      <Textarea className="text-xs" rows={1} value={editing.obs_gerais ?? ""} onChange={e => set("obs_gerais", e.target.value.toUpperCase())} />
+                    <div className="flex-1 flex flex-col min-h-0"><Label className="text-[10px] text-muted-foreground">Observação geral</Label>
+                      <Textarea className="text-xs flex-1 resize-none" rows={1} value={editing.obs_gerais ?? ""} onChange={e => set("obs_gerais", e.target.value.toUpperCase())} />
                     </div>
                   </div>
                 </TabsContent>
