@@ -13,7 +13,7 @@ import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
-import { Truck, Plus, FileText, Search, Ban, UploadCloud, FileCode, MapPin, Package, Building2, Trash2, Filter, Calendar, CheckCircle2, ChevronsUpDown, Check, ReceiptText, Pencil, Download, Settings2, X, Loader2, ClipboardList } from "lucide-react";
+import { Truck, Plus, FileText, Search, Ban, UploadCloud, FileCode, MapPin, Package, Building2, Trash2, Filter, Calendar, CheckCircle2, ChevronsUpDown, Check, ReceiptText, Pencil, Download, Eye, Settings2, X, Loader2, ClipboardList } from "lucide-react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useEmpresaAtual } from "@/hooks/use-empresa";
@@ -113,7 +113,7 @@ function CtePage() {
   }, [docs]);
 
   const downloadXml = (doc: CteDoc) => {
-    if (!doc.xml_assinado) { toast.error("XML não disponível"); return; }
+    if (!doc.xml_assinado) throw new Error("XML sem dados para gerar PDF");
     let xmlContent = doc.xml_assinado;
     try {
       const parsed = JSON.parse(doc.xml_assinado);
@@ -130,7 +130,7 @@ function CtePage() {
     toast.success("XML baixado");
   };
 
-  const downloadPdf = async (doc: CteDoc) => {
+  const gerarDacteBlob = async (doc: CteDoc): Promise<Blob> => {
     if (!doc.xml_assinado) { toast.error("XML não disponível para gerar PDF"); return; }
     try {
       const parser = new DOMParser();
@@ -262,6 +262,14 @@ function CtePage() {
         qrCode: tag("infCTeSupl > qrCodCTe") || tag("qrCodCTe") || "",
         logoDataUrl: JUVENAL_LOGO || undefined,
       });
+      return pdfBlob;
+    } catch (e: any) {
+      throw e;
+    }
+  };
+  const downloadPdf = async (doc: CteDoc) => {
+    try {
+      const pdfBlob = await gerarDacteBlob(doc);
       const url = URL.createObjectURL(pdfBlob);
       const a = document.createElement("a");
       a.href = url;
@@ -269,6 +277,17 @@ function CtePage() {
       a.click();
       URL.revokeObjectURL(url);
       toast.success("PDF baixado");
+    } catch (e: any) {
+      toast.error("Erro ao gerar PDF", { description: e.message });
+    }
+  };
+  const visualizarPdf = async (doc: CteDoc) => {
+    try {
+      const pdfBlob = await gerarDacteBlob(doc);
+      if (viewUrl) URL.revokeObjectURL(viewUrl);
+      const url = URL.createObjectURL(pdfBlob);
+      setViewUrl(url);
+      setViewNum((doc as any).numero || "");
     } catch (e: any) {
       toast.error("Erro ao gerar PDF", { description: e.message });
     }
@@ -1066,6 +1085,8 @@ function CtePage() {
   });
 
   const [previewOpen, setPreviewOpen] = useState(false);
+  const [viewUrl, setViewUrl] = useState<string | null>(null);
+  const [viewNum, setViewNum] = useState("");
   const [previewData, setPreviewData] = useState<{ xml: string; chave: string; proximo: string; ambiente: string; form: any } | null>(null);
   const percursoAplicadoKey = useRef("");
  const { data: percursosDB, error: percursosError } = useQuery({
@@ -1470,6 +1491,7 @@ function CtePage() {
                         {d.status === "autorizado" && (
                           <>
                             <Button size="icon" variant="ghost" className="h-7 w-7 text-sky-600" onClick={() => downloadXml(d)} title="Baixar XML"><FileCode className="h-3.5 w-3.5" /></Button>
+                            <Button size="icon" variant="ghost" className="h-7 w-7 text-sky-600" onClick={() => visualizarPdf(d)} title="Visualizar DACTE"><Eye className="h-3.5 w-3.5" /></Button>
                             <Button size="icon" variant="ghost" className="h-7 w-7 text-amber-600" onClick={() => downloadPdf(d)} title="Baixar DACTE (PDF)"><Download className="h-3.5 w-3.5" /></Button>
                           </>
                         )}
@@ -2301,6 +2323,21 @@ function CtePage() {
             <Button onClick={() => { setPreviewOpen(false); emitir.mutate(); }} disabled={emitir.isPending || !form.cnpjTomador || !form.xNomeTomador}>
               {emitir.isPending ? "Enviando..." : <><Truck className="mr-1 h-3.5 w-3.5" /> Enviar Doc-e</>}
             </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Dialog de Visualizacao DACTE (emitidos) */}
+      <Dialog open={!!viewUrl} onOpenChange={v => { if (!v && viewUrl) { URL.revokeObjectURL(viewUrl); setViewUrl(null); } }}>
+        <DialogContent className="max-w-4xl max-h-[90vh] flex flex-col p-0">
+          <DialogHeader className="px-4 pt-4 pb-2">
+            <DialogTitle className="flex items-center gap-2">
+              <FileText className="h-4 w-4" /> DACTE {viewNum}
+            </DialogTitle>
+          </DialogHeader>
+          {viewUrl && <iframe src={viewUrl} className="flex-1 w-full min-h-[500px] border-0" />}
+          <DialogFooter className="px-4 pb-4">
+            <Button variant="outline" onClick={() => { if (viewUrl) URL.revokeObjectURL(viewUrl); setViewUrl(null); }}>Fechar</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
