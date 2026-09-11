@@ -349,6 +349,7 @@ function CtePage() {
     Math.max(0, num2(f.vPrest) + num2(f.adicionalPed) + num2(f.outrosPed) + num2(f.adValorem) + num2(f.gris) + num2(f.taxaColeta) + num2(f.taxaEntrega) - num2(f.descontoPed));
 
   // Pedágio: com cobrança (Free Flow / TAGs) os dados são obrigatórios — alimentam o MDF-e e barram a emissão
+  const Traciona = (tipo: any) => { const t = String(tipo || "").toLowerCase(); return t.indexOf("cavalo") >= 0 || (t.indexOf("truck") >= 0 && t.indexOf("bitruck") < 0); };
   const validarPedagio = (f: typeof emptyForm) => {
     const modo = (f.pedagioPagto || "sem-pagamento") as string;
     if (modo === "sem-pagamento") return;
@@ -1008,10 +1009,10 @@ function CtePage() {
       if (String(form.cnpjConsignatario || "").replace(/\D/g, "").length === 14 && !ieOk(form.ieConsignatario)) pend.push("IE do consignatario");
       if (String(form.cnpjRedespacho || "").replace(/\D/g, "").length === 14 && !ieOk(form.ieRedespacho)) pend.push("IE do redespacho");
       if (!String(form.motoristaNome || "").trim()) pend.push("Motorista");
-      if (!String(form.placaVeiculo || "").trim()) pend.push("Placa do cavalo (veiculo 1)");
+      if (!String(form.placaVeiculo || "").trim()) pend.push("Placa da tracao (veiculo 1)");
       else {
         const vv = (veiculos || []).find(v => String(v.placa || "").toUpperCase() === String(form.placaVeiculo || "").toUpperCase());
-        if (vv && String(vv.tipo || "").toLowerCase().indexOf("cavalo") >= 0 && !String(form.semiReboque1 || "").trim()) pend.push("Placa do reboque (veiculo 1 cadastrado como cavalo)");
+        if (vv && Traciona(vv.tipo) && !String(form.semiReboque1 || "").trim()) pend.push("Placa do reboque (veiculo 1 de tracao)");
       }
       if (!(parseFloat(form.vPrest) > 0)) pend.push("Valor do servico maior que zero");
       if (!String(form.icmsCST || "").trim()) pend.push("CST do ICMS");
@@ -1152,29 +1153,7 @@ function CtePage() {
     mutationFn: async () => {
       if (!empresa) throw new Error("Empresa não selecionada");
       const chaves = selecionadas.size > 0 ? Array.from(selecionadas) : mercadorias.map(m => m.chave);
-      const pend: string[] = [];
-      const ieOk = (vv: any) => String(vv || "").trim().length > 0;
-      if (!ieOk((empresa as any).ie)) pend.push("IE do remetente (empresa)");
-      const selDocs = mercadorias.filter(m => chaves.includes(m.chave));
-      if (selDocs.filter(m => !ieOk((m as any).destIE)).length > 0) pend.push("IE do destinatario");
-      if (!ieOk(form.ieTomador)) pend.push("IE do tomador");
-      if (String(form.cnpjConsignatario || "").replace(/\D/g, "").length === 14 && !ieOk(form.ieConsignatario)) pend.push("IE do consignatario");
-      if (String(form.cnpjRedespacho || "").replace(/\D/g, "").length === 14 && !ieOk(form.ieRedespacho)) pend.push("IE do redespacho");
-      if (!String(form.motoristaNome || "").trim()) pend.push("Motorista");
-      if (!String(form.placaVeiculo || "").trim()) pend.push("Placa do cavalo (veiculo 1)");
-      else {
-        const vv = (veiculos || []).find(v => String(v.placa || "").toUpperCase() === String(form.placaVeiculo || "").toUpperCase());
-        if (vv && String(vv.tipo || "").toLowerCase().indexOf("cavalo") >= 0 && !String(form.semiReboque1 || "").trim()) pend.push("Placa do reboque (veiculo 1 cadastrado como cavalo)");
-      }
-      if (!(parseFloat(form.vPrest) > 0)) pend.push("Valor do servico maior que zero");
-      if (!String(form.icmsCST || "").trim()) pend.push("CST do ICMS");
-      if (!String(form.cfop || "").trim()) pend.push("CFOP");
-      if (!String(form.icmsAliq || "").trim()) pend.push("Aliquota do ICMS");
-      if (!String(form.seguradoraNome || "").trim()) pend.push("Seguradora");
-      if (!String(form.apolice || "").trim()) pend.push("Apolice do seguro");
-      if (!String(form.segResponsavel || "").trim()) pend.push("Responsavel do seguro");
-      if (pend.length > 0) throw new Error("Para emitir informe: " + pend.join("; "));
-      validarPedagio(form);
+
       return previewCteXmlFn({ data: { empresaId: empresa.id, input: {
         ambiente: form.ambiente,
         toma: form.toma, cnpjTomador: form.cnpjTomador, xNomeTomador: form.xNomeTomador, ufTomador: form.ufTomador, cMunTomador: form.cMunTomador, xMunTomador: form.xMunTomador,
@@ -2041,7 +2020,7 @@ function CtePage() {
                       <div><Label className="text-[10px] text-muted-foreground">% Agregados</Label><Input className="h-6 text-[10px]" placeholder="0.00" /></div>
                     </div>
                     <div className="grid grid-cols-3 gap-1">
-                      <div><Label className="text-[10px] text-muted-foreground">Cavalo</Label>
+                      <div><Label className="text-[10px] text-muted-foreground">{"Tra\u00e7\u00e3o"}</Label>
                         <Popover open={veiculoOpen === "placaVeiculo"} onOpenChange={v => { setVeiculoOpen(v ? "placaVeiculo" : null); if (v) setVeiculoQuery(""); }}>
                           <PopoverTrigger asChild>
                             <Button variant="outline" role="combobox" aria-expanded={veiculoOpen === "placaVeiculo"} className="h-6 text-[10px] justify-between w-full font-mono uppercase font-normal">
