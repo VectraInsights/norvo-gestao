@@ -1000,9 +1000,9 @@ function CtePage() {
   });
 
   const consultar = useMutation({
-    mutationFn: async (chave: string) => {
+    mutationFn: async ({ chave, ambiente }: { chave: string; ambiente?: string }) => {
       if (!empresa) throw new Error("Empresa não selecionada");
-      return consultarCteFn({ data: { empresaId: empresa.id, chave } });
+      return consultarCteFn({ data: { empresaId: empresa.id, chave, ambiente } });
     },
     onSuccess: (ret: any) => toast.success(`Consulta: ${ret?.cStat || "?"} ${ret?.xMotivo || ""}`),
     onError: (e: Error) => toast.error(e.message),
@@ -1454,7 +1454,7 @@ function CtePage() {
                       </>
                     ) : (
                       <>
-                        <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => d.chave_acesso && consultar.mutate(d.chave_acesso)} title="Consultar SEFAZ"><Search className="h-3.5 w-3.5" /></Button>
+                        <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => d.chave_acesso && consultar.mutate({ chave: d.chave_acesso, ambiente: (d as any).ambiente })} title="Consultar SEFAZ"><Search className="h-3.5 w-3.5" /></Button>
                         {d.status === "autorizado" && (
                           <>
                             <Button size="icon" variant="ghost" className="h-7 w-7 text-sky-600" onClick={() => downloadXml(d)} title="Baixar XML"><FileCode className="h-3.5 w-3.5" /></Button>

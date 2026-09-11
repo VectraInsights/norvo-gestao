@@ -95,7 +95,7 @@ export const consultarCteFn = createServerFn({ method: "POST" }).validator((d:{e
   const { createClient }=await import("@supabase/supabase-js");
   const supa=createClient(process.env.SUPABASE_URL||"",process.env.SUPABASE_SERVICE_ROLE_KEY||"");
   const { data: cfg}=await supa.from("nfe_config").select("ambiente").eq("empresa_id",data.empresaId).maybeSingle();
-  const ambiente=cfg?.ambiente==="homologacao"?"homologacao":"producao";
+  const ambiente=((data as any).ambiente==="homologacao"||(data as any).ambiente==="producao")?(data as any).ambiente:(cfg?.ambiente==="homologacao"?"homologacao":"producao");
   return consultarCte(cert.pfx, cert.senha, data.chave, ambiente, cert.uf);
 });
 export const consultarCteChaveFn = createServerFn({ method: "POST" }).validator((d:{empresaId:string;chave:string})=>d).handler(async ({data})=>{

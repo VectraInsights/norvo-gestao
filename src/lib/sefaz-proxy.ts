@@ -184,7 +184,7 @@ export async function handleSefazProxy(request: Request): Promise<Response> {
       }
       case "consultarCte": {
         const { consultarCte } = await import("@/lib/sefaz-cte");
-        result = await consultarCte(pfxBytes, senha, (body as any).chave, ambiente, uf);
+        result = await consultarCte(pfxBytes, senha, (body as any).chave, (((body as any).ambiente === "homologacao" || (body as any).ambiente === "producao") ? (body as any).ambiente : ambiente), uf);
         break;
       }
       case "consultarCteChave": {
