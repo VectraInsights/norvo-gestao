@@ -1355,9 +1355,18 @@ Commits CF `9113282` + Vercel `eba27ef` + Worker `91291ef6` (+ fix `64b9d36`: o 
 ---
 
 ## DACTE com barras e QR reais (11/09/2026)
-
 - Barras CODE-128C reais da chave (MOC 4.00) via JsBarcode+canvas; QR vetorial do `qrCodCTe` do XML via qrcode-generator (módulos desenhados no PDF, 25mm). Fallback p/ barras simuladas fora do browser ou sem chave.
 - Download lê `qrCodCTe` (`infCTeSupl`) do XML autorizado. Preview segue sem QR (só existe após autorizar) e com barras reais se já houver chave.
 - Libs vendorizadas em `src/lib/vendor/` (bundles oficiais jsbarcode 3.12.3 + qrcode-generator 2.0.4) porque o `package.json` está com lock de escrita — documentar ao destravar.
 
 Commits CF `f1f9062` + Vercel `5f69095` + Worker `20b4dc02`.
+
+---
+
+## Consulta SEFAZ e DACTE fiel ao XML (11/09/2026)
+
+- Consulta MG mandava gzip+base64 (copiado da recepção) e voltava 225; consulta espera XML puro — corrigido, passou a responder 100/217 de verdade.
+- Consulta usava ambiente do config da empresa (padrão produção!); agora usa o ambiente do próprio documento (tela → server → proxy). 217 anterior era pergunta na produção por doc de homologação.
+- Download do DACTE lê cidades do `det` (no Simplificado não há xMunIni no `ide`), destinatário prefere grupo `dest`/percurso (não o toma com texto de homologação), lê enderDest/enderRem/exped/receb quando existirem (no Simplificado esses grupos não existem no schema) e observa aviso se percurso não casar.
+
+Commits CF `8953415` + Vercel `155cfea` + Worker `861f1175`.
