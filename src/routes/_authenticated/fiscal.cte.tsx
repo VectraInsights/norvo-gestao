@@ -1005,8 +1005,12 @@ function CtePage() {
       const ieOk = (vv: any) => String(vv || "").trim().length > 0;
       if (!ieOk((empresa as any).ie)) pend.push("IE do remetente (empresa)");
       const selDocs = mercadorias.filter(m => chaves.includes(m.chave));
-      if (selDocs.filter(m => !ieOk(form.ieDestinatario || (m as any).destIE)).length > 0) pend.push("IE do destinatario");
-      if (!ieOk(form.ieTomador)) pend.push("IE do tomador");
+            const m0 = (selDocs[0] || {}) as any;
+      const destCt2 = (contatoByDoc.get(String(m0.destCnpj || "").replace(/\D/g, "")) || {}) as any;
+      const destIeOk = form.ieDestinatario || m0.destIE || destCt2.ie || ((percursoMatch as any)?.dest_ie || "");
+      if (selDocs.length > 0 && !ieOk(destIeOk)) pend.push("IE do destinatario");
+            const tomCt = (contatoByDoc.get(String(form.cnpjTomador || "").replace(/\D/g, "")) || {}) as any;
+      if (!ieOk(form.ieTomador || tomCt.ie)) pend.push("IE do tomador");
       if (String(form.cnpjConsignatario || "").replace(/\D/g, "").length === 14 && !ieOk(form.ieConsignatario)) pend.push("IE do consignatario");
       if (String(form.cnpjRedespacho || "").replace(/\D/g, "").length === 14 && !ieOk(form.ieRedespacho)) pend.push("IE do redespacho");
       if (!String(form.motoristaNome || "").trim()) pend.push("Motorista");
@@ -1257,7 +1261,7 @@ function CtePage() {
       dest_cnpj: d.destDoc, dest_nome: a.dest || d.destNome || "", dest_ie: form.ieDestinatario || a.destIE || cDesP.ie || "", dest_uf: a.destUF || cDesP.uf || "",
       dest_cmun: a.destCMun || "", dest_xmun: a.destXMun || cDesP.cidade || "", dest_logradouro: a.destLogradouro || cDesP.logradouro || "",
       dest_nro: cDesP.numero || "", dest_bairro: a.destBairro || cDesP.bairro || "", dest_cep: (a.destCEP || cDesP.cep || "").replace(/\D/g, "") || "", dest_fone: a.destFone || cDesP.telefone || "",
-      toma_tipo: form.toma, toma_cnpj: d.tomaDoc, toma_nome: form.xNomeTomador || "", toma_ie: form.ieTomador || "",
+      toma_tipo: form.toma, toma_cnpj: d.tomaDoc, toma_nome: form.xNomeTomador || "", toma_ie: form.ieTomador || (((contatoByDoc.get(String(form.cnpjTomador || "").replace(/\D/g, "")) || {}) as any).ie || ""),
       toma_uf: form.ufTomador || "", toma_cmun: form.cMunTomador || "", toma_xmun: form.xMunTomador || "",
       toma_logradouro: form.logradouroTomador || "", toma_nro: form.nroTomador || "", toma_bairro: form.bairroTomador || "",
       toma_cep: form.cepTomador || "", toma_fone: form.foneTomador || "", toma_email: form.emailTomador || "",
@@ -1645,6 +1649,10 @@ function CtePage() {
                       </Command>
                     </PopoverContent>
                   </Popover>
+                  <div className="mt-1 flex items-center gap-1 text-[10px] text-muted-foreground">
+                    <span className="truncate">CNPJ: {form.cnpjTomador ? fmtCnpjInput(form.cnpjTomador) : "-"}</span>
+                    <span className="inline-flex items-center gap-1 shrink-0">IE: <Input className="h-5 w-32 text-[10px] px-1" placeholder="ISENTO" value={form.ieTomador || ((contatoByDoc.get(String(form.cnpjTomador || "").replace(/\D/g, "")) || {}) as any).ie || ""} onChange={e=>setForm({...form,ieTomador:e.target.value.replace(/\D/g, "")})} /></span>
+                  </div>
                 </div>
                 <div><Label className="text-[10px] text-muted-foreground">Mod / Série</Label><Input className="h-7 text-xs font-mono w-[92px] text-center px-1 bg-transparent" value="57 / 001" readOnly /></div>
                 <div><Label className="text-[10px] text-muted-foreground">Percurso</Label><Input className="h-7 text-xs font-mono w-[76px] text-center px-1 bg-transparent" value={percursoMatch?.codigo || "—"} readOnly title={percursoMatch?.nome || "Nenhum percurso associado"} /></div>
@@ -1751,7 +1759,7 @@ function CtePage() {
                     </div>
                     <div className="space-y-0.5 text-[10px]">
                       <p className="font-medium text-xs">{active.dest || "—"}</p>
-                      <p className="text-muted-foreground">CNPJ: {active.destCnpj ? active.destCnpj.replace(/(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})/, "$1.$2.$3/$4-$5") : "—"} {<span className="inline-flex items-center gap-1">IE: <Input className="h-5 w-32 text-[10px] px-1" placeholder="ISENTO" value={form.ieDestinatario || ""} onChange={e=>setForm({...form,ieDestinatario:e.target.value.replace(/\D/g, "")})} /></span>}</p>
+                      <p className="text-muted-foreground">CNPJ: {active.destCnpj ? active.destCnpj.replace(/(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})/, "$1.$2.$3/$4-$5") : "—"} {<span className="inline-flex items-center gap-1">IE: <Input className="h-5 w-32 text-[10px] px-1" placeholder="ISENTO" value={form.ieDestinatario || destIE} onChange={e=>setForm({...form,ieDestinatario:e.target.value.replace(/\D/g, "")})} /></span>}</p>
                       <p className="text-muted-foreground">{[destLgr && `${destLgr}${destNro ? `, ${destNro}` : ""}`, destBai].filter(Boolean).join(" — ") || "—"}</p>
                       <p className="text-muted-foreground">{destCid || "—"}-{destUF || "—"} {destCEP ? `CEP: ${destCEP}` : ""}</p>
                       {destFone && <p className="text-muted-foreground">Fone: {destFone}</p>}
