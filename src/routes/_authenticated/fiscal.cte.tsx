@@ -1279,6 +1279,35 @@ function CtePage() {
     aplicarPercurso(m);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open, form.cnpjTomador, mercadorias, selecionadas, percursos]);
+  const entregaSrcRef = useRef("");
+  useEffect(() => {
+    if (!open) return;
+    const hasRed = (form.cnpjRedespacho || "").replace(/\D/g, "").length === 14;
+    const sel = mercadorias.filter(m => selecionadas.has(m.chave));
+    const a = ((sel[0] || mercadorias[0] || {}) as any);
+    const dx = hasRed ? (form.xMunRedespacho || "") : (a.destXMun || "");
+    const du = hasRed ? (form.ufRedespacho || "") : (a.destUF || "");
+    const dc = hasRed ? "" : (a.destCMun || "");
+    if (!dx) return;
+    const sig = (hasRed ? "R" : "D") + "|" + dx + "|" + du;
+    if (entregaSrcRef.current === sig) return;
+    entregaSrcRef.current = sig;
+    setForm(f => ({ ...f, xMunFim: dx, ufFim: du, ...(dc ? { cMunFim: dc } : {}) }));
+    if (hasRed && du) {
+      const mySig = sig;
+      (async () => {
+        try {
+          const r = await fetch("https://brasilapi.com.br/api/ibge/municipios/v1/" + du);
+          if (!r.ok) return;
+          const arr = await r.json();
+          const norm = (st: string) => (st || "").toUpperCase().normalize("NFD").replace(/[^A-Z ]/g, "").replace(/ +/g, " ").trim();
+          const hit = ((arr as any[]) || []).find((mm: any) => norm(mm.nome) === norm(dx));
+          if (hit && hit.codigo_ibge && entregaSrcRef.current === mySig) setForm(f => ({ ...f, cMunFim: String(hit.codigo_ibge) }));
+        } catch {}
+      })();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open, form.cnpjRedespacho, form.xMunRedespacho, form.ufRedespacho, form.cnpjTomador, mercadorias, selecionadas, percursos]);
   return (
     <div className="p-6 space-y-4">
       <PageHeader eyebrow="Fiscal" title="CT-e" description="Conhecimento de Transporte Eletrônico (57) — emissão robusta estilo STM, com múltiplas NF-es por CT-e." actions={<Button size="sm" onClick={() => novoCtePreservandoFiscal()}><Plus className="mr-1 h-4 w-4" /> Novo CT-e</Button>} />
