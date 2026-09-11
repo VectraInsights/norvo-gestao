@@ -169,12 +169,6 @@ function CtePage() {
           if (hit) { percObs = hit.obs_gerais || ""; percColX = hit.coleta_xmun || ""; percColU = hit.coleta_uf || ""; percEntX = hit.entrega_xmun || ""; percEntU = hit.entrega_uf || ""; percDstDoc = hit.dest_cnpj || ""; percDstNome = hit.dest_nome || ""; percDstX = hit.dest_xmun || ""; percDstU = hit.dest_uf || ""; percDstLog = hit.dest_logradouro || ""; percDstNro = hit.dest_nro || ""; percDstBairro = hit.dest_bairro || ""; percDstCep = hit.dest_cep || ""; percDstIE = hit.dest_ie || ""; percDstFone = hit.dest_fone || ""; }
         }
       } catch {}
-      let destNomeFix = tag("infCte > dest > xNome") || "";
-      if (!destNomeFix || destNomeFix === "CTE EMITIDO EM AMBIENTE DE HOMOLOGACAO - SEM VALORFISCAL") destNomeFix = percDstNome;
-      if (!destNomeFix || destNomeFix === "CTE EMITIDO EM AMBIENTE DE HOMOLOGACAO - SEM VALORFISCAL") destNomeFix = ctDstNome;
-      if (!destNomeFix || destNomeFix === "CTE EMITIDO EM AMBIENTE DE HOMOLOGACAO - SEM VALORFISCAL") destNomeFix = tag("infCte > toma > xNome") || "";
-      if (destNomeFix === "CTE EMITIDO EM AMBIENTE DE HOMOLOGACAO - SEM VALORFISCAL") destNomeFix = "";
-      if (!percObs && !percColX) toast.warning("Percurso nao localizado: obs e cidades ficam em branco");
       let ctDstNome = "", ctDstX = "", ctDstU = "";
       try {
         if (empresa && (remD || dstD || tomaD)) {
@@ -185,6 +179,12 @@ function CtePage() {
           if (cD) { ctDstNome = cD.nome || ""; ctDstX = cD.cidade || ""; ctDstU = cD.uf || ""; }
         }
       } catch {}
+      let destNomeFix = tag("infCte > dest > xNome") || "";
+      if (!destNomeFix || destNomeFix === "CTE EMITIDO EM AMBIENTE DE HOMOLOGACAO - SEM VALORFISCAL") destNomeFix = percDstNome;
+      if (!destNomeFix || destNomeFix === "CTE EMITIDO EM AMBIENTE DE HOMOLOGACAO - SEM VALORFISCAL") destNomeFix = ctDstNome;
+      if (!destNomeFix || destNomeFix === "CTE EMITIDO EM AMBIENTE DE HOMOLOGACAO - SEM VALORFISCAL") destNomeFix = tag("infCte > toma > xNome") || "";
+      if (destNomeFix === "CTE EMITIDO EM AMBIENTE DE HOMOLOGACAO - SEM VALORFISCAL") destNomeFix = "";
+      if (!percObs && !percColX) toast.warning("Percurso nao localizado: obs e cidades ficam em branco");
       const xmlComps = Array.from(xmlDoc.querySelectorAll("vPrest > Comp")).map(cc => ({ nome: (cc.querySelector("xNome")?.textContent || "").trim(), valor: parseFloat(cc.querySelector("vComp")?.textContent || "0") || 0 })).filter(cc => cc.nome).slice(0, 8);
       const pdfBlob = gerarDactePdf({
         chave: doc.chave_acesso || "",
