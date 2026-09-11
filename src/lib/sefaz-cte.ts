@@ -266,7 +266,7 @@ export async function emitirCte(pfx:Buffer, senha:string, xml:string, ambiente:A
   if (isMG) {
     // MG CT-e Simplificado: namespace CTeRecepcaoSimpV4
     const ns = "http://www.portalfiscal.inf.br/cte/wsdl/CTeRecepcaoSimpV4";
-    const body=`<cteDadosMsg xmlns="${ns}">${consSit}</cteDadosMsg>`; // MG consulta recebe XML puro (gzip aqui dava 225)
+    const body=`<cteDadosMsg xmlns="${ns}">${dadosBase64}</cteDadosMsg>`;
     const envelope = `<?xml version="1.0" encoding="utf-8"?><soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/"><soap:Body>${body}</soap:Body></soap:Envelope>`;
     console.log("[CTE-SEFAZ] Envelope SOAP (tamanho):", Buffer.byteLength(envelope));
     const u=new URL(ep.recepcao);
