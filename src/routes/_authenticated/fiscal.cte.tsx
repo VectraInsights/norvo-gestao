@@ -1718,10 +1718,16 @@ function CtePage() {
                     <Select value={form.icmsCST} onValueChange={v => setForm({ ...form, icmsCST: v })}>
                       <SelectTrigger className="h-7 text-xs"><SelectValue /></SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="00">00 — Tributação normal</SelectItem>
-                        <SelectItem value="20">20 — Com redução</SelectItem>
-                        <SelectItem value="45">45 — Isento</SelectItem>
-                        <SelectItem value="60">60 — ICMS cobrado por ST</SelectItem>
+                        <SelectItem value="00">00 — Tributada integralmente</SelectItem>
+                        <SelectItem value="10">10 — Tributada e com cobrança do ICMS por substituição tributária</SelectItem>
+                        <SelectItem value="20">20 — Com redução de base de cálculo</SelectItem>
+                        <SelectItem value="30">30 — Isenta ou não tributada e com cobrança do ICMS por substituição tributária</SelectItem>
+                        <SelectItem value="40">40 — Isenta</SelectItem>
+                        <SelectItem value="41">41 — Não tributada</SelectItem>
+                        <SelectItem value="50">50 — Suspensão</SelectItem>
+                        <SelectItem value="51">51 — Diferimento</SelectItem>
+                        <SelectItem value="60">60 — ICMS cobrado anteriormente por substituição tributária</SelectItem>
+                        <SelectItem value="70">70 — Com redução de base de cálculo e cobrança do ICMS por substituição tributária</SelectItem>
                         <SelectItem value="90">90 — Outras</SelectItem>
                       </SelectContent>
                     </Select>

@@ -148,9 +148,10 @@ export function buildCteXml(input: CteInputCompleto): { xml: string; chave: stri
   let impXml: string;
   if (cst === "00") impXml = `<imp><ICMS><ICMS00><CST>00</CST><vBC>${vBC}</vBC><pICMS>${pICMS}</pICMS><vICMS>${vICMS}</vICMS></ICMS00></ICMS></imp>`;
   else if (cst === "20") impXml = `<imp><ICMS><ICMS20><CST>20</CST><pRedBC>0.00</pRedBC><vBC>${vBC}</vBC><pICMS>${pICMS}</pICMS><vICMS>${vICMS}</vICMS></ICMS20></ICMS></imp>`;
-  else if (cst === "45") impXml = `<imp><ICMS><ICMS45><CST>45</CST></ICMS45></ICMS></imp>`;
+  else if (cst === "40" || cst === "41" || cst === "45" || cst === "51") impXml = `<imp><ICMS><ICMS45><CST>${cst}</CST></ICMS45></ICMS></imp>`;
   else if (cst === "60") impXml = `<imp><ICMS><ICMS60><CST>60</CST><vBCSTRet>0.00</vBCSTRet><vICMSSTRet>0.00</vICMSSTRet><pICMSSTRet>0.00</pICMSSTRet><vCred>0.00</vCred></ICMS60></ICMS></imp>`;
-  else impXml = `<imp><ICMS><ICMS90><CST>${cst}</CST><pRedBC>0.00</pRedBC><vBC>${vBC}</vBC><pICMS>${pICMS}</pICMS><vICMS>${vICMS}</vICMS><vCred>0.00</vCred></ICMS90></ICMS></imp>`;
+  else if (cst === "90") impXml = `<imp><ICMS><ICMS90><CST>90</CST><pRedBC>0.00</pRedBC><vBC>${vBC}</vBC><pICMS>${pICMS}</pICMS><vICMS>${vICMS}</vICMS><vCred>0.00</vCred></ICMS90></ICMS></imp>`;
+  else throw new Error("CST " + cst + " nao existe no CT-e (valido: 00, 20, 40, 41, 45, 51, 60, 90)");
 
   // IBS/CBS (reforma tributária, obrigatório desde 2026 — erro 310 se ausente).
   // Alíquotas de teste 2026 (LC 214): IBS 0,10% / CBS 0,90%, calculadas sobre a vBC.
