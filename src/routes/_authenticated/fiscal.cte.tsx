@@ -153,10 +153,11 @@ function CtePage() {
       const dg = (st: any) => String(st || "").replace(/\D/g, "");
       let percObs = "", percColX = "", percColU = "", percEntX = "", percEntU = "";
       let percDstDoc = "", percDstNome = "", percDstX = "", percDstU = "", percDstLog = "", percDstNro = "", percDstBairro = "", percDstCep = "", percDstIE = "", percDstFone = "";
+      let remD = "", dstD = "", tomaD = "";
       try {
-        const remD = dg(tag("infCte > rem > CNPJ") || tag("infCte > rem > CPF"));
-        const dstD = dg(tag("infCte > dest > CNPJ") || tag("infCte > dest > CPF"));
-        let tomaD = dg(xmlDoc.querySelector("toma4 > CNPJ")?.textContent || xmlDoc.querySelector("toma4 > CPF")?.textContent || "");
+        remD = dg(tag("infCte > rem > CNPJ") || tag("infCte > rem > CPF"));
+        dstD = dg(tag("infCte > dest > CNPJ") || tag("infCte > dest > CPF"));
+        tomaD = dg(xmlDoc.querySelector("toma4 > CNPJ")?.textContent || xmlDoc.querySelector("toma4 > CPF")?.textContent || "");
         if (!tomaD) {
           const t3 = (xmlDoc.querySelector("toma3 > toma")?.textContent || "").trim();
           tomaD = t3 === "0" ? remD : t3 === "3" ? dstD : "";
@@ -170,9 +171,20 @@ function CtePage() {
       } catch {}
       let destNomeFix = tag("infCte > dest > xNome") || "";
       if (!destNomeFix || destNomeFix === "CTE EMITIDO EM AMBIENTE DE HOMOLOGACAO - SEM VALORFISCAL") destNomeFix = percDstNome;
+      if (!destNomeFix || destNomeFix === "CTE EMITIDO EM AMBIENTE DE HOMOLOGACAO - SEM VALORFISCAL") destNomeFix = ctDstNome;
       if (!destNomeFix || destNomeFix === "CTE EMITIDO EM AMBIENTE DE HOMOLOGACAO - SEM VALORFISCAL") destNomeFix = tag("infCte > toma > xNome") || "";
       if (destNomeFix === "CTE EMITIDO EM AMBIENTE DE HOMOLOGACAO - SEM VALORFISCAL") destNomeFix = "";
       if (!percObs && !percColX) toast.warning("Percurso nao localizado: obs e cidades ficam em branco");
+      let ctDstNome = "", ctDstX = "", ctDstU = "";
+      try {
+        if (empresa && (remD || dstD || tomaD)) {
+          const { data: cts } = await supabase.from("contatos" as any).select("documento,nome,cidade,uf").eq("empresa_id", (empresa as any).id);
+          const cl = ((cts as any[]) || []);
+          const fnd = (dd: string) => cl.find(cc => String(cc.documento || "").replace(/\D/g, "") === dd);
+          const cD = dstD ? fnd(dstD) : null;
+          if (cD) { ctDstNome = cD.nome || ""; ctDstX = cD.cidade || ""; ctDstU = cD.uf || ""; }
+        }
+      } catch {}
       const xmlComps = Array.from(xmlDoc.querySelectorAll("vPrest > Comp")).map(cc => ({ nome: (cc.querySelector("xNome")?.textContent || "").trim(), valor: parseFloat(cc.querySelector("vComp")?.textContent || "0") || 0 })).filter(cc => cc.nome).slice(0, 8);
       const pdfBlob = gerarDactePdf({
         chave: doc.chave_acesso || "",
@@ -205,8 +217,8 @@ function CtePage() {
         remFone: "",
         destCnpj: tag("infCte > dest > CNPJ") || percDstDoc || tag("infCte > toma > CNPJ") || "",
         destNome: destNomeFix,
-        destCidade: tag("infCte > dest > enderDest > xMun") || percDstX || tag("infCte > toma > enderToma > xMun") || "",
-        destUF: tag("infCte > dest > enderDest > UF") || percDstU || tag("infCte > toma > enderToma > UF") || "",
+        destCidade: tag("infCte > dest > enderDest > xMun") || percDstX || ctDstX || tag("infCte > toma > enderToma > xMun") || "",
+        destUF: tag("infCte > dest > enderDest > UF") || percDstU || ctDstU || tag("infCte > toma > enderToma > UF") || "",
         destEndereco: ((tag("infCte > dest > enderDest > xLgr") || "") + " " + (tag("infCte > dest > enderDest > nro") || "")).trim() || ((percDstLog || "") + " " + (percDstNro || "")).trim() || "",
         destBairro: tag("infCte > dest > enderDest > xBairro") || percDstBairro || "",
         destCEP: tag("infCte > dest > enderDest > CEP") || percDstCep || "",
