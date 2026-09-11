@@ -1341,3 +1341,13 @@ Commits CF `a16bf80..2aca9b8` + Vercel espelhos + Worker redeployado a cada muda
 - Convertidos todos os `type="number"` + campos de texto do Percurso (Fiscal: 8 alíquotas; Seguro: RCTR-C/RCF-DC/Adicional/Total; Vale pedágio; Distância/Duração inteiros): config, estoque (5 telas), financeiro (contas, empréstimos), fiscal (config, emitidas, percursos), frota (multas, veículos, viagens), RH (comissões, férias), vendas (crm, pedidos).
 
 Commits CF `1f78d92` + Vercel `bb9c24d` + Worker `c78b722c`.
+
+---
+
+## DACTE padrão do modelo + obs do percurso (11/09/2026)
+
+- `src/lib/dacte-pdf.ts` rebuildado no padrão do modelo enviado (Scribd CT-e Rodoviário): P&B sem faixas azuis/cinzas, canhoto de recebimento no topo (declaração + NOME/RG/ASSINATURA + TÉRMINO + box CT-E Nº/SÉRIE), CFOP com INÍCIO/TÉRMINO DA PRESTAÇÃO (cidade-UF), coluna ICMS ST, DOCUMENTOS com CNPJ emitente + SÉRIE/NRO, CST por extenso Tabela B; homologação continua no box OBSERVAÇÕES; logo Juvenal mantido.
+- Obs do percurso (`obs_gerais`) sai no DACTE: preview já levava; download de autorizado agora lê `form.obsGerais` gravado no JSON + `ObsCont/ObsFisco` do XML (antes era `""` fixo).
+- Download lê ICMS do grupo correto (ICMS00/20/45/60/90/OutraUF; antes só ICMS00) e emissor mapeia 40/41/45/51 p/ ICMS45, resto só 00/20/60/90, resto bloqueia com erro claro.
+
+Commits CF `9113282` + Vercel `eba27ef` + Worker `91291ef6`.
