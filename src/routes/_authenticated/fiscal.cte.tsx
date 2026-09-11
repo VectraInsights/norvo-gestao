@@ -145,6 +145,11 @@ function CtePage() {
         valor: parseFloat(det.querySelector("infNFe > total > ICMSTot > vNF")?.textContent || "0"),
         chave: det.querySelector("chNFe")?.textContent || "",
       }));
+      let obsPercurso = '';
+      try { const pj = JSON.parse(doc.xml_assinado); obsPercurso = (pj && pj.form && (pj.form.obsGerais || "")) || ""; } catch {}
+      const gIcms = ["ICMS00", "ICMS20", "ICMS45", "ICMS60", "ICMS90", "ICMSOutraUF"].find(g => tag("infCte > imp > ICMS > " + g + " > CST"));
+      const tagI = (f: string) => (gIcms ? tag("infCte > imp > ICMS > " + gIcms + " > " + f) : "");
+      const xmlObs = Array.from(xmlDoc.querySelectorAll("ObsCont > xTexto, ObsFisco > xTexto")).map(e => (e.textContent || "").trim()).filter(Boolean).join(" ");
       const pdfBlob = gerarDactePdf({
         chave: doc.chave_acesso || "",
         numero: doc.numero || "",
@@ -179,10 +184,10 @@ function CtePage() {
         valorServico: parseFloat(tag("infCte > vPrest > vTPrest")) || Number(doc.valor_servico) || 0,
         valorCarga: parseFloat(tag("infCte > infCarga > vMerc")) || 0,
         pesoKg: parseFloat(tag("infCte > infCarga > qCarga")) || 0,
-        icmsCST: tag("infCte > imp > ICMS > ICMS00 > CST") || "00",
-        icmsBase: parseFloat(tag("infCte > imp > ICMS > ICMS00 > vBC")) || 0,
-        icmsAliq: parseFloat(tag("infCte > imp > ICMS > ICMS00 > pICMS")) || 0,
-        icmsValor: parseFloat(tag("infCte > imp > ICMS > ICMS00 > vICMS")) || 0,
+        icmsCST: tagI("CST") || "00",
+        icmsBase: parseFloat(tagI("vBC")) || 0,
+        icmsAliq: parseFloat(tagI("pICMS")) || 0,
+        icmsValor: parseFloat(tagI("vICMS")) || 0,
         nFes,
         placa: tag("infModal > rodo > veic > placa") || "",
         placaReboque: "",
@@ -191,7 +196,7 @@ function CtePage() {
         apolice: "",
         averbacao: "",
         protocolo: doc.protocolo_sefaz || "",
-        obs: "",
+        obs: [obsPercurso, xmlObs].filter(Boolean).join(" ") || "",
         logoDataUrl: JUVENAL_LOGO || undefined,
       });
       const url = URL.createObjectURL(pdfBlob);
