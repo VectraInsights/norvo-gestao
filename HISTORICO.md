@@ -1493,3 +1493,10 @@ Commits CF `d49b494` + Vercel `30ff3a0` (+ `f664f64` trigger) + Worker `227f5885
 - `dacte-pdf.ts` reescrito no layout exato da referencia (Juvenal 37105): cabecalho com subquadros, barras+chave, protocolo/versao, meta 5 itens, CFOP pontuado, previsao viagem, blocos rotulados, tomador com cidade/UF, produto+averbacao, carga+seguro combinados, componentes em grade fixa 4x3 + totais, ICMS/IBS no formato oficial, documentos em 2 colunas (Tipo/Serie-Nro/Chave), linha IBPT, info adicionais, modal lotacao completo (conjunto, vale-pedagio, motorista, lacres), canhoto oficial. Saiu: caixa de consulta, peso avulso, rodape de impressao.
 - Chamador extrai do XML: dhEmi, versao, toma, proPred, xOutCat, infQ, IBSCBS, vTotTrib, compl, IE toma, rodo completo (veic/moto/lacres/prop/valePed/CIOT/dPrev), CFOP/ide corrigido; pjForm p/ seguro/apolice/averbacao/formaPagto; lookups p/ CNPJ seguradora, CPF motorista, fones.
 - Validado gerando o PDF do 37105: 1 pagina A4.
+---
+
+## DACTE: toast unico, dest via contato, header sem tilt (14/09/2026)
+
+- Toast de percurso some apos o 1o aviso por documento (sessionStorage por chave).
+- Destinatario: CNPJ cai p/ o achado via NF-e + endereco/IE/fone via contato full (antes so percurso); fones emit/rem via contato.
+- Cabecalho: textos do emitente saiam INCLINADOS (size passado como angulo no doc.text!) + estouravam a caixa. Travados retos, linhas reequilibradas p/ caber. QR validado nitido no render local.

@@ -190,6 +190,16 @@ function CtePage() {
           if (cD) { ctDstNome = cD.nome || ""; ctDstX = cD.cidade || ""; ctDstU = cD.uf || ""; }
         }
       } catch {}
+      let cRemFull: any = null, cDstFull: any = null;
+      try {
+        if (empresa && (remD || dstD || tomaD)) {
+          const { data: cts2 } = await supabase.from("contatos" as any).select("documento,nome,logradouro,numero,bairro,cidade,uf,cep,ie,telefone").eq("empresa_id", (empresa as any).id);
+          const cl2 = ((cts2 as any[]) || []);
+          const f2 = (dd: string) => cl2.find(cc => String(cc.documento || "").replace(/\D/g, "") === dd);
+          if (remD) cRemFull = f2(remD);
+          if (dstD) cDstFull = f2(dstD);
+        }
+      } catch {}
       let emitFoneC = "", remFoneC = "", motoCPFC = "", segCNPJC = "";
       try {
         if (empresa && (remD || tomaD)) {
@@ -229,7 +239,8 @@ function CtePage() {
           if (!insErr) healed = true;
         } catch {}
       }
-      if (!healed && !percObs && !percColX) toast.warning("Percurso nao localizado: obs e cidades ficam em branco");
+      const percWarnKey = "perc-warn:" + (doc.chave_acesso || "");
+      if (!healed && !percObs && !percColX && !sessionStorage.getItem(percWarnKey)) { sessionStorage.setItem(percWarnKey, "1"); toast.warning("Percurso nao localizado: obs e cidades ficam em branco"); }
       if (healed) toast.info("Percurso criado automaticamente - complete a observacao em Percursos");
       const xmlComps = Array.from(xmlDoc.querySelectorAll("vPrest > Comp")).map(cc => ({ nome: (cc.querySelector("xNome")?.textContent || "").trim(), valor: parseFloat(cc.querySelector("vComp")?.textContent || "0") || 0 })).filter(cc => cc.nome).slice(0, 8);
       const dhEmi = tag("infCte > ide > dhEmi") || "";
@@ -256,7 +267,7 @@ function CtePage() {
       const propEl = rodoEl?.querySelector("prop");
       const valeEl = rodoEl?.querySelector("valePed");
       const lacresXml = Array.from(rodoEl?.querySelectorAll("lacRodo > nLacre") || []).map(e => (e.textContent || "").trim()).filter(Boolean).join(", ");
-      const pdfBlob = gerarDactePdf({
+            const pdfBlob = gerarDactePdf({
         chave: doc.chave_acesso || "",
         numero: doc.numero || "",
         serie: doc.serie || "1",
@@ -285,15 +296,15 @@ function CtePage() {
         remCEP: tag("infCte > emit > enderEmit > CEP") || "",
         remIE: tag("infCte > emit > IE") || "",
         remFone: remFoneC,
-        destCnpj: tag("infCte > dest > CNPJ") || percDstDoc || tag("infCte > toma > CNPJ") || "",
+        destCnpj: tag("infCte > dest > CNPJ") || percDstDoc || dstD || tag("infCte > toma > CNPJ") || "",
         destNome: destNomeFix,
-        destCidade: tag("infCte > dest > enderDest > xMun") || percDstX || ctDstX || tag("infCte > toma > enderToma > xMun") || "",
-        destUF: tag("infCte > dest > enderDest > UF") || percDstU || ctDstU || tag("infCte > toma > enderToma > UF") || "",
-        destEndereco: ((tag("infCte > dest > enderDest > xLgr") || "") + " " + (tag("infCte > dest > enderDest > nro") || "")).trim() || ((percDstLog || "") + " " + (percDstNro || "")).trim() || "",
-        destBairro: tag("infCte > dest > enderDest > xBairro") || percDstBairro || "",
-        destCEP: tag("infCte > dest > enderDest > CEP") || percDstCep || "",
-        destIE: tag("infCte > dest > IE") || percDstIE || "",
-        destFone: percDstFone || "",
+        destCidade: tag("infCte > dest > enderDest > xMun") || percDstX || ctDstX || (cDstFull as any)?.cidade || tag("infCte > toma > enderToma > xMun") || "",
+        destUF: tag("infCte > dest > enderDest > UF") || percDstU || ctDstU || (cDstFull as any)?.uf || tag("infCte > toma > enderToma > UF") || "",
+        destEndereco: ((tag("infCte > dest > enderDest > xLgr") || "") + " " + (tag("infCte > dest > enderDest > nro") || "")).trim() || ((percDstLog || "") + " " + (percDstNro || "")).trim() || ((((cDstFull as any)?.logradouro || "") + " " + ((cDstFull as any)?.numero || "")).trim()) || "",
+        destBairro: tag("infCte > dest > enderDest > xBairro") || percDstBairro || (cDstFull as any)?.bairro || "",
+        destCEP: tag("infCte > dest > enderDest > CEP") || percDstCep || (cDstFull as any)?.cep || "",
+        destIE: tag("infCte > dest > IE") || percDstIE || (cDstFull as any)?.ie || "",
+        destFone: percDstFone || (cDstFull as any)?.telefone || "",
         expCnpj: tag("infCte > exped > CNPJ") || "",
         expNome: tag("infCte > exped > xNome") || "",
         expCidade: tag("infCte > exped > enderExped > xMun") || "",

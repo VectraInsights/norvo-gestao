@@ -286,10 +286,10 @@ export function gerarDactePdf(data: DacteData): Blob {
   else { border(); doc.rect(M + 2, y + 2, 14, 14, "S"); }
   const ex = M + 25;
   valB(cut(data.emitNome || "EMPRESA", 42), ex, y + 4, 8);
-  setFont("normal", 6); black();
-  doc.text(`Endereço  ${cut(D(data.emitEndereco), 34)}   Bairro  ${cut(D(data.emitBairro), 16)}   CEP  ${D(data.emitCEP)}`, ex, y + 8, 6);
-  doc.text(`Cidade  ${cut(D(data.emitCidade), 22)}, ${D(data.emitUF)}   Tel.  ${D(data.emitFone)}`, ex, y + 10.5, 6);
-  doc.text(`CPF / CNPJ  ${fmtCnpj(data.emitCnpj)}   Insc. Est.  ${D(data.emitIE)}`, ex, y + 13, 6);
+  setFont("normal", 5.5); black();
+  doc.text(`Endereço  ${cut(D(data.emitEndereco), 36)}   CEP  ${D(data.emitCEP)}`, ex, y + 8);
+  doc.text(`Bairro  ${cut(D(data.emitBairro), 15)}   Cidade  ${cut(D(data.emitCidade), 20)}, ${D(data.emitUF)}   Tel.  ${D(data.emitFone)}`, ex, y + 10.5);
+  doc.text(`CPF / CNPJ  ${fmtCnpj(data.emitCnpj)}   Insc. Est.  ${D(data.emitIE)}`, ex, y + 13);
   const dx = M + emitW;
   valB("DACTE", dx + 1.5, y + 4.5, 10);
   setFont("normal", 5); black();
