@@ -144,7 +144,13 @@ export default {
     try {
       const handler = await getServerEntry();
       const response = await handler.fetch(request, env, ctx);
-      return await normalizeCatastrophicSsrResponse(response);
+      const normalized = await normalizeCatastrophicSsrResponse(response);
+      // HTML nunca cacheado: sem Cache-Control o navegador reaproveita o shell velho no F5 simples
+      const ct = normalized.headers.get("content-type") || "";
+      if (!ct.includes("text/html")) return normalized;
+      const h = new Headers(normalized.headers);
+      h.set("Cache-Control", "no-cache");
+      return new Response(normalized.body, { status: normalized.status, statusText: normalized.statusText, headers: h });
     } catch (error) {
       console.error(error);
       return new Response(renderErrorPage(), {

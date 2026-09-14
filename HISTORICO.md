@@ -1456,3 +1456,8 @@ Commits CF `d49b494` + Vercel `30ff3a0` (+ `f664f64` trigger) + Worker `227f5885
 ## Botao importar sem amarelo chapado (14/09/2026)
 
 - Labels de importacao (CT-e e veiculos) com `bg-amber-100` fixo migrados p/ tokens `accent` do tema — acompanham claro/escuro sem gritar.
+---
+
+## HTML sem cache (14/09/2026)
+
+- Respostas `text/html` com `Cache-Control: no-cache`: sem isso o navegador reaproveitava o shell antigo no F5 simples (sem validadores p/ revalidar) e o tema novo nao aparecia.
