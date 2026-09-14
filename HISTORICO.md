@@ -1441,3 +1441,8 @@ Commits CF `d49b494` + Vercel `30ff3a0` (+ `f664f64` trigger) + Worker `227f5885
 ## Sidebar escura com tom proprio (14/09/2026)
 
 - `.dark --sidebar` 0.20 -> 0.24 (painel elevado sobre a pagina 0.18) e `--sidebar-accent` acompanhando.
+---
+
+## Tema claro neutro de baixo contraste (14/09/2026)
+
+- Superficies claras (fundo, caixas, muted, sidebar, bordas, textos) migradas do creme quente p/ cinza neutro frio; pagina (0.92) e caixas (0.935) quase no mesmo tom. Terracota e cores semanticas mantidos; modo escuro intocado.
