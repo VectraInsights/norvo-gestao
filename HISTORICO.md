@@ -1536,3 +1536,8 @@ Commits CF `d49b494` + Vercel `30ff3a0` (+ `f664f64` trigger) + Worker `227f5885
 ## Subcolunas DACTE reequilibradas (14/09/2026)
 
 - Data Emissao (16 chars) invadia a coluna do Modal; larguras 13/12/15/8/14 -> 13/11/13/7/18.
+---
+
+## Legenda das barras centralizada + respiro sublinha (14/09/2026)
+
+- Caption da chave centralizada com barras e numero; sublinha DACTE com folga da borda; obs box 8 p/ manter 1 pagina.

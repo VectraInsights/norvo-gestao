@@ -276,7 +276,7 @@ export function gerarDactePdf(data: DacteData): Blob {
 
   // ---- Cabeçalho: emitente | DACTE | modal ----
   const emitW = 108, dacteW = 62, modalW = CW - emitW - dacteW;
-  const headH = 17;
+  const headH = 18;
   box(M, y, emitW, headH);
   box(M + emitW, y, dacteW, headH);
   box(M + emitW + dacteW, y, modalW, headH);
@@ -311,7 +311,7 @@ export function gerarDactePdf(data: DacteData): Blob {
   coff.forEach((co, i) => {
     if (i > 0) vline(dx + co, subY, subH);
     lab(cheads[i], dx + co + 1, subY + 3);
-    valB(cvals[i], dx + co + 1, subY + 7, 6);
+    valB(cvals[i], dx + co + 1, subY + 6.5, 6);
   });
   const mx = M + emitW + dacteW;
   setFont("bold", 5.5); black();
@@ -336,8 +336,7 @@ export function gerarDactePdf(data: DacteData): Blob {
       doc.addImage(barsImg, "PNG", M + (maxW - iw) / 2 + 2, y + 2, iw, ih);
     } catch {}
   }
-  setFont("normal", 4.5); black();
-  doc.text("Chave de Acesso para Consulta de autenticidade no site www.cte.fazenda.gov.br ou da Autorizada", M + 2, y + 13);
+  ctr("Chave de Acesso para Consulta de autenticidade no site www.cte.fazenda.gov.br ou da Autorizada", M + (CW - 24) / 2, y + 13, 4.5);
   ctr(fmtChave(data.chave), M + (CW - 24) / 2, y + 17.5, 6.5, true);
   const qx = M + CW - 22;
   if (qrTxt) drawQr(doc, qx, y + 1, 20, qrTxt);
@@ -603,9 +602,9 @@ export function gerarDactePdf(data: DacteData): Blob {
   // ---- Observações ----
   const hasObsTxt = !!(data.obs && data.obs.trim());
   const isHom = (data.ambiente || "") === "homologacao";
-  const obsH = 9;
+  const obsH = 8;
   need(obsH + 6);
-  box(M, y, CW, 5);
+  box(M, y, CW, 4.5);
   ctr("Observações", W / 2, y + 3.5, 6, true);
   y += 5;
   box(M, y, CW, obsH);
@@ -635,7 +634,7 @@ export function gerarDactePdf(data: DacteData): Blob {
   // ---- Informações adicionais ----
   const iaH = 5;
   need(iaH + 6);
-  box(M, y, CW, 5);
+  box(M, y, CW, 4.5);
   setFont("bold", 6); black();
   doc.text("Informações Adicionais", M + 2, y + 3.5);
   y += 5;
