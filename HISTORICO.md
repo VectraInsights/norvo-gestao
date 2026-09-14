@@ -1407,3 +1407,10 @@ Commits CF `4b9e2aa..437fb22` + Vercel espelhos + Worker redeployado a cada muda
 - `routeTree.gen.ts` regenerado no build (faltava `/fiscal/percursos` no manifesto commitado).
 
 PENDENTE (dashboard Vercel): criar env `VITE_AI_URL=https://norvo-gestao-cf.sptn201169.workers.dev` + Redeploy — sem ela o chat no site principal responde "disponivel apenas no Worker".
+---
+
+## URL canonica = Worker; Vercel vira so API SEFAZ (14/09/2026)
+
+- `src/server.ts`: na Vercel (host `*.vercel.app`), tudo que nao for `/api/sefaz*` redireciona 308 para o Worker (preserva metodo/corpo). `/api/sefaz` e `/api/sefaz-cron` seguem normais; `/api/ai/chat` antigo passa a cair no Worker em vez de 404.
+- MDF-e validado antes: emite/consulta/encerra via proxy `/api/sefaz`, funciona servido pelo Worker — redirect nao quebra nada fiscal.
+- PENDENTE: repointar o exe Electron (desktop carrega a URL da Vercel; redirect leva ao Worker sozinho, mas o ideal e apontar direto).
