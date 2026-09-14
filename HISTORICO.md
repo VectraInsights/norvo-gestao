@@ -1466,3 +1466,8 @@ Commits CF `d49b494` + Vercel `30ff3a0` (+ `f664f64` trigger) + Worker `227f5885
 ## Tema claro bem mais escuro (14/09/2026)
 
 - Prova via console: o neutro anterior (0.92) estava aplicado, mas claro demais. Pagina 0.92->0.86, caixas 0.935->0.89, demais superficies acompanhando; sidebar terracota segue distinta.
+---
+
+## Offwhite quente de volta (14/09/2026)
+
+- Cinza neutro revertido: fundo offwhite quente (0.94), caixas (0.97), textos e bordas na familia quente; sidebar terracota mantida.
