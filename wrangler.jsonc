@@ -15,8 +15,8 @@
     "SUPABASE_URL": "https://lfxhimtbuazezjkjlddj.supabase.co",
     "SUPABASE_PUBLISHABLE_KEY": "sb_publishable_DHkWhHGR_Lzb1hlGy5JUKQ_xiDIqxd1"
   },
-  "bindings": {
-    "AI": "AI"
+  "ai": {
+    "binding": "AI"
   },
   "triggers": {
     "crons": ["0 3,4,5,6,7,8,9 * * *"]

@@ -43,7 +43,10 @@ export function AIChat() {
     setLoading(true);
 
     try {
-      const res = await fetch("/api/ai/chat", {
+      // VITE_AI_URL aponta para o Worker (chat roda no binding AI nativo).
+      // Vazio = mesma origem (quando o app é servido pelo próprio Worker).
+      const aiBase = (import.meta as any).env?.VITE_AI_URL || "";
+      const res = await fetch(`${aiBase}/api/ai/chat`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({

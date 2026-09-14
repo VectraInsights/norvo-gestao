@@ -1393,3 +1393,17 @@ Commits CF `5f84898..f48e434` + `534741e` + Vercel espelhos + Worker redeployado
 - Corre√ß√µes: `destNomeFix` fora do `try`, ordem do lookup de contatos, gzip s√≥ na recep√ß√£o, bloco de travas fora do preview.
 
 Commits CF `4b9e2aa..437fb22` + Vercel espelhos + Worker redeployado a cada mudan√ßa.
+
+---
+
+## Assistente AI no Worker, fora da Vercel (14/09/2026)
+
+- `/api/ai/chat` atendido so onde ha binding AI (Worker): sem binding, 404 direto em vez de 500 ó a Vercel nao queima mais function num caminho morto. SEFAZ (`/api/sefaz`, `/api/sefaz-cron`) intocada.
+- Front chama via `VITE_AI_URL` (absoluto; vazio = mesma origem no Worker); CORS restrito (vercel.app, workers.dev, localhost) + preflight OPTIONS.
+- `wrangler.jsonc`: `"bindings"` nao e campo valido (wrangler ignorava com warning) ? `"ai": {"binding": "AI"}`; binding `env.AI` ativo no deploy.
+- Handler lia `response.response.tool_calls` (formato OpenAI) e quebrava: Workers AI/llama retorna `{ response, tool_calls: [{ name, arguments }] }` no topo ó parse refeito nos dois formatos + eco do turno no estilo da doc. Chat testado de ponta a ponta no Worker.
+- Env do Worker chega via `globalThis.__env__` (o entry nitro chama o handler so com `request`).
+- MDF-e auditado: o proxy `/api/sefaz` nunca importou `sefaz-mdf-server`; so a pagina `/fiscal/mdf` usa (serverFn sob demanda) ó nada a cortar sem perder funcao.
+- `routeTree.gen.ts` regenerado no build (faltava `/fiscal/percursos` no manifesto commitado).
+
+PENDENTE (dashboard Vercel): criar env `VITE_AI_URL=https://norvo-gestao-cf.sptn201169.workers.dev` + Redeploy ó sem ela o chat no site principal responde "disponivel apenas no Worker".

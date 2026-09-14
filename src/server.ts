@@ -87,26 +87,51 @@ export default {
       }
     }
 
-    // Assistente AI — chat com Workers AI + tools de consulta ao banco
-    if (url.pathname === "/api/ai/chat" && request.method === "POST") {
+    // Assistente AI — roda no Cloudflare Worker (binding AI nativo).
+    // Na Vercel não há binding: 404 direto, sem queimar function num 500 garantido.
+    // O front chama via VITE_AI_URL (absoluto; vazio = mesma origem, no Worker) — CORS restrito abaixo.
+    if (url.pathname === "/api/ai/chat" && (request.method === "POST" || request.method === "OPTIONS")) {
+      const origin = request.headers.get("Origin") || "";
+      const allowed = !origin
+        || origin === "https://norvo-gestao.vercel.app"
+        || origin.endsWith(".vercel.app")
+        || origin.endsWith(".workers.dev")
+        || origin.startsWith("http://localhost:");
+      const cors = allowed ? {
+        "Access-Control-Allow-Origin": origin || "*",
+        "Access-Control-Allow-Methods": "POST, OPTIONS",
+        "Access-Control-Allow-Headers": "Content-Type",
+      } : {};
+      if (request.method === "OPTIONS") {
+        return new Response(null, { status: 204, headers: cors });
+      }
+      // O entry nitro chama este handler só com (request): env chega via globalThis.__env__
+      // (nitro cloudflare-module injeta antes de delegar). Fallback encadeado p/ cada runtime.
+      const workerEnv = ((env as any)?.AI ? env : (globalThis as any)?.__env__) as Record<string, string>;
+      if (!(workerEnv as any)?.AI) {
+        return new Response(JSON.stringify({ error: "Assistente disponível apenas no Worker" }), {
+          status: 404,
+          headers: { "Content-Type": "application/json", ...cors },
+        });
+      }
       try {
         const body = await request.json() as { messages: Array<{ role: string; content: string }>; empresaId: string };
         if (!body.messages || !body.empresaId) {
           return new Response(JSON.stringify({ error: "messages e empresaId são obrigatórios" }), {
             status: 400,
-            headers: { "Content-Type": "application/json" },
+            headers: { "Content-Type": "application/json", ...cors },
           });
         }
         const { handleAiChat } = await import("./lib/ai-chat");
-        const result = await handleAiChat(env as Record<string, string>, body.messages, body.empresaId);
+        const result = await handleAiChat(workerEnv, body.messages, body.empresaId);
         return new Response(JSON.stringify(result), {
-          headers: { "Content-Type": "application/json" },
+          headers: { "Content-Type": "application/json", ...cors },
         });
       } catch (error) {
         console.error("[ai-chat]", error);
         return new Response(JSON.stringify({ error: String(error) }), {
           status: 500,
-          headers: { "Content-Type": "application/json" },
+          headers: { "Content-Type": "application/json", ...cors },
         });
       }
     }

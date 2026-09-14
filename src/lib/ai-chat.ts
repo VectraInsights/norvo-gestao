@@ -267,45 +267,54 @@ export async function handleAiChat(
   if (!ai) throw new Error("Workers AI binding não configurado");
 
   // Tool calling: máximo 3 rodadas para evitar loops
-  let allMessages = [
+  // Formato Workers AI (llama/hermes): { response, tool_calls: [{ name, arguments }] }
+  // — tool_calls no TOPO do objeto, não aninhado; arguments pode vir objeto ou string JSON.
+  let allMessages: Array<Record<string, unknown>> = [
     { role: "system", content: SYSTEM_PROMPT },
     ...messages,
   ];
 
   for (let round = 0; round < 3; round++) {
-    const response = await ai.run("@cf/meta/llama-3.1-8b-instruct-fp8-fast", {
+    const raw = (await ai.run("@cf/meta/llama-3.1-8b-instruct-fp8-fast", {
       messages: allMessages,
       tools: AI_TOOLS,
       max_tokens: 512,
-    });
+    })) as { response?: unknown; tool_calls?: Array<Record<string, any>> };
+    const out = (raw as any)?.result ?? raw ?? {};
+    const calls: Array<Record<string, any>> = out.tool_calls ?? (out.response as any)?.tool_calls ?? [];
+    const text = typeof out.response === "string" ? (out.response as string) : "";
 
-    const msg = response.response;
-
-    // Se não tem tool_calls, retorna a resposta
-    if (!msg.tool_calls || msg.tool_calls.length === 0) {
-      return { reply: msg.content || "Desculpe, não consegui processar sua pergunta." };
+    // Sem tool_calls: resposta final
+    if (!calls.length) {
+      return { reply: text || "Desculpe, não consegui processar sua pergunta." };
     }
 
-    // Adiciona a resposta do modelo (com tool_calls) ao histórico
-    allMessages.push(msg);
+    // Ecoa o turno do assistente (estilo tradicional da doc: content = tool serializada)
+    allMessages.push({ role: "assistant", content: text || JSON.stringify(calls[0]) });
 
     // Executa cada tool_call
-    for (const tc of msg.tool_calls) {
-      const toolName = tc.function.name;
-      const args = JSON.parse(tc.function.arguments || "{}");
+    for (const tc of calls) {
+      const toolName: string = tc.name ?? tc.function?.name ?? "";
+      let args: Record<string, unknown> = {};
+      const rawArgs = tc.arguments ?? tc.function?.arguments;
+      try {
+        args = typeof rawArgs === "string" ? JSON.parse(rawArgs || "{}") : (rawArgs || {});
+      } catch { args = {}; }
       const result = await executeTool(toolName, args, empresaId, supa);
 
       allMessages.push({
         role: "tool",
         content: result,
-      } as any);
+      });
     }
   }
 
   // Fallback após 3 rodadas
-  const lastResponse = await ai.run("@cf/meta/llama-3.1-8b-instruct-fp8-fast", {
+  const lastRaw = (await ai.run("@cf/meta/llama-3.1-8b-instruct-fp8-fast", {
     messages: allMessages,
     max_tokens: 512,
-  });
-  return { reply: lastResponse.response?.content || "Consulta processada. Por favor, reformule sua pergunta." };
+  })) as any;
+  const lastOut = lastRaw?.result ?? lastRaw ?? {};
+  const lastText = typeof lastOut.response === "string" ? lastOut.response : "";
+  return { reply: lastText || "Consulta processada. Por favor, reformule sua pergunta." };
 }
