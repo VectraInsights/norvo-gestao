@@ -307,7 +307,7 @@ export function gerarDactePdf(data: DacteData): Blob {
   const subY = y + 10, subH = headH - 10;
   const cheads = ["Modelo", "Série", "Número", "FL", "Data Emissão"];
   const cvals = ["57", D(data.serie) || "1", fmtInt(data.numero), D(data.fl) || "1 / 1", fmtDH(data.dhEmi || data.dataEmissao)];
-  const coff = [0, 13, 25, 40, 48];
+  const coff = [0, 13, 24, 37, 44];
   coff.forEach((co, i) => {
     if (i > 0) vline(dx + co, subY, subH);
     lab(cheads[i], dx + co + 1, subY + 3);
