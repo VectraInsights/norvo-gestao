@@ -1313,8 +1313,9 @@ function CtePage() {
     const hasRed = (form.cnpjRedespacho || "").replace(/\D/g, "").length === 14;
     const sel = mercadorias.filter(m => selecionadas.has(m.chave));
     const a = ((sel[0] || mercadorias[0] || {}) as any);
-    const dx = hasRed ? (form.xMunRedespacho || "") : (a.destXMun || "");
-    const du = hasRed ? (form.ufRedespacho || "") : (a.destUF || "");
+    const cDstE = contatoByDoc.get(String(a.destCnpj || "").replace(/\D/g, "")) || {};
+    const dx = hasRed ? (form.xMunRedespacho || "") : (a.destXMun || (cDstE as any).cidade || "");
+    const du = hasRed ? (form.ufRedespacho || "") : (a.destUF || (cDstE as any).uf || "");
     const dc = hasRed ? "" : (a.destCMun || "");
     if (!dx) return;
     const sig = (hasRed ? "R" : "D") + "|" + dx + "|" + du;
@@ -1335,7 +1336,25 @@ function CtePage() {
       })();
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [open, form.cnpjRedespacho, form.xMunRedespacho, form.ufRedespacho, form.cnpjTomador, mercadorias, selecionadas, percursos]);
+  }, [open, form.cnpjRedespacho, form.xMunRedespacho, form.ufRedespacho, form.cnpjTomador, mercadorias, selecionadas, percursos, contatoByDoc]);
+  // Coleta segue exclusivamente o remetente (NF-e emitente + contato) - campo travado na UI
+  const coletaSrcRef = useRef("");
+  useEffect(() => {
+    if (!open) return;
+    const sel2 = mercadorias.filter(m => selecionadas.has(m.chave));
+    const b = ((sel2[0] || mercadorias[0] || {}) as any);
+    if (!b.emitCnpj && !b.emitXMun) return;
+    const cEmi = contatoByDoc.get(String(b.emitCnpj || "").replace(/\D/g, "")) || {};
+    const cx = b.emitXMun || (cEmi as any).cidade || "";
+    const cu = b.emitUF || (cEmi as any).uf || "";
+    const cc = b.emitCMun || "";
+    if (!cx) return;
+    const sig2 = "C|" + String(b.emitCnpj || "") + "|" + cx + "|" + cu;
+    if (coletaSrcRef.current === sig2) return;
+    coletaSrcRef.current = sig2;
+    setForm(f => ({ ...f, xMunIni: cx, ...(cu ? { ufIni: cu } : {}), ...(cc ? { cMunIni: cc } : {}) }));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open, mercadorias, selecionadas, percursos, contatoByDoc]);
   return (
     <div className="p-6 space-y-4">
       <PageHeader eyebrow="Fiscal" title="CT-e" description="Conhecimento de Transporte Eletrônico (57) — emissão robusta estilo STM, com múltiplas NF-es por CT-e." actions={<Button size="sm" onClick={() => novoCtePreservandoFiscal()}><Plus className="mr-1 h-4 w-4" /> Novo CT-e</Button>} />
@@ -1697,15 +1716,15 @@ function CtePage() {
                 <div className="flex-[1_1_160px] min-w-0">
                   <Label className="text-[10px] text-muted-foreground">Coleta</Label>
                   <div className="flex gap-1">
-                    <Input className="h-7 text-xs flex-1 min-w-0" placeholder="Município" value={form.xMunIni} onChange={e=>setForm({...form,xMunIni:e.target.value})} />
-                    <Input className="h-7 text-xs w-14 text-center shrink-0" placeholder="UF" value={form.ufIni} onChange={e=>setForm({...form,ufIni:e.target.value.toUpperCase()})} maxLength={2} />
+                    <Input readOnly tabIndex={-1} className="h-7 text-xs flex-1 min-w-0 bg-transparent" placeholder="Município" value={form.xMunIni} title="Segue o remetente" />
+                    <Input readOnly tabIndex={-1} title="Segue o remetente" className="h-7 text-xs w-14 text-center shrink-0 bg-transparent" placeholder="UF" value={form.ufIni} maxLength={2} />
                   </div>
                 </div>
                 <div className="flex-[1_1_160px] min-w-0">
                   <Label className="text-[10px] text-muted-foreground">Entrega</Label>
                   <div className="flex gap-1">
-                    <Input className="h-7 text-xs flex-1 min-w-0" placeholder="Município" value={form.xMunFim} onChange={e=>setForm({...form,xMunFim:e.target.value})} />
-                    <Input className="h-7 text-xs w-14 text-center shrink-0" placeholder="UF" value={form.ufFim} onChange={e=>setForm({...form,ufFim:e.target.value.toUpperCase()})} maxLength={2} />
+                    <Input readOnly tabIndex={-1} className="h-7 text-xs flex-1 min-w-0 bg-transparent" placeholder="Município" value={form.xMunFim} title="Segue redespacho/destinatario" />
+                    <Input readOnly tabIndex={-1} title="Segue redespacho/destinatario" className="h-7 text-xs w-14 text-center shrink-0 bg-transparent" placeholder="UF" value={form.ufFim} maxLength={2} />
                   </div>
                 </div>
                 </div>

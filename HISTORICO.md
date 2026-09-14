@@ -1425,3 +1425,9 @@ Commits CF `d49b494` + Vercel `30ff3a0` (+ `f664f64` trigger) + Worker `227f5885
 ## Caixas off-white quente (14/09/2026)
 
 - `--card` e `--popover` 1.0 -> 0.975 quente: caixas seguem claras contra a pagina, sem o claro de branco puro.
+---
+
+## Coleta/Entrega travadas nas origens (14/09/2026)
+
+- Coleta/Entrega (municipio+UF) viraram somente-leitura com tooltip ("Segue o remetente" / "Segue redespacho/destinatario"); fora do tab.
+- Efeito novo: coleta segue o remetente (NF-e emitente + contato). Entrega (ja automatica) ganhou fallback de contato quando a NF-e vem sem cidade.
