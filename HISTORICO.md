@@ -1541,3 +1541,12 @@ Commits CF `d49b494` + Vercel `30ff3a0` (+ `f664f64` trigger) + Worker `227f5885
 ## Legenda das barras centralizada + respiro sublinha (14/09/2026)
 
 - Caption da chave centralizada com barras e numero; sublinha DACTE com folga da borda; obs box 8 p/ manter 1 pagina.
+---
+
+## Operacao em 14/09/2026 (nota)
+
+- Deploys 100% automaticos: push na main -> CF Builds (Worker) + Vercel (API SEFAZ). Sem `wrangler deploy` manual.
+- URL canonica = Worker; Vercel redireciona tudo (exceto `/api/sefaz*`) p/ o Worker (308).
+- Vercel precisa das envs `VITE_AI_URL` (chat) e `SUPABASE_SERVICE_ROLE_KEY` (proxy); Worker precisa do secret `SUPABASE_SERVICE_ROLE_KEY` (sem ele, `/api/sefaz` retorna 401).
+- HTML com `no-cache`: sem isso o navegador reaproveita o shell velho no F5.
+- Incidentes do dia (resolvidos): token do CF Builds rolado (recriar em Settings -> Builds), trigger GitHub->Vercel mudo (disconnect/reconnect do repo destravou).
