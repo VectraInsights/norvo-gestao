@@ -281,15 +281,25 @@ export function gerarDactePdf(data: DacteData): Blob {
   box(M + emitW, y, dacteW, headH);
   box(M + emitW + dacteW, y, modalW, headH);
   const qrTxt = (data.qrCode || "").trim();
-  if (qrTxt) drawQr(doc, M + 2, y + 2, 13, qrTxt);
-  else if (data.logoDataUrl) { try { doc.addImage(data.logoDataUrl as string, "PNG", M + 2, y + 4, 24, 8); } catch {} }
-  else { border(); doc.rect(M + 2, y + 2, 14, 14, "S"); }
-  const ex = M + 25;
-  valB(cut(data.emitNome || "EMPRESA", 42), ex, y + 4, 8);
-  setFont("normal", 5.5); black();
-  doc.text(`Endereço  ${cut(D(data.emitEndereco), 36)}   CEP  ${D(data.emitCEP)}`, ex, y + 8);
-  doc.text(`Bairro  ${cut(D(data.emitBairro), 15)}   Cidade  ${cut(D(data.emitCidade), 20)}, ${D(data.emitUF)}   Tel.  ${D(data.emitFone)}`, ex, y + 10.5);
-  doc.text(`CPF / CNPJ  ${fmtCnpj(data.emitCnpj)}   Insc. Est.  ${D(data.emitIE)}`, ex, y + 13);
+  if (data.logoDataUrl) { try { doc.addImage(data.logoDataUrl as string, "PNG", M + 2, y + 3.5, 26, 10.2); } catch {} }
+  else if (qrTxt) drawQr(doc, M + 2, y + 2, 13, qrTxt);
+  else { border(); doc.rect(M + 2, y + 2, 13, 13, "S"); }
+  const ex = M + 30;
+  setFont("normal", 6); black();
+  doc.text("Endereço", ex, y + 4.5);
+  val(cut(D(data.emitEndereco), 44), ex + 17, y + 4.5, 6);
+  doc.text("Bairro", ex, y + 8);
+  val(cut(D(data.emitBairro), 15), ex + 17, y + 8, 6);
+  doc.text("CEP", ex + 52, y + 8);
+  val(D(data.emitCEP), ex + 60, y + 8, 6);
+  doc.text("Cidade", ex, y + 11.5);
+  val(`${cut(D(data.emitCidade), 20)}, ${D(data.emitUF)}`, ex + 17, y + 11.5, 6);
+  doc.text("Tel.", ex + 44, y + 11.5);
+  val(D(data.emitFone), ex + 52, y + 11.5, 6);
+  doc.text("CPF / CNPJ", ex, y + 15);
+  val(fmtCnpj(data.emitCnpj), ex + 13, y + 15, 6);
+  doc.text("Insc. Est.", ex + 37, y + 15);
+  val(D(data.emitIE), ex + 51, y + 15, 6);
   const dx = M + emitW;
   valB("DACTE", dx + 1.5, y + 4.5, 10);
   setFont("normal", 5); black();
@@ -308,7 +318,7 @@ export function gerarDactePdf(data: DacteData): Blob {
   doc.text("Modal", mx + 1.5, y + 3);
   valB("Rodoviário", mx + 1.5, y + 7.5, 7);
   doc.line(mx, y + 10, mx + modalW, y + 10);
-  lab("Insc. Suframa Destinatário", mx + 1.5, y + 13);
+  black(); setFont("normal", 5); doc.text("Insc. Suframa Destinatário", mx + 1.5, y + 13);
   y += headH + 1;
 
   // ---- Código de barras + chave ----
