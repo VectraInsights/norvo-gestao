@@ -1500,3 +1500,9 @@ Commits CF `d49b494` + Vercel `30ff3a0` (+ `f664f64` trigger) + Worker `227f5885
 - Toast de percurso some apos o 1o aviso por documento (sessionStorage por chave).
 - Destinatario: CNPJ cai p/ o achado via NF-e + endereco/IE/fone via contato full (antes so percurso); fones emit/rem via contato.
 - Cabecalho: textos do emitente saiam INCLINADOS (size passado como angulo no doc.text!) + estouravam a caixa. Travados retos, linhas reequilibradas p/ caber. QR validado nitido no render local.
+---
+
+## Tipo de logradouro via CEP no DACTE (14/09/2026)
+
+- Novo `lib/endereco.ts`: detecta prefixo (Av/Rua/Alameda/...) e, se ausente, busca a rua pelo CEP na BrasilAPI conferindo o nome. Validado: NAZARE+66035445 -> Avenida Nazare.
+- DACTE (rem/dest/emit/toma) usa o logradouro enriquecido; dado gravado intacto. Form e contatos seguem exibindo a origem.

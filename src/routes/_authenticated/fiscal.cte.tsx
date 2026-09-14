@@ -24,6 +24,7 @@ import { limparIE } from "@/lib/ie";
 import { emitirCteFn, consultarCteFn, cancelarCteFn, previewCteXmlFn, excluirRejeitadosCteFn } from "@/lib/sefaz-cte-server";
 import { CFOPS_CTE, MOD_FRETE_OPTIONS, RESPONSAVEL_CTE_OPTIONS } from "@/lib/cfops-transporte";
 import { gerarDactePdf } from "@/lib/dacte-pdf";
+import { completarLogradouro } from "@/lib/endereco";
 import { JUVENAL_LOGO } from "@/lib/juvenal-logo";
 import { Textarea } from "@/components/ui/textarea";
 import { DateInput } from "@/components/erp/date-input";
@@ -267,6 +268,16 @@ function CtePage() {
       const propEl = rodoEl?.querySelector("prop");
       const valeEl = rodoEl?.querySelector("valePed");
       const lacresXml = Array.from(rodoEl?.querySelectorAll("lacRodo > nLacre") || []).map(e => (e.textContent || "").trim()).filter(Boolean).join(", ");
+      const remLogRaw = tag("infCte > emit > enderEmit > xLgr") || (cRemFull as any)?.logradouro || "";
+      const remNroRaw = tag("infCte > emit > enderEmit > nro") || (cRemFull as any)?.numero || "";
+      const remCepRaw = tag("infCte > emit > enderEmit > CEP") || (cRemFull as any)?.cep || "";
+      const dstLogRaw = tag("infCte > dest > enderDest > xLgr") || percDstLog || (cDstFull as any)?.logradouro || "";
+      const dstNroRaw = tag("infCte > dest > enderDest > nro") || percDstNro || (cDstFull as any)?.numero || "";
+      const dstCepRaw = tag("infCte > dest > enderDest > CEP") || percDstCep || (cDstFull as any)?.cep || "";
+      const tomLogRaw = tag("infCte > toma > enderToma > xLgr") || "";
+      const tomNroRaw = tag("infCte > toma > enderToma > nro") || "";
+      const tomCepRaw = tag("infCte > toma > enderToma > CEP") || "";
+      const [remLogEnr, dstLogEnr, tomLogEnr] = await Promise.all([completarLogradouro(remLogRaw, remCepRaw), completarLogradouro(dstLogRaw, dstCepRaw), completarLogradouro(tomLogRaw, tomCepRaw)]);
             const pdfBlob = gerarDactePdf({
         chave: doc.chave_acesso || "",
         numero: doc.numero || "",
@@ -275,7 +286,7 @@ function CtePage() {
         dataEmissao: doc.created_at,
         emitCnpj: tag("infCte > emit > CNPJ") || "",
         emitNome: tag("infCte > emit > xNome") || "",
-        emitEndereco: `${tag("infCte > emit > enderEmit > xLgr")} ${tag("infCte > emit > enderEmit > nro")}`.trim(),
+        emitEndereco: `${remLogEnr} ${remNroRaw}`.trim(),
         emitCidade: tag("infCte > emit > enderEmit > xMun") || "",
         emitUF: tag("infCte > emit > enderEmit > UF") || "",
         emitIE: tag("infCte > emit > IE") || "",
@@ -284,14 +295,14 @@ function CtePage() {
         emitFone: emitFoneC,
         tomadorCnpj: tag("infCte > toma > CNPJ") || "",
         tomadorNome: tag("infCte > toma > xNome") || "",
-        tomadorEndereco: `${tag("infCte > toma > enderToma > xLgr")} ${tag("infCte > toma > enderToma > nro")}`.trim(),
+        tomadorEndereco: `${tomLogEnr} ${tomNroRaw}`.trim(),
         tomadorCidade: tag("infCte > toma > enderToma > xMun") || "",
         tomadorUF: tag("infCte > toma > enderToma > UF") || "",
         remCnpj: tag("infCte > emit > CNPJ") || "",
         remNome: tag("infCte > emit > xNome") || "",
         remCidade: tag("infCte > emit > enderEmit > xMun") || "",
         remUF: tag("infCte > emit > enderEmit > UF") || "",
-        remEndereco: ((tag("infCte > emit > enderEmit > xLgr") || "") + " " + (tag("infCte > emit > enderEmit > nro") || "")).trim(),
+        remEndereco: ((remLogEnr || "") + " " + (remNroRaw || "")).trim(),
         remBairro: tag("infCte > emit > enderEmit > xBairro") || "",
         remCEP: tag("infCte > emit > enderEmit > CEP") || "",
         remIE: tag("infCte > emit > IE") || "",
@@ -300,7 +311,7 @@ function CtePage() {
         destNome: destNomeFix,
         destCidade: tag("infCte > dest > enderDest > xMun") || percDstX || ctDstX || (cDstFull as any)?.cidade || tag("infCte > toma > enderToma > xMun") || "",
         destUF: tag("infCte > dest > enderDest > UF") || percDstU || ctDstU || (cDstFull as any)?.uf || tag("infCte > toma > enderToma > UF") || "",
-        destEndereco: ((tag("infCte > dest > enderDest > xLgr") || "") + " " + (tag("infCte > dest > enderDest > nro") || "")).trim() || ((percDstLog || "") + " " + (percDstNro || "")).trim() || ((((cDstFull as any)?.logradouro || "") + " " + ((cDstFull as any)?.numero || "")).trim()) || "",
+        destEndereco: ((dstLogEnr || "") + " " + (dstNroRaw || "")).trim() || "",
         destBairro: tag("infCte > dest > enderDest > xBairro") || percDstBairro || (cDstFull as any)?.bairro || "",
         destCEP: tag("infCte > dest > enderDest > CEP") || percDstCep || (cDstFull as any)?.cep || "",
         destIE: tag("infCte > dest > IE") || percDstIE || (cDstFull as any)?.ie || "",
