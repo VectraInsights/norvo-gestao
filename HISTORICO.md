@@ -1526,3 +1526,8 @@ Commits CF `d49b494` + Vercel `30ff3a0` (+ `f664f64` trigger) + Worker `227f5885
 ## Cabecalho estilo imagem 2 (14/09/2026)
 
 - Emitente com logo a esquerda + linhas rotuladas (Endereco/Bairro+CEP/Cidade+Tel/CNPJ+IE), sem nome em texto e sem QR no cabecalho ( segue no padrao da imagem 2; barras+chave+protocolo cobrem a consulta). Suframa sem corte.
+---
+
+## Cabecalho imagem 2 + QR de volta (14/09/2026)
+
+- Emitente: logo + nome + linhas rotuladas iguais a referencia. QR 20mm ao lado das barras/chave (cabecalho sem espaco p/ os 25mm do MOC); blocos compactados p/ manter 1 pagina (validado no render local).

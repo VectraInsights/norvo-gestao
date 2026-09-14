@@ -282,24 +282,24 @@ export function gerarDactePdf(data: DacteData): Blob {
   box(M + emitW + dacteW, y, modalW, headH);
   const qrTxt = (data.qrCode || "").trim();
   if (data.logoDataUrl) { try { doc.addImage(data.logoDataUrl as string, "PNG", M + 2, y + 3.5, 26, 10.2); } catch {} }
-  else if (qrTxt) drawQr(doc, M + 2, y + 2, 13, qrTxt);
-  else { border(); doc.rect(M + 2, y + 2, 13, 13, "S"); }
+  else { border(); doc.rect(M + 2, y + 3.5, 26, 10.2, "S"); }
   const ex = M + 30;
+  valB(cut(D(data.emitNome) || "EMPRESA", 38), ex, y + 3.5, 7);
   setFont("normal", 6); black();
-  doc.text("Endereço", ex, y + 4.5);
-  val(cut(D(data.emitEndereco), 44), ex + 17, y + 4.5, 6);
-  doc.text("Bairro", ex, y + 8);
-  val(cut(D(data.emitBairro), 15), ex + 17, y + 8, 6);
-  doc.text("CEP", ex + 52, y + 8);
-  val(D(data.emitCEP), ex + 60, y + 8, 6);
-  doc.text("Cidade", ex, y + 11.5);
-  val(`${cut(D(data.emitCidade), 20)}, ${D(data.emitUF)}`, ex + 17, y + 11.5, 6);
-  doc.text("Tel.", ex + 44, y + 11.5);
-  val(D(data.emitFone), ex + 52, y + 11.5, 6);
-  doc.text("CPF / CNPJ", ex, y + 15);
-  val(fmtCnpj(data.emitCnpj), ex + 13, y + 15, 6);
-  doc.text("Insc. Est.", ex + 37, y + 15);
-  val(D(data.emitIE), ex + 51, y + 15, 6);
+  doc.text("Endereço", ex, y + 6.5);
+  val(cut(D(data.emitEndereco), 40), ex + 17, y + 6.5, 6);
+  doc.text("Bairro", ex, y + 9.5);
+  val(cut(D(data.emitBairro), 14), ex + 17, y + 9.5, 6);
+  doc.text("CEP", ex + 52, y + 9.5);
+  val(D(data.emitCEP), ex + 60, y + 9.5, 6);
+  doc.text("Cidade", ex, y + 12.5);
+  val(`${cut(D(data.emitCidade), 20)}, ${D(data.emitUF)}`, ex + 17, y + 12.5, 6);
+  doc.text("Tel.", ex + 54, y + 12.5);
+  val(D(data.emitFone), ex + 62, y + 12.5, 6);
+  doc.text("CPF / CNPJ", ex, y + 15.5);
+  val(fmtCnpj(data.emitCnpj), ex + 13, y + 15.5, 6);
+  doc.text("Insc. Est.", ex + 37, y + 15.5);
+  val(D(data.emitIE), ex + 51, y + 15.5, 6);
   const dx = M + emitW;
   valB("DACTE", dx + 1.5, y + 4.5, 10);
   setFont("normal", 5); black();
@@ -322,21 +322,26 @@ export function gerarDactePdf(data: DacteData): Blob {
   y += headH + 1;
 
   // ---- Código de barras + chave ----
-  const barH = 11;
+  const barH = 22;
   box(M, y, CW, barH);
+  vline(M + CW - 24, y, barH);
   const barsImg = barcodePng(data.chave);
   if (barsImg) {
     try {
       const props = (doc as any).getImageProperties(barsImg);
       const ratio = props.width / props.height;
-      let iw = 6 * ratio, ih = 6;
-      if (iw > CW - 4) { iw = CW - 4; ih = iw / ratio; }
-      doc.addImage(barsImg, "PNG", M + (CW - iw) / 2, y + 1, iw, ih);
+      let iw = 7 * ratio, ih = 7;
+      const maxW = CW - 24 - 8;
+      if (iw > maxW) { iw = maxW; ih = iw / ratio; }
+      doc.addImage(barsImg, "PNG", M + (maxW - iw) / 2 + 2, y + 2, iw, ih);
     } catch {}
   }
   setFont("normal", 4.5); black();
-  doc.text("Chave de Acesso para Consulta de autenticidade no site www.cte.fazenda.gov.br ou da Autorizada", M + 2, y + 8);
-  ctr(fmtChave(data.chave), W / 2, y + 10, 6.5, true);
+  doc.text("Chave de Acesso para Consulta de autenticidade no site www.cte.fazenda.gov.br ou da Autorizada", M + 2, y + 13);
+  ctr(fmtChave(data.chave), M + (CW - 24) / 2, y + 17.5, 6.5, true);
+  const qx = M + CW - 22;
+  if (qrTxt) drawQr(doc, qx, y + 1, 20, qrTxt);
+  else { border(); doc.rect(qx, y + 1, 20, 20, "S"); }
   y += barH + 1;
 
   // ---- Protocolo ----
@@ -351,7 +356,7 @@ export function gerarDactePdf(data: DacteData): Blob {
   y += prH + 1;
 
   // ---- Tipo CT-e / serviço / responsável / tomador / pagamento ----
-  const metaH = 6;
+  const metaH = 5.5;
   box(M, y, CW, metaH);
   const finTxt = String(data.finalidade || "Normal");
   const tipoCTe = /^normal$/i.test(finTxt) ? "EmissaoNormal" : finTxt;
@@ -364,21 +369,21 @@ export function gerarDactePdf(data: DacteData): Blob {
   ];
   let mxx = M + 2;
   metas.forEach(([l, v, w]) => {
-    lab(l, mxx, y + 2.5);
-    val(cut(v, 26), mxx, y + 5.5, 5.5);
+    lab(l, mxx, y + 2);
+    val(cut(v, 26), mxx, y + 5, 5.5);
     if (w) { vline(mxx + w, y, metaH); mxx += w + 2; }
   });
   y += metaH + 1;
 
   // ---- CFOP ----
-  const cfH = 6;
+  const cfH = 5.5;
   box(M, y, CW, cfH);
-  lab("CFOP - Natureza da Prestação", M + 2, y + 2.5);
-  val(`${cfopFmt(data.cfop)}    ${cut(D(data.naturezaOperacao) || "TRANSPORTE", 60)}`, M + 2, y + 5.5, 6);
+  lab("CFOP - Natureza da Prestação", M + 2, y + 2);
+  val(`${cfopFmt(data.cfop)}    ${cut(D(data.naturezaOperacao) || "TRANSPORTE", 60)}`, M + 2, y + 5, 6);
   y += cfH + 1;
 
   // ---- Início / previsão / término ----
-  const iniH = 8;
+  const iniH = 7.5;
   box(M, y, CW, iniH);
   const iniCols: Array<[string, string, number]> = [
     ["Início da Prestação", `${cut(D(data.origemCidade), 30)}, ${D(data.origemUF)}`, 66],
@@ -387,8 +392,8 @@ export function gerarDactePdf(data: DacteData): Blob {
   ];
   let ixx = M + 2;
   iniCols.forEach(([l, v, w]) => {
-    lab(l, ixx, y + 3);
-    valB(cut(v, 34), ixx, y + 6.5, 6);
+    lab(l, ixx, y + 2.5);
+    valB(cut(v, 34), ixx, y + 6, 6);
     if (w) { vline(ixx + w, y, iniH); ixx += w + 2; }
   });
   y += iniH + 1;
@@ -402,7 +407,7 @@ export function gerarDactePdf(data: DacteData): Blob {
   y += rdH + 1;
 
   // ---- Expedidor | Recebedor ----
-  const erH = 20;
+  const erH = 19.5;
   box(M, y, hw, erH);
   box(M + hw, y, hw, erH);
   party(M, "Expedidor", { nome: data.expNome, lgr: data.expEndereco, cid: data.expCidade, cep: "", bai: "", doc: data.expCnpj, ie: data.expIE, uf: data.expUF, fone: "" });
@@ -410,23 +415,23 @@ export function gerarDactePdf(data: DacteData): Blob {
   y += erH + 1;
 
   // ---- Tomador ----
-  const tomH = 14;
+  const tomH = 13;
   box(M, y, CW, tomH);
-  valB(`Tomador: ${cut(D(data.tomadorNome), 48)}`, M + 1.5, y + 3.5, 6);
+  valB(`Tomador: ${cut(D(data.tomadorNome), 48)}`, M + 1.5, y + 3, 6);
   setFont("normal", 6); black();
-  doc.text(`Cidade : ${cut(D(data.tomadorCidade), 28)} / ${D(data.tomadorUF)}`, M + 105, y + 3.5);
-  doc.text(`Endereço : ${cut(D(data.tomadorEndereco), 70)}`, M + 1.5, y + 6.5);
-  doc.text(`CPF / CNPJ : ${fmtCnpj(data.tomadorCnpj)}   Insc. Est. ${cut(D(data.tomadorIE), 20)}`, M + 1.5, y + 9.5);
-  doc.text(`Tel. : ${D(data.tomadorFone)}   País : BRASIL`, M + 105, y + 9.5);
+  doc.text(`Cidade : ${cut(D(data.tomadorCidade), 28)} / ${D(data.tomadorUF)}`, M + 105, y + 3);
+  doc.text(`Endereço : ${cut(D(data.tomadorEndereco), 70)}`, M + 1.5, y + 6);
+  doc.text(`CPF / CNPJ : ${fmtCnpj(data.tomadorCnpj)}   Insc. Est. ${cut(D(data.tomadorIE), 20)}`, M + 1.5, y + 9);
+  doc.text(`Tel. : ${D(data.tomadorFone)}   País : BRASIL`, M + 105, y + 9);
   y += tomH + 1;
 
   // ---- Produto / valor mercadoria / averbação ----
-  const pdH = 8;
+  const pdH = 7.5;
   box(M, y, CW, pdH);
-  lab("Produto Predominante", M + 2, y + 3);
-  lab("Outras Características da Carga", M + 62, y + 3);
-  lab("Valor Total Mercadoria", M + 122, y + 3);
-  lab("Número Averbação", M + 158, y + 3);
+  lab("Produto Predominante", M + 2, y + 2.5);
+  lab("Outras Características da Carga", M + 62, y + 2.5);
+  lab("Valor Total Mercadoria", M + 122, y + 2.5);
+  lab("Número Averbação", M + 158, y + 2.5);
   val(cut(D(data.proPred) || D(data.produtoPredominante), 30), M + 2, y + 6.5, 6);
   val(cut(D(data.xOutCat) || D(data.outrasCaract), 30), M + 62, y + 6.5, 6);
   val(fmtNum(data.valorCarga), M + 122, y + 6.5, 6);
@@ -557,9 +562,9 @@ export function gerarDactePdf(data: DacteData): Blob {
   y += ibH + 1;
 
   // ---- Documentos originários ----
-  const docTitleH = 4.5;
+  const docTitleH = 4;
   box(M, y, CW, docTitleH);
-  ctr("Documentos Originários", W / 2, y + 3.5, 6, true);
+  ctr("Documentos Originários", W / 2, y + 3, 6, true);
   y += docTitleH;
   const docHeadH = 4;
   box(M, y, CW, docHeadH);
@@ -577,7 +582,7 @@ export function gerarDactePdf(data: DacteData): Blob {
   } else {
     for (let i = 0; i < nfs.length; i += 2) {
       need(11);
-      const rh = 5.5;
+      const rh = 5;
       box(M, y, hw, rh);
       box(M + hw, y, hw, rh);
       for (let c = 0; c < 2; c++) {
@@ -585,10 +590,10 @@ export function gerarDactePdf(data: DacteData): Blob {
         if (!nf) break;
         const ox = (c === 0 ? M : M + hw) + 2;
         setFont("normal", 5.5); black();
-        doc.text("NFe", ox, y + 3.5);
-        doc.text(`${String(nf.serie || "1").padStart(3, "0")} / ${D(nf.nNF)}`, ox + 18, y + 3.5);
+        doc.text("NFe", ox, y + 3);
+        doc.text(`${String(nf.serie || "1").padStart(3, "0")} / ${D(nf.nNF)}`, ox + 18, y + 3);
         setFont("normal", 4.5);
-        doc.text(fmtChave(nf.chave || ""), ox + 44, y + 3.5);
+        doc.text(fmtChave(nf.chave || ""), ox + 44, y + 3);
       }
       y += rh;
     }
@@ -598,7 +603,7 @@ export function gerarDactePdf(data: DacteData): Blob {
   // ---- Observações ----
   const hasObsTxt = !!(data.obs && data.obs.trim());
   const isHom = (data.ambiente || "") === "homologacao";
-  const obsH = 12;
+  const obsH = 9;
   need(obsH + 6);
   box(M, y, CW, 5);
   ctr("Observações", W / 2, y + 3.5, 6, true);
@@ -607,7 +612,7 @@ export function gerarDactePdf(data: DacteData): Blob {
   if (hasObsTxt) {
     setFont("normal", 5); black();
     const lines = doc.splitTextToSize(data.obs, CW - 4);
-    doc.text(lines.slice(0, 4), M + 2, y + 4);
+    doc.text(lines.slice(0, 2), M + 2, y + 4);
   }
   if (isHom) {
     doc.setTextColor(170, 170, 170);
@@ -617,7 +622,7 @@ export function gerarDactePdf(data: DacteData): Blob {
   y += obsH + 1;
 
   // ---- Total impostos aproximado ----
-  const impH = 4.5;
+  const impH = 4;
   box(M, y, CW, impH);
   const vt = Number(data.vTotTrib) || 0;
   const perc = data.valorServico ? (vt / Number(data.valorServico)) * 100 : 0;
@@ -628,7 +633,7 @@ export function gerarDactePdf(data: DacteData): Blob {
   y += impH + 1;
 
   // ---- Informações adicionais ----
-  const iaH = 6;
+  const iaH = 5;
   need(iaH + 6);
   box(M, y, CW, 5);
   setFont("bold", 6); black();
@@ -638,7 +643,7 @@ export function gerarDactePdf(data: DacteData): Blob {
   if (D(data.infoAdicionais)) {
     setFont("normal", 5); black();
     const lines = doc.splitTextToSize(String(data.infoAdicionais), CW - 4);
-    doc.text(lines.slice(0, 3), M + 2, y + 4);
+    doc.text(lines.slice(0, 2), M + 2, y + 4);
   }
   y += iaH + 1;
 
@@ -706,12 +711,12 @@ export function gerarDactePdf(data: DacteData): Blob {
 
   // ---- Uso exclusivo | fisco ----
   need(12);
-  const usoH = 6;
+  const usoH = 5;
   box(M, y, hw, usoH);
   box(M + hw, y, hw, usoH);
   setFont("bold", 5.5); black();
-  doc.text("Uso Exclusivo do Emissor do CT-e", M + 2, y + 4);
-  doc.text("Reservado ao Fisco", M + hw + 2, y + 4);
+  doc.text("Uso Exclusivo do Emissor do CT-e", M + 2, y + 3.5);
+  doc.text("Reservado ao Fisco", M + hw + 2, y + 3.5);
   y += usoH + 1;
 
   // ---- Canhoto ----
@@ -722,24 +727,24 @@ export function gerarDactePdf(data: DacteData): Blob {
   try { (doc as any).restoreGraphicsState(); } catch {}
   border();
   y += 2;
-  const caH = 15;
+  const caH = 14;
   box(M, y, CW, caH);
   ctr("DECLARO QUE RECEBI OS VOLUMES DESTE CONHECIMENTO EM PERFEITO ESTADO PELO QUE DOU POR CUMPRIMENTO DESTE PRESENTE", W / 2, y + 3.5, 5.5, true);
   vline(M + 70, y + 5, caH - 5);
   vline(M + 140, y + 5, caH - 5);
   setFont("normal", 5); black();
-  doc.text("Nome", M + 2, y + 6);
-  doc.text("RG", M + 2, y + 10);
-  doc.text("Assinatura ou Carimbo", M + 72, y + 10);
-  doc.text("Término da Prestação - Data/Hora", M + 72, y + 6);
-  doc.line(M + 72, y + 8.5, M + 136, y + 8.5);
-  doc.text("Início de Prestação - Data/Hora", M + 72, y + 13);
-  doc.line(M + 72, y + 14.5, M + 136, y + 14.5);
+  doc.text("Nome", M + 2, y + 5.5);
+  doc.text("RG", M + 2, y + 9);
+  doc.text("Assinatura ou Carimbo", M + 72, y + 9);
+  doc.text("Término da Prestação - Data/Hora", M + 72, y + 5.5);
+  doc.line(M + 72, y + 8, M + 136, y + 8);
+  doc.text("Início de Prestação - Data/Hora", M + 72, y + 11.5);
+  doc.line(M + 72, y + 13, M + 136, y + 13);
   setFont("bold", 6); black();
-  doc.text("CT-e", M + 150, y + 6);
+  doc.text("CT-e", M + 150, y + 5.5);
   setFont("bold", 6); black();
-  doc.text(`NRO Documento : ${fmtInt(data.numero)}`, M + 142, y + 9.5);
-  doc.text(`Série : ${D(data.serie) || "1"}`, M + 142, y + 13);
+  doc.text(`NRO Documento : ${fmtInt(data.numero)}`, M + 142, y + 9);
+  doc.text(`Série : ${D(data.serie) || "1"}`, M + 142, y + 11.5);
 
   return doc.output("blob");
 }
