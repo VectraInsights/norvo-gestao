@@ -70,7 +70,7 @@
   --radius: 0.625rem;
 
   /* Papel quente / tinta grafite */
-  --background: oklch(0.985 0.006 80);        /* off-white cremoso */
+  --background: oklch(0.95 0.008 80);         /* papel suave, menos glare */
   --foreground: oklch(0.22 0.02 60);          /* grafite marrom */
 
   --card: oklch(1 0 0);
@@ -82,10 +82,10 @@
   --primary: oklch(0.55 0.16 38);
   --primary-foreground: oklch(0.985 0.006 80);
 
-  --secondary: oklch(0.95 0.012 75);
+  --secondary: oklch(0.92 0.012 75);
   --secondary-foreground: var(--foreground);
 
-  --muted: oklch(0.955 0.01 75);
+  --muted: oklch(0.925 0.01 75);
   --muted-foreground: oklch(0.5 0.02 60);
 
   --accent: oklch(0.93 0.03 60);              /* pêssego suave */
@@ -110,7 +110,7 @@
   --chart-4: oklch(0.72 0.14 75);   /* âmbar */
   --chart-5: oklch(0.5 0.02 60);    /* grafite */
 
-  --sidebar: oklch(0.97 0.008 75);
+  --sidebar: oklch(0.94 0.008 75);
   --sidebar-foreground: oklch(0.28 0.02 60);
   --sidebar-primary: oklch(0.55 0.16 38);
   --sidebar-primary-foreground: oklch(0.985 0.006 80);

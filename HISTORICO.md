@@ -1415,3 +1415,8 @@ PENDENTE (dashboard Vercel): criar env `VITE_AI_URL=https://norvo-gestao-cf.sptn
 - MDF-e validado antes: emite/consulta/encerra via proxy `/api/sefaz`, funciona servido pelo Worker — redirect nao quebra nada fiscal.
 - PENDENTE: repointar o exe Electron (desktop carrega a URL da Vercel; redirect leva ao Worker sozinho, mas o ideal e apontar direto).
 Commits CF `d49b494` + Vercel `30ff3a0` (+ `f664f64` trigger) + Worker `227f5885`.
+---
+
+## Fundo claro mais suave (14/09/2026)
+
+- `--background` 0.985 -> 0.95 (papel quente, menos glare); `--muted`, `--secondary` e `--sidebar` desceram junto p/ manter a hierarquia. Cards seguem brancos, modo escuro intocado.
