@@ -1451,3 +1451,8 @@ Commits CF `d49b494` + Vercel `30ff3a0` (+ `f664f64` trigger) + Worker `227f5885
 ## Sidebar terracota clara (14/09/2026)
 
 - Sidebar do tema claro com banho terracota (fundo, selecao e borda); texto escuro mantido.
+---
+
+## Botao importar sem amarelo chapado (14/09/2026)
+
+- Labels de importacao (CT-e e veiculos) com `bg-amber-100` fixo migrados p/ tokens `accent` do tema — acompanham claro/escuro sem gritar.

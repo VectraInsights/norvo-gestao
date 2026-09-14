@@ -1495,7 +1495,7 @@ function CtePage() {
 
           {/* Ações de importação múltipla */}
           <div className="flex flex-wrap gap-2">
-            <label className="flex items-center gap-2 px-3 py-2 border rounded bg-amber-100 dark:bg-amber-900/30 cursor-pointer hover:bg-amber-200 text-xs font-medium">
+            <label className="flex items-center gap-2 px-3 py-2 border rounded bg-accent text-accent-foreground cursor-pointer hover:bg-accent/70 text-xs font-medium">
               <UploadCloud className="h-4 w-4" /> Importar NFes (XML)
               <input type="file" accept=".xml" multiple className="hidden" onChange={e => { if (e.target.files) handleImportNFeXml(e.target.files); e.currentTarget.value = ""; }} />
             </label>
