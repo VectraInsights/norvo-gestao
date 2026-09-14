@@ -1506,3 +1506,8 @@ Commits CF `d49b494` + Vercel `30ff3a0` (+ `f664f64` trigger) + Worker `227f5885
 
 - Novo `lib/endereco.ts`: detecta prefixo (Av/Rua/Alameda/...) e, se ausente, busca a rua pelo CEP na BrasilAPI conferindo o nome. Validado: NAZARE+66035445 -> Avenida Nazare.
 - DACTE (rem/dest/emit/toma) usa o logradouro enriquecido; dado gravado intacto. Form e contatos seguem exibindo a origem.
+---
+
+## Enriquecido volta p/ o cadastro (14/09/2026)
+
+- Ao gerar o DACTE, se o contato esta sem prefixo e o enriquecido tem, grava de volta (rem/dest). Dado manual com prefixo nunca e sobrescrito; idempotente.

@@ -24,7 +24,7 @@ import { limparIE } from "@/lib/ie";
 import { emitirCteFn, consultarCteFn, cancelarCteFn, previewCteXmlFn, excluirRejeitadosCteFn } from "@/lib/sefaz-cte-server";
 import { CFOPS_CTE, MOD_FRETE_OPTIONS, RESPONSAVEL_CTE_OPTIONS } from "@/lib/cfops-transporte";
 import { gerarDactePdf } from "@/lib/dacte-pdf";
-import { completarLogradouro } from "@/lib/endereco";
+import { completarLogradouro, temTipoLogradouro } from "@/lib/endereco";
 import { JUVENAL_LOGO } from "@/lib/juvenal-logo";
 import { Textarea } from "@/components/ui/textarea";
 import { DateInput } from "@/components/erp/date-input";
@@ -278,6 +278,18 @@ function CtePage() {
       const tomNroRaw = tag("infCte > toma > enderToma > nro") || "";
       const tomCepRaw = tag("infCte > toma > enderToma > CEP") || "";
       const [remLogEnr, dstLogEnr, tomLogEnr] = await Promise.all([completarLogradouro(remLogRaw, remCepRaw), completarLogradouro(dstLogRaw, dstCepRaw), completarLogradouro(tomLogRaw, tomCepRaw)]);
+      try {
+        const pendUpd: Array<Promise<any>> = [];
+        const fixCad = (docDigits: string, atual: string, novo: string) => {
+          if (!empresa || !docDigits || !novo || novo === atual) return;
+          if (atual && temTipoLogradouro(atual)) return;
+          if (!temTipoLogradouro(novo)) return;
+          pendUpd.push(supabase.from("contatos" as any).update({ logradouro: novo }).eq("empresa_id", (empresa as any).id).eq("documento", docDigits));
+        };
+        fixCad(remD, ((cRemFull as any)?.logradouro || ""), remLogEnr);
+        fixCad(dstD, ((cDstFull as any)?.logradouro || ""), dstLogEnr);
+        if (pendUpd.length) await Promise.all(pendUpd);
+      } catch {}
             const pdfBlob = gerarDactePdf({
         chave: doc.chave_acesso || "",
         numero: doc.numero || "",
