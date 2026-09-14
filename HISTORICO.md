@@ -1471,3 +1471,8 @@ Commits CF `d49b494` + Vercel `30ff3a0` (+ `f664f64` trigger) + Worker `227f5885
 ## Offwhite quente de volta (14/09/2026)
 
 - Cinza neutro revertido: fundo offwhite quente (0.94), caixas (0.97), textos e bordas na familia quente; sidebar terracota mantida.
+---
+
+## Marca verde no claro (14/09/2026)
+
+- Primario/anel/graficos/sidebar/accent: terracota -> verde profundo, combinando com o offwhite. Ambar semantico (alertas) mantido; modo escuro intocado.

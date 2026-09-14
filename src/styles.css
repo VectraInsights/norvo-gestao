@@ -7,7 +7,7 @@
 /*
  * Norvo — design system
  * Estética fintech corporativa: papel quente, tinta grafite profunda,
- * acento terracota. Deliberadamente distante do azul/verde de ERPs
+ * acento verde. Deliberadamente distante do azul/verde de ERPs
  * tradicionais brasileiros.
  */
 
@@ -63,7 +63,7 @@
   --color-sidebar-ring: var(--sidebar-ring);
 
   --shadow-panel: 0 1px 0 oklch(0.22 0.02 60 / 0.06), 0 8px 24px -12px oklch(0.22 0.02 60 / 0.10);
-  --shadow-glow: 0 0 0 1px oklch(0.62 0.16 40 / 0.15), 0 8px 32px -8px oklch(0.62 0.16 40 / 0.25);
+  --shadow-glow: 0 0 0 1px oklch(0.47 0.13 150 / 0.15), 0 8px 32px -8px oklch(0.47 0.13 150 / 0.25);
 }
 
 :root {
@@ -78,8 +78,9 @@
   --popover: oklch(0.97 0.006 80);
   --popover-foreground: var(--foreground);
 
-  /* Acento primário: terracota profundo */
-  --primary: oklch(0.55 0.16 38);
+  /* Acento primário: verde profundo */
+  --primary: oklch(0.47 0.13 150);
+  --ring: oklch(0.47 0.13 150);
   --primary-foreground: oklch(0.985 0.006 80);
 
   --secondary: oklch(0.91 0.012 75);
@@ -88,8 +89,8 @@
   --muted: oklch(0.91 0.01 75);
   --muted-foreground: oklch(0.5 0.02 60);
 
-  --accent: oklch(0.90 0.03 60);               /* destaque quente */
-  --accent-foreground: oklch(0.35 0.08 40);
+  --accent: oklch(0.90 0.025 150);            /* destaque verde */
+  --accent-foreground: oklch(0.35 0.07 150);
 
   --destructive: oklch(0.52 0.20 25);
   --destructive-foreground: oklch(0.985 0.006 80);
@@ -102,22 +103,21 @@
 
   --border: oklch(0.86 0.012 70);
   --input: oklch(0.86 0.012 70);
-  --ring: oklch(0.55 0.16 38);
 
-  --chart-1: oklch(0.55 0.16 38);   /* terracota */
+  --chart-1: oklch(0.47 0.13 150);   /* verde */
   --chart-2: oklch(0.55 0.11 155);  /* verde oliva */
   --chart-3: oklch(0.35 0.06 250);  /* índigo profundo */
   --chart-4: oklch(0.72 0.14 75);   /* âmbar */
   --chart-5: oklch(0.5 0.02 60);    /* grafite */
 
-  --sidebar: oklch(0.80 0.04 45);
+  --sidebar: oklch(0.85 0.02 150);
   --sidebar-foreground: oklch(0.28 0.02 60);
-  --sidebar-primary: oklch(0.55 0.16 38);
+  --sidebar-primary: oklch(0.47 0.13 150);
   --sidebar-primary-foreground: oklch(0.985 0.006 80);
-  --sidebar-accent: oklch(0.74 0.05 42);
+  --sidebar-accent: oklch(0.79 0.03 150);
   --sidebar-accent-foreground: oklch(0.22 0.02 60);
-  --sidebar-border: oklch(0.72 0.03 45);
-  --sidebar-ring: oklch(0.55 0.16 38);
+  --sidebar-border: oklch(0.77 0.02 150);
+  --sidebar-ring: oklch(0.47 0.13 150);
 }
 
 .dark {
