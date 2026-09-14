@@ -1436,3 +1436,8 @@ Commits CF `d49b494` + Vercel `30ff3a0` (+ `f664f64` trigger) + Worker `227f5885
 ## Sidebar com tom proprio (14/09/2026)
 
 - Sidebar em taupe quente (0.87) com borda e destaque de selecao acompanhando; texto escuro mantido (contraste ok). Modo escuro intocado.
+---
+
+## Sidebar escura com tom proprio (14/09/2026)
+
+- `.dark --sidebar` 0.20 -> 0.24 (painel elevado sobre a pagina 0.18) e `--sidebar-accent` acompanhando.
