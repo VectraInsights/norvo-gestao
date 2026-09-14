@@ -1420,3 +1420,8 @@ Commits CF `d49b494` + Vercel `30ff3a0` (+ `f664f64` trigger) + Worker `227f5885
 ## Fundo claro mais suave (14/09/2026)
 
 - `--background` 0.985 -> 0.95 (papel quente, menos glare); `--muted`, `--secondary` e `--sidebar` desceram junto p/ manter a hierarquia. Cards seguem brancos, modo escuro intocado.
+---
+
+## Caixas off-white quente (14/09/2026)
+
+- `--card` e `--popover` 1.0 -> 0.975 quente: caixas seguem claras contra a pagina, sem o claro de branco puro.

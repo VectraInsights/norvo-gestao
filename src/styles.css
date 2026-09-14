@@ -73,9 +73,9 @@
   --background: oklch(0.95 0.008 80);         /* papel suave, menos glare */
   --foreground: oklch(0.22 0.02 60);          /* grafite marrom */
 
-  --card: oklch(1 0 0);
+  --card: oklch(0.975 0.005 80);
   --card-foreground: var(--foreground);
-  --popover: oklch(1 0 0);
+  --popover: oklch(0.975 0.005 80);
   --popover-foreground: var(--foreground);
 
   /* Acento primário: terracota profundo */
