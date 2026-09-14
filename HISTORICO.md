@@ -1431,3 +1431,8 @@ Commits CF `d49b494` + Vercel `30ff3a0` (+ `f664f64` trigger) + Worker `227f5885
 
 - Coleta/Entrega (municipio+UF) viraram somente-leitura com tooltip ("Segue o remetente" / "Segue redespacho/destinatario"); fora do tab.
 - Efeito novo: coleta segue o remetente (NF-e emitente + contato). Entrega (ja automatica) ganhou fallback de contato quando a NF-e vem sem cidade.
+---
+
+## Sidebar com tom proprio (14/09/2026)
+
+- Sidebar em taupe quente (0.87) com borda e destaque de selecao acompanhando; texto escuro mantido (contraste ok). Modo escuro intocado.
