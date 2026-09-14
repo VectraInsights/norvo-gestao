@@ -110,13 +110,13 @@
   --chart-4: oklch(0.72 0.14 75);   /* âmbar */
   --chart-5: oklch(0.5 0.02 60);    /* grafite */
 
-  --sidebar: oklch(0.85 0.008 250);
+  --sidebar: oklch(0.84 0.035 45);
   --sidebar-foreground: oklch(0.28 0.006 250);
   --sidebar-primary: oklch(0.55 0.16 38);
   --sidebar-primary-foreground: oklch(0.985 0.006 80);
-  --sidebar-accent: oklch(0.79 0.01 250);
+  --sidebar-accent: oklch(0.78 0.045 42);
   --sidebar-accent-foreground: oklch(0.25 0.006 250);
-  --sidebar-border: oklch(0.78 0.008 250);
+  --sidebar-border: oklch(0.76 0.03 45);
   --sidebar-ring: oklch(0.55 0.16 38);
 }
 
