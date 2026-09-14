@@ -1481,3 +1481,8 @@ Commits CF `d49b494` + Vercel `30ff3a0` (+ `f664f64` trigger) + Worker `227f5885
 ## IE aceita ISENTO digitado (14/09/2026)
 
 - Os 4 campos de IE (tomador, destinatario, consignatario, redespacho) apagavam letras a cada tecla (`replace(/\D/g)`), tornando ISENTO impossivel de digitar. Agora aceitam A-Z0-9 em maiusculas (numeros como antes). Validacao e XML ja tratavam ISENTO.
+---
+
+## Pedagio "sem" sempre marcado (14/09/2026)
+
+- Valores legados de `pedagio_pagto` (ex. "sem") nao casavam com nenhum radio e deixavam tudo desmarcado. `pagtoSeguro()` normaliza qualquer valor p/ um dos 4 validos (padrao sem-pagamento) nos radios, no calculo, ao aplicar percurso e ao salvar; select do percurso com a mesma guarda.

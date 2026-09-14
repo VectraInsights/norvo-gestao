@@ -328,6 +328,8 @@ function CtePage() {
   };
   // Percurso NÃO guarda motorista nem frete: ao abrir um CT-e novo, esses dados de viagem zeram
   const LIMPA_VIAGEM = { motoristaNome: "", motoristaId: "", ciot: "", placaVeiculo: "", placaReboque: "", semiReboque1: "", semiReboque2: "", vPrest: "0.00", adicionalPed: "0.00", descontoPed: "0.00", outrosPed: "0.00", adValorem: "0.00", gris: "0.00", taxaColeta: "0.00", taxaEntrega: "0.00", valePedagio: "0.00", pedagioPagto: "sem-pagamento", pedagioOperadora: "", pedagioCnpj: "", pedagioTag: "", distanciaKm: "", duracaoHoras: "" };
+  const PAGTO_VALIDOS = ["free-flow", "tag-transportador", "tag-tomador", "sem-pagamento"];
+  const pagtoSeguro = (v: any) => (PAGTO_VALIDOS.includes(v) ? v : "sem-pagamento");
   const [form, setForm] = useState(emptyForm);
   // Novo CT-e preservando dados fiscais (CFOP, impostos, status) — só limpa dados da NF/tomador/rota
   const novoCtePreservandoFiscal = () => {
@@ -351,7 +353,7 @@ function CtePage() {
   // Pedágio: com cobrança (Free Flow / TAGs) os dados são obrigatórios — alimentam o MDF-e e barram a emissão
   const Traciona = (tipo: any) => { const t = String(tipo || "").toLowerCase(); return t.indexOf("cavalo") >= 0 || (t.indexOf("truck") >= 0 && t.indexOf("bitruck") < 0); };
   const validarPedagio = (f: typeof emptyForm) => {
-    const modo = (f.pedagioPagto || "sem-pagamento") as string;
+    const modo = pagtoSeguro(f.pedagioPagto) as string;
     if (modo === "sem-pagamento") return;
     const rotulo = modo === "free-flow" ? "Free Flow" : modo === "tag-transportador" ? "TAG Transportador" : "TAG Tomador";
     const errs: string[] = [];
@@ -1210,7 +1212,7 @@ function CtePage() {
       cMunIni: r.coleta_cmun || f.cMunIni, xMunIni: r.coleta_xmun || f.xMunIni, ufIni: r.coleta_uf || f.ufIni,
       cMunFim: r.entrega_cmun || f.cMunFim, xMunFim: r.entrega_xmun || f.xMunFim, ufFim: r.entrega_uf || f.ufFim,
       cfop: r.cfop || f.cfop,
-      pedagioPagto: r.pedagio_pagto || f.pedagioPagto, pedagioOperadora: r.pedagio_operadora || f.pedagioOperadora,
+      pedagioPagto: pagtoSeguro(r.pedagio_pagto || f.pedagioPagto), pedagioOperadora: r.pedagio_operadora || f.pedagioOperadora,
       pedagioCnpj: r.pedagio_cnpj || f.pedagioCnpj, pedagioTag: r.pedagio_tag || f.pedagioTag,
       valePedagio: r.pedagio_vale || f.valePedagio,
       cnpjConsignatario: r.consig_cnpj || f.cnpjConsignatario, xNomeConsignatario: r.consig_nome || f.xNomeConsignatario,
@@ -1279,7 +1281,7 @@ function CtePage() {
       seg_rctr_c: form.rctrC || "", seg_rcf_dc: form.rcfDc || "", seg_adicional: form.segAdicional || "",
       seg_total: form.segTotal || "", seg_repassar: form.segRepassar === "S", seg_responsavel: form.segResponsavel || "",
       distancia_km: form.distanciaKm || "", duracao_horas: form.duracaoHoras || "",
-      pedagio_pagto: form.pedagioPagto || "sem-pagamento", pedagio_operadora: form.pedagioOperadora || "", pedagio_cnpj: form.pedagioCnpj || "",
+      pedagio_pagto: pagtoSeguro(form.pedagioPagto), pedagio_operadora: form.pedagioOperadora || "", pedagio_cnpj: form.pedagioCnpj || "",
       pedagio_tag: form.pedagioTag || "", pedagio_vale: form.valePedagio || "0.00",
       icms_cst: form.icmsCST || "", icms_aliq: form.icmsAliq || "",
       reducao_base: (form as any).reducaoBase || "", credito_outorgado: (form as any).creditoOutorgado || "",
@@ -2200,10 +2202,10 @@ function CtePage() {
               <Card className="p-2">
                 <h5 className="text-xs font-semibold mb-1">Forma de Pagamento do Pedágio</h5>
                 <div className="flex flex-wrap gap-3 text-[10px]">
-                  <label className="flex items-center gap-1"><input type="radio" name="pedagio_pagto" checked={(form.pedagioPagto || "sem-pagamento") === "free-flow"} onChange={() => setForm({ ...form, pedagioPagto: "free-flow" })} /> Free Flow</label>
-                  <label className="flex items-center gap-1"><input type="radio" name="pedagio_pagto" checked={(form.pedagioPagto || "sem-pagamento") === "tag-transportador"} onChange={() => setForm({ ...form, pedagioPagto: "tag-transportador" })} /> TAG Transportador</label>
-                  <label className="flex items-center gap-1"><input type="radio" name="pedagio_pagto" checked={(form.pedagioPagto || "sem-pagamento") === "tag-tomador"} onChange={() => setForm({ ...form, pedagioPagto: "tag-tomador" })} /> TAG Tomador</label>
-                  <label className="flex items-center gap-1"><input type="radio" name="pedagio_pagto" checked={(form.pedagioPagto || "sem-pagamento") === "sem-pagamento"} onChange={() => setForm({ ...form, pedagioPagto: "sem-pagamento" })} /> Sem Pagamento de Pedágio</label>
+                  <label className="flex items-center gap-1"><input type="radio" name="pedagio_pagto" checked={pagtoSeguro(form.pedagioPagto) === "free-flow"} onChange={() => setForm({ ...form, pedagioPagto: "free-flow" })} /> Free Flow</label>
+                  <label className="flex items-center gap-1"><input type="radio" name="pedagio_pagto" checked={pagtoSeguro(form.pedagioPagto) === "tag-transportador"} onChange={() => setForm({ ...form, pedagioPagto: "tag-transportador" })} /> TAG Transportador</label>
+                  <label className="flex items-center gap-1"><input type="radio" name="pedagio_pagto" checked={pagtoSeguro(form.pedagioPagto) === "tag-tomador"} onChange={() => setForm({ ...form, pedagioPagto: "tag-tomador" })} /> TAG Tomador</label>
+                  <label className="flex items-center gap-1"><input type="radio" name="pedagio_pagto" checked={pagtoSeguro(form.pedagioPagto) === "sem-pagamento"} onChange={() => setForm({ ...form, pedagioPagto: "sem-pagamento" })} /> Sem Pagamento de Pedágio</label>
                 </div>
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-1 mt-1">
                   <div><Label className="text-[10px] text-muted-foreground">Operadora</Label><Input className="h-6 text-[11px]" placeholder="Ex: SEM PARAR" value={form.pedagioOperadora || ""} onChange={e => setForm({ ...form, pedagioOperadora: e.target.value })} /></div>

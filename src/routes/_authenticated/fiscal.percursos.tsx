@@ -578,7 +578,7 @@ function PercursosPage() {
                     <div className="grid grid-cols-2 md:grid-cols-5 gap-1">
                       <div>
                         <Label className="text-[10px] text-muted-foreground">Pagamento</Label>
-                        <Select value={editing.pedagio_pagto || "sem-pagamento"} onValueChange={v => set("pedagio_pagto", v)}>
+                        <Select value={["free-flow", "tag-transportador", "tag-tomador", "sem-pagamento"].includes(editing.pedagio_pagto) ? editing.pedagio_pagto : "sem-pagamento"} onValueChange={v => set("pedagio_pagto", v)}>
                           <SelectTrigger className="h-7 text-xs"><SelectValue /></SelectTrigger>
                           <SelectContent>
                             <SelectItem value="sem-pagamento">Sem Pagamento</SelectItem>
