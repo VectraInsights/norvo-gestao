@@ -1516,3 +1516,8 @@ Commits CF `d49b494` + Vercel `30ff3a0` (+ `f664f64` trigger) + Worker `227f5885
 ## DACTE tudo maiusculo (14/09/2026)
 
 - Rua vinda da API em caixa alta + `cut()` do PDF forca maiusculas em nomes/enderecos/cidades. Obs e info adicionais seguem livres.
+---
+
+## Ordem dos icones do CT-e (14/09/2026)
+
+- Acoes: olho, XML, PDF, cancelar, lupa por ultimo (fora do rascunho).
