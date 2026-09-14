@@ -54,7 +54,7 @@ export async function completarLogradouro(logr: string, cep: string): Promise<st
       const nOrig = norm(orig), nSt = norm(street);
       if (nSt === nOrig || nSt.endsWith(" " + nOrig) || nSt.includes(nOrig)) {
         cepCache.set(digits, street);
-        return street;
+        return street.toUpperCase();
       }
     }
     cepCache.set(digits, "");

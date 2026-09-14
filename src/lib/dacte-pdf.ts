@@ -253,7 +253,7 @@ export function gerarDactePdf(data: DacteData): Blob {
   const val = (t: string, x: number, yy: number, s = 7) => { black(); setFont("normal", s); doc.text(String(t || ""), x, yy); };
   const valB = (t: string, x: number, yy: number, s = 7) => { black(); setFont("bold", s); doc.text(String(t || ""), x, yy); };
   const need = (h: number) => { if (y + h > LIM) { doc.addPage(); y = M; } };
-  const cut = (t: string, n: number) => String(t || "").slice(0, n);
+  const cut = (t: string, n: number) => String(t || "").slice(0, n).toUpperCase();
   const D = (v: any) => (v === undefined || v === null || v === "" ? "" : String(v));
   const ctr = (t: string, xx: number, yy: number, s: number, bold = false) => {
     black(); setFont(bold ? "bold" : "normal", s);
