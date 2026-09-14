@@ -1476,3 +1476,8 @@ Commits CF `d49b494` + Vercel `30ff3a0` (+ `f664f64` trigger) + Worker `227f5885
 ## Marca verde no claro (14/09/2026)
 
 - Primario/anel/graficos/sidebar/accent: terracota -> verde profundo, combinando com o offwhite. Ambar semantico (alertas) mantido; modo escuro intocado.
+---
+
+## IE aceita ISENTO digitado (14/09/2026)
+
+- Os 4 campos de IE (tomador, destinatario, consignatario, redespacho) apagavam letras a cada tecla (`replace(/\D/g)`), tornando ISENTO impossivel de digitar. Agora aceitam A-Z0-9 em maiusculas (numeros como antes). Validacao e XML ja tratavam ISENTO.
