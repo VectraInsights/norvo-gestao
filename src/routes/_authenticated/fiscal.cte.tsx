@@ -190,6 +190,26 @@ function CtePage() {
           if (cD) { ctDstNome = cD.nome || ""; ctDstX = cD.cidade || ""; ctDstU = cD.uf || ""; }
         }
       } catch {}
+      let emitFoneC = "", remFoneC = "", motoCPFC = "", segCNPJC = "";
+      try {
+        if (empresa && (remD || tomaD)) {
+          const { data: cts2 } = await supabase.from("contatos" as any).select("documento,telefone").eq("empresa_id", (empresa as any).id);
+          const cl2 = ((cts2 as any[]) || []);
+          const f2 = (dd: string) => cl2.find(cc => String(cc.documento || "").replace(/\D/g, "") === dd);
+          const cE = remD ? f2(remD) : null;
+          if (cE) { emitFoneC = ((cE as any).telefone || "").replace(/\D/g, ""); remFoneC = emitFoneC; }
+        }
+        const segId = (pjForm as any).seguradoraId || "";
+        if (empresa && segId) {
+          const { data: sg } = await supabase.from("seguradoras" as any).select("cnpj").eq("empresa_id", (empresa as any).id).eq("id", segId).maybeSingle();
+          if (sg) segCNPJC = (sg as any).cnpj || "";
+        }
+        const motId = (pjForm as any).motoristaId || "";
+        if (empresa && motId) {
+          const { data: cb } = await supabase.from("colaboradores" as any).select("cpf").eq("empresa_id", (empresa as any).id).eq("id", motId).maybeSingle();
+          if (cb) motoCPFC = String((cb as any).cpf || "").replace(/\D/g, "");
+        }
+      } catch {}
       let destNomeFix = tag("infCte > dest > xNome") || "";
       if (!destNomeFix || destNomeFix === "CTE EMITIDO EM AMBIENTE DE HOMOLOGACAO - SEM VALORFISCAL") destNomeFix = percDstNome;
       if (!destNomeFix || destNomeFix === "CTE EMITIDO EM AMBIENTE DE HOMOLOGACAO - SEM VALORFISCAL") destNomeFix = ctDstNome;
@@ -212,6 +232,30 @@ function CtePage() {
       if (!healed && !percObs && !percColX) toast.warning("Percurso nao localizado: obs e cidades ficam em branco");
       if (healed) toast.info("Percurso criado automaticamente - complete a observacao em Percursos");
       const xmlComps = Array.from(xmlDoc.querySelectorAll("vPrest > Comp")).map(cc => ({ nome: (cc.querySelector("xNome")?.textContent || "").trim(), valor: parseFloat(cc.querySelector("vComp")?.textContent || "0") || 0 })).filter(cc => cc.nome).slice(0, 8);
+      const dhEmi = tag("infCte > ide > dhEmi") || "";
+      const versaoCte = xmlDoc.querySelector("infCte")?.getAttribute("versao") || "4.00";
+      const toma3 = (xmlDoc.querySelector("toma3 > toma")?.textContent || "").trim();
+      const toma4x = !!xmlDoc.querySelector("toma4, infCte > toma4");
+      const proPred = tag("infCte > infCarga > proPred") || "";
+      const xOutCat = tag("infCte > infCarga > xOutCat") || "";
+      const infQ = Array.from(xmlDoc.querySelectorAll("infCte > infCarga > infQ")).map(q => ({ q: q.querySelector("qCarga")?.textContent || "", um: q.querySelector("tpMed")?.textContent || q.querySelector("cUnid")?.textContent || "" })).slice(0, 3);
+      const ibsBase = tag("infCte > imp > IBSCBS > vBC") || tag("infCte > imp > IBSCBS > vBCIBS") || "";
+      const ibsCST = tag("infCte > imp > IBSCBS > CST") || "";
+      const ibsClass = tag("infCte > imp > IBSCBS > cClassTrib") || "";
+      const gCBS = xmlDoc.querySelector("infCte > imp > IBSCBS > gCBS");
+      const gMun = xmlDoc.querySelector("infCte > imp > IBSCBS > gIBSMun");
+      const gUF = xmlDoc.querySelector("infCte > imp > IBSCBS > gIBSUF");
+      const gtxt = (el: any, s: string) => el?.querySelector(s)?.textContent || "";
+      const vTotTrib = tag("infCte > imp > vTotTrib") || "";
+      const complXEmi = tag("infCte > compl > xEmi") || "";
+      const tomaIEXml = tag("infCte > toma > IE") || "";
+      const rodoEl = xmlDoc.querySelector("infModal > rodo, infCte > infCteNorm > infModal > rodo");
+      const rq = (s: string) => rodoEl?.querySelector(s)?.textContent || "";
+      const veicsXml = Array.from(rodoEl?.querySelectorAll("veic, reboque") || []).map(v => ({ tipo: (/^t/i.test(v.querySelector("tpProp")?.textContent || "") ? "Terceiro" : "Própria"), placa: v.querySelector("placa")?.textContent || "", renavam: v.querySelector("RENAVAM")?.textContent || "", uf: v.querySelector("UF")?.textContent || "", rntrc: v.querySelector("RNTRC")?.textContent || "" }));
+      const motoEl = rodoEl?.querySelector("moto");
+      const propEl = rodoEl?.querySelector("prop");
+      const valeEl = rodoEl?.querySelector("valePed");
+      const lacresXml = Array.from(rodoEl?.querySelectorAll("lacRodo > nLacre") || []).map(e => (e.textContent || "").trim()).filter(Boolean).join(", ");
       const pdfBlob = gerarDactePdf({
         chave: doc.chave_acesso || "",
         numero: doc.numero || "",
@@ -226,7 +270,7 @@ function CtePage() {
         emitIE: tag("infCte > emit > IE") || "",
         emitBairro: tag("infCte > emit > enderEmit > xBairro") || "",
         emitCEP: tag("infCte > emit > enderEmit > CEP") || "",
-        emitFone: "",
+        emitFone: emitFoneC,
         tomadorCnpj: tag("infCte > toma > CNPJ") || "",
         tomadorNome: tag("infCte > toma > xNome") || "",
         tomadorEndereco: `${tag("infCte > toma > enderToma > xLgr")} ${tag("infCte > toma > enderToma > nro")}`.trim(),
@@ -240,7 +284,7 @@ function CtePage() {
         remBairro: tag("infCte > emit > enderEmit > xBairro") || "",
         remCEP: tag("infCte > emit > enderEmit > CEP") || "",
         remIE: tag("infCte > emit > IE") || "",
-        remFone: "",
+        remFone: remFoneC,
         destCnpj: tag("infCte > dest > CNPJ") || percDstDoc || tag("infCte > toma > CNPJ") || "",
         destNome: destNomeFix,
         destCidade: tag("infCte > dest > enderDest > xMun") || percDstX || ctDstX || tag("infCte > toma > enderToma > xMun") || "",
@@ -262,8 +306,8 @@ function CtePage() {
         recUF: tag("infCte > receb > enderReceb > UF") || "",
         recEndereco: ((tag("infCte > receb > enderReceb > xLgr") || "") + " " + (tag("infCte > receb > enderReceb > nro") || "")).trim(),
         recIE: tag("infCte > receb > IE") || "",
-        cfop: tag("infCte > infCarga > infQ > tpUnid") || "5353",
-        naturezaOperacao: "TRANSPORTE",
+        cfop: tag("infCte > ide > CFOP") || "5353",
+        naturezaOperacao: tag("infCte > ide > natOp") || "TRANSPORTE",
         origemCidade: tag("det > xMunIni") || tag("infCte > ide > xMunIni") || pjForm.xMunIni || percColX || "",
         origemUF: tag("infCte > ide > UFIni") || pjForm.ufIni || percColU || "",
         destinoCidade: tag("det > xMunFim") || tag("infCte > ide > xMunFim") || pjForm.xMunFim || percEntX || "",
@@ -280,12 +324,52 @@ function CtePage() {
         placa: tag("infModal > rodo > veic > placa") || "",
         placaReboque: "",
         rntrc: tag("infModal > rodo > RNTRC") || "",
-        seguradoraNome: "",
-        apolice: "",
-        averbacao: "",
+        seguradoraNome: (pjForm as any).seguradoraNome || "",
+        apolice: (pjForm as any).apolice || "",
+        averbacao: (pjForm as any).averbacao || "",
         protocolo: doc.protocolo_sefaz || "",
         obs: [...new Set([obsPercurso, percObs, xmlObs].filter(Boolean))].join(" ") || "",
         qrCode: tag("infCTeSupl > qrCodCTe") || tag("qrCodCTe") || "",
+        dhEmi,
+        versao: versaoCte,
+        tomaCod: toma4x ? "4" : toma3,
+        toma4: toma4x,
+        formaPagto: (pjForm as any).formaPagamento || "",
+        finalidade: (pjForm as any).finalidadeEmissao || "Normal",
+        tipoServico: (pjForm as any).tipoServico || "Normal",
+        previsaoViagem: dhEmi,
+        proPred,
+        xOutCat,
+        infQ,
+        cubagem: "",
+        qtdVol: "",
+        tomadorIE: tomaIEXml,
+        segCNPJ: segCNPJC,
+        segResp: (pjForm as any).segResponsavel || "4",
+        segRespCNPJ: "",
+        numeroAverbacao: (pjForm as any).averbacao || "",
+        segTotal: (pjForm as any).segTotal || "",
+        valePedagio: (pjForm as any).valePedagio || "",
+        valePedFornCNPJ: valeEl?.querySelector("cnpjForn")?.textContent || valeEl?.querySelector("CNPJForn")?.textContent || (pjForm as any).pedagioCnpj || "",
+        valePedComprov: valeEl?.querySelector("nCompra")?.textContent || valeEl?.querySelector("nComp")?.textContent || (pjForm as any).pedagioTag || "",
+        valePedRespCNPJ: valeEl?.querySelector("cnpjResp")?.textContent || valeEl?.querySelector("CNPJResp")?.textContent || "",
+        ibsBase, ibsCST, ibsClass,
+        cbsAliq: gtxt(gCBS, "pCBS"), cbsValor: gtxt(gCBS, "vCBS"),
+        ibsMunAliq: gtxt(gMun, "pIBSMun"), ibsMunValor: gtxt(gMun, "vIBSMun"),
+        ibsUfAliq: gtxt(gUF, "pIBSUF"), ibsUfValor: gtxt(gUF, "vIBSUF"),
+        vTotTrib,
+        infoAdicionais: complXEmi,
+        ciot: rq("CIOT") || (pjForm as any).ciot || "",
+        dataPrevEntrega: rq("dPrev") || "",
+        veiculos: veicsXml,
+        motoNome: motoEl?.querySelector("xNome")?.textContent || (pjForm as any).motoristaNome || "",
+        motoCPF: motoEl?.querySelector("CPF")?.textContent || motoCPFC,
+        lacres: lacresXml,
+        propDoc: propEl?.querySelector("CNPJ")?.textContent || propEl?.querySelector("CPF")?.textContent || "",
+        propNome: propEl?.querySelector("xNome")?.textContent || "",
+        propRNTRC: propEl?.querySelector("RNTRC")?.textContent || "",
+        reducaoBase: tagI("pRedBC") || 0,
+        icmsST: tagI("vICMSST") || tagI("vST") || 0,
         logoDataUrl: JUVENAL_LOGO || undefined,
       });
       return pdfBlob;

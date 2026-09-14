@@ -2,15 +2,21 @@ import { jsPDF } from "jspdf";
 import JsBarcode from "./vendor/jsbarcode.bundle.cjs";
 import qrcode from "./vendor/qrcode.bundle.cjs";
 
+// DACTE fiel ao modelo oficial (Juvenal Transportes) — retrato A4, P&B.
 interface DacteData {
   chave: string;
   numero: string;
   serie: string;
   ambiente: string;
   dataEmissao: string;
+  dhEmi?: string;
+  versao?: string;
   emitCnpj: string;
   emitNome: string;
   emitEndereco: string;
+  emitBairro?: string;
+  emitCEP?: string;
+  emitFone?: string;
   emitCidade: string;
   emitUF: string;
   emitIE: string;
@@ -19,6 +25,10 @@ interface DacteData {
   tomadorEndereco: string;
   tomadorCidade: string;
   tomadorUF: string;
+  tomadorIE?: string;
+  tomadorFone?: string;
+  tomaCod?: string;
+  toma4?: boolean;
   remCnpj: string;
   remNome: string;
   remCidade: string;
@@ -52,74 +62,147 @@ interface DacteData {
   recEndereco?: string;
   recIE?: string;
   cfop: string;
-  valorServico: number;
-  valorCarga: number;
-  pesoKg: number;
-  icmsCST: string;
-  icmsBase: number;
-  icmsAliq: number;
-  icmsValor: number;
-  reducaoBase?: number | string;
-  nFes: Array<{ nNF: string; serie: string; valor: number; chave?: string }>;
-  placa: string;
-  placaReboque: string;
-  rntrc: string;
-  seguradoraNome?: string;
-  apolice?: string;
-  averbacao?: string;
-  obs: string;
   naturezaOperacao?: string;
   origemCidade?: string;
   origemUF?: string;
   destinoCidade?: string;
   destinoUF?: string;
+  previsaoViagem?: string;
+  valorServico: number;
+  valorCarga: number;
+  pesoKg: number;
+  proPred?: string;
+  xOutCat?: string;
   produtoPredominante?: string;
   outrasCaract?: string;
-  tipoDocE?: string;
-  tipoServico?: string;
-  indGlobalizado?: string;
+  infQ?: Array<{ q?: string; um?: string }>;
+  cubagem?: string;
+  qtdVol?: string;
+  icmsCST: string;
+  icmsBase: number;
+  icmsAliq: number;
+  icmsValor: number;
+  reducaoBase?: number | string;
+  icmsST?: number | string;
+  ibsCST?: string;
+  ibsClass?: string;
+  ibsBase?: number | string;
+  cbsAliq?: number | string;
+  cbsValor?: number | string;
+  ibsMunAliq?: number | string;
+  ibsMunValor?: number | string;
+  ibsUfAliq?: number | string;
+  ibsUfValor?: number | string;
+  vTotTrib?: number | string;
+  nFes: Array<{ nNF: string; serie: string; valor: number; chave?: string }>;
+  placa: string;
+  placaReboque: string;
+  rntrc: string;
+  ciot?: string;
+  dataPrevEntrega?: string;
+  veiculos?: Array<{ tipo?: string; placa?: string; renavam?: string; uf?: string; rntrc?: string }>;
+  motoNome?: string;
+  motoCPF?: string;
+  lacres?: string;
+  propDoc?: string;
+  propNome?: string;
+  propRNTRC?: string;
+  subContratado?: string;
+  seguradoraNome?: string;
+  segCNPJ?: string;
+  segResp?: string;
+  segRespCNPJ?: string;
+  apolice?: string;
+  averbacao?: string;
+  numeroAverbacao?: string;
+  segTotal?: number | string;
+  valePedagio?: number | string;
+  valePedFornCNPJ?: string;
+  valePedComprov?: string;
+  valePedRespCNPJ?: string;
+  comps?: Array<{ nome: string; valor: number }>;
+  obs: string;
+  infoAdicionais?: string;
   protocolo?: string;
   modelo?: string;
   fl?: string;
   logoDataUrl?: string;
   qrCode?: string;
-  comps?: Array<{ nome: string; valor: number }>;
-  emitBairro?: string;
-  emitCEP?: string;
-  emitFone?: string;
+  tipoServico?: string;
+  finalidade?: string;
+  formaPagto?: string;
+  respEmissao?: string;
 }
 
 function fmtCnpj(v: string): string {
   const c = (v || "").replace(/\D/g, "");
   if (c.length === 14) return c.replace(/(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})/, "$1.$2.$3/$4-$5");
   if (c.length === 11) return c.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, "$1.$2.$3-$4");
-  return v || "—";
+  return v || "";
 }
 
-function fmtBrl(v: number): string {
-  return v.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
+function fmtNum(v: number | string): string {
+  return (Number(v) || 0).toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+}
+
+function fmtInt(v: string | number): string {
+  const n = Number(String(v || "").replace(/\D/g, "")) || 0;
+  return n.toLocaleString("pt-BR", { maximumFractionDigits: 0 });
 }
 
 function fmtChave(chave: string): string {
   return (chave || "").replace(/\D/g, "").replace(/(\d{4})/g, "$1 ").trim();
 }
 
-function cstLabel(cst: string): string {
+function fmtDH(v: string): string {
+  try {
+    const d = new Date(v);
+    if (isNaN(d.getTime())) return v || "";
+    const p = (n: number) => String(n).padStart(2, "0");
+    return `${p(d.getDate())}/${p(d.getMonth() + 1)}/${d.getFullYear()} ${p(d.getHours())}:${p(d.getMinutes())}`;
+  } catch { return v || ""; }
+}
+
+function fmtDataCurta(v: string): string {
+  const d = String(v || "").replace(/\D/g, "");
+  if (d.length === 8) return `${d.slice(6, 8)}/${d.slice(4, 6)}/${d.slice(0, 4)}`;
+  if (/^\d{4}-\d{2}-\d{2}/.test(v)) return `${v.slice(8, 10)}/${v.slice(5, 7)}/${v.slice(0, 4)}`;
+  return v || "";
+}
+
+function cfopFmt(cfop: string): string {
+  const d = (cfop || "").replace(/\D/g, "");
+  return d.length === 4 ? `${d[0]}.${d.slice(1)}` : (cfop || "");
+}
+
+function cstIcmsLabel(cst: string): string {
   const c = (cst || "").replace(/\D/g, "").padStart(2, "0");
   const map: Record<string, string> = {
-    "00": "00 - Tributada integralmente",
-    "10": "10 - Tributada e com cobrança do ICMS por substituição tributária",
-    "20": "20 - Com redução de base de cálculo",
-    "30": "30 - Isenta ou não tributada e com cobrança do ICMS por substituição tributária",
-    "40": "40 - Isenta",
-    "41": "41 - Não tributada",
-    "50": "50 - Suspensão",
-    "51": "51 - Diferimento",
-    "60": "60 - ICMS cobrado anteriormente por substituição tributária",
-    "70": "70 - Com redução de base de cálculo e cobrança do ICMS por substituição tributária",
-    "90": "90 - Outras",
+    "00": "ICMS com Tributação Integral",
+    "10": "ICMS com cobrança por ST",
+    "20": "ICMS com redução de base de cálculo",
+    "30": "ICMS isenta/não tributada com ST",
+    "40": "ICMS isenta",
+    "41": "ICMS não tributada",
+    "50": "ICMS suspensão",
+    "51": "ICMS diferido",
+    "60": "ICMS cobrado anteriormente por ST",
+    "70": "ICMS com redução e ST",
+    "90": "ICMS outros",
   };
-  return map[c] || (c ? `${c} - Verificar CST` : "—");
+  return `${c} - ${map[c] || "Verificar CST"}`;
+}
+
+function tomaLabel(cod: string | undefined, toma4: boolean | undefined): string {
+  if (toma4) return "Outros";
+  const m: Record<string, string> = { "0": "Remetente", "1": "Expedidor", "2": "Recebedor", "3": "Destinatario", "4": "Outros" };
+  return m[String(cod || "")] || "Destinatario";
+}
+
+function segRespLabel(r: string | undefined): string {
+  const m: Record<string, string> = { "1": "1- Tomador do Serviço", "2": "2- Remetente", "3": "3- Destinatário", "4": "4- Emitente do CT-e", "5": "5- Outros" };
+  const k = String(r || "4");
+  return m[k] || k;
 }
 
 // CODE-128C real da chave (MOC 4.00). Volta null fora do browser ou sem chave válida.
@@ -156,492 +239,497 @@ function drawQr(doc: any, x: number, y: number, size: number, text: string): boo
 
 export function gerarDactePdf(data: DacteData): Blob {
   const doc = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4" });
-  const W = 210, M = 7;
-  const CW = W - 2 * M;
+  const W = 210, M = 6, CW = W - 2 * M;
   const hw = CW / 2;
-
+  const LIM = 291;
   let y = M;
 
   const setFont = (w: "bold" | "normal", s: number) => { doc.setFont("helvetica", w); doc.setFontSize(s); };
   const black = () => doc.setTextColor(0, 0, 0);
-  const dkGray = () => doc.setTextColor(80, 80, 80);
-  const border = () => { doc.setDrawColor(0, 0, 0); doc.setLineWidth(0.15); };
-
-  const drawBox = (x: number, _y: number, w: number, h: number) => {
-    border();
-    doc.rect(x, _y, w, h, "S");
+  const border = () => { doc.setDrawColor(0, 0, 0); doc.setLineWidth(0.2); };
+  const box = (x: number, yy: number, w: number, h: number) => { border(); doc.rect(x, yy, w, h, "S"); };
+  const vline = (x: number, yy: number, h: number) => { border(); doc.line(x, yy, x, yy + h); };
+  const lab = (t: string, x: number, yy: number) => { black(); setFont("bold", 5.5); doc.text(t, x, yy); };
+  const val = (t: string, x: number, yy: number, s = 7) => { black(); setFont("normal", s); doc.text(String(t || ""), x, yy); };
+  const valB = (t: string, x: number, yy: number, s = 7) => { black(); setFont("bold", s); doc.text(String(t || ""), x, yy); };
+  const need = (h: number) => { if (y + h > LIM) { doc.addPage(); y = M; } };
+  const cut = (t: string, n: number) => String(t || "").slice(0, n);
+  const D = (v: any) => (v === undefined || v === null || v === "" ? "" : String(v));
+  const ctr = (t: string, xx: number, yy: number, s: number, bold = false) => {
+    black(); setFont(bold ? "bold" : "normal", s);
+    try { (doc as any).text(t, xx, yy, { align: "center" }); } catch { doc.text(t, xx, yy); }
   };
 
-  // Título de seção: texto preto em negrito, sem preenchimento (padrão P&B)
-  const sectionTitle = (x: number, _y: number, w: number, title: string) => {
-    black();
-    setFont("bold", 6.5);
-    doc.text(title, x + 1.5, _y + 4);
-    return _y + 5.5;
+  // Bloco pessoa (remetente/destinatário/expedidor/recebedor): título inline + 5 linhas
+  const party = (x: number, title: string, p: { nome?: string; lgr?: string; cid?: string; cep?: string; bai?: string; doc?: string; ie?: string; uf?: string; fone?: string }) => {
+    valB(`${title} : ${cut(D(p.nome), 46)}`, x + 1.5, y + 4, 6);
+    setFont("normal", 6); black();
+    const L = [
+      `Endereço : ${cut(D(p.lgr), 52)}`,
+      `Município : ${cut(D(p.cid), 26)}   CEP : ${D(p.cep)}`,
+      `Bairro : ${cut(D(p.bai), 52)}`,
+      `CPF / CNP : ${fmtCnpj(D(p.doc))}   Insc. Est : ${cut(D(p.ie), 18)}`,
+      `UF : ${D(p.uf)}   País : BRASIL   Fone : ${D(p.fone)}`,
+    ];
+    L.forEach((ln, i) => doc.text(ln, x + 1.5, y + 7 + i * 2.9));
   };
 
-  const twoColSection = (titleL: string, titleR: string, yStart: number, boxH: number) => {
-    black();
-    setFont("bold", 6.5);
-    doc.text(titleL, M + 1.5, yStart + 4);
-    doc.text(titleR, M + hw + 1.5, yStart + 4);
-    border();
-    doc.rect(M, yStart, hw, boxH, "S");
-    doc.rect(M + hw, yStart, hw, boxH, "S");
-    return yStart + 5;
-  };
-
-  const addrBlock = (x: number, _y: number, lines: string[]) => {
-    setFont("normal", 5.5);
-    lines.forEach((ln, i) => {
-      if (ln) doc.text(ln, x + 1.5, _y + 3.5 + i * 3.5);
-    });
-  };
-
-  // ═══════════════════════════════════════════════════
-  // CANHOTO: declaração de recebimento (topo)
-  // ═══════════════════════════════════════════════════
-  
-
-  // ═══════════════════════════════════════════════════
-  // LINHA 1: EMPRESA | DACTE | MODAL
-  // ═══════════════════════════════════════════════════
-    const qrHead = (data.qrCode || "").trim();
-  const headH = 24;
-  drawBox(M, y, CW, headH);
-  black();
-  let ex0 = M + 2;
-  if (qrHead) {
-    drawQr(doc, M + 2, y + 2, 20, qrHead);
-    ex0 = M + 26;
-  } else if (data.logoDataUrl) {
-    try { doc.addImage(data.logoDataUrl as string, "PNG", M + 1.5, y + 2, 24, 8); } catch {}
-    ex0 = M + 27;
-  }
-  setFont("bold", 9);
-  doc.text(data.emitNome || "EMPRESA", ex0, y + 5);
-  setFont("normal", 5);
-  doc.text(`Endere\u00e7o ${data.emitEndereco || "\u2014"}   Bairro ${data.emitBairro || "\u2014"}`, ex0, y + 9.5);
-  doc.text(`Cidade ${data.emitCidade || "\u2014"}, ${data.emitUF || "\u2014"}   CEP ${data.emitCEP || "\u2014"}   Tel. ${data.emitFone || "\u2014"}`, ex0, y + 13.5);
-  doc.text(`CPF / CNPJ ${fmtCnpj(data.emitCnpj)}   Insc. Est. ${data.emitIE || "\u2014"}`, ex0, y + 17.5);
-  setFont("bold", 12);
-  doc.text("DACTE", M + 128, y + 6);
-  setFont("normal", 5.5);
-  doc.text("Documento Auxiliar do Conhecimento de Transporte Eletr\u00f4nico", M + 106, y + 10.5);
-  setFont("bold", 7);
-  doc.text("MODAL", W - M - 30, y + 5);
-  setFont("bold", 9);
-  doc.text("RODOVI\u00c1RIO", W - M - 30, y + 10);
-  y += headH + 1;
-  drawBox(M, y, CW, 9);
-  setFont("bold", 4.5);
-  doc.text("MODELO", M + 2, y + 3);
-  doc.text("S\u00c9RIE", M + 22, y + 3);
-  doc.text("N\u00daMERO", M + 38, y + 3);
-  doc.text("FL", M + 70, y + 3);
-  doc.text("DATA E HORA EMISS\u00c3O", M + 85, y + 3);
-  doc.text("INSC. SUFRAMA DESTINAT\u00c1RIO", M + 150, y + 3);
-  setFont("normal", 7);
-  doc.text(data.modelo || "57", M + 2, y + 7.5);
-  doc.text((data.serie || "001").padStart(3, "0"), M + 22, y + 7.5);
-  doc.text((data.numero || "1").padStart(9, "0"), M + 38, y + 7.5);
-  doc.text(data.fl || "1/1", M + 70, y + 7.5);
-  setFont("normal", 5);
-  doc.text(data.dataEmissao ? new Date(data.dataEmissao).toLocaleString("pt-BR") : "\u2014", M + 85, y + 7.5);
-  doc.text("\u2014", M + 150, y + 7.5);
-  y += 10;
-
-  // ═══════════════════════════════════════════════════
-  // BARRAS + CHAVE DE ACESSO
-  // ═══════════════════════════════════════════════════
+  // ---- Cabeçalho: emitente | DACTE | modal ----
+  const emitW = 108, dacteW = 62, modalW = CW - emitW - dacteW;
+  const headH = 17;
+  box(M, y, emitW, headH);
+  box(M + emitW, y, dacteW, headH);
+  box(M + emitW + dacteW, y, modalW, headH);
   const qrTxt = (data.qrCode || "").trim();
+  if (qrTxt) drawQr(doc, M + 2, y + 2, 13, qrTxt);
+  else if (data.logoDataUrl) { try { doc.addImage(data.logoDataUrl as string, "PNG", M + 2, y + 4, 24, 8); } catch {} }
+  else { border(); doc.rect(M + 2, y + 2, 14, 14, "S"); }
+  const ex = M + 25;
+  valB(cut(data.emitNome || "EMPRESA", 42), ex, y + 4, 8);
+  setFont("normal", 6); black();
+  doc.text(`Endereço  ${cut(D(data.emitEndereco), 34)}   Bairro  ${cut(D(data.emitBairro), 16)}   CEP  ${D(data.emitCEP)}`, ex, y + 8, 6);
+  doc.text(`Cidade  ${cut(D(data.emitCidade), 22)}, ${D(data.emitUF)}   Tel.  ${D(data.emitFone)}`, ex, y + 10.5, 6);
+  doc.text(`CPF / CNPJ  ${fmtCnpj(data.emitCnpj)}   Insc. Est.  ${D(data.emitIE)}`, ex, y + 13, 6);
+  const dx = M + emitW;
+  valB("DACTE", dx + 1.5, y + 4.5, 10);
+  setFont("normal", 5); black();
+  doc.text("Documento auxiliar do conhecimento de transporte eletrônico", dx + 1.5, y + 8.5);
+  const subY = y + 10, subH = headH - 10;
+  const cheads = ["Modelo", "Série", "Número", "FL", "Data Emissão"];
+  const cvals = ["57", D(data.serie) || "1", fmtInt(data.numero), D(data.fl) || "1 / 1", fmtDH(data.dhEmi || data.dataEmissao)];
+  const coff = [0, 13, 25, 40, 48];
+  coff.forEach((co, i) => {
+    if (i > 0) vline(dx + co, subY, subH);
+    lab(cheads[i], dx + co + 1, subY + 3);
+    valB(cvals[i], dx + co + 1, subY + 7, 6);
+  });
+  const mx = M + emitW + dacteW;
+  setFont("bold", 5.5); black();
+  doc.text("Modal", mx + 1.5, y + 3);
+  valB("Rodoviário", mx + 1.5, y + 7.5, 7);
+  doc.line(mx, y + 10, mx + modalW, y + 10);
+  lab("Insc. Suframa Destinatário", mx + 1.5, y + 13);
+  y += headH + 1;
+
+  // ---- Código de barras + chave ----
+  const barH = 11;
+  box(M, y, CW, barH);
   const barsImg = barcodePng(data.chave);
-  const drawRealBars = (x0: number, y0: number, wMax: number, h: number): number => {
+  if (barsImg) {
     try {
-      if (!barsImg) return -1;
       const props = (doc as any).getImageProperties(barsImg);
       const ratio = props.width / props.height;
-      let iw = h * ratio, ih = h;
-      if (iw > wMax) { iw = wMax; ih = iw / ratio; }
-      doc.addImage(barsImg, "PNG", x0, y0, iw, ih);
-      return ih;
-    } catch { return -1; }
-  };
-  const drawSimBars = (x0: number, y0: number, x1: number, bh: number) => {
-    for (let bx = x0; bx < x1; bx += 1.1) {
-      const h = 5 + Math.random() * bh;
-      doc.setFillColor(0, 0, 0);
-      doc.rect(bx, y0, 0.5, h, "F");
-    }
-  };
-  if (qrTxt) {
-    drawBox(M, y, CW, 30);
-    if (drawRealBars(M + 2, y + 2, 156, 9) < 0) drawSimBars(M + 2, y + 2, M + 158, 2.5);
-    black();
-    setFont("normal", 6.5);
-    doc.text(fmtChave(data.chave), M + 2, y + 15);
-    setFont("bold", 5);
-    doc.text("Chave de acesso", M + 2, y + 28);
-    if (!drawQr(doc, W - M - 29, y + 2.5, 25, qrTxt)) {
-      setFont("normal", 4.5);
-      doc.text("QR indisponível", W - M - 29, y + 15);
-    }
-    y += 31;
-  } else {
-    drawBox(M, y, CW, 15);
-    if (drawRealBars(M + 2, y + 1, CW - 4, 8) < 0) drawSimBars(M + 2, y + 1, W - M - 2, 2.5);
-    black();
-    setFont("normal", 6.5);
-    doc.text(fmtChave(data.chave), M + 2, y + 11.5);
-    setFont("bold", 5);
-    doc.text("Chave de acesso", M + 2, y + 13.5);
-    y += 16;
+      let iw = 6 * ratio, ih = 6;
+      if (iw > CW - 4) { iw = CW - 4; ih = iw / ratio; }
+      doc.addImage(barsImg, "PNG", M + (CW - iw) / 2, y + 1, iw, ih);
+    } catch {}
   }
+  setFont("normal", 4.5); black();
+  doc.text("Chave de Acesso para Consulta de autenticidade no site www.cte.fazenda.gov.br ou da Autorizada", M + 2, y + 8);
+  ctr(fmtChave(data.chave), W / 2, y + 10, 6.5, true);
+  y += barH + 1;
 
-  // ═══════════════════════════════════════════════════
-  // TIPO CT-E | TIPO SERVIÇO | TOMADOR | IND GLOBALIZADO
-  // ═══════════════════════════════════════════════════
-  drawBox(M, y, CW, 7);
-  setFont("bold", 4.5);
-  let cx = M + 2;
-  const tipoItems = [
-    { lbl: "TIPO DO CT-E", val: data.tipoDocE || "Normal" },
-    { lbl: "TIPO DO SERVIÇO", val: data.tipoServico || "Normal" },
-    { lbl: "TOMADOR DO SERVIÇO", val: data.tomadorNome || "Destinatário" },
-    { lbl: "IND. CT-e GLOBALIZADO", val: data.indGlobalizado || "Não" },
+  // ---- Protocolo ----
+  const prH = 5;
+  box(M, y, CW, prH);
+  setFont("bold", 6); black();
+  doc.text("Protocolo de Autorização de Uso", M + 2, y + 4);
+  val(D(data.protocolo), M + 72, y + 4, 6.5);
+  setFont("bold", 6); black();
+  doc.text("Versão", M + 150, y + 4);
+  val(D(data.versao) || "4.00", M + 168, y + 4, 6.5);
+  y += prH + 1;
+
+  // ---- Tipo CT-e / serviço / responsável / tomador / pagamento ----
+  const metaH = 6;
+  box(M, y, CW, metaH);
+  const finTxt = String(data.finalidade || "Normal");
+  const tipoCTe = /^normal$/i.test(finTxt) ? "EmissaoNormal" : finTxt;
+  const metas: Array<[string, string, number]> = [
+    ["Tipo do CT-E", tipoCTe, 34],
+    ["Tipo do Serviço", D(data.tipoServico) || "Normal", 34],
+    ["Responsável Emissão", D(data.respEmissao), 38],
+    ["Tomador de Serviço", tomaLabel(data.tomaCod, data.toma4), 38],
+    ["Forma de Pagamento", D(data.formaPagto), 0],
   ];
-  tipoItems.forEach((t) => {
-    doc.text(t.lbl, cx, y + 2.5);
-    setFont("normal", 5);
-    doc.text(String(t.val).slice(0, 60), cx, y + 5.5);
-    setFont("bold", 4.5);
-    cx += 48;
+  let mxx = M + 2;
+  metas.forEach(([l, v, w]) => {
+    lab(l, mxx, y + 2.5);
+    val(cut(v, 26), mxx, y + 5.5, 5.5);
+    if (w) { vline(mxx + w, y, metaH); mxx += w + 2; }
   });
-  y += 8;
+  y += metaH + 1;
 
-  // ═══════════════════════════════════════════════════
-  // CONSULTA AUTENTICIDADE
-  // ═══════════════════════════════════════════════════
-  drawBox(M, y, CW, 5.5);
-  setFont("normal", 5);
-  doc.text("Consulta de autenticidade no portal nacional do CT-e, no site da Sefaz Autorizadora, ou em", M + 2, y + 2.2);
-  setFont("bold", 5);
-  doc.text("http://www.cte.fazenda.gov.br/portal", M + 2, y + 4.7);
-  y += 6.5;
+  // ---- CFOP ----
+  const cfH = 6;
+  box(M, y, CW, cfH);
+  lab("CFOP - Natureza da Prestação", M + 2, y + 2.5);
+  val(`${cfopFmt(data.cfop)}    ${cut(D(data.naturezaOperacao) || "TRANSPORTE", 60)}`, M + 2, y + 5.5, 6);
+  y += cfH + 1;
 
-  // ═══════════════════════════════════════════════════
-  // PROTOCOLO DE AUTORIZAÇÃO
-  // ═══════════════════════════════════════════════════
-  drawBox(M, y, CW, 6);
-  setFont("bold", 5.5);
-  doc.text("PROTOCOLO DE AUTORIZAÇÃO DE USO", M + 2, y + 4);
-  setFont("normal", 6);
-  doc.text(data.protocolo || "CT-e sem Autorização de Uso da SEFAZ", M + 75, y + 4);
-  y += 7;
+  // ---- Início / previsão / término ----
+  const iniH = 8;
+  box(M, y, CW, iniH);
+  const iniCols: Array<[string, string, number]> = [
+    ["Início da Prestação", `${cut(D(data.origemCidade), 30)}, ${D(data.origemUF)}`, 66],
+    ["Previsão Início Viagem", fmtDH(D(data.previsaoViagem) || data.dhEmi || data.dataEmissao), 66],
+    ["Término da Prestação", `${cut(D(data.destinoCidade), 30)}, ${D(data.destinoUF)}`, 0],
+  ];
+  let ixx = M + 2;
+  iniCols.forEach(([l, v, w]) => {
+    lab(l, ixx, y + 3);
+    valB(cut(v, 34), ixx, y + 6.5, 6);
+    if (w) { vline(ixx + w, y, iniH); ixx += w + 2; }
+  });
+  y += iniH + 1;
 
-  // ═══════════════════════════════════════════════════
-  // CFOP - NATUREZA | INÍCIO | TÉRMINO DA PRESTAÇÃO
-  // ═══════════════════════════════════════════════════
-  drawBox(M, y, CW, 11);
-  setFont("bold", 4.5);
-  doc.text("CFOP - NATUREZA DA PRESTAÇÃO", M + 2, y + 3);
-  doc.text("INÍCIO DA PRESTAÇÃO", M + 90, y + 3);
-  doc.text("TÉRMINO DA PRESTAÇÃO", M + 140, y + 3);
-  setFont("normal", 6);
-  doc.text(`${data.cfop || "—"} - ${data.naturezaOperacao || "TRANSPORTE"}`, M + 2, y + 8);
-  doc.text(`${data.origemCidade || "—"} - ${data.origemUF || "—"}`, M + 90, y + 8);
-  doc.text(`${data.destinoCidade || "—"} - ${data.destinoUF || "—"}`, M + 140, y + 8);
-  y += 12;
+  // ---- Remetente | Destinatário ----
+  const rdH = 21;
+  box(M, y, hw, rdH);
+  box(M + hw, y, hw, rdH);
+  party(M, "Remetente", { nome: data.remNome, lgr: data.remEndereco, cid: data.remCidade, cep: data.remCEP, bai: data.remBairro, doc: data.remCnpj, ie: data.remIE, uf: data.remUF, fone: data.remFone });
+  party(M + hw, "Destinatário", { nome: data.destNome, lgr: data.destEndereco, cid: data.destCidade, cep: data.destCEP, bai: data.destBairro, doc: data.destCnpj, ie: data.destIE, uf: data.destUF, fone: data.destFone });
+  y += rdH + 1;
 
-  // ═══════════════════════════════════════════════════
-  // REMETENTE | DESTINATÁRIO
-  // ═══════════════════════════════════════════════════
-  const remDestH = 28;
-  const ry = twoColSection("REMETENTE", "DESTINATÁRIO", y, remDestH);
-    addrBlock(M, ry, [     `Remetente : ${data.remNome || "\u2014"}` ,     `Endere\u00e7o : ${data.remEndereco || "\u2014"}` ,     `Munic\u00edpio : ${data.remCidade || "\u2014"}   CEP : ${data.remCEP || "\u2014"}` ,     `Bairro : ${data.remBairro || "\u2014"}   Insc. Est : ${data.remIE || "\u2014"}` ,     `CPF / CNPJ : ${fmtCnpj(data.remCnpj)}   UF : ${data.remUF || "\u2014"}   Fone : ${data.remFone || "\u2014"}` ,     `Pa\u00eds : ${data.remPais || "Brasil"}` ,   ]);
-    addrBlock(M + hw, ry, [     `Destinat\u00e1rio : ${data.destNome || "\u2014"}` ,     `Endere\u00e7o : ${data.destEndereco || "\u2014"}` ,     `Munic\u00edpio : ${data.destCidade || "\u2014"}   CEP : ${data.destCEP || "\u2014"}` ,     `Bairro : ${data.destBairro || "\u2014"}   Insc. Est : ${data.destIE || "\u2014"}` ,     `CPF / CNPJ : ${fmtCnpj(data.destCnpj)}   UF : ${data.destUF || "\u2014"}   Fone : ${data.destFone || "\u2014"}` ,     `Pa\u00eds : ${data.destPais || "Brasil"}` ,   ]);
-  y += remDestH + 1;
+  // ---- Expedidor | Recebedor ----
+  const erH = 20;
+  box(M, y, hw, erH);
+  box(M + hw, y, hw, erH);
+  party(M, "Expedidor", { nome: data.expNome, lgr: data.expEndereco, cid: data.expCidade, cep: "", bai: "", doc: data.expCnpj, ie: data.expIE, uf: data.expUF, fone: "" });
+  party(M + hw, "Recebedor", { nome: data.recNome, lgr: data.recEndereco, cid: data.recCidade, cep: "", bai: "", doc: data.recCnpj, ie: data.recIE, uf: data.recUF, fone: "" });
+  y += erH + 1;
 
-  // ═══════════════════════════════════════════════════
-  // EXPEDIDOR | RECEBEDOR
-  // ═══════════════════════════════════════════════════
-  const expRecH = 25;
-  const ery = twoColSection("EXPEDIDOR", "RECEBEDOR", y, expRecH);
-    addrBlock(M, ery, [     `Endere\u00e7o : ${data.expEndereco || "\u2014"}` ,     `Munic\u00edpio : ${data.expCidade || "\u2014"}   CEP : \u2014` ,     `Bairro : \u2014   Insc. Est : ${data.expIE || "\u2014"}` ,     `CPF / CNPJ : ${fmtCnpj(data.expCnpj || "")}   UF : ${data.expUF || "\u2014"}   Fone : \u2014` ,     `Pa\u00eds : Brasil` ,   ]);
-    addrBlock(M + hw, ery, [     `Endere\u00e7o : ${data.recEndereco || "\u2014"}` ,     `Munic\u00edpio : ${data.recCidade || "\u2014"}   CEP : \u2014` ,     `Bairro : \u2014   Insc. Est : ${data.recIE || "\u2014"}` ,     `CPF / CNPJ : ${fmtCnpj(data.recCnpj || "")}   UF : ${data.recUF || "\u2014"}   Fone : \u2014` ,     `Pa\u00eds : Brasil` ,   ]);
-  y += expRecH + 1;
-
-  // ═══════════════════════════════════════════════════
-  // TOMADOR DO SERVIÇO (full width)
-  // ═══════════════════════════════════════════════════
-  const tomH = 22;
-  sectionTitle(M, y, CW, "TOMADOR DO SERVIÇO");
-  drawBox(M, y + 5, CW, tomH - 5);
-    addrBlock(M, y + 5, [
-    `NOME: ${data.tomadorNome || "\u2014"}` ,
-    `ENDERE\u00c7O: ${data.tomadorEndereco || "\u2014"}` ,
-    `MUNIC\u00cdPIO: ${data.tomadorCidade || "\u2014"}   UF: ${data.tomadorUF || "\u2014"}   CEP: \u2014   PA\u00cdS: Brasil` ,
-    `CNPJ/CPF: ${fmtCnpj(data.tomadorCnpj)}` ,
-  ]);
+  // ---- Tomador ----
+  const tomH = 14;
+  box(M, y, CW, tomH);
+  valB(`Tomador: ${cut(D(data.tomadorNome), 48)}`, M + 1.5, y + 3.5, 6);
+  setFont("normal", 6); black();
+  doc.text(`Cidade : ${cut(D(data.tomadorCidade), 28)} / ${D(data.tomadorUF)}`, M + 105, y + 3.5);
+  doc.text(`Endereço : ${cut(D(data.tomadorEndereco), 70)}`, M + 1.5, y + 6.5);
+  doc.text(`CPF / CNPJ : ${fmtCnpj(data.tomadorCnpj)}   Insc. Est. ${cut(D(data.tomadorIE), 20)}`, M + 1.5, y + 9.5);
+  doc.text(`Tel. : ${D(data.tomadorFone)}   País : BRASIL`, M + 105, y + 9.5);
   y += tomH + 1;
 
-  // ═══════════════════════════════════════════════════
-  // PRODUTO PREDOMINANTE | CARACTERÍSTICAS | VALOR
-  // ═══════════════════════════════════════════════════
-  const prodH = 10;
-  drawBox(M, y, CW, prodH);
-  setFont("bold", 4.5);
-  doc.text("PRODUTO PREDOMINANTE", M + 2, y + 3.5);
-  doc.text("OUTRAS CARACTERÍSTICAS DA CARGA", M + 65, y + 3.5);
-  doc.text("VALOR TOTAL DA MERCADORIA", W - M - 40, y + 3.5);
-  setFont("normal", 6);
-  doc.text(String(data.produtoPredominante || "—").slice(0, 45), M + 2, y + 8);
-  doc.text(String(data.outrasCaract || "—").slice(0, 45), M + 65, y + 8);
-  doc.text(fmtBrl(data.valorCarga), W - M - 40, y + 8);
-  y += prodH + 1;
+  // ---- Produto / valor mercadoria / averbação ----
+  const pdH = 8;
+  box(M, y, CW, pdH);
+  lab("Produto Predominante", M + 2, y + 3);
+  lab("Outras Características da Carga", M + 62, y + 3);
+  lab("Valor Total Mercadoria", M + 122, y + 3);
+  lab("Número Averbação", M + 158, y + 3);
+  val(cut(D(data.proPred) || D(data.produtoPredominante), 30), M + 2, y + 6.5, 6);
+  val(cut(D(data.xOutCat) || D(data.outrasCaract), 30), M + 62, y + 6.5, 6);
+  val(fmtNum(data.valorCarga), M + 122, y + 6.5, 6);
+  setFont("normal", 5); black();
+  doc.text(cut(D(data.numeroAverbacao), 26), M + 158, y + 6.5);
+  y += pdH + 1;
 
-  // ═══════════════════════════════════════════════════
-  // PESO | QTDE | TIPO
-  // ═══════════════════════════════════════════════════
-  const pesoH = 8;
-  drawBox(M, y, CW, pesoH);
-  setFont("bold", 4.5);
-  doc.text("PESO BRUTO (KG)", M + 2, y + 3);
-  doc.text("QTDE. UN. MEDIDA", M + 35, y + 3);
-  doc.text("CUBAGEM (M3)", M + 80, y + 3);
-  doc.text("QTDE. (VOL.)", M + 120, y + 3);
-  setFont("normal", 6);
-  doc.text(`${data.pesoKg.toLocaleString("pt-BR", { minimumFractionDigits: 3 })} KG`, M + 2, y + 7);
-  y += pesoH + 1;
+  // ---- Carga + seguro ----
+  const cgH = 13;
+  box(M, y, CW, cgH);
+  const q0: any = data.infQ && data.infQ.length > 0 ? data.infQ[0] : {};
+  const q1: any = data.infQ && data.infQ.length > 1 ? data.infQ[1] : q0;
+  lab("Qtd.", M + 2, y + 3); lab("Carga", M + 2, y + 6);
+  const cgw: Array<[string, string, string, number]> = [
+    ["Qtde Medida/", "Un Medida", `${cut(D(q0.q), 12)}/${cut(D(q0.um) || "Unid", 8)}`, 24],
+    ["Qtde Cobrada/", "Un Medida", `${cut(D(q1.q), 12)}/${cut(D(q1.um) || "Unid", 8)}`, 24],
+    ["Cubagem", "(M³)", D(data.cubagem) || "0,00", 18],
+    ["Qtd.Vol. /", "UN", D(data.qtdVol), 18],
+  ];
+  let cxx = M + 16;
+  cgw.forEach(([l1, l2, v, w]) => {
+    lab(l1, cxx + 1, y + 3); lab(l2, cxx + 1, y + 6);
+    val(v, cxx + 1, y + 10.5, 6);
+    vline(cxx + w, y, cgH);
+    cxx += w + 1.5;
+  });
+  const sx = cxx + 0.5;
+  setFont("normal", 5.5); black();
+  doc.text(`Nome da Seguradora  ${cut(D(data.seguradoraNome), 30)}   CNPJ  ${fmtCnpj(D(data.segCNPJ))}`, sx, y + 3.5);
+  doc.text(`Responsável  ${cut(segRespLabel(data.segResp), 24)}   CNPJ  ${fmtCnpj(D(data.segRespCNPJ) || data.emitCnpj)}`, sx, y + 7);
+  doc.text(`Número Apólice  ${cut(D(data.apolice), 24)}`, sx, y + 10.5);
+  y += cgH + 1;
 
-  // ═══════════════════════════════════════════════════
-  // COMPONENTES DO VALOR DA PRESTAÇÃO
-  // ═══════════════════════════════════════════════════
-  sectionTitle(M, y, CW, "COMPONENTES DO VALOR DA PRESTAÇÃO DE SERVIÇO");
-  y += 5;
-    const comps = (data.comps && data.comps.length > 0 ? data.comps : [{ nome: "Frete Valor", valor: data.valorServico }]).slice(0, 8);
-  const compRows = Math.max(1, Math.ceil(comps.length / 2));
-  drawBox(M, y, CW, 5 + compRows * 5);
-  setFont("bold", 4.5);
-  doc.text("NOME", M + 2, y + 3.5);
-  doc.text("VALOR", M + 48, y + 3.5);
-  doc.text("NOME", M + 98, y + 3.5);
-  doc.text("VALOR", M + 144, y + 3.5);
-  setFont("normal", 5.5);
-  for (let ci = 0; ci < comps.length; ci += 2) {
-    const cyy = y + 8.5 + (ci / 2) * 5;
-    doc.text(String(comps[ci].nome || "\u2014").slice(0, 26), M + 2, cyy);
-    doc.text(fmtBrl(Number(comps[ci].valor) || 0), M + 48, cyy);
-    if (comps[ci + 1]) {
-      doc.text(String(comps[ci + 1].nome || "\u2014").slice(0, 26), M + 98, cyy);
-      doc.text(fmtBrl(Number(comps[ci + 1].valor) || 0), M + 144, cyy);
-    }
-  }
-  y += 5.5 + compRows * 5;
-  drawBox(M, y, CW, 5);
-  setFont("bold", 4.5);
-  doc.text("VALOR TOTAL DO SERVI\u00c7O", W - M - 62, y + 3.5);
-  setFont("bold", 6);
-  doc.text(fmtBrl(data.valorServico), W - M - 25, y + 3.5);
-  y += 6;
-  drawBox(M, y, CW, 5);
-  setFont("bold", 4.5);
-  doc.text("VALOR A RECEBER", W - M - 35, y + 3.5);
-  setFont("normal", 6);
-  doc.text(fmtBrl(data.valorServico), W - M - 15, y + 3.5);
-  y += 6;
+  // ---- Componentes ----
+  const getComp = (keys: string[]): number => {
+    const list = data.comps || [];
+    const hit = list.find(c => keys.some(k => String(c.nome || "").toUpperCase().includes(k)));
+    return hit ? Number(hit.valor) || 0 : 0;
+  };
+  const vFrete = getComp(["FRETE"]);
+  const vAdic = getComp(["ADICIONAL"]);
+  const vDesc = getComp(["DESCONTO"]);
+  const vOut = getComp(["OUTROS"]);
+  const vAdv = getComp(["AD VALOREM", "ADVALOREM"]);
+  const vGris = getComp(["GRIS"]);
+  const vCol = getComp(["COLETA"]);
+  const vEnt = getComp(["ENTREGA"]);
+  const vSeg = Number(data.segTotal) || getComp(["SEGURO"]);
+  const vPed = Number(data.valePedagio) || 0;
+  const gridX = M, gridW = 146, totX = M + gridW, totW = CW - gridW;
+  const compRows: Array<Array<[string, number]>> = [
+    [["Frete", vFrete], ["Adicional", vAdic], ["ICMS", Number(data.icmsValor) || 0], ["Coleta", vCol]],
+    [["Pedágio", vPed], ["Desconto", vDesc], ["Ad Valorem", vAdv], ["Entrega", vEnt]],
+    [["Sec/Cat", 0], ["Seguro", vSeg], ["GRIS", vGris], ["Outros", vOut]],
+  ];
+  const chH = 4, crH = 4;
+  const compH = chH + crH * 3;
+  box(gridX, y, gridW, compH);
+  box(totX, y, totW, compH);
+  const colW = gridW / 4;
+  const pairW = colW / 2;
+  setFont("bold", 5); black();
+  ["Nome", "Valor", "Nome", "Valor", "Nome", "Valor", "Nome", "Valor"].forEach((h, i) => {
+    doc.text(h, gridX + 1 + Math.floor(i / 2) * colW + (i % 2) * pairW, y + 3);
+  });
+  compRows.forEach((row, r) => {
+    row.forEach(([nm, vv], c) => {
+      setFont("normal", 5.5); black();
+      doc.text(nm, gridX + 1 + c * colW, y + chH + 3 + r * crH);
+      doc.text(fmtNum(vv), gridX + 1 + c * colW + pairW, y + chH + 3 + r * crH);
+    });
+  });
+  for (let i = 1; i < 4; i++) vline(gridX + i * colW, y, compH);
+  setFont("bold", 5.5); black();
+  doc.text("Valor do Serviço", totX + 2, y + 3.5);
+  valB(fmtNum(data.valorServico), totX + 2, y + 8, 7);
+  setFont("bold", 5.5); black();
+  doc.text("Valor à Receber", totX + 2, y + 12);
+  valB(fmtNum(data.valorServico), totX + 2, y + 16, 7);
+  y += compH + 1;
 
-  // ═══════════════════════════════════════════════════
-  // INFORMAÇÕES RELATIVAS AO IMPOSTO
-  // ═══════════════════════════════════════════════════
-  sectionTitle(M, y, CW, "INFORMAÇÕES RELATIVAS AO IMPOSTO");
-  y += 5;
-  drawBox(M, y, CW, 7);
-  setFont("bold", 4.5);
-  doc.text("SITUAÇÃO TRIBUTÁRIA", M + 2, y + 3);
-  doc.text("BASE DE CÁLCULO", M + 62, y + 3);
-  doc.text("ALÍQ. ICMS (%)", M + 98, y + 3);
-  doc.text("VALOR ICMS", M + 126, y + 3);
-  doc.text("% RED BC CALC", M + 152, y + 3);
-  doc.text("ICMS ST", M + 178, y + 3);
-  setFont("normal", 5.5);
-  doc.text(cstLabel(data.icmsCST).slice(0, 42), M + 2, y + 6);
-  doc.text(fmtBrl(data.icmsBase), M + 62, y + 6);
-  doc.text(`${data.icmsAliq}%`, M + 98, y + 6);
-  doc.text(fmtBrl(data.icmsValor), M + 126, y + 6);
-  const redBc = Number(data.reducaoBase ?? 0) || 0;
-  doc.text(`${redBc.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}%`, M + 152, y + 6);
-  doc.text("—", M + 178, y + 6);
-  y += 8;
-  const ibsBase = Number(data.icmsBase) || 0;
-  const vCBS = ibsBase * 0.009, vIBSUf = ibsBase * 0.001;
-  sectionTitle(M, y, CW, "Tributa\u00e7\u00e3o da Reforma Tribut\u00e1ria (IBS/CBS)");
-  y += 5;
-  drawBox(M, y, CW, 7);
-  setFont("bold", 4.5);
-  doc.text("CST", M + 2, y + 3);
-  doc.text("Classifica\u00e7\u00e3o Tribut\u00e1ria", M + 12, y + 3);
-  doc.text("Base de C\u00e1lculo", M + 76, y + 3);
-  doc.text("% CBS", M + 102, y + 3);
-  doc.text("Valor CBS", M + 113, y + 3);
-  doc.text("% IBS Mun", M + 133, y + 3);
-  doc.text("Valor IBS Mun", M + 146, y + 3);
-  doc.text("% IBS UF", M + 166, y + 3);
-  doc.text("Valor IBS UF", M + 177, y + 3);
-  setFont("normal", 5);
-  doc.text("000", M + 2, y + 6);
-  doc.text("000001 - Tributadas integralmente IBS/CBS", M + 12, y + 6);
-  doc.text(fmtBrl(ibsBase), M + 76, y + 6);
-  doc.text("0,90", M + 102, y + 6);
-  doc.text(fmtBrl(vCBS), M + 113, y + 6);
-  doc.text("0,00", M + 133, y + 6);
-  doc.text(fmtBrl(0), M + 146, y + 6);
-  doc.text("0,10", M + 166, y + 6);
-  doc.text(fmtBrl(vIBSUf), M + 177, y + 6);
-  y += 8;
+  // ---- ICMS ----
+  const icH = 8;
+  box(M, y, CW, icH);
+  const icCols: Array<[string, string, number]> = [
+    ["Situação Tributária", cstIcmsLabel(data.icmsCST).slice(0, 34), 72],
+    ["Base de Cálculo", fmtNum(data.icmsBase), 30],
+    ["AL ICMS", fmtNum(data.icmsAliq), 22],
+    ["Valor ICMS", fmtNum(data.icmsValor), 30],
+    ["% Red. Bc. Calc", fmtNum(data.reducaoBase ?? 0), 24],
+    ["ICMS ST", fmtNum(data.icmsST ?? 0), 0],
+  ];
+  let icx = M + 2;
+  icCols.forEach(([l, v, w]) => {
+    lab(l, icx, y + 3);
+    val(v, icx, y + 6.5, 5.5);
+    if (w) { vline(icx + w, y, icH); icx += w + 2; }
+  });
+  y += icH + 1;
 
-  // ═══════════════════════════════════════════════════
-  // DOCUMENTOS ORIGINÁRIOS
-  // ═══════════════════════════════════════════════════
-  sectionTitle(M, y, CW, "DOCUMENTOS ORIGINÁRIOS");
-  y += 5;
-  drawBox(M, y, CW, 6);
-  setFont("bold", 4.5);
-  doc.text("TP DOC.", M + 2, y + 4);
-  doc.text("CNPJ/CPF EMITENTE", M + 30, y + 4);
-  doc.text("SÉRIE/NRO. DOCUMENTO", M + 85, y + 4);
-  doc.text("CHAVE DO DOCUMENTO", M + 130, y + 4);
-  y += 6.5;
+  // ---- IBS/CBS ----
+  const ibH = 8;
+  box(M, y, CW, ibH);
+  const ibBase = data.ibsBase !== undefined && data.ibsBase !== "" ? Number(data.ibsBase) : Number(data.icmsBase) || 0;
+  const cbsA = data.cbsAliq !== undefined && data.cbsAliq !== "" ? Number(data.cbsAliq) : 0.90;
+  const cbsV = data.cbsValor !== undefined && data.cbsValor !== "" ? Number(data.cbsValor) : ibBase * 0.009;
+  const munA = data.ibsMunAliq !== undefined && data.ibsMunAliq !== "" ? Number(data.ibsMunAliq) : 0;
+  const munV = data.ibsMunValor !== undefined && data.ibsMunValor !== "" ? Number(data.ibsMunValor) : 0;
+  const ufA = data.ibsUfAliq !== undefined && data.ibsUfAliq !== "" ? Number(data.ibsUfAliq) : 0.10;
+  const ufV = data.ibsUfValor !== undefined && data.ibsUfValor !== "" ? Number(data.ibsUfValor) : ibBase * 0.001;
+  const ibCols: Array<[string, string, number]> = [
+    ["CST", D(data.ibsCST) || "000", 12],
+    ["Classificação Tributária", cut(D(data.ibsClass) || "000001 - Situações tributadas integralmente pelo IBS e CBS.", 40), 64],
+    ["Base de Cálculo", fmtNum(ibBase), 26],
+    ["% CBS", fmtNum(cbsA), 16],
+    ["Valor CBS", fmtNum(cbsV), 24],
+    ["% IBS Mun", fmtNum(munA), 16],
+    ["Valor IBS Mun", fmtNum(munV), 24],
+    ["% IBS Uf", fmtNum(ufA), 14],
+    ["Valor IBS Uf", fmtNum(ufV), 0],
+  ];
+  let ibx = M + 2;
+  ibCols.forEach(([l, v, w]) => {
+    lab(l, ibx, y + 3);
+    val(v, ibx, y + 6.5, 5);
+    if (w) { vline(ibx + w, y, ibH); ibx += w + 1.5; }
+  });
+  y += ibH + 1;
 
-  if (data.nFes.length > 0) {
-    const perRow = 2;
-    const rows = Math.min(Math.ceil(data.nFes.length / perRow), 4);
-    for (let r = 0; r < rows; r++) {
-      drawBox(M, y, CW, 8.5);
-      setFont("normal", 5);
-      for (let c = 0; c < perRow; c++) {
-        const idx = r * perRow + c;
-        if (idx >= data.nFes.length) break;
-        const nf = data.nFes[idx];
-        const ox = c === 0 ? M + 2 : M + 100;
-        doc.text(`NF-E ${nf.nNF || "—"}`, ox, y + 3.5);
-        if (nf.chave) {
-          setFont("normal", 4.5);
-          doc.text(fmtChave(nf.chave), ox, y + 7);
-          setFont("normal", 5);
-        }
-      }
-      y += 9;
-    }
+  // ---- Documentos originários ----
+  const docTitleH = 4.5;
+  box(M, y, CW, docTitleH);
+  ctr("Documentos Originários", W / 2, y + 3.5, 6, true);
+  y += docTitleH;
+  const docHeadH = 4;
+  box(M, y, CW, docHeadH);
+  setFont("bold", 5); black();
+  ["Tipo Doc", "Série / Nº Doc.", "Chave NFe", "Tipo Doc", "Série / Nº Doc.", "Chave NFe"].forEach((h, i) => {
+    doc.text(h, (i < 3 ? M : M + hw) + [2, 20, 46][i % 3], y + 3);
+  });
+  y += docHeadH;
+  const nfs = data.nFes || [];
+  if (nfs.length === 0) {
+    need(6);
+    box(M, y, CW, 6);
+    val("Nenhum documento fiscal vinculado.", M + 2, y + 4.5, 5.5);
+    y += 6;
   } else {
-    drawBox(M, y, CW, 6);
-    setFont("normal", 5);
-    doc.text("Nenhum documento fiscal vinculado.", M + 2, y + 4);
-    y += 6.5;
+    for (let i = 0; i < nfs.length; i += 2) {
+      need(11);
+      const rh = 5.5;
+      box(M, y, hw, rh);
+      box(M + hw, y, hw, rh);
+      for (let c = 0; c < 2; c++) {
+        const nf = nfs[i + c];
+        if (!nf) break;
+        const ox = (c === 0 ? M : M + hw) + 2;
+        setFont("normal", 5.5); black();
+        doc.text("NFe", ox, y + 3.5);
+        doc.text(`${String(nf.serie || "1").padStart(3, "0")} / ${D(nf.nNF)}`, ox + 18, y + 3.5);
+        setFont("normal", 4.5);
+        doc.text(fmtChave(nf.chave || ""), ox + 44, y + 3.5);
+      }
+      y += rh;
+    }
   }
   y += 1;
 
-  // ═══════════════════════════════════════════════════
-  // OBSERVAÇÕES (mantém mensagem de homologação aqui)
-  // ═══════════════════════════════════════════════════
-  sectionTitle(M, y, CW, "OBSERVA\u00c7\u00d5ES");
-  y += 5;
+  // ---- Observações ----
   const hasObsTxt = !!(data.obs && data.obs.trim());
   const isHom = (data.ambiente || "") === "homologacao";
-  const obsH = hasObsTxt && isHom ? 24 : 16;
-  drawBox(M, y, CW, obsH);
+  const obsH = 12;
+  need(obsH + 6);
+  box(M, y, CW, 5);
+  ctr("Observações", W / 2, y + 3.5, 6, true);
+  y += 5;
+  box(M, y, CW, obsH);
   if (hasObsTxt) {
-    setFont("normal", 5);
-    black();
+    setFont("normal", 5); black();
     const lines = doc.splitTextToSize(data.obs, CW - 4);
-    doc.text(lines.slice(0, isHom ? 3 : 5), M + 2, y + 4);
+    doc.text(lines.slice(0, 4), M + 2, y + 4);
   }
   if (isHom) {
     doc.setTextColor(170, 170, 170);
-    if (hasObsTxt) {
-      setFont("bold", 9);
-      doc.text("AMBIENTE DE HOMOLOGA\u00c7\u00c3O - SEM VALOR FISCAL", W / 2, y + obsH - 3, { align: "center" });
-    } else {
-      setFont("bold", 13);
-      doc.text("AMBIENTE DE HOMOLOGA\u00c7\u00c3O - SEM VALOR FISCAL", W / 2, y + obsH / 2 + 5, { align: "center" });
-    }
+    ctr("AMBIENTE DE HOMOLOGAÇÃO - SEM VALOR FISCAL", W / 2, y + obsH - 3, 9, true);
     black();
   }
   y += obsH + 1;
 
-  // ═══════════════════════════════════════════════════
-  // DADOS ESPECÍFICOS DO MODAL RODOVIÁRIO
-  // ═══════════════════════════════════════════════════
-  sectionTitle(M, y, CW, "DADOS ESPECÍFICOS DO MODAL RODOVIÁRIO");
-  y += 5;
-  drawBox(M, y, CW, 7);
-  setFont("bold", 4.5);
-  doc.text("RNTRC DA EMPRESA", M + 2, y + 3);
-  doc.text("DATA PREVISTA DE ENTREGA", M + 42, y + 3);
-  doc.text("ESTE CONHECIMENTO DE TRANSPORTE ATENDE À LEGISLAÇÃO DE TRANSPORTE RODOVIÁRIO EM VIGOR", M + 88, y + 3);
-  setFont("normal", 6);
-  doc.text(data.rntrc || "—", M + 2, y + 6);
-  doc.text("—", M + 42, y + 6);
-  y += 8;
+  // ---- Total impostos aproximado ----
+  const impH = 4.5;
+  box(M, y, CW, impH);
+  const vt = Number(data.vTotTrib) || 0;
+  const perc = data.valorServico ? (vt / Number(data.valorServico)) * 100 : 0;
+  const percTxt = perc.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  setFont("normal", 5); black();
+  const impLine = `Total Impostos Aproximado --> Federal Nacional: R$ ${fmtNum(vt)} (${percTxt}%) Estadual: R$ 0,00 (0,00%) Municipal: R$ 0,00 (0,00%) Valor Total: R$ ${fmtNum(vt)} Fonte IBPT - 24.1.A`;
+  try { (doc as any).text(impLine, W / 2, y + 3, { align: "center" }); } catch { doc.text(impLine, M + 2, y + 3); }
+  y += impH + 1;
 
-  // ═══════════════════════════════════════════════════
-  // DADOS DO SEGURO DA CARGA
-  // ═══════════════════════════════════════════════════
-  sectionTitle(M, y, CW, "DADOS DO SEGURO DA CARGA");
+  // ---- Informações adicionais ----
+  const iaH = 6;
+  need(iaH + 6);
+  box(M, y, CW, 5);
+  setFont("bold", 6); black();
+  doc.text("Informações Adicionais", M + 2, y + 3.5);
   y += 5;
-  drawBox(M, y, CW, 10);
-  setFont("bold", 4.5);
-  doc.text("SEGURADORA", M + 2, y + 3);
-  doc.text("APOLICE", M + 85, y + 3);
-  doc.text("AVERBACAO", M + 145, y + 3);
-  setFont("normal", 6);
-  doc.text((data.seguradoraNome || "-").slice(0, 45), M + 2, y + 7.5);
-  doc.text(data.apolice || "-", M + 85, y + 7.5);
-  doc.text(data.averbacao || "-", M + 145, y + 7.5);
-  y += 11;
+  box(M, y, CW, iaH);
+  if (D(data.infoAdicionais)) {
+    setFont("normal", 5); black();
+    const lines = doc.splitTextToSize(String(data.infoAdicionais), CW - 4);
+    doc.text(lines.slice(0, 3), M + 2, y + 4);
+  }
+  y += iaH + 1;
 
-  // USO EXCLUSIVO | RESERVADO AO FISCO
-  // ═══════════════════════════════════════════════════
-  const usoH = 14;
-  drawBox(M, y, hw, usoH);
-  drawBox(M + hw, y, hw, usoH);
-  setFont("bold", 5);
-  doc.text("USO EXCLUSIVO DO EMISSOR DO CT-e", M + 2, y + 4);
-  doc.text("RESERVADO AO FISCO", M + hw + 2, y + 4);
+  // ---- Modal lotação ----
+  need(40);
+  const moTitleH = 4.5;
+  box(M, y, CW, moTitleH);
+  ctr("Dados Específicos do Modal Rodoviário - Lotação", W / 2, y + 3.5, 6, true);
+  y += moTitleH;
+  const moH = 6;
+  box(M, y, CW, moH);
+  lab("RNTRC DA EMPRESA", M + 2, y + 2.5);
+  lab("CIOT", M + 44, y + 2.5);
+  lab("Data Prevista de Entrega", M + 76, y + 2.5);
+  setFont("bold", 5); black();
+  doc.text("Esse Conhecimento de Transporte Atende à Legislação de transporte Rodoviário em Vigor", M + 122, y + 4);
+  val(D(data.rntrc), M + 2, y + 5, 6);
+  val(D(data.ciot), M + 44, y + 5, 6);
+  val(fmtDataCurta(D(data.dataPrevEntrega)), M + 76, y + 5, 6);
+  y += moH;
+  const conjH = 4;
+  box(M, y, hw, conjH);
+  box(M + hw, y, hw, conjH);
+  setFont("bold", 5); black();
+  doc.text("Identificação do Conjunto Transportador", M + 2, y + 3);
+  doc.text("Informações Referente ao Vale - Pedágio", M + hw + 2, y + 3);
+  y += conjH;
+  const veics = (data.veiculos && data.veiculos.length > 0)
+    ? data.veiculos.slice(0, 4)
+    : [{ tipo: "Própria", placa: data.placa, renavam: "", uf: "", rntrc: data.rntrc }];
+  const vRowH = 4;
+  veics.forEach((vc) => {
+    need(vRowH + 22);
+    box(M, y, hw, vRowH);
+    box(M + hw, y, hw, vRowH);
+    setFont("normal", 5); black();
+    doc.text(cut(D(vc.tipo) || "Própria", 10), M + 2, y + 3);
+    doc.text(cut(D(vc.placa), 10), M + 18, y + 3);
+    doc.text(cut(D(vc.renavam), 14), M + 34, y + 3);
+    doc.text(cut(D(vc.uf), 4), M + 62, y + 3);
+    doc.text(cut(D(vc.rntrc), 12), M + 70, y + 3);
+    doc.text(fmtCnpj(D(data.valePedFornCNPJ)), M + hw + 2, y + 3);
+    doc.text(cut(D(data.valePedComprov), 14), M + hw + 32, y + 3);
+    doc.text(fmtCnpj(D(data.valePedRespCNPJ)), M + hw + 52, y + 3);
+    doc.text(fmtNum(data.valePedagio ?? 0), M + hw + 82, y + 3);
+    y += vRowH;
+  });
+  const subcH = 4.5;
+  box(M, y, CW, subcH);
+  setFont("bold", 4.5); black();
+  doc.text("Endereço SubContratado", M + 2, y + 3);
+  val(cut(D(data.subContratado), 80), M + 42, y + 3, 5);
+  y += subcH;
+  const motH = 6;
+  box(M, y, CW, motH);
+  lab("Motorista", M + 2, y + 2);
+  lab("CPF do Motorista", M + 62, y + 2);
+  lab("Proprietário", M + 96, y + 2);
+  lab("Identificação dos Lacres em Trânsit", M + 150, y + 2);
+  val(cut(D(data.motoNome), 30), M + 2, y + 5, 5);
+  val(D(data.motoCPF), M + 62, y + 5, 5);
+  val(`${fmtCnpj(D(data.propDoc))}  ${cut(D(data.propNome), 24)}`, M + 96, y + 5, 5);
+  val(cut(D(data.lacres), 24), M + 150, y + 5, 5);
+  y += motH + 1;
+
+  // ---- Uso exclusivo | fisco ----
+  need(12);
+  const usoH = 6;
+  box(M, y, hw, usoH);
+  box(M + hw, y, hw, usoH);
+  setFont("bold", 5.5); black();
+  doc.text("Uso Exclusivo do Emissor do CT-e", M + 2, y + 4);
+  doc.text("Reservado ao Fisco", M + hw + 2, y + 4);
   y += usoH + 1;
 
-  // ═══════════════════════════════════════════════════
-  // RODAPÉ
-  // ═══════════════════════════════════════════════════
-    doc.saveGraphicsState();
+  // ---- Canhoto ----
+  need(17);
+  doc.saveGraphicsState();
   try { (doc as any).setLineDashPattern([2, 2], 0); } catch {}
   doc.line(M, y, M + CW, y);
-  doc.restoreGraphicsState();
+  try { (doc as any).restoreGraphicsState(); } catch {}
   border();
   y += 2;
-  const recH = 17;
-  drawBox(M, y, CW, recH);
-  border();
-  doc.line(M + 128, y, M + 128, y + recH);
-  doc.line(M + 164, y, M + 164, y + recH);
-  setFont("normal", 4.5);
-  const decl2 = doc.splitTextToSize("DECLARO QUE RECEBI OS VOLUMES DESTE CONHECIMENTO EM PERFEITO ESTADO PELO QUE DOU POR CUMPRIDO O PRESENTE CONTRATO DE TRANSPORTE", 124);
-  doc.text(decl2.slice(0, 2), M + 2, y + 3.5);
-  setFont("bold", 4.5);
-  doc.text("NOME:", M + 2, y + 11);
-  doc.text("RG:", M + 62, y + 11);
-  doc.text("ASSINATURA / CARIMBO", M + 2, y + 15.5);
-  doc.text("T\u00c9RMINO DA PRESTA\u00c7\u00c3O - DATA/HORA", M + 130, y + 3.5);
-  setFont("bold", 6);
-  doc.text("CT-E", M + 166, y + 4);
-  setFont("normal", 5);
-  doc.text(`N\u00ba. DOCUMENTO ${(data.numero || "1").padStart(9, "0")}`, M + 166, y + 9);
-  doc.text(`S\u00c9RIE ${(data.serie || "001").padStart(3, "0")}`, M + 166, y + 13.5);
-  y += recH + 1;
-dkGray();
-  setFont("normal", 4.5);
-  doc.text(`DATA E HORA DA IMPRESSÃO: ${new Date().toLocaleString("pt-BR")}`, M, y + 2);
-  doc.text("Norvo Gestão", W - M - 22, y + 2);
+  const caH = 15;
+  box(M, y, CW, caH);
+  ctr("DECLARO QUE RECEBI OS VOLUMES DESTE CONHECIMENTO EM PERFEITO ESTADO PELO QUE DOU POR CUMPRIMENTO DESTE PRESENTE", W / 2, y + 3.5, 5.5, true);
+  vline(M + 70, y + 5, caH - 5);
+  vline(M + 140, y + 5, caH - 5);
+  setFont("normal", 5); black();
+  doc.text("Nome", M + 2, y + 6);
+  doc.text("RG", M + 2, y + 10);
+  doc.text("Assinatura ou Carimbo", M + 72, y + 10);
+  doc.text("Término da Prestação - Data/Hora", M + 72, y + 6);
+  doc.line(M + 72, y + 8.5, M + 136, y + 8.5);
+  doc.text("Início de Prestação - Data/Hora", M + 72, y + 13);
+  doc.line(M + 72, y + 14.5, M + 136, y + 14.5);
+  setFont("bold", 6); black();
+  doc.text("CT-e", M + 150, y + 6);
+  setFont("bold", 6); black();
+  doc.text(`NRO Documento : ${fmtInt(data.numero)}`, M + 142, y + 9.5);
+  doc.text(`Série : ${D(data.serie) || "1"}`, M + 142, y + 13);
 
   return doc.output("blob");
 }
