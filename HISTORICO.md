@@ -1639,3 +1639,8 @@ Commits CF `d49b494` + Vercel `30ff3a0` (+ `f664f64` trigger) + Worker `227f5885
 
 - Pilha esquerda: emitente + DACTE (11) + modal (5) + protocolo com Versao (6); total 43 igual a coluna QR (intacta).
 - Removida a faixa de protocolo largura total (duplicava); 1 pagina mantida.
+---
+
+## DACTE emitente: CEP/Tel/Insc alinhados (15/09/2026)
+
+- Rotulos em ex+38; valores/IE compensados; bairro 20 em fonte 5 (validado sem colar).
