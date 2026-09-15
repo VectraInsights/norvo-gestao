@@ -5,7 +5,7 @@ async function callProxy(action: string, body: Record<string, unknown>) {
   if (!res.ok) throw new Error((await res.json().catch(() => ({ error: `HTTP ${res.status}` }))).error);
   return res.json();
 }
-export const emitirCteFn = createServerFn({ method: "POST" }).validator((d: { empresaId: string; input: any }) => d).handler(async ({ data }) => {
+export const emitirCteFn = createServerFn({ method: "POST" }).validator((d: { empresaId: string; input: any; form?: any }) => d).handler(async ({ data }) => {
   if (SEFAZ_URL) return callProxy("emitirCte", data);
   const { buscarCertificadoAtivo, buildCteXml, emitirCte } = await import("@/lib/sefaz-cte");
   const cert = await buscarCertificadoAtivo(data.empresaId);
@@ -79,7 +79,7 @@ export const emitirCteFn = createServerFn({ method: "POST" }).validator((d: { em
   console.log("[CTE-DEBUG] Emit input:", JSON.stringify(input.emit));
   const ret = await emitirCte(cert.pfx, cert.senha, xml, ambiente, cert.uf);
   if (ret.sucesso) {
-    await supa.from("cte_documentos").insert({ empresa_id: data.empresaId, chave_acesso: chave, numero: proximo, serie: input.serie, status: "autorizado", xml_assinado: xml, protocolo_sefaz: ret.protocolo, ambiente, data_autorizacao: new Date().toISOString(), valor_servico: input.vPrest, peso_carga: input.pesoKg } as any);
+    await supa.from("cte_documentos").insert({ empresa_id: data.empresaId, chave_acesso: chave, numero: proximo, serie: input.serie, status: "autorizado", xml_assinado: JSON.stringify({ xml, form: (data as any).form || {} }), protocolo_sefaz: ret.protocolo, ambiente, data_autorizacao: new Date().toISOString(), valor_servico: input.vPrest, peso_carga: input.pesoKg } as any);
     // Baixa as NF-es (fonte da verdade no servidor — front repete por segurança)
     const chUsadas = (input.chavesNFe || []).map((c: any) => String(c).replace(/\D/g, "")).filter(Boolean);
     if (chUsadas.length > 0) await supa.from("cte_nfes_pendentes" as any).update({ status: "embarcada" }).in("chave", chUsadas).eq("empresa_id", data.empresaId);
