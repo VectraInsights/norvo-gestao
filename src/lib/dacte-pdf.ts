@@ -63,6 +63,7 @@ interface DacteData {
   recIE?: string;
   cfop: string;
   naturezaOperacao?: string;
+  cfopDescricao?: string;
   origemCidade?: string;
   origemUF?: string;
   destinoCidade?: string;
@@ -381,8 +382,9 @@ export function gerarDactePdf(data: DacteData): Blob {
   // ---- CFOP + inicio / termino (mesma linha, natureza por inteiro) ----
   const cfiH = 7.5;
   box(M, y, CW, cfiH);
+  const cfopTxt = data.cfopDescricao || `${cfopFmt(data.cfop)}  ${D(data.naturezaOperacao) || "TRANSPORTE"}`;
   const cfiCols: Array<[string, string, number]> = [
-    ["CFOP - Natureza da Prestação", `${cfopFmt(data.cfop)}  ${D(data.naturezaOperacao) || "TRANSPORTE"}`, 100],
+    ["CFOP - Natureza da Prestação", cfopTxt, 100],
     ["Início da Prestação", `${cut(D(data.origemCidade), 30)}, ${D(data.origemUF)}`, 48],
     ["Término da Prestação", `${cut(D(data.destinoCidade), 30)}, ${D(data.destUF)}`, 0],
   ];

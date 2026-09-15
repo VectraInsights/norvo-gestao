@@ -54,7 +54,7 @@ function CtePage() {
   const [editingRascunhoId, setEditingRascunhoId] = useState<string | null>(null);
   const [statusTab, setStatusTab] = useState("autorizados");
   const [respNome, setRespNome] = useState("");
-  useEffect(() => { (async () => { try { const { data } = await supabase.auth.getUser(); const usr = (data as any)?.user; const nm = (usr?.user_metadata as any)?.nome || ""; const em = usr?.email ? String(usr.email).split("@")[0] : ""; setRespNome(nm || em || ""); } catch {} })(); }, []);
+  useEffect(() => { (async () => { try { const { data } = await supabase.auth.getUser(); const usr = (data as any)?.user; if (!usr) return; let nm = (usr?.user_metadata as any)?.nome || ""; if (!nm && empresa) { const { data: eu } = await supabase.from("empresa_users" as any).select("nome").eq("empresa_id", (empresa as any).id).eq("user_id", usr.id).maybeSingle(); nm = (eu as any)?.nome || ""; } setRespNome(nm || ""); } catch {} })(); }, [(empresa as any)?.id]);
 
   const mercadoriasSorted = useMemo(() => {
     const arr = [...mercadorias];
@@ -355,6 +355,7 @@ function CtePage() {
         recEndereco: ((tag("infCte > receb > enderReceb > xLgr") || "") + " " + (tag("infCte > receb > enderReceb > nro") || "")).trim(),
         recIE: tag("infCte > receb > IE") || "",
         cfop: tag("infCte > ide > CFOP") || "5353",
+        cfopDescricao: (CFOPS_CTE.find(c => c.codigo === (tag("infCte > ide > CFOP") || "5353"))?.descricao || ""),
         naturezaOperacao: tag("infCte > ide > natOp") || "TRANSPORTE",
         origemCidade: tag("det > xMunIni") || tag("infCte > ide > xMunIni") || pjForm.xMunIni || percColX || "",
         origemUF: tag("infCte > ide > UFIni") || pjForm.ufIni || percColU || "",
@@ -2527,6 +2528,7 @@ function CtePage() {
               destIE: first.destIE || cDst.ie || "",
               destFone: first.destFone || cDst.telefone || "",
               cfop: f.cfop || "5353",
+              cfopDescricao: (CFOPS_CTE.find(c => c.codigo === (f.cfop || "5353"))?.descricao || ""),
               naturezaOperacao: "TRANSPORTE INTERESTADUAL - INDUSTRIAL",
               origemCidade: f.xMunIni || "",
               origemUF: f.ufIni || "",

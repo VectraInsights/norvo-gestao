@@ -1655,3 +1655,9 @@ Commits CF `d49b494` + Vercel `30ff3a0` (+ `f664f64` trigger) + Worker `227f5885
 ## DACTE: CFOP + inicio/termino na mesma linha (15/09/2026)
 
 - Faixa unica: CFOP primeiro (natureza por inteiro) + Inicio + Termino; Previsao Inicio Viagem removida.
+---
+
+## DACTE: CFOP oficial + responsavel do cadastro (15/09/2026)
+
+- CFOP mostra descricao oficial da tabela (`6.352 - Prestacao ... a comercio`); natOp vira fallback.
+- Responsavel = `empresa_users.nome` (cadastro da conta) + metadata; sem fragmento de email.
