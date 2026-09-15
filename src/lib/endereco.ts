@@ -19,7 +19,7 @@ const TIPOS = new Set([
 ]);
 
 function norm(s: string): string {
-  const a = (s || "").toUpperCase().replace(/\./g, " ").normalize("NFD");
+  const a = (s || "").toUpperCase().replace(/\./g, " ").normalize("NFD").replace(/[\u0300-\u036f]/g, "");
   const b = a.replace(/[^A-Za-z0-9 ]/g, " ");
   return b.replace(/ +/g, " ").trim();
 }

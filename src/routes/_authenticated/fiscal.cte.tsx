@@ -197,14 +197,14 @@ function CtePage() {
           if (cD) { ctDstNome = cD.nome || ""; ctDstX = cD.cidade || ""; ctDstU = cD.uf || ""; }
         }
       } catch {}
-      let cRemFull: any = null, cDstFull: any = null, emitFoneE = "";
+      let cRemFull: any = null, cDstFull: any = null, cTomFull: any = null, emitFoneE = "";
       try {
         if (empresa && (remD || dstD || tomaD)) {
           const { data: cts2 } = await supabase.from("fiscal_cadastros" as any).select("documento,nome,logradouro,numero,bairro,cidade,uf,cep,ie,telefone").eq("empresa_id", (empresa as any).id);
           const cl2 = ((cts2 as any[]) || []);
           const f2 = (dd: string) => cl2.find(cc => String(cc.documento || "").replace(/\D/g, "") === dd);
           if (remD) cRemFull = f2(remD);
-          if (dstD) cDstFull = f2(dstD);
+          if (dstD) cDstFull = f2(dstD);          if (tomaD) cTomFull = f2(tomaD);
           const emitD = dg(tag("infCte > emit > CNPJ") || tag("infCte > emit > CPF"));
           if (emitD) { const cEmi = f2(emitD); if (cEmi) emitFoneE = ((cEmi as any).telefone || "").replace(/\D/g, ""); }
         }
@@ -284,9 +284,9 @@ function CtePage() {
       const dstLogRaw = tag("infCte > dest > enderDest > xLgr") || percDstLog || (cDstFull as any)?.logradouro || "";
       const dstNroRaw = tag("infCte > dest > enderDest > nro") || percDstNro || (cDstFull as any)?.numero || "";
       const dstCepRaw = tag("infCte > dest > enderDest > CEP") || percDstCep || (cDstFull as any)?.cep || "";
-      const tomLogRaw = tag("infCte > toma > enderToma > xLgr") || "";
-      const tomNroRaw = tag("infCte > toma > enderToma > nro") || "";
-      const tomCepRaw = tag("infCte > toma > enderToma > CEP") || "";
+      const tomLogRaw = tag("infCte > toma > enderToma > xLgr") || (cTomFull as any)?.logradouro || "";
+      const tomNroRaw = tag("infCte > toma > enderToma > nro") || (cTomFull as any)?.numero || "";
+      const tomCepRaw = tag("infCte > toma > enderToma > CEP") || (cTomFull as any)?.cep || "";
       const emitLogRaw = tag("infCte > emit > enderEmit > xLgr") || "";
       const emitNroRaw = tag("infCte > emit > enderEmit > nro") || "";
       const emitCepRaw = tag("infCte > emit > enderEmit > CEP") || "";
@@ -321,6 +321,7 @@ function CtePage() {
         tomadorCnpj: tag("infCte > toma > CNPJ") || "",
         tomadorNome: tag("infCte > toma > xNome") || "",
         tomadorEndereco: `${tomLogEnr} ${tomNroRaw}`.trim(),
+        tomadorFone: tag("infCte > toma > fone") || (cTomFull as any)?.telefone || "",
         tomadorCidade: tag("infCte > toma > enderToma > xMun") || "",
         tomadorUF: tag("infCte > toma > enderToma > UF") || "",
         remCnpj: tag("infCte > rem > CNPJ") || tag("infCte > rem > CPF") || dg(nfRef?.emit_cnpj) || tag("infCte > emit > CNPJ") || "",
@@ -2521,6 +2522,7 @@ function CtePage() {
               // Manter igual a HOMOLOG_TOMADOR_NOME em sefaz-cte.ts (SEFAZ-MG exige em homologação, erro 938)
               tomadorNome: previewData.ambiente === "homologacao" ? "CTE EMITIDO EM AMBIENTE DE HOMOLOGACAO - SEM VALORFISCAL" : (f.xNomeTomador || ""),
               tomadorEndereco: `${f.logradouroTomador || ""} ${f.nroTomador || ""} ${f.bairroTomador || ""}`.trim(),
+              tomadorFone: f.foneTomador || "",
               tomadorCidade: f.xMunTomador || "",
               tomadorUF: f.ufTomador || "",
               remCnpj: first.emitCnpj || "",

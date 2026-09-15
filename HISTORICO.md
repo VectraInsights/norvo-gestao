@@ -1694,3 +1694,9 @@ Commits CF `d49b494` + Vercel `30ff3a0` (+ `f664f64` trigger) + Worker `227f5885
 ## Numeracao CT-e por ambiente, homologacao do 500 (15/09/2026)
 
 - 539: proxy reusava numero sem filtrar ambiente; agora max numerico por empresa+ambiente, homologacao `max+1,500`.
+---
+
+## Logradouro: acento no meio da palavra + fallback tomador (15/09/2026)
+
+- `norm()` trocava acento por espaco (DECIO->DE CIO) e a conferencia falhava; agora remove diacriticos. Caso real validado: VEREADOR DECIO DE PAULA + 35574825 -> RUA VEREADOR DECIO DE PAULA.
+- Tomador usa cadastro (logr/nro/cep/fone) quando o XML nao traz; fone do tomador no DACTE.
