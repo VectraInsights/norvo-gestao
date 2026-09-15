@@ -1633,3 +1633,9 @@ Commits CF `d49b494` + Vercel `30ff3a0` (+ `f664f64` trigger) + Worker `227f5885
 ## DACTE emitente: bairro ate 20 letras (15/09/2026)
 
 - Bairro corta em 20 (fonte 5.5); CEP deslocado para a direita; validado com 20 letras sem encostar.
+---
+
+## DACTE: protocolo na coluna esquerda (15/09/2026)
+
+- Pilha esquerda: emitente + DACTE (11) + modal (5) + protocolo com Versao (6); total 43 igual a coluna QR (intacta).
+- Removida a faixa de protocolo largura total (duplicava); 1 pagina mantida.

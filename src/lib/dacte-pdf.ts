@@ -277,7 +277,7 @@ export function gerarDactePdf(data: DacteData): Blob {
   // ---- Cabeçalho: emitente | DACTE | modal ----
     // ---- Cabecalho 2 colunas: emitente+DACTE | QR+barras+chave ----
   const colL = 98, colR = CW - colL - 2, rx = M + colL + 2;
-  const emH = 18, daH = 16, moH2 = 7;
+  const emH = 18, daH = 11, moH2 = 5, prHL = 6;
   const yTop = y;
   box(M, y, colL, emH);
   if (data.logoDataUrl) { try { doc.addImage(data.logoDataUrl as string, "PNG", M + 2, y + 3.5, 26, 10.2); } catch {} }
@@ -301,24 +301,32 @@ export function gerarDactePdf(data: DacteData): Blob {
   val(cut(D(data.emitIE), 12), ex + 49, y + 15.5, 6);
   y += emH + 1;
   box(M, y, colL, daH);
-  ctr("DACTE", M + colL / 2, y + 4, 10, true);
+  ctr("DACTE", M + colL / 2, y + 3, 9, true);
   setFont("normal", 5); black();
-  ctr("Documento auxiliar do conhecimento de transporte eletrônico", M + colL / 2, y + 8, 5);
+  ctr("Documento auxiliar do conhecimento de transporte eletrônico", M + colL / 2, y + 6, 4.5);
   const dheads = ["Modelo", "Série", "Número", "FL", "Data Emissão"];
   const dvals = ["57", D(data.serie) || "1", fmtInt(data.numero), D(data.fl) || "1 / 1", fmtDH(data.dhEmi || data.dataEmissao)];
   const doff = [0, 18, 32, 52, 62];
   doff.forEach((co, i) => {
-    if (i > 0) vline(M + co, y + 10, daH - 10);
-    lab(dheads[i], M + co + 1, y + 12.5);
-    valB(dvals[i], M + co + 1, y + 15, 6);
+    if (i > 0) vline(M + co, y + 7, daH - 7);
+    lab(dheads[i], M + co + 1, y + 8.2);
+    valB(dvals[i], M + co + 1, y + 10.2, 5.5);
   });
   y += daH + 1;
   box(M, y, colL, moH2);
   setFont("bold", 6); black();
-  doc.text("Modal: Rodoviário", M + 2, y + 5);
-  doc.text("Insc. Suframa Destinatário:", M + 62, y + 5);
+  doc.text("Modal: Rodoviário", M + 2, y + 4);
+  doc.text("Insc. Suframa Destinatário:", M + 62, y + 4);
   y += moH2 + 1;
-  const rhH = emH + 1 + daH + 1 + moH2;
+  box(M, y, colL, prHL);
+  setFont("bold", 6); black();
+  doc.text("Protocolo de Autorização de Uso", M + 2, y + 4.2);
+  val(D(data.protocolo), M + 40, y + 4.2, 6);
+  setFont("bold", 6); black();
+  doc.text("Versão", M + 62, y + 4.2);
+  val(D(data.versao) || "4.00", M + 74, y + 4.2, 6);
+  y += prHL + 1;
+  const rhH = emH + 1 + daH + 1 + moH2 + 1 + prHL;
   const ry = yTop;
   box(rx, ry, colR, rhH);
   const qrTxt = (data.qrCode || "").trim();
@@ -340,17 +348,6 @@ export function gerarDactePdf(data: DacteData): Blob {
   const capLines = doc.splitTextToSize("Chave de Acesso para Consulta de autenticidade no site www.cte.fazenda.gov.br ou da Autorizada", colR - 6);
   capLines.slice(0, 2).forEach((ln: string, i: number) => ctr(ln, rx + colR / 2, ry + 37 + i * 2.6, 4.5));
   ctr(fmtChave(data.chave), rx + colR / 2, ry + 42, 6, true);
-
-  // ---- Protocolo ----
-  const prH = 5;
-  box(M, y, CW, prH);
-  setFont("bold", 6); black();
-  doc.text("Protocolo de Autorização de Uso", M + 2, y + 4);
-  val(D(data.protocolo), M + 72, y + 4, 6.5);
-  setFont("bold", 6); black();
-  doc.text("Versão", M + 150, y + 4);
-  val(D(data.versao) || "4.00", M + 168, y + 4, 6.5);
-  y += prH + 1;
 
   // ---- Tipo CT-e / serviço / responsável / tomador / pagamento ----
   const metaH = 5.5;
