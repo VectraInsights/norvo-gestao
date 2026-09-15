@@ -287,6 +287,7 @@ function CtePage() {
       const tomLogRaw = tag("infCte > toma > enderToma > xLgr") || (cTomFull as any)?.logradouro || "";
       const tomNroRaw = tag("infCte > toma > enderToma > nro") || (cTomFull as any)?.numero || "";
       const tomCepRaw = tag("infCte > toma > enderToma > CEP") || (cTomFull as any)?.cep || "";
+      const tomBairroRaw = tag("infCte > toma > enderToma > xBairro") || (cTomFull as any)?.bairro || "";
       const emitLogRaw = tag("infCte > emit > enderEmit > xLgr") || "";
       const emitNroRaw = tag("infCte > emit > enderEmit > nro") || "";
       const emitCepRaw = tag("infCte > emit > enderEmit > CEP") || "";
@@ -328,7 +329,7 @@ function CtePage() {
         respEmissao: respNome,
         tomadorCnpj: tag("infCte > toma > CNPJ") || "",
         tomadorNome: tag("infCte > toma > xNome") || "",
-        tomadorEndereco: `${tomLogEnr} ${tomNroRaw}`.trim(),
+        tomadorEndereco: `${tomLogEnr}${tomNroRaw ? ", " + tomNroRaw : ""}${tomBairroRaw ? " - " + tomBairroRaw : ""}`.trim(),
         tomadorFone: tag("infCte > toma > fone") || (cTomFull as any)?.telefone || "",
         tomadorCidade: tag("infCte > toma > enderToma > xMun") || "",
         tomadorUF: tag("infCte > toma > enderToma > UF") || "",
@@ -2537,7 +2538,7 @@ function CtePage() {
               tomadorCnpj: f.cnpjTomador || "",
               // Manter igual a HOMOLOG_TOMADOR_NOME em sefaz-cte.ts (SEFAZ-MG exige em homologação, erro 938)
               tomadorNome: previewData.ambiente === "homologacao" ? "CTE EMITIDO EM AMBIENTE DE HOMOLOGACAO - SEM VALORFISCAL" : (f.xNomeTomador || ""),
-              tomadorEndereco: `${f.logradouroTomador || ""} ${f.nroTomador || ""} ${f.bairroTomador || ""}`.trim(),
+              tomadorEndereco: `${(f.logradouroTomador || "").trim()}${f.nroTomador ? ", " + f.nroTomador : ""}${f.bairroTomador ? " - " + f.bairroTomador : ""}`.trim(),
               tomadorFone: f.foneTomador || "",
               tomadorCidade: f.xMunTomador || "",
               tomadorUF: f.ufTomador || "",
