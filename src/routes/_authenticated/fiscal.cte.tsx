@@ -302,6 +302,14 @@ function CtePage() {
         fixCad(dstD, ((cDstFull as any)?.logradouro || ""), dstLogEnr);
         if (pendUpd.length) await Promise.all(pendUpd);
       } catch {}
+      let totQVol = 0;
+      try {
+        const chavesNfeXml = Array.from(xmlDoc.querySelectorAll("det > infNFe > chNFe")).map(e => (((e as any).textContent) || "").replace(/\D/g, "")).filter(c => c.length >= 20);
+        if (empresa && chavesNfeXml.length) {
+          const { data: qrows } = await supabase.from("cte_nfes_pendentes" as any).select("qvol").eq("empresa_id", (empresa as any).id).in("chave", chavesNfeXml);
+          totQVol = (((qrows as any[]) || []).reduce((a: number, r: any) => a + (Number(r?.qvol) || 0), 0));
+        }
+      } catch {}
             const pdfBlob = gerarDactePdf({
         chave: doc.chave_acesso || "",
         numero: doc.numero || "",
@@ -362,7 +370,7 @@ function CtePage() {
         destinoCidade: tag("det > xMunFim") || tag("infCte > ide > xMunFim") || pjForm.xMunFim || percEntX || "",
         destinoUF: tag("infCte > ide > UFFim") || pjForm.ufFim || percEntU || "",
         valorServico: parseFloat(tag("infCte > vPrest > vTPrest")) || Number(doc.valor_servico) || 0,
-        valorCarga: parseFloat(tag("infCte > infCarga > vMerc")) || 0,
+        valorCarga: parseFloat(tag("infCte > infCarga > vCarga")) || parseFloat(tag("infCte > infCarga > vMerc")) || 0,
         pesoKg: parseFloat(tag("infCte > infCarga > qCarga")) || 0,
         icmsCST: tagI("CST") || "00",
         icmsBase: parseFloat(tagI("vBC")) || 0,
@@ -391,7 +399,7 @@ function CtePage() {
         xOutCat,
         infQ,
         cubagem: "",
-        qtdVol: "",
+        qtdVol: totQVol > 0 ? String(totQVol) : "",
         tomadorIE: tomaIEXml,
         segCNPJ: segCNPJC,
         segResp: (pjForm as any).segResponsavel || "4",
@@ -2560,6 +2568,7 @@ function CtePage() {
               destinoUF: f.ufFim || "",
               valorServico: f.vPrest || 0,
               valorCarga: f.vCarga || 0,
+              qtdVol: (() => { const q = baseNfes.reduce((a: number, m: any) => a + Number((m as any).qVol || 0), 0); return q > 0 ? String(q) : ""; })(),
               pesoKg: f.pesoKg || 0,
               icmsCST: f.icmsCST || "00",
               icmsBase: f.icms?.vBC || f.vPrest || 0,
