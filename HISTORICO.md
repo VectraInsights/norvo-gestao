@@ -1608,3 +1608,8 @@ Commits CF `d49b494` + Vercel `30ff3a0` (+ `f664f64` trigger) + Worker `227f5885
 
 - Coluna Chave sem truncate: exibe os 44 digitos (`break-all`, mono 11px).
 - Coluna Acoes alinhada ao canto direito (`justify-end`, header `text-right`).
+---
+
+## Tabela CT-e: chave colada no olho (15/09/2026)
+
+- Digitos da chave alinhados a direita (`text-right pr-1`); celula de acoes com `pl-1`: respiro minimo sem sobrepor.
