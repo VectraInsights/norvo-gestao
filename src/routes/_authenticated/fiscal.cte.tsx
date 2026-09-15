@@ -241,7 +241,8 @@ function CtePage() {
         } catch {}
       }
       const percWarnKey = "perc-warn:" + (doc.chave_acesso || "");
-      if (!healed && !percObs && !percColX && !sessionStorage.getItem(percWarnKey)) { sessionStorage.setItem(percWarnKey, "1"); toast.warning("Percurso nao localizado: obs e cidades ficam em branco"); }
+      const percWarned = (() => { try { return !!localStorage.getItem(percWarnKey); } catch { return false; } })();
+      if (!healed && !percObs && !percColX && !percWarned) { try { localStorage.setItem(percWarnKey, "1"); } catch {} toast.warning("Percurso nao localizado: obs e cidades ficam em branco"); }
       if (healed) toast.info("Percurso criado automaticamente - complete a observacao em Percursos");
       const xmlComps = Array.from(xmlDoc.querySelectorAll("vPrest > Comp")).map(cc => ({ nome: (cc.querySelector("xNome")?.textContent || "").trim(), valor: parseFloat(cc.querySelector("vComp")?.textContent || "0") || 0 })).filter(cc => cc.nome).slice(0, 8);
       const dhEmi = tag("infCte > ide > dhEmi") || "";
