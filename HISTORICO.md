@@ -1560,3 +1560,8 @@ Commits CF `d49b494` + Vercel `30ff3a0` (+ `f664f64` trigger) + Worker `227f5885
 ## Toast de percurso: 1x para sempre (15/09/2026)
 
 - Guard era sessionStorage (morria a cada dia). Agora localStorage por chave: avisou uma vez, nao repete.
+---
+
+## Percurso garantido na emissao e na cura (15/09/2026)
+
+- Causa do toast fantasma: `persistirPercursoSilencioso` (emissao/rascunho) e a cura do DACTE exigiam tomador 14 digitos; doc sem tomador resolvido nunca ganhava percurso. Cura agora so exige rem+dest; erro do insert aparece no toast (1x) em vez de silencio; match do form normaliza digitos.

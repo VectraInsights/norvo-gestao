@@ -227,7 +227,7 @@ function CtePage() {
       if (!destNomeFix || destNomeFix === "CTE EMITIDO EM AMBIENTE DE HOMOLOGACAO - SEM VALORFISCAL") destNomeFix = tag("infCte > toma > xNome") || "";
       if (destNomeFix === "CTE EMITIDO EM AMBIENTE DE HOMOLOGACAO - SEM VALORFISCAL") destNomeFix = "";
       let healed = false;
-      if (!hit && empresa && remD.length === 14 && dstD.length === 14 && tomaD.length === 14) {
+      if (!hit && empresa && remD.length === 14 && dstD.length === 14) {
         try {
           const { data: mx } = await supabase.from("cte_percursos" as any).select("codigo").eq("empresa_id", (empresa as any).id).order("codigo", { ascending: false }).limit(1);
           const last = parseInt(((((mx as any[]) || [])[0] as any)?.codigo || "0"), 10) || 0;
@@ -238,6 +238,7 @@ function CtePage() {
           if (!nmB || nmB === "CTE EMITIDO EM AMBIENTE DE HOMOLOGACAO - SEM VALORFISCAL") nmB = dstD;
           const { error: insErr } = await supabase.from("cte_percursos" as any).insert({ empresa_id: (empresa as any).id, codigo: String(last + 1).padStart(4, "0"), nome: (nmA + " > " + nmB).slice(0, 120), rem_cnpj: remD, dest_cnpj: dstD, toma_cnpj: tomaD, coleta_xmun: detX1, coleta_uf: tag("infCte > ide > UFIni") || "", entrega_xmun: detX2, entrega_uf: tag("infCte > ide > UFFim") || "", cfop: tag("infCte > ide > CFOP") || "5353", obs_gerais: "" });
           if (!insErr) healed = true;
+          else { const k2 = "perc-err:" + (doc.chave_acesso || ""); try { const g = localStorage.getItem(k2); if (!g) { localStorage.setItem(k2, "1"); toast.warning("Percurso auto: " + String((insErr as any)?.message || insErr).slice(0, 140)); } } catch {} }
         } catch {}
       }
       const percWarnKey = "perc-warn:" + (doc.chave_acesso || "");
@@ -280,7 +281,7 @@ function CtePage() {
       const tomCepRaw = tag("infCte > toma > enderToma > CEP") || "";
       const [remLogEnr, dstLogEnr, tomLogEnr] = await Promise.all([completarLogradouro(remLogRaw, remCepRaw), completarLogradouro(dstLogRaw, dstCepRaw), completarLogradouro(tomLogRaw, tomCepRaw)]);
       try {
-        const pendUpd: Array<Promise<any>> = [];
+        const pendUpd: Array<any> = [];
         const fixCad = (docDigits: string, atual: string, novo: string) => {
           if (!empresa || !docDigits || !novo || novo === atual) return;
           if (atual && temTipoLogradouro(atual)) return;
@@ -1317,7 +1318,7 @@ function CtePage() {
     // Conferência estrita: só aplica com CNPJ de remetente + destinatário + tomador iguais
     if (!percursos || percursos.length === 0) return null;
     if (!d.remDoc || !d.destDoc || !d.tomaDoc) return null;
-    return percursos.find(r => r.rem_cnpj === d.remDoc && r.dest_cnpj === d.destDoc && r.toma_cnpj === d.tomaDoc) || null;
+    return percursos.find(r => onlyDigitsPercurso(r.rem_cnpj) === d.remDoc && onlyDigitsPercurso(r.dest_cnpj) === d.destDoc && onlyDigitsPercurso(r.toma_cnpj) === d.tomaDoc) || null;
   };
   const aplicarPercurso = (r: Record<string, any>) => {
     setForm(f => ({ ...f,
