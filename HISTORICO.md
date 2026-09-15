@@ -1667,3 +1667,9 @@ Commits CF `d49b494` + Vercel `30ff3a0` (+ `f664f64` trigger) + Worker `227f5885
 
 - Protocolo/Versao com `:` e numeros colados (2mm).
 - `completarLogradouro` aceita rua da API sem tipo conhecido (Vereador/Deputado/Doutor); writeback acompanha.
+---
+
+## Contatos refeitos com dados do XML da NF-e (15/09/2026)
+
+- Import le `enderEmit/enderDest > nro` (nunca lido); numero vai ao contato.
+- `upsertContatoFromNfe` ATUALIZA existente com endereco do XML (prefixo Rua/Av, numero, bairro, CEP, IE, fone); antes ignorava. Nome so se vazio; tipo preservado.

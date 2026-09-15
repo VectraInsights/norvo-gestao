@@ -816,14 +816,27 @@ function CtePage() {
         const { data } = await supabase.from("contatos" as any).select("nome,logradouro,numero,bairro,cidade,uf,cep,telefone").eq("empresa_id", empresa!.id).eq("documento", doc).maybeSingle();
         return data || null;
       };
-      const upsertContatoFromNfe = async (cnpj: string, nome: string, ie: string, uf: string, cidade: string, logradouro: string, bairro: string, cep: string, fone: string, tipo: "cliente" | "fornecedor" | "transportadora" | "ambos") => {
+      const upsertContatoFromNfe = async (cnpj: string, nome: string, ie: string, uf: string, cidade: string, logradouro: string, bairro: string, cep: string, fone: string, numero: string, tipo: "cliente" | "fornecedor" | "transportadora" | "ambos") => {
         const doc = (cnpj || "").replace(/\D/g, "");
         if (!doc || doc.length < 11 || !nome) return;
-        const { data: existente } = await supabase.from("contatos" as any).select("id").eq("empresa_id", empresa!.id).eq("documento", doc).maybeSingle();
-        if (existente) return;
-        const { error } = await supabase.from("contatos" as any).insert({ empresa_id: empresa!.id, nome, tipo, documento: doc, ie: ie || null, uf: uf || null, cidade: cidade || null, logradouro: logradouro || null, bairro: bairro || null, cep: cep || null, telefone: fone || null });
+        const { data: existente } = await supabase.from("contatos" as any).select("id,nome").eq("empresa_id", empresa!.id).eq("documento", doc).maybeSingle();
+        if (existente) {
+          const upd: Record<string, unknown> = {};
+          if (!(existente as any)?.nome && nome) upd.nome = nome;
+          if (ie) upd.ie = ie;
+          if (uf) upd.uf = uf;
+          if (cidade) upd.cidade = cidade;
+          if (logradouro) upd.logradouro = logradouro;
+          if (numero) upd.numero = numero;
+          if (bairro) upd.bairro = bairro;
+          if (cep) upd.cep = cep;
+          if (fone) upd.telefone = fone;
+          if (Object.keys(upd).length) await supabase.from("contatos" as any).update(upd).eq("empresa_id", empresa!.id).eq("documento", doc);
+          return;
+        }
+        const { error } = await supabase.from("contatos" as any).insert({ empresa_id: empresa!.id, nome, tipo, documento: doc, ie: ie || null, uf: uf || null, cidade: cidade || null, logradouro: logradouro || null, numero: numero || null, bairro: bairro || null, cep: cep || null, telefone: fone || null });
         if (error && /ie/i.test(error.message || "")) {
-          await supabase.from("contatos" as any).insert({ empresa_id: empresa!.id, nome, tipo, documento: doc, uf: uf || null, cidade: cidade || null, logradouro: logradouro || null, bairro: bairro || null, cep: cep || null, telefone: fone || null });
+          await supabase.from("contatos" as any).insert({ empresa_id: empresa!.id, nome, tipo, documento: doc, uf: uf || null, cidade: cidade || null, logradouro: logradouro || null, numero: numero || null, bairro: bairro || null, cep: cep || null, telefone: fone || null });
         }
       };
       let added = 0;
@@ -847,6 +860,7 @@ function CtePage() {
         const emitBairro = doc.querySelector("emit > enderEmit > xBairro")?.textContent || "";
         const emitCEP = doc.querySelector("emit > enderEmit > CEP")?.textContent || "";
         const emitFone = doc.querySelector("emit > enderEmit > fone")?.textContent || "";
+        const emitNroXml = doc.querySelector("emit > enderEmit > nro")?.textContent || "";
         const destCnpj = doc.querySelector("dest > CNPJ")?.textContent || doc.querySelector("dest > CPF")?.textContent || "";
         const destXNome = doc.querySelector("dest > xNome")?.textContent || "";
         const destIE = doc.querySelector("dest > IE")?.textContent || "";
@@ -857,6 +871,7 @@ function CtePage() {
         const destBairro = doc.querySelector("dest > enderDest > xBairro")?.textContent || "";
         const destCEP = doc.querySelector("dest > enderDest > CEP")?.textContent || "";
         const destFone = doc.querySelector("dest > enderDest > fone")?.textContent || "";
+        const destNroXml = doc.querySelector("dest > enderDest > nro")?.textContent || "";
         const vNF = doc.querySelector("total > ICMSTot > vNF")?.textContent || doc.querySelector("vNF")?.textContent || "0";
         const pesoB = doc.querySelector("transp > vol > pesoB")?.textContent || doc.querySelector("vol > pesoB")?.textContent || "";
         const nNF = doc.querySelector("ide > nNF")?.textContent || file.name.replace(/\.xml$/i, "");
@@ -876,14 +891,14 @@ function CtePage() {
         // Lookup endereço no cadastro de contatos (XML de NF-e pode não trazer endereço)
         const [emitContato, destContato] = await Promise.all([lookupContato(emitCnpj), lookupContato(destCnpj)]);
         const emitLog = emitLgr || (emitContato as any)?.logradouro || "";
-        const emitNro = (emitContato as any)?.numero || "";
+        const emitNro = emitNroXml || (emitContato as any)?.numero || "";
         const emitBai = emitBairro || (emitContato as any)?.bairro || "";
         const emitCepFin = emitCEP || (emitContato as any)?.cep || "";
         const emitCidFin = emitXMun || (emitContato as any)?.cidade || "";
         const emitUfFin = emitUF || (emitContato as any)?.uf || "";
         const emitFoneFin = emitFone || (emitContato as any)?.telefone || "";
         const destLog = destLgr || (destContato as any)?.logradouro || "";
-        const destNro = (destContato as any)?.numero || "";
+        const destNro = destNroXml || (destContato as any)?.numero || "";
         const destBai = destBairro || (destContato as any)?.bairro || "";
         const destCepFin = destCEP || (destContato as any)?.cep || "";
         const destCidFin = destXMun || (destContato as any)?.cidade || "";
@@ -949,8 +964,8 @@ function CtePage() {
           continue;
         }
         novas.push({ chave: chaveNorm, nNF, serie, emit: emitXNome, emitCnpj, emitUF: emitUfFin, emitCMun, emitXMun: emitCidFin, emitIE, emitLogradouro: emitLog, emitBairro: emitBai, emitCEP: emitCepFin, emitFone: emitFoneFin, dest: destXNome, destCnpj, destUF: destUfFin, destCMun, destXMun: destCidFin, destIE, destLogradouro: destLog, destBairro: destBai, destCEP: destCepFin, destFone: destFoneFin, valor, peso, data: dhEmi.slice(0, 10), tomador: tomadorNome, tomadorCnpj, tomadorUF, tomadorCMun, tomadorXMun, tomadorIE, tomadorLogradouro: tomadorLog, tomadorBairro: tomadorBai, tomadorCEP: tomadorCep, modFrete });
-        upsertContatoFromNfe(emitCnpj, emitXNome, emitIE, emitUF, emitXMun, emitLgr, emitBairro, emitCEP, emitFone, "fornecedor").catch(() => {});
-        upsertContatoFromNfe(destCnpj, destXNome, destIE, destUF, destXMun, destLgr, destBairro, destCEP, destFone, "cliente").catch(() => {});
+        upsertContatoFromNfe(emitCnpj, emitXNome, emitIE, emitUF, emitXMun, emitLgr, emitBairro, emitCEP, emitFone, emitNro, "fornecedor").catch(() => {});
+        upsertContatoFromNfe(destCnpj, destXNome, destIE, destUF, destXMun, destLgr, destBairro, destCEP, destFone, destNro, "cliente").catch(() => {});
         if (added === 0 && mercadorias.length === 0) {
           const tomaByMod: Record<string, string> = { "0": "0", "1": "3", "2": "4", "3": "0", "4": "3", "9": "4" };
           const tomaIni = tomaByMod[modFrete] ?? "3";
