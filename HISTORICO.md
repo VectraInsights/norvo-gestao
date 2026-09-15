@@ -1570,3 +1570,8 @@ Commits CF `d49b494` + Vercel `30ff3a0` (+ `f664f64` trigger) + Worker `227f5885
 ## Cabecalho 2 colunas + QR 25mm (15/09/2026)
 
 - Esquerda: emitente + DACTE + faixa Modal; direita: QR 25mm (MOC) + barras + chave. Compactado p/ 1 pagina.
+---
+
+## Metades alinhadas + divisor QR/barras (15/09/2026)
+
+- Caixa direita ancorada no topo (estava 1mm deslocada); linha separando QR do codigo de barras.

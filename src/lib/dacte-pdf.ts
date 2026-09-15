@@ -278,6 +278,7 @@ export function gerarDactePdf(data: DacteData): Blob {
     // ---- Cabecalho 2 colunas: emitente+DACTE | QR+barras+chave ----
   const colL = 116, colR = CW - colL - 2, rx = M + colL + 2;
   const emH = 18, daH = 16, moH2 = 7;
+  const yTop = y;
   box(M, y, colL, emH);
   if (data.logoDataUrl) { try { doc.addImage(data.logoDataUrl as string, "PNG", M + 2, y + 3.5, 26, 10.2); } catch {} }
   else { border(); doc.rect(M + 2, y + 3.5, 26, 10.2, "S"); }
@@ -318,11 +319,12 @@ export function gerarDactePdf(data: DacteData): Blob {
   doc.text("Insc. Suframa Destinatário:", M + 62, y + 5);
   y += moH2 + 1;
   const rhH = emH + 1 + daH + 1 + moH2;
-  const ry = y - rhH;
+  const ry = yTop;
   box(rx, ry, colR, rhH);
   const qrTxt = (data.qrCode || "").trim();
   if (qrTxt) drawQr(doc, rx + (colR - 25) / 2, ry + 1.5, 25, qrTxt);
   else { border(); doc.rect(rx + (colR - 25) / 2, ry + 1.5, 25, 25, "S"); }
+  border(); doc.line(rx, ry + 27, rx + colR, ry + 27);
   const barsImg = barcodePng(data.chave);
   if (barsImg) {
     try {
