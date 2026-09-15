@@ -1580,3 +1580,9 @@ Commits CF `d49b494` + Vercel `30ff3a0` (+ `f664f64` trigger) + Worker `227f5885
 ## Arquivos com nome da chave (15/09/2026)
 
 - Download do XML e do PDF salvam como `<chave>.xml` / `<chave>.pdf` (cai p/ numero se sem chave).
+---
+
+## Remetente via NF-e, nao via emitente (15/09/2026)
+
+- Simplificado nao tem grupo `rem`: o codigo usava o emitente (Juvenal) como remetente. Agora: XML rem -> NF-e emitente -> percurso -> contato -> emit. Vale p/ CNPJ/nome/cidade/UF/endereco/IE/fone. Mesmo vale p/ dest nome/cidade/UF via NF-e.
+- Com remD correto, o match do percurso (TECNO->INSS) acerta e o toast some; fone do emitente separado do remetente.

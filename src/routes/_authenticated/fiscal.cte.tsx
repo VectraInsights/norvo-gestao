@@ -155,30 +155,34 @@ function CtePage() {
       let percObs = "", percColX = "", percColU = "", percEntX = "", percEntU = "";
       let percDstDoc = "", percDstNome = "", percDstX = "", percDstU = "", percDstLog = "", percDstNro = "", percDstBairro = "", percDstCep = "", percDstIE = "", percDstFone = "";
       let remD = "", dstD = "", tomaD = "";
+      let nfRef: any = null;
+      let percRemNome = "", percRemX = "", percRemU = "", percRemLog = "", percRemNro = "", percRemBairro = "", percRemCep = "", percRemIE = "", percRemFone = "";
       let hit: any = null;
       try {
-        remD = dg(tag("infCte > rem > CNPJ") || tag("infCte > rem > CPF"));
+        try {
+          const chs0 = nFes.map((nn: any) => dg(nn.chave)).filter((cc: string) => cc.length === 44).slice(0, 5);
+          if (empresa && chs0.length > 0) {
+            const { data: nfs0 } = await supabase.from("cte_nfes_pendentes" as any).select("chave,emit_cnpj,emit_nome,emit_uf,emit_cmun,emit_xmun,dest_cnpj,dest_nome,dest_uf,dest_cmun,dest_xmun").eq("empresa_id", (empresa as any).id).in("chave", chs0);
+            const rows0 = ((nfs0 as any[]) || []);
+            if (rows0.length > 0) nfRef = rows0[0];
+          }
+        } catch {}
+        remD = dg(tag("infCte > rem > CNPJ") || tag("infCte > rem > CPF")) || dg(nfRef?.emit_cnpj) || dg(tag("infCte > emit > CNPJ") || tag("infCte > emit > CPF"));
         dstD = dg(tag("infCte > dest > CNPJ") || tag("infCte > dest > CPF"));
         tomaD = dg(xmlDoc.querySelector("toma4 > CNPJ")?.textContent || xmlDoc.querySelector("toma4 > CPF")?.textContent || xmlDoc.querySelector("infCte > toma > CNPJ")?.textContent || "");
         if (!tomaD) {
           const t3 = (xmlDoc.querySelector("toma3 > toma")?.textContent || xmlDoc.querySelector("infCte > toma > toma")?.textContent || "").trim();
           tomaD = t3 === "0" ? remD : t3 === "3" ? dstD : "";
         }
-          if (!dstD) {
-            try {
-              const chs = nFes.map((nn: any) => dg(nn.chave)).filter((cc: string) => cc.length === 44).slice(0, 5);
-              if (empresa && chs.length > 0) {
-                const { data: nfs } = await supabase.from("cte_nfes_pendentes" as any).select("chave,dest_cnpj").eq("empresa_id", (empresa as any).id).in("chave", chs);
-                const dd = [...new Set(((nfs as any[]) || []).map((nn: any) => dg(nn.dest_cnpj)).filter(Boolean))];
-                if (dd.length === 1) dstD = dd[0];
-              }
-            } catch {}
+          if (!dstD && nfRef) {
+            const dd = dg(nfRef.dest_cnpj);
+            if (dd) dstD = dd;
           }
         if (empresa && remD && dstD) {
-          const { data: prcs } = await supabase.from("cte_percursos" as any).select("obs_gerais,coleta_xmun,coleta_uf,entrega_xmun,entrega_uf,rem_cnpj,dest_cnpj,toma_cnpj,dest_nome,dest_xmun,dest_uf,dest_logradouro,dest_nro,dest_bairro,dest_cep,dest_ie,dest_fone").eq("empresa_id", (empresa as any).id);
+          const { data: prcs } = await supabase.from("cte_percursos" as any).select("obs_gerais,coleta_xmun,coleta_uf,entrega_xmun,entrega_uf,rem_cnpj,dest_cnpj,toma_cnpj,rem_nome,rem_xmun,rem_uf,rem_logradouro,rem_nro,rem_bairro,rem_cep,rem_ie,rem_fone,dest_nome,dest_xmun,dest_uf,dest_logradouro,dest_nro,dest_bairro,dest_cep,dest_ie,dest_fone").eq("empresa_id", (empresa as any).id);
           const list = ((prcs as any[]) || []);
           hit = list.find(pp => dg(pp.rem_cnpj) === remD && dg(pp.dest_cnpj) === dstD && (!tomaD || dg(pp.toma_cnpj) === tomaD)) || list.find(pp => dg(pp.rem_cnpj) === remD && dg(pp.dest_cnpj) === dstD) || null;
-          if (hit) { percObs = hit.obs_gerais || ""; percColX = hit.coleta_xmun || ""; percColU = hit.coleta_uf || ""; percEntX = hit.entrega_xmun || ""; percEntU = hit.entrega_uf || ""; percDstDoc = hit.dest_cnpj || ""; percDstNome = hit.dest_nome || ""; percDstX = hit.dest_xmun || ""; percDstU = hit.dest_uf || ""; percDstLog = hit.dest_logradouro || ""; percDstNro = hit.dest_nro || ""; percDstBairro = hit.dest_bairro || ""; percDstCep = hit.dest_cep || ""; percDstIE = hit.dest_ie || ""; percDstFone = hit.dest_fone || ""; }
+          if (hit) { percObs = hit.obs_gerais || ""; percColX = hit.coleta_xmun || ""; percColU = hit.coleta_uf || ""; percEntX = hit.entrega_xmun || ""; percEntU = hit.entrega_uf || ""; percDstDoc = hit.dest_cnpj || ""; percDstNome = hit.dest_nome || ""; percDstX = hit.dest_xmun || ""; percDstU = hit.dest_uf || ""; percDstLog = hit.dest_logradouro || ""; percDstNro = hit.dest_nro || ""; percDstBairro = hit.dest_bairro || ""; percDstCep = hit.dest_cep || ""; percDstIE = hit.dest_ie || ""; percDstFone = hit.dest_fone || ""; percRemNome = hit.rem_nome || ""; percRemX = hit.rem_xmun || ""; percRemU = hit.rem_uf || ""; percRemLog = hit.rem_logradouro || ""; percRemNro = hit.rem_nro || ""; percRemBairro = hit.rem_bairro || ""; percRemCep = hit.rem_cep || ""; percRemIE = hit.rem_ie || ""; percRemFone = hit.rem_fone || ""; }
         }
       } catch {}
       let ctDstNome = "", ctDstX = "", ctDstU = "";
@@ -191,7 +195,7 @@ function CtePage() {
           if (cD) { ctDstNome = cD.nome || ""; ctDstX = cD.cidade || ""; ctDstU = cD.uf || ""; }
         }
       } catch {}
-      let cRemFull: any = null, cDstFull: any = null;
+      let cRemFull: any = null, cDstFull: any = null, emitFoneE = "";
       try {
         if (empresa && (remD || dstD || tomaD)) {
           const { data: cts2 } = await supabase.from("contatos" as any).select("documento,nome,logradouro,numero,bairro,cidade,uf,cep,ie,telefone").eq("empresa_id", (empresa as any).id);
@@ -199,6 +203,8 @@ function CtePage() {
           const f2 = (dd: string) => cl2.find(cc => String(cc.documento || "").replace(/\D/g, "") === dd);
           if (remD) cRemFull = f2(remD);
           if (dstD) cDstFull = f2(dstD);
+          const emitD = dg(tag("infCte > emit > CNPJ") || tag("infCte > emit > CPF"));
+          if (emitD) { const cEmi = f2(emitD); if (cEmi) emitFoneE = ((cEmi as any).telefone || "").replace(/\D/g, ""); }
         }
       } catch {}
       let emitFoneC = "", remFoneC = "", motoCPFC = "", segCNPJC = "";
@@ -221,7 +227,7 @@ function CtePage() {
           if (cb) motoCPFC = String((cb as any).cpf || "").replace(/\D/g, "");
         }
       } catch {}
-      let destNomeFix = tag("infCte > dest > xNome") || "";
+      let destNomeFix = tag("infCte > dest > xNome") || (nfRef?.dest_nome || "") || "";
       if (!destNomeFix || destNomeFix === "CTE EMITIDO EM AMBIENTE DE HOMOLOGACAO - SEM VALORFISCAL") destNomeFix = percDstNome;
       if (!destNomeFix || destNomeFix === "CTE EMITIDO EM AMBIENTE DE HOMOLOGACAO - SEM VALORFISCAL") destNomeFix = ctDstNome;
       if (!destNomeFix || destNomeFix === "CTE EMITIDO EM AMBIENTE DE HOMOLOGACAO - SEM VALORFISCAL") destNomeFix = tag("infCte > toma > xNome") || "";
@@ -270,9 +276,9 @@ function CtePage() {
       const propEl = rodoEl?.querySelector("prop");
       const valeEl = rodoEl?.querySelector("valePed");
       const lacresXml = Array.from(rodoEl?.querySelectorAll("lacRodo > nLacre") || []).map(e => (e.textContent || "").trim()).filter(Boolean).join(", ");
-      const remLogRaw = tag("infCte > emit > enderEmit > xLgr") || (cRemFull as any)?.logradouro || "";
-      const remNroRaw = tag("infCte > emit > enderEmit > nro") || (cRemFull as any)?.numero || "";
-      const remCepRaw = tag("infCte > emit > enderEmit > CEP") || (cRemFull as any)?.cep || "";
+      const remLogRaw = tag("infCte > rem > enderRem > xLgr") || percRemLog || (cRemFull as any)?.logradouro || tag("infCte > emit > enderEmit > xLgr") || "";
+      const remNroRaw = tag("infCte > rem > enderRem > nro") || percRemNro || (cRemFull as any)?.numero || tag("infCte > emit > enderEmit > nro") || "";
+      const remCepRaw = tag("infCte > rem > enderRem > CEP") || percRemCep || (cRemFull as any)?.cep || tag("infCte > emit > enderEmit > CEP") || "";
       const dstLogRaw = tag("infCte > dest > enderDest > xLgr") || percDstLog || (cDstFull as any)?.logradouro || "";
       const dstNroRaw = tag("infCte > dest > enderDest > nro") || percDstNro || (cDstFull as any)?.numero || "";
       const dstCepRaw = tag("infCte > dest > enderDest > CEP") || percDstCep || (cDstFull as any)?.cep || "";
@@ -306,25 +312,25 @@ function CtePage() {
         emitIE: tag("infCte > emit > IE") || "",
         emitBairro: tag("infCte > emit > enderEmit > xBairro") || "",
         emitCEP: tag("infCte > emit > enderEmit > CEP") || "",
-        emitFone: emitFoneC,
+        emitFone: emitFoneE || "",
         tomadorCnpj: tag("infCte > toma > CNPJ") || "",
         tomadorNome: tag("infCte > toma > xNome") || "",
         tomadorEndereco: `${tomLogEnr} ${tomNroRaw}`.trim(),
         tomadorCidade: tag("infCte > toma > enderToma > xMun") || "",
         tomadorUF: tag("infCte > toma > enderToma > UF") || "",
-        remCnpj: tag("infCte > emit > CNPJ") || "",
-        remNome: tag("infCte > emit > xNome") || "",
-        remCidade: tag("infCte > emit > enderEmit > xMun") || "",
-        remUF: tag("infCte > emit > enderEmit > UF") || "",
+        remCnpj: tag("infCte > rem > CNPJ") || tag("infCte > rem > CPF") || dg(nfRef?.emit_cnpj) || tag("infCte > emit > CNPJ") || "",
+        remNome: tag("infCte > rem > xNome") || (nfRef?.emit_nome || "") || percRemNome || tag("infCte > emit > xNome") || "",
+        remCidade: tag("infCte > rem > enderRem > xMun") || (nfRef?.emit_xmun || "") || percRemX || (cRemFull as any)?.cidade || tag("infCte > emit > enderEmit > xMun") || "",
+        remUF: tag("infCte > rem > enderRem > UF") || (nfRef?.emit_uf || "") || percRemU || (cRemFull as any)?.uf || tag("infCte > emit > enderEmit > UF") || "",
         remEndereco: ((remLogEnr || "") + " " + (remNroRaw || "")).trim(),
-        remBairro: tag("infCte > emit > enderEmit > xBairro") || "",
-        remCEP: tag("infCte > emit > enderEmit > CEP") || "",
-        remIE: tag("infCte > emit > IE") || "",
-        remFone: remFoneC,
+        remBairro: tag("infCte > rem > enderRem > xBairro") || percRemBairro || (cRemFull as any)?.bairro || tag("infCte > emit > enderEmit > xBairro") || "",
+        remCEP: tag("infCte > rem > enderRem > CEP") || percRemCep || (cRemFull as any)?.cep || tag("infCte > emit > enderEmit > CEP") || "",
+        remIE: tag("infCte > rem > IE") || percRemIE || (cRemFull as any)?.ie || tag("infCte > emit > IE") || "",
+        remFone: remFoneC || percRemFone,
         destCnpj: tag("infCte > dest > CNPJ") || percDstDoc || dstD || tag("infCte > toma > CNPJ") || "",
         destNome: destNomeFix,
-        destCidade: tag("infCte > dest > enderDest > xMun") || percDstX || ctDstX || (cDstFull as any)?.cidade || tag("infCte > toma > enderToma > xMun") || "",
-        destUF: tag("infCte > dest > enderDest > UF") || percDstU || ctDstU || (cDstFull as any)?.uf || tag("infCte > toma > enderToma > UF") || "",
+        destCidade: tag("infCte > dest > enderDest > xMun") || (nfRef?.dest_xmun || "") || percDstX || ctDstX || (cDstFull as any)?.cidade || tag("infCte > toma > enderToma > xMun") || "",
+        destUF: tag("infCte > dest > enderDest > UF") || (nfRef?.dest_uf || "") || percDstU || ctDstU || (cDstFull as any)?.uf || tag("infCte > toma > enderToma > UF") || "",
         destEndereco: ((dstLogEnr || "") + " " + (dstNroRaw || "")).trim() || "",
         destBairro: tag("infCte > dest > enderDest > xBairro") || percDstBairro || (cDstFull as any)?.bairro || "",
         destCEP: tag("infCte > dest > enderDest > CEP") || percDstCep || (cDstFull as any)?.cep || "",
