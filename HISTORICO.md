@@ -1623,3 +1623,8 @@ Commits CF `d49b494` + Vercel `30ff3a0` (+ `f664f64` trigger) + Worker `227f5885
 ## Tabela CT-e: titulos centralizados (15/09/2026)
 
 - Todos os `TableHead` (Numero, Serie, Status, Notas, Valor, Chave, Acoes) com `text-center`; celulas de dados inalteradas.
+---
+
+## DACTE emitente: bairro completo (15/09/2026)
+
+- Bairro corta em 13 (era 10): `SAO SEBASTIAO` inteiro; rotulo/valor do CEP 2mm a direita.
