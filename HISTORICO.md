@@ -1700,3 +1700,8 @@ Commits CF `d49b494` + Vercel `30ff3a0` (+ `f664f64` trigger) + Worker `227f5885
 
 - `norm()` trocava acento por espaco (DECIO->DE CIO) e a conferencia falhava; agora remove diacriticos. Caso real validado: VEREADOR DECIO DE PAULA + 35574825 -> RUA VEREADOR DECIO DE PAULA.
 - Tomador usa cadastro (logr/nro/cep/fone) quando o XML nao traz; fone do tomador no DACTE.
+---
+
+## DACTE: quantidade medida/cobrada em pt-BR (15/09/2026)
+
+- `fmtQtd`: ponto no milhar + virgula no decimal, preservando as casas (6750.0000 -> 6.750,0000).

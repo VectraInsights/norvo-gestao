@@ -146,6 +146,16 @@ function fmtNum(v: number | string): string {
   return (Number(v) || 0).toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 }
 
+function fmtQtd(v: string | number): string {
+  const s = String(v === undefined || v === null ? "" : v).trim();
+  const m = s.match(/^(-?\d+)([.,](\d+))?$/);
+  if (!m) return s;
+  const dec = (m[3] || "").slice(0, 4);
+  const thou = m[1].replace(/\D/g, "").replace(/^0+(?=\d)/, "").replace(/\B(?=(\d{3})+(?!\d))/g, ".");
+  const dd = (dec + "00").slice(0, Math.max(2, dec.length));
+  return (s.charAt(0) === "-" ? "-" : "") + thou + "," + dd;
+}
+
 function fmtInt(v: string | number): string {
   const n = Number(String(v || "").replace(/\D/g, "")) || 0;
   return n.toLocaleString("pt-BR", { maximumFractionDigits: 0 });
@@ -444,8 +454,8 @@ export function gerarDactePdf(data: DacteData): Blob {
   const q1: any = data.infQ && data.infQ.length > 1 ? data.infQ[1] : q0;
   lab("Qtd.", M + 2, y + 3); lab("Carga", M + 2, y + 6);
   const cgw: Array<[string, string, string, number]> = [
-    ["Qtde Medida/", "Un Medida", `${cut(D(q0.q), 12)}/${cut(D(q0.um) || "Unid", 8)}`, 24],
-    ["Qtde Cobrada/", "Un Medida", `${cut(D(q1.q), 12)}/${cut(D(q1.um) || "Unid", 8)}`, 24],
+    ["Qtde Medida/", "Un Medida", `${cut(fmtQtd(D(q0.q)), 14)}/${cut(D(q0.um) || "Unid", 8)}`, 24],
+    ["Qtde Cobrada/", "Un Medida", `${cut(fmtQtd(D(q1.q)), 14)}/${cut(D(q1.um) || "Unid", 8)}`, 24],
     ["Cubagem", "(M³)", D(data.cubagem) || "0,00", 18],
     ["Qtd.Vol. /", "UN", D(data.qtdVol), 18],
   ];
