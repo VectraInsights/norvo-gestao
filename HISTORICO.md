@@ -1678,3 +1678,9 @@ Commits CF `d49b494` + Vercel `30ff3a0` (+ `f664f64` trigger) + Worker `227f5885
 ## Cancelamento usa ambiente do documento (15/09/2026)
 
 - 216 acontecia pq o cancel ia p/ producao (nfe_config) mesmo p/ CT-e de homologacao; agora usa body.ambiente > documento > global.
+---
+
+## Fiscal > Cadastro (clientes+fornecedores) (15/09/2026)
+
+- Nova rota `/fiscal/cadastro`: contatos cliente/fornecedor/ambos juntos, com busca, filtro por tipo e CRUD completo (IE, endereco com numero, lookup CNPJ).
+- Item `Cadastro` no menu Fiscal apos Percursos (mesmo modulo fiscal, sem permissao nova).
