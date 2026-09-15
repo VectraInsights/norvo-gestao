@@ -285,7 +285,10 @@ function CtePage() {
       const tomLogRaw = tag("infCte > toma > enderToma > xLgr") || "";
       const tomNroRaw = tag("infCte > toma > enderToma > nro") || "";
       const tomCepRaw = tag("infCte > toma > enderToma > CEP") || "";
-      const [remLogEnr, dstLogEnr, tomLogEnr] = await Promise.all([completarLogradouro(remLogRaw, remCepRaw), completarLogradouro(dstLogRaw, dstCepRaw), completarLogradouro(tomLogRaw, tomCepRaw)]);
+      const emitLogRaw = tag("infCte > emit > enderEmit > xLgr") || "";
+      const emitNroRaw = tag("infCte > emit > enderEmit > nro") || "";
+      const emitCepRaw = tag("infCte > emit > enderEmit > CEP") || "";
+      const [emitLogEnr, remLogEnr, dstLogEnr, tomLogEnr] = await Promise.all([completarLogradouro(emitLogRaw, emitCepRaw), completarLogradouro(remLogRaw, remCepRaw), completarLogradouro(dstLogRaw, dstCepRaw), completarLogradouro(tomLogRaw, tomCepRaw)]);
       try {
         const pendUpd: Array<any> = [];
         const fixCad = (docDigits: string, atual: string, novo: string) => {
@@ -306,7 +309,7 @@ function CtePage() {
         dataEmissao: doc.created_at,
         emitCnpj: tag("infCte > emit > CNPJ") || "",
         emitNome: tag("infCte > emit > xNome") || "",
-        emitEndereco: `${remLogEnr} ${remNroRaw}`.trim(),
+        emitEndereco: `${emitLogEnr} ${emitNroRaw}`.trim(),
         emitCidade: tag("infCte > emit > enderEmit > xMun") || "",
         emitUF: tag("infCte > emit > enderEmit > UF") || "",
         emitIE: tag("infCte > emit > IE") || "",
