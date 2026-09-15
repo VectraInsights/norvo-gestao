@@ -427,10 +427,8 @@ export function gerarDactePdf(data: DacteData): Blob {
   box(M, y, CW, tomH);
   valB(`Tomador: ${cut(D(data.tomadorNome), 58)}`, M + 1.5, y + 3, 6);
   setFont("normal", 6); black();
-  doc.text(`Cidade : ${cut(D(data.tomadorCidade), 28)} / ${D(data.tomadorUF)}`, M + 105, y + 3);
   doc.text(`Endereço : ${cut(D(data.tomadorEndereco), 70)}`, M + 1.5, y + 6);
-  doc.text(`CPF / CNPJ : ${fmtCnpj(data.tomadorCnpj)}   Insc. Est. ${cut(D(data.tomadorIE), 20)}`, M + 1.5, y + 9);
-  doc.text(`Tel. : ${D(data.tomadorFone)}   País : BRASIL`, M + 105, y + 9);
+  doc.text(`CPF / CNPJ : ${fmtCnpj(data.tomadorCnpj)}   Insc. Est. ${cut(D(data.tomadorIE), 16)}   Cidade : ${cut(D(data.tomadorCidade), 20)} / ${D(data.tomadorUF)}   Tel. : ${D(data.tomadorFone)}   País : BRASIL`, M + 1.5, y + 9);
   y += tomH + 1;
 
   // ---- Produto / valor mercadoria / averbação ----
