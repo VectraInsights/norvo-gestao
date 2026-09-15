@@ -607,14 +607,17 @@ export function gerarDactePdf(data: DacteData): Blob {
   }
   y += 1;
 
-  // ---- Observações ----
+  // ---- Observações (preenche até o canhoto encostar no rodapé) ----
   const hasObsTxt = !!(data.obs && data.obs.trim());
   const isHom = (data.ambiente || "") === "homologacao";
-  const obsH = 7;
-  need(obsH + 6);
+  need(7 + 6);
   box(M, y, CW, 4.5);
   ctr("Observações", W / 2, y + 3.5, 6, true);
   y += 5;
+  const nVeicObs = Math.min(Math.max((data.veiculos && data.veiculos.length) || 1, 1), 4);
+  const restoAposObs = 1 + 4.5 + 11 + (26 + 4 * nVeicObs) + 5.5 + 16 + 1; // +1 folga p/ need(17) do canhoto
+  let obsH = LIM - y - restoAposObs;
+  if (!(obsH >= 7)) obsH = 7;
   box(M, y, CW, obsH);
   if (hasObsTxt) {
     setFont("normal", 5); black();
