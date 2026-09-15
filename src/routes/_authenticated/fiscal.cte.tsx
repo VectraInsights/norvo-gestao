@@ -125,7 +125,7 @@ function CtePage() {
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
-    a.download = `CTe_${doc.numero || "0"}.xml`;
+    a.download = `${(doc.chave_acesso || "").replace(/\D/g, "") || doc.numero || "0"}.xml`;
     a.click();
     URL.revokeObjectURL(url);
     toast.success("XML baixado");
@@ -419,7 +419,7 @@ function CtePage() {
       const url = URL.createObjectURL(pdfBlob);
       const a = document.createElement("a");
       a.href = url;
-      a.download = `DACTE_${doc.numero || "0"}.pdf`;
+      a.download = `${(doc.chave_acesso || "").replace(/\D/g, "") || doc.numero || "0"}.pdf`;
       a.click();
       URL.revokeObjectURL(url);
       toast.success("PDF baixado");

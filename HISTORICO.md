@@ -1575,3 +1575,8 @@ Commits CF `d49b494` + Vercel `30ff3a0` (+ `f664f64` trigger) + Worker `227f5885
 ## Metades alinhadas + divisor QR/barras (15/09/2026)
 
 - Caixa direita ancorada no topo (estava 1mm deslocada); linha separando QR do codigo de barras.
+---
+
+## Arquivos com nome da chave (15/09/2026)
+
+- Download do XML e do PDF salvam como `<chave>.xml` / `<chave>.pdf` (cai p/ numero se sem chave).
