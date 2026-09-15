@@ -515,10 +515,10 @@ export function gerarDactePdf(data: DacteData): Blob {
   for (let i = 1; i < 4; i++) vline(gridX + i * colW, y, compH);
   setFont("bold", 5.5); black();
   doc.text("Valor do Serviço", totX + 2, y + 3);
-  valB(fmtNum(data.valorServico), totX + 2, y + 7.5, 7);
+  valB(fmtNum(data.valorServico), totX + 2, y + 7, 7);
   setFont("bold", 5.5); black();
   doc.text("Valor à Receber", totX + 2, y + 11);
-  valB(fmtNum(data.valorServico), totX + 2, y + 15, 7);
+  valB(fmtNum(data.valorServico), totX + 2, y + 14.5, 7);
   y += compH + 1;
 
   // ---- ICMS ----
