@@ -43,7 +43,7 @@ function CtePage() {
   const qc = useQueryClient();
   const search = Route.useSearch();
   const [isParsing, setIsParsing] = useState(false);
-  const [mercadorias, setMercadorias] = useState<Array<{ chave: string; nNF: string; serie: string; emit: string; emitCnpj: string; emitUF: string; emitCMun: string; emitXMun: string; emitIE?: string; emitLogradouro?: string; emitBairro?: string; emitCEP?: string; emitFone?: string; dest: string; destCnpj: string; destUF: string; destCMun: string; destXMun: string; destIE?: string; destLogradouro?: string; destBairro?: string; destCEP?: string; destFone?: string; valor: number; peso: number; data: string; tomador: string; tomadorCnpj: string; tomadorUF: string; tomadorCMun: string; tomadorXMun: string; tomadorIE?: string; tomadorLogradouro?: string; tomadorBairro?: string; tomadorCEP?: string; modFrete: string }>>([]);
+  const [mercadorias, setMercadorias] = useState<Array<{ chave: string; nNF: string; serie: string; emit: string; emitCnpj: string; emitUF: string; emitCMun: string; emitXMun: string; emitIE?: string; emitLogradouro?: string; emitBairro?: string; emitCEP?: string; emitFone?: string; dest: string; destCnpj: string; destUF: string; destCMun: string; destXMun: string; destIE?: string; destLogradouro?: string; destBairro?: string; destCEP?: string; destFone?: string; valor: number; peso: number; data: string; tomador: string; tomadorCnpj: string; tomadorUF: string; tomadorCMun: string; tomadorXMun: string; tomadorIE?: string; tomadorLogradouro?: string; tomadorBairro?: string; tomadorCEP?: string; modFrete: string; qVol?: number }>>([]);
   const [selecionadas, setSelecionadas] = useState<Set<string>>(new Set());
   const [filtroEmpresa] = useState("ROSE TRANSPORTES");
   const [filtroRemetente, setFiltroRemetente] = useState("TODOS REMETENTES");
@@ -539,6 +539,7 @@ function CtePage() {
         destXMun: r.dest_xmun || "",
         valor: Number(r.valor ?? 0),
         peso: Number(r.peso ?? 0),
+        qVol: Number((r as any).qvol ?? 0),
         data: r.data_emissao ? String(r.data_emissao).slice(0, 10) : "",
         tomador: r.tomador_nome || "",
         tomadorCnpj: r.tomador_cnpj || "",
@@ -886,6 +887,8 @@ function CtePage() {
         const stExistente = statusPorChave.get(chaveNorm);
         if (chavesEmRascunho.has(chaveNorm) || (stExistente && stExistente !== "pendente")) { reservadas++; continue; }
         const peso = pesoB ? parseFloat(pesoB) : 1000;
+        const qVolXml = doc.querySelector("transp > vol > qVol")?.textContent || "";
+        const qVolNum = parseFloat(qVolXml) || 0;
         const valor = parseFloat(vNF) || 0;
         const modFrete = doc.querySelector("transp > modFrete")?.textContent || "";
 
@@ -942,6 +945,7 @@ function CtePage() {
           dest_xmun: destXMun || null,
           valor,
           peso,
+          qvol: qVolNum || null,
           data_emissao: dhEmi ? dhEmi.slice(0, 10) : null,
           tomador_nome: tomadorNome,
           tomador_cnpj: tomadorCnpj,
@@ -964,7 +968,7 @@ function CtePage() {
           toast.error(`Falha ao salvar NF ${nNF}: ${error.message}`);
           continue;
         }
-        novas.push({ chave: chaveNorm, nNF, serie, emit: emitXNome, emitCnpj, emitUF: emitUfFin, emitCMun, emitXMun: emitCidFin, emitIE, emitLogradouro: emitLog, emitBairro: emitBai, emitCEP: emitCepFin, emitFone: emitFoneFin, dest: destXNome, destCnpj, destUF: destUfFin, destCMun, destXMun: destCidFin, destIE, destLogradouro: destLog, destBairro: destBai, destCEP: destCepFin, destFone: destFoneFin, valor, peso, data: dhEmi.slice(0, 10), tomador: tomadorNome, tomadorCnpj, tomadorUF, tomadorCMun, tomadorXMun, tomadorIE, tomadorLogradouro: tomadorLog, tomadorBairro: tomadorBai, tomadorCEP: tomadorCep, modFrete });
+        novas.push({ chave: chaveNorm, nNF, serie, emit: emitXNome, emitCnpj, emitUF: emitUfFin, emitCMun, emitXMun: emitCidFin, emitIE, emitLogradouro: emitLog, emitBairro: emitBai, emitCEP: emitCepFin, emitFone: emitFoneFin, dest: destXNome, destCnpj, destUF: destUfFin, destCMun, destXMun: destCidFin, destIE, destLogradouro: destLog, destBairro: destBai, destCEP: destCepFin, destFone: destFoneFin, valor, peso, qVol: qVolNum, data: dhEmi.slice(0, 10), tomador: tomadorNome, tomadorCnpj, tomadorUF, tomadorCMun, tomadorXMun, tomadorIE, tomadorLogradouro: tomadorLog, tomadorBairro: tomadorBai, tomadorCEP: tomadorCep, modFrete });
         upsertContatoFromNfe(emitCnpj, emitXNome, emitIE, emitUF, emitXMun, emitLgr, emitBairro, emitCEP, emitFone, emitNro).catch(() => {});
         upsertContatoFromNfe(destCnpj, destXNome, destIE, destUF, destXMun, destLgr, destBairro, destCEP, destFone, destNro).catch(() => {});
         if (added === 0 && mercadorias.length === 0) {
@@ -1094,7 +1098,7 @@ function CtePage() {
         chave: m.chave, nNF: m.nNF, serie: m.serie,
         emit: m.emit, emitCnpj: m.emitCnpj, emitUF: m.emitUF, emitCMun: m.emitCMun, emitXMun: m.emitXMun,
         dest: m.dest, destCnpj: m.destCnpj, destUF: m.destUF, destCMun: m.destCMun, destXMun: m.destXMun,
-        valor: m.valor, peso: m.peso, data: m.data,
+        valor: m.valor, peso: m.peso, qVol: (m as any).qVol || 0, data: m.data,
         tomador: m.tomador, tomadorCnpj: m.tomadorCnpj, tomadorUF: m.tomadorUF, tomadorCMun: m.tomadorCMun, tomadorXMun: m.tomadorXMun,
         modFrete: m.modFrete,
       }));
@@ -2013,13 +2017,14 @@ function CtePage() {
                         <TableHead className="text-[10px]">Nº NF-e</TableHead>
                         <TableHead className="text-[10px]">Série</TableHead>
                         <TableHead className="text-[10px]">Data Doc</TableHead>
+                        <TableHead className="text-[10px] text-right">Qtde</TableHead>
                         <TableHead className="text-[10px] text-right">Qtde Peso</TableHead>
                         <TableHead className="text-[10px] text-right">Valor</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
                       {mercadorias.length === 0 ? (
-                        <TableRow><TableCell colSpan={10} className="text-center text-xs text-muted-foreground py-8">Nenhuma NF-e importada</TableCell></TableRow>
+                        <TableRow><TableCell colSpan={11} className="text-center text-xs text-muted-foreground py-8">Nenhuma NF-e importada</TableCell></TableRow>
                       ) : (selecionadas.size > 0 ? mercadorias.filter(m => selecionadas.has(m.chave)) : mercadorias).map(m => (
                         <TableRow key={m.chave} className="text-[11px]" data-selected={selecionadas.has(m.chave)}>
                           <TableCell>
@@ -2036,6 +2041,7 @@ function CtePage() {
                           <TableCell className="font-mono">{m.nNF}</TableCell>
                           <TableCell>{m.serie}</TableCell>
                           <TableCell>{m.data ? dateBR(m.data) : "—"}</TableCell>
+                          <TableCell className="text-right">{Number(m.qVol || 0) > 0 ? Number(m.qVol).toLocaleString("pt-BR", { maximumFractionDigits: 0 }) : "—"}</TableCell>
                           <TableCell className="text-right">{Number(m.peso).toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</TableCell>
                           <TableCell className="text-right font-medium">{brl(m.valor)}</TableCell>
                         </TableRow>
@@ -2045,11 +2051,13 @@ function CtePage() {
                 </div>
                 {(() => {
                   const base = selecionadas.size > 0 ? mercadorias.filter(m => selecionadas.has(m.chave)) : mercadorias;
+                  const totQ = base.reduce((a, m) => a + Number(m.qVol || 0), 0);
                   const totP = base.reduce((a, m) => a + Number(m.peso || 0), 0);
                   const totV = base.reduce((a, m) => a + Number(m.valor || 0), 0);
                   return (
-                    <div className="grid grid-cols-[1fr_110px_130px] border-t bg-muted/40 text-xs font-semibold">
-                      <div className="px-2 py-1.5">TOTAL — {base.length} NF-e(s) • KG / PESO BRUTO</div>
+                    <div className="grid grid-cols-[1fr_90px_110px_130px] border-t bg-muted/40 text-xs font-semibold">
+                      <div className="px-2 py-1.5">TOTAL — {base.length} NF-e(s) • VOL / KG / VALOR</div>
+                      <div className="px-2 py-1.5 text-right font-mono">{totQ.toLocaleString("pt-BR", { maximumFractionDigits: 0 })}</div>
                       <div className="px-2 py-1.5 text-right font-mono">{totP.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
                       <div className="px-2 py-1.5 text-right font-mono">{brl(totV)}</div>
                     </div>

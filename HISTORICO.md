@@ -1705,3 +1705,8 @@ Commits CF `d49b494` + Vercel `30ff3a0` (+ `f664f64` trigger) + Worker `227f5885
 ## DACTE: quantidade medida/cobrada em pt-BR (15/09/2026)
 
 - `fmtQtd`: ponto no milhar + virgula no decimal, preservando as casas (6750.0000 -> 6.750,0000).
+---
+
+## Mercadorias: coluna Qtde (qVol do XML) (15/09/2026)
+
+- Import le `transp/vol/qVol`; coluna `qvol` nova; tela mostra Qtde por NF + total de volumes; rascunho preserva.
