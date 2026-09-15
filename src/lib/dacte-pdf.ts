@@ -425,7 +425,7 @@ export function gerarDactePdf(data: DacteData): Blob {
   // ---- Tomador ----
   const tomH = 13;
   box(M, y, CW, tomH);
-  valB(`Tomador: ${cut(D(data.tomadorNome), 48)}`, M + 1.5, y + 3, 6);
+  valB(`Tomador: ${cut(D(data.tomadorNome), 58)}`, M + 1.5, y + 3, 6);
   setFont("normal", 6); black();
   doc.text(`Cidade : ${cut(D(data.tomadorCidade), 28)} / ${D(data.tomadorUF)}`, M + 105, y + 3);
   doc.text(`Endereço : ${cut(D(data.tomadorEndereco), 70)}`, M + 1.5, y + 6);
