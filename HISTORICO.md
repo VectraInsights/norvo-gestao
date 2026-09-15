@@ -1602,3 +1602,9 @@ Commits CF `d49b494` + Vercel `30ff3a0` (+ `f664f64` trigger) + Worker `227f5885
 
 - Bug: `emitEndereco` do DACTE (doc autorizado) montado com rua/numero do REMETENTE (`remLogEnr/remNroRaw`); caixa do emitente misturava rua do remetente com resto do emitente.
 - Fix: le `enderEmit > xLgr/nro/CEP` do XML autorizado + `completarLogradouro`; preview/rascunho ja usavam `empresas` (ok).
+---
+
+## Tabela CT-e: chave completa + acoes a direita (15/09/2026)
+
+- Coluna Chave sem truncate: exibe os 44 digitos (`break-all`, mono 11px).
+- Coluna Acoes alinhada ao canto direito (`justify-end`, header `text-right`).
