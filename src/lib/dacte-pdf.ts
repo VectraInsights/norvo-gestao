@@ -508,17 +508,17 @@ export function gerarDactePdf(data: DacteData): Blob {
   compRows.forEach((row, r) => {
     row.forEach(([nm, vv], c) => {
       setFont("normal", 5.5); black();
-      doc.text(nm, gridX + 1 + c * colW, y + chH + 3 + r * crH);
-      doc.text(fmtNum(vv), gridX + 1 + c * colW + pairW, y + chH + 3 + r * crH);
+      doc.text(nm, gridX + 1 + c * colW, y + chH + 2 + r * crH);
+      doc.text(fmtNum(vv), gridX + 1 + c * colW + pairW, y + chH + 2 + r * crH);
     });
   });
   for (let i = 1; i < 4; i++) vline(gridX + i * colW, y, compH);
   setFont("bold", 5.5); black();
-  doc.text("Valor do Serviço", totX + 2, y + 3.5);
-  valB(fmtNum(data.valorServico), totX + 2, y + 8, 7);
+  doc.text("Valor do Serviço", totX + 2, y + 3);
+  valB(fmtNum(data.valorServico), totX + 2, y + 7.5, 7);
   setFont("bold", 5.5); black();
-  doc.text("Valor à Receber", totX + 2, y + 12);
-  valB(fmtNum(data.valorServico), totX + 2, y + 16, 7);
+  doc.text("Valor à Receber", totX + 2, y + 11);
+  valB(fmtNum(data.valorServico), totX + 2, y + 15, 7);
   y += compH + 1;
 
   // ---- ICMS ----

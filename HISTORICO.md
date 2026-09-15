@@ -1715,3 +1715,8 @@ Commits CF `d49b494` + Vercel `30ff3a0` (+ `f664f64` trigger) + Worker `227f5885
 ## DACTE: valor da carga + volumes (15/09/2026)
 
 - `valorCarga` le `vCarga` do Simplificado (vMerc so no normal); `qtdVol` soma `qvol` das NF-es (doc e preview).
+---
+
+## DACTE: componentes centralizados (15/09/2026)
+
+- Fileiras Nome/Valor centralizadas na faixa (estavam no pe); totais com respiro da borda.
