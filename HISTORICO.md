@@ -1628,3 +1628,8 @@ Commits CF `d49b494` + Vercel `30ff3a0` (+ `f664f64` trigger) + Worker `227f5885
 ## DACTE emitente: bairro completo (15/09/2026)
 
 - Bairro corta em 13 (era 10): `SAO SEBASTIAO` inteiro; rotulo/valor do CEP 2mm a direita.
+---
+
+## DACTE emitente: bairro ate 20 letras (15/09/2026)
+
+- Bairro corta em 20 (fonte 5.5); CEP deslocado para a direita; validado com 20 letras sem encostar.

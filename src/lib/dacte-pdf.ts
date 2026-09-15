@@ -288,9 +288,9 @@ export function gerarDactePdf(data: DacteData): Blob {
   doc.text("Endereço :", ex, y + 6.5);
   val(cut(D(data.emitEndereco), 36), ex + 14, y + 6.5, 6);
   doc.text("Bairro", ex, y + 9.5);
-  val(cut(D(data.emitBairro), 13), ex + 14, y + 9.5, 6);
-  doc.text("CEP", ex + 32, y + 9.5);
-  val(D(data.emitCEP), ex + 40, y + 9.5, 6);
+  val(cut(D(data.emitBairro), 20), ex + 14, y + 9.5, 5.5);
+  doc.text("CEP", ex + 41, y + 9.5);
+  val(D(data.emitCEP), ex + 47, y + 9.5, 6);
   doc.text("Cidade", ex, y + 12.5);
   val(`${cut(D(data.emitCidade), 18)}, ${D(data.emitUF)}`, ex + 14, y + 12.5, 6);
   doc.text("Tel.", ex + 38, y + 12.5);
