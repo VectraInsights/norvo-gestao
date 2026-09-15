@@ -1550,3 +1550,8 @@ Commits CF `d49b494` + Vercel `30ff3a0` (+ `f664f64` trigger) + Worker `227f5885
 - Vercel precisa das envs `VITE_AI_URL` (chat) e `SUPABASE_SERVICE_ROLE_KEY` (proxy); Worker precisa do secret `SUPABASE_SERVICE_ROLE_KEY` (sem ele, `/api/sefaz` retorna 401).
 - HTML com `no-cache`: sem isso o navegador reaproveita o shell velho no F5.
 - Incidentes do dia (resolvidos): token do CF Builds rolado (recriar em Settings -> Builds), trigger GitHub->Vercel mudo (disconnect/reconnect do repo destravou).
+---
+
+## Sucesso em teal (14/09/2026)
+
+- `--success` e `--chart-2` do claro: oliva -> teal, separando do verde da marca. Escuro intocado.

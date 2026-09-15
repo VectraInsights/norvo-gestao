@@ -95,7 +95,7 @@
   --destructive: oklch(0.52 0.20 25);
   --destructive-foreground: oklch(0.985 0.006 80);
 
-  --success: oklch(0.55 0.11 155);            /* verde-oliva profundo */
+  --success: oklch(0.52 0.12 173);            /* teal */
   --success-foreground: oklch(0.985 0.006 80);
 
   --warning: oklch(0.72 0.14 75);             /* âmbar */
@@ -105,7 +105,7 @@
   --input: oklch(0.86 0.012 70);
 
   --chart-1: oklch(0.47 0.13 150);   /* verde */
-  --chart-2: oklch(0.55 0.11 155);  /* verde oliva */
+  --chart-2: oklch(0.52 0.12 173);  /* teal */
   --chart-3: oklch(0.35 0.06 250);  /* índigo profundo */
   --chart-4: oklch(0.72 0.14 75);   /* âmbar */
   --chart-5: oklch(0.5 0.02 60);    /* grafite */
