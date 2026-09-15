@@ -275,12 +275,10 @@ export function gerarDactePdf(data: DacteData): Blob {
   };
 
   // ---- Cabeçalho: emitente | DACTE | modal ----
-  const emitW = 108, dacteW = 62, modalW = CW - emitW - dacteW;
-  const headH = 18;
-  box(M, y, emitW, headH);
-  box(M + emitW, y, dacteW, headH);
-  box(M + emitW + dacteW, y, modalW, headH);
-  const qrTxt = (data.qrCode || "").trim();
+    // ---- Cabecalho 2 colunas: emitente+DACTE | QR+barras+chave ----
+  const colL = 116, colR = CW - colL - 2, rx = M + colL + 2;
+  const emH = 18, daH = 16, moH2 = 7;
+  box(M, y, colL, emH);
   if (data.logoDataUrl) { try { doc.addImage(data.logoDataUrl as string, "PNG", M + 2, y + 3.5, 26, 10.2); } catch {} }
   else { border(); doc.rect(M + 2, y + 3.5, 26, 10.2, "S"); }
   const ex = M + 30;
@@ -300,48 +298,46 @@ export function gerarDactePdf(data: DacteData): Blob {
   val(fmtCnpj(data.emitCnpj), ex + 13, y + 15.5, 6);
   doc.text("Insc. Est.", ex + 37, y + 15.5);
   val(D(data.emitIE), ex + 51, y + 15.5, 6);
-  const dx = M + emitW;
-  valB("DACTE", dx + 1.5, y + 4.5, 10);
+  y += emH + 1;
+  box(M, y, colL, daH);
+  valB("DACTE", M + 2, y + 4, 10);
   setFont("normal", 5); black();
-  doc.text("Documento auxiliar do conhecimento de transporte eletrônico", dx + 1.5, y + 8.5);
-  const subY = y + 10, subH = headH - 10;
-  const cheads = ["Modelo", "Série", "Número", "FL", "Data Emissão"];
-  const cvals = ["57", D(data.serie) || "1", fmtInt(data.numero), D(data.fl) || "1 / 1", fmtDH(data.dhEmi || data.dataEmissao)];
-  const coff = [0, 13, 24, 37, 44];
-  coff.forEach((co, i) => {
-    if (i > 0) vline(dx + co, subY, subH);
-    lab(cheads[i], dx + co + 1, subY + 3);
-    valB(cvals[i], dx + co + 1, subY + 6.5, 6);
+  doc.text("Documento auxiliar do conhecimento de transporte eletrônico", M + 2, y + 8);
+  const dheads = ["Modelo", "Série", "Número", "FL", "Data Emissão"];
+  const dvals = ["57", D(data.serie) || "1", fmtInt(data.numero), D(data.fl) || "1 / 1", fmtDH(data.dhEmi || data.dataEmissao)];
+  const doff = [0, 20, 36, 58, 70];
+  doff.forEach((co, i) => {
+    if (i > 0) vline(M + co, y + 10, daH - 10);
+    lab(dheads[i], M + co + 1, y + 12.5);
+    valB(dvals[i], M + co + 1, y + 15, 6);
   });
-  const mx = M + emitW + dacteW;
-  setFont("bold", 5.5); black();
-  doc.text("Modal", mx + 1.5, y + 3);
-  valB("Rodoviário", mx + 1.5, y + 7.5, 7);
-  doc.line(mx, y + 10, mx + modalW, y + 10);
-  black(); setFont("normal", 5); doc.text("Insc. Suframa Destinatário", mx + 1.5, y + 13);
-  y += headH + 1;
-
-  // ---- Código de barras + chave ----
-  const barH = 22;
-  box(M, y, CW, barH);
-  vline(M + CW - 24, y, barH);
+  y += daH + 1;
+  box(M, y, colL, moH2);
+  setFont("bold", 6); black();
+  doc.text("Modal: Rodoviário", M + 2, y + 5);
+  doc.text("Insc. Suframa Destinatário:", M + 62, y + 5);
+  y += moH2 + 1;
+  const rhH = emH + 1 + daH + 1 + moH2;
+  const ry = y - rhH;
+  box(rx, ry, colR, rhH);
+  const qrTxt = (data.qrCode || "").trim();
+  if (qrTxt) drawQr(doc, rx + (colR - 25) / 2, ry + 1.5, 25, qrTxt);
+  else { border(); doc.rect(rx + (colR - 25) / 2, ry + 1.5, 25, 25, "S"); }
   const barsImg = barcodePng(data.chave);
   if (barsImg) {
     try {
       const props = (doc as any).getImageProperties(barsImg);
       const ratio = props.width / props.height;
       let iw = 7 * ratio, ih = 7;
-      const maxW = CW - 24 - 8;
+      const maxW = colR - 8;
       if (iw > maxW) { iw = maxW; ih = iw / ratio; }
-      doc.addImage(barsImg, "PNG", M + (maxW - iw) / 2 + 2, y + 2, iw, ih);
+      doc.addImage(barsImg, "PNG", rx + (maxW - iw) / 2 + 2, ry + 28, iw, ih);
     } catch {}
   }
-  ctr("Chave de Acesso para Consulta de autenticidade no site www.cte.fazenda.gov.br ou da Autorizada", M + (CW - 24) / 2, y + 13, 4.5);
-  ctr(fmtChave(data.chave), M + (CW - 24) / 2, y + 17.5, 6.5, true);
-  const qx = M + CW - 22;
-  if (qrTxt) drawQr(doc, qx, y + 1, 20, qrTxt);
-  else { border(); doc.rect(qx, y + 1, 20, 20, "S"); }
-  y += barH + 1;
+  setFont("normal", 4.5); black();
+  const capLines = doc.splitTextToSize("Chave de Acesso para Consulta de autenticidade no site www.cte.fazenda.gov.br ou da Autorizada", colR - 6);
+  capLines.slice(0, 2).forEach((ln: string, i: number) => ctr(ln, rx + colR / 2, ry + 37 + i * 2.6, 4.5));
+  ctr(fmtChave(data.chave), rx + colR / 2, ry + 42, 6, true);
 
   // ---- Protocolo ----
   const prH = 5;
@@ -602,7 +598,7 @@ export function gerarDactePdf(data: DacteData): Blob {
   // ---- Observações ----
   const hasObsTxt = !!(data.obs && data.obs.trim());
   const isHom = (data.ambiente || "") === "homologacao";
-  const obsH = 8;
+  const obsH = 7;
   need(obsH + 6);
   box(M, y, CW, 4.5);
   ctr("Observações", W / 2, y + 3.5, 6, true);
@@ -621,14 +617,14 @@ export function gerarDactePdf(data: DacteData): Blob {
   y += obsH + 1;
 
   // ---- Total impostos aproximado ----
-  const impH = 4;
+  const impH = 3.5;
   box(M, y, CW, impH);
   const vt = Number(data.vTotTrib) || 0;
   const perc = data.valorServico ? (vt / Number(data.valorServico)) * 100 : 0;
   const percTxt = perc.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
   setFont("normal", 5); black();
   const impLine = `Total Impostos Aproximado --> Federal Nacional: R$ ${fmtNum(vt)} (${percTxt}%) Estadual: R$ 0,00 (0,00%) Municipal: R$ 0,00 (0,00%) Valor Total: R$ ${fmtNum(vt)} Fonte IBPT - 24.1.A`;
-  try { (doc as any).text(impLine, W / 2, y + 3, { align: "center" }); } catch { doc.text(impLine, M + 2, y + 3); }
+  try { (doc as any).text(impLine, W / 2, y + 2.5, { align: "center" }); } catch { doc.text(impLine, M + 2, y + 2.5); }
   y += impH + 1;
 
   // ---- Informações adicionais ----
@@ -710,12 +706,12 @@ export function gerarDactePdf(data: DacteData): Blob {
 
   // ---- Uso exclusivo | fisco ----
   need(12);
-  const usoH = 5;
+  const usoH = 4.5;
   box(M, y, hw, usoH);
   box(M + hw, y, hw, usoH);
   setFont("bold", 5.5); black();
-  doc.text("Uso Exclusivo do Emissor do CT-e", M + 2, y + 3.5);
-  doc.text("Reservado ao Fisco", M + hw + 2, y + 3.5);
+  doc.text("Uso Exclusivo do Emissor do CT-e", M + 2, y + 3);
+  doc.text("Reservado ao Fisco", M + hw + 2, y + 3);
   y += usoH + 1;
 
   // ---- Canhoto ----
