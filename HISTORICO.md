@@ -1684,3 +1684,8 @@ Commits CF `d49b494` + Vercel `30ff3a0` (+ `f664f64` trigger) + Worker `227f5885
 
 - Nova rota `/fiscal/cadastro`: contatos cliente/fornecedor/ambos juntos, com busca, filtro por tipo e CRUD completo (IE, endereco com numero, lookup CNPJ).
 - Item `Cadastro` no menu Fiscal apos Percursos (mesmo modulo fiscal, sem permissao nova).
+---
+
+## Fiscal isolado em fiscal_cadastros (15/09/2026)
+
+- Tabela propria `fiscal_cadastros` (RLS membros, trigger updated_at) + backfill de 13 contatos; Cadastro sem tipo; CT-e (import, percursos, preview, DACTE) le/grava so nela.

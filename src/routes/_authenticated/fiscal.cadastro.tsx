@@ -4,9 +4,7 @@ import { EmptyState } from "@/components/erp/empty-state";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
-import { Checkbox } from "@/components/ui/checkbox";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
@@ -27,7 +25,7 @@ export const Route = createFileRoute("/_authenticated/fiscal/cadastro")({
 });
 
 type Contato = {
-  id: string; nome: string; tipo: string;
+  id: string; nome: string;
   documento: string | null; ie: string | null; email: string | null; telefone: string | null;
   cep: string | null; logradouro: string | null; numero: string | null;
   complemento: string | null; bairro: string | null; cidade: string | null;
@@ -38,16 +36,9 @@ const emptyForm = () => ({
   nome: "", documento: "", ie: "", email: "", telefone: "",
   cep: "", logradouro: "", numero: "", complemento: "",
   bairro: "", cidade: "", uf: "", observacoes: "",
-  isCliente: true, isFornecedor: true,
 });
 
 function onlyDigits(s: string) { return s.replace(/\D/g, ""); }
-
-function tipoBadge(tipo: string) {
-  if (tipo === "ambos") return <Badge variant="secondary" className="bg-emerald-500/15 text-emerald-600">cliente+fornecedor</Badge>;
-  if (tipo === "fornecedor") return <Badge variant="secondary" className="bg-amber-500/15 text-amber-600">fornecedor</Badge>;
-  return <Badge variant="secondary" className="bg-sky-500/15 text-sky-600">cliente</Badge>;
-}
 
 function Cadastro() {
   const { data: empresa } = useEmpresaAtual();
@@ -58,16 +49,14 @@ function Cadastro() {
   const [deleting, setDeleting] = useState<Contato | null>(null);
   const [lookingUp, setLookingUp] = useState(false);
   const [busca, setBusca] = useState("");
-  const [filtroTipo, setFiltroTipo] = useState<"todos" | "cliente" | "fornecedor">("todos");
 
   const { data: contatos, isLoading } = useQuery({
     enabled: !!empresa,
     queryKey: ["fiscal-cadastro", empresa?.id] as const,
     queryFn: async ({ signal }) => {
-      const { data, error } = await supabase.from("contatos")
-        .select("id,nome,tipo,documento,ie,email,telefone,cep,logradouro,numero,complemento,bairro,cidade,uf,observacoes")
+      const { data, error } = await supabase.from("fiscal_cadastros")
+        .select("id,nome,documento,ie,email,telefone,cep,logradouro,numero,complemento,bairro,cidade,uf,observacoes")
         .eq("empresa_id", empresa!.id)
-        .in("tipo", ["cliente", "fornecedor", "ambos"])
         .order("nome").abortSignal(signal);
       if (error) throw error;
       return (data ?? []) as Contato[];
@@ -77,14 +66,12 @@ function Cadastro() {
   const filtrados = useMemo(() => {
     const q = busca.trim().toLowerCase();
     return (contatos ?? []).filter((c) => {
-      if (filtroTipo === "cliente" && !(c.tipo === "cliente" || c.tipo === "ambos")) return false;
-      if (filtroTipo === "fornecedor" && !(c.tipo === "fornecedor" || c.tipo === "ambos")) return false;
       if (!q) return true;
       return (c.nome || "").toLowerCase().includes(q)
         || (c.documento || "").replace(/\D/g, "").includes(q.replace(/\D/g, ""))
         || (c.cidade || "").toLowerCase().includes(q);
     });
-  }, [contatos, busca, filtroTipo]);
+  }, [contatos, busca]);
 
   const lookupCnpj = async () => {
     const digits = onlyDigits(form.documento);
@@ -125,20 +112,18 @@ function Cadastro() {
     }
   };
 
-  const tipoDe = (input: ReturnType<typeof emptyForm>) =>
-    input.isCliente && input.isFornecedor ? "ambos" : input.isFornecedor ? "fornecedor" : "cliente";
 
   const criar = useMutation({
     mutationFn: async (input: ReturnType<typeof emptyForm>) => {
       if (!empresa) throw new Error("Empresa não selecionada");
       const doc = onlyDigits(input.documento);
       if (doc) {
-        const { data: existente } = await supabase.from("contatos")
+        const { data: existente } = await supabase.from("fiscal_cadastros")
           .select("id,nome").eq("empresa_id", empresa.id).eq("documento", doc).maybeSingle();
         if (existente) throw new Error(`Já cadastrado: ${existente.nome}`);
       }
-      const { error } = await supabase.from("contatos").insert({
-        empresa_id: empresa.id, nome: input.nome, tipo: tipoDe(input),
+      const { error } = await supabase.from("fiscal_cadastros").insert({
+        empresa_id: empresa.id, nome: input.nome,
         documento: doc || null, ie: input.ie || null, email: input.email || null, telefone: input.telefone || null,
         cep: input.cep || null, logradouro: input.logradouro || null, numero: input.numero || null,
         complemento: input.complemento || null, bairro: input.bairro || null,
@@ -150,7 +135,6 @@ function Cadastro() {
       toast.success("Contato criado");
       setOpen(false); setForm(emptyForm());
       qc.invalidateQueries({ queryKey: ["fiscal-cadastro"] });
-      qc.invalidateQueries({ queryKey: ["contatos"] });
     },
     onError: (e: Error) => toast.error(e.message),
   });
@@ -160,12 +144,12 @@ function Cadastro() {
       if (!empresa) throw new Error("Empresa não selecionada");
       const doc = onlyDigits(input.documento);
       if (doc) {
-        const { data: existente } = await supabase.from("contatos")
+        const { data: existente } = await supabase.from("fiscal_cadastros")
           .select("id,nome").eq("empresa_id", empresa.id).eq("documento", doc).neq("id", input.id).maybeSingle();
         if (existente) throw new Error(`Já existe outro contato com este CPF/CNPJ: ${existente.nome}`);
       }
-      const { error } = await supabase.from("contatos").update({
-        nome: input.nome, tipo: tipoDe(input),
+      const { error } = await supabase.from("fiscal_cadastros").update({
+        nome: input.nome,
         documento: doc || null, ie: input.ie || null, email: input.email || null, telefone: input.telefone || null,
         cep: input.cep || null, logradouro: input.logradouro || null, numero: input.numero || null,
         complemento: input.complemento || null, bairro: input.bairro || null,
@@ -177,21 +161,19 @@ function Cadastro() {
       toast.success("Contato atualizado");
       setOpen(false); setEditing(null); setForm(emptyForm());
       qc.invalidateQueries({ queryKey: ["fiscal-cadastro"] });
-      qc.invalidateQueries({ queryKey: ["contatos"] });
     },
     onError: (e: Error) => toast.error(e.message),
   });
 
   const excluir = useMutation({
     mutationFn: async (id: string) => {
-      const { error } = await supabase.from("contatos").delete().eq("id", id);
+      const { error } = await supabase.from("fiscal_cadastros").delete().eq("id", id);
       if (error) throw error;
     },
     onSuccess: () => {
       toast.success("Contato excluído");
       setDeleting(null);
       qc.invalidateQueries({ queryKey: ["fiscal-cadastro"] });
-      qc.invalidateQueries({ queryKey: ["contatos"] });
     },
     onError: (e: Error) => toast.error(e.message),
   });
@@ -203,8 +185,6 @@ function Cadastro() {
       cep: c.cep ?? "", logradouro: c.logradouro ?? "", numero: c.numero ?? "",
       complemento: c.complemento ?? "", bairro: c.bairro ?? "", cidade: c.cidade ?? "",
       uf: c.uf ?? "", observacoes: c.observacoes ?? "",
-      isCliente: c.tipo === "cliente" || c.tipo === "ambos",
-      isFornecedor: c.tipo === "fornecedor" || c.tipo === "ambos",
     });
     setOpen(true);
   };
@@ -223,13 +203,6 @@ function Cadastro() {
           <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
           <Input className="pl-8" placeholder="Buscar por nome, CPF/CNPJ ou cidade..." value={busca} onChange={(e) => setBusca(e.target.value)} />
         </div>
-        <div className="flex gap-1">
-          {(["todos", "cliente", "fornecedor"] as const).map((t) => (
-            <Button key={t} size="sm" variant={filtroTipo === t ? "default" : "outline"} onClick={() => setFiltroTipo(t)}>
-              {t === "todos" ? "Todos" : t === "cliente" ? "Clientes" : "Fornecedores"}
-            </Button>
-          ))}
-        </div>
       </div>
       {isLoading ? (
         <div className="space-y-2">{Array.from({ length: 4 }).map((_, i) => <div key={i} className="h-12 animate-pulse rounded-md bg-muted/30" />)}</div>
@@ -240,14 +213,13 @@ function Cadastro() {
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>Nome</TableHead><TableHead>Tipo</TableHead><TableHead>Documento</TableHead><TableHead>Cidade/UF</TableHead><TableHead>Contato</TableHead><TableHead className="w-20" />
+                <TableHead>Nome</TableHead><TableHead>Documento</TableHead><TableHead>Cidade/UF</TableHead><TableHead>Contato</TableHead><TableHead className="w-20" />
               </TableRow>
             </TableHeader>
             <TableBody>
               {filtrados.map((c) => (
                 <TableRow key={c.id}>
                   <TableCell className="font-medium">{c.nome}</TableCell>
-                  <TableCell>{tipoBadge(c.tipo)}</TableCell>
                   <TableCell className="text-tabular">{c.documento ?? "—"}</TableCell>
                   <TableCell className="text-muted-foreground">{c.cidade ? `${c.cidade}${c.uf ? `/${c.uf}` : ""}` : "—"}</TableCell>
                   <TableCell className="text-muted-foreground">{c.telefone ?? c.email ?? "—"}</TableCell>
@@ -297,17 +269,6 @@ function Cadastro() {
               </div>
             </div>
             <div><Label>Nome / Razão social *</Label><Input required value={form.nome} onChange={(e) => setForm({ ...form, nome: e.target.value })} /></div>
-            <div>
-              <Label>Tipo</Label>
-              <div className="flex gap-4 mt-2">
-                <label className="flex items-center gap-2 text-sm cursor-pointer">
-                  <Checkbox checked={form.isCliente} onCheckedChange={(v) => setForm({ ...form, isCliente: v === true })} /> Cliente
-                </label>
-                <label className="flex items-center gap-2 text-sm cursor-pointer">
-                  <Checkbox checked={form.isFornecedor} onCheckedChange={(v) => setForm({ ...form, isFornecedor: v === true })} /> Fornecedor
-                </label>
-              </div>
-            </div>
             <div className="grid grid-cols-2 gap-3">
               <div><Label>IE / ISENTO</Label><Input value={form.ie} onChange={(e) => setForm({ ...form, ie: e.target.value.toUpperCase() })} /></div>
               <div><Label>Telefone</Label><Input value={form.telefone} onChange={(e) => setForm({ ...form, telefone: e.target.value })} /></div>

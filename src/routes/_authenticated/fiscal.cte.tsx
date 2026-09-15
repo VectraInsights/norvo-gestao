@@ -190,7 +190,7 @@ function CtePage() {
       let ctDstNome = "", ctDstX = "", ctDstU = "";
       try {
         if (empresa && (remD || dstD || tomaD)) {
-          const { data: cts } = await supabase.from("contatos" as any).select("documento,nome,cidade,uf").eq("empresa_id", (empresa as any).id);
+          const { data: cts } = await supabase.from("fiscal_cadastros" as any).select("documento,nome,cidade,uf").eq("empresa_id", (empresa as any).id);
           const cl = ((cts as any[]) || []);
           const fnd = (dd: string) => cl.find(cc => String(cc.documento || "").replace(/\D/g, "") === dd);
           const cD = dstD ? fnd(dstD) : null;
@@ -200,7 +200,7 @@ function CtePage() {
       let cRemFull: any = null, cDstFull: any = null, emitFoneE = "";
       try {
         if (empresa && (remD || dstD || tomaD)) {
-          const { data: cts2 } = await supabase.from("contatos" as any).select("documento,nome,logradouro,numero,bairro,cidade,uf,cep,ie,telefone").eq("empresa_id", (empresa as any).id);
+          const { data: cts2 } = await supabase.from("fiscal_cadastros" as any).select("documento,nome,logradouro,numero,bairro,cidade,uf,cep,ie,telefone").eq("empresa_id", (empresa as any).id);
           const cl2 = ((cts2 as any[]) || []);
           const f2 = (dd: string) => cl2.find(cc => String(cc.documento || "").replace(/\D/g, "") === dd);
           if (remD) cRemFull = f2(remD);
@@ -212,7 +212,7 @@ function CtePage() {
       let emitFoneC = "", remFoneC = "", motoCPFC = "", segCNPJC = "";
       try {
         if (empresa && (remD || tomaD)) {
-          const { data: cts2 } = await supabase.from("contatos" as any).select("documento,telefone").eq("empresa_id", (empresa as any).id);
+          const { data: cts2 } = await supabase.from("fiscal_cadastros" as any).select("documento,telefone").eq("empresa_id", (empresa as any).id);
           const cl2 = ((cts2 as any[]) || []);
           const f2 = (dd: string) => cl2.find(cc => String(cc.documento || "").replace(/\D/g, "") === dd);
           const cE = remD ? f2(remD) : null;
@@ -296,7 +296,7 @@ function CtePage() {
         const fixCad = (docDigits: string, atual: string, novo: string) => {
           if (!empresa || !docDigits || !novo || novo === atual) return;
           if (atual && temTipoLogradouro(atual)) return;
-          pendUpd.push(supabase.from("contatos" as any).update({ logradouro: novo }).eq("empresa_id", (empresa as any).id).eq("documento", docDigits));
+          pendUpd.push(supabase.from("fiscal_cadastros" as any).update({ logradouro: novo }).eq("empresa_id", (empresa as any).id).eq("documento", docDigits));
         };
         fixCad(remD, ((cRemFull as any)?.logradouro || ""), remLogEnr);
         fixCad(dstD, ((cDstFull as any)?.logradouro || ""), dstLogEnr);
@@ -638,7 +638,7 @@ function CtePage() {
     });
   }, [regimeData, empresa?.id]);
 
-  // Lookup CNPJ p/ Consignatário/Redespacho: contatos → BrasilAPI → ReceitaWS
+  // Lookup CNPJ p/ Consignatário/Redespacho: fiscal_cadastros → BrasilAPI → ReceitaWS
   const [lookingUpConsig, setLookingUpConsig] = useState(false);
   const [lookingUpRedesp, setLookingUpRedesp] = useState(false);
   const lastLookupConsig = useRef("");
@@ -653,8 +653,8 @@ function CtePage() {
   };
   const buscarDadosCnpj = async (digits: string) => {
     if (empresa) {
-      // select * p/ incluir `ie` quando a migration 20260908_contatos_ie já foi aplicada
-      const { data } = await supabase.from("contatos" as any).select("*").eq("empresa_id", empresa.id).eq("documento", digits).maybeSingle();
+      // select * (fiscal_cadastros ja tem coluna ie nativa)
+      const { data } = await supabase.from("fiscal_cadastros" as any).select("*").eq("empresa_id", empresa.id).eq("documento", digits).maybeSingle();
       if (data) {
         const c = data as any;
         return { nome: c.nome || "", logradouro: c.logradouro || "", numero: c.numero || "", bairro: c.bairro || "", cidade: c.cidade || "", uf: c.uf || "", cep: String(c.cep || "").replace(/\D/g, ""), fone: c.telefone || "", ie: c.ie || "", fromContatos: true };
@@ -683,10 +683,10 @@ function CtePage() {
   };
   // Insert resiliente: tenta com `ie`, se a migration ainda não foi aplicada reinsere sem
   const insertContatoResiliente = async (row: Record<string, unknown>) => {
-    const { error } = await supabase.from("contatos" as any).insert(row as any);
+    const { error } = await supabase.from("fiscal_cadastros" as any).insert(row as any);
     if (error && /ie/i.test(error.message || "")) {
       const { ie: _omit, ...semIe } = row;
-      await supabase.from("contatos" as any).insert(semIe as any);
+      await supabase.from("fiscal_cadastros" as any).insert(semIe as any);
     }
   };
   const lookupConsignatario = async (digits: string) => {
@@ -697,7 +697,7 @@ function CtePage() {
       if (!d) { toast.error("CNPJ não encontrado"); return; }
       setForm(f => ({ ...f, cnpjConsignatario: digits, xNomeConsignatario: d.nome || f.xNomeConsignatario, ieConsignatario: (d as any).ie || f.ieConsignatario, ufConsignatario: d.uf || f.ufConsignatario, xMunConsignatario: d.cidade || f.xMunConsignatario, cepConsignatario: d.cep || f.cepConsignatario, logradouroConsignatario: d.logradouro || f.logradouroConsignatario, nroConsignatario: d.numero || f.nroConsignatario, bairroConsignatario: d.bairro || f.bairroConsignatario }));
       if (!(d as any).fromContatos && d.nome) {
-        await insertContatoResiliente({ empresa_id: empresa.id, nome: d.nome, tipo: "cliente", documento: digits, uf: d.uf || null, cidade: d.cidade || null, logradouro: d.logradouro || null, numero: d.numero || null, bairro: d.bairro || null, cep: d.cep || null, telefone: d.fone || null });
+        await insertContatoResiliente({ empresa_id: empresa.id, nome: d.nome, documento: digits, uf: d.uf || null, cidade: d.cidade || null, logradouro: d.logradouro || null, numero: d.numero || null, bairro: d.bairro || null, cep: d.cep || null, telefone: d.fone || null });
       }
       toast.success("Consignatário localizado");
     } catch (e: any) { toast.error(e.message || "Falha ao buscar CNPJ"); }
@@ -711,7 +711,7 @@ function CtePage() {
       if (!d) { toast.error("CNPJ não encontrado"); return; }
       setForm(f => ({ ...f, cnpjRedespacho: digits, xNomeRedespacho: d.nome || f.xNomeRedespacho, ieRedespacho: (d as any).ie || f.ieRedespacho, ufRedespacho: d.uf || f.ufRedespacho, xMunRedespacho: d.cidade || f.xMunRedespacho, cepRedespacho: d.cep || f.cepRedespacho, logradouroRedespacho: d.logradouro || f.logradouroRedespacho, nroRedespacho: d.numero || f.nroRedespacho, bairroRedespacho: d.bairro || f.bairroRedespacho }));
       if (!(d as any).fromContatos && d.nome) {
-        await insertContatoResiliente({ empresa_id: empresa.id, nome: d.nome, tipo: "cliente", documento: digits, uf: d.uf || null, cidade: d.cidade || null, logradouro: d.logradouro || null, numero: d.numero || null, bairro: d.bairro || null, cep: d.cep || null, telefone: d.fone || null });
+        await insertContatoResiliente({ empresa_id: empresa.id, nome: d.nome, documento: digits, uf: d.uf || null, cidade: d.cidade || null, logradouro: d.logradouro || null, numero: d.numero || null, bairro: d.bairro || null, cep: d.cep || null, telefone: d.fone || null });
       }
       toast.success("Redespacho localizado");
     } catch (e: any) { toast.error(e.message || "Falha ao buscar CNPJ"); }
@@ -723,7 +723,7 @@ function CtePage() {
     enabled: !!empresa,
     queryKey: ["contatos-cte", empresa?.id],
     queryFn: async (): Promise<any[]> => {
-      const { data } = await supabase.from("contatos" as any).select("documento,nome,ie,logradouro,numero,bairro,cidade,uf,cep,telefone").eq("empresa_id", empresa!.id);
+      const { data } = await supabase.from("fiscal_cadastros" as any).select("documento,nome,ie,logradouro,numero,bairro,cidade,uf,cep,telefone").eq("empresa_id", empresa!.id);
       return (data ?? []) as any[];
     },
   });
@@ -745,7 +745,7 @@ function CtePage() {
       if (!d) { toast.error("CNPJ não encontrado"); return; }
       setForm(f => ({ ...f, cnpjTomador: digits, xNomeTomador: d.nome || f.xNomeTomador, ieTomador: (d as any).ie || f.ieTomador, ufTomador: d.uf || f.ufTomador, xMunTomador: d.cidade || f.xMunTomador, cepTomador: d.cep || f.cepTomador, logradouroTomador: d.logradouro || f.logradouroTomador, nroTomador: d.numero || f.nroTomador, bairroTomador: d.bairro || f.bairroTomador, foneTomador: (d as any).fone || f.foneTomador }));
       if (!(d as any).fromContatos && d.nome) {
-        await insertContatoResiliente({ empresa_id: empresa.id, nome: d.nome, tipo: "cliente", documento: digits, uf: d.uf || null, cidade: d.cidade || null, logradouro: d.logradouro || null, numero: d.numero || null, bairro: d.bairro || null, cep: d.cep || null, telefone: (d as any).fone || null });
+        await insertContatoResiliente({ empresa_id: empresa.id, nome: d.nome, documento: digits, uf: d.uf || null, cidade: d.cidade || null, logradouro: d.logradouro || null, numero: d.numero || null, bairro: d.bairro || null, cep: d.cep || null, telefone: (d as any).fone || null });
       }
       toast.success("Tomador localizado");
     } catch (e: any) { toast.error(e.message || "Falha ao buscar CNPJ"); }
@@ -813,13 +813,13 @@ function CtePage() {
       const lookupContato = async (cnpj: string) => {
         const doc = (cnpj || "").replace(/\D/g, "");
         if (!doc || doc.length < 11) return null;
-        const { data } = await supabase.from("contatos" as any).select("nome,logradouro,numero,bairro,cidade,uf,cep,telefone").eq("empresa_id", empresa!.id).eq("documento", doc).maybeSingle();
+        const { data } = await supabase.from("fiscal_cadastros" as any).select("nome,logradouro,numero,bairro,cidade,uf,cep,telefone").eq("empresa_id", empresa!.id).eq("documento", doc).maybeSingle();
         return data || null;
       };
-      const upsertContatoFromNfe = async (cnpj: string, nome: string, ie: string, uf: string, cidade: string, logradouro: string, bairro: string, cep: string, fone: string, numero: string, tipo: "cliente" | "fornecedor" | "transportadora" | "ambos") => {
+      const upsertContatoFromNfe = async (cnpj: string, nome: string, ie: string, uf: string, cidade: string, logradouro: string, bairro: string, cep: string, fone: string, numero: string) => {
         const doc = (cnpj || "").replace(/\D/g, "");
         if (!doc || doc.length < 11 || !nome) return;
-        const { data: existente } = await supabase.from("contatos" as any).select("id,nome").eq("empresa_id", empresa!.id).eq("documento", doc).maybeSingle();
+        const { data: existente } = await supabase.from("fiscal_cadastros" as any).select("id,nome").eq("empresa_id", empresa!.id).eq("documento", doc).maybeSingle();
         if (existente) {
           const upd: Record<string, unknown> = {};
           if (!(existente as any)?.nome && nome) upd.nome = nome;
@@ -831,12 +831,12 @@ function CtePage() {
           if (bairro) upd.bairro = bairro;
           if (cep) upd.cep = cep;
           if (fone) upd.telefone = fone;
-          if (Object.keys(upd).length) await supabase.from("contatos" as any).update(upd).eq("empresa_id", empresa!.id).eq("documento", doc);
+          if (Object.keys(upd).length) await supabase.from("fiscal_cadastros" as any).update(upd).eq("empresa_id", empresa!.id).eq("documento", doc);
           return;
         }
-        const { error } = await supabase.from("contatos" as any).insert({ empresa_id: empresa!.id, nome, tipo, documento: doc, ie: ie || null, uf: uf || null, cidade: cidade || null, logradouro: logradouro || null, numero: numero || null, bairro: bairro || null, cep: cep || null, telefone: fone || null });
+        const { error } = await supabase.from("fiscal_cadastros" as any).insert({ empresa_id: empresa!.id, nome, documento: doc, ie: ie || null, uf: uf || null, cidade: cidade || null, logradouro: logradouro || null, numero: numero || null, bairro: bairro || null, cep: cep || null, telefone: fone || null });
         if (error && /ie/i.test(error.message || "")) {
-          await supabase.from("contatos" as any).insert({ empresa_id: empresa!.id, nome, tipo, documento: doc, uf: uf || null, cidade: cidade || null, logradouro: logradouro || null, numero: numero || null, bairro: bairro || null, cep: cep || null, telefone: fone || null });
+          await supabase.from("fiscal_cadastros" as any).insert({ empresa_id: empresa!.id, nome, documento: doc, uf: uf || null, cidade: cidade || null, logradouro: logradouro || null, numero: numero || null, bairro: bairro || null, cep: cep || null, telefone: fone || null });
         }
       };
       let added = 0;
@@ -888,7 +888,7 @@ function CtePage() {
         const valor = parseFloat(vNF) || 0;
         const modFrete = doc.querySelector("transp > modFrete")?.textContent || "";
 
-        // Lookup endereço no cadastro de contatos (XML de NF-e pode não trazer endereço)
+        // Lookup endereço no cadastro fiscal (XML de NF-e pode não trazer endereço)
         const [emitContato, destContato] = await Promise.all([lookupContato(emitCnpj), lookupContato(destCnpj)]);
         const emitLog = emitLgr || (emitContato as any)?.logradouro || "";
         const emitNro = emitNroXml || (emitContato as any)?.numero || "";
@@ -964,8 +964,8 @@ function CtePage() {
           continue;
         }
         novas.push({ chave: chaveNorm, nNF, serie, emit: emitXNome, emitCnpj, emitUF: emitUfFin, emitCMun, emitXMun: emitCidFin, emitIE, emitLogradouro: emitLog, emitBairro: emitBai, emitCEP: emitCepFin, emitFone: emitFoneFin, dest: destXNome, destCnpj, destUF: destUfFin, destCMun, destXMun: destCidFin, destIE, destLogradouro: destLog, destBairro: destBai, destCEP: destCepFin, destFone: destFoneFin, valor, peso, data: dhEmi.slice(0, 10), tomador: tomadorNome, tomadorCnpj, tomadorUF, tomadorCMun, tomadorXMun, tomadorIE, tomadorLogradouro: tomadorLog, tomadorBairro: tomadorBai, tomadorCEP: tomadorCep, modFrete });
-        upsertContatoFromNfe(emitCnpj, emitXNome, emitIE, emitUF, emitXMun, emitLgr, emitBairro, emitCEP, emitFone, emitNro, "fornecedor").catch(() => {});
-        upsertContatoFromNfe(destCnpj, destXNome, destIE, destUF, destXMun, destLgr, destBairro, destCEP, destFone, destNro, "cliente").catch(() => {});
+        upsertContatoFromNfe(emitCnpj, emitXNome, emitIE, emitUF, emitXMun, emitLgr, emitBairro, emitCEP, emitFone, emitNro).catch(() => {});
+        upsertContatoFromNfe(destCnpj, destXNome, destIE, destUF, destXMun, destLgr, destBairro, destCEP, destFone, destNro).catch(() => {});
         if (added === 0 && mercadorias.length === 0) {
           const tomaByMod: Record<string, string> = { "0": "0", "1": "3", "2": "4", "3": "0", "4": "3", "9": "4" };
           const tomaIni = tomaByMod[modFrete] ?? "3";
