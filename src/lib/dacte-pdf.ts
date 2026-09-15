@@ -276,29 +276,29 @@ export function gerarDactePdf(data: DacteData): Blob {
 
   // ---- Cabeçalho: emitente | DACTE | modal ----
     // ---- Cabecalho 2 colunas: emitente+DACTE | QR+barras+chave ----
-  const colL = 116, colR = CW - colL - 2, rx = M + colL + 2;
+  const colL = 98, colR = CW - colL - 2, rx = M + colL + 2;
   const emH = 18, daH = 16, moH2 = 7;
   const yTop = y;
   box(M, y, colL, emH);
   if (data.logoDataUrl) { try { doc.addImage(data.logoDataUrl as string, "PNG", M + 2, y + 3.5, 26, 10.2); } catch {} }
   else { border(); doc.rect(M + 2, y + 3.5, 26, 10.2, "S"); }
   const ex = M + 30;
-  valB(cut(D(data.emitNome) || "EMPRESA", 38), ex, y + 3.5, 7);
+  valB(cut(D(data.emitNome) || "EMPRESA", 34), ex, y + 3.5, 7);
   setFont("normal", 6); black();
   doc.text("Endereço", ex, y + 6.5);
-  val(cut(D(data.emitEndereco), 40), ex + 17, y + 6.5, 6);
+  val(cut(D(data.emitEndereco), 36), ex + 17, y + 6.5, 6);
   doc.text("Bairro", ex, y + 9.5);
-  val(cut(D(data.emitBairro), 14), ex + 17, y + 9.5, 6);
-  doc.text("CEP", ex + 52, y + 9.5);
-  val(D(data.emitCEP), ex + 60, y + 9.5, 6);
+  val(cut(D(data.emitBairro), 10), ex + 17, y + 9.5, 6);
+  doc.text("CEP", ex + 28, y + 9.5);
+  val(D(data.emitCEP), ex + 36, y + 9.5, 6);
   doc.text("Cidade", ex, y + 12.5);
-  val(`${cut(D(data.emitCidade), 20)}, ${D(data.emitUF)}`, ex + 17, y + 12.5, 6);
-  doc.text("Tel.", ex + 54, y + 12.5);
-  val(D(data.emitFone), ex + 62, y + 12.5, 6);
+  val(`${cut(D(data.emitCidade), 18)}, ${D(data.emitUF)}`, ex + 17, y + 12.5, 6);
+  doc.text("Tel.", ex + 38, y + 12.5);
+  val(D(data.emitFone), ex + 46, y + 12.5, 6);
   doc.text("CPF / CNPJ", ex, y + 15.5);
   val(fmtCnpj(data.emitCnpj), ex + 13, y + 15.5, 6);
   doc.text("Insc. Est.", ex + 37, y + 15.5);
-  val(D(data.emitIE), ex + 51, y + 15.5, 6);
+  val(cut(D(data.emitIE), 12), ex + 49, y + 15.5, 6);
   y += emH + 1;
   box(M, y, colL, daH);
   valB("DACTE", M + 2, y + 4, 10);
@@ -306,7 +306,7 @@ export function gerarDactePdf(data: DacteData): Blob {
   doc.text("Documento auxiliar do conhecimento de transporte eletrônico", M + 2, y + 8);
   const dheads = ["Modelo", "Série", "Número", "FL", "Data Emissão"];
   const dvals = ["57", D(data.serie) || "1", fmtInt(data.numero), D(data.fl) || "1 / 1", fmtDH(data.dhEmi || data.dataEmissao)];
-  const doff = [0, 20, 36, 58, 70];
+  const doff = [0, 18, 32, 52, 62];
   doff.forEach((co, i) => {
     if (i > 0) vline(M + co, y + 10, daH - 10);
     lab(dheads[i], M + co + 1, y + 12.5);
