@@ -289,8 +289,8 @@ export function gerarDactePdf(data: DacteData): Blob {
   val(cut(D(data.emitEndereco), 36), ex + 17, y + 6.5, 6);
   doc.text("Bairro", ex, y + 9.5);
   val(cut(D(data.emitBairro), 10), ex + 17, y + 9.5, 6);
-  doc.text("CEP", ex + 28, y + 9.5);
-  val(D(data.emitCEP), ex + 36, y + 9.5, 6);
+  doc.text("CEP", ex + 30, y + 9.5);
+  val(D(data.emitCEP), ex + 38, y + 9.5, 6);
   doc.text("Cidade", ex, y + 12.5);
   val(`${cut(D(data.emitCidade), 18)}, ${D(data.emitUF)}`, ex + 17, y + 12.5, 6);
   doc.text("Tel.", ex + 38, y + 12.5);
@@ -301,9 +301,9 @@ export function gerarDactePdf(data: DacteData): Blob {
   val(cut(D(data.emitIE), 12), ex + 49, y + 15.5, 6);
   y += emH + 1;
   box(M, y, colL, daH);
-  valB("DACTE", M + 2, y + 4, 10);
+  ctr("DACTE", M + colL / 2, y + 4, 10, true);
   setFont("normal", 5); black();
-  doc.text("Documento auxiliar do conhecimento de transporte eletrônico", M + 2, y + 8);
+  ctr("Documento auxiliar do conhecimento de transporte eletrônico", M + colL / 2, y + 8, 5);
   const dheads = ["Modelo", "Série", "Número", "FL", "Data Emissão"];
   const dvals = ["57", D(data.serie) || "1", fmtInt(data.numero), D(data.fl) || "1 / 1", fmtDH(data.dhEmi || data.dataEmissao)];
   const doff = [0, 18, 32, 52, 62];

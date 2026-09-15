@@ -1591,3 +1591,8 @@ Commits CF `d49b494` + Vercel `30ff3a0` (+ `f664f64` trigger) + Worker `227f5885
 ## Cabecalho meio a meio (15/09/2026)
 
 - Colunas 98/98 (antes 116/80 que esticava o endereco); conteudo da esquerda reequilibrado.
+---
+
+## DACTE centralizado (teste) + CEP sem cola (15/09/2026)
+
+- Titulo/subtitulo centralizados na coluna; CEP deslocado (colava no bairro).
