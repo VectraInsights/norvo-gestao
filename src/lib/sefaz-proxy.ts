@@ -149,8 +149,9 @@ export async function handleSefazProxy(request: Request): Promise<Response> {
         const { data: emp } = await supa2.from("empresas").select("cnpj, uf, ie, razao_social, nome_fantasia, logradouro, numero, complemento, bairro, cidade, cep, regime_tributario").eq("id", empresaId).single();
         const inp = (body as any).input || {};
         const cteAmbiente = inp.ambiente === "homologacao" ? "homologacao" : ambiente;
-        const { data: ultimo } = await supa2.from("cte_documentos").select("numero").eq("empresa_id", empresaId).order("created_at",{ascending:false}).limit(1).maybeSingle();
-        const proximo = String((parseInt((ultimo as any)?.numero || "0",10)+1));
+        const { data: ultimos } = await supa2.from("cte_documentos").select("numero").eq("empresa_id", empresaId).eq("ambiente", cteAmbiente).order("created_at",{ascending:false}).limit(50);
+        const baseNum = Math.max(0, ...(((ultimos as any[]) || []).map(r => parseInt((r as any)?.numero || "0", 10) || 0)));
+        const proximo = cteAmbiente === "homologacao" ? String(Math.max(baseNum + 1, 500)) : String(baseNum + 1);
         const cli = inp.emit || {};
         const emitCnpj = cli.cnpj || emp?.cnpj || "";
         const emitUf = emp?.uf || cli.uf || uf;

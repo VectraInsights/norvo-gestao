@@ -14,10 +14,10 @@ export const emitirCteFn = createServerFn({ method: "POST" }).validator((d: { em
   const { data: emp } = await supa.from("empresas").select("cnpj, uf, ie, nome_fantasia, razao_social, logradouro, numero, bairro, cidade, cep, regime_tributario").eq("id", data.empresaId).single();
   const { data: cfg } = await supa.from("nfe_config").select("ambiente").eq("empresa_id", data.empresaId).maybeSingle();
   const ambiente = (data.input as any).ambiente === "homologacao" ? "homologacao" : (cfg?.ambiente==="homologacao"?"homologacao":"producao");
-  const { data: ultimo } = await supa.from("cte_documentos").select("numero").eq("empresa_id", data.empresaId).eq("ambiente", ambiente).order("numero",{ascending:false}).limit(1).maybeSingle();
-  const baseNum = parseInt((ultimo as any)?.numero || "0",10);
+  const { data: ultimos } = await supa.from("cte_documentos").select("numero").eq("empresa_id", data.empresaId).eq("ambiente", ambiente).order("created_at",{ascending:false}).limit(50);
+  const baseNum = Math.max(0, ...(((ultimos as any[]) || []).map(r => parseInt((r as any)?.numero || "0", 10) || 0)));
   const proximo = ambiente === "homologacao"
-    ? String(baseNum >= 900000 ? baseNum + 1 : Math.max(baseNum + 1, 900000))
+    ? String(Math.max(baseNum + 1, 500))
     : String(baseNum + 1);
   const cli = data.input.emit || {};
   const form = (data.input as any).form || {};
@@ -115,10 +115,10 @@ export const previewCteXmlFn = createServerFn({ method: "POST" }).validator((d: 
   const { data: emp } = await supa.from("empresas").select("cnpj, uf, ie, nome_fantasia, razao_social, logradouro, numero, complemento, bairro, cidade, cep, regime_tributario").eq("id", data.empresaId).single();
   const { data: cfg } = await supa.from("nfe_config").select("ambiente").eq("empresa_id", data.empresaId).maybeSingle();
   const ambiente = (data.input as any).ambiente === "homologacao" ? "homologacao" : (cfg?.ambiente==="homologacao"?"homologacao":"producao");
-  const { data: ultimo } = await supa.from("cte_documentos").select("numero").eq("empresa_id", data.empresaId).eq("ambiente", ambiente).order("numero",{ascending:false}).limit(1).maybeSingle();
-  const baseNum = parseInt((ultimo as any)?.numero || "0",10);
+  const { data: ultimos } = await supa.from("cte_documentos").select("numero").eq("empresa_id", data.empresaId).eq("ambiente", ambiente).order("created_at",{ascending:false}).limit(50);
+  const baseNum = Math.max(0, ...(((ultimos as any[]) || []).map(r => parseInt((r as any)?.numero || "0", 10) || 0)));
   const proximo = ambiente === "homologacao"
-    ? String(baseNum >= 900000 ? baseNum + 1 : Math.max(baseNum + 1, 900000))
+    ? String(Math.max(baseNum + 1, 500))
     : String(baseNum + 1);
   const cli = data.input.emit || {};
   const emitCnpj = emp?.cnpj || cli.cnpj || "";

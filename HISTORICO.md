@@ -1689,3 +1689,8 @@ Commits CF `d49b494` + Vercel `30ff3a0` (+ `f664f64` trigger) + Worker `227f5885
 ## Fiscal isolado em fiscal_cadastros (15/09/2026)
 
 - Tabela propria `fiscal_cadastros` (RLS membros, trigger updated_at) + backfill de 13 contatos; Cadastro sem tipo; CT-e (import, percursos, preview, DACTE) le/grava so nela.
+---
+
+## Numeracao CT-e por ambiente, homologacao do 500 (15/09/2026)
+
+- 539: proxy reusava numero sem filtrar ambiente; agora max numerico por empresa+ambiente, homologacao `max+1,500`.
