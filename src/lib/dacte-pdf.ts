@@ -378,28 +378,21 @@ export function gerarDactePdf(data: DacteData): Blob {
   });
   y += metaH + 1;
 
-  // ---- CFOP ----
-  const cfH = 5.5;
-  box(M, y, CW, cfH);
-  lab("CFOP - Natureza da Prestação", M + 2, y + 2);
-  val(`${cfopFmt(data.cfop)}    ${cut(D(data.naturezaOperacao) || "TRANSPORTE", 60)}`, M + 2, y + 5, 6);
-  y += cfH + 1;
-
-  // ---- Início / previsão / término ----
-  const iniH = 7.5;
-  box(M, y, CW, iniH);
-  const iniCols: Array<[string, string, number]> = [
-    ["Início da Prestação", `${cut(D(data.origemCidade), 30)}, ${D(data.origemUF)}`, 66],
-    ["Previsão Início Viagem", fmtDH(D(data.previsaoViagem) || data.dhEmi || data.dataEmissao), 66],
-    ["Término da Prestação", `${cut(D(data.destinoCidade), 30)}, ${D(data.destinoUF)}`, 0],
+  // ---- CFOP + inicio / termino (mesma linha, natureza por inteiro) ----
+  const cfiH = 7.5;
+  box(M, y, CW, cfiH);
+  const cfiCols: Array<[string, string, number]> = [
+    ["CFOP - Natureza da Prestação", `${cfopFmt(data.cfop)}  ${D(data.naturezaOperacao) || "TRANSPORTE"}`, 100],
+    ["Início da Prestação", `${cut(D(data.origemCidade), 30)}, ${D(data.origemUF)}`, 48],
+    ["Término da Prestação", `${cut(D(data.destinoCidade), 30)}, ${D(data.destUF)}`, 0],
   ];
-  let ixx = M + 2;
-  iniCols.forEach(([l, v, w]) => {
-    lab(l, ixx, y + 2.5);
-    valB(cut(v, 34), ixx, y + 6, 6);
-    if (w) { vline(ixx + w, y, iniH); ixx += w + 2; }
+  let cfiX = M + 2;
+  cfiCols.forEach(([l, v, w]) => {
+    lab(l, cfiX, y + 2.5);
+    valB(cut(v, 84), cfiX, y + 6, 6);
+    if (w) { vline(cfiX + w, y, cfiH); cfiX += w + 2; }
   });
-  y += iniH + 1;
+  y += cfiH + 1;
 
   // ---- Remetente | Destinatário ----
   const rdH = 21;

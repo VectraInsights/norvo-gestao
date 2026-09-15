@@ -1650,3 +1650,8 @@ Commits CF `d49b494` + Vercel `30ff3a0` (+ `f664f64` trigger) + Worker `227f5885
 
 - Tipo `EMISSAO NORMAL` separado; Responsavel = usuario logado (`user_metadata.nome`, fallback email) nos 2 fluxos.
 - Tomador pela identidade dos CNPJs (rem/dest/exp/rec), nao pelo codigo; `<toma>` direto lido no Simplificado.
+---
+
+## DACTE: CFOP + inicio/termino na mesma linha (15/09/2026)
+
+- Faixa unica: CFOP primeiro (natureza por inteiro) + Inicio + Termino; Previsao Inicio Viagem removida.
