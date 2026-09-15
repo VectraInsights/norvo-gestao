@@ -330,11 +330,11 @@ export function gerarDactePdf(data: DacteData): Blob {
   y += moH2 + 1;
   box(M, y, colL, prHL);
   setFont("bold", 6); black();
-  doc.text("Protocolo de Autorização de Uso", M + 2, y + 4.2);
-  val(D(data.protocolo), M + 40, y + 4.2, 6);
+  doc.text("Protocolo de Autorização de Uso :", M + 2, y + 4.2);
+  val(D(data.protocolo), M + 45, y + 4.2, 6);
   setFont("bold", 6); black();
-  doc.text("Versão", M + 62, y + 4.2);
-  val(D(data.versao) || "4.00", M + 74, y + 4.2, 6);
+  doc.text("Versão :", M + 64, y + 4.2);
+  val(D(data.versao) || "4.00", M + 76, y + 4.2, 6);
   y += prHL + 1;
   const rhH = emH + 1 + daH + 1 + moH2 + 1 + prHL;
   const ry = yTop;

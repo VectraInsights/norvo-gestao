@@ -296,7 +296,6 @@ function CtePage() {
         const fixCad = (docDigits: string, atual: string, novo: string) => {
           if (!empresa || !docDigits || !novo || novo === atual) return;
           if (atual && temTipoLogradouro(atual)) return;
-          if (!temTipoLogradouro(novo)) return;
           pendUpd.push(supabase.from("contatos" as any).update({ logradouro: novo }).eq("empresa_id", (empresa as any).id).eq("documento", docDigits));
         };
         fixCad(remD, ((cRemFull as any)?.logradouro || ""), remLogEnr);

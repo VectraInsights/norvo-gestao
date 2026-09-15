@@ -49,8 +49,9 @@ export async function completarLogradouro(logr: string, cep: string): Promise<st
     if (!r.ok) return orig;
     const j = await r.json();
     const street = String(j.street || "").trim();
-    // so usa se o nome confere com o dado (evita trocar por rua errada do CEP)
-    if (street && temTipoLogradouro(street)) {
+    // so usa se o nome confere com o dado (evita trocar por rua errada do CEP);
+    // vale tambem para ruas sem tipo conhecido (Vereador, Deputado, Doutor...) pois a API ja traz o nome completo
+    if (street) {
       const nOrig = norm(orig), nSt = norm(street);
       if (nSt === nOrig || nSt.endsWith(" " + nOrig) || nSt.includes(nOrig)) {
         cepCache.set(digits, street);
