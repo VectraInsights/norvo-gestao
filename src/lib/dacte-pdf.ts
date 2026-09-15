@@ -525,7 +525,7 @@ export function gerarDactePdf(data: DacteData): Blob {
   const icH = 8;
   box(M, y, CW, icH);
   const icCols: Array<[string, string, number]> = [
-    ["Situação Tributária", cstIcmsLabel(data.icmsCST).slice(0, 34), 72],
+    ["Situação Tributária", cstIcmsLabel(data.icmsCST).slice(0, 34), 68],
     ["Base de Cálculo", fmtNum(data.icmsBase), 30],
     ["AL ICMS", fmtNum(data.icmsAliq), 22],
     ["Valor ICMS", fmtNum(data.icmsValor), 30],
@@ -551,14 +551,14 @@ export function gerarDactePdf(data: DacteData): Blob {
   const ufA = data.ibsUfAliq !== undefined && data.ibsUfAliq !== "" ? Number(data.ibsUfAliq) : 0.10;
   const ufV = data.ibsUfValor !== undefined && data.ibsUfValor !== "" ? Number(data.ibsUfValor) : ibBase * 0.001;
   const ibCols: Array<[string, string, number]> = [
-    ["CST", D(data.ibsCST) || "000", 12],
-    ["Classificação Tributária", cut(D(data.ibsClass) || "000001 - Situações tributadas integralmente pelo IBS e CBS.", 40), 64],
-    ["Base de Cálculo", fmtNum(ibBase), 26],
-    ["% CBS", fmtNum(cbsA), 16],
-    ["Valor CBS", fmtNum(cbsV), 24],
-    ["% IBS Mun", fmtNum(munA), 16],
-    ["Valor IBS Mun", fmtNum(munV), 24],
-    ["% IBS Uf", fmtNum(ufA), 14],
+    ["CST", D(data.ibsCST) || "000", 10],
+    ["Classificação Tributária", cut(D(data.ibsClass) || "000001 - Situações tributadas integralmente pelo IBS e CBS.", 34), 54],
+    ["Base de Cálculo", fmtNum(ibBase), 24],
+    ["% CBS", fmtNum(cbsA), 14],
+    ["Valor CBS", fmtNum(cbsV), 20],
+    ["% IBS Mun", fmtNum(munA), 14],
+    ["Valor IBS Mun", fmtNum(munV), 20],
+    ["% IBS Uf", fmtNum(ufA), 12],
     ["Valor IBS Uf", fmtNum(ufV), 0],
   ];
   let ibx = M + 2;

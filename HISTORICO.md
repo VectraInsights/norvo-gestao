@@ -1720,3 +1720,8 @@ Commits CF `d49b494` + Vercel `30ff3a0` (+ `f664f64` trigger) + Worker `227f5885
 ## DACTE: componentes centralizados (15/09/2026)
 
 - Fileiras Nome/Valor centralizadas na faixa (estavam no pe); totais com respiro da borda.
+---
+
+## DACTE: faixa IBS dentro da pagina (15/09/2026)
+
+- Colunas do IBS somavam 210mm (pagina tem 198); reequilibradas p/ 188 + folga no ICMS ST.
