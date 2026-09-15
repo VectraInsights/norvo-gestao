@@ -1618,3 +1618,8 @@ Commits CF `d49b494` + Vercel `30ff3a0` (+ `f664f64` trigger) + Worker `227f5885
 ## DACTE emitente: dois-pontos + valores a esquerda (15/09/2026)
 
 - Rotulo `Endereço :`; coluna de valores 17->14mm (bairro nao encosta mais no CEP); CNPJ alinhado junto.
+---
+
+## Tabela CT-e: titulos centralizados (15/09/2026)
+
+- Todos os `TableHead` (Numero, Serie, Status, Notas, Valor, Chave, Acoes) com `text-center`; celulas de dados inalteradas.

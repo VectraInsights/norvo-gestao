@@ -1708,7 +1708,7 @@ function CtePage() {
           ) : (
             <Card className="overflow-hidden">
               <Table>
-                <TableHeader><TableRow><TableHead>Número</TableHead><TableHead>Série</TableHead><TableHead>Status</TableHead><TableHead>Notas Fiscais</TableHead><TableHead className="text-right">Valor</TableHead><TableHead>Chave</TableHead><TableHead className="text-right">Ações</TableHead></TableRow></TableHeader>
+                <TableHeader><TableRow><TableHead className="text-center">Número</TableHead><TableHead className="text-center">Série</TableHead><TableHead className="text-center">Status</TableHead><TableHead className="text-center">Notas Fiscais</TableHead><TableHead className="text-center">Valor</TableHead><TableHead className="text-center">Chave</TableHead><TableHead className="text-center">Ações</TableHead></TableRow></TableHeader>
                 <TableBody>{filteredDocs.map(d => {
                   const nNFs = (() => { try { const j = JSON.parse(d.xml_assinado || "{}"); return j.nfs?.map((n: any) => n.nNF).filter(Boolean) || []; } catch { } try { const chaves = [...(d.xml_assinado||"").matchAll(/<chNFe>(\d{44})<\/chNFe>/g)].map(m=>m[1]); if (chaves.length===0) return []; return chaves.map(ch=>ch.slice(25,34).replace(/^0+/,"") || "0"); } catch { return []; } })();
                   const isRascunho = d.status === "rascunho";
