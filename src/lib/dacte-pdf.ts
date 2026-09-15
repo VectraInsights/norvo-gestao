@@ -193,7 +193,16 @@ function cstIcmsLabel(cst: string): string {
   return `${c} - ${map[c] || "Verificar CST"}`;
 }
 
-function tomaLabel(cod: string | undefined, toma4: boolean | undefined): string {
+function tomaLabel(cod: string | undefined, toma4: boolean | undefined, tomDoc?: string, remDoc?: string, destDoc?: string, expDoc?: string, recDoc?: string): string {
+  const dg = (s: any) => String(s || "").replace(/\D/g, "");
+  const td = dg(tomDoc);
+  if (td) {
+    if (td === dg(remDoc)) return "Remetente";
+    if (td === dg(destDoc)) return "Destinatario";
+    if (dg(expDoc) && td === dg(expDoc)) return "Expedidor";
+    if (dg(recDoc) && td === dg(recDoc)) return "Recebedor";
+    return "Outros";
+  }
   if (toma4) return "Outros";
   const m: Record<string, string> = { "0": "Remetente", "1": "Expedidor", "2": "Recebedor", "3": "Destinatario", "4": "Outros" };
   return m[String(cod || "")] || "Destinatario";
@@ -353,12 +362,12 @@ export function gerarDactePdf(data: DacteData): Blob {
   const metaH = 5.5;
   box(M, y, CW, metaH);
   const finTxt = String(data.finalidade || "Normal");
-  const tipoCTe = /^normal$/i.test(finTxt) ? "EmissaoNormal" : finTxt;
+  const tipoCTe = /^normal$/i.test(finTxt) ? "Emissao Normal" : finTxt;
   const metas: Array<[string, string, number]> = [
     ["Tipo do CT-E", tipoCTe, 34],
     ["Tipo do Serviço", D(data.tipoServico) || "Normal", 34],
     ["Responsável Emissão", D(data.respEmissao), 38],
-    ["Tomador de Serviço", tomaLabel(data.tomaCod, data.toma4), 38],
+    ["Tomador de Serviço", tomaLabel(data.tomaCod, data.toma4, (data as any).tomadorCnpj, (data as any).remCnpj, (data as any).destCnpj, (data as any).expCnpj, (data as any).recCnpj), 38],
     ["Forma de Pagamento", D(data.formaPagto), 0],
   ];
   let mxx = M + 2;

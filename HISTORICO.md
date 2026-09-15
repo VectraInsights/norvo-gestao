@@ -1644,3 +1644,9 @@ Commits CF `d49b494` + Vercel `30ff3a0` (+ `f664f64` trigger) + Worker `227f5885
 ## DACTE emitente: CEP/Tel/Insc alinhados (15/09/2026)
 
 - Rotulos em ex+38; valores/IE compensados; bairro 20 em fonte 5 (validado sem colar).
+---
+
+## DACTE faixa meta: tipo, responsavel, tomador (15/09/2026)
+
+- Tipo `EMISSAO NORMAL` separado; Responsavel = usuario logado (`user_metadata.nome`, fallback email) nos 2 fluxos.
+- Tomador pela identidade dos CNPJs (rem/dest/exp/rec), nao pelo codigo; `<toma>` direto lido no Simplificado.

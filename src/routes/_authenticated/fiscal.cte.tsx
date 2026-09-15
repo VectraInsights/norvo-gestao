@@ -53,6 +53,8 @@ function CtePage() {
   const [sortConfig, setSortConfig] = useState<{ key: string; dir: "asc" | "desc" }>({ key: "nNF", dir: "asc" });
   const [editingRascunhoId, setEditingRascunhoId] = useState<string | null>(null);
   const [statusTab, setStatusTab] = useState("autorizados");
+  const [respNome, setRespNome] = useState("");
+  useEffect(() => { (async () => { try { const { data } = await supabase.auth.getUser(); const usr = (data as any)?.user; const nm = (usr?.user_metadata as any)?.nome || ""; const em = usr?.email ? String(usr.email).split("@")[0] : ""; setRespNome(nm || em || ""); } catch {} })(); }, []);
 
   const mercadoriasSorted = useMemo(() => {
     const arr = [...mercadorias];
@@ -316,6 +318,7 @@ function CtePage() {
         emitBairro: tag("infCte > emit > enderEmit > xBairro") || "",
         emitCEP: tag("infCte > emit > enderEmit > CEP") || "",
         emitFone: emitFoneE || "",
+        respEmissao: respNome,
         tomadorCnpj: tag("infCte > toma > CNPJ") || "",
         tomadorNome: tag("infCte > toma > xNome") || "",
         tomadorEndereco: `${tomLogEnr} ${tomNroRaw}`.trim(),
@@ -377,8 +380,8 @@ function CtePage() {
         qrCode: tag("infCTeSupl > qrCodCTe") || tag("qrCodCTe") || "",
         dhEmi,
         versao: versaoCte,
-        tomaCod: toma4x ? "4" : toma3,
-        toma4: toma4x,
+        tomaCod: tag("infCte > toma > toma") || toma3,
+        toma4: toma4x || (tag("infCte > toma > toma") || toma3) === "4",
         formaPagto: (pjForm as any).formaPagamento || "",
         finalidade: (pjForm as any).finalidadeEmissao || "Normal",
         tipoServico: (pjForm as any).tipoServico || "Normal",
@@ -2498,6 +2501,7 @@ function CtePage() {
               emitCEP: (f.emit as any)?.cep || "",
               emitFone: (f.emit as any)?.fone || "",
               emitIE: f.emit?.ie || "ISENTO",
+              respEmissao: respNome,
               tomadorCnpj: f.cnpjTomador || "",
               // Manter igual a HOMOLOG_TOMADOR_NOME em sefaz-cte.ts (SEFAZ-MG exige em homologação, erro 938)
               tomadorNome: previewData.ambiente === "homologacao" ? "CTE EMITIDO EM AMBIENTE DE HOMOLOGACAO - SEM VALORFISCAL" : (f.xNomeTomador || ""),
