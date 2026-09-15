@@ -141,7 +141,7 @@ export const previewCteXmlFn = createServerFn({ method: "POST" }).validator((d: 
   return { xml, chave, proximo, ambiente, form: data.input };
 });
 
-export const cancelarCteFn = createServerFn({ method: "POST" }).validator((d:{empresaId:string;chave:string;justificativa:string;protocolo?:string})=>d).handler(async ({data})=>{
+export const cancelarCteFn = createServerFn({ method: "POST" }).validator((d:{empresaId:string;chave:string;justificativa:string;protocolo?:string;ambiente?:string})=>d).handler(async ({data})=>{
   if(SEFAZ_URL) return callProxy("cancelarCte", data);
   const { buscarCertificadoAtivo, cancelarCte } = await import("@/lib/sefaz-cte");
   const cert=await buscarCertificadoAtivo(data.empresaId);

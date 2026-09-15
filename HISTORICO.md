@@ -1673,3 +1673,8 @@ Commits CF `d49b494` + Vercel `30ff3a0` (+ `f664f64` trigger) + Worker `227f5885
 
 - Import le `enderEmit/enderDest > nro` (nunca lido); numero vai ao contato.
 - `upsertContatoFromNfe` ATUALIZA existente com endereco do XML (prefixo Rua/Av, numero, bairro, CEP, IE, fone); antes ignorava. Nome so se vazio; tipo preservado.
+---
+
+## Cancelamento usa ambiente do documento (15/09/2026)
+
+- 216 acontecia pq o cancel ia p/ producao (nfe_config) mesmo p/ CT-e de homologacao; agora usa body.ambiente > documento > global.

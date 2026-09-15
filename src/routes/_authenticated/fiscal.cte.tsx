@@ -1243,11 +1243,11 @@ function CtePage() {
   });
 
   const cancelar = useMutation({
-    mutationFn: async ({ chave, protocolo }: { chave: string; protocolo?: string }) => {
+    mutationFn: async ({ chave, protocolo, ambiente }: { chave: string; protocolo?: string; ambiente?: string }) => {
       if (!empresa) throw new Error("Empresa não selecionada");
       const just = prompt("Justificativa de cancelamento (mín. 15 caracteres):", "CT-e cancelado por erro nos dados da prestação do serviço") || "";
       if (just.length < 15) throw new Error("Justificativa muito curta");
-      const ret = await cancelarCteFn({ data: { empresaId: empresa.id, chave, justificativa: just, protocolo } });
+      const ret = await cancelarCteFn({ data: { empresaId: empresa.id, chave, justificativa: just, protocolo, ambiente } });
       return { ...ret, chave };
     },
     onSuccess: async (ret: any) => {
@@ -1748,7 +1748,7 @@ function CtePage() {
                         )}
                       </>
                     )}
-                    {!isRascunho && <Button size="icon" variant="ghost" className="h-7 w-7 text-destructive" disabled={d.status!=="autorizado"} onClick={() => d.chave_acesso && cancelar.mutate({ chave: d.chave_acesso, protocolo: d.protocolo_sefaz || undefined })} title="Cancelar"><Ban className="h-3.5 w-3.5" /></Button>}
+                    {!isRascunho && <Button size="icon" variant="ghost" className="h-7 w-7 text-destructive" disabled={d.status!=="autorizado"} onClick={() => d.chave_acesso && cancelar.mutate({ chave: d.chave_acesso, protocolo: d.protocolo_sefaz || undefined, ambiente: (d as any).ambiente })} title="Cancelar"><Ban className="h-3.5 w-3.5" /></Button>}
                     {!isRascunho && <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => d.chave_acesso && consultar.mutate({ chave: d.chave_acesso, ambiente: (d as any).ambiente })} title="Consultar SEFAZ"><Search className="h-3.5 w-3.5" /></Button>}
                   </TableCell></TableRow>
                   );

@@ -194,7 +194,13 @@ export async function handleSefazProxy(request: Request): Promise<Response> {
       }
       case "cancelarCte": {
         const { cancelarCte } = await import("@/lib/sefaz-cte");
-        result = await cancelarCte(pfxBytes, senha, (body as any).chave, (body as any).justificativa, ambiente, cnpj, uf, (body as any).protocolo);
+        let ambCanc = (((body as any).ambiente === "homologacao" || (body as any).ambiente === "producao") ? (body as any).ambiente : ambiente);
+        if (!(body as any).ambiente) {
+          const { data: docAmb } = await supabase.from("cte_documentos").select("ambiente").eq("chave_acesso", String((body as any).chave || "")).maybeSingle();
+          if ((docAmb as any)?.ambiente === "homologacao" || (docAmb as any)?.ambiente === "producao") ambCanc = (docAmb as any).ambiente;
+        }
+        console.log("[CTE-CANCEL] ambiente resolvido:", ambCanc);
+        result = await cancelarCte(pfxBytes, senha, (body as any).chave, (body as any).justificativa, ambCanc, cnpj, uf, (body as any).protocolo);
         if ((result as any).sucesso) {
           const { createClient: cc } = await import("@supabase/supabase-js");
           const s = cc(process.env.SUPABASE_URL||"", process.env.SUPABASE_SERVICE_ROLE_KEY||"");
