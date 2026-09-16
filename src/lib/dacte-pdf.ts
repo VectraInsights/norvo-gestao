@@ -520,7 +520,8 @@ export function gerarDactePdf(data: DacteData): Blob {
     });
   });
   for (let i = 1; i < 4; i++) vline(gridX + i * colW, y, compH);
-  dashH(M + 1, M + CW - 1, y + 8);
+  dashH(M + 1, totX - 1, y + 8);
+  border(); doc.line(totX + 1, y + 8, M + CW - 1, y + 8);
   dashH(gridX + 1, gridX + gridW - 1, y + 12);
   setFont("bold", 5.5); black();
   doc.text("Valor do Serviço", totX + 2, y + 3);
@@ -755,12 +756,12 @@ export function gerarDactePdf(data: DacteData): Blob {
   vline(M + 152, y + 4, caH - 4);
   setFont("normal", 5); black();
   doc.text("Nome", M + 2, y + 6.5);
-  dashH(M + 1, M + 57, y + 9);
+  border(); doc.line(M + 1, y + 9, M + 57, y + 9);
   doc.text("RG", M + 2, y + 12);
   ctr("Assinatura ou Carimbo", M + 83, y + 10, 5);
   setFont("normal", 4.5); black();
   ctr("Término da Prestação - Data/Hora", M + 130, y + 6, 4.5);
-  dashH(M + 109, M + 151, y + 9);
+  border(); doc.line(M + 109, y + 9, M + 151, y + 9);
   ctr("Início de Prestação - Data/Hora", M + 130, y + 12, 4.5);
   setFont("bold", 6); black();
   doc.text("CT-e", M + 154, y + 6);
