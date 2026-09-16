@@ -1738,3 +1738,5 @@ eed(17)) p/ canhoto encostar no rodape; tomador RUA, NUMERO - BAIRRO - CIDADE / 
 - DACTE componentes: tracejada y+8 em largura total (grade+totais), y+12 na grade.
 
 - DACTE: divisorias do canhoto e trecho Servico/Receber em linha continua (grade segue tracejada).
+
+- DACTE canhoto: Nome/RG no topo (espaco p/ escrita), Assinatura embaixo, Inicio em cima/Término embaixo a esquerda.
