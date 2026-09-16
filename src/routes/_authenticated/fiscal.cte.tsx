@@ -485,6 +485,16 @@ function CtePage() {
   };
   // Percurso NÃO guarda motorista nem frete: ao abrir um CT-e novo, esses dados de viagem zeram
   const LIMPA_VIAGEM = { motoristaNome: "", motoristaId: "", ciot: "", placaVeiculo: "", placaReboque: "", semiReboque1: "", semiReboque2: "", vPrest: "0.00", adicionalPed: "0.00", descontoPed: "0.00", outrosPed: "0.00", adValorem: "0.00", gris: "0.00", taxaColeta: "0.00", taxaEntrega: "0.00", valePedagio: "0.00", pedagioPagto: "sem-pagamento", pedagioOperadora: "", pedagioCnpj: "", pedagioTag: "", distanciaKm: "", duracaoHoras: "" };
+  const PEDAGIO_OPERADORAS = [
+    { nome: "CONECTCAR", cnpj: "16577631000299" },
+    { nome: "DB TRANS", cnpj: "04467870000126" },
+    { nome: "MOVE MAIS", cnpj: "15266912000187" },
+    { nome: "PAMCARD", cnpj: "12815827000123" },
+    { nome: "REPOM", cnpj: "65997260000103" },
+    { nome: "SEM PARAR", cnpj: "04088208000165" },
+    { nome: "TARGET", cnpj: "14821124000142" },
+    { nome: "VELOE", cnpj: "04740876000125" },
+  ];
   const PAGTO_VALIDOS = ["free-flow", "tag-transportador", "tag-tomador", "sem-pagamento"];
   const pagtoSeguro = (v: any) => (PAGTO_VALIDOS.includes(v) ? v : "sem-pagamento");
   const [form, setForm] = useState(emptyForm);
@@ -2403,7 +2413,11 @@ function CtePage() {
                   <label className="flex items-center gap-1"><input type="radio" name="pedagio_pagto" checked={pagtoSeguro(form.pedagioPagto) === "sem-pagamento"} onChange={() => setForm({ ...form, pedagioPagto: "sem-pagamento" })} /> Sem Pagamento de Pedágio</label>
                 </div>
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-1 mt-1">
-                  <div><Label className="text-[10px] text-muted-foreground">Operadora</Label><Input className="h-6 text-[11px]" placeholder="Ex: SEM PARAR" value={form.pedagioOperadora || ""} onChange={e => setForm({ ...form, pedagioOperadora: e.target.value })} /></div>
+                  <div><Label className="text-[10px] text-muted-foreground">Operadora</Label>
+                    <Select value={form.pedagioOperadora || ""} onValueChange={v => { const op = PEDAGIO_OPERADORAS.find(o => o.nome === v); setForm({ ...form, pedagioOperadora: v, pedagioCnpj: op ? op.cnpj : form.pedagioCnpj }); }}>
+                      <SelectTrigger className="h-6 text-[11px]"><SelectValue placeholder="Selecione" /></SelectTrigger>
+                      <SelectContent>{PEDAGIO_OPERADORAS.map(o => <SelectItem key={o.nome} value={o.nome}>{o.nome}</SelectItem>)}</SelectContent>
+                    </Select></div>
                   <div><Label className="text-[10px] text-muted-foreground">CNPJ Operadora</Label><Input className="h-6 text-[11px]" placeholder="00.000.000/0000-00" value={form.pedagioCnpj || ""} onChange={e => setForm({ ...form, pedagioCnpj: e.target.value })} /></div>
                   <div><Label className="text-[10px] text-muted-foreground">Vale Pedágio (R$)</Label><Input className="h-6 text-[11px]" placeholder="0.00" value={form.valePedagio || ""} onChange={e=>setForm({...form, valePedagio: e.target.value})} /></div>
                   <div><Label className="text-[10px] text-muted-foreground">Nº TAG</Label><Input className="h-6 text-[11px]" placeholder="Nº TAG" value={form.pedagioTag || ""} onChange={e => setForm({ ...form, pedagioTag: e.target.value })} /></div>
