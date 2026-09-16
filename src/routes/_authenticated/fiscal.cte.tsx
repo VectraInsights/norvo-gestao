@@ -393,7 +393,7 @@ function CtePage() {
         icmsAliq: parseFloat(tagI("pICMS")) || 0,
         icmsValor: parseFloat(tagI("vICMS")) || 0,
         nFes,
-        comps: xmlComps,
+        comps: xmlComps.length > 0 ? xmlComps : (([['Frete Valor', (pjForm as any).vPrest], ['Adicional', (pjForm as any).adicionalPed], ['Desconto', (pjForm as any).descontoPed], ['Outros', (pjForm as any).outrosPed], ['Ad Valorem', (pjForm as any).adValorem], ['GRIS', (pjForm as any).gris], ['Coleta', (pjForm as any).taxaColeta], ['Entrega', (pjForm as any).taxaEntrega]] as Array<[string, any]>).filter(([, vv]) => Number(vv) !== 0).map(([nn, vv]) => ({ nome: nn, valor: Number(vv) || 0 }))),
         placa: tag("infModal > rodo > veic > placa") || (pjForm as any).placaVeiculo || "",
         placaReboque: "",
         rntrc: tag("infModal > rodo > RNTRC") || "",
