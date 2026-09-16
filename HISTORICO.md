@@ -1760,3 +1760,5 @@ eed(17)) p/ canhoto encostar no rodape; tomador RUA, NUMERO - BAIRRO - CIDADE / 
 - Vale-pedagio (Lei 10.209/Res 6.024/NT 2025.001): CNPJ resp + IDVPO obrigatorios; comprovante = IDVPO; coluna eiculos.tag_pedagio aplicada no banco.
 
 - CTE: TAG digitada volta p/ eiculos.tag_pedagio ao autorizar (sync com a placa); campo Saldo Cartao removido.
+
+- CTE: preview DACTE fullscreen; editarRascunho pula auto-apply do percurso (pedagio preservado).
