@@ -78,6 +78,7 @@ type Veiculo = {
   quantidade_eixos: number | null;
   categoria: string | null;
   chassi: string | null;
+  tag_pedagio: string | null;
   status: string;
   observacoes: string | null;
 };
@@ -100,6 +101,7 @@ function formVazio() {
     quantidade_eixos: "",
     categoria: "",
     chassi: "",
+    tag_pedagio: "",
     status: "ativo",
     observacoes: "",
   };
@@ -415,6 +417,7 @@ function Veiculos() {
       quantidade_eixos: (v as any).quantidade_eixos ? String((v as any).quantidade_eixos) : "",
       categoria: (v as any).categoria ?? "",
       chassi: (v as any).chassi ?? "",
+      tag_pedagio: (v as any).tag_pedagio ?? "",
       status: v.status,
       observacoes: v.observacoes ?? "",
     });
@@ -446,6 +449,7 @@ function Veiculos() {
         quantidade_eixos: Number(form.quantidade_eixos),
         categoria: form.categoria,
         chassi: form.chassi.trim().toUpperCase(),
+        tag_pedagio: form.tag_pedagio.trim() || null,
         status: form.status,
         observacoes: form.observacoes.trim() || null,
       };
@@ -615,6 +619,10 @@ function Veiculos() {
               <div>
                 <Label>Chassi *</Label>
                 <Input value={form.chassi} onChange={(e) => set("chassi", e.target.value.toUpperCase())} placeholder="17 caracteres" maxLength={17} className="uppercase font-mono text-xs" />
+              </div>
+              <div>
+                <Label>TAG Pedágio</Label>
+                <Input value={form.tag_pedagio} onChange={(e) => set("tag_pedagio", e.target.value)} placeholder="Nº da TAG instalada" className="font-mono text-xs" />
               </div>
               <div>
                 <Label>RNTRC</Label>

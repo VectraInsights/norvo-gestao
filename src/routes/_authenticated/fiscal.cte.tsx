@@ -638,9 +638,9 @@ function CtePage() {
     enabled: !!empresa,
     queryKey: ["veiculos-cte", empresa?.id],
     queryFn: async () => {
-      const { data, error } = await supabase.from("veiculos" as never).select("id,placa,marca_modelo,tipo,renavam,rntrc").eq("empresa_id", empresa!.id).order("placa").limit(100);
+      const { data, error } = await supabase.from("veiculos" as never).select("id,placa,marca_modelo,tipo,renavam,rntrc,tag_pedagio").eq("empresa_id", empresa!.id).order("placa").limit(100);
       if (error) throw error;
-      return (data ?? []) as unknown as Array<{ id: string; placa: string; marca_modelo: string | null; tipo: string | null; renavam: string | null; rntrc: string | null }>;
+      return (data ?? []) as unknown as Array<{ id: string; placa: string; marca_modelo: string | null; tipo: string | null; renavam: string | null; rntrc: string | null; tag_pedagio: string | null }>;
     },
   });
   const { data: seguradoras } = useQuery({
@@ -2278,7 +2278,7 @@ function CtePage() {
                                     const q = veiculoQuery.toLowerCase();
                                     return v.placa.toLowerCase().includes(q) || (v.marca_modelo || "").toLowerCase().includes(q);
                                   }).map(v => (
-                                    <CommandItem key={v.id} value={v.placa} onSelect={() => { setForm(f => ({ ...f, placaVeiculo: v.placa.toUpperCase() })); setVeiculoOpen(null); setVeiculoQuery(""); }}>
+                                    <CommandItem key={v.id} value={v.placa} onSelect={() => { const tagV = (v as any).tag_pedagio || ""; setForm(f => ({ ...f, placaVeiculo: v.placa.toUpperCase(), ...(tagV ? { pedagioTag: tagV } : {}) })); setVeiculoOpen(null); setVeiculoQuery(""); }}>
                                       <Check className={"mr-2 h-3 w-3 " + (form.placaVeiculo === v.placa ? "opacity-100" : "opacity-0")} />
                                       <div className="flex flex-col"><span className="text-xs font-mono">{v.placa}</span><span className="text-[10px] text-muted-foreground">{v.marca_modelo || v.tipo || ""}</span></div>
                                     </CommandItem>
