@@ -520,9 +520,8 @@ export function gerarDactePdf(data: DacteData): Blob {
     });
   });
   for (let i = 1; i < 4; i++) vline(gridX + i * colW, y, compH);
-  dashH(gridX + 1, gridX + gridW - 1, y + 8);
+  dashH(M + 1, M + CW - 1, y + 8);
   dashH(gridX + 1, gridX + gridW - 1, y + 12);
-  dashH(totX + 1, totX + totW - 1, y + 8.5);
   setFont("bold", 5.5); black();
   doc.text("Valor do Serviço", totX + 2, y + 3);
   valB(fmtNum(data.valorServico), totX + 2, y + 6.5, 7);
