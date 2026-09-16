@@ -425,7 +425,7 @@ function CtePage() {
         valePedagio: (pjForm as any).valePedagio || "",
         valePedFornCNPJ: valeEl?.querySelector("cnpjForn")?.textContent || valeEl?.querySelector("CNPJForn")?.textContent || (pjForm as any).pedagioCnpj || "",
         valePedComprov: valeEl?.querySelector("nCompra")?.textContent || valeEl?.querySelector("nComp")?.textContent || (pjForm as any).pedagioTag || "",
-        valePedRespCNPJ: valeEl?.querySelector("cnpjResp")?.textContent || valeEl?.querySelector("CNPJResp")?.textContent || "",
+        valePedRespCNPJ: valeEl?.querySelector("cnpjResp")?.textContent || valeEl?.querySelector("CNPJResp")?.textContent || (pjForm as any).pedagioRespCnpj || "",
         ibsBase, ibsCST, ibsClass,
         cbsAliq: gtxt(gCBS, "pCBS"), cbsValor: gtxt(gCBS, "vCBS"),
         ibsMunAliq: gtxt(gMun, "pIBSMun"), ibsMunValor: gtxt(gMun, "vIBSMun"),
@@ -481,10 +481,10 @@ function CtePage() {
     formaPagamento: "Outros", finalidadeEmissao: "Normal", tipoServico: "Normal", formaEmissao: "Normal",
     cteReferenciado: "", chaveCompAnulacao: "", dataDeclaracao: "",
     obsGerais: "", obsAnulacao: "", obsGlobalizado: "",
-    adicionalPed: "0.00", descontoPed: "0.00", outrosPed: "0.00", adValorem: "0.00", gris: "0.00", taxaColeta: "0.00", taxaEntrega: "0.00", valePedagio: "0.00", pedagioPagto: "sem-pagamento", pedagioOperadora: "", pedagioCnpj: "", pedagioTag: "", distanciaKm: "", duracaoHoras: "", rctrC: "0.00", rcfDc: "0.00", segAdicional: "0.00", segTotal: "0.00", segRepassar: "", segResponsavel: "4",
+    adicionalPed: "0.00", descontoPed: "0.00", outrosPed: "0.00", adValorem: "0.00", gris: "0.00", taxaColeta: "0.00", taxaEntrega: "0.00", valePedagio: "0.00", pedagioPagto: "sem-pagamento", pedagioOperadora: "", pedagioCnpj: "", pedagioTag: "", pedagioRespCnpj: "", pedagioIdentVPO: "", pedagioDataOp: "", pedagioSaldoCartao: "", distanciaKm: "", duracaoHoras: "", rctrC: "0.00", rcfDc: "0.00", segAdicional: "0.00", segTotal: "0.00", segRepassar: "", segResponsavel: "4",
   };
   // Percurso NÃO guarda motorista nem frete: ao abrir um CT-e novo, esses dados de viagem zeram
-  const LIMPA_VIAGEM = { motoristaNome: "", motoristaId: "", ciot: "", placaVeiculo: "", placaReboque: "", semiReboque1: "", semiReboque2: "", vPrest: "0.00", adicionalPed: "0.00", descontoPed: "0.00", outrosPed: "0.00", adValorem: "0.00", gris: "0.00", taxaColeta: "0.00", taxaEntrega: "0.00", valePedagio: "0.00", pedagioPagto: "sem-pagamento", pedagioOperadora: "", pedagioCnpj: "", pedagioTag: "", distanciaKm: "", duracaoHoras: "" };
+  const LIMPA_VIAGEM = { motoristaNome: "", motoristaId: "", ciot: "", placaVeiculo: "", placaReboque: "", semiReboque1: "", semiReboque2: "", vPrest: "0.00", adicionalPed: "0.00", descontoPed: "0.00", outrosPed: "0.00", adValorem: "0.00", gris: "0.00", taxaColeta: "0.00", taxaEntrega: "0.00", valePedagio: "0.00", pedagioPagto: "sem-pagamento", pedagioOperadora: "", pedagioCnpj: "", pedagioTag: "", pedagioRespCnpj: "", pedagioIdentVPO: "", pedagioDataOp: "", pedagioSaldoCartao: "", distanciaKm: "", duracaoHoras: "" };
   const PEDAGIO_OPERADORAS = [
     { nome: "CONECTCAR", cnpj: "16577631000299" },
     { nome: "DB TRANS", cnpj: "04467870000126" },
@@ -2420,7 +2420,11 @@ function CtePage() {
                     </Select></div>
                   <div><Label className="text-[10px] text-muted-foreground">CNPJ Operadora</Label><Input className="h-6 text-[11px]" placeholder="00.000.000/0000-00" value={form.pedagioCnpj || ""} onChange={e => setForm({ ...form, pedagioCnpj: e.target.value })} /></div>
                   <div><Label className="text-[10px] text-muted-foreground">Vale Pedágio (R$)</Label><Input className="h-6 text-[11px]" placeholder="0.00" value={form.valePedagio || ""} onChange={e=>setForm({...form, valePedagio: e.target.value})} /></div>
-                  <div><Label className="text-[10px] text-muted-foreground">Nº TAG</Label><Input className="h-6 text-[11px]" placeholder="Nº TAG" value={form.pedagioTag || ""} onChange={e => setForm({ ...form, pedagioTag: e.target.value })} /></div>
+                  <div><Label className="text-[10px] text-muted-foreground">Nº TAG</Label><Input className="h-6 text-[11px]" placeholder="Nº TAG" value={form.pedagioTag || ""} onChange={e=>setForm({...form, pedagioTag: e.target.value})} /></div>
+                  <div><Label className="text-[10px] text-muted-foreground">CNPJ Resp. Pagto</Label><Input className="h-6 text-[11px]" placeholder="00.000.000/0000-00" value={(form as any).pedagioRespCnpj || ""} onChange={e=>setForm({...form, pedagioRespCnpj: e.target.value} as any)} /></div>
+                  <div><Label className="text-[10px] text-muted-foreground">Identificador VPO</Label><Input className="h-6 text-[11px]" value={(form as any).pedagioIdentVPO || ""} onChange={e=>setForm({...form, pedagioIdentVPO: e.target.value} as any)} /></div>
+                  <div><Label className="text-[10px] text-muted-foreground">Data Operação</Label><Input className="h-6 text-[11px]" placeholder="DD/MM/AAAA" value={(form as any).pedagioDataOp || ""} onChange={e=>setForm({...form, pedagioDataOp: e.target.value} as any)} /></div>
+                  <div><Label className="text-[10px] text-muted-foreground">Saldo Cartão</Label><Input className="h-6 text-[11px]" placeholder="0.00" value={(form as any).pedagioSaldoCartao || ""} onChange={e=>setForm({...form, pedagioSaldoCartao: e.target.value} as any)} /></div>
                 </div>
               </Card>
             </TabsContent>
