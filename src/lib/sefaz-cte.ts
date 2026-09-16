@@ -193,7 +193,7 @@ export function buildCteXml(input: CteInputCompleto): { xml: string; chave: stri
       <infQ><cUnid>01</cUnid><tpMed>00</tpMed><qCarga>${input.pesoKg.toFixed(4)}</qCarga></infQ>
     </infCarga>
     ${infNFeXml}
-    <infModal versaoModal="4.00"><rodo><RNTRC>${(input.modalRod?.rntrc || input.rntrc || "ISENTO").replace(/\D/g,"") || "ISENTO"}</RNTRC>${((input.modalRod?.veiculos || []).filter(v => v && v.placa).slice(0, 1).map(v => `<veic><placa>${v.placa}</placa>${v.renavam ? `<RENAVAM>${v.renavam}</RENAVAM>` : ""}<UF>${v.uf}</UF></veic>`).join(""))}</rodo></infModal>
+    <infModal versaoModal="4.00"><rodo><RNTRC>${(input.modalRod?.rntrc || input.rntrc || "ISENTO").replace(/\D/g,"") || "ISENTO"}</RNTRC></rodo></infModal>
     ${impXml}
     <total><vTPrest>${input.vPrest.toFixed(2)}</vTPrest><vTRec>${input.vPrest.toFixed(2)}</vTRec><vTotDFe>${vTotDFe}</vTotDFe></total>
     <infRespTec><CNPJ>${cnpjLimpo}</CNPJ><xContato>SUPORTE TECNICO</xContato><email>suporte@vectrainsights.com.br</email><fone>3139952572</fone></infRespTec>
