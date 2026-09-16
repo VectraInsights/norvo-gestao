@@ -83,20 +83,21 @@ function CalculadoraPage() {
   const [reTipo, setReTipo] = useState<TipoRescisao>("sem-justa");
   const [reSal, setReSal] = useState("0");
   const [reDias, setReDias] = useState("15");
-  const [reMDec, setReMDec] = useState("6");
-  const [reMFer, setReMFer] = useState("6");
-  const [reVenc, setReVenc] = useState("0");
+  const [reAdm, setReAdm] = useState("");
+  const [reResc, setReResc] = useState("");
+  const [reTemVenc, setReTemVenc] = useState(false);
+  const [reVencSel, setReVencSel] = useState("30");
   const [reAviso, setReAviso] = useState("30");
   const [reFGTS, setReFGTS] = useState("0");
   const [reDep, setReDep] = useState("0");
   const rRe = useMemo(
     () => calcRescisao(reTipo, {
       salario: Number(reSal) || 0, diasSaldo: Number(reDias) || 0,
-      mesesDecimo: Number(reMDec) || 0, mesesFerias: Number(reMFer) || 0,
-      feriasVencidasDias: Number(reVenc) || 0, avisoDias: Number(reAviso) || 0,
+      admissao: reAdm, rescisao: reResc,
+      feriasVencidasDias: reTemVenc ? Number(reVencSel) || 0 : 0, avisoDias: Number(reAviso) || 0,
       saldoFGTS: Number(reFGTS) || 0, dependentes: Number(reDep) || 0,
     }),
-    [reTipo, reSal, reDias, reMDec, reMFer, reVenc, reAviso, reFGTS, reDep],
+    [reTipo, reSal, reDias, reAdm, reResc, reTemVenc, reVencSel, reAviso, reFGTS, reDep],
   );
 
   return (
@@ -227,9 +228,24 @@ function CalculadoraPage() {
               </div>
               <div><Label>Salário base</Label><MoneyInput value={reSal} onChange={setReSal} /></div>
               <div><Label>Dias de saldo no mês</Label><Input type="number" min={0} max={31} value={reDias} onChange={(e) => setReDias(e.target.value)} /></div>
-              <div><Label>Meses p/ 13º proporcional</Label><Input type="number" min={0} max={12} value={reMDec} onChange={(e) => setReMDec(e.target.value)} /></div>
-              <div><Label>Meses p/ férias proporcionais</Label><Input type="number" min={0} max={12} value={reMFer} onChange={(e) => setReMFer(e.target.value)} /></div>
-              <div><Label>Férias vencidas (dias)</Label><Input type="number" min={0} value={reVenc} onChange={(e) => setReVenc(e.target.value)} /></div>
+              <div><Label>Data de admissão</Label><Input type="date" value={reAdm} onChange={(e) => setReAdm(e.target.value)} /></div>
+              <div><Label>Data de rescisão</Label><Input type="date" value={reResc} onChange={(e) => setReResc(e.target.value)} /></div>
+              <p className="text-xs text-muted-foreground">13º proporcional: {rRe.mesesDecimo}/12 · Férias proporcionais: {rRe.mesesFerias}/12 avos.{rRe.periodoVencido ? " Período aquisitivo completado — marque as vencidas." : ""}</p>
+              <label className="flex items-center gap-2 text-sm">
+                <Checkbox checked={reTemVenc} onCheckedChange={(v) => setReTemVenc(v === true)} />
+                Tem férias vencidas
+              </label>
+              {reTemVenc && (
+                <div><Label>Quantidade</Label>
+                  <Select value={reVencSel} onValueChange={setReVencSel}>
+                    <SelectTrigger><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="30">30 dias (1 período)</SelectItem>
+                      <SelectItem value="60">60 dias (2 períodos)</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
               <div><Label>Aviso prévio (dias, 0 = trabalhado)</Label><Input type="number" min={0} max={90} value={reAviso} onChange={(e) => setReAviso(e.target.value)} /></div>
               <div><Label>Saldo FGTS (p/ multa)</Label><MoneyInput value={reFGTS} onChange={setReFGTS} /></div>
               <div><Label>Dependentes p/ IRRF</Label><Input type="number" min={0} value={reDep} onChange={(e) => setReDep(e.target.value)} /></div>

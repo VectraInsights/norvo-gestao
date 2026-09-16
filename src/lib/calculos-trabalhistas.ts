@@ -131,7 +131,7 @@ export const TIPOS_RESCISAO: Array<{ value: TipoRescisao; label: string }> = [
 ];
 
 export type RescisaoInput = {
-  salario: number; diasSaldo: number; mesesDecimo: number; mesesFerias: number;
+  salario: number; diasSaldo: number; admissao: string; rescisao: string;
   feriasVencidasDias: number; avisoDias: number; saldoFGTS: number; dependentes?: number;
 };
 
@@ -141,6 +141,7 @@ export type ResultadoRescisao = {
   verbas: VerbaRecisoria[]; bruto: number; baseINSS: number; inss: number;
   baseIRRF: number; irrf: number; liquido: number;
   fgtsMes: number; multaPct: number; multaFGTS: number; totalFGTS: number;
+  mesesDecimo: number; mesesFerias: number; periodoVencido: boolean;
 };
 
 const r2 = (n: number) => Math.round(n * 100) / 100;
@@ -148,8 +149,22 @@ const r2 = (n: number) => Math.round(n * 100) / 100;
 export function calcRescisao(tipo: TipoRescisao, inp: RescisaoInput): ResultadoRescisao {
   const sal = Math.max(0, inp.salario || 0);
   const dias = Math.min(31, Math.max(0, inp.diasSaldo || 0));
-  const mDec = Math.min(12, Math.max(0, Math.round(inp.mesesDecimo) || 0));
-  const mFer = Math.min(12, Math.max(0, Math.round(inp.mesesFerias) || 0));
+  // 13º: meses do ano da rescisão (admissão em diante) com 15+ dias trabalhados
+  const a = parseISO(inp.admissao);
+  const f = parseISO(inp.rescisao);
+  let mDec = 0;
+  if (a && f && cmpData(f, a) >= 0) {
+    const ini = a.y === f.y ? a : { y: f.y, m: 1, d: 1 };
+    mDec = Math.min(12, contarMeses15d(ini, f));
+  }
+  // Férias: meses do período aquisitivo atual com 15+ dias; 12+ = período vencido
+  let mFer = 0;
+  let periodoVencido = false;
+  if (a && f && cmpData(f, a) >= 0) {
+    const total = contarMeses15d(a, f);
+    periodoVencido = total >= 12;
+    mFer = total % 12;
+  }
   const venc = Math.min(60, Math.max(0, Math.round(inp.feriasVencidasDias) || 0));
   const av = Math.min(90, Math.max(0, Math.round(inp.avisoDias) || 0));
   const dep = Math.max(0, Math.floor(inp.dependentes || 0));
@@ -187,5 +202,42 @@ export function calcRescisao(tipo: TipoRescisao, inp: RescisaoInput): ResultadoR
     verbas, bruto, baseINSS, inss, baseIRRF, irrf,
     liquido: r2(bruto - inss - irrf),
     fgtsMes, multaPct, multaFGTS, totalFGTS: r2(baseMulta + multaFGTS),
+    mesesDecimo: mDec, mesesFerias: mFer, periodoVencido,
   };
+}
+
+type DataYMD = { y: number; m: number; d: number };
+
+function parseISO(s: string): DataYMD | null {
+  const mt = /^(\d{4})-(\d{2})-(\d{2})$/.exec(String(s || "").slice(0, 10));
+  if (!mt) return null;
+  const y = Number(mt[1]);
+  const m = Number(mt[2]);
+  const d = Number(mt[3]);
+  if (m < 1 || m > 12 || d < 1 || d > 31) return null;
+  return { y, m, d };
+}
+
+function cmpData(x: DataYMD, y2: DataYMD): number {
+  return x.y - y2.y || x.m - y2.m || x.d - y2.d;
+}
+
+function diasNoMes(y: number, m: number): number {
+  return new Date(y, m, 0).getDate();
+}
+
+/** Conta os meses com 15+ dias dentro do intervalo (fração >= 15 dias conta 1 mês). */
+export function contarMeses15d(inicio: DataYMD, fim: DataYMD): number {
+  let n = 0;
+  let y = inicio.y;
+  let m = inicio.m;
+  while (y < fim.y || (y === fim.y && m <= fim.m)) {
+    const dim = diasNoMes(y, m);
+    const d0 = y === inicio.y && m === inicio.m ? Math.min(inicio.d, dim) : 1;
+    const d1 = y === fim.y && m === fim.m ? Math.min(fim.d, dim) : dim;
+    if (d1 - d0 + 1 >= 15) n++;
+    m++;
+    if (m > 12) { m = 1; y++; }
+  }
+  return n;
 }
