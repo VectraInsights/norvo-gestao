@@ -653,18 +653,16 @@ export function gerarDactePdf(data: DacteData): Blob {
   try { (doc as any).text(impLine, W / 2, y + 2.5, { align: "center" }); } catch { doc.text(impLine, M + 2, y + 2.5); }
   y += impH + 1;
 
-  // ---- Informações adicionais ----
-  const iaH = 5;
-  need(iaH + 6);
-  box(M, y, CW, 4.5);
+  // ---- Informações adicionais (caixa única) ----
+  const iaH = 10;
+  need(iaH + 1);
+  box(M, y, CW, iaH);
   setFont("bold", 6); black();
   doc.text("Informações Adicionais", M + 2, y + 3.5);
-  y += 5;
-  box(M, y, CW, iaH);
   if (D(data.infoAdicionais)) {
     setFont("normal", 5); black();
     const lines = doc.splitTextToSize(String(data.infoAdicionais), CW - 4);
-    doc.text(lines.slice(0, 2), M + 2, y + 4);
+    doc.text(lines.slice(0, 2), M + 2, y + 8);
   }
   y += iaH + 1;
 
