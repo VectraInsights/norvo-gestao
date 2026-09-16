@@ -424,7 +424,7 @@ function CtePage() {
         segTotal: (pjForm as any).segTotal || "",
         valePedagio: (pjForm as any).valePedagio || "",
         valePedFornCNPJ: valeEl?.querySelector("cnpjForn")?.textContent || valeEl?.querySelector("CNPJForn")?.textContent || (pjForm as any).pedagioCnpj || "",
-        valePedComprov: valeEl?.querySelector("nCompra")?.textContent || valeEl?.querySelector("nComp")?.textContent || (pjForm as any).pedagioTag || "",
+        valePedComprov: valeEl?.querySelector("nCompra")?.textContent || valeEl?.querySelector("nComp")?.textContent || (pjForm as any).pedagioIdentVPO || (pjForm as any).pedagioTag || "",
         valePedRespCNPJ: valeEl?.querySelector("cnpjResp")?.textContent || valeEl?.querySelector("CNPJResp")?.textContent || (pjForm as any).pedagioRespCnpj || "",
         ibsBase, ibsCST, ibsClass,
         cbsAliq: gtxt(gCBS, "pCBS"), cbsValor: gtxt(gCBS, "vCBS"),
@@ -527,6 +527,8 @@ function CtePage() {
     if (!((f.pedagioOperadora || "").trim())) errs.push("Operadora");
     if ((f.pedagioCnpj || "").replace(/\D/g, "").length !== 14) errs.push("CNPJ da Operadora (14 dígitos)");
     if ((parseFloat(f.valePedagio) || 0) <= 0) errs.push("Vale Pedágio (R$) maior que zero");
+    if (((f as any).pedagioRespCnpj || "").replace(/\D/g, "").length !== 14) errs.push("CNPJ Resp. Pagto (14 dígitos)");
+    if (!(((f as any).pedagioIdentVPO || "").trim()) && !((f.pedagioTag || "").trim())) errs.push("Identificador VPO");
     if ((modo === "tag-transportador" || modo === "tag-tomador") && !((f.pedagioTag || "").trim())) errs.push("Nº TAG");
     if (errs.length) throw new Error(`Pedágio obrigatório (${rotulo}): informe ${errs.join("; ")}`);
   };
@@ -2638,6 +2640,10 @@ function CtePage() {
               seguradoraNome: f.seguradoraNome || "",
               apolice: f.apolice || "",
               averbacao: f.averbacao || "",
+              valePedagio: f.valePedagio || "",
+              valePedFornCNPJ: f.pedagioCnpj || "",
+              valePedComprov: (f as any).pedagioIdentVPO || f.pedagioTag || "",
+              valePedRespCNPJ: (f as any).pedagioRespCnpj || "",
               obs: [(f as any).obsGerais, (f as any).obsAnulacao, (f as any).obsGlobalizado].filter(Boolean).join(" • ") || "",
               protocolo: "",
               logoDataUrl: JUVENAL_LOGO || undefined,
