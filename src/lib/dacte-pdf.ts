@@ -723,11 +723,9 @@ export function gerarDactePdf(data: DacteData): Blob {
   lab("Motorista", M + 2, y + 2);
   lab("CPF do Motorista", M + 62, y + 2);
   lab("Proprietário", M + 96, y + 2);
-  lab("Identificação dos Lacres em Trânsit", M + 150, y + 2);
   val(cut(D(data.motoNome), 30), M + 2, y + 5, 5);
   val(D(data.motoCPF), M + 62, y + 5, 5);
   val(`${fmtCnpj(D(data.propDoc))}  ${cut(D(data.propNome), 24)}`, M + 96, y + 5, 5);
-  val(cut(D(data.lacres), 24), M + 150, y + 5, 5);
   y += motH + 1;
 
   // ---- Uso exclusivo | fisco ----
