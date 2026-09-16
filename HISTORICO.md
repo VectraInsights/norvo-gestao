@@ -1748,3 +1748,5 @@ eed(17)) p/ canhoto encostar no rodape; tomador RUA, NUMERO - BAIRRO - CIDADE / 
 - DACTE conjunto: subcabecalho Tipo/Placa/Renavam/UF/RNTRC; vale-pedagio exibido uma unica vez.
 
 - CTE: RNTRC do modal puxa de ntrc_lista (match CNPJ emissora); emissao bloqueada sem RNTRC (nunca ISENTO).
+
+- DACTE vale-pedagio: subcabecalho CNPJ Fornecedor/Numero Comprovante/CNPJ Responsavel/Vale Pedagio; comprovante ate 20 chars.
