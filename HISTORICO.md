@@ -1758,3 +1758,5 @@ eed(17)) p/ canhoto encostar no rodape; tomador RUA, NUMERO - BAIRRO - CIDADE / 
 - Frota: coluna eiculos.tag_pedagio (migration 20260916120000); campo TAG no cadastro; CTE preenche Nº TAG ao escolher a tracao.
 
 - Vale-pedagio (Lei 10.209/Res 6.024/NT 2025.001): CNPJ resp + IDVPO obrigatorios; comprovante = IDVPO; coluna eiculos.tag_pedagio aplicada no banco.
+
+- CTE: TAG digitada volta p/ eiculos.tag_pedagio ao autorizar (sync com a placa); campo Saldo Cartao removido.
