@@ -131,8 +131,8 @@ export const TIPOS_RESCISAO: Array<{ value: TipoRescisao; label: string }> = [
 ];
 
 export type RescisaoInput = {
-  salario: number; diasSaldo: number; admissao: string; rescisao: string;
-  feriasVencidasDias: number; avisoDias: number; saldoFGTS: number; dependentes?: number;
+  salario: number; admissao: string; rescisao: string;
+  feriasVencidasDias: number; avisoDias: number; saldoFGTS?: number; dependentes?: number;
 };
 
 export type VerbaRecisoria = { nome: string; valor: number; inss: boolean; irrf: boolean; fgts: boolean };
@@ -148,10 +148,11 @@ const r2 = (n: number) => Math.round(n * 100) / 100;
 
 export function calcRescisao(tipo: TipoRescisao, inp: RescisaoInput): ResultadoRescisao {
   const sal = Math.max(0, inp.salario || 0);
-  const dias = Math.min(31, Math.max(0, inp.diasSaldo || 0));
-  // 13º: meses do ano da rescisão (admissão em diante) com 15+ dias trabalhados
   const a = parseISO(inp.admissao);
   const f = parseISO(inp.rescisao);
+  // Saldo = dias trabalhados no mês do desligamento (dia da rescisão)
+  const dias = f ? Math.min(f.d, 31) : 0;
+  // 13º: meses do ano da rescisão (admissão em diante) com 15+ dias trabalhados
   let mDec = 0;
   if (a && f && cmpData(f, a) >= 0) {
     const ini = a.y === f.y ? a : { y: f.y, m: 1, d: 1 };
