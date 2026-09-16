@@ -2588,7 +2588,7 @@ function CtePage() {
             </DialogTitle>
           </DialogHeader>
           {previewData && (() => {
-            const f = previewData.form;
+            const f = { ...form, ...previewData.form };
             const baseNfes = selecionadas.size > 0 ? mercadorias.filter(m => selecionadas.has(m.chave)) : mercadorias;
             const nFes = baseNfes.map((m: any) => ({ nNF: m.nNF || "", serie: m.serie || "1", valor: m.valor || 0, chave: m.chave || "" }));
             const first = mercadorias[0] || {} as any;
@@ -2645,6 +2645,7 @@ function CtePage() {
               valorServico: f.vPrest || 0,
               valorCarga: f.vCarga || 0,
               qtdVol: (() => { const q = baseNfes.reduce((a: number, m: any) => a + Number((m as any).qVol || 0), 0); return q > 0 ? String(q) : ""; })(),
+              infQ: [{ q: String((f as any).peso ?? (f as any).pesoKg ?? 0), um: "KG" }],
               pesoKg: f.pesoKg || 0,
               icmsCST: f.icmsCST || "00",
               icmsBase: f.icms?.vBC || f.vPrest || 0,
@@ -2665,6 +2666,11 @@ function CtePage() {
               seguradoraNome: f.seguradoraNome || "",
               apolice: f.apolice || "",
               averbacao: f.averbacao || "",
+              numeroAverbacao: f.averbacao || "",
+              motoNome: f.motoristaNome || "",
+              motoCPF: ((motoristas || []).find((m: any) => m.id === f.motoristaId)?.cpf || ""),
+              ciot: f.ciot || "",
+              segCNPJ: ((seguradoras || []).find((s: any) => s.id === f.seguradoraId)?.cnpj || ""),
               valePedagio: f.valePedagio || "",
               valePedFornCNPJ: f.pedagioCnpj || "",
               valePedComprov: (f as any).pedagioIdentVPO || f.pedagioTag || "",
