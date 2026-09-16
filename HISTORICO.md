@@ -1764,3 +1764,5 @@ eed(17)) p/ canhoto encostar no rodape; tomador RUA, NUMERO - BAIRRO - CIDADE / 
 - CTE: preview DACTE fullscreen; editarRascunho pula auto-apply do percurso (pedagio preservado).
 
 - Preview DACTE: mescla form vivo + input; passa infQ (peso), motoNome/CPF, CIOT, numeroAverbacao, segCNPJ.
+
+- Pedagio 100% por viagem: removido do apply e do save de percurso + bloco na tela de percursos.
