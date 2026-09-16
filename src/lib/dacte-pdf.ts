@@ -702,6 +702,10 @@ export function gerarDactePdf(data: DacteData): Blob {
   doc.text("Renavam", M + 34, y + 2.5);
   doc.text("UF", M + 62, y + 2.5);
   doc.text("RNTRC", M + 70, y + 2.5);
+  doc.text("CNPJ Fornecedor", M + hw + 2, y + 2.5);
+  doc.text("Número Comprovante", M + hw + 32, y + 2.5);
+  doc.text("CNPJ Responsável", M + hw + 52, y + 2.5);
+  doc.text("Vale Pedágio", M + hw + 82, y + 2.5);
   vline(M + 15, y, subHeadH);
   vline(M + 31, y, subHeadH);
   vline(M + 59, y, subHeadH);
@@ -727,7 +731,7 @@ export function gerarDactePdf(data: DacteData): Blob {
     vline(M + 67, y, vRowH);
     if (vi === 0) {
       doc.text(fmtCnpj(D(data.valePedFornCNPJ)), M + hw + 2, y + 3);
-      doc.text(cut(D(data.valePedComprov), 14), M + hw + 32, y + 3);
+      doc.text(cut(D(data.valePedComprov), 20), M + hw + 32, y + 3);
       doc.text(fmtCnpj(D(data.valePedRespCNPJ)), M + hw + 52, y + 3);
       doc.text(fmtNum(data.valePedagio ?? 0), M + hw + 82, y + 3);
     }
