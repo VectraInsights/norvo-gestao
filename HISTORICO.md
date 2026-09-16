@@ -1744,3 +1744,5 @@ eed(17)) p/ canhoto encostar no rodape; tomador RUA, NUMERO - BAIRRO - CIDADE / 
 - DACTE modal: verticais entre RNTRC/CIOT/Data/Legislacao; 5 colunas do conjunto (tipo/placa/renavam/uf/rntrc) com verticais.
 
 - DACTE veiculos: emissao grava <veic> (tracao); autorizado/preview caem p/ formulario+frota (renavam/rntrc); frase legislacao 4.5 sem corte.
+
+- DACTE conjunto: subcabecalho Tipo/Placa/Renavam/UF/RNTRC; vale-pedagio exibido uma unica vez.
