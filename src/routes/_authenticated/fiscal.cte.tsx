@@ -947,8 +947,8 @@ function CtePage() {
         const stExistente = statusPorChave.get(chaveNorm);
         if (chavesEmRascunho.has(chaveNorm) || (stExistente && stExistente !== "pendente")) { reservadas++; continue; }
         const peso = pesoB ? parseFloat(pesoB) : 1000;
-        const qVolXml = doc.querySelector("transp > vol > qVol")?.textContent || "";
-        const qVolNum = parseFloat(qVolXml) || 0;
+        let qVolNum = Array.from(doc.querySelectorAll("transp > vol > qVol")).reduce((a, e) => a + (parseFloat(e.textContent || "") || 0), 0);
+        if (!qVolNum) qVolNum = Array.from(doc.querySelectorAll("det > prod > qCom")).reduce((a, e) => a + (parseFloat(e.textContent || "") || 0), 0);
         const valor = parseFloat(vNF) || 0;
         const modFrete = doc.querySelector("transp > modFrete")?.textContent || "";
 
