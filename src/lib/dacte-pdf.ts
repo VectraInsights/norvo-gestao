@@ -693,9 +693,11 @@ export function gerarDactePdf(data: DacteData): Blob {
   doc.text("Identificação do Conjunto Transportador", M + 2, y + 3);
   doc.text("Informações Referente ao Vale - Pedágio", M + hw + 2, y + 3);
   y += conjH;
+  const vRowH = 4;
   const subHeadH = 3.5;
+  const valeBoxH = subHeadH + nVeicObs * vRowH;
   box(M, y, hw, subHeadH);
-  box(M + hw, y, hw, subHeadH);
+  box(M + hw, y, hw, valeBoxH);
   setFont("bold", 4.5); black();
   doc.text("Tipo", M + 2, y + 2.5);
   doc.text("Placa", M + 18, y + 2.5);
@@ -710,15 +712,18 @@ export function gerarDactePdf(data: DacteData): Blob {
   vline(M + 31, y, subHeadH);
   vline(M + 59, y, subHeadH);
   vline(M + 67, y, subHeadH);
+  setFont("normal", 5); black();
+  doc.text(fmtCnpj(D(data.valePedFornCNPJ)), M + hw + 2, y + subHeadH + 3);
+  doc.text(cut(D(data.valePedComprov), 20), M + hw + 32, y + subHeadH + 3);
+  doc.text(fmtCnpj(D(data.valePedRespCNPJ)), M + hw + 52, y + subHeadH + 3);
+  doc.text(fmtNum(data.valePedagio ?? 0), M + hw + 82, y + subHeadH + 3);
   y += subHeadH;
   const veics = (data.veiculos && data.veiculos.length > 0)
     ? data.veiculos.slice(0, 4)
     : [{ tipo: "Própria", placa: data.placa, renavam: "", uf: "", rntrc: data.rntrc }];
-  const vRowH = 4;
-  veics.forEach((vc, vi) => {
+  veics.forEach((vc) => {
     need(vRowH + 22);
     box(M, y, hw, vRowH);
-    box(M + hw, y, hw, vRowH);
     setFont("normal", 5); black();
     doc.text(cut(D(vc.tipo) || "Própria", 10), M + 2, y + 3);
     doc.text(cut(D(vc.placa), 10), M + 18, y + 3);
@@ -729,12 +734,6 @@ export function gerarDactePdf(data: DacteData): Blob {
     vline(M + 31, y, vRowH);
     vline(M + 59, y, vRowH);
     vline(M + 67, y, vRowH);
-    if (vi === 0) {
-      doc.text(fmtCnpj(D(data.valePedFornCNPJ)), M + hw + 2, y + 3);
-      doc.text(cut(D(data.valePedComprov), 20), M + hw + 32, y + 3);
-      doc.text(fmtCnpj(D(data.valePedRespCNPJ)), M + hw + 52, y + 3);
-      doc.text(fmtNum(data.valePedagio ?? 0), M + hw + 82, y + 3);
-    }
     y += vRowH;
   });
   const subcH = 4.5;
