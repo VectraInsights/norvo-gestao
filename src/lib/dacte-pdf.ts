@@ -495,6 +495,8 @@ export function gerarDactePdf(data: DacteData): Blob {
   const vEnt = getComp(["ENTREGA"]);
   const vSeg = Number(data.segTotal) || getComp(["SEGURO"]);
   const vFrete = getComp(["FRETE"]) || Math.max(0, Math.round(((Number(data.valorServico) || 0) - vAdic - vOut - vAdv - vGris - vCol - vEnt + vDesc) * 100) / 100);
+  const vBruto = Math.round((vFrete + vAdic + vOut + vAdv + vGris + vCol + vEnt) * 100) / 100;
+  const vReceber = Number(data.valorServico) || Math.max(0, Math.round((vBruto - vDesc) * 100) / 100);
   const gridX = M, gridW = 146, totX = M + gridW, totW = CW - gridW;
   const compRows: Array<Array<[string, number]>> = [
     [["Frete", vFrete], ["Adicional", vAdic], ["Coleta", vCol]],
@@ -524,10 +526,10 @@ export function gerarDactePdf(data: DacteData): Blob {
   border(); doc.line(totX + 1, y + 9.5, M + CW - 1, y + 9.5);
   setFont("bold", 5.5); black();
   doc.text("Valor do Serviço", totX + 2, y + 3);
-  valB(fmtNum(data.valorServico), totX + 2, y + 7, 7);
+  valB(fmtNum(vBruto), totX + 2, y + 7, 7);
   setFont("bold", 5.5); black();
   doc.text("Valor à Receber", totX + 2, y + 12.5);
-  valB(fmtNum(data.valorServico), totX + 2, y + 16, 7);
+  valB(fmtNum(vReceber), totX + 2, y + 16, 7);
   y += compH + 1;
 
   // ---- ICMS ----

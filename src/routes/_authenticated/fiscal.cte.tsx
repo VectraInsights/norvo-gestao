@@ -2638,7 +2638,7 @@ function CtePage() {
               origemUF: f.ufIni || "",
               destinoCidade: f.xMunFim || "",
               destinoUF: f.ufFim || "",
-              valorServico: f.vPrest || 0,
+              valorServico: totalPrestacao({ ...emptyForm, ...(f as any) }),
               valorCarga: f.vCarga || 0,
               qtdVol: (() => { const q = baseNfes.reduce((a: number, m: any) => a + Number((m as any).qVol || 0), 0); return q > 0 ? String(q) : ""; })(),
               infQ: [{ q: String((f as any).peso ?? (f as any).pesoKg ?? 0), um: "KG" }],
