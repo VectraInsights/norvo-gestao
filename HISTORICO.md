@@ -1754,3 +1754,5 @@ eed(17)) p/ canhoto encostar no rodape; tomador RUA, NUMERO - BAIRRO - CIDADE / 
 - CTE: 8 operadoras de pedagio pre-cadastradas (CONECTCAR, DB TRANS, MOVE MAIS, PAMCARD, REPOM, SEM PARAR, TARGET, VELOE); selecao preenche CNPJ.
 
 - CTE pedagio: operadora em dropdown (8 pre-cadastradas); novos campos CNPJ Resp, Identificador VPO, Data Operacao, Saldo Cartao; CNPJ resp cai no DACTE.
+
+- Frota: coluna eiculos.tag_pedagio (migration 20260916120000); campo TAG no cadastro; CTE preenche Nº TAG ao escolher a tracao.
