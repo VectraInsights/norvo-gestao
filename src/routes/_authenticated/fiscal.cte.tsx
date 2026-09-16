@@ -1142,6 +1142,7 @@ function CtePage() {
         setSelecionadas(new Set(parsed.chavesNFe || []));
       }
       setEditingRascunhoId(doc.id);
+      pularPercursoRef.current = true;
       setOpen(true);
       qc.invalidateQueries({ queryKey: ["cte-documentos"] });
       qc.invalidateQueries({ queryKey: ["cte-nfes-pendentes", empresa.id] });
@@ -1370,6 +1371,7 @@ function CtePage() {
   const [viewNum, setViewNum] = useState("");
   const [previewData, setPreviewData] = useState<{ xml: string; chave: string; proximo: string; ambiente: string; form: any } | null>(null);
   const percursoAplicadoKey = useRef("");
+  const pularPercursoRef = useRef(false);
  const { data: percursosDB, error: percursosError } = useQuery({
     enabled: !!empresa,
     queryKey: ["cte-percursos", empresa?.id],
@@ -1525,6 +1527,7 @@ function CtePage() {
   useEffect(() => { percursoAplicadoKey.current = ""; }, [open]);
   useEffect(() => {
     if (!open || percursos.length === 0) return;
+    if (pularPercursoRef.current) { pularPercursoRef.current = false; return; }
     const d = docsAtuais();
     if (!d.tomaDoc || d.tomaDoc.length !== 14) return;
     const m = matchPercurso(d);
@@ -2573,7 +2576,7 @@ function CtePage() {
 
       {/* Dialog de Pré-Visualização DACTE */}
       <Dialog open={previewOpen} onOpenChange={setPreviewOpen}>
-        <DialogContent className="max-w-4xl max-h-[90vh] flex flex-col p-0">
+        <DialogContent className="w-screen h-screen max-w-none max-h-none m-0 rounded-none flex flex-col p-0">
           <DialogHeader className="px-4 pt-4 pb-2">
             <DialogTitle className="flex items-center gap-2">
               <FileText className="h-4 w-4" /> Pré-Visualização DACTE
