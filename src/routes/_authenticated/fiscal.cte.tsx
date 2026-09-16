@@ -517,6 +517,12 @@ function CtePage() {
     if (cnpjEmp.length !== 14) return;
     setForm(f => (f.pedagioRespCnpj ? f : { ...f, pedagioRespCnpj: cnpjEmp }));
   }, [open]);
+  useEffect(() => {
+    if (!open) return;
+    const dEmi = String(form.dataEmissao || "").slice(0, 10);
+    if (!dEmi) return;
+    setForm(f => (f.pedagioDataOp === dEmi ? f : { ...f, pedagioDataOp: dEmi }));
+  }, [open, form.dataEmissao]);
 
   // Total da prestação = Valor Serviço + componentes − Desconto (vale-pedágio NÃO integra: Lei 10.209/2001 art. 2º)
   const num2 = (v: any) => parseFloat(v) || 0;
@@ -2442,7 +2448,7 @@ function CtePage() {
                   <div><Label className="text-[10px] text-muted-foreground">Nº TAG</Label><Input className="h-6 text-[11px]" placeholder="Nº TAG" value={form.pedagioTag || ""} onChange={e=>setForm({...form, pedagioTag: e.target.value})} /></div>
                   <div><Label className="text-[10px] text-muted-foreground">CNPJ Resp. Pagto</Label><Input className="h-6 text-[11px] bg-transparent" title="Sempre o CNPJ da emissora" value={form.pedagioRespCnpj || ""} readOnly /></div>
                   <div><Label className="text-[10px] text-muted-foreground">Identificador VPO</Label><Input className="h-6 text-[11px]" value={(form as any).pedagioIdentVPO || ""} onChange={e=>setForm({...form, pedagioIdentVPO: e.target.value} as any)} /></div>
-                  <div><Label className="text-[10px] text-muted-foreground">Data Operação</Label><Input className="h-6 text-[11px]" placeholder="DD/MM/AAAA" value={(form as any).pedagioDataOp || ""} onChange={e=>setForm({...form, pedagioDataOp: e.target.value} as any)} /></div>
+                  <div><Label className="text-[10px] text-muted-foreground">Data Operação</Label><Input className="h-6 text-[11px] bg-transparent" title="Sempre a data de emissão" value={String(form.pedagioDataOp || "").slice(0, 10).split("-").reverse().join("/")} readOnly /></div>
                 </div>
               </Card>
             </TabsContent>
