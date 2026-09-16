@@ -1762,3 +1762,5 @@ eed(17)) p/ canhoto encostar no rodape; tomador RUA, NUMERO - BAIRRO - CIDADE / 
 - CTE: TAG digitada volta p/ eiculos.tag_pedagio ao autorizar (sync com a placa); campo Saldo Cartao removido.
 
 - CTE: preview DACTE fullscreen; editarRascunho pula auto-apply do percurso (pedagio preservado).
+
+- Preview DACTE: mescla form vivo + input; passa infQ (peso), motoNome/CPF, CIOT, numeroAverbacao, segCNPJ.
