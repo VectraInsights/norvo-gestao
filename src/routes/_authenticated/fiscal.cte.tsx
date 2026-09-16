@@ -481,10 +481,10 @@ function CtePage() {
     formaPagamento: "Outros", finalidadeEmissao: "Normal", tipoServico: "Normal", formaEmissao: "Normal",
     cteReferenciado: "", chaveCompAnulacao: "", dataDeclaracao: "",
     obsGerais: "", obsAnulacao: "", obsGlobalizado: "",
-    adicionalPed: "0.00", descontoPed: "0.00", outrosPed: "0.00", adValorem: "0.00", gris: "0.00", taxaColeta: "0.00", taxaEntrega: "0.00", valePedagio: "0.00", pedagioPagto: "sem-pagamento", pedagioOperadora: "", pedagioCnpj: "", pedagioTag: "", pedagioRespCnpj: "", pedagioIdentVPO: "", pedagioDataOp: "", pedagioSaldoCartao: "", distanciaKm: "", duracaoHoras: "", rctrC: "0.00", rcfDc: "0.00", segAdicional: "0.00", segTotal: "0.00", segRepassar: "", segResponsavel: "4",
+    adicionalPed: "0.00", descontoPed: "0.00", outrosPed: "0.00", adValorem: "0.00", gris: "0.00", taxaColeta: "0.00", taxaEntrega: "0.00", valePedagio: "0.00", pedagioPagto: "sem-pagamento", pedagioOperadora: "", pedagioCnpj: "", pedagioTag: "", pedagioRespCnpj: "", pedagioIdentVPO: "", pedagioDataOp: "", distanciaKm: "", duracaoHoras: "", rctrC: "0.00", rcfDc: "0.00", segAdicional: "0.00", segTotal: "0.00", segRepassar: "", segResponsavel: "4",
   };
   // Percurso NÃO guarda motorista nem frete: ao abrir um CT-e novo, esses dados de viagem zeram
-  const LIMPA_VIAGEM = { motoristaNome: "", motoristaId: "", ciot: "", placaVeiculo: "", placaReboque: "", semiReboque1: "", semiReboque2: "", vPrest: "0.00", adicionalPed: "0.00", descontoPed: "0.00", outrosPed: "0.00", adValorem: "0.00", gris: "0.00", taxaColeta: "0.00", taxaEntrega: "0.00", valePedagio: "0.00", pedagioPagto: "sem-pagamento", pedagioOperadora: "", pedagioCnpj: "", pedagioTag: "", pedagioRespCnpj: "", pedagioIdentVPO: "", pedagioDataOp: "", pedagioSaldoCartao: "", distanciaKm: "", duracaoHoras: "" };
+  const LIMPA_VIAGEM = { motoristaNome: "", motoristaId: "", ciot: "", placaVeiculo: "", placaReboque: "", semiReboque1: "", semiReboque2: "", vPrest: "0.00", adicionalPed: "0.00", descontoPed: "0.00", outrosPed: "0.00", adValorem: "0.00", gris: "0.00", taxaColeta: "0.00", taxaEntrega: "0.00", valePedagio: "0.00", pedagioPagto: "sem-pagamento", pedagioOperadora: "", pedagioCnpj: "", pedagioTag: "", pedagioRespCnpj: "", pedagioIdentVPO: "", pedagioDataOp: "", distanciaKm: "", duracaoHoras: "" };
   const PEDAGIO_OPERADORAS = [
     { nome: "CONECTCAR", cnpj: "16577631000299" },
     { nome: "DB TRANS", cnpj: "04467870000126" },
@@ -1255,6 +1255,17 @@ function CtePage() {
         toast.success(`CT-e ${ret.chave} autorizado` + (ret.protocolo ? ` prot ${ret.protocolo}` : ""));
         setOpen(false);
         persistirPercursoSilencioso();
+        try {
+          const plSync = String(form.placaVeiculo || "").toUpperCase();
+          const tgSync = String(form.pedagioTag || "").trim();
+          if (empresa && plSync && tgSync) {
+            const vvSync = (veiculos || []).find(v => String(v.placa || "").toUpperCase() === plSync);
+            if (vvSync && (vvSync as any).tag_pedagio !== tgSync) {
+              await (supabase.from("veiculos" as never) as any).update({ tag_pedagio: tgSync }).eq("empresa_id", empresa.id).eq("placa", plSync);
+              qc.invalidateQueries({ queryKey: ["veiculos-cte", empresa.id] });
+            }
+          }
+        } catch {}
         let rascunhoNfs: any[] = [];
         if (editingRascunhoId) {
           const { data: rascDoc } = await supabase.from("cte_documentos" as any).select("xml_assinado").eq("id", editingRascunhoId).maybeSingle();
@@ -2426,7 +2437,6 @@ function CtePage() {
                   <div><Label className="text-[10px] text-muted-foreground">CNPJ Resp. Pagto</Label><Input className="h-6 text-[11px]" placeholder="00.000.000/0000-00" value={(form as any).pedagioRespCnpj || ""} onChange={e=>setForm({...form, pedagioRespCnpj: e.target.value} as any)} /></div>
                   <div><Label className="text-[10px] text-muted-foreground">Identificador VPO</Label><Input className="h-6 text-[11px]" value={(form as any).pedagioIdentVPO || ""} onChange={e=>setForm({...form, pedagioIdentVPO: e.target.value} as any)} /></div>
                   <div><Label className="text-[10px] text-muted-foreground">Data Operação</Label><Input className="h-6 text-[11px]" placeholder="DD/MM/AAAA" value={(form as any).pedagioDataOp || ""} onChange={e=>setForm({...form, pedagioDataOp: e.target.value} as any)} /></div>
-                  <div><Label className="text-[10px] text-muted-foreground">Saldo Cartão</Label><Input className="h-6 text-[11px]" placeholder="0.00" value={(form as any).pedagioSaldoCartao || ""} onChange={e=>setForm({...form, pedagioSaldoCartao: e.target.value} as any)} /></div>
                 </div>
               </Card>
             </TabsContent>
