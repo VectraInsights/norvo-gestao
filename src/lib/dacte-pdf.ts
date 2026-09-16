@@ -486,7 +486,6 @@ export function gerarDactePdf(data: DacteData): Blob {
     const hit = list.find(c => keys.some(k => String(c.nome || "").toUpperCase().includes(k)));
     return hit ? Number(hit.valor) || 0 : 0;
   };
-  const vFrete = getComp(["FRETE"]);
   const vAdic = getComp(["ADICIONAL"]);
   const vDesc = getComp(["DESCONTO"]);
   const vOut = getComp(["OUTROS"]);
@@ -495,12 +494,12 @@ export function gerarDactePdf(data: DacteData): Blob {
   const vCol = getComp(["COLETA"]);
   const vEnt = getComp(["ENTREGA"]);
   const vSeg = Number(data.segTotal) || getComp(["SEGURO"]);
-  const vPed = Number(data.valePedagio) || 0;
+  const vFrete = getComp(["FRETE"]) || Math.max(0, Math.round(((Number(data.valorServico) || 0) - vAdic - vOut - vAdv - vGris - vCol - vEnt + vDesc) * 100) / 100);
   const gridX = M, gridW = 146, totX = M + gridW, totW = CW - gridW;
   const compRows: Array<Array<[string, number]>> = [
-    [["Frete", vFrete], ["Adicional", vAdic], ["ICMS", Number(data.icmsValor) || 0], ["Coleta", vCol]],
-    [["Pedágio", vPed], ["Desconto", vDesc], ["Ad Valorem", vAdv], ["Entrega", vEnt]],
-    [["Sec/Cat", 0], ["Seguro", vSeg], ["GRIS", vGris], ["Outros", vOut]],
+    [["Frete", vFrete], ["Adicional", vAdic], ["Coleta", vCol], ["Entrega", vEnt]],
+    [["Ad Valorem", vAdv], ["GRIS", vGris], ["Desconto", vDesc], ["Outros", vOut]],
+    [["Sec/Cat", 0], ["Seguro", vSeg], ["", 0], ["", 0]],
   ];
   const chH = 4, crH = 4;
   const compH = chH + crH * 3;
@@ -514,6 +513,7 @@ export function gerarDactePdf(data: DacteData): Blob {
   });
   compRows.forEach((row, r) => {
     row.forEach(([nm, vv], c) => {
+      if (!nm) return;
       setFont("normal", 5.5); black();
       doc.text(nm, gridX + 1 + c * colW, y + chH + 2 + r * crH);
       doc.text(fmtNum(vv), gridX + 1 + c * colW + pairW, y + chH + 2 + r * crH);
