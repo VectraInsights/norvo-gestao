@@ -269,6 +269,14 @@ export function gerarDactePdf(data: DacteData): Blob {
   const border = () => { doc.setDrawColor(0, 0, 0); doc.setLineWidth(0.2); };
   const box = (x: number, yy: number, w: number, h: number) => { border(); doc.rect(x, yy, w, h, "S"); };
   const vline = (x: number, yy: number, h: number) => { border(); doc.line(x, yy, x, yy + h); };
+  const dashH = (x1: number, x2: number, yy: number) => {
+    doc.saveGraphicsState();
+    try { (doc as any).setLineDashPattern([1.5, 1.5], 0); } catch {}
+    doc.setDrawColor(0, 0, 0); doc.setLineWidth(0.2);
+    doc.line(x1, yy, x2, yy);
+    try { (doc as any).restoreGraphicsState(); } catch {}
+    border();
+  };
   const lab = (t: string, x: number, yy: number) => { black(); setFont("bold", 5.5); doc.text(t, x, yy); };
   const val = (t: string, x: number, yy: number, s = 7) => { black(); setFont("normal", s); doc.text(String(t || ""), x, yy); };
   const valB = (t: string, x: number, yy: number, s = 7) => { black(); setFont("bold", s); doc.text(String(t || ""), x, yy); };
@@ -512,6 +520,9 @@ export function gerarDactePdf(data: DacteData): Blob {
     });
   });
   for (let i = 1; i < 4; i++) vline(gridX + i * colW, y, compH);
+  dashH(gridX + 1, gridX + gridW - 1, y + 8);
+  dashH(gridX + 1, gridX + gridW - 1, y + 12);
+  dashH(totX + 1, totX + totW - 1, y + 8.5);
   setFont("bold", 5.5); black();
   doc.text("Valor do Serviço", totX + 2, y + 3);
   valB(fmtNum(data.valorServico), totX + 2, y + 6.5, 7);
@@ -624,6 +635,7 @@ export function gerarDactePdf(data: DacteData): Blob {
     const lines = doc.splitTextToSize(data.obs, CW - 4);
     doc.text(lines.slice(0, 2), M + 2, y + 4);
   }
+  if (hasObsTxt && isHom && obsH >= 14) dashH(M + 1, M + CW - 1, y + obsH - 6);
   if (isHom) {
     doc.setTextColor(170, 170, 170);
     ctr("AMBIENTE DE HOMOLOGAÇÃO - SEM VALOR FISCAL", W / 2, y + obsH - 3, 9, true);
@@ -729,7 +741,7 @@ export function gerarDactePdf(data: DacteData): Blob {
   doc.text("Reservado ao Fisco", M + hw + 2, y + 3);
   y += usoH + 1;
 
-  // ---- Canhoto ----
+  // ---- Canhoto (Nome/RG | Assinatura | Prestacao | CT-e) ----
   need(17);
   doc.saveGraphicsState();
   try { (doc as any).setLineDashPattern([2, 2], 0); } catch {}
@@ -740,21 +752,23 @@ export function gerarDactePdf(data: DacteData): Blob {
   const caH = 14;
   box(M, y, CW, caH);
   ctr("DECLARO QUE RECEBI OS VOLUMES DESTE CONHECIMENTO EM PERFEITO ESTADO PELO QUE DOU POR CUMPRIMENTO DESTE PRESENTE", W / 2, y + 3.5, 5.5, true);
-  vline(M + 70, y + 5, caH - 5);
-  vline(M + 140, y + 5, caH - 5);
+  vline(M + 58, y + 4, caH - 4);
+  vline(M + 108, y + 4, caH - 4);
+  vline(M + 152, y + 4, caH - 4);
   setFont("normal", 5); black();
-  doc.text("Nome", M + 2, y + 5.5);
-  doc.text("RG", M + 2, y + 9);
-  doc.text("Assinatura ou Carimbo", M + 72, y + 9);
-  doc.text("Término da Prestação - Data/Hora", M + 72, y + 5.5);
-  doc.line(M + 72, y + 8, M + 136, y + 8);
-  doc.text("Início de Prestação - Data/Hora", M + 72, y + 11.5);
-  doc.line(M + 72, y + 13, M + 136, y + 13);
+  doc.text("Nome", M + 2, y + 6.5);
+  dashH(M + 1, M + 57, y + 9);
+  doc.text("RG", M + 2, y + 12);
+  ctr("Assinatura ou Carimbo", M + 83, y + 10, 5);
+  setFont("normal", 4.5); black();
+  ctr("Término da Prestação - Data/Hora", M + 130, y + 6, 4.5);
+  dashH(M + 109, M + 151, y + 9);
+  ctr("Início de Prestação - Data/Hora", M + 130, y + 12, 4.5);
   setFont("bold", 6); black();
-  doc.text("CT-e", M + 150, y + 5.5);
-  setFont("bold", 6); black();
-  doc.text(`NRO Documento : ${fmtInt(data.numero)}`, M + 142, y + 9);
-  doc.text(`Série : ${D(data.serie) || "1"}`, M + 142, y + 11.5);
+  doc.text("CT-e", M + 154, y + 6);
+  setFont("normal", 5.5); black();
+  doc.text(`NRO Documento : ${fmtInt(data.numero)}`, M + 154, y + 9.5);
+  doc.text(`Série : ${D(data.serie) || "1"}`, M + 154, y + 12);
 
   return doc.output("blob");
 }
