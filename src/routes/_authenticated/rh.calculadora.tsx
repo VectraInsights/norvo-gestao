@@ -35,9 +35,15 @@ function CalculadoraPage() {
   const [salBruto, setSalBruto] = useState("3000");
   const [salProv, setSalProv] = useState("0");
   const [salDesc, setSalDesc] = useState("0");
+  const [salVT, setSalVT] = useState(false);
+  const [salSaude, setSalSaude] = useState("0");
+  const [salOdonto, setSalOdonto] = useState("0");
+  const [salAlim, setSalAlim] = useState("0");
+  const vtDesc = salVT ? Math.round(((Number(salBruto) || 0) * 0.06) * 100) / 100 : 0;
+  const outrosDet = vtDesc + (Number(salSaude) || 0) + (Number(salOdonto) || 0) + (Number(salAlim) || 0);
   const rSal = useMemo(
-    () => calcSalarioLiquido(Number(salBruto) || 0, Number(salProv) || 0, Number(salDesc) || 0),
-    [salBruto, salProv, salDesc],
+    () => calcSalarioLiquido(Number(salBruto) || 0, Number(salProv) || 0, outrosDet + (Number(salDesc) || 0)),
+    [salBruto, salProv, salDesc, outrosDet],
   );
 
   // Férias
@@ -87,13 +93,24 @@ function CalculadoraPage() {
               <div><Label>Salário bruto</Label><MoneyInput value={salBruto} onChange={setSalBruto} /></div>
               <div><Label>Outros proventos</Label><MoneyInput value={salProv} onChange={setSalProv} /></div>
               <div><Label>Outros descontos</Label><MoneyInput value={salDesc} onChange={setSalDesc} /></div>
+              <label className="flex items-center gap-2 text-sm">
+                <Checkbox checked={salVT} onCheckedChange={(v) => setSalVT(v === true)} />
+                Vale-transporte (6% do bruto)
+              </label>
+              <div><Label>Plano de saúde</Label><MoneyInput value={salSaude} onChange={setSalSaude} /></div>
+              <div><Label>Odontológico</Label><MoneyInput value={salOdonto} onChange={setSalOdonto} /></div>
+              <div><Label>Alimentação</Label><MoneyInput value={salAlim} onChange={setSalAlim} /></div>
             </Card>
             <Card className="p-4">
               <Linha rotulo="Salário bruto" valor={rSal.bruto} />
               <Linha rotulo="Proventos" valor={rSal.proventos} />
               <Linha rotulo="INSS" valor={rSal.inss} subtrair />
               <Linha rotulo="IRRF" valor={rSal.irrf} subtrair />
-              <Linha rotulo="Outros descontos" valor={rSal.outrosDescontos} subtrair />
+              {vtDesc > 0 && <Linha rotulo="Vale-transporte (6%)" valor={vtDesc} subtrair />}
+              {Number(salSaude) > 0 && <Linha rotulo="Plano de saúde" valor={Number(salSaude)} subtrair />}
+              {Number(salOdonto) > 0 && <Linha rotulo="Odontológico" valor={Number(salOdonto)} subtrair />}
+              {Number(salAlim) > 0 && <Linha rotulo="Alimentação" valor={Number(salAlim)} subtrair />}
+              <Linha rotulo="Outros descontos" valor={Number(salDesc) || 0} subtrair />
               <Linha rotulo="Salário líquido" valor={rSal.liquido} total />
             </Card>
           </div>
