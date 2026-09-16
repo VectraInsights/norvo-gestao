@@ -647,7 +647,8 @@ function CtePage() {
       return rows.find(r => String(r.cnpj || "").replace(/\D/g, "") === empDigits && empDigits)?.rntrc || rows[0]?.rntrc || "";
     },
   });
-  const rntrcFinal = String(rntrcCad || form.rntrc || "").toUpperCase();
+  const normRntrc8 = (v: string) => { const u = String(v || "").toUpperCase(); if (u === "ISENTO") return u; let d = u.replace(/\D/g, ""); while (d.length > 8 && d.startsWith("0")) d = d.slice(1); return d; };
+  const rntrcFinal = normRntrc8(rntrcCad || form.rntrc || "");
   const { data: veiculos } = useQuery({
     enabled: !!empresa,
     queryKey: ["veiculos-cte", empresa?.id],
