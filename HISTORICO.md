@@ -1756,3 +1756,5 @@ eed(17)) p/ canhoto encostar no rodape; tomador RUA, NUMERO - BAIRRO - CIDADE / 
 - CTE pedagio: operadora em dropdown (8 pre-cadastradas); novos campos CNPJ Resp, Identificador VPO, Data Operacao, Saldo Cartao; CNPJ resp cai no DACTE.
 
 - Frota: coluna eiculos.tag_pedagio (migration 20260916120000); campo TAG no cadastro; CTE preenche Nº TAG ao escolher a tracao.
+
+- Vale-pedagio (Lei 10.209/Res 6.024/NT 2025.001): CNPJ resp + IDVPO obrigatorios; comprovante = IDVPO; coluna eiculos.tag_pedagio aplicada no banco.
