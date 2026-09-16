@@ -119,3 +119,73 @@ export function calcHoraExtra(salario: number, qtd50 = 0, qtd100 = 0): Resultado
   const total100 = qtd100 * valorHora * 2;
   return { valorHora, total50, total100, total: total50 + total100 };
 }
+
+export type TipoRescisao = "sem-justa" | "pedido" | "justa" | "termino" | "acordo";
+
+export const TIPOS_RESCISAO: Array<{ value: TipoRescisao; label: string }> = [
+  { value: "sem-justa", label: "Sem justa causa" },
+  { value: "pedido", label: "Pedido de demissão" },
+  { value: "justa", label: "Justa causa" },
+  { value: "termino", label: "Término de contrato" },
+  { value: "acordo", label: "Acordo (art. 484-A)" },
+];
+
+export type RescisaoInput = {
+  salario: number; diasSaldo: number; mesesDecimo: number; mesesFerias: number;
+  feriasVencidasDias: number; avisoDias: number; saldoFGTS: number; dependentes?: number;
+};
+
+export type VerbaRecisoria = { nome: string; valor: number; inss: boolean; irrf: boolean; fgts: boolean };
+
+export type ResultadoRescisao = {
+  verbas: VerbaRecisoria[]; bruto: number; baseINSS: number; inss: number;
+  baseIRRF: number; irrf: number; liquido: number;
+  fgtsMes: number; multaPct: number; multaFGTS: number; totalFGTS: number;
+};
+
+const r2 = (n: number) => Math.round(n * 100) / 100;
+
+export function calcRescisao(tipo: TipoRescisao, inp: RescisaoInput): ResultadoRescisao {
+  const sal = Math.max(0, inp.salario || 0);
+  const dias = Math.min(31, Math.max(0, inp.diasSaldo || 0));
+  const mDec = Math.min(12, Math.max(0, Math.round(inp.mesesDecimo) || 0));
+  const mFer = Math.min(12, Math.max(0, Math.round(inp.mesesFerias) || 0));
+  const venc = Math.min(60, Math.max(0, Math.round(inp.feriasVencidasDias) || 0));
+  const av = Math.min(90, Math.max(0, Math.round(inp.avisoDias) || 0));
+  const dep = Math.max(0, Math.floor(inp.dependentes || 0));
+  const verbas: VerbaRecisoria[] = [];
+  const soVencidas = tipo === "justa";
+  verbas.push({ nome: `Saldo de salário (${dias}d)`, valor: r2((sal / 30) * dias), inss: true, irrf: true, fgts: true });
+  if (!soVencidas && av > 0) {
+    const vAviso = r2(((sal / 30) * av) * (tipo === "acordo" ? 0.5 : 1));
+    verbas.push({
+      nome: tipo === "pedido" ? `Aviso descontado (${av}d)` : `Aviso indenizado (${av}d)`,
+      valor: tipo === "pedido" ? -vAviso : vAviso, inss: false, irrf: false, fgts: tipo !== "pedido",
+    });
+  }
+  if (!soVencidas && mDec > 0) {
+    verbas.push({ nome: `13º proporcional (${mDec}/12)`, valor: r2((sal / 12) * mDec), inss: true, irrf: true, fgts: true });
+  }
+  if (!soVencidas && mFer > 0) {
+    const f = (sal / 12) * mFer;
+    verbas.push({ nome: `Férias proporcionais (${mFer}/12) + ⅓`, valor: r2(f + f / 3), inss: false, irrf: false, fgts: true });
+  }
+  if (venc > 0) {
+    const f = (sal / 30) * venc;
+    verbas.push({ nome: `Férias vencidas (${venc}d) + ⅓`, valor: r2(f + f / 3), inss: false, irrf: false, fgts: true });
+  }
+  const bruto = r2(verbas.reduce((s, v) => s + v.valor, 0));
+  const baseINSS = r2(verbas.reduce((s, v) => s + (v.inss ? v.valor : 0), 0));
+  const inss = calcINSS(Math.max(0, baseINSS));
+  const baseIRRF = r2(Math.max(0, baseINSS - inss));
+  const irrf = baseIRRF > 0 ? calcIRRF(baseIRRF, Math.max(0, bruto), dep) : 0;
+  const fgtsMes = r2(verbas.reduce((s, v) => s + (v.fgts && v.valor > 0 ? v.valor * 0.08 : 0), 0));
+  const multaPct = tipo === "sem-justa" ? 0.4 : tipo === "acordo" ? 0.2 : 0;
+  const baseMulta = r2(Math.max(0, inp.saldoFGTS || 0) + fgtsMes);
+  const multaFGTS = r2(multaPct * baseMulta);
+  return {
+    verbas, bruto, baseINSS, inss, baseIRRF, irrf,
+    liquido: r2(bruto - inss - irrf),
+    fgtsMes, multaPct, multaFGTS, totalFGTS: r2(baseMulta + multaFGTS),
+  };
+}

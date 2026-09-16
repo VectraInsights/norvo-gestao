@@ -6,10 +6,12 @@ import { Label } from "@/components/ui/label";
 import { Card } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useMemo, useState } from "react";
 import { brl } from "@/lib/format";
 import {
-  calcSalarioLiquido, calcFerias, calcDecimoTerceiro, calcHoraExtra, DEDUCAO_DEPENDENTE,
+  calcSalarioLiquido, calcFerias, calcDecimoTerceiro, calcHoraExtra, calcRescisao,
+  DEDUCAO_DEPENDENTE, TIPOS_RESCISAO, type TipoRescisao,
 } from "@/lib/calculos-trabalhistas";
 
 export const Route = createFileRoute("/_authenticated/rh/calculadora")({
@@ -77,11 +79,31 @@ function CalculadoraPage() {
     [heSal, he50, he100],
   );
 
+  // Rescisão
+  const [reTipo, setReTipo] = useState<TipoRescisao>("sem-justa");
+  const [reSal, setReSal] = useState("3000");
+  const [reDias, setReDias] = useState("15");
+  const [reMDec, setReMDec] = useState("6");
+  const [reMFer, setReMFer] = useState("6");
+  const [reVenc, setReVenc] = useState("0");
+  const [reAviso, setReAviso] = useState("30");
+  const [reFGTS, setReFGTS] = useState("0");
+  const [reDep, setReDep] = useState("0");
+  const rRe = useMemo(
+    () => calcRescisao(reTipo, {
+      salario: Number(reSal) || 0, diasSaldo: Number(reDias) || 0,
+      mesesDecimo: Number(reMDec) || 0, mesesFerias: Number(reMFer) || 0,
+      feriasVencidasDias: Number(reVenc) || 0, avisoDias: Number(reAviso) || 0,
+      saldoFGTS: Number(reFGTS) || 0, dependentes: Number(reDep) || 0,
+    }),
+    [reTipo, reSal, reDias, reMDec, reMFer, reVenc, reAviso, reFGTS, reDep],
+  );
+
   return (
     <div>
       <PageHeader
         title="Calculadora trabalhista"
-        description="Simulação rápida de valores (salário, férias, 13º e horas extras) com as tabelas de 2026. Estimativa — não vinculada a nenhum funcionário."
+        description="Simulação rápida de valores (salário, férias, 13º, horas extras e rescisão) com as tabelas de 2026. Estimativa — não vinculada a nenhum funcionário."
       />
       <Tabs defaultValue="salario">
         <TabsList>
@@ -89,6 +111,7 @@ function CalculadoraPage() {
           <TabsTrigger value="ferias">Férias</TabsTrigger>
           <TabsTrigger value="decimo">13º salário</TabsTrigger>
           <TabsTrigger value="extras">Horas extras</TabsTrigger>
+          <TabsTrigger value="rescisao">Rescisão</TabsTrigger>
         </TabsList>
 
         <TabsContent value="salario">
@@ -187,6 +210,42 @@ function CalculadoraPage() {
               <Linha rotulo="Extras 50%" valor={rHe.total50} />
               <Linha rotulo="Extras 100%" valor={rHe.total100} />
               <Linha rotulo="Total de horas extras" valor={rHe.total} total />
+            </Card>
+          </div>
+        </TabsContent>
+
+        <TabsContent value="rescisao">
+          <div className="grid gap-4 md:grid-cols-2">
+            <Card className="space-y-3 p-4">
+              <div><Label>Tipo de rescisão</Label>
+                <Select value={reTipo} onValueChange={(v) => setReTipo(v as TipoRescisao)}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    {TIPOS_RESCISAO.map((t) => <SelectItem key={t.value} value={t.value}>{t.label}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div><Label>Salário base</Label><MoneyInput value={reSal} onChange={setReSal} /></div>
+              <div><Label>Dias de saldo no mês</Label><Input type="number" min={0} max={31} value={reDias} onChange={(e) => setReDias(e.target.value)} /></div>
+              <div><Label>Meses p/ 13º proporcional</Label><Input type="number" min={0} max={12} value={reMDec} onChange={(e) => setReMDec(e.target.value)} /></div>
+              <div><Label>Meses p/ férias proporcionais</Label><Input type="number" min={0} max={12} value={reMFer} onChange={(e) => setReMFer(e.target.value)} /></div>
+              <div><Label>Férias vencidas (dias)</Label><Input type="number" min={0} value={reVenc} onChange={(e) => setReVenc(e.target.value)} /></div>
+              <div><Label>Aviso prévio (dias, 0 = trabalhado)</Label><Input type="number" min={0} max={90} value={reAviso} onChange={(e) => setReAviso(e.target.value)} /></div>
+              <div><Label>Saldo FGTS (p/ multa)</Label><MoneyInput value={reFGTS} onChange={setReFGTS} /></div>
+              <div><Label>Dependentes p/ IRRF</Label><Input type="number" min={0} value={reDep} onChange={(e) => setReDep(e.target.value)} /></div>
+            </Card>
+            <Card className="p-4">
+              {rRe.verbas.map((v) => (
+                <Linha key={v.nome} rotulo={v.nome} valor={Math.abs(v.valor)} subtrair={v.valor < 0} />
+              ))}
+              <Linha rotulo="Total bruto" valor={rRe.bruto} total />
+              <Linha rotulo="INSS" valor={rRe.inss} subtrair />
+              <Linha rotulo="IRRF" valor={rRe.irrf} subtrair />
+              <Linha rotulo="Líquido da rescisão" valor={rRe.liquido} total />
+              <Linha rotulo="FGTS do mês (8%)" valor={rRe.fgtsMes} />
+              {rRe.multaPct > 0 && <Linha rotulo={`Multa FGTS (${Math.round(rRe.multaPct * 100)}%)`} valor={rRe.multaFGTS} />}
+              <Linha rotulo="Total FGTS (saldo + multa)" valor={rRe.totalFGTS} total />
+              <p className="mt-1 text-xs text-muted-foreground">Aviso indenizado e férias indenizadas (+⅓) não têm INSS/IRRF.</p>
             </Card>
           </div>
         </TabsContent>
