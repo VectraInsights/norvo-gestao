@@ -1750,3 +1750,5 @@ eed(17)) p/ canhoto encostar no rodape; tomador RUA, NUMERO - BAIRRO - CIDADE / 
 - CTE: RNTRC do modal puxa de ntrc_lista (match CNPJ emissora); emissao bloqueada sem RNTRC (nunca ISENTO).
 
 - DACTE vale-pedagio: subcabecalho CNPJ Fornecedor/Numero Comprovante/CNPJ Responsavel/Vale Pedagio; comprovante ate 20 chars.
+
+- CTE: 8 operadoras de pedagio pre-cadastradas (CONECTCAR, DB TRANS, MOVE MAIS, PAMCARD, REPOM, SEM PARAR, TARGET, VELOE); selecao preenche CNPJ.
