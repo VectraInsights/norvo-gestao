@@ -34,7 +34,7 @@ function Linha({ rotulo, valor, subtrair, total }: { rotulo: string; valor: numb
 
 function CalculadoraPage() {
   // Salário
-  const [salBruto, setSalBruto] = useState("3000");
+  const [salBruto, setSalBruto] = useState("0");
   const [salProv, setSalProv] = useState("0");
   const [salDesc, setSalDesc] = useState("0");
   const [salVT, setSalVT] = useState(false);
@@ -51,7 +51,7 @@ function CalculadoraPage() {
   );
 
   // Férias
-  const [ferSal, setFerSal] = useState("3000");
+  const [ferSal, setFerSal] = useState("0");
   const [ferDias, setFerDias] = useState("30");
   const [ferAbono, setFerAbono] = useState("0");
   const [ferDecimo, setFerDecimo] = useState(false);
@@ -62,7 +62,7 @@ function CalculadoraPage() {
   );
 
   // 13º
-  const [decSal, setDecSal] = useState("3000");
+  const [decSal, setDecSal] = useState("0");
   const [decMeses, setDecMeses] = useState("12");
   const [decDep, setDecDep] = useState("0");
   const rDec = useMemo(
@@ -71,7 +71,7 @@ function CalculadoraPage() {
   );
 
   // Horas extras
-  const [heSal, setHeSal] = useState("3000");
+  const [heSal, setHeSal] = useState("0");
   const [he50, setHe50] = useState("0");
   const [he100, setHe100] = useState("0");
   const rHe = useMemo(
@@ -81,7 +81,7 @@ function CalculadoraPage() {
 
   // Rescisão
   const [reTipo, setReTipo] = useState<TipoRescisao>("sem-justa");
-  const [reSal, setReSal] = useState("3000");
+  const [reSal, setReSal] = useState("0");
   const [reDias, setReDias] = useState("15");
   const [reMDec, setReMDec] = useState("6");
   const [reMFer, setReMFer] = useState("6");
