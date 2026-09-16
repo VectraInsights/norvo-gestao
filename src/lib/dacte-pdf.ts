@@ -522,7 +522,7 @@ export function gerarDactePdf(data: DacteData): Blob {
     });
   });
   for (let i = 1; i < 3; i++) vline(gridX + i * colW, y, compH);
-  for (let r = 0; r < 2; r++) dashH(gridX + 1, gridX + gridW - 1, y + chH + 3 + crH / 2 + r * crH);
+  for (let r = 0; r < 2; r++) { border(); doc.line(gridX + 1, y + chH + 3 + crH / 2 + r * crH, gridX + gridW - 1, y + chH + 3 + crH / 2 + r * crH); }
   border(); doc.line(totX + 1, y + 9.5, M + CW - 1, y + 9.5);
   setFont("bold", 5.5); black();
   doc.text("Valor do Serviço", totX + 2, y + 3);
