@@ -9,7 +9,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { useMemo, useState } from "react";
 import { brl } from "@/lib/format";
 import {
-  calcSalarioLiquido, calcFerias, calcDecimoTerceiro, calcHoraExtra,
+  calcSalarioLiquido, calcFerias, calcDecimoTerceiro, calcHoraExtra, DEDUCAO_DEPENDENTE,
 } from "@/lib/calculos-trabalhistas";
 
 export const Route = createFileRoute("/_authenticated/rh/calculadora")({
@@ -41,9 +41,11 @@ function CalculadoraPage() {
   const [salAlim, setSalAlim] = useState("0");
   const vtDesc = salVT ? Math.round(((Number(salBruto) || 0) * 0.06) * 100) / 100 : 0;
   const outrosDet = vtDesc + (Number(salSaude) || 0) + (Number(salOdonto) || 0) + (Number(salAlim) || 0);
+  const [salDep, setSalDep] = useState("0");
+  const depDesc = (Number(salDep) || 0) * DEDUCAO_DEPENDENTE;
   const rSal = useMemo(
-    () => calcSalarioLiquido(Number(salBruto) || 0, Number(salProv) || 0, outrosDet + (Number(salDesc) || 0)),
-    [salBruto, salProv, salDesc, outrosDet],
+    () => calcSalarioLiquido(Number(salBruto) || 0, Number(salProv) || 0, outrosDet + (Number(salDesc) || 0), Number(salDep) || 0),
+    [salBruto, salProv, salDesc, outrosDet, salDep],
   );
 
   // Férias
@@ -51,17 +53,19 @@ function CalculadoraPage() {
   const [ferDias, setFerDias] = useState("30");
   const [ferAbono, setFerAbono] = useState("0");
   const [ferDecimo, setFerDecimo] = useState(false);
+  const [ferDep, setFerDep] = useState("0");
   const rFer = useMemo(
-    () => calcFerias(Number(ferSal) || 0, Number(ferDias) || 0, Number(ferAbono) || 0, ferDecimo),
-    [ferSal, ferDias, ferAbono, ferDecimo],
+    () => calcFerias(Number(ferSal) || 0, Number(ferDias) || 0, Number(ferAbono) || 0, ferDecimo, Number(ferDep) || 0),
+    [ferSal, ferDias, ferAbono, ferDecimo, ferDep],
   );
 
   // 13º
   const [decSal, setDecSal] = useState("3000");
   const [decMeses, setDecMeses] = useState("12");
+  const [decDep, setDecDep] = useState("0");
   const rDec = useMemo(
-    () => calcDecimoTerceiro(Number(decSal) || 0, Number(decMeses) || 0),
-    [decSal, decMeses],
+    () => calcDecimoTerceiro(Number(decSal) || 0, Number(decMeses) || 0, Number(decDep) || 0),
+    [decSal, decMeses, decDep],
   );
 
   // Horas extras
@@ -100,12 +104,14 @@ function CalculadoraPage() {
               <div><Label>Plano de saúde</Label><MoneyInput value={salSaude} onChange={setSalSaude} /></div>
               <div><Label>Odontológico</Label><MoneyInput value={salOdonto} onChange={setSalOdonto} /></div>
               <div><Label>Alimentação</Label><MoneyInput value={salAlim} onChange={setSalAlim} /></div>
+              <div><Label>Dependentes p/ IRRF</Label><Input type="number" min={0} value={salDep} onChange={(e) => setSalDep(e.target.value)} /></div>
             </Card>
             <Card className="p-4">
               <Linha rotulo="Salário bruto" valor={rSal.bruto} />
               <Linha rotulo="Proventos" valor={rSal.proventos} />
               <Linha rotulo="INSS" valor={rSal.inss} subtrair />
               <Linha rotulo="IRRF" valor={rSal.irrf} subtrair />
+              {Number(salDep) > 0 && <p className="text-xs text-muted-foreground">Dedução de {salDep} dependente(s) na base do IRRF ({brl(depDesc)}).</p>}
               {vtDesc > 0 && <Linha rotulo="Vale-transporte (6%)" valor={vtDesc} subtrair />}
               {Number(salSaude) > 0 && <Linha rotulo="Plano de saúde" valor={Number(salSaude)} subtrair />}
               {Number(salOdonto) > 0 && <Linha rotulo="Odontológico" valor={Number(salOdonto)} subtrair />}
@@ -126,12 +132,14 @@ function CalculadoraPage() {
                 <Checkbox checked={ferDecimo} onCheckedChange={(v) => setFerDecimo(v === true)} />
                 Adiantar 13º junto
               </label>
+              <div><Label>Dependentes p/ IRRF</Label><Input type="number" min={0} value={ferDep} onChange={(e) => setFerDep(e.target.value)} /></div>
             </Card>
             <Card className="p-4">
               <Linha rotulo={`Férias (${rFer.diasGozo}d × 1/30)`} valor={rFer.proporcional} />
               <Linha rotulo="Adicional constitucional (⅓)" valor={rFer.terco} />
               <Linha rotulo="INSS" valor={rFer.inssFerias} subtrair />
               <Linha rotulo="IRRF" valor={rFer.irrfFerias} subtrair />
+              {Number(ferDep) > 0 && <p className="text-xs text-muted-foreground">Dedução de {ferDep} dependente(s) na base do IRRF.</p>}
               <Linha rotulo="Líquido das férias" valor={rFer.liquidoFerias} total />
               {rFer.abonoDias > 0 && (
                 <><Linha rotulo={`Abono pecuniário (${rFer.abonoDias}d, isento)`} valor={rFer.valorAbono} /></>
@@ -154,12 +162,14 @@ function CalculadoraPage() {
             <Card className="space-y-3 p-4">
               <div><Label>Salário bruto mensal</Label><MoneyInput value={decSal} onChange={setDecSal} /></div>
               <div><Label>Meses trabalhados (1–12)</Label><Input type="number" min={1} max={12} value={decMeses} onChange={(e) => setDecMeses(e.target.value)} /></div>
+              <div><Label>Dependentes p/ IRRF</Label><Input type="number" min={0} value={decDep} onChange={(e) => setDecDep(e.target.value)} /></div>
               <p className="text-xs text-muted-foreground">Na prática, a 1ª parcela (até novembro) sai sem descontos; os descontos incidem na 2ª parcela.</p>
             </Card>
             <Card className="p-4">
               <Linha rotulo={`13º bruto (${rDec.meses}/12)`} valor={rDec.bruto} />
               <Linha rotulo="INSS" valor={rDec.inss} subtrair />
               <Linha rotulo="IRRF" valor={rDec.irrf} subtrair />
+              {Number(decDep) > 0 && <p className="text-xs text-muted-foreground">Dedução de {decDep} dependente(s) na base do IRRF.</p>}
               <Linha rotulo="13º líquido" valor={rDec.liquido} total />
             </Card>
           </div>
