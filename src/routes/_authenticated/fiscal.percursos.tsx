@@ -38,7 +38,6 @@ const EDITAVEIS = [
   "redesp_cnpj", "redesp_nome", "redesp_ie", "redesp_uf", "redesp_xmun", "redesp_cep", "redesp_logradouro", "redesp_nro", "redesp_bairro",
   "seg_nome", "seg_apolice", "seg_averbacao", "seg_rctr_c", "seg_rcf_dc", "seg_adicional", "seg_total", "seg_repassar", "seg_responsavel",
   "distancia_km", "duracao_horas",
-  "pedagio_pagto", "pedagio_operadora", "pedagio_cnpj", "pedagio_tag", "pedagio_vale",
   "icms_cst", "icms_aliq", "reducao_base", "credito_outorgado",
   "pis_aliq", "cofins_aliq", "ir_aliq", "inss_aliq", "csll_aliq",
   "obs_gerais",
@@ -571,27 +570,6 @@ function PercursosPage() {
                       <div className="flex items-end pb-1">
                         <label className="flex items-center gap-1 text-[11px]"><input type="checkbox" checked={!!editing.seg_repassar} onChange={e => set("seg_repassar", e.target.checked)} /> Repassar</label>
                       </div>
-                    </div>
-                  </div>
-                  <div className="border rounded p-2 space-y-1">
-                    <p className="text-[11px] font-semibold">Pedágio</p>
-                    <div className="grid grid-cols-2 md:grid-cols-5 gap-1">
-                      <div>
-                        <Label className="text-[10px] text-muted-foreground">Pagamento</Label>
-                        <Select value={["free-flow", "tag-transportador", "tag-tomador", "sem-pagamento"].includes(editing.pedagio_pagto) ? editing.pedagio_pagto : "sem-pagamento"} onValueChange={v => set("pedagio_pagto", v)}>
-                          <SelectTrigger className="h-7 text-xs"><SelectValue /></SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="sem-pagamento">Sem Pagamento</SelectItem>
-                            <SelectItem value="free-flow">Free Flow</SelectItem>
-                            <SelectItem value="tag-transportador">TAG Transportador</SelectItem>
-                            <SelectItem value="tag-tomador">TAG Tomador</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </div>
-                      <T editing={editing} set={set} label="Operadora" k="pedagio_operadora" />
-                      <T editing={editing} set={set} label="CNPJ operadora" k="pedagio_cnpj" mono />
-                      <T editing={editing} set={set} label="Nº TAG" k="pedagio_tag" mono />
-                      <Num editing={editing} set={set} label="Vale (R$)" k="pedagio_vale" prefix="R$" />
                     </div>
                   </div>
                 </TabsContent>
