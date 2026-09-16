@@ -679,7 +679,7 @@ export function gerarDactePdf(data: DacteData): Blob {
   lab("RNTRC DA EMPRESA", M + 2, y + 2.5);
   lab("CIOT", M + 44, y + 2.5);
   lab("Data Prevista de Entrega", M + 76, y + 2.5);
-  setFont("bold", 5); black();
+  setFont("bold", 4.5); black();
   doc.text("Esse Conhecimento de Transporte Atende à Legislação de transporte Rodoviário em Vigor", M + 122, y + 4);
   val(D(data.rntrc), M + 2, y + 5, 6);
   val(D(data.ciot), M + 44, y + 5, 6);

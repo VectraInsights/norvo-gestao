@@ -273,11 +273,26 @@ function CtePage() {
       const tomaIEXml = tag("infCte > toma > IE") || "";
       const rodoEl = xmlDoc.querySelector("infModal > rodo, infCte > infCteNorm > infModal > rodo");
       const rq = (s: string) => rodoEl?.querySelector(s)?.textContent || "";
-      const veicsXml = Array.from(rodoEl?.querySelectorAll("veic, reboque") || []).map(v => ({ tipo: (/^t/i.test(v.querySelector("tpProp")?.textContent || "") ? "Terceiro" : "Própria"), placa: v.querySelector("placa")?.textContent || "", renavam: v.querySelector("RENAVAM")?.textContent || "", uf: v.querySelector("UF")?.textContent || "", rntrc: v.querySelector("RNTRC")?.textContent || "" }));
+      const veicsXml = Array.from(rodoEl?.querySelectorAll("veic, reboque") || []).map(v => ({ tipo: (/^t/i.test(v.querySelector("tpProp")?.textContent || "") ? "Terceiro" : "Própria"), placa: v.querySelector("placa")?.textContent || "", renavam: v.querySelector("RENAVAM")?.textContent || "", uf: v.querySelector("UF")?.textContent || "", rntrc: v.querySelector("RNTRC")?.textContent || rq("RNTRC") || "" }));
       const motoEl = rodoEl?.querySelector("moto");
       const propEl = rodoEl?.querySelector("prop");
       const valeEl = rodoEl?.querySelector("valePed");
       const lacresXml = Array.from(rodoEl?.querySelectorAll("lacRodo > nLacre") || []).map(e => (e.textContent || "").trim()).filter(Boolean).join(", ");
+      const rodoRNTRC = rq("RNTRC") || "";
+      const emitUfXml = tag("infCte > emit > enderEmit > UF") || "";
+      const placasForm = [(pjForm as any).placaVeiculo, (pjForm as any).placaReboque, (pjForm as any).semiReboque1, (pjForm as any).semiReboque2].map(p => String(p || "").toUpperCase()).filter(Boolean);
+      let veicsFrota: Array<any> = [];
+      try {
+        if (empresa && placasForm.length) {
+          const { data: fv } = await supabase.from("veiculos" as never).select("placa,renavam,rntrc").eq("empresa_id", (empresa as any).id).in("placa", placasForm);
+          veicsFrota = ((fv as any[]) || []);
+        }
+      } catch {}
+      const temPlacaXml = new Set(veicsXml.map(v => String(v.placa || "").toUpperCase()));
+      const veicsFin = [...veicsXml, ...placasForm.filter(p => !temPlacaXml.has(p)).map(p => {
+        const fv = veicsFrota.find((x: any) => String(x.placa || "").toUpperCase() === p);
+        return { tipo: "Própria", placa: p, renavam: fv?.renavam || "", uf: emitUfXml, rntrc: fv?.rntrc || rodoRNTRC };
+      })].slice(0, 4);
       const remLogRaw = tag("infCte > rem > enderRem > xLgr") || percRemLog || (cRemFull as any)?.logradouro || tag("infCte > emit > enderEmit > xLgr") || "";
       const remNroRaw = tag("infCte > rem > enderRem > nro") || percRemNro || (cRemFull as any)?.numero || tag("infCte > emit > enderEmit > nro") || "";
       const remCepRaw = tag("infCte > rem > enderRem > CEP") || percRemCep || (cRemFull as any)?.cep || tag("infCte > emit > enderEmit > CEP") || "";
@@ -379,7 +394,7 @@ function CtePage() {
         icmsValor: parseFloat(tagI("vICMS")) || 0,
         nFes,
         comps: xmlComps,
-        placa: tag("infModal > rodo > veic > placa") || "",
+        placa: tag("infModal > rodo > veic > placa") || (pjForm as any).placaVeiculo || "",
         placaReboque: "",
         rntrc: tag("infModal > rodo > RNTRC") || "",
         seguradoraNome: (pjForm as any).seguradoraNome || "",
@@ -419,7 +434,7 @@ function CtePage() {
         infoAdicionais: complXEmi,
         ciot: rq("CIOT") || (pjForm as any).ciot || "",
         dataPrevEntrega: rq("dPrev") || "",
-        veiculos: veicsXml,
+        veiculos: veicsFin,
         motoNome: motoEl?.querySelector("xNome")?.textContent || (pjForm as any).motoristaNome || "",
         motoCPF: motoEl?.querySelector("CPF")?.textContent || motoCPFC,
         lacres: lacresXml,
@@ -601,9 +616,9 @@ function CtePage() {
     enabled: !!empresa,
     queryKey: ["veiculos-cte", empresa?.id],
     queryFn: async () => {
-      const { data, error } = await supabase.from("veiculos" as never).select("id,placa,marca_modelo,tipo").eq("empresa_id", empresa!.id).order("placa").limit(100);
+      const { data, error } = await supabase.from("veiculos" as never).select("id,placa,marca_modelo,tipo,renavam,rntrc").eq("empresa_id", empresa!.id).order("placa").limit(100);
       if (error) throw error;
-      return (data ?? []) as unknown as Array<{ id: string; placa: string; marca_modelo: string | null; tipo: string | null }>;
+      return (data ?? []) as unknown as Array<{ id: string; placa: string; marca_modelo: string | null; tipo: string | null; renavam: string | null; rntrc: string | null }>;
     },
   });
   const { data: seguradoras } = useQuery({
@@ -1195,6 +1210,7 @@ function CtePage() {
         ambiente: form.ambiente,
         toma: form.toma, cnpjTomador: form.cnpjTomador, xNomeTomador: form.xNomeTomador, ufTomador: form.ufTomador, cMunTomador: form.cMunTomador, xMunTomador: form.xMunTomador,
         cfop: form.cfop, vPrest: totalPrestacao(form), vCarga: parseFloat(form.vCarga)||0, pesoKg: parseFloat(form.peso)||0, rntrc: form.rntrc,
+        modalRod: { rntrc: form.rntrc, veiculos: (() => { const vv = (veiculos || []).find(v => String(v.placa || "").toUpperCase() === String(form.placaVeiculo || "").toUpperCase()); return form.placaVeiculo ? [{ placa: String(form.placaVeiculo).toUpperCase(), uf: empresa.uf || "MG", renavam: (vv as any)?.renavam || undefined }] : []; })() },
         cMunEnv: form.cMunEnv, xMunEnv: form.xMunEnv, ufEnv: form.ufEnv, cMunIni: form.cMunIni, xMunIni: form.xMunIni, ufIni: form.ufIni, cMunFim: form.cMunFim, xMunFim: form.xMunFim, ufFim: form.ufFim,
         icms: { CST: form.icmsCST, vBC: totalPrestacao(form), pICMS: parseFloat(form.icmsAliq)||0, vICMS: parseFloat(form.icmsValor)||0 },
         impostos: { pisAliq: parseFloat(form.pisAliq)||0, cofinsAliq: parseFloat(form.cofinsAliq)||0, irAliq: parseFloat(form.irAliq)||0, inssAliq: parseFloat(form.inssAliq)||0, csllAliq: parseFloat(form.csllAliq)||0 },
@@ -1326,6 +1342,7 @@ function CtePage() {
         ambiente: form.ambiente,
         toma: form.toma, cnpjTomador: form.cnpjTomador, xNomeTomador: form.xNomeTomador, ufTomador: form.ufTomador, cMunTomador: form.cMunTomador, xMunTomador: form.xMunTomador,
         cfop: form.cfop, vPrest: totalPrestacao(form), vCarga: parseFloat(form.vCarga)||0, pesoKg: parseFloat(form.peso)||0, rntrc: form.rntrc,
+        modalRod: { rntrc: form.rntrc, veiculos: (() => { const vv = (veiculos || []).find(v => String(v.placa || "").toUpperCase() === String(form.placaVeiculo || "").toUpperCase()); return form.placaVeiculo ? [{ placa: String(form.placaVeiculo).toUpperCase(), uf: empresa.uf || "MG", renavam: (vv as any)?.renavam || undefined }] : []; })() },
         obsGerais: (form as any).obsGerais || "", obsAnulacao: (form as any).obsAnulacao || "", obsGlobalizado: (form as any).obsGlobalizado || "",
         reducaoBase: parseFloat((form as any).reducaoBase)||0,
         cMunEnv: form.cMunEnv, xMunEnv: form.xMunEnv, ufEnv: form.ufEnv, cMunIni: form.cMunIni, xMunIni: form.xMunIni, ufIni: form.ufIni, cMunFim: form.cMunFim, xMunFim: form.xMunFim, ufFim: form.ufFim,
@@ -2583,6 +2600,10 @@ function CtePage() {
               placa: f.placaVeiculo || "",
               placaReboque: f.placaReboque || "",
               rntrc: f.rntrc || "",
+              veiculos: [f.placaVeiculo, f.placaReboque, (f as any).semiReboque1, (f as any).semiReboque2].map(p => String(p || "").toUpperCase()).filter(Boolean).filter((p, i, a) => a.indexOf(p) === i).map(p => {
+                const fv = (veiculos || []).find(v => String(v.placa || "").toUpperCase() === p);
+                return { tipo: "Própria", placa: p, renavam: (fv as any)?.renavam || "", uf: (empresa as any)?.uf || "MG", rntrc: (fv as any)?.rntrc || f.rntrc || "" };
+              }).slice(0, 4),
               seguradoraNome: f.seguradoraNome || "",
               apolice: f.apolice || "",
               averbacao: f.averbacao || "",
