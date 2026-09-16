@@ -1736,3 +1736,5 @@ eed(17)) p/ canhoto encostar no rodape; tomador RUA, NUMERO - BAIRRO - CIDADE / 
 - DACTE item 2.8: dashH tracejada entre linhas de componentes, Servico/Receber, obs/homolog; canhoto 4 colunas (Nome/RG|Assinatura|Prestacao|CT-e) (29a6d11/790e4b7).
 
 - DACTE componentes: tracejada y+8 em largura total (grade+totais), y+12 na grade.
+
+- DACTE: divisorias do canhoto e trecho Servico/Receber em linha continua (grade segue tracejada).
