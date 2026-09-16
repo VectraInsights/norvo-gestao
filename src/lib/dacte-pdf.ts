@@ -626,7 +626,7 @@ export function gerarDactePdf(data: DacteData): Blob {
   ctr("Observações", W / 2, y + 3.5, 6, true);
   y += 5;
   const nVeicObs = Math.min(Math.max((data.veiculos && data.veiculos.length) || 1, 1), 4);
-  const restoAposObs = 1 + 4.5 + 11 + (26 + 4 * nVeicObs) + 5.5 + 16 + 1; // +1 folga p/ need(17) do canhoto
+  const restoAposObs = 1 + 4.5 + 11 + (29.5 + 4 * nVeicObs) + 5.5 + 16 + 1; // +1 folga p/ need(17) do canhoto
   let obsH = LIM - y - restoAposObs;
   if (!(obsH >= 7)) obsH = 7;
   box(M, y, CW, obsH);
@@ -693,11 +693,25 @@ export function gerarDactePdf(data: DacteData): Blob {
   doc.text("Identificação do Conjunto Transportador", M + 2, y + 3);
   doc.text("Informações Referente ao Vale - Pedágio", M + hw + 2, y + 3);
   y += conjH;
+  const subHeadH = 3.5;
+  box(M, y, hw, subHeadH);
+  box(M + hw, y, hw, subHeadH);
+  setFont("bold", 4.5); black();
+  doc.text("Tipo", M + 2, y + 2.5);
+  doc.text("Placa", M + 18, y + 2.5);
+  doc.text("Renavam", M + 34, y + 2.5);
+  doc.text("UF", M + 62, y + 2.5);
+  doc.text("RNTRC", M + 70, y + 2.5);
+  vline(M + 15, y, subHeadH);
+  vline(M + 31, y, subHeadH);
+  vline(M + 59, y, subHeadH);
+  vline(M + 67, y, subHeadH);
+  y += subHeadH;
   const veics = (data.veiculos && data.veiculos.length > 0)
     ? data.veiculos.slice(0, 4)
     : [{ tipo: "Própria", placa: data.placa, renavam: "", uf: "", rntrc: data.rntrc }];
   const vRowH = 4;
-  veics.forEach((vc) => {
+  veics.forEach((vc, vi) => {
     need(vRowH + 22);
     box(M, y, hw, vRowH);
     box(M + hw, y, hw, vRowH);
@@ -711,10 +725,12 @@ export function gerarDactePdf(data: DacteData): Blob {
     vline(M + 31, y, vRowH);
     vline(M + 59, y, vRowH);
     vline(M + 67, y, vRowH);
-    doc.text(fmtCnpj(D(data.valePedFornCNPJ)), M + hw + 2, y + 3);
-    doc.text(cut(D(data.valePedComprov), 14), M + hw + 32, y + 3);
-    doc.text(fmtCnpj(D(data.valePedRespCNPJ)), M + hw + 52, y + 3);
-    doc.text(fmtNum(data.valePedagio ?? 0), M + hw + 82, y + 3);
+    if (vi === 0) {
+      doc.text(fmtCnpj(D(data.valePedFornCNPJ)), M + hw + 2, y + 3);
+      doc.text(cut(D(data.valePedComprov), 14), M + hw + 32, y + 3);
+      doc.text(fmtCnpj(D(data.valePedRespCNPJ)), M + hw + 52, y + 3);
+      doc.text(fmtNum(data.valePedagio ?? 0), M + hw + 82, y + 3);
+    }
     y += vRowH;
   });
   const subcH = 4.5;
