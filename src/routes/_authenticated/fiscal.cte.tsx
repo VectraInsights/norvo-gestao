@@ -612,6 +612,18 @@ function CtePage() {
       return (data ?? []) as unknown as Array<{ id: string; nome: string; cargo: string; cpf: string | null }>;
     },
   });
+  const { data: rntrcCad } = useQuery({
+    enabled: !!empresa,
+    queryKey: ["rntrc-cte", empresa?.id],
+    queryFn: async () => {
+      const { data, error } = await supabase.from("rntrc_lista" as never).select("rntrc,cnpj").eq("empresa_id", empresa!.id).order("rntrc");
+      if (error) throw error;
+      const rows = ((data ?? []) as Array<{ rntrc: string; cnpj: string | null }>);
+      const empDigits = String((empresa as any).cnpj || "").replace(/\D/g, "");
+      return rows.find(r => String(r.cnpj || "").replace(/\D/g, "") === empDigits && empDigits)?.rntrc || rows[0]?.rntrc || "";
+    },
+  });
+  const rntrcFinal = String(rntrcCad || form.rntrc || "").toUpperCase();
   const { data: veiculos } = useQuery({
     enabled: !!empresa,
     queryKey: ["veiculos-cte", empresa?.id],
@@ -1192,6 +1204,7 @@ function CtePage() {
       if (String(form.cnpjConsignatario || "").replace(/\D/g, "").length === 14 && !ieOk(form.ieConsignatario)) pend.push("IE do consignatario");
       if (String(form.cnpjRedespacho || "").replace(/\D/g, "").length === 14 && !ieOk(form.ieRedespacho)) pend.push("IE do redespacho");
       if (!String(form.motoristaNome || "").trim()) pend.push("Motorista");
+      if (!rntrcFinal || /^ISENTO$/i.test(rntrcFinal)) pend.push("RNTRC da empresa (cadastre em Configuracoes > RNTRC)");
       if (!String(form.placaVeiculo || "").trim()) pend.push("Placa da tracao (veiculo 1)");
       else {
         const vv = (veiculos || []).find(v => String(v.placa || "").toUpperCase() === String(form.placaVeiculo || "").toUpperCase());
@@ -1209,8 +1222,8 @@ function CtePage() {
       const ret: any = await emitirCteFn({ data: { empresaId: empresa.id, form, input: {
         ambiente: form.ambiente,
         toma: form.toma, cnpjTomador: form.cnpjTomador, xNomeTomador: form.xNomeTomador, ufTomador: form.ufTomador, cMunTomador: form.cMunTomador, xMunTomador: form.xMunTomador,
-        cfop: form.cfop, vPrest: totalPrestacao(form), vCarga: parseFloat(form.vCarga)||0, pesoKg: parseFloat(form.peso)||0, rntrc: form.rntrc,
-        modalRod: { rntrc: form.rntrc, veiculos: (() => { const vv = (veiculos || []).find(v => String(v.placa || "").toUpperCase() === String(form.placaVeiculo || "").toUpperCase()); return form.placaVeiculo ? [{ placa: String(form.placaVeiculo).toUpperCase(), uf: empresa.uf || "MG", renavam: (vv as any)?.renavam || undefined }] : []; })() },
+        cfop: form.cfop, vPrest: totalPrestacao(form), vCarga: parseFloat(form.vCarga)||0, pesoKg: parseFloat(form.peso)||0, rntrc: rntrcFinal,
+        modalRod: { rntrc: rntrcFinal, veiculos: (() => { const vv = (veiculos || []).find(v => String(v.placa || "").toUpperCase() === String(form.placaVeiculo || "").toUpperCase()); return form.placaVeiculo ? [{ placa: String(form.placaVeiculo).toUpperCase(), uf: empresa.uf || "MG", renavam: (vv as any)?.renavam || undefined }] : []; })() },
         cMunEnv: form.cMunEnv, xMunEnv: form.xMunEnv, ufEnv: form.ufEnv, cMunIni: form.cMunIni, xMunIni: form.xMunIni, ufIni: form.ufIni, cMunFim: form.cMunFim, xMunFim: form.xMunFim, ufFim: form.ufFim,
         icms: { CST: form.icmsCST, vBC: totalPrestacao(form), pICMS: parseFloat(form.icmsAliq)||0, vICMS: parseFloat(form.icmsValor)||0 },
         impostos: { pisAliq: parseFloat(form.pisAliq)||0, cofinsAliq: parseFloat(form.cofinsAliq)||0, irAliq: parseFloat(form.irAliq)||0, inssAliq: parseFloat(form.inssAliq)||0, csllAliq: parseFloat(form.csllAliq)||0 },
@@ -1341,8 +1354,8 @@ function CtePage() {
       return previewCteXmlFn({ data: { empresaId: empresa.id, input: {
         ambiente: form.ambiente,
         toma: form.toma, cnpjTomador: form.cnpjTomador, xNomeTomador: form.xNomeTomador, ufTomador: form.ufTomador, cMunTomador: form.cMunTomador, xMunTomador: form.xMunTomador,
-        cfop: form.cfop, vPrest: totalPrestacao(form), vCarga: parseFloat(form.vCarga)||0, pesoKg: parseFloat(form.peso)||0, rntrc: form.rntrc,
-        modalRod: { rntrc: form.rntrc, veiculos: (() => { const vv = (veiculos || []).find(v => String(v.placa || "").toUpperCase() === String(form.placaVeiculo || "").toUpperCase()); return form.placaVeiculo ? [{ placa: String(form.placaVeiculo).toUpperCase(), uf: empresa.uf || "MG", renavam: (vv as any)?.renavam || undefined }] : []; })() },
+        cfop: form.cfop, vPrest: totalPrestacao(form), vCarga: parseFloat(form.vCarga)||0, pesoKg: parseFloat(form.peso)||0, rntrc: rntrcFinal,
+        modalRod: { rntrc: rntrcFinal, veiculos: (() => { const vv = (veiculos || []).find(v => String(v.placa || "").toUpperCase() === String(form.placaVeiculo || "").toUpperCase()); return form.placaVeiculo ? [{ placa: String(form.placaVeiculo).toUpperCase(), uf: empresa.uf || "MG", renavam: (vv as any)?.renavam || undefined }] : []; })() },
         obsGerais: (form as any).obsGerais || "", obsAnulacao: (form as any).obsAnulacao || "", obsGlobalizado: (form as any).obsGlobalizado || "",
         reducaoBase: parseFloat((form as any).reducaoBase)||0,
         cMunEnv: form.cMunEnv, xMunEnv: form.xMunEnv, ufEnv: form.ufEnv, cMunIni: form.cMunIni, xMunIni: form.xMunIni, ufIni: form.ufIni, cMunFim: form.cMunFim, xMunFim: form.xMunFim, ufFim: form.ufFim,
@@ -2599,10 +2612,10 @@ function CtePage() {
               comps: ([['Frete Valor', f.vPrest], ['Adicional', (f as any).adicionalPed], ['Desconto', (f as any).descontoPed], ['Outros', (f as any).outrosPed], ['Ad Valorem', (f as any).adValorem], ['GRIS', (f as any).gris], ['Coleta', (f as any).taxaColeta], ['Entrega', (f as any).taxaEntrega]] as Array<[string, any]>).filter(([, vv]) => Number(vv) !== 0).map(([nn, vv]) => ({ nome: nn, valor: Number(vv) || 0 })),
               placa: f.placaVeiculo || "",
               placaReboque: f.placaReboque || "",
-              rntrc: f.rntrc || "",
+              rntrc: f.rntrc || rntrcFinal || "",
               veiculos: [f.placaVeiculo, f.placaReboque, (f as any).semiReboque1, (f as any).semiReboque2].map(p => String(p || "").toUpperCase()).filter(Boolean).filter((p, i, a) => a.indexOf(p) === i).map(p => {
                 const fv = (veiculos || []).find(v => String(v.placa || "").toUpperCase() === p);
-                return { tipo: "Própria", placa: p, renavam: (fv as any)?.renavam || "", uf: (empresa as any)?.uf || "MG", rntrc: (fv as any)?.rntrc || f.rntrc || "" };
+                return { tipo: "Própria", placa: p, renavam: (fv as any)?.renavam || "", uf: (empresa as any)?.uf || "MG", rntrc: (fv as any)?.rntrc || f.rntrc || rntrcFinal || "" };
               }).slice(0, 4),
               seguradoraNome: f.seguradoraNome || "",
               apolice: f.apolice || "",
