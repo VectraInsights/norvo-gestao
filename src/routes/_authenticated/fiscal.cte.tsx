@@ -1229,7 +1229,7 @@ function CtePage() {
       if (String(form.cnpjConsignatario || "").replace(/\D/g, "").length === 14 && !ieOk(form.ieConsignatario)) pend.push("IE do consignatario");
       if (String(form.cnpjRedespacho || "").replace(/\D/g, "").length === 14 && !ieOk(form.ieRedespacho)) pend.push("IE do redespacho");
       if (!String(form.motoristaNome || "").trim()) pend.push("Motorista");
-      if (!rntrcFinal || /^ISENTO$/i.test(rntrcFinal)) pend.push("RNTRC da empresa (cadastre em Configuracoes > RNTRC)");
+      if (!rntrcFinal || /^ISENTO$/i.test(rntrcFinal) || rntrcFinal.replace(/\D/g, "").length !== 8) pend.push("RNTRC da empresa com 8 digitos (cadastre em Configuracoes > RNTRC)");
       if (!String(form.placaVeiculo || "").trim()) pend.push("Placa da tracao (veiculo 1)");
       else {
         const vv = (veiculos || []).find(v => String(v.placa || "").toUpperCase() === String(form.placaVeiculo || "").toUpperCase());

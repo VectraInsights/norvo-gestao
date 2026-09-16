@@ -97,6 +97,9 @@ export interface CteInputCompleto {
 }
 
 export function buildCteXml(input: CteInputCompleto): { xml: string; chave: string } {
+  const rntrcRaw = String(input.modalRod?.rntrc || (input as any).rntrc || "ISENTO").toUpperCase();
+  const rntrcXml = rntrcRaw === "ISENTO" ? "ISENTO" : rntrcRaw.replace(/\D/g, "");
+  if (!/^(ISENTO|\d{8})$/.test(rntrcXml)) throw new Error(`RNTRC invalido para a SEFAZ (8 digitos ou ISENTO): ${input.modalRod?.rntrc || (input as any).rntrc || ""}`);
   const now = new Date();
   const tzOffset = now.getTimezoneOffset(); // minutes; negative for UTC+ (e.g. UTC-3 → +180)
   const tzH = String(Math.floor(Math.abs(tzOffset) / 60)).padStart(2, "0");
@@ -193,7 +196,7 @@ export function buildCteXml(input: CteInputCompleto): { xml: string; chave: stri
       <infQ><cUnid>01</cUnid><tpMed>00</tpMed><qCarga>${input.pesoKg.toFixed(4)}</qCarga></infQ>
     </infCarga>
     ${infNFeXml}
-    <infModal versaoModal="4.00"><rodo><RNTRC>${(input.modalRod?.rntrc || input.rntrc || "ISENTO").replace(/\D/g,"") || "ISENTO"}</RNTRC></rodo></infModal>
+    <infModal versaoModal="4.00"><rodo><RNTRC>${rntrcXml}</RNTRC></rodo></infModal>
     ${impXml}
     <total><vTPrest>${input.vPrest.toFixed(2)}</vTPrest><vTRec>${input.vPrest.toFixed(2)}</vTRec><vTotDFe>${vTotDFe}</vTotDFe></total>
     <infRespTec><CNPJ>${cnpjLimpo}</CNPJ><xContato>SUPORTE TECNICO</xContato><email>suporte@vectrainsights.com.br</email><fone>3139952572</fone></infRespTec>
