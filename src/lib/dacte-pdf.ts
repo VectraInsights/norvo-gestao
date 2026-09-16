@@ -508,17 +508,19 @@ export function gerarDactePdf(data: DacteData): Blob {
   box(gridX, y, gridW, compH);
   box(totX, y, totW, compH);
   const colW = gridW / 3;
-  const pairW = colW / 2;
   setFont("bold", 5); black();
   ["Nome", "Valor", "Nome", "Valor", "Nome", "Valor"].forEach((h, i) => {
-    doc.text(h, gridX + 1 + Math.floor(i / 2) * colW + (i % 2) * pairW, y + 3);
+    const cc = Math.floor(i / 2);
+    if (i % 2 === 0) doc.text(h, gridX + 1 + cc * colW, y + 3);
+    else doc.text(h, gridX + (cc + 1) * colW - 1 - doc.getTextWidth(h), y + 3);
   });
   compRows.forEach((row, r) => {
     row.forEach(([nm, vv], c) => {
       if (!nm) return;
       setFont("normal", 5.5); black();
       doc.text(nm, gridX + 1 + c * colW, y + chH + 3.2 + r * crH);
-      doc.text(fmtNum(vv), gridX + 1 + c * colW + pairW, y + chH + 3.2 + r * crH);
+      const vvS = fmtNum(vv);
+      doc.text(vvS, gridX + (c + 1) * colW - 1 - doc.getTextWidth(vvS), y + chH + 3.2 + r * crH);
     });
   });
   for (let i = 1; i < 3; i++) vline(gridX + i * colW, y, compH);
@@ -526,10 +528,10 @@ export function gerarDactePdf(data: DacteData): Blob {
   border(); doc.line(totX + 1, y + 9, M + CW - 1, y + 9);
   setFont("bold", 5.5); black();
   doc.text("Valor do Serviço", totX + 2, y + 3);
-  valB(fmtNum(vBruto), totX + 2, y + 7.2, 7);
+  { const sV = fmtNum(vBruto); setFont("bold", 7); black(); doc.text(sV, M + CW - 2 - doc.getTextWidth(sV), y + 7.2); }
   setFont("bold", 5.5); black();
   doc.text("Valor à Receber", totX + 2, y + 12.5);
-  valB(fmtNum(vReceber), totX + 2, y + 16.2, 7);
+  { const sV = fmtNum(vReceber); setFont("bold", 7); black(); doc.text(sV, M + CW - 2 - doc.getTextWidth(sV), y + 16.2); }
   y += compH + 1;
 
   // ---- ICMS ----
