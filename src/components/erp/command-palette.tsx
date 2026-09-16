@@ -33,6 +33,7 @@ const ROUTES: { label: string; to: string; hint?: string }[] = [
   { label: "Colaboradores", to: "/rh/colaboradores" },
   { label: "Folha de pagamento", to: "/rh/folha" },
   { label: "Férias", to: "/rh/ferias" },
+  { label: "Calculadora trabalhista", to: "/rh/calculadora" },
   { label: "Configurações", to: "/configuracoes" },
 ];
 

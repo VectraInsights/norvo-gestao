@@ -30,6 +30,7 @@ const LABELS: Record<string, string> = {
   rh: "RH",
   colaboradores: "Colaboradores",
   folha: "Folha de pagamento",
+  calculadora: "Calculadora",
 };
 
 export function Breadcrumbs() {

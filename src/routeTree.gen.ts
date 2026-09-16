@@ -26,6 +26,7 @@ import { Route as AuthenticatedRhFolhaRouteImport } from './routes/_authenticate
 import { Route as AuthenticatedRhFeriasRouteImport } from './routes/_authenticated/rh.ferias'
 import { Route as AuthenticatedRhComissoesRouteImport } from './routes/_authenticated/rh.comissoes'
 import { Route as AuthenticatedRhColaboradoresRouteImport } from './routes/_authenticated/rh.colaboradores'
+import { Route as AuthenticatedRhCalculadoraRouteImport } from './routes/_authenticated/rh.calculadora'
 import { Route as AuthenticatedRhAdiantamentosRouteImport } from './routes/_authenticated/rh.adiantamentos'
 import { Route as AuthenticatedProjetosProjetosRouteImport } from './routes/_authenticated/projetos.projetos'
 import { Route as AuthenticatedProjetosOsRouteImport } from './routes/_authenticated/projetos.os'
@@ -41,6 +42,7 @@ import { Route as AuthenticatedFiscalEmitidasRouteImport } from './routes/_authe
 import { Route as AuthenticatedFiscalCteRouteImport } from './routes/_authenticated/fiscal.cte'
 import { Route as AuthenticatedFiscalContadorRouteImport } from './routes/_authenticated/fiscal.contador'
 import { Route as AuthenticatedFiscalConfiguracoesRouteImport } from './routes/_authenticated/fiscal.configuracoes'
+import { Route as AuthenticatedFiscalCadastroRouteImport } from './routes/_authenticated/fiscal.cadastro'
 import { Route as AuthenticatedFinanceiroTransferenciasRouteImport } from './routes/_authenticated/financeiro.transferencias'
 import { Route as AuthenticatedFinanceiroRelatoriosRouteImport } from './routes/_authenticated/financeiro.relatorios'
 import { Route as AuthenticatedFinanceiroReceberRouteImport } from './routes/_authenticated/financeiro.receber'
@@ -152,6 +154,12 @@ const AuthenticatedRhColaboradoresRoute =
     path: '/rh/colaboradores',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedRhCalculadoraRoute =
+  AuthenticatedRhCalculadoraRouteImport.update({
+    id: '/rh/calculadora',
+    path: '/rh/calculadora',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedRhAdiantamentosRoute =
   AuthenticatedRhAdiantamentosRouteImport.update({
     id: '/rh/adiantamentos',
@@ -237,6 +245,12 @@ const AuthenticatedFiscalConfiguracoesRoute =
   AuthenticatedFiscalConfiguracoesRouteImport.update({
     id: '/fiscal/configuracoes',
     path: '/fiscal/configuracoes',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedFiscalCadastroRoute =
+  AuthenticatedFiscalCadastroRouteImport.update({
+    id: '/fiscal/cadastro',
+    path: '/fiscal/cadastro',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
 const AuthenticatedFinanceiroTransferenciasRoute =
@@ -388,6 +402,7 @@ export interface FileRoutesByFullPath {
   '/financeiro/receber': typeof AuthenticatedFinanceiroReceberRoute
   '/financeiro/relatorios': typeof AuthenticatedFinanceiroRelatoriosRoute
   '/financeiro/transferencias': typeof AuthenticatedFinanceiroTransferenciasRoute
+  '/fiscal/cadastro': typeof AuthenticatedFiscalCadastroRoute
   '/fiscal/configuracoes': typeof AuthenticatedFiscalConfiguracoesRoute
   '/fiscal/contador': typeof AuthenticatedFiscalContadorRoute
   '/fiscal/cte': typeof AuthenticatedFiscalCteRoute
@@ -403,6 +418,7 @@ export interface FileRoutesByFullPath {
   '/projetos/os': typeof AuthenticatedProjetosOsRoute
   '/projetos/projetos': typeof AuthenticatedProjetosProjetosRoute
   '/rh/adiantamentos': typeof AuthenticatedRhAdiantamentosRoute
+  '/rh/calculadora': typeof AuthenticatedRhCalculadoraRoute
   '/rh/colaboradores': typeof AuthenticatedRhColaboradoresRoute
   '/rh/comissoes': typeof AuthenticatedRhComissoesRoute
   '/rh/ferias': typeof AuthenticatedRhFeriasRoute
@@ -441,6 +457,7 @@ export interface FileRoutesByTo {
   '/financeiro/receber': typeof AuthenticatedFinanceiroReceberRoute
   '/financeiro/relatorios': typeof AuthenticatedFinanceiroRelatoriosRoute
   '/financeiro/transferencias': typeof AuthenticatedFinanceiroTransferenciasRoute
+  '/fiscal/cadastro': typeof AuthenticatedFiscalCadastroRoute
   '/fiscal/configuracoes': typeof AuthenticatedFiscalConfiguracoesRoute
   '/fiscal/contador': typeof AuthenticatedFiscalContadorRoute
   '/fiscal/cte': typeof AuthenticatedFiscalCteRoute
@@ -456,6 +473,7 @@ export interface FileRoutesByTo {
   '/projetos/os': typeof AuthenticatedProjetosOsRoute
   '/projetos/projetos': typeof AuthenticatedProjetosProjetosRoute
   '/rh/adiantamentos': typeof AuthenticatedRhAdiantamentosRoute
+  '/rh/calculadora': typeof AuthenticatedRhCalculadoraRoute
   '/rh/colaboradores': typeof AuthenticatedRhColaboradoresRoute
   '/rh/comissoes': typeof AuthenticatedRhComissoesRoute
   '/rh/ferias': typeof AuthenticatedRhFeriasRoute
@@ -496,6 +514,7 @@ export interface FileRoutesById {
   '/_authenticated/financeiro/receber': typeof AuthenticatedFinanceiroReceberRoute
   '/_authenticated/financeiro/relatorios': typeof AuthenticatedFinanceiroRelatoriosRoute
   '/_authenticated/financeiro/transferencias': typeof AuthenticatedFinanceiroTransferenciasRoute
+  '/_authenticated/fiscal/cadastro': typeof AuthenticatedFiscalCadastroRoute
   '/_authenticated/fiscal/configuracoes': typeof AuthenticatedFiscalConfiguracoesRoute
   '/_authenticated/fiscal/contador': typeof AuthenticatedFiscalContadorRoute
   '/_authenticated/fiscal/cte': typeof AuthenticatedFiscalCteRoute
@@ -511,6 +530,7 @@ export interface FileRoutesById {
   '/_authenticated/projetos/os': typeof AuthenticatedProjetosOsRoute
   '/_authenticated/projetos/projetos': typeof AuthenticatedProjetosProjetosRoute
   '/_authenticated/rh/adiantamentos': typeof AuthenticatedRhAdiantamentosRoute
+  '/_authenticated/rh/calculadora': typeof AuthenticatedRhCalculadoraRoute
   '/_authenticated/rh/colaboradores': typeof AuthenticatedRhColaboradoresRoute
   '/_authenticated/rh/comissoes': typeof AuthenticatedRhComissoesRoute
   '/_authenticated/rh/ferias': typeof AuthenticatedRhFeriasRoute
@@ -551,6 +571,7 @@ export interface FileRouteTypes {
     | '/financeiro/receber'
     | '/financeiro/relatorios'
     | '/financeiro/transferencias'
+    | '/fiscal/cadastro'
     | '/fiscal/configuracoes'
     | '/fiscal/contador'
     | '/fiscal/cte'
@@ -566,6 +587,7 @@ export interface FileRouteTypes {
     | '/projetos/os'
     | '/projetos/projetos'
     | '/rh/adiantamentos'
+    | '/rh/calculadora'
     | '/rh/colaboradores'
     | '/rh/comissoes'
     | '/rh/ferias'
@@ -604,6 +626,7 @@ export interface FileRouteTypes {
     | '/financeiro/receber'
     | '/financeiro/relatorios'
     | '/financeiro/transferencias'
+    | '/fiscal/cadastro'
     | '/fiscal/configuracoes'
     | '/fiscal/contador'
     | '/fiscal/cte'
@@ -619,6 +642,7 @@ export interface FileRouteTypes {
     | '/projetos/os'
     | '/projetos/projetos'
     | '/rh/adiantamentos'
+    | '/rh/calculadora'
     | '/rh/colaboradores'
     | '/rh/comissoes'
     | '/rh/ferias'
@@ -658,6 +682,7 @@ export interface FileRouteTypes {
     | '/_authenticated/financeiro/receber'
     | '/_authenticated/financeiro/relatorios'
     | '/_authenticated/financeiro/transferencias'
+    | '/_authenticated/fiscal/cadastro'
     | '/_authenticated/fiscal/configuracoes'
     | '/_authenticated/fiscal/contador'
     | '/_authenticated/fiscal/cte'
@@ -673,6 +698,7 @@ export interface FileRouteTypes {
     | '/_authenticated/projetos/os'
     | '/_authenticated/projetos/projetos'
     | '/_authenticated/rh/adiantamentos'
+    | '/_authenticated/rh/calculadora'
     | '/_authenticated/rh/colaboradores'
     | '/_authenticated/rh/comissoes'
     | '/_authenticated/rh/ferias'
@@ -815,6 +841,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedRhColaboradoresRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/rh/calculadora': {
+      id: '/_authenticated/rh/calculadora'
+      path: '/rh/calculadora'
+      fullPath: '/rh/calculadora'
+      preLoaderRoute: typeof AuthenticatedRhCalculadoraRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/rh/adiantamentos': {
       id: '/_authenticated/rh/adiantamentos'
       path: '/rh/adiantamentos'
@@ -918,6 +951,13 @@ declare module '@tanstack/react-router' {
       path: '/fiscal/configuracoes'
       fullPath: '/fiscal/configuracoes'
       preLoaderRoute: typeof AuthenticatedFiscalConfiguracoesRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/fiscal/cadastro': {
+      id: '/_authenticated/fiscal/cadastro'
+      path: '/fiscal/cadastro'
+      fullPath: '/fiscal/cadastro'
+      preLoaderRoute: typeof AuthenticatedFiscalCadastroRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/financeiro/transferencias': {
@@ -1085,6 +1125,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedFinanceiroReceberRoute: typeof AuthenticatedFinanceiroReceberRoute
   AuthenticatedFinanceiroRelatoriosRoute: typeof AuthenticatedFinanceiroRelatoriosRoute
   AuthenticatedFinanceiroTransferenciasRoute: typeof AuthenticatedFinanceiroTransferenciasRoute
+  AuthenticatedFiscalCadastroRoute: typeof AuthenticatedFiscalCadastroRoute
   AuthenticatedFiscalConfiguracoesRoute: typeof AuthenticatedFiscalConfiguracoesRoute
   AuthenticatedFiscalContadorRoute: typeof AuthenticatedFiscalContadorRoute
   AuthenticatedFiscalCteRoute: typeof AuthenticatedFiscalCteRoute
@@ -1100,6 +1141,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedProjetosOsRoute: typeof AuthenticatedProjetosOsRoute
   AuthenticatedProjetosProjetosRoute: typeof AuthenticatedProjetosProjetosRoute
   AuthenticatedRhAdiantamentosRoute: typeof AuthenticatedRhAdiantamentosRoute
+  AuthenticatedRhCalculadoraRoute: typeof AuthenticatedRhCalculadoraRoute
   AuthenticatedRhColaboradoresRoute: typeof AuthenticatedRhColaboradoresRoute
   AuthenticatedRhComissoesRoute: typeof AuthenticatedRhComissoesRoute
   AuthenticatedRhFeriasRoute: typeof AuthenticatedRhFeriasRoute
@@ -1140,6 +1182,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
     AuthenticatedFinanceiroRelatoriosRoute,
   AuthenticatedFinanceiroTransferenciasRoute:
     AuthenticatedFinanceiroTransferenciasRoute,
+  AuthenticatedFiscalCadastroRoute: AuthenticatedFiscalCadastroRoute,
   AuthenticatedFiscalConfiguracoesRoute: AuthenticatedFiscalConfiguracoesRoute,
   AuthenticatedFiscalContadorRoute: AuthenticatedFiscalContadorRoute,
   AuthenticatedFiscalCteRoute: AuthenticatedFiscalCteRoute,
@@ -1155,6 +1198,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedProjetosOsRoute: AuthenticatedProjetosOsRoute,
   AuthenticatedProjetosProjetosRoute: AuthenticatedProjetosProjetosRoute,
   AuthenticatedRhAdiantamentosRoute: AuthenticatedRhAdiantamentosRoute,
+  AuthenticatedRhCalculadoraRoute: AuthenticatedRhCalculadoraRoute,
   AuthenticatedRhColaboradoresRoute: AuthenticatedRhColaboradoresRoute,
   AuthenticatedRhComissoesRoute: AuthenticatedRhComissoesRoute,
   AuthenticatedRhFeriasRoute: AuthenticatedRhFeriasRoute,

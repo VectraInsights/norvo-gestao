@@ -36,6 +36,7 @@ import {
   MapPin,
   BookUser,
   OctagonAlert,
+  Calculator,
 } from "lucide-react";
 
 export type NavItem = { to: string; label: string; icon: typeof LayoutDashboard };
@@ -120,6 +121,7 @@ const RAW_NAV: NavGroup[] = [
       { to: "/rh/ferias", label: "Férias", icon: Sun },
       { to: "/rh/comissoes", label: "Comissões", icon: Percent },
       { to: "/rh/adiantamentos", label: "Adiantamentos", icon: HandCoins },
+      { to: "/rh/calculadora", label: "Calculadora", icon: Calculator },
     ],
   },
   {
