@@ -16,6 +16,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEmpresaAtual } from "@/hooks/use-empresa";
 import { toast } from "sonner";
+import { completarLogradouro } from "@/lib/endereco";
 
 export const Route = createFileRoute("/_authenticated/fiscal/cadastro")({
   component: Cadastro,
@@ -97,7 +98,7 @@ function Cadastro() {
         email: d.email ?? f.email,
         telefone: d.ddd_telefone_1 || d.telefone || f.telefone,
         cep: d.cep ?? f.cep,
-        logradouro: d.logradouro ?? f.logradouro,
+        logradouro: [d.descricao_tipo_de_logradouro || (d as any).tipo_logradouro || "", d.logradouro || ""].filter(Boolean).join(" ") || f.logradouro,
         numero: d.numero ?? f.numero,
         complemento: d.complemento ?? f.complemento,
         bairro: d.bairro ?? f.bairro,
@@ -122,10 +123,11 @@ function Cadastro() {
           .select("id,nome").eq("empresa_id", empresa.id).eq("documento", doc).maybeSingle();
         if (existente) throw new Error(`Já cadastrado: ${existente.nome}`);
       }
+      const logrFinal = await completarLogradouro(input.logradouro || "", input.cep || "");
       const { error } = await supabase.from("fiscal_cadastros").insert({
         empresa_id: empresa.id, nome: input.nome,
         documento: doc || null, ie: input.ie || null, email: input.email || null, telefone: input.telefone || null,
-        cep: input.cep || null, logradouro: input.logradouro || null, numero: input.numero || null,
+        cep: input.cep || null, logradouro: logrFinal || null, numero: input.numero || null,
         complemento: input.complemento || null, bairro: input.bairro || null,
         cidade: input.cidade || null, uf: input.uf || null, observacoes: input.observacoes || null,
       });
@@ -148,10 +150,11 @@ function Cadastro() {
           .select("id,nome").eq("empresa_id", empresa.id).eq("documento", doc).neq("id", input.id).maybeSingle();
         if (existente) throw new Error(`Já existe outro contato com este CPF/CNPJ: ${existente.nome}`);
       }
+      const logrFinal = await completarLogradouro(input.logradouro || "", input.cep || "");
       const { error } = await supabase.from("fiscal_cadastros").update({
         nome: input.nome,
         documento: doc || null, ie: input.ie || null, email: input.email || null, telefone: input.telefone || null,
-        cep: input.cep || null, logradouro: input.logradouro || null, numero: input.numero || null,
+        cep: input.cep || null, logradouro: logrFinal || null, numero: input.numero || null,
         complemento: input.complemento || null, bairro: input.bairro || null,
         cidade: input.cidade || null, uf: input.uf || null, observacoes: input.observacoes || null,
       }).eq("id", input.id);
