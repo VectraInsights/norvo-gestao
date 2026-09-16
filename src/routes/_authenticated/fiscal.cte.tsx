@@ -511,6 +511,12 @@ function CtePage() {
   };
   const [cfopOpen, setCfopOpen] = useState(false);
   const [cfopQuery, setCfopQuery] = useState("");
+  useEffect(() => {
+    if (!open || !empresa) return;
+    const cnpjEmp = String((empresa as any).cnpj || "").replace(/\D/g, "");
+    if (cnpjEmp.length !== 14) return;
+    setForm(f => (f.pedagioRespCnpj ? f : { ...f, pedagioRespCnpj: cnpjEmp }));
+  }, [open]);
 
   // Total da prestação = Valor Serviço + componentes − Desconto (vale-pedágio NÃO integra: Lei 10.209/2001 art. 2º)
   const num2 = (v: any) => parseFloat(v) || 0;
@@ -2434,7 +2440,7 @@ function CtePage() {
                   <div><Label className="text-[10px] text-muted-foreground">CNPJ Operadora</Label><Input className="h-6 text-[11px]" placeholder="00.000.000/0000-00" value={form.pedagioCnpj || ""} onChange={e => setForm({ ...form, pedagioCnpj: e.target.value })} /></div>
                   <div><Label className="text-[10px] text-muted-foreground">Vale Pedágio (R$)</Label><MoneyInput className="h-6 text-[11px] font-medium" value={form.valePedagio} onChange={v => setForm(f => ({ ...f, valePedagio: v }))} /></div>
                   <div><Label className="text-[10px] text-muted-foreground">Nº TAG</Label><Input className="h-6 text-[11px]" placeholder="Nº TAG" value={form.pedagioTag || ""} onChange={e=>setForm({...form, pedagioTag: e.target.value})} /></div>
-                  <div><Label className="text-[10px] text-muted-foreground">CNPJ Resp. Pagto</Label><Input className="h-6 text-[11px]" placeholder="00.000.000/0000-00" value={(form as any).pedagioRespCnpj || ""} onChange={e=>setForm({...form, pedagioRespCnpj: e.target.value} as any)} /></div>
+                  <div><Label className="text-[10px] text-muted-foreground">CNPJ Resp. Pagto</Label><Input className="h-6 text-[11px] bg-transparent" title="Sempre o CNPJ da emissora" value={form.pedagioRespCnpj || ""} readOnly /></div>
                   <div><Label className="text-[10px] text-muted-foreground">Identificador VPO</Label><Input className="h-6 text-[11px]" value={(form as any).pedagioIdentVPO || ""} onChange={e=>setForm({...form, pedagioIdentVPO: e.target.value} as any)} /></div>
                   <div><Label className="text-[10px] text-muted-foreground">Data Operação</Label><Input className="h-6 text-[11px]" placeholder="DD/MM/AAAA" value={(form as any).pedagioDataOp || ""} onChange={e=>setForm({...form, pedagioDataOp: e.target.value} as any)} /></div>
                 </div>
