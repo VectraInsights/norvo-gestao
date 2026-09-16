@@ -684,6 +684,9 @@ export function gerarDactePdf(data: DacteData): Blob {
   val(D(data.rntrc), M + 2, y + 5, 6);
   val(D(data.ciot), M + 44, y + 5, 6);
   val(fmtDataCurta(D(data.dataPrevEntrega)), M + 76, y + 5, 6);
+  vline(M + 42, y, moH);
+  vline(M + 74, y, moH);
+  vline(M + 120, y, moH);
   y += moH;
   const conjH = 4;
   box(M, y, hw, conjH);
@@ -706,6 +709,10 @@ export function gerarDactePdf(data: DacteData): Blob {
     doc.text(cut(D(vc.renavam), 14), M + 34, y + 3);
     doc.text(cut(D(vc.uf), 4), M + 62, y + 3);
     doc.text(cut(D(vc.rntrc), 12), M + 70, y + 3);
+    vline(M + 15, y, vRowH);
+    vline(M + 31, y, vRowH);
+    vline(M + 59, y, vRowH);
+    vline(M + 67, y, vRowH);
     doc.text(fmtCnpj(D(data.valePedFornCNPJ)), M + hw + 2, y + 3);
     doc.text(cut(D(data.valePedComprov), 14), M + hw + 32, y + 3);
     doc.text(fmtCnpj(D(data.valePedRespCNPJ)), M + hw + 52, y + 3);
