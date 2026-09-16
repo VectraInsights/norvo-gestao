@@ -497,38 +497,37 @@ export function gerarDactePdf(data: DacteData): Blob {
   const vFrete = getComp(["FRETE"]) || Math.max(0, Math.round(((Number(data.valorServico) || 0) - vAdic - vOut - vAdv - vGris - vCol - vEnt + vDesc) * 100) / 100);
   const gridX = M, gridW = 146, totX = M + gridW, totW = CW - gridW;
   const compRows: Array<Array<[string, number]>> = [
-    [["Frete", vFrete], ["Adicional", vAdic], ["Coleta", vCol], ["Entrega", vEnt]],
-    [["Ad Valorem", vAdv], ["GRIS", vGris], ["Desconto", vDesc], ["Outros", vOut]],
-    [["Sec/Cat", 0], ["Seguro", vSeg], ["", 0], ["", 0]],
+    [["Frete", vFrete], ["Adicional", vAdic], ["Coleta", vCol]],
+    [["Entrega", vEnt], ["Ad Valorem", vAdv], ["GRIS", vGris]],
+    [["Desconto", vDesc], ["Outros", vOut], ["Seguro", vSeg]],
   ];
-  const chH = 4, crH = 4;
+  const chH = 4, crH = 5;
   const compH = chH + crH * 3;
   box(gridX, y, gridW, compH);
   box(totX, y, totW, compH);
-  const colW = gridW / 4;
+  const colW = gridW / 3;
   const pairW = colW / 2;
   setFont("bold", 5); black();
-  ["Nome", "Valor", "Nome", "Valor", "Nome", "Valor", "Nome", "Valor"].forEach((h, i) => {
+  ["Nome", "Valor", "Nome", "Valor", "Nome", "Valor"].forEach((h, i) => {
     doc.text(h, gridX + 1 + Math.floor(i / 2) * colW + (i % 2) * pairW, y + 3);
   });
   compRows.forEach((row, r) => {
     row.forEach(([nm, vv], c) => {
       if (!nm) return;
       setFont("normal", 5.5); black();
-      doc.text(nm, gridX + 1 + c * colW, y + chH + 2 + r * crH);
-      doc.text(fmtNum(vv), gridX + 1 + c * colW + pairW, y + chH + 2 + r * crH);
+      doc.text(nm, gridX + 1 + c * colW, y + chH + 3 + r * crH);
+      doc.text(fmtNum(vv), gridX + 1 + c * colW + pairW, y + chH + 3 + r * crH);
     });
   });
-  for (let i = 1; i < 4; i++) vline(gridX + i * colW, y, compH);
-  dashH(M + 1, totX - 1, y + 8);
-  border(); doc.line(totX + 1, y + 8, M + CW - 1, y + 8);
-  dashH(gridX + 1, gridX + gridW - 1, y + 12);
+  for (let i = 1; i < 3; i++) vline(gridX + i * colW, y, compH);
+  for (let r = 0; r < 2; r++) dashH(gridX + 1, gridX + gridW - 1, y + chH + 3 + crH / 2 + r * crH);
+  border(); doc.line(totX + 1, y + 9.5, M + CW - 1, y + 9.5);
   setFont("bold", 5.5); black();
   doc.text("Valor do Serviço", totX + 2, y + 3);
-  valB(fmtNum(data.valorServico), totX + 2, y + 6.5, 7);
+  valB(fmtNum(data.valorServico), totX + 2, y + 7, 7);
   setFont("bold", 5.5); black();
-  doc.text("Valor à Receber", totX + 2, y + 11);
-  valB(fmtNum(data.valorServico), totX + 2, y + 14, 7);
+  doc.text("Valor à Receber", totX + 2, y + 12.5);
+  valB(fmtNum(data.valorServico), totX + 2, y + 16, 7);
   y += compH + 1;
 
   // ---- ICMS ----
