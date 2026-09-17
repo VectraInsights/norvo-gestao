@@ -304,13 +304,13 @@ export function gerarDactePdf(data: DacteData): Blob {
     const c2 = x + hw * 0.58;
     const v2 = (s: string, xx: number, yy: number) => { black(); setFont("normal", 6); doc.text(String(s || ""), xx, yy); };
     let yy = y + 7;
-    doc.text("Endereço", x + 1.5, yy); v2(cut(D(p.lgr), 70), x + 18, yy); yy += 2.9;
-    doc.text("Município", x + 1.5, yy); v2(cut(D(p.cid), 30), x + 18, yy);
+    doc.text("Endereço :", x + 1.5, yy); v2(cut(D(p.lgr), 70), x + 18, yy); yy += 2.9;
+    doc.text("Município :", x + 1.5, yy); v2(cut(D(p.cid), 30), x + 18, yy);
     doc.text("CEP :", c2, yy); v2(D(p.cep), c2 + 11, yy); yy += 2.9;
-    doc.text("Bairro", x + 1.5, yy); v2(cut(D(p.bai), 60), x + 18, yy); yy += 2.9;
-    doc.text("CPF / CNPJ", x + 1.5, yy); v2(fmtCnpj(D(p.doc)), x + 18, yy);
+    doc.text("Bairro :", x + 1.5, yy); v2(cut(D(p.bai), 60), x + 18, yy); yy += 2.9;
+    doc.text("CPF / CNPJ :", x + 1.5, yy); v2(fmtCnpj(D(p.doc)), x + 18, yy);
     doc.text("Insc. Est :", c2, yy); v2(cut(D(p.ie), 18), c2 + 16, yy); yy += 2.9;
-    doc.text("UF", x + 1.5, yy); v2(D(p.uf), x + 8, yy);
+    doc.text("UF :", x + 1.5, yy); v2(D(p.uf), x + 8, yy);
     doc.text("País :", x + 30, yy); v2("BRASIL", x + 40, yy);
     doc.text("Fone :", c2, yy); v2(D(p.fone), c2 + 13, yy);
   };
