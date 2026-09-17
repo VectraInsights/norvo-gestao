@@ -1793,6 +1793,12 @@ function CtePage() {
                                     if (grupos.size > 1) {
                                       toast.error(red ? "No redespacho, o CT-e exige o mesmo remetente" : "Não pode emitir o mesmo CT-e para destinos diferentes");
                                       next.delete(m.chave);
+                                    } else if (red) {
+                                      const chaveRem = m.emitCnpj || m.emit;
+                                      const outras = mercadorias.filter(x => !next.has(x.chave) && (x.emitCnpj || x.emit) === chaveRem);
+                                      if (outras.length > 0 && confirm(`Selecionar todas as ${outras.length + 1} NF-e de ${(m.emit || "").slice(0, 40)}?`)) {
+                                        outras.forEach(x => next.add(x.chave));
+                                      }
                                     }
                                   } else next.delete(m.chave);
                                   setSelecionadas(next);
