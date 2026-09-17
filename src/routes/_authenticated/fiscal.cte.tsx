@@ -1260,7 +1260,7 @@ function CtePage() {
         const dests = new Set(sel.map(m => m.destCnpj || m.dest));
         const emits = new Set(sel.map(m => m.emitCnpj || m.emit));
         const tomads = new Set(sel.map(m => m.tomadorCnpj || m.tomador));
-        if (emits.size > 1) throw new Error("CT-e não pode ter remetentes diferentes. Selecione NF-es do mesmo remetente.");
+        if ((form as any).modoEmbarque === "redespacho" && emits.size > 1) throw new Error("CT-e não pode ter remetentes diferentes. Selecione NF-es do mesmo remetente.");
         if ((form as any).modoEmbarque !== "redespacho" && dests.size > 1) throw new Error("CT-e não pode ter destinatários diferentes. Selecione NF-es do mesmo destinatário.");
         if (tomads.size > 1) throw new Error("CT-e não pode ter tomadores diferentes. Selecione NF-es do mesmo tomador.");
       }
@@ -1752,9 +1752,9 @@ function CtePage() {
                             onChange={e => {
                               if (e.target.checked) {
                                 const red = (form as any).modoEmbarque === "redespacho";
-                                const grupos = new Set(mercadorias.map(m => red ? (m.emitCnpj || m.emit) : (m.destCnpj || m.dest)));
+                                const grupos = new Set(mercadorias.map(m => red ? (m.emitCnpj || m.emit) : (m.tomadorCnpj || m.tomador)));
                                 if (grupos.size > 1) {
-                                  toast.error(red ? "No redespacho, selecione NF-es do mesmo remetente" : "Não pode selecionar NF-es com destinos diferentes");
+                                  toast.error(red ? "No redespacho, selecione NF-es do mesmo remetente" : "No simplificado, selecione NF-es do mesmo tomador");
                                   return;
                                 }
                                 setSelecionadas(new Set(mercadorias.map(m => m.chave)));
@@ -1801,9 +1801,9 @@ function CtePage() {
                                     next.add(m.chave);
                                     const sel = mercadorias.filter(x => next.has(x.chave));
                                     const red = (form as any).modoEmbarque === "redespacho";
-                                    const grupos = new Set(sel.map(x => red ? (x.emitCnpj || x.emit) : (x.destCnpj || x.dest)));
+                                    const grupos = new Set(sel.map(x => red ? (x.emitCnpj || x.emit) : (x.tomadorCnpj || x.tomador)));
                                     if (grupos.size > 1) {
-                                      toast.error(red ? "No redespacho, o CT-e exige o mesmo remetente" : "Não pode emitir o mesmo CT-e para destinos diferentes");
+                                      toast.error(red ? "No redespacho, o CT-e exige o mesmo remetente" : "No simplificado, o CT-e exige o mesmo tomador");
                                       next.delete(m.chave);
                                     } else if (red) {
                                       const chaveRem = m.emitCnpj || m.emit;
@@ -1854,7 +1854,7 @@ function CtePage() {
                       const dests = new Set(sel.map(m => m.destCnpj || m.dest));
                       const emits = new Set(sel.map(m => m.emitCnpj || m.emit));
                       const tomads = new Set(sel.map(m => m.tomadorCnpj || m.tomador));
-                      if (emits.size > 1) { toast.error("Remetentes diferentes"); return; }
+                      if ((form as any).modoEmbarque === "redespacho" && emits.size > 1) { toast.error("Remetentes diferentes"); return; }
                       if ((form as any).modoEmbarque !== "redespacho" && dests.size > 1) { toast.error("Destinatários diferentes"); return; }
                       if (tomads.size > 1) { toast.error("Tomadores diferentes"); return; }
                       const somaV = sel.reduce((a,m)=>a+m.valor,0);
@@ -2194,7 +2194,7 @@ function CtePage() {
                       <TableRow>
                         <TableHead className="w-6">
                           <input type="checkbox" checked={mercadorias.length > 0 && selecionadas.size === mercadorias.length} onChange={e => {
-                            if (e.target.checked) { const emits = new Set(mercadorias.map(m => m.emitCnpj || m.emit)); const dests = new Set(mercadorias.map(m => m.destCnpj || m.dest)); const tomads = new Set(mercadorias.map(m => m.tomadorCnpj || m.tomador)); if (emits.size > 1) { toast.error("Remetentes diferentes"); return; } if (dests.size > 1) { toast.error("Destinatários diferentes"); return; } if (tomads.size > 1) { toast.error("Tomadores diferentes"); return; } setSelecionadas(new Set(mercadorias.map(m => m.chave))); } else setSelecionadas(new Set());
+                            if (e.target.checked) { const red = (form as any).modoEmbarque === "redespacho"; const emits = new Set(mercadorias.map(m => m.emitCnpj || m.emit)); const tomads = new Set(mercadorias.map(m => m.tomadorCnpj || m.tomador)); if (red && emits.size > 1) { toast.error("Remetentes diferentes"); return; } if (tomads.size > 1) { toast.error("No simplificado, selecione NF-es do mesmo tomador"); return; } setSelecionadas(new Set(mercadorias.map(m => m.chave))); } else setSelecionadas(new Set());
                           }} />
                         </TableHead>
                         <TableHead className="text-[10px]">Modelo</TableHead>
@@ -2217,7 +2217,7 @@ function CtePage() {
                           <TableCell>
                             <input type="checkbox" checked={selecionadas.has(m.chave)} onChange={e => {
                               const next = new Set(selecionadas);
-                              if (e.target.checked) { next.add(m.chave); const sel = mercadorias.filter(x => next.has(x.chave)); const emits = new Set(sel.map(x => x.emitCnpj || x.emit)); const dests = new Set(sel.map(x => x.destCnpj || x.dest)); const tomads = new Set(sel.map(x => x.tomadorCnpj || x.tomador)); if (emits.size > 1) { toast.error("Remetentes diferentes"); next.delete(m.chave); } else if (dests.size > 1) { toast.error("Destinatários diferentes"); next.delete(m.chave); } else if (tomads.size > 1) { toast.error("Tomadores diferentes"); next.delete(m.chave); } } else next.delete(m.chave);
+                              if (e.target.checked) { next.add(m.chave); const sel = mercadorias.filter(x => next.has(x.chave)); const red = (form as any).modoEmbarque === "redespacho"; const emits = new Set(sel.map(x => x.emitCnpj || x.emit)); const tomads = new Set(sel.map(x => x.tomadorCnpj || x.tomador)); if (red && emits.size > 1) { toast.error("Remetentes diferentes"); next.delete(m.chave); } else if (tomads.size > 1) { toast.error("No simplificado, o CT-e exige o mesmo tomador"); next.delete(m.chave); } } else next.delete(m.chave);
                               setSelecionadas(next);
                             }} />
                           </TableCell>
