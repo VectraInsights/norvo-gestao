@@ -173,7 +173,7 @@ export function buildCteXml(input: CteInputCompleto): { xml: string; chave: stri
   // infNFe — schema exige <chNFe>, não <chave>
   const docAntXml = (rawDet: string) => {
     const chNFeDet = String(rawDet).replace(/\D/g, "");
-    const chs = (input.docAnt?.chaves || []).map(c => String(c).replace(/\D/g, "")).filter(c => c.length === 44);
+    const chs = [...new Set((input.docAnt?.chaves || []).map(c => String(c).replace(/\D/g, "")).filter(c => c.length === 44))];
     if (chs.length === 0) return "";
     const tp = input.docAnt?.tpPrest === "2" ? "2" : "1";
     const parcial = tp === "2" && chNFeDet.length === 44 ? `<infNFeTranspParcial><chNFe>${chNFeDet}</chNFeTranspParcial>` : "";
