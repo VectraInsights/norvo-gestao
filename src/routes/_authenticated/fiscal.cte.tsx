@@ -13,7 +13,7 @@ import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
-import { Truck, Plus, FileText, Search, Ban, UploadCloud, FileCode, MapPin, Package, Building2, Trash2, Filter, Calendar, CheckCircle2, ChevronsUpDown, Check, ReceiptText, Pencil, Download, Eye, Settings2, X, Loader2, ClipboardList } from "lucide-react";
+import { Truck, Plus, FileText, Search, Ban, UploadCloud, FileCode, MapPin, Package, Building2, Trash2, Filter, Calendar, CheckCircle2, ChevronsUpDown, Check, ReceiptText, Pencil, Download, Eye, Settings2, X, Loader2, ClipboardList, Printer } from "lucide-react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useEmpresaAtual } from "@/hooks/use-empresa";
@@ -29,6 +29,58 @@ import { JUVENAL_LOGO } from "@/lib/juvenal-logo";
 import { Textarea } from "@/components/ui/textarea";
 import { DateInput } from "@/components/erp/date-input";
 import { MoneyInput } from "@/components/erp/money-input";
+
+/* Visor próprio de DACTE: tela cheia do sistema (sem a barra do navegador),
+ * com Baixar, Imprimir, zoom e Fechar (Esc). */
+function DacteViewer({ titulo, subtitulo, url, nomeArquivo, onClose, acoes }: {
+  titulo: string; subtitulo?: string; url: string; nomeArquivo: string;
+  onClose: () => void; acoes?: any;
+}) {
+  const frameRef = useRef<HTMLIFrameElement>(null);
+  const [zoom, setZoom] = useState(100);
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") { e.stopPropagation(); onClose(); }
+    };
+    window.addEventListener("keydown", onKey, true);
+    document.body.style.overflow = "hidden";
+    return () => {
+      window.removeEventListener("keydown", onKey, true);
+      document.body.style.overflow = "";
+    };
+  }, [onClose]);
+  const baixar = () => {
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = nomeArquivo;
+    a.click();
+  };
+  const imprimir = () => {
+    const w = frameRef.current?.contentWindow;
+    if (w) { w.focus(); w.print(); }
+  };
+  return (
+    <div className="fixed inset-0 z-[100] flex flex-col bg-background">
+      <div className="flex flex-wrap items-center gap-2 border-b border-border px-4 py-2">
+        <FileText className="h-4 w-4" />
+        <span className="font-medium">{titulo}</span>
+        {subtitulo && <span className="max-w-full truncate text-xs text-muted-foreground">{subtitulo}</span>}
+        <div className="ml-auto flex items-center gap-1">
+          <Button size="icon" variant="ghost" className="h-8 w-8" title="Reduzir zoom" onClick={() => setZoom((z) => Math.max(50, z - 10))}>−</Button>
+          <span className="w-12 text-center text-xs text-muted-foreground">{zoom}%</span>
+          <Button size="icon" variant="ghost" className="h-8 w-8" title="Ampliar zoom" onClick={() => setZoom((z) => Math.min(200, z + 10))}>+</Button>
+          <Button size="sm" variant="outline" onClick={baixar}><Download className="mr-1 h-3.5 w-3.5" /> Baixar</Button>
+          <Button size="sm" variant="outline" onClick={imprimir}><Printer className="mr-1 h-3.5 w-3.5" /> Imprimir</Button>
+          {acoes}
+          <Button size="icon" variant="ghost" className="h-8 w-8" title="Fechar (Esc)" onClick={onClose}><X className="h-4 w-4" /></Button>
+        </div>
+      </div>
+      <div className="flex-1 overflow-auto bg-muted/40 p-2 sm:p-4">
+        <iframe ref={frameRef} src={`${url}#toolbar=0&navpanes=0`} title={titulo} className="mx-auto h-full min-h-[70vh] w-full max-w-5xl border bg-white shadow" style={{ zoom: zoom / 100 }} />
+      </div>
+    </div>
+  );
+}
 
 export const Route = createFileRoute("/_authenticated/fiscal/cte")({
   component: CtePage,
@@ -1368,6 +1420,7 @@ function CtePage() {
   });
 
   const [previewOpen, setPreviewOpen] = useState(false);
+  const lastPreviewUrl = useRef<string | null>(null);
   const [viewUrl, setViewUrl] = useState<string | null>(null);
   const [viewNum, setViewNum] = useState("");
   const [previewData, setPreviewData] = useState<{ xml: string; chave: string; proximo: string; ambiente: string; form: any } | null>(null);
@@ -2570,20 +2623,8 @@ function CtePage() {
         </DialogContent>
       </Dialog>
 
-      {/* Dialog de Pré-Visualização DACTE */}
-      <Dialog open={previewOpen} onOpenChange={setPreviewOpen}>
-        <DialogContent className="w-screen h-screen max-w-none max-h-none m-0 rounded-none flex flex-col p-0">
-          <DialogHeader className="px-4 pt-4 pb-2">
-            <DialogTitle className="flex items-center gap-2">
-              <FileText className="h-4 w-4" /> Pré-Visualização DACTE
-              {previewData && (
-                <Badge variant="outline" className="ml-2 text-[10px]">
-                  Nº {previewData.proximo} • {previewData.ambiente === "homologacao" ? "Homologação" : "Produção"}
-                </Badge>
-              )}
-            </DialogTitle>
-          </DialogHeader>
-          {previewData && (() => {
+      {/* Visor próprio de Pré-Visualização DACTE */}
+      {previewOpen && previewData && (() => {
             const f = { ...form, ...previewData.form };
             const baseNfes = selecionadas.size > 0 ? mercadorias.filter(m => selecionadas.has(m.chave)) : mercadorias;
             const nFes = baseNfes.map((m: any) => ({ nNF: m.nNF || "", serie: m.serie || "1", valor: m.valor || 0, chave: m.chave || "" }));
@@ -2676,34 +2717,33 @@ function CtePage() {
               logoDataUrl: JUVENAL_LOGO || undefined,
             });
             const url = URL.createObjectURL(pdfBlob);
-            return <iframe src={url} className="flex-1 w-full min-h-[500px] border-0" />;
+            if (lastPreviewUrl.current && lastPreviewUrl.current !== url) URL.revokeObjectURL(lastPreviewUrl.current);
+            lastPreviewUrl.current = url;
+            return (
+              <DacteViewer
+                titulo="Pré-Visualização DACTE"
+                subtitulo={`Nº ${previewData.proximo} • ${previewData.ambiente === "homologacao" ? "Homologação" : "Produção"} • Chave ${previewData.chave}`}
+                url={url}
+                nomeArquivo={`DACTE-${previewData.proximo}.pdf`}
+                onClose={() => { if (lastPreviewUrl.current) { URL.revokeObjectURL(lastPreviewUrl.current); lastPreviewUrl.current = null; } setPreviewOpen(false); }}
+                acoes={
+                  <Button size="sm" onClick={() => { setPreviewOpen(false); emitir.mutate(); }} disabled={emitir.isPending || !form.cnpjTomador || !form.xNomeTomador}>
+                    {emitir.isPending ? "Enviando..." : <><Truck className="mr-1 h-3.5 w-3.5" /> Enviar Doc-e</>}
+                  </Button>
+                }
+              />
+            );
           })()}
-          <div className="flex items-center justify-between px-4 py-2 border-t text-[10px] text-muted-foreground">
-            <span>Chave: {previewData?.chave || "—"}</span>
-          </div>
-          <DialogFooter className="px-4 pb-4">
-            <Button variant="outline" onClick={() => setPreviewOpen(false)}>Fechar</Button>
-            <Button onClick={() => { setPreviewOpen(false); emitir.mutate(); }} disabled={emitir.isPending || !form.cnpjTomador || !form.xNomeTomador}>
-              {emitir.isPending ? "Enviando..." : <><Truck className="mr-1 h-3.5 w-3.5" /> Enviar Doc-e</>}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
 
-      {/* Dialog de Visualizacao DACTE (emitidos) */}
-      <Dialog open={!!viewUrl} onOpenChange={v => { if (!v && viewUrl) { URL.revokeObjectURL(viewUrl); setViewUrl(null); } }}>
-        <DialogContent className="flex flex-col p-2 sm:p-4">
-          <DialogHeader className="px-4 pt-4 pb-2">
-            <DialogTitle className="flex items-center gap-2">
-              <FileText className="h-4 w-4" /> DACTE {viewNum}
-            </DialogTitle>
-          </DialogHeader>
-          {viewUrl && <iframe src={viewUrl} className="flex-1 w-full min-h-[500px] border-0" />}
-          <DialogFooter className="px-4 pb-4">
-            <Button variant="outline" onClick={() => { if (viewUrl) URL.revokeObjectURL(viewUrl); setViewUrl(null); }}>Fechar</Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      {/* Visor próprio DACTE (emitidos) */}
+      {viewUrl && (
+        <DacteViewer
+          titulo={`DACTE ${viewNum}`}
+          url={viewUrl}
+          nomeArquivo={`DACTE-${viewNum || "emitido"}.pdf`}
+          onClose={() => { URL.revokeObjectURL(viewUrl); setViewUrl(null); }}
+        />
+      )}
     </div>
   );
 }
