@@ -525,7 +525,7 @@ function CtePage() {
 
   const [open, setOpen] = useState(false);
   const emptyForm = { toma: "3", ieDestinatario: "", cnpjTomador: "", xNomeTomador: "", ufTomador: "MG", cMunTomador: "3106200", xMunTomador: "BELO HORIZONTE", ieTomador: "", logradouroTomador: "", nroTomador: "", bairroTomador: "", cepTomador: "", foneTomador: "", emailTomador: "", cnpjConsignatario: "", xNomeConsignatario: "", ieConsignatario: "", ufConsignatario: "", xMunConsignatario: "", cepConsignatario: "", logradouroConsignatario: "", nroConsignatario: "", bairroConsignatario: "", cnpjRedespacho: "", xNomeRedespacho: "", ieRedespacho: "", ufRedespacho: "", xMunRedespacho: "", cepRedespacho: "", logradouroRedespacho: "", nroRedespacho: "", bairroRedespacho: "", ambiente: "homologacao" as "homologacao" | "producao", cfop: "5353", vPrest: "0.00", vCarga: "0.00", peso: "0", rntrc: "", icmsCST: "00", icmsBase: "1000.00", icmsAliq: "0.00", icmsValor: "0.00", reducaoBase: "0.00", creditoOutorgado: "0.00", pisAliq: "0.00", cofinsAliq: "0.00", irAliq: "0.00", inssAliq: "0.00", csllAliq: "0.00", motoristaNome: "", motoristaId: "", ciot: "", placaVeiculo: "", placaReboque: "", semiReboque1: "", semiReboque2: "", seguradoraNome: "", seguradoraId: "", apolice: "", averbacao: "", cMunEnv: "3106200", xMunEnv: "BELO HORIZONTE", ufEnv: "MG", cMunIni: "3106200", xMunIni: "BELO HORIZONTE", ufIni: "MG", cMunFim: "3550308", xMunFim: "SAO PAULO", ufFim: "SP",     dataEmissao: new Date().toISOString().slice(0,10),
-    formaPagamento: "Outros", finalidadeEmissao: "Normal", tipoServico: "Normal", formaEmissao: "Normal", modoEmbarque: "avulso" as "avulso" | "redespacho",
+    formaPagamento: "Outros", finalidadeEmissao: "Normal", tipoServico: "Normal", formaEmissao: "Normal", modoEmbarque: "avulso" as "avulso" | "simplificado",
     cteReferenciado: "", chaveCompAnulacao: "", dataDeclaracao: "",
     obsGerais: "", obsAnulacao: "", obsGlobalizado: "",
     adicionalPed: "0.00", descontoPed: "0.00", outrosPed: "0.00", adValorem: "0.00", gris: "0.00", taxaColeta: "0.00", taxaEntrega: "0.00", valePedagio: "0.00", pedagioPagto: "sem-pagamento", pedagioOperadora: "", pedagioCnpj: "", pedagioTag: "", pedagioRespCnpj: "", pedagioIdentVPO: "", pedagioDataOp: "", distanciaKm: "", duracaoHoras: "", docAntChaves: "", docAntTpPrest: "1", rctrC: "0.00", rcfDc: "0.00", segAdicional: "0.00", segTotal: "0.00", segRepassar: "", segResponsavel: "4",
@@ -1260,8 +1260,8 @@ function CtePage() {
         const dests = new Set(sel.map(m => m.destCnpj || m.dest));
         const emits = new Set(sel.map(m => m.emitCnpj || m.emit));
         const tomads = new Set(sel.map(m => m.tomadorCnpj || m.tomador));
-        if ((form as any).modoEmbarque === "redespacho" && emits.size > 1) throw new Error("CT-e não pode ter remetentes diferentes. Selecione NF-es do mesmo remetente.");
-        if ((form as any).modoEmbarque !== "redespacho" && dests.size > 1) throw new Error("CT-e não pode ter destinatários diferentes. Selecione NF-es do mesmo destinatário.");
+        if ((form as any).modoEmbarque === "simplificado" && emits.size > 1) throw new Error("CT-e não pode ter remetentes diferentes. Selecione NF-es do mesmo remetente.");
+        if ((form as any).modoEmbarque !== "simplificado" && dests.size > 1) throw new Error("CT-e não pode ter destinatários diferentes. Selecione NF-es do mesmo destinatário.");
         if (tomads.size > 1) throw new Error("CT-e não pode ter tomadores diferentes. Selecione NF-es do mesmo tomador.");
       }
       const pend: string[] = [];
@@ -1276,16 +1276,6 @@ function CtePage() {
       if (!ieOk(form.ieTomador || tomCt.ie)) pend.push("IE do tomador");
       if (String(form.cnpjConsignatario || "").replace(/\D/g, "").length === 14 && !ieOk(form.ieConsignatario)) pend.push("IE do consignatario");
       if (String(form.cnpjRedespacho || "").replace(/\D/g, "").length === 14 && !ieOk(form.ieRedespacho)) pend.push("IE do redespacho");
-      if ((form as any).modoEmbarque === "redespacho" && String(form.cnpjRedespacho || "").replace(/\D/g, "").length !== 14) pend.push("Redespachante (CNPJ) — obrigatório no modo Redespacho");
-      const docAntChaves = String((form as any).docAntChaves || "").split(/[\s,;]+/).map(s => s.replace(/\D/g, "")).filter(s => s.length > 0);
-      if ((form as any).modoEmbarque === "redespacho") {
-        if (docAntChaves.length === 0) pend.push("Doc. anteriores (chaves dos CT-es)");
-        else if (docAntChaves.some(c => c.length !== 44 || c.slice(20, 22) !== "57")) pend.push("Doc. anteriores (chaves de CT-e com 44 dígitos)");
-        else {
-          const baseTom = String(form.cnpjTomador || "").replace(/\D/g, "").slice(0, 8);
-          if (baseTom.length === 8 && docAntChaves.some(c => c.slice(6, 14) !== baseTom)) pend.push("Doc. anteriores (tomador deve ser o emitente dos CT-es)");
-        }
-      }
       if (!String(form.motoristaNome || "").trim()) pend.push("Motorista");
       if (!rntrcFinal || /^ISENTO$/i.test(rntrcFinal) || rntrcFinal.replace(/\D/g, "").length !== 8) pend.push("RNTRC da empresa com 8 digitos (cadastre em Configuracoes > RNTRC)");
       if (!String(form.placaVeiculo || "").trim()) pend.push("Placa da tracao (veiculo 1)");
@@ -1305,7 +1295,7 @@ function CtePage() {
       const ret: any = await emitirCteFn({ data: { empresaId: empresa.id, form, input: {
         ambiente: form.ambiente,
         toma: form.toma, cnpjTomador: form.cnpjTomador, xNomeTomador: form.xNomeTomador, ufTomador: form.ufTomador, cMunTomador: form.cMunTomador, xMunTomador: form.xMunTomador,
-        cfop: form.cfop, tpServ: (form as any).modoEmbarque === "redespacho" ? "2" : "0", docAnt: { chaves: String((form as any).docAntChaves || "").split(/[\s,;]+/).map(s => s.replace(/\D/g, "")).filter(s => s.length === 44), tpPrest: (form as any).docAntTpPrest === "2" ? "2" : "1" }, vPrest: totalPrestacao(form), vCarga: parseFloat(form.vCarga)||0, pesoKg: parseFloat(form.peso)||0, rntrc: rntrcFinal,
+        cfop: form.cfop, tpServ: "0", vPrest: totalPrestacao(form), vCarga: parseFloat(form.vCarga)||0, pesoKg: parseFloat(form.peso)||0, rntrc: rntrcFinal,
         modalRod: { rntrc: rntrcFinal, veiculos: (() => { const vv = (veiculos || []).find(v => String(v.placa || "").toUpperCase() === String(form.placaVeiculo || "").toUpperCase()); return form.placaVeiculo ? [{ placa: String(form.placaVeiculo).toUpperCase(), uf: empresa.uf || "MG", renavam: (vv as any)?.renavam || undefined }] : []; })() },
         cMunEnv: form.cMunEnv, xMunEnv: form.xMunEnv, ufEnv: form.ufEnv, cMunIni: form.cMunIni, xMunIni: form.xMunIni, ufIni: form.ufIni, cMunFim: form.cMunFim, xMunFim: form.xMunFim, ufFim: form.ufFim,
         icms: { CST: form.icmsCST, vBC: totalPrestacao(form), pICMS: parseFloat(form.icmsAliq)||0, vICMS: parseFloat(form.icmsValor)||0 },
@@ -1450,7 +1440,7 @@ function CtePage() {
       return previewCteXmlFn({ data: { empresaId: empresa.id, input: {
         ambiente: form.ambiente,
         toma: form.toma, cnpjTomador: form.cnpjTomador, xNomeTomador: form.xNomeTomador, ufTomador: form.ufTomador, cMunTomador: form.cMunTomador, xMunTomador: form.xMunTomador,
-        cfop: form.cfop, tpServ: (form as any).modoEmbarque === "redespacho" ? "2" : "0", docAnt: { chaves: String((form as any).docAntChaves || "").split(/[\s,;]+/).map(s => s.replace(/\D/g, "")).filter(s => s.length === 44), tpPrest: (form as any).docAntTpPrest === "2" ? "2" : "1" }, vPrest: totalPrestacao(form), vCarga: parseFloat(form.vCarga)||0, pesoKg: parseFloat(form.peso)||0, rntrc: rntrcFinal,
+        cfop: form.cfop, tpServ: "0", vPrest: totalPrestacao(form), vCarga: parseFloat(form.vCarga)||0, pesoKg: parseFloat(form.peso)||0, rntrc: rntrcFinal,
         modalRod: { rntrc: rntrcFinal, veiculos: (() => { const vv = (veiculos || []).find(v => String(v.placa || "").toUpperCase() === String(form.placaVeiculo || "").toUpperCase()); return form.placaVeiculo ? [{ placa: String(form.placaVeiculo).toUpperCase(), uf: empresa.uf || "MG", renavam: (vv as any)?.renavam || undefined }] : []; })() },
         obsGerais: (form as any).obsGerais || "", obsAnulacao: (form as any).obsAnulacao || "", obsGlobalizado: (form as any).obsGlobalizado || "",
         reducaoBase: parseFloat((form as any).reducaoBase)||0,
@@ -1697,7 +1687,7 @@ function CtePage() {
           <Card className="overflow-hidden border-2 border-primary/20 shadow-panel">
             <div className="bg-primary text-primary-foreground px-3 py-2 flex items-center justify-between">
               <h3 className="text-sm font-semibold flex items-center gap-2"><Package className="h-4 w-4" /> Cadastro de Mercadorias para Embarque</h3>
-              <span className="text-xs opacity-80">{(form as any).modoEmbarque === "redespacho" ? "CT-e Redespacho • Mesmo remetente" : "CT-e Avulso • Sem Mercadoria/Percurso"}</span>
+              <span className="text-xs opacity-80">{(form as any).modoEmbarque === "simplificado" ? "CT-e Simplificado • Mesmo remetente" : "CT-e Avulso • Sem Mercadoria/Percurso"}</span>
             </div>
             <CardContent className="p-3 space-y-3 bg-muted/20 overflow-visible">
               <div className="border rounded p-2 bg-background space-y-2">
@@ -1705,8 +1695,8 @@ function CtePage() {
                   <div>
                     <Label className="text-xs font-semibold text-primary">Embarque via CT-e</Label>
                     <div className="flex flex-col gap-1 mt-1 text-xs">
-                      <label className="flex items-center gap-1"><input type="radio" name="modo-embarque" checked={(form as any).modoEmbarque !== "redespacho"} onChange={() => setForm(f => ({ ...f, modoEmbarque: "avulso" }))} /> CT-e Avulso</label>
-                      <label className="flex items-center gap-1"><input type="radio" name="modo-embarque" checked={(form as any).modoEmbarque === "redespacho"} onChange={() => setForm(f => ({ ...f, modoEmbarque: "redespacho" }))} /> CT-e Redespacho</label>
+                      <label className="flex items-center gap-1"><input type="radio" name="modo-embarque" checked={(form as any).modoEmbarque !== "simplificado"} onChange={() => setForm(f => ({ ...f, modoEmbarque: "avulso" }))} /> CT-e Avulso</label>
+                      <label className="flex items-center gap-1"><input type="radio" name="modo-embarque" checked={(form as any).modoEmbarque === "simplificado"} onChange={() => setForm(f => ({ ...f, modoEmbarque: "simplificado" }))} /> CT-e Simplificado</label>
                     </div>
                   </div>
                   <div>
@@ -1751,10 +1741,10 @@ function CtePage() {
                             checked={mercadorias.length > 0 && selecionadas.size === mercadorias.length}
                             onChange={e => {
                               if (e.target.checked) {
-                                const red = (form as any).modoEmbarque === "redespacho";
+                                const red = (form as any).modoEmbarque === "simplificado";
                                 const grupos = new Set(mercadorias.map(m => red ? (m.emitCnpj || m.emit) : (m.tomadorCnpj || m.tomador)));
                                 if (grupos.size > 1) {
-                                  toast.error(red ? "No redespacho, selecione NF-es do mesmo remetente" : "No simplificado, selecione NF-es do mesmo tomador");
+                                  toast.error(red ? "No modo simplificado, selecione NF-es do mesmo remetente" : "No simplificado, selecione NF-es do mesmo tomador");
                                   return;
                                 }
                                 setSelecionadas(new Set(mercadorias.map(m => m.chave)));
@@ -1800,10 +1790,10 @@ function CtePage() {
                                   if (e.target.checked) {
                                     next.add(m.chave);
                                     const sel = mercadorias.filter(x => next.has(x.chave));
-                                    const red = (form as any).modoEmbarque === "redespacho";
+                                    const red = (form as any).modoEmbarque === "simplificado";
                                     const grupos = new Set(sel.map(x => red ? (x.emitCnpj || x.emit) : (x.tomadorCnpj || x.tomador)));
                                     if (grupos.size > 1) {
-                                      toast.error(red ? "No redespacho, o CT-e exige o mesmo remetente" : "No simplificado, o CT-e exige o mesmo tomador");
+                                      toast.error(red ? "No modo simplificado, o CT-e exige o mesmo remetente" : "No simplificado, o CT-e exige o mesmo tomador");
                                       next.delete(m.chave);
                                     } else if (red) {
                                       const chaveRem = m.emitCnpj || m.emit;
@@ -1854,8 +1844,8 @@ function CtePage() {
                       const dests = new Set(sel.map(m => m.destCnpj || m.dest));
                       const emits = new Set(sel.map(m => m.emitCnpj || m.emit));
                       const tomads = new Set(sel.map(m => m.tomadorCnpj || m.tomador));
-                      if ((form as any).modoEmbarque === "redespacho" && emits.size > 1) { toast.error("Remetentes diferentes"); return; }
-                      if ((form as any).modoEmbarque !== "redespacho" && dests.size > 1) { toast.error("Destinatários diferentes"); return; }
+                      if ((form as any).modoEmbarque === "simplificado" && emits.size > 1) { toast.error("Remetentes diferentes"); return; }
+                      if ((form as any).modoEmbarque !== "simplificado" && dests.size > 1) { toast.error("Destinatários diferentes"); return; }
                       if (tomads.size > 1) { toast.error("Tomadores diferentes"); return; }
                       const somaV = sel.reduce((a,m)=>a+m.valor,0);
                       const somaP = sel.reduce((a,m)=>a+m.peso,0);
@@ -1938,7 +1928,7 @@ function CtePage() {
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent className="w-screen h-screen max-w-none max-h-none m-0 rounded-none overflow-y-auto">
           <DialogHeader>
-            <DialogTitle className="flex items-center gap-2"><Truck className="h-5 w-5 text-primary" /> {(form as any).modoEmbarque === "redespacho" ? "Conhecimento de Transporte com Redespacho (tpServ 2)" : "Conhecimento de Transporte Avulso"}</DialogTitle>
+            <DialogTitle className="flex items-center gap-2"><Truck className="h-5 w-5 text-primary" /> {(form as any).modoEmbarque === "simplificado" ? "Conhecimento de Transporte Simplificado" : "Conhecimento de Transporte Avulso"}</DialogTitle>
             <p className="text-sm text-muted-foreground">Emissão de CT-e (57) — versão 4.00 via mTLS SEFAZ.</p>
           </DialogHeader>
 
@@ -2165,21 +2155,7 @@ function CtePage() {
                     <p className="text-muted-foreground">{form.xMunRedespacho || "—"}-{form.ufRedespacho || "—"} {form.cepRedespacho ? `CEP: ${form.cepRedespacho}` : ""}</p>
                   </div>
                 ) : <p className="text-[10px] text-muted-foreground">Digite o CNPJ para buscar os dados automaticamente</p>}
-                <div className="mt-2 border-t pt-2">
-                  <Label className="text-[10px] text-muted-foreground">Doc. anteriores — chaves dos CT-es (1 por linha){(form as any).modoEmbarque === "redespacho" ? " *" : ""}</Label>
-                  <Textarea value={(form as any).docAntChaves || ""} onChange={(e) => setForm({ ...form, docAntChaves: e.target.value })} className="mt-1 h-16 font-mono text-[10px]" placeholder="Chave do CT-e anterior (44 dígitos)" />
-                  <div className="mt-1 flex items-center gap-2">
-                    <Label className="text-[10px] text-muted-foreground">Prestação</Label>
-                    <Select value={(form as any).docAntTpPrest || "1"} onValueChange={(v) => setForm({ ...form, docAntTpPrest: v })}>
-                      <SelectTrigger className="h-6 w-44 text-[10px]"><SelectValue /></SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="1">Total</SelectItem>
-                        <SelectItem value="2">Parcial (NF-es abaixo)</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <p className="mt-1 text-[10px] text-muted-foreground">Obrigatório no Redespacho (SEFAZ 942). Na parcial, as NF-es deste CT-e vão em cada item.</p>
-                </div>
+
               </Card>
               </div>
             </TabsContent>
@@ -2194,7 +2170,7 @@ function CtePage() {
                       <TableRow>
                         <TableHead className="w-6">
                           <input type="checkbox" checked={mercadorias.length > 0 && selecionadas.size === mercadorias.length} onChange={e => {
-                            if (e.target.checked) { const red = (form as any).modoEmbarque === "redespacho"; const emits = new Set(mercadorias.map(m => m.emitCnpj || m.emit)); const tomads = new Set(mercadorias.map(m => m.tomadorCnpj || m.tomador)); if (red && emits.size > 1) { toast.error("Remetentes diferentes"); return; } if (tomads.size > 1) { toast.error("No simplificado, selecione NF-es do mesmo tomador"); return; } setSelecionadas(new Set(mercadorias.map(m => m.chave))); } else setSelecionadas(new Set());
+                            if (e.target.checked) { const red = (form as any).modoEmbarque === "simplificado"; const emits = new Set(mercadorias.map(m => m.emitCnpj || m.emit)); const tomads = new Set(mercadorias.map(m => m.tomadorCnpj || m.tomador)); if (red && emits.size > 1) { toast.error("Remetentes diferentes"); return; } if (tomads.size > 1) { toast.error("No simplificado, selecione NF-es do mesmo tomador"); return; } setSelecionadas(new Set(mercadorias.map(m => m.chave))); } else setSelecionadas(new Set());
                           }} />
                         </TableHead>
                         <TableHead className="text-[10px]">Modelo</TableHead>
@@ -2217,7 +2193,7 @@ function CtePage() {
                           <TableCell>
                             <input type="checkbox" checked={selecionadas.has(m.chave)} onChange={e => {
                               const next = new Set(selecionadas);
-                              if (e.target.checked) { next.add(m.chave); const sel = mercadorias.filter(x => next.has(x.chave)); const red = (form as any).modoEmbarque === "redespacho"; const emits = new Set(sel.map(x => x.emitCnpj || x.emit)); const tomads = new Set(sel.map(x => x.tomadorCnpj || x.tomador)); if (red && emits.size > 1) { toast.error("Remetentes diferentes"); next.delete(m.chave); } else if (tomads.size > 1) { toast.error("No simplificado, o CT-e exige o mesmo tomador"); next.delete(m.chave); } } else next.delete(m.chave);
+                              if (e.target.checked) { next.add(m.chave); const sel = mercadorias.filter(x => next.has(x.chave)); const red = (form as any).modoEmbarque === "simplificado"; const emits = new Set(sel.map(x => x.emitCnpj || x.emit)); const tomads = new Set(sel.map(x => x.tomadorCnpj || x.tomador)); if (red && emits.size > 1) { toast.error("Remetentes diferentes"); next.delete(m.chave); } else if (tomads.size > 1) { toast.error("No simplificado, o CT-e exige o mesmo tomador"); next.delete(m.chave); } } else next.delete(m.chave);
                               setSelecionadas(next);
                             }} />
                           </TableCell>
