@@ -535,7 +535,10 @@ export function gerarDactePdf(data: DacteData): Blob {
   y += compH + 1;
 
   // ---- ICMS ----
-  const icH = 8;
+  const icTitleH = 3.5, icH = 7;
+  box(M, y, CW, icTitleH);
+  ctr("Informações Relativas ao Imposto", W / 2, y + 2.5, 5.5, true);
+  y += icTitleH;
   box(M, y, CW, icH);
   const icCols: Array<[string, string, number]> = [
     ["Situação Tributária", cstIcmsLabel(data.icmsCST).slice(0, 34), 68],
@@ -547,14 +550,17 @@ export function gerarDactePdf(data: DacteData): Blob {
   ];
   let icx = M + 2;
   icCols.forEach(([l, v, w]) => {
-    lab(l, icx, y + 3);
-    val(v, icx, y + 6.5, 5.5);
+    lab(l, icx, y + 2.5);
+    val(v, icx, y + 5.5, 5.5);
     if (w) { vline(icx + w, y, icH); icx += w + 2; }
   });
   y += icH + 1;
 
   // ---- IBS/CBS ----
-  const ibH = 8;
+  const ibTitleH = 3.5, ibH = 7;
+  box(M, y, CW, ibTitleH);
+  ctr("Tributação da Reforma Tributária (IBS/CBS)", W / 2, y + 2.5, 5.5, true);
+  y += ibTitleH;
   box(M, y, CW, ibH);
   const ibBase = data.ibsBase !== undefined && data.ibsBase !== "" ? Number(data.ibsBase) : Number(data.icmsBase) || 0;
   const cbsA = data.cbsAliq !== undefined && data.cbsAliq !== "" ? Number(data.cbsAliq) : 0.90;
@@ -576,8 +582,8 @@ export function gerarDactePdf(data: DacteData): Blob {
   ];
   let ibx = M + 2;
   ibCols.forEach(([l, v, w]) => {
-    lab(l, ibx, y + 3);
-    val(v, ibx, y + 6.5, 5);
+    lab(l, ibx, y + 2.5);
+    val(v, ibx, y + 5.5, 5);
     if (w) { vline(ibx + w, y, ibH); ibx += w + 1.5; }
   });
   y += ibH + 1;
