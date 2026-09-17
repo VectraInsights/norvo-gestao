@@ -523,13 +523,13 @@ function CtePage() {
 
   const [open, setOpen] = useState(false);
   const emptyForm = { toma: "3", ieDestinatario: "", cnpjTomador: "", xNomeTomador: "", ufTomador: "MG", cMunTomador: "3106200", xMunTomador: "BELO HORIZONTE", ieTomador: "", logradouroTomador: "", nroTomador: "", bairroTomador: "", cepTomador: "", foneTomador: "", emailTomador: "", cnpjConsignatario: "", xNomeConsignatario: "", ieConsignatario: "", ufConsignatario: "", xMunConsignatario: "", cepConsignatario: "", logradouroConsignatario: "", nroConsignatario: "", bairroConsignatario: "", cnpjRedespacho: "", xNomeRedespacho: "", ieRedespacho: "", ufRedespacho: "", xMunRedespacho: "", cepRedespacho: "", logradouroRedespacho: "", nroRedespacho: "", bairroRedespacho: "", ambiente: "homologacao" as "homologacao" | "producao", cfop: "5353", vPrest: "0.00", vCarga: "0.00", peso: "0", rntrc: "", icmsCST: "00", icmsBase: "1000.00", icmsAliq: "0.00", icmsValor: "0.00", reducaoBase: "0.00", creditoOutorgado: "0.00", pisAliq: "0.00", cofinsAliq: "0.00", irAliq: "0.00", inssAliq: "0.00", csllAliq: "0.00", motoristaNome: "", motoristaId: "", ciot: "", placaVeiculo: "", placaReboque: "", semiReboque1: "", semiReboque2: "", seguradoraNome: "", seguradoraId: "", apolice: "", averbacao: "", cMunEnv: "3106200", xMunEnv: "BELO HORIZONTE", ufEnv: "MG", cMunIni: "3106200", xMunIni: "BELO HORIZONTE", ufIni: "MG", cMunFim: "3550308", xMunFim: "SAO PAULO", ufFim: "SP",     dataEmissao: new Date().toISOString().slice(0,10),
-    formaPagamento: "Outros", finalidadeEmissao: "Normal", tipoServico: "Normal", formaEmissao: "Normal",
+    formaPagamento: "Outros", finalidadeEmissao: "Normal", tipoServico: "Normal", formaEmissao: "Normal", modoEmbarque: "avulso" as "avulso" | "redespacho",
     cteReferenciado: "", chaveCompAnulacao: "", dataDeclaracao: "",
     obsGerais: "", obsAnulacao: "", obsGlobalizado: "",
     adicionalPed: "0.00", descontoPed: "0.00", outrosPed: "0.00", adValorem: "0.00", gris: "0.00", taxaColeta: "0.00", taxaEntrega: "0.00", valePedagio: "0.00", pedagioPagto: "sem-pagamento", pedagioOperadora: "", pedagioCnpj: "", pedagioTag: "", pedagioRespCnpj: "", pedagioIdentVPO: "", pedagioDataOp: "", distanciaKm: "", duracaoHoras: "", rctrC: "0.00", rcfDc: "0.00", segAdicional: "0.00", segTotal: "0.00", segRepassar: "", segResponsavel: "4",
   };
   // Percurso NÃO guarda motorista nem frete: ao abrir um CT-e novo, esses dados de viagem zeram
-  const LIMPA_VIAGEM = { motoristaNome: "", motoristaId: "", ciot: "", placaVeiculo: "", placaReboque: "", semiReboque1: "", semiReboque2: "", vPrest: "0.00", adicionalPed: "0.00", descontoPed: "0.00", outrosPed: "0.00", adValorem: "0.00", gris: "0.00", taxaColeta: "0.00", taxaEntrega: "0.00", valePedagio: "0.00", pedagioPagto: "sem-pagamento", pedagioOperadora: "", pedagioCnpj: "", pedagioTag: "", pedagioRespCnpj: "", pedagioIdentVPO: "", pedagioDataOp: "", distanciaKm: "", duracaoHoras: "" };
+  const LIMPA_VIAGEM = { modoEmbarque: "avulso" as "avulso" | "redespacho", motoristaNome: "", motoristaId: "", ciot: "", placaVeiculo: "", placaReboque: "", semiReboque1: "", semiReboque2: "", vPrest: "0.00", adicionalPed: "0.00", descontoPed: "0.00", outrosPed: "0.00", adValorem: "0.00", gris: "0.00", taxaColeta: "0.00", taxaEntrega: "0.00", valePedagio: "0.00", pedagioPagto: "sem-pagamento", pedagioOperadora: "", pedagioCnpj: "", pedagioTag: "", pedagioRespCnpj: "", pedagioIdentVPO: "", pedagioDataOp: "", distanciaKm: "", duracaoHoras: "" };
   const PEDAGIO_OPERADORAS = [
     { nome: "CONECTCAR", cnpj: "16577631000299" },
     { nome: "DB TRANS", cnpj: "04467870000126" },
@@ -1259,7 +1259,7 @@ function CtePage() {
         const emits = new Set(sel.map(m => m.emitCnpj || m.emit));
         const tomads = new Set(sel.map(m => m.tomadorCnpj || m.tomador));
         if (emits.size > 1) throw new Error("CT-e não pode ter remetentes diferentes. Selecione NF-es do mesmo remetente.");
-        if (dests.size > 1) throw new Error("CT-e não pode ter destinatários diferentes. Selecione NF-es do mesmo destinatário.");
+        if ((form as any).modoEmbarque !== "redespacho" && dests.size > 1) throw new Error("CT-e não pode ter destinatários diferentes. Selecione NF-es do mesmo destinatário.");
         if (tomads.size > 1) throw new Error("CT-e não pode ter tomadores diferentes. Selecione NF-es do mesmo tomador.");
       }
       const pend: string[] = [];
@@ -1293,7 +1293,7 @@ function CtePage() {
       const ret: any = await emitirCteFn({ data: { empresaId: empresa.id, form, input: {
         ambiente: form.ambiente,
         toma: form.toma, cnpjTomador: form.cnpjTomador, xNomeTomador: form.xNomeTomador, ufTomador: form.ufTomador, cMunTomador: form.cMunTomador, xMunTomador: form.xMunTomador,
-        cfop: form.cfop, vPrest: totalPrestacao(form), vCarga: parseFloat(form.vCarga)||0, pesoKg: parseFloat(form.peso)||0, rntrc: rntrcFinal,
+        cfop: form.cfop, tpServ: (form as any).modoEmbarque === "redespacho" ? "2" : "0", vPrest: totalPrestacao(form), vCarga: parseFloat(form.vCarga)||0, pesoKg: parseFloat(form.peso)||0, rntrc: rntrcFinal,
         modalRod: { rntrc: rntrcFinal, veiculos: (() => { const vv = (veiculos || []).find(v => String(v.placa || "").toUpperCase() === String(form.placaVeiculo || "").toUpperCase()); return form.placaVeiculo ? [{ placa: String(form.placaVeiculo).toUpperCase(), uf: empresa.uf || "MG", renavam: (vv as any)?.renavam || undefined }] : []; })() },
         cMunEnv: form.cMunEnv, xMunEnv: form.xMunEnv, ufEnv: form.ufEnv, cMunIni: form.cMunIni, xMunIni: form.xMunIni, ufIni: form.ufIni, cMunFim: form.cMunFim, xMunFim: form.xMunFim, ufFim: form.ufFim,
         icms: { CST: form.icmsCST, vBC: totalPrestacao(form), pICMS: parseFloat(form.icmsAliq)||0, vICMS: parseFloat(form.icmsValor)||0 },
@@ -1438,7 +1438,7 @@ function CtePage() {
       return previewCteXmlFn({ data: { empresaId: empresa.id, input: {
         ambiente: form.ambiente,
         toma: form.toma, cnpjTomador: form.cnpjTomador, xNomeTomador: form.xNomeTomador, ufTomador: form.ufTomador, cMunTomador: form.cMunTomador, xMunTomador: form.xMunTomador,
-        cfop: form.cfop, vPrest: totalPrestacao(form), vCarga: parseFloat(form.vCarga)||0, pesoKg: parseFloat(form.peso)||0, rntrc: rntrcFinal,
+        cfop: form.cfop, tpServ: (form as any).modoEmbarque === "redespacho" ? "2" : "0", vPrest: totalPrestacao(form), vCarga: parseFloat(form.vCarga)||0, pesoKg: parseFloat(form.peso)||0, rntrc: rntrcFinal,
         modalRod: { rntrc: rntrcFinal, veiculos: (() => { const vv = (veiculos || []).find(v => String(v.placa || "").toUpperCase() === String(form.placaVeiculo || "").toUpperCase()); return form.placaVeiculo ? [{ placa: String(form.placaVeiculo).toUpperCase(), uf: empresa.uf || "MG", renavam: (vv as any)?.renavam || undefined }] : []; })() },
         obsGerais: (form as any).obsGerais || "", obsAnulacao: (form as any).obsAnulacao || "", obsGlobalizado: (form as any).obsGlobalizado || "",
         reducaoBase: parseFloat((form as any).reducaoBase)||0,
@@ -1685,7 +1685,7 @@ function CtePage() {
           <Card className="overflow-hidden border-2 border-primary/20 shadow-panel">
             <div className="bg-primary text-primary-foreground px-3 py-2 flex items-center justify-between">
               <h3 className="text-sm font-semibold flex items-center gap-2"><Package className="h-4 w-4" /> Cadastro de Mercadorias para Embarque</h3>
-              <span className="text-xs opacity-80">CT-e Avulso • Sem Mercadoria/Percurso</span>
+              <span className="text-xs opacity-80">{(form as any).modoEmbarque === "redespacho" ? "CT-e Redespacho • Mesmo remetente" : "CT-e Avulso • Sem Mercadoria/Percurso"}</span>
             </div>
             <CardContent className="p-3 space-y-3 bg-muted/20 overflow-visible">
               <div className="border rounded p-2 bg-background space-y-2">
@@ -1693,8 +1693,8 @@ function CtePage() {
                   <div>
                     <Label className="text-xs font-semibold text-primary">Embarque via CT-e</Label>
                     <div className="flex flex-col gap-1 mt-1 text-xs">
-                      <label className="flex items-center gap-1"><input type="radio" checked readOnly /> CT-e Avulso</label>
-                      <label className="flex items-center gap-1 opacity-60"><input type="radio" disabled /> CT-e Redes­pacho</label>
+                      <label className="flex items-center gap-1"><input type="radio" name="modo-embarque" checked={(form as any).modoEmbarque !== "redespacho"} onChange={() => setForm(f => ({ ...f, modoEmbarque: "avulso" }))} /> CT-e Avulso</label>
+                      <label className="flex items-center gap-1"><input type="radio" name="modo-embarque" checked={(form as any).modoEmbarque === "redespacho"} onChange={() => setForm(f => ({ ...f, modoEmbarque: "redespacho" }))} /> CT-e Redespacho</label>
                     </div>
                   </div>
                   <div>
@@ -1739,9 +1739,10 @@ function CtePage() {
                             checked={mercadorias.length > 0 && selecionadas.size === mercadorias.length}
                             onChange={e => {
                               if (e.target.checked) {
-                                const dests = new Set(mercadorias.map(m => m.destCnpj || m.dest));
-                                if (dests.size > 1) {
-                                  toast.error("Não pode selecionar NF-es com destinos diferentes");
+                                const red = (form as any).modoEmbarque === "redespacho";
+                                const grupos = new Set(mercadorias.map(m => red ? (m.emitCnpj || m.emit) : (m.destCnpj || m.dest)));
+                                if (grupos.size > 1) {
+                                  toast.error(red ? "No redespacho, selecione NF-es do mesmo remetente" : "Não pode selecionar NF-es com destinos diferentes");
                                   return;
                                 }
                                 setSelecionadas(new Set(mercadorias.map(m => m.chave)));
@@ -1787,9 +1788,10 @@ function CtePage() {
                                   if (e.target.checked) {
                                     next.add(m.chave);
                                     const sel = mercadorias.filter(x => next.has(x.chave));
-                                    const dests = new Set(sel.map(x => x.destCnpj || x.dest));
-                                    if (dests.size > 1) {
-                                      toast.error("Não pode emitir o mesmo CT-e para destinos diferentes");
+                                    const red = (form as any).modoEmbarque === "redespacho";
+                                    const grupos = new Set(sel.map(x => red ? (x.emitCnpj || x.emit) : (x.destCnpj || x.dest)));
+                                    if (grupos.size > 1) {
+                                      toast.error(red ? "No redespacho, o CT-e exige o mesmo remetente" : "Não pode emitir o mesmo CT-e para destinos diferentes");
                                       next.delete(m.chave);
                                     }
                                   } else next.delete(m.chave);
@@ -1835,7 +1837,7 @@ function CtePage() {
                       const emits = new Set(sel.map(m => m.emitCnpj || m.emit));
                       const tomads = new Set(sel.map(m => m.tomadorCnpj || m.tomador));
                       if (emits.size > 1) { toast.error("Remetentes diferentes"); return; }
-                      if (dests.size > 1) { toast.error("Destinatários diferentes"); return; }
+                      if ((form as any).modoEmbarque !== "redespacho" && dests.size > 1) { toast.error("Destinatários diferentes"); return; }
                       if (tomads.size > 1) { toast.error("Tomadores diferentes"); return; }
                       const somaV = sel.reduce((a,m)=>a+m.valor,0);
                       const somaP = sel.reduce((a,m)=>a+m.peso,0);

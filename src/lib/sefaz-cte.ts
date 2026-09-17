@@ -88,6 +88,7 @@ export interface CteInputCompleto {
   dest?: { cnpj?:string; cpf?:string; xNome:string; uf:string; cMun:string; xMun:string; ie?:string; cep?:string; logradouro?:string; nro?:string; bairro?:string };
   tomador: TomadorCte;
   vPrest: number; vCarga: number; pesoKg: number; cfop: string;
+  tpServ?: string;
   obs?: string;
   infCTeNorm?: { proPred?: string; xOutCat?: string };
   modalRod?: { rntrc: string; ciot?: string; veiculos?: Array<{ placa: string; uf: string; renavam?: string; rntrc?: string }> };
@@ -182,7 +183,7 @@ export function buildCteXml(input: CteInputCompleto): { xml: string; chave: stri
       <cUF>${cUF}</cUF><cCT>${cCT}</cCT><CFOP>${input.cfop}</CFOP><natOp>${natOp}</natOp><mod>57</mod><serie>${serie}</serie><nCT>${nCT}</nCT><dhEmi>${dhEmi}</dhEmi>
       <tpImp>1</tpImp><tpEmis>1</tpEmis><cDV>${chave.slice(-1)}</cDV><tpAmb>${input.ambiente==="producao"?"1":"2"}</tpAmb><tpCTe>5</tpCTe><procEmi>0</procEmi><verProc>NORVO_1.0</verProc>
       <cMunEnv>${input.cMunEnv}</cMunEnv><xMunEnv>${input.xMunEnv}</xMunEnv><UFEnv>${input.ufEnv}</UFEnv>
-      <modal>01</modal><tpServ>0</tpServ>
+      <modal>01</modal><tpServ>${input.tpServ || "0"}</tpServ>
       <UFIni>${input.ufIni}</UFIni><UFFim>${input.ufFim}</UFFim>
       <retira>1</retira>
     </ide>
