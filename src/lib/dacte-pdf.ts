@@ -299,21 +299,22 @@ export function gerarDactePdf(data: DacteData): Blob {
 
   // Bloco pessoa (remetente/destinatário/expedidor/recebedor): título inline + 5 linhas em 2 colunas
   const party = (x: number, title: string, p: { nome?: string; lgr?: string; cid?: string; cep?: string; bai?: string; doc?: string; ie?: string; uf?: string; fone?: string }) => {
-    valB(`${title} : ${cut(D(p.nome), 46)}`, x + 1.5, y + 4, 6);
-    setFont("normal", 6); black();
-    const c2 = x + hw * 0.58;
+    setFont("bold", 6); black();
+    const labX1 = x + 22, valX1 = x + 24, labX2 = x + 68, valX2 = x + 70;
+    const lbR = (s: string, xe: number, yy: number) => { black(); setFont("bold", 6); const w = doc.getTextWidth(s); doc.text(s, xe - w, yy); };
     const v2 = (s: string, xx: number, yy: number) => { black(); setFont("normal", 6); doc.text(String(s || ""), xx, yy); };
-    const lb = (s: string, xx: number, yy: number) => { black(); setFont("bold", 6); doc.text(s, xx, yy); };
+    lbR(`${title} :`, labX1, y + 4);
+    v2(cut(D(p.nome), 46), valX1, y + 4);
     let yy = y + 7;
-    lb("Endereço :", x + 1.5, yy); v2(cut(D(p.lgr), 70), x + 18, yy); yy += 2.9;
-    lb("Município :", x + 1.5, yy); v2(cut(D(p.cid), 30), x + 18, yy);
-    lb("CEP :", c2, yy); v2(D(p.cep), c2 + 11, yy); yy += 2.9;
-    lb("Bairro :", x + 1.5, yy); v2(cut(D(p.bai), 60), x + 18, yy); yy += 2.9;
-    lb("CPF / CNPJ :", x + 1.5, yy); v2(fmtCnpj(D(p.doc)), x + 18, yy);
-    lb("Insc. Est :", c2, yy); v2(cut(D(p.ie), 18), c2 + 16, yy); yy += 2.9;
-    lb("UF :", x + 1.5, yy); v2(D(p.uf), x + 8, yy);
-    lb("País :", x + 22, yy); v2("BRASIL", x + 32, yy);
-    lb("Fone :", c2, yy); v2(D(p.fone), c2 + 13, yy);
+    lbR("Endereço :", labX1, yy); v2(cut(D(p.lgr), 70), valX1, yy); yy += 2.9;
+    lbR("Município :", labX1, yy); v2(cut(D(p.cid), 30), valX1, yy);
+    lbR("CEP :", labX2, yy); v2(D(p.cep), valX2, yy); yy += 2.9;
+    lbR("Bairro :", labX1, yy); v2(cut(D(p.bai), 60), valX1, yy); yy += 2.9;
+    lbR("CPF / CNPJ :", labX1, yy); v2(fmtCnpj(D(p.doc)), valX1, yy);
+    lbR("Insc. Est :", labX2, yy); v2(cut(D(p.ie), 18), valX2, yy); yy += 2.9;
+    lbR("UF :", labX1, yy); v2(D(p.uf), valX1, yy);
+    lbR("País :", x + 44, yy); v2("BRASIL", x + 46, yy);
+    lbR("Fone :", labX2, yy); v2(D(p.fone), valX2, yy);
   };
 
   // ---- Cabeçalho: emitente | DACTE | modal ----
