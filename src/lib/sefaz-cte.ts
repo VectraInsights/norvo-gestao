@@ -89,6 +89,7 @@ export interface CteInputCompleto {
   tomador: TomadorCte;
   vPrest: number; vCarga: number; pesoKg: number; cfop: string;
   tpServ?: string;
+  docAnt?: { chaves: string[]; tpPrest?: string };
   obs?: string;
   infCTeNorm?: { proPred?: string; xOutCat?: string };
   modalRod?: { rntrc: string; ciot?: string; veiculos?: Array<{ placa: string; uf: string; renavam?: string; rntrc?: string }> };
@@ -170,9 +171,17 @@ export function buildCteXml(input: CteInputCompleto): { xml: string; chave: stri
   impXml = impXml.replace(/<\/imp>$/, `${ibsXml}</imp>`);
 
   // infNFe — schema exige <chNFe>, não <chave>
+  const docAntXml = (rawDet: string) => {
+    const chNFeDet = String(rawDet).replace(/\D/g, "");
+    const chs = (input.docAnt?.chaves || []).map(c => String(c).replace(/\D/g, "")).filter(c => c.length === 44);
+    if (chs.length === 0) return "";
+    const tp = input.docAnt?.tpPrest === "2" ? "2" : "1";
+    const parcial = tp === "2" && chNFeDet.length === 44 ? `<infNFeTranspParcial><chNFe>${chNFeDet}</chNFeTranspParcial>` : "";
+    return chs.map(ch => `<infDocAnt><chCTe>${ch}</chCTe><tpPrest>${tp}</tpPrest>${parcial}</infDocAnt>`).join("");
+  };
   const infNFeXml = (input.chavesNFe && input.chavesNFe.length > 0)
-    ? input.chavesNFe.map((ch, i) => `<det nItem="${i+1}"><cMunIni>${input.cMunIni}</cMunIni><xMunIni>${input.xMunIni}</xMunIni><cMunFim>${input.cMunFim}</cMunFim><xMunFim>${input.xMunFim}</xMunFim><vPrest>${input.vPrest.toFixed(2)}</vPrest><vRec>${input.vPrest.toFixed(2)}</vRec><infNFe><chNFe>${ch.replace(/\D/g,"")}</chNFe></infNFe></det>`).join("")
-    : `<det nItem="1"><cMunIni>${input.cMunIni}</cMunIni><xMunIni>${input.xMunIni}</xMunIni><cMunFim>${input.cMunFim}</cMunFim><xMunFim>${input.xMunFim}</xMunFim><vPrest>${input.vPrest.toFixed(2)}</vPrest><vRec>${input.vPrest.toFixed(2)}</vRec><infNFe><chNFe>00000000000000000000000000000000000000000000</chNFe></infNFe></det>`;
+    ? input.chavesNFe.map((ch, i) => `<det nItem="${i+1}"><cMunIni>${input.cMunIni}</cMunIni><xMunIni>${input.xMunIni}</xMunIni><cMunFim>${input.cMunFim}</cMunFim><xMunFim>${input.xMunFim}</xMunFim><vPrest>${input.vPrest.toFixed(2)}</vPrest><vRec>${input.vPrest.toFixed(2)}</vRec><infNFe><chNFe>${ch.replace(/\D/g,"")}</chNFe></infNFe>${docAntXml(ch)}</det>`).join("")
+    : `<det nItem="1"><cMunIni>${input.cMunIni}</cMunIni><xMunIni>${input.xMunIni}</xMunIni><cMunFim>${input.cMunFim}</cMunFim><xMunFim>${input.xMunFim}</xMunFim><vPrest>${input.vPrest.toFixed(2)}</vPrest><vRec>${input.vPrest.toFixed(2)}</vRec><infNFe><chNFe>00000000000000000000000000000000000000000000</chNFe></infNFe>${docAntXml("")}</det>`;
 
   // CTeSimp — root element <CTeSimp>, not <CTe>
   // versao goes ONLY on <infCte>, NOT on <CTeSimp> per XSD

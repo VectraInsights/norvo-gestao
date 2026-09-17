@@ -528,7 +528,7 @@ function CtePage() {
     formaPagamento: "Outros", finalidadeEmissao: "Normal", tipoServico: "Normal", formaEmissao: "Normal", modoEmbarque: "avulso" as "avulso" | "redespacho",
     cteReferenciado: "", chaveCompAnulacao: "", dataDeclaracao: "",
     obsGerais: "", obsAnulacao: "", obsGlobalizado: "",
-    adicionalPed: "0.00", descontoPed: "0.00", outrosPed: "0.00", adValorem: "0.00", gris: "0.00", taxaColeta: "0.00", taxaEntrega: "0.00", valePedagio: "0.00", pedagioPagto: "sem-pagamento", pedagioOperadora: "", pedagioCnpj: "", pedagioTag: "", pedagioRespCnpj: "", pedagioIdentVPO: "", pedagioDataOp: "", distanciaKm: "", duracaoHoras: "", rctrC: "0.00", rcfDc: "0.00", segAdicional: "0.00", segTotal: "0.00", segRepassar: "", segResponsavel: "4",
+    adicionalPed: "0.00", descontoPed: "0.00", outrosPed: "0.00", adValorem: "0.00", gris: "0.00", taxaColeta: "0.00", taxaEntrega: "0.00", valePedagio: "0.00", pedagioPagto: "sem-pagamento", pedagioOperadora: "", pedagioCnpj: "", pedagioTag: "", pedagioRespCnpj: "", pedagioIdentVPO: "", pedagioDataOp: "", distanciaKm: "", duracaoHoras: "", docAntChaves: "", docAntTpPrest: "1", rctrC: "0.00", rcfDc: "0.00", segAdicional: "0.00", segTotal: "0.00", segRepassar: "", segResponsavel: "4",
   };
   // Percurso NÃO guarda motorista nem frete: ao abrir um CT-e novo, esses dados de viagem zeram
   const LIMPA_VIAGEM = { motoristaNome: "", motoristaId: "", ciot: "", placaVeiculo: "", placaReboque: "", semiReboque1: "", semiReboque2: "", vPrest: "0.00", adicionalPed: "0.00", descontoPed: "0.00", outrosPed: "0.00", adValorem: "0.00", gris: "0.00", taxaColeta: "0.00", taxaEntrega: "0.00", valePedagio: "0.00", pedagioPagto: "sem-pagamento", pedagioOperadora: "", pedagioCnpj: "", pedagioTag: "", pedagioRespCnpj: "", pedagioIdentVPO: "", pedagioDataOp: "", distanciaKm: "", duracaoHoras: "" };
@@ -1276,7 +1276,16 @@ function CtePage() {
       if (!ieOk(form.ieTomador || tomCt.ie)) pend.push("IE do tomador");
       if (String(form.cnpjConsignatario || "").replace(/\D/g, "").length === 14 && !ieOk(form.ieConsignatario)) pend.push("IE do consignatario");
       if (String(form.cnpjRedespacho || "").replace(/\D/g, "").length === 14 && !ieOk(form.ieRedespacho)) pend.push("IE do redespacho");
-      if ((form as any).modoEmbarque === "redespacho" && String(form.cnpjRedespacho || "").replace(/\D/g, "").length !== 14) pend.push("Redespachante (CNPJ) \u2014 obrigat\u00f3rio no modo Redespacho");
+      if ((form as any).modoEmbarque === "redespacho" && String(form.cnpjRedespacho || "").replace(/\D/g, "").length !== 14) pend.push("Redespachante (CNPJ) — obrigatório no modo Redespacho");
+      const docAntChaves = String((form as any).docAntChaves || "").split(/[\s,;]+/).map(s => s.replace(/\D/g, "")).filter(s => s.length > 0);
+      if ((form as any).modoEmbarque === "redespacho") {
+        if (docAntChaves.length === 0) pend.push("Doc. anteriores (chaves dos CT-es)");
+        else if (docAntChaves.some(c => c.length !== 44 || c.slice(20, 22) !== "57")) pend.push("Doc. anteriores (chaves de CT-e com 44 dígitos)");
+        else {
+          const baseTom = String(form.cnpjTomador || "").replace(/\D/g, "").slice(0, 8);
+          if (baseTom.length === 8 && docAntChaves.some(c => c.slice(6, 14) !== baseTom)) pend.push("Doc. anteriores (tomador deve ser o emitente dos CT-es)");
+        }
+      }
       if (!String(form.motoristaNome || "").trim()) pend.push("Motorista");
       if (!rntrcFinal || /^ISENTO$/i.test(rntrcFinal) || rntrcFinal.replace(/\D/g, "").length !== 8) pend.push("RNTRC da empresa com 8 digitos (cadastre em Configuracoes > RNTRC)");
       if (!String(form.placaVeiculo || "").trim()) pend.push("Placa da tracao (veiculo 1)");
@@ -1296,7 +1305,7 @@ function CtePage() {
       const ret: any = await emitirCteFn({ data: { empresaId: empresa.id, form, input: {
         ambiente: form.ambiente,
         toma: form.toma, cnpjTomador: form.cnpjTomador, xNomeTomador: form.xNomeTomador, ufTomador: form.ufTomador, cMunTomador: form.cMunTomador, xMunTomador: form.xMunTomador,
-        cfop: form.cfop, tpServ: (form as any).modoEmbarque === "redespacho" ? "2" : "0", vPrest: totalPrestacao(form), vCarga: parseFloat(form.vCarga)||0, pesoKg: parseFloat(form.peso)||0, rntrc: rntrcFinal,
+        cfop: form.cfop, tpServ: (form as any).modoEmbarque === "redespacho" ? "2" : "0", docAnt: { chaves: String((form as any).docAntChaves || "").split(/[\s,;]+/).map(s => s.replace(/\D/g, "")).filter(s => s.length === 44), tpPrest: (form as any).docAntTpPrest === "2" ? "2" : "1" }, vPrest: totalPrestacao(form), vCarga: parseFloat(form.vCarga)||0, pesoKg: parseFloat(form.peso)||0, rntrc: rntrcFinal,
         modalRod: { rntrc: rntrcFinal, veiculos: (() => { const vv = (veiculos || []).find(v => String(v.placa || "").toUpperCase() === String(form.placaVeiculo || "").toUpperCase()); return form.placaVeiculo ? [{ placa: String(form.placaVeiculo).toUpperCase(), uf: empresa.uf || "MG", renavam: (vv as any)?.renavam || undefined }] : []; })() },
         cMunEnv: form.cMunEnv, xMunEnv: form.xMunEnv, ufEnv: form.ufEnv, cMunIni: form.cMunIni, xMunIni: form.xMunIni, ufIni: form.ufIni, cMunFim: form.cMunFim, xMunFim: form.xMunFim, ufFim: form.ufFim,
         icms: { CST: form.icmsCST, vBC: totalPrestacao(form), pICMS: parseFloat(form.icmsAliq)||0, vICMS: parseFloat(form.icmsValor)||0 },
@@ -1441,7 +1450,7 @@ function CtePage() {
       return previewCteXmlFn({ data: { empresaId: empresa.id, input: {
         ambiente: form.ambiente,
         toma: form.toma, cnpjTomador: form.cnpjTomador, xNomeTomador: form.xNomeTomador, ufTomador: form.ufTomador, cMunTomador: form.cMunTomador, xMunTomador: form.xMunTomador,
-        cfop: form.cfop, tpServ: (form as any).modoEmbarque === "redespacho" ? "2" : "0", vPrest: totalPrestacao(form), vCarga: parseFloat(form.vCarga)||0, pesoKg: parseFloat(form.peso)||0, rntrc: rntrcFinal,
+        cfop: form.cfop, tpServ: (form as any).modoEmbarque === "redespacho" ? "2" : "0", docAnt: { chaves: String((form as any).docAntChaves || "").split(/[\s,;]+/).map(s => s.replace(/\D/g, "")).filter(s => s.length === 44), tpPrest: (form as any).docAntTpPrest === "2" ? "2" : "1" }, vPrest: totalPrestacao(form), vCarga: parseFloat(form.vCarga)||0, pesoKg: parseFloat(form.peso)||0, rntrc: rntrcFinal,
         modalRod: { rntrc: rntrcFinal, veiculos: (() => { const vv = (veiculos || []).find(v => String(v.placa || "").toUpperCase() === String(form.placaVeiculo || "").toUpperCase()); return form.placaVeiculo ? [{ placa: String(form.placaVeiculo).toUpperCase(), uf: empresa.uf || "MG", renavam: (vv as any)?.renavam || undefined }] : []; })() },
         obsGerais: (form as any).obsGerais || "", obsAnulacao: (form as any).obsAnulacao || "", obsGlobalizado: (form as any).obsGlobalizado || "",
         reducaoBase: parseFloat((form as any).reducaoBase)||0,
@@ -2156,6 +2165,21 @@ function CtePage() {
                     <p className="text-muted-foreground">{form.xMunRedespacho || "—"}-{form.ufRedespacho || "—"} {form.cepRedespacho ? `CEP: ${form.cepRedespacho}` : ""}</p>
                   </div>
                 ) : <p className="text-[10px] text-muted-foreground">Digite o CNPJ para buscar os dados automaticamente</p>}
+                <div className="mt-2 border-t pt-2">
+                  <Label className="text-[10px] text-muted-foreground">Doc. anteriores — chaves dos CT-es (1 por linha){(form as any).modoEmbarque === "redespacho" ? " *" : ""}</Label>
+                  <Textarea value={(form as any).docAntChaves || ""} onChange={(e) => setForm({ ...form, docAntChaves: e.target.value })} className="mt-1 h-16 font-mono text-[10px]" placeholder="Chave do CT-e anterior (44 dígitos)" />
+                  <div className="mt-1 flex items-center gap-2">
+                    <Label className="text-[10px] text-muted-foreground">Prestação</Label>
+                    <Select value={(form as any).docAntTpPrest || "1"} onValueChange={(v) => setForm({ ...form, docAntTpPrest: v })}>
+                      <SelectTrigger className="h-6 w-44 text-[10px]"><SelectValue /></SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="1">Total</SelectItem>
+                        <SelectItem value="2">Parcial (NF-es abaixo)</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <p className="mt-1 text-[10px] text-muted-foreground">Obrigatório no Redespacho (SEFAZ 942). Na parcial, as NF-es deste CT-e vão em cada item.</p>
+                </div>
               </Card>
               </div>
             </TabsContent>
