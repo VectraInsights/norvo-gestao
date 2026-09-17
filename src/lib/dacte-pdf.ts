@@ -300,6 +300,9 @@ export function gerarDactePdf(data: DacteData): Blob {
   // Bloco pessoa (remetente/destinatário/expedidor/recebedor): título inline + 5 linhas em 2 colunas
   const party = (x: number, title: string, p: { nome?: string; lgr?: string; cid?: string; cep?: string; bai?: string; doc?: string; ie?: string; uf?: string; fone?: string }) => {
     const labX2 = x + 68;
+    const labX1 = x + 22, valX1 = x + 24;
+    const lbR = (s: string, xe: number, yy: number) => { black(); setFont("bold", 6); const w = doc.getTextWidth(s); doc.text(s, xe - w, yy); };
+    const v2 = (s: string, xx: number, yy: number) => { black(); setFont("normal", 6); doc.text(String(s || ""), xx, yy); };
     const row = (label: string, value: string, xx: number, yy: number): number => {
       black(); setFont("bold", 6); doc.text(label, xx, yy);
       const vx = xx + doc.getTextWidth(label) + 1.5;
@@ -307,15 +310,15 @@ export function gerarDactePdf(data: DacteData): Blob {
       return vx + doc.getTextWidth(String(value || ""));
     };
     let yy = y + 4;
-    row(`${title} :`, cut(D(p.nome), 46), x + 1.5, yy); yy += 3;
-    row("Endereço :", cut(D(p.lgr), 70), x + 1.5, yy); yy += 2.9;
-    row("Município :", cut(D(p.cid), 30), x + 1.5, yy);
+    lbR(`${title} :`, labX1, yy); v2(cut(D(p.nome), 46), valX1, yy); yy += 3;
+    lbR("Endereço :", labX1, yy); v2(cut(D(p.lgr), 70), valX1, yy); yy += 2.9;
+    lbR("Município :", labX1, yy); v2(cut(D(p.cid), 30), valX1, yy);
     row("CEP :", D(p.cep), labX2, yy); yy += 2.9;
-    row("Bairro :", cut(D(p.bai), 60), x + 1.5, yy); yy += 2.9;
-    row("CPF / CNPJ :", fmtCnpj(D(p.doc)), x + 1.5, yy);
+    lbR("Bairro :", labX1, yy); v2(cut(D(p.bai), 60), valX1, yy); yy += 2.9;
+    lbR("CPF / CNPJ :", labX1, yy); v2(fmtCnpj(D(p.doc)), valX1, yy);
     row("Insc. Est :", cut(D(p.ie), 18), labX2, yy); yy += 2.9;
-    const afterUF = row("UF :", D(p.uf), x + 1.5, yy);
-    row("País :", "BRASIL", afterUF + 4, yy);
+    lbR("UF :", labX1, yy); v2(D(p.uf), valX1, yy);
+    row("País :", "BRASIL", x + 34, yy);
     row("Fone :", D(p.fone), labX2, yy);
   };
 
