@@ -98,6 +98,20 @@ export function AppShell({ children }: { children: ReactNode }) {
   const currentEmpresa =
     (selectedId && empresas?.find((e) => e.id === selectedId)) || empresas?.[0];
 
+  const { data: meuNome } = useQuery({
+    queryKey: ["meu-nome", currentEmpresa?.id, user?.id],
+    enabled: !!currentEmpresa && !!user,
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("empresa_users" as any)
+        .select("nome")
+        .eq("empresa_id", currentEmpresa!.id)
+        .eq("user_id", user!.id)
+        .maybeSingle();
+      return (data as any)?.nome || (user as any)?.user_metadata?.nome || "";
+    },
+  });
+
   const handleSelectEmpresa = (id: string) => {
     setSelectedEmpresaId(id);
     qc.invalidateQueries();
@@ -252,7 +266,7 @@ export function AppShell({ children }: { children: ReactNode }) {
           ref={sidebarRef}
           className={cn(
             "border-r border-sidebar-border bg-sidebar text-sidebar-foreground flex flex-col",
-            "fixed inset-y-0 left-0 z-40 -translate-x-full transition-all lg:static lg:translate-x-0",
+            "fixed inset-y-0 left-0 z-40 -translate-x-full transition-all lg:sticky lg:top-0 lg:h-screen lg:translate-x-0",
             collapsed ? "w-[72px]" : "w-[260px]",
             open && "translate-x-0",
           )}
@@ -327,7 +341,7 @@ export function AppShell({ children }: { children: ReactNode }) {
 
           <nav
             ref={navRef}
-            className="flex-1 overflow-y-auto p-3"
+            className="min-h-0 flex-1 overflow-y-auto p-3"
             aria-label="Navegação principal"
             onKeyDown={onNavKeyDown}
           >
@@ -494,12 +508,12 @@ export function AppShell({ children }: { children: ReactNode }) {
                   )}
                 >
                   <div className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-primary text-primary-foreground text-xs font-semibold">
-                    {user?.email?.[0]?.toUpperCase() ?? "?"}
+                    {(meuNome || user?.email)?.[0]?.toUpperCase() ?? "?"}
                   </div>
                   {!collapsed && (
                     <div className="min-w-0 flex-1">
-                      <div className="truncate text-sm">{user?.email}</div>
-                      <div className="truncate text-xs text-muted-foreground">Minha conta</div>
+                      <div className="truncate text-sm">{meuNome || user?.email}</div>
+                      <div className="truncate text-xs text-muted-foreground">{meuNome ? user?.email : "Dados da conta"}</div>
                     </div>
                   )}
                 </button>

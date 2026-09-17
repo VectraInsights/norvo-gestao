@@ -12,6 +12,7 @@ import {
 import { supabase } from "@/integrations/supabase/client";
 import { useEmpresaAtual } from "@/hooks/use-empresa";
 import { toast } from "sonner";
+import { useQueryClient } from "@tanstack/react-query";
 
 export function AlterarSenhaDialog({
   open,
@@ -26,6 +27,7 @@ export function AlterarSenhaDialog({
   const [nova, setNova] = useState("");
   const [confirma, setConfirma] = useState("");
   const [saving, setSaving] = useState(false);
+  const qc = useQueryClient();
 
   useEffect(() => {
     if (!open) return;
@@ -84,12 +86,14 @@ export function AlterarSenhaDialog({
           .eq("empresa_id", (empresa as any).id)
           .eq("user_id", usr.id);
         if (error) {
+          qc.invalidateQueries({ queryKey: ["meu-nome"] });
           toast.success("Nome atualizado no login!");
           toast.info("O cadastro da empresa não pôde ser alterado — peça a um admin.");
           onOpenChange(false);
           return;
         }
       }
+      qc.invalidateQueries({ queryKey: ["meu-nome"] });
       toast.success(querSenha ? "Nome e senha atualizados!" : "Nome atualizado!");
       onOpenChange(false);
     } catch (e) {
