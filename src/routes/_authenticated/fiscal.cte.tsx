@@ -106,7 +106,7 @@ function CtePage() {
   const [periodoFim, setPeriodoFim] = useState(() => new Date().toISOString().slice(0, 10));
   const [sortConfig, setSortConfig] = useState<{ key: string; dir: "asc" | "desc" }>({ key: "nNF", dir: "asc" });
   const [editingRascunhoId, setEditingRascunhoId] = useState<string | null>(null);
-  const [statusTab, setStatusTab] = useState("autorizados");
+  const [statusTab, setStatusTab] = useState("embarque");
   const [respNome, setRespNome] = useState("");
   useEffect(() => { (async () => { try { const { data } = await supabase.auth.getUser(); const usr = (data as any)?.user; if (!usr) return; let nm = (usr?.user_metadata as any)?.nome || ""; if (!nm && empresa) { const { data: eu } = await supabase.from("empresa_users" as any).select("nome").eq("empresa_id", (empresa as any).id).eq("user_id", usr.id).maybeSingle(); nm = (eu as any)?.nome || ""; } setRespNome(nm || ""); } catch {} })(); }, [(empresa as any)?.id]);
 
@@ -145,15 +145,6 @@ function CtePage() {
     };
   }, [docs]);
 
-  const filteredDocs = useMemo(() => {
-    switch (statusTab) {
-      case "autorizados": return docsByStatus.autorizados;
-      case "rejeitados": return docsByStatus.rejeitados;
-      case "cancelados": return docsByStatus.cancelados;
-      case "rascunhos": return docsByStatus.rascunhos;
-      default: return docs ?? [];
-    }
-  }, [statusTab, docsByStatus, docs]);
 
   // Chaves reservadas em rascunhos (inclui rascunhos antigos, cujas NF-es foram deletadas do banco)
   const chavesEmRascunho = useMemo(() => {
@@ -1637,230 +1628,14 @@ function CtePage() {
     setForm(f => ({ ...f, xMunIni: cx, ...(cu ? { ufIni: cu } : {}), ...(cc ? { cMunIni: cc } : {}) }));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open, mercadorias, selecionadas, percursos, contatoByDoc]);
-  return (
-    <div className="p-6 space-y-4">
-      <PageHeader eyebrow="Fiscal" title="CT-e" description="Conhecimento de Transporte Eletrônico (57) — emissão robusta estilo STM, com múltiplas NF-es por CT-e." actions={<Button size="sm" onClick={() => novoCtePreservandoFiscal()}><Plus className="mr-1 h-4 w-4" /> Novo CT-e</Button>} />
-
-      {/* Cadastro de Mercadorias para Embarque — estilo STM */}
-      <Card className="overflow-hidden border-2 border-primary/20 shadow-panel">
-        <div className="bg-primary text-primary-foreground px-3 py-2 flex items-center justify-between">
-          <h3 className="text-sm font-semibold flex items-center gap-2"><Package className="h-4 w-4" /> Cadastro de Mercadorias para Embarque</h3>
-          <span className="text-xs opacity-80">CT-e Avulso • Sem Mercadoria/Percurso</span>
-        </div>
-        <CardContent className="p-3 space-y-3 bg-muted/20 overflow-visible">
-          <div className="border rounded p-2 bg-background space-y-2">
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-3">
-              <div>
-                <Label className="text-xs font-semibold text-primary">Embarque via CT-e</Label>
-                <div className="flex flex-col gap-1 mt-1 text-xs">
-                  <label className="flex items-center gap-1"><input type="radio" checked readOnly /> CT-e Avulso</label>
-                  <label className="flex items-center gap-1 opacity-60"><input type="radio" disabled /> CT-e Redes­pacho</label>
-                </div>
-              </div>
-              <div>
-                <Label className="text-xs font-semibold text-primary">Situação de Embarque</Label>
-                <div className="flex flex-col gap-1 mt-1 text-xs">
-                  <label className="flex items-center gap-1"><input type="radio" checked readOnly /> Pendentes de Liberação</label>
-                  <label className="flex items-center gap-1 opacity-60"><input type="radio" disabled /> Embarques Liberados</label>
-                </div>
-              </div>
-                <div>
-                <Label className="text-xs font-semibold text-primary">Período de Entrada</Label>
-                <div className="flex items-center gap-1.5 mt-1">
-                  <DateInput value={periodoIni} onChange={setPeriodoIni} className="h-7 text-xs flex-1 min-w-0" />
-                  <span className="text-xs shrink-0">Até</span>
-                  <DateInput value={periodoFim} onChange={setPeriodoFim} className="h-7 text-xs flex-1 min-w-0" />
-                  <Button size="sm" variant="outline" className="h-7 text-xs shrink-0 px-2"><Search className="h-3 w-3 mr-1" />Consulta</Button>
-                </div>
-                </div>
-              </div>
-            <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted-foreground border-t pt-2">
-              <span>Qtde NF-e: <span className="font-bold text-foreground">{mercadorias.length}</span></span>
-              <span className="text-muted-foreground/40">•</span>
-              <span>Peso Bruto: <span className="font-bold text-foreground">{Number(mercadorias.reduce((a,m)=>a+m.peso,0)).toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} kg</span></span>
-              <span className="text-muted-foreground/40">•</span>
-              <span>Valor: <span className="font-bold text-foreground">{brl(mercadorias.reduce((a,m)=>a+m.valor,0))}</span></span>
-            </div>
-          </div>
-
-          {/* Listagem das Notas Fiscais */}
-          <div className="border rounded overflow-hidden bg-background">
-            <div className="bg-sky-600 text-white px-2 py-1 flex items-center justify-between">
-              <span className="text-xs font-semibold">Listagem das Notas Fiscais</span>
-              <span className="text-xs">Qtde NF-e: {mercadorias.length}</span>
-            </div>
-            <div className="overflow-x-auto max-h-[220px]">
-              <Table>
-                <TableHeader className="sticky top-0 bg-muted">
-                  <TableRow>
-                    <TableHead className="w-6">
-                      <input
-                        type="checkbox"
-                        checked={mercadorias.length > 0 && selecionadas.size === mercadorias.length}
-                        onChange={e => {
-                          if (e.target.checked) {
-                            const dests = new Set(mercadorias.map(m => m.destCnpj || m.dest));
-                            if (dests.size > 1) {
-                              toast.error("Não pode selecionar NF-es com destinos diferentes");
-                              return;
-                            }
-                            setSelecionadas(new Set(mercadorias.map(m => m.chave)));
-                          } else setSelecionadas(new Set());
-                        }}
-                      />
-                    </TableHead>
-                    {([
-                      { key: "emit", label: "Remetente" },
-                      { key: "emitCnpj", label: "CNPJ Remetente" },
-                      { key: "dest", label: "Destinatário" },
-                      { key: "destCnpj", label: "CNPJ Destinatário" },
-                      { key: "tomador", label: "Tomador" },
-                      { key: "nNF", label: "Nº NF-e" },
-                      { key: "serie", label: "Série" },
-                      { key: "data", label: "Data Emissão" },
-                      { key: "valor", label: "Valor" },
-                      { key: "peso", label: "Peso" },
-                    ] as const).map(col => (
-                      <TableHead
-                        key={col.key}
-                        className="text-xs cursor-pointer select-none hover:bg-muted/80"
-                        onClick={() => setSortConfig(s => s.key === col.key ? { key: col.key, dir: s.dir === "asc" ? "desc" : "asc" } : { key: col.key, dir: "asc" })}
-                      >
-                        {col.label}
-                        {sortConfig.key === col.key && <span className="ml-1">{sortConfig.dir === "asc" ? "▲" : "▼"}</span>}
-                      </TableHead>
-                    ))}
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {mercadorias.length === 0 ? (
-                    <TableRow><TableCell colSpan={12} className="text-center text-xs text-muted-foreground py-8">Nenhuma NF-e importada. Use "Importar NFes (XML)" abaixo.</TableCell></TableRow>
-                  ) : (
-                    mercadoriasSorted.map((m) => (
-                      <TableRow key={m.chave} className="text-xs" data-selected={selecionadas.has(m.chave)}>
-                        <TableCell>
-                          <input
-                            type="checkbox"
-                            checked={selecionadas.has(m.chave)}
-                            onChange={e => {
-                              const next = new Set(selecionadas);
-                              if (e.target.checked) {
-                                next.add(m.chave);
-                                const sel = mercadorias.filter(x => next.has(x.chave));
-                                const dests = new Set(sel.map(x => x.destCnpj || x.dest));
-                                if (dests.size > 1) {
-                                  toast.error("Não pode emitir o mesmo CT-e para destinos diferentes");
-                                  next.delete(m.chave);
-                                }
-                              } else next.delete(m.chave);
-                              setSelecionadas(next);
-                            }}
-                          />
-                        </TableCell>
-                        <TableCell className="truncate max-w-[110px]" title={m.emit}>{m.emit}</TableCell>
-                        <TableCell className="font-mono text-[10px]">{m.emitCnpj ? m.emitCnpj.replace(/(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})/, "$1.$2.$3/$4-$5") : "—"}</TableCell>
-                        <TableCell className="truncate max-w-[110px]" title={m.dest}>{m.dest}</TableCell>
-                        <TableCell className="font-mono text-[10px]">{m.destCnpj ? m.destCnpj.replace(/(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})/, "$1.$2.$3/$4-$5") : "—"}</TableCell>
-                        <TableCell className="truncate max-w-[110px] text-amber-700" title={m.tomador}>{m.tomador || "—"}</TableCell>
-                        <TableCell className="font-mono">{m.nNF}</TableCell>
-                        <TableCell>{m.serie}</TableCell>
-                        <TableCell>{m.data ? dateBR(m.data) : "—"}</TableCell>
-                        <TableCell className="text-right">{brl(m.valor)}</TableCell>
-                        <TableCell className="text-right">{Number(m.peso).toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</TableCell>
-                      </TableRow>
-                    ))
-                  )}
-                </TableBody>
-              </Table>
-            </div>
-          </div>
-
-          {/* Ações de importação múltipla */}
-          <div className="flex flex-wrap gap-2">
-            <label className="flex items-center gap-2 px-3 py-2 border rounded bg-accent text-accent-foreground cursor-pointer hover:bg-accent/70 text-xs font-medium">
-              <UploadCloud className="h-4 w-4" /> Importar NFes (XML)
-              <input type="file" accept=".xml" multiple className="hidden" onChange={e => { if (e.target.files) handleImportNFeXml(e.target.files); e.currentTarget.value = ""; }} />
-            </label>
-            <Button variant="outline" size="sm" onClick={async () => { if (!empresa) return; if (mercadorias.length === 0) return; if (!confirm(`Remover ${mercadorias.length} NF-e(s) pendentes?`)) return; const { error } = await supabase.from("cte_nfes_pendentes" as any).delete().eq("empresa_id", empresa.id).eq("status", "pendente"); if (error) toast.error(error.message); else { setMercadorias([]); setSelecionadas(new Set()); qc.invalidateQueries({ queryKey: ["cte-nfes-pendentes", empresa.id] }); toast.success("Pendentes removidos"); } }} disabled={mercadorias.length===0}><Trash2 className="mr-1 h-3 w-3" /> Limpar</Button>
-            <Button variant="outline" size="sm" onClick={async () => { if (!empresa) return; try { await excluirRejeitadosCteFn({ data: { empresaId: empresa.id } }); toast.success("CT-e rejeitados excluídos"); qc.invalidateQueries({ queryKey: ["cte-documentos"] }); } catch(e:any) { toast.error(e.message); } }}><Trash2 className="mr-1 h-3 w-3" /> Limpar Rejeitados</Button>
-            <div className="ml-auto flex gap-2">
-              <Button
-                variant="outline"
-                size="sm"
-                disabled={selecionadas.size===0}
-                onClick={() => {
-                  if (selecionadas.size===0) { toast.error("Selecione ao menos uma NF-e"); return; }
-                  const sel = mercadorias.filter(m => selecionadas.has(m.chave));
-                  const dests = new Set(sel.map(m => m.destCnpj || m.dest));
-                  const emits = new Set(sel.map(m => m.emitCnpj || m.emit));
-                  const tomads = new Set(sel.map(m => m.tomadorCnpj || m.tomador));
-                  if (emits.size > 1) { toast.error("Remetentes diferentes"); return; }
-                  if (dests.size > 1) { toast.error("Destinatários diferentes"); return; }
-                  if (tomads.size > 1) { toast.error("Tomadores diferentes"); return; }
-                  const somaV = sel.reduce((a,m)=>a+m.valor,0);
-                  const somaP = sel.reduce((a,m)=>a+m.peso,0);
-                  const first = sel[0] as typeof sel[0] & { modFrete?: string; tomadorUF?: string; tomadorCMun?: string; tomadorXMun?: string; emitUF?: string; emitCMun?: string; emitXMun?: string; destUF?: string; destCMun?: string; destXMun?: string };
-                  const tomaByMod: Record<string,string> = { "0":"0", "1":"3", "2":"4", "3":"0", "4":"3", "9":"4" };
-                  const tomaSel = (first as any).modFrete ? (tomaByMod[(first as any).modFrete] ?? "3") : "3";
-                  const tomCnpjDigits = (((first as any).tomadorCnpj || first.destCnpj || "") as string).replace(/\D/g, "");
-                  const cTom = contatoByDoc.get(tomCnpjDigits) || {};
-                  lastLookupTomador.current = tomCnpjDigits;
-                  setForm(f => ({
-                    ...f,
-                    toma: tomaSel,
-                    cnpjTomador: (first as any).tomadorCnpj || first.destCnpj || "",
-                    xNomeTomador: (first as any).tomador || first.dest || "",
-                    ufTomador: (first as any).tomadorUF || cTom.uf || "",
-                    cMunTomador: (first as any).tomadorCMun || "",
-                    xMunTomador: (first as any).tomadorXMun || cTom.cidade || "",
-                    ieTomador: (first as any).tomadorIE || cTom.ie || "",
-                    logradouroTomador: (first as any).tomadorLogradouro || cTom.logradouro || "",
-                    nroTomador: cTom.numero || "",
-                    bairroTomador: (first as any).tomadorBairro || cTom.bairro || "",
-                    cepTomador: (first as any).tomadorCEP || (cTom.cep || "").replace(/\D/g, "") || "",
-                    foneTomador: cTom.telefone || "",
-                    emailTomador: "",
-                    cMunIni: (first as any).emitCMun || "",
-                    xMunIni: (first as any).emitXMun || "",
-                    ufIni: (first as any).emitUF || "",
-                    cMunFim: (first as any).destCMun || "",
-                    xMunFim: (first as any).destXMun || "",
-                    ieDestinatario: (first as any).destIE || "",
-                    ufFim: (first as any).destUF || "",
-                    cMunEnv: (first as any).emitCMun || "",
-                    xMunEnv: (first as any).emitXMun || "",
-                    ufEnv: (first as any).emitUF || "",
-                    vCarga: somaV.toFixed(2),
-                    peso: String(somaP),
-                    icmsBase: f.vPrest || "0.00",
-                    ...LIMPA_VIAGEM,
-                  }));
-                  setOpen(true);
-                }}
-              >
-                Gerar CT-e com {selecionadas.size || 0} selecionada(s)
-              </Button>
-              <Button size="sm" onClick={() => novoCtePreservandoFiscal()}><Plus className="mr-1 h-3 w-3" /> Novo CT-e avulso</Button>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-
-      {isLoading ? <div className="text-sm text-muted-foreground">Carregando…</div> : (
-        <Tabs value={statusTab} onValueChange={setStatusTab}>
-          <TabsList className="mb-2">
-            <TabsTrigger value="autorizados" className="text-xs data-[state=active]:bg-primary/10 data-[state=active]:text-primary">Autorizados ({docsByStatus.autorizados.length})</TabsTrigger>
-            <TabsTrigger value="rejeitados" className="text-xs data-[state=active]:bg-primary/10 data-[state=active]:text-primary">Rejeitados ({docsByStatus.rejeitados.length})</TabsTrigger>
-            <TabsTrigger value="cancelados" className="text-xs data-[state=active]:bg-primary/10 data-[state=active]:text-primary">Cancelados ({docsByStatus.cancelados.length})</TabsTrigger>
-            <TabsTrigger value="rascunhos" className="text-xs data-[state=active]:bg-primary/10 data-[state=active]:text-primary">Rascunhos ({docsByStatus.rascunhos.length})</TabsTrigger>
-          </TabsList>
-          {filteredDocs.length === 0 ? (
-            <EmptyState icon={Truck} title="Nenhum CT-e" description={`Nenhum CT-e ${statusTab}.`} />
+  const renderTabelaDocs = (lista: CteDoc[], rotulo: string) => (<>
+{lista.length === 0 ? (
+            <EmptyState icon={Truck} title="Nenhum CT-e" description={`Nenhum CT-e ${rotulo}.`} />
           ) : (
             <Card className="overflow-hidden">
               <Table>
                 <TableHeader><TableRow><TableHead className="text-center">Número</TableHead><TableHead className="text-center">Série</TableHead><TableHead className="text-center">Status</TableHead><TableHead className="text-center">Notas Fiscais</TableHead><TableHead className="text-center">Valor</TableHead><TableHead className="text-center">Chave</TableHead><TableHead className="text-center">Ações</TableHead></TableRow></TableHeader>
-                <TableBody>{filteredDocs.map(d => {
+                <TableBody>{lista.map(d => {
                   const nNFs = (() => { try { const j = JSON.parse(d.xml_assinado || "{}"); const nn = j.nfs?.map((n: any) => n.nNF).filter(Boolean) || []; if (nn.length) return nn; } catch { } try { const chaves = [...(d.xml_assinado||"").matchAll(/<chNFe>(\d{44})<\/chNFe>/g)].map(m=>m[1]); if (chaves.length===0) return []; return chaves.map(ch=>ch.slice(25,34).replace(/^0+/,"") || "0"); } catch { return []; } })();
                   const isRascunho = d.status === "rascunho";
                   return (
@@ -1889,6 +1664,232 @@ function CtePage() {
               </Table>
             </Card>
           )}
+
+  </>);
+
+  return (
+    <div className="p-6 space-y-4">
+      <PageHeader eyebrow="Fiscal" title="CT-e" description="Conhecimento de Transporte Eletrônico (57) — emissão robusta estilo STM, com múltiplas NF-es por CT-e." actions={<Button size="sm" onClick={() => novoCtePreservandoFiscal()}><Plus className="mr-1 h-4 w-4" /> Novo CT-e</Button>} />
+
+      {isLoading ? <div className="text-sm text-muted-foreground">Carregando…</div> : (
+        <Tabs value={statusTab} onValueChange={setStatusTab}>
+          <TabsList className="mb-2 flex flex-wrap">
+            <TabsTrigger value="embarque" className="text-xs data-[state=active]:bg-primary/10 data-[state=active]:text-primary">NF-es para embarque ({mercadorias.length})</TabsTrigger>
+            <TabsTrigger value="rascunhos" className="text-xs data-[state=active]:bg-primary/10 data-[state=active]:text-primary">Aguardando envio ({docsByStatus.rascunhos.length})</TabsTrigger>
+            <TabsTrigger value="autorizados" className="text-xs data-[state=active]:bg-primary/10 data-[state=active]:text-primary">Autorizados ({docsByStatus.autorizados.length})</TabsTrigger>
+            <TabsTrigger value="rejeitados" className="text-xs data-[state=active]:bg-primary/10 data-[state=active]:text-primary">Rejeitados ({docsByStatus.rejeitados.length})</TabsTrigger>
+            <TabsTrigger value="cancelados" className="text-xs data-[state=active]:bg-primary/10 data-[state=active]:text-primary">Cancelados ({docsByStatus.cancelados.length})</TabsTrigger>
+          </TabsList>
+          <TabsContent value="embarque">
+          {/* Cadastro de Mercadorias para Embarque — estilo STM */}
+          <Card className="overflow-hidden border-2 border-primary/20 shadow-panel">
+            <div className="bg-primary text-primary-foreground px-3 py-2 flex items-center justify-between">
+              <h3 className="text-sm font-semibold flex items-center gap-2"><Package className="h-4 w-4" /> Cadastro de Mercadorias para Embarque</h3>
+              <span className="text-xs opacity-80">CT-e Avulso • Sem Mercadoria/Percurso</span>
+            </div>
+            <CardContent className="p-3 space-y-3 bg-muted/20 overflow-visible">
+              <div className="border rounded p-2 bg-background space-y-2">
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-3">
+                  <div>
+                    <Label className="text-xs font-semibold text-primary">Embarque via CT-e</Label>
+                    <div className="flex flex-col gap-1 mt-1 text-xs">
+                      <label className="flex items-center gap-1"><input type="radio" checked readOnly /> CT-e Avulso</label>
+                      <label className="flex items-center gap-1 opacity-60"><input type="radio" disabled /> CT-e Redes­pacho</label>
+                    </div>
+                  </div>
+                  <div>
+                    <Label className="text-xs font-semibold text-primary">Situação de Embarque</Label>
+                    <div className="flex flex-col gap-1 mt-1 text-xs">
+                      <label className="flex items-center gap-1"><input type="radio" checked readOnly /> Pendentes de Liberação</label>
+                      <label className="flex items-center gap-1 opacity-60"><input type="radio" disabled /> Embarques Liberados</label>
+                    </div>
+                  </div>
+                    <div>
+                    <Label className="text-xs font-semibold text-primary">Período de Entrada</Label>
+                    <div className="flex items-center gap-1.5 mt-1">
+                      <DateInput value={periodoIni} onChange={setPeriodoIni} className="h-7 text-xs flex-1 min-w-0" />
+                      <span className="text-xs shrink-0">Até</span>
+                      <DateInput value={periodoFim} onChange={setPeriodoFim} className="h-7 text-xs flex-1 min-w-0" />
+                      <Button size="sm" variant="outline" className="h-7 text-xs shrink-0 px-2"><Search className="h-3 w-3 mr-1" />Consulta</Button>
+                    </div>
+                    </div>
+                  </div>
+                <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted-foreground border-t pt-2">
+                  <span>Qtde NF-e: <span className="font-bold text-foreground">{mercadorias.length}</span></span>
+                  <span className="text-muted-foreground/40">•</span>
+                  <span>Peso Bruto: <span className="font-bold text-foreground">{Number(mercadorias.reduce((a,m)=>a+m.peso,0)).toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} kg</span></span>
+                  <span className="text-muted-foreground/40">•</span>
+                  <span>Valor: <span className="font-bold text-foreground">{brl(mercadorias.reduce((a,m)=>a+m.valor,0))}</span></span>
+                </div>
+              </div>
+
+              {/* Listagem das Notas Fiscais */}
+              <div className="border rounded overflow-hidden bg-background">
+                <div className="bg-sky-600 text-white px-2 py-1 flex items-center justify-between">
+                  <span className="text-xs font-semibold">Listagem das Notas Fiscais</span>
+                  <span className="text-xs">Qtde NF-e: {mercadorias.length}</span>
+                </div>
+                <div className="overflow-x-auto max-h-[220px]">
+                  <Table>
+                    <TableHeader className="sticky top-0 bg-muted">
+                      <TableRow>
+                        <TableHead className="w-6">
+                          <input
+                            type="checkbox"
+                            checked={mercadorias.length > 0 && selecionadas.size === mercadorias.length}
+                            onChange={e => {
+                              if (e.target.checked) {
+                                const dests = new Set(mercadorias.map(m => m.destCnpj || m.dest));
+                                if (dests.size > 1) {
+                                  toast.error("Não pode selecionar NF-es com destinos diferentes");
+                                  return;
+                                }
+                                setSelecionadas(new Set(mercadorias.map(m => m.chave)));
+                              } else setSelecionadas(new Set());
+                            }}
+                          />
+                        </TableHead>
+                        {([
+                          { key: "emit", label: "Remetente" },
+                          { key: "emitCnpj", label: "CNPJ Remetente" },
+                          { key: "dest", label: "Destinatário" },
+                          { key: "destCnpj", label: "CNPJ Destinatário" },
+                          { key: "tomador", label: "Tomador" },
+                          { key: "nNF", label: "Nº NF-e" },
+                          { key: "serie", label: "Série" },
+                          { key: "data", label: "Data Emissão" },
+                          { key: "valor", label: "Valor" },
+                          { key: "peso", label: "Peso" },
+                        ] as const).map(col => (
+                          <TableHead
+                            key={col.key}
+                            className="text-xs cursor-pointer select-none hover:bg-muted/80"
+                            onClick={() => setSortConfig(s => s.key === col.key ? { key: col.key, dir: s.dir === "asc" ? "desc" : "asc" } : { key: col.key, dir: "asc" })}
+                          >
+                            {col.label}
+                            {sortConfig.key === col.key && <span className="ml-1">{sortConfig.dir === "asc" ? "▲" : "▼"}</span>}
+                          </TableHead>
+                        ))}
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {mercadorias.length === 0 ? (
+                        <TableRow><TableCell colSpan={12} className="text-center text-xs text-muted-foreground py-8">Nenhuma NF-e importada. Use "Importar NFes (XML)" abaixo.</TableCell></TableRow>
+                      ) : (
+                        mercadoriasSorted.map((m) => (
+                          <TableRow key={m.chave} className="text-xs" data-selected={selecionadas.has(m.chave)}>
+                            <TableCell>
+                              <input
+                                type="checkbox"
+                                checked={selecionadas.has(m.chave)}
+                                onChange={e => {
+                                  const next = new Set(selecionadas);
+                                  if (e.target.checked) {
+                                    next.add(m.chave);
+                                    const sel = mercadorias.filter(x => next.has(x.chave));
+                                    const dests = new Set(sel.map(x => x.destCnpj || x.dest));
+                                    if (dests.size > 1) {
+                                      toast.error("Não pode emitir o mesmo CT-e para destinos diferentes");
+                                      next.delete(m.chave);
+                                    }
+                                  } else next.delete(m.chave);
+                                  setSelecionadas(next);
+                                }}
+                              />
+                            </TableCell>
+                            <TableCell className="truncate max-w-[110px]" title={m.emit}>{m.emit}</TableCell>
+                            <TableCell className="font-mono text-[10px]">{m.emitCnpj ? m.emitCnpj.replace(/(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})/, "$1.$2.$3/$4-$5") : "—"}</TableCell>
+                            <TableCell className="truncate max-w-[110px]" title={m.dest}>{m.dest}</TableCell>
+                            <TableCell className="font-mono text-[10px]">{m.destCnpj ? m.destCnpj.replace(/(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})/, "$1.$2.$3/$4-$5") : "—"}</TableCell>
+                            <TableCell className="truncate max-w-[110px] text-amber-700" title={m.tomador}>{m.tomador || "—"}</TableCell>
+                            <TableCell className="font-mono">{m.nNF}</TableCell>
+                            <TableCell>{m.serie}</TableCell>
+                            <TableCell>{m.data ? dateBR(m.data) : "—"}</TableCell>
+                            <TableCell className="text-right">{brl(m.valor)}</TableCell>
+                            <TableCell className="text-right">{Number(m.peso).toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</TableCell>
+                          </TableRow>
+                        ))
+                      )}
+                    </TableBody>
+                  </Table>
+                </div>
+              </div>
+
+              {/* Ações de importação múltipla */}
+              <div className="flex flex-wrap gap-2">
+                <label className="flex items-center gap-2 px-3 py-2 border rounded bg-accent text-accent-foreground cursor-pointer hover:bg-accent/70 text-xs font-medium">
+                  <UploadCloud className="h-4 w-4" /> Importar NFes (XML)
+                  <input type="file" accept=".xml" multiple className="hidden" onChange={e => { if (e.target.files) handleImportNFeXml(e.target.files); e.currentTarget.value = ""; }} />
+                </label>
+                <Button variant="outline" size="sm" onClick={async () => { if (!empresa) return; if (mercadorias.length === 0) return; if (!confirm(`Remover ${mercadorias.length} NF-e(s) pendentes?`)) return; const { error } = await supabase.from("cte_nfes_pendentes" as any).delete().eq("empresa_id", empresa.id).eq("status", "pendente"); if (error) toast.error(error.message); else { setMercadorias([]); setSelecionadas(new Set()); qc.invalidateQueries({ queryKey: ["cte-nfes-pendentes", empresa.id] }); toast.success("Pendentes removidos"); } }} disabled={mercadorias.length===0}><Trash2 className="mr-1 h-3 w-3" /> Limpar</Button>
+                <Button variant="outline" size="sm" onClick={async () => { if (!empresa) return; try { await excluirRejeitadosCteFn({ data: { empresaId: empresa.id } }); toast.success("CT-e rejeitados excluídos"); qc.invalidateQueries({ queryKey: ["cte-documentos"] }); } catch(e:any) { toast.error(e.message); } }}><Trash2 className="mr-1 h-3 w-3" /> Limpar Rejeitados</Button>
+                <div className="ml-auto flex gap-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    disabled={selecionadas.size===0}
+                    onClick={() => {
+                      if (selecionadas.size===0) { toast.error("Selecione ao menos uma NF-e"); return; }
+                      const sel = mercadorias.filter(m => selecionadas.has(m.chave));
+                      const dests = new Set(sel.map(m => m.destCnpj || m.dest));
+                      const emits = new Set(sel.map(m => m.emitCnpj || m.emit));
+                      const tomads = new Set(sel.map(m => m.tomadorCnpj || m.tomador));
+                      if (emits.size > 1) { toast.error("Remetentes diferentes"); return; }
+                      if (dests.size > 1) { toast.error("Destinatários diferentes"); return; }
+                      if (tomads.size > 1) { toast.error("Tomadores diferentes"); return; }
+                      const somaV = sel.reduce((a,m)=>a+m.valor,0);
+                      const somaP = sel.reduce((a,m)=>a+m.peso,0);
+                      const first = sel[0] as typeof sel[0] & { modFrete?: string; tomadorUF?: string; tomadorCMun?: string; tomadorXMun?: string; emitUF?: string; emitCMun?: string; emitXMun?: string; destUF?: string; destCMun?: string; destXMun?: string };
+                      const tomaByMod: Record<string,string> = { "0":"0", "1":"3", "2":"4", "3":"0", "4":"3", "9":"4" };
+                      const tomaSel = (first as any).modFrete ? (tomaByMod[(first as any).modFrete] ?? "3") : "3";
+                      const tomCnpjDigits = (((first as any).tomadorCnpj || first.destCnpj || "") as string).replace(/\D/g, "");
+                      const cTom = contatoByDoc.get(tomCnpjDigits) || {};
+                      lastLookupTomador.current = tomCnpjDigits;
+                      setForm(f => ({
+                        ...f,
+                        toma: tomaSel,
+                        cnpjTomador: (first as any).tomadorCnpj || first.destCnpj || "",
+                        xNomeTomador: (first as any).tomador || first.dest || "",
+                        ufTomador: (first as any).tomadorUF || cTom.uf || "",
+                        cMunTomador: (first as any).tomadorCMun || "",
+                        xMunTomador: (first as any).tomadorXMun || cTom.cidade || "",
+                        ieTomador: (first as any).tomadorIE || cTom.ie || "",
+                        logradouroTomador: (first as any).tomadorLogradouro || cTom.logradouro || "",
+                        nroTomador: cTom.numero || "",
+                        bairroTomador: (first as any).tomadorBairro || cTom.bairro || "",
+                        cepTomador: (first as any).tomadorCEP || (cTom.cep || "").replace(/\D/g, "") || "",
+                        foneTomador: cTom.telefone || "",
+                        emailTomador: "",
+                        cMunIni: (first as any).emitCMun || "",
+                        xMunIni: (first as any).emitXMun || "",
+                        ufIni: (first as any).emitUF || "",
+                        cMunFim: (first as any).destCMun || "",
+                        xMunFim: (first as any).destXMun || "",
+                        ieDestinatario: (first as any).destIE || "",
+                        ufFim: (first as any).destUF || "",
+                        cMunEnv: (first as any).emitCMun || "",
+                        xMunEnv: (first as any).emitXMun || "",
+                        ufEnv: (first as any).emitUF || "",
+                        vCarga: somaV.toFixed(2),
+                        peso: String(somaP),
+                        icmsBase: f.vPrest || "0.00",
+                        ...LIMPA_VIAGEM,
+                      }));
+                      setOpen(true);
+                    }}
+                  >
+                    Gerar CT-e com {selecionadas.size || 0} selecionada(s)
+                  </Button>
+                  <Button size="sm" onClick={() => novoCtePreservandoFiscal()}><Plus className="mr-1 h-3 w-3" /> Novo CT-e avulso</Button>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+          </TabsContent>
+          <TabsContent value="rascunhos">{renderTabelaDocs(docsByStatus.rascunhos, "aguardando envio")}</TabsContent>
+          <TabsContent value="autorizados">{renderTabelaDocs(docsByStatus.autorizados, "autorizados")}</TabsContent>
+          <TabsContent value="rejeitados">{renderTabelaDocs(docsByStatus.rejeitados, "rejeitados")}</TabsContent>
+          <TabsContent value="cancelados">{renderTabelaDocs(docsByStatus.cancelados, "cancelados")}</TabsContent>
         </Tabs>
       )}
       <Dialog open={open} onOpenChange={setOpen}>
