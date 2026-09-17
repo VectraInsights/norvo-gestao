@@ -204,6 +204,17 @@ function cstIcmsLabel(cst: string): string {
   return `${c} - ${map[c] || "Verificar CST"}`;
 }
 
+const CCLASS_TRIB_NOMES: Record<string, string> = {
+  "000001": "Situações tributadas integralmente pelo IBS e CBS",
+};
+function cClassTribLabel(v: any): string {
+  const code = String(v || "").trim();
+  if (!code) return "000001 - Situações tributadas integralmente pelo IBS e CBS.";
+  if (code.includes(" - ")) return code;
+  const nome = CCLASS_TRIB_NOMES[code];
+  return nome ? `${code} - ${nome}` : code;
+}
+
 function tomaLabel(cod: string | undefined, toma4: boolean | undefined, tomDoc?: string, remDoc?: string, destDoc?: string, expDoc?: string, recDoc?: string): string {
   const dg = (s: any) => String(s || "").replace(/\D/g, "");
   const td = dg(tomDoc);
@@ -571,7 +582,7 @@ export function gerarDactePdf(data: DacteData): Blob {
   const ufV = data.ibsUfValor !== undefined && data.ibsUfValor !== "" ? Number(data.ibsUfValor) : ibBase * 0.001;
   const ibCols: Array<[string, string, number]> = [
     ["CST", D(data.ibsCST) || "000", 10],
-    ["Classificação Tributária", cut(D(data.ibsClass) || "000001 - Situações tributadas integralmente pelo IBS e CBS.", 34), 54],
+    ["Classificação Tributária", cut(cClassTribLabel(data.ibsClass), 58), 54],
     ["Base de Cálculo", fmtNum(ibBase), 24],
     ["% CBS", fmtNum(cbsA), 14],
     ["Valor CBS", fmtNum(cbsV), 20],
@@ -581,9 +592,9 @@ export function gerarDactePdf(data: DacteData): Blob {
     ["Valor IBS Uf", fmtNum(ufV), 0],
   ];
   let ibx = M + 2;
-  ibCols.forEach(([l, v, w]) => {
+  ibCols.forEach(([l, v, w], ii) => {
     lab(l, ibx, y + 2.5);
-    val(v, ibx, y + 5.5, 5);
+    val(v, ibx, y + 5.5, ii === 1 ? 4.5 : 5);
     if (w) { vline(ibx + w, y, ibH); ibx += w + 1.5; }
   });
   y += ibH + 1;
