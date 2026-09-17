@@ -1,6 +1,7 @@
 import { jsPDF } from "jspdf";
 import JsBarcode from "./vendor/jsbarcode.bundle.cjs";
 import qrcode from "./vendor/qrcode.bundle.cjs";
+import { CCLASS_TRIB_CST, CCLASS_TRIB_NOMES } from "./cclass-trib";
 
 // DACTE fiel ao modelo oficial (Juvenal Transportes) — retrato A4, P&B.
 interface DacteData {
@@ -204,9 +205,6 @@ function cstIcmsLabel(cst: string): string {
   return `${c} - ${map[c] || "Verificar CST"}`;
 }
 
-const CCLASS_TRIB_NOMES: Record<string, string> = {
-  "000001": "Situações tributadas integralmente pelo IBS e CBS",
-};
 function cClassTribLabel(v: any): string {
   const code = String(v || "").trim();
   if (!code) return "000001 - Situações tributadas integralmente pelo IBS e CBS.";
@@ -580,8 +578,10 @@ export function gerarDactePdf(data: DacteData): Blob {
   const munV = data.ibsMunValor !== undefined && data.ibsMunValor !== "" ? Number(data.ibsMunValor) : 0;
   const ufA = data.ibsUfAliq !== undefined && data.ibsUfAliq !== "" ? Number(data.ibsUfAliq) : 0.10;
   const ufV = data.ibsUfValor !== undefined && data.ibsUfValor !== "" ? Number(data.ibsUfValor) : ibBase * 0.001;
+  const ibsCode = String((data as any).ibsClass || "").trim();
+  const ibsCSTx = CCLASS_TRIB_CST[ibsCode] || D(data.ibsCST) || "000";
   const ibCols: Array<[string, string, number]> = [
-    ["CST", D(data.ibsCST) || "000", 10],
+    ["CST", ibsCSTx, 10],
     ["Classificação Tributária", cut(cClassTribLabel(data.ibsClass), 58), 54],
     ["Base de Cálculo", fmtNum(ibBase), 24],
     ["% CBS", fmtNum(cbsA), 14],
