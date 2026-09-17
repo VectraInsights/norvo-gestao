@@ -311,7 +311,7 @@ export function gerarDactePdf(data: DacteData): Blob {
     doc.text("CPF / CNPJ :", x + 1.5, yy); v2(fmtCnpj(D(p.doc)), x + 18, yy);
     doc.text("Insc. Est :", c2, yy); v2(cut(D(p.ie), 18), c2 + 16, yy); yy += 2.9;
     doc.text("UF :", x + 1.5, yy); v2(D(p.uf), x + 8, yy);
-    doc.text("País :", x + 30, yy); v2("BRASIL", x + 40, yy);
+    doc.text("País :", x + 22, yy); v2("BRASIL", x + 32, yy);
     doc.text("Fone :", c2, yy); v2(D(p.fone), c2 + 13, yy);
   };
 
