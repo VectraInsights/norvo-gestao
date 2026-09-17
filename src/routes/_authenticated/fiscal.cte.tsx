@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -99,6 +100,7 @@ function CtePage() {
   const [isParsing, setIsParsing] = useState(false);
   const [mercadorias, setMercadorias] = useState<Array<{ chave: string; nNF: string; serie: string; emit: string; emitCnpj: string; emitUF: string; emitCMun: string; emitXMun: string; emitIE?: string; emitLogradouro?: string; emitBairro?: string; emitCEP?: string; emitFone?: string; dest: string; destCnpj: string; destUF: string; destCMun: string; destXMun: string; destIE?: string; destLogradouro?: string; destBairro?: string; destCEP?: string; destFone?: string; valor: number; peso: number; data: string; tomador: string; tomadorCnpj: string; tomadorUF: string; tomadorCMun: string; tomadorXMun: string; tomadorIE?: string; tomadorLogradouro?: string; tomadorBairro?: string; tomadorCEP?: string; modFrete: string; qVol?: number }>>([]);
   const [selecionadas, setSelecionadas] = useState<Set<string>>(new Set());
+  const [confRemetente, setConfRemetente] = useState<{ nome: string; chaves: string[] } | null>(null);
   const [filtroEmpresa] = useState("ROSE TRANSPORTES");
   const [filtroRemetente, setFiltroRemetente] = useState("TODOS REMETENTES");
   const [filtroDestinatario, setFiltroDestinatario] = useState("TODOS OS DESTINATÁRIOS");
@@ -1796,8 +1798,8 @@ function CtePage() {
                                     } else if (red) {
                                       const chaveRem = m.emitCnpj || m.emit;
                                       const outras = mercadorias.filter(x => !next.has(x.chave) && (x.emitCnpj || x.emit) === chaveRem);
-                                      if (outras.length > 0 && confirm(`Selecionar todas as ${outras.length + 1} NF-e de ${(m.emit || "").slice(0, 40)}?`)) {
-                                        outras.forEach(x => next.add(x.chave));
+                                      if (outras.length > 0) {
+                                        setConfRemetente({ nome: (m.emit || "").slice(0, 60), chaves: outras.map(x => x.chave) });
                                       }
                                     }
                                   } else next.delete(m.chave);
@@ -1894,6 +1896,22 @@ function CtePage() {
             </CardContent>
           </Card>
           </TabsContent>
+          <AlertDialog open={!!confRemetente} onOpenChange={(o) => { if (!o) setConfRemetente(null); }}>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>Selecionar todas do remetente?</AlertDialogTitle>
+                <AlertDialogDescription>
+                  {confRemetente && `Selecionar todas as ${confRemetente.chaves.length + 1} NF-e de ${confRemetente.nome}?`}
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                <AlertDialogAction onClick={() => { if (confRemetente) setSelecionadas((prev) => new Set([...prev, ...confRemetente.chaves])); setConfRemetente(null); }}>
+                  Selecionar
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
           <TabsContent value="rascunhos">{renderTabelaDocs(docsByStatus.rascunhos, "aguardando envio")}</TabsContent>
           <TabsContent value="autorizados">{renderTabelaDocs(docsByStatus.autorizados, "autorizados")}</TabsContent>
           <TabsContent value="rejeitados">
