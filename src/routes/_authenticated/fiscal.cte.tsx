@@ -37,7 +37,9 @@ function DacteViewer({ titulo, subtitulo, url, nomeArquivo, onClose, acoes }: {
   onClose: () => void; acoes?: any;
 }) {
   const frameRef = useRef<HTMLIFrameElement>(null);
-  const [zoom, setZoom] = useState(100);
+  const [zoom, setZoom] = useState(() =>
+    typeof window === "undefined" ? 100 : Math.min(200, Math.max(100, Math.round(window.innerWidth / 12))),
+  );
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if (e.key === "Escape") { e.stopPropagation(); onClose(); }
