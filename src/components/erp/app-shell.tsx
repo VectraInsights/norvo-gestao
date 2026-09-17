@@ -506,7 +506,7 @@ export function AppShell({ children }: { children: ReactNode }) {
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="w-56">
                 <DropdownMenuItem onSelect={() => setSenhaOpen(true)}>
-                  <KeyRound className="mr-2 h-4 w-4" /> Alterar senha
+                  <KeyRound className="mr-2 h-4 w-4" /> Dados da conta
                 </DropdownMenuItem>
                 <DropdownMenuItem onSelect={() => navigate({ to: "/configuracoes" })}>
                   <Settings className="mr-2 h-4 w-4" /> Configurações

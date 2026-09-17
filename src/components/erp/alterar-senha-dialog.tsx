@@ -103,7 +103,7 @@ export function AlterarSenhaDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-sm">
         <DialogHeader>
-          <DialogTitle>Minha conta</DialogTitle>
+          <DialogTitle>Dados da conta</DialogTitle>
         </DialogHeader>
         <div className="grid gap-3">
           <div>
