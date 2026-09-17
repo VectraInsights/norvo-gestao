@@ -1824,7 +1824,7 @@ function CtePage() {
                   <input type="file" accept=".xml" multiple className="hidden" onChange={e => { if (e.target.files) handleImportNFeXml(e.target.files); e.currentTarget.value = ""; }} />
                 </label>
                 <Button variant="outline" size="sm" onClick={async () => { if (!empresa) return; if (mercadorias.length === 0) return; if (!confirm(`Remover ${mercadorias.length} NF-e(s) pendentes?`)) return; const { error } = await supabase.from("cte_nfes_pendentes" as any).delete().eq("empresa_id", empresa.id).eq("status", "pendente"); if (error) toast.error(error.message); else { setMercadorias([]); setSelecionadas(new Set()); qc.invalidateQueries({ queryKey: ["cte-nfes-pendentes", empresa.id] }); toast.success("Pendentes removidos"); } }} disabled={mercadorias.length===0}><Trash2 className="mr-1 h-3 w-3" /> Limpar</Button>
-                <Button variant="outline" size="sm" onClick={async () => { if (!empresa) return; try { await excluirRejeitadosCteFn({ data: { empresaId: empresa.id } }); toast.success("CT-e rejeitados excluídos"); qc.invalidateQueries({ queryKey: ["cte-documentos"] }); } catch(e:any) { toast.error(e.message); } }}><Trash2 className="mr-1 h-3 w-3" /> Limpar Rejeitados</Button>
+                
                 <div className="ml-auto flex gap-2">
                   <Button
                     variant="outline"
@@ -1890,7 +1890,14 @@ function CtePage() {
           </TabsContent>
           <TabsContent value="rascunhos">{renderTabelaDocs(docsByStatus.rascunhos, "aguardando envio")}</TabsContent>
           <TabsContent value="autorizados">{renderTabelaDocs(docsByStatus.autorizados, "autorizados")}</TabsContent>
-          <TabsContent value="rejeitados">{renderTabelaDocs(docsByStatus.rejeitados, "rejeitados")}</TabsContent>
+          <TabsContent value="rejeitados">
+            {docsByStatus.rejeitados.length > 0 && (
+              <div className="mb-2 flex justify-end">
+                <Button variant="outline" size="sm" onClick={async () => { if (!empresa) return; try { await excluirRejeitadosCteFn({ data: { empresaId: empresa.id } }); toast.success("CT-e rejeitados excluídos"); qc.invalidateQueries({ queryKey: ["cte-documentos"] }); } catch(e:any) { toast.error(e.message); } }}><Trash2 className="mr-1 h-3 w-3" /> Limpar Rejeitados</Button>
+              </div>
+            )}
+            {renderTabelaDocs(docsByStatus.rejeitados, "rejeitados")}
+          </TabsContent>
           <TabsContent value="cancelados">{renderTabelaDocs(docsByStatus.cancelados, "cancelados")}</TabsContent>
         </Tabs>
       )}
