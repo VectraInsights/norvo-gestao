@@ -138,16 +138,18 @@ function UsuariosPage() {
 
   // ---- Editar permissões ----
   const [editando, setEditando] = useState<MembroRow | null>(null);
-  const [formE, setFormE] = useState({ papel: "viewer", modulos: [] as string[] });
+  const [formE, setFormE] = useState({ papel: "viewer", modulos: [] as string[], nome: "" });
 
   const salvarEdicao = useMutation({
     mutationFn: async () => {
       if (!editando || !empresa) throw new Error("Nada para salvar");
+      if (!formE.nome.trim()) throw new Error("Informe o nome");
       const payload: any =
         editando.role === "owner"
-          ? {}
+          ? { nome: formE.nome.trim() }
           : {
               role: formE.papel,
+              nome: formE.nome.trim(),
               modulos: formE.papel === "admin" ? [] : formE.modulos,
             };
       const { error } = await (supabase.from("empresa_users") as any)
@@ -157,7 +159,7 @@ function UsuariosPage() {
       if (error) throw error;
     },
     onSuccess: () => {
-      toast.success("Permissões atualizadas");
+      toast.success("Dados atualizados");
       qc.invalidateQueries({ queryKey: ["empresa-users-list"] });
       qc.invalidateQueries({ queryKey: ["minha-permissao"] });
       setEditando(null);
@@ -220,6 +222,7 @@ function UsuariosPage() {
     setFormE({
       papel: m.role === "admin" ? "admin" : "viewer",
       modulos: m.modulos ?? [],
+      nome: m.nome ?? "",
     });
   };
 
@@ -290,8 +293,7 @@ function UsuariosPage() {
                   </TableCell>
                   <TableCell className="text-sm text-muted-foreground">{labelModulos(m)}</TableCell>
                   <TableCell onClick={(e) => e.stopPropagation()}>
-                    {m.role !== "owner" && (
-                      <div className="flex items-center justify-end gap-1">
+                    <div className="flex items-center justify-end gap-1">
                         <Button
                           variant="ghost"
                           size="icon"
@@ -301,6 +303,8 @@ function UsuariosPage() {
                         >
                           <Pencil className="h-4 w-4" />
                         </Button>
+                        {m.role !== "owner" && (
+                        <>
                         <Button
                           variant="ghost"
                           size="icon"
@@ -340,8 +344,9 @@ function UsuariosPage() {
                             </AlertDialogFooter>
                           </AlertDialogContent>
                         </AlertDialog>
+                        </>
+                        )}
                       </div>
-                    )}
                   </TableCell>
                 </TableRow>
               ))}
@@ -437,26 +442,32 @@ function UsuariosPage() {
       <Dialog open={!!editando} onOpenChange={(o) => !o && setEditando(null)}>
         <DialogContent className="max-w-md">
           <DialogHeader>
-            <DialogTitle>Permissões de {editando?.nome}</DialogTitle>
+            <DialogTitle>Dados de {editando?.nome}</DialogTitle>
           </DialogHeader>
-          {editando && editando.role !== "owner" && (
+          {editando && (
             <div className="grid gap-3">
               <div>
-                <Label>Papel</Label>
-                <Select
-                  value={formE.papel}
-                  onValueChange={(v) => setFormE((f) => ({ ...f, papel: v }))}
-                >
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="viewer">Membro — usa só os módulos marcados</SelectItem>
-                    <SelectItem value="admin">Admin — gerencia usuários e vê tudo</SelectItem>
-                  </SelectContent>
-                </Select>
+                <Label>Nome</Label>
+                <Input value={formE.nome} onChange={(e) => setFormE((f) => ({ ...f, nome: e.target.value }))} />
               </div>
-              {formE.papel === "viewer" && (
+              {editando.role !== "owner" && (
+                <div>
+                  <Label>Papel</Label>
+                  <Select
+                    value={formE.papel}
+                    onValueChange={(v) => setFormE((f) => ({ ...f, papel: v }))}
+                  >
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="viewer">Membro — usa só os módulos marcados</SelectItem>
+                      <SelectItem value="admin">Admin — gerencia usuários e vê tudo</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
+              {editando.role !== "owner" && formE.papel === "viewer" && (
                 <div>
                   <Label>Módulos permitidos</Label>
                   <div className="grid grid-cols-2 gap-1 rounded-md border p-3">
@@ -481,11 +492,9 @@ function UsuariosPage() {
             <Button variant="outline" onClick={() => setEditando(null)}>
               Cancelar
             </Button>
-            {editando?.role !== "owner" && (
-              <Button onClick={() => salvarEdicao.mutate()} disabled={salvarEdicao.isPending}>
-                Salvar
-              </Button>
-            )}
+            <Button onClick={() => salvarEdicao.mutate()} disabled={salvarEdicao.isPending}>
+              Salvar
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
