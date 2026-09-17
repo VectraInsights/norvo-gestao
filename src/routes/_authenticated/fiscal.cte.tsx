@@ -75,8 +75,8 @@ function DacteViewer({ titulo, subtitulo, url, nomeArquivo, onClose, acoes }: {
           <Button size="icon" variant="ghost" className="h-8 w-8" title="Fechar (Esc)" onClick={onClose}><X className="h-4 w-4" /></Button>
         </div>
       </div>
-      <div className="flex-1 overflow-auto bg-muted/40 p-2 sm:p-4">
-        <iframe ref={frameRef} src={`${url}#toolbar=0&navpanes=0`} title={titulo} className="mx-auto h-full min-h-[70vh] w-full max-w-5xl border bg-white shadow" style={{ zoom: zoom / 100 }} />
+      <div className="flex-1 overflow-auto bg-muted/40">
+        <iframe ref={frameRef} src={`${url}#toolbar=0&navpanes=0`} title={titulo} className="h-full min-h-[70vh] w-full border-0 bg-white" style={{ zoom: zoom / 100 }} />
       </div>
     </div>
   );
