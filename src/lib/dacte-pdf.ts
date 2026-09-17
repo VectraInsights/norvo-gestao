@@ -612,9 +612,10 @@ export function gerarDactePdf(data: DacteData): Blob {
         const ox = (c === 0 ? M : M + hw) + 2;
         setFont("normal", 5.5); black();
         doc.text("NFe", ox, y + 3);
-        doc.text(`${String(nf.serie || "1").padStart(3, "0")} / ${D(nf.nNF)}`, ox + 18, y + 3);
+        const nn = D(nf.nNF) || String(nf.chave || "").replace(/\D/g, "").slice(25, 34);
+        doc.text(`${String(nf.serie || "1").padStart(3, "0")} / ${nn}`, ox + 18, y + 3);
         setFont("normal", 4.5);
-        doc.text(fmtChave(nf.chave || ""), ox + 44, y + 3);
+        doc.text(String(nf.chave || "").replace(/\D/g, ""), ox + 44, y + 3);
       }
       y += rh;
     }
