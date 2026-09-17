@@ -78,7 +78,7 @@ function DacteViewer({ titulo, subtitulo, url, nomeArquivo, onClose, acoes }: {
         </div>
       </div>
       <div className="flex-1 overflow-auto bg-muted/40">
-        <iframe ref={frameRef} src={`${url}#toolbar=0&navpanes=0`} title={titulo} className="h-full min-h-[70vh] w-full border-0 bg-white" style={{ zoom: zoom / 100 }} />
+        <iframe ref={frameRef} src={`${url}#toolbar=0&navpanes=0&zoom=${zoom}`} title={titulo} className="h-full min-h-[70vh] w-full border-0 bg-white" />
       </div>
     </div>
   );
