@@ -297,18 +297,22 @@ export function gerarDactePdf(data: DacteData): Blob {
     try { (doc as any).text(t, xx, yy, { align: "center" }); } catch { doc.text(t, xx, yy); }
   };
 
-  // Bloco pessoa (remetente/destinatário/expedidor/recebedor): título inline + 5 linhas
+  // Bloco pessoa (remetente/destinatário/expedidor/recebedor): título inline + 5 linhas em 2 colunas
   const party = (x: number, title: string, p: { nome?: string; lgr?: string; cid?: string; cep?: string; bai?: string; doc?: string; ie?: string; uf?: string; fone?: string }) => {
     valB(`${title} : ${cut(D(p.nome), 46)}`, x + 1.5, y + 4, 6);
     setFont("normal", 6); black();
-    const L = [
-      `Endereço : ${cut(D(p.lgr), 52)}`,
-      `Bairro : ${cut(D(p.bai), 52)}`,
-      `Município : ${cut(D(p.cid), 26)}   CEP : ${D(p.cep)}`,
-      `CPF / CNPJ : ${fmtCnpj(D(p.doc))}   Insc. Est : ${cut(D(p.ie), 18)}`,
-      `UF : ${D(p.uf)}   País : BRASIL   Fone : ${D(p.fone)}`,
-    ];
-    L.forEach((ln, i) => doc.text(ln, x + 1.5, y + 7 + i * 2.9));
+    const c2 = x + hw * 0.58;
+    const v2 = (s: string, xx: number, yy: number) => { black(); setFont("normal", 6); doc.text(String(s || ""), xx, yy); };
+    let yy = y + 7;
+    doc.text("Endereço", x + 1.5, yy); v2(cut(D(p.lgr), 70), x + 18, yy); yy += 2.9;
+    doc.text("Município", x + 1.5, yy); v2(cut(D(p.cid), 30), x + 18, yy);
+    doc.text("CEP :", c2, yy); v2(D(p.cep), c2 + 11, yy); yy += 2.9;
+    doc.text("Bairro", x + 1.5, yy); v2(cut(D(p.bai), 60), x + 18, yy); yy += 2.9;
+    doc.text("CPF / CNPJ", x + 1.5, yy); v2(fmtCnpj(D(p.doc)), x + 18, yy);
+    doc.text("Insc. Est :", c2, yy); v2(cut(D(p.ie), 18), c2 + 16, yy); yy += 2.9;
+    doc.text("UF", x + 1.5, yy); v2(D(p.uf), x + 8, yy);
+    doc.text("País :", x + 30, yy); v2("BRASIL", x + 40, yy);
+    doc.text("Fone :", c2, yy); v2(D(p.fone), c2 + 13, yy);
   };
 
   // ---- Cabeçalho: emitente | DACTE | modal ----
