@@ -284,10 +284,10 @@ function CtePage() {
         }
       } catch {}
       let destNomeFix = tag("infCte > dest > xNome") || (nfRef?.dest_nome || "") || "";
-      if (!destNomeFix || destNomeFix === "CTE EMITIDO EM AMBIENTE DE HOMOLOGACAO - SEM VALORFISCAL") destNomeFix = percDstNome;
-      if (!destNomeFix || destNomeFix === "CTE EMITIDO EM AMBIENTE DE HOMOLOGACAO - SEM VALORFISCAL") destNomeFix = ctDstNome;
-      if (!destNomeFix || destNomeFix === "CTE EMITIDO EM AMBIENTE DE HOMOLOGACAO - SEM VALORFISCAL") destNomeFix = tag("infCte > toma > xNome") || "";
-      if (destNomeFix === "CTE EMITIDO EM AMBIENTE DE HOMOLOGACAO - SEM VALORFISCAL") destNomeFix = "";
+      if (!destNomeFix || destNomeFix.startsWith("CTE EMITIDO EM AMBIENTE DE HOMOLOGACAO")) destNomeFix = percDstNome;
+      if (!destNomeFix || destNomeFix.startsWith("CTE EMITIDO EM AMBIENTE DE HOMOLOGACAO")) destNomeFix = ctDstNome;
+      if (!destNomeFix || destNomeFix.startsWith("CTE EMITIDO EM AMBIENTE DE HOMOLOGACAO")) destNomeFix = tag("infCte > toma > xNome") || "";
+      if (destNomeFix.startsWith("CTE EMITIDO EM AMBIENTE DE HOMOLOGACAO")) destNomeFix = "";
       let healed = false;
       if (!hit && empresa && remD.length === 14 && dstD.length === 14) {
         try {
@@ -297,7 +297,7 @@ function CtePage() {
           const detX2 = tag("det > xMunFim") || "";
           const nmA = tag("infCte > emit > xNome") || remD;
           let nmB = tag("infCte > toma > xNome") || "";
-          if (!nmB || nmB === "CTE EMITIDO EM AMBIENTE DE HOMOLOGACAO - SEM VALORFISCAL") nmB = dstD;
+          if (!nmB || nmB.startsWith("CTE EMITIDO EM AMBIENTE DE HOMOLOGACAO")) nmB = dstD;
           const { error: insErr } = await supabase.from("cte_percursos" as any).insert({ empresa_id: (empresa as any).id, codigo: String(last + 1).padStart(4, "0"), nome: (nmA + " > " + nmB).slice(0, 120), rem_cnpj: remD, dest_cnpj: dstD, toma_cnpj: tomaD, coleta_xmun: detX1, coleta_uf: tag("infCte > ide > UFIni") || "", entrega_xmun: detX2, entrega_uf: tag("infCte > ide > UFFim") || "", cfop: tag("infCte > ide > CFOP") || "5353", obs_gerais: "" });
           if (!insErr) healed = true;
           else { const k2 = "perc-err:" + (doc.chave_acesso || ""); try { const g = localStorage.getItem(k2); if (!g) { localStorage.setItem(k2, "1"); toast.warning("Percurso auto: " + String((insErr as any)?.message || insErr).slice(0, 140)); } } catch {} }
@@ -2651,7 +2651,7 @@ function CtePage() {
               respEmissao: respNome,
               tomadorCnpj: f.cnpjTomador || "",
               // Manter igual a HOMOLOG_TOMADOR_NOME em sefaz-cte.ts (SEFAZ-MG exige em homologação, erro 938)
-              tomadorNome: previewData.ambiente === "homologacao" ? "CTE EMITIDO EM AMBIENTE DE HOMOLOGACAO - SEM VALORFISCAL" : (f.xNomeTomador || ""),
+              tomadorNome: previewData.ambiente === "homologacao" ? "CTE EMITIDO EM AMBIENTE DE HOMOLOGACAO - SEM VALOR FISCAL" : (f.xNomeTomador || ""),
               tomadorEndereco: `${(f.logradouroTomador || "").trim()}${f.nroTomador ? ", " + f.nroTomador : ""}${f.bairroTomador ? " - " + f.bairroTomador : ""}`.trim(),
               tomadorFone: f.foneTomador || "",
               tomadorCidade: f.xMunTomador || "",

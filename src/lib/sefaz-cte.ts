@@ -13,7 +13,7 @@ export type Ambiente = "homologacao" | "producao";
 
 // SEFAZ-MG exige em homologação (erro 938) que a razão social do tomador seja
 // literalmente este texto. Manter sincronizado com o preview em fiscal.cte.tsx.
-export const HOMOLOG_TOMADOR_NOME = "CTE EMITIDO EM AMBIENTE DE HOMOLOGACAO - SEM VALORFISCAL";
+export const HOMOLOG_TOMADOR_NOME = "CTE EMITIDO EM AMBIENTE DE HOMOLOGACAO - SEM VALOR FISCAL";
 
 export const CTE_ENDPOINTS = {
   homologacao: {
