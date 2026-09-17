@@ -303,9 +303,9 @@ export function gerarDactePdf(data: DacteData): Blob {
     setFont("normal", 6); black();
     const L = [
       `Endereço : ${cut(D(p.lgr), 52)}`,
-      `Município : ${cut(D(p.cid), 26)}   CEP : ${D(p.cep)}`,
       `Bairro : ${cut(D(p.bai), 52)}`,
-      `CPF / CNP : ${fmtCnpj(D(p.doc))}   Insc. Est : ${cut(D(p.ie), 18)}`,
+      `Município : ${cut(D(p.cid), 26)}   CEP : ${D(p.cep)}`,
+      `CPF / CNPJ : ${fmtCnpj(D(p.doc))}   Insc. Est : ${cut(D(p.ie), 18)}`,
       `UF : ${D(p.uf)}   País : BRASIL   Fone : ${D(p.fone)}`,
     ];
     L.forEach((ln, i) => doc.text(ln, x + 1.5, y + 7 + i * 2.9));
