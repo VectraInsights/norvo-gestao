@@ -2,6 +2,7 @@ import { jsPDF } from "jspdf";
 import JsBarcode from "./vendor/jsbarcode.bundle.cjs";
 import qrcode from "./vendor/qrcode.bundle.cjs";
 import { CCLASS_TRIB_CST, CCLASS_TRIB_NOMES } from "./cclass-trib";
+export const DACTE_REV = "20260918-p1";
 
 // DACTE fiel ao modelo oficial (Juvenal Transportes) — retrato A4, P&B.
 interface DacteData {

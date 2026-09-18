@@ -24,7 +24,7 @@ import { toast } from "sonner";
 import { limparIE } from "@/lib/ie";
 import { emitirCteFn, consultarCteFn, cancelarCteFn, previewCteXmlFn, excluirRejeitadosCteFn } from "@/lib/sefaz-cte-server";
 import { CFOPS_CTE, MOD_FRETE_OPTIONS, RESPONSAVEL_CTE_OPTIONS } from "@/lib/cfops-transporte";
-import { gerarDactePdf } from "@/lib/dacte-pdf";
+import { gerarDactePdf, DACTE_REV } from "@/lib/dacte-pdf";
 import { completarLogradouro, temTipoLogradouro } from "@/lib/endereco";
 import { JUVENAL_LOGO } from "@/lib/juvenal-logo";
 import { Textarea } from "@/components/ui/textarea";
@@ -72,6 +72,7 @@ function DacteViewer({ titulo, subtitulo, url, nomeArquivo, onClose, acoes }: {
           <Button size="icon" variant="ghost" className="h-8 w-8" title="Reduzir zoom" onClick={() => setZoom((z) => Math.max(50, z - 10))}>−</Button>
           <span className="w-12 text-center text-xs text-muted-foreground">{zoom}%</span>
           <span className="text-[10px] text-muted-foreground/50">rev-20260918d</span>
+          <span className="text-[10px] text-muted-foreground/50">pdf-{DACTE_REV}</span>
           <Button size="icon" variant="ghost" className="h-8 w-8" title="Ampliar zoom" onClick={() => setZoom((z) => Math.min(200, z + 10))}>+</Button>
           <Button size="sm" variant="outline" onClick={baixar}><Download className="mr-1 h-3.5 w-3.5" /> Baixar</Button>
           <Button size="sm" variant="outline" onClick={imprimir}><Printer className="mr-1 h-3.5 w-3.5" /> Imprimir</Button>
