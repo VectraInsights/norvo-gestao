@@ -300,23 +300,24 @@ export function gerarDactePdf(data: DacteData): Blob {
   // Bloco pessoa (remetente/destinatário/expedidor/recebedor): título inline + 5 linhas em 2 colunas
   const party = (x: number, title: string, p: { nome?: string; lgr?: string; cid?: string; cep?: string; bai?: string; doc?: string; ie?: string; uf?: string; fone?: string }) => {
     setFont("bold", 6); black();
-    const valX1 = x + 24, labX2 = x + 62, valX2 = x + 81;
-    const row = (label: string, value: string, xx: number, vx: number, yy: number) => {
-      black(); setFont("bold", 6); doc.text(label, xx, yy);
-      black(); setFont("normal", 6); doc.text(String(value || ""), vx, yy);
-    };
-    let yy = y + 4;
-    row(title + " :", cut(D(p.nome), 46), x + 1.5, valX1, yy); yy += 3;
-    row("Endereço :", cut(D(p.lgr), 70), x + 1.5, valX1, yy); yy += 2.9;
-    row("Município :", cut(D(p.cid), 30), x + 1.5, valX1, yy);
-    row("CEP :", D(p.cep), labX2, valX2, yy); yy += 2.9;
-    row("Bairro :", cut(D(p.bai), 60), x + 1.5, valX1, yy); yy += 2.9;
-    row("CPF / CNPJ :", fmtCnpj(D(p.doc)), x + 1.5, valX1, yy);
-    row("Insc. Est :", cut(D(p.ie), 18), labX2, valX2, yy); yy += 2.9;
-    row("UF :", D(p.uf), x + 1.5, valX1, yy);
-    row("País :", "BRASIL", x + 34, x + 44, yy);
-    row("Fone :", D(p.fone), labX2, valX2, yy);
+    const colonX1 = x + 22, valX1 = x + 24;
+    const labX2 = x + 62, colonX2 = x + 80, valX2 = x + 81;
+    const lab = (s: string, xx: number, yy: number) => { black(); setFont("bold", 6); doc.text(s, xx, yy); };
+    const col = (xe: number, yy: number) => { black(); setFont("bold", 6); doc.text(":", xe, yy); };
+    const v2 = (s: string, xx: number, yy: number) => { black(); setFont("normal", 6); doc.text(String(s || ""), xx, yy); };
+    lab(title, x + 1.5, y + 4); col(colonX1, y + 4); v2(cut(D(p.nome), 46), valX1, y + 4);
+    let yy = y + 7;
+    lab("Endere├ºo", x + 1.5, yy); col(colonX1, yy); v2(cut(D(p.lgr), 70), valX1, yy); yy += 2.9;
+    lab("Munic├¡pio", x + 1.5, yy); col(colonX1, yy); v2(cut(D(p.cid), 30), valX1, yy);
+    lab("CEP", labX2, yy); col(colonX2, yy); v2(D(p.cep), valX2, yy); yy += 2.9;
+    lab("Bairro", x + 1.5, yy); col(colonX1, yy); v2(cut(D(p.bai), 60), valX1, yy); yy += 2.9;
+    lab("CPF / CNPJ", x + 1.5, yy); col(colonX1, yy); v2(fmtCnpj(D(p.doc)), valX1, yy);
+    lab("Insc. Est", labX2, yy); col(colonX2, yy); v2(cut(D(p.ie), 18), valX2, yy); yy += 2.9;
+    lab("UF", x + 1.5, yy); col(colonX1, yy); v2(D(p.uf), valX1, yy);
+    lab("Pa├¡s", x + 34, yy); col(x + 42, yy); v2("BRASIL", x + 44, yy);
+    lab("Fone", labX2, yy); col(colonX2, yy); v2(D(p.fone), valX2, yy);
   };
+
 
   // ---- Cabeçalho: emitente | DACTE | modal ----
     // ---- Cabecalho 2 colunas: emitente+DACTE | QR+barras+chave ----
