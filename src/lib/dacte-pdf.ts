@@ -555,9 +555,9 @@ export function gerarDactePdf(data: DacteData): Blob {
   y += compH + 1;
 
   // ---- ICMS ----
-  const icTitleH = 3.5, icH = 7;
+  const icTitleH = 3, icH = 7;
   box(M, y, CW, icTitleH);
-  ctr("Informações Relativas ao Imposto", W / 2, y + 2.5, 5.5, true);
+  ctr("Informações Relativas ao Imposto", W / 2, y + 2.2, 5.5, true);
   y += icTitleH;
   box(M, y, CW, icH);
   const icCols: Array<[string, string, number]> = [
@@ -577,9 +577,9 @@ export function gerarDactePdf(data: DacteData): Blob {
   y += icH + 1;
 
   // ---- IBS/CBS ----
-  const ibTitleH = 3.5, ibH = 7;
+  const ibTitleH = 3, ibH = 7;
   box(M, y, CW, ibTitleH);
-  ctr("Tributação da Reforma Tributária (IBS/CBS)", W / 2, y + 2.5, 5.5, true);
+  ctr("Tributação da Reforma Tributária (IBS/CBS)", W / 2, y + 2.2, 5.5, true);
   y += ibTitleH;
   box(M, y, CW, ibH);
   const ibBase = data.ibsBase !== undefined && data.ibsBase !== "" ? Number(data.ibsBase) : Number(data.icmsBase) || 0;
@@ -611,15 +611,15 @@ export function gerarDactePdf(data: DacteData): Blob {
   y += ibH + 1;
 
   // ---- Documentos originários ----
-  const docTitleH = 4;
+  const docTitleH = 3.5;
   box(M, y, CW, docTitleH);
-  ctr("Documentos Originários", W / 2, y + 3, 6, true);
+  ctr("Documentos Originários", W / 2, y + 2.5, 6, true);
   y += docTitleH;
-  const docHeadH = 4;
+  const docHeadH = 3.5;
   box(M, y, CW, docHeadH);
   setFont("bold", 5); black();
   ["Tipo Doc", "Série / Nº Doc.", "Chave NFe", "Tipo Doc", "Série / Nº Doc.", "Chave NFe"].forEach((h, i) => {
-    doc.text(h, (i < 3 ? M : M + hw) + [2, 20, 46][i % 3], y + 3);
+    doc.text(h, (i < 3 ? M : M + hw) + [2, 20, 46][i % 3], y + 2.5);
   });
   y += docHeadH;
   const nfs = data.nFes || [];
@@ -631,7 +631,7 @@ export function gerarDactePdf(data: DacteData): Blob {
   } else {
     for (let i = 0; i < nfs.length; i += 2) {
       need(11);
-      const rh = 5;
+      const rh = 4.5;
       box(M, y, hw, rh);
       box(M + hw, y, hw, rh);
       for (let c = 0; c < 2; c++) {
@@ -639,11 +639,11 @@ export function gerarDactePdf(data: DacteData): Blob {
         if (!nf) break;
         const ox = (c === 0 ? M : M + hw) + 2;
         setFont("normal", 5.5); black();
-        doc.text("NFe", ox, y + 3);
+        doc.text("NFe", ox, y + 2.7);
         const nn = D(nf.nNF) || String(nf.chave || "").replace(/\D/g, "").slice(25, 34);
-        doc.text(`${String(nf.serie || "1").padStart(3, "0")} / ${nn}`, ox + 18, y + 3);
+        doc.text(`${String(nf.serie || "1").padStart(3, "0")} / ${nn}`, ox + 18, y + 2.7);
         setFont("normal", 4.5);
-        doc.text(String(nf.chave || "").replace(/\D/g, ""), ox + 44, y + 3);
+        doc.text(String(nf.chave || "").replace(/\D/g, ""), ox + 44, y + 2.7);
       }
       y += rh;
     }
@@ -654,20 +654,22 @@ export function gerarDactePdf(data: DacteData): Blob {
   const hasObsTxt = !!(data.obs && data.obs.trim());
   const isHom = (data.ambiente || "") === "homologacao";
   need(7 + 6);
-  box(M, y, CW, 4.5);
-  ctr("Observações", W / 2, y + 3.5, 6, true);
-  y += 5;
+  box(M, y, CW, 4);
+  ctr("Observações", W / 2, y + 3, 6, true);
+  y += 4.5;
   const nVeicObs = Math.min(Math.max((data.veiculos && data.veiculos.length) || 1, 1), 4);
-  const restoAposObs = 1 + 4.5 + 11 + (29.5 + 4 * nVeicObs) + 5.5 + 16 + 1; // +1 folga p/ need(17) do canhoto
+  const iaDyn = !!(data.infoAdicionais && String(data.infoAdicionais).trim()) ? 10 : 5.5;
+  const restoAposObs = 1 + 4 + (iaDyn + 1) + (19 + 4 * nVeicObs) + 4 + 7 + 4.5 + 16 + 1; // +1 folga p/ need(17) do canhoto
   let obsH = LIM - y - restoAposObs;
   if (!(obsH >= 7)) obsH = 7;
   box(M, y, CW, obsH);
+  const obsLines = !hasObsTxt ? 0 : obsH >= 12.5 ? 2 : 1;
   if (hasObsTxt) {
     setFont("normal", 5); black();
     const lines = doc.splitTextToSize(data.obs, CW - 4);
-    doc.text(lines.slice(0, 2), M + 2, y + 4);
+    doc.text(lines.slice(0, obsLines), M + 2, y + 4);
   }
-  if (isHom) {
+  if (isHom && (obsLines === 0 || obsH >= (obsLines === 2 ? 12.5 : 10))) {
     doc.setTextColor(170, 170, 170);
     ctr("AMBIENTE DE HOMOLOGAÇÃO - SEM VALOR FISCAL", W / 2, y + obsH - 3, 9, true);
     black();
@@ -675,22 +677,22 @@ export function gerarDactePdf(data: DacteData): Blob {
   y += obsH + 1;
 
   // ---- Total impostos aproximado ----
-  const impH = 3.5;
+  const impH = 2.8;
   box(M, y, CW, impH);
   const vt = Number(data.vTotTrib) || 0;
   const perc = data.valorServico ? (vt / Number(data.valorServico)) * 100 : 0;
   const percTxt = perc.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
   setFont("normal", 5); black();
   const impLine = `Total Impostos Aproximado --> Federal Nacional: R$ ${fmtNum(vt)} (${percTxt}%) Estadual: R$ 0,00 (0,00%) Municipal: R$ 0,00 (0,00%) Valor Total: R$ ${fmtNum(vt)} Fonte IBPT - 24.1.A`;
-  try { (doc as any).text(impLine, W / 2, y + 2.5, { align: "center" }); } catch { doc.text(impLine, M + 2, y + 2.5); }
+  try { (doc as any).text(impLine, W / 2, y + 2, { align: "center" }); } catch { doc.text(impLine, M + 2, y + 2.5); }
   y += impH + 1;
 
   // ---- Informações adicionais (caixa única) ----
-  const iaH = 10;
+  const iaH = iaDyn;
   need(iaH + 1);
   box(M, y, CW, iaH);
   setFont("bold", 6); black();
-  doc.text("Informações Adicionais", M + 2, y + 3.5);
+  doc.text("Informações Adicionais", M + 2, y + 3);
   if (D(data.infoAdicionais)) {
     setFont("normal", 5); black();
     const lines = doc.splitTextToSize(String(data.infoAdicionais), CW - 4);
@@ -700,46 +702,46 @@ export function gerarDactePdf(data: DacteData): Blob {
 
   // ---- Modal lotação ----
   need(40);
-  const moTitleH = 4.5;
+  const moTitleH = 3;
   box(M, y, CW, moTitleH);
-  ctr("Dados Específicos do Modal Rodoviário - Lotação", W / 2, y + 3.5, 6, true);
+  ctr("Dados Específicos do Modal Rodoviário - Lotação", W / 2, y + 2.2, 6, true);
   y += moTitleH;
-  const moH = 6;
+  const moH = 5.3;
   box(M, y, CW, moH);
-  lab("RNTRC DA EMPRESA", M + 2, y + 2.5);
-  lab("CIOT", M + 44, y + 2.5);
-  lab("Data Prevista de Entrega", M + 76, y + 2.5);
+  lab("RNTRC DA EMPRESA", M + 2, y + 2);
+  lab("CIOT", M + 44, y + 2);
+  lab("Data Prevista de Entrega", M + 76, y + 2);
   setFont("bold", 4.5); black();
   doc.text("Esse Conhecimento de Transporte Atende à Legislação de transporte Rodoviário em Vigor", M + 122, y + 4);
-  val(D(data.rntrc), M + 2, y + 5, 6);
-  val(D(data.ciot), M + 44, y + 5, 6);
-  val(fmtDataCurta(D(data.dataPrevEntrega)), M + 76, y + 5, 6);
+  val(D(data.rntrc), M + 2, y + 4.5, 6);
+  val(D(data.ciot), M + 44, y + 4.5, 6);
+  val(fmtDataCurta(D(data.dataPrevEntrega)), M + 76, y + 4.5, 6);
   vline(M + 42, y, moH);
   vline(M + 74, y, moH);
   vline(M + 120, y, moH);
   y += moH;
-  const conjH = 4;
+  const conjH = 3;
   box(M, y, hw, conjH);
   box(M + hw, y, hw, conjH);
   setFont("bold", 5); black();
-  doc.text("Identificação do Conjunto Transportador", M + 2, y + 3);
-  doc.text("Informações Referente ao Vale - Pedágio", M + hw + 2, y + 3);
+  doc.text("Identificação do Conjunto Transportador", M + 2, y + 2.2);
+  doc.text("Informações Referente ao Vale - Pedágio", M + hw + 2, y + 2.2);
   y += conjH;
-  const vRowH = 4;
-  const subHeadH = 3.5;
+  const vRowH = 3.5;
+  const subHeadH = 3;
   const valeBoxH = subHeadH + nVeicObs * vRowH;
   box(M, y, hw, subHeadH);
   box(M + hw, y, hw, valeBoxH);
   setFont("bold", 4.5); black();
-  doc.text("Tipo", M + 2, y + 2.5);
-  doc.text("Placa", M + 18, y + 2.5);
-  doc.text("Renavam", M + 34, y + 2.5);
-  doc.text("UF", M + 62, y + 2.5);
-  doc.text("RNTRC", M + 70, y + 2.5);
-  doc.text("CNPJ Fornecedor", M + hw + 2, y + 2.5);
-  doc.text("Número Comprovante", M + hw + 32, y + 2.5);
-  doc.text("CNPJ Responsável", M + hw + 52, y + 2.5);
-  doc.text("Vale Pedágio", M + hw + 82, y + 2.5);
+  doc.text("Tipo", M + 2, y + 2);
+  doc.text("Placa", M + 18, y + 2);
+  doc.text("Renavam", M + 34, y + 2);
+  doc.text("UF", M + 62, y + 2);
+  doc.text("RNTRC", M + 70, y + 2);
+  doc.text("CNPJ Fornecedor", M + hw + 2, y + 2);
+  doc.text("Número Comprovante", M + hw + 32, y + 2);
+  doc.text("CNPJ Responsável", M + hw + 52, y + 2);
+  doc.text("Vale Pedágio", M + hw + 82, y + 2);
   vline(M + 15, y, subHeadH);
   vline(M + 31, y, subHeadH);
   vline(M + 59, y, subHeadH);
@@ -756,42 +758,42 @@ export function gerarDactePdf(data: DacteData): Blob {
   veics.forEach((vc) => {
     need(vRowH + 22);
     box(M, y, hw, vRowH);
-    setFont("normal", 5); black();
-    doc.text(cut(D(vc.tipo) || "Própria", 10), M + 2, y + 3);
-    doc.text(cut(D(vc.placa), 10), M + 18, y + 3);
-    doc.text(cut(D(vc.renavam), 14), M + 34, y + 3);
-    doc.text(cut(D(vc.uf), 4), M + 62, y + 3);
-    doc.text(cut(D(vc.rntrc), 12), M + 70, y + 3);
+    setFont("normal", 4.5); black();
+    doc.text(cut(D(vc.tipo) || "Própria", 10), M + 2, y + 2.6);
+    doc.text(cut(D(vc.placa), 10), M + 18, y + 2.6);
+    doc.text(cut(D(vc.renavam), 14), M + 34, y + 2.6);
+    doc.text(cut(D(vc.uf), 4), M + 62, y + 2.6);
+    doc.text(cut(D(vc.rntrc), 12), M + 70, y + 2.6);
     vline(M + 15, y, vRowH);
     vline(M + 31, y, vRowH);
     vline(M + 59, y, vRowH);
     vline(M + 67, y, vRowH);
     y += vRowH;
   });
-  const subcH = 4.5;
+  const subcH = 3.2;
   box(M, y, CW, subcH);
   setFont("bold", 4.5); black();
-  doc.text("Endereço SubContratado", M + 2, y + 3);
+  doc.text("Endereço SubContratado", M + 2, y + 2);
   val(cut(D(data.subContratado), 80), M + 42, y + 3, 5);
   y += subcH;
-  const motH = 6;
+  const motH = 5.3;
   box(M, y, CW, motH);
-  lab("Motorista", M + 2, y + 2);
-  lab("CPF do Motorista", M + 62, y + 2);
-  lab("Proprietário", M + 96, y + 2);
-  val(cut(D(data.motoNome), 30), M + 2, y + 5, 5);
-  val(D(data.motoCPF), M + 62, y + 5, 5);
-  val(`${fmtCnpj(D(data.propDoc))}  ${cut(D(data.propNome), 24)}`, M + 96, y + 5, 5);
+  lab("Motorista", M + 2, y + 1.8);
+  lab("CPF do Motorista", M + 62, y + 1.8);
+  lab("Proprietário", M + 96, y + 1.8);
+  val(cut(D(data.motoNome), 30), M + 2, y + 4.5, 5);
+  val(D(data.motoCPF), M + 62, y + 4.5, 5);
+  val(`${fmtCnpj(D(data.propDoc))}  ${cut(D(data.propNome), 24)}`, M + 96, y + 4.5, 5);
   y += motH + 1;
 
   // ---- Uso exclusivo | fisco ----
   need(12);
-  const usoH = 4.5;
+  const usoH = 3.2;
   box(M, y, hw, usoH);
   box(M + hw, y, hw, usoH);
   setFont("bold", 5.5); black();
-  doc.text("Uso Exclusivo do Emissor do CT-e", M + 2, y + 3);
-  doc.text("Reservado ao Fisco", M + hw + 2, y + 3);
+  doc.text("Uso Exclusivo do Emissor do CT-e", M + 2, y + 2);
+  doc.text("Reservado ao Fisco", M + hw + 2, y + 2);
   y += usoH + 1;
 
   // ---- Canhoto (Nome/RG | Assinatura | Prestacao | CT-e) ----
