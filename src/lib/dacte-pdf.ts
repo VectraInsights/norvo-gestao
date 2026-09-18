@@ -307,14 +307,14 @@ export function gerarDactePdf(data: DacteData): Blob {
     const v2 = (s: string, xx: number, yy: number) => { black(); setFont("normal", 6); doc.text(String(s || ""), xx, yy); };
     lab(title, x + 1.5, y + 4); col(colonX1, y + 4); v2(cut(D(p.nome), 46), valX1, y + 4);
     let yy = y + 7;
-    lab("Endere├ºo", x + 1.5, yy); col(colonX1, yy); v2(cut(D(p.lgr), 70), valX1, yy); yy += 2.9;
-    lab("Munic├¡pio", x + 1.5, yy); col(colonX1, yy); v2(cut(D(p.cid), 30), valX1, yy);
+    lab("Enderço", x + 1.5, yy); col(colonX1, yy); v2(cut(D(p.lgr), 70), valX1, yy); yy += 2.9;
+    lab("Município", x + 1.5, yy); col(colonX1, yy); v2(cut(D(p.cid), 30), valX1, yy);
     lab("CEP", labX2, yy); col(colonX2, yy); v2(D(p.cep), valX2, yy); yy += 2.9;
     lab("Bairro", x + 1.5, yy); col(colonX1, yy); v2(cut(D(p.bai), 60), valX1, yy); yy += 2.9;
     lab("CPF / CNPJ", x + 1.5, yy); col(colonX1, yy); v2(fmtCnpj(D(p.doc)), valX1, yy);
     lab("Insc. Est", labX2, yy); col(colonX2, yy); v2(cut(D(p.ie), 18), valX2, yy); yy += 2.9;
     lab("UF", x + 1.5, yy); col(colonX1, yy); v2(D(p.uf), valX1, yy);
-    lab("Pa├¡s", x + 34, yy); col(x + 42, yy); v2("BRASIL", x + 44, yy);
+    lab("País", x + 34, yy); col(x + 42, yy); v2("BRASIL", x + 44, yy);
     lab("Fone", labX2, yy); col(colonX2, yy); v2(D(p.fone), valX2, yy);
   };
 
