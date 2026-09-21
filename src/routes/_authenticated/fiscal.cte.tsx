@@ -2278,11 +2278,7 @@ function CtePage() {
                   <div><Label className="text-[10px] text-muted-foreground">Valor ICMS (R$)</Label><MoneyInput className="h-7 text-xs bg-muted" value={form.icmsValor} onChange={() => {}} placeholder="0,00" /></div>
                   <div className="md:col-span-3"><Label className="text-[10px] text-muted-foreground">Valor do crédito outorgado/presumido (R$)</Label><MoneyInput className="h-7 text-xs bg-muted" value={(form as any).creditoOutorgado || "0.00"} onChange={() => {}} placeholder="0,00" /></div>
                 </div>
-                <p className="text-[9px] text-muted-foreground mt-1">Somente leitura — CST e impostos vêm do Percurso (Fiscal → Percursos) e são aplicados ao gerar o CT-e.</p>
-              </Card>
-              <Card className="p-3">
-                <h5 className="text-xs font-semibold mb-2">Outros Impostos — Alíquotas (%) e Valores (R$)</h5>
-                <div className="grid grid-cols-2 md:grid-cols-3 gap-1">
+                <div className="grid grid-cols-2 md:grid-cols-3 gap-1 mt-2">
                   <div><Label className="text-[10px] text-muted-foreground">PIS (%)</Label><MoneyInput className="h-7 text-xs bg-muted" prefix="" value={form.pisAliq} onChange={() => {}} placeholder="0,00" /></div>
                   <div><Label className="text-[10px] text-muted-foreground">COFINS (%)</Label><MoneyInput className="h-7 text-xs bg-muted" prefix="" value={form.cofinsAliq} onChange={() => {}} placeholder="0,00" /></div>
                   <div><Label className="text-[10px] text-muted-foreground">INSS (%)</Label><MoneyInput className="h-7 text-xs bg-muted" prefix="" value={form.inssAliq} onChange={() => {}} placeholder="0,00" /></div>
@@ -2292,6 +2288,7 @@ function CtePage() {
                   <div><Label className="text-[10px] text-muted-foreground">Valor COFINS (R$)</Label><MoneyInput className="h-7 text-xs bg-muted" value={valorImposto(form.cofinsAliq)} onChange={() => {}} placeholder="0,00" /></div>
                   <div><Label className="text-[10px] text-muted-foreground">Valor INSS (R$)</Label><MoneyInput className="h-7 text-xs bg-muted" value={valorImposto(form.inssAliq)} onChange={() => {}} placeholder="0,00" /></div>
                 </div>
+                <p className="text-[9px] text-muted-foreground mt-1">Somente leitura — CST e impostos vêm do Percurso (Fiscal → Percursos) e são aplicados ao gerar o CT-e.</p>
               </Card>
 
             </TabsContent>
