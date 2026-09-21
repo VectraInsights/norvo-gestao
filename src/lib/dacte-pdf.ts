@@ -301,10 +301,23 @@ export function gerarDactePdf(data: DacteData): Blob {
   // Bloco pessoa (remetente/destinatário/expedidor/recebedor): título inline + 5 linhas em 2 colunas
   const party = (x: number, title: string, p: { nome?: string; lgr?: string; cid?: string; cep?: string; bai?: string; doc?: string; ie?: string; uf?: string; fone?: string }) => {
     setFont("bold", 6); black();
-    const labX2 = x + 70, valX2 = x + 81;
-    const row = (label: string, value: string, xx: number, vx: number, yy: number) => {
-      black(); setFont("bold", 6); doc.text(label, xx, yy);
-      black(); setFont("normal", 6); doc.text(String(value || ""), vx, yy);
+    const valX2 = x + 81;
+    // Coluna direita: ":" alinhados no fim do "Insc. Est :" (maior rotulo da
+    // coluna); valores seguem fixos em valX2
+    const anchorR = valX2 - 1.5;
+    const rowR = (label: string, value: string, yy: number) => {
+      black(); setFont("bold", 6);
+      try { (doc as any).text(label, anchorR, yy, { align: "right" }); }
+      catch { doc.text(label, anchorR - doc.getTextWidth(label), yy); }
+      black(); setFont("normal", 6); doc.text(String(value || ""), valX2, yy);
+    };
+    // País: ":" alinhado pelo fim do próprio rótulo (posição visual mantida)
+    const rowPais = (yy: number) => {
+      black(); setFont("bold", 6);
+      const fim = x + 34 + doc.getTextWidth("País :");
+      try { (doc as any).text("País :", fim, yy, { align: "right" }); }
+      catch { doc.text("País :", x + 34, yy); }
+      black(); setFont("normal", 6); doc.text("BRASIL", fim + 1.5, yy);
     };
     // Ancora dos ":" da coluna esquerda: fim do "CPF / CNPJ :" (rotulo intacto,
     // desenhado como antes em x + 1.5; os demais rotulos alinham a direita nele)
@@ -321,13 +334,13 @@ export function gerarDactePdf(data: DacteData): Blob {
     rowL(title + " :", cut(D(p.nome), 46), yy); yy += 3;
     rowL("Endereço :", cut(D(p.lgr), 70), yy); yy += 2.9;
     rowL("Município :", cut(D(p.cid), 30), yy);
-    row("CEP :", D(p.cep), labX2, valX2, yy); yy += 2.9;
+    rowR("CEP :", D(p.cep), yy); yy += 2.9;
     rowL("Bairro :", cut(D(p.bai), 60), yy); yy += 2.9;
     rowL("CPF / CNPJ :", fmtCnpj(D(p.doc)), yy);
-    row("Insc. Est :", cut(D(p.ie), 18), labX2, valX2, yy); yy += 2.9;
+    rowR("Insc. Est :", cut(D(p.ie), 18), yy); yy += 2.9;
     rowL("UF :", D(p.uf), yy);
-    row("País :", "BRASIL", x + 34, x + 44, yy);
-    row("Fone :", D(p.fone), labX2, valX2, yy);
+    rowPais(yy);
+    rowR("Fone :", D(p.fone), yy);
   };
 
 
