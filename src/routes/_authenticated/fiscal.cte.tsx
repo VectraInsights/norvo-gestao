@@ -2336,7 +2336,7 @@ function CtePage() {
                   <h5 className="text-xs font-semibold mb-0.5">Dados do Veículo / Motorista</h5>
                   <div className="space-y-0.5">
                     <div className="grid grid-cols-3 gap-1">
-                      <div><Label className="text-[10px] text-muted-foreground">Nome Motorista</Label>
+                      <div className="col-span-2"><Label className="text-[10px] text-muted-foreground">Nome Motorista</Label>
                       <Popover open={motoristaOpen} onOpenChange={setMotoristaOpen}>
                         <PopoverTrigger asChild>
                           <Button variant="outline" role="combobox" aria-expanded={motoristaOpen} className="h-6 text-[10px] justify-between w-full font-normal">
@@ -2367,7 +2367,6 @@ function CtePage() {
                       </Popover>
                       </div>
                       <div><Label className="text-[10px] text-muted-foreground">CIOT</Label><Input className="h-6 text-[10px]" placeholder="Nº CIOT" /></div>
-                      <div><Label className="text-[10px] text-muted-foreground">% Agregados</Label><Input className="h-6 text-[10px]" placeholder="0.00" /></div>
                     </div>
                     <div className="grid grid-cols-3 gap-1">
                       <div><Label className="text-[10px] text-muted-foreground">{"Tra\u00e7\u00e3o"}</Label>
