@@ -1255,6 +1255,16 @@ function CtePage() {
   });
 
   const emittingRef = useRef(false);
+  const motoristasXml = () => {
+    const a: Array<{ xNome: string; cpf: string }> = [];
+    const m1 = (motoristas || []).find((m: any) => m.id === form.motoristaId);
+    if (m1) a.push({ xNome: String((m1 as any).nome || "").toUpperCase(), cpf: String((m1 as any).cpf || "").replace(/\D/g, "") });
+    if (form.possuiMoto2 === "S") {
+      const m2 = (motoristas || []).find((m: any) => m.id === (form as any).motorista2Id);
+      if (m2 && m2.id !== form.motoristaId) a.push({ xNome: String((m2 as any).nome || "").toUpperCase(), cpf: String((m2 as any).cpf || "").replace(/\D/g, "") });
+    }
+    return a;
+  };
   const emitir = useMutation({
     mutationFn: async () => {
       // Trava contra duplo clique: duas emissões concorrentes calculariam o mesmo número.
@@ -1288,7 +1298,9 @@ function CtePage() {
       if (String(form.cnpjConsignatario || "").replace(/\D/g, "").length === 14 && !ieOk(form.ieConsignatario)) pend.push("IE do consignatario");
       if (String(form.cnpjRedespacho || "").replace(/\D/g, "").length === 14 && !ieOk(form.ieRedespacho)) pend.push("IE do redespacho");
       if (!String(form.motoristaNome || "").trim()) pend.push("Motorista");
+      if (!/^\d{11}$/.test(String((((motoristas || []).find((m: any) => m.id === form.motoristaId) as any)?.cpf || "")).replace(/\D/g, ""))) pend.push("CPF do motorista (cadastre em RH)");
       if (form.possuiMoto2 === "S" && !String((form as any).motorista2Nome || "").trim()) pend.push("Segundo motorista");
+      if (form.possuiMoto2 === "S" && !/^\d{11}$/.test(String((((motoristas || []).find((m: any) => m.id === (form as any).motorista2Id) as any)?.cpf || "")).replace(/\D/g, ""))) pend.push("CPF do segundo motorista (cadastre em RH)");
       if (!rntrcFinal || /^ISENTO$/i.test(rntrcFinal) || rntrcFinal.replace(/\D/g, "").length !== 8) pend.push("RNTRC da empresa com 8 digitos (cadastre em Configuracoes > RNTRC)");
       if (!String(form.placaVeiculo || "").trim()) pend.push("Placa da tracao (veiculo 1)");
       else {
@@ -1308,7 +1320,7 @@ function CtePage() {
         ambiente: form.ambiente,
         toma: form.toma, cnpjTomador: form.cnpjTomador, xNomeTomador: form.xNomeTomador, ufTomador: form.ufTomador, cMunTomador: form.cMunTomador, xMunTomador: form.xMunTomador,
         cfop: form.cfop, tpServ: "0", vPrest: totalPrestacao(form), vCarga: parseFloat(form.vCarga)||0, pesoKg: parseFloat(form.peso)||0, rntrc: rntrcFinal,
-        modalRod: { rntrc: rntrcFinal, veiculos: (() => { const vv = (veiculos || []).find(v => String(v.placa || "").toUpperCase() === String(form.placaVeiculo || "").toUpperCase()); return form.placaVeiculo ? [{ placa: String(form.placaVeiculo).toUpperCase(), uf: empresa.uf || "MG", renavam: (vv as any)?.renavam || undefined }] : []; })() },
+        modalRod: { rntrc: rntrcFinal, motoristas: motoristasXml(), veiculos: (() => { const vv = (veiculos || []).find(v => String(v.placa || "").toUpperCase() === String(form.placaVeiculo || "").toUpperCase()); return form.placaVeiculo ? [{ placa: String(form.placaVeiculo).toUpperCase(), uf: empresa.uf || "MG", renavam: (vv as any)?.renavam || undefined }] : []; })() },
         cMunEnv: form.cMunEnv, xMunEnv: form.xMunEnv, ufEnv: form.ufEnv, cMunIni: form.cMunIni, xMunIni: form.xMunIni, ufIni: form.ufIni, cMunFim: form.cMunFim, xMunFim: form.xMunFim, ufFim: form.ufFim,
         icms: { CST: form.icmsCST, vBC: totalPrestacao(form), pICMS: parseFloat(form.icmsAliq)||0, vICMS: parseFloat(form.icmsValor)||0 },
         impostos: { pisAliq: parseFloat(form.pisAliq)||0, cofinsAliq: parseFloat(form.cofinsAliq)||0, irAliq: parseFloat(form.irAliq)||0, inssAliq: parseFloat(form.inssAliq)||0, csllAliq: parseFloat(form.csllAliq)||0 },
@@ -1453,7 +1465,7 @@ function CtePage() {
         ambiente: form.ambiente,
         toma: form.toma, cnpjTomador: form.cnpjTomador, xNomeTomador: form.xNomeTomador, ufTomador: form.ufTomador, cMunTomador: form.cMunTomador, xMunTomador: form.xMunTomador,
         cfop: form.cfop, tpServ: "0", vPrest: totalPrestacao(form), vCarga: parseFloat(form.vCarga)||0, pesoKg: parseFloat(form.peso)||0, rntrc: rntrcFinal,
-        modalRod: { rntrc: rntrcFinal, veiculos: (() => { const vv = (veiculos || []).find(v => String(v.placa || "").toUpperCase() === String(form.placaVeiculo || "").toUpperCase()); return form.placaVeiculo ? [{ placa: String(form.placaVeiculo).toUpperCase(), uf: empresa.uf || "MG", renavam: (vv as any)?.renavam || undefined }] : []; })() },
+        modalRod: { rntrc: rntrcFinal, motoristas: motoristasXml(), veiculos: (() => { const vv = (veiculos || []).find(v => String(v.placa || "").toUpperCase() === String(form.placaVeiculo || "").toUpperCase()); return form.placaVeiculo ? [{ placa: String(form.placaVeiculo).toUpperCase(), uf: empresa.uf || "MG", renavam: (vv as any)?.renavam || undefined }] : []; })() },
         obsGerais: (form as any).obsGerais || "", obsAnulacao: (form as any).obsAnulacao || "", obsGlobalizado: (form as any).obsGlobalizado || "",
         reducaoBase: parseFloat((form as any).reducaoBase)||0,
         cMunEnv: form.cMunEnv, xMunEnv: form.xMunEnv, ufEnv: form.ufEnv, cMunIni: form.cMunIni, xMunIni: form.xMunIni, ufIni: form.ufIni, cMunFim: form.cMunFim, xMunFim: form.xMunFim, ufFim: form.ufFim,
@@ -2506,10 +2518,10 @@ function CtePage() {
                         {form.semiReboque2 ? (<button type="button" className="mt-0.5 text-[9px] text-muted-foreground underline" onClick={() => setForm(f => ({ ...f, semiReboque2: "" }))}>limpar</button>) : null}
                       </div>
                     </div>
-                    <label className="flex items-center gap-1 text-[10px]"><input type="checkbox" checked={form.possuiMoto2 === "S"} onChange={e => setForm({ ...form, possuiMoto2: e.target.checked ? "S" : "", ...(e.target.checked ? {} : { motorista2Nome: "", motorista2Id: "" }) })} /> Possui Segundo Motorista</label>
-                    {form.possuiMoto2 === "S" && (
-                      <div className="grid grid-cols-3 gap-1 mt-1">
-                        <div className="col-span-2"><Label className="text-[10px] text-muted-foreground">Segundo Motorista</Label>
+                    <div className="flex items-center gap-2">
+                      <label className="flex items-center gap-1 text-[10px] shrink-0"><input type="checkbox" checked={form.possuiMoto2 === "S"} onChange={e => setForm({ ...form, possuiMoto2: e.target.checked ? "S" : "", ...(e.target.checked ? {} : { motorista2Nome: "", motorista2Id: "" }) })} /> Possui Segundo Motorista</label>
+                      {form.possuiMoto2 === "S" && (
+                        <div className="flex-1 min-w-0">
                         <Popover open={motorista2Open} onOpenChange={setMotorista2Open}>
                           <PopoverTrigger asChild>
                             <Button variant="outline" role="combobox" aria-expanded={motorista2Open} className="h-6 text-[10px] justify-between w-full font-normal">
@@ -2539,16 +2551,15 @@ function CtePage() {
                           </PopoverContent>
                         </Popover>
                         </div>
-                        <div><Label className="text-[10px] text-muted-foreground">CPF</Label><Input className="h-6 text-[10px] bg-transparent" readOnly value={((motoristas || []).find((m: any) => m.id === (form as any).motorista2Id) as any)?.cpf || ""} /></div>
-                      </div>
-                    )}
+                      )}
+                    </div>
                   </div>
                 </Card>
 
               {/* Pedágio / Taxas / Despesas Acessórias (ex-aba Taxas) */}
               <Card className="p-1.5">
                 <h5 className="text-xs font-semibold mb-0.5">Componentes do Frete</h5>
-                <div className="grid grid-cols-4 md:grid-cols-8 gap-1">
+                <div className="grid grid-cols-2 md:grid-cols-3 gap-1">
                   <div><Label className="text-[10px] text-muted-foreground">Valor Serviço</Label><MoneyInput className="h-6 text-[11px] font-medium" value={form.vPrest} onChange={v => setForm(f => ({ ...f, vPrest: v }))} /></div>
                   <div><Label className="text-[10px] text-muted-foreground">Adicional</Label><MoneyInput className="h-6 text-[11px] font-medium" value={form.adicionalPed} onChange={v => setForm(f => ({ ...f, adicionalPed: v }))} /></div>
                   <div><Label className="text-[10px] text-muted-foreground">Desconto</Label><MoneyInput className="h-6 text-[11px] font-medium" value={form.descontoPed} onChange={v => setForm(f => ({ ...f, descontoPed: v }))} /></div>
@@ -2569,7 +2580,7 @@ function CtePage() {
                   <label className="flex items-center gap-1"><input type="radio" name="pedagio_pagto" checked={pagtoSeguro(form.pedagioPagto) === "tag-tomador"} onChange={() => setForm({ ...form, pedagioPagto: "tag-tomador" })} /> TAG Tomador</label>
                   <label className="flex items-center gap-1"><input type="radio" name="pedagio_pagto" checked={pagtoSeguro(form.pedagioPagto) === "sem-pagamento"} onChange={() => setForm({ ...form, pedagioPagto: "sem-pagamento" })} /> Sem Pagamento de Pedágio</label>
                 </div>
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-1 mt-0.5">
+                <div className="grid grid-cols-2 md:grid-cols-3 gap-1 mt-0.5">
                   <div><Label className="text-[10px] text-muted-foreground">Operadora</Label>
                     <Select value={form.pedagioOperadora || ""} onValueChange={v => { const op = PEDAGIO_OPERADORAS.find(o => o.nome === v); setForm({ ...form, pedagioOperadora: v, pedagioCnpj: op ? op.cnpj : form.pedagioCnpj }); }}>
                       <SelectTrigger className="h-6 text-[11px]"><SelectValue placeholder="Selecione" /></SelectTrigger>

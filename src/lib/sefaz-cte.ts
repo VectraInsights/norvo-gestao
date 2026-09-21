@@ -92,7 +92,7 @@ export interface CteInputCompleto {
   docAnt?: { chaves: string[]; tpPrest?: string };
   obs?: string;
   infCTeNorm?: { proPred?: string; xOutCat?: string };
-  modalRod?: { rntrc: string; ciot?: string; veiculos?: Array<{ placa: string; uf: string; renavam?: string; rntrc?: string }> };
+  modalRod?: { rntrc: string; ciot?: string; veiculos?: Array<{ placa: string; uf: string; renavam?: string; rntrc?: string }>; motoristas?: Array<{ xNome: string; cpf: string }> };
   chavesNFe?: string[];
   icms?: { CST: string; vBC: number; pICMS: number; vICMS: number };
   impostos?: { pisAliq?: number; cofinsAliq?: number; irAliq?: number; inssAliq?: number; csllAliq?: number };
@@ -103,6 +103,11 @@ export function buildCteXml(input: CteInputCompleto): { xml: string; chave: stri
   let rntrcXml = rntrcRaw === "ISENTO" ? "ISENTO" : rntrcRaw.replace(/\D/g, "");
   while (rntrcXml.length > 8 && rntrcXml.startsWith("0")) rntrcXml = rntrcXml.slice(1);
   if (!/^(ISENTO|\d{8})$/.test(rntrcXml)) throw new Error(`RNTRC invalido para a SEFAZ (8 digitos ou ISENTO): ${input.modalRod?.rntrc || (input as any).rntrc || ""}`);
+  const motoXml = (((input.modalRod as any)?.motoristas || []) as Array<{ xNome?: string; cpf?: string }>).map(m => {
+    const nm = String(m?.xNome || "").toUpperCase().slice(0, 60).trim();
+    const cpf = String(m?.cpf || "").replace(/\D/g, "");
+    return (nm.length >= 2 && /^\d{11}$/.test(cpf)) ? `<moto><xNome>${nm}</xNome><CPF>${cpf}</CPF></moto>` : "";
+  }).join("");
   const now = new Date();
   const tzOffset = now.getTimezoneOffset(); // minutes; negative for UTC+ (e.g. UTC-3 → +180)
   const tzH = String(Math.floor(Math.abs(tzOffset) / 60)).padStart(2, "0");
@@ -207,7 +212,7 @@ export function buildCteXml(input: CteInputCompleto): { xml: string; chave: stri
       <infQ><cUnid>01</cUnid><tpMed>00</tpMed><qCarga>${input.pesoKg.toFixed(4)}</qCarga></infQ>
     </infCarga>
     ${infNFeXml}
-    <infModal versaoModal="4.00"><rodo><RNTRC>${rntrcXml}</RNTRC></rodo></infModal>
+    <infModal versaoModal="4.00"><rodo><RNTRC>${rntrcXml}</RNTRC>${motoXml}</rodo></infModal>
     ${impXml}
     <total><vTPrest>${input.vPrest.toFixed(2)}</vTPrest><vTRec>${input.vPrest.toFixed(2)}</vTRec><vTotDFe>${vTotDFe}</vTotDFe></total>
     <infRespTec><CNPJ>${cnpjLimpo}</CNPJ><xContato>SUPORTE TECNICO</xContato><email>suporte@vectrainsights.com.br</email><fone>3139952572</fone></infRespTec>
