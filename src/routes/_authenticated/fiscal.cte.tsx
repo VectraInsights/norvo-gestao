@@ -93,7 +93,7 @@ export const Route = createFileRoute("/_authenticated/fiscal/cte")({
   validateSearch: (search: Record<string, unknown>) => ({ fromNFe: (search.fromNFe as string) || undefined }),
 });
 
-type CteDoc = { id: string; numero: string | null; serie: string | null; status: string; valor_servico: number | null; chave_acesso: string | null; created_at: string; motivo_rejeicao: string | null; protocolo_sefaz: string | null; xml_assinado: string | null; ambiente: string | null };
+type CteDoc = { id: string; numero: string | null; serie: string | null; status: string; valor_servico: number | null; chave_acesso: string | null; created_at: string; motivo_rejeicao: string | null; protocolo_sefaz: string | null; xml_assinado: string | null; ambiente: string | null; data_autorizacao: string | null };
 
 function CtePage() {
   const { data: empresa } = useEmpresaAtual();
@@ -133,7 +133,7 @@ function CtePage() {
     enabled: !!empresa,
     queryKey: ["cte-documentos", empresa?.id],
     queryFn: async (): Promise<CteDoc[]> => {
-      const { data, error } = await supabase.from("cte_documentos" as any)        .select("id,numero,serie,status,valor_servico,chave_acesso,created_at,motivo_rejeicao,protocolo_sefaz,xml_assinado,ambiente").eq("empresa_id", empresa!.id).order("created_at", { ascending: false }).limit(100);
+      const { data, error } = await supabase.from("cte_documentos" as any)        .select("id,numero,serie,status,valor_servico,chave_acesso,created_at,motivo_rejeicao,protocolo_sefaz,xml_assinado,ambiente,data_autorizacao").eq("empresa_id", empresa!.id).order("created_at", { ascending: false }).limit(100);
       if (error) throw error;
       return (data ?? []) as unknown as CteDoc[];
     },
@@ -563,6 +563,8 @@ function CtePage() {
     });
     setSelecionadas(new Set());
     setEditingRascunhoId(null);
+    setViewDoc(null);
+    setAba("geral");
     setOpen(true);
   };
   const [cfopOpen, setCfopOpen] = useState(false);
@@ -683,6 +685,9 @@ function CtePage() {
   const [motoristaQuery, setMotoristaQuery] = useState("");
   const [motorista2Open, setMotorista2Open] = useState(false);
   const [motorista2Query, setMotorista2Query] = useState("");
+  const [viewDoc, setViewDoc] = useState<CteDoc | null>(null);
+  const [aba, setAba] = useState("geral");
+  const fmtDataHora = (iso: any) => { try { const d = new Date(String(iso)); if (isNaN(d.getTime())) return "—"; return d.toLocaleString("pt-BR", { day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit" }); } catch { return "—"; } };
   const [veiculoOpen, setVeiculoOpen] = useState<string | null>(null);
   const [veiculoQuery, setVeiculoQuery] = useState("");
   const [seguradoraOpen, setSeguradoraOpen] = useState(false);
@@ -1190,6 +1195,8 @@ function CtePage() {
     try {
       const parsed = JSON.parse(doc.xml_assinado || "{}");
       if (parsed.form) setForm(parsed.form);
+      setViewDoc(null);
+      setAba("geral");
       if (parsed.nfs && parsed.nfs.length > 0) {
         const mapped = parsed.nfs.map((r: any) => ({
           chave: r.chave, nNF: r.nNF || "", serie: r.serie || "1",
@@ -1210,6 +1217,18 @@ function CtePage() {
     } catch (e: any) {
       toast.error("Erro ao carregar rascunho", { description: e.message });
     }
+  };
+
+  const visualizarDoc = (doc: CteDoc) => {
+    try {
+      const parsed = JSON.parse(doc.xml_assinado || "{}");
+      if (parsed.form) setForm({ ...emptyForm, ...parsed.form });
+      else setForm({ ...emptyForm });
+    } catch { setForm({ ...emptyForm }); }
+    setEditingRascunhoId(null);
+    setViewDoc(doc);
+    setAba("status");
+    setOpen(true);
   };
 
   const salvarRascunho = useMutation({
@@ -1269,6 +1288,7 @@ function CtePage() {
   };
   const emitir = useMutation({
     mutationFn: async () => {
+      if (viewDoc) throw new Error("Feche a visualização para emitir um novo CT-e");
       // Trava contra duplo clique: duas emissões concorrentes calculariam o mesmo número.
       // Retorna marcador silencioso (sem toast de erro) em vez de throw.
       if (emittingRef.current) return { ignored: true };
@@ -1685,6 +1705,7 @@ function CtePage() {
                       </>
                     )}
                     {!isRascunho && <Button size="icon" variant="ghost" className="h-7 w-7 text-destructive" disabled={d.status!=="autorizado"} onClick={() => d.chave_acesso && cancelar.mutate({ chave: d.chave_acesso, protocolo: d.protocolo_sefaz || undefined, ambiente: (d as any).ambiente })} title="Cancelar"><Ban className="h-3.5 w-3.5" /></Button>}
+                    {!isRascunho && <Button size="icon" variant="ghost" className="h-7 w-7 text-emerald-600" onClick={() => visualizarDoc(d)} title="Ver dados e status"><ClipboardList className="h-3.5 w-3.5" /></Button>}
                     {!isRascunho && <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => d.chave_acesso && consultar.mutate({ chave: d.chave_acesso, ambiente: (d as any).ambiente })} title="Consultar SEFAZ"><Search className="h-3.5 w-3.5" /></Button>}
                   </TableCell></TableRow>
                   );
@@ -1911,6 +1932,8 @@ function CtePage() {
                         icmsBase: f.vPrest || "0.00",
                         ...LIMPA_VIAGEM,
                       }));
+                      setViewDoc(null);
+                      setAba("geral");
                       setOpen(true);
                     }}
                   >
@@ -1951,14 +1974,14 @@ function CtePage() {
           <TabsContent value="cancelados">{renderTabelaDocs(docsByStatus.cancelados, "cancelados")}</TabsContent>
         </Tabs>
       )}
-      <Dialog open={open} onOpenChange={setOpen}>
+      <Dialog open={open} onOpenChange={o => { setOpen(o); if (!o) { setViewDoc(null); setAba("geral"); } }}>
         <DialogContent className="w-screen h-screen max-w-none max-h-none m-0 rounded-none overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2"><Truck className="h-5 w-5 text-primary" /> {(form as any).modoEmbarque === "simplificado" ? "Conhecimento de Transporte Simplificado" : "Conhecimento de Transporte Avulso"}</DialogTitle>
             <p className="text-sm text-muted-foreground">Emissão de CT-e (57) — versão 4.00 via mTLS SEFAZ.</p>
           </DialogHeader>
 
-          <Tabs defaultValue="geral" className="w-full">
+          <Tabs value={aba} onValueChange={setAba} className="w-full">
             <TabsList className="w-full justify-start gap-0 bg-muted/50 rounded-t-md">
               <TabsTrigger value="geral" className="rounded-t-md rounded-b-none text-xs data-[state=active]:bg-background data-[state=active]:shadow-sm data-[state=active]:text-primary"><Settings2 className="mr-1 h-3 w-3" />Geral</TabsTrigger>
               <TabsTrigger value="seguros" className="rounded-t-md rounded-b-none text-xs data-[state=active]:bg-background data-[state=active]:shadow-sm data-[state=active]:text-primary"><Truck className="mr-1 h-3 w-3" />Transporte</TabsTrigger>
@@ -1978,7 +2001,7 @@ function CtePage() {
                     <ToggleGroupItem value="producao" className="h-6 text-[10px] px-2 data-[state=on]:bg-green-600/10 data-[state=on]:text-green-700">Produção</ToggleGroupItem>
                   </ToggleGroup>
                 </div>
-                <div className="w-44"><Label className="text-[10px] text-muted-foreground">N° Conhecimento</Label><Input className="h-7 text-xs font-mono bg-transparent" value="— aguardando emissão —" readOnly /></div>
+                <div className="w-44"><Label className="text-[10px] text-muted-foreground">N° Conhecimento</Label><Input className="h-7 text-xs font-mono bg-transparent" value={viewDoc?.numero ?? "— aguardando emissão —"} readOnly /></div>
                 <div className="w-[136px]"><Label className="text-[10px] text-muted-foreground">Data Emissão</Label><DateInput value={form.dataEmissao} onChange={v => setForm({...form, dataEmissao: v})} className="h-7 text-xs" /></div>
                 <div className="min-w-0">
                   <Label className="text-[10px] text-muted-foreground">Tomador do Serviço</Label>
@@ -2672,10 +2695,10 @@ function CtePage() {
               <Card className="p-3">
                 <h5 className="text-xs font-semibold mb-2">Situação do CT-e</h5>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-                  <div><Label className="text-[10px] text-muted-foreground">Chave de Acesso</Label><Input className="h-6 text-[10px] font-mono bg-transparent dark:bg-transparent" value="— aguardando emissão —" readOnly /></div>
-                  <div><Label className="text-[10px] text-muted-foreground">Protocolo de Envio</Label><Input className="h-6 text-[10px] font-mono bg-transparent dark:bg-transparent" value="— aguardando emissão —" readOnly /></div>
-                  <div><Label className="text-[10px] text-muted-foreground">Data Hora Envio</Label><Input className="h-6 text-[10px] bg-transparent dark:bg-transparent" value="— aguardando emissão —" readOnly /></div>
-                  <div><Label className="text-[10px] text-muted-foreground">Motivo Envio</Label><Input className="h-6 text-[10px] bg-transparent dark:bg-transparent" value="— aguardando emissão —" readOnly /></div>
+                  <div><Label className="text-[10px] text-muted-foreground">Chave de Acesso</Label><Input className="h-6 text-[10px] font-mono bg-transparent dark:bg-transparent" value={viewDoc?.chave_acesso || "— aguardando emissão —"} readOnly /></div>
+                  <div><Label className="text-[10px] text-muted-foreground">Protocolo de Envio</Label><Input className="h-6 text-[10px] font-mono bg-transparent dark:bg-transparent" value={viewDoc ? (viewDoc.protocolo_sefaz || "—") : "— aguardando emissão —"} readOnly /></div>
+                  <div><Label className="text-[10px] text-muted-foreground">Data Hora Envio</Label><Input className="h-6 text-[10px] bg-transparent dark:bg-transparent" value={viewDoc ? fmtDataHora(viewDoc.data_autorizacao) : "— aguardando emissão —"} readOnly /></div>
+                  <div><Label className="text-[10px] text-muted-foreground">Motivo Envio</Label><Input className="h-6 text-[10px] bg-transparent dark:bg-transparent" value={viewDoc ? (viewDoc.status === "rejeitado" ? (viewDoc.motivo_rejeicao || "—") : "Autorizado o uso do CT-e") : "— aguardando emissão —"} readOnly /></div>
                   <div><Label className="text-[10px] text-muted-foreground">Protocolo Cancelamento</Label><Input className="h-6 text-[10px] font-mono bg-transparent dark:bg-transparent" value="—" readOnly /></div>
                   <div><Label className="text-[10px] text-muted-foreground">Data Hora Cancelamento</Label><Input className="h-6 text-[10px] bg-transparent dark:bg-transparent" value="—" readOnly /></div>
                   <div className="md:col-span-2"><Label className="text-[10px] text-muted-foreground">Motivo Cancelamento</Label><Input className="h-6 text-[10px] bg-transparent dark:bg-transparent" value="—" readOnly /></div>
@@ -2703,6 +2726,7 @@ function CtePage() {
 
           <DialogFooter className="gap-2">
             <Button variant="outline" onClick={() => { setOpen(false); setEditingRascunhoId(null); setMercadorias([]); setSelecionadas(new Set()); qc.invalidateQueries({ queryKey: ["cte-documentos"] }); qc.invalidateQueries({ queryKey: ["cte-nfes-pendentes", empresa?.id] }); }}><Ban className="mr-1 h-3.5 w-3.5" /> Cancelar</Button>
+            {!viewDoc && (<>
             <Button variant="outline" onClick={() => salvarRascunho.mutate()} disabled={salvarRascunho.isPending}>
               {salvarRascunho.isPending ? "Salvando..." : <><FileText className="mr-1 h-3.5 w-3.5" /> Salvar Rascunho</>}
             </Button>
@@ -2712,6 +2736,7 @@ function CtePage() {
             <Button onClick={() => emitir.mutate()} disabled={emitir.isPending || !form.cnpjTomador || !form.xNomeTomador}>
               {emitir.isPending ? "Enviando..." : <><Truck className="mr-1 h-3.5 w-3.5" /> Enviar Doc-e</>}
             </Button>
+            </>)}
           </DialogFooter>
         </DialogContent>
       </Dialog>
