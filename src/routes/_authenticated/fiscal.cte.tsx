@@ -1227,7 +1227,7 @@ function CtePage() {
     } catch { setForm({ ...emptyForm }); }
     setEditingRascunhoId(null);
     setViewDoc(doc);
-    setAba("status");
+    setAba("geral");
     setOpen(true);
   };
 
@@ -1986,12 +1986,25 @@ function CtePage() {
               <TabsTrigger value="geral" className="rounded-t-md rounded-b-none text-xs data-[state=active]:bg-background data-[state=active]:shadow-sm data-[state=active]:text-primary"><Settings2 className="mr-1 h-3 w-3" />Geral</TabsTrigger>
               <TabsTrigger value="seguros" className="rounded-t-md rounded-b-none text-xs data-[state=active]:bg-background data-[state=active]:shadow-sm data-[state=active]:text-primary"><Truck className="mr-1 h-3 w-3" />Transporte</TabsTrigger>
               <TabsTrigger value="docs" className="rounded-t-md rounded-b-none text-xs data-[state=active]:bg-background data-[state=active]:shadow-sm data-[state=active]:text-primary"><FileText className="mr-1 h-3 w-3" />Tributação e Carga</TabsTrigger>
-              <TabsTrigger value="status" className="rounded-t-md rounded-b-none text-xs data-[state=active]:bg-background data-[state=active]:shadow-sm data-[state=active]:text-primary"><ClipboardList className="mr-1 h-3 w-3" />Status</TabsTrigger>
               <TabsTrigger value="obs" className="rounded-t-md rounded-b-none text-xs data-[state=active]:bg-background data-[state=active]:shadow-sm data-[state=active]:text-primary"><FileCode className="mr-1 h-3 w-3" />Observações</TabsTrigger>
             </TabsList>
 
             {/* === TAB: Geral === */}
             <TabsContent value="geral" className="mt-3 space-y-3">
+              {viewDoc && (
+              <Card className="p-3">
+                <h5 className="text-xs font-semibold mb-2">Situação do CT-e</h5>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                  <div><Label className="text-[10px] text-muted-foreground">Chave de Acesso</Label><Input className="h-6 text-[10px] font-mono bg-transparent dark:bg-transparent" value={viewDoc?.chave_acesso || "— aguardando emissão —"} readOnly /></div>
+                  <div><Label className="text-[10px] text-muted-foreground">Protocolo de Envio</Label><Input className="h-6 text-[10px] font-mono bg-transparent dark:bg-transparent" value={viewDoc ? (viewDoc.protocolo_sefaz || "—") : "— aguardando emissão —"} readOnly /></div>
+                  <div><Label className="text-[10px] text-muted-foreground">Data Hora Envio</Label><Input className="h-6 text-[10px] bg-transparent dark:bg-transparent" value={viewDoc ? fmtDataHora(viewDoc.data_autorizacao) : "— aguardando emissão —"} readOnly /></div>
+                  <div><Label className="text-[10px] text-muted-foreground">Motivo Envio</Label><Input className="h-6 text-[10px] bg-transparent dark:bg-transparent" value={viewDoc ? (viewDoc.status === "rejeitado" ? (viewDoc.motivo_rejeicao || "—") : "Autorizado o uso do CT-e") : "— aguardando emissão —"} readOnly /></div>
+                  <div><Label className="text-[10px] text-muted-foreground">Protocolo Cancelamento</Label><Input className="h-6 text-[10px] font-mono bg-transparent dark:bg-transparent" value="—" readOnly /></div>
+                  <div><Label className="text-[10px] text-muted-foreground">Data Hora Cancelamento</Label><Input className="h-6 text-[10px] bg-transparent dark:bg-transparent" value="—" readOnly /></div>
+                  <div className="md:col-span-2"><Label className="text-[10px] text-muted-foreground">Motivo Cancelamento</Label><Input className="h-6 text-[10px] bg-transparent dark:bg-transparent" value="—" readOnly /></div>
+                </div>
+              </Card>
+              )}
               {/* Header: Ambiente, Nº, Data, Tomador, Mod/Ser + CFOP */}
               <div className="grid grid-cols-2 md:grid-cols-[auto_auto_auto_minmax(0,1fr)_auto_auto] gap-2 border rounded p-3 bg-muted/20">
                 <div>
@@ -2619,32 +2632,12 @@ function CtePage() {
                 </div>
               </Card>
               </div>
-            </TabsContent>
-
-            {/* === TAB: Status === */}
-            <TabsContent value="status" className="mt-3 space-y-3">
-              <Card className="p-3">
-                <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
-                  <div><Label className="text-[10px] text-muted-foreground">* Modal</Label>
-                    <Select value="RODOVIARIO" onValueChange={() => {}}>
-                      <SelectTrigger className="h-7 text-xs"><SelectValue /></SelectTrigger>
-                      <SelectContent><SelectItem value="RODOVIARIO">RODOVIÁRIO</SelectItem></SelectContent>
-                    </Select>
-                  </div>
-                  <div><Label className="text-[10px] text-muted-foreground">* Tomador</Label><Input className="h-7 text-xs bg-transparent dark:bg-transparent" value={{ "0": "REMETENTE", "1": "DESTINATÁRIO", "2": "OUTROS", "3": "REMETENTE", "4": "DESTINATÁRIO", "9": "OUTROS" }[form.toma] || "OUTROS"} readOnly /></div>
-                  <div><Label className="text-[10px] text-muted-foreground">* Forma de Pagamento</Label>
-                    <Select value={(form as any).formaPagamento || "Outros"} onValueChange={v => setForm({ ...form, formaPagamento: v } as any)}>
-                      <SelectTrigger className="h-7 text-xs"><SelectValue /></SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="A Vista">À VISTA</SelectItem>
-                        <SelectItem value="A Prazo">A PRAZO</SelectItem>
-                        <SelectItem value="Outros">OUTROS</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div><Label className="text-[10px] text-muted-foreground">* Finalidade de Emissão</Label>
+              <Card className="p-1.5 mt-1.5">
+                <h5 className="text-xs font-semibold mb-0.5">Finalidade e Documentos Referenciados</h5>
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-1">
+                  <div><Label className="text-[10px] text-muted-foreground">Finalidade de Emissão</Label>
                     <Select value={(form as any).finalidadeEmissao || "Normal"} onValueChange={v => setForm({ ...form, finalidadeEmissao: v } as any)}>
-                      <SelectTrigger className="h-7 text-xs"><SelectValue /></SelectTrigger>
+                      <SelectTrigger className="h-6 text-[10px]"><SelectValue /></SelectTrigger>
                       <SelectContent>
                         <SelectItem value="Normal">NORMAL</SelectItem>
                         <SelectItem value="Complemento">COMPLEMENTO</SelectItem>
@@ -2653,9 +2646,9 @@ function CtePage() {
                       </SelectContent>
                     </Select>
                   </div>
-                  <div><Label className="text-[10px] text-muted-foreground">* Tipo de Serviço</Label>
+                  <div><Label className="text-[10px] text-muted-foreground">Tipo de Serviço</Label>
                     <Select value={(form as any).tipoServico || "Normal"} onValueChange={v => setForm({ ...form, tipoServico: v } as any)}>
-                      <SelectTrigger className="h-7 text-xs"><SelectValue /></SelectTrigger>
+                      <SelectTrigger className="h-6 text-[10px]"><SelectValue /></SelectTrigger>
                       <SelectContent>
                         <SelectItem value="Normal">NORMAL</SelectItem>
                         <SelectItem value="Subcontratacao">SUBCONTRATAÇÃO</SelectItem>
@@ -2664,9 +2657,9 @@ function CtePage() {
                       </SelectContent>
                     </Select>
                   </div>
-                  <div><Label className="text-[10px] text-muted-foreground">* Forma de Emissão</Label>
+                  <div><Label className="text-[10px] text-muted-foreground">Forma de Emissão</Label>
                     <Select value={(form as any).formaEmissao || "Normal"} onValueChange={v => setForm({ ...form, formaEmissao: v } as any)}>
-                      <SelectTrigger className="h-7 text-xs"><SelectValue /></SelectTrigger>
+                      <SelectTrigger className="h-6 text-[10px]"><SelectValue /></SelectTrigger>
                       <SelectContent>
                         <SelectItem value="Normal">NORMAL</SelectItem>
                         <SelectItem value="EPEC">EPEC</SelectItem>
@@ -2675,37 +2668,32 @@ function CtePage() {
                       </SelectContent>
                     </Select>
                   </div>
+                  <div><Label className="text-[10px] text-muted-foreground">Forma de Pagamento</Label>
+                    <Select value={(form as any).formaPagamento || "Outros"} onValueChange={v => setForm({ ...form, formaPagamento: v } as any)}>
+                      <SelectTrigger className="h-6 text-[10px]"><SelectValue /></SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="A Vista">À VISTA</SelectItem>
+                        <SelectItem value="A Prazo">A PRAZO</SelectItem>
+                        <SelectItem value="Outros">OUTROS</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
                 </div>
+                {(form as any).finalidadeEmissao && (form as any).finalidadeEmissao !== "Normal" && (
+                  <div className="grid grid-cols-1 md:grid-cols-[180px_1fr] gap-1 items-center mt-1">
+                    <Label className="text-[10px] text-muted-foreground">CT-e Referenciado</Label>
+                    <Input className="h-6 text-[10px] font-mono" placeholder="Chave de acesso do CT-e substituído (44 dígitos)" value={(form as any).cteReferenciado || ""} onChange={e=>setForm({...form, cteReferenciado: e.target.value.replace(/\D/g, "").slice(0, 44)} as any)} maxLength={44} />
+                    <Label className="text-[10px] text-muted-foreground">Complemento / Anulação</Label>
+                    <Input className="h-6 text-[10px] font-mono" placeholder="Chave do CT-e complementado/anulado (44 dígitos)" value={(form as any).chaveCompAnulacao || ""} onChange={e=>setForm({...form, chaveCompAnulacao: e.target.value.replace(/\D/g, "").slice(0, 44)} as any)} maxLength={44} />
+                    <Label className="text-[10px] text-muted-foreground">Data Declaração</Label>
+                    <DateInput value={(form as any).dataDeclaracao || ""} onChange={v => setForm({ ...form, dataDeclaracao: v } as any)} className="h-6 text-[10px]" />
+                  </div>
+                )}
                 <p className="text-[9px] text-muted-foreground mt-1">CT-e Simplificado MG transmite sempre como Normal / Rodoviário; demais opções ficam salvas no rascunho.</p>
               </Card>
-              <Card className="p-3 space-y-2">
-                <div className="grid grid-cols-1 md:grid-cols-[180px_1fr] gap-1 items-center">
-                  <Label className="text-[10px] text-muted-foreground">CT-e Referenciado</Label>
-                  <Input className="h-6 text-[10px] font-mono" placeholder="Chave de acesso do CT-e substituído (44 dígitos)" value={(form as any).cteReferenciado || ""} onChange={e=>setForm({...form, cteReferenciado: e.target.value.replace(/\D/g, "").slice(0, 44)} as any)} maxLength={44} />
-                </div>
-                <div className="grid grid-cols-1 md:grid-cols-[180px_1fr] gap-1 items-center">
-                  <Label className="text-[10px] text-muted-foreground">Complemento / Anulação</Label>
-                  <Input className="h-6 text-[10px] font-mono" placeholder="Chave do CT-e complementado/anulado (44 dígitos)" value={(form as any).chaveCompAnulacao || ""} onChange={e=>setForm({...form, chaveCompAnulacao: e.target.value.replace(/\D/g, "").slice(0, 44)} as any)} maxLength={44} />
-                </div>
-                <div className="grid grid-cols-1 md:grid-cols-[180px_200px] gap-1 items-center">
-                  <Label className="text-[10px] text-muted-foreground">Data Declaração</Label>
-                  <DateInput value={(form as any).dataDeclaracao || ""} onChange={v => setForm({ ...form, dataDeclaracao: v } as any)} className="h-6 text-[10px]" />
-                </div>
-              </Card>
-              <Card className="p-3">
-                <h5 className="text-xs font-semibold mb-2">Situação do CT-e</h5>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-                  <div><Label className="text-[10px] text-muted-foreground">Chave de Acesso</Label><Input className="h-6 text-[10px] font-mono bg-transparent dark:bg-transparent" value={viewDoc?.chave_acesso || "— aguardando emissão —"} readOnly /></div>
-                  <div><Label className="text-[10px] text-muted-foreground">Protocolo de Envio</Label><Input className="h-6 text-[10px] font-mono bg-transparent dark:bg-transparent" value={viewDoc ? (viewDoc.protocolo_sefaz || "—") : "— aguardando emissão —"} readOnly /></div>
-                  <div><Label className="text-[10px] text-muted-foreground">Data Hora Envio</Label><Input className="h-6 text-[10px] bg-transparent dark:bg-transparent" value={viewDoc ? fmtDataHora(viewDoc.data_autorizacao) : "— aguardando emissão —"} readOnly /></div>
-                  <div><Label className="text-[10px] text-muted-foreground">Motivo Envio</Label><Input className="h-6 text-[10px] bg-transparent dark:bg-transparent" value={viewDoc ? (viewDoc.status === "rejeitado" ? (viewDoc.motivo_rejeicao || "—") : "Autorizado o uso do CT-e") : "— aguardando emissão —"} readOnly /></div>
-                  <div><Label className="text-[10px] text-muted-foreground">Protocolo Cancelamento</Label><Input className="h-6 text-[10px] font-mono bg-transparent dark:bg-transparent" value="—" readOnly /></div>
-                  <div><Label className="text-[10px] text-muted-foreground">Data Hora Cancelamento</Label><Input className="h-6 text-[10px] bg-transparent dark:bg-transparent" value="—" readOnly /></div>
-                  <div className="md:col-span-2"><Label className="text-[10px] text-muted-foreground">Motivo Cancelamento</Label><Input className="h-6 text-[10px] bg-transparent dark:bg-transparent" value="—" readOnly /></div>
-                </div>
-                <p className="text-[9px] text-muted-foreground mt-1">Preenchidos automaticamente após transmissão/cancelamento.</p>
-              </Card>
             </TabsContent>
+
+            {/* TAB Status removida: finalidade foi para o Transporte; situação aparece na Geral em modo visualização */}
 
             {/* === TAB: Observações === */}
             <TabsContent value="obs" className="mt-3 space-y-3">
