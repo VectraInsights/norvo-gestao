@@ -1766,3 +1766,64 @@ eed(17)) p/ canhoto encostar no rodape; tomador RUA, NUMERO - BAIRRO - CIDADE / 
 - Preview DACTE: mescla form vivo + input; passa infQ (peso), motoNome/CPF, CIOT, numeroAverbacao, segCNPJ.
 
 - Pedagio 100% por viagem: removido do apply e do save de percurso + bloco na tela de percursos.
+- DACTE modal: vale-pedagio lado direito em box unico (titulo + rotulos + 1 linha de dados, sem caixas/linhas por veiculo); conjunto segue com linhas por veiculo.
+- DACTE componentes: grade sem Pedagio e sem ICMS (vale so no campo proprio, fora do total); Frete com fallback valorServico menos demais comps na reimpressao (XML sem Comp).
+- Reimpressao DACTE: comps restaurados do formulario salvo quando o XML nao traz Comp (Outros/Desconto/Coleta/Entrega voltam a aparecer).
+- DACTE componentes: grade 3x3 sem Sec/Cat (rotulo morto sempre zerado, removido); linhas com respiro e tracejados separadores inteiros entre as fileiras.
+- DACTE totais: Valor do Servico = soma bruta dos servicos; Valor a Receber = total fiscal vTPrest (bruto menos desconto); preview valorServico = totalPrestacao.
+- DACTE componentes: separadores entre fileiras em linha continua (sem tracejado).
+- DACTE componentes: linha continua tambem sob o cabecalho; texto centralizado verticalmente mantido a esquerda.
+- DACTE componentes: nomes a esquerda, valores e cabecalho Valor a direita (grade e totais).
+- DP/RH: Calculadora trabalhista avulsa (/rh/calculadora) em 4 abas (salario, ferias, 13o, horas extras), tabelas 2026, sem vinculo com funcionario.
+- Calculadora salario: VT 6% automatico + saude/odonto/alimentacao discriminados.
+- Calculadora: deducao de dependentes (R$ 189,59 cada) na base do IRRF nas abas salario/ferias/13o.
+- Calculadora: aba Rescisao (5 tipos, aviso/ferias/13o, multa FGTS 40/20%).
+- Calculadora: salarios iniciais zerados.
+- Calculadora rescisao: avos de 13o/ferias pelas datas (regra 15+ dias), vencidas via checkbox + dropdown 30/60.
+- Calculadora rescisao: removidos dias de saldo, linha de avos e saldo FGTS; saldo automatico pelo dia da rescisao.
+- Calculadora: removidos campos de dependentes de todas as abas.
+- DACTE: visor proprio em tela cheia (sem barra do navegador) com Baixar, Imprimir, zoom e Esc; vale p/ olho e preview.
+- DACTE visor: PDF em largura total.
+- DACTE visor: zoom inicial preenche a largura da tela.
+- DACTE visor: zoom via parametro nativo do leitor (CSS nao afeta plugin).
+- Usuarios: nome editavel no Minha conta (todos) e na tela de usuarios (admin, incl. dono).
+- Minha conta renomeado para Dados da conta (nome + senha).
+- Sidebar: mostra nome do usuario; menu fixo na viewport com rodape preso (só o conteudo rola).
+- Homologacao: tomador SEM VALOR FISCAL com espaco (comparacoes toleram docs antigos).
+- CTe: pagina em 5 abas (embarque, aguardando envio, autorizados, rejeitados, cancelados).
+- Redespacho habilitado: selecao por remetente, tpServ 2 no XML, modo no form/rascunho.
+- CTe: botao Limpar Rejeitados movido para a aba Rejeitados.
+- Redespacho: ao marcar uma NF, pergunta se seleciona todas do remetente.
+- Redespacho: confirmacao de selecionar todas em dialogo proprio (sem confirm do navegador).
+- Redespacho: Gerar preserva o modo (nao reseta); titulo do dialogo indica tpServ 2.
+- Redespacho: trava exige CNPJ do redespachante para emitir.
+- Redespacho: infDocAnt por item (chCTe + total/parcial) + validacoes G016/G026.
+- Redespacho: docAnt com chaves unicas (G025).
+- Simplificado: avulso junta remetentes/destinatarios com tomador unico (NT 2024.002).
+- Embarque virou Simplificado (tpServ 0, sem docAnt/trava).
+- DACTE originarios: numero da NF via chave quando ausente; chave continua sem espacos.
+- DACTE impostos: titulos centrais estilo imagem 2 (Informacoes Relativas ao Imposto + Reforma Tributaria).
+- DACTE IBS: classificacao com nome por extenso.
+- DACTE IBS: tabela CClassTrib completa (164 codigos, LC 214/2025).
+- DACTE enderecos rem/dest/exp/rec com virgula apos logradouro.
+- DACTE pessoas: bairro acima do municipio; CPF/CNPJ com J.
+- DACTE pessoas em 2 colunas estilo oficial.
+- DACTE pessoas: dois-pontos em todos os rotulos.
+- DACTE pessoas: Pais colado na UF igual modelo.
+- DACTE pessoas: rotulos em negrito.
+- DACTE pessoas: rotulos alinhados a direita, valores na mesma reta.
+- DACTE pessoas: campos a esquerda fluindo apos rotulo.
+- DACTE pessoas: dois-pontos alinhados no do CNPJ.
+- DACTE pessoas: volta ao fluxo encostado do modelo oficial.
+- DACTE pessoas: volta alinhamento dos dois-pontos (zoom confirmou).
+- DACTE 1 pagina garantido (compressao + resto exato); canhoto sempre pag 1.
+- DACTE pessoas: rotulos na lateral + dois-pontos alinhados.
+- Visor DACTE com marcador de revisao (diagnostico).
+- DACTE pessoas: colunas fixas verificadas por medida.
+- DACTE pessoas: rotulos na lateral, colons no do CNPJ, valores a frente.
+- DACTE pessoas: acentos refeitos (Ender/Munic/Pais).
+- Marcador rev-d no visor.
+- Visor mostra revisao do PDF (diagnostico de deploy).
+- DACTE pessoas: padrao imagem 2 (rotulos+colons juntos, valores alinhados).
+- DACTE pessoas: colunas fixas com acentos (rev p3).
+- DACTE pessoas: padrao imagem 2 definitivo (rev p4).
