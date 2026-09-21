@@ -2282,19 +2282,15 @@ function CtePage() {
               </Card>
               <Card className="p-3">
                 <h5 className="text-xs font-semibold mb-2">Outros Impostos — Alíquotas (%) e Valores (R$)</h5>
-                <div className="grid grid-cols-2 md:grid-cols-5 gap-1">
+                <div className="grid grid-cols-2 md:grid-cols-3 gap-1">
                   <div><Label className="text-[10px] text-muted-foreground">PIS (%)</Label><MoneyInput className="h-7 text-xs bg-muted" prefix="" value={form.pisAliq} onChange={() => {}} placeholder="0,00" /></div>
                   <div><Label className="text-[10px] text-muted-foreground">COFINS (%)</Label><MoneyInput className="h-7 text-xs bg-muted" prefix="" value={form.cofinsAliq} onChange={() => {}} placeholder="0,00" /></div>
-                  <div><Label className="text-[10px] text-muted-foreground">IR (%)</Label><MoneyInput className="h-7 text-xs bg-muted" prefix="" value={form.irAliq} onChange={() => {}} placeholder="0,00" /></div>
                   <div><Label className="text-[10px] text-muted-foreground">INSS (%)</Label><MoneyInput className="h-7 text-xs bg-muted" prefix="" value={form.inssAliq} onChange={() => {}} placeholder="0,00" /></div>
-                  <div><Label className="text-[10px] text-muted-foreground">CSLL (%)</Label><MoneyInput className="h-7 text-xs bg-muted" prefix="" value={form.csllAliq} onChange={() => {}} placeholder="0,00" /></div>
                 </div>
-                <div className="grid grid-cols-2 md:grid-cols-5 gap-1 mt-1">
+                <div className="grid grid-cols-2 md:grid-cols-3 gap-1 mt-1">
                   <div><Label className="text-[10px] text-muted-foreground">Valor PIS (R$)</Label><MoneyInput className="h-7 text-xs bg-muted" value={valorImposto(form.pisAliq)} onChange={() => {}} placeholder="0,00" /></div>
                   <div><Label className="text-[10px] text-muted-foreground">Valor COFINS (R$)</Label><MoneyInput className="h-7 text-xs bg-muted" value={valorImposto(form.cofinsAliq)} onChange={() => {}} placeholder="0,00" /></div>
-                  <div><Label className="text-[10px] text-muted-foreground">Valor IR (R$)</Label><MoneyInput className="h-7 text-xs bg-muted" value={valorImposto(form.irAliq)} onChange={() => {}} placeholder="0,00" /></div>
                   <div><Label className="text-[10px] text-muted-foreground">Valor INSS (R$)</Label><MoneyInput className="h-7 text-xs bg-muted" value={valorImposto(form.inssAliq)} onChange={() => {}} placeholder="0,00" /></div>
-                  <div><Label className="text-[10px] text-muted-foreground">Valor CSLL (R$)</Label><MoneyInput className="h-7 text-xs bg-muted" value={valorImposto(form.csllAliq)} onChange={() => {}} placeholder="0,00" /></div>
                 </div>
               </Card>
 
