@@ -2651,25 +2651,16 @@ function CtePage() {
               <Card className="p-1.5 mt-1.5">
                 <h5 className="text-xs font-semibold mb-0.5">Finalidade e Documentos Referenciados</h5>
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-1">
-                  <div><Label className="text-[10px] text-muted-foreground">Finalidade de Emissão</Label>
-                    <Select value={(form as any).finalidadeEmissao || "Normal"} onValueChange={v => setForm({ ...form, finalidadeEmissao: v } as any)}>
+                  <div className="md:col-span-2"><Label className="text-[10px] text-muted-foreground">Finalidade / Tipo de Serviço</Label>
+                    <Select value={((form as any).tipoServico && (form as any).tipoServico !== "Normal") ? (form as any).tipoServico : ((form as any).finalidadeEmissao || "Normal")} onValueChange={v => setForm({ ...form, ...(v === "Complemento" ? { finalidadeEmissao: "Complemento", tipoServico: "Normal" } : v === "Normal" ? { finalidadeEmissao: "Normal", tipoServico: "Normal" } : { finalidadeEmissao: "Normal", tipoServico: v }) } as any)}>
                       <SelectTrigger className="h-6 text-[10px]"><SelectValue /></SelectTrigger>
                       <SelectContent>
                         <SelectItem value="Normal">NORMAL</SelectItem>
                         <SelectItem value="Complemento">COMPLEMENTO</SelectItem>
                         <SelectItem value="Subcontratacao">SUBCONTRATAÇÃO</SelectItem>
                         <SelectItem value="Redespacho">REDESPACHO</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div><Label className="text-[10px] text-muted-foreground">Tipo de Serviço</Label>
-                    <Select value={(form as any).tipoServico || "Normal"} onValueChange={v => setForm({ ...form, tipoServico: v } as any)}>
-                      <SelectTrigger className="h-6 text-[10px]"><SelectValue /></SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="Normal">NORMAL</SelectItem>
-                        <SelectItem value="Subcontratacao">SUBCONTRATAÇÃO</SelectItem>
-                        <SelectItem value="Redespacho">REDESPACHO</SelectItem>
                         <SelectItem value="Redespacho Intermediario">REDESPACHO INTERMEDIÁRIO</SelectItem>
+                        <SelectItem value="Substituicao" disabled>SUBSTITUIÇÃO (via ícone na lista)</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
