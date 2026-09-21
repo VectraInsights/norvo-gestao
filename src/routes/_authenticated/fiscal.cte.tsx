@@ -1986,10 +1986,6 @@ function CtePage() {
                       </Command>
                     </PopoverContent>
                   </Popover>
-                  <div className="mt-1 flex items-center gap-1 text-[10px] text-muted-foreground">
-                    <span className="truncate">CNPJ: {form.cnpjTomador ? fmtCnpjInput(form.cnpjTomador) : "-"}</span>
-                    <span className="inline-flex items-center gap-1 shrink-0">IE: <Input className="h-5 w-32 text-[10px] px-1 text-foreground" placeholder="ISENTO" value={form.ieTomador || ((contatoByDoc.get(String(form.cnpjTomador || "").replace(/\D/g, "")) || {}) as any).ie || ""} onChange={e=>setForm({...form,ieTomador:e.target.value.toUpperCase().replace(/[^A-Z0-9]/g,"").slice(0,14)})} /></span>
-                  </div>
                 </div>
                 <div><Label className="text-[10px] text-muted-foreground">Mod / Série</Label><Input className="h-7 text-xs font-mono w-[92px] text-center px-1 bg-transparent" value="57 / 001" readOnly /></div>
                 <div><Label className="text-[10px] text-muted-foreground">Percurso</Label><Input className="h-7 text-xs font-mono w-[76px] text-center px-1 bg-transparent" value={percursoMatch?.codigo || "—"} readOnly title={percursoMatch?.nome || "Nenhum percurso associado"} /></div>
