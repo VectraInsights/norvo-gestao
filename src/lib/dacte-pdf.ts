@@ -106,6 +106,8 @@ interface DacteData {
   veiculos?: Array<{ tipo?: string; placa?: string; renavam?: string; uf?: string; rntrc?: string }>;
   motoNome?: string;
   motoCPF?: string;
+  moto2Nome?: string;
+  moto2CPF?: string;
   lacres?: string;
   propDoc?: string;
   propNome?: string;
@@ -799,7 +801,8 @@ export function gerarDactePdf(data: DacteData): Blob {
   doc.text("Endereço SubContratado", M + 2, y + 2);
   val(cut(D(data.subContratado), 80), M + 42, y + 3, 5);
   y += subcH;
-  const motH = 5.3;
+  const temMoto2 = String(D(data.moto2Nome)).trim().length > 0;
+  const motH = temMoto2 ? 11 : 5.3;
   box(M, y, CW, motH);
   lab("Motorista", M + 2, y + 1.8);
   lab("CPF do Motorista", M + 62, y + 1.8);
@@ -807,6 +810,12 @@ export function gerarDactePdf(data: DacteData): Blob {
   val(cut(D(data.motoNome), 30), M + 2, y + 4.5, 5);
   val(D(data.motoCPF), M + 62, y + 4.5, 5);
   val(`${fmtCnpj(D(data.propDoc))}  ${cut(D(data.propNome), 24)}`, M + 96, y + 4.5, 5);
+  if (temMoto2) {
+    lab("2º Motorista", M + 2, y + 7.2);
+    lab("CPF 2º Motorista", M + 62, y + 7.2);
+    val(cut(D(data.moto2Nome), 30), M + 2, y + 9.9, 5);
+    val(D(data.moto2CPF), M + 62, y + 9.9, 5);
+  }
   y += motH + 1;
 
   // ---- Uso exclusivo | fisco ----

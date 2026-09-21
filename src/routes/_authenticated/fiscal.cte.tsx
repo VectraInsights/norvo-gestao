@@ -258,7 +258,7 @@ function CtePage() {
           if (emitD) { const cEmi = f2(emitD); if (cEmi) emitFoneE = ((cEmi as any).telefone || "").replace(/\D/g, ""); }
         }
       } catch {}
-      let emitFoneC = "", remFoneC = "", motoCPFC = "", segCNPJC = "";
+      let emitFoneC = "", remFoneC = "", motoCPFC = "", moto2CPFC = "", segCNPJC = "";
       try {
         if (empresa && (remD || tomaD)) {
           const { data: cts2 } = await supabase.from("fiscal_cadastros" as any).select("documento,telefone").eq("empresa_id", (empresa as any).id);
@@ -276,6 +276,11 @@ function CtePage() {
         if (empresa && motId) {
           const { data: cb } = await supabase.from("colaboradores" as any).select("cpf").eq("empresa_id", (empresa as any).id).eq("id", motId).maybeSingle();
           if (cb) motoCPFC = String((cb as any).cpf || "").replace(/\D/g, "");
+        }
+        const mot2Id = (pjForm as any).motorista2Id || "";
+        if (empresa && mot2Id) {
+          const { data: cb2 } = await supabase.from("colaboradores" as any).select("cpf").eq("empresa_id", (empresa as any).id).eq("id", mot2Id).maybeSingle();
+          if (cb2) moto2CPFC = String((cb2 as any).cpf || "").replace(/\D/g, "");
         }
       } catch {}
       let destNomeFix = tag("infCte > dest > xNome") || (nfRef?.dest_nome || "") || "";
@@ -486,6 +491,8 @@ function CtePage() {
         veiculos: veicsFin,
         motoNome: motoEl?.querySelector("xNome")?.textContent || (pjForm as any).motoristaNome || "",
         motoCPF: motoEl?.querySelector("CPF")?.textContent || motoCPFC,
+        moto2Nome: (pjForm as any).motorista2Nome || "",
+        moto2CPF: moto2CPFC,
         lacres: lacresXml,
         propDoc: propEl?.querySelector("CNPJ")?.textContent || propEl?.querySelector("CPF")?.textContent || "",
         propNome: propEl?.querySelector("xNome")?.textContent || "",
@@ -526,14 +533,14 @@ function CtePage() {
   };
 
   const [open, setOpen] = useState(false);
-  const emptyForm = { toma: "3", ieDestinatario: "", cnpjTomador: "", xNomeTomador: "", ufTomador: "MG", cMunTomador: "3106200", xMunTomador: "BELO HORIZONTE", ieTomador: "", logradouroTomador: "", nroTomador: "", bairroTomador: "", cepTomador: "", foneTomador: "", emailTomador: "", cnpjConsignatario: "", xNomeConsignatario: "", ieConsignatario: "", ufConsignatario: "", xMunConsignatario: "", cepConsignatario: "", logradouroConsignatario: "", nroConsignatario: "", bairroConsignatario: "", cnpjRedespacho: "", xNomeRedespacho: "", ieRedespacho: "", ufRedespacho: "", xMunRedespacho: "", cepRedespacho: "", logradouroRedespacho: "", nroRedespacho: "", bairroRedespacho: "", ambiente: "homologacao" as "homologacao" | "producao", cfop: "5353", vPrest: "0.00", vCarga: "0.00", peso: "0", rntrc: "", icmsCST: "00", icmsBase: "1000.00", icmsAliq: "0.00", icmsValor: "0.00", reducaoBase: "0.00", creditoOutorgado: "0.00", pisAliq: "0.00", cofinsAliq: "0.00", irAliq: "0.00", inssAliq: "0.00", csllAliq: "0.00", motoristaNome: "", motoristaId: "", ciot: "", placaVeiculo: "", placaReboque: "", semiReboque1: "", semiReboque2: "", seguradoraNome: "", seguradoraId: "", apolice: "", averbacao: "", cMunEnv: "3106200", xMunEnv: "BELO HORIZONTE", ufEnv: "MG", cMunIni: "3106200", xMunIni: "BELO HORIZONTE", ufIni: "MG", cMunFim: "3550308", xMunFim: "SAO PAULO", ufFim: "SP",     dataEmissao: new Date().toISOString().slice(0,10),
+  const emptyForm = { toma: "3", ieDestinatario: "", cnpjTomador: "", xNomeTomador: "", ufTomador: "MG", cMunTomador: "3106200", xMunTomador: "BELO HORIZONTE", ieTomador: "", logradouroTomador: "", nroTomador: "", bairroTomador: "", cepTomador: "", foneTomador: "", emailTomador: "", cnpjConsignatario: "", xNomeConsignatario: "", ieConsignatario: "", ufConsignatario: "", xMunConsignatario: "", cepConsignatario: "", logradouroConsignatario: "", nroConsignatario: "", bairroConsignatario: "", cnpjRedespacho: "", xNomeRedespacho: "", ieRedespacho: "", ufRedespacho: "", xMunRedespacho: "", cepRedespacho: "", logradouroRedespacho: "", nroRedespacho: "", bairroRedespacho: "", ambiente: "homologacao" as "homologacao" | "producao", cfop: "5353", vPrest: "0.00", vCarga: "0.00", peso: "0", rntrc: "", icmsCST: "00", icmsBase: "1000.00", icmsAliq: "0.00", icmsValor: "0.00", reducaoBase: "0.00", creditoOutorgado: "0.00", pisAliq: "0.00", cofinsAliq: "0.00", irAliq: "0.00", inssAliq: "0.00", csllAliq: "0.00", motoristaNome: "", motoristaId: "", possuiMoto2: "", motorista2Nome: "", motorista2Id: "", ciot: "", placaVeiculo: "", placaReboque: "", semiReboque1: "", semiReboque2: "", seguradoraNome: "", seguradoraId: "", apolice: "", averbacao: "", cMunEnv: "3106200", xMunEnv: "BELO HORIZONTE", ufEnv: "MG", cMunIni: "3106200", xMunIni: "BELO HORIZONTE", ufIni: "MG", cMunFim: "3550308", xMunFim: "SAO PAULO", ufFim: "SP",     dataEmissao: new Date().toISOString().slice(0,10),
     formaPagamento: "Outros", finalidadeEmissao: "Normal", tipoServico: "Normal", formaEmissao: "Normal", modoEmbarque: "avulso" as "avulso" | "simplificado",
     cteReferenciado: "", chaveCompAnulacao: "", dataDeclaracao: "",
     obsGerais: "", obsAnulacao: "", obsGlobalizado: "",
     adicionalPed: "0.00", descontoPed: "0.00", outrosPed: "0.00", adValorem: "0.00", gris: "0.00", taxaColeta: "0.00", taxaEntrega: "0.00", valePedagio: "0.00", pedagioPagto: "sem-pagamento", pedagioOperadora: "", pedagioCnpj: "", pedagioTag: "", pedagioRespCnpj: "", pedagioIdentVPO: "", pedagioDataOp: "", distanciaKm: "", duracaoHoras: "", docAntChaves: "", docAntTpPrest: "1", rctrC: "0.00", rcfDc: "0.00", segAdicional: "0.00", segTotal: "0.00", segRepassar: "", segResponsavel: "4",
   };
   // Percurso NÃO guarda motorista nem frete: ao abrir um CT-e novo, esses dados de viagem zeram
-  const LIMPA_VIAGEM = { motoristaNome: "", motoristaId: "", ciot: "", placaVeiculo: "", placaReboque: "", semiReboque1: "", semiReboque2: "", vPrest: "0.00", adicionalPed: "0.00", descontoPed: "0.00", outrosPed: "0.00", adValorem: "0.00", gris: "0.00", taxaColeta: "0.00", taxaEntrega: "0.00", valePedagio: "0.00", pedagioPagto: "sem-pagamento", pedagioOperadora: "", pedagioCnpj: "", pedagioTag: "", pedagioRespCnpj: "", pedagioIdentVPO: "", pedagioDataOp: "", distanciaKm: "", duracaoHoras: "" };
+  const LIMPA_VIAGEM = { motoristaNome: "", motoristaId: "", possuiMoto2: "", motorista2Nome: "", motorista2Id: "", ciot: "", placaVeiculo: "", placaReboque: "", semiReboque1: "", semiReboque2: "", vPrest: "0.00", adicionalPed: "0.00", descontoPed: "0.00", outrosPed: "0.00", adValorem: "0.00", gris: "0.00", taxaColeta: "0.00", taxaEntrega: "0.00", valePedagio: "0.00", pedagioPagto: "sem-pagamento", pedagioOperadora: "", pedagioCnpj: "", pedagioTag: "", pedagioRespCnpj: "", pedagioIdentVPO: "", pedagioDataOp: "", distanciaKm: "", duracaoHoras: "" };
   const PEDAGIO_OPERADORAS = [
     { nome: "CONECTCAR", cnpj: "16577631000299" },
     { nome: "DB TRANS", cnpj: "04467870000126" },
@@ -672,6 +679,8 @@ function CtePage() {
   // Motoristas (cargo contém Motorista), Veículos e Seguradoras para menus tipo CFOP
   const [motoristaOpen, setMotoristaOpen] = useState(false);
   const [motoristaQuery, setMotoristaQuery] = useState("");
+  const [motorista2Open, setMotorista2Open] = useState(false);
+  const [motorista2Query, setMotorista2Query] = useState("");
   const [veiculoOpen, setVeiculoOpen] = useState<string | null>(null);
   const [veiculoQuery, setVeiculoQuery] = useState("");
   const [seguradoraOpen, setSeguradoraOpen] = useState(false);
@@ -1279,6 +1288,7 @@ function CtePage() {
       if (String(form.cnpjConsignatario || "").replace(/\D/g, "").length === 14 && !ieOk(form.ieConsignatario)) pend.push("IE do consignatario");
       if (String(form.cnpjRedespacho || "").replace(/\D/g, "").length === 14 && !ieOk(form.ieRedespacho)) pend.push("IE do redespacho");
       if (!String(form.motoristaNome || "").trim()) pend.push("Motorista");
+      if (form.possuiMoto2 === "S" && !String((form as any).motorista2Nome || "").trim()) pend.push("Segundo motorista");
       if (!rntrcFinal || /^ISENTO$/i.test(rntrcFinal) || rntrcFinal.replace(/\D/g, "").length !== 8) pend.push("RNTRC da empresa com 8 digitos (cadastre em Configuracoes > RNTRC)");
       if (!String(form.placaVeiculo || "").trim()) pend.push("Placa da tracao (veiculo 1)");
       else {
@@ -2496,7 +2506,42 @@ function CtePage() {
                         {form.semiReboque2 ? (<button type="button" className="mt-0.5 text-[9px] text-muted-foreground underline" onClick={() => setForm(f => ({ ...f, semiReboque2: "" }))}>limpar</button>) : null}
                       </div>
                     </div>
-                    <label className="flex items-center gap-1 text-[10px]"><input type="checkbox" /> Possui Segundo Motorista</label>
+                    <label className="flex items-center gap-1 text-[10px]"><input type="checkbox" checked={form.possuiMoto2 === "S"} onChange={e => setForm({ ...form, possuiMoto2: e.target.checked ? "S" : "", ...(e.target.checked ? {} : { motorista2Nome: "", motorista2Id: "" }) })} /> Possui Segundo Motorista</label>
+                    {form.possuiMoto2 === "S" && (
+                      <div className="grid grid-cols-3 gap-1 mt-1">
+                        <div className="col-span-2"><Label className="text-[10px] text-muted-foreground">Segundo Motorista</Label>
+                        <Popover open={motorista2Open} onOpenChange={setMotorista2Open}>
+                          <PopoverTrigger asChild>
+                            <Button variant="outline" role="combobox" aria-expanded={motorista2Open} className="h-6 text-[10px] justify-between w-full font-normal">
+                              <span className="truncate">{(form as any).motorista2Nome || "Selecione o segundo motorista"}</span>
+                              <ChevronsUpDown className="ml-2 h-3 w-3 shrink-0 opacity-50" />
+                            </Button>
+                          </PopoverTrigger>
+                          <PopoverContent className="w-[360px] p-0" align="start">
+                            <Command shouldFilter={false}>
+                              <CommandInput placeholder="Buscar motorista..." value={motorista2Query} onValueChange={setMotorista2Query} />
+                              <CommandList>
+                                <CommandEmpty>{motoristas?.length ? "Nenhum motorista encontrado." : "Nenhum colaborador com cargo Motorista. Cadastre em RH."}</CommandEmpty>
+                                <CommandGroup>
+                                  {(motoristas ?? []).filter(m => {
+                                    if (!motorista2Query) return true;
+                                    const q = motorista2Query.toLowerCase();
+                                    return m.nome.toLowerCase().includes(q) || m.cargo.toLowerCase().includes(q) || (m.cpf || "").includes(q);
+                                  }).map(m => (
+                                    <CommandItem key={m.id} value={m.id} onSelect={() => { setForm(f => ({ ...f, motorista2Id: m.id, motorista2Nome: m.nome } as any)); setMotorista2Open(false); setMotorista2Query(""); }}>
+                                      <Check className={"mr-2 h-3 w-3 " + ((form as any).motorista2Id === m.id ? "opacity-100" : "opacity-0")} />
+                                      <div className="flex flex-col"><span className="text-xs">{m.nome}</span><span className="text-[10px] text-muted-foreground">{m.cargo}</span></div>
+                                    </CommandItem>
+                                  ))}
+                                </CommandGroup>
+                              </CommandList>
+                            </Command>
+                          </PopoverContent>
+                        </Popover>
+                        </div>
+                        <div><Label className="text-[10px] text-muted-foreground">CPF</Label><Input className="h-6 text-[10px] bg-transparent" readOnly value={((motoristas || []).find((m: any) => m.id === (form as any).motorista2Id) as any)?.cpf || ""} /></div>
+                      </div>
+                    )}
                   </div>
                 </Card>
 
@@ -2742,6 +2787,8 @@ function CtePage() {
               numeroAverbacao: f.averbacao || "",
               motoNome: f.motoristaNome || "",
               motoCPF: ((motoristas || []).find((m: any) => m.id === f.motoristaId)?.cpf || ""),
+              moto2Nome: (f as any).motorista2Nome || "",
+              moto2CPF: (((motoristas || []).find((m: any) => m.id === (f as any).motorista2Id) as any)?.cpf || ""),
               ciot: f.ciot || "",
               segCNPJ: ((seguradoras || []).find((s: any) => s.id === f.seguradoraId)?.cnpj || ""),
               valePedagio: f.valePedagio || "",
