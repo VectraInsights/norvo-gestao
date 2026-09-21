@@ -2270,11 +2270,11 @@ function CtePage() {
             </TabsContent>
 
             {/* === TAB: Seguros/Veículos === */}
-            <TabsContent value="seguros" className="mt-2 space-y-2">
-              <div className="grid grid-cols-1 gap-2">
-                <Card className="p-2">
-                  <h5 className="text-xs font-semibold mb-1">Seguro da Carga</h5>
-                  <div className="space-y-1">
+            <TabsContent value="seguros" className="mt-1">
+              <div className="grid grid-cols-1 xl:grid-cols-2 gap-1.5">
+                <Card className="p-1.5">
+                  <h5 className="text-xs font-semibold mb-0.5">Seguro da Carga</h5>
+                  <div className="space-y-0.5">
                                         <div className="grid grid-cols-12 gap-1">
                       <div className="col-span-5"><Label className="text-[10px] text-muted-foreground">Seguradora</Label>
                       <Popover open={seguradoraOpen} onOpenChange={setSeguradoraOpen}>
@@ -2330,9 +2330,9 @@ function CtePage() {
                   </div>
                 </Card>
 
-                <Card className="p-2">
-                  <h5 className="text-xs font-semibold mb-1">Dados do Veículo / Motorista</h5>
-                  <div className="space-y-1">
+                <Card className="p-1.5">
+                  <h5 className="text-xs font-semibold mb-0.5">Dados do Veículo / Motorista</h5>
+                  <div className="space-y-0.5">
                     <div className="grid grid-cols-3 gap-1">
                       <div><Label className="text-[10px] text-muted-foreground">Nome Motorista</Label>
                       <Popover open={motoristaOpen} onOpenChange={setMotoristaOpen}>
@@ -2498,11 +2498,10 @@ function CtePage() {
                     <label className="flex items-center gap-1 text-[10px]"><input type="checkbox" /> Possui Segundo Motorista</label>
                   </div>
                 </Card>
-              </div>
 
               {/* Pedágio / Taxas / Despesas Acessórias (ex-aba Taxas) */}
-              <Card className="p-2">
-                <h5 className="text-xs font-semibold mb-1">Componentes do Frete</h5>
+              <Card className="p-1.5">
+                <h5 className="text-xs font-semibold mb-0.5">Componentes do Frete</h5>
                 <div className="grid grid-cols-4 md:grid-cols-8 gap-1">
                   <div><Label className="text-[10px] text-muted-foreground">Valor Serviço</Label><MoneyInput className="h-6 text-[11px] font-medium" value={form.vPrest} onChange={v => setForm(f => ({ ...f, vPrest: v }))} /></div>
                   <div><Label className="text-[10px] text-muted-foreground">Adicional</Label><MoneyInput className="h-6 text-[11px] font-medium" value={form.adicionalPed} onChange={v => setForm(f => ({ ...f, adicionalPed: v }))} /></div>
@@ -2513,18 +2512,18 @@ function CtePage() {
                   <div><Label className="text-[10px] text-muted-foreground">Taxa Coleta</Label><MoneyInput className="h-6 text-[11px] font-medium" value={form.taxaColeta} onChange={v => setForm(f => ({ ...f, taxaColeta: v }))} /></div>
                   <div><Label className="text-[10px] text-muted-foreground">Taxa Entrega</Label><MoneyInput className="h-6 text-[11px] font-medium" value={form.taxaEntrega} onChange={v => setForm(f => ({ ...f, taxaEntrega: v }))} /></div>
                                   </div>
-                <p className="text-[9px] text-muted-foreground mt-1">Vale-pedágio (Lei 10.209/2001, art. 2º): não integra o frete nem a BC do ICMS e não vai no CT-e — informar no MDF-e.</p>
+                <p className="text-[9px] text-muted-foreground mt-0.5">Vale-pedágio (Lei 10.209/2001, art. 2º): não integra o frete nem a BC do ICMS e não vai no CT-e — informar no MDF-e.</p>
               </Card>
 
-              <Card className="p-2">
-                <h5 className="text-xs font-semibold mb-1">Forma de Pagamento do Pedágio</h5>
+              <Card className="p-1.5">
+                <h5 className="text-xs font-semibold mb-0.5">Forma de Pagamento do Pedágio</h5>
                 <div className="flex flex-wrap gap-3 text-[10px]">
                   <label className="flex items-center gap-1"><input type="radio" name="pedagio_pagto" checked={pagtoSeguro(form.pedagioPagto) === "free-flow"} onChange={() => setForm({ ...form, pedagioPagto: "free-flow" })} /> Free Flow</label>
                   <label className="flex items-center gap-1"><input type="radio" name="pedagio_pagto" checked={pagtoSeguro(form.pedagioPagto) === "tag-transportador"} onChange={() => setForm({ ...form, pedagioPagto: "tag-transportador" })} /> TAG Transportador</label>
                   <label className="flex items-center gap-1"><input type="radio" name="pedagio_pagto" checked={pagtoSeguro(form.pedagioPagto) === "tag-tomador"} onChange={() => setForm({ ...form, pedagioPagto: "tag-tomador" })} /> TAG Tomador</label>
                   <label className="flex items-center gap-1"><input type="radio" name="pedagio_pagto" checked={pagtoSeguro(form.pedagioPagto) === "sem-pagamento"} onChange={() => setForm({ ...form, pedagioPagto: "sem-pagamento" })} /> Sem Pagamento de Pedágio</label>
                 </div>
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-1 mt-1">
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-1 mt-0.5">
                   <div><Label className="text-[10px] text-muted-foreground">Operadora</Label>
                     <Select value={form.pedagioOperadora || ""} onValueChange={v => { const op = PEDAGIO_OPERADORAS.find(o => o.nome === v); setForm({ ...form, pedagioOperadora: v, pedagioCnpj: op ? op.cnpj : form.pedagioCnpj }); }}>
                       <SelectTrigger className="h-6 text-[11px]"><SelectValue placeholder="Selecione" /></SelectTrigger>
@@ -2538,6 +2537,7 @@ function CtePage() {
                   <div><Label className="text-[10px] text-muted-foreground">Data Operação</Label><Input className="h-6 text-[11px] bg-transparent" title="Sempre a data de emissão" value={String(form.pedagioDataOp || "").slice(0, 10).split("-").reverse().join("/")} readOnly /></div>
                 </div>
               </Card>
+              </div>
             </TabsContent>
 
             {/* === TAB: Status === */}
