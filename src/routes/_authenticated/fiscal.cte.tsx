@@ -447,7 +447,7 @@ function CtePage() {
         icmsAliq: parseFloat(tagI("pICMS")) || 0,
         icmsValor: parseFloat(tagI("vICMS")) || 0,
         nFes,
-        comps: xmlComps.length > 0 ? xmlComps : (([['Frete Valor', (pjForm as any).vPrest], ['Adicional', (pjForm as any).adicionalPed], ['Desconto', (pjForm as any).descontoPed], ['Outros', (pjForm as any).outrosPed], ['Ad Valorem', (pjForm as any).adValorem], ['GRIS', (pjForm as any).gris], ['Coleta', (pjForm as any).taxaColeta], ['Entrega', (pjForm as any).taxaEntrega]] as Array<[string, any]>).filter(([, vv]) => Number(vv) !== 0).map(([nn, vv]) => ({ nome: nn, valor: Number(vv) || 0 }))),
+        comps: xmlComps.length > 0 ? xmlComps : (([['Frete Valor', (pjForm as any).vPrest], ['Coleta', (pjForm as any).taxaColeta], ['Entrega', (pjForm as any).taxaEntrega], ['Ad Valorem', (pjForm as any).adValorem], ['GRIS', (pjForm as any).gris], ['Outros', (pjForm as any).outrosPed], ['Desconto', (pjForm as any).descontoPed], ['Adicional', (pjForm as any).adicionalPed]] as Array<[string, any]>).filter(([, vv]) => Number(vv) !== 0).map(([nn, vv]) => ({ nome: nn, valor: Number(vv) || 0 }))),
         placa: tag("infModal > rodo > veic > placa") || (pjForm as any).placaVeiculo || "",
         placaReboque: "",
         rntrc: tag("infModal > rodo > RNTRC") || "",
@@ -595,7 +595,7 @@ function CtePage() {
     if (!((f.pedagioOperadora || "").trim())) errs.push("Operadora");
     if ((f.pedagioCnpj || "").replace(/\D/g, "").length !== 14) errs.push("CNPJ da Operadora (14 dígitos)");
     if ((parseFloat(f.valePedagio) || 0) <= 0) errs.push("Vale Pedágio (R$) maior que zero");
-    if (((f as any).pedagioRespCnpj || "").replace(/\D/g, "").length !== 14) errs.push("CNPJ Resp. Pagto (14 dígitos)");
+    if (((f as any).pedagioRespCnpj || "").replace(/\D/g, "").length !== 14) errs.push("CNPJ Responsável Pagamento (14 dígitos)");
     if (!(((f as any).pedagioIdentVPO || "").trim()) && !((f.pedagioTag || "").trim())) errs.push("Identificador VPO");
     if ((modo === "tag-transportador" || modo === "tag-tomador") && !((f.pedagioTag || "").trim())) errs.push("Nº TAG");
     if (errs.length) throw new Error(`Pedágio obrigatório (${rotulo}): informe ${errs.join("; ")}`);
@@ -2561,13 +2561,12 @@ function CtePage() {
                 <h5 className="text-xs font-semibold mb-0.5">Componentes do Frete</h5>
                 <div className="grid grid-cols-2 md:grid-cols-3 gap-1">
                   <div><Label className="text-[10px] text-muted-foreground">Valor Serviço</Label><MoneyInput className="h-6 text-[11px] font-medium" value={form.vPrest} onChange={v => setForm(f => ({ ...f, vPrest: v }))} /></div>
-                  <div><Label className="text-[10px] text-muted-foreground">Adicional</Label><MoneyInput className="h-6 text-[11px] font-medium" value={form.adicionalPed} onChange={v => setForm(f => ({ ...f, adicionalPed: v }))} /></div>
-                  <div><Label className="text-[10px] text-muted-foreground">Desconto</Label><MoneyInput className="h-6 text-[11px] font-medium" value={form.descontoPed} onChange={v => setForm(f => ({ ...f, descontoPed: v }))} /></div>
-                  <div><Label className="text-[10px] text-muted-foreground">Outros</Label><MoneyInput className="h-6 text-[11px] font-medium" value={form.outrosPed} onChange={v => setForm(f => ({ ...f, outrosPed: v }))} /></div>
-                  <div><Label className="text-[10px] text-muted-foreground">Ad Valorem</Label><MoneyInput className="h-6 text-[11px] font-medium" value={form.adValorem} onChange={v => setForm(f => ({ ...f, adValorem: v }))} /></div>
-                  <div><Label className="text-[10px] text-muted-foreground">GRIS</Label><MoneyInput className="h-6 text-[11px] font-medium" value={form.gris} onChange={v => setForm(f => ({ ...f, gris: v }))} /></div>
                   <div><Label className="text-[10px] text-muted-foreground">Taxa Coleta</Label><MoneyInput className="h-6 text-[11px] font-medium" value={form.taxaColeta} onChange={v => setForm(f => ({ ...f, taxaColeta: v }))} /></div>
                   <div><Label className="text-[10px] text-muted-foreground">Taxa Entrega</Label><MoneyInput className="h-6 text-[11px] font-medium" value={form.taxaEntrega} onChange={v => setForm(f => ({ ...f, taxaEntrega: v }))} /></div>
+                  <div><Label className="text-[10px] text-muted-foreground">Ad Valorem</Label><MoneyInput className="h-6 text-[11px] font-medium" value={form.adValorem} onChange={v => setForm(f => ({ ...f, adValorem: v }))} /></div>
+                  <div><Label className="text-[10px] text-muted-foreground">GRIS</Label><MoneyInput className="h-6 text-[11px] font-medium" value={form.gris} onChange={v => setForm(f => ({ ...f, gris: v }))} /></div>
+                  <div><Label className="text-[10px] text-muted-foreground">Outros</Label><MoneyInput className="h-6 text-[11px] font-medium" value={form.outrosPed} onChange={v => setForm(f => ({ ...f, outrosPed: v }))} /></div>
+                  <div><Label className="text-[10px] text-muted-foreground">Desconto</Label><MoneyInput className="h-6 text-[11px] font-medium" value={form.descontoPed} onChange={v => setForm(f => ({ ...f, descontoPed: v }))} /></div>
                                   </div>
                 <p className="text-[9px] text-muted-foreground mt-0.5">Vale-pedágio (Lei 10.209/2001, art. 2º): não integra o frete nem a BC do ICMS e não vai no CT-e — informar no MDF-e.</p>
               </Card>
@@ -2586,10 +2585,10 @@ function CtePage() {
                       <SelectTrigger className="h-6 text-[11px]"><SelectValue placeholder="Selecione" /></SelectTrigger>
                       <SelectContent>{PEDAGIO_OPERADORAS.map(o => <SelectItem key={o.nome} value={o.nome}>{o.nome}</SelectItem>)}</SelectContent>
                     </Select></div>
-                  <div><Label className="text-[10px] text-muted-foreground">CNPJ Operadora</Label><Input className="h-6 text-[11px]" placeholder="00.000.000/0000-00" value={form.pedagioCnpj || ""} onChange={e => setForm({ ...form, pedagioCnpj: e.target.value })} /></div>
+                  <div><Label className="text-[10px] text-muted-foreground">CNPJ Operadora</Label><Input className="h-6 text-[11px] font-mono" placeholder="00.000.000/0000-00" value={fmtCnpjInput(form.pedagioCnpj || "")} onChange={e => setForm({ ...form, pedagioCnpj: e.target.value.replace(/\D/g, "").slice(0, 14) })} maxLength={18} /></div>
                   <div><Label className="text-[10px] text-muted-foreground">Vale Pedágio (R$)</Label><MoneyInput className="h-6 text-[11px] font-medium" value={form.valePedagio} onChange={v => setForm(f => ({ ...f, valePedagio: v }))} /></div>
                   <div><Label className="text-[10px] text-muted-foreground">Nº TAG</Label><Input className="h-6 text-[11px]" placeholder="Nº TAG" value={form.pedagioTag || ""} onChange={e=>setForm({...form, pedagioTag: e.target.value})} /></div>
-                  <div><Label className="text-[10px] text-muted-foreground">CNPJ Resp. Pagto</Label><Input className="h-6 text-[11px] bg-transparent" title="Sempre o CNPJ da emissora" value={form.pedagioRespCnpj || ""} readOnly /></div>
+                  <div><Label className="text-[10px] text-muted-foreground">CNPJ Responsável Pagamento</Label><Input className="h-6 text-[11px] font-mono bg-transparent" title="Sempre o CNPJ da emissora" value={fmtCnpjInput(form.pedagioRespCnpj || "")} readOnly /></div>
                   <div><Label className="text-[10px] text-muted-foreground">Identificador VPO</Label><Input className="h-6 text-[11px]" value={(form as any).pedagioIdentVPO || ""} onChange={e=>setForm({...form, pedagioIdentVPO: e.target.value} as any)} /></div>
                   <div><Label className="text-[10px] text-muted-foreground">Data Operação</Label><Input className="h-6 text-[11px] bg-transparent" title="Sempre a data de emissão" value={String(form.pedagioDataOp || "").slice(0, 10).split("-").reverse().join("/")} readOnly /></div>
                 </div>
@@ -2784,7 +2783,7 @@ function CtePage() {
               produtoPredominante: (f as any).produtoPredominante || "",
               outrasCaract: (f as any).outrasCaracteristicas || "",
               nFes,
-              comps: ([['Frete Valor', f.vPrest], ['Adicional', (f as any).adicionalPed], ['Desconto', (f as any).descontoPed], ['Outros', (f as any).outrosPed], ['Ad Valorem', (f as any).adValorem], ['GRIS', (f as any).gris], ['Coleta', (f as any).taxaColeta], ['Entrega', (f as any).taxaEntrega]] as Array<[string, any]>).filter(([, vv]) => Number(vv) !== 0).map(([nn, vv]) => ({ nome: nn, valor: Number(vv) || 0 })),
+              comps: ([['Frete Valor', f.vPrest], ['Coleta', (f as any).taxaColeta], ['Entrega', (f as any).taxaEntrega], ['Ad Valorem', (f as any).adValorem], ['GRIS', (f as any).gris], ['Outros', (f as any).outrosPed], ['Desconto', (f as any).descontoPed], ['Adicional', (f as any).adicionalPed]] as Array<[string, any]>).filter(([, vv]) => Number(vv) !== 0).map(([nn, vv]) => ({ nome: nn, valor: Number(vv) || 0 })),
               placa: f.placaVeiculo || "",
               placaReboque: f.placaReboque || "",
               rntrc: f.rntrc || rntrcFinal || "",
