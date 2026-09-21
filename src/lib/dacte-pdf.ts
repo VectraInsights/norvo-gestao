@@ -301,20 +301,31 @@ export function gerarDactePdf(data: DacteData): Blob {
   // Bloco pessoa (remetente/destinatário/expedidor/recebedor): título inline + 5 linhas em 2 colunas
   const party = (x: number, title: string, p: { nome?: string; lgr?: string; cid?: string; cep?: string; bai?: string; doc?: string; ie?: string; uf?: string; fone?: string }) => {
     setFont("bold", 6); black();
-    const valX1 = x + 24, labX2 = x + 62, valX2 = x + 81;
+    const labX2 = x + 70, valX2 = x + 81;
     const row = (label: string, value: string, xx: number, vx: number, yy: number) => {
       black(); setFont("bold", 6); doc.text(label, xx, yy);
       black(); setFont("normal", 6); doc.text(String(value || ""), vx, yy);
     };
+    // Ancora dos ":" da coluna esquerda: fim do "CPF / CNPJ :" (rotulo intacto,
+    // desenhado como antes em x + 1.5; os demais rotulos alinham a direita nele)
+    setFont("bold", 6);
+    const anchor = x + 1.5 + doc.getTextWidth("CPF / CNPJ :");
+    const valL = anchor + 1.5;
+    const rowL = (label: string, value: string, yy: number) => {
+      black(); setFont("bold", 6);
+      try { (doc as any).text(label, anchor, yy, { align: "right" }); }
+      catch { doc.text(label, x + 1.5, yy); }
+      black(); setFont("normal", 6); doc.text(String(value || ""), valL, yy);
+    };
     let yy = y + 4;
-    row(title + " :", cut(D(p.nome), 46), x + 1.5, valX1, yy); yy += 3;
-    row("Endereço :", cut(D(p.lgr), 70), x + 1.5, valX1, yy); yy += 2.9;
-    row("Município :", cut(D(p.cid), 30), x + 1.5, valX1, yy);
+    rowL(title + " :", cut(D(p.nome), 46), yy); yy += 3;
+    rowL("Endereço :", cut(D(p.lgr), 70), yy); yy += 2.9;
+    rowL("Município :", cut(D(p.cid), 30), yy);
     row("CEP :", D(p.cep), labX2, valX2, yy); yy += 2.9;
-    row("Bairro :", cut(D(p.bai), 60), x + 1.5, valX1, yy); yy += 2.9;
-    row("CPF / CNPJ :", fmtCnpj(D(p.doc)), x + 1.5, valX1, yy);
+    rowL("Bairro :", cut(D(p.bai), 60), yy); yy += 2.9;
+    rowL("CPF / CNPJ :", fmtCnpj(D(p.doc)), yy);
     row("Insc. Est :", cut(D(p.ie), 18), labX2, valX2, yy); yy += 2.9;
-    row("UF :", D(p.uf), x + 1.5, valX1, yy);
+    rowL("UF :", D(p.uf), yy);
     row("País :", "BRASIL", x + 34, x + 44, yy);
     row("Fone :", D(p.fone), labX2, valX2, yy);
   };
