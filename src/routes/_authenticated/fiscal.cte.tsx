@@ -581,6 +581,8 @@ function CtePage() {
   }, [open, form.dataEmissao]);
 
   // Total da prestação = Valor Serviço + componentes − Desconto (vale-pedágio NÃO integra: Lei 10.209/2001 art. 2º)
+  // Valor cobrado de cada imposto = base (total da prestação) × alíquota
+  const valorImposto = (aliq: any) => (totalPrestacao(form) * (parseFloat(aliq || "0") || 0) / 100).toFixed(2);
   const num2 = (v: any) => parseFloat(v) || 0;
   const totalPrestacao = (f: typeof emptyForm) =>
     Math.max(0, num2(f.vPrest) + num2(f.adicionalPed) + num2(f.outrosPed) + num2(f.adValorem) + num2(f.gris) + num2(f.taxaColeta) + num2(f.taxaEntrega) - num2(f.descontoPed));
@@ -2250,10 +2252,10 @@ function CtePage() {
 
               {/* Tributação (fundida nesta aba) */}
               <Card className="p-3">
-                <h5 className="text-xs font-semibold mb-2 flex items-center gap-1.5"><ReceiptText className="h-3.5 w-3.5 text-primary" /> ICMS</h5>
+                <h5 className="text-xs font-semibold mb-2 flex items-center gap-1.5"><ReceiptText className="h-3.5 w-3.5 text-primary" /> Impostos</h5>
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
                   <div><Label className="text-[10px] text-muted-foreground">* CST</Label>
-                    <Select value={form.icmsCST} onValueChange={v => setForm({ ...form, icmsCST: v })}>
+                    <Select value={form.icmsCST} onValueChange={() => {}} disabled>
                       <SelectTrigger className="h-7 text-xs"><SelectValue /></SelectTrigger>
                       <SelectContent>
                         <SelectItem value="00">00 — Tributada integralmente</SelectItem>
@@ -2270,22 +2272,29 @@ function CtePage() {
                       </SelectContent>
                     </Select>
                   </div>
-                  <div><Label className="text-[10px] text-muted-foreground">Redução de Base (%)</Label><MoneyInput className="h-7 text-xs" prefix="" value={(form as any).reducaoBase || "0.00"} onChange={v => setForm({ ...form, reducaoBase: v } as any)} placeholder="0,00" /></div>
-                  <div><Label className="text-[10px] text-muted-foreground">Alíquota ICMS (%)</Label><MoneyInput className="h-7 text-xs" prefix="" value={form.icmsAliq} onChange={v => setForm({ ...form, icmsAliq: v })} placeholder="0,00" /></div>
+                  <div><Label className="text-[10px] text-muted-foreground">Redução de Base (%)</Label><MoneyInput className="h-7 text-xs bg-muted" prefix="" value={(form as any).reducaoBase || "0.00"} onChange={() => {}} placeholder="0,00" /></div>
+                  <div><Label className="text-[10px] text-muted-foreground">Alíquota ICMS (%)</Label><MoneyInput className="h-7 text-xs bg-muted" prefix="" value={form.icmsAliq} onChange={() => {}} placeholder="0,00" /></div>
                   <div><Label className="text-[10px] text-muted-foreground">Base Cálculo (R$)</Label><MoneyInput className="h-7 text-xs bg-muted" value={totalPrestacao(form).toFixed(2)} onChange={() => {}} placeholder="0,00" /></div>
                   <div><Label className="text-[10px] text-muted-foreground">Valor ICMS (R$)</Label><MoneyInput className="h-7 text-xs bg-muted" value={form.icmsValor} onChange={() => {}} placeholder="0,00" /></div>
-                  <div className="md:col-span-3"><Label className="text-[10px] text-muted-foreground">Valor do crédito outorgado/presumido (R$)</Label><MoneyInput className="h-7 text-xs" value={(form as any).creditoOutorgado || "0.00"} onChange={v => setForm({ ...form, creditoOutorgado: v } as any)} placeholder="0,00" /></div>
+                  <div className="md:col-span-3"><Label className="text-[10px] text-muted-foreground">Valor do crédito outorgado/presumido (R$)</Label><MoneyInput className="h-7 text-xs bg-muted" value={(form as any).creditoOutorgado || "0.00"} onChange={() => {}} placeholder="0,00" /></div>
                 </div>
-                <p className="text-[9px] text-muted-foreground mt-1">Digite só números — vírgula preenche automaticamente. Ponto só para milhares. Base padrão = Valor do Serviço. Redução/crédito salvos no rascunho.</p>
+                <p className="text-[9px] text-muted-foreground mt-1">Somente leitura — CST e impostos vêm do Percurso (Fiscal → Percursos) e são aplicados ao gerar o CT-e.</p>
               </Card>
               <Card className="p-3">
-                <h5 className="text-xs font-semibold mb-2">Outros Impostos — Alíquotas (%)</h5>
+                <h5 className="text-xs font-semibold mb-2">Outros Impostos — Alíquotas (%) e Valores (R$)</h5>
                 <div className="grid grid-cols-2 md:grid-cols-5 gap-1">
-                  <div><Label className="text-[10px] text-muted-foreground">PIS (%)</Label><MoneyInput className="h-7 text-xs" prefix="" value={form.pisAliq} onChange={v => setForm({ ...form, pisAliq: v })} placeholder="0,00" /></div>
-                  <div><Label className="text-[10px] text-muted-foreground">COFINS (%)</Label><MoneyInput className="h-7 text-xs" prefix="" value={form.cofinsAliq} onChange={v => setForm({ ...form, cofinsAliq: v })} placeholder="0,00" /></div>
-                  <div><Label className="text-[10px] text-muted-foreground">IR (%)</Label><MoneyInput className="h-7 text-xs" prefix="" value={form.irAliq} onChange={v => setForm({ ...form, irAliq: v })} placeholder="0,00" /></div>
-                  <div><Label className="text-[10px] text-muted-foreground">INSS (%)</Label><MoneyInput className="h-7 text-xs" prefix="" value={form.inssAliq} onChange={v => setForm({ ...form, inssAliq: v })} placeholder="0,00" /></div>
-                  <div><Label className="text-[10px] text-muted-foreground">CSLL (%)</Label><MoneyInput className="h-7 text-xs" prefix="" value={form.csllAliq} onChange={v => setForm({ ...form, csllAliq: v })} placeholder="0,00" /></div>
+                  <div><Label className="text-[10px] text-muted-foreground">PIS (%)</Label><MoneyInput className="h-7 text-xs bg-muted" prefix="" value={form.pisAliq} onChange={() => {}} placeholder="0,00" /></div>
+                  <div><Label className="text-[10px] text-muted-foreground">COFINS (%)</Label><MoneyInput className="h-7 text-xs bg-muted" prefix="" value={form.cofinsAliq} onChange={() => {}} placeholder="0,00" /></div>
+                  <div><Label className="text-[10px] text-muted-foreground">IR (%)</Label><MoneyInput className="h-7 text-xs bg-muted" prefix="" value={form.irAliq} onChange={() => {}} placeholder="0,00" /></div>
+                  <div><Label className="text-[10px] text-muted-foreground">INSS (%)</Label><MoneyInput className="h-7 text-xs bg-muted" prefix="" value={form.inssAliq} onChange={() => {}} placeholder="0,00" /></div>
+                  <div><Label className="text-[10px] text-muted-foreground">CSLL (%)</Label><MoneyInput className="h-7 text-xs bg-muted" prefix="" value={form.csllAliq} onChange={() => {}} placeholder="0,00" /></div>
+                </div>
+                <div className="grid grid-cols-2 md:grid-cols-5 gap-1 mt-1">
+                  <div><Label className="text-[10px] text-muted-foreground">Valor PIS (R$)</Label><MoneyInput className="h-7 text-xs bg-muted" value={valorImposto(form.pisAliq)} onChange={() => {}} placeholder="0,00" /></div>
+                  <div><Label className="text-[10px] text-muted-foreground">Valor COFINS (R$)</Label><MoneyInput className="h-7 text-xs bg-muted" value={valorImposto(form.cofinsAliq)} onChange={() => {}} placeholder="0,00" /></div>
+                  <div><Label className="text-[10px] text-muted-foreground">Valor IR (R$)</Label><MoneyInput className="h-7 text-xs bg-muted" value={valorImposto(form.irAliq)} onChange={() => {}} placeholder="0,00" /></div>
+                  <div><Label className="text-[10px] text-muted-foreground">Valor INSS (R$)</Label><MoneyInput className="h-7 text-xs bg-muted" value={valorImposto(form.inssAliq)} onChange={() => {}} placeholder="0,00" /></div>
+                  <div><Label className="text-[10px] text-muted-foreground">Valor CSLL (R$)</Label><MoneyInput className="h-7 text-xs bg-muted" value={valorImposto(form.csllAliq)} onChange={() => {}} placeholder="0,00" /></div>
                 </div>
               </Card>
 
