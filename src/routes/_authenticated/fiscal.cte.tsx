@@ -14,7 +14,7 @@ import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
-import { Truck, Plus, FileText, Search, Ban, UploadCloud, FileCode, MapPin, Package, Building2, Trash2, Filter, Calendar, CheckCircle2, ChevronsUpDown, Check, ReceiptText, Pencil, Download, Eye, Settings2, X, Loader2, ClipboardList, Printer } from "lucide-react";
+import { Truck, Plus, FileText, Search, Ban, UploadCloud, FileCode, MapPin, Package, Building2, Trash2, Filter, Calendar, CheckCircle2, ChevronsUpDown, Check, ReceiptText, Pencil, Download, Eye, Settings2, X, Loader2, ClipboardList, Printer, Repeat } from "lucide-react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useEmpresaAtual } from "@/hooks/use-empresa";
@@ -1231,6 +1231,21 @@ function CtePage() {
     setOpen(true);
   };
 
+  const substituirCte = (doc: CteDoc) => {
+    try {
+      const parsed = JSON.parse(doc.xml_assinado || "{}");
+      const base = parsed.form || {};
+      setForm({ ...emptyForm, ...base, finalidadeEmissao: "Substituicao", cteReferenciado: String(doc.chave_acesso || "").replace(/\D/g, ""), dataEmissao: new Date().toISOString().slice(0, 10) });
+    } catch { setForm({ ...emptyForm, finalidadeEmissao: "Substituicao", cteReferenciado: String(doc.chave_acesso || "").replace(/\D/g, "") } as any); }
+    setMercadorias([]);
+    setSelecionadas(new Set());
+    setEditingRascunhoId(null);
+    setViewDoc(null);
+    setAba("geral");
+    setOpen(true);
+    toast.info(`Substituição do CT-e ${doc.numero || ""} — confira os dados e emita`);
+  };
+
   const salvarRascunho = useMutation({
     mutationFn: async () => {
       if (!empresa) throw new Error("Empresa não selecionada");
@@ -1706,6 +1721,7 @@ function CtePage() {
                     )}
                     {!isRascunho && <Button size="icon" variant="ghost" className="h-7 w-7 text-destructive" disabled={d.status!=="autorizado"} onClick={() => d.chave_acesso && cancelar.mutate({ chave: d.chave_acesso, protocolo: d.protocolo_sefaz || undefined, ambiente: (d as any).ambiente })} title="Cancelar"><Ban className="h-3.5 w-3.5" /></Button>}
                     {!isRascunho && <Button size="icon" variant="ghost" className="h-7 w-7 text-emerald-600" onClick={() => visualizarDoc(d)} title="Ver dados e status"><ClipboardList className="h-3.5 w-3.5" /></Button>}
+                    {!isRascunho && d.status === "autorizado" && <Button size="icon" variant="ghost" className="h-7 w-7 text-violet-600" onClick={() => substituirCte(d)} title="Emitir CT-e de substituição"><Repeat className="h-3.5 w-3.5" /></Button>}
                     {!isRascunho && <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => d.chave_acesso && consultar.mutate({ chave: d.chave_acesso, ambiente: (d as any).ambiente })} title="Consultar SEFAZ"><Search className="h-3.5 w-3.5" /></Button>}
                   </TableCell></TableRow>
                   );
@@ -2641,8 +2657,8 @@ function CtePage() {
                       <SelectContent>
                         <SelectItem value="Normal">NORMAL</SelectItem>
                         <SelectItem value="Complemento">COMPLEMENTO</SelectItem>
-                        <SelectItem value="Anulacao">ANULAÇÃO</SelectItem>
-                        <SelectItem value="Substituicao">SUBSTITUIÇÃO</SelectItem>
+                        <SelectItem value="Subcontratacao">SUBCONTRATAÇÃO</SelectItem>
+                        <SelectItem value="Redespacho">REDESPACHO</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
