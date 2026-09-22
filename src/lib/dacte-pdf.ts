@@ -689,15 +689,12 @@ export function gerarDactePdf(data: DacteData): Blob {
   if (!(obsH >= 7)) obsH = 7;
   box(M, y, CW, obsH);
   const maxObs = Math.max(1, Math.min(3, Math.floor((obsH - 8) / 2.1)));
-  let obsShown = 0;
   if (hasObsTxt) {
     setFont("normal", 5); black();
     const lines = doc.splitTextToSize(data.obs, CW - 4);
-    const show = lines.slice(0, maxObs);
-    obsShown = show.length;
-    doc.text(show, M + 2, y + 4);
+    doc.text(lines.slice(0, maxObs), M + 2, y + 4);
   }
-  if (isHom && (obsShown === 0 || obsH >= 10)) {
+  if (isHom) {
     doc.setTextColor(170, 170, 170);
     ctr("AMBIENTE DE HOMOLOGAÇÃO - SEM VALOR FISCAL", W / 2, y + obsH - 3, 9, true);
     black();

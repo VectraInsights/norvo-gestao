@@ -1906,4 +1906,6 @@ Commits CF `ddeb6e4..37d5da0` (+ ajustes de X do dono) espelhados na Vercel.
 
 - Observações limitadas a 3 linhas (suficiente) com espaço reservado;
   tarja de homologação sempre visível. Espelhado na Vercel.
+- Tarja de homologação incondicional em ambiente de teste (sem exceção
+  por tamanho da caixa). Espelhado na Vercel.
 
