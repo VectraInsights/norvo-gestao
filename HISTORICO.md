@@ -1936,11 +1936,19 @@ Commits CF `ddeb6e4..37d5da0` (+ ajustes de X do dono) espelhados na Vercel.
   averbação). Espelhado na Vercel.
 
 ## MDF-e: lista, fullscreen e via autorizados (22/09/2026)
-
 - Query sem `cfop` (coluna inexistente derrubava a lista) + erro visível.
 - Dialog Novo MDF-e em tela cheia.
 - Autorizados ganhou checkbox por CT-e + botão Gerar MDF-e: abre o
-  manifesto já com os selecionados. Espelhado na Vercel.## Novo CT-e pede o percurso (22/09/2026)
+  manifesto já com os selecionados. Espelhado na Vercel.
+
+## MDF-e espelha CT-es + percurso UFs + emissão real (22/09/2026)
+
+- Sem escolher motorista/veículo: tração, reboques e motoristas
+  (1º+2º, com CPF) vêm dos CT-es vinculados; emissão usa o primeiro.
+- Percurso: checklist multi-UF (padrão UF descarga) vai ao
+  `<infPercurso>` do XML; obs/percurso gravados no `xml_assinado`.
+- Proxy Vercel saiu do stub fase 1: emitir/encerrar/cancelar MDF-e
+  executam de verdade (SVRS). Espelhado na Vercel.## Novo CT-e pede o percurso (22/09/2026)
 
 - Botões Novo CT-e (topo e avulso) abrem seletor de percurso (busca por
   número/nome); ao confirmar, o form zera por completo e os dados vêm

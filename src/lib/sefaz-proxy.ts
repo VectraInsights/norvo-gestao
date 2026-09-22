@@ -214,10 +214,43 @@ export async function handleSefazProxy(request: Request): Promise<Response> {
         }
         return json(result);
       }
-      case "emitirMdf":
-      case "encerrarMdf":
-      case "cancelarMdf":
-        return json({ sucesso: false, fase: 1, motivo: `${action}: MDF-e fase 1 — SEFAZ na fase 2`, debug: { ambiente, cnpj, uf } });
+      case "emitirMdf": {
+        const { emitirMdf } = await import("@/lib/sefaz-mdf");
+        const b = body as any;
+        const retMdf = await emitirMdf(pfxBytes, senha, b.xml, ambiente);
+        const { createClient: ccMdf } = await import("@supabase/supabase-js");
+        const sMdf = ccMdf(process.env.SUPABASE_URL||"", process.env.SUPABASE_SERVICE_ROLE_KEY||"");
+        if ((retMdf as any).sucesso && (retMdf as any).chave) {
+          await sMdf.from("mdf_documentos").upsert({ empresa_id: empresaId, chave_acesso: (retMdf as any).chave, status: "autorizado", protocolo_sefaz: (retMdf as any).protocolo || null, veiculo_tracao_id: b.veiculoTracaoId || null, motorista_id: b.motoristaId || null, uf_carregamento: b.ufCarregamento, uf_descarregamento: b.ufDescarregamento, qtd_cte: b.qtdCtes, valor_total_carga: b.valorTotalCarga, peso_total: b.pesoTotal, ambiente, data_autorizacao: new Date().toISOString(), xml_assinado: JSON.stringify({ xml: b.xml, percursoUFs: b.percursoUFs || [], observacoes: b.observacoes || "" }) } as never, { onConflict: "chave_acesso" });
+        } else if ((retMdf as any).cStat) {
+          const numero = String(b.xml || "").match(/<nMDF>(\d+)<\/nMDF>/)?.[1] || "";
+          const serie = String(b.xml || "").match(/<serie>(\d+)<\/serie>/)?.[1] || "1";
+          await sMdf.from("mdf_documentos").insert({ empresa_id: empresaId, numero, serie, status: "rejeitado", motivo_rejeicao: `${(retMdf as any).cStat} - ${(retMdf as any).xMotivo}`, uf_carregamento: b.ufCarregamento, uf_descarregamento: b.ufDescarregamento, qtd_cte: b.qtdCtes, valor_total_carga: b.valorTotalCarga, peso_total: b.pesoTotal, ambiente, xml_assinado: b.xml } as never);
+        }
+        return json(retMdf);
+      }
+      case "encerrarMdf": {
+        const { encerrarMdf } = await import("@/lib/sefaz-mdf");
+        const b = body as any;
+        const retEnc = await encerrarMdf(pfxBytes, senha, b.chave, ambiente, b.cnpj || cnpj, b.uf || uf);
+        if ((retEnc as any).sucesso) {
+          const { createClient: ccEnc } = await import("@supabase/supabase-js");
+          const sEnc = ccEnc(process.env.SUPABASE_URL||"", process.env.SUPABASE_SERVICE_ROLE_KEY||"");
+          await sEnc.from("mdf_documentos").update({ status: "encerrado", data_encerramento: new Date().toISOString() } as never).eq("chave_acesso", b.chave);
+        }
+        return json(retEnc);
+      }
+      case "cancelarMdf": {
+        const { cancelarMdf } = await import("@/lib/sefaz-mdf");
+        const b = body as any;
+        const retCanc = await cancelarMdf(pfxBytes, senha, b.chave, b.justificativa, ambiente, b.cnpj || cnpj, b.uf || uf);
+        if ((retCanc as any).sucesso) {
+          const { createClient: ccCanc } = await import("@supabase/supabase-js");
+          const sCanc = ccCanc(process.env.SUPABASE_URL||"", process.env.SUPABASE_SERVICE_ROLE_KEY||"");
+          await sCanc.from("mdf_documentos").update({ status: "cancelado" } as never).eq("chave_acesso", b.chave);
+        }
+        return json(retCanc);
+      }
       case "consultar": {
         // Buscar last_query_at atual ANTES de consultar
         const { data: configAntes } = await supabase
