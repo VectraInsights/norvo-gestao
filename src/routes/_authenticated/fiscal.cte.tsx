@@ -1574,6 +1574,7 @@ function CtePage() {
     return percursos.some(r => dg(r.rem_cnpj) === dg(m.emitCnpj) && dg(r.dest_cnpj) === dg(m.destCnpj) && dg(r.toma_cnpj) === dg(m.tomadorCnpj));
   };
   const aplicarPercurso = (r: Record<string, any>) => {
+    const stdAliq = (v: any, fb: any) => (v && Number(v) !== 0 ? String(v) : fb);
     setForm(f => ({ ...f,
       toma: r.toma_tipo || f.toma,
       cnpjTomador: r.toma_cnpj || f.cnpjTomador, xNomeTomador: r.toma_nome || f.xNomeTomador,
@@ -1601,7 +1602,7 @@ function CtePage() {
       distanciaKm: r.distancia_km || f.distanciaKm, duracaoHoras: r.duracao_horas || f.duracaoHoras,
       icmsCST: r.icms_cst || f.icmsCST, icmsAliq: r.icms_aliq || f.icmsAliq,
       reducaoBase: (r.reducao_base || (f as any).reducaoBase) as string, creditoOutorgado: (r.credito_outorgado || (f as any).creditoOutorgado) as string,
-      pisAliq: r.pis_aliq || f.pisAliq, cofinsAliq: r.cofins_aliq || f.cofinsAliq, irAliq: r.ir_aliq || f.irAliq,
+      pisAliq: stdAliq(r.pis_aliq, f.pisAliq), cofinsAliq: stdAliq(r.cofins_aliq, f.cofinsAliq), irAliq: r.ir_aliq || f.irAliq,
       inssAliq: r.inss_aliq || f.inssAliq, csllAliq: r.csll_aliq || f.csllAliq,
 
       ...(r.obs_gerais ? { obsGerais: r.obs_gerais } : {}),
@@ -1972,7 +1973,7 @@ function CtePage() {
                       const semPerc = sel.filter(m => !nfTemPercurso(m));
                       if (semPerc.length > 0) {
                         const p0 = semPerc[0] as any;
-                        try { localStorage.setItem("prefill_percurso_from_cte", JSON.stringify({ remCnpj: String(p0.emitCnpj || "").replace(/\D/g, ""), remNome: p0.emit || "", destCnpj: String(p0.destCnpj || "").replace(/\D/g, ""), destNome: p0.dest || "", tomaCnpj: String(p0.tomadorCnpj || "").replace(/\D/g, ""), tomaNome: p0.tomador || "", returnTo: "/fiscal/cte" })); } catch {}
+                        try { localStorage.setItem("prefill_percurso_from_cte", JSON.stringify({ remCnpj: String(p0.emitCnpj || "").replace(/\D/g, ""), remNome: p0.emit || "", remUF: (p0 as any).emitUF || "", remXMun: (p0 as any).emitXMun || "", destCnpj: String(p0.destCnpj || "").replace(/\D/g, ""), destNome: p0.dest || "", destUF: (p0 as any).destUF || "", destXMun: (p0 as any).destXMun || "", tomaCnpj: String(p0.tomadorCnpj || "").replace(/\D/g, ""), tomaNome: p0.tomador || "", returnTo: "/fiscal/cte" })); } catch {}
                         toast.info(`NF-e ${p0.nNF || ""} sem percurso — cadastre o percurso para continuar`);
                         navigate({ to: "/fiscal/percursos" } as any);
                         return;

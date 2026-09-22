@@ -230,7 +230,7 @@ function PercursosPage() {
       if (voltarCteRef.current) { voltarCteRef.current = false; navigate({ to: "/fiscal/cte" } as any); }
       return;
     }
-    setEditing({ id: "", codigo: "NOVO", nome: ((pre.remNome || "Origem") + " > " + (pre.destNome || "Destino")).slice(0, 80), rem_cnpj: dg(pre.remCnpj), rem_nome: pre.remNome || "", dest_cnpj: dg(pre.destCnpj), dest_nome: pre.destNome || "", toma_cnpj: dg(pre.tomaCnpj), toma_nome: pre.tomaNome || "" } as Percurso);
+    setEditing({ id: "", codigo: "NOVO", nome: ((pre.remNome || "Origem") + " > " + (pre.destNome || "Destino")).slice(0, 80), rem_cnpj: dg(pre.remCnpj), rem_nome: pre.remNome || "", rem_uf: pre.remUF || (contatoByDoc.get(dg(pre.remCnpj)) || {}).uf || "", rem_xmun: pre.remXMun || (contatoByDoc.get(dg(pre.remCnpj)) || {}).cidade || "", dest_cnpj: dg(pre.destCnpj), dest_nome: pre.destNome || "", dest_uf: pre.destUF || (contatoByDoc.get(dg(pre.destCnpj)) || {}).uf || "", dest_xmun: pre.destXMun || (contatoByDoc.get(dg(pre.destCnpj)) || {}).cidade || "", toma_cnpj: dg(pre.tomaCnpj), toma_nome: pre.tomaNome || "", coleta_xmun: pre.remXMun || (contatoByDoc.get(dg(pre.remCnpj)) || {}).cidade || "", coleta_uf: pre.remUF || (contatoByDoc.get(dg(pre.remCnpj)) || {}).uf || "", entrega_xmun: pre.destXMun || (contatoByDoc.get(dg(pre.destCnpj)) || {}).cidade || "", entrega_uf: pre.destUF || (contatoByDoc.get(dg(pre.destCnpj)) || {}).uf || "", pis_aliq: "0.65", cofins_aliq: "3.00" } as Percurso);
     setPercTab("geral");
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [empresa?.id, (percursos || []).length]);
@@ -415,6 +415,15 @@ function PercursosPage() {
       setEditing(e => (e ? { ...e, entrega_xmun: nx, entrega_uf: nu } : e));
     }
   }, [editing?.redesp_cnpj, editing?.redesp_xmun, editing?.redesp_uf, editing?.dest_xmun, editing?.dest_uf]);
+  // Amarracao: coleta segue o remetente
+  useEffect(() => {
+    if (!editing) return;
+    const nx = (editing.rem_xmun || "").trim();
+    const nu = (editing.rem_uf || "").trim();
+    if ((editing.coleta_xmun || "") !== nx || (editing.coleta_uf || "") !== nu) {
+      setEditing(e => (e ? { ...e, coleta_xmun: nx, coleta_uf: nu } : e));
+    }
+  }, [editing?.rem_xmun, editing?.rem_uf]);
   const lastLookupParte = useRef<Record<string, string>>({});
   const lookupParte = async (p: "consig" | "redesp", digits: string) => {
     const d = digits.replace(/\D/g, "").slice(0, 14);
