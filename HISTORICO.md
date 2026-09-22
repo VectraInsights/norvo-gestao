@@ -1398,21 +1398,21 @@ Commits CF `4b9e2aa..437fb22` + Vercel espelhos + Worker redeployado a cada muda
 
 ## Assistente AI no Worker, fora da Vercel (14/09/2026)
 
-- `/api/ai/chat` atendido so onde ha binding AI (Worker): sem binding, 404 direto em vez de 500 — a Vercel nao queima mais function num caminho morto. SEFAZ (`/api/sefaz`, `/api/sefaz-cron`) intocada.
+- `/api/ai/chat` atendido so onde ha binding AI (Worker): sem binding, 404 direto em vez de 500 ï¿½ a Vercel nao queima mais function num caminho morto. SEFAZ (`/api/sefaz`, `/api/sefaz-cron`) intocada.
 - Front chama via `VITE_AI_URL` (absoluto; vazio = mesma origem no Worker); CORS restrito (vercel.app, workers.dev, localhost) + preflight OPTIONS.
 - `wrangler.jsonc`: `"bindings"` nao e campo valido (wrangler ignorava com warning) ? `"ai": {"binding": "AI"}`; binding `env.AI` ativo no deploy.
-- Handler lia `response.response.tool_calls` (formato OpenAI) e quebrava: Workers AI/llama retorna `{ response, tool_calls: [{ name, arguments }] }` no topo — parse refeito nos dois formatos + eco do turno no estilo da doc. Chat testado de ponta a ponta no Worker.
+- Handler lia `response.response.tool_calls` (formato OpenAI) e quebrava: Workers AI/llama retorna `{ response, tool_calls: [{ name, arguments }] }` no topo ï¿½ parse refeito nos dois formatos + eco do turno no estilo da doc. Chat testado de ponta a ponta no Worker.
 - Env do Worker chega via `globalThis.__env__` (o entry nitro chama o handler so com `request`).
-- MDF-e auditado: o proxy `/api/sefaz` nunca importou `sefaz-mdf-server`; so a pagina `/fiscal/mdf` usa (serverFn sob demanda) — nada a cortar sem perder funcao.
+- MDF-e auditado: o proxy `/api/sefaz` nunca importou `sefaz-mdf-server`; so a pagina `/fiscal/mdf` usa (serverFn sob demanda) ï¿½ nada a cortar sem perder funcao.
 - `routeTree.gen.ts` regenerado no build (faltava `/fiscal/percursos` no manifesto commitado).
 
-PENDENTE (dashboard Vercel): criar env `VITE_AI_URL=https://norvo-gestao-cf.sptn201169.workers.dev` + Redeploy — sem ela o chat no site principal responde "disponivel apenas no Worker".
+PENDENTE (dashboard Vercel): criar env `VITE_AI_URL=https://norvo-gestao-cf.sptn201169.workers.dev` + Redeploy ï¿½ sem ela o chat no site principal responde "disponivel apenas no Worker".
 ---
 
 ## URL canonica = Worker; Vercel vira so API SEFAZ (14/09/2026)
 
 - `src/server.ts`: na Vercel (host `*.vercel.app`), tudo que nao for `/api/sefaz*` redireciona 308 para o Worker (preserva metodo/corpo). `/api/sefaz` e `/api/sefaz-cron` seguem normais; `/api/ai/chat` antigo passa a cair no Worker em vez de 404.
-- MDF-e validado antes: emite/consulta/encerra via proxy `/api/sefaz`, funciona servido pelo Worker — redirect nao quebra nada fiscal.
+- MDF-e validado antes: emite/consulta/encerra via proxy `/api/sefaz`, funciona servido pelo Worker ï¿½ redirect nao quebra nada fiscal.
 - PENDENTE: repointar o exe Electron (desktop carrega a URL da Vercel; redirect leva ao Worker sozinho, mas o ideal e apontar direto).
 Commits CF `d49b494` + Vercel `30ff3a0` (+ `f664f64` trigger) + Worker `227f5885`.
 ---
@@ -1455,7 +1455,7 @@ Commits CF `d49b494` + Vercel `30ff3a0` (+ `f664f64` trigger) + Worker `227f5885
 
 ## Botao importar sem amarelo chapado (14/09/2026)
 
-- Labels de importacao (CT-e e veiculos) com `bg-amber-100` fixo migrados p/ tokens `accent` do tema — acompanham claro/escuro sem gritar.
+- Labels de importacao (CT-e e veiculos) com `bg-amber-100` fixo migrados p/ tokens `accent` do tema ï¿½ acompanham claro/escuro sem gritar.
 ---
 
 ## HTML sem cache (14/09/2026)
@@ -1617,7 +1617,7 @@ Commits CF `d49b494` + Vercel `30ff3a0` (+ `f664f64` trigger) + Worker `227f5885
 
 ## DACTE emitente: dois-pontos + valores a esquerda (15/09/2026)
 
-- Rotulo `Endereço :`; coluna de valores 17->14mm (bairro nao encosta mais no CEP); CNPJ alinhado junto.
+- Rotulo `Endereï¿½o :`; coluna de valores 17->14mm (bairro nao encosta mais no CEP); CNPJ alinhado junto.
 ---
 
 ## Tabela CT-e: titulos centralizados (15/09/2026)
@@ -1739,7 +1739,7 @@ eed(17)) p/ canhoto encostar no rodape; tomador RUA, NUMERO - BAIRRO - CIDADE / 
 
 - DACTE: divisorias do canhoto e trecho Servico/Receber em linha continua (grade segue tracejada).
 
-- DACTE canhoto: Nome/RG no topo (espaco p/ escrita), Assinatura embaixo, Inicio em cima/Término embaixo a esquerda.
+- DACTE canhoto: Nome/RG no topo (espaco p/ escrita), Assinatura embaixo, Inicio em cima/Tï¿½rmino embaixo a esquerda.
 
 - DACTE modal: verticais entre RNTRC/CIOT/Data/Legislacao; 5 colunas do conjunto (tipo/placa/renavam/uf/rntrc) com verticais.
 
@@ -1755,7 +1755,7 @@ eed(17)) p/ canhoto encostar no rodape; tomador RUA, NUMERO - BAIRRO - CIDADE / 
 
 - CTE pedagio: operadora em dropdown (8 pre-cadastradas); novos campos CNPJ Resp, Identificador VPO, Data Operacao, Saldo Cartao; CNPJ resp cai no DACTE.
 
-- Frota: coluna eiculos.tag_pedagio (migration 20260916120000); campo TAG no cadastro; CTE preenche Nº TAG ao escolher a tracao.
+- Frota: coluna eiculos.tag_pedagio (migration 20260916120000); campo TAG no cadastro; CTE preenche Nï¿½ TAG ao escolher a tracao.
 
 - Vale-pedagio (Lei 10.209/Res 6.024/NT 2025.001): CNPJ resp + IDVPO obrigatorios; comprovante = IDVPO; coluna eiculos.tag_pedagio aplicada no banco.
 
@@ -1788,7 +1788,7 @@ eed(17)) p/ canhoto encostar no rodape; tomador RUA, NUMERO - BAIRRO - CIDADE / 
 - DACTE visor: zoom via parametro nativo do leitor (CSS nao afeta plugin).
 - Usuarios: nome editavel no Minha conta (todos) e na tela de usuarios (admin, incl. dono).
 - Minha conta renomeado para Dados da conta (nome + senha).
-- Sidebar: mostra nome do usuario; menu fixo na viewport com rodape preso (só o conteudo rola).
+- Sidebar: mostra nome do usuario; menu fixo na viewport com rodape preso (sï¿½ o conteudo rola).
 - Homologacao: tomador SEM VALOR FISCAL com espaco (comparacoes toleram docs antigos).
 - CTe: pagina em 5 abas (embarque, aguardando envio, autorizados, rejeitados, cancelados).
 - Redespacho habilitado: selecao por remetente, tpServ 2 no XML, modo no form/rascunho.
@@ -1827,3 +1827,51 @@ eed(17)) p/ canhoto encostar no rodape; tomador RUA, NUMERO - BAIRRO - CIDADE / 
 - DACTE pessoas: padrao imagem 2 (rotulos+colons juntos, valores alinhados).
 - DACTE pessoas: colunas fixas com acentos (rev p3).
 - DACTE pessoas: padrao imagem 2 definitivo (rev p4).
+
+---
+
+## Regra: HISTORICO atualizado a cada push (22/09/2026)
+
+- A partir desta data, todo commit+push nos dois repos (`norvo-gestao` e
+  `norvo-gestao-cf`) ganha entrada aqui no mesmo push. Os dois HISTORICOs
+  seguem espelhados (mesmo hash).
+
+## CT-e: rodada de UX + motorista no XML (22/09/2026)
+
+Backfill â€” 21 commits que estavam sem registro:
+
+- **DACTE pessoas**: `:` da esquerda alinhados no fim do `CPF / CNPJ`
+  (ancora medida, rotulo intacto); `:` da direita alinhados no fim do
+  `Insc. Est`; `:` do Pais pelo fim do proprio rotulo (`dacte-pdf.ts:party`).
+- **Header**: linha `CNPJ/IE` sob Tomador do Servico removida.
+- **Transporte sem rolagem**: 4 cards em 2 colunas (`xl:grid-cols-2`) +
+  paddings enxutos; **Seguro em 3 linhas** (seguradora+apolice /
+  resp+averb+base+doc / demais, seguradora em 7/12).
+- **Veiculo**: `% Agregados` (campo morto) removido; Motorista em 2/3.
+- **2o motorista utilizavel**: checkbox + dropdown inline, trava de emissao,
+  linha condicional no DACTE, vai no rascunho.
+- **Moto no XML**: `<moto><xNome><CPF>` no `<rodo>` apos RNTRC (1o + 2o);
+  trava exige CPF valido no RH; preview mostra o XML antes de enviar.
+  (Se voltar 225, ajustar posicao do grupo no XSD do Simp.)
+- **Componentes**: ordem Frete, Coleta, Entrega, Ad Valorem, GRIS, Outros,
+  Desconto; Adicional saiu da tela (segue no total p/ rascunhos antigos).
+- **Pedagio**: ordem Operadora, CNPJ Op, Vale, Data; CNPJs mascarados;
+  label por extenso; campos travados em Sem Pagamento; tudo em 3 linhas.
+- **Tributacao**: card unico **Impostos** (era ICMS + Outros); valores R$
+  por imposto (base = total da prestacao); **IR/CSLL fora da tela**
+  (apuracao trimestral no Presumido: IR 15% s/ 8%, CSLL 9% s/ 12%);
+  aba 100% visual â€” CST e impostos editam so no Percurso.
+- **Status**: botao verde na linha reabre o dialogo na Situacao com dados
+  reais (chave, protocolo, data, motivo); footer travado no modo view.
+- **Aba Status excluida**: Finalidade vai p/ o Transporte
+  (menu unico Finalidade/Tipo: Normal, Complemento, Subcontratacao,
+  Redespacho, Redespacho Intermediario; refs so se nao-Normal);
+  Anulacao nao existe mais; **Substituicao so via icone** roxo na linha
+  (preenche novo CT-e com chave referenciada).
+- **Complemento**: Motivo (Descarga, Adicional de frete, Retorno, etc.) +
+  CT-e Original filtrado por remetente/destinatario/tomador do percurso
+  (query `cte-nfes-todas` cruzando chaves do XML); chaves manuais e Data
+  Declaracao removidos.
+
+Commits CF `ddeb6e4..37d5da0` (+ ajustes de X do dono) espelhados na Vercel.
+
