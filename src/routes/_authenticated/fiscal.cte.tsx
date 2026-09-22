@@ -713,6 +713,7 @@ function CtePage() {
   const [viewDoc, setViewDoc] = useState<CteDoc | null>(null);
   const [aba, setAba] = useState("geral");
   const navigate = useNavigate();
+  const [mdfSel, setMdfSel] = useState<Set<string>>(new Set());
   const fmtDataHora = (iso: any) => { try { const d = new Date(String(iso)); if (isNaN(d.getTime())) return "—"; return d.toLocaleString("pt-BR", { day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit" }); } catch { return "—"; } };
   const [veiculoOpen, setVeiculoOpen] = useState<string | null>(null);
   const [veiculoQuery, setVeiculoQuery] = useState("");
@@ -1757,12 +1758,12 @@ function CtePage() {
           ) : (
             <Card className="overflow-hidden">
               <Table>
-                <TableHeader><TableRow><TableHead className="text-center">Número</TableHead><TableHead className="text-center">Série</TableHead><TableHead className="text-center">Status</TableHead><TableHead className="text-center">Notas Fiscais</TableHead><TableHead className="text-center">Valor</TableHead><TableHead className="text-center">Chave</TableHead><TableHead className="text-center">Ações</TableHead></TableRow></TableHeader>
+                <TableHeader><TableRow>{rotulo === "autorizados" && <TableHead className="w-6"></TableHead>}<TableHead className="text-center">Número</TableHead><TableHead className="text-center">Série</TableHead><TableHead className="text-center">Status</TableHead><TableHead className="text-center">Notas Fiscais</TableHead><TableHead className="text-center">Valor</TableHead><TableHead className="text-center">Chave</TableHead><TableHead className="text-center">Ações</TableHead></TableRow></TableHeader>
                 <TableBody>{lista.map(d => {
                   const nNFs = (() => { try { const j = JSON.parse(d.xml_assinado || "{}"); const nn = j.nfs?.map((n: any) => n.nNF).filter(Boolean) || []; if (nn.length) return nn; } catch { } try { const chaves = [...(d.xml_assinado||"").matchAll(/<chNFe>(\d{44})<\/chNFe>/g)].map(m=>m[1]); if (chaves.length===0) return []; return chaves.map(ch=>ch.slice(25,34).replace(/^0+/,"") || "0"); } catch { return []; } })();
                   const isRascunho = d.status === "rascunho";
                   return (
-                  <TableRow key={d.id} className={isRascunho ? "bg-muted/30" : ""}><TableCell className="font-mono">{d.numero ?? "—"}</TableCell><TableCell>{d.serie ?? "—"}</TableCell><TableCell title={d.status==="rejeitado" && d.motivo_rejeicao ? d.motivo_rejeicao : ""}><Badge variant="secondary" className={d.status==="autorizado"?"bg-emerald-500/15 text-emerald-600":d.status==="rejeitado"?"bg-destructive/15 text-destructive":d.status==="cancelado"?"bg-orange-500/15 text-orange-600":isRascunho?"bg-amber-500/15 text-amber-600":""}>{d.status}{d.status==="rejeitado" && d.motivo_rejeicao ? ` — ${d.motivo_rejeicao.slice(0,60)}` : ""}</Badge></TableCell>                  <TableCell className="text-xs">{nNFs.length > 0 ? nNFs.join(", ") : d.chave_acesso ? "1" : "—"}</TableCell><TableCell className="text-right">{brl(Number(d.valor_servico ?? 0))}</TableCell><TableCell className="font-mono text-[11px] break-all min-w-[280px] text-right pr-1" title={d.chave_acesso||""}>{d.chave_acesso ?? "—"}</TableCell><TableCell className="flex gap-1 justify-end whitespace-nowrap pl-1">
+                  <TableRow key={d.id} className={isRascunho ? "bg-muted/30" : ""}>{rotulo === "autorizados" && d.chave_acesso && <TableCell><input type="checkbox" checked={mdfSel.has(d.chave_acesso)} onChange={() => setMdfSel(prev => { const next = new Set(prev); if (next.has(d.chave_acesso!)) next.delete(d.chave_acesso!); else next.add(d.chave_acesso!); return next; })} title="Selecionar para MDF-e" /></TableCell>}<TableCell className="font-mono">{d.numero ?? "—"}</TableCell><TableCell>{d.serie ?? "—"}</TableCell><TableCell title={d.status==="rejeitado" && d.motivo_rejeicao ? d.motivo_rejeicao : ""}><Badge variant="secondary" className={d.status==="autorizado"?"bg-emerald-500/15 text-emerald-600":d.status==="rejeitado"?"bg-destructive/15 text-destructive":d.status==="cancelado"?"bg-orange-500/15 text-orange-600":isRascunho?"bg-amber-500/15 text-amber-600":""}>{d.status}{d.status==="rejeitado" && d.motivo_rejeicao ? ` — ${d.motivo_rejeicao.slice(0,60)}` : ""}</Badge></TableCell>                  <TableCell className="text-xs">{nNFs.length > 0 ? nNFs.join(", ") : d.chave_acesso ? "1" : "—"}</TableCell><TableCell className="text-right">{brl(Number(d.valor_servico ?? 0))}</TableCell><TableCell className="font-mono text-[11px] break-all min-w-[280px] text-right pr-1" title={d.chave_acesso||""}>{d.chave_acesso ?? "—"}</TableCell><TableCell className="flex gap-1 justify-end whitespace-nowrap pl-1">
                     {isRascunho ? (
                       <>
                         <Button size="icon" variant="ghost" className="h-7 w-7 text-primary" onClick={() => editarRascunho(d)} title="Editar rascunho"><Pencil className="h-3.5 w-3.5" /></Button>
@@ -2070,7 +2071,14 @@ function CtePage() {
             </DialogContent>
           </Dialog>
           <TabsContent value="rascunhos">{renderTabelaDocs(docsByStatus.rascunhos, "aguardando envio")}</TabsContent>
-          <TabsContent value="autorizados">{renderTabelaDocs(docsByStatus.autorizados, "autorizados")}</TabsContent>
+          <TabsContent value="autorizados">
+            {docsByStatus.autorizados.length > 0 && (
+              <div className="mb-2 flex justify-end">
+                <Button variant="outline" size="sm" disabled={mdfSel.size === 0} onClick={() => { try { localStorage.setItem("prefill_mdf_from_cte", JSON.stringify({ chaves: [...mdfSel] })); } catch {} setMdfSel(new Set()); navigate({ to: "/fiscal/mdf" } as any); }}><Truck className="mr-1 h-3 w-3" /> Gerar MDF-e ({mdfSel.size})</Button>
+              </div>
+            )}
+            {renderTabelaDocs(docsByStatus.autorizados, "autorizados")}
+          </TabsContent>
           <TabsContent value="rejeitados">
             {docsByStatus.rejeitados.length > 0 && (
               <div className="mb-2 flex justify-end">

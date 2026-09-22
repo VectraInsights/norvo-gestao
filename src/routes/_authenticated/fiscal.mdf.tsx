@@ -15,7 +15,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useEmpresaAtual } from "@/hooks/use-empresa";
 import { brl, dateBR, num } from "@/lib/format";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { toast } from "sonner";
 import { emitirMdfFn, consultarMdfFn, encerrarMdfFn, cancelarMdfFn } from "@/lib/sefaz-mdf-server";
 import { DateInput } from "@/components/erp/date-input";
@@ -36,12 +36,23 @@ type MdfDoc = {
   xml_assinado: string | null; xml_protocolo: string | null;
 };
 
-type CteDoc = { id: string; numero: string | null; chave_acesso: string | null; status: string; valor_servico: number | null; peso_carga: number | null; cfop: string | null };
+type CteDoc = { id: string; numero: string | null; chave_acesso: string | null; status: string; valor_servico: number | null; peso_carga: number | null };
 
 function MdfPage() {
   const { data: empresa } = useEmpresaAtual();
   const qc = useQueryClient();
   const [open, setOpen] = useState(false);
+  const [mdfPrefill, setMdfPrefill] = useState<string[] | null>(null);
+  useEffect(() => {
+    let pre: any = null;
+    try { pre = JSON.parse(localStorage.getItem("prefill_mdf_from_cte") || "null"); } catch { pre = null; }
+    if (pre?.chaves?.length) {
+      try { localStorage.removeItem("prefill_mdf_from_cte"); } catch {}
+      setMdfPrefill(pre.chaves);
+      setOpen(true);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
   const [openEncerrar, setOpenEncerrar] = useState(false);
   const [openCancelar, setOpenCancelar] = useState(false);
   const [mdfEncerrar, setMdfEncerrar] = useState<MdfDoc | null>(null);
@@ -218,7 +229,7 @@ function MdfPage() {
         </Dialog>
       )}
 
-      <DialogNovoMdf open={open} onOpenChange={setOpen} empresaId={empresa?.id || ""} />
+      <DialogNovoMdf open={open} onOpenChange={(v) => { setOpen(v); if (!v) setMdfPrefill(null); }} empresaId={empresa?.id || ""} chavesIniciais={mdfPrefill || undefined} />
     </div>
   );
 }
@@ -238,7 +249,7 @@ function EncerrarMdfButton({ mdf, empresaId, onSuccess }: { mdf: MdfDoc; empresa
   return <Button onClick={handleEncerrar} disabled={loading}>{loading ? "Encerrando..." : "Confirmar Encerramento"}</Button>;
 }
 
-function DialogNovoMdf({ open, onOpenChange, empresaId }: { open: boolean; onOpenChange: (v: boolean) => void; empresaId: string }) {
+function DialogNovoMdf({ open, onOpenChange, empresaId, chavesIniciais }: { open: boolean; onOpenChange: (v: boolean) => void; empresaId: string; chavesIniciais?: string[] }) {
   const qc = useQueryClient();
   const [loading, setLoading] = useState(false);
   const [ufCarregamento, setUfCarregamento] = useState("MG");
@@ -274,12 +285,12 @@ function DialogNovoMdf({ open, onOpenChange, empresaId }: { open: boolean; onOpe
     },
   });
 
-  const { data: ctesDisponiveis } = useQuery({
+  const { data: ctesDisponiveis, error: ctesErro } = useQuery({
     enabled: !!empresaId && open,
     queryKey: ["ctes-para-mdf", empresaId],
     queryFn: async (): Promise<CteDoc[]> => {
       const { data, error } = await supabase.from("cte_documentos" as any)
-        .select("id,numero,chave_acesso,status,valor_servico,peso_carga,cfop")
+        .select("id,numero,chave_acesso,status,valor_servico,peso_carga")
         .eq("empresa_id", empresaId)
         .eq("status", "autorizado")
         .order("created_at", { ascending: false })
@@ -290,6 +301,7 @@ function DialogNovoMdf({ open, onOpenChange, empresaId }: { open: boolean; onOpe
   });
 
   const [ctesSelecionadas, setCtesSelecionadas] = useState<Set<string>>(new Set());
+  useEffect(() => { if (open && chavesIniciais?.length) setCtesSelecionadas(new Set(chavesIniciais)); }, [open]);
   const [veicTracId, setVeicTracId] = useState("");
   const [motoristaId, setMotoristaId] = useState("");
 
@@ -349,7 +361,7 @@ function DialogNovoMdf({ open, onOpenChange, empresaId }: { open: boolean; onOpe
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className="w-screen h-screen max-w-none max-h-none m-0 rounded-none overflow-y-auto">
         <DialogHeader><DialogTitle>Novo MDF-e</DialogTitle></DialogHeader>
 
         <Tabs defaultValue="ctes" className="w-full">
@@ -361,7 +373,9 @@ function DialogNovoMdf({ open, onOpenChange, empresaId }: { open: boolean; onOpe
 
           <TabsContent value="ctes" className="space-y-3">
             <p className="text-xs text-muted-foreground">Selecione os CT-e autorizados para incluir no manifesto.</p>
-            {!ctesDisponiveis?.length ? (
+            {ctesErro ? (
+              <p className="text-sm text-destructive">Falha ao carregar CT-es: {String((ctesErro as any)?.message || ctesErro)}</p>
+            ) : !ctesDisponiveis?.length ? (
               <p className="text-sm text-muted-foreground">Nenhum CT-e autorizado disponível.</p>
             ) : (
               <div className="border rounded-md max-h-[300px] overflow-y-auto">
