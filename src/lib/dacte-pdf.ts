@@ -273,7 +273,7 @@ export function gerarDactePdf(data: DacteData): Blob {
   const doc = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4" });
   const W = 210, M = 6, CW = W - 2 * M;
   const hw = CW / 2;
-  const LIM = 291;
+  const LIM = 293; // margem inferior minima segura de impressao (~4mm)
   let y = M;
 
   const setFont = (w: "bold" | "normal", s: number) => { doc.setFont("helvetica", w); doc.setFontSize(s); };
@@ -688,13 +688,16 @@ export function gerarDactePdf(data: DacteData): Blob {
   let obsH = LIM - y - restoAposObs;
   if (!(obsH >= 7)) obsH = 7;
   box(M, y, CW, obsH);
-  const obsLines = !hasObsTxt ? 0 : obsH >= 12.5 ? 2 : 1;
+  const maxObs = Math.max(1, Math.floor((obsH - 4) / 2.1));
+  let obsShown = 0;
   if (hasObsTxt) {
     setFont("normal", 5); black();
     const lines = doc.splitTextToSize(data.obs, CW - 4);
-    doc.text(lines.slice(0, obsLines), M + 2, y + 4);
+    const show = lines.slice(0, maxObs);
+    obsShown = show.length;
+    doc.text(show, M + 2, y + 4);
   }
-  if (isHom && (obsLines === 0 || obsH >= (obsLines === 2 ? 12.5 : 10))) {
+  if (isHom && (obsShown === 0 || obsH - 4 - obsShown * 2.1 >= 2.5)) {
     doc.setTextColor(170, 170, 170);
     ctr("AMBIENTE DE HOMOLOGAÇÃO - SEM VALOR FISCAL", W / 2, y + obsH - 3, 9, true);
     black();

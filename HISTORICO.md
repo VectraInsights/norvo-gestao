@@ -1894,3 +1894,11 @@ Commits CF `ddeb6e4..37d5da0` (+ ajustes de X do dono) espelhados na Vercel.
   Subcontratação/Redespacho voltam a pedir a chave digitada (44 dígitos),
   pois o CT-e original é de outra empresa. Espelhado na Vercel.
 
+## DACTE obs completa + canhoto na borda (22/09/2026)
+
+- Observações: limite fixo de 2 linhas removido — imprime quantas
+  couberem na caixa (`maxObs` pela altura; excedente corta sem quebrar
+  a página). Marca d'água de homologação só se sobrar espaço.
+- Canhoto: `LIM` 291→293, margem inferior ~7mm→~5mm (mínimo seguro;
+  abaixo disso impressora comum corta). Espelhado na Vercel.
+
