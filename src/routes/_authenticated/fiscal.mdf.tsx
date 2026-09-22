@@ -305,9 +305,21 @@ function DialogNovoMdf({ open, onOpenChange, empresaId, empresa, chavesIniciais 
   const [percursoUFs, setPercursoUFs] = useState<string[]>(["SP"]);
   const [tracaoSel, setTracaoSel] = useState("");
   const todasTracoes = useMemo(() => { const out: string[] = []; for (const c of (ctesDisponiveis || [])) { try { const p = JSON.parse((c as any).xml_assinado || "{}"); const pl = String(p.form?.placaVeiculo || "").toUpperCase(); if (pl && !out.includes(pl)) out.push(pl); } catch {} } return out.sort(); }, [ctesDisponiveis]);
-  const ctesDaTracao = useMemo(() => (ctesDisponiveis || []).filter(c => { if (!tracaoSel) return false; try { const p = JSON.parse((c as any).xml_assinado || "{}"); return String(p.form?.placaVeiculo || "").toUpperCase() === tracaoSel; } catch { return false; } }), [ctesDisponiveis, tracaoSel]);
+  const ctesDaTracao = useMemo(() => {
+    const q = tracaoSel.trim().toUpperCase();
+    if (!q) return [];
+    return (ctesDisponiveis || []).filter(c => {
+      try { const p = JSON.parse((c as any).xml_assinado || "{}"); const pl = String(p.form?.placaVeiculo || "").toUpperCase(); return pl.includes(q); } catch { return false; }
+    });
+  }, [ctesDisponiveis, tracaoSel]);
   const [infoFisco, setInfoFisco] = useState("");
   const [respNome, setRespNome] = useState("");
+  const [tipoMdf, setTipoMdf] = useState<"Normal" | "Globalizado">("Normal");
+  const [isTransbordo, setIsTransbordo] = useState(false);
+  const [transb1, setTransb1] = useState("");
+  const [transb2, setTransb2] = useState("");
+  const [transb3, setTransb3] = useState("");
+  const [percursoSelIdx, setPercursoSelIdx] = useState<number | null>(null);
   useEffect(() => { if (!open) return; (async () => { try { const { data } = await supabase.auth.getUser(); const usr = (data as any)?.user; if (!usr) return; let nm = (usr?.user_metadata as any)?.nome || ""; if (!nm && empresaId) { const { data: eu } = await supabase.from("empresa_users" as any).select("nome").eq("empresa_id", empresaId).eq("user_id", usr.id).maybeSingle(); nm = (eu as any)?.nome || ""; } setRespNome(nm || ""); } catch {} })(); }, [open, empresaId]);
   useEffect(() => { if (open && chavesIniciais?.length) { setCtesSelecionadas(new Set(chavesIniciais)); setPercursoUFs(["SP"]); } }, [open]);
   useEffect(() => {
@@ -379,17 +391,32 @@ function DialogNovoMdf({ open, onOpenChange, empresaId, empresa, chavesIniciais 
           ufCarregamento, ufDescarregamento,
           qtdCtes: ctesArr.length, valorTotalCarga: input.valorTotalCarga, pesoTotal: input.pesoTotalKG,
           percursoUFs, observacoes, infoFisco,
-        }
+          tipoMdf, isTransbordo, transbordo1: transb1, transbordo2: transb2, transbordo3: transb3,
+        } as any
       });
 
       if (res.sucesso) toast.success("MDF-e emitido com sucesso!");
       else toast.error(`Erro: ${res.xMotivo}`);
 
       onOpenChange(false);
-      setCtesSelecionadas(new Set()); setTracaoSel(""); setPercursoUFs(["SP"]); setObservacoes(""); setInfoFisco("");
+      setCtesSelecionadas(new Set()); setTracaoSel(""); setPercursoUFs(["SP"]); setObservacoes(""); setInfoFisco(""); setIsTransbordo(false); setTransb1(""); setTransb2(""); setTransb3(""); setTipoMdf("Normal"); setPercursoSelIdx(null);
       qc.invalidateQueries({ queryKey: ["mdf-documentos"] });
     } catch (e: unknown) { toast.error(e instanceof Error ? e.message : "Erro ao emitir MDF-e"); }
     setLoading(false);
+  };
+
+  const moverPercurso = (idx: number, dir: -1 | 1) => {
+    setPercursoUFs(prev => {
+      const n = [...prev]; const j = idx + dir;
+      if (j < 0 || j >= n.length) return prev;
+      const tmp = n[idx]; n[idx] = n[j]; n[j] = tmp;
+      setPercursoSelIdx(j);
+      return n;
+    });
+  };
+  const excluirPercurso = (idx: number) => {
+    setPercursoUFs(prev => prev.filter((_, i) => i !== idx));
+    setPercursoSelIdx(null);
   };
 
   return (
@@ -400,12 +427,26 @@ function DialogNovoMdf({ open, onOpenChange, empresaId, empresa, chavesIniciais 
         <div className="space-y-2">
           <div className="border rounded-md p-2">
             <div className="grid grid-cols-2 md:grid-cols-6 gap-1">
-              <div className="md:col-span-2"><Label className="text-xs">Empresa</Label><Input className="h-6 text-[11px] bg-transparent" readOnly value={(empresa as any)?.nome_fantasia || (empresa as any)?.razao_social || "—"} /></div>
-              <div><Label className="text-xs">CNPJ</Label><Input className="h-6 text-[11px] font-mono bg-transparent" readOnly value={String((empresa as any)?.cnpj || "").replace(/(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})/, "$1.$2.$3/$4-$5") || "—"} /></div>
-              <div><Label className="text-xs">Tipo MDF-e</Label><Input className="h-6 text-[11px] bg-transparent" readOnly value="Normal" /></div>
+              <div className="md:col-span-2"><Label className="text-xs">Nome da Empresa</Label><Input className="h-6 text-[11px] bg-transparent" readOnly value={(empresa as any)?.nome_fantasia || (empresa as any)?.razao_social || "—"} /></div>
+              <div className="border rounded px-1 py-0.5">
+                <Label className="text-[10px] leading-none">Tipo MDF-e</Label>
+                <div className="flex gap-2 items-center mt-0.5">
+                  <label className="flex items-center gap-1 text-[11px] cursor-pointer"><input type="radio" checked={tipoMdf === "Normal"} onChange={() => setTipoMdf("Normal")} className="h-3 w-3" /> Normal</label>
+                  <label className="flex items-center gap-1 text-[11px] cursor-pointer"><input type="radio" checked={tipoMdf === "Globalizado"} onChange={() => setTipoMdf("Globalizado")} className="h-3 w-3" /> Globalizado</label>
+                </div>
+                <label className="flex items-center gap-1 text-[11px] cursor-pointer mt-1"><input type="checkbox" checked={isTransbordo} onChange={e => setIsTransbordo(e.target.checked)} className="h-3 w-3" /> Manifesto Transbordo</label>
+              </div>
+              <div><Label className="text-xs">Nº Manifesto</Label><Input className="h-6 text-[11px] font-mono bg-muted" readOnly value="—" placeholder="auto" /></div>
               <div><Label className="text-xs">Data Emissão</Label><Input className="h-6 text-[11px] bg-transparent" readOnly value={new Date().toLocaleDateString("pt-BR")} /></div>
               <div><Label className="text-xs">Situação</Label><Input className="h-6 text-[11px] bg-transparent" readOnly value="Novo" /></div>
             </div>
+            {isTransbordo && (
+              <div className="grid grid-cols-3 gap-2 mt-2 border-t pt-2">
+                <div><Label className="text-xs">1º Transbordo</Label><Input className="h-6 text-[11px] font-mono" value={transb1} onChange={e => setTransb1(e.target.value)} placeholder="Chave / local 1º transbordo" /></div>
+                <div><Label className="text-xs">2º Transbordo</Label><Input className="h-6 text-[11px] font-mono" value={transb2} onChange={e => setTransb2(e.target.value)} placeholder="2º transbordo" /></div>
+                <div><Label className="text-xs">3º Transbordo</Label><Input className="h-6 text-[11px] font-mono" value={transb3} onChange={e => setTransb3(e.target.value)} placeholder="3º transbordo" /></div>
+              </div>
+            )}
             <div className="grid grid-cols-2 md:grid-cols-4 gap-1 mt-1">
               <div><Label className="text-xs">UF Carregamento</Label>
                 <Select value={ufCarregamento} onValueChange={setUfCarregamento}>
@@ -419,7 +460,12 @@ function DialogNovoMdf({ open, onOpenChange, empresaId, empresa, chavesIniciais 
                   <SelectContent>{UFS.map(uf => (<SelectItem key={uf} value={uf}>{uf}</SelectItem>))}</SelectContent>
                 </Select>
               </div>
-              <div className="md:col-span-2"><Label className="text-xs">Local Emissão</Label><Input className="h-6 text-[11px] bg-transparent" readOnly value={[ (empresa as any)?.cidade, (empresa as any)?.uf ].filter(Boolean).join("/") || "—"} /></div>
+              <div><Label className="text-xs">Cidade Inicial Carga</Label><Input className="h-6 text-[11px] bg-transparent" readOnly value={(empresa as any)?.cidade || "—"} /></div>
+              <div><Label className="text-xs">Cidade Encerramento</Label><Input className="h-6 text-[11px] bg-transparent" readOnly value={(empresa as any)?.cidade || "—"} /></div>
+            </div>
+            <div className="grid grid-cols-2 gap-1 mt-1">
+              <div><Label className="text-xs">Local Emissão</Label><Input className="h-6 text-[11px] bg-transparent" readOnly value={[ (empresa as any)?.cidade, (empresa as any)?.uf ].filter(Boolean).join("/") || "—"} /></div>
+              <div><Label className="text-xs">CNPJ ANTT - AUTORIZADO</Label><Input className="h-6 text-[11px] font-mono bg-transparent" readOnly value={String((empresa as any)?.cnpj || "").replace(/(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})/, "$1.$2.$3/$4-$5") || "—"} /></div>
             </div>
           </div>
 
@@ -440,14 +486,20 @@ function DialogNovoMdf({ open, onOpenChange, empresaId, empresa, chavesIniciais 
 
           <div className="border rounded-md p-2">
             <div className="grid grid-cols-2 md:grid-cols-4 gap-1 mb-1 items-end">
-              <div><Label className="text-xs">Tração *</Label>
-                <Select value={tracaoSel} onValueChange={v => { setTracaoSel(v); setCtesSelecionadas(new Set()); }}>
-                  <SelectTrigger className="h-6 text-[11px] font-mono"><SelectValue placeholder="Selecione a tração..." /></SelectTrigger>
-                  <SelectContent>{todasTracoes.map(p => (<SelectItem key={p} value={p}>{p}</SelectItem>))}</SelectContent>
-                </Select>
+              <div><Label className="text-xs">Tração (digite a placa) *</Label>
+                <Input
+                  className="h-6 text-[11px] font-mono"
+                  value={tracaoSel}
+                  onChange={e => { const v = e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, ""); setTracaoSel(v); setCtesSelecionadas(new Set()); }}
+                  placeholder="Ex: PVQ7C82"
+                  list="mdf-tracoes-list"
+                />
+                <datalist id="mdf-tracoes-list">
+                  {todasTracoes.map(p => (<option key={p} value={p} />))}
+                </datalist>
               </div>
               <div className="md:col-span-3 flex items-center justify-end gap-1">
-                <Label className="text-xs mr-auto">Conhecimentos ({ctesSelArr.length} vinculados)</Label>
+                <Label className="text-xs mr-auto">Conhecimentos ({ctesSelArr.length} vinculados){tracaoSel ? ` • placa ${tracaoSel}` : ""}</Label>
                 <Button size="sm" variant="outline" className="h-6 text-[11px]" disabled={!tracaoSel} onClick={() => setCtesSelecionadas(new Set(ctesDaTracao.map(c => c.chave_acesso || "").filter(Boolean)))}>Marcar</Button>
                 <Button size="sm" variant="outline" className="h-6 text-[11px]" onClick={() => setCtesSelecionadas(new Set())}>Limpar</Button>
               </div>
@@ -504,14 +556,42 @@ function DialogNovoMdf({ open, onOpenChange, empresaId, empresa, chavesIniciais 
               {motNomes.length ? motNomes.map(m => (<p key={m.nome} className="text-xs">{m.nome} <span className="text-muted-foreground">({cpfDe(m.id, m.nome) || "s/CPF"})</span></p>)) : (<p className="text-xs text-muted-foreground">—</p>)}
             </div>
             <div className="border rounded-md p-2">
-              <Label className="text-xs">Percurso (UFs) *</Label>
-              <div className="flex flex-wrap gap-1 mt-1">
+              <div className="flex items-center justify-between">
+                <Label className="text-xs">Percurso (ordem que o motorista vai seguir) *</Label>
+                <span className="text-[10px] text-muted-foreground">{percursoUFs.length} UF(s)</span>
+              </div>
+              <div className="flex gap-1 mt-1">
+                <Select value="" onValueChange={v => { if (v && !percursoUFs.includes(v)) { setPercursoUFs(prev => [...prev, v]); setPercursoSelIdx(percursoUFs.length); } }}>
+                  <SelectTrigger className="h-6 text-[11px] flex-1"><SelectValue placeholder="Adicionar UF..." /></SelectTrigger>
+                  <SelectContent>{UFS.filter(u => !percursoUFs.includes(u)).map(uf => (<SelectItem key={uf} value={uf}>{uf}</SelectItem>))}</SelectContent>
+                </Select>
+                <Button size="sm" variant="outline" className="h-6 text-[11px]" disabled={percursoSelIdx === null} onClick={() => percursoSelIdx !== null && excluirPercurso(percursoSelIdx)}>Exclui</Button>
+                <div className="flex flex-col gap-0.5">
+                  <Button size="sm" variant="outline" className="h-3 px-1 text-[10px] leading-none" disabled={percursoSelIdx === null || percursoSelIdx === 0} onClick={() => percursoSelIdx !== null && moverPercurso(percursoSelIdx, -1)}>▲</Button>
+                  <Button size="sm" variant="outline" className="h-3 px-1 text-[10px] leading-none" disabled={percursoSelIdx === null || percursoSelIdx === percursoUFs.length - 1} onClick={() => percursoSelIdx !== null && moverPercurso(percursoSelIdx, 1)}>▼</Button>
+                </div>
+              </div>
+              <div className="border rounded mt-2 max-h-[110px] overflow-auto">
+                <table className="w-full text-xs">
+                  <thead className="bg-muted sticky top-0"><tr><th className="text-left px-1 py-0.5 font-semibold">#</th><th className="text-left px-1 py-0.5 font-semibold">UF</th></tr></thead>
+                  <tbody>
+                    {percursoUFs.length === 0 ? (<tr><td colSpan={2} className="text-center text-muted-foreground py-2">Nenhuma UF. Adicione na ordem do trajeto.</td></tr>) : percursoUFs.map((uf, idx) => (
+                      <tr key={`${uf}-${idx}`} className={"cursor-pointer " + (percursoSelIdx === idx ? "bg-primary/10" : "hover:bg-muted/50")} onClick={() => setPercursoSelIdx(idx)}>
+                        <td className="px-1 py-0.5 font-mono">{idx + 1}º</td><td className="px-1 py-0.5 font-mono font-bold">{uf}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+              <p className="text-[10px] text-muted-foreground mt-1">Clique para selecionar • use ▲/▼ para reordenar • Exclui remove. Ordem é gravada em <code>infPercurso</code>.</p>
+              <div className="flex flex-wrap gap-1 mt-2 border-t pt-2">
+                <span className="text-[10px] text-muted-foreground w-full">Atalho marcar:</span>
                 {UFS.map(uf => {
                   const ord = percursoUFs.indexOf(uf);
                   return (
-                  <label key={uf} title={ord >= 0 ? `${ord + 1}ª no percurso` : "Clique para adicionar na ordem"} className={"inline-flex items-center gap-1 text-xs font-mono px-1.5 py-0.5 rounded border cursor-pointer " + (ord >= 0 ? "border-primary bg-primary/10" : "border-transparent hover:bg-muted")}>
+                  <label key={uf} title={ord >= 0 ? `${ord + 1}ª` : "Adicionar"} className={"inline-flex items-center gap-1 text-[10px] font-mono px-1 py-0.5 rounded border cursor-pointer " + (ord >= 0 ? "border-primary bg-primary/10" : "border-transparent hover:bg-muted")}>
                     <input type="checkbox" checked={ord >= 0} onChange={() => setPercursoUFs(prev => prev.includes(uf) ? prev.filter(x => x !== uf) : [...prev, uf])} className="h-3 w-3" /> {uf}
-                    {ord >= 0 && <span className="inline-flex items-center justify-center h-4 min-w-4 px-0.5 rounded-full bg-primary text-primary-foreground text-[10px] font-bold">{ord + 1}</span>}
+                    {ord >= 0 && <span className="inline-flex items-center justify-center h-3 min-w-3 px-0.5 rounded-full bg-primary text-primary-foreground text-[9px] font-bold">{ord + 1}</span>}
                   </label>
                   );
                 })}
