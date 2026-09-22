@@ -629,6 +629,16 @@ function CtePage() {
       }>;
     },
   });
+  // Todas as NF-es (qualquer status) para cruzar CT-es autorizados com o percurso no complemento
+  const { data: nfesTodas } = useQuery({
+    enabled: !!empresa,
+    queryKey: ["cte-nfes-todas", empresa?.id],
+    queryFn: async () => {
+      const { data, error } = await supabase.from("cte_nfes_pendentes" as any).select("chave,emit_cnpj,emit_nome,dest_cnpj,dest_nome").eq("empresa_id", empresa!.id).limit(2000);
+      if (error) throw error;
+      return (data ?? []) as unknown as Array<{ chave: string; emit_cnpj: string | null; emit_nome: string | null; dest_cnpj: string | null; dest_nome: string | null }>;
+    },
+  });
   useEffect(() => {
     if (pendentesDB) {
       const mapped = pendentesDB.map(r => ({
@@ -1291,6 +1301,7 @@ function CtePage() {
   });
 
   const emittingRef = useRef(false);
+  const MOTIVOS_COMPLEMENTO = ["Descarga", "Adicional de frete", "Retorno", "Reentrega", "Estadia", "Diferença de frete", "Pedágio", "Outros"];
   const motoristasXml = () => {
     const a: Array<{ xNome: string; cpf: string }> = [];
     const m1 = (motoristas || []).find((m: any) => m.id === form.motoristaId);
@@ -1629,6 +1640,30 @@ function CtePage() {
     } catch (e) { console.log("[CTE-PERCURSO] save silencioso falhou:", (e as Error)?.message); }
   };
   const percursoMatch = matchPercurso(docsAtuais());
+  // CT-es autorizados compatíveis com o percurso atual (complemento/substituição)
+  const ctesCompativeis = useMemo(() => {
+    const dg = (v: any) => String(v || "").replace(/\D/g, "");
+    const sel = mercadorias.filter(m => selecionadas.has(m.chave));
+    const base = sel.length > 0 ? sel[0] : mercadorias[0];
+    const rem = dg((percursoMatch as any)?.rem_cnpj || (base as any)?.emitCnpj);
+    const dst = dg((percursoMatch as any)?.dest_cnpj || (base as any)?.destCnpj);
+    const tom = dg((percursoMatch as any)?.toma_cnpj || form.cnpjTomador);
+    const nfMap = new Map(((nfesTodas || []) as any[]).map(n => [dg(n.chave), n]));
+    const lista = ((docs || []) as CteDoc[]).filter(d => d.status === "autorizado" && d.chave_acesso);
+    if (!rem && !dst && !tom) return lista;
+    return lista.filter(d => {
+      let tomaD = "", chaves: string[] = [];
+      try {
+        const p = JSON.parse(d.xml_assinado || "{}");
+        if (p.form) tomaD = dg(p.form.cnpjTomador);
+        const xml = p.xml || "";
+        chaves = [...xml.matchAll(/<(?:chNFe|chave)>(\d{44})<\/(?:chNFe|chave)>/g)].map(m => m[1]);
+      } catch { /* sem NF vinculada: vale só o tomador */ }
+      if (!chaves.length) return !tom || tomaD === tom;
+      if (tom && tomaD && tomaD !== tom) return false;
+      return chaves.some(ch => { const n = nfMap.get(ch); return !!n && (!rem || dg(n.emit_cnpj) === rem) && (!dst || dg(n.dest_cnpj) === dst); });
+    });
+  }, [docs, nfesTodas, percursoMatch, mercadorias, selecionadas, form.cnpjTomador]);
   useEffect(() => { percursoAplicadoKey.current = ""; }, [open]);
   useEffect(() => {
     if (!open || percursos.length === 0) return;
@@ -2652,7 +2687,7 @@ function CtePage() {
                 <h5 className="text-xs font-semibold mb-0.5">Finalidade e Documentos Referenciados</h5>
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-1">
                   <div className="md:col-span-2"><Label className="text-[10px] text-muted-foreground">Finalidade / Tipo de Serviço</Label>
-                    <Select value={(() => { const t = (form as any).tipoServico; const f = (form as any).finalidadeEmissao || "Normal"; if (t && t !== "Normal") return t; if (f === "Substituicao") return ""; return f; })()} onValueChange={v => setForm({ ...form, ...(v === "Complemento" ? { finalidadeEmissao: "Complemento", tipoServico: "Normal" } : v === "Normal" ? { finalidadeEmissao: "Normal", tipoServico: "Normal" } : { finalidadeEmissao: "Normal", tipoServico: v }) } as any)}>
+                    <Select value={(() => { const t = (form as any).tipoServico; const f = (form as any).finalidadeEmissao || "Normal"; if (t && t !== "Normal") return t; if (f === "Substituicao") return ""; return f; })()} onValueChange={v => setForm({ ...form, ...(v === "Complemento" ? { finalidadeEmissao: "Complemento", tipoServico: "Normal" } : v === "Normal" ? { finalidadeEmissao: "Normal", tipoServico: "Normal", motivoComplemento: "", cteReferenciado: "" } : { finalidadeEmissao: "Normal", tipoServico: v }) } as any)}>
                       <SelectTrigger className="h-6 text-[10px]"><SelectValue placeholder="SUBSTITUIÇÃO (via ícone)" /></SelectTrigger>
                       <SelectContent>
                         <SelectItem value="Normal">NORMAL</SelectItem>
@@ -2685,14 +2720,32 @@ function CtePage() {
                     </Select>
                   </div>
                 </div>
-                {(form as any).finalidadeEmissao && (form as any).finalidadeEmissao !== "Normal" && (
-                  <div className="grid grid-cols-1 md:grid-cols-[180px_1fr] gap-1 items-center mt-1">
-                    <Label className="text-[10px] text-muted-foreground">CT-e Referenciado</Label>
-                    <Input className="h-6 text-[10px] font-mono" placeholder="Chave de acesso do CT-e substituído (44 dígitos)" value={(form as any).cteReferenciado || ""} onChange={e=>setForm({...form, cteReferenciado: e.target.value.replace(/\D/g, "").slice(0, 44)} as any)} maxLength={44} />
-                    <Label className="text-[10px] text-muted-foreground">Complemento / Anulação</Label>
-                    <Input className="h-6 text-[10px] font-mono" placeholder="Chave do CT-e complementado/anulado (44 dígitos)" value={(form as any).chaveCompAnulacao || ""} onChange={e=>setForm({...form, chaveCompAnulacao: e.target.value.replace(/\D/g, "").slice(0, 44)} as any)} maxLength={44} />
-                    <Label className="text-[10px] text-muted-foreground">Data Declaração</Label>
-                    <DateInput value={(form as any).dataDeclaracao || ""} onChange={v => setForm({ ...form, dataDeclaracao: v } as any)} className="h-6 text-[10px]" />
+                {((form as any).finalidadeEmissao === "Complemento" || (form as any).finalidadeEmissao === "Substituicao") && (
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-1 mt-1">
+                    {(form as any).finalidadeEmissao === "Complemento" && (
+                    <div><Label className="text-[10px] text-muted-foreground">Motivo do Complemento</Label>
+                      <Select value={(form as any).motivoComplemento || ""} onValueChange={v => setForm({ ...form, motivoComplemento: v } as any)}>
+                        <SelectTrigger className="h-6 text-[10px]"><SelectValue placeholder="Selecione o motivo" /></SelectTrigger>
+                        <SelectContent>
+                          {MOTIVOS_COMPLEMENTO.map(m => <SelectItem key={m} value={m}>{m.toUpperCase()}</SelectItem>)}
+                        </SelectContent>
+                      </Select></div>
+                    )}
+                    <div><Label className="text-[10px] text-muted-foreground">CT-e Original</Label>
+                      <div className="flex items-center gap-1">
+                      <Select value={(form as any).cteReferenciado || ""} onValueChange={v => setForm({ ...form, cteReferenciado: v } as any)}>
+                        <SelectTrigger className="h-6 text-[10px] font-mono"><SelectValue placeholder={ctesCompativeis.length > 0 ? "Selecione o CT-e original" : "Sem CT-e compatível no percurso"} /></SelectTrigger>
+                        <SelectContent>
+                          {(form as any).cteReferenciado && !ctesCompativeis.some(d => String(d.chave_acesso || "").replace(/\D/g, "") === String((form as any).cteReferenciado).replace(/\D/g, "")) && (
+                            <SelectItem value={String((form as any).cteReferenciado).replace(/\D/g, "")}>CT-e {(form as any).cteReferenciado} (fora do percurso)</SelectItem>
+                          )}
+                          {ctesCompativeis.map(d => { const ch = String(d.chave_acesso || "").replace(/\D/g, ""); return (
+                            <SelectItem key={d.id} value={ch} title={ch}>CT-e {d.numero} • {d.valor_servico != null ? brl(Number(d.valor_servico)) : ""}</SelectItem>
+                          ); })}
+                        </SelectContent>
+                      </Select>
+                      {(form as any).cteReferenciado && <Button size="icon" variant="ghost" className="h-6 w-6 shrink-0" onClick={() => setForm({ ...form, cteReferenciado: "" } as any)} title="Limpar"><X className="h-3 w-3" /></Button>}
+                      </div></div>
                   </div>
                 )}
                 <p className="text-[9px] text-muted-foreground mt-1">CT-e Simplificado MG transmite sempre como Normal / Rodoviário; demais opções ficam salvas no rascunho.</p>
