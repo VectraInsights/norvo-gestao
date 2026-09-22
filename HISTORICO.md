@@ -1931,7 +1931,9 @@ Commits CF `ddeb6e4..37d5da0` (+ ajustes de X do dono) espelhados na Vercel.
   com valores. Ficam ICMS, PIS, COFINS, IBS, CBS. Espelhado na Vercel.
 - Percurso: IR/INSS/CSLL fora da tela do Fiscal (ficam ICMS, PIS,
   COFINS). Espelhado na Vercel.
-- Percurso: IBS 0,10 e CBS 0,90 fixos no Fiscal. Espelhado na Vercel.## Novo CT-e pede o percurso (22/09/2026)
+- Percurso: IBS 0,10 e CBS 0,90 fixos no Fiscal. Espelhado na Vercel.
+- Percurso: Seguradora virou dropdown do cadastro (preenche apólice e
+  averbação). Espelhado na Vercel.## Novo CT-e pede o percurso (22/09/2026)
 
 - Botões Novo CT-e (topo e avulso) abrem seletor de percurso (busca por
   número/nome); ao confirmar, o form zera por completo e os dados vêm

@@ -248,6 +248,15 @@ function PercursosPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [empresa?.id, (percursos || []).length]);
 
+  const { data: seguradorasPerc } = useQuery({
+    enabled: !!empresa,
+    queryKey: ["seguradoras-perc", empresa?.id],
+    queryFn: async () => {
+      const { data, error } = await supabase.from("seguradoras" as any).select("id,nome,apolice_numero,averbacao").eq("empresa_id", empresa!.id).eq("ativo", true).order("nome").limit(100);
+      if (error) throw error;
+      return (data ?? []) as unknown as Array<{ id: string; nome: string; apolice_numero: string | null; averbacao: string | null }>;
+    },
+  });
   const { data: contatosCte } = useQuery({
     enabled: !!empresa,
     queryKey: ["contatos-cte", empresa?.id],
@@ -616,7 +625,13 @@ function PercursosPage() {
                   <div className="border rounded p-2 space-y-1">
                     <p className="text-[11px] font-semibold">Seguro</p>
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-1">
-                      <div className="col-span-2"><T editing={editing} set={set} label="Seguradora" k="seg_nome" /></div>
+                      <div className="col-span-2"><Label className="text-[10px] text-muted-foreground">Seguradora</Label>
+                        <Select value={editing?.seg_nome || ""} onValueChange={v => { const s = (seguradorasPerc || []).find(x => x.nome === v); setEditing((e: any) => (e ? { ...e, seg_nome: v, seg_apolice: s?.apolice_numero || e.seg_apolice || "", seg_averbacao: s?.averbacao || e.seg_averbacao || "" } : e)); }}>
+                          <SelectTrigger className="h-7 text-xs"><SelectValue placeholder="Selecione seguradora" /></SelectTrigger>
+                          <SelectContent>
+                            {(seguradorasPerc || []).map(s => <SelectItem key={s.id} value={s.nome}>{s.nome}</SelectItem>)}
+                          </SelectContent>
+                        </Select></div>
                       <T editing={editing} set={set} label="Apólice" k="seg_apolice" mono />
                       <T editing={editing} set={set} label="Averbação" k="seg_averbacao" mono />
                       <Num editing={editing} set={set} label="RCTR-C" k="seg_rctr_c" prefix="R$" />
