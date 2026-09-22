@@ -2039,7 +2039,7 @@ function CtePage() {
                   const q = percPickQuery.toLowerCase();
                   return String(r.codigo || "").toLowerCase().includes(q) || String(r.nome || "").toLowerCase().includes(q);
                 }).map(r => (
-                  <button key={r.id} type="button" onClick={() => setPercPickSel(r.codigo)} className={"w-full text-left text-xs px-2 py-1.5 rounded border " + (percPickSel === r.codigo ? "border-primary bg-primary/10" : "border-transparent hover:bg-muted")}>
+                  <button key={r.id} type="button" onClick={() => setPercPickSel(r.codigo)} onDoubleClick={() => novoAvulsoDePercurso(r)} className={"w-full text-left text-xs px-2 py-1.5 rounded border " + (percPickSel === r.codigo ? "border-primary bg-primary/10" : "border-transparent hover:bg-muted")} title="Dois cliques para usar direto">
                     <span className="font-mono font-semibold">{r.codigo}</span><span className="text-muted-foreground"> — {r.nome || "Sem nome"}</span>
                   </button>
                 ))}

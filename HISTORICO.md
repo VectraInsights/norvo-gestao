@@ -1915,4 +1915,5 @@ Commits CF `ddeb6e4..37d5da0` (+ ajustes de X do dono) espelhados na Vercel.
   número/nome); ao confirmar, o form zera por completo e os dados vêm
   do percurso via `aplicarPercurso` — nada do último CT-e é reaproveitado.
   Espelhado na Vercel.
+- Dois cliques no percurso já confirma direto. Espelhado na Vercel.
 
