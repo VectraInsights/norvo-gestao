@@ -1,4 +1,4 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { PageHeader } from "@/components/erp/page-header";
 import { EmptyState } from "@/components/erp/empty-state";
 import { Card, CardContent } from "@/components/ui/card";
@@ -195,6 +195,8 @@ async function calcDistDur(o: { cep: string; xmun: string; uf: string }, d: { ce
 function PercursosPage() {
   const { data: empresa } = useEmpresaAtual();
   const qc = useQueryClient();
+  const navigate = useNavigate();
+  const voltarCteRef = useRef(false);
   const [busca, setBusca] = useState("");
   const [percTab, setPercTab] = useState("geral");
   const [editing, setEditing] = useState<Percurso | null>(null);
@@ -212,6 +214,26 @@ function PercursosPage() {
       return (data ?? []) as unknown as Percurso[];
     },
   });
+
+  // Chegada via CT-e (Gerar sem percurso): abre rascunho pré-preenchido e volta ao salvar
+  useEffect(() => {
+    if (!empresa || !percursos) return;
+    let pre: any = null;
+    try { pre = JSON.parse(localStorage.getItem("prefill_percurso_from_cte") || "null"); } catch { pre = null; }
+    if (!pre?.remCnpj || !pre?.destCnpj || !pre?.tomaCnpj) return;
+    try { localStorage.removeItem("prefill_percurso_from_cte"); } catch {}
+    const dg = (v: any) => String(v || "").replace(/\D/g, "");
+    const existe = percursos.some(p => dg(p.rem_cnpj) === dg(pre.remCnpj) && dg(p.dest_cnpj) === dg(pre.destCnpj) && dg(p.toma_cnpj) === dg(pre.tomaCnpj));
+    voltarCteRef.current = pre.returnTo === "/fiscal/cte";
+    if (existe) {
+      toast.success("Percurso já cadastrado — de volta ao CT-e");
+      if (voltarCteRef.current) { voltarCteRef.current = false; navigate({ to: "/fiscal/cte" } as any); }
+      return;
+    }
+    setEditing({ id: "", codigo: "NOVO", nome: ((pre.remNome || "Origem") + " > " + (pre.destNome || "Destino")).slice(0, 80), rem_cnpj: dg(pre.remCnpj), rem_nome: pre.remNome || "", dest_cnpj: dg(pre.destCnpj), dest_nome: pre.destNome || "", toma_cnpj: dg(pre.tomaCnpj), toma_nome: pre.tomaNome || "" } as Percurso);
+    setPercTab("geral");
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [empresa?.id, (percursos || []).length]);
 
   const { data: contatosCte } = useQuery({
     enabled: !!empresa,
@@ -312,7 +334,20 @@ function PercursosPage() {
         }
         setEditing(e => (e ? { ...e, distancia_km: payload.distancia_km, duracao_horas: payload.duracao_horas } : e));
       }
-      const upd = supabase.from("cte_percursos" as any).update(payload).eq("id", editing.id).then(r => { if ((r as any).error) throw (r as any).error; });
+      if (!editing.id) {        const remD = digits(payload.rem_cnpj || (editing as any).rem_cnpj);
+        const dstD = digits(payload.dest_cnpj || (editing as any).dest_cnpj);
+        const tomD = digits(payload.toma_cnpj || (editing as any).toma_cnpj);
+        if (remD.length !== 14 || dstD.length !== 14 || tomD.length !== 14) throw new Error("Remetente, destinatário e tomador precisam de CNPJ válido");
+        const { data: mx } = await supabase.from("cte_percursos" as any).select("codigo").eq("empresa_id", empresa.id).order("codigo", { ascending: false }).limit(1);
+        const last = parseInt((((mx as any[])?.[0] as any)?.codigo || "0"), 10) || 0;
+        const codigo = String(last + 1).padStart(4, "0");
+        const nome = String((editing as any).nome || (((editing as any).rem_nome || "Origem") + " > " + ((editing as any).dest_nome || "Destino"))).slice(0, 80).toUpperCase();
+        const { data: ins, error: insErr } = await supabase.from("cte_percursos" as any).insert({ empresa_id: empresa.id, codigo, nome, rem_cnpj: remD, rem_nome: (editing as any).rem_nome || "", dest_cnpj: dstD, dest_nome: (editing as any).dest_nome || "", toma_cnpj: tomD, toma_nome: (editing as any).toma_nome || "", ...payload }).select("id").maybeSingle();
+        if (insErr) throw insErr;
+      } else {
+        const { error: updErr } = await supabase.from("cte_percursos" as any).update(payload).eq("id", editing.id);
+        if (updErr) throw updErr;
+      }
       const wbs = (["consig", "redesp"] as const).map(async p => {
         const doc = String(payload[p + "_cnpj"] || "").replace(/\D/g, "");
         if (doc.length !== 14) return;
@@ -321,13 +356,14 @@ function PercursosPage() {
         if (ex) { await supabase.from("contatos" as any).update(crow).eq("id", (ex as any).id); }
         else { await supabase.from("contatos" as any).insert({ empresa_id: empresa.id, tipo: "cliente", documento: doc, ...crow } as any); }
       });
-      await Promise.all([upd, ...wbs]);
+      await Promise.all([...wbs]);
       qc.invalidateQueries({ queryKey: ["contatos-cte", empresa.id] });
     },
     onSuccess: () => {
-      toast.success("Percurso atualizado");
+      toast.success("Percurso salvo");
       setEditing(null);
       qc.invalidateQueries({ queryKey: ["cte-percursos", empresa?.id] });
+      if (voltarCteRef.current) { voltarCteRef.current = false; navigate({ to: "/fiscal/cte" } as any); }
     },
     onError: (e: Error) => toast.error(e.message),
   });
@@ -485,7 +521,7 @@ function PercursosPage() {
         <DialogContent className="p-3 sm:p-4">
           <div className="flex flex-col h-full gap-2">
             <DialogHeader>
-              <DialogTitle className="text-sm">Editar percurso {editing?.codigo || ""} — {editing?.nome || ""}</DialogTitle>
+              <DialogTitle className="text-sm">{editing?.id ? <>Editar percurso {editing?.codigo || ""} — {editing?.nome || ""}</> : <>Novo percurso</>}</DialogTitle>
             </DialogHeader>
             {editing && (
               <Tabs value={percTab} onValueChange={setPercTab} className="flex-1 flex flex-col min-h-0">

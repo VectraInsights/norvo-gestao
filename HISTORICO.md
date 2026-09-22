@@ -1909,6 +1909,13 @@ Commits CF `ddeb6e4..37d5da0` (+ ajustes de X do dono) espelhados na Vercel.
 - Tarja de homologação incondicional em ambiente de teste (sem exceção
   por tamanho da caixa). Espelhado na Vercel.
 
+## NF sem percurso em vermelho + cadastro com volta (22/09/2026)
+
+- Embarque: NF sem percurso (rem+dest+toma) em vermelho com tooltip.
+- Gerar com NF sem percurso leva a Fiscal → Percursos com rascunho
+  pré-preenchido (chave travada); salvar cria (insert + código sequencial)
+  e volta ao CT-e. Espelhado na Vercel.
+
 ## Novo CT-e pede o percurso (22/09/2026)
 
 - Botões Novo CT-e (topo e avulso) abrem seletor de percurso (busca por

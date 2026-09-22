@@ -1,4 +1,4 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { PageHeader } from "@/components/erp/page-header";
 import { EmptyState } from "@/components/erp/empty-state";
 import { Card, CardContent } from "@/components/ui/card";
@@ -712,6 +712,7 @@ function CtePage() {
   const [percPickSel, setPercPickSel] = useState("");
   const [viewDoc, setViewDoc] = useState<CteDoc | null>(null);
   const [aba, setAba] = useState("geral");
+  const navigate = useNavigate();
   const fmtDataHora = (iso: any) => { try { const d = new Date(String(iso)); if (isNaN(d.getTime())) return "—"; return d.toLocaleString("pt-BR", { day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit" }); } catch { return "—"; } };
   const [veiculoOpen, setVeiculoOpen] = useState<string | null>(null);
   const [veiculoQuery, setVeiculoQuery] = useState("");
@@ -1566,6 +1567,12 @@ function CtePage() {
     if (!d.remDoc || !d.destDoc || !d.tomaDoc) return null;
     return percursos.find(r => onlyDigitsPercurso(r.rem_cnpj) === d.remDoc && onlyDigitsPercurso(r.dest_cnpj) === d.destDoc && onlyDigitsPercurso(r.toma_cnpj) === d.tomaDoc) || null;
   };
+  // NF sem percurso cadastrado (rem+dest+toma) — linha vermelha + bloqueio no Gerar
+  const nfTemPercurso = (m: any) => {
+    if (!percursos || percursos.length === 0) return false;
+    const dg = (v: any) => String(v || "").replace(/\D/g, "");
+    return percursos.some(r => dg(r.rem_cnpj) === dg(m.emitCnpj) && dg(r.dest_cnpj) === dg(m.destCnpj) && dg(r.toma_cnpj) === dg(m.tomadorCnpj));
+  };
   const aplicarPercurso = (r: Record<string, any>) => {
     setForm(f => ({ ...f,
       toma: r.toma_tipo || f.toma,
@@ -1895,7 +1902,7 @@ function CtePage() {
                         <TableRow><TableCell colSpan={12} className="text-center text-xs text-muted-foreground py-8">Nenhuma NF-e importada. Use "Importar NFes (XML)" abaixo.</TableCell></TableRow>
                       ) : (
                         mercadoriasSorted.map((m) => (
-                          <TableRow key={m.chave} className="text-xs" data-selected={selecionadas.has(m.chave)}>
+                          <TableRow key={m.chave} className={"text-xs" + (!nfTemPercurso(m) ? " text-red-600" : "")} title={!nfTemPercurso(m) ? "Sem percurso cadastrado" : undefined} data-selected={selecionadas.has(m.chave)}>
                             <TableCell>
                               <input
                                 type="checkbox"
@@ -1962,6 +1969,14 @@ function CtePage() {
                       if ((form as any).modoEmbarque === "simplificado" && emits.size > 1) { toast.error("Remetentes diferentes"); return; }
                       if ((form as any).modoEmbarque !== "simplificado" && dests.size > 1) { toast.error("Destinatários diferentes"); return; }
                       if (tomads.size > 1) { toast.error("Tomadores diferentes"); return; }
+                      const semPerc = sel.filter(m => !nfTemPercurso(m));
+                      if (semPerc.length > 0) {
+                        const p0 = semPerc[0] as any;
+                        try { localStorage.setItem("prefill_percurso_from_cte", JSON.stringify({ remCnpj: String(p0.emitCnpj || "").replace(/\D/g, ""), remNome: p0.emit || "", destCnpj: String(p0.destCnpj || "").replace(/\D/g, ""), destNome: p0.dest || "", tomaCnpj: String(p0.tomadorCnpj || "").replace(/\D/g, ""), tomaNome: p0.tomador || "", returnTo: "/fiscal/cte" })); } catch {}
+                        toast.info(`NF-e ${p0.nNF || ""} sem percurso — cadastre o percurso para continuar`);
+                        navigate({ to: "/fiscal/percursos" } as any);
+                        return;
+                      }
                       const somaV = sel.reduce((a,m)=>a+m.valor,0);
                       const somaP = sel.reduce((a,m)=>a+m.peso,0);
                       const first = sel[0] as typeof sel[0] & { modFrete?: string; tomadorUF?: string; tomadorCMun?: string; tomadorXMun?: string; emitUF?: string; emitCMun?: string; emitXMun?: string; destUF?: string; destCMun?: string; destXMun?: string };
