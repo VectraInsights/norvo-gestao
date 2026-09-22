@@ -311,13 +311,7 @@ function DialogNovoMdf({ open, onOpenChange, empresaId, empresa, chavesIniciais 
   const [percursoUFs, setPercursoUFs] = useState<string[]>(["SP"]);
   const [tracaoSel, setTracaoSel] = useState("");
   const todasTracoes = useMemo(() => { const out: string[] = []; for (const c of (ctesDisponiveis || [])) { try { const p = JSON.parse((c as any).xml_assinado || "{}"); const pl = String(p.form?.placaVeiculo || "").toUpperCase(); if (pl && !out.includes(pl)) out.push(pl); } catch {} } return out.sort(); }, [ctesDisponiveis]);
-  const ctesDaTracao = useMemo(() => {
-    const q = tracaoSel.trim().toUpperCase();
-    if (!q) return [];
-    return (ctesDisponiveis || []).filter(c => {
-      try { const p = JSON.parse((c as any).xml_assinado || "{}"); const pl = String(p.form?.placaVeiculo || "").toUpperCase(); return pl.includes(q); } catch { return false; }
-    });
-  }, [ctesDisponiveis, tracaoSel]);
+  const ctesDaTracao = useMemo(() => (ctesDisponiveis || []).filter(c => { if (!tracaoSel) return false; try { const p = JSON.parse((c as any).xml_assinado || "{}"); return String(p.form?.placaVeiculo || "").toUpperCase() === tracaoSel; } catch { return false; } }), [ctesDisponiveis, tracaoSel]);
   const [infoFisco, setInfoFisco] = useState("");
   const [respNome, setRespNome] = useState("");
   const [tipoMdf, setTipoMdf] = useState<"Normal" | "Globalizado">("Normal");
@@ -535,17 +529,11 @@ function DialogNovoMdf({ open, onOpenChange, empresaId, empresa, chavesIniciais 
 
           <div className="border rounded-md p-2">
             <div className="grid grid-cols-2 md:grid-cols-4 gap-1 mb-1 items-end">
-              <div><Label className="text-xs">Tração (digite a placa) *</Label>
-                <Input
-                  className="h-6 text-[11px] font-mono"
-                  value={tracaoSel}
-                  onChange={e => { const v = e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, ""); setTracaoSel(v); setCtesSelecionadas(new Set()); }}
-                  placeholder="Ex: PVQ7C82"
-                  list="mdf-tracoes-list"
-                />
-                <datalist id="mdf-tracoes-list">
-                  {todasTracoes.map(p => (<option key={p} value={p} />))}
-                </datalist>
+              <div><Label className="text-xs">Tração *</Label>
+                <Select value={tracaoSel} onValueChange={v => { setTracaoSel(v); setCtesSelecionadas(new Set()); }}>
+                  <SelectTrigger className="h-6 text-[11px] font-mono"><SelectValue placeholder="Selecione a tração..." /></SelectTrigger>
+                  <SelectContent>{todasTracoes.map(p => (<SelectItem key={p} value={p}>{p}</SelectItem>))}</SelectContent>
+                </Select>
               </div>
               <div className="md:col-span-3 flex items-center justify-end gap-1">
                 <Label className="text-xs mr-auto">Conhecimentos ({ctesSelArr.length} vinculados){tracaoSel ? ` • placa ${tracaoSel}` : ""}</Label>
