@@ -2732,6 +2732,7 @@ function CtePage() {
                       </Select></div>
                     )}
                     <div><Label className="text-[10px] text-muted-foreground">CT-e Original</Label>
+                      {((form as any).finalidadeEmissao === "Complemento" || (form as any).finalidadeEmissao === "Substituicao") ? (
                       <div className="flex items-center gap-1">
                       <Select value={(form as any).cteReferenciado || ""} onValueChange={v => setForm({ ...form, cteReferenciado: v } as any)}>
                         <SelectTrigger className="h-6 text-[10px] font-mono"><SelectValue placeholder={ctesCompativeis.length > 0 ? "Selecione o CT-e original" : "Sem CT-e compatível no percurso"} /></SelectTrigger>
@@ -2745,7 +2746,10 @@ function CtePage() {
                         </SelectContent>
                       </Select>
                       {(form as any).cteReferenciado && <Button size="icon" variant="ghost" className="h-6 w-6 shrink-0" onClick={() => setForm({ ...form, cteReferenciado: "" } as any)} title="Limpar"><X className="h-3 w-3" /></Button>}
-                      </div></div>
+                      </div>
+                      ) : (
+                      <Input className="h-6 text-[10px] font-mono" placeholder="Chave do CT-e original (44 dígitos, outra empresa)" value={(form as any).cteReferenciado || ""} onChange={e=>setForm({...form, cteReferenciado: e.target.value.replace(/\D/g, "").slice(0, 44)} as any)} maxLength={44} />
+                      )}</div>
                   </div>
                 )}
                 <p className="text-[9px] text-muted-foreground mt-1">CT-e Simplificado MG transmite sempre como Normal / Rodoviário; demais opções ficam salvas no rascunho.</p>

@@ -1888,3 +1888,9 @@ Commits CF `ddeb6e4..37d5da0` (+ ajustes de X do dono) espelhados na Vercel.
   Intermediário (antes só Complemento/Substituição). Motivo segue só
   no Complemento. Espelhado na Vercel.
 
+## CT-e Original de terceiro em subcontratação/redespacho (22/09/2026)
+
+- Complemento/Substituição seguem no dropdown dos nossos autorizados;
+  Subcontratação/Redespacho voltam a pedir a chave digitada (44 dígitos),
+  pois o CT-e original é de outra empresa. Espelhado na Vercel.
+
