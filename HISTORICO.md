@@ -1899,6 +1899,11 @@ Commits CF `ddeb6e4..37d5da0` (+ ajustes de X do dono) espelhados na Vercel.
 - Observações: limite fixo de 2 linhas removido — imprime quantas
   couberem na caixa (`maxObs` pela altura; excedente corta sem quebrar
   a página). Marca d'água de homologação só se sobrar espaço.
-- Canhoto: `LIM` 291→293, margem inferior ~7mm→~5mm (mínimo seguro;
+-   Canhoto: `LIM` 291→293, margem inferior ~7mm→~5mm (mínimo seguro;
   abaixo disso impressora comum corta). Espelhado na Vercel.
+
+## DACTE obs em 3 linhas + tarja sempre (22/09/2026)
+
+- Observações limitadas a 3 linhas (suficiente) com espaço reservado;
+  tarja de homologação sempre visível. Espelhado na Vercel.
 

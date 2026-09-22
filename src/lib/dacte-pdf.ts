@@ -688,7 +688,7 @@ export function gerarDactePdf(data: DacteData): Blob {
   let obsH = LIM - y - restoAposObs;
   if (!(obsH >= 7)) obsH = 7;
   box(M, y, CW, obsH);
-  const maxObs = Math.max(1, Math.floor((obsH - 4) / 2.1));
+  const maxObs = Math.max(1, Math.min(3, Math.floor((obsH - 8) / 2.1)));
   let obsShown = 0;
   if (hasObsTxt) {
     setFont("normal", 5); black();
@@ -697,7 +697,7 @@ export function gerarDactePdf(data: DacteData): Blob {
     obsShown = show.length;
     doc.text(show, M + 2, y + 4);
   }
-  if (isHom && (obsShown === 0 || obsH - 4 - obsShown * 2.1 >= 2.5)) {
+  if (isHom && (obsShown === 0 || obsH >= 10)) {
     doc.setTextColor(170, 170, 170);
     ctr("AMBIENTE DE HOMOLOGAÇÃO - SEM VALOR FISCAL", W / 2, y + obsH - 3, 9, true);
     black();
