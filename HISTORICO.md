@@ -1917,3 +1917,10 @@ Commits CF `ddeb6e4..37d5da0` (+ ajustes de X do dono) espelhados na Vercel.
   Espelhado na Vercel.
 - Dois cliques no percurso já confirma direto. Espelhado na Vercel.
 
+## Complemento puxa dados do original (22/09/2026)
+
+- Ao escolher o CT-e Original no Complemento: motoristas, placas,
+  CIOT zerado, pedágio zerado (sem-pagamento) e seguro vêm do original
+  (complemento mantém demais dados; sem averbação nova). Valores ficam
+  para preencher a diferença. Espelhado na Vercel.
+

@@ -2773,7 +2773,25 @@ function CtePage() {
                     <div><Label className="text-[10px] text-muted-foreground">CT-e Original</Label>
                       {((form as any).finalidadeEmissao === "Complemento" || (form as any).finalidadeEmissao === "Substituicao") ? (
                       <div className="flex items-center gap-1">
-                      <Select value={(form as any).cteReferenciado || ""} onValueChange={v => setForm({ ...form, cteReferenciado: v } as any)}>
+                      <Select value={(form as any).cteReferenciado || ""} onValueChange={v => {
+                        const base: any = { cteReferenciado: v };
+                        if (v && (form as any).finalidadeEmissao === "Complemento") {
+                          const orig = ((docs || []) as CteDoc[]).find(x => String(x.chave_acesso || "").replace(/\D/g, "") === String(v).replace(/\D/g, ""));
+                          try {
+                            const f0 = JSON.parse(orig?.xml_assinado || "{}").form || {};
+                            Object.assign(base, {
+                              motoristaId: f0.motoristaId || "", motoristaNome: f0.motoristaNome || "",
+                              possuiMoto2: f0.possuiMoto2 || "", motorista2Id: f0.motorista2Id || "", motorista2Nome: f0.motorista2Nome || "",
+                              placaVeiculo: f0.placaVeiculo || "", placaReboque: f0.placaReboque || "", semiReboque1: f0.semiReboque1 || "", semiReboque2: f0.semiReboque2 || "",
+                              ciot: "",
+                              pedagioPagto: "sem-pagamento", pedagioOperadora: "", pedagioCnpj: "", valePedagio: "0.00", pedagioTag: "", pedagioIdentVPO: "", pedagioDataOp: "",
+                              seguradoraNome: f0.seguradoraNome || "", seguradoraId: f0.seguradoraId || "", apolice: f0.apolice || "", averbacao: f0.averbacao || "",
+                              rctrC: f0.rctrC || "", rcfDc: f0.rcfDc || "", segAdicional: f0.segAdicional || "", segTotal: f0.segTotal || "", segRepassar: f0.segRepassar || "", segResponsavel: f0.segResponsavel || "",
+                            });
+                          } catch { /* mantém só a chave */ }
+                        }
+                        setForm({ ...form, ...base } as any);
+                      }}>
                         <SelectTrigger className="h-6 text-[10px] font-mono"><SelectValue placeholder={ctesCompativeis.length > 0 ? "Selecione o CT-e original" : "Sem CT-e compatível no percurso"} /></SelectTrigger>
                         <SelectContent>
                           {(form as any).cteReferenciado && !ctesCompativeis.some(d => String(d.chave_acesso || "").replace(/\D/g, "") === String((form as any).cteReferenciado).replace(/\D/g, "")) && (
