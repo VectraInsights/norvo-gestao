@@ -65,11 +65,17 @@ function Tc({ label, k, mono, editing, set, ro }: { label: string; k: string; mo
       <Input className={"h-6 text-[11px]" + (mono ? " font-mono" : "") + (ro ? " bg-transparent dark:bg-transparent" : "")} value={editing?.[k] ?? ""} onChange={e => { set(k, e.target.value.toUpperCase()); }} placeholder="" readOnly={ro} />
     </div>
   );
-}function Num({ editing, set, label, k, dec, prefix }: { editing: any; set: (k: string, v: any) => void; label: string; k: string; dec?: number; prefix?: string }) {
+}function Num({ editing, set, label, k, dec, prefix, fixo }: { editing?: any; set?: (k: string, v: any) => void; label: string; k?: string; dec?: number; prefix?: string; fixo?: string }) {
+  if (fixo !== undefined) return (
+    <div>
+      <Label className="text-[10px] text-muted-foreground">{label}</Label>
+      <Input className="h-7 text-xs bg-muted" value={fixo} readOnly />
+    </div>
+  );
   return (
     <div>
       <Label className="text-[10px] text-muted-foreground">{label}</Label>
-      <MoneyInput className="h-7 text-xs" prefix={prefix ?? ""} decimals={dec ?? 2} value={(editing as any)?.[k] ?? ""} onChange={v => set(k, v)} placeholder="0,00" />
+      <MoneyInput className="h-7 text-xs" prefix={prefix ?? ""} decimals={dec ?? 2} value={(editing as any)?.[k!] ?? ""} onChange={v => set!(k!, v)} placeholder="0,00" />
     </div>
   );
 }
@@ -597,6 +603,8 @@ function PercursosPage() {
                       <Num editing={editing} set={set} label="Crédito outorgado" k="credito_outorgado" />
                       <Num editing={editing} set={set} label="PIS %" k="pis_aliq" />
                       <Num editing={editing} set={set} label="COFINS %" k="cofins_aliq" />
+                      <Num label="IBS %" fixo="0,10" />
+                      <Num label="CBS %" fixo="0,90" />
                     </div></div>
                     <div className="flex-1 flex flex-col min-h-0"><Label className="text-[10px] text-muted-foreground">Observação geral</Label>
                       <Textarea className="text-xs flex-1 resize-none" rows={1} value={editing.obs_gerais ?? ""} onChange={e => set("obs_gerais", e.target.value.toUpperCase())} />
