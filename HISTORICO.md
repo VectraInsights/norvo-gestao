@@ -1916,14 +1916,19 @@ Commits CF `ddeb6e4..37d5da0` (+ ajustes de X do dono) espelhados na Vercel.
   e volta ao CT-e. Espelhado na Vercel.
 
 ## Coleta/Entrega auto + PIS/COFINS padrão (22/09/2026)
-
 - Percurso novo vindo do CT-e já nasce com coleta=remetente e
   entrega=destinatário (cidade/UF da NF ou do cadastro); coleta amarrada
   no remetente como a entrega já era no destino/redespacho.
 - PIS 0,65 / COFINS 3,00: zeros do percurso não apagam mais o regime no
   apply; rascunho de percurso já nasce no padrão. Total segue sem somar
   PIS/COFINS (só informativo) e ICMS por dentro. Espelhado na Vercel.
-## Novo CT-e pede o percurso (22/09/2026)
+
+## Percurso com km/h + só 5 impostos no CT-e (22/09/2026)
+
+- Rascunho de percurso já nasce com distância/duração calculadas
+  (CEP/cidade da NF ou cadastro).
+- CT-e: saiu INSS; entraram IBS 0,10 e CBS 0,90 fixos (fase teste 2026)
+  com valores. Ficam ICMS, PIS, COFINS, IBS, CBS. Espelhado na Vercel.## Novo CT-e pede o percurso (22/09/2026)
 
 - Botões Novo CT-e (topo e avulso) abrem seletor de percurso (busca por
   número/nome); ao confirmar, o form zera por completo e os dados vêm

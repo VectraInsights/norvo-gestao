@@ -230,7 +230,14 @@ function PercursosPage() {
       if (voltarCteRef.current) { voltarCteRef.current = false; navigate({ to: "/fiscal/cte" } as any); }
       return;
     }
-    setEditing({ id: "", codigo: "NOVO", nome: ((pre.remNome || "Origem") + " > " + (pre.destNome || "Destino")).slice(0, 80), rem_cnpj: dg(pre.remCnpj), rem_nome: pre.remNome || "", rem_uf: pre.remUF || (contatoByDoc.get(dg(pre.remCnpj)) || {}).uf || "", rem_xmun: pre.remXMun || (contatoByDoc.get(dg(pre.remCnpj)) || {}).cidade || "", dest_cnpj: dg(pre.destCnpj), dest_nome: pre.destNome || "", dest_uf: pre.destUF || (contatoByDoc.get(dg(pre.destCnpj)) || {}).uf || "", dest_xmun: pre.destXMun || (contatoByDoc.get(dg(pre.destCnpj)) || {}).cidade || "", toma_cnpj: dg(pre.tomaCnpj), toma_nome: pre.tomaNome || "", coleta_xmun: pre.remXMun || (contatoByDoc.get(dg(pre.remCnpj)) || {}).cidade || "", coleta_uf: pre.remUF || (contatoByDoc.get(dg(pre.remCnpj)) || {}).uf || "", entrega_xmun: pre.destXMun || (contatoByDoc.get(dg(pre.destCnpj)) || {}).cidade || "", entrega_uf: pre.destUF || (contatoByDoc.get(dg(pre.destCnpj)) || {}).uf || "", pis_aliq: "0.65", cofins_aliq: "3.00" } as Percurso);
+    const cR0 = contatoByDoc.get(dg(pre.remCnpj)) || {}, cD0 = contatoByDoc.get(dg(pre.destCnpj)) || {};
+    const remX0 = pre.remXMun || (cR0 as any).cidade || "", remU0 = pre.remUF || (cR0 as any).uf || "";
+    const dstX0 = pre.destXMun || (cD0 as any).cidade || "", dstU0 = pre.destUF || (cD0 as any).uf || "";
+    const remCep0 = (cR0 as any).cep || "", dstCep0 = (cD0 as any).cep || "";
+    setEditing({ id: "", codigo: "NOVO", nome: ((pre.remNome || "Origem") + " > " + (pre.destNome || "Destino")).slice(0, 80), rem_cnpj: dg(pre.remCnpj), rem_nome: pre.remNome || "", rem_uf: remU0, rem_xmun: remX0, rem_cep: remCep0, dest_cnpj: dg(pre.destCnpj), dest_nome: pre.destNome || "", dest_uf: dstU0, dest_xmun: dstX0, dest_cep: dstCep0, toma_cnpj: dg(pre.tomaCnpj), toma_nome: pre.tomaNome || "", coleta_xmun: remX0, coleta_uf: remU0, entrega_xmun: dstX0, entrega_uf: dstU0, pis_aliq: "0.65", cofins_aliq: "3.00", distancia_km: "", duracao_horas: "" } as Percurso);
+    calcDistDur({ cep: remCep0, xmun: remX0, uf: remU0 }, { cep: dstCep0, xmun: dstX0, uf: dstU0 }).then(calc => {
+      setEditing(e => (e && !e.id ? { ...e, distancia_km: calc.km, duracao_horas: calc.h } : e));
+    }).catch(() => {});
     setPercTab("geral");
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [empresa?.id, (percursos || []).length]);
