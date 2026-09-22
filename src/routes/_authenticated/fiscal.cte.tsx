@@ -2668,18 +2668,18 @@ function CtePage() {
                   <label className="flex items-center gap-1"><input type="radio" name="pedagio_pagto" checked={pagtoSeguro(form.pedagioPagto) === "tag-tomador"} onChange={() => setForm({ ...form, pedagioPagto: "tag-tomador" })} /> TAG Tomador</label>
                   <label className="flex items-center gap-1"><input type="radio" name="pedagio_pagto" checked={pagtoSeguro(form.pedagioPagto) === "sem-pagamento"} onChange={() => setForm({ ...form, pedagioPagto: "sem-pagamento" })} /> Sem Pagamento de Pedágio</label>
                 </div>
-                <div className="grid grid-cols-2 md:grid-cols-3 gap-1 mt-0.5">
-                  <div><Label className="text-[10px] text-muted-foreground">Operadora</Label>
+                <div className="grid grid-cols-2 md:grid-cols-6 gap-1 mt-0.5">
+                  <div className="md:col-span-2"><Label className="text-[10px] text-muted-foreground">Operadora</Label>
                     <Select disabled={pagtoSeguro(form.pedagioPagto) === "sem-pagamento"} value={form.pedagioOperadora || ""} onValueChange={v => { const op = PEDAGIO_OPERADORAS.find(o => o.nome === v); setForm({ ...form, pedagioOperadora: v, pedagioCnpj: op ? op.cnpj : form.pedagioCnpj }); }}>
                       <SelectTrigger className="h-6 text-[11px]"><SelectValue placeholder="Selecione" /></SelectTrigger>
                       <SelectContent>{PEDAGIO_OPERADORAS.map(o => <SelectItem key={o.nome} value={o.nome}>{o.nome}</SelectItem>)}</SelectContent>
                     </Select></div>
-                  <div><Label className="text-[10px] text-muted-foreground">CNPJ Operadora</Label><Input className="h-6 text-[11px] font-mono" placeholder="00.000.000/0000-00" disabled={pagtoSeguro(form.pedagioPagto) === "sem-pagamento"} value={fmtCnpjInput(form.pedagioCnpj || "")} onChange={e => setForm({ ...form, pedagioCnpj: e.target.value.replace(/\D/g, "").slice(0, 14) })} maxLength={18} /></div>
+                  <div className="md:col-span-2"><Label className="text-[10px] text-muted-foreground">CNPJ Operadora</Label><Input className="h-6 text-[11px] font-mono" placeholder="00.000.000/0000-00" disabled={pagtoSeguro(form.pedagioPagto) === "sem-pagamento"} value={fmtCnpjInput(form.pedagioCnpj || "")} onChange={e => setForm({ ...form, pedagioCnpj: e.target.value.replace(/\D/g, "").slice(0, 14) })} maxLength={18} /></div>
                   <div><Label className="text-[10px] text-muted-foreground">Vale Pedágio (R$)</Label><MoneyInput className="h-6 text-[11px] font-medium" disabled={pagtoSeguro(form.pedagioPagto) === "sem-pagamento"} value={form.valePedagio} onChange={v => setForm(f => ({ ...f, valePedagio: v }))} /></div>
                   <div><Label className="text-[10px] text-muted-foreground">Data Operação</Label><Input className="h-6 text-[11px] bg-transparent" title="Sempre a data de emissão" value={String(form.pedagioDataOp || "").slice(0, 10).split("-").reverse().join("/")} readOnly /></div>
-                  <div><Label className="text-[10px] text-muted-foreground">Nº TAG</Label><Input className="h-6 text-[11px]" placeholder="Nº TAG" disabled={pagtoSeguro(form.pedagioPagto) === "sem-pagamento"} value={form.pedagioTag || ""} onChange={e=>setForm({...form, pedagioTag: e.target.value})} /></div>
-                  <div><Label className="text-[10px] text-muted-foreground">CNPJ Responsável Pagamento</Label><Input className="h-6 text-[11px] font-mono bg-transparent" title="Sempre o CNPJ da emissora" value={fmtCnpjInput(form.pedagioRespCnpj || "")} readOnly /></div>
-                  <div><Label className="text-[10px] text-muted-foreground">Identificador VPO</Label><Input className="h-6 text-[11px]" disabled={pagtoSeguro(form.pedagioPagto) === "sem-pagamento"} value={(form as any).pedagioIdentVPO || ""} onChange={e=>setForm({...form, pedagioIdentVPO: e.target.value} as any)} /></div>
+                  <div className="md:col-span-2"><Label className="text-[10px] text-muted-foreground">Nº TAG</Label><Input className="h-6 text-[11px]" placeholder="Nº TAG" disabled={pagtoSeguro(form.pedagioPagto) === "sem-pagamento"} value={form.pedagioTag || ""} onChange={e=>setForm({...form, pedagioTag: e.target.value})} /></div>
+                  <div className="md:col-span-2"><Label className="text-[10px] text-muted-foreground">CNPJ Responsável Pagamento</Label><Input className="h-6 text-[11px] font-mono bg-transparent" title="Sempre o CNPJ da emissora" value={fmtCnpjInput(form.pedagioRespCnpj || "")} readOnly /></div>
+                  <div className="md:col-span-2"><Label className="text-[10px] text-muted-foreground">Identificador VPO</Label><Input className="h-6 text-[11px]" disabled={pagtoSeguro(form.pedagioPagto) === "sem-pagamento"} value={(form as any).pedagioIdentVPO || ""} onChange={e=>setForm({...form, pedagioIdentVPO: e.target.value} as any)} /></div>
                 </div>
               </Card>
               </div>

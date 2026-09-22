@@ -1875,3 +1875,9 @@ Backfill — 21 commits que estavam sem registro:
 
 Commits CF `ddeb6e4..37d5da0` (+ ajustes de X do dono) espelhados na Vercel.
 
+## CT-e pedágio em 2 linhas (22/09/2026)
+
+- Linha 1: Operadora (2/6) + CNPJ Operadora (2/6) + Vale (1/6) + Data
+  Operação (1/6); linha 2: TAG + CNPJ Responsável + ID VPO (2/6 cada).
+  Espelhado na Vercel.
+
