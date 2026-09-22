@@ -1924,3 +1924,9 @@ Commits CF `ddeb6e4..37d5da0` (+ ajustes de X do dono) espelhados na Vercel.
   (complemento mantém demais dados; sem averbação nova). Valores ficam
   para preencher a diferença. Espelhado na Vercel.
 
+## Complemento sem seguro (22/09/2026)
+
+- Correção: complemento (ex. descarga) não gera novo transporte, então
+  NÃO puxa seguro do original (evita averbação duplicada); trava de
+  seguradora/apólice/responsável pula no Complemento. Espelhado na Vercel.
+

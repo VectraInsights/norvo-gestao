@@ -1374,9 +1374,11 @@ function CtePage() {
       if (!String(form.icmsCST || "").trim()) pend.push("CST do ICMS");
       if (!String(form.cfop || "").trim()) pend.push("CFOP");
       if (!String(form.icmsAliq || "").trim()) pend.push("Aliquota do ICMS");
-      if (!String(form.seguradoraNome || "").trim()) pend.push("Seguradora");
-      if (!String(form.apolice || "").trim()) pend.push("Apolice do seguro");
-      if (!String(form.segResponsavel || "").trim()) pend.push("Responsavel do seguro");
+      if ((form as any).finalidadeEmissao !== "Complemento") {
+        if (!String(form.seguradoraNome || "").trim()) pend.push("Seguradora");
+        if (!String(form.apolice || "").trim()) pend.push("Apolice do seguro");
+        if (!String(form.segResponsavel || "").trim()) pend.push("Responsavel do seguro");
+      }
       if (pend.length > 0) throw new Error("Para emitir informe: " + pend.join("; "));
       validarPedagio(form);
       const ret: any = await emitirCteFn({ data: { empresaId: empresa.id, form, input: {
@@ -2785,8 +2787,8 @@ function CtePage() {
                               placaVeiculo: f0.placaVeiculo || "", placaReboque: f0.placaReboque || "", semiReboque1: f0.semiReboque1 || "", semiReboque2: f0.semiReboque2 || "",
                               ciot: "",
                               pedagioPagto: "sem-pagamento", pedagioOperadora: "", pedagioCnpj: "", valePedagio: "0.00", pedagioTag: "", pedagioIdentVPO: "", pedagioDataOp: "",
-                              seguradoraNome: f0.seguradoraNome || "", seguradoraId: f0.seguradoraId || "", apolice: f0.apolice || "", averbacao: f0.averbacao || "",
-                              rctrC: f0.rctrC || "", rcfDc: f0.rcfDc || "", segAdicional: f0.segAdicional || "", segTotal: f0.segTotal || "", segRepassar: f0.segRepassar || "", segResponsavel: f0.segResponsavel || "",
+                              seguradoraNome: "", seguradoraId: "", apolice: "", averbacao: "",
+                              rctrC: "", rcfDc: "", segAdicional: "", segTotal: "", segRepassar: "", segResponsavel: "",
                             });
                           } catch { /* mantém só a chave */ }
                         }
