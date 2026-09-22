@@ -1930,3 +1930,8 @@ Commits CF `ddeb6e4..37d5da0` (+ ajustes de X do dono) espelhados na Vercel.
   NÃO puxa seguro do original (evita averbação duplicada); trava de
   seguradora/apólice/responsável pula no Complemento. Espelhado na Vercel.
 
+## Complemento trava pedágio e CIOT (22/09/2026)
+
+- Radios do pedágio + campo CIOT desabilitados no Complemento.
+  Espelhado na Vercel.
+

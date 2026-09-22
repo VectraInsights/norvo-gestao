@@ -2518,7 +2518,7 @@ function CtePage() {
                         </PopoverContent>
                       </Popover>
                       </div>
-                      <div><Label className="text-[10px] text-muted-foreground">CIOT</Label><Input className="h-6 text-[10px]" placeholder="Nº CIOT" /></div>
+                      <div><Label className="text-[10px] text-muted-foreground">CIOT</Label><Input className="h-6 text-[10px]" placeholder="Nº CIOT" disabled={(form as any).finalidadeEmissao === "Complemento"} /></div>
                     </div>
                     <div className="grid grid-cols-3 gap-1">
                       <div><Label className="text-[10px] text-muted-foreground">{"Tra\u00e7\u00e3o"}</Label>
@@ -2704,10 +2704,10 @@ function CtePage() {
               <Card className="p-1.5">
                 <h5 className="text-xs font-semibold mb-0.5">Forma de Pagamento do Pedágio</h5>
                 <div className="flex flex-wrap gap-3 text-[10px]">
-                  <label className="flex items-center gap-1"><input type="radio" name="pedagio_pagto" checked={pagtoSeguro(form.pedagioPagto) === "free-flow"} onChange={() => setForm({ ...form, pedagioPagto: "free-flow" })} /> Free Flow</label>
-                  <label className="flex items-center gap-1"><input type="radio" name="pedagio_pagto" checked={pagtoSeguro(form.pedagioPagto) === "tag-transportador"} onChange={() => setForm({ ...form, pedagioPagto: "tag-transportador" })} /> TAG Transportador</label>
-                  <label className="flex items-center gap-1"><input type="radio" name="pedagio_pagto" checked={pagtoSeguro(form.pedagioPagto) === "tag-tomador"} onChange={() => setForm({ ...form, pedagioPagto: "tag-tomador" })} /> TAG Tomador</label>
-                  <label className="flex items-center gap-1"><input type="radio" name="pedagio_pagto" checked={pagtoSeguro(form.pedagioPagto) === "sem-pagamento"} onChange={() => setForm({ ...form, pedagioPagto: "sem-pagamento" })} /> Sem Pagamento de Pedágio</label>
+                  <label className="flex items-center gap-1"><input type="radio" name="pedagio_pagto" checked={pagtoSeguro(form.pedagioPagto) === "free-flow"} onChange={() => setForm({ ...form, pedagioPagto: "free-flow" })} disabled={(form as any).finalidadeEmissao === "Complemento"} /> Free Flow</label>
+                  <label className="flex items-center gap-1"><input type="radio" name="pedagio_pagto" checked={pagtoSeguro(form.pedagioPagto) === "tag-transportador"} onChange={() => setForm({ ...form, pedagioPagto: "tag-transportador" })} disabled={(form as any).finalidadeEmissao === "Complemento"} /> TAG Transportador</label>
+                  <label className="flex items-center gap-1"><input type="radio" name="pedagio_pagto" checked={pagtoSeguro(form.pedagioPagto) === "tag-tomador"} onChange={() => setForm({ ...form, pedagioPagto: "tag-tomador" })} disabled={(form as any).finalidadeEmissao === "Complemento"} /> TAG Tomador</label>
+                  <label className="flex items-center gap-1"><input type="radio" name="pedagio_pagto" checked={pagtoSeguro(form.pedagioPagto) === "sem-pagamento"} onChange={() => setForm({ ...form, pedagioPagto: "sem-pagamento" })} disabled={(form as any).finalidadeEmissao === "Complemento"} /> Sem Pagamento de Pedágio</label>
                 </div>
                 <div className="grid grid-cols-2 md:grid-cols-6 gap-1 mt-0.5">
                   <div className="md:col-span-2"><Label className="text-[10px] text-muted-foreground">Operadora</Label>
