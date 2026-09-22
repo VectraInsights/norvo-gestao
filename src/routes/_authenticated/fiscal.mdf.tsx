@@ -334,7 +334,44 @@ function DialogNovoMdf({ open, onOpenChange, empresaId, empresa, chavesIniciais 
     if (!first) return;
     try { const p = JSON.parse((first as any).xml_assinado || "{}"); const pl = String(p.form?.placaVeiculo || "").toUpperCase(); if (pl) setTracaoSel(pl); } catch {}
   }, [open, ctesDisponiveis, ctesSelecionadas, tracaoSel]);
+  // percurso mantém última UF de descarga como último item, mas permite repetição
   useEffect(() => { setPercursoUFs(prev => (prev.length && prev[prev.length - 1] === ufDescarregamento) ? prev : [...prev, ufDescarregamento]); }, [ufDescarregamento]);
+  // Sincroniza UF/Cidade de carregamento/descarregamento com os CT-es selecionados (ex: PA no print)
+  const cidadeIniDerivada = useMemo(() => {
+    if (ctesSelArr.length) {
+      const f = formDe(ctesSelArr[0]);
+      return f.xMunIni || (f as any).xMunCarrega || (empresa as any)?.cidade || "—";
+    }
+    return (empresa as any)?.cidade || "—";
+  }, [ctesSelArr, empresa]);
+  const cidadeFimDerivada = useMemo(() => {
+    if (ctesSelArr.length) {
+      const f = formDe(ctesSelArr[ctesSelArr.length - 1]);
+      return f.xMunFim || (f as any).xMunDescarrega || (empresa as any)?.cidade || "—";
+    }
+    return (empresa as any)?.cidade || "—";
+  }, [ctesSelArr, empresa]);
+  useEffect(() => {
+    if (!ctesSelArr.length) return;
+    const first = formDe(ctesSelArr[0]);
+    const ufIni = first.ufIni || (first as any).UFIni || first.ufCarregamento;
+    if (ufIni && ufIni !== ufCarregamento) setUfCarregamento(ufIni);
+    const destUfs = ctesSelArr.map(c => formDe(c).ufFim).filter(Boolean) as string[];
+    const uniq = [...new Set(destUfs)];
+    if (uniq.length === 1 && uniq[0] !== ufDescarregamento) {
+      const nova = uniq[0];
+      setUfDescarregamento(nova);
+      setPercursoUFs(prev => {
+        // se percurso ainda é o default ["SP"] ou vazio, substitui por [PA] em vez de acumular SP+PA
+        if (prev.length === 1 && prev[0] === "SP") return [nova];
+        if (prev.length === 0) return [nova];
+        return prev;
+      });
+    } else if (destUfs.length) {
+      const last = destUfs[destUfs.length - 1];
+      if (last && last !== ufDescarregamento) setUfDescarregamento(last);
+    }
+  }, [ctesSelArr]);
   // Tudo vem dos CT-es: trações, reboques e motoristas (1º + 2º) dos forms salvos
   const ctesForms = useMemo(() => (ctesDisponiveis || []).filter(c => ctesSelecionadas.has(c.chave_acesso || "")).map(c => { try { const p = JSON.parse((c as any).xml_assinado || "{}"); return (p.form || {}) as Record<string, any>; } catch { return {} as Record<string, any>; } }), [ctesDisponiveis, ctesSelecionadas]);
   const reboques = useMemo(() => { const out: string[] = []; for (const f of ctesForms) for (const k of ["placaReboque", "semiReboque1", "semiReboque2"]) { const p = String(f[k] || "").toUpperCase(); if (p && !out.includes(p)) out.push(p); } return out; }, [ctesForms]);
@@ -466,8 +503,8 @@ function DialogNovoMdf({ open, onOpenChange, empresaId, empresa, chavesIniciais 
                   <SelectContent>{UFS.map(uf => (<SelectItem key={uf} value={uf}>{uf}</SelectItem>))}</SelectContent>
                 </Select>
               </div>
-              <div><Label className="text-xs">Cidade Inicial Carga</Label><Input className="h-6 text-[11px] bg-transparent" readOnly value={(empresa as any)?.cidade || "—"} /></div>
-              <div><Label className="text-xs">Cidade Encerramento</Label><Input className="h-6 text-[11px] bg-transparent" readOnly value={(empresa as any)?.cidade || "—"} /></div>
+              <div><Label className="text-xs">Cidade Inicial Carga</Label><Input className="h-6 text-[11px] bg-transparent" readOnly value={cidadeIniDerivada} /></div>
+              <div><Label className="text-xs">Cidade Encerramento</Label><Input className="h-6 text-[11px] bg-transparent" readOnly value={cidadeFimDerivada} /></div>
             </div>
             <div className="grid grid-cols-2 gap-1 mt-1">
               <div><Label className="text-xs">Local Emissão</Label><Input className="h-6 text-[11px] bg-transparent" readOnly value={[ (empresa as any)?.cidade, (empresa as any)?.uf ].filter(Boolean).join("/") || "—"} /></div>
