@@ -76,6 +76,14 @@ function MdfPage() {
     },
   });
 
+  const statusCounts = {
+    todos: (docs || []).length,
+    autorizado: (docs || []).filter(d => d.status === "autorizado").length,
+    rejeitado: (docs || []).filter(d => d.status === "rejeitado").length,
+    cancelado: (docs || []).filter(d => d.status === "cancelado").length,
+    encerrado: (docs || []).filter(d => d.status === "encerrado").length,
+    rascunho: (docs || []).filter(d => d.status === "rascunho").length,
+  };
   const docsFiltrados = (docs || []).filter(d => {
     if (filtroStatus !== "todos" && d.status !== filtroStatus) return false;
     if (periodoIni && d.created_at < periodoIni) return false;
@@ -105,30 +113,28 @@ function MdfPage() {
         }
       />
 
-      <div className="flex flex-wrap gap-3 items-end">
-        <div className="space-y-1">
-          <Label className="text-xs">Status</Label>
-          <Select value={filtroStatus} onValueChange={setFiltroStatus}>
-            <SelectTrigger className="w-[160px] h-8"><SelectValue /></SelectTrigger>
-            <SelectContent>
-              <SelectItem value="todos">Todos</SelectItem>
-              <SelectItem value="rascunho">Rascunho</SelectItem>
-              <SelectItem value="autorizado">Autorizado</SelectItem>
-              <SelectItem value="encerrado">Encerrado</SelectItem>
-              <SelectItem value="cancelado">Cancelado</SelectItem>
-              <SelectItem value="rejeitado">Rejeitado</SelectItem>
-            </SelectContent>
-          </Select>
+      <Tabs value={filtroStatus} onValueChange={setFiltroStatus}>
+        <div className="flex flex-wrap gap-3 items-end justify-between">
+          <TabsList className="h-auto flex-wrap">
+            <TabsTrigger value="todos" className="text-xs">Todos ({statusCounts.todos})</TabsTrigger>
+            <TabsTrigger value="autorizado" className="text-xs">Autorizado ({statusCounts.autorizado})</TabsTrigger>
+            <TabsTrigger value="rejeitado" className="text-xs">Rejeitado ({statusCounts.rejeitado})</TabsTrigger>
+            <TabsTrigger value="cancelado" className="text-xs">Cancelado ({statusCounts.cancelado})</TabsTrigger>
+            <TabsTrigger value="encerrado" className="text-xs">Encerrado ({statusCounts.encerrado})</TabsTrigger>
+            <TabsTrigger value="rascunho" className="text-xs">Rascunho ({statusCounts.rascunho})</TabsTrigger>
+          </TabsList>
+          <div className="flex gap-2">
+            <div className="space-y-1">
+              <Label className="text-xs">De</Label>
+              <DateInput value={periodoIni} onChange={setPeriodoIni} className="w-[130px] h-8" />
+            </div>
+            <div className="space-y-1">
+              <Label className="text-xs">Até</Label>
+              <DateInput value={periodoFim} onChange={setPeriodoFim} className="w-[130px] h-8" />
+            </div>
+          </div>
         </div>
-        <div className="space-y-1">
-          <Label className="text-xs">De</Label>
-          <DateInput value={periodoIni} onChange={setPeriodoIni} className="w-[130px] h-8" />
-        </div>
-        <div className="space-y-1">
-          <Label className="text-xs">Até</Label>
-          <DateInput value={periodoFim} onChange={setPeriodoFim} className="w-[130px] h-8" />
-        </div>
-      </div>
+      </Tabs>
 
       {isLoading ? (
         <div className="text-sm text-muted-foreground">Carregando…</div>
