@@ -198,10 +198,14 @@ async function soapRequest(url: string, body: string, action: string, agent?: ht
 }
 
 export async function emitirMdf(pfx: Buffer, senha: string, xml: string, ambiente: Ambiente): Promise<{ sucesso: boolean; cStat: string; xMotivo: string; chave?: string; protocolo?: string; xmlRet?: string }> {
-  const ep = getMdfEndpoints(ambiente);
+  const ep = getMdfEndpoints(ambiente) as any;
   const xmlAss = signXml(xml, pfx, senha);
-  const body = `<MDFeDadosMsg xmlns="http://www.portalfiscal.inf.br/mdf/wsdl/MDFeRecepcao">${xmlAss}</MDFeDadosMsg>`;
-  const ret = await soapRequest(ep.mdfRecepcao, body, "http://www.portalfiscal.inf.br/mdf/wsdl/MDFeRecepcao/MDFeRecepcao", createSefazAgent(pfx, senha));
+  // Produção/homologação SVRS atual é RecepcaoSinc (síncrono 3.00) - fallback para Recepcao legado se não existir
+  const url = ep.mdfRecepcaoSinc || ep.mdfRecepcao;
+  const isSinc = !!ep.mdfRecepcaoSinc && url === ep.mdfRecepcaoSinc;
+  const ns = isSinc ? "MDFeRecepcaoSinc" : "MDFeRecepcao";
+  const body = `<MDFeDadosMsg xmlns="http://www.portalfiscal.inf.br/mdf/wsdl/${ns}">${xmlAss}</MDFeDadosMsg>`;
+  const ret = await soapRequest(url, body, `http://www.portalfiscal.inf.br/mdf/wsdl/${ns}/${ns}`, createSefazAgent(pfx, senha));
   const cStat = ret.match(/<cStat>(\d+)<\/cStat>/)?.[1] || "";
   const xMotivo = ret.match(/<xMotivo>([^<]+)<\/xMotivo>/)?.[1] || "";
   const ch = ret.match(/<chMDFe>(\d{44})<\/chMDFe>/)?.[1] || xml.match(/Id="MDFe(\d{44})"/)?.[1];
