@@ -328,7 +328,7 @@ function DialogNovoMdf({ open, onOpenChange, empresaId, empresa, chavesIniciais 
     if (!first) return;
     try { const p = JSON.parse((first as any).xml_assinado || "{}"); const pl = String(p.form?.placaVeiculo || "").toUpperCase(); if (pl) setTracaoSel(pl); } catch {}
   }, [open, ctesDisponiveis, ctesSelecionadas, tracaoSel]);
-  useEffect(() => { setPercursoUFs(prev => prev.includes(ufDescarregamento) ? prev : [...prev, ufDescarregamento]); }, [ufDescarregamento]);
+  useEffect(() => { setPercursoUFs(prev => (prev.length && prev[prev.length - 1] === ufDescarregamento) ? prev : [...prev, ufDescarregamento]); }, [ufDescarregamento]);
   // Tudo vem dos CT-es: trações, reboques e motoristas (1º + 2º) dos forms salvos
   const ctesForms = useMemo(() => (ctesDisponiveis || []).filter(c => ctesSelecionadas.has(c.chave_acesso || "")).map(c => { try { const p = JSON.parse((c as any).xml_assinado || "{}"); return (p.form || {}) as Record<string, any>; } catch { return {} as Record<string, any>; } }), [ctesDisponiveis, ctesSelecionadas]);
   const reboques = useMemo(() => { const out: string[] = []; for (const f of ctesForms) for (const k of ["placaReboque", "semiReboque1", "semiReboque2"]) { const p = String(f[k] || "").toUpperCase(); if (p && !out.includes(p)) out.push(p); } return out; }, [ctesForms]);
@@ -561,9 +561,9 @@ function DialogNovoMdf({ open, onOpenChange, empresaId, empresa, chavesIniciais 
                 <span className="text-[10px] text-muted-foreground">{percursoUFs.length} UF(s)</span>
               </div>
               <div className="flex gap-1 mt-1">
-                <Select value="" onValueChange={v => { if (v && !percursoUFs.includes(v)) { setPercursoUFs(prev => [...prev, v]); setPercursoSelIdx(percursoUFs.length); } }}>
-                  <SelectTrigger className="h-6 text-[11px] flex-1"><SelectValue placeholder="Adicionar UF..." /></SelectTrigger>
-                  <SelectContent>{UFS.filter(u => !percursoUFs.includes(u)).map(uf => (<SelectItem key={uf} value={uf}>{uf}</SelectItem>))}</SelectContent>
+                <Select value="" onValueChange={v => { if (v) { const idx = percursoUFs.length; setPercursoUFs(prev => [...prev, v]); setPercursoSelIdx(idx); } }}>
+                  <SelectTrigger className="h-6 text-[11px] flex-1"><SelectValue placeholder="Adicionar UF na ordem..." /></SelectTrigger>
+                  <SelectContent>{UFS.map(uf => (<SelectItem key={uf} value={uf}>{uf}</SelectItem>))}</SelectContent>
                 </Select>
                 <Button size="sm" variant="outline" className="h-6 text-[11px]" disabled={percursoSelIdx === null} onClick={() => percursoSelIdx !== null && excluirPercurso(percursoSelIdx)}>Exclui</Button>
                 <div className="flex flex-col gap-0.5">
@@ -573,28 +573,22 @@ function DialogNovoMdf({ open, onOpenChange, empresaId, empresa, chavesIniciais 
               </div>
               <div className="border rounded mt-2 max-h-[110px] overflow-auto">
                 <table className="w-full text-xs">
-                  <thead className="bg-muted sticky top-0"><tr><th className="text-left px-1 py-0.5 font-semibold">#</th><th className="text-left px-1 py-0.5 font-semibold">UF</th></tr></thead>
+                  <thead className="bg-muted sticky top-0"><tr><th className="text-left px-1 py-0.5 font-semibold">#</th><th className="text-left px-1 py-0.5 font-semibold">UF</th><th className="text-left px-1 py-0.5 font-semibold">Ações</th></tr></thead>
                   <tbody>
-                    {percursoUFs.length === 0 ? (<tr><td colSpan={2} className="text-center text-muted-foreground py-2">Nenhuma UF. Adicione na ordem do trajeto.</td></tr>) : percursoUFs.map((uf, idx) => (
-                      <tr key={`${uf}-${idx}`} className={"cursor-pointer " + (percursoSelIdx === idx ? "bg-primary/10" : "hover:bg-muted/50")} onClick={() => setPercursoSelIdx(idx)}>
-                        <td className="px-1 py-0.5 font-mono">{idx + 1}º</td><td className="px-1 py-0.5 font-mono font-bold">{uf}</td>
+                    {percursoUFs.length === 0 ? (<tr><td colSpan={3} className="text-center text-muted-foreground py-2">Nenhuma UF. Adicione na ordem do trajeto (repetir é permitido).</td></tr>) : percursoUFs.map((uf, idx) => (
+                      <tr key={`${idx}-${uf}`} className={"cursor-pointer " + (percursoSelIdx === idx ? "bg-primary/10" : "hover:bg-muted/50")} onClick={() => setPercursoSelIdx(idx)}>
+                        <td className="px-1 py-0.5 font-mono">{idx + 1}º</td><td className="px-1 py-0.5 font-mono font-bold">{uf}</td><td className="px-1 py-0.5"><Button variant="ghost" size="sm" className="h-4 px-1 text-[10px]" onClick={e => { e.stopPropagation(); excluirPercurso(idx); }}>✕</Button></td>
                       </tr>
                     ))}
                   </tbody>
                 </table>
               </div>
-              <p className="text-[10px] text-muted-foreground mt-1">Clique para selecionar • use ▲/▼ para reordenar • Exclui remove. Ordem é gravada em <code>infPercurso</code>.</p>
+              <p className="text-[10px] text-muted-foreground mt-1">Lista em ordem de passagem • clique para selecionar • ▲/▼ reordena • ✕/Exclui remove • mesma UF pode repetir.</p>
               <div className="flex flex-wrap gap-1 mt-2 border-t pt-2">
-                <span className="text-[10px] text-muted-foreground w-full">Atalho marcar:</span>
-                {UFS.map(uf => {
-                  const ord = percursoUFs.indexOf(uf);
-                  return (
-                  <label key={uf} title={ord >= 0 ? `${ord + 1}ª` : "Adicionar"} className={"inline-flex items-center gap-1 text-[10px] font-mono px-1 py-0.5 rounded border cursor-pointer " + (ord >= 0 ? "border-primary bg-primary/10" : "border-transparent hover:bg-muted")}>
-                    <input type="checkbox" checked={ord >= 0} onChange={() => setPercursoUFs(prev => prev.includes(uf) ? prev.filter(x => x !== uf) : [...prev, uf])} className="h-3 w-3" /> {uf}
-                    {ord >= 0 && <span className="inline-flex items-center justify-center h-3 min-w-3 px-0.5 rounded-full bg-primary text-primary-foreground text-[9px] font-bold">{ord + 1}</span>}
-                  </label>
-                  );
-                })}
+                <span className="text-[10px] text-muted-foreground w-full">Adicionar rápido (permite repetir):</span>
+                {UFS.map(uf => (
+                  <Button key={uf} variant="outline" size="sm" className="h-5 px-1.5 text-[10px] font-mono" onClick={() => { setPercursoUFs(prev => [...prev, uf]); setPercursoSelIdx(percursoUFs.length); }}>{uf}</Button>
+                ))}
               </div>
             </div>
             <div className="border rounded-md p-2 space-y-1">
