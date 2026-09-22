@@ -1948,7 +1948,15 @@ Commits CF `ddeb6e4..37d5da0` (+ ajustes de X do dono) espelhados na Vercel.
 - Percurso: checklist multi-UF (padrão UF descarga) vai ao
   `<infPercurso>` do XML; obs/percurso gravados no `xml_assinado`.
 - Proxy Vercel saiu do stub fase 1: emitir/encerrar/cancelar MDF-e
-  executam de verdade (SVRS). Espelhado na Vercel.## Novo CT-e pede o percurso (22/09/2026)
+  executam de verdade (SVRS). Espelhado na Vercel.
+
+## MDF-e tela única estilo referência (22/09/2026)
+
+- Sem abas: cabeçalho (empresa, tipo, data, situação), veículo/CIOT/
+  seguro vindos dos CT-es, tabela CT-e (emissão, CTRC, placa, reboques,
+  coleta/entrega, NFs, valor, peso) com Marcar/Limpar, totais +
+  responsável, motoristas, percurso UFs, observação + info fisco.
+  Espelhado na Vercel.## Novo CT-e pede o percurso (22/09/2026)
 
 - Botões Novo CT-e (topo e avulso) abrem seletor de percurso (busca por
   número/nome); ao confirmar, o form zera por completo e os dados vêm

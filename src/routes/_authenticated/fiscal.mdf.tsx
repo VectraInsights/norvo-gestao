@@ -36,7 +36,7 @@ type MdfDoc = {
   xml_assinado: string | null; xml_protocolo: string | null;
 };
 
-type CteDoc = { id: string; numero: string | null; chave_acesso: string | null; status: string; valor_servico: number | null; peso_carga: number | null };
+type CteDoc = { id: string; numero: string | null; serie: string | null; chave_acesso: string | null; status: string; valor_servico: number | null; peso_carga: number | null; data_autorizacao: string | null };
 
 function MdfPage() {
   const { data: empresa } = useEmpresaAtual();
@@ -229,7 +229,7 @@ function MdfPage() {
         </Dialog>
       )}
 
-      <DialogNovoMdf open={open} onOpenChange={(v) => { setOpen(v); if (!v) setMdfPrefill(null); }} empresaId={empresa?.id || ""} chavesIniciais={mdfPrefill || undefined} />
+      <DialogNovoMdf open={open} onOpenChange={(v) => { setOpen(v); if (!v) setMdfPrefill(null); }} empresaId={empresa?.id || ""} empresa={empresa} chavesIniciais={mdfPrefill || undefined} />
     </div>
   );
 }
@@ -249,7 +249,7 @@ function EncerrarMdfButton({ mdf, empresaId, onSuccess }: { mdf: MdfDoc; empresa
   return <Button onClick={handleEncerrar} disabled={loading}>{loading ? "Encerrando..." : "Confirmar Encerramento"}</Button>;
 }
 
-function DialogNovoMdf({ open, onOpenChange, empresaId, chavesIniciais }: { open: boolean; onOpenChange: (v: boolean) => void; empresaId: string; chavesIniciais?: string[] }) {
+function DialogNovoMdf({ open, onOpenChange, empresaId, empresa, chavesIniciais }: { open: boolean; onOpenChange: (v: boolean) => void; empresaId: string; empresa?: any; chavesIniciais?: string[] }) {
   const qc = useQueryClient();
   const [loading, setLoading] = useState(false);
   const [ufCarregamento, setUfCarregamento] = useState("MG");
@@ -291,7 +291,7 @@ function DialogNovoMdf({ open, onOpenChange, empresaId, chavesIniciais }: { open
     queryKey: ["ctes-para-mdf", empresaId],
     queryFn: async (): Promise<CteDoc[]> => {
       const { data, error } = await supabase.from("cte_documentos" as any)
-        .select("id,numero,chave_acesso,status,valor_servico,peso_carga,xml_assinado")
+        .select("id,numero,serie,chave_acesso,status,valor_servico,peso_carga,xml_assinado,data_autorizacao")
         .eq("empresa_id", empresaId)
         .eq("status", "autorizado")
         .order("created_at", { ascending: false })
@@ -303,6 +303,9 @@ function DialogNovoMdf({ open, onOpenChange, empresaId, chavesIniciais }: { open
 
   const [ctesSelecionadas, setCtesSelecionadas] = useState<Set<string>>(new Set());
   const [percursoUFs, setPercursoUFs] = useState<string[]>(["SP"]);
+  const [infoFisco, setInfoFisco] = useState("");
+  const [respNome, setRespNome] = useState("");
+  useEffect(() => { if (!open) return; (async () => { try { const { data } = await supabase.auth.getUser(); const usr = (data as any)?.user; if (!usr) return; let nm = (usr?.user_metadata as any)?.nome || ""; if (!nm && empresaId) { const { data: eu } = await supabase.from("empresa_users" as any).select("nome").eq("empresa_id", empresaId).eq("user_id", usr.id).maybeSingle(); nm = (eu as any)?.nome || ""; } setRespNome(nm || ""); } catch {} })(); }, [open, empresaId]);
   useEffect(() => { if (open && chavesIniciais?.length) { setCtesSelecionadas(new Set(chavesIniciais)); setPercursoUFs(["SP"]); } }, [open]);
   useEffect(() => { setPercursoUFs(prev => prev.includes(ufDescarregamento) ? prev : [...prev, ufDescarregamento]); }, [ufDescarregamento]);
   // Tudo vem dos CT-es: trações, reboques e motoristas (1º + 2º) dos forms salvos
@@ -311,6 +314,15 @@ function DialogNovoMdf({ open, onOpenChange, empresaId, chavesIniciais }: { open
   const reboques = useMemo(() => { const out: string[] = []; for (const f of ctesForms) for (const k of ["placaReboque", "semiReboque1", "semiReboque2"]) { const p = String(f[k] || "").toUpperCase(); if (p && !out.includes(p)) out.push(p); } return out; }, [ctesForms]);
   const motNomes = useMemo(() => { const out: Array<{ id: string; nome: string }> = []; for (const f of ctesForms) for (const k of [["motoristaId", "motoristaNome"], ["motorista2Id", "motorista2Nome"]] as const) { const nm = String(f[k[1]] || "").trim(); if (nm && !out.some(o => o.nome === nm)) out.push({ id: String(f[k[0]] || ""), nome: nm }); } return out; }, [ctesForms]);
   const cpfDe = (id: string, nome: string) => ((motoristas || []).find(m => (id && m.id === id) || m.nome === nome)?.cpf || "");
+  const ciotMdf = useMemo(() => ctesForms.map(f => String(f.ciot || "").trim()).find(Boolean) || "", [ctesForms]);
+  const segMdf = useMemo(() => ctesForms.find(f => String(f.seguradoraNome || "").trim()) || {}, [ctesForms]);
+  const ctesSelArr = useMemo(() => (ctesDisponiveis || []).filter(c => ctesSelecionadas.has(c.chave_acesso || "")), [ctesDisponiveis, ctesSelecionadas]);
+  const totalCarga = useMemo(() => ctesSelArr.reduce((s, c) => s + (c.valor_servico || 0), 0), [ctesSelArr]);
+  const pesoCarga = useMemo(() => ctesSelArr.reduce((s, c) => s + (c.peso_carga || 0), 0), [ctesSelArr]);
+  const veicTracInfo = useMemo(() => (veiculos || []).find(v => tracoes.length && String(v.placa || "").toUpperCase() === tracoes[0]), [veiculos, tracoes]);
+  const fmtData = (iso: any) => { try { const d = new Date(String(iso)); if (isNaN(d.getTime())) return "—"; return d.toLocaleDateString("pt-BR"); } catch { return "—"; } };
+  const nfsDe = (c: CteDoc): string[] => { try { const p = JSON.parse((c as any).xml_assinado || "{}"); const xml = p.xml || ""; return [...xml.matchAll(/<chNFe>(\d{44})<\/chNFe>/g)].map(m => m[1].slice(25, 34).replace(/^0+/, "") || "0"); } catch { return []; } };
+  const formDe = (c: CteDoc): Record<string, any> => { try { const p = JSON.parse((c as any).xml_assinado || "{}"); return (p.form || {}) as Record<string, any>; } catch { return {}; } };
   const [veicTracId, setVeicTracId] = useState("");
   const [motoristaId, setMotoristaId] = useState("");
 
@@ -358,7 +370,7 @@ function DialogNovoMdf({ open, onOpenChange, empresaId, chavesIniciais }: { open
           empresaId, xml, veiculoTracaoId: veic?.id, motoristaId: mot?.id,
           ufCarregamento, ufDescarregamento,
           qtdCtes: ctesArr.length, valorTotalCarga: input.valorTotalCarga, pesoTotal: input.pesoTotalKG,
-          percursoUFs, observacoes,
+          percursoUFs, observacoes, infoFisco,
         }
       });
 
@@ -366,7 +378,7 @@ function DialogNovoMdf({ open, onOpenChange, empresaId, chavesIniciais }: { open
       else toast.error(`Erro: ${res.xMotivo}`);
 
       onOpenChange(false);
-      setCtesSelecionadas(new Set()); setPercursoUFs(["SP"]); setObservacoes("");
+      setCtesSelecionadas(new Set()); setPercursoUFs(["SP"]); setObservacoes(""); setInfoFisco("");
       qc.invalidateQueries({ queryKey: ["mdf-documentos"] });
     } catch (e: unknown) { toast.error(e instanceof Error ? e.message : "Erro ao emitir MDF-e"); }
     setLoading(false);
@@ -377,92 +389,108 @@ function DialogNovoMdf({ open, onOpenChange, empresaId, chavesIniciais }: { open
       <DialogContent className="w-screen h-screen max-w-none max-h-none m-0 rounded-none overflow-y-auto">
         <DialogHeader><DialogTitle>Novo MDF-e</DialogTitle></DialogHeader>
 
-        <Tabs defaultValue="ctes" className="w-full">
-          <TabsList className="grid w-full grid-cols-3">
-            <TabsTrigger value="ctes">CT-e Vinculados</TabsTrigger>
-            <TabsTrigger value="veiculo">Veículo/Motorista</TabsTrigger>
-            <TabsTrigger value="rota">Rota</TabsTrigger>
-          </TabsList>
+        <div className="space-y-2">
+          <div className="border rounded-md p-2">
+            <div className="grid grid-cols-2 md:grid-cols-6 gap-1">
+              <div className="md:col-span-2"><Label className="text-xs">Empresa</Label><Input className="h-6 text-[11px] bg-transparent" readOnly value={(empresa as any)?.nome_fantasia || (empresa as any)?.razao_social || "—"} /></div>
+              <div><Label className="text-xs">CNPJ</Label><Input className="h-6 text-[11px] font-mono bg-transparent" readOnly value={String((empresa as any)?.cnpj || "").replace(/(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})/, "$1.$2.$3/$4-$5") || "—"} /></div>
+              <div><Label className="text-xs">Tipo MDF-e</Label><Input className="h-6 text-[11px] bg-transparent" readOnly value="Normal" /></div>
+              <div><Label className="text-xs">Data Emissão</Label><Input className="h-6 text-[11px] bg-transparent" readOnly value={new Date().toLocaleDateString("pt-BR")} /></div>
+              <div><Label className="text-xs">Situação</Label><Input className="h-6 text-[11px] bg-transparent" readOnly value="Novo" /></div>
+            </div>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-1 mt-1">
+              <div><Label className="text-xs">UF Carregamento</Label>
+                <Select value={ufCarregamento} onValueChange={setUfCarregamento}>
+                  <SelectTrigger className="h-6 text-[11px]"><SelectValue /></SelectTrigger>
+                  <SelectContent>{UFS.map(uf => (<SelectItem key={uf} value={uf}>{uf}</SelectItem>))}</SelectContent>
+                </Select>
+              </div>
+              <div><Label className="text-xs">UF Descarregamento</Label>
+                <Select value={ufDescarregamento} onValueChange={setUfDescarregamento}>
+                  <SelectTrigger className="h-6 text-[11px]"><SelectValue /></SelectTrigger>
+                  <SelectContent>{UFS.map(uf => (<SelectItem key={uf} value={uf}>{uf}</SelectItem>))}</SelectContent>
+                </Select>
+              </div>
+              <div className="md:col-span-2"><Label className="text-xs">Local Emissão</Label><Input className="h-6 text-[11px] bg-transparent" readOnly value={[ (empresa as any)?.cidade, (empresa as any)?.uf ].filter(Boolean).join("/") || "—"} /></div>
+            </div>
+          </div>
 
-          <TabsContent value="ctes" className="space-y-3">
-            <p className="text-xs text-muted-foreground">Selecione os CT-e autorizados para incluir no manifesto.</p>
+          <div className="border rounded-md p-2">
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-1">
+              <div><Label className="text-xs">Tração</Label><p className="font-mono text-xs">{tracoes[0] || "—"}{veicTracInfo?.renavam ? ` • RENAVAM ${veicTracInfo.renavam}` : ""}</p></div>
+              <div><Label className="text-xs">Reboques</Label><p className="font-mono text-xs">{reboques.join(", ") || "—"}</p></div>
+              <div><Label className="text-xs">CIOT</Label><p className="font-mono text-xs">{ciotMdf || "—"}</p></div>
+              <div><Label className="text-xs">Tipo Frota</Label><p className="text-xs">{veicTracInfo ? `${veicTracInfo.marca_modelo || ""} / ${veicTracInfo.tipo || ""}`.trim() || "—" : "—"}</p></div>
+            </div>
+            <div className="grid grid-cols-2 md:grid-cols-3 gap-1 mt-1">
+              <div><Label className="text-xs">Seguradora</Label><p className="text-xs">{String((segMdf as any).seguradoraNome || "—")}</p></div>
+              <div><Label className="text-xs">Apólice</Label><p className="font-mono text-xs">{String((segMdf as any).apolice || "—")}</p></div>
+              <div><Label className="text-xs">Averbação</Label><p className="font-mono text-xs">{String((segMdf as any).averbacao || "—")}</p></div>
+            </div>
+            {!ctesSelecionadas.size && <p className="text-xs text-muted-foreground mt-1">Veículo, CIOT e seguro vêm dos CT-es vinculados abaixo.</p>}
+          </div>
+
+          <div className="border rounded-md p-2">
+            <div className="flex items-center justify-between mb-1">
+              <Label className="text-xs">Conhecimentos ({ctesSelArr.length} vinculados)</Label>
+              <div className="flex gap-1">
+                <Button size="sm" variant="outline" className="h-6 text-[11px]" onClick={() => setCtesSelecionadas(new Set((ctesDisponiveis || []).map(c => c.chave_acesso || "").filter(Boolean)))}>Marcar</Button>
+                <Button size="sm" variant="outline" className="h-6 text-[11px]" onClick={() => setCtesSelecionadas(new Set())}>Limpar</Button>
+              </div>
+            </div>
             {ctesErro ? (
               <p className="text-sm text-destructive">Falha ao carregar CT-es: {String((ctesErro as any)?.message || ctesErro)}</p>
             ) : !ctesDisponiveis?.length ? (
               <p className="text-sm text-muted-foreground">Nenhum CT-e autorizado disponível.</p>
             ) : (
-              <div className="border rounded-md max-h-[300px] overflow-y-auto">
+              <div className="border rounded-md max-h-[260px] overflow-auto">
                 <Table>
-                  <TableHeader><TableRow>
-                    <TableHead className="w-[40px]"></TableHead>
-                    <TableHead>Nº</TableHead><TableHead>Chave</TableHead><TableHead>Valor</TableHead><TableHead>Peso</TableHead>
+                  <TableHeader className="sticky top-0 bg-muted"><TableRow>
+                    <TableHead className="w-[36px]"></TableHead>
+                    <TableHead>Emissão</TableHead><TableHead>CTRC</TableHead><TableHead>Série</TableHead><TableHead>Placa</TableHead><TableHead>Reboques</TableHead><TableHead>Coleta</TableHead><TableHead>UF</TableHead><TableHead>Entrega</TableHead><TableHead>UF</TableHead><TableHead>Notas Fiscais</TableHead><TableHead className="text-right">Valor</TableHead><TableHead className="text-right">Peso</TableHead>
                   </TableRow></TableHeader>
                   <TableBody>
-                    {ctesDisponiveis.map(c => (
+                    {ctesDisponiveis.map(c => {
+                      const f = formDe(c);
+                      const reb = [f.placaReboque, f.semiReboque1, f.semiReboque2].map(x => String(x || "").toUpperCase()).filter(Boolean).join(", ");
+                      return (
                       <TableRow key={c.id} className={ctesSelecionadas.has(c.chave_acesso || "") ? "bg-muted/50" : ""}>
                         <TableCell><input type="checkbox" checked={ctesSelecionadas.has(c.chave_acesso || "")} onChange={() => toggleCte(c.chave_acesso || "")} className="h-4 w-4" /></TableCell>
-                        <TableCell className="font-mono">{c.numero ?? "—"}</TableCell>
-                        <TableCell className="font-mono text-xs truncate max-w-[200px]">{c.chave_acesso ?? "—"}</TableCell>
-                        <TableCell>{c.valor_servico ? brl(c.valor_servico) : "—"}</TableCell>
-                        <TableCell>{c.peso_carga ? `${num(c.peso_carga)} kg` : "—"}</TableCell>
+                        <TableCell className="text-xs whitespace-nowrap">{fmtData(c.data_autorizacao)}</TableCell>
+                        <TableCell className="font-mono text-xs">{c.numero ?? "—"}</TableCell>
+                        <TableCell className="font-mono text-xs">{(c as any).serie ?? "1"}</TableCell>
+                        <TableCell className="font-mono text-xs">{String(f.placaVeiculo || "—").toUpperCase()}</TableCell>
+                        <TableCell className="font-mono text-xs">{reb || "—"}</TableCell>
+                        <TableCell className="text-xs">{f.xMunIni || "—"}</TableCell>
+                        <TableCell className="text-xs">{f.ufIni || "—"}</TableCell>
+                        <TableCell className="text-xs">{f.xMunFim || "—"}</TableCell>
+                        <TableCell className="text-xs">{f.ufFim || "—"}</TableCell>
+                        <TableCell className="font-mono text-xs">{nfsDe(c).join(", ") || "—"}</TableCell>
+                        <TableCell className="text-right text-xs">{c.valor_servico ? brl(c.valor_servico) : "—"}</TableCell>
+                        <TableCell className="text-right text-xs">{c.peso_carga ? `${num(c.peso_carga)} kg` : "—"}</TableCell>
                       </TableRow>
-                    ))}
+                      );
+                    })}
                   </TableBody>
                 </Table>
               </div>
             )}
-            <p className="text-xs text-muted-foreground">{ctesSelecionadas.size} CT-e selecionado(s)</p>
-          </TabsContent>
+          </div>
 
-          <TabsContent value="veiculo" className="space-y-3">
-            {!ctesSelecionadas.size ? (
-              <p className="text-xs text-muted-foreground">Selecione CT-es na primeira aba — tração, reboques e motoristas vêm deles.</p>
-            ) : (
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
-                <div className="border rounded-md p-2">
-                  <Label className="text-xs">Tração</Label>
-                  {tracoes.length ? tracoes.map(p => { const v = (veiculos || []).find(x => String(x.placa || "").toUpperCase() === p); return (<p key={p} className="font-mono text-xs">{p}{v?.renavam ? ` • RENAVAM ${v.renavam}` : ""}</p>); }) : (<p className="text-xs text-destructive">Sem tração nos CT-es</p>)}
-                </div>
-                <div className="border rounded-md p-2">
-                  <Label className="text-xs">Reboques</Label>
-                  {reboques.length ? reboques.map(p => (<p key={p} className="font-mono text-xs">{p}</p>)) : (<p className="text-xs text-muted-foreground">—</p>)}
-                </div>
-                <div className="border rounded-md p-2">
-                  <Label className="text-xs">Motoristas</Label>
-                  {motNomes.length ? motNomes.map(m => (<p key={m.nome} className="text-xs">{m.nome} <span className="text-muted-foreground">({cpfDe(m.id, m.nome) || "s/CPF"})</span></p>)) : (<p className="text-xs text-destructive">Sem motorista nos CT-es</p>)}
-                </div>
-              </div>
-            )}
-          </TabsContent>
+          <div className="border rounded-md p-2 grid grid-cols-2 md:grid-cols-4 gap-1">
+            <div><Label className="text-xs">Valor Total Carga</Label><p className="font-mono text-xs">{brl(totalCarga)}</p></div>
+            <div><Label className="text-xs">Peso Total Carga</Label><p className="font-mono text-xs">{num(pesoCarga)} kg</p></div>
+            <div className="md:col-span-2"><Label className="text-xs">Responsável Emissão</Label><p className="text-xs">{respNome || "—"}</p></div>
+          </div>
 
-          <TabsContent value="rota" className="space-y-3">
-            <div className="grid grid-cols-2 gap-3">
-              <div className="space-y-1">
-                <Label className="text-xs">UF Carregamento</Label>
-                <Select value={ufCarregamento} onValueChange={setUfCarregamento}>
-                  <SelectTrigger><SelectValue /></SelectTrigger>
-                  <SelectContent>
-                    {["AC","AL","AM","AP","BA","CE","DF","ES","GO","MA","MG","MS","MT","PA","PB","PE","PI","PR","RJ","RN","RO","RR","RS","SC","SE","SP","TO"].map(uf => (
-                      <SelectItem key={uf} value={uf}>{uf}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="space-y-1">
-                <Label className="text-xs">UF Descarregamento</Label>
-                <Select value={ufDescarregamento} onValueChange={setUfDescarregamento}>
-                  <SelectTrigger><SelectValue /></SelectTrigger>
-                  <SelectContent>
-                    {["AC","AL","AM","AP","BA","CE","DF","ES","GO","MA","MG","MS","MT","PA","PB","PE","PI","PR","RJ","RN","RO","RR","RS","SC","SE","SP","TO"].map(uf => (
-                      <SelectItem key={uf} value={uf}>{uf}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
+            <div className="border rounded-md p-2">
+              <Label className="text-xs">Motoristas</Label>
+              {motNomes.length ? motNomes.map(m => (<p key={m.nome} className="text-xs">{m.nome} <span className="text-muted-foreground">({cpfDe(m.id, m.nome) || "s/CPF"})</span></p>)) : (<p className="text-xs text-muted-foreground">—</p>)}
             </div>
-            <div className="space-y-1">
-              <Label className="text-xs">Percurso (UFs por onde passa) *</Label>
-              <div className="flex flex-wrap gap-1 border rounded-md p-2">
+            <div className="border rounded-md p-2">
+              <Label className="text-xs">Percurso (UFs) *</Label>
+              <div className="flex flex-wrap gap-1 mt-1">
                 {UFS.map(uf => (
                   <label key={uf} className={"inline-flex items-center gap-1 text-xs font-mono px-1.5 py-0.5 rounded border cursor-pointer " + (percursoUFs.includes(uf) ? "border-primary bg-primary/10" : "border-transparent hover:bg-muted")}>
                     <input type="checkbox" checked={percursoUFs.includes(uf)} onChange={() => setPercursoUFs(prev => prev.includes(uf) ? prev.filter(x => x !== uf) : [...prev, uf])} className="h-3 w-3" /> {uf}
@@ -470,12 +498,12 @@ function DialogNovoMdf({ open, onOpenChange, empresaId, chavesIniciais }: { open
                 ))}
               </div>
             </div>
-            <div className="space-y-1">
-              <Label className="text-xs">Observações</Label>
-              <Textarea value={observacoes} onChange={e => setObservacoes(e.target.value)} placeholder="Observações do manifesto..." rows={2} />
+            <div className="border rounded-md p-2 space-y-1">
+              <div><Label className="text-xs">Observação</Label><Textarea value={observacoes} onChange={e => setObservacoes(e.target.value)} rows={2} className="text-xs" /></div>
+              <div><Label className="text-xs">Informações Adicionais Fisco</Label><Textarea value={infoFisco} onChange={e => setInfoFisco(e.target.value)} rows={2} className="text-xs" /></div>
             </div>
-          </TabsContent>
-        </Tabs>
+          </div>
+        </div>
 
         <DialogFooter>
           <Button variant="outline" onClick={() => onOpenChange(false)}>Cancelar</Button>

@@ -58,6 +58,7 @@ export const emitirMdfFn = createServerFn({ method: "POST" })
     pesoTotal: number;
     percursoUFs?: string[];
     observacoes?: string;
+    infoFisco?: string;
   }) => data)
   .handler(async ({ data }) => {
     if (SEFAZ_URL) return callSefazProxy("emitirMdf", data);
@@ -82,7 +83,7 @@ export const emitirMdfFn = createServerFn({ method: "POST" })
         peso_total: data.pesoTotal,
         ambiente,
         data_autorizacao: new Date().toISOString(),
-        xml_assinado: JSON.stringify({ xml: data.xml, percursoUFs: data.percursoUFs || [], observacoes: data.observacoes || "" }),
+        xml_assinado: JSON.stringify({ xml: data.xml, percursoUFs: data.percursoUFs || [], observacoes: data.observacoes || "", infoFisco: data.infoFisco || "" }),
       } as never, { onConflict: "chave_acesso" });
     } else if (result.cStat) {
       const numero = data.xml.match(/<nMDF>(\d+)<\/nMDF>/)?.[1] || "";
