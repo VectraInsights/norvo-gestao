@@ -303,14 +303,22 @@ function DialogNovoMdf({ open, onOpenChange, empresaId, empresa, chavesIniciais 
 
   const [ctesSelecionadas, setCtesSelecionadas] = useState<Set<string>>(new Set());
   const [percursoUFs, setPercursoUFs] = useState<string[]>(["SP"]);
+  const [tracaoSel, setTracaoSel] = useState("");
+  const todasTracoes = useMemo(() => { const out: string[] = []; for (const c of (ctesDisponiveis || [])) { try { const p = JSON.parse((c as any).xml_assinado || "{}"); const pl = String(p.form?.placaVeiculo || "").toUpperCase(); if (pl && !out.includes(pl)) out.push(pl); } catch {} } return out.sort(); }, [ctesDisponiveis]);
+  const ctesDaTracao = useMemo(() => (ctesDisponiveis || []).filter(c => { if (!tracaoSel) return false; try { const p = JSON.parse((c as any).xml_assinado || "{}"); return String(p.form?.placaVeiculo || "").toUpperCase() === tracaoSel; } catch { return false; } }), [ctesDisponiveis, tracaoSel]);
   const [infoFisco, setInfoFisco] = useState("");
   const [respNome, setRespNome] = useState("");
   useEffect(() => { if (!open) return; (async () => { try { const { data } = await supabase.auth.getUser(); const usr = (data as any)?.user; if (!usr) return; let nm = (usr?.user_metadata as any)?.nome || ""; if (!nm && empresaId) { const { data: eu } = await supabase.from("empresa_users" as any).select("nome").eq("empresa_id", empresaId).eq("user_id", usr.id).maybeSingle(); nm = (eu as any)?.nome || ""; } setRespNome(nm || ""); } catch {} })(); }, [open, empresaId]);
   useEffect(() => { if (open && chavesIniciais?.length) { setCtesSelecionadas(new Set(chavesIniciais)); setPercursoUFs(["SP"]); } }, [open]);
+  useEffect(() => {
+    if (!open || tracaoSel || !ctesSelecionadas.size) return;
+    const first = (ctesDisponiveis || []).find(c => ctesSelecionadas.has(c.chave_acesso || ""));
+    if (!first) return;
+    try { const p = JSON.parse((first as any).xml_assinado || "{}"); const pl = String(p.form?.placaVeiculo || "").toUpperCase(); if (pl) setTracaoSel(pl); } catch {}
+  }, [open, ctesDisponiveis, ctesSelecionadas, tracaoSel]);
   useEffect(() => { setPercursoUFs(prev => prev.includes(ufDescarregamento) ? prev : [...prev, ufDescarregamento]); }, [ufDescarregamento]);
   // Tudo vem dos CT-es: trações, reboques e motoristas (1º + 2º) dos forms salvos
   const ctesForms = useMemo(() => (ctesDisponiveis || []).filter(c => ctesSelecionadas.has(c.chave_acesso || "")).map(c => { try { const p = JSON.parse((c as any).xml_assinado || "{}"); return (p.form || {}) as Record<string, any>; } catch { return {} as Record<string, any>; } }), [ctesDisponiveis, ctesSelecionadas]);
-  const tracoes = useMemo(() => { const out: string[] = []; for (const f of ctesForms) { const p = String(f.placaVeiculo || "").toUpperCase(); if (p && !out.includes(p)) out.push(p); } return out; }, [ctesForms]);
   const reboques = useMemo(() => { const out: string[] = []; for (const f of ctesForms) for (const k of ["placaReboque", "semiReboque1", "semiReboque2"]) { const p = String(f[k] || "").toUpperCase(); if (p && !out.includes(p)) out.push(p); } return out; }, [ctesForms]);
   const motNomes = useMemo(() => { const out: Array<{ id: string; nome: string }> = []; for (const f of ctesForms) for (const k of [["motoristaId", "motoristaNome"], ["motorista2Id", "motorista2Nome"]] as const) { const nm = String(f[k[1]] || "").trim(); if (nm && !out.some(o => o.nome === nm)) out.push({ id: String(f[k[0]] || ""), nome: nm }); } return out; }, [ctesForms]);
   const cpfDe = (id: string, nome: string) => ((motoristas || []).find(m => (id && m.id === id) || m.nome === nome)?.cpf || "");
@@ -319,7 +327,7 @@ function DialogNovoMdf({ open, onOpenChange, empresaId, empresa, chavesIniciais 
   const ctesSelArr = useMemo(() => (ctesDisponiveis || []).filter(c => ctesSelecionadas.has(c.chave_acesso || "")), [ctesDisponiveis, ctesSelecionadas]);
   const totalCarga = useMemo(() => ctesSelArr.reduce((s, c) => s + (c.valor_servico || 0), 0), [ctesSelArr]);
   const pesoCarga = useMemo(() => ctesSelArr.reduce((s, c) => s + (c.peso_carga || 0), 0), [ctesSelArr]);
-  const veicTracInfo = useMemo(() => (veiculos || []).find(v => tracoes.length && String(v.placa || "").toUpperCase() === tracoes[0]), [veiculos, tracoes]);
+  const veicTracInfo = useMemo(() => (veiculos || []).find(v => !!tracaoSel && String(v.placa || "").toUpperCase() === tracaoSel), [veiculos, tracaoSel]);
   const fmtData = (iso: any) => { try { const d = new Date(String(iso)); if (isNaN(d.getTime())) return "—"; return d.toLocaleDateString("pt-BR"); } catch { return "—"; } };
   const nfsDe = (c: CteDoc): string[] => { try { const p = JSON.parse((c as any).xml_assinado || "{}"); const xml = p.xml || ""; return [...xml.matchAll(/<chNFe>(\d{44})<\/chNFe>/g)].map(m => m[1].slice(25, 34).replace(/^0+/, "") || "0"); } catch { return []; } };
   const formDe = (c: CteDoc): Record<string, any> => { try { const p = JSON.parse((c as any).xml_assinado || "{}"); return (p.form || {}) as Record<string, any>; } catch { return {}; } };
@@ -336,11 +344,11 @@ function DialogNovoMdf({ open, onOpenChange, empresaId, empresa, chavesIniciais 
 
   const handleEmitir = async () => {
     if (!ctesSelecionadas.size) { toast.error("Selecione pelo menos 1 CT-e"); return; }
-    if (!tracoes.length) { toast.error("CT-es sem veículo de tração"); return; }
+    if (!tracaoSel) { toast.error("Selecione a tração"); return; }
     if (!motNomes.length) { toast.error("CT-es sem motorista"); return; }
     if (!percursoUFs.length) { toast.error("Selecione ao menos 1 UF no percurso"); return; }
 
-    const veic = (veiculos || []).find(v => String(v.placa || "").toUpperCase() === tracoes[0]);
+    const veic = (veiculos || []).find(v => String(v.placa || "").toUpperCase() === tracaoSel);
     const mot0 = motNomes[0];
     const mot = (motoristas || []).find(m => (mot0.id && m.id === mot0.id) || m.nome === mot0.nome);
 
@@ -352,7 +360,7 @@ function DialogNovoMdf({ open, onOpenChange, empresaId, empresa, chavesIniciais 
         empresaId, ambiente: "homologacao" as const, serie: "1", numero,
         ufCarregamento, ufDescarregamento,
         emit: { cnpj: "", ie: "", xNome: "", uf: ufCarregamento, cMun: "", xMun: "" },
-        veicTrac: { placa: tracoes[0], uf: ufCarregamento, rntrc: (veic as any)?.rntrc || "", tara: 0 },
+        veicTrac: { placa: tracaoSel, uf: ufCarregamento, rntrc: (veic as any)?.rntrc || "", tara: 0 },
         reboques: reboques.slice(0, 3).map(p => ({ placa: p, uf: ufCarregamento, tara: 0 })),
         condutor: { cpf: mot?.cpf || "", xNome: mot0.nome },
         ctes: ctesArr.map(c => ({ chave: c.chave_acesso || "", valor: c.valor_servico || 0, pesoKG: c.peso_carga || 0 })),
@@ -378,7 +386,7 @@ function DialogNovoMdf({ open, onOpenChange, empresaId, empresa, chavesIniciais 
       else toast.error(`Erro: ${res.xMotivo}`);
 
       onOpenChange(false);
-      setCtesSelecionadas(new Set()); setPercursoUFs(["SP"]); setObservacoes(""); setInfoFisco("");
+      setCtesSelecionadas(new Set()); setTracaoSel(""); setPercursoUFs(["SP"]); setObservacoes(""); setInfoFisco("");
       qc.invalidateQueries({ queryKey: ["mdf-documentos"] });
     } catch (e: unknown) { toast.error(e instanceof Error ? e.message : "Erro ao emitir MDF-e"); }
     setLoading(false);
@@ -417,7 +425,7 @@ function DialogNovoMdf({ open, onOpenChange, empresaId, empresa, chavesIniciais 
 
           <div className="border rounded-md p-2">
             <div className="grid grid-cols-2 md:grid-cols-4 gap-1">
-              <div><Label className="text-xs">Tração</Label><p className="font-mono text-xs">{tracoes[0] || "—"}{veicTracInfo?.renavam ? ` • RENAVAM ${veicTracInfo.renavam}` : ""}</p></div>
+              <div><Label className="text-xs">Tração</Label><p className="font-mono text-xs">{tracaoSel || "—"}{veicTracInfo?.renavam ? ` • RENAVAM ${veicTracInfo.renavam}` : ""}</p></div>
               <div><Label className="text-xs">Reboques</Label><p className="font-mono text-xs">{reboques.join(", ") || "—"}</p></div>
               <div><Label className="text-xs">CIOT</Label><p className="font-mono text-xs">{ciotMdf || "—"}</p></div>
               <div><Label className="text-xs">Tipo Frota</Label><p className="text-xs">{veicTracInfo ? `${veicTracInfo.marca_modelo || ""} / ${veicTracInfo.tipo || ""}`.trim() || "—" : "—"}</p></div>
@@ -431,10 +439,16 @@ function DialogNovoMdf({ open, onOpenChange, empresaId, empresa, chavesIniciais 
           </div>
 
           <div className="border rounded-md p-2">
-            <div className="flex items-center justify-between mb-1">
-              <Label className="text-xs">Conhecimentos ({ctesSelArr.length} vinculados)</Label>
-              <div className="flex gap-1">
-                <Button size="sm" variant="outline" className="h-6 text-[11px]" onClick={() => setCtesSelecionadas(new Set((ctesDisponiveis || []).map(c => c.chave_acesso || "").filter(Boolean)))}>Marcar</Button>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-1 mb-1 items-end">
+              <div><Label className="text-xs">Tração *</Label>
+                <Select value={tracaoSel} onValueChange={v => { setTracaoSel(v); setCtesSelecionadas(new Set()); }}>
+                  <SelectTrigger className="h-6 text-[11px] font-mono"><SelectValue placeholder="Selecione a tração..." /></SelectTrigger>
+                  <SelectContent>{todasTracoes.map(p => (<SelectItem key={p} value={p}>{p}</SelectItem>))}</SelectContent>
+                </Select>
+              </div>
+              <div className="md:col-span-3 flex items-center justify-end gap-1">
+                <Label className="text-xs mr-auto">Conhecimentos ({ctesSelArr.length} vinculados)</Label>
+                <Button size="sm" variant="outline" className="h-6 text-[11px]" disabled={!tracaoSel} onClick={() => setCtesSelecionadas(new Set(ctesDaTracao.map(c => c.chave_acesso || "").filter(Boolean)))}>Marcar</Button>
                 <Button size="sm" variant="outline" className="h-6 text-[11px]" onClick={() => setCtesSelecionadas(new Set())}>Limpar</Button>
               </div>
             </div>
@@ -450,7 +464,8 @@ function DialogNovoMdf({ open, onOpenChange, empresaId, empresa, chavesIniciais 
                     <TableHead>Emissão</TableHead><TableHead>CTRC</TableHead><TableHead>Série</TableHead><TableHead>Placa</TableHead><TableHead>Reboques</TableHead><TableHead>Coleta</TableHead><TableHead>UF</TableHead><TableHead>Entrega</TableHead><TableHead>UF</TableHead><TableHead>Notas Fiscais</TableHead><TableHead className="text-right">Valor</TableHead><TableHead className="text-right">Peso</TableHead>
                   </TableRow></TableHeader>
                   <TableBody>
-                    {ctesDisponiveis.map(c => {
+                    {!tracaoSel && (<TableRow><TableCell colSpan={13} className="text-center text-xs text-muted-foreground py-6">Selecione a tração acima para listar os CT-es.</TableCell></TableRow>)}
+                    {ctesDaTracao.map(c => {
                       const f = formDe(c);
                       const reb = [f.placaReboque, f.semiReboque1, f.semiReboque2].map(x => String(x || "").toUpperCase()).filter(Boolean).join(", ");
                       return (
@@ -491,11 +506,15 @@ function DialogNovoMdf({ open, onOpenChange, empresaId, empresa, chavesIniciais 
             <div className="border rounded-md p-2">
               <Label className="text-xs">Percurso (UFs) *</Label>
               <div className="flex flex-wrap gap-1 mt-1">
-                {UFS.map(uf => (
-                  <label key={uf} className={"inline-flex items-center gap-1 text-xs font-mono px-1.5 py-0.5 rounded border cursor-pointer " + (percursoUFs.includes(uf) ? "border-primary bg-primary/10" : "border-transparent hover:bg-muted")}>
-                    <input type="checkbox" checked={percursoUFs.includes(uf)} onChange={() => setPercursoUFs(prev => prev.includes(uf) ? prev.filter(x => x !== uf) : [...prev, uf])} className="h-3 w-3" /> {uf}
+                {UFS.map(uf => {
+                  const ord = percursoUFs.indexOf(uf);
+                  return (
+                  <label key={uf} title={ord >= 0 ? `${ord + 1}ª no percurso` : "Clique para adicionar na ordem"} className={"inline-flex items-center gap-1 text-xs font-mono px-1.5 py-0.5 rounded border cursor-pointer " + (ord >= 0 ? "border-primary bg-primary/10" : "border-transparent hover:bg-muted")}>
+                    <input type="checkbox" checked={ord >= 0} onChange={() => setPercursoUFs(prev => prev.includes(uf) ? prev.filter(x => x !== uf) : [...prev, uf])} className="h-3 w-3" /> {uf}
+                    {ord >= 0 && <span className="inline-flex items-center justify-center h-4 min-w-4 px-0.5 rounded-full bg-primary text-primary-foreground text-[10px] font-bold">{ord + 1}</span>}
                   </label>
-                ))}
+                  );
+                })}
               </div>
             </div>
             <div className="border rounded-md p-2 space-y-1">
@@ -507,7 +526,7 @@ function DialogNovoMdf({ open, onOpenChange, empresaId, empresa, chavesIniciais 
 
         <DialogFooter>
           <Button variant="outline" onClick={() => onOpenChange(false)}>Cancelar</Button>
-          <Button onClick={handleEmitir} disabled={loading || !ctesSelecionadas.size || !tracoes.length || !motNomes.length || !percursoUFs.length}>
+          <Button onClick={handleEmitir} disabled={loading || !tracaoSel || !ctesSelecionadas.size || !motNomes.length || !percursoUFs.length}>
             <Send className="mr-1 h-4 w-4" /> {loading ? "Emitindo..." : "Emitir MDF-e"}
           </Button>
         </DialogFooter>

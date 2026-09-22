@@ -1949,6 +1949,8 @@ Commits CF `ddeb6e4..37d5da0` (+ ajustes de X do dono) espelhados na Vercel.
   `<infPercurso>` do XML; obs/percurso gravados no `xml_assinado`.
 - Proxy Vercel saiu do stub fase 1: emitir/encerrar/cancelar MDF-e
   executam de verdade (SVRS). Espelhado na Vercel.
+- MDF-e: tração escolhida primeiro filtra os CT-es; percurso com ordem
+  numerada (clique adiciona na sequência). Espelhado na Vercel.
 
 ## MDF-e tela única estilo referência (22/09/2026)
 
