@@ -1881,3 +1881,10 @@ Commits CF `ddeb6e4..37d5da0` (+ ajustes de X do dono) espelhados na Vercel.
   Operação (1/6); linha 2: TAG + CNPJ Responsável + ID VPO (2/6 cada).
   Espelhado na Vercel.
 
+## CT-e complemento: motivos A-Z + Original em subcontratação/redespacho (22/09/2026)
+
+- Motivos em ordem alfabética (Outros por último).
+- CT-e Original também em Subcontratação, Redespacho e Redespacho
+  Intermediário (antes só Complemento/Substituição). Motivo segue só
+  no Complemento. Espelhado na Vercel.
+

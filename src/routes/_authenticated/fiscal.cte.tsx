@@ -1301,7 +1301,7 @@ function CtePage() {
   });
 
   const emittingRef = useRef(false);
-  const MOTIVOS_COMPLEMENTO = ["Descarga", "Adicional de frete", "Retorno", "Reentrega", "Estadia", "Diferença de frete", "Pedágio", "Outros"];
+  const MOTIVOS_COMPLEMENTO = ["Adicional de frete", "Descarga", "Diferença de frete", "Estadia", "Pedágio", "Reentrega", "Retorno", "Outros"];
   const motoristasXml = () => {
     const a: Array<{ xNome: string; cpf: string }> = [];
     const m1 = (motoristas || []).find((m: any) => m.id === form.motoristaId);
@@ -2720,7 +2720,7 @@ function CtePage() {
                     </Select>
                   </div>
                 </div>
-                {((form as any).finalidadeEmissao === "Complemento" || (form as any).finalidadeEmissao === "Substituicao") && (
+                {((form as any).finalidadeEmissao === "Complemento" || (form as any).finalidadeEmissao === "Substituicao" || ((form as any).tipoServico && (form as any).tipoServico !== "Normal")) && (
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-1 mt-1">
                     {(form as any).finalidadeEmissao === "Complemento" && (
                     <div><Label className="text-[10px] text-muted-foreground">Motivo do Complemento</Label>
