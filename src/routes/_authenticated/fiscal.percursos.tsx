@@ -597,9 +597,6 @@ function PercursosPage() {
                       <Num editing={editing} set={set} label="Crédito outorgado" k="credito_outorgado" />
                       <Num editing={editing} set={set} label="PIS %" k="pis_aliq" />
                       <Num editing={editing} set={set} label="COFINS %" k="cofins_aliq" />
-                      <Num editing={editing} set={set} label="IR %" k="ir_aliq" />
-                      <Num editing={editing} set={set} label="INSS %" k="inss_aliq" />
-                      <Num editing={editing} set={set} label="CSLL %" k="csll_aliq" />
                     </div></div>
                     <div className="flex-1 flex flex-col min-h-0"><Label className="text-[10px] text-muted-foreground">Observação geral</Label>
                       <Textarea className="text-xs flex-1 resize-none" rows={1} value={editing.obs_gerais ?? ""} onChange={e => set("obs_gerais", e.target.value.toUpperCase())} />
