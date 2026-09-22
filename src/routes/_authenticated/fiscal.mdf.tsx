@@ -336,7 +336,13 @@ function DialogNovoMdf({ open, onOpenChange, empresaId, empresa, chavesIniciais 
   }, [open, ctesDisponiveis, ctesSelecionadas, tracaoSel]);
   // percurso mantém última UF de descarga como último item, mas permite repetição
   useEffect(() => { setPercursoUFs(prev => (prev.length && prev[prev.length - 1] === ufDescarregamento) ? prev : [...prev, ufDescarregamento]); }, [ufDescarregamento]);
-  // Sincroniza UF/Cidade de carregamento/descarregamento com os CT-es selecionados (ex: PA no print)
+  // Helpers CT-e (precisam vir antes das cidades derivadas)
+  const fmtData = (iso: any) => { try { const d = new Date(String(iso)); if (isNaN(d.getTime())) return "—"; return d.toLocaleDateString("pt-BR"); } catch { return "—"; } };
+  const nfsDe = (c: CteDoc): string[] => { try { const p = JSON.parse((c as any).xml_assinado || "{}"); const xml = p.xml || ""; return [...xml.matchAll(/<chNFe>(\d{44})<\/chNFe>/g)].map(m => m[1].slice(25, 34).replace(/^0+/, "") || "0"); } catch { return []; } };
+  const formDe = (c: CteDoc): Record<string, any> => { try { const p = JSON.parse((c as any).xml_assinado || "{}"); return (p.form || {}) as Record<string, any>; } catch { return {}; } };
+  const ctesSelArr = useMemo(() => (ctesDisponiveis || []).filter(c => ctesSelecionadas.has(c.chave_acesso || "")), [ctesDisponiveis, ctesSelecionadas]);
+  const ctesForms = useMemo(() => (ctesDisponiveis || []).filter(c => ctesSelecionadas.has(c.chave_acesso || "")).map(c => { try { const p = JSON.parse((c as any).xml_assinado || "{}"); return (p.form || {}) as Record<string, any>; } catch { return {} as Record<string, any>; } }), [ctesDisponiveis, ctesSelecionadas]);
+  // Cidades derivadas + opções de encerramento (deve ser um dos destinos)
   const cidadeIniDerivada = useMemo(() => {
     if (ctesSelArr.length) {
       const f = formDe(ctesSelArr[0]);
@@ -344,13 +350,15 @@ function DialogNovoMdf({ open, onOpenChange, empresaId, empresa, chavesIniciais 
     }
     return (empresa as any)?.cidade || "—";
   }, [ctesSelArr, empresa]);
-  const cidadeFimDerivada = useMemo(() => {
-    if (ctesSelArr.length) {
-      const f = formDe(ctesSelArr[ctesSelArr.length - 1]);
-      return f.xMunFim || (f as any).xMunDescarrega || (empresa as any)?.cidade || "—";
+  const cidadesFimOptions = useMemo(() => [...new Set(ctesSelArr.map(c => formDe(c).xMunFim).filter(Boolean) as string[])], [ctesSelArr]);
+  const [cidadeFimSel, setCidadeFimSel] = useState("");
+  useEffect(() => {
+    if (!cidadesFimOptions.length) { if (cidadeFimSel) setCidadeFimSel(""); return; }
+    if (!cidadeFimSel || !cidadesFimOptions.includes(cidadeFimSel)) {
+      setCidadeFimSel(cidadesFimOptions[cidadesFimOptions.length - 1]);
     }
-    return (empresa as any)?.cidade || "—";
-  }, [ctesSelArr, empresa]);
+  }, [cidadesFimOptions]);
+  const cidadeFimDerivada = cidadeFimSel || (cidadesFimOptions[cidadesFimOptions.length - 1] || (empresa as any)?.cidade || "—");
   useEffect(() => {
     if (!ctesSelArr.length) return;
     const first = formDe(ctesSelArr[0]);
@@ -362,7 +370,6 @@ function DialogNovoMdf({ open, onOpenChange, empresaId, empresa, chavesIniciais 
       const nova = uniq[0];
       setUfDescarregamento(nova);
       setPercursoUFs(prev => {
-        // se percurso ainda é o default ["SP"] ou vazio, substitui por [PA] em vez de acumular SP+PA
         if (prev.length === 1 && prev[0] === "SP") return [nova];
         if (prev.length === 0) return [nova];
         return prev;
@@ -372,20 +379,13 @@ function DialogNovoMdf({ open, onOpenChange, empresaId, empresa, chavesIniciais 
       if (last && last !== ufDescarregamento) setUfDescarregamento(last);
     }
   }, [ctesSelArr]);
-  // Tudo vem dos CT-es: trações, reboques e motoristas (1º + 2º) dos forms salvos
-  const ctesForms = useMemo(() => (ctesDisponiveis || []).filter(c => ctesSelecionadas.has(c.chave_acesso || "")).map(c => { try { const p = JSON.parse((c as any).xml_assinado || "{}"); return (p.form || {}) as Record<string, any>; } catch { return {} as Record<string, any>; } }), [ctesDisponiveis, ctesSelecionadas]);
-  const reboques = useMemo(() => { const out: string[] = []; for (const f of ctesForms) for (const k of ["placaReboque", "semiReboque1", "semiReboque2"]) { const p = String(f[k] || "").toUpperCase(); if (p && !out.includes(p)) out.push(p); } return out; }, [ctesForms]);
   const motNomes = useMemo(() => { const out: Array<{ id: string; nome: string }> = []; for (const f of ctesForms) for (const k of [["motoristaId", "motoristaNome"], ["motorista2Id", "motorista2Nome"]] as const) { const nm = String(f[k[1]] || "").trim(); if (nm && !out.some(o => o.nome === nm)) out.push({ id: String(f[k[0]] || ""), nome: nm }); } return out; }, [ctesForms]);
   const cpfDe = (id: string, nome: string) => ((motoristas || []).find(m => (id && m.id === id) || m.nome === nome)?.cpf || "");
   const ciotMdf = useMemo(() => ctesForms.map(f => String(f.ciot || "").trim()).find(Boolean) || "", [ctesForms]);
   const segMdf = useMemo(() => ctesForms.find(f => String(f.seguradoraNome || "").trim()) || {}, [ctesForms]);
-  const ctesSelArr = useMemo(() => (ctesDisponiveis || []).filter(c => ctesSelecionadas.has(c.chave_acesso || "")), [ctesDisponiveis, ctesSelecionadas]);
   const totalCarga = useMemo(() => ctesSelArr.reduce((s, c) => s + (c.valor_servico || 0), 0), [ctesSelArr]);
   const pesoCarga = useMemo(() => ctesSelArr.reduce((s, c) => s + (c.peso_carga || 0), 0), [ctesSelArr]);
   const veicTracInfo = useMemo(() => (veiculos || []).find(v => !!tracaoSel && String(v.placa || "").toUpperCase() === tracaoSel), [veiculos, tracaoSel]);
-  const fmtData = (iso: any) => { try { const d = new Date(String(iso)); if (isNaN(d.getTime())) return "—"; return d.toLocaleDateString("pt-BR"); } catch { return "—"; } };
-  const nfsDe = (c: CteDoc): string[] => { try { const p = JSON.parse((c as any).xml_assinado || "{}"); const xml = p.xml || ""; return [...xml.matchAll(/<chNFe>(\d{44})<\/chNFe>/g)].map(m => m[1].slice(25, 34).replace(/^0+/, "") || "0"); } catch { return []; } };
-  const formDe = (c: CteDoc): Record<string, any> => { try { const p = JSON.parse((c as any).xml_assinado || "{}"); return (p.form || {}) as Record<string, any>; } catch { return {}; } };
   const [veicTracId, setVeicTracId] = useState("");
   const [motoristaId, setMotoristaId] = useState("");
 
@@ -504,7 +504,12 @@ function DialogNovoMdf({ open, onOpenChange, empresaId, empresa, chavesIniciais 
                 </Select>
               </div>
               <div><Label className="text-xs">Cidade Inicial Carga</Label><Input className="h-6 text-[11px] bg-transparent" readOnly value={cidadeIniDerivada} /></div>
-              <div><Label className="text-xs">Cidade Encerramento</Label><Input className="h-6 text-[11px] bg-transparent" readOnly value={cidadeFimDerivada} /></div>
+              <div><Label className="text-xs">Cidade Encerramento *</Label>{cidadesFimOptions.length > 1 ? (
+                <Select value={cidadeFimSel} onValueChange={setCidadeFimSel}>
+                  <SelectTrigger className="h-6 text-[11px]"><SelectValue /></SelectTrigger>
+                  <SelectContent>{cidadesFimOptions.map(c => (<SelectItem key={c} value={c}>{c}</SelectItem>))}</SelectContent>
+                </Select>
+              ) : (<Input className="h-6 text-[11px] bg-transparent" readOnly value={cidadeFimDerivada} />)}</div>
             </div>
             <div className="grid grid-cols-2 gap-1 mt-1">
               <div><Label className="text-xs">Local Emissão</Label><Input className="h-6 text-[11px] bg-transparent" readOnly value={[ (empresa as any)?.cidade, (empresa as any)?.uf ].filter(Boolean).join("/") || "—"} /></div>
