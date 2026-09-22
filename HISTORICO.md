@@ -1909,3 +1909,10 @@ Commits CF `ddeb6e4..37d5da0` (+ ajustes de X do dono) espelhados na Vercel.
 - Tarja de homologação incondicional em ambiente de teste (sem exceção
   por tamanho da caixa). Espelhado na Vercel.
 
+## Novo CT-e pede o percurso (22/09/2026)
+
+- Botões Novo CT-e (topo e avulso) abrem seletor de percurso (busca por
+  número/nome); ao confirmar, o form zera por completo e os dados vêm
+  do percurso via `aplicarPercurso` — nada do último CT-e é reaproveitado.
+  Espelhado na Vercel.
+

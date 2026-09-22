@@ -567,6 +567,18 @@ function CtePage() {
     setAba("geral");
     setOpen(true);
   };
+  const novoAvulsoDePercurso = (r: Record<string, any>) => {
+    setForm({ ...emptyForm });
+    setMercadorias([]);
+    setSelecionadas(new Set());
+    setEditingRascunhoId(null);
+    setViewDoc(null);
+    setPercPickOpen(false);
+    aplicarPercurso(r);
+    setAba("geral");
+    setOpen(true);
+    toast.success(`Percurso ${r.codigo} aplicado`);
+  };
   const [cfopOpen, setCfopOpen] = useState(false);
   const [cfopQuery, setCfopQuery] = useState("");
   useEffect(() => {
@@ -695,6 +707,9 @@ function CtePage() {
   const [motoristaQuery, setMotoristaQuery] = useState("");
   const [motorista2Open, setMotorista2Open] = useState(false);
   const [motorista2Query, setMotorista2Query] = useState("");
+  const [percPickOpen, setPercPickOpen] = useState(false);
+  const [percPickQuery, setPercPickQuery] = useState("");
+  const [percPickSel, setPercPickSel] = useState("");
   const [viewDoc, setViewDoc] = useState<CteDoc | null>(null);
   const [aba, setAba] = useState("geral");
   const fmtDataHora = (iso: any) => { try { const d = new Date(String(iso)); if (isNaN(d.getTime())) return "—"; return d.toLocaleString("pt-BR", { day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit" }); } catch { return "—"; } };
@@ -1769,7 +1784,7 @@ function CtePage() {
 
   return (
     <div className="p-6 space-y-4">
-      <PageHeader eyebrow="Fiscal" title="CT-e" description="Conhecimento de Transporte Eletrônico (57) — emissão robusta estilo STM, com múltiplas NF-es por CT-e." actions={<Button size="sm" onClick={() => novoCtePreservandoFiscal()}><Plus className="mr-1 h-4 w-4" /> Novo CT-e</Button>} />
+      <PageHeader eyebrow="Fiscal" title="CT-e" description="Conhecimento de Transporte Eletrônico (57) — emissão robusta estilo STM, com múltiplas NF-es por CT-e." actions={<Button size="sm" onClick={() => { setPercPickQuery(""); setPercPickSel(""); setPercPickOpen(true); }}><Plus className="mr-1 h-4 w-4" /> Novo CT-e</Button>} />
 
       {isLoading ? <div className="text-sm text-muted-foreground">Carregando…</div> : (
         <Tabs value={statusTab} onValueChange={setStatusTab}>
@@ -1990,7 +2005,7 @@ function CtePage() {
                   >
                     Gerar CT-e com {selecionadas.size || 0} selecionada(s)
                   </Button>
-                  <Button size="sm" onClick={() => novoCtePreservandoFiscal()}><Plus className="mr-1 h-3 w-3" /> Novo CT-e avulso</Button>
+                  <Button size="sm" onClick={() => { setPercPickQuery(""); setPercPickSel(""); setPercPickOpen(true); }}><Plus className="mr-1 h-3 w-3" /> Novo CT-e avulso</Button>
                 </div>
               </div>
             </CardContent>
@@ -2012,6 +2027,30 @@ function CtePage() {
               </AlertDialogFooter>
             </AlertDialogContent>
           </AlertDialog>
+          <Dialog open={percPickOpen} onOpenChange={setPercPickOpen}>
+            <DialogContent className="max-w-lg">
+              <DialogHeader>
+                <DialogTitle>Novo CT-e — escolher percurso</DialogTitle>
+              </DialogHeader>
+              <Input className="h-7 text-xs" placeholder="Buscar por número ou nome..." value={percPickQuery} onChange={e => setPercPickQuery(e.target.value)} />
+              <div className="max-h-64 overflow-y-auto space-y-1">
+                {percursos.filter(r => {
+                  if (!percPickQuery) return true;
+                  const q = percPickQuery.toLowerCase();
+                  return String(r.codigo || "").toLowerCase().includes(q) || String(r.nome || "").toLowerCase().includes(q);
+                }).map(r => (
+                  <button key={r.id} type="button" onClick={() => setPercPickSel(r.codigo)} className={"w-full text-left text-xs px-2 py-1.5 rounded border " + (percPickSel === r.codigo ? "border-primary bg-primary/10" : "border-transparent hover:bg-muted")}>
+                    <span className="font-mono font-semibold">{r.codigo}</span><span className="text-muted-foreground"> — {r.nome || "Sem nome"}</span>
+                  </button>
+                ))}
+                {percursos.length === 0 && <p className="text-xs text-muted-foreground">Nenhum percurso cadastrado. Cadastre em Fiscal → Percursos.</p>}
+              </div>
+              <DialogFooter>
+                <Button variant="outline" onClick={() => setPercPickOpen(false)}>Cancelar</Button>
+                <Button disabled={!percursos.some(r => r.codigo === percPickSel)} onClick={() => { const r = percursos.find(x => x.codigo === percPickSel); if (r) novoAvulsoDePercurso(r); }}>Usar percurso</Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
           <TabsContent value="rascunhos">{renderTabelaDocs(docsByStatus.rascunhos, "aguardando envio")}</TabsContent>
           <TabsContent value="autorizados">{renderTabelaDocs(docsByStatus.autorizados, "autorizados")}</TabsContent>
           <TabsContent value="rejeitados">
