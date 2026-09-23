@@ -2246,3 +2246,12 @@ Commits CF `ddeb6e4..37d5da0` (+ ajustes de X do dono) espelhados na Vercel.
 - Vercel servia bundle antigo (404 legado) mesmo com o fix no
   GitHub; commit para forcar novo deploy nos dois alvos.
   Espelhado na Vercel.
+
+## MDF-e envio sincrono correto (23/09/2026)
+
+- Raiz do 404/500: SVRS removeu o assincrono (tabelas oficiais
+  so listam RecepcaoSinc) e a action Sinc exige
+  .../mdfe/wsdl/MDFeRecepcaoSinc/mdfeRecepcao (era mdf/.../
+  MDFeRecepcaoSinc). Envio agora: enviMDFe com XML assinado em
+  gzip+base64 em mdfeDadosMsg; resposta le infProt (100 =
+  autorizado). Espelhado na Vercel.

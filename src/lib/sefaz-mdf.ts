@@ -5,6 +5,7 @@
  * Ref: https://mdfe.fazenda.gov.br/portal/webServices.aspx
  */
 import https from "node:https";
+import zlib from "node:zlib";
 import { createSefazAgent, signXml, buscarCertificadoAtivo } from "./sefaz";
 export { buscarCertificadoAtivo };
 
@@ -19,6 +20,7 @@ export const MDF_ENDPOINTS = {
     mdfRecepcaoEvento: "https://mdfe-homologacao.svrs.rs.gov.br/ws/MDFeRecepcaoEvento/MDFeRecepcaoEvento.asmx",
     mdfDistribuicaoDFe: "https://mdfe-homologacao.svrs.rs.gov.br/ws/MDFeDistribuicaoDFe/MDFeDistribuicaoDFe.asmx",
     mdfConsNaoEnc: "https://mdfe-homologacao.svrs.rs.gov.br/ws/MDFeConsNaoEnc/MDFeConsNaoEnc.asmx",
+    mdfRecepcaoSinc: "https://mdfe-homologacao.svrs.rs.gov.br/ws/MDFeRecepcaoSinc/MDFeRecepcaoSinc.asmx",
   },
   producao: {
     mdfRecepcao: "https://mdfe.svrs.rs.gov.br/ws/MDFeRecepcao/MDFeRecepcao.asmx",
@@ -28,6 +30,7 @@ export const MDF_ENDPOINTS = {
     mdfRecepcaoEvento: "https://mdfe.svrs.rs.gov.br/ws/MDFeRecepcaoEvento/MDFeRecepcaoEvento.asmx",
     mdfDistribuicaoDFe: "https://mdfe.svrs.rs.gov.br/ws/MDFeDistribuicaoDFe/MDFeDistribuicaoDFe.asmx",
     mdfConsNaoEnc: "https://mdfe.svrs.rs.gov.br/ws/MDFeConsNaoEnc/MDFeConsNaoEnc.asmx",
+    mdfRecepcaoSinc: "https://mdfe.svrs.rs.gov.br/ws/MDFeRecepcaoSinc/MDFeRecepcaoSinc.asmx",
   },
 } as const;
 
@@ -218,37 +221,21 @@ async function soapRequest(url: string, body: string, action: string, agent?: ht
 export async function emitirMdf(pfx: Buffer, senha: string, xml: string, ambiente: Ambiente): Promise<{ sucesso: boolean; cStat: string; xMotivo: string; chave?: string; protocolo?: string; xmlRet?: string }> {
   const ep = getMdfEndpoints(ambiente) as any;
   const agent = createSefazAgent(pfx, senha);
-  const tpAmb = ambiente === "producao" ? "1" : "2";
-  const xmlAss = signXml(xml, pfx, senha);
-  // 1. Recepcao assíncrona (MDF-e 3.00 não tem Sinc) -> cStat 103 + nRec
-  const body = `<MDFeDadosMsg xmlns="http://www.portalfiscal.inf.br/mdf/wsdl/MDFeRecepcao">${xmlAss}</MDFeDadosMsg>`;
-  const ret = await soapRequest(ep.mdfRecepcao, body, "http://www.portalfiscal.inf.br/mdf/wsdl/MDFeRecepcao/MDFeRecepcao", agent);
-  let cStat = ret.match(/<cStat>(\d+)<\/cStat>/)?.[1] || "";
-  let xMotivo = ret.match(/<xMotivo>([^<]+)<\/xMotivo>/)?.[1] || "";
+  const xmlAss = signXml(xml, pfx, senha).replace(/<\?xml[^?]*\?>\s*/g, "");
+  // MDF-e 3.00: só envio síncrono (RecepcaoSinc) com XML gzip+base64 dentro de enviMDFe
+  const compactada = zlib.gzipSync(Buffer.from(xmlAss, "utf-8")).toString("base64");
+  const idLote = String(Date.now()).slice(-15).padStart(15, "0");
+  const envi = `<enviMDFe versao="3.00" xmlns="http://www.portalfiscal.inf.br/mdf"><idLote>${idLote}</idLote><MDFe>${compactada}</MDFe></enviMDFe>`;
+  const body = `<mdfeDadosMsg xmlns="http://www.portalfiscal.inf.br/mdfe/wsdl/MDFeRecepcaoSinc">${envi}</mdfeDadosMsg>`;
+  const ret = await soapRequest(ep.mdfRecepcaoSinc, body, "http://www.portalfiscal.inf.br/mdfe/wsdl/MDFeRecepcaoSinc/mdfeRecepcao", agent);
+  const prot = ret.match(/<infProt>[\s\S]*?<\/infProt>/)?.[0] || "";
+  const cStatProt = prot.match(/<cStat>(\d+)<\/cStat>/)?.[1] || "";
+  const xMotivoProt = prot.match(/<xMotivo>([^<]+)<\/xMotivo>/)?.[1] || "";
+  const cStat = cStatProt || ret.match(/<cStat>(\d+)<\/cStat>/)?.[1] || "";
+  const xMotivo = xMotivoProt || ret.match(/<xMotivo>([^<]+)<\/xMotivo>/)?.[1] || "";
   const chave = ret.match(/<chMDFe>(\d{44})<\/chMDFe>/)?.[1] || xml.match(/Id="MDFe(\d{44})"/)?.[1];
-  let protocolo = ret.match(/<protMDFe[^>]*>[\s\S]*?<nProt>(\d+)<\/nProt>/)?.[1] || ret.match(/<nProt>(\d+)<\/nProt>/)?.[1];
-  let xmlRet = ret;
-  const nRec = ret.match(/<nRec>(\d+)<\/nRec>/)?.[1] || "";
-  // 2. Consulta recibo (RetRecepcao) até processar: 104 = lote processado, 105 = ainda processando
-  if (cStat === "103" && nRec) {
-    for (let i = 0; i < 10; i++) {
-      await new Promise(r => setTimeout(r, 3000));
-      const consBody = `<MDFeRetRecepcaoMsg xmlns="http://www.portalfiscal.inf.br/mdf/wsdl/MDFeRetRecepcao"><consReciMDFe versao="3.00" xmlns="http://www.portalfiscal.inf.br/mdf"><tpAmb>${tpAmb}</tpAmb><nRec>${nRec}</nRec></consReciMDFe></MDFeRetRecepcaoMsg>`;
-      let ret2 = "";
-      try {
-        ret2 = await soapRequest(ep.mdfRetRecepcao, consBody, "http://www.portalfiscal.inf.br/mdf/wsdl/MDFeRetRecepcao/MDFeRetRecepcao", agent);
-      } catch (e) { xMotivo = e instanceof Error ? e.message : String(e); break; }
-      xmlRet = ret2;
-      const cStatLote = ret2.match(/<cStat>(\d+)<\/cStat>/)?.[1] || "";
-      if (cStatLote === "105") continue;
-      const prot = ret2.match(/<infProt>[\s\S]*?<\/infProt>/)?.[0] || "";
-      cStat = prot.match(/<cStat>(\d+)<\/cStat>/)?.[1] || cStatLote;
-      xMotivo = prot.match(/<xMotivo>([^<]+)<\/xMotivo>/)?.[1] || ret2.match(/<xMotivo>([^<]+)<\/xMotivo>/)?.[1] || "";
-      protocolo = prot.match(/<nProt>(\d+)<\/nProt>/)?.[1] || protocolo;
-      break;
-    }
-  }
-  return { sucesso: cStat === "100" || cStat === "104", cStat, xMotivo, chave, protocolo, xmlRet };
+  const protocolo = prot.match(/<nProt>(\d+)<\/nProt>/)?.[1];
+  return { sucesso: cStat === "100", cStat, xMotivo, chave, protocolo, xmlRet: ret };
 }
 
 export async function consultarMdf(pfx: Buffer, senha: string, chave: string, ambiente: Ambiente): Promise<{ cStat: string; xMotivo: string; xml?: string }> {
