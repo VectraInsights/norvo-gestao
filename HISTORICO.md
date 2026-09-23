@@ -2061,3 +2061,13 @@ Commits CF `ddeb6e4..37d5da0` (+ ajustes de X do dono) espelhados na Vercel.
   visiveis mas desabilitados sem o checkbox; Veiculo/Reboque(s)/
   CIOT abaixo do nome. Box seguinte fica com Tipo Frota + Apolice.
   Espelhado na Vercel.
+
+## MDF-e box empresa em 3 colunas (23/09/2026)
+
+- Box da empresa em 3 colunas como no desenho: esquerda Nome/
+  Veiculo+RENAVAM/Reboque(s)+RENAVAM/CIOT/Cidade+UF de Inicio;
+  meio Tipo MDF-e (radios empilhados) + Cidade+UF de Encerramento;
+  direita Manifesto Transbordo + 1o/2o/3o (sempre visiveis,
+  editaveis so com o checkbox).
+- Linha de Cidades/UFs removida do box de dados ao lado.
+  Espelhado na Vercel.

@@ -469,27 +469,52 @@ function DialogNovoMdf({ open, onOpenChange, empresaId, empresa, chavesIniciais 
 
         <div className="space-y-2">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-            <div className="border rounded-md p-2 space-y-1">
-              <div className="grid grid-cols-1 md:grid-cols-5 gap-1 items-end">
-                <div className="md:col-span-3"><Label className="text-xs">Nome da Empresa</Label><Input className="h-6 text-[11px] bg-transparent" readOnly value={(empresa as any)?.nome_fantasia || (empresa as any)?.razao_social || "—"} /></div>
-                <div className="md:col-span-2">
-                  <Label className="text-[10px] leading-none">Tipo MDF-e</Label>
-                  <div className="flex gap-2 items-center mt-0.5">
-                    <label className="flex items-center gap-1 text-[11px] cursor-pointer"><input type="radio" checked={tipoMdf === "Normal"} onChange={() => setTipoMdf("Normal")} className="h-3 w-3" /> Normal</label>
-                    <label className="flex items-center gap-1 text-[11px] cursor-pointer"><input type="radio" checked={tipoMdf === "Globalizado"} onChange={() => setTipoMdf("Globalizado")} className="h-3 w-3" /> Globalizado</label>
+            <div className="border rounded-md p-2">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
+                <div className="space-y-1">
+                  <div><Label className="text-xs">Nome da Empresa</Label><Input className="h-6 text-[11px] bg-transparent" readOnly value={(empresa as any)?.nome_fantasia || (empresa as any)?.razao_social || "—"} /></div>
+                  <div><Label className="text-xs">Veículo</Label><p className="font-mono text-xs">{tracaoSel || "—"}{veicTracInfo?.renavam ? ` • RENAVAM ${veicTracInfo.renavam}` : ""}</p></div>
+                  <div><Label className="text-xs">Reboque(s)</Label><p className="font-mono text-xs">{reboques.length ? reboques.map(p => { const v = (veiculos || []).find(x => String(x.placa || "").toUpperCase() === p); return v?.renavam ? `${p} • RENAVAM ${v.renavam}` : p; }).join(", ") : "—"}</p></div>
+                  <div><Label className="text-xs">CIOT</Label><p className="font-mono text-xs">{ciotMdf || "—"}</p></div>
+                  <div className="grid grid-cols-2 gap-1">
+                    <div><Label className="text-xs">Cidade de Início</Label><Input className="h-6 text-[11px] bg-transparent" readOnly value={cidadeIniDerivada} /></div>
+                    <div><Label className="text-xs">UF de Início</Label>
+                      <Select value={ufCarregamento} onValueChange={setUfCarregamento}>
+                        <SelectTrigger className="h-6 text-[11px]"><SelectValue /></SelectTrigger>
+                        <SelectContent>{UFS.map(uf => (<SelectItem key={uf} value={uf}>{uf}</SelectItem>))}</SelectContent>
+                      </Select>
+                    </div>
                   </div>
                 </div>
-              </div>
-              <div><label className="flex items-center gap-1 text-[11px] cursor-pointer"><input type="checkbox" checked={isTransbordo} onChange={e => setIsTransbordo(e.target.checked)} className="h-3 w-3" /> Manifesto Transbordo</label></div>
-              <div className="grid grid-cols-3 gap-1">
-                <div><Label className="text-xs">1º Transbordo</Label><Input className="h-6 text-[11px] font-mono" disabled={!isTransbordo} value={transb1} onChange={e => setTransb1(e.target.value)} placeholder="Chave / local 1º transbordo" /></div>
-                <div><Label className="text-xs">2º Transbordo</Label><Input className="h-6 text-[11px] font-mono" disabled={!isTransbordo} value={transb2} onChange={e => setTransb2(e.target.value)} placeholder="2º transbordo" /></div>
-                <div><Label className="text-xs">3º Transbordo</Label><Input className="h-6 text-[11px] font-mono" disabled={!isTransbordo} value={transb3} onChange={e => setTransb3(e.target.value)} placeholder="3º transbordo" /></div>
-              </div>
-              <div className="grid grid-cols-2 md:grid-cols-3 gap-1">
-                <div><Label className="text-xs">Veículo</Label><p className="font-mono text-xs">{tracaoSel || "—"}{veicTracInfo?.renavam ? ` • RENAVAM ${veicTracInfo.renavam}` : ""}</p></div>
-                <div><Label className="text-xs">Reboque(s)</Label><p className="font-mono text-xs">{reboques.join(", ") || "—"}</p></div>
-                <div><Label className="text-xs">CIOT</Label><p className="font-mono text-xs">{ciotMdf || "—"}</p></div>
+                <div className="space-y-1">
+                  <div>
+                    <Label className="text-[10px] leading-none">Tipo MDF-e</Label>
+                    <div className="flex flex-col gap-0.5 mt-0.5">
+                      <label className="flex items-center gap-1 text-[11px] cursor-pointer"><input type="radio" checked={tipoMdf === "Normal"} onChange={() => setTipoMdf("Normal")} className="h-3 w-3" /> Normal</label>
+                      <label className="flex items-center gap-1 text-[11px] cursor-pointer"><input type="radio" checked={tipoMdf === "Globalizado"} onChange={() => setTipoMdf("Globalizado")} className="h-3 w-3" /> Globalizado</label>
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-2 gap-1">
+                    <div><Label className="text-xs">Cidade de Encerramento</Label>{cidadesFimOptions.length > 1 ? (
+                      <Select value={cidadeFimSel} onValueChange={setCidadeFimSel}>
+                        <SelectTrigger className="h-6 text-[11px]"><SelectValue /></SelectTrigger>
+                        <SelectContent>{cidadesFimOptions.map(c => (<SelectItem key={c} value={c}>{c}</SelectItem>))}</SelectContent>
+                      </Select>
+                    ) : (<Input className="h-6 text-[11px] bg-transparent" readOnly value={cidadeFimDerivada} />)}</div>
+                    <div><Label className="text-xs">UF de Encerramento</Label>
+                      <Select value={ufDescarregamento} onValueChange={setUfDescarregamento}>
+                        <SelectTrigger className="h-6 text-[11px]"><SelectValue /></SelectTrigger>
+                        <SelectContent>{UFS.map(uf => (<SelectItem key={uf} value={uf}>{uf}</SelectItem>))}</SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+                </div>
+                <div className="space-y-1">
+                  <div><label className="flex items-center gap-1 text-[11px] font-medium cursor-pointer"><input type="checkbox" checked={isTransbordo} onChange={e => setIsTransbordo(e.target.checked)} className="h-3 w-3" /> Manifesto Transbordo</label></div>
+                  <div><Label className="text-xs">1º Transbordo</Label><Input className="h-6 text-[11px] font-mono" disabled={!isTransbordo} value={transb1} onChange={e => setTransb1(e.target.value)} placeholder="Chave / local 1º transbordo" /></div>
+                  <div><Label className="text-xs">2º Transbordo</Label><Input className="h-6 text-[11px] font-mono" disabled={!isTransbordo} value={transb2} onChange={e => setTransb2(e.target.value)} placeholder="2º transbordo" /></div>
+                  <div><Label className="text-xs">3º Transbordo</Label><Input className="h-6 text-[11px] font-mono" disabled={!isTransbordo} value={transb3} onChange={e => setTransb3(e.target.value)} placeholder="3º transbordo" /></div>
+                </div>
               </div>
             </div>
             <div className="border rounded-md p-2 space-y-1">
@@ -499,27 +524,6 @@ function DialogNovoMdf({ open, onOpenChange, empresaId, empresa, chavesIniciais 
                 <div><Label className="text-xs">Data Emissão</Label><Input className="h-6 text-[11px] bg-transparent" readOnly value={new Date().toLocaleDateString("pt-BR")} /></div>
                 <div><Label className="text-xs">Hora Emissão</Label><Input className="h-6 text-[11px] bg-transparent" readOnly value={new Date().toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })} /></div>
                 <div><Label className="text-xs">Responsável Emissão</Label><Input className="h-6 text-[11px] bg-transparent" readOnly value={respNome || ""} /></div>
-              </div>
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-1">
-                <div><Label className="text-xs">Cidade Início</Label><Input className="h-6 text-[11px] bg-transparent" readOnly value={cidadeIniDerivada} /></div>
-                <div><Label className="text-xs">UF Início</Label>
-                  <Select value={ufCarregamento} onValueChange={setUfCarregamento}>
-                    <SelectTrigger className="h-6 text-[11px]"><SelectValue /></SelectTrigger>
-                    <SelectContent>{UFS.map(uf => (<SelectItem key={uf} value={uf}>{uf}</SelectItem>))}</SelectContent>
-                  </Select>
-                </div>
-                <div><Label className="text-xs">Cidade Encerramento</Label>{cidadesFimOptions.length > 1 ? (
-                  <Select value={cidadeFimSel} onValueChange={setCidadeFimSel}>
-                    <SelectTrigger className="h-6 text-[11px]"><SelectValue /></SelectTrigger>
-                    <SelectContent>{cidadesFimOptions.map(c => (<SelectItem key={c} value={c}>{c}</SelectItem>))}</SelectContent>
-                  </Select>
-                ) : (<Input className="h-6 text-[11px] bg-transparent" readOnly value={cidadeFimDerivada} />)}</div>
-                <div><Label className="text-xs">UF Encerramento</Label>
-                  <Select value={ufDescarregamento} onValueChange={setUfDescarregamento}>
-                    <SelectTrigger className="h-6 text-[11px]"><SelectValue /></SelectTrigger>
-                    <SelectContent>{UFS.map(uf => (<SelectItem key={uf} value={uf}>{uf}</SelectItem>))}</SelectContent>
-                  </Select>
-                </div>
               </div>
               <div className="grid grid-cols-2 gap-1">
                 <div><Label className="text-xs">Seguradora RC-V</Label><Input className="h-6 text-[11px] bg-transparent" readOnly value={String((segMdf as any).seguradoraNome || "")} /></div>
