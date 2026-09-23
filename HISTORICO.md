@@ -2163,3 +2163,12 @@ Commits CF `ddeb6e4..37d5da0` (+ ajustes de X do dono) espelhados na Vercel.
   Percurso inicia vazio e so tem as UFs entre inicio e fim
   adicionadas pelo usuario; reset tambem zera.
   Espelhado na Vercel.
+
+## MDF-e Reboque/CIOT na 2a coluna + Percurso limpo (23/09/2026)
+
+- Coluna 1: Nome/Veiculo/Motorista; coluna 2: Tipo + Reboque(s)
+  + CIOT (caixas mais largas, sem truncar).
+- Percurso: removidos select "Adicionar UF na ordem" e
+  observacao do titulo (vira "Percurso *"); botoes Exclui/▲▼
+  foram para o cabecalho; adicionar segue pelos botoes de UF.
+  Espelhado na Vercel.

@@ -467,28 +467,24 @@ function DialogNovoMdf({ open, onOpenChange, empresaId, empresa, chavesIniciais 
               <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
                 <div className="space-y-1">
                   <div><Label className="text-xs">Nome da Empresa</Label><Input className="h-6 text-[11px] bg-transparent" readOnly value={(empresa as any)?.nome_fantasia || (empresa as any)?.razao_social || "—"} /></div>
-                  <div className="grid grid-cols-2 gap-1">
-                    <div><Label className="text-xs">Veículo *</Label>
-                      <Select value={tracaoSel} onValueChange={v => { setTracaoSel(v); setCtesSelecionadas(new Set()); }}>
-                        <SelectTrigger className="h-6 w-fit max-w-full gap-1 text-[11px] font-mono [&>span]:truncate">{tracaoSel ? (<span>{tracaoSel}{veicTracInfo?.renavam ? ` • RENAVAM ${veicTracInfo.renavam}` : ""}</span>) : (<span className="text-muted-foreground">Selecione...</span>)}</SelectTrigger>
-                        <SelectContent>{placasVeiculoOpts.map(p => (<SelectItem key={p} value={p}>{p}</SelectItem>))}</SelectContent>
-                      </Select>
-                    </div>
-                    <div><Label className="text-xs">Reboque(s)</Label><div className="flex h-6 w-fit max-w-full items-center justify-between gap-1 whitespace-nowrap rounded-md border border-input bg-stone-200 dark:bg-muted px-3 py-2 text-[11px] shadow-sm font-mono"><span className="truncate">{reboques.length ? reboques.map(p => { const v = (veiculos || []).find(x => String(x.placa || "").toUpperCase() === p); return v?.renavam ? `${p} • RENAVAM ${v.renavam}` : p; }).join(", ") : "—"}</span></div></div>
+                  <div><Label className="text-xs">Veículo *</Label>
+                    <Select value={tracaoSel} onValueChange={v => { setTracaoSel(v); setCtesSelecionadas(new Set()); }}>
+                      <SelectTrigger className="h-6 w-fit max-w-full gap-1 text-[11px] font-mono [&>span]:truncate">{tracaoSel ? (<span>{tracaoSel}{veicTracInfo?.renavam ? ` • RENAVAM ${veicTracInfo.renavam}` : ""}</span>) : (<span className="text-muted-foreground">Selecione...</span>)}</SelectTrigger>
+                      <SelectContent>{placasVeiculoOpts.map(p => (<SelectItem key={p} value={p}>{p}</SelectItem>))}</SelectContent>
+                    </Select>
                   </div>
-                  <div className="grid grid-cols-2 gap-1">
-                    <div><Label className="text-xs">Motorista</Label>{motNomes.length ? motNomes.map(m => (<p key={m.nome} className="text-xs truncate">{m.nome} <span className="text-muted-foreground">({cpfDe(m.id, m.nome) || "s/CPF"})</span></p>)) : (<p className="text-xs text-muted-foreground">—</p>)}</div>
-                    <div><Label className="text-xs">CIOT</Label><p className="font-mono text-xs">{ciotMdf || "—"}</p></div>
-                  </div>
+                  <div><Label className="text-xs">Motorista</Label>{motNomes.length ? motNomes.map(m => (<p key={m.nome} className="text-xs truncate">{m.nome} <span className="text-muted-foreground">({cpfDe(m.id, m.nome) || "s/CPF"})</span></p>)) : (<p className="text-xs text-muted-foreground">—</p>)}</div>
                 </div>
                 <div className="space-y-1">
                   <div>
                     <Label className="text-[10px] leading-none">Tipo MDF-e</Label>
-                    <div className="flex flex-col gap-0.5 mt-0.5">
+                    <div className="flex gap-2 items-center mt-0.5">
                       <label className="flex items-center gap-1 text-[11px] cursor-pointer"><input type="radio" checked={tipoMdf === "Normal"} onChange={() => setTipoMdf("Normal")} className="h-3 w-3" /> Normal</label>
                       <label className="flex items-center gap-1 text-[11px] cursor-pointer"><input type="radio" checked={tipoMdf === "Globalizado"} onChange={() => setTipoMdf("Globalizado")} className="h-3 w-3" /> Globalizado</label>
                     </div>
                   </div>
+                  <div><Label className="text-xs">Reboque(s)</Label><div className="flex h-6 w-fit max-w-full items-center justify-between gap-1 whitespace-nowrap rounded-md border border-input bg-stone-200 dark:bg-muted px-3 py-2 text-[11px] shadow-sm font-mono"><span className="truncate">{reboques.length ? reboques.map(p => { const v = (veiculos || []).find(x => String(x.placa || "").toUpperCase() === p); return v?.renavam ? `${p} • RENAVAM ${v.renavam}` : p; }).join(", ") : "—"}</span></div></div>
+                  <div><Label className="text-xs">CIOT</Label><p className="font-mono text-xs">{ciotMdf || "—"}</p></div>
                 </div>
                 <div className="space-y-1">
                   <div><label className="flex items-center gap-1 text-[11px] font-medium cursor-pointer"><input type="checkbox" checked={isTransbordo} onChange={e => setIsTransbordo(e.target.checked)} className="h-3 w-3" /> Manifesto Transbordo</label></div>
@@ -597,18 +593,14 @@ function DialogNovoMdf({ open, onOpenChange, empresaId, empresa, chavesIniciais 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
             <div className="border rounded-md p-2">
               <div className="flex items-center justify-between">
-                <Label className="text-xs">Percurso (ordem que o motorista vai seguir) *</Label>
-                <span className="text-[10px] text-muted-foreground">{percursoUFs.length} UF(s)</span>
-              </div>
-              <div className="flex gap-1 mt-1">
-                <Select value="" onValueChange={v => { if (v) { const idx = percursoUFs.length; setPercursoUFs(prev => [...prev, v]); setPercursoSelIdx(idx); } }}>
-                  <SelectTrigger className="h-6 text-[11px] flex-1"><SelectValue placeholder="Adicionar UF na ordem..." /></SelectTrigger>
-                  <SelectContent>{UFS.map(uf => (<SelectItem key={uf} value={uf}>{uf}</SelectItem>))}</SelectContent>
-                </Select>
-                <Button size="sm" variant="outline" className="h-6 text-[11px]" disabled={percursoSelIdx === null} onClick={() => percursoSelIdx !== null && excluirPercurso(percursoSelIdx)}>Exclui</Button>
-                <div className="flex flex-col gap-0.5">
-                  <Button size="sm" variant="outline" className="h-3 px-1 text-[10px] leading-none" disabled={percursoSelIdx === null || percursoSelIdx === 0} onClick={() => percursoSelIdx !== null && moverPercurso(percursoSelIdx, -1)}>▲</Button>
-                  <Button size="sm" variant="outline" className="h-3 px-1 text-[10px] leading-none" disabled={percursoSelIdx === null || percursoSelIdx === percursoUFs.length - 1} onClick={() => percursoSelIdx !== null && moverPercurso(percursoSelIdx, 1)}>▼</Button>
+                <Label className="text-xs">Percurso *</Label>
+                <div className="flex items-center gap-1">
+                  <span className="text-[10px] text-muted-foreground">{percursoUFs.length} UF(s)</span>
+                  <Button size="sm" variant="outline" className="h-6 text-[11px]" disabled={percursoSelIdx === null} onClick={() => percursoSelIdx !== null && excluirPercurso(percursoSelIdx)}>Exclui</Button>
+                  <div className="flex flex-col gap-0.5">
+                    <Button size="sm" variant="outline" className="h-3 px-1 text-[10px] leading-none" disabled={percursoSelIdx === null || percursoSelIdx === 0} onClick={() => percursoSelIdx !== null && moverPercurso(percursoSelIdx, -1)}>▲</Button>
+                    <Button size="sm" variant="outline" className="h-3 px-1 text-[10px] leading-none" disabled={percursoSelIdx === null || percursoSelIdx === percursoUFs.length - 1} onClick={() => percursoSelIdx !== null && moverPercurso(percursoSelIdx, 1)}>▼</Button>
+                  </div>
                 </div>
               </div>
               <div className="border rounded mt-2 max-h-[110px] overflow-auto">
