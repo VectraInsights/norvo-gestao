@@ -2071,3 +2071,11 @@ Commits CF `ddeb6e4..37d5da0` (+ ajustes de X do dono) espelhados na Vercel.
   editaveis so com o checkbox).
 - Linha de Cidades/UFs removida do box de dados ao lado.
   Espelhado na Vercel.
+
+## MDF-e veiculo selecionado no box da empresa (23/09/2026)
+
+- Campo Veiculo no box da empresa virou dropdown (placas do
+  cadastro + placas dos CT-es, com RENAVAM abaixo); filtrar os
+  CT-es e a emissao usam essa selecao. Dropdown de Tracao
+  removido do box de Conhecimentos (ficam rotulo + Marcar/Limpar).
+  Espelhado na Vercel.

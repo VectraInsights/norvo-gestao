@@ -311,6 +311,7 @@ function DialogNovoMdf({ open, onOpenChange, empresaId, empresa, chavesIniciais 
   const [percursoUFs, setPercursoUFs] = useState<string[]>(["SP"]);
   const [tracaoSel, setTracaoSel] = useState("");
   const todasTracoes = useMemo(() => { const out: string[] = []; for (const c of (ctesDisponiveis || [])) { try { const p = JSON.parse((c as any).xml_assinado || "{}"); const pl = String(p.form?.placaVeiculo || "").toUpperCase(); if (pl && !out.includes(pl)) out.push(pl); } catch {} } return out.sort(); }, [ctesDisponiveis]);
+  const placasVeiculoOpts = useMemo(() => { const out: string[] = []; for (const v of (veiculos || [])) { const p = String(v.placa || "").toUpperCase(); if (p && !out.includes(p)) out.push(p); } for (const p of todasTracoes) if (!out.includes(p)) out.push(p); return out.sort(); }, [veiculos, todasTracoes]);
   const ctesDaTracao = useMemo(() => (ctesDisponiveis || []).filter(c => { if (!tracaoSel) return false; try { const p = JSON.parse((c as any).xml_assinado || "{}"); return String(p.form?.placaVeiculo || "").toUpperCase() === tracaoSel; } catch { return false; } }), [ctesDisponiveis, tracaoSel]);
   const [infoFisco, setInfoFisco] = useState("");
   const [respNome, setRespNome] = useState("");
@@ -397,7 +398,7 @@ function DialogNovoMdf({ open, onOpenChange, empresaId, empresa, chavesIniciais 
 
   const handleEmitir = async () => {
     if (!ctesSelecionadas.size) { toast.error("Selecione pelo menos 1 CT-e"); return; }
-    if (!tracaoSel) { toast.error("Selecione a tração"); return; }
+    if (!tracaoSel) { toast.error("Selecione o veículo"); return; }
     if (!motNomes.length) { toast.error("CT-es sem motorista"); return; }
     if (!percursoUFs.length) { toast.error("Selecione ao menos 1 UF no percurso"); return; }
 
@@ -473,7 +474,13 @@ function DialogNovoMdf({ open, onOpenChange, empresaId, empresa, chavesIniciais 
               <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
                 <div className="space-y-1">
                   <div><Label className="text-xs">Nome da Empresa</Label><Input className="h-6 text-[11px] bg-transparent" readOnly value={(empresa as any)?.nome_fantasia || (empresa as any)?.razao_social || "—"} /></div>
-                  <div><Label className="text-xs">Veículo</Label><p className="font-mono text-xs">{tracaoSel || "—"}{veicTracInfo?.renavam ? ` • RENAVAM ${veicTracInfo.renavam}` : ""}</p></div>
+                  <div><Label className="text-xs">Veículo *</Label>
+                    <Select value={tracaoSel} onValueChange={v => { setTracaoSel(v); setCtesSelecionadas(new Set()); }}>
+                      <SelectTrigger className="h-6 text-[11px] font-mono"><SelectValue placeholder="Selecione..." /></SelectTrigger>
+                      <SelectContent>{placasVeiculoOpts.map(p => (<SelectItem key={p} value={p}>{p}</SelectItem>))}</SelectContent>
+                    </Select>
+                    {veicTracInfo?.renavam ? <p className="font-mono text-[10px] text-muted-foreground">RENAVAM {veicTracInfo.renavam}</p> : null}
+                  </div>
                   <div><Label className="text-xs">Reboque(s)</Label><p className="font-mono text-xs">{reboques.length ? reboques.map(p => { const v = (veiculos || []).find(x => String(x.placa || "").toUpperCase() === p); return v?.renavam ? `${p} • RENAVAM ${v.renavam}` : p; }).join(", ") : "—"}</p></div>
                   <div><Label className="text-xs">CIOT</Label><p className="font-mono text-xs">{ciotMdf || "—"}</p></div>
                   <div className="grid grid-cols-2 gap-1">
@@ -546,18 +553,10 @@ function DialogNovoMdf({ open, onOpenChange, empresaId, empresa, chavesIniciais 
           </div>
 
           <div className="border rounded-md p-2">
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-1 mb-1 items-end">
-              <div><Label className="text-xs">Tração *</Label>
-                <Select value={tracaoSel} onValueChange={v => { setTracaoSel(v); setCtesSelecionadas(new Set()); }}>
-                  <SelectTrigger className="h-6 text-[11px] font-mono"><SelectValue placeholder="Selecione a tração..." /></SelectTrigger>
-                  <SelectContent>{todasTracoes.map(p => (<SelectItem key={p} value={p}>{p}</SelectItem>))}</SelectContent>
-                </Select>
-              </div>
-              <div className="md:col-span-3 flex items-center justify-end gap-1">
-                <Label className="text-xs mr-auto">Conhecimentos ({ctesSelArr.length} vinculados){tracaoSel ? ` • placa ${tracaoSel}` : ""}</Label>
-                <Button size="sm" variant="outline" className="h-6 text-[11px]" disabled={!tracaoSel} onClick={() => setCtesSelecionadas(new Set(ctesDaTracao.map(c => c.chave_acesso || "").filter(Boolean)))}>Marcar</Button>
-                <Button size="sm" variant="outline" className="h-6 text-[11px]" onClick={() => setCtesSelecionadas(new Set())}>Limpar</Button>
-              </div>
+            <div className="flex items-center justify-end gap-1 mb-1">
+              <Label className="text-xs mr-auto">Conhecimentos ({ctesSelArr.length} vinculados){tracaoSel ? ` • placa ${tracaoSel}` : ""}</Label>
+              <Button size="sm" variant="outline" className="h-6 text-[11px]" disabled={!tracaoSel} onClick={() => setCtesSelecionadas(new Set(ctesDaTracao.map(c => c.chave_acesso || "").filter(Boolean)))}>Marcar</Button>
+              <Button size="sm" variant="outline" className="h-6 text-[11px]" onClick={() => setCtesSelecionadas(new Set())}>Limpar</Button>
             </div>
             {ctesErro ? (
               <p className="text-sm text-destructive">Falha ao carregar CT-es: {String((ctesErro as any)?.message || ctesErro)}</p>
@@ -571,7 +570,7 @@ function DialogNovoMdf({ open, onOpenChange, empresaId, empresa, chavesIniciais 
                     <TableHead>Emissão</TableHead><TableHead>CTRC</TableHead><TableHead>Série</TableHead><TableHead>Placa</TableHead><TableHead>Reboques</TableHead><TableHead>Coleta</TableHead><TableHead>UF</TableHead><TableHead>Entrega</TableHead><TableHead>UF</TableHead><TableHead>Notas Fiscais</TableHead><TableHead className="text-right">Valor</TableHead><TableHead className="text-right">Peso</TableHead>
                   </TableRow></TableHeader>
                   <TableBody>
-                    {!tracaoSel && (<TableRow><TableCell colSpan={13} className="text-center text-xs text-muted-foreground py-6">Selecione a tração acima para listar os CT-es.</TableCell></TableRow>)}
+                    {!tracaoSel && (<TableRow><TableCell colSpan={13} className="text-center text-xs text-muted-foreground py-6">Selecione o veículo no box da empresa para listar os CT-es.</TableCell></TableRow>)}
                     {ctesDaTracao.map(c => {
                       const f = formDe(c);
                       const reb = [f.placaReboque, f.semiReboque1, f.semiReboque2].map(x => String(x || "").toUpperCase()).filter(Boolean).join(", ");
