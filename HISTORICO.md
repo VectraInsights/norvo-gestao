@@ -2053,3 +2053,11 @@ Commits CF `ddeb6e4..37d5da0` (+ ajustes de X do dono) espelhados na Vercel.
   (faltava o import de @/components/ui/select, usado no campo
   Regime tributario). Erro ja apontado pelo tsc no baseline.
   Espelhado na Vercel.
+
+## MDF-e box empresa com veiculo/transbordo (23/09/2026)
+
+- Box da empresa: Nome + radios Normal/Globalizado a direita;
+  checkbox Transbordo logo abaixo; 1o/2o/3o Transbordo sempre
+  visiveis mas desabilitados sem o checkbox; Veiculo/Reboque(s)/
+  CIOT abaixo do nome. Box seguinte fica com Tipo Frota + Apolice.
+  Espelhado na Vercel.

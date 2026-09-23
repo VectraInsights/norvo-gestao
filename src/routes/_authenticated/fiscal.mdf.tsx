@@ -469,17 +469,27 @@ function DialogNovoMdf({ open, onOpenChange, empresaId, empresa, chavesIniciais 
 
         <div className="space-y-2">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-            <div className="border rounded-md p-2">
-              <div><Label className="text-xs">Nome da Empresa</Label><Input className="h-6 text-[11px] bg-transparent" readOnly value={(empresa as any)?.nome_fantasia || (empresa as any)?.razao_social || "—"} /></div>
-              <div className="flex flex-wrap items-end gap-x-4 gap-y-1 mt-1">
-                <div>
+            <div className="border rounded-md p-2 space-y-1">
+              <div className="grid grid-cols-1 md:grid-cols-5 gap-1 items-end">
+                <div className="md:col-span-3"><Label className="text-xs">Nome da Empresa</Label><Input className="h-6 text-[11px] bg-transparent" readOnly value={(empresa as any)?.nome_fantasia || (empresa as any)?.razao_social || "—"} /></div>
+                <div className="md:col-span-2">
                   <Label className="text-[10px] leading-none">Tipo MDF-e</Label>
                   <div className="flex gap-2 items-center mt-0.5">
                     <label className="flex items-center gap-1 text-[11px] cursor-pointer"><input type="radio" checked={tipoMdf === "Normal"} onChange={() => setTipoMdf("Normal")} className="h-3 w-3" /> Normal</label>
                     <label className="flex items-center gap-1 text-[11px] cursor-pointer"><input type="radio" checked={tipoMdf === "Globalizado"} onChange={() => setTipoMdf("Globalizado")} className="h-3 w-3" /> Globalizado</label>
                   </div>
                 </div>
-                <label className="flex items-center gap-1 text-[11px] cursor-pointer"><input type="checkbox" checked={isTransbordo} onChange={e => setIsTransbordo(e.target.checked)} className="h-3 w-3" /> Manifesto Transbordo</label>
+              </div>
+              <div><label className="flex items-center gap-1 text-[11px] cursor-pointer"><input type="checkbox" checked={isTransbordo} onChange={e => setIsTransbordo(e.target.checked)} className="h-3 w-3" /> Manifesto Transbordo</label></div>
+              <div className="grid grid-cols-3 gap-1">
+                <div><Label className="text-xs">1º Transbordo</Label><Input className="h-6 text-[11px] font-mono" disabled={!isTransbordo} value={transb1} onChange={e => setTransb1(e.target.value)} placeholder="Chave / local 1º transbordo" /></div>
+                <div><Label className="text-xs">2º Transbordo</Label><Input className="h-6 text-[11px] font-mono" disabled={!isTransbordo} value={transb2} onChange={e => setTransb2(e.target.value)} placeholder="2º transbordo" /></div>
+                <div><Label className="text-xs">3º Transbordo</Label><Input className="h-6 text-[11px] font-mono" disabled={!isTransbordo} value={transb3} onChange={e => setTransb3(e.target.value)} placeholder="3º transbordo" /></div>
+              </div>
+              <div className="grid grid-cols-2 md:grid-cols-3 gap-1">
+                <div><Label className="text-xs">Veículo</Label><p className="font-mono text-xs">{tracaoSel || "—"}{veicTracInfo?.renavam ? ` • RENAVAM ${veicTracInfo.renavam}` : ""}</p></div>
+                <div><Label className="text-xs">Reboque(s)</Label><p className="font-mono text-xs">{reboques.join(", ") || "—"}</p></div>
+                <div><Label className="text-xs">CIOT</Label><p className="font-mono text-xs">{ciotMdf || "—"}</p></div>
               </div>
             </div>
             <div className="border rounded-md p-2 space-y-1">
@@ -525,31 +535,9 @@ function DialogNovoMdf({ open, onOpenChange, empresaId, empresa, chavesIniciais 
 
           <div className="border rounded-md p-2">
             <div className="grid grid-cols-2 md:grid-cols-4 gap-1">
-              <div>
-                <div><Label className="text-xs">Veículo</Label><p className="font-mono text-xs">{tracaoSel || "—"}{veicTracInfo?.renavam ? ` • RENAVAM ${veicTracInfo.renavam}` : ""}</p></div>
-                <div className="mt-1"><Label className="text-xs">CIOT</Label><p className="font-mono text-xs">{ciotMdf || "—"}</p></div>
-              </div>
-              {isTransbordo ? (
-                <>
-                  <div><Label className="text-xs">1º Transbordo</Label><Input className="h-6 text-[11px] font-mono" value={transb1} onChange={e => setTransb1(e.target.value)} placeholder="Chave / local 1º transbordo" /></div>
-                  <div><Label className="text-xs">2º Transbordo</Label><Input className="h-6 text-[11px] font-mono" value={transb2} onChange={e => setTransb2(e.target.value)} placeholder="2º transbordo" /></div>
-                  <div><Label className="text-xs">3º Transbordo</Label><Input className="h-6 text-[11px] font-mono" value={transb3} onChange={e => setTransb3(e.target.value)} placeholder="3º transbordo" /></div>
-                </>
-              ) : (
-                <>
-                  <div><Label className="text-xs">Reboques</Label><p className="font-mono text-xs">{reboques.join(", ") || "—"}</p></div>
-                  <div><Label className="text-xs">Tipo Frota</Label><p className="text-xs">{veicTracInfo ? `${veicTracInfo.marca_modelo || ""} / ${veicTracInfo.tipo || ""}`.trim() || "—" : "—"}</p></div>
-                  <div><Label className="text-xs">Apólice</Label><p className="font-mono text-xs">{String((segMdf as any).apolice || "—")}</p></div>
-                </>
-              )}
+              <div><Label className="text-xs">Tipo Frota</Label><p className="text-xs">{veicTracInfo ? `${veicTracInfo.marca_modelo || ""} / ${veicTracInfo.tipo || ""}`.trim() || "—" : "—"}</p></div>
+              <div><Label className="text-xs">Apólice</Label><p className="font-mono text-xs">{String((segMdf as any).apolice || "—")}</p></div>
             </div>
-            {isTransbordo && (
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-1 mt-1">
-                <div><Label className="text-xs">Reboques</Label><p className="font-mono text-xs">{reboques.join(", ") || "—"}</p></div>
-                <div><Label className="text-xs">Tipo Frota</Label><p className="text-xs">{veicTracInfo ? `${veicTracInfo.marca_modelo || ""} / ${veicTracInfo.tipo || ""}`.trim() || "—" : "—"}</p></div>
-                <div><Label className="text-xs">Apólice</Label><p className="font-mono text-xs">{String((segMdf as any).apolice || "—")}</p></div>
-              </div>
-            )}
             {!ctesSelecionadas.size && <p className="text-xs text-muted-foreground mt-1">Veículo, CIOT e seguro vêm dos CT-es vinculados abaixo.</p>}
           </div>
 
