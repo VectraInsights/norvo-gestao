@@ -2179,3 +2179,16 @@ Commits CF `ddeb6e4..37d5da0` (+ ajustes de X do dono) espelhados na Vercel.
   CT-es listados; clique no titulo de qualquer coluna ordena
   (asc/desc, terceiro clique limpa, com seta indicativa).
   Espelhado na Vercel.
+
+## MDF-e CIOT no XML + peso do CT-e (23/09/2026)
+
+- CIOT ia para a tela mas nunca entrava no input do buildMdfXml:
+  agora vai em veicTrac.ciot e sai em rodo/infANTT/infCIOT
+  (CIOT + CNPJ emitente), conforme MOC 3.00. RNTRC movido para
+  dentro do infANTT (estava solto sob rodo, fora do schema);
+  tag invalida CIOT-dentro-de-veicTracao removida.
+- Peso: proxy nao gravava peso_carga no CT-e (so valor) e o
+  MDF-e somava zero; proxy agora grava peso_carga e o dialogo
+  usa fallback pesoDe() = coluna ou form.peso do CT-e (tabela,
+  totais, ordenacao e XML).
+  Espelhado na Vercel.

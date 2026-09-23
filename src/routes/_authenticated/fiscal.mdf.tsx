@@ -337,6 +337,7 @@ function DialogNovoMdf({ open, onOpenChange, empresaId, empresa, chavesIniciais 
   const fmtData = (iso: any) => { try { const d = new Date(String(iso)); if (isNaN(d.getTime())) return "—"; return d.toLocaleDateString("pt-BR"); } catch { return "—"; } };
   const nfsDe = (c: CteDoc): string[] => { try { const p = JSON.parse((c as any).xml_assinado || "{}"); const xml = p.xml || ""; return [...xml.matchAll(/<chNFe>(\d{44})<\/chNFe>/g)].map(m => m[1].slice(25, 34).replace(/^0+/, "") || "0"); } catch { return []; } };
   const formDe = (c: CteDoc): Record<string, any> => { try { const p = JSON.parse((c as any).xml_assinado || "{}"); return (p.form || {}) as Record<string, any>; } catch { return {}; } };
+  const pesoDe = (c: CteDoc): number => c.peso_carga || parseFloat(formDe(c).peso as any) || 0;
   const [sortCte, setSortCte] = useState<{ key: string; dir: 1 | -1 } | null>(null);
   const valCte = (c: CteDoc, key: string): string | number => {
     const f = formDe(c);
@@ -352,7 +353,7 @@ function DialogNovoMdf({ open, onOpenChange, empresaId, empresa, chavesIniciais 
       case "ufFim": return String(f.ufFim || "");
       case "nfs": return nfsDe(c).join(", ");
       case "valor": return c.valor_servico || 0;
-      case "peso": return c.peso_carga || 0;
+      case "peso": return pesoDe(c);
       default: return "";
     }
   };
@@ -418,7 +419,7 @@ function DialogNovoMdf({ open, onOpenChange, empresaId, empresa, chavesIniciais 
   const ciotMdf = useMemo(() => ctesForms.map(f => String(f.ciot || "").trim()).find(Boolean) || "", [ctesForms]);
   const segMdf = useMemo(() => ctesForms.find(f => String(f.seguradoraNome || "").trim()) || {}, [ctesForms]);
   const totalCarga = useMemo(() => ctesSelArr.reduce((s, c) => s + (c.valor_servico || 0), 0), [ctesSelArr]);
-  const pesoCarga = useMemo(() => ctesSelArr.reduce((s, c) => s + (c.peso_carga || 0), 0), [ctesSelArr]);
+  const pesoCarga = useMemo(() => ctesSelArr.reduce((s, c) => s + pesoDe(c), 0), [ctesSelArr]);
   const veicTracInfo = useMemo(() => (veiculos || []).find(v => !!tracaoSel && String(v.placa || "").toUpperCase() === tracaoSel), [veiculos, tracaoSel]);
   const [veicTracId, setVeicTracId] = useState("");
   const [motoristaId, setMotoristaId] = useState("");
@@ -449,14 +450,14 @@ function DialogNovoMdf({ open, onOpenChange, empresaId, empresa, chavesIniciais 
         empresaId, ambiente: ambienteMdf, serie: serieMdf || "000", numero,
         ufCarregamento, ufDescarregamento,
         emit: { cnpj: "", ie: "", xNome: "", uf: ufCarregamento, cMun: "", xMun: "" },
-        veicTrac: { placa: tracaoSel, uf: ufCarregamento, rntrc: (veic as any)?.rntrc || "", tara: 0 },
+        veicTrac: { placa: tracaoSel, uf: ufCarregamento, rntrc: (veic as any)?.rntrc || "", tara: 0, ciot: ciotMdf || undefined },
         reboques: reboques.slice(0, 3).map(p => ({ placa: p, uf: ufCarregamento, tara: 0 })),
         condutor: { cpf: mot?.cpf || "", xNome: mot0.nome },
-        ctes: ctesArr.map(c => ({ chave: c.chave_acesso || "", valor: c.valor_servico || 0, pesoKG: c.peso_carga || 0 })),
+        ctes: ctesArr.map(c => ({ chave: c.chave_acesso || "", valor: c.valor_servico || 0, pesoKG: pesoDe(c) })),
         infMunCarrega: [{ cMunCarrega: "", xMunCarrega: "" }],
         infPercurso: percursoUFs.map(uf => ({ ufFim: uf })),
         valorTotalCarga: ctesArr.reduce((s, c) => s + (c.valor_servico || 0), 0),
-        pesoTotalKG: ctesArr.reduce((s, c) => s + (c.peso_carga || 0), 0),
+        pesoTotalKG: ctesArr.reduce((s, c) => s + pesoDe(c), 0),
         tipo: (isTransbordo ? "transbordo" : "normal") as "normal" | "transbordo",
         mdfesTransbordo: [transb1, transb2, transb3].filter(k => /^\d{44}$/.test((k || "").trim())).map(k => ({ chave: k.trim() })),
       };
@@ -616,7 +617,7 @@ function DialogNovoMdf({ open, onOpenChange, empresaId, empresa, chavesIniciais 
                         <TableCell className="text-xs">{f.ufFim || "—"}</TableCell>
                         <TableCell className="font-mono text-xs">{nfsDe(c).join(", ") || "—"}</TableCell>
                         <TableCell className="text-right text-xs">{c.valor_servico ? brl(c.valor_servico) : "—"}</TableCell>
-                        <TableCell className="text-right text-xs">{c.peso_carga ? `${num(c.peso_carga)} kg` : "—"}</TableCell>
+                        <TableCell className="text-right text-xs">{pesoDe(c) ? `${num(pesoDe(c))} kg` : "—"}</TableCell>
                       </TableRow>
                       );
                     })}

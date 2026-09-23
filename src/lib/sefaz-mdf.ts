@@ -112,7 +112,9 @@ export function buildMdfXml(input: MdfInputCompleto): { xml: string; chave: stri
   ).map(p => `<infPercurso><UFPer>${p.ufFim}</UFPer></infPercurso>`).join("");
 
   // Veículos
-  const veicTracXml = `<veicTrac><placa>${input.veicTrac.placa}</placa><UF>${input.veicTrac.uf}</UF><RNTRC>${input.veicTrac.rntrc}</RNTRC><tara>${input.veicTrac.tara}</tara>${input.veicTrac.capKG ? `<capKG>${input.veicTrac.capKG}</capKG>` : ""}${input.veicTrac.capM3 ? `<capM3>${input.veicTrac.capM3}</capM3>` : ""}<tpRod>${input.veicTrac.tpRod || "0"}</tpRod><tpCarroceria>${input.veicTrac.tpCarroceria || "0"}</tpCarroceria>${input.veicTrac.ciot ? `<CIOT><CIOT>${input.veicTrac.ciot}</CIOT></CIOT>` : ""}</veicTrac>`;
+  const ciotNum = String(input.veicTrac.ciot || "").replace(/\D/g, "");
+  const infCiotXml = ciotNum ? `<infCIOT><CIOT>${ciotNum}</CIOT><CNPJ>${cnpjLimpo}</CNPJ></infCIOT>` : "";
+  const veicTracXml = `<veicTrac><placa>${input.veicTrac.placa}</placa><UF>${input.veicTrac.uf}</UF><RNTRC>${input.veicTrac.rntrc}</RNTRC><tara>${input.veicTrac.tara}</tara>${input.veicTrac.capKG ? `<capKG>${input.veicTrac.capKG}</capKG>` : ""}${input.veicTrac.capM3 ? `<capM3>${input.veicTrac.capM3}</capM3>` : ""}<tpRod>${input.veicTrac.tpRod || "0"}</tpRod><tpCarroceria>${input.veicTrac.tpCarroceria || "0"}</tpCarroceria></veicTrac>`;
   const reboquesXml = (input.reboques || []).map(r =>
     `<reboque><placa>${r.placa}</placa><UF>${r.uf}</UF>${r.rntrc ? `<RNTRC>${r.rntrc}</RNTRC>` : ""}<tara>${r.tara}</tara>${r.capKG ? `<capKG>${r.capKG}</capKG>` : ""}${r.capM3 ? `<capM3>${r.capM3}</capM3>` : ""}<tpCarroceria>${r.tpCarroceria || "0"}</tpCarroceria></reboque>`
   ).join("");
@@ -174,7 +176,10 @@ export function buildMdfXml(input: MdfInputCompleto): { xml: string; chave: stri
     </emit>
     <infModal versaoModal="3.00">
       <rodo>
-        <RNTRC>${input.veicTrac.rntrc}</RNTRC>
+        <infANTT>
+          <RNTRC>${input.veicTrac.rntrc}</RNTRC>
+          ${infCiotXml}
+        </infANTT>
         ${veicTracXml}
         ${reboquesXml}
         ${condutorXml}
