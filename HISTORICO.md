@@ -2088,3 +2088,14 @@ Commits CF `ddeb6e4..37d5da0` (+ ajustes de X do dono) espelhados na Vercel.
   MG/SP fixos); reset apos emitir tambem zera.
 - Tipo Frota excluido; Apolice foi para o box direito (linha
   Seguradora/Apolice/Chave). Espelhado na Vercel.
+
+## MDF-e veiculo so tracao + box direito 2 colunas (23/09/2026)
+
+- Dropdown de Veiculo exclui Carreta/Bitrem do cadastro (so
+  tracao: Cavalo, Truck, Toco, 3/4, Van; placas vindas de CT-e
+  continuam, pois ja sao tracao).
+- Box direito dividido em 2 colunas a partir da linha 2 (linha 1
+  intacta): esquerda Seguradora/Averbacao/Apolice, direita Chave
+  de acesso (em branco, sem placeholder)/CNPJ ANTT/Local.
+- Transbordos 1-3 sem placeholder, sempre em branco.
+  Espelhado na Vercel.

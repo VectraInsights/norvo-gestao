@@ -311,7 +311,7 @@ function DialogNovoMdf({ open, onOpenChange, empresaId, empresa, chavesIniciais 
   const [percursoUFs, setPercursoUFs] = useState<string[]>(["SP"]);
   const [tracaoSel, setTracaoSel] = useState("");
   const todasTracoes = useMemo(() => { const out: string[] = []; for (const c of (ctesDisponiveis || [])) { try { const p = JSON.parse((c as any).xml_assinado || "{}"); const pl = String(p.form?.placaVeiculo || "").toUpperCase(); if (pl && !out.includes(pl)) out.push(pl); } catch {} } return out.sort(); }, [ctesDisponiveis]);
-  const placasVeiculoOpts = useMemo(() => { const out: string[] = []; for (const v of (veiculos || [])) { const p = String(v.placa || "").toUpperCase(); if (p && !out.includes(p)) out.push(p); } for (const p of todasTracoes) if (!out.includes(p)) out.push(p); return out.sort(); }, [veiculos, todasTracoes]);
+  const placasVeiculoOpts = useMemo(() => { const out: string[] = []; const REB = ["carreta", "bitrem"]; for (const v of (veiculos || [])) { if (REB.includes(String(v.tipo || "").toLowerCase().trim())) continue; const p = String(v.placa || "").toUpperCase(); if (p && !out.includes(p)) out.push(p); } for (const p of todasTracoes) if (!out.includes(p)) out.push(p); return out.sort(); }, [veiculos, todasTracoes]);
   const ctesDaTracao = useMemo(() => (ctesDisponiveis || []).filter(c => { if (!tracaoSel) return false; try { const p = JSON.parse((c as any).xml_assinado || "{}"); return String(p.form?.placaVeiculo || "").toUpperCase() === tracaoSel; } catch { return false; } }), [ctesDisponiveis, tracaoSel]);
   const [infoFisco, setInfoFisco] = useState("");
   const [respNome, setRespNome] = useState("");
@@ -495,9 +495,9 @@ function DialogNovoMdf({ open, onOpenChange, empresaId, empresa, chavesIniciais 
                 </div>
                 <div className="space-y-1">
                   <div><label className="flex items-center gap-1 text-[11px] font-medium cursor-pointer"><input type="checkbox" checked={isTransbordo} onChange={e => setIsTransbordo(e.target.checked)} className="h-3 w-3" /> Manifesto Transbordo</label></div>
-                  <div><Label className="text-xs">1º Transbordo</Label><Input className="h-6 text-[11px] font-mono" disabled={!isTransbordo} value={transb1} onChange={e => setTransb1(e.target.value)} placeholder="Chave / local 1º transbordo" /></div>
-                  <div><Label className="text-xs">2º Transbordo</Label><Input className="h-6 text-[11px] font-mono" disabled={!isTransbordo} value={transb2} onChange={e => setTransb2(e.target.value)} placeholder="2º transbordo" /></div>
-                  <div><Label className="text-xs">3º Transbordo</Label><Input className="h-6 text-[11px] font-mono" disabled={!isTransbordo} value={transb3} onChange={e => setTransb3(e.target.value)} placeholder="3º transbordo" /></div>
+                  <div><Label className="text-xs">1º Transbordo</Label><Input className="h-6 text-[11px] font-mono" disabled={!isTransbordo} value={transb1} onChange={e => setTransb1(e.target.value)} /></div>
+                  <div><Label className="text-xs">2º Transbordo</Label><Input className="h-6 text-[11px] font-mono" disabled={!isTransbordo} value={transb2} onChange={e => setTransb2(e.target.value)} /></div>
+                  <div><Label className="text-xs">3º Transbordo</Label><Input className="h-6 text-[11px] font-mono" disabled={!isTransbordo} value={transb3} onChange={e => setTransb3(e.target.value)} /></div>
                 </div>
               </div>
               <div className="grid grid-cols-2 md:grid-cols-[1fr_68px_1fr_68px] gap-1">
@@ -530,15 +530,17 @@ function DialogNovoMdf({ open, onOpenChange, empresaId, empresa, chavesIniciais 
                 <div><Label className="text-xs">Hora Emissão</Label><Input className="h-6 text-[11px] bg-transparent" readOnly value={new Date().toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })} /></div>
                 <div><Label className="text-xs">Responsável Emissão</Label><Input className="h-6 text-[11px] bg-transparent" readOnly value={respNome || ""} /></div>
               </div>
-              <div className="grid grid-cols-2 md:grid-cols-3 gap-1">
-                <div><Label className="text-xs">Seguradora RC-V</Label><Input className="h-6 text-[11px] bg-transparent" readOnly value={String((segMdf as any).seguradoraNome || "")} /></div>
-                <div><Label className="text-xs">Apólice</Label><Input className="h-6 text-[11px] font-mono bg-transparent" readOnly value={String((segMdf as any).apolice || "")} /></div>
-                <div><Label className="text-xs">Chave de acesso</Label><Input className="h-6 text-[11px] font-mono bg-transparent" readOnly value="" placeholder="gerada na emissão" /></div>
-              </div>
-              <div className="grid grid-cols-2 md:grid-cols-3 gap-1">
-                <div><Label className="text-xs">Averbação RC-V</Label><Input className="h-6 text-[11px] font-mono bg-transparent" readOnly value={String((segMdf as any).averbacao || "")} /></div>
-                <div><Label className="text-xs">CNPJ ANTT - AUTORIZADO</Label><Input className="h-6 text-[11px] font-mono bg-transparent" readOnly value={String((empresa as any)?.cnpj || "").replace(/(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})/, "$1.$2.$3/$4-$5") || "—"} /></div>
-                <div><Label className="text-xs">Local Emissão</Label><Input className="h-6 text-[11px] bg-transparent" readOnly value={[ (empresa as any)?.cidade, (empresa as any)?.uf ].filter(Boolean).join("/") || "—"} /></div>
+              <div className="grid grid-cols-2 gap-1">
+                <div className="space-y-1">
+                  <div><Label className="text-xs">Seguradora RC-V</Label><Input className="h-6 text-[11px] bg-transparent" readOnly value={String((segMdf as any).seguradoraNome || "")} /></div>
+                  <div><Label className="text-xs">Averbação RC-V</Label><Input className="h-6 text-[11px] font-mono bg-transparent" readOnly value={String((segMdf as any).averbacao || "")} /></div>
+                  <div><Label className="text-xs">Apólice</Label><Input className="h-6 text-[11px] font-mono bg-transparent" readOnly value={String((segMdf as any).apolice || "")} /></div>
+                </div>
+                <div className="space-y-1">
+                  <div><Label className="text-xs">Chave de acesso</Label><Input className="h-6 text-[11px] font-mono bg-transparent" readOnly value="" /></div>
+                  <div><Label className="text-xs">CNPJ ANTT - AUTORIZADO</Label><Input className="h-6 text-[11px] font-mono bg-transparent" readOnly value={String((empresa as any)?.cnpj || "").replace(/(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})/, "$1.$2.$3/$4-$5") || "—"} /></div>
+                  <div><Label className="text-xs">Local Emissão</Label><Input className="h-6 text-[11px] bg-transparent" readOnly value={[ (empresa as any)?.cidade, (empresa as any)?.uf ].filter(Boolean).join("/") || "—"} /></div>
+                </div>
               </div>
             </div>
           </div>
