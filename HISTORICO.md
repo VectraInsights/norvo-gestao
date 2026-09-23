@@ -2215,3 +2215,11 @@ Commits CF `ddeb6e4..37d5da0` (+ ajustes de X do dono) espelhados na Vercel.
 - Valor/Peso total no cabecalho da caixa de selecao de CT-es
   (ao lado de Marcar/Limpar); segunda coluna fica so com
   Observacao/Info Fisco. Espelhado na Vercel.
+
+## MDF-e recepcao assincrona com recibo (23/09/2026)
+
+- Erro real da SEFAZ: action MDFeRecepcaoSinc nao existe no SVRS
+  (HTTP 500). MDF-e 3.00 so tem recepcao assincrona: volta para
+  MDFeRecepcao (103 + nRec) + polling do MDFeRetRecepcao (10x3s:
+  105 aguarda, 104 le infProt com cStat/xMotivo/nProt).
+  Espelhado na Vercel.
