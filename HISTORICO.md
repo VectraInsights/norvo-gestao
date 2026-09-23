@@ -2199,3 +2199,8 @@ Commits CF `ddeb6e4..37d5da0` (+ ajustes de X do dono) espelhados na Vercel.
   Percurso sobe ao lado dos totais (2/3 + 1/3): Valor/Peso
   empilhados no canto direito; Obs/Fisco em linha cheia abaixo.
   Espelhado na Vercel.
+
+## MDF-e obs na coluna direita (23/09/2026)
+
+- Coluna direita: Totais + Observacao/Info Fisco empilhados;
+  esquerda exclusiva do Percurso. Espelhado na Vercel.

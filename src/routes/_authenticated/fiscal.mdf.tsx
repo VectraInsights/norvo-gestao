@@ -660,15 +660,16 @@ function DialogNovoMdf({ open, onOpenChange, empresaId, empresa, chavesIniciais 
                 ))}
               </div>
             </div>
-            <div className="border rounded-md p-2 space-y-1 h-fit">
-              <div><Label className="text-xs">Valor Total Carga</Label><p className="font-mono text-sm font-semibold">{brl(totalCarga)}</p></div>
-              <div><Label className="text-xs">Peso Total Carga</Label><p className="font-mono text-sm font-semibold">{num(pesoCarga)} kg</p></div>
+            <div className="space-y-2">
+              <div className="border rounded-md p-2 space-y-1 h-fit">
+                <div><Label className="text-xs">Valor Total Carga</Label><p className="font-mono text-sm font-semibold">{brl(totalCarga)}</p></div>
+                <div><Label className="text-xs">Peso Total Carga</Label><p className="font-mono text-sm font-semibold">{num(pesoCarga)} kg</p></div>
+              </div>
+              <div className="border rounded-md p-2 space-y-1">
+                <div><Label className="text-xs">Observação</Label><Textarea value={observacoes} onChange={e => setObservacoes(e.target.value)} rows={2} className="text-xs" /></div>
+                <div><Label className="text-xs">Informações Adicionais Fisco</Label><Textarea value={infoFisco} onChange={e => setInfoFisco(e.target.value)} rows={2} className="text-xs" /></div>
+              </div>
             </div>
-          </div>
-
-          <div className="border rounded-md p-2 grid grid-cols-1 md:grid-cols-2 gap-2">
-            <div><Label className="text-xs">Observação</Label><Textarea value={observacoes} onChange={e => setObservacoes(e.target.value)} rows={2} className="text-xs" /></div>
-            <div><Label className="text-xs">Informações Adicionais Fisco</Label><Textarea value={infoFisco} onChange={e => setInfoFisco(e.target.value)} rows={2} className="text-xs" /></div>
           </div>
         </div>
 
