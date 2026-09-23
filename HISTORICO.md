@@ -2291,3 +2291,9 @@ Commits CF `ddeb6e4..37d5da0` (+ ajustes de X do dono) espelhados na Vercel.
   anterior com os mesmos documentos (server + proxy) e a
   linha ganha botao excluir (RLS permite DELETE).
   Espelhado na Vercel.
+
+## MDF-e sem whitespace (fix 599) (23/09/2026)
+
+- 599/D03: template tinha LF/indentacao entre tags; agora
+  buildMdfXml comprime (><) antes de assinar (digest valido).
+  Espelhado na Vercel.

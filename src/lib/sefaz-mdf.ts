@@ -138,7 +138,7 @@ export function buildMdfXml(input: MdfInputCompleto): { xml: string; chave: stri
   // Lacres
   const lacresXml = (input.lacres || []).map(l => `<nLacre>${l.nLacre}</nLacre>`).join("");
 
-  const xml = `<?xml version="1.0" encoding="UTF-8"?>
+  const raw = `<?xml version="1.0" encoding="UTF-8"?>
 <MDFe xmlns="http://www.portalfiscal.inf.br/mdfe">
   <infMDFe Id="${id}" versao="3.00">
     <ide>
@@ -197,6 +197,8 @@ export function buildMdfXml(input: MdfInputCompleto): { xml: string; chave: stri
     <infSolicNFF />
   </infMDFe>
 </MDFe>`;
+  // D03/cStat 599: sem caracteres de edição (LF/CR/TAB/espaço) entre tags — antes de assinar
+  const xml = raw.replace(/>\s+</g, "><").trim();
   return { xml, chave };
 }
 
