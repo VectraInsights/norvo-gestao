@@ -2149,3 +2149,9 @@ Commits CF `ddeb6e4..37d5da0` (+ ajustes de X do dono) espelhados na Vercel.
 
 - Setinha removida da caixa do Reboque (so o Veiculo, que e
   selecionavel, mantem). Espelhado na Vercel.
+
+## MDF-e Motorista ao lado do CIOT (23/09/2026)
+
+- Coluna da empresa: linha Veiculo/Reboque e linha Motorista/
+  CIOT. Box Motoristas de baixo excluido (vira Percurso + Obs).
+  Espelhado na Vercel.

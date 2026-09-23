@@ -474,14 +474,19 @@ function DialogNovoMdf({ open, onOpenChange, empresaId, empresa, chavesIniciais 
               <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
                 <div className="space-y-1">
                   <div><Label className="text-xs">Nome da Empresa</Label><Input className="h-6 text-[11px] bg-transparent" readOnly value={(empresa as any)?.nome_fantasia || (empresa as any)?.razao_social || "—"} /></div>
-                  <div><Label className="text-xs">Veículo *</Label>
-                    <Select value={tracaoSel} onValueChange={v => { setTracaoSel(v); setCtesSelecionadas(new Set()); }}>
-                      <SelectTrigger className="h-6 w-fit max-w-full gap-1 text-[11px] font-mono [&>span]:truncate">{tracaoSel ? (<span>{tracaoSel}{veicTracInfo?.renavam ? ` • RENAVAM ${veicTracInfo.renavam}` : ""}</span>) : (<span className="text-muted-foreground">Selecione...</span>)}</SelectTrigger>
-                      <SelectContent>{placasVeiculoOpts.map(p => (<SelectItem key={p} value={p}>{p}</SelectItem>))}</SelectContent>
-                    </Select>
+                  <div className="grid grid-cols-2 gap-1">
+                    <div><Label className="text-xs">Veículo *</Label>
+                      <Select value={tracaoSel} onValueChange={v => { setTracaoSel(v); setCtesSelecionadas(new Set()); }}>
+                        <SelectTrigger className="h-6 w-fit max-w-full gap-1 text-[11px] font-mono [&>span]:truncate">{tracaoSel ? (<span>{tracaoSel}{veicTracInfo?.renavam ? ` • RENAVAM ${veicTracInfo.renavam}` : ""}</span>) : (<span className="text-muted-foreground">Selecione...</span>)}</SelectTrigger>
+                        <SelectContent>{placasVeiculoOpts.map(p => (<SelectItem key={p} value={p}>{p}</SelectItem>))}</SelectContent>
+                      </Select>
+                    </div>
+                    <div><Label className="text-xs">Reboque(s)</Label><div className="flex h-6 w-fit max-w-full items-center justify-between gap-1 whitespace-nowrap rounded-md border border-input bg-stone-200 dark:bg-muted px-3 py-2 text-[11px] shadow-sm font-mono"><span className="truncate">{reboques.length ? reboques.map(p => { const v = (veiculos || []).find(x => String(x.placa || "").toUpperCase() === p); return v?.renavam ? `${p} • RENAVAM ${v.renavam}` : p; }).join(", ") : "—"}</span></div></div>
                   </div>
-                  <div><Label className="text-xs">Reboque(s)</Label><div className="flex h-6 w-fit max-w-full items-center justify-between gap-1 whitespace-nowrap rounded-md border border-input bg-stone-200 dark:bg-muted px-3 py-2 text-[11px] shadow-sm font-mono"><span className="truncate">{reboques.length ? reboques.map(p => { const v = (veiculos || []).find(x => String(x.placa || "").toUpperCase() === p); return v?.renavam ? `${p} • RENAVAM ${v.renavam}` : p; }).join(", ") : "—"}</span></div></div>
-                  <div><Label className="text-xs">CIOT</Label><p className="font-mono text-xs">{ciotMdf || "—"}</p></div>
+                  <div className="grid grid-cols-2 gap-1">
+                    <div><Label className="text-xs">Motorista</Label>{motNomes.length ? motNomes.map(m => (<p key={m.nome} className="text-xs truncate">{m.nome} <span className="text-muted-foreground">({cpfDe(m.id, m.nome) || "s/CPF"})</span></p>)) : (<p className="text-xs text-muted-foreground">—</p>)}</div>
+                    <div><Label className="text-xs">CIOT</Label><p className="font-mono text-xs">{ciotMdf || "—"}</p></div>
+                  </div>
                 </div>
                 <div className="space-y-1">
                   <div>
@@ -596,11 +601,7 @@ function DialogNovoMdf({ open, onOpenChange, empresaId, empresa, chavesIniciais 
             <div className="md:col-span-2"><Label className="text-xs">Responsável Emissão</Label><p className="text-xs">{respNome || "—"}</p></div>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
-            <div className="border rounded-md p-2">
-              <Label className="text-xs">Motoristas</Label>
-              {motNomes.length ? motNomes.map(m => (<p key={m.nome} className="text-xs">{m.nome} <span className="text-muted-foreground">({cpfDe(m.id, m.nome) || "s/CPF"})</span></p>)) : (<p className="text-xs text-muted-foreground">—</p>)}
-            </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
             <div className="border rounded-md p-2">
               <div className="flex items-center justify-between">
                 <Label className="text-xs">Percurso (ordem que o motorista vai seguir) *</Label>
