@@ -2240,3 +2240,9 @@ Commits CF `ddeb6e4..37d5da0` (+ ajustes de X do dono) espelhados na Vercel.
 - Trava: sem UF de inicio/fim (vêm dos CT-es) nao emite;
   lista intermediaria continua opcional.
   Espelhado na Vercel.
+
+## Retrigger deploy Vercel/Worker (23/09/2026)
+
+- Vercel servia bundle antigo (404 legado) mesmo com o fix no
+  GitHub; commit para forcar novo deploy nos dois alvos.
+  Espelhado na Vercel.
