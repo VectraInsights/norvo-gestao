@@ -2079,3 +2079,12 @@ Commits CF `ddeb6e4..37d5da0` (+ ajustes de X do dono) espelhados na Vercel.
   CT-es e a emissao usam essa selecao. Dropdown de Tracao
   removido do box de Conhecimentos (ficam rotulo + Marcar/Limpar).
   Espelhado na Vercel.
+
+## MDF-e cidades/UFs mesma linha + avulso zerado (23/09/2026)
+
+- Cidade+UF de Inicio e Cidade+UF de Encerramento na mesma linha
+  no box da empresa (cidades largas, UFs com 68px); saidas do box
+  de dados. UFs iniciam em branco e so preenchem via CT-es (antes
+  MG/SP fixos); reset apos emitir tambem zera.
+- Tipo Frota excluido; Apolice foi para o box direito (linha
+  Seguradora/Apolice/Chave). Espelhado na Vercel.

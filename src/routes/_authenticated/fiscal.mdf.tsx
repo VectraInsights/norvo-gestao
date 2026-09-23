@@ -258,8 +258,8 @@ function EncerrarMdfButton({ mdf, empresaId, onSuccess }: { mdf: MdfDoc; empresa
 function DialogNovoMdf({ open, onOpenChange, empresaId, empresa, chavesIniciais }: { open: boolean; onOpenChange: (v: boolean) => void; empresaId: string; empresa?: any; chavesIniciais?: string[] }) {
   const qc = useQueryClient();
   const [loading, setLoading] = useState(false);
-  const [ufCarregamento, setUfCarregamento] = useState("MG");
-  const [ufDescarregamento, setUfDescarregamento] = useState("SP");
+  const [ufCarregamento, setUfCarregamento] = useState("");
+  const [ufDescarregamento, setUfDescarregamento] = useState("");
   const [observacoes, setObservacoes] = useState("");
 
   const { data: veiculos } = useQuery({
@@ -333,7 +333,7 @@ function DialogNovoMdf({ open, onOpenChange, empresaId, empresa, chavesIniciais 
     try { const p = JSON.parse((first as any).xml_assinado || "{}"); const pl = String(p.form?.placaVeiculo || "").toUpperCase(); if (pl) setTracaoSel(pl); } catch {}
   }, [open, ctesDisponiveis, ctesSelecionadas, tracaoSel]);
   // percurso mantém última UF de descarga como último item, mas permite repetição
-  useEffect(() => { setPercursoUFs(prev => (prev.length && prev[prev.length - 1] === ufDescarregamento) ? prev : [...prev, ufDescarregamento]); }, [ufDescarregamento]);
+  useEffect(() => { if (!ufDescarregamento) return; setPercursoUFs(prev => (prev.length && prev[prev.length - 1] === ufDescarregamento) ? prev : [...prev, ufDescarregamento]); }, [ufDescarregamento]);
   // Helpers CT-e (precisam vir antes das cidades derivadas)
   const fmtData = (iso: any) => { try { const d = new Date(String(iso)); if (isNaN(d.getTime())) return "—"; return d.toLocaleDateString("pt-BR"); } catch { return "—"; } };
   const nfsDe = (c: CteDoc): string[] => { try { const p = JSON.parse((c as any).xml_assinado || "{}"); const xml = p.xml || ""; return [...xml.matchAll(/<chNFe>(\d{44})<\/chNFe>/g)].map(m => m[1].slice(25, 34).replace(/^0+/, "") || "0"); } catch { return []; } };
@@ -443,7 +443,7 @@ function DialogNovoMdf({ open, onOpenChange, empresaId, empresa, chavesIniciais 
       else toast.error(`Erro: ${res.xMotivo}`);
 
       onOpenChange(false);
-      setCtesSelecionadas(new Set()); setTracaoSel(""); setPercursoUFs(["SP"]); setObservacoes(""); setInfoFisco(""); setIsTransbordo(false); setTransb1(""); setTransb2(""); setTransb3(""); setTipoMdf("Normal"); setPercursoSelIdx(null);
+      setCtesSelecionadas(new Set()); setTracaoSel(""); setUfCarregamento(""); setUfDescarregamento(""); setCidadeFimSel(""); setPercursoUFs(["SP"]); setObservacoes(""); setInfoFisco(""); setIsTransbordo(false); setTransb1(""); setTransb2(""); setTransb3(""); setTipoMdf("Normal"); setPercursoSelIdx(null);
       qc.invalidateQueries({ queryKey: ["mdf-documentos"] });
     } catch (e: unknown) { toast.error(e instanceof Error ? e.message : "Erro ao emitir MDF-e"); }
     setLoading(false);
@@ -470,7 +470,7 @@ function DialogNovoMdf({ open, onOpenChange, empresaId, empresa, chavesIniciais 
 
         <div className="space-y-2">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-            <div className="border rounded-md p-2">
+            <div className="border rounded-md p-2 space-y-1">
               <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
                 <div className="space-y-1">
                   <div><Label className="text-xs">Nome da Empresa</Label><Input className="h-6 text-[11px] bg-transparent" readOnly value={(empresa as any)?.nome_fantasia || (empresa as any)?.razao_social || "—"} /></div>
@@ -483,15 +483,6 @@ function DialogNovoMdf({ open, onOpenChange, empresaId, empresa, chavesIniciais 
                   </div>
                   <div><Label className="text-xs">Reboque(s)</Label><p className="font-mono text-xs">{reboques.length ? reboques.map(p => { const v = (veiculos || []).find(x => String(x.placa || "").toUpperCase() === p); return v?.renavam ? `${p} • RENAVAM ${v.renavam}` : p; }).join(", ") : "—"}</p></div>
                   <div><Label className="text-xs">CIOT</Label><p className="font-mono text-xs">{ciotMdf || "—"}</p></div>
-                  <div className="grid grid-cols-2 gap-1">
-                    <div><Label className="text-xs">Cidade de Início</Label><Input className="h-6 text-[11px] bg-transparent" readOnly value={cidadeIniDerivada} /></div>
-                    <div><Label className="text-xs">UF de Início</Label>
-                      <Select value={ufCarregamento} onValueChange={setUfCarregamento}>
-                        <SelectTrigger className="h-6 text-[11px]"><SelectValue /></SelectTrigger>
-                        <SelectContent>{UFS.map(uf => (<SelectItem key={uf} value={uf}>{uf}</SelectItem>))}</SelectContent>
-                      </Select>
-                    </div>
-                  </div>
                 </div>
                 <div className="space-y-1">
                   <div>
@@ -501,26 +492,33 @@ function DialogNovoMdf({ open, onOpenChange, empresaId, empresa, chavesIniciais 
                       <label className="flex items-center gap-1 text-[11px] cursor-pointer"><input type="radio" checked={tipoMdf === "Globalizado"} onChange={() => setTipoMdf("Globalizado")} className="h-3 w-3" /> Globalizado</label>
                     </div>
                   </div>
-                  <div className="grid grid-cols-2 gap-1">
-                    <div><Label className="text-xs">Cidade de Encerramento</Label>{cidadesFimOptions.length > 1 ? (
-                      <Select value={cidadeFimSel} onValueChange={setCidadeFimSel}>
-                        <SelectTrigger className="h-6 text-[11px]"><SelectValue /></SelectTrigger>
-                        <SelectContent>{cidadesFimOptions.map(c => (<SelectItem key={c} value={c}>{c}</SelectItem>))}</SelectContent>
-                      </Select>
-                    ) : (<Input className="h-6 text-[11px] bg-transparent" readOnly value={cidadeFimDerivada} />)}</div>
-                    <div><Label className="text-xs">UF de Encerramento</Label>
-                      <Select value={ufDescarregamento} onValueChange={setUfDescarregamento}>
-                        <SelectTrigger className="h-6 text-[11px]"><SelectValue /></SelectTrigger>
-                        <SelectContent>{UFS.map(uf => (<SelectItem key={uf} value={uf}>{uf}</SelectItem>))}</SelectContent>
-                      </Select>
-                    </div>
-                  </div>
                 </div>
                 <div className="space-y-1">
                   <div><label className="flex items-center gap-1 text-[11px] font-medium cursor-pointer"><input type="checkbox" checked={isTransbordo} onChange={e => setIsTransbordo(e.target.checked)} className="h-3 w-3" /> Manifesto Transbordo</label></div>
                   <div><Label className="text-xs">1º Transbordo</Label><Input className="h-6 text-[11px] font-mono" disabled={!isTransbordo} value={transb1} onChange={e => setTransb1(e.target.value)} placeholder="Chave / local 1º transbordo" /></div>
                   <div><Label className="text-xs">2º Transbordo</Label><Input className="h-6 text-[11px] font-mono" disabled={!isTransbordo} value={transb2} onChange={e => setTransb2(e.target.value)} placeholder="2º transbordo" /></div>
                   <div><Label className="text-xs">3º Transbordo</Label><Input className="h-6 text-[11px] font-mono" disabled={!isTransbordo} value={transb3} onChange={e => setTransb3(e.target.value)} placeholder="3º transbordo" /></div>
+                </div>
+              </div>
+              <div className="grid grid-cols-2 md:grid-cols-[1fr_68px_1fr_68px] gap-1">
+                <div><Label className="text-xs">Cidade de Início</Label><Input className="h-6 text-[11px] bg-transparent" readOnly value={cidadeIniDerivada} /></div>
+                <div><Label className="text-xs">UF de Início</Label>
+                  <Select value={ufCarregamento} onValueChange={setUfCarregamento}>
+                    <SelectTrigger className="h-6 px-1 text-[11px]"><SelectValue placeholder="UF" /></SelectTrigger>
+                    <SelectContent>{UFS.map(uf => (<SelectItem key={uf} value={uf}>{uf}</SelectItem>))}</SelectContent>
+                  </Select>
+                </div>
+                <div><Label className="text-xs">Cidade de Encerramento</Label>{cidadesFimOptions.length > 1 ? (
+                  <Select value={cidadeFimSel} onValueChange={setCidadeFimSel}>
+                    <SelectTrigger className="h-6 text-[11px]"><SelectValue /></SelectTrigger>
+                    <SelectContent>{cidadesFimOptions.map(c => (<SelectItem key={c} value={c}>{c}</SelectItem>))}</SelectContent>
+                  </Select>
+                ) : (<Input className="h-6 text-[11px] bg-transparent" readOnly value={cidadeFimDerivada} />)}</div>
+                <div><Label className="text-xs">UF de Encerramento</Label>
+                  <Select value={ufDescarregamento} onValueChange={setUfDescarregamento}>
+                    <SelectTrigger className="h-6 px-1 text-[11px]"><SelectValue placeholder="UF" /></SelectTrigger>
+                    <SelectContent>{UFS.map(uf => (<SelectItem key={uf} value={uf}>{uf}</SelectItem>))}</SelectContent>
+                  </Select>
                 </div>
               </div>
             </div>
@@ -532,8 +530,9 @@ function DialogNovoMdf({ open, onOpenChange, empresaId, empresa, chavesIniciais 
                 <div><Label className="text-xs">Hora Emissão</Label><Input className="h-6 text-[11px] bg-transparent" readOnly value={new Date().toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })} /></div>
                 <div><Label className="text-xs">Responsável Emissão</Label><Input className="h-6 text-[11px] bg-transparent" readOnly value={respNome || ""} /></div>
               </div>
-              <div className="grid grid-cols-2 gap-1">
+              <div className="grid grid-cols-2 md:grid-cols-3 gap-1">
                 <div><Label className="text-xs">Seguradora RC-V</Label><Input className="h-6 text-[11px] bg-transparent" readOnly value={String((segMdf as any).seguradoraNome || "")} /></div>
+                <div><Label className="text-xs">Apólice</Label><Input className="h-6 text-[11px] font-mono bg-transparent" readOnly value={String((segMdf as any).apolice || "")} /></div>
                 <div><Label className="text-xs">Chave de acesso</Label><Input className="h-6 text-[11px] font-mono bg-transparent" readOnly value="" placeholder="gerada na emissão" /></div>
               </div>
               <div className="grid grid-cols-2 md:grid-cols-3 gap-1">
@@ -542,14 +541,6 @@ function DialogNovoMdf({ open, onOpenChange, empresaId, empresa, chavesIniciais 
                 <div><Label className="text-xs">Local Emissão</Label><Input className="h-6 text-[11px] bg-transparent" readOnly value={[ (empresa as any)?.cidade, (empresa as any)?.uf ].filter(Boolean).join("/") || "—"} /></div>
               </div>
             </div>
-          </div>
-
-          <div className="border rounded-md p-2">
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-1">
-              <div><Label className="text-xs">Tipo Frota</Label><p className="text-xs">{veicTracInfo ? `${veicTracInfo.marca_modelo || ""} / ${veicTracInfo.tipo || ""}`.trim() || "—" : "—"}</p></div>
-              <div><Label className="text-xs">Apólice</Label><p className="font-mono text-xs">{String((segMdf as any).apolice || "—")}</p></div>
-            </div>
-            {!ctesSelecionadas.size && <p className="text-xs text-muted-foreground mt-1">Veículo, CIOT e seguro vêm dos CT-es vinculados abaixo.</p>}
           </div>
 
           <div className="border rounded-md p-2">
