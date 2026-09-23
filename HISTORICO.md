@@ -2029,3 +2029,13 @@ Commits CF `ddeb6e4..37d5da0` (+ ajustes de X do dono) espelhados na Vercel.
   destinos). Série agora editável (antes fixa "1") e vai pro XML.
   Espelhado na Vercel.
 
+
+## MDF-e serie 000 fixa + ambiente do nfe_config (23/09/2026)
+
+- Serie padrao do MDF-e = "000", somente leitura (sem edicao).
+- Chave corrigida: gerarChaveMdf nao incluia a serie (41 digitos,
+  invalida); agora monta os 44 (cUF+AAMM+CNPJ+58+serie+numero+
+  tpEmis+codigo+DV).
+- Ambiente nao e mais fixo em homologacao no XML: o dialogo le
+  nfe_config.ambiente (mesma fonte do servidor) e mostra selo
+  Homologacao/Producao no titulo. Espelhado na Vercel.

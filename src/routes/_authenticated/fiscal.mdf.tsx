@@ -315,12 +315,21 @@ function DialogNovoMdf({ open, onOpenChange, empresaId, empresa, chavesIniciais 
   const [infoFisco, setInfoFisco] = useState("");
   const [respNome, setRespNome] = useState("");
   const [tipoMdf, setTipoMdf] = useState<"Normal" | "Globalizado">("Normal");
-  const [serieMdf, setSerieMdf] = useState("1");
+  const [serieMdf] = useState("000");
   const [isTransbordo, setIsTransbordo] = useState(false);
   const [transb1, setTransb1] = useState("");
   const [transb2, setTransb2] = useState("");
   const [transb3, setTransb3] = useState("");
   const [percursoSelIdx, setPercursoSelIdx] = useState<number | null>(null);
+  const { data: nfeCfg } = useQuery({
+    enabled: !!empresaId && open,
+    queryKey: ["nfe-config-ambiente", empresaId],
+    queryFn: async () => {
+      const { data } = await supabase.from("nfe_config" as any).select("ambiente").eq("empresa_id", empresaId).maybeSingle();
+      return (data as any)?.ambiente as string | undefined;
+    },
+  });
+  const ambienteMdf = (nfeCfg === "homologacao" ? "homologacao" : "producao") as "homologacao" | "producao";
   useEffect(() => { if (!open) return; (async () => { try { const { data } = await supabase.auth.getUser(); const usr = (data as any)?.user; if (!usr) return; let nm = (usr?.user_metadata as any)?.nome || ""; if (!nm && empresaId) { const { data: eu } = await supabase.from("empresa_users" as any).select("nome").eq("empresa_id", empresaId).eq("user_id", usr.id).maybeSingle(); nm = (eu as any)?.nome || ""; } setRespNome(nm || ""); } catch {} })(); }, [open, empresaId]);
   useEffect(() => { if (open && chavesIniciais?.length) { setCtesSelecionadas(new Set(chavesIniciais)); setPercursoUFs(["SP"]); } }, [open]);
   useEffect(() => {
@@ -408,7 +417,7 @@ function DialogNovoMdf({ open, onOpenChange, empresaId, empresa, chavesIniciais 
       const ctesArr = (ctesDisponiveis || []).filter(c => ctesSelecionadas.has(c.chave_acesso || ""));
       const numero = String(Math.floor(Math.random() * 999999) + 1).padStart(9, "0");
       const input = {
-        empresaId, ambiente: "homologacao" as const, serie: serieMdf || "1", numero,
+        empresaId, ambiente: ambienteMdf, serie: serieMdf || "000", numero,
         ufCarregamento, ufDescarregamento,
         emit: { cnpj: "", ie: "", xNome: "", uf: ufCarregamento, cMun: "", xMun: "" },
         veicTrac: { placa: tracaoSel, uf: ufCarregamento, rntrc: (veic as any)?.rntrc || "", tara: 0 },
@@ -463,7 +472,7 @@ function DialogNovoMdf({ open, onOpenChange, empresaId, empresa, chavesIniciais 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="w-screen h-screen max-w-none max-h-none m-0 rounded-none overflow-y-auto">
-        <DialogHeader><DialogTitle>Novo MDF-e</DialogTitle></DialogHeader>
+        <DialogHeader><DialogTitle>Novo MDF-e <span className={"text-xs font-normal px-1.5 py-0.5 rounded " + (ambienteMdf === "homologacao" ? "bg-amber-100 text-amber-800" : "bg-green-100 text-green-800")}>{ambienteMdf === "homologacao" ? "Homologação" : "Produção"}</span></DialogTitle></DialogHeader>
 
         <div className="space-y-2">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
@@ -483,7 +492,7 @@ function DialogNovoMdf({ open, onOpenChange, empresaId, empresa, chavesIniciais 
             <div className="border rounded-md p-2 space-y-1">
               <div className="grid grid-cols-2 md:grid-cols-5 gap-1">
                 <div><Label className="text-xs">Nº Manifesto</Label><Input className="h-6 text-[11px] font-mono bg-muted" readOnly value="—" placeholder="auto" /></div>
-                <div><Label className="text-xs">Série</Label><Input className="h-6 text-[11px] font-mono" value={serieMdf} onChange={e => setSerieMdf(e.target.value.replace(/\D/g, "").slice(0, 3))} placeholder="1" /></div>
+                <div><Label className="text-xs">Série</Label><Input className="h-6 text-[11px] font-mono bg-transparent" readOnly value={serieMdf} /></div>
                 <div><Label className="text-xs">Data Emissão</Label><Input className="h-6 text-[11px] bg-transparent" readOnly value={new Date().toLocaleDateString("pt-BR")} /></div>
                 <div><Label className="text-xs">Hora Emissão</Label><Input className="h-6 text-[11px] bg-transparent" readOnly value={new Date().toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })} /></div>
                 <div><Label className="text-xs">Responsável Emissão</Label><Input className="h-6 text-[11px] bg-transparent" readOnly value={respNome || ""} /></div>

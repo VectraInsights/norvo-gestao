@@ -51,8 +51,8 @@ function calcDV(chave43: string): string {
   const resto = soma % 11; const dv = resto < 2 ? 0 : 11 - resto; return String(dv);
 }
 
-export function gerarChaveMdf(cUF: string, aamm: string, cnpj: string, nMDF: string, cMDF: string): string {
-  const base = `${cUF}${aamm}${cnpj.padStart(14, "0")}58${nMDF.padStart(9, "0")}1${cMDF.padStart(8, "0")}`;
+export function gerarChaveMdf(cUF: string, aamm: string, cnpj: string, serie: string, nMDF: string, cMDF: string): string {
+  const base = `${cUF}${aamm}${cnpj.padStart(14, "0")}58${serie.padStart(3, "0")}${nMDF.padStart(9, "0")}1${cMDF.padStart(8, "0")}`;
   return base + calcDV(base);
 }
 
@@ -87,7 +87,7 @@ export function buildMdfXml(input: MdfInputCompleto): { xml: string; chave: stri
   const cnpjLimpo = input.emit.cnpj.replace(/\D/g, "").padStart(14, "0");
   const nMDF = input.numero.padStart(9, "0");
   const cMDF = String(Math.floor(Math.random() * 100000000)).padStart(8, "0");
-  const chave = gerarChaveMdf(cUF, aamm, cnpjLimpo, input.numero, cMDF);
+  const chave = gerarChaveMdf(cUF, aamm, cnpjLimpo, input.serie, input.numero, cMDF);
   const id = `MDFe${chave}`;
   const dhEmiFmt = dhEmi;
   const dhIniViagem = dhEmi;
