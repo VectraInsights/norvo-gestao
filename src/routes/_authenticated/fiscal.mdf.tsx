@@ -582,8 +582,10 @@ function DialogNovoMdf({ open, onOpenChange, empresaId, empresa, chavesIniciais 
           </div>
 
           <div className="border rounded-md p-2">
-            <div className="flex items-center justify-end gap-1 mb-1">
+            <div className="flex items-center justify-end gap-2 mb-1">
               <Label className="text-xs mr-auto">Conhecimentos ({ctesSelArr.length} vinculados){tracaoSel ? ` • placa ${tracaoSel}` : ""}</Label>
+              <span className="text-xs">Valor total: <strong className="font-mono">{brl(totalCarga)}</strong></span>
+              <span className="text-xs">Peso total: <strong className="font-mono">{num(pesoCarga)} kg</strong></span>
               <Button size="sm" variant="outline" className="h-6 text-[11px]" disabled={!tracaoSel} onClick={() => setCtesSelecionadas(new Set(ctesDaTracao.map(c => c.chave_acesso || "").filter(Boolean)))}>Marcar</Button>
               <Button size="sm" variant="outline" className="h-6 text-[11px]" onClick={() => setCtesSelecionadas(new Set())}>Limpar</Button>
             </div>
@@ -661,10 +663,6 @@ function DialogNovoMdf({ open, onOpenChange, empresaId, empresa, chavesIniciais 
               </div>
             </div>
             <div className="space-y-2 md:col-span-3">
-              <div className="border rounded-md p-2 space-y-1 h-fit">
-                <div><Label className="text-xs">Valor Total Carga</Label><p className="font-mono text-sm font-semibold">{brl(totalCarga)}</p></div>
-                <div><Label className="text-xs">Peso Total Carga</Label><p className="font-mono text-sm font-semibold">{num(pesoCarga)} kg</p></div>
-              </div>
               <div className="border rounded-md p-2 space-y-1">
                 <div><Label className="text-xs">Observação</Label><Textarea value={observacoes} onChange={e => setObservacoes(e.target.value)} rows={2} className="text-xs" /></div>
                 <div><Label className="text-xs">Informações Adicionais Fisco</Label><Textarea value={infoFisco} onChange={e => setInfoFisco(e.target.value)} rows={2} className="text-xs" /></div>
