@@ -480,7 +480,7 @@ function DialogNovoMdf({ open, onOpenChange, empresaId, empresa, chavesIniciais 
                       <SelectContent>{placasVeiculoOpts.map(p => (<SelectItem key={p} value={p}>{p}</SelectItem>))}</SelectContent>
                     </Select>
                   </div>
-                  <div><Label className="text-xs">Reboque(s)</Label><p className="font-mono text-xs">{reboques.length ? reboques.map(p => { const v = (veiculos || []).find(x => String(x.placa || "").toUpperCase() === p); return v?.renavam ? `${p} • RENAVAM ${v.renavam}` : p; }).join(", ") : "—"}</p></div>
+                  <div><Label className="text-xs">Reboque(s)</Label><div className="flex h-6 w-fit max-w-full items-center gap-1 rounded-md border border-input bg-transparent px-2 text-[11px] font-mono"><span className="truncate">{reboques.length ? reboques.map(p => { const v = (veiculos || []).find(x => String(x.placa || "").toUpperCase() === p); return v?.renavam ? `${p} • RENAVAM ${v.renavam}` : p; }).join(", ") : "—"}</span></div></div>
                   <div><Label className="text-xs">CIOT</Label><p className="font-mono text-xs">{ciotMdf || "—"}</p></div>
                 </div>
                 <div className="space-y-1">
@@ -501,7 +501,7 @@ function DialogNovoMdf({ open, onOpenChange, empresaId, empresa, chavesIniciais 
               </div>
               <div className="grid grid-cols-2 md:grid-cols-[minmax(0,1fr)_88px_minmax(0,1fr)_88px] gap-2">
                 <div className="min-w-0"><Label className="text-xs whitespace-nowrap">Cidade Início</Label><Input className="h-6 text-[11px] bg-transparent" readOnly value={cidadeIniDerivada} /></div>
-                <div><Label className="text-xs whitespace-nowrap">UF Início</Label>
+                <div><Label className="text-xs whitespace-nowrap" title="UF de Início">UF</Label>
                   <Select value={ufCarregamento} onValueChange={setUfCarregamento}>
                     <SelectTrigger className="h-6 px-1 text-[11px]"><SelectValue placeholder="UF" /></SelectTrigger>
                     <SelectContent>{UFS.map(uf => (<SelectItem key={uf} value={uf}>{uf}</SelectItem>))}</SelectContent>
@@ -513,7 +513,7 @@ function DialogNovoMdf({ open, onOpenChange, empresaId, empresa, chavesIniciais 
                     <SelectContent>{cidadesFimOptions.map(c => (<SelectItem key={c} value={c}>{c}</SelectItem>))}</SelectContent>
                   </Select>
                 ) : (<Input className="h-6 text-[11px] bg-transparent" readOnly value={cidadeFimDerivada} />)}</div>
-                <div><Label className="text-xs whitespace-nowrap">UF Encerramento</Label>
+                <div><Label className="text-xs whitespace-nowrap" title="UF de Encerramento">UF</Label>
                   <Select value={ufDescarregamento} onValueChange={setUfDescarregamento}>
                     <SelectTrigger className="h-6 px-1 text-[11px]"><SelectValue placeholder="UF" /></SelectTrigger>
                     <SelectContent>{UFS.map(uf => (<SelectItem key={uf} value={uf}>{uf}</SelectItem>))}</SelectContent>

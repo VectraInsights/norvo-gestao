@@ -2123,3 +2123,13 @@ Commits CF `ddeb6e4..37d5da0` (+ ajustes de X do dono) espelhados na Vercel.
 - Ao desselecionar todos os CT-es, UFs de Inicio/Encerramento
   zeram junto com as cidades (antes ficavam presos).
   Espelhado na Vercel.
+
+## MDF-e labels UF curtos + Reboque em caixa (23/09/2026)
+
+- Causa do estouro: o proprio rotulo "UF Encerramento" com
+  nowrap (~90px) era mais largo que a coluna de 88px. Labels
+  viraram "UF" (titulo completo no hover); contexto Inicio/
+  Encerramento segue na cidade ao lado.
+- Reboque(s) na mesma caixa do Veiculo (borda, mono, h-6),
+  somente leitura, mesmo formato placa + RENAVAM.
+  Espelhado na Vercel.
