@@ -1984,3 +1984,31 @@ Commits CF `ddeb6e4..37d5da0` (+ ajustes de X do dono) espelhados na Vercel.
 - Radios do pedágio + campo CIOT desabilitados no Complemento.
   Espelhado na Vercel.
 
+## MDF-e: transbordo na tela + XML (22/09/2026)
+
+- Transbordo na tela do Novo MDF-e: radios Tipo MDF-e (Normal /
+  Globalizado) + checkbox "Manifesto Transbordo" que abre campos
+  1º/2º/3º Transbordo (chave/locais). Vindo do remoto (commit
+  117d87a, que também trouxe percurso editável em ordem e placa
+  digitável filtrando CT-es). Espelhado na Vercel.
+- Esta rodada de 9 commits do remoto saiu sem entrada no HISTORICO
+  (regra violada lá); registrada aqui no retrofit.
+
+## MDF-e: XML corrigido (groups faltantes) (22/09/2026)
+
+- `buildMdfXml` montava `infMunCarregaXml`, `infPercursoXml` e
+  `infDocXml` mas NUNCA os inseriu no XML final — corrigido:
+  `infMunCarrega` e `infPercurso` agora entram dentro do `<ide>` e o
+  `<infDoc>` é emitido após o `<infModal>`.
+- Tag do percurso corrigida de `UFFim` para `UFPer` (schema 3.00).
+- Novo grupo `<tot>` (qCTe/qMDFe, vCarga, cUnid=01, qCarga) — era
+  obrigatório e não existia.
+- `<infCTe>` corrigido: tags inválidas `pesoB`/`vCarga` substituídas
+  por `infCarga` (cUnid/qCarga/vCarga).
+- Tag inválida `<tpAmbiente>` removida do `<ide>`.
+- Transbordo vai para o XML: quando checked, gera `infMDFeTransp`
+  (chMDFe) em cada `infMunDescarga` usando as chaves de 44 dígitos
+  digitadas (1º/2º/3º). Obs: no leiaute esse grupo é validação F43/F44
+  para modal Aquaviário — vale validar na SEFAZ se o rodo aceita.
+  Espelhado na Vercel.
+

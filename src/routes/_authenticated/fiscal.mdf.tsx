@@ -418,6 +418,8 @@ function DialogNovoMdf({ open, onOpenChange, empresaId, empresa, chavesIniciais 
         infPercurso: percursoUFs.map(uf => ({ ufFim: uf })),
         valorTotalCarga: ctesArr.reduce((s, c) => s + (c.valor_servico || 0), 0),
         pesoTotalKG: ctesArr.reduce((s, c) => s + (c.peso_carga || 0), 0),
+        tipo: (isTransbordo ? "transbordo" : "normal") as "normal" | "transbordo",
+        mdfesTransbordo: [transb1, transb2, transb3].filter(k => /^\d{44}$/.test((k || "").trim())).map(k => ({ chave: k.trim() })),
       };
 
       const { buildMdfXml } = await import("@/lib/sefaz-mdf");

@@ -76,6 +76,8 @@ export interface MdfInputCompleto {
   qtdTotalNF?: number;
   lacres?: Array<{ nLacre: string }>;
   obs?: string;
+  tipo?: "normal" | "transbordo";
+  mdfesTransbordo?: Array<{ chave: string }>;
 }
 
 export function buildMdfXml(input: MdfInputCompleto): { xml: string; chave: string } {
@@ -103,11 +105,11 @@ export function buildMdfXml(input: MdfInputCompleto): { xml: string; chave: stri
     `<infMunDescarrega><cMunDescarga>${m.cMunDescarga}</cMunDescarga><xMunDescarga>${m.xMunDescarga}</xMunDescarga></infMunDescarrega>`
   ).join("");
 
-  // infPercurso (ufFim obrigatório)
+  // infPercurso (UFPer obrigatório)
   const infPercursoXml = (input.infPercurso && input.infPercurso.length > 0
     ? input.infPercurso
     : [{ ufFim: input.ufDescarregamento }]
-  ).map(p => `<infPercurso><UFFim>${p.ufFim}</UFFim></infPercurso>`).join("");
+  ).map(p => `<infPercurso><UFPer>${p.ufFim}</UFPer></infPercurso>`).join("");
 
   // Veículos
   const veicTracXml = `<veicTrac><placa>${input.veicTrac.placa}</placa><UF>${input.veicTrac.uf}</UF><RNTRC>${input.veicTrac.rntrc}</RNTRC><tara>${input.veicTrac.tara}</tara>${input.veicTrac.capKG ? `<capKG>${input.veicTrac.capKG}</capKG>` : ""}${input.veicTrac.capM3 ? `<capM3>${input.veicTrac.capM3}</capM3>` : ""}<tpRod>${input.veicTrac.tpRod || "0"}</tpRod><tpCarroceria>${input.veicTrac.tpCarroceria || "0"}</tpCarroceria>${input.veicTrac.ciot ? `<CIOT><CIOT>${input.veicTrac.ciot}</CIOT></CIOT>` : ""}</veicTrac>`;
@@ -118,12 +120,17 @@ export function buildMdfXml(input: MdfInputCompleto): { xml: string; chave: stri
   // Condutor
   const condutorXml = `<condutor><CPF>${input.condutor.cpf.replace(/\D/g, "")}</CPF><xNome>${input.condutor.xNome}</xNome></condutor>`;
 
-  // InfDoc (CT-e vinculados)
-  const infDocXml = input.ctes.map(cte => {
-    const cMunIni = cte.chave.slice(0, 7);
-    const cMunFim = cte.chave.slice(0, 7);
-    return `<infMunDescarga><cMunDescarga>${cMunFim}</cMunDescarga><xMunDescarga></xMunDescarga><infCTe><chCTe>${cte.chave}</chCTe><pesoB>${cte.pesoKG.toFixed(3)}</pesoB><vCarga>${cte.valor.toFixed(2)}</vCarga></infCTe></infMunDescarga>`;
-  }).join("");
+  // InfDoc (CT-e vinculados ou MDF-e de transbordo)
+  const isTransbordo = input.tipo === "transbordo" && !!input.mdfesTransbordo?.length;
+  const infDocXml = isTransbordo
+    ? (input.mdfesTransbordo || []).map(mdf => {
+        const cMunDesc = mdf.chave.slice(0, 7);
+        return `<infMunDescarga><cMunDescarga>${cMunDesc}</cMunDescarga><xMunDescarga></xMunDescarga><infMDFeTransp><chMDFe>${mdf.chave}</chMDFe></infMDFeTransp></infMunDescarga>`;
+      }).join("")
+    : input.ctes.map(cte => {
+        const cMunFim = cte.chave.slice(0, 7);
+        return `<infMunDescarga><cMunDescarga>${cMunFim}</cMunDescarga><xMunDescarga></xMunDescarga><infCTe><chCTe>${cte.chave}</chCTe><infCarga><cUnid>01</cUnid><qCarga>${cte.pesoKG.toFixed(4)}</qCarga><vCarga>${cte.valor.toFixed(2)}</vCarga></infCarga></infCTe></infMunDescarga>`;
+      }).join("");
 
   // Lacres
   const lacresXml = (input.lacres || []).map(l => `<nLacre>${l.nLacre}</nLacre>`).join("");
@@ -140,15 +147,16 @@ export function buildMdfXml(input: MdfInputCompleto): { xml: string; chave: stri
       <nMDF>${input.numero}</nMDF>
       <cMDF>${cMDF}</cMDF>
       <dhEmi>${dhEmiFmt}</dhEmi>
-      <tpAmbiente>1</tpAmbiente>
       <tpProd>0</tpProd>
       <tpEmit>0</tpEmit>
       <modFrete>0</modFrete>
       <dhIniViagem>${dhIniViagem}</dhIniViagem>
       <cMunIni>${input.infMunCarrega[0]?.cMunCarrega || ""}</cMunIni>
       <UFIni>${input.ufCarregamento}</UFIni>
-      <cMunFim>${input.infMunDescarrega?.[0]?.cMunDescarga || input.infMunCarrega[0]?.cMunCarrega || ""}</cMunFim>
+      <cMunFim>${input.infMunDescarrega?.[0]?.cMunDescarga || input.ctes[0]?.chave?.slice(0, 7) || ""}</cMunFim>
       <UFFim>${input.ufDescarregamento}</UFFim>
+      ${infMunCarregaXml}
+      ${infPercursoXml}
     </ide>
     <emit>
       <CNPJ>${cnpjLimpo}</CNPJ>
@@ -173,6 +181,13 @@ export function buildMdfXml(input: MdfInputCompleto): { xml: string; chave: stri
         ${lacresXml ? `<lacres>${lacresXml}</lacres>` : ""}
       </rodo>
     </infModal>
+    <infDoc>${infDocXml}</infDoc>
+    <tot>
+      ${input.ctes.length > 0 ? `<qCTe>${input.ctes.length}</qCTe>` : isTransbordo ? `<qMDFe>${input.mdfesTransbordo?.length || 0}</qMDFe>` : ""}
+      <vCarga>${input.valorTotalCarga.toFixed(2)}</vCarga>
+      <cUnid>01</cUnid>
+      <qCarga>${input.pesoTotalKG.toFixed(4)}</qCarga>
+    </tot>
     <infSolicNFF />
   </infMDFe>
 </MDFe>`;
