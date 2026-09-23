@@ -2204,3 +2204,8 @@ Commits CF `ddeb6e4..37d5da0` (+ ajustes de X do dono) espelhados na Vercel.
 
 - Coluna direita: Totais + Observacao/Info Fisco empilhados;
   esquerda exclusiva do Percurso. Espelhado na Vercel.
+
+## MDF-e percurso 1/4 da largura (23/09/2026)
+
+- Grade percurso/totais-obs passa de 2/3+1/3 para 1/4+3/4.
+  Espelhado na Vercel.
