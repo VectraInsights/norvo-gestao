@@ -315,6 +315,7 @@ function DialogNovoMdf({ open, onOpenChange, empresaId, empresa, chavesIniciais 
   const [infoFisco, setInfoFisco] = useState("");
   const [respNome, setRespNome] = useState("");
   const [tipoMdf, setTipoMdf] = useState<"Normal" | "Globalizado">("Normal");
+  const [serieMdf, setSerieMdf] = useState("1");
   const [isTransbordo, setIsTransbordo] = useState(false);
   const [transb1, setTransb1] = useState("");
   const [transb2, setTransb2] = useState("");
@@ -340,10 +341,10 @@ function DialogNovoMdf({ open, onOpenChange, empresaId, empresa, chavesIniciais 
   const cidadeIniDerivada = useMemo(() => {
     if (ctesSelArr.length) {
       const f = formDe(ctesSelArr[0]);
-      return f.xMunIni || (f as any).xMunCarrega || (empresa as any)?.cidade || "—";
+      return f.xMunIni || (f as any).xMunCarrega || "";
     }
-    return (empresa as any)?.cidade || "—";
-  }, [ctesSelArr, empresa]);
+    return "";
+  }, [ctesSelArr]);
   const cidadesFimOptions = useMemo(() => [...new Set(ctesSelArr.map(c => formDe(c).xMunFim).filter(Boolean) as string[])], [ctesSelArr]);
   const [cidadeFimSel, setCidadeFimSel] = useState("");
   useEffect(() => {
@@ -352,7 +353,7 @@ function DialogNovoMdf({ open, onOpenChange, empresaId, empresa, chavesIniciais 
       setCidadeFimSel(cidadesFimOptions[cidadesFimOptions.length - 1]);
     }
   }, [cidadesFimOptions]);
-  const cidadeFimDerivada = cidadeFimSel || (cidadesFimOptions[cidadesFimOptions.length - 1] || (empresa as any)?.cidade || "—");
+  const cidadeFimDerivada = cidadeFimSel || (cidadesFimOptions[cidadesFimOptions.length - 1] || "");
   useEffect(() => {
     if (!ctesSelArr.length) return;
     const first = formDe(ctesSelArr[0]);
@@ -407,7 +408,7 @@ function DialogNovoMdf({ open, onOpenChange, empresaId, empresa, chavesIniciais 
       const ctesArr = (ctesDisponiveis || []).filter(c => ctesSelecionadas.has(c.chave_acesso || ""));
       const numero = String(Math.floor(Math.random() * 999999) + 1).padStart(9, "0");
       const input = {
-        empresaId, ambiente: "homologacao" as const, serie: "1", numero,
+        empresaId, ambiente: "homologacao" as const, serie: serieMdf || "1", numero,
         ufCarregamento, ufDescarregamento,
         emit: { cnpj: "", ie: "", xNome: "", uf: ufCarregamento, cMun: "", xMun: "" },
         veicTrac: { placa: tracaoSel, uf: ufCarregamento, rntrc: (veic as any)?.rntrc || "", tara: 0 },
@@ -465,67 +466,88 @@ function DialogNovoMdf({ open, onOpenChange, empresaId, empresa, chavesIniciais 
         <DialogHeader><DialogTitle>Novo MDF-e</DialogTitle></DialogHeader>
 
         <div className="space-y-2">
-          <div className="border rounded-md p-2">
-            <div className="grid grid-cols-2 md:grid-cols-6 gap-1">
-              <div className="md:col-span-2"><Label className="text-xs">Nome da Empresa</Label><Input className="h-6 text-[11px] bg-transparent" readOnly value={(empresa as any)?.nome_fantasia || (empresa as any)?.razao_social || "—"} /></div>
-              <div className="border rounded px-1 py-0.5">
-                <Label className="text-[10px] leading-none">Tipo MDF-e</Label>
-                <div className="flex gap-2 items-center mt-0.5">
-                  <label className="flex items-center gap-1 text-[11px] cursor-pointer"><input type="radio" checked={tipoMdf === "Normal"} onChange={() => setTipoMdf("Normal")} className="h-3 w-3" /> Normal</label>
-                  <label className="flex items-center gap-1 text-[11px] cursor-pointer"><input type="radio" checked={tipoMdf === "Globalizado"} onChange={() => setTipoMdf("Globalizado")} className="h-3 w-3" /> Globalizado</label>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+            <div className="border rounded-md p-2">
+              <div><Label className="text-xs">Nome da Empresa</Label><Input className="h-6 text-[11px] bg-transparent" readOnly value={(empresa as any)?.nome_fantasia || (empresa as any)?.razao_social || "—"} /></div>
+              <div className="flex flex-wrap items-end gap-x-4 gap-y-1 mt-1">
+                <div>
+                  <Label className="text-[10px] leading-none">Tipo MDF-e</Label>
+                  <div className="flex gap-2 items-center mt-0.5">
+                    <label className="flex items-center gap-1 text-[11px] cursor-pointer"><input type="radio" checked={tipoMdf === "Normal"} onChange={() => setTipoMdf("Normal")} className="h-3 w-3" /> Normal</label>
+                    <label className="flex items-center gap-1 text-[11px] cursor-pointer"><input type="radio" checked={tipoMdf === "Globalizado"} onChange={() => setTipoMdf("Globalizado")} className="h-3 w-3" /> Globalizado</label>
+                  </div>
                 </div>
-                <label className="flex items-center gap-1 text-[11px] cursor-pointer mt-1"><input type="checkbox" checked={isTransbordo} onChange={e => setIsTransbordo(e.target.checked)} className="h-3 w-3" /> Manifesto Transbordo</label>
+                <label className="flex items-center gap-1 text-[11px] cursor-pointer"><input type="checkbox" checked={isTransbordo} onChange={e => setIsTransbordo(e.target.checked)} className="h-3 w-3" /> Manifesto Transbordo</label>
               </div>
-              <div><Label className="text-xs">Nº Manifesto</Label><Input className="h-6 text-[11px] font-mono bg-muted" readOnly value="—" placeholder="auto" /></div>
-              <div><Label className="text-xs">Data Emissão</Label><Input className="h-6 text-[11px] bg-transparent" readOnly value={new Date().toLocaleDateString("pt-BR")} /></div>
-              <div><Label className="text-xs">Situação</Label><Input className="h-6 text-[11px] bg-transparent" readOnly value="Novo" /></div>
             </div>
-            {isTransbordo && (
-              <div className="grid grid-cols-3 gap-2 mt-2 border-t pt-2">
-                <div><Label className="text-xs">1º Transbordo</Label><Input className="h-6 text-[11px] font-mono" value={transb1} onChange={e => setTransb1(e.target.value)} placeholder="Chave / local 1º transbordo" /></div>
-                <div><Label className="text-xs">2º Transbordo</Label><Input className="h-6 text-[11px] font-mono" value={transb2} onChange={e => setTransb2(e.target.value)} placeholder="2º transbordo" /></div>
-                <div><Label className="text-xs">3º Transbordo</Label><Input className="h-6 text-[11px] font-mono" value={transb3} onChange={e => setTransb3(e.target.value)} placeholder="3º transbordo" /></div>
+            <div className="border rounded-md p-2 space-y-1">
+              <div className="grid grid-cols-2 md:grid-cols-5 gap-1">
+                <div><Label className="text-xs">Nº Manifesto</Label><Input className="h-6 text-[11px] font-mono bg-muted" readOnly value="—" placeholder="auto" /></div>
+                <div><Label className="text-xs">Série</Label><Input className="h-6 text-[11px] font-mono" value={serieMdf} onChange={e => setSerieMdf(e.target.value.replace(/\D/g, "").slice(0, 3))} placeholder="1" /></div>
+                <div><Label className="text-xs">Data Emissão</Label><Input className="h-6 text-[11px] bg-transparent" readOnly value={new Date().toLocaleDateString("pt-BR")} /></div>
+                <div><Label className="text-xs">Hora Emissão</Label><Input className="h-6 text-[11px] bg-transparent" readOnly value={new Date().toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })} /></div>
+                <div><Label className="text-xs">Responsável Emissão</Label><Input className="h-6 text-[11px] bg-transparent" readOnly value={respNome || ""} /></div>
               </div>
-            )}
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-1 mt-1">
-              <div><Label className="text-xs">UF Carregamento</Label>
-                <Select value={ufCarregamento} onValueChange={setUfCarregamento}>
-                  <SelectTrigger className="h-6 text-[11px]"><SelectValue /></SelectTrigger>
-                  <SelectContent>{UFS.map(uf => (<SelectItem key={uf} value={uf}>{uf}</SelectItem>))}</SelectContent>
-                </Select>
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-1">
+                <div><Label className="text-xs">Cidade Início</Label><Input className="h-6 text-[11px] bg-transparent" readOnly value={cidadeIniDerivada} /></div>
+                <div><Label className="text-xs">UF Início</Label>
+                  <Select value={ufCarregamento} onValueChange={setUfCarregamento}>
+                    <SelectTrigger className="h-6 text-[11px]"><SelectValue /></SelectTrigger>
+                    <SelectContent>{UFS.map(uf => (<SelectItem key={uf} value={uf}>{uf}</SelectItem>))}</SelectContent>
+                  </Select>
+                </div>
+                <div><Label className="text-xs">Cidade Encerramento</Label>{cidadesFimOptions.length > 1 ? (
+                  <Select value={cidadeFimSel} onValueChange={setCidadeFimSel}>
+                    <SelectTrigger className="h-6 text-[11px]"><SelectValue /></SelectTrigger>
+                    <SelectContent>{cidadesFimOptions.map(c => (<SelectItem key={c} value={c}>{c}</SelectItem>))}</SelectContent>
+                  </Select>
+                ) : (<Input className="h-6 text-[11px] bg-transparent" readOnly value={cidadeFimDerivada} />)}</div>
+                <div><Label className="text-xs">UF Encerramento</Label>
+                  <Select value={ufDescarregamento} onValueChange={setUfDescarregamento}>
+                    <SelectTrigger className="h-6 text-[11px]"><SelectValue /></SelectTrigger>
+                    <SelectContent>{UFS.map(uf => (<SelectItem key={uf} value={uf}>{uf}</SelectItem>))}</SelectContent>
+                  </Select>
+                </div>
               </div>
-              <div><Label className="text-xs">UF Descarregamento</Label>
-                <Select value={ufDescarregamento} onValueChange={setUfDescarregamento}>
-                  <SelectTrigger className="h-6 text-[11px]"><SelectValue /></SelectTrigger>
-                  <SelectContent>{UFS.map(uf => (<SelectItem key={uf} value={uf}>{uf}</SelectItem>))}</SelectContent>
-                </Select>
+              <div className="grid grid-cols-2 gap-1">
+                <div><Label className="text-xs">Seguradora RC-V</Label><Input className="h-6 text-[11px] bg-transparent" readOnly value={String((segMdf as any).seguradoraNome || "")} /></div>
+                <div><Label className="text-xs">Chave de acesso</Label><Input className="h-6 text-[11px] font-mono bg-transparent" readOnly value="" placeholder="gerada na emissão" /></div>
               </div>
-              <div><Label className="text-xs">Cidade Inicial Carga</Label><Input className="h-6 text-[11px] bg-transparent" readOnly value={cidadeIniDerivada} /></div>
-              <div><Label className="text-xs">Cidade Encerramento *</Label>{cidadesFimOptions.length > 1 ? (
-                <Select value={cidadeFimSel} onValueChange={setCidadeFimSel}>
-                  <SelectTrigger className="h-6 text-[11px]"><SelectValue /></SelectTrigger>
-                  <SelectContent>{cidadesFimOptions.map(c => (<SelectItem key={c} value={c}>{c}</SelectItem>))}</SelectContent>
-                </Select>
-              ) : (<Input className="h-6 text-[11px] bg-transparent" readOnly value={cidadeFimDerivada} />)}</div>
-            </div>
-            <div className="grid grid-cols-2 gap-1 mt-1">
-              <div><Label className="text-xs">Local Emissão</Label><Input className="h-6 text-[11px] bg-transparent" readOnly value={[ (empresa as any)?.cidade, (empresa as any)?.uf ].filter(Boolean).join("/") || "—"} /></div>
-              <div><Label className="text-xs">CNPJ ANTT - AUTORIZADO</Label><Input className="h-6 text-[11px] font-mono bg-transparent" readOnly value={String((empresa as any)?.cnpj || "").replace(/(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})/, "$1.$2.$3/$4-$5") || "—"} /></div>
+              <div className="grid grid-cols-2 md:grid-cols-3 gap-1">
+                <div><Label className="text-xs">Averbação RC-V</Label><Input className="h-6 text-[11px] font-mono bg-transparent" readOnly value={String((segMdf as any).averbacao || "")} /></div>
+                <div><Label className="text-xs">CNPJ ANTT - AUTORIZADO</Label><Input className="h-6 text-[11px] font-mono bg-transparent" readOnly value={String((empresa as any)?.cnpj || "").replace(/(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})/, "$1.$2.$3/$4-$5") || "—"} /></div>
+                <div><Label className="text-xs">Local Emissão</Label><Input className="h-6 text-[11px] bg-transparent" readOnly value={[ (empresa as any)?.cidade, (empresa as any)?.uf ].filter(Boolean).join("/") || "—"} /></div>
+              </div>
             </div>
           </div>
 
           <div className="border rounded-md p-2">
             <div className="grid grid-cols-2 md:grid-cols-4 gap-1">
-              <div><Label className="text-xs">Tração</Label><p className="font-mono text-xs">{tracaoSel || "—"}{veicTracInfo?.renavam ? ` • RENAVAM ${veicTracInfo.renavam}` : ""}</p></div>
-              <div><Label className="text-xs">Reboques</Label><p className="font-mono text-xs">{reboques.join(", ") || "—"}</p></div>
-              <div><Label className="text-xs">CIOT</Label><p className="font-mono text-xs">{ciotMdf || "—"}</p></div>
-              <div><Label className="text-xs">Tipo Frota</Label><p className="text-xs">{veicTracInfo ? `${veicTracInfo.marca_modelo || ""} / ${veicTracInfo.tipo || ""}`.trim() || "—" : "—"}</p></div>
+              <div>
+                <div><Label className="text-xs">Veículo</Label><p className="font-mono text-xs">{tracaoSel || "—"}{veicTracInfo?.renavam ? ` • RENAVAM ${veicTracInfo.renavam}` : ""}</p></div>
+                <div className="mt-1"><Label className="text-xs">CIOT</Label><p className="font-mono text-xs">{ciotMdf || "—"}</p></div>
+              </div>
+              {isTransbordo ? (
+                <>
+                  <div><Label className="text-xs">1º Transbordo</Label><Input className="h-6 text-[11px] font-mono" value={transb1} onChange={e => setTransb1(e.target.value)} placeholder="Chave / local 1º transbordo" /></div>
+                  <div><Label className="text-xs">2º Transbordo</Label><Input className="h-6 text-[11px] font-mono" value={transb2} onChange={e => setTransb2(e.target.value)} placeholder="2º transbordo" /></div>
+                  <div><Label className="text-xs">3º Transbordo</Label><Input className="h-6 text-[11px] font-mono" value={transb3} onChange={e => setTransb3(e.target.value)} placeholder="3º transbordo" /></div>
+                </>
+              ) : (
+                <>
+                  <div><Label className="text-xs">Reboques</Label><p className="font-mono text-xs">{reboques.join(", ") || "—"}</p></div>
+                  <div><Label className="text-xs">Tipo Frota</Label><p className="text-xs">{veicTracInfo ? `${veicTracInfo.marca_modelo || ""} / ${veicTracInfo.tipo || ""}`.trim() || "—" : "—"}</p></div>
+                  <div><Label className="text-xs">Apólice</Label><p className="font-mono text-xs">{String((segMdf as any).apolice || "—")}</p></div>
+                </>
+              )}
             </div>
-            <div className="grid grid-cols-2 md:grid-cols-3 gap-1 mt-1">
-              <div><Label className="text-xs">Seguradora</Label><p className="text-xs">{String((segMdf as any).seguradoraNome || "—")}</p></div>
-              <div><Label className="text-xs">Apólice</Label><p className="font-mono text-xs">{String((segMdf as any).apolice || "—")}</p></div>
-              <div><Label className="text-xs">Averbação</Label><p className="font-mono text-xs">{String((segMdf as any).averbacao || "—")}</p></div>
-            </div>
+            {isTransbordo && (
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-1 mt-1">
+                <div><Label className="text-xs">Reboques</Label><p className="font-mono text-xs">{reboques.join(", ") || "—"}</p></div>
+                <div><Label className="text-xs">Tipo Frota</Label><p className="text-xs">{veicTracInfo ? `${veicTracInfo.marca_modelo || ""} / ${veicTracInfo.tipo || ""}`.trim() || "—" : "—"}</p></div>
+                <div><Label className="text-xs">Apólice</Label><p className="font-mono text-xs">{String((segMdf as any).apolice || "—")}</p></div>
+              </div>
+            )}
             {!ctesSelecionadas.size && <p className="text-xs text-muted-foreground mt-1">Veículo, CIOT e seguro vêm dos CT-es vinculados abaixo.</p>}
           </div>
 

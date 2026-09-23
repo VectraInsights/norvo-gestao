@@ -2009,6 +2009,23 @@ Commits CF `ddeb6e4..37d5da0` (+ ajustes de X do dono) espelhados na Vercel.
 - Transbordo vai para o XML: quando checked, gera `infMDFeTransp`
   (chMDFe) em cada `infMunDescarga` usando as chaves de 44 dígitos
   digitadas (1º/2º/3º). Obs: no leiaute esse grupo é validação F43/F44
-  para modal Aquaviário — vale validar na SEFAZ se o rodo aceita.
+  para modal Aquaviário —   vale validar na SEFAZ se o rodo aceita.
+  Espelhado na Vercel.
+
+## Novo MDF-e em boxes separados (23/09/2026)
+
+- Cabeçalho em 2 boxes lado a lado: esquerda = Nome da Empresa +
+  radios Normal/Globalizado + checkbox Manifesto Transbordo ao lado;
+  direita = linha 1 (Nº Manifesto, Série editável, Data/Hora emissão,
+  Responsável), linha 2 (Cidade/UF início, Cidade/UF encerramento),
+  linha 3 (Seguradora RC-V, Chave de acesso), linha 4 (Averbação RC-V,
+  CNPJ ANTT autorizado, Local emissão). Box de Situação excluído.
+- Box do veículo: Veículo com CIOT embaixo; 1º/2º/3º Transbordo ao
+  lado do veículo quando marcado (Reboques/Tipo Frota/Apólice descem
+  para a 2ª linha nesse caso).
+- Cidades de início/encerramento ficam em branco no MDF-e avulso
+  (antes puxavam a cidade da empresa, ex. São Paulo); com CT-es,
+  continuam vindo dos CT-es (encerramento mantém select entre
+  destinos). Série agora editável (antes fixa "1") e vai pro XML.
   Espelhado na Vercel.
 
