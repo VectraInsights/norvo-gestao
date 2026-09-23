@@ -105,11 +105,11 @@ export function buildMdfXml(input: MdfInputCompleto): { xml: string; chave: stri
     `<infMunDescarrega><cMunDescarga>${m.cMunDescarga}</cMunDescarga><xMunDescarga>${m.xMunDescarga}</xMunDescarga></infMunDescarrega>`
   ).join("");
 
-  // infPercurso (UFPer obrigatório)
-  const infPercursoXml = (input.infPercurso && input.infPercurso.length > 0
-    ? input.infPercurso
-    : [{ ufFim: input.ufDescarregamento }]
-  ).map(p => `<infPercurso><UFPer>${p.ufFim}</UFPer></infPercurso>`).join("");
+  // infPercurso (UFPer) — opcional (0-25); só UFs adicionadas pelo usuário, sem fallback
+  const infPercursoXml = (input.infPercurso || [])
+    .map(p => String(p.ufFim || "").trim().toUpperCase())
+    .filter(uf => /^[A-Z]{2}$/.test(uf))
+    .map(uf => `<infPercurso><UFPer>${uf}</UFPer></infPercurso>`).join("");
 
   // Veículos
   const ciotNum = String(input.veicTrac.ciot || "").replace(/\D/g, "");

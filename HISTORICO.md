@@ -2223,3 +2223,10 @@ Commits CF `ddeb6e4..37d5da0` (+ ajustes de X do dono) espelhados na Vercel.
   MDFeRecepcao (103 + nRec) + polling do MDFeRetRecepcao (10x3s:
   105 aguarda, 104 le infProt com cStat/xMotivo/nProt).
   Espelhado na Vercel.
+
+## MDF-e emite sem percurso (23/09/2026)
+
+- infPercurso virou opcional de verdade (0-25, sem fallback
+  para UF de descarga; filtra so siglas validas). Validacao e
+  botao nao exigem mais UF no percurso.
+  Espelhado na Vercel.

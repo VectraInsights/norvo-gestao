@@ -436,7 +436,6 @@ function DialogNovoMdf({ open, onOpenChange, empresaId, empresa, chavesIniciais 
     if (!ctesSelecionadas.size) { toast.error("Selecione pelo menos 1 CT-e"); return; }
     if (!tracaoSel) { toast.error("Selecione o veículo"); return; }
     if (!motNomes.length) { toast.error("CT-es sem motorista"); return; }
-    if (!percursoUFs.length) { toast.error("Selecione ao menos 1 UF no percurso"); return; }
 
     const veic = (veiculos || []).find(v => String(v.placa || "").toUpperCase() === tracaoSel);
     const mot0 = motNomes[0];
@@ -673,7 +672,7 @@ function DialogNovoMdf({ open, onOpenChange, empresaId, empresa, chavesIniciais 
 
         <DialogFooter>
           <Button variant="outline" onClick={() => onOpenChange(false)}>Cancelar</Button>
-          <Button onClick={handleEmitir} disabled={loading || !tracaoSel || !ctesSelecionadas.size || !motNomes.length || !percursoUFs.length}>
+          <Button onClick={handleEmitir} disabled={loading || !tracaoSel || !ctesSelecionadas.size || !motNomes.length}>
             <Send className="mr-1 h-4 w-4" /> {loading ? "Emitindo..." : "Emitir MDF-e"}
           </Button>
         </DialogFooter>
