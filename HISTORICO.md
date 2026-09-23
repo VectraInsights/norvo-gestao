@@ -2139,3 +2139,8 @@ Commits CF `ddeb6e4..37d5da0` (+ ajustes de X do dono) espelhados na Vercel.
 - Caixa do Reboque(s) com as mesmas classes do Trigger
   (bg-stone-200, shadow-sm, px-3, chevron): formato e cor
   identicos aos do Veiculo. Espelhado na Vercel.
+
+## MDF-e cidades com fundo cinza (23/09/2026)
+
+- Caixas Cidade Inicio/Encerramento com fundo cinza sempre
+  (bg-stone-200, igual aos selects). Espelhado na Vercel.
