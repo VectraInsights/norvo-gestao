@@ -2192,3 +2192,10 @@ Commits CF `ddeb6e4..37d5da0` (+ ajustes de X do dono) espelhados na Vercel.
   usa fallback pesoDe() = coluna ou form.peso do CT-e (tabela,
   totais, ordenacao e XML).
   Espelhado na Vercel.
+
+## MDF-e totais no canto + percurso em cima (23/09/2026)
+
+- Responsavel sai do box de totais (ja esta no topo direito).
+  Percurso sobe ao lado dos totais (2/3 + 1/3): Valor/Peso
+  empilhados no canto direito; Obs/Fisco em linha cheia abaixo.
+  Espelhado na Vercel.
