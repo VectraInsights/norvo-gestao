@@ -2046,3 +2046,10 @@ Commits CF `ddeb6e4..37d5da0` (+ ajustes de X do dono) espelhados na Vercel.
   (getCertAndAmbiente ignora nfe_config) e proxy (emitir/encerrar/
   cancelar) forcados para homologacao. Selo no titulo mostra
   Homologacao. Espelhado na Vercel.
+
+## Configuracoes/Empresas crash Select (23/09/2026)
+
+- Pagina quebrava com ReferenceError: Select is not defined
+  (faltava o import de @/components/ui/select, usado no campo
+  Regime tributario). Erro ja apontado pelo tsc no baseline.
+  Espelhado na Vercel.
