@@ -358,7 +358,7 @@ function DialogNovoMdf({ open, onOpenChange, empresaId, empresa, chavesIniciais 
   }, [cidadesFimOptions]);
   const cidadeFimDerivada = cidadeFimSel || (cidadesFimOptions[cidadesFimOptions.length - 1] || "");
   useEffect(() => {
-    if (!ctesSelArr.length) return;
+    if (!ctesSelArr.length) { setUfCarregamento(""); setUfDescarregamento(""); return; }
     const first = formDe(ctesSelArr[0]);
     const ufIni = first.ufIni || (first as any).UFIni || first.ufCarregamento;
     if (ufIni && ufIni !== ufCarregamento) setUfCarregamento(ufIni);
@@ -470,13 +470,13 @@ function DialogNovoMdf({ open, onOpenChange, empresaId, empresa, chavesIniciais 
 
         <div className="space-y-2">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-            <div className="border rounded-md p-2 space-y-1">
+            <div className="border rounded-md p-2 space-y-1 overflow-hidden">
               <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
                 <div className="space-y-1">
                   <div><Label className="text-xs">Nome da Empresa</Label><Input className="h-6 text-[11px] bg-transparent" readOnly value={(empresa as any)?.nome_fantasia || (empresa as any)?.razao_social || "—"} /></div>
                   <div><Label className="text-xs">Veículo *</Label>
                     <Select value={tracaoSel} onValueChange={v => { setTracaoSel(v); setCtesSelecionadas(new Set()); }}>
-                      <SelectTrigger className="h-6 w-[220px] max-w-full text-[11px] font-mono">{tracaoSel ? (<span className="truncate">{tracaoSel}{veicTracInfo?.renavam ? ` • RENAVAM ${veicTracInfo.renavam}` : ""}</span>) : (<span className="text-muted-foreground">Selecione...</span>)}</SelectTrigger>
+                      <SelectTrigger className="h-6 w-fit max-w-full gap-1 text-[11px] font-mono [&>span]:truncate">{tracaoSel ? (<span>{tracaoSel}{veicTracInfo?.renavam ? ` • RENAVAM ${veicTracInfo.renavam}` : ""}</span>) : (<span className="text-muted-foreground">Selecione...</span>)}</SelectTrigger>
                       <SelectContent>{placasVeiculoOpts.map(p => (<SelectItem key={p} value={p}>{p}</SelectItem>))}</SelectContent>
                     </Select>
                   </div>

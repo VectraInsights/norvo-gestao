@@ -2113,3 +2113,13 @@ Commits CF `ddeb6e4..37d5da0` (+ ajustes de X do dono) espelhados na Vercel.
 - Select do Veiculo com largura fixa (220px) e RENAVAM dentro
   do proprio campo (linha abaixo removida).
   Espelhado na Vercel.
+
+## MDF-e overflow blindado + RENAVAM cheio + UFs zeram (23/09/2026)
+
+- Box da empresa com overflow-hidden: UF Encerramento nao passa
+  mais da borda em nenhuma largura.
+- Select do Veiculo encolhe pro conteudo (w-fit): mostra placa +
+  RENAVAM inteiros, mesmo padrao do Reboque.
+- Ao desselecionar todos os CT-es, UFs de Inicio/Encerramento
+  zeram junto com as cidades (antes ficavam presos).
+  Espelhado na Vercel.
