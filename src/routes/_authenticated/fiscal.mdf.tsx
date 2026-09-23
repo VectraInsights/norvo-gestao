@@ -476,10 +476,9 @@ function DialogNovoMdf({ open, onOpenChange, empresaId, empresa, chavesIniciais 
                   <div><Label className="text-xs">Nome da Empresa</Label><Input className="h-6 text-[11px] bg-transparent" readOnly value={(empresa as any)?.nome_fantasia || (empresa as any)?.razao_social || "—"} /></div>
                   <div><Label className="text-xs">Veículo *</Label>
                     <Select value={tracaoSel} onValueChange={v => { setTracaoSel(v); setCtesSelecionadas(new Set()); }}>
-                      <SelectTrigger className="h-6 text-[11px] font-mono"><SelectValue placeholder="Selecione..." /></SelectTrigger>
+                      <SelectTrigger className="h-6 w-[220px] max-w-full text-[11px] font-mono">{tracaoSel ? (<span className="truncate">{tracaoSel}{veicTracInfo?.renavam ? ` • RENAVAM ${veicTracInfo.renavam}` : ""}</span>) : (<span className="text-muted-foreground">Selecione...</span>)}</SelectTrigger>
                       <SelectContent>{placasVeiculoOpts.map(p => (<SelectItem key={p} value={p}>{p}</SelectItem>))}</SelectContent>
                     </Select>
-                    {veicTracInfo?.renavam ? <p className="font-mono text-[10px] text-muted-foreground">RENAVAM {veicTracInfo.renavam}</p> : null}
                   </div>
                   <div><Label className="text-xs">Reboque(s)</Label><p className="font-mono text-xs">{reboques.length ? reboques.map(p => { const v = (veiculos || []).find(x => String(x.placa || "").toUpperCase() === p); return v?.renavam ? `${p} • RENAVAM ${v.renavam}` : p; }).join(", ") : "—"}</p></div>
                   <div><Label className="text-xs">CIOT</Label><p className="font-mono text-xs">{ciotMdf || "—"}</p></div>
@@ -500,15 +499,15 @@ function DialogNovoMdf({ open, onOpenChange, empresaId, empresa, chavesIniciais 
                   <div><Label className="text-xs">3º Transbordo</Label><Input className="h-6 text-[11px] font-mono" disabled={!isTransbordo} value={transb3} onChange={e => setTransb3(e.target.value)} /></div>
                 </div>
               </div>
-              <div className="grid grid-cols-2 md:grid-cols-[1fr_88px_1fr_88px] gap-2">
-                <div><Label className="text-xs whitespace-nowrap">Cidade Início</Label><Input className="h-6 text-[11px] bg-transparent" readOnly value={cidadeIniDerivada} /></div>
+              <div className="grid grid-cols-2 md:grid-cols-[minmax(0,1fr)_88px_minmax(0,1fr)_88px] gap-2">
+                <div className="min-w-0"><Label className="text-xs whitespace-nowrap">Cidade Início</Label><Input className="h-6 text-[11px] bg-transparent" readOnly value={cidadeIniDerivada} /></div>
                 <div><Label className="text-xs whitespace-nowrap">UF Início</Label>
                   <Select value={ufCarregamento} onValueChange={setUfCarregamento}>
                     <SelectTrigger className="h-6 px-1 text-[11px]"><SelectValue placeholder="UF" /></SelectTrigger>
                     <SelectContent>{UFS.map(uf => (<SelectItem key={uf} value={uf}>{uf}</SelectItem>))}</SelectContent>
                   </Select>
                 </div>
-                <div><Label className="text-xs whitespace-nowrap">Cidade Encerramento</Label>{cidadesFimOptions.length > 1 ? (
+                <div className="min-w-0"><Label className="text-xs whitespace-nowrap">Cidade Encerramento</Label>{cidadesFimOptions.length > 1 ? (
                   <Select value={cidadeFimSel} onValueChange={setCidadeFimSel}>
                     <SelectTrigger className="h-6 text-[11px]"><SelectValue /></SelectTrigger>
                     <SelectContent>{cidadesFimOptions.map(c => (<SelectItem key={c} value={c}>{c}</SelectItem>))}</SelectContent>

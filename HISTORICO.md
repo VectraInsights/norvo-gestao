@@ -2105,3 +2105,11 @@ Commits CF `ddeb6e4..37d5da0` (+ ajustes de X do dono) espelhados na Vercel.
 - Labels encurtados (Cidade/UF Inicio/Encerramento) com nowrap e
   colunas de UF em 88px: nada mais quebra de linha nem desalinha.
   Espelhado na Vercel.
+
+## MDF-e overflow UF + RENAVAM no select (23/09/2026)
+
+- Linha cidades/UFs com minmax(0,1fr): UF Encerramento nao
+  passa mais da borda do box.
+- Select do Veiculo com largura fixa (220px) e RENAVAM dentro
+  do proprio campo (linha abaixo removida).
+  Espelhado na Vercel.
