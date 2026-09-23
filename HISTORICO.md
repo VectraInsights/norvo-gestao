@@ -2099,3 +2099,9 @@ Commits CF `ddeb6e4..37d5da0` (+ ajustes de X do dono) espelhados na Vercel.
   de acesso (em branco, sem placeholder)/CNPJ ANTT/Local.
 - Transbordos 1-3 sem placeholder, sempre em branco.
   Espelhado na Vercel.
+
+## MDF-e linha cidades/UFs alinhada (23/09/2026)
+
+- Labels encurtados (Cidade/UF Inicio/Encerramento) com nowrap e
+  colunas de UF em 88px: nada mais quebra de linha nem desalinha.
+  Espelhado na Vercel.
