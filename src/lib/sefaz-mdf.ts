@@ -200,8 +200,8 @@ export function buildMdfXml(input: MdfInputCompleto): { xml: string; chave: stri
   return { xml, chave };
 }
 
-async function soapRequest(url: string, body: string, action: string, agent?: https.Agent): Promise<string> {
-  const envelope = `<?xml version="1.0" encoding="utf-8"?><soap12:Envelope xmlns:soap12="http://www.w3.org/2003/05/soap-envelope"><soap12:Body>${body}</soap12:Body></soap12:Envelope>`;
+async function soapRequest(url: string, body: string, action: string, agent?: https.Agent, headerXml?: string): Promise<string> {
+  const envelope = `<?xml version="1.0" encoding="utf-8"?><soap12:Envelope xmlns:soap12="http://www.w3.org/2003/05/soap-envelope"><soap12:Header>${headerXml || ""}</soap12:Header><soap12:Body>${body}</soap12:Body></soap12:Envelope>`;
   const contentType = `application/soap+xml; charset=utf-8; action="${action}"`;
   if (agent) {
     const u = new URL(url);
@@ -224,13 +224,15 @@ async function soapRequest(url: string, body: string, action: string, agent?: ht
 export async function emitirMdf(pfx: Buffer, senha: string, xml: string, ambiente: Ambiente): Promise<{ sucesso: boolean; cStat: string; xMotivo: string; chave?: string; protocolo?: string; xmlRet?: string }> {
   const ep = getMdfEndpoints(ambiente) as any;
   const agent = createSefazAgent(pfx, senha);
-  const xmlAss = signXml(xml, pfx, senha).replace(/<\?xml[^?]*\?>\s*/g, "");
-  // MDF-e 3.00: só envio síncrono (RecepcaoSinc) com XML gzip+base64 dentro de enviMDFe
-  const compactada = zlib.gzipSync(Buffer.from(xmlAss, "utf-8")).toString("base64");
-  const idLote = String(Date.now()).slice(-15).padStart(15, "0");
-  const envi = `<enviMDFe versao="3.00" xmlns="http://www.portalfiscal.inf.br/mdf"><idLote>${idLote}</idLote><MDFe>${compactada}</MDFe></enviMDFe>`;
-  const body = `<mdfeDadosMsg xmlns="http://www.portalfiscal.inf.br/mdfe/wsdl/MDFeRecepcaoSinc">${envi}</mdfeDadosMsg>`;
-  const ret = await soapRequest(ep.mdfRecepcaoSinc, body, "http://www.portalfiscal.inf.br/mdfe/wsdl/MDFeRecepcaoSinc/mdfeRecepcao", agent);
+  const nsSinc = "http://www.portalfiscal.inf.br/mdfe/wsdl/MDFeRecepcaoSinc";
+  const cUF = xml.match(/Id="MDFe(\d{2})/)?.[1] || "31";
+  const cabec = `<mdfeCabecMsg xmlns="${nsSinc}"><cUF>${cUF}</cUF><versaoDados>3.00</versaoDados></mdfeCabecMsg>`;
+  const xmlAss = signXml(xml, pfx, senha);
+  // Síncrono (ACBr): mdfeDadosMsg = base64(gzip(<MDFe>...</MDFe>)) puro, sem enviMDFe/idLote
+  const mdfeEl = xmlAss.match(/<MDFe[\s>][\s\S]*<\/MDFe>/)?.[0] || xmlAss.replace(/<\?xml[^?]*\?>\s*/g, "");
+  const compactada = zlib.gzipSync(Buffer.from(mdfeEl, "utf-8")).toString("base64");
+  const body = `<mdfeDadosMsg xmlns="${nsSinc}">${compactada}</mdfeDadosMsg>`;
+  const ret = await soapRequest(ep.mdfRecepcaoSinc, body, `${nsSinc}/mdfeRecepcao`, agent, cabec);
   const prot = ret.match(/<infProt>[\s\S]*?<\/infProt>/)?.[0] || "";
   const cStatProt = prot.match(/<cStat>(\d+)<\/cStat>/)?.[1] || "";
   const xMotivoProt = prot.match(/<xMotivo>([^<]+)<\/xMotivo>/)?.[1] || "";

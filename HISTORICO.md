@@ -2261,3 +2261,10 @@ Commits CF `ddeb6e4..37d5da0` (+ ajustes de X do dono) espelhados na Vercel.
 - HTTP 400 vazio no Sinc: soapRequest passa a logar URL, action,
   tamanhos e headers da resposta para diagnostico preciso.
   Espelhado na Vercel.
+
+## MDF-e Sinc formato ACBr (23/09/2026)
+
+- 400 vazio porque o payload ia com enviMDFe/idLote e sem
+  header: formato certo (fonte ACBr) e mdfeDadosMsg =
+  base64(gzip(<MDFe>...</MDFe>)) puro + header SOAP mdfeCabecMsg
+  (cUF da chave + versaoDados 3.00). Espelhado na Vercel.
