@@ -2275,3 +2275,10 @@ Commits CF `ddeb6e4..37d5da0` (+ ajustes de X do dono) espelhados na Vercel.
   confirmado no XSD 3.00; trocado em MDFe, eventoMDFe,
   consSitMDFe e nos WSDLs (Consulta/Evento). Toast de erro
   passa a mostrar cStat + motivo. Espelhado na Vercel.
+
+## MDF-e reemitir rejeitado (23/09/2026)
+
+- Linha rejeitada ganha botao Tentar novamente (RotateCcw,
+  tooltip com o motivo): reabre o Novo MDF-e com os mesmos
+  CT-es pre-selecionados (chaves extraidas do XML guardado).
+  Espelhado na Vercel.

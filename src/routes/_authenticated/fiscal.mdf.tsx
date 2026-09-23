@@ -10,7 +10,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Route as RoadIcon, Plus, FileText, Search, Trash2, Filter, Calendar, CheckCircle2, XCircle, AlertTriangle, RefreshCw, Send, FileDown, Truck, Users } from "lucide-react";
+import { Route as RoadIcon, Plus, FileText, Search, Trash2, Filter, Calendar, CheckCircle2, XCircle, AlertTriangle, RefreshCw, Send, FileDown, Truck, Users, RotateCcw } from "lucide-react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useEmpresaAtual } from "@/hooks/use-empresa";
@@ -58,6 +58,14 @@ function MdfPage() {
   const [mdfEncerrar, setMdfEncerrar] = useState<MdfDoc | null>(null);
   const [mdfCancelar, setMdfCancelar] = useState<MdfDoc | null>(null);
   const [justificativa, setJustificativa] = useState("");
+  const reemitir = (d: MdfDoc) => {
+    const xml = String((d as any).xml_assinado || "");
+    const chaves = [...xml.matchAll(/<chCTe>(\d{44})<\/chCTe>/g)].map(m => m[1]);
+    const unicas = [...new Set(chaves)];
+    if (!unicas.length) { toast.error("Sem CT-es vinculados para reaproveitar"); return; }
+    setMdfPrefill(unicas);
+    setOpen(true);
+  };
   const [filtroStatus, setFiltroStatus] = useState("todos");
   const [periodoIni, setPeriodoIni] = useState("");
   const [periodoFim, setPeriodoFim] = useState("");
@@ -182,6 +190,11 @@ function MdfPage() {
                             <XCircle className="h-4 w-4 text-destructive" />
                           </Button>
                         </>
+                      )}
+                      {d.status === "rejeitado" && (
+                        <Button variant="ghost" size="sm" title={d.motivo_rejeicao ? `Rejeitado: ${d.motivo_rejeicao} — clique para tentar novamente` : "Tentar novamente"} onClick={() => reemitir(d)}>
+                          <RotateCcw className="h-4 w-4" />
+                        </Button>
                       )}
                       {d.status === "rascunho" && (
                         <Button variant="ghost" size="sm" title="Rejeitado — ver motivo">
