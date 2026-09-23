@@ -308,7 +308,7 @@ function DialogNovoMdf({ open, onOpenChange, empresaId, empresa, chavesIniciais 
   });
 
   const [ctesSelecionadas, setCtesSelecionadas] = useState<Set<string>>(new Set());
-  const [percursoUFs, setPercursoUFs] = useState<string[]>(["SP"]);
+  const [percursoUFs, setPercursoUFs] = useState<string[]>([]);
   const [tracaoSel, setTracaoSel] = useState("");
   const todasTracoes = useMemo(() => { const out: string[] = []; for (const c of (ctesDisponiveis || [])) { try { const p = JSON.parse((c as any).xml_assinado || "{}"); const pl = String(p.form?.placaVeiculo || "").toUpperCase(); if (pl && !out.includes(pl)) out.push(pl); } catch {} } return out.sort(); }, [ctesDisponiveis]);
   const placasVeiculoOpts = useMemo(() => { const out: string[] = []; const REB = ["carreta", "bitrem"]; for (const v of (veiculos || [])) { if (REB.includes(String(v.tipo || "").toLowerCase().trim())) continue; const p = String(v.placa || "").toUpperCase(); if (p && !out.includes(p)) out.push(p); } for (const p of todasTracoes) if (!out.includes(p)) out.push(p); return out.sort(); }, [veiculos, todasTracoes]);
@@ -325,15 +325,14 @@ function DialogNovoMdf({ open, onOpenChange, empresaId, empresa, chavesIniciais 
   // MDF-e travado em homologação (decisão 23/09/2026) — XML e transmissão sempre tpAmb=2
   const ambienteMdf = "homologacao" as const;
   useEffect(() => { if (!open) return; (async () => { try { const { data } = await supabase.auth.getUser(); const usr = (data as any)?.user; if (!usr) return; let nm = (usr?.user_metadata as any)?.nome || ""; if (!nm && empresaId) { const { data: eu } = await supabase.from("empresa_users" as any).select("nome").eq("empresa_id", empresaId).eq("user_id", usr.id).maybeSingle(); nm = (eu as any)?.nome || ""; } setRespNome(nm || ""); } catch {} })(); }, [open, empresaId]);
-  useEffect(() => { if (open && chavesIniciais?.length) { setCtesSelecionadas(new Set(chavesIniciais)); setPercursoUFs(["SP"]); } }, [open]);
+  useEffect(() => { if (open && chavesIniciais?.length) { setCtesSelecionadas(new Set(chavesIniciais)); setPercursoUFs([]); } }, [open]);
+  // Percurso: só UFs entre início e fim, adicionadas pelo usuário — CT-e nunca entra na lista
   useEffect(() => {
     if (!open || tracaoSel || !ctesSelecionadas.size) return;
     const first = (ctesDisponiveis || []).find(c => ctesSelecionadas.has(c.chave_acesso || ""));
     if (!first) return;
     try { const p = JSON.parse((first as any).xml_assinado || "{}"); const pl = String(p.form?.placaVeiculo || "").toUpperCase(); if (pl) setTracaoSel(pl); } catch {}
   }, [open, ctesDisponiveis, ctesSelecionadas, tracaoSel]);
-  // percurso mantém última UF de descarga como último item, mas permite repetição
-  useEffect(() => { if (!ufDescarregamento) return; setPercursoUFs(prev => (prev.length && prev[prev.length - 1] === ufDescarregamento) ? prev : [...prev, ufDescarregamento]); }, [ufDescarregamento]);
   // Helpers CT-e (precisam vir antes das cidades derivadas)
   const fmtData = (iso: any) => { try { const d = new Date(String(iso)); if (isNaN(d.getTime())) return "—"; return d.toLocaleDateString("pt-BR"); } catch { return "—"; } };
   const nfsDe = (c: CteDoc): string[] => { try { const p = JSON.parse((c as any).xml_assinado || "{}"); const xml = p.xml || ""; return [...xml.matchAll(/<chNFe>(\d{44})<\/chNFe>/g)].map(m => m[1].slice(25, 34).replace(/^0+/, "") || "0"); } catch { return []; } };
@@ -365,13 +364,7 @@ function DialogNovoMdf({ open, onOpenChange, empresaId, empresa, chavesIniciais 
     const destUfs = ctesSelArr.map(c => formDe(c).ufFim).filter(Boolean) as string[];
     const uniq = [...new Set(destUfs)];
     if (uniq.length === 1 && uniq[0] !== ufDescarregamento) {
-      const nova = uniq[0];
-      setUfDescarregamento(nova);
-      setPercursoUFs(prev => {
-        if (prev.length === 1 && prev[0] === "SP") return [nova];
-        if (prev.length === 0) return [nova];
-        return prev;
-      });
+      setUfDescarregamento(uniq[0]);
     } else if (destUfs.length) {
       const last = destUfs[destUfs.length - 1];
       if (last && last !== ufDescarregamento) setUfDescarregamento(last);
@@ -443,7 +436,7 @@ function DialogNovoMdf({ open, onOpenChange, empresaId, empresa, chavesIniciais 
       else toast.error(`Erro: ${res.xMotivo}`);
 
       onOpenChange(false);
-      setCtesSelecionadas(new Set()); setTracaoSel(""); setUfCarregamento(""); setUfDescarregamento(""); setCidadeFimSel(""); setPercursoUFs(["SP"]); setObservacoes(""); setInfoFisco(""); setIsTransbordo(false); setTransb1(""); setTransb2(""); setTransb3(""); setTipoMdf("Normal"); setPercursoSelIdx(null);
+      setCtesSelecionadas(new Set()); setTracaoSel(""); setUfCarregamento(""); setUfDescarregamento(""); setCidadeFimSel(""); setPercursoUFs([]); setObservacoes(""); setInfoFisco(""); setIsTransbordo(false); setTransb1(""); setTransb2(""); setTransb3(""); setTipoMdf("Normal"); setPercursoSelIdx(null);
       qc.invalidateQueries({ queryKey: ["mdf-documentos"] });
     } catch (e: unknown) { toast.error(e instanceof Error ? e.message : "Erro ao emitir MDF-e"); }
     setLoading(false);

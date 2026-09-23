@@ -2155,3 +2155,11 @@ Commits CF `ddeb6e4..37d5da0` (+ ajustes de X do dono) espelhados na Vercel.
 - Coluna da empresa: linha Veiculo/Reboque e linha Motorista/
   CIOT. Box Motoristas de baixo excluido (vira Percurso + Obs).
   Espelhado na Vercel.
+
+## MDF-e percurso sem auto-preenchimento (23/09/2026)
+
+- UF de Encerramento nao entra mais na lista ao selecionar
+  CT-e (efeito removido + sync nao toca mais no percurso).
+  Percurso inicia vazio e so tem as UFs entre inicio e fim
+  adicionadas pelo usuario; reset tambem zera.
+  Espelhado na Vercel.
