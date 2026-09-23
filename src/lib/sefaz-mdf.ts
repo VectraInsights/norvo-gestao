@@ -12,24 +12,22 @@ export type Ambiente = "homologacao" | "producao";
 
 export const MDF_ENDPOINTS = {
   homologacao: {
-    mdfRecepcao: "https://mdfe-homologacao.svrs.rs.gov.br/ws/mdferecepcao/MDFeRecepcao.asmx",
-    mdfRetRecepcao: "https://mdfe-homologacao.svrs.rs.gov.br/ws/mdferetrecepcao/MDFeRetRecepcao.asmx",
-    mdfStatusServico: "https://mdfe-homologacao.svrs.rs.gov.br/ws/mdfestatusservico/MDFeStatusServico.asmx",
-    mdfConsulta: "https://mdfe-homologacao.svrs.rs.gov.br/ws/mdfeconsulta/MDFeConsulta.asmx",
-    mdfRecepcaoEvento: "https://mdfe-homologacao.svrs.rs.gov.br/ws/mdferecepcaoevento/MDFeRecepcaoEvento.asmx",
+    mdfRecepcao: "https://mdfe-homologacao.svrs.rs.gov.br/ws/MDFeRecepcao/MDFeRecepcao.asmx",
+    mdfRetRecepcao: "https://mdfe-homologacao.svrs.rs.gov.br/ws/MDFeRetRecepcao/MDFeRetRecepcao.asmx",
+    mdfStatusServico: "https://mdfe-homologacao.svrs.rs.gov.br/ws/MDFeStatusServico/MDFeStatusServico.asmx",
+    mdfConsulta: "https://mdfe-homologacao.svrs.rs.gov.br/ws/MDFeConsulta/MDFeConsulta.asmx",
+    mdfRecepcaoEvento: "https://mdfe-homologacao.svrs.rs.gov.br/ws/MDFeRecepcaoEvento/MDFeRecepcaoEvento.asmx",
     mdfDistribuicaoDFe: "https://mdfe-homologacao.svrs.rs.gov.br/ws/MDFeDistribuicaoDFe/MDFeDistribuicaoDFe.asmx",
-    mdfRecepcaoSinc: "https://mdfe-homologacao.svrs.rs.gov.br/ws/MDFeRecepcaoSinc/MDFeRecepcaoSinc.asmx",
-    mdfConsNaoEnc: "https://mdfe-homologacao.svrs.rs.gov.br/ws/mdfeconsnaoenc/MDFeConsNaoEnc.asmx",
+    mdfConsNaoEnc: "https://mdfe-homologacao.svrs.rs.gov.br/ws/MDFeConsNaoEnc/MDFeConsNaoEnc.asmx",
   },
   producao: {
-    mdfRecepcao: "https://mdfe.svrs.rs.gov.br/ws/mdferecepcao/MDFeRecepcao.asmx",
-    mdfRetRecepcao: "https://mdfe.svrs.rs.gov.br/ws/mdferetrecepcao/MDFeRetRecepcao.asmx",
-    mdfStatusServico: "https://mdfe.svrs.rs.gov.br/ws/mdfestatusservico/MDFeStatusServico.asmx",
-    mdfConsulta: "https://mdfe.svrs.rs.gov.br/ws/mdfeconsulta/MDFeConsulta.asmx",
-    mdfRecepcaoEvento: "https://mdfe.svrs.rs.gov.br/ws/mdferecepcaoevento/MDFeRecepcaoEvento.asmx",
+    mdfRecepcao: "https://mdfe.svrs.rs.gov.br/ws/MDFeRecepcao/MDFeRecepcao.asmx",
+    mdfRetRecepcao: "https://mdfe.svrs.rs.gov.br/ws/MDFeRetRecepcao/MDFeRetRecepcao.asmx",
+    mdfStatusServico: "https://mdfe.svrs.rs.gov.br/ws/MDFeStatusServico/MDFeStatusServico.asmx",
+    mdfConsulta: "https://mdfe.svrs.rs.gov.br/ws/MDFeConsulta/MDFeConsulta.asmx",
+    mdfRecepcaoEvento: "https://mdfe.svrs.rs.gov.br/ws/MDFeRecepcaoEvento/MDFeRecepcaoEvento.asmx",
     mdfDistribuicaoDFe: "https://mdfe.svrs.rs.gov.br/ws/MDFeDistribuicaoDFe/MDFeDistribuicaoDFe.asmx",
-    mdfRecepcaoSinc: "https://mdfe.svrs.rs.gov.br/ws/MDFeRecepcaoSinc/MDFeRecepcaoSinc.asmx",
-    mdfConsNaoEnc: "https://mdfe.svrs.rs.gov.br/ws/mdfeconsnaoenc/MDFeConsNaoEnc.asmx",
+    mdfConsNaoEnc: "https://mdfe.svrs.rs.gov.br/ws/MDFeConsNaoEnc/MDFeConsNaoEnc.asmx",
   },
 } as const;
 

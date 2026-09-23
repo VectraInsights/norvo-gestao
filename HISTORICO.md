@@ -2230,3 +2230,13 @@ Commits CF `ddeb6e4..37d5da0` (+ ajustes de X do dono) espelhados na Vercel.
   para UF de descarga; filtra so siglas validas). Validacao e
   botao nao exigem mais UF no percurso.
   Espelhado na Vercel.
+
+## MDF-e URLs SVRS corretas + trava percurso (23/09/2026)
+
+- 404 porque o path estava minusculo (/ws/mdferecepcao/...);
+  padrao oficial e /ws/MDFeRecepcao/MDFeRecepcao.asmx (idem
+  RetRecepcao/Status/Consulta/Evento/Distribuicao/ConsNaoEnc,
+  homologacao e producao). Sinc removido do mapa.
+- Trava: sem UF de inicio/fim (vêm dos CT-es) nao emite;
+  lista intermediaria continua opcional.
+  Espelhado na Vercel.
