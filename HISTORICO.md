@@ -2144,3 +2144,8 @@ Commits CF `ddeb6e4..37d5da0` (+ ajustes de X do dono) espelhados na Vercel.
 
 - Caixas Cidade Inicio/Encerramento com fundo cinza sempre
   (bg-stone-200, igual aos selects). Espelhado na Vercel.
+
+## MDF-e sem seta no Reboque (23/09/2026)
+
+- Setinha removida da caixa do Reboque (so o Veiculo, que e
+  selecionavel, mantem). Espelhado na Vercel.
