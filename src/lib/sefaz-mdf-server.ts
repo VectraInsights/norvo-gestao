@@ -41,7 +41,9 @@ async function getCertAndAmbiente(empresaId: string) {
   const { createClient } = await import("@supabase/supabase-js");
   const supabase = createClient(process.env.SUPABASE_URL || "", process.env.SUPABASE_SERVICE_ROLE_KEY || "");
   const { data: nfeConfig } = await supabase.from("nfe_config").select("ambiente").eq("empresa_id", empresaId).maybeSingle();
-  const ambiente: "homologacao" | "producao" = nfeConfig?.ambiente === "homologacao" ? "homologacao" : "producao";
+  // MDF-e travado em homologação (decisão 23/09/2026) — ignora o config
+  const ambiente: "homologacao" | "producao" = "homologacao";
+  void nfeConfig;
   return { cert, ambiente, supabase };
 }
 

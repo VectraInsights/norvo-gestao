@@ -321,15 +321,8 @@ function DialogNovoMdf({ open, onOpenChange, empresaId, empresa, chavesIniciais 
   const [transb2, setTransb2] = useState("");
   const [transb3, setTransb3] = useState("");
   const [percursoSelIdx, setPercursoSelIdx] = useState<number | null>(null);
-  const { data: nfeCfg } = useQuery({
-    enabled: !!empresaId && open,
-    queryKey: ["nfe-config-ambiente", empresaId],
-    queryFn: async () => {
-      const { data } = await supabase.from("nfe_config" as any).select("ambiente").eq("empresa_id", empresaId).maybeSingle();
-      return (data as any)?.ambiente as string | undefined;
-    },
-  });
-  const ambienteMdf = (nfeCfg === "homologacao" ? "homologacao" : "producao") as "homologacao" | "producao";
+  // MDF-e travado em homologação (decisão 23/09/2026) — XML e transmissão sempre tpAmb=2
+  const ambienteMdf = "homologacao" as const;
   useEffect(() => { if (!open) return; (async () => { try { const { data } = await supabase.auth.getUser(); const usr = (data as any)?.user; if (!usr) return; let nm = (usr?.user_metadata as any)?.nome || ""; if (!nm && empresaId) { const { data: eu } = await supabase.from("empresa_users" as any).select("nome").eq("empresa_id", empresaId).eq("user_id", usr.id).maybeSingle(); nm = (eu as any)?.nome || ""; } setRespNome(nm || ""); } catch {} })(); }, [open, empresaId]);
   useEffect(() => { if (open && chavesIniciais?.length) { setCtesSelecionadas(new Set(chavesIniciais)); setPercursoUFs(["SP"]); } }, [open]);
   useEffect(() => {

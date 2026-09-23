@@ -2039,3 +2039,10 @@ Commits CF `ddeb6e4..37d5da0` (+ ajustes de X do dono) espelhados na Vercel.
 - Ambiente nao e mais fixo em homologacao no XML: o dialogo le
   nfe_config.ambiente (mesma fonte do servidor) e mostra selo
   Homologacao/Producao no titulo. Espelhado na Vercel.
+
+## MDF-e travado em homologacao (23/09/2026)
+
+- MDF-e SEMPRE em homologacao: dialogo (XML tpAmb=2), server
+  (getCertAndAmbiente ignora nfe_config) e proxy (emitir/encerrar/
+  cancelar) forcados para homologacao. Selo no titulo mostra
+  Homologacao. Espelhado na Vercel.
