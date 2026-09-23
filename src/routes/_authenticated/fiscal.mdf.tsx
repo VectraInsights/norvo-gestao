@@ -337,6 +337,48 @@ function DialogNovoMdf({ open, onOpenChange, empresaId, empresa, chavesIniciais 
   const fmtData = (iso: any) => { try { const d = new Date(String(iso)); if (isNaN(d.getTime())) return "—"; return d.toLocaleDateString("pt-BR"); } catch { return "—"; } };
   const nfsDe = (c: CteDoc): string[] => { try { const p = JSON.parse((c as any).xml_assinado || "{}"); const xml = p.xml || ""; return [...xml.matchAll(/<chNFe>(\d{44})<\/chNFe>/g)].map(m => m[1].slice(25, 34).replace(/^0+/, "") || "0"); } catch { return []; } };
   const formDe = (c: CteDoc): Record<string, any> => { try { const p = JSON.parse((c as any).xml_assinado || "{}"); return (p.form || {}) as Record<string, any>; } catch { return {}; } };
+  const [sortCte, setSortCte] = useState<{ key: string; dir: 1 | -1 } | null>(null);
+  const valCte = (c: CteDoc, key: string): string | number => {
+    const f = formDe(c);
+    switch (key) {
+      case "emissao": return c.data_autorizacao || "";
+      case "ctrc": return Number(c.numero) || 0;
+      case "serie": return String((c as any).serie || "1");
+      case "placa": return String(f.placaVeiculo || "").toUpperCase();
+      case "reboques": return [f.placaReboque, f.semiReboque1, f.semiReboque2].map(x => String(x || "").toUpperCase()).filter(Boolean).join(", ");
+      case "coleta": return String(f.xMunIni || "");
+      case "ufIni": return String(f.ufIni || "");
+      case "entrega": return String(f.xMunFim || "");
+      case "ufFim": return String(f.ufFim || "");
+      case "nfs": return nfsDe(c).join(", ");
+      case "valor": return c.valor_servico || 0;
+      case "peso": return c.peso_carga || 0;
+      default: return "";
+    }
+  };
+  const ctesOrdenados = useMemo(() => {
+    const arr = [...ctesDaTracao];
+    if (!sortCte) return arr;
+    arr.sort((a, b) => {
+      const va = valCte(a, sortCte.key); const vb = valCte(b, sortCte.key);
+      const r = typeof va === "number" && typeof vb === "number" ? va - vb : String(va).localeCompare(String(vb), "pt-BR");
+      return r * sortCte.dir;
+    });
+    return arr;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [ctesDaTracao, sortCte]);
+  const thCte = (label: string, key: string, right?: boolean) => (
+    <TableHead key={key} onClick={() => setSortCte(prev => (!prev || prev.key !== key ? { key, dir: 1 } : prev.dir === 1 ? { key, dir: -1 } : null))} className={(right ? "text-right " : "") + "cursor-pointer select-none whitespace-nowrap"} title="Clique para ordenar">{label}{sortCte?.key === key ? (sortCte.dir === 1 ? " ▲" : " ▼") : ""}</TableHead>
+  );
+  const todasMarcadas = ctesDaTracao.length > 0 && ctesDaTracao.every(c => ctesSelecionadas.has(c.chave_acesso || ""));
+  const toggleTodas = () => {
+    setCtesSelecionadas(prev => {
+      const next = new Set(prev);
+      if (todasMarcadas) { for (const c of ctesDaTracao) next.delete(c.chave_acesso || ""); }
+      else { for (const c of ctesDaTracao) if (c.chave_acesso) next.add(c.chave_acesso); }
+      return next;
+    });
+  };
   const ctesSelArr = useMemo(() => (ctesDisponiveis || []).filter(c => ctesSelecionadas.has(c.chave_acesso || "")), [ctesDisponiveis, ctesSelecionadas]);
   const ctesForms = useMemo(() => (ctesDisponiveis || []).filter(c => ctesSelecionadas.has(c.chave_acesso || "")).map(c => { try { const p = JSON.parse((c as any).xml_assinado || "{}"); return (p.form || {}) as Record<string, any>; } catch { return {} as Record<string, any>; } }), [ctesDisponiveis, ctesSelecionadas]);
   // Cidades derivadas + opções de encerramento (deve ser um dos destinos)
@@ -552,12 +594,12 @@ function DialogNovoMdf({ open, onOpenChange, empresaId, empresa, chavesIniciais 
               <div className="border rounded-md max-h-[260px] overflow-auto">
                 <Table>
                   <TableHeader className="sticky top-0 bg-muted"><TableRow>
-                    <TableHead className="w-[36px]"></TableHead>
-                    <TableHead>Emissão</TableHead><TableHead>CTRC</TableHead><TableHead>Série</TableHead><TableHead>Placa</TableHead><TableHead>Reboques</TableHead><TableHead>Coleta</TableHead><TableHead>UF</TableHead><TableHead>Entrega</TableHead><TableHead>UF</TableHead><TableHead>Notas Fiscais</TableHead><TableHead className="text-right">Valor</TableHead><TableHead className="text-right">Peso</TableHead>
+                    <TableHead className="w-[36px]"><input type="checkbox" checked={todasMarcadas} onChange={toggleTodas} className="h-4 w-4" title="Selecionar todos" /></TableHead>
+                    {thCte("Emissão", "emissao")}{thCte("CTRC", "ctrc")}{thCte("Série", "serie")}{thCte("Placa", "placa")}{thCte("Reboques", "reboques")}{thCte("Coleta", "coleta")}{thCte("UF", "ufIni")}{thCte("Entrega", "entrega")}{thCte("UF", "ufFim")}{thCte("Notas Fiscais", "nfs")}{thCte("Valor", "valor", true)}{thCte("Peso", "peso", true)}
                   </TableRow></TableHeader>
                   <TableBody>
                     {!tracaoSel && (<TableRow><TableCell colSpan={13} className="text-center text-xs text-muted-foreground py-6">Selecione o veículo no box da empresa para listar os CT-es.</TableCell></TableRow>)}
-                    {ctesDaTracao.map(c => {
+                    {ctesOrdenados.map(c => {
                       const f = formDe(c);
                       const reb = [f.placaReboque, f.semiReboque1, f.semiReboque2].map(x => String(x || "").toUpperCase()).filter(Boolean).join(", ");
                       return (

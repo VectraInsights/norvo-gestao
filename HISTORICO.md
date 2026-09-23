@@ -2172,3 +2172,10 @@ Commits CF `ddeb6e4..37d5da0` (+ ajustes de X do dono) espelhados na Vercel.
   observacao do titulo (vira "Percurso *"); botoes Exclui/▲▼
   foram para o cabecalho; adicionar segue pelos botoes de UF.
   Espelhado na Vercel.
+
+## MDF-e selecionar todos + colunas ordenaveis (23/09/2026)
+
+- Checkbox no cabecalho da tabela marca/desmarca todos os
+  CT-es listados; clique no titulo de qualquer coluna ordena
+  (asc/desc, terceiro clique limpa, com seta indicativa).
+  Espelhado na Vercel.
