@@ -2255,3 +2255,9 @@ Commits CF `ddeb6e4..37d5da0` (+ ajustes de X do dono) espelhados na Vercel.
   MDFeRecepcaoSinc). Envio agora: enviMDFe com XML assinado em
   gzip+base64 em mdfeDadosMsg; resposta le infProt (100 =
   autorizado). Espelhado na Vercel.
+
+## MDF-e log diagnostico do POST (23/09/2026)
+
+- HTTP 400 vazio no Sinc: soapRequest passa a logar URL, action,
+  tamanhos e headers da resposta para diagnostico preciso.
+  Espelhado na Vercel.

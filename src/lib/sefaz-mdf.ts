@@ -208,7 +208,10 @@ async function soapRequest(url: string, body: string, action: string, agent?: ht
     return new Promise<string>((resolve, reject) => {
       const req = https.request({ hostname: u.hostname, port: u.port || 443, path: u.pathname, method: "POST", agent, headers: { "Content-Type": contentType, "Content-Length": Buffer.byteLength(envelope) } }, res => {
         let d = ""; res.on("data", c => d += c);
-        res.on("end", () => res.statusCode && res.statusCode >= 400 ? reject(new Error(`MDF-e HTTP ${res.statusCode}: ${d.slice(0, 500)}`)) : resolve(d));
+        res.on("end", () => {
+          console.log(`[mdf-debug] POST ${u.hostname}${u.pathname} action=${action} status=${res.statusCode} reqBytes=${Buffer.byteLength(envelope)} respBytes=${d.length} respHeaders=${JSON.stringify(res.headers)}`);
+          res.statusCode && res.statusCode >= 400 ? reject(new Error(`MDF-e HTTP ${res.statusCode}: ${d.slice(0, 2000)}`)) : resolve(d);
+        });
       });
       req.on("error", reject); req.write(envelope); req.end();
     });
