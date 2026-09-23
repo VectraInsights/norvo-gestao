@@ -2133,3 +2133,9 @@ Commits CF `ddeb6e4..37d5da0` (+ ajustes de X do dono) espelhados na Vercel.
 - Reboque(s) na mesma caixa do Veiculo (borda, mono, h-6),
   somente leitura, mesmo formato placa + RENAVAM.
   Espelhado na Vercel.
+
+## MDF-e Reboque igual ao Veiculo (23/09/2026)
+
+- Caixa do Reboque(s) com as mesmas classes do Trigger
+  (bg-stone-200, shadow-sm, px-3, chevron): formato e cor
+  identicos aos do Veiculo. Espelhado na Vercel.
