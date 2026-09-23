@@ -139,7 +139,7 @@ export function buildMdfXml(input: MdfInputCompleto): { xml: string; chave: stri
   const lacresXml = (input.lacres || []).map(l => `<nLacre>${l.nLacre}</nLacre>`).join("");
 
   const xml = `<?xml version="1.0" encoding="UTF-8"?>
-<MDFe xmlns="http://www.portalfiscal.inf.br/mdfe" versao="3.00">
+<MDFe xmlns="http://www.portalfiscal.inf.br/mdfe">
   <infMDFe Id="${id}" versao="3.00">
     <ide>
       <cUF>${cUF}</cUF>

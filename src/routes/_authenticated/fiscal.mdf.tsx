@@ -192,9 +192,14 @@ function MdfPage() {
                         </>
                       )}
                       {d.status === "rejeitado" && (
-                        <Button variant="ghost" size="sm" title={d.motivo_rejeicao ? `Rejeitado: ${d.motivo_rejeicao} — clique para tentar novamente` : "Tentar novamente"} onClick={() => reemitir(d)}>
-                          <RotateCcw className="h-4 w-4" />
-                        </Button>
+                        <>
+                          <Button variant="ghost" size="sm" title={d.motivo_rejeicao ? `Rejeitado: ${d.motivo_rejeicao} — clique para tentar novamente` : "Tentar novamente"} onClick={() => reemitir(d)}>
+                            <RotateCcw className="h-4 w-4" />
+                          </Button>
+                          <Button variant="ghost" size="sm" title="Excluir rejeitado" onClick={async () => { if (!window.confirm(`Excluir MDF-e rejeitado #${d.numero || ""}?`)) return; const { error } = await supabase.from("mdf_documentos" as any).delete().eq("id", d.id); if (error) toast.error(error.message); else { toast.success("Rejeitado excluído"); qc.invalidateQueries({ queryKey: ["mdf-documentos"] }); } }}>
+                            <Trash2 className="h-4 w-4 text-destructive" />
+                          </Button>
+                        </>
                       )}
                       {d.status === "rascunho" && (
                         <Button variant="ghost" size="sm" title="Rejeitado — ver motivo">

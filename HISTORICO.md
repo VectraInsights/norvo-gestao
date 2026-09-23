@@ -2282,3 +2282,12 @@ Commits CF `ddeb6e4..37d5da0` (+ ajustes de X do dono) espelhados na Vercel.
   tooltip com o motivo): reabre o Novo MDF-e com os mesmos
   CT-es pre-selecionados (chaves extraidas do XML guardado).
   Espelhado na Vercel.
+
+## MDF-e fix 215 + sem duplicar rejeitado (23/09/2026)
+
+- 215 porque o <MDFe> raiz levava versao="3.00" (so infMDFe
+  tem versao no schema): atributo removido da raiz.
+- Rejeitado nao duplica mais: ao rejeitar, apaga rejeitado
+  anterior com os mesmos documentos (server + proxy) e a
+  linha ganha botao excluir (RLS permite DELETE).
+  Espelhado na Vercel.

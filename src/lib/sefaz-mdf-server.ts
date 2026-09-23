@@ -95,6 +95,18 @@ export const emitirMdfFn = createServerFn({ method: "POST" })
     } else if (result.cStat) {
       const numero = data.xml.match(/<nMDF>(\d+)<\/nMDF>/)?.[1] || "";
       const serie = data.xml.match(/<serie>(\d+)<\/serie>/)?.[1] || "1";
+      // Substitui rejeitado anterior com os mesmos documentos (não duplica a cada tentativa)
+      const chavesDe = (x: string) => [...x.matchAll(/<chCTe>(\d{44})<\/chCTe>/g), ...x.matchAll(/<chMDFe>(\d{44})<\/chMDFe>/g)].map(m => m[1]).sort();
+      try {
+        const chavesNovo = chavesDe(data.xml);
+        const { data: rejAnt } = await supabase.from("mdf_documentos" as never).select("id,xml_assinado").eq("empresa_id", data.empresaId).eq("status", "rejeitado");
+        for (const r of (rejAnt as any[]) || []) {
+          const ch = chavesDe(String((r as any).xml_assinado || ""));
+          if (ch.length && JSON.stringify(ch) === JSON.stringify(chavesNovo)) {
+            await supabase.from("mdf_documentos" as never).delete().eq("id", (r as any).id);
+          }
+        }
+      } catch {}
       await supabase.from("mdf_documentos" as never).insert({
         empresa_id: data.empresaId,
         numero,

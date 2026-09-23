@@ -226,6 +226,18 @@ export async function handleSefazProxy(request: Request): Promise<Response> {
         } else if ((retMdf as any).cStat) {
           const numero = String(b.xml || "").match(/<nMDF>(\d+)<\/nMDF>/)?.[1] || "";
           const serie = String(b.xml || "").match(/<serie>(\d+)<\/serie>/)?.[1] || "1";
+          // Substitui rejeitado anterior com os mesmos documentos (não duplica a cada tentativa)
+          try {
+            const chavesDeP = (x: string) => [...x.matchAll(/<chCTe>(\d{44})<\/chCTe>/g), ...x.matchAll(/<chMDFe>(\d{44})<\/chMDFe>/g)].map(m => m[1]).sort();
+            const chavesNovoP = chavesDeP(String(b.xml || ""));
+            const { data: rejAntP } = await sMdf.from("mdf_documentos").select("id,xml_assinado").eq("empresa_id", empresaId).eq("status", "rejeitado");
+            for (const r of (rejAntP as any[]) || []) {
+              const ch = chavesDeP(String((r as any).xml_assinado || ""));
+              if (ch.length && JSON.stringify(ch) === JSON.stringify(chavesNovoP)) {
+                await sMdf.from("mdf_documentos").delete().eq("id", (r as any).id);
+              }
+            }
+          } catch {}
           await sMdf.from("mdf_documentos").insert({ empresa_id: empresaId, numero, serie, status: "rejeitado", motivo_rejeicao: `${(retMdf as any).cStat} - ${(retMdf as any).xMotivo}`, uf_carregamento: b.ufCarregamento, uf_descarregamento: b.ufDescarregamento, qtd_cte: b.qtdCtes, valor_total_carga: b.valorTotalCarga, peso_total: b.pesoTotal, ambiente: ambMdf, xml_assinado: b.xml } as never);
         }
         return json(retMdf);
