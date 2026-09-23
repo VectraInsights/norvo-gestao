@@ -476,7 +476,7 @@ function DialogNovoMdf({ open, onOpenChange, empresaId, empresa, chavesIniciais 
       });
 
       if (res.sucesso) toast.success("MDF-e emitido com sucesso!");
-      else toast.error(`Erro: ${res.xMotivo}`);
+      else toast.error(`Erro ${res.cStat}: ${res.xMotivo}`);
 
       onOpenChange(false);
       setCtesSelecionadas(new Set()); setTracaoSel(""); setUfCarregamento(""); setUfDescarregamento(""); setCidadeFimSel(""); setPercursoUFs([]); setObservacoes(""); setInfoFisco(""); setIsTransbordo(false); setTransb1(""); setTransb2(""); setTransb3(""); setTipoMdf("Normal"); setPercursoSelIdx(null);

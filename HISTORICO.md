@@ -2268,3 +2268,10 @@ Commits CF `ddeb6e4..37d5da0` (+ ajustes de X do dono) espelhados na Vercel.
   header: formato certo (fonte ACBr) e mdfeDadosMsg =
   base64(gzip(<MDFe>...</MDFe>)) puro + header SOAP mdfeCabecMsg
   (cUF da chave + versaoDados 3.00). Espelhado na Vercel.
+
+## MDF-e namespace mdfe (cStat 598) (23/09/2026)
+
+- Rejeicao 598/D02: namespace padrao e .../mdfe (com E),
+  confirmado no XSD 3.00; trocado em MDFe, eventoMDFe,
+  consSitMDFe e nos WSDLs (Consulta/Evento). Toast de erro
+  passa a mostrar cStat + motivo. Espelhado na Vercel.

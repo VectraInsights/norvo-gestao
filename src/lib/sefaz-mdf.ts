@@ -1,6 +1,6 @@
-/**
- * MDF-e (Manifesto Eletrônico de Documentos Fiscais) — modelo 58
- * Fase 2: XML completo 3.00, assinatura, emissão/consulta/encerramento/cancelamento via SVRS.
+﻿/**
+ * MDF-e (Manifesto EletrÃ´nico de Documentos Fiscais) â€” modelo 58
+ * Fase 2: XML completo 3.00, assinatura, emissÃ£o/consulta/encerramento/cancelamento via SVRS.
  * Endpoints: https://www.confaz.fazenda.gov.br/web Services
  * Ref: https://mdfe.fazenda.gov.br/portal/webServices.aspx
  */
@@ -106,13 +106,13 @@ export function buildMdfXml(input: MdfInputCompleto): { xml: string; chave: stri
     `<infMunDescarrega><cMunDescarga>${m.cMunDescarga}</cMunDescarga><xMunDescarga>${m.xMunDescarga}</xMunDescarga></infMunDescarrega>`
   ).join("");
 
-  // infPercurso (UFPer) — opcional (0-25); só UFs adicionadas pelo usuário, sem fallback
+  // infPercurso (UFPer) â€” opcional (0-25); sÃ³ UFs adicionadas pelo usuÃ¡rio, sem fallback
   const infPercursoXml = (input.infPercurso || [])
     .map(p => String(p.ufFim || "").trim().toUpperCase())
     .filter(uf => /^[A-Z]{2}$/.test(uf))
     .map(uf => `<infPercurso><UFPer>${uf}</UFPer></infPercurso>`).join("");
 
-  // Veículos
+  // VeÃ­culos
   const ciotNum = String(input.veicTrac.ciot || "").replace(/\D/g, "");
   const infCiotXml = ciotNum ? `<infCIOT><CIOT>${ciotNum}</CIOT><CNPJ>${cnpjLimpo}</CNPJ></infCIOT>` : "";
   const veicTracXml = `<veicTrac><placa>${input.veicTrac.placa}</placa><UF>${input.veicTrac.uf}</UF><RNTRC>${input.veicTrac.rntrc}</RNTRC><tara>${input.veicTrac.tara}</tara>${input.veicTrac.capKG ? `<capKG>${input.veicTrac.capKG}</capKG>` : ""}${input.veicTrac.capM3 ? `<capM3>${input.veicTrac.capM3}</capM3>` : ""}<tpRod>${input.veicTrac.tpRod || "0"}</tpRod><tpCarroceria>${input.veicTrac.tpCarroceria || "0"}</tpCarroceria></veicTrac>`;
@@ -139,7 +139,7 @@ export function buildMdfXml(input: MdfInputCompleto): { xml: string; chave: stri
   const lacresXml = (input.lacres || []).map(l => `<nLacre>${l.nLacre}</nLacre>`).join("");
 
   const xml = `<?xml version="1.0" encoding="UTF-8"?>
-<MDFe xmlns="http://www.portalfiscal.inf.br/mdf" versao="3.00">
+<MDFe xmlns="http://www.portalfiscal.inf.br/mdfe" versao="3.00">
   <infMDFe Id="${id}" versao="3.00">
     <ide>
       <cUF>${cUF}</cUF>
@@ -228,7 +228,7 @@ export async function emitirMdf(pfx: Buffer, senha: string, xml: string, ambient
   const cUF = xml.match(/Id="MDFe(\d{2})/)?.[1] || "31";
   const cabec = `<mdfeCabecMsg xmlns="${nsSinc}"><cUF>${cUF}</cUF><versaoDados>3.00</versaoDados></mdfeCabecMsg>`;
   const xmlAss = signXml(xml, pfx, senha);
-  // Síncrono (ACBr): mdfeDadosMsg = base64(gzip(<MDFe>...</MDFe>)) puro, sem enviMDFe/idLote
+  // SÃ­ncrono (ACBr): mdfeDadosMsg = base64(gzip(<MDFe>...</MDFe>)) puro, sem enviMDFe/idLote
   const mdfeEl = xmlAss.match(/<MDFe[\s>][\s\S]*<\/MDFe>/)?.[0] || xmlAss.replace(/<\?xml[^?]*\?>\s*/g, "");
   const compactada = zlib.gzipSync(Buffer.from(mdfeEl, "utf-8")).toString("base64");
   const body = `<mdfeDadosMsg xmlns="${nsSinc}">${compactada}</mdfeDadosMsg>`;
@@ -245,8 +245,8 @@ export async function emitirMdf(pfx: Buffer, senha: string, xml: string, ambient
 
 export async function consultarMdf(pfx: Buffer, senha: string, chave: string, ambiente: Ambiente): Promise<{ cStat: string; xMotivo: string; xml?: string }> {
   const ep = getMdfEndpoints(ambiente);
-  const body = `<MDFeConsultaMsg xmlns="http://www.portalfiscal.inf.br/mdf/wsdl/MDFeConsulta"><consSitMDFe xmlns="http://www.portalfiscal.inf.br/mdf" versao="3.00"><tpAmb>${ambiente === "producao" ? "1" : "2"}</tpAmb><xServ>CONSULTAR</xServ><chMDFe>${chave}</chMDFe></consSitMDFe></MDFeConsultaMsg>`;
-  const ret = await soapRequest(ep.mdfConsulta, body, "http://www.portalfiscal.inf.br/mdf/wsdl/MDFeConsulta/MDFeConsulta", createSefazAgent(pfx, senha));
+  const body = `<MDFeConsultaMsg xmlns="http://www.portalfiscal.inf.br/mdfe/wsdl/MDFeConsulta"><consSitMDFe xmlns="http://www.portalfiscal.inf.br/mdfe" versao="3.00"><tpAmb>${ambiente === "producao" ? "1" : "2"}</tpAmb><xServ>CONSULTAR</xServ><chMDFe>${chave}</chMDFe></consSitMDFe></MDFeConsultaMsg>`;
+  const ret = await soapRequest(ep.mdfConsulta, body, "http://www.portalfiscal.inf.br/mdfe/wsdl/MDFeConsulta/MDFeConsulta", createSefazAgent(pfx, senha));
   const cStat = ret.match(/<cStat>(\d+)<\/cStat>/)?.[1] || "";
   const xMotivo = ret.match(/<xMotivo>([^<]+)<\/xMotivo>/)?.[1] || "";
   return { cStat, xMotivo, xml: ret };
@@ -256,10 +256,10 @@ export async function encerrarMdf(pfx: Buffer, senha: string, chave: string, amb
   const ep = getMdfEndpoints(ambiente);
   const dhEvento = new Date().toISOString().replace(/\.\d{3}Z$/, "");
   const cOrgao = codigoUF(uf);
-  const evento = `<eventoMDFe xmlns="http://www.portalfiscal.inf.br/mdf" versao="3.00"><infEvento Id="ID110112${chave}1"><cOrgao>${cOrgao}</cOrgao><tpAmb>${ambiente === "producao" ? "1" : "2"}</tpAmb><CNPJ>${cnpj.replace(/\D/g, "")}</CNPJ><chMDFe>${chave}</chMDFe><dhEvento>${dhEvento}</dhEvento><tpEvento>110112</tpEvento><nSeqEvento>1</nSeqEvento><detEvento versaoEvento="3.00"><evEncMDFe><descEvento>Encerramento</descEvento><nProt>0</nProt><dtEncerramento>${dhEvento.slice(0, 10)}</dtEncarramento><cMunEncerramento>${cOrgao}</cMunEncerramento><UFEncerramento>${uf}</UFEncerramento></evEncMDFe></detEvento></infEvento></eventoMDFe>`;
+  const evento = `<eventoMDFe xmlns="http://www.portalfiscal.inf.br/mdfe" versao="3.00"><infEvento Id="ID110112${chave}1"><cOrgao>${cOrgao}</cOrgao><tpAmb>${ambiente === "producao" ? "1" : "2"}</tpAmb><CNPJ>${cnpj.replace(/\D/g, "")}</CNPJ><chMDFe>${chave}</chMDFe><dhEvento>${dhEvento}</dhEvento><tpEvento>110112</tpEvento><nSeqEvento>1</nSeqEvento><detEvento versaoEvento="3.00"><evEncMDFe><descEvento>Encerramento</descEvento><nProt>0</nProt><dtEncerramento>${dhEvento.slice(0, 10)}</dtEncarramento><cMunEncerramento>${cOrgao}</cMunEncerramento><UFEncerramento>${uf}</UFEncerramento></evEncMDFe></detEvento></infEvento></eventoMDFe>`;
   const ass = signXml(evento, pfx, senha);
-  const body = `<MDFeRecepcaoEventoMsg xmlns="http://www.portalfiscal.inf.br/mdf/wsdl/MDFeRecepcaoEvento">${ass}</MDFeRecepcaoEventoMsg>`;
-  const ret = await soapRequest(ep.mdfRecepcaoEvento, body, "http://www.portalfiscal.inf.br/mdf/wsdl/MDFeRecepcaoEvento/MDFeRecepcaoEvento", createSefazAgent(pfx, senha));
+  const body = `<MDFeRecepcaoEventoMsg xmlns="http://www.portalfiscal.inf.br/mdfe/wsdl/MDFeRecepcaoEvento">${ass}</MDFeRecepcaoEventoMsg>`;
+  const ret = await soapRequest(ep.mdfRecepcaoEvento, body, "http://www.portalfiscal.inf.br/mdfe/wsdl/MDFeRecepcaoEvento/MDFeRecepcaoEvento", createSefazAgent(pfx, senha));
   const cStat = ret.match(/<cStat>(\d+)<\/cStat>/)?.[1] || "";
   const xMotivo = ret.match(/<xMotivo>([^<]+)<\/xMotivo>/)?.[1] || "";
   return { sucesso: cStat === "135" || cStat === "155", cStat, xMotivo };
@@ -269,10 +269,10 @@ export async function cancelarMdf(pfx: Buffer, senha: string, chave: string, jus
   const ep = getMdfEndpoints(ambiente);
   const dhEvento = new Date().toISOString().replace(/\.\d{3}Z$/, "");
   const cOrgao = codigoUF(uf);
-  const evento = `<eventoMDFe xmlns="http://www.portalfiscal.inf.br/mdf" versao="3.00"><infEvento Id="ID110111${chave}1"><cOrgao>${cOrgao}</cOrgao><tpAmb>${ambiente === "producao" ? "1" : "2"}</tpAmb><CNPJ>${cnpj.replace(/\D/g, "")}</CNPJ><chMDFe>${chave}</chMDFe><dhEvento>${dhEvento}</dhEvento><tpEvento>110111</tpEvento><nSeqEvento>1</nSeqEvento><detEvento versaoEvento="3.00"><evCancMDFe><descEvento>Cancelamento</descEvento><nProt>0</nProt><xJust>${justificativa}</xJust></evCancMDFe></detEvento></infEvento></eventoMDFe>`;
+  const evento = `<eventoMDFe xmlns="http://www.portalfiscal.inf.br/mdfe" versao="3.00"><infEvento Id="ID110111${chave}1"><cOrgao>${cOrgao}</cOrgao><tpAmb>${ambiente === "producao" ? "1" : "2"}</tpAmb><CNPJ>${cnpj.replace(/\D/g, "")}</CNPJ><chMDFe>${chave}</chMDFe><dhEvento>${dhEvento}</dhEvento><tpEvento>110111</tpEvento><nSeqEvento>1</nSeqEvento><detEvento versaoEvento="3.00"><evCancMDFe><descEvento>Cancelamento</descEvento><nProt>0</nProt><xJust>${justificativa}</xJust></evCancMDFe></detEvento></infEvento></eventoMDFe>`;
   const ass = signXml(evento, pfx, senha);
-  const body = `<MDFeRecepcaoEventoMsg xmlns="http://www.portalfiscal.inf.br/mdf/wsdl/MDFeRecepcaoEvento">${ass}</MDFeRecepcaoEventoMsg>`;
-  const ret = await soapRequest(ep.mdfRecepcaoEvento, body, "http://www.portalfiscal.inf.br/mdf/wsdl/MDFeRecepcaoEvento/MDFeRecepcaoEvento", createSefazAgent(pfx, senha));
+  const body = `<MDFeRecepcaoEventoMsg xmlns="http://www.portalfiscal.inf.br/mdfe/wsdl/MDFeRecepcaoEvento">${ass}</MDFeRecepcaoEventoMsg>`;
+  const ret = await soapRequest(ep.mdfRecepcaoEvento, body, "http://www.portalfiscal.inf.br/mdfe/wsdl/MDFeRecepcaoEvento/MDFeRecepcaoEvento", createSefazAgent(pfx, senha));
   const cStat = ret.match(/<cStat>(\d+)<\/cStat>/)?.[1] || "";
   const xMotivo = ret.match(/<xMotivo>([^<]+)<\/xMotivo>/)?.[1] || "";
   return { sucesso: cStat === "135" || cStat === "155", cStat, xMotivo };
