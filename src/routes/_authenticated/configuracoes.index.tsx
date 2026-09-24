@@ -170,7 +170,7 @@ function NFeConfigTab({ empresaId }: { empresaId: string }) {
 
   useEffect(() => {
     if (data) setForm({
-      ambiente: data.ambiente, serie: String(data.serie), proximo_numero: String(data.proximo_numero),
+      ambiente: "homologacao", serie: String(data.serie), proximo_numero: String(data.proximo_numero),
       regime_tributario: data.regime_tributario, cnae: data.cnae ?? "", natureza_operacao: data.natureza_operacao ?? "",
     });
   }, [data]);
@@ -178,7 +178,7 @@ function NFeConfigTab({ empresaId }: { empresaId: string }) {
   const save = async () => {
     const payload = {
       empresa_id: empresaId,
-      ambiente: form.ambiente,
+      ambiente: "homologacao",
       serie: Number(form.serie),
       proximo_numero: Number(form.proximo_numero),
       regime_tributario: form.regime_tributario,
@@ -196,13 +196,7 @@ function NFeConfigTab({ empresaId }: { empresaId: string }) {
       <div className="grid grid-cols-2 gap-3">
         <div>
           <Label>Ambiente</Label>
-          <Select value={form.ambiente} onValueChange={(v) => setForm({ ...form, ambiente: v })}>
-            <SelectTrigger><SelectValue /></SelectTrigger>
-            <SelectContent>
-              <SelectItem value="homologacao">Homologação (teste)</SelectItem>
-              <SelectItem value="producao">Produção</SelectItem>
-            </SelectContent>
-          </Select>
+          <div className="flex h-9 items-center rounded-md border bg-amber-50 px-3 text-sm text-amber-800 dark:bg-amber-950/30 dark:text-amber-200">Homologação (testes)</div>
         </div>
         <div>
           <Label>Regime tributário</Label>

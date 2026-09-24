@@ -3,6 +3,7 @@
  * Segue o mesmo padrão de sefaz-server.ts.
  */
 import { createServerFn } from "@tanstack/react-start";
+import { MDFE_AMBIENTE, MDFE_TP_AMB } from "@/lib/sefaz-ambiente";
 
 const SEFAZ_URL = (() => {
   try {
@@ -26,7 +27,7 @@ async function callSefazProxy(action: string, body: Record<string, unknown>) {
       "Content-Type": "application/json",
       "Authorization": `Bearer ${process.env.SUPABASE_SERVICE_ROLE_KEY || ""}`,
     },
-    body: JSON.stringify({ action, ...body }),
+    body: JSON.stringify({ action, ...body, ambiente: MDFE_AMBIENTE, tpAmb: MDFE_TP_AMB }),
   });
   if (!res.ok) {
     const err = await res.json().catch(() => ({ error: `HTTP ${res.status}` }));
@@ -40,11 +41,8 @@ async function getCertAndAmbiente(empresaId: string) {
   const cert = await buscarCertificadoAtivo(empresaId);
   const { createClient } = await import("@supabase/supabase-js");
   const supabase = createClient(process.env.SUPABASE_URL || "", process.env.SUPABASE_SERVICE_ROLE_KEY || "");
-  const { data: nfeConfig } = await supabase.from("nfe_config").select("ambiente").eq("empresa_id", empresaId).maybeSingle();
-  // MDF-e travado em homologação (decisão 23/09/2026) — ignora o config
-  const ambiente: "homologacao" | "producao" = "homologacao";
-  void nfeConfig;
-  return { cert, ambiente, supabase };
+  console.log(`[sefaz-mdf-server] empresa=${empresaId} ambiente: ${MDFE_AMBIENTE} tpAmb=${MDFE_TP_AMB}`);
+  return { cert, ambiente: MDFE_AMBIENTE, supabase };
 }
 
 export const emitirMdfFn = createServerFn({ method: "POST" })

@@ -14,6 +14,12 @@ import forge from "node-forge";
 import https from "node:https";
 import crypto from "node:crypto";
 import { gunzipSync } from "zlib";
+import {
+  SEFAZ_AMBIENTE,
+  SEFAZ_TP_AMB,
+  assertSefazAmbiente,
+  assertSefazXmlAmbiente,
+} from "./sefaz-ambiente";
 
 // OID constants for PKCS#12 bags
 const OID_PKCS8_SHROUDED_KEY_BAG = "1.2.840.113549.1.12.10.1.2";
@@ -108,9 +114,9 @@ const SEFAZ_ENDPOINTS: Record<string, { nfeAutorizacao: string; nfeRetAutorizaca
     receptEventos: NACIONAL.homologacao.receptEventos,
   },
   RS: {
-    nfeAutorizacao: "https://nfe.svrs.rs.gov.br/ws/NfeAutorizacao/NFeAutorizacao4.asmx",
-    nfeRetAutorizacao: "https://nfe.svrs.rs.gov.br/ws/NfeRetAutorizacao/NFeRetAutorizacao4.asmx",
-    nfeStatusServico: "https://nfe.svrs.rs.gov.br/ws/NfeStatusServico/NfeStatusServico4.asmx",
+    nfeAutorizacao: "https://nfe-homologacao.svrs.rs.gov.br/ws/NfeAutorizacao/NFeAutorizacao4.asmx",
+    nfeRetAutorizacao: "https://nfe-homologacao.svrs.rs.gov.br/ws/NfeRetAutorizacao/NFeRetAutorizacao4.asmx",
+    nfeStatusServico: "https://nfe-homologacao.svrs.rs.gov.br/ws/NfeStatusServico/NfeStatusServico4.asmx",
     receptEventos: NACIONAL.homologacao.receptEventos,
   },
   MS: {
@@ -134,14 +140,25 @@ const SEFAZ_ENDPOINTS: Record<string, { nfeAutorizacao: string; nfeRetAutorizaca
   },
 };
 
-function getEndpoints(uf: string, ambiente: "homologacao" | "producao" = "homologacao") {
+function getEndpoints(uf: string, ambiente: "homologacao" | "producao" = SEFAZ_AMBIENTE) {
+  assertSefazAmbiente(ambiente);
   const base = SEFAZ_ENDPOINTS[uf] || SEFAZ_ENDPOINTS.DEFAULT;
-  const nacional = ambiente === "producao" ? NACIONAL.producao : NACIONAL.homologacao;
-  return {
+  const nacional = NACIONAL[SEFAZ_AMBIENTE];
+  const endpoints = {
     ...base,
     nfeDistribuicaoDFe: nacional.nfeDistribuicaoDFe,
     receptEventos: nacional.receptEventos,
   };
+  const urls = Object.values(endpoints);
+  const productionHosts = new Set([
+    "nfe.svrs.rs.gov.br",
+    "www1.nfe.fazenda.gov.br",
+    "www.nfe.fazenda.gov.br",
+  ]);
+  if (urls.some((value) => productionHosts.has(new URL(value).hostname.toLowerCase()))) {
+    throw new Error(`Endpoint NF-e de produção bloqueado no ambiente de testes: ${urls.join(", ")}`);
+  }
+  return endpoints;
 }
 
 // Código da UF IBGE (obrigatório no distDFeInt)
@@ -585,7 +602,7 @@ export async function consultarDestinatario(
   senha: string,
   cnpj: string,
   uf: string,
-  ambiente: "homologacao" | "producao" = "homologacao",
+  ambiente: "homologacao" | "producao" = SEFAZ_AMBIENTE,
   startNsu?: string,
 ): Promise<{ notas: Array<{ chave: string; emitente: string; cnpj: string; valor: number; data: string }>; debug?: { cStat: string; xMotivo: string; endpoint: string; tpAmb: string; cUFAutor: string; cnpj: string }; maxNsuObtido?: string; ultNSU?: string; resetouCursor?: boolean }> {
   const endpoints = getEndpoints(uf, ambiente);
@@ -594,7 +611,7 @@ export async function consultarDestinatario(
 
   const nsWdsl = "http://www.portalfiscal.inf.br/nfe/wsdl/NFeDistribuicaoDFe";
   const cnpjLimpo = cnpj.replace(/\D/g, "");
-  const tpAmb = ambiente === "producao" ? "1" : "2";
+  const tpAmb = SEFAZ_TP_AMB;
   const cUFAutor = getCodigoUf(uf);
 
   console.log("[sefaz] consultarDestinatario CNPJ:", cnpjLimpo, "UF:", uf, "codUF:", cUFAutor, "ambiente:", ambiente, "endpoint:", endpoints.nfeDistribuicaoDFe, "startNsu:", startNsu || "(zero)");
@@ -708,7 +725,7 @@ export async function enviarEventoManifestacao(
   tipoEvento: TipoEventoManifestacao,
   cnpj: string,
   uf: string,
-  ambiente: "homologacao" | "producao" = "homologacao",
+  ambiente: "homologacao" | "producao" = SEFAZ_AMBIENTE,
   justificativa?: string,
 ): Promise<{ sucesso: boolean; codigo: string; motivo: string }> {
   const endpoints = getEndpoints(uf, ambiente);
@@ -723,7 +740,7 @@ export async function enviarEventoManifestacao(
   // Montar XML do evento
   const eventoXml = `<eventoNFe xmlns="${ns}" versao="1.00">
   <infEvento Id="ID${tipoEvento}${chave}${nSeqEvento}">
-    <tpAmb>${ambiente === "producao" ? "1" : "2"}</tpAmb>
+    <tpAmb>${SEFAZ_TP_AMB}</tpAmb>
     <CNPJ>${cnpjLimpo}</CNPJ>
     <chNFe>${chave}</chNFe>
     <dhEvento>${dataHora}</dhEvento>
@@ -774,8 +791,10 @@ export async function emitirNFe(
   senha: string,
   xmlNFe: string,
   uf: string,
-  ambiente: "homologacao" | "producao" = "homologacao",
+  ambiente: "homologacao" | "producao" = SEFAZ_AMBIENTE,
 ): Promise<{ sucesso: boolean; chave: string; numero: string; codigo: string; motivo: string }> {
+  assertSefazAmbiente(ambiente);
+  assertSefazXmlAmbiente(xmlNFe);
   const endpoints = getEndpoints(uf, ambiente);
   const ns = "http://www.portalfiscal.inf.br/nfe";
   const agent = createSefazAgent(pfxBytes, senha);
@@ -876,13 +895,13 @@ export async function consultarPorChave(
   chave: string,
   cnpj: string,
   uf: string,
-  ambiente: "homologacao" | "producao" = "homologacao",
+  ambiente: "homologacao" | "producao" = SEFAZ_AMBIENTE,
 ): Promise<{ nota: { chave: string; emitente: string; cnpj: string; valor: number; data: string; xml: string } | null; debug?: { cStat: string; xMotivo: string; endpoint: string } }> {
   const endpoints = getEndpoints(uf, ambiente);
   const ns = "http://www.portalfiscal.inf.br/nfe";
   const nsWdsl = "http://www.portalfiscal.inf.br/nfe/wsdl/NFeDistribuicaoDFe";
   const agent = createSefazAgent(pfxBytes, senha);
-  const tpAmb = ambiente === "producao" ? "1" : "2";
+  const tpAmb = SEFAZ_TP_AMB;
   const chaveLimpa = chave.replace(/\D/g, "");
 
   if (chaveLimpa.length !== 44) {

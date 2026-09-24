@@ -10,7 +10,6 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
@@ -23,6 +22,7 @@ import { useState, useEffect, useMemo, useRef } from "react";
 import { toast } from "sonner";
 import { limparIE } from "@/lib/ie";
 import { emitirCteFn, consultarCteFn, cancelarCteFn, previewCteXmlFn, excluirRejeitadosCteFn } from "@/lib/sefaz-cte-server";
+import { SEFAZ_AMBIENTE } from "@/lib/sefaz-ambiente";
 import { CFOPS_CTE, MOD_FRETE_OPTIONS, RESPONSAVEL_CTE_OPTIONS } from "@/lib/cfops-transporte";
 import { gerarDactePdf, DACTE_REV } from "@/lib/dacte-pdf";
 import { completarLogradouro, temTipoLogradouro } from "@/lib/endereco";
@@ -133,7 +133,7 @@ function CtePage() {
     enabled: !!empresa,
     queryKey: ["cte-documentos", empresa?.id],
     queryFn: async (): Promise<CteDoc[]> => {
-      const { data, error } = await supabase.from("cte_documentos" as any)        .select("id,numero,serie,status,valor_servico,chave_acesso,created_at,motivo_rejeicao,protocolo_sefaz,xml_assinado,ambiente,data_autorizacao").eq("empresa_id", empresa!.id).order("created_at", { ascending: false }).limit(100);
+      const { data, error } = await supabase.from("cte_documentos" as any)        .select("id,numero,serie,status,valor_servico,chave_acesso,created_at,motivo_rejeicao,protocolo_sefaz,xml_assinado,ambiente,data_autorizacao").eq("empresa_id", empresa!.id).eq("ambiente", SEFAZ_AMBIENTE).order("created_at", { ascending: false }).limit(100);
       if (error) throw error;
       return (data ?? []) as unknown as CteDoc[];
     },
@@ -384,7 +384,7 @@ function CtePage() {
         chave: doc.chave_acesso || "",
         numero: doc.numero || "",
         serie: doc.serie || "1",
-        ambiente: doc.ambiente || "producao",
+        ambiente: "homologacao",
         dataEmissao: doc.created_at,
         emitCnpj: tag("infCte > emit > CNPJ") || "",
         emitNome: tag("infCte > emit > xNome") || "",
@@ -533,7 +533,7 @@ function CtePage() {
   };
 
   const [open, setOpen] = useState(false);
-  const emptyForm = { toma: "3", ieDestinatario: "", cnpjTomador: "", xNomeTomador: "", ufTomador: "MG", cMunTomador: "3106200", xMunTomador: "BELO HORIZONTE", ieTomador: "", logradouroTomador: "", nroTomador: "", bairroTomador: "", cepTomador: "", foneTomador: "", emailTomador: "", cnpjConsignatario: "", xNomeConsignatario: "", ieConsignatario: "", ufConsignatario: "", xMunConsignatario: "", cepConsignatario: "", logradouroConsignatario: "", nroConsignatario: "", bairroConsignatario: "", cnpjRedespacho: "", xNomeRedespacho: "", ieRedespacho: "", ufRedespacho: "", xMunRedespacho: "", cepRedespacho: "", logradouroRedespacho: "", nroRedespacho: "", bairroRedespacho: "", ambiente: "homologacao" as "homologacao" | "producao", cfop: "5353", vPrest: "0.00", vCarga: "0.00", peso: "0", rntrc: "", icmsCST: "00", icmsBase: "1000.00", icmsAliq: "0.00", icmsValor: "0.00", reducaoBase: "0.00", creditoOutorgado: "0.00", pisAliq: "0.00", cofinsAliq: "0.00", irAliq: "0.00", inssAliq: "0.00", csllAliq: "0.00", motoristaNome: "", motoristaId: "", possuiMoto2: "", motorista2Nome: "", motorista2Id: "", ciot: "", placaVeiculo: "", placaReboque: "", semiReboque1: "", semiReboque2: "", seguradoraNome: "", seguradoraId: "", apolice: "", averbacao: "", cMunEnv: "3106200", xMunEnv: "BELO HORIZONTE", ufEnv: "MG", cMunIni: "3106200", xMunIni: "BELO HORIZONTE", ufIni: "MG", cMunFim: "3550308", xMunFim: "SAO PAULO", ufFim: "SP",     dataEmissao: new Date().toISOString().slice(0,10),
+  const emptyForm = { toma: "3", ieDestinatario: "", cnpjTomador: "", xNomeTomador: "", ufTomador: "MG", cMunTomador: "3106200", xMunTomador: "BELO HORIZONTE", ieTomador: "", logradouroTomador: "", nroTomador: "", bairroTomador: "", cepTomador: "", foneTomador: "", emailTomador: "", cnpjConsignatario: "", xNomeConsignatario: "", ieConsignatario: "", ufConsignatario: "", xMunConsignatario: "", cepConsignatario: "", logradouroConsignatario: "", nroConsignatario: "", bairroConsignatario: "", cnpjRedespacho: "", xNomeRedespacho: "", ieRedespacho: "", ufRedespacho: "", xMunRedespacho: "", cepRedespacho: "", logradouroRedespacho: "", nroRedespacho: "", bairroRedespacho: "", ambiente: SEFAZ_AMBIENTE as "homologacao" | "producao", cfop: "5353", vPrest: "0.00", vCarga: "0.00", peso: "0", rntrc: "", icmsCST: "00", icmsBase: "1000.00", icmsAliq: "0.00", icmsValor: "0.00", reducaoBase: "0.00", creditoOutorgado: "0.00", pisAliq: "0.00", cofinsAliq: "0.00", irAliq: "0.00", inssAliq: "0.00", csllAliq: "0.00", motoristaNome: "", motoristaId: "", possuiMoto2: "", motorista2Nome: "", motorista2Id: "", ciot: "", placaVeiculo: "", placaReboque: "", semiReboque1: "", semiReboque2: "", seguradoraNome: "", seguradoraId: "", apolice: "", averbacao: "", cMunEnv: "3106200", xMunEnv: "BELO HORIZONTE", ufEnv: "MG", cMunIni: "3106200", xMunIni: "BELO HORIZONTE", ufIni: "MG", cMunFim: "3550308", xMunFim: "SAO PAULO", ufFim: "SP",     dataEmissao: new Date().toISOString().slice(0,10),
     formaPagamento: "Outros", finalidadeEmissao: "Normal", tipoServico: "Normal", formaEmissao: "Normal", modoEmbarque: "avulso" as "avulso" | "simplificado",
     cteReferenciado: "", chaveCompAnulacao: "", dataDeclaracao: "",
     obsGerais: "", obsAnulacao: "", obsGlobalizado: "",
@@ -1384,7 +1384,7 @@ function CtePage() {
       if (pend.length > 0) throw new Error("Para emitir informe: " + pend.join("; "));
       validarPedagio(form);
       const ret: any = await emitirCteFn({ data: { empresaId: empresa.id, form, input: {
-        ambiente: form.ambiente,
+        ambiente: SEFAZ_AMBIENTE,
         toma: form.toma, cnpjTomador: form.cnpjTomador, xNomeTomador: form.xNomeTomador, ufTomador: form.ufTomador, cMunTomador: form.cMunTomador, xMunTomador: form.xMunTomador,
         cfop: form.cfop, tpServ: "0", vPrest: totalPrestacao(form), vCarga: parseFloat(form.vCarga)||0, pesoKg: parseFloat(form.peso)||0, rntrc: rntrcFinal,
         modalRod: { rntrc: rntrcFinal, motoristas: motoristasXml(), veiculos: (() => { const vv = (veiculos || []).find(v => String(v.placa || "").toUpperCase() === String(form.placaVeiculo || "").toUpperCase()); return form.placaVeiculo ? [{ placa: String(form.placaVeiculo).toUpperCase(), uf: empresa.uf || "MG", renavam: (vv as any)?.renavam || undefined }] : []; })() },
@@ -1529,7 +1529,7 @@ function CtePage() {
       const chaves = selecionadas.size > 0 ? Array.from(selecionadas) : mercadorias.map(m => m.chave);
 
       return previewCteXmlFn({ data: { empresaId: empresa.id, input: {
-        ambiente: form.ambiente,
+        ambiente: SEFAZ_AMBIENTE,
         toma: form.toma, cnpjTomador: form.cnpjTomador, xNomeTomador: form.xNomeTomador, ufTomador: form.ufTomador, cMunTomador: form.cMunTomador, xMunTomador: form.xMunTomador,
         cfop: form.cfop, tpServ: "0", vPrest: totalPrestacao(form), vCarga: parseFloat(form.vCarga)||0, pesoKg: parseFloat(form.peso)||0, rntrc: rntrcFinal,
         modalRod: { rntrc: rntrcFinal, motoristas: motoristasXml(), veiculos: (() => { const vv = (veiculos || []).find(v => String(v.placa || "").toUpperCase() === String(form.placaVeiculo || "").toUpperCase()); return form.placaVeiculo ? [{ placa: String(form.placaVeiculo).toUpperCase(), uf: empresa.uf || "MG", renavam: (vv as any)?.renavam || undefined }] : []; })() },
@@ -1780,10 +1780,10 @@ function CtePage() {
                         )}
                       </>
                     )}
-                    {!isRascunho && <Button size="icon" variant="ghost" className="h-7 w-7 text-destructive" disabled={d.status!=="autorizado"} onClick={() => d.chave_acesso && cancelar.mutate({ chave: d.chave_acesso, protocolo: d.protocolo_sefaz || undefined, ambiente: (d as any).ambiente })} title="Cancelar"><Ban className="h-3.5 w-3.5" /></Button>}
+                    {!isRascunho && <Button size="icon" variant="ghost" className="h-7 w-7 text-destructive" disabled={d.status!=="autorizado"} onClick={() => d.chave_acesso && cancelar.mutate({ chave: d.chave_acesso, protocolo: d.protocolo_sefaz || undefined, ambiente: SEFAZ_AMBIENTE })} title="Cancelar"><Ban className="h-3.5 w-3.5" /></Button>}
                     {!isRascunho && <Button size="icon" variant="ghost" className="h-7 w-7 text-emerald-600" onClick={() => visualizarDoc(d)} title="Ver dados e status"><ClipboardList className="h-3.5 w-3.5" /></Button>}
                     {!isRascunho && d.status === "autorizado" && <Button size="icon" variant="ghost" className="h-7 w-7 text-violet-600" onClick={() => substituirCte(d)} title="Emitir CT-e de substituição"><Repeat className="h-3.5 w-3.5" /></Button>}
-                    {!isRascunho && <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => d.chave_acesso && consultar.mutate({ chave: d.chave_acesso, ambiente: (d as any).ambiente })} title="Consultar SEFAZ"><Search className="h-3.5 w-3.5" /></Button>}
+                    {!isRascunho && <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => d.chave_acesso && consultar.mutate({ chave: d.chave_acesso, ambiente: SEFAZ_AMBIENTE })} title="Consultar SEFAZ"><Search className="h-3.5 w-3.5" /></Button>}
                   </TableCell></TableRow>
                   );
                 })}</TableBody>
@@ -2125,10 +2125,7 @@ function CtePage() {
               <div className="grid grid-cols-2 md:grid-cols-[auto_auto_auto_minmax(0,1fr)_auto_auto] gap-2 border rounded p-3 bg-muted/20">
                 <div>
                   <Label className="text-[10px] text-muted-foreground">Ambiente</Label>
-                  <ToggleGroup type="single" value={form.ambiente} onValueChange={v => { if (v) setForm({...form, ambiente: v as "homologacao" | "producao"}); }} className="bg-background border rounded-md h-7 mt-0.5">
-                    <ToggleGroupItem value="homologacao" className="h-6 text-[10px] px-2 data-[state=on]:bg-primary/10 data-[state=on]:text-primary">Homologação</ToggleGroupItem>
-                    <ToggleGroupItem value="producao" className="h-6 text-[10px] px-2 data-[state=on]:bg-green-600/10 data-[state=on]:text-green-700">Produção</ToggleGroupItem>
-                  </ToggleGroup>
+                  <div className="flex h-7 items-center rounded-md border bg-amber-50 px-2 text-[10px] font-medium text-amber-800 dark:bg-amber-950/30 dark:text-amber-200">Homologação (testes)</div>
                 </div>
                 <div className="w-44"><Label className="text-[10px] text-muted-foreground">N° Conhecimento</Label><Input className="h-7 text-xs font-mono bg-transparent" value={viewDoc?.numero ?? "— aguardando emissão —"} readOnly /></div>
                 <div className="w-[136px]"><Label className="text-[10px] text-muted-foreground">Data Emissão</Label><DateInput value={form.dataEmissao} onChange={v => setForm({...form, dataEmissao: v})} className="h-7 text-xs" /></div>
@@ -2889,7 +2886,7 @@ function CtePage() {
               chave: previewData.chave,
               numero: previewData.proximo,
               serie: f.serie || "1",
-              ambiente: previewData.ambiente,
+              ambiente: SEFAZ_AMBIENTE,
               dataEmissao: new Date().toISOString(),
               emitCnpj: f.emit?.cnpj || "",
               emitNome: f.emit?.xNome || f.xNomeTomador || "",
@@ -2903,7 +2900,7 @@ function CtePage() {
               respEmissao: respNome,
               tomadorCnpj: f.cnpjTomador || "",
               // Manter igual a HOMOLOG_TOMADOR_NOME em sefaz-cte.ts (SEFAZ-MG exige em homologação, erro 938)
-              tomadorNome: previewData.ambiente === "homologacao" ? "CTE EMITIDO EM AMBIENTE DE HOMOLOGACAO - SEM VALOR FISCAL" : (f.xNomeTomador || ""),
+              tomadorNome: SEFAZ_AMBIENTE === "homologacao" ? "CTE EMITIDO EM AMBIENTE DE HOMOLOGACAO - SEM VALOR FISCAL" : "",
               tomadorEndereco: `${(f.logradouroTomador || "").trim()}${f.nroTomador ? ", " + f.nroTomador : ""}${f.bairroTomador ? " - " + f.bairroTomador : ""}`.trim(),
               tomadorFone: f.foneTomador || "",
               tomadorCidade: f.xMunTomador || "",
@@ -2978,7 +2975,7 @@ function CtePage() {
             return (
               <DacteViewer
                 titulo="Pré-Visualização DACTE"
-                subtitulo={`Nº ${previewData.proximo} • ${previewData.ambiente === "homologacao" ? "Homologação" : "Produção"} • Chave ${previewData.chave}`}
+                subtitulo={`Nº ${previewData.proximo} • Homologação (testes) • Chave ${previewData.chave}`}
                 url={url}
                 nomeArquivo={`DACTE-${previewData.proximo}.pdf`}
                 onClose={() => { if (lastPreviewUrl.current) { URL.revokeObjectURL(lastPreviewUrl.current); lastPreviewUrl.current = null; } setPreviewOpen(false); }}

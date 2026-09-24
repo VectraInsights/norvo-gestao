@@ -1,7 +1,8 @@
 import { createServerFn } from "@tanstack/react-start";
+import { SEFAZ_AMBIENTE, SEFAZ_TP_AMB } from "@/lib/sefaz-ambiente";
 const SEFAZ_URL = (() => { try { const imp = typeof import.meta !== "undefined" ? (import.meta as any).env : undefined; const a = imp?.SEFAZ_URL || imp?.VITE_SEFAZ_URL || ""; const b = typeof process !== "undefined" ? (process.env.SEFAZ_URL || process.env.VITE_SEFAZ_URL || "") : ""; return a || b; } catch { return ""; } })();
 async function callProxy(action: string, body: Record<string, unknown>) {
-  const res = await fetch(SEFAZ_URL, { method: "POST", headers: { "Content-Type": "application/json", Authorization: `Bearer ${process.env.SUPABASE_SERVICE_ROLE_KEY || ""}` }, body: JSON.stringify({ action, ...body }) });
+  const res = await fetch(SEFAZ_URL, { method: "POST", headers: { "Content-Type": "application/json", Authorization: `Bearer ${process.env.SUPABASE_SERVICE_ROLE_KEY || ""}` }, body: JSON.stringify({ action, ...body, ambiente: SEFAZ_AMBIENTE, tpAmb: SEFAZ_TP_AMB }) });
   if (!res.ok) throw new Error((await res.json().catch(() => ({ error: `HTTP ${res.status}` }))).error);
   return res.json();
 }
@@ -12,8 +13,8 @@ export const emitirCteFn = createServerFn({ method: "POST" }).validator((d: { em
   const { createClient } = await import("@supabase/supabase-js");
   const supa = createClient(process.env.SUPABASE_URL||"", process.env.SUPABASE_SERVICE_ROLE_KEY||"");
   const { data: emp } = await supa.from("empresas").select("cnpj, uf, ie, nome_fantasia, razao_social, logradouro, numero, bairro, cidade, cep, regime_tributario").eq("id", data.empresaId).single();
-  const { data: cfg } = await supa.from("nfe_config").select("ambiente").eq("empresa_id", data.empresaId).maybeSingle();
-  const ambiente = (data.input as any).ambiente === "homologacao" ? "homologacao" : (cfg?.ambiente==="homologacao"?"homologacao":"producao");
+  const ambiente = SEFAZ_AMBIENTE;
+  console.log(`[CTE-DEBUG] empresa=${data.empresaId} ambiente=${ambiente} tpAmb=${SEFAZ_TP_AMB} configIgnorada=true`);
   const { data: ultimos } = await supa.from("cte_documentos").select("numero").eq("empresa_id", data.empresaId).eq("ambiente", ambiente).order("created_at",{ascending:false}).limit(50);
   const baseNum = Math.max(0, ...(((ultimos as any[]) || []).map(r => parseInt((r as any)?.numero || "0", 10) || 0)));
   const proximo = ambiente === "homologacao"
@@ -92,20 +93,16 @@ export const consultarCteFn = createServerFn({ method: "POST" }).validator((d:{e
   if(SEFAZ_URL) return callProxy("consultarCte", data);
   const { buscarCertificadoAtivo, consultarCte } = await import("@/lib/sefaz-cte");
   const cert=await buscarCertificadoAtivo(data.empresaId);
-  const { createClient }=await import("@supabase/supabase-js");
-  const supa=createClient(process.env.SUPABASE_URL||"",process.env.SUPABASE_SERVICE_ROLE_KEY||"");
-  const { data: cfg}=await supa.from("nfe_config").select("ambiente").eq("empresa_id",data.empresaId).maybeSingle();
-  const ambiente=((data as any).ambiente==="homologacao"||(data as any).ambiente==="producao")?(data as any).ambiente:(cfg?.ambiente==="homologacao"?"homologacao":"producao");
+  const ambiente = SEFAZ_AMBIENTE;
+  console.log(`[CTE-DEBUG] empresa=${data.empresaId} acao=consultar ambiente=${ambiente} tpAmb=${SEFAZ_TP_AMB} configIgnorada=true`);
   return consultarCte(cert.pfx, cert.senha, data.chave, ambiente, cert.uf);
 });
 export const consultarCteChaveFn = createServerFn({ method: "POST" }).validator((d:{empresaId:string;chave:string})=>d).handler(async ({data})=>{
   if(SEFAZ_URL) return callProxy("consultarCteChave", data);
   const { buscarCertificadoAtivo, consultarCtePorChave } = await import("@/lib/sefaz-cte");
   const cert=await buscarCertificadoAtivo(data.empresaId);
-  const { createClient }=await import("@supabase/supabase-js");
-  const supa=createClient(process.env.SUPABASE_URL||"",process.env.SUPABASE_SERVICE_ROLE_KEY||"");
-  const { data: cfg}=await supa.from("nfe_config").select("ambiente").eq("empresa_id",data.empresaId).maybeSingle();
-  const ambiente=cfg?.ambiente==="homologacao"?"homologacao":"producao";
+  const ambiente = SEFAZ_AMBIENTE;
+  console.log(`[CTE-DEBUG] empresa=${data.empresaId} acao=consultarChave ambiente=${ambiente} tpAmb=${SEFAZ_TP_AMB} configIgnorada=true`);
   return consultarCtePorChave(cert.pfx, cert.senha, data.chave, ambiente, cert.cnpj, cert.uf);
 });
 export const previewCteXmlFn = createServerFn({ method: "POST" }).validator((d: { empresaId: string; input: any }) => d).handler(async ({ data }) => {
@@ -113,8 +110,8 @@ export const previewCteXmlFn = createServerFn({ method: "POST" }).validator((d: 
   const { createClient } = await import("@supabase/supabase-js");
   const supa = createClient(process.env.SUPABASE_URL||"", process.env.SUPABASE_SERVICE_ROLE_KEY||"");
   const { data: emp } = await supa.from("empresas").select("cnpj, uf, ie, nome_fantasia, razao_social, logradouro, numero, complemento, bairro, cidade, cep, regime_tributario").eq("id", data.empresaId).single();
-  const { data: cfg } = await supa.from("nfe_config").select("ambiente").eq("empresa_id", data.empresaId).maybeSingle();
-  const ambiente = (data.input as any).ambiente === "homologacao" ? "homologacao" : (cfg?.ambiente==="homologacao"?"homologacao":"producao");
+  const ambiente = SEFAZ_AMBIENTE;
+  console.log(`[CTE-DEBUG] empresa=${data.empresaId} acao=preview ambiente=${ambiente} tpAmb=${SEFAZ_TP_AMB} configIgnorada=true`);
   const { data: ultimos } = await supa.from("cte_documentos").select("numero").eq("empresa_id", data.empresaId).eq("ambiente", ambiente).order("created_at",{ascending:false}).limit(50);
   const baseNum = Math.max(0, ...(((ultimos as any[]) || []).map(r => parseInt((r as any)?.numero || "0", 10) || 0)));
   const proximo = ambiente === "homologacao"
@@ -147,9 +144,8 @@ export const cancelarCteFn = createServerFn({ method: "POST" }).validator((d:{em
   const cert=await buscarCertificadoAtivo(data.empresaId);
   const { createClient }=await import("@supabase/supabase-js");
   const supa=createClient(process.env.SUPABASE_URL||"",process.env.SUPABASE_SERVICE_ROLE_KEY||"");
-  const { data:doc }=await supa.from("cte_documentos").select("ambiente").eq("chave_acesso",data.chave).maybeSingle();
-  const ambiente=(doc as any)?.ambiente==="producao"?"producao":"homologacao";
-  console.log("[CTE-CANCEL] ambiente:", ambiente, "chave:", data.chave, "protocolo:", data.protocolo);
+  const ambiente = SEFAZ_AMBIENTE;
+  console.log(`[CTE-CANCEL] empresa=${data.empresaId} ambiente=${ambiente} tpAmb=${SEFAZ_TP_AMB} chave=${data.chave} configIgnorada=true`);
   const ret=await cancelarCte(cert.pfx, cert.senha, data.chave, data.justificativa, ambiente, cert.cnpj, cert.uf, data.protocolo);
   if(ret.sucesso) {
     await supa.from("cte_documentos").update({status:"cancelado"} as any).eq("chave_acesso",data.chave);

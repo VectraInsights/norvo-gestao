@@ -5,6 +5,7 @@
  */
 
 import { createClient } from "@supabase/supabase-js";
+import { SEFAZ_AMBIENTE, SEFAZ_TP_AMB } from "@/lib/sefaz-ambiente";
 
 const COOLDOWN_MS = 60 * 60 * 1000; // 1 hora
 
@@ -41,12 +42,13 @@ export async function handleSefazCron(): Promise<Response> {
 
       const { data: nfeConfig } = await supabase
         .from("nfe_config")
-        .select("ambiente, last_nsu, last_query_at")
+        .select("last_nsu, last_query_at")
         .eq("empresa_id", empresaId)
         .maybeSingle();
 
-      const ambiente = nfeConfig?.ambiente === "homologacao" ? "homologacao" : "producao";
+      const ambiente = SEFAZ_AMBIENTE;
       const startNsu = nfeConfig?.last_nsu || undefined;
+      console.log(`[sefaz-cron] ${empresaId}: ambiente=${ambiente} tpAmb=${SEFAZ_TP_AMB}`);
 
       // Pular se última consulta < 1h (evita cStat 656)
       if (nfeConfig?.last_query_at) {

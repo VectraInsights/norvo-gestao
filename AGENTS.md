@@ -210,6 +210,12 @@ sobrescrito pela env `NITRO_PRESET` (ex.: `node-server`, `vercel`).
   apontando para o proxy Vercel. Worker NÃO suporta mTLS (limitação da plataforma). Deploy
   automático via GitHub Actions (Wrangler) no push em main.
 
+- **Ambiente fiscal em testes**: `src/lib/sefaz-ambiente.ts` fixa `SEFAZ_AMBIENTE=homologacao`
+  e `SEFAZ_TP_AMB=2` para NF-e, CT-e e MDF-e. `nfe_config.ambiente`, parâmetros recebidos
+  pelo proxy e toggles de produção não alteram o runtime; endpoints e XMLs de produção são
+  bloqueados. O log do proxy deve mostrar `ambiente: homologacao` e `configIgnorada` apenas
+  para diagnóstico.
+
 - **Certificados**: tabela `certificados_digitais` + bucket Storage `certificados` (RLS por empresa).
   Upload em `/configuracoes/fiscal` → valida thumbprint/validade via node-forge → inserção atômica.
   Senha armazenada em `senha_cript` (service role). Busca via `buscarCertificadoAtivo(empresaId)`

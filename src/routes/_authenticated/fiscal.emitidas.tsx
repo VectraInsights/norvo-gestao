@@ -478,7 +478,7 @@ function NotasEmitidas() {
             <div className="flex items-center gap-1.5">
               <span className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse"></span>
               <span className="text-muted-foreground">Ambiente:</span> 
-              <strong className="capitalize text-foreground font-medium">{config.ambiente ?? "—"}</strong>
+              <strong className="capitalize text-foreground font-medium">Homologação (testes)</strong>
             </div>
             <div>
               <span className="text-muted-foreground">Série Padrão:</span>{" "}

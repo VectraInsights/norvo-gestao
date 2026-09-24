@@ -6,6 +6,7 @@
  */
 
 import { createServerFn } from "@tanstack/react-start";
+import { SEFAZ_AMBIENTE, SEFAZ_TP_AMB } from "@/lib/sefaz-ambiente";
 
 const SEFAZ_URL = (() => {
   try {
@@ -31,7 +32,7 @@ async function callSefazProxy(action: string, body: Record<string, unknown>) {
       "Content-Type": "application/json",
       "Authorization": `Bearer ${process.env.SUPABASE_SERVICE_ROLE_KEY || ""}`,
     },
-    body: JSON.stringify({ action, ...body }),
+    body: JSON.stringify({ action, ...body, ambiente: SEFAZ_AMBIENTE, tpAmb: SEFAZ_TP_AMB }),
   });
   if (!res.ok) {
     const err = await res.json().catch(() => ({ error: `HTTP ${res.status}` }));
@@ -50,8 +51,8 @@ export const consultarNFeDestinatarioFn = createServerFn({ method: "POST" })
 
     const { createClient } = await import("@supabase/supabase-js");
     const supabase = createClient(process.env.SUPABASE_URL || "", process.env.SUPABASE_SERVICE_ROLE_KEY || "");
-    const { data: nfeConfig } = await supabase.from("nfe_config").select("ambiente, last_nsu, last_query_at").eq("empresa_id", data.empresaId).maybeSingle();
-    const ambiente = nfeConfig?.ambiente === "homologacao" ? "homologacao" : "producao";
+    const { data: nfeConfig } = await supabase.from("nfe_config").select("last_nsu, last_query_at").eq("empresa_id", data.empresaId).maybeSingle();
+    const ambiente = SEFAZ_AMBIENTE;
     const startNsu = nfeConfig?.last_nsu || undefined;
 
     // Cooldown
@@ -69,7 +70,7 @@ export const consultarNFeDestinatarioFn = createServerFn({ method: "POST" })
             cStat: "656",
             xMotivo: `Cooldown entre consultas — aguarde ${remainingMin} minuto(s)`,
             endpoint: "",
-            tpAmb: ambiente === "producao" ? "1" : "2",
+            tpAmb: SEFAZ_TP_AMB,
             cUFAutor: "",
             cnpj: cert.cnpj,
           },
@@ -113,10 +114,8 @@ export const manifestarNFeFn = createServerFn({ method: "POST" })
     if (SEFAZ_URL) return callSefazProxy("manifestar", { empresaId: data.empresaId, chave: data.chave, tipoEvento: data.tipoEvento, justificativa: data.justificativa });
     const { enviarEventoManifestacao, buscarCertificadoAtivo } = await import("@/lib/sefaz");
     const cert = await buscarCertificadoAtivo(data.empresaId);
-    const { createClient } = await import("@supabase/supabase-js");
-    const supabase = createClient(process.env.SUPABASE_URL || "", process.env.SUPABASE_SERVICE_ROLE_KEY || "");
-    const { data: nfeConfig } = await supabase.from("nfe_config").select("ambiente").eq("empresa_id", data.empresaId).maybeSingle();
-    const ambiente = nfeConfig?.ambiente === "homologacao" ? "homologacao" : "producao";
+    const ambiente = SEFAZ_AMBIENTE;
+    console.log(`[sefaz-server] empresa=${data.empresaId} acao=manifestar ambiente: ${ambiente} tpAmb=${SEFAZ_TP_AMB}`);
     return enviarEventoManifestacao(cert.pfx, cert.senha, data.chave, data.tipoEvento, cert.cnpj, cert.uf, ambiente, data.justificativa);
   });
 
@@ -126,10 +125,8 @@ export const emitirNFeFn = createServerFn({ method: "POST" })
     if (SEFAZ_URL) return callSefazProxy("emitir", { empresaId: data.empresaId, xml: data.xml });
     const { emitirNFe, buscarCertificadoAtivo } = await import("@/lib/sefaz");
     const cert = await buscarCertificadoAtivo(data.empresaId);
-    const { createClient } = await import("@supabase/supabase-js");
-    const supabase = createClient(process.env.SUPABASE_URL || "", process.env.SUPABASE_SERVICE_ROLE_KEY || "");
-    const { data: nfeConfig } = await supabase.from("nfe_config").select("ambiente").eq("empresa_id", data.empresaId).maybeSingle();
-    const ambiente = nfeConfig?.ambiente === "homologacao" ? "homologacao" : "producao";
+    const ambiente = SEFAZ_AMBIENTE;
+    console.log(`[sefaz-server] empresa=${data.empresaId} acao=emitir ambiente: ${ambiente} tpAmb=${SEFAZ_TP_AMB}`);
     return emitirNFe(cert.pfx, cert.senha, data.xml, cert.uf, ambiente);
   });
 
@@ -148,10 +145,8 @@ export const consultarNFePorChaveFn = createServerFn({ method: "POST" })
     const { consultarPorChave, buscarCertificadoAtivo } = await import("@/lib/sefaz");
     const cert = await buscarCertificadoAtivo(data.empresaId);
 
-    const { createClient } = await import("@supabase/supabase-js");
-    const supabase = createClient(process.env.SUPABASE_URL || "", process.env.SUPABASE_SERVICE_ROLE_KEY || "");
-    const { data: nfeConfig } = await supabase.from("nfe_config").select("ambiente").eq("empresa_id", data.empresaId).maybeSingle();
-    const ambiente = nfeConfig?.ambiente === "homologacao" ? "homologacao" : "producao";
+    const ambiente = SEFAZ_AMBIENTE;
+    console.log(`[sefaz-server] empresa=${data.empresaId} acao=consultarChave ambiente: ${ambiente} tpAmb=${SEFAZ_TP_AMB}`);
 
     return consultarPorChave(cert.pfx, cert.senha, data.chave, cert.cnpj, cert.uf, ambiente);
   });

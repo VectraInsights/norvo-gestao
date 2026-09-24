@@ -2412,3 +2412,21 @@ Espelhado na Vercel.
 - Retry de rejeitado nao mostra Salvar Rascunho (ja foi a
   SEFAZ); rascunho normal e prefill de CT-e mantem o botao.
   Espelhado na Vercel.
+
+## Trava global de homologação para o sistema fiscal (24/09/2026)
+
+- O sistema continua integralmente em testes: NF-e, CT-e e MDF-e
+  agora usam a fonte única `SEFAZ_AMBIENTE = homologacao` e
+  `SEFAZ_TP_AMB = 2`; `nfe_config.ambiente` e parâmetros do body
+  não podem reativar produção.
+- `sefaz-proxy` registra `ambiente: homologacao`, `tpAmb: 2` e o
+  ambiente configurado no banco apenas como `configIgnorada`.
+- Getters de endpoint e validações de XML bloqueiam produção;
+  MDF-e exige `mdfe-homologacao.svrs.rs.gov.br`, CT-e usa os hosts
+  de homologação e a distribuição usa `hom1.cte.fazenda.gov.br`.
+- O proxy ganhou o fluxo `consultarMdf`, o caminho do certificado
+  não registra mais o caminho Storage no log, e a seleção de CT-e
+  do MDF-e filtra documentos homologados.
+- Telas de configuração/CT-e/MDF-e exibem Homologação como estado
+  fixo de testes. Espelhado nos dois repositórios; validar o
+  rebuild/deploy antes de testar na SEFAZ.

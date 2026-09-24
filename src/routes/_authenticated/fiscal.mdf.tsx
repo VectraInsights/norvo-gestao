@@ -18,6 +18,7 @@ import { brl, dateBR, num } from "@/lib/format";
 import { useState, useEffect, useMemo } from "react";
 import { toast } from "sonner";
 import { emitirMdfFn, consultarMdfFn, encerrarMdfFn, cancelarMdfFn } from "@/lib/sefaz-mdf-server";
+import { MDFE_AMBIENTE } from "@/lib/sefaz-ambiente";
 import { DateInput } from "@/components/erp/date-input";
 import { Textarea } from "@/components/ui/textarea";
 
@@ -127,6 +128,7 @@ function MdfPage() {
       const { data, error } = await supabase.from("mdf_documentos" as any)
         .select("id,numero,serie,status,qtd_cte,chave_acesso,created_at,motivo_rejeicao,protocolo_sefaz,uf_carregamento,uf_descarregamento,valor_total_carga,peso_total,veiculo_tracao_id,motorista_id,xml_assinado,xml_protocolo")
         .eq("empresa_id", empresa!.id)
+        .eq("ambiente", MDFE_AMBIENTE)
         .order("created_at", { ascending: false })
         .limit(100);
       if (error) throw error;
@@ -373,6 +375,7 @@ function DialogNovoMdf({ open, onOpenChange, empresaId, empresa, chavesIniciais,
         .select("id,numero,serie,chave_acesso,status,valor_servico,peso_carga,xml_assinado,data_autorizacao")
         .eq("empresa_id", empresaId)
         .eq("status", "autorizado")
+        .eq("ambiente", MDFE_AMBIENTE)
         .order("created_at", { ascending: false })
         .limit(50);
       if (error) throw error;
@@ -420,7 +423,7 @@ function DialogNovoMdf({ open, onOpenChange, empresaId, empresa, chavesIniciais,
     return [...new Set(errs)];
   }, [ufCarregamento, ufDescarregamento, percursoUFs]);
   // MDF-e travado em homologação (decisão 23/09/2026) — XML e transmissão sempre tpAmb=2
-  const ambienteMdf = "homologacao" as const;
+  const ambienteMdf = MDFE_AMBIENTE;
   useEffect(() => { if (!open) return; (async () => { try { const { data } = await supabase.auth.getUser(); const usr = (data as any)?.user; if (!usr) return; let nm = (usr?.user_metadata as any)?.nome || ""; if (!nm && empresaId) { const { data: eu } = await supabase.from("empresa_users" as any).select("nome").eq("empresa_id", empresaId).eq("user_id", usr.id).maybeSingle(); nm = (eu as any)?.nome || ""; } setRespNome(nm || ""); } catch {} })(); }, [open, empresaId]);
   useEffect(() => { if (open && chavesIniciais?.length) { setCtesSelecionadas(new Set(chavesIniciais)); setPercursoUFs([]); } }, [open]);
   useEffect(() => {
@@ -664,7 +667,7 @@ function DialogNovoMdf({ open, onOpenChange, empresaId, empresa, chavesIniciais,
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="w-screen h-screen max-w-none max-h-none m-0 rounded-none overflow-y-auto">
-        <DialogHeader><DialogTitle>Novo MDF-e <span className={"text-xs font-normal px-1.5 py-0.5 rounded " + (ambienteMdf === "homologacao" ? "bg-amber-100 text-amber-800" : "bg-green-100 text-green-800")}>{ambienteMdf === "homologacao" ? "Homologação" : "Produção"}</span></DialogTitle></DialogHeader>
+        <DialogHeader><DialogTitle>Novo MDF-e <span className="rounded bg-amber-100 px-1.5 py-0.5 text-xs font-normal text-amber-800">Homologação (testes)</span></DialogTitle></DialogHeader>
 
         <div className="space-y-2">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-2">

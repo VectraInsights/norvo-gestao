@@ -5,6 +5,7 @@
  */
 
 import { createClient } from "@supabase/supabase-js";
+import { MDFE_AMBIENTE, MDFE_TP_AMB, SEFAZ_AMBIENTE, SEFAZ_TP_AMB } from "@/lib/sefaz-ambiente";
 
 function json(data: unknown, status = 200) {
   return new Response(JSON.stringify(data), {
@@ -54,7 +55,7 @@ export async function handleSefazProxy(request: Request): Promise<Response> {
       return json({ error: "Nenhum certificado ativo encontrado" }, 404);
     }
 
-    console.log("[sefaz-proxy] cert path:", cert.arquivo_path);
+    console.log("[sefaz-proxy] certificado ativo carregado (caminho omitido)");
 
     // Download do certificado
     const { data: fileData, error: dlErr } = await supabase.storage
@@ -107,9 +108,10 @@ export async function handleSefazProxy(request: Request): Promise<Response> {
       .eq("empresa_id", empresaId)
       .maybeSingle();
 
-    const ambiente = nfeConfig?.ambiente === "homologacao" ? "homologacao" : "producao";
+    const ambiente = SEFAZ_AMBIENTE;
     const startNsu = nfeConfig?.last_nsu || undefined;
-    console.log("[sefaz-proxy] ambiente:", ambiente, "cnpj:", cnpj, "uf:", uf, "startNsu:", startNsu || "(zero)");
+    const configuredAmbiente = nfeConfig?.ambiente || "(vazio)";
+    console.log("[sefaz-proxy] ambiente:", ambiente, "tpAmb:", SEFAZ_TP_AMB, "configIgnorada:", configuredAmbiente, "cnpj:", cnpj, "uf:", uf, "startNsu:", startNsu || "(zero)");
 
     // Cooldown: verificar se já passou o tempo mínimo entre consultas
     if (action === "consultar" && nfeConfig?.last_query_at) {
@@ -128,7 +130,7 @@ export async function handleSefazProxy(request: Request): Promise<Response> {
             cStat: "656",
             xMotivo: `Cooldown entre consultas — aguarde ${remainingMin} minuto(s)`,
             endpoint: "",
-            tpAmb: ambiente === "producao" ? "1" : "2",
+            tpAmb: SEFAZ_TP_AMB,
             cUFAutor: "",
             cnpj,
           },
@@ -148,7 +150,7 @@ export async function handleSefazProxy(request: Request): Promise<Response> {
         const supa2 = createClient2(process.env.SUPABASE_URL||"", process.env.SUPABASE_SERVICE_ROLE_KEY||"");
         const { data: emp } = await supa2.from("empresas").select("cnpj, uf, ie, razao_social, nome_fantasia, logradouro, numero, complemento, bairro, cidade, cep, regime_tributario").eq("id", empresaId).single();
         const inp = (body as any).input || {};
-        const cteAmbiente = inp.ambiente === "homologacao" ? "homologacao" : ambiente;
+        const cteAmbiente = SEFAZ_AMBIENTE;
         const { data: ultimos } = await supa2.from("cte_documentos").select("numero").eq("empresa_id", empresaId).eq("ambiente", cteAmbiente).order("created_at",{ascending:false}).limit(50);
         const baseNum = Math.max(0, ...(((ultimos as any[]) || []).map(r => parseInt((r as any)?.numero || "0", 10) || 0)));
         const proximo = cteAmbiente === "homologacao" ? String(Math.max(baseNum + 1, 500)) : String(baseNum + 1);
@@ -185,22 +187,18 @@ export async function handleSefazProxy(request: Request): Promise<Response> {
       }
       case "consultarCte": {
         const { consultarCte } = await import("@/lib/sefaz-cte");
-        result = await consultarCte(pfxBytes, senha, (body as any).chave, (((body as any).ambiente === "homologacao" || (body as any).ambiente === "producao") ? (body as any).ambiente : ambiente), uf);
+        result = await consultarCte(pfxBytes, senha, (body as any).chave, SEFAZ_AMBIENTE, uf);
         break;
       }
       case "consultarCteChave": {
         const { consultarCtePorChave } = await import("@/lib/sefaz-cte");
-        result = await consultarCtePorChave(pfxBytes, senha, (body as any).chave, ambiente, cnpj, uf);
+        result = await consultarCtePorChave(pfxBytes, senha, (body as any).chave, SEFAZ_AMBIENTE, cnpj, uf);
         break;
       }
       case "cancelarCte": {
         const { cancelarCte } = await import("@/lib/sefaz-cte");
-        let ambCanc = (((body as any).ambiente === "homologacao" || (body as any).ambiente === "producao") ? (body as any).ambiente : ambiente);
-        if (!(body as any).ambiente) {
-          const { data: docAmb } = await supabase.from("cte_documentos").select("ambiente").eq("chave_acesso", String((body as any).chave || "")).maybeSingle();
-          if ((docAmb as any)?.ambiente === "homologacao" || (docAmb as any)?.ambiente === "producao") ambCanc = (docAmb as any).ambiente;
-        }
-        console.log("[CTE-CANCEL] ambiente resolvido:", ambCanc);
+        const ambCanc = SEFAZ_AMBIENTE;
+        console.log("[CTE-CANCEL] ambiente:", ambCanc, "tpAmb:", SEFAZ_TP_AMB, "chave:", (body as any).chave, "configIgnorada: true");
         result = await cancelarCte(pfxBytes, senha, (body as any).chave, (body as any).justificativa, ambCanc, cnpj, uf, (body as any).protocolo);
         if ((result as any).sucesso) {
           const { createClient: cc } = await import("@supabase/supabase-js");
@@ -214,10 +212,15 @@ export async function handleSefazProxy(request: Request): Promise<Response> {
         }
         return json(result);
       }
+      case "consultarMdf": {
+        const { consultarMdf } = await import("@/lib/sefaz-mdf");
+        result = await consultarMdf(pfxBytes, senha, (body as any).chave, SEFAZ_AMBIENTE);
+        break;
+      }
       case "emitirMdf": {
         const { emitirMdf } = await import("@/lib/sefaz-mdf");
         const b = body as any;
-        const ambMdf = "homologacao" as const; // MDF-e travado em homologação (23/09/2026)
+        const ambMdf = MDFE_AMBIENTE;
         const retMdf = await emitirMdf(pfxBytes, senha, b.xml, ambMdf);
         const { createClient: ccMdf } = await import("@supabase/supabase-js");
         const sMdf = ccMdf(process.env.SUPABASE_URL||"", process.env.SUPABASE_SERVICE_ROLE_KEY||"");
@@ -245,7 +248,7 @@ export async function handleSefazProxy(request: Request): Promise<Response> {
       case "encerrarMdf": {
         const { encerrarMdf } = await import("@/lib/sefaz-mdf");
         const b = body as any;
-        const retEnc = await encerrarMdf(pfxBytes, senha, b.chave, "homologacao", b.cnpj || cnpj, b.uf || uf);
+        const retEnc = await encerrarMdf(pfxBytes, senha, b.chave, MDFE_AMBIENTE, b.cnpj || cnpj, b.uf || uf);
         if ((retEnc as any).sucesso) {
           const { createClient: ccEnc } = await import("@supabase/supabase-js");
           const sEnc = ccEnc(process.env.SUPABASE_URL||"", process.env.SUPABASE_SERVICE_ROLE_KEY||"");
@@ -256,7 +259,7 @@ export async function handleSefazProxy(request: Request): Promise<Response> {
       case "cancelarMdf": {
         const { cancelarMdf } = await import("@/lib/sefaz-mdf");
         const b = body as any;
-        const retCanc = await cancelarMdf(pfxBytes, senha, b.chave, b.justificativa, "homologacao", b.cnpj || cnpj, b.uf || uf);
+        const retCanc = await cancelarMdf(pfxBytes, senha, b.chave, b.justificativa, MDFE_AMBIENTE, b.cnpj || cnpj, b.uf || uf);
         if ((retCanc as any).sucesso) {
           const { createClient: ccCanc } = await import("@supabase/supabase-js");
           const sCanc = ccCanc(process.env.SUPABASE_URL||"", process.env.SUPABASE_SERVICE_ROLE_KEY||"");

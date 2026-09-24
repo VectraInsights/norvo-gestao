@@ -7,6 +7,12 @@
 import https from "node:https";
 import zlib from "node:zlib";
 import { createSefazAgent, signXml, buscarCertificadoAtivo } from "./sefaz";
+import {
+  SEFAZ_AMBIENTE,
+  SEFAZ_TP_AMB,
+  assertSefazAmbiente,
+  assertSefazXmlAmbiente,
+} from "./sefaz-ambiente";
 export { buscarCertificadoAtivo };
 
 export type Ambiente = "homologacao" | "producao";
@@ -43,7 +49,8 @@ export const CTE_ENDPOINTS = {
 } as const;
 
 function getCteEndpoints(ambiente: Ambiente, uf?: string) {
-  const base = ambiente === "producao" ? CTE_ENDPOINTS.producao : CTE_ENDPOINTS.homologacao;
+  assertSefazAmbiente(ambiente);
+  const base = CTE_ENDPOINTS[SEFAZ_AMBIENTE];
   // MG usa autorizador próprio
   if (uf?.toUpperCase() === "MG") {
     return {
@@ -99,6 +106,7 @@ export interface CteInputCompleto {
 }
 
 export function buildCteXml(input: CteInputCompleto): { xml: string; chave: string } {
+  assertSefazAmbiente(input.ambiente);
   const rntrcRaw = String(input.modalRod?.rntrc || (input as any).rntrc || "ISENTO").toUpperCase();
   let rntrcXml = rntrcRaw === "ISENTO" ? "ISENTO" : rntrcRaw.replace(/\D/g, "");
   while (rntrcXml.length > 8 && rntrcXml.startsWith("0")) rntrcXml = rntrcXml.slice(1);
@@ -195,7 +203,7 @@ export function buildCteXml(input: CteInputCompleto): { xml: string; chave: stri
   <infCte Id="${id}" versao="4.00">
     <ide>
       <cUF>${cUF}</cUF><cCT>${cCT}</cCT><CFOP>${input.cfop}</CFOP><natOp>${natOp}</natOp><mod>57</mod><serie>${serie}</serie><nCT>${nCT}</nCT><dhEmi>${dhEmi}</dhEmi>
-      <tpImp>1</tpImp><tpEmis>1</tpEmis><cDV>${chave.slice(-1)}</cDV><tpAmb>${input.ambiente==="producao"?"1":"2"}</tpAmb><tpCTe>5</tpCTe><procEmi>0</procEmi><verProc>NORVO_1.0</verProc>
+      <tpImp>1</tpImp><tpEmis>1</tpEmis><cDV>${chave.slice(-1)}</cDV><tpAmb>${SEFAZ_TP_AMB}</tpAmb><tpCTe>5</tpCTe><procEmi>0</procEmi><verProc>NORVO_1.0</verProc>
       <cMunEnv>${input.cMunEnv}</cMunEnv><xMunEnv>${input.xMunEnv}</xMunEnv><UFEnv>${input.ufEnv}</UFEnv>
       <modal>01</modal><tpServ>${input.tpServ || "0"}</tpServ>
       <UFIni>${input.ufIni}</UFIni><UFFim>${input.ufFim}</UFFim>
@@ -217,12 +225,17 @@ export function buildCteXml(input: CteInputCompleto): { xml: string; chave: stri
     <total><vTPrest>${input.vPrest.toFixed(2)}</vTPrest><vTRec>${input.vPrest.toFixed(2)}</vTRec><vTotDFe>${vTotDFe}</vTotDFe></total>
     <infRespTec><CNPJ>${cnpjLimpo}</CNPJ><xContato>SUPORTE TECNICO</xContato><email>suporte@vectrainsights.com.br</email><fone>3139952572</fone></infRespTec>
   </infCte>
-  <infCTeSupl><qrCodCTe>https://${(input.ufEnv || input.emit.uf)?.toUpperCase() === "MG" ? "portalcte.fazenda.mg.gov.br/portalcte/sistema/qrcode.xhtml" : "dfeportal.svrs.rs.gov.br/cteQrCode"}?chCTe=${chave}&amp;tpAmb=${input.ambiente==="producao"?"1":"2"}</qrCodCTe></infCTeSupl>
+  <infCTeSupl><qrCodCTe>https://${(input.ufEnv || input.emit.uf)?.toUpperCase() === "MG" ? "portalcte.fazenda.mg.gov.br/portalcte/sistema/qrcode.xhtml" : "dfeportal.svrs.rs.gov.br/cteQrCode"}?chCTe=${chave}&amp;tpAmb=${SEFAZ_TP_AMB}</qrCodCTe></infCTeSupl>
 </CTeSimp>`;
   return { xml, chave };
 }
 
 async function soapRequest(url:string, body:string, action:string, agent?:https.Agent): Promise<string>{
+  const u = new URL(url);
+  const host = u.hostname.toLowerCase();
+  if (host === "cte.svrs.rs.gov.br" || host === "cte.fazenda.mg.gov.br" || host === "www1.cte.fazenda.gov.br") {
+    throw new Error(`Endpoint CT-e de produção bloqueado no ambiente de testes: ${url}`);
+  }
   const envelope = `<?xml version="1.0" encoding="utf-8"?><soap12:Envelope xmlns:soap12="http://www.w3.org/2003/05/soap-envelope"><soap12:Body>${body}</soap12:Body></soap12:Envelope>`;
   const contentType = `application/soap+xml; charset=utf-8; action="${action}"`;
   if(agent){
@@ -273,6 +286,8 @@ async function reconciliarEmissao(pfx: Buffer, senha: string, out: { sucesso: bo
 }
 
 export async function emitirCte(pfx:Buffer, senha:string, xml:string, ambiente:Ambiente, uf?: string): Promise<{ sucesso:boolean; cStat:string; xMotivo:string; chave?:string; protocolo?:string; xmlRet?:string }>{
+  assertSefazAmbiente(ambiente);
+  assertSefazXmlAmbiente(xml);
   const ep=getCteEndpoints(ambiente, uf);
   const xmlAss = signXml(xml, pfx, senha);
   console.log("[CTE-SEFAZ] XML ASSINADO COMPLETO:", xmlAss);
@@ -330,7 +345,7 @@ export async function emitirCte(pfx:Buffer, senha:string, xml:string, ambiente:A
 
 export async function consultarCte(pfx:Buffer, senha:string, chave:string, ambiente:Ambiente, uf?: string): Promise<{ cStat:string; xMotivo:string; xml?:string }>{
   const ep=getCteEndpoints(ambiente, uf);
-  const consSit=`<consSitCTe xmlns="http://www.portalfiscal.inf.br/cte" versao="4.00"><tpAmb>${ambiente==="producao"?"1":"2"}</tpAmb><xServ>CONSULTAR</xServ><chCTe>${chave}</chCTe></consSitCTe>`;
+  const consSit=`<consSitCTe xmlns="http://www.portalfiscal.inf.br/cte" versao="4.00"><tpAmb>${SEFAZ_TP_AMB}</tpAmb><xServ>CONSULTAR</xServ><chCTe>${chave}</chCTe></consSitCTe>`;
   const compressed = zlib.gzipSync(Buffer.from(consSit, "utf-8"));
   const dadosBase64 = compressed.toString("base64");
   const isMG = uf?.toUpperCase() === "MG";
@@ -358,13 +373,12 @@ export async function consultarCte(pfx:Buffer, senha:string, chave:string, ambie
 }
 
 export async function consultarCtePorChave(pfx:Buffer, senha:string, chave:string, ambiente:Ambiente, cnpjAutor:string, ufAutor?: string): Promise<{ sucesso:boolean; cStat:string; xMotivo:string; chave?:string; emitCnpj?:string; emitNome?:string; emitIE?:string; dhEmi?:string; nCT?:string; serie?:string; modelo?:string }>{
+  assertSefazAmbiente(ambiente);
   const ch = (chave || "").replace(/\D/g, "");
   if (ch.length !== 44) return { sucesso:false, cStat:"", xMotivo:"Chave deve ter 44 dígitos" };
-  const url = ambiente==="producao"
-    ? "https://www1.cte.fazenda.gov.br/CTeDistribuicaoDFe/CTeDistribuicaoDFe.asmx"
-    : "https://hom1.cte.fazenda.gov.br/CTeDistribuicaoDFe/CTeDistribuicaoDFe.asmx";
+  const url = "https://hom1.cte.fazenda.gov.br/CTeDistribuicaoDFe/CTeDistribuicaoDFe.asmx";
   const ns = "http://www.portalfiscal.inf.br/cte/wsdl/CTeDistribuicaoDFe";
-  const tpAmb = ambiente==="producao"?"1":"2";
+  const tpAmb = SEFAZ_TP_AMB;
   const payload = `<distDFeInt versao="1.01" xmlns="http://www.portalfiscal.inf.br/cte"><tpAmb>${tpAmb}</tpAmb><cUFAutor>${codigoUF(ufAutor||"MG")}</cUFAutor><CNPJ>${(cnpjAutor||"").replace(/\D/g,"")}</CNPJ><consChNFe><chCTe>${ch}</chCTe></consChNFe></distDFeInt>`;
   const body = `<cteDistDFeInteresse xmlns="${ns}"><cteDadosMsg xmlns="${ns}">${payload}</cteDadosMsg></cteDistDFeInteresse>`;
   const ret = await soapRequest(url, body, `${ns}/cteDistDFeInteresse`, createSefazAgent(pfx,senha));
@@ -399,7 +413,7 @@ export async function cancelarCte(pfx:Buffer, senha:string, chave:string, justif
   const chaveFmt = chave.replace(/\D/g, "").padStart(44, "0");
   const nProtFmt = (protocolo || "0").replace(/\D/g,"").padStart(15,"0");
   const cnpjFmt = cnpj.replace(/\D/g,"").padStart(14,"0");
-  const evento=`<eventoCTe xmlns="http://www.portalfiscal.inf.br/cte" versao="4.00"><infEvento Id="ID${tpEvento}${chaveFmt}${nSeq}"><cOrgao>${cOrgao}</cOrgao><tpAmb>${ambiente==="producao"?"1":"2"}</tpAmb><CNPJ>${cnpjFmt}</CNPJ><chCTe>${chaveFmt}</chCTe><dhEvento>${dhEvento}</dhEvento><tpEvento>${tpEvento}</tpEvento><nSeqEvento>${nSeq}</nSeqEvento><detEvento versaoEvento="4.00"><evCancCTe><descEvento>Cancelamento</descEvento><nProt>${nProtFmt}</nProt><xJust>${justificativa}</xJust></evCancCTe></detEvento></infEvento></eventoCTe>`;
+  const evento=`<eventoCTe xmlns="http://www.portalfiscal.inf.br/cte" versao="4.00"><infEvento Id="ID${tpEvento}${chaveFmt}${nSeq}"><cOrgao>${cOrgao}</cOrgao><tpAmb>${SEFAZ_TP_AMB}</tpAmb><CNPJ>${cnpjFmt}</CNPJ><chCTe>${chaveFmt}</chCTe><dhEvento>${dhEvento}</dhEvento><tpEvento>${tpEvento}</tpEvento><nSeqEvento>${nSeq}</nSeqEvento><detEvento versaoEvento="4.00"><evCancCTe><descEvento>Cancelamento</descEvento><nProt>${nProtFmt}</nProt><xJust>${justificativa}</xJust></evCancCTe></detEvento></infEvento></eventoCTe>`;
   console.log("[CTE-CANCEL] evento XML:", evento);
   const ass=signXml(evento, pfx, senha);
   console.log("[CTE-CANCEL] XML assinado (500 chars):", ass.slice(0, 500));
