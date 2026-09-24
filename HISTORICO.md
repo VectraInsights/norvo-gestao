@@ -2321,3 +2321,9 @@ Commits CF `ddeb6e4..37d5da0` (+ ajustes de X do dono) espelhados na Vercel.
   (assinado, intocavel; base64 de SignatureValue/X509 tambem
   sem quebras). Validado em teste local: 0 ws fora do SI.
   Espelhado na Vercel.
+
+## MDF-e log aponta tag com whitespace (23/09/2026)
+
+- WS-check no XML assinado: loga bytes + tags com whitespace
+  apos abertura / antes de fecho para achar o 599 exato.
+  Espelhado na Vercel.
