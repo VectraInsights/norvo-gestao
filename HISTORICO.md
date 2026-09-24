@@ -2337,3 +2337,10 @@ Commits CF `ddeb6e4..37d5da0` (+ ajustes de X do dono) espelhados na Vercel.
   NFe/CT-e/MDF-e (assinatura continua valida: SEFAZ
   canonicaliza o recebido). Observar proximas emissoes de
   CT-e/NFe. Espelhado na Vercel.
+
+## MDF-e digest no elemento (fix 297) (24/09/2026)
+
+- 297 porque o digest cobria o documento cheio; SVRS valida
+  o elemento canonizado: signXml aceita digestInput opt-in
+  (CT-e/NFe intactos) e o MDF-e passa infMDFe com xmlns
+  redundante (= c14n do subset). Espelhado na Vercel.

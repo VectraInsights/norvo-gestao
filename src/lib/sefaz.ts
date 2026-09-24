@@ -327,7 +327,7 @@ export function parseCertificate(pfxBytes: Buffer, senha: string): CertificadoIn
 /**
  * Tenta assinar XML usando node-forge. Retorna null se o PFX não for suportado.
  */
-function tryForgeSignXml(xml: string, pfxBytes: Buffer, senha: string): string | null {
+function tryForgeSignXml(xml: string, pfxBytes: Buffer, senha: string, digestInput?: string): string | null {
   try {
     const p12Asn1 = forge.asn1.fromDer(forge.util.decode64(pfxBytes.toString("base64")));
     const p12 = forge.pkcs12.pkcs12FromAsn1(p12Asn1, senha);
@@ -340,7 +340,7 @@ function tryForgeSignXml(xml: string, pfxBytes: Buffer, senha: string): string |
 
     if (!privateKey || !certificate) return null;
 
-    return signXmlWithForge(xml, privateKey, certificate, pfxBytes, senha);
+    return signXmlWithForge(xml, privateKey, certificate, pfxBytes, senha, digestInput);
   } catch {
     return null;
   }
@@ -352,6 +352,7 @@ function signXmlWithForge(
   certificate: forge.pki.Certificate,
   _pfxBytes: Buffer,
   _senha: string,
+  digestInput?: string,
 ): string {
   // Serializar certificado para base64 (sem BEGIN/END)
   const certDer = forge.asn1.toDer(forge.pki.certificateToAsn1(certificate)).getBytes();
@@ -362,11 +363,10 @@ function signXmlWithForge(
   const uri = matchId ? `#${matchId[1]}` : "#NFe";
 
   // Canonicalização simplificada (C14N exclusive - suficiente para SEFAZ)
-  const xmlToSign = xml;
 
-  // Criar SHA-1 digest do conteúdo
+  // Criar SHA-1 digest do conteúdo (padrão: documento cheio; MDF-e/SVRS exige elemento canonizado)
   const md = forge.md.sha1.create();
-  md.update(xmlToSign);
+  md.update(digestInput ?? xml);
   const digestValue = forge.util.encode64(md.digest().getBytes());
 
   // Construir SignedInfo em LINHA ÚNICA (W3C enveloped signature) — sem LF/indentação (regra D03/599 do MDF-e)
@@ -399,7 +399,7 @@ function signXmlWithForge(
 /**
  * Assinatura XML usando crypto nativo do Node.js (fallback para PFX com algoritmos não suportados pelo node-forge).
  */
-function signXmlNative(xml: string, pfxBytes: Buffer, senha: string): string {
+function signXmlNative(xml: string, pfxBytes: Buffer, senha: string, digestInput?: string): string {
   const { privateKey, certChain } = extractPkcs12Native(pfxBytes, senha);
 
   if (certChain.length === 0) {
@@ -417,9 +417,9 @@ function signXmlNative(xml: string, pfxBytes: Buffer, senha: string): string {
   const matchId = xml.match(/<inf(?:NFe|Cte|Evento|MDFe)\s+Id="([^"]+)"/);
   const uri = matchId ? `#${matchId[1]}` : "#NFe";
 
-  // SHA-1 digest do conteúdo
+  // SHA-1 digest do conteúdo (padrão: documento cheio; MDF-e/SVRS exige elemento canonizado)
   const md = forge.md.sha1.create();
-  md.update(xml);
+  md.update(digestInput ?? xml);
   const digestValue = forge.util.encode64(md.digest().getBytes());
 
   // SignedInfo em LINHA ÚNICA (sem LF/indentação — regra D03/599 do MDF-e)
@@ -450,14 +450,15 @@ export function signXml(
   xml: string,
   pfxBytes: Buffer,
   senha: string,
+  digestInput?: string,
 ): string {
   // Tentar node-forge primeiro
-  const forgeResult = tryForgeSignXml(xml, pfxBytes, senha);
+  const forgeResult = tryForgeSignXml(xml, pfxBytes, senha, digestInput);
   if (forgeResult) return forgeResult;
 
   // Fallback: crypto nativo do Node.js
   console.log("[sefaz] node-forge não suporta este PFX para assinatura, usando crypto nativo");
-  return signXmlNative(xml, pfxBytes, senha);
+  return signXmlNative(xml, pfxBytes, senha, digestInput);
 }
 
 // ============================================================
