@@ -415,7 +415,7 @@ function canonicalizeMdfInfMdfInclusive(node: Element): string {
     }
     attributes.sort((a, b) => a.name < b.name ? -1 : a.name > b.name ? 1 : 0);
 
-    const namespace = true ? ' xmlns="http://www.portalfiscal.inf.br/mdfe"' : "";
+    const namespace = isRoot ? ' xmlns="http://www.portalfiscal.inf.br/mdfe"' : "";
     const renderedAttributes = attributes.map((attr) => ` ${attr.name}="${escapeC14nAttribute(attr.value)}"`).join("");
     const children = Array.from(element.childNodes)
       .map((child) => render(child, false))

@@ -2443,3 +2443,14 @@ Espelhado na Vercel.
   (`http://www.w3.org/TR/2001/REC-xml-c14n-20010315`) e em UTF-8.
 - O XML assinado não é reformatado após a assinatura; os bytes
   originais seguem intactos até o gzip e o envelope SOAP.
+
+## xmlns só na raiz do infMDFe (24/09/2026)
+
+- O canonicalizador de `sefaz.ts` injetava `xmlns` em todos os nós
+  (`true ? ...`); agora usa o `isRoot` já existente, então só o
+  `<infMDFe>` raiz carrega o namespace e os filhos (`ide`, `cUF`,
+  `tpAmb`, `emit`, `infModal`, `infDoc`, `tot` etc.) saem limpos.
+- O `buildMdfXml` (`sefaz-mdf.ts`) declara o `xmlns` no `<infMDFe>`
+  (`Id` + `versao` mantidos) e nenhum filho recebe `xmlns` explícito.
+- Canonicidade C14N 1.0 inclusiva e lógica de assinatura inalteradas.
+- Espelhado na Vercel via push em main.

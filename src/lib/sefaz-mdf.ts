@@ -163,7 +163,7 @@ export function buildMdfXml(input: MdfInputCompleto): { xml: string; chave: stri
 
   const raw = `<?xml version="1.0" encoding="UTF-8"?>
 <MDFe xmlns="http://www.portalfiscal.inf.br/mdfe">
-  <infMDFe Id="${id}" versao="3.00">
+  <infMDFe xmlns="http://www.portalfiscal.inf.br/mdfe" Id="${id}" versao="3.00">
     <ide>
       <cUF>${cUF}</cUF>
       <tpAmb>${MDFE_TP_AMB}</tpAmb>

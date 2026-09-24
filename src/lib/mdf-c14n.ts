@@ -33,7 +33,7 @@ function compareAttributes(a: Attr, b: Attr): number {
 }
 
 export function canonicalizeMdfInfMdfInclusive(node: Element): string {
-  const render = (current: Element | Text | CDATASection | Comment, isRoot: boolean): string => {
+  const render = (current: Element | Text | CDATASection | Comment): string => {
     const nodeType = current.nodeType;
 
     if (nodeType === 3 || nodeType === 4) {
@@ -58,15 +58,20 @@ export function canonicalizeMdfInfMdfInclusive(node: Element): string {
     }
     attributes.sort((a, b) => a.name < b.name ? -1 : a.name > b.name ? 1 : 0);
 
-    const namespace = true ? ' xmlns="http://www.portalfiscal.inf.br/mdfe"' : "";
+    // Only add xmlns on the root element (the one that has no parent in the MDF namespace)
+    // We detect this by checking if the element's parent is not in the MDF namespace
+    // or if it's the original node passed to the function
+    const isRoot = element === node || element.parentNode === null || 
+      element.parentNode.namespaceURI !== "http://www.portalfiscal.inf.br/mdfe";
+    const namespace = isRoot ? ' xmlns="http://www.portalfiscal.inf.br/mdfe"' : "";
     const renderedAttributes = attributes.map((attr) => ` ${attr.name}="${escapeC14nAttribute(attr.value)}"`).join("");
     const children = Array.from(element.childNodes)
-      .map((child) => render(child, false))
+      .map((child) => render(child))
       .join("");
-    return `<${element.nodeName}${namespace}${renderedAttributes}>${children}</${element.nodeName}>`;
+    return "<" + element.nodeName + namespace + renderedAttributes + ">" + children + "</" + element.nodeName + ">";
   };
 
-  return render(node, true);
+  return render(node);
 }
 
 export function getMdfReferenceNode(xml: string): { node: Element; id: string } {
