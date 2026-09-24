@@ -2356,3 +2356,10 @@ Commits CF `ddeb6e4..37d5da0` (+ ajustes de X do dono) espelhados na Vercel.
   pos-gunzip menos Signature (CT-e passa com declaracao porque
   ela viaja junto; MDFe extrai so o <MDFe>). Digest agora =
   template sem declaracao. Espelhado na Vercel.
+
+## MDF-e digest substring crua (24/09/2026)
+
+-Digest elemento+ns e doc sem declaracao deram 297; SVRS e
+.NET e as regras D02/D03 sao verificacao por string: digest
+agora e o <infMDFe> cru como viaja (OuterXml, sem injecao).
+Espelhado na Vercel.
