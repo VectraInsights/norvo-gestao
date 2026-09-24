@@ -2363,3 +2363,12 @@ Commits CF `ddeb6e4..37d5da0` (+ ajustes de X do dono) espelhados na Vercel.
 .NET e as regras D02/D03 sao verificacao por string: digest
 agora e o <infMDFe> cru como viaja (OuterXml, sem injecao).
 Espelhado na Vercel.
+
+## MDF-e trava percurso errado (G060/663) (24/09/2026)
+
+- SEFAZ valida sim (NT 2014/001 G060, 663): vizinhos/iguais
+  = percurso vazio; senao, cadeia completa com divisas em
+  ordem Origem->Destino, sem repetir ini/fim. Mapa de
+  vizinhanca das 27 UFs + BFS no dialogo: avisa em vermelho
+  sob o percurso e trava o Emitir. Ex.: MG->PA via RJ trava;
+  via GO,TO passa. Espelhado na Vercel.

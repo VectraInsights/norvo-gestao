@@ -38,6 +38,37 @@ type MdfDoc = {
 
 type CteDoc = { id: string; numero: string | null; serie: string | null; chave_acesso: string | null; status: string; valor_servico: number | null; peso_carga: number | null; data_autorizacao: string | null };
 
+// Vizinhança das UFs (fronteira terrestre) para validar o trajeto do percurso
+const UF_VIZINHOS: Record<string, string[]> = {
+  AC: ["AM", "RO"], AL: ["BA", "PE", "SE"], AM: ["AC", "RO", "MT", "PA", "RR", "AP"],
+  AP: ["PA", "AM"], BA: ["SE", "AL", "PE", "PI", "TO", "GO", "MG", "ES"],
+  CE: ["PI", "PE", "PB", "RN"], DF: ["GO", "MG"], ES: ["BA", "MG", "RJ"],
+  GO: ["DF", "MG", "MT", "MS", "TO", "BA"], MA: ["PI", "TO", "PA"],
+  MG: ["BA", "ES", "RJ", "SP", "MS", "GO", "DF"], MS: ["MG", "SP", "PR", "MT", "GO"],
+  MT: ["RO", "AM", "PA", "TO", "GO", "MS"], PA: ["AP", "AM", "MT", "TO", "MA"],
+  PB: ["CE", "PE", "RN"], PE: ["PB", "CE", "PI", "BA", "AL"],
+  PI: ["CE", "PE", "BA", "TO", "MA"], PR: ["MS", "SP", "SC"],
+  RJ: ["ES", "MG", "SP"], RN: ["CE", "PB"], RO: ["AC", "AM", "MT"],
+  RR: ["AM", "PA"], RS: ["SC"], SC: ["PR", "RS"], SE: ["AL", "BA"],
+  SP: ["MG", "RJ", "PR", "MS"], TO: ["MA", "PI", "BA", "GO", "MT", "PA"],
+};
+function distUF(a: string, b: string): number {
+  if (a === b) return 0;
+  const seen = new Set([a]);
+  let front = [a];
+  let d = 0;
+  while (front.length) {
+    d++;
+    const next: string[] = [];
+    for (const u of front) for (const v of (UF_VIZINHOS[u] || [])) {
+      if (v === b) return d;
+      if (!seen.has(v)) { seen.add(v); next.push(v); }
+    }
+    front = next;
+  }
+  return 99;
+}
+
 function MdfPage() {
   const { data: empresa } = useEmpresaAtual();
   const qc = useQueryClient();
@@ -340,6 +371,30 @@ function DialogNovoMdf({ open, onOpenChange, empresaId, empresa, chavesIniciais 
   const [transb2, setTransb2] = useState("");
   const [transb3, setTransb3] = useState("");
   const [percursoSelIdx, setPercursoSelIdx] = useState<number | null>(null);
+  // Validação G060/SEFAZ 663: vizinhos ou iguais = percurso vazio; senão, cadeia completa com divisas em ordem
+  const errosPercurso = useMemo(() => {
+    const errs: string[] = [];
+    const ini = (ufCarregamento || "").toUpperCase();
+    const fim = (ufDescarregamento || "").toUpperCase();
+    if (!ini || !fim) return errs;
+    const d = distUF(ini, fim);
+    if (d <= 1) {
+      if (percursoUFs.length) errs.push(`Origem e destino ${d === 0 ? "são o mesmo estado" : "fazem divisa"} — percurso deve ficar vazio (SEFAZ 663).`);
+      return errs;
+    }
+    if (!percursoUFs.length) { errs.push(`Informe as UFs de passagem entre ${ini} e ${fim} (SEFAZ 663).`); return errs; }
+    const rota = [ini, ...percursoUFs.map(u => String(u || "").toUpperCase()), fim];
+    for (let i = 0; i < rota.length - 1; i++) {
+      const a = rota[i], b = rota[i + 1];
+      if (a !== b && !(UF_VIZINHOS[a] || []).includes(b)) errs.push(`Trecho ${a} → ${b} sem divisa — ordem incorreta (SEFAZ 663).`);
+    }
+    percursoUFs.forEach(u => {
+      const uu = String(u || "").toUpperCase();
+      if (uu === ini || uu === fim) errs.push(`Não repita ${uu} (início/fim) no percurso.`);
+      else if (distUF(ini, uu) + distUF(uu, fim) > d + 1) errs.push(`${uu} está fora do trajeto ${ini} → ${fim}.`);
+    });
+    return [...new Set(errs)];
+  }, [ufCarregamento, ufDescarregamento, percursoUFs]);
   // MDF-e travado em homologação (decisão 23/09/2026) — XML e transmissão sempre tpAmb=2
   const ambienteMdf = "homologacao" as const;
   useEffect(() => { if (!open) return; (async () => { try { const { data } = await supabase.auth.getUser(); const usr = (data as any)?.user; if (!usr) return; let nm = (usr?.user_metadata as any)?.nome || ""; if (!nm && empresaId) { const { data: eu } = await supabase.from("empresa_users" as any).select("nome").eq("empresa_id", empresaId).eq("user_id", usr.id).maybeSingle(); nm = (eu as any)?.nome || ""; } setRespNome(nm || ""); } catch {} })(); }, [open, empresaId]);
@@ -455,6 +510,7 @@ function DialogNovoMdf({ open, onOpenChange, empresaId, empresa, chavesIniciais 
     if (!tracaoSel) { toast.error("Selecione o veículo"); return; }
     if (!motNomes.length) { toast.error("CT-es sem motorista"); return; }
     if (!ufCarregamento || !ufDescarregamento) { toast.error("Percurso incompleto: UF de início/encerramento vêm dos CT-es"); return; }
+    if (errosPercurso.length) { toast.error(errosPercurso[0]); return; }
     const _firstCheck = (() => { try { const p = JSON.parse((ctesSelArr[0] as any)?.xml_assinado || "{}"); return (p.form || {}) as Record<string, any>; } catch { return {} as Record<string, any>; } })();
     if (!String(_firstCheck.cMunIni || "").trim()) { toast.error("CT-e sem município de coleta (cMunIni) — complete no CT-e"); return; }
 
@@ -679,6 +735,11 @@ function DialogNovoMdf({ open, onOpenChange, empresaId, empresa, chavesIniciais 
                 </table>
               </div>
               <p className="text-[10px] text-muted-foreground mt-1">Lista em ordem de passagem • clique para selecionar • ▲/▼ reordena • ✕/Exclui remove • mesma UF pode repetir.</p>
+              {!!errosPercurso.length && (
+                <div className="mt-1 border border-destructive/50 bg-destructive/10 rounded p-1.5">
+                  {errosPercurso.map(e => (<p key={e} className="text-[11px] text-destructive">⚠ {e}</p>))}
+                </div>
+              )}
               <div className="flex flex-wrap gap-1 mt-2 border-t pt-2">
                 <span className="text-[10px] text-muted-foreground w-full">Adicionar rápido (permite repetir):</span>
                 {UFS.map(uf => (
@@ -697,7 +758,7 @@ function DialogNovoMdf({ open, onOpenChange, empresaId, empresa, chavesIniciais 
 
         <DialogFooter>
           <Button variant="outline" onClick={() => onOpenChange(false)}>Cancelar</Button>
-          <Button onClick={handleEmitir} disabled={loading || !tracaoSel || !ctesSelecionadas.size || !motNomes.length || !ufCarregamento || !ufDescarregamento}>
+          <Button onClick={handleEmitir} disabled={loading || !tracaoSel || !ctesSelecionadas.size || !motNomes.length || !ufCarregamento || !ufDescarregamento || !!errosPercurso.length}>
             <Send className="mr-1 h-4 w-4" /> {loading ? "Emitindo..." : "Emitir MDF-e"}
           </Button>
         </DialogFooter>
