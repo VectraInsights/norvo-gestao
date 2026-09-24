@@ -13,6 +13,8 @@
 import forge from "node-forge";
 import https from "node:https";
 import crypto from "node:crypto";
+import { DOMParser } from "@xmldom/xmldom";
+import c14nFactory from "xml-c14n";
 import { gunzipSync } from "zlib";
 import {
   SEFAZ_AMBIENTE,
@@ -24,6 +26,14 @@ import {
 // OID constants for PKCS#12 bags
 const OID_PKCS8_SHROUDED_KEY_BAG = "1.2.840.113549.1.12.10.1.2";
 const OID_CERT_BAG = "1.2.840.113549.1.12.10.1.3";
+
+const XML_INCLUSIVE_C14N = "http://www.w3.org/TR/2001/REC-xml-c14n-20010315";
+export const XML_EXCLUSIVE_C14N = "http://www.w3.org/2001/10/xml-exc-c14n#";
+
+interface XmlSignatureOptions {
+  referenceUri?: string;
+  canonicalizationAlgorithm?: string;
+}
 
 // ============================================================
 // Agent HTTPS com certificado cliente (mTLS)
@@ -341,10 +351,61 @@ export function parseCertificate(pfxBytes: Buffer, senha: string): CertificadoIn
 // Assinatura XML (W3C XML Digital Signature - envelopamento)
 // ============================================================
 
+function canonicalizeExclusiveXml(node: Node): Promise<string> {
+  const canonicaliser = c14nFactory().createCanonicaliser(XML_EXCLUSIVE_C14N);
+  return new Promise<string>((resolve, reject) => {
+    canonicaliser.canonicalise(node, (error, value) => {
+      if (error) {
+        reject(error instanceof Error ? error : new Error(String(error)));
+        return;
+      }
+      resolve(value);
+    });
+  });
+}
+
+function getMdfReferenceNode(xml: string) {
+  const document = new DOMParser().parseFromString(xml, "application/xml");
+  const infMdf = document.getElementsByTagName("infMDFe").item(0);
+  if (!infMdf) throw new Error("MDF-e sem elemento infMDFe para assinar");
+
+  const id = infMdf.getAttribute("Id") || "";
+  if (!id) throw new Error("MDF-e sem atributo Id em infMDFe");
+  return { node: infMdf, id };
+}
+
+export async function signMdfXml(xml: string, pfxBytes: Buffer, senha: string): Promise<string> {
+  const { node, id } = getMdfReferenceNode(xml);
+  const referenceUri = `#${id}`;
+  const canonicalizedInfMdf = await canonicalizeExclusiveXml(node as unknown as Node);
+  const signed = signXml(xml, pfxBytes, senha, canonicalizedInfMdf, {
+    referenceUri,
+    canonicalizationAlgorithm: XML_EXCLUSIVE_C14N,
+  });
+
+  const signedReference = signed.match(/<Reference URI="([^"]+)"/)?.[1];
+  const signedId = getMdfReferenceNode(signed).id;
+  if (signedId !== id || signedReference !== referenceUri) {
+    throw new Error(`Referência da assinatura MDF-e inválida: id=${signedId || "(ausente)"}/${signedReference || "(ausente)"}; esperado=${id}/${referenceUri}`);
+  }
+  if (!signed.includes(`<CanonicalizationMethod Algorithm="${XML_EXCLUSIVE_C14N}"/>`) ||
+      !signed.includes(`<Transform Algorithm="${XML_EXCLUSIVE_C14N}"/>`)) {
+    throw new Error("Assinatura MDF-e sem canonicalização exclusiva");
+  }
+
+  return signed;
+}
+
 /**
  * Tenta assinar XML usando node-forge. Retorna null se o PFX não for suportado.
  */
-function tryForgeSignXml(xml: string, pfxBytes: Buffer, senha: string, digestInput?: string): string | null {
+function tryForgeSignXml(
+  xml: string,
+  pfxBytes: Buffer,
+  senha: string,
+  digestInput?: string,
+  options?: XmlSignatureOptions,
+): string | null {
   try {
     const p12Asn1 = forge.asn1.fromDer(forge.util.decode64(pfxBytes.toString("base64")));
     const p12 = forge.pkcs12.pkcs12FromAsn1(p12Asn1, senha);
@@ -357,7 +418,7 @@ function tryForgeSignXml(xml: string, pfxBytes: Buffer, senha: string, digestInp
 
     if (!privateKey || !certificate) return null;
 
-    return signXmlWithForge(xml, privateKey, certificate, pfxBytes, senha, digestInput);
+    return signXmlWithForge(xml, privateKey, certificate, pfxBytes, senha, digestInput, options);
   } catch {
     return null;
   }
@@ -370,6 +431,7 @@ function signXmlWithForge(
   _pfxBytes: Buffer,
   _senha: string,
   digestInput?: string,
+  options?: XmlSignatureOptions,
 ): string {
   // Serializar certificado para base64 (sem BEGIN/END)
   const certDer = forge.asn1.toDer(forge.pki.certificateToAsn1(certificate)).getBytes();
@@ -377,25 +439,27 @@ function signXmlWithForge(
 
   // ID do elemento a assinar (infNFe/infCte/infEvento/infMDFe com atributo Id)
   const matchId = xml.match(/<inf(?:NFe|Cte|Evento|MDFe)\s+Id="([^"]+)"/);
-  const uri = matchId ? `#${matchId[1]}` : "#NFe";
+  const uri = options?.referenceUri || (matchId ? `#${matchId[1]}` : "#NFe");
+  const canonicalizationAlgorithm = options?.canonicalizationAlgorithm || XML_INCLUSIVE_C14N;
 
-  // Canonicalização simplificada (C14N exclusive - suficiente para SEFAZ)
+  // MDF-e: digestInput recebe infMDFe já canonizada em C14N exclusivo.
+  // Os fluxos legados continuam usando o digest fornecido ou o XML completo.
 
-  // Criar SHA-1 digest do conteúdo (padrão: documento cheio; MDF-e/SVRS exige elemento canonizado)
+  // Criar SHA-1 digest UTF-8 do conteúdo canônico/fornecido
   const md = forge.md.sha1.create();
-  md.update(digestInput ?? xml);
+  md.update(digestInput ?? xml, "utf8");
   const digestValue = forge.util.encode64(md.digest().getBytes());
 
-  // Construir SignedInfo em LINHA ÚNICA (build 004)
-  const signedInfo = `<SignedInfo xmlns="http://www.w3.org/2000/09/xmldsig#"><CanonicalizationMethod Algorithm="http://www.w3.org/TR/2001/REC-xml-c14n-20010315"/><SignatureMethod Algorithm="http://www.w3.org/2000/09/xmldsig#rsa-sha1"/><Reference URI="${uri}"><Transforms><Transform Algorithm="http://www.w3.org/2000/09/xmldsig#enveloped-signature"/><Transform Algorithm="http://www.w3.org/TR/2001/REC-xml-c14n-20010315"/></Transforms><DigestMethod Algorithm="http://www.w3.org/2000/09/xmldsig#sha1"/><DigestValue>${digestValue}</DigestValue></Reference></SignedInfo>`;
+  // Construir SignedInfo em LINHA ÚNICA (build 005)
+  const signedInfo = `<SignedInfo xmlns="http://www.w3.org/2000/09/xmldsig#"><CanonicalizationMethod Algorithm="${canonicalizationAlgorithm}"/><SignatureMethod Algorithm="http://www.w3.org/2000/09/xmldsig#rsa-sha1"/><Reference URI="${uri}"><Transforms><Transform Algorithm="http://www.w3.org/2000/09/xmldsig#enveloped-signature"/><Transform Algorithm="${canonicalizationAlgorithm}"/></Transforms><DigestMethod Algorithm="http://www.w3.org/2000/09/xmldsig#sha1"/><DigestValue>${digestValue}</DigestValue></Reference></SignedInfo>`;
 
   // Assinar o SignedInfo
   const md2 = forge.md.sha1.create();
-  md2.update(signedInfo);
+  md2.update(signedInfo, "utf8");
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const signatureValue = forge.util.encode64((privateKey as any).sign(md2));
 
-  // Montar Signature completa em LINHA ÚNICA (build 004)
+  // Montar Signature completa em LINHA ÚNICA (build 005)
   const signature = `<Signature xmlns="http://www.w3.org/2000/09/xmldsig#">${signedInfo}<SignatureValue>${signatureValue}</SignatureValue><KeyInfo><X509Data><X509Certificate>${certB64}</X509Certificate></X509Data></KeyInfo></Signature>`;
 
   // Inserir assinatura no local correto conforme o tipo de documento
@@ -416,7 +480,13 @@ function signXmlWithForge(
 /**
  * Assinatura XML usando crypto nativo do Node.js (fallback para PFX com algoritmos não suportados pelo node-forge).
  */
-function signXmlNative(xml: string, pfxBytes: Buffer, senha: string, digestInput?: string): string {
+function signXmlNative(
+  xml: string,
+  pfxBytes: Buffer,
+  senha: string,
+  digestInput?: string,
+  options?: XmlSignatureOptions,
+): string {
   const { privateKey, certChain } = extractPkcs12Native(pfxBytes, senha);
 
   if (certChain.length === 0) {
@@ -432,23 +502,24 @@ function signXmlNative(xml: string, pfxBytes: Buffer, senha: string, digestInput
 
   // ID do elemento a assinar
   const matchId = xml.match(/<inf(?:NFe|Cte|Evento|MDFe)\s+Id="([^"]+)"/);
-  const uri = matchId ? `#${matchId[1]}` : "#NFe";
+  const uri = options?.referenceUri || (matchId ? `#${matchId[1]}` : "#NFe");
+  const canonicalizationAlgorithm = options?.canonicalizationAlgorithm || XML_INCLUSIVE_C14N;
 
-  // SHA-1 digest do conteúdo (padrão: documento cheio; MDF-e/SVRS exige elemento canonizado)
+  // Criar SHA-1 digest UTF-8 do conteúdo canônico/fornecido
   const md = forge.md.sha1.create();
-  md.update(digestInput ?? xml);
+  md.update(digestInput ?? xml, "utf8");
   const digestValue = forge.util.encode64(md.digest().getBytes());
 
   // SignedInfo em LINHA ÚNICA (build 004)
-  const signedInfo = `<SignedInfo xmlns="http://www.w3.org/2000/09/xmldsig#"><CanonicalizationMethod Algorithm="http://www.w3.org/TR/2001/REC-xml-c14n-20010315"/><SignatureMethod Algorithm="http://www.w3.org/2000/09/xmldsig#rsa-sha1"/><Reference URI="${uri}"><Transforms><Transform Algorithm="http://www.w3.org/2000/09/xmldsig#enveloped-signature"/><Transform Algorithm="http://www.w3.org/TR/2001/REC-xml-c14n-20010315"/></Transforms><DigestMethod Algorithm="http://www.w3.org/2000/09/xmldsig#sha1"/><DigestValue>${digestValue}</DigestValue></Reference></SignedInfo>`;
+  const signedInfo = `<SignedInfo xmlns="http://www.w3.org/2000/09/xmldsig#"><CanonicalizationMethod Algorithm="${canonicalizationAlgorithm}"/><SignatureMethod Algorithm="http://www.w3.org/2000/09/xmldsig#rsa-sha1"/><Reference URI="${uri}"><Transforms><Transform Algorithm="http://www.w3.org/2000/09/xmldsig#enveloped-signature"/><Transform Algorithm="${canonicalizationAlgorithm}"/></Transforms><DigestMethod Algorithm="http://www.w3.org/2000/09/xmldsig#sha1"/><DigestValue>${digestValue}</DigestValue></Reference></SignedInfo>`;
 
   // Assinar SignedInfo com crypto nativo (RSA-SHA1)
   const sign = crypto.createSign("SHA1");
-  sign.update(signedInfo);
+  sign.update(signedInfo, "utf8");
   const signatureBuffer = sign.sign(privateKey);
   const signatureValue = signatureBuffer.toString("base64");
 
-  // Montar Signature completa em LINHA ÚNICA (build 004)
+  // Montar Signature completa em LINHA ÚNICA (build 005)
   const signature = `<Signature xmlns="http://www.w3.org/2000/09/xmldsig#">${signedInfo}<SignatureValue>${signatureValue}</SignatureValue><KeyInfo><X509Data><X509Certificate>${certB64}</X509Certificate></X509Data></KeyInfo></Signature>`;
 
   // EventoCTe: Signature goes inside <eventoCTe> before </eventoCTe>
@@ -468,14 +539,15 @@ export function signXml(
   pfxBytes: Buffer,
   senha: string,
   digestInput?: string,
+  options?: XmlSignatureOptions,
 ): string {
   // Tentar node-forge primeiro
-  const forgeResult = tryForgeSignXml(xml, pfxBytes, senha, digestInput);
+  const forgeResult = tryForgeSignXml(xml, pfxBytes, senha, digestInput, options);
   if (forgeResult) return forgeResult;
 
   // Fallback: crypto nativo do Node.js
   console.log("[sefaz] node-forge não suporta este PFX para assinatura, usando crypto nativo");
-  return signXmlNative(xml, pfxBytes, senha, digestInput);
+  return signXmlNative(xml, pfxBytes, senha, digestInput, options);
 }
 
 // ============================================================

@@ -6,7 +6,7 @@
  */
 import https from "node:https";
 import zlib from "node:zlib";
-import { createSefazAgent, signXml, buscarCertificadoAtivo } from "./sefaz";
+import { createSefazAgent, signMdfXml, signXml, buscarCertificadoAtivo, XML_EXCLUSIVE_C14N } from "./sefaz";
 import {
   MDFE_AMBIENTE,
   MDFE_SVRS_HOMOLOGACAO_HOST,
@@ -255,23 +255,24 @@ async function soapRequest(url: string, body: string, action: string, agent?: ht
   }
   const tpAmb = body.match(/<tpAmb>\s*(\d+)\s*<\/tpAmb>/)?.[1] || MDFE_TP_AMB;
   const envelope = `<?xml version="1.0" encoding="utf-8"?><soap12:Envelope xmlns:soap12="http://www.w3.org/2003/05/soap-envelope"><soap12:Header>${headerXml || ""}</soap12:Header><soap12:Body>${body}</soap12:Body></soap12:Envelope>`;
+  const envelopeBytes = Buffer.from(envelope, "utf8");
   const contentType = `application/soap+xml; charset=utf-8; action="${action}"`;
   if (agent) {
     return new Promise<string>((resolve, reject) => {
-      const req = https.request({ hostname: u.hostname, port: u.port || 443, path: u.pathname, method: "POST", agent, headers: { "Content-Type": contentType, "Content-Length": Buffer.byteLength(envelope) } }, res => {
+      const req = https.request({ hostname: u.hostname, port: u.port || 443, path: u.pathname, method: "POST", agent, headers: { "Content-Type": contentType, "Content-Length": envelopeBytes.length } }, res => {
         let d = ""; res.on("data", c => d += c);
         res.on("end", () => {
-          console.log(`[mdf-debug] ambiente=${MDFE_AMBIENTE} tpAmb=${tpAmb} POST ${u.hostname}${u.pathname} action=${action} status=${res.statusCode} reqBytes=${Buffer.byteLength(envelope)} respBytes=${d.length} respHeaders=${JSON.stringify(res.headers)}`);
+          console.log(`[mdf-debug] ambiente=${MDFE_AMBIENTE} tpAmb=${tpAmb} POST ${u.hostname}${u.pathname} action=${action} status=${res.statusCode} reqBytes=${envelopeBytes.length} respBytes=${d.length} respHeaders=${JSON.stringify(res.headers)}`);
           logMdfResponse(d);
           res.statusCode && res.statusCode >= 400 ? reject(new Error(`MDF-e HTTP ${res.statusCode}: ${d.slice(0, 2000)}`)) : resolve(d);
         });
       });
-      req.on("error", reject); req.write(envelope); req.end();
+      req.on("error", reject); req.write(envelopeBytes); req.end();
     });
   }
-  const r = await fetch(u, { method: "POST", headers: { "Content-Type": contentType }, body: envelope });
+  const r = await fetch(u, { method: "POST", headers: { "Content-Type": contentType }, body: envelopeBytes });
   const responseText = await r.text();
-  console.log(`[mdf-debug] ambiente=${MDFE_AMBIENTE} tpAmb=${tpAmb} POST ${u.hostname}${u.pathname} action=${action} status=${r.status} reqBytes=${Buffer.byteLength(envelope)} respBytes=${responseText.length} respHeaders=${JSON.stringify(Object.fromEntries(r.headers))}`);
+  console.log(`[mdf-debug] ambiente=${MDFE_AMBIENTE} tpAmb=${tpAmb} POST ${u.hostname}${u.pathname} action=${action} status=${r.status} reqBytes=${envelopeBytes.length} respBytes=${responseText.length} respHeaders=${JSON.stringify(Object.fromEntries(r.headers))}`);
   logMdfResponse(responseText);
   if (!r.ok) throw new Error(`MDF-e HTTP ${r.status}: ${responseText.slice(0, 2000)}`);
   return responseText;
@@ -280,31 +281,30 @@ async function soapRequest(url: string, body: string, action: string, agent?: ht
 export async function emitirMdf(pfx: Buffer, senha: string, xml: string, ambiente: Ambiente): Promise<{ sucesso: boolean; cStat: string; xMotivo: string; chave?: string; protocolo?: string; xmlRet?: string }> {
   assertMdfAmbiente(ambiente);
   assertMdfXmlAmbiente(xml);
-  const BUILD = "004-single-fulldoc";
+  const BUILD = "005-exc-c14n-utf8-immutable";
   const ep = getMdfEndpoints(ambiente);
   const agent = createSefazAgent(pfx, senha);
   const nsSinc = "http://www.portalfiscal.inf.br/mdfe/wsdl/MDFeRecepcaoSinc";
   const cUF = xml.match(/Id="MDFe(\d{2})/)?.[1] || "31";
   const cabec = `<mdfeCabecMsg xmlns="${nsSinc}"><cUF>${cUF}</cUF><versaoDados>3.00</versaoDados></mdfeCabecMsg>`;
-  // Digest full-doc (fórmula idêntica ao CT-e, que autoriza)
-  const xmlAss = signXml(xml, pfx, senha).replace(/<Signature([^>]*)>([\s\S]*)<\/Signature>/, (_full, attrs, inner) => {
-    const m = inner.match(/<SignedInfo[\s\S]*<\/SignedInfo>/);
-    if (!m || m.index === undefined) return _full;
-    const si = m[0] as string;
-    const before = inner.slice(0, m.index).replace(/>\s+</g, "><").replace(/^\s+/, "").replace(/\s+$/, "");
-    const after = inner.slice(m.index + si.length).replace(/>\s+</g, "><")
-      .replace(/<(SignatureValue|X509Certificate)>([^<]*)<\/(SignatureValue|X509Certificate)>/g,
-        (_t: string, t: string, v: string, c: string) => `<${t}>${v.replace(/[\r\n\t]+/g, "")}</${c}>`).replace(/\s+$/, "").replace(/^\s+/, "");
-    return `<Signature${attrs}>${before}${si}${after}</Signature>`;
-  });
-  // D03/599: aponta a tag exata com whitespace restante (diagnóstico em produção)
+  // A declaração XML é removida ANTES da assinatura. Depois disso, xmlAss
+  // é transportado sem qualquer replace/trim; os mesmos bytes UTF-8 vão para o gzip.
+  const xmlForSignature = xml.replace(/^\uFEFF?\s*<\?xml[^?]*\?>\s*/i, "");
+  const xmlAss = await signMdfXml(xmlForSignature, pfx, senha);
+  const referenceUri = xmlAss.match(/<Reference URI="([^"]+)"/)?.[1] || "";
+  const signedXmlBytes = Buffer.byteLength(xmlAss, "utf8");
+  // D03/599: diagnóstico somente leitura; não altera o XML assinado.
   const wsAbre = [...xmlAss.matchAll(/<([^<>\s/][^<>]{0,40})>\s+</g)].map(m => m[1]);
   const wsFecha = [...xmlAss.matchAll(/>\s+<\/([^<>]+)>/g)].map(m => "/" + m[1]);
-  console.log(`[mdf-debug] BUILD=${BUILD} ambiente=${MDFE_AMBIENTE} tpAmb=${MDFE_TP_AMB} WS-check bytes=${xmlAss.length} após-abertura=[${wsAbre.slice(0, 12).join(",")}] antes-fecho=[${wsFecha.slice(0, 12).join(",")}]`);
-  // SÃ­ncrono (ACBr): mdfeDadosMsg = base64(gzip(<MDFe>...</MDFe>)) puro, sem enviMDFe/idLote
-  const mdfeEl = xmlAss.match(/<MDFe[\s>][\s\S]*<\/MDFe>/)?.[0] || xmlAss.replace(/<\?xml[^?]*\?>\s*/g, "");
-  const compactada = zlib.gzipSync(Buffer.from(mdfeEl, "utf-8")).toString("base64");
-  const body = `<mdfeDadosMsg xmlns="${nsSinc}">${compactada}</mdfeDadosMsg>`;
+  console.log(`[mdf-debug] BUILD=${BUILD} ambiente=${MDFE_AMBIENTE} tpAmb=${MDFE_TP_AMB} reference=${referenceUri} c14n=${XML_EXCLUSIVE_C14N} signedXmlUtf8Bytes=${signedXmlBytes} WS-check após-abertura=[${wsAbre.slice(0, 12).join(",")}] antes-fecho=[${wsFecha.slice(0, 12).join(",")}]`);
+  // Sincrono (ACBr): mdfeDadosMsg = base64(gzip(<MDFe>...</MDFe>)) puro, sem enviMDFe/idLote.
+  // xmlAss é a string exata devolvida pelo assinador; não a reescreva aqui.
+  const signedMdfXml = xmlAss;
+  const mdfeXmlBytes = Buffer.from(signedMdfXml, "utf8");
+  const compactada = zlib.gzipSync(mdfeXmlBytes);
+  const compactadaB64 = compactada.toString("base64");
+  console.log(`[mdf-debug] transporte XML preservado: xmlBytes=${mdfeXmlBytes.length} gzipBytes=${compactada.length} base64Bytes=${compactadaB64.length}`);
+  const body = `<mdfeDadosMsg xmlns="${nsSinc}">${compactadaB64}</mdfeDadosMsg>`;
   const ret = await soapRequest(ep.mdfRecepcaoSinc, body, `${nsSinc}/mdfeRecepcao`, agent, cabec);
   const prot = ret.match(/<infProt>[\s\S]*?<\/infProt>/)?.[0] || "";
   const cStatProt = prot.match(/<cStat>(\d+)<\/cStat>/)?.[1] || "";
