@@ -74,7 +74,7 @@ function MdfPage() {
   const qc = useQueryClient();
   const [open, setOpen] = useState(false);
   const [mdfPrefill, setMdfPrefill] = useState<string[] | null>(null);
-  const [mdfDraft, setMdfDraft] = useState<{ chaves: string[]; percursoUFs: string[]; observacoes: string; infoFisco: string; tipoMdf: "Normal" | "Globalizado"; isTransbordo: boolean; transb1: string; transb2: string; transb3: string } | null>(null);
+  const [mdfDraft, setMdfDraft] = useState<{ id?: string; chaves: string[]; percursoUFs: string[]; observacoes: string; infoFisco: string; tipoMdf: "Normal" | "Globalizado"; isTransbordo: boolean; transb1: string; transb2: string; transb3: string } | null>(null);
   useEffect(() => {
     let pre: any = null;
     try { pre = JSON.parse(localStorage.getItem("prefill_mdf_from_cte") || "null"); } catch { pre = null; }
@@ -94,6 +94,7 @@ function MdfPage() {
     try {
       const p = JSON.parse(String((d as any).xml_assinado || "{}"));
       setMdfDraft({
+        id: d.id,
         chaves: Array.isArray(p.chaves) ? p.chaves : [],
         percursoUFs: Array.isArray(p.percursoUFs) ? p.percursoUFs : [],
         observacoes: String(p.observacoes || ""),
@@ -325,7 +326,7 @@ function EncerrarMdfButton({ mdf, empresaId, onSuccess }: { mdf: MdfDoc; empresa
   return <Button onClick={handleEncerrar} disabled={loading}>{loading ? "Encerrando..." : "Confirmar Encerramento"}</Button>;
 }
 
-function DialogNovoMdf({ open, onOpenChange, empresaId, empresa, chavesIniciais, rascunhoInicial }: { open: boolean; onOpenChange: (v: boolean) => void; empresaId: string; empresa?: any; chavesIniciais?: string[]; rascunhoInicial?: { chaves: string[]; percursoUFs: string[]; observacoes: string; infoFisco: string; tipoMdf: "Normal" | "Globalizado"; isTransbordo: boolean; transb1: string; transb2: string; transb3: string } | null }) {
+function DialogNovoMdf({ open, onOpenChange, empresaId, empresa, chavesIniciais, rascunhoInicial }: { open: boolean; onOpenChange: (v: boolean) => void; empresaId: string; empresa?: any; chavesIniciais?: string[]; rascunhoInicial?: { id?: string; chaves: string[]; percursoUFs: string[]; observacoes: string; infoFisco: string; tipoMdf: "Normal" | "Globalizado"; isTransbordo: boolean; transb1: string; transb2: string; transb3: string } | null }) {
   const qc = useQueryClient();
   const [loading, setLoading] = useState(false);
   const [ufCarregamento, setUfCarregamento] = useState("");
@@ -588,7 +589,12 @@ function DialogNovoMdf({ open, onOpenChange, empresaId, empresa, chavesIniciais,
         } as any
       });
 
-      if (res.sucesso) toast.success("MDF-e emitido com sucesso!");
+      if (res.sucesso) {
+        toast.success("MDF-e emitido com sucesso!");
+        if (rascunhoInicial?.id) {
+          try { await supabase.from("mdf_documentos" as any).delete().eq("id", rascunhoInicial.id); } catch {}
+        }
+      }
       else toast.error(`Erro ${res.cStat}: ${res.xMotivo}`);
 
       onOpenChange(false);
@@ -605,14 +611,33 @@ function DialogNovoMdf({ open, onOpenChange, empresaId, empresa, chavesIniciais,
     setLoading(true);
     try {
       const ctesArr = (ctesDisponiveis || []).filter(c => ctesSelecionadas.has(c.chave_acesso || ""));
-      const { error } = await supabase.from("mdf_documentos" as any).insert({
+      const chaves = [...ctesSelecionadas];
+      const payload = {
         empresa_id: empresaId, status: "rascunho", serie: serieMdf || "000",
         qtd_cte: ctesArr.length, valor_total_carga: totalCarga, peso_total: pesoCarga,
         uf_carregamento: ufCarregamento || null, uf_descarregamento: ufDescarregamento || null,
         veiculo_tracao_id: (veic as any)?.id || null, ambiente: ambienteMdf,
-        xml_assinado: JSON.stringify({ rascunho: true, chaves: [...ctesSelecionadas], percursoUFs, observacoes, infoFisco, tipoMdf, isTransbordo, transb1, transb2, transb3 }),
-      } as any);
-      if (error) throw error;
+        xml_assinado: JSON.stringify({ rascunho: true, chaves, percursoUFs, observacoes, infoFisco, tipoMdf, isTransbordo, transb1, transb2, transb3 }),
+      } as any;
+      if (rascunhoInicial?.id) {
+        const { error } = await supabase.from("mdf_documentos" as any).update(payload).eq("id", rascunhoInicial.id);
+        if (error) throw error;
+      } else {
+        try {
+          const { data: outros } = await supabase.from("mdf_documentos" as any).select("id,xml_assinado").eq("empresa_id", empresaId).eq("status", "rascunho");
+          for (const r of (outros as any[]) || []) {
+            try {
+              const p = JSON.parse(String((r as any).xml_assinado || "{}"));
+              const ch = [...new Set([...(Array.isArray(p.chaves) ? p.chaves : [])])].sort();
+              if (ch.length && JSON.stringify(ch) === JSON.stringify([...chaves].sort())) {
+                await supabase.from("mdf_documentos" as any).delete().eq("id", (r as any).id);
+              }
+            } catch {}
+          }
+        } catch {}
+        const { error } = await supabase.from("mdf_documentos" as any).insert(payload);
+        if (error) throw error;
+      }
       toast.success("Rascunho salvo!");
       onOpenChange(false);
       qc.invalidateQueries({ queryKey: ["mdf-documentos"] });

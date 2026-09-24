@@ -2395,3 +2395,9 @@ Espelhado na Vercel.
 - XML: trim nas bordas de todos os textos (higiene contra
   599 por espacos vindos de cadastro/CT-e).
   Espelhado na Vercel.
+
+## MDF-e rascunho sem duplicar (24/09/2026)
+
+- Salvar de rascunho em edicao atualiza a linha; rascunho
+  novo com mesmos CT-es substitui o anterior; emitir com
+  sucesso apaga o rascunho de origem. Espelhado na Vercel.
