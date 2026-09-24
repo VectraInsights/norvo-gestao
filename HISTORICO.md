@@ -2467,3 +2467,15 @@ Espelhado na Vercel.
   `referenceTransformAlgorithm` com default = algoritmo existente).
 - Constante de log atualizada para `BUILD=007-exc-c14n-infmodal-fix`.
 - Espelhado na Vercel via push em main.
+
+## BUILD 008: Transforms padrão do XSD (24/09/2026)
+
+- `Reference/Transforms` do MDF-e com apenas as duas transformações do XSD:
+  `enveloped-signature` + C14N inclusiva
+  (`http://www.w3.org/TR/2001/REC-xml-c14n-20010315`); `exc-c14n#`
+  removido do `Reference`.
+- `CanonicalizationMethod` do `SignedInfo` segue C14N inclusiva.
+- `<infModal versaoModal="3.00" xmlns="http://www.portalfiscal.inf.br/mdfe">`
+  mantido.
+- Constante de log atualizada para `BUILD=008-fix-transforms-c14n-standard`.
+- Espelhado na Vercel via push em main.

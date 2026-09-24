@@ -455,13 +455,11 @@ export function signMdfXml(xml: string, pfxBytes: Buffer, senha: string): string
   console.log("[mdf-debug] DigestValue (SHA-1 Base64):", digestHash);
   console.log("[mdf-debug] Reference URI:", `#${id}`);
   console.log("[mdf-debug] Canonicalization Algorithm:", XML_INCLUSIVE_C14N);
-  console.log("[mdf-debug] Reference Transform:", XML_EXCLUSIVE_C14N);
 
-  // 4. Assinatura usando o digestInput canônico (Reference com Exclusive C14N)
+  // 4. Assinatura usando o digestInput canônico
   const signed = signXml(xml, pfxBytes, senha, canonicalizedInfMdf, {
     referenceUri,
     canonicalizationAlgorithm: XML_INCLUSIVE_C14N,
-    referenceTransformAlgorithm: XML_EXCLUSIVE_C14N,
   });
 
   // 5. Extração do SignatureValue gerado
@@ -475,8 +473,8 @@ export function signMdfXml(xml: string, pfxBytes: Buffer, senha: string): string
     throw new Error(`Referência da assinatura MDF-e inválida: id=${signedId || "(ausente)"}/${signedReference || "(ausente)"}; esperado=${id}/#${id}`);
   }
   if (!signed.includes(`<CanonicalizationMethod Algorithm="${XML_INCLUSIVE_C14N}"/>`) ||
-      !signed.includes(`<Transform Algorithm="${XML_EXCLUSIVE_C14N}"/>`)) {
-    throw new Error("Assinatura MDF-e sem canonicalização esperada (SignedInfo inclusiva / Reference exclusiva)");
+      !signed.includes(`<Transform Algorithm="${XML_INCLUSIVE_C14N}"/>`)) {
+    throw new Error("Assinatura MDF-e sem canonicalização inclusiva");
   }
 
   return signed;
