@@ -2313,3 +2313,11 @@ Commits CF `ddeb6e4..37d5da0` (+ ajustes de X do dono) espelhados na Vercel.
   RENAVAM/tpRod (mapa do tipo)/reboques, tpEmit 1/3, trava
   sem cMunIni. Validado contra o XSD oficial localmente.
   Espelhado na Vercel.
+
+## MDF-e Signature sem whitespace (fix 599) (23/09/2026)
+
+- 599 voltava porque o signXml pretty-printa a Signature
+  (LF/indentacao): agora comprime tudo EXCETO o SignedInfo
+  (assinado, intocavel; base64 de SignatureValue/X509 tambem
+  sem quebras). Validado em teste local: 0 ws fora do SI.
+  Espelhado na Vercel.

@@ -240,7 +240,17 @@ export async function emitirMdf(pfx: Buffer, senha: string, xml: string, ambient
   const nsSinc = "http://www.portalfiscal.inf.br/mdfe/wsdl/MDFeRecepcaoSinc";
   const cUF = xml.match(/Id="MDFe(\d{2})/)?.[1] || "31";
   const cabec = `<mdfeCabecMsg xmlns="${nsSinc}"><cUF>${cUF}</cUF><versaoDados>3.00</versaoDados></mdfeCabecMsg>`;
-  const xmlAss = signXml(xml, pfx, senha);
+  // D03/599: signXml pretty-printa a Signature; comprime tudo EXCETO o SignedInfo (assinado, intocável)
+  const xmlAss = signXml(xml, pfx, senha).replace(/<Signature([^>]*)>([\s\S]*)<\/Signature>/, (_full, attrs, inner) => {
+    const m = inner.match(/<SignedInfo[\s\S]*<\/SignedInfo>/);
+    if (!m || m.index === undefined) return _full;
+    const si = m[0] as string;
+    const before = inner.slice(0, m.index).replace(/>\s+</g, "><").replace(/^\s+/, "").replace(/\s+$/, "");
+    const after = inner.slice(m.index + si.length).replace(/>\s+</g, "><")
+      .replace(/<(SignatureValue|X509Certificate)>([^<]*)<\/(SignatureValue|X509Certificate)>/g,
+        (_t: string, t: string, v: string, c: string) => `<${t}>${v.replace(/[\r\n\t]+/g, "")}</${c}>`).replace(/\s+$/, "").replace(/^\s+/, "");
+    return `<Signature${attrs}>${before}${si}${after}</Signature>`;
+  });
   // SÃ­ncrono (ACBr): mdfeDadosMsg = base64(gzip(<MDFe>...</MDFe>)) puro, sem enviMDFe/idLote
   const mdfeEl = xmlAss.match(/<MDFe[\s>][\s\S]*<\/MDFe>/)?.[0] || xmlAss.replace(/<\?xml[^?]*\?>\s*/g, "");
   const compactada = zlib.gzipSync(Buffer.from(mdfeEl, "utf-8")).toString("base64");
