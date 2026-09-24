@@ -240,9 +240,8 @@ export async function emitirMdf(pfx: Buffer, senha: string, xml: string, ambient
   const nsSinc = "http://www.portalfiscal.inf.br/mdfe/wsdl/MDFeRecepcaoSinc";
   const cUF = xml.match(/Id="MDFe(\d{2})/)?.[1] || "31";
   const cabec = `<mdfeCabecMsg xmlns="${nsSinc}"><cUF>${cUF}</cUF><versaoDados>3.00</versaoDados></mdfeCabecMsg>`;
-  // Digest = substring crua do <infMDFe> como viaja (OuterXml, sem fixup de ns).
-  const digestInput = xml.match(/<infMDFe[\s\S]*<\/infMDFe>/)?.[0];
-  const xmlAss = signXml(xml, pfx, senha, digestInput).replace(/<Signature([^>]*)>([\s\S]*)<\/Signature>/, (_full, attrs, inner) => {
+  // Digest full-doc (fórmula idêntica ao CT-e, que autoriza)
+  const xmlAss = signXml(xml, pfx, senha).replace(/<Signature([^>]*)>([\s\S]*)<\/Signature>/, (_full, attrs, inner) => {
     const m = inner.match(/<SignedInfo[\s\S]*<\/SignedInfo>/);
     if (!m || m.index === undefined) return _full;
     const si = m[0] as string;
@@ -255,7 +254,7 @@ export async function emitirMdf(pfx: Buffer, senha: string, xml: string, ambient
   // D03/599: aponta a tag exata com whitespace restante (diagnóstico em produção)
   const wsAbre = [...xmlAss.matchAll(/<([^<>\s/][^<>]{0,40})>\s+</g)].map(m => m[1]);
   const wsFecha = [...xmlAss.matchAll(/>\s+<\/([^<>]+)>/g)].map(m => "/" + m[1]);
-  console.log(`[mdf-debug] WS-check bytes=${xmlAss.length} digest=${digestInput ? `element:${digestInput.length}` : "full"} após-abertura=[${wsAbre.slice(0, 12).join(",")}] antes-fecho=[${wsFecha.slice(0, 12).join(",")}]`);
+  console.log(`[mdf-debug] WS-check bytes=${xmlAss.length} após-abertura=[${wsAbre.slice(0, 12).join(",")}] antes-fecho=[${wsFecha.slice(0, 12).join(",")}]`);
   // SÃ­ncrono (ACBr): mdfeDadosMsg = base64(gzip(<MDFe>...</MDFe>)) puro, sem enviMDFe/idLote
   const mdfeEl = xmlAss.match(/<MDFe[\s>][\s\S]*<\/MDFe>/)?.[0] || xmlAss.replace(/<\?xml[^?]*\?>\s*/g, "");
   const compactada = zlib.gzipSync(Buffer.from(mdfeEl, "utf-8")).toString("base64");

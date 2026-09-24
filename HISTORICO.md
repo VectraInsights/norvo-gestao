@@ -2372,3 +2372,11 @@ Espelhado na Vercel.
   vizinhanca das 27 UFs + BFS no dialogo: avisa em vermelho
   sob o percurso e trava o Emitir. Ex.: MG->PA via RJ trava;
   via GO,TO passa. Espelhado na Vercel.
+
+## Revert assinatura pretty + digest full-doc (24/09/2026)
+
+- Evidencia: com template comprimido o teste deu 215 (schema),
+  nao 599 — pretty na Signature nunca quebrou D03. Single-line
+  e digests alternativos deram 297 sempre. Volta a formula
+  identica ao CT-e (pretty + full-doc) nos dois caminhos.
+  Espelhado na Vercel.
