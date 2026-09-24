@@ -281,7 +281,7 @@ async function soapRequest(url: string, body: string, action: string, agent?: ht
 export async function emitirMdf(pfx: Buffer, senha: string, xml: string, ambiente: Ambiente): Promise<{ sucesso: boolean; cStat: string; xMotivo: string; chave?: string; protocolo?: string; xmlRet?: string }> {
   assertMdfAmbiente(ambiente);
   assertMdfXmlAmbiente(xml);
-  const BUILD = "010-infmodal-string-replace";
+  const BUILD = "011-regex-infmodal-xmlns";
   const ep = getMdfEndpoints(ambiente);
   const agent = createSefazAgent(pfx, senha);
   const nsSinc = "http://www.portalfiscal.inf.br/mdfe/wsdl/MDFeRecepcaoSinc";
@@ -289,12 +289,16 @@ export async function emitirMdf(pfx: Buffer, senha: string, xml: string, ambient
   const cabec = `<mdfeCabecMsg xmlns="${nsSinc}"><cUF>${cUF}</cUF><versaoDados>3.00</versaoDados></mdfeCabecMsg>`;
   // A declaração XML é removida ANTES da assinatura. Depois disso, xmlAss
   // é transportado sem qualquer replace/trim; os mesmos bytes UTF-8 vão para o gzip.
-  // Garantia cirúrgica: <infModal> com xmlns explícito antes do Digest/Assinatura
-  // (no-op se o builder já emitiu; o canonicalizador normaliza para a raiz no digest).
+  // Garantia cirúrgica: <infModal> com xmlns explícito antes do Digest/Assinatura.
+  // Regex flexível: captura qualquer atributo existente, remove xmlns duplicado
+  // e reinjeta um único xmlns antes do fechamento da tag.
   const xmlForSignature = xml
     .replace(/^\uFEFF?\s*<\?xml[^?]*\?>\s*/i, "")
-    .replace(/<infModal\s+versaoModal="3\.00"\s*>/, '<infModal versaoModal="3.00" xmlns="http://www.portalfiscal.inf.br/mdfe">');
-  console.log("[mdf-debug] infModal com xmlns explicito:", /<infModal[^>]*xmlns="http:\/\/www\.portalfiscal\.inf\.br\/mdfe"/.test(xmlForSignature));
+    .replace(/<infModal([^>]*)>/g, (_m, attrs: string) => {
+      const cleaned = String(attrs).replace(/\s+xmlns="[^"]*"/g, "");
+      return `<infModal${cleaned} xmlns="http://www.portalfiscal.inf.br/mdfe">`;
+    });
+  console.log("[mdf-debug] infModal tag:", xmlForSignature.match(/<infModal[^>]*>/)?.[0] || "(ausente)");
   const xmlAss = signMdfXml(xmlForSignature, pfx, senha);
   const referenceUri = xmlAss.match(/<Reference URI="([^"]+)"/)?.[1] || "";
   const signedXmlBytes = Buffer.byteLength(xmlAss, "utf8");

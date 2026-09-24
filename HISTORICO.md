@@ -2500,3 +2500,13 @@ Espelhado na Vercel.
   substituição, sobre a string já substituída.
 - Constante de log atualizada para `BUILD=010-infmodal-string-replace`.
 - Espelhado na Vercel via push em main.
+
+## BUILD 011: infModal via regex flexível (24/09/2026)
+
+- Substituição por regex flexível na string pré-assinatura
+  (`/<infModal([^>]*)>/g`): preserva atributos existentes, remove `xmlns`
+  duplicado se houver e injeta um único
+  `xmlns="http://www.portalfiscal.inf.br/mdfe"` antes do `>`.
+- Log temporário exibe a tag `<infModal>` resultante exata.
+- Constante de log atualizada para `BUILD=011-regex-infmodal-xmlns`.
+- Espelhado na Vercel via push em main.
