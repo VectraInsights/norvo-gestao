@@ -591,11 +591,11 @@ function DialogNovoMdf({ open, onOpenChange, empresaId, empresa, chavesIniciais,
 
       if (res.sucesso) {
         toast.success("MDF-e emitido com sucesso!");
-        if (rascunhoInicial?.id) {
-          try { await supabase.from("mdf_documentos" as any).delete().eq("id", rascunhoInicial.id); } catch {}
-        }
       }
       else toast.error(`Erro ${res.cStat}: ${res.xMotivo}`);
+      if ((res.sucesso || res.cStat) && rascunhoInicial?.id) {
+        try { await supabase.from("mdf_documentos" as any).delete().eq("id", rascunhoInicial.id); } catch {}
+      }
 
       onOpenChange(false);
       setCtesSelecionadas(new Set()); setTracaoSel(""); setUfCarregamento(""); setUfDescarregamento(""); setCidadeFimSel(""); setPercursoUFs([]); setObservacoes(""); setInfoFisco(""); setIsTransbordo(false); setTransb1(""); setTransb2(""); setTransb3(""); setTipoMdf("Normal"); setPercursoSelIdx(null);

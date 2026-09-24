@@ -2401,3 +2401,8 @@ Espelhado na Vercel.
 - Salvar de rascunho em edicao atualiza a linha; rascunho
   novo com mesmos CT-es substitui o anterior; emitir com
   sucesso apaga o rascunho de origem. Espelhado na Vercel.
+
+## MDF-e rejeitado limpa rascunho (24/09/2026)
+
+- Rejeitado ja foi a SEFAZ: ao rejeitar, o rascunho de origem
+  e apagado (antes so saia no sucesso). Espelhado na Vercel.
