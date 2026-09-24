@@ -410,19 +410,31 @@ function canonicalizeMdfInfMdfInclusive(node: Element): string {
       throw new Error("MDF-e com namespace/prefixo não suportado para C14N inclusivo");
     }
 
-    const attributes = Array.from(element.attributes)
+    const allAttributes = Array.from(element.attributes);
+    const explicitXmlns = allAttributes.filter((attr) => attr.name === "xmlns" || attr.prefix === "xmlns" || attr.namespaceURI === "http://www.w3.org/2000/xmlns/");
+    if (explicitXmlns.some((attr) => attr.name !== "xmlns")) {
+      throw new Error("MDF-e com namespace prefixado não suportado");
+    }
+    const explicitDefaultXmlns = explicitXmlns.find((attr) => attr.name === "xmlns")?.value || "";
+    if (explicitDefaultXmlns && explicitDefaultXmlns !== "http://www.portalfiscal.inf.br/mdfe") {
+      throw new Error("MDF-e com namespace default divergente do MDF-e");
+    }
+    const attributes = allAttributes
       .filter((attr) => attr.name !== "xmlns" && attr.prefix !== "xmlns" && attr.namespaceURI !== "http://www.w3.org/2000/xmlns/");
     if (attributes.some((attr) => attr.prefix || attr.namespaceURI === "http://www.w3.org/XML/1998/namespace" || (attr.namespaceURI || "") !== "")) {
       throw new Error("MDF-e com atributo namespace/XML não suportado para C14N inclusivo");
     }
     attributes.sort((a, b) => a.name < b.name ? -1 : a.name > b.name ? 1 : 0);
 
-    const namespace = isRoot ? ' xmlns="http://www.portalfiscal.inf.br/mdfe"' : "";
+    // Preserva o xmlns declarado explicitamente no nó (ex.: <infModal ... xmlns="...">);
+    // a raiz sempre carrega o namespace. Namespaces redundantes NÃO são limpos.
+    const rootNamespace = isRoot ? ' xmlns="http://www.portalfiscal.inf.br/mdfe"' : "";
     const renderedAttributes = attributes.map((attr) => ` ${attr.name}="${escapeC14nAttribute(attr.value)}"`).join("");
+    const preservedXmlns = !isRoot && explicitDefaultXmlns ? ` xmlns="${explicitDefaultXmlns}"` : "";
     const children = Array.from(element.childNodes)
       .map((child) => render(child, false))
       .join("");
-    return `<${element.nodeName}${namespace}${renderedAttributes}>${children}</${element.nodeName}>`;
+    return `<${element.nodeName}${rootNamespace}${renderedAttributes}${preservedXmlns}>${children}</${element.nodeName}>`;
   };
 
   return render(node, true);

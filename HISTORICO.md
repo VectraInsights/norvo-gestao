@@ -2510,3 +2510,16 @@ Espelhado na Vercel.
 - Log temporário exibe a tag `<infModal>` resultante exata.
 - Constante de log atualizada para `BUILD=011-regex-infmodal-xmlns`.
 - Espelhado na Vercel via push em main.
+
+## BUILD 012: C14N preserva xmlns do infModal (24/09/2026)
+
+- Canonicalizador (`sefaz.ts` + `mdf-c14n.ts`) não limpa mais `xmlns`
+  redundante: `xmlns` default declarado explicitamente no nó é
+  preservado na forma canônica; raiz sempre carrega o namespace.
+- Forma canônica validada localmente: raiz
+  `<infMDFe xmlns="..." Id="..." versao="3.00">` e
+  `<infModal versaoModal="3.00" xmlns="http://www.portalfiscal.inf.br/mdfe">`;
+  demais filhos sem `xmlns`. Prefixados/divergentes seguem rejeitados.
+- Log `canonicalized infMDFe` passa a exibir o `xmlns` no `infModal`.
+- Constante de log atualizada para `BUILD=012-c14n-preserve-infmodal-xmlns`.
+- Espelhado na Vercel via push em main.
