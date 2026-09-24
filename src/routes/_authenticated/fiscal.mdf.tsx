@@ -75,6 +75,7 @@ function MdfPage() {
   const [open, setOpen] = useState(false);
   const [mdfPrefill, setMdfPrefill] = useState<string[] | null>(null);
   const [mdfDraft, setMdfDraft] = useState<{ id?: string; chaves: string[]; percursoUFs: string[]; observacoes: string; infoFisco: string; tipoMdf: "Normal" | "Globalizado"; isTransbordo: boolean; transb1: string; transb2: string; transb3: string } | null>(null);
+  const [semRascunho, setSemRascunho] = useState(false);
   useEffect(() => {
     let pre: any = null;
     try { pre = JSON.parse(localStorage.getItem("prefill_mdf_from_cte") || "null"); } catch { pre = null; }
@@ -112,6 +113,7 @@ function MdfPage() {
     const unicas = [...new Set(chaves)];
     if (!unicas.length) { toast.error("Sem CT-es vinculados para reaproveitar"); return; }
     setMdfPrefill(unicas);
+    setSemRascunho(true);
     setOpen(true);
   };
   const [filtroStatus, setFiltroStatus] = useState("todos");
@@ -306,7 +308,7 @@ function MdfPage() {
         </Dialog>
       )}
 
-      <DialogNovoMdf open={open} onOpenChange={(v) => { setOpen(v); if (!v) { setMdfPrefill(null); setMdfDraft(null); } }} empresaId={empresa?.id || ""} empresa={empresa} chavesIniciais={mdfPrefill || undefined} rascunhoInicial={mdfDraft} />
+      <DialogNovoMdf open={open} onOpenChange={(v) => { setOpen(v); if (!v) { setMdfPrefill(null); setMdfDraft(null); setSemRascunho(false); } }} empresaId={empresa?.id || ""} empresa={empresa} chavesIniciais={mdfPrefill || undefined} rascunhoInicial={mdfDraft} permiteRascunho={!semRascunho} />
     </div>
   );
 }
@@ -326,7 +328,7 @@ function EncerrarMdfButton({ mdf, empresaId, onSuccess }: { mdf: MdfDoc; empresa
   return <Button onClick={handleEncerrar} disabled={loading}>{loading ? "Encerrando..." : "Confirmar Encerramento"}</Button>;
 }
 
-function DialogNovoMdf({ open, onOpenChange, empresaId, empresa, chavesIniciais, rascunhoInicial }: { open: boolean; onOpenChange: (v: boolean) => void; empresaId: string; empresa?: any; chavesIniciais?: string[]; rascunhoInicial?: { id?: string; chaves: string[]; percursoUFs: string[]; observacoes: string; infoFisco: string; tipoMdf: "Normal" | "Globalizado"; isTransbordo: boolean; transb1: string; transb2: string; transb3: string } | null }) {
+function DialogNovoMdf({ open, onOpenChange, empresaId, empresa, chavesIniciais, rascunhoInicial, permiteRascunho = true }: { open: boolean; onOpenChange: (v: boolean) => void; empresaId: string; empresa?: any; chavesIniciais?: string[]; permiteRascunho?: boolean; rascunhoInicial?: { id?: string; chaves: string[]; percursoUFs: string[]; observacoes: string; infoFisco: string; tipoMdf: "Normal" | "Globalizado"; isTransbordo: boolean; transb1: string; transb2: string; transb3: string } | null }) {
   const qc = useQueryClient();
   const [loading, setLoading] = useState(false);
   const [ufCarregamento, setUfCarregamento] = useState("");
@@ -838,9 +840,11 @@ function DialogNovoMdf({ open, onOpenChange, empresaId, empresa, chavesIniciais,
 
         <DialogFooter>
           <Button variant="outline" onClick={() => onOpenChange(false)}>Cancelar</Button>
+          {permiteRascunho && (
           <Button variant="secondary" onClick={handleSalvarRascunho} disabled={loading || !ctesSelecionadas.size}>
             {loading ? "Salvando..." : "Salvar Rascunho"}
           </Button>
+          )}
           <Button onClick={handleEmitir} disabled={loading || !tracaoSel || !ctesSelecionadas.size || !motNomes.length || !ufCarregamento || !ufDescarregamento || !!errosPercurso.length}>
             <Send className="mr-1 h-4 w-4" /> {loading ? "Emitindo..." : "Emitir MDF-e"}
           </Button>

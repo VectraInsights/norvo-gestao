@@ -2406,3 +2406,9 @@ Espelhado na Vercel.
 
 - Rejeitado ja foi a SEFAZ: ao rejeitar, o rascunho de origem
   e apagado (antes so saia no sucesso). Espelhado na Vercel.
+
+## MDF-e sem rascunho no retry (24/09/2026)
+
+- Retry de rejeitado nao mostra Salvar Rascunho (ja foi a
+  SEFAZ); rascunho normal e prefill de CT-e mantem o botao.
+  Espelhado na Vercel.
