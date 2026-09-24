@@ -2479,3 +2479,13 @@ Espelhado na Vercel.
   mantido.
 - Constante de log atualizada para `BUILD=008-fix-transforms-c14n-standard`.
 - Espelhado na Vercel via push em main.
+
+## BUILD 009: infModal com xmlns explícito (24/09/2026)
+
+- `<infModal versaoModal="3.00" xmlns="http://www.portalfiscal.inf.br/mdfe">`
+  garantido na string pré-assinatura (`emitirMdf` reinjeta via replace
+  cirúrgico somente se o builder tiver removido; no-op caso contrário).
+- `<infMDFe>` com `xmlns`; filhos (`ide`, `emit`, `rodo`, `infDoc`, `tot`)
+  sem `xmlns`. Digest inalterado (canonicalizador normaliza para a raiz).
+- Constante de log atualizada para `BUILD=009-infmodal-xmlns-explicit`.
+- Espelhado na Vercel via push em main.
