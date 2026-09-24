@@ -2386,3 +2386,12 @@ Espelhado na Vercel.
 - Single-line de volta + digest full-doc (formula CT-e) +
   marcador BUILD=004 no log para provar qual codigo rodou.
   Espelhado na Vercel.
+
+## MDF-e botao Salvar Rascunho + trim textos (24/09/2026)
+
+- Rodape do Novo MDF-e ganha Salvar Rascunho (grava status
+  rascunho com CT-es, percurso, obs, tipo/transbordo); linha
+  rascunho tem Continuar editando (restaura tudo) e Excluir.
+- XML: trim nas bordas de todos os textos (higiene contra
+  599 por espacos vindos de cadastro/CT-e).
+  Espelhado na Vercel.

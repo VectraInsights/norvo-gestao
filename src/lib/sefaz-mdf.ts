@@ -209,7 +209,8 @@ export function buildMdfXml(input: MdfInputCompleto): { xml: string; chave: stri
   </infMDFe>
 </MDFe>`;
   // D03/cStat 599: sem caracteres de edição (LF/CR/TAB/espaço) entre tags — antes de assinar
-  const xml = raw.replace(/>\s+</g, "><").trim();
+  // + trim dentro dos textos (bordas de valores vindos do cadastro/CT-e)
+  const xml = raw.replace(/>\s+</g, "><").replace(/>([^<>]*)</g, (_m, t: string) => `>${t.trim()}<`).trim();
   return { xml, chave };
 }
 

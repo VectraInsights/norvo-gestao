@@ -10,7 +10,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Route as RoadIcon, Plus, FileText, Search, Trash2, Filter, Calendar, CheckCircle2, XCircle, AlertTriangle, RefreshCw, Send, FileDown, Truck, Users, RotateCcw } from "lucide-react";
+import { Route as RoadIcon, Plus, FileText, Search, Trash2, Filter, Calendar, CheckCircle2, XCircle, AlertTriangle, RefreshCw, Send, FileDown, Truck, Users, RotateCcw, Pencil } from "lucide-react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useEmpresaAtual } from "@/hooks/use-empresa";
@@ -74,6 +74,7 @@ function MdfPage() {
   const qc = useQueryClient();
   const [open, setOpen] = useState(false);
   const [mdfPrefill, setMdfPrefill] = useState<string[] | null>(null);
+  const [mdfDraft, setMdfDraft] = useState<{ chaves: string[]; percursoUFs: string[]; observacoes: string; infoFisco: string; tipoMdf: "Normal" | "Globalizado"; isTransbordo: boolean; transb1: string; transb2: string; transb3: string } | null>(null);
   useEffect(() => {
     let pre: any = null;
     try { pre = JSON.parse(localStorage.getItem("prefill_mdf_from_cte") || "null"); } catch { pre = null; }
@@ -89,6 +90,21 @@ function MdfPage() {
   const [mdfEncerrar, setMdfEncerrar] = useState<MdfDoc | null>(null);
   const [mdfCancelar, setMdfCancelar] = useState<MdfDoc | null>(null);
   const [justificativa, setJustificativa] = useState("");
+  const continuarRascunho = (d: MdfDoc) => {
+    try {
+      const p = JSON.parse(String((d as any).xml_assinado || "{}"));
+      setMdfDraft({
+        chaves: Array.isArray(p.chaves) ? p.chaves : [],
+        percursoUFs: Array.isArray(p.percursoUFs) ? p.percursoUFs : [],
+        observacoes: String(p.observacoes || ""),
+        infoFisco: String(p.infoFisco || ""),
+        tipoMdf: p.tipoMdf === "Globalizado" ? "Globalizado" : "Normal",
+        isTransbordo: !!p.isTransbordo,
+        transb1: String(p.transb1 || ""), transb2: String(p.transb2 || ""), transb3: String(p.transb3 || ""),
+      });
+      setOpen(true);
+    } catch { toast.error("Rascunho ilegível"); }
+  };
   const reemitir = (d: MdfDoc) => {
     const xml = String((d as any).xml_assinado || "");
     const chaves = [...xml.matchAll(/<chCTe>(\d{44})<\/chCTe>/g)].map(m => m[1]);
@@ -233,9 +249,14 @@ function MdfPage() {
                         </>
                       )}
                       {d.status === "rascunho" && (
-                        <Button variant="ghost" size="sm" title="Rejeitado — ver motivo">
-                          <AlertTriangle className="h-4 w-4 text-amber-500" />
-                        </Button>
+                        <>
+                          <Button variant="ghost" size="sm" title="Continuar editando" onClick={() => continuarRascunho(d)}>
+                            <Pencil className="h-4 w-4" />
+                          </Button>
+                          <Button variant="ghost" size="sm" title="Excluir rascunho" onClick={async () => { if (!window.confirm("Excluir este rascunho?")) return; const { error } = await supabase.from("mdf_documentos" as any).delete().eq("id", d.id); if (error) toast.error(error.message); else { toast.success("Rascunho excluído"); qc.invalidateQueries({ queryKey: ["mdf-documentos"] }); } }}>
+                            <Trash2 className="h-4 w-4 text-destructive" />
+                          </Button>
+                        </>
                       )}
                     </div>
                   </TableCell>
@@ -284,7 +305,7 @@ function MdfPage() {
         </Dialog>
       )}
 
-      <DialogNovoMdf open={open} onOpenChange={(v) => { setOpen(v); if (!v) setMdfPrefill(null); }} empresaId={empresa?.id || ""} empresa={empresa} chavesIniciais={mdfPrefill || undefined} />
+      <DialogNovoMdf open={open} onOpenChange={(v) => { setOpen(v); if (!v) { setMdfPrefill(null); setMdfDraft(null); } }} empresaId={empresa?.id || ""} empresa={empresa} chavesIniciais={mdfPrefill || undefined} rascunhoInicial={mdfDraft} />
     </div>
   );
 }
@@ -304,7 +325,7 @@ function EncerrarMdfButton({ mdf, empresaId, onSuccess }: { mdf: MdfDoc; empresa
   return <Button onClick={handleEncerrar} disabled={loading}>{loading ? "Encerrando..." : "Confirmar Encerramento"}</Button>;
 }
 
-function DialogNovoMdf({ open, onOpenChange, empresaId, empresa, chavesIniciais }: { open: boolean; onOpenChange: (v: boolean) => void; empresaId: string; empresa?: any; chavesIniciais?: string[] }) {
+function DialogNovoMdf({ open, onOpenChange, empresaId, empresa, chavesIniciais, rascunhoInicial }: { open: boolean; onOpenChange: (v: boolean) => void; empresaId: string; empresa?: any; chavesIniciais?: string[]; rascunhoInicial?: { chaves: string[]; percursoUFs: string[]; observacoes: string; infoFisco: string; tipoMdf: "Normal" | "Globalizado"; isTransbordo: boolean; transb1: string; transb2: string; transb3: string } | null }) {
   const qc = useQueryClient();
   const [loading, setLoading] = useState(false);
   const [ufCarregamento, setUfCarregamento] = useState("");
@@ -399,6 +420,18 @@ function DialogNovoMdf({ open, onOpenChange, empresaId, empresa, chavesIniciais 
   const ambienteMdf = "homologacao" as const;
   useEffect(() => { if (!open) return; (async () => { try { const { data } = await supabase.auth.getUser(); const usr = (data as any)?.user; if (!usr) return; let nm = (usr?.user_metadata as any)?.nome || ""; if (!nm && empresaId) { const { data: eu } = await supabase.from("empresa_users" as any).select("nome").eq("empresa_id", empresaId).eq("user_id", usr.id).maybeSingle(); nm = (eu as any)?.nome || ""; } setRespNome(nm || ""); } catch {} })(); }, [open, empresaId]);
   useEffect(() => { if (open && chavesIniciais?.length) { setCtesSelecionadas(new Set(chavesIniciais)); setPercursoUFs([]); } }, [open]);
+  useEffect(() => {
+    if (!open || !rascunhoInicial) return;
+    setCtesSelecionadas(new Set(rascunhoInicial.chaves || []));
+    setPercursoUFs(rascunhoInicial.percursoUFs || []);
+    setObservacoes(rascunhoInicial.observacoes || "");
+    setInfoFisco(rascunhoInicial.infoFisco || "");
+    setTipoMdf(rascunhoInicial.tipoMdf === "Globalizado" ? "Globalizado" : "Normal");
+    setIsTransbordo(!!rascunhoInicial.isTransbordo);
+    setTransb1(rascunhoInicial.transb1 || ""); setTransb2(rascunhoInicial.transb2 || ""); setTransb3(rascunhoInicial.transb3 || "");
+    setPercursoSelIdx(null);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open]);
   // Percurso: só UFs entre início e fim, adicionadas pelo usuário — CT-e nunca entra na lista
   useEffect(() => {
     if (!open || tracaoSel || !ctesSelecionadas.size) return;
@@ -562,6 +595,28 @@ function DialogNovoMdf({ open, onOpenChange, empresaId, empresa, chavesIniciais 
       setCtesSelecionadas(new Set()); setTracaoSel(""); setUfCarregamento(""); setUfDescarregamento(""); setCidadeFimSel(""); setPercursoUFs([]); setObservacoes(""); setInfoFisco(""); setIsTransbordo(false); setTransb1(""); setTransb2(""); setTransb3(""); setTipoMdf("Normal"); setPercursoSelIdx(null);
       qc.invalidateQueries({ queryKey: ["mdf-documentos"] });
     } catch (e: unknown) { toast.error(e instanceof Error ? e.message : "Erro ao emitir MDF-e"); }
+    setLoading(false);
+  };
+
+  const handleSalvarRascunho = async () => {
+    if (!ctesSelecionadas.size) { toast.error("Selecione pelo menos 1 CT-e"); return; }
+    if (!empresaId) return;
+    const veic = (veiculos || []).find(v => String(v.placa || "").toUpperCase() === tracaoSel);
+    setLoading(true);
+    try {
+      const ctesArr = (ctesDisponiveis || []).filter(c => ctesSelecionadas.has(c.chave_acesso || ""));
+      const { error } = await supabase.from("mdf_documentos" as any).insert({
+        empresa_id: empresaId, status: "rascunho", serie: serieMdf || "000",
+        qtd_cte: ctesArr.length, valor_total_carga: totalCarga, peso_total: pesoCarga,
+        uf_carregamento: ufCarregamento || null, uf_descarregamento: ufDescarregamento || null,
+        veiculo_tracao_id: (veic as any)?.id || null, ambiente: ambienteMdf,
+        xml_assinado: JSON.stringify({ rascunho: true, chaves: [...ctesSelecionadas], percursoUFs, observacoes, infoFisco, tipoMdf, isTransbordo, transb1, transb2, transb3 }),
+      } as any);
+      if (error) throw error;
+      toast.success("Rascunho salvo!");
+      onOpenChange(false);
+      qc.invalidateQueries({ queryKey: ["mdf-documentos"] });
+    } catch (e: unknown) { toast.error(e instanceof Error ? e.message : "Erro ao salvar rascunho"); }
     setLoading(false);
   };
 
@@ -758,6 +813,9 @@ function DialogNovoMdf({ open, onOpenChange, empresaId, empresa, chavesIniciais 
 
         <DialogFooter>
           <Button variant="outline" onClick={() => onOpenChange(false)}>Cancelar</Button>
+          <Button variant="secondary" onClick={handleSalvarRascunho} disabled={loading || !ctesSelecionadas.size}>
+            {loading ? "Salvando..." : "Salvar Rascunho"}
+          </Button>
           <Button onClick={handleEmitir} disabled={loading || !tracaoSel || !ctesSelecionadas.size || !motNomes.length || !ufCarregamento || !ufDescarregamento || !!errosPercurso.length}>
             <Send className="mr-1 h-4 w-4" /> {loading ? "Emitindo..." : "Emitir MDF-e"}
           </Button>
