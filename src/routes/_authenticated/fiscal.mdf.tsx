@@ -455,6 +455,8 @@ function DialogNovoMdf({ open, onOpenChange, empresaId, empresa, chavesIniciais 
     if (!tracaoSel) { toast.error("Selecione o veículo"); return; }
     if (!motNomes.length) { toast.error("CT-es sem motorista"); return; }
     if (!ufCarregamento || !ufDescarregamento) { toast.error("Percurso incompleto: UF de início/encerramento vêm dos CT-es"); return; }
+    const _firstCheck = (() => { try { const p = JSON.parse((ctesSelArr[0] as any)?.xml_assinado || "{}"); return (p.form || {}) as Record<string, any>; } catch { return {} as Record<string, any>; } })();
+    if (!String(_firstCheck.cMunIni || "").trim()) { toast.error("CT-e sem município de coleta (cMunIni) — complete no CT-e"); return; }
 
     const veic = (veiculos || []).find(v => String(v.placa || "").toUpperCase() === tracaoSel);
     const mot0 = motNomes[0];
@@ -464,19 +466,23 @@ function DialogNovoMdf({ open, onOpenChange, empresaId, empresa, chavesIniciais 
     try {
       const ctesArr = (ctesDisponiveis || []).filter(c => ctesSelecionadas.has(c.chave_acesso || ""));
       const numero = String(Math.floor(Math.random() * 999999) + 1).padStart(9, "0");
+      const firstForm = formDe(ctesArr[0]);
+      const tpRodDe = (t?: string | null) => { const s = String(t || "").toLowerCase(); if (s.includes("cavalo")) return "03"; if (s.includes("truck")) return "01"; if (s.includes("toco")) return "02"; if (s.includes("van") || s.includes("furg")) return "04"; if (s.includes("utilit")) return "05"; return "06"; };
+      const renavamDe = (placa: string) => (veiculos || []).find(v => String(v.placa || "").toUpperCase() === String(placa || "").toUpperCase())?.renavam || undefined;
       const input = {
         empresaId, ambiente: ambienteMdf, serie: serieMdf || "000", numero,
         ufCarregamento, ufDescarregamento,
-        emit: { cnpj: "", ie: "", xNome: "", uf: ufCarregamento, cMun: "", xMun: "" },
-        veicTrac: { placa: tracaoSel, uf: ufCarregamento, rntrc: (veic as any)?.rntrc || "", tara: 0, ciot: ciotMdf || undefined },
-        reboques: reboques.slice(0, 3).map(p => ({ placa: p, uf: ufCarregamento, tara: 0 })),
+        emit: { cnpj: String((empresa as any)?.cnpj || ""), ie: String((empresa as any)?.ie || ""), xNome: String((empresa as any)?.razao_social || (empresa as any)?.nome_fantasia || ""), uf: ufCarregamento, cMun: String(firstForm.cMunIni || ""), xMun: String(firstForm.xMunIni || "") },
+        veicTrac: { placa: tracaoSel, uf: ufCarregamento, rntrc: (veic as any)?.rntrc || "", tara: 0, renavam: (veic as any)?.renavam || undefined, tpRod: tpRodDe((veic as any)?.tipo), ciot: ciotMdf || undefined },
+        reboques: reboques.slice(0, 3).map(p => ({ placa: p, uf: ufCarregamento, tara: 0, renavam: renavamDe(p) })),
         condutor: { cpf: mot?.cpf || "", xNome: mot0.nome },
-        ctes: ctesArr.map(c => ({ chave: c.chave_acesso || "", valor: c.valor_servico || 0, pesoKG: pesoDe(c) })),
-        infMunCarrega: [{ cMunCarrega: "", xMunCarrega: "" }],
+        ctes: ctesArr.map(c => { const f = formDe(c); return { chave: c.chave_acesso || "", valor: c.valor_servico || 0, pesoKG: pesoDe(c), cMunDescarga: String(f.cMunFim || ""), xMunDescarga: String(f.xMunFim || "") }; }),
+        infMunCarrega: [{ cMunCarrega: String(firstForm.cMunIni || ""), xMunCarrega: String(firstForm.xMunIni || "") }],
         infPercurso: percursoUFs.map(uf => ({ ufFim: uf })),
         valorTotalCarga: ctesArr.reduce((s, c) => s + (c.valor_servico || 0), 0),
         pesoTotalKG: ctesArr.reduce((s, c) => s + pesoDe(c), 0),
         tipo: (isTransbordo ? "transbordo" : "normal") as "normal" | "transbordo",
+        tpEmit: tipoMdf === "Globalizado" ? "3" : "1",
         mdfesTransbordo: [transb1, transb2, transb3].filter(k => /^\d{44}$/.test((k || "").trim())).map(k => ({ chave: k.trim() })),
       };
 

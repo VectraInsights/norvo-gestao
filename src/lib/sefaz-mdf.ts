@@ -65,10 +65,10 @@ export interface MdfInputCompleto {
   ufCarregamento: string;
   ufDescarregamento: string;
   emit: { cnpj: string; ie: string; xNome: string; uf: string; cMun: string; xMun: string };
-  veicTrac: { placa: string; uf: string; rntrc: string; tara: number; capKG?: number; capM3?: number; tpRod?: string; tpCarroceria?: string; ciot?: string };
-  reboques?: Array<{ placa: string; uf: string; rntrc?: string; tara: number; capKG?: number; capM3?: number; tpCarroceria?: string }>;
+  veicTrac: { placa: string; uf: string; rntrc: string; tara: number; capKG?: number; capM3?: number; tpRod?: string; tpCarroceria?: string; ciot?: string; renavam?: string };
+  reboques?: Array<{ placa: string; uf: string; tara: number; renavam?: string; capKG?: number; capM3?: number; tpCarroceria?: string }>;
   condutor: { cpf: string; xNome: string };
-  ctes: Array<{ chave: string; valor: number; pesoKG: number }>;
+  ctes: Array<{ chave: string; valor: number; pesoKG: number; cMunDescarga?: string; xMunDescarga?: string }>;
   infMunCarrega: Array<{ cMunCarrega: string; xMunCarrega: string }>;
   infMunDescarrega?: Array<{ cMunDescarga: string; xMunDescarga: string }>;
   infPercurso?: Array<{ ufFim: string }>;
@@ -78,20 +78,26 @@ export interface MdfInputCompleto {
   lacres?: Array<{ nLacre: string }>;
   obs?: string;
   tipo?: "normal" | "transbordo";
+  tpEmit?: string;
   mdfesTransbordo?: Array<{ chave: string }>;
 }
 
 export function buildMdfXml(input: MdfInputCompleto): { xml: string; chave: string } {
-  const dhEmi = new Date().toISOString();
+  // TDateTimeUTC: AAAA-MM-DDTHH:MM:SS-03:00 (sem millis, sem Z; servidor roda em UTC)
+  const agora = new Date(Date.now() - 3 * 3600 * 1000);
+  const p2 = (n: number) => String(n).padStart(2, "0");
+  const dhFmt = `${agora.getUTCFullYear()}-${p2(agora.getUTCMonth() + 1)}-${p2(agora.getUTCDate())}T${p2(agora.getUTCHours())}:${p2(agora.getUTCMinutes())}:${p2(agora.getUTCSeconds())}-03:00`;
   const cUF = codigoUF(input.ufCarregamento);
-  const aamm = dhEmi.slice(2, 4) + dhEmi.slice(5, 7);
+  const aamm = dhFmt.slice(2, 4) + dhFmt.slice(5, 7);
   const cnpjLimpo = input.emit.cnpj.replace(/\D/g, "").padStart(14, "0");
+  const serieTag = String(input.serie).replace(/^0+/, "") || "0";
+  const numeroTag = String(parseInt(input.numero, 10) || 0);
   const nMDF = input.numero.padStart(9, "0");
   const cMDF = String(Math.floor(Math.random() * 100000000)).padStart(8, "0");
   const chave = gerarChaveMdf(cUF, aamm, cnpjLimpo, input.serie, input.numero, cMDF);
   const id = `MDFe${chave}`;
-  const dhEmiFmt = dhEmi;
-  const dhIniViagem = dhEmi;
+  const cDV = chave.slice(-1);
+  const tpEmit = input.tpEmit || "1";
 
   // infMunCarrega
   const infMunCarregaXml = input.infMunCarrega.map(m =>
@@ -115,13 +121,12 @@ export function buildMdfXml(input: MdfInputCompleto): { xml: string; chave: stri
   // VeÃ­culos
   const ciotNum = String(input.veicTrac.ciot || "").replace(/\D/g, "");
   const infCiotXml = ciotNum ? `<infCIOT><CIOT>${ciotNum}</CIOT><CNPJ>${cnpjLimpo}</CNPJ></infCIOT>` : "";
-  const veicTracXml = `<veicTrac><placa>${input.veicTrac.placa}</placa><UF>${input.veicTrac.uf}</UF><RNTRC>${input.veicTrac.rntrc}</RNTRC><tara>${input.veicTrac.tara}</tara>${input.veicTrac.capKG ? `<capKG>${input.veicTrac.capKG}</capKG>` : ""}${input.veicTrac.capM3 ? `<capM3>${input.veicTrac.capM3}</capM3>` : ""}<tpRod>${input.veicTrac.tpRod || "0"}</tpRod><tpCarroceria>${input.veicTrac.tpCarroceria || "0"}</tpCarroceria></veicTrac>`;
+  // Condutor (ordem XSD: xNome, CPF)
+  const condutorXml = `<condutor><xNome>${input.condutor.xNome}</xNome><CPF>${input.condutor.cpf.replace(/\D/g, "")}</CPF></condutor>`;
+  const veicTracXml = `<veicTracao><placa>${input.veicTrac.placa}</placa>${input.veicTrac.renavam ? `<RENAVAM>${input.veicTrac.renavam}</RENAVAM>` : ""}<tara>${input.veicTrac.tara}</tara>${input.veicTrac.capKG ? `<capKG>${input.veicTrac.capKG}</capKG>` : ""}${input.veicTrac.capM3 ? `<capM3>${input.veicTrac.capM3}</capM3>` : ""}${condutorXml}<tpRod>${input.veicTrac.tpRod || "06"}</tpRod><tpCar>${input.veicTrac.tpCarroceria || "00"}</tpCar><UF>${input.veicTrac.uf}</UF></veicTracao>`;
   const reboquesXml = (input.reboques || []).map(r =>
-    `<reboque><placa>${r.placa}</placa><UF>${r.uf}</UF>${r.rntrc ? `<RNTRC>${r.rntrc}</RNTRC>` : ""}<tara>${r.tara}</tara>${r.capKG ? `<capKG>${r.capKG}</capKG>` : ""}${r.capM3 ? `<capM3>${r.capM3}</capM3>` : ""}<tpCarroceria>${r.tpCarroceria || "0"}</tpCarroceria></reboque>`
+    `<veicReboque><placa>${r.placa}</placa>${r.renavam ? `<RENAVAM>${r.renavam}</RENAVAM>` : ""}<tara>${r.tara}</tara><capKG>${r.capKG ?? 0}</capKG>${r.capM3 ? `<capM3>${r.capM3}</capM3>` : ""}<tpCar>${r.tpCarroceria || "00"}</tpCar><UF>${r.uf}</UF></veicReboque>`
   ).join("");
-
-  // Condutor
-  const condutorXml = `<condutor><CPF>${input.condutor.cpf.replace(/\D/g, "")}</CPF><xNome>${input.condutor.xNome}</xNome></condutor>`;
 
   // InfDoc (CT-e vinculados ou MDF-e de transbordo)
   const isTransbordo = input.tipo === "transbordo" && !!input.mdfesTransbordo?.length;
@@ -130,10 +135,19 @@ export function buildMdfXml(input: MdfInputCompleto): { xml: string; chave: stri
         const cMunDesc = mdf.chave.slice(0, 7);
         return `<infMunDescarga><cMunDescarga>${cMunDesc}</cMunDescarga><xMunDescarga></xMunDescarga><infMDFeTransp><chMDFe>${mdf.chave}</chMDFe></infMDFeTransp></infMunDescarga>`;
       }).join("")
-    : input.ctes.map(cte => {
-        const cMunFim = cte.chave.slice(0, 7);
-        return `<infMunDescarga><cMunDescarga>${cMunFim}</cMunDescarga><xMunDescarga></xMunDescarga><infCTe><chCTe>${cte.chave}</chCTe><infCarga><cUnid>01</cUnid><qCarga>${cte.pesoKG.toFixed(4)}</qCarga><vCarga>${cte.valor.toFixed(2)}</vCarga></infCarga></infCTe></infMunDescarga>`;
-      }).join("");
+    : (() => {
+        const grupos = new Map<string, { cMun: string; xMun: string; chaves: string[] }>();
+        for (const cte of input.ctes) {
+          const cMun = (cte.cMunDescarga || "").replace(/\D/g, "") || cte.chave.slice(0, 7);
+          const xMun = cte.xMunDescarga || "";
+          const k = `${cMun}|${xMun}`;
+          if (!grupos.has(k)) grupos.set(k, { cMun, xMun, chaves: [] });
+          grupos.get(k)!.chaves.push(cte.chave);
+        }
+        return [...grupos.values()].map(g =>
+          `<infMunDescarga><cMunDescarga>${g.cMun}</cMunDescarga><xMunDescarga>${g.xMun}</xMunDescarga>${g.chaves.map(ch => `<infCTe><chCTe>${ch}</chCTe></infCTe>`).join("")}</infMunDescarga>`
+        ).join("");
+      })();
 
   // Lacres
   const lacresXml = (input.lacres || []).map(l => `<nLacre>${l.nLacre}</nLacre>`).join("");
@@ -144,26 +158,26 @@ export function buildMdfXml(input: MdfInputCompleto): { xml: string; chave: stri
     <ide>
       <cUF>${cUF}</cUF>
       <tpAmb>${input.ambiente === "producao" ? "1" : "2"}</tpAmb>
-      <tpEmis>1</tpEmis>
+      <tpEmit>${tpEmit}</tpEmit>
       <mod>58</mod>
-      <serie>${input.serie}</serie>
-      <nMDF>${input.numero}</nMDF>
+      <serie>${serieTag}</serie>
+      <nMDF>${numeroTag}</nMDF>
       <cMDF>${cMDF}</cMDF>
-      <dhEmi>${dhEmiFmt}</dhEmi>
-      <tpProd>0</tpProd>
-      <tpEmit>0</tpEmit>
-      <modFrete>0</modFrete>
-      <dhIniViagem>${dhIniViagem}</dhIniViagem>
-      <cMunIni>${input.infMunCarrega[0]?.cMunCarrega || ""}</cMunIni>
+      <cDV>${cDV}</cDV>
+      <modal>1</modal>
+      <dhEmi>${dhFmt}</dhEmi>
+      <tpEmis>1</tpEmis>
+      <procEmi>0</procEmi>
+      <verProc>Norvo 1.0</verProc>
       <UFIni>${input.ufCarregamento}</UFIni>
-      <cMunFim>${input.infMunDescarrega?.[0]?.cMunDescarga || input.ctes[0]?.chave?.slice(0, 7) || ""}</cMunFim>
       <UFFim>${input.ufDescarregamento}</UFFim>
       ${infMunCarregaXml}
       ${infPercursoXml}
+      <dhIniViagem>${dhFmt}</dhIniViagem>
     </ide>
     <emit>
       <CNPJ>${cnpjLimpo}</CNPJ>
-      <IE>${input.emit.ie || "ISENTO"}</IE>
+      ${/^\d{2,14}$/.test(input.emit.ie || "") ? `<IE>${input.emit.ie}</IE>` : ""}
       <xNome>${input.emit.xNome}</xNome>
       <enderEmit>
         <xLgr>RUA</xLgr>
@@ -171,7 +185,6 @@ export function buildMdfXml(input: MdfInputCompleto): { xml: string; chave: stri
         <xBairro>CENTRO</xBairro>
         <cMun>${input.emit.cMun}</cMun>
         <xMun>${input.emit.xMun}</xMun>
-        <CEP>00000000</CEP>
         <UF>${input.emit.uf}</UF>
       </enderEmit>
     </emit>
@@ -183,8 +196,6 @@ export function buildMdfXml(input: MdfInputCompleto): { xml: string; chave: stri
         </infANTT>
         ${veicTracXml}
         ${reboquesXml}
-        ${condutorXml}
-        ${lacresXml ? `<lacres>${lacresXml}</lacres>` : ""}
       </rodo>
     </infModal>
     <infDoc>${infDocXml}</infDoc>
@@ -194,7 +205,7 @@ export function buildMdfXml(input: MdfInputCompleto): { xml: string; chave: stri
       <cUnid>01</cUnid>
       <qCarga>${input.pesoTotalKG.toFixed(4)}</qCarga>
     </tot>
-    <infSolicNFF />
+    ${lacresXml ? `<lacres>${lacresXml}</lacres>` : ""}
   </infMDFe>
 </MDFe>`;
   // D03/cStat 599: sem caracteres de edição (LF/CR/TAB/espaço) entre tags — antes de assinar

@@ -2297,3 +2297,19 @@ Commits CF `ddeb6e4..37d5da0` (+ ajustes de X do dono) espelhados na Vercel.
 - 599/D03: template tinha LF/indentacao entre tags; agora
   buildMdfXml comprime (><) antes de assinar (digest valido).
   Espelhado na Vercel.
+
+## MDF-e XML reescrito pelo XSD 3.00 (23/09/2026)
+
+- ide na ordem do XSD: tpEmit 1/3 (era tpEmis fora de lugar),
+  cDV, modal 1, tpEmis 1, procEmi 0, verProc, UFIni/UFFim,
+  infMunCarrega, infPercurso, dhIniViagem; removidos tpProd,
+  modFrete, cMunIni, cMunFim (nao existem); serie "0" e nMDF
+  sem zeros (TSerie/TNF); dhEmi -03:00 sem millis.
+- Nomes corrigidos: veicTracao/veicReboque/tpCar; RNTRC fora
+  do veiculo; condutor xNome+CPF; infCTe so chCTe; infDoc
+  agrupa por municipio real do CT-e; IE omitida se nao
+  numerica; infSolicNFF vazio removido; lacres no nivel certo.
+- Dialogo: emit/enderEmit/cMun reais (empresa + CT-e),
+  RENAVAM/tpRod (mapa do tipo)/reboques, tpEmit 1/3, trava
+  sem cMunIni. Validado contra o XSD oficial localmente.
+  Espelhado na Vercel.
