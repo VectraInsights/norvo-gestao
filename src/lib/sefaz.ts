@@ -28,10 +28,12 @@ const OID_PKCS8_SHROUDED_KEY_BAG = "1.2.840.113549.1.12.10.1.2";
 const OID_CERT_BAG = "1.2.840.113549.1.12.10.1.3";
 
 export const XML_INCLUSIVE_C14N = "http://www.w3.org/TR/2001/REC-xml-c14n-20010315";
+export const XML_EXCLUSIVE_C14N = "http://www.w3.org/2001/10/xml-exc-c14n#";
 
 interface XmlSignatureOptions {
   referenceUri?: string;
   canonicalizationAlgorithm?: string;
+  referenceTransformAlgorithm?: string;
 }
 
 // ============================================================
@@ -453,11 +455,13 @@ export function signMdfXml(xml: string, pfxBytes: Buffer, senha: string): string
   console.log("[mdf-debug] DigestValue (SHA-1 Base64):", digestHash);
   console.log("[mdf-debug] Reference URI:", `#${id}`);
   console.log("[mdf-debug] Canonicalization Algorithm:", XML_INCLUSIVE_C14N);
+  console.log("[mdf-debug] Reference Transform:", XML_EXCLUSIVE_C14N);
 
-  // 4. Assinatura usando o digestInput canônico
+  // 4. Assinatura usando o digestInput canônico (Reference com Exclusive C14N)
   const signed = signXml(xml, pfxBytes, senha, canonicalizedInfMdf, {
     referenceUri,
     canonicalizationAlgorithm: XML_INCLUSIVE_C14N,
+    referenceTransformAlgorithm: XML_EXCLUSIVE_C14N,
   });
 
   // 5. Extração do SignatureValue gerado
@@ -471,8 +475,8 @@ export function signMdfXml(xml: string, pfxBytes: Buffer, senha: string): string
     throw new Error(`Referência da assinatura MDF-e inválida: id=${signedId || "(ausente)"}/${signedReference || "(ausente)"}; esperado=${id}/#${id}`);
   }
   if (!signed.includes(`<CanonicalizationMethod Algorithm="${XML_INCLUSIVE_C14N}"/>`) ||
-      !signed.includes(`<Transform Algorithm="${XML_INCLUSIVE_C14N}"/>`)) {
-    throw new Error("Assinatura MDF-e sem canonicalização inclusiva");
+      !signed.includes(`<Transform Algorithm="${XML_EXCLUSIVE_C14N}"/>`)) {
+    throw new Error("Assinatura MDF-e sem canonicalização esperada (SignedInfo inclusiva / Reference exclusiva)");
   }
 
   return signed;
@@ -523,6 +527,7 @@ function signXmlWithForge(
   const matchId = xml.match(/<inf(?:NFe|Cte|Evento|MDFe)\s+Id="([^"]+)"/);
   const uri = options?.referenceUri || (matchId ? `#${matchId[1]}` : "#NFe");
   const canonicalizationAlgorithm = options?.canonicalizationAlgorithm || XML_INCLUSIVE_C14N;
+  const referenceTransformAlgorithm = options?.referenceTransformAlgorithm || canonicalizationAlgorithm;
 
   // MDF-e: digestInput recebe infMDFe já canonizada em C14N exclusivo.
   // Os fluxos legados continuam usando o digest fornecido ou o XML completo.
@@ -533,7 +538,7 @@ function signXmlWithForge(
   const digestValue = forge.util.encode64(md.digest().getBytes());
 
   // Construir SignedInfo em LINHA ÚNICA (build 005)
-  const signedInfo = `<SignedInfo xmlns="http://www.w3.org/2000/09/xmldsig#"><CanonicalizationMethod Algorithm="${canonicalizationAlgorithm}"/><SignatureMethod Algorithm="http://www.w3.org/2000/09/xmldsig#rsa-sha1"/><Reference URI="${uri}"><Transforms><Transform Algorithm="http://www.w3.org/2000/09/xmldsig#enveloped-signature"/><Transform Algorithm="${canonicalizationAlgorithm}"/></Transforms><DigestMethod Algorithm="http://www.w3.org/2000/09/xmldsig#sha1"/><DigestValue>${digestValue}</DigestValue></Reference></SignedInfo>`;
+  const signedInfo = `<SignedInfo xmlns="http://www.w3.org/2000/09/xmldsig#"><CanonicalizationMethod Algorithm="${canonicalizationAlgorithm}"/><SignatureMethod Algorithm="http://www.w3.org/2000/09/xmldsig#rsa-sha1"/><Reference URI="${uri}"><Transforms><Transform Algorithm="http://www.w3.org/2000/09/xmldsig#enveloped-signature"/><Transform Algorithm="${referenceTransformAlgorithm}"/></Transforms><DigestMethod Algorithm="http://www.w3.org/2000/09/xmldsig#sha1"/><DigestValue>${digestValue}</DigestValue></Reference></SignedInfo>`;
 
   // Assinar o SignedInfo
   const md2 = forge.md.sha1.create();
@@ -586,6 +591,7 @@ function signXmlNative(
   const matchId = xml.match(/<inf(?:NFe|Cte|Evento|MDFe)\s+Id="([^"]+)"/);
   const uri = options?.referenceUri || (matchId ? `#${matchId[1]}` : "#NFe");
   const canonicalizationAlgorithm = options?.canonicalizationAlgorithm || XML_INCLUSIVE_C14N;
+  const referenceTransformAlgorithm = options?.referenceTransformAlgorithm || canonicalizationAlgorithm;
 
   // Criar SHA-1 digest UTF-8 do conteúdo canônico/fornecido
   const md = forge.md.sha1.create();
@@ -593,7 +599,7 @@ function signXmlNative(
   const digestValue = forge.util.encode64(md.digest().getBytes());
 
   // SignedInfo em LINHA ÚNICA (build 004)
-  const signedInfo = `<SignedInfo xmlns="http://www.w3.org/2000/09/xmldsig#"><CanonicalizationMethod Algorithm="${canonicalizationAlgorithm}"/><SignatureMethod Algorithm="http://www.w3.org/2000/09/xmldsig#rsa-sha1"/><Reference URI="${uri}"><Transforms><Transform Algorithm="http://www.w3.org/2000/09/xmldsig#enveloped-signature"/><Transform Algorithm="${canonicalizationAlgorithm}"/></Transforms><DigestMethod Algorithm="http://www.w3.org/2000/09/xmldsig#sha1"/><DigestValue>${digestValue}</DigestValue></Reference></SignedInfo>`;
+  const signedInfo = `<SignedInfo xmlns="http://www.w3.org/2000/09/xmldsig#"><CanonicalizationMethod Algorithm="${canonicalizationAlgorithm}"/><SignatureMethod Algorithm="http://www.w3.org/2000/09/xmldsig#rsa-sha1"/><Reference URI="${uri}"><Transforms><Transform Algorithm="http://www.w3.org/2000/09/xmldsig#enveloped-signature"/><Transform Algorithm="${referenceTransformAlgorithm}"/></Transforms><DigestMethod Algorithm="http://www.w3.org/2000/09/xmldsig#sha1"/><DigestValue>${digestValue}</DigestValue></Reference></SignedInfo>`;
 
   // Assinar SignedInfo com crypto nativo (RSA-SHA1)
   const sign = crypto.createSign("SHA1");

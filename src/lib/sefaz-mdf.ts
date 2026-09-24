@@ -197,7 +197,7 @@ export function buildMdfXml(input: MdfInputCompleto): { xml: string; chave: stri
         <UF>${input.emit.uf}</UF>
       </enderEmit>
     </emit>
-    <infModal versaoModal="3.00">
+    <infModal versaoModal="3.00" xmlns="http://www.portalfiscal.inf.br/mdfe">
       <rodo>
         <infANTT>
           <RNTRC>${input.veicTrac.rntrc}</RNTRC>
@@ -281,7 +281,7 @@ async function soapRequest(url: string, body: string, action: string, agent?: ht
 export async function emitirMdf(pfx: Buffer, senha: string, xml: string, ambiente: Ambiente): Promise<{ sucesso: boolean; cStat: string; xMotivo: string; chave?: string; protocolo?: string; xmlRet?: string }> {
   assertMdfAmbiente(ambiente);
   assertMdfXmlAmbiente(xml);
-  const BUILD = "006-inclusive-c14n-utf8-immutable";
+  const BUILD = "007-exc-c14n-infmodal-fix";
   const ep = getMdfEndpoints(ambiente);
   const agent = createSefazAgent(pfx, senha);
   const nsSinc = "http://www.portalfiscal.inf.br/mdfe/wsdl/MDFeRecepcaoSinc";

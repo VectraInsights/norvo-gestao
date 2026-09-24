@@ -2454,3 +2454,16 @@ Espelhado na Vercel.
   (`Id` + `versao` mantidos) e nenhum filho recebe `xmlns` explícito.
 - Canonicidade C14N 1.0 inclusiva e lógica de assinatura inalteradas.
 - Espelhado na Vercel via push em main.
+
+## BUILD 007: xmlns no infModal + Reference em Exclusive C14N (24/09/2026)
+
+- O `buildMdfXml` (`sefaz-mdf.ts`) agora declara
+  `<infModal versaoModal="3.00" xmlns="http://www.portalfiscal.inf.br/mdfe">`;
+  `xmlns` mantido só em `<infMDFe>` e `<infModal>`, demais filhos sem
+  declaração explícita.
+- O `Transform` do `Reference` passou a Exclusive C14N
+  (`http://www.w3.org/2001/10/xml-exc-c14n#`); o `CanonicalizationMethod`
+  do `SignedInfo` segue inclusivo. NF-e/CT-e preservados (novo parâmetro
+  `referenceTransformAlgorithm` com default = algoritmo existente).
+- Constante de log atualizada para `BUILD=007-exc-c14n-infmodal-fix`.
+- Espelhado na Vercel via push em main.
