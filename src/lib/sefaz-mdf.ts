@@ -6,7 +6,7 @@
  */
 import https from "node:https";
 import zlib from "node:zlib";
-import { createSefazAgent, signMdfXml, signXml, buscarCertificadoAtivo, XML_EXCLUSIVE_C14N } from "./sefaz";
+import { createSefazAgent, signMdfXml, signXml, buscarCertificadoAtivo, XML_INCLUSIVE_C14N } from "./sefaz";
 import {
   MDFE_AMBIENTE,
   MDFE_SVRS_HOMOLOGACAO_HOST,
@@ -281,7 +281,7 @@ async function soapRequest(url: string, body: string, action: string, agent?: ht
 export async function emitirMdf(pfx: Buffer, senha: string, xml: string, ambiente: Ambiente): Promise<{ sucesso: boolean; cStat: string; xMotivo: string; chave?: string; protocolo?: string; xmlRet?: string }> {
   assertMdfAmbiente(ambiente);
   assertMdfXmlAmbiente(xml);
-  const BUILD = "005-exc-c14n-utf8-immutable";
+  const BUILD = "006-inclusive-c14n-utf8-immutable";
   const ep = getMdfEndpoints(ambiente);
   const agent = createSefazAgent(pfx, senha);
   const nsSinc = "http://www.portalfiscal.inf.br/mdfe/wsdl/MDFeRecepcaoSinc";
@@ -290,13 +290,13 @@ export async function emitirMdf(pfx: Buffer, senha: string, xml: string, ambient
   // A declaração XML é removida ANTES da assinatura. Depois disso, xmlAss
   // é transportado sem qualquer replace/trim; os mesmos bytes UTF-8 vão para o gzip.
   const xmlForSignature = xml.replace(/^\uFEFF?\s*<\?xml[^?]*\?>\s*/i, "");
-  const xmlAss = await signMdfXml(xmlForSignature, pfx, senha);
+  const xmlAss = signMdfXml(xmlForSignature, pfx, senha);
   const referenceUri = xmlAss.match(/<Reference URI="([^"]+)"/)?.[1] || "";
   const signedXmlBytes = Buffer.byteLength(xmlAss, "utf8");
   // D03/599: diagnóstico somente leitura; não altera o XML assinado.
   const wsAbre = [...xmlAss.matchAll(/<([^<>\s/][^<>]{0,40})>\s+</g)].map(m => m[1]);
   const wsFecha = [...xmlAss.matchAll(/>\s+<\/([^<>]+)>/g)].map(m => "/" + m[1]);
-  console.log(`[mdf-debug] BUILD=${BUILD} ambiente=${MDFE_AMBIENTE} tpAmb=${MDFE_TP_AMB} reference=${referenceUri} c14n=${XML_EXCLUSIVE_C14N} signedXmlUtf8Bytes=${signedXmlBytes} WS-check após-abertura=[${wsAbre.slice(0, 12).join(",")}] antes-fecho=[${wsFecha.slice(0, 12).join(",")}]`);
+  console.log(`[mdf-debug] BUILD=${BUILD} ambiente=${MDFE_AMBIENTE} tpAmb=${MDFE_TP_AMB} reference=${referenceUri} c14n=${XML_INCLUSIVE_C14N} signedXmlUtf8Bytes=${signedXmlBytes} WS-check após-abertura=[${wsAbre.slice(0, 12).join(",")}] antes-fecho=[${wsFecha.slice(0, 12).join(",")}]`);
   // Sincrono (ACBr): mdfeDadosMsg = base64(gzip(<MDFe>...</MDFe>)) puro, sem enviMDFe/idLote.
   // xmlAss é a string exata devolvida pelo assinador; não a reescreva aqui.
   const signedMdfXml = xmlAss;

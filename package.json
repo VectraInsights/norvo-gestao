@@ -76,7 +76,6 @@
     "vite-tsconfig-paths": "^6.0.2",
     "xlsx": "^0.18.5",
     "xlsx-js-style": "^1.2.0",
-    "xml-c14n": "^0.0.6",
     "zod": "^3.24.2"
   },
   "devDependencies": {
@@ -85,7 +84,6 @@
     "@types/node-forge": "^1.3.14",
     "@types/react": "^19.2.0",
     "@types/react-dom": "^19.2.0",
-    "@types/xml-c14n": "^0.0.3",
     "@vitejs/plugin-react": "^5.2.0",
     "eslint": "^9.32.0",
     "eslint-config-prettier": "^10.1.1",

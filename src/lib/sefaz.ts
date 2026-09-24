@@ -14,7 +14,6 @@ import forge from "node-forge";
 import https from "node:https";
 import crypto from "node:crypto";
 import { DOMParser } from "@xmldom/xmldom";
-import c14nFactory from "xml-c14n";
 import { gunzipSync } from "zlib";
 import {
   SEFAZ_AMBIENTE,
@@ -27,8 +26,7 @@ import {
 const OID_PKCS8_SHROUDED_KEY_BAG = "1.2.840.113549.1.12.10.1.2";
 const OID_CERT_BAG = "1.2.840.113549.1.12.10.1.3";
 
-const XML_INCLUSIVE_C14N = "http://www.w3.org/TR/2001/REC-xml-c14n-20010315";
-export const XML_EXCLUSIVE_C14N = "http://www.w3.org/2001/10/xml-exc-c14n#";
+export const XML_INCLUSIVE_C14N = "http://www.w3.org/TR/2001/REC-xml-c14n-20010315";
 
 interface XmlSignatureOptions {
   referenceUri?: string;
@@ -351,17 +349,88 @@ export function parseCertificate(pfxBytes: Buffer, senha: string): CertificadoIn
 // Assinatura XML (W3C XML Digital Signature - envelopamento)
 // ============================================================
 
-function canonicalizeExclusiveXml(node: Node): Promise<string> {
-  const canonicaliser = c14nFactory().createCanonicaliser(XML_EXCLUSIVE_C14N);
-  return new Promise<string>((resolve, reject) => {
-    canonicaliser.canonicalise(node, (error, value) => {
-      if (error) {
-        reject(error instanceof Error ? error : new Error(String(error)));
-        return;
-      }
-      resolve(value);
-    });
-  });
+interface MdfXmlAttribute {
+  name: string;
+  localName: string | null;
+  namespaceURI: string | null;
+  prefix: string | null;
+  value: string;
+}
+
+interface MdfXmlNode {
+  nodeType: number;
+  nodeName: string;
+  nodeValue: string | null;
+  namespaceURI: string | null;
+  prefix: string | null;
+  attributes: ArrayLike<MdfXmlAttribute>;
+  childNodes: ArrayLike<MdfXmlNode>;
+}
+
+const MDFE_XML_NAMESPACE = "http://www.portalfiscal.inf.br/mdfe";
+const XMLNS_XML_NAMESPACE = "http://www.w3.org/2000/xmlns/";
+const XML_XML_NAMESPACE = "http://www.w3.org/XML/1998/namespace";
+const ELEMENT_NODE = 1;
+const TEXT_NODE = 3;
+const CDATA_SECTION_NODE = 4;
+const PROCESSING_INSTRUCTION_NODE = 7;
+const COMMENT_NODE = 8;
+
+function escapeMdfC14nText(value: string): string {
+  return value.replace(/\r\n?/g, "\n").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+}
+
+function escapeMdfC14nAttribute(value: string): string {
+  return escapeMdfC14nText(value)
+    .replace(/"/g, "&quot;")
+    .replace(/\t/g, "&#x9;")
+    .replace(/\n/g, "&#xA;")
+    .replace(/\r/g, "&#xD;");
+}
+
+function compareMdfC14nAttributes(a: MdfXmlAttribute, b: MdfXmlAttribute): number {
+  const aName = a.localName || a.name;
+  const bName = b.localName || b.name;
+  return aName < bName ? -1 : aName > bName ? 1 : 0;
+}
+
+/**
+ * Canonicaliza o infMDFe gerado pelo módulo. O subconjunto MDF-e usa apenas
+ * a namespace padrão, sem prefixos, comentários ou PIs; nesse caso a forma
+ * inclusiva exigida pelo XSD é completamente definida por este serializador.
+ * Qualquer estrutura não suportada falha antes da assinatura.
+ */
+function canonicalizeMdfInfMdfInclusive(node: MdfXmlNode): string {
+  const render = (current: MdfXmlNode, root: boolean): string => {
+    if (current.nodeType === TEXT_NODE || current.nodeType === CDATA_SECTION_NODE) {
+      return escapeMdfC14nText(current.nodeValue || "");
+    }
+    if (current.nodeType === COMMENT_NODE) return "";
+    if (current.nodeType === PROCESSING_INSTRUCTION_NODE) {
+      throw new Error("MDF-e não pode conter processing instruction antes da assinatura");
+    }
+    if (current.nodeType !== ELEMENT_NODE) return "";
+
+    if (current.prefix || current.namespaceURI !== MDFE_XML_NAMESPACE) {
+      throw new Error("MDF-e com namespace/prefixo não suportado para C14N inclusivo");
+    }
+
+    const attributes = Array.from(current.attributes as ArrayLike<MdfXmlAttribute>)
+      .filter((attribute) => attribute.name !== "xmlns" && attribute.prefix !== "xmlns" && attribute.namespaceURI !== XMLNS_XML_NAMESPACE);
+    if (attributes.some((attribute) => attribute.prefix || attribute.namespaceURI === XML_XML_NAMESPACE || (attribute.namespaceURI || "") !== "")) {
+      throw new Error("MDF-e com atributo namespace/XML não suportado para C14N inclusivo");
+    }
+    attributes.sort(compareMdfC14nAttributes);
+
+    const namespace = root ? ` xmlns="${escapeMdfC14nAttribute(MDFE_XML_NAMESPACE)}"` : "";
+    const renderedAttributes = attributes.map((attribute) => ` ${attribute.name}="${escapeMdfC14nAttribute(attribute.value)}"`).join("");
+    const children = Array.from(current.childNodes as ArrayLike<MdfXmlNode>)
+      .map((child) => render(child, false))
+      .join("");
+    return `<${current.nodeName}${namespace}${renderedAttributes}>${children}</${current.nodeName}>`;
+  };
+
+  return render(node, true);
 }
 
 function getMdfReferenceNode(xml: string) {
@@ -371,16 +440,16 @@ function getMdfReferenceNode(xml: string) {
 
   const id = infMdf.getAttribute("Id") || "";
   if (!id) throw new Error("MDF-e sem atributo Id em infMDFe");
-  return { node: infMdf, id };
+  return { node: infMdf as unknown as MdfXmlNode, id };
 }
 
-export async function signMdfXml(xml: string, pfxBytes: Buffer, senha: string): Promise<string> {
+export function signMdfXml(xml: string, pfxBytes: Buffer, senha: string): string {
   const { node, id } = getMdfReferenceNode(xml);
   const referenceUri = `#${id}`;
-  const canonicalizedInfMdf = await canonicalizeExclusiveXml(node as unknown as Node);
+  const canonicalizedInfMdf = canonicalizeMdfInfMdfInclusive(node);
   const signed = signXml(xml, pfxBytes, senha, canonicalizedInfMdf, {
     referenceUri,
-    canonicalizationAlgorithm: XML_EXCLUSIVE_C14N,
+    canonicalizationAlgorithm: XML_INCLUSIVE_C14N,
   });
 
   const signedReference = signed.match(/<Reference URI="([^"]+)"/)?.[1];
@@ -388,9 +457,9 @@ export async function signMdfXml(xml: string, pfxBytes: Buffer, senha: string): 
   if (signedId !== id || signedReference !== referenceUri) {
     throw new Error(`Referência da assinatura MDF-e inválida: id=${signedId || "(ausente)"}/${signedReference || "(ausente)"}; esperado=${id}/${referenceUri}`);
   }
-  if (!signed.includes(`<CanonicalizationMethod Algorithm="${XML_EXCLUSIVE_C14N}"/>`) ||
-      !signed.includes(`<Transform Algorithm="${XML_EXCLUSIVE_C14N}"/>`)) {
-    throw new Error("Assinatura MDF-e sem canonicalização exclusiva");
+  if (!signed.includes(`<CanonicalizationMethod Algorithm="${XML_INCLUSIVE_C14N}"/>`) ||
+      !signed.includes(`<Transform Algorithm="${XML_INCLUSIVE_C14N}"/>`)) {
+    throw new Error("Assinatura MDF-e sem canonicalização inclusiva");
   }
 
   return signed;

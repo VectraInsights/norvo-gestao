@@ -2439,7 +2439,7 @@ Espelhado na Vercel.
 ## Correção da assinatura MDF-e (cStat 297) (24/09/2026)
 
 - A emissão usa o `Id` real de `infMDFe` no `Reference URI`.
-- O digest é calculado sobre `infMDFe` em C14N exclusivo
-  (`http://www.w3.org/2001/10/xml-exc-c14n#`) e em UTF-8.
+- O digest é calculado sobre `infMDFe` em C14N inclusivo
+  (`http://www.w3.org/TR/2001/REC-xml-c14n-20010315`) e em UTF-8.
 - O XML assinado não é reformatado após a assinatura; os bytes
   originais seguem intactos até o gzip e o envelope SOAP.
