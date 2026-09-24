@@ -281,7 +281,7 @@ async function soapRequest(url: string, body: string, action: string, agent?: ht
 export async function emitirMdf(pfx: Buffer, senha: string, xml: string, ambiente: Ambiente): Promise<{ sucesso: boolean; cStat: string; xMotivo: string; chave?: string; protocolo?: string; xmlRet?: string }> {
   assertMdfAmbiente(ambiente);
   assertMdfXmlAmbiente(xml);
-  const BUILD = "012-c14n-preserve-infmodal-xmlns";
+  const BUILD = "013-sync-signed-xml-structure";
   const ep = getMdfEndpoints(ambiente);
   const agent = createSefazAgent(pfx, senha);
   const nsSinc = "http://www.portalfiscal.inf.br/mdfe/wsdl/MDFeRecepcaoSinc";
@@ -289,7 +289,10 @@ export async function emitirMdf(pfx: Buffer, senha: string, xml: string, ambient
   const cabec = `<mdfeCabecMsg xmlns="${nsSinc}"><cUF>${cUF}</cUF><versaoDados>3.00</versaoDados></mdfeCabecMsg>`;
   // A declaração XML é removida ANTES da assinatura. Depois disso, xmlAss
   // é transportado sem qualquer replace/trim; os mesmos bytes UTF-8 vão para o gzip.
-  // Garantia cirúrgica: <infModal> com xmlns explícito antes do Digest/Assinatura.
+  // BUILD 013: a injeção do xmlns em <infModal> é feita no DOCUMENTO GLOBAL
+  // (xmlForSignature), ANTES de invocar signMdfXml. O digest é calculado sobre
+  // o <infMDFe> desse mesmo documento e a <Signature> é anexada a ele;
+  // o envelope de transporte usa esse mesmo xmlAss sem reescrita.
   // Regex flexível: captura qualquer atributo existente, remove xmlns duplicado
   // e reinjeta um único xmlns antes do fechamento da tag.
   const xmlForSignature = xml
@@ -302,6 +305,7 @@ export async function emitirMdf(pfx: Buffer, senha: string, xml: string, ambient
   const xmlAss = signMdfXml(xmlForSignature, pfx, senha);
   const referenceUri = xmlAss.match(/<Reference URI="([^"]+)"/)?.[1] || "";
   const signedXmlBytes = Buffer.byteLength(xmlAss, "utf8");
+  console.log(`[mdf-debug] XML final assinado: ${signedXmlBytes} bytes UTF-8; infModal:`, xmlAss.match(/<infModal[^>]*>/)?.[0] || "(ausente)");
   // D03/599: diagnóstico somente leitura; não altera o XML assinado.
   const wsAbre = [...xmlAss.matchAll(/<([^<>\s/][^<>]{0,40})>\s+</g)].map(m => m[1]);
   const wsFecha = [...xmlAss.matchAll(/>\s+<\/([^<>]+)>/g)].map(m => "/" + m[1]);

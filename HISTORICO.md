@@ -2523,3 +2523,13 @@ Espelhado na Vercel.
 - Log `canonicalized infMDFe` passa a exibir o `xmlns` no `infModal`.
 - Constante de log atualizada para `BUILD=012-c14n-preserve-infmodal-xmlns`.
 - Espelhado na Vercel via push em main.
+
+## BUILD 013: digest e envelope sobre o mesmo XML (24/09/2026)
+
+- Sequência garantida em `emitirMdf`: injeção do `xmlns` no `<infModal>`
+  ocorre no documento global (`xmlForSignature`) antes de `signMdfXml`;
+  digest calculado sobre o `<infMDFe>` desse documento; `<Signature>`
+  anexada ao mesmo XML que segue ao envelope, sem reescrita.
+- Log passa a exibir bytes do XML final assinado + tag `<infModal>` final.
+- Constante de log atualizada para `BUILD=013-sync-signed-xml-structure`.
+- Espelhado na Vercel via push em main.
