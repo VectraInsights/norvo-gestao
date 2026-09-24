@@ -369,19 +369,8 @@ function signXmlWithForge(
   md.update(digestInput ?? xml);
   const digestValue = forge.util.encode64(md.digest().getBytes());
 
-  // Construir SignedInfo (W3C enveloped signature — formato original pretty, igual CT-e/NFe)
-  const signedInfo = `<SignedInfo xmlns="http://www.w3.org/2000/09/xmldsig#">
-    <CanonicalizationMethod Algorithm="http://www.w3.org/TR/2001/REC-xml-c14n-20010315"/>
-    <SignatureMethod Algorithm="http://www.w3.org/2000/09/xmldsig#rsa-sha1"/>
-    <Reference URI="${uri}">
-      <Transforms>
-        <Transform Algorithm="http://www.w3.org/2000/09/xmldsig#enveloped-signature"/>
-        <Transform Algorithm="http://www.w3.org/TR/2001/REC-xml-c14n-20010315"/>
-      </Transforms>
-      <DigestMethod Algorithm="http://www.w3.org/2000/09/xmldsig#sha1"/>
-      <DigestValue>${digestValue}</DigestValue>
-    </Reference>
-  </SignedInfo>`;
+  // Construir SignedInfo em LINHA ÚNICA (build 004)
+  const signedInfo = `<SignedInfo xmlns="http://www.w3.org/2000/09/xmldsig#"><CanonicalizationMethod Algorithm="http://www.w3.org/TR/2001/REC-xml-c14n-20010315"/><SignatureMethod Algorithm="http://www.w3.org/2000/09/xmldsig#rsa-sha1"/><Reference URI="${uri}"><Transforms><Transform Algorithm="http://www.w3.org/2000/09/xmldsig#enveloped-signature"/><Transform Algorithm="http://www.w3.org/TR/2001/REC-xml-c14n-20010315"/></Transforms><DigestMethod Algorithm="http://www.w3.org/2000/09/xmldsig#sha1"/><DigestValue>${digestValue}</DigestValue></Reference></SignedInfo>`;
 
   // Assinar o SignedInfo
   const md2 = forge.md.sha1.create();
@@ -389,16 +378,8 @@ function signXmlWithForge(
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const signatureValue = forge.util.encode64((privateKey as any).sign(md2));
 
-  // Montar Signature completa (formato original pretty, igual CT-e/NFe)
-  const signature = `<Signature xmlns="http://www.w3.org/2000/09/xmldsig#">
-  ${signedInfo}
-  <SignatureValue>${signatureValue}</SignatureValue>
-  <KeyInfo>
-    <X509Data>
-      <X509Certificate>${certB64}</X509Certificate>
-    </X509Data>
-  </KeyInfo>
-</Signature>`;
+  // Montar Signature completa em LINHA ÚNICA (build 004)
+  const signature = `<Signature xmlns="http://www.w3.org/2000/09/xmldsig#">${signedInfo}<SignatureValue>${signatureValue}</SignatureValue><KeyInfo><X509Data><X509Certificate>${certB64}</X509Certificate></X509Data></KeyInfo></Signature>`;
 
   // Inserir assinatura no local correto conforme o tipo de documento
   // EventoCTe: Signature goes inside <eventoCTe> before </eventoCTe>
@@ -441,19 +422,8 @@ function signXmlNative(xml: string, pfxBytes: Buffer, senha: string, digestInput
   md.update(digestInput ?? xml);
   const digestValue = forge.util.encode64(md.digest().getBytes());
 
-  // SignedInfo (formato original pretty, igual CT-e/NFe)
-  const signedInfo = `<SignedInfo xmlns="http://www.w3.org/2000/09/xmldsig#">
-    <CanonicalizationMethod Algorithm="http://www.w3.org/TR/2001/REC-xml-c14n-20010315"/>
-    <SignatureMethod Algorithm="http://www.w3.org/2000/09/xmldsig#rsa-sha1"/>
-    <Reference URI="${uri}">
-      <Transforms>
-        <Transform Algorithm="http://www.w3.org/2000/09/xmldsig#enveloped-signature"/>
-        <Transform Algorithm="http://www.w3.org/TR/2001/REC-xml-c14n-20010315"/>
-      </Transforms>
-      <DigestMethod Algorithm="http://www.w3.org/2000/09/xmldsig#sha1"/>
-      <DigestValue>${digestValue}</DigestValue>
-    </Reference>
-  </SignedInfo>`;
+  // SignedInfo em LINHA ÚNICA (build 004)
+  const signedInfo = `<SignedInfo xmlns="http://www.w3.org/2000/09/xmldsig#"><CanonicalizationMethod Algorithm="http://www.w3.org/TR/2001/REC-xml-c14n-20010315"/><SignatureMethod Algorithm="http://www.w3.org/2000/09/xmldsig#rsa-sha1"/><Reference URI="${uri}"><Transforms><Transform Algorithm="http://www.w3.org/2000/09/xmldsig#enveloped-signature"/><Transform Algorithm="http://www.w3.org/TR/2001/REC-xml-c14n-20010315"/></Transforms><DigestMethod Algorithm="http://www.w3.org/2000/09/xmldsig#sha1"/><DigestValue>${digestValue}</DigestValue></Reference></SignedInfo>`;
 
   // Assinar SignedInfo com crypto nativo (RSA-SHA1)
   const sign = crypto.createSign("SHA1");
@@ -461,16 +431,8 @@ function signXmlNative(xml: string, pfxBytes: Buffer, senha: string, digestInput
   const signatureBuffer = sign.sign(privateKey);
   const signatureValue = signatureBuffer.toString("base64");
 
-  // Montar Signature completa (formato original pretty, igual CT-e/NFe)
-  const signature = `<Signature xmlns="http://www.w3.org/2000/09/xmldsig#">
-  ${signedInfo}
-  <SignatureValue>${signatureValue}</SignatureValue>
-  <KeyInfo>
-    <X509Data>
-      <X509Certificate>${certB64}</X509Certificate>
-    </X509Data>
-  </KeyInfo>
-</Signature>`;
+  // Montar Signature completa em LINHA ÚNICA (build 004)
+  const signature = `<Signature xmlns="http://www.w3.org/2000/09/xmldsig#">${signedInfo}<SignatureValue>${signatureValue}</SignatureValue><KeyInfo><X509Data><X509Certificate>${certB64}</X509Certificate></X509Data></KeyInfo></Signature>`;
 
   // EventoCTe: Signature goes inside <eventoCTe> before </eventoCTe>
   if (xml.includes("</eventoCTe>")) return xml.replace("</eventoCTe>", signature + "</eventoCTe>");

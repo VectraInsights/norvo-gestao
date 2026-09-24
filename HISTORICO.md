@@ -2380,3 +2380,9 @@ Espelhado na Vercel.
   e digests alternativos deram 297 sempre. Volta a formula
   identica ao CT-e (pretty + full-doc) nos dois caminhos.
   Espelhado na Vercel.
+
+## Build 004 single+fulldoc com marcador (24/09/2026)
+
+- Single-line de volta + digest full-doc (formula CT-e) +
+  marcador BUILD=004 no log para provar qual codigo rodou.
+  Espelhado na Vercel.
