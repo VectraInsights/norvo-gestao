@@ -2344,3 +2344,8 @@ Commits CF `ddeb6e4..37d5da0` (+ ajustes de X do dono) espelhados na Vercel.
   o elemento canonizado: signXml aceita digestInput opt-in
   (CT-e/NFe intactos) e o MDF-e passa infMDFe com xmlns
   redundante (= c14n do subset). Espelhado na Vercel.
+
+## MDF-e log modo digest (24/09/2026)
+
+- WS-check passa a mostrar digest=element:N ou full, para
+  provar qual codigo rodou em producao. Espelhado na Vercel.

@@ -257,7 +257,7 @@ export async function emitirMdf(pfx: Buffer, senha: string, xml: string, ambient
   // D03/599: aponta a tag exata com whitespace restante (diagnóstico em produção)
   const wsAbre = [...xmlAss.matchAll(/<([^<>\s/][^<>]{0,40})>\s+</g)].map(m => m[1]);
   const wsFecha = [...xmlAss.matchAll(/>\s+<\/([^<>]+)>/g)].map(m => "/" + m[1]);
-  console.log(`[mdf-debug] WS-check bytes=${xmlAss.length} após-abertura=[${wsAbre.slice(0, 12).join(",")}] antes-fecho=[${wsFecha.slice(0, 12).join(",")}]`);
+  console.log(`[mdf-debug] WS-check bytes=${xmlAss.length} digest=${digestInput ? `element:${digestInput.length}` : "full"} após-abertura=[${wsAbre.slice(0, 12).join(",")}] antes-fecho=[${wsFecha.slice(0, 12).join(",")}]`);
   // SÃ­ncrono (ACBr): mdfeDadosMsg = base64(gzip(<MDFe>...</MDFe>)) puro, sem enviMDFe/idLote
   const mdfeEl = xmlAss.match(/<MDFe[\s>][\s\S]*<\/MDFe>/)?.[0] || xmlAss.replace(/<\?xml[^?]*\?>\s*/g, "");
   const compactada = zlib.gzipSync(Buffer.from(mdfeEl, "utf-8")).toString("base64");
