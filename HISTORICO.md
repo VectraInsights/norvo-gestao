@@ -2489,3 +2489,14 @@ Espelhado na Vercel.
   sem `xmlns`. Digest inalterado (canonicalizador normaliza para a raiz).
 - Constante de log atualizada para `BUILD=009-infmodal-xmlns-explicit`.
 - Espelhado na Vercel via push em main.
+
+## BUILD 010: infModal via string replace forçado (24/09/2026)
+
+- Replace direto na string do XML após a construção e antes de assinar:
+  `<infModal versaoModal="3.00">` →
+  `<infModal versaoModal="3.00" xmlns="http://www.portalfiscal.inf.br/mdfe">`
+  (`emitirMdf`, `sefaz-mdf.ts`).
+- DigestValue (SHA-1) e SignatureValue calculados somente após a
+  substituição, sobre a string já substituída.
+- Constante de log atualizada para `BUILD=010-infmodal-string-replace`.
+- Espelhado na Vercel via push em main.
