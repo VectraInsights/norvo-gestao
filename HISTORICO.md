@@ -2327,3 +2327,13 @@ Commits CF `ddeb6e4..37d5da0` (+ ajustes de X do dono) espelhados na Vercel.
 - WS-check no XML assinado: loga bytes + tags com whitespace
   apos abertura / antes de fecho para achar o 599 exato.
   Espelhado na Vercel.
+
+## Assinatura em linha unica (fix 599 raiz) (24/09/2026)
+
+- WS-check apontou o whitespace dentro do SignedInfo
+  (Transforms/Reference): como e assinado, nao da para limpar
+  depois — SignedInfo e Signature agora saem em linha unica
+  nos dois caminhos (forge e nativo), igual ao ACBr. Vale para
+  NFe/CT-e/MDF-e (assinatura continua valida: SEFAZ
+  canonicaliza o recebido). Observar proximas emissoes de
+  CT-e/NFe. Espelhado na Vercel.
