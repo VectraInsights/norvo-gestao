@@ -240,10 +240,9 @@ export async function emitirMdf(pfx: Buffer, senha: string, xml: string, ambient
   const nsSinc = "http://www.portalfiscal.inf.br/mdfe/wsdl/MDFeRecepcaoSinc";
   const cUF = xml.match(/Id="MDFe(\d{2})/)?.[1] || "31";
   const cabec = `<mdfeCabecMsg xmlns="${nsSinc}"><cUF>${cUF}</cUF><versaoDados>3.00</versaoDados></mdfeCabecMsg>`;
-  // Digest no escopo do elemento canonizado (= o que o SVRS valida): infMDFe com xmlns redundante,
-  // sem whitespace (equivale ao c14n para docs sem prefixos/atributos fora de ordem)
-  const infEl = xml.match(/<infMDFe[\s\S]*<\/infMDFe>/);
-  const digestInput = infEl ? infEl[0].replace(/^<infMDFe/, '<infMDFe xmlns="http://www.portalfiscal.inf.br/mdfe"') : undefined;
+  // Digest = bytes transportados (pós-gunzip menos bloco Signature) = template sem declaração.
+  // É o que o SVRS valida (CT-e passa com declaração porque ela viaja junto; aqui extraímos só o <MDFe>).
+  const digestInput = xml.replace(/<\?xml[^?]*\?>\s*/g, "");
   const xmlAss = signXml(xml, pfx, senha, digestInput).replace(/<Signature([^>]*)>([\s\S]*)<\/Signature>/, (_full, attrs, inner) => {
     const m = inner.match(/<SignedInfo[\s\S]*<\/SignedInfo>/);
     if (!m || m.index === undefined) return _full;

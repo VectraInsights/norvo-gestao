@@ -2349,3 +2349,10 @@ Commits CF `ddeb6e4..37d5da0` (+ ajustes de X do dono) espelhados na Vercel.
 
 - WS-check passa a mostrar digest=element:N ou full, para
   provar qual codigo rodou em producao. Espelhado na Vercel.
+
+## MDF-e digest nos bytes transportados (fix 297) (24/09/2026)
+
+- Modelo que explica tudo: SVRS valida digest sobre os bytes
+  pos-gunzip menos Signature (CT-e passa com declaracao porque
+  ela viaja junto; MDFe extrai so o <MDFe>). Digest agora =
+  template sem declaracao. Espelhado na Vercel.
