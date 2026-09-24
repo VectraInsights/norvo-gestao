@@ -2430,3 +2430,8 @@ Espelhado na Vercel.
 - Telas de configuração/CT-e/MDF-e exibem Homologação como estado
   fixo de testes. Espelhado nos dois repositórios; validar o
   rebuild/deploy antes de testar na SEFAZ.
+
+## Log completo da resposta MDF-e (24/09/2026)
+
+- O `mdf-debug` agora registra o `ResponseBody` completo após o POST
+  e extrai todas as tags `cStat`/`xMotivo` para diagnóstico da rejeição.

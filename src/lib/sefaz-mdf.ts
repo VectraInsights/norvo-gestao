@@ -223,6 +223,31 @@ export function buildMdfXml(input: MdfInputCompleto): { xml: string; chave: stri
   return { xml, chave };
 }
 
+function decodeMdfXmlText(value: string): string {
+  return value
+    .replace(/<!\[CDATA\[([\s\S]*?)\]\]>/g, "$1")
+    .replace(/&lt;/g, "<")
+    .replace(/&gt;/g, ">")
+    .replace(/&quot;/g, '"')
+    .replace(/&apos;/g, "'")
+    .replace(/&amp;/g, "&")
+    .trim();
+}
+
+function extractMdfResponseTags(responseBody: string, tag: "cStat" | "xMotivo"): string[] {
+  const pattern = new RegExp(`<(?:[\\w.-]+:)?${tag}(?:\\s[^>]*)?>([\\s\\S]*?)<\\/(?:[\\w.-]+:)?${tag}>`, "gi");
+  return [...responseBody.matchAll(pattern)]
+    .map((match) => decodeMdfXmlText(match[1] || ""))
+    .filter(Boolean);
+}
+
+function logMdfResponse(responseBody: string): void {
+  const cStat = extractMdfResponseTags(responseBody, "cStat");
+  const xMotivo = extractMdfResponseTags(responseBody, "xMotivo");
+  console.log(`[mdf-debug] ResponseBody=${responseBody || "(vazio)"}`);
+  console.log(`[mdf-debug] resposta SEFAZ cStat=${cStat.join(",") || "(ausente)"} xMotivo=${xMotivo.join(" | ") || "(ausente)"}`);
+}
+
 async function soapRequest(url: string, body: string, action: string, agent?: https.Agent, headerXml?: string): Promise<string> {
   const u = new URL(url);
   if (u.hostname !== MDFE_SVRS_HOMOLOGACAO_HOST) {
@@ -237,6 +262,7 @@ async function soapRequest(url: string, body: string, action: string, agent?: ht
         let d = ""; res.on("data", c => d += c);
         res.on("end", () => {
           console.log(`[mdf-debug] ambiente=${MDFE_AMBIENTE} tpAmb=${tpAmb} POST ${u.hostname}${u.pathname} action=${action} status=${res.statusCode} reqBytes=${Buffer.byteLength(envelope)} respBytes=${d.length} respHeaders=${JSON.stringify(res.headers)}`);
+          logMdfResponse(d);
           res.statusCode && res.statusCode >= 400 ? reject(new Error(`MDF-e HTTP ${res.statusCode}: ${d.slice(0, 2000)}`)) : resolve(d);
         });
       });
@@ -246,6 +272,7 @@ async function soapRequest(url: string, body: string, action: string, agent?: ht
   const r = await fetch(u, { method: "POST", headers: { "Content-Type": contentType }, body: envelope });
   const responseText = await r.text();
   console.log(`[mdf-debug] ambiente=${MDFE_AMBIENTE} tpAmb=${tpAmb} POST ${u.hostname}${u.pathname} action=${action} status=${r.status} reqBytes=${Buffer.byteLength(envelope)} respBytes=${responseText.length} respHeaders=${JSON.stringify(Object.fromEntries(r.headers))}`);
+  logMdfResponse(responseText);
   if (!r.ok) throw new Error(`MDF-e HTTP ${r.status}: ${responseText.slice(0, 2000)}`);
   return responseText;
 }
