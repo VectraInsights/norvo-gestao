@@ -2991,3 +2991,10 @@ Espelhado na Vercel.
   (agrupados por município; xMun ausente resolvido via IBGE, senão
   aborta com mensagem clara).
 - Espelhado na Vercel via push em main.
+
+## Seguro herdado no transbordo (25/09/2026)
+
+- 699 no transbordo: sem `chCTe` no XML o servidor não completava o
+  `infSeg`. Agora o front herda o bloco `<seg>` completo (seguradora,
+  CNPJ, apólice, averbação) do manifesto origem, com fallback nos CT-es.
+- Espelhado na Vercel via push em main.

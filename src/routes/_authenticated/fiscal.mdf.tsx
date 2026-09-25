@@ -1037,6 +1037,18 @@ function DialogNovoMdf({ open, onOpenChange, empresaId, empresa, chavesIniciais,
   const reboques = useMemo(() => { const out: string[] = []; for (const f of ctesForms) for (const k of ["placaReboque", "semiReboque1", "semiReboque2"]) { const p = String(f[k] || "").toUpperCase(); if (p && !out.includes(p)) out.push(p); } return out; }, [ctesForms]);
   const motNomes = useMemo(() => { const out: Array<{ id: string; nome: string }> = []; for (const f of ctesForms) for (const k of [["motoristaId", "motoristaNome"], ["motorista2Id", "motorista2Nome"]] as const) { const nm = String(f[k[1]] || "").trim(); if (nm && !out.some(o => o.nome === nm)) out.push({ id: String(f[k[0]] || ""), nome: nm }); } return out; }, [ctesForms]);
   const cpfDe = (id: string, nome: string) => ((motoristas || []).find(m => (id && m.id === id) || m.nome === nome)?.cpf || "");
+  // CNPJ da seguradora p/ o infSeg (699): no transbordo não há chCTe no XML
+  // e o servidor não completa; resolve aqui pelo nome (mesma regra do servidor).
+  const segComCnpj = async (s: { xSeg: string; nApol: string; nAver: string; cnpjSeg?: string }) => {
+    let cnpjSeg = String(s.cnpjSeg || "").replace(/\D/g, "");
+    try {
+      if (!/^\d{14}$/.test(cnpjSeg) && s.xSeg && empresaId) {
+        const { data: sg } = await supabase.from("seguradoras" as any).select("cnpj").eq("empresa_id", empresaId).ilike("nome", s.xSeg).limit(1);
+        cnpjSeg = String(((sg as any[])?.[0] as any)?.cnpj || "").replace(/\D/g, "");
+      }
+    } catch {}
+    return { ...s, cnpjSeg: /^\d{14}$/.test(cnpjSeg) ? cnpjSeg : undefined };
+  };
   const ciotMdf = useMemo(() => ctesForms.map(f => String(f.ciot || "").trim()).find(Boolean) || "", [ctesForms]);
   const segMdf = useMemo(() => ctesForms.find(f => String(f.seguradoraNome || "").trim()) || {}, [ctesForms]);
   const totalCarga = useMemo(() => ctesSelArr.reduce((s, c) => s + (c.valor_servico || 0), 0), [ctesSelArr]);
@@ -1107,6 +1119,30 @@ function DialogNovoMdf({ open, onOpenChange, empresaId, empresa, chavesIniciais,
         }
       } catch {}
       if (!emitCMun) emitCMun = String(firstForm.cMunIni || "");
+      // Seguro do transbordo: herda o bloco <seg> completo do manifesto origem
+      // (mesma carga/apólice); completa com os CT-es quando ausente.
+      const segOrigem = await (async () => {
+        const chaves = [transb1, transb2, transb3].filter(k => /^\d{44}$/.test((k || "").trim())).map(k => k.trim());
+        if (!isTransbordo || !chaves.length) return null as null | { xSeg: string; cnpjSeg: string; nApol: string; nAver: string };
+        const { data: rows } = await supabase.from("mdf_documentos" as any).select("chave_acesso,xml_assinado").in("chave_acesso", chaves);
+        for (const ch of chaves) {
+          const raw = String(((rows as any[]) || []).find(r => String((r as any).chave_acesso || "") === ch)?.xml_assinado || "");
+          let xml = raw;
+          try { const p = JSON.parse(raw); if (p?.xml) xml = String(p.xml); } catch {}
+          const segBlock = xml.match(/<seg>([\s\S]*?)<\/seg>/)?.[1] || "";
+          if (!segBlock) continue;
+          const infSegBlock = segBlock.match(/<infSeg>([\s\S]*?)<\/infSeg>/)?.[1] || "";
+          const got = {
+            xSeg: (infSegBlock.match(/<xSeg>([^<]*)<\/xSeg>/)?.[1] || "").trim(),
+            cnpjSeg: (infSegBlock.match(/<CNPJ>(\d{14})<\/CNPJ>/)?.[1] || "").replace(/\D/g, ""),
+            nApol: (segBlock.match(/<nApol>([^<]*)<\/nApol>/)?.[1] || "").trim(),
+            nAver: (segBlock.match(/<nAver>([^<]*)<\/nAver>/)?.[1] || "").trim(),
+          };
+          if (got.xSeg || got.nApol) return got;
+        }
+        return null;
+      })();
+      const segForm = { xSeg: String((segMdf as any).seguradoraNome || ""), nApol: String((segMdf as any).apolice || ""), nAver: String((segMdf as any).averbacao || "") };
       const input = {
         empresaId, ambiente: ambienteMdf, serie: serieMdf || "000", numero,
         ufCarregamento, ufDescarregamento,
@@ -1126,7 +1162,12 @@ function DialogNovoMdf({ open, onOpenChange, empresaId, empresa, chavesIniciais,
         pesoTotalKG: ctesArr.reduce((s, c) => s + pesoDe(c), 0),
         tipo: (isTransbordo ? "transbordo" : "normal") as "normal" | "transbordo",
         tpEmit: tipoMdf === "Globalizado" ? "3" : "1",
-        seg: { xSeg: String((segMdf as any).seguradoraNome || ""), nApol: String((segMdf as any).apolice || ""), nAver: String((segMdf as any).averbacao || "") },
+        seg: await segComCnpj({
+          xSeg: segForm.xSeg || segOrigem?.xSeg || "",
+          nApol: segForm.nApol || segOrigem?.nApol || "",
+          nAver: segForm.nAver || segOrigem?.nAver || "",
+          cnpjSeg: segOrigem?.cnpjSeg || "",
+        }),
         contratantes: contratantesMdf,
         prodPred: { xProd: proPredMdf },
         mdfesTransbordo: await (async () => {
