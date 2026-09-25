@@ -92,7 +92,7 @@ export const Route = createFileRoute("/_authenticated/fiscal/cte")({
   validateSearch: (search: Record<string, unknown>) => ({ fromNFe: (search.fromNFe as string) || undefined }),
 });
 
-type CteDoc = { id: string; numero: string | null; serie: string | null; status: string; valor_servico: number | null; chave_acesso: string | null; created_at: string; motivo_rejeicao: string | null; protocolo_sefaz: string | null; xml_assinado: string | null; ambiente: string | null; data_autorizacao: string | null };
+type CteDoc = { id: string; numero: string | null; serie: string | null; status: string; valor_servico: number | null; chave_acesso: string | null; created_at: string; motivo_rejeicao: string | null; protocolo_sefaz: string | null; xml_assinado: string | null; ambiente: string | null; data_autorizacao: string | null; responsavel_emissao: string | null };
 
 // Placa(s), motorista e data de emissão direto do XML/form do CT-e p/ a tabela.
 function infoCteLinha(xmlAssinado: string | null): { placas: string[]; motorista: string; dataEmi: string } {
@@ -151,7 +151,7 @@ function CtePage() {
     enabled: !!empresa,
     queryKey: ["cte-documentos", empresa?.id],
     queryFn: async (): Promise<CteDoc[]> => {
-      const { data, error } = await supabase.from("cte_documentos" as any)        .select("id,numero,serie,status,valor_servico,chave_acesso,created_at,motivo_rejeicao,protocolo_sefaz,xml_assinado,ambiente,data_autorizacao").eq("empresa_id", empresa!.id).eq("ambiente", SEFAZ_AMBIENTE).order("created_at", { ascending: false }).limit(100);
+      const { data, error } = await supabase.from("cte_documentos" as any)        .select("id,numero,serie,status,valor_servico,chave_acesso,created_at,motivo_rejeicao,protocolo_sefaz,xml_assinado,ambiente,data_autorizacao,responsavel_emissao").eq("empresa_id", empresa!.id).eq("ambiente", SEFAZ_AMBIENTE).order("created_at", { ascending: false }).limit(100);
       if (error) throw error;
       return (data ?? []) as unknown as CteDoc[];
     },
@@ -1422,7 +1422,7 @@ function CtePage() {
       }
       if (pend.length > 0) throw new Error("Para emitir informe: " + pend.join("; "));
       validarPedagio(form);
-      const ret: any = await emitirCteFn({ data: { empresaId: empresa.id, form, input: {
+      const ret: any = await emitirCteFn({ data: { empresaId: empresa.id, responsavel: respNome, form, input: {
         ambiente: SEFAZ_AMBIENTE,
         toma: form.toma, cnpjTomador: form.cnpjTomador, xNomeTomador: form.xNomeTomador, ufTomador: form.ufTomador, cMunTomador: form.cMunTomador, xMunTomador: form.xMunTomador,
         cfop: form.cfop, tpServ: "0", vPrest: totalPrestacao(form), vCarga: parseFloat(form.vCarga)||0, pesoKg: parseFloat(form.peso)||0, rntrc: rntrcFinal,
@@ -1799,13 +1799,13 @@ function CtePage() {
           ) : (
             <Card className="overflow-hidden">
               <Table>
-                <TableHeader><TableRow>{rotulo === "autorizados" && !semSelecao && <TableHead className="w-6"></TableHead>}<TableHead className="text-center">Placa</TableHead><TableHead className="text-center">Motorista</TableHead><TableHead className="text-center">Número</TableHead><TableHead className="text-center">Série</TableHead><TableHead className="text-center">Data Emissão</TableHead><TableHead className="text-center">Notas Fiscais</TableHead><TableHead className="text-center">Valor</TableHead><TableHead className="text-center">Ações</TableHead></TableRow></TableHeader>
+                <TableHeader><TableRow>{rotulo === "autorizados" && !semSelecao && <TableHead className="w-6"></TableHead>}<TableHead className="text-center">Placa</TableHead><TableHead className="text-center">Motorista</TableHead><TableHead className="text-center">Número</TableHead><TableHead className="text-center">Série</TableHead><TableHead className="text-center">Notas Fiscais</TableHead><TableHead className="text-center">Valor</TableHead><TableHead className="text-center">Responsável</TableHead><TableHead className="text-center">Data Emissão</TableHead><TableHead className="text-center">Ações</TableHead></TableRow></TableHeader>
                 <TableBody>{lista.map(d => {
                   const nNFs = (() => { try { const j = JSON.parse(d.xml_assinado || "{}"); const nn = j.nfs?.map((n: any) => n.nNF).filter(Boolean) || []; if (nn.length) return nn; } catch { } try { const chaves = [...(d.xml_assinado||"").matchAll(/<chNFe>(\d{44})<\/chNFe>/g)].map(m=>m[1]); if (chaves.length===0) return []; return chaves.map(ch=>ch.slice(25,34).replace(/^0+/,"") || "0"); } catch { return []; } })();
                   const info = infoCteLinha(d.xml_assinado);
                   const isRascunho = d.status === "rascunho";
                   return (
-                  <TableRow key={d.id} className={isRascunho ? "bg-muted/30" : ""}>{rotulo === "autorizados" && !semSelecao && d.chave_acesso && <TableCell><input type="checkbox" checked={mdfSel.has(d.chave_acesso)} onChange={() => setMdfSel(prev => { const next = new Set(prev); if (next.has(d.chave_acesso!)) next.delete(d.chave_acesso!); else next.add(d.chave_acesso!); return next; })} title="Selecionar para MDF-e" /></TableCell>}<TableCell className="font-mono text-xs">{info.placas.length ? info.placas.join(" / ") : "—"}</TableCell><TableCell className="text-xs max-w-[160px] truncate" title={info.motorista || ""}>{info.motorista || "—"}</TableCell><TableCell className="font-mono">{d.numero ?? "—"}{d.status === "rejeitado" && d.motivo_rejeicao ? <p className="font-sans text-[10px] text-destructive/80 max-w-[160px] truncate" title={d.motivo_rejeicao}>{d.motivo_rejeicao}</p> : null}</TableCell><TableCell>{d.serie ?? "—"}</TableCell><TableCell className="text-xs whitespace-nowrap">{info.dataEmi || "—"}</TableCell><TableCell className="text-xs">{nNFs.length > 0 ? nNFs.join(", ") : d.chave_acesso ? "1" : "—"}</TableCell><TableCell className="text-right">{brl(Number(d.valor_servico ?? 0))}</TableCell><TableCell className="flex gap-1 justify-end whitespace-nowrap pl-1">
+                  <TableRow key={d.id} className={isRascunho ? "bg-muted/30" : ""}>{rotulo === "autorizados" && !semSelecao && d.chave_acesso && <TableCell><input type="checkbox" checked={mdfSel.has(d.chave_acesso)} onChange={() => setMdfSel(prev => { const next = new Set(prev); if (next.has(d.chave_acesso!)) next.delete(d.chave_acesso!); else next.add(d.chave_acesso!); return next; })} title="Selecionar para MDF-e" /></TableCell>}<TableCell className="font-mono text-xs">{info.placas.length ? info.placas.join(" / ") : "—"}</TableCell><TableCell className="text-xs max-w-[160px] truncate" title={info.motorista || ""}>{info.motorista || "—"}</TableCell><TableCell className="font-mono">{d.numero ?? "—"}{d.status === "rejeitado" && d.motivo_rejeicao ? <p className="font-sans text-[10px] text-destructive/80 max-w-[160px] truncate" title={d.motivo_rejeicao}>{d.motivo_rejeicao}</p> : null}</TableCell><TableCell>{d.serie ?? "—"}</TableCell><TableCell className="text-xs">{nNFs.length > 0 ? nNFs.join(", ") : d.chave_acesso ? "1" : "—"}</TableCell><TableCell className="text-right">{brl(Number(d.valor_servico ?? 0))}</TableCell><TableCell className="text-xs max-w-[140px] truncate" title={(d as any).responsavel_emissao || ""}>{(d as any).responsavel_emissao || "—"}</TableCell><TableCell className="text-xs whitespace-nowrap">{info.dataEmi || "—"}</TableCell><TableCell className="flex gap-1 justify-end whitespace-nowrap pl-1">
                     {isRascunho ? (
                       <>
                         <Button size="icon" variant="ghost" className="h-7 w-7 text-primary" onClick={() => editarRascunho(d)} title="Editar rascunho"><Pencil className="h-3.5 w-3.5" /></Button>

@@ -66,6 +66,7 @@ export const emitirMdfFn = createServerFn({ method: "POST" })
     transbordo3?: string;
     numero?: string;
     serie?: string;
+    responsavel?: string;
   }) => data)
   .handler(async ({ data }) => {
     if (SEFAZ_URL) return callSefazProxy("emitirMdf", data);
@@ -107,6 +108,7 @@ export const emitirMdfFn = createServerFn({ method: "POST" })
         status: "autorizado",
         numero: String((data as any).numero || String(data.xml || "").match(/<nMDF>(\d+)<\/nMDF>/)?.[1] || ""),
         serie: String((data as any).serie || String(data.xml || "").match(/<serie>(\d+)<\/serie>/)?.[1] || ""),
+        responsavel_emissao: (data as any).responsavel || null,
         protocolo_sefaz: result.protocolo || null,
         veiculo_tracao_id: data.veiculoTracaoId || null,
         motorista_id: data.motoristaId || null,
@@ -164,7 +166,7 @@ export const consultarMdfFn = createServerFn({ method: "POST" })
   });
 
 export const encerrarMdfFn = createServerFn({ method: "POST" })
-  .validator((data: { empresaId: string; chave: string; cnpj: string; uf: string; protocolo: string; cMun: string }) => data)
+  .validator((data: { empresaId: string; chave: string; cnpj: string; uf: string; protocolo: string; cMun: string; responsavel?: string }) => data)
   .handler(async ({ data }) => {
     if (SEFAZ_URL) return callSefazProxy("encerrarMdf", data);
 
@@ -179,7 +181,7 @@ export const encerrarMdfFn = createServerFn({ method: "POST" })
     }
 
     if (result.sucesso) {
-      await supabase.from("mdf_documentos" as never).update({ status: "encerrado", data_encerramento: new Date().toISOString() } as never).eq("chave_acesso", data.chave);
+      await supabase.from("mdf_documentos" as never).update({ status: "encerrado", data_encerramento: new Date().toISOString(), responsavel_encerramento: (data as any).responsavel || null } as never).eq("chave_acesso", data.chave);
     }
 
     return result;

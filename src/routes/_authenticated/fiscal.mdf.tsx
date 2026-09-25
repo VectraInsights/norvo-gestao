@@ -36,6 +36,8 @@ type MdfDoc = {
   valor_total_carga: number | null; peso_total: number | null;
   veiculo_tracao_id: string | null; motorista_id: string | null;
   xml_assinado: string | null; xml_protocolo: string | null;
+  responsavel_emissao: string | null; responsavel_encerramento: string | null;
+  data_encerramento: string | null;
 };
 
 type CteDoc = { id: string; numero: string | null; serie: string | null; chave_acesso: string | null; status: string; valor_servico: number | null; peso_carga: number | null; data_autorizacao: string | null };
@@ -229,7 +231,7 @@ function MdfPage() {
     queryKey: ["mdf-documentos", empresa?.id],
     queryFn: async (): Promise<MdfDoc[]> => {
       const { data, error } = await supabase.from("mdf_documentos" as any)
-        .select("id,numero,serie,status,qtd_cte,chave_acesso,created_at,motivo_rejeicao,protocolo_sefaz,uf_carregamento,uf_descarregamento,valor_total_carga,peso_total,veiculo_tracao_id,motorista_id,xml_assinado,xml_protocolo")
+        .select("id,numero,serie,status,qtd_cte,chave_acesso,created_at,motivo_rejeicao,protocolo_sefaz,uf_carregamento,uf_descarregamento,valor_total_carga,peso_total,veiculo_tracao_id,motorista_id,xml_assinado,xml_protocolo,responsavel_emissao,responsavel_encerramento,data_encerramento")
         .eq("empresa_id", empresa!.id)
         .eq("ambiente", MDFE_AMBIENTE)
         .order("created_at", { ascending: false })
@@ -560,6 +562,11 @@ function DialogVerMdf({ d, xml, onClose, onBaixarXml, onBaixarPdf }: { d: MdfDoc
                 <R label="Data Emissão" value={dataEmi} />
                 <R label="Hora Emissão" value={horaEmi} />
                 <R label="Protocolo" mono value={d.protocolo_sefaz || ""} />
+                <R label="Placa" mono value={dd.placa || ""} />
+                <R label="Motorista" value={dd.condutorNome || ""} />
+                <R label="Responsável Emissão" value={(d as any).responsavel_emissao || ""} />
+                <R label="Data de Encerramento" value={(d as any).data_encerramento ? new Date(String((d as any).data_encerramento)).toLocaleDateString("pt-BR") : ""} />
+                <R label="Responsável Encerramento" value={(d as any).responsavel_encerramento || ""} />
               </div>
               <div className="grid grid-cols-2 gap-1">
                 <div className="space-y-1">
@@ -674,7 +681,17 @@ function EncerrarMdfButton({ mdf, empresaId, cnpj, onSuccess }: { mdf: MdfDoc; e
     if (!cMun) { toast.error("Município de encerramento não encontrado no MDF-e"); return; }
     setLoading(true);
     try {
-      const res = await encerrarMdfFn({ data: { empresaId, chave: mdf.chave_acesso, cnpj, uf: mdf.uf_carregamento || "", protocolo: mdf.protocolo_sefaz || "", cMun } });
+      let nm = "";
+      try {
+        const { data } = await supabase.auth.getUser();
+        const usr = (data as any)?.user;
+        nm = (usr?.user_metadata as any)?.nome || "";
+        if (!nm && empresaId) {
+          const { data: eu } = await supabase.from("empresa_users" as any).select("nome").eq("empresa_id", empresaId).eq("user_id", usr.id).maybeSingle();
+          nm = (eu as any)?.nome || "";
+        }
+      } catch {}
+      const res = await encerrarMdfFn({ data: { empresaId, chave: mdf.chave_acesso, cnpj, uf: mdf.uf_carregamento || "", protocolo: mdf.protocolo_sefaz || "", cMun, responsavel: nm } });
       if (res.sucesso) { toast.success("MDF-e encerrado!"); onSuccess(); }
       else toast.error(`Erro: ${res.xMotivo}`);
     } catch (e: unknown) { toast.error(e instanceof Error ? e.message : "Erro ao encerrar"); }
@@ -791,6 +808,32 @@ function DialogNovoMdf({ open, onOpenChange, empresaId, empresa, chavesIniciais,
   const [tipoMdf, setTipoMdf] = useState<"Normal" | "Globalizado">("Normal");
   const [serieMdf] = useState("000");
   const [isTransbordo, setIsTransbordo] = useState(false);
+  // Manifestos encerrados da tração selecionada (só truck/cavalo: tracaoSel
+  // nunca é carreta) para os dropdowns de transbordo.
+  const { data: mdfsEncerrados } = useQuery({
+    enabled: !!empresaId && open && isTransbordo,
+    queryKey: ["mdf-encerrados", empresaId],
+    queryFn: async ({ signal }) => {
+      const { data, error } = await supabase.from("mdf_documentos" as any)
+        .select("chave_acesso,numero,veiculo_tracao_id").eq("empresa_id", empresaId)
+        .eq("status", "encerrado").order("created_at", { ascending: false }).limit(100).abortSignal(signal);
+      if (error) throw error;
+      return (data ?? []) as unknown as Array<{ chave_acesso: string | null; numero: string | null; veiculo_tracao_id: string | null }>;
+    },
+  });
+  const transbOpts = useMemo(() => {
+    const tv = (veiculos || []).find(v => !!tracaoSel && String(v.placa || "").toUpperCase() === tracaoSel);
+    if (!tv) return [];
+    return (mdfsEncerrados || []).filter(m => m.veiculo_tracao_id && m.veiculo_tracao_id === (tv as any).id && m.chave_acesso);
+  }, [mdfsEncerrados, veiculos, tracaoSel]);
+  const TransbSelect = ({ label, value, onChange }: { label: string; value: string; onChange: (v: string) => void }) => (
+    <div className="min-w-0"><Label className="text-xs whitespace-nowrap">{label}</Label>
+      <Select value={value || undefined} onValueChange={onChange} disabled={!isTransbordo}>
+        <SelectTrigger className="h-6 text-[11px] font-mono"><SelectValue placeholder={transbOpts.length ? "Selecione..." : "Sem encerrados p/ tração"} /></SelectTrigger>
+        <SelectContent>{transbOpts.map(o => (<SelectItem key={o.chave_acesso} value={o.chave_acesso || ""} className="font-mono text-[11px]" title={o.chave_acesso || ""}>#{o.numero ?? "?"} ···{(o.chave_acesso || "").slice(-8)}</SelectItem>))}</SelectContent>
+      </Select>
+    </div>
+  );
   const [transb1, setTransb1] = useState("");
   const [transb2, setTransb2] = useState("");
   const [transb3, setTransb3] = useState("");
@@ -1024,7 +1067,7 @@ function DialogNovoMdf({ open, onOpenChange, empresaId, empresa, chavesIniciais,
 
       const res = await emitirMdfFn({
         data: {
-          empresaId, xml, numero, serie: serieMdf, veiculoTracaoId: veic?.id, motoristaId: mot?.id,
+          empresaId, xml, numero, serie: serieMdf, responsavel: respNome, veiculoTracaoId: veic?.id, motoristaId: mot?.id,
           ufCarregamento, ufDescarregamento,
           qtdCtes: ctesArr.length, valorTotalCarga: input.valorTotalCarga, pesoTotal: input.pesoTotalKG,
           percursoUFs, observacoes, infoFisco,
@@ -1135,9 +1178,9 @@ function DialogNovoMdf({ open, onOpenChange, empresaId, empresa, chavesIniciais,
                 </div>
                 <div className="space-y-1">
                   <div><label className="flex items-center gap-1 text-[11px] font-medium cursor-pointer"><input type="checkbox" checked={isTransbordo} onChange={e => setIsTransbordo(e.target.checked)} className="h-3 w-3" /> Manifesto Transbordo</label></div>
-                  <div><Label className="text-xs">1º Transbordo</Label><Input className="h-6 text-[11px] font-mono" disabled={!isTransbordo} value={transb1} onChange={e => setTransb1(e.target.value)} /></div>
-                  <div><Label className="text-xs">2º Transbordo</Label><Input className="h-6 text-[11px] font-mono" disabled={!isTransbordo} value={transb2} onChange={e => setTransb2(e.target.value)} /></div>
-                  <div><Label className="text-xs">3º Transbordo</Label><Input className="h-6 text-[11px] font-mono" disabled={!isTransbordo} value={transb3} onChange={e => setTransb3(e.target.value)} /></div>
+                  <TransbSelect label="1º Transbordo" value={transb1} onChange={setTransb1} />
+                  <TransbSelect label="2º Transbordo" value={transb2} onChange={setTransb2} />
+                  <TransbSelect label="3º Transbordo" value={transb3} onChange={setTransb3} />
                 </div>
               </div>
               <div className="grid grid-cols-2 md:grid-cols-[minmax(0,1fr)_170px_minmax(0,1fr)_170px] gap-2">

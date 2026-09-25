@@ -177,7 +177,7 @@ export async function handleSefazProxy(request: Request): Promise<Response> {
         console.log("[CTE-PROXY-DEBUG] XML gerado:", xml);
         const ret = await emitirCte(pfxBytes, senha, xml, cteAmbiente, emitUf);
         const supa3 = createClient(process.env.SUPABASE_URL||"", process.env.SUPABASE_SERVICE_ROLE_KEY||"");
-        if (ret.sucesso) await supa3.from("cte_documentos").insert({ empresa_id: empresaId, chave_acesso: chave, numero: proximo, serie: input.serie, status: "autorizado", xml_assinado: JSON.stringify({ xml, form: (body as any).form || {} }), protocolo_sefaz: ret.protocolo, ambiente: cteAmbiente, data_autorizacao: new Date().toISOString(), valor_servico: input.vPrest, peso_carga: Number((input as any).pesoKg ?? (body as any)?.form?.peso ?? 0) || null } as any);
+        if (ret.sucesso) await supa3.from("cte_documentos").insert({ empresa_id: empresaId, chave_acesso: chave, numero: proximo, serie: input.serie, status: "autorizado", xml_assinado: JSON.stringify({ xml, form: (body as any).form || {} }), protocolo_sefaz: ret.protocolo, ambiente: cteAmbiente, data_autorizacao: new Date().toISOString(), valor_servico: input.vPrest, peso_carga: Number((input as any).pesoKg ?? (body as any)?.form?.peso ?? 0) || null, responsavel_emissao: (body as any).responsavel || null } as any);
         else await supa3.from("cte_documentos").insert({ empresa_id: empresaId, chave_acesso: chave, numero: proximo, serie: input.serie, status: "rejeitado", xml_assinado: xml, motivo_rejeicao: ret.xMotivo, ambiente: cteAmbiente } as any);
         if (ret.sucesso) {
           const chUsadas = ((inp as any).chavesNFe || []).map((c: any) => String(c).replace(/\D/g, "")).filter(Boolean);
@@ -246,7 +246,7 @@ export async function handleSefazProxy(request: Request): Promise<Response> {
           }
         } catch {}
         if ((retMdf as any).sucesso && (retMdf as any).chave) {
-          await sMdf.from("mdf_documentos").upsert({ empresa_id: empresaId, chave_acesso: (retMdf as any).chave, status: "autorizado", numero: String((b as any).numero || String(b.xml || "").match(/<nMDF>(\d+)<\/nMDF>/)?.[1] || ""), serie: String((b as any).serie || String(b.xml || "").match(/<serie>(\d+)<\/serie>/)?.[1] || ""), protocolo_sefaz: (retMdf as any).protocolo || null, veiculo_tracao_id: b.veiculoTracaoId || null, motorista_id: b.motoristaId || null, uf_carregamento: b.ufCarregamento, uf_descarregamento: b.ufDescarregamento, qtd_cte: b.qtdCtes, valor_total_carga: b.valorTotalCarga, peso_total: b.pesoTotal, ambiente: ambMdf, data_autorizacao: new Date().toISOString(), xml_assinado: JSON.stringify({ xml: b.xml, percursoUFs: b.percursoUFs || [], observacoes: b.observacoes || "", infoFisco: b.infoFisco || "", tipoMdf: b.tipoMdf || "Normal", isTransbordo: !!b.isTransbordo, transbordos: [b.transbordo1, b.transbordo2, b.transbordo3].filter(Boolean) }) } as never, { onConflict: "chave_acesso" });
+          await sMdf.from("mdf_documentos").upsert({ empresa_id: empresaId, chave_acesso: (retMdf as any).chave, status: "autorizado", numero: String((b as any).numero || String(b.xml || "").match(/<nMDF>(\d+)<\/nMDF>/)?.[1] || ""), serie: String((b as any).serie || String(b.xml || "").match(/<serie>(\d+)<\/serie>/)?.[1] || ""), responsavel_emissao: (b as any).responsavel || null, protocolo_sefaz: (retMdf as any).protocolo || null, veiculo_tracao_id: b.veiculoTracaoId || null, motorista_id: b.motoristaId || null, uf_carregamento: b.ufCarregamento, uf_descarregamento: b.ufDescarregamento, qtd_cte: b.qtdCtes, valor_total_carga: b.valorTotalCarga, peso_total: b.pesoTotal, ambiente: ambMdf, data_autorizacao: new Date().toISOString(), xml_assinado: JSON.stringify({ xml: b.xml, percursoUFs: b.percursoUFs || [], observacoes: b.observacoes || "", infoFisco: b.infoFisco || "", tipoMdf: b.tipoMdf || "Normal", isTransbordo: !!b.isTransbordo, transbordos: [b.transbordo1, b.transbordo2, b.transbordo3].filter(Boolean) }) } as never, { onConflict: "chave_acesso" });
         } else if ((retMdf as any).cStat) {
           const numero = String(b.xml || "").match(/<nMDF>(\d+)<\/nMDF>/)?.[1] || "";
           const serie = String(b.xml || "").match(/<serie>(\d+)<\/serie>/)?.[1] || "1";
@@ -273,7 +273,7 @@ export async function handleSefazProxy(request: Request): Promise<Response> {
         if ((retEnc as any).sucesso) {
           const { createClient: ccEnc } = await import("@supabase/supabase-js");
           const sEnc = ccEnc(process.env.SUPABASE_URL||"", process.env.SUPABASE_SERVICE_ROLE_KEY||"");
-          await sEnc.from("mdf_documentos").update({ status: "encerrado", data_encerramento: new Date().toISOString() } as never).eq("chave_acesso", b.chave);
+          await sEnc.from("mdf_documentos").update({ status: "encerrado", data_encerramento: new Date().toISOString(), responsavel_encerramento: (b as any).responsavel || null } as never).eq("chave_acesso", b.chave);
         }
         return json(retEnc);
       }

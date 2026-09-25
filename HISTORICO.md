@@ -2950,3 +2950,16 @@ Espelhado na Vercel.
   abria como painel lateral: o popup "Onde encerrar?" agora força
   `inset-auto` + centro via translate, 320px, altura automática.
 - Espelhado na Vercel via push em main.
+
+## Responsáveis, consulta MDF-e e transbordo (25/09/2026)
+
+- Novas colunas `responsavel_emissao` (CT-e/MDF-e) e
+  `responsavel_encerramento` (MDF-e) — migration `20260925130000`;
+  gravadas na emissão/encerramento (server + proxy), "—" no antigo.
+- Visualizar MDF-e: Nº, Série, Data/Hora Emissão, Placa, Motorista,
+  Resp. Emissão, Data/Resp. Encerramento.
+- Tabela CT-e: Placa, Motorista, Número, Série, Notas, Valor,
+  Responsável, Data Emissão (sem Status/Chave).
+- Transbordos 1-3 viraram dropdowns de manifestos encerrados da
+  tração selecionada (só truck/cavalo).
+- Espelhado na Vercel via push em main.
