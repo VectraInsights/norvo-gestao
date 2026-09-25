@@ -690,7 +690,7 @@ function EncerrarMdfButton({ mdf, empresaId, cnpj, onSuccess }: { mdf: MdfDoc; e
     >{loading ? "Encerrando..." : "Confirmar Encerramento"}</Button>
     {openSel && (
       <Dialog open={openSel} onOpenChange={setOpenSel}>
-        <DialogContent className="max-w-[320px] p-4 gap-3">
+        <DialogContent className="inset-auto left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-[320px] max-w-[calc(100vw-2rem)] h-auto max-h-[90vh] p-4 gap-3">
           <DialogHeader><DialogTitle className="text-base">Onde encerrar?</DialogTitle></DialogHeader>
           <p className="text-xs text-muted-foreground">O manifesto tem {munOpts.length} municípios de descarga. Escolha o local de encerramento.</p>
           <Select value={cMunSel} onValueChange={setCMunSel}>
