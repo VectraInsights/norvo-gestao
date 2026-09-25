@@ -2576,3 +2576,15 @@ Espelhado na Vercel.
   `SignatureValue` intacto (só operações de string).
 - Constante de log atualizada para `BUILD=017-explicit-xmldsig-namespace`.
 - Espelhado na Vercel via push em main.
+
+## BUILD 018: SignedInfo em forma canônica estrita (24/09/2026)
+
+- Causa provável do 297: C14N 1.0 expande empty-tags (`<x/>` → `<x></x>`);
+  assinávamos a forma auto-fechada, divergindo da canonicalização da SEFAZ
+  na verificação RSA. Templates (forge + nativo) agora emitem
+  `CanonicalizationMethod`, `SignatureMethod`, `Transform` e `DigestMethod`
+  expandidos; ordem dos Transforms e algoritmos inalterados.
+- Novo log `[mdf-debug] bytes de SignedInfo antes do RSA-SHA1:` (só MDF-e,
+  via `logSignedInfoBytes`; NF-e/CT-e inalterados).
+- Constante de log atualizada para `BUILD=018-c14n-signedinfo-fix`.
+- Espelhado na Vercel via push em main.

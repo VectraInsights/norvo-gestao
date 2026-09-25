@@ -34,6 +34,7 @@ interface XmlSignatureOptions {
   referenceUri?: string;
   canonicalizationAlgorithm?: string;
   referenceTransformAlgorithm?: string;
+  logSignedInfoBytes?: boolean;
 }
 
 // ============================================================
@@ -472,6 +473,7 @@ export function signMdfXml(xml: string, pfxBytes: Buffer, senha: string): string
   const signed = signXml(xml, pfxBytes, senha, canonicalizedInfMdf, {
     referenceUri,
     canonicalizationAlgorithm: XML_INCLUSIVE_C14N,
+    logSignedInfoBytes: true,
   });
 
   // 5. Extração do SignatureValue gerado
@@ -485,8 +487,8 @@ export function signMdfXml(xml: string, pfxBytes: Buffer, senha: string): string
   if (signedId !== id || signedReference !== `#${id}`) {
     throw new Error(`Referência da assinatura MDF-e inválida: id=${signedId || "(ausente)"}/${signedReference || "(ausente)"}; esperado=${id}/#${id}`);
   }
-  if (!signed.includes(`<CanonicalizationMethod Algorithm="${XML_INCLUSIVE_C14N}"/>`) ||
-      !signed.includes(`<Transform Algorithm="${XML_INCLUSIVE_C14N}"/>`)) {
+  if (!signed.includes(`<CanonicalizationMethod Algorithm="${XML_INCLUSIVE_C14N}"></CanonicalizationMethod>`) ||
+      !signed.includes(`<Transform Algorithm="${XML_INCLUSIVE_C14N}"></Transform>`)) {
     throw new Error("Assinatura MDF-e sem canonicalização inclusiva");
   }
 
@@ -548,10 +550,12 @@ function signXmlWithForge(
   md.update(digestInput ?? xml, "utf8");
   const digestValue = forge.util.encode64(md.digest().getBytes());
 
-  // Construir SignedInfo em LINHA ÚNICA (build 005)
-  const signedInfo = `<SignedInfo xmlns="http://www.w3.org/2000/09/xmldsig#"><CanonicalizationMethod Algorithm="${canonicalizationAlgorithm}"/><SignatureMethod Algorithm="http://www.w3.org/2000/09/xmldsig#rsa-sha1"/><Reference URI="${uri}"><Transforms><Transform Algorithm="http://www.w3.org/2000/09/xmldsig#enveloped-signature"/><Transform Algorithm="${referenceTransformAlgorithm}"/></Transforms><DigestMethod Algorithm="http://www.w3.org/2000/09/xmldsig#sha1"/><DigestValue>${digestValue}</DigestValue></Reference></SignedInfo>`;
+  // Construir SignedInfo em LINHA ÚNICA com empty-tags EXPANDIDAS (C14N 1.0 converte
+  // <x/> em <x></x>; assinar a forma auto-fechada quebra a verificação RSA na SEFAZ)
+  const signedInfo = `<SignedInfo xmlns="http://www.w3.org/2000/09/xmldsig#"><CanonicalizationMethod Algorithm="${canonicalizationAlgorithm}"></CanonicalizationMethod><SignatureMethod Algorithm="http://www.w3.org/2000/09/xmldsig#rsa-sha1"></SignatureMethod><Reference URI="${uri}"><Transforms><Transform Algorithm="http://www.w3.org/2000/09/xmldsig#enveloped-signature"></Transform><Transform Algorithm="${referenceTransformAlgorithm}"></Transform></Transforms><DigestMethod Algorithm="http://www.w3.org/2000/09/xmldsig#sha1"></DigestMethod><DigestValue>${digestValue}</DigestValue></Reference></SignedInfo>`;
 
   // Assinar o SignedInfo
+  if (options?.logSignedInfoBytes) console.log("[mdf-debug] bytes de SignedInfo antes do RSA-SHA1:", Buffer.byteLength(signedInfo, "utf8"));
   const md2 = forge.md.sha1.create();
   md2.update(signedInfo, "utf8");
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -609,10 +613,12 @@ function signXmlNative(
   md.update(digestInput ?? xml, "utf8");
   const digestValue = forge.util.encode64(md.digest().getBytes());
 
-  // SignedInfo em LINHA ÚNICA (build 004)
-  const signedInfo = `<SignedInfo xmlns="http://www.w3.org/2000/09/xmldsig#"><CanonicalizationMethod Algorithm="${canonicalizationAlgorithm}"/><SignatureMethod Algorithm="http://www.w3.org/2000/09/xmldsig#rsa-sha1"/><Reference URI="${uri}"><Transforms><Transform Algorithm="http://www.w3.org/2000/09/xmldsig#enveloped-signature"/><Transform Algorithm="${referenceTransformAlgorithm}"/></Transforms><DigestMethod Algorithm="http://www.w3.org/2000/09/xmldsig#sha1"/><DigestValue>${digestValue}</DigestValue></Reference></SignedInfo>`;
+  // SignedInfo em LINHA ÚNICA com empty-tags EXPANDIDAS (C14N 1.0 converte
+  // <x/> em <x></x>; assinar a forma auto-fechada quebra a verificação RSA na SEFAZ)
+  const signedInfo = `<SignedInfo xmlns="http://www.w3.org/2000/09/xmldsig#"><CanonicalizationMethod Algorithm="${canonicalizationAlgorithm}"></CanonicalizationMethod><SignatureMethod Algorithm="http://www.w3.org/2000/09/xmldsig#rsa-sha1"></SignatureMethod><Reference URI="${uri}"><Transforms><Transform Algorithm="http://www.w3.org/2000/09/xmldsig#enveloped-signature"></Transform><Transform Algorithm="${referenceTransformAlgorithm}"></Transform></Transforms><DigestMethod Algorithm="http://www.w3.org/2000/09/xmldsig#sha1"></DigestMethod><DigestValue>${digestValue}</DigestValue></Reference></SignedInfo>`;
 
   // Assinar SignedInfo com crypto nativo (RSA-SHA1)
+  if (options?.logSignedInfoBytes) console.log("[mdf-debug] bytes de SignedInfo antes do RSA-SHA1:", Buffer.byteLength(signedInfo, "utf8"));
   const sign = crypto.createSign("SHA1");
   sign.update(signedInfo, "utf8");
   const signatureBuffer = sign.sign(privateKey);
