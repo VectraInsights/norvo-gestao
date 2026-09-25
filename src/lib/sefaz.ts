@@ -530,9 +530,9 @@ function signXmlWithForge(
   digestInput?: string,
   options?: XmlSignatureOptions,
 ): string {
-  // Serializar certificado para base64 (sem BEGIN/END)
+  // Serializar certificado para base64 em linha única contínua (sem \r ou \n)
   const certDer = forge.asn1.toDer(forge.pki.certificateToAsn1(certificate)).getBytes();
-  const certB64 = forge.util.encode64(certDer);
+  const certB64 = forge.util.encode64(certDer).replace(/[\r\n\s]+/g, "");
 
   // ID do elemento a assinar (infNFe/infCte/infEvento/infMDFe com atributo Id)
   const matchId = xml.match(/<inf(?:NFe|Cte|Evento|MDFe)\s+Id="([^"]+)"/);
@@ -591,8 +591,8 @@ function signXmlNative(
     throw new Error("Não foi possível extrair certificado para assinatura XML");
   }
 
-  // Serializar certificado leaf para base64
-  const certB64 = certChain[0].toString("base64");
+  // Serializar certificado leaf para base64 em linha única contínua (sem \r ou \n)
+  const certB64 = certChain[0].toString("base64").replace(/[\r\n\s]+/g, "");
 
   // Extrair informações do cert leaf
   const certAsn1 = forge.asn1.fromDer(certChain[0].toString("binary"));

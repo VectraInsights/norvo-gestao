@@ -281,7 +281,7 @@ async function soapRequest(url: string, body: string, action: string, agent?: ht
 export async function emitirMdf(pfx: Buffer, senha: string, xml: string, ambiente: Ambiente): Promise<{ sucesso: boolean; cStat: string; xMotivo: string; chave?: string; protocolo?: string; xmlRet?: string }> {
   assertMdfAmbiente(ambiente);
   assertMdfXmlAmbiente(xml);
-  const BUILD = "015-force-xmlns-final-payload";
+  const BUILD = "016-signature-crlf-x509-clean";
   const ep = getMdfEndpoints(ambiente);
   const agent = createSefazAgent(pfx, senha);
   const nsSinc = "http://www.portalfiscal.inf.br/mdfe/wsdl/MDFeRecepcaoSinc";
@@ -296,6 +296,7 @@ export async function emitirMdf(pfx: Buffer, senha: string, xml: string, ambient
   // Regex flexível: captura qualquer atributo existente, remove xmlns duplicado
   // e reinjeta um único xmlns antes do fechamento da tag.
   const xmlForSignature = xml
+    .replace(/\r\n?/g, "\n")
     .replace(/^\uFEFF?\s*<\?xml[^?]*\?>\s*/i, "")
     .replace(/<infModal([^>]*)>/g, (_m, attrs: string) => {
       const cleaned = String(attrs).replace(/\s+xmlns="[^"]*"/g, "");
@@ -313,6 +314,7 @@ export async function emitirMdf(pfx: Buffer, senha: string, xml: string, ambient
   const referenceUri = xmlFinal.match(/<Reference URI="([^"]+)"/)?.[1] || "";
   const signedXmlBytes = Buffer.byteLength(xmlFinal, "utf8");
   console.log(`[mdf-debug] XML final assinado: ${signedXmlBytes} bytes UTF-8; infModal:`, xmlFinal.match(/<infModal[^>]*>/)?.[0] || "(ausente)");
+  console.log("[mdf-debug] Signature:", xmlFinal.match(/<Signature[\s\S]*<\/Signature>/)?.[0] || "(não encontrado)");
   // D03/599: diagnóstico somente leitura; não altera o XML assinado.
   const wsAbre = [...xmlFinal.matchAll(/<([^<>\s/][^<>]{0,40})>\s+</g)].map(m => m[1]);
   const wsFecha = [...xmlFinal.matchAll(/>\s+<\/([^<>]+)>/g)].map(m => "/" + m[1]);

@@ -2554,3 +2554,14 @@ Espelhado na Vercel.
   `xmlns` no `<infModal>`.
 - Constante de log atualizada para `BUILD=015-force-xmlns-final-payload`.
 - Espelhado na Vercel via push em main.
+
+## BUILD 016: CRLF/X509 limpos e log do Signature (24/09/2026)
+
+- XML normalizado para `\n` (sem `\r\n`) antes de assinar e mantido até
+  o envio; digest inalterado (canonicalizador já normaliza quebras).
+- `<X509Certificate>` garantido em linha única contínua (forge e nativo).
+- Pós-assinatura já era sem reformatagem (só replace de inserção; parses
+  DOM são somente-leitura para diagnóstico).
+- Novo log `[mdf-debug] Signature:` com o nó completo + bytes do payload.
+- Constante de log atualizada para `BUILD=016-signature-crlf-x509-clean`.
+- Espelhado na Vercel via push em main.
