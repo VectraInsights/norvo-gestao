@@ -744,7 +744,8 @@ function DialogNovoMdf({ open, onOpenChange, empresaId, empresa, chavesIniciais,
   const [tracaoSel, setTracaoSel] = useState("");
   const todasTracoes = useMemo(() => { const out: string[] = []; for (const c of (ctesDisponiveis || [])) { try { const p = JSON.parse((c as any).xml_assinado || "{}"); const pl = String(p.form?.placaVeiculo || "").toUpperCase(); if (pl && !out.includes(pl)) out.push(pl); } catch {} } return out.sort(); }, [ctesDisponiveis]);
   const placasVeiculoOpts = useMemo(() => { const out: string[] = []; const REB = ["carreta", "bitrem"]; for (const v of (veiculos || [])) { if (REB.includes(String(v.tipo || "").toLowerCase().trim())) continue; const p = String(v.placa || "").toUpperCase(); if (p && !out.includes(p)) out.push(p); } for (const p of todasTracoes) if (!out.includes(p)) out.push(p); return out.sort(); }, [veiculos, todasTracoes]);
-  const ctesDaTracao = useMemo(() => (ctesDisponiveis || []).filter(c => { if (!tracaoSel) return false; try { const p = JSON.parse((c as any).xml_assinado || "{}"); return String(p.form?.placaVeiculo || "").toUpperCase() === tracaoSel; } catch { return false; } }), [ctesDisponiveis, tracaoSel]);
+  const ctesDaTracao = useMemo(() => (ctesDisponiveis || []).filter(c => { if (!tracaoSel) return false; if (cteVinculado(c.chave_acesso)) return false; try { const p = JSON.parse((c as any).xml_assinado || "{}"); return String(p.form?.placaVeiculo || "").toUpperCase() === tracaoSel; } catch { return false; } }), [ctesDisponiveis, tracaoSel, mdfChaves]);
+  const ctesOcultosMdf = useMemo(() => (ctesDisponiveis || []).filter(c => cteVinculado(c.chave_acesso)).length, [ctesDisponiveis, mdfChaves]);
   const [infoFisco, setInfoFisco] = useState("");
   const [respNome, setRespNome] = useState("");
   const [tipoMdf, setTipoMdf] = useState<"Normal" | "Globalizado">("Normal");
@@ -1151,6 +1152,7 @@ function DialogNovoMdf({ open, onOpenChange, empresaId, empresa, chavesIniciais,
               <span className="text-xs">Peso total: <strong className="font-mono">{num(pesoCarga)} kg</strong></span>
               <Button size="sm" variant="outline" className="h-6 text-[11px]" disabled={!tracaoSel} onClick={() => setCtesSelecionadas(new Set(ctesDaTracao.filter(c => !cteVinculado(c.chave_acesso)).map(c => c.chave_acesso || "").filter(Boolean)))}>Marcar</Button>
               <Button size="sm" variant="outline" className="h-6 text-[11px]" onClick={() => setCtesSelecionadas(new Set())}>Limpar</Button>
+              {ctesOcultosMdf > 0 && <span className="text-[10px] text-muted-foreground self-center">{ctesOcultosMdf} CT-e(s) já em MDF-e oculto(s)</span>}
             </div>
             {ctesErro ? (
               <p className="text-sm text-destructive">Falha ao carregar CT-es: {String((ctesErro as any)?.message || ctesErro)}</p>
@@ -1170,8 +1172,8 @@ function DialogNovoMdf({ open, onOpenChange, empresaId, empresa, chavesIniciais,
                       const reb = [f.placaReboque, f.semiReboque1, f.semiReboque2].map(x => String(x || "").toUpperCase()).filter(Boolean).join(", ");
                       return (
                       <TableRow key={c.id} className={ctesSelecionadas.has(c.chave_acesso || "") ? "bg-muted/50" : ""}>
-                        <TableCell><input type="checkbox" disabled={cteVinculado(c.chave_acesso)} checked={ctesSelecionadas.has(c.chave_acesso || "")} onChange={() => toggleCte(c.chave_acesso || "")} className="h-4 w-4" title={cteVinculado(c.chave_acesso) ? "Já vinculado a um MDF-e ativo" : "Selecionar"} /></TableCell>
-                        <TableCell className="text-xs whitespace-nowrap">{fmtData(c.data_autorizacao)}{cteVinculado(c.chave_acesso) ? <span className="ml-1 rounded bg-amber-100 px-1 text-[10px] text-amber-800">em MDF-e</span> : null}</TableCell>
+                        <TableCell><input type="checkbox" checked={ctesSelecionadas.has(c.chave_acesso || "")} onChange={() => toggleCte(c.chave_acesso || "")} className="h-4 w-4" /></TableCell>
+                        <TableCell className="text-xs whitespace-nowrap">{fmtData(c.data_autorizacao)}</TableCell>
                         <TableCell className="font-mono text-xs">{c.numero ?? "—"}</TableCell>
                         <TableCell className="font-mono text-xs">{(c as any).serie ?? "1"}</TableCell>
                         <TableCell className="font-mono text-xs">{String(f.placaVeiculo || "—").toUpperCase()}</TableCell>

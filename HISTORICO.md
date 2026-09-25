@@ -2920,3 +2920,11 @@ Espelhado na Vercel.
   Notas Fiscais, Valor (sem Status e sem Chave; motivo da rejeição sob
   o número nos Rejeitados).
 - Espelhado na Vercel via push em main.
+
+## dtEnc no encerramento + vinculados ocultos (25/09/2026)
+
+- 630 ao encerrar: tag `dtEncerramento` não existe no XSD — correto é
+  `dtEnc` (`evEncMDFe`: descEvento, nProt, dtEnc, cMun, UF).
+- Novo MDF-e: CT-es já em MDF-e somem da relação (filtro na lista +
+  aviso de ocultos); bloqueio de seleção/emissão mantido.
+- Espelhado na Vercel via push em main.
