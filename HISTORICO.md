@@ -2650,3 +2650,10 @@ Espelhado na Vercel.
   digest cobria bytes que o enviado nao tinha (na pratica).
   Removido do template e da regex (agora so limpa).
   Espelhado na Vercel via push em main.
+
+## BUILD 023: RNTRC 8 digitos no MDF-e (25/09/2026)
+
+- 297 resolvido pelo BUILD 022; SEFAZ passou a validar schema e
+  devolveu 580: RNTRC 044560578 (9 digitos) viola TRNTRC.
+  Mesma normalizacao do CT-e (tira zero a esquerda ate 8).
+  Espelhado na Vercel via push em main.

@@ -129,6 +129,10 @@ export function buildMdfXml(input: MdfInputCompleto): { xml: string; chave: stri
 
   // VeÃ­culos
   const ciotNum = String(input.veicTrac.ciot || "").replace(/\D/g, "");
+  // RNTRC: TRNTRC exige 8 dígitos — remove zero(s) à esquerda como no CT-e.
+  let rntrcXml = String(input.veicTrac.rntrc || "").replace(/\D/g, "");
+  while (rntrcXml.length > 8 && rntrcXml.startsWith("0")) rntrcXml = rntrcXml.slice(1);
+  if (!/^\d{8}$/.test(rntrcXml)) throw new Error(`RNTRC invalido para a SEFAZ (8 digitos): ${input.veicTrac.rntrc || ""}`);
   const infCiotXml = ciotNum ? `<infCIOT><CIOT>${ciotNum}</CIOT><CNPJ>${cnpjLimpo}</CNPJ></infCIOT>` : "";
   // Condutor (ordem XSD: xNome, CPF)
   const condutorXml = `<condutor><xNome>${input.condutor.xNome}</xNome><CPF>${input.condutor.cpf.replace(/\D/g, "")}</CPF></condutor>`;
@@ -200,7 +204,7 @@ export function buildMdfXml(input: MdfInputCompleto): { xml: string; chave: stri
     <infModal versaoModal="3.00">
       <rodo>
         <infANTT>
-          <RNTRC>${input.veicTrac.rntrc}</RNTRC>
+          <RNTRC>${rntrcXml}</RNTRC>
           ${infCiotXml}
         </infANTT>
         ${veicTracXml}
@@ -281,7 +285,7 @@ async function soapRequest(url: string, body: string, action: string, agent?: ht
 export async function emitirMdf(pfx: Buffer, senha: string, xml: string, ambiente: Ambiente): Promise<{ sucesso: boolean; cStat: string; xMotivo: string; chave?: string; protocolo?: string; xmlRet?: string }> {
   assertMdfAmbiente(ambiente);
   assertMdfXmlAmbiente(xml);
-  const BUILD = "022-sem-xmlns-redundante-infmodal";
+  const BUILD = "023-rntrc-8-digitos";
   const ep = getMdfEndpoints(ambiente);
   const agent = createSefazAgent(pfx, senha);
   const nsSinc = "http://www.portalfiscal.inf.br/mdfe/wsdl/MDFeRecepcaoSinc";
