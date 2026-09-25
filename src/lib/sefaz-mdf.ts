@@ -281,7 +281,7 @@ async function soapRequest(url: string, body: string, action: string, agent?: ht
 export async function emitirMdf(pfx: Buffer, senha: string, xml: string, ambiente: Ambiente): Promise<{ sucesso: boolean; cStat: string; xMotivo: string; chave?: string; protocolo?: string; xmlRet?: string }> {
   assertMdfAmbiente(ambiente);
   assertMdfXmlAmbiente(xml);
-  const BUILD = "014-signature-transforms-check";
+  const BUILD = "015-force-xmlns-final-payload";
   const ep = getMdfEndpoints(ambiente);
   const agent = createSefazAgent(pfx, senha);
   const nsSinc = "http://www.portalfiscal.inf.br/mdfe/wsdl/MDFeRecepcaoSinc";
@@ -303,16 +303,23 @@ export async function emitirMdf(pfx: Buffer, senha: string, xml: string, ambient
     });
   console.log("[mdf-debug] infModal tag:", xmlForSignature.match(/<infModal[^>]*>/)?.[0] || "(ausente)");
   const xmlAss = signMdfXml(xmlForSignature, pfx, senha);
-  const referenceUri = xmlAss.match(/<Reference URI="([^"]+)"/)?.[1] || "";
-  const signedXmlBytes = Buffer.byteLength(xmlAss, "utf8");
-  console.log(`[mdf-debug] XML final assinado: ${signedXmlBytes} bytes UTF-8; infModal:`, xmlAss.match(/<infModal[^>]*>/)?.[0] || "(ausente)");
+  // BUILD 015: força xmlns em <infModal> no payload final (pós-assinatura),
+  // com limpeza de duplicados. Não invalida o digest: a forma canônica
+  // (BUILD 012) já contém esse mesmo xmlns.
+  const xmlFinal = xmlAss.replace(/<infModal([^>]*)>/g, (_m, attrs: string) => {
+    const cleaned = String(attrs).replace(/\s+xmlns="[^"]*"/g, "");
+    return `<infModal${cleaned} xmlns="http://www.portalfiscal.inf.br/mdfe">`;
+  });
+  const referenceUri = xmlFinal.match(/<Reference URI="([^"]+)"/)?.[1] || "";
+  const signedXmlBytes = Buffer.byteLength(xmlFinal, "utf8");
+  console.log(`[mdf-debug] XML final assinado: ${signedXmlBytes} bytes UTF-8; infModal:`, xmlFinal.match(/<infModal[^>]*>/)?.[0] || "(ausente)");
   // D03/599: diagnóstico somente leitura; não altera o XML assinado.
-  const wsAbre = [...xmlAss.matchAll(/<([^<>\s/][^<>]{0,40})>\s+</g)].map(m => m[1]);
-  const wsFecha = [...xmlAss.matchAll(/>\s+<\/([^<>]+)>/g)].map(m => "/" + m[1]);
+  const wsAbre = [...xmlFinal.matchAll(/<([^<>\s/][^<>]{0,40})>\s+</g)].map(m => m[1]);
+  const wsFecha = [...xmlFinal.matchAll(/>\s+<\/([^<>]+)>/g)].map(m => "/" + m[1]);
   console.log(`[mdf-debug] BUILD=${BUILD} ambiente=${MDFE_AMBIENTE} tpAmb=${MDFE_TP_AMB} reference=${referenceUri} c14n=${XML_INCLUSIVE_C14N} signedXmlUtf8Bytes=${signedXmlBytes} WS-check após-abertura=[${wsAbre.slice(0, 12).join(",")}] antes-fecho=[${wsFecha.slice(0, 12).join(",")}]`);
   // Sincrono (ACBr): mdfeDadosMsg = base64(gzip(<MDFe>...</MDFe>)) puro, sem enviMDFe/idLote.
-  // xmlAss é a string exata devolvida pelo assinador; não a reescreva aqui.
-  const signedMdfXml = xmlAss;
+  // xmlFinal é o payload exato (assinado + xmlns forçado no infModal); vai ao gzip sem mais alterações.
+  const signedMdfXml = xmlFinal;
   const mdfeXmlBytes = Buffer.from(signedMdfXml, "utf8");
   const compactada = zlib.gzipSync(mdfeXmlBytes);
   const compactadaB64 = compactada.toString("base64");

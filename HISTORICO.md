@@ -2543,3 +2543,14 @@ Espelhado na Vercel.
 - Novo log `[mdf-debug] SignedInfo:` com o nó completo antes do envio.
 - Constante de log atualizada para `BUILD=014-signature-transforms-check`.
 - Espelhado na Vercel via push em main.
+
+## BUILD 015: xmlns forçado no payload final (24/09/2026)
+
+- Após `signMdfXml`, `emitirMdf` aplica regex flexível no payload final
+  (`/<infModal([^>]*)>/g` com limpeza de duplicados) e envia esse
+  `xmlFinal` ao gzip/envelope; `signedXmlUtf8Bytes` medido sobre ele
+  (esperado > 5700, ~5717 bytes).
+- Digest preservado: a forma canônica (BUILD 012) já contém o mesmo
+  `xmlns` no `<infModal>`.
+- Constante de log atualizada para `BUILD=015-force-xmlns-final-payload`.
+- Espelhado na Vercel via push em main.
