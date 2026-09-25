@@ -142,7 +142,8 @@ export function buildCteXml(input: CteInputCompleto): { xml: string; chave: stri
   const id = `CTe${chave}`;
   const natOp = input.natOp || "PRESTACAO DE SERVICO DE TRANSPORTE";
   const toma = input.tomador.toma;
-  const crt = input.emit.crt || "3";
+  const crtRaw = String(input.emit.crt || "3").toLowerCase().trim();
+  const crt = /^[1-4]$/.test(crtRaw) ? crtRaw : crtRaw.includes("mei") ? "4" : crtRaw.includes("simples") ? "1" : "3";
   const xNomeToma = input.ambiente === "homologacao" ? HOMOLOG_TOMADOR_NOME : input.tomador.xNome;
 
   // indIEToma: 1=Contribuinte, 2=Isento, 9=Nao Contribuinte

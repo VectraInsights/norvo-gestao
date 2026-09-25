@@ -2613,3 +2613,11 @@ Espelhado na Vercel.
   pré-assinatura mantidas: builder + regex + setAttribute no DOM).
 - Constante de log atualizada para `BUILD=020-dom-ns-c14n-fix`.
 - Espelhado na Vercel via push em main.
+
+## Reconciliacao 24/09 noite (24/09/2026)
+
+- Sincronizado com 19 commits da outra frente (BUILDs 001-020:
+  C14N real via xml-c14n/xmldom, SignedInfo canonico, ambiente
+  global homologacao, filtros por ambiente) + mantidos CRT
+  normalizado e retry com percurso/transbordo desta frente.
+  Espelhado na Vercel via push em main.

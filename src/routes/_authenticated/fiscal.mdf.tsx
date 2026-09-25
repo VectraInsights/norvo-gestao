@@ -113,7 +113,15 @@ function MdfPage() {
     const chaves = [...xml.matchAll(/<chCTe>(\d{44})<\/chCTe>/g)].map(m => m[1]);
     const unicas = [...new Set(chaves)];
     if (!unicas.length) { toast.error("Sem CT-es vinculados para reaproveitar"); return; }
-    setMdfPrefill(unicas);
+    const percurso = [...xml.matchAll(/<UFPer>([A-Z]{2})<\/UFPer>/g)].map(m => m[1]);
+    const transbs = [...xml.matchAll(/<chMDFe>(\d{44})<\/chMDFe>/g)].map(m => m[1]);
+    const tpEmitM = xml.match(/<tpEmit>([13])<\/tpEmit>/)?.[1];
+    setMdfDraft({
+      chaves: unicas, percursoUFs: percurso, observacoes: "", infoFisco: "",
+      tipoMdf: tpEmitM === "3" ? "Globalizado" : "Normal",
+      isTransbordo: transbs.length > 0,
+      transb1: transbs[0] || "", transb2: transbs[1] || "", transb3: transbs[2] || "",
+    });
     setSemRascunho(true);
     setOpen(true);
   };
