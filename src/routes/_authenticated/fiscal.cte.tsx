@@ -170,22 +170,36 @@ function CtePage() {
 
   // CT-es já vinculados a MDF-e ativo (autorizado/encerrado): extrai chCTe
   // dos XMLs dos manifestos para as sub-abas Sem/Com MDF-e.
-  const { data: mdfChaves } = useQuery({
+  const { data: mdfVinculos } = useQuery({
     enabled: !!empresa,
     queryKey: ["mdf-chaves-cte", (empresa as any)?.id],
     queryFn: async ({ signal }) => {
       const { data, error } = await supabase.from("mdf_documentos" as any)
-        .select("xml_assinado").eq("empresa_id", (empresa as any).id)
+        .select("status,xml_assinado").eq("empresa_id", (empresa as any).id)
         .in("status", ["autorizado", "encerrado"]).limit(200).abortSignal(signal);
       if (error) throw error;
-      const set = new Set<string>();
-      for (const r of (data as any[]) || []) {
-        const x = String((r as any)?.xml_assinado || "");
-        for (const m of x.matchAll(/<chCTe>(\d{44})<\/chCTe>/g)) set.add(m[1]);
-      }
-      return set;
+      return (data ?? []) as unknown as Array<{ status: string; xml_assinado: string | null }>;
     },
   });
+  const mdfChaves = useMemo(() => {
+    const set = new Set<string>();
+    for (const r of (mdfVinculos ?? [])) {
+      const x = String((r as any)?.xml_assinado || "");
+      for (const m of x.matchAll(/<chCTe>(\d{44})<\/chCTe>/g)) set.add(m[1]);
+    }
+    return set;
+  }, [mdfVinculos]);
+  // Status do manifesto (aberto x encerrado) por CT-e, p/ mensagens de bloqueio.
+  const mdfStatusPorCte = useMemo(() => {
+    const map = new Map<string, string>();
+    for (const r of (mdfVinculos ?? [])) {
+      const x = String((r as any)?.xml_assinado || "");
+      for (const m of x.matchAll(/<chCTe>(\d{44})<\/chCTe>/g)) {
+        if (!map.has(m[1])) map.set(m[1], String((r as any)?.status || ""));
+      }
+    }
+    return map;
+  }, [mdfVinculos]);
   const autSemMdf = useMemo(() => docsByStatus.autorizados.filter(d => !d.chave_acesso || !mdfChaves?.has(d.chave_acesso)), [docsByStatus, mdfChaves]);
   const autComMdf = useMemo(() => docsByStatus.autorizados.filter(d => !!d.chave_acesso && !!mdfChaves?.has(d.chave_acesso)), [docsByStatus, mdfChaves]);
 
@@ -1822,7 +1836,7 @@ function CtePage() {
                         )}
                       </>
                     )}
-                    {!isRascunho && <Button size="icon" variant="ghost" className="h-7 w-7 text-destructive" disabled={d.status!=="autorizado"} onClick={() => { if (!d.chave_acesso) return; if (d.chave_acesso && mdfChaves?.has(d.chave_acesso)) { toast.error("CT-e vinculado a um MDF-e ativo — cancele o manifesto primeiro"); return; } setCteCancelar({ chave: d.chave_acesso, protocolo: d.protocolo_sefaz || undefined, ambiente: SEFAZ_AMBIENTE }); setMotivoCanc("ERRO DE EMISSAO DO CT-E"); }} title="Cancelar"><Ban className="h-3.5 w-3.5" /></Button>}
+                    {!isRascunho && <Button size="icon" variant="ghost" className="h-7 w-7 text-destructive" disabled={d.status!=="autorizado"} onClick={() => { if (!d.chave_acesso) return; const stMdf = mdfStatusPorCte.get(d.chave_acesso); if (stMdf === "encerrado") { toast.error("Manifesto encerrado — o CT-e não pode ser cancelado"); return; } if (stMdf) { toast.error("CT-e vinculado a um MDF-e ativo — cancele o manifesto primeiro"); return; } setCteCancelar({ chave: d.chave_acesso, protocolo: d.protocolo_sefaz || undefined, ambiente: SEFAZ_AMBIENTE }); setMotivoCanc("ERRO DE EMISSAO DO CT-E"); }} title="Cancelar"><Ban className="h-3.5 w-3.5" /></Button>}
                     {!isRascunho && <Button size="icon" variant="ghost" className="h-7 w-7 text-emerald-600" onClick={() => visualizarDoc(d)} title="Ver dados e status"><ClipboardList className="h-3.5 w-3.5" /></Button>}
                     {!isRascunho && d.status === "autorizado" && <Button size="icon" variant="ghost" className="h-7 w-7 text-violet-600" onClick={() => substituirCte(d)} title="Emitir CT-e de substituição"><Repeat className="h-3.5 w-3.5" /></Button>}
                     {!isRascunho && <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => d.chave_acesso && consultar.mutate({ chave: d.chave_acesso, ambiente: SEFAZ_AMBIENTE })} title="Consultar SEFAZ"><Search className="h-3.5 w-3.5" /></Button>}

@@ -814,22 +814,42 @@ function DialogNovoMdf({ open, onOpenChange, empresaId, empresa, chavesIniciais,
     queryKey: ["mdf-encerrados", empresaId],
     queryFn: async ({ signal }) => {
       const { data, error } = await supabase.from("mdf_documentos" as any)
-        .select("chave_acesso,numero,veiculo_tracao_id").eq("empresa_id", empresaId)
+        .select("chave_acesso,numero,veiculo_tracao_id,xml_assinado").eq("empresa_id", empresaId)
         .eq("status", "encerrado").order("created_at", { ascending: false }).limit(100).abortSignal(signal);
       if (error) throw error;
-      return (data ?? []) as unknown as Array<{ chave_acesso: string | null; numero: string | null; veiculo_tracao_id: string | null }>;
+      return (data ?? []) as unknown as Array<{ chave_acesso: string | null; numero: string | null; veiculo_tracao_id: string | null; xml_assinado: string | null }>;
     },
   });
+  // Resumo do manifesto origem p/ o dropdown (nº, emissão, carga, descarga, veículo).
+  const infoTransb = (xmlRaw: string | null) => {
+    let xml = String(xmlRaw || "");
+    try { const p = JSON.parse(xml); if (p?.xml) xml = String(p.xml); } catch {}
+    const dh = xml.match(/<dhEmi>([^<]+)<\/dhEmi>/)?.[1] || "";
+    const data = /^\d{4}-\d{2}-\d{2}/.test(dh) ? dh.slice(0, 10).split("-").reverse().join("/") : "";
+    const munCar = xml.match(/<xMunCarrega>([^<]*)<\/xMunCarrega>/)?.[1]?.trim() || "";
+    const ufIni = xml.match(/<UFIni>([^<]*)<\/UFIni>/)?.[1]?.trim() || "";
+    const descs = [...xml.matchAll(/<xMunDescarga>([^<]*)<\/xMunDescarga>/g)].map(m => m[1].trim()).filter(Boolean);
+    const ufFim = xml.match(/<UFFim>([^<]*)<\/UFFim>/)?.[1]?.trim() || "";
+    return { data, munCar, ufIni, munDesc: descs.length ? descs[descs.length - 1] : "", ufFim };
+  };
   const transbOpts = useMemo(() => {
     const tv = (veiculos || []).find(v => !!tracaoSel && String(v.placa || "").toUpperCase() === tracaoSel);
     if (!tv) return [];
-    return (mdfsEncerrados || []).filter(m => m.veiculo_tracao_id && m.veiculo_tracao_id === (tv as any).id && m.chave_acesso);
+    return (mdfsEncerrados || [])
+      .filter(m => m.veiculo_tracao_id && m.veiculo_tracao_id === (tv as any).id && m.chave_acesso)
+      .map(m => {
+        const t = infoTransb((m as any).xml_assinado);
+        const v = (veiculos || []).find(x => String((x as any).id) === String((m as any).veiculo_tracao_id));
+        const veic = v ? `${String((v as any).placa || "").toUpperCase()}${(v as any).marca_modelo ? " " + String((v as any).marca_modelo).toUpperCase() : ""}` : "";
+        const label = `#${m.numero ?? "?"}${t.data ? " · " + t.data : ""}${t.munCar ? ` · ${t.munCar}${t.ufIni ? "/" + t.ufIni : ""}` : ""}${t.munDesc ? ` → ${t.munDesc}${t.ufFim ? "/" + t.ufFim : ""}` : ""}${veic ? " · " + veic : ""}`;
+        return { chave: m.chave_acesso as string, label };
+      });
   }, [mdfsEncerrados, veiculos, tracaoSel]);
   const TransbSelect = ({ label, value, onChange }: { label: string; value: string; onChange: (v: string) => void }) => (
     <div className="min-w-0"><Label className="text-xs whitespace-nowrap">{label}</Label>
       <Select value={value || undefined} onValueChange={onChange} disabled={!isTransbordo}>
         <SelectTrigger className="h-6 text-[11px] font-mono"><SelectValue placeholder={transbOpts.length ? "Selecione..." : "Sem encerrados p/ tração"} /></SelectTrigger>
-        <SelectContent>{transbOpts.map(o => (<SelectItem key={o.chave_acesso} value={o.chave_acesso || ""} className="font-mono text-[11px]" title={o.chave_acesso || ""}>#{o.numero ?? "?"} ···{(o.chave_acesso || "").slice(-8)}</SelectItem>))}</SelectContent>
+        <SelectContent>{transbOpts.map(o => (<SelectItem key={o.chave} value={o.chave} className="font-mono text-[11px]" title={o.chave}>{o.label}</SelectItem>))}</SelectContent>
       </Select>
     </div>
   );
@@ -894,6 +914,15 @@ function DialogNovoMdf({ open, onOpenChange, empresaId, empresa, chavesIniciais,
   const ambienteMdf = MDFE_AMBIENTE;
   useEffect(() => { if (!open) return; (async () => { try { const { data } = await supabase.auth.getUser(); const usr = (data as any)?.user; if (!usr) return; let nm = (usr?.user_metadata as any)?.nome || ""; if (!nm && empresaId) { const { data: eu } = await supabase.from("empresa_users" as any).select("nome").eq("empresa_id", empresaId).eq("user_id", usr.id).maybeSingle(); nm = (eu as any)?.nome || ""; } setRespNome(nm || ""); } catch {} })(); }, [open, empresaId]);
   useEffect(() => { if (open && chavesIniciais?.length) { setCtesSelecionadas(new Set(chavesIniciais)); setPercursoUFs([]); } }, [open]);
+  // Ao fechar (ESC/X/voltar), limpa tudo da memória para o próximo manifesto.
+  useEffect(() => {
+    if (open) return;
+    setCtesSelecionadas(new Set()); setTracaoSel(""); setUfCarregamento(""); setUfDescarregamento("");
+    setCidadeFimSel(""); setPercursoUFs([]); setObservacoes(""); setInfoFisco(""); setIsTransbordo(false);
+    setTransb1(""); setTransb2(""); setTransb3(""); setTipoMdf("Normal"); setPercursoSelIdx(null);
+    setMotoristaId(""); setVeicTracId("");
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open]);
   useEffect(() => {
     if (!open || !rascunhoInicial) return;
     setCtesSelecionadas(new Set(rascunhoInicial.chaves || []));

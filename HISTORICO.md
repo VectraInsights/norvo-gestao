@@ -2974,3 +2974,12 @@ Espelhado na Vercel.
 - Transbordo selecionado filtra a relação só aos CT-es dele (exceção
   legítima ao bloqueio de vinculados).
 - Espelhado na Vercel via push em main.
+
+## Aviso de encerrado, memória limpa e transbordo rico (25/09/2026)
+
+- Cancelar CT-e de manifesto encerrado avisa que não pode ser
+  cancelado; de manifesto aberto mantém "cancele o manifesto".
+- Novo MDF-e limpa tudo ao fechar (ESC/X/voltar) — sem resto na memória.
+- Dropdowns de transbordo com Nº, emissão, carga, descarga e veículo
+  (marca/modelo), sem o Id interno.
+- Espelhado na Vercel via push em main.
