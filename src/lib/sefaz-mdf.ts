@@ -285,7 +285,7 @@ async function soapRequest(url: string, body: string, action: string, agent?: ht
 export async function emitirMdf(pfx: Buffer, senha: string, xml: string, ambiente: Ambiente): Promise<{ sucesso: boolean; cStat: string; xMotivo: string; chave?: string; protocolo?: string; xmlRet?: string }> {
   assertMdfAmbiente(ambiente);
   assertMdfXmlAmbiente(xml);
-  const BUILD = "023-rntrc-8-digitos";
+  const BUILD = "024-rntrc-proxy-sanitize";
   const ep = getMdfEndpoints(ambiente);
   const agent = createSefazAgent(pfx, senha);
   const nsSinc = "http://www.portalfiscal.inf.br/mdfe/wsdl/MDFeRecepcaoSinc";
@@ -298,7 +298,16 @@ export async function emitirMdf(pfx: Buffer, senha: string, xml: string, ambient
   // exatamente o que é enviado.
   // Regex: remove xmlns redundante de <infModal> (C14N padrão omite declaração
   // redundante em não-ápice; mantê-la quebra o digest na SEFAZ).
-  const xmlForSignature = xml
+  // Sanitização de transporte (vale para XML montado por qualquer front,
+  // inclusive versões antigas): TRNTRC exige 8 dígitos — remove zero(s)
+  // à esquerda; RNTRC inválido aborta antes de assinar.
+  const xmlSanitizado = xml.replace(/<RNTRC>(\d+)<\/RNTRC>/g, (_m, d: string) => {
+    let x = String(d);
+    while (x.length > 8 && x.startsWith("0")) x = x.slice(1);
+    if (!/^\d{8}$/.test(x)) throw new Error(`RNTRC invalido para a SEFAZ (8 digitos): ${d}`);
+    return `<RNTRC>${x}</RNTRC>`;
+  });
+  const xmlForSignature = xmlSanitizado
     .replace(/\r\n?/g, "\n")
     .replace(/^\uFEFF?\s*<\?xml[^?]*\?>\s*/i, "")
     .replace(/<infModal([^>]*)>/g, (_m, attrs: string) => {

@@ -2657,3 +2657,11 @@ Espelhado na Vercel.
   devolveu 580: RNTRC 044560578 (9 digitos) viola TRNTRC.
   Mesma normalizacao do CT-e (tira zero a esquerda ate 8).
   Espelhado na Vercel via push em main.
+
+## BUILD 024: sanitiza RNTRC no proxy (25/09/2026)
+
+- BUILD 023 normalizou no builder, mas o XML chega montado pelo
+  front antigo (CF congelado) — proxy assinava sem normalizar.
+  Sanitizacao movida para emitirMdf (transporte): tira zero a
+  esquerda ate 8 digitos; invalido aborta antes de assinar.
+  Espelhado na Vercel via push em main.
