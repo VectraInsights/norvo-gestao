@@ -2641,3 +2641,12 @@ Espelhado na Vercel.
   (erros TS2440/2395 pre-existentes); build passa e a local
   prevalece — limpeza fica para depois.
   Espelhado na Vercel via push em main.
+
+## BUILD 022: sem xmlns redundante no infModal (25/09/2026)
+
+- Causa do 297 isolada por verificacao offline (digest+RSA do
+  log conferem): C14N padrao omite declaracao redundante em
+  nao-apice, mas builder+regex injetavam xmlns no infModal —
+  digest cobria bytes que o enviado nao tinha (na pratica).
+  Removido do template e da regex (agora so limpa).
+  Espelhado na Vercel via push em main.

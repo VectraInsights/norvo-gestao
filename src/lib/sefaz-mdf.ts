@@ -197,7 +197,7 @@ export function buildMdfXml(input: MdfInputCompleto): { xml: string; chave: stri
         <UF>${input.emit.uf}</UF>
       </enderEmit>
     </emit>
-    <infModal versaoModal="3.00" xmlns="http://www.portalfiscal.inf.br/mdfe">
+    <infModal versaoModal="3.00">
       <rodo>
         <infANTT>
           <RNTRC>${input.veicTrac.rntrc}</RNTRC>
@@ -281,7 +281,7 @@ async function soapRequest(url: string, body: string, action: string, agent?: ht
 export async function emitirMdf(pfx: Buffer, senha: string, xml: string, ambiente: Ambiente): Promise<{ sucesso: boolean; cStat: string; xMotivo: string; chave?: string; protocolo?: string; xmlRet?: string }> {
   assertMdfAmbiente(ambiente);
   assertMdfXmlAmbiente(xml);
-  const BUILD = "021-no-redundant-xmlns";
+  const BUILD = "022-sem-xmlns-redundante-infmodal";
   const ep = getMdfEndpoints(ambiente);
   const agent = createSefazAgent(pfx, senha);
   const nsSinc = "http://www.portalfiscal.inf.br/mdfe/wsdl/MDFeRecepcaoSinc";
@@ -289,24 +289,22 @@ export async function emitirMdf(pfx: Buffer, senha: string, xml: string, ambient
   const cabec = `<mdfeCabecMsg xmlns="${nsSinc}"><cUF>${cUF}</cUF><versaoDados>3.00</versaoDados></mdfeCabecMsg>`;
   // A declaração XML é removida ANTES da assinatura. Depois disso, xmlAss
   // é transportado sem qualquer replace/trim; os mesmos bytes UTF-8 vão para o gzip.
-  // BUILD 013: a injeção do xmlns em <infModal> é feita no DOCUMENTO GLOBAL
-  // (xmlForSignature), ANTES de invocar signMdfXml. O digest é calculado sobre
-  // o <infMDFe> desse mesmo documento e a <Signature> é anexada a ele;
-  // o envelope de transporte usa esse mesmo xmlAss sem reescrita.
-  // Regex flexível: captura qualquer atributo existente, remove xmlns duplicado
-  // e reinjeta um único xmlns antes do fechamento da tag.
+  // Sem xmlns redundante em <infModal>: C14N padrão omite declaração
+  // redundante em não-ápice, então o digest cobre os bytes sem ele —
+  // exatamente o que é enviado.
+  // Regex: remove xmlns redundante de <infModal> (C14N padrão omite declaração
+  // redundante em não-ápice; mantê-la quebra o digest na SEFAZ).
   const xmlForSignature = xml
     .replace(/\r\n?/g, "\n")
     .replace(/^\uFEFF?\s*<\?xml[^?]*\?>\s*/i, "")
     .replace(/<infModal([^>]*)>/g, (_m, attrs: string) => {
       const cleaned = String(attrs).replace(/\s+xmlns="[^"]*"/g, "");
-      return `<infModal${cleaned} xmlns="http://www.portalfiscal.inf.br/mdfe">`;
+      return `<infModal${cleaned}>`;
     });
   console.log("[mdf-debug] infModal tag:", xmlForSignature.match(/<infModal[^>]*>/)?.[0] || "(ausente)");
   const xmlAss = signMdfXml(xmlForSignature, pfx, senha);
-  // BUILD 020 (invariância): xmlAss segue direto ao envelope, sem replaces
-  // pós-assinatura; o xmlns do infModal já está garantido pré-assinatura
-  // (builder + regex em xmlForSignature + setAttribute no DOM do digest).
+  // Invariância: xmlAss segue direto ao envelope, sem replaces
+  // pós-assinatura; sem xmlns redundante em <infModal>.
   const referenceUri = xmlAss.match(/<Reference URI="([^"]+)"/)?.[1] || "";
   const signedXmlBytes = Buffer.byteLength(xmlAss, "utf8");
   console.log(`[mdf-debug] XML final assinado: ${signedXmlBytes} bytes UTF-8; infModal:`, xmlAss.match(/<infModal[^>]*>/)?.[0] || "(ausente)");
