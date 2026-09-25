@@ -3014,3 +3014,11 @@ Espelhado na Vercel.
 - Reenvio de transbordo marca os CT-es automaticamente (uma vez;
   desmarcar é respeitado); duplicadas entre dropdowns eliminadas.
 - Espelhado na Vercel via push em main.
+
+## Compactação visual do MDF-e (25/09/2026)
+
+- Sem campo manual de protocolo no cancelar (recuperação automática);
+  UFs de início/encerramento voltaram a sigla.
+- Novo MDF-e compactado p/ caber na tela: tabela de CT-es e lista de
+  percurso menores, observações em 1 linha (rolagem só em telas baixas).
+- Espelhado na Vercel via push em main.

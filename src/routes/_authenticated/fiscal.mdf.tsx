@@ -187,7 +187,6 @@ function MdfPage() {
     setConsultandoChave("");
   };
   const [justificativa, setJustificativa] = useState("");
-  const [protocoloManual, setProtocoloManual] = useState("");
   const continuarRascunho = (d: MdfDoc) => {
     try {
       const p = JSON.parse(String((d as any).xml_assinado || "{}"));
@@ -366,7 +365,7 @@ function MdfPage() {
                           <Button variant="ghost" size="sm" onClick={() => { setMdfEncerrar(d); setOpenEncerrar(true); }} title="Encerrar">
                             <CheckCircle2 className="h-4 w-4" />
                           </Button>
-                          <Button variant="ghost" size="sm" onClick={() => { setMdfCancelar(d); setJustificativa("ERRO DE EMISSAO DO MDF-E"); setProtocoloManual(String(d.protocolo_sefaz || "").replace(/\D/g, "")); setOpenCancelar(true); }} title="Cancelar">
+                          <Button variant="ghost" size="sm" onClick={() => { setMdfCancelar(d); setJustificativa("ERRO DE EMISSAO DO MDF-E"); setOpenCancelar(true); }} title="Cancelar">
                             <XCircle className="h-4 w-4 text-destructive" />
                           </Button>
                         </>
@@ -438,11 +437,6 @@ function MdfPage() {
             <DialogHeader><DialogTitle>Cancelar MDF-e #{mdfCancelar.numero}</DialogTitle></DialogHeader>
             <div className="space-y-2">
               <div>
-                <Label>Protocolo de autorização (15 dígitos)</Label>
-                <Input value={protocoloManual} onChange={(e) => setProtocoloManual(e.target.value.replace(/\D/g, "").slice(0, 15))} placeholder="Preenchido do registro; se vazio, informe o do Portal Nacional" className="font-mono" />
-                <p className="text-[11px] text-muted-foreground mt-1">Quando vazio, o sistema tenta recuperar via consulta SEFAZ (fora do ar no SVRS). Consulte a chave no Portal Nacional do MDF-e e cole o protocolo aqui.</p>
-              </div>
-              <div>
                 <Label>Motivo (obrigatório)</Label>
                 <Select value={justificativa} onValueChange={setJustificativa}>
                   <SelectTrigger><SelectValue placeholder="Selecione o motivo" /></SelectTrigger>
@@ -455,14 +449,14 @@ function MdfPage() {
               </div>
             </div>
             <DialogFooter>
-              <Button variant="outline" onClick={() => { setOpenCancelar(false); setJustificativa(""); setProtocoloManual(""); }}>Voltar</Button>
+              <Button variant="outline" onClick={() => { setOpenCancelar(false); setJustificativa(""); }}>Voltar</Button>
               <Button variant="destructive" disabled={!justificativa.trim()} onClick={async () => {
                 if (!empresa || !mdfCancelar.chave_acesso) return;
                 try {
-                  const res = await cancelarMdfFn({ data: { empresaId: empresa.id, chave: mdfCancelar.chave_acesso, justificativa: justificativa.trim(), cnpj: String((empresa as any)?.cnpj || ""), uf: mdfCancelar.uf_carregamento || "", protocolo: protocoloManual.replace(/\D/g, "") || mdfCancelar.protocolo_sefaz || "" } });
+                  const res = await cancelarMdfFn({ data: { empresaId: empresa.id, chave: mdfCancelar.chave_acesso, justificativa: justificativa.trim(), cnpj: String((empresa as any)?.cnpj || ""), uf: mdfCancelar.uf_carregamento || "", protocolo: mdfCancelar.protocolo_sefaz || "" } });
                   if (res.sucesso) toast.success("MDF-e cancelado com sucesso!");
                   else toast.error(`Erro: ${res.xMotivo}`);
-                  setOpenCancelar(false); setMdfCancelar(null); setJustificativa(""); setProtocoloManual("");
+                  setOpenCancelar(false); setMdfCancelar(null); setJustificativa("");
                   qc.invalidateQueries({ queryKey: ["mdf-documentos"] });
                 } catch (e: unknown) { toast.error(e instanceof Error ? e.message : "Erro ao cancelar"); }
               }}>Confirmar Cancelamento</Button>
@@ -617,7 +611,7 @@ function DialogVerMdf({ d, xml, onClose, onBaixarXml, onBaixarPdf }: { d: MdfDoc
           <div className="grid grid-cols-1 md:grid-cols-4 gap-2">
             <div className="border rounded-md p-2 md:col-span-1">
               <Label className="text-xs">Percurso ({percursoCompleto.length} UF(s))</Label>
-              <div className="border rounded mt-2 max-h-[110px] overflow-auto">
+              <div className="border rounded mt-2 max-h-[80px] overflow-auto">
                 <table className="w-full text-xs">
                   <thead className="bg-muted sticky top-0"><tr><th className="text-left px-1 py-0.5 font-semibold">#</th><th className="text-left px-1 py-0.5 font-semibold">UF</th></tr></thead>
                   <tbody>
@@ -762,7 +756,6 @@ function DialogNovoMdf({ open, onOpenChange, empresaId, empresa, chavesIniciais,
   });
 
   const UFS = ["AC","AL","AM","AP","BA","CE","DF","ES","GO","MA","MG","MS","MT","PA","PB","PE","PI","PR","RJ","RN","RO","RR","RS","SC","SE","SP","TO"];
-  const UF_NOME: Record<string, string> = { AC: "Acre", AL: "Alagoas", AM: "Amazonas", AP: "Amapá", BA: "Bahia", CE: "Ceará", DF: "Distrito Federal", ES: "Espírito Santo", GO: "Goiás", MA: "Maranhão", MG: "Minas Gerais", MS: "Mato Grosso do Sul", MT: "Mato Grosso", PA: "Pará", PB: "Paraíba", PE: "Pernambuco", PI: "Piauí", PR: "Paraná", RJ: "Rio de Janeiro", RN: "Rio Grande do Norte", RO: "Rondônia", RR: "Roraima", RS: "Rio Grande do Sul", SC: "Santa Catarina", SE: "Sergipe", SP: "São Paulo", TO: "Tocantins" };
   const { data: ctesDisponiveis, error: ctesErro } = useQuery({
     enabled: !!empresaId && open,
     queryKey: ["ctes-para-mdf", empresaId],
@@ -1341,8 +1334,8 @@ function DialogNovoMdf({ open, onOpenChange, empresaId, empresa, chavesIniciais,
                 <div className="min-w-0"><Label className="text-xs whitespace-nowrap">Cidade Início</Label><Input className="h-6 text-[11px] bg-stone-200 dark:bg-muted" readOnly value={cidadeIniDerivada} /></div>
                 <div><Label className="text-xs whitespace-nowrap" title="UF de Início">UF Início</Label>
                   <Select value={ufCarregamento} onValueChange={setUfCarregamento}>
-                    <SelectTrigger className="h-6 px-1 text-[11px]"><SelectValue placeholder="Estado" /></SelectTrigger>
-                    <SelectContent>{UFS.map(uf => (<SelectItem key={uf} value={uf}>{UF_NOME[uf] || uf}</SelectItem>))}</SelectContent>
+                    <SelectTrigger className="h-6 px-1 text-[11px] font-mono"><SelectValue placeholder="UF" /></SelectTrigger>
+                    <SelectContent>{UFS.map(uf => (<SelectItem key={uf} value={uf} className="font-mono">{uf}</SelectItem>))}</SelectContent>
                   </Select>
                 </div>
                 <div className="min-w-0"><Label className="text-xs whitespace-nowrap">Cidade Encerramento</Label>{cidadesFimOptions.length > 1 ? (
@@ -1353,8 +1346,8 @@ function DialogNovoMdf({ open, onOpenChange, empresaId, empresa, chavesIniciais,
                 ) : (<Input className="h-6 text-[11px] bg-stone-200 dark:bg-muted" readOnly value={cidadeFimDerivada} />)}</div>
                 <div><Label className="text-xs whitespace-nowrap" title="UF de Encerramento">UF Encerramento</Label>
                   <Select value={ufDescarregamento} onValueChange={setUfDescarregamento}>
-                    <SelectTrigger className="h-6 px-1 text-[11px]"><SelectValue placeholder="Estado" /></SelectTrigger>
-                    <SelectContent>{UFS.map(uf => (<SelectItem key={uf} value={uf}>{UF_NOME[uf] || uf}</SelectItem>))}</SelectContent>
+                    <SelectTrigger className="h-6 px-1 text-[11px] font-mono"><SelectValue placeholder="UF" /></SelectTrigger>
+                    <SelectContent>{UFS.map(uf => (<SelectItem key={uf} value={uf} className="font-mono">{uf}</SelectItem>))}</SelectContent>
                   </Select>
                 </div>
               </div>
@@ -1396,7 +1389,7 @@ function DialogNovoMdf({ open, onOpenChange, empresaId, empresa, chavesIniciais,
             ) : !ctesDisponiveis?.length ? (
               <p className="text-sm text-muted-foreground">Nenhum CT-e autorizado disponível.</p>
             ) : (
-              <div className="border rounded-md max-h-[260px] overflow-auto">
+              <div className="border rounded-md max-h-[150px] overflow-auto">
                 <Table>
                   <TableHeader className="sticky top-0 bg-muted"><TableRow>
                     <TableHead className="w-[36px]"><input type="checkbox" checked={todasMarcadas} onChange={toggleTodas} className="h-4 w-4" title="Selecionar todos" /></TableHead>
@@ -1444,7 +1437,7 @@ function DialogNovoMdf({ open, onOpenChange, empresaId, empresa, chavesIniciais,
                   </div>
                 </div>
               </div>
-              <div className="border rounded mt-2 max-h-[110px] overflow-auto">
+              <div className="border rounded mt-2 max-h-[80px] overflow-auto">
                 <table className="w-full text-xs">
                   <thead className="bg-muted sticky top-0"><tr><th className="text-left px-1 py-0.5 font-semibold">#</th><th className="text-left px-1 py-0.5 font-semibold">UF</th><th className="text-left px-1 py-0.5 font-semibold">Ações</th></tr></thead>
                   <tbody>
@@ -1471,8 +1464,8 @@ function DialogNovoMdf({ open, onOpenChange, empresaId, empresa, chavesIniciais,
             </div>
             <div className="space-y-2 md:col-span-3">
               <div className="border rounded-md p-2 space-y-1">
-                <div><Label className="text-xs">Observação</Label><Textarea value={observacoes} onChange={e => setObservacoes(e.target.value)} rows={2} className="text-xs" /></div>
-                <div><Label className="text-xs">Informações Adicionais Fisco</Label><Textarea value={infoFisco} onChange={e => setInfoFisco(e.target.value)} rows={2} className="text-xs" /></div>
+                <div><Label className="text-xs">Observação</Label><Textarea value={observacoes} onChange={e => setObservacoes(e.target.value)} rows={1} className="text-xs min-h-[28px]" /></div>
+                <div><Label className="text-xs">Informações Adicionais Fisco</Label><Textarea value={infoFisco} onChange={e => setInfoFisco(e.target.value)} rows={1} className="text-xs min-h-[28px]" /></div>
               </div>
             </div>
           </div>
