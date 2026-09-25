@@ -558,13 +558,16 @@ export async function emitirMdf(pfx: Buffer, senha: string, xml: string, ambient
   console.log(`[mdf-debug] transporte XML preservado: xmlBytes=${mdfeXmlBytes.length} gzipBytes=${compactada.length} base64Bytes=${compactadaB64.length}`);
   const body = `<mdfeDadosMsg xmlns="${nsSinc}">${compactadaB64}</mdfeDadosMsg>`;
   const ret = await soapRequest(ep.mdfRecepcaoSinc, body, `${nsSinc}/mdfeRecepcao`, agent, cabec);
-  const prot = ret.match(/<infProt>[\s\S]*?<\/infProt>/)?.[0] || "";
-  const cStatProt = prot.match(/<cStat>(\d+)<\/cStat>/)?.[1] || "";
-  const xMotivoProt = prot.match(/<xMotivo>([^<]+)<\/xMotivo>/)?.[1] || "";
-  const cStat = cStatProt || ret.match(/<cStat>(\d+)<\/cStat>/)?.[1] || "";
-  const xMotivo = xMotivoProt || ret.match(/<xMotivo>([^<]+)<\/xMotivo>/)?.[1] || "";
-  const chave = ret.match(/<chMDFe>(\d{44})<\/chMDFe>/)?.[1] || xml.match(/Id="MDFe(\d{44})"/)?.[1];
-  const protocolo = prot.match(/<nProt>(\d+)<\/nProt>/)?.[1];
+  // Extração tolerante a prefixo de namespace (SVRS varia a serialização).
+  const prot = ret.match(/<(?:[\w.-]+:)?infProt(?:\s[^>]*)?>[\s\S]*?<\/(?:[\w.-]+:)?infProt>/)?.[0] || "";
+  const protTag = (t: string) => prot.match(new RegExp(`<(?:[\\w.-]+:)?${t}(?:\\s[^>]*)?>([^<]*)<\\/(?:[\\w.-]+:)?${t}>`))?.[1] || "";
+  const cStatProt = protTag("cStat");
+  const xMotivoProt = protTag("xMotivo");
+  const cStat = cStatProt || extractMdfResponseTags(ret, "cStat")[0] || "";
+  const xMotivo = xMotivoProt || extractMdfResponseTags(ret, "xMotivo")[0] || "";
+  const chave = ret.match(/<(?:[\w.-]+:)?chMDFe>(\d{44})<\/(?:[\w.-]+:)?chMDFe>/)?.[1] || xml.match(/Id="MDFe(\d{44})"/)?.[1];
+  const protocolo = protTag("nProt") || undefined;
+  console.log(`[mdf-debug] protocolo extraído: ${protocolo || "(ausente)"} (bloco infProt: ${prot ? "presente" : "AUSENTE"})`);
   return { sucesso: cStat === "100", cStat, xMotivo, chave, protocolo, xmlRet: ret };
 }
 

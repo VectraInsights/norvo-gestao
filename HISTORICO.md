@@ -2886,11 +2886,16 @@ Espelhado na Vercel.
   Campo manual do dialog mantido como último recurso.
 - Espelhado na Vercel via push em main.
 
-## Digest do evento sobre infEvento (25/09/2026)
-
-- 297 no cancelar/encerrar: `signXml(evento)` sem `digestInput` gerava o
+## Digest do evento sobre infEvento (25/09/2026)- 297 no cancelar/encerrar: `signXml(evento)` sem `digestInput` gerava o
   digest sobre o `<eventoMDFe>` inteiro, mas o Reference aponta o
   `infEvento`. Novo `signMdfEventoXml` canonicaliza o `infEvento`
   (ápice com xmlns) e assina sobre ele (provado localmente: digests
   divergem). Vale para cancelar e encerrar.
+- Espelhado na Vercel via push em main.
+
+## Protocolo gravado na emissão (25/09/2026)
+
+- Emissão autorizada sem `protocolo_sefaz`: extração do `nProt` agora
+  tolera prefixo de namespace em `infProt`/`nProt`/`chMDFe`/`cStat` e
+  registra no log se o bloco `infProt` veio presente ou ausente.
 - Espelhado na Vercel via push em main.
