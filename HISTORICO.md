@@ -2730,3 +2730,9 @@ Espelhado na Vercel.
 - 480: infMDFeSupl/qrCodMDFe anexado apos assinar (fora da
   area do digest, como no CT-e). URL SVRS com chave + tpAmb.
   Espelhado na Vercel via push em main.
+
+## BUILD 033: QR Code apos Signature (25/09/2026)
+
+- 480 persistia: Signature e irma apos </infMDFe>, entao a
+  regex de insercao nao casava. infMDFeSupl agora antes de
+  </MDFe> (ordem XSD) + log presente/AUSENTE. Espelhado.
