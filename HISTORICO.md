@@ -3026,5 +3026,7 @@ Espelhado na Vercel.
 ## Rodapé em 3 colunas (25/09/2026)
 
 - Base do Novo MDF-e em 2/10 (tabela do percurso), 1/10 (seletor de UFs)
-  e 7/10 (observações + fisco, caixas ampliadas p/ 3 linhas).
+  e 7/10 (observações + fisco).
+- Seletor rotulado "Adicionar UF" alinhado ao topo; instrução do percurso
+  removida; observações/fisco em 2 linhas p/ subir o rodapé de botões.
 - Espelhado na Vercel via push em main.

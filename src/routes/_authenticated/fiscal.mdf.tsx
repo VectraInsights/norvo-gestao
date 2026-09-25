@@ -1449,15 +1449,14 @@ function DialogNovoMdf({ open, onOpenChange, empresaId, empresa, chavesIniciais,
                   </tbody>
                 </table>
               </div>
-              <p className="text-[10px] text-muted-foreground mt-1">Lista em ordem de passagem • clique para selecionar • ▲/▼ reordena • ✕/Exclui remove • mesma UF pode repetir.</p>
               {!!errosPercurso.length && (
                 <div className="mt-1 border border-destructive/50 bg-destructive/10 rounded p-1.5">
                   {errosPercurso.map(e => (<p key={e} className="text-[11px] text-destructive">⚠ {e}</p>))}
                 </div>
               )}
             </div>
-            <div className="border rounded-md p-2 md:col-span-1">
-              <span className="text-[10px] text-muted-foreground">Adicionar rápido (permite repetir):</span>
+            <div className="border rounded-md p-2 md:col-span-1 self-start">
+              <span className="text-[10px] text-muted-foreground">Adicionar UF:</span>
               <div className="flex flex-wrap gap-1 mt-2">
                 {UFS.map(uf => (
                   <Button key={uf} variant="outline" size="sm" className="h-5 px-1.5 text-[10px] font-mono" onClick={() => { setPercursoUFs(prev => [...prev, uf]); setPercursoSelIdx(percursoUFs.length); }}>{uf}</Button>
@@ -1466,8 +1465,8 @@ function DialogNovoMdf({ open, onOpenChange, empresaId, empresa, chavesIniciais,
             </div>
             <div className="space-y-2 md:col-span-7">
               <div className="border rounded-md p-2 space-y-1">
-                <div><Label className="text-xs">Observação</Label><Textarea value={observacoes} onChange={e => setObservacoes(e.target.value)} rows={3} className="text-xs" /></div>
-                <div><Label className="text-xs">Informações Adicionais Fisco</Label><Textarea value={infoFisco} onChange={e => setInfoFisco(e.target.value)} rows={3} className="text-xs" /></div>
+                <div><Label className="text-xs">Observação</Label><Textarea value={observacoes} onChange={e => setObservacoes(e.target.value)} rows={2} className="text-xs" /></div>
+                <div><Label className="text-xs">Informações Adicionais Fisco</Label><Textarea value={infoFisco} onChange={e => setInfoFisco(e.target.value)} rows={2} className="text-xs" /></div>
               </div>
             </div>
           </div>
