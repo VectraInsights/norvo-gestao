@@ -1425,7 +1425,7 @@ function DialogNovoMdf({ open, onOpenChange, empresaId, empresa, chavesIniciais,
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-10 gap-2">
-            <div className="border rounded-md p-2 md:col-span-1 min-w-0 overflow-hidden">
+            <div className="border rounded-md p-2 md:col-span-2 min-w-0 overflow-hidden">
               <div className="flex items-center justify-between gap-1 flex-wrap">
                 <Label className="text-xs">Percurso *</Label>
                 <div className="flex items-center gap-1">
@@ -1456,7 +1456,7 @@ function DialogNovoMdf({ open, onOpenChange, empresaId, empresa, chavesIniciais,
                 </div>
               )}
             </div>
-            <div className="border rounded-md p-2 md:col-span-2">
+            <div className="border rounded-md p-2 md:col-span-1">
               <span className="text-[10px] text-muted-foreground">Adicionar rápido (permite repetir):</span>
               <div className="flex flex-wrap gap-1 mt-2">
                 {UFS.map(uf => (
@@ -1466,8 +1466,8 @@ function DialogNovoMdf({ open, onOpenChange, empresaId, empresa, chavesIniciais,
             </div>
             <div className="space-y-2 md:col-span-7">
               <div className="border rounded-md p-2 space-y-1">
-                <div><Label className="text-xs">Observação</Label><Textarea value={observacoes} onChange={e => setObservacoes(e.target.value)} rows={1} className="text-xs min-h-[28px]" /></div>
-                <div><Label className="text-xs">Informações Adicionais Fisco</Label><Textarea value={infoFisco} onChange={e => setInfoFisco(e.target.value)} rows={1} className="text-xs min-h-[28px]" /></div>
+                <div><Label className="text-xs">Observação</Label><Textarea value={observacoes} onChange={e => setObservacoes(e.target.value)} rows={3} className="text-xs" /></div>
+                <div><Label className="text-xs">Informações Adicionais Fisco</Label><Textarea value={infoFisco} onChange={e => setInfoFisco(e.target.value)} rows={3} className="text-xs" /></div>
               </div>
             </div>
           </div>

@@ -3025,6 +3025,6 @@ Espelhado na Vercel.
 
 ## Rodapé em 3 colunas (25/09/2026)
 
-- Base do Novo MDF-e em 1/10 (tabela do percurso), 2/10 (seletor de UFs)
-  e 7/10 (observações + fisco).
+- Base do Novo MDF-e em 2/10 (tabela do percurso), 1/10 (seletor de UFs)
+  e 7/10 (observações + fisco, caixas ampliadas p/ 3 linhas).
 - Espelhado na Vercel via push em main.
