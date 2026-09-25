@@ -2898,10 +2898,17 @@ Espelhado na Vercel.
   registra no log se o bloco `infProt` veio presente ou ausente.
 - Espelhado na Vercel via push em main.
 
-## Número/série gravados no autorizado (25/09/2026)
-
-- Autorizado sem número na tela: o `upsert` de sucesso não gravava
+## Número/série gravados no autorizado (25/09/2026)- Autorizado sem número na tela: o `upsert` de sucesso não gravava
   `numero`/`serie` (só o rejeitado gravava). Agora grava nos dois
   caminhos (server function e proxy), via parâmetro ou via `<nMDF>` e
   `<serie>` do XML.
+- Espelhado na Vercel via push em main.
+
+## Abas fiscais reorganizadas (25/09/2026)
+
+- Sem aba Todos (embarque do CT-e mantida); ordem: Aguardando envio,
+  Rejeitados, Cancelados, Autorizados (rótulos no plural nas 2 telas).
+- CT-e Autorizados com sub-abas Sem MDF-e / Com MDF-e (vínculo extraído
+  dos XMLs dos manifestos ativos); MDF-e Autorizados com Abertos /
+  Encerrados.
 - Espelhado na Vercel via push em main.

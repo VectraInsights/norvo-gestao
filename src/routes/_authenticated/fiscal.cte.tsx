@@ -111,6 +111,7 @@ function CtePage() {
   const [sortConfig, setSortConfig] = useState<{ key: string; dir: "asc" | "desc" }>({ key: "nNF", dir: "asc" });
   const [editingRascunhoId, setEditingRascunhoId] = useState<string | null>(null);
   const [statusTab, setStatusTab] = useState("embarque");
+  const [mdfVincTab, setMdfVincTab] = useState("sem");
   const [respNome, setRespNome] = useState("");
   useEffect(() => { (async () => { try { const { data } = await supabase.auth.getUser(); const usr = (data as any)?.user; if (!usr) return; let nm = (usr?.user_metadata as any)?.nome || ""; if (!nm && empresa) { const { data: eu } = await supabase.from("empresa_users" as any).select("nome").eq("empresa_id", (empresa as any).id).eq("user_id", usr.id).maybeSingle(); nm = (eu as any)?.nome || ""; } setRespNome(nm || ""); } catch {} })(); }, [(empresa as any)?.id]);
 
@@ -149,6 +150,27 @@ function CtePage() {
     };
   }, [docs]);
 
+
+  // CT-es já vinculados a MDF-e ativo (autorizado/encerrado): extrai chCTe
+  // dos XMLs dos manifestos para as sub-abas Sem/Com MDF-e.
+  const { data: mdfChaves } = useQuery({
+    enabled: !!empresa,
+    queryKey: ["mdf-chaves-cte", (empresa as any)?.id],
+    queryFn: async ({ signal }) => {
+      const { data, error } = await supabase.from("mdf_documentos" as any)
+        .select("xml_assinado").eq("empresa_id", (empresa as any).id)
+        .in("status", ["autorizado", "encerrado"]).limit(200).abortSignal(signal);
+      if (error) throw error;
+      const set = new Set<string>();
+      for (const r of (data as any[]) || []) {
+        const x = String((r as any)?.xml_assinado || "");
+        for (const m of x.matchAll(/<chCTe>(\d{44})<\/chCTe>/g)) set.add(m[1]);
+      }
+      return set;
+    },
+  });
+  const autSemMdf = useMemo(() => docsByStatus.autorizados.filter(d => !d.chave_acesso || !mdfChaves?.has(d.chave_acesso)), [docsByStatus, mdfChaves]);
+  const autComMdf = useMemo(() => docsByStatus.autorizados.filter(d => !!d.chave_acesso && !!mdfChaves?.has(d.chave_acesso)), [docsByStatus, mdfChaves]);
 
   // Chaves reservadas em rascunhos (inclui rascunhos antigos, cujas NF-es foram deletadas do banco)
   const chavesEmRascunho = useMemo(() => {
@@ -1827,9 +1849,9 @@ function CtePage() {
           <TabsList className="mb-2 flex flex-wrap">
             <TabsTrigger value="embarque" className="text-xs data-[state=active]:bg-primary/10 data-[state=active]:text-primary">NF-es para embarque ({mercadorias.length})</TabsTrigger>
             <TabsTrigger value="rascunhos" className="text-xs data-[state=active]:bg-primary/10 data-[state=active]:text-primary">Aguardando envio ({docsByStatus.rascunhos.length})</TabsTrigger>
-            <TabsTrigger value="autorizados" className="text-xs data-[state=active]:bg-primary/10 data-[state=active]:text-primary">Autorizados ({docsByStatus.autorizados.length})</TabsTrigger>
             <TabsTrigger value="rejeitados" className="text-xs data-[state=active]:bg-primary/10 data-[state=active]:text-primary">Rejeitados ({docsByStatus.rejeitados.length})</TabsTrigger>
             <TabsTrigger value="cancelados" className="text-xs data-[state=active]:bg-primary/10 data-[state=active]:text-primary">Cancelados ({docsByStatus.cancelados.length})</TabsTrigger>
+            <TabsTrigger value="autorizados" className="text-xs data-[state=active]:bg-primary/10 data-[state=active]:text-primary">Autorizados ({docsByStatus.autorizados.length})</TabsTrigger>
           </TabsList>
           <TabsContent value="embarque">
           {/* Cadastro de Mercadorias para Embarque — estilo STM */}
@@ -2102,7 +2124,13 @@ function CtePage() {
                 <Button variant="outline" size="sm" disabled={mdfSel.size === 0} onClick={() => { try { localStorage.setItem("prefill_mdf_from_cte", JSON.stringify({ chaves: [...mdfSel] })); } catch {} setMdfSel(new Set()); navigate({ to: "/fiscal/mdf" } as any); }}><Truck className="mr-1 h-3 w-3" /> Gerar MDF-e ({mdfSel.size})</Button>
               </div>
             )}
-            {renderTabelaDocs(docsByStatus.autorizados, "autorizados")}
+            <Tabs value={mdfVincTab} onValueChange={setMdfVincTab}>
+              <TabsList className="mb-2">
+                <TabsTrigger value="sem" className="text-xs data-[state=active]:bg-primary/10 data-[state=active]:text-primary">Sem MDF-e ({autSemMdf.length})</TabsTrigger>
+                <TabsTrigger value="com" className="text-xs data-[state=active]:bg-primary/10 data-[state=active]:text-primary">Com MDF-e ({autComMdf.length})</TabsTrigger>
+              </TabsList>
+            </Tabs>
+            {renderTabelaDocs(mdfVincTab === "com" ? autComMdf : autSemMdf, "autorizados")}
           </TabsContent>
           <TabsContent value="rejeitados">
             {docsByStatus.rejeitados.length > 0 && (

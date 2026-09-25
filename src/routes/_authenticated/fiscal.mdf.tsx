@@ -219,7 +219,8 @@ function MdfPage() {
     setSemRascunho(true);
     setOpen(true);
   };
-  const [filtroStatus, setFiltroStatus] = useState("todos");
+  const [filtroStatus, setFiltroStatus] = useState("autorizados");
+  const [mdfSitTab, setMdfSitTab] = useState("abertos");
   const [periodoIni, setPeriodoIni] = useState("");
   const [periodoFim, setPeriodoFim] = useState("");
 
@@ -239,7 +240,6 @@ function MdfPage() {
   });
 
   const statusCounts = {
-    todos: (docs || []).length,
     autorizado: (docs || []).filter(d => d.status === "autorizado").length,
     rejeitado: (docs || []).filter(d => d.status === "rejeitado").length,
     cancelado: (docs || []).filter(d => d.status === "cancelado").length,
@@ -247,7 +247,11 @@ function MdfPage() {
     rascunho: (docs || []).filter(d => d.status === "rascunho").length,
   };
   const docsFiltrados = (docs || []).filter(d => {
-    if (filtroStatus !== "todos" && d.status !== filtroStatus) return false;
+    if (filtroStatus === "autorizados") {
+      if (d.status !== "autorizado" && d.status !== "encerrado") return false;
+      if (mdfSitTab === "abertos" && d.status !== "autorizado") return false;
+      if (mdfSitTab === "encerrados" && d.status !== "encerrado") return false;
+    } else if (d.status !== filtroStatus) return false;
     if (periodoIni && d.created_at < periodoIni) return false;
     if (periodoFim && d.created_at > periodoFim + "T23:59:59") return false;
     return true;
@@ -278,12 +282,10 @@ function MdfPage() {
       <Tabs value={filtroStatus} onValueChange={setFiltroStatus}>
         <div className="flex flex-wrap gap-3 items-end justify-between">
           <TabsList className="h-auto flex-wrap">
-            <TabsTrigger value="todos" className="text-xs">Todos ({statusCounts.todos})</TabsTrigger>
-            <TabsTrigger value="autorizado" className="text-xs">Autorizado ({statusCounts.autorizado})</TabsTrigger>
-            <TabsTrigger value="rejeitado" className="text-xs">Rejeitado ({statusCounts.rejeitado})</TabsTrigger>
-            <TabsTrigger value="cancelado" className="text-xs">Cancelado ({statusCounts.cancelado})</TabsTrigger>
-            <TabsTrigger value="encerrado" className="text-xs">Encerrado ({statusCounts.encerrado})</TabsTrigger>
-            <TabsTrigger value="rascunho" className="text-xs">Rascunho ({statusCounts.rascunho})</TabsTrigger>
+            <TabsTrigger value="rascunho" className="text-xs">Aguardando envio ({statusCounts.rascunho})</TabsTrigger>
+            <TabsTrigger value="rejeitado" className="text-xs">Rejeitados ({statusCounts.rejeitado})</TabsTrigger>
+            <TabsTrigger value="cancelado" className="text-xs">Cancelados ({statusCounts.cancelado})</TabsTrigger>
+            <TabsTrigger value="autorizados" className="text-xs">Autorizados ({statusCounts.autorizado + statusCounts.encerrado})</TabsTrigger>
           </TabsList>
           <div className="flex gap-2">
             <div className="space-y-1">
@@ -297,6 +299,15 @@ function MdfPage() {
           </div>
         </div>
       </Tabs>
+
+      {filtroStatus === "autorizados" && (
+        <Tabs value={mdfSitTab} onValueChange={setMdfSitTab}>
+          <TabsList className="h-auto flex-wrap">
+            <TabsTrigger value="abertos" className="text-xs">Abertos ({statusCounts.autorizado})</TabsTrigger>
+            <TabsTrigger value="encerrados" className="text-xs">Encerrados ({statusCounts.encerrado})</TabsTrigger>
+          </TabsList>
+        </Tabs>
+      )}
 
       {isLoading ? (
         <div className="text-sm text-muted-foreground">Carregando…</div>
