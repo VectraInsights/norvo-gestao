@@ -1065,26 +1065,14 @@ function DialogNovoMdf({ open, onOpenChange, empresaId, empresa, chavesIniciais,
                   <div><Label className="text-xs">3º Transbordo</Label><Input className="h-6 text-[11px] font-mono" disabled={!isTransbordo} value={transb3} onChange={e => setTransb3(e.target.value)} /></div>
                 </div>
               </div>
-              <div className="grid grid-cols-2 md:grid-cols-[minmax(0,1fr)_88px_minmax(0,1fr)_88px] gap-2">
+              <div className="grid grid-cols-2 gap-2">
                 <div className="min-w-0"><Label className="text-xs whitespace-nowrap">Cidade Início</Label><Input className="h-6 text-[11px] bg-stone-200 dark:bg-muted" readOnly value={cidadeIniDerivada} /></div>
-                <div><Label className="text-xs whitespace-nowrap" title="UF de Início">UF</Label>
-                  <Select value={ufCarregamento} onValueChange={setUfCarregamento}>
-                    <SelectTrigger className="h-6 px-1 text-[11px]"><SelectValue placeholder="UF" /></SelectTrigger>
-                    <SelectContent>{UFS.map(uf => (<SelectItem key={uf} value={uf}>{uf}</SelectItem>))}</SelectContent>
-                  </Select>
-                </div>
                 <div className="min-w-0"><Label className="text-xs whitespace-nowrap">Cidade Encerramento</Label>{cidadesFimOptions.length > 1 ? (
                   <Select value={cidadeFimSel} onValueChange={setCidadeFimSel}>
                     <SelectTrigger className="h-6 text-[11px]"><SelectValue /></SelectTrigger>
                     <SelectContent>{cidadesFimOptions.map(c => (<SelectItem key={c} value={c}>{c}</SelectItem>))}</SelectContent>
                   </Select>
                 ) : (<Input className="h-6 text-[11px] bg-stone-200 dark:bg-muted" readOnly value={cidadeFimDerivada} />)}</div>
-                <div><Label className="text-xs whitespace-nowrap" title="UF de Encerramento">UF</Label>
-                  <Select value={ufDescarregamento} onValueChange={setUfDescarregamento}>
-                    <SelectTrigger className="h-6 px-1 text-[11px]"><SelectValue placeholder="UF" /></SelectTrigger>
-                    <SelectContent>{UFS.map(uf => (<SelectItem key={uf} value={uf}>{uf}</SelectItem>))}</SelectContent>
-                  </Select>
-                </div>
               </div>
             </div>
             <div className="border rounded-md p-2 space-y-1">

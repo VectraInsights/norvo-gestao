@@ -2865,10 +2865,15 @@ Espelhado na Vercel.
   a migration `20260925120000` no Supabase (SQL Editor).
 - Espelhado na Vercel via push em main.
 
-## Protocolo manual no cancelamento (25/09/2026)
-
-- SVRS homologação rejeita a consulta nas duas formas de action
+## Protocolo manual no cancelamento (25/09/2026)- SVRS homologação rejeita a consulta nas duas formas de action
   (serviço fora do ar/lado SVRS): dialog de cancelamento ganhou campo
   opcional de protocolo (15 dígitos, pré-preenchido do registro) para
   colar o nProt do Portal Nacional e cancelar sem depender da consulta.
+- Espelhado na Vercel via push em main.
+
+## Sem abreviação de UF no MDF-e (25/09/2026)
+
+- Diálogo de emissão: removidos os selects de UF de início/encerramento
+  (só cidades); UFs seguem derivadas automaticamente dos CT-es para o
+  XML, validações e gravação. Botões de UF do percurso mantidos.
 - Espelhado na Vercel via push em main.
