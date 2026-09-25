@@ -2873,7 +2873,8 @@ Espelhado na Vercel.
 
 ## Sem abreviação de UF no MDF-e (25/09/2026)
 
-- Diálogo de emissão: removidos os selects de UF de início/encerramento
-  (só cidades); UFs seguem derivadas automaticamente dos CT-es para o
-  XML, validações e gravação. Botões de UF do percurso mantidos.
+- Diálogo de emissão: campos UF Início/Encerramento restaurados exibindo
+  o nome completo do estado (ex.: Minas Gerais em vez de MG); valor
+  interno segue a sigla para o XML. Derivação automática dos CT-es e
+  botões de UF do percurso mantidos.
 - Espelhado na Vercel via push em main.

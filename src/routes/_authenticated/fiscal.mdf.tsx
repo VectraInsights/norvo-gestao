@@ -693,6 +693,7 @@ function DialogNovoMdf({ open, onOpenChange, empresaId, empresa, chavesIniciais,
   });
 
   const UFS = ["AC","AL","AM","AP","BA","CE","DF","ES","GO","MA","MG","MS","MT","PA","PB","PE","PI","PR","RJ","RN","RO","RR","RS","SC","SE","SP","TO"];
+  const UF_NOME: Record<string, string> = { AC: "Acre", AL: "Alagoas", AM: "Amazonas", AP: "Amapá", BA: "Bahia", CE: "Ceará", DF: "Distrito Federal", ES: "Espírito Santo", GO: "Goiás", MA: "Maranhão", MG: "Minas Gerais", MS: "Mato Grosso do Sul", MT: "Mato Grosso", PA: "Pará", PB: "Paraíba", PE: "Pernambuco", PI: "Piauí", PR: "Paraná", RJ: "Rio de Janeiro", RN: "Rio Grande do Norte", RO: "Rondônia", RR: "Roraima", RS: "Rio Grande do Sul", SC: "Santa Catarina", SE: "Sergipe", SP: "São Paulo", TO: "Tocantins" };
   const { data: ctesDisponiveis, error: ctesErro } = useQuery({
     enabled: !!empresaId && open,
     queryKey: ["ctes-para-mdf", empresaId],
@@ -1065,14 +1066,26 @@ function DialogNovoMdf({ open, onOpenChange, empresaId, empresa, chavesIniciais,
                   <div><Label className="text-xs">3º Transbordo</Label><Input className="h-6 text-[11px] font-mono" disabled={!isTransbordo} value={transb3} onChange={e => setTransb3(e.target.value)} /></div>
                 </div>
               </div>
-              <div className="grid grid-cols-2 gap-2">
+              <div className="grid grid-cols-2 md:grid-cols-[minmax(0,1fr)_170px_minmax(0,1fr)_170px] gap-2">
                 <div className="min-w-0"><Label className="text-xs whitespace-nowrap">Cidade Início</Label><Input className="h-6 text-[11px] bg-stone-200 dark:bg-muted" readOnly value={cidadeIniDerivada} /></div>
+                <div><Label className="text-xs whitespace-nowrap" title="UF de Início">UF Início</Label>
+                  <Select value={ufCarregamento} onValueChange={setUfCarregamento}>
+                    <SelectTrigger className="h-6 px-1 text-[11px]"><SelectValue placeholder="Estado" /></SelectTrigger>
+                    <SelectContent>{UFS.map(uf => (<SelectItem key={uf} value={uf}>{UF_NOME[uf] || uf}</SelectItem>))}</SelectContent>
+                  </Select>
+                </div>
                 <div className="min-w-0"><Label className="text-xs whitespace-nowrap">Cidade Encerramento</Label>{cidadesFimOptions.length > 1 ? (
                   <Select value={cidadeFimSel} onValueChange={setCidadeFimSel}>
                     <SelectTrigger className="h-6 text-[11px]"><SelectValue /></SelectTrigger>
                     <SelectContent>{cidadesFimOptions.map(c => (<SelectItem key={c} value={c}>{c}</SelectItem>))}</SelectContent>
                   </Select>
                 ) : (<Input className="h-6 text-[11px] bg-stone-200 dark:bg-muted" readOnly value={cidadeFimDerivada} />)}</div>
+                <div><Label className="text-xs whitespace-nowrap" title="UF de Encerramento">UF Encerramento</Label>
+                  <Select value={ufDescarregamento} onValueChange={setUfDescarregamento}>
+                    <SelectTrigger className="h-6 px-1 text-[11px]"><SelectValue placeholder="Estado" /></SelectTrigger>
+                    <SelectContent>{UFS.map(uf => (<SelectItem key={uf} value={uf}>{UF_NOME[uf] || uf}</SelectItem>))}</SelectContent>
+                  </Select>
+                </div>
               </div>
             </div>
             <div className="border rounded-md p-2 space-y-1">
