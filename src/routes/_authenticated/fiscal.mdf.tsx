@@ -690,16 +690,16 @@ function EncerrarMdfButton({ mdf, empresaId, cnpj, onSuccess }: { mdf: MdfDoc; e
     >{loading ? "Encerrando..." : "Confirmar Encerramento"}</Button>
     {openSel && (
       <Dialog open={openSel} onOpenChange={setOpenSel}>
-        <DialogContent className="max-w-sm">
-          <DialogHeader><DialogTitle>Onde encerrar?</DialogTitle></DialogHeader>
-          <p className="text-sm text-muted-foreground">O manifesto tem {munOpts.length} municípios de descarga. Escolha o local de encerramento.</p>
+        <DialogContent className="max-w-[320px] p-4 gap-3">
+          <DialogHeader><DialogTitle className="text-base">Onde encerrar?</DialogTitle></DialogHeader>
+          <p className="text-xs text-muted-foreground">O manifesto tem {munOpts.length} municípios de descarga. Escolha o local de encerramento.</p>
           <Select value={cMunSel} onValueChange={setCMunSel}>
-            <SelectTrigger><SelectValue /></SelectTrigger>
-            <SelectContent>{munOpts.map(o => (<SelectItem key={o.cMun} value={o.cMun}>{o.xMun ? `${o.xMun} — ${o.cMun}` : o.cMun}</SelectItem>))}</SelectContent>
+            <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
+            <SelectContent>{munOpts.map(o => (<SelectItem key={o.cMun} value={o.cMun} className="text-xs">{o.xMun || o.cMun}</SelectItem>))}</SelectContent>
           </Select>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setOpenSel(false)}>Voltar</Button>
-            <Button onClick={() => { setOpenSel(false); handleEncerrar(cMunSel); }} disabled={!cMunSel || loading}>{loading ? "Encerrando..." : "Confirmar Encerramento"}</Button>
+          <DialogFooter className="gap-2 sm:gap-0">
+            <Button variant="outline" size="sm" onClick={() => setOpenSel(false)}>Voltar</Button>
+            <Button size="sm" onClick={() => { setOpenSel(false); handleEncerrar(cMunSel); }} disabled={!cMunSel || loading}>{loading ? "Encerrando..." : "Confirmar Encerramento"}</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

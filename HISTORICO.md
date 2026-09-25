@@ -2934,5 +2934,11 @@ Espelhado na Vercel.
 - 630: após `dtEnc` o XSD exige `cUF` + `cMun` (não `cMunEncerramento`
   / `UFEncerramento`); `cUF` deriva do IBGE (2 primeiros dígitos).
 - Encerrar com 1 município segue direto; com 2+ abre janela
-  perguntando onde encerrar (cidade — IBGE).
+  perguntando onde encerrar (só nome da cidade; IBGE vai só no XML).
+- Espelhado na Vercel via push em main.
+
+## Diálogo compacto de encerramento (25/09/2026)
+
+- Janela "Onde encerrar?" pequena e centralizada (320px), só com o nome
+  da cidade no seletor — o código IBGE segue invisível para o XML.
 - Espelhado na Vercel via push em main.
