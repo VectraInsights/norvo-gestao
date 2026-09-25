@@ -284,7 +284,7 @@ function MdfPage() {
                           <Button variant="ghost" size="sm" onClick={() => { setMdfEncerrar(d); setOpenEncerrar(true); }} title="Encerrar">
                             <CheckCircle2 className="h-4 w-4" />
                           </Button>
-                          <Button variant="ghost" size="sm" onClick={() => { setMdfCancelar(d); setOpenCancelar(true); }} title="Cancelar">
+                          <Button variant="ghost" size="sm" onClick={() => { setMdfCancelar(d); setJustificativa("MDF-e cancelado por erro nos dados do manifesto"); setOpenCancelar(true); }} title="Cancelar">
                             <XCircle className="h-4 w-4 text-destructive" />
                           </Button>
                         </>

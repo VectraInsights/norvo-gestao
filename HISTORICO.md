@@ -2750,3 +2750,8 @@ Espelhado na Vercel.
   ganha baixar XML). Ao autorizar, apaga rejeitados anteriores
   com os mesmos CT-es (nos dois caminhos do servidor).
   Espelhado na Vercel via push em main.
+
+## Motivo padrao no cancelamento do MDF-e (25/09/2026)
+
+- Dialog de cancelamento abre com "MDF-e cancelado por erro
+  nos dados do manifesto" (editavel), como o CT-e. Espelhado.
