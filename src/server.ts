@@ -60,11 +60,8 @@ export default {
     // Proxy SEFAZ — roda no Vercel (Node.js com mTLS).
     // No CF Worker, esta roda nunca é atingida (o Worker chama o Vercel).
     const url = new URL(request.url);
-    // URL canonica = Worker. Na Vercel, tudo que nao for API SEFAZ redireciona
-    // (308 preserva metodo/corpo; "/api/sefaz-cron" casa no prefixo e nao redireciona).
-    if (url.hostname.endsWith(".vercel.app") && !url.pathname.startsWith("/api/sefaz")) {
-      return Response.redirect(`https://norvo-gestao-cf.sptn201169.workers.dev${url.pathname}${url.search}`, 308);
-    }
+    // Front canônico = Vercel (o redirect antigo para o Worker foi removido;
+    // o CF está congelado e não recebe mais o front novo).
     if (url.pathname === "/api/sefaz" && request.method === "POST") {
       try {
         const { handleSefazProxy } = await import("./lib/sefaz-proxy");

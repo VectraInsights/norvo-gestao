@@ -2764,3 +2764,11 @@ Espelhado na Vercel.
 - Cancelamento CT-e e MDF-e com select de 3 motivos (erro de
   emissao / cliente cancelou / falta de energia). CT-e trocou
   o prompt por dialog. Espelhado na Vercel via push em main.
+
+## Remove redirect Vercel->CF (25/09/2026)
+
+- src/server.ts redirecionava (308) todo o front Vercel p/ o
+  Worker congelado — por isso as telas novas nunca apareciam.
+  Front canonico agora e a Vercel; redirect removido. Erros
+  tsc em server.ts sao pre-existentes (5 antes e depois).
+  Espelhado na Vercel via push em main.
