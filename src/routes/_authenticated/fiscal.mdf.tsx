@@ -951,7 +951,7 @@ function DialogNovoMdf({ open, onOpenChange, empresaId, empresa, chavesIniciais,
 
       const res = await emitirMdfFn({
         data: {
-          empresaId, xml, veiculoTracaoId: veic?.id, motoristaId: mot?.id,
+          empresaId, xml, numero, serie: serieMdf, veiculoTracaoId: veic?.id, motoristaId: mot?.id,
           ufCarregamento, ufDescarregamento,
           qtdCtes: ctesArr.length, valorTotalCarga: input.valorTotalCarga, pesoTotal: input.pesoTotalKG,
           percursoUFs, observacoes, infoFisco,

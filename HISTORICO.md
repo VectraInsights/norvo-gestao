@@ -2893,9 +2893,15 @@ Espelhado na Vercel.
   divergem). Vale para cancelar e encerrar.
 - Espelhado na Vercel via push em main.
 
-## Protocolo gravado na emissão (25/09/2026)
-
-- Emissão autorizada sem `protocolo_sefaz`: extração do `nProt` agora
+## Protocolo gravado na emissão (25/09/2026)- Emissão autorizada sem `protocolo_sefaz`: extração do `nProt` agora
   tolera prefixo de namespace em `infProt`/`nProt`/`chMDFe`/`cStat` e
   registra no log se o bloco `infProt` veio presente ou ausente.
+- Espelhado na Vercel via push em main.
+
+## Número/série gravados no autorizado (25/09/2026)
+
+- Autorizado sem número na tela: o `upsert` de sucesso não gravava
+  `numero`/`serie` (só o rejeitado gravava). Agora grava nos dois
+  caminhos (server function e proxy), via parâmetro ou via `<nMDF>` e
+  `<serie>` do XML.
 - Espelhado na Vercel via push em main.

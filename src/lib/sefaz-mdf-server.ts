@@ -64,6 +64,8 @@ export const emitirMdfFn = createServerFn({ method: "POST" })
     transbordo1?: string;
     transbordo2?: string;
     transbordo3?: string;
+    numero?: string;
+    serie?: string;
   }) => data)
   .handler(async ({ data }) => {
     if (SEFAZ_URL) return callSefazProxy("emitirMdf", data);
@@ -103,6 +105,8 @@ export const emitirMdfFn = createServerFn({ method: "POST" })
         empresa_id: data.empresaId,
         chave_acesso: result.chave,
         status: "autorizado",
+        numero: String((data as any).numero || String(data.xml || "").match(/<nMDF>(\d+)<\/nMDF>/)?.[1] || ""),
+        serie: String((data as any).serie || String(data.xml || "").match(/<serie>(\d+)<\/serie>/)?.[1] || ""),
         protocolo_sefaz: result.protocolo || null,
         veiculo_tracao_id: data.veiculoTracaoId || null,
         motorista_id: data.motoristaId || null,
