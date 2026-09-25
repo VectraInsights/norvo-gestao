@@ -2736,3 +2736,9 @@ Espelhado na Vercel.
 - 480 persistia: Signature e irma apos </infMDFe>, entao a
   regex de insercao nao casava. infMDFeSupl agora antes de
   </MDFe> (ordem XSD) + log presente/AUSENTE. Espelhado.
+
+## BUILD 034: QR antes da Signature (25/09/2026)
+
+- 215 + 480: infMDFeSupl existe no XSD mas antes da Signature
+  (ordem infMDFe, supl, Signature, como NF-e/CT-e). Insercao
+  movida p/ pre-assinatura (fora do digest). Espelhado.

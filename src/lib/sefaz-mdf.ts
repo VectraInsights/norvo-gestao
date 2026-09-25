@@ -497,7 +497,7 @@ async function soapRequest(url: string, body: string, action: string, agent?: ht
 export async function emitirMdf(pfx: Buffer, senha: string, xml: string, ambiente: Ambiente): Promise<{ sucesso: boolean; cStat: string; xMotivo: string; chave?: string; protocolo?: string; xmlRet?: string }> {
   assertMdfAmbiente(ambiente);
   assertMdfXmlAmbiente(xml);
-  const BUILD = "033-qr-code-pos-signature";
+  const BUILD = "034-qr-antes-signature";
   const ep = getMdfEndpoints(ambiente);
   const agent = createSefazAgent(pfx, senha);
   const nsSinc = "http://www.portalfiscal.inf.br/mdfe/wsdl/MDFeRecepcaoSinc";
@@ -529,17 +529,18 @@ export async function emitirMdf(pfx: Buffer, senha: string, xml: string, ambient
       return `<infModal${cleaned}>`;
     });
   console.log("[mdf-debug] infModal tag:", xmlForSignature.match(/<infModal[^>]*>/)?.[0] || "(ausente)");
-  const xmlAss = signMdfXml(xmlForSignature, pfx, senha);
+  // 480: QR Code obrigatório — ordem XSD: infMDFe, infMDFeSupl, Signature
+  // (como na NF-e/CT-e). Fora da área do digest (Reference cobre só o
+  // infMDFe), então pode entrar antes de assinar; a Signature é anexada depois.
+  const chaveQr = xmlForSignature.match(/Id="MDFe(\d{44})"/)?.[1] || "";
+  const qrCod = `https://dfe-portal.svrs.rs.gov.br/mdfe/qrCode?chMDFe=${chaveQr}&amp;tpAmb=${MDFE_TP_AMB}`;
+  const xmlComQr = /<infMDFeSupl[\s>]/.test(xmlForSignature) || !/<\/infMDFe>\s*<\/MDFe>/.test(xmlForSignature)
+    ? xmlForSignature
+    : xmlForSignature.replace(/<\/infMDFe>\s*<\/MDFe>/, `</infMDFe><infMDFeSupl><qrCodMDFe>${qrCod}</qrCodMDFe></infMDFeSupl></MDFe>`);
+  const xmlAss = signMdfXml(xmlComQr, pfx, senha);
   // Invariância: xmlAss segue direto ao envelope, sem replaces
   // pós-assinatura; sem xmlns redundante em <infModal>.
-  // 480: QR Code obrigatório — infMDFeSupl fica FORA da área assinada
-  // (Reference cobre só o infMDFe), então é anexado após assinar.
-  // A Signature é irmã após </infMDFe>; o supl vai depois dela, antes de </MDFe>.
-  const chaveQr = xmlAss.match(/Id="MDFe(\d{44})"/)?.[1] || "";
-  const qrCod = `https://dfe-portal.svrs.rs.gov.br/mdfe/qrCode?chMDFe=${chaveQr}&amp;tpAmb=${MDFE_TP_AMB}`;
-  const signedMdfXml = /<\/MDFe>\s*$/.test(xmlAss)
-    ? xmlAss.replace(/<\/MDFe>\s*$/, `<infMDFeSupl><qrCodMDFe>${qrCod}</qrCodMDFe></infMDFeSupl></MDFe>`)
-    : xmlAss;
+  const signedMdfXml = xmlAss;
   console.log("[mdf-debug] infMDFeSupl:", /<infMDFeSupl>/.test(signedMdfXml) ? "presente" : "AUSENTE");
   const referenceUri = signedMdfXml.match(/<Reference URI="([^"]+)"/)?.[1] || "";
   const signedXmlBytes = Buffer.byteLength(signedMdfXml, "utf8");
