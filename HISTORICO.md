@@ -2689,3 +2689,10 @@ Espelhado na Vercel.
   + nApol + nAver. Averbacao: do CT-e, com fallback p/ cadastro
   da seguradora (mesmo que o CT-e usa). completarSegMdf agora
   reconstrói o grupo com dados do CT-e. Espelhado na Vercel.
+
+## BUILD 028: nAver ficticia em homologacao (25/09/2026)
+
+- 699 ainda cobrava nAver (vazia no CT-e e no cadastro).
+  Homologacao: usa 9999999999 quando ausente (ambiente de
+  testes, sem efeito fiscal). Producao: aborta com mensagem
+  clara pedindo a averbacao real. Espelhado na Vercel.

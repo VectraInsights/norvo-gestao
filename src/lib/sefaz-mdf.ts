@@ -76,7 +76,9 @@ export interface MdfSeguro {
 // válido pois o CNPJ é obrigatório dentro dele; nApol/nAver opcionais).
 // Para tpEmit 1/3 (prestador) emite mesmo sem dados (rejeição 698).
 // Regra F92/699 exige o grupo completo: responsável + seguradora + apólice + averbação.
-export function montarSegXml(seg: MdfSeguro | undefined, tpEmit: string, cnpjEmit?: string): string {
+// nAver: em HOMOLOGAÇÃO usa valor fictício quando ausente (ambiente de testes);
+// em PRODUÇÃO aborta com mensagem clara (averbação fictícia seria fraude).
+export function montarSegXml(seg: MdfSeguro | undefined, tpEmit: string, cnpjEmit?: string, homolog?: boolean): string {
   const segIn = seg || {};
   const precisaSeg = tpEmit === "1" || tpEmit === "3";
   const xSeg = String(segIn.xSeg || "").trim().slice(0, 30);
@@ -85,7 +87,11 @@ export function montarSegXml(seg: MdfSeguro | undefined, tpEmit: string, cnpjEmi
   // para caber no limite de 20 do XSD sem truncar o número real.
   const nApolRaw = String(segIn.nApol || "").trim();
   const nApol = (nApolRaw.replace(/[\s.\-/]/g, "") || nApolRaw).slice(0, 20);
-  const nAver = String(segIn.nAver || "").trim().slice(0, 40);
+  let nAver = String(segIn.nAver || "").trim().slice(0, 40);
+  if (!nAver && precisaSeg) {
+    if (homolog) { nAver = "9999999999"; console.log("[mdf-debug] nAver ficticia de homologacao aplicada"); }
+    else throw new Error("Averbação do seguro (nAver) não informada no CT-e nem no cadastro da seguradora — preencha para emitir o MDF-e");
+  }
   if (!precisaSeg && !xSeg && !nApol && !nAver) return "";
   const cnpjResp = String(cnpjEmit || "").replace(/\D/g, "");
   const infRespXml = `<infResp><respSeg>1</respSeg>${/^\d{14}$/.test(cnpjResp) ? `<CNPJ>${cnpjResp}</CNPJ>` : ""}</infResp>`;
@@ -144,7 +150,8 @@ export async function segDoCteVinculado(supa: { from(t: string): any }, empresaI
 export function completarSegMdf(xml: string, seg: MdfSeguro | undefined): string {
   const cnpjEmit = (xml.match(/<emit><CNPJ>(\d{14})<\/CNPJ>/)?.[1] || "").replace(/\D/g, "");
   const tpEmit = xml.match(/<tpEmit>([^<]*)<\/tpEmit>/)?.[1] || "";
-  const full = montarSegXml(seg, tpEmit, cnpjEmit);
+  const homolog = /<tpAmb>2<\/tpAmb>/.test(xml);
+  const full = montarSegXml(seg, tpEmit, cnpjEmit, homolog);
   if (!full) return xml;
   if (/<seg>[\s\S]*?<\/seg>/.test(xml)) return xml.replace(/<seg>[\s\S]*?<\/seg>/, full);
   if (xml.includes("</infDoc>")) return xml.replace(/<\/infDoc>/, `</infDoc>${full}`);
@@ -255,7 +262,7 @@ export function buildMdfXml(input: MdfInputCompleto): { xml: string; chave: stri
   // Seguro da carga (filho de infMDFe, entre infDoc e tot; XSD mdfeTiposBasico_v3.00).
   // Rejeição 698 exige seg para prestador no rodoviário (tpEmit 1/3) —
   // dados puxados do CT-e vinculado (seguradora/apólice/averbação).
-  const segXml = montarSegXml(input.seg, tpEmit, cnpjLimpo);
+  const segXml = montarSegXml(input.seg, tpEmit, cnpjLimpo, MDFE_TP_AMB === "2");
 
   const raw = `<?xml version="1.0" encoding="UTF-8"?>
 <MDFe xmlns="http://www.portalfiscal.inf.br/mdfe">
@@ -378,7 +385,7 @@ async function soapRequest(url: string, body: string, action: string, agent?: ht
 export async function emitirMdf(pfx: Buffer, senha: string, xml: string, ambiente: Ambiente): Promise<{ sucesso: boolean; cStat: string; xMotivo: string; chave?: string; protocolo?: string; xmlRet?: string }> {
   assertMdfAmbiente(ambiente);
   assertMdfXmlAmbiente(xml);
-  const BUILD = "027-seg-regra-699-completa";
+  const BUILD = "028-naver-ficticia-homolog";
   const ep = getMdfEndpoints(ambiente);
   const agent = createSefazAgent(pfx, senha);
   const nsSinc = "http://www.portalfiscal.inf.br/mdfe/wsdl/MDFeRecepcaoSinc";
