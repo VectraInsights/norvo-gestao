@@ -650,21 +650,61 @@ function DialogVerMdf({ d, xml, onClose, onBaixarXml, onBaixarPdf }: { d: MdfDoc
 }
 function EncerrarMdfButton({ mdf, empresaId, cnpj, onSuccess }: { mdf: MdfDoc; empresaId: string; cnpj: string; onSuccess: () => void }) {
   const [loading, setLoading] = useState(false);
-  const handleEncerrar = async () => {
-    if (!mdf.chave_acesso) return;
-    setLoading(true);
+  const [openSel, setOpenSel] = useState(false);
+  const [cMunSel, setCMunSel] = useState("");
+  // Municípios de descarga distintos do XML (cMun + nome).
+  const munOpts = useMemo(() => {
     try {
       const raw = String((mdf as any).xml_assinado || "");
       let xml = raw;
-      try { const p = JSON.parse(raw); if (p && p.xml) xml = String(p.xml); } catch {}
-      const cMun = xml.match(/<cMunDescarga>(\d{7})<\/cMunDescarga>/)?.[1] || "";
+      try { const p = JSON.parse(raw); if (p?.xml) xml = String(p.xml); } catch {}
+      const out: Array<{ cMun: string; xMun: string }> = [];
+      for (const m of xml.matchAll(/<cMunDescarga>(\d{7})<\/cMunDescarga>\s*<xMunDescarga>([^<]*)<\/xMunDescarga>/g)) {
+        if (!out.some(o => o.cMun === m[1])) out.push({ cMun: m[1], xMun: (m[2] || "").trim() });
+      }
+      if (!out.length) for (const m of xml.matchAll(/<cMunDescarga>(\d{7})<\/cMunDescarga>/g)) {
+        if (!out.some(o => o.cMun === m[1])) out.push({ cMun: m[1], xMun: "" });
+      }
+      return out;
+    } catch { return [] as Array<{ cMun: string; xMun: string }>; }
+  }, [mdf]);
+  const handleEncerrar = async (cMunOverride?: string) => {
+    if (!mdf.chave_acesso) return;
+    const cMun = cMunOverride || munOpts[0]?.cMun || "";
+    if (!cMun) { toast.error("Município de encerramento não encontrado no MDF-e"); return; }
+    setLoading(true);
+    try {
       const res = await encerrarMdfFn({ data: { empresaId, chave: mdf.chave_acesso, cnpj, uf: mdf.uf_carregamento || "", protocolo: mdf.protocolo_sefaz || "", cMun } });
       if (res.sucesso) { toast.success("MDF-e encerrado!"); onSuccess(); }
       else toast.error(`Erro: ${res.xMotivo}`);
     } catch (e: unknown) { toast.error(e instanceof Error ? e.message : "Erro ao encerrar"); }
     setLoading(false);
   };
-  return <Button onClick={handleEncerrar} disabled={loading}>{loading ? "Encerrando..." : "Confirmar Encerramento"}</Button>;
+  return (<>
+    <Button
+      onClick={() => {
+        if (munOpts.length > 1) { setCMunSel(munOpts[munOpts.length - 1].cMun); setOpenSel(true); }
+        else handleEncerrar();
+      }}
+      disabled={loading}
+    >{loading ? "Encerrando..." : "Confirmar Encerramento"}</Button>
+    {openSel && (
+      <Dialog open={openSel} onOpenChange={setOpenSel}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader><DialogTitle>Onde encerrar?</DialogTitle></DialogHeader>
+          <p className="text-sm text-muted-foreground">O manifesto tem {munOpts.length} municípios de descarga. Escolha o local de encerramento.</p>
+          <Select value={cMunSel} onValueChange={setCMunSel}>
+            <SelectTrigger><SelectValue /></SelectTrigger>
+            <SelectContent>{munOpts.map(o => (<SelectItem key={o.cMun} value={o.cMun}>{o.xMun ? `${o.xMun} — ${o.cMun}` : o.cMun}</SelectItem>))}</SelectContent>
+          </Select>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setOpenSel(false)}>Voltar</Button>
+            <Button onClick={() => { setOpenSel(false); handleEncerrar(cMunSel); }} disabled={!cMunSel || loading}>{loading ? "Encerrando..." : "Confirmar Encerramento"}</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    )}
+  </>);
 }
 
 function DialogNovoMdf({ open, onOpenChange, empresaId, empresa, chavesIniciais, rascunhoInicial, permiteRascunho = true }: { open: boolean; onOpenChange: (v: boolean) => void; empresaId: string; empresa?: any; chavesIniciais?: string[]; permiteRascunho?: boolean; rascunhoInicial?: { id?: string; chaves: string[]; percursoUFs: string[]; observacoes: string; infoFisco: string; tipoMdf: "Normal" | "Globalizado"; isTransbordo: boolean; transb1: string; transb2: string; transb3: string } | null }) {

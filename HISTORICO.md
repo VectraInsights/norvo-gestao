@@ -2928,3 +2928,11 @@ Espelhado na Vercel.
 - Novo MDF-e: CT-es já em MDF-e somem da relação (filtro na lista +
   aviso de ocultos); bloqueio de seleção/emissão mantido.
 - Espelhado na Vercel via push em main.
+
+## cUF/cMun no encerramento + escolha do município (25/09/2026)
+
+- 630: após `dtEnc` o XSD exige `cUF` + `cMun` (não `cMunEncerramento`
+  / `UFEncerramento`); `cUF` deriva do IBGE (2 primeiros dígitos).
+- Encerrar com 1 município segue direto; com 2+ abre janela
+  perguntando onde encerrar (cidade — IBGE).
+- Espelhado na Vercel via push em main.
