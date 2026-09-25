@@ -2822,3 +2822,12 @@ Espelhado na Vercel.
   correto (biblio oficial + MOC) e mdfeDadosMsg com o evento
   dentro, + cabec msg. nProt zerado: recupera via consulta
   quando o registro local esta sem protocolo. Espelhado.
+
+## DAMDFE 40/60 + veiculos do cadastro (25/09/2026)
+
+- Primeira linha 40/60 (logo+empresa | barras+QR+chave),
+  QR sem aperto; segunda linha sem caixa de QR.
+- RNTRC/proprietario agora do cadastro do veiculo (tracao
+  e carretas), nunca do emissor; sem cadastro fica vazio.
+- Docs: CIOT e NFes em caixas separadas; averbacao e CNPJ
+  Responsavel (por extenso) mais estreitas. Espelhado.

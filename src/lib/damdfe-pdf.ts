@@ -32,13 +32,16 @@ export interface DamdfeData {
   rntrc: string;
   placa: string;
   renavam: string;
+  // RNTRC/proprietário DO CADASTRO do veículo (nunca do emitente).
+  tracRntrc: string;
+  tracProp: string;
   tpRod: string;
   tpCar: string;
   ciot: string;
   ufVeic: string;
   condutorNome: string;
   condutorCpf: string;
-  reboques: Array<{ placa: string; renavam: string; uf: string }>;
+  reboques: Array<{ placa: string; renavam: string; uf: string; rntrc?: string; prop?: string }>;
   contratanteNome: string;
   contratanteDoc: string;
   chavesCte: string[];
@@ -156,6 +159,8 @@ export function damdfeDataDoXml(xml: string, extra?: { protocolo?: string; numer
     emitMun: q("enderEmit > xMun", inf || undefined),
     emitUF: q("enderEmit > UF", inf || undefined),
     rntrc: q("RNTRC", rodo || undefined),
+    tracRntrc: "",
+    tracProp: "",
     ciot: q("CIOT", rodo || undefined),
     placa: q("veicTracao > placa", rodo || undefined),
     renavam: q("veicTracao > RENAVAM", rodo || undefined),
@@ -218,26 +223,26 @@ export function gerarDamdfePdf(d: DamdfeData): Blob {
   const fmtChaveDots = (ch: string) => D(ch).replace(/\D/g, "").replace(/(\d{4})(?=\d)/g, "$1.");
   const fmtData = (v: string) => { const m = D(v).match(/^(\d{4})-(\d{2})-(\d{2})/); return m ? `${m[3]}/${m[2]}/${m[1]}` : D(v); };
 
-  // ---- Cabeçalho 50/50: [logo + emitente] [DAMDFE + barras + QR + chave] ----
+  // ---- Cabeçalho 40/60: [logo + emitente] [DAMDFE + barras + QR + chave] ----
   const logo = (d as any).logoDataUrl || JUVENAL_LOGO;
   const hH = 34;
-  const wHalf = (CW - 1) / 2;
-  const xEm = M, xDa = M + wHalf + 1;
-  box(xEm, y, wHalf, hH);
+  const wLeft = 115, wRight = CW - wLeft - 1;
+  const xEm = M, xDa = M + wLeft + 1;
+  box(xEm, y, wLeft, hH);
   try { doc.addImage(logo, "PNG", xEm + 2, y + 6, 30, 20); } catch {}
-  const tx = xEm + 34, tw = wHalf - 34;
-  ctr(cut(D(d.emitNome) || "EMITENTE", 46), tx + tw / 2, y + 5, 9, true);
+  const tx = xEm + 34, tw = wLeft - 34;
+  ctr(cut(D(d.emitNome) || "EMITENTE", 38), tx + tw / 2, y + 5, 9, true);
   ctr(`${fmtCnpj(d.emitCnpj)}   RNTRC: ${D(d.rntrc)}`, tx + tw / 2, y + 9.5, 7);
   ctr(`${D(d.emitLgr)}, ${D(d.emitNro)}`, tx + tw / 2, y + 14, 7);
   ctr(`${D(d.emitMun)} / ${D(d.emitUF)}`, tx + tw / 2, y + 18.5, 7);
   ctr(`CEP: ${D(d.emitCep)}   Tel.: ${D(d.emitFone)}`, tx + tw / 2, y + 23, 7);
   ctr(`Carreg.: ${D(d.ufIni)} → Descarreg.: ${D(d.ufFim)}`, tx + tw / 2, y + 27.5, 6);
-  box(xDa, y, wHalf, hH);
+  box(xDa, y, wRight, hH);
   black(); setFont("bold", 13); doc.text("DAMDFE", xDa + 2, y + 6.5);
   setFont("normal", 6); black(); doc.text("Documento Auxiliar de Manifesto Eletrônico de Cargas", xDa + 32, y + 6.5);
   const bc0 = barcodePng(d.chave);
-  if (bc0) { try { doc.addImage(bc0, "PNG", xDa + 2, y + 9, wHalf - 32, 8); } catch {} }
-  if (D(d.qrUrl)) drawQr(doc, xDa + wHalf - 26, y + 8, 20, D(d.qrUrl));
+  if (bc0) { try { doc.addImage(bc0, "PNG", xDa + 2, y + 9, wRight - 34, 8); } catch {} }
+  if (D(d.qrUrl)) drawQr(doc, xDa + wRight - 26, y + 8, 20, D(d.qrUrl));
   lab("CHAVE DE ACESSO", xDa + 2, y + 22.5);
   val(fmtChaveDots(d.chave), xDa + 2, y + 27, 6.5);
   y += hH + 1;
@@ -263,19 +268,19 @@ export function gerarDamdfePdf(d: DamdfeData): Blob {
   valB(`${D(d.protocolo)}${d.tpAmb === "2" ? "   HOMOLOGAÇÃO — SEM VALOR FISCAL" : ""}`, cx + 1, y + 7.5, 7);
   y += h2 + 1;
 
-  // ---- Modal rodoviário + QR (caixas separadas, sem sobreposição) ----
+  // ---- Modal rodoviário (linha cheia, sem QR) ----
   titleBar("MODAL RODOVIÁRIO DE CARGAS");
   need(16);
-  const wQr = 26, wAgreg = 39, wMod = CW - wQr - wAgreg - 2;
-  box(M, y, wMod, 15);
+  box(M, y, CW, 15);
   const mrow: Array<[number, string, string, boolean?]> = [
-    [26, "Quantidade CT-e", String(d.docs.length || d.chavesCte.length || "0"), true],
-    [24, "Quantidade NF-e", "0", false],
-    [24, "Quantidade NF", "0", false],
-    [38, "Quantidade Medida", fmtNum4(d.qCarga), false],
-    [22, "Unidade", "KG", false],
-    [43, "Valor Total Carga", fmtNum(d.vCarga), true],
-    [43, "Valor Total Serviço", fmtNum(d.vCarga), true],
+    [30, "Quantidade CT-e", String(d.docs.length || d.chavesCte.length || "0"), true],
+    [28, "Quantidade NF-e", "0", false],
+    [28, "Quantidade NF", "0", false],
+    [44, "Quantidade Medida", fmtNum4(d.qCarga), false],
+    [26, "Unidade", "KG", false],
+    [52, "Valor Total Carga", fmtNum(d.vCarga), true],
+    [52, "Valor Total Serviço", fmtNum(d.vCarga), true],
+    [27, "Valor Total Agregado", "0,00", false],
   ];
   let mx = M;
   for (const [w, label, value, bold] of mrow) {
@@ -283,11 +288,6 @@ export function gerarDamdfePdf(d: DamdfeData): Blob {
     cell(mx, w, label, value, 7, !!bold);
     mx += w;
   }
-  const xAgreg = M + wMod + 1, xQr = xAgreg + wAgreg + 1;
-  box(xAgreg, y, wAgreg, 15);
-  lab("Valor Total Agregado", xAgreg + 1, y + 3); val("0,00", xAgreg + 1, y + 7, 7);
-  box(xQr, y, wQr, 15);
-  if (D(d.qrUrl)) drawQr(doc, xQr + (wQr - 20) / 2, y + 1, 13, D(d.qrUrl));
   y += 16;
 
   // ---- Seguro RCV ----
@@ -316,14 +316,13 @@ export function gerarDamdfePdf(d: DamdfeData): Blob {
   lab("NOME", vcondX + 42, y + 3);
   const ciotTxt = `RESPONSÁVEL CIOT: ${fmtCnpj(d.emitCnpj)}`;
   black(); setFont("bold", 6); doc.text(ciotTxt, M + CW - 1 - doc.getTextWidth(ciotTxt), y + 3);
-  const propDoc = fmtCnpj(d.emitCnpj), propNome = cut(D(d.emitNome), 30);
-  // Sem grupo prop no XML = veículo do emitente: RNTRC/CNPJ/nome do
-  // proprietário repetidos em todas as linhas (tração + carretas).
-  const veicRows = [{ placa: d.placa, renavam: d.renavam, rntrc: d.rntrc }, ...d.reboques.map(r => ({ placa: r.placa, renavam: r.renavam, rntrc: d.rntrc }))];
+  // Proprietário/RNTRC vêm do cadastro do veículo (tracRntrc/tracProp e
+  // reboques[].rntrc/prop); sem cadastro, fica em branco (nunca emitente).
+  const veicRows = [{ placa: d.placa, renavam: d.renavam, rntrc: D(d.tracRntrc), nome: cut(D(d.tracProp), 30) }, ...d.reboques.map(r => ({ placa: r.placa, renavam: r.renavam, rntrc: D(r.rntrc), nome: cut(D(r.prop), 30) }))];
   veicRows.forEach((v, i) => {
     const ry = y + 6 + i * 5;
     val(D(v.placa), vxs[0] + 1, ry, 6.5); val(D(v.renavam), vxs[1] + 1, ry, 6.5); val(D(v.rntrc), vxs[2] + 1, ry, 6.5);
-    val(propDoc, vxs[3] + 1, ry, 6.5); val(propNome, vxs[4] + 1, ry, 6.5);
+    val("", vxs[3] + 1, ry, 6.5); val(D(v.nome), vxs[4] + 1, ry, 6.5);
   });
   val(fmtCnpj(d.condutorCpf), vcondX + 1, y + 8, 6.5); val(cut(D(d.condutorNome), 24), vcondX + 42, y + 8, 6.5);
   y += hV + 1;
@@ -332,7 +331,7 @@ export function gerarDamdfePdf(d: DamdfeData): Blob {
   titleBar("INFORMAÇÕES DOS DOCUMENTOS FISCAIS VINCULADOS AO MANIFESTO");
   need(11);
   box(M, y, CW, 6);
-  const dcols: Array<[number, string]> = [[16, "Tipo Doc."], [20, "Nº Doc."], [82, "Chave Documento"], [62, "Numero Averbação"], [40, "CNPJ Resp."], [36, "Nº Apólice"], [0, "Nº CIOT / NFes"]];
+  const dcols: Array<[number, string]> = [[16, "Tipo Doc."], [20, "Nº Doc."], [78, "Chave Documento"], [48, "Numero Averbação"], [44, "CNPJ Responsável"], [34, "Nº Apólice"], [24, "Nº CIOT"], [0, "Nº Notas Fiscais"]];
   let dx = M;
   for (const [w0, t] of dcols) { const w = w0 || (M + CW - dx); if (dx > M) vline(dx, y, 6); lab(t, dx + 1, y + 4); dx += w; }
   y += 6;
@@ -340,8 +339,8 @@ export function gerarDamdfePdf(d: DamdfeData): Blob {
     need(6);
     box(M, y, CW, 6);
     let ddx = M;
-    const cells = ["CT-e", cut(D(docu.numero), 10), D(docu.chave), cut(D(d.nAver), 30), fmtCnpj(d.emitCnpj), cut(D(d.nApol), 20), cut(`${D(d.ciot)} ${D(docu.nfes)}`.trim(), 24)];
-    const widths = [16, 20, 82, 62, 40, 36, CW - 256];
+    const cells = ["CT-e", cut(D(docu.numero), 10), D(docu.chave), cut(D(d.nAver), 26), fmtCnpj(d.emitCnpj), cut(D(d.nApol), 22), cut(D(d.ciot), 14), cut(D(docu.nfes), 14)];
+    const widths = [16, 20, 78, 48, 44, 34, 24, CW - 264];
     cells.forEach((c, i) => { if (ddx > M) vline(ddx, y, 6); val(c, ddx + 1, y + 4, 5.5); ddx += widths[i]; });
     y += 6;
   }

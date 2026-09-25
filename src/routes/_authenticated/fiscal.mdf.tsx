@@ -141,6 +141,21 @@ function MdfPage() {
           });
         }
       } catch {}
+      // RNTRC/proprietário DO CADASTRO dos veículos (tração + reboques).
+      try {
+        const placas = [dados.placa, ...dados.reboques.map(r => r.placa)].map(p => String(p || "").toUpperCase()).filter(Boolean);
+        if (placas.length && empresa) {
+          const { data: vs } = await supabase.from("veiculos" as any).select("placa,rntrc,proprietario").eq("empresa_id", (empresa as any).id).in("placa", placas);
+          const byPlaca = new Map<string, any>();
+          for (const v of (vs as any[]) || []) if ((v as any)?.placa) byPlaca.set(String((v as any).placa).toUpperCase(), v);
+          const tv = byPlaca.get(String(dados.placa || "").toUpperCase());
+          if (tv) { dados.tracRntrc = String((tv as any).rntrc || ""); dados.tracProp = String((tv as any).proprietario || ""); }
+          dados.reboques = dados.reboques.map(r => {
+            const rv = byPlaca.get(String(r.placa || "").toUpperCase());
+            return rv ? { ...r, rntrc: String((rv as any).rntrc || ""), prop: String((rv as any).proprietario || "") } : r;
+          });
+        }
+      } catch {}
       const blob = gerarDamdfePdf(dados);
       const url = URL.createObjectURL(blob);
       const a = document.createElement("a");
