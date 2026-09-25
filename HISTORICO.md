@@ -2703,3 +2703,9 @@ Espelhado na Vercel.
   puxado do XML assinado do CT-e (toma4 ou toma03->rem/exped/
   receb/dest). Front extrai na emissao; servidor completa via
   cte_documentos p/ XML de front antigo. Espelhado na Vercel.
+
+## BUILD 030: contratante CTeSimp (25/09/2026)
+
+- 578 persistia: extrator nao cobria o <toma> do CTeSimp
+  (filho de infCte). Corrigido + testado offline. Espelhado
+  na Vercel via push em main.

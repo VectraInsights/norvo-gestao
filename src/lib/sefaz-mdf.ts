@@ -183,8 +183,9 @@ export interface MdfContratante {
   cpf?: string;
 }
 
-// Extrai o tomador do CT-e assinado (toma4 direto; toma03 0-3 via
-// remetente/expedidor/recebedor/destinatário) — rejeição 578.
+// Extrai o tomador do CT-e assinado — CTeSimp (<toma> filho de <infCte>),
+// CT-e normal toma4 direto, ou toma03 0-3 via remetente/expedidor/
+// recebedor/destinatário — rejeição 578.
 export function extrairContratantesDoCte(cteXml: string): MdfContratante[] {
   const out: MdfContratante[] = [];
   const push = (xNome: string, doc: string) => {
@@ -203,13 +204,22 @@ export function extrairContratantesDoCte(cteXml: string): MdfContratante[] {
   if (t4) {
     const { doc, nome } = docNomeDe(t4);
     push(nome, doc);
-  } else {
+    return out;
+  }
+  // CTeSimp: <toma><toma>3</toma><indIEToma>…</indIEToma><CNPJ>…<xNome>…
+  const simp = cteXml.match(/<toma>\s*<toma>([0-4])<\/toma>([\s\S]*?)<\/toma>/);
+  if (simp) {
+    const { doc, nome } = docNomeDe(simp[2]);
+    push(nome, doc);
+    return out;
+  }
+  {
     const tipo = grupo("toma03").match(/<toma>([0-3])<\/toma>/)?.[1] || "3";
     const tag = tipo === "0" ? "rem" : tipo === "1" ? "exped" : tipo === "2" ? "receb" : "dest";
     const { doc, nome } = docNomeDe(grupo(tag));
     push(nome, doc);
+    return out;
   }
-  return out;
 }
 
 // Garante <infContratante> no infANTT (para XML de front antigo).
@@ -460,7 +470,7 @@ async function soapRequest(url: string, body: string, action: string, agent?: ht
 export async function emitirMdf(pfx: Buffer, senha: string, xml: string, ambiente: Ambiente): Promise<{ sucesso: boolean; cStat: string; xMotivo: string; chave?: string; protocolo?: string; xmlRet?: string }> {
   assertMdfAmbiente(ambiente);
   assertMdfXmlAmbiente(xml);
-  const BUILD = "029-contratante-do-cte";
+  const BUILD = "030-contratante-ctesimp";
   const ep = getMdfEndpoints(ambiente);
   const agent = createSefazAgent(pfx, senha);
   const nsSinc = "http://www.portalfiscal.inf.br/mdfe/wsdl/MDFeRecepcaoSinc";
