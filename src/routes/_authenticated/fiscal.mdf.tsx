@@ -154,6 +154,14 @@ function MdfPage() {
             const rv = byPlaca.get(String(r.placa || "").toUpperCase());
             return rv ? { ...r, rntrc: String((rv as any).rntrc || ""), prop: String((rv as any).proprietario || "") } : r;
           });
+          // CNPJ/CPF do proprietário (coluna nova; query separada p/ não quebrar se a migration ainda não rodou).
+          try {
+            const { data: vd } = await supabase.from("veiculos" as any).select("placa,proprietario_doc").eq("empresa_id", (empresa as any).id).in("placa", placas);
+            const byDoc = new Map<string, string>();
+            for (const v of (vd as any[]) || []) if ((v as any)?.placa) byDoc.set(String((v as any).placa).toUpperCase(), String((v as any).proprietario_doc || ""));
+            (dados as any).tracPropDoc = byDoc.get(String(dados.placa || "").toUpperCase()) || "";
+            dados.reboques = dados.reboques.map(r => ({ ...r, propDoc: byDoc.get(String(r.placa || "").toUpperCase()) || "" }));
+          } catch {}
         }
       } catch {}
       const blob = gerarDamdfePdf(dados);
@@ -888,10 +896,32 @@ function DialogNovoMdf({ open, onOpenChange, empresaId, empresa, chavesIniciais,
           if (!proPredMdf) proPredMdf = (cteXml.match(/<proPred>([^<]{1,120})<\/proPred>/)?.[1] || "").trim();
         } catch {}
       }
+      // cMun do EMITENTE (empresa): resolve IBGE pela cidade/UF do cadastro;
+      // fallback para o município de coleta quando a lookup falhar.
+      let emitCMun = "";
+      try {
+        const empUF = String((empresa as any)?.uf || "").toUpperCase();
+        const empXMun = String((empresa as any)?.cidade || "");
+        if (empUF && empXMun) {
+          const rI = await fetch("https://brasilapi.com.br/api/ibge/municipios/v1/" + empUF);
+          if (rI.ok) {
+            const arr = await rI.json();
+            const norm = (s: string) => (s || "").toUpperCase().normalize("NFD").replace(/[^A-Z ]/g, "").replace(/ +/g, " ").trim();
+            const hit = ((arr as any[]) || []).find((mm: any) => norm(mm.nome) === norm(empXMun));
+            if (hit?.codigo_ibge) emitCMun = String(hit.codigo_ibge);
+          }
+        }
+      } catch {}
+      if (!emitCMun) emitCMun = String(firstForm.cMunIni || "");
       const input = {
         empresaId, ambiente: ambienteMdf, serie: serieMdf || "000", numero,
         ufCarregamento, ufDescarregamento,
-        emit: { cnpj: String((empresa as any)?.cnpj || ""), ie: String((empresa as any)?.ie || ""), xNome: String((empresa as any)?.razao_social || (empresa as any)?.nome_fantasia || ""), uf: ufCarregamento, cMun: String(firstForm.cMunIni || ""), xMun: String(firstForm.xMunIni || ""), logradouro: String((empresa as any)?.logradouro || ""), nro: String((empresa as any)?.numero || ""), bairro: String((empresa as any)?.bairro || "") },
+        emit: (() => {
+          // enderEmit é o endereço do EMITENTE (empresa), nunca do remetente/coleta.
+          const empUF = String((empresa as any)?.uf || "").toUpperCase();
+          const empXMun = String((empresa as any)?.cidade || "");
+          return { cnpj: String((empresa as any)?.cnpj || ""), ie: String((empresa as any)?.ie || ""), xNome: String((empresa as any)?.razao_social || (empresa as any)?.nome_fantasia || ""), uf: empUF || ufCarregamento, cMun: emitCMun, xMun: empXMun || String(firstForm.xMunIni || ""), logradouro: String((empresa as any)?.logradouro || ""), nro: String((empresa as any)?.numero || ""), bairro: String((empresa as any)?.bairro || "") };
+        })(),
         veicTrac: { placa: tracaoSel, uf: ufCarregamento, rntrc: (veic as any)?.rntrc || "", tara: 0, renavam: (veic as any)?.renavam || undefined, tpRod: tpRodDe((veic as any)?.tipo), ciot: ciotMdf || undefined },
         reboques: reboques.slice(0, 3).map(p => ({ placa: p, uf: ufCarregamento, tara: 0, renavam: renavamDe(p) })),
         condutor: { cpf: mot?.cpf || "", xNome: mot0.nome },

@@ -35,13 +35,14 @@ export interface DamdfeData {
   // RNTRC/proprietário DO CADASTRO do veículo (nunca do emitente).
   tracRntrc: string;
   tracProp: string;
+  tracPropDoc: string;
   tpRod: string;
   tpCar: string;
   ciot: string;
   ufVeic: string;
   condutorNome: string;
   condutorCpf: string;
-  reboques: Array<{ placa: string; renavam: string; uf: string; rntrc?: string; prop?: string }>;
+  reboques: Array<{ placa: string; renavam: string; uf: string; rntrc?: string; prop?: string; propDoc?: string }>;
   contratanteNome: string;
   contratanteDoc: string;
   chavesCte: string[];
@@ -161,6 +162,7 @@ export function damdfeDataDoXml(xml: string, extra?: { protocolo?: string; numer
     rntrc: q("RNTRC", rodo || undefined),
     tracRntrc: "",
     tracProp: "",
+    tracPropDoc: "",
     ciot: q("CIOT", rodo || undefined),
     placa: q("veicTracao > placa", rodo || undefined),
     renavam: q("veicTracao > RENAVAM", rodo || undefined),
@@ -318,21 +320,23 @@ export function gerarDamdfePdf(d: DamdfeData): Blob {
   black(); setFont("bold", 6); doc.text(ciotTxt, M + CW - 1 - doc.getTextWidth(ciotTxt), y + 3);
   // Proprietário/RNTRC vêm do cadastro do veículo (tracRntrc/tracProp e
   // reboques[].rntrc/prop); sem cadastro, fica em branco (nunca emitente).
-  // DOC: o cadastro não tem a coluna — quando o proprietário é a própria
-  // empresa (nome bate), usa o CNPJ dela; senão fica vazio.
+  // DOC: usa o CNPJ/CPF cadastrado no veículo (proprietario_doc); quando
+  // ausente, cai no nome-bate-com-empresa; senão fica vazio.
   const normProp = (s: string) => D(s).toUpperCase().replace(/[^A-Z0-9]/g, "");
-  const docPropDe = (prop: string) => {
+  const docPropDe = (prop: string, docExplicito?: string) => {
+    const dd = D(docExplicito).replace(/\D/g, "");
+    if (dd.length === 11 || dd.length === 14) return fmtCnpj(dd);
     const p = normProp(prop), e = normProp(d.emitNome);
     if (!p || !e) return "";
     if (p === e) return fmtCnpj(d.emitCnpj);
     if (p.length >= 6 && e.length >= 6 && (p.includes(e) || e.includes(p))) return fmtCnpj(d.emitCnpj);
     return "";
   };
-  const veicRows = [{ placa: d.placa, renavam: d.renavam, rntrc: D(d.tracRntrc), nome: cut(D(d.tracProp), 30) }, ...d.reboques.map(r => ({ placa: r.placa, renavam: r.renavam, rntrc: D(r.rntrc), nome: cut(D(r.prop), 30) }))];
+  const veicRows = [{ placa: d.placa, renavam: d.renavam, rntrc: D(d.tracRntrc), doc: D((d as any).tracPropDoc), nome: cut(D(d.tracProp), 30) }, ...d.reboques.map(r => ({ placa: r.placa, renavam: r.renavam, rntrc: D(r.rntrc), doc: D((r as any).propDoc), nome: cut(D(r.prop), 30) }))];
   veicRows.forEach((v, i) => {
     const ry = y + 6 + i * 5;
     val(D(v.placa), vxs[0] + 1, ry, 6.5); val(D(v.renavam), vxs[1] + 1, ry, 6.5); val(D(v.rntrc), vxs[2] + 1, ry, 6.5);
-    val(docPropDe(v.nome), vxs[3] + 1, ry, 6.5); val(D(v.nome), vxs[4] + 1, ry, 6.5);
+    val(docPropDe(v.nome, v.doc), vxs[3] + 1, ry, 6.5); val(D(v.nome), vxs[4] + 1, ry, 6.5);
   });
   val(fmtCnpj(d.condutorCpf), vcondX + 1, y + 8, 6.5); val(cut(D(d.condutorNome), 24), vcondX + 42, y + 8, 6.5);
   y += hV + 1;

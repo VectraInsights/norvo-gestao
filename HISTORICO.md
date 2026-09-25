@@ -2837,3 +2837,22 @@ Espelhado na Vercel.
 - Coluna DOC estava vazia (cadastro nao tem o documento):
   quando o proprietario e a propria empresa, usa o CNPJ
   dela; terceiro segue vazio. Espelhado.
+
+## CNPJ/CPF do proprietário + endereço do emitente (25/09/2026)- Veículos: nova coluna `proprietario_doc` (migration
+  `20260925120000`; CNPJ 14 ou CPF 11 dígitos, opcional) com campo no
+  cadastro, coluna na tabela e busca; dialog de cadastro em tela cheia.
+- DAMDFE usa o doc cadastrado na coluna DOC PROPRIETÁRIO (tração e
+  reboques), com fallback para nome-bate-com-empresa.
+- MDF-e: `enderEmit` agora é o endereço do EMITENTE (cidade/UF da
+  empresa; cMun via IBGE/BrasilAPI com fallback na coleta) — antes
+  misturava rua da empresa com cidade/UF da coleta (remetente).
+- Espelhado na Vercel via push em main.
+
+## Action da consulta MDF-e (25/09/2026)
+
+- Cancelar/encerrar sem protocolo local quebravam ("protocolo de
+  autorização não encontrado"): a consulta caía em HTTP 500 porque a
+  action `.../MDFeConsulta/mdfeConsulta` não é reconhecida pelo SVRS.
+  Corrigido para `.../MDFeConsulta/MDFeConsulta` (método ASMX com
+  maiúsculas, como no nome do serviço). Actions de evento mantidas.
+- Espelhado na Vercel via push em main.

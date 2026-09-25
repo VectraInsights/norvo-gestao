@@ -75,6 +75,7 @@ type Veiculo = {
   rntrc: string | null;
   renavam: string | null;
   proprietario: string | null;
+  proprietario_doc: string | null;
   quantidade_eixos: number | null;
   categoria: string | null;
   chassi: string | null;
@@ -98,6 +99,7 @@ function formVazio() {
     rntrc: "",
     renavam: "",
     proprietario: "",
+    proprietario_doc: "",
     quantidade_eixos: "",
     categoria: "",
     chassi: "",
@@ -414,6 +416,7 @@ function Veiculos() {
       rntrc: v.rntrc ?? "",
       renavam: v.renavam ?? "",
       proprietario: (v as any).proprietario ?? "",
+      proprietario_doc: (v as any).proprietario_doc ?? "",
       quantidade_eixos: (v as any).quantidade_eixos ? String((v as any).quantidade_eixos) : "",
       categoria: (v as any).categoria ?? "",
       chassi: (v as any).chassi ?? "",
@@ -435,6 +438,8 @@ function Veiculos() {
       if (!form.renavam.trim()) throw new Error("RENAVAM é obrigatório");
       if (!form.chassi.trim()) throw new Error("Chassi é obrigatório");
       if (!form.proprietario.trim()) throw new Error("Proprietário é obrigatório");
+      const propDoc = form.proprietario_doc.replace(/\D/g, "");
+      if (propDoc && propDoc.length !== 11 && propDoc.length !== 14) throw new Error("CNPJ/CPF do proprietário inválido (11 ou 14 dígitos)");
       if (!form.categoria) throw new Error("Categoria é obrigatória");
       if (!form.quantidade_eixos) throw new Error("Quantidade de eixos é obrigatória");
       const payload: any = {
@@ -446,6 +451,7 @@ function Veiculos() {
         rntrc: form.rntrc.trim() || null,
         renavam: form.renavam.trim(),
         proprietario: form.proprietario.trim(),
+        proprietario_doc: form.proprietario_doc.replace(/\D/g, "") || null,
         quantidade_eixos: Number(form.quantidade_eixos),
         categoria: form.categoria,
         chassi: form.chassi.trim().toUpperCase(),
@@ -491,7 +497,7 @@ function Veiculos() {
   const lista = (veiculos ?? []).filter((v) => {
     if (!busca.trim()) return true;
     const s = busca.toLowerCase();
-    return [v.placa, v.marca_modelo, v.tipo, v.rntrc, (v as any).proprietario, (v as any).categoria, (v as any).chassi].some((x) =>
+    return [v.placa, v.marca_modelo, v.tipo, v.rntrc, (v as any).proprietario, (v as any).proprietario_doc, (v as any).categoria, (v as any).chassi].some((x) =>
       (x ?? "").toLowerCase().includes(s),
     );
   });
@@ -517,7 +523,7 @@ function Veiculos() {
             Novo veículo
           </Button>
         </DialogTrigger>
-        <DialogContent className="max-w-2xl">
+        <DialogContent className="w-screen h-screen max-w-none max-h-none m-0 rounded-none overflow-y-auto">
           <DialogHeader>
             <DialogTitle>{editing ? `Editar ${editing.placa}` : "Novo veículo"}</DialogTitle>
           </DialogHeader>
@@ -665,6 +671,10 @@ function Veiculos() {
                 <Input value={form.proprietario} onChange={(e) => handleProprietarioChange(e.target.value)} placeholder="Nome do proprietário" />
               </div>
               <div>
+                <Label>CNPJ/CPF Proprietário</Label>
+                <Input value={form.proprietario_doc} onChange={(e) => set("proprietario_doc", e.target.value.replace(/[^\d./-]/g, "").slice(0, 18))} placeholder="Somente números" className="font-mono" />
+              </div>
+              <div>
                 <Label>Categoria *</Label>
                 <Select value={form.categoria} onValueChange={v => set("categoria", v)}>
                   <SelectTrigger><SelectValue placeholder="Selecione" /></SelectTrigger>
@@ -773,6 +783,7 @@ function Veiculos() {
                 <TableHead>Tipo</TableHead>
                 <TableHead>Ano</TableHead>
                 <TableHead>Proprietário</TableHead>
+                <TableHead>CNPJ/CPF</TableHead>
                 <TableHead className="text-center">Eixos</TableHead>
                 <TableHead>Categoria</TableHead>
                 <TableHead>Chassi</TableHead>
@@ -788,6 +799,7 @@ function Veiculos() {
                   <TableCell>{v.tipo ?? "—"}</TableCell>
                   <TableCell>{v.ano ?? "—"}</TableCell>
                   <TableCell className="truncate max-w-[140px]">{(v as any).proprietario ?? "—"}</TableCell>
+                  <TableCell className="font-mono text-xs">{(v as any).proprietario_doc ?? "—"}</TableCell>
                   <TableCell className="text-center">{(v as any).quantidade_eixos ?? "—"}</TableCell>
                   <TableCell className="capitalize">{(v as any).categoria ?? "—"}</TableCell>
                   <TableCell className="font-mono text-xs">{(v as any).chassi ?? "—"}</TableCell>
