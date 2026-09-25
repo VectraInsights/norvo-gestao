@@ -3034,3 +3034,9 @@ Espelhado na Vercel.
 - 3º Transbordo removido da tela (lógica mantida p/ rascunhos antigos);
   botões de UF compactos p/ exibir as 27 siglas.
 - Espelhado na Vercel via push em main.
+
+## Grade 6 colunas no seletor de UF (25/09/2026)
+
+- Botões de UF em grade fixa de 6 colunas (5 linhas): SP/TO e demais
+  sempre visíveis e clicáveis, sem corte.
+- Espelhado na Vercel via push em main.
