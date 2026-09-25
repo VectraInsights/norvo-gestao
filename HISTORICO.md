@@ -2565,3 +2565,14 @@ Espelhado na Vercel.
 - Novo log `[mdf-debug] Signature:` com o nó completo + bytes do payload.
 - Constante de log atualizada para `BUILD=016-signature-crlf-x509-clean`.
 - Espelhado na Vercel via push em main.
+
+## BUILD 017: namespace xmldsig explícito (24/09/2026)
+
+- Verificado: `SignedInfo` e `Signature` já emitidos com
+  `xmlns="http://www.w3.org/2000/09/xmldsig#"` explícito; filhos
+  vinculados por herança do default namespace (forma canônica exige
+  `xmlns` só na raiz: `<SignedInfo xmlns="..."><CanonicalizationMethod...`).
+  `Signature` anexada como filha direta de `<MDFe>` após `</infMDFe>`;
+  `SignatureValue` intacto (só operações de string).
+- Constante de log atualizada para `BUILD=017-explicit-xmldsig-namespace`.
+- Espelhado na Vercel via push em main.
