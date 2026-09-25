@@ -3031,4 +3031,6 @@ Espelhado na Vercel.
   removida; observações/fisco achatadas (1 linha).
 - Rodapé fixo na borda inferior (sem rolagem na página): diálogo em
   coluna flex, botões Cancelar/Salvar/Emitir sempre visíveis.
+- 3º Transbordo removido da tela (lógica mantida p/ rascunhos antigos);
+  botões de UF compactos p/ exibir as 27 siglas.
 - Espelhado na Vercel via push em main.

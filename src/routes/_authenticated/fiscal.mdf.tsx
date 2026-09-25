@@ -1327,7 +1327,6 @@ function DialogNovoMdf({ open, onOpenChange, empresaId, empresa, chavesIniciais,
                   <div><label className="flex items-center gap-1 text-[11px] font-medium cursor-pointer"><input type="checkbox" checked={isTransbordo} onChange={e => setIsTransbordo(e.target.checked)} className="h-3 w-3" /> Manifesto Transbordo</label></div>
                   <TransbSelect label="1º Transbordo" value={transb1} onChange={setTransb1} />
                   <TransbSelect label="2º Transbordo" value={transb2} onChange={setTransb2} />
-                  <TransbSelect label="3º Transbordo" value={transb3} onChange={setTransb3} />
                 </div>
               </div>
               <div className="grid grid-cols-2 md:grid-cols-[minmax(0,1fr)_170px_minmax(0,1fr)_170px] gap-2">
@@ -1457,9 +1456,9 @@ function DialogNovoMdf({ open, onOpenChange, empresaId, empresa, chavesIniciais,
             </div>
             <div className="border rounded-md p-2 md:col-span-1 self-start">
               <span className="text-[10px] text-muted-foreground">Adicionar UF:</span>
-              <div className="flex flex-wrap gap-1 mt-2">
+              <div className="flex flex-wrap gap-0.5 mt-1">
                 {UFS.map(uf => (
-                  <Button key={uf} variant="outline" size="sm" className="h-5 px-1.5 text-[10px] font-mono" onClick={() => { setPercursoUFs(prev => [...prev, uf]); setPercursoSelIdx(percursoUFs.length); }}>{uf}</Button>
+                  <Button key={uf} variant="outline" size="sm" className="h-[18px] px-1 text-[9px] font-mono leading-none" onClick={() => { setPercursoUFs(prev => [...prev, uf]); setPercursoSelIdx(percursoUFs.length); }}>{uf}</Button>
                 ))}
               </div>
             </div>
