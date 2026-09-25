@@ -586,6 +586,7 @@ function DialogNovoMdf({ open, onOpenChange, empresaId, empresa, chavesIniciais,
         pesoTotalKG: ctesArr.reduce((s, c) => s + pesoDe(c), 0),
         tipo: (isTransbordo ? "transbordo" : "normal") as "normal" | "transbordo",
         tpEmit: tipoMdf === "Globalizado" ? "3" : "1",
+        seg: { xSeg: String((segMdf as any).seguradoraNome || ""), nApol: String((segMdf as any).apolice || ""), nAver: String((segMdf as any).averbacao || "") },
         mdfesTransbordo: [transb1, transb2, transb3].filter(k => /^\d{44}$/.test((k || "").trim())).map(k => ({ chave: k.trim() })),
       };
 

@@ -65,6 +65,60 @@ export function gerarChaveMdf(cUF: string, aamm: string, cnpj: string, serie: st
   return base + calcDV(base);
 }
 
+export interface MdfSeguro {
+  xSeg?: string;
+  cnpjSeg?: string;
+  nApol?: string;
+  nAver?: string;
+}
+
+// Monta <seg> conforme XSD (infResp/respSeg obrigatório; infSeg só com CNPJ
+// válido pois o CNPJ é obrigatório dentro dele; nApol/nAver opcionais).
+// Para tpEmit 1/3 (prestador) emite mesmo sem dados (rejeição 698).
+export function montarSegXml(seg: MdfSeguro | undefined, tpEmit: string): string {
+  const segIn = seg || {};
+  const precisaSeg = tpEmit === "1" || tpEmit === "3";
+  const xSeg = String(segIn.xSeg || "").trim().slice(0, 30);
+  const cnpjSeg = String(segIn.cnpjSeg || "").replace(/\D/g, "");
+  const nApol = String(segIn.nApol || "").trim().slice(0, 20);
+  const nAver = String(segIn.nAver || "").trim().slice(0, 40);
+  if (!precisaSeg && !xSeg && !nApol && !nAver) return "";
+  const infSegXml = (xSeg && /^\d{14}$/.test(cnpjSeg)) ? `<infSeg><xSeg>${xSeg}</xSeg><CNPJ>${cnpjSeg}</CNPJ></infSeg>` : "";
+  return `<seg><infResp><respSeg>1</respSeg></infResp>${infSegXml}${nApol ? `<nApol>${nApol}</nApol>` : ""}${nAver ? `<nAver>${nAver}</nAver>` : ""}</seg>`;
+}
+
+// Garante <seg> no XML (para XML de front antigo): injeta após </infDoc>.
+export function garantirSegMdf(xml: string, seg: MdfSeguro | undefined): string {
+  if (/<seg[\s>]/.test(xml)) return xml;
+  const tpEmit = xml.match(/<tpEmit>([^<]*)<\/tpEmit>/)?.[1] || "";
+  const segXml = montarSegXml(seg, tpEmit);
+  if (!segXml || !xml.includes("</infDoc>")) return xml;
+  return xml.replace(/<\/infDoc>/, `</infDoc>${segXml}`);
+}
+
+// Puxa seguradora/apólice/averbação do CT-e vinculado (cte_documentos).
+export async function segDoCteVinculado(supa: { from(t: string): any }, empresaId: string, xml: string): Promise<MdfSeguro | null> {
+  try {
+    const chaves = [...String(xml).matchAll(/<chCTe>(\d{44})<\/chCTe>/g)].map(m => m[1]);
+    if (!chaves.length) return null;
+    const { data: rows } = await supa.from("cte_documentos").select("xml_assinado").eq("empresa_id", empresaId).in("chave_acesso", chaves).limit(10);
+    for (const r of (rows as any[]) || []) {
+      const raw = String((r as any)?.xml_assinado || "");
+      let f: any = {};
+      try { f = JSON.parse(raw).form || {}; } catch {}
+      const xSeg = String(f.seguradoraNome || "").trim();
+      const nApol = String(f.apolice || "").trim();
+      const nAver = String(f.averbacao || "").trim();
+      if (xSeg || nApol || nAver) return { xSeg, nApol, nAver };
+      const mSeg = raw.match(/<xSeg>([^<]{1,30})<\/xSeg>/);
+      const mApol = raw.match(/<nApol>([^<]{1,20})<\/nApol>/);
+      const mAver = raw.match(/<nAver>([^<]{1,40})<\/nAver>/);
+      if (mSeg || mApol) return { xSeg: (mSeg?.[1] || "").trim(), nApol: (mApol?.[1] || "").trim(), nAver: (mAver?.[1] || "").trim() };
+    }
+  } catch {}
+  return null;
+}
+
 export interface MdfInputCompleto {
   empresaId: string;
   ambiente: Ambiente;
@@ -85,6 +139,7 @@ export interface MdfInputCompleto {
   qtdTotalNF?: number;
   lacres?: Array<{ nLacre: string }>;
   obs?: string;
+  seg?: { xSeg?: string; cnpjSeg?: string; nApol?: string; nAver?: string };
   tipo?: "normal" | "transbordo";
   tpEmit?: string;
   mdfesTransbordo?: Array<{ chave: string }>;
@@ -165,6 +220,11 @@ export function buildMdfXml(input: MdfInputCompleto): { xml: string; chave: stri
   // Lacres
   const lacresXml = (input.lacres || []).map(l => `<nLacre>${l.nLacre}</nLacre>`).join("");
 
+  // Seguro da carga (filho de infMDFe, entre infDoc e tot; XSD mdfeTiposBasico_v3.00).
+  // Rejeição 698 exige seg para prestador no rodoviário (tpEmit 1/3) —
+  // dados puxados do CT-e vinculado (seguradora/apólice/averbação).
+  const segXml = montarSegXml(input.seg, tpEmit);
+
   const raw = `<?xml version="1.0" encoding="UTF-8"?>
 <MDFe xmlns="http://www.portalfiscal.inf.br/mdfe">
   <infMDFe xmlns="http://www.portalfiscal.inf.br/mdfe" Id="${id}" versao="3.00">
@@ -212,6 +272,7 @@ export function buildMdfXml(input: MdfInputCompleto): { xml: string; chave: stri
       </rodo>
     </infModal>
     <infDoc>${infDocXml}</infDoc>
+    ${segXml}
     <tot>
       ${input.ctes.length > 0 ? `<qCTe>${input.ctes.length}</qCTe>` : isTransbordo ? `<qMDFe>${input.mdfesTransbordo?.length || 0}</qMDFe>` : ""}
       <vCarga>${input.valorTotalCarga.toFixed(2)}</vCarga>
@@ -285,7 +346,7 @@ async function soapRequest(url: string, body: string, action: string, agent?: ht
 export async function emitirMdf(pfx: Buffer, senha: string, xml: string, ambiente: Ambiente): Promise<{ sucesso: boolean; cStat: string; xMotivo: string; chave?: string; protocolo?: string; xmlRet?: string }> {
   assertMdfAmbiente(ambiente);
   assertMdfXmlAmbiente(xml);
-  const BUILD = "024-rntrc-proxy-sanitize";
+  const BUILD = "025-seg-do-cte";
   const ep = getMdfEndpoints(ambiente);
   const agent = createSefazAgent(pfx, senha);
   const nsSinc = "http://www.portalfiscal.inf.br/mdfe/wsdl/MDFeRecepcaoSinc";
@@ -301,6 +362,8 @@ export async function emitirMdf(pfx: Buffer, senha: string, xml: string, ambient
   // Sanitização de transporte (vale para XML montado por qualquer front,
   // inclusive versões antigas): TRNTRC exige 8 dígitos — remove zero(s)
   // à esquerda; RNTRC inválido aborta antes de assinar.
+  // 698: o <seg> vem do builder (front novo puxa do CT-e) ou do backfill
+  // no servidor (segDoCteVinculado); aqui só sanitização de transporte.
   const xmlSanitizado = xml.replace(/<RNTRC>(\d+)<\/RNTRC>/g, (_m, d: string) => {
     let x = String(d);
     while (x.length > 8 && x.startsWith("0")) x = x.slice(1);

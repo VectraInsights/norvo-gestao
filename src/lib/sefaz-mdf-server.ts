@@ -68,8 +68,16 @@ export const emitirMdfFn = createServerFn({ method: "POST" })
   .handler(async ({ data }) => {
     if (SEFAZ_URL) return callSefazProxy("emitirMdf", data);
 
-    const { emitirMdf } = await import("@/lib/sefaz-mdf");
+    const { emitirMdf, segDoCteVinculado, garantirSegMdf } = await import("@/lib/sefaz-mdf");
     const { cert, ambiente, supabase } = await getCertAndAmbiente(data.empresaId);
+
+    // 698: backfill do <seg> a partir do CT-e vinculado (fronts antigos).
+    try {
+      if (!/<seg[\s>]/.test(String(data.xml || ""))) {
+        const seg = await segDoCteVinculado(supabase, data.empresaId, String(data.xml || ""));
+        if (seg) { data.xml = garantirSegMdf(String(data.xml || ""), seg); console.log("[mdf-debug] seg backfill do CT-e:", JSON.stringify(seg)); }
+      }
+    } catch {}
 
     const result = await emitirMdf(cert.pfx, cert.senha, data.xml, ambiente);
 

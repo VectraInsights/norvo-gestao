@@ -2665,3 +2665,12 @@ Espelhado na Vercel.
   Sanitizacao movida para emitirMdf (transporte): tira zero a
   esquerda ate 8 digitos; invalido aborta antes de assinar.
   Espelhado na Vercel via push em main.
+
+## BUILD 025: seg puxado do CT-e (25/09/2026)
+
+- 698 (seguro obrigatorio p/ prestador rodoviario): grupo <seg>
+  agora sempre emitido (filho de infMDFe, ordem XSD infDoc-seg-tot)
+  com seguradora/apolice/averbacao puxadas do CT-e vinculado
+  (front) + backfill no servidor via cte_documentos p/ XML de
+  front antigo. infSeg so com CNPJ valido (obrigatorio no XSD).
+  Espelhado na Vercel via push em main.
