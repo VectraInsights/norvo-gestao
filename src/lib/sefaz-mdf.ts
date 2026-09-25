@@ -579,7 +579,25 @@ export async function protocoloDoMdf(pfx: Buffer, senha: string, chave: string, 
 
 export async function consultarMdf(pfx: Buffer, senha: string, chave: string, ambiente: Ambiente): Promise<{ cStat: string; xMotivo: string; xml?: string }> {  const ep = getMdfEndpoints(ambiente);
   const body = `<MDFeConsultaMsg xmlns="http://www.portalfiscal.inf.br/mdfe/wsdl/MDFeConsulta"><consSitMDFe xmlns="http://www.portalfiscal.inf.br/mdfe" versao="3.00"><tpAmb>${MDFE_TP_AMB}</tpAmb><xServ>CONSULTAR</xServ><chMDFe>${chave}</chMDFe></consSitMDFe></MDFeConsultaMsg>`;
-  const ret = await soapRequest(ep.mdfConsulta, body, "http://www.portalfiscal.inf.br/mdfe/wsdl/MDFeConsulta/MDFeConsulta", createSefazAgent(pfx, senha));
+  // SVRS já rejeitou as duas formas em momentos distintos; tenta a convencional
+  // (mdfeConsulta, padrão dos demais serviços MDF-e) e cai para MDFeConsulta.
+  const actions = [
+    "http://www.portalfiscal.inf.br/mdfe/wsdl/MDFeConsulta/mdfeConsulta",
+    "http://www.portalfiscal.inf.br/mdfe/wsdl/MDFeConsulta/MDFeConsulta",
+  ];
+  let ret = "";
+  for (const action of actions) {
+    try {
+      ret = await soapRequest(ep.mdfConsulta, body, action, createSefazAgent(pfx, senha));
+      console.log(`[mdf-debug] consulta aceita action=${action}`);
+      break;
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : String(e);
+      console.log(`[mdf-debug] consulta falhou action=${action}: ${msg.slice(0, 160)}`);
+      if (!/not recognized/i.test(msg)) throw e;
+    }
+  }
+  if (!ret) throw new Error("MDF-e consulta rejeitada pelo SVRS (action não reconhecida nas duas formas)");
   const cStat = ret.match(/<cStat>(\d+)<\/cStat>/)?.[1] || "";
   const xMotivo = ret.match(/<xMotivo>([^<]+)<\/xMotivo>/)?.[1] || "";
   return { cStat, xMotivo, xml: ret };

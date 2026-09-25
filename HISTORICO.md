@@ -2856,3 +2856,13 @@ Espelhado na Vercel.
   Corrigido para `.../MDFeConsulta/MDFeConsulta` (método ASMX com
   maiúsculas, como no nome do serviço). Actions de evento mantidas.
 - Espelhado na Vercel via push em main.
+
+## Consulta com fallback de action + save sem migration (25/09/2026)
+
+- SVRS rejeitou as duas formas da action de consulta em momentos
+  distintos: `consultarMdf` tenta `mdfeConsulta` e, em fault "not
+  recognized", tenta `MDFeConsulta` (log indica qual aceitou).
+- Salvamento do veículo tolera banco sem a coluna nova: em erro de
+  schema-cache de `proprietario_doc`, salva sem ela e avisa para rodar
+  a migration `20260925120000` no Supabase (SQL Editor).
+- Espelhado na Vercel via push em main.

@@ -460,16 +460,27 @@ function Veiculos() {
         observacoes: form.observacoes.trim() || null,
       };
       const tbl = supabase.from("veiculos" as never) as any;
-      if (editing) {
-        const { error } = await tbl.update(payload).eq("id", editing.id);
+      const payloadBase: any = { ...payload };
+      delete payloadBase.proprietario_doc;
+      const trySave = async (p: any) => {
+        if (editing) return tbl.update(p).eq("id", editing.id);
+        return tbl.insert(p);
+      };
+      const friendly = (e: any) => {
+        if (String(e?.message || "").toLowerCase().includes("duplicate"))
+          throw new Error("Já existe um veículo com esta placa");
+        throw e;
+      };
+      try {
+        const { error } = await trySave(payload);
         if (error) throw error;
-      } else {
-        const { error } = await tbl.insert(payload);
-        if (error) {
-          if (String(error.message).toLowerCase().includes("duplicate"))
-            throw new Error("Já existe um veículo com esta placa");
-          throw error;
-        }
+      } catch (e: any) {
+        // Coluna nova ainda sem migration no banco: salva sem ela e avisa.
+        if (String(e?.message || "").toLowerCase().includes("proprietario_doc")) {
+          const { error } = await trySave(payloadBase);
+          if (error) await friendly(error);
+          toast.warning("Migration pendente no Supabase (20260925120000): veículo salvo sem o CNPJ/CPF do proprietário");
+        } else await friendly(e);
       }
     },
     onSuccess: () => {
