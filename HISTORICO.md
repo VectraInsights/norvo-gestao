@@ -2724,3 +2724,9 @@ Espelhado na Vercel.
   do proPred do CT-e; padrao 05/CARGA GERAL quando ausente.
   Front extrai na emissao; servidor completa p/ XML antigo.
   Espelhado na Vercel via push em main.
+
+## BUILD 032: QR Code do MDF-e (25/09/2026)
+
+- 480: infMDFeSupl/qrCodMDFe anexado apos assinar (fora da
+  area do digest, como no CT-e). URL SVRS com chave + tpAmb.
+  Espelhado na Vercel via push em main.

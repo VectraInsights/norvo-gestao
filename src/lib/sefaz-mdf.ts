@@ -497,7 +497,7 @@ async function soapRequest(url: string, body: string, action: string, agent?: ht
 export async function emitirMdf(pfx: Buffer, senha: string, xml: string, ambiente: Ambiente): Promise<{ sucesso: boolean; cStat: string; xMotivo: string; chave?: string; protocolo?: string; xmlRet?: string }> {
   assertMdfAmbiente(ambiente);
   assertMdfXmlAmbiente(xml);
-  const BUILD = "031-produto-predominante";
+  const BUILD = "032-qr-code";
   const ep = getMdfEndpoints(ambiente);
   const agent = createSefazAgent(pfx, senha);
   const nsSinc = "http://www.portalfiscal.inf.br/mdfe/wsdl/MDFeRecepcaoSinc";
@@ -532,8 +532,15 @@ export async function emitirMdf(pfx: Buffer, senha: string, xml: string, ambient
   const xmlAss = signMdfXml(xmlForSignature, pfx, senha);
   // Invariância: xmlAss segue direto ao envelope, sem replaces
   // pós-assinatura; sem xmlns redundante em <infModal>.
-  const referenceUri = xmlAss.match(/<Reference URI="([^"]+)"/)?.[1] || "";
-  const signedXmlBytes = Buffer.byteLength(xmlAss, "utf8");
+  // 480: QR Code obrigatório — infMDFeSupl fica FORA da área assinada
+  // (Reference cobre só o infMDFe), então é anexado após assinar.
+  const chaveQr = xmlAss.match(/Id="MDFe(\d{44})"/)?.[1] || "";
+  const qrCod = `https://dfe-portal.svrs.rs.gov.br/mdfe/qrCode?chMDFe=${chaveQr}&amp;tpAmb=${MDFE_TP_AMB}`;
+  const signedMdfXml = /<\/infMDFe>\s*<\/MDFe>/.test(xmlAss)
+    ? xmlAss.replace(/<\/infMDFe>\s*<\/MDFe>/, `</infMDFe><infMDFeSupl><qrCodMDFe>${qrCod}</qrCodMDFe></infMDFeSupl></MDFe>`)
+    : xmlAss;
+  const referenceUri = signedMdfXml.match(/<Reference URI="([^"]+)"/)?.[1] || "";
+  const signedXmlBytes = Buffer.byteLength(signedMdfXml, "utf8");
   console.log(`[mdf-debug] XML final assinado: ${signedXmlBytes} bytes UTF-8; infModal:`, xmlAss.match(/<infModal[^>]*>/)?.[0] || "(ausente)");
   console.log("[mdf-debug] Signature:", xmlAss.match(/<Signature[\s\S]*<\/Signature>/)?.[0] || "(não encontrado)");
   // D03/599: diagnóstico somente leitura; não altera o XML assinado.
@@ -541,8 +548,7 @@ export async function emitirMdf(pfx: Buffer, senha: string, xml: string, ambient
   const wsFecha = [...xmlAss.matchAll(/>\s+<\/([^<>]+)>/g)].map(m => "/" + m[1]);
   console.log(`[mdf-debug] BUILD=${BUILD} ambiente=${MDFE_AMBIENTE} tpAmb=${MDFE_TP_AMB} reference=${referenceUri} c14n=${XML_INCLUSIVE_C14N} signedXmlUtf8Bytes=${signedXmlBytes} WS-check após-abertura=[${wsAbre.slice(0, 12).join(",")}] antes-fecho=[${wsFecha.slice(0, 12).join(",")}]`);
   // Sincrono (ACBr): mdfeDadosMsg = base64(gzip(<MDFe>...</MDFe>)) puro, sem enviMDFe/idLote.
-  // xmlAss segue intacto ao gzip/envelope, sem reescrita pós-assinatura.
-  const signedMdfXml = xmlAss;
+  // signedMdfXml (com infMDFeSupl) segue intacto ao gzip/envelope.
   const mdfeXmlBytes = Buffer.from(signedMdfXml, "utf8");
   const compactada = zlib.gzipSync(mdfeXmlBytes);
   const compactadaB64 = compactada.toString("base64");
