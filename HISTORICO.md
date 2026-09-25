@@ -2772,3 +2772,13 @@ Espelhado na Vercel.
   Front canonico agora e a Vercel; redirect removido. Erros
   tsc em server.ts sao pre-existentes (5 antes e depois).
   Espelhado na Vercel via push em main.
+
+## DAMDFE PDF + visualizar tela cheia (25/09/2026)
+
+- Novo damdfe-pdf.ts (jsPDF, A4): emitente, chave+lista,
+  QR, protocolo, veiculo/condutor/contratante, CT-es,
+  seguro, carga/totais. Botao Baixar PDF na linha e no
+  visualizar.
+- Visualizar virou tela cheia espelhando a emissao
+  (boxes empresa/veiculo, seguradora, CT-es, percurso,
+  totais, obs), tudo somente leitura. Espelhado.

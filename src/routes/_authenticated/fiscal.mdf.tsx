@@ -18,6 +18,7 @@ import { brl, dateBR, num } from "@/lib/format";
 import { useState, useEffect, useMemo } from "react";
 import { toast } from "sonner";
 import { emitirMdfFn, consultarMdfFn, encerrarMdfFn, cancelarMdfFn } from "@/lib/sefaz-mdf-server";
+import { gerarDamdfePdf, damdfeDataDoXml } from "@/lib/damdfe-pdf";
 import { MDFE_AMBIENTE } from "@/lib/sefaz-ambiente";
 import { DateInput } from "@/components/erp/date-input";
 import { Textarea } from "@/components/ui/textarea";
@@ -109,6 +110,21 @@ function MdfPage() {
     a.click();
     URL.revokeObjectURL(url);
     toast.success("XML baixado");
+  };
+  const baixarPdfMdf = (d: MdfDoc) => {
+    try {
+      const xml = xmlDeMdf(d);
+      if (!xml.includes("<infMDFe")) { toast.error("XML não encontrado no registro"); return; }
+      const dados = damdfeDataDoXml(xml, { protocolo: d.protocolo_sefaz || undefined, numero: d.numero, serie: d.serie });
+      const blob = gerarDamdfePdf(dados);
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `${(d.chave_acesso || "").replace(/\D/g, "") || d.numero || "0"}-damdfe.pdf`;
+      a.click();
+      URL.revokeObjectURL(url);
+      toast.success("DAMDFE baixado");
+    } catch (e: unknown) { toast.error(e instanceof Error ? e.message : "Erro ao gerar PDF"); }
   };
   const consultarMdf = async (d: MdfDoc) => {
     if (!empresa || !d.chave_acesso) return;
@@ -278,6 +294,9 @@ function MdfPage() {
                           <Button variant="ghost" size="sm" title="Baixar XML" onClick={() => baixarXmlMdf(d)}>
                             <Download className="h-4 w-4 text-amber-600" />
                           </Button>
+                          <Button variant="ghost" size="sm" title="Baixar PDF (DAMDFE)" onClick={() => baixarPdfMdf(d)}>
+                            <FileDown className="h-4 w-4 text-emerald-600" />
+                          </Button>
                           <Button variant="ghost" size="sm" title="Consultar SEFAZ" disabled={consultandoChave === d.chave_acesso} onClick={() => consultarMdf(d)}>
                             <Search className="h-4 w-4" />
                           </Button>
@@ -296,6 +315,9 @@ function MdfPage() {
                           </Button>
                           <Button variant="ghost" size="sm" title="Baixar XML" onClick={() => baixarXmlMdf(d)}>
                             <Download className="h-4 w-4 text-amber-600" />
+                          </Button>
+                          <Button variant="ghost" size="sm" title="Baixar PDF (DAMDFE)" onClick={() => baixarPdfMdf(d)}>
+                            <FileDown className="h-4 w-4 text-emerald-600" />
                           </Button>
                           <Button variant="ghost" size="sm" title="Consultar SEFAZ" disabled={consultandoChave === d.chave_acesso} onClick={() => consultarMdf(d)}>
                             <Search className="h-4 w-4" />
@@ -380,30 +402,13 @@ function MdfPage() {
       )}
 
       {mdfVer && (
-        <Dialog open={!!mdfVer} onOpenChange={(v) => { if (!v) setMdfVer(null); }}>
-          <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto">
-            <DialogHeader><DialogTitle>MDF-e {mdfVer.numero ? `#${mdfVer.numero}` : ""} — {mdfVer.status}</DialogTitle></DialogHeader>
-            <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-sm">
-              <div><span className="text-muted-foreground">Série:</span> <span className="font-mono">{mdfVer.serie ?? "—"}</span></div>
-              <div><span className="text-muted-foreground">CT-es:</span> {mdfVer.qtd_cte ?? 0}</div>
-              <div><span className="text-muted-foreground">UF carreg.:</span> {mdfVer.uf_carregamento ?? "—"}</div>
-              <div><span className="text-muted-foreground">UF descarreg.:</span> {mdfVer.uf_descarregamento ?? "—"}</div>
-              <div><span className="text-muted-foreground">Valor carga:</span> {mdfVer.valor_total_carga ? brl(mdfVer.valor_total_carga) : "—"}</div>
-              <div><span className="text-muted-foreground">Peso:</span> {mdfVer.peso_total ? `${num(mdfVer.peso_total)} kg` : "—"}</div>
-              <div className="col-span-2"><span className="text-muted-foreground">Chave:</span> <span className="font-mono text-xs break-all">{mdfVer.chave_acesso ?? "—"}</span></div>
-              <div className="col-span-2"><span className="text-muted-foreground">Protocolo:</span> <span className="font-mono">{mdfVer.protocolo_sefaz ?? (mdfVer as any).xml_protocolo ?? "—"}</span></div>
-              {mdfVer.motivo_rejeicao && <div className="col-span-2 text-destructive text-xs">{mdfVer.motivo_rejeicao}</div>}
-            </div>
-            <details>
-              <summary className="cursor-pointer text-sm text-muted-foreground">Ver XML</summary>
-              <pre className="mt-2 max-h-64 overflow-auto rounded bg-muted p-2 font-mono text-[10px] whitespace-pre-wrap break-all">{xmlDeMdf(mdfVer) || "(sem XML)"}</pre>
-            </details>
-            <DialogFooter>
-              <Button variant="outline" onClick={() => baixarXmlMdf(mdfVer)}><Download className="mr-1 h-3.5 w-3.5" /> Baixar XML</Button>
-              <Button variant="outline" onClick={() => setMdfVer(null)}>Fechar</Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
+        <DialogVerMdf
+          d={mdfVer}
+          xml={xmlDeMdf(mdfVer)}
+          onClose={() => setMdfVer(null)}
+          onBaixarXml={() => baixarXmlMdf(mdfVer)}
+          onBaixarPdf={() => baixarPdfMdf(mdfVer)}
+        />
       )}
 
       <DialogNovoMdf open={open} onOpenChange={(v) => { setOpen(v); if (!v) { setMdfPrefill(null); setMdfDraft(null); setSemRascunho(false); } }} empresaId={empresa?.id || ""} empresa={empresa} chavesIniciais={mdfPrefill || undefined} rascunhoInicial={mdfDraft} permiteRascunho={!semRascunho} />
@@ -411,8 +416,173 @@ function MdfPage() {
   );
 }
 
-function EncerrarMdfButton({ mdf, empresaId, onSuccess }: { mdf: MdfDoc; empresaId: string; onSuccess: () => void }) {
-  const [loading, setLoading] = useState(false);
+// Visualização em tela cheia espelhando a tela de emissão (somente leitura).
+function DialogVerMdf({ d, xml, onClose, onBaixarXml, onBaixarPdf }: { d: MdfDoc; xml: string; onClose: () => void; onBaixarXml: () => void; onBaixarPdf: () => void }) {
+  const dd = useMemo(() => damdfeDataDoXml(xml, { protocolo: d.protocolo_sefaz || undefined, numero: d.numero, serie: d.serie }), [xml, d]);
+  const infos = useMemo(() => {
+    try {
+      const p = JSON.parse(String((d as any).xml_assinado || "{}"));
+      return { observacoes: String(p.observacoes || ""), infoFisco: String(p.infoFisco || "") };
+    } catch { return { observacoes: "", infoFisco: "" }; }
+  }, [d]);
+  const transbs = useMemo(() => [...xml.matchAll(/<chMDFe>(\d{44})<\/chMDFe>/g)].map(m => m[1]), [xml]);
+  const { data: ctesVer } = useQuery({
+    enabled: dd.chavesCte.length > 0,
+    queryKey: ["mdf-ver-ctes", d.id],
+    queryFn: async () => {
+      const { data, error } = await supabase.from("cte_documentos" as any)
+        .select("chave_acesso,numero,serie,valor_servico,peso_carga,data_autorizacao")
+        .in("chave_acesso", dd.chavesCte);
+      if (error) throw error;
+      return (data ?? []) as unknown as Array<{ chave_acesso: string | null; numero: string | null; serie: string | null; valor_servico: number | null; peso_carga: number | null; data_autorizacao: string | null }>;
+    },
+  });
+  const ctePorChave = useMemo(() => {
+    const m = new Map<string, { chave_acesso: string | null; numero: string | null; serie: string | null; valor_servico: number | null; peso_carga: number | null; data_autorizacao: string | null }>();
+    for (const c of (ctesVer || [])) if (c.chave_acesso) m.set(c.chave_acesso, c);
+    return m;
+  }, [ctesVer]);
+  const dh = String(dd.dhEmi || "");
+  const dataEmi = dh.slice(8, 10) + "/" + dh.slice(5, 7) + "/" + dh.slice(0, 4);
+  const horaEmi = dh.slice(11, 16);
+  const tpRodLbl: Record<string, string> = { "01": "Truck", "02": "Toco", "03": "Cavalo Mecânico", "04": "VAN", "05": "Utilitário", "06": "Outros" };
+  const tpCarLbl: Record<string, string> = { "00": "Não aplicável", "01": "Aberta", "02": "Fechada/Baú", "03": "Granelera", "04": "Porta Container", "05": "Sider" };
+  const R = ({ label, value, mono }: { label: string; value: string; mono?: boolean }) => (
+    <div><Label className="text-xs">{label}</Label><Input className={"h-6 text-[11px] bg-transparent" + (mono ? " font-mono" : "")} readOnly value={value || "—"} /></div>
+  );
+  const percursoCompleto = [dd.ufIni, ...dd.percurso, dd.ufFim].filter(Boolean);
+  return (
+    <Dialog open onOpenChange={(v) => { if (!v) onClose(); }}>
+      <DialogContent className="w-screen h-screen max-w-none max-h-none m-0 rounded-none overflow-y-auto">
+        <DialogHeader>
+          <DialogTitle>
+            MDF-e #{d.numero ?? "—"} <Badge variant={d.status === "autorizado" ? "default" : "secondary"} className="ml-1">{d.status}</Badge>
+            <span className="rounded bg-amber-100 px-1.5 py-0.5 text-xs font-normal text-amber-800 ml-2">Homologação (testes)</span>
+          </DialogTitle>
+        </DialogHeader>
+        <div className="space-y-2">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+            <div className="border rounded-md p-2 space-y-1 overflow-hidden">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
+                <div className="space-y-1">
+                  <R label="Nome da Empresa" value={dd.emitNome} />
+                  <R label="Veículo" mono value={dd.placa ? `${dd.placa}${dd.renavam ? ` • RENAVAM ${dd.renavam}` : ""}` : ""} />
+                  <div><Label className="text-xs">Motorista</Label><p className="text-xs truncate">{dd.condutorNome || "—"} <span className="text-muted-foreground">({dd.condutorCpf ? dd.condutorCpf.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, "$1.$2.$3-$4") : "s/CPF"})</span></p></div>
+                </div>
+                <div className="space-y-1">
+                  <R label="Tipo MDF-e" value={dd.tpEmit === "3" ? "Globalizado" : "Normal"} />
+                  <R label="Reboque(s)" mono value={dd.reboques.map(r => r.placa).filter(Boolean).join(", ")} />
+                  <div><Label className="text-xs">CIOT</Label><p className="font-mono text-xs">{dd.ciot || "—"}</p></div>
+                </div>
+                <div className="space-y-1">
+                  <div><label className="flex items-center gap-1 text-[11px] font-medium"><input type="checkbox" checked={transbs.length > 0} readOnly className="h-3 w-3" /> Manifesto Transbordo</label></div>
+                  {[0, 1, 2].map(i => (<R key={i} label={`${i + 1}º Transbordo`} mono value={transbs[i] || ""} />))}
+                </div>
+              </div>
+              <div className="grid grid-cols-2 md:grid-cols-[minmax(0,1fr)_88px_minmax(0,1fr)_88px] gap-2">
+                <div className="min-w-0"><Label className="text-xs whitespace-nowrap">Cidade Início</Label><Input className="h-6 text-[11px] bg-stone-200 dark:bg-muted" readOnly value={dd.munCarrega} /></div>
+                <div><Label className="text-xs whitespace-nowrap">UF</Label><Input className="h-6 px-1 text-[11px] bg-stone-200 dark:bg-muted" readOnly value={dd.ufIni} /></div>
+                <div className="min-w-0"><Label className="text-xs whitespace-nowrap">Cidade Encerramento</Label><Input className="h-6 text-[11px] bg-stone-200 dark:bg-muted" readOnly value={dd.munDescarrega} /></div>
+                <div><Label className="text-xs whitespace-nowrap">UF</Label><Input className="h-6 px-1 text-[11px] bg-stone-200 dark:bg-muted" readOnly value={dd.ufFim} /></div>
+              </div>
+            </div>
+            <div className="border rounded-md p-2 space-y-1">
+              <div className="grid grid-cols-2 md:grid-cols-5 gap-1">
+                <R label="Nº Manifesto" mono value={d.numero || ""} />
+                <R label="Série" mono value={d.serie || ""} />
+                <R label="Data Emissão" value={dataEmi} />
+                <R label="Hora Emissão" value={horaEmi} />
+                <R label="Protocolo" mono value={d.protocolo_sefaz || ""} />
+              </div>
+              <div className="grid grid-cols-2 gap-1">
+                <div className="space-y-1">
+                  <R label="Seguradora RC-V" value={dd.xSeg} />
+                  <R label="Averbação RC-V" mono value={dd.nAver} />
+                  <R label="Apólice" mono value={dd.nApol} />
+                </div>
+                <div className="space-y-1">
+                  <R label="Chave de acesso" mono value={dd.chave} />
+                  <R label="CNPJ ANTT - AUTORIZADO" mono value={dd.emitCnpj.replace(/(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})/, "$1.$2.$3/$4-$5")} />
+                  <R label="Local Emissão" value={[dd.emitMun, dd.emitUF].filter(Boolean).join("/")} />
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div className="border rounded-md p-2">
+            <div className="flex items-center justify-end gap-2 mb-1">
+              <Label className="text-xs mr-auto">Conhecimentos ({dd.chavesCte.length} vinculados)</Label>
+              <span className="text-xs">Valor total: <strong className="font-mono">{d.valor_total_carga ? brl(d.valor_total_carga) : "—"}</strong></span>
+              <span className="text-xs">Peso total: <strong className="font-mono">{d.peso_total ? `${num(d.peso_total)} kg` : "—"}</strong></span>
+            </div>
+            <div className="border rounded-md max-h-[260px] overflow-auto">
+              <Table>
+                <TableHeader className="sticky top-0 bg-muted"><TableRow>
+                  <TableHead>Emissão</TableHead><TableHead>CTRC</TableHead><TableHead>Série</TableHead><TableHead>Chave</TableHead><TableHead className="text-right">Valor</TableHead><TableHead className="text-right">Peso</TableHead>
+                </TableRow></TableHeader>
+                <TableBody>
+                  {dd.chavesCte.map(ch => {
+                    const c = ctePorChave.get(ch);
+                    return (
+                      <TableRow key={ch}>
+                        <TableCell className="text-xs whitespace-nowrap">{c?.data_autorizacao ? new Date(String(c.data_autorizacao)).toLocaleDateString("pt-BR") : "—"}</TableCell>
+                        <TableCell className="font-mono text-xs">{c?.numero ?? "—"}</TableCell>
+                        <TableCell className="font-mono text-xs">{c?.serie ?? "—"}</TableCell>
+                        <TableCell className="font-mono text-xs">{ch}</TableCell>
+                        <TableCell className="text-right text-xs">{c?.valor_servico ? brl(c.valor_servico) : "—"}</TableCell>
+                        <TableCell className="text-right text-xs">{c?.peso_carga ? `${num(c.peso_carga)} kg` : "—"}</TableCell>
+                      </TableRow>
+                    );
+                  })}
+                </TableBody>
+              </Table>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-2">
+            <div className="border rounded-md p-2 md:col-span-1">
+              <Label className="text-xs">Percurso ({percursoCompleto.length} UF(s))</Label>
+              <div className="border rounded mt-2 max-h-[110px] overflow-auto">
+                <table className="w-full text-xs">
+                  <thead className="bg-muted sticky top-0"><tr><th className="text-left px-1 py-0.5 font-semibold">#</th><th className="text-left px-1 py-0.5 font-semibold">UF</th></tr></thead>
+                  <tbody>
+                    {percursoCompleto.map((uf, idx) => (
+                      <tr key={`${idx}-${uf}`}><td className="px-1 py-0.5 font-mono">{idx + 1}º</td><td className="px-1 py-0.5 font-mono font-bold">{uf}</td></tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+            <div className="space-y-2 md:col-span-3">
+              <div className="border rounded-md p-2 grid grid-cols-2 md:grid-cols-4 gap-1">
+                <R label="Qtd CT-e" mono value={dd.qCte} />
+                <R label="Valor carga (R$)" mono value={dd.vCarga} />
+                <R label="Peso (kg)" mono value={dd.qCarga} />
+                <R label="Produto predominante" value={`${dd.tpCarga} ${dd.xProd}`.trim()} />
+              </div>
+              <div className="border rounded-md p-2 grid grid-cols-2 gap-1">
+                <R label="Contratante" value={dd.contratanteNome} />
+                <R label="CNPJ/CPF contratante" mono value={dd.contratanteDoc} />
+              </div>
+              <div className="border rounded-md p-2 space-y-1">
+                <div><Label className="text-xs">Observação</Label><Textarea value={infos.observacoes} readOnly rows={2} className="text-xs" /></div>
+                <div><Label className="text-xs">Informações Adicionais Fisco</Label><Textarea value={infos.infoFisco} readOnly rows={2} className="text-xs" /></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <DialogFooter>
+          <Button variant="outline" onClick={onBaixarXml}><Download className="mr-1 h-3.5 w-3.5" /> Baixar XML</Button>
+          <Button variant="outline" onClick={onBaixarPdf}><FileDown className="mr-1 h-3.5 w-3.5" /> Baixar PDF</Button>
+          <Button variant="outline" onClick={onClose}>Fechar</Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+function EncerrarMdfButton({ mdf, empresaId, onSuccess }: { mdf: MdfDoc; empresaId: string; onSuccess: () => void }) {  const [loading, setLoading] = useState(false);
   const handleEncerrar = async () => {
     if (!mdf.chave_acesso) return;
     setLoading(true);
