@@ -2601,3 +2601,15 @@ Espelhado na Vercel.
   antiga é detectada como não-canônica.
 - Constante de log atualizada para `BUILD=019-signedinfo-c14n-strict`.
 - Espelhado na Vercel via push em main.
+
+## BUILD 020: xmlns via DOM e invariância pós-assinatura (24/09/2026)
+
+- `signMdfXml` aplica `setAttribute('xmlns', ...)` no nó DOM `infModal`
+  antes do digest/assinatura.
+- `canonicalizationAlgorithm` segue C14N 1.0 inclusiva; `X509Certificate`
+  segue em linha única (BUILD 016).
+- Invariância: `xmlAss` segue direto ao gzip/envelope, sem replaces
+  pós-assinatura (removida a injeção pós-sign da BUILD 015; garantias
+  pré-assinatura mantidas: builder + regex + setAttribute no DOM).
+- Constante de log atualizada para `BUILD=020-dom-ns-c14n-fix`.
+- Espelhado na Vercel via push em main.

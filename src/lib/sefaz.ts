@@ -526,6 +526,10 @@ export function signMdfXml(xml: string, pfxBytes: Buffer, senha: string): string
   const { node, id } = getMdfReferenceNode(xml);
   const referenceUri = `#${id}`;
 
+  // BUILD 020: xmlns explícito via DOM no infModal antes da assinatura.
+  const infModalEl = node.getElementsByTagName("infModal").item(0) as unknown as Element | null;
+  if (infModalEl) infModalEl.setAttribute("xmlns", "http://www.portalfiscal.inf.br/mdfe");
+
   // 1. Canonicalização C14N 1.0 Inclusiva do elemento infMDFe
   const canonicalizedInfMdf = canonicalizeMdfInfMdfInclusive(node);
 
