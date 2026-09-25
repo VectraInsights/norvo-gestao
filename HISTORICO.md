@@ -2941,4 +2941,5 @@ Espelhado na Vercel.
 
 - Janela "Onde encerrar?" pequena e centralizada (320px), só com o nome
   da cidade no seletor — o código IBGE segue invisível para o XML.
+  Janela externa de confirmação também compacta (320px).
 - Espelhado na Vercel via push em main.

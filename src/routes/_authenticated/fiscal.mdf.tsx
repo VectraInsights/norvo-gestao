@@ -418,11 +418,11 @@ function MdfPage() {
 
       {mdfEncerrar && (
         <Dialog open={openEncerrar} onOpenChange={setOpenEncerrar}>
-          <DialogContent>
-            <DialogHeader><DialogTitle>Encerrar MDF-e #{mdfEncerrar.numero}</DialogTitle></DialogHeader>
-            <p className="text-sm text-muted-foreground">Confirma o encerramento do manifesto? Esta ação é irreversível.</p>
-            <DialogFooter>
-              <Button variant="outline" onClick={() => setOpenEncerrar(false)}>Cancelar</Button>
+          <DialogContent className="max-w-[320px] p-4 gap-3">
+            <DialogHeader><DialogTitle className="text-base">Encerrar MDF-e #{mdfEncerrar.numero}</DialogTitle></DialogHeader>
+            <p className="text-xs text-muted-foreground">Confirma o encerramento do manifesto? Esta ação é irreversível.</p>
+            <DialogFooter className="gap-2 sm:gap-0">
+              <Button variant="outline" size="sm" onClick={() => setOpenEncerrar(false)}>Cancelar</Button>
               <EncerrarMdfButton mdf={mdfEncerrar} empresaId={empresa!.id} cnpj={String((empresa as any)?.cnpj || "")} onSuccess={() => { setOpenEncerrar(false); setMdfEncerrar(null); qc.invalidateQueries({ queryKey: ["mdf-documentos"] }); }} />
             </DialogFooter>
           </DialogContent>
@@ -682,6 +682,7 @@ function EncerrarMdfButton({ mdf, empresaId, cnpj, onSuccess }: { mdf: MdfDoc; e
   };
   return (<>
     <Button
+      size="sm"
       onClick={() => {
         if (munOpts.length > 1) { setCMunSel(munOpts[munOpts.length - 1].cMun); setOpenSel(true); }
         else handleEncerrar();
