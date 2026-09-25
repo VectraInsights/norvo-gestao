@@ -3005,3 +3005,12 @@ Espelhado na Vercel.
   transbordo só tem `chMDFe`. Agora reaproveita os manifestos origem
   (a relação filtra os CT-es deles para reselecionar).
 - Espelhado na Vercel via push em main.
+
+## Transbordo rodoviário como MDF-e normal (25/09/2026)
+
+- 647: `infMDFeTransp` só vale p/ modal aquaviário (modal 3). No
+  rodoviário, o transbordo sai como MDF-e normal com os CT-es do
+  manifesto origem (seleção por manifesto mantida como localizador).
+- Reenvio de transbordo marca os CT-es automaticamente (uma vez;
+  desmarcar é respeitado); duplicadas entre dropdowns eliminadas.
+- Espelhado na Vercel via push em main.

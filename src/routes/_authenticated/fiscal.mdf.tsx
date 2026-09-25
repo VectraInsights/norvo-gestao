@@ -15,7 +15,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useEmpresaAtual } from "@/hooks/use-empresa";
 import { brl, dateBR, num } from "@/lib/format";
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useRef } from "react";
 import { toast } from "sonner";
 import { emitirMdfFn, consultarMdfFn, encerrarMdfFn, cancelarMdfFn } from "@/lib/sefaz-mdf-server";
 import { gerarDamdfePdf, damdfeDataDoXml } from "@/lib/damdfe-pdf";
@@ -871,7 +871,10 @@ function DialogNovoMdf({ open, onOpenChange, empresaId, empresa, chavesIniciais,
   const [transb3, setTransb3] = useState("");
   // Chaves dos manifestos de transbordo selecionados: seus CT-es são a
   // única origem válida da nova carga (exceção legítima ao bloqueio).
-  const transbSel = useMemo(() => [transb1, transb2, transb3].map(s => String(s || "").trim()).filter(k => /^\d{44}$/.test(k)), [transb1, transb2, transb3]);
+  // 647: infMDFeTransp (referenciar outro MDF-e) só vale p/ modal aquaviário.
+  // No rodoviário, transbordo = MDF-e NORMAL com os CT-es do manifesto origem
+  // (a seleção por manifesto origem segue como localizador).
+  const transbSel = useMemo(() => [...new Set([transb1, transb2, transb3].map(s => String(s || "").trim()).filter(k => /^\d{44}$/.test(k)))], [transb1, transb2, transb3]);
   const { data: transbCtes } = useQuery({
     enabled: !!empresaId && open && transbSel.length > 0,
     queryKey: ["mdf-transbordo-ctes", empresaId, ...[...transbSel].sort()],
@@ -890,6 +893,18 @@ function DialogNovoMdf({ open, onOpenChange, empresaId, empresa, chavesIniciais,
   const transbAtivo = isTransbordo ? transbCtes : null;
   // Bloqueado = em MDF-e ativo, exceto CT-e vindo do transbordo selecionado.
   const cteBloqueado = (chave?: string | null) => !!chave && cteVinculado(chave) && !(transbAtivo?.has(chave));
+  // Reenvio de transbordo: marca automaticamente os CT-es do manifesto origem
+  // (uma vez por seleção; desmarcar manualmente é respeitado).
+  const transbAutoRef = useRef("");
+  useEffect(() => {
+    if (!open || !isTransbordo || !transbAtivo || !transbAtivo.size) return;
+    if (ctesSelecionadas.size) return;
+    const k = [...transbSel].sort().join(",");
+    if (transbAutoRef.current === k) return;
+    transbAutoRef.current = k;
+    setCtesSelecionadas(new Set([...transbAtivo]));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open, isTransbordo, transbAtivo]);
   // Relação: com transbordo selecionado, SÓ os CT-es dele; senão, os da
   // tração exceto vinculados.
   const ctesDaTracao = useMemo(() => (ctesDisponiveis || []).filter(c => {
@@ -934,6 +949,7 @@ function DialogNovoMdf({ open, onOpenChange, empresaId, empresa, chavesIniciais,
     setCidadeFimSel(""); setPercursoUFs([]); setObservacoes(""); setInfoFisco(""); setIsTransbordo(false);
     setTransb1(""); setTransb2(""); setTransb3(""); setTipoMdf("Normal"); setPercursoSelIdx(null);
     setMotoristaId(""); setVeicTracId("");
+    transbAutoRef.current = "";
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open]);
   useEffect(() => {
@@ -1161,7 +1177,9 @@ function DialogNovoMdf({ open, onOpenChange, empresaId, empresa, chavesIniciais,
         infPercurso: percursoUFs.map(uf => ({ ufFim: uf })),
         valorTotalCarga: ctesArr.reduce((s, c) => s + (c.valor_servico || 0), 0),
         pesoTotalKG: ctesArr.reduce((s, c) => s + pesoDe(c), 0),
-        tipo: (isTransbordo ? "transbordo" : "normal") as "normal" | "transbordo",
+        // 647: rodoviário nunca referencia outro MDF-e (só aquaviário pode);
+        // transbordo rodoviário sai como MDF-e normal com os CT-es.
+        tipo: "normal" as "normal" | "transbordo",
         tpEmit: tipoMdf === "Globalizado" ? "3" : "1",
         seg: await segComCnpj({
           xSeg: segForm.xSeg || segOrigem?.xSeg || "",
