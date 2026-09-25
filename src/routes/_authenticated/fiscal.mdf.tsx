@@ -1295,10 +1295,10 @@ function DialogNovoMdf({ open, onOpenChange, empresaId, empresa, chavesIniciais,
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="w-screen h-screen max-w-none max-h-none m-0 rounded-none overflow-y-auto">
-        <DialogHeader><DialogTitle>Novo MDF-e <span className="rounded bg-amber-100 px-1.5 py-0.5 text-xs font-normal text-amber-800">Homologação (testes)</span></DialogTitle></DialogHeader>
+      <DialogContent className="w-screen h-screen max-w-none max-h-none m-0 rounded-none overflow-hidden flex flex-col">
+        <DialogHeader className="shrink-0"><DialogTitle>Novo MDF-e <span className="rounded bg-amber-100 px-1.5 py-0.5 text-xs font-normal text-amber-800">Homologação (testes)</span></DialogTitle></DialogHeader>
 
-        <div className="space-y-2">
+        <div className="space-y-2 flex-1 min-h-0">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
             <div className="border rounded-md p-2 space-y-1 overflow-hidden">
               <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
@@ -1389,7 +1389,7 @@ function DialogNovoMdf({ open, onOpenChange, empresaId, empresa, chavesIniciais,
             ) : !ctesDisponiveis?.length ? (
               <p className="text-sm text-muted-foreground">Nenhum CT-e autorizado disponível.</p>
             ) : (
-              <div className="border rounded-md max-h-[150px] overflow-auto">
+              <div className="border rounded-md max-h-[120px] overflow-auto">
                 <Table>
                   <TableHeader className="sticky top-0 bg-muted"><TableRow>
                     <TableHead className="w-[36px]"><input type="checkbox" checked={todasMarcadas} onChange={toggleTodas} className="h-4 w-4" title="Selecionar todos" /></TableHead>
@@ -1465,14 +1465,14 @@ function DialogNovoMdf({ open, onOpenChange, empresaId, empresa, chavesIniciais,
             </div>
             <div className="space-y-2 md:col-span-7">
               <div className="border rounded-md p-2 space-y-1">
-                <div><Label className="text-xs">Observação</Label><Textarea value={observacoes} onChange={e => setObservacoes(e.target.value)} rows={2} className="text-xs" /></div>
-                <div><Label className="text-xs">Informações Adicionais Fisco</Label><Textarea value={infoFisco} onChange={e => setInfoFisco(e.target.value)} rows={2} className="text-xs" /></div>
+                <div><Label className="text-xs">Observação</Label><Textarea value={observacoes} onChange={e => setObservacoes(e.target.value)} rows={1} className="text-xs min-h-[28px] py-1" /></div>
+                <div><Label className="text-xs">Informações Adicionais Fisco</Label><Textarea value={infoFisco} onChange={e => setInfoFisco(e.target.value)} rows={1} className="text-xs min-h-[28px] py-1" /></div>
               </div>
             </div>
           </div>
         </div>
 
-        <DialogFooter>
+        <DialogFooter className="shrink-0 border-t border-border pt-2 mt-2">
           <Button variant="outline" onClick={() => onOpenChange(false)}>Cancelar</Button>
           {permiteRascunho && (
           <Button variant="secondary" onClick={handleSalvarRascunho} disabled={loading || !ctesSelecionadas.size}>

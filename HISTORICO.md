@@ -3028,5 +3028,7 @@ Espelhado na Vercel.
 - Base do Novo MDF-e em 2/10 (tabela do percurso), 1/10 (seletor de UFs)
   e 7/10 (observações + fisco).
 - Seletor rotulado "Adicionar UF" alinhado ao topo; instrução do percurso
-  removida; observações/fisco em 2 linhas p/ subir o rodapé de botões.
+  removida; observações/fisco achatadas (1 linha).
+- Rodapé fixo na borda inferior (sem rolagem na página): diálogo em
+  coluna flex, botões Cancelar/Salvar/Emitir sempre visíveis.
 - Espelhado na Vercel via push em main.
