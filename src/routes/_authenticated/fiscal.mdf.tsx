@@ -839,7 +839,8 @@ function DialogNovoMdf({ open, onOpenChange, empresaId, empresa, chavesIniciais,
     const ufIni = xml.match(/<UFIni>([^<]*)<\/UFIni>/)?.[1]?.trim() || "";
     const descs = [...xml.matchAll(/<xMunDescarga>([^<]*)<\/xMunDescarga>/g)].map(m => m[1].trim()).filter(Boolean);
     const ufFim = xml.match(/<UFFim>([^<]*)<\/UFFim>/)?.[1]?.trim() || "";
-    return { data, munCar, ufIni, munDesc: descs.length ? descs[descs.length - 1] : "", ufFim };
+    const rebs = [...xml.matchAll(/<veicReboque>[\s\S]*?<placa>([^<]+)<\/placa>/g)].map(m => m[1].trim().toUpperCase()).filter(Boolean);
+    return { data, munCar, ufIni, munDesc: descs.length ? descs[descs.length - 1] : "", ufFim, rebs: [...new Set(rebs)] };
   };
   const transbOpts = useMemo(() => {
     const tv = (veiculos || []).find(v => !!tracaoSel && String(v.placa || "").toUpperCase() === tracaoSel);
@@ -851,7 +852,8 @@ function DialogNovoMdf({ open, onOpenChange, empresaId, empresa, chavesIniciais,
         const v = (veiculos || []).find(x => String((x as any).id) === String((m as any).veiculo_tracao_id));
         const veic = v ? String((v as any).placa || "").toUpperCase() : "";
         const mot = String((m as any).motoristaNome || "").toUpperCase();
-        const label = `#${m.numero ?? "?"}${t.data ? " · " + t.data : ""}${t.munCar ? ` · ${t.munCar}${t.ufIni ? "/" + t.ufIni : ""}` : ""}${t.munDesc ? ` → ${t.munDesc}${t.ufFim ? "/" + t.ufFim : ""}` : ""}${veic ? " · " + veic : ""}${mot ? " · " + mot : ""}`;
+        const reb = t.rebs.length ? " + " + t.rebs.join(" + ") : "";
+        const label = `#${m.numero ?? "?"}${t.data ? " · " + t.data : ""}${t.munCar ? ` · ${t.munCar}${t.ufIni ? "/" + t.ufIni : ""}` : ""}${t.munDesc ? ` → ${t.munDesc}${t.ufFim ? "/" + t.ufFim : ""}` : ""}${veic ? " · " + veic + reb : ""}${mot ? " · " + mot : ""}`;
         return { chave: m.chave_acesso as string, label };
       });
   }, [mdfsEncerrados, veiculos, tracaoSel]);
