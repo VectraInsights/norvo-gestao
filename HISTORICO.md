@@ -2709,3 +2709,11 @@ Espelhado na Vercel.
 - 578 persistia: extrator nao cobria o <toma> do CTeSimp
   (filho de infCte). Corrigido + testado offline. Espelhado
   na Vercel via push em main.
+
+## Fix: validade do toxicologico em DD/MM/AAAA (25/09/2026)
+
+- Auditoria de datas: app ja usa dateBR (DD/MM/AAAA) em todas
+  as exibicoes; unico ponto em ISO era a validade do
+  toxicologico no cadastro de colaboradores (Input readOnly).
+  Agora formata com dateBR. Inputs de digitacao (type=date,
+  DateInput) seguem locale do navegador.

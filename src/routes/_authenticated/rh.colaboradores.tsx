@@ -736,7 +736,7 @@ function ColaboradoresPage() {
                       </div>
                       <div>
                         <Label>Validade do toxicológico</Label>
-                        <Input value={form.toxico_validade} readOnly />
+                        <Input value={form.toxico_validade ? dateBR(form.toxico_validade) : ""} readOnly />
                         <p className="mt-1 text-xs text-muted-foreground">
                           {form.toxico_exame
                             ? "2 anos e 6 meses após o exame (CTB art. 148-A)"
