@@ -1298,7 +1298,7 @@ function DialogNovoMdf({ open, onOpenChange, empresaId, empresa, chavesIniciais,
       <DialogContent className="w-screen h-screen max-w-none max-h-none m-0 rounded-none overflow-hidden flex flex-col">
         <DialogHeader className="shrink-0"><DialogTitle>Novo MDF-e <span className="rounded bg-amber-100 px-1.5 py-0.5 text-xs font-normal text-amber-800">Homologação (testes)</span></DialogTitle></DialogHeader>
 
-        <div className="space-y-2 flex-1 min-h-0">
+        <div className="space-y-2 flex-1 min-h-0 flex flex-col">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
             <div className="border rounded-md p-2 space-y-1 overflow-hidden">
               <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
@@ -1423,7 +1423,7 @@ function DialogNovoMdf({ open, onOpenChange, empresaId, empresa, chavesIniciais,
             )}
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-10 gap-2">
+          <div className="grid grid-cols-1 md:grid-cols-10 gap-2 flex-1 min-h-0">
             <div className="border rounded-md p-2 md:col-span-2 min-w-0 overflow-hidden">
               <div className="flex items-center justify-between gap-1 flex-wrap">
                 <Label className="text-xs">Percurso *</Label>

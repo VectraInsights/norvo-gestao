@@ -3040,3 +3040,9 @@ Espelhado na Vercel.
 - Botões de UF em grade fixa de 6 colunas (5 linhas): SP/TO e demais
   sempre visíveis e clicáveis, sem corte.
 - Espelhado na Vercel via push em main.
+
+## Caixas até a borda (25/09/2026)
+
+- Linha percurso/UFs/observações em flex que ocupa o espaço restante:
+  as três caixas esticam até a borda inferior, sem rolagem.
+- Espelhado na Vercel via push em main.
