@@ -2795,3 +2795,15 @@ Espelhado na Vercel.
   no topo esquerdo, chave com barras, FL i/N, modal, seguro
   RCV, veiculos/condutores/CIOT, docs com NFes, obs).
   Espelhado na Vercel via push em main.
+
+## Signature no evento + DAMDFE ajustes (25/09/2026)
+
+- 243 persistia: signXml nao inseria Signature em eventoMDFe
+  (so conhecia eventoCTe) — evento ia sem assinatura. Agora
+  insere + log de confirmacao. Era a causa raiz (as 4 do
+  BUILD anterior continuam validas).
+- Endereco real do emitente no XML (era RUA/SN/CENTRO fixo).
+- DAMDFE: cabecalho em caixa unica (logo + endereco),
+  RNTRC/CNPJ/proprietario em todas as linhas de veiculo,
+  linha do modal com caixas separadas e larguras corrigidas
+  (agregado nao invade mais o QR). Espelhado.

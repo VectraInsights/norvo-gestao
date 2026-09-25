@@ -115,7 +115,7 @@ function MdfPage() {
     try {
       const xml = xmlDeMdf(d);
       if (!xml.includes("<infMDFe")) { toast.error("XML não encontrado no registro"); return; }
-      const dados = damdfeDataDoXml(xml, { protocolo: d.protocolo_sefaz || undefined, numero: d.numero, serie: d.serie });
+      const dados = damdfeDataDoXml(xml, { protocolo: d.protocolo_sefaz || undefined, numero: d.numero, serie: d.serie, emitCep: String((empresa as any)?.cep || ""), emitFone: String((empresa as any)?.telefone || "") });
       try {
         const raw = String((d as any).xml_assinado || "");
         try { const p = JSON.parse(raw); dados.obs = String(p.observacoes || p.infoFisco || ""); } catch {}
@@ -876,7 +876,7 @@ function DialogNovoMdf({ open, onOpenChange, empresaId, empresa, chavesIniciais,
       const input = {
         empresaId, ambiente: ambienteMdf, serie: serieMdf || "000", numero,
         ufCarregamento, ufDescarregamento,
-        emit: { cnpj: String((empresa as any)?.cnpj || ""), ie: String((empresa as any)?.ie || ""), xNome: String((empresa as any)?.razao_social || (empresa as any)?.nome_fantasia || ""), uf: ufCarregamento, cMun: String(firstForm.cMunIni || ""), xMun: String(firstForm.xMunIni || "") },
+        emit: { cnpj: String((empresa as any)?.cnpj || ""), ie: String((empresa as any)?.ie || ""), xNome: String((empresa as any)?.razao_social || (empresa as any)?.nome_fantasia || ""), uf: ufCarregamento, cMun: String(firstForm.cMunIni || ""), xMun: String(firstForm.xMunIni || ""), logradouro: String((empresa as any)?.logradouro || ""), nro: String((empresa as any)?.numero || ""), bairro: String((empresa as any)?.bairro || "") },
         veicTrac: { placa: tracaoSel, uf: ufCarregamento, rntrc: (veic as any)?.rntrc || "", tara: 0, renavam: (veic as any)?.renavam || undefined, tpRod: tpRodDe((veic as any)?.tipo), ciot: ciotMdf || undefined },
         reboques: reboques.slice(0, 3).map(p => ({ placa: p, uf: ufCarregamento, tara: 0, renavam: renavamDe(p) })),
         condutor: { cpf: mot?.cpf || "", xNome: mot0.nome },

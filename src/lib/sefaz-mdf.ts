@@ -262,7 +262,7 @@ export interface MdfInputCompleto {
   numero: string;
   ufCarregamento: string;
   ufDescarregamento: string;
-  emit: { cnpj: string; ie: string; xNome: string; uf: string; cMun: string; xMun: string };
+  emit: { cnpj: string; ie: string; xNome: string; uf: string; cMun: string; xMun: string; logradouro?: string; nro?: string; bairro?: string };
   veicTrac: { placa: string; uf: string; rntrc: string; tara: number; capKG?: number; capM3?: number; tpRod?: string; tpCarroceria?: string; ciot?: string; renavam?: string };
   reboques?: Array<{ placa: string; uf: string; tara: number; renavam?: string; capKG?: number; capM3?: number; tpCarroceria?: string }>;
   condutor: { cpf: string; xNome: string };
@@ -402,9 +402,9 @@ export function buildMdfXml(input: MdfInputCompleto): { xml: string; chave: stri
       ${/^\d{2,14}$/.test(input.emit.ie || "") ? `<IE>${input.emit.ie}</IE>` : ""}
       <xNome>${input.emit.xNome}</xNome>
       <enderEmit>
-        <xLgr>RUA</xLgr>
-        <nro>SN</nro>
-        <xBairro>CENTRO</xBairro>
+        <xLgr>${String(input.emit.logradouro || "").trim().length >= 2 ? String(input.emit.logradouro).trim().slice(0, 60) : "RUA"}</xLgr>
+        <nro>${String(input.emit.nro || "").trim() || "SN"}</nro>
+        <xBairro>${String(input.emit.bairro || "").trim().length >= 2 ? String(input.emit.bairro).trim().slice(0, 60) : "CENTRO"}</xBairro>
         <cMun>${input.emit.cMun}</cMun>
         <xMun>${input.emit.xMun}</xMun>
         <UF>${input.emit.uf}</UF>
@@ -591,6 +591,7 @@ export async function encerrarMdf(pfx: Buffer, senha: string, chave: string, amb
   if (!/^\d{7}$/.test(cMunFmt)) throw new Error("Município de encerramento não encontrado no MDF-e");
   const evento = `<eventoMDFe xmlns="http://www.portalfiscal.inf.br/mdfe" versao="3.00"><infEvento Id="ID110112${chave}1"><cOrgao>${cOrgao}</cOrgao><tpAmb>${MDFE_TP_AMB}</tpAmb><CNPJ>${cnpjFmt}</CNPJ><chMDFe>${chave}</chMDFe><dhEvento>${dhEvento}</dhEvento><tpEvento>110112</tpEvento><nSeqEvento>1</nSeqEvento><detEvento versaoEvento="3.00"><evEncMDFe><descEvento>Encerramento</descEvento><nProt>${nProtFmt}</nProt><dtEncerramento>${dhEvento.slice(0, 10)}</dtEncerramento><cMunEncerramento>${cMunFmt}</cMunEncerramento><UFEncerramento>${uf}</UFEncerramento></evEncMDFe></detEvento></infEvento></eventoMDFe>`;
   const ass = signXml(evento, pfx, senha);
+  console.log("[mdf-debug] evento encerramento com Signature:", /<Signature[\s>]/.test(ass));
   const body = `<MDFeRecepcaoEventoMsg xmlns="http://www.portalfiscal.inf.br/mdfe/wsdl/MDFeRecepcaoEvento">${ass}</MDFeRecepcaoEventoMsg>`;
   const ret = await soapRequest(ep.mdfRecepcaoEvento, body, "http://www.portalfiscal.inf.br/mdfe/wsdl/MDFeRecepcaoEvento/mdfeRecepcaoEvento", createSefazAgent(pfx, senha));
   const cStat = ret.match(/<cStat>(\d+)<\/cStat>/)?.[1] || "";
@@ -612,6 +613,7 @@ export async function cancelarMdf(pfx: Buffer, senha: string, chave: string, jus
   if (xJustFmt.length < 15) throw new Error("Justificativa do cancelamento deve ter ao menos 15 caracteres");
   const evento = `<eventoMDFe xmlns="http://www.portalfiscal.inf.br/mdfe" versao="3.00"><infEvento Id="ID110111${chave}1"><cOrgao>${cOrgao}</cOrgao><tpAmb>${MDFE_TP_AMB}</tpAmb><CNPJ>${cnpjFmt}</CNPJ><chMDFe>${chave}</chMDFe><dhEvento>${dhEvento}</dhEvento><tpEvento>110111</tpEvento><nSeqEvento>1</nSeqEvento><detEvento versaoEvento="3.00"><evCancMDFe><descEvento>Cancelamento</descEvento><nProt>${nProtFmt}</nProt><xJust>${xJustFmt}</xJust></evCancMDFe></detEvento></infEvento></eventoMDFe>`;
   const ass = signXml(evento, pfx, senha);
+  console.log("[mdf-debug] evento cancelamento com Signature:", /<Signature[\s>]/.test(ass));
   const body = `<MDFeRecepcaoEventoMsg xmlns="http://www.portalfiscal.inf.br/mdfe/wsdl/MDFeRecepcaoEvento">${ass}</MDFeRecepcaoEventoMsg>`;
   const ret = await soapRequest(ep.mdfRecepcaoEvento, body, "http://www.portalfiscal.inf.br/mdfe/wsdl/MDFeRecepcaoEvento/mdfeRecepcaoEvento", createSefazAgent(pfx, senha));
   const cStat = ret.match(/<cStat>(\d+)<\/cStat>/)?.[1] || "";
