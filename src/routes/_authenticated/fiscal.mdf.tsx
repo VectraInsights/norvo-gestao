@@ -185,6 +185,7 @@ function MdfPage() {
     setConsultandoChave("");
   };
   const [justificativa, setJustificativa] = useState("");
+  const [protocoloManual, setProtocoloManual] = useState("");
   const continuarRascunho = (d: MdfDoc) => {
     try {
       const p = JSON.parse(String((d as any).xml_assinado || "{}"));
@@ -351,7 +352,7 @@ function MdfPage() {
                           <Button variant="ghost" size="sm" onClick={() => { setMdfEncerrar(d); setOpenEncerrar(true); }} title="Encerrar">
                             <CheckCircle2 className="h-4 w-4" />
                           </Button>
-                          <Button variant="ghost" size="sm" onClick={() => { setMdfCancelar(d); setJustificativa("ERRO DE EMISSAO DO MDF-E"); setOpenCancelar(true); }} title="Cancelar">
+                          <Button variant="ghost" size="sm" onClick={() => { setMdfCancelar(d); setJustificativa("ERRO DE EMISSAO DO MDF-E"); setProtocoloManual(String(d.protocolo_sefaz || "").replace(/\D/g, "")); setOpenCancelar(true); }} title="Cancelar">
                             <XCircle className="h-4 w-4 text-destructive" />
                           </Button>
                         </>
@@ -422,25 +423,32 @@ function MdfPage() {
           <DialogContent>
             <DialogHeader><DialogTitle>Cancelar MDF-e #{mdfCancelar.numero}</DialogTitle></DialogHeader>
             <div className="space-y-2">
-              <Label>Motivo (obrigatório)</Label>
-              <Select value={justificativa} onValueChange={setJustificativa}>
-                <SelectTrigger><SelectValue placeholder="Selecione o motivo" /></SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="ERRO DE EMISSAO DO MDF-E">ERRO DE EMISSÃO DO MDF-E</SelectItem>
-                  <SelectItem value="CLIENTE CANCELOU O SERVICO">CLIENTE CANCELOU O SERVIÇO</SelectItem>
-                  <SelectItem value="FALTA DE ENERGIA/IMPOSSIBILIDADE TECNICA">FALTA DE ENERGIA/IMPOSSIBILIDADE TÉCNICA</SelectItem>
-                </SelectContent>
-              </Select>
+              <div>
+                <Label>Protocolo de autorização (15 dígitos)</Label>
+                <Input value={protocoloManual} onChange={(e) => setProtocoloManual(e.target.value.replace(/\D/g, "").slice(0, 15))} placeholder="Preenchido do registro; se vazio, informe o do Portal Nacional" className="font-mono" />
+                <p className="text-[11px] text-muted-foreground mt-1">Quando vazio, o sistema tenta recuperar via consulta SEFAZ (fora do ar no SVRS). Consulte a chave no Portal Nacional do MDF-e e cole o protocolo aqui.</p>
+              </div>
+              <div>
+                <Label>Motivo (obrigatório)</Label>
+                <Select value={justificativa} onValueChange={setJustificativa}>
+                  <SelectTrigger><SelectValue placeholder="Selecione o motivo" /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="ERRO DE EMISSAO DO MDF-E">ERRO DE EMISSÃO DO MDF-E</SelectItem>
+                    <SelectItem value="CLIENTE CANCELOU O SERVICO">CLIENTE CANCELOU O SERVIÇO</SelectItem>
+                    <SelectItem value="FALTA DE ENERGIA/IMPOSSIBILIDADE TECNICA">FALTA DE ENERGIA/IMPOSSIBILIDADE TÉCNICA</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
             </div>
             <DialogFooter>
-              <Button variant="outline" onClick={() => { setOpenCancelar(false); setJustificativa(""); }}>Voltar</Button>
+              <Button variant="outline" onClick={() => { setOpenCancelar(false); setJustificativa(""); setProtocoloManual(""); }}>Voltar</Button>
               <Button variant="destructive" disabled={!justificativa.trim()} onClick={async () => {
                 if (!empresa || !mdfCancelar.chave_acesso) return;
                 try {
-                  const res = await cancelarMdfFn({ data: { empresaId: empresa.id, chave: mdfCancelar.chave_acesso, justificativa: justificativa.trim(), cnpj: String((empresa as any)?.cnpj || ""), uf: mdfCancelar.uf_carregamento || "", protocolo: mdfCancelar.protocolo_sefaz || "" } });
+                  const res = await cancelarMdfFn({ data: { empresaId: empresa.id, chave: mdfCancelar.chave_acesso, justificativa: justificativa.trim(), cnpj: String((empresa as any)?.cnpj || ""), uf: mdfCancelar.uf_carregamento || "", protocolo: protocoloManual.replace(/\D/g, "") || mdfCancelar.protocolo_sefaz || "" } });
                   if (res.sucesso) toast.success("MDF-e cancelado com sucesso!");
                   else toast.error(`Erro: ${res.xMotivo}`);
-                  setOpenCancelar(false); setMdfCancelar(null); setJustificativa("");
+                  setOpenCancelar(false); setMdfCancelar(null); setJustificativa(""); setProtocoloManual("");
                   qc.invalidateQueries({ queryKey: ["mdf-documentos"] });
                 } catch (e: unknown) { toast.error(e instanceof Error ? e.message : "Erro ao cancelar"); }
               }}>Confirmar Cancelamento</Button>
