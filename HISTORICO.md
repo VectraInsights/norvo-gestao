@@ -2904,11 +2904,19 @@ Espelhado na Vercel.
   `<serie>` do XML.
 - Espelhado na Vercel via push em main.
 
-## Abas fiscais reorganizadas (25/09/2026)
-
-- Sem aba Todos (embarque do CT-e mantida); ordem: Aguardando envio,
+## Abas fiscais reorganizadas (25/09/2026)- Sem aba Todos (embarque do CT-e mantida); ordem: Aguardando envio,
   Rejeitados, Cancelados, Autorizados (rótulos no plural nas 2 telas).
 - CT-e Autorizados com sub-abas Sem MDF-e / Com MDF-e (vínculo extraído
   dos XMLs dos manifestos ativos); MDF-e Autorizados com Abertos /
   Encerrados.
+- Espelhado na Vercel via push em main.
+
+## Bloqueio de CT-e já em MDF-e + colunas da tabela CT-e (25/09/2026)
+
+- CT-e vinculado a MDF-e ativo não entra em outro manifesto: checkbox
+  desabilitado (tela CT-e e diálogo Novo MDF-e), Marcar/toggleTodas
+  ignoram vinculados, emissão/rascunho barram com erro.
+- Tabela CT-e: colunas Placa, Motorista, Número, Série, Data Emissão,
+  Notas Fiscais, Valor (sem Status e sem Chave; motivo da rejeição sob
+  o número nos Rejeitados).
 - Espelhado na Vercel via push em main.

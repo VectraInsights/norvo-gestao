@@ -3,7 +3,6 @@ import { PageHeader } from "@/components/erp/page-header";
 import { EmptyState } from "@/components/erp/empty-state";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -94,6 +93,24 @@ export const Route = createFileRoute("/_authenticated/fiscal/cte")({
 });
 
 type CteDoc = { id: string; numero: string | null; serie: string | null; status: string; valor_servico: number | null; chave_acesso: string | null; created_at: string; motivo_rejeicao: string | null; protocolo_sefaz: string | null; xml_assinado: string | null; ambiente: string | null; data_autorizacao: string | null };
+
+// Placa(s), motorista e data de emissão direto do XML/form do CT-e p/ a tabela.
+function infoCteLinha(xmlAssinado: string | null): { placas: string[]; motorista: string; dataEmi: string } {
+  let xml = String(xmlAssinado || ""), form: any = {};
+  try { const p = JSON.parse(xml); if (p && typeof p === "object" && (p.xml || p.form)) { if (p.xml) xml = String(p.xml); form = p.form || {}; } } catch {}
+  const placas: string[] = [];
+  for (const m of xml.matchAll(/<(?:veic|reboque)>[\s\S]*?<placa>([^<]+)<\/placa>/g)) { const pl = m[1].trim().toUpperCase(); if (pl && !placas.includes(pl)) placas.push(pl); }
+  if (!placas.length) {
+    const rodo = xml.match(/<rodo>[\s\S]*?<\/rodo>/)?.[0] || "";
+    for (const m of rodo.matchAll(/<placa>([^<]+)<\/placa>/g)) { const pl = m[1].trim().toUpperCase(); if (pl && !placas.includes(pl)) placas.push(pl); }
+  }
+  for (const k of ["placaVeiculo", "placaReboque", "semiReboque1", "semiReboque2"]) { const pl = String(form[k] || "").trim().toUpperCase(); if (pl && !placas.includes(pl)) placas.push(pl); }
+  let mot = xml.match(/<moto>[\s\S]*?<xNome>([^<]+)<\/xNome>/)?.[1]?.trim() || "";
+  if (!mot) mot = [form.motoristaNome, form.motorista2Nome].map((s: any) => String(s || "").trim()).filter(Boolean).join(" / ");
+  const dh = xml.match(/<dhEmi>([^<]+)<\/dhEmi>/)?.[1] || String(form.dataEmissao || "");
+  const dataEmi = /^\d{4}-\d{2}-\d{2}/.test(dh) ? dh.slice(0, 10).split("-").reverse().join("/") : (dh ? dh.slice(0, 10) : "");
+  return { placas, motorista: mot, dataEmi };
+}
 
 function CtePage() {
   const { data: empresa } = useEmpresaAtual();
@@ -1776,18 +1793,19 @@ function CtePage() {
     setForm(f => ({ ...f, xMunIni: cx, ...(cu ? { ufIni: cu } : {}), ...(cc ? { cMunIni: cc } : {}) }));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open, mercadorias, selecionadas, percursos, contatoByDoc]);
-  const renderTabelaDocs = (lista: CteDoc[], rotulo: string) => (<>
+  const renderTabelaDocs = (lista: CteDoc[], rotulo: string, semSelecao = false) => (<>
 {lista.length === 0 ? (
             <EmptyState icon={Truck} title="Nenhum CT-e" description={`Nenhum CT-e ${rotulo}.`} />
           ) : (
             <Card className="overflow-hidden">
               <Table>
-                <TableHeader><TableRow>{rotulo === "autorizados" && <TableHead className="w-6"></TableHead>}<TableHead className="text-center">Número</TableHead><TableHead className="text-center">Série</TableHead><TableHead className="text-center">Status</TableHead><TableHead className="text-center">Notas Fiscais</TableHead><TableHead className="text-center">Valor</TableHead><TableHead className="text-center">Chave</TableHead><TableHead className="text-center">Ações</TableHead></TableRow></TableHeader>
+                <TableHeader><TableRow>{rotulo === "autorizados" && !semSelecao && <TableHead className="w-6"></TableHead>}<TableHead className="text-center">Placa</TableHead><TableHead className="text-center">Motorista</TableHead><TableHead className="text-center">Número</TableHead><TableHead className="text-center">Série</TableHead><TableHead className="text-center">Data Emissão</TableHead><TableHead className="text-center">Notas Fiscais</TableHead><TableHead className="text-center">Valor</TableHead><TableHead className="text-center">Ações</TableHead></TableRow></TableHeader>
                 <TableBody>{lista.map(d => {
                   const nNFs = (() => { try { const j = JSON.parse(d.xml_assinado || "{}"); const nn = j.nfs?.map((n: any) => n.nNF).filter(Boolean) || []; if (nn.length) return nn; } catch { } try { const chaves = [...(d.xml_assinado||"").matchAll(/<chNFe>(\d{44})<\/chNFe>/g)].map(m=>m[1]); if (chaves.length===0) return []; return chaves.map(ch=>ch.slice(25,34).replace(/^0+/,"") || "0"); } catch { return []; } })();
+                  const info = infoCteLinha(d.xml_assinado);
                   const isRascunho = d.status === "rascunho";
                   return (
-                  <TableRow key={d.id} className={isRascunho ? "bg-muted/30" : ""}>{rotulo === "autorizados" && d.chave_acesso && <TableCell><input type="checkbox" checked={mdfSel.has(d.chave_acesso)} onChange={() => setMdfSel(prev => { const next = new Set(prev); if (next.has(d.chave_acesso!)) next.delete(d.chave_acesso!); else next.add(d.chave_acesso!); return next; })} title="Selecionar para MDF-e" /></TableCell>}<TableCell className="font-mono">{d.numero ?? "—"}</TableCell><TableCell>{d.serie ?? "—"}</TableCell><TableCell title={d.status==="rejeitado" && d.motivo_rejeicao ? d.motivo_rejeicao : ""}><Badge variant="secondary" className={d.status==="autorizado"?"bg-emerald-500/15 text-emerald-600":d.status==="rejeitado"?"bg-destructive/15 text-destructive":d.status==="cancelado"?"bg-orange-500/15 text-orange-600":isRascunho?"bg-amber-500/15 text-amber-600":""}>{d.status}{d.status==="rejeitado" && d.motivo_rejeicao ? ` — ${d.motivo_rejeicao.slice(0,60)}` : ""}</Badge></TableCell>                  <TableCell className="text-xs">{nNFs.length > 0 ? nNFs.join(", ") : d.chave_acesso ? "1" : "—"}</TableCell><TableCell className="text-right">{brl(Number(d.valor_servico ?? 0))}</TableCell><TableCell className="font-mono text-[11px] break-all min-w-[280px] text-right pr-1" title={d.chave_acesso||""}>{d.chave_acesso ?? "—"}</TableCell><TableCell className="flex gap-1 justify-end whitespace-nowrap pl-1">
+                  <TableRow key={d.id} className={isRascunho ? "bg-muted/30" : ""}>{rotulo === "autorizados" && !semSelecao && d.chave_acesso && <TableCell><input type="checkbox" checked={mdfSel.has(d.chave_acesso)} onChange={() => setMdfSel(prev => { const next = new Set(prev); if (next.has(d.chave_acesso!)) next.delete(d.chave_acesso!); else next.add(d.chave_acesso!); return next; })} title="Selecionar para MDF-e" /></TableCell>}<TableCell className="font-mono text-xs">{info.placas.length ? info.placas.join(" / ") : "—"}</TableCell><TableCell className="text-xs max-w-[160px] truncate" title={info.motorista || ""}>{info.motorista || "—"}</TableCell><TableCell className="font-mono">{d.numero ?? "—"}{d.status === "rejeitado" && d.motivo_rejeicao ? <p className="font-sans text-[10px] text-destructive/80 max-w-[160px] truncate" title={d.motivo_rejeicao}>{d.motivo_rejeicao}</p> : null}</TableCell><TableCell>{d.serie ?? "—"}</TableCell><TableCell className="text-xs whitespace-nowrap">{info.dataEmi || "—"}</TableCell><TableCell className="text-xs">{nNFs.length > 0 ? nNFs.join(", ") : d.chave_acesso ? "1" : "—"}</TableCell><TableCell className="text-right">{brl(Number(d.valor_servico ?? 0))}</TableCell><TableCell className="flex gap-1 justify-end whitespace-nowrap pl-1">
                     {isRascunho ? (
                       <>
                         <Button size="icon" variant="ghost" className="h-7 w-7 text-primary" onClick={() => editarRascunho(d)} title="Editar rascunho"><Pencil className="h-3.5 w-3.5" /></Button>
@@ -2130,7 +2148,7 @@ function CtePage() {
                 <TabsTrigger value="com" className="text-xs data-[state=active]:bg-primary/10 data-[state=active]:text-primary">Com MDF-e ({autComMdf.length})</TabsTrigger>
               </TabsList>
             </Tabs>
-            {renderTabelaDocs(mdfVincTab === "com" ? autComMdf : autSemMdf, "autorizados")}
+            {renderTabelaDocs(mdfVincTab === "com" ? autComMdf : autSemMdf, "autorizados", mdfVincTab === "com")}
           </TabsContent>
           <TabsContent value="rejeitados">
             {docsByStatus.rejeitados.length > 0 && (
