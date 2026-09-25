@@ -2621,3 +2621,12 @@ Espelhado na Vercel.
   global homologacao, filtros por ambiente) + mantidos CRT
   normalizado e retry com percurso/transbordo desta frente.
   Espelhado na Vercel via push em main.
+
+## .gitignore endurecido (24/09/2026)
+
+- Mesclado pedido com entradas do projeto: certs (*.pfx/.p12/
+  .pem/.key/.crt), build/, out/, *.tsbuildinfo, .env.*,
+  coverage, Thumbs.db, .pnpm-store. Nada sensivel estava
+  rastreado (.env e chaves fora do git); .env.example segue
+  versionado de proposito. Sem git rm necessario.
+  Espelhado na Vercel via push em main.

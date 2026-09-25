@@ -1,4 +1,20 @@
-# Logs
+# Dependências
+node_modules/
+.pnpm-store/
+
+# Arquivos de Build e Compilação
+.next/
+out/
+dist/
+dist-ssr
+build/
+.output
+.vinxi
+.tanstack/**
+.nitro
+*.tsbuildinfo
+
+# Logs e Ambientes
 logs
 *.log
 npm-debug.log*
@@ -6,34 +22,42 @@ yarn-debug.log*
 yarn-error.log*
 pnpm-debug.log*
 lerna-debug.log*
-
-node_modules
-dist
-dist-ssr
-.output
-.vinxi
-.tanstack/**
-.nitro
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
 *.local
-
-# Wrangler / Cloudflare
-.wrangler/
 .dev.vars
 
-# Desktop (Electron)
-desktop/release
-desktop/node_modules
+# Certificados Digitais e Chaves (Segurança — nunca versionar)
+*.pfx
+*.p12
+*.pem
+*.key
+*.crt
 
-# Editor directories and files
+# Arquivos Temporários de Sistema e IDEs
+.DS_Store
+Thumbs.db
 .vscode/*
 !.vscode/extensions.json
 .idea
-.DS_Store
 *.suo
 *.ntvs*
 *.njsproj
 *.sln
 *.sw?
+*.swp
+*.swo
 
-# Environment (contem secrets - nunca versionar)
-.env
+# Testes e Cobertura
+coverage/
+.nyc_output/
+
+# Wrangler / Cloudflare
+.wrangler/
+
+# Desktop (Electron)
+desktop/release
+desktop/node_modules
