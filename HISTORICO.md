@@ -2630,3 +2630,14 @@ Espelhado na Vercel.
   rastreado (.env e chaves fora do git); .env.example segue
   versionado de proposito. Sem git rm necessario.
   Espelhado na Vercel via push em main.
+
+## BUILD 021: digest cobre bytes enviados (24/09/2026)
+
+- Causa do 297: setAttribute xmlns no DOM gerava digest sobre
+  bytes com xmlns redundante que o XML enviado nao tem
+  (provado offline: digest+RSA do log conferem). Removido;
+  BUILD=021-no-redundant-xmlns.
+- Conhecido: sefaz.ts x mdf-c14n.ts tem declaracoes duplicadas
+  (erros TS2440/2395 pre-existentes); build passa e a local
+  prevalece — limpeza fica para depois.
+  Espelhado na Vercel via push em main.
