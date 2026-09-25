@@ -169,6 +169,11 @@ export const encerrarMdfFn = createServerFn({ method: "POST" })
 
     const result = await encerrarMdf(cert.pfx, cert.senha, data.chave, ambiente, data.cnpj, data.uf, data.protocolo, data.cMun);
 
+    // Backfill do protocolo quando recuperado automaticamente (só acontece uma vez).
+    if ((result as any).protocoloUsado && !(data.protocolo || "").replace(/\D/g, "")) {
+      try { await supabase.from("mdf_documentos" as never).update({ protocolo_sefaz: (result as any).protocoloUsado } as never).eq("chave_acesso", data.chave); } catch {}
+    }
+
     if (result.sucesso) {
       await supabase.from("mdf_documentos" as never).update({ status: "encerrado", data_encerramento: new Date().toISOString() } as never).eq("chave_acesso", data.chave);
     }
@@ -185,6 +190,11 @@ export const cancelarMdfFn = createServerFn({ method: "POST" })
     const { cert, ambiente, supabase } = await getCertAndAmbiente(data.empresaId);
 
     const result = await cancelarMdf(cert.pfx, cert.senha, data.chave, data.justificativa, ambiente, data.cnpj, data.uf, data.protocolo);
+
+    // Backfill do protocolo quando recuperado automaticamente (só acontece uma vez).
+    if ((result as any).protocoloUsado && !(data.protocolo || "").replace(/\D/g, "")) {
+      try { await supabase.from("mdf_documentos" as never).update({ protocolo_sefaz: (result as any).protocoloUsado } as never).eq("chave_acesso", data.chave); } catch {}
+    }
 
     if (result.sucesso) {
       await supabase.from("mdf_documentos" as never).update({ status: "cancelado" } as never).eq("chave_acesso", data.chave);

@@ -2878,3 +2878,12 @@ Espelhado na Vercel.
   interno segue a sigla para o XML. Derivação automática dos CT-es e
   botões de UF do percurso mantidos.
 - Espelhado na Vercel via push em main.
+
+## Protocolo automático via Não Encerrados (25/09/2026)
+
+- `protocoloDoMdf` agora tenta consulta situação e, em falha, consulta
+  não-encerrados (`MDFeConsNaoEnc`, filtra a chave e extrai o `nProt`).
+- Encerrar/cancelar retornam `protocoloUsado`; server functions gravam
+  de volta em `mdf_documentos.protocolo_sefaz` (backfill, uma única vez).
+  Campo manual do dialog mantido como último recurso.
+- Espelhado na Vercel via push em main.

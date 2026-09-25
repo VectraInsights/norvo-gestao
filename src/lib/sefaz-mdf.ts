@@ -568,13 +568,35 @@ export async function emitirMdf(pfx: Buffer, senha: string, xml: string, ambient
   return { sucesso: cStat === "100", cStat, xMotivo, chave, protocolo, xmlRet: ret };
 }
 
-// Recupera o protocolo de autorização via consulta (quando o registro
-// local está sem protocolo, o cancelamento/encerramento o exige).
-export async function protocoloDoMdf(pfx: Buffer, senha: string, chave: string, ambiente: Ambiente): Promise<string> {
+// Consulta MDF-es não encerrados do emitente (retorna nProt por chave;
+// alternativa quando a consulta situação está fora do ar no SVRS).
+export async function consultarNaoEncerrados(pfx: Buffer, senha: string, cnpj: string, ambiente: Ambiente): Promise<string> {
+  const ep = getMdfEndpoints(ambiente);
+  const nsNaoEnc = "http://www.portalfiscal.inf.br/mdfe/wsdl/MDFeConsNaoEnc";
+  const cnpjFmt = String(cnpj || "").replace(/\D/g, "");
+  const cabec = `<mdfeCabecMsg xmlns="${nsNaoEnc}"><cUF>31</cUF><versaoDados>3.00</versaoDados></mdfeCabecMsg>`;
+  const body = `<MDFeConsNaoEncMsg xmlns="${nsNaoEnc}"><consNaoEnc xmlns="http://www.portalfiscal.inf.br/mdfe" versao="3.00"><tpAmb>${MDFE_TP_AMB}</tpAmb><xServ>CONSULTAR NÃO ENCERRADOS</xServ><CNPJ>${cnpjFmt}</CNPJ></consNaoEnc></MDFeConsNaoEncMsg>`;
+  return soapRequest(ep.mdfConsNaoEnc, body, `${nsNaoEnc}/mdfeConsNaoEnc`, createSefazAgent(pfx, senha), cabec);
+}
+
+// Recupera o protocolo de autorização (quando o registro local está sem
+// protocolo, o cancelamento/encerramento o exige): consulta situação e,
+// em falha, consulta não-encerrados.
+export async function protocoloDoMdf(pfx: Buffer, senha: string, chave: string, ambiente: Ambiente, cnpj: string): Promise<string> {
   try {
     const cons = await consultarMdf(pfx, senha, chave, ambiente);
-    return cons.xml?.match(/<nProt>(\d{15})<\/nProt>/)?.[1] || "";
-  } catch { return ""; }
+    const p = cons.xml?.match(/<nProt>(\d{15})<\/nProt>/)?.[1] || "";
+    if (p) { console.log("[mdf-debug] protocolo recuperado via consulta situacao"); return p; }
+  } catch {}
+  try {
+    const ret = await consultarNaoEncerrados(pfx, senha, cnpj, ambiente);
+    const cStat = ret.match(/<cStat>(\d+)<\/cStat>/)?.[1] || "";
+    console.log(`[mdf-debug] consNaoEnc cStat=${cStat || "(ausente)"}`);
+    for (const m of ret.matchAll(/<infMDFe>[\s\S]*?<chMDFe>(\d{44})<\/chMDFe>[\s\S]*?<nProt>(\d{15})<\/nProt>[\s\S]*?<\/infMDFe>/g)) {
+      if (m[1] === chave) { console.log("[mdf-debug] protocolo recuperado via nao-encerrados"); return m[2]; }
+    }
+  } catch (e) { console.log("[mdf-debug] consNaoEnc falhou:", e instanceof Error ? e.message.slice(0, 160) : e); }
+  return "";
 }
 
 export async function consultarMdf(pfx: Buffer, senha: string, chave: string, ambiente: Ambiente): Promise<{ cStat: string; xMotivo: string; xml?: string }> {  const ep = getMdfEndpoints(ambiente);
@@ -614,7 +636,7 @@ export async function encerrarMdf(pfx: Buffer, senha: string, chave: string, amb
   const cMunFmt = String(cMun || "").replace(/\D/g, "");
   if (!/^\d{14}$/.test(cnpjFmt)) throw new Error("CNPJ do emitente inválido para o evento de encerramento");
   if (/^0+$/.test(nProtFmt)) {
-    nProtFmt = (await protocoloDoMdf(pfx, senha, chave, ambiente)).replace(/\D/g, "");
+    nProtFmt = (await protocoloDoMdf(pfx, senha, chave, ambiente, cnpj)).replace(/\D/g, "");
     if (nProtFmt) console.log("[mdf-debug] protocolo recuperado via consulta para encerrar");
   }
   if (!/^\d{15}$/.test(nProtFmt)) throw new Error("Protocolo de autorização não encontrado para encerrar o MDF-e");
@@ -629,7 +651,7 @@ export async function encerrarMdf(pfx: Buffer, senha: string, chave: string, amb
   const ret = await soapRequest(ep.mdfRecepcaoEvento, body, `${nsEvt}/mdfeRecepcaoEvento`, createSefazAgent(pfx, senha), cabec);
   const cStat = ret.match(/<cStat>(\d+)<\/cStat>/)?.[1] || "";
   const xMotivo = ret.match(/<xMotivo>([^<]+)<\/xMotivo>/)?.[1] || "";
-  return { sucesso: cStat === "135" || cStat === "155", cStat, xMotivo };
+  return { sucesso: cStat === "135" || cStat === "155", cStat, xMotivo, protocoloUsado: nProtFmt };
 }
 
 export async function cancelarMdf(pfx: Buffer, senha: string, chave: string, justificativa: string, ambiente: Ambiente, cnpj: string, uf: string, protocolo: string): Promise<{ sucesso: boolean; cStat: string; xMotivo: string }> {
@@ -643,7 +665,7 @@ export async function cancelarMdf(pfx: Buffer, senha: string, chave: string, jus
   const xJustFmt = String(justificativa || "").trim().slice(0, 255);
   if (!/^\d{14}$/.test(cnpjFmt)) throw new Error("CNPJ do emitente inválido para o evento de cancelamento");
   if (/^0+$/.test(nProtFmt)) {
-    nProtFmt = (await protocoloDoMdf(pfx, senha, chave, ambiente)).replace(/\D/g, "");
+    nProtFmt = (await protocoloDoMdf(pfx, senha, chave, ambiente, cnpj)).replace(/\D/g, "");
     if (nProtFmt) console.log("[mdf-debug] protocolo recuperado via consulta para cancelar");
   }
   if (!/^\d{15}$/.test(nProtFmt)) throw new Error("Protocolo de autorização não encontrado para cancelar o MDF-e");
@@ -659,5 +681,5 @@ export async function cancelarMdf(pfx: Buffer, senha: string, chave: string, jus
   const ret = await soapRequest(ep.mdfRecepcaoEvento, body, `${nsEvt}/mdfeRecepcaoEvento`, createSefazAgent(pfx, senha), cabec);
   const cStat = ret.match(/<cStat>(\d+)<\/cStat>/)?.[1] || "";
   const xMotivo = ret.match(/<xMotivo>([^<]+)<\/xMotivo>/)?.[1] || "";
-  return { sucesso: cStat === "135" || cStat === "155", cStat, xMotivo };
+  return { sucesso: cStat === "135" || cStat === "155", cStat, xMotivo, protocoloUsado: nProtFmt };
 }
