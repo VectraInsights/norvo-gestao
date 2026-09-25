@@ -3022,3 +3022,9 @@ Espelhado na Vercel.
 - Novo MDF-e compactado p/ caber na tela: tabela de CT-es e lista de
   percurso menores, observações em 1 linha (rolagem só em telas baixas).
 - Espelhado na Vercel via push em main.
+
+## Rodapé em 3 colunas (25/09/2026)
+
+- Base do Novo MDF-e em 1/10 (tabela do percurso), 2/10 (seletor de UFs)
+  e 7/10 (observações + fisco).
+- Espelhado na Vercel via push em main.
