@@ -6,7 +6,7 @@
  */
 import https from "node:https";
 import zlib from "node:zlib";
-import { createSefazAgent, signMdfXml, signXml, buscarCertificadoAtivo, XML_INCLUSIVE_C14N } from "./sefaz";
+import { createSefazAgent, signMdfXml, signMdfEventoXml, buscarCertificadoAtivo, XML_INCLUSIVE_C14N } from "./sefaz";
 import {
   MDFE_AMBIENTE,
   MDFE_SVRS_HOMOLOGACAO_HOST,
@@ -642,7 +642,7 @@ export async function encerrarMdf(pfx: Buffer, senha: string, chave: string, amb
   if (!/^\d{15}$/.test(nProtFmt)) throw new Error("Protocolo de autorização não encontrado para encerrar o MDF-e");
   if (!/^\d{7}$/.test(cMunFmt)) throw new Error("Município de encerramento não encontrado no MDF-e");
   const evento = `<eventoMDFe xmlns="http://www.portalfiscal.inf.br/mdfe" versao="3.00"><infEvento Id="ID110112${chave}01"><cOrgao>${cOrgao}</cOrgao><tpAmb>${MDFE_TP_AMB}</tpAmb><CNPJ>${cnpjFmt}</CNPJ><chMDFe>${chave}</chMDFe><dhEvento>${dhEvento}</dhEvento><tpEvento>110112</tpEvento><nSeqEvento>01</nSeqEvento><detEvento versaoEvento="3.00"><evEncMDFe><descEvento>Encerramento</descEvento><nProt>${nProtFmt}</nProt><dtEncerramento>${dhEvento.slice(0, 10)}</dtEncerramento><cMunEncerramento>${cMunFmt}</cMunEncerramento><UFEncerramento>${uf}</UFEncerramento></evEncMDFe></detEvento></infEvento></eventoMDFe>`;
-  const ass = signXml(evento, pfx, senha);
+  const ass = signMdfEventoXml(evento, pfx, senha);
   console.log("[mdf-debug] evento encerramento com Signature:", /<Signature[\s>]/.test(ass));
   // Todos os WS do MDF-e trafegam via mdfeDadosMsg (MOC DF-e).
   const nsEvt = "http://www.portalfiscal.inf.br/mdfe/wsdl/MDFeRecepcaoEvento";
@@ -671,7 +671,7 @@ export async function cancelarMdf(pfx: Buffer, senha: string, chave: string, jus
   if (!/^\d{15}$/.test(nProtFmt)) throw new Error("Protocolo de autorização não encontrado para cancelar o MDF-e");
   if (xJustFmt.length < 15) throw new Error("Justificativa do cancelamento deve ter ao menos 15 caracteres");
   const evento = `<eventoMDFe xmlns="http://www.portalfiscal.inf.br/mdfe" versao="3.00"><infEvento Id="ID110111${chave}01"><cOrgao>${cOrgao}</cOrgao><tpAmb>${MDFE_TP_AMB}</tpAmb><CNPJ>${cnpjFmt}</CNPJ><chMDFe>${chave}</chMDFe><dhEvento>${dhEvento}</dhEvento><tpEvento>110111</tpEvento><nSeqEvento>01</nSeqEvento><detEvento versaoEvento="3.00"><evCancMDFe><descEvento>Cancelamento</descEvento><nProt>${nProtFmt}</nProt><xJust>${xJustFmt}</xJust></evCancMDFe></detEvento></infEvento></eventoMDFe>`;
-  const ass = signXml(evento, pfx, senha);
+  const ass = signMdfEventoXml(evento, pfx, senha);
   console.log("[mdf-debug] evento cancelamento com Signature:", /<Signature[\s>]/.test(ass));
   console.log("[mdf-debug] evento xml:", evento);
   // Todos os WS do MDF-e trafegam via mdfeDadosMsg (MOC DF-e).

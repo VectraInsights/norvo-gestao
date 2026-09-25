@@ -571,6 +571,27 @@ export function signMdfXml(xml: string, pfxBytes: Buffer, senha: string): string
 }
 
 /**
+ * Assina evento MDF-e (cancelamento/encerramento): digest sobre o
+ * <infEvento> canonicalizado (ápice do subset, com xmlns), como a SEFAZ
+ * reconstrói via Transforms do Reference (URI = Id do infEvento).
+ */
+export function signMdfEventoXml(xml: string, pfxBytes: Buffer, senha: string): string {
+  const document = new DOMParser().parseFromString(xml, "application/xml");
+  const infEvento = document.getElementsByTagName("infEvento").item(0);
+  if (!infEvento) throw new Error("Evento MDF-e sem elemento infEvento para assinar");
+  const id = infEvento.getAttribute("Id") || "";
+  if (!id) throw new Error("Evento MDF-e sem atributo Id em infEvento");
+  const canonicalized = canonicalizeMdfInfMdfInclusive(infEvento as unknown as Element);
+  console.log("[mdf-debug] canonicalized infEvento:", canonicalized);
+  return signXml(xml, pfxBytes, senha, canonicalized, {
+    referenceUri: `#${id}`,
+    canonicalizationAlgorithm: XML_INCLUSIVE_C14N,
+    logSignedInfoBytes: true,
+    strictSignedInfo: true,
+  });
+}
+
+/**
  * Tenta assinar XML usando node-forge. Retorna null se o PFX não for suportado.
  */
 function tryForgeSignXml(

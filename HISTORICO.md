@@ -2879,11 +2879,18 @@ Espelhado na Vercel.
   botões de UF do percurso mantidos.
 - Espelhado na Vercel via push em main.
 
-## Protocolo automático via Não Encerrados (25/09/2026)
-
-- `protocoloDoMdf` agora tenta consulta situação e, em falha, consulta
+## Protocolo automático via Não Encerrados (25/09/2026)- `protocoloDoMdf` agora tenta consulta situação e, em falha, consulta
   não-encerrados (`MDFeConsNaoEnc`, filtra a chave e extrai o `nProt`).
 - Encerrar/cancelar retornam `protocoloUsado`; server functions gravam
   de volta em `mdf_documentos.protocolo_sefaz` (backfill, uma única vez).
   Campo manual do dialog mantido como último recurso.
+- Espelhado na Vercel via push em main.
+
+## Digest do evento sobre infEvento (25/09/2026)
+
+- 297 no cancelar/encerrar: `signXml(evento)` sem `digestInput` gerava o
+  digest sobre o `<eventoMDFe>` inteiro, mas o Reference aponta o
+  `infEvento`. Novo `signMdfEventoXml` canonicaliza o `infEvento`
+  (ápice com xmlns) e assina sobre ele (provado localmente: digests
+  divergem). Vale para cancelar e encerrar.
 - Espelhado na Vercel via push em main.
