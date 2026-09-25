@@ -269,7 +269,7 @@ export async function handleSefazProxy(request: Request): Promise<Response> {
       case "encerrarMdf": {
         const { encerrarMdf } = await import("@/lib/sefaz-mdf");
         const b = body as any;
-        const retEnc = await encerrarMdf(pfxBytes, senha, b.chave, MDFE_AMBIENTE, b.cnpj || cnpj, b.uf || uf);
+        const retEnc = await encerrarMdf(pfxBytes, senha, b.chave, MDFE_AMBIENTE, b.cnpj || cnpj, b.uf || uf, b.protocolo || "", b.cMun || "");
         if ((retEnc as any).sucesso) {
           const { createClient: ccEnc } = await import("@supabase/supabase-js");
           const sEnc = ccEnc(process.env.SUPABASE_URL||"", process.env.SUPABASE_SERVICE_ROLE_KEY||"");
@@ -280,7 +280,7 @@ export async function handleSefazProxy(request: Request): Promise<Response> {
       case "cancelarMdf": {
         const { cancelarMdf } = await import("@/lib/sefaz-mdf");
         const b = body as any;
-        const retCanc = await cancelarMdf(pfxBytes, senha, b.chave, b.justificativa, MDFE_AMBIENTE, b.cnpj || cnpj, b.uf || uf);
+        const retCanc = await cancelarMdf(pfxBytes, senha, b.chave, b.justificativa, MDFE_AMBIENTE, b.cnpj || cnpj, b.uf || uf, b.protocolo || "");
         if ((retCanc as any).sucesso) {
           const { createClient: ccCanc } = await import("@supabase/supabase-js");
           const sCanc = ccCanc(process.env.SUPABASE_URL||"", process.env.SUPABASE_SERVICE_ROLE_KEY||"");

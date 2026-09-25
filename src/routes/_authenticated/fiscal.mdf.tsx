@@ -111,11 +111,36 @@ function MdfPage() {
     URL.revokeObjectURL(url);
     toast.success("XML baixado");
   };
-  const baixarPdfMdf = (d: MdfDoc) => {
+  const baixarPdfMdf = async (d: MdfDoc) => {
     try {
       const xml = xmlDeMdf(d);
       if (!xml.includes("<infMDFe")) { toast.error("XML não encontrado no registro"); return; }
       const dados = damdfeDataDoXml(xml, { protocolo: d.protocolo_sefaz || undefined, numero: d.numero, serie: d.serie });
+      try {
+        const raw = String((d as any).xml_assinado || "");
+        try { const p = JSON.parse(raw); dados.obs = String(p.observacoes || p.infoFisco || ""); } catch {}
+      } catch {}
+      // Enriquece docs com número do CT-e e NFes vinculadas.
+      try {
+        const chaves = dados.chavesCte;
+        if (chaves.length) {
+          const { data: rows } = await supabase.from("cte_documentos" as any).select("chave_acesso,numero,xml_assinado").in("chave_acesso", chaves);
+          const byCh = new Map<string, any>();
+          for (const r of (rows as any[]) || []) if ((r as any)?.chave_acesso) byCh.set((r as any).chave_acesso, r);
+          dados.docs = chaves.map(ch => {
+            const r = byCh.get(ch);
+            let nfes = "";
+            try {
+              let cx = String((r as any)?.xml_assinado || "");
+              try { const p = JSON.parse(cx); if (p?.xml) cx = String(p.xml); } catch {}
+              nfes = [...cx.matchAll(/<chNFe>(\d{44})<\/chNFe>/g)]
+                .map(m => `${m[1].slice(25, 34).replace(/^0+/, "") || "0"}/${m[1].slice(22, 25).replace(/^0+/, "") || "0"}`)
+                .join(", ");
+            } catch {}
+            return { numero: String((r as any)?.numero || ""), chave: ch, nfes };
+          });
+        }
+      } catch {}
       const blob = gerarDamdfePdf(dados);
       const url = URL.createObjectURL(blob);
       const a = document.createElement("a");
@@ -363,7 +388,7 @@ function MdfPage() {
             <p className="text-sm text-muted-foreground">Confirma o encerramento do manifesto? Esta ação é irreversível.</p>
             <DialogFooter>
               <Button variant="outline" onClick={() => setOpenEncerrar(false)}>Cancelar</Button>
-              <EncerrarMdfButton mdf={mdfEncerrar} empresaId={empresa!.id} onSuccess={() => { setOpenEncerrar(false); setMdfEncerrar(null); qc.invalidateQueries({ queryKey: ["mdf-documentos"] }); }} />
+              <EncerrarMdfButton mdf={mdfEncerrar} empresaId={empresa!.id} cnpj={String((empresa as any)?.cnpj || "")} onSuccess={() => { setOpenEncerrar(false); setMdfEncerrar(null); qc.invalidateQueries({ queryKey: ["mdf-documentos"] }); }} />
             </DialogFooter>
           </DialogContent>
         </Dialog>
@@ -389,7 +414,7 @@ function MdfPage() {
               <Button variant="destructive" disabled={!justificativa.trim()} onClick={async () => {
                 if (!empresa || !mdfCancelar.chave_acesso) return;
                 try {
-                  const res = await cancelarMdfFn({ data: { empresaId: empresa.id, chave: mdfCancelar.chave_acesso, justificativa: justificativa.trim(), cnpj: "", uf: mdfCancelar.uf_carregamento || "" } });
+                  const res = await cancelarMdfFn({ data: { empresaId: empresa.id, chave: mdfCancelar.chave_acesso, justificativa: justificativa.trim(), cnpj: String((empresa as any)?.cnpj || ""), uf: mdfCancelar.uf_carregamento || "", protocolo: mdfCancelar.protocolo_sefaz || "" } });
                   if (res.sucesso) toast.success("MDF-e cancelado com sucesso!");
                   else toast.error(`Erro: ${res.xMotivo}`);
                   setOpenCancelar(false); setMdfCancelar(null); setJustificativa("");
@@ -581,13 +606,17 @@ function DialogVerMdf({ d, xml, onClose, onBaixarXml, onBaixarPdf }: { d: MdfDoc
     </Dialog>
   );
 }
-
-function EncerrarMdfButton({ mdf, empresaId, onSuccess }: { mdf: MdfDoc; empresaId: string; onSuccess: () => void }) {  const [loading, setLoading] = useState(false);
+function EncerrarMdfButton({ mdf, empresaId, cnpj, onSuccess }: { mdf: MdfDoc; empresaId: string; cnpj: string; onSuccess: () => void }) {
+  const [loading, setLoading] = useState(false);
   const handleEncerrar = async () => {
     if (!mdf.chave_acesso) return;
     setLoading(true);
     try {
-      const res = await encerrarMdfFn({ data: { empresaId, chave: mdf.chave_acesso, cnpj: "", uf: mdf.uf_carregamento || "" } });
+      const raw = String((mdf as any).xml_assinado || "");
+      let xml = raw;
+      try { const p = JSON.parse(raw); if (p && p.xml) xml = String(p.xml); } catch {}
+      const cMun = xml.match(/<cMunDescarga>(\d{7})<\/cMunDescarga>/)?.[1] || "";
+      const res = await encerrarMdfFn({ data: { empresaId, chave: mdf.chave_acesso, cnpj, uf: mdf.uf_carregamento || "", protocolo: mdf.protocolo_sefaz || "", cMun } });
       if (res.sucesso) { toast.success("MDF-e encerrado!"); onSuccess(); }
       else toast.error(`Erro: ${res.xMotivo}`);
     } catch (e: unknown) { toast.error(e instanceof Error ? e.message : "Erro ao encerrar"); }

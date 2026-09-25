@@ -577,11 +577,19 @@ export async function consultarMdf(pfx: Buffer, senha: string, chave: string, am
   return { cStat, xMotivo, xml: ret };
 }
 
-export async function encerrarMdf(pfx: Buffer, senha: string, chave: string, ambiente: Ambiente, cnpj: string, uf: string): Promise<{ sucesso: boolean; cStat: string; xMotivo: string }> {
+export async function encerrarMdf(pfx: Buffer, senha: string, chave: string, ambiente: Ambiente, cnpj: string, uf: string, protocolo: string, cMun: string): Promise<{ sucesso: boolean; cStat: string; xMotivo: string }> {
   const ep = getMdfEndpoints(ambiente);
-  const dhEvento = new Date().toISOString().replace(/\.\d{3}Z$/, "");
+  const agora = new Date(Date.now() - 3 * 3600 * 1000);
+  const p2 = (n: number) => String(n).padStart(2, "0");
+  const dhEvento = `${agora.getUTCFullYear()}-${p2(agora.getUTCMonth() + 1)}-${p2(agora.getUTCDate())}T${p2(agora.getUTCHours())}:${p2(agora.getUTCMinutes())}:${p2(agora.getUTCSeconds())}-03:00`;
   const cOrgao = codigoUF(uf);
-  const evento = `<eventoMDFe xmlns="http://www.portalfiscal.inf.br/mdfe" versao="3.00"><infEvento Id="ID110112${chave}1"><cOrgao>${cOrgao}</cOrgao><tpAmb>${MDFE_TP_AMB}</tpAmb><CNPJ>${cnpj.replace(/\D/g, "")}</CNPJ><chMDFe>${chave}</chMDFe><dhEvento>${dhEvento}</dhEvento><tpEvento>110112</tpEvento><nSeqEvento>1</nSeqEvento><detEvento versaoEvento="3.00"><evEncMDFe><descEvento>Encerramento</descEvento><nProt>0</nProt><dtEncerramento>${dhEvento.slice(0, 10)}</dtEncarramento><cMunEncerramento>${cOrgao}</cMunEncerramento><UFEncerramento>${uf}</UFEncerramento></evEncMDFe></detEvento></infEvento></eventoMDFe>`;
+  const cnpjFmt = cnpj.replace(/\D/g, "").padStart(14, "0");
+  const nProtFmt = String(protocolo || "").replace(/\D/g, "").padStart(15, "0");
+  const cMunFmt = String(cMun || "").replace(/\D/g, "");
+  if (!/^\d{14}$/.test(cnpjFmt)) throw new Error("CNPJ do emitente inválido para o evento de encerramento");
+  if (!/^\d{15}$/.test(nProtFmt)) throw new Error("Protocolo de autorização não encontrado para encerrar o MDF-e");
+  if (!/^\d{7}$/.test(cMunFmt)) throw new Error("Município de encerramento não encontrado no MDF-e");
+  const evento = `<eventoMDFe xmlns="http://www.portalfiscal.inf.br/mdfe" versao="3.00"><infEvento Id="ID110112${chave}1"><cOrgao>${cOrgao}</cOrgao><tpAmb>${MDFE_TP_AMB}</tpAmb><CNPJ>${cnpjFmt}</CNPJ><chMDFe>${chave}</chMDFe><dhEvento>${dhEvento}</dhEvento><tpEvento>110112</tpEvento><nSeqEvento>1</nSeqEvento><detEvento versaoEvento="3.00"><evEncMDFe><descEvento>Encerramento</descEvento><nProt>${nProtFmt}</nProt><dtEncerramento>${dhEvento.slice(0, 10)}</dtEncerramento><cMunEncerramento>${cMunFmt}</cMunEncerramento><UFEncerramento>${uf}</UFEncerramento></evEncMDFe></detEvento></infEvento></eventoMDFe>`;
   const ass = signXml(evento, pfx, senha);
   const body = `<MDFeRecepcaoEventoMsg xmlns="http://www.portalfiscal.inf.br/mdfe/wsdl/MDFeRecepcaoEvento">${ass}</MDFeRecepcaoEventoMsg>`;
   const ret = await soapRequest(ep.mdfRecepcaoEvento, body, "http://www.portalfiscal.inf.br/mdfe/wsdl/MDFeRecepcaoEvento/mdfeRecepcaoEvento", createSefazAgent(pfx, senha));
@@ -590,11 +598,19 @@ export async function encerrarMdf(pfx: Buffer, senha: string, chave: string, amb
   return { sucesso: cStat === "135" || cStat === "155", cStat, xMotivo };
 }
 
-export async function cancelarMdf(pfx: Buffer, senha: string, chave: string, justificativa: string, ambiente: Ambiente, cnpj: string, uf: string): Promise<{ sucesso: boolean; cStat: string; xMotivo: string }> {
+export async function cancelarMdf(pfx: Buffer, senha: string, chave: string, justificativa: string, ambiente: Ambiente, cnpj: string, uf: string, protocolo: string): Promise<{ sucesso: boolean; cStat: string; xMotivo: string }> {
   const ep = getMdfEndpoints(ambiente);
-  const dhEvento = new Date().toISOString().replace(/\.\d{3}Z$/, "");
+  const agora = new Date(Date.now() - 3 * 3600 * 1000);
+  const p2 = (n: number) => String(n).padStart(2, "0");
+  const dhEvento = `${agora.getUTCFullYear()}-${p2(agora.getUTCMonth() + 1)}-${p2(agora.getUTCDate())}T${p2(agora.getUTCHours())}:${p2(agora.getUTCMinutes())}:${p2(agora.getUTCSeconds())}-03:00`;
   const cOrgao = codigoUF(uf);
-  const evento = `<eventoMDFe xmlns="http://www.portalfiscal.inf.br/mdfe" versao="3.00"><infEvento Id="ID110111${chave}1"><cOrgao>${cOrgao}</cOrgao><tpAmb>${MDFE_TP_AMB}</tpAmb><CNPJ>${cnpj.replace(/\D/g, "")}</CNPJ><chMDFe>${chave}</chMDFe><dhEvento>${dhEvento}</dhEvento><tpEvento>110111</tpEvento><nSeqEvento>1</nSeqEvento><detEvento versaoEvento="3.00"><evCancMDFe><descEvento>Cancelamento</descEvento><nProt>0</nProt><xJust>${justificativa}</xJust></evCancMDFe></detEvento></infEvento></eventoMDFe>`;
+  const cnpjFmt = cnpj.replace(/\D/g, "").padStart(14, "0");
+  const nProtFmt = String(protocolo || "").replace(/\D/g, "").padStart(15, "0");
+  const xJustFmt = String(justificativa || "").trim().slice(0, 255);
+  if (!/^\d{14}$/.test(cnpjFmt)) throw new Error("CNPJ do emitente inválido para o evento de cancelamento");
+  if (!/^\d{15}$/.test(nProtFmt)) throw new Error("Protocolo de autorização não encontrado para cancelar o MDF-e");
+  if (xJustFmt.length < 15) throw new Error("Justificativa do cancelamento deve ter ao menos 15 caracteres");
+  const evento = `<eventoMDFe xmlns="http://www.portalfiscal.inf.br/mdfe" versao="3.00"><infEvento Id="ID110111${chave}1"><cOrgao>${cOrgao}</cOrgao><tpAmb>${MDFE_TP_AMB}</tpAmb><CNPJ>${cnpjFmt}</CNPJ><chMDFe>${chave}</chMDFe><dhEvento>${dhEvento}</dhEvento><tpEvento>110111</tpEvento><nSeqEvento>1</nSeqEvento><detEvento versaoEvento="3.00"><evCancMDFe><descEvento>Cancelamento</descEvento><nProt>${nProtFmt}</nProt><xJust>${xJustFmt}</xJust></evCancMDFe></detEvento></infEvento></eventoMDFe>`;
   const ass = signXml(evento, pfx, senha);
   const body = `<MDFeRecepcaoEventoMsg xmlns="http://www.portalfiscal.inf.br/mdfe/wsdl/MDFeRecepcaoEvento">${ass}</MDFeRecepcaoEventoMsg>`;
   const ret = await soapRequest(ep.mdfRecepcaoEvento, body, "http://www.portalfiscal.inf.br/mdfe/wsdl/MDFeRecepcaoEvento/mdfeRecepcaoEvento", createSefazAgent(pfx, senha));

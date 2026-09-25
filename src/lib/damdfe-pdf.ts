@@ -1,6 +1,7 @@
 import { jsPDF } from "jspdf";
 import JsBarcode from "./vendor/jsbarcode.bundle.cjs";
 import qrcode from "./vendor/qrcode.bundle.cjs";
+import { JUVENAL_LOGO } from "./juvenal-logo";
 
 export const DAMDFE_REV = "20260925-p1";
 
@@ -10,12 +11,15 @@ export interface DamdfeData {
   numero: string;
   serie: string;
   dhEmi: string;
+  dhIniViagem: string;
   tpAmb: string;
   tpEmit: string;
   ufIni: string;
   ufFim: string;
   munCarrega: string;
   munDescarrega: string;
+  // Documentos vinculados (enriquecido pelo chamador com numero/NFes).
+  docs: Array<{ numero: string; chave: string; nfes: string }>;
   percurso: string[];
   emitCnpj: string;
   emitNome: string;
@@ -49,6 +53,8 @@ export interface DamdfeData {
   qCarga: string;
   protocolo?: string;
   qrUrl?: string;
+  logoDataUrl?: string;
+  obs?: string;
 }
 
 function D(v: unknown): string {
@@ -131,6 +137,7 @@ export function damdfeDataDoXml(xml: string, extra?: { protocolo?: string; numer
     numero: extra?.numero || q("nMDF", inf || undefined),
     serie: extra?.serie || q("serie", inf || undefined),
     dhEmi: q("dhEmi", inf || undefined),
+    dhIniViagem: q("dhIniViagem", inf || undefined),
     tpAmb: q("tpAmb", inf || undefined),
     tpEmit: q("tpEmit", inf || undefined),
     ufIni: q("UFIni", inf || undefined),
@@ -159,6 +166,7 @@ export function damdfeDataDoXml(xml: string, extra?: { protocolo?: string; numer
     contratanteNome: q("xNome", contrat || undefined),
     contratanteDoc: q("CNPJ", contrat || undefined) || q("CPF", contrat || undefined),
     chavesCte,
+    docs: chavesCte.map(ch => ({ numero: "", chave: ch, nfes: "" })),
     xSeg: q("xSeg", seg || undefined),
     cnpjSeg: q("infSeg > CNPJ", seg || undefined),
     nApol: q("nApol", seg || undefined),
@@ -174,13 +182,15 @@ export function damdfeDataDoXml(xml: string, extra?: { protocolo?: string; numer
 }
 
 export function gerarDamdfePdf(d: DamdfeData): Blob {
-  const doc = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4" });
-  const W = 210, M = 6, CW = W - 2 * M;
-  const LIM = 290;
+  // Layout oficial paisagem A4; logo da empresa no topo esquerdo.
+  const doc = new jsPDF({ orientation: "landscape", unit: "mm", format: "a4" });
+  const W = 297, M = 5, CW = W - 2 * M;
+  const LIM = 202;
   let y = M;
   const setFont = (w: "bold" | "normal", s: number) => { doc.setFont("helvetica", w); doc.setFontSize(s); };
   const black = () => doc.setTextColor(0, 0, 0);
   const box = (x: number, yy: number, w: number, h: number) => { doc.setDrawColor(0, 0, 0); doc.setLineWidth(0.2); doc.rect(x, yy, w, h, "S"); };
+  const vline = (x: number, yy: number, h: number) => { doc.setDrawColor(0, 0, 0); doc.setLineWidth(0.2); doc.line(x, yy, x, yy + h); };
   const lab = (t: string, x: number, yy: number) => { black(); setFont("bold", 5.5); doc.text(t, x, yy); };
   const val = (t: string, x: number, yy: number, s = 7) => { black(); setFont("normal", s); doc.text(D(t), x, yy); };
   const valB = (t: string, x: number, yy: number, s = 7) => { black(); setFont("bold", s); doc.text(D(t), x, yy); };
@@ -190,93 +200,185 @@ export function gerarDamdfePdf(d: DamdfeData): Blob {
     black(); setFont(bold ? "bold" : "normal", s);
     try { (doc as any).text(t, xx, yy, { align: "center" }); } catch { doc.text(t, xx, yy); }
   };
-  const secTitle = (t: string) => { need(8); setFont("bold", 7); black(); doc.text(t, M + 1, y + 4); y += 6; };
+  const titleBar = (t: string) => {
+    need(7);
+    box(M, y, CW, 5);
+    black(); setFont("bold", 6.5);
+    try { (doc as any).text(t, M + CW / 2, y + 3.5, { align: "center" }); } catch { doc.text(t, M + 1, y + 3.5); }
+    y += 5;
+  };
+  const cell = (x: number, w: number, label: string, value: string, vs = 7, bold = false) => {
+    lab(label, x + 1, y + 3);
+    if (bold) valB(value, x + 1, y + 7, vs); else val(value, x + 1, y + 7, vs);
+  };
+  const fmtChaveDots = (ch: string) => D(ch).replace(/\D/g, "").replace(/(\d{4})(?=\d)/g, "$1.");
+  const fmtData = (v: string) => { const m = D(v).match(/^(\d{4})-(\d{2})-(\d{2})/); return m ? `${m[3]}/${m[2]}/${m[1]}` : D(v); };
 
-  // ---- Cabeçalho: emitente | DAMDFE ----
-  const colL = 118, colR = CW - colL - 2, rx = M + colL + 2;
-  const emH = 26;
-  box(M, y, colL, emH);
-  valB(cut(D(d.emitNome) || "EMITENTE", 44), M + 2, y + 4, 8);
-  val(`${D(d.emitLgr)}, ${D(d.emitNro)} - ${D(d.emitBairro)}`, M + 2, y + 8, 6);
-  val(`${D(d.emitMun)} / ${D(d.emitUF)}`, M + 2, y + 11.5, 6);
-  val(`CNPJ ${fmtCnpj(d.emitCnpj)}   IE ${D(d.emitIE)}`, M + 2, y + 15, 6);
-  val(`RNTRC ${D(d.rntrc)}`, M + 2, y + 18.5, 6);
-  val(`Carreg.: ${D(d.ufIni)}  →  Descarreg.: ${D(d.ufFim)}${d.percurso.length ? `  (via ${d.percurso.join("-")})` : ""}`, M + 2, y + 22, 6);
-  box(rx, y, colR, emH);
-  ctr("DAMDFE", rx + colR / 2, y + 5, 11, true);
-  ctr("Documento Auxiliar do Manifesto Eletrônico", rx + colR / 2, y + 8.5, 5);
-  ctr(`Modelo 58   Série ${D(d.serie)}   Nº ${D(d.numero)}`, rx + colR / 2, y + 13, 7, true);
-  ctr(`Emissão ${fmtDH(d.dhEmi)}`, rx + colR / 2, y + 17, 6);
-  if (d.tpAmb === "2") { doc.setTextColor(200, 0, 0); setFont("bold", 7); try { (doc as any).text("HOMOLOGAÇÃO — SEM VALOR FISCAL", rx + colR / 2, y + 22, { align: "center" }); } catch {} black(); }
-  y += emH + 1;
+  // ---- Cabeçalho: logo | emitente | DAMDFE/barras/chave ----
+  const logo = (d as any).logoDataUrl || JUVENAL_LOGO;
+  const hH = 30;
+  const wLogo = 34, wEm = 148, wDa = CW - wLogo - wEm - 2;
+  const xLogo = M, xEm = M + wLogo + 1, xDa = xEm + wEm + 1;
+  box(xLogo, y, wLogo, hH);
+  try { doc.addImage(logo, "PNG", xLogo + 2, y + 5, wLogo - 4, 20); } catch {}
+  box(xEm, y, wEm, hH);
+  ctr(cut(D(d.emitNome) || "EMITENTE", 52), xEm + wEm / 2, y + 4.5, 9, true);
+  ctr(`${fmtCnpj(d.emitCnpj)}   RNTRC: ${D(d.rntrc)}`, xEm + wEm / 2, y + 8.5, 7);
+  ctr(`${D(d.emitLgr)}, ${D(d.emitNro)}`, xEm + wEm / 2, y + 12.5, 7);
+  ctr(`${D(d.emitMun)} / ${D(d.emitUF)}`, xEm + wEm / 2, y + 16.5, 7);
+  ctr(`CEP: ${D((d as any).emitCep || "")}   Tel.: ${D((d as any).emitFone || "")}`, xEm + wEm / 2, y + 20.5, 7);
+  ctr(`Contingência: ${D(d.ufIni)} → ${D(d.ufFim)}`, xEm + wEm / 2, y + 24.5, 6);
+  box(xDa, y, wDa, hH);
+  black(); setFont("bold", 13); doc.text("DAMDFE", xDa + 2, y + 6);
+  setFont("normal", 6); black(); doc.text("Documento Auxiliar de Manifesto Eletrônico de", xDa + 30, y + 4.5); doc.text("Cargas", xDa + 30, y + 8);
+  const bc0 = barcodePng(d.chave);
+  if (bc0) { try { doc.addImage(bc0, "PNG", xDa + 2, y + 9.5, wDa - 4, 8); } catch {} }
+  lab("CHAVE DE ACESSO", xDa + 2, y + 22);
+  val(fmtChaveDots(d.chave), xDa + 2, y + 26, 6.5);
+  y += hH + 1;
 
-  // ---- Chave + barras ----
-  const chaveH = 20;
-  box(M, y, CW, chaveH);
-  lab("CHAVE DE ACESSO", M + 2, y + 3.5);
-  setFont("normal", 7); black();
-  doc.text(fmtChave(d.chave), M + 2, y + 7.5);
-  const bc = barcodePng(d.chave);
-  if (bc) { try { doc.addImage(bc, "PNG", M + 2, y + 9, 120, 9); } catch {} }
-  // QR à direita
-  const qrTxt = D(d.qrUrl);
-  if (qrTxt) drawQr(doc, M + CW - 20, y + 2, 16, qrTxt);
-  y += chaveH + 1;
-
-  // ---- Protocolo ----
-  if (d.protocolo) {
-    box(M, y, CW, 7);
-    lab("PROTOCOLO DE AUTORIZAÇÃO", M + 2, y + 4.5);
-    valB(D(d.protocolo), M + 52, y + 4.5, 7);
-    y += 8;
+  // ---- Linha 2: modelo/serie/numero/FL/emissão/previsão/UFs/protocolo ----
+  const h2 = 11;
+  box(M, y, CW, h2);
+  const c2: Array<[number, string, string]> = [
+    [22, "MODELO", "58"], [20, "SÉRIE", D(d.serie) || "000"], [26, "NÚMERO", D(d.numero)],
+    [16, "FL", ""], [30, "EMISSÃO", fmtData(d.dhEmi)], [44, "PREVISÃO INÍCIO", fmtDH(d.dhIniViagem)],
+    [30, "UF CARREG.", D(d.ufIni)], [32, "UF DESCARREG.", D(d.ufFim)],
+  ];
+  let cx = M;
+  let flX = 0, flY = 0;
+  for (const [w, label, value] of c2) {
+    if (cx > M) vline(cx, y, h2);
+    cell(cx, w, label, label === "FL" ? "" : value, 7, true);
+    if (label === "FL") { flX = cx + 1; flY = y + 7; }
+    cx += w;
   }
+  vline(cx, y, h2);
+  lab("PROTOCOLO DE AUTORIZAÇÃO DE USO", cx + 1, y + 3);
+  valB(`${D(d.protocolo)}${d.tpAmb === "2" ? "   HOMOLOGAÇÃO — SEM VALOR FISCAL" : ""}`, cx + 1, y + 7.5, 7);
+  y += h2 + 1;
 
-  // ---- Veículo / condutor / contratante ----
-  secTitle("MODAL RODOVIÁRIO");
+  // ---- Modal rodoviário + QR ----
+  titleBar("MODAL RODOVIÁRIO DE CARGAS");
+  need(16);
+  const wQr = 30, wMod = CW - wQr - 1;
+  box(M, y, wMod, 15);
+  const mrow: Array<[number, string, string, boolean?]> = [
+    [30, "Quantidade CT-e", String(d.docs.length || d.chavesCte.length || "0"), true],
+    [30, "Quantidade NF-e", "0", false],
+    [30, "Quantidade NF", "0", false],
+    [42, "Quantidade Medida", fmtNum4(d.qCarga), false],
+    [28, "Unidade", "KG", false],
+    [48, "Valor Total Carga", fmtNum(d.vCarga), true],
+    [49, "Valor Total Serviço", fmtNum(d.vCarga), true],
+  ];
+  let mx = M;
+  for (const [w, label, value, bold] of mrow) {
+    if (mx > M) vline(mx, y, 15);
+    cell(mx, w, label, value, 7, !!bold);
+    mx += w;
+  }
+  vline(mx, y, 15);
+  lab("Valor Total Agregado", mx + 1, y + 3); val("0,00", mx + 1, y + 7, 7);
+  box(M + wMod + 1, y, wQr, 15);
+  if (D(d.qrUrl)) drawQr(doc, M + wMod + 1 + (wQr - 20) / 2, y + 1, 13, D(d.qrUrl));
+  y += 16;
+
+  // ---- Seguro RCV ----
+  titleBar("INFORMAÇÕES SEGURO DE RESPONSABILIDADE CIVIL DE VEÍCULO - RCV");
+  need(11);
+  box(M, y, CW, 10);
+  cell(M, 130, "Protocolo Averbação", cut(D(d.nAver), 40), 7);
+  vline(M + 130, y, 10);
+  cell(M + 130, 80, "CNPJ Responsável", fmtCnpj(d.emitCnpj), 7);
+  vline(M + 210, y, 10);
+  cell(M + 210, CW - 210, "Nº Apólice", cut(D(d.nApol), 24), 7);
+  y += 11;
+
+  // ---- Veículos / condutores / CIOT ----
+  titleBar("VEÍCULOS");
   need(24);
-  box(M, y, CW, 22);
-  lab("PLACA TRAÇÃO", M + 2, y + 3.5); valB(D(d.placa), M + 2, y + 7.5, 8);
-  lab("RENAVAM", M + 32, y + 3.5); val(D(d.renavam), M + 32, y + 7.5, 7);
-  lab("UF", M + 62, y + 3.5); val(D(d.ufVeic), M + 62, y + 7.5, 7);
-  lab("CONDUTOR", M + 72, y + 3.5); val(`${cut(D(d.condutorNome), 30)}  ${fmtCnpj(d.condutorCpf)}`, M + 72, y + 7.5, 7);
-  lab("REBOQUE(S)", M + 2, y + 12); val(d.reboques.map(r => `${D(r.placa)}/${D(r.uf)}`).join("  ") || "—", M + 2, y + 16, 7);
-  lab("CONTRATANTE", M + 72, y + 12); val(`${cut(D(d.contratanteNome), 30)}  ${fmtCnpj(d.contratanteDoc)}`, M + 72, y + 16, 7);
-  y += 23;
+  const hV = 10 + Math.max(1, d.reboques.length + 1) * 5;
+  box(M, y, CW, hV);
+  const vcols: Array<[number, string]> = [[34, "PLACA"], [34, "RENAVAM"], [30, "RNTRC"], [48, "DOC PROPRIETÁRIO"], [0, "NOME PROPRIETÁRIO"]];
+  let vx = M;
+  const vxs: number[] = [];
+  for (const [w0, t] of vcols) { const w = w0 || (M + CW - vx - 100); vxs.push(vx); lab(t, vx + 1, y + 3); vx += w; if (vx < M + CW - 100) vline(vx, y, hV); }
+  const vcondX = M + CW - 100;
+  vline(vcondX, y, hV);
+  lab("CONDUTORES — CPF", vcondX + 1, y + 3);
+  lab("NOME", vcondX + 42, y + 3);
+  const ciotTxt = `RESPONSÁVEL CIOT: ${fmtCnpj(d.emitCnpj)}`;
+  black(); setFont("bold", 6); doc.text(ciotTxt, M + CW - 1 - doc.getTextWidth(ciotTxt), y + 3);
+  const propDoc = fmtCnpj(d.emitCnpj), propNome = cut(D(d.emitNome), 30);
+  const veicRows = [{ placa: d.placa, renavam: d.renavam, rntrc: d.rntrc }, ...d.reboques.map(r => ({ placa: r.placa, renavam: r.renavam, rntrc: "" }))];
+  veicRows.forEach((v, i) => {
+    const ry = y + 6 + i * 5;
+    val(D(v.placa), vxs[0] + 1, ry, 6.5); val(D(v.renavam), vxs[1] + 1, ry, 6.5); val(D(v.rntrc), vxs[2] + 1, ry, 6.5);
+    if (i === 0) { val(propDoc, vxs[3] + 1, ry, 6.5); val(propNome, vxs[4] + 1, ry, 6.5); }
+  });
+  val(fmtCnpj(d.condutorCpf), vcondX + 1, y + 8, 6.5); val(cut(D(d.condutorNome), 24), vcondX + 42, y + 8, 6.5);
+  y += hV + 1;
 
   // ---- Documentos vinculados ----
-  secTitle(`DOCUMENTOS VINCULADOS (${d.chavesCte.length} CT-e)`);
-  for (const ch of d.chavesCte) {
-    need(7);
+  titleBar("INFORMAÇÕES DOS DOCUMENTOS FISCAIS VINCULADOS AO MANIFESTO");
+  need(11);
+  box(M, y, CW, 6);
+  const dcols: Array<[number, string]> = [[16, "Tipo Doc."], [20, "Nº Doc."], [82, "Chave Documento"], [62, "Numero Averbação"], [40, "CNPJ Resp."], [36, "Nº Apólice"], [0, "Nº CIOT / NFes"]];
+  let dx = M;
+  for (const [w0, t] of dcols) { const w = w0 || (M + CW - dx); if (dx > M) vline(dx, y, 6); lab(t, dx + 1, y + 4); dx += w; }
+  y += 6;
+  for (const docu of d.docs) {
+    need(6);
     box(M, y, CW, 6);
-    val(fmtChave(ch), M + 2, y + 4, 6.5);
+    let ddx = M;
+    const cells = ["CT-e", cut(D(docu.numero), 10), D(docu.chave), cut(D(d.nAver), 30), fmtCnpj(d.emitCnpj), cut(D(d.nApol), 20), cut(`${D(d.ciot)} ${D(docu.nfes)}`.trim(), 24)];
+    const widths = [16, 20, 82, 62, 40, 36, CW - 256];
+    cells.forEach((c, i) => { if (ddx > M) vline(ddx, y, 6); val(c, ddx + 1, y + 4, 5.5); ddx += widths[i]; });
     y += 6;
   }
   y += 1;
 
-  // ---- Seguro ----
-  secTitle("SEGURO DA CARGA");
-  need(14);
-  box(M, y, CW, 12);
-  lab("SEGURADORA", M + 2, y + 3.5); val(`${cut(D(d.xSeg), 34)}  ${fmtCnpj(d.cnpjSeg)}`, M + 2, y + 7.5, 7);
-  lab("APÓLICE", M + 2, y + 11); val(D(d.nApol), M + 22, y + 11, 7);
-  lab("AVERBAÇÃO", M + 80, y + 11); val(D(d.nAver), M + 104, y + 11, 7);
-  y += 13;
+  // ---- Composição da carga ----
+  titleBar("INFORMAÇÕES DA COMPOSIÇÃO DA CARGA");
+  need(16);
+  box(M, y, CW, 15);
+  const cw3 = CW / 3;
+  lab("VALE PEDÁGIO", M + 1, y + 3.5);
+  vline(M + cw3, y, 15);
+  lab("INFO DE UNIDADE DE TRANSPORTE", M + cw3 + 1, y + 3.5);
+  vline(M + 2 * cw3, y, 15);
+  lab("IDENTIFICAÇÃO DE UNID DE CARGA", M + 2 * cw3 + 1, y + 3.5);
+  y += 16;
 
-  // ---- Produto + totais ----
-  secTitle("CARGA");
-  need(14);
-  box(M, y, CW, 12);
-  lab("PRODUTO PREDOMINANTE", M + 2, y + 3.5); val(`${D(d.tpCarga)}  ${cut(D(d.xProd), 50)}`, M + 2, y + 7.5, 7);
-  lab("QTD CT-e", M + 2, y + 11); val(D(d.qCte), M + 22, y + 11, 7);
-  lab("VALOR", M + 50, y + 11); valB(fmtNum(d.vCarga), M + 64, y + 11, 7);
-  lab("PESO (kg)", M + 110, y + 11); valB(fmtNum(d.qCarga), M + 130, y + 11, 7);
-  y += 13;
+  // ---- Observação / adicionais ----
+  need(22);
+  box(M, y, CW, 21);
+  const midObs = M + CW / 2;
+  lab("OBSERVAÇÃO", M + 1, y + 3.5);
+  vline(midObs, y, 21);
+  lab("INFORMAÇÕES ADICIONAIS", midObs + 1, y + 3.5);
+  try {
+    const obsLines = (doc as any).splitTextToSize(D((d as any).obs || ""), CW / 2 - 4);
+    setFont("normal", 6); black();
+    (doc as any).text(obsLines.slice(0, 4), M + 1, y + 8);
+  } catch {}
+  val(`CNPJ ANTT - Autorizado: ${fmtCnpj(d.emitCnpj)}`, midObs + 1, y + 16, 7);
+  y += 22;
 
-  // ---- Consulta ----
-  need(12);
-  setFont("normal", 6); black();
-  doc.text("Consulta e confirmação: dfe-portal.svrs.rs.gov.br/mdfe/qrCode", M + 1, y + 4);
-  doc.text(`Chave: ${D(d.chave)}`, M + 1, y + 8);
+  // ---- FL i/N ----
+  try {
+    const n = doc.getNumberOfPages();
+    for (let i = 1; i <= n; i++) {
+      doc.setPage(i);
+      if (i === 1 && flX) { black(); setFont("bold", 7); doc.text(`${i}/${n}`, flX, flY); }
+    }
+  } catch {}
 
   return doc.output("blob");
+}
+
+function fmtNum4(v: string): string {
+  const n = Number(String(v || "").replace(",", "."));
+  return isNaN(n) ? String(v || "") : n.toLocaleString("pt-BR", { minimumFractionDigits: 4, maximumFractionDigits: 4 });
 }

@@ -160,14 +160,14 @@ export const consultarMdfFn = createServerFn({ method: "POST" })
   });
 
 export const encerrarMdfFn = createServerFn({ method: "POST" })
-  .validator((data: { empresaId: string; chave: string; cnpj: string; uf: string }) => data)
+  .validator((data: { empresaId: string; chave: string; cnpj: string; uf: string; protocolo: string; cMun: string }) => data)
   .handler(async ({ data }) => {
     if (SEFAZ_URL) return callSefazProxy("encerrarMdf", data);
 
     const { encerrarMdf } = await import("@/lib/sefaz-mdf");
     const { cert, ambiente, supabase } = await getCertAndAmbiente(data.empresaId);
 
-    const result = await encerrarMdf(cert.pfx, cert.senha, data.chave, ambiente, data.cnpj, data.uf);
+    const result = await encerrarMdf(cert.pfx, cert.senha, data.chave, ambiente, data.cnpj, data.uf, data.protocolo, data.cMun);
 
     if (result.sucesso) {
       await supabase.from("mdf_documentos" as never).update({ status: "encerrado", data_encerramento: new Date().toISOString() } as never).eq("chave_acesso", data.chave);
@@ -177,14 +177,14 @@ export const encerrarMdfFn = createServerFn({ method: "POST" })
   });
 
 export const cancelarMdfFn = createServerFn({ method: "POST" })
-  .validator((data: { empresaId: string; chave: string; justificativa: string; cnpj: string; uf: string }) => data)
+  .validator((data: { empresaId: string; chave: string; justificativa: string; cnpj: string; uf: string; protocolo: string }) => data)
   .handler(async ({ data }) => {
     if (SEFAZ_URL) return callSefazProxy("cancelarMdf", data);
 
     const { cancelarMdf } = await import("@/lib/sefaz-mdf");
     const { cert, ambiente, supabase } = await getCertAndAmbiente(data.empresaId);
 
-    const result = await cancelarMdf(cert.pfx, cert.senha, data.chave, data.justificativa, ambiente, data.cnpj, data.uf);
+    const result = await cancelarMdf(cert.pfx, cert.senha, data.chave, data.justificativa, ambiente, data.cnpj, data.uf, data.protocolo);
 
     if (result.sucesso) {
       await supabase.from("mdf_documentos" as never).update({ status: "cancelado" } as never).eq("chave_acesso", data.chave);

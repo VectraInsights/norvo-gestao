@@ -2782,3 +2782,16 @@ Espelhado na Vercel.
 - Visualizar virou tela cheia espelhando a emissao
   (boxes empresa/veiculo, seguradora, CT-es, percurso,
   totais, obs), tudo somente leitura. Espelhado.
+
+## Evento MDF-e valido + DAMDFE oficial (25/09/2026)
+
+- 243 XML Mal Formado no cancelar/encerrar: 4 defeitos juntos
+  (typo </dtEncarramento>, dhEvento sem timezone, nProt=0,
+  CNPJ vazio). Espelhado no CT-e que funciona: TZ -03:00,
+  nProt 15 digitos (protocolo real), CNPJ real, cMun de
+  encerramento do 1o descarregamento. Front passa cnpj,
+  protocolo e cMun; servidor valida antes de enviar.
+- DAMDFE reescrito no layout oficial paisagem (logo Juvenal
+  no topo esquerdo, chave com barras, FL i/N, modal, seguro
+  RCV, veiculos/condutores/CIOT, docs com NFes, obs).
+  Espelhado na Vercel via push em main.
