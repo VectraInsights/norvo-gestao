@@ -280,7 +280,7 @@ export interface MdfInputCompleto {
   prodPred?: { tpCarga?: string; xProd?: string; ncm?: string };
   tipo?: "normal" | "transbordo";
   tpEmit?: string;
-  mdfesTransbordo?: Array<{ chave: string }>;
+  mdfesTransbordo?: Array<{ chave: string; cMun?: string; xMun?: string }>;
 }
 
 export function buildMdfXml(input: MdfInputCompleto): { xml: string; chave: string } {
@@ -344,10 +344,23 @@ export function buildMdfXml(input: MdfInputCompleto): { xml: string; chave: stri
   // InfDoc (CT-e vinculados ou MDF-e de transbordo)
   const isTransbordo = input.tipo === "transbordo" && !!input.mdfesTransbordo?.length;
   const infDocXml = isTransbordo
-    ? (input.mdfesTransbordo || []).map(mdf => {
-        const cMunDesc = mdf.chave.slice(0, 7);
-        return `<infMunDescarga><cMunDescarga>${cMunDesc}</cMunDescarga><xMunDescarga></xMunDescarga><infMDFeTransp><chMDFe>${mdf.chave}</chMDFe></infMDFeTransp></infMunDescarga>`;
-      }).join("")
+    ? (() => {
+        // Municípios de descarga REAIS do manifesto origem (nunca pedaço de chave;
+        // xMun vazio dá 215). Agrupa por município.
+        const grupos = new Map<string, { cMun: string; xMun: string; chaves: string[] }>();
+        for (const mdf of input.mdfesTransbordo || []) {
+          const cMun = String(mdf.cMun || "").replace(/\D/g, "");
+          const xMun = String(mdf.xMun || "").trim();
+          if (!/^\d{7}$/.test(cMun)) throw new Error(`Transbordo sem município de descarga válido: ${mdf.chave}`);
+          if (xMun.length < 2) throw new Error(`Transbordo sem nome do município de descarga: ${mdf.chave}`);
+          const k = `${cMun}|${xMun}`;
+          if (!grupos.has(k)) grupos.set(k, { cMun, xMun, chaves: [] });
+          grupos.get(k)!.chaves.push(mdf.chave);
+        }
+        return [...grupos.values()].map(g =>
+          `<infMunDescarga><cMunDescarga>${g.cMun}</cMunDescarga><xMunDescarga>${g.xMun}</xMunDescarga>${g.chaves.map(ch => `<infMDFeTransp><chMDFe>${ch}</chMDFe></infMDFeTransp>`).join("")}</infMunDescarga>`
+        ).join("");
+      })()
     : (() => {
         const grupos = new Map<string, { cMun: string; xMun: string; chaves: string[] }>();
         for (const cte of input.ctes) {

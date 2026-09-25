@@ -2983,3 +2983,11 @@ Espelhado na Vercel.
 - Dropdowns de transbordo com Nº, emissão, carga, descarga, placa
   (+ carreta quando houver) e motorista do manifesto original.
 - Espelhado na Vercel via push em main.
+
+## Municípios reais no transbordo (25/09/2026)
+
+- 215 no transbordo: `cMunDescarga` usava pedaço da chave e `xMunDescarga`
+  ia vazio. Agora usa cMun/xMun reais do XML do manifesto origem
+  (agrupados por município; xMun ausente resolvido via IBGE, senão
+  aborta com mensagem clara).
+- Espelhado na Vercel via push em main.

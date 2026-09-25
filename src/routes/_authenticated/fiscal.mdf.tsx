@@ -1129,7 +1129,32 @@ function DialogNovoMdf({ open, onOpenChange, empresaId, empresa, chavesIniciais,
         seg: { xSeg: String((segMdf as any).seguradoraNome || ""), nApol: String((segMdf as any).apolice || ""), nAver: String((segMdf as any).averbacao || "") },
         contratantes: contratantesMdf,
         prodPred: { xProd: proPredMdf },
-        mdfesTransbordo: [transb1, transb2, transb3].filter(k => /^\d{44}$/.test((k || "").trim())).map(k => ({ chave: k.trim() })),
+        mdfesTransbordo: await (async () => {
+          // Municípios de descarga reais do manifesto origem (do XML dele);
+          // xMun ausente é resolvido via IBGE, senão a emissão aborta (215).
+          const chaves = [transb1, transb2, transb3].filter(k => /^\d{44}$/.test((k || "").trim())).map(k => k.trim());
+          if (!chaves.length) return [];
+          const { data: rows } = await supabase.from("mdf_documentos" as any).select("chave_acesso,xml_assinado").in("chave_acesso", chaves);
+          const byCh = new Map<string, string>();
+          for (const r of (rows as any[]) || []) byCh.set(String((r as any).chave_acesso || ""), String((r as any).xml_assinado || ""));
+          const out: Array<{ chave: string; cMun: string; xMun: string }> = [];
+          for (const ch of chaves) {
+            let xml = byCh.get(ch) || "";
+            try { const p = JSON.parse(xml); if (p?.xml) xml = String(p.xml); } catch {}
+            for (const b of xml.matchAll(/<infMunDescarga>([\s\S]*?)<\/infMunDescarga>/g)) {
+              const cMun = b[1].match(/<cMunDescarga>(\d{7})<\/cMunDescarga>/)?.[1] || "";
+              let xMun = b[1].match(/<xMunDescarga>([^<]*)<\/xMunDescarga>/)?.[1]?.trim() || "";
+              if (cMun && !xMun) {
+                try {
+                  const rI = await fetch(`https://brasilapi.com.br/api/ibge/municipios/v1/${cMun}`);
+                  if (rI.ok) xMun = String((await rI.json())?.nome || "").trim();
+                } catch {}
+              }
+              if (cMun) out.push({ chave: ch, cMun, xMun });
+            }
+          }
+          return out;
+        })(),
       };
 
       const { xml } = buildMdfXml(input);
