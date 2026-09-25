@@ -318,11 +318,21 @@ export function gerarDamdfePdf(d: DamdfeData): Blob {
   black(); setFont("bold", 6); doc.text(ciotTxt, M + CW - 1 - doc.getTextWidth(ciotTxt), y + 3);
   // Proprietário/RNTRC vêm do cadastro do veículo (tracRntrc/tracProp e
   // reboques[].rntrc/prop); sem cadastro, fica em branco (nunca emitente).
+  // DOC: o cadastro não tem a coluna — quando o proprietário é a própria
+  // empresa (nome bate), usa o CNPJ dela; senão fica vazio.
+  const normProp = (s: string) => D(s).toUpperCase().replace(/[^A-Z0-9]/g, "");
+  const docPropDe = (prop: string) => {
+    const p = normProp(prop), e = normProp(d.emitNome);
+    if (!p || !e) return "";
+    if (p === e) return fmtCnpj(d.emitCnpj);
+    if (p.length >= 6 && e.length >= 6 && (p.includes(e) || e.includes(p))) return fmtCnpj(d.emitCnpj);
+    return "";
+  };
   const veicRows = [{ placa: d.placa, renavam: d.renavam, rntrc: D(d.tracRntrc), nome: cut(D(d.tracProp), 30) }, ...d.reboques.map(r => ({ placa: r.placa, renavam: r.renavam, rntrc: D(r.rntrc), nome: cut(D(r.prop), 30) }))];
   veicRows.forEach((v, i) => {
     const ry = y + 6 + i * 5;
     val(D(v.placa), vxs[0] + 1, ry, 6.5); val(D(v.renavam), vxs[1] + 1, ry, 6.5); val(D(v.rntrc), vxs[2] + 1, ry, 6.5);
-    val("", vxs[3] + 1, ry, 6.5); val(D(v.nome), vxs[4] + 1, ry, 6.5);
+    val(docPropDe(v.nome), vxs[3] + 1, ry, 6.5); val(D(v.nome), vxs[4] + 1, ry, 6.5);
   });
   val(fmtCnpj(d.condutorCpf), vcondX + 1, y + 8, 6.5); val(cut(D(d.condutorNome), 24), vcondX + 42, y + 8, 6.5);
   y += hV + 1;

@@ -2831,3 +2831,9 @@ Espelhado na Vercel.
   e carretas), nunca do emissor; sem cadastro fica vazio.
 - Docs: CIOT e NFes em caixas separadas; averbacao e CNPJ
   Responsavel (por extenso) mais estreitas. Espelhado.
+
+## DOC proprietario no DAMDFE (25/09/2026)
+
+- Coluna DOC estava vazia (cadastro nao tem o documento):
+  quando o proprietario e a propria empresa, usa o CNPJ
+  dela; terceiro segue vazio. Espelhado.
