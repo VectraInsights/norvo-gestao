@@ -1389,7 +1389,7 @@ function DialogNovoMdf({ open, onOpenChange, empresaId, empresa, chavesIniciais,
             ) : !ctesDisponiveis?.length ? (
               <p className="text-sm text-muted-foreground">Nenhum CT-e autorizado disponível.</p>
             ) : (
-              <div className="border rounded-md max-h-[120px] overflow-auto">
+              <div className="border rounded-md max-h-[160px] overflow-auto">
                 <Table>
                   <TableHeader className="sticky top-0 bg-muted"><TableRow>
                     <TableHead className="w-[36px]"><input type="checkbox" checked={todasMarcadas} onChange={toggleTodas} className="h-4 w-4" title="Selecionar todos" /></TableHead>
