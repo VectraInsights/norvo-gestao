@@ -2533,3 +2533,13 @@ Espelhado na Vercel.
 - Log passa a exibir bytes do XML final assinado + tag `<infModal>` final.
 - Constante de log atualizada para `BUILD=013-sync-signed-xml-structure`.
 - Espelhado na Vercel via push em main.
+
+## BUILD 014: diagnóstico do SignedInfo (24/09/2026)
+
+- `Reference/Transforms` confirmados em ordem (`enveloped-signature` +
+  C14N inclusiva); `CanonicalizationMethod` inclusiva, `SignatureMethod`
+  `rsa-sha1`, `DigestMethod` `sha1` ( templates de `signXmlWithForge` e
+  `signXmlNative`, sem alteração).
+- Novo log `[mdf-debug] SignedInfo:` com o nó completo antes do envio.
+- Constante de log atualizada para `BUILD=014-signature-transforms-check`.
+- Espelhado na Vercel via push em main.

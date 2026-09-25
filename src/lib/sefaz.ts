@@ -477,6 +477,7 @@ export function signMdfXml(xml: string, pfxBytes: Buffer, senha: string): string
   // 5. Extração do SignatureValue gerado
   const signatureValue = signed.match(/<SignatureValue>([^<]+)<\/SignatureValue>/)?.[1] || "(não encontrado)";
   console.log("[mdf-debug] SignatureValue (Base64):", signatureValue);
+  console.log("[mdf-debug] SignedInfo:", signed.match(/<SignedInfo[\s\S]*<\/SignedInfo>/)?.[0] || "(não encontrado)");
 
   // 6. Validações pós-assinatura
   const signedReference = signed.match(/<Reference URI="([^"]+)"/)?.[1];
