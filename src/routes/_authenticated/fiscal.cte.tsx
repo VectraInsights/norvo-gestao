@@ -1822,7 +1822,7 @@ function CtePage() {
                         )}
                       </>
                     )}
-                    {!isRascunho && <Button size="icon" variant="ghost" className="h-7 w-7 text-destructive" disabled={d.status!=="autorizado"} onClick={() => { if (!d.chave_acesso) return; setCteCancelar({ chave: d.chave_acesso, protocolo: d.protocolo_sefaz || undefined, ambiente: SEFAZ_AMBIENTE }); setMotivoCanc("ERRO DE EMISSAO DO CT-E"); }} title="Cancelar"><Ban className="h-3.5 w-3.5" /></Button>}
+                    {!isRascunho && <Button size="icon" variant="ghost" className="h-7 w-7 text-destructive" disabled={d.status!=="autorizado"} onClick={() => { if (!d.chave_acesso) return; if (d.chave_acesso && mdfChaves?.has(d.chave_acesso)) { toast.error("CT-e vinculado a um MDF-e ativo — cancele o manifesto primeiro"); return; } setCteCancelar({ chave: d.chave_acesso, protocolo: d.protocolo_sefaz || undefined, ambiente: SEFAZ_AMBIENTE }); setMotivoCanc("ERRO DE EMISSAO DO CT-E"); }} title="Cancelar"><Ban className="h-3.5 w-3.5" /></Button>}
                     {!isRascunho && <Button size="icon" variant="ghost" className="h-7 w-7 text-emerald-600" onClick={() => visualizarDoc(d)} title="Ver dados e status"><ClipboardList className="h-3.5 w-3.5" /></Button>}
                     {!isRascunho && d.status === "autorizado" && <Button size="icon" variant="ghost" className="h-7 w-7 text-violet-600" onClick={() => substituirCte(d)} title="Emitir CT-e de substituição"><Repeat className="h-3.5 w-3.5" /></Button>}
                     {!isRascunho && <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => d.chave_acesso && consultar.mutate({ chave: d.chave_acesso, ambiente: SEFAZ_AMBIENTE })} title="Consultar SEFAZ"><Search className="h-3.5 w-3.5" /></Button>}
@@ -2412,7 +2412,7 @@ function CtePage() {
                       <TableRow>
                         <TableHead className="w-6">
                           <input type="checkbox" checked={mercadorias.length > 0 && selecionadas.size === mercadorias.length} onChange={e => {
-                            if (e.target.checked) { const red = (form as any).modoEmbarque === "simplificado"; const emits = new Set(mercadorias.map(m => m.emitCnpj || m.emit)); const tomads = new Set(mercadorias.map(m => m.tomadorCnpj || m.tomador)); if (red && emits.size > 1) { toast.error("Remetentes diferentes"); return; } if (tomads.size > 1) { toast.error("No simplificado, selecione NF-es do mesmo tomador"); return; } setSelecionadas(new Set(mercadorias.map(m => m.chave))); } else setSelecionadas(new Set());
+                            if (e.target.checked) { const red = (form as any).modoEmbarque === "simplificado"; const emits = new Set(mercadorias.map(m => m.emitCnpj || m.emit)); const dests = new Set(mercadorias.map(m => m.destCnpj || m.dest)); const tomads = new Set(mercadorias.map(m => m.tomadorCnpj || m.tomador)); if (red && emits.size > 1) { toast.error("Remetentes diferentes"); return; } if (!red && dests.size > 1) { toast.error("CT-e não pode ter destinatários diferentes"); return; } if (tomads.size > 1) { toast.error("No simplificado, selecione NF-es do mesmo tomador"); return; } setSelecionadas(new Set(mercadorias.map(m => m.chave))); } else setSelecionadas(new Set());
                           }} />
                         </TableHead>
                         <TableHead className="text-[10px]">Modelo</TableHead>
@@ -2435,7 +2435,7 @@ function CtePage() {
                           <TableCell>
                             <input type="checkbox" checked={selecionadas.has(m.chave)} onChange={e => {
                               const next = new Set(selecionadas);
-                              if (e.target.checked) { next.add(m.chave); const sel = mercadorias.filter(x => next.has(x.chave)); const red = (form as any).modoEmbarque === "simplificado"; const emits = new Set(sel.map(x => x.emitCnpj || x.emit)); const tomads = new Set(sel.map(x => x.tomadorCnpj || x.tomador)); if (red && emits.size > 1) { toast.error("Remetentes diferentes"); next.delete(m.chave); } else if (tomads.size > 1) { toast.error("No simplificado, o CT-e exige o mesmo tomador"); next.delete(m.chave); } } else next.delete(m.chave);
+                              if (e.target.checked) { next.add(m.chave); const sel = mercadorias.filter(x => next.has(x.chave)); const red = (form as any).modoEmbarque === "simplificado"; const emits = new Set(sel.map(x => x.emitCnpj || x.emit)); const dests = new Set(sel.map(x => x.destCnpj || x.dest)); const tomads = new Set(sel.map(x => x.tomadorCnpj || x.tomador)); if (red && emits.size > 1) { toast.error("Remetentes diferentes"); next.delete(m.chave); } else if (!red && dests.size > 1) { toast.error("CT-e não pode ter destinatários diferentes"); next.delete(m.chave); } else if (tomads.size > 1) { toast.error("No simplificado, o CT-e exige o mesmo tomador"); next.delete(m.chave); } } else next.delete(m.chave);
                               setSelecionadas(next);
                             }} />
                           </TableCell>

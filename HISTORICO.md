@@ -2963,3 +2963,14 @@ Espelhado na Vercel.
 - Transbordos 1-3 viraram dropdowns de manifestos encerrados da
   tração selecionada (só truck/cavalo).
 - Espelhado na Vercel via push em main.
+
+## Travas fiscais (25/09/2026)
+
+- Cancelar CT-e vinculado a MDF-e ativo bloqueado (cancele o manifesto).
+- Seleção de NFs barra destinatários diferentes no avulso (era só na
+  emissão); remetente/tomador como antes.
+- Rejeitado do MDF-e sai da lista por sobreposição de CT-es (antes só
+  por conjunto idêntico) nos 4 pontos de limpeza.
+- Transbordo selecionado filtra a relação só aos CT-es dele (exceção
+  legítima ao bloqueio de vinculados).
+- Espelhado na Vercel via push em main.

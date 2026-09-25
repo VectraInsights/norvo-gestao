@@ -801,7 +801,6 @@ function DialogNovoMdf({ open, onOpenChange, empresaId, empresa, chavesIniciais,
   const [tracaoSel, setTracaoSel] = useState("");
   const todasTracoes = useMemo(() => { const out: string[] = []; for (const c of (ctesDisponiveis || [])) { try { const p = JSON.parse((c as any).xml_assinado || "{}"); const pl = String(p.form?.placaVeiculo || "").toUpperCase(); if (pl && !out.includes(pl)) out.push(pl); } catch {} } return out.sort(); }, [ctesDisponiveis]);
   const placasVeiculoOpts = useMemo(() => { const out: string[] = []; const REB = ["carreta", "bitrem"]; for (const v of (veiculos || [])) { if (REB.includes(String(v.tipo || "").toLowerCase().trim())) continue; const p = String(v.placa || "").toUpperCase(); if (p && !out.includes(p)) out.push(p); } for (const p of todasTracoes) if (!out.includes(p)) out.push(p); return out.sort(); }, [veiculos, todasTracoes]);
-  const ctesDaTracao = useMemo(() => (ctesDisponiveis || []).filter(c => { if (!tracaoSel) return false; if (cteVinculado(c.chave_acesso)) return false; try { const p = JSON.parse((c as any).xml_assinado || "{}"); return String(p.form?.placaVeiculo || "").toUpperCase() === tracaoSel; } catch { return false; } }), [ctesDisponiveis, tracaoSel, mdfChaves]);
   const ctesOcultosMdf = useMemo(() => (ctesDisponiveis || []).filter(c => cteVinculado(c.chave_acesso)).length, [ctesDisponiveis, mdfChaves]);
   const [infoFisco, setInfoFisco] = useState("");
   const [respNome, setRespNome] = useState("");
@@ -837,6 +836,35 @@ function DialogNovoMdf({ open, onOpenChange, empresaId, empresa, chavesIniciais,
   const [transb1, setTransb1] = useState("");
   const [transb2, setTransb2] = useState("");
   const [transb3, setTransb3] = useState("");
+  // Chaves dos manifestos de transbordo selecionados: seus CT-es são a
+  // única origem válida da nova carga (exceção legítima ao bloqueio).
+  const transbSel = useMemo(() => [transb1, transb2, transb3].map(s => String(s || "").trim()).filter(k => /^\d{44}$/.test(k)), [transb1, transb2, transb3]);
+  const { data: transbCtes } = useQuery({
+    enabled: !!empresaId && open && transbSel.length > 0,
+    queryKey: ["mdf-transbordo-ctes", empresaId, ...[...transbSel].sort()],
+    queryFn: async ({ signal }) => {
+      const { data, error } = await supabase.from("mdf_documentos" as any)
+        .select("xml_assinado").eq("empresa_id", empresaId).in("chave_acesso", transbSel).abortSignal(signal);
+      if (error) throw error;
+      const set = new Set<string>();
+      for (const r of (data as any[]) || []) {
+        const x = String((r as any)?.xml_assinado || "");
+        for (const m of x.matchAll(/<chCTe>(\d{44})<\/chCTe>/g)) set.add(m[1]);
+      }
+      return set;
+    },
+  });
+  const transbAtivo = isTransbordo ? transbCtes : null;
+  // Bloqueado = em MDF-e ativo, exceto CT-e vindo do transbordo selecionado.
+  const cteBloqueado = (chave?: string | null) => !!chave && cteVinculado(chave) && !(transbAtivo?.has(chave));
+  // Relação: com transbordo selecionado, SÓ os CT-es dele; senão, os da
+  // tração exceto vinculados.
+  const ctesDaTracao = useMemo(() => (ctesDisponiveis || []).filter(c => {
+    if (transbAtivo && transbAtivo.size > 0) return !!c.chave_acesso && transbAtivo.has(c.chave_acesso);
+    if (!tracaoSel) return false;
+    if (cteBloqueado(c.chave_acesso)) return false;
+    try { const p = JSON.parse((c as any).xml_assinado || "{}"); return String(p.form?.placaVeiculo || "").toUpperCase() === tracaoSel; } catch { return false; }
+  }), [ctesDisponiveis, tracaoSel, mdfChaves, transbAtivo]);
   const [percursoSelIdx, setPercursoSelIdx] = useState<number | null>(null);
   // Validação G060/SEFAZ 663: vizinhos ou iguais = percurso vazio; senão, cadeia completa com divisas em ordem
   const errosPercurso = useMemo(() => {
@@ -923,12 +951,12 @@ function DialogNovoMdf({ open, onOpenChange, empresaId, empresa, chavesIniciais,
   const thCte = (label: string, key: string, right?: boolean) => (
     <TableHead key={key} onClick={() => setSortCte(prev => (!prev || prev.key !== key ? { key, dir: 1 } : prev.dir === 1 ? { key, dir: -1 } : null))} className={(right ? "text-right " : "") + "cursor-pointer select-none whitespace-nowrap"} title="Clique para ordenar">{label}{sortCte?.key === key ? (sortCte.dir === 1 ? " ▲" : " ▼") : ""}</TableHead>
   );
-  const todasMarcadas = ctesDaTracao.length > 0 && ctesDaTracao.filter(c => !cteVinculado(c.chave_acesso)).every(c => ctesSelecionadas.has(c.chave_acesso || ""));
+  const todasMarcadas = ctesDaTracao.length > 0 && ctesDaTracao.filter(c => !cteBloqueado(c.chave_acesso)).every(c => ctesSelecionadas.has(c.chave_acesso || ""));
   const toggleTodas = () => {
     setCtesSelecionadas(prev => {
       const next = new Set(prev);
       if (todasMarcadas) { for (const c of ctesDaTracao) next.delete(c.chave_acesso || ""); }
-      else { for (const c of ctesDaTracao) if (c.chave_acesso && !cteVinculado(c.chave_acesso)) next.add(c.chave_acesso); }
+      else { for (const c of ctesDaTracao) if (c.chave_acesso && !cteBloqueado(c.chave_acesso)) next.add(c.chave_acesso); }
       return next;
     });
   };
@@ -977,7 +1005,7 @@ function DialogNovoMdf({ open, onOpenChange, empresaId, empresa, chavesIniciais,
   const [motoristaId, setMotoristaId] = useState("");
 
   const toggleCte = (chave: string) => {
-    if (cteVinculado(chave)) { toast.error("CT-e já vinculado a um MDF-e ativo"); return; }
+    if (cteBloqueado(chave)) { toast.error("CT-e já vinculado a um MDF-e ativo"); return; }
     setCtesSelecionadas(prev => {
       const next = new Set(prev);
       if (next.has(chave)) next.delete(chave); else next.add(chave);
@@ -1000,7 +1028,7 @@ function DialogNovoMdf({ open, onOpenChange, empresaId, empresa, chavesIniciais,
 
     setLoading(true);
     try {
-      const bloqueados = [...ctesSelecionadas].filter(c => cteVinculado(c));
+      const bloqueados = [...ctesSelecionadas].filter(c => cteBloqueado(c));
       if (bloqueados.length) { toast.error("CT-e já vinculado a um MDF-e ativo — remova da seleção"); setLoading(false); return; }
       const ctesArr = (ctesDisponiveis || []).filter(c => ctesSelecionadas.has(c.chave_acesso || ""));
       const numero = String(Math.floor(Math.random() * 999999) + 1).padStart(9, "0");
@@ -1092,7 +1120,7 @@ function DialogNovoMdf({ open, onOpenChange, empresaId, empresa, chavesIniciais,
 
   const handleSalvarRascunho = async () => {
     if (!ctesSelecionadas.size) { toast.error("Selecione pelo menos 1 CT-e"); return; }
-    if ([...ctesSelecionadas].some(c => cteVinculado(c))) { toast.error("CT-e já vinculado a um MDF-e ativo — remova da seleção"); return; }
+    if ([...ctesSelecionadas].some(c => cteBloqueado(c))) { toast.error("CT-e já vinculado a um MDF-e ativo — remova da seleção"); return; }
     if (!empresaId) return;
     const veic = (veiculos || []).find(v => String(v.placa || "").toUpperCase() === tracaoSel);
     setLoading(true);
@@ -1233,9 +1261,9 @@ function DialogNovoMdf({ open, onOpenChange, empresaId, empresa, chavesIniciais,
               <Label className="text-xs mr-auto">Conhecimentos ({ctesSelArr.length} vinculados){tracaoSel ? ` • placa ${tracaoSel}` : ""}</Label>
               <span className="text-xs">Valor total: <strong className="font-mono">{brl(totalCarga)}</strong></span>
               <span className="text-xs">Peso total: <strong className="font-mono">{num(pesoCarga)} kg</strong></span>
-              <Button size="sm" variant="outline" className="h-6 text-[11px]" disabled={!tracaoSel} onClick={() => setCtesSelecionadas(new Set(ctesDaTracao.filter(c => !cteVinculado(c.chave_acesso)).map(c => c.chave_acesso || "").filter(Boolean)))}>Marcar</Button>
+              <Button size="sm" variant="outline" className="h-6 text-[11px]" disabled={!tracaoSel} onClick={() => setCtesSelecionadas(new Set(ctesDaTracao.filter(c => !cteBloqueado(c.chave_acesso)).map(c => c.chave_acesso || "").filter(Boolean)))}>Marcar</Button>
               <Button size="sm" variant="outline" className="h-6 text-[11px]" onClick={() => setCtesSelecionadas(new Set())}>Limpar</Button>
-              {ctesOcultosMdf > 0 && <span className="text-[10px] text-muted-foreground self-center">{ctesOcultosMdf} CT-e(s) já em MDF-e oculto(s)</span>}
+              {ctesOcultosMdf > 0 && !(transbAtivo && transbAtivo.size > 0) && <span className="text-[10px] text-muted-foreground self-center">{ctesOcultosMdf} CT-e(s) já em MDF-e oculto(s)</span>}
             </div>
             {ctesErro ? (
               <p className="text-sm text-destructive">Falha ao carregar CT-es: {String((ctesErro as any)?.message || ctesErro)}</p>

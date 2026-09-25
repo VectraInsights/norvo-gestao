@@ -239,7 +239,7 @@ export async function handleSefazProxy(request: Request): Promise<Response> {
             const { data: rejAntMdf } = await sMdf.from("mdf_documentos").select("id,xml_assinado").eq("empresa_id", empresaId).eq("status", "rejeitado");
             for (const r of (rejAntMdf as any[]) || []) {
               const ch = chavesDeMdf(String((r as any).xml_assinado || ""));
-              if (ch.length && JSON.stringify(ch) === JSON.stringify(chavesNovoMdf)) {
+              if (ch.length && ch.some(c => chavesNovoMdf.includes(c))) {
                 await sMdf.from("mdf_documentos").delete().eq("id", (r as any).id);
               }
             }
@@ -257,7 +257,7 @@ export async function handleSefazProxy(request: Request): Promise<Response> {
             const { data: rejAntP } = await sMdf.from("mdf_documentos").select("id,xml_assinado").eq("empresa_id", empresaId).eq("status", "rejeitado");
             for (const r of (rejAntP as any[]) || []) {
               const ch = chavesDeP(String((r as any).xml_assinado || ""));
-              if (ch.length && JSON.stringify(ch) === JSON.stringify(chavesNovoP)) {
+              if (ch.length && ch.some(c => chavesNovoP.includes(c))) {
                 await sMdf.from("mdf_documentos").delete().eq("id", (r as any).id);
               }
             }
