@@ -81,7 +81,24 @@ export const emitirMdfFn = createServerFn({ method: "POST" })
 
     const result = await emitirMdf(cert.pfx, cert.senha, data.xml, ambiente);
 
+    // Chaves dos documentos vinculados (para limpar rejeitados dos mesmos CT-es).
+    const chavesDe = (x: string) => [...x.matchAll(/<chCTe>(\d{44})<\/chCTe>/g), ...x.matchAll(/<chMDFe>(\d{44})<\/chMDFe>/g)].map(m => m[1]).sort();
+    const limparRejeitadosIguais = async () => {
+      try {
+        const chavesNovo = chavesDe(String(data.xml || ""));
+        if (!chavesNovo.length) return;
+        const { data: rejAnt } = await supabase.from("mdf_documentos" as never).select("id,xml_assinado").eq("empresa_id", data.empresaId).eq("status", "rejeitado");
+        for (const r of (rejAnt as any[]) || []) {
+          const ch = chavesDe(String((r as any).xml_assinado || ""));
+          if (ch.length && JSON.stringify(ch) === JSON.stringify(chavesNovo)) {
+            await supabase.from("mdf_documentos" as never).delete().eq("id", (r as any).id);
+          }
+        }
+      } catch {}
+    };
+
     if (result.sucesso && result.chave) {
+      await limparRejeitadosIguais();
       await supabase.from("mdf_documentos" as never).upsert({
         empresa_id: data.empresaId,
         chave_acesso: result.chave,

@@ -231,6 +231,20 @@ export async function handleSefazProxy(request: Request): Promise<Response> {
         const retMdf = await emitirMdf(pfxBytes, senha, b.xml, ambMdf);
         const { createClient: ccMdf } = await import("@supabase/supabase-js");
         const sMdf = ccMdf(process.env.SUPABASE_URL||"", process.env.SUPABASE_SERVICE_ROLE_KEY||"");
+        // Limpa rejeitados anteriores com os mesmos documentos (não acumula).
+        const chavesDeMdf = (x: string) => [...x.matchAll(/<chCTe>(\d{44})<\/chCTe>/g), ...x.matchAll(/<chMDFe>(\d{44})<\/chMDFe>/g)].map(m => m[1]).sort();
+        try {
+          const chavesNovoMdf = chavesDeMdf(String(b.xml || ""));
+          if (chavesNovoMdf.length) {
+            const { data: rejAntMdf } = await sMdf.from("mdf_documentos").select("id,xml_assinado").eq("empresa_id", empresaId).eq("status", "rejeitado");
+            for (const r of (rejAntMdf as any[]) || []) {
+              const ch = chavesDeMdf(String((r as any).xml_assinado || ""));
+              if (ch.length && JSON.stringify(ch) === JSON.stringify(chavesNovoMdf)) {
+                await sMdf.from("mdf_documentos").delete().eq("id", (r as any).id);
+              }
+            }
+          }
+        } catch {}
         if ((retMdf as any).sucesso && (retMdf as any).chave) {
           await sMdf.from("mdf_documentos").upsert({ empresa_id: empresaId, chave_acesso: (retMdf as any).chave, status: "autorizado", protocolo_sefaz: (retMdf as any).protocolo || null, veiculo_tracao_id: b.veiculoTracaoId || null, motorista_id: b.motoristaId || null, uf_carregamento: b.ufCarregamento, uf_descarregamento: b.ufDescarregamento, qtd_cte: b.qtdCtes, valor_total_carga: b.valorTotalCarga, peso_total: b.pesoTotal, ambiente: ambMdf, data_autorizacao: new Date().toISOString(), xml_assinado: JSON.stringify({ xml: b.xml, percursoUFs: b.percursoUFs || [], observacoes: b.observacoes || "", infoFisco: b.infoFisco || "", tipoMdf: b.tipoMdf || "Normal", isTransbordo: !!b.isTransbordo, transbordos: [b.transbordo1, b.transbordo2, b.transbordo3].filter(Boolean) }) } as never, { onConflict: "chave_acesso" });
         } else if ((retMdf as any).cStat) {

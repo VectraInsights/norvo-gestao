@@ -2742,3 +2742,11 @@ Espelhado na Vercel.
 - 215 + 480: infMDFeSupl existe no XSD mas antes da Signature
   (ordem infMDFe, supl, Signature, como NF-e/CT-e). Insercao
   movida p/ pre-assinatura (fora do digest). Espelhado.
+
+## Botoes do MDF-e + limpa rejeitado ao autorizar (25/09/2026)
+
+- Linha do MDF-e com visualizar (resumo + XML), baixar XML e
+  consultar SEFAZ (autorizado/encerrado/cancelado; rejeitado
+  ganha baixar XML). Ao autorizar, apaga rejeitados anteriores
+  com os mesmos CT-es (nos dois caminhos do servidor).
+  Espelhado na Vercel via push em main.

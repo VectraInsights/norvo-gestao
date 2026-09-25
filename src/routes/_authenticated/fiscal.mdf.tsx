@@ -10,7 +10,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Route as RoadIcon, Plus, FileText, Search, Trash2, Filter, Calendar, CheckCircle2, XCircle, AlertTriangle, RefreshCw, Send, FileDown, Truck, Users, RotateCcw, Pencil } from "lucide-react";
+import { Route as RoadIcon, Plus, FileText, Search, Trash2, Filter, Calendar, CheckCircle2, XCircle, AlertTriangle, RefreshCw, Send, FileDown, Truck, Users, RotateCcw, Pencil, Eye, Download } from "lucide-react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useEmpresaAtual } from "@/hooks/use-empresa";
@@ -91,6 +91,35 @@ function MdfPage() {
   const [openCancelar, setOpenCancelar] = useState(false);
   const [mdfEncerrar, setMdfEncerrar] = useState<MdfDoc | null>(null);
   const [mdfCancelar, setMdfCancelar] = useState<MdfDoc | null>(null);
+  const [mdfVer, setMdfVer] = useState<MdfDoc | null>(null);
+  const [consultandoChave, setConsultandoChave] = useState("");
+  const xmlDeMdf = (d: MdfDoc) => {
+    const raw = String(d.xml_assinado || "");
+    try { const p = JSON.parse(raw); if (p && p.xml) return String(p.xml); } catch {}
+    return raw;
+  };
+  const baixarXmlMdf = (d: MdfDoc) => {
+    const xml = xmlDeMdf(d);
+    if (!xml.includes("<")) { toast.error("XML não encontrado no registro"); return; }
+    const blob = new Blob([xml], { type: "application/xml" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `${(d.chave_acesso || "").replace(/\D/g, "") || d.numero || "0"}-mdfe.xml`;
+    a.click();
+    URL.revokeObjectURL(url);
+    toast.success("XML baixado");
+  };
+  const consultarMdf = async (d: MdfDoc) => {
+    if (!empresa || !d.chave_acesso) return;
+    setConsultandoChave(d.chave_acesso);
+    try {
+      const res = await consultarMdfFn({ data: { empresaId: empresa.id, chave: d.chave_acesso } });
+      if (res.cStat === "100") toast.success(`Autorizado: ${res.xMotivo || ""}`);
+      else toast.info(`SEFAZ: ${res.cStat} - ${res.xMotivo}`);
+    } catch (e: unknown) { toast.error(e instanceof Error ? e.message : "Erro ao consultar"); }
+    setConsultandoChave("");
+  };
   const [justificativa, setJustificativa] = useState("");
   const continuarRascunho = (d: MdfDoc) => {
     try {
@@ -243,6 +272,15 @@ function MdfPage() {
                     <div className="flex gap-1 justify-end">
                       {d.status === "autorizado" && (
                         <>
+                          <Button variant="ghost" size="sm" title="Visualizar" onClick={() => setMdfVer(d)}>
+                            <Eye className="h-4 w-4 text-sky-600" />
+                          </Button>
+                          <Button variant="ghost" size="sm" title="Baixar XML" onClick={() => baixarXmlMdf(d)}>
+                            <Download className="h-4 w-4 text-amber-600" />
+                          </Button>
+                          <Button variant="ghost" size="sm" title="Consultar SEFAZ" disabled={consultandoChave === d.chave_acesso} onClick={() => consultarMdf(d)}>
+                            <Search className="h-4 w-4" />
+                          </Button>
                           <Button variant="ghost" size="sm" onClick={() => { setMdfEncerrar(d); setOpenEncerrar(true); }} title="Encerrar">
                             <CheckCircle2 className="h-4 w-4" />
                           </Button>
@@ -251,8 +289,24 @@ function MdfPage() {
                           </Button>
                         </>
                       )}
+                      {(d.status === "encerrado" || d.status === "cancelado") && (
+                        <>
+                          <Button variant="ghost" size="sm" title="Visualizar" onClick={() => setMdfVer(d)}>
+                            <Eye className="h-4 w-4 text-sky-600" />
+                          </Button>
+                          <Button variant="ghost" size="sm" title="Baixar XML" onClick={() => baixarXmlMdf(d)}>
+                            <Download className="h-4 w-4 text-amber-600" />
+                          </Button>
+                          <Button variant="ghost" size="sm" title="Consultar SEFAZ" disabled={consultandoChave === d.chave_acesso} onClick={() => consultarMdf(d)}>
+                            <Search className="h-4 w-4" />
+                          </Button>
+                        </>
+                      )}
                       {d.status === "rejeitado" && (
                         <>
+                          <Button variant="ghost" size="sm" title="Baixar XML" onClick={() => baixarXmlMdf(d)}>
+                            <Download className="h-4 w-4 text-amber-600" />
+                          </Button>
                           <Button variant="ghost" size="sm" title={d.motivo_rejeicao ? `Rejeitado: ${d.motivo_rejeicao} — clique para tentar novamente` : "Tentar novamente"} onClick={() => reemitir(d)}>
                             <RotateCcw className="h-4 w-4" />
                           </Button>
@@ -313,6 +367,33 @@ function MdfPage() {
                   qc.invalidateQueries({ queryKey: ["mdf-documentos"] });
                 } catch (e: unknown) { toast.error(e instanceof Error ? e.message : "Erro ao cancelar"); }
               }}>Confirmar Cancelamento</Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+      )}
+
+      {mdfVer && (
+        <Dialog open={!!mdfVer} onOpenChange={(v) => { if (!v) setMdfVer(null); }}>
+          <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto">
+            <DialogHeader><DialogTitle>MDF-e {mdfVer.numero ? `#${mdfVer.numero}` : ""} — {mdfVer.status}</DialogTitle></DialogHeader>
+            <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-sm">
+              <div><span className="text-muted-foreground">Série:</span> <span className="font-mono">{mdfVer.serie ?? "—"}</span></div>
+              <div><span className="text-muted-foreground">CT-es:</span> {mdfVer.qtd_cte ?? 0}</div>
+              <div><span className="text-muted-foreground">UF carreg.:</span> {mdfVer.uf_carregamento ?? "—"}</div>
+              <div><span className="text-muted-foreground">UF descarreg.:</span> {mdfVer.uf_descarregamento ?? "—"}</div>
+              <div><span className="text-muted-foreground">Valor carga:</span> {mdfVer.valor_total_carga ? brl(mdfVer.valor_total_carga) : "—"}</div>
+              <div><span className="text-muted-foreground">Peso:</span> {mdfVer.peso_total ? `${num(mdfVer.peso_total)} kg` : "—"}</div>
+              <div className="col-span-2"><span className="text-muted-foreground">Chave:</span> <span className="font-mono text-xs break-all">{mdfVer.chave_acesso ?? "—"}</span></div>
+              <div className="col-span-2"><span className="text-muted-foreground">Protocolo:</span> <span className="font-mono">{mdfVer.protocolo_sefaz ?? (mdfVer as any).xml_protocolo ?? "—"}</span></div>
+              {mdfVer.motivo_rejeicao && <div className="col-span-2 text-destructive text-xs">{mdfVer.motivo_rejeicao}</div>}
+            </div>
+            <details>
+              <summary className="cursor-pointer text-sm text-muted-foreground">Ver XML</summary>
+              <pre className="mt-2 max-h-64 overflow-auto rounded bg-muted p-2 font-mono text-[10px] whitespace-pre-wrap break-all">{xmlDeMdf(mdfVer) || "(sem XML)"}</pre>
+            </details>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => baixarXmlMdf(mdfVer)}><Download className="mr-1 h-3.5 w-3.5" /> Baixar XML</Button>
+              <Button variant="outline" onClick={() => setMdfVer(null)}>Fechar</Button>
             </DialogFooter>
           </DialogContent>
         </Dialog>
