@@ -2815,3 +2815,10 @@ Espelhado na Vercel.
   evento p/ diagnosticar. Era o ultimo suspeito restante.
 - DAMDFE: primeira linha 50/50 (logo+empresa | barras+QR+
   chave, QR folgado). Espelhado.
+
+## Evento via mdfeDadosMsg + protocolo via consulta (25/09/2026)
+
+- 243 raiz: corpo do evento ia em MDFeRecepcaoEventoMsg; o
+  correto (biblio oficial + MOC) e mdfeDadosMsg com o evento
+  dentro, + cabec msg. nProt zerado: recupera via consulta
+  quando o registro local esta sem protocolo. Espelhado.
