@@ -2717,3 +2717,10 @@ Espelhado na Vercel.
   toxicologico no cadastro de colaboradores (Input readOnly).
   Agora formata com dateBR. Inputs de digitacao (type=date,
   DateInput) seguem locale do navegador.
+
+## BUILD 031: produto predominante (25/09/2026)
+
+- 725: <prodPred> (tpCarga/xProd) entre seg e tot. xProd puxado
+  do proPred do CT-e; padrao 05/CARGA GERAL quando ausente.
+  Front extrai na emissao; servidor completa p/ XML antigo.
+  Espelhado na Vercel via push em main.

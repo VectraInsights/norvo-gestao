@@ -65,6 +65,25 @@ export function gerarChaveMdf(cUF: string, aamm: string, cnpj: string, serie: st
   return base + calcDV(base);
 }
 
+// Produto predominante (XSD: tpCarga 01-11 obrigatório, xProd 1-120
+// obrigatório, NCM 2 ou 8 dígitos opcional). Padrão: 05/CARGA GERAL.
+export function montarProdPredXml(prod?: { tpCarga?: string; xProd?: string; ncm?: string }): string {
+  const tpCarga = /^(0[1-9]|1[01])$/.test(String(prod?.tpCarga || "").trim()) ? String(prod!.tpCarga).trim() : "05";
+  const xProd = String(prod?.xProd || "").trim().slice(0, 120) || "CARGA GERAL";
+  const ncm = String(prod?.ncm || "").replace(/\D/g, "");
+  const ncmXml = (/^\d{8}$/.test(ncm) || /^\d{2}$/.test(ncm)) ? `<NCM>${ncm}</NCM>` : "";
+  return `<prodPred><tpCarga>${tpCarga}</tpCarga><xProd>${xProd}</xProd>${ncmXml}</prodPred>`;
+}
+
+// Garante <prodPred> após </seg> (ou </infDoc>) — para XML de front antigo.
+export function garantirProdPredMdf(xml: string, xProd?: string): string {
+  if (/<prodPred[\s>]/.test(xml)) return xml;
+  const add = montarProdPredXml({ xProd });
+  if (/<\/seg>/.test(xml)) return xml.replace(/<\/seg>/, `</seg>${add}`);
+  if (xml.includes("</infDoc>")) return xml.replace(/<\/infDoc>/, `</infDoc>${add}`);
+  return xml;
+}
+
 export interface MdfSeguro {
   xSeg?: string;
   cnpjSeg?: string;
@@ -115,23 +134,25 @@ export async function segDoCteVinculado(supa: { from(t: string): any }, empresaI
   return dados.seg;
 }
 
-// Busca única: seguro + tomadores dos CT-es vinculados ao MDF-e.
-export async function dadosDoCteVinculado(supa: { from(t: string): any }, empresaId: string, xml: string): Promise<{ seg: MdfSeguro | null; contratantes: MdfContratante[] }> {
+// Busca única: seguro + tomadores + produto predominante dos CT-es vinculados.
+export async function dadosDoCteVinculado(supa: { from(t: string): any }, empresaId: string, xml: string): Promise<{ seg: MdfSeguro | null; contratantes: MdfContratante[]; proPred: string }> {
   const contratantes: MdfContratante[] = [];
+  let proPred = "";
   try {
     const chaves = [...String(xml).matchAll(/<chCTe>(\d{44})<\/chCTe>/g)].map(m => m[1]);
-    if (!chaves.length) return { seg: null, contratantes };
+    if (!chaves.length) return { seg: null, contratantes, proPred };
     const { data: rows } = await supa.from("cte_documentos").select("xml_assinado").eq("empresa_id", empresaId).in("chave_acesso", chaves).limit(10);
     let seg: MdfSeguro | null = null;
     for (const r of (rows as any[]) || []) {
       const raw = String((r as any)?.xml_assinado || "");
-      // Tomadores do XML assinado do CT-e (578).
+      // Tomadores + produto predominante do XML assinado do CT-e (578/725).
       try {
         let cteXml = raw;
         try { const p = JSON.parse(raw); if (p && p.xml) cteXml = String(p.xml); } catch {}
         for (const t of extrairContratantesDoCte(cteXml)) {
           if (!contratantes.some(o => (o.cnpj || o.cpf || o.xNome) === (t.cnpj || t.cpf || t.xNome))) contratantes.push(t);
         }
+        if (!proPred) proPred = (cteXml.match(/<proPred>([^<]{1,120})<\/proPred>/)?.[1] || "").trim();
       } catch {}
       if (seg) continue;
       let f: any = {};
@@ -159,9 +180,9 @@ export async function dadosDoCteVinculado(supa: { from(t: string): any }, empres
       const mAver = raw.match(/<nAver>([^<]{1,40})<\/nAver>/);
       if (mSeg || mApol) seg = { xSeg: (mSeg?.[1] || "").trim(), nApol: (mApol?.[1] || "").trim(), nAver: (mAver?.[1] || "").trim() };
     }
-    return { seg, contratantes };
+    return { seg, contratantes, proPred };
   } catch {}
-  return { seg: null, contratantes };
+  return { seg: null, contratantes, proPred };
 }
 
 // Completa o <seg> reconstruindo o grupo com os dados do CT-e
@@ -256,6 +277,7 @@ export interface MdfInputCompleto {
   obs?: string;
   seg?: { xSeg?: string; cnpjSeg?: string; nApol?: string; nAver?: string };
   contratantes?: Array<{ xNome?: string; cnpj?: string; cpf?: string }>;
+  prodPred?: { tpCarga?: string; xProd?: string; ncm?: string };
   tipo?: "normal" | "transbordo";
   tpEmit?: string;
   mdfesTransbordo?: Array<{ chave: string }>;
@@ -343,6 +365,10 @@ export function buildMdfXml(input: MdfInputCompleto): { xml: string; chave: stri
   // Lacres
   const lacresXml = (input.lacres || []).map(l => `<nLacre>${l.nLacre}</nLacre>`).join("");
 
+  // Produto predominante (filho de infMDFe, entre seg e tot; rejeição 725
+  // exige para o rodoviário). tpCarga 05 = Carga Geral (padrão).
+  const prodPredXml = montarProdPredXml(input.prodPred);
+
   // Seguro da carga (filho de infMDFe, entre infDoc e tot; XSD mdfeTiposBasico_v3.00).
   // Rejeição 698 exige seg para prestador no rodoviário (tpEmit 1/3) —
   // dados puxados do CT-e vinculado (seguradora/apólice/averbação).
@@ -397,6 +423,7 @@ export function buildMdfXml(input: MdfInputCompleto): { xml: string; chave: stri
     </infModal>
     <infDoc>${infDocXml}</infDoc>
     ${segXml}
+    ${prodPredXml}
     <tot>
       ${input.ctes.length > 0 ? `<qCTe>${input.ctes.length}</qCTe>` : isTransbordo ? `<qMDFe>${input.mdfesTransbordo?.length || 0}</qMDFe>` : ""}
       <vCarga>${input.valorTotalCarga.toFixed(2)}</vCarga>
@@ -470,7 +497,7 @@ async function soapRequest(url: string, body: string, action: string, agent?: ht
 export async function emitirMdf(pfx: Buffer, senha: string, xml: string, ambiente: Ambiente): Promise<{ sucesso: boolean; cStat: string; xMotivo: string; chave?: string; protocolo?: string; xmlRet?: string }> {
   assertMdfAmbiente(ambiente);
   assertMdfXmlAmbiente(xml);
-  const BUILD = "030-contratante-ctesimp";
+  const BUILD = "031-produto-predominante";
   const ep = getMdfEndpoints(ambiente);
   const agent = createSefazAgent(pfx, senha);
   const nsSinc = "http://www.portalfiscal.inf.br/mdfe/wsdl/MDFeRecepcaoSinc";

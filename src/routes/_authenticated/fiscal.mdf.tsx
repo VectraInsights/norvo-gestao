@@ -573,14 +573,17 @@ function DialogNovoMdf({ open, onOpenChange, empresaId, empresa, chavesIniciais,
       const tpRodDe = (t?: string | null) => { const s = String(t || "").toLowerCase(); if (s.includes("cavalo")) return "03"; if (s.includes("truck")) return "01"; if (s.includes("toco")) return "02"; if (s.includes("van") || s.includes("furg")) return "04"; if (s.includes("utilit")) return "05"; return "06"; };
       const renavamDe = (placa: string) => (veiculos || []).find(v => String(v.placa || "").toUpperCase() === String(placa || "").toUpperCase())?.renavam || undefined;
       const { buildMdfXml, extrairContratantesDoCte } = await import("@/lib/sefaz-mdf");
-      // Tomadores direto do XML assinado dos CT-es (578).
+      // Tomadores + produto predominante direto do XML assinado dos CT-es (578/725).
       const contratantesMdf: Array<{ xNome?: string; cnpj?: string; cpf?: string }> = [];
+      let proPredMdf = "";
       for (const c of ctesArr) {
         try {
           const p = JSON.parse((c as any).xml_assinado || "{}");
-          for (const t of extrairContratantesDoCte(String(p.xml || ""))) {
+          const cteXml = String(p.xml || "");
+          for (const t of extrairContratantesDoCte(cteXml)) {
             if (!contratantesMdf.some(o => (o.cnpj || o.cpf || o.xNome) === (t.cnpj || t.cpf || t.xNome))) contratantesMdf.push(t);
           }
+          if (!proPredMdf) proPredMdf = (cteXml.match(/<proPred>([^<]{1,120})<\/proPred>/)?.[1] || "").trim();
         } catch {}
       }
       const input = {
@@ -599,6 +602,7 @@ function DialogNovoMdf({ open, onOpenChange, empresaId, empresa, chavesIniciais,
         tpEmit: tipoMdf === "Globalizado" ? "3" : "1",
         seg: { xSeg: String((segMdf as any).seguradoraNome || ""), nApol: String((segMdf as any).apolice || ""), nAver: String((segMdf as any).averbacao || "") },
         contratantes: contratantesMdf,
+        prodPred: { xProd: proPredMdf },
         mdfesTransbordo: [transb1, transb2, transb3].filter(k => /^\d{44}$/.test((k || "").trim())).map(k => ({ chave: k.trim() })),
       };
 

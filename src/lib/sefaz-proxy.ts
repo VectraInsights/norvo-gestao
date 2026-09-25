@@ -218,14 +218,15 @@ export async function handleSefazProxy(request: Request): Promise<Response> {
         break;
       }
       case "emitirMdf": {
-        const { emitirMdf, dadosDoCteVinculado, completarSegMdf, garantirContratanteMdf } = await import("@/lib/sefaz-mdf");
+        const { emitirMdf, dadosDoCteVinculado, completarSegMdf, garantirContratanteMdf, garantirProdPredMdf } = await import("@/lib/sefaz-mdf");
         const b = body as any;
         const ambMdf = MDFE_AMBIENTE;
-        // 698/699 (seg) e 578 (contratante): completa com dados do CT-e.
+        // 698/699 (seg), 578 (contratante) e 725 (prodPred): completa com dados do CT-e.
         try {
           const dados = await dadosDoCteVinculado(supabase, empresaId, String(b.xml || ""));
           if (dados.seg) { const antes = String(b.xml || ""); b.xml = completarSegMdf(antes, dados.seg); if (b.xml !== antes) console.log("[mdf-debug] seg completado do CT-e:", JSON.stringify({ xSeg: dados.seg.xSeg, nApol: dados.seg.nApol, temCnpj: !!dados.seg.cnpjSeg })); }
           if (dados.contratantes.length) { const antes = String(b.xml || ""); b.xml = garantirContratanteMdf(antes, dados.contratantes); if (b.xml !== antes) console.log("[mdf-debug] contratante do CT-e:", JSON.stringify(dados.contratantes)); }
+          { const antes = String(b.xml || ""); b.xml = garantirProdPredMdf(antes, dados.proPred); if (b.xml !== antes) console.log("[mdf-debug] prodPred do CT-e:", JSON.stringify(dados.proPred || "CARGA GERAL")); }
         } catch {}
         const retMdf = await emitirMdf(pfxBytes, senha, b.xml, ambMdf);
         const { createClient: ccMdf } = await import("@supabase/supabase-js");
