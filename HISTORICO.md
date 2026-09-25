@@ -2943,3 +2943,10 @@ Espelhado na Vercel.
   da cidade no seletor — o código IBGE segue invisível para o XML.
   Janela externa de confirmação voltou ao padrão.
 - Espelhado na Vercel via push em main.
+
+## Popup centralizado de verdade (25/09/2026)
+
+- O `DialogContent` do projeto é fullscreen por padrão, por isso a janela
+  abria como painel lateral: o popup "Onde encerrar?" agora força
+  `inset-auto` + centro via translate, 320px, altura automática.
+- Espelhado na Vercel via push em main.
