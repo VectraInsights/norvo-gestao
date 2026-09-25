@@ -35,6 +35,77 @@ interface XmlSignatureOptions {
   canonicalizationAlgorithm?: string;
   referenceTransformAlgorithm?: string;
   logSignedInfoBytes?: boolean;
+  strictSignedInfo?: boolean;
+}
+
+const XMLDSIG_NAMESPACE = "http://www.w3.org/2000/09/xmldsig#";
+const XMLNS_NAMESPACE = "http://www.w3.org/2000/xmlns/";
+
+function escapeC14nTextSignedInfo(value: string): string {
+  return value
+    .replace(/\r\n?/g, "\n")
+    .replace(/&/g, "&")
+    .replace(/</g, "<")
+    .replace(/>/g, ">");
+}
+
+function escapeC14nAttrSignedInfo(value: string): string {
+  return escapeC14nTextSignedInfo(value)
+    .replace(/"/g, '"')
+    .replace(/\t/g, "&#x9;")
+    .replace(/\n/g, "&#xA;")
+    .replace(/\r/g, "&#xD;");
+}
+
+/**
+ * Canonicalização C14N 1.0 Inclusiva estrita (sem comentários) do SignedInfo.
+ * Garante a forma exata que a SEFAZ reconstrói na verificação RSA.
+ */
+function canonicalizeSignedInfoStrict(signedInfo: string): string {
+  const doc = new DOMParser().parseFromString(signedInfo, "application/xml");
+  const root = doc.documentElement;
+  if (!root || root.nodeName !== "SignedInfo") throw new Error("SignedInfo ausente para C14N estrita");
+  const render = (current: Element | Text | CDATASection | Comment, isRoot: boolean): string => {
+    const nodeType = current.nodeType;
+    if (nodeType === 3 || nodeType === 4) {
+      return escapeC14nTextSignedInfo((current as Text).nodeValue || "");
+    }
+    if (nodeType === 8) return "";
+    if (nodeType !== 1) throw new Error("SignedInfo com nó não suportado para C14N estrita");
+    const element = current as Element;
+    if (element.prefix || element.namespaceURI !== XMLDSIG_NAMESPACE) {
+      throw new Error("SignedInfo com namespace inesperado para C14N estrita");
+    }
+    const attrs = Array.from(element.attributes);
+    const explicitXmlns = attrs.filter((attr) => attr.name === "xmlns" || attr.prefix === "xmlns" || attr.namespaceURI === XMLNS_NAMESPACE);
+    if (explicitXmlns.some((attr) => attr.name !== "xmlns")) {
+      throw new Error("SignedInfo com namespace prefixado para C14N estrita");
+    }
+    const explicitDefault = explicitXmlns.find((attr) => attr.name === "xmlns")?.value || "";
+    if (explicitDefault && explicitDefault !== XMLDSIG_NAMESPACE) {
+      throw new Error("SignedInfo com default namespace divergente para C14N estrita");
+    }
+    const regular = attrs.filter((attr) => attr.name !== "xmlns" && attr.prefix !== "xmlns" && attr.namespaceURI !== XMLNS_NAMESPACE);
+    if (regular.some((attr) => attr.prefix || (attr.namespaceURI || "") !== "")) {
+      throw new Error("SignedInfo com atributo namespaced para C14N estrita");
+    }
+    regular.sort((a, b) => a.name < b.name ? -1 : a.name > b.name ? 1 : 0);
+    const rootNs = isRoot ? ` xmlns="${XMLDSIG_NAMESPACE}"` : "";
+    const rendered = regular.map((attr) => ` ${attr.name}="${escapeC14nAttrSignedInfo(attr.value)}"`).join("");
+    const preserved = !isRoot && explicitDefault ? ` xmlns="${explicitDefault}"` : "";
+    const children = Array.from(element.childNodes)
+      .map((child) => render(child as Element | Text | CDATASection | Comment, false))
+      .join("");
+    return `<${element.nodeName}${rootNs}${rendered}${preserved}>${children}</${element.nodeName}>`;
+  };
+  return render(root as unknown as Element, true);
+}
+
+function assertStrictC14nSignedInfo(signedInfo: string): void {
+  const canonical = canonicalizeSignedInfoStrict(signedInfo);
+  if (canonical !== signedInfo) {
+    throw new Error(`SignedInfo fora da C14N 1.0 estrita: recebido=${signedInfo} esperado=${canonical}`);
+  }
 }
 
 // ============================================================
@@ -469,11 +540,12 @@ export function signMdfXml(xml: string, pfxBytes: Buffer, senha: string): string
   console.log("[mdf-debug] Reference URI:", `#${id}`);
   console.log("[mdf-debug] Canonicalization Algorithm:", XML_INCLUSIVE_C14N);
 
-  // 4. Assinatura usando o digestInput canônico
+  // 4. Assinatura usando o digestInput canônico (SignedInfo em C14N estrita)
   const signed = signXml(xml, pfxBytes, senha, canonicalizedInfMdf, {
     referenceUri,
     canonicalizationAlgorithm: XML_INCLUSIVE_C14N,
     logSignedInfoBytes: true,
+    strictSignedInfo: true,
   });
 
   // 5. Extração do SignatureValue gerado
@@ -554,7 +626,11 @@ function signXmlWithForge(
   // <x/> em <x></x>; assinar a forma auto-fechada quebra a verificação RSA na SEFAZ)
   const signedInfo = `<SignedInfo xmlns="http://www.w3.org/2000/09/xmldsig#"><CanonicalizationMethod Algorithm="${canonicalizationAlgorithm}"></CanonicalizationMethod><SignatureMethod Algorithm="http://www.w3.org/2000/09/xmldsig#rsa-sha1"></SignatureMethod><Reference URI="${uri}"><Transforms><Transform Algorithm="http://www.w3.org/2000/09/xmldsig#enveloped-signature"></Transform><Transform Algorithm="${referenceTransformAlgorithm}"></Transform></Transforms><DigestMethod Algorithm="http://www.w3.org/2000/09/xmldsig#sha1"></DigestMethod><DigestValue>${digestValue}</DigestValue></Reference></SignedInfo>`;
 
-  // Assinar o SignedInfo
+  // Assinar o SignedInfo (C14N 1.0 Inclusiva estrita já garantida por asserção)
+  if (options?.strictSignedInfo) {
+    assertStrictC14nSignedInfo(signedInfo);
+    console.log("[mdf-debug] string exata SignedInfo para RSA:", signedInfo);
+  }
   if (options?.logSignedInfoBytes) console.log("[mdf-debug] bytes de SignedInfo antes do RSA-SHA1:", Buffer.byteLength(signedInfo, "utf8"));
   const md2 = forge.md.sha1.create();
   md2.update(signedInfo, "utf8");
@@ -617,7 +693,11 @@ function signXmlNative(
   // <x/> em <x></x>; assinar a forma auto-fechada quebra a verificação RSA na SEFAZ)
   const signedInfo = `<SignedInfo xmlns="http://www.w3.org/2000/09/xmldsig#"><CanonicalizationMethod Algorithm="${canonicalizationAlgorithm}"></CanonicalizationMethod><SignatureMethod Algorithm="http://www.w3.org/2000/09/xmldsig#rsa-sha1"></SignatureMethod><Reference URI="${uri}"><Transforms><Transform Algorithm="http://www.w3.org/2000/09/xmldsig#enveloped-signature"></Transform><Transform Algorithm="${referenceTransformAlgorithm}"></Transform></Transforms><DigestMethod Algorithm="http://www.w3.org/2000/09/xmldsig#sha1"></DigestMethod><DigestValue>${digestValue}</DigestValue></Reference></SignedInfo>`;
 
-  // Assinar SignedInfo com crypto nativo (RSA-SHA1)
+  // Assinar SignedInfo com crypto nativo (RSA-SHA1, C14N 1.0 Inclusiva estrita por asserção)
+  if (options?.strictSignedInfo) {
+    assertStrictC14nSignedInfo(signedInfo);
+    console.log("[mdf-debug] string exata SignedInfo para RSA:", signedInfo);
+  }
   if (options?.logSignedInfoBytes) console.log("[mdf-debug] bytes de SignedInfo antes do RSA-SHA1:", Buffer.byteLength(signedInfo, "utf8"));
   const sign = crypto.createSign("SHA1");
   sign.update(signedInfo, "utf8");

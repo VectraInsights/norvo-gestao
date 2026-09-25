@@ -2588,3 +2588,16 @@ Espelhado na Vercel.
   via `logSignedInfoBytes`; NF-e/CT-e inalterados).
 - Constante de log atualizada para `BUILD=018-c14n-signedinfo-fix`.
 - Espelhado na Vercel via push em main.
+
+## BUILD 019: asserção de C14N estrita no SignedInfo (24/09/2026)
+
+- Novo `canonicalizeSignedInfoStrict` + `assertStrictC14nSignedInfo`
+  (`sefaz.ts`): antes do RSA-SHA1, o `SignedInfo` é recanonicalizado e
+  comparado byte a byte; divergência aborta a assinatura (só MDF-e, via
+  `strictSignedInfo`; NF-e/CT-e inalterados).
+- Novo log `[mdf-debug] string exata SignedInfo para RSA:` no momento do
+  disparo da chave privada (forge e nativo).
+- Lógica validada localmente: template expandido passa; forma auto-fechada
+  antiga é detectada como não-canônica.
+- Constante de log atualizada para `BUILD=019-signedinfo-c14n-strict`.
+- Espelhado na Vercel via push em main.
