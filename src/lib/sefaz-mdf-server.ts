@@ -68,15 +68,13 @@ export const emitirMdfFn = createServerFn({ method: "POST" })
   .handler(async ({ data }) => {
     if (SEFAZ_URL) return callSefazProxy("emitirMdf", data);
 
-    const { emitirMdf, segDoCteVinculado, garantirSegMdf } = await import("@/lib/sefaz-mdf");
+    const { emitirMdf, segDoCteVinculado, completarSegMdf } = await import("@/lib/sefaz-mdf");
     const { cert, ambiente, supabase } = await getCertAndAmbiente(data.empresaId);
 
-    // 698: backfill do <seg> a partir do CT-e vinculado (fronts antigos).
+    // 698/699: completa o <seg> com dados do CT-e (infSeg com CNPJ).
     try {
-      if (!/<seg[\s>]/.test(String(data.xml || ""))) {
-        const seg = await segDoCteVinculado(supabase, data.empresaId, String(data.xml || ""));
-        if (seg) { data.xml = garantirSegMdf(String(data.xml || ""), seg); console.log("[mdf-debug] seg backfill do CT-e:", JSON.stringify(seg)); }
-      }
+      const seg = await segDoCteVinculado(supabase, data.empresaId, String(data.xml || ""));
+      if (seg) { const antes = String(data.xml || ""); data.xml = completarSegMdf(antes, seg); if (data.xml !== antes) console.log("[mdf-debug] seg completado do CT-e:", JSON.stringify({ xSeg: seg.xSeg, nApol: seg.nApol, temCnpj: !!seg.cnpjSeg })); }
     } catch {}
 
     const result = await emitirMdf(cert.pfx, cert.senha, data.xml, ambiente);

@@ -2674,3 +2674,11 @@ Espelhado na Vercel.
   (front) + backfill no servidor via cte_documentos p/ XML de
   front antigo. infSeg so com CNPJ valido (obrigatorio no XSD).
   Espelhado na Vercel via push em main.
+
+## BUILD 026: seg completo com infSeg (25/09/2026)
+
+- 699 (seguro incompleto): faltava infSeg (nome + CNPJ da
+  seguradora). Servidor agora puxa CNPJ da tabela seguradoras e
+  completa o <seg> (injeta grupo ou so infSeg). Apolice sem
+  separadores p/ caber no limite de 20 do XSD sem truncar.
+  Espelhado na Vercel via push em main.

@@ -218,15 +218,13 @@ export async function handleSefazProxy(request: Request): Promise<Response> {
         break;
       }
       case "emitirMdf": {
-        const { emitirMdf, segDoCteVinculado, garantirSegMdf } = await import("@/lib/sefaz-mdf");
+        const { emitirMdf, segDoCteVinculado, completarSegMdf } = await import("@/lib/sefaz-mdf");
         const b = body as any;
         const ambMdf = MDFE_AMBIENTE;
-        // 698: backfill do <seg> a partir do CT-e vinculado (fronts antigos).
+        // 698/699: completa o <seg> com dados do CT-e (infSeg com CNPJ).
         try {
-          if (!/<seg[\s>]/.test(String(b.xml || ""))) {
-            const seg = await segDoCteVinculado(supabase, empresaId, String(b.xml || ""));
-            if (seg) { b.xml = garantirSegMdf(String(b.xml || ""), seg); console.log("[mdf-debug] seg backfill do CT-e:", JSON.stringify(seg)); }
-          }
+          const seg = await segDoCteVinculado(supabase, empresaId, String(b.xml || ""));
+          if (seg) { const antes = String(b.xml || ""); b.xml = completarSegMdf(antes, seg); if (b.xml !== antes) console.log("[mdf-debug] seg completado do CT-e:", JSON.stringify({ xSeg: seg.xSeg, nApol: seg.nApol, temCnpj: !!seg.cnpjSeg })); }
         } catch {}
         const retMdf = await emitirMdf(pfxBytes, senha, b.xml, ambMdf);
         const { createClient: ccMdf } = await import("@supabase/supabase-js");
