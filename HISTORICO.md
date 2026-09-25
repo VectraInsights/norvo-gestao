@@ -2807,3 +2807,11 @@ Espelhado na Vercel.
   RNTRC/CNPJ/proprietario em todas as linhas de veiculo,
   linha do modal com caixas separadas e larguras corrigidas
   (agregado nao invade mais o QR). Espelhado.
+
+## Evento nSeq 01 + DAMDFE 50/50 (25/09/2026)
+
+- 243 com Signature: Id/nSeqEvento com 1 digito violava o
+  padrao (2 digitos) — agora 01 nos dois + log do XML do
+  evento p/ diagnosticar. Era o ultimo suspeito restante.
+- DAMDFE: primeira linha 50/50 (logo+empresa | barras+QR+
+  chave, QR folgado). Espelhado.

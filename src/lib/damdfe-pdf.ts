@@ -218,27 +218,28 @@ export function gerarDamdfePdf(d: DamdfeData): Blob {
   const fmtChaveDots = (ch: string) => D(ch).replace(/\D/g, "").replace(/(\d{4})(?=\d)/g, "$1.");
   const fmtData = (v: string) => { const m = D(v).match(/^(\d{4})-(\d{2})-(\d{2})/); return m ? `${m[3]}/${m[2]}/${m[1]}` : D(v); };
 
-  // ---- Cabeçalho: caixa única logo + emitente | DAMDFE/barras/chave ----
+  // ---- Cabeçalho 50/50: [logo + emitente] [DAMDFE + barras + QR + chave] ----
   const logo = (d as any).logoDataUrl || JUVENAL_LOGO;
-  const hH = 30;
-  const wEm = 182, wDa = CW - wEm - 1;
-  const xEm = M, xDa = M + wEm + 1;
-  box(xEm, y, wEm, hH);
-  try { doc.addImage(logo, "PNG", xEm + 2, y + 5, 30, 20); } catch {}
-  const tx = xEm + 34;
-  ctr(cut(D(d.emitNome) || "EMITENTE", 52), tx + (wEm - 34) / 2, y + 4.5, 9, true);
-  ctr(`${fmtCnpj(d.emitCnpj)}   RNTRC: ${D(d.rntrc)}`, tx + (wEm - 34) / 2, y + 8.5, 7);
-  ctr(`${D(d.emitLgr)}, ${D(d.emitNro)}`, tx + (wEm - 34) / 2, y + 12.5, 7);
-  ctr(`${D(d.emitMun)} / ${D(d.emitUF)}`, tx + (wEm - 34) / 2, y + 16.5, 7);
-  ctr(`CEP: ${D(d.emitCep)}   Tel.: ${D(d.emitFone)}`, tx + (wEm - 34) / 2, y + 20.5, 7);
-  ctr(`Carreg.: ${D(d.ufIni)} → Descarreg.: ${D(d.ufFim)}`, tx + (wEm - 34) / 2, y + 24.5, 6);
-  box(xDa, y, wDa, hH);
-  black(); setFont("bold", 13); doc.text("DAMDFE", xDa + 2, y + 6);
-  setFont("normal", 6); black(); doc.text("Documento Auxiliar de Manifesto Eletrônico de", xDa + 30, y + 4.5); doc.text("Cargas", xDa + 30, y + 8);
+  const hH = 34;
+  const wHalf = (CW - 1) / 2;
+  const xEm = M, xDa = M + wHalf + 1;
+  box(xEm, y, wHalf, hH);
+  try { doc.addImage(logo, "PNG", xEm + 2, y + 6, 30, 20); } catch {}
+  const tx = xEm + 34, tw = wHalf - 34;
+  ctr(cut(D(d.emitNome) || "EMITENTE", 46), tx + tw / 2, y + 5, 9, true);
+  ctr(`${fmtCnpj(d.emitCnpj)}   RNTRC: ${D(d.rntrc)}`, tx + tw / 2, y + 9.5, 7);
+  ctr(`${D(d.emitLgr)}, ${D(d.emitNro)}`, tx + tw / 2, y + 14, 7);
+  ctr(`${D(d.emitMun)} / ${D(d.emitUF)}`, tx + tw / 2, y + 18.5, 7);
+  ctr(`CEP: ${D(d.emitCep)}   Tel.: ${D(d.emitFone)}`, tx + tw / 2, y + 23, 7);
+  ctr(`Carreg.: ${D(d.ufIni)} → Descarreg.: ${D(d.ufFim)}`, tx + tw / 2, y + 27.5, 6);
+  box(xDa, y, wHalf, hH);
+  black(); setFont("bold", 13); doc.text("DAMDFE", xDa + 2, y + 6.5);
+  setFont("normal", 6); black(); doc.text("Documento Auxiliar de Manifesto Eletrônico de Cargas", xDa + 32, y + 6.5);
   const bc0 = barcodePng(d.chave);
-  if (bc0) { try { doc.addImage(bc0, "PNG", xDa + 2, y + 9.5, wDa - 4, 8); } catch {} }
-  lab("CHAVE DE ACESSO", xDa + 2, y + 22);
-  val(fmtChaveDots(d.chave), xDa + 2, y + 26, 6.5);
+  if (bc0) { try { doc.addImage(bc0, "PNG", xDa + 2, y + 9, wHalf - 32, 8); } catch {} }
+  if (D(d.qrUrl)) drawQr(doc, xDa + wHalf - 26, y + 8, 20, D(d.qrUrl));
+  lab("CHAVE DE ACESSO", xDa + 2, y + 22.5);
+  val(fmtChaveDots(d.chave), xDa + 2, y + 27, 6.5);
   y += hH + 1;
 
   // ---- Linha 2: modelo/serie/numero/FL/emissão/previsão/UFs/protocolo ----
