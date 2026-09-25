@@ -814,10 +814,19 @@ function DialogNovoMdf({ open, onOpenChange, empresaId, empresa, chavesIniciais,
     queryKey: ["mdf-encerrados", empresaId],
     queryFn: async ({ signal }) => {
       const { data, error } = await supabase.from("mdf_documentos" as any)
-        .select("chave_acesso,numero,veiculo_tracao_id,xml_assinado").eq("empresa_id", empresaId)
+        .select("chave_acesso,numero,veiculo_tracao_id,motorista_id,xml_assinado").eq("empresa_id", empresaId)
         .eq("status", "encerrado").order("created_at", { ascending: false }).limit(100).abortSignal(signal);
       if (error) throw error;
-      return (data ?? []) as unknown as Array<{ chave_acesso: string | null; numero: string | null; veiculo_tracao_id: string | null; xml_assinado: string | null }>;
+      const rows = (data ?? []) as unknown as Array<{ chave_acesso: string | null; numero: string | null; veiculo_tracao_id: string | null; motorista_id: string | null; xml_assinado: string | null }>;
+      const motIds = [...new Set(rows.map(r => String(r.motorista_id || "")).filter(Boolean))];
+      let motMap = new Map<string, string>();
+      if (motIds.length) {
+        try {
+          const { data: mots } = await supabase.from("colaboradores" as any).select("id,nome").in("id", motIds).abortSignal(signal);
+          motMap = new Map(((mots as any[]) || []).map(m => [String((m as any).id), String((m as any).nome || "")]));
+        } catch {}
+      }
+      return rows.map(r => ({ ...r, motoristaNome: motMap.get(String(r.motorista_id || "")) || "" }));
     },
   });
   // Resumo do manifesto origem p/ o dropdown (nº, emissão, carga, descarga, veículo).
@@ -840,8 +849,9 @@ function DialogNovoMdf({ open, onOpenChange, empresaId, empresa, chavesIniciais,
       .map(m => {
         const t = infoTransb((m as any).xml_assinado);
         const v = (veiculos || []).find(x => String((x as any).id) === String((m as any).veiculo_tracao_id));
-        const veic = v ? `${String((v as any).placa || "").toUpperCase()}${(v as any).marca_modelo ? " " + String((v as any).marca_modelo).toUpperCase() : ""}` : "";
-        const label = `#${m.numero ?? "?"}${t.data ? " · " + t.data : ""}${t.munCar ? ` · ${t.munCar}${t.ufIni ? "/" + t.ufIni : ""}` : ""}${t.munDesc ? ` → ${t.munDesc}${t.ufFim ? "/" + t.ufFim : ""}` : ""}${veic ? " · " + veic : ""}`;
+        const veic = v ? String((v as any).placa || "").toUpperCase() : "";
+        const mot = String((m as any).motoristaNome || "").toUpperCase();
+        const label = `#${m.numero ?? "?"}${t.data ? " · " + t.data : ""}${t.munCar ? ` · ${t.munCar}${t.ufIni ? "/" + t.ufIni : ""}` : ""}${t.munDesc ? ` → ${t.munDesc}${t.ufFim ? "/" + t.ufFim : ""}` : ""}${veic ? " · " + veic : ""}${mot ? " · " + mot : ""}`;
         return { chave: m.chave_acesso as string, label };
       });
   }, [mdfsEncerrados, veiculos, tracaoSel]);

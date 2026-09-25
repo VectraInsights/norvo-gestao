@@ -2980,6 +2980,6 @@ Espelhado na Vercel.
 - Cancelar CT-e de manifesto encerrado avisa que não pode ser
   cancelado; de manifesto aberto mantém "cancele o manifesto".
 - Novo MDF-e limpa tudo ao fechar (ESC/X/voltar) — sem resto na memória.
-- Dropdowns de transbordo com Nº, emissão, carga, descarga e veículo
-  (marca/modelo), sem o Id interno.
+- Dropdowns de transbordo com Nº, emissão, carga, descarga, placa e
+  motorista do manifesto original (sem marca/modelo e sem Id).
 - Espelhado na Vercel via push em main.
