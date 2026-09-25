@@ -1460,10 +1460,12 @@ function CtePage() {
     onError: (e: Error) => toast.error(e.message),
   });
 
+  const [cteCancelar, setCteCancelar] = useState<{ chave: string; protocolo?: string; ambiente?: string } | null>(null);
+  const [motivoCanc, setMotivoCanc] = useState("ERRO DE EMISSAO DO CT-E");
   const cancelar = useMutation({
-    mutationFn: async ({ chave, protocolo, ambiente }: { chave: string; protocolo?: string; ambiente?: string }) => {
+    mutationFn: async ({ chave, protocolo, ambiente, justificativa }: { chave: string; protocolo?: string; ambiente?: string; justificativa: string }) => {
       if (!empresa) throw new Error("Empresa não selecionada");
-      const just = prompt("Justificativa de cancelamento (mín. 15 caracteres):", "CT-e cancelado por erro nos dados da prestação do serviço") || "";
+      const just = String(justificativa || "");
       if (just.length < 15) throw new Error("Justificativa muito curta");
       const ret = await cancelarCteFn({ data: { empresaId: empresa.id, chave, justificativa: just, protocolo, ambiente } });
       return { ...ret, chave };
@@ -1780,7 +1782,7 @@ function CtePage() {
                         )}
                       </>
                     )}
-                    {!isRascunho && <Button size="icon" variant="ghost" className="h-7 w-7 text-destructive" disabled={d.status!=="autorizado"} onClick={() => d.chave_acesso && cancelar.mutate({ chave: d.chave_acesso, protocolo: d.protocolo_sefaz || undefined, ambiente: SEFAZ_AMBIENTE })} title="Cancelar"><Ban className="h-3.5 w-3.5" /></Button>}
+                    {!isRascunho && <Button size="icon" variant="ghost" className="h-7 w-7 text-destructive" disabled={d.status!=="autorizado"} onClick={() => { if (!d.chave_acesso) return; setCteCancelar({ chave: d.chave_acesso, protocolo: d.protocolo_sefaz || undefined, ambiente: SEFAZ_AMBIENTE }); setMotivoCanc("ERRO DE EMISSAO DO CT-E"); }} title="Cancelar"><Ban className="h-3.5 w-3.5" /></Button>}
                     {!isRascunho && <Button size="icon" variant="ghost" className="h-7 w-7 text-emerald-600" onClick={() => visualizarDoc(d)} title="Ver dados e status"><ClipboardList className="h-3.5 w-3.5" /></Button>}
                     {!isRascunho && d.status === "autorizado" && <Button size="icon" variant="ghost" className="h-7 w-7 text-violet-600" onClick={() => substituirCte(d)} title="Emitir CT-e de substituição"><Repeat className="h-3.5 w-3.5" /></Button>}
                     {!isRascunho && <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => d.chave_acesso && consultar.mutate({ chave: d.chave_acesso, ambiente: SEFAZ_AMBIENTE })} title="Consultar SEFAZ"><Search className="h-3.5 w-3.5" /></Button>}
@@ -1790,6 +1792,29 @@ function CtePage() {
               </Table>
             </Card>
           )}
+
+      {cteCancelar && (
+        <Dialog open={!!cteCancelar} onOpenChange={(v) => { if (!v) setCteCancelar(null); }}>
+          <DialogContent>
+            <DialogHeader><DialogTitle>Cancelar CT-e</DialogTitle></DialogHeader>
+            <div className="space-y-2">
+              <Label>Motivo (obrigatório)</Label>
+              <Select value={motivoCanc} onValueChange={setMotivoCanc}>
+                <SelectTrigger><SelectValue placeholder="Selecione o motivo" /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="ERRO DE EMISSAO DO CT-E">ERRO DE EMISSÃO DO CT-E</SelectItem>
+                  <SelectItem value="CLIENTE CANCELOU O SERVICO">CLIENTE CANCELOU O SERVIÇO</SelectItem>
+                  <SelectItem value="FALTA DE ENERGIA/IMPOSSIBILIDADE TECNICA">FALTA DE ENERGIA/IMPOSSIBILIDADE TÉCNICA</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setCteCancelar(null)}>Voltar</Button>
+              <Button variant="destructive" disabled={!motivoCanc.trim() || cancelar.isPending} onClick={() => { if (!cteCancelar) return; cancelar.mutate({ ...cteCancelar, justificativa: motivoCanc }, { onSettled: () => setCteCancelar(null) }); }}>Confirmar Cancelamento</Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+      )}
 
   </>);
 

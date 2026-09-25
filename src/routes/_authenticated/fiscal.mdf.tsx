@@ -284,7 +284,7 @@ function MdfPage() {
                           <Button variant="ghost" size="sm" onClick={() => { setMdfEncerrar(d); setOpenEncerrar(true); }} title="Encerrar">
                             <CheckCircle2 className="h-4 w-4" />
                           </Button>
-                          <Button variant="ghost" size="sm" onClick={() => { setMdfCancelar(d); setJustificativa("MDF-e cancelado por erro nos dados do manifesto"); setOpenCancelar(true); }} title="Cancelar">
+                          <Button variant="ghost" size="sm" onClick={() => { setMdfCancelar(d); setJustificativa("ERRO DE EMISSAO DO MDF-E"); setOpenCancelar(true); }} title="Cancelar">
                             <XCircle className="h-4 w-4 text-destructive" />
                           </Button>
                         </>
@@ -352,8 +352,15 @@ function MdfPage() {
           <DialogContent>
             <DialogHeader><DialogTitle>Cancelar MDF-e #{mdfCancelar.numero}</DialogTitle></DialogHeader>
             <div className="space-y-2">
-              <Label>Justificativa (obrigatória)</Label>
-              <Textarea value={justificativa} onChange={e => setJustificativa(e.target.value)} placeholder="Motivo do cancelamento..." rows={3} />
+              <Label>Motivo (obrigatório)</Label>
+              <Select value={justificativa} onValueChange={setJustificativa}>
+                <SelectTrigger><SelectValue placeholder="Selecione o motivo" /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="ERRO DE EMISSAO DO MDF-E">ERRO DE EMISSÃO DO MDF-E</SelectItem>
+                  <SelectItem value="CLIENTE CANCELOU O SERVICO">CLIENTE CANCELOU O SERVIÇO</SelectItem>
+                  <SelectItem value="FALTA DE ENERGIA/IMPOSSIBILIDADE TECNICA">FALTA DE ENERGIA/IMPOSSIBILIDADE TÉCNICA</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
             <DialogFooter>
               <Button variant="outline" onClick={() => { setOpenCancelar(false); setJustificativa(""); }}>Voltar</Button>

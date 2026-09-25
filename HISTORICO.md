@@ -2755,3 +2755,12 @@ Espelhado na Vercel.
 
 - Dialog de cancelamento abre com "MDF-e cancelado por erro
   nos dados do manifesto" (editavel), como o CT-e. Espelhado.
+
+## Fix action evento + 3 motivos de cancelamento (25/09/2026)
+
+- Cancelar/encerrar MDF-e quebravam (HTTP 500 action nao
+  reconhecida): actions em minusculo (mdfeRecepcaoEvento;
+  consulta em mdfeConsulta, mesmo padrao do CT-e).
+- Cancelamento CT-e e MDF-e com select de 3 motivos (erro de
+  emissao / cliente cancelou / falta de energia). CT-e trocou
+  o prompt por dialog. Espelhado na Vercel via push em main.
