@@ -75,7 +75,8 @@ export interface MdfSeguro {
 // Monta <seg> conforme XSD (infResp/respSeg obrigatório; infSeg só com CNPJ
 // válido pois o CNPJ é obrigatório dentro dele; nApol/nAver opcionais).
 // Para tpEmit 1/3 (prestador) emite mesmo sem dados (rejeição 698).
-export function montarSegXml(seg: MdfSeguro | undefined, tpEmit: string): string {
+// Regra F92/699 exige o grupo completo: responsável + seguradora + apólice + averbação.
+export function montarSegXml(seg: MdfSeguro | undefined, tpEmit: string, cnpjEmit?: string): string {
   const segIn = seg || {};
   const precisaSeg = tpEmit === "1" || tpEmit === "3";
   const xSeg = String(segIn.xSeg || "").trim().slice(0, 30);
@@ -86,8 +87,10 @@ export function montarSegXml(seg: MdfSeguro | undefined, tpEmit: string): string
   const nApol = (nApolRaw.replace(/[\s.\-/]/g, "") || nApolRaw).slice(0, 20);
   const nAver = String(segIn.nAver || "").trim().slice(0, 40);
   if (!precisaSeg && !xSeg && !nApol && !nAver) return "";
+  const cnpjResp = String(cnpjEmit || "").replace(/\D/g, "");
+  const infRespXml = `<infResp><respSeg>1</respSeg>${/^\d{14}$/.test(cnpjResp) ? `<CNPJ>${cnpjResp}</CNPJ>` : ""}</infResp>`;
   const infSegXml = (xSeg && /^\d{14}$/.test(cnpjSeg)) ? `<infSeg><xSeg>${xSeg}</xSeg><CNPJ>${cnpjSeg}</CNPJ></infSeg>` : "";
-  return `<seg><infResp><respSeg>1</respSeg></infResp>${infSegXml}${nApol ? `<nApol>${nApol}</nApol>` : ""}${nAver ? `<nAver>${nAver}</nAver>` : ""}</seg>`;
+  return `<seg>${infRespXml}${infSegXml}${nApol ? `<nApol>${nApol}</nApol>` : ""}${nAver ? `<nAver>${nAver}</nAver>` : ""}</seg>`;
 }
 
 // Garante <seg> no XML (para XML de front antigo): injeta após </infDoc>.
@@ -115,13 +118,17 @@ export async function segDoCteVinculado(supa: { from(t: string): any }, empresaI
       const nAver = String(f.averbacao || "").trim();
       if (xSeg || nApol || nAver) {
         let cnpjSeg = "";
+        let averbCad = "";
         try {
           if (xSeg) {
-            const { data: sg } = await supa.from("seguradoras").select("cnpj").eq("empresa_id", empresaId).ilike("nome", xSeg).limit(1);
+            const { data: sg } = await supa.from("seguradoras").select("cnpj,averbacao").eq("empresa_id", empresaId).ilike("nome", xSeg).limit(1);
             cnpjSeg = String((sg as any[])?.[0]?.cnpj || "").replace(/\D/g, "");
+            averbCad = String((sg as any[])?.[0]?.averbacao || "").trim();
           }
         } catch {}
-        return { xSeg, cnpjSeg, nApol, nAver };
+        // Averbação: do CT-e; se vazia, do cadastro da seguradora (mesmo
+        // fallback que o CT-e usa ao preencher a apólice).
+        return { xSeg, cnpjSeg, nApol, nAver: nAver || averbCad };
       }
       const mSeg = raw.match(/<xSeg>([^<]{1,30})<\/xSeg>/);
       const mApol = raw.match(/<nApol>([^<]{1,20})<\/nApol>/);
@@ -132,15 +139,15 @@ export async function segDoCteVinculado(supa: { from(t: string): any }, empresaI
   return null;
 }
 
-// Completa o <seg>: injeta o grupo se ausente; se existir sem <infSeg>,
-// insere o infSeg (nome + CNPJ da seguradora do CT-e).
+// Completa o <seg> reconstruindo o grupo com os dados do CT-e
+// (responsável + seguradora + apólice + averbação — regra F92/699).
 export function completarSegMdf(xml: string, seg: MdfSeguro | undefined): string {
-  const xSeg = String(seg?.xSeg || "").trim().slice(0, 30);
-  const cnpjSeg = String(seg?.cnpjSeg || "").replace(/\D/g, "");
-  if (!/<seg[\s>]/.test(xml)) return garantirSegMdf(xml, seg);
-  if (!/<infSeg[\s>]/.test(xml) && xSeg && /^\d{14}$/.test(cnpjSeg) && xml.includes("</infResp>")) {
-    return xml.replace(/<\/infResp>/, `</infResp><infSeg><xSeg>${xSeg}</xSeg><CNPJ>${cnpjSeg}</CNPJ></infSeg>`);
-  }
+  const cnpjEmit = (xml.match(/<emit><CNPJ>(\d{14})<\/CNPJ>/)?.[1] || "").replace(/\D/g, "");
+  const tpEmit = xml.match(/<tpEmit>([^<]*)<\/tpEmit>/)?.[1] || "";
+  const full = montarSegXml(seg, tpEmit, cnpjEmit);
+  if (!full) return xml;
+  if (/<seg>[\s\S]*?<\/seg>/.test(xml)) return xml.replace(/<seg>[\s\S]*?<\/seg>/, full);
+  if (xml.includes("</infDoc>")) return xml.replace(/<\/infDoc>/, `</infDoc>${full}`);
   return xml;
 }
 
@@ -248,7 +255,7 @@ export function buildMdfXml(input: MdfInputCompleto): { xml: string; chave: stri
   // Seguro da carga (filho de infMDFe, entre infDoc e tot; XSD mdfeTiposBasico_v3.00).
   // Rejeição 698 exige seg para prestador no rodoviário (tpEmit 1/3) —
   // dados puxados do CT-e vinculado (seguradora/apólice/averbação).
-  const segXml = montarSegXml(input.seg, tpEmit);
+  const segXml = montarSegXml(input.seg, tpEmit, cnpjLimpo);
 
   const raw = `<?xml version="1.0" encoding="UTF-8"?>
 <MDFe xmlns="http://www.portalfiscal.inf.br/mdfe">
@@ -371,7 +378,7 @@ async function soapRequest(url: string, body: string, action: string, agent?: ht
 export async function emitirMdf(pfx: Buffer, senha: string, xml: string, ambiente: Ambiente): Promise<{ sucesso: boolean; cStat: string; xMotivo: string; chave?: string; protocolo?: string; xmlRet?: string }> {
   assertMdfAmbiente(ambiente);
   assertMdfXmlAmbiente(xml);
-  const BUILD = "026-seg-completo-infseg";
+  const BUILD = "027-seg-regra-699-completa";
   const ep = getMdfEndpoints(ambiente);
   const agent = createSefazAgent(pfx, senha);
   const nsSinc = "http://www.portalfiscal.inf.br/mdfe/wsdl/MDFeRecepcaoSinc";

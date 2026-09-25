@@ -2682,3 +2682,10 @@ Espelhado na Vercel.
   completa o <seg> (injeta grupo ou so infSeg). Apolice sem
   separadores p/ caber no limite de 20 do XSD sem truncar.
   Espelhado na Vercel via push em main.
+
+## BUILD 027: seg regra 699 completa (25/09/2026)
+
+- 699 exige grupo todo: CNPJ do responsavel no infResp + infSeg
+  + nApol + nAver. Averbacao: do CT-e, com fallback p/ cadastro
+  da seguradora (mesmo que o CT-e usa). completarSegMdf agora
+  reconstrói o grupo com dados do CT-e. Espelhado na Vercel.
