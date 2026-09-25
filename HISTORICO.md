@@ -2696,3 +2696,10 @@ Espelhado na Vercel.
   Homologacao: usa 9999999999 quando ausente (ambiente de
   testes, sem efeito fiscal). Producao: aborta com mensagem
   clara pedindo a averbacao real. Espelhado na Vercel.
+
+## BUILD 029: contratante do CT-e (25/09/2026)
+
+- 578 (tomadores obrigatorios): <infContratante> no infANTT
+  puxado do XML assinado do CT-e (toma4 ou toma03->rem/exped/
+  receb/dest). Front extrai na emissao; servidor completa via
+  cte_documentos p/ XML de front antigo. Espelhado na Vercel.

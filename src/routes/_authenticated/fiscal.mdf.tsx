@@ -572,6 +572,17 @@ function DialogNovoMdf({ open, onOpenChange, empresaId, empresa, chavesIniciais,
       const firstForm = formDe(ctesArr[0]);
       const tpRodDe = (t?: string | null) => { const s = String(t || "").toLowerCase(); if (s.includes("cavalo")) return "03"; if (s.includes("truck")) return "01"; if (s.includes("toco")) return "02"; if (s.includes("van") || s.includes("furg")) return "04"; if (s.includes("utilit")) return "05"; return "06"; };
       const renavamDe = (placa: string) => (veiculos || []).find(v => String(v.placa || "").toUpperCase() === String(placa || "").toUpperCase())?.renavam || undefined;
+      const { buildMdfXml, extrairContratantesDoCte } = await import("@/lib/sefaz-mdf");
+      // Tomadores direto do XML assinado dos CT-es (578).
+      const contratantesMdf: Array<{ xNome?: string; cnpj?: string; cpf?: string }> = [];
+      for (const c of ctesArr) {
+        try {
+          const p = JSON.parse((c as any).xml_assinado || "{}");
+          for (const t of extrairContratantesDoCte(String(p.xml || ""))) {
+            if (!contratantesMdf.some(o => (o.cnpj || o.cpf || o.xNome) === (t.cnpj || t.cpf || t.xNome))) contratantesMdf.push(t);
+          }
+        } catch {}
+      }
       const input = {
         empresaId, ambiente: ambienteMdf, serie: serieMdf || "000", numero,
         ufCarregamento, ufDescarregamento,
@@ -587,10 +598,10 @@ function DialogNovoMdf({ open, onOpenChange, empresaId, empresa, chavesIniciais,
         tipo: (isTransbordo ? "transbordo" : "normal") as "normal" | "transbordo",
         tpEmit: tipoMdf === "Globalizado" ? "3" : "1",
         seg: { xSeg: String((segMdf as any).seguradoraNome || ""), nApol: String((segMdf as any).apolice || ""), nAver: String((segMdf as any).averbacao || "") },
+        contratantes: contratantesMdf,
         mdfesTransbordo: [transb1, transb2, transb3].filter(k => /^\d{44}$/.test((k || "").trim())).map(k => ({ chave: k.trim() })),
       };
 
-      const { buildMdfXml } = await import("@/lib/sefaz-mdf");
       const { xml } = buildMdfXml(input);
 
       const res = await emitirMdfFn({

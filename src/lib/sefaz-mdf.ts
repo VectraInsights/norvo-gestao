@@ -111,12 +111,29 @@ export function garantirSegMdf(xml: string, seg: MdfSeguro | undefined): string 
 // Puxa seguradora/apólice/averbação do CT-e vinculado (cte_documentos) +
 // CNPJ da seguradora (tabela seguradoras) para completar o infSeg (699).
 export async function segDoCteVinculado(supa: { from(t: string): any }, empresaId: string, xml: string): Promise<MdfSeguro | null> {
+  const dados = await dadosDoCteVinculado(supa, empresaId, xml);
+  return dados.seg;
+}
+
+// Busca única: seguro + tomadores dos CT-es vinculados ao MDF-e.
+export async function dadosDoCteVinculado(supa: { from(t: string): any }, empresaId: string, xml: string): Promise<{ seg: MdfSeguro | null; contratantes: MdfContratante[] }> {
+  const contratantes: MdfContratante[] = [];
   try {
     const chaves = [...String(xml).matchAll(/<chCTe>(\d{44})<\/chCTe>/g)].map(m => m[1]);
-    if (!chaves.length) return null;
+    if (!chaves.length) return { seg: null, contratantes };
     const { data: rows } = await supa.from("cte_documentos").select("xml_assinado").eq("empresa_id", empresaId).in("chave_acesso", chaves).limit(10);
+    let seg: MdfSeguro | null = null;
     for (const r of (rows as any[]) || []) {
       const raw = String((r as any)?.xml_assinado || "");
+      // Tomadores do XML assinado do CT-e (578).
+      try {
+        let cteXml = raw;
+        try { const p = JSON.parse(raw); if (p && p.xml) cteXml = String(p.xml); } catch {}
+        for (const t of extrairContratantesDoCte(cteXml)) {
+          if (!contratantes.some(o => (o.cnpj || o.cpf || o.xNome) === (t.cnpj || t.cpf || t.xNome))) contratantes.push(t);
+        }
+      } catch {}
+      if (seg) continue;
       let f: any = {};
       try { f = JSON.parse(raw).form || {}; } catch {}
       const xSeg = String(f.seguradoraNome || "").trim();
@@ -134,15 +151,17 @@ export async function segDoCteVinculado(supa: { from(t: string): any }, empresaI
         } catch {}
         // Averbação: do CT-e; se vazia, do cadastro da seguradora (mesmo
         // fallback que o CT-e usa ao preencher a apólice).
-        return { xSeg, cnpjSeg, nApol, nAver: nAver || averbCad };
+        seg = { xSeg, cnpjSeg, nApol, nAver: nAver || averbCad };
       }
+      if (seg) continue;
       const mSeg = raw.match(/<xSeg>([^<]{1,30})<\/xSeg>/);
       const mApol = raw.match(/<nApol>([^<]{1,20})<\/nApol>/);
       const mAver = raw.match(/<nAver>([^<]{1,40})<\/nAver>/);
-      if (mSeg || mApol) return { xSeg: (mSeg?.[1] || "").trim(), nApol: (mApol?.[1] || "").trim(), nAver: (mAver?.[1] || "").trim() };
+      if (mSeg || mApol) seg = { xSeg: (mSeg?.[1] || "").trim(), nApol: (mApol?.[1] || "").trim(), nAver: (mAver?.[1] || "").trim() };
     }
+    return { seg, contratantes };
   } catch {}
-  return null;
+  return { seg: null, contratantes };
 }
 
 // Completa o <seg> reconstruindo o grupo com os dados do CT-e
@@ -156,6 +175,53 @@ export function completarSegMdf(xml: string, seg: MdfSeguro | undefined): string
   if (/<seg>[\s\S]*?<\/seg>/.test(xml)) return xml.replace(/<seg>[\s\S]*?<\/seg>/, full);
   if (xml.includes("</infDoc>")) return xml.replace(/<\/infDoc>/, `</infDoc>${full}`);
   return xml;
+}
+
+export interface MdfContratante {
+  xNome?: string;
+  cnpj?: string;
+  cpf?: string;
+}
+
+// Extrai o tomador do CT-e assinado (toma4 direto; toma03 0-3 via
+// remetente/expedidor/recebedor/destinatário) — rejeição 578.
+export function extrairContratantesDoCte(cteXml: string): MdfContratante[] {
+  const out: MdfContratante[] = [];
+  const push = (xNome: string, doc: string) => {
+    const d = String(doc || "").replace(/\D/g, "");
+    const nome = String(xNome || "").trim().slice(0, 60);
+    if (d.length === 14) { if (!out.some(o => o.cnpj === d)) out.push({ xNome: nome, cnpj: d }); }
+    else if (d.length === 11) { if (!out.some(o => o.cpf === d)) out.push({ xNome: nome, cpf: d }); }
+    else if (nome.length >= 2) { if (!out.some(o => o.xNome === nome)) out.push({ xNome: nome }); }
+  };
+  const grupo = (tag: string) => cteXml.match(new RegExp(`<${tag}>([\\s\\S]*?)<\\/${tag}>`))?.[1] || "";
+  const docNomeDe = (frag: string) => ({
+    doc: frag.match(/<(CNPJ|CPF)>([^<]+)<\/\1>/)?.[2] || "",
+    nome: frag.match(/<xNome>([^<]+)<\/xNome>/)?.[1] || "",
+  });
+  const t4 = grupo("toma4");
+  if (t4) {
+    const { doc, nome } = docNomeDe(t4);
+    push(nome, doc);
+  } else {
+    const tipo = grupo("toma03").match(/<toma>([0-3])<\/toma>/)?.[1] || "3";
+    const tag = tipo === "0" ? "rem" : tipo === "1" ? "exped" : tipo === "2" ? "receb" : "dest";
+    const { doc, nome } = docNomeDe(grupo(tag));
+    push(nome, doc);
+  }
+  return out;
+}
+
+// Garante <infContratante> no infANTT (para XML de front antigo).
+export function garantirContratanteMdf(xml: string, list: MdfContratante[]): string {
+  if (/<infContratante[\s>]/.test(xml) || !list.length || !xml.includes("</infANTT>")) return xml;
+  const add = list.map(c => {
+    const nome = String(c.xNome || "").trim().slice(0, 60);
+    const doc = /^\d{14}$/.test(String(c.cnpj || "").replace(/\D/g, "")) ? `<CNPJ>${String(c.cnpj).replace(/\D/g, "")}</CNPJ>`
+      : /^\d{11}$/.test(String(c.cpf || "").replace(/\D/g, "")) ? `<CPF>${String(c.cpf).replace(/\D/g, "")}</CPF>` : "";
+    return `<infContratante>${nome.length >= 2 ? `<xNome>${nome}</xNome>` : ""}${doc}</infContratante>`;
+  }).join("");
+  return add ? xml.replace(/<\/infANTT>/, `${add}</infANTT>`) : xml;
 }
 
 export interface MdfInputCompleto {
@@ -179,6 +245,7 @@ export interface MdfInputCompleto {
   lacres?: Array<{ nLacre: string }>;
   obs?: string;
   seg?: { xSeg?: string; cnpjSeg?: string; nApol?: string; nAver?: string };
+  contratantes?: Array<{ xNome?: string; cnpj?: string; cpf?: string }>;
   tipo?: "normal" | "transbordo";
   tpEmit?: string;
   mdfesTransbordo?: Array<{ chave: string }>;
@@ -228,6 +295,13 @@ export function buildMdfXml(input: MdfInputCompleto): { xml: string; chave: stri
   while (rntrcXml.length > 8 && rntrcXml.startsWith("0")) rntrcXml = rntrcXml.slice(1);
   if (!/^\d{8}$/.test(rntrcXml)) throw new Error(`RNTRC invalido para a SEFAZ (8 digitos): ${input.veicTrac.rntrc || ""}`);
   const infCiotXml = ciotNum ? `<infCIOT><CIOT>${ciotNum}</CIOT><CNPJ>${cnpjLimpo}</CNPJ></infCIOT>` : "";
+  // Contratantes (tomadores — rejeição 578; ordem XSD: xNome, CNPJ/CPF).
+  const contratantesXml = (input.contratantes || []).map(c => {
+    const nome = String(c.xNome || "").trim().slice(0, 60);
+    const doc = /^\d{14}$/.test(String(c.cnpj || "").replace(/\D/g, "")) ? `<CNPJ>${String(c.cnpj).replace(/\D/g, "")}</CNPJ>`
+      : /^\d{11}$/.test(String(c.cpf || "").replace(/\D/g, "")) ? `<CPF>${String(c.cpf).replace(/\D/g, "")}</CPF>` : "";
+    return `<infContratante>${nome.length >= 2 ? `<xNome>${nome}</xNome>` : ""}${doc}</infContratante>`;
+  }).join("");
   // Condutor (ordem XSD: xNome, CPF)
   const condutorXml = `<condutor><xNome>${input.condutor.xNome}</xNome><CPF>${input.condutor.cpf.replace(/\D/g, "")}</CPF></condutor>`;
   const veicTracXml = `<veicTracao><placa>${input.veicTrac.placa}</placa>${input.veicTrac.renavam ? `<RENAVAM>${input.veicTrac.renavam}</RENAVAM>` : ""}<tara>${input.veicTrac.tara}</tara>${input.veicTrac.capKG ? `<capKG>${input.veicTrac.capKG}</capKG>` : ""}${input.veicTrac.capM3 ? `<capM3>${input.veicTrac.capM3}</capM3>` : ""}${condutorXml}<tpRod>${input.veicTrac.tpRod || "06"}</tpRod><tpCar>${input.veicTrac.tpCarroceria || "00"}</tpCar><UF>${input.veicTrac.uf}</UF></veicTracao>`;
@@ -305,6 +379,7 @@ export function buildMdfXml(input: MdfInputCompleto): { xml: string; chave: stri
         <infANTT>
           <RNTRC>${rntrcXml}</RNTRC>
           ${infCiotXml}
+          ${contratantesXml}
         </infANTT>
         ${veicTracXml}
         ${reboquesXml}
@@ -385,7 +460,7 @@ async function soapRequest(url: string, body: string, action: string, agent?: ht
 export async function emitirMdf(pfx: Buffer, senha: string, xml: string, ambiente: Ambiente): Promise<{ sucesso: boolean; cStat: string; xMotivo: string; chave?: string; protocolo?: string; xmlRet?: string }> {
   assertMdfAmbiente(ambiente);
   assertMdfXmlAmbiente(xml);
-  const BUILD = "028-naver-ficticia-homolog";
+  const BUILD = "029-contratante-do-cte";
   const ep = getMdfEndpoints(ambiente);
   const agent = createSefazAgent(pfx, senha);
   const nsSinc = "http://www.portalfiscal.inf.br/mdfe/wsdl/MDFeRecepcaoSinc";
