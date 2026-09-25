@@ -208,9 +208,10 @@ function MdfPage() {
     const xml = String((d as any).xml_assinado || "");
     const chaves = [...xml.matchAll(/<chCTe>(\d{44})<\/chCTe>/g)].map(m => m[1]);
     const unicas = [...new Set(chaves)];
-    if (!unicas.length) { toast.error("Sem CT-es vinculados para reaproveitar"); return; }
     const percurso = [...xml.matchAll(/<UFPer>([A-Z]{2})<\/UFPer>/g)].map(m => m[1]);
     const transbs = [...xml.matchAll(/<chMDFe>(\d{44})<\/chMDFe>/g)].map(m => m[1]);
+    // Transbordo não tem chCTe (só chMDFe): reaproveita os manifestos origem.
+    if (!unicas.length && !transbs.length) { toast.error("Sem CT-es vinculados para reaproveitar"); return; }
     const tpEmitM = xml.match(/<tpEmit>([13])<\/tpEmit>/)?.[1];
     setMdfDraft({
       chaves: unicas, percursoUFs: percurso, observacoes: "", infoFisco: "",
