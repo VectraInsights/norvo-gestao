@@ -265,7 +265,7 @@ export function AppShell({ children }: { children: ReactNode }) {
         <aside
           ref={sidebarRef}
           className={cn(
-            "border-r border-sidebar-border bg-sidebar text-sidebar-foreground flex flex-col",
+            "border-r border-sidebar-border bg-sidebar text-sidebar-foreground flex flex-col shadow-[8px_0_28px_-24px_oklch(0.2_0.02_60_/_0.55)]",
             "fixed inset-y-0 left-0 z-40 -translate-x-full transition-all lg:sticky lg:top-0 lg:h-screen lg:translate-x-0",
             collapsed ? "w-[72px]" : "w-[260px]",
             open && "translate-x-0",
@@ -359,8 +359,8 @@ export function AppShell({ children }: { children: ReactNode }) {
                       "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sidebar-ring",
                       collapsed ? "justify-center p-2" : "min-h-11 gap-2.5 px-3 py-2 lg:min-h-0",
                       active
-                        ? "bg-sidebar-primary text-sidebar-primary-foreground"
-                        : "text-sidebar-foreground hover:bg-sidebar-accent",
+                        ? "bg-sidebar-primary text-sidebar-primary-foreground shadow-sm"
+                        : "text-sidebar-foreground/80 hover:bg-sidebar-accent hover:text-sidebar-foreground",
                     )}
                   >
                     <LayoutDashboard className="h-4 w-4 shrink-0" />
@@ -544,7 +544,7 @@ export function AppShell({ children }: { children: ReactNode }) {
 
         {/* Conteúdo */}
         <div className="flex min-w-0 flex-col">
-          <header className="flex h-14 items-center justify-between border-b border-border/60 bg-background/80 px-4 backdrop-blur lg:px-8">
+          <header className="sticky top-0 z-20 flex h-14 items-center justify-between border-b border-border/60 bg-background/85 px-4 shadow-[0_1px_12px_-10px_oklch(0.2_0.02_60_/_0.5)] backdrop-blur lg:px-8">
             <div className="flex items-center gap-2">
               <Button variant="ghost" size="sm" className="lg:hidden" onClick={() => setOpen(true)}>
                 Menu

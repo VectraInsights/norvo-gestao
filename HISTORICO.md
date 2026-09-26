@@ -62,6 +62,9 @@ Registro condensado da evolução do Norvo Gestão fora do editor Lovable.
 
 ## Registro de manutenção
 
+21. **Modernização visual global (26/09/2026)** — iniciada a evolução do design system para tornar o Norvo mais apresentável, consistente e intuitivo em todos os módulos. A primeira etapa atualizou tokens de raio, foco visível, seleção, redução de movimento, superfícies reutilizáveis, tabelas com cabeçalho/hover padronizados, cabeçalhos de página com hierarquia mais clara, sidebar com sombra e navegação ativa mais evidente, além de cabeçalho principal fixo durante a rolagem. A sequência planejada é: design system global, navegação/dashboard, tabelas/formulários e acabamento/acessibilidade.
+
+
 10. **Service role key configurada** - `.env` saiu do versionamento (gitignore + `.env.example`
     como modelo); a secret `sb_secret_...` existe no `.env` local e nas env vars da Vercel.
     Nada no código usa `supabaseAdmin` ainda — configuração preventiva.

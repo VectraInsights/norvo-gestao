@@ -67,7 +67,7 @@
 }
 
 :root {
-  --radius: 0.625rem;
+  --radius: 0.75rem;
 
   /* Papel quente / tinta grafite */
   --background: oklch(0.94 0.01 80);            /* offwhite quente */
@@ -164,6 +164,26 @@
     -webkit-font-smoothing: antialiased;
   }
   h1, h2, h3, .font-display { font-family: var(--font-display); letter-spacing: -0.01em; }
+  ::selection { background: color-mix(in oklab, var(--color-primary) 22%, transparent); }
+  :focus-visible { outline: 2px solid var(--color-ring); outline-offset: 2px; }
+  button, a, input, select, textarea { transition: border-color 160ms ease, background-color 160ms ease, box-shadow 160ms ease, color 160ms ease; }
+}
+
+@layer components {
+  .erp-surface {
+    border: 1px solid color-mix(in oklab, var(--color-border) 82%, transparent);
+    background: color-mix(in oklab, var(--color-card) 92%, transparent);
+    box-shadow: var(--shadow-panel);
+  }
+  .erp-table-wrap { overflow-x: auto; border: 1px solid var(--color-border); border-radius: var(--radius-lg); background: var(--color-card); box-shadow: var(--shadow-panel); }
+  .erp-table-wrap table thead { background: color-mix(in oklab, var(--color-muted) 62%, transparent); }
+  .erp-table-wrap table th { white-space: nowrap; font-size: 0.7rem; font-weight: 650; letter-spacing: 0.04em; text-transform: uppercase; color: var(--color-muted-foreground); }
+  .erp-table-wrap table tbody tr { transition: background-color 140ms ease; }
+  .erp-table-wrap table tbody tr:hover { background: color-mix(in oklab, var(--color-accent) 38%, transparent); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { scroll-behavior: auto !important; transition-duration: 0.01ms !important; animation-duration: 0.01ms !important; }
 }
 
 @utility text-display { font-family: var(--font-display); letter-spacing: -0.015em; }
