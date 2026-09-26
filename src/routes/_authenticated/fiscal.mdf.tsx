@@ -1295,10 +1295,10 @@ function DialogNovoMdf({ open, onOpenChange, empresaId, empresa, chavesIniciais,
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="w-screen h-screen max-w-none max-h-none m-0 rounded-none overflow-hidden flex flex-col" style={{ display: "flex", flexDirection: "column", height: "100vh", overflow: "hidden" }}>
-        <DialogHeader className="shrink-0" style={{ flexShrink: 0 }}><DialogTitle>Novo MDF-e <span className="rounded bg-amber-100 px-1.5 py-0.5 text-xs font-normal text-amber-800">Homologação (testes)</span><span className="ml-2 align-middle font-mono text-[10px] font-normal text-muted-foreground" title="Revisão da tela">ui-28</span></DialogTitle></DialogHeader>
+      <DialogContent className="w-screen h-screen max-w-none max-h-none m-0 rounded-none overflow-hidden" style={{ display: "grid", gridTemplateRows: "auto minmax(0,1fr) auto", height: "100vh", overflow: "hidden" }}>
+        <DialogHeader className="shrink-0" style={{ flexShrink: 0 }}><DialogTitle>Novo MDF-e <span className="rounded bg-amber-100 px-1.5 py-0.5 text-xs font-normal text-amber-800">Homologação (testes)</span><span className="ml-2 align-middle font-mono text-[10px] font-normal text-muted-foreground" title="Revisão da tela">ui-29</span></DialogTitle></DialogHeader>
 
-        <div className="space-y-2 flex-1 min-h-0 flex flex-col" style={{ flex: "1 1 0%", minHeight: 0, display: "flex", flexDirection: "column" }}>
+        <div className="space-y-2 min-h-0" style={{ minHeight: 0, overflow: "hidden", display: "grid", gridTemplateRows: "auto auto minmax(0,1fr)", gap: "8px" }}>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
             <div className="border rounded-md p-2 space-y-1 overflow-hidden">
               <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
@@ -1423,7 +1423,7 @@ function DialogNovoMdf({ open, onOpenChange, empresaId, empresa, chavesIniciais,
             )}
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-10 gap-2 flex-1 min-h-0 items-stretch" style={{ flex: "1 1 0%", minHeight: 0 }}>
+          <div className="grid grid-cols-1 md:grid-cols-10 gap-2 items-stretch" style={{ minHeight: 0 }}>
             <div className="border rounded-md p-2 md:col-span-2 min-w-0 overflow-hidden h-full flex flex-col" style={{ height: "100%" }}>
               <div className="flex items-center justify-between gap-1 flex-wrap">
                 <Label className="text-xs">Percurso *</Label>

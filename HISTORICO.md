@@ -3061,3 +3061,10 @@ Espelhado na Vercel.
 - Respiro final zerado (rodapé sem margem/padding): caixas coladas na
   linha dos botões.
 - Espelhado na Vercel via push em main.
+
+## Grade explícita no diálogo (25/09/2026)
+
+- Mecanismo trocado: diálogo e conteúdo em `grid` com linhas explícitas
+  (`auto minmax(0,1fr) auto`), sem depender de distribuição flex.
+  Marcador `ui-29`. Verificado nos bundles antes do push.
+- Espelhado na Vercel via push em main.
