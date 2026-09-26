@@ -1423,8 +1423,8 @@ function DialogNovoMdf({ open, onOpenChange, empresaId, empresa, chavesIniciais,
             )}
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-10 gap-2 flex-1 min-h-0">
-            <div className="border rounded-md p-2 md:col-span-2 min-w-0 overflow-hidden">
+          <div className="grid grid-cols-1 md:grid-cols-10 gap-2 flex-1 min-h-0 items-stretch">
+            <div className="border rounded-md p-2 md:col-span-2 min-w-0 overflow-hidden h-full flex flex-col">
               <div className="flex items-center justify-between gap-1 flex-wrap">
                 <Label className="text-xs">Percurso *</Label>
                 <div className="flex items-center gap-1">
@@ -1454,7 +1454,7 @@ function DialogNovoMdf({ open, onOpenChange, empresaId, empresa, chavesIniciais,
                 </div>
               )}
             </div>
-            <div className="border rounded-md p-2 md:col-span-1 self-start">
+            <div className="border rounded-md p-2 md:col-span-1 h-full">
               <span className="text-[10px] text-muted-foreground">Adicionar UF:</span>
               <div className="grid grid-cols-6 gap-0.5 mt-1">
                 {UFS.map(uf => (
