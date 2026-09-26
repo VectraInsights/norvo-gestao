@@ -1295,13 +1295,14 @@ function DialogNovoMdf({ open, onOpenChange, empresaId, empresa, chavesIniciais,
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="w-screen h-screen max-w-none max-h-none m-0 rounded-none overflow-hidden" style={{ display: "grid", gridTemplateRows: "auto minmax(0,1fr) auto", height: "100vh", overflow: "hidden" }}>
-        <DialogHeader className="shrink-0" style={{ flexShrink: 0 }}><DialogTitle>Novo MDF-e <span className="rounded bg-amber-100 px-1.5 py-0.5 text-xs font-normal text-amber-800">Homologação (testes)</span><span className="ml-2 align-middle font-mono text-[10px] font-normal text-muted-foreground" title="Revisão da tela">ui-31</span></DialogTitle></DialogHeader>
+      <DialogContent className="w-screen h-screen max-w-none max-h-none m-0 rounded-none overflow-hidden" style={{ display: "grid", gridTemplateRows: "auto 1fr auto", height: "100vh", overflow: "hidden" }}>
+        <DialogHeader className="shrink-0 px-4 pt-4 pb-0" style={{ flexShrink: 0 }}><DialogTitle>Novo MDF-e <span className="rounded bg-amber-100 px-1.5 py-0.5 text-xs font-normal text-amber-800">Homologação (testes)</span><span className="ml-2 align-middle font-mono text-[10px] font-normal text-muted-foreground" title="Revisão da tela">ui-32</span></DialogTitle></DialogHeader>
 
-        <div className="min-h-0" style={{ minHeight: 0, overflow: "hidden", display: "grid", gridTemplateRows: "auto auto minmax(0,1fr)", gap: "8px" }}>
+        <div className="overflow-y-auto px-4 py-2" style={{ minHeight: 0 }}>
+          <div className="space-y-2">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
             <div className="border rounded-md overflow-hidden">
-              <div className="bg-muted/60 border-b px-2 py-1 text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">Dados do Veículo / Motorista</div>
+              <div className="bg-primary/8 border-b border-primary/20 px-2 py-1 text-[10px] font-semibold uppercase tracking-wide text-primary/80">Dados do Veículo / Motorista</div>
               <div className="p-2 space-y-1">
               <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
                 <div className="space-y-1">
@@ -1355,7 +1356,7 @@ function DialogNovoMdf({ open, onOpenChange, empresaId, empresa, chavesIniciais,
             </div>
             </div>
             <div className="border rounded-md overflow-hidden">
-              <div className="bg-muted/60 border-b px-2 py-1 text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">Dados do Manifesto</div>
+              <div className="bg-primary/8 border-b border-primary/20 px-2 py-1 text-[10px] font-semibold uppercase tracking-wide text-primary/80">Dados do Manifesto</div>
               <div className="p-2 space-y-1">
               <div className="grid grid-cols-2 md:grid-cols-5 gap-1">
                 <div><Label className="text-xs">Nº Manifesto</Label><Input className="h-6 text-[11px] font-mono bg-muted" readOnly value="—" placeholder="auto" /></div>
@@ -1381,7 +1382,7 @@ function DialogNovoMdf({ open, onOpenChange, empresaId, empresa, chavesIniciais,
           </div>
 
           <div className="border rounded-md overflow-hidden">
-            <div className="bg-muted/60 border-b px-2 py-1 text-[10px] font-semibold uppercase tracking-wide text-muted-foreground flex items-center justify-between gap-2">
+            <div className="bg-primary/8 border-b border-primary/20 px-2 py-1 text-[10px] font-semibold uppercase tracking-wide text-primary/80 flex items-center justify-between gap-2">
               <span>Conhecimentos ({ctesSelArr.length} vinculados){tracaoSel ? ` • placa ${tracaoSel}` : ""}</span>
               <div className="flex items-center gap-2">
                 <span className="text-[10px] font-normal normal-case">Valor total: <strong className="font-mono">{brl(totalCarga)}</strong></span>
@@ -1435,7 +1436,7 @@ function DialogNovoMdf({ open, onOpenChange, empresaId, empresa, chavesIniciais,
 
           <div className="grid grid-cols-1 md:grid-cols-10 gap-2 items-stretch" style={{ minHeight: "180px", overflow: "hidden", height: "100%" }}>
             <div className="border rounded-md md:col-span-2 min-w-0 overflow-hidden flex flex-col" style={{ height: "100%", minHeight: "180px" }}>
-              <div className="bg-muted/60 border-b px-2 py-1 text-[10px] font-semibold uppercase tracking-wide text-muted-foreground shrink-0 flex items-center justify-between gap-1">
+              <div className="bg-primary/8 border-b border-primary/20 px-2 py-1 text-[10px] font-semibold uppercase tracking-wide text-primary/80 shrink-0 flex items-center justify-between gap-1">
                 <span>Percurso * <span className="font-normal normal-case">({percursoUFs.length} UF{percursoUFs.length !== 1 ? "s" : ""})</span></span>
                 <div className="flex items-center gap-1">
                   <Button size="sm" variant="outline" className="h-5 text-[10px]" disabled={percursoSelIdx === null} onClick={() => percursoSelIdx !== null && excluirPercurso(percursoSelIdx)}>Exclui</Button>
@@ -1464,7 +1465,7 @@ function DialogNovoMdf({ open, onOpenChange, empresaId, empresa, chavesIniciais,
               )}
             </div>
             <div className="border rounded-md md:col-span-1 flex flex-col" style={{ height: "100%", minHeight: "180px" }}>
-              <div className="bg-muted/60 border-b px-2 py-1 text-[10px] font-semibold uppercase tracking-wide text-muted-foreground shrink-0">Adicionar UF</div>
+              <div className="bg-primary/8 border-b border-primary/20 px-2 py-1 text-[10px] font-semibold uppercase tracking-wide text-primary/80 shrink-0">Adicionar UF</div>
               <div className="p-1.5 grid grid-cols-6 gap-0.5 content-start">
                 {UFS.map(uf => (
                   <Button key={uf} variant="outline" size="sm" className="h-[18px] px-0 text-[9px] font-mono leading-none" onClick={() => { setPercursoUFs(prev => [...prev, uf]); setPercursoSelIdx(percursoUFs.length); }}>{uf}</Button>
@@ -1473,13 +1474,14 @@ function DialogNovoMdf({ open, onOpenChange, empresaId, empresa, chavesIniciais,
             </div>
             <div className="md:col-span-7 flex flex-col" style={{ height: "100%", minHeight: "180px" }}>
               <div className="border rounded-md overflow-hidden flex-1 flex flex-col">
-                <div className="bg-muted/60 border-b px-2 py-1 text-[10px] font-semibold uppercase tracking-wide text-muted-foreground shrink-0">Observações</div>
+                <div className="bg-primary/8 border-b border-primary/20 px-2 py-1 text-[10px] font-semibold uppercase tracking-wide text-primary/80 shrink-0">Observações</div>
                 <div className="p-2 flex-1 flex flex-col gap-2">
                   <div className="flex-1 flex flex-col"><Label className="text-xs mb-0.5">Observação</Label><Textarea value={observacoes} onChange={e => setObservacoes(e.target.value)} className="text-xs flex-1 resize-none py-1 min-h-[40px]" /></div>
                   <div className="flex-1 flex flex-col"><Label className="text-xs mb-0.5">Informações Adicionais Fisco</Label><Textarea value={infoFisco} onChange={e => setInfoFisco(e.target.value)} className="text-xs flex-1 resize-none py-1 min-h-[40px]" /></div>
                 </div>
               </div>
             </div>
+          </div>
           </div>
         </div>
 

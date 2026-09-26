@@ -3134,3 +3134,12 @@ Espelhado na Vercel.
 - Sidebar: revertida para cor única (primária) no item ativo — sem cores por módulo.
 - PageHeader: borda esquerda colorida por módulo (mantida — aprovada na ui).
 - Espelhado via kiro-automerge → main.
+
+
+## MDF-e ui-32: scroll no conteúdo + cabeçalhos mais visíveis (26/09/2026)
+
+- Diálogo trocado de grid com 1fr para scroll vertical no conteúdo:
+  área central com `overflow-y-auto`, eliminando o corte da seção inferior.
+- Cabeçalhos das caixas: cor trocada de `bg-muted/60` para `bg-primary/8`
+  com borda `border-primary/20` e texto `text-primary/80` — mais visíveis.
+- Espelhado via kiro-automerge → main.
