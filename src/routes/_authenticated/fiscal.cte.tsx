@@ -607,6 +607,21 @@ function CtePage() {
   const PAGTO_VALIDOS = ["free-flow", "tag-transportador", "tag-tomador", "sem-pagamento"];
   const pagtoSeguro = (v: any) => (PAGTO_VALIDOS.includes(v) ? v : "sem-pagamento");
   const [form, setForm] = useState(emptyForm);
+  const limparFormularioAoSair = () => {
+    setOpen(false);
+    setForm({ ...emptyForm });
+    setMercadorias([]);
+    setSelecionadas(new Set());
+    setEditingRascunhoId(null);
+    setViewDoc(null);
+    setAba("geral");
+    setPercPickOpen(false);
+    setVeiculoOpen(null);
+    setMotoristaOpen(false);
+    setMotorista2Open(false);
+    qc.invalidateQueries({ queryKey: ["cte-documentos"] });
+    qc.invalidateQueries({ queryKey: ["cte-nfes-pendentes", empresa?.id] });
+  };
   // Novo CT-e preservando dados fiscais (CFOP, impostos, status) — só limpa dados da NF/tomador/rota
   const novoCtePreservandoFiscal = () => {
     setForm(f => {
@@ -2234,7 +2249,7 @@ function CtePage() {
           <TabsContent value="cancelados">{renderTabelaDocs(docsByStatus.cancelados, "cancelados")}</TabsContent>
         </Tabs>
       )}
-      <Dialog open={open} onOpenChange={o => { setOpen(o); if (!o) { setViewDoc(null); setAba("geral"); } }}>
+      <Dialog open={open} onOpenChange={o => { if (o) setOpen(true); else limparFormularioAoSair(); }}>
         <DialogContent className="w-screen h-screen max-w-none max-h-none m-0 rounded-none overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2"><Truck className="h-5 w-5 text-primary" /> {(form as any).modoEmbarque === "simplificado" ? "Conhecimento de Transporte Simplificado" : "Conhecimento de Transporte Avulso"}</DialogTitle>
@@ -3004,7 +3019,7 @@ function CtePage() {
           </Tabs>
 
           <DialogFooter className="gap-2">
-            <Button variant="outline" onClick={() => { setOpen(false); setEditingRascunhoId(null); setMercadorias([]); setSelecionadas(new Set()); qc.invalidateQueries({ queryKey: ["cte-documentos"] }); qc.invalidateQueries({ queryKey: ["cte-nfes-pendentes", empresa?.id] }); }}><Ban className="mr-1 h-3.5 w-3.5" /> Cancelar</Button>
+            <Button variant="outline" onClick={limparFormularioAoSair}><Ban className="mr-1 h-3.5 w-3.5" /> Cancelar</Button>
             {!viewDoc && (<>
             <Button variant="outline" onClick={() => salvarRascunho.mutate()} disabled={salvarRascunho.isPending}>
               {salvarRascunho.isPending ? "Salvando..." : <><FileText className="mr-1 h-3.5 w-3.5" /> Salvar Rascunho</>}
