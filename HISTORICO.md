@@ -3058,4 +3058,6 @@ Espelhado na Vercel.
 - Layout crítico em estilos inline (à prova de conflito de CSS):
   diálogo, conteúdo, grade e caixas com flex/altura inline verificados
   nos bundles SSR e cliente antes do push.
+- Respiro final zerado (rodapé sem margem/padding): caixas coladas na
+  linha dos botões.
 - Espelhado na Vercel via push em main.

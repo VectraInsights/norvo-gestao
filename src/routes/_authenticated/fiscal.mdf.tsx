@@ -1471,7 +1471,7 @@ function DialogNovoMdf({ open, onOpenChange, empresaId, empresa, chavesIniciais,
           </div>
         </div>
 
-        <DialogFooter className="shrink-0 pt-1" style={{ flexShrink: 0 }}>
+        <DialogFooter className="shrink-0 mt-0" style={{ flexShrink: 0, marginTop: 0 }}>
           <Button variant="outline" onClick={() => onOpenChange(false)}>Cancelar</Button>
           {permiteRascunho && (
           <Button variant="secondary" onClick={handleSalvarRascunho} disabled={loading || !ctesSelecionadas.size}>
