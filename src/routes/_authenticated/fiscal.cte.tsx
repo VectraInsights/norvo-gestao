@@ -1327,17 +1327,44 @@ function CtePage() {
   };
 
   const complementarCte = (doc: CteDoc) => {
+  const chave = String(doc.chave_acesso || "").replace(/\D/g, "");
   try {
   const parsed = JSON.parse(doc.xml_assinado || "{}");
   const base = parsed.form || {};
-  setForm({ ...emptyForm, ...base, finalidadeEmissao: "Complemento", cteReferenciado: String(doc.chave_acesso || "").replace(/\D/g, ""), dataEmissao: new Date().toISOString().slice(0, 10) });
-  } catch { setForm({ ...emptyForm, finalidadeEmissao: "Complemento", cteReferenciado: String(doc.chave_acesso || "").replace(/\D/g, "") } as any); }
-  setMercadorias([]);
-  setSelecionadas(new Set());
-  setEditingRascunhoId(null);
-  setViewDoc(null);
-  setAba("geral");
-  setOpen(true);
+  const xml = String(parsed.xml || "");
+  const xmlDoc = xml ? new DOMParser().parseFromString(xml, "text/xml") : null;
+  const text = (selector: string) => xmlDoc?.querySelector(selector)?.textContent?.trim() || "";
+  const toma = text("toma3 > toma") || text("infCte > toma > toma") || base.toma || "3";
+  const tomaDoc = text("toma4 > CNPJ") || text("toma4 > CPF") || text("infCte > toma > CNPJ") || text("infCte > toma > CPF") || (toma === "0" ? text("infCte > rem > CNPJ") : toma === "3" ? text("infCte > dest > CNPJ") : "");
+  const remetente = text("infCte > rem > xNome") || base.xNomeRemetente || "";
+  const destinatario = text("infCte > dest > xNome") || base.xNomeDestinatario || "";
+  const tomador = text("infCte > toma > xNome") || (toma === "0" ? remetente : toma === "3" ? destinatario : "");
+  const nfs = Array.from(xmlDoc?.querySelectorAll("det") || []).map(det => ({
+    chave: det.querySelector("chNFe")?.textContent?.trim() || "",
+    nNF: det.querySelector("infNFe > ide > nNF")?.textContent?.trim() || "",
+    serie: det.querySelector("infNFe > ide > serie")?.textContent?.trim() || "1",
+    emit: det.querySelector("infNFe > emit > xNome")?.textContent?.trim() || remetente,
+    emitCnpj: det.querySelector("infNFe > emit > CNPJ")?.textContent?.trim() || text("infCte > rem > CNPJ"),
+    emitUF: det.querySelector("infNFe > emit > enderEmit > UF")?.textContent?.trim() || "",
+    emitCMun: det.querySelector("infNFe > emit > enderEmit > cMun")?.textContent?.trim() || "",
+    emitXMun: det.querySelector("infNFe > emit > enderEmit > xMun")?.textContent?.trim() || "",
+    dest: det.querySelector("infNFe > dest > xNome")?.textContent?.trim() || destinatario,
+    destCnpj: det.querySelector("infNFe > dest > CNPJ")?.textContent?.trim() || text("infCte > dest > CNPJ"),
+    destUF: det.querySelector("infNFe > dest > enderDest > UF")?.textContent?.trim() || "",
+    destCMun: det.querySelector("infNFe > dest > enderDest > cMun")?.textContent?.trim() || "",
+    destXMun: det.querySelector("infNFe > dest > enderDest > xMun")?.textContent?.trim() || "",
+    valor: Number(det.querySelector("infNFe > total > ICMSTot > vNF")?.textContent || 0), peso: 0, data: "",
+    tomador, tomadorCnpj: tomaDoc, tomadorUF: "", tomadorCMun: "", tomadorXMun: "", modFrete: "",
+  })).filter(n => n.chave);
+  setForm({ ...emptyForm, ...base,
+    toma, cnpjTomador: tomaDoc || base.cnpjTomador, xNomeTomador: tomador || base.xNomeTomador,
+    finalidadeEmissao: "Complemento", cteReferenciado: chave, dataEmissao: new Date().toISOString().slice(0, 10),
+    pedagioPagto: base.pedagioPagto || "sem-pagamento", valePedagio: base.valePedagio || "0.00",
+  } as any);
+  setMercadorias(nfs.length ? nfs as any : (parsed.nfs || []));
+  setSelecionadas(new Set(nfs.map(n => n.chave)));
+  } catch { setForm({ ...emptyForm, finalidadeEmissao: "Complemento", cteReferenciado: chave } as any); setMercadorias([]); setSelecionadas(new Set()); }
+  setEditingRascunhoId(null); setViewDoc(null); setAba("geral"); setOpen(true);
   toast.info(`CT-e complementar do CT-e ${doc.numero || ""} — confira os dados e emita`);
   };
 
@@ -1529,7 +1556,13 @@ function CtePage() {
   });
 
   const [cteCancelar, setCteCancelar] = useState<{ chave: string; protocolo?: string; ambiente?: string } | null>(null);
+  const [cteCancelarLote, setCteCancelarLote] = useState(false);
   const [motivoCanc, setMotivoCanc] = useState("ERRO DE EMISSAO DO CT-E");
+  const cancelarSelecionados = async () => {
+    const docsSelecionados = docsByStatus.autorizados.filter(d => d.chave_acesso && mdfSel.has(d.chave_acesso));
+    if (!docsSelecionados.length) { toast.error("Selecione ao menos um CT-e autorizado"); return; }
+    setCteCancelarLote(true);
+  };
   const cancelar = useMutation({
     mutationFn: async ({ chave, protocolo, ambiente, justificativa }: { chave: string; protocolo?: string; ambiente?: string; justificativa: string }) => {
       if (!empresa) throw new Error("Empresa não selecionada");
@@ -1822,13 +1855,14 @@ function CtePage() {
     setForm(f => ({ ...f, xMunIni: cx, ...(cu ? { ufIni: cu } : {}), ...(cc ? { cMunIni: cc } : {}) }));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open, mercadorias, selecionadas, percursos, contatoByDoc]);
+  const autorizadosSelecionados = docsByStatus.autorizados.filter(d => d.chave_acesso && mdfSel.has(d.chave_acesso));
   const renderTabelaDocs = (lista: CteDoc[], rotulo: string, semSelecao = false) => (<>
 {lista.length === 0 ? (
             <EmptyState icon={Truck} title="Nenhum CT-e" description={`Nenhum CT-e ${rotulo}.`} />
           ) : (
             <Card className="overflow-hidden">
               <Table>
-                <TableHeader><TableRow>{rotulo === "autorizados" && !semSelecao && <TableHead className="w-6"></TableHead>}<TableHead className="text-center">Placa</TableHead><TableHead className="text-center">Motorista</TableHead><TableHead className="text-center">Número</TableHead><TableHead className="text-center">Série</TableHead><TableHead className="text-center">Notas Fiscais</TableHead><TableHead className="text-center">Valor</TableHead><TableHead className="text-center">Responsável</TableHead><TableHead className="text-center">Data Emissão</TableHead><TableHead className="text-center">Ações</TableHead></TableRow></TableHeader>
+                <TableHeader><TableRow>{rotulo === "autorizados" && !semSelecao && <TableHead className="w-6"><div className="flex items-center gap-1"><input type="checkbox" checked={lista.filter(d => d.status === "autorizado" && d.chave_acesso).every(d => mdfSel.has(d.chave_acesso!)) && lista.some(d => d.status === "autorizado" && d.chave_acesso)} onChange={() => { const autorizados = lista.filter(d => d.status === "autorizado" && d.chave_acesso).map(d => d.chave_acesso!); setMdfSel(prev => autorizados.every(k => prev.has(k)) ? new Set([...prev].filter(k => !autorizados.includes(k))) : new Set([...prev, ...autorizados])); }} title="Selecionar CT-es autorizados" /><Button type="button" size="icon" variant="ghost" className="h-6 w-6 text-destructive" disabled={!autorizadosSelecionados.length} onClick={cancelarSelecionados} title="Cancelar CT-es selecionados" aria-label="Cancelar CT-es selecionados"><Ban className="h-3.5 w-3.5" /></Button></div></TableHead>}<TableHead className="text-center">Placa</TableHead><TableHead className="text-center">Motorista</TableHead><TableHead className="text-center">Número</TableHead><TableHead className="text-center">Série</TableHead><TableHead className="text-center">Notas Fiscais</TableHead><TableHead className="text-center">Valor</TableHead><TableHead className="text-center">Responsável</TableHead><TableHead className="text-center">Data Emissão</TableHead><TableHead className="text-center">Ações</TableHead></TableRow></TableHeader>
                 <TableBody>{lista.map(d => {
                   const nNFs = (() => { try { const j = JSON.parse(d.xml_assinado || "{}"); const nn = j.nfs?.map((n: any) => n.nNF).filter(Boolean) || []; if (nn.length) return nn; } catch { } try { const chaves = [...(d.xml_assinado||"").matchAll(/<chNFe>(\d{44})<\/chNFe>/g)].map(m=>m[1]); if (chaves.length===0) return []; return chaves.map(ch=>ch.slice(25,34).replace(/^0+/,"") || "0"); } catch { return []; } })();
                   const info = infoCteLinha(d.xml_assinado);
@@ -1862,6 +1896,16 @@ function CtePage() {
             </Card>
           )}
 
+      {cteCancelarLote && (
+        <Dialog open={cteCancelarLote} onOpenChange={v => { if (!v) setCteCancelarLote(false); }}>
+          <DialogContent>
+            <DialogHeader><DialogTitle>Cancelar CT-es selecionados</DialogTitle></DialogHeader>
+            <p className="text-sm text-muted-foreground">Serão cancelados {autorizadosSelecionados.length} CT-e(s) autorizado(s). O processamento será feito um por vez.</p>
+            <div className="space-y-2"><Label>Motivo (obrigatório)</Label><Select value={motivoCanc} onValueChange={setMotivoCanc}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent><SelectItem value="ERRO DE EMISSAO DO CT-E">ERRO DE EMISSÃO DO CT-E</SelectItem><SelectItem value="CLIENTE CANCELOU O SERVICO">CLIENTE CANCELOU O SERVIÇO</SelectItem><SelectItem value="FALTA DE ENERGIA/IMPOSSIBILIDADE TECNICA">FALTA DE ENERGIA/IMPOSSIBILIDADE TÉCNICA</SelectItem></SelectContent></Select></div>
+            <DialogFooter><Button variant="outline" onClick={() => setCteCancelarLote(false)}>Voltar</Button><Button variant="destructive" disabled={cancelar.isPending || motivoCanc.length < 15} onClick={async () => { const docsLote = [...autorizadosSelecionados]; setCteCancelarLote(false); for (const d of docsLote) { if (!d.chave_acesso) continue; const st = mdfStatusPorCte.get(d.chave_acesso); if (st) continue; try { await cancelar.mutateAsync({ chave: d.chave_acesso, protocolo: d.protocolo_sefaz || undefined, ambiente: SEFAZ_AMBIENTE, justificativa: motivoCanc }); } catch {} } setMdfSel(new Set()); }}>Confirmar cancelamento</Button></DialogFooter>
+          </DialogContent>
+        </Dialog>
+      )}
       {cteCancelar && (
         <Dialog open={!!cteCancelar} onOpenChange={(v) => { if (!v) setCteCancelar(null); }}>
           <DialogContent>
