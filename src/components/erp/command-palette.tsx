@@ -45,7 +45,7 @@ export function CommandPalette() {
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
-      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "k") {
+      if ((e.ctrlKey || e.metaKey) && ["k", "/"].includes(e.key.toLowerCase())) {
         e.preventDefault();
         setOpen((o) => !o);
       }
@@ -104,6 +104,7 @@ export function CommandPalette() {
       <Button
         variant="outline" size="sm"
         className="h-8 gap-2 px-2 text-xs text-muted-foreground"
+        aria-label="Abrir busca global (Ctrl K ou Ctrl /)"
         onClick={() => setOpen(true)}
       >
         <Search className="h-3.5 w-3.5" />
