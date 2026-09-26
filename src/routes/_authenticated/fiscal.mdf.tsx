@@ -1457,17 +1457,12 @@ function DialogNovoMdf({ open, onOpenChange, empresaId, empresa, chavesIniciais,
                   </tbody>
                 </table>
               </div>
-              {!!errosPercurso.length && (
-                <div className="border-t border-destructive/50 bg-destructive/10 p-1.5 shrink-0">
-                  <p className="text-[11px] text-destructive">⚠ percurso incorreto</p>
-                </div>
-              )}
             </div>
             <div className="md:col-span-1 border-r flex flex-col" style={{ minHeight: 0 }}>
               <div className="bg-primary/8 border-b border-primary/20 px-2 py-1 text-[10px] font-semibold uppercase tracking-wide text-primary/80 shrink-0">Adicionar UF</div>
               <div className="p-1.5 grid grid-cols-6 gap-0.5 content-start">
                 {UFS.map(uf => (
-                  <Button key={uf} variant="outline" size="sm" className="h-[18px] px-0 text-[9px] font-mono leading-none" onClick={() => { setPercursoUFs(prev => [...prev, uf]); setPercursoSelIdx(percursoUFs.length); }}>{uf}</Button>
+                  <Button key={uf} variant="outline" size="sm" className="h-6 px-0 text-xs font-mono leading-none" onClick={() => { setPercursoUFs(prev => [...prev, uf]); setPercursoSelIdx(percursoUFs.length); }}>{uf}</Button>
                 ))}
               </div>
             </div>
@@ -1479,7 +1474,12 @@ function DialogNovoMdf({ open, onOpenChange, empresaId, empresa, chavesIniciais,
               </div>
             </div>
           </div>
-          <div className="flex justify-end gap-2 pt-2 shrink-0">
+          <div className="flex items-center justify-end gap-2 pt-2 shrink-0">
+            {!!errosPercurso.length && (
+              <div className="mr-auto border border-destructive/30 bg-destructive/10 px-2 py-1">
+                <p className="text-xs font-medium text-destructive">Percurso Incorreto</p>
+              </div>
+            )}
             <Button variant="outline" onClick={() => onOpenChange(false)}>Cancelar</Button>
             {permiteRascunho && (
             <Button variant="secondary" onClick={handleSalvarRascunho} disabled={loading || !ctesSelecionadas.size}>
