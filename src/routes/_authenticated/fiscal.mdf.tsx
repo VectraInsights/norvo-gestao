@@ -1379,7 +1379,7 @@ function DialogNovoMdf({ open, onOpenChange, empresaId, empresa, chavesIniciais,
             </div>
           </div>
 
-          <div className="border rounded-md overflow-hidden">
+          <div className="border rounded-md overflow-hidden shrink-0 h-[190px]">
             <div className="bg-primary/8 border-b border-primary/20 px-2 py-1 text-[10px] font-semibold uppercase tracking-wide text-primary/80 flex items-center justify-between gap-2">
               <span>Conhecimentos ({ctesSelArr.length} vinculados){tracaoSel ? ` • placa ${tracaoSel}` : ""}</span>
               <div className="flex items-center gap-2">
@@ -1396,7 +1396,7 @@ function DialogNovoMdf({ open, onOpenChange, empresaId, empresa, chavesIniciais,
             ) : !ctesDisponiveis?.length ? (
               <p className="text-sm text-muted-foreground">Nenhum CT-e autorizado disponível.</p>
             ) : (
-              <div className="border rounded-md max-h-[160px] overflow-auto">
+              <div className="border rounded-md h-[145px] overflow-auto">
                 <Table>
                   <TableHeader className="sticky top-0 bg-muted"><TableRow>
                     <TableHead className="w-[36px]"><input type="checkbox" checked={todasMarcadas} onChange={toggleTodas} className="h-4 w-4" title="Selecionar todos" /></TableHead>
@@ -1438,7 +1438,8 @@ function DialogNovoMdf({ open, onOpenChange, empresaId, empresa, chavesIniciais,
               <div className="bg-primary/8 border-b border-primary/20 px-2 py-1 text-[10px] font-semibold uppercase tracking-wide text-primary/80 shrink-0 flex items-center justify-between gap-1">
                 <span>Percurso * <span className="font-normal normal-case">({percursoUFs.length} UF{percursoUFs.length !== 1 ? "s" : ""})</span></span>
                 <div className="flex items-center gap-1">
-                  <Button size="sm" variant="outline" className="h-5 text-[10px]" disabled={percursoSelIdx === null} onClick={() => percursoSelIdx !== null && excluirPercurso(percursoSelIdx)}>Exclui</Button>
+                  <Button size="sm" variant="outline" className="h-5 text-[10px]" disabled={percursoUFs.length === 0} onClick={() => { setPercursoUFs([]); setPercursoSelIdx(null); }}>Limpar</Button>
+                  <Button size="sm" variant="outline" className="h-5 text-[10px]" disabled={percursoSelIdx === null} onClick={() => percursoSelIdx !== null && excluirPercurso(percursoSelIdx)}>Excluir</Button>
                   <div className="flex flex-col gap-0.5">
                     <Button size="sm" variant="outline" className="h-3 px-1 text-[10px] leading-none" disabled={percursoSelIdx === null || percursoSelIdx === 0} onClick={() => percursoSelIdx !== null && moverPercurso(percursoSelIdx, -1)}>▲</Button>
                     <Button size="sm" variant="outline" className="h-3 px-1 text-[10px] leading-none" disabled={percursoSelIdx === null || percursoSelIdx === percursoUFs.length - 1} onClick={() => percursoSelIdx !== null && moverPercurso(percursoSelIdx, 1)}>▼</Button>
