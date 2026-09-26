@@ -2409,7 +2409,7 @@ function CtePage() {
                     </div>
                     <div className="space-y-0.5 text-[10px]">
                       <p className="font-medium text-xs">{active.dest || "—"}</p>
-                      <p className="text-muted-foreground">CNPJ: {active.destCnpj ? active.destCnpj.replace(/(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})/, "$1.$2.$3/$4-$5") : "—"} {<span className="inline-flex items-center gap-1">IE: <Input className="h-5 w-32 text-[10px] px-1 text-foreground" placeholder="ISENTO" value={form.ieDestinatario || destIE || ((contatoByDoc.get(String(active.destCnpj || "").replace(/\D/g, "")) || {}) as any).ie || ""} onChange={e=>setForm({...form,ieDestinatario:e.target.value.toUpperCase().replace(/[^A-Z0-9]/g,"").slice(0,14)})} /></span>}</p>
+                      <p className="text-muted-foreground">CNPJ: {active.destCnpj ? active.destCnpj.replace(/(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})/, "$1.$2.$3/$4-$5") : "—"} {destIE || ((contatoByDoc.get(String(active.destCnpj || "").replace(/\D/g, "")) || {}) as any).ie ? `IE: ${destIE || ((contatoByDoc.get(String(active.destCnpj || "").replace(/\D/g, "")) || {}) as any).ie}` : ""}</p>
                       <p className="text-muted-foreground">{[destLgr && `${destLgr}${destNro ? `, ${destNro}` : ""}`, destBai].filter(Boolean).join(" — ") || "—"}</p>
                       <p className="text-muted-foreground">{destCid || "—"}-{destUF || "—"} {destCEP ? `CEP: ${destCEP}` : ""}</p>
                       {destFone && <p className="text-muted-foreground">Fone: {destFone}</p>}
