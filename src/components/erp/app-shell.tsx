@@ -56,7 +56,8 @@ export function AppShell({ children }: { children: ReactNode }) {
   const location = useLocation();
   const qc = useQueryClient();
   const [open, setOpen] = useState(false);
-  const [collapsed, setCollapsed] = useState<boolean>(() => {
+  const [navigating, setNavigating] = useState(false);
+  const [collapsed, setCollapsed = useState<boolean>(() => {
     if (typeof window === "undefined") return false;
     return window.localStorage.getItem("norvo-sidebar-collapsed") === "1";
   });
@@ -156,8 +157,9 @@ export function AppShell({ children }: { children: ReactNode }) {
 
   // Fecha o drawer mobile e os dropdowns ao navegar, mantendo o grupo ativo aberto
   useEffect(() => {
-    setOpen(false);
-    keepActiveOpen();
+  setOpen(false);
+  setNavigating(false);
+  keepActiveOpen();
   }, [location.pathname, keepActiveOpen]);
 
   // Fecha os dropdowns ao clicar fora da barra lateral (mantém o grupo ativo)
@@ -426,6 +428,7 @@ export function AppShell({ children }: { children: ReactNode }) {
                         const link = (
                           <Link
                             to={item.to}
+                            onClick={() => setNavigating(true)}
                             data-nav-focusable
                             data-nav-group={group.label}
                             aria-current={active ? "page" : undefined}
@@ -577,7 +580,8 @@ export function AppShell({ children }: { children: ReactNode }) {
               <ShortcutsDialog />
             </div>
           </header>
-          <main id="conteudo-principal" tabIndex={-1} className="min-w-0 flex-1 overflow-auto px-3 py-4 outline-none sm:px-5 sm:py-6 lg:p-8">
+          <main id="conteudo-principal" tabIndex={-1} className="relative min-w-0 flex-1 overflow-auto px-3 py-4 outline-none sm:px-5 sm:py-6 lg:p-8">
+          {navigating && <div className="pointer-events-none fixed inset-x-0 top-0 z-[70] h-0.5 overflow-hidden bg-primary/15"><div className="h-full w-1/3 animate-[shimmer_1.1s_ease-in-out_infinite] bg-primary" /></div>}
             {semAcesso ? (
               <Card className="mx-auto mt-10 max-w-md p-8 text-center">
                 <ShieldAlert className="mx-auto mb-3 h-10 w-10 text-muted-foreground" />

@@ -186,6 +186,11 @@
   *, *::before, *::after { scroll-behavior: auto !important; transition-duration: 0.01ms !important; animation-duration: 0.01ms !important; }
 }
 
+@keyframes shimmer {
+  from { transform: translateX(-100%); }
+  to { transform: translateX(320%); }
+}
+
 @layer utilities {
   .text-balance { text-wrap: balance; }
   .scrollbar-subtle { scrollbar-color: color-mix(in oklab, var(--color-muted-foreground) 35%, transparent) transparent; scrollbar-width: thin; }
