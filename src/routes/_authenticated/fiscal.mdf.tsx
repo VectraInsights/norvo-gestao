@@ -1295,7 +1295,7 @@ function DialogNovoMdf({ open, onOpenChange, empresaId, empresa, chavesIniciais,
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="w-screen h-screen max-w-none max-h-none m-0 rounded-none p-0 gap-0 overflow-hidden" style={{ display: "grid", gridTemplateRows: "auto 1fr auto", height: "100vh", overflow: "hidden" }}>
+      <DialogContent showClose={false} className="w-screen h-screen max-w-none max-h-none m-0 rounded-none p-0 gap-0 overflow-hidden" style={{ display: "grid", gridTemplateRows: "auto 1fr auto", height: "100vh", overflow: "hidden" }}>
         <div className="overflow-hidden p-0 flex flex-col" style={{ minHeight: 0, overflow: "hidden" }}>
           <div className="space-y-1 flex-1 flex flex-col" style={{ minHeight: 0 }}>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-1">
@@ -1459,7 +1459,7 @@ function DialogNovoMdf({ open, onOpenChange, empresaId, empresa, chavesIniciais,
               </div>
               {!!errosPercurso.length && (
                 <div className="border-t border-destructive/50 bg-destructive/10 p-1.5 shrink-0">
-                  {errosPercurso.map(e => (<p key={e} className="text-[11px] text-destructive">⚠ {e}</p>))}
+                  <p className="text-[11px] text-destructive">⚠ percurso incorreto</p>
                 </div>
               )}
             </div>
