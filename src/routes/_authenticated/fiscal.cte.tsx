@@ -12,7 +12,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
-import { Truck, Plus, FileText, Search, Ban, UploadCloud, FileCode, MapPin, Package, Building2, Trash2, Filter, Calendar, CheckCircle2, ChevronsUpDown, Check, ReceiptText, Pencil, Download, Eye, Settings2, X, Loader2, ClipboardList, Printer, Repeat } from "lucide-react";
+import { Truck, Plus, FileText, Search, Ban, UploadCloud, FileCode, FilePlus2, MapPin, Package, Building2, Trash2, Filter, Calendar, CheckCircle2, ChevronsUpDown, Check, ReceiptText, Pencil, Download, Eye, Settings2, X, Loader2, ClipboardList, Printer, Repeat } from "lucide-react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useEmpresaAtual } from "@/hooks/use-empresa";
@@ -1854,7 +1854,7 @@ function CtePage() {
                     {!isRascunho && <Button size="icon" variant="ghost" className="h-7 w-7 text-destructive" disabled={d.status!=="autorizado"} onClick={() => { if (!d.chave_acesso) return; const stMdf = mdfStatusPorCte.get(d.chave_acesso); if (stMdf === "encerrado") { toast.error("Manifesto encerrado — o CT-e não pode ser cancelado"); return; } if (stMdf) { toast.error("CT-e vinculado a um MDF-e ativo — cancele o manifesto primeiro"); return; } setCteCancelar({ chave: d.chave_acesso, protocolo: d.protocolo_sefaz || undefined, ambiente: SEFAZ_AMBIENTE }); setMotivoCanc("ERRO DE EMISSAO DO CT-E"); }} title="Cancelar"><Ban className="h-3.5 w-3.5" /></Button>}
                     {!isRascunho && <Button size="icon" variant="ghost" className="h-7 w-7 text-emerald-600" onClick={() => visualizarDoc(d)} title="Ver dados e status"><ClipboardList className="h-3.5 w-3.5" /></Button>}
                     {!isRascunho && d.status === "autorizado" && <Button size="icon" variant="ghost" className="h-7 w-7 text-violet-600" onClick={() => substituirCte(d)} title="Emitir CT-e de substituição"><Repeat className="h-3.5 w-3.5" /></Button>}
-                    {!isRascunho && d.status === "autorizado" && <Button size="sm" variant="outline" className="h-7 px-2 text-[10px] text-emerald-700" onClick={() => complementarCte(d)} title="Emitir CT-e complementar"><Plus className="mr-1 h-3 w-3" /> CT-e complementar</Button>}
+                    {!isRascunho && d.status === "autorizado" && <Button size="icon" variant="ghost" className="h-7 w-7 text-emerald-700" onClick={() => complementarCte(d)} title="Emitir CT-e complementar" aria-label="Emitir CT-e complementar"><FilePlus2 className="h-4 w-4" /></Button>}
                   </TableCell></TableRow>
                   );
                 })}</TableBody>
