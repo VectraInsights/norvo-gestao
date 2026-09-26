@@ -3050,3 +3050,10 @@ Espelhado na Vercel.
 - Espelhado na Vercel via push em main. IMPORTANTE: aguardar o deploy
   concluir e Ctrl+F5 — telas com botões de UF em 5 colunas são versão
   antiga (a nova usa grade de 6).
+
+## Sem linha do rodapé + marcador de versão (25/09/2026)
+
+- Linha divisória acima dos botões removida; caixas descem até a borda.
+- Marcador `ui-27` no título do Novo MDF-e p/ conferir a versão em tela
+  (Vercel pode estar sem publicar os pushes — checar Deployments).
+- Espelhado na Vercel via push em main.

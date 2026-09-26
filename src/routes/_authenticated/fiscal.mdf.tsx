@@ -1296,7 +1296,7 @@ function DialogNovoMdf({ open, onOpenChange, empresaId, empresa, chavesIniciais,
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="w-screen h-screen max-w-none max-h-none m-0 rounded-none overflow-hidden flex flex-col">
-        <DialogHeader className="shrink-0"><DialogTitle>Novo MDF-e <span className="rounded bg-amber-100 px-1.5 py-0.5 text-xs font-normal text-amber-800">Homologação (testes)</span></DialogTitle></DialogHeader>
+        <DialogHeader className="shrink-0"><DialogTitle>Novo MDF-e <span className="rounded bg-amber-100 px-1.5 py-0.5 text-xs font-normal text-amber-800">Homologação (testes)</span><span className="ml-2 align-middle font-mono text-[10px] font-normal text-muted-foreground" title="Revisão da tela">ui-27</span></DialogTitle></DialogHeader>
 
         <div className="space-y-2 flex-1 min-h-0 flex flex-col">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
@@ -1471,7 +1471,7 @@ function DialogNovoMdf({ open, onOpenChange, empresaId, empresa, chavesIniciais,
           </div>
         </div>
 
-        <DialogFooter className="shrink-0 border-t border-border pt-2 mt-2">
+        <DialogFooter className="shrink-0 pt-1">
           <Button variant="outline" onClick={() => onOpenChange(false)}>Cancelar</Button>
           {permiteRascunho && (
           <Button variant="secondary" onClick={handleSalvarRascunho} disabled={loading || !ctesSelecionadas.size}>
