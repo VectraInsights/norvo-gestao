@@ -2126,7 +2126,7 @@ function CtePage() {
             </AlertDialogContent>
           </AlertDialog>
           <Dialog open={percPickOpen} onOpenChange={setPercPickOpen}>
-            <DialogContent className="max-w-lg">
+            <DialogContent className="fixed inset-0 left-0 top-0 translate-x-0 translate-y-0 w-screen h-screen max-w-none max-h-none rounded-none p-6 overflow-y-auto">
               <DialogHeader>
                 <DialogTitle>Novo CT-e — escolher percurso</DialogTitle>
               </DialogHeader>
