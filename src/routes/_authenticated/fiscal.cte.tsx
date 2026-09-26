@@ -620,7 +620,9 @@ function CtePage() {
     setMotoristaOpen(false);
     setMotorista2Open(false);
     qc.invalidateQueries({ queryKey: ["cte-documentos"] });
-    qc.invalidateQueries({ queryKey: ["cte-nfes-pendentes", empresa?.id] });
+    if (empresa?.id) {
+      void qc.refetchQueries({ queryKey: ["cte-nfes-pendentes", empresa.id], type: "active" });
+    }
   };
   // Novo CT-e preservando dados fiscais (CFOP, impostos, status) — só limpa dados da NF/tomador/rota
   const novoCtePreservandoFiscal = () => {
