@@ -3044,5 +3044,6 @@ Espelhado na Vercel.
 ## Caixas até a borda (25/09/2026)
 
 - Linha percurso/UFs/observações em flex que ocupa o espaço restante:
-  as três caixas esticam até a borda inferior, sem rolagem.
+  as três caixas esticam até a borda inferior, sem rolagem (removido o
+  `self-start` da caixa de UFs que impedia o esticamento).
 - Espelhado na Vercel via push em main.
