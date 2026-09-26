@@ -571,9 +571,9 @@ export function AppShell({ children }: { children: ReactNode }) {
             <div className="flex items-center gap-1">
               <CommandPalette />
               <NotificationsBell />
-              <Button variant="ghost" size="icon" onClick={toggleTheme} aria-label="Alternar tema">
-                {theme === "dark" ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
-              </Button>
+<Button variant="ghost" size="icon" onClick={toggleTheme} aria-label={theme === "dark" ? "Ativar tema claro" : "Ativar tema escuro"} title={theme === "dark" ? "Ativar tema claro" : "Ativar tema escuro"}>
+  {theme === "dark" ? <Sun className="h-4 w-4" aria-hidden="true" /> : <Moon className="h-4 w-4" aria-hidden="true" />}
+  </Button>
               <ShortcutsDialog />
             </div>
           </header>
