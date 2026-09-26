@@ -1298,8 +1298,8 @@ function DialogNovoMdf({ open, onOpenChange, empresaId, empresa, chavesIniciais,
       <DialogContent className="w-screen h-screen max-w-none max-h-none m-0 rounded-none overflow-hidden" style={{ display: "grid", gridTemplateRows: "auto 1fr auto", height: "100vh", overflow: "hidden" }}>
         <DialogHeader className="shrink-0 px-4 pt-4 pb-0" style={{ flexShrink: 0 }}><DialogTitle>Novo MDF-e <span className="rounded bg-amber-100 px-1.5 py-0.5 text-xs font-normal text-amber-800">Homologação (testes)</span><span className="ml-2 align-middle font-mono text-[10px] font-normal text-muted-foreground" title="Revisão da tela">ui-32</span></DialogTitle></DialogHeader>
 
-        <div className="overflow-y-auto px-4 py-2" style={{ minHeight: 0 }}>
-          <div className="space-y-2">
+        <div className="overflow-hidden px-4 py-2 flex flex-col" style={{ minHeight: 0, overflow: "hidden" }}>
+          <div className="space-y-2 flex-1 flex flex-col" style={{ minHeight: 0 }}>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
             <div className="border rounded-md overflow-hidden">
               <div className="bg-primary/8 border-b border-primary/20 px-2 py-1 text-[10px] font-semibold uppercase tracking-wide text-primary/80">Dados do Veículo / Motorista</div>
@@ -1434,8 +1434,9 @@ function DialogNovoMdf({ open, onOpenChange, empresaId, empresa, chavesIniciais,
             </div>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-10 gap-2 items-stretch" style={{ minHeight: "180px", overflow: "hidden", height: "100%" }}>
-            <div className="border rounded-md md:col-span-2 min-w-0 overflow-hidden flex flex-col" style={{ height: "100%", minHeight: "180px" }}>
+          <div className="border rounded-md overflow-hidden flex-1 flex flex-col" style={{ minHeight: 0 }}>
+          <div className="grid grid-cols-1 md:grid-cols-10 flex-1" style={{ minHeight: 0 }}>
+            <div className="md:col-span-2 min-w-0 border-r flex flex-col" style={{ minHeight: 0 }}>
               <div className="bg-primary/8 border-b border-primary/20 px-2 py-1 text-[10px] font-semibold uppercase tracking-wide text-primary/80 shrink-0 flex items-center justify-between gap-1">
                 <span>Percurso * <span className="font-normal normal-case">({percursoUFs.length} UF{percursoUFs.length !== 1 ? "s" : ""})</span></span>
                 <div className="flex items-center gap-1">
@@ -1464,7 +1465,7 @@ function DialogNovoMdf({ open, onOpenChange, empresaId, empresa, chavesIniciais,
                 </div>
               )}
             </div>
-            <div className="border rounded-md md:col-span-1 flex flex-col" style={{ height: "100%", minHeight: "180px" }}>
+            <div className="md:col-span-1 border-r flex flex-col" style={{ minHeight: 0 }}>
               <div className="bg-primary/8 border-b border-primary/20 px-2 py-1 text-[10px] font-semibold uppercase tracking-wide text-primary/80 shrink-0">Adicionar UF</div>
               <div className="p-1.5 grid grid-cols-6 gap-0.5 content-start">
                 {UFS.map(uf => (
@@ -1472,30 +1473,28 @@ function DialogNovoMdf({ open, onOpenChange, empresaId, empresa, chavesIniciais,
                 ))}
               </div>
             </div>
-            <div className="md:col-span-7 flex flex-col" style={{ height: "100%", minHeight: "180px" }}>
-              <div className="border rounded-md overflow-hidden flex-1 flex flex-col">
-                <div className="bg-primary/8 border-b border-primary/20 px-2 py-1 text-[10px] font-semibold uppercase tracking-wide text-primary/80 shrink-0">Observações</div>
-                <div className="p-2 flex-1 flex flex-col gap-2">
-                  <div className="flex-1 flex flex-col"><Label className="text-xs mb-0.5">Observação</Label><Textarea value={observacoes} onChange={e => setObservacoes(e.target.value)} className="text-xs flex-1 resize-none py-1 min-h-[40px]" /></div>
-                  <div className="flex-1 flex flex-col"><Label className="text-xs mb-0.5">Informações Adicionais Fisco</Label><Textarea value={infoFisco} onChange={e => setInfoFisco(e.target.value)} className="text-xs flex-1 resize-none py-1 min-h-[40px]" /></div>
-                </div>
+            <div className="md:col-span-7 flex flex-col" style={{ minHeight: 0 }}>
+              <div className="bg-primary/8 border-b border-primary/20 px-2 py-1 text-[10px] font-semibold uppercase tracking-wide text-primary/80 shrink-0">Observações</div>
+              <div className="p-2 flex-1 flex flex-col gap-2" style={{ minHeight: 0 }}>
+                <div className="flex-1 flex flex-col" style={{ minHeight: 0 }}><Label className="text-xs mb-0.5">Observação</Label><Textarea value={observacoes} onChange={e => setObservacoes(e.target.value)} className="text-xs flex-1 resize-none py-1 min-h-[40px]" /></div>
+                <div className="flex-1 flex flex-col" style={{ minHeight: 0 }}><Label className="text-xs mb-0.5">Informações Adicionais Fisco</Label><Textarea value={infoFisco} onChange={e => setInfoFisco(e.target.value)} className="text-xs flex-1 resize-none py-1 min-h-[40px]" /></div>
               </div>
             </div>
           </div>
+          <div className="flex justify-end gap-2 p-2 border-t shrink-0">
+            <Button variant="outline" onClick={() => onOpenChange(false)}>Cancelar</Button>
+            {permiteRascunho && (
+            <Button variant="secondary" onClick={handleSalvarRascunho} disabled={loading || !ctesSelecionadas.size}>
+              {loading ? "Salvando..." : "Salvar Rascunho"}
+            </Button>
+            )}
+            <Button onClick={handleEmitir} disabled={loading || !tracaoSel || !ctesSelecionadas.size || !motNomes.length || !ufCarregamento || !ufDescarregamento || !!errosPercurso.length}>
+              <Send className="mr-1 h-4 w-4" /> {loading ? "Emitindo..." : "Emitir MDF-e"}
+            </Button>
+          </div>
+          </div>
           </div>
         </div>
-
-        <DialogFooter className="shrink-0 mt-0" style={{ flexShrink: 0, marginTop: 0 }}>
-          <Button variant="outline" onClick={() => onOpenChange(false)}>Cancelar</Button>
-          {permiteRascunho && (
-          <Button variant="secondary" onClick={handleSalvarRascunho} disabled={loading || !ctesSelecionadas.size}>
-            {loading ? "Salvando..." : "Salvar Rascunho"}
-          </Button>
-          )}
-          <Button onClick={handleEmitir} disabled={loading || !tracaoSel || !ctesSelecionadas.size || !motNomes.length || !ufCarregamento || !ufDescarregamento || !!errosPercurso.length}>
-            <Send className="mr-1 h-4 w-4" /> {loading ? "Emitindo..." : "Emitir MDF-e"}
-          </Button>
-        </DialogFooter>
       </DialogContent>
     </Dialog>
   );

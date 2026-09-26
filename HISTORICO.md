@@ -3143,3 +3143,10 @@ Espelhado na Vercel.
 - Cabeçalhos das caixas: cor trocada de `bg-muted/60` para `bg-primary/8`
   com borda `border-primary/20` e texto `text-primary/80` — mais visíveis.
 - Espelhado via kiro-automerge → main.
+
+## Caixa única sem scroll (26/09/2026)
+
+- Base em UMA caixa só: percurso + UFs + observações e, colados no
+  rodapé dela, Cancelar/Salvar/Emitir (DialogFooter separado removido).
+  Sem scroll na página; tudo visível de uma vez.
+- Espelhado na Vercel via push em main.
