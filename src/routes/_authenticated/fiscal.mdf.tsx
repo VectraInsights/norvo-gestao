@@ -1423,7 +1423,7 @@ function DialogNovoMdf({ open, onOpenChange, empresaId, empresa, chavesIniciais,
             )}
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-10 gap-2 items-stretch min-h-0 h-full" style={{ minHeight: 0, overflow: "hidden" }}>
+          <div className="grid grid-cols-1 md:grid-cols-10 gap-2 items-stretch" style={{ minHeight: 0, overflow: "hidden", height: "100%" }}>
             <div className="border rounded-md p-2 md:col-span-2 min-w-0 overflow-hidden h-full flex flex-col" style={{ height: "100%" }}>
               <div className="flex items-center justify-between gap-1 flex-wrap shrink-0">
                 <Label className="text-xs">Percurso *</Label>

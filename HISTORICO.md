@@ -3099,3 +3099,11 @@ Espelhado na Vercel.
 - Div dos botões de UF: adicionado `flex flex-col`; grid interno com
   `content-start` para os botões ficarem no topo sem esticar.
 - Espelhado via kiro-automerge → main.
+
+
+## Percurso/UFs: height 100% no grid da última linha (26/09/2026)
+
+- Corrigido: grid `md:grid-cols-10` da última seção recebe `height: "100%"`
+  explícito para ocupar toda a área do grid-cell pai (1fr do gridTemplateRows).
+  `flex-1` não tem efeito dentro de grid — trocado por `height: 100%`.
+- Tabela de percurso mantém `flex-1 min-h-0` para esticar dentro da coluna.
