@@ -1295,10 +1295,10 @@ function DialogNovoMdf({ open, onOpenChange, empresaId, empresa, chavesIniciais,
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="w-screen h-screen max-w-none max-h-none m-0 rounded-none overflow-hidden flex flex-col">
-        <DialogHeader className="shrink-0"><DialogTitle>Novo MDF-e <span className="rounded bg-amber-100 px-1.5 py-0.5 text-xs font-normal text-amber-800">Homologação (testes)</span><span className="ml-2 align-middle font-mono text-[10px] font-normal text-muted-foreground" title="Revisão da tela">ui-27</span></DialogTitle></DialogHeader>
+      <DialogContent className="w-screen h-screen max-w-none max-h-none m-0 rounded-none overflow-hidden flex flex-col" style={{ display: "flex", flexDirection: "column", height: "100vh", overflow: "hidden" }}>
+        <DialogHeader className="shrink-0" style={{ flexShrink: 0 }}><DialogTitle>Novo MDF-e <span className="rounded bg-amber-100 px-1.5 py-0.5 text-xs font-normal text-amber-800">Homologação (testes)</span><span className="ml-2 align-middle font-mono text-[10px] font-normal text-muted-foreground" title="Revisão da tela">ui-28</span></DialogTitle></DialogHeader>
 
-        <div className="space-y-2 flex-1 min-h-0 flex flex-col">
+        <div className="space-y-2 flex-1 min-h-0 flex flex-col" style={{ flex: "1 1 0%", minHeight: 0, display: "flex", flexDirection: "column" }}>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
             <div className="border rounded-md p-2 space-y-1 overflow-hidden">
               <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
@@ -1423,8 +1423,8 @@ function DialogNovoMdf({ open, onOpenChange, empresaId, empresa, chavesIniciais,
             )}
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-10 gap-2 flex-1 min-h-0 items-stretch">
-            <div className="border rounded-md p-2 md:col-span-2 min-w-0 overflow-hidden h-full flex flex-col">
+          <div className="grid grid-cols-1 md:grid-cols-10 gap-2 flex-1 min-h-0 items-stretch" style={{ flex: "1 1 0%", minHeight: 0 }}>
+            <div className="border rounded-md p-2 md:col-span-2 min-w-0 overflow-hidden h-full flex flex-col" style={{ height: "100%" }}>
               <div className="flex items-center justify-between gap-1 flex-wrap">
                 <Label className="text-xs">Percurso *</Label>
                 <div className="flex items-center gap-1">
@@ -1454,7 +1454,7 @@ function DialogNovoMdf({ open, onOpenChange, empresaId, empresa, chavesIniciais,
                 </div>
               )}
             </div>
-            <div className="border rounded-md p-2 md:col-span-1 h-full">
+            <div className="border rounded-md p-2 md:col-span-1 h-full" style={{ height: "100%" }}>
               <span className="text-[10px] text-muted-foreground">Adicionar UF:</span>
               <div className="grid grid-cols-6 gap-0.5 mt-1">
                 {UFS.map(uf => (
@@ -1462,7 +1462,7 @@ function DialogNovoMdf({ open, onOpenChange, empresaId, empresa, chavesIniciais,
                 ))}
               </div>
             </div>
-            <div className="space-y-2 md:col-span-7">
+            <div className="space-y-2 md:col-span-7" style={{ height: "100%" }}>
               <div className="border rounded-md p-2 space-y-1">
                 <div><Label className="text-xs">Observação</Label><Textarea value={observacoes} onChange={e => setObservacoes(e.target.value)} rows={1} className="text-xs min-h-[28px] py-1" /></div>
                 <div><Label className="text-xs">Informações Adicionais Fisco</Label><Textarea value={infoFisco} onChange={e => setInfoFisco(e.target.value)} rows={1} className="text-xs min-h-[28px] py-1" /></div>
@@ -1471,7 +1471,7 @@ function DialogNovoMdf({ open, onOpenChange, empresaId, empresa, chavesIniciais,
           </div>
         </div>
 
-        <DialogFooter className="shrink-0 pt-1">
+        <DialogFooter className="shrink-0 pt-1" style={{ flexShrink: 0 }}>
           <Button variant="outline" onClick={() => onOpenChange(false)}>Cancelar</Button>
           {permiteRascunho && (
           <Button variant="secondary" onClick={handleSalvarRascunho} disabled={loading || !ctesSelecionadas.size}>

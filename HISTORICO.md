@@ -3054,6 +3054,8 @@ Espelhado na Vercel.
 ## Sem linha do rodapé + marcador de versão (25/09/2026)
 
 - Linha divisória acima dos botões removida; caixas descem até a borda.
-- Marcador `ui-27` no título do Novo MDF-e p/ conferir a versão em tela
-  (Vercel pode estar sem publicar os pushes — checar Deployments).
+- Marcador `ui-28` no título do Novo MDF-e p/ conferir a versão em tela.
+- Layout crítico em estilos inline (à prova de conflito de CSS):
+  diálogo, conteúdo, grade e caixas com flex/altura inline verificados
+  nos bundles SSR e cliente antes do push.
 - Espelhado na Vercel via push em main.
