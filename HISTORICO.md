@@ -3068,3 +3068,14 @@ Espelhado na Vercel.
   (`auto minmax(0,1fr) auto`), sem depender de distribuição flex.
   Marcador `ui-29`. Verificado nos bundles antes do push.
 - Espelhado na Vercel via push em main.
+
+## Percurso + UFs alinhados ao rodapé (26/09/2026)
+
+- Último bloco do Novo MDF-e (Percurso, botões de UF e Observações) ajustado
+  para esticar até os botões de ação, sem espaço vazio entre eles e o rodapé.
+- Grid interno usa `gridTemplateRows: "auto auto minmax(0,1fr)"` — última linha
+  vira 1fr; grid de colunas `md:grid-cols-10` recebeu `h-full`; div de
+  observações usa `flex flex-col` + `flex-1` para preencher o espaço restante.
+- Caixas de Observação e Informações Adicionais Fisco com `rows={2}`.
+- Push feito pelo usuário via terminal (política do Kiro Crew bloqueia push
+  direto para main pelo agente).
