@@ -1346,43 +1346,56 @@ function CtePage() {
   const complementarCte = (doc: CteDoc) => {
   const chave = String(doc.chave_acesso || "").replace(/\D/g, "");
   try {
-  const parsed = JSON.parse(doc.xml_assinado || "{}");
-  const base = parsed.form || {};
-  const xml = String(parsed.xml || "");
+  const raw = String(doc.xml_assinado || "");
+  let parsed: any = {};
+  try { parsed = JSON.parse(raw); } catch { parsed = { xml: raw }; }
+  const base = parsed.form && typeof parsed.form === "object" ? parsed.form : {};
+  const xml = String(parsed.xml || (raw.trim().startsWith("<") ? raw : ""));
   const xmlDoc = xml ? new DOMParser().parseFromString(xml, "text/xml") : null;
-  const text = (selector: string) => xmlDoc?.querySelector(selector)?.textContent?.trim() || "";
-  const toma = text("toma3 > toma") || text("infCte > toma > toma") || base.toma || "3";
-  const tomaDoc = text("toma4 > CNPJ") || text("toma4 > CPF") || text("infCte > toma > CNPJ") || text("infCte > toma > CPF") || (toma === "0" ? text("infCte > rem > CNPJ") : toma === "3" ? text("infCte > dest > CNPJ") : "");
-  const remetente = text("infCte > rem > xNome") || base.xNomeRemetente || "";
-  const destinatario = text("infCte > dest > xNome") || base.xNomeDestinatario || "";
-  const tomador = text("infCte > toma > xNome") || (toma === "0" ? remetente : toma === "3" ? destinatario : "");
-  const nfs = Array.from(xmlDoc?.querySelectorAll("det") || []).map(det => ({
-    chave: det.querySelector("chNFe")?.textContent?.trim() || "",
-    nNF: det.querySelector("infNFe > ide > nNF")?.textContent?.trim() || "",
-    serie: det.querySelector("infNFe > ide > serie")?.textContent?.trim() || "1",
-    emit: det.querySelector("infNFe > emit > xNome")?.textContent?.trim() || remetente,
-    emitCnpj: det.querySelector("infNFe > emit > CNPJ")?.textContent?.trim() || text("infCte > rem > CNPJ"),
-    emitUF: det.querySelector("infNFe > emit > enderEmit > UF")?.textContent?.trim() || "",
-    emitCMun: det.querySelector("infNFe > emit > enderEmit > cMun")?.textContent?.trim() || "",
-    emitXMun: det.querySelector("infNFe > emit > enderEmit > xMun")?.textContent?.trim() || "",
-    dest: det.querySelector("infNFe > dest > xNome")?.textContent?.trim() || destinatario,
-    destCnpj: det.querySelector("infNFe > dest > CNPJ")?.textContent?.trim() || text("infCte > dest > CNPJ"),
-    destUF: det.querySelector("infNFe > dest > enderDest > UF")?.textContent?.trim() || "",
-    destCMun: det.querySelector("infNFe > dest > enderDest > cMun")?.textContent?.trim() || "",
-    destXMun: det.querySelector("infNFe > dest > enderDest > xMun")?.textContent?.trim() || "",
-    valor: Number(det.querySelector("infNFe > total > ICMSTot > vNF")?.textContent || 0), peso: 0, data: "",
-    tomador, tomadorCnpj: tomaDoc, tomadorUF: "", tomadorCMun: "", tomadorXMun: "", modFrete: "",
-  })).filter(n => n.chave);
-  setForm({ ...emptyForm, ...base,
+  const nodes = (root: ParentNode | null, name: string) => root ? Array.from(root.querySelectorAll("*")).filter((node) => node.localName === name) : [];
+  const text = (root: ParentNode | null, name: string) => nodes(root, name)[0]?.textContent?.trim() || "";
+  const cte = nodes(xmlDoc, "infCte")[0] || xmlDoc;
+  const rem = nodes(cte, "rem")[0] || null;
+  const dest = nodes(cte, "dest")[0] || null;
+  const tomaNode = nodes(cte, "toma3")[0] || nodes(cte, "toma4")[0] || nodes(cte, "toma")[0] || null;
+  const toma = text(tomaNode, "toma") || base.toma || "3";
+  const tomaDoc = text(tomaNode, "CNPJ") || text(tomaNode, "CPF") || (toma === "0" ? text(rem, "CNPJ") : toma === "3" ? text(dest, "CNPJ") : "");
+  const remetente = text(rem, "xNome") || base.xNomeRemetente || "";
+  const destinatario = text(dest, "xNome") || base.xNomeDestinatario || "";
+  const tomador = text(tomaNode, "xNome") || (toma === "0" ? remetente : toma === "3" ? destinatario : "");
+  const nfs = nodes(xmlDoc, "det").map(det => {
+    const infNfe = nodes(det, "infNFe")[0] || det;
+    const ide = nodes(infNfe, "ide")[0] || infNfe;
+    const emit = nodes(infNfe, "emit")[0] || infNfe;
+    const emitEnd = nodes(emit, "enderEmit")[0] || emit;
+    const nfeDest = nodes(infNfe, "dest")[0] || infNfe;
+    const destEnd = nodes(nfeDest, "enderDest")[0] || nfeDest;
+    const total = nodes(infNfe, "ICMSTot")[0] || infNfe;
+    return {
+      chave: text(det, "chNFe"), nNF: text(ide, "nNF"), serie: text(ide, "serie") || "1",
+      emit: text(emit, "xNome") || remetente, emitCnpj: text(emit, "CNPJ") || text(rem, "CNPJ"),
+      emitUF: text(emitEnd, "UF"), emitCMun: text(emitEnd, "cMun"), emitXMun: text(emitEnd, "xMun"),
+      dest: text(nfeDest, "xNome") || destinatario, destCnpj: text(nfeDest, "CNPJ") || text(dest, "CNPJ"),
+      destUF: text(destEnd, "UF"), destCMun: text(destEnd, "cMun"), destXMun: text(destEnd, "xMun"),
+      valor: Number(text(total, "vNF") || 0), peso: 0, data: "", tomador, tomadorCnpj: tomaDoc,
+      tomadorUF: "", tomadorCMun: "", tomadorXMun: "", modFrete: "",
+    };
+  }).filter(n => n.chave);
+  const inherited = {
+    ...base,
     toma, cnpjTomador: tomaDoc || base.cnpjTomador, xNomeTomador: tomador || base.xNomeTomador,
     finalidadeEmissao: "Complemento", cteReferenciado: chave, dataEmissao: new Date().toISOString().slice(0, 10),
     pedagioPagto: base.pedagioPagto || "sem-pagamento", valePedagio: base.valePedagio || "0.00",
-  } as any);
-  setMercadorias(nfs.length ? nfs as any : (parsed.nfs || []));
-  setSelecionadas(new Set(nfs.map(n => n.chave)));
-  } catch { setForm({ ...emptyForm, finalidadeEmissao: "Complemento", cteReferenciado: chave } as any); setMercadorias([]); setSelecionadas(new Set()); }
+  };
+  setForm({ ...emptyForm, ...inherited } as any);
+  setMercadorias(nfs.length ? nfs as any : Array.isArray(parsed.nfs) ? parsed.nfs : []);
+  setSelecionadas(new Set((nfs.length ? nfs : parsed.nfs || []).map((n: any) => n.chave).filter(Boolean)));
+  } catch (error) {
+    console.log("[v0] Falha ao herdar dados do CT-e complementar:", error);
+    setForm({ ...emptyForm, finalidadeEmissao: "Complemento", cteReferenciado: chave } as any); setMercadorias([]); setSelecionadas(new Set());
+  }
   setEditingRascunhoId(null); setViewDoc(null); setAba("geral"); setOpen(true);
-  toast.info(`CT-e complementar do CT-e ${doc.numero || ""} — confira os dados e emita`);
+  toast.info(`CT-e complementar do CT-e ${doc.numero || ""} — dados do original carregados`);
   };
 
   const salvarRascunho = useMutation({
