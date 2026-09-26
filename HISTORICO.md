@@ -3045,5 +3045,8 @@ Espelhado na Vercel.
 
 - Linha percurso/UFs/observações em flex que ocupa o espaço restante:
   as três caixas esticam até a borda inferior, sem rolagem (removido o
-  `self-start` da caixa de UFs que impedia o esticamento).
-- Espelhado na Vercel via push em main.
+  `self-start` da caixa de UFs que impedia o esticamento; header
+  shrink-0 completa a cadeia flex).
+- Espelhado na Vercel via push em main. IMPORTANTE: aguardar o deploy
+  concluir e Ctrl+F5 — telas com botões de UF em 5 colunas são versão
+  antiga (a nova usa grade de 6).
