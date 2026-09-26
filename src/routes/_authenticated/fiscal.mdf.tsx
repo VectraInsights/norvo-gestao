@@ -1295,10 +1295,10 @@ function DialogNovoMdf({ open, onOpenChange, empresaId, empresa, chavesIniciais,
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="w-screen h-screen max-w-none max-h-none m-0 rounded-none overflow-hidden" style={{ display: "grid", gridTemplateRows: "auto 1fr auto", height: "100vh", overflow: "hidden" }}>
+      <DialogContent className="w-screen h-screen max-w-none max-h-none m-0 rounded-none p-0 gap-0 overflow-hidden" style={{ display: "grid", gridTemplateRows: "auto 1fr auto", height: "100vh", overflow: "hidden" }}>
         <DialogHeader className="shrink-0 px-4 pt-4 pb-0" style={{ flexShrink: 0 }}><DialogTitle>Novo MDF-e <span className="rounded bg-amber-100 px-1.5 py-0.5 text-xs font-normal text-amber-800">Homologação (testes)</span><span className="ml-2 align-middle font-mono text-[10px] font-normal text-muted-foreground" title="Revisão da tela">ui-32</span></DialogTitle></DialogHeader>
 
-        <div className="overflow-hidden px-2 py-1 flex flex-col" style={{ minHeight: 0, overflow: "hidden" }}>
+        <div className="overflow-hidden p-0 flex flex-col" style={{ minHeight: 0, overflow: "hidden" }}>
           <div className="space-y-1 flex-1 flex flex-col" style={{ minHeight: 0 }}>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-1">
             <div className="border rounded-md overflow-hidden">
