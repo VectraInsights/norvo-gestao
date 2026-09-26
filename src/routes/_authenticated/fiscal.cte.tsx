@@ -1312,18 +1312,33 @@ function CtePage() {
   };
 
   const substituirCte = (doc: CteDoc) => {
-    try {
-      const parsed = JSON.parse(doc.xml_assinado || "{}");
-      const base = parsed.form || {};
-      setForm({ ...emptyForm, ...base, finalidadeEmissao: "Substituicao", cteReferenciado: String(doc.chave_acesso || "").replace(/\D/g, ""), dataEmissao: new Date().toISOString().slice(0, 10) });
-    } catch { setForm({ ...emptyForm, finalidadeEmissao: "Substituicao", cteReferenciado: String(doc.chave_acesso || "").replace(/\D/g, "") } as any); }
-    setMercadorias([]);
-    setSelecionadas(new Set());
-    setEditingRascunhoId(null);
-    setViewDoc(null);
-    setAba("geral");
-    setOpen(true);
-    toast.info(`Substituição do CT-e ${doc.numero || ""} — confira os dados e emita`);
+  try {
+  const parsed = JSON.parse(doc.xml_assinado || "{}");
+  const base = parsed.form || {};
+  setForm({ ...emptyForm, ...base, finalidadeEmissao: "Substituicao", cteReferenciado: String(doc.chave_acesso || "").replace(/\D/g, ""), dataEmissao: new Date().toISOString().slice(0, 10) });
+  } catch { setForm({ ...emptyForm, finalidadeEmissao: "Substituicao", cteReferenciado: String(doc.chave_acesso || "").replace(/\D/g, "") } as any); }
+  setMercadorias([]);
+  setSelecionadas(new Set());
+  setEditingRascunhoId(null);
+  setViewDoc(null);
+  setAba("geral");
+  setOpen(true);
+  toast.info(`Substituição do CT-e ${doc.numero || ""} — confira os dados e emita`);
+  };
+
+  const complementarCte = (doc: CteDoc) => {
+  try {
+  const parsed = JSON.parse(doc.xml_assinado || "{}");
+  const base = parsed.form || {};
+  setForm({ ...emptyForm, ...base, finalidadeEmissao: "Complemento", cteReferenciado: String(doc.chave_acesso || "").replace(/\D/g, ""), dataEmissao: new Date().toISOString().slice(0, 10) });
+  } catch { setForm({ ...emptyForm, finalidadeEmissao: "Complemento", cteReferenciado: String(doc.chave_acesso || "").replace(/\D/g, "") } as any); }
+  setMercadorias([]);
+  setSelecionadas(new Set());
+  setEditingRascunhoId(null);
+  setViewDoc(null);
+  setAba("geral");
+  setOpen(true);
+  toast.info(`CT-e complementar do CT-e ${doc.numero || ""} — confira os dados e emita`);
   };
 
   const salvarRascunho = useMutation({
@@ -1839,7 +1854,7 @@ function CtePage() {
                     {!isRascunho && <Button size="icon" variant="ghost" className="h-7 w-7 text-destructive" disabled={d.status!=="autorizado"} onClick={() => { if (!d.chave_acesso) return; const stMdf = mdfStatusPorCte.get(d.chave_acesso); if (stMdf === "encerrado") { toast.error("Manifesto encerrado — o CT-e não pode ser cancelado"); return; } if (stMdf) { toast.error("CT-e vinculado a um MDF-e ativo — cancele o manifesto primeiro"); return; } setCteCancelar({ chave: d.chave_acesso, protocolo: d.protocolo_sefaz || undefined, ambiente: SEFAZ_AMBIENTE }); setMotivoCanc("ERRO DE EMISSAO DO CT-E"); }} title="Cancelar"><Ban className="h-3.5 w-3.5" /></Button>}
                     {!isRascunho && <Button size="icon" variant="ghost" className="h-7 w-7 text-emerald-600" onClick={() => visualizarDoc(d)} title="Ver dados e status"><ClipboardList className="h-3.5 w-3.5" /></Button>}
                     {!isRascunho && d.status === "autorizado" && <Button size="icon" variant="ghost" className="h-7 w-7 text-violet-600" onClick={() => substituirCte(d)} title="Emitir CT-e de substituição"><Repeat className="h-3.5 w-3.5" /></Button>}
-                    {!isRascunho && <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => d.chave_acesso && consultar.mutate({ chave: d.chave_acesso, ambiente: SEFAZ_AMBIENTE })} title="Consultar SEFAZ"><Search className="h-3.5 w-3.5" /></Button>}
+                    {!isRascunho && d.status === "autorizado" && <Button size="sm" variant="outline" className="h-7 px-2 text-[10px] text-emerald-700" onClick={() => complementarCte(d)} title="Emitir CT-e complementar"><Plus className="mr-1 h-3 w-3" /> CT-e complementar</Button>}
                   </TableCell></TableRow>
                   );
                 })}</TableBody>
@@ -2200,7 +2215,7 @@ function CtePage() {
                   <div><Label className="text-[10px] text-muted-foreground">Protocolo de Envio</Label><Input className="h-6 text-[10px] font-mono bg-transparent dark:bg-transparent" value={viewDoc ? (viewDoc.protocolo_sefaz || "—") : "— aguardando emissão —"} readOnly /></div>
                   <div><Label className="text-[10px] text-muted-foreground">Data Hora Envio</Label><Input className="h-6 text-[10px] bg-transparent dark:bg-transparent" value={viewDoc ? fmtDataHora(viewDoc.data_autorizacao) : "— aguardando emissão —"} readOnly /></div>
                   <div><Label className="text-[10px] text-muted-foreground">Motivo Envio</Label><Input className="h-6 text-[10px] bg-transparent dark:bg-transparent" value={viewDoc ? (viewDoc.status === "rejeitado" ? (viewDoc.motivo_rejeicao || "—") : "Autorizado o uso do CT-e") : "— aguardando emissão —"} readOnly /></div>
-                  <div><Label className="text-[10px] text-muted-foreground">Protocolo Cancelamento</Label><Input className="h-6 text-[10px] font-mono bg-transparent dark:bg-transparent" value="—" readOnly /></div>
+                  <div><Label className="text-[10px] text-muted-foreground">Protocolo Cancelamento</Label><Input className="h-6 text-[10px] font-mono bg-transparent dark:bg-transparent" value="���" readOnly /></div>
                   <div><Label className="text-[10px] text-muted-foreground">Data Hora Cancelamento</Label><Input className="h-6 text-[10px] bg-transparent dark:bg-transparent" value="—" readOnly /></div>
                   <div className="md:col-span-2"><Label className="text-[10px] text-muted-foreground">Motivo Cancelamento</Label><Input className="h-6 text-[10px] bg-transparent dark:bg-transparent" value="—" readOnly /></div>
                 </div>
