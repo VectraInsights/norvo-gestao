@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { ArrowRight, BarChart3, Boxes, Check, FileText, ReceiptText, ShieldCheck, Users } from "lucide-react";
+import { ArrowRight, BarChart3, Boxes, FileText, ReceiptText, ShieldCheck, Users } from "lucide-react";
 import norvoLogo from "@/assets/norvo-logo.png";
 
 export const Route = createFileRoute("/")({
@@ -52,9 +52,7 @@ function LandingPage() {
               </Link>
               <a href="#modulos" className="inline-flex items-center rounded-lg border border-[#cfc8be] bg-transparent px-6 py-3.5 font-medium hover:bg-white/60">Conhecer recursos</a>
             </div>
-            <div className="mt-8 flex flex-wrap gap-x-6 gap-y-2 text-sm text-[#6e665e]">
-              {['Comece sem cartão', 'Dados protegidos', 'Feito para o Brasil'].map((item) => <span key={item} className="flex items-center gap-2"><Check className="h-4 w-4 text-[#08783d]" />{item}</span>)}
-            </div>
+
           </div>
 
           <div className="relative mx-auto w-full max-w-[520px]">
