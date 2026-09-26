@@ -1296,11 +1296,13 @@ function DialogNovoMdf({ open, onOpenChange, empresaId, empresa, chavesIniciais,
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="w-screen h-screen max-w-none max-h-none m-0 rounded-none overflow-hidden" style={{ display: "grid", gridTemplateRows: "auto minmax(0,1fr) auto", height: "100vh", overflow: "hidden" }}>
-        <DialogHeader className="shrink-0" style={{ flexShrink: 0 }}><DialogTitle>Novo MDF-e <span className="rounded bg-amber-100 px-1.5 py-0.5 text-xs font-normal text-amber-800">Homologação (testes)</span><span className="ml-2 align-middle font-mono text-[10px] font-normal text-muted-foreground" title="Revisão da tela">ui-29</span></DialogTitle></DialogHeader>
+        <DialogHeader className="shrink-0" style={{ flexShrink: 0 }}><DialogTitle>Novo MDF-e <span className="rounded bg-amber-100 px-1.5 py-0.5 text-xs font-normal text-amber-800">Homologação (testes)</span><span className="ml-2 align-middle font-mono text-[10px] font-normal text-muted-foreground" title="Revisão da tela">ui-31</span></DialogTitle></DialogHeader>
 
         <div className="min-h-0" style={{ minHeight: 0, overflow: "hidden", display: "grid", gridTemplateRows: "auto auto minmax(0,1fr)", gap: "8px" }}>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-            <div className="border rounded-md p-2 space-y-1 overflow-hidden">
+            <div className="border rounded-md overflow-hidden">
+              <div className="bg-muted/60 border-b px-2 py-1 text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">Dados do Veículo / Motorista</div>
+              <div className="p-2 space-y-1">
               <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
                 <div className="space-y-1">
                   <div><Label className="text-xs">Nome da Empresa</Label><Input className="h-6 text-[11px] bg-transparent" readOnly value={(empresa as any)?.nome_fantasia || (empresa as any)?.razao_social || "—"} /></div>
@@ -1351,7 +1353,10 @@ function DialogNovoMdf({ open, onOpenChange, empresaId, empresa, chavesIniciais,
                 </div>
               </div>
             </div>
-            <div className="border rounded-md p-2 space-y-1">
+            </div>
+            <div className="border rounded-md overflow-hidden">
+              <div className="bg-muted/60 border-b px-2 py-1 text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">Dados do Manifesto</div>
+              <div className="p-2 space-y-1">
               <div className="grid grid-cols-2 md:grid-cols-5 gap-1">
                 <div><Label className="text-xs">Nº Manifesto</Label><Input className="h-6 text-[11px] font-mono bg-muted" readOnly value="—" placeholder="auto" /></div>
                 <div><Label className="text-xs">Série</Label><Input className="h-6 text-[11px] font-mono bg-transparent" readOnly value={serieMdf} /></div>
@@ -1371,18 +1376,22 @@ function DialogNovoMdf({ open, onOpenChange, empresaId, empresa, chavesIniciais,
                   <div><Label className="text-xs">Local Emissão</Label><Input className="h-6 text-[11px] bg-transparent" readOnly value={[ (empresa as any)?.cidade, (empresa as any)?.uf ].filter(Boolean).join("/") || "—"} /></div>
                 </div>
               </div>
+              </div>
             </div>
           </div>
 
-          <div className="border rounded-md p-2">
-            <div className="flex items-center justify-end gap-2 mb-1">
-              <Label className="text-xs mr-auto">Conhecimentos ({ctesSelArr.length} vinculados){tracaoSel ? ` • placa ${tracaoSel}` : ""}</Label>
-              <span className="text-xs">Valor total: <strong className="font-mono">{brl(totalCarga)}</strong></span>
-              <span className="text-xs">Peso total: <strong className="font-mono">{num(pesoCarga)} kg</strong></span>
-              <Button size="sm" variant="outline" className="h-6 text-[11px]" disabled={!tracaoSel} onClick={() => setCtesSelecionadas(new Set(ctesDaTracao.filter(c => !cteBloqueado(c.chave_acesso)).map(c => c.chave_acesso || "").filter(Boolean)))}>Marcar</Button>
-              <Button size="sm" variant="outline" className="h-6 text-[11px]" onClick={() => setCtesSelecionadas(new Set())}>Limpar</Button>
-              {ctesOcultosMdf > 0 && !(transbAtivo && transbAtivo.size > 0) && <span className="text-[10px] text-muted-foreground self-center">{ctesOcultosMdf} CT-e(s) já em MDF-e oculto(s)</span>}
+          <div className="border rounded-md overflow-hidden">
+            <div className="bg-muted/60 border-b px-2 py-1 text-[10px] font-semibold uppercase tracking-wide text-muted-foreground flex items-center justify-between gap-2">
+              <span>Conhecimentos ({ctesSelArr.length} vinculados){tracaoSel ? ` • placa ${tracaoSel}` : ""}</span>
+              <div className="flex items-center gap-2">
+                <span className="text-[10px] font-normal normal-case">Valor total: <strong className="font-mono">{brl(totalCarga)}</strong></span>
+                <span className="text-[10px] font-normal normal-case">Peso total: <strong className="font-mono">{num(pesoCarga)} kg</strong></span>
+                <Button size="sm" variant="outline" className="h-5 text-[10px]" disabled={!tracaoSel} onClick={() => setCtesSelecionadas(new Set(ctesDaTracao.filter(c => !cteBloqueado(c.chave_acesso)).map(c => c.chave_acesso || "").filter(Boolean)))}>Marcar</Button>
+                <Button size="sm" variant="outline" className="h-5 text-[10px]" onClick={() => setCtesSelecionadas(new Set())}>Limpar</Button>
+                {ctesOcultosMdf > 0 && !(transbAtivo && transbAtivo.size > 0) && <span className="text-[10px] font-normal normal-case text-muted-foreground">{ctesOcultosMdf} CT-e(s) já em MDF-e oculto(s)</span>}
+              </div>
             </div>
+            <div className="p-2">
             {ctesErro ? (
               <p className="text-sm text-destructive">Falha ao carregar CT-es: {String((ctesErro as any)?.message || ctesErro)}</p>
             ) : !ctesDisponiveis?.length ? (
@@ -1421,22 +1430,22 @@ function DialogNovoMdf({ open, onOpenChange, empresaId, empresa, chavesIniciais,
                 </Table>
               </div>
             )}
+            </div>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-10 gap-2 items-stretch" style={{ minHeight: 0, overflow: "hidden", height: "100%" }}>
-            <div className="border rounded-md p-2 md:col-span-2 min-w-0 overflow-hidden h-full flex flex-col" style={{ height: "100%" }}>
-              <div className="flex items-center justify-between gap-1 flex-wrap shrink-0">
-                <Label className="text-xs">Percurso *</Label>
+          <div className="grid grid-cols-1 md:grid-cols-10 gap-2 items-stretch" style={{ minHeight: "180px", overflow: "hidden", height: "100%" }}>
+            <div className="border rounded-md md:col-span-2 min-w-0 overflow-hidden flex flex-col" style={{ height: "100%", minHeight: "180px" }}>
+              <div className="bg-muted/60 border-b px-2 py-1 text-[10px] font-semibold uppercase tracking-wide text-muted-foreground shrink-0 flex items-center justify-between gap-1">
+                <span>Percurso * <span className="font-normal normal-case">({percursoUFs.length} UF{percursoUFs.length !== 1 ? "s" : ""})</span></span>
                 <div className="flex items-center gap-1">
-                  <span className="text-[10px] text-muted-foreground">{percursoUFs.length} UF(s)</span>
-                  <Button size="sm" variant="outline" className="h-6 text-[11px]" disabled={percursoSelIdx === null} onClick={() => percursoSelIdx !== null && excluirPercurso(percursoSelIdx)}>Exclui</Button>
+                  <Button size="sm" variant="outline" className="h-5 text-[10px]" disabled={percursoSelIdx === null} onClick={() => percursoSelIdx !== null && excluirPercurso(percursoSelIdx)}>Exclui</Button>
                   <div className="flex flex-col gap-0.5">
                     <Button size="sm" variant="outline" className="h-3 px-1 text-[10px] leading-none" disabled={percursoSelIdx === null || percursoSelIdx === 0} onClick={() => percursoSelIdx !== null && moverPercurso(percursoSelIdx, -1)}>▲</Button>
                     <Button size="sm" variant="outline" className="h-3 px-1 text-[10px] leading-none" disabled={percursoSelIdx === null || percursoSelIdx === percursoUFs.length - 1} onClick={() => percursoSelIdx !== null && moverPercurso(percursoSelIdx, 1)}>▼</Button>
                   </div>
                 </div>
               </div>
-              <div className="border rounded mt-2 flex-1 min-h-0 overflow-auto">
+              <div className="flex-1 min-h-0 overflow-auto">
                 <table className="w-full text-xs">
                   <thead className="bg-muted sticky top-0"><tr><th className="text-left px-1 py-0.5 font-semibold">#</th><th className="text-left px-1 py-0.5 font-semibold">UF</th><th className="text-left px-1 py-0.5 font-semibold">Ações</th></tr></thead>
                   <tbody>
@@ -1449,23 +1458,26 @@ function DialogNovoMdf({ open, onOpenChange, empresaId, empresa, chavesIniciais,
                 </table>
               </div>
               {!!errosPercurso.length && (
-                <div className="mt-1 border border-destructive/50 bg-destructive/10 rounded p-1.5 shrink-0">
+                <div className="border-t border-destructive/50 bg-destructive/10 p-1.5 shrink-0">
                   {errosPercurso.map(e => (<p key={e} className="text-[11px] text-destructive">⚠ {e}</p>))}
                 </div>
               )}
             </div>
-            <div className="border rounded-md p-2 md:col-span-1 h-full flex flex-col" style={{ height: "100%" }}>
-              <span className="text-[10px] text-muted-foreground shrink-0">Adicionar UF:</span>
-              <div className="grid grid-cols-6 gap-0.5 mt-1 content-start">
+            <div className="border rounded-md md:col-span-1 flex flex-col" style={{ height: "100%", minHeight: "180px" }}>
+              <div className="bg-muted/60 border-b px-2 py-1 text-[10px] font-semibold uppercase tracking-wide text-muted-foreground shrink-0">Adicionar UF</div>
+              <div className="p-1.5 grid grid-cols-6 gap-0.5 content-start">
                 {UFS.map(uf => (
                   <Button key={uf} variant="outline" size="sm" className="h-[18px] px-0 text-[9px] font-mono leading-none" onClick={() => { setPercursoUFs(prev => [...prev, uf]); setPercursoSelIdx(percursoUFs.length); }}>{uf}</Button>
                 ))}
               </div>
             </div>
-            <div className="space-y-2 md:col-span-7 flex flex-col" style={{ height: "100%" }}>
-              <div className="border rounded-md p-2 space-y-1 flex-1 flex flex-col justify-between">
-                <div><Label className="text-xs">Observação</Label><Textarea value={observacoes} onChange={e => setObservacoes(e.target.value)} rows={2} className="text-xs min-h-[36px] py-1" /></div>
-                <div><Label className="text-xs">Informações Adicionais Fisco</Label><Textarea value={infoFisco} onChange={e => setInfoFisco(e.target.value)} rows={2} className="text-xs min-h-[36px] py-1" /></div>
+            <div className="md:col-span-7 flex flex-col" style={{ height: "100%", minHeight: "180px" }}>
+              <div className="border rounded-md overflow-hidden flex-1 flex flex-col">
+                <div className="bg-muted/60 border-b px-2 py-1 text-[10px] font-semibold uppercase tracking-wide text-muted-foreground shrink-0">Observações</div>
+                <div className="p-2 flex-1 flex flex-col gap-2">
+                  <div className="flex-1 flex flex-col"><Label className="text-xs mb-0.5">Observação</Label><Textarea value={observacoes} onChange={e => setObservacoes(e.target.value)} className="text-xs flex-1 resize-none py-1 min-h-[40px]" /></div>
+                  <div className="flex-1 flex flex-col"><Label className="text-xs mb-0.5">Informações Adicionais Fisco</Label><Textarea value={infoFisco} onChange={e => setInfoFisco(e.target.value)} className="text-xs flex-1 resize-none py-1 min-h-[40px]" /></div>
+                </div>
               </div>
             </div>
           </div>

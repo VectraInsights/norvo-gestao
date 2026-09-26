@@ -3121,3 +3121,16 @@ Espelhado na Vercel.
 - Cores definidas centralmente em `nav-config.ts` (campos `color`/`colorBg`)
   e em `page-header.tsx` (mapa `MODULE_COLORS`).
 - Espelhado via kiro-automerge → main.
+
+
+## MDF-e ui-31: cabeçalhos coloridos + percurso esticado (26/09/2026)
+
+- Caixas do Novo MDF-e com cabeçalho `bg-muted/60` + texto cinza uppercase
+  para separação visual: "Dados do Veículo / Motorista", "Dados do Manifesto",
+  "Conhecimentos", "Percurso", "Adicionar UF", "Observações".
+- Percurso e UFs: `minHeight: 180px` explícito garante a altura mínima
+  independente do grid pai; tabela do percurso com `flex-1 min-h-0 overflow-auto`.
+- Textareas de Observação / Info Fisco com `flex-1 resize-none` para crescer.
+- Sidebar: revertida para cor única (primária) no item ativo — sem cores por módulo.
+- PageHeader: borda esquerda colorida por módulo (mantida — aprovada na ui).
+- Espelhado via kiro-automerge → main.
