@@ -577,7 +577,7 @@ export function AppShell({ children }: { children: ReactNode }) {
               <ShortcutsDialog />
             </div>
           </header>
-          <main className="min-w-0 flex-1 overflow-auto px-3 py-4 sm:px-5 sm:py-6 lg:p-8">
+          <main id="conteudo-principal" tabIndex={-1} className="min-w-0 flex-1 overflow-auto px-3 py-4 outline-none sm:px-5 sm:py-6 lg:p-8">
             {semAcesso ? (
               <Card className="mx-auto mt-10 max-w-md p-8 text-center">
                 <ShieldAlert className="mx-auto mb-3 h-10 w-10 text-muted-foreground" />
