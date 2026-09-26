@@ -3149,4 +3149,6 @@ Espelhado na Vercel.
 - Base em UMA caixa só: percurso + UFs + observações e, colados no
   rodapé dela, Cancelar/Salvar/Emitir (DialogFooter separado removido).
   Sem scroll na página; tudo visível de uma vez.
+- Margens mínimas no diálogo (laterais/topo/fundo e entre caixas).
+- Cabeçalhos coloridos no CT-e (padrão do MDF-e).
 - Espelhado na Vercel via push em main.

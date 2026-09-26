@@ -1930,8 +1930,8 @@ function CtePage() {
 
               {/* Listagem das Notas Fiscais */}
               <div className="border rounded overflow-hidden bg-background">
-                <div className="bg-sky-600 text-white px-2 py-1 flex items-center justify-between">
-                  <span className="text-xs font-semibold">Listagem das Notas Fiscais</span>
+                <div className="bg-primary/8 text-primary/80 border-b border-primary/20 px-2 py-1 flex items-center justify-between">
+                  <span className="text-[10px] font-semibold uppercase tracking-wide">Listagem das Notas Fiscais</span>
                   <span className="text-xs">Qtde NF-e: {mercadorias.length}</span>
                 </div>
                 <div className="overflow-x-auto max-h-[220px]">
@@ -2194,7 +2194,7 @@ function CtePage() {
             <TabsContent value="geral" className="mt-3 space-y-3">
               {viewDoc && (
               <Card className="p-3">
-                <h5 className="text-xs font-semibold mb-2">Situação do CT-e</h5>
+                <div className="bg-primary/8 border-b border-primary/20 -m-3 mb-2 px-2 py-1 text-[10px] font-semibold uppercase tracking-wide text-primary/80">Situação do CT-e</div>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
                   <div><Label className="text-[10px] text-muted-foreground">Chave de Acesso</Label><Input className="h-6 text-[10px] font-mono bg-transparent dark:bg-transparent" value={viewDoc?.chave_acesso || "— aguardando emissão —"} readOnly /></div>
                   <div><Label className="text-[10px] text-muted-foreground">Protocolo de Envio</Label><Input className="h-6 text-[10px] font-mono bg-transparent dark:bg-transparent" value={viewDoc ? (viewDoc.protocolo_sefaz || "—") : "— aguardando emissão —"} readOnly /></div>
@@ -2329,9 +2329,9 @@ function CtePage() {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                   {/* Remetente */}
                   <Card className="p-3">
-                    <div className="flex items-center gap-2 mb-2">
+                    <div className="bg-primary/8 border-b border-primary/20 -m-3 mb-2 px-2 py-1 flex items-center gap-2">
                       <div className="h-6 w-6 rounded bg-emerald-500/10 grid place-items-center"><UploadCloud className="h-3.5 w-3.5 text-emerald-600" /></div>
-                      <h5 className="text-xs font-semibold">Remetente</h5>
+                      <h5 className="text-[10px] font-semibold uppercase tracking-wide text-primary/80">Remetente</h5>
                     </div>
                     <div className="space-y-0.5 text-[10px]">
                       <p className="font-medium text-xs">{active.emit || "—"}</p>
@@ -2344,9 +2344,9 @@ function CtePage() {
 
                   {/* Destinatário */}
                   <Card className="p-3">
-                    <div className="flex items-center gap-2 mb-2">
+                    <div className="bg-primary/8 border-b border-primary/20 -m-3 mb-2 px-2 py-1 flex items-center gap-2">
                       <div className="h-6 w-6 rounded bg-sky-500/10 grid place-items-center"><Package className="h-3.5 w-3.5 text-sky-600" /></div>
-                      <h5 className="text-xs font-semibold">Destinatário</h5>
+                      <h5 className="text-[10px] font-semibold uppercase tracking-wide text-primary/80">Destinatário</h5>
                     </div>
                     <div className="space-y-0.5 text-[10px]">
                       <p className="font-medium text-xs">{active.dest || "—"}</p>
@@ -2363,9 +2363,9 @@ function CtePage() {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
               {/* Consignatário */}
               <Card className="p-3">
-                <div className="flex items-center gap-2 mb-2">
+                <div className="bg-primary/8 border-b border-primary/20 -m-3 mb-2 px-2 py-1 flex items-center gap-2">
                   <div className="h-6 w-6 rounded bg-amber-500/10 grid place-items-center"><Building2 className="h-3.5 w-3.5 text-amber-600" /></div>
-                  <h5 className="text-xs font-semibold">Consignatário</h5>
+                  <h5 className="text-[10px] font-semibold uppercase tracking-wide text-primary/80">Consignatário</h5>
                   <span className="text-[9px] text-muted-foreground hidden md:inline">opcional</span>
                   <div className="ml-auto flex items-center gap-1">
                     <Input className="h-6 text-[10px] w-44 font-mono" placeholder="CNPJ — digite p/ buscar" value={fmtCnpjInput(form.cnpjConsignatario || "")} onChange={e => {
@@ -2389,9 +2389,9 @@ function CtePage() {
 
               {/* Redespacho */}
               <Card className="p-3">
-                <div className="flex items-center gap-2 mb-2">
+                <div className="bg-primary/8 border-b border-primary/20 -m-3 mb-2 px-2 py-1 flex items-center gap-2">
                   <div className="h-6 w-6 rounded bg-violet-500/10 grid place-items-center"><Truck className="h-3.5 w-3.5 text-violet-600" /></div>
-                  <h5 className="text-xs font-semibold">Redespacho</h5>
+                  <h5 className="text-[10px] font-semibold uppercase tracking-wide text-primary/80">Redespacho</h5>
                   <span className="text-[9px] text-muted-foreground hidden md:inline">opcional</span>
                   <div className="ml-auto flex items-center gap-1">
                     <Input className="h-6 text-[10px] w-44 font-mono" placeholder="CNPJ — digite p/ buscar" value={fmtCnpjInput(form.cnpjRedespacho || "")} onChange={e => {
@@ -2419,7 +2419,7 @@ function CtePage() {
             {/* === TAB: Doc Mercadorias === */}
             <TabsContent value="docs" className="mt-3 space-y-3">
               <Card className="overflow-hidden">
-                <div className="bg-sky-600 text-white px-3 py-1.5 text-xs font-semibold">Mercadorias Transportadas — {mercadorias.filter(m => selecionadas.has(m.chave)).length || mercadorias.length} NF-e(s)</div>
+                <div className="bg-primary/8 border-b border-primary/20 px-3 py-1.5 text-[10px] font-semibold uppercase tracking-wide text-primary/80">Mercadorias Transportadas — {mercadorias.filter(m => selecionadas.has(m.chave)).length || mercadorias.length} NF-e(s)</div>
                 <div className="overflow-x-auto max-h-[240px]">
                   <Table>
                     <TableHeader className="sticky top-0 bg-muted">
@@ -2486,7 +2486,9 @@ function CtePage() {
 
               {/* Tributação (fundida nesta aba) */}
               <Card className="p-3">
-                <h5 className="text-xs font-semibold mb-2 flex items-center gap-1.5"><ReceiptText className="h-3.5 w-3.5 text-primary" /> Impostos</h5>
+                <div className="bg-primary/8 border-b border-primary/20 -m-3 mb-2 px-2 py-1 flex items-center gap-1.5">
+                  <ReceiptText className="h-3.5 w-3.5 text-primary" /><h5 className="text-[10px] font-semibold uppercase tracking-wide text-primary/80">Impostos</h5>
+                </div>
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
                   <div><Label className="text-[10px] text-muted-foreground">* CST</Label>
                     <Select value={form.icmsCST} onValueChange={() => {}} disabled>
@@ -2533,7 +2535,7 @@ function CtePage() {
             <TabsContent value="seguros" className="mt-1">
               <div className="grid grid-cols-1 xl:grid-cols-2 gap-1.5">
                 <Card className="p-1.5">
-                  <h5 className="text-xs font-semibold mb-0.5">Seguro da Carga</h5>
+                  <div className="bg-primary/8 border-b border-primary/20 -m-1.5 mb-0.5 px-2 py-1 text-[10px] font-semibold uppercase tracking-wide text-primary/80">Seguro da Carga</div>
                   <div className="space-y-0.5">
                                         <div className="grid grid-cols-12 gap-1">
                       <div className="col-span-7"><Label className="text-[10px] text-muted-foreground">Seguradora</Label>
@@ -2593,7 +2595,7 @@ function CtePage() {
                 </Card>
 
                 <Card className="p-1.5">
-                  <h5 className="text-xs font-semibold mb-0.5">Dados do Veículo / Motorista</h5>
+                  <div className="bg-primary/8 border-b border-primary/20 -m-1.5 mb-0.5 px-2 py-1 text-[10px] font-semibold uppercase tracking-wide text-primary/80">Dados do Veículo / Motorista</div>
                   <div className="space-y-0.5">
                     <div className="grid grid-cols-3 gap-1">
                       <div className="col-span-2"><Label className="text-[10px] text-muted-foreground">Nome Motorista</Label>
@@ -2796,7 +2798,7 @@ function CtePage() {
 
               {/* Pedágio / Taxas / Despesas Acessórias (ex-aba Taxas) */}
               <Card className="p-1.5">
-                <h5 className="text-xs font-semibold mb-0.5">Componentes do Frete</h5>
+                <div className="bg-primary/8 border-b border-primary/20 -m-1.5 mb-0.5 px-2 py-1 text-[10px] font-semibold uppercase tracking-wide text-primary/80">Componentes do Frete</div>
                 <div className="grid grid-cols-2 md:grid-cols-3 gap-1">
                   <div><Label className="text-[10px] text-muted-foreground">Valor Serviço</Label><MoneyInput className="h-6 text-[11px] font-medium" value={form.vPrest} onChange={v => setForm(f => ({ ...f, vPrest: v }))} /></div>
                   <div><Label className="text-[10px] text-muted-foreground">Taxa Coleta</Label><MoneyInput className="h-6 text-[11px] font-medium" value={form.taxaColeta} onChange={v => setForm(f => ({ ...f, taxaColeta: v }))} /></div>
@@ -2810,7 +2812,7 @@ function CtePage() {
               </Card>
 
               <Card className="p-1.5">
-                <h5 className="text-xs font-semibold mb-0.5">Forma de Pagamento do Pedágio</h5>
+                <div className="bg-primary/8 border-b border-primary/20 -m-1.5 mb-0.5 px-2 py-1 text-[10px] font-semibold uppercase tracking-wide text-primary/80">Forma de Pagamento do Pedágio</div>
                 <div className="flex flex-wrap gap-3 text-[10px]">
                   <label className="flex items-center gap-1"><input type="radio" name="pedagio_pagto" checked={pagtoSeguro(form.pedagioPagto) === "free-flow"} onChange={() => setForm({ ...form, pedagioPagto: "free-flow" })} disabled={(form as any).finalidadeEmissao === "Complemento"} /> Free Flow</label>
                   <label className="flex items-center gap-1"><input type="radio" name="pedagio_pagto" checked={pagtoSeguro(form.pedagioPagto) === "tag-transportador"} onChange={() => setForm({ ...form, pedagioPagto: "tag-transportador" })} disabled={(form as any).finalidadeEmissao === "Complemento"} /> TAG Transportador</label>
@@ -2833,7 +2835,7 @@ function CtePage() {
               </Card>
               </div>
               <Card className="p-1.5 mt-1.5">
-                <h5 className="text-xs font-semibold mb-0.5">Finalidade e Documentos Referenciados</h5>
+                <div className="bg-primary/8 border-b border-primary/20 -m-1.5 mb-0.5 px-2 py-1 text-[10px] font-semibold uppercase tracking-wide text-primary/80">Finalidade e Documentos Referenciados</div>
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-1">
                   <div className="md:col-span-2"><Label className="text-[10px] text-muted-foreground">Finalidade / Tipo de Serviço</Label>
                     <Select value={(() => { const t = (form as any).tipoServico; const f = (form as any).finalidadeEmissao || "Normal"; if (t && t !== "Normal") return t; if (f === "Substituicao") return ""; return f; })()} onValueChange={v => setForm({ ...form, ...(v === "Complemento" ? { finalidadeEmissao: "Complemento", tipoServico: "Normal" } : v === "Normal" ? { finalidadeEmissao: "Normal", tipoServico: "Normal", motivoComplemento: "", cteReferenciado: "" } : { finalidadeEmissao: "Normal", tipoServico: v }) } as any)}>
@@ -2928,15 +2930,15 @@ function CtePage() {
             {/* === TAB: Observações === */}
             <TabsContent value="obs" className="mt-3 space-y-3">
               <Card className="p-3">
-                <h5 className="text-xs font-semibold mb-1">Observações Gerais</h5>
+                <div className="bg-primary/8 border-b border-primary/20 -m-3 mb-1 px-2 py-1 text-[10px] font-semibold uppercase tracking-wide text-primary/80">Observações Gerais</div>
                 <Textarea className="min-h-[120px] text-xs font-mono resize-y" placeholder={"01 — \n02 — \n03 — Protocolo Pedidos:"} value={(form as any).obsGerais || ""} onChange={e=>setForm({...form, obsGerais: e.target.value} as any)} />
               </Card>
               <Card className="p-3">
-                <h5 className="text-xs font-semibold mb-1">Observações CT-e Anulação/Substituição</h5>
+                <div className="bg-primary/8 border-b border-primary/20 -m-3 mb-1 px-2 py-1 text-[10px] font-semibold uppercase tracking-wide text-primary/80">Observações CT-e Anulação/Substituição</div>
                 <Textarea className="min-h-[60px] text-xs font-mono resize-y" value={(form as any).obsAnulacao || ""} onChange={e=>setForm({...form, obsAnulacao: e.target.value} as any)} />
               </Card>
               <Card className="p-3">
-                <h5 className="text-xs font-semibold mb-1">Observações CT-e Globalizado</h5>
+                <div className="bg-primary/8 border-b border-primary/20 -m-3 mb-1 px-2 py-1 text-[10px] font-semibold uppercase tracking-wide text-primary/80">Observações CT-e Globalizado</div>
                 <Textarea className="min-h-[60px] text-xs font-mono resize-y" value={(form as any).obsGlobalizado || ""} onChange={e=>setForm({...form, obsGlobalizado: e.target.value} as any)} />
               </Card>
             </TabsContent>
