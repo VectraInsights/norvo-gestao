@@ -1461,9 +1461,9 @@ function DialogNovoMdf({ open, onOpenChange, empresaId, empresa, chavesIniciais,
             </div>
             <div className="md:col-span-1 border-r flex flex-col" style={{ minHeight: 0 }}>
               <div className="bg-primary/8 border-b border-primary/20 px-2 py-1 text-[10px] font-semibold uppercase tracking-wide text-primary/80 shrink-0">Adicionar UF</div>
-              <div className="flex-1 min-h-0 p-1 grid grid-cols-3 grid-rows-9 gap-0.5 content-start">
+              <div className="flex-1 min-h-0 overflow-y-auto p-1 grid grid-cols-3 auto-rows-[20px] gap-0.5 content-start">
                 {UFS.map(uf => (
-                  <Button key={uf} variant="outline" size="sm" className="h-5 px-0 text-[10px] font-mono leading-none" onClick={() => { setPercursoUFs(prev => [...prev, uf]); setPercursoSelIdx(percursoUFs.length); }}>{uf}</Button>
+                  <Button key={uf} variant="outline" size="sm" className="h-5 min-h-0 px-0 text-[9px] font-mono leading-none" onClick={() => { setPercursoUFs(prev => [...prev, uf]); setPercursoSelIdx(percursoUFs.length); }}>{uf}</Button>
                 ))}
               </div>
             </div>
@@ -1476,10 +1476,12 @@ function DialogNovoMdf({ open, onOpenChange, empresaId, empresa, chavesIniciais,
             </div>
           </div>
           <div className="grid grid-cols-10 h-8 shrink-0 gap-1">
-            <div className="col-span-2 flex h-8 items-center border border-destructive/30 bg-destructive/10 px-2">
-              {percursoUFs.length > 0 && errosPercurso.length > 0 && <p className="text-xs font-medium text-destructive">Percurso Incorreto</p>}
-            </div>
-            <div className="col-span-8 flex h-8 items-center justify-end gap-2">
+            {percursoUFs.length > 0 && errosPercurso.length > 0 && (
+              <div className="col-span-2 flex h-8 items-center border border-destructive/30 bg-destructive/10 px-2">
+                <p className="text-xs font-medium text-destructive">Percurso Incorreto</p>
+              </div>
+            )}
+            <div className={`${percursoUFs.length > 0 && errosPercurso.length > 0 ? "col-span-8" : "col-span-10"} flex h-8 items-center justify-end gap-2`}>
               <Button className="h-8" variant="outline" onClick={() => onOpenChange(false)}>Cancelar</Button>
               {permiteRascunho && (
               <Button className="h-8" variant="secondary" onClick={handleSalvarRascunho} disabled={loading || !ctesSelecionadas.size}>
