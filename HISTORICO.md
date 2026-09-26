@@ -62,7 +62,7 @@ Registro condensado da evolução do Norvo Gestão fora do editor Lovable.
 
 ## Registro de manutenção
 
-21. **Modernização visual global (26/09/2026)** — iniciada a evolução do design system para tornar o Norvo mais apresentável, consistente e intuitivo em todos os módulos. A primeira etapa atualizou tokens de raio, foco visível, seleção, redução de movimento, superfícies reutilizáveis, tabelas com cabeçalho/hover padronizados, cabeçalhos de página com hierarquia mais clara, sidebar com sombra e navegação ativa mais evidente, além de cabeçalho principal fixo durante a rolagem. A sequência planejada é: design system global, navegação/dashboard, tabelas/formulários e acabamento/acessibilidade.
+21. **Modernização visual global (26/09/2026)** — iniciada a evolução do design system para tornar o Norvo mais apresentável, consistente e intuitivo em todos os módulos. A primeira entrega também adicionou ao Dashboard uma faixa de ações rápidas para tarefas frequentes, reduzindo a dependência do menu lateral. A primeira etapa atualizou tokens de raio, foco visível, seleção, redução de movimento, superfícies reutilizáveis, tabelas com cabeçalho/hover padronizados, cabeçalhos de página com hierarquia mais clara, sidebar com sombra e navegação ativa mais evidente, além de cabeçalho principal fixo durante a rolagem. A sequência planejada é: design system global, navegação/dashboard, tabelas/formulários e acabamento/acessibilidade.
 
 
 10. **Service role key configurada** - `.env` saiu do versionamento (gitignore + `.env.example`
@@ -739,7 +739,7 @@ Mudanças no código (commits `df2d23b` cf / `fb0dff8` vercel):
 ## CT-e: correção ordem toma + logging detalhado SEFAZ - 03/09/2026
 
 Analisando o XSD do CTeSimp (`cteTiposBasico_v4.00.xsd`), o `<toma>` tem ordem estrita:
-`toma → indIEToma → CNPJ/CPF → IE(opt) → xNome → enderToma → fone(opt) → email(opt)`
+`toma → indIEToma → CNPJ/CPF → IE(opt) → xNome ��� enderToma → fone(opt) → email(opt)`
 
 O XML rejeitado tinha `<fone>` ANTES de `<enderToma>` — violação de schema (cStat 225).
 

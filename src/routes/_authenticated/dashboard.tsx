@@ -1,4 +1,4 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { PageHeader } from "@/components/erp/page-header";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -15,6 +15,8 @@ import {
   AlertTriangle,
   ShoppingCart,
   FileText,
+  Plus,
+  ArrowRight,
 } from "lucide-react";
 import { EmptyState } from "@/components/erp/empty-state";
 import { Button } from "@/components/ui/button";
@@ -304,6 +306,14 @@ function Dashboard() {
     );
   }
 
+  const navigate = useNavigate();
+  const atalhos = [
+    { label: "Nova venda", to: "/vendas/nova", icon: ShoppingCart },
+    { label: "Lançamento financeiro", to: "/financeiro/lancamentos", icon: Wallet },
+    { label: "Novo produto", to: "/estoque/produtos", icon: Package },
+    { label: "Novo contato", to: "/cadastros/contatos", icon: Users },
+  ];
+
   const cards = [
     {
       label: "Receita do mês",
@@ -363,8 +373,29 @@ function Dashboard() {
         description="Visão geral da operação em tempo real."
       />
 
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        {loadingStats
+  <Card className="erp-surface mb-6">
+  <CardContent className="p-4 sm:p-5">
+  <div className="mb-3 flex items-center justify-between gap-3">
+  <div>
+  <h2 className="text-sm font-semibold">Ações rápidas</h2>
+  <p className="text-xs text-muted-foreground">Acesse as tarefas mais usadas sem navegar pelo menu.</p>
+  </div>
+  <Plus className="h-4 w-4 text-primary" aria-hidden="true" />
+  </div>
+  <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
+  {atalhos.map((atalho) => {
+    const Icon = atalho.icon;
+    return <Button key={atalho.to} variant="outline" className="h-auto justify-between px-3 py-3 text-left" onClick={() => navigate({ to: atalho.to })}>
+      <span className="flex items-center gap-2"><Icon className="h-4 w-4 text-primary" aria-hidden="true" />{atalho.label}</span>
+      <ArrowRight className="h-3.5 w-3.5 text-muted-foreground" aria-hidden="true" />
+    </Button>;
+  })}
+  </div>
+  </CardContent>
+  </Card>
+
+  <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+  {loadingStats
           ? Array.from({ length: 8 }).map((_, i) => (
               <Card key={i} className="shadow-panel">
                 <CardContent className="p-5">
