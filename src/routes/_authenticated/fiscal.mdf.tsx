@@ -1461,7 +1461,7 @@ function DialogNovoMdf({ open, onOpenChange, empresaId, empresa, chavesIniciais,
             </div>
             <div className="md:col-span-1 border-r flex flex-col" style={{ minHeight: 0 }}>
               <div className="bg-primary/8 border-b border-primary/20 px-2 py-1 text-[10px] font-semibold uppercase tracking-wide text-primary/80 shrink-0">Adicionar UF</div>
-              <div className="flex-1 min-h-0 overflow-y-auto p-1 grid grid-cols-3 auto-rows-[20px] gap-0.5 content-start">
+              <div className="min-h-0 overflow-visible p-1 grid grid-cols-3 grid-rows-9 auto-rows-[20px] gap-0.5 content-start">
                 {UFS.map(uf => (
                   <Button key={uf} variant="outline" size="sm" className="h-5 min-h-0 px-0 text-[9px] font-mono leading-none" onClick={() => { setPercursoUFs(prev => [...prev, uf]); setPercursoSelIdx(percursoUFs.length); }}>{uf}</Button>
                 ))}
