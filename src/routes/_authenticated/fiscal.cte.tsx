@@ -2439,7 +2439,7 @@ function CtePage() {
                 {(form.xNomeConsignatario || form.cnpjConsignatario) ? (
                   <div className="space-y-0.5 text-[10px]">
                     <p className="font-medium text-xs">{form.xNomeConsignatario || "—"}</p>
-                    <p className="text-muted-foreground flex items-center gap-1 flex-wrap">CNPJ: {form.cnpjConsignatario ? fmtCnpjInput(form.cnpjConsignatario) : "—"} <span className="inline-flex items-center gap-1">IE: <Input className="h-5 w-32 text-[10px] px-1 text-foreground" placeholder="ISENTO" value={form.ieConsignatario || ((contatoByDoc.get(String(form.cnpjConsignatario || "").replace(/\D/g, "")) || {}) as any).ie || ""} onChange={e=>setForm({...form,ieConsignatario:e.target.value.toUpperCase().replace(/[^A-Z0-9]/g,"").slice(0,14)})} /></span></p>
+                    <p className="text-muted-foreground flex items-center gap-1 flex-wrap">CNPJ: {form.cnpjConsignatario ? fmtCnpjInput(form.cnpjConsignatario) : "—"} {form.ieConsignatario || ((contatoByDoc.get(String(form.cnpjConsignatario || "").replace(/\D/g, "")) || {}) as any).ie ? `IE: ${form.ieConsignatario || ((contatoByDoc.get(String(form.cnpjConsignatario || "").replace(/\D/g, "")) || {}) as any).ie}` : ""}</p>
                     <p className="text-muted-foreground">{[form.logradouroConsignatario && `${form.logradouroConsignatario}${form.nroConsignatario ? `, ${form.nroConsignatario}` : ""}`, form.bairroConsignatario].filter(Boolean).join(" — ") || "—"}</p>
                     <p className="text-muted-foreground">{form.xMunConsignatario || "—"}-{form.ufConsignatario || "—"} {form.cepConsignatario ? `CEP: ${form.cepConsignatario}` : ""}</p>
                   </div>
@@ -2465,7 +2465,7 @@ function CtePage() {
                 {(form.xNomeRedespacho || form.cnpjRedespacho) ? (
                   <div className="space-y-0.5 text-[10px]">
                     <p className="font-medium text-xs">{form.xNomeRedespacho || "—"}</p>
-                    <p className="text-muted-foreground flex items-center gap-1 flex-wrap">CNPJ: {form.cnpjRedespacho ? fmtCnpjInput(form.cnpjRedespacho) : "—"} <span className="inline-flex items-center gap-1">IE: <Input className="h-5 w-32 text-[10px] px-1 text-foreground" placeholder="ISENTO" value={form.ieRedespacho || ((contatoByDoc.get(String(form.cnpjRedespacho || "").replace(/\D/g, "")) || {}) as any).ie || ""} onChange={e=>setForm({...form,ieRedespacho:e.target.value.toUpperCase().replace(/[^A-Z0-9]/g,"").slice(0,14)})} /></span></p>
+                    <p className="text-muted-foreground flex items-center gap-1 flex-wrap">CNPJ: {form.cnpjRedespacho ? fmtCnpjInput(form.cnpjRedespacho) : "—"} {form.ieRedespacho || ((contatoByDoc.get(String(form.cnpjRedespacho || "").replace(/\D/g, "")) || {}) as any).ie ? `IE: ${form.ieRedespacho || ((contatoByDoc.get(String(form.cnpjRedespacho || "").replace(/\D/g, "")) || {}) as any).ie}` : ""}</p>
                     <p className="text-muted-foreground">{[form.logradouroRedespacho && `${form.logradouroRedespacho}${form.nroRedespacho ? `, ${form.nroRedespacho}` : ""}`, form.bairroRedespacho].filter(Boolean).join(" — ") || "—"}</p>
                     <p className="text-muted-foreground">{form.xMunRedespacho || "—"}-{form.ufRedespacho || "—"} {form.cepRedespacho ? `CEP: ${form.cepRedespacho}` : ""}</p>
                   </div>
