@@ -1474,19 +1474,19 @@ function DialogNovoMdf({ open, onOpenChange, empresaId, empresa, chavesIniciais,
               </div>
             </div>
           </div>
-          <div className="flex items-center justify-end gap-2 pt-2 shrink-0">
+          <div className="flex h-8 items-center justify-end gap-2 shrink-0">
             {!!errosPercurso.length && (
-              <div className="mr-auto border border-destructive/30 bg-destructive/10 px-2 py-1">
+              <div className="mr-auto flex h-8 items-center border border-destructive/30 bg-destructive/10 px-2">
                 <p className="text-xs font-medium text-destructive">Percurso Incorreto</p>
               </div>
             )}
-            <Button variant="outline" onClick={() => onOpenChange(false)}>Cancelar</Button>
+            <Button className="h-8" variant="outline" onClick={() => onOpenChange(false)}>Cancelar</Button>
             {permiteRascunho && (
-            <Button variant="secondary" onClick={handleSalvarRascunho} disabled={loading || !ctesSelecionadas.size}>
+            <Button className="h-8" variant="secondary" onClick={handleSalvarRascunho} disabled={loading || !ctesSelecionadas.size}>
               {loading ? "Salvando..." : "Salvar Rascunho"}
             </Button>
             )}
-            <Button onClick={handleEmitir} disabled={loading || !tracaoSel || !ctesSelecionadas.size || !motNomes.length || !ufCarregamento || !ufDescarregamento || !!errosPercurso.length}>
+            <Button className="h-8" onClick={handleEmitir} disabled={loading || !tracaoSel || !ctesSelecionadas.size || !motNomes.length || !ufCarregamento || !ufDescarregamento || !!errosPercurso.length}>
               <Send className="mr-1 h-4 w-4" /> {loading ? "Emitindo..." : "Emitir MDF-e"}
             </Button>
           </div>
