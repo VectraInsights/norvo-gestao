@@ -19,6 +19,7 @@ import {
   PanelLeftOpen,
   KeyRound,
   ShieldAlert,
+  Menu,
 } from "lucide-react";
 import norvoLogo from "@/assets/norvo-logo.png";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
@@ -537,7 +538,7 @@ export function AppShell({ children }: { children: ReactNode }) {
         {/* Backdrop mobile */}
         {open && (
           <div
-            className="fixed inset-0 z-30 bg-black/40 lg:hidden"
+            className="fixed inset-0 z-30 bg-foreground/30 backdrop-blur-[1px] lg:hidden"
             onClick={() => setOpen(false)}
           />
         )}
@@ -546,8 +547,8 @@ export function AppShell({ children }: { children: ReactNode }) {
         <div className="flex min-w-0 flex-col">
           <header className="sticky top-0 z-20 flex h-14 items-center justify-between border-b border-border/60 bg-background/85 px-4 shadow-[0_1px_12px_-10px_oklch(0.2_0.02_60_/_0.5)] backdrop-blur lg:px-8">
             <div className="flex items-center gap-2">
-              <Button variant="ghost" size="sm" className="lg:hidden" onClick={() => setOpen(true)}>
-                Menu
+              <Button variant="ghost" size="icon" className="lg:hidden" onClick={() => setOpen(true)} aria-label="Abrir menu">
+                <Menu className="h-5 w-5" />
               </Button>
               <Button
                 variant="ghost"
@@ -576,7 +577,7 @@ export function AppShell({ children }: { children: ReactNode }) {
               <ShortcutsDialog />
             </div>
           </header>
-          <main className="min-w-0 flex-1 overflow-auto p-6 lg:p-8">
+          <main className="min-w-0 flex-1 overflow-auto px-3 py-4 sm:px-5 sm:py-6 lg:p-8">
             {semAcesso ? (
               <Card className="mx-auto mt-10 max-w-md p-8 text-center">
                 <ShieldAlert className="mx-auto mb-3 h-10 w-10 text-muted-foreground" />
