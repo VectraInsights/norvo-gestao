@@ -97,6 +97,7 @@ export function CommandPalette() {
   });
 
   const go = (to: string) => { setOpen(false); setQ(""); navigate({ to }); };
+  const fechar = (nextOpen: boolean) => { setOpen(nextOpen); if (!nextOpen) setQ(""); };
 
   return (
     <>
@@ -110,7 +111,7 @@ export function CommandPalette() {
         <kbd className="ml-1 hidden rounded border bg-muted px-1.5 py-0.5 font-mono text-[10px] sm:inline">⌘K</kbd>
       </Button>
 
-      <CommandDialog open={open} onOpenChange={setOpen}>
+      <CommandDialog open={open} onOpenChange={fechar}>
         <CommandInput placeholder="Buscar páginas, clientes, produtos, lançamentos…" value={q} onValueChange={setQ} />
         <CommandList>
           <CommandEmpty>{term.length < 2 ? "Digite ao menos 2 caracteres." : "Nada encontrado."}</CommandEmpty>

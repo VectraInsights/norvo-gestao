@@ -69,7 +69,7 @@ export function NotificationsBell() {
           )}
         </Button>
       </PopoverTrigger>
-      <PopoverContent align="end" className="w-96 p-0">
+      <PopoverContent align="end" className="w-[calc(100vw-2rem)] max-w-96 p-0 shadow-xl">
         <div className="flex items-center justify-between border-b px-4 py-2.5">
           <div className="text-sm font-medium">Notificações</div>
           {naoLidos > 0 && (
@@ -80,7 +80,11 @@ export function NotificationsBell() {
         </div>
         <ScrollArea className="max-h-96">
           {alertas.length === 0 ? (
-            <div className="p-8 text-center text-sm text-muted-foreground">Nenhuma notificação.</div>
+            <div className="flex flex-col items-center gap-2 p-8 text-center">
+              <div className="grid h-10 w-10 place-items-center rounded-full bg-muted text-muted-foreground"><Bell className="h-4 w-4" aria-hidden="true" /></div>
+              <p className="text-sm font-medium">Tudo em dia</p>
+              <p className="text-xs text-muted-foreground">Nenhuma notificação pendente para esta empresa.</p>
+            </div>
           ) : (
             <ul className="divide-y">
               {alertas.map((a) => {
