@@ -39,17 +39,17 @@ export function Breadcrumbs() {
   if (parts.length === 0) return null;
 
   return (
-    <nav aria-label="Breadcrumb" className="mb-4 flex items-center gap-1.5 text-xs text-muted-foreground">
-      <Link to="/dashboard" className="flex items-center gap-1 hover:text-foreground">
-        <Home className="h-3 w-3" />
+    <nav aria-label="Navegação estrutural" className="mb-4 flex min-w-0 items-center gap-1.5 overflow-x-auto whitespace-nowrap text-xs text-muted-foreground scrollbar-subtle">
+      <Link to="/dashboard" aria-label="Ir para o Dashboard" className="flex shrink-0 items-center gap-1 rounded-md p-1 hover:bg-muted hover:text-foreground">
+        <Home className="h-3 w-3" aria-hidden="true" />
       </Link>
       {parts.map((seg, i) => {
         const label = LABELS[seg] ?? seg;
         const last = i === parts.length - 1;
         return (
-          <span key={i} className="flex items-center gap-1.5">
-            <ChevronRight className="h-3 w-3 opacity-50" />
-            <span className={last ? "font-medium text-foreground" : ""}>{label}</span>
+          <span key={i} className="flex shrink-0 items-center gap-1.5">
+            <ChevronRight className="h-3 w-3 opacity-50" aria-hidden="true" />
+            <span className={last ? "rounded-md bg-muted/70 px-1.5 py-0.5 font-medium text-foreground" : "text-muted-foreground"}>{label}</span>
           </span>
         );
       })}
