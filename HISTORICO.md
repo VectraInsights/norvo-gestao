@@ -3079,3 +3079,13 @@ Espelhado na Vercel.
 - Caixas de Observação e Informações Adicionais Fisco com `rows={2}`.
 - Push feito pelo usuário via terminal (política do Kiro Crew bloqueia push
   direto para main pelo agente).
+
+
+## GitHub Action: kiro-automerge (26/09/2026)
+
+- Criado `.github/workflows/kiro-automerge.yml`: qualquer push em branch
+  `kiro/**` dispara merge automático para `main` e deleta a branch de origem.
+- Motivação: política do Kiro Crew bloqueia push direto para main pelo agente;
+  com essa Action o agente faz push em `kiro/changes` e o merge acontece via CI.
+- Push feito pelo usuário via terminal (primeira vez; daí em diante o agente
+  usa kiro/* e o merge é automático).

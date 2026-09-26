@@ -1,0 +1,30 @@
+name: Kiro Auto-merge to main
+
+on:
+  push:
+    branches:
+      - 'kiro/**'
+
+jobs:
+  automerge:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Merge into main
+        run: |
+          git config user.name "kiro-agent"
+          git config user.email "kiro@norvo-gestao"
+          git checkout main
+          git merge --ff-only "${{ github.ref_name }}" || git merge --no-ff "${{ github.ref_name }}" -m "auto-merge: ${{ github.ref_name }} → main"
+          git push origin main
+
+      - name: Delete source branch
+        run: git push origin --delete "${{ github.ref_name }}"
