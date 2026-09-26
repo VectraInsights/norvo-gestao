@@ -274,8 +274,8 @@ function MdfPage() {
         description="Manifesto Eletrônico de Documentos Fiscais (modelo 58). Emissão, vinculação de CT-e e encerramento."
         actions={
           <div className="flex gap-2">
-            <Button size="sm" onClick={() => setOpen(true)}>
-              <Plus className="mr-1 h-4 w-4" /> Novo MDF-e
+<Button size="sm" disabled={!empresa?.id} onClick={() => { if (empresa?.id) setOpen(true); }}>
+  <Plus className="mr-1 h-4 w-4" /> Novo MDF-e
             </Button>
           </div>
         }
@@ -475,7 +475,7 @@ function MdfPage() {
         />
       )}
 
-      <DialogNovoMdf open={open} onOpenChange={(v) => { setOpen(v); if (!v) { setMdfPrefill(null); setMdfDraft(null); setSemRascunho(false); } }} empresaId={empresa?.id || ""} empresa={empresa} chavesIniciais={mdfPrefill || undefined} rascunhoInicial={mdfDraft} permiteRascunho={!semRascunho} />
+      <DialogNovoMdf open={open && !!empresa?.id} onOpenChange={(v) => { setOpen(v); if (!v) { setMdfPrefill(null); setMdfDraft(null); setSemRascunho(false); } }} empresaId={empresa?.id || ""} empresa={empresa} chavesIniciais={mdfPrefill || undefined} rascunhoInicial={mdfDraft} permiteRascunho={!semRascunho} />
     </div>
   );
 }
