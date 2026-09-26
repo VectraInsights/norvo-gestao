@@ -1296,8 +1296,6 @@ function DialogNovoMdf({ open, onOpenChange, empresaId, empresa, chavesIniciais,
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="w-screen h-screen max-w-none max-h-none m-0 rounded-none p-0 gap-0 overflow-hidden" style={{ display: "grid", gridTemplateRows: "auto 1fr auto", height: "100vh", overflow: "hidden" }}>
-        <DialogHeader className="shrink-0 px-4 pt-4 pb-0" style={{ flexShrink: 0 }}><DialogTitle>Novo MDF-e <span className="rounded bg-amber-100 px-1.5 py-0.5 text-xs font-normal text-amber-800">Homologação (testes)</span><span className="ml-2 align-middle font-mono text-[10px] font-normal text-muted-foreground" title="Revisão da tela">ui-32</span></DialogTitle></DialogHeader>
-
         <div className="overflow-hidden p-0 flex flex-col" style={{ minHeight: 0, overflow: "hidden" }}>
           <div className="space-y-1 flex-1 flex flex-col" style={{ minHeight: 0 }}>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-1">
@@ -1434,7 +1432,7 @@ function DialogNovoMdf({ open, onOpenChange, empresaId, empresa, chavesIniciais,
             </div>
           </div>
 
-          <div className="border rounded-md overflow-hidden flex-1 flex flex-col" style={{ minHeight: 0 }}>
+          <div className="flex-1 flex flex-col min-h-0" style={{ minHeight: 0 }}>
           <div className="grid grid-cols-1 md:grid-cols-10 flex-1 gap-1" style={{ minHeight: 0 }}>
             <div className="md:col-span-2 min-w-0 border-r flex flex-col" style={{ minHeight: 0 }}>
               <div className="bg-primary/8 border-b border-primary/20 px-2 py-1 text-[10px] font-semibold uppercase tracking-wide text-primary/80 shrink-0 flex items-center justify-between gap-1">
@@ -1481,7 +1479,7 @@ function DialogNovoMdf({ open, onOpenChange, empresaId, empresa, chavesIniciais,
               </div>
             </div>
           </div>
-          <div className="flex justify-end gap-2 p-2 border-t shrink-0">
+          <div className="flex justify-end gap-2 pt-2 shrink-0">
             <Button variant="outline" onClick={() => onOpenChange(false)}>Cancelar</Button>
             {permiteRascunho && (
             <Button variant="secondary" onClick={handleSalvarRascunho} disabled={loading || !ctesSelecionadas.size}>
