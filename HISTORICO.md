@@ -3089,3 +3089,13 @@ Espelhado na Vercel.
   com essa Action o agente faz push em `kiro/changes` e o merge acontece via CI.
 - Push feito pelo usuário via terminal (primeira vez; daí em diante o agente
   usa kiro/* e o merge é automático).
+
+
+## Percurso e UFs esticam até o rodapé (26/09/2026)
+
+- Caixas de Percurso e Adicionar UF agora se estendem até a linha dos botões.
+- Tabela do percurso: `max-h-[80px]` trocado por `flex-1 min-h-0` — cresce
+  com o espaço disponível em vez de truncar em 80px.
+- Div dos botões de UF: adicionado `flex flex-col`; grid interno com
+  `content-start` para os botões ficarem no topo sem esticar.
+- Espelhado via kiro-automerge → main.

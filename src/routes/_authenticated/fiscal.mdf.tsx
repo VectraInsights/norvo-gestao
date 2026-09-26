@@ -1425,7 +1425,7 @@ function DialogNovoMdf({ open, onOpenChange, empresaId, empresa, chavesIniciais,
 
           <div className="grid grid-cols-1 md:grid-cols-10 gap-2 items-stretch min-h-0 h-full" style={{ minHeight: 0, overflow: "hidden" }}>
             <div className="border rounded-md p-2 md:col-span-2 min-w-0 overflow-hidden h-full flex flex-col" style={{ height: "100%" }}>
-              <div className="flex items-center justify-between gap-1 flex-wrap">
+              <div className="flex items-center justify-between gap-1 flex-wrap shrink-0">
                 <Label className="text-xs">Percurso *</Label>
                 <div className="flex items-center gap-1">
                   <span className="text-[10px] text-muted-foreground">{percursoUFs.length} UF(s)</span>
@@ -1436,7 +1436,7 @@ function DialogNovoMdf({ open, onOpenChange, empresaId, empresa, chavesIniciais,
                   </div>
                 </div>
               </div>
-              <div className="border rounded mt-2 max-h-[80px] overflow-auto">
+              <div className="border rounded mt-2 flex-1 min-h-0 overflow-auto">
                 <table className="w-full text-xs">
                   <thead className="bg-muted sticky top-0"><tr><th className="text-left px-1 py-0.5 font-semibold">#</th><th className="text-left px-1 py-0.5 font-semibold">UF</th><th className="text-left px-1 py-0.5 font-semibold">Ações</th></tr></thead>
                   <tbody>
@@ -1449,14 +1449,14 @@ function DialogNovoMdf({ open, onOpenChange, empresaId, empresa, chavesIniciais,
                 </table>
               </div>
               {!!errosPercurso.length && (
-                <div className="mt-1 border border-destructive/50 bg-destructive/10 rounded p-1.5">
+                <div className="mt-1 border border-destructive/50 bg-destructive/10 rounded p-1.5 shrink-0">
                   {errosPercurso.map(e => (<p key={e} className="text-[11px] text-destructive">⚠ {e}</p>))}
                 </div>
               )}
             </div>
-            <div className="border rounded-md p-2 md:col-span-1 h-full" style={{ height: "100%" }}>
-              <span className="text-[10px] text-muted-foreground">Adicionar UF:</span>
-              <div className="grid grid-cols-6 gap-0.5 mt-1">
+            <div className="border rounded-md p-2 md:col-span-1 h-full flex flex-col" style={{ height: "100%" }}>
+              <span className="text-[10px] text-muted-foreground shrink-0">Adicionar UF:</span>
+              <div className="grid grid-cols-6 gap-0.5 mt-1 content-start">
                 {UFS.map(uf => (
                   <Button key={uf} variant="outline" size="sm" className="h-[18px] px-0 text-[9px] font-mono leading-none" onClick={() => { setPercursoUFs(prev => [...prev, uf]); setPercursoSelIdx(percursoUFs.length); }}>{uf}</Button>
                 ))}
