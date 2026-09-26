@@ -16,17 +16,8 @@ export default defineConfig(({ mode, command }) => {
     envDefine[`import.meta.env.${key}`] = JSON.stringify(value);
   }
 
-  const isDevBuild = mode === "development";
-
   const config: UserConfig = {
     define: envDefine,
-    ...(isDevBuild
-      ? {
-          environments: {
-            client: { define: { "process.env.NODE_ENV": JSON.stringify("development") } },
-          },
-        }
-      : {}),
     css: { transformer: "lightningcss" },
     resolve: {
       alias: { "@": `${process.cwd()}/src` },
