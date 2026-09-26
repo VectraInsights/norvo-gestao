@@ -3107,3 +3107,17 @@ Espelhado na Vercel.
   explícito para ocupar toda a área do grid-cell pai (1fr do gridTemplateRows).
   `flex-1` não tem efeito dentro de grid — trocado por `height: 100%`.
 - Tabela de percurso mantém `flex-1 min-h-0` para esticar dentro da coluna.
+
+
+## Cores por módulo na sidebar e cabeçalhos (26/09/2026)
+
+- Cada módulo recebeu uma cor de identificação:
+  Financeiro=verde, Vendas=violeta, Estoque=âmbar, Frota=laranja,
+  Projetos=sky, RH=rosa, Fiscal=azul, Acessos=rose.
+- Sidebar: grupo ativo e item de página atual exibem o fundo + ícone colorido
+  do módulo em vez do primário genérico.
+- PageHeader: borda esquerda colorida (`border-l-4`) muda conforme o módulo
+  da rota atual — identifica instantaneamente em qual área o usuário está.
+- Cores definidas centralmente em `nav-config.ts` (campos `color`/`colorBg`)
+  e em `page-header.tsx` (mapa `MODULE_COLORS`).
+- Espelhado via kiro-automerge → main.

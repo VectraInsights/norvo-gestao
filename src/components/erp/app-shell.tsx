@@ -397,12 +397,12 @@ export function AppShell({ children }: { children: ReactNode }) {
                         "flex w-full touch-manipulation select-none items-center gap-2.5 rounded-md px-3 text-sm font-medium transition-colors",
                         "min-h-11 py-2 lg:min-h-0 lg:py-2",
                         "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sidebar-ring",
-                        groupActive && !isOpen
-                          ? "bg-sidebar-accent text-sidebar-foreground"
+                        groupActive
+                          ? cn(group.colorBg, group.color)
                           : "text-sidebar-foreground hover:bg-sidebar-accent",
                       )}
                     >
-                      <GroupIcon className="h-4 w-4 shrink-0" />
+                      <GroupIcon className={cn("h-4 w-4 shrink-0", groupActive && group.color)} />
                       <span className="flex-1 text-left">{group.label}</span>
                       <ChevronDown
                         className={cn(
@@ -435,11 +435,11 @@ export function AppShell({ children }: { children: ReactNode }) {
                                 ? "justify-center p-2"
                                 : "min-h-11 gap-2.5 px-3 py-2 lg:min-h-0",
                               active
-                                ? "bg-sidebar-primary text-sidebar-primary-foreground"
+                                ? cn(group.colorBg, group.color, "font-medium")
                                 : "text-sidebar-foreground hover:bg-sidebar-accent",
                             )}
                           >
-                            <item.icon className="h-4 w-4 shrink-0" />
+                            <item.icon className={cn("h-4 w-4 shrink-0", active && group.color)} />
                             {!collapsed && item.label}
                           </Link>
                         );

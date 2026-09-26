@@ -40,7 +40,7 @@ import {
 } from "lucide-react";
 
 export type NavItem = { to: string; label: string; icon: typeof LayoutDashboard };
-export type NavGroup = { label: string; icon: typeof LayoutDashboard; items: NavItem[] };
+export type NavGroup = { label: string; icon: typeof LayoutDashboard; items: NavItem[]; color?: string; colorBg?: string };
 
 const byLabel = (a: { label: string }, b: { label: string }) =>
   a.label.localeCompare(b.label, "pt-BR", { sensitivity: "base" });
@@ -49,11 +49,15 @@ const RAW_NAV: NavGroup[] = [
   {
     label: "Visão geral",
     icon: LayoutDashboard,
+    color: "text-primary",
+    colorBg: "bg-primary/10",
     items: [{ to: "/dashboard", label: "Dashboard", icon: LayoutDashboard }],
   },
   {
     label: "Financeiro",
     icon: Wallet,
+    color: "text-emerald-600 dark:text-emerald-400",
+    colorBg: "bg-emerald-500/10",
     items: [
       { to: "/financeiro/receber", label: "Contas a receber", icon: TrendingUp },
       { to: "/financeiro/pagar", label: "Contas a pagar", icon: ReceiptText },
@@ -75,6 +79,8 @@ const RAW_NAV: NavGroup[] = [
   {
     label: "Vendas & CRM",
     icon: ShoppingCart,
+    color: "text-violet-600 dark:text-violet-400",
+    colorBg: "bg-violet-500/10",
     items: [
       { to: "/vendas/crm", label: "Funil (CRM)", icon: Kanban },
       { to: "/vendas/clientes", label: "Clientes", icon: UserSquare2 },
@@ -85,6 +91,8 @@ const RAW_NAV: NavGroup[] = [
   {
     label: "Estoque",
     icon: Boxes,
+    color: "text-amber-600 dark:text-amber-400",
+    colorBg: "bg-amber-500/10",
     items: [
       { to: "/estoque/produtos", label: "Produtos", icon: Package },
       { to: "/estoque/fornecedores", label: "Fornecedores", icon: UserSquare2 },
@@ -98,6 +106,8 @@ const RAW_NAV: NavGroup[] = [
   {
     label: "Frota & Viagens",
     icon: Truck,
+    color: "text-orange-600 dark:text-orange-400",
+    colorBg: "bg-orange-500/10",
     items: [
       { to: "/frota/viagens", label: "Viagens", icon: ArrowLeftRight },
       { to: "/frota/veiculos", label: "Veículos", icon: Truck },
@@ -107,6 +117,8 @@ const RAW_NAV: NavGroup[] = [
   {
     label: "Projetos",
     icon: Briefcase,
+    color: "text-sky-600 dark:text-sky-400",
+    colorBg: "bg-sky-500/10",
     items: [
       { to: "/projetos/projetos", label: "Projetos", icon: Briefcase },
       { to: "/projetos/os", label: "Ordens de serviço", icon: Wrench },
@@ -115,6 +127,8 @@ const RAW_NAV: NavGroup[] = [
   {
     label: "DP / RH",
     icon: UsersRound,
+    color: "text-pink-600 dark:text-pink-400",
+    colorBg: "bg-pink-500/10",
     items: [
       { to: "/rh/colaboradores", label: "Colaboradores", icon: UsersRound },
       { to: "/rh/folha", label: "Folha de pagamento", icon: Wallet },
@@ -127,6 +141,8 @@ const RAW_NAV: NavGroup[] = [
   {
     label: "Fiscal",
     icon: FileText,
+    color: "text-blue-600 dark:text-blue-400",
+    colorBg: "bg-blue-500/10",
     items: [
       { to: "/fiscal/emitidas", label: "Notas Emitidas", icon: FileOutput },
       { to: "/fiscal/recebidas", label: "Notas de Compra", icon: FileInput },
@@ -142,6 +158,8 @@ const RAW_NAV: NavGroup[] = [
   {
     label: "Acessos",
     icon: ShieldCheck,
+    color: "text-rose-600 dark:text-rose-400",
+    colorBg: "bg-rose-500/10",
     items: [{ to: "/configuracoes/usuarios", label: "Usuários e acessos", icon: ShieldCheck }],
   },
 ];
