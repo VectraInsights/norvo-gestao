@@ -20,6 +20,7 @@ import {
   KeyRound,
   ShieldAlert,
   Menu,
+  X,
 } from "lucide-react";
 import norvoLogo from "@/assets/norvo-logo.png";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
@@ -278,6 +279,9 @@ export function AppShell({ children }: { children: ReactNode }) {
         {/* Sidebar */}
         <aside
           ref={sidebarRef}
+          role={open ? "dialog" : undefined}
+          aria-modal={open ? true : undefined}
+          aria-label={open ? "Menu principal" : undefined}
           className={cn(
             "border-r border-sidebar-border bg-sidebar text-sidebar-foreground flex flex-col shadow-[8px_0_28px_-24px_oklch(0.2_0.02_60_/_0.55)]",
             "fixed inset-y-0 left-0 z-40 -translate-x-full transition-all lg:sticky lg:top-0 lg:h-screen lg:translate-x-0",
@@ -305,6 +309,9 @@ export function AppShell({ children }: { children: ReactNode }) {
                 Norvo
               </span>
             )}
+            <Button variant="ghost" size="icon" className="ml-auto lg:hidden" onClick={() => setOpen(false)} aria-label="Fechar menu">
+              <X className="h-4 w-4" aria-hidden="true" />
+            </Button>
           </div>
 
           {/* Empresa switcher */}
