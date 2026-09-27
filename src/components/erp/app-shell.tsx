@@ -57,7 +57,7 @@ export function AppShell({ children }: { children: ReactNode }) {
   const qc = useQueryClient();
   const [open, setOpen] = useState(false);
   const [navigating, setNavigating] = useState(false);
-  const [collapsed, setCollapsed = useState<boolean>(() => {
+  const [collapsed, setCollapsed] = useState<boolean>(() => {
     if (typeof window === "undefined") return false;
     return window.localStorage.getItem("norvo-sidebar-collapsed") === "1";
   });

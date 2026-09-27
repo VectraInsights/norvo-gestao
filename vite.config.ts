@@ -9,12 +9,19 @@ import viteReact from "@vitejs/plugin-react";
 // Substitui o antigo wrapper @lovable.dev/vite-tanstack-config.
 // Ordem dos plugins importa: tanstackStart ANTES de viteReact.
 export default defineConfig(({ mode, command }) => {
-  // Injeta VITE_* dos .env como constantes no bundle (mesmo comportamento do
-  // envDefine do wrapper; vars da Vercel entram via process.env nativamente).
+  // Expõe apenas variáveis públicas no bundle. A Vercel mantém tanto os nomes
+  // VITE_* quanto os nomes nativos do Supabase; os aliases evitam divergência
+  // entre preview, produção e desenvolvimento local.
+  const loadedEnv = loadEnv(mode, process.cwd(), "");
+  const publicEnv = {
+    VITE_SUPABASE_URL: loadedEnv.VITE_SUPABASE_URL || process.env.VITE_SUPABASE_URL || loadedEnv.NEXT_PUBLIC_SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL || loadedEnv.SUPABASE_URL || process.env.SUPABASE_URL,
+    VITE_SUPABASE_PUBLISHABLE_KEY: loadedEnv.VITE_SUPABASE_PUBLISHABLE_KEY || process.env.VITE_SUPABASE_PUBLISHABLE_KEY || loadedEnv.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY || loadedEnv.SUPABASE_PUBLISHABLE_KEY || process.env.SUPABASE_PUBLISHABLE_KEY,
+  };
   const envDefine: Record<string, string> = {};
-  for (const [key, value] of Object.entries(loadEnv(mode, process.cwd(), "VITE_"))) {
-    envDefine[`import.meta.env.${key}`] = JSON.stringify(value);
+  for (const [key, value] of Object.entries(publicEnv)) {
+    if (value) envDefine[`import.meta.env.${key}`] = JSON.stringify(value);
   }
+
 
   const config: UserConfig = {
     define: envDefine,
