@@ -162,6 +162,17 @@ export function AppShell({ children }: { children: ReactNode }) {
   keepActiveOpen();
   }, [location.pathname, keepActiveOpen]);
 
+  // Escape fecha o drawer móvel sem interferir em diálogos nativos
+  useEffect(() => {
+    const onEscape = (ev: KeyboardEvent) => {
+      if (ev.key !== "Escape" || !open) return;
+      setOpen(false);
+      keepActiveOpen();
+    };
+    document.addEventListener("keydown", onEscape);
+    return () => document.removeEventListener("keydown", onEscape);
+  }, [open, keepActiveOpen]);
+
   // Fecha os dropdowns ao clicar fora da barra lateral (mantém o grupo ativo)
   useEffect(() => {
     const onPointerDown = (ev: PointerEvent) => {
@@ -551,7 +562,7 @@ export function AppShell({ children }: { children: ReactNode }) {
           <header className="sticky top-0 z-20 flex h-14 items-center justify-between border-b border-border/60 bg-background/85 px-4 shadow-[0_1px_12px_-10px_oklch(0.2_0.02_60_/_0.5)] backdrop-blur lg:px-8">
             <div className="flex items-center gap-2">
               <Button variant="ghost" size="icon" className="lg:hidden" onClick={() => setOpen(true)} aria-label="Abrir menu">
-                <Menu className="h-5 w-5" />
+                <Menu className="h-5 w-5" aria-hidden="true" />
               </Button>
               <Button
                 variant="ghost"
