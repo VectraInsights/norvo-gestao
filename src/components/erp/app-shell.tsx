@@ -163,6 +163,16 @@ export function AppShell({ children }: { children: ReactNode }) {
   keepActiveOpen();
   }, [location.pathname, keepActiveOpen]);
 
+  // Evita que a página role por trás do drawer aberto em telas pequenas
+  useEffect(() => {
+    if (!open || typeof window === "undefined" || window.innerWidth >= 1024) return;
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.body.style.overflow = previousOverflow;
+    };
+  }, [open]);
+
   // Escape fecha o drawer móvel sem interferir em diálogos nativos
   useEffect(() => {
     const onEscape = (ev: KeyboardEvent) => {
