@@ -96,20 +96,32 @@ type CteDoc = { id: string; numero: string | null; serie: string | null; status:
 
 // Placa(s), motorista e data de emissão direto do XML/form do CT-e p/ a tabela.
 function infoCteLinha(xmlAssinado: string | null): { placas: string[]; motorista: string; dataEmi: string } {
-  let xml = String(xmlAssinado || ""), form: any = {};
-  try { const p = JSON.parse(xml); if (p && typeof p === "object" && (p.xml || p.form)) { if (p.xml) xml = String(p.xml); form = p.form || {}; } } catch {}
+  let raw = String(xmlAssinado || ""), form: Record<string, unknown> = {};
+  try {
+    const parsed = JSON.parse(raw);
+    if (parsed && typeof parsed === "object" && (parsed.xml || parsed.form)) {
+      raw = String(parsed.xml || "");
+      form = (parsed.form && typeof parsed.form === "object" ? parsed.form : {}) as Record<string, unknown>;
+    }
+  } catch { /* XML puro */ }
+  const xmlDoc = raw.trim().startsWith("<") ? new DOMParser().parseFromString(raw, "application/xml") : null;
+  const elements = (name: string, root: ParentNode | null = xmlDoc) => root ? Array.from(root.querySelectorAll("*")).filter((node) => node.localName === name) : [];
+  const firstText = (name: string, root: ParentNode | null = xmlDoc) => elements(name, root)[0]?.textContent?.trim() || "";
   const placas: string[] = [];
-  for (const m of xml.matchAll(/<(?:veic|reboque)>[\s\S]*?<placa>([^<]+)<\/placa>/g)) { const pl = m[1].trim().toUpperCase(); if (pl && !placas.includes(pl)) placas.push(pl); }
-  if (!placas.length) {
-    const rodo = xml.match(/<rodo>[\s\S]*?<\/rodo>/)?.[0] || "";
-    for (const m of rodo.matchAll(/<placa>([^<]+)<\/placa>/g)) { const pl = m[1].trim().toUpperCase(); if (pl && !placas.includes(pl)) placas.push(pl); }
+  for (const node of [...elements("veic"), ...elements("reboque"), ...elements("placa")]) {
+    const value = node.localName === "placa" ? node.textContent?.trim() : firstText("placa", node);
+    const placa = String(value || "").toUpperCase();
+    if (placa && !placas.includes(placa)) placas.push(placa);
   }
-  for (const k of ["placaVeiculo", "placaReboque", "semiReboque1", "semiReboque2"]) { const pl = String(form[k] || "").trim().toUpperCase(); if (pl && !placas.includes(pl)) placas.push(pl); }
-  let mot = xml.match(/<moto>[\s\S]*?<xNome>([^<]+)<\/xNome>/)?.[1]?.trim() || "";
-  if (!mot) mot = [form.motoristaNome, form.motorista2Nome].map((s: any) => String(s || "").trim()).filter(Boolean).join(" / ");
-  const dh = xml.match(/<dhEmi>([^<]+)<\/dhEmi>/)?.[1] || String(form.dataEmissao || "");
-  const dataEmi = /^\d{4}-\d{2}-\d{2}/.test(dh) ? dh.slice(0, 10).split("-").reverse().join("/") : (dh ? dh.slice(0, 10) : "");
-  return { placas, motorista: mot, dataEmi };
+  for (const key of ["placaVeiculo", "placaReboque", "semiReboque1", "semiReboque2"]) {
+    const placa = String(form[key] || "").trim().toUpperCase();
+    if (placa && !placas.includes(placa)) placas.push(placa);
+  }
+  let motorista = firstText("xNome", elements("moto")[0] || null);
+  if (!motorista) motorista = [form.motoristaNome, form.motorista2Nome].map((value) => String(value || "").trim()).filter(Boolean).join(" / ");
+  const dataRaw = firstText("dhEmi") || String(form.dataEmissao || "");
+  const dataEmi = /^\d{4}-\d{2}-\d{2}/.test(dataRaw) ? dataRaw.slice(0, 10).split("-").reverse().join("/") : dataRaw.slice(0, 10);
+  return { placas, motorista, dataEmi };
 }
 
 function CtePage() {

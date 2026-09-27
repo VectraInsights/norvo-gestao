@@ -200,6 +200,15 @@ html[data-density="compact"] .erp-table-wrap td,
 html[data-density="compact"] .erp-table-wrap th { padding-block: 0.375rem; }
 html[data-density="compact"] .erp-table-wrap { font-size: 0.8125rem; }
 
+@media print {
+  @page { margin: 12mm; }
+  body { background: white !important; color: black !important; }
+  body > a, nav, aside, header button, [data-print="hidden"], .no-print { display: none !important; }
+  #conteudo-principal { overflow: visible !important; padding: 0 !important; }
+  .print-break-before { break-before: page; }
+  .print-avoid-break { break-inside: avoid; }
+}
+
 @media (max-width: 640px) {
   .erp-table-wrap { border-inline: 0; border-radius: 0.75rem; }
   [role="dialog"] { max-height: calc(100dvh - 1rem); }
