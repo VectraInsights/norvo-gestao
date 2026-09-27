@@ -58,10 +58,20 @@ export function AppShell({ children }: { children: ReactNode }) {
   const qc = useQueryClient();
   const [open, setOpen] = useState(false);
   const [navigating, setNavigating] = useState(false);
+  const [compactMode, setCompactMode] = useState<boolean>(() => {
+    if (typeof window === "undefined") return false;
+    return window.localStorage.getItem("norvo-compact-mode") === "1";
+  });
   const [collapsed, setCollapsed] = useState<boolean>(() => {
     if (typeof window === "undefined") return false;
     return window.localStorage.getItem("norvo-sidebar-collapsed") === "1";
   });
+  useEffect(() => {
+    document.documentElement.dataset.density = compactMode ? "compact" : "comfortable";
+    try { window.localStorage.setItem("norvo-compact-mode", compactMode ? "1" : "0"); } catch { /* storage indisponível */ }
+    return () => { delete document.documentElement.dataset.density; };
+  }, [compactMode]);
+  const toggleCompactMode = () => setCompactMode((value) => !value);
   const toggleCollapsed = () => {
     setCollapsed((c) => {
       const next = !c;
@@ -605,6 +615,9 @@ export function AppShell({ children }: { children: ReactNode }) {
 <Button variant="ghost" size="icon" onClick={toggleTheme} aria-label={theme === "dark" ? "Ativar tema claro" : "Ativar tema escuro"} title={theme === "dark" ? "Ativar tema claro" : "Ativar tema escuro"}>
   {theme === "dark" ? <Sun className="h-4 w-4" aria-hidden="true" /> : <Moon className="h-4 w-4" aria-hidden="true" />}
   </Button>
+              <Button variant="ghost" size="icon" onClick={toggleCompactMode} aria-label={compactMode ? "Usar espaçamento confortável" : "Ativar modo compacto"} title={compactMode ? "Usar espaçamento confortável" : "Ativar modo compacto"}>
+                <span aria-hidden="true" className="text-[11px] font-bold">{compactMode ? "C" : "D"}</span>
+              </Button>
               <ShortcutsDialog />
             </div>
           </header>
