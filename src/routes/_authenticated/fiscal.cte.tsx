@@ -2163,7 +2163,6 @@ function CtePage() {
 
               {/* Ações de importação múltipla */}
               <div className="flex flex-wrap gap-2">
-  <Button variant="outline" size="sm" onClick={() => setManualNfeOpen(true)}><Plus className="h-4 w-4 mr-1" /> Inserir NF-e manual</Button>
   <label className="flex items-center gap-2 px-3 py-2 border rounded bg-accent text-accent-foreground cursor-pointer hover:bg-accent/70 text-xs font-medium">
   <UploadCloud className="h-4 w-4" /> Importar NFes (XML)
                   <input type="file" accept=".xml" multiple className="hidden" onChange={e => { if (e.target.files) handleImportNFeXml(e.target.files); e.currentTarget.value = ""; }} />
@@ -2335,7 +2334,7 @@ function CtePage() {
     </DialogContent>
   </Dialog>
   <Dialog open={open} onOpenChange={o => { if (o) setOpen(true); else setOpen(false); }}>
-  <DialogContent className="w-screen h-screen max-w-none max-h-none m-0 rounded-none overflow-y-auto">
+  <DialogContent onEscapeKeyDown={(event) => { event.preventDefault(); setOpen(false); }} className="w-screen h-screen max-w-none max-h-none m-0 rounded-none overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2"><Truck className="h-5 w-5 text-primary" /> {(form as any).modoEmbarque === "simplificado" ? "Conhecimento de Transporte Simplificado" : "Conhecimento de Transporte Avulso"}</DialogTitle>
             <p className="text-sm text-muted-foreground">Emissão de CT-e (57) — versão 4.00 via mTLS SEFAZ.</p>
@@ -2578,7 +2577,10 @@ function CtePage() {
             {/* === TAB: Doc Mercadorias === */}
             <TabsContent value="docs" className="mt-3 space-y-3">
               <Card className="overflow-hidden">
-                <div className="bg-primary/8 border-b border-primary/20 px-3 py-1.5 text-[10px] font-semibold uppercase tracking-wide text-primary/80">Mercadorias Transportadas — {mercadorias.filter(m => selecionadas.has(m.chave)).length || mercadorias.length} NF-e(s)</div>
+                <div className="flex items-center justify-between gap-2 bg-primary/8 border-b border-primary/20 px-3 py-1.5">
+    <div className="text-[10px] font-semibold uppercase tracking-wide text-primary/80">Mercadorias Transportadas — {mercadorias.filter(m => selecionadas.has(m.chave)).length || mercadorias.length} NF-e(s)</div>
+    <Button type="button" variant="outline" size="sm" className="h-7 text-xs" onClick={() => setManualNfeOpen(true)}><Plus className="mr-1 h-3.5 w-3.5" /> Inserir NF-e manual</Button>
+  </div>
                 <div className="overflow-x-auto max-h-[240px]">
                   <Table>
                     <TableHeader className="sticky top-0 bg-muted">
