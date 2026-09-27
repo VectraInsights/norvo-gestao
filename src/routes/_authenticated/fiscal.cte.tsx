@@ -30,6 +30,12 @@ import { Textarea } from "@/components/ui/textarea";
 import { DateInput } from "@/components/erp/date-input";
 import { MoneyInput } from "@/components/erp/money-input";
 
+function formatarCnpjPercurso(value: unknown) {
+  const digits = String(value || "").replace(/\D/g, "");
+  if (digits.length !== 14) return String(value || "Não informado");
+  return digits.replace(/(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})/, "$1.$2.$3/$4-$5");
+}
+
 /* Visor próprio de DACTE: tela cheia do sistema (sem a barra do navegador),
  * com Baixar, Imprimir, zoom e Fechar (Esc). */
 function DacteViewer({ titulo, subtitulo, url, nomeArquivo, onClose, acoes }: {
@@ -2258,10 +2264,22 @@ function CtePage() {
                 {percursos.filter(r => {
                   if (!percPickQuery) return true;
                   const q = percPickQuery.toLowerCase();
-                  return String(r.codigo || "").toLowerCase().includes(q) || String(r.nome || "").toLowerCase().includes(q);
+                  return [r.codigo, r.nome, r.rem_nome, r.dest_nome, r.rem_cnpj, r.dest_cnpj]
+    .some(value => String(value || "").toLowerCase().includes(q));
                 }).map(r => (
                   <button key={r.id} type="button" onClick={() => setPercPickSel(r.codigo)} onDoubleClick={() => novoAvulsoDePercurso(r)} className={"w-full text-left text-xs px-2 py-1.5 rounded border " + (percPickSel === r.codigo ? "border-primary bg-primary/10" : "border-transparent hover:bg-muted")} title="Dois cliques para usar direto">
-                    <span className="font-mono font-semibold">{r.codigo}</span><span className="text-muted-foreground"> — {r.nome || "Sem nome"}</span>
+                    <div className="flex items-start gap-3">
+    <span className="font-mono font-semibold shrink-0 pt-0.5">{r.codigo}</span>
+    <div className="min-w-0 flex-1 space-y-1">
+      <div className="font-medium leading-tight">{r.rem_nome || r.nome || "Remetente não informado"}</div>
+      <div className="text-muted-foreground leading-tight">{r.dest_nome || "Destinatário não informado"}</div>
+      <div className="flex flex-wrap gap-x-4 gap-y-0.5 text-[11px] text-muted-foreground">
+        <span>Remetente: {formatarCnpjPercurso(r.rem_cnpj)}</span>
+        <span>Destinatário: {formatarCnpjPercurso(r.dest_cnpj)}</span>
+      </div>
+      {(r.coleta_xmun || r.entrega_xmun) && <div className="text-[11px] text-muted-foreground">{r.coleta_xmun || "Origem não informada"} {r.coleta_uf ? `(${r.coleta_uf})` : ""} → {r.entrega_xmun || "Destino não informado"} {r.entrega_uf ? `(${r.entrega_uf})` : ""}</div>}
+    </div>
+  </div>
                   </button>
                 ))}
                 {percursos.length === 0 && <p className="text-xs text-muted-foreground">Nenhum percurso cadastrado. Cadastre em Fiscal → Percursos.</p>}
