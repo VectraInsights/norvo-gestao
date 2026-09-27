@@ -136,7 +136,7 @@ function CtePage() {
   const search = Route.useSearch();
   const [isParsing, setIsParsing] = useState(false);
   const [manualNfeOpen, setManualNfeOpen] = useState(false);
-  const [manualNfe, setManualNfe] = useState({ nNF: "", serie: "1", emit: "", emitCnpj: "", dest: "", destCnpj: "", valor: "0", peso: "0", data: new Date().toISOString().slice(0, 10) });
+  const [manualNfe, setManualNfe] = useState({ modelo: "55", chave: "", nNF: "", serie: "1", emit: "", emitCnpj: "", dest: "", destCnpj: "", data: new Date().toISOString().slice(0, 10), qtde: "1", peso: "0", valor: "0" });
   const [mercadorias, setMercadorias] = useState<Array<{ chave: string; nNF: string; serie: string; emit: string; emitCnpj: string; emitUF: string; emitCMun: string; emitXMun: string; emitIE?: string; emitLogradouro?: string; emitBairro?: string; emitCEP?: string; emitFone?: string; dest: string; destCnpj: string; destUF: string; destCMun: string; destXMun: string; destIE?: string; destLogradouro?: string; destBairro?: string; destCEP?: string; destFone?: string; valor: number; peso: number; data: string; tomador: string; tomadorCnpj: string; tomadorUF: string; tomadorCMun: string; tomadorXMun: string; tomadorIE?: string; tomadorLogradouro?: string; tomadorBairro?: string; tomadorCEP?: string; modFrete: string; qVol?: number }>>([]);
   const [selecionadas, setSelecionadas] = useState<Set<string>>(new Set());
   const [confRemetente, setConfRemetente] = useState<{ nome: string; chaves: string[] } | null>(null);
@@ -631,18 +631,18 @@ function CtePage() {
     const emit = manualNfe.emit.trim();
     const dest = manualNfe.dest.trim();
     if (!emit || !dest) { toast.error("Informe remetente e destinatário"); return; }
-    const chave = `MANUAL-${Date.now()}`;
-    const item = {
-      chave, nNF: manualNfe.nNF.trim() || "AVULSA", serie: manualNfe.serie.trim() || "1",
+const chave = manualNfe.chave.replace(/\D/g, "") || `MANUAL-${Date.now()}`;
+  const item = {
+  chave, modelo: manualNfe.modelo.trim() || "55", nNF: manualNfe.nNF.trim() || "AVULSA", serie: manualNfe.serie.trim() || "1",
       emit, emitCnpj: manualNfe.emitCnpj.replace(/\\D/g, ""), emitUF: "", emitCMun: "", emitXMun: "",
       dest, destCnpj: manualNfe.destCnpj.replace(/\\D/g, ""), destUF: "", destCMun: "", destXMun: "",
-      valor: Number(manualNfe.valor.replace(",", ".")) || 0, peso: Number(manualNfe.peso.replace(",", ".")) || 0,
+      valor: Number(manualNfe.valor.replace(",", ".")) || 0, peso: Number(manualNfe.peso.replace(",", ".")) || 0, quantidade: Number(manualNfe.qtde.replace(",", ".")) || 0, qtdePeso: Number(manualNfe.peso.replace(",", ".")) || 0,
       data: manualNfe.data, tomador: dest, tomadorCnpj: manualNfe.destCnpj.replace(/\\D/g, ""), tomadorUF: "", tomadorCMun: "", tomadorXMun: "", modFrete: "9",
     };
     setMercadorias((current) => [...current, item]);
     setSelecionadas((current) => new Set(current).add(chave));
     setForm((current) => ({ ...current, vCarga: (mercadorias.reduce((sum, m) => sum + m.valor, 0) + item.valor).toFixed(2), peso: String(mercadorias.reduce((sum, m) => sum + m.peso, 0) + item.peso), xMunIni: current.xMunIni, xMunFim: current.xMunFim }));
-    setManualNfe({ nNF: "", serie: "1", emit: "", emitCnpj: "", dest: "", destCnpj: "", valor: "0", peso: "0", data: new Date().toISOString().slice(0, 10) });
+    setManualNfe({ modelo: "55", chave: "", nNF: "", serie: "1", emit: "", emitCnpj: "", dest: "", destCnpj: "", data: new Date().toISOString().slice(0, 10), qtde: "1", peso: "0", valor: "0" });
     setManualNfeOpen(false);
     toast.success("NF-e manual adicionada ao CT-e");
   };
@@ -2007,7 +2007,7 @@ function CtePage() {
 
   return (
     <div className="p-6 space-y-4">
-      <PageHeader eyebrow="Fiscal" title="CT-e" description="Conhecimento de Transporte Eletrônico (57) — emissão robusta estilo STM, com múltiplas NF-es por CT-e." actions={<Button size="sm" onClick={() => { setPercPickQuery(""); setPercPickSel(""); setPercPickOpen(true); }}><Plus className="mr-1 h-4 w-4" /> Novo CT-e</Button>} />
+      <PageHeader eyebrow="Fiscal" title="CT-e" description="Conhecimento de Transporte Eletrônico (57) — emissão robusta estilo STM, com múltiplas NF-es por CT-e." />
 
       {isLoading ? <div className="text-sm text-muted-foreground">Carregando…</div> : (
         <Tabs value={statusTab} onValueChange={setStatusTab}>
@@ -2236,7 +2236,7 @@ function CtePage() {
                   >
                     Gerar CT-e com {selecionadas.size || 0} selecionada(s)
                   </Button>
-                  <Button size="sm" onClick={() => { setPercPickQuery(""); setPercPickSel(""); setPercPickOpen(true); }}><Plus className="mr-1 h-3 w-3" /> Novo CT-e avulso</Button>
+                  <Button size="sm" onClick={() => { setPercPickQuery(""); setPercPickSel(""); setPercPickOpen(true); }}><Plus className="mr-1 h-3 w-3" /> Novo CT-e</Button>
                 </div>
               </div>
             </CardContent>
@@ -2317,9 +2317,11 @@ function CtePage() {
         </Tabs>
       )}
   <Dialog open={manualNfeOpen} onOpenChange={setManualNfeOpen}>
-    <DialogContent>
+    <DialogContent onEscapeKeyDown={(event) => { event.preventDefault(); event.stopPropagation(); setManualNfeOpen(false); }} onKeyDown={(event) => event.stopPropagation()}>
       <DialogHeader><DialogTitle>Inserir NF-e manualmente</DialogTitle></DialogHeader>
       <div className="grid grid-cols-2 gap-3">
+        <div><Label>Modelo</Label><Input value={manualNfe.modelo} onChange={e => setManualNfe(v => ({ ...v, modelo: e.target.value }))} placeholder="55" /></div>
+        <div><Label>Chave NF-e</Label><Input value={manualNfe.chave} onChange={e => setManualNfe(v => ({ ...v, chave: e.target.value.replace(/\D/g, "").slice(0, 44) }))} placeholder="44 dígitos" maxLength={44} /></div>
         <div><Label>Nº NF-e</Label><Input value={manualNfe.nNF} onChange={e => setManualNfe(v => ({ ...v, nNF: e.target.value }))} placeholder="Ex.: 12345" /></div>
         <div><Label>Série</Label><Input value={manualNfe.serie} onChange={e => setManualNfe(v => ({ ...v, serie: e.target.value }))} /></div>
         <div className="col-span-2"><Label>Remetente *</Label><Input value={manualNfe.emit} onChange={e => setManualNfe(v => ({ ...v, emit: e.target.value }))} placeholder="Nome ou razão social" /></div>
@@ -2327,14 +2329,15 @@ function CtePage() {
         <div className="col-span-2"><Label>Destinatário *</Label><Input value={manualNfe.dest} onChange={e => setManualNfe(v => ({ ...v, dest: e.target.value }))} placeholder="Nome ou razão social" /></div>
         <div><Label>CNPJ destinatário</Label><Input value={manualNfe.destCnpj} onChange={e => setManualNfe(v => ({ ...v, destCnpj: e.target.value }))} /></div>
         <div><Label>Data</Label><DateInput value={manualNfe.data} onChange={data => setManualNfe(v => ({ ...v, data }))} /></div>
-        <div><Label>Valor da NF-e</Label><Input inputMode="decimal" value={manualNfe.valor} onChange={e => setManualNfe(v => ({ ...v, valor: e.target.value }))} /></div>
-        <div><Label>Peso (kg)</Label><Input inputMode="decimal" value={manualNfe.peso} onChange={e => setManualNfe(v => ({ ...v, peso: e.target.value }))} /></div>
+<div><Label>Quantidade</Label><Input inputMode="decimal" value={manualNfe.qtde} onChange={e => setManualNfe(v => ({ ...v, qtde: e.target.value }))} /></div>
+  <div><Label>Quantidade de peso (kg)</Label><Input inputMode="decimal" value={manualNfe.peso} onChange={e => setManualNfe(v => ({ ...v, peso: e.target.value }))} /></div>
+  <div><Label>Valor da NF-e</Label><Input inputMode="decimal" value={manualNfe.valor} onChange={e => setManualNfe(v => ({ ...v, valor: e.target.value }))} /></div>
       </div>
       <DialogFooter><Button variant="outline" onClick={() => setManualNfeOpen(false)}>Cancelar</Button><Button onClick={adicionarNfeManual}>Adicionar NF-e</Button></DialogFooter>
     </DialogContent>
   </Dialog>
   <Dialog open={open} onOpenChange={o => { if (o) setOpen(true); else setOpen(false); }}>
-  <DialogContent onEscapeKeyDown={(event) => { event.preventDefault(); setOpen(false); }} className="w-screen h-screen max-w-none max-h-none m-0 rounded-none overflow-y-auto">
+  <DialogContent onEscapeKeyDown={(event) => { event.preventDefault(); event.stopPropagation(); setOpen(false); }} onKeyDown={(event) => event.stopPropagation()} className="w-screen h-screen max-w-none max-h-none m-0 rounded-none overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2"><Truck className="h-5 w-5 text-primary" /> {(form as any).modoEmbarque === "simplificado" ? "Conhecimento de Transporte Simplificado" : "Conhecimento de Transporte Avulso"}</DialogTitle>
             <p className="text-sm text-muted-foreground">Emissão de CT-e (57) — versão 4.00 via mTLS SEFAZ.</p>
