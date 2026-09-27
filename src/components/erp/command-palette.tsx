@@ -85,6 +85,20 @@ export function CommandPalette() {
     },
   });
 
+  const { data: colaboradores } = useQuery({
+    queryKey: ["cmd-colaboradores", empresaId, term],
+    enabled,
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("colaboradores")
+        .select("id,nome,cpf,cargo")
+        .eq("empresa_id", empresaId!)
+        .or(`nome.ilike.%${term}%,cpf.ilike.%${term}%`)
+        .limit(6);
+      return data ?? [];
+    },
+  });
+
   const { data: lancamentos } = useQuery({
     queryKey: ["cmd-lanc", empresaId, term],
     enabled,
@@ -150,6 +164,20 @@ export function CommandPalette() {
                   <CommandItem key={p.id} value={`prod-${p.id}-${p.nome}`} onSelect={() => go("/estoque/produtos")}>
                     <span className="truncate">{p.nome}</span>
                     {p.codigo && <span className="ml-auto text-xs text-muted-foreground">{p.codigo}</span>}
+                  </CommandItem>
+                ))}
+              </CommandGroup>
+            </>
+          )}
+
+          {colaboradores && colaboradores.length > 0 && pode("rh") && (
+            <>
+              <CommandSeparator />
+              <CommandGroup heading="Colaboradores">
+                {colaboradores.map((colaborador) => (
+                  <CommandItem key={colaborador.id} value={`colaborador-${colaborador.id}-${colaborador.nome}`} onSelect={() => go("/rh/colaboradores")}>
+                    <span className="truncate">{colaborador.nome}</span>
+                    <span className="ml-auto text-xs text-muted-foreground">{colaborador.cargo || "Colaborador"}</span>
                   </CommandItem>
                 ))}
               </CommandGroup>
