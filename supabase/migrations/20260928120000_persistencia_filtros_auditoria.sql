@@ -29,18 +29,18 @@ ALTER TABLE public.auditoria_eventos ENABLE ROW LEVEL SECURITY;
 DROP POLICY IF EXISTS filtros_salvos_empresa ON public.filtros_salvos;
 CREATE POLICY filtros_salvos_empresa ON public.filtros_salvos
   FOR ALL TO authenticated
-  USING (public.is_empresa_member(empresa_id) AND user_id = auth.uid())
-  WITH CHECK (public.is_empresa_member(empresa_id) AND user_id = auth.uid());
+  USING (public.is_empresa_member(empresa_id, auth.uid()) AND user_id = auth.uid())
+  WITH CHECK (public.is_empresa_member(empresa_id, auth.uid()) AND user_id = auth.uid());
 
 DROP POLICY IF EXISTS auditoria_eventos_empresa_select ON public.auditoria_eventos;
 CREATE POLICY auditoria_eventos_empresa_select ON public.auditoria_eventos
   FOR SELECT TO authenticated
-  USING (public.is_empresa_member(empresa_id));
+  USING (public.is_empresa_member(empresa_id, auth.uid()));
 
 DROP POLICY IF EXISTS auditoria_eventos_empresa_insert ON public.auditoria_eventos;
 CREATE POLICY auditoria_eventos_empresa_insert ON public.auditoria_eventos
   FOR INSERT TO authenticated
-  WITH CHECK (public.is_empresa_member(empresa_id) AND user_id = auth.uid());
+  WITH CHECK (public.is_empresa_member(empresa_id, auth.uid()) AND user_id = auth.uid());
 
 GRANT SELECT, INSERT, UPDATE, DELETE ON public.filtros_salvos TO authenticated;
 GRANT SELECT, INSERT ON public.auditoria_eventos TO authenticated;
