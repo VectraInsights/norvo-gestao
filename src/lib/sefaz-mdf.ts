@@ -557,8 +557,8 @@ export async function emitirMdf(pfx: Buffer, senha: string, xml: string, ambient
   console.log("[mdf-debug] infMDFeSupl:", /<infMDFeSupl>/.test(signedMdfXml) ? "presente" : "AUSENTE");
   const referenceUri = signedMdfXml.match(/<Reference URI="([^"]+)"/)?.[1] || "";
   const signedXmlBytes = Buffer.byteLength(signedMdfXml, "utf8");
-  console.log(`[mdf-debug] XML final assinado: ${signedXmlBytes} bytes UTF-8; infModal:`, xmlAss.match(/<infModal[^>]*>/)?.[0] || "(ausente)");
-  console.log("[mdf-debug] Signature:", xmlAss.match(/<Signature[\s\S]*<\/Signature>/)?.[0] || "(não encontrado)");
+  console.info("[mdf] XML final assinado", { bytes: signedXmlBytes, infModal: Boolean(xmlAss.match(/<infModal[^>]*>/)) });
+  console.info("[mdf] assinatura gerada", { bytes: signedXmlBytes });
   // D03/599: diagnóstico somente leitura; não altera o XML assinado.
   const wsAbre = [...xmlAss.matchAll(/<([^<>\s/][^<>]{0,40})>\s+</g)].map(m => m[1]);
   const wsFecha = [...xmlAss.matchAll(/>\s+<\/([^<>]+)>/g)].map(m => "/" + m[1]);
@@ -659,7 +659,7 @@ export async function encerrarMdf(pfx: Buffer, senha: string, chave: string, amb
   if (!/^\d{7}$/.test(cMunFmt)) throw new Error("Município de encerramento não encontrado no MDF-e");
   const evento = `<eventoMDFe xmlns="http://www.portalfiscal.inf.br/mdfe" versao="3.00"><infEvento Id="ID110112${chave}01"><cOrgao>${cOrgao}</cOrgao><tpAmb>${MDFE_TP_AMB}</tpAmb><CNPJ>${cnpjFmt}</CNPJ><chMDFe>${chave}</chMDFe><dhEvento>${dhEvento}</dhEvento><tpEvento>110112</tpEvento><nSeqEvento>01</nSeqEvento><detEvento versaoEvento="3.00"><evEncMDFe><descEvento>Encerramento</descEvento><nProt>${nProtFmt}</nProt><dtEnc>${dhEvento.slice(0, 10)}</dtEnc><cUF>${String(cMunFmt).slice(0, 2)}</cUF><cMun>${cMunFmt}</cMun></evEncMDFe></detEvento></infEvento></eventoMDFe>`;
   const ass = signMdfEventoXml(evento, pfx, senha);
-  console.log("[mdf-debug] evento encerramento com Signature:", /<Signature[\s>]/.test(ass));
+  console.info("[mdf] evento de encerramento assinado", { assinado: /<Signature[\s>]/.test(ass) });
   // Todos os WS do MDF-e trafegam via mdfeDadosMsg (MOC DF-e).
   const nsEvt = "http://www.portalfiscal.inf.br/mdfe/wsdl/MDFeRecepcaoEvento";
   const cabec = `<mdfeCabecMsg xmlns="${nsEvt}"><cUF>${cOrgao}</cUF><versaoDados>3.00</versaoDados></mdfeCabecMsg>`;
@@ -688,8 +688,8 @@ export async function cancelarMdf(pfx: Buffer, senha: string, chave: string, jus
   if (xJustFmt.length < 15) throw new Error("Justificativa do cancelamento deve ter ao menos 15 caracteres");
   const evento = `<eventoMDFe xmlns="http://www.portalfiscal.inf.br/mdfe" versao="3.00"><infEvento Id="ID110111${chave}01"><cOrgao>${cOrgao}</cOrgao><tpAmb>${MDFE_TP_AMB}</tpAmb><CNPJ>${cnpjFmt}</CNPJ><chMDFe>${chave}</chMDFe><dhEvento>${dhEvento}</dhEvento><tpEvento>110111</tpEvento><nSeqEvento>01</nSeqEvento><detEvento versaoEvento="3.00"><evCancMDFe><descEvento>Cancelamento</descEvento><nProt>${nProtFmt}</nProt><xJust>${xJustFmt}</xJust></evCancMDFe></detEvento></infEvento></eventoMDFe>`;
   const ass = signMdfEventoXml(evento, pfx, senha);
-  console.log("[mdf-debug] evento cancelamento com Signature:", /<Signature[\s>]/.test(ass));
-  console.log("[mdf-debug] evento xml:", evento);
+  console.info("[mdf] evento de cancelamento assinado", { assinado: /<Signature[\s>]/.test(ass) });
+  console.info("[mdf] evento de cancelamento preparado", { bytes: Buffer.byteLength(evento, "utf8") });
   // Todos os WS do MDF-e trafegam via mdfeDadosMsg (MOC DF-e).
   const nsEvt = "http://www.portalfiscal.inf.br/mdfe/wsdl/MDFeRecepcaoEvento";
   const cabec = `<mdfeCabecMsg xmlns="${nsEvt}"><cUF>${cOrgao}</cUF><versaoDados>3.00</versaoDados></mdfeCabecMsg>`;

@@ -1238,7 +1238,7 @@ export async function consultarPorChave(
     decodedXml = compressedBuffer.toString("utf8");
   }
 
-  console.log("[sefaz] consultarPorChave decodedXml (first 500):", decodedXml.slice(0, 500));
+  console.info("[sefaz] XML consultado decodificado", { bytes: Buffer.byteLength(decodedXml, "utf8") });
 
   const emitCNPJ = decodedXml.match(/<emit>[\s\S]*?<CNPJ>(\d{14})<\/CNPJ>[\s\S]*?<\/emit>/)?.[1] || "";
   const emitXNome = decodedXml.match(/<emit>[\s\S]*?<xNome>([^<]+)<\/xNome>[\s\S]*?<\/emit>/)?.[1] || "";

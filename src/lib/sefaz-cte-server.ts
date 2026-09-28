@@ -75,9 +75,8 @@ export const emitirCteFn = createServerFn({ method: "POST" }).validator((d: { em
   };
   console.log("[CTE-DEBUG] tomador xNome:", input.tomador?.xNome, "CNPJ:", input.tomador?.cnpj, "hex:", Buffer.from(input.tomador?.xNome||"").toString("hex"));
   const { xml, chave } = buildCteXml(input);
-  console.log("[CTE-DEBUG] XML gerado:", xml);
-  console.log("[CTE-DEBUG] Toma input:", JSON.stringify(input.tomador));
-  console.log("[CTE-DEBUG] Emit input:", JSON.stringify(input.emit));
+  console.info("[CTE] XML gerado", { chave, bytes: Buffer.byteLength(xml, "utf8") });
+  console.info("[CTE] dados de emissão preparados", { temTomador: Boolean(input.tomador), temEmitente: Boolean(input.emit) });
   const ret = await emitirCte(cert.pfx, cert.senha, xml, ambiente, cert.uf);
   if (ret.sucesso) {
     await supa.from("cte_documentos").insert({ empresa_id: data.empresaId, chave_acesso: chave, numero: proximo, serie: input.serie, status: "autorizado", xml_assinado: JSON.stringify({ xml, form: (data as any).form || {} }), protocolo_sefaz: ret.protocolo, ambiente, data_autorizacao: new Date().toISOString(), valor_servico: input.vPrest, peso_carga: input.pesoKg, responsavel_emissao: (data as any).responsavel || null } as any);

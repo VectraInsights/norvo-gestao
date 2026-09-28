@@ -291,7 +291,7 @@ export async function emitirCte(pfx:Buffer, senha:string, xml:string, ambiente:A
   assertSefazXmlAmbiente(xml);
   const ep=getCteEndpoints(ambiente, uf);
   const xmlAss = signXml(xml, pfx, senha);
-  console.log("[CTE-SEFAZ] XML ASSINADO COMPLETO:", xmlAss);
+  console.info("[CTE-SEFAZ] XML assinado", { bytes: Buffer.byteLength(xmlAss, "utf8") });
   // V4 Sinc — MOC exige GZip + Base64 no cteDadosMsg
   const compressed = zlib.gzipSync(Buffer.from(xmlAss, "utf-8"));
   const dadosBase64 = compressed.toString("base64");
@@ -415,7 +415,7 @@ export async function cancelarCte(pfx:Buffer, senha:string, chave:string, justif
   const nProtFmt = (protocolo || "0").replace(/\D/g,"").padStart(15,"0");
   const cnpjFmt = cnpj.replace(/\D/g,"").padStart(14,"0");
   const evento=`<eventoCTe xmlns="http://www.portalfiscal.inf.br/cte" versao="4.00"><infEvento Id="ID${tpEvento}${chaveFmt}${nSeq}"><cOrgao>${cOrgao}</cOrgao><tpAmb>${SEFAZ_TP_AMB}</tpAmb><CNPJ>${cnpjFmt}</CNPJ><chCTe>${chaveFmt}</chCTe><dhEvento>${dhEvento}</dhEvento><tpEvento>${tpEvento}</tpEvento><nSeqEvento>${nSeq}</nSeqEvento><detEvento versaoEvento="4.00"><evCancCTe><descEvento>Cancelamento</descEvento><nProt>${nProtFmt}</nProt><xJust>${justificativa}</xJust></evCancCTe></detEvento></infEvento></eventoCTe>`;
-  console.log("[CTE-CANCEL] evento XML:", evento);
+  console.info("[CTE-CANCEL] evento preparado", { bytes: Buffer.byteLength(evento, "utf8") });
   const ass=signXml(evento, pfx, senha);
   console.log("[CTE-CANCEL] XML assinado (500 chars):", ass.slice(0, 500));
   console.log("[CTE-CANCEL] URI na assinatura:", ass.match(/URI="([^"]+)"/)?.[1] || "NAO_ENCONTRADO");
