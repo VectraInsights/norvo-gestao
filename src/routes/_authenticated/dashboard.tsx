@@ -279,9 +279,7 @@ function Dashboard() {
       if (error) throw error;
       const rows = (data ?? []) as unknown as MultaAlertaRow[];
       return rows.filter(
-        (m) =>
-          (new Date(m.data_vencimento + "T12:00:00").getTime() - Date.now()) / 86400_000 <=
-          30,
+        (m) => (new Date(m.data_vencimento + "T12:00:00").getTime() - Date.now()) / 86400_000 <= 30,
       );
     },
   });
@@ -385,29 +383,41 @@ function Dashboard() {
         description="Visão geral da operação em tempo real."
       />
 
-  <Card className="erp-surface mb-6">
-  <CardContent className="p-4 sm:p-5">
-  <div className="mb-3 flex items-center justify-between gap-3">
-  <div>
-  <h2 className="text-sm font-semibold">Ações rápidas</h2>
-  <p className="text-xs text-muted-foreground">Acesse as tarefas mais usadas sem navegar pelo menu.</p>
-  </div>
-  <Plus className="h-4 w-4 text-primary" aria-hidden="true" />
-  </div>
-  <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
-  {atalhos.map((atalho) => {
-    const Icon = atalho.icon;
-    return <Button key={atalho.to} variant="outline" className="h-auto justify-between px-3 py-3 text-left" onClick={() => navigate({ to: atalho.to })}>
-      <span className="flex items-center gap-2"><Icon className="h-4 w-4 text-primary" aria-hidden="true" />{atalho.label}</span>
-      <ArrowRight className="h-3.5 w-3.5 text-muted-foreground" aria-hidden="true" />
-    </Button>;
-  })}
-  </div>
-  </CardContent>
-  </Card>
+      <Card className="erp-surface mb-6 overflow-hidden border-primary/15 bg-gradient-to-br from-card via-card to-primary/[0.04]">
+        <CardContent className="p-4 sm:p-5">
+          <div className="mb-3 flex items-center justify-between gap-3">
+            <div>
+              <h2 className="text-sm font-semibold">Ações rápidas</h2>
+              <p className="text-xs text-muted-foreground">
+                Acesse as tarefas mais usadas sem navegar pelo menu.
+              </p>
+            </div>
+            <Plus className="h-4 w-4 text-primary" aria-hidden="true" />
+          </div>
+          <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
+            {atalhos.map((atalho) => {
+              const Icon = atalho.icon;
+              return (
+                <Button
+                  key={atalho.to}
+                  variant="outline"
+                  className="h-auto justify-between px-3 py-3 text-left"
+                  onClick={() => navigate({ to: atalho.to })}
+                >
+                  <span className="flex items-center gap-2">
+                    <Icon className="h-4 w-4 text-primary" aria-hidden="true" />
+                    {atalho.label}
+                  </span>
+                  <ArrowRight className="h-3.5 w-3.5 text-muted-foreground" aria-hidden="true" />
+                </Button>
+              );
+            })}
+          </div>
+        </CardContent>
+      </Card>
 
-  <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-  {loadingStats
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        {loadingStats
           ? Array.from({ length: 8 }).map((_, i) => (
               <Card key={i} className="shadow-panel">
                 <CardContent className="p-5">
@@ -417,13 +427,22 @@ function Dashboard() {
               </Card>
             ))
           : cards.map((c) => (
-              <Card key={c.label} className="shadow-panel">
+              <Card
+                key={c.label}
+                className="group shadow-panel transition-all duration-200 hover:-translate-y-0.5 hover:border-primary/25 hover:shadow-lg"
+              >
                 <CardContent className="p-5">
                   <div className="flex items-center justify-between text-muted-foreground">
-                    <span className="text-xs uppercase tracking-wider">{c.label}</span>
-                    <c.icon className={`h-4 w-4 ${c.tone}`} />
+                    <span className="text-xs font-medium uppercase tracking-[0.12em]">
+                      {c.label}
+                    </span>
+                    <span className="rounded-lg bg-muted/70 p-2 transition-colors group-hover:bg-primary/10">
+                      <c.icon className={`h-4 w-4 ${c.tone}`} aria-hidden="true" />
+                    </span>
                   </div>
-                  <div className="mt-3 text-display text-2xl text-tabular">{c.value}</div>
+                  <div className="mt-4 text-display text-2xl font-semibold text-tabular">
+                    {c.value}
+                  </div>
                 </CardContent>
               </Card>
             ))}
@@ -432,8 +451,13 @@ function Dashboard() {
       <div className="mt-8 grid gap-4 lg:grid-cols-3">
         <Card className="shadow-panel lg:col-span-2">
           <CardContent className="p-5">
-            <div className="mb-3 flex items-center justify-between">
-              <h3 className="font-semibold">Receita — últimos 30 dias</h3>
+            <div className="mb-4 flex items-center justify-between gap-3">
+              <div>
+                <p className="text-xs font-medium uppercase tracking-[0.12em] text-muted-foreground">
+                  Desempenho
+                </p>
+                <h3 className="mt-1 font-semibold">Receita — últimos 30 dias</h3>
+              </div>
               <Badge variant="secondary">{brl(stats?.receitaMes ?? 0)}</Badge>
             </div>
             {loadingStats || !stats ? (
@@ -448,9 +472,16 @@ function Dashboard() {
 
         <Card className="shadow-panel">
           <CardContent className="p-5">
-            <div className="mb-3 flex items-center justify-between">
-              <h3 className="font-semibold">Alertas & estoque baixo</h3>
-              <AlertTriangle className="h-4 w-4 text-warning-foreground" />
+            <div className="mb-4 flex items-center justify-between gap-3">
+              <div>
+                <p className="text-xs font-medium uppercase tracking-[0.12em] text-muted-foreground">
+                  Atenção
+                </p>
+                <h3 className="mt-1 font-semibold">Alertas & estoque baixo</h3>
+              </div>
+              <span className="rounded-lg bg-warning/15 p-2">
+                <AlertTriangle className="h-4 w-4 text-warning-foreground" aria-hidden="true" />
+              </span>
             </div>
             {!alertas?.length &&
             !stats?.estoqueBaixo?.length &&
@@ -515,15 +546,14 @@ function Dashboard() {
                   ))}
                 {multasVencendo?.map((m) => {
                   const dias = Math.ceil(
-                    (new Date(m.data_vencimento + "T12:00:00").getTime() - Date.now()) /
-                      86400_000,
+                    (new Date(m.data_vencimento + "T12:00:00").getTime() - Date.now()) / 86400_000,
                   );
                   return (
                     <li key={m.id} className="flex items-center justify-between text-sm">
                       <span className="truncate">
                         <strong>{m.placa}</strong> — multa{" "}
-                        {m.auto_infracao ? `auto ${m.auto_infracao}` : ""} {dias < 0 ? "vencida em" : "vence em"}{" "}
-                        {dateBR(m.data_vencimento)}
+                        {m.auto_infracao ? `auto ${m.auto_infracao}` : ""}{" "}
+                        {dias < 0 ? "vencida em" : "vence em"} {dateBR(m.data_vencimento)}
                       </span>
                       <Badge
                         variant="secondary"
