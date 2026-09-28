@@ -224,7 +224,7 @@ function Viagens() {
       const { data, error } = await supabase
         .from("viagens" as never)
         .select(
-          "id,empresa_id,cliente_id,motorista_id,veiculo_id,status,data_saida,data_chegada,origem,destino,valor_frete,observacoes,created_at,cliente:contatos(nome), motorista:colaboradores(nome), veiculo:veiculos(placa)",
+          "id,empresa_id,cliente_id,motorista_id,veiculo_id,status,data_saida,data_chegada,origem_cidade,origem_uf,destino_cidade,destino_uf,valor_frete,observacoes,created_at,cliente:contatos(nome), motorista:colaboradores(nome), veiculo:veiculos(placa)",
         )
         .eq("empresa_id", empresa!.id)
         .order("created_at", { ascending: false })

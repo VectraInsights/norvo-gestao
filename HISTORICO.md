@@ -3199,3 +3199,10 @@ Espelhado na Vercel.
   (guarda RequireEmpresa + useEmpresaAtual + sino).
   Restauradas as colunas reais em route.tsx, use-empresa,
   app-shell e notifications-bell (+severidade no select).
+
+## Viagens 400: colunas origem/destino inexistentes (28/09)
+
+- Mesmo padrao dos selects quebrados: commit de paginacao
+  trocou por origem,destino (tabela tem origem_cidade,
+  origem_uf, destino_cidade, destino_uf). Query validada
+  direto no banco antes do push.
