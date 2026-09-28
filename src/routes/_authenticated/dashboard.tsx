@@ -91,6 +91,8 @@ function Dashboard() {
 
   const { data: empresas, isLoading: loadingEmp } = useQuery({
     queryKey: ["empresas"],
+    staleTime: 5 * 60_000,
+    gcTime: 15 * 60_000,
     queryFn: async ({ signal }) => {
       const { data, error } = await supabase
         .from("empresas")
@@ -107,6 +109,8 @@ function Dashboard() {
   const { data: stats, isLoading: loadingStats } = useQuery({
     enabled: !!empresa,
     queryKey: ["dashboard-stats", empresa?.id],
+    staleTime: 60_000,
+    gcTime: 10 * 60_000,
     queryFn: async ({ signal }) => {
       const hoje = new Date().toISOString().slice(0, 10);
       const inicioMes = hoje.slice(0, 7) + "-01";
@@ -210,6 +214,8 @@ function Dashboard() {
   const { data: alertas } = useQuery({
     enabled: !!empresa,
     queryKey: ["alertas", empresa?.id],
+    staleTime: 30_000,
+    gcTime: 5 * 60_000,
     queryFn: async ({ signal }) => {
       const { data, error } = await supabase
         .from("alertas")
@@ -227,6 +233,8 @@ function Dashboard() {
   const { data: cnhVencendo } = useQuery({
     enabled: !!empresa,
     queryKey: ["cnh-vencendo", empresa?.id],
+    staleTime: 5 * 60_000,
+    gcTime: 15 * 60_000,
     queryFn: async ({ signal }) => {
       const limite = new Date(Date.now() + 31 * 86400_000).toISOString().slice(0, 10);
       const { data, error } = await supabase
@@ -255,6 +263,8 @@ function Dashboard() {
   const { data: multasVencendo } = useQuery({
     enabled: !!empresa,
     queryKey: ["multas-vencendo", empresa?.id],
+    staleTime: 60_000,
+    gcTime: 10 * 60_000,
     queryFn: async ({ signal }) => {
       const limite = new Date(Date.now() + 31 * 86400_000).toISOString().slice(0, 10);
       const { data, error } = await supabase
@@ -279,6 +289,8 @@ function Dashboard() {
   const { data: proximosReceber } = useQuery({
     enabled: !!empresa,
     queryKey: ["proximos-receber", empresa?.id],
+    staleTime: 60_000,
+    gcTime: 10 * 60_000,
     queryFn: async ({ signal }) => {
       const { data, error } = await supabase
         .from("lancamentos_financeiros")
