@@ -6,20 +6,65 @@ import { Input } from "@/components/ui/input";
 import { MoneyInput } from "@/components/erp/money-input";
 import { Label } from "@/components/ui/label";
 import { Card } from "@/components/ui/card";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+  DialogFooter,
+} from "@/components/ui/dialog";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
-import { Loader2, Plus, TrendingUp, Trash2, Check, RotateCcw, Ban, ArrowUp, ArrowDown, ArrowUpDown, Search, X, Pencil } from "lucide-react";
+import {
+  ChevronLeft,
+  ChevronRight,
+  Loader2,
+  Plus,
+  TrendingUp,
+  Trash2,
+  Check,
+  RotateCcw,
+  Ban,
+  ArrowUp,
+  ArrowDown,
+  ArrowUpDown,
+  Search,
+  X,
+  Pencil,
+} from "lucide-react";
 import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEmpresaAtual } from "@/hooks/use-empresa";
 import { toast } from "sonner";
-import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { useNavigate } from "@tanstack/react-router";
 import { format } from "date-fns";
 import { LancamentosToolbar } from "@/components/erp/lancamentos-toolbar";
@@ -30,11 +75,14 @@ import { usePerfisMap } from "@/hooks/use-perfis";
 export const Route = createFileRoute("/_authenticated/financeiro/receber")({
   component: () => <LancamentosPage tipo="receber" />,
   errorComponent: ({ error }) => (
-    <div className="p-6 text-sm text-destructive" role="alert">Falha: {error.message}</div>
+    <div className="p-6 text-sm text-destructive" role="alert">
+      Falha: {error.message}
+    </div>
   ),
 });
 
-const brl = (n: number) => Number(n).toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
+const brl = (n: number) =>
+  Number(n).toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 
 const STATUS_TONE: Record<string, string> = {
   aberto: "bg-accent text-accent-foreground",
@@ -56,14 +104,29 @@ type Lancamento = {
   categoria_id: string | null;
 };
 
-const FORMAS_PAGAMENTO = ["Boleto", "Cartão de crédito", "Cartão de débito", "Cheque", "Dinheiro", "Duplicata", "Pix", "Transferência", "Outros"] as const;
+const FORMAS_PAGAMENTO = [
+  "Boleto",
+  "Cartão de crédito",
+  "Cartão de débito",
+  "Cheque",
+  "Dinheiro",
+  "Duplicata",
+  "Pix",
+  "Transferência",
+  "Outros",
+] as const;
 
 const emptyForm = () => ({
-  descricao: "", valor: "",
+  descricao: "",
+  valor: "",
   data_emissao: format(new Date(), "yyyy-MM-dd"),
   data_vencimento: format(new Date(), "yyyy-MM-dd"),
-  contato_id: "", categoria_id: "", conta_bancaria_id: "",
-  documento: "", observacoes: "", forma_pagamento: "",
+  contato_id: "",
+  categoria_id: "",
+  conta_bancaria_id: "",
+  documento: "",
+  observacoes: "",
+  forma_pagamento: "",
   created_by: null as string | null,
   created_at: "",
 });
@@ -75,7 +138,10 @@ export function LancamentosPage({ tipo }: { tipo: "receber" | "pagar" }) {
   const navigate = useNavigate();
   const [open, setOpen] = useState(false);
   const [form, setForm] = useState(emptyForm);
-  const [lancamentoBloqueado, setLancamentoBloqueado] = useState<{ id: string; descricao: string } | null>(null);
+  const [lancamentoBloqueado, setLancamentoBloqueado] = useState<{
+    id: string;
+    descricao: string;
+  } | null>(null);
 
   const listKey = ["lancamentos", empresa?.id, tipo] as const;
 
@@ -87,7 +153,9 @@ export function LancamentosPage({ tipo }: { tipo: "receber" | "pagar" }) {
     queryFn: async ({ signal }): Promise<Lancamento[]> => {
       const { data, error } = await supabase
         .from("lancamentos_financeiros")
-        .select("id,descricao,valor,status,data_vencimento,created_at,created_by,contato:contatos(nome),categoria_id")
+        .select(
+          "id,descricao,valor,status,data_vencimento,created_at,created_by,contato:contatos(nome),categoria_id",
+        )
         .eq("empresa_id", empresa!.id)
         .eq("tipo", tipo)
         .order("data_vencimento", { ascending: true })
@@ -104,9 +172,16 @@ export function LancamentosPage({ tipo }: { tipo: "receber" | "pagar" }) {
     staleTime: 10 * 60_000,
     gcTime: 30 * 60_000,
     queryFn: async () => {
-      const tipos = (tipo === "receber" ? ["cliente", "ambos"] : ["fornecedor", "ambos"]) as ("cliente" | "fornecedor" | "ambos")[];
-      const { data, error } = await supabase.from("contatos")
-        .select("id,nome,tipo").eq("empresa_id", empresa!.id).in("tipo", tipos).order("nome").limit(1000);
+      const tipos = (tipo === "receber" ? ["cliente", "ambos"] : ["fornecedor", "ambos"]) as (
+        "cliente" | "fornecedor" | "ambos"
+      )[];
+      const { data, error } = await supabase
+        .from("contatos")
+        .select("id,nome,tipo")
+        .eq("empresa_id", empresa!.id)
+        .in("tipo", tipos)
+        .order("nome")
+        .limit(1000);
       if (error) throw error;
       return data ?? [];
     },
@@ -118,8 +193,13 @@ export function LancamentosPage({ tipo }: { tipo: "receber" | "pagar" }) {
     staleTime: 10 * 60_000,
     gcTime: 30 * 60_000,
     queryFn: async () => {
-      const { data, error } = await supabase.from("contas_bancarias")
-        .select("id,nome,banco").eq("empresa_id", empresa!.id).eq("ativo", true).order("nome").limit(100);
+      const { data, error } = await supabase
+        .from("contas_bancarias")
+        .select("id,nome,banco")
+        .eq("empresa_id", empresa!.id)
+        .eq("ativo", true)
+        .order("nome")
+        .limit(100);
       if (error) throw error;
       return data ?? [];
     },
@@ -131,8 +211,13 @@ export function LancamentosPage({ tipo }: { tipo: "receber" | "pagar" }) {
     staleTime: 10 * 60_000,
     gcTime: 30 * 60_000,
     queryFn: async () => {
-      const { data, error } = await supabase.from("categorias_financeiras")
-        .select("id,nome").eq("empresa_id", empresa!.id).eq("tipo", tipo).order("nome").limit(500);
+      const { data, error } = await supabase
+        .from("categorias_financeiras")
+        .select("id,nome")
+        .eq("empresa_id", empresa!.id)
+        .eq("tipo", tipo)
+        .order("nome")
+        .limit(500);
       if (error) throw error;
       return data ?? [];
     },
@@ -183,7 +268,11 @@ export function LancamentosPage({ tipo }: { tipo: "receber" | "pagar" }) {
     mutationFn: async (l: Pick<Lancamento, "id" | "valor">) => {
       const { data, error } = await supabase
         .from("lancamentos_financeiros")
-        .update({ status: "pago", valor_pago: l.valor, data_pagamento: format(new Date(), "yyyy-MM-dd") })
+        .update({
+          status: "pago",
+          valor_pago: l.valor,
+          data_pagamento: format(new Date(), "yyyy-MM-dd"),
+        })
         .eq("id", l.id)
         .in("status", ["aberto", "parcial", "vencido"])
         .select("id")
@@ -196,52 +285,85 @@ export function LancamentosPage({ tipo }: { tipo: "receber" | "pagar" }) {
   });
 
   const [selected, setSelected] = useState<Set<string>>(new Set());
-  const toggle = (id: string) => setSelected((s) => { const n = new Set(s); n.has(id) ? n.delete(id) : n.add(id); return n; });
+  const toggle = (id: string) =>
+    setSelected((s) => {
+      const n = new Set(s);
+      if (n.has(id)) n.delete(id);
+      else n.add(id);
+      return n;
+    });
   // allIds calculado depois dos filtros (mais abaixo, via `filtrados`)
   const clearSel = () => setSelected(new Set());
 
   const excluirLote = useMutation({
     mutationFn: async (ids: string[]) => {
       // Desvincula parcelas de notas importadas antes de excluir
-      await supabase.from("notas_importadas_parcelas" as never)
+      await supabase
+        .from("notas_importadas_parcelas" as never)
         .update({ lancamento_id: null } as never)
         .in("lancamento_id", ids);
       // Desvincula folhas vinculadas (fallback se trigger não disparar via client)
-      await supabase.from("folha_pagamento" as never)
+      await supabase
+        .from("folha_pagamento" as never)
         .update({ status: "aberta", lancamento_id: null, data_pagamento: null } as never)
         .in("lancamento_id", ids);
       // Desvincula das transações OFX antes de excluir — a transação bancária
       // volta para "aberto" (podendo ser reconciliada novamente), mas não é apagada.
-      const { error: eOfx } = await supabase.from("ofx_transacoes")
-        .update({ status: "aberto", lancamento_id: null }).in("lancamento_id", ids);
+      const { error: eOfx } = await supabase
+        .from("ofx_transacoes")
+        .update({ status: "aberto", lancamento_id: null })
+        .in("lancamento_id", ids);
       if (eOfx) throw eOfx;
       const { error } = await supabase.from("lancamentos_financeiros").delete().in("id", ids);
       if (error) throw error;
     },
-    onSuccess: () => { toast.success("Lançamentos excluídos"); clearSel(); invalidate(); },
+    onSuccess: () => {
+      toast.success("Lançamentos excluídos");
+      clearSel();
+      invalidate();
+    },
     onError: (e: Error) => toast.error(e.message),
   });
 
-
   const alterarStatusLote = useMutation({
-    mutationFn: async ({ ids, status }: { ids: string[]; status: "aberto" | "pago" | "cancelado" | "vencido" | "parcial" }) => {
-      const patch = status === "pago"
-        ? { status, data_pagamento: format(new Date(), "yyyy-MM-dd") }
-        : { status };
+    mutationFn: async ({
+      ids,
+      status,
+    }: {
+      ids: string[];
+      status: "aberto" | "pago" | "cancelado" | "vencido" | "parcial";
+    }) => {
+      const patch =
+        status === "pago"
+          ? { status, data_pagamento: format(new Date(), "yyyy-MM-dd") }
+          : { status };
       const { error } = await supabase.from("lancamentos_financeiros").update(patch).in("id", ids);
       if (error) throw error;
     },
-    onSuccess: () => { toast.success("Status alterado"); clearSel(); invalidate(); },
+    onSuccess: () => {
+      toast.success("Status alterado");
+      clearSel();
+      invalidate();
+    },
     onError: (e: Error) => toast.error(e.message),
   });
 
   // Edição
-  const [editing, setEditing] = useState<null | { id: string } & ReturnType<typeof emptyForm>>(null);
+  const [editing, setEditing] = useState<null | ({ id: string } & ReturnType<typeof emptyForm>)>(
+    null,
+  );
   const abrirEdicao = async (id: string) => {
-    const { data, error } = await supabase.from("lancamentos_financeiros")
-      .select("id,descricao,valor,data_emissao,data_vencimento,contato_id,categoria_id,conta_bancaria_id,documento,observacoes,forma_pagamento,created_by,created_at")
-      .eq("id", id).maybeSingle();
-    if (error || !data) { toast.error(error?.message ?? "Não encontrado"); return; }
+    const { data, error } = await supabase
+      .from("lancamentos_financeiros")
+      .select(
+        "id,descricao,valor,data_emissao,data_vencimento,contato_id,categoria_id,conta_bancaria_id,documento,observacoes,forma_pagamento,created_by,created_at",
+      )
+      .eq("id", id)
+      .maybeSingle();
+    if (error || !data) {
+      toast.error(error?.message ?? "Não encontrado");
+      return;
+    }
     setEditing({
       id: data.id,
       descricao: data.descricao ?? "",
@@ -262,38 +384,77 @@ export function LancamentosPage({ tipo }: { tipo: "receber" | "pagar" }) {
     mutationFn: async (input: NonNullable<typeof editing>) => {
       const valor = Number(input.valor);
       if (!(valor > 0)) throw new Error("Valor deve ser maior que zero");
-      const { error } = await supabase.from("lancamentos_financeiros").update({
-        descricao: input.descricao, valor,
-        data_emissao: input.data_emissao, data_vencimento: input.data_vencimento,
-        contato_id: input.contato_id || null, categoria_id: input.categoria_id || null,
-        conta_bancaria_id: input.conta_bancaria_id || null,
-        documento: input.documento || null, observacoes: input.observacoes || null,
-        forma_pagamento: input.forma_pagamento || null,
-      }).eq("id", input.id);
+      const { error } = await supabase
+        .from("lancamentos_financeiros")
+        .update({
+          descricao: input.descricao,
+          valor,
+          data_emissao: input.data_emissao,
+          data_vencimento: input.data_vencimento,
+          contato_id: input.contato_id || null,
+          categoria_id: input.categoria_id || null,
+          conta_bancaria_id: input.conta_bancaria_id || null,
+          documento: input.documento || null,
+          observacoes: input.observacoes || null,
+          forma_pagamento: input.forma_pagamento || null,
+        })
+        .eq("id", input.id);
       if (error) throw error;
     },
-    onSuccess: () => { toast.success("Lançamento atualizado"); setEditing(null); invalidate(); },
+    onSuccess: () => {
+      toast.success("Lançamento atualizado");
+      setEditing(null);
+      invalidate();
+    },
     onError: (e: Error) => toast.error(e.message),
   });
 
   // Ordenação
   type SortKey = "descricao" | "contato" | "data_vencimento" | "valor" | "status";
-  const [sort, setSort] = useState<{ key: SortKey; dir: "asc" | "desc" }>({ key: "data_vencimento", dir: "desc" });
+  const [sort, setSort] = useState<{ key: SortKey; dir: "asc" | "desc" }>({
+    key: "data_vencimento",
+    dir: "desc",
+  });
   const toggleSort = (key: SortKey) =>
-    setSort((s) => s.key === key ? { key, dir: s.dir === "asc" ? "desc" : "asc" } : { key, dir: "asc" });
+    setSort((s) =>
+      s.key === key ? { key, dir: s.dir === "asc" ? "desc" : "asc" } : { key, dir: "asc" },
+    );
   const sorted = [...(lancamentos ?? [])].sort((a, b) => {
     const dir = sort.dir === "asc" ? 1 : -1;
-    const va = sort.key === "contato" ? (a.contato?.nome ?? "") : (a as unknown as Record<string, unknown>)[sort.key];
-    const vb = sort.key === "contato" ? (b.contato?.nome ?? "") : (b as unknown as Record<string, unknown>)[sort.key];
+    const va =
+      sort.key === "contato"
+        ? (a.contato?.nome ?? "")
+        : (a as unknown as Record<string, unknown>)[sort.key];
+    const vb =
+      sort.key === "contato"
+        ? (b.contato?.nome ?? "")
+        : (b as unknown as Record<string, unknown>)[sort.key];
     if (typeof va === "number" && typeof vb === "number") return (va - vb) * dir;
     return String(va ?? "").localeCompare(String(vb ?? "")) * dir;
   });
-  const SortHead = ({ k, children, className }: { k: SortKey; children: React.ReactNode; className?: string }) => (
+  const SortHead = ({
+    k,
+    children,
+    className,
+  }: {
+    k: SortKey;
+    children: React.ReactNode;
+    className?: string;
+  }) => (
     <TableHead className={className}>
-      <button type="button" onClick={() => toggleSort(k)} className="inline-flex items-center gap-1 font-medium hover:text-foreground">
+      <button
+        type="button"
+        onClick={() => toggleSort(k)}
+        className="inline-flex items-center gap-1 font-medium hover:text-foreground"
+      >
         {children}
-        {sort.key !== k ? <ArrowUpDown className="h-3 w-3 opacity-50" />
-          : sort.dir === "asc" ? <ArrowUp className="h-3 w-3" /> : <ArrowDown className="h-3 w-3" />}
+        {sort.key !== k ? (
+          <ArrowUpDown className="h-3 w-3 opacity-50" />
+        ) : sort.dir === "asc" ? (
+          <ArrowUp className="h-3 w-3" />
+        ) : (
+          <ArrowDown className="h-3 w-3" />
+        )}
       </button>
     </TableHead>
   );
@@ -319,16 +480,25 @@ export function LancamentosPage({ tipo }: { tipo: "receber" | "pagar" }) {
     return l.status === "pago";
   };
   const [busca, setBusca] = useState("");
+  const [pagina, setPagina] = useState(1);
   const buscaNorm = busca.trim().toLowerCase();
   const aplicaBusca = (l: Lancamento) =>
     !buscaNorm ||
     l.descricao.toLowerCase().includes(buscaNorm) ||
     (l.contato?.nome ?? "").toLowerCase().includes(buscaNorm);
   const filtrados = noPeriodo.filter(filtroAba).filter(aplicaBusca);
+  const pageSize = 25;
+  const totalPaginas = Math.max(1, Math.ceil(filtrados.length / pageSize));
+  const paginaAtual = Math.min(pagina, totalPaginas);
+  const lancamentosVisiveis = filtrados.slice((paginaAtual - 1) * pageSize, paginaAtual * pageSize);
   const cont = {
     todos: noPeriodo.filter(aplicaBusca).length,
-    vencidos: noPeriodo.filter((l) => emAberto(l.status) && l.data_vencimento < hojeStr).filter(aplicaBusca).length,
-    avencer: noPeriodo.filter((l) => emAberto(l.status) && l.data_vencimento >= hojeStr).filter(aplicaBusca).length,
+    vencidos: noPeriodo
+      .filter((l) => emAberto(l.status) && l.data_vencimento < hojeStr)
+      .filter(aplicaBusca).length,
+    avencer: noPeriodo
+      .filter((l) => emAberto(l.status) && l.data_vencimento >= hojeStr)
+      .filter(aplicaBusca).length,
     quitados: noPeriodo.filter((l) => l.status === "pago").filter(aplicaBusca).length,
   };
   const abaLabelQuitado = tipo === "receber" ? "Recebidos" : "Pagos";
@@ -338,7 +508,10 @@ export function LancamentosPage({ tipo }: { tipo: "receber" | "pagar" }) {
   const toggleAll = () => setSelected(allChecked ? new Set() : new Set(allIds));
 
   const titulo = tipo === "receber" ? "Contas a receber" : "Contas a pagar";
-  const desc = tipo === "receber" ? "Recebimentos futuros e realizados." : "Compromissos financeiros a vencer e pagos.";
+  const desc =
+    tipo === "receber"
+      ? "Recebimentos futuros e realizados."
+      : "Compromissos financeiros a vencer e pagos.";
 
   return (
     <>
@@ -351,87 +524,165 @@ export function LancamentosPage({ tipo }: { tipo: "receber" | "pagar" }) {
             <Button variant="outline" size="sm" className="h-9">
               Adicionar trilha de auditoria
             </Button>
-            <Dialog open={open} onOpenChange={(v) => { if (!criar.isPending) setOpen(v); }}>
+            <Dialog
+              open={open}
+              onOpenChange={(v) => {
+                if (!criar.isPending) setOpen(v);
+              }}
+            >
               <DialogTrigger asChild>
-                <Button><Plus className="mr-1 h-4 w-4" />Novo lançamento</Button>
+                <Button>
+                  <Plus className="mr-1 h-4 w-4" />
+                  Novo lançamento
+                </Button>
               </DialogTrigger>
               <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-lg">
-              <DialogHeader><DialogTitle>Novo lançamento — {titulo}</DialogTitle></DialogHeader>
-              <form onSubmit={(e) => { e.preventDefault(); criar.mutate(form); }} className="space-y-3">
-                <div>
-                  <Label>Descrição *</Label>
-                  <Input required value={form.descricao} onChange={(e) => setForm({ ...form, descricao: e.target.value })} />
-                </div>
-                <div className="grid grid-cols-3 gap-3">
+                <DialogHeader>
+                  <DialogTitle>Novo lançamento — {titulo}</DialogTitle>
+                </DialogHeader>
+                <form
+                  onSubmit={(e) => {
+                    e.preventDefault();
+                    criar.mutate(form);
+                  }}
+                  className="space-y-3"
+                >
                   <div>
-                    <Label>Valor (R$) *</Label>
-                    <MoneyInput required value={form.valor} onChange={(v) => setForm({ ...form, valor: v })} prefix="" />
+                    <Label>Descrição *</Label>
+                    <Input
+                      required
+                      value={form.descricao}
+                      onChange={(e) => setForm({ ...form, descricao: e.target.value })}
+                    />
+                  </div>
+                  <div className="grid grid-cols-3 gap-3">
+                    <div>
+                      <Label>Valor (R$) *</Label>
+                      <MoneyInput
+                        required
+                        value={form.valor}
+                        onChange={(v) => setForm({ ...form, valor: v })}
+                        prefix=""
+                      />
+                    </div>
+                    <div>
+                      <Label>Emissão</Label>
+                      <DateInput
+                        value={form.data_emissao}
+                        onChange={(v) => setForm({ ...form, data_emissao: v })}
+                      />
+                    </div>
+                    <div>
+                      <Label>Vencimento *</Label>
+                      <DateInput
+                        required
+                        value={form.data_vencimento}
+                        onChange={(v) => setForm({ ...form, data_vencimento: v })}
+                      />
+                    </div>
                   </div>
                   <div>
-                    <Label>Emissão</Label>
-                    <DateInput value={form.data_emissao} onChange={(v) => setForm({ ...form, data_emissao: v })} />
-                  </div>
-                  <div>
-                    <Label>Vencimento *</Label>
-                    <DateInput required value={form.data_vencimento} onChange={(v) => setForm({ ...form, data_vencimento: v })} />
-                  </div>
-                </div>
-                <div>
-                  <Label>{tipo === "receber" ? "Cliente" : "Fornecedor"}</Label>
-                  <Select value={form.contato_id} onValueChange={(v) => setForm({ ...form, contato_id: v })}>
-                    <SelectTrigger><SelectValue placeholder="Selecionar contato" /></SelectTrigger>
-                    <SelectContent>
-                      {contatosOpt?.map((c) => <SelectItem key={c.id} value={c.id}>{c.nome}</SelectItem>)}
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div className="grid grid-cols-2 gap-3">
-                  <div>
-                    <Label>Conta bancária</Label>
-                    <Select value={form.conta_bancaria_id} onValueChange={(v) => setForm({ ...form, conta_bancaria_id: v })}>
-                      <SelectTrigger><SelectValue placeholder="Selecionar" /></SelectTrigger>
+                    <Label>{tipo === "receber" ? "Cliente" : "Fornecedor"}</Label>
+                    <Select
+                      value={form.contato_id}
+                      onValueChange={(v) => setForm({ ...form, contato_id: v })}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Selecionar contato" />
+                      </SelectTrigger>
                       <SelectContent>
-                        {contasOpt?.map((c) => <SelectItem key={c.id} value={c.id}>{c.nome}{c.banco ? ` — ${c.banco}` : ""}</SelectItem>)}
+                        {contatosOpt?.map((c) => (
+                          <SelectItem key={c.id} value={c.id}>
+                            {c.nome}
+                          </SelectItem>
+                        ))}
                       </SelectContent>
                     </Select>
                   </div>
-                  <div>
-                    <Label>Categoria</Label>
-                    <Select value={form.categoria_id} onValueChange={(v) => setForm({ ...form, categoria_id: v })}>
-                      <SelectTrigger><SelectValue placeholder="Selecionar" /></SelectTrigger>
-                      <SelectContent>
-                        {categoriasOpt?.map((c) => <SelectItem key={c.id} value={c.id}>{c.nome}</SelectItem>)}
-                      </SelectContent>
-                    </Select>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <Label>Conta bancária</Label>
+                      <Select
+                        value={form.conta_bancaria_id}
+                        onValueChange={(v) => setForm({ ...form, conta_bancaria_id: v })}
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder="Selecionar" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {contasOpt?.map((c) => (
+                            <SelectItem key={c.id} value={c.id}>
+                              {c.nome}
+                              {c.banco ? ` — ${c.banco}` : ""}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div>
+                      <Label>Categoria</Label>
+                      <Select
+                        value={form.categoria_id}
+                        onValueChange={(v) => setForm({ ...form, categoria_id: v })}
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder="Selecionar" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {categoriasOpt?.map((c) => (
+                            <SelectItem key={c.id} value={c.id}>
+                              {c.nome}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
                   </div>
-                </div>
-                <div className="grid grid-cols-2 gap-3">
-                  <div>
-                    <Label>Nº documento / NF</Label>
-                    <Input value={form.documento} onChange={(e) => setForm({ ...form, documento: e.target.value })} />
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <Label>Nº documento / NF</Label>
+                      <Input
+                        value={form.documento}
+                        onChange={(e) => setForm({ ...form, documento: e.target.value })}
+                      />
+                    </div>
+                    <div>
+                      <Label>Forma de pagamento</Label>
+                      <Select
+                        value={form.forma_pagamento || "__none"}
+                        onValueChange={(v) =>
+                          setForm({ ...form, forma_pagamento: v === "__none" ? "" : v })
+                        }
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder="Selecionar" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="__none">Não informar</SelectItem>
+                          {FORMAS_PAGAMENTO.map((f) => (
+                            <SelectItem key={f} value={f}>
+                              {f}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
                   </div>
                   <div>
-                    <Label>Forma de pagamento</Label>
-                    <Select value={form.forma_pagamento || "__none"} onValueChange={(v) => setForm({ ...form, forma_pagamento: v === "__none" ? "" : v })}>
-                      <SelectTrigger><SelectValue placeholder="Selecionar" /></SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="__none">Não informar</SelectItem>
-                        {FORMAS_PAGAMENTO.map((f) => <SelectItem key={f} value={f}>{f}</SelectItem>)}
-                      </SelectContent>
-                    </Select>
+                    <Label>Observações</Label>
+                    <Textarea
+                      rows={2}
+                      value={form.observacoes}
+                      onChange={(e) => setForm({ ...form, observacoes: e.target.value })}
+                    />
                   </div>
-                </div>
-                <div>
-                  <Label>Observações</Label>
-                  <Textarea rows={2} value={form.observacoes} onChange={(e) => setForm({ ...form, observacoes: e.target.value })} />
-                </div>
-                <DialogFooter>
-                  <Button type="submit" disabled={criar.isPending}>
-                    {criar.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}Salvar
-                  </Button>
-                </DialogFooter>
-              </form>
-            </DialogContent>
+                  <DialogFooter>
+                    <Button type="submit" disabled={criar.isPending}>
+                      {criar.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}Salvar
+                    </Button>
+                  </DialogFooter>
+                </form>
+              </DialogContent>
             </Dialog>
           </div>
         }
@@ -439,28 +690,44 @@ export function LancamentosPage({ tipo }: { tipo: "receber" | "pagar" }) {
 
       <div className="mb-3 flex flex-wrap items-center gap-2">
         <div className="inline-flex rounded-md border bg-muted/30 p-1 text-sm">
-          {([
-            { k: "todos", label: `Todos (${cont.todos})` },
-            { k: "vencidos", label: `Vencidos (${cont.vencidos})` },
-            { k: "avencer", label: `A vencer (${cont.avencer})` },
-            { k: "quitados", label: `${abaLabelQuitado} (${cont.quitados})` },
-          ] as { k: Aba; label: string }[]).map((t) => (
+          {(
+            [
+              { k: "todos", label: `Todos (${cont.todos})` },
+              { k: "vencidos", label: `Vencidos (${cont.vencidos})` },
+              { k: "avencer", label: `A vencer (${cont.avencer})` },
+              { k: "quitados", label: `${abaLabelQuitado} (${cont.quitados})` },
+            ] as { k: Aba; label: string }[]
+          ).map((t) => (
             <button
               key={t.k}
               type="button"
-              onClick={() => { setAba(t.k); clearSel(); }}
+              onClick={() => {
+                setAba(t.k);
+                setPagina(1);
+                clearSel();
+              }}
               className={`rounded px-3 py-1.5 transition-colors ${aba === t.k ? "bg-background shadow-sm font-medium" : "text-muted-foreground hover:text-foreground"}`}
             >
               {t.label}
             </button>
           ))}
         </div>
-        <PeriodoFilter value={periodo} onChange={(p) => { setPeriodo(p); clearSel(); }} />
+        <PeriodoFilter
+          value={periodo}
+          onChange={(p) => {
+            setPeriodo(p);
+            clearSel();
+          }}
+        />
         <div className="relative ml-auto w-full sm:w-80">
           <Search className="pointer-events-none absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
           <Input
             value={busca}
-            onChange={(e) => { setBusca(e.target.value); clearSel(); }}
+            onChange={(e) => {
+              setBusca(e.target.value);
+              setPagina(1);
+              clearSel();
+            }}
             placeholder="Pesquisar por descrição ou contato…"
             className="h-9 pl-8 pr-8"
           />
@@ -494,15 +761,25 @@ export function LancamentosPage({ tipo }: { tipo: "receber" | "pagar" }) {
           ))}
         </div>
       ) : !filtrados.length ? (
-        <EmptyState icon={TrendingUp} title="Nenhum lançamento nesta aba" description="Ajuste a aba acima ou crie um novo lançamento." />
+        <EmptyState
+          icon={TrendingUp}
+          title="Nenhum lançamento nesta aba"
+          description="Ajuste a aba acima ou crie um novo lançamento."
+        />
       ) : (
         <Card className="overflow-hidden shadow-panel">
           {selected.size > 0 && (
             <div className="flex flex-wrap items-center gap-2 border-b bg-muted/40 px-3 py-2 text-sm">
               <span className="font-medium">{selected.size} selecionado(s)</span>
               <div className="ml-auto flex flex-wrap gap-2">
-                <Select onValueChange={(v) => alterarStatusLote.mutate({ ids: [...selected], status: v as "aberto" })}>
-                  <SelectTrigger className="h-8 w-[180px]"><SelectValue placeholder="Alterar status" /></SelectTrigger>
+                <Select
+                  onValueChange={(v) =>
+                    alterarStatusLote.mutate({ ids: [...selected], status: v as "aberto" })
+                  }
+                >
+                  <SelectTrigger className="h-8 w-[180px]">
+                    <SelectValue placeholder="Alterar status" />
+                  </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="aberto">Aberto</SelectItem>
                     <SelectItem value="pago">Pago</SelectItem>
@@ -511,11 +788,25 @@ export function LancamentosPage({ tipo }: { tipo: "receber" | "pagar" }) {
                     <SelectItem value="cancelado">Cancelado</SelectItem>
                   </SelectContent>
                 </Select>
-                <Button size="sm" variant="destructive" disabled={excluirLote.isPending}
-                  onClick={() => { if (confirm(`Excluir ${selected.size} lançamento(s)?\n\nSe algum estiver conciliado, a transação do extrato voltará para "em aberto" (não será apagada).`)) excluirLote.mutate([...selected]); }}>
-                  <Trash2 className="mr-1 h-4 w-4" />Excluir
+                <Button
+                  size="sm"
+                  variant="destructive"
+                  disabled={excluirLote.isPending}
+                  onClick={() => {
+                    if (
+                      confirm(
+                        `Excluir ${selected.size} lançamento(s)?\n\nSe algum estiver conciliado, a transação do extrato voltará para "em aberto" (não será apagada).`,
+                      )
+                    )
+                      excluirLote.mutate([...selected]);
+                  }}
+                >
+                  <Trash2 className="mr-1 h-4 w-4" />
+                  Excluir
                 </Button>
-                <Button size="sm" variant="ghost" onClick={clearSel}>Limpar</Button>
+                <Button size="sm" variant="ghost" onClick={clearSel}>
+                  Limpar
+                </Button>
               </div>
             </div>
           )}
@@ -523,43 +814,74 @@ export function LancamentosPage({ tipo }: { tipo: "receber" | "pagar" }) {
             <TableHeader>
               <TableRow>
                 <TableHead className="w-10">
-                  <Checkbox checked={allChecked} onCheckedChange={toggleAll} aria-label="Selecionar todos" />
+                  <Checkbox
+                    checked={allChecked}
+                    onCheckedChange={toggleAll}
+                    aria-label="Selecionar todos"
+                  />
                 </TableHead>
                 <SortHead k="contato">{tipo === "pagar" ? "Fornecedor" : "Cliente"}</SortHead>
                 <SortHead k="descricao">Descrição</SortHead>
                 <SortHead k="data_vencimento">Vencimento</SortHead>
-                <SortHead k="valor" className="text-right">Valor</SortHead>
+                <SortHead k="valor" className="text-right">
+                  Valor
+                </SortHead>
                 <SortHead k="status">Status</SortHead>
                 <TableHead />
               </TableRow>
             </TableHeader>
             <TableBody>
-              {filtrados.map((l) => {
+              {lancamentosVisiveis.map((l) => {
                 const emAndamento = marcarPago.isPending && marcarPago.variables?.id === l.id;
                 return (
                   <TableRow key={l.id} data-state={selected.has(l.id) ? "selected" : undefined}>
                     <TableCell onClick={(e) => e.stopPropagation()}>
-                      <Checkbox checked={selected.has(l.id)} onCheckedChange={() => toggle(l.id)} aria-label="Selecionar" />
+                      <Checkbox
+                        checked={selected.has(l.id)}
+                        onCheckedChange={() => toggle(l.id)}
+                        aria-label="Selecionar"
+                      />
                     </TableCell>
-                    <TableCell className="text-muted-foreground font-medium">{l.contato?.nome ?? "—"}</TableCell>
+                    <TableCell className="text-muted-foreground font-medium">
+                      {l.contato?.nome ?? "—"}
+                    </TableCell>
                     <TableCell className="font-medium">
                       <div>{l.descricao}</div>
-                      {l.categoria_id && (() => {
-                        const cat = categoriasOpt?.find(c => c.id === l.categoria_id);
-                        return cat ? <Badge variant="outline" className="mt-0.5 text-[10px] font-normal border-muted-foreground/30 text-muted-foreground">{cat.nome}</Badge> : null;
-                      })()}
+                      {l.categoria_id &&
+                        (() => {
+                          const cat = categoriasOpt?.find((c) => c.id === l.categoria_id);
+                          return cat ? (
+                            <Badge
+                              variant="outline"
+                              className="mt-0.5 text-[10px] font-normal border-muted-foreground/30 text-muted-foreground"
+                            >
+                              {cat.nome}
+                            </Badge>
+                          ) : null;
+                        })()}
                     </TableCell>
-                    <TableCell className="text-tabular">{format(new Date(l.data_vencimento + "T00:00:00"), "dd/MM/yyyy")}</TableCell>
-                    <TableCell className="text-right text-tabular font-medium">{brl(l.valor)}</TableCell>
+                    <TableCell className="text-tabular">
+                      {format(new Date(l.data_vencimento + "T00:00:00"), "dd/MM/yyyy")}
+                    </TableCell>
+                    <TableCell className="text-right text-tabular font-medium">
+                      {brl(l.valor)}
+                    </TableCell>
                     <TableCell>
-                      <Badge className={STATUS_TONE[l.status] ?? ""} variant="secondary">{l.status}</Badge>
+                      <Badge className={STATUS_TONE[l.status] ?? ""} variant="secondary">
+                        {l.status}
+                      </Badge>
                     </TableCell>
                     <TableCell className="text-right">
                       <div className="flex items-center justify-end gap-1">
                         <TooltipProvider>
                           <Tooltip>
                             <TooltipTrigger asChild>
-                              <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => abrirEdicao(l.id)}>
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-7 w-7"
+                                onClick={() => abrirEdicao(l.id)}
+                              >
                                 <Pencil className="h-3.5 w-3.5" />
                               </Button>
                             </TooltipTrigger>
@@ -570,8 +892,13 @@ export function LancamentosPage({ tipo }: { tipo: "receber" | "pagar" }) {
                           <TooltipProvider>
                             <Tooltip>
                               <TooltipTrigger asChild>
-                                <Button variant="ghost" size="icon" className="h-7 w-7" disabled={emAndamento}
-                                  onClick={() => marcarPago.mutate({ id: l.id, valor: l.valor })}>
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  className="h-7 w-7"
+                                  disabled={emAndamento}
+                                  onClick={() => marcarPago.mutate({ id: l.id, valor: l.valor })}
+                                >
                                   <Check className="h-3.5 w-3.5" />
                                 </Button>
                               </TooltipTrigger>
@@ -583,8 +910,14 @@ export function LancamentosPage({ tipo }: { tipo: "receber" | "pagar" }) {
                           <TooltipProvider>
                             <Tooltip>
                               <TooltipTrigger asChild>
-                                <Button variant="ghost" size="icon" className="h-7 w-7"
-                                  onClick={() => alterarStatusLote.mutate({ ids: [l.id], status: "aberto" })}>
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  className="h-7 w-7"
+                                  onClick={() =>
+                                    alterarStatusLote.mutate({ ids: [l.id], status: "aberto" })
+                                  }
+                                >
                                   <RotateCcw className="h-3.5 w-3.5" />
                                 </Button>
                               </TooltipTrigger>
@@ -596,8 +929,14 @@ export function LancamentosPage({ tipo }: { tipo: "receber" | "pagar" }) {
                           <TooltipProvider>
                             <Tooltip>
                               <TooltipTrigger asChild>
-                                <Button variant="ghost" size="icon" className="h-7 w-7"
-                                  onClick={() => alterarStatusLote.mutate({ ids: [l.id], status: "cancelado" })}>
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  className="h-7 w-7"
+                                  onClick={() =>
+                                    alterarStatusLote.mutate({ ids: [l.id], status: "cancelado" })
+                                  }
+                                >
                                   <Ban className="h-3.5 w-3.5" />
                                 </Button>
                               </TooltipTrigger>
@@ -608,7 +947,10 @@ export function LancamentosPage({ tipo }: { tipo: "receber" | "pagar" }) {
                         <TooltipProvider>
                           <Tooltip>
                             <TooltipTrigger asChild>
-                              <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive hover:text-destructive"
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-7 w-7 text-destructive hover:text-destructive"
                                 onClick={async () => {
                                   const { data: vinculada } = await supabase
                                     .from("notas_importadas_parcelas" as never)
@@ -619,8 +961,14 @@ export function LancamentosPage({ tipo }: { tipo: "receber" | "pagar" }) {
                                     setLancamentoBloqueado({ id: l.id, descricao: l.descricao });
                                     return;
                                   }
-                                  if (confirm('Excluir lançamento?\n\nSe estiver conciliado, a transação do extrato voltará para "em aberto" (não será apagada).')) excluirLote.mutate([l.id]);
-                                }}>
+                                  if (
+                                    confirm(
+                                      'Excluir lançamento?\n\nSe estiver conciliado, a transação do extrato voltará para "em aberto" (não será apagada).',
+                                    )
+                                  )
+                                    excluirLote.mutate([l.id]);
+                                }}
+                              >
                                 <Trash2 className="h-3.5 w-3.5" />
                               </Button>
                             </TooltipTrigger>
@@ -634,69 +982,166 @@ export function LancamentosPage({ tipo }: { tipo: "receber" | "pagar" }) {
               })}
             </TableBody>
           </Table>
+          <div className="flex items-center justify-between border-t px-4 py-3 text-sm text-muted-foreground">
+            <span>
+              Mostrando {(paginaAtual - 1) * pageSize + 1}–
+              {Math.min(paginaAtual * pageSize, filtrados.length)} de {filtrados.length}
+            </span>
+            <div className="flex items-center gap-1">
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                aria-label="Página anterior"
+                disabled={paginaAtual === 1}
+                onClick={() => setPagina((value) => Math.max(1, value - 1))}
+              >
+                <ChevronLeft className="h-4 w-4" />
+              </Button>
+              <span className="px-2 text-xs">
+                Página {paginaAtual} de {totalPaginas}
+              </span>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                aria-label="Próxima página"
+                disabled={paginaAtual === totalPaginas}
+                onClick={() => setPagina((value) => Math.min(totalPaginas, value + 1))}
+              >
+                <ChevronRight className="h-4 w-4" />
+              </Button>
+            </div>
+          </div>
         </Card>
       )}
 
-      <Dialog open={!!editing} onOpenChange={(v) => { if (!v && !salvarEdicao.isPending) setEditing(null); }}>
+      <Dialog
+        open={!!editing}
+        onOpenChange={(v) => {
+          if (!v && !salvarEdicao.isPending) setEditing(null);
+        }}
+      >
         <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-lg">
-          <DialogHeader><DialogTitle>Editar lançamento</DialogTitle></DialogHeader>
+          <DialogHeader>
+            <DialogTitle>Editar lançamento</DialogTitle>
+          </DialogHeader>
           {editing && (
-            <form onSubmit={(e) => { e.preventDefault(); salvarEdicao.mutate(editing); }} className="space-y-3">
-              {(editing.created_by || (editing.observacoes ?? "").includes("adiantamento recorrente")) && (
+            <form
+              onSubmit={(e) => {
+                e.preventDefault();
+                salvarEdicao.mutate(editing);
+              }}
+              className="space-y-3"
+            >
+              {(editing.created_by ||
+                (editing.observacoes ?? "").includes("adiantamento recorrente")) && (
                 <p className="flex items-center gap-2 text-xs text-muted-foreground">
                   <span>
-                    {editing.created_by
-                      ? <>Lançado por <span className="font-medium">{perfis[editing.created_by] ?? "—"}</span> · {format(new Date(editing.created_at), "dd/MM/yyyy HH:mm")}</>
-                      : "Lançado pelo sistema"}
+                    {editing.created_by ? (
+                      <>
+                        Lançado por{" "}
+                        <span className="font-medium">{perfis[editing.created_by] ?? "—"}</span> ·{" "}
+                        {format(new Date(editing.created_at), "dd/MM/yyyy HH:mm")}
+                      </>
+                    ) : (
+                      "Lançado pelo sistema"
+                    )}
                   </span>
                   {(editing.observacoes ?? "").includes("adiantamento recorrente") && (
-                    <span className="rounded bg-muted px-1.5 py-0.5 text-[10px] uppercase tracking-wide">recorrência</span>
+                    <span className="rounded bg-muted px-1.5 py-0.5 text-[10px] uppercase tracking-wide">
+                      recorrência
+                    </span>
                   )}
                 </p>
               )}
               <div>
                 <Label>Descrição *</Label>
-                <Input required value={editing.descricao} onChange={(e) => setEditing({ ...editing, descricao: e.target.value })} />
+                <Input
+                  required
+                  value={editing.descricao}
+                  onChange={(e) => setEditing({ ...editing, descricao: e.target.value })}
+                />
               </div>
               <div className="grid grid-cols-3 gap-3">
                 <div>
                   <Label>Valor (R$) *</Label>
-                  <MoneyInput required value={editing.valor} onChange={(v) => setEditing({ ...editing, valor: v })} prefix="" />
+                  <MoneyInput
+                    required
+                    value={editing.valor}
+                    onChange={(v) => setEditing({ ...editing, valor: v })}
+                    prefix=""
+                  />
                 </div>
                 <div>
                   <Label>Emissão</Label>
-                  <DateInput value={editing.data_emissao} onChange={(v) => setEditing({ ...editing, data_emissao: v })} />
+                  <DateInput
+                    value={editing.data_emissao}
+                    onChange={(v) => setEditing({ ...editing, data_emissao: v })}
+                  />
                 </div>
                 <div>
                   <Label>Vencimento *</Label>
-                  <DateInput required value={editing.data_vencimento} onChange={(v) => setEditing({ ...editing, data_vencimento: v })} />
+                  <DateInput
+                    required
+                    value={editing.data_vencimento}
+                    onChange={(v) => setEditing({ ...editing, data_vencimento: v })}
+                  />
                 </div>
               </div>
               <div>
                 <Label>{tipo === "receber" ? "Cliente" : "Fornecedor"}</Label>
-                <Select value={editing.contato_id} onValueChange={(v) => setEditing({ ...editing, contato_id: v })}>
-                  <SelectTrigger><SelectValue placeholder="Selecionar contato" /></SelectTrigger>
+                <Select
+                  value={editing.contato_id}
+                  onValueChange={(v) => setEditing({ ...editing, contato_id: v })}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Selecionar contato" />
+                  </SelectTrigger>
                   <SelectContent>
-                    {contatosOpt?.map((c) => <SelectItem key={c.id} value={c.id}>{c.nome}</SelectItem>)}
+                    {contatosOpt?.map((c) => (
+                      <SelectItem key={c.id} value={c.id}>
+                        {c.nome}
+                      </SelectItem>
+                    ))}
                   </SelectContent>
                 </Select>
               </div>
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <Label>Conta bancária</Label>
-                  <Select value={editing.conta_bancaria_id} onValueChange={(v) => setEditing({ ...editing, conta_bancaria_id: v })}>
-                    <SelectTrigger><SelectValue placeholder="Selecionar" /></SelectTrigger>
+                  <Select
+                    value={editing.conta_bancaria_id}
+                    onValueChange={(v) => setEditing({ ...editing, conta_bancaria_id: v })}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Selecionar" />
+                    </SelectTrigger>
                     <SelectContent>
-                      {contasOpt?.map((c) => <SelectItem key={c.id} value={c.id}>{c.nome}{c.banco ? ` — ${c.banco}` : ""}</SelectItem>)}
+                      {contasOpt?.map((c) => (
+                        <SelectItem key={c.id} value={c.id}>
+                          {c.nome}
+                          {c.banco ? ` — ${c.banco}` : ""}
+                        </SelectItem>
+                      ))}
                     </SelectContent>
                   </Select>
                 </div>
                 <div>
                   <Label>Categoria</Label>
-                  <Select value={editing.categoria_id} onValueChange={(v) => setEditing({ ...editing, categoria_id: v })}>
-                    <SelectTrigger><SelectValue placeholder="Selecionar" /></SelectTrigger>
+                  <Select
+                    value={editing.categoria_id}
+                    onValueChange={(v) => setEditing({ ...editing, categoria_id: v })}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Selecionar" />
+                    </SelectTrigger>
                     <SelectContent>
-                      {categoriasOpt?.map((c) => <SelectItem key={c.id} value={c.id}>{c.nome}</SelectItem>)}
+                      {categoriasOpt?.map((c) => (
+                        <SelectItem key={c.id} value={c.id}>
+                          {c.nome}
+                        </SelectItem>
+                      ))}
                     </SelectContent>
                   </Select>
                 </div>
@@ -704,26 +1149,45 @@ export function LancamentosPage({ tipo }: { tipo: "receber" | "pagar" }) {
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <Label>Nº documento / NF</Label>
-                  <Input value={editing.documento} onChange={(e) => setEditing({ ...editing, documento: e.target.value })} />
+                  <Input
+                    value={editing.documento}
+                    onChange={(e) => setEditing({ ...editing, documento: e.target.value })}
+                  />
                 </div>
                 <div>
                   <Label>Forma de pagamento</Label>
-                  <Select value={editing.forma_pagamento || "__none"} onValueChange={(v) => setEditing({ ...editing, forma_pagamento: v === "__none" ? "" : v })}>
-                    <SelectTrigger><SelectValue placeholder="Selecionar" /></SelectTrigger>
+                  <Select
+                    value={editing.forma_pagamento || "__none"}
+                    onValueChange={(v) =>
+                      setEditing({ ...editing, forma_pagamento: v === "__none" ? "" : v })
+                    }
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Selecionar" />
+                    </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="__none">Não informar</SelectItem>
-                      {FORMAS_PAGAMENTO.map((f) => <SelectItem key={f} value={f}>{f}</SelectItem>)}
+                      {FORMAS_PAGAMENTO.map((f) => (
+                        <SelectItem key={f} value={f}>
+                          {f}
+                        </SelectItem>
+                      ))}
                     </SelectContent>
                   </Select>
                 </div>
               </div>
               <div>
                 <Label>Observações</Label>
-                <Textarea rows={2} value={editing.observacoes} onChange={(e) => setEditing({ ...editing, observacoes: e.target.value })} />
+                <Textarea
+                  rows={2}
+                  value={editing.observacoes}
+                  onChange={(e) => setEditing({ ...editing, observacoes: e.target.value })}
+                />
               </div>
               <DialogFooter>
                 <Button type="submit" disabled={salvarEdicao.isPending}>
-                  {salvarEdicao.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}Salvar alterações
+                  {salvarEdicao.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                  Salvar alterações
                 </Button>
               </DialogFooter>
             </form>
@@ -731,21 +1195,29 @@ export function LancamentosPage({ tipo }: { tipo: "receber" | "pagar" }) {
         </DialogContent>
       </Dialog>
 
-      <AlertDialog open={!!lancamentoBloqueado} onOpenChange={(v) => { if (!v) setLancamentoBloqueado(null); }}>
+      <AlertDialog
+        open={!!lancamentoBloqueado}
+        onOpenChange={(v) => {
+          if (!v) setLancamentoBloqueado(null);
+        }}
+      >
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Lançamento vinculado a nota fiscal</AlertDialogTitle>
             <AlertDialogDescription>
-              Não é possível excluir este lançamento diretamente por aqui, pois ele foi gerado automaticamente a partir de uma nota fiscal importada.
-              As alterações devem ser feitas em <strong>Fiscal → Notas de Compra</strong>.
+              Não é possível excluir este lançamento diretamente por aqui, pois ele foi gerado
+              automaticamente a partir de uma nota fiscal importada. As alterações devem ser feitas
+              em <strong>Fiscal → Notas de Compra</strong>.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancelar</AlertDialogCancel>
-            <AlertDialogAction onClick={() => {
-              setLancamentoBloqueado(null);
-              navigate({ to: "/fiscal/recebidas" });
-            }}>
+            <AlertDialogAction
+              onClick={() => {
+                setLancamentoBloqueado(null);
+                navigate({ to: "/fiscal/recebidas" });
+              }}
+            >
               Ir para Notas de Compra
             </AlertDialogAction>
           </AlertDialogFooter>
