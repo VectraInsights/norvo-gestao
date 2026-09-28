@@ -6,13 +6,46 @@ import { StatusBadge } from "@/components/erp/status-badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { FileText, Send, Ban, Download, AlertTriangle, Plus, Search, FileDown, CheckCircle } from "lucide-react";
+import {
+  FileText,
+  Send,
+  Ban,
+  Download,
+  AlertTriangle,
+  Plus,
+  Search,
+  FileDown,
+  CheckCircle,
+  ChevronLeft,
+  ChevronRight,
+} from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEmpresaAtual } from "@/hooks/use-empresa";
@@ -55,9 +88,12 @@ function FiscalError({ error, reset }: { error: Error; reset: () => void }) {
       <div className="flex h-12 w-12 items-center justify-center rounded-full bg-destructive/10">
         <AlertTriangle className="h-6 w-6 text-destructive" />
       </div>
-      <div className="text-base font-semibold text-foreground">Ops! Ocorreu um problema no módulo fiscal</div>
+      <div className="text-base font-semibold text-foreground">
+        Ops! Ocorreu um problema no módulo fiscal
+      </div>
       <div className="max-w-[300px] text-xs leading-relaxed text-muted-foreground">
-        Não conseguimos carregar os dados das notas fiscais agora. Detalhes técnicos: <code className="bg-muted px-1 py-0.5 rounded">{error.message}</code>
+        Não conseguimos carregar os dados das notas fiscais agora. Detalhes técnicos:{" "}
+        <code className="bg-muted px-1 py-0.5 rounded">{error.message}</code>
       </div>
       <Button size="sm" variant="outline" onClick={reset} className="mt-2">
         Tentar novamente
@@ -70,12 +106,18 @@ function NotasEmitidas() {
   const { data: empresa } = useEmpresaAtual();
   const qc = useQueryClient();
   const [pendingId, setPendingId] = useState<string | null>(null);
-  
+
   // Filtros
   const [activeTab, setActiveTab] = useState<string>("todas");
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("todos");
-  
+  const [pagina, setPagina] = useState(1);
+
+  const pageSize = 25;
+  const totalPaginas = Math.max(1, Math.ceil(notasFiltradas.length / pageSize));
+  const paginaAtual = Math.min(pagina, totalPaginas);
+  const notasVisiveis = notasFiltradas.slice((paginaAtual - 1) * pageSize, paginaAtual * pageSize);
+
   // Modal Nova Nota
   const [modalOpen, setModalOpen] = useState(false);
   const [novaNotaTipo, setNovaNotaTipo] = useState<"nfe" | "nfse" | "nfce">("nfe");
@@ -91,8 +133,11 @@ function NotasEmitidas() {
     staleTime: 30_000,
     gcTime: 10 * 60_000,
     queryFn: async ({ signal }) => {
-      const { data, error } = await supabase.from("notas_fiscais")
-        .select("id,numero,serie,status,valor_total,data_emissao,chave,tipo,contato:contatos(nome),venda:vendas(numero)")
+      const { data, error } = await supabase
+        .from("notas_fiscais")
+        .select(
+          "id,numero,serie,status,valor_total,data_emissao,chave,tipo,contato:contatos(nome),venda:vendas(numero)",
+        )
         .eq("empresa_id", empresa!.id)
         .order("created_at", { ascending: false })
         .limit(200)
@@ -109,7 +154,8 @@ function NotasEmitidas() {
     staleTime: 5 * 60_000,
     gcTime: 15 * 60_000,
     queryFn: async ({ signal }) => {
-      const { data, error } = await supabase.from("nfe_config")
+      const { data, error } = await supabase
+        .from("nfe_config")
         .select("ambiente,serie,proximo_numero,regime_tributario")
         .eq("empresa_id", empresa!.id)
         .abortSignal(signal)
@@ -126,14 +172,15 @@ function NotasEmitidas() {
     staleTime: 10 * 60_000,
     gcTime: 30 * 60_000,
     queryFn: async () => {
-      const { data, error } = await supabase.from("contatos")
+      const { data, error } = await supabase
+        .from("contatos")
         .select("id, nome")
         .eq("empresa_id", empresa!.id)
         .order("nome")
         .limit(1000);
       if (error) throw error;
       return data ?? [];
-    }
+    },
   });
 
   // Inicializar o número da nova nota com base na config atual
@@ -152,8 +199,8 @@ function NotasEmitidas() {
   // Mutação para emitir nota
   const emitirMut = useMutation({
     mutationFn: async (id: string) => {
-      const targetNota = notasReais?.find(n => n.id === id);
-      
+      const targetNota = notasReais?.find((n) => n.id === id);
+
       // Tentar emissão real via SEFAZ
       try {
         const { emitirNFeFn } = await import("@/lib/sefaz-server");
@@ -235,16 +282,19 @@ function NotasEmitidas() {
 </NFe>`;
 
         const result = await emitirNFeFn({ data: { empresaId: empresa!.id, xml: xmlNFe } });
-        
+
         if (result.sucesso) {
           // Atualizar nota no banco com dados reais da SEFAZ
-          const { error: updErr } = await supabase.from("notas_fiscais").update({
-            status: "autorizada",
-            chave: result.chave || `SEFAZ_${result.codigo}`,
-            data_emissao: new Date().toISOString(),
-            numero: String(targetNota?.numero || config?.proximo_numero || 1),
-            mensagem: result.motivo,
-          }).eq("id", id);
+          const { error: updErr } = await supabase
+            .from("notas_fiscais")
+            .update({
+              status: "autorizada",
+              chave: result.chave || `SEFAZ_${result.codigo}`,
+              data_emissao: new Date().toISOString(),
+              numero: String(targetNota?.numero || config?.proximo_numero || 1),
+              mensagem: result.motivo,
+            })
+            .eq("id", id);
           if (updErr) throw updErr;
         } else {
           throw new Error(`SEFAZ: ${result.motivo} (código ${result.codigo})`);
@@ -258,28 +308,37 @@ function NotasEmitidas() {
         const numNota = targetNota?.numero || config?.proximo_numero || 1;
         const chave = `35${yy}${mm}${cnpjClean}55001${String(numNota).padStart(9, "0")}1234567890`;
 
-        const { error: updErr } = await supabase.from("notas_fiscais").update({
-          status: "autorizada",
-          chave,
-          data_emissao: now.toISOString(),
-          numero: String(numNota),
-          mensagem: "Emitida em modo simulação (certificado não configurado)",
-        }).eq("id", id);
+        const { error: updErr } = await supabase
+          .from("notas_fiscais")
+          .update({
+            status: "autorizada",
+            chave,
+            data_emissao: now.toISOString(),
+            numero: String(numNota),
+            mensagem: "Emitida em modo simulação (certificado não configurado)",
+          })
+          .eq("id", id);
         if (updErr) throw updErr;
       }
 
       // Incrementar próximo número na config
       if (empresa?.id && config) {
         const proximo = (config.proximo_numero ?? 1) + 1;
-        await supabase.from("nfe_config").upsert({
-          empresa_id: empresa.id,
-          proximo_numero: proximo
-        }, { onConflict: "empresa_id" });
+        await supabase.from("nfe_config").upsert(
+          {
+            empresa_id: empresa.id,
+            proximo_numero: proximo,
+          },
+          { onConflict: "empresa_id" },
+        );
       }
     },
     onMutate: (id) => setPendingId(id),
     onSettled: () => setPendingId(null),
-    onSuccess: () => { toast.success("Nota Fiscal emitida com sucesso!"); invalidate(); },
+    onSuccess: () => {
+      toast.success("Nota Fiscal emitida com sucesso!");
+      invalidate();
+    },
     onError: (e: Error) => toast.error(e.message),
   });
 
@@ -287,19 +346,28 @@ function NotasEmitidas() {
   const cancelarMut = useMutation({
     mutationFn: async ({ id, motivo }: { id: string; motivo: string }) => {
       try {
-        const { error } = await supabase.rpc("cancelar_nota_fiscal", { _nf_id: id, _motivo: motivo });
+        const { error } = await supabase.rpc("cancelar_nota_fiscal", {
+          _nf_id: id,
+          _motivo: motivo,
+        });
         if (error) throw error;
       } catch (err) {
         // Fallback para atualização direta
-        const { error: updErr } = await supabase.from("notas_fiscais").update({
-          status: "cancelada"
-        }).eq("id", id);
+        const { error: updErr } = await supabase
+          .from("notas_fiscais")
+          .update({
+            status: "cancelada",
+          })
+          .eq("id", id);
         if (updErr) throw updErr;
       }
     },
     onMutate: ({ id }) => setPendingId(id),
     onSettled: () => setPendingId(null),
-    onSuccess: () => { toast.success("Nota fiscal cancelada na SEFAZ!"); invalidate(); },
+    onSuccess: () => {
+      toast.success("Nota fiscal cancelada na SEFAZ!");
+      invalidate();
+    },
     onError: (e: Error) => toast.error(e.message),
   });
 
@@ -309,16 +377,20 @@ function NotasEmitidas() {
       if (!empresa) throw new Error("Empresa não selecionada");
       if (!novaNotaContato) throw new Error("Selecione um cliente");
       if (!novaNotaValor || parseFloat(novaNotaValor) <= 0) throw new Error("Valor total inválido");
-      
-      const { data, error } = await supabase.from("notas_fiscais").insert({
-        empresa_id: empresa.id,
-        tipo: novaNotaTipo,
-        contato_id: novaNotaContato,
-        valor_total: parseFloat(novaNotaValor),
-        numero: novaNotaNumero || String(config?.proximo_numero ?? 1),
-        serie: novaNotaSerie || String(config?.serie ?? 1),
-        status: "rascunho"
-      }).select().single();
+
+      const { data, error } = await supabase
+        .from("notas_fiscais")
+        .insert({
+          empresa_id: empresa.id,
+          tipo: novaNotaTipo,
+          contato_id: novaNotaContato,
+          valor_total: parseFloat(novaNotaValor),
+          numero: novaNotaNumero || String(config?.proximo_numero ?? 1),
+          serie: novaNotaSerie || String(config?.serie ?? 1),
+          status: "rascunho",
+        })
+        .select()
+        .single();
 
       if (error) throw error;
       return data;
@@ -330,12 +402,13 @@ function NotasEmitidas() {
       setNovaNotaValor("");
       invalidate();
     },
-    onError: (e: Error) => toast.error(e.message)
+    onError: (e: Error) => toast.error(e.message),
   });
 
   const onCancelar = (id: string) => {
     const motivo = prompt("Motivo do cancelamento (mín. 15 caracteres):");
-    if (!motivo || motivo.trim().length < 15) return toast.error("Motivo deve ter ao menos 15 caracteres");
+    if (!motivo || motivo.trim().length < 15)
+      return toast.error("Motivo deve ter ao menos 15 caracteres");
     cancelarMut.mutate({ id, motivo: motivo.trim() });
   };
 
@@ -377,7 +450,7 @@ function NotasEmitidas() {
       const chaveMatch = n.chave?.toLowerCase().includes(term);
       const tipoLabel = n.tipo.toUpperCase();
       const tipoMatch = tipoLabel.includes(term);
-      
+
       return numMatch || clienteMatch || chaveMatch || tipoMatch;
     }
 
@@ -387,94 +460,113 @@ function NotasEmitidas() {
   return (
     <>
       <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
-        <PageHeader 
-          eyebrow="Gestão Fiscal" 
-          title="Notas de Saída" 
-          description="Controle e emissão de notas fiscais de venda e prestação de serviços (NF-e, NFS-e, NFC-e)." 
+        <PageHeader
+          eyebrow="Gestão Fiscal"
+          title="Notas de Saída"
+          description="Controle e emissão de notas fiscais de venda e prestação de serviços (NF-e, NFS-e, NFC-e)."
         />
-        
+
         <div className="flex items-center gap-2">
           <Button variant="outline" size="sm">
             Adicionar trilha de auditoria
           </Button>
           <Dialog open={modalOpen} onOpenChange={setModalOpen}>
             <DialogTrigger asChild>
-              <Button onClick={() => setModalOpen(true)} className="w-full sm:w-auto shadow-sm transition-transform hover:scale-[1.02] active:scale-[0.98]">
+              <Button
+                onClick={() => setModalOpen(true)}
+                className="w-full sm:w-auto shadow-sm transition-transform hover:scale-[1.02] active:scale-[0.98]"
+              >
                 <Plus className="mr-2 h-4 w-4" /> Nova Emissão
               </Button>
             </DialogTrigger>
             <DialogContent className="sm:max-w-[480px]">
-            <DialogHeader>
-              <DialogTitle>Emitir Nota Fiscal (Rascunho)</DialogTitle>
-              <DialogDescription>
-                Crie um novo rascunho de nota fiscal. Ela ficará pronta para emissão na lista principal.
-              </DialogDescription>
-            </DialogHeader>
-            <div className="grid gap-4 py-4">
-              <div className="grid gap-2">
-                <Label htmlFor="tipo">Tipo de Operação</Label>
-                <Select value={novaNotaTipo} onValueChange={(v: "nfe" | "nfse" | "nfce") => setNovaNotaTipo(v)}>
-                  <SelectTrigger id="tipo">
-                    <SelectValue placeholder="Selecione o tipo de nota" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="nfe">Nota de Produto (NF-e)</SelectItem>
-                    <SelectItem value="nfse">Nota de Serviço (NFS-e)</SelectItem>
-                    <SelectItem value="nfce">Nota de Consumidor (NFC-e)</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div className="grid gap-2">
-                <Label htmlFor="cliente">Cliente destinatário</Label>
-                <Select value={novaNotaContato} onValueChange={setNovaNotaContato}>
-                  <SelectTrigger id="cliente">
-                    <SelectValue placeholder="Selecione o cliente" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {contatos?.map((c) => (
-                      <SelectItem key={c.id} value={c.id}>{c.nome}</SelectItem>
-                    ))}
-                    {(!contatos || contatos.length === 0) && (
-                      <SelectItem value="none" disabled>Nenhum cliente cadastrado</SelectItem>
-                    )}
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
+              <DialogHeader>
+                <DialogTitle>Emitir Nota Fiscal (Rascunho)</DialogTitle>
+                <DialogDescription>
+                  Crie um novo rascunho de nota fiscal. Ela ficará pronta para emissão na lista
+                  principal.
+                </DialogDescription>
+              </DialogHeader>
+              <div className="grid gap-4 py-4">
                 <div className="grid gap-2">
-                  <Label htmlFor="numero">Número</Label>
-                  <Input 
-                    id="numero" 
-                    value={novaNotaNumero} 
-                    onChange={(e) => setNovaNotaNumero(e.target.value)} 
-                    placeholder="Auto"
+                  <Label htmlFor="tipo">Tipo de Operação</Label>
+                  <Select
+                    value={novaNotaTipo}
+                    onValueChange={(v: "nfe" | "nfse" | "nfce") => setNovaNotaTipo(v)}
+                  >
+                    <SelectTrigger id="tipo">
+                      <SelectValue placeholder="Selecione o tipo de nota" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="nfe">Nota de Produto (NF-e)</SelectItem>
+                      <SelectItem value="nfse">Nota de Serviço (NFS-e)</SelectItem>
+                      <SelectItem value="nfce">Nota de Consumidor (NFC-e)</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="grid gap-2">
+                  <Label htmlFor="cliente">Cliente destinatário</Label>
+                  <Select value={novaNotaContato} onValueChange={setNovaNotaContato}>
+                    <SelectTrigger id="cliente">
+                      <SelectValue placeholder="Selecione o cliente" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {contatos?.map((c) => (
+                        <SelectItem key={c.id} value={c.id}>
+                          {c.nome}
+                        </SelectItem>
+                      ))}
+                      {(!contatos || contatos.length === 0) && (
+                        <SelectItem value="none" disabled>
+                          Nenhum cliente cadastrado
+                        </SelectItem>
+                      )}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="grid gap-2">
+                    <Label htmlFor="numero">Número</Label>
+                    <Input
+                      id="numero"
+                      value={novaNotaNumero}
+                      onChange={(e) => setNovaNotaNumero(e.target.value)}
+                      placeholder="Auto"
+                    />
+                  </div>
+                  <div className="grid gap-2">
+                    <Label htmlFor="serie">Série</Label>
+                    <Input
+                      id="serie"
+                      value={novaNotaSerie}
+                      onChange={(e) => setNovaNotaSerie(e.target.value)}
+                      placeholder="1"
+                    />
+                  </div>
+                </div>
+
+                <div className="grid gap-2">
+                  <Label htmlFor="valor">Valor Total (R$)</Label>
+                  <MoneyInput
+                    id="valor"
+                    prefix=""
+                    placeholder="0,00"
+                    value={novaNotaValor}
+                    onChange={setNovaNotaValor}
                   />
                 </div>
-                <div className="grid gap-2">
-                  <Label htmlFor="serie">Série</Label>
-                  <Input 
-                    id="serie" 
-                    value={novaNotaSerie} 
-                    onChange={(e) => setNovaNotaSerie(e.target.value)} 
-                    placeholder="1"
-                  />
-                </div>
               </div>
-
-              <div className="grid gap-2">
-                <Label htmlFor="valor">Valor Total (R$)</Label>
-                <MoneyInput id="valor" prefix="" placeholder="0,00" value={novaNotaValor} onChange={setNovaNotaValor} />
-              </div>
-            </div>
-            <DialogFooter>
-              <Button variant="outline" onClick={() => setModalOpen(false)}>Cancelar</Button>
-              <Button onClick={() => criarNotaMut.mutate()} disabled={criarNotaMut.isPending}>
-                {criarNotaMut.isPending ? "Criando..." : "Criar Rascunho"}
-              </Button>
-            </DialogFooter>
-          </DialogContent>
+              <DialogFooter>
+                <Button variant="outline" onClick={() => setModalOpen(false)}>
+                  Cancelar
+                </Button>
+                <Button onClick={() => criarNotaMut.mutate()} disabled={criarNotaMut.isPending}>
+                  {criarNotaMut.isPending ? "Criando..." : "Criar Rascunho"}
+                </Button>
+              </DialogFooter>
+            </DialogContent>
           </Dialog>
         </div>
       </div>
@@ -484,8 +576,10 @@ function NotasEmitidas() {
           <CardContent className="flex flex-wrap items-center gap-x-8 gap-y-3 p-4 text-sm">
             <div className="flex items-center gap-1.5">
               <span className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse"></span>
-              <span className="text-muted-foreground">Ambiente:</span> 
-              <strong className="capitalize text-foreground font-medium">Homologação (testes)</strong>
+              <span className="text-muted-foreground">Ambiente:</span>
+              <strong className="capitalize text-foreground font-medium">
+                Homologação (testes)
+              </strong>
             </div>
             <div>
               <span className="text-muted-foreground">Série Padrão:</span>{" "}
@@ -493,7 +587,9 @@ function NotasEmitidas() {
             </div>
             <div>
               <span className="text-muted-foreground">Próximo nº:</span>{" "}
-              <strong className="text-foreground font-medium">{config.proximo_numero ?? "—"}</strong>
+              <strong className="text-foreground font-medium">
+                {config.proximo_numero ?? "—"}
+              </strong>
             </div>
             <div className="rounded bg-primary/10 px-2 py-0.5 text-xs text-primary font-medium">
               {config.regime_tributario === "simples" ? "Simples Nacional" : "Lucro Presumido"}
@@ -504,12 +600,27 @@ function NotasEmitidas() {
 
       {/* Filtros e Busca */}
       <div className="mb-6 flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full md:w-auto">
+        <Tabs
+          value={activeTab}
+          onValueChange={(value) => {
+            setActiveTab(value);
+            setPagina(1);
+          }}
+          className="w-full md:w-auto"
+        >
           <TabsList className="grid grid-cols-4 md:w-auto bg-muted/80 p-1">
-            <TabsTrigger value="todas" className="text-xs">Todas</TabsTrigger>
-            <TabsTrigger value="nfe" className="text-xs">NF-e</TabsTrigger>
-            <TabsTrigger value="nfse" className="text-xs">NFS-e</TabsTrigger>
-            <TabsTrigger value="nfce" className="text-xs">NFC-e</TabsTrigger>
+            <TabsTrigger value="todas" className="text-xs">
+              Todas
+            </TabsTrigger>
+            <TabsTrigger value="nfe" className="text-xs">
+              NF-e
+            </TabsTrigger>
+            <TabsTrigger value="nfse" className="text-xs">
+              NFS-e
+            </TabsTrigger>
+            <TabsTrigger value="nfce" className="text-xs">
+              NFC-e
+            </TabsTrigger>
           </TabsList>
         </Tabs>
 
@@ -520,11 +631,20 @@ function NotasEmitidas() {
               placeholder="Buscar por cliente, nº, chave..."
               className="pl-9 h-9"
               value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
+              onChange={(e) => {
+                setSearchTerm(e.target.value);
+                setPagina(1);
+              }}
             />
           </div>
 
-          <Select value={statusFilter} onValueChange={setStatusFilter}>
+          <Select
+            value={statusFilter}
+            onValueChange={(value) => {
+              setStatusFilter(value);
+              setPagina(1);
+            }}
+          >
             <SelectTrigger className="w-[140px] h-9">
               <SelectValue placeholder="Status" />
             </SelectTrigger>
@@ -548,10 +668,10 @@ function NotasEmitidas() {
           </CardContent>
         </Card>
       ) : !notasFiltradas?.length ? (
-        <EmptyState 
-          icon={FileText} 
-          title="Nenhum documento fiscal encontrado" 
-          description="Refine seus filtros ou realize uma nova emissão para gerar rascunhos de notas fiscais." 
+        <EmptyState
+          icon={FileText}
+          title="Nenhum documento fiscal encontrado"
+          description="Refine seus filtros ou realize uma nova emissão para gerar rascunhos de notas fiscais."
         />
       ) : (
         <Card className="overflow-hidden border-muted shadow-panel bg-card/60 backdrop-blur-sm">
@@ -561,25 +681,49 @@ function NotasEmitidas() {
                 <TableRow>
                   <TableHead className="font-semibold text-foreground">Operação</TableHead>
                   <TableHead className="font-semibold text-foreground">Nº/Série</TableHead>
-                  <TableHead className="font-semibold text-foreground">Cliente / Emitente</TableHead>
+                  <TableHead className="font-semibold text-foreground">
+                    Cliente / Emitente
+                  </TableHead>
                   <TableHead className="font-semibold text-foreground">Venda / Origem</TableHead>
                   <TableHead className="font-semibold text-foreground">Emissão</TableHead>
-                  <TableHead className="text-right font-semibold text-foreground">Valor Total</TableHead>
+                  <TableHead className="text-right font-semibold text-foreground">
+                    Valor Total
+                  </TableHead>
                   <TableHead className="font-semibold text-foreground">Status</TableHead>
                   <TableHead />
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {notasFiltradas.map((n) => {
+                {notasVisiveis.map((n) => {
                   const busy = pendingId === n.id;
-                  
+
                   // Label estilizado para o tipo de nota
                   const getTipoLabel = (tipo: NotaTipo) => {
                     switch (tipo) {
-                      case "nfe": return <span className="rounded bg-sky-500/10 text-sky-600 dark:text-sky-400 px-1.5 py-0.5 text-[11px] font-bold uppercase">NF-e</span>;
-                      case "nfse": return <span className="rounded bg-amber-500/10 text-amber-600 dark:text-amber-400 px-1.5 py-0.5 text-[11px] font-bold uppercase">NFS-e</span>;
-                      case "nfce": return <span className="rounded bg-purple-500/10 text-purple-600 dark:text-purple-400 px-1.5 py-0.5 text-[11px] font-bold uppercase">NFC-e</span>;
-                      default: return <span className="rounded bg-muted px-1.5 py-0.5 text-[11px] font-bold uppercase">{n.tipo.toUpperCase()}</span>;
+                      case "nfe":
+                        return (
+                          <span className="rounded bg-sky-500/10 text-sky-600 dark:text-sky-400 px-1.5 py-0.5 text-[11px] font-bold uppercase">
+                            NF-e
+                          </span>
+                        );
+                      case "nfse":
+                        return (
+                          <span className="rounded bg-amber-500/10 text-amber-600 dark:text-amber-400 px-1.5 py-0.5 text-[11px] font-bold uppercase">
+                            NFS-e
+                          </span>
+                        );
+                      case "nfce":
+                        return (
+                          <span className="rounded bg-purple-500/10 text-purple-600 dark:text-purple-400 px-1.5 py-0.5 text-[11px] font-bold uppercase">
+                            NFC-e
+                          </span>
+                        );
+                      default:
+                        return (
+                          <span className="rounded bg-muted px-1.5 py-0.5 text-[11px] font-bold uppercase">
+                            {n.tipo.toUpperCase()}
+                          </span>
+                        );
                     }
                   };
 
@@ -606,38 +750,42 @@ function NotasEmitidas() {
                       </TableCell>
                       <TableCell className="text-right">
                         <div className="flex justify-end gap-1">
-                          {(n.status === "rascunho" || n.status === "rejeitada") && n.id.indexOf("mock") === -1 && (
-                            <Button 
-                              size="sm" 
-                              variant="ghost" 
-                              disabled={busy} 
-                              onClick={() => emitirMut.mutate(n.id)}
-                              className="h-8 text-primary hover:bg-primary/10"
-                            >
-                              <Send className="mr-1 h-3.5 w-3.5" />{busy ? "Emitindo…" : "Emitir"}
-                            </Button>
-                          )}
-                          
+                          {(n.status === "rascunho" || n.status === "rejeitada") &&
+                            n.id.indexOf("mock") === -1 && (
+                              <Button
+                                size="sm"
+                                variant="ghost"
+                                disabled={busy}
+                                onClick={() => emitirMut.mutate(n.id)}
+                                className="h-8 text-primary hover:bg-primary/10"
+                              >
+                                <Send className="mr-1 h-3.5 w-3.5" />
+                                {busy ? "Emitindo…" : "Emitir"}
+                              </Button>
+                            )}
+
                           {n.status === "autorizada" && (
                             <>
-                              <Button 
-                                size="sm" 
-                                variant="ghost" 
+                              <Button
+                                size="sm"
+                                variant="ghost"
                                 onClick={() => baixarXML(n)}
                                 className="h-8 hover:bg-muted"
                               >
-                                <Download className="mr-1 h-3.5 w-3.5" />XML
+                                <Download className="mr-1 h-3.5 w-3.5" />
+                                XML
                               </Button>
-                              
+
                               {n.id.indexOf("mock") === -1 && (
-                                <Button 
-                                  size="sm" 
-                                  variant="ghost" 
-                                  disabled={busy} 
-                                  className="h-8 text-destructive hover:bg-destructive/10" 
+                                <Button
+                                  size="sm"
+                                  variant="ghost"
+                                  disabled={busy}
+                                  className="h-8 text-destructive hover:bg-destructive/10"
                                   onClick={() => onCancelar(n.id)}
                                 >
-                                  <Ban className="mr-1 h-3.5 w-3.5" />{busy ? "Cancelando…" : "Cancelar"}
+                                  <Ban className="mr-1 h-3.5 w-3.5" />
+                                  {busy ? "Cancelando…" : "Cancelar"}
                                 </Button>
                               )}
                             </>
@@ -649,10 +797,40 @@ function NotasEmitidas() {
                 })}
               </TableBody>
             </Table>
+            <div className="flex items-center justify-between border-t px-4 py-3 text-sm text-muted-foreground">
+              <span>
+                Mostrando {(paginaAtual - 1) * pageSize + 1}–
+                {Math.min(paginaAtual * pageSize, notasFiltradas.length)} de {notasFiltradas.length}
+              </span>
+              <div className="flex items-center gap-1">
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  aria-label="Página anterior"
+                  disabled={paginaAtual === 1}
+                  onClick={() => setPagina((value) => Math.max(1, value - 1))}
+                >
+                  <ChevronLeft className="h-4 w-4" />
+                </Button>
+                <span className="px-2 text-xs">
+                  Página {paginaAtual} de {totalPaginas}
+                </span>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  aria-label="Próxima página"
+                  disabled={paginaAtual === totalPaginas}
+                  onClick={() => setPagina((value) => Math.min(totalPaginas, value + 1))}
+                >
+                  <ChevronRight className="h-4 w-4" />
+                </Button>
+              </div>
+            </div>
           </div>
         </Card>
       )}
     </>
   );
 }
-
