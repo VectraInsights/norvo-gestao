@@ -18,6 +18,7 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/comp
 import { useState, useMemo, useEffect } from "react";
 import { toast } from "sonner";
 import { brl, dateBR } from "@/lib/format";
+import { useFiltrosSalvos } from "@/hooks/use-filtros-salvos";
 
 import { supabase } from "@/integrations/supabase/client";
 import { useEmpresaAtual } from "@/hooks/use-empresa";
@@ -201,6 +202,14 @@ function NotasRecebidas() {
     const now = new Date();
     return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
   });
+  const [filtroSalvoNome, setFiltroSalvoNome] = useState("");
+  const [filtrosSalvosOpen, setFiltrosSalvosOpen] = useState(false);
+  const { data: authUser } = useQuery({
+    queryKey: ["auth-user-for-fiscal-filters"],
+    queryFn: async () => (await supabase.auth.getUser()).data.user,
+    staleTime: 5 * 60 * 1000,
+  });
+  const filtrosSalvos = useFiltrosSalvos(empresa?.id, authUser?.id, "fiscal-notas-recebidas");
 
   // Importação XML State
   const [dragging, setDragging] = useState(false);
@@ -1292,6 +1301,9 @@ ${transportadora ? `<div class="section"><div class="section-title">TRANSPORTE</
                   return <option key={m} value={m}>{nomesMes[parseInt(mes)-1]}/{ano}</option>;
                 })}
               </select>
+              <Button variant="outline" size="sm" onClick={() => setFiltrosSalvosOpen(true)}>
+                Filtros salvos
+              </Button>
             </div>
             
             <Button 
@@ -1645,7 +1657,31 @@ ${transportadora ? `<div class="section"><div class="section-title">TRANSPORTE</
         </TabsContent>
       </Tabs>
 
-      <Dialog open={chaveImportModal} onOpenChange={setChaveImportModal}>
+      <Dialog open={filtrosSalvosOpen} onOpenChange={setFiltrosSalvosOpen}>
+  <DialogContent className="sm:max-w-md">
+  <DialogHeader><DialogTitle>Filtros salvos</DialogTitle></DialogHeader>
+  <div className="space-y-4 py-2">
+  <div className="flex gap-2">
+  <Input value={filtroSalvoNome} onChange={(e) => setFiltroSalvoNome(e.target.value)} placeholder="Nome do filtro" />
+  <Button disabled={!filtroSalvoNome.trim() || filtrosSalvos.salvar.isPending} onClick={() => filtrosSalvos.salvar.mutate({ nome: filtroSalvoNome, filtros: { search, filtroMes } }, { onSuccess: () => { setFiltroSalvoNome(""); toast.success("Filtro salvo"); } })}>Salvar</Button>
+  </div>
+  <div className="space-y-2">
+  {filtrosSalvos.filtros.length === 0 ? <p className="text-sm text-muted-foreground">Nenhum filtro salvo.</p> : filtrosSalvos.filtros.map((filtro) => (
+  <div key={filtro.id} className="flex items-center justify-between rounded-md border px-3 py-2">
+  <span className="text-sm">{filtro.nome}</span>
+  <div className="flex gap-1">
+  <Button size="sm" variant="ghost" onClick={() => { const valores = filtro.filtros as { search?: string; filtroMes?: string }; setSearch(valores.search ?? ""); setFiltroMes(valores.filtroMes ?? "todos"); setFiltrosSalvosOpen(false); }}>Aplicar</Button>
+  <Button size="sm" variant="ghost" className="text-destructive" onClick={() => filtrosSalvos.excluir.mutate(filtro.id)}>Excluir</Button>
+  </div>
+  </div>
+  ))}
+  </div>
+  </div>
+  <DialogFooter><Button variant="outline" onClick={() => setFiltrosSalvosOpen(false)}>Fechar</Button></DialogFooter>
+  </DialogContent>
+  </Dialog>
+
+  <Dialog open={chaveImportModal} onOpenChange={setChaveImportModal}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
             <DialogTitle>Importar NF-e por Chave de Acesso</DialogTitle>
