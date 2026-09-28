@@ -31,7 +31,15 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { AlertTriangle, Package, Plus, Pencil, Trash2 } from "lucide-react";
+import {
+  AlertTriangle,
+  ChevronLeft,
+  ChevronRight,
+  Package,
+  Plus,
+  Pencil,
+  Trash2,
+} from "lucide-react";
 import { useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -92,6 +100,7 @@ function Produtos() {
   const [open, setOpen] = useState(false);
   const [busca, setBusca] = useState("");
   const [filtroCat, setFiltroCat] = useState("todas");
+  const [pagina, setPagina] = useState(1);
   const [form, setForm] = useState(EMPTY_FORM);
   const [editing, setEditing] = useState<Produto | null>(null);
   const [deleting, setDeleting] = useState<Produto | null>(null);
@@ -216,6 +225,11 @@ function Produtos() {
     );
   }, [produtos, busca, filtroCat]);
 
+  const pageSize = 25;
+  const totalPaginas = Math.max(1, Math.ceil(filtrados.length / pageSize));
+  const paginaAtual = Math.min(pagina, totalPaginas);
+  const produtosVisiveis = filtrados.slice((paginaAtual - 1) * pageSize, paginaAtual * pageSize);
+
   const submit = (e: React.FormEvent) => {
     e.preventDefault();
     if (editing) {
@@ -262,7 +276,10 @@ function Produtos() {
               onOpenChange={(v) => {
                 if (!criarMut.isPending && !editarMut.isPending) {
                   setOpen(v);
-                  if (!v) { setEditing(null); setForm(EMPTY_FORM); }
+                  if (!v) {
+                    setEditing(null);
+                    setForm(EMPTY_FORM);
+                  }
                 }
               }}
             >
@@ -298,7 +315,9 @@ function Produtos() {
                     <Label>Categoria</Label>
                     <Select
                       value={form.categoria || "__none__"}
-                      onValueChange={(v) => setForm({ ...form, categoria: v === "__none__" ? "" : v })}
+                      onValueChange={(v) =>
+                        setForm({ ...form, categoria: v === "__none__" ? "" : v })
+                      }
                     >
                       <SelectTrigger className="w-full">
                         <SelectValue placeholder="Selecione uma categoria" />
@@ -306,7 +325,9 @@ function Produtos() {
                       <SelectContent>
                         <SelectItem value="__none__">Sem categoria</SelectItem>
                         {categorias.map((c) => (
-                          <SelectItem key={c} value={c}>{c}</SelectItem>
+                          <SelectItem key={c} value={c}>
+                            {c}
+                          </SelectItem>
                         ))}
                       </SelectContent>
                     </Select>
@@ -339,11 +360,21 @@ function Produtos() {
                   <div className="grid grid-cols-2 gap-3">
                     <div>
                       <Label>Estoque inicial</Label>
-                      <MoneyInput prefix="" decimals={3} value={form.estoque_atual} onChange={(v) => setForm({ ...form, estoque_atual: v })} />
+                      <MoneyInput
+                        prefix=""
+                        decimals={3}
+                        value={form.estoque_atual}
+                        onChange={(v) => setForm({ ...form, estoque_atual: v })}
+                      />
                     </div>
                     <div>
                       <Label>Estoque mínimo</Label>
-                      <MoneyInput prefix="" decimals={3} value={form.estoque_minimo} onChange={(v) => setForm({ ...form, estoque_minimo: v })} />
+                      <MoneyInput
+                        prefix=""
+                        decimals={3}
+                        value={form.estoque_minimo}
+                        onChange={(v) => setForm({ ...form, estoque_minimo: v })}
+                      />
                     </div>
                   </div>
                   <DialogFooter>
@@ -363,9 +394,18 @@ function Produtos() {
           className="flex-1"
           placeholder="Buscar por nome ou código…"
           value={busca}
-          onChange={(e) => setBusca(e.target.value)}
+          onChange={(e) => {
+            setBusca(e.target.value);
+            setPagina(1);
+          }}
         />
-        <Select value={filtroCat} onValueChange={setFiltroCat}>
+        <Select
+          value={filtroCat}
+          onValueChange={(value) => {
+            setFiltroCat(value);
+            setPagina(1);
+          }}
+        >
           <SelectTrigger className="w-48">
             <SelectValue />
           </SelectTrigger>
@@ -414,7 +454,7 @@ function Produtos() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {filtrados.map((p) => {
+              {produtosVisiveis.map((p) => {
                 const atual = Number(p.estoque_atual ?? 0);
                 const min = Number(p.estoque_minimo ?? 0);
                 const baixo = min > 0 && atual <= min;
@@ -459,7 +499,12 @@ function Produtos() {
                         <TooltipProvider>
                           <Tooltip>
                             <TooltipTrigger asChild>
-                              <Button size="sm" variant="ghost" className="h-7 w-7 p-0" onClick={() => openEdit(p)}>
+                              <Button
+                                size="sm"
+                                variant="ghost"
+                                className="h-7 w-7 p-0"
+                                onClick={() => openEdit(p)}
+                              >
                                 <Pencil className="h-3.5 w-3.5" />
                               </Button>
                             </TooltipTrigger>
@@ -469,7 +514,12 @@ function Produtos() {
                         <TooltipProvider>
                           <Tooltip>
                             <TooltipTrigger asChild>
-                              <Button size="sm" variant="ghost" className="h-7 w-7 p-0 text-destructive hover:bg-destructive/10" onClick={() => setDeleting(p)}>
+                              <Button
+                                size="sm"
+                                variant="ghost"
+                                className="h-7 w-7 p-0 text-destructive hover:bg-destructive/10"
+                                onClick={() => setDeleting(p)}
+                              >
                                 <Trash2 className="h-3.5 w-3.5" />
                               </Button>
                             </TooltipTrigger>
@@ -483,15 +533,52 @@ function Produtos() {
               })}
             </TableBody>
           </Table>
+          <div className="flex items-center justify-between border-t px-4 py-3 text-sm text-muted-foreground">
+            <span>
+              Mostrando {(paginaAtual - 1) * pageSize + 1}–
+              {Math.min(paginaAtual * pageSize, filtrados.length)} de {filtrados.length}
+            </span>
+            <div className="flex items-center gap-1">
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                aria-label="Página anterior"
+                disabled={paginaAtual === 1}
+                onClick={() => setPagina((value) => Math.max(1, value - 1))}
+              >
+                <ChevronLeft className="h-4 w-4" />
+              </Button>
+              <span className="px-2 text-xs">
+                Página {paginaAtual} de {totalPaginas}
+              </span>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                aria-label="Próxima página"
+                disabled={paginaAtual === totalPaginas}
+                onClick={() => setPagina((value) => Math.min(totalPaginas, value + 1))}
+              >
+                <ChevronRight className="h-4 w-4" />
+              </Button>
+            </div>
+          </div>
         </Card>
       )}
 
-      <AlertDialog open={!!deleting} onOpenChange={(v) => { if (!v) setDeleting(null); }}>
+      <AlertDialog
+        open={!!deleting}
+        onOpenChange={(v) => {
+          if (!v) setDeleting(null);
+        }}
+      >
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Excluir produto</AlertDialogTitle>
             <AlertDialogDescription>
-              Tem certeza que deseja excluir <strong>{deleting?.nome}</strong>? Esta ação não pode ser desfeita.
+              Tem certeza que deseja excluir <strong>{deleting?.nome}</strong>? Esta ação não pode
+              ser desfeita.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
