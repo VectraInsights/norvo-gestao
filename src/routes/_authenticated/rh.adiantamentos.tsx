@@ -105,7 +105,7 @@ function AdiantamentosPage() {
       const { data, error } = await supabase
         .from("adiantamentos" as never)
         .select(
-          "id,empresa_id,colaborador_id,valor,data,observacoes,recorrente,status,lancamento_id,created_at,colaboradores:colaborador_id(nome)",
+          "id,empresa_id,colaborador_id,valor,data,motivo,recorrente,status,lancamento_id,created_at,colaboradores:colaborador_id(nome)",
         )
         .eq("empresa_id", empresa!.id)
         .order("data", { ascending: false })

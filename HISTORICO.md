@@ -3213,3 +3213,12 @@ Espelhado na Vercel.
   sair e voltar a tela dentro de 60s serve do cache sem
   recarregar; mutacoes continuam invalidando. Sem risco:
   refetchOnWindowFocus segue desligado, reconnect atualiza.
+
+## Mais 5 queries com coluna inexistente (28/09)
+
+- Mesma familia: adiantamentos.observacoes->motivo,
+  comissoes.valor_percentual/base/comissao->percentual,
+  base_valor,valor,descricao, folha salario_bruto/
+  liquido->salario,horas_extras,beneficios,descontos,
+  detalhe,inss,irrf,liquido, percursos descricao removido
+  (2 arquivos). Todas validadas direto no banco.

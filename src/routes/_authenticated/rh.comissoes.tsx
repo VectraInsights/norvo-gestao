@@ -133,7 +133,7 @@ function ComissoesPage() {
       const { data, error } = await supabase
         .from("comissoes" as never)
         .select(
-          "id,empresa_id,colaborador_id,competencia,valor_percentual,valor_base,valor_comissao,status,created_at,colaboradores:colaborador_id(nome)",
+          "id,empresa_id,colaborador_id,competencia,percentual,base_valor,valor,descricao,status,created_at,colaboradores:colaborador_id(nome)",
         )
         .eq("empresa_id", empresa!.id)
         .eq("competencia", competencia)

@@ -503,7 +503,7 @@ function PercursosPage() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("cte_percursos" as any)
-        .select("id,empresa_id,codigo,nome,descricao,created_at")
+        .select("id,empresa_id,codigo,nome,created_at")
         .eq("empresa_id", empresa!.id)
         .order("codigo")
         .limit(500);

@@ -165,7 +165,7 @@ function FolhaPage() {
       const { data, error } = await supabase
         .from("folha_pagamento" as never)
         .select(
-          "id,empresa_id,colaborador_id,competencia_mes,competencia_ano,salario_bruto,salario_liquido,status,created_at,colaboradores:colaborador_id(nome,salario_base)",
+          "id,empresa_id,colaborador_id,competencia_mes,competencia_ano,salario,horas_extras,beneficios,descontos,descontos_detalhe,inss,irrf,liquido,status,created_at,colaboradores:colaborador_id(nome,salario_base)",
         )
         .eq("empresa_id", empresa!.id)
         .eq("competencia_mes", mes)

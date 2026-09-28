@@ -3446,7 +3446,7 @@ function CtePage() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("cte_percursos" as any)
-        .select("id,empresa_id,nome,codigo,descricao,created_at")
+        .select("id,empresa_id,nome,codigo,created_at")
         .eq("empresa_id", empresa!.id)
         .order("nome");
       if (error) throw error;
