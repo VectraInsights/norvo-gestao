@@ -42,6 +42,7 @@ import {
   Plus,
   Search,
   FileDown,
+  Bookmark,
   CheckCircle,
   ChevronLeft,
   ChevronRight,
@@ -52,6 +53,7 @@ import { useEmpresaAtual } from "@/hooks/use-empresa";
 import { toast } from "sonner";
 import { brl, dateBR } from "@/lib/format";
 import { useState, useEffect } from "react";
+import { useFiltrosSalvos } from "@/hooks/use-filtros-salvos";
 
 export const Route = createFileRoute("/_authenticated/fiscal/emitidas")({
   component: NotasEmitidas,
@@ -112,6 +114,14 @@ function NotasEmitidas() {
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("todos");
   const [pagina, setPagina] = useState(1);
+  const [filtroSalvoNome, setFiltroSalvoNome] = useState("");
+  const [filtrosSalvosOpen, setFiltrosSalvosOpen] = useState(false);
+  const { data: authUser } = useQuery({
+    queryKey: ["auth-user-for-fiscal-emitidas-filters"],
+    queryFn: async () => (await supabase.auth.getUser()).data.user,
+    staleTime: 5 * 60_000,
+  });
+  const filtrosSalvos = useFiltrosSalvos(empresa?.id, authUser?.id, "fiscal-notas-emitidas");
 
   const pageSize = 25;
   const totalPaginas = Math.max(1, Math.ceil(notasFiltradas.length / pageSize));
@@ -656,8 +666,50 @@ function NotasEmitidas() {
               <SelectItem value="rejeitada">Rejeitadas</SelectItem>
             </SelectContent>
           </Select>
+          <Button
+            type="button"
+            variant="outline"
+            size="icon"
+            className="h-9 w-9 shrink-0"
+            aria-label="Filtros salvos"
+            onClick={() => setFiltrosSalvosOpen(true)}
+          >
+            <Bookmark className="h-4 w-4" />
+          </Button>
         </div>
       </div>
+
+      <Dialog open={filtrosSalvosOpen} onOpenChange={setFiltrosSalvosOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Filtros salvos</DialogTitle>
+            <DialogDescription>Salve uma combinação de tipo, status e busca para reutilizar depois.</DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-2">
+            <div className="flex gap-2">
+              <Input value={filtroSalvoNome} onChange={(event) => setFiltroSalvoNome(event.target.value)} placeholder="Nome do filtro" />
+              <Button
+                disabled={!filtroSalvoNome.trim() || filtrosSalvos.salvar.isPending}
+                onClick={() => filtrosSalvos.salvar.mutate({ nome: filtroSalvoNome, filtros: { activeTab, searchTerm, statusFilter } }, { onSuccess: () => { setFiltroSalvoNome(""); toast.success("Filtro salvo"); } })}
+              >
+                Salvar
+              </Button>
+            </div>
+            <div className="space-y-2">
+              {filtrosSalvos.filtros.length === 0 ? <p className="text-sm text-muted-foreground">Nenhum filtro salvo.</p> : filtrosSalvos.filtros.map((filtro) => (
+                <div key={filtro.id} className="flex items-center justify-between rounded-md border px-3 py-2">
+                  <span className="text-sm">{filtro.nome}</span>
+                  <div className="flex gap-1">
+                    <Button size="sm" variant="ghost" onClick={() => { const valores = filtro.filtros as { activeTab?: string; searchTerm?: string; statusFilter?: string }; setActiveTab(valores.activeTab ?? "todas"); setSearchTerm(valores.searchTerm ?? ""); setStatusFilter(valores.statusFilter ?? "todos"); setPagina(1); setFiltrosSalvosOpen(false); }}>Aplicar</Button>
+                    <Button size="sm" variant="ghost" className="text-destructive" onClick={() => filtrosSalvos.excluir.mutate(filtro.id)}>Excluir</Button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+          <DialogFooter><Button variant="outline" onClick={() => setFiltrosSalvosOpen(false)}>Fechar</Button></DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       {loadingNotas ? (
         <Card className="shadow-panel">
