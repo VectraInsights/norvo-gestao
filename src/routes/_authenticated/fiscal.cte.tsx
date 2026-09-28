@@ -169,8 +169,10 @@ function CtePage() {
 
   const { data: docs, isLoading } = useQuery({
     enabled: !!empresa,
-    queryKey: ["cte-documentos", empresa?.id],
-    queryFn: async (): Promise<CteDoc[]> => {
+  queryKey: ["cte-documentos", empresa?.id],
+  staleTime: 30_000,
+  gcTime: 10 * 60_000,
+  queryFn: async (): Promise<CteDoc[]> => {
       const { data, error } = await supabase.from("cte_documentos" as any)        .select("id,numero,serie,status,valor_servico,chave_acesso,created_at,motivo_rejeicao,protocolo_sefaz,xml_assinado,ambiente,data_autorizacao,responsavel_emissao").eq("empresa_id", empresa!.id).eq("ambiente", SEFAZ_AMBIENTE).order("created_at", { ascending: false }).limit(100);
       if (error) throw error;
       return (data ?? []) as unknown as CteDoc[];
@@ -738,9 +740,11 @@ const chave = manualNfe.chave.replace(/\D/g, "") || `MANUAL-${Date.now()}`;
   // NF-es pendentes persistidas (sobrevivem a F5/troca de tela) — dedup global por chave
   const { data: pendentesDB } = useQuery({
     enabled: !!empresa,
-    queryKey: ["cte-nfes-pendentes", empresa?.id],
-    queryFn: async () => {
-      const { data, error } = await supabase.from("cte_nfes_pendentes" as any).select("*").eq("empresa_id", empresa!.id).eq("status", "pendente").order("created_at");
+  queryKey: ["cte-nfes-pendentes", empresa?.id],
+  staleTime: 30_000,
+  gcTime: 10 * 60_000,
+  queryFn: async () => {
+  const { data, error } = await supabase.from("cte_nfes_pendentes" as any).select("chave,n_nf,serie,emit_nome,emit_cnpj,emit_uf,emit_cmun,emit_xmun,dest_nome,dest_cnpj,dest_uf,dest_cmun,dest_xmun,valor,peso,data_emissao,tomador_nome,tomador_cnpj,tomador_uf,tomador_cmun,tomador_xmun,tomador_ie,tomador_logradouro,tomador_bairro,tomador_cep,mod_frete").eq("empresa_id", empresa!.id).eq("status", "pendente").order("created_at").limit(1000);
       if (error) throw error;
       return (data ?? []) as unknown as Array<{
         chave: string; n_nf: string | null; serie: string | null; emit_nome: string | null; emit_cnpj: string | null; emit_uf: string | null; emit_cmun: string | null; emit_xmun: string | null;
@@ -753,8 +757,10 @@ const chave = manualNfe.chave.replace(/\D/g, "") || `MANUAL-${Date.now()}`;
   // Todas as NF-es (qualquer status) para cruzar CT-es autorizados com o percurso no complemento
   const { data: nfesTodas } = useQuery({
     enabled: !!empresa,
-    queryKey: ["cte-nfes-todas", empresa?.id],
-    queryFn: async () => {
+  queryKey: ["cte-nfes-todas", empresa?.id],
+  staleTime: 2 * 60_000,
+  gcTime: 15 * 60_000,
+  queryFn: async () => {
       const { data, error } = await supabase.from("cte_nfes_pendentes" as any).select("chave,emit_cnpj,emit_nome,dest_cnpj,dest_nome").eq("empresa_id", empresa!.id).limit(2000);
       if (error) throw error;
       return (data ?? []) as unknown as Array<{ chave: string; emit_cnpj: string | null; emit_nome: string | null; dest_cnpj: string | null; dest_nome: string | null }>;
