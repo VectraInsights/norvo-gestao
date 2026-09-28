@@ -67,9 +67,13 @@ export function gerarChaveMdf(cUF: string, aamm: string, cnpj: string, serie: st
 
 // Produto predominante (XSD: tpCarga 01-11 obrigatório, xProd 1-120
 // obrigatório, NCM 2 ou 8 dígitos opcional). Padrão: 05/CARGA GERAL.
+function escapeXml(value: string): string {
+  return value.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/\"/g, "&quot;").replace(/'/g, "&apos;");
+}
+
 export function montarProdPredXml(prod?: { tpCarga?: string; xProd?: string; ncm?: string }): string {
   const tpCarga = /^(0[1-9]|1[01])$/.test(String(prod?.tpCarga || "").trim()) ? String(prod!.tpCarga).trim() : "05";
-  const xProd = String(prod?.xProd || "").trim().slice(0, 120) || "CARGA GERAL";
+  const xProd = escapeXml(String(prod?.xProd || "").trim().slice(0, 120) || "CARGA GERAL");
   const ncm = String(prod?.ncm || "").replace(/\D/g, "");
   const ncmXml = (/^\d{8}$/.test(ncm) || /^\d{2}$/.test(ncm)) ? `<NCM>${ncm}</NCM>` : "";
   return `<prodPred><tpCarga>${tpCarga}</tpCarga><xProd>${xProd}</xProd>${ncmXml}</prodPred>`;
