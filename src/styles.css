@@ -199,6 +199,23 @@
 html[data-density="compact"] .erp-table-wrap td,
 html[data-density="compact"] .erp-table-wrap th { padding-block: 0.375rem; }
 html[data-density="compact"] .erp-table-wrap { font-size: 0.8125rem; }
+html[data-density="compact"] .erp-surface { padding-block: 0.75rem; }
+html[data-density="compact"] .erp-surface h1,
+html[data-density="compact"] .erp-surface h2,
+html[data-density="compact"] .erp-surface h3 { margin-block: 0; }
+
+@media (max-width: 640px) {
+  body { overflow-x: hidden; }
+  #conteudo-principal { padding-inline: 0.75rem; padding-block: 1rem; }
+  .erp-table-wrap { max-width: calc(100vw - 1.5rem); }
+  .erp-table-wrap table { min-width: 42rem; }
+  .erp-surface { border-radius: 0.625rem; }
+  .erp-table-wrap td, .erp-table-wrap th { padding-inline: 0.5rem; }
+}
+
+@media (min-width: 641px) and (max-width: 1023px) {
+  #conteudo-principal { padding-inline: 1.25rem; }
+}
 
 @media print {
   @page { margin: 12mm; }
