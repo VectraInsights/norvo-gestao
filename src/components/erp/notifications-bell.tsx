@@ -1,4 +1,5 @@
-import { Bell, Check, AlertTriangle, Info, AlertCircle } from "lucide-react";
+import { Bell, Check, AlertTriangle, Info, AlertCircle, ExternalLink } from "lucide-react";
+import { useNavigate } from "@tanstack/react-router";
 import { Button } from "@/components/ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -24,7 +25,20 @@ const SEV_COLOR: Record<string, string> = {
 
 export function NotificationsBell() {
   const empresaId = useSelectedEmpresaId();
+  const navigate = useNavigate();
   const qc = useQueryClient();
+
+  const abrirReferencia = (tabela: string | null, id: string | null) => {
+    if (!tabela || !id) return;
+    const rotas: Record<string, string> = {
+      produtos: "/estoque/produtos",
+      multas: "/frota/multas",
+      ferias: "/rh/ferias",
+      lancamentos_financeiros: "/financeiro/contas",
+    };
+    const rota = rotas[tabela];
+    if (rota) navigate({ to: rota });
+  };
 
   const { data: alertas = [] } = useQuery({
     queryKey: ["alertas", empresaId],
@@ -99,12 +113,18 @@ export function NotificationsBell() {
                         {formatDistanceToNow(new Date(a.created_at), { addSuffix: true, locale: ptBR })}
                       </div>
                     </div>
-                    {!a.lido && (
-                      <Button variant="ghost" size="icon" className="h-6 w-6 shrink-0"
-                        onClick={() => marcarLido.mutate(a.id)} aria-label="Marcar como lida">
-                        <Check className="h-3 w-3" />
-                      </Button>
-                    )}
+                    <div className="flex shrink-0 items-start gap-1">
+                      {a.ref_tabela && a.ref_id && (
+                        <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => abrirReferencia(a.ref_tabela, a.ref_id)} aria-label="Abrir registro relacionado">
+                          <ExternalLink className="h-3 w-3" />
+                        </Button>
+                      )}
+                      {!a.lido && (
+                        <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => marcarLido.mutate(a.id)} aria-label="Marcar como lida">
+                          <Check className="h-3 w-3" />
+                        </Button>
+                      )}
+                    </div>
                   </li>
                 );
               })}
