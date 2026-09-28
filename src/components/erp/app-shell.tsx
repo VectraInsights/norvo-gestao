@@ -97,9 +97,10 @@ export function AppShell({ children }: { children: ReactNode }) {
   const { data: empresas } = useQuery({
     queryKey: ["empresas"],
     queryFn: async () => {
+      // A tabela empresas NÃO tem coluna "nome" (usar nome_fantasia).
       const { data, error } = await supabase
         .from("empresas")
-        .select("id,nome,cnpj,created_at")
+        .select("id,nome_fantasia,cnpj,created_at")
         .order("created_at");
       if (error) throw error;
       return data;

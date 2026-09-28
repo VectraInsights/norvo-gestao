@@ -3189,3 +3189,13 @@ Espelhado na Vercel.
 
 - Revertido 00274ab (v0 havia apontado o exe para o Worker
   congelado). Exe volta a abrir norvo-gestao.vercel.app.
+
+## Apagao 28/09: selects com coluna inexistente (fix)
+
+- Commits perf do v0 trocaram select(*) por listas com
+  colunas que nao existem: empresas.nome (tabela so tem
+  nome_fantasia/razao_social) e alertas.lida (e lido).
+  As queries estouravam e o app inteiro nao carregava
+  (guarda RequireEmpresa + useEmpresaAtual + sino).
+  Restauradas as colunas reais em route.tsx, use-empresa,
+  app-shell e notifications-bell (+severidade no select).

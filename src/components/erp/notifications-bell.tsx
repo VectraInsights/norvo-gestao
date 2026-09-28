@@ -46,7 +46,7 @@ export function NotificationsBell() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("alertas")
-        .select("id,empresa_id,titulo,mensagem,tipo,lida,created_at")
+        .select("id,empresa_id,titulo,mensagem,tipo,severidade,lido,created_at")
         .eq("empresa_id", empresaId!)
         .order("created_at", { ascending: false })
         .limit(20);

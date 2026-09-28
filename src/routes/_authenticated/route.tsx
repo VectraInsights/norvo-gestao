@@ -33,7 +33,8 @@ function RequireEmpresa({ children }: { children: ReactNode }) {
   const { data, isLoading, isError } = useQuery({
     queryKey: ["empresas"],
     queryFn: async () => {
-      const { data, error } = await supabase.from("empresas").select("id,nome,created_at").order("created_at");
+      // A tabela empresas NÃO tem coluna "nome".
+      const { data, error } = await supabase.from("empresas").select("id,created_at").order("created_at");
       if (error) throw error;
       return data;
     },

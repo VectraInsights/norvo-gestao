@@ -36,7 +36,8 @@ export function useEmpresaAtual() {
     staleTime: 5 * 60_000,
     gcTime: 15 * 60_000,
     queryFn: async () => {
-      const { data, error } = await supabase.from("empresas").select("id,nome,created_at").order("created_at");
+      // A tabela empresas NÃO tem coluna "nome" (usar nome_fantasia/razao_social).
+      const { data, error } = await supabase.from("empresas").select("*").order("created_at");
       if (error) throw error;
       if (!data?.length) return null;
       return (selectedId && data.find((e) => e.id === selectedId)) || data[0];
