@@ -213,9 +213,11 @@ function PercursosPage() {
   const { data: percursos, isLoading } = useQuery({
     enabled: !!empresa,
     queryKey: ["cte-percursos", empresa?.id],
+    staleTime: 2 * 60_000,
+    gcTime: 15 * 60_000,
     queryFn: async () => {
       const { data, error } = await supabase.from("cte_percursos" as any)
-        .select("*").eq("empresa_id", empresa!.id).order("codigo");
+        .select("*").eq("empresa_id", empresa!.id).order("codigo").limit(500);
       if (error) throw error;
       return (data ?? []) as unknown as Percurso[];
     },
