@@ -699,7 +699,18 @@ function ReconcileDialog({ contaId, conta, empresaId, autoConciliar, importing, 
   const [rows, setRows] = useState<Record<string, RowState>>({});
   const [buscarModo, setBuscarModo] = useState<Record<string, boolean>>({});
 
-  useEffect(() => { if (!open) { setBusca(""); setFiltro("todos"); setSel(new Set()); setRows({}); setBuscarModo({}); } }, [open]);
+  useEffect(() => {
+    if (!open) {
+      setBusca("");
+      setFiltro("todos");
+      setOrdem("recentes");
+      setMes("todos");
+      setPagina(1);
+      setSel(new Set());
+      setRows({});
+      setBuscarModo({});
+    }
+  }, [open]);
 
   useEffect(() => {
     if (!open) return;
@@ -1081,7 +1092,7 @@ function ReconcileDialog({ contaId, conta, empresaId, autoConciliar, importing, 
                 }}>
                   Salvar filtro
                 </Button>
-                <Button variant="ghost" size="sm" onClick={() => { setBusca(""); setFiltro("todos"); setMes("todos"); setPagina(1); }}>
+                <Button variant="ghost" size="sm" onClick={() => { setBusca(""); setFiltro("todos"); setOrdem("recentes"); setMes("todos"); setPagina(1); }}>
                   <Trash2 className="mr-1 h-3 w-3" />Limpar filtros
                 </Button>
 
