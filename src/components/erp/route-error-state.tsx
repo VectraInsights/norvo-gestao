@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 
 export function RouteErrorState() {
   return (
-    <main className="grid min-h-[50vh] place-items-center p-6" role="alert">
+    <main className="grid min-h-[50vh] place-items-center p-6" role="alert" aria-live="assertive">
       <section className="flex max-w-md flex-col items-center gap-3 text-center">
         <span className="grid size-11 place-items-center rounded-full bg-destructive/10 text-destructive" aria-hidden="true">
           <AlertTriangle className="size-5" />
