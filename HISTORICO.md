@@ -3163,3 +3163,13 @@ Espelhado na Vercel.
 - Margens mínimas no diálogo (laterais/topo/fundo e entre caixas).
 - Cabeçalhos coloridos no CT-e (padrão do MDF-e).
 - Espelhado na Vercel via push em main.
+
+## Melhoria 2 — filtros salvos na conciliação (28/09/2026)
+
+- A tela de conciliação bancária agora permite salvar os filtros atuais por usuário e empresa,
+  listar filtros salvos e reaplicá-los posteriormente.
+- A implementação usa a tabela `filtros_salvos` e o hook `useFiltrosSalvos`; não adiciona
+  integração nova nem altera variáveis de ambiente.
+- Validado com build de produção. O lint global continua apontando pendências preexistentes
+  em scripts e componentes não relacionados.
+

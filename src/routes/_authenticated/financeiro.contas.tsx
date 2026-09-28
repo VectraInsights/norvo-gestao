@@ -24,6 +24,7 @@ import { toast } from "sonner";
 import { parseOfxFull } from "@/lib/ofx";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
+import { useFiltrosSalvos } from "@/hooks/use-filtros-salvos";
 import { detectBancoByNome, detectBancoByCodigo, formatContaComDigito, normalizaContaNumero } from "@/lib/bancos";
 
 export const Route = createFileRoute("/_authenticated/financeiro/contas")({
@@ -682,6 +683,12 @@ function ReconcileDialog({ contaId, conta, empresaId, autoConciliar, importing, 
   const [ordem, setOrdem] = useState<"recentes" | "antigos" | "maior" | "menor">("recentes");
   const [mes, setMes] = useState("todos");
   const [pagina, setPagina] = useState(1);
+  const { data: authUser } = useQuery({
+    queryKey: ["auth-user-for-saved-filters"],
+    queryFn: async () => (await supabase.auth.getUser()).data.user,
+    staleTime: 5 * 60 * 1000,
+  });
+  const filtrosSalvos = useFiltrosSalvos(empresaId, authUser?.id, "financeiro-conciliacao");
 
   useEffect(() => {
     const id = setTimeout(() => setBuscaDebounced(busca), 250);
@@ -987,6 +994,18 @@ function ReconcileDialog({ contaId, conta, empresaId, autoConciliar, importing, 
 
   const titulo = conta ? `Contas financeiras — ${conta.nome ?? conta.banco ?? ""}` : "Conciliação bancária";
 
+  const filtroAtual = { busca, filtro, ordem, mes };
+  const aplicarFiltroSalvo = (id: string) => {
+    const salvo = filtrosSalvos.filtros.find((item) => item.id === id);
+    if (!salvo) return;
+    const valores = salvo.filtros as Partial<typeof filtroAtual>;
+    setBusca(typeof valores.busca === "string" ? valores.busca : "");
+    setFiltro(valores.filtro === "recebimentos" || valores.filtro === "pagamentos" ? valores.filtro : "todos");
+    setOrdem(valores.ordem === "antigos" || valores.ordem === "maior" || valores.ordem === "menor" ? valores.ordem : "recentes");
+    setMes(typeof valores.mes === "string" ? valores.mes : "todos");
+    setPagina(1);
+  };
+
   if (!open) return null;
 
   return (
@@ -1048,7 +1067,21 @@ function ReconcileDialog({ contaId, conta, empresaId, autoConciliar, importing, 
                     ))}
                   </SelectContent>
                 </Select>
-                <Button variant="ghost" size="sm" onClick={() => { setBusca(""); setFiltro("todos"); setMes("todos"); }}>
+                {filtrosSalvos.filtros.length > 0 && (
+                  <Select onValueChange={aplicarFiltroSalvo}>
+                    <SelectTrigger className="w-[190px]"><SelectValue placeholder="Filtros salvos" /></SelectTrigger>
+                    <SelectContent>
+                      {filtrosSalvos.filtros.map((salvo) => <SelectItem key={salvo.id} value={salvo.id}>{salvo.nome}</SelectItem>)}
+                    </SelectContent>
+                  </Select>
+                )}
+                <Button variant="outline" size="sm" disabled={filtrosSalvos.salvar.isPending || !authUser?.id} onClick={() => {
+                  const nome = window.prompt("Nome do filtro");
+                  if (nome?.trim()) filtrosSalvos.salvar.mutate({ nome, filtros: filtroAtual });
+                }}>
+                  Salvar filtro
+                </Button>
+                <Button variant="ghost" size="sm" onClick={() => { setBusca(""); setFiltro("todos"); setMes("todos"); setPagina(1); }}>
                   <Trash2 className="mr-1 h-3 w-3" />Limpar filtros
                 </Button>
 
