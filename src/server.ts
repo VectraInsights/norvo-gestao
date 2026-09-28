@@ -2,6 +2,7 @@ import "./lib/error-capture";
 
 import { consumeLastCapturedError } from "./lib/error-capture";
 import { renderErrorPage } from "./lib/error-page";
+import { monitorError, monitorInfo } from "./lib/operational-monitor";
 
 type ServerEntry = {
   fetch: (request: Request, env: unknown, ctx: unknown) => Promise<Response> | Response;
@@ -45,16 +46,31 @@ function isH3SwallowedErrorBody(body: string): boolean {
 }
 
 export default {
-  async scheduled(_event: unknown, env: Record<string, string>, ctx: { waitUntil: (p: Promise<unknown>) => void }) {
+  async scheduled(
+    _event: unknown,
+    env: Record<string, string>,
+    ctx: { waitUntil: (p: Promise<unknown>) => void },
+  ) {
     // Cloudflare Cron: 03–09 UTC (00–06 BRT) — reaproveita handleSefazCron
     // Injeta env do Worker em process.env para o helper ler SUPABASE_URL/KEY
     try {
       if (typeof process !== "undefined" && env) {
-        for (const [k, v] of Object.entries(env)) (process.env as any)[k] = v;
+        for (const [k, v] of Object.entries(env)) {
+          process.env[k] = v;
+        }
       }
       const { handleSefazCron } = await import("./lib/sefaz-cron");
-      ctx.waitUntil(handleSefazCron().then(r => r.text().then(t => console.log("[scheduled] sefaz-cron", t)).catch(e => console.error("[scheduled] err", e))));
-    } catch (e) { console.error("[scheduled] fail", e); }
+      ctx.waitUntil(
+        handleSefazCron()
+          .then(async (r) => {
+            monitorInfo("sefaz.cron.completed", { status: r.status });
+            console.log("[scheduled] sefaz-cron", await r.clone().text());
+          })
+          .catch((error) => monitorError("sefaz.cron.failed", error)),
+      );
+    } catch (e) {
+      console.error("[scheduled] fail", e);
+    }
   },
   async fetch(request: Request, env: unknown, ctx: unknown) {
     // Proxy SEFAZ — roda no Vercel (Node.js com mTLS).
@@ -67,7 +83,7 @@ export default {
         const { handleSefazProxy } = await import("./lib/sefaz-proxy");
         return await handleSefazProxy(request);
       } catch (error) {
-        console.error("[sefaz-proxy]", error);
+        monitorError("sefaz.proxy.failed", error);
         return new Response(JSON.stringify({ error: String(error) }), {
           status: 500,
           headers: { "Content-Type": "application/json" },
@@ -81,7 +97,7 @@ export default {
         const { handleSefazCron } = await import("./lib/sefaz-cron");
         return await handleSefazCron();
       } catch (error) {
-        console.error("[sefaz-cron]", error);
+        monitorError("sefaz.cron.request_failed", error);
         return new Response(JSON.stringify({ error: String(error) }), {
           status: 500,
           headers: { "Content-Type": "application/json" },
@@ -92,36 +108,51 @@ export default {
     // Assistente AI — roda no Cloudflare Worker (binding AI nativo).
     // Na Vercel não há binding: 404 direto, sem queimar function num 500 garantido.
     // O front chama via VITE_AI_URL (absoluto; vazio = mesma origem, no Worker) — CORS restrito abaixo.
-    if (url.pathname === "/api/ai/chat" && (request.method === "POST" || request.method === "OPTIONS")) {
-    const clientKey = request.headers.get("CF-Connecting-IP") || request.headers.get("X-Forwarded-For") || "anonymous";
-    const now = Date.now();
-    const bucket = ((globalThis as any).__norvoAiRateLimit ??= new Map<string, { startedAt: number; count: number }>) as Map<string, { startedAt: number; count: number }>;
-    const current = bucket.get(clientKey);
-    if (!current || now - current.startedAt >= 60_000) bucket.set(clientKey, { startedAt: now, count: 1 });
-    else if (++current.count > 30) {
-      return new Response(JSON.stringify({ error: "Muitas solicitações. Aguarde um minuto." }), {
-        status: 429,
-        headers: { "Content-Type": "application/json", "Retry-After": "60" },
-      });
-    }
+    if (
+      url.pathname === "/api/ai/chat" &&
+      (request.method === "POST" || request.method === "OPTIONS")
+    ) {
+      const clientKey =
+        request.headers.get("CF-Connecting-IP") ||
+        request.headers.get("X-Forwarded-For") ||
+        "anonymous";
+      const now = Date.now();
+      const runtime = globalThis as typeof globalThis & {
+        __norvoAiRateLimit?: Map<string, { startedAt: number; count: number }>;
+        __env__?: Record<string, string>;
+      };
+      const bucket = (runtime.__norvoAiRateLimit ??= new Map());
+      const current = bucket.get(clientKey);
+      if (!current || now - current.startedAt >= 60_000)
+        bucket.set(clientKey, { startedAt: now, count: 1 });
+      else if (++current.count > 30) {
+        return new Response(JSON.stringify({ error: "Muitas solicitações. Aguarde um minuto." }), {
+          status: 429,
+          headers: { "Content-Type": "application/json", "Retry-After": "60" },
+        });
+      }
       const origin = request.headers.get("Origin") || "";
-      const allowed = !origin
-        || origin === "https://norvo-gestao.vercel.app"
-        || origin.endsWith(".vercel.app")
-        || origin.endsWith(".workers.dev")
-        || origin.startsWith("http://localhost:");
-      const cors = allowed ? {
-        "Access-Control-Allow-Origin": origin || "*",
-        "Access-Control-Allow-Methods": "POST, OPTIONS",
-        "Access-Control-Allow-Headers": "Content-Type",
-      } : {};
+      const allowed =
+        !origin ||
+        origin === "https://norvo-gestao.vercel.app" ||
+        origin.endsWith(".vercel.app") ||
+        origin.endsWith(".workers.dev") ||
+        origin.startsWith("http://localhost:");
+      const cors = allowed
+        ? {
+            "Access-Control-Allow-Origin": origin || "*",
+            "Access-Control-Allow-Methods": "POST, OPTIONS",
+            "Access-Control-Allow-Headers": "Content-Type",
+          }
+        : {};
       if (request.method === "OPTIONS") {
         return new Response(null, { status: 204, headers: cors });
       }
       // O entry nitro chama este handler só com (request): env chega via globalThis.__env__
       // (nitro cloudflare-module injeta antes de delegar). Fallback encadeado p/ cada runtime.
-      const workerEnv = ((env as any)?.AI ? env : (globalThis as any)?.__env__) as Record<string, string>;
-      if (!(workerEnv as any)?.AI) {
+      const workerEnv = (env && typeof env === "object" && "AI" in env ? env : runtime.__env__) as
+        Record<string, string> | undefined;
+      if (!workerEnv?.AI) {
         return new Response(JSON.stringify({ error: "Assistente disponível apenas no Worker" }), {
           status: 404,
           headers: { "Content-Type": "application/json", ...cors },
@@ -129,8 +160,19 @@ export default {
       }
       const startedAt = Date.now();
       try {
-  const body = await request.json() as { messages: Array<{ role: string; content: string }>; empresaId: string };
-  if (!body.messages || !body.empresaId || !Array.isArray(body.messages) || body.messages.length > 30 || body.messages.some((message) => typeof message?.content !== "string" || message.content.length > 4_000)) {
+        const body = (await request.json()) as {
+          messages: Array<{ role: string; content: string }>;
+          empresaId: string;
+        };
+        if (
+          !body.messages ||
+          !body.empresaId ||
+          !Array.isArray(body.messages) ||
+          body.messages.length > 30 ||
+          body.messages.some(
+            (message) => typeof message?.content !== "string" || message.content.length > 4_000,
+          )
+        ) {
           return new Response(JSON.stringify({ error: "messages e empresaId são obrigatórios" }), {
             status: 400,
             headers: { "Content-Type": "application/json", ...cors },
@@ -138,16 +180,22 @@ export default {
         }
         const { handleAiChat } = await import("./lib/ai-chat");
         const result = await handleAiChat(workerEnv, body.messages, body.empresaId);
-        console.info("[ai-chat] completed", { durationMs: Date.now() - startedAt, messages: body.messages.length });
+        console.info("[ai-chat] completed", {
+          durationMs: Date.now() - startedAt,
+          messages: body.messages.length,
+        });
         return new Response(JSON.stringify(result), {
           headers: { "Content-Type": "application/json", ...cors },
         });
       } catch (error) {
         console.error("[ai-chat] request failed", error);
-        return new Response(JSON.stringify({ error: "Não foi possível processar o assistente agora." }), {
-          status: 500,
-          headers: { "Content-Type": "application/json", ...cors },
-        });
+        return new Response(
+          JSON.stringify({ error: "Não foi possível processar o assistente agora." }),
+          {
+            status: 500,
+            headers: { "Content-Type": "application/json", ...cors },
+          },
+        );
       }
     }
 
@@ -163,7 +211,11 @@ export default {
       h.set("X-Content-Type-Options", "nosniff");
       h.set("Referrer-Policy", "strict-origin-when-cross-origin");
       h.set("Permissions-Policy", "camera=(), microphone=(), geolocation=()");
-      return new Response(normalized.body, { status: normalized.status, statusText: normalized.statusText, headers: h });
+      return new Response(normalized.body, {
+        status: normalized.status,
+        statusText: normalized.statusText,
+        headers: h,
+      });
     } catch (error) {
       console.error(error);
       return new Response(renderErrorPage(), {
