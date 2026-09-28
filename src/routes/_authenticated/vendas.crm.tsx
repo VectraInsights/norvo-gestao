@@ -66,9 +66,11 @@ function CRM() {
   const { data: etapas = [], isLoading: loadEt } = useQuery({
     enabled: !!empresa,
     queryKey: ["crm_etapas", empresa?.id],
+    staleTime: 5 * 60_000,
+    gcTime: 15 * 60_000,
     queryFn: async () => {
       const { data, error } = await supabase.from("crm_etapas" as never)
-        .select("*").eq("empresa_id", empresa!.id).order("ordem");
+        .select("id,nome,ordem,cor,ganho,perdido").eq("empresa_id", empresa!.id).order("ordem");
       if (error) throw error;
       return (data ?? []) as unknown as Etapa[];
     },
@@ -77,9 +79,11 @@ function CRM() {
   const { data: oports = [], isLoading: loadOp } = useQuery({
     enabled: !!empresa,
     queryKey: ["crm_oportunidades", empresa?.id],
+    staleTime: 30_000,
+    gcTime: 10 * 60_000,
     queryFn: async () => {
       const { data, error } = await supabase.from("crm_oportunidades" as never)
-        .select("*, contatos:contato_id(nome)")
+        .select("id,titulo,descricao,valor,probabilidade,data_prevista,etapa_id,contato_id,status,contatos:contato_id(nome)")
         .eq("empresa_id", empresa!.id).order("ordem");
       if (error) throw error;
       return (data ?? []) as unknown as Oport[];
@@ -89,6 +93,8 @@ function CRM() {
   const { data: contatos = [] } = useQuery({
     enabled: !!empresa,
     queryKey: ["contatos-todos", empresa?.id],
+    staleTime: 10 * 60_000,
+    gcTime: 30 * 60_000,
     queryFn: async () => {
       const { data } = await supabase.from("contatos").select("id,nome")
         .eq("empresa_id", empresa!.id).order("nome");
