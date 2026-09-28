@@ -7,12 +7,45 @@ import { Input } from "@/components/ui/input";
 import { MoneyInput } from "@/components/erp/money-input";
 import { Label } from "@/components/ui/label";
 import { Card } from "@/components/ui/card";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger, SheetFooter } from "@/components/ui/sheet";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import {
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+  SheetTrigger,
+  SheetFooter,
+} from "@/components/ui/sheet";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem } from "@/components/ui/dropdown-menu";
-import { Loader2, MoreHorizontal, Plus, ShoppingCart, Trash2 } from "lucide-react";
+import {
+  DropdownMenu,
+  DropdownMenuTrigger,
+  DropdownMenuContent,
+  DropdownMenuItem,
+} from "@/components/ui/dropdown-menu";
+import {
+  ChevronLeft,
+  ChevronRight,
+  Loader2,
+  MoreHorizontal,
+  Plus,
+  ShoppingCart,
+  Trash2,
+} from "lucide-react";
 import { useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -24,7 +57,11 @@ import type { Database } from "@/integrations/supabase/types";
 type VendaStatus = Database["public"]["Enums"]["venda_status"];
 
 type VendaRow = {
-  id: string; numero: number; data: string; status: VendaStatus; total: number;
+  id: string;
+  numero: number;
+  data: string;
+  status: VendaStatus;
+  total: number;
   cliente: { nome: string } | null;
   condicao: { nome: string } | null;
 };
@@ -32,7 +69,9 @@ type VendaRow = {
 export const Route = createFileRoute("/_authenticated/vendas/pedidos")({
   component: VendasPage,
   errorComponent: ({ error }) => (
-    <div className="p-6 text-sm text-destructive" role="alert">Falha: {error.message}</div>
+    <div className="p-6 text-sm text-destructive" role="alert">
+      Falha: {error.message}
+    </div>
   ),
 });
 
@@ -58,13 +97,19 @@ function VendasPage() {
   const qc = useQueryClient();
   const [open, setOpen] = useState(false);
   const [statusFilter, setStatusFilter] = useState<VendaStatus | "todos">("todos");
+  const [pagina, setPagina] = useState(1);
 
   const { data: vendas, isLoading } = useQuery({
     enabled: !!empresa,
     queryKey: ["vendas", empresa?.id, statusFilter] as const,
+    staleTime: 30_000,
+    gcTime: 10 * 60_000,
     queryFn: async ({ signal }): Promise<VendaRow[]> => {
-      let q = supabase.from("vendas")
-        .select("id,numero,data,status,total,cliente:contatos(nome),condicao:condicoes_pagamento(nome)")
+      let q = supabase
+        .from("vendas")
+        .select(
+          "id,numero,data,status,total,cliente:contatos(nome),condicao:condicoes_pagamento(nome)",
+        )
         .eq("empresa_id", empresa!.id)
         .order("created_at", { ascending: false })
         .limit(200)
@@ -75,6 +120,11 @@ function VendasPage() {
       return (data ?? []) as unknown as VendaRow[];
     },
   });
+
+  const pageSize = 25;
+  const totalPaginas = Math.max(1, Math.ceil((vendas?.length ?? 0) / pageSize));
+  const paginaAtual = Math.min(pagina, totalPaginas);
+  const vendasVisiveis = (vendas ?? []).slice((paginaAtual - 1) * pageSize, paginaAtual * pageSize);
 
   const invalidateAll = () => {
     qc.invalidateQueries({ queryKey: ["vendas"] });
@@ -90,16 +140,23 @@ function VendasPage() {
   // não é atualizada e o botão avisa em vez de sobrescrever silenciosamente.
   const mudarStatus = useMutation({
     mutationFn: async ({ id, from, to }: { id: string; from: VendaStatus; to: VendaStatus }) => {
-      if (!TRANSICOES[from].includes(to)) throw new Error(`Transição ${from} → ${to} não permitida`);
-      const { data, error } = await supabase.from("vendas")
+      if (!TRANSICOES[from].includes(to))
+        throw new Error(`Transição ${from} → ${to} não permitida`);
+      const { data, error } = await supabase
+        .from("vendas")
         .update({ status: to })
-        .eq("id", id).eq("status", from)
-        .select("id").maybeSingle();
+        .eq("id", id)
+        .eq("status", from)
+        .select("id")
+        .maybeSingle();
       if (error) throw error;
       if (!data) throw new Error("Status já foi alterado por outro usuário — recarregue a lista");
       return to;
     },
-    onSuccess: (to) => { toast.success(`Venda marcada como ${to}`); invalidateAll(); },
+    onSuccess: (to) => {
+      toast.success(`Venda marcada como ${to}`);
+      invalidateAll();
+    },
     onError: (e: Error) => toast.error(e.message),
   });
 
@@ -111,8 +168,16 @@ function VendasPage() {
         description="Proposta → pedido → faturamento. Ao faturar, o sistema baixa estoque, gera contas a receber e cria a nota fiscal."
         actions={
           <div className="flex items-center gap-2">
-            <Select value={statusFilter} onValueChange={(v) => setStatusFilter(v as VendaStatus | "todos")}>
-              <SelectTrigger className="w-40"><SelectValue /></SelectTrigger>
+            <Select
+              value={statusFilter}
+              onValueChange={(v) => {
+                setStatusFilter(v as VendaStatus | "todos");
+                setPagina(1);
+              }}
+            >
+              <SelectTrigger className="w-40">
+                <SelectValue />
+              </SelectTrigger>
               <SelectContent>
                 <SelectItem value="todos">Todos os status</SelectItem>
                 <SelectItem value="rascunho">Rascunho</SelectItem>
@@ -123,17 +188,35 @@ function VendasPage() {
               </SelectContent>
             </Select>
             <Sheet open={open} onOpenChange={setOpen}>
-              <SheetTrigger asChild><Button><Plus className="mr-1 h-4 w-4" />Nova venda</Button></SheetTrigger>
-              <NovaVendaSheet onClose={() => { setOpen(false); invalidateAll(); }} />
+              <SheetTrigger asChild>
+                <Button>
+                  <Plus className="mr-1 h-4 w-4" />
+                  Nova venda
+                </Button>
+              </SheetTrigger>
+              <NovaVendaSheet
+                onClose={() => {
+                  setOpen(false);
+                  invalidateAll();
+                }}
+              />
             </Sheet>
           </div>
         }
       />
 
       {isLoading ? (
-        <div className="space-y-2">{Array.from({ length: 5 }).map((_, i) => <div key={i} className="h-12 animate-pulse rounded-md bg-muted/30" />)}</div>
+        <div className="space-y-2">
+          {Array.from({ length: 5 }).map((_, i) => (
+            <div key={i} className="h-12 animate-pulse rounded-md bg-muted/30" />
+          ))}
+        </div>
       ) : !vendas?.length ? (
-        <EmptyState icon={ShoppingCart} title="Nenhuma venda ainda" description="Crie sua primeira proposta ou pedido para começar." />
+        <EmptyState
+          icon={ShoppingCart}
+          title="Nenhuma venda ainda"
+          description="Crie sua primeira proposta ou pedido para começar."
+        />
       ) : (
         <Card className="overflow-hidden shadow-panel">
           <Table>
@@ -149,7 +232,7 @@ function VendasPage() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {vendas.map((v) => {
+              {vendasVisiveis.map((v) => {
                 const emAndamento = mudarStatus.isPending && mudarStatus.variables?.id === v.id;
                 const proximos = TRANSICOES[v.status];
                 return (
@@ -157,22 +240,65 @@ function VendasPage() {
                     <TableCell className="text-tabular font-medium">#{v.numero}</TableCell>
                     <TableCell>{v.cliente?.nome ?? "—"}</TableCell>
                     <TableCell className="text-tabular">{dateBR(v.data)}</TableCell>
-                    <TableCell className="text-muted-foreground text-sm">{v.condicao?.nome ?? "—"}</TableCell>
-                    <TableCell className="text-right text-tabular font-medium">{brl(v.total)}</TableCell>
-                    <TableCell><StatusBadge status={v.status} /></TableCell>
+                    <TableCell className="text-muted-foreground text-sm">
+                      {v.condicao?.nome ?? "—"}
+                    </TableCell>
+                    <TableCell className="text-right text-tabular font-medium">
+                      {brl(v.total)}
+                    </TableCell>
+                    <TableCell>
+                      <StatusBadge status={v.status} />
+                    </TableCell>
                     <TableCell className="text-right">
                       {proximos.length > 0 && (
                         <DropdownMenu>
                           <DropdownMenuTrigger asChild>
                             <Button variant="ghost" size="sm" disabled={emAndamento}>
-                              {emAndamento ? <Loader2 className="h-4 w-4 animate-spin" /> : <MoreHorizontal className="h-4 w-4" />}
+                              {emAndamento ? (
+                                <Loader2 className="h-4 w-4 animate-spin" />
+                              ) : (
+                                <MoreHorizontal className="h-4 w-4" />
+                              )}
                             </Button>
                           </DropdownMenuTrigger>
                           <DropdownMenuContent align="end">
-                            {proximos.includes("proposta") && <DropdownMenuItem onSelect={() => mudarStatus.mutate({ id: v.id, from: v.status, to: "proposta" })}>Enviar como proposta</DropdownMenuItem>}
-                            {proximos.includes("pedido") && <DropdownMenuItem onSelect={() => mudarStatus.mutate({ id: v.id, from: v.status, to: "pedido" })}>Aprovar → Pedido</DropdownMenuItem>}
-                            {proximos.includes("faturado") && <DropdownMenuItem onSelect={() => mudarStatus.mutate({ id: v.id, from: v.status, to: "faturado" })}>Faturar venda</DropdownMenuItem>}
-                            {proximos.includes("cancelado") && <DropdownMenuItem className="text-destructive" onSelect={() => mudarStatus.mutate({ id: v.id, from: v.status, to: "cancelado" })}>Cancelar</DropdownMenuItem>}
+                            {proximos.includes("proposta") && (
+                              <DropdownMenuItem
+                                onSelect={() =>
+                                  mudarStatus.mutate({ id: v.id, from: v.status, to: "proposta" })
+                                }
+                              >
+                                Enviar como proposta
+                              </DropdownMenuItem>
+                            )}
+                            {proximos.includes("pedido") && (
+                              <DropdownMenuItem
+                                onSelect={() =>
+                                  mudarStatus.mutate({ id: v.id, from: v.status, to: "pedido" })
+                                }
+                              >
+                                Aprovar → Pedido
+                              </DropdownMenuItem>
+                            )}
+                            {proximos.includes("faturado") && (
+                              <DropdownMenuItem
+                                onSelect={() =>
+                                  mudarStatus.mutate({ id: v.id, from: v.status, to: "faturado" })
+                                }
+                              >
+                                Faturar venda
+                              </DropdownMenuItem>
+                            )}
+                            {proximos.includes("cancelado") && (
+                              <DropdownMenuItem
+                                className="text-destructive"
+                                onSelect={() =>
+                                  mudarStatus.mutate({ id: v.id, from: v.status, to: "cancelado" })
+                                }
+                              >
+                                Cancelar
+                              </DropdownMenuItem>
+                            )}
                           </DropdownMenuContent>
                         </DropdownMenu>
                       )}
@@ -182,6 +308,37 @@ function VendasPage() {
               })}
             </TableBody>
           </Table>
+          <div className="flex items-center justify-between border-t px-4 py-3 text-sm text-muted-foreground">
+            <span>
+              Mostrando {(paginaAtual - 1) * pageSize + 1}–
+              {Math.min(paginaAtual * pageSize, vendas?.length ?? 0)} de {vendas?.length ?? 0}
+            </span>
+            <div className="flex items-center gap-1">
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                aria-label="Página anterior"
+                disabled={paginaAtual === 1}
+                onClick={() => setPagina((value) => Math.max(1, value - 1))}
+              >
+                <ChevronLeft className="h-4 w-4" />
+              </Button>
+              <span className="px-2 text-xs">
+                Página {paginaAtual} de {totalPaginas}
+              </span>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                aria-label="Próxima página"
+                disabled={paginaAtual === totalPaginas}
+                onClick={() => setPagina((value) => Math.min(totalPaginas, value + 1))}
+              >
+                <ChevronRight className="h-4 w-4" />
+              </Button>
+            </div>
+          </div>
         </Card>
       )}
     </>
@@ -196,37 +353,64 @@ function NovaVendaSheet({ onClose }: { onClose: () => void }) {
   const [itens, setItens] = useState<Item[]>([]);
 
   const { data: clientes } = useQuery({
-    enabled: !!empresa, queryKey: ["contatos-clientes", empresa?.id] as const,
+    enabled: !!empresa,
+    queryKey: ["contatos-clientes", empresa?.id] as const,
     queryFn: async ({ signal }) => {
-      const { data, error } = await supabase.from("contatos")
-        .select("id,nome").eq("empresa_id", empresa!.id)
-        .in("tipo", ["cliente", "ambos"]).order("nome").abortSignal(signal);
-      if (error) throw error; return data ?? [];
+      const { data, error } = await supabase
+        .from("contatos")
+        .select("id,nome")
+        .eq("empresa_id", empresa!.id)
+        .in("tipo", ["cliente", "ambos"])
+        .order("nome")
+        .abortSignal(signal);
+      if (error) throw error;
+      return data ?? [];
     },
   });
   const { data: condicoes } = useQuery({
-    enabled: !!empresa, queryKey: ["condicoes", empresa?.id] as const,
+    enabled: !!empresa,
+    queryKey: ["condicoes", empresa?.id] as const,
     queryFn: async ({ signal }) => {
-      const { data, error } = await supabase.from("condicoes_pagamento")
-        .select("id,nome").eq("empresa_id", empresa!.id).eq("ativo", true)
-        .order("nome").abortSignal(signal);
-      if (error) throw error; return data ?? [];
+      const { data, error } = await supabase
+        .from("condicoes_pagamento")
+        .select("id,nome")
+        .eq("empresa_id", empresa!.id)
+        .eq("ativo", true)
+        .order("nome")
+        .abortSignal(signal);
+      if (error) throw error;
+      return data ?? [];
     },
   });
   const { data: produtos } = useQuery({
-    enabled: !!empresa, queryKey: ["produtos-select", empresa?.id] as const,
+    enabled: !!empresa,
+    queryKey: ["produtos-select", empresa?.id] as const,
     queryFn: async ({ signal }) => {
-      const { data, error } = await supabase.from("produtos")
-        .select("id,nome,preco_venda").eq("empresa_id", empresa!.id).eq("ativo", true)
-        .order("nome").abortSignal(signal);
-      if (error) throw error; return data ?? [];
+      const { data, error } = await supabase
+        .from("produtos")
+        .select("id,nome,preco_venda")
+        .eq("empresa_id", empresa!.id)
+        .eq("ativo", true)
+        .order("nome")
+        .abortSignal(signal);
+      if (error) throw error;
+      return data ?? [];
     },
   });
 
   const addItem = (produto_id: string) => {
     const p = produtos?.find((x) => x.id === produto_id);
     if (!p) return;
-    setItens((s) => [...s, { produto_id: p.id, descricao: p.nome, quantidade: 1, preco_unitario: Number(p.preco_venda ?? 0), desconto_pct: 0 }]);
+    setItens((s) => [
+      ...s,
+      {
+        produto_id: p.id,
+        descricao: p.nome,
+        quantidade: 1,
+        preco_unitario: Number(p.preco_venda ?? 0),
+        desconto_pct: 0,
+      },
+    ]);
   };
   const updateItem = (i: number, patch: Partial<Item>) =>
     setItens((s) => s.map((it, idx) => (idx === i ? { ...it, ...patch } : it)));
@@ -254,16 +438,20 @@ function NovaVendaSheet({ onClose }: { onClose: () => void }) {
       if (!clienteId) throw new Error("Selecione um cliente");
       if (!itens.length) throw new Error("Adicione ao menos um item");
 
-      const { data: venda, error: e1 } = await supabase.from("vendas").insert({
-        empresa_id: empresa.id,
-        cliente_id: clienteId,
-        condicao_pagamento_id: condicaoId || null,
-        observacoes: observacoes || null,
-        status,
-        subtotal: totals.subtotal,
-        desconto: totals.desconto,
-        total: totals.total,
-      }).select("id").single();
+      const { data: venda, error: e1 } = await supabase
+        .from("vendas")
+        .insert({
+          empresa_id: empresa.id,
+          cliente_id: clienteId,
+          condicao_pagamento_id: condicaoId || null,
+          observacoes: observacoes || null,
+          status,
+          subtotal: totals.subtotal,
+          desconto: totals.desconto,
+          total: totals.total,
+        })
+        .select("id")
+        .single();
       if (e1 || !venda) throw new Error(e1?.message ?? "Erro ao criar venda");
 
       const payload = itens.map((it, i) => ({
@@ -282,7 +470,10 @@ function NovaVendaSheet({ onClose }: { onClose: () => void }) {
         throw new Error(`Itens: ${e2.message}`);
       }
     },
-    onSuccess: () => { toast.success("Venda criada"); onClose(); },
+    onSuccess: () => {
+      toast.success("Venda criada");
+      onClose();
+    },
     onError: (e: Error) => toast.error(e.message),
   });
 
@@ -290,21 +481,39 @@ function NovaVendaSheet({ onClose }: { onClose: () => void }) {
 
   return (
     <SheetContent className="w-full sm:max-w-2xl overflow-y-auto">
-      <SheetHeader><SheetTitle>Nova venda</SheetTitle></SheetHeader>
+      <SheetHeader>
+        <SheetTitle>Nova venda</SheetTitle>
+      </SheetHeader>
       <div className="mt-4 space-y-4">
         <div className="grid grid-cols-2 gap-3">
           <div>
             <Label>Cliente</Label>
             <Select value={clienteId} onValueChange={setClienteId}>
-              <SelectTrigger><SelectValue placeholder="Selecione" /></SelectTrigger>
-              <SelectContent>{clientes?.map((c) => <SelectItem key={c.id} value={c.id}>{c.nome}</SelectItem>)}</SelectContent>
+              <SelectTrigger>
+                <SelectValue placeholder="Selecione" />
+              </SelectTrigger>
+              <SelectContent>
+                {clientes?.map((c) => (
+                  <SelectItem key={c.id} value={c.id}>
+                    {c.nome}
+                  </SelectItem>
+                ))}
+              </SelectContent>
             </Select>
           </div>
           <div>
             <Label>Condição de pagamento</Label>
             <Select value={condicaoId} onValueChange={setCondicaoId}>
-              <SelectTrigger><SelectValue placeholder="À vista" /></SelectTrigger>
-              <SelectContent>{condicoes?.map((c) => <SelectItem key={c.id} value={c.id}>{c.nome}</SelectItem>)}</SelectContent>
+              <SelectTrigger>
+                <SelectValue placeholder="À vista" />
+              </SelectTrigger>
+              <SelectContent>
+                {condicoes?.map((c) => (
+                  <SelectItem key={c.id} value={c.id}>
+                    {c.nome}
+                  </SelectItem>
+                ))}
+              </SelectContent>
             </Select>
           </div>
         </div>
@@ -313,27 +522,77 @@ function NovaVendaSheet({ onClose }: { onClose: () => void }) {
           <div className="mb-2 flex items-end justify-between">
             <Label>Itens</Label>
             <Select value="" onValueChange={addItem}>
-              <SelectTrigger className="w-56"><SelectValue placeholder="+ Adicionar produto" /></SelectTrigger>
+              <SelectTrigger className="w-56">
+                <SelectValue placeholder="+ Adicionar produto" />
+              </SelectTrigger>
               <SelectContent>
-                {produtos?.map((p) => <SelectItem key={p.id} value={p.id}>{p.nome} — {brl(Number(p.preco_venda ?? 0))}</SelectItem>)}
+                {produtos?.map((p) => (
+                  <SelectItem key={p.id} value={p.id}>
+                    {p.nome} — {brl(Number(p.preco_venda ?? 0))}
+                  </SelectItem>
+                ))}
               </SelectContent>
             </Select>
           </div>
           {itens.length === 0 ? (
-            <div className="rounded-md border border-dashed p-4 text-center text-sm text-muted-foreground">Nenhum item — escolha um produto acima.</div>
+            <div className="rounded-md border border-dashed p-4 text-center text-sm text-muted-foreground">
+              Nenhum item — escolha um produto acima.
+            </div>
           ) : (
             <Card className="overflow-hidden">
               <Table>
-                <TableHeader><TableRow><TableHead>Produto</TableHead><TableHead className="w-20">Qtd</TableHead><TableHead className="w-28">Preço</TableHead><TableHead className="w-20">Desc%</TableHead><TableHead className="w-28 text-right">Total</TableHead><TableHead className="w-10" /></TableRow></TableHeader>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Produto</TableHead>
+                    <TableHead className="w-20">Qtd</TableHead>
+                    <TableHead className="w-28">Preço</TableHead>
+                    <TableHead className="w-20">Desc%</TableHead>
+                    <TableHead className="w-28 text-right">Total</TableHead>
+                    <TableHead className="w-10" />
+                  </TableRow>
+                </TableHeader>
                 <TableBody>
                   {itens.map((it, i) => (
                     <TableRow key={i}>
                       <TableCell className="font-medium">{it.descricao}</TableCell>
-                      <TableCell><MoneyInput prefix="" decimals={3} value={it.quantidade} onChange={(v) => updateItem(i, { quantidade: Number(v) })} className="h-8" /></TableCell>
-                      <TableCell><MoneyInput value={String(it.preco_unitario ?? "")} onChange={(v) => updateItem(i, { preco_unitario: Number(v) })} prefix="" className="h-8" /></TableCell>
-                      <TableCell><MoneyInput prefix="" value={it.desconto_pct} onChange={(v) => updateItem(i, { desconto_pct: Number(v) })} className="h-8" /></TableCell>
-                      <TableCell className="text-right text-tabular">{brl(totals.linhas[i]?.total ?? 0)}</TableCell>
-                      <TableCell><Button variant="ghost" size="icon" onClick={() => removeItem(i)} disabled={disabled}><Trash2 className="h-4 w-4" /></Button></TableCell>
+                      <TableCell>
+                        <MoneyInput
+                          prefix=""
+                          decimals={3}
+                          value={it.quantidade}
+                          onChange={(v) => updateItem(i, { quantidade: Number(v) })}
+                          className="h-8"
+                        />
+                      </TableCell>
+                      <TableCell>
+                        <MoneyInput
+                          value={String(it.preco_unitario ?? "")}
+                          onChange={(v) => updateItem(i, { preco_unitario: Number(v) })}
+                          prefix=""
+                          className="h-8"
+                        />
+                      </TableCell>
+                      <TableCell>
+                        <MoneyInput
+                          prefix=""
+                          value={it.desconto_pct}
+                          onChange={(v) => updateItem(i, { desconto_pct: Number(v) })}
+                          className="h-8"
+                        />
+                      </TableCell>
+                      <TableCell className="text-right text-tabular">
+                        {brl(totals.linhas[i]?.total ?? 0)}
+                      </TableCell>
+                      <TableCell>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => removeItem(i)}
+                          disabled={disabled}
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </TableCell>
                     </TableRow>
                   ))}
                 </TableBody>
@@ -348,20 +607,38 @@ function NovaVendaSheet({ onClose }: { onClose: () => void }) {
         </div>
 
         <div className="rounded-md bg-muted/40 p-3 text-sm">
-          <div className="flex justify-between"><span>Subtotal</span><span className="text-tabular">{brl(totals.subtotal)}</span></div>
-          <div className="flex justify-between text-muted-foreground"><span>Desconto</span><span className="text-tabular">− {brl(totals.desconto)}</span></div>
-          <div className="mt-1 flex justify-between border-t pt-2 font-semibold"><span>Total</span><span className="text-tabular text-lg">{brl(totals.total)}</span></div>
+          <div className="flex justify-between">
+            <span>Subtotal</span>
+            <span className="text-tabular">{brl(totals.subtotal)}</span>
+          </div>
+          <div className="flex justify-between text-muted-foreground">
+            <span>Desconto</span>
+            <span className="text-tabular">− {brl(totals.desconto)}</span>
+          </div>
+          <div className="mt-1 flex justify-between border-t pt-2 font-semibold">
+            <span>Total</span>
+            <span className="text-tabular text-lg">{brl(totals.total)}</span>
+          </div>
         </div>
       </div>
       <SheetFooter className="mt-4 flex-row gap-2 sm:justify-end">
         <Button variant="outline" disabled={disabled} onClick={() => salvar.mutate("rascunho")}>
-          {disabled && salvar.variables === "rascunho" && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}Salvar rascunho
+          {disabled && salvar.variables === "rascunho" && (
+            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+          )}
+          Salvar rascunho
         </Button>
         <Button variant="secondary" disabled={disabled} onClick={() => salvar.mutate("proposta")}>
-          {disabled && salvar.variables === "proposta" && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}Enviar proposta
+          {disabled && salvar.variables === "proposta" && (
+            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+          )}
+          Enviar proposta
         </Button>
         <Button disabled={disabled} onClick={() => salvar.mutate("pedido")}>
-          {disabled && salvar.variables === "pedido" && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}Criar pedido
+          {disabled && salvar.variables === "pedido" && (
+            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+          )}
+          Criar pedido
         </Button>
       </SheetFooter>
     </SheetContent>
