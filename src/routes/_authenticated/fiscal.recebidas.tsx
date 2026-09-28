@@ -221,9 +221,10 @@ function NotasRecebidas() {
     (async () => {
       const { data: notasDb } = await supabase
         .from("notas_importadas" as never)
-        .select("*")
+        .select("id,empresa_id,chave_acesso,emitente,cnpj_emitente,valor_total,data_emissao,numero_nf,created_at")
         .eq("empresa_id", empresa.id)
-        .order("created_at", { ascending: false });
+        .order("created_at", { ascending: false })
+        .limit(500);
       if (notasDb && Array.isArray(notasDb)) {
         setNotas((notasDb as any[]).map(n => ({
           id: n.id,
@@ -234,7 +235,7 @@ function NotasRecebidas() {
           data_emissao: n.data_emissao || "",
           situacao_sefaz: "autorizada" as const,
           numero_nf: n.numero_nf || "",
-          xml_completo: n.xml_completo || "",
+          xml_completo: "",
         })));
       }
     })();
@@ -967,7 +968,7 @@ function NotasRecebidas() {
     try {
       const semCategoria = notaDetalhe.produtos.filter(p => !p.categoria || p.categoria.trim() === "");
       if (semCategoria.length > 0) {
-        toast.error(`Categoria obrigatória: ${semCategoria.map(p => p.nome).join(", ")}`);
+        toast.error(`Categoria obrigat��ria: ${semCategoria.map(p => p.nome).join(", ")}`);
         setIsSaving(false);
         return;
       }
