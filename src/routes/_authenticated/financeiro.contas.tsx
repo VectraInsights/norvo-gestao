@@ -177,8 +177,10 @@ function ContasFinanceiras() {
 
   const { data: contas } = useQuery({
     enabled: !!empresa,
-    queryKey: ["contas-bancarias", empresa?.id] as const,
-    queryFn: async ({ signal }): Promise<ContaBancaria[]> => {
+  queryKey: ["contas-bancarias", empresa?.id] as const,
+  staleTime: 2 * 60_000,
+  gcTime: 15 * 60_000,
+  queryFn: async ({ signal }): Promise<ContaBancaria[]> => {
       const { data, error } = await supabase.from("contas_bancarias")
         .select("id,nome,banco,agencia,conta,saldo_atual,tipo")
         .eq("empresa_id", empresa!.id).order("banco").abortSignal(signal);
@@ -714,7 +716,7 @@ function ReconcileDialog({ contaId, conta, empresaId, autoConciliar, importing, 
     queryFn: async (): Promise<OfxRow[]> => {
       const { data, error } = await supabase.from("ofx_transacoes")
         .select("id,data_transacao,valor,tipo,memo,status,lancamento_id")
-        .eq("conta_bancaria_id", contaId!).order("data_transacao", { ascending: false });
+        .eq("conta_bancaria_id", contaId!).order("data_transacao", { ascending: false }).limit(1000);
       if (error) throw error;
       return data ?? [];
     },
@@ -735,8 +737,10 @@ function ReconcileDialog({ contaId, conta, empresaId, autoConciliar, importing, 
 
   const { data: categorias } = useQuery({
     enabled: open && !!empresaId,
-    queryKey: ["categorias-conc", empresaId] as const,
-    queryFn: async () => {
+  queryKey: ["categorias-conc", empresaId] as const,
+  staleTime: 10 * 60_000,
+  gcTime: 30 * 60_000,
+  queryFn: async () => {
       const { data, error } = await supabase.from("categorias_financeiras")
         .select("id,nome,tipo").eq("empresa_id", empresaId!).order("nome");
       if (error) throw error;
@@ -746,8 +750,10 @@ function ReconcileDialog({ contaId, conta, empresaId, autoConciliar, importing, 
 
   const { data: contatos } = useQuery({
     enabled: open && !!empresaId,
-    queryKey: ["contatos-conc", empresaId] as const,
-    queryFn: async () => {
+  queryKey: ["contatos-conc", empresaId] as const,
+  staleTime: 10 * 60_000,
+  gcTime: 30 * 60_000,
+  queryFn: async () => {
       const { data, error } = await supabase.from("contatos")
         .select("id,nome").eq("empresa_id", empresaId!).eq("ativo", true).order("nome").limit(500);
       if (error) throw error;
@@ -757,8 +763,10 @@ function ReconcileDialog({ contaId, conta, empresaId, autoConciliar, importing, 
 
   const { data: centros } = useQuery({
     enabled: open && !!empresaId,
-    queryKey: ["centros-conc", empresaId] as const,
-    queryFn: async () => {
+  queryKey: ["centros-conc", empresaId] as const,
+  staleTime: 10 * 60_000,
+  gcTime: 30 * 60_000,
+  queryFn: async () => {
       const { data, error } = await supabase.from("centros_custo")
         .select("id,nome").eq("empresa_id", empresaId!).eq("ativo", true).order("nome");
       if (error) throw error;
