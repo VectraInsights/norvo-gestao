@@ -14,6 +14,6 @@ export const MODULOS: { key: ModuloKey; label: string }[] = [
 /** Descobre o módulo de uma rota pelo primeiro segmento. Retorna null para rotas
  *  sempre visíveis (Dashboard, Configurações, etc.). */
 export function moduloDaRota(pathname: string): ModuloKey | null {
-  const seg = pathname.split("/")[1] ?? "";
-  return (MODULOS.some((m) => m.key === seg) ? seg : null) as ModuloKey | null;
+  const seg = pathname.trim().split(/[/?#]/)[1] ?? "";
+  return MODULOS.some((m) => m.key === seg) ? seg : null;
 }
