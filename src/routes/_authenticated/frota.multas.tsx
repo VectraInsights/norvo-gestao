@@ -163,9 +163,10 @@ function Multas() {
     queryFn: async ({ signal }) => {
       const { data, error } = await supabase
         .from("multas" as never)
-        .select("*")
+        .select("id,veiculo_id,placa,renavam,orgao_autuador,auto_infracao,data_infracao,descricao,valor,data_vencimento,pontos,status,origem")
         .eq("empresa_id", empresa!.id)
         .order("data_infracao", { ascending: false })
+        .limit(500)
         .abortSignal(signal);
       if (error) throw error;
       return (data ?? []) as unknown as Multa[];
@@ -193,7 +194,7 @@ function Multas() {
     queryFn: async ({ signal }) => {
       const { data, error } = await supabase
         .from("multas_config" as never)
-        .select("*")
+        .select("empresa_id,endpoint,usuario,senha,ativo,ultima_sync")
         .eq("empresa_id", empresa!.id)
         .abortSignal(signal)
         .maybeSingle();

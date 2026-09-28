@@ -392,9 +392,10 @@ function Veiculos() {
     queryFn: async ({ signal }) => {
       const { data, error } = await supabase
         .from("veiculos" as never)
-        .select("*")
+        .select("id,placa,marca_modelo,tipo,ano,rntrc,renavam,proprietario,proprietario_doc,quantidade_eixos,categoria,chassi,tag_pedagio,status,observacoes")
         .eq("empresa_id", empresa!.id)
         .order("placa")
+        .limit(500)
         .abortSignal(signal);
       if (error) throw error;
       return (data ?? []) as unknown as Veiculo[];

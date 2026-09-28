@@ -172,7 +172,7 @@ function FeriasPage() {
     queryKey: ["ferias_concessoes", empresa?.id],
     queryFn: async () => {
       const { data, error } = await supabase.from("ferias_concessoes" as never)
-        .select("*").eq("empresa_id", empresa!.id).order("data_inicio_gozo");
+        .select("id,empresa_id,colaborador_id,periodo_inicio,data_inicio_gozo,data_fim_gozo,dias,abono_dias,adiantar_decimo,status").eq("empresa_id", empresa!.id).order("data_inicio_gozo").limit(500);
       if (error) throw error;
       return (data ?? []) as unknown as Concessao[];
     },
