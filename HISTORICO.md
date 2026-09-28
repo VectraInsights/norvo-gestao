@@ -64,7 +64,7 @@ Registro condensado da evolução do Norvo Gestão fora do editor Lovable.
 
 23. **CT-e, percursos e tentativa de melhoria 1 (27–29/09/2026)** — no módulo `/fiscal/cte`, foram publicados: exibição de remetente/destinatário completos, CNPJs formatados e origem/destino no seletor de percursos; ordenação crescente dos percursos; preservação das NF-es ao pressionar Escape; inserção de NF-e manual movida para a aba Tributação e Carga do CT-e avulso; remoção do botão superior duplicado e renomeação do botão inferior para "Novo CT-e"; formulário manual com modelo, chave NF-e, número, série, remetente/CNPJ, destinatário/CNPJ, data, quantidade, peso e valor. Commits publicados: `8cbca71`, `f95d40a`, `18f4f78` e `a957700`.
 
-24. **Melhoria 1 iniciada — persistência e alertas (28/09/2026)** — criado e publicado o commit `0b8c1e8`, com migration `20260928120000_persistencia_filtros_auditoria.sql`, hook `useFiltrosSalvos` e botão de abertura de registros relacionados no sino de notificações. A migration ainda NÃO foi aplicada no banco, pois a execução SQL/MCP do Supabase não ficou disponível nesta sessão. A tentativa via `psql` também não foi possível: o workspace não possui `psql` nem gerenciador `apt-get`. O build/check também não foi concluído: `npm run check` não existe e a tentativa alternativa foi encerrada pelo ambiente com código 137 (memória). Nenhuma variável de ambiente do Supabase foi alterada.
+24. **Melhoria 1 — persistência e alertas (28/09/2026)** — criado e publicado o commit `0b8c1e8`, com migration `20260928120000_persistencia_filtros_auditoria.sql`, hook `useFiltrosSalvos` e botão de abertura de registros relacionados no sino de notificações. A migration foi aplicada com sucesso no projeto Supabase remoto `lfxhimtbuazezjkjlddj` via Management API usando o `SUPABASE_PAT` já configurado. Nenhuma variável de ambiente foi alterada.
 
 25. **Diagnóstico de integração (29/09/2026)** — confirmado que o projeto correto é `norvo-gestao` (`lfxhimtbuazezjkjlddj`) na organização Supabase `VectraInsights's Org`; a equipe Vercel correta é `vectrainsights' projects`. Tentativas de instalar/reconectar a integração Supabase no v0 falharam antes da seleção da organização com `Failed to fetch dashboard project`; não foi possível reativar o MCP nem aplicar a migration. O projeto incorreto `jbrvfrylppesbnaoqjcb` foi identificado, mas não foi excluído por falta de ferramenta de exclusão e para evitar uma operação irreversível sem confirmação dentro do painel.
 
@@ -235,7 +235,7 @@ Registro condensado da evolução do Norvo Gestão fora do editor Lovable.
     - Migração aplicada localmente via pooler (`scripts/apply-migration.cjs`, usa env
       DATABASE_URL); teste da automação/trigger rodou em transação revertida.
 
-## Registro de manutenção — 24/08/2026 (tarde): adiantamentos e extrato
+## Registro de manutenção ��� 24/08/2026 (tarde): adiantamentos e extrato
 
 - **Geração imediata**: ao cadastrar adiantamento recorrente, a 1ª conta a pagar nasce na
   hora (UI chama a função de geração; `GRANT EXECUTE` para authenticated na migration
