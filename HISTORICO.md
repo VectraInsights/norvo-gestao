@@ -3206,3 +3206,10 @@ Espelhado na Vercel.
   trocou por origem,destino (tabela tem origem_cidade,
   origem_uf, destino_cidade, destino_uf). Query validada
   direto no banco antes do push.
+
+## Cache global 60s p/ telas instantaneas (28/09)
+
+- staleTime 30s->60s e gcTime 5->15min no QueryClient:
+  sair e voltar a tela dentro de 60s serve do cache sem
+  recarregar; mutacoes continuam invalidando. Sem risco:
+  refetchOnWindowFocus segue desligado, reconnect atualiza.

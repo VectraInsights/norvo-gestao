@@ -6,8 +6,8 @@ export const getRouter = () => {
   const queryClient = new QueryClient({
     defaultOptions: {
       queries: {
-        staleTime: 30_000,            // SWR: dados servidos do cache por 30s
-        gcTime: 5 * 60_000,           // mantém em memória por 5min
+        staleTime: 60_000,            // SWR: voltar à tela em até 60s é instantâneo (cache)
+        gcTime: 15 * 60_000,          // mantém em memória por 15min
         refetchOnWindowFocus: false,  // evita refetch agressivo ao voltar de aba
         refetchOnReconnect: "always", // atualiza após recuperar a conexão
         networkMode: "online",       // não inicia consultas enquanto offline
