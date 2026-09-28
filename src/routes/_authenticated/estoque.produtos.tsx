@@ -99,6 +99,8 @@ function Produtos() {
   const { data: produtos, isLoading } = useQuery({
     enabled: !!empresa,
     queryKey: ["produtos", empresa?.id],
+    staleTime: 60_000,
+    gcTime: 10 * 60_000,
     queryFn: async ({ signal }) => {
       const { data, error } = await supabase
         .from("produtos")
@@ -107,6 +109,7 @@ function Produtos() {
         )
         .eq("empresa_id", empresa!.id)
         .order("nome")
+        .limit(1000)
         .abortSignal(signal);
       if (error) throw error;
       return (data ?? []) as unknown as Produto[];

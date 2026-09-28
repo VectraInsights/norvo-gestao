@@ -88,6 +88,8 @@ function NotasEmitidas() {
   const { data: notasReais, isLoading: loadingNotas } = useQuery({
     enabled: !!empresa,
     queryKey: ["notas-emitidas", empresa?.id],
+    staleTime: 30_000,
+    gcTime: 10 * 60_000,
     queryFn: async ({ signal }) => {
       const { data, error } = await supabase.from("notas_fiscais")
         .select("id,numero,serie,status,valor_total,data_emissao,chave,tipo,contato:contatos(nome),venda:vendas(numero)")
@@ -104,6 +106,8 @@ function NotasEmitidas() {
   const { data: config } = useQuery({
     enabled: !!empresa,
     queryKey: ["nfe-config", empresa?.id],
+    staleTime: 5 * 60_000,
+    gcTime: 15 * 60_000,
     queryFn: async ({ signal }) => {
       const { data, error } = await supabase.from("nfe_config")
         .select("ambiente,serie,proximo_numero,regime_tributario")
@@ -119,11 +123,14 @@ function NotasEmitidas() {
   const { data: contatos } = useQuery({
     enabled: !!empresa && modalOpen,
     queryKey: ["contatos-select", empresa?.id],
+    staleTime: 10 * 60_000,
+    gcTime: 30 * 60_000,
     queryFn: async () => {
       const { data, error } = await supabase.from("contatos")
         .select("id, nome")
         .eq("empresa_id", empresa!.id)
-        .order("nome");
+        .order("nome")
+        .limit(1000);
       if (error) throw error;
       return data ?? [];
     }
