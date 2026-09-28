@@ -93,6 +93,17 @@ export default {
     // Na Vercel não há binding: 404 direto, sem queimar function num 500 garantido.
     // O front chama via VITE_AI_URL (absoluto; vazio = mesma origem, no Worker) — CORS restrito abaixo.
     if (url.pathname === "/api/ai/chat" && (request.method === "POST" || request.method === "OPTIONS")) {
+    const clientKey = request.headers.get("CF-Connecting-IP") || request.headers.get("X-Forwarded-For") || "anonymous";
+    const now = Date.now();
+    const bucket = ((globalThis as any).__norvoAiRateLimit ??= new Map<string, { startedAt: number; count: number }>) as Map<string, { startedAt: number; count: number }>;
+    const current = bucket.get(clientKey);
+    if (!current || now - current.startedAt >= 60_000) bucket.set(clientKey, { startedAt: now, count: 1 });
+    else if (++current.count > 30) {
+      return new Response(JSON.stringify({ error: "Muitas solicitações. Aguarde um minuto." }), {
+        status: 429,
+        headers: { "Content-Type": "application/json", "Retry-After": "60" },
+      });
+    }
       const origin = request.headers.get("Origin") || "";
       const allowed = !origin
         || origin === "https://norvo-gestao.vercel.app"
@@ -116,9 +127,10 @@ export default {
           headers: { "Content-Type": "application/json", ...cors },
         });
       }
+      const startedAt = Date.now();
       try {
-        const body = await request.json() as { messages: Array<{ role: string; content: string }>; empresaId: string };
-        if (!body.messages || !body.empresaId) {
+  const body = await request.json() as { messages: Array<{ role: string; content: string }>; empresaId: string };
+  if (!body.messages || !body.empresaId || !Array.isArray(body.messages) || body.messages.length > 30 || body.messages.some((message) => typeof message?.content !== "string" || message.content.length > 4_000)) {
           return new Response(JSON.stringify({ error: "messages e empresaId são obrigatórios" }), {
             status: 400,
             headers: { "Content-Type": "application/json", ...cors },
@@ -126,12 +138,13 @@ export default {
         }
         const { handleAiChat } = await import("./lib/ai-chat");
         const result = await handleAiChat(workerEnv, body.messages, body.empresaId);
+        console.info("[ai-chat] completed", { durationMs: Date.now() - startedAt, messages: body.messages.length });
         return new Response(JSON.stringify(result), {
           headers: { "Content-Type": "application/json", ...cors },
         });
       } catch (error) {
-        console.error("[ai-chat]", error);
-        return new Response(JSON.stringify({ error: String(error) }), {
+        console.error("[ai-chat] request failed", error);
+        return new Response(JSON.stringify({ error: "Não foi possível processar o assistente agora." }), {
           status: 500,
           headers: { "Content-Type": "application/json", ...cors },
         });
@@ -147,6 +160,9 @@ export default {
       if (!ct.includes("text/html")) return normalized;
       const h = new Headers(normalized.headers);
       h.set("Cache-Control", "no-cache");
+      h.set("X-Content-Type-Options", "nosniff");
+      h.set("Referrer-Policy", "strict-origin-when-cross-origin");
+      h.set("Permissions-Policy", "camera=(), microphone=(), geolocation=()");
       return new Response(normalized.body, { status: normalized.status, statusText: normalized.statusText, headers: h });
     } catch (error) {
       console.error(error);
