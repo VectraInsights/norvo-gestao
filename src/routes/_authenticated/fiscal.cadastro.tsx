@@ -54,11 +54,15 @@ function Cadastro() {
   const { data: contatos, isLoading } = useQuery({
     enabled: !!empresa,
     queryKey: ["fiscal-cadastro", empresa?.id] as const,
+    staleTime: 2 * 60_000,
+    gcTime: 15 * 60_000,
     queryFn: async ({ signal }) => {
       const { data, error } = await supabase.from("fiscal_cadastros")
         .select("id,nome,documento,ie,email,telefone,cep,logradouro,numero,complemento,bairro,cidade,uf,observacoes")
         .eq("empresa_id", empresa!.id)
-        .order("nome").abortSignal(signal);
+        .order("nome")
+        .limit(500)
+        .abortSignal(signal);
       if (error) throw error;
       return (data ?? []) as Contato[];
     },
