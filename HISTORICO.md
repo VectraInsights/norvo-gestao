@@ -3229,3 +3229,18 @@ Espelhado na Vercel.
   de paginacao usava notasFiltradas antes do const (insercao
   do commit de filtros). Movido para depois da declaracao.
   tsc da pagina zerado.
+
+## 2 CT-es mesma NF-e em homologacao + datas emboladas (28/09)
+
+- Import de XML: em homologacao (`SEFAZ_AMBIENTE`) a mesma
+  NF-e pode ser reutilizada em varios CT-es de teste — reativa
+  (volta p/ pendente, update em vez de insert) em vez de contar
+  como reservada/duplicada. Producao continua bloqueando.
+- Emissao autorizada em homologacao mantem NF-e como pendente
+  (nao baixa p/ embarcada), entao a nota segue disponivel p/
+  o 2o CT-e sem reimportar. Cada CT-e sai com chave/nCT proprios.
+- Filtro Periodo de Entrada (aba embarque): os 2 DateInputs
+  dividiam a coluna do grid (`flex-1 min-w-0`) e o ano cortava
+  ("14/09/20"). Linha com `flex-wrap` e cada data com
+  `w-[150px] shrink-0` — ano completo visivel, botoes descem
+  p/ baixo em tela estreita.

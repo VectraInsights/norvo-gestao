@@ -2393,11 +2393,21 @@ function CtePage() {
           duplicadas++;
           continue;
         }
-        // Bloqueia NF já reservada em rascunho ou embarcada em CT-e (evita duplicidade)
+        // Homologação: permite reutilizar a mesma NF-e em vários CT-es de teste —
+        // reativa (volta p/ pendente) em vez de bloquear. Produção continua bloqueando.
         const stExistente = statusPorChave.get(chaveNorm);
-        if (chavesEmRascunho.has(chaveNorm) || (stExistente && stExistente !== "pendente")) {
+        const emHomolog = SEFAZ_AMBIENTE === "homologacao";
+        if (!emHomolog && (chavesEmRascunho.has(chaveNorm) || (stExistente && stExistente !== "pendente"))) {
           reservadas++;
           continue;
+        }
+        if (emHomolog && stExistente && stExistente !== "pendente") {
+          await supabase
+            .from("cte_nfes_pendentes" as any)
+            .update({ status: "pendente" })
+            .eq("empresa_id", empresa!.id)
+            .eq("chave", chaveNorm);
+          statusPorChave.set(chaveNorm, "pendente");
         }
         const peso = pesoB ? parseFloat(pesoB) : 1000;
         let qVolNum = Array.from(doc.querySelectorAll("transp > vol > qVol")).reduce(
@@ -2492,7 +2502,15 @@ function CtePage() {
           mod_frete: modFrete || null,
           status: "pendente" as const,
         };
-        const { error } = await supabase.from("cte_nfes_pendentes" as any).insert(payload);
+        const jaExiste = statusPorChave.has(chaveNorm);
+        const { error } =
+          emHomolog && jaExiste
+            ? await supabase
+                .from("cte_nfes_pendentes" as any)
+                .update(payload)
+                .eq("empresa_id", empresa!.id)
+                .eq("chave", chaveNorm)
+            : await supabase.from("cte_nfes_pendentes" as any).insert(payload);
         if (error) {
           if (
             (error as any).code === "23505" ||
@@ -3237,7 +3255,9 @@ function CtePage() {
         }
         const chavesUsadas =
           selecionadas.size > 0 ? Array.from(selecionadas) : mercadorias.map((m) => m.chave);
-        if (empresa && chavesUsadas.length > 0) {
+        // Homologação: mantém NF-e como pendente p/ permitir 2º CT-e com a mesma nota em teste.
+        // Produção: baixa como embarcada normalmente.
+        if (empresa && chavesUsadas.length > 0 && SEFAZ_AMBIENTE !== "homologacao") {
           const { count, error: embErr } = await supabase
             .from("cte_nfes_pendentes" as any)
             .update({ status: "embarcada" })
@@ -4429,17 +4449,17 @@ function CtePage() {
                       <Label className="text-xs font-semibold text-primary">
                         Período de Entrada
                       </Label>
-                      <div className="flex items-center gap-1.5 mt-1">
+                      <div className="flex flex-wrap items-center gap-1.5 mt-1">
                         <DateInput
                           value={periodoIni}
                           onChange={setPeriodoIni}
-                          className="h-7 text-xs flex-1 min-w-0"
+                          className="h-7 text-xs w-[150px] shrink-0"
                         />
                         <span className="text-xs shrink-0">Até</span>
                         <DateInput
                           value={periodoFim}
                           onChange={setPeriodoFim}
-                          className="h-7 text-xs flex-1 min-w-0"
+                          className="h-7 text-xs w-[150px] shrink-0"
                         />
                         <Button size="sm" variant="outline" className="h-7 text-xs shrink-0 px-2">
                           <Search className="h-3 w-3 mr-1" />
