@@ -3222,3 +3222,10 @@ Espelhado na Vercel.
   liquido->salario,horas_extras,beneficios,descontos,
   detalhe,inss,irrf,liquido, percursos descricao removido
   (2 arquivos). Todas validadas direto no banco.
+
+## Notas Emitidas crash $ TDZ (28/09)
+
+- ReferenceError Cannot access $ before initialization: bloco
+  de paginacao usava notasFiltradas antes do const (insercao
+  do commit de filtros). Movido para depois da declaracao.
+  tsc da pagina zerado.

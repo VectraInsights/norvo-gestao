@@ -124,9 +124,6 @@ function NotasEmitidas() {
   const filtrosSalvos = useFiltrosSalvos(empresa?.id, authUser?.id, "fiscal-notas-emitidas");
 
   const pageSize = 25;
-  const totalPaginas = Math.max(1, Math.ceil(notasFiltradas.length / pageSize));
-  const paginaAtual = Math.min(pagina, totalPaginas);
-  const notasVisiveis = notasFiltradas.slice((paginaAtual - 1) * pageSize, paginaAtual * pageSize);
 
   // Modal Nova Nota
   const [modalOpen, setModalOpen] = useState(false);
@@ -466,6 +463,10 @@ function NotasEmitidas() {
 
     return true;
   });
+
+  const totalPaginas = Math.max(1, Math.ceil(notasFiltradas.length / pageSize));
+  const paginaAtual = Math.min(pagina, totalPaginas);
+  const notasVisiveis = notasFiltradas.slice((paginaAtual - 1) * pageSize, paginaAtual * pageSize);
 
   return (
     <>
