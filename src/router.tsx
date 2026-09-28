@@ -9,6 +9,8 @@ export const getRouter = () => {
         staleTime: 30_000,            // SWR: dados servidos do cache por 30s
         gcTime: 5 * 60_000,           // mantém em memória por 5min
         refetchOnWindowFocus: false,  // evita refetch agressivo ao voltar de aba
+        refetchOnReconnect: "always", // atualiza após recuperar a conexão
+        networkMode: "online",       // não inicia consultas enquanto offline
         retry: (failureCount, err: unknown) => {
           // não re-tenta 4xx (auth/validação); re-tenta rede/5xx até 2x
           const status = (err as { status?: number })?.status;
