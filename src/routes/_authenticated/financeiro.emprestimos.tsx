@@ -77,9 +77,11 @@ function EmprestimosPage() {
   const { data: lista, isLoading } = useQuery({
     enabled: !!empresa,
     queryKey: ["emprestimos", empresa?.id],
+    staleTime: 30_000,
+    gcTime: 10 * 60_000,
     queryFn: async () => {
       const { data, error } = await supabase.from("emprestimos" as never)
-        .select("*").eq("empresa_id", empresa!.id).order("data_contratacao", { ascending: false });
+        .select("id,tipo,descricao,credor,valor_principal,taxa_juros_mensal,parcelas,data_contratacao,primeiro_vencimento,status").eq("empresa_id", empresa!.id).order("data_contratacao", { ascending: false }).limit(300);
       if (error) throw error;
       return (data ?? []) as unknown as Emprestimo[];
     },
@@ -90,7 +92,7 @@ function EmprestimosPage() {
     queryKey: ["emprestimo-parcelas", sel],
     queryFn: async () => {
       const { data, error } = await supabase.from("emprestimo_parcelas" as never)
-        .select("*").eq("emprestimo_id", sel!).order("numero");
+        .select("id,emprestimo_id,numero,data_vencimento,valor,valor_juros,valor_amortizacao,status,lancamento_id").eq("emprestimo_id", sel!).order("numero").limit(500);
       if (error) throw error;
       return (data ?? []) as unknown as Parcela[];
     },

@@ -65,9 +65,11 @@ function TransferenciasPage() {
   const { data: lista, isLoading } = useQuery({
     enabled: !!empresa,
     queryKey: ["transferencias", empresa?.id],
+    staleTime: 30_000,
+    gcTime: 10 * 60_000,
     queryFn: async () => {
       const { data, error } = await supabase.from("transferencias_contas" as never)
-        .select("*").eq("empresa_id", empresa!.id).order("data", { ascending: false }).limit(300);
+        .select("id,empresa_id,data,conta_origem_id,conta_destino_id,valor,descricao,observacoes").eq("empresa_id", empresa!.id).order("data", { ascending: false }).limit(300);
       if (error) throw error;
       return (data ?? []) as unknown as Transferencia[];
     },
