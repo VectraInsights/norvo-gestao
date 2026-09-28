@@ -48,6 +48,8 @@ import {
 import {
   AlertCircle,
   Car,
+  ChevronLeft,
+  ChevronRight,
   CheckCircle2,
   Pencil,
   Plus,
@@ -137,6 +139,7 @@ function Multas() {
   const [editing, setEditing] = useState<Multa | null>(null);
   const [busca, setBusca] = useState("");
   const [filtroStatus, setFiltroStatus] = useState("todas");
+  const [pagina, setPagina] = useState(1);
   const [form, setForm] = useState(formVazio);
   const [configOpen, setConfigOpen] = useState(false);
   const [configForm, setConfigForm] = useState({
@@ -163,7 +166,9 @@ function Multas() {
     queryFn: async ({ signal }) => {
       const { data, error } = await supabase
         .from("multas" as never)
-        .select("id,veiculo_id,placa,renavam,orgao_autuador,auto_infracao,data_infracao,descricao,valor,data_vencimento,pontos,status,origem")
+        .select(
+          "id,veiculo_id,placa,renavam,orgao_autuador,auto_infracao,data_infracao,descricao,valor,data_vencimento,pontos,status,origem",
+        )
         .eq("empresa_id", empresa!.id)
         .order("data_infracao", { ascending: false })
         .limit(500)
@@ -244,9 +249,7 @@ function Multas() {
     const abertas = (multas ?? []).filter((m) => m.status !== "paga");
     const valor = abertas.reduce((s, m) => s + Number(m.valor || 0), 0);
     const hoje = new Date().toISOString().slice(0, 10);
-    const vencidas = abertas.filter(
-      (m) => m.data_vencimento && m.data_vencimento < hoje,
-    );
+    const vencidas = abertas.filter((m) => m.data_vencimento && m.data_vencimento < hoje);
     const valorVencidas = vencidas.reduce((s, m) => s + Number(m.valor || 0), 0);
     return { qtd: abertas.length, valor, qtdVencidas: vencidas.length, valorVencidas };
   }, [multas]);
@@ -369,11 +372,15 @@ function Multas() {
     if (filtroStatus !== "todas" && m.status !== filtroStatus) return false;
     if (!busca.trim()) return true;
     const s = busca.toLowerCase();
-    return [m.placa, m.auto_infracao, m.orgao_autuador, m.renavam, m.descricao].some(
-      (x) => (x ?? "").toLowerCase().includes(s),
+    return [m.placa, m.auto_infracao, m.orgao_autuador, m.renavam, m.descricao].some((x) =>
+      (x ?? "").toLowerCase().includes(s),
     );
   });
 
+  const pageSize = 25;
+  const totalPaginas = Math.max(1, Math.ceil(lista.length / pageSize));
+  const paginaAtual = Math.min(pagina, totalPaginas);
+  const multasVisiveis = lista.slice((paginaAtual - 1) * pageSize, paginaAtual * pageSize);
   const hoje = new Date().toISOString().slice(0, 10);
 
   return (
@@ -453,7 +460,12 @@ function Multas() {
                     </div>
                     <div>
                       <Label>PONTOS</Label>
-                      <MoneyInput prefix="" decimals={0} value={form.pontos} onChange={(v) => set("pontos", v)} />
+                      <MoneyInput
+                        prefix=""
+                        decimals={0}
+                        value={form.pontos}
+                        onChange={(v) => set("pontos", v)}
+                      />
                     </div>
                   </div>
                   <div className="grid grid-cols-2 gap-3">
@@ -475,7 +487,10 @@ function Multas() {
                   <div className="grid grid-cols-3 gap-3">
                     <div>
                       <Label>Data da infração *</Label>
-                      <DateInput value={form.data_infracao} onChange={(v) => set("data_infracao", v)} />
+                      <DateInput
+                        value={form.data_infracao}
+                        onChange={(v) => set("data_infracao", v)}
+                      />
                     </div>
                     <div>
                       <Label>Vencimento</Label>
@@ -548,10 +563,19 @@ function Multas() {
             className="pl-8"
             placeholder="Buscar por placa, auto de infração, órgão…"
             value={busca}
-            onChange={(e) => setBusca(e.target.value)}
+            onChange={(e) => {
+              setBusca(e.target.value);
+              setPagina(1);
+            }}
           />
         </div>
-        <Select value={filtroStatus} onValueChange={setFiltroStatus}>
+        <Select
+          value={filtroStatus}
+          onValueChange={(value) => {
+            setFiltroStatus(value);
+            setPagina(1);
+          }}
+        >
           <SelectTrigger className="w-44">
             <SelectValue />
           </SelectTrigger>
@@ -594,7 +618,7 @@ function Multas() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {lista.map((m) => {
+              {multasVisiveis.map((m) => {
                 const vencida =
                   m.status !== "paga" && m.data_vencimento && m.data_vencimento < hoje;
                 return (
@@ -630,9 +654,7 @@ function Multas() {
                             size="icon"
                             className="h-8 w-8"
                             title="Marcar como paga"
-                            onClick={() =>
-                              trocarStatus.mutate({ id: m.id, status: "paga" })
-                            }
+                            onClick={() => trocarStatus.mutate({ id: m.id, status: "paga" })}
                           >
                             <CheckCircle2 className="h-4 w-4 text-success" />
                           </Button>
@@ -643,9 +665,7 @@ function Multas() {
                             size="icon"
                             className="h-8 w-8"
                             title="Reabrir multa"
-                            onClick={() =>
-                              trocarStatus.mutate({ id: m.id, status: "aberta" })
-                            }
+                            onClick={() => trocarStatus.mutate({ id: m.id, status: "aberta" })}
                           >
                             <RotateCcw className="h-4 w-4" />
                           </Button>
@@ -688,6 +708,37 @@ function Multas() {
               })}
             </TableBody>
           </Table>
+          <div className="flex items-center justify-between border-t px-4 py-3 text-sm text-muted-foreground">
+            <span>
+              Mostrando {(paginaAtual - 1) * pageSize + 1}–
+              {Math.min(paginaAtual * pageSize, lista.length)} de {lista.length}
+            </span>
+            <div className="flex items-center gap-1">
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                aria-label="Página anterior"
+                disabled={paginaAtual === 1}
+                onClick={() => setPagina((value) => Math.max(1, value - 1))}
+              >
+                <ChevronLeft className="h-4 w-4" />
+              </Button>
+              <span className="px-2 text-xs">
+                Página {paginaAtual} de {totalPaginas}
+              </span>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                aria-label="Próxima página"
+                disabled={paginaAtual === totalPaginas}
+                onClick={() => setPagina((value) => Math.min(totalPaginas, value + 1))}
+              >
+                <ChevronRight className="h-4 w-4" />
+              </Button>
+            </div>
+          </div>
         </Card>
       )}
 
@@ -698,10 +749,7 @@ function Multas() {
           </DialogHeader>
           <div className="grid gap-3">
             <div className="flex items-center gap-2">
-              <Switch
-                checked={configForm.ativo}
-                onCheckedChange={(v) => setConfig("ativo", v)}
-              />
+              <Switch checked={configForm.ativo} onCheckedChange={(v) => setConfig("ativo", v)} />
               <Label>Integração ativa</Label>
             </div>
             <div>
