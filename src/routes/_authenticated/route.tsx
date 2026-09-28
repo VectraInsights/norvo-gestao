@@ -4,6 +4,7 @@ import { useQuery } from "@tanstack/react-query";
 import { Loader2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { AppShell } from "@/components/erp/app-shell";
+import { RouteErrorState } from "@/components/erp/route-error-state";
 
 export const Route = createFileRoute("/_authenticated")({
   ssr: false,
@@ -12,10 +13,11 @@ export const Route = createFileRoute("/_authenticated")({
     if (error || !data.user) throw redirect({ to: "/auth" });
   },
   pendingComponent: () => (
-    <div className="grid h-screen place-items-center">
-      <Loader2 className="h-8 w-8 animate-spin text-primary" />
-    </div>
+    <main className="grid h-screen place-items-center" aria-busy="true" aria-label="Carregando página">
+      <Loader2 className="size-8 animate-spin text-primary" aria-hidden="true" />
+    </main>
   ),
+  errorComponent: RouteErrorState,
   component: () => (
     <AppShell>
       <RequireEmpresa>
@@ -50,5 +52,6 @@ function RequireEmpresa({ children }: { children: ReactNode }) {
     );
   }
   if (vazio) return null;
+  if (isError) return <RouteErrorState />;
   return <>{children}</>;
 }
