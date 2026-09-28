@@ -82,6 +82,8 @@ export function LancamentosPage({ tipo }: { tipo: "receber" | "pagar" }) {
   const { data: lancamentos, isLoading } = useQuery({
     enabled: !!empresa,
     queryKey: listKey,
+    staleTime: 30_000,
+    gcTime: 10 * 60_000,
     queryFn: async ({ signal }): Promise<Lancamento[]> => {
       const { data, error } = await supabase
         .from("lancamentos_financeiros")
@@ -99,10 +101,12 @@ export function LancamentosPage({ tipo }: { tipo: "receber" | "pagar" }) {
   const { data: contatosOpt } = useQuery({
     enabled: !!empresa,
     queryKey: ["contatos-opt", empresa?.id, tipo] as const,
+    staleTime: 10 * 60_000,
+    gcTime: 30 * 60_000,
     queryFn: async () => {
       const tipos = (tipo === "receber" ? ["cliente", "ambos"] : ["fornecedor", "ambos"]) as ("cliente" | "fornecedor" | "ambos")[];
       const { data, error } = await supabase.from("contatos")
-        .select("id,nome,tipo").eq("empresa_id", empresa!.id).in("tipo", tipos).order("nome");
+        .select("id,nome,tipo").eq("empresa_id", empresa!.id).in("tipo", tipos).order("nome").limit(1000);
       if (error) throw error;
       return data ?? [];
     },
@@ -111,9 +115,11 @@ export function LancamentosPage({ tipo }: { tipo: "receber" | "pagar" }) {
   const { data: contasOpt } = useQuery({
     enabled: !!empresa,
     queryKey: ["contas-opt", empresa?.id] as const,
+    staleTime: 10 * 60_000,
+    gcTime: 30 * 60_000,
     queryFn: async () => {
       const { data, error } = await supabase.from("contas_bancarias")
-        .select("id,nome,banco").eq("empresa_id", empresa!.id).eq("ativo", true).order("nome");
+        .select("id,nome,banco").eq("empresa_id", empresa!.id).eq("ativo", true).order("nome").limit(100);
       if (error) throw error;
       return data ?? [];
     },
@@ -122,9 +128,11 @@ export function LancamentosPage({ tipo }: { tipo: "receber" | "pagar" }) {
   const { data: categoriasOpt } = useQuery({
     enabled: !!empresa,
     queryKey: ["categorias-opt", empresa?.id, tipo] as const,
+    staleTime: 10 * 60_000,
+    gcTime: 30 * 60_000,
     queryFn: async () => {
       const { data, error } = await supabase.from("categorias_financeiras")
-        .select("id,nome").eq("empresa_id", empresa!.id).eq("tipo", tipo).order("nome");
+        .select("id,nome").eq("empresa_id", empresa!.id).eq("tipo", tipo).order("nome").limit(500);
       if (error) throw error;
       return data ?? [];
     },
