@@ -63,6 +63,7 @@ import { Route as AuthenticatedEstoqueFornecedoresRouteImport } from './routes/_
 import { Route as AuthenticatedEstoqueComprasRouteImport } from './routes/_authenticated/estoque.compras'
 import { Route as AuthenticatedConfiguracoesUsuariosRouteImport } from './routes/_authenticated/configuracoes.usuarios'
 import { Route as AuthenticatedConfiguracoesEmpresasRouteImport } from './routes/_authenticated/configuracoes.empresas'
+import { Route as AuthenticatedConfiguracoesAuditoriaRouteImport } from './routes/_authenticated/configuracoes.auditoria'
 
 const SitemapDotxmlRoute = SitemapDotxmlRouteImport.update({
   id: '/sitemap.xml',
@@ -373,6 +374,12 @@ const AuthenticatedConfiguracoesEmpresasRoute =
     path: '/configuracoes/empresas',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedConfiguracoesAuditoriaRoute =
+  AuthenticatedConfiguracoesAuditoriaRouteImport.update({
+    id: '/configuracoes/auditoria',
+    path: '/configuracoes/auditoria',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -382,6 +389,7 @@ export interface FileRoutesByFullPath {
   '/redefinir': typeof RedefinirRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
+  '/configuracoes/auditoria': typeof AuthenticatedConfiguracoesAuditoriaRoute
   '/configuracoes/empresas': typeof AuthenticatedConfiguracoesEmpresasRoute
   '/configuracoes/usuarios': typeof AuthenticatedConfiguracoesUsuariosRoute
   '/estoque/compras': typeof AuthenticatedEstoqueComprasRoute
@@ -437,6 +445,7 @@ export interface FileRoutesByTo {
   '/redefinir': typeof RedefinirRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
+  '/configuracoes/auditoria': typeof AuthenticatedConfiguracoesAuditoriaRoute
   '/configuracoes/empresas': typeof AuthenticatedConfiguracoesEmpresasRoute
   '/configuracoes/usuarios': typeof AuthenticatedConfiguracoesUsuariosRoute
   '/estoque/compras': typeof AuthenticatedEstoqueComprasRoute
@@ -494,6 +503,7 @@ export interface FileRoutesById {
   '/redefinir': typeof RedefinirRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/_authenticated/dashboard': typeof AuthenticatedDashboardRoute
+  '/_authenticated/configuracoes/auditoria': typeof AuthenticatedConfiguracoesAuditoriaRoute
   '/_authenticated/configuracoes/empresas': typeof AuthenticatedConfiguracoesEmpresasRoute
   '/_authenticated/configuracoes/usuarios': typeof AuthenticatedConfiguracoesUsuariosRoute
   '/_authenticated/estoque/compras': typeof AuthenticatedEstoqueComprasRoute
@@ -551,6 +561,7 @@ export interface FileRouteTypes {
     | '/redefinir'
     | '/sitemap.xml'
     | '/dashboard'
+    | '/configuracoes/auditoria'
     | '/configuracoes/empresas'
     | '/configuracoes/usuarios'
     | '/estoque/compras'
@@ -606,6 +617,7 @@ export interface FileRouteTypes {
     | '/redefinir'
     | '/sitemap.xml'
     | '/dashboard'
+    | '/configuracoes/auditoria'
     | '/configuracoes/empresas'
     | '/configuracoes/usuarios'
     | '/estoque/compras'
@@ -662,6 +674,7 @@ export interface FileRouteTypes {
     | '/redefinir'
     | '/sitemap.xml'
     | '/_authenticated/dashboard'
+    | '/_authenticated/configuracoes/auditoria'
     | '/_authenticated/configuracoes/empresas'
     | '/_authenticated/configuracoes/usuarios'
     | '/_authenticated/estoque/compras'
@@ -1100,11 +1113,19 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedConfiguracoesEmpresasRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/configuracoes/auditoria': {
+      id: '/_authenticated/configuracoes/auditoria'
+      path: '/configuracoes/auditoria'
+      fullPath: '/configuracoes/auditoria'
+      preLoaderRoute: typeof AuthenticatedConfiguracoesAuditoriaRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
   }
 }
 
 interface AuthenticatedRouteRouteChildren {
   AuthenticatedDashboardRoute: typeof AuthenticatedDashboardRoute
+  AuthenticatedConfiguracoesAuditoriaRoute: typeof AuthenticatedConfiguracoesAuditoriaRoute
   AuthenticatedConfiguracoesEmpresasRoute: typeof AuthenticatedConfiguracoesEmpresasRoute
   AuthenticatedConfiguracoesUsuariosRoute: typeof AuthenticatedConfiguracoesUsuariosRoute
   AuthenticatedEstoqueComprasRoute: typeof AuthenticatedEstoqueComprasRoute
@@ -1155,6 +1176,8 @@ interface AuthenticatedRouteRouteChildren {
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedDashboardRoute: AuthenticatedDashboardRoute,
+  AuthenticatedConfiguracoesAuditoriaRoute:
+    AuthenticatedConfiguracoesAuditoriaRoute,
   AuthenticatedConfiguracoesEmpresasRoute:
     AuthenticatedConfiguracoesEmpresasRoute,
   AuthenticatedConfiguracoesUsuariosRoute:
