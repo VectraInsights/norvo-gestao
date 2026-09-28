@@ -24,8 +24,16 @@ describe("regras do MDF-e", () => {
     expect(montarProdPredXml()).toContain("<tpCarga>05</tpCarga><xProd>CARGA GERAL</xProd>");
   });
 
+  it("normaliza dados incompletos com valores fiscais seguros", () => {
+    const xml = montarProdPredXml({ tpCarga: "", xProd: "", ncm: "" });
+
+    expect(xml).toContain("<tpCarga>05</tpCarga>");
+    expect(xml).toContain("<xProd>CARGA GERAL</xProd>");
+    expect(xml).not.toContain("<NCM>");
+  });
+
   it("não permite conteúdo XML injetado em campos fiscais", () => {
-    const xml = montarProdPredXml({ tpCarga: "01", xProd: '"/><evil>1</evil>', ncm: "12345678" });
+    const xml = montarProdPredXml({ tpCarga: "01", xProd: '\"/><evil>1</evil>', ncm: "12345678" });
 
     expect(xml).not.toContain("<evil>");
     expect(xml).toContain("&lt;evil&gt;");

@@ -11,9 +11,17 @@ describe("moduloDaRota", () => {
     expect(moduloDaRota("  /estoque/produtos?pagina=2#lista  ")).toBe("estoque");
   });
 
+  it("identifica todos os módulos cadastrados", () => {
+    for (const modulo of MODULOS) {
+      expect(moduloDaRota(`/${modulo.key}/inicio`)).toBe(modulo.key);
+    }
+  });
+
   it("mantém rotas públicas e administrativas sem módulo", () => {
     expect(moduloDaRota("/dashboard")).toBeNull();
     expect(moduloDaRota("/configuracoes/usuarios")).toBeNull();
+    expect(moduloDaRota("dashboard")).toBeNull();
+    expect(moduloDaRota("/")).toBeNull();
     expect(MODULOS).toHaveLength(7);
   });
 });
