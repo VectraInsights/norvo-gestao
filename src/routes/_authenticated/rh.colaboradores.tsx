@@ -44,7 +44,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-import { Users, Pencil, Plus, Trash2, X } from "lucide-react";
+import { ChevronLeft, ChevronRight, Users, Pencil, Plus, Trash2, X } from "lucide-react";
 import { useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -167,6 +167,7 @@ function ColaboradoresPage() {
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState<Colab | null>(null);
   const [form, setForm] = useState(formInicial);
+  const [pagina, setPagina] = useState(1);
   const set = <K extends keyof typeof form>(k: K, v: (typeof form)[K]) =>
     setForm((f) => ({ ...f, [k]: v }));
 
@@ -178,7 +179,9 @@ function ColaboradoresPage() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("colaboradores" as never)
-        .select("id,nome,cpf,cargo,email,telefone,salario_base,data_admissao,data_demissao,status,pix,banco,agencia,conta,observacoes,cnh_numero,cnh_categoria,cnh_validade,toxico_exame,optante_vt")
+        .select(
+          "id,nome,cpf,cargo,email,telefone,salario_base,data_admissao,data_demissao,status,pix,banco,agencia,conta,observacoes,cnh_numero,cnh_categoria,cnh_validade,toxico_exame,optante_vt",
+        )
         .eq("empresa_id", empresa!.id)
         .order("nome")
         .limit(500);
@@ -186,6 +189,11 @@ function ColaboradoresPage() {
       return (data ?? []) as unknown as Colab[];
     },
   });
+
+  const pageSize = 25;
+  const totalPaginas = Math.max(1, Math.ceil((colabs?.length ?? 0) / pageSize));
+  const paginaAtual = Math.min(pagina, totalPaginas);
+  const colabsVisiveis = (colabs ?? []).slice((paginaAtual - 1) * pageSize, paginaAtual * pageSize);
 
   const { data: cargos = [] } = useQuery({
     enabled: !!empresa,
@@ -207,9 +215,8 @@ function ColaboradoresPage() {
 
   // quantos funcionários usam cada cargo (vínculo pelo NOME do cargo)
   const usoCargo = (nome: string) =>
-    (colabs ?? []).filter(
-      (x) => (x.cargo ?? "").trim().toLowerCase() === nome.trim().toLowerCase(),
-    ).length;
+    (colabs ?? []).filter((x) => (x.cargo ?? "").trim().toLowerCase() === nome.trim().toLowerCase())
+      .length;
 
   // autocomplete do campo cargo: mostra todos ao focar, filtra conforme digita
   const [cargoFoco, setCargoFoco] = useState(false);
@@ -333,7 +340,11 @@ function ColaboradoresPage() {
       validarForm(form);
       if (form.cpf) {
         const tbl2 = supabase.from("colaboradores" as never) as any;
-        const q = tbl2.select("id").eq("empresa_id", empresa.id).eq("cpf", form.cpf.trim()).limit(1);
+        const q = tbl2
+          .select("id")
+          .eq("empresa_id", empresa.id)
+          .eq("cpf", form.cpf.trim())
+          .limit(1);
         const { data: existente } = await (editing ? q.neq("id", editing.id) : q);
         if (existente && existente.length > 0) {
           throw new Error("Já existe um colaborador com esse CPF nesta empresa");
@@ -443,7 +454,10 @@ function ColaboradoresPage() {
                         const usos = usoCargo(c.nome);
                         const emEdicao = cargoEditId === c.id;
                         return (
-                          <li key={c.id} className="flex items-center justify-between gap-2 px-3 py-2">
+                          <li
+                            key={c.id}
+                            className="flex items-center justify-between gap-2 px-3 py-2"
+                          >
                             {emEdicao ? (
                               <form
                                 className="flex flex-1 items-center gap-2"
@@ -478,7 +492,10 @@ function ColaboradoresPage() {
                                     size="icon"
                                     className="h-7 w-7"
                                     aria-label="Renomear"
-                                    onClick={() => { setCargoEditId(c.id); setCargoEditNome(c.nome); }}
+                                    onClick={() => {
+                                      setCargoEditId(c.id);
+                                      setCargoEditNome(c.nome);
+                                    }}
                                   >
                                     <Pencil className="h-3.5 w-3.5" />
                                   </Button>
@@ -487,7 +504,11 @@ function ColaboradoresPage() {
                                     size="icon"
                                     className="h-7 w-7"
                                     aria-label="Excluir"
-                                    title={usos > 0 ? "Vinculado a funcionário(s) — não pode ser excluído" : "Excluir"}
+                                    title={
+                                      usos > 0
+                                        ? "Vinculado a funcionário(s) — não pode ser excluído"
+                                        : "Excluir"
+                                    }
                                     disabled={usos > 0}
                                     onClick={() => excluirCargo.mutate(c.id)}
                                   >
@@ -504,8 +525,8 @@ function ColaboradoresPage() {
                 </div>
                 <p className="text-xs text-muted-foreground">
                   Crie, renomeie e exclua qualquer cargo. Só não é possível excluir um cargo
-                  vinculado ao cadastro de algum funcionário. Viagens consideram motoristas
-                  todos os colaboradores com cargo contendo "Motorista".
+                  vinculado ao cadastro de algum funcionário. Viagens consideram motoristas todos os
+                  colaboradores com cargo contendo "Motorista".
                 </p>
               </DialogContent>
             </Dialog>
@@ -741,7 +762,10 @@ function ColaboradoresPage() {
                       </div>
                       <div>
                         <Label>Validade do toxicológico</Label>
-                        <Input value={form.toxico_validade ? dateBR(form.toxico_validade) : ""} readOnly />
+                        <Input
+                          value={form.toxico_validade ? dateBR(form.toxico_validade) : ""}
+                          readOnly
+                        />
                         <p className="mt-1 text-xs text-muted-foreground">
                           {form.toxico_exame
                             ? "2 anos e 6 meses após o exame (CTB art. 148-A)"
@@ -813,59 +837,98 @@ function ColaboradoresPage() {
             description="Cadastre o primeiro colaborador."
           />
         ) : (
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Nome</TableHead>
-                <TableHead>Cargo</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead>Admissão</TableHead>
-                <TableHead className="text-right">Salário</TableHead>
-                <TableHead className="w-10"></TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {colabs.map((c) => (
-                <TableRow key={c.id}>
-                  <TableCell className="font-medium">{c.nome}</TableCell>
-                  <TableCell>{c.cargo ?? "—"}</TableCell>
-                  <TableCell>{STATUS[c.status] ?? c.status}</TableCell>
-                  <TableCell>{c.data_admissao ? dateBR(c.data_admissao) : "—"}</TableCell>
-                  <TableCell className="text-right text-tabular">
-                    {brl(c.salario_base ?? 0)}
-                  </TableCell>
-                  <TableCell>
-                    <span className="flex justify-end gap-1">
-                      <Button variant="ghost" size="icon" className="h-8 w-8" title="Editar" onClick={() => openEdit(c)}>
-                        <Pencil className="h-4 w-4" />
-                      </Button>
-                      <AlertDialog>
-                        <AlertDialogTrigger asChild>
-                          <Button variant="ghost" size="icon" className="h-8 w-8">
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
-                        </AlertDialogTrigger>
-                        <AlertDialogContent>
-                          <AlertDialogHeader>
-                            <AlertDialogTitle>Excluir colaborador?</AlertDialogTitle>
-                            <AlertDialogDescription>
-                              As folhas vinculadas também serão removidas.
-                            </AlertDialogDescription>
-                          </AlertDialogHeader>
-                          <AlertDialogFooter>
-                            <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                            <AlertDialogAction onClick={() => del.mutate(c.id)}>
-                              Excluir
-                            </AlertDialogAction>
-                          </AlertDialogFooter>
-                        </AlertDialogContent>
-                      </AlertDialog>
-                    </span>
-                  </TableCell>
+          <>
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Nome</TableHead>
+                  <TableHead>Cargo</TableHead>
+                  <TableHead>Status</TableHead>
+                  <TableHead>Admissão</TableHead>
+                  <TableHead className="text-right">Salário</TableHead>
+                  <TableHead className="w-10"></TableHead>
                 </TableRow>
-              ))}
-            </TableBody>
-          </Table>
+              </TableHeader>
+              <TableBody>
+                {colabsVisiveis.map((c) => (
+                  <TableRow key={c.id}>
+                    <TableCell className="font-medium">{c.nome}</TableCell>
+                    <TableCell>{c.cargo ?? "—"}</TableCell>
+                    <TableCell>{STATUS[c.status] ?? c.status}</TableCell>
+                    <TableCell>{c.data_admissao ? dateBR(c.data_admissao) : "—"}</TableCell>
+                    <TableCell className="text-right text-tabular">
+                      {brl(c.salario_base ?? 0)}
+                    </TableCell>
+                    <TableCell>
+                      <span className="flex justify-end gap-1">
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-8 w-8"
+                          title="Editar"
+                          onClick={() => openEdit(c)}
+                        >
+                          <Pencil className="h-4 w-4" />
+                        </Button>
+                        <AlertDialog>
+                          <AlertDialogTrigger asChild>
+                            <Button variant="ghost" size="icon" className="h-8 w-8">
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </AlertDialogTrigger>
+                          <AlertDialogContent>
+                            <AlertDialogHeader>
+                              <AlertDialogTitle>Excluir colaborador?</AlertDialogTitle>
+                              <AlertDialogDescription>
+                                As folhas vinculadas também serão removidas.
+                              </AlertDialogDescription>
+                            </AlertDialogHeader>
+                            <AlertDialogFooter>
+                              <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                              <AlertDialogAction onClick={() => del.mutate(c.id)}>
+                                Excluir
+                              </AlertDialogAction>
+                            </AlertDialogFooter>
+                          </AlertDialogContent>
+                        </AlertDialog>
+                      </span>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+            <div className="flex items-center justify-between border-t px-4 py-3 text-sm text-muted-foreground">
+              <span>
+                Mostrando {(paginaAtual - 1) * pageSize + 1}–
+                {Math.min(paginaAtual * pageSize, colabs?.length ?? 0)} de {colabs?.length ?? 0}
+              </span>
+              <div className="flex items-center gap-1">
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  aria-label="Página anterior"
+                  disabled={paginaAtual === 1}
+                  onClick={() => setPagina((value) => Math.max(1, value - 1))}
+                >
+                  <ChevronLeft className="h-4 w-4" />
+                </Button>
+                <span className="px-2 text-xs">
+                  Página {paginaAtual} de {totalPaginas}
+                </span>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  aria-label="Próxima página"
+                  disabled={paginaAtual === totalPaginas}
+                  onClick={() => setPagina((value) => Math.min(totalPaginas, value + 1))}
+                >
+                  <ChevronRight className="h-4 w-4" />
+                </Button>
+              </div>
+            </div>
+          </>
         )}
       </Card>
     </div>
