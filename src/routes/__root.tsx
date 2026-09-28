@@ -17,6 +17,7 @@ import {
 } from "@tanstack/react-router";
 import { useEffect, type ReactNode } from "react";
 import { Toaster } from "@/components/ui/sonner";
+import { ConnectionStatus } from "@/components/erp/connection-status";
 
 import appCss from "../styles.css?url";
 import { supabase } from "@/integrations/supabase/client";
@@ -148,6 +149,7 @@ function RootComponent() {
     <QueryClientProvider client={queryClient}>
       <Outlet />
       <Toaster richColors position="top-right" />
+      <ConnectionStatus />
     </QueryClientProvider>
   );
 }
