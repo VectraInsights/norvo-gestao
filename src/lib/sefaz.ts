@@ -329,53 +329,65 @@ function extractPkcs12Native(pfxBytes: Buffer, senha: string): {
 }
 
 /**
- * Extrai a cadeia de certificados X.509 do PKCS#12 parseando ASN.1 manualmente.
- * Procura por OCTET STRINGs que contenham certificados DER válidos.
+ * Extrai a cadeia de certificados X.509 do PKCS#12 sem depender do algoritmo
+ * usado para cifrar as bags. Alguns A1 usam AES-256/PBE e o node-forge não
+ * consegue abrir o PFX inteiro, mas os certificados públicos continuam em DER.
  */
 function extractCertChainFromPkcs12(pfxBytes: Buffer): Buffer[] {
   const certs: Buffer[] = [];
+  const fingerprints = new Set<string>();
 
-  // Parse do ASN.1 using node-forge (funciona para estrutura, só falha no pkcs12FromAsn1)
-  const p12Asn1 = forge.asn1.fromDer(forge.util.decode64(pfxBytes.toString("base64")));
+  function tryCertificate(value: string | Buffer): boolean {
+    const derBytes = Buffer.isBuffer(value) ? value : Buffer.from(value, "binary");
+    if (derBytes.length < 200 || derBytes.length > 8000 || derBytes[0] !== 0x30) return false;
 
-  // Busca recursiva por certificados DER no ASN.1 tree
-  function walkAsn1(node: forge.asn1.Asn1) {
+    try {
+      const certAsn1 = forge.asn1.fromDer(derBytes.toString("binary"));
+      const cert = forge.pki.certificateFromAsn1(certAsn1);
+      if (!cert?.subject) return false;
+
+      const fingerprint = forge.md.sha256.create().update(derBytes.toString("binary")).digest().toHex();
+      if (!fingerprints.has(fingerprint)) {
+        fingerprints.add(fingerprint);
+        certs.push(derBytes);
+      }
+      return true;
+    } catch {
+      return false;
+    }
+  }
+
+  function walkAsn1(node: forge.asn1.Asn1): void {
     if (!node) return;
 
-    // Se é uma string OCTET, verifica se parece um certificado DER
-    if (node.type === forge.asn1.Type.OCTETSTRING) {
-      const value = node.value as string;
-      const derBytes = Buffer.from(value, "binary");
+    if (typeof node.value === "string") {
+      const value = node.value;
+      if (node.type === forge.asn1.Type.OCTETSTRING) {
+        tryCertificate(value);
 
-      // Certificados DER começam com SEQUENCE (30 82) e têm tamanho típico de 500-4000 bytes
-      if (derBytes.length >= 200 && derBytes.length <= 8000 &&
-          derBytes[0] === 0x30 && derBytes[1] === 0x82) {
+        // Algumas estruturas PKCS#12 encapsulam outro ASN.1 dentro do OCTET
+        // STRING (ContentInfo/AuthSafe). Descer nesse conteúdo encontra as
+        // bags públicas mesmo quando o conteúdo privado está cifrado.
         try {
-          const certAsn1 = forge.asn1.fromDer(derBytes.toString("binary"));
-          const cert = forge.pki.certificateFromAsn1(certAsn1);
-          if (cert && cert.subject) {
-            certs.push(derBytes);
-          }
+          const nested = forge.asn1.fromDer(value, 0, false, true);
+          walkAsn1(nested);
         } catch {
-          // Não é um certificado válido, ignora
+          // OCTET STRING pode conter dados cifrados ou não-ASN.1.
         }
       }
+      return;
     }
 
-    // Recursar nos filhos
-    if (node.value && typeof node.value === "string") {
-      // Folha, não recusrar
-    } else if (Array.isArray(node.value)) {
-      for (const child of node.value) {
-        walkAsn1(child);
-      }
+    if (Array.isArray(node.value)) {
+      for (const child of node.value) walkAsn1(child);
     }
   }
 
   try {
+    const p12Asn1 = forge.asn1.fromDer(forge.util.decode64(pfxBytes.toString("base64")));
     walkAsn1(p12Asn1);
   } catch {
-    // Se o parse ASN.1 falhar, retorna vazio
+    // O parse estrutural pode falhar em PFXs não convencionais.
   }
 
   return certs;
