@@ -47,6 +47,8 @@ import {
 } from "@/components/ui/alert-dialog";
 import {
   ArrowLeftRight,
+  ChevronLeft,
+  ChevronRight,
   Plus,
   Pencil,
   Fuel,
@@ -201,6 +203,7 @@ function Viagens() {
   const qc = useQueryClient();
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState<Viagem | null>(null);
+  const [pagina, setPagina] = useState(1);
   const [form, setForm] = useState(formVazio);
   const set = <K extends keyof typeof form>(k: K, v: (typeof form)[K]) =>
     setForm((f) => ({ ...f, [k]: v }));
@@ -215,12 +218,17 @@ function Viagens() {
   const { data: viagens, isLoading } = useQuery({
     enabled: !!empresa,
     queryKey: ["viagens", empresa?.id],
+    staleTime: 30_000,
+    gcTime: 10 * 60_000,
     queryFn: async ({ signal }) => {
       const { data, error } = await supabase
         .from("viagens" as never)
-        .select("*, cliente:contatos(nome), motorista:colaboradores(nome), veiculo:veiculos(placa)")
+        .select(
+          "id,empresa_id,cliente_id,motorista_id,veiculo_id,status,data_saida,data_chegada,origem,destino,valor_frete,observacoes,created_at,cliente:contatos(nome), motorista:colaboradores(nome), veiculo:veiculos(placa)",
+        )
         .eq("empresa_id", empresa!.id)
         .order("created_at", { ascending: false })
+        .limit(1000)
         .abortSignal(signal);
       if (error) throw error;
       return (data ?? []) as unknown as Viagem[];
@@ -240,6 +248,14 @@ function Viagens() {
       return (data ?? []) as unknown as Despesa[];
     },
   });
+
+  const pageSize = 25;
+  const totalPaginas = Math.max(1, Math.ceil((viagens?.length ?? 0) / pageSize));
+  const paginaAtual = Math.min(pagina, totalPaginas);
+  const viagensVisiveis = (viagens ?? []).slice(
+    (paginaAtual - 1) * pageSize,
+    paginaAtual * pageSize,
+  );
 
   const despPorViagem = useMemo(() => {
     const m = new Map<string, number>();
@@ -561,17 +577,11 @@ function Viagens() {
                 <div className="grid grid-cols-2 gap-3">
                   <div>
                     <Label>Data de saída</Label>
-                    <DateInput
-                      value={form.data_saida}
-                      onChange={(v) => set("data_saida", v)}
-                    />
+                    <DateInput value={form.data_saida} onChange={(v) => set("data_saida", v)} />
                   </div>
                   <div>
                     <Label>Previsão de chegada</Label>
-                    <DateInput
-                      value={form.data_chegada}
-                      onChange={(v) => set("data_chegada", v)}
-                    />
+                    <DateInput value={form.data_chegada} onChange={(v) => set("data_chegada", v)} />
                   </div>
                 </div>
                 <div className="grid grid-cols-2 gap-3">
@@ -581,7 +591,12 @@ function Viagens() {
                   </div>
                   <div>
                     <Label>KM rodado</Label>
-                    <MoneyInput prefix="" decimals={1} value={form.km_rodado} onChange={(v) => set("km_rodado", v)} />
+                    <MoneyInput
+                      prefix=""
+                      decimals={1}
+                      value={form.km_rodado}
+                      onChange={(v) => set("km_rodado", v)}
+                    />
                   </div>
                 </div>
                 <div>
@@ -657,7 +672,7 @@ function Viagens() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {viagens.map((v) => {
+              {viagensVisiveis.map((v) => {
                 const desp = despPorViagem.get(v.id) ?? 0;
                 const resultado = Number(v.valor_frete ?? 0) - desp;
                 return (
@@ -764,6 +779,37 @@ function Viagens() {
               })}
             </TableBody>
           </Table>
+          <div className="flex items-center justify-between border-t px-4 py-3 text-sm text-muted-foreground">
+            <span>
+              Mostrando {(paginaAtual - 1) * pageSize + 1}–
+              {Math.min(paginaAtual * pageSize, viagens?.length ?? 0)} de {viagens?.length ?? 0}
+            </span>
+            <div className="flex items-center gap-1">
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                aria-label="Página anterior"
+                disabled={paginaAtual === 1}
+                onClick={() => setPagina((value) => Math.max(1, value - 1))}
+              >
+                <ChevronLeft className="h-4 w-4" />
+              </Button>
+              <span className="px-2 text-xs">
+                Página {paginaAtual} de {totalPaginas}
+              </span>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                aria-label="Próxima página"
+                disabled={paginaAtual === totalPaginas}
+                onClick={() => setPagina((value) => Math.min(totalPaginas, value + 1))}
+              >
+                <ChevronRight className="h-4 w-4" />
+              </Button>
+            </div>
+          </div>
         </Card>
       )}
 
