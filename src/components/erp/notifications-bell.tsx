@@ -44,8 +44,12 @@ export function NotificationsBell() {
     queryKey: ["alertas", empresaId],
     enabled: !!empresaId,
     queryFn: async () => {
-      const { data, error } = await supabase.from("alertas")
-        .select("*").eq("empresa_id", empresaId!).order("created_at", { ascending: false }).limit(20);
+      const { data, error } = await supabase
+        .from("alertas")
+        .select("id,empresa_id,titulo,mensagem,tipo,lida,created_at")
+        .eq("empresa_id", empresaId!)
+        .order("created_at", { ascending: false })
+        .limit(20);
       if (error) throw error;
       return data;
     },
@@ -64,8 +68,11 @@ export function NotificationsBell() {
 
   const marcarTodos = useMutation({
     mutationFn: async () => {
-      const { error } = await supabase.from("alertas").update({ lido: true })
-        .eq("empresa_id", empresaId!).eq("lido", false);
+      const { error } = await supabase
+        .from("alertas")
+        .update({ lido: true })
+        .eq("empresa_id", empresaId!)
+        .eq("lido", false);
       if (error) throw error;
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: ["alertas"] }),
@@ -87,7 +94,12 @@ export function NotificationsBell() {
         <div className="flex items-center justify-between border-b px-4 py-2.5">
           <div className="text-sm font-medium">Notificações</div>
           {naoLidos > 0 && (
-            <Button variant="ghost" size="sm" className="h-7 text-xs" onClick={() => marcarTodos.mutate()}>
+            <Button
+              variant="ghost"
+              size="sm"
+              className="h-7 text-xs"
+              onClick={() => marcarTodos.mutate()}
+            >
               <Check className="mr-1 h-3 w-3" /> Marcar todas
             </Button>
           )}
@@ -95,32 +107,61 @@ export function NotificationsBell() {
         <ScrollArea className="max-h-96">
           {alertas.length === 0 ? (
             <div className="flex flex-col items-center gap-2 p-8 text-center">
-              <div className="grid h-10 w-10 place-items-center rounded-full bg-muted text-muted-foreground"><Bell className="h-4 w-4" aria-hidden="true" /></div>
+              <div className="grid h-10 w-10 place-items-center rounded-full bg-muted text-muted-foreground">
+                <Bell className="h-4 w-4" aria-hidden="true" />
+              </div>
               <p className="text-sm font-medium">Tudo em dia</p>
-              <p className="text-xs text-muted-foreground">Nenhuma notificação pendente para esta empresa.</p>
+              <p className="text-xs text-muted-foreground">
+                Nenhuma notificação pendente para esta empresa.
+              </p>
             </div>
           ) : (
             <ul className="divide-y">
               {alertas.map((a) => {
                 const Icon = SEV_ICON[a.severidade as keyof typeof SEV_ICON] ?? Info;
                 return (
-                  <li key={a.id} className={"flex gap-3 p-3 " + (a.lido ? "opacity-60" : "bg-accent/30")}>
-                    <Icon className={"mt-0.5 h-4 w-4 shrink-0 " + (SEV_COLOR[a.severidade] ?? "text-muted-foreground")} />
+                  <li
+                    key={a.id}
+                    className={"flex gap-3 p-3 " + (a.lido ? "opacity-60" : "bg-accent/30")}
+                  >
+                    <Icon
+                      className={
+                        "mt-0.5 h-4 w-4 shrink-0 " +
+                        (SEV_COLOR[a.severidade] ?? "text-muted-foreground")
+                      }
+                    />
                     <div className="min-w-0 flex-1">
                       <div className="text-sm font-medium">{a.titulo}</div>
-                      {a.mensagem && <div className="mt-0.5 text-xs text-muted-foreground">{a.mensagem}</div>}
+                      {a.mensagem && (
+                        <div className="mt-0.5 text-xs text-muted-foreground">{a.mensagem}</div>
+                      )}
                       <div className="mt-1 text-[10px] uppercase tracking-wider text-muted-foreground">
-                        {formatDistanceToNow(new Date(a.created_at), { addSuffix: true, locale: ptBR })}
+                        {formatDistanceToNow(new Date(a.created_at), {
+                          addSuffix: true,
+                          locale: ptBR,
+                        })}
                       </div>
                     </div>
                     <div className="flex shrink-0 items-start gap-1">
                       {a.ref_tabela && a.ref_id && (
-                        <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => abrirReferencia(a.ref_tabela, a.ref_id)} aria-label="Abrir registro relacionado">
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-6 w-6"
+                          onClick={() => abrirReferencia(a.ref_tabela, a.ref_id)}
+                          aria-label="Abrir registro relacionado"
+                        >
                           <ExternalLink className="h-3 w-3" />
                         </Button>
                       )}
                       {!a.lido && (
-                        <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => marcarLido.mutate(a.id)} aria-label="Marcar como lida">
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-6 w-6"
+                          onClick={() => marcarLido.mutate(a.id)}
+                          aria-label="Marcar como lida"
+                        >
                           <Check className="h-3 w-3" />
                         </Button>
                       )}

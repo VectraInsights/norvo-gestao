@@ -8,9 +8,29 @@ import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { MoneyInput } from "@/components/erp/money-input";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import {
+  Dialog,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Percent, Plus, Trash2, HandCoins, Pencil } from "lucide-react";
 import { useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
@@ -23,21 +43,34 @@ import { format } from "date-fns";
 export const Route = createFileRoute("/_authenticated/rh/comissoes")({
   component: ComissoesPage,
   errorComponent: ({ error }) => (
-    <div role="alert" className="rounded-md border border-destructive/40 bg-destructive/5 p-4 text-sm text-destructive">
+    <div
+      role="alert"
+      className="rounded-md border border-destructive/40 bg-destructive/5 p-4 text-sm text-destructive"
+    >
       Erro: {error.message}
     </div>
   ),
 });
 
 type Comissao = {
-  id: string; colaborador_id: string | null; competencia: string; descricao: string | null;
-  base_valor: number; percentual: number; valor: number; status: string; lancamento_id: string | null;
+  id: string;
+  colaborador_id: string | null;
+  competencia: string;
+  descricao: string | null;
+  base_valor: number;
+  percentual: number;
+  valor: number;
+  status: string;
+  lancamento_id: string | null;
   colaboradores?: { nome: string } | null;
 };
 
 const MESES = ["Jan", "Fev", "Mar", "Abr", "Mai", "Jun", "Jul", "Ago", "Set", "Out", "Nov", "Dez"];
 const STATUS_LABEL: Record<string, string> = {
-  prevista: "Prevista", aprovada: "Aprovada", paga: "Paga", cancelada: "Cancelada",
+  prevista: "Prevista",
+  aprovada: "Aprovada",
+  paga: "Paga",
+  cancelada: "Cancelada",
 };
 
 function ComissoesPage() {
@@ -60,7 +93,13 @@ function ComissoesPage() {
     [base, percentual],
   );
 
-  const reset = () => { setEditing(null); setColaborador(""); setDescricao(""); setBase("0"); setPercentual("0"); };
+  const reset = () => {
+    setEditing(null);
+    setColaborador("");
+    setDescricao("");
+    setBase("0");
+    setPercentual("0");
+  };
 
   const abrirEdicao = (c: Comissao) => {
     setEditing(c);
@@ -76,9 +115,13 @@ function ComissoesPage() {
     enabled: !!empresa,
     queryKey: ["colaboradores-motoristas", empresa?.id],
     queryFn: async () => {
-      const { data } = await supabase.from("colaboradores" as never)
-        .select("id,nome").eq("empresa_id", empresa!.id).eq("status", "ativo")
-        .ilike("cargo", "%motorist%").order("nome");
+      const { data } = await supabase
+        .from("colaboradores" as never)
+        .select("id,nome")
+        .eq("empresa_id", empresa!.id)
+        .eq("status", "ativo")
+        .ilike("cargo", "%motorist%")
+        .order("nome");
       return (data ?? []) as unknown as { id: string; nome: string }[];
     },
   });
@@ -87,9 +130,13 @@ function ComissoesPage() {
     enabled: !!empresa,
     queryKey: ["comissoes", empresa?.id, competencia],
     queryFn: async () => {
-      const { data, error } = await supabase.from("comissoes" as never)
-        .select("*, colaboradores:colaborador_id(nome)")
-        .eq("empresa_id", empresa!.id).eq("competencia", competencia)
+      const { data, error } = await supabase
+        .from("comissoes" as never)
+        .select(
+          "id,empresa_id,colaborador_id,competencia,valor_percentual,valor_base,valor_comissao,status,created_at,colaboradores:colaborador_id(nome)",
+        )
+        .eq("empresa_id", empresa!.id)
+        .eq("competencia", competencia)
         .order("created_at", { ascending: false });
       if (error) throw error;
       return (data ?? []) as unknown as Comissao[];
@@ -104,9 +151,13 @@ function ComissoesPage() {
       if (!colaborador) throw new Error("Selecione o colaborador");
       if (valor <= 0) throw new Error("Informe base e percentual");
       const payload: any = {
-        empresa_id: empresa.id, colaborador_id: colaborador, competencia,
-        descricao: descricao || null, base_valor: Number(base) || 0,
-        percentual: Number(percentual) || 0, valor,
+        empresa_id: empresa.id,
+        colaborador_id: colaborador,
+        competencia,
+        descricao: descricao || null,
+        base_valor: Number(base) || 0,
+        percentual: Number(percentual) || 0,
+        valor,
       };
       const tbl = supabase.from("comissoes" as never) as any;
       if (editing) {
@@ -120,7 +171,8 @@ function ComissoesPage() {
     onSuccess: () => {
       toast.success(editing ? "Comissão atualizada" : "Comissão lançada");
       qc.invalidateQueries({ queryKey: ["comissoes"] });
-      setOpen(false); reset();
+      setOpen(false);
+      reset();
     },
     onError: (e: Error) => toast.error(e.message),
   });
@@ -133,27 +185,40 @@ function ComissoesPage() {
       // categoria "Comissões" (cria se não existir)
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const { data: cats } = await (supabase.from("categorias_financeiras") as any)
-        .select("id").eq("empresa_id", empresa.id).eq("tipo", "pagar").eq("nome", "Comissões").limit(1);
+        .select("id")
+        .eq("empresa_id", empresa.id)
+        .eq("tipo", "pagar")
+        .eq("nome", "Comissões")
+        .limit(1);
       let catId: string | null = cats?.[0]?.id ?? null;
       if (!catId) {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const { data: nc, error: eCat } = await (supabase.from("categorias_financeiras") as any)
           .insert({ empresa_id: empresa.id, nome: "Comissões", tipo: "pagar" })
-          .select("id").single();
+          .select("id")
+          .single();
         if (eCat) throw eCat;
         catId = nc.id;
       }
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const { data: lanc, error } = await (supabase.from("lancamentos_financeiros") as any).insert({
-        empresa_id: empresa.id, tipo: "pagar", status: "aberto",
-        descricao: `${nome} — ${MESES[mes - 1]}/${ano}`.trim(),
-        valor: c.valor, data_emissao: format(new Date(), "yyyy-MM-dd"),
-        data_vencimento: format(new Date(ano, mes, 5), "yyyy-MM-dd"),
-        categoria_id: catId,
-      }).select("id").single();
+      const { data: lanc, error } = await (supabase.from("lancamentos_financeiros") as any)
+        .insert({
+          empresa_id: empresa.id,
+          tipo: "pagar",
+          status: "aberto",
+          descricao: `${nome} — ${MESES[mes - 1]}/${ano}`.trim(),
+          valor: c.valor,
+          data_emissao: format(new Date(), "yyyy-MM-dd"),
+          data_vencimento: format(new Date(ano, mes, 5), "yyyy-MM-dd"),
+          categoria_id: catId,
+        })
+        .select("id")
+        .single();
       if (error) throw error;
-      const { error: e2 } = await supabase.from("comissoes" as never)
-        .update({ lancamento_id: lanc.id, status: "aprovada" } as never).eq("id", c.id);
+      const { error: e2 } = await supabase
+        .from("comissoes" as never)
+        .update({ lancamento_id: lanc.id, status: "aprovada" } as never)
+        .eq("id", c.id);
       if (e2) throw e2;
     },
     onSuccess: () => {
@@ -167,14 +232,23 @@ function ComissoesPage() {
   const excluir = useMutation({
     mutationFn: async (c: { id: string; lancamento_id: string | null }) => {
       if (c.lancamento_id) {
-        const { data: lanc } = await (supabase.from("lancamentos_financeiros" as never)
-          .select("status").eq("id", c.lancamento_id).maybeSingle() as any);
+        const { data: lanc } = await (supabase
+          .from("lancamentos_financeiros" as never)
+          .select("status")
+          .eq("id", c.lancamento_id)
+          .maybeSingle() as any);
         if (lanc && lanc.status !== "pago") {
-          const { error: eDel } = await supabase.from("lancamentos_financeiros").delete().eq("id", c.lancamento_id);
+          const { error: eDel } = await supabase
+            .from("lancamentos_financeiros")
+            .delete()
+            .eq("id", c.lancamento_id);
           if (eDel) throw eDel;
         }
       }
-      const { error } = await supabase.from("comissoes" as never).delete().eq("id", c.id);
+      const { error } = await supabase
+        .from("comissoes" as never)
+        .delete()
+        .eq("id", c.id);
       if (error) throw error;
     },
     onSuccess: () => {
@@ -188,31 +262,45 @@ function ComissoesPage() {
     mutationFn: async () => {
       if (!empresa) throw new Error("Selecione uma empresa");
       const pendentes = (lista ?? []).filter((c) => !c.lancamento_id && c.status !== "cancelada");
-      if (pendentes.length === 0) throw new Error("Nenhuma comissão pendente para gerar conta a pagar");
+      if (pendentes.length === 0)
+        throw new Error("Nenhuma comissão pendente para gerar conta a pagar");
 
       const { data: cats } = await (supabase.from("categorias_financeiras") as any)
-        .select("id").eq("empresa_id", empresa.id).eq("tipo", "pagar").eq("nome", "Comissões").limit(1);
+        .select("id")
+        .eq("empresa_id", empresa.id)
+        .eq("tipo", "pagar")
+        .eq("nome", "Comissões")
+        .limit(1);
       let catId: string | null = cats?.[0]?.id ?? null;
       if (!catId) {
         const { data: nc, error: eCat } = await (supabase.from("categorias_financeiras") as any)
           .insert({ empresa_id: empresa.id, nome: "Comissões", tipo: "pagar" })
-          .select("id").single();
+          .select("id")
+          .single();
         if (eCat) throw eCat;
         catId = nc.id;
       }
 
       for (const c of pendentes) {
         const nome = c.colaboradores?.nome ?? "colaborador";
-        const { data: lanc, error } = await (supabase.from("lancamentos_financeiros") as any).insert({
-          empresa_id: empresa.id, tipo: "pagar", status: "aberto",
-          descricao: `${nome} — ${MESES[mes - 1]}/${ano}`.trim(),
-          valor: c.valor, data_emissao: format(new Date(), "yyyy-MM-dd"),
-          data_vencimento: format(new Date(ano, mes, 5), "yyyy-MM-dd"),
-          categoria_id: catId,
-        }).select("id").single();
+        const { data: lanc, error } = await (supabase.from("lancamentos_financeiros") as any)
+          .insert({
+            empresa_id: empresa.id,
+            tipo: "pagar",
+            status: "aberto",
+            descricao: `${nome} — ${MESES[mes - 1]}/${ano}`.trim(),
+            valor: c.valor,
+            data_emissao: format(new Date(), "yyyy-MM-dd"),
+            data_vencimento: format(new Date(ano, mes, 5), "yyyy-MM-dd"),
+            categoria_id: catId,
+          })
+          .select("id")
+          .single();
         if (error) throw error;
-        const { error: e2 } = await supabase.from("comissoes" as never)
-          .update({ lancamento_id: lanc.id, status: "aprovada" } as never).eq("id", c.id);
+        const { error: e2 } = await supabase
+          .from("comissoes" as never)
+          .update({ lancamento_id: lanc.id, status: "aprovada" } as never)
+          .eq("id", c.id);
         if (e2) throw e2;
       }
     },
@@ -233,47 +321,94 @@ function ComissoesPage() {
         actions={
           <div className="flex flex-wrap gap-2">
             <Select value={String(mes)} onValueChange={(v) => setMes(Number(v))}>
-              <SelectTrigger className="w-[110px]"><SelectValue /></SelectTrigger>
+              <SelectTrigger className="w-[110px]">
+                <SelectValue />
+              </SelectTrigger>
               <SelectContent>
-                {MESES.map((m, i) => <SelectItem key={m} value={String(i + 1)}>{m}</SelectItem>)}
-              </SelectContent>
-            </Select>
-            <Select value={String(ano)} onValueChange={(v) => setAno(Number(v))}>
-              <SelectTrigger className="w-[100px]"><SelectValue /></SelectTrigger>
-              <SelectContent>
-                {Array.from({ length: 6 }, (_, i) => now.getFullYear() - 3 + i).map((a) => (
-                  <SelectItem key={a} value={String(a)}>{a}</SelectItem>
+                {MESES.map((m, i) => (
+                  <SelectItem key={m} value={String(i + 1)}>
+                    {m}
+                  </SelectItem>
                 ))}
               </SelectContent>
             </Select>
-            <Button variant="outline" disabled={gerarEmLote.isPending || !(lista ?? []).some(c => !c.lancamento_id && c.status !== "cancelada")}
-              onClick={() => { if (confirm(`Gerar conta(s) a pagar para ${(lista ?? []).filter(c => !c.lancamento_id && c.status !== "cancelada").length} comissão(õe)s pendente(s)?`)) gerarEmLote.mutate(); }}>
-              <HandCoins className="h-4 w-4 mr-1" />Gerar contas a pagar
+            <Select value={String(ano)} onValueChange={(v) => setAno(Number(v))}>
+              <SelectTrigger className="w-[100px]">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {Array.from({ length: 6 }, (_, i) => now.getFullYear() - 3 + i).map((a) => (
+                  <SelectItem key={a} value={String(a)}>
+                    {a}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <Button
+              variant="outline"
+              disabled={
+                gerarEmLote.isPending ||
+                !(lista ?? []).some((c) => !c.lancamento_id && c.status !== "cancelada")
+              }
+              onClick={() => {
+                if (
+                  confirm(
+                    `Gerar conta(s) a pagar para ${(lista ?? []).filter((c) => !c.lancamento_id && c.status !== "cancelada").length} comissão(õe)s pendente(s)?`,
+                  )
+                )
+                  gerarEmLote.mutate();
+              }}
+            >
+              <HandCoins className="h-4 w-4 mr-1" />
+              Gerar contas a pagar
             </Button>
-              <Dialog open={open} onOpenChange={(o) => { setOpen(o); if (!o) reset(); }}>
+            <Dialog
+              open={open}
+              onOpenChange={(o) => {
+                setOpen(o);
+                if (!o) reset();
+              }}
+            >
               <DialogTrigger asChild>
-                <Button><Plus className="mr-1.5 h-4 w-4" /> Nova comissão</Button>
+                <Button>
+                  <Plus className="mr-1.5 h-4 w-4" /> Nova comissão
+                </Button>
               </DialogTrigger>
               <DialogContent className="sm:max-w-md">
-                <DialogHeader><DialogTitle>{editing ? "Editar comissão" : `Nova comissão · ${MESES[mes - 1]}/${ano}`}</DialogTitle></DialogHeader>
+                <DialogHeader>
+                  <DialogTitle>
+                    {editing ? "Editar comissão" : `Nova comissão · ${MESES[mes - 1]}/${ano}`}
+                  </DialogTitle>
+                </DialogHeader>
                 <div className="grid gap-4">
                   <div className="space-y-1.5">
                     <Label>Colaborador (motoristas)</Label>
                     <Select value={colaborador} onValueChange={setColaborador}>
-                      <SelectTrigger><SelectValue placeholder="Selecione" /></SelectTrigger>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Selecione" />
+                      </SelectTrigger>
                       <SelectContent>
-                        {colabs.map((c) => <SelectItem key={c.id} value={c.id}>{c.nome}</SelectItem>)}
+                        {colabs.map((c) => (
+                          <SelectItem key={c.id} value={c.id}>
+                            {c.nome}
+                          </SelectItem>
+                        ))}
                       </SelectContent>
                     </Select>
                     {colabs.length === 0 && (
                       <p className="text-xs text-muted-foreground">
-                        Nenhum motorista ativo com cargo cadastrado — cadastre em DP → Colaboradores.
+                        Nenhum motorista ativo com cargo cadastrado — cadastre em DP →
+                        Colaboradores.
                       </p>
                     )}
                   </div>
                   <div className="space-y-1.5">
                     <Label>Descrição</Label>
-                    <Input value={descricao} onChange={(e) => setDescricao(e.target.value)} placeholder="Ex.: vendas do mês" />
+                    <Input
+                      value={descricao}
+                      onChange={(e) => setDescricao(e.target.value)}
+                      placeholder="Ex.: vendas do mês"
+                    />
                   </div>
                   <div className="grid gap-2 sm:grid-cols-2">
                     <div className="space-y-1.5">
@@ -301,7 +436,11 @@ function ComissoesPage() {
       />
 
       {isLoading ? (
-        <div className="space-y-2">{[...Array(4)].map((_, i) => <Skeleton key={i} className="h-12 w-full" />)}</div>
+        <div className="space-y-2">
+          {[...Array(4)].map((_, i) => (
+            <Skeleton key={i} className="h-12 w-full" />
+          ))}
+        </div>
       ) : !lista?.length ? (
         <EmptyState
           icon={Percent}
@@ -329,30 +468,54 @@ function ComissoesPage() {
               {lista.map((c) => (
                 <TableRow key={c.id}>
                   <TableCell className="font-medium">{c.colaboradores?.nome ?? "—"}</TableCell>
-                  <TableCell className="max-w-[220px] truncate text-muted-foreground">{c.descricao ?? "—"}</TableCell>
+                  <TableCell className="max-w-[220px] truncate text-muted-foreground">
+                    {c.descricao ?? "—"}
+                  </TableCell>
                   <TableCell className="text-right">{brl(c.base_valor)}</TableCell>
-                  <TableCell className="text-right text-muted-foreground">{Number(c.percentual)}%</TableCell>
+                  <TableCell className="text-right text-muted-foreground">
+                    {Number(c.percentual)}%
+                  </TableCell>
                   <TableCell className="text-right font-medium">{brl(c.valor)}</TableCell>
-                  <TableCell><Badge variant="secondary">{STATUS_LABEL[c.status] ?? c.status}</Badge></TableCell>
+                  <TableCell>
+                    <Badge variant="secondary">{STATUS_LABEL[c.status] ?? c.status}</Badge>
+                  </TableCell>
                   <TableCell className="text-right">
                     <div className="flex items-center justify-end gap-1">
                       <Button
-                        size="icon" variant="ghost" aria-label="Gerar conta a pagar"
+                        size="icon"
+                        variant="ghost"
+                        aria-label="Gerar conta a pagar"
                         title={c.lancamento_id ? "Já lançado no financeiro" : "Gerar conta a pagar"}
                         disabled={!!c.lancamento_id || gerarPagamento.isPending}
                         onClick={() => gerarPagamento.mutate(c)}
                       >
                         <HandCoins className="h-4 w-4" />
                       </Button>
-                      <Button size="icon" variant="ghost" aria-label="Editar" title="Editar"
+                      <Button
+                        size="icon"
+                        variant="ghost"
+                        aria-label="Editar"
+                        title="Editar"
                         disabled={!!c.lancamento_id}
-                        onClick={() => abrirEdicao(c)}>
+                        onClick={() => abrirEdicao(c)}
+                      >
                         <Pencil className="h-4 w-4" />
                       </Button>
-                      <Button size="icon" variant="ghost" aria-label="Excluir" onClick={() => {
-                        if (confirm(c.lancamento_id ? "Excluir esta comissão?\n\nA conta a pagar vinculada também será removida." : "Excluir esta comissão?"))
-                          excluir.mutate(c);
-                      }}>
+                      <Button
+                        size="icon"
+                        variant="ghost"
+                        aria-label="Excluir"
+                        onClick={() => {
+                          if (
+                            confirm(
+                              c.lancamento_id
+                                ? "Excluir esta comissão?\n\nA conta a pagar vinculada também será removida."
+                                : "Excluir esta comissão?",
+                            )
+                          )
+                            excluir.mutate(c);
+                        }}
+                      >
                         <Trash2 className="h-4 w-4" />
                       </Button>
                     </div>

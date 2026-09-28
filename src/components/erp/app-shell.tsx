@@ -64,7 +64,9 @@ export function AppShell({ children }: { children: ReactNode }) {
   });
   useEffect(() => {
     document.documentElement.dataset.density = "compact";
-    return () => { delete document.documentElement.dataset.density; };
+    return () => {
+      delete document.documentElement.dataset.density;
+    };
   }, []);
   const toggleCollapsed = () => {
     setCollapsed((c) => {
@@ -95,7 +97,10 @@ export function AppShell({ children }: { children: ReactNode }) {
   const { data: empresas } = useQuery({
     queryKey: ["empresas"],
     queryFn: async () => {
-      const { data, error } = await supabase.from("empresas").select("*").order("created_at");
+      const { data, error } = await supabase
+        .from("empresas")
+        .select("id,nome,cnpj,created_at")
+        .order("created_at");
       if (error) throw error;
       return data;
     },
@@ -162,9 +167,9 @@ export function AppShell({ children }: { children: ReactNode }) {
 
   // Fecha o drawer mobile e os dropdowns ao navegar, mantendo o grupo ativo aberto
   useEffect(() => {
-  setOpen(false);
-  setNavigating(false);
-  keepActiveOpen();
+    setOpen(false);
+    setNavigating(false);
+    keepActiveOpen();
   }, [location.pathname, keepActiveOpen]);
 
   // Evita que a página role por trás do drawer aberto em telas pequenas
@@ -323,7 +328,13 @@ export function AppShell({ children }: { children: ReactNode }) {
                 Norvo
               </span>
             )}
-            <Button variant="ghost" size="icon" className="ml-auto lg:hidden" onClick={() => setOpen(false)} aria-label="Fechar menu">
+            <Button
+              variant="ghost"
+              size="icon"
+              className="ml-auto lg:hidden"
+              onClick={() => setOpen(false)}
+              aria-label="Fechar menu"
+            >
               <X className="h-4 w-4" aria-hidden="true" />
             </Button>
           </div>
@@ -549,7 +560,9 @@ export function AppShell({ children }: { children: ReactNode }) {
                   {!collapsed && (
                     <div className="min-w-0 flex-1">
                       <div className="truncate text-sm">{meuNome || user?.email}</div>
-                      <div className="truncate text-xs text-muted-foreground">{meuNome ? user?.email : "Dados da conta"}</div>
+                      <div className="truncate text-xs text-muted-foreground">
+                        {meuNome ? user?.email : "Dados da conta"}
+                      </div>
                     </div>
                   )}
                 </button>
@@ -582,7 +595,13 @@ export function AppShell({ children }: { children: ReactNode }) {
         <div className="flex min-w-0 flex-col">
           <header className="sticky top-0 z-20 flex h-14 items-center justify-between border-b border-border/60 bg-background/85 px-4 shadow-[0_1px_12px_-10px_oklch(0.2_0.02_60_/_0.5)] backdrop-blur lg:px-8">
             <div className="flex items-center gap-2">
-              <Button variant="ghost" size="icon" className="lg:hidden" onClick={() => setOpen(true)} aria-label="Abrir menu">
+              <Button
+                variant="ghost"
+                size="icon"
+                className="lg:hidden"
+                onClick={() => setOpen(true)}
+                aria-label="Abrir menu"
+              >
                 <Menu className="h-5 w-5" aria-hidden="true" />
               </Button>
               <Button
@@ -606,15 +625,33 @@ export function AppShell({ children }: { children: ReactNode }) {
             <div className="flex items-center gap-1">
               <CommandPalette />
               <NotificationsBell />
-<Button variant="ghost" size="icon" onClick={toggleTheme} aria-label={theme === "dark" ? "Ativar tema claro" : "Ativar tema escuro"} title={theme === "dark" ? "Ativar tema claro" : "Ativar tema escuro"}>
-  {theme === "dark" ? <Sun className="h-4 w-4" aria-hidden="true" /> : <Moon className="h-4 w-4" aria-hidden="true" />}
-  </Button>
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={toggleTheme}
+                aria-label={theme === "dark" ? "Ativar tema claro" : "Ativar tema escuro"}
+                title={theme === "dark" ? "Ativar tema claro" : "Ativar tema escuro"}
+              >
+                {theme === "dark" ? (
+                  <Sun className="h-4 w-4" aria-hidden="true" />
+                ) : (
+                  <Moon className="h-4 w-4" aria-hidden="true" />
+                )}
+              </Button>
 
               <ShortcutsDialog />
             </div>
           </header>
-          <main id="conteudo-principal" tabIndex={-1} className="relative min-w-0 flex-1 overflow-auto px-3 py-4 outline-none sm:px-5 sm:py-6 lg:p-8">
-          {navigating && <div className="pointer-events-none fixed inset-x-0 top-0 z-[70] h-0.5 overflow-hidden bg-primary/15"><div className="h-full w-1/3 animate-[shimmer_1.1s_ease-in-out_infinite] bg-primary" /></div>}
+          <main
+            id="conteudo-principal"
+            tabIndex={-1}
+            className="relative min-w-0 flex-1 overflow-auto px-3 py-4 outline-none sm:px-5 sm:py-6 lg:p-8"
+          >
+            {navigating && (
+              <div className="pointer-events-none fixed inset-x-0 top-0 z-[70] h-0.5 overflow-hidden bg-primary/15">
+                <div className="h-full w-1/3 animate-[shimmer_1.1s_ease-in-out_infinite] bg-primary" />
+              </div>
+            )}
             {semAcesso ? (
               <Card className="mx-auto mt-10 max-w-md p-8 text-center">
                 <ShieldAlert className="mx-auto mb-3 h-10 w-10 text-muted-foreground" />

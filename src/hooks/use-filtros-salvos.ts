@@ -12,7 +12,11 @@ export type FiltroSalvo = {
   updated_at: string;
 };
 
-export function useFiltrosSalvos(empresaId: string | null | undefined, userId: string | null | undefined, modulo: string) {
+export function useFiltrosSalvos(
+  empresaId: string | null | undefined,
+  userId: string | null | undefined,
+  modulo: string,
+) {
   const queryClient = useQueryClient();
   const queryKey = ["filtros-salvos", empresaId, userId, modulo];
 
@@ -22,7 +26,7 @@ export function useFiltrosSalvos(empresaId: string | null | undefined, userId: s
     queryFn: async () => {
       const { data, error } = await supabase
         .from("filtros_salvos" as never)
-        .select("*")
+        .select("id,empresa_id,user_id,modulo,nome,filtros,created_at,updated_at")
         .eq("empresa_id", empresaId!)
         .eq("user_id", userId!)
         .eq("modulo", modulo)
@@ -36,7 +40,10 @@ export function useFiltrosSalvos(empresaId: string | null | undefined, userId: s
     mutationFn: async ({ nome, filtros }: { nome: string; filtros: Record<string, unknown> }) => {
       const { data, error } = await supabase
         .from("filtros_salvos" as never)
-        .upsert({ empresa_id: empresaId!, user_id: userId!, modulo, nome: nome.trim(), filtros }, { onConflict: "empresa_id,user_id,modulo,nome" })
+        .upsert(
+          { empresa_id: empresaId!, user_id: userId!, modulo, nome: nome.trim(), filtros },
+          { onConflict: "empresa_id,user_id,modulo,nome" },
+        )
         .select()
         .single();
       if (error) throw error;
@@ -47,7 +54,11 @@ export function useFiltrosSalvos(empresaId: string | null | undefined, userId: s
 
   const excluir = useMutation({
     mutationFn: async (id: string) => {
-      const { error } = await supabase.from("filtros_salvos" as never).delete().eq("id", id).eq("user_id", userId!);
+      const { error } = await supabase
+        .from("filtros_salvos" as never)
+        .delete()
+        .eq("id", id)
+        .eq("user_id", userId!);
       if (error) throw error;
     },
     onSuccess: () => queryClient.invalidateQueries({ queryKey }),
