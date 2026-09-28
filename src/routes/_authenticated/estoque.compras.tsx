@@ -63,10 +63,12 @@ function Compras() {
   const { data: ordens, isLoading } = useQuery({
     enabled: !!empresa,
     queryKey: ["ordens_compra", empresa?.id],
+    staleTime: 30_000,
+    gcTime: 10 * 60_000,
     queryFn: async () => {
       const { data, error } = await supabase.from("ordens_compra" as never)
-        .select("*, contatos:fornecedor_id(nome)")
-        .eq("empresa_id", empresa!.id).order("created_at", { ascending: false });
+        .select("id,numero,status,total,data_emissao,data_prevista,fornecedor_id,observacoes,conta_bancaria_id,contatos:fornecedor_id(nome)")
+        .eq("empresa_id", empresa!.id).order("created_at", { ascending: false }).limit(500);
       if (error) throw error;
       return (data ?? []) as unknown as OC[];
     },
@@ -75,6 +77,8 @@ function Compras() {
   const { data: fornecedores = [] } = useQuery({
     enabled: !!empresa,
     queryKey: ["contatos-fornecedor", empresa?.id],
+    staleTime: 10 * 60_000,
+    gcTime: 30 * 60_000,
     queryFn: async () => {
       const { data } = await supabase.from("contatos").select("id,nome")
         .eq("empresa_id", empresa!.id).in("tipo", ["fornecedor", "ambos"]).order("nome");

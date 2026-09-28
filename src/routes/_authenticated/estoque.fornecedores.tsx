@@ -54,12 +54,16 @@ function Fornecedores() {
   const { data: contatos, isLoading } = useQuery({
     enabled: !!empresa,
     queryKey: ["fornecedores", empresa?.id] as const,
+    staleTime: 2 * 60_000,
+    gcTime: 15 * 60_000,
     queryFn: async ({ signal }) => {
       const { data, error } = await supabase.from("contatos")
         .select("id,nome,tipo,documento,email,telefone,cep,logradouro,numero,complemento,bairro,cidade,uf,observacoes")
         .eq("empresa_id", empresa!.id)
         .in("tipo", ["fornecedor", "ambos"])
-        .order("nome").abortSignal(signal);
+        .order("nome")
+        .limit(1000)
+        .abortSignal(signal);
       if (error) throw error;
       return (data ?? []) as Contato[];
     },

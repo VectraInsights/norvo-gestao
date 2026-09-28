@@ -105,6 +105,8 @@ function Movimentacoes() {
   const { data: movs, isLoading } = useQuery({
     enabled: !!empresa,
     queryKey: ["movs", empresa?.id],
+    staleTime: 30_000,
+    gcTime: 10 * 60_000,
     queryFn: async ({ signal }) => {
       const { data, error } = await supabase
         .from("movimentacoes_estoque")
@@ -123,6 +125,8 @@ function Movimentacoes() {
   const { data: depositos = [] } = useQuery({
     enabled: !!empresa,
     queryKey: ["depositos-mov", empresa?.id],
+    staleTime: 10 * 60_000,
+    gcTime: 30 * 60_000,
     queryFn: async ({ signal }) => {
       const { data, error } = await supabase
         .from("depositos")
@@ -146,6 +150,7 @@ function Movimentacoes() {
         .eq("empresa_id", empresa!.id)
         .eq("ativo", true)
         .order("nome")
+        .limit(1000)
         .abortSignal(signal);
       if (error) throw error;
       return (data ?? []) as ProdutoSelect[];
@@ -231,7 +236,7 @@ function Movimentacoes() {
       <PageHeader
         eyebrow="Estoque"
         title="Movimentações"
-        description="Entradas, saídas e ajustes de inventário."
+        description="Entradas, saídas e ajustes de invent��rio."
         actions={
           <div className="flex gap-2">
             <Dialog
