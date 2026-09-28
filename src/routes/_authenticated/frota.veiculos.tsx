@@ -44,7 +44,19 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-import { Truck, Plus, Pencil, Trash2, Search, ChevronsUpDown, Check, Upload, FileText } from "lucide-react";
+import {
+  ChevronLeft,
+  ChevronRight,
+  Truck,
+  Plus,
+  Pencil,
+  Trash2,
+  Search,
+  ChevronsUpDown,
+  Check,
+  Upload,
+  FileText,
+} from "lucide-react";
 import { useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -52,7 +64,14 @@ import { useEmpresaAtual } from "@/hooks/use-empresa";
 import { toast } from "sonner";
 import { num } from "@/lib/format";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
+import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+} from "@/components/ui/command";
 
 export const Route = createFileRoute("/_authenticated/frota/veiculos")({
   component: Veiculos,
@@ -118,6 +137,7 @@ function Veiculos() {
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState<Veiculo | null>(null);
   const [busca, setBusca] = useState("");
+  const [pagina, setPagina] = useState(1);
   const [form, setForm] = useState(formVazio);
   const set = <K extends keyof typeof form>(k: K, v: (typeof form)[K]) =>
     setForm((f) => ({ ...f, [k]: v }));
@@ -163,7 +183,13 @@ function Veiculos() {
         .order("rntrc")
         .abortSignal(signal);
       if (error) throw error;
-      return (data ?? []) as { id: string; rntrc: string; nome: string; cnpj: string | null; categoria: string | null }[];
+      return (data ?? []) as {
+        id: string;
+        rntrc: string;
+        nome: string;
+        cnpj: string | null;
+        categoria: string | null;
+      }[];
     },
   });
 
@@ -197,7 +223,8 @@ function Veiculos() {
   const rntrcDisponiveis = useMemo(() => {
     const map = new Map<string, { rntrc: string; nome: string }>();
     for (const r of rntrcLista ?? []) map.set(r.rntrc, { rntrc: r.rntrc, nome: r.nome });
-    for (const v of veiculosExistentes ?? []) if (v.rntrc && !map.has(v.rntrc)) map.set(v.rntrc, { rntrc: v.rntrc, nome: "" });
+    for (const v of veiculosExistentes ?? [])
+      if (v.rntrc && !map.has(v.rntrc)) map.set(v.rntrc, { rntrc: v.rntrc, nome: "" });
     return [...map.values()].sort((a, b) => a.rntrc.localeCompare(b.rntrc));
   }, [rntrcLista, veiculosExistentes]);
 
@@ -290,11 +317,15 @@ function Veiculos() {
       console.log("[CRLV] texto bruto (800):", upper.slice(0, 800));
       // Isola dados: entre "LEIA O QR CODE" e "RECUPERADO" ou "DOCUMENTO EMITIDO"
       let dadosBloco = "";
-      const blocoMatch = upper.match(/LEIA O QR CODE.*?\s+([0-9]{11}\s+[A-Z]{3}[0-9][A-Z0-9][0-9]{2}[\s\S]*?)\s+RECUPERADO/);
+      const blocoMatch = upper.match(
+        /LEIA O QR CODE.*?\s+([0-9]{11}\s+[A-Z]{3}[0-9][A-Z0-9][0-9]{2}[\s\S]*?)\s+RECUPERADO/,
+      );
       if (blocoMatch) dadosBloco = blocoMatch[1];
       else {
         // fallback: pega sequência com RENAVAM + PLACA + ANO
-        const alt = upper.match(/([0-9]{11}\s+[A-Z]{3}[0-9][A-Z0-9][0-9]{2}[\s\S]{0,500}LGP TRANSPORTES LTDA)/);
+        const alt = upper.match(
+          /([0-9]{11}\s+[A-Z]{3}[0-9][A-Z0-9][0-9]{2}[\s\S]{0,500}LGP TRANSPORTES LTDA)/,
+        );
         if (alt) dadosBloco = alt[1];
         else dadosBloco = upper;
       }
@@ -308,38 +339,64 @@ function Veiculos() {
       const placaMatch = dadosBloco.match(/([A-Z]{3}[0-9][A-Z0-9][0-9]{2})/);
       const renavamMatch = dadosBloco.match(/\b([0-9]{11})\b/);
       const chassiMatch = dadosBloco.match(/\b([A-Z0-9]{17})\b/);
-      const anos = [...dadosBloco.matchAll(/\b(19|20)[0-9]{2}\b/g)].map(m => m[0]);
-      const catMatch = dadosBloco.match(/\b(ALUGUEL|PARTICULAR|AGREGADO|TERCEIRO)\b/)
-        || upper.match(/CATEGORIA\s+(ALUGUEL|PARTICULAR|AGREGADO|TERCEIRO)/)
-        || dadosBloco.match(/(PARTICULAR)/i);
-      console.log("[CRLV] catMatch:", catMatch ? catMatch[1] : "NENHUM", "| dadosBloco snippet:", dadosBloco.slice(0, 300));
-      const eixosMatch = dadosBloco.match(/\bEIXOS?\b[^0-9]*([0-9])\b/) || dadosBloco.match(/\*\.\*\s+([0-9])\s+0\dP/);
+      const anos = [...dadosBloco.matchAll(/\b(19|20)[0-9]{2}\b/g)].map((m) => m[0]);
+      const catMatch =
+        dadosBloco.match(/\b(ALUGUEL|PARTICULAR|AGREGADO|TERCEIRO)\b/) ||
+        upper.match(/CATEGORIA\s+(ALUGUEL|PARTICULAR|AGREGADO|TERCEIRO)/) ||
+        dadosBloco.match(/(PARTICULAR)/i);
+      console.log(
+        "[CRLV] catMatch:",
+        catMatch ? catMatch[1] : "NENHUM",
+        "| dadosBloco snippet:",
+        dadosBloco.slice(0, 300),
+      );
+      const eixosMatch =
+        dadosBloco.match(/\bEIXOS?\b[^0-9]*([0-9])\b/) ||
+        dadosBloco.match(/\*\.\*\s+([0-9])\s+0\dP/);
       // Marca: após "***" e antes de palavra-chave de espécie
       let marcaVal = "";
-      const marcaSec = dadosBloco.match(/\*\*\*\s+([A-Z0-9][A-Z0-9 \/\.\-]+?)\s+(?:TRACAO|TRAC.AO|CARGA|SEMI-REBOQUE|CAMINH.AO|TRATOR|PASSEIO|UTILIT.ARIO)/i);
+      const marcaSec = dadosBloco.match(
+        /\*\*\*\s+([A-Z0-9][A-Z0-9 \/\.\-]+?)\s+(?:TRACAO|TRAC.AO|CARGA|SEMI-REBOQUE|CAMINH.AO|TRATOR|PASSEIO|UTILIT.ARIO)/i,
+      );
       if (marcaSec) marcaVal = clean(marcaSec[1]);
       else {
-        const m2 = upper.match(/MARCA\s*\/\s*MODELO\s*\/\s*VERS[ÃA]O\s+([A-Z0-9][A-Z0-9 \/\.\-]+?)\s+ESP[ÉE]CIE/);
+        const m2 = upper.match(
+          /MARCA\s*\/\s*MODELO\s*\/\s*VERS[ÃA]O\s+([A-Z0-9][A-Z0-9 \/\.\-]+?)\s+ESP[ÉE]CIE/,
+        );
         if (m2) marcaVal = clean(m2[1].split("PLACA ANTERIOR")[0]);
       }
       let propVal = "";
       // Padrão 1: CARROCERIA FECHADA + nome + sufixo jurídico (LTDA/EPP/MEI/EIRELI/SA/etc)
-      const propSec = dadosBloco.match(/CARROCERIA\s+FECHADA\s+([A-Z][A-Z0-9 \.\-\/&]+?)\s+(?:LTDA|EPP|MEI|EIRELI|S\.?A\.?)/i);
+      const propSec = dadosBloco.match(
+        /CARROCERIA\s+FECHADA\s+([A-Z][A-Z0-9 \.\-\/&]+?)\s+(?:LTDA|EPP|MEI|EIRELI|S\.?A\.?)/i,
+      );
       if (propSec) propVal = clean(propSec[1]);
       else {
         // Padrão 2: após "0XP" + 2 palavras, nome + CNPJ (formato BTB3808 etc)
-        const p2 = dadosBloco.match(/0\dP\s+\S+\s+\S+\s+([A-Z][A-Z0-9 \.\-\/&]+?)\s+\d{2}\.\d{3}\.\d{3}/);
+        const p2 = dadosBloco.match(
+          /0\dP\s+\S+\s+\S+\s+([A-Z][A-Z0-9 \.\-\/&]+?)\s+\d{2}\.\d{3}\.\d{3}/,
+        );
         if (p2) propVal = clean(p2[1]);
         else {
           // Padrão 3: após "0XP" + 1 palavra, nome + sufixo jurídico + CNPJ
-          const p3 = dadosBloco.match(/0\dP\s+\S+\s+([A-Z][A-Z0-9 \.\-\/&]+?)\s+(?:EPP|LTDA|MEI|EIRELI|S\.?A\.?)\s+\d/);
+          const p3 = dadosBloco.match(
+            /0\dP\s+\S+\s+([A-Z][A-Z0-9 \.\-\/&]+?)\s+(?:EPP|LTDA|MEI|EIRELI|S\.?A\.?)\s+\d/,
+          );
           if (p3) propVal = clean(p3[1]);
         }
       }
-      const especieVal = dadosBloco.includes("SEMI-REBOQUE") ? "Carreta"
-        : dadosBloco.includes("TRACAO") || dadosBloco.includes("CAMINHÃO") || dadosBloco.includes("CAMINHAO") || dadosBloco.includes("TRATOR") || dadosBloco.includes("CARGA CAMINHAO") || dadosBloco.includes("CARGA CAMINHÃO") ? "Cavalo Mecânico"
-        : dadosBloco.includes("CARGA") ? "Carreta"
-        : "";
+      const especieVal = dadosBloco.includes("SEMI-REBOQUE")
+        ? "Carreta"
+        : dadosBloco.includes("TRACAO") ||
+            dadosBloco.includes("CAMINHÃO") ||
+            dadosBloco.includes("CAMINHAO") ||
+            dadosBloco.includes("TRATOR") ||
+            dadosBloco.includes("CARGA CAMINHAO") ||
+            dadosBloco.includes("CARGA CAMINHÃO")
+          ? "Cavalo Mecânico"
+          : dadosBloco.includes("CARGA")
+            ? "Carreta"
+            : "";
       const updates: Partial<typeof form> = {};
       if (placaMatch) updates.placa = placaMatch[1].replace(/[^A-Z0-9]/g, "").toUpperCase();
       if (renavamMatch) updates.renavam = renavamMatch[1];
@@ -349,9 +406,11 @@ function Veiculos() {
       }
       if (chassiMatch && chassiMatch[1].length === 17) updates.chassi = chassiMatch[1];
       // CRLV: primeiro ano = EXERCÍCIO (licenciamento), segundo = ANO FAB/MODELO
-      if (anos.length >= 2) updates.ano = anos[1]; // segundo = fabricação
+      if (anos.length >= 2)
+        updates.ano = anos[1]; // segundo = fabricação
       else if (anos.length === 1) updates.ano = anos[0];
-      if (marcaVal && marcaVal.length > 3 && !marcaVal.includes("PLACA ANTERIOR")) updates.marca_modelo = marcaVal.slice(0, 60);
+      if (marcaVal && marcaVal.length > 3 && !marcaVal.includes("PLACA ANTERIOR"))
+        updates.marca_modelo = marcaVal.slice(0, 60);
       else updates.marca_modelo = "SR/RANDON SRFG CG";
       if (catMatch) {
         const c = catMatch[1];
@@ -376,7 +435,7 @@ function Veiculos() {
       if (Object.keys(updates).length === 0) {
         toast.error("Não foi possível extrair dados do PDF. Verifique se é o CRLV digital.");
       } else {
-        setForm(f => ({ ...f, ...updates }));
+        setForm((f) => ({ ...f, ...updates }));
         toast.success("Dados do CRLV importados — confira e salve");
       }
     } catch (e: any) {
@@ -392,7 +451,9 @@ function Veiculos() {
     queryFn: async ({ signal }) => {
       const { data, error } = await supabase
         .from("veiculos" as never)
-        .select("id,placa,marca_modelo,tipo,ano,rntrc,renavam,proprietario,proprietario_doc,quantidade_eixos,categoria,chassi,tag_pedagio,status,observacoes")
+        .select(
+          "id,placa,marca_modelo,tipo,ano,rntrc,renavam,proprietario,proprietario_doc,quantidade_eixos,categoria,chassi,tag_pedagio,status,observacoes",
+        )
         .eq("empresa_id", empresa!.id)
         .order("placa")
         .limit(500)
@@ -440,7 +501,8 @@ function Veiculos() {
       if (!form.chassi.trim()) throw new Error("Chassi é obrigatório");
       if (!form.proprietario.trim()) throw new Error("Proprietário é obrigatório");
       const propDoc = form.proprietario_doc.replace(/\D/g, "");
-      if (propDoc && propDoc.length !== 11 && propDoc.length !== 14) throw new Error("CNPJ/CPF do proprietário inválido (11 ou 14 dígitos)");
+      if (propDoc && propDoc.length !== 11 && propDoc.length !== 14)
+        throw new Error("CNPJ/CPF do proprietário inválido (11 ou 14 dígitos)");
       if (!form.categoria) throw new Error("Categoria é obrigatória");
       if (!form.quantidade_eixos) throw new Error("Quantidade de eixos é obrigatória");
       const payload: any = {
@@ -468,7 +530,11 @@ function Veiculos() {
         return tbl.insert(p);
       };
       const friendly = (e: any) => {
-        if (String(e?.message || "").toLowerCase().includes("duplicate"))
+        if (
+          String(e?.message || "")
+            .toLowerCase()
+            .includes("duplicate")
+        )
           throw new Error("Já existe um veículo com esta placa");
         throw e;
       };
@@ -477,10 +543,16 @@ function Veiculos() {
         if (error) throw error;
       } catch (e: any) {
         // Coluna nova ainda sem migration no banco: salva sem ela e avisa.
-        if (String(e?.message || "").toLowerCase().includes("proprietario_doc")) {
+        if (
+          String(e?.message || "")
+            .toLowerCase()
+            .includes("proprietario_doc")
+        ) {
           const { error } = await trySave(payloadBase);
           if (error) await friendly(error);
-          toast.warning("Migration pendente no Supabase (20260925120000): veículo salvo sem o CNPJ/CPF do proprietário");
+          toast.warning(
+            "Migration pendente no Supabase (20260925120000): veículo salvo sem o CNPJ/CPF do proprietário",
+          );
         } else await friendly(e);
       }
     },
@@ -509,10 +581,22 @@ function Veiculos() {
   const lista = (veiculos ?? []).filter((v) => {
     if (!busca.trim()) return true;
     const s = busca.toLowerCase();
-    return [v.placa, v.marca_modelo, v.tipo, v.rntrc, (v as any).proprietario, (v as any).proprietario_doc, (v as any).categoria, (v as any).chassi].some((x) =>
-      (x ?? "").toLowerCase().includes(s),
-    );
+    return [
+      v.placa,
+      v.marca_modelo,
+      v.tipo,
+      v.rntrc,
+      (v as any).proprietario,
+      (v as any).proprietario_doc,
+      (v as any).categoria,
+      (v as any).chassi,
+    ].some((x) => (x ?? "").toLowerCase().includes(s));
   });
+
+  const pageSize = 25;
+  const totalPaginas = Math.max(1, Math.ceil(lista.length / pageSize));
+  const paginaAtual = Math.min(pagina, totalPaginas);
+  const veiculosVisiveis = lista.slice((paginaAtual - 1) * pageSize, paginaAtual * pageSize);
 
   return (
     <>
@@ -530,7 +614,13 @@ function Veiculos() {
         }}
       >
         <DialogTrigger asChild>
-          <Button className="mb-4" onClick={() => { reset(); setOpen(true); }}>
+          <Button
+            className="mb-4"
+            onClick={() => {
+              reset();
+              setOpen(true);
+            }}
+          >
             <Plus className="mr-1 h-4 w-4" />
             Novo veículo
           </Button>
@@ -543,10 +633,23 @@ function Veiculos() {
             <div className="flex gap-2">
               <label className="flex items-center gap-2 px-3 py-2 border rounded bg-accent text-accent-foreground cursor-pointer hover:bg-accent/70 text-xs font-medium">
                 <FileText className="h-4 w-4" /> Importar CRLV (PDF)
-                <input type="file" accept=".pdf" className="hidden" onChange={e => { const f = e.target.files?.[0]; if (f) handleCrlvPdf(f); e.currentTarget.value = ""; }} />
+                <input
+                  type="file"
+                  accept=".pdf"
+                  className="hidden"
+                  onChange={(e) => {
+                    const f = e.target.files?.[0];
+                    if (f) handleCrlvPdf(f);
+                    e.currentTarget.value = "";
+                  }}
+                />
               </label>
-              {isParsingPdf && <span className="text-xs text-muted-foreground self-center">Lendo PDF…</span>}
-              <span className="text-[10px] text-muted-foreground self-center">Preenche placa, RENAVAM, chassi e modelo automaticamente</span>
+              {isParsingPdf && (
+                <span className="text-xs text-muted-foreground self-center">Lendo PDF…</span>
+              )}
+              <span className="text-[10px] text-muted-foreground self-center">
+                Preenche placa, RENAVAM, chassi e modelo automaticamente
+              </span>
             </div>
             <div className="grid grid-cols-3 gap-3">
               <div>
@@ -579,56 +682,106 @@ function Veiculos() {
                 </Select>
               </div>
             </div>
-                <div className="grid grid-cols-[1fr_auto_auto] gap-3 items-end">
-                  <div>
-                    <Label>Marca / modelo *</Label>
-                    <Input
-                      value={form.marca_modelo}
-                      onChange={(e) => set("marca_modelo", e.target.value)}
-                    />
-                  </div>
-                  <div className="w-44">
-                    <Label>Tipo *</Label>
-                    <Popover open={tipoOpen} onOpenChange={setTipoOpen}>
-                      <PopoverTrigger asChild>
-                        <Button variant="outline" role="combobox" aria-expanded={tipoOpen} className="h-10 w-full justify-between font-normal">
-                          <span>{form.tipo || "Selecione"}</span>
-                          <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+            <div className="grid grid-cols-[1fr_auto_auto] gap-3 items-end">
+              <div>
+                <Label>Marca / modelo *</Label>
+                <Input
+                  value={form.marca_modelo}
+                  onChange={(e) => set("marca_modelo", e.target.value)}
+                />
+              </div>
+              <div className="w-44">
+                <Label>Tipo *</Label>
+                <Popover open={tipoOpen} onOpenChange={setTipoOpen}>
+                  <PopoverTrigger asChild>
+                    <Button
+                      variant="outline"
+                      role="combobox"
+                      aria-expanded={tipoOpen}
+                      className="h-10 w-full justify-between font-normal"
+                    >
+                      <span>{form.tipo || "Selecione"}</span>
+                      <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-[320px] p-0" align="start">
+                    <Command shouldFilter={false}>
+                      <CommandInput
+                        placeholder="Buscar tipo..."
+                        value={tipoQuery}
+                        onValueChange={setTipoQuery}
+                      />
+                      <CommandList>
+                        <CommandEmpty>Nenhum tipo encontrado.</CommandEmpty>
+                        <CommandGroup>
+                          {tipos
+                            .filter(
+                              (t) =>
+                                !tipoQuery || t.toLowerCase().includes(tipoQuery.toLowerCase()),
+                            )
+                            .map((t) => (
+                              <CommandItem
+                                key={t}
+                                value={t}
+                                onSelect={() => {
+                                  set("tipo", t);
+                                  setTipoOpen(false);
+                                  setTipoQuery("");
+                                }}
+                              >
+                                <Check
+                                  className={
+                                    "mr-2 h-4 w-4 " +
+                                    (form.tipo === t ? "opacity-100" : "opacity-0")
+                                  }
+                                />
+                                {t}
+                              </CommandItem>
+                            ))}
+                          {tipoQuery &&
+                            !tipos.some((t) => t.toLowerCase() === tipoQuery.toLowerCase()) && (
+                              <CommandItem
+                                value={tipoQuery}
+                                onSelect={() => {
+                                  set("tipo", tipoQuery);
+                                  setTipoOpen(false);
+                                  setTipoQuery("");
+                                }}
+                              >
+                                Usar &quot;{tipoQuery}&quot;
+                              </CommandItem>
+                            )}
+                        </CommandGroup>
+                      </CommandList>
+                      <div className="border-t p-1">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="w-full justify-start text-xs"
+                          onClick={() => {
+                            setTipoOpen(false);
+                            setTiposOpen(true);
+                          }}
+                        >
+                          <Plus className="mr-1 h-3 w-3" /> Gerenciar tipos
                         </Button>
-                      </PopoverTrigger>
-                      <PopoverContent className="w-[320px] p-0" align="start">
-                        <Command shouldFilter={false}>
-                          <CommandInput placeholder="Buscar tipo..." value={tipoQuery} onValueChange={setTipoQuery} />
-                          <CommandList>
-                            <CommandEmpty>Nenhum tipo encontrado.</CommandEmpty>
-                            <CommandGroup>
-                              {tipos.filter(t => !tipoQuery || t.toLowerCase().includes(tipoQuery.toLowerCase())).map(t => (
-                                <CommandItem key={t} value={t} onSelect={() => { set("tipo", t); setTipoOpen(false); setTipoQuery(""); }}>
-                                  <Check className={"mr-2 h-4 w-4 " + (form.tipo === t ? "opacity-100" : "opacity-0")} />
-                                  {t}
-                                </CommandItem>
-                              ))}
-                              {tipoQuery && !tipos.some(t => t.toLowerCase() === tipoQuery.toLowerCase()) && (
-                                <CommandItem value={tipoQuery} onSelect={() => { set("tipo", tipoQuery); setTipoOpen(false); setTipoQuery(""); }}>
-                                  Usar &quot;{tipoQuery}&quot;
-                                </CommandItem>
-                              )}
-                            </CommandGroup>
-                          </CommandList>
-                          <div className="border-t p-1">
-                            <Button variant="ghost" size="sm" className="w-full justify-start text-xs" onClick={() => { setTipoOpen(false); setTiposOpen(true); }}>
-                              <Plus className="mr-1 h-3 w-3" /> Gerenciar tipos
-                            </Button>
-                          </div>
-                        </Command>
-                      </PopoverContent>
-                    </Popover>
-                  </div>
-                  <div>
-                    <Label>Eixos *</Label>
-                    <MoneyInput prefix="" decimals={0} value={form.quantidade_eixos} onChange={(v) => set("quantidade_eixos", v)} placeholder="2" className="w-16" />
-                  </div>
-                </div>
+                      </div>
+                    </Command>
+                  </PopoverContent>
+                </Popover>
+              </div>
+              <div>
+                <Label>Eixos *</Label>
+                <MoneyInput
+                  prefix=""
+                  decimals={0}
+                  value={form.quantidade_eixos}
+                  onChange={(v) => set("quantidade_eixos", v)}
+                  placeholder="2"
+                  className="w-16"
+                />
+              </div>
+            </div>
             <div className="grid grid-cols-3 gap-3">
               <div>
                 <Label>RENAVAM *</Label>
@@ -636,38 +789,83 @@ function Veiculos() {
               </div>
               <div>
                 <Label>Chassi *</Label>
-                <Input value={form.chassi} onChange={(e) => set("chassi", e.target.value.toUpperCase())} placeholder="17 caracteres" maxLength={17} className="uppercase font-mono text-xs" />
+                <Input
+                  value={form.chassi}
+                  onChange={(e) => set("chassi", e.target.value.toUpperCase())}
+                  placeholder="17 caracteres"
+                  maxLength={17}
+                  className="uppercase font-mono text-xs"
+                />
               </div>
               <div>
                 <Label>TAG Pedágio</Label>
-                <Input value={form.tag_pedagio} onChange={(e) => set("tag_pedagio", e.target.value)} placeholder="Nº da TAG instalada" className="font-mono text-xs" />
+                <Input
+                  value={form.tag_pedagio}
+                  onChange={(e) => set("tag_pedagio", e.target.value)}
+                  placeholder="Nº da TAG instalada"
+                  className="font-mono text-xs"
+                />
               </div>
               <div>
                 <Label>RNTRC</Label>
                 <Popover open={rntrcOpen} onOpenChange={setRntrcOpen}>
                   <PopoverTrigger asChild>
-                    <Button variant="outline" role="combobox" className="h-10 w-full justify-between font-normal">
+                    <Button
+                      variant="outline"
+                      role="combobox"
+                      className="h-10 w-full justify-between font-normal"
+                    >
                       <span className="truncate">
-                        {form.rntrc ? `${form.rntrc}${rntrcDisponiveis.find(r => r.rntrc === form.rntrc)?.nome ? ` — ${rntrcDisponiveis.find(r => r.rntrc === form.rntrc)?.nome}` : ""}` : "Selecione ou digite"}
+                        {form.rntrc
+                          ? `${form.rntrc}${rntrcDisponiveis.find((r) => r.rntrc === form.rntrc)?.nome ? ` — ${rntrcDisponiveis.find((r) => r.rntrc === form.rntrc)?.nome}` : ""}`
+                          : "Selecione ou digite"}
                       </span>
                       <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                     </Button>
                   </PopoverTrigger>
                   <PopoverContent className="w-[350px] p-0" align="start">
                     <Command>
-                      <CommandInput placeholder="Buscar RNTRC ou nome..." value={form.rntrc} onValueChange={(v) => set("rntrc", v.toUpperCase())} />
+                      <CommandInput
+                        placeholder="Buscar RNTRC ou nome..."
+                        value={form.rntrc}
+                        onValueChange={(v) => set("rntrc", v.toUpperCase())}
+                      />
                       <CommandList>
                         <CommandEmpty>
-                          <Button variant="ghost" size="sm" className="w-full justify-start text-xs" onClick={() => { if (form.rntrc) { criarRntrc.mutate(form.rntrc); setRntrcOpen(false); } }}>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="w-full justify-start text-xs"
+                            onClick={() => {
+                              if (form.rntrc) {
+                                criarRntrc.mutate(form.rntrc);
+                                setRntrcOpen(false);
+                              }
+                            }}
+                          >
                             <Plus className="mr-1 h-3 w-3" /> Salvar &quot;{form.rntrc}&quot;
                           </Button>
                         </CommandEmpty>
                         <CommandGroup>
                           {rntrcDisponiveis.map((r) => (
-                            <CommandItem key={r.rntrc} value={`${r.rntrc} ${r.nome}`} onSelect={() => { set("rntrc", r.rntrc); setRntrcOpen(false); }}>
-                              <Check className={"mr-2 h-4 w-4 " + (form.rntrc === r.rntrc ? "opacity-100" : "opacity-0")} />
+                            <CommandItem
+                              key={r.rntrc}
+                              value={`${r.rntrc} ${r.nome}`}
+                              onSelect={() => {
+                                set("rntrc", r.rntrc);
+                                setRntrcOpen(false);
+                              }}
+                            >
+                              <Check
+                                className={
+                                  "mr-2 h-4 w-4 " +
+                                  (form.rntrc === r.rntrc ? "opacity-100" : "opacity-0")
+                                }
+                              />
                               <span className="font-medium">{r.rntrc}</span>
-                              {r.nome && <span className="ml-2 text-muted-foreground">— {r.nome}</span>}
+                              {r.nome && (
+                                <span className="ml-2 text-muted-foreground">— {r.nome}</span>
+                              )}
                             </CommandItem>
                           ))}
                         </CommandGroup>
@@ -680,19 +878,34 @@ function Veiculos() {
             <div className="grid grid-cols-2 gap-3">
               <div>
                 <Label>Proprietário *</Label>
-                <Input value={form.proprietario} onChange={(e) => handleProprietarioChange(e.target.value)} placeholder="Nome do proprietário" />
+                <Input
+                  value={form.proprietario}
+                  onChange={(e) => handleProprietarioChange(e.target.value)}
+                  placeholder="Nome do proprietário"
+                />
               </div>
               <div>
                 <Label>CNPJ/CPF Proprietário</Label>
-                <Input value={form.proprietario_doc} onChange={(e) => set("proprietario_doc", e.target.value.replace(/[^\d./-]/g, "").slice(0, 18))} placeholder="Somente números" className="font-mono" />
+                <Input
+                  value={form.proprietario_doc}
+                  onChange={(e) =>
+                    set("proprietario_doc", e.target.value.replace(/[^\d./-]/g, "").slice(0, 18))
+                  }
+                  placeholder="Somente números"
+                  className="font-mono"
+                />
               </div>
               <div>
                 <Label>Categoria *</Label>
-                <Select value={form.categoria} onValueChange={v => set("categoria", v)}>
-                  <SelectTrigger><SelectValue placeholder="Selecione" /></SelectTrigger>
+                <Select value={form.categoria} onValueChange={(v) => set("categoria", v)}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Selecione" />
+                  </SelectTrigger>
                   <SelectContent>
-                    {CATEGORIAS.map(c => (
-                      <SelectItem key={c} value={c.toLowerCase()}>{c}</SelectItem>
+                    {CATEGORIAS.map((c) => (
+                      <SelectItem key={c} value={c.toLowerCase()}>
+                        {c}
+                      </SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
@@ -730,9 +943,14 @@ function Veiculos() {
                 placeholder="Novo tipo..."
                 value={novoTipo}
                 onChange={(e) => setNovoTipo(e.target.value)}
-                onKeyDown={(e) => { if (e.key === "Enter") criarTipo.mutate(); }}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") criarTipo.mutate();
+                }}
               />
-              <Button onClick={() => criarTipo.mutate()} disabled={criarTipo.isPending || !novoTipo.trim()}>
+              <Button
+                onClick={() => criarTipo.mutate()}
+                disabled={criarTipo.isPending || !novoTipo.trim()}
+              >
                 {criarTipo.isPending ? "…" : <Plus className="h-4 w-4" />}
               </Button>
             </div>
@@ -767,7 +985,10 @@ function Veiculos() {
           className="pl-8"
           placeholder="Buscar por placa, modelo…"
           value={busca}
-          onChange={(e) => setBusca(e.target.value)}
+          onChange={(e) => {
+            setBusca(e.target.value);
+            setPagina(1);
+          }}
         />
       </div>
 
@@ -804,15 +1025,21 @@ function Veiculos() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {lista.map((v) => (
+              {veiculosVisiveis.map((v) => (
                 <TableRow key={v.id}>
                   <TableCell className="font-mono font-medium">{v.placa}</TableCell>
                   <TableCell>{v.marca_modelo ?? "—"}</TableCell>
                   <TableCell>{v.tipo ?? "—"}</TableCell>
                   <TableCell>{v.ano ?? "—"}</TableCell>
-                  <TableCell className="truncate max-w-[140px]">{(v as any).proprietario ?? "—"}</TableCell>
-                  <TableCell className="font-mono text-xs">{(v as any).proprietario_doc ?? "—"}</TableCell>
-                  <TableCell className="text-center">{(v as any).quantidade_eixos ?? "—"}</TableCell>
+                  <TableCell className="truncate max-w-[140px]">
+                    {(v as any).proprietario ?? "—"}
+                  </TableCell>
+                  <TableCell className="font-mono text-xs">
+                    {(v as any).proprietario_doc ?? "—"}
+                  </TableCell>
+                  <TableCell className="text-center">
+                    {(v as any).quantidade_eixos ?? "—"}
+                  </TableCell>
                   <TableCell className="capitalize">{(v as any).categoria ?? "—"}</TableCell>
                   <TableCell className="font-mono text-xs">{(v as any).chassi ?? "—"}</TableCell>
                   <TableCell>
@@ -857,6 +1084,37 @@ function Veiculos() {
               ))}
             </TableBody>
           </Table>
+          <div className="flex items-center justify-between border-t px-4 py-3 text-sm text-muted-foreground">
+            <span>
+              Mostrando {(paginaAtual - 1) * pageSize + 1}–
+              {Math.min(paginaAtual * pageSize, lista.length)} de {lista.length}
+            </span>
+            <div className="flex items-center gap-1">
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                aria-label="Página anterior"
+                disabled={paginaAtual === 1}
+                onClick={() => setPagina((value) => Math.max(1, value - 1))}
+              >
+                <ChevronLeft className="h-4 w-4" />
+              </Button>
+              <span className="px-2 text-xs">
+                Página {paginaAtual} de {totalPaginas}
+              </span>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                aria-label="Próxima página"
+                disabled={paginaAtual === totalPaginas}
+                onClick={() => setPagina((value) => Math.min(totalPaginas, value + 1))}
+              >
+                <ChevronRight className="h-4 w-4" />
+              </Button>
+            </div>
+          </div>
         </Card>
       )}
     </>
