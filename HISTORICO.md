@@ -73,6 +73,7 @@ Registro condensado da evolução do Norvo Gestão fora do editor Lovable.
 27. **Filtros salvos nas notas recebidas (29/09/2026)** — adicionada a persistência por usuário e empresa para busca e mês na tela `/fiscal/recebidas`, com salvar, aplicar e excluir filtros salvos.
 
 28. **Próxima melhoria — filtros salvos nas notas emitidas (29/09/2026)** — adicionada a persistência por usuário e empresa para tipo, status e busca na tela `/fiscal/emitidas`, com salvar, aplicar e excluir filtros salvos. Publicada diretamente na `main`, sem merge de branches.
+29. **Filtros salvos no CT-e (29/09/2026)** — adicionada persistência por usuário e empresa para remetente, destinatário e período de entrada na tela `/fiscal/cte`, com salvar e aplicar filtros salvos. Alteração feita diretamente na `main`; o build foi iniciado, mas o processo foi encerrado pelo ambiente por falta de memória (código 137).
 25. **Diagnóstico de integração (29/09/2026)** — confirmado que o projeto correto é `norvo-gestao` (`lfxhimtbuazezjkjlddj`) na organização Supabase `VectraInsights's Org`; a equipe Vercel correta é `vectrainsights' projects`. Tentativas de instalar/reconectar a integração Supabase no v0 falharam antes da seleção da organização com `Failed to fetch dashboard project`; não foi possível reativar o MCP nem aplicar a migration. O projeto incorreto `jbrvfrylppesbnaoqjcb` foi identificado, mas não foi excluído por falta de ferramenta de exclusão e para evitar uma operação irreversível sem confirmação dentro do painel.
 
 22. **CT-e complementar (26/09/2026)** — corrigida a abertura de CT-e complementar para aceitar tanto `xml_assinado` em JSON quanto XML puro, localizar tags por `localName` (inclusive XML com namespace) e herdar corretamente formulário, tomador, remetente/destinatário via NF referenciada, motorista, placas, pedágio e demais dados do CT-e original. A interface informa quando os dados originais foram carregados.
@@ -3028,7 +3029,7 @@ Espelhado na Vercel.
 
 - 647: `infMDFeTransp` só vale p/ modal aquaviário (modal 3). No
   rodoviário, o transbordo sai como MDF-e normal com os CT-es do
-  manifesto origem (seleção por manifesto mantida como localizador).
+  manifesto origem (sele��ão por manifesto mantida como localizador).
 - Reenvio de transbordo marca os CT-es automaticamente (uma vez;
   desmarcar é respeitado); duplicadas entre dropdowns eliminadas.
 - Espelhado na Vercel via push em main.

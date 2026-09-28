@@ -98,6 +98,7 @@ import { JUVENAL_LOGO } from "@/lib/juvenal-logo";
 import { Textarea } from "@/components/ui/textarea";
 import { DateInput } from "@/components/erp/date-input";
 import { MoneyInput } from "@/components/erp/money-input";
+import { useFiltrosSalvos } from "@/hooks/use-filtros-salvos";
 
 function formatarCnpjPercurso(value: unknown) {
   const digits = String(value || "").replace(/\D/g, "");
@@ -373,6 +374,22 @@ function CtePage() {
   const [statusTab, setStatusTab] = useState("embarque");
   const [mdfVincTab, setMdfVincTab] = useState("sem");
   const [respNome, setRespNome] = useState("");
+  const [filtrosSalvosOpen, setFiltrosSalvosOpen] = useState(false);
+  const { data: authUser } = useQuery({
+    queryKey: ["auth-user-cte"],
+    queryFn: async () => (await supabase.auth.getUser()).data.user,
+    staleTime: 5 * 60_000,
+  });
+  const filtrosSalvos = useFiltrosSalvos(empresa?.id, authUser?.id, "fiscal-cte");
+  const filtroAtual = { filtroRemetente, filtroDestinatario, periodoIni, periodoFim };
+  const aplicarFiltroSalvo = (id: string) => {
+    const salvo = filtrosSalvos.filtros.find((item) => item.id === id);
+    const valores = salvo?.filtros ?? {};
+    if (typeof valores.filtroRemetente === "string") setFiltroRemetente(valores.filtroRemetente);
+    if (typeof valores.filtroDestinatario === "string") setFiltroDestinatario(valores.filtroDestinatario);
+    if (typeof valores.periodoIni === "string") setPeriodoIni(valores.periodoIni);
+    if (typeof valores.periodoFim === "string") setPeriodoFim(valores.periodoFim);
+  };
   useEffect(() => {
     (async () => {
       try {
@@ -4428,6 +4445,34 @@ function CtePage() {
                           <Search className="h-3 w-3 mr-1" />
                           Consulta
                         </Button>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          className="h-7 text-xs shrink-0 px-2"
+                          onClick={() => {
+                            const nome = window.prompt("Nome do filtro");
+                            if (nome?.trim()) {
+                              filtrosSalvos.salvar.mutate({ nome, filtros: filtroAtual });
+                            }
+                          }}
+                          disabled={!authUser?.id || filtrosSalvos.salvar.isPending}
+                        >
+                          Salvar filtro
+                        </Button>
+                        {filtrosSalvos.filtros.length > 0 && (
+                          <Select onValueChange={aplicarFiltroSalvo}>
+                            <SelectTrigger className="h-7 w-[150px] text-xs">
+                              <SelectValue placeholder="Filtros salvos" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {filtrosSalvos.filtros.map((salvo) => (
+                                <SelectItem key={salvo.id} value={salvo.id}>
+                                  {salvo.nome}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        )}
                       </div>
                     </div>
                   </div>
