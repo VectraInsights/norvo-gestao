@@ -173,12 +173,15 @@ function ColaboradoresPage() {
   const { data: colabs, isLoading } = useQuery({
     enabled: !!empresa,
     queryKey: ["colaboradores", empresa?.id],
+    staleTime: 60_000,
+    gcTime: 10 * 60_000,
     queryFn: async () => {
       const { data, error } = await supabase
         .from("colaboradores" as never)
-        .select("*")
+        .select("id,nome,cpf,cargo,email,telefone,salario_base,data_admissao,data_demissao,status,pix,banco,agencia,conta,observacoes,cnh_numero,cnh_categoria,cnh_validade,toxico_exame,optante_vt")
         .eq("empresa_id", empresa!.id)
-        .order("nome");
+        .order("nome")
+        .limit(500);
       if (error) throw error;
       return (data ?? []) as unknown as Colab[];
     },
@@ -187,6 +190,8 @@ function ColaboradoresPage() {
   const { data: cargos = [] } = useQuery({
     enabled: !!empresa,
     queryKey: ["cargos", empresa?.id],
+    staleTime: 10 * 60_000,
+    gcTime: 30 * 60_000,
     queryFn: async ({ signal }) => {
       const { data, error } = await supabase
         .from("cargos" as never)
