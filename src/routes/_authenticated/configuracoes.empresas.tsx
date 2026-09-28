@@ -56,8 +56,10 @@ function EmpresasPage() {
 
   const { data: empresas } = useQuery({
     queryKey: ["empresas"],
+    staleTime: 5 * 60_000,
+    gcTime: 15 * 60_000,
     queryFn: async () => {
-      const { data, error } = await supabase.from("empresas").select("*").order("created_at");
+      const { data, error } = await supabase.from("empresas").select("id,created_by,created_at,updated_at,cnpj,nome_fantasia,razao_social,email,telefone,logradouro,numero,complemento,bairro,cidade,uf,cep,regime_tributario").order("created_at").limit(100);
       if (error) throw error; return (data ?? []) as Empresa[];
     },
   });
