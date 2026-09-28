@@ -3184,3 +3184,8 @@ Espelhado na Vercel.
 - Validado com build de produção. O lint global continua apontando pendências preexistentes
   em scripts e componentes não relacionados.
 
+
+## Electron de volta para a Vercel (28/09/2026)
+
+- Revertido 00274ab (v0 havia apontado o exe para o Worker
+  congelado). Exe volta a abrir norvo-gestao.vercel.app.
