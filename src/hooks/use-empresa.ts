@@ -33,8 +33,10 @@ export function useEmpresaAtual() {
   const selectedId = useSelectedEmpresaId();
   return useQuery({
     queryKey: ["empresas", "atual", selectedId],
+    staleTime: 5 * 60_000,
+    gcTime: 15 * 60_000,
     queryFn: async () => {
-      const { data, error } = await supabase.from("empresas").select("*").order("created_at");
+      const { data, error } = await supabase.from("empresas").select("id,nome,created_at").order("created_at");
       if (error) throw error;
       if (!data?.length) return null;
       return (selectedId && data.find((e) => e.id === selectedId)) || data[0];
