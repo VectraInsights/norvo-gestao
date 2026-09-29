@@ -35,6 +35,8 @@ const LABELS: Record<string, string> = {
 
 export function Breadcrumbs() {
   const { pathname } = useLocation();
+  // CT-e tem cabeçalho próprio compacto — sem breadcrumb
+  if (pathname === "/fiscal/cte") return null;
   const parts = pathname.split("/").filter(Boolean);
   if (parts.length === 0) return null;
 

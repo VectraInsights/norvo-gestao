@@ -3244,3 +3244,11 @@ Espelhado na Vercel.
   ("14/09/20"). Linha com `flex-wrap` e cada data com
   `w-[150px] shrink-0` — ano completo visivel, botoes descem
   p/ baixo em tela estreita.
+
+## CT-e: cabecalho compacto sem breadcrumb (28/09)
+
+- Removidos breadcrumb (Fiscal > cte) so nesta rota
+  (`breadcrumbs.tsx` retorna null em `/fiscal/cte`) e
+  eyebrow/descricao do PageHeader — fica so o titulo CT-e
+  com a barra azul. Container `p-6` -> `px-6 pb-6 pt-2`
+  p/ encostar no cabecalho.

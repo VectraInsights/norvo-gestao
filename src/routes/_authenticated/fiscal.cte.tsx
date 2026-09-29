@@ -1,5 +1,4 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { PageHeader } from "@/components/erp/page-header";
 import { EmptyState } from "@/components/erp/empty-state";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -4346,12 +4345,10 @@ function CtePage() {
   );
 
   return (
-    <div className="p-6 space-y-4">
-      <PageHeader
-        eyebrow="Fiscal"
-        title="CT-e"
-        description="Conhecimento de Transporte Eletrônico (57) — emissão robusta estilo STM, com múltiplas NF-es por CT-e."
-      />
+    <div className="px-6 pb-6 pt-2 space-y-3">
+      <div className="border-l-4 border-blue-500 pl-4 py-0.5">
+        <h1 className="text-display text-3xl leading-tight md:text-4xl">CT-e</h1>
+      </div>
 
       {isLoading ? (
         <div className="text-sm text-muted-foreground">Carregando…</div>
