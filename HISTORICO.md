@@ -3572,6 +3572,19 @@ Espelhado na Vercel.
   travava a errada); extração agora varre todos os recortes.
 - Espelhado na Vercel via push em main.
 
+## CNH: nº por pontos + decisão por campo entre passadas (29/09)
+
+- Nº errado: agora cada candidato de 9-12 dígitos soma pontos por
+  âncora (linha do CPF +3, rótulo +2, prefixo da L1 do MRZ +4, linha
+  do rótulo +2); DV de CPF exclui o CPF; nºs soltos (vertical,
+  protocolo DETRAN) zeram. Melhor global entre passadas vence
+  (desempate: frequência, tamanho). Caso real: certo com 15 pts.
+- Decisão por campo: nome/nº/nascimento primeiro válido; CPF mais
+  votado com DV (reparo único); categoria mais votada (empate=longa);
+  validade maior ISO.
+- Nome rótulo×MRZ: completa truncamento, MRZ vence filiação.
+- Espelhado na Vercel via push em main.
+
 ## CNH: CPF com DV + categoria por voto + nome MRZ reconciliado (29/09)
 
 - CPF 296→206 (troca do OCR): agora só preenche CPF com dígito

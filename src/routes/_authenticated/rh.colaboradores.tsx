@@ -348,7 +348,7 @@ function ColaboradoresPage() {
     }
     return { nome: mrz, fonte: "mrz" };
   }
-  type PassCnh = { campos: CnhCampos; fontes: Record<string, string>; cpfs: string[]; tag: string };
+  type PassCnh = { campos: CnhCampos; fontes: Record<string, string>; cpfs: string[]; regs: { v: string; s: number }[]; tag: string };
   function limparNome(bruto: string): string {
     const toks = bruto.split(/\s+/).filter(Boolean);
     let ini = 0;
@@ -407,7 +407,7 @@ function ColaboradoresPage() {
   //     <CPF> <nº registro> <categoria>; validade = maior data do documento
   //  3) Fallback: maior sequência em maiúsculas fora do cabeçalho
   // Cobre o modelo digital antigo e o novo (gov.br + QR-CODE + MRZ).
-  function extrairCamposCnh(texto: string): { achados: string[]; campos: CnhCampos; fontes: Record<string, string>; cpfs: string[] } {
+  function extrairCamposCnh(texto: string): { achados: string[]; campos: CnhCampos; fontes: Record<string, string>; cpfs: string[]; regs: { v: string; s: number }[] } {
     const campos = CAMPOS_VAZIOS();
     // Qual estratégia venceu cada campo (só nomes — nenhum dado pessoal vai p/ log).
     const fontes: Record<string, string> = {};
@@ -526,38 +526,55 @@ function ColaboradoresPage() {
       campos.nome = esc.nome;
       if (esc.nome) fontes.nome = esc.fonte;
     }
-    // 2) Nº REGISTRO: rótulo (tolerante) -> linha do CPF -> linha do rótulo.
-    // A linha do CPF no documento traz <CPF> <registro> <categoria> lado a lado.
-    if (!campos.cnh_numero && campos.cpf) {
-      const i = T.indexOf(campos.cpf);
-      if (i >= 0) {
-        const jan = T.slice(i + campos.cpf.length, i + campos.cpf.length + 80);
-        campos.cnh_numero = jan.match(/(\d{9,12})/)?.[1] ?? "";
-        if (campos.cnh_numero) fontes.cnh_numero = "linha-cpf";
-      }
-    }
-    if (!campos.cnh_numero) {
-      campos.cnh_numero =
-        T.match(/(?:N[ºo]\s*\.?\s*(?:REGISTRO|RENACH)|RENACH|REGISTRO)\s*\D{0,10}(\d{9,12})/i)?.[1] ??
-        T.match(/\bN[ºo]?\s*REGISTRO\D{0,10}(\d[\d ]{8,14}\d)/i)?.[1]?.replace(/\D/g, "") ??
-        T.match(/R[E3]G[I1]ST[R][O0]\D{0,10}(\d{9,12})/i)?.[1] ??
-        apos(/REGISTRO|RENACH/i, /(\d{9,12})/, 80);
-      if (campos.cnh_numero) fontes.cnh_numero = "rotulo";
-    }
-    if (!campos.cnh_numero) {
-      // Linha do rótulo Nº REGISTRO + próximas 3 (datas excluídas p/ não contaminar)
-      const idxR = linhas.findIndex((l) => /REGISTRO|RENACH|R[E3]G[I1]ST[R]/i.test(l));
-      for (let j = Math.max(0, idxR); j < linhas.length && j < idxR + 4 && !campos.cnh_numero; j++) {
-        const semDatas = linhas[j].replace(/\d{2}\/\d{2}\/\d{4}/g, " ");
-        const runs = semDatas.match(/\d(?:[\d ]*\d)?/g) ?? [];
-        for (const r of runs) {
-          const dig = r.replace(/\D/g, "");
-          if (/^\d{9,12}$/.test(dig)) {
-            campos.cnh_numero = dig;
-            fontes.cnh_numero = "linha-rotulo";
-            break;
-          }
+    // 2) Nº REGISTRO por pontos: cada candidato de 9-12 dígitos soma pela âncora.
+    // (a) 1º número após o CPF na região (+3); (b) após rótulo REGISTRO (+2);
+    // (c) começa com os dígitos da L1 do MRZ "I<BRA<registro>" (+4);
+    // (d) na linha do rótulo (+2). Sequência com DV de CPF é o CPF, não o nº.
+    // Nºs soltos (vertical da borda, protocolo do DETRAN) zeram e perdem.
+    const regs: { v: string; s: number }[] = [];
+    {
+      const vistos = new Map<string, number>();
+      const pushReg = (v: string, s: number) => {
+        if (!/^\d{9,12}$/.test(v)) return;
+        if (v.length === 11 && dvCpfOk(v)) return;
+        vistos.set(v, (vistos.get(v) ?? 0) + s);
+      };
+      const cpfAncora = cpfs[0] ?? "";
+      if (cpfAncora) {
+        const i = T.indexOf(cpfAncora);
+        if (i >= 0) {
+          const m = T.slice(i + cpfAncora.length, i + cpfAncora.length + 80).match(/(\d{9,12})/);
+          if (m) pushReg(m[1], 3);
         }
+      }
+      for (const re of [
+        /(?:N[ºo]\s*\.?\s*(?:REGISTRO|RENACH)|RENACH|REGISTRO)\s*\D{0,10}(\d{9,12})/i,
+        /\bN[ºo]?\s*REGISTRO\D{0,10}(\d[\d ]{8,14}\d)/i,
+        /R[E3]G[I1]ST[R][O0]\D{0,10}(\d{9,12})/i,
+      ]) {
+        const m = T.match(re);
+        if (m) pushReg((m[1] ?? "").replace(/\D/g, ""), 2);
+      }
+      const win = apos(/REGISTRO|RENACH/i, /(\d{9,12})/, 80);
+      if (win) pushReg(win, 2);
+      const mrz1 = (
+        linhas.find((l) => /^I</.test(l))?.match(/I<BRA(\d+)/)?.[1] ??
+        T.match(/I<BRA(\d{6,11})/)?.[1] ??
+        ""
+      ).replace(/\D/g, "");
+      if (mrz1.length >= 6) {
+        for (const m of T.matchAll(/(\d{9,12})/g)) if (m[1].startsWith(mrz1)) pushReg(m[1], 4);
+      }
+      const idxR = linhas.findIndex((l) => /REGISTRO|RENACH|R[E3]G[I1]ST[R]/i.test(l));
+      for (let j = Math.max(0, idxR); j < linhas.length && j < idxR + 4; j++) {
+        const semDatas = linhas[j].replace(/\d{2}\/\d{2}\/\d{4}/g, " ");
+        for (const r of semDatas.match(/\d(?:[\d ]*\d)?/g) ?? []) pushReg(r.replace(/\D/g, ""), 2);
+      }
+      const scored = [...vistos.entries()].map(([v, s]) => ({ v, s })).sort((a, b) => b.s - a.s);
+      for (const { v, s } of scored) regs.push({ v, s });
+      if (scored[0]) {
+        campos.cnh_numero = scored[0].v;
+        fontes.cnh_numero = `score${scored[0].s}`;
       }
     }
     // 2b) CATEGORIA: rótulo (tolerante) -> letra após o nº do registro na mesma linha.
@@ -625,7 +642,7 @@ function ColaboradoresPage() {
         fontes.data_nascimento = "rotulo";
       }
     }
-    return { achados: rotulosDe(campos), campos, fontes, cpfs };
+    return { achados: rotulosDe(campos), campos, fontes, cpfs, regs };
   }
 
   // OCR da imagem da CNH (a CNH digital exporta o documento como imagem): renderiza a
@@ -813,7 +830,7 @@ function ColaboradoresPage() {
       const passes: PassCnh[] = [];
       if (texto.replace(/\s/g, "").length >= 50) {
         const r = extrairCamposCnh(texto);
-        passes.push({ campos: r.campos, fontes: r.fontes, cpfs: r.cpfs, tag: "texto" });
+        passes.push({ campos: r.campos, fontes: r.fontes, cpfs: r.cpfs, regs: r.regs, tag: "texto" });
         console.info("[CNH] passada texto:", JSON.stringify(r.fontes));
       }
       const temPass = (k: keyof CnhCampos) => passes.some((p) => p.campos[k]);
@@ -823,7 +840,7 @@ function ColaboradoresPage() {
         const ocr = await ocrCnh(pdf);
         ocr.textos.forEach((tx, i) => {
           const r = extrairCamposCnh(tx);
-          passes.push({ campos: r.campos, fontes: r.fontes, cpfs: r.cpfs, tag: `ocr${i + 1}` });
+          passes.push({ campos: r.campos, fontes: r.fontes, cpfs: r.cpfs, regs: r.regs, tag: `ocr${i + 1}` });
         });
         console.info(
           "[CNH] passes:",
@@ -839,8 +856,21 @@ function ColaboradoresPage() {
         return p?.campos[k] ?? "";
       };
       total.nome = sanearNome(first("nome"));
-      total.cnh_numero = first("cnh_numero");
       total.data_nascimento = first("data_nascimento");
+      // Nº: melhor pontuação global entre passadas (desempate: frequência, tamanho).
+      {
+        const pool = passes.flatMap((p) => p.regs.map((r) => ({ ...r, tag: p.tag })));
+        if (pool.length > 0) {
+          const freq = new Map<string, number>();
+          for (const c of pool) freq.set(c.v, (freq.get(c.v) ?? 0) + 1);
+          const sMax = Math.max(...pool.map((c) => c.s));
+          const top = pool.filter((c) => c.s === sMax);
+          top.sort((a, b) => (freq.get(b.v) ?? 0) - (freq.get(a.v) ?? 0) || b.v.length - a.v.length);
+          const win = top[0];
+          total.cnh_numero = win.v;
+          fontesTotal.cnh_numero = `${win.tag}:score${win.s}`;
+        }
+      }
       // CPF: só com DV válido; mais votado entre passadas; senão repara 1 dígito
       // (único reparo possível) — nunca preenche CPF inválido.
       total.cpf = maisVotado(passes.map((p) => p.campos.cpf));
