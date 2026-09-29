@@ -3414,3 +3414,7 @@ Espelhado na Vercel.
 ## CNH OCR: recorte entre foto e validades + PSM palavra/linha (29/09)
 
 - Logs mostraram que o recorte pegava os codigos de validacao (baixo) e antes a data de validade: numero fica entre os dois (faixa y~0.37-0.48). Recortes ajustados + PSM 8/7 (palavra/linha unica) com aceite estrito 9-12 digitos.
+
+## CNH OCR: numero via mapa de vermelho (29/09)
+
+- Recortes chutados caiam nos codigos de validacao/data. Agora detecta as regioes mais vermelhas do documento (o No REGISTRO e o maior texto vermelho) e faz OCR de digitos nelas, em ordem de vermelhidao.
