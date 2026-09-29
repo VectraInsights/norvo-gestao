@@ -3508,3 +3508,11 @@ Espelhado na Vercel.
 - Testado em node em 4 cenários (ideal, embaralhado, OCR sujo, só
   datas): todos os 6 campos; sem data de validade no texto, não chuta.
 - Espelhado na Vercel via push em main.
+
+## Toast da importação da CNH (29/09)
+
+- Tudo lido (6 campos): só "DADOS IMPORTADOS COM SUCESSO".
+- Parcial: "Importação parcial da CNH" + o que foi lido e o que
+  faltou (Nome/CPF/Nº CNH/Categoria/Validade/Nascimento).
+- Nada: "Nada reconhecido no PDF. Preencha manualmente." (mantido).
+- Espelhado na Vercel via push em main.

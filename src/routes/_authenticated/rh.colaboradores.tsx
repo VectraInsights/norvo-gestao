@@ -725,13 +725,23 @@ function ColaboradoresPage() {
       if (total.cnh_categoria) set("cnh_categoria", total.cnh_categoria);
       if (total.cnh_validade) set("cnh_validade", total.cnh_validade);
       if (total.data_nascimento) set("data_nascimento", total.data_nascimento);
-      const achados = rotulosDe(total);
-      if (achados.length === 0) toast.warning("Nada reconhecido no PDF. Preencha manualmente.");
+      const ROTULO_CAMPO: Record<keyof typeof total, string> = {
+        nome: "Nome",
+        cpf: "CPF",
+        cnh_numero: "Nº CNH",
+        cnh_categoria: "Categoria",
+        cnh_validade: "Validade CNH",
+        data_nascimento: "Nascimento",
+      };
+      const chaves = Object.keys(total) as (keyof typeof total)[];
+      const lidos = chaves.filter((k) => total[k]).map((k) => ROTULO_CAMPO[k]);
+      const faltaram = chaves.filter((k) => !total[k]).map((k) => ROTULO_CAMPO[k]);
+      if (lidos.length === 0) toast.warning("Nada reconhecido no PDF. Preencha manualmente.");
+      else if (faltaram.length === 0) toast.success("DADOS IMPORTADOS COM SUCESSO");
       else
-        toast.success(
-          `CNH lida: ${achados.join(", ")}` +
-            (achados.includes("nº CNH") ? "" : " (nº da CNH não lido — está abaixo da foto)"),
-        );
+        toast.warning("Importação parcial da CNH", {
+          description: `Lidos: ${lidos.join(", ")}. Faltaram: ${faltaram.join(", ")} — confira na tela.`,
+        });
     } catch (e: any) {
       toast.error("Falha ao ler PDF", { description: e?.message });
     }
