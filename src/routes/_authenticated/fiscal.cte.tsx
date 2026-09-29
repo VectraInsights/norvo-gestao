@@ -362,12 +362,10 @@ function CtePage() {
   const [filtroDestinatario, setFiltroDestinatario] = useState("TODOS OS DESTINATÁRIOS");
   const [periodoIni, setPeriodoIni] = useState(() => {
     const d = new Date();
-    d.setDate(d.getDate() - 14);
+    d.setDate(d.getDate() - 15);
     return d.toISOString().slice(0, 10);
   });
   const [periodoFim, setPeriodoFim] = useState(() => new Date().toISOString().slice(0, 10));
-  // Filtro de período aplicado via botão Consulta (não reage sozinho à digitação)
-  const [periodoAplicado, setPeriodoAplicado] = useState<{ ini: string; fim: string } | null>(null);
   const [sortConfig, setSortConfig] = useState<{ key: string; dir: "asc" | "desc" }>({
     key: "nNF",
     dir: "asc",
@@ -383,7 +381,6 @@ function CtePage() {
     staleTime: 5 * 60_000,
   });
   const filtrosSalvos = useFiltrosSalvos(empresa?.id, authUser?.id, "fiscal-cte");
-  const filtroAtual = { filtroRemetente, filtroDestinatario, periodoIni, periodoFim };
   const aplicarFiltroSalvo = (id: string) => {
     const salvo = filtrosSalvos.filtros.find((item) => item.id === id);
     const valores = salvo?.filtros ?? {};
@@ -413,12 +410,12 @@ function CtePage() {
     })();
   }, [(empresa as any)?.id]);
 
+  // Período de Entrada sempre aplicado (padrão hoje-15 dias); sem botão Consulta
   const dentroPeriodo = (data: string) => {
-    if (!periodoAplicado) return true;
     const d = (data || "").slice(0, 10);
     if (!d) return true;
-    if (periodoAplicado.ini && d < periodoAplicado.ini) return false;
-    if (periodoAplicado.fim && d > periodoAplicado.fim) return false;
+    if (periodoIni && d < periodoIni) return false;
+    if (periodoFim && d > periodoFim) return false;
     return true;
   };
   const mercadoriasSorted = useMemo(() => {
@@ -435,7 +432,7 @@ function CtePage() {
       return 0;
     });
     return arr;
-  }, [mercadorias, sortConfig, periodoAplicado]);
+  }, [mercadorias, sortConfig, periodoIni, periodoFim]);
 
   const { data: docs, isLoading } = useQuery({
     enabled: !!empresa,
@@ -4464,51 +4461,6 @@ function CtePage() {
                           onChange={setPeriodoFim}
                           className="h-7 text-xs w-[150px] shrink-0"
                         />
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          className="h-7 text-xs shrink-0 px-2"
-                          onClick={() => {
-                            setPeriodoAplicado({ ini: periodoIni, fim: periodoFim });
-                            const n = mercadorias.filter((m) => {
-                              const d = (m.data || "").slice(0, 10);
-                              if (!d) return true;
-                              if (periodoIni && d < periodoIni) return false;
-                              if (periodoFim && d > periodoFim) return false;
-                              return true;
-                            }).length;
-                            toast.success(`Período aplicado: ${n} de ${mercadorias.length} NF-e(s)`);
-                          }}
-                        >
-                          <Search className="h-3 w-3 mr-1" />
-                          Consulta
-                        </Button>
-                        {periodoAplicado && (
-                          <Button
-                            size="sm"
-                            variant="ghost"
-                            className="h-7 text-xs shrink-0 px-1.5"
-                            title="Limpar filtro de período"
-                            onClick={() => setPeriodoAplicado(null)}
-                          >
-                            <X className="h-3 w-3 mr-1" />
-                            {mercadoriasSorted.length}/{mercadorias.length}
-                          </Button>
-                        )}
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          className="h-7 text-xs shrink-0 px-2"
-                          onClick={() => {
-                            const nome = window.prompt("Nome do filtro");
-                            if (nome?.trim()) {
-                              filtrosSalvos.salvar.mutate({ nome, filtros: filtroAtual });
-                            }
-                          }}
-                          disabled={!authUser?.id || filtrosSalvos.salvar.isPending}
-                        >
-                          Salvar filtro
-                        </Button>
                         {filtrosSalvos.filtros.length > 0 && (
                           <Select onValueChange={aplicarFiltroSalvo}>
                             <SelectTrigger className="h-7 w-[150px] text-xs">
@@ -4526,33 +4478,6 @@ function CtePage() {
                       </div>
                     </div>
                   </div>
-                  <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted-foreground border-t pt-2">
-                    <span>
-                      Qtde NF-e:{" "}
-                      <span className="font-bold text-foreground">{mercadoriasSorted.length}</span>
-                      {periodoAplicado && (
-                        <span className="font-normal"> de {mercadorias.length}</span>
-                      )}
-                    </span>
-                    <span className="text-muted-foreground/40">•</span>
-                    <span>
-                      Peso Bruto:{" "}
-                      <span className="font-bold text-foreground">
-                        {Number(mercadoriasSorted.reduce((a, m) => a + m.peso, 0)).toLocaleString(
-                          "pt-BR",
-                          { minimumFractionDigits: 2, maximumFractionDigits: 2 },
-                        )}{" "}
-                        kg
-                      </span>
-                    </span>
-                    <span className="text-muted-foreground/40">•</span>
-                    <span>
-                      Valor:{" "}
-                      <span className="font-bold text-foreground">
-                        {brl(mercadoriasSorted.reduce((a, m) => a + m.valor, 0))}
-                      </span>
-                    </span>
-                  </div>
                 </div>
 
                 {/* Listagem das Notas Fiscais */}
@@ -4562,10 +4487,7 @@ function CtePage() {
                       Listagem das Notas Fiscais
                     </span>
                     <span className="text-xs">
-                      Qtde NF-e:{" "}
-                      {periodoAplicado
-                        ? `${mercadoriasSorted.length}/${mercadorias.length}`
-                        : mercadorias.length}
+                      Qtde NF-e: {mercadoriasSorted.length}/{mercadorias.length}
                     </span>
                   </div>
                   <div className="overflow-auto max-h-[calc(100vh-470px)] min-h-[200px]">

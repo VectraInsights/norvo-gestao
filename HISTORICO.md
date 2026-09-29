@@ -3316,3 +3316,11 @@ Espelhado na Vercel.
 - Novo "Mesmo rem./dest.": a partir da 1a selecionada,
   marca todas as visiveis com mesmo remetente (CNPJ/nome)
   e destinatario — ex.: 1 clique seleciona as 20 do par.
+
+## CT-e: periodo automatico 15 dias, sem botoes nem totais (28/09)
+
+- Removidos Consulta, Salvar filtro e a faixa de totais
+  (Qtde/Peso/Valor). Periodo de Entrada filtra ao vivo,
+  padrao hoje-15 dias (era -14). Listagem sobre p/ colar
+  nas datas; contadores da aba e do cabecalho da lista
+  mostram `visiveis/total`.
