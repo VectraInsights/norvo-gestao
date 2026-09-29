@@ -362,82 +362,46 @@ function ColaboradoresPage() {
     }
   }
 
-  // Segunda passada p/ o nº da CNH: localiza as regiões mais VERMELHAS do documento
-  // (o Nº REGISTRO é o maior texto vermelho; códigos de validação são pretos) e faz
-  // OCR de dígitos nelas. Só aceita sequência limpa de 9-12 dígitos.
+  // Segunda passada p/ o nº da CNH: lê o conteúdo da caixa Nº REGISTRO (sem cor).
+  // Recortes justos na faixa da caixa, ampliados 3x, só dígitos, PSM palavra/linha.
+  // Só aceita sequência limpa de 9-12 dígitos — nunca concatena fragmentos.
   async function ocrDigitosRegistro(orig: HTMLCanvasElement): Promise<string> {
     const { createWorker } = await import("tesseract.js");
-    // Mapa de vermelho na RESOLUÇÃO ORIGINAL (downscale diluía os traços finos):
-    // amostra pixels com passo 6 na faixa do cartão (x 0-62%, y 32-62%)
-    const W = orig.width;
-    const H = orig.height;
-    const octx = orig.getContext("2d", { willReadFrequently: true });
-    if (!octx) return "";
-    let full: ImageData;
+    // Cinza sem threshold (preserva traços finos)
+    const cinza = document.createElement("canvas");
+    cinza.width = orig.width;
+    cinza.height = orig.height;
+    const gc = cinza.getContext("2d");
+    if (!gc) return "";
+    gc.drawImage(orig, 0, 0);
     try {
-      full = octx.getImageData(0, 0, W, H);
-    } catch {
-      return "";
-    }
-    const fp = full.data;
-    const isRed = (x: number, y: number) => {
-      const i = (y * W + x) * 4;
-      // Vermelho puro (dígitos); exclui pele/laranja (R-G menor) e fundo verde
-      return fp[i] > 150 && fp[i] - fp[i + 1] > 90 && fp[i] - fp[i + 2] > 90;
-    };
-    // Grade grossa 0.05 x 0.04 (fração da página) com contagem de vermelhos
-    const grid = new Map<string, { fx: number; fy: number; red: number; tot: number }>();
-    const step = 6;
-    for (let y = Math.floor(H * 0.32); y < H * 0.62; y += step) {
-      for (let x = 0; x < W * 0.62; x += step) {
-        const key = Math.floor(x / W / 0.05) + ":" + Math.floor(y / H / 0.04);
-        let g = grid.get(key);
-        if (!g) {
-          g = { fx: x / W, fy: y / H, red: 0, tot: 0 };
-          grid.set(key, g);
-        }
-        g.tot++;
-        if (isRed(x, y)) g.red++;
+      const img = gc.getImageData(0, 0, cinza.width, cinza.height);
+      const d = img.data;
+      for (let i = 0; i < d.length; i += 4) {
+        const gr = Math.round(0.299 * d[i] + 0.587 * d[i + 1] + 0.114 * d[i + 2]);
+        d[i] = d[i + 1] = d[i + 2] = gr;
       }
-    }
-    const cells = [...grid.values()]
-      .filter((g) => g.tot > 0 && g.red / g.tot > 0.03)
-      .sort((a, b) => b.red / b.tot - a.red / a.tot);
-    console.log(
-      "[CNH-OCR] celulas vermelhas",
-      cells.slice(0, 5).map((c) => ({
-        x: +c.fx.toFixed(2),
-        y: +c.fy.toFixed(2),
-        n: c.red,
-      })),
-    );
-    // Top-3 distantes -> janelas 0.2 x 0.1 centralizadas na célula
-    const picks: { fx: number; fy: number }[] = [];
-    for (const c of cells) {
-      if (picks.length >= 3) break;
-      if (picks.every((p) => Math.abs(p.fx - c.fx) > 0.12 || Math.abs(p.fy - c.fy) > 0.1)) {
-        picks.push({
-          fx: Math.min(0.8, Math.max(0, c.fx - 0.1)),
-          fy: Math.min(0.85, Math.max(0, c.fy - 0.05)),
-        });
-      }
-    }
-    if (picks.length === 0) {
-      console.log("[CNH-OCR] registro: nenhuma região vermelha");
-      return "";
-    }
+      gc.putImageData(img, 0, 0);
+    } catch {}
+    // Caixa Nº REGISTRO: à direita da foto, acima das validades/códigos
+    const caixas = [
+      { x: 0.27, y: 0.38, w: 0.15, h: 0.07 },
+      { x: 0.25, y: 0.42, w: 0.17, h: 0.07 },
+      { x: 0.27, y: 0.34, w: 0.15, h: 0.08 },
+    ];
     const worker = await createWorker("por");
     try {
-      for (const p of picks) {
+      for (const r of caixas) {
         const c = document.createElement("canvas");
-        const x = Math.floor(orig.width * p.fx);
-        const y = Math.floor(orig.height * p.fy);
-        const w = Math.floor(orig.width * 0.2);
-        const h = Math.floor(orig.height * 0.1);
+        const x = Math.floor(cinza.width * r.x);
+        const y = Math.floor(cinza.height * r.y);
+        const w = Math.floor(cinza.width * r.w);
+        const h = Math.floor(cinza.height * r.h);
+        if (w < 10 || h < 10) continue;
         c.width = w * 3;
         c.height = h * 3;
-        c.getContext("2d")?.drawImage(orig, x, y, w, h, 0, 0, c.width, c.height);
-        for (const psm of [8, 6]) {
+        c.getContext("2d")?.drawImage(cinza, x, y, w, h, 0, 0, c.width, c.height);
+        for (const psm of [8, 7, 6]) {
           await worker.setParameters({
             tessedit_char_whitelist: "0123456789",
             tessedit_pageseg_mode: psm as any,
@@ -445,18 +409,18 @@ function ColaboradoresPage() {
           const { data } = await worker.recognize(c);
           const t = data?.text ?? "";
           console.log(
-            "[CNH-OCR] registro",
-            JSON.stringify(p),
+            "[CNH-OCR] caixa",
+            JSON.stringify(r),
             "psm" + psm,
             JSON.stringify(t.slice(0, 200)),
           );
           const runs = t.match(/\d(?:[\d ]*\d)?/g) ?? [];
-          for (const r of runs) {
-            const dig = r.replace(/\D/g, "");
+          for (const run of runs) {
+            const dig = run.replace(/\D/g, "");
             if (/^\d{9,12}$/.test(dig)) {
-              const idx = t.indexOf(r);
+              const idx = t.indexOf(run);
               const antes = t.slice(Math.max(0, idx - 3), idx);
-              const depois = t.slice(idx + r.length, idx + r.length + 3);
+              const depois = t.slice(idx + run.length, idx + run.length + 3);
               if (!antes.includes("/") && !depois.includes("/")) return dig;
             }
           }
