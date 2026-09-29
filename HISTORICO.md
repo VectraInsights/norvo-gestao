@@ -591,7 +591,8 @@ certificado tem estrutura PKCS12 não padrão ou se `extractPkcs12Native` precis
       abertas/contestadas vencidas ou vencendo em 30 dias; menu Frota ganhou Multas.
     - Pendente para ligar o automático: credencial do provedor SENATRAN (endpoint, usuário e
       senha em `multas_config` com ativo=true) e, se desejado, pg_cron — hoje a sincronização
-      é manual.
+      é manual.
+
 46. **Configuração SENATRAN na UI + fix git global — 29/08/2026**:
     - Dialog de configuração SENATRAN na página `/frota/multas`: endpoint, usuário, senha,
       toggle ativo, exibição da última sincronização. Botão Sincronizar só habilitado quando
@@ -1769,7 +1770,8 @@ eed(17)) p/ canhoto encostar no rodape; tomador RUA, NUMERO - BAIRRO - CIDADE / 
 
 - DACTE conjunto: subcabecalho Tipo/Placa/Renavam/UF/RNTRC; vale-pedagio exibido uma unica vez.
 
-- CTE: RNTRC do modal puxa de ntrc_lista (match CNPJ emissora); emissao bloqueada sem RNTRC (nunca ISENTO).
+- CTE: RNTRC do modal puxa de 
+ntrc_lista (match CNPJ emissora); emissao bloqueada sem RNTRC (nunca ISENTO).
 
 - DACTE vale-pedagio: subcabecalho CNPJ Fornecedor/Numero Comprovante/CNPJ Responsavel/Vale Pedagio; comprovante ate 20 chars.
 
@@ -3342,3 +3344,11 @@ Espelhado na Vercel.
   paddings), `min-h-[500px]` como fallback. Titulo, filtros,
   listagem e botoes (Importar/Limpar/Gerar) sempre visiveis
   de uma vez; só a listagem rola por dentro.
+
+## Percursos: colunas vazias (29/09)
+
+- Mesma familia do apagao: query da lista selecionava so
+  id,empresa_id,codigo,nome,created_at e a tabela mostrava
+  traco em remetente/destino/tomador/coleta/entrega. Select
+  ampliado com as 10 colunas que a tabela usa (todas gravadas
+  pelo proprio app, existencia confirmada no codigo).
