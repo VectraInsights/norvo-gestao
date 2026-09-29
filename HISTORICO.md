@@ -3491,3 +3491,20 @@ Espelhado na Vercel.
   seguinte". Validado em teste node: nome, CPF, nº 01603641705,
   categoria E, nascimento 03/01/1964, validade 27/12/2028.
 - Espelhado na Vercel via push em main.
+
+## CNH: extração multi-fonte com âncoras de layout (29/09)
+
+- Sintoma: no modelo novo só vinham CPF+nascimento. Causa raiz: se a
+  camada de texto achava qualquer campo, o OCR nem rodava — e cada
+  fonte sozinha perdia campos (ordem embaralhada, rótulo longe do valor).
+- `extrairCamposCnh` virou função pura (devolve campos, não grava): o
+  importador roda camada de texto + até 3 recortes de OCR e mescla,
+  cada fonte preenchendo só os campos ainda vazios.
+- Âncoras sem depender de rótulo: linha do CPF traz `<CPF> <registro>
+  <categoria>` lado a lado; validade = maior data do doc (exclui
+  nascimento e datas grudadas em EMISSÃO/HABILITAÇÃO).
+- Rótulos tolerantes a OCR (espaço faltando, 0/O, caixa mista) + MRZ
+  mesmo sem `<<<` (linha após as datas, só maiúsculas).
+- Testado em node em 4 cenários (ideal, embaralhado, OCR sujo, só
+  datas): todos os 6 campos; sem data de validade no texto, não chuta.
+- Espelhado na Vercel via push em main.
