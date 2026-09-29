@@ -3405,3 +3405,8 @@ Espelhado na Vercel.
 
 - Log mostrou que o fallback juntava ES ORG no nome: agora a via principal e a linha seguinte ao rotulo NOME + limparNome corta sobra de 1-2 letras no fim (ES cai; DA/DE/DO no meio ficam).
 - Numero: 2 recortes justos abaixo da foto sobre a imagem so em cinza (threshold anterior lia 356 0 2); aceite so de sequencia limpa 9-12 digitos.
+
+## CNH OCR: recorte na faixa do registro + importar sempre preenche (29/09)
+
+- Print mostrou o Nº REGISTRO no meio do documento (y~0.42-0.52): recortes ajustados p/ essa faixa.
+- Importar agora sempre preenche nome/CPF lidos (antes, valor sujo de teste anterior bloqueava o novo).

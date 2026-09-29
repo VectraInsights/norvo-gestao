@@ -203,7 +203,7 @@ function ColaboradoresPage() {
       .filter(Boolean);
     const achados: string[] = [];
     const cpf = T.match(/(\d{3}\.\d{3}\.\d{3}-\d{2})/)?.[1] ?? "";
-    if (cpf && !form.cpf) {
+    if (cpf) {
       set("cpf", cpf);
       achados.push("CPF");
     }
@@ -245,7 +245,9 @@ function ColaboradoresPage() {
     // Validação rígida final (vale p/ todos os caminhos acima)
     console.log("[CNH-OCR] nome bruto", JSON.stringify(nome));
     nome = limparNome(nome);
-    if (nome && !form.nome.trim()) {
+    // Importar = ação explícita: sempre preenche com o lido (inclusive por cima de
+    // valor sujo de importação anterior)
+    if (nome) {
       set("nome", nome);
       achados.push("nome");
     }
@@ -396,8 +398,8 @@ function ColaboradoresPage() {
       gc.putImageData(img, 0, 0);
     } catch {}
     const crops = [
-      { x: 0.08, y: 0.28, w: 0.2, h: 0.1 }, // justo abaixo da foto
-      { x: 0.03, y: 0.3, w: 0.3, h: 0.12 },
+      { x: 0.25, y: 0.42, w: 0.2, h: 0.1 }, // Nº REGISTRO (faixa do meio do documento)
+      { x: 0.2, y: 0.4, w: 0.25, h: 0.14 },
     ];
     const worker = await createWorker("por");
     try {
