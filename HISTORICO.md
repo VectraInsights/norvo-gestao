@@ -3427,3 +3427,8 @@ Espelhado na Vercel.
 
 - Lista: card com borda, barra verde com titulo+qtde, sub-barra Listagem + pagina, status em pildora (Ativo em destaque).
 - Janela: titulo com linha rosa do modulo RH; secoes em caixas padronizadas (Dados pessoais, Pagamento com PIX/Banco/Agencia/Conta, CNH sem fundo escuro, Adicionais com VT+Observacoes).
+
+## Colaborador: linhas corridas + telefone unico (29/09)
+
+- Janela em linhas de largura cheia (4/5/3/2/4 colunas): nome,cpf,tel,email / cargo,status,admissao,demissao,salario / CNH / conta / VT+obs. Sem caixas, sem espaco vazio.
+- Telefone em linha unica separado por ; (converte p/ o formato / do banco); botao Outro numero removido.

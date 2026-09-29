@@ -129,7 +129,10 @@ function validarForm(form: ReturnType<typeof formInicial>) {
     if (!form.toxico_exame)
       throw new Error("Para o cargo de motorista, informe a data do último exame toxicológico");
   }
-  const tels = form.telefones.map((t) => t.trim()).filter(Boolean);
+  const tels = form.telefone
+    .split(/[;/]/)
+    .map((t) => t.trim())
+    .filter(Boolean);
   if (tels.length === 0) throw new Error("Informe pelo menos um telefone");
   for (const t of tels)
     if (soDigitos(t).length < 10) throw new Error(`Telefone inválido: "${t}" (use DDD + número)`);
@@ -144,7 +147,7 @@ function formInicial() {
     cpf: "",
     cargo: "",
     email: "",
-    telefones: [""] as string[],
+    telefone: "",
     salario_base: "0",
     data_admissao: "",
     data_demissao: "",
@@ -632,7 +635,7 @@ function ColaboradoresPage() {
       cpf: c.cpf ?? "",
       cargo: c.cargo ?? "",
       email: c.email ?? "",
-      telefones: (c.telefone ?? "").split(" / ").filter(Boolean) || [""],
+      telefone: (c.telefone ?? "").split(" / ").filter(Boolean).join("; "),
       salario_base: String(c.salario_base ?? 0),
       data_admissao: c.data_admissao ?? "",
       data_demissao: c.data_demissao ?? "",
@@ -675,7 +678,8 @@ function ColaboradoresPage() {
         cargo: form.cargo.trim() || null,
         email: form.email || null,
         telefone:
-          form.telefones
+          form.telefone
+            .split(";")
             .map((t) => t.trim())
             .filter(Boolean)
             .join(" / ") || null,
@@ -869,309 +873,241 @@ function ColaboradoresPage() {
                     </span>
                   </DialogTitle>
                 </DialogHeader>
-                <div className="grid gap-4 md:grid-cols-2 flex-1 min-h-0 overflow-y-auto p-1">
-                  <div className="space-y-3 min-w-0">
-                  <div className="border rounded bg-background overflow-hidden">
-                    <div className="bg-primary/8 text-primary/80 border-b border-primary/20 px-2 py-1 text-[10px] font-semibold uppercase tracking-wide">
-                      Dados pessoais
-                    </div>
-                    <div className="p-2 space-y-3">
-                    <div className="grid grid-cols-2 gap-3">
-                    <div className="space-y-1">
-                      <Label>Nome *</Label>
-                      <Input value={form.nome} onChange={(e) => set("nome", e.target.value)} />
-                    </div>
-                    <div className="space-y-1">
-                      <Label>CPF *</Label>
-                      <Input
-                        placeholder="000.000.000-00"
-                        value={form.cpf}
-                        onChange={(e) => set("cpf", e.target.value)}
-                      />
-                    </div>
-                  </div>
-                  <div className="grid grid-cols-2 gap-3">
-                    <div className="space-y-1">
-                      <Label>Cargo *</Label>
-                      <div className="relative">
-                        <Input
-                          placeholder="Digite ou selecione o cargo"
-                          value={form.cargo}
-                          onChange={(e) => set("cargo", e.target.value)}
-                          onFocus={() => setCargoFoco(true)}
-                          onBlur={() => setTimeout(() => setCargoFoco(false), 200)}
-                          autoComplete="off"
-                        />
-                        {cargoFoco && cargoSugestoes.length > 0 && (
-                          <div className="absolute z-20 mt-1 max-h-56 w-full overflow-y-auto rounded-md border bg-popover shadow-md">
-                            {cargoSugestoes.map((nome) => (
-                              <button
-                                type="button"
-                                key={nome}
-                                className="w-full px-3 py-2 text-left text-sm hover:bg-muted"
-                                onMouseDown={(e) => {
-                                  e.preventDefault();
-                                  set("cargo", nome);
-                                  setCargoFoco(false);
-                                }}
-                              >
-                                {nome}
-                              </button>
-                            ))}
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                    <div className="space-y-1">
-                      <Label>Status</Label>
-                      <Select value={form.status} onValueChange={(v) => set("status", v)}>
-                        <SelectTrigger>
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {Object.entries(STATUS).map(([k, v]) => (
-                            <SelectItem key={k} value={k}>
-                              {v}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
-                  </div>
-                  <div className="grid grid-cols-2 gap-3">
-                    <div className="space-y-1">
-                      <Label>E-mail</Label>
-                      <Input
-                        type="email"
-                        value={form.email}
-                        onChange={(e) => set("email", e.target.value)}
-                      />
-                    </div>
-                    <div className="space-y-1">
-                      <Label>Telefone(s) *</Label>
-                      <div className="space-y-2">
-                        {form.telefones.map((tel, i) => (
-                          <div key={i} className="flex gap-1">
-                            <Input
-                              placeholder="(00) 00000-0000"
-                              value={tel}
-                              onChange={(e) =>
-                                set(
-                                  "telefones",
-                                  form.telefones.map((t, j) => (j === i ? e.target.value : t)),
-                                )
-                              }
-                            />
-                            {form.telefones.length > 1 && (
-                              <Button
-                                type="button"
-                                variant="ghost"
-                                size="icon"
-                                className="h-10 w-10 shrink-0"
-                                onClick={() =>
-                                  set(
-                                    "telefones",
-                                    form.telefones.filter((_, j) => j !== i),
-                                  )
-                                }
-                              >
-                                <X className="h-4 w-4" />
-                              </Button>
-                            )}
-                          </div>
-                        ))}
-                        <Button
-                          type="button"
-                          variant="outline"
-                          size="sm"
-                          onClick={() => set("telefones", [...form.telefones, ""])}
-                        >
-                          <Plus className="h-4 w-4 mr-1" />
-                          Outro número
-                        </Button>
-                      </div>
-                    </div>
-                  </div>
-                  <div className="grid grid-cols-2 gap-3">
-                    <div className="space-y-1">
-                      <Label>Salário base</Label>
-                      <MoneyInput
-                        value={form.salario_base}
-                        onChange={(v) => set("salario_base", v)}
-                      />
-                    </div>
-                    <div className="space-y-1">
-                      <Label>Data de admissão *</Label>
-                      <DateInput
-                        value={form.data_admissao}
-                        onChange={(v) => set("data_admissao", v)}
-                      />
-                    </div>
-                  </div>
-                  <div className="grid grid-cols-2 gap-3">
-                    <div className="space-y-1">
-                      <Label>Data de demissão</Label>
-                      <DateInput
-                        value={form.data_demissao}
-                        onChange={(v) => set("data_demissao", v)}
-                      />
-                    </div>
-                    <div></div>
-                  </div>
-                    </div>
-                  </div>
-                  <div className="border rounded bg-background overflow-hidden">
-                    <div className="bg-primary/8 text-primary/80 border-b border-primary/20 px-2 py-1 text-[10px] font-semibold uppercase tracking-wide">
-                      Pagamento
-                    </div>
-                    <div className="p-2 space-y-3">
-                  <div className="grid grid-cols-2 gap-3">
-                    <div className="space-y-1">
-                      <Label>PIX</Label>
-                      <Input value={form.pix} onChange={(e) => set("pix", e.target.value)} />
-                    </div>
-                    <div className="space-y-1">
-                      <Label>Banco</Label>
-                      <Input value={form.banco} onChange={(e) => set("banco", e.target.value)} />
-                    </div>
-                  </div>
-                  <div className="grid grid-cols-2 gap-3">
-                    <div className="space-y-1">
-                      <Label>Agência</Label>
-                      <Input
-                        value={form.agencia}
-                        onChange={(e) => set("agencia", e.target.value)}
-                      />
-                    </div>
-                    <div className="space-y-1">
-                      <Label>Conta</Label>
-                      <Input value={form.conta} onChange={(e) => set("conta", e.target.value)} />
-                    </div>
-                  </div>
-                    </div>
-                  </div>
-                  </div>
-                  <div className="space-y-3 min-w-0">
-                  <div className="border rounded bg-background overflow-hidden">
-                    <div className="bg-primary/8 border-b border-primary/20 px-2 py-1 flex items-center justify-between gap-2">
-                      <div className="text-[10px] font-semibold uppercase tracking-wide text-primary/80">
-                        CNH
-                      </div>
-                      <label className="flex cursor-pointer items-center gap-1.5 rounded-md border bg-background px-2 py-1 text-[11px] font-medium hover:bg-muted">
-                        <FileUp className="h-3.5 w-3.5" /> Importar PDF da CNH
-                        <input
-                          type="file"
-                          accept=".pdf,application/pdf"
-                          className="hidden"
-                          onChange={(e) => {
-                            if (e.target.files?.[0]) importarCnhPdf(e.target.files[0]);
-                            e.currentTarget.value = "";
-                          }}
-                        />
-                      </label>
-                    </div>
-                    <div className="p-2">
-                    <div className="grid grid-cols-3 gap-3">
+                <div className="flex-1 min-h-0 overflow-y-auto p-1">
+                  <div className="space-y-3 max-w-6xl">
+                    <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
                       <div className="space-y-1">
-                        <Label>
-                          Nº da CNH {form.cargo.toLowerCase().includes("motorist") ? "*" : ""}
-                        </Label>
+                        <Label>Nome *</Label>
+                        <Input value={form.nome} onChange={(e) => set("nome", e.target.value)} />
+                      </div>
+                      <div className="space-y-1">
+                        <Label>CPF *</Label>
                         <Input
-                          value={form.cnh_numero}
-                          onChange={(e) => set("cnh_numero", e.target.value)}
+                          placeholder="000.000.000-00"
+                          value={form.cpf}
+                          onChange={(e) => set("cpf", e.target.value)}
                         />
                       </div>
                       <div className="space-y-1">
-                        <Label>
-                          Categoria {form.cargo.toLowerCase().includes("motorist") ? "*" : ""}
-                        </Label>
-                        <Select
-                          value={form.cnh_categoria || ""}
-                          onValueChange={(v) => set("cnh_categoria", v)}
-                        >
+                        <Label>Telefone(s) *</Label>
+                        <Input
+                          placeholder="(00) 00000-0000; (00) 00000-0000"
+                          value={form.telefone}
+                          onChange={(e) => set("telefone", e.target.value)}
+                        />
+                      </div>
+                      <div className="space-y-1">
+                        <Label>E-mail</Label>
+                        <Input
+                          type="email"
+                          value={form.email}
+                          onChange={(e) => set("email", e.target.value)}
+                        />
+                      </div>
+                    </div>
+                    <div className="grid grid-cols-2 gap-3 md:grid-cols-5">
+                      <div className="space-y-1">
+                        <Label>Cargo *</Label>
+                        <div className="relative">
+                          <Input
+                            placeholder="Digite ou selecione o cargo"
+                            value={form.cargo}
+                            onChange={(e) => set("cargo", e.target.value)}
+                            onFocus={() => setCargoFoco(true)}
+                            onBlur={() => setTimeout(() => setCargoFoco(false), 200)}
+                            autoComplete="off"
+                          />
+                          {cargoFoco && cargoSugestoes.length > 0 && (
+                            <div className="absolute z-20 mt-1 max-h-56 w-full overflow-y-auto rounded-md border bg-popover shadow-md">
+                              {cargoSugestoes.map((nome) => (
+                                <button
+                                  type="button"
+                                  key={nome}
+                                  className="w-full px-3 py-2 text-left text-sm hover:bg-muted"
+                                  onMouseDown={(e) => {
+                                    e.preventDefault();
+                                    set("cargo", nome);
+                                    setCargoFoco(false);
+                                  }}
+                                >
+                                  {nome}
+                                </button>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                      <div className="space-y-1">
+                        <Label>Status</Label>
+                        <Select value={form.status} onValueChange={(v) => set("status", v)}>
                           <SelectTrigger>
-                            <SelectValue placeholder="Selecione" />
+                            <SelectValue />
                           </SelectTrigger>
                           <SelectContent>
-                            {["A", "B", "AB", "C", "D", "E", "AC", "AD", "AE"].map((c) => (
-                              <SelectItem key={c} value={c}>
-                                {c}
+                            {Object.entries(STATUS).map(([k, v]) => (
+                              <SelectItem key={k} value={k}>
+                                {v}
                               </SelectItem>
                             ))}
                           </SelectContent>
                         </Select>
                       </div>
                       <div className="space-y-1">
-                        <Label>Validade</Label>
+                        <Label>Data de admissão *</Label>
                         <DateInput
-                          value={form.cnh_validade}
-                          onChange={(v) => set("cnh_validade", v)}
+                          value={form.data_admissao}
+                          onChange={(v) => set("data_admissao", v)}
+                        />
+                      </div>
+                      <div className="space-y-1">
+                        <Label>Data de demissão</Label>
+                        <DateInput
+                          value={form.data_demissao}
+                          onChange={(v) => set("data_demissao", v)}
+                        />
+                      </div>
+                      <div className="space-y-1">
+                        <Label>Salário base</Label>
+                        <MoneyInput
+                          value={form.salario_base}
+                          onChange={(v) => set("salario_base", v)}
                         />
                       </div>
                     </div>
-                    <div className="mt-3 grid grid-cols-2 gap-3">
-                      <div>
-                        <Label>
-                          Último exame toxicológico{" "}
-                          {form.cargo.toLowerCase().includes("motorist") ? "*" : ""}
-                        </Label>
+                    <div className="border rounded bg-background overflow-hidden">
+                      <div className="bg-primary/8 border-b border-primary/20 px-2 py-1 flex items-center justify-between gap-2">
+                        <div className="text-[10px] font-semibold uppercase tracking-wide text-primary/80">
+                          CNH
+                        </div>
+                        <label className="flex cursor-pointer items-center gap-1.5 rounded-md border bg-background px-2 py-1 text-[11px] font-medium hover:bg-muted">
+                          <FileUp className="h-3.5 w-3.5" /> Importar PDF da CNH
+                          <input
+                            type="file"
+                            accept=".pdf,application/pdf"
+                            className="hidden"
+                            onChange={(e) => {
+                              if (e.target.files?.[0]) importarCnhPdf(e.target.files[0]);
+                              e.currentTarget.value = "";
+                            }}
+                          />
+                        </label>
+                      </div>
+                      <div className="p-2 space-y-3">
+                        <div className="grid grid-cols-2 gap-3 md:grid-cols-3">
+                          <div className="space-y-1">
+                            <Label>
+                              Nº da CNH {form.cargo.toLowerCase().includes("motorist") ? "*" : ""}
+                            </Label>
+                            <Input
+                              value={form.cnh_numero}
+                              onChange={(e) => set("cnh_numero", e.target.value)}
+                            />
+                          </div>
+                          <div className="space-y-1">
+                            <Label>
+                              Categoria {form.cargo.toLowerCase().includes("motorist") ? "*" : ""}
+                            </Label>
+                            <Select
+                              value={form.cnh_categoria || ""}
+                              onValueChange={(v) => set("cnh_categoria", v)}
+                            >
+                              <SelectTrigger>
+                                <SelectValue placeholder="Selecione" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                {["A", "B", "AB", "C", "D", "E", "AC", "AD", "AE"].map((c) => (
+                                  <SelectItem key={c} value={c}>
+                                    {c}
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                          </div>
+                          <div className="space-y-1">
+                            <Label>Validade</Label>
+                            <DateInput
+                              value={form.cnh_validade}
+                              onChange={(v) => set("cnh_validade", v)}
+                            />
+                          </div>
+                        </div>
+                        <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
+                          <div>
+                            <Label>
+                              Último exame toxicológico{" "}
+                              {form.cargo.toLowerCase().includes("motorist") ? "*" : ""}
+                            </Label>
+                            <Input
+                              type="date"
+                              value={form.toxico_exame}
+                              onChange={(e) =>
+                                setForm((f) => ({
+                                  ...f,
+                                  toxico_exame: e.target.value,
+                                  toxico_validade: e.target.value ? soma30meses(e.target.value) : "",
+                                }))
+                              }
+                            />
+                          </div>
+                          <div>
+                            <Label>Validade do toxicológico</Label>
+                            <Input
+                              value={form.toxico_validade ? dateBR(form.toxico_validade) : ""}
+                              readOnly
+                            />
+                            <p className="mt-1 text-xs text-muted-foreground">
+                              {form.toxico_exame
+                                ? "2 anos e 6 meses após o exame (CTB art. 148-A)"
+                                : form.cargo.toLowerCase().includes("motorist")
+                                  ? "Obrigatório para motoristas de categoria C/D/E"
+                                  : "Exame obrigatório apenas para categorias C/D/E"}
+                            </p>
+                          </div>
+                        </div>
+                        {avisoToxico(form.toxico_validade) && (
+                          <p className="mt-2 text-xs text-warning-foreground">
+                            ⚠ {avisoToxico(form.toxico_validade)}
+                          </p>
+                        )}
+                      </div>
+                    </div>
+                    <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
+                      <div className="space-y-1">
+                        <Label>PIX</Label>
+                        <Input value={form.pix} onChange={(e) => set("pix", e.target.value)} />
+                      </div>
+                      <div className="space-y-1">
+                        <Label>Banco</Label>
+                        <Input value={form.banco} onChange={(e) => set("banco", e.target.value)} />
+                      </div>
+                      <div className="space-y-1">
+                        <Label>Agência</Label>
                         <Input
-                          type="date"
-                          value={form.toxico_exame}
-                          onChange={(e) =>
-                            setForm((f) => ({
-                              ...f,
-                              toxico_exame: e.target.value,
-                              toxico_validade: e.target.value ? soma30meses(e.target.value) : "",
-                            }))
-                          }
+                          value={form.agencia}
+                          onChange={(e) => set("agencia", e.target.value)}
                         />
                       </div>
-                      <div>
-                        <Label>Validade do toxicológico</Label>
-                        <Input
-                          value={form.toxico_validade ? dateBR(form.toxico_validade) : ""}
-                          readOnly
-                        />
-                        <p className="mt-1 text-xs text-muted-foreground">
-                          {form.toxico_exame
-                            ? "2 anos e 6 meses após o exame (CTB art. 148-A)"
-                            : form.cargo.toLowerCase().includes("motorist")
-                              ? "Obrigatório para motoristas de categoria C/D/E"
-                              : "Exame obrigatório apenas para categorias C/D/E"}
-                        </p>
+                      <div className="space-y-1">
+                        <Label>Conta</Label>
+                        <Input value={form.conta} onChange={(e) => set("conta", e.target.value)} />
                       </div>
                     </div>
-                    {avisoToxico(form.toxico_validade) && (
-                      <p className="mt-2 text-xs text-warning-foreground">
-                        ⚠ {avisoToxico(form.toxico_validade)}
-                      </p>
-                    )}
+                    <label className="flex items-center gap-2 text-sm">
+                      <input
+                        type="checkbox"
+                        checked={form.optante_vt}
+                        onChange={(e) => set("optante_vt", e.target.checked)}
+                      />
+                      Optante pelo Vale-Transporte (desconto de 6% sobre salário base na folha)
+                    </label>
+                    <div className="space-y-1">
+                      <Label>Observações</Label>
+                      <Textarea
+                        rows={2}
+                        value={form.observacoes}
+                        onChange={(e) => set("observacoes", e.target.value)}
+                      />
                     </div>
-                  </div>
-                  <div className="border rounded bg-background overflow-hidden">
-                    <div className="bg-primary/8 text-primary/80 border-b border-primary/20 px-2 py-1 text-[10px] font-semibold uppercase tracking-wide">
-                      Adicionais
-                    </div>
-                    <div className="p-2 space-y-3">
-                  <label className="flex items-center gap-2 text-sm">
-                    <input
-                      type="checkbox"
-                      checked={form.optante_vt}
-                      onChange={(e) => set("optante_vt", e.target.checked)}
-                    />
-                    Optante pelo Vale-Transporte (desconto de 6% sobre salário base na folha)
-                  </label>
-                  <div className="space-y-1">
-                    <Label>Observações</Label>
-                    <Textarea
-                      rows={2}
-                      value={form.observacoes}
-                      onChange={(e) => set("observacoes", e.target.value)}
-                    />
-                  </div>
-                    </div>
-                  </div>
                   </div>
                 </div>
                 <DialogFooter className="shrink-0 border-t pt-3">
