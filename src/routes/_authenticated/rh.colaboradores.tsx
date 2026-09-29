@@ -367,51 +367,58 @@ function ColaboradoresPage() {
   // OCR de dígitos nelas. Só aceita sequência limpa de 9-12 dígitos.
   async function ocrDigitosRegistro(orig: HTMLCanvasElement): Promise<string> {
     const { createWorker } = await import("tesseract.js");
-    // Mapa de vermelhidão em baixa resolução (rápido)
-    const W = 200;
-    const H = Math.max(1, Math.floor(orig.height * (W / orig.width)));
-    const small = document.createElement("canvas");
-    small.width = W;
-    small.height = H;
-    const gs = small.getContext("2d", { willReadFrequently: true });
-    if (!gs) return "";
-    gs.drawImage(orig, 0, 0, W, H);
-    let img: ImageData;
+    // Mapa de vermelho na RESOLUÇÃO ORIGINAL (downscale diluía os traços finos):
+    // amostra pixels com passo 6 na faixa do cartão (x 0-62%, y 32-62%)
+    const W = orig.width;
+    const H = orig.height;
+    const octx = orig.getContext("2d", { willReadFrequently: true });
+    if (!octx) return "";
+    let full: ImageData;
     try {
-      img = gs.getImageData(0, 0, W, H);
+      full = octx.getImageData(0, 0, W, H);
     } catch {
       return "";
     }
-    const px = img.data;
+    const fp = full.data;
     const isRed = (x: number, y: number) => {
       const i = (y * W + x) * 4;
-      return px[i] > 140 && px[i] - px[i + 1] > 40 && px[i] - px[i + 2] > 40;
+      // Vermelho puro (dígitos); exclui pele/laranja (R-G menor) e fundo verde
+      return fp[i] > 150 && fp[i] - fp[i + 1] > 90 && fp[i] - fp[i + 2] > 90;
     };
-    // Células 20x12 na faixa do cartão (x 0-62%, y 30-60% — abaixo da foto)
-    type Cel = { cx: number; cy: number; score: number };
-    const cells: Cel[] = [];
-    for (let cy = Math.floor(H * 0.3); cy < H * 0.6; cy += 12) {
-      for (let cx = 0; cx < W * 0.62; cx += 20) {
-        let red = 0;
-        let tot = 0;
-        for (let y = cy; y < Math.min(cy + 12, H); y += 2) {
-          for (let x = cx; x < Math.min(cx + 20, W); x += 2) {
-            tot++;
-            if (isRed(x, y)) red++;
-          }
+    // Grade grossa 0.05 x 0.04 (fração da página) com contagem de vermelhos
+    const grid = new Map<string, { fx: number; fy: number; red: number; tot: number }>();
+    const step = 6;
+    for (let y = Math.floor(H * 0.32); y < H * 0.62; y += step) {
+      for (let x = 0; x < W * 0.62; x += step) {
+        const key = Math.floor(x / W / 0.05) + ":" + Math.floor(y / H / 0.04);
+        let g = grid.get(key);
+        if (!g) {
+          g = { fx: x / W, fy: y / H, red: 0, tot: 0 };
+          grid.set(key, g);
         }
-        if (tot > 0 && red / tot > 0.02) cells.push({ cx, cy, score: red / tot });
+        g.tot++;
+        if (isRed(x, y)) g.red++;
       }
     }
-    cells.sort((a, b) => b.score - a.score);
-    // Top-3 células distantes entre si -> janelas em fração da página
+    const cells = [...grid.values()]
+      .filter((g) => g.tot > 0 && g.red / g.tot > 0.03)
+      .sort((a, b) => b.red / b.tot - a.red / a.tot);
+    console.log(
+      "[CNH-OCR] celulas vermelhas",
+      cells.slice(0, 5).map((c) => ({
+        x: +c.fx.toFixed(2),
+        y: +c.fy.toFixed(2),
+        n: c.red,
+      })),
+    );
+    // Top-3 distantes -> janelas 0.2 x 0.1 centralizadas na célula
     const picks: { fx: number; fy: number }[] = [];
     for (const c of cells) {
       if (picks.length >= 3) break;
-      if (picks.every((p) => Math.abs(p.fx * W - c.cx) > 30 || Math.abs(p.fy * H - c.cy) > 24)) {
+      if (picks.every((p) => Math.abs(p.fx - c.fx) > 0.12 || Math.abs(p.fy - c.fy) > 0.1)) {
         picks.push({
-          fx: Math.min(0.8, Math.max(0, c.cx / W - 0.1)),
-          fy: Math.min(0.85, Math.max(0, c.cy / H - 0.05)),
+          fx: Math.min(0.8, Math.max(0, c.fx - 0.1)),
+          fy: Math.min(0.85, Math.max(0, c.fy - 0.05)),
         });
       }
     }

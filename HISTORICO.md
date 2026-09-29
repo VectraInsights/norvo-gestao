@@ -3418,3 +3418,7 @@ Espelhado na Vercel.
 ## CNH OCR: numero via mapa de vermelho (29/09)
 
 - Recortes chutados caiam nos codigos de validacao/data. Agora detecta as regioes mais vermelhas do documento (o No REGISTRO e o maior texto vermelho) e faz OCR de digitos nelas, em ordem de vermelhidao.
+
+## CNH OCR: mapa de vermelho em resolucao original (29/09)
+
+- O downscale p/ 200px diluia os tracos vermelhos finos ate sumirem (nenhuma regiao). Agora amostra pixels na resolucao original com vermelho estrito (exclui pele/laranja e fundo verde) e loga as celulas.
