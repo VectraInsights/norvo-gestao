@@ -3443,3 +3443,7 @@ Espelhado na Vercel.
 ## Migration colaboradores aplicada via API (29/09)
 
 - 20260929140000 aplicada com PAT via Management API/database/query (STATUS 201) e 8 colunas conferidas no information_schema (data_nascimento date + 7 text). App ja usa as colunas; fallback sem-migracao mantido por seguranca.
+
+## Colaborador largura cheia e compacto (29/09)
+
+- Janela sem max-w-6xl (usa a tela toda), espacamentos reduzidos e inputs/botoes h-8: tudo visivel sem rolagem no desktop.
