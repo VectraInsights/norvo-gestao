@@ -3270,3 +3270,12 @@ Espelhado na Vercel.
   modulo (eyebrow/descricao ignorados, `mb-7` -> `mb-4`,
   sem `border-b`); `Breadcrumbs` retorna null em todas
   as rotas. Acoes do header (botoes a direita) mantidas.
+
+## CT-e: abas dentro da barra verde + topo compacto (28/09)
+
+- As 5 abas (embarque/rascunhos/rejeitados/cancelados/
+  autorizados) sairam da faixa cinza e foram p/ dentro do
+  cabecalho verde, com estilo invertido (fundo translucido,
+  ativa branca com texto verde). Cartao unico envolve todas
+  as abas; titulo CT-e `text-3xl` -> `text-2xl` e container
+  `px-6/pb-6/pt-2` -> `px-4/pb-4/pt-1` p/ caber na tela.

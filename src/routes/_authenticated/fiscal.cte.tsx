@@ -4345,61 +4345,61 @@ function CtePage() {
   );
 
   return (
-    <div className="px-6 pb-6 pt-2 space-y-3">
+    <div className="px-4 pb-4 pt-1 space-y-2">
       <div className="border-l-4 border-blue-500 pl-4 py-0.5">
-        <h1 className="text-display text-3xl leading-tight md:text-4xl">CT-e</h1>
+        <h1 className="text-display text-2xl leading-tight md:text-3xl">CT-e</h1>
       </div>
 
       {isLoading ? (
         <div className="text-sm text-muted-foreground">Carregando…</div>
       ) : (
         <Tabs value={statusTab} onValueChange={setStatusTab}>
-          <TabsList className="mb-2 flex flex-wrap">
-            <TabsTrigger
-              value="embarque"
-              className="text-xs data-[state=active]:bg-primary/10 data-[state=active]:text-primary"
-            >
-              NF-es para embarque ({mercadorias.length})
-            </TabsTrigger>
-            <TabsTrigger
-              value="rascunhos"
-              className="text-xs data-[state=active]:bg-primary/10 data-[state=active]:text-primary"
-            >
-              Aguardando envio ({docsByStatus.rascunhos.length})
-            </TabsTrigger>
-            <TabsTrigger
-              value="rejeitados"
-              className="text-xs data-[state=active]:bg-primary/10 data-[state=active]:text-primary"
-            >
-              Rejeitados ({docsByStatus.rejeitados.length})
-            </TabsTrigger>
-            <TabsTrigger
-              value="cancelados"
-              className="text-xs data-[state=active]:bg-primary/10 data-[state=active]:text-primary"
-            >
-              Cancelados ({docsByStatus.cancelados.length})
-            </TabsTrigger>
-            <TabsTrigger
-              value="autorizados"
-              className="text-xs data-[state=active]:bg-primary/10 data-[state=active]:text-primary"
-            >
-              Autorizados ({docsByStatus.autorizados.length})
-            </TabsTrigger>
-          </TabsList>
-          <TabsContent value="embarque">
-            {/* Cadastro de Mercadorias para Embarque — estilo STM */}
-            <Card className="overflow-hidden border-2 border-primary/20 shadow-panel">
-              <div className="bg-primary text-primary-foreground px-3 py-2 flex items-center justify-between">
-                <h3 className="text-sm font-semibold flex items-center gap-2">
-                  <Package className="h-4 w-4" /> Cadastro de Mercadorias para Embarque
-                </h3>
-                <span className="text-xs opacity-80">
-                  {(form as any).modoEmbarque === "simplificado"
-                    ? "CT-e Simplificado • Mesmo remetente"
-                    : "CT-e Avulso • Sem Mercadoria/Percurso"}
-                </span>
-              </div>
-              <CardContent className="p-3 space-y-3 bg-muted/20 overflow-visible">
+          {/* Cartão único: barra verde com título + abas + modo; conteúdo das abas abaixo */}
+          <Card className="overflow-hidden border-2 border-primary/20 shadow-panel">
+            <div className="bg-primary text-primary-foreground px-3 py-1.5 flex flex-wrap items-center gap-x-3 gap-y-1.5">
+              <h3 className="text-sm font-semibold flex items-center gap-2">
+                <Package className="h-4 w-4" /> Cadastro de Mercadorias para Embarque
+              </h3>
+              <TabsList className="bg-primary-foreground/15 p-0.5 gap-0.5">
+                <TabsTrigger
+                  value="embarque"
+                  className="text-[11px] px-2 py-1 text-primary-foreground/85 data-[state=active]:bg-primary-foreground data-[state=active]:text-primary"
+                >
+                  NF-es para embarque ({mercadorias.length})
+                </TabsTrigger>
+                <TabsTrigger
+                  value="rascunhos"
+                  className="text-[11px] px-2 py-1 text-primary-foreground/85 data-[state=active]:bg-primary-foreground data-[state=active]:text-primary"
+                >
+                  Aguardando envio ({docsByStatus.rascunhos.length})
+                </TabsTrigger>
+                <TabsTrigger
+                  value="rejeitados"
+                  className="text-[11px] px-2 py-1 text-primary-foreground/85 data-[state=active]:bg-primary-foreground data-[state=active]:text-primary"
+                >
+                  Rejeitados ({docsByStatus.rejeitados.length})
+                </TabsTrigger>
+                <TabsTrigger
+                  value="cancelados"
+                  className="text-[11px] px-2 py-1 text-primary-foreground/85 data-[state=active]:bg-primary-foreground data-[state=active]:text-primary"
+                >
+                  Cancelados ({docsByStatus.cancelados.length})
+                </TabsTrigger>
+                <TabsTrigger
+                  value="autorizados"
+                  className="text-[11px] px-2 py-1 text-primary-foreground/85 data-[state=active]:bg-primary-foreground data-[state=active]:text-primary"
+                >
+                  Autorizados ({docsByStatus.autorizados.length})
+                </TabsTrigger>
+              </TabsList>
+              <span className="text-xs opacity-80 ml-auto">
+                {(form as any).modoEmbarque === "simplificado"
+                  ? "CT-e Simplificado • Mesmo remetente"
+                  : "CT-e Avulso • Sem Mercadoria/Percurso"}
+              </span>
+            </div>
+            <CardContent className="p-3 space-y-3 bg-muted/20 overflow-visible">
+              <TabsContent value="embarque" className="mt-0">
                 <div className="border rounded p-2 bg-background space-y-2">
                   <div className="grid grid-cols-1 lg:grid-cols-3 gap-3">
                     <div>
@@ -4870,9 +4870,7 @@ function CtePage() {
                     </Button>
                   </div>
                 </div>
-              </CardContent>
-            </Card>
-          </TabsContent>
+              </TabsContent>
           <AlertDialog
             open={!!confRemetente}
             onOpenChange={(o) => {
@@ -4995,10 +4993,10 @@ function CtePage() {
               </DialogFooter>
             </DialogContent>
           </Dialog>
-          <TabsContent value="rascunhos">
+          <TabsContent value="rascunhos" className="mt-0">
             {renderTabelaDocs(docsByStatus.rascunhos, "aguardando envio")}
           </TabsContent>
-          <TabsContent value="autorizados">
+          <TabsContent value="autorizados" className="mt-0">
             {docsByStatus.autorizados.length > 0 && (
               <div className="mb-2 flex justify-end">
                 <Button
@@ -5042,7 +5040,7 @@ function CtePage() {
               mdfVincTab === "com",
             )}
           </TabsContent>
-          <TabsContent value="rejeitados">
+          <TabsContent value="rejeitados" className="mt-0">
             {docsByStatus.rejeitados.length > 0 && (
               <div className="mb-2 flex justify-end">
                 <Button
@@ -5065,9 +5063,11 @@ function CtePage() {
             )}
             {renderTabelaDocs(docsByStatus.rejeitados, "rejeitados")}
           </TabsContent>
-          <TabsContent value="cancelados">
+          <TabsContent value="cancelados" className="mt-0">
             {renderTabelaDocs(docsByStatus.cancelados, "cancelados")}
           </TabsContent>
+          </CardContent>
+          </Card>
         </Tabs>
       )}
       <Dialog open={manualNfeOpen} onOpenChange={setManualNfeOpen}>
