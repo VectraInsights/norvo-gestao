@@ -3572,6 +3572,19 @@ Espelhado na Vercel.
   travava a errada); extração agora varre todos os recortes.
 - Espelhado na Vercel via push em main.
 
+## CNH: CPF com DV + categoria por voto + nome MRZ reconciliado (29/09)
+
+- CPF 296→206 (troca do OCR): agora só preenche CPF com dígito
+  verificador válido; entre passadas vale o mais votado; sem nenhum
+  válido, tenta reparar 1 dígito (caso real repara exato e único).
+  CPF inválido nunca mais é preenchido (fica p/ conferir).
+- Categoria E→AE (truncado): votação entre passadas, empate decide
+  pelo mais longo.
+- Nome: rótulo vs MRZ reconciliados — truncamento do MRZ ("NUNE")
+  completa com o rótulo; se divergirem em pessoa (filiação), o MRZ
+  (condutor) vence.
+- Espelhado na Vercel via push em main.
+
 ## CNH: nº por pontos + decisão por campo entre passadas (29/09)
 
 - Nº errado: agora cada candidato de 9-12 dígitos soma pontos por
@@ -3583,6 +3596,15 @@ Espelhado na Vercel.
   votado com DV (reparo único); categoria mais votada (empate=longa);
   validade maior ISO.
 - Nome rótulo×MRZ: completa truncamento, MRZ vence filiação.
+- Espelhado na Vercel via push em main.
+
+## CNH: passada da caixa CAT HAB p/ categoria (29/09)
+
+- "AE" pequeno e vermelho virava "E" nos recortes grandes de forma
+  sistemática (voto não salva erro repetido). Nova passada em escala
+  6x só na caixa, com whitelist ABCDE: roda quando o voto veio vazio
+  ou com 1 letra, valendo 2 votos (empate com o truncado resolve no
+  mais longo). Log `[CNH] caixa-cat`.
 - Espelhado na Vercel via push em main.
 
 ## Diálogos sempre em tela cheia (29/09)
@@ -3607,26 +3629,4 @@ Espelhado na Vercel.
   receber, transferências, emitidas, percursos, recebidas + toolbar.
   Lógicas extras (`__none__`, "Todos", VT, saldos) preservadas;
   estáticos (status, dias, UF) mantidos como Select.
-- Espelhado na Vercel via push em main.
-
-## CNH: passada da caixa CAT HAB p/ categoria (29/09)
-
-- "AE" pequeno e vermelho virava "E" nos recortes grandes de forma
-  sistemática (voto não salva erro repetido). Nova passada em escala
-  6x só na caixa, com whitelist ABCDE: roda quando o voto veio vazio
-  ou com 1 letra, valendo 2 votos (empate com o truncado resolve no
-  mais longo). Log `[CNH] caixa-cat`.
-- Espelhado na Vercel via push em main.
-
-## CNH: CPF com DV + categoria por voto + nome MRZ reconciliado (29/09)
-
-- CPF 296→206 (troca do OCR): agora só preenche CPF com dígito
-  verificador válido; entre passadas vale o mais votado; sem nenhum
-  válido, tenta reparar 1 dígito (caso real repara exato e único).
-  CPF inválido nunca mais é preenchido (fica p/ conferir).
-- Categoria E→AE (truncado): votação entre passadas, empate decide
-  pelo mais longo.
-- Nome: rótulo vs MRZ reconciliados — truncamento do MRZ ("NUNE")
-  completa com o rótulo; se divergirem em pessoa (filiação), o MRZ
-  (condutor) vence.
 - Espelhado na Vercel via push em main.
