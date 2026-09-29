@@ -383,11 +383,11 @@ function ColaboradoresPage() {
       }
       gc.putImageData(img, 0, 0);
     } catch {}
-    // Caixa Nº REGISTRO: à direita da foto, acima das validades/códigos
+    // Caixa Nº REGISTRO: à esquerda, embaixo da foto (nº vertical "22899..." fica
+    // mais à esquerda e é preto/rotacionado — fora destes recortes)
     const caixas = [
-      { x: 0.27, y: 0.38, w: 0.15, h: 0.07 },
-      { x: 0.25, y: 0.42, w: 0.17, h: 0.07 },
-      { x: 0.27, y: 0.34, w: 0.15, h: 0.08 },
+      { x: 0.14, y: 0.44, w: 0.18, h: 0.1 },
+      { x: 0.12, y: 0.42, w: 0.22, h: 0.13 },
     ];
     const worker = await createWorker("por");
     try {
