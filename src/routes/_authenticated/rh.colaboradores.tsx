@@ -1040,8 +1040,8 @@ function ColaboradoresPage() {
                   </DialogTitle>
                 </DialogHeader>
                 <div className="flex-1 min-h-0 overflow-y-auto p-1">
-                  <div className="max-w-6xl border rounded bg-background overflow-hidden">
-                    <div className="p-2 space-y-3">
+                  <div className="border rounded bg-background overflow-hidden [&_input]:h-8 [&_button]:h-8">
+                    <div className="p-2 space-y-2">
                       <div className="grid grid-cols-2 gap-3 md:grid-cols-5">
                         <div className="space-y-1">
                           <Label>Nome *</Label>
@@ -1083,7 +1083,7 @@ function ColaboradoresPage() {
                     <div className="bg-primary/8 text-primary/80 border-y border-primary/20 px-2 py-1 text-[10px] font-semibold uppercase tracking-wide">
                       Endereço
                     </div>
-                    <div className="p-2 space-y-3">
+                    <div className="p-2 space-y-2">
                       <div className="grid grid-cols-2 gap-3 md:grid-cols-12">
                         <div className="space-y-1 md:col-span-3">
                           <Label>Rua / Av.</Label>
@@ -1269,7 +1269,7 @@ function ColaboradoresPage() {
                         />
                       </label>
                     </div>
-                    <div className="p-2 space-y-3">
+                    <div className="p-2 space-y-2">
                       <div className="grid grid-cols-2 gap-3 md:grid-cols-3">
                         <div className="space-y-1">
                           <Label>
@@ -1376,7 +1376,7 @@ function ColaboradoresPage() {
                     <div className="bg-primary/8 text-primary/80 border-y border-primary/20 px-2 py-1 text-[10px] font-semibold uppercase tracking-wide">
                       Adicionais
                     </div>
-                    <div className="p-2 space-y-3">
+                    <div className="p-2 space-y-2">
                       <label className="flex items-center gap-2 text-sm">
                         <input
                           type="checkbox"
