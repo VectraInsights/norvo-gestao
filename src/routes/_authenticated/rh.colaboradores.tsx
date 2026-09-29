@@ -44,8 +44,11 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-import { ChevronLeft, ChevronRight, Users, Pencil, Plus, Trash2, X } from "lucide-react";
+import { ChevronLeft, ChevronRight, Users, Pencil, Plus, Trash2, X, FileUp } from "lucide-react";
 import { useMemo, useState } from "react";
+import * as pdfjsLib from "pdfjs-dist";
+import pdfWorker from "pdfjs-dist/build/pdf.worker.min.mjs?url";
+pdfjsLib.GlobalWorkerOptions.workerSrc = pdfWorker;
 import { supabase } from "@/integrations/supabase/client";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEmpresaAtual } from "@/hooks/use-empresa";
@@ -170,6 +173,64 @@ function ColaboradoresPage() {
   const [pagina, setPagina] = useState(1);
   const set = <K extends keyof typeof form>(k: K, v: (typeof form)[K]) =>
     setForm((f) => ({ ...f, [k]: v }));
+
+  // Lê o PDF da CNH (texto) e preenche nome/CPF/CNH — só preenche vazio em nome/CPF
+  async function importarCnhPdf(file: File) {
+    try {
+      toast.info("Lendo PDF da CNH…");
+      const buf = await file.arrayBuffer();
+      const pdf = await pdfjsLib.getDocument({ data: buf }).promise;
+      let texto = "";
+      for (let i = 1; i <= Math.min(pdf.numPages, 5); i++) {
+        const page = await pdf.getPage(i);
+        const tc = await page.getTextContent();
+        texto +=
+          (tc.items as any[]).map((it) => (typeof it?.str === "string" ? it.str : "")).join(" ") +
+          "\n";
+      }
+      if (texto.replace(/\s/g, "").length < 50) {
+        toast.error("PDF sem texto legível (digitalizado?). Preencha manualmente.");
+        return;
+      }
+      const T = texto.replace(/\s+/g, " ");
+      const achados: string[] = [];
+      const cpf = T.match(/(\d{3}\.\d{3}\.\d{3}-\d{2})/)?.[1] ?? "";
+      if (cpf && !form.cpf) {
+        set("cpf", cpf);
+        achados.push("CPF");
+      }
+      const nome =
+        T.match(/NOME\s+([A-ZÀ-ÚÃÕÇÉÍÓÚÂÊÔ ]{6,60}?)(?=\s+(?:DOC|CPF|RG|CNH|DATA|CATEG|VALID|HABIL|FILIAC|NACIONALIDADE|NATURALIDADE|ASS|LOCAL|OBS))/)
+          ?.[1]?.trim() ?? "";
+      if (nome && !form.nome.trim()) {
+        set("nome", nome);
+        achados.push("nome");
+      }
+      const reg =
+        T.match(/(?:N[ºo]\s*\.?\s*(?:REGISTRO|RENACH)|RENACH|REGISTRO)\s*(\d{9,12})/i)?.[1] ?? "";
+      if (reg) {
+        set("cnh_numero", reg);
+        achados.push("nº CNH");
+      }
+      const cat =
+        T.match(/CATEGORIA(?:\s+HAB\.?)?\s*([A-E]{1,2})\b/i)?.[1]?.toUpperCase() ??
+        T.match(/\bCAT\.?\s*HAB\.?\s*([A-E]{1,2})\b/i)?.[1]?.toUpperCase() ??
+        "";
+      if (cat && ["A", "B", "AB", "C", "D", "E", "AC", "AD", "AE"].includes(cat)) {
+        set("cnh_categoria", cat);
+        achados.push("categoria " + cat);
+      }
+      const val = T.match(/VALIDADE\s*(\d{2})\/(\d{2})\/(\d{4})/)?.slice(1) ?? [];
+      if (val.length === 3) {
+        set("cnh_validade", `${val[2]}-${val[1]}-${val[0]}`);
+        achados.push("validade");
+      }
+      if (achados.length === 0) toast.warning("Nada reconhecido no PDF. Preencha manualmente.");
+      else toast.success(`CNH lida: ${achados.join(", ")}`);
+    } catch (e: any) {
+      toast.error("Falha ao ler PDF", { description: e?.message });
+    }
+  }
 
   const { data: colabs, isLoading } = useQuery({
     enabled: !!empresa,
@@ -543,12 +604,13 @@ function ColaboradoresPage() {
                   Novo colaborador
                 </Button>
               </DialogTrigger>
-              <DialogContent className="max-w-xl">
-                <DialogHeader>
+              <DialogContent className="flex flex-col">
+                <DialogHeader className="shrink-0">
                   <DialogTitle>{editing ? "Editar colaborador" : "Novo colaborador"}</DialogTitle>
                 </DialogHeader>
-                <div className="grid gap-3 max-h-[70vh] overflow-y-auto p-1">
-                  <div className="grid grid-cols-2 gap-3">
+                <div className="grid gap-4 md:grid-cols-2 flex-1 min-h-0 overflow-y-auto p-1">
+                  <div className="space-y-3 min-w-0">
+                    <div className="grid grid-cols-2 gap-3">
                     <div className="space-y-1">
                       <Label>Nome *</Label>
                       <Input value={form.nome} onChange={(e) => set("nome", e.target.value)} />
@@ -700,9 +762,25 @@ function ColaboradoresPage() {
                       <Input value={form.banco} onChange={(e) => set("banco", e.target.value)} />
                     </div>
                   </div>
+                  </div>
+                  <div className="space-y-3 min-w-0">
                   <div className="rounded-md border bg-muted/30 p-3">
-                    <div className="mb-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-                      CNH
+                    <div className="mb-2 flex items-center justify-between gap-2">
+                      <div className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                        CNH
+                      </div>
+                      <label className="flex cursor-pointer items-center gap-1.5 rounded-md border bg-background px-2 py-1 text-[11px] font-medium hover:bg-muted">
+                        <FileUp className="h-3.5 w-3.5" /> Importar PDF da CNH
+                        <input
+                          type="file"
+                          accept=".pdf,application/pdf"
+                          className="hidden"
+                          onChange={(e) => {
+                            if (e.target.files?.[0]) importarCnhPdf(e.target.files[0]);
+                            e.currentTarget.value = "";
+                          }}
+                        />
+                      </label>
                     </div>
                     <div className="grid grid-cols-3 gap-3">
                       <div className="space-y-1">
@@ -810,8 +888,9 @@ function ColaboradoresPage() {
                       onChange={(e) => set("observacoes", e.target.value)}
                     />
                   </div>
+                  </div>
                 </div>
-                <DialogFooter>
+                <DialogFooter className="shrink-0 border-t pt-3">
                   <Button variant="outline" onClick={() => setOpen(false)}>
                     Cancelar
                   </Button>

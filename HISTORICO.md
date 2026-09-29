@@ -3369,3 +3369,8 @@ Espelhado na Vercel.
 
 - Aba Seguro e Pedagio -> Seguro; removidos Averbacao (so sai na emissao do CT-e) e Responsavel da tela (colunas seguem no banco; emissao usa como fallback sem quebrar).
 - Apolice ocupa 2 colunas; Observacao (mesmo obs_gerais da aba Geral) logo abaixo do seguro, no padrao da tela legada.
+
+## Colaborador: janela cheia + importar PDF da CNH (29/09)
+
+- Dialog Novo/Editar colaborador em tela cheia (base ja era fullscreen; removido max-w-xl) com 2 colunas no desktop: dados pessoais a esquerda, CNH/banco/obs a direita.
+- Botao Importar PDF da CNH no bloco CNH (pdfjs-dist, que ja estava instalado): extrai texto e preenche nome/CPF (so se vazios) + numero/categoria/validade da CNH, com toast do que foi achado; avisa se PDF for digitalizado sem texto.
