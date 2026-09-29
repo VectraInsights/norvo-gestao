@@ -728,7 +728,7 @@ function ColaboradoresPage() {
   });
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       <PageHeader
         title="Colaboradores"
         description="Cadastro de funcionários, cargos e dados de pagamento."
@@ -863,10 +863,19 @@ function ColaboradoresPage() {
               </DialogTrigger>
               <DialogContent className="flex flex-col">
                 <DialogHeader className="shrink-0">
-                  <DialogTitle>{editing ? "Editar colaborador" : "Novo colaborador"}</DialogTitle>
+                  <DialogTitle>
+                    <span className="border-l-4 border-pink-500 pl-3">
+                      {editing ? "Editar colaborador" : "Novo colaborador"}
+                    </span>
+                  </DialogTitle>
                 </DialogHeader>
                 <div className="grid gap-4 md:grid-cols-2 flex-1 min-h-0 overflow-y-auto p-1">
                   <div className="space-y-3 min-w-0">
+                  <div className="border rounded bg-background overflow-hidden">
+                    <div className="bg-primary/8 text-primary/80 border-b border-primary/20 px-2 py-1 text-[10px] font-semibold uppercase tracking-wide">
+                      Dados pessoais
+                    </div>
+                    <div className="p-2 space-y-3">
                     <div className="grid grid-cols-2 gap-3">
                     <div className="space-y-1">
                       <Label>Nome *</Label>
@@ -1009,6 +1018,13 @@ function ColaboradoresPage() {
                     </div>
                     <div></div>
                   </div>
+                    </div>
+                  </div>
+                  <div className="border rounded bg-background overflow-hidden">
+                    <div className="bg-primary/8 text-primary/80 border-b border-primary/20 px-2 py-1 text-[10px] font-semibold uppercase tracking-wide">
+                      Pagamento
+                    </div>
+                    <div className="p-2 space-y-3">
                   <div className="grid grid-cols-2 gap-3">
                     <div className="space-y-1">
                       <Label>PIX</Label>
@@ -1019,11 +1035,26 @@ function ColaboradoresPage() {
                       <Input value={form.banco} onChange={(e) => set("banco", e.target.value)} />
                     </div>
                   </div>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="space-y-1">
+                      <Label>Agência</Label>
+                      <Input
+                        value={form.agencia}
+                        onChange={(e) => set("agencia", e.target.value)}
+                      />
+                    </div>
+                    <div className="space-y-1">
+                      <Label>Conta</Label>
+                      <Input value={form.conta} onChange={(e) => set("conta", e.target.value)} />
+                    </div>
+                  </div>
+                    </div>
+                  </div>
                   </div>
                   <div className="space-y-3 min-w-0">
-                  <div className="rounded-md border bg-muted/30 p-3">
-                    <div className="mb-2 flex items-center justify-between gap-2">
-                      <div className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                  <div className="border rounded bg-background overflow-hidden">
+                    <div className="bg-primary/8 border-b border-primary/20 px-2 py-1 flex items-center justify-between gap-2">
+                      <div className="text-[10px] font-semibold uppercase tracking-wide text-primary/80">
                         CNH
                       </div>
                       <label className="flex cursor-pointer items-center gap-1.5 rounded-md border bg-background px-2 py-1 text-[11px] font-medium hover:bg-muted">
@@ -1039,6 +1070,7 @@ function ColaboradoresPage() {
                         />
                       </label>
                     </div>
+                    <div className="p-2">
                     <div className="grid grid-cols-3 gap-3">
                       <div className="space-y-1">
                         <Label>
@@ -1115,20 +1147,13 @@ function ColaboradoresPage() {
                         ⚠ {avisoToxico(form.toxico_validade)}
                       </p>
                     )}
-                  </div>
-                  <div className="grid grid-cols-2 gap-3">
-                    <div className="space-y-1">
-                      <Label>Agência</Label>
-                      <Input
-                        value={form.agencia}
-                        onChange={(e) => set("agencia", e.target.value)}
-                      />
-                    </div>
-                    <div className="space-y-1">
-                      <Label>Conta</Label>
-                      <Input value={form.conta} onChange={(e) => set("conta", e.target.value)} />
                     </div>
                   </div>
+                  <div className="border rounded bg-background overflow-hidden">
+                    <div className="bg-primary/8 text-primary/80 border-b border-primary/20 px-2 py-1 text-[10px] font-semibold uppercase tracking-wide">
+                      Adicionais
+                    </div>
+                    <div className="p-2 space-y-3">
                   <label className="flex items-center gap-2 text-sm">
                     <input
                       type="checkbox"
@@ -1144,6 +1169,8 @@ function ColaboradoresPage() {
                       value={form.observacoes}
                       onChange={(e) => set("observacoes", e.target.value)}
                     />
+                  </div>
+                    </div>
                   </div>
                   </div>
                 </div>
@@ -1161,7 +1188,19 @@ function ColaboradoresPage() {
         }
       />
 
-      <Card className="p-0 overflow-hidden">
+      <Card className="overflow-hidden border-2 border-primary/20 shadow-panel">
+        <div className="bg-primary text-primary-foreground px-3 py-2 flex items-center justify-between">
+          <h3 className="text-sm font-semibold">Colaboradores</h3>
+          <span className="text-xs opacity-80">Qtde: {colabs?.length ?? 0}</span>
+        </div>
+        <div className="bg-primary/8 text-primary/80 border-b border-primary/20 px-3 py-1.5 flex items-center justify-between">
+          <span className="text-[10px] font-semibold uppercase tracking-wide">
+            Listagem de colaboradores
+          </span>
+          <span className="text-xs">
+            Página {paginaAtual} de {totalPaginas}
+          </span>
+        </div>
         {isLoading ? (
           <div className="p-6">
             <Skeleton className="h-32 w-full" />
@@ -1190,7 +1229,18 @@ function ColaboradoresPage() {
                   <TableRow key={c.id}>
                     <TableCell className="font-medium">{c.nome}</TableCell>
                     <TableCell>{c.cargo ?? "—"}</TableCell>
-                    <TableCell>{STATUS[c.status] ?? c.status}</TableCell>
+                    <TableCell>
+                      <span
+                        className={
+                          "inline-block rounded-full px-2 py-0.5 text-[11px] font-medium " +
+                          (c.status === "ativo"
+                            ? "bg-primary/15 text-primary"
+                            : "bg-muted text-muted-foreground")
+                        }
+                      >
+                        {STATUS[c.status] ?? c.status}
+                      </span>
+                    </TableCell>
                     <TableCell>{c.data_admissao ? dateBR(c.data_admissao) : "—"}</TableCell>
                     <TableCell className="text-right text-tabular">
                       {brl(c.salario_base ?? 0)}
