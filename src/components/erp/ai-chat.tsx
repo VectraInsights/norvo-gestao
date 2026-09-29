@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect } from "react";
+import type { CSSProperties } from "react";
 import { MessageSquare, X, Send, Bot, User, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
@@ -14,6 +15,26 @@ const SUGESTOES = [
   "Quais motoristas estão ativos?",
 ];
 
+const BTN_SIZE = 40;
+const BTN_MARGIN = 12;
+const PANEL_W = 380;
+
+type XY = { x: number; y: number };
+
+function clamp(n: number, min: number, max: number) {
+  return Math.max(min, Math.min(max, n));
+}
+
+function loadPos(key: string): XY | null {
+  try {
+    const raw = localStorage.getItem(key);
+    if (!raw) return null;
+    const p = JSON.parse(raw);
+    if (typeof p?.x === "number" && typeof p?.y === "number") return p;
+  } catch {}
+  return null;
+}
+
 export function AIChat() {
   const { data: empresa } = useEmpresaAtual();
   const [open, setOpen] = useState(false);
@@ -22,6 +43,11 @@ export function AIChat() {
   const [loading, setLoading] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+  // Posição arrastável (persistida) — botão e painel
+  const [btnPos, setBtnPos] = useState<XY | null>(() => loadPos("norvo-ai-btn-pos"));
+  const [panelPos, setPanelPos] = useState<XY | null>(() => loadPos("norvo-ai-panel-pos"));
+  const btnDrag = useRef<{ sx: number; sy: number; ox: number; oy: number; moved: boolean } | null>(null);
+  const panelDrag = useRef<{ sx: number; sy: number; ox: number; oy: number } | null>(null);
 
   useEffect(() => {
     if (scrollRef.current) {
@@ -64,20 +90,86 @@ export function AIChat() {
   }
 
   if (!open) {
+    const style: CSSProperties = btnPos
+      ? { left: btnPos.x, top: btnPos.y }
+      : { bottom: BTN_MARGIN, right: BTN_MARGIN };
     return (
       <Button
-        onClick={() => setOpen(true)}
-        className="fixed bottom-6 right-6 z-50 h-14 w-14 rounded-full shadow-lg bg-primary text-primary-foreground hover:bg-primary/90"
+        onPointerDown={(e) => {
+          (e.currentTarget as HTMLElement).setPointerCapture?.(e.pointerId);
+          const cur = btnPos ?? {
+            x: window.innerWidth - BTN_MARGIN - BTN_SIZE,
+            y: window.innerHeight - BTN_MARGIN - BTN_SIZE,
+          };
+          btnDrag.current = { sx: e.clientX, sy: e.clientY, ox: cur.x, oy: cur.y, moved: false };
+        }}
+        onPointerMove={(e) => {
+          const d = btnDrag.current;
+          if (!d) return;
+          const nx = clamp(d.ox + e.clientX - d.sx, 0, window.innerWidth - BTN_SIZE);
+          const ny = clamp(d.oy + e.clientY - d.sy, 0, window.innerHeight - BTN_SIZE);
+          if (Math.abs(e.clientX - d.sx) + Math.abs(e.clientY - d.sy) > 4) d.moved = true;
+          setBtnPos({ x: nx, y: ny });
+        }}
+        onPointerUp={() => {
+          const d = btnDrag.current;
+          btnDrag.current = null;
+          if (!d) return;
+          if (d.moved) {
+            setBtnPos((p) => {
+              if (p) { try { localStorage.setItem("norvo-ai-btn-pos", JSON.stringify(p)); } catch {} }
+              return p;
+            });
+          } else {
+            setOpen(true);
+          }
+        }}
+        onClick={(e) => {
+          // Clique sem arrastar abre; arrastar só move
+          if (btnDrag.current?.moved) e.preventDefault();
+        }}
+        style={style}
+        title="Assistente — clique para abrir, arraste para mover"
+        className="fixed z-50 h-10 w-10 rounded-full shadow-md bg-primary text-primary-foreground hover:bg-primary/90 touch-none select-none cursor-grab active:cursor-grabbing"
         size="icon"
       >
-        <MessageSquare className="h-6 w-6" />
+        <MessageSquare className="h-4 w-4" />
       </Button>
     );
   }
 
+  const panelStyle: CSSProperties = panelPos
+    ? { left: panelPos.x, top: panelPos.y }
+    : { bottom: BTN_MARGIN, right: BTN_MARGIN };
   return (
-    <Card className="fixed bottom-6 right-6 z-50 w-[380px] max-h-[520px] flex flex-col shadow-2xl border-primary/20">
-      <CardHeader className="flex flex-row items-center justify-between space-y-0 p-3 bg-primary text-primary-foreground rounded-t-lg">
+    <Card style={panelStyle} className="fixed z-50 w-[380px] max-w-[calc(100vw-24px)] max-h-[520px] flex flex-col shadow-2xl border-primary/20">
+      <CardHeader
+        onPointerDown={(e) => {
+          (e.currentTarget as HTMLElement).setPointerCapture?.(e.pointerId);
+          const cur = panelPos ?? {
+            x: window.innerWidth - BTN_MARGIN - PANEL_W,
+            y: window.innerHeight - BTN_MARGIN - 520,
+          };
+          panelDrag.current = { sx: e.clientX, sy: e.clientY, ox: cur.x, oy: cur.y };
+        }}
+        onPointerMove={(e) => {
+          const d = panelDrag.current;
+          if (!d) return;
+          setPanelPos({
+            x: clamp(d.ox + e.clientX - d.sx, 0, window.innerWidth - 100),
+            y: clamp(d.oy + e.clientY - d.sy, 0, window.innerHeight - 60),
+          });
+        }}
+        onPointerUp={() => {
+          panelDrag.current = null;
+          setPanelPos((p) => {
+            if (p) { try { localStorage.setItem("norvo-ai-panel-pos", JSON.stringify(p)); } catch {} }
+            return p;
+          });
+        }}
+        title="Arraste para mover"
+        className="flex flex-row items-center justify-between space-y-0 p-3 bg-primary text-primary-foreground rounded-t-lg touch-none select-none cursor-grab active:cursor-grabbing"
+      >
         <div className="flex items-center gap-2">
           <Bot className="h-4 w-4" />
           <span className="text-sm font-semibold">Assistente Norvo</span>

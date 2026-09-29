@@ -3252,3 +3252,12 @@ Espelhado na Vercel.
   eyebrow/descricao do PageHeader — fica so o titulo CT-e
   com a barra azul. Container `p-6` -> `px-6 pb-6 pt-2`
   p/ encostar no cabecalho.
+
+## Assistente flutuante menor e arrastavel (28/09)
+
+- Botao `h-14 w-14 bottom-6 right-6` -> `h-10 w-10`
+  encostado no canto (`12px`), icone `h-6` -> `h-4`.
+- Botao e painel arrastaveis (pointer capture, clamp
+  na viewport, posicao persistida em localStorage);
+  clique sem arrastar abre o chat. Painel move pela
+  barra de titulo e respeita `max-w: 100vw-24px`.
