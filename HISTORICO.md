@@ -3332,3 +3332,13 @@ Espelhado na Vercel.
   o rodape sem barra de rolagem na pagina. Filtros e botoes
   com `shrink-0`; só a listagem rola por dentro e ocupa
   todo o espaco livre (cresce p/ cima).
+
+## CT-e: altura travada na viewport, pagina sem rolagem (29/09)
+
+- `h-full` nao conteve a altura (porcentagem contra pai
+  flex nao vale) e a pagina rolava com o rodape cortado.
+  Pagina com `h-[calc(100dvh-88/104/120px)]` por breakpoint
+  (= altura exata do `main`: viewport menos header 56px e
+  paddings), `min-h-[500px]` como fallback. Titulo, filtros,
+  listagem e botoes (Importar/Limpar/Gerar) sempre visiveis
+  de uma vez; só a listagem rola por dentro.

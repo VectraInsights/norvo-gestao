@@ -4353,7 +4353,7 @@ function CtePage() {
   );
 
   return (
-    <div className="px-2 pb-2 pt-1 h-full flex flex-col gap-2">
+    <div className="px-2 pb-2 pt-1 h-[calc(100dvh-88px)] sm:h-[calc(100dvh-104px)] lg:h-[calc(100dvh-120px)] min-h-[500px] flex flex-col gap-2">
       <div className="border-l-4 border-blue-500 pl-4 py-0.5 shrink-0">
         <h1 className="text-display text-2xl leading-tight md:text-3xl">CT-e</h1>
       </div>
