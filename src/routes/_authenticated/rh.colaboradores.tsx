@@ -259,6 +259,41 @@ function ColaboradoresPage() {
   // "SOBRENOME", "NOME") — modelo digital novo traz "2 e 1 NOME E SOBRENOME
   // ROBERTO DE SOUZA" tudo grudado.
   const FILLER_INICIO = new Set(["E", "NOME", "SOBRENOME", "SOBRENOMES"]);
+  const semAcento = (s: string) => s.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+  // Primeiras palavras que nunca são nome: rótulos da CNH e seus fragmentos
+  // (a camada de texto/OCR às vezes gruda "HABILITAÇÃO" — ou um caco como
+  // "MENTAÇÃO" — na frente do nome). Sufixos com 5+ letras p/ não colidir
+  // com nomes reais; terminações TACAO/DUCAO não existem em nome próprio.
+  const ROTULOS_CNH = [
+    "HABILITAÇÃO", "HABILITACAO", "CONDUCCIÓN", "CONDUCAO", "CARTEIRA", "NACIONAL",
+    "SOBRENOME", "REGISTRO", "VALIDADE", "EMISSAO", "EMISSÃO", "NASCIMENTO",
+    "PERMISO", "LICENSE", "DRIVER", "REPUBLICA", "REPÚBLICA", "FEDERATIVA", "BRASIL",
+    "IDENTIDADE", "CATEGORIA", "TRANSPORTES", "TRANSITO", "SENATRAN", "SECRETARIA",
+    "INFRAESTRUTURA", "MINISTERIO", "DOCUMENTO", "ASSINATURA", "PORTADOR",
+    "FILIAÇÃO", "FILIACAO", "OBSERVAÇÕES", "LOCAL", "GOVERNO", "SERPRO",
+    "BR", "QR", "CODE",
+  ];
+  const FRAG_INICIO = new Set<string>();
+  for (const w of ROTULOS_CNH) {
+    const n = semAcento(w.toUpperCase());
+    FRAG_INICIO.add(n);
+    for (let i = 1; i + 5 <= n.length; i++) FRAG_INICIO.add(n.slice(i));
+  }
+  // Remove cacos de rótulo da frente do nome ("MENTAÇÃO ROBERTO DE SOUZA" →
+  // "ROBERTO DE SOUZA"). Só corta se o resto continuar válido. Conectores
+  // (DE/DA/DO) também saem — nome próprio nunca começa com eles.
+  function sanearNome(nm: string): string {
+    if (!nm) return "";
+    const toks = nm.split(/\s+/).filter(Boolean);
+    let i = 0;
+    while (i < toks.length) {
+      const t = semAcento(toks[i].toUpperCase());
+      if (!(FRAG_INICIO.has(t) || /TACAO$|DUCAO$/.test(t) || /^(DE|DA|DO|DAS|DOS)$/.test(t))) break;
+      i++;
+    }
+    if (i === 0) return nm;
+    return limparNome(toks.slice(i).join(" "));
+  }
   function limparNome(bruto: string): string {
     const toks = bruto.split(/\s+/).filter(Boolean);
     let ini = 0;
@@ -411,9 +446,9 @@ function ColaboradoresPage() {
           .replace(/\b(NOME|DOC|IDENTIDADE|ORG|ORGAO|EMISSOR|UF|CPF|DATA|NASCIMENTO|FILIA[CÇ][AÃ]O|CATEGORIA|CAT|HAB|VALIDADE|PERMISSAO|ACC|REGISTRO|RENACH|HABILITA[CÇ][AÃ]O|OBSERVA[CÇ][OÕ]ES|LOCAL|EMISSAO)\b\.?/gi, " ")
           .replace(/[^A-ZÀ-ÚÃÕÇÉÍÓÚÂÊÔ ]/g, " ");
         const cands = limpo.match(/[A-ZÀ-ÚÃÕÇÉÍÓÚÂÊÔ ]{6,60}/g) ?? [];
-        const STOP = /REPUBLICA|FEDERATIVA|BRASIL|MINISTERIO|TRANSPORTES|TRANSITO|SENATRAN|CARTEIRA|HABILITACAO|PERMISO|CONDUCCION|DRIVER|LICENSE|SOBRENOME/;
+        const STOP = /REPUBLICA|FEDERATIVA|BRASIL|MINISTERIO|TRANSPORTES|TRANSITO|SENATRAN|CARTEIRA|HABILITACAO|HABILITA|PERMISO|CONDUCCION|CONDUCAO|DRIVER|LICENSE|SOBRENOME/;
         campos.nome =
-          cands.map((c) => limparNome(c.trim())).find((c) => c && !STOP.test(c)) ?? "";
+          cands.map((c) => limparNome(c.trim())).find((c) => c && !STOP.test(semAcento(c))) ?? "";
       }
       console.log("[CNH-OCR] nome bruto", JSON.stringify(campos.nome));
     }
@@ -478,30 +513,37 @@ function ColaboradoresPage() {
       if (val.length === 3) campos.cnh_validade = `${val[2]}-${val[1]}-${val[0]}`;
     }
     if (!campos.cnh_validade) {
-      // Âncora de layout: validade é a MAIOR data do documento (emissão/habilitação
-      // são passadas, nascimento é excluído). A tabela de categorias repete a
-      // validade — não atrapalha, é a mesma data.
+      // Por contexto: cada data herda o rótulo do trecho desde a data anterior
+      // ("EMISSÃO 29/12/2023 4b VALIDADE 27/12/2028": a 1ª é emissão, a 2ª é
+      // validade — mesmo lado a lado não troca). Sem rótulo, vale a maior data;
+      // só com rótulo de emissão/habilitação/nascimento, não chuta nada.
       const nascIso = campos.data_nascimento;
       const nascBr = nascIso
         ? `${nascIso.slice(8, 10)}/${nascIso.slice(5, 7)}/${nascIso.slice(0, 4)}`
         : "";
       const num = (d: string) => Number(d.slice(6) + d.slice(3, 5) + d.slice(0, 2));
       let melhor = "";
+      let melhorNota = -Infinity;
       let fimAnt = 0;
       for (const m of T.matchAll(/(\d{2})\/(\d{2})\/(\d{4})/g)) {
         const d = m[0];
         const i = m.index ?? 0;
         // Só vale o que está entre a data anterior e esta (rótulo da vizinha não contamina)
-        const gap = T.slice(Math.max(fimAnt, i - 22), i);
+        const gap = T.slice(Math.max(fimAnt, i - 40), i);
         fimAnt = i + d.length;
         if (d === nascBr) continue;
         const y = Number(d.slice(6));
         if (y < 1990 || y > 2100) continue;
-        // Data de emissão/1ª habilitação/nascimento não é validade
-        if (/EMISSAO|HABILITACAO|NASCIMENTO/i.test(gap)) continue;
-        if (!melhor || num(d) > num(melhor)) melhor = d;
+        let nota = 0;
+        if (/VALID/i.test(gap)) nota += 2;
+        if (/EMISS|HABILIT|NASC/i.test(gap)) nota -= 10;
+        if (nota > melhorNota || (nota === melhorNota && melhor && num(d) > num(melhor))) {
+          melhorNota = nota;
+          melhor = d;
+        }
       }
-      if (melhor) campos.cnh_validade = `${melhor.slice(6)}-${melhor.slice(3, 5)}-${melhor.slice(0, 2)}`;
+      if (melhor && melhorNota >= 0)
+        campos.cnh_validade = `${melhor.slice(6)}-${melhor.slice(3, 5)}-${melhor.slice(0, 2)}`;
     }
     if (!campos.data_nascimento) {
       const nasc =
@@ -667,7 +709,7 @@ function ColaboradoresPage() {
   // Lê o PDF da CNH e preenche nome/CPF/CNH — texto direto ou OCR da imagem
   async function importarCnhPdf(file: File) {
     try {
-      toast.info("Lendo PDF da CNH…");
+      toast.info("IMPORTANDO DADOS");
       const buf = await file.arrayBuffer();
       const pdf = await pdfjsLib.getDocument({ data: buf }).promise;
       let texto = "";
@@ -703,7 +745,7 @@ function ColaboradoresPage() {
       // 2) OCR complementa o que a camada de texto não trouxe (e vice-versa):
       //    cada recorte preenche só os campos ainda vazios (primeiro acerto vence).
       if (faltando().length > 0) {
-        toast.info("Lendo imagem do documento (OCR)… pode levar alguns segundos");
+        toast.info("IMPORTANDO DADOS");
         const ocr = await ocrCnh(pdf);
         for (const tx of ocr.textos) {
           const r = extrairCamposCnh(tx);
@@ -717,6 +759,8 @@ function ColaboradoresPage() {
         const reg = await ocrDigitosRegistro(pdf);
         if (reg) total.cnh_numero = reg;
       }
+      // Corta caco de rótulo grudado na frente do nome ("MENTAÇÃO ROBERTO…" → "ROBERTO…")
+      if (total.nome) total.nome = sanearNome(total.nome);
       // Importar = ação explícita: sempre preenche com o lido (inclusive por cima
       // de valor sujo de importação anterior)
       if (total.nome) set("nome", total.nome);

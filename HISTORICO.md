@@ -3516,3 +3516,16 @@ Espelhado na Vercel.
   faltou (Nome/CPF/Nº CNH/Categoria/Validade/Nascimento).
 - Nada: "Nada reconhecido no PDF. Preencha manualmente." (mantido).
 - Espelhado na Vercel via push em main.
+
+## CNH: nome sem caco de rótulo + validade por contexto (29/09)
+
+- Nome vinha "MENTAÇÃO ROBERTO DE SOUZA": caco de rótulo grudado na
+  frente. Novo `sanearNome` corta da frente rótulos, seus fragmentos
+  (5+ letras) e terminações TACAO/DUCAO — só se o resto continuar
+  válido; nomes reais em ÃO (CONCEIÇÃO, JOÃO) preservados.
+- Filtro anti-cabeçalho agora ignora acento (HABILITAÇÃO com Ã passava).
+- Validade por contexto: cada data herda o rótulo do trecho desde a
+  data anterior — "EMISSÃO 29/12/2023 VALIDADE 27/12/2028" lado a lado
+  não troca mais; só com rótulo de emissão, não chuta.
+- Toasts azuis de progresso viraram só "IMPORTANDO DADOS".
+- Espelhado na Vercel via push em main.
