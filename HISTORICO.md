@@ -3383,3 +3383,10 @@ Espelhado na Vercel.
 ## CNH OCR: leitura por proximidade + contraste (29/09)
 
 - So o CPF vinha porque o OCR embaralha a ordem (rotulos de um lado, valores de outro). Fallback apos(rotulo, captura, janela) p/ nome/registro/categoria/validade + pre-processamento (cinza+contraste) contra o fundo verde + log [CNH-OCR] no console p/ ajuste fino.
+
+## CNH OCR: nome limpo + numero por digitos + salario opcional (29/09)
+
+- apos() comecava no rotulo e grudava NOME no nome; agora corta apos o rotulo + NOME na lista de limpeza + remove letras soltas do fim (OLIVEIRA E S | -> OLIVEIRA).
+- Numero da CNH (vermelho, mal lido): segunda passada na faixa inferior ampliada 2x com whitelist so de digitos.
+- Salario base deixa de ser obrigatorio (validacao + asterisco); save ja gravava 0.
+- Select de categoria com value controlado desde o inicio (some o warning uncontrolled->controlled).

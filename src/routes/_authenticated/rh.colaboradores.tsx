@@ -133,7 +133,6 @@ function validarForm(form: ReturnType<typeof formInicial>) {
   if (tels.length === 0) throw new Error("Informe pelo menos um telefone");
   for (const t of tels)
     if (soDigitos(t).length < 10) throw new Error(`Telefone inválido: "${t}" (use DDD + número)`);
-  if (!(Number(form.salario_base) > 0)) throw new Error("Salário base é obrigatório");
   if (!form.data_admissao) throw new Error("Data de admissão é obrigatória");
   if (form.status === "demitido" && !form.data_demissao)
     throw new Error("Informe a data de demissão para colaboradores demitidos");
@@ -184,11 +183,12 @@ function ColaboradoresPage() {
       set("cpf", cpf);
       achados.push("CPF");
     }
-    // Valor N caracteres após um rótulo (p/ OCR com ordem embaralhada)
+    // Valor N caracteres APÓS um rótulo (p/ OCR com ordem embaralhada)
     const apos = (rotulo: RegExp, captura: RegExp, janela = 120) => {
-      const i = T.search(rotulo);
-      if (i < 0) return "";
-      return T.slice(i, i + janela).match(captura)?.[1]?.trim() ?? "";
+      const m = T.match(rotulo);
+      if (!m || m.index === undefined) return "";
+      const ini = m.index + m[0].length;
+      return T.slice(ini, ini + janela).match(captura)?.[1]?.trim() ?? "";
     };
     let nome =
       T.match(/NOME\s+([A-ZÀ-ÚÃÕÇÉÍÓÚÂÊÔ ]{6,60}?)(?=\s+(?:DOC|CPF|RG|CNH|DATA|CATEG|VALID|HABIL|FILIAC|NACIONALIDADE|NATURALIDADE|ASS|LOCAL|OBS))/)
@@ -196,10 +196,16 @@ function ColaboradoresPage() {
     if (!nome) {
       // Fallback: remove palavras-rótulo e pega a 1ª sequência longa em maiúsculas
       const limpo = apos(/NOME/, /(.{10,200})/, 200)
-        .replace(/\b(DOC|IDENTIDADE|ORG|ORGAO|EMISSOR|UF|CPF|DATA|NASCIMENTO|FILIA[CÇ][AÃ]O|CATEGORIA|CAT|HAB|VALIDADE|PERMISSAO|ACC|REGISTRO|RENACH|HABILITA[CÇ][AÃ]O|OBSERVA[CÇ][OÕ]ES|LOCAL|EMISSAO)\b\.?/gi, " ")
+        .replace(/\b(NOME|DOC|IDENTIDADE|ORG|ORGAO|EMISSOR|UF|CPF|DATA|NASCIMENTO|FILIA[CÇ][AÃ]O|CATEGORIA|CAT|HAB|VALIDADE|PERMISSAO|ACC|REGISTRO|RENACH|HABILITA[CÇ][AÃ]O|OBSERVA[CÇ][OÕ]ES|LOCAL|EMISSAO)\b\.?/gi, " ")
         .replace(/[^A-ZÀ-ÚÃÕÇÉÍÓÚÂÊÔ ]/g, " ");
       nome = limpo.match(/([A-ZÀ-ÚÃÕÇÉÍÓÚÂÊÔ ]{6,60})/)?.[1]?.trim() ?? "";
     }
+    // Limpa ruído do OCR no fim (letras soltas, barras): "OLIVEIRA E S |" -> "OLIVEIRA"
+    nome = nome
+      .replace(/\|/g, " ")
+      .replace(/\s+/g, " ")
+      .replace(/(\s+[A-ZÀ-Ú])+\s*$/g, "")
+      .trim();
     if (nome && !form.nome.trim()) {
       set("nome", nome);
       achados.push("nome");
@@ -233,8 +239,9 @@ function ColaboradoresPage() {
   }
 
   // OCR da imagem da CNH (a CNH digital exporta o documento como imagem): renderiza a
-  // página, recorta a região do documento e lê com tesseract (português)
-  async function ocrCnh(pdf: any): Promise<string> {
+  // página, recorta a região do documento e lê com tesseract (português).
+  // Retorna o texto e o canvas da página (p/ a passada de dígitos do nº da CNH).
+  async function ocrCnh(pdf: any): Promise<{ texto: string; canvas: HTMLCanvasElement | null }> {
     const { createWorker } = await import("tesseract.js");
     const page = await pdf.getPage(1);
     const scale = 3;
@@ -280,9 +287,34 @@ function ColaboradoresPage() {
         );
         const { data } = await worker.recognize(c);
         console.log("[CNH-OCR] recorte", r, (data?.text ?? "").slice(0, 600));
-        if ((data?.text ?? "").replace(/\s/g, "").length > 30) return data.text;
+        if ((data?.text ?? "").replace(/\s/g, "").length > 30)
+          return { texto: data.text, canvas };
       }
-      return "";
+      return { texto: "", canvas };
+    } finally {
+      await worker.terminate();
+    }
+  }
+
+  // Segunda passada só p/ o nº da CNH (dígitos vermelhos, mal lidos no geral):
+  // faixa inferior do documento ampliada 2x, só dígitos
+  async function ocrDigitosRegistro(canvas: HTMLCanvasElement): Promise<string> {
+    const { createWorker } = await import("tesseract.js");
+    const c = document.createElement("canvas");
+    const y = Math.floor(canvas.height * 0.3);
+    const w = Math.floor(canvas.width * 0.62);
+    const h = canvas.height - y;
+    c.width = w * 2;
+    c.height = h * 2;
+    const g = c.getContext("2d");
+    if (!g) return "";
+    g.drawImage(canvas, 0, y, w, h, 0, 0, c.width, c.height);
+    const worker = await createWorker("por");
+    try {
+      await worker.setParameters({ tessedit_char_whitelist: "0123456789" });
+      const { data } = await worker.recognize(c);
+      console.log("[CNH-OCR] digitos", (data?.text ?? "").slice(0, 200));
+      return (data?.text ?? "").replace(/\D/g, "").match(/\d{9,12}/)?.[0] ?? "";
     } finally {
       await worker.terminate();
     }
@@ -303,10 +335,19 @@ function ColaboradoresPage() {
           "\n";
       }
       let achados = texto.replace(/\s/g, "").length >= 50 ? extrairCamposCnh(texto) : [];
+      let canvasOcr: HTMLCanvasElement | null = null;
       if (achados.length === 0) {
         toast.info("Lendo imagem do documento (OCR)… pode levar alguns segundos");
         const ocr = await ocrCnh(pdf);
-        if (ocr) achados = extrairCamposCnh(ocr);
+        canvasOcr = ocr.canvas;
+        if (ocr.texto) achados = extrairCamposCnh(ocr.texto);
+      }
+      if (!achados.includes("nº CNH") && canvasOcr) {
+        const reg = await ocrDigitosRegistro(canvasOcr);
+        if (reg) {
+          set("cnh_numero", reg);
+          achados.push("nº CNH");
+        }
       }
       if (achados.length === 0) toast.warning("Nada reconhecido no PDF. Preencha manualmente.");
       else toast.success(`CNH lida: ${achados.join(", ")}`);
@@ -811,7 +852,7 @@ function ColaboradoresPage() {
                   </div>
                   <div className="grid grid-cols-2 gap-3">
                     <div className="space-y-1">
-                      <Label>Salário base *</Label>
+                      <Label>Salário base</Label>
                       <MoneyInput
                         value={form.salario_base}
                         onChange={(v) => set("salario_base", v)}
@@ -880,7 +921,7 @@ function ColaboradoresPage() {
                           Categoria {form.cargo.toLowerCase().includes("motorist") ? "*" : ""}
                         </Label>
                         <Select
-                          value={form.cnh_categoria || undefined}
+                          value={form.cnh_categoria || ""}
                           onValueChange={(v) => set("cnh_categoria", v)}
                         >
                           <SelectTrigger>
