@@ -352,8 +352,10 @@ function ColaboradoresPage() {
   //     <CPF> <nº registro> <categoria>; validade = maior data do documento
   //  3) Fallback: maior sequência em maiúsculas fora do cabeçalho
   // Cobre o modelo digital antigo e o novo (gov.br + QR-CODE + MRZ).
-  function extrairCamposCnh(texto: string): { achados: string[]; campos: CnhCampos } {
+  function extrairCamposCnh(texto: string): { achados: string[]; campos: CnhCampos; fontes: Record<string, string> } {
     const campos = CAMPOS_VAZIOS();
+    // Qual estratégia venceu cada campo (só nomes — nenhum dado pessoal vai p/ log).
+    const fontes: Record<string, string> = {};
     const T = texto.replace(/\s+/g, " ");
     const linhas = texto
       .split("\n")
@@ -373,10 +375,14 @@ function ColaboradoresPage() {
         return `${ano}-${mm}-${dd}`;
       };
       if (datas) {
-        if (!campos.data_nascimento)
+        if (!campos.data_nascimento) {
           campos.data_nascimento = convNasc(datas[1].slice(0, 2), datas[1].slice(2, 4), datas[1].slice(4, 6));
-        if (!campos.cnh_validade)
+          fontes.data_nascimento = "mrz";
+        }
+        if (!campos.cnh_validade) {
           campos.cnh_validade = `20${datas[2].slice(0, 2)}-${datas[2].slice(2, 4)}-${datas[2].slice(4, 6)}`;
+          fontes.cnh_validade = "mrz";
+        }
       }
       let lnome = mrz.find((l) => /^[A-Z]/.test(l) && !/^I</.test(l) && /<</.test(l));
       if (!lnome) {
@@ -392,15 +398,22 @@ function ColaboradoresPage() {
           .replace(/\s+/g, " ")
           .trim();
         const limpo = limparNome(nm);
-        if (limpo && !campos.nome) campos.nome = limpo;
+        if (limpo && !campos.nome) {
+          campos.nome = limpo;
+          fontes.nome = "mrz";
+        }
       }
     }
     // CPF + nascimento lado a lado (layout da CNH: "136.983.846-80 18/07/1993")
     const par = T.match(/(\d{3}\.\d{3}\.\d{3}-\d{2})\s+(\d{2})\/(\d{2})\/(\d{4})/);
     const cpf = par?.[1] ?? T.match(/(\d{3}\.\d{3}\.\d{3}-\d{2})/)?.[1] ?? "";
-    if (cpf && !campos.cpf) campos.cpf = cpf;
+    if (cpf && !campos.cpf) {
+      campos.cpf = cpf;
+      fontes.cpf = "regex";
+    }
     if (par && !campos.data_nascimento) {
       campos.data_nascimento = `${par[4]}-${par[3]}-${par[2]}`;
+      fontes.data_nascimento = "cpf-lado";
     }
     // Valor N caracteres APÓS um rótulo (p/ OCR com ordem embaralhada)
     const apos = (rotulo: RegExp, captura: RegExp, janela = 120) => {
@@ -451,6 +464,7 @@ function ColaboradoresPage() {
           cands.map((c) => limparNome(c.trim())).find((c) => c && !STOP.test(semAcento(c))) ?? "";
       }
       console.log("[CNH-OCR] nome bruto", JSON.stringify(campos.nome));
+      if (campos.nome && !fontes.nome) fontes.nome = "rotulo";
     }
     // 2) Nº REGISTRO: rótulo (tolerante) -> linha do CPF -> linha do rótulo.
     // A linha do CPF no documento traz <CPF> <registro> <categoria> lado a lado.
@@ -459,6 +473,7 @@ function ColaboradoresPage() {
       if (i >= 0) {
         const jan = T.slice(i + campos.cpf.length, i + campos.cpf.length + 80);
         campos.cnh_numero = jan.match(/(\d{9,12})/)?.[1] ?? "";
+        if (campos.cnh_numero) fontes.cnh_numero = "linha-cpf";
       }
     }
     if (!campos.cnh_numero) {
@@ -467,6 +482,7 @@ function ColaboradoresPage() {
         T.match(/\bN[ºo]?\s*REGISTRO\D{0,10}(\d[\d ]{8,14}\d)/i)?.[1]?.replace(/\D/g, "") ??
         T.match(/R[E3]G[I1]ST[R][O0]\D{0,10}(\d{9,12})/i)?.[1] ??
         apos(/REGISTRO|RENACH/i, /(\d{9,12})/, 80);
+      if (campos.cnh_numero) fontes.cnh_numero = "rotulo";
     }
     if (!campos.cnh_numero) {
       // Linha do rótulo Nº REGISTRO + próximas 3 (datas excluídas p/ não contaminar)
@@ -478,6 +494,7 @@ function ColaboradoresPage() {
           const dig = r.replace(/\D/g, "");
           if (/^\d{9,12}$/.test(dig)) {
             campos.cnh_numero = dig;
+            fontes.cnh_numero = "linha-rotulo";
             break;
           }
         }
@@ -491,26 +508,36 @@ function ColaboradoresPage() {
         T.match(/\bCAT\.?\s*HAB\.?\s*([A-E]{1,2})\b/i)?.[1]?.toUpperCase() ??
         T.match(/CAT\W{0,4}HAB\W{0,4}([A-E]{1,2})\b/i)?.[1]?.toUpperCase() ??
         apos(/CAT\.?\s*HAB|CATEGORIA/i, /\b([A-E]{1,2})\b/, 120).toUpperCase();
+      if (campos.cnh_categoria) fontes.cnh_categoria = "rotulo";
     }
     if (!campos.cnh_categoria && campos.cnh_numero) {
       const i = T.indexOf(campos.cnh_numero);
       if (i >= 0) {
         const jan = T.slice(i + campos.cnh_numero.length, i + campos.cnh_numero.length + 20);
         campos.cnh_categoria = jan.match(/\b([A-E]{1,2})\b/)?.[1]?.toUpperCase() ?? "";
+        if (campos.cnh_categoria) fontes.cnh_categoria = "linha-cpf";
       }
     }
     if (campos.cnh_categoria && !["A", "B", "AB", "C", "D", "E", "AC", "AD", "AE"].includes(campos.cnh_categoria))
       campos.cnh_categoria = "";
     // Modelo novo: "4b VALIDADE 27/12/2028" e "3 DATA, LOCAL E UF DE NASCIMENTO 03/01/1964,..."
+    // O marcador 4b é a assinatura deste modelo (4a = emissão) — tenta ele primeiro.
     if (!campos.cnh_validade) {
+      const val4b =
+        T.match(/4\s*B\b[^0-9]{0,25}(\d{2})\/(\d{2})\/(\d{4})/i)?.slice(1) ?? [];
       const val =
-        T.match(/VALIDADE\s*(\d{2})\/(\d{2})\/(\d{4})/)?.slice(1) ??
-        T.match(/\bVALID(?:ADE|E)?\D{0,15}(\d{2})\/(\d{2})\/(\d{4})/)?.slice(1) ??
-        (() => {
-          const m = apos(/VALID/i, /(\d{2}\/\d{2}\/\d{4})/, 60).match(/(\d{2})\/(\d{2})\/(\d{4})/);
-          return m ? m.slice(1) : [];
-        })();
-      if (val.length === 3) campos.cnh_validade = `${val[2]}-${val[1]}-${val[0]}`;
+        val4b.length === 3
+          ? val4b
+          : (T.match(/VALIDADE\s*(\d{2})\/(\d{2})\/(\d{4})/)?.slice(1) ??
+            T.match(/\bVALID(?:ADE|E)?\D{0,15}(\d{2})\/(\d{2})\/(\d{4})/)?.slice(1) ??
+            (() => {
+              const m = apos(/VALID/i, /(\d{2}\/\d{2}\/\d{4})/, 60).match(/(\d{2})\/(\d{2})\/(\d{4})/);
+              return m ? m.slice(1) : [];
+            })());
+      if (val.length === 3) {
+        campos.cnh_validade = `${val[2]}-${val[1]}-${val[0]}`;
+        fontes.cnh_validade = val4b.length === 3 ? "4b" : "rotulo";
+      }
     }
     if (!campos.cnh_validade) {
       // Por contexto: cada data herda o rótulo do trecho desde a data anterior
@@ -542,8 +569,10 @@ function ColaboradoresPage() {
           melhor = d;
         }
       }
-      if (melhor && melhorNota >= 0)
+      if (melhor && melhorNota >= 0) {
         campos.cnh_validade = `${melhor.slice(6)}-${melhor.slice(3, 5)}-${melhor.slice(0, 2)}`;
+        fontes.cnh_validade = "contexto";
+      }
     }
     if (!campos.data_nascimento) {
       const nasc =
@@ -552,9 +581,12 @@ function ColaboradoresPage() {
         T.match(/NASCIMENTO\D{0,40}(\d{2})\/(\d{2})\/(\d{4})/)?.slice(1) ??
         T.match(/DATA\D{0,40}NASCIMENTO\D{0,40}(\d{2})\/(\d{2})\/(\d{4})/)?.slice(1) ??
         [];
-      if (nasc.length === 3) campos.data_nascimento = `${nasc[2]}-${nasc[1]}-${nasc[0]}`;
+      if (nasc.length === 3) {
+        campos.data_nascimento = `${nasc[2]}-${nasc[1]}-${nasc[0]}`;
+        fontes.data_nascimento = "rotulo";
+      }
     }
-    return { achados: rotulosDe(campos), campos };
+    return { achados: rotulosDe(campos), campos, fontes };
   }
 
   // OCR da imagem da CNH (a CNH digital exporta o documento como imagem): renderiza a
@@ -706,10 +738,13 @@ function ColaboradoresPage() {
     }
   }
 
-  // Lê o PDF da CNH e preenche nome/CPF/CNH — texto direto ou OCR da imagem
+  // Lê o PDF da CNH e preenche nome/CPF/CNH — texto direto ou OCR da imagem.
+  // Mesmo id em todos os toasts: o "IMPORTANDO DADOS" aparece uma única vez
+  // e o resultado final o substitui (sem empilhar).
   async function importarCnhPdf(file: File) {
+    const TOAST_ID = "cnh-import";
     try {
-      toast.info("IMPORTANDO DADOS");
+      toast.info("IMPORTANDO DADOS", { id: TOAST_ID });
       const buf = await file.arrayBuffer();
       const pdf = await pdfjsLib.getDocument({ data: buf }).promise;
       let texto = "";
@@ -737,22 +772,29 @@ function ColaboradoresPage() {
       }
       // 1) Camada de texto do PDF (rápida; modelos digitais costumam ter)
       const total = CAMPOS_VAZIOS();
+      const fontesTotal: Record<string, string> = {};
       if (texto.replace(/\s/g, "").length >= 50) {
         const r = extrairCamposCnh(texto);
         Object.assign(total, r.campos);
+        Object.assign(fontesTotal, r.fontes);
+        console.info("[CNH] passada texto:", JSON.stringify(r.fontes));
       }
       const faltando = () => (CNH_CORE as readonly string[]).filter((k) => !(total as any)[k]);
       // 2) OCR complementa o que a camada de texto não trouxe (e vice-versa):
       //    cada recorte preenche só os campos ainda vazios (primeiro acerto vence).
       if (faltando().length > 0) {
-        toast.info("IMPORTANDO DADOS");
+        toast.info("IMPORTANDO DADOS", { id: TOAST_ID });
         const ocr = await ocrCnh(pdf);
-        for (const tx of ocr.textos) {
+        ocr.textos.forEach((tx, i) => {
+          if (faltando().length === 0) return;
           const r = extrairCamposCnh(tx);
           for (const k of Object.keys(total) as (keyof typeof total)[])
-            if (!total[k] && r.campos[k]) total[k] = r.campos[k];
-          if (faltando().length === 0) break;
-        }
+            if (!total[k] && r.campos[k]) {
+              total[k] = r.campos[k];
+              fontesTotal[k] = `ocr${i + 1}:${r.fontes[k] ?? "?"}`;
+            }
+        });
+        console.info("[CNH] fontes finais:", JSON.stringify(fontesTotal));
       }
       // 3) Último recurso p/ o nº: leitura de dígitos na caixa Nº REGISTRO
       if (!total.cnh_numero) {
@@ -780,10 +822,12 @@ function ColaboradoresPage() {
       const chaves = Object.keys(total) as (keyof typeof total)[];
       const lidos = chaves.filter((k) => total[k]).map((k) => ROTULO_CAMPO[k]);
       const faltaram = chaves.filter((k) => !total[k]).map((k) => ROTULO_CAMPO[k]);
-      if (lidos.length === 0) toast.warning("Nada reconhecido no PDF. Preencha manualmente.");
-      else if (faltaram.length === 0) toast.success("DADOS IMPORTADOS COM SUCESSO");
+      if (lidos.length === 0)
+        toast.warning("Nada reconhecido no PDF. Preencha manualmente.", { id: TOAST_ID });
+      else if (faltaram.length === 0) toast.success("DADOS IMPORTADOS COM SUCESSO", { id: TOAST_ID });
       else
         toast.warning("Importação parcial da CNH", {
+          id: TOAST_ID,
           description: `Lidos: ${lidos.join(", ")}. Faltaram: ${faltaram.join(", ")} — confira na tela.`,
         });
     } catch (e: any) {

@@ -3529,3 +3529,14 @@ Espelhado na Vercel.
   não troca mais; só com rótulo de emissão, não chuta.
 - Toasts azuis de progresso viraram só "IMPORTANDO DADOS".
 - Espelhado na Vercel via push em main.
+
+## CNH: validade ancorada no 4b + toast único (29/09)
+
+- Validade agora ancora primeiro no marcador 4b do modelo novo
+  ("4B VALIDADE 27/12/2028", tolera fundido sem espaço); genérico e
+  contexto continuam como rede de apoio.
+- Toast "IMPORTANDO DADOS" com id único: aparece uma vez e o resultado
+  final o substitui (antes empilhava dois).
+- Log `[CNH] fontes` registra qual estratégia venceu cada campo
+  (só nomes, sem dados pessoais) p/ diagnosticar próximas falhas.
+- Espelhado na Vercel via push em main.
