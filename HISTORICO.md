@@ -3303,3 +3303,16 @@ Espelhado na Vercel.
   `max-w-[110px]` -> `max-w-[200px]`: remetente/destina-
   tario/tomador mostram bem mais texto. Tooltip com nome
   completo mantido.
+
+## CT-e: filtro de periodo + excluir selecionadas + mesmo rem/dest (28/09)
+
+- Botao Consulta ligado: aplica `periodoIni/Fim` sobre a
+  data de emissao (notas sem data continuam visiveis),
+  com toast "N de M" e chip `N/M` + X p/ limpar o filtro.
+  Totais, contadores e selecionar-tudo passam a respeitar
+  a listagem visivel (aba mantem o total geral).
+- Novo "Excluir selecionadas" ao lado do Limpar: apaga do
+  banco só as chaves marcadas (com confirm).
+- Novo "Mesmo rem./dest.": a partir da 1a selecionada,
+  marca todas as visiveis com mesmo remetente (CNPJ/nome)
+  e destinatario — ex.: 1 clique seleciona as 20 do par.

@@ -74,6 +74,7 @@ import {
   ClipboardList,
   Printer,
   Repeat,
+  Copy,
 } from "lucide-react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -365,6 +366,8 @@ function CtePage() {
     return d.toISOString().slice(0, 10);
   });
   const [periodoFim, setPeriodoFim] = useState(() => new Date().toISOString().slice(0, 10));
+  // Filtro de período aplicado via botão Consulta (não reage sozinho à digitação)
+  const [periodoAplicado, setPeriodoAplicado] = useState<{ ini: string; fim: string } | null>(null);
   const [sortConfig, setSortConfig] = useState<{ key: string; dir: "asc" | "desc" }>({
     key: "nNF",
     dir: "asc",
@@ -410,8 +413,16 @@ function CtePage() {
     })();
   }, [(empresa as any)?.id]);
 
+  const dentroPeriodo = (data: string) => {
+    if (!periodoAplicado) return true;
+    const d = (data || "").slice(0, 10);
+    if (!d) return true;
+    if (periodoAplicado.ini && d < periodoAplicado.ini) return false;
+    if (periodoAplicado.fim && d > periodoAplicado.fim) return false;
+    return true;
+  };
   const mercadoriasSorted = useMemo(() => {
-    const arr = [...mercadorias];
+    const arr = mercadorias.filter((m) => dentroPeriodo(m.data));
     arr.sort((a, b) => {
       const va = (a as any)[sortConfig.key] ?? "";
       const vb = (b as any)[sortConfig.key] ?? "";
@@ -424,7 +435,7 @@ function CtePage() {
       return 0;
     });
     return arr;
-  }, [mercadorias, sortConfig]);
+  }, [mercadorias, sortConfig, periodoAplicado]);
 
   const { data: docs, isLoading } = useQuery({
     enabled: !!empresa,
@@ -4453,10 +4464,37 @@ function CtePage() {
                           onChange={setPeriodoFim}
                           className="h-7 text-xs w-[150px] shrink-0"
                         />
-                        <Button size="sm" variant="outline" className="h-7 text-xs shrink-0 px-2">
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          className="h-7 text-xs shrink-0 px-2"
+                          onClick={() => {
+                            setPeriodoAplicado({ ini: periodoIni, fim: periodoFim });
+                            const n = mercadorias.filter((m) => {
+                              const d = (m.data || "").slice(0, 10);
+                              if (!d) return true;
+                              if (periodoIni && d < periodoIni) return false;
+                              if (periodoFim && d > periodoFim) return false;
+                              return true;
+                            }).length;
+                            toast.success(`Período aplicado: ${n} de ${mercadorias.length} NF-e(s)`);
+                          }}
+                        >
                           <Search className="h-3 w-3 mr-1" />
                           Consulta
                         </Button>
+                        {periodoAplicado && (
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            className="h-7 text-xs shrink-0 px-1.5"
+                            title="Limpar filtro de período"
+                            onClick={() => setPeriodoAplicado(null)}
+                          >
+                            <X className="h-3 w-3 mr-1" />
+                            {mercadoriasSorted.length}/{mercadorias.length}
+                          </Button>
+                        )}
                         <Button
                           size="sm"
                           variant="outline"
@@ -4491,13 +4529,16 @@ function CtePage() {
                   <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted-foreground border-t pt-2">
                     <span>
                       Qtde NF-e:{" "}
-                      <span className="font-bold text-foreground">{mercadorias.length}</span>
+                      <span className="font-bold text-foreground">{mercadoriasSorted.length}</span>
+                      {periodoAplicado && (
+                        <span className="font-normal"> de {mercadorias.length}</span>
+                      )}
                     </span>
                     <span className="text-muted-foreground/40">•</span>
                     <span>
                       Peso Bruto:{" "}
                       <span className="font-bold text-foreground">
-                        {Number(mercadorias.reduce((a, m) => a + m.peso, 0)).toLocaleString(
+                        {Number(mercadoriasSorted.reduce((a, m) => a + m.peso, 0)).toLocaleString(
                           "pt-BR",
                           { minimumFractionDigits: 2, maximumFractionDigits: 2 },
                         )}{" "}
@@ -4508,7 +4549,7 @@ function CtePage() {
                     <span>
                       Valor:{" "}
                       <span className="font-bold text-foreground">
-                        {brl(mercadorias.reduce((a, m) => a + m.valor, 0))}
+                        {brl(mercadoriasSorted.reduce((a, m) => a + m.valor, 0))}
                       </span>
                     </span>
                   </div>
@@ -4520,7 +4561,12 @@ function CtePage() {
                     <span className="text-[10px] font-semibold uppercase tracking-wide">
                       Listagem das Notas Fiscais
                     </span>
-                    <span className="text-xs">Qtde NF-e: {mercadorias.length}</span>
+                    <span className="text-xs">
+                      Qtde NF-e:{" "}
+                      {periodoAplicado
+                        ? `${mercadoriasSorted.length}/${mercadorias.length}`
+                        : mercadorias.length}
+                    </span>
                   </div>
                   <div className="overflow-auto max-h-[calc(100vh-470px)] min-h-[200px]">
                     <Table className="min-w-[1280px]">
@@ -4530,13 +4576,14 @@ function CtePage() {
                             <input
                               type="checkbox"
                               checked={
-                                mercadorias.length > 0 && selecionadas.size === mercadorias.length
+                                mercadoriasSorted.length > 0 &&
+                                selecionadas.size === mercadoriasSorted.length
                               }
                               onChange={(e) => {
                                 if (e.target.checked) {
                                   const red = (form as any).modoEmbarque === "simplificado";
                                   const grupos = new Set(
-                                    mercadorias.map((m) =>
+                                    mercadoriasSorted.map((m) =>
                                       red ? m.emitCnpj || m.emit : m.tomadorCnpj || m.tomador,
                                     ),
                                   );
@@ -4548,7 +4595,7 @@ function CtePage() {
                                     );
                                     return;
                                   }
-                                  setSelecionadas(new Set(mercadorias.map((m) => m.chave)));
+                                setSelecionadas(new Set(mercadoriasSorted.map((m) => m.chave)));
                                 } else setSelecionadas(new Set());
                               }}
                             />
@@ -4730,8 +4777,56 @@ function CtePage() {
                   >
                     <Trash2 className="mr-1 h-3 w-3" /> Limpar
                   </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    disabled={selecionadas.size === 0}
+                    title="Exclui do embarque apenas as NF-es selecionadas"
+                    onClick={async () => {
+                      if (!empresa || selecionadas.size === 0) return;
+                      const chaves = Array.from(selecionadas);
+                      if (!confirm(`Excluir ${chaves.length} NF-e(s) selecionada(s) do embarque?`))
+                        return;
+                      const { error } = await supabase
+                        .from("cte_nfes_pendentes" as any)
+                        .delete()
+                        .eq("empresa_id", empresa.id)
+                        .in("chave", chaves);
+                      if (error) toast.error(error.message);
+                      else {
+                        setMercadorias((atual) => atual.filter((m) => !selecionadas.has(m.chave)));
+                        setSelecionadas(new Set());
+                        qc.invalidateQueries({ queryKey: ["cte-nfes-pendentes", empresa.id] });
+                        toast.success(`${chaves.length} NF-e(s) excluída(s)`);
+                      }
+                    }}
+                  >
+                    <Trash2 className="mr-1 h-3 w-3" /> Excluir selecionadas
+                  </Button>
 
                   <div className="ml-auto flex gap-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      disabled={selecionadas.size === 0}
+                      title="Seleciona todas as notas visíveis com o mesmo remetente e destinatário da primeira selecionada"
+                      onClick={() => {
+                        const ref = mercadoriasSorted.find((m) => selecionadas.has(m.chave));
+                        if (!ref) {
+                          toast.error("Selecione ao menos uma NF-e de referência");
+                          return;
+                        }
+                        const kE = (m: (typeof mercadoriasSorted)[number]) => m.emitCnpj || m.emit;
+                        const kD = (m: (typeof mercadoriasSorted)[number]) => m.destCnpj || m.dest;
+                        const iguais = mercadoriasSorted.filter(
+                          (m) => kE(m) === kE(ref) && kD(m) === kD(ref),
+                        );
+                        setSelecionadas(new Set(iguais.map((m) => m.chave)));
+                        toast.success(`${iguais.length} NF-e(s) selecionadas`);
+                      }}
+                    >
+                      <Copy className="mr-1 h-3 w-3" /> Mesmo rem./dest.
+                    </Button>
                     <Button
                       variant="outline"
                       size="sm"
