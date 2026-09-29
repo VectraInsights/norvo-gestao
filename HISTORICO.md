@@ -3462,3 +3462,14 @@ Espelhado na Vercel.
 ## CNH nascimento colado no CPF + status A-Z (29/09)
 
 - Nascimento vinha depois do CPF com digitos no meio (fora do alcance do padrao): agora extrai o par CPF+data juntos. Status em ordem alfabetica no dropdown.
+
+## Colaboradores: telefone auto-;, ID ordenável, maiúsculas e VT (29/09)
+
+- Telefone: ao completar 11 dígitos e continuar digitando, o `; ` entra
+  sozinho (cola de vários números também separa).
+- Tabela com coluna ID antes do nome; cabeçalhos ID/Nome/Cargo/Status/
+  Admissão/Salário clicáveis (padrão A-Z por nome).
+- Nome sempre em maiúsculas (digitação e gravação).
+- Checkbox do vale-transporte ao lado do salário base; datas com largura
+  total consistente.
+- Espelhado na Vercel via push em main.

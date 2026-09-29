@@ -115,6 +115,7 @@ const UFS = [
 ];
 
 // Máscara progressiva de telefone; vários números separados por ;
+// ao completar 11 dígitos e continuar digitando, o ; entra sozinho.
 function mascaraFone(dig: string) {
   const d = dig.replace(/\D/g, "").slice(0, 11);
   if (d.length === 0) return "";
@@ -124,10 +125,17 @@ function mascaraFone(dig: string) {
   return `(${d.slice(0, 2)}) ${d.slice(2, 7)}-${d.slice(7)}`;
 }
 function mascaraTelefones(v: string) {
-  return v
-    .split(";")
-    .map((s) => mascaraFone(s.trimStart()))
-    .join("; ");
+  const parts: string[] = [];
+  for (const s of v.split(";")) {
+    let dig = s.replace(/\D/g, "");
+    if (!dig) continue;
+    while (dig.length > 11) {
+      parts.push(mascaraFone(dig.slice(0, 11)));
+      dig = dig.slice(11);
+    }
+    parts.push(mascaraFone(dig));
+  }
+  return parts.join("; ");
 }
 
 const soma30meses = (d: string) => {
@@ -594,7 +602,38 @@ function ColaboradoresPage() {
   const pageSize = 25;
   const totalPaginas = Math.max(1, Math.ceil((colabs?.length ?? 0) / pageSize));
   const paginaAtual = Math.min(pagina, totalPaginas);
-  const colabsVisiveis = (colabs ?? []).slice((paginaAtual - 1) * pageSize, paginaAtual * pageSize);
+  // Ordenação da listagem (padrão: nome A-Z); cabeçalhos clicáveis.
+  const [ordem, setOrdem] = useState<{
+    key: "codigo" | "nome" | "cargo" | "status" | "data_admissao" | "salario_base";
+    dir: 1 | -1;
+  }>({ key: "nome", dir: 1 });
+  const colabsOrdenados = useMemo(() => {
+    const arr = [...(colabs ?? [])];
+    const val = (c: Colab): string | number => {
+      if (ordem.key === "codigo") return Number(c.codigo ?? 0);
+      if (ordem.key === "salario_base") return Number(c.salario_base ?? 0);
+      if (ordem.key === "data_admissao") return c.data_admissao || "";
+      if (ordem.key === "status") return STATUS[c.status] ?? c.status;
+      return String(c[ordem.key] ?? "").toLocaleLowerCase();
+    };
+    arr.sort((a, b) => {
+      const va = val(a);
+      const vb = val(b);
+      const r =
+        typeof va === "number" && typeof vb === "number"
+          ? va - vb
+          : String(va).localeCompare(String(vb), "pt-BR");
+      return r * ordem.dir;
+    });
+    return arr;
+  }, [colabs, ordem]);
+  const colabsVisiveis = colabsOrdenados.slice((paginaAtual - 1) * pageSize, paginaAtual * pageSize);
+  const alternarOrdem = (key: typeof ordem.key) => {
+    setOrdem((o) => (o.key === key ? { key, dir: o.dir === 1 ? -1 : 1 } : { key, dir: 1 }));
+    setPagina(1);
+  };
+  const setaOrdem = (key: typeof ordem.key) =>
+    ordem.key === key ? (ordem.dir === 1 ? " ▲" : " ▼") : "";
 
   const { data: cargos = [] } = useQuery({
     enabled: !!empresa,
@@ -826,7 +865,7 @@ function ColaboradoresPage() {
       }
       const payload: any = {
         empresa_id: empresa.id,
-        nome: form.nome.trim(),
+        nome: form.nome.trim().toUpperCase(),
         cpf: form.cpf || null,
         cargo: form.cargo.trim() || null,
         email: form.email || null,
@@ -1067,7 +1106,7 @@ function ColaboradoresPage() {
                       <div className="grid grid-cols-2 gap-3 md:grid-cols-12">
                         <div className="space-y-1 md:col-span-4">
                           <Label>Nome *</Label>
-                          <Input value={form.nome} onChange={(e) => set("nome", e.target.value)} />
+                          <Input value={form.nome} onChange={(e) => set("nome", e.target.value.toUpperCase())} className="uppercase" />
                         </div>
                         <div className="space-y-1 md:col-span-2">
                           <Label>CPF *</Label>
@@ -1080,6 +1119,7 @@ function ColaboradoresPage() {
                         <div className="space-y-1 md:col-span-2">
                           <Label>Data de nascimento</Label>
                           <DateInput
+                            className="w-full"
                             value={form.data_nascimento}
                             onChange={(v) => set("data_nascimento", v)}
                           />
@@ -1258,6 +1298,7 @@ function ColaboradoresPage() {
                         <div className="space-y-1 md:col-span-2">
                           <Label>Data de admissão *</Label>
                           <DateInput
+                            className="w-full"
                             value={form.data_admissao}
                             onChange={(v) => set("data_admissao", v)}
                           />
@@ -1265,6 +1306,7 @@ function ColaboradoresPage() {
                         <div className="space-y-1 md:col-span-2">
                           <Label>Data de demissão</Label>
                           <DateInput
+                            className="w-full"
                             value={form.data_demissao}
                             onChange={(v) => set("data_demissao", v)}
                           />
@@ -1275,6 +1317,14 @@ function ColaboradoresPage() {
                             value={form.salario_base}
                             onChange={(v) => set("salario_base", v)}
                           />
+                          <label className="flex items-center gap-1.5 text-xs pt-1 cursor-pointer">
+                            <input
+                              type="checkbox"
+                              checked={form.optante_vt}
+                              onChange={(e) => set("optante_vt", e.target.checked)}
+                            />
+                            Vale-transporte (6%)
+                          </label>
                         </div>
                       </div>
                     </div>
@@ -1387,14 +1437,6 @@ function ColaboradoresPage() {
                       Adicionais
                     </div>
                     <div className="p-2 space-y-2">
-                      <label className="flex items-center gap-2 text-sm">
-                        <input
-                          type="checkbox"
-                          checked={form.optante_vt}
-                          onChange={(e) => set("optante_vt", e.target.checked)}
-                        />
-                        Optante pelo Vale-Transporte (desconto de 6% sobre salário base na folha)
-                      </label>
                       <div className="space-y-1">
                         <Label>Observações</Label>
                         <Textarea
@@ -1448,17 +1490,19 @@ function ColaboradoresPage() {
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Nome</TableHead>
-                  <TableHead>Cargo</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead>Admissão</TableHead>
-                  <TableHead className="text-right">Salário</TableHead>
+                  <TableHead className="cursor-pointer select-none whitespace-nowrap" onClick={() => alternarOrdem("codigo")} title="Ordenar por ID">ID{setaOrdem("codigo")}</TableHead>
+                  <TableHead className="cursor-pointer select-none" onClick={() => alternarOrdem("nome")} title="Ordenar por nome">Nome{setaOrdem("nome")}</TableHead>
+                  <TableHead className="cursor-pointer select-none" onClick={() => alternarOrdem("cargo")} title="Ordenar por cargo">Cargo{setaOrdem("cargo")}</TableHead>
+                  <TableHead className="cursor-pointer select-none" onClick={() => alternarOrdem("status")} title="Ordenar por status">Status{setaOrdem("status")}</TableHead>
+                  <TableHead className="cursor-pointer select-none" onClick={() => alternarOrdem("data_admissao")} title="Ordenar por admissão">Admissão{setaOrdem("data_admissao")}</TableHead>
+                  <TableHead className="text-right cursor-pointer select-none" onClick={() => alternarOrdem("salario_base")} title="Ordenar por salário">Salário{setaOrdem("salario_base")}</TableHead>
                   <TableHead className="w-10"></TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {colabsVisiveis.map((c) => (
                   <TableRow key={c.id}>
+                    <TableCell className="font-mono">{c.codigo ?? "—"}</TableCell>
                     <TableCell className="font-medium">{c.nome}</TableCell>
                     <TableCell>{c.cargo ?? "—"}</TableCell>
                     <TableCell>
