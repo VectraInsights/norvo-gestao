@@ -4360,7 +4360,7 @@ function CtePage() {
               <h3 className="text-sm font-semibold flex items-center gap-2">
                 <Package className="h-4 w-4" /> Cadastro de Mercadorias para Embarque
               </h3>
-              <TabsList className="bg-black/20 p-1 gap-1 flex-1">
+              <TabsList className="bg-white/25 p-1 gap-1 flex-1">
                 <TabsTrigger
                   value="embarque"
                   className="flex-1 text-xs px-3 py-1.5 font-medium text-white/80 hover:text-white hover:bg-white/10 data-[state=active]:bg-white data-[state=active]:text-green-900 data-[state=active]:font-bold data-[state=active]:shadow"
