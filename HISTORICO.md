@@ -3473,3 +3473,21 @@ Espelhado na Vercel.
 - Checkbox do vale-transporte ao lado do salário base; datas com largura
   total consistente.
 - Espelhado na Vercel via push em main.
+
+## CNH digital modelo novo gov.br + QR-CODE + MRZ (29/09)
+
+- Só o CPF era lido. Causas: nome vinha como "NOME E SOBRENOME <nome>"
+  grudado (o "E" inicial quebrava o validador); nascimento usa rótulo
+  "DATA, LOCAL E UF DE NASCIMENTO" (regex exigia "DATA NASCIMENTO"
+  colado); fallback pegava o cabeçalho REPÚBLICA como nome.
+- `limparNome` agora descarta enchimento inicial (E/NOME/SOBRENOME);
+  nome mesma-linha ("...SOBRENOME ROBERTO DE SOUZA 1ª HABILITAÇÃO...");
+  nascimento/validade com `NASCIMENTO`/`VALID` + até 40/15 chars de
+  distância; fallback ignora cabeçalho (stop-list).
+- MRZ do rodapé (`<<<`) como fonte confiável: datas YYMMDD da L2
+  (nascimento 1900s/validade 2000s) + nome da L3 (`<` vira espaço).
+- Texto do PDF agora agrupa por linha (coord Y do pdfjs) em vez de
+  juntar a página inteira — preserva "rótulo numa linha, valor na
+  seguinte". Validado em teste node: nome, CPF, nº 01603641705,
+  categoria E, nascimento 03/01/1964, validade 27/12/2028.
+- Espelhado na Vercel via push em main.

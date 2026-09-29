@@ -255,9 +255,16 @@ function ColaboradoresPage() {
   // Corta sobra de 1-2 letras no FIM ("ES" solto do OCR), preservando conectores
   // reais (DA/DE/DO/DAS/DOS/E) e nomes curtos (mínimo 2 palavras no fim).
   // Exige ao menos 2 palavras. "" = descartado.
+  // Antes de validar, descarta enchimento de rótulo no INÍCIO ("E SOBRENOME",
+  // "SOBRENOME", "NOME") — modelo digital novo traz "2 e 1 NOME E SOBRENOME
+  // ROBERTO DE SOUZA" tudo grudado.
+  const FILLER_INICIO = new Set(["E", "NOME", "SOBRENOME", "SOBRENOMES"]);
   function limparNome(bruto: string): string {
+    const toks = bruto.split(/\s+/).filter(Boolean);
+    let ini = 0;
+    while (ini < toks.length && FILLER_INICIO.has(toks[ini])) ini++;
     const boas: string[] = [];
-    for (const p of bruto.split(/\s+/).filter(Boolean)) {
+    for (const p of toks.slice(ini)) {
       if (/^[A-ZÀÁÂÃÇÉÊÍÓÔÕÚ]{2,}$/.test(p)) boas.push(p);
       else break;
     }
@@ -273,6 +280,7 @@ function ColaboradoresPage() {
 
   // Extrai nome/CPF/CNH de um texto (camada de texto do PDF ou OCR) — retorna o que achou.
   // Tenta rótulo+valor adjacentes e, se o OCR embaralhar a ordem, busca por proximidade/linhas.
+  // Cobre 2 modelos digitais: o antigo e o novo (cabeçalho gov.br + QR-CODE + MRZ com <<< no rodapé).
   function extrairCamposCnh(texto: string): string[] {
     const T = texto.replace(/\s+/g, " ");
     const linhas = texto
@@ -280,6 +288,38 @@ function ColaboradoresPage() {
       .map((l) => l.trim())
       .filter(Boolean);
     const achados: string[] = [];
+    // 0) MRZ do modelo novo (3 linhas com <<< no rodapé) — fonte mais confiável:
+    //    L1: I<BRA<registro>...  L2: <nasc YYMMDD>M<valid YYMMDD>...  L3: NOME<<SOBRENOME<<<<
+    {
+      const mrz = linhas.filter((l) => /<{3,}/.test(l));
+      if (mrz.length >= 2) {
+        const blob = mrz.join(" ");
+        const datas = blob.match(/(\d{6})\d?[MF<](\d{6})/);
+        const convNasc = (yy: string, mm: string, dd: string) => {
+          const ano = Number(yy) > Number(String(new Date().getFullYear()).slice(2)) ? 1900 + Number(yy) : 2000 + Number(yy);
+          return `${ano}-${mm}-${dd}`;
+        };
+        if (datas) {
+          set("data_nascimento", convNasc(datas[1].slice(0, 2), datas[1].slice(2, 4), datas[1].slice(4, 6)));
+          if (!achados.includes("nascimento")) achados.push("nascimento");
+          set("cnh_validade", `20${datas[2].slice(0, 2)}-${datas[2].slice(2, 4)}-${datas[2].slice(4, 6)}`);
+          if (!achados.includes("validade")) achados.push("validade");
+        }
+        const lnome = mrz.find((l) => /^[A-Z]/.test(l) && !/^I</.test(l) && /<</.test(l));
+        if (lnome) {
+          const nm = lnome
+            .replace(/</g, " ")
+            .replace(/[^A-ZÀ-ÚÃÕÇÉÍÓÚÂÊÔ ]/g, " ")
+            .replace(/\s+/g, " ")
+            .trim();
+          const limpo = limparNome(nm);
+          if (limpo) {
+            set("nome", limpo);
+            achados.push("nome");
+          }
+        }
+      }
+    }
     // CPF + nascimento lado a lado (layout da CNH: "136.983.846-80 18/07/1993")
     const par = T.match(/(\d{3}\.\d{3}\.\d{3}-\d{2})\s+(\d{2})\/(\d{2})\/(\d{4})/);
     const cpf = par?.[1] ?? T.match(/(\d{3}\.\d{3}\.\d{3}-\d{2})/)?.[1] ?? "";
@@ -298,18 +338,26 @@ function ColaboradoresPage() {
       const ini = m.index + m[0].length;
       return T.slice(ini, ini + janela).match(captura)?.[1]?.trim() ?? "";
     };
-    let nome = "";
+    let nome = achados.includes("nome") ? "__MRZ__" : "";
     // 1º) Linha seguinte ao rótulo NOME (layout do documento — o mais confiável no OCR)
     {
       const idx = linhas.findIndex(
-        (l) => /^NOME\b/i.test(l) && l.replace(/NOME/i, "").trim().length < 4,
+        (l) => /NOME(\s+E\s+SOBRENOME)?\b/i.test(l) && l.replace(/NOME|SOBRENOME/gi, "").replace(/[\dªº]/g, "").replace(/\be\b/gi, "").trim().length < 6,
       );
-      if (idx >= 0) {
+      if (idx >= 0 && !nome) {
+        // Mesmo rótulo + valor na mesma linha ("NOME E SOBRENOME ROBERTO DE SOUZA")
+        const mesma = linhas[idx].replace(/^\s*\d*\s*(e\s+)?\d*\s*NOME(\s+E\s+SOBRENOME)?/i, " ").trim();
+        if (mesma.length > 3) nome = limparNome(mesma);
         for (let j = idx + 1; j < linhas.length && j < idx + 4 && !nome; j++) {
           console.log("[CNH-OCR] nome linha?", JSON.stringify(linhas[j]));
           nome = limparNome(linhas[j]);
         }
       }
+    }
+    // 1b) Modelo novo: "NOME E SOBRENOME <nome> 1ª HABILITAÇÃO/data" tudo na mesma linha
+    if (!nome) {
+      const m = T.match(/NOME(\s+E\s+SOBRENOME)?\s+([A-ZÀ-ÚÃÕÇÉÍÓÚÂÊÔ ]{3,70}?)(?=\s*(?:\d|1[ªa]|DOC\b|CPF\b|CNH\b|DATA\b|CATEG|VALID|HABIL|FILIAC|NACIONALIDADE|NATURALIDADE|ASS\b|LOCAL\b|OBS\b|MINAS|GERAIS|BRASIL))/i);
+      if (m) nome = limparNome(m[2]);
     }
     // 2º) Rótulo+valor adjacentes
     if (!nome) {
@@ -317,26 +365,31 @@ function ColaboradoresPage() {
         T.match(/NOME\s+([A-ZÀ-ÚÃÕÇÉÍÓÚÂÊÔ ]{6,60}?)(?=\s+(?:DOC|CPF|RG|CNH|DATA|CATEG|VALID|HABIL|FILIAC|NACIONALIDADE|NATURALIDADE|ASS|LOCAL|OBS))/)
           ?.[1]?.trim() ?? "";
     }
-    if (!nome) {
+    if (!nome || nome === "__MRZ__") {
       // 3º) Fallback: remove palavras-rótulo e pega a 1ª sequência longa em maiúsculas
+      // (cabeçalho REPÚBLICA/MINISTÉRIO nunca vale como nome)
       const limpo = apos(/NOME/, /(.{10,200})/, 200)
         .replace(/\b(NOME|DOC|IDENTIDADE|ORG|ORGAO|EMISSOR|UF|CPF|DATA|NASCIMENTO|FILIA[CÇ][AÃ]O|CATEGORIA|CAT|HAB|VALIDADE|PERMISSAO|ACC|REGISTRO|RENACH|HABILITA[CÇ][AÃ]O|OBSERVA[CÇ][OÕ]ES|LOCAL|EMISSAO)\b\.?/gi, " ")
         .replace(/[^A-ZÀ-ÚÃÕÇÉÍÓÚÂÊÔ ]/g, " ");
-      nome = limpo.match(/([A-ZÀ-ÚÃÕÇÉÍÓÚÂÊÔ ]{6,60})/)?.[1]?.trim() ?? "";
+      const cands = limpo.match(/[A-ZÀ-ÚÃÕÇÉÍÓÚÂÊÔ ]{6,60}/g) ?? [];
+      const STOP = /REPUBLICA|FEDERATIVA|BRASIL|MINISTERIO|TRANSPORTES|TRANSITO|SENATRAN|CARTEIRA|HABILITACAO|PERMISO|CONDUCCION|DRIVER|LICENSE|SOBRENOME/;
+      nome =
+        cands.map((c) => limparNome(c.trim())).find((c) => c && !STOP.test(c)) ?? "";
     }
     // Filtra o que veio dos regexes (vale p/ todos os caminhos acima)
-    nome = limparNome(nome);
+    if (nome !== "__MRZ__") nome = limparNome(nome);
     // Validação rígida final (vale p/ todos os caminhos acima)
     console.log("[CNH-OCR] nome bruto", JSON.stringify(nome));
-    nome = limparNome(nome);
+    if (nome !== "__MRZ__") nome = limparNome(nome);
     // Importar = ação explícita: sempre preenche com o lido (inclusive por cima de
     // valor sujo de importação anterior)
-    if (nome) {
+    if (nome && nome !== "__MRZ__") {
       set("nome", nome);
       achados.push("nome");
     }
     let reg =
-      T.match(/(?:N[ºo]\s*\.?\s*(?:REGISTRO|RENACH)|RENACH|REGISTRO)\s*(\d{9,12})/i)?.[1] ??
+      T.match(/(?:N[ºo]\s*\.?\s*(?:REGISTRO|RENACH)|RENACH|REGISTRO)\s*\D{0,10}(\d{9,12})/i)?.[1] ??
+      T.match(/\bN[ºo]?\s*REGISTRO\D{0,10}(\d[\d ]{8,14}\d)/i)?.[1]?.replace(/\D/g, "") ??
       apos(/REGISTRO|RENACH/i, /(\d{9,12})/, 80);
     if (!reg) {
       // Linha do rótulo Nº REGISTRO + próximas 3 (datas excluídas p/ não contaminar)
@@ -365,18 +418,24 @@ function ColaboradoresPage() {
       set("cnh_categoria", cat);
       achados.push("categoria " + cat);
     }
+    // Modelo novo: "4b VALIDADE 27/12/2028" e "3 DATA, LOCAL E UF DE NASCIMENTO 03/01/1964,..."
     const val =
       T.match(/VALIDADE\s*(\d{2})\/(\d{2})\/(\d{4})/)?.slice(1) ??
+      T.match(/\bVALID(?:ADE|E)?\D{0,15}(\d{2})\/(\d{2})\/(\d{4})/)?.slice(1) ??
       (() => {
         const m = apos(/VALID/i, /(\d{2}\/\d{2}\/\d{4})/, 60).match(/(\d{2})\/(\d{2})\/(\d{4})/);
         return m ? m.slice(1) : [];
       })();
-    if (val.length === 3) {
+    if (val.length === 3 && !achados.includes("validade")) {
       set("cnh_validade", `${val[2]}-${val[1]}-${val[0]}`);
       achados.push("validade");
     }
-    const nasc = T.match(/DATA NASCIMENTO[^0-9]{0,20}(\d{2})\/(\d{2})\/(\d{4})/)?.slice(1) ?? [];
-    if (nasc.length === 3) {
+    const nasc =
+      T.match(/DATA NASCIMENTO[^0-9]{0,20}(\d{2})\/(\d{2})\/(\d{4})/)?.slice(1) ??
+      T.match(/NASCIMENTO\D{0,40}(\d{2})\/(\d{2})\/(\d{4})/)?.slice(1) ??
+      T.match(/DATA\D{0,40}NASCIMENTO\D{0,40}(\d{2})\/(\d{2})\/(\d{4})/)?.slice(1) ??
+      [];
+    if (nasc.length === 3 && !achados.includes("nascimento")) {
       set("data_nascimento", `${nasc[2]}-${nasc[1]}-${nasc[0]}`);
       achados.push("nascimento");
     }
@@ -550,9 +609,24 @@ function ColaboradoresPage() {
       for (let i = 1; i <= Math.min(pdf.numPages, 5); i++) {
         const page = await pdf.getPage(i);
         const tc = await page.getTextContent();
-        texto +=
-          (tc.items as any[]).map((it) => (typeof it?.str === "string" ? it.str : "")).join(" ") +
-          "\n";
+        const items = (tc.items as any[]).filter((it) => typeof it?.str === "string" && it.str.trim());
+        // Agrupa por linha (coord Y do transform) p/ preservar "rótulo numa linha,
+        // valor na seguinte" — o modelo novo traz tudo em caixas separadas.
+        try {
+          const rows = new Map<number, any[]>();
+          for (const it of items) {
+            const y = Array.isArray(it.transform) ? Math.round(Number(it.transform[5]) / 2) : 0;
+            if (!rows.has(y)) rows.set(y, []);
+            rows.get(y)!.push(it);
+          }
+          const ys = [...rows.keys()].sort((a, b) => b - a);
+          for (const y of ys) {
+            const row = rows.get(y)!.sort((a, b) => Number(a.transform?.[4] ?? 0) - Number(b.transform?.[4] ?? 0));
+            texto += row.map((it) => it.str.trim()).join(" ") + "\n";
+          }
+        } catch {
+          texto += items.map((it) => it.str).join(" ") + "\n";
+        }
       }
       let achados = texto.replace(/\s/g, "").length >= 50 ? extrairCamposCnh(texto) : [];
       if (achados.length === 0) {
