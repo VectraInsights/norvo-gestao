@@ -4755,7 +4755,6 @@ function CtePage() {
                   </Button>
 
                   <div className="ml-auto flex gap-2">
-                    {(form as any).modoEmbarque === "simplificado" && (
                     <Button
                       variant="outline"
                       size="sm"
@@ -4778,7 +4777,6 @@ function CtePage() {
                     >
                       <Copy className="mr-1 h-3 w-3" /> Mesmo rem./dest.
                     </Button>
-                    )}
                     <Button
                       variant="outline"
                       size="sm"
