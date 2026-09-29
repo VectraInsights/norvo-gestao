@@ -4415,6 +4415,7 @@ function CtePage() {
                             type="radio"
                             name="modo-embarque"
                             checked={(form as any).modoEmbarque !== "simplificado"}
+                            onClick={() => setSelecionadas(new Set())}
                             onChange={() => setForm((f) => ({ ...f, modoEmbarque: "avulso" }))}
                           />{" "}
                           CT-e Avulso
@@ -4424,6 +4425,7 @@ function CtePage() {
                             type="radio"
                             name="modo-embarque"
                             checked={(form as any).modoEmbarque === "simplificado"}
+                            onClick={() => setSelecionadas(new Set())}
                             onChange={() =>
                               setForm((f) => ({ ...f, modoEmbarque: "simplificado" }))
                             }
@@ -4497,6 +4499,12 @@ function CtePage() {
                           <TableHead className="w-6">
                             <input
                               type="checkbox"
+                              title={
+                                (form as any).modoEmbarque === "simplificado"
+                                  ? "Selecionar todas visíveis"
+                                  : "No CT-e Avulso, selecione uma NF-e por vez"
+                              }
+                              disabled={(form as any).modoEmbarque !== "simplificado"}
                               checked={
                                 mercadoriasSorted.length > 0 &&
                                 selecionadas.size === mercadoriasSorted.length
@@ -4516,6 +4524,17 @@ function CtePage() {
                                         : "No simplificado, selecione NF-es do mesmo tomador",
                                     );
                                     return;
+                                  }
+                                  if (!red) {
+                                    const dests = new Set(
+                                      mercadoriasSorted.map((m) => m.destCnpj || m.dest),
+                                    );
+                                    if (dests.size > 1) {
+                                      toast.error(
+                                        "Há destinos diferentes na lista — selecione manualmente as do mesmo destinatário",
+                                      );
+                                      return;
+                                    }
                                   }
                                 setSelecionadas(new Set(mercadoriasSorted.map((m) => m.chave)));
                                 } else setSelecionadas(new Set());
@@ -4580,22 +4599,31 @@ function CtePage() {
                                   onChange={(e) => {
                                     const next = new Set(selecionadas);
                                     if (e.target.checked) {
-                                      next.add(m.chave);
-                                      const sel = mercadorias.filter((x) => next.has(x.chave));
                                       const red = (form as any).modoEmbarque === "simplificado";
-                                      const grupos = new Set(
-                                        sel.map((x) =>
-                                          red ? x.emitCnpj || x.emit : x.tomadorCnpj || x.tomador,
-                                        ),
-                                      );
-                                      if (grupos.size > 1) {
-                                        toast.error(
-                                          red
-                                            ? "No modo simplificado, o CT-e exige o mesmo remetente"
-                                            : "No simplificado, o CT-e exige o mesmo tomador",
-                                        );
-                                        next.delete(m.chave);
-                                      } else if (red) {
+                                      if (!red) {
+                                        // CT-e Avulso: uma NF-e por vez — trocar limpa a anterior
+                                        setSelecionadas(new Set([m.chave]));
+                                        return;
+                                      }
+                                      // CT-e Simplificado: várias, só do mesmo remetente + tomador
+                                      const kR = (x: (typeof mercadorias)[number]) => x.emitCnpj || x.emit;
+                                      const kT = (x: (typeof mercadorias)[number]) =>
+                                        x.tomadorCnpj || x.tomador;
+                                      const ref = mercadorias.find((x) => selecionadas.has(x.chave));
+                                      if (ref) {
+                                        if (kR(ref) !== kR(m)) {
+                                          toast.error(
+                                            "No modo simplificado, o CT-e exige o mesmo remetente",
+                                          );
+                                          return;
+                                        }
+                                        if (kT(ref) !== kT(m)) {
+                                          toast.error("O CT-e exige o mesmo tomador");
+                                          return;
+                                        }
+                                      }
+                                      next.add(m.chave);
+                                      if (red) {
                                         const chaveRem = m.emitCnpj || m.emit;
                                         const outras = mercadorias.filter(
                                           (x) =>
@@ -4727,6 +4755,7 @@ function CtePage() {
                   </Button>
 
                   <div className="ml-auto flex gap-2">
+                    {(form as any).modoEmbarque === "simplificado" && (
                     <Button
                       variant="outline"
                       size="sm"
@@ -4749,6 +4778,7 @@ function CtePage() {
                     >
                       <Copy className="mr-1 h-3 w-3" /> Mesmo rem./dest.
                     </Button>
+                    )}
                     <Button
                       variant="outline"
                       size="sm"

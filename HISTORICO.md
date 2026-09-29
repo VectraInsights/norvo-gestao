@@ -3358,3 +3358,9 @@ Espelhado na Vercel.
 - calendar.tsx formatMonthDropdown short (mai.) -> long pt-BR capitalizado (Maio). Vale p/ todos os calendarios do app.
 - date-input.tsx: removido o botao Usar hoje do rodape do popover (mantido o texto Hoje).
 - Arquivos estavam com atributo Hidden no Windows e recusavam escrita; desocultados com attrib -H.
+
+## CT-e: multiplas notas so no Simplificado mesmo remetente (29/09)
+
+- Avulso: uma NF-e por vez (clicar em outra troca a selecao); checkbox geral desabilitado; botao Mesmo rem./dest. oculto.
+- Simplificado: varias, travadas no clique p/ mesmo remetente + tomador (antes so validava no Gerar).
+- Trocar de modo limpa a selecao.
