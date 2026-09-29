@@ -534,23 +534,60 @@ function ColaboradoresPage() {
         const iso = `${m[4]}-${m[3]}-${m[2]}`;
         if (!datasB.includes(iso)) datasB.push(iso);
       }
-      if (datasB.length > 0) {
+      if (datasB.length > 1) {
+        // 2+ datas marcadas B (ex.: 4a lido como 4b + 4b real): a maior é a validade.
+        // Com 1 só, não confia — pode ser emissão embaralhada; segue p/ rótulo/par.
         datasB.sort();
         campos.cnh_validade = datasB[datasB.length - 1];
-        fontes.cnh_validade = datasB.length > 1 ? "4b-max" : "4b";
+        fontes.cnh_validade = "4b-max";
       }
     }
     if (!campos.cnh_validade) {
-      const val =
-        T.match(/VALIDADE\s*(\d{2})\/(\d{2})\/(\d{4})/)?.slice(1) ??
-        T.match(/\bVALID(?:ADE|E)?\D{0,15}(\d{2})\/(\d{2})\/(\d{4})/)?.slice(1) ??
-        (() => {
-          const m = apos(/VALID/i, /(\d{2}\/\d{2}\/\d{4})/, 60).match(/(\d{2})\/(\d{2})\/(\d{4})/);
-          return m ? m.slice(1) : [];
-        })();
+      // Trecho entre rótulo e data com EMISSÃO/HABILITAÇÃO/NASCIMENTO contamina:
+      // o OCR embaralha a ordem ("VALIDADE ... EMISSÃO 29/12/2023 27/12/2028")
+      // e a 1ª data da janela seria a de emissão. Só aceita trecho limpo.
+      const trechoLimpo = (gap: string) => !/EMISS|HABILIT|NASC/i.test(gap);
+      // Par validade+emissão em qualquer ordem: 2+ datas até 60 chars após
+      // VALIDADE → a MAIOR é a validade (emissão com rótulo próprio é descartada).
+      // Com 1 data só, vale o rótulo direto (v2/v3) — par de 1 chuta igual.
+      let vPar = "";
+      {
+        const mV = T.match(/VALID/i);
+        if (mV && mV.index !== undefined) {
+          const jan = T.slice(mV.index + mV[0].length, mV.index + mV[0].length + 60);
+          const ds: { d: string; gap: string }[] = [];
+          let ant = 0;
+          for (const mD of jan.matchAll(/(\d{2})\/(\d{2})\/(\d{4})/g)) {
+            const i = mD.index ?? 0;
+            ds.push({ d: `${mD[3]}-${mD[2]}-${mD[1]}`, gap: jan.slice(ant, i) });
+            ant = i + mD[0].length;
+          }
+          const ok = ds.filter(
+            (x) => trechoLimpo(x.gap) && Number(x.d.slice(0, 4)) >= 1990 && Number(x.d.slice(0, 4)) <= 2100,
+          );
+          if (ok.length >= 2) vPar = ok.map((x) => x.d).sort()[ok.length - 1];
+        }
+      }
+      const v1 = vPar ? [] : T.match(/VALIDADE\s*(\d{2})\/(\d{2})\/(\d{4})/)?.slice(1) ?? [];
+      const g2 = T.match(/\bVALID(?:ADE|E)?(\D{0,15})(\d{2})\/(\d{2})\/(\d{4})/);
+      const v2 =
+        g2 && trechoLimpo(g2[1]) ? [g2[2], g2[3], g2[4]] : [];
+      let v3: string[] = [];
+      {
+        const mV = T.match(/VALID/i);
+        if (mV && mV.index !== undefined) {
+          const jan = T.slice(mV.index + mV[0].length, mV.index + mV[0].length + 60);
+          const mD = jan.match(/(\d{2})\/(\d{2})\/(\d{4})/);
+          if (mD && mD.index !== undefined && trechoLimpo(jan.slice(0, mD.index))) v3 = mD.slice(1);
+        }
+      }
+      const val = vPar ? [] : v1.length === 3 ? v1 : v2.length === 3 ? v2 : v3;
       if (val.length === 3) {
         campos.cnh_validade = `${val[2]}-${val[1]}-${val[0]}`;
         fontes.cnh_validade = "rotulo";
+      } else if (vPar) {
+        campos.cnh_validade = vPar;
+        fontes.cnh_validade = "par-max";
       }
     }
     if (!campos.cnh_validade) {

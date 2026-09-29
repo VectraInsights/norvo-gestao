@@ -3549,3 +3549,14 @@ Espelhado na Vercel.
   emissão sempre); se só sobrar a de emissão, deixa vazio.
 - Ordem restaurada: 4b-coletado → rótulo VALIDADE → contexto.
 - Espelhado na Vercel via push em main.
+
+## CNH: validade à prova de embaralhamento do OCR (29/09)
+
+- 4b com captura única não é confiável (pode ser a emissão colada
+  após VALIDADE no texto embaralhado): só vale com 2+ datas (max).
+- Novo par-max: 2+ datas após VALIDADE em qualquer ordem → a maior
+  é a validade; trechos com EMISSÃO são descartados.
+- Rótulos com guarda anti-EMISSÃO no trecho; 8 cenários em teste node
+  (normal, colado, rótulo no meio, 4a-misread, só-emissão→vazio,
+  invertido, sem marcador, tabela) todos certos.
+- Espelhado na Vercel via push em main.
