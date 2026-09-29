@@ -4360,43 +4360,38 @@ function CtePage() {
               <h3 className="text-sm font-semibold flex items-center gap-2">
                 <Package className="h-4 w-4" /> Cadastro de Mercadorias para Embarque
               </h3>
-              <TabsList className="bg-primary-foreground/15 p-0.5 gap-0.5">
+              <TabsList className="bg-black/20 p-1 gap-1 flex-1">
                 <TabsTrigger
                   value="embarque"
-                  className="text-[11px] px-2 py-1 text-primary-foreground/85 data-[state=active]:bg-primary-foreground data-[state=active]:text-primary"
+                  className="flex-1 text-xs px-3 py-1.5 font-medium text-white/80 hover:text-white hover:bg-white/10 data-[state=active]:bg-white data-[state=active]:text-green-900 data-[state=active]:font-bold data-[state=active]:shadow"
                 >
                   NF-es para embarque ({mercadorias.length})
                 </TabsTrigger>
                 <TabsTrigger
                   value="rascunhos"
-                  className="text-[11px] px-2 py-1 text-primary-foreground/85 data-[state=active]:bg-primary-foreground data-[state=active]:text-primary"
+                  className="flex-1 text-xs px-3 py-1.5 font-medium text-white/80 hover:text-white hover:bg-white/10 data-[state=active]:bg-white data-[state=active]:text-green-900 data-[state=active]:font-bold data-[state=active]:shadow"
                 >
                   Aguardando envio ({docsByStatus.rascunhos.length})
                 </TabsTrigger>
                 <TabsTrigger
                   value="rejeitados"
-                  className="text-[11px] px-2 py-1 text-primary-foreground/85 data-[state=active]:bg-primary-foreground data-[state=active]:text-primary"
+                  className="flex-1 text-xs px-3 py-1.5 font-medium text-white/80 hover:text-white hover:bg-white/10 data-[state=active]:bg-white data-[state=active]:text-green-900 data-[state=active]:font-bold data-[state=active]:shadow"
                 >
                   Rejeitados ({docsByStatus.rejeitados.length})
                 </TabsTrigger>
                 <TabsTrigger
                   value="cancelados"
-                  className="text-[11px] px-2 py-1 text-primary-foreground/85 data-[state=active]:bg-primary-foreground data-[state=active]:text-primary"
+                  className="flex-1 text-xs px-3 py-1.5 font-medium text-white/80 hover:text-white hover:bg-white/10 data-[state=active]:bg-white data-[state=active]:text-green-900 data-[state=active]:font-bold data-[state=active]:shadow"
                 >
                   Cancelados ({docsByStatus.cancelados.length})
                 </TabsTrigger>
                 <TabsTrigger
                   value="autorizados"
-                  className="text-[11px] px-2 py-1 text-primary-foreground/85 data-[state=active]:bg-primary-foreground data-[state=active]:text-primary"
+                  className="flex-1 text-xs px-3 py-1.5 font-medium text-white/80 hover:text-white hover:bg-white/10 data-[state=active]:bg-white data-[state=active]:text-green-900 data-[state=active]:font-bold data-[state=active]:shadow"
                 >
                   Autorizados ({docsByStatus.autorizados.length})
                 </TabsTrigger>
               </TabsList>
-              <span className="text-xs opacity-80 ml-auto">
-                {(form as any).modoEmbarque === "simplificado"
-                  ? "CT-e Simplificado • Mesmo remetente"
-                  : "CT-e Avulso • Sem Mercadoria/Percurso"}
-              </span>
             </div>
             <CardContent className="p-3 space-y-3 bg-muted/20 overflow-visible">
               <TabsContent value="embarque" className="mt-0">

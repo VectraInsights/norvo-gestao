@@ -3287,3 +3287,11 @@ Espelhado na Vercel.
   ate encostar no rodape sem criar barra de rolagem na pagina
   (a rolagem fica so dentro da listagem, com cabecalho fixo).
   `pb-4` -> `pb-2`. Em tela 900px mostra ~13 notas em vez de 6.
+
+## CT-e: abas espalhadas com destaque (28/09)
+
+- Removido o texto de modo a direita ("CT-e Avulso...").
+- TabsList com `flex-1` e cada aba `flex-1`: ocupam toda a
+  largura da barra verde. Paleta com mais contraste: fundo
+  `black/20`, inativas `white/80` com hover, ativa branca com
+  texto verde-900 em negrito + sombra.
