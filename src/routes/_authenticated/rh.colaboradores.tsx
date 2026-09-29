@@ -174,6 +174,8 @@ function ColaboradoresPage() {
     setForm((f) => ({ ...f, [k]: v }));
 
   // Nome válido: só palavras de 2+ letras (PT) desde o início; PARA na 1ª inválida.
+  // Corta sobra de 1-2 letras no FIM ("ES" solto do OCR), preservando conectores
+  // reais (DA/DE/DO/DAS/DOS/E) e nomes curtos (mínimo 2 palavras no fim).
   // Exige ao menos 2 palavras. "" = descartado.
   function limparNome(bruto: string): string {
     const boas: string[] = [];
@@ -181,12 +183,10 @@ function ColaboradoresPage() {
       if (/^[A-ZÀÁÂÃÇÉÊÍÓÔÕÚ]{2,}$/.test(p)) boas.push(p);
       else break;
     }
-    // Ruído do OCR no fim ("ES" solto); preserva conectores reais no meio do nome.
-    // Só corta sobra de 1-2 letras no FIM, mantendo ao menos 2 palavras.
     while (
-      boas.length > 2 &&
+      boas.length >= 4 &&
       boas[boas.length - 1].length <= 2 &&
-      !["DA", "DE", "DO", "DAS", "DOS", "E"].includes(boas[boas.length - 1])
+      !["DA", "DE", "DI", "DO", "DU", "DAS", "DES", "DOS", "E"].includes(boas[boas.length - 1])
     ) {
       boas.pop();
     }
@@ -214,27 +214,34 @@ function ColaboradoresPage() {
       const ini = m.index + m[0].length;
       return T.slice(ini, ini + janela).match(captura)?.[1]?.trim() ?? "";
     };
-    let nome =
-      T.match(/NOME\s+([A-ZÀ-ÚÃÕÇÉÍÓÚÂÊÔ ]{6,60}?)(?=\s+(?:DOC|CPF|RG|CNH|DATA|CATEG|VALID|HABIL|FILIAC|NACIONALIDADE|NATURALIDADE|ASS|LOCAL|OBS))/)
-        ?.[1]?.trim() ?? "";
+    let nome = "";
+    // 1º) Linha seguinte ao rótulo NOME (layout do documento — o mais confiável no OCR)
+    {
+      const idx = linhas.findIndex(
+        (l) => /^NOME\b/i.test(l) && l.replace(/NOME/i, "").trim().length < 4,
+      );
+      if (idx >= 0) {
+        for (let j = idx + 1; j < linhas.length && j < idx + 4 && !nome; j++) {
+          console.log("[CNH-OCR] nome linha?", JSON.stringify(linhas[j]));
+          nome = limparNome(linhas[j]);
+        }
+      }
+    }
+    // 2º) Rótulo+valor adjacentes
     if (!nome) {
-      // Fallback: remove palavras-rótulo e pega a 1ª sequência longa em maiúsculas
+      nome =
+        T.match(/NOME\s+([A-ZÀ-ÚÃÕÇÉÍÓÚÂÊÔ ]{6,60}?)(?=\s+(?:DOC|CPF|RG|CNH|DATA|CATEG|VALID|HABIL|FILIAC|NACIONALIDADE|NATURALIDADE|ASS|LOCAL|OBS))/)
+          ?.[1]?.trim() ?? "";
+    }
+    if (!nome) {
+      // 3º) Fallback: remove palavras-rótulo e pega a 1ª sequência longa em maiúsculas
       const limpo = apos(/NOME/, /(.{10,200})/, 200)
         .replace(/\b(NOME|DOC|IDENTIDADE|ORG|ORGAO|EMISSOR|UF|CPF|DATA|NASCIMENTO|FILIA[CÇ][AÃ]O|CATEGORIA|CAT|HAB|VALIDADE|PERMISSAO|ACC|REGISTRO|RENACH|HABILITA[CÇ][AÃ]O|OBSERVA[CÇ][OÕ]ES|LOCAL|EMISSAO)\b\.?/gi, " ")
         .replace(/[^A-ZÀ-ÚÃÕÇÉÍÓÚÂÊÔ ]/g, " ");
       nome = limpo.match(/([A-ZÀ-ÚÃÕÇÉÍÓÚÂÊÔ ]{6,60})/)?.[1]?.trim() ?? "";
     }
-    // Filtra o que veio dos regexes; se sobrar nada, tenta a linha seguinte ao rótulo
+    // Filtra o que veio dos regexes (vale p/ todos os caminhos acima)
     nome = limparNome(nome);
-    if (!nome) {
-      const idx = linhas.findIndex(
-        (l) => /^NOME\b/i.test(l) && l.replace(/NOME/i, "").trim().length < 4,
-      );
-      for (let j = idx + 1; j < linhas.length && j < idx + 4 && !nome; j++) {
-        console.log("[CNH-OCR] nome linha?", JSON.stringify(linhas[j]));
-        nome = limparNome(linhas[j]);
-      }
-    }
     // Validação rígida final (vale p/ todos os caminhos acima)
     console.log("[CNH-OCR] nome bruto", JSON.stringify(nome));
     nome = limparNome(nome);
@@ -353,38 +360,13 @@ function ColaboradoresPage() {
     }
   }
 
-  // Segunda passada p/ o nº da CNH (Nº REGISTRO, logo abaixo da foto): recorte justo
-  // da imagem ORIGINAL (o threshold quebra os dígitos vermelhos finos), só cinza,
-  // ampliado, só dígitos. Só aceita sequência limpa de 9-12 dígitos — nunca concatena.
+  // Segunda passada p/ o nº da CNH (Nº REGISTRO, logo abaixo da foto): recortes justos
+  // da imagem ORIGINAL só em cinza (o threshold quebra os dígitos vermelhos finos),
+  // ampliados, só dígitos. Testa candidatos e só aceita sequência limpa de 9-12
+  // dígitos — nunca concatena fragmentos.
   async function ocrDigitosRegistro(orig: HTMLCanvasElement): Promise<string> {
     const { createWorker } = await import("tesseract.js");
-    const c = document.createElement("canvas");
-    const x = Math.floor(orig.width * 0.03);
-    const y = Math.floor(orig.height * 0.24);
-    const w = Math.floor(orig.width * 0.32);
-    const h = Math.floor(orig.height * 0.2);
-    c.width = w * 3;
-    c.height = h * 3;
-    const g = c.getContext("2d");
-    if (!g) return "";
-    g.drawImage(orig, x, y, w, h, 0, 0, c.width, c.height);
-    // Só cinza (sem threshold): preserva os traços vermelhos finos
-    try {
-      const img = g.getImageData(0, 0, c.width, c.height);
-      const d = img.data;
-      for (let i = 0; i < d.length; i += 4) {
-        const gr = Math.round(0.299 * d[i] + 0.587 * d[i + 1] + 0.114 * d[i + 2]);
-        d[i] = d[i + 1] = d[i + 2] = gr;
-      }
-      g.putImageData(img, 0, 0);
-    } catch {}
-    const worker = await createWorker("por");
-    try {
-      await worker.setParameters({ tessedit_char_whitelist: "0123456789" });
-      const { data } = await worker.recognize(c);
-      const t = data?.text ?? "";
-      console.log("[CNH-OCR] registro", JSON.stringify(t.slice(0, 200)));
-      // Sequências com separador (data usa / — excluída); só 9-12 dígitos limpos
+    const checar = (t: string) => {
       const runs = t.match(/\d(?:[\d ]*\d)?/g) ?? [];
       for (const r of runs) {
         const dig = r.replace(/\D/g, "");
@@ -394,6 +376,46 @@ function ColaboradoresPage() {
           const depois = t.slice(idx + r.length, idx + r.length + 3);
           if (!antes.includes("/") && !depois.includes("/")) return dig;
         }
+      }
+      return "";
+    };
+    // Cinza sem threshold (preserva traços vermelhos finos)
+    const cinza = document.createElement("canvas");
+    cinza.width = orig.width;
+    cinza.height = orig.height;
+    const gc = cinza.getContext("2d");
+    if (!gc) return "";
+    gc.drawImage(orig, 0, 0);
+    try {
+      const img = gc.getImageData(0, 0, cinza.width, cinza.height);
+      const d = img.data;
+      for (let i = 0; i < d.length; i += 4) {
+        const gr = Math.round(0.299 * d[i] + 0.587 * d[i + 1] + 0.114 * d[i + 2]);
+        d[i] = d[i + 1] = d[i + 2] = gr;
+      }
+      gc.putImageData(img, 0, 0);
+    } catch {}
+    const crops = [
+      { x: 0.08, y: 0.28, w: 0.2, h: 0.1 }, // justo abaixo da foto
+      { x: 0.03, y: 0.3, w: 0.3, h: 0.12 },
+    ];
+    const worker = await createWorker("por");
+    try {
+      await worker.setParameters({ tessedit_char_whitelist: "0123456789" });
+      for (const r of crops) {
+        const c = document.createElement("canvas");
+        const x = Math.floor(cinza.width * r.x);
+        const y = Math.floor(cinza.height * r.y);
+        const w = Math.floor(cinza.width * r.w);
+        const h = Math.floor(cinza.height * r.h);
+        c.width = w * 3;
+        c.height = h * 3;
+        c.getContext("2d")?.drawImage(cinza, x, y, w, h, 0, 0, c.width, c.height);
+        const { data } = await worker.recognize(c);
+        const t = data?.text ?? "";
+        console.log("[CNH-OCR] registro", JSON.stringify(r), JSON.stringify(t.slice(0, 200)));
+        const dig = checar(t);
+        if (dig) return dig;
       }
       return "";
     } finally {

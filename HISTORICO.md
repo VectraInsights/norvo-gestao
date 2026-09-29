@@ -3400,3 +3400,8 @@ Espelhado na Vercel.
 
 - Nome: fallback pela linha seguinte ao rotulo NOME + limparNome com corte de ruido no fim (ES solto cai, DA/DE/DO no meio ficam).
 - Numero: recorte usa a imagem ORIGINAL so em cinza (o threshold quebrava os digitos vermelhos) + fallback por linhas excluindo datas.
+
+## CNH OCR: nome pela linha do rotulo + 2 recortes do numero (29/09)
+
+- Log mostrou que o fallback juntava ES ORG no nome: agora a via principal e a linha seguinte ao rotulo NOME + limparNome corta sobra de 1-2 letras no fim (ES cai; DA/DE/DO no meio ficam).
+- Numero: 2 recortes justos abaixo da foto sobre a imagem so em cinza (threshold anterior lia 356 0 2); aceite so de sequencia limpa 9-12 digitos.
