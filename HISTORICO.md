@@ -3390,3 +3390,8 @@ Espelhado na Vercel.
 - Numero da CNH (vermelho, mal lido): segunda passada na faixa inferior ampliada 2x com whitelist so de digitos.
 - Salario base deixa de ser obrigatorio (validacao + asterisco); save ja gravava 0.
 - Select de categoria com value controlado desde o inicio (some o warning uncontrolled->controlled).
+
+## CNH OCR: sem numero inventado + nome rigido (29/09)
+
+- Numero: fim da concatenacao de fragmentos (montava numero falso). Agora recorte justo abaixo da foto com whitelist de digitos e so aceita sequencia limpa de 9-12 digitos (fora de datas); se nao achar, deixa vazio e avisa onde esta no documento.
+- Nome: validacao rigida palavra a palavra (2+ letras PT, para na 1a invalida, minimo 2 palavras) + log do bruto.

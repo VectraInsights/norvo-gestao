@@ -200,12 +200,16 @@ function ColaboradoresPage() {
         .replace(/[^A-ZÀ-ÚÃÕÇÉÍÓÚÂÊÔ ]/g, " ");
       nome = limpo.match(/([A-ZÀ-ÚÃÕÇÉÍÓÚÂÊÔ ]{6,60})/)?.[1]?.trim() ?? "";
     }
-    // Limpa ruído do OCR no fim (letras soltas, barras): "OLIVEIRA E S |" -> "OLIVEIRA"
-    nome = nome
-      .replace(/\|/g, " ")
-      .replace(/\s+/g, " ")
-      .replace(/(\s+[A-ZÀ-Ú])+\s*$/g, "")
-      .trim();
+    // Validação rígida: só palavras de 2+ letras maiúsculas desde o início; PARA na
+    // primeira inválida ("OLIVEIRA E S |" -> "OLIVEIRA"). Exige ao menos 2 palavras.
+    console.log("[CNH-OCR] nome bruto", JSON.stringify(nome));
+    const palavras = nome.split(/\s+/).filter(Boolean);
+    const boas: string[] = [];
+    for (const p of palavras) {
+      if (/^[A-ZÀÁÂÃÇÉÊÍÓÔÕÚ]{2,}$/.test(p)) boas.push(p);
+      else break;
+    }
+    nome = boas.length >= 2 ? boas.join(" ") : "";
     if (nome && !form.nome.trim()) {
       set("nome", nome);
       achados.push("nome");
@@ -296,25 +300,39 @@ function ColaboradoresPage() {
     }
   }
 
-  // Segunda passada só p/ o nº da CNH (dígitos vermelhos, mal lidos no geral):
-  // faixa inferior do documento ampliada 2x, só dígitos
+  // Segunda passada p/ o nº da CNH (Nº REGISTRO, logo abaixo da foto): recorte justo
+  // ampliado, só dígitos. Só aceita sequência limpa de 9-12 dígitos — nunca concatena
+  // fragmentos (número inventado é pior que campo vazio).
   async function ocrDigitosRegistro(canvas: HTMLCanvasElement): Promise<string> {
     const { createWorker } = await import("tesseract.js");
     const c = document.createElement("canvas");
-    const y = Math.floor(canvas.height * 0.3);
-    const w = Math.floor(canvas.width * 0.62);
-    const h = canvas.height - y;
-    c.width = w * 2;
-    c.height = h * 2;
+    const x = Math.floor(canvas.width * 0.05);
+    const y = Math.floor(canvas.height * 0.26);
+    const w = Math.floor(canvas.width * 0.27);
+    const h = Math.floor(canvas.height * 0.16);
+    c.width = w * 3;
+    c.height = h * 3;
     const g = c.getContext("2d");
     if (!g) return "";
-    g.drawImage(canvas, 0, y, w, h, 0, 0, c.width, c.height);
+    g.drawImage(canvas, x, y, w, h, 0, 0, c.width, c.height);
     const worker = await createWorker("por");
     try {
       await worker.setParameters({ tessedit_char_whitelist: "0123456789" });
       const { data } = await worker.recognize(c);
-      console.log("[CNH-OCR] digitos", (data?.text ?? "").slice(0, 200));
-      return (data?.text ?? "").replace(/\D/g, "").match(/\d{9,12}/)?.[0] ?? "";
+      const t = data?.text ?? "";
+      console.log("[CNH-OCR] registro", JSON.stringify(t.slice(0, 200)));
+      // Sequências com separador (data usa / — excluída); só 9-12 dígitos limpos
+      const runs = t.match(/\d(?:[\d ]*\d)?/g) ?? [];
+      for (const r of runs) {
+        const dig = r.replace(/\D/g, "");
+        if (/^\d{9,12}$/.test(dig)) {
+          const idx = t.indexOf(r);
+          const antes = t.slice(Math.max(0, idx - 3), idx);
+          const depois = t.slice(idx + r.length, idx + r.length + 3);
+          if (!antes.includes("/") && !depois.includes("/")) return dig;
+        }
+      }
+      return "";
     } finally {
       await worker.terminate();
     }
@@ -350,7 +368,11 @@ function ColaboradoresPage() {
         }
       }
       if (achados.length === 0) toast.warning("Nada reconhecido no PDF. Preencha manualmente.");
-      else toast.success(`CNH lida: ${achados.join(", ")}`);
+      else
+        toast.success(
+          `CNH lida: ${achados.join(", ")}` +
+            (achados.includes("nº CNH") ? "" : " (nº da CNH não lido — está abaixo da foto)"),
+        );
     } catch (e: any) {
       toast.error("Falha ao ler PDF", { description: e?.message });
     }
