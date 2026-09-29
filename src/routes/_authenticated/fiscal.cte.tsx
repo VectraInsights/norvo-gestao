@@ -4345,7 +4345,7 @@ function CtePage() {
   );
 
   return (
-    <div className="px-4 pb-2 pt-1 space-y-2">
+    <div className="px-2 pb-2 pt-1 space-y-2">
       <div className="border-l-4 border-blue-500 pl-4 py-0.5">
         <h1 className="text-display text-2xl leading-tight md:text-3xl">CT-e</h1>
       </div>
@@ -4523,7 +4523,7 @@ function CtePage() {
                     <span className="text-xs">Qtde NF-e: {mercadorias.length}</span>
                   </div>
                   <div className="overflow-auto max-h-[calc(100vh-470px)] min-h-[200px]">
-                    <Table>
+                    <Table className="min-w-[1280px]">
                       <TableHeader className="sticky top-0 bg-muted">
                         <TableRow>
                           <TableHead className="w-6">
@@ -4645,7 +4645,7 @@ function CtePage() {
                                   }}
                                 />
                               </TableCell>
-                              <TableCell className="truncate max-w-[110px]" title={m.emit}>
+                              <TableCell className="truncate max-w-[200px]" title={m.emit}>
                                 {m.emit}
                               </TableCell>
                               <TableCell className="font-mono text-[10px]">
@@ -4656,7 +4656,7 @@ function CtePage() {
                                     )
                                   : "—"}
                               </TableCell>
-                              <TableCell className="truncate max-w-[110px]" title={m.dest}>
+                              <TableCell className="truncate max-w-[200px]" title={m.dest}>
                                 {m.dest}
                               </TableCell>
                               <TableCell className="font-mono text-[10px]">
@@ -4668,7 +4668,7 @@ function CtePage() {
                                   : "—"}
                               </TableCell>
                               <TableCell
-                                className="truncate max-w-[110px] text-amber-700"
+                                className="truncate max-w-[200px] text-amber-700"
                                 title={m.tomador}
                               >
                                 {m.tomador || "—"}

@@ -3295,3 +3295,11 @@ Espelhado na Vercel.
   largura da barra verde. Paleta com mais contraste: fundo
   `black/20`, inativas `white/80` com hover, ativa branca com
   texto verde-900 em negrito + sombra.
+
+## CT-e: tabela mais larga (28/09)
+
+- Pagina `px-4` -> `px-2`; tabela com `min-w-[1280px]`
+  (rolagem lateral dentro da listagem) e colunas de nome
+  `max-w-[110px]` -> `max-w-[200px]`: remetente/destina-
+  tario/tomador mostram bem mais texto. Tooltip com nome
+  completo mantido.
