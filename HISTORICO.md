@@ -3395,3 +3395,8 @@ Espelhado na Vercel.
 
 - Numero: fim da concatenacao de fragmentos (montava numero falso). Agora recorte justo abaixo da foto com whitelist de digitos e so aceita sequencia limpa de 9-12 digitos (fora de datas); se nao achar, deixa vazio e avisa onde esta no documento.
 - Nome: validacao rigida palavra a palavra (2+ letras PT, para na 1a invalida, minimo 2 palavras) + log do bruto.
+
+## CNH OCR: nome por linhas + digitos sem threshold (29/09)
+
+- Nome: fallback pela linha seguinte ao rotulo NOME + limparNome com corte de ruido no fim (ES solto cai, DA/DE/DO no meio ficam).
+- Numero: recorte usa a imagem ORIGINAL so em cinza (o threshold quebrava os digitos vermelhos) + fallback por linhas excluindo datas.

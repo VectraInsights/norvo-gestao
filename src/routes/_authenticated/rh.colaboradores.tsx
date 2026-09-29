@@ -173,10 +173,34 @@ function ColaboradoresPage() {
   const set = <K extends keyof typeof form>(k: K, v: (typeof form)[K]) =>
     setForm((f) => ({ ...f, [k]: v }));
 
+  // Nome válido: só palavras de 2+ letras (PT) desde o início; PARA na 1ª inválida.
+  // Exige ao menos 2 palavras. "" = descartado.
+  function limparNome(bruto: string): string {
+    const boas: string[] = [];
+    for (const p of bruto.split(/\s+/).filter(Boolean)) {
+      if (/^[A-ZÀÁÂÃÇÉÊÍÓÔÕÚ]{2,}$/.test(p)) boas.push(p);
+      else break;
+    }
+    // Ruído do OCR no fim ("ES" solto); preserva conectores reais no meio do nome.
+    // Só corta sobra de 1-2 letras no FIM, mantendo ao menos 2 palavras.
+    while (
+      boas.length > 2 &&
+      boas[boas.length - 1].length <= 2 &&
+      !["DA", "DE", "DO", "DAS", "DOS", "E"].includes(boas[boas.length - 1])
+    ) {
+      boas.pop();
+    }
+    return boas.length >= 2 ? boas.join(" ") : "";
+  }
+
   // Extrai nome/CPF/CNH de um texto (camada de texto do PDF ou OCR) — retorna o que achou.
-  // Tenta rótulo+valor adjacentes e, se o OCR embaralhar a ordem, busca por proximidade.
+  // Tenta rótulo+valor adjacentes e, se o OCR embaralhar a ordem, busca por proximidade/linhas.
   function extrairCamposCnh(texto: string): string[] {
     const T = texto.replace(/\s+/g, " ");
+    const linhas = texto
+      .split("\n")
+      .map((l) => l.trim())
+      .filter(Boolean);
     const achados: string[] = [];
     const cpf = T.match(/(\d{3}\.\d{3}\.\d{3}-\d{2})/)?.[1] ?? "";
     if (cpf && !form.cpf) {
@@ -200,23 +224,42 @@ function ColaboradoresPage() {
         .replace(/[^A-ZÀ-ÚÃÕÇÉÍÓÚÂÊÔ ]/g, " ");
       nome = limpo.match(/([A-ZÀ-ÚÃÕÇÉÍÓÚÂÊÔ ]{6,60})/)?.[1]?.trim() ?? "";
     }
-    // Validação rígida: só palavras de 2+ letras maiúsculas desde o início; PARA na
-    // primeira inválida ("OLIVEIRA E S |" -> "OLIVEIRA"). Exige ao menos 2 palavras.
-    console.log("[CNH-OCR] nome bruto", JSON.stringify(nome));
-    const palavras = nome.split(/\s+/).filter(Boolean);
-    const boas: string[] = [];
-    for (const p of palavras) {
-      if (/^[A-ZÀÁÂÃÇÉÊÍÓÔÕÚ]{2,}$/.test(p)) boas.push(p);
-      else break;
+    // Filtra o que veio dos regexes; se sobrar nada, tenta a linha seguinte ao rótulo
+    nome = limparNome(nome);
+    if (!nome) {
+      const idx = linhas.findIndex(
+        (l) => /^NOME\b/i.test(l) && l.replace(/NOME/i, "").trim().length < 4,
+      );
+      for (let j = idx + 1; j < linhas.length && j < idx + 4 && !nome; j++) {
+        console.log("[CNH-OCR] nome linha?", JSON.stringify(linhas[j]));
+        nome = limparNome(linhas[j]);
+      }
     }
-    nome = boas.length >= 2 ? boas.join(" ") : "";
+    // Validação rígida final (vale p/ todos os caminhos acima)
+    console.log("[CNH-OCR] nome bruto", JSON.stringify(nome));
+    nome = limparNome(nome);
     if (nome && !form.nome.trim()) {
       set("nome", nome);
       achados.push("nome");
     }
-    const reg =
+    let reg =
       T.match(/(?:N[ºo]\s*\.?\s*(?:REGISTRO|RENACH)|RENACH|REGISTRO)\s*(\d{9,12})/i)?.[1] ??
       apos(/REGISTRO|RENACH/i, /(\d{9,12})/, 80);
+    if (!reg) {
+      // Linha do rótulo Nº REGISTRO + próximas 3 (datas excluídas p/ não contaminar)
+      const idxR = linhas.findIndex((l) => /REGISTRO|RENACH/i.test(l));
+      for (let j = Math.max(0, idxR); j < linhas.length && j < idxR + 4 && !reg; j++) {
+        const semDatas = linhas[j].replace(/\d{2}\/\d{2}\/\d{4}/g, " ");
+        const runs = semDatas.match(/\d(?:[\d ]*\d)?/g) ?? [];
+        for (const r of runs) {
+          const dig = r.replace(/\D/g, "");
+          if (/^\d{9,12}$/.test(dig)) {
+            reg = dig;
+            break;
+          }
+        }
+      }
+    }
     if (reg) {
       set("cnh_numero", reg);
       achados.push("nº CNH");
@@ -245,7 +288,9 @@ function ColaboradoresPage() {
   // OCR da imagem da CNH (a CNH digital exporta o documento como imagem): renderiza a
   // página, recorta a região do documento e lê com tesseract (português).
   // Retorna o texto e o canvas da página (p/ a passada de dígitos do nº da CNH).
-  async function ocrCnh(pdf: any): Promise<{ texto: string; canvas: HTMLCanvasElement | null }> {
+  async function ocrCnh(
+    pdf: any,
+  ): Promise<{ texto: string; canvas: HTMLCanvasElement | null; orig: HTMLCanvasElement | null }> {
     const { createWorker } = await import("tesseract.js");
     const page = await pdf.getPage(1);
     const scale = 3;
@@ -256,6 +301,14 @@ function ColaboradoresPage() {
     const ctx = canvas.getContext("2d");
     if (!ctx) throw new Error("Canvas indisponível");
     await page.render({ canvasContext: ctx, viewport }).promise;
+    // Cópia íntegra (sem threshold) p/ os dígitos vermelhos do nº da CNH
+    let orig: HTMLCanvasElement | null = null;
+    try {
+      orig = document.createElement("canvas");
+      orig.width = canvas.width;
+      orig.height = canvas.height;
+      orig.getContext("2d")?.drawImage(canvas, 0, 0);
+    } catch {}
     // Pré-processamento: cinza + contraste (fundo verde da CNH atrapalha o OCR)
     try {
       const img = ctx.getImageData(0, 0, canvas.width, canvas.height);
@@ -292,29 +345,39 @@ function ColaboradoresPage() {
         const { data } = await worker.recognize(c);
         console.log("[CNH-OCR] recorte", r, (data?.text ?? "").slice(0, 600));
         if ((data?.text ?? "").replace(/\s/g, "").length > 30)
-          return { texto: data.text, canvas };
+          return { texto: data.text, canvas, orig };
       }
-      return { texto: "", canvas };
+      return { texto: "", canvas, orig };
     } finally {
       await worker.terminate();
     }
   }
 
   // Segunda passada p/ o nº da CNH (Nº REGISTRO, logo abaixo da foto): recorte justo
-  // ampliado, só dígitos. Só aceita sequência limpa de 9-12 dígitos — nunca concatena
-  // fragmentos (número inventado é pior que campo vazio).
-  async function ocrDigitosRegistro(canvas: HTMLCanvasElement): Promise<string> {
+  // da imagem ORIGINAL (o threshold quebra os dígitos vermelhos finos), só cinza,
+  // ampliado, só dígitos. Só aceita sequência limpa de 9-12 dígitos — nunca concatena.
+  async function ocrDigitosRegistro(orig: HTMLCanvasElement): Promise<string> {
     const { createWorker } = await import("tesseract.js");
     const c = document.createElement("canvas");
-    const x = Math.floor(canvas.width * 0.05);
-    const y = Math.floor(canvas.height * 0.26);
-    const w = Math.floor(canvas.width * 0.27);
-    const h = Math.floor(canvas.height * 0.16);
+    const x = Math.floor(orig.width * 0.03);
+    const y = Math.floor(orig.height * 0.24);
+    const w = Math.floor(orig.width * 0.32);
+    const h = Math.floor(orig.height * 0.2);
     c.width = w * 3;
     c.height = h * 3;
     const g = c.getContext("2d");
     if (!g) return "";
-    g.drawImage(canvas, x, y, w, h, 0, 0, c.width, c.height);
+    g.drawImage(orig, x, y, w, h, 0, 0, c.width, c.height);
+    // Só cinza (sem threshold): preserva os traços vermelhos finos
+    try {
+      const img = g.getImageData(0, 0, c.width, c.height);
+      const d = img.data;
+      for (let i = 0; i < d.length; i += 4) {
+        const gr = Math.round(0.299 * d[i] + 0.587 * d[i + 1] + 0.114 * d[i + 2]);
+        d[i] = d[i + 1] = d[i + 2] = gr;
+      }
+      g.putImageData(img, 0, 0);
+    } catch {}
     const worker = await createWorker("por");
     try {
       await worker.setParameters({ tessedit_char_whitelist: "0123456789" });
@@ -353,15 +416,15 @@ function ColaboradoresPage() {
           "\n";
       }
       let achados = texto.replace(/\s/g, "").length >= 50 ? extrairCamposCnh(texto) : [];
-      let canvasOcr: HTMLCanvasElement | null = null;
+      let origOcr: HTMLCanvasElement | null = null;
       if (achados.length === 0) {
         toast.info("Lendo imagem do documento (OCR)… pode levar alguns segundos");
         const ocr = await ocrCnh(pdf);
-        canvasOcr = ocr.canvas;
+        origOcr = ocr.orig;
         if (ocr.texto) achados = extrairCamposCnh(ocr.texto);
       }
-      if (!achados.includes("nº CNH") && canvasOcr) {
-        const reg = await ocrDigitosRegistro(canvasOcr);
+      if (!achados.includes("nº CNH") && origOcr) {
+        const reg = await ocrDigitosRegistro(origOcr);
         if (reg) {
           set("cnh_numero", reg);
           achados.push("nº CNH");
