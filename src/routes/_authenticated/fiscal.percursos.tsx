@@ -1276,7 +1276,7 @@ function PercursosPage() {
                     value="seguro"
                     className="text-xs data-[state=active]:bg-primary/10 data-[state=active]:text-primary"
                   >
-                    Seguro e Pedágio
+                    Seguro
                   </TabsTrigger>
                 </TabsList>
                 <TabsContent value="geral" className="mt-2 space-y-1 flex-1 flex flex-col min-h-0">
@@ -1491,7 +1491,6 @@ function PercursosPage() {
                                     ...e,
                                     seg_nome: v,
                                     seg_apolice: s?.apolice_numero || e.seg_apolice || "",
-                                    seg_averbacao: s?.averbacao || e.seg_averbacao || "",
                                   }
                                 : e,
                             );
@@ -1509,8 +1508,9 @@ function PercursosPage() {
                           </SelectContent>
                         </Select>
                       </div>
-                      <T editing={editing} set={set} label="Apólice" k="seg_apolice" mono />
-                      <T editing={editing} set={set} label="Averbação" k="seg_averbacao" mono />
+                      <div className="col-span-2">
+                        <T editing={editing} set={set} label="Apólice" k="seg_apolice" mono />
+                      </div>
                       <Num editing={editing} set={set} label="RCTR-C" k="seg_rctr_c" prefix="R$" />
                       <Num editing={editing} set={set} label="RCF-DC" k="seg_rcf_dc" prefix="R$" />
                       <Num
@@ -1521,7 +1521,6 @@ function PercursosPage() {
                         prefix="R$"
                       />
                       <Num editing={editing} set={set} label="Total" k="seg_total" prefix="R$" />
-                      <T editing={editing} set={set} label="Responsável" k="seg_responsavel" />
                       <div className="flex items-end pb-1">
                         <label className="flex items-center gap-1 text-[11px]">
                           <input
@@ -1533,6 +1532,15 @@ function PercursosPage() {
                         </label>
                       </div>
                     </div>
+                  </div>
+                  <div className="border rounded p-2 space-y-1">
+                    <Label className="text-[10px] text-muted-foreground">Observação</Label>
+                    <Textarea
+                      className="text-xs resize-none"
+                      rows={2}
+                      value={editing.obs_gerais ?? ""}
+                      onChange={(e) => set("obs_gerais", e.target.value.toUpperCase())}
+                    />
                   </div>
                 </TabsContent>
               </Tabs>

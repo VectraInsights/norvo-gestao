@@ -3364,3 +3364,8 @@ Espelhado na Vercel.
 - Avulso: uma NF-e por vez (clicar em outra troca a selecao); checkbox geral desabilitado; botao Mesmo rem./dest. oculto.
 - Simplificado: varias, travadas no clique p/ mesmo remetente + tomador (antes so validava no Gerar).
 - Trocar de modo limpa a selecao.
+
+## Percursos: aba Seguro enxuta + observacao (29/09)
+
+- Aba Seguro e Pedagio -> Seguro; removidos Averbacao (so sai na emissao do CT-e) e Responsavel da tela (colunas seguem no banco; emissao usa como fallback sem quebrar).
+- Apolice ocupa 2 colunas; Observacao (mesmo obs_gerais da aba Geral) logo abaixo do seguro, no padrao da tela legada.
