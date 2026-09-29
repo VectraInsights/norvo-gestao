@@ -520,109 +520,37 @@ function ColaboradoresPage() {
     }
     if (campos.cnh_categoria && !["A", "B", "AB", "C", "D", "E", "AC", "AD", "AE"].includes(campos.cnh_categoria))
       campos.cnh_categoria = "";
-    // Modelo novo: "4b VALIDADE 27/12/2028" e "3 DATA, LOCAL E UF DE NASCIMENTO 03/01/1964,..."
-    // O marcador 4b é a assinatura deste modelo (4a = emissão). Como o OCR às
-    // vezes lê "4a" como "4b", coleta TODAS as datas marcadas B, descarta as
-    // grudadas em EMISSÃO e fica com a MAIOR (validade > emissão sempre).
-    if (!campos.cnh_validade) {
-      const datasB: string[] = [];
-      for (const m of T.matchAll(/4\s*B\b(.{0,40}?)(\d{2})\/(\d{2})\/(\d{4})/gi)) {
-        const gap: string = m[1];
-        if (/EMISS|HABILIT|NASC/i.test(gap)) continue;
-        const y = Number(m[4]);
-        if (y < 1990 || y > 2100) continue;
-        const iso = `${m[4]}-${m[3]}-${m[2]}`;
-        if (!datasB.includes(iso)) datasB.push(iso);
-      }
-      if (datasB.length > 1) {
-        // 2+ datas marcadas B (ex.: 4a lido como 4b + 4b real): a maior é a validade.
-        // Com 1 só, não confia — pode ser emissão embaralhada; segue p/ rótulo/par.
-        datasB.sort();
-        campos.cnh_validade = datasB[datasB.length - 1];
-        fontes.cnh_validade = "4b-max";
-      }
-    }
-    if (!campos.cnh_validade) {
-      // Trecho entre rótulo e data com EMISSÃO/HABILITAÇÃO/NASCIMENTO contamina:
-      // o OCR embaralha a ordem ("VALIDADE ... EMISSÃO 29/12/2023 27/12/2028")
-      // e a 1ª data da janela seria a de emissão. Só aceita trecho limpo.
-      const trechoLimpo = (gap: string) => !/EMISS|HABILIT|NASC/i.test(gap);
-      // Par validade+emissão em qualquer ordem: 2+ datas até 60 chars após
-      // VALIDADE → a MAIOR é a validade (emissão com rótulo próprio é descartada).
-      // Com 1 data só, vale o rótulo direto (v2/v3) — par de 1 chuta igual.
-      let vPar = "";
-      {
-        const mV = T.match(/VALID/i);
-        if (mV && mV.index !== undefined) {
-          const jan = T.slice(mV.index + mV[0].length, mV.index + mV[0].length + 60);
-          const ds: { d: string; gap: string }[] = [];
-          let ant = 0;
-          for (const mD of jan.matchAll(/(\d{2})\/(\d{2})\/(\d{4})/g)) {
-            const i = mD.index ?? 0;
-            ds.push({ d: `${mD[3]}-${mD[2]}-${mD[1]}`, gap: jan.slice(ant, i) });
-            ant = i + mD[0].length;
-          }
-          const ok = ds.filter(
-            (x) => trechoLimpo(x.gap) && Number(x.d.slice(0, 4)) >= 1990 && Number(x.d.slice(0, 4)) <= 2100,
-          );
-          if (ok.length >= 2) vPar = ok.map((x) => x.d).sort()[ok.length - 1];
-        }
-      }
-      const v1 = vPar ? [] : T.match(/VALIDADE\s*(\d{2})\/(\d{2})\/(\d{4})/)?.slice(1) ?? [];
-      const g2 = T.match(/\bVALID(?:ADE|E)?(\D{0,15})(\d{2})\/(\d{2})\/(\d{4})/);
-      const v2 =
-        g2 && trechoLimpo(g2[1]) ? [g2[2], g2[3], g2[4]] : [];
-      let v3: string[] = [];
-      {
-        const mV = T.match(/VALID/i);
-        if (mV && mV.index !== undefined) {
-          const jan = T.slice(mV.index + mV[0].length, mV.index + mV[0].length + 60);
-          const mD = jan.match(/(\d{2})\/(\d{2})\/(\d{4})/);
-          if (mD && mD.index !== undefined && trechoLimpo(jan.slice(0, mD.index))) v3 = mD.slice(1);
-        }
-      }
-      const val = vPar ? [] : v1.length === 3 ? v1 : v2.length === 3 ? v2 : v3;
-      if (val.length === 3) {
-        campos.cnh_validade = `${val[2]}-${val[1]}-${val[0]}`;
-        fontes.cnh_validade = "rotulo";
-      } else if (vPar) {
-        campos.cnh_validade = vPar;
-        fontes.cnh_validade = "par-max";
-      }
-    }
-    if (!campos.cnh_validade) {
-      // Por contexto: cada data herda o rótulo do trecho desde a data anterior
-      // ("EMISSÃO 29/12/2023 4b VALIDADE 27/12/2028": a 1ª é emissão, a 2ª é
-      // validade — mesmo lado a lado não troca). Sem rótulo, vale a maior data;
-      // só com rótulo de emissão/habilitação/nascimento, não chuta nada.
+    // VALIDADE (4b = 27/12/2028; 4a = emissão = 29/12/2023, lado a lado).
+    // Regra única, à prova da ordem embaralhada do OCR: excluídas as datas
+    // grudadas em EMISSÃO/HABILITAÇÃO/nascimento, a MAIOR restante é a
+    // validade (nada na CNH é posterior a ela; a tabela de categorias só
+    // repete o mesmo valor). Só aceita dia/mês plausíveis e ano 1990-2100.
+    // Se a emissão aparece mas a validade sumiu (OCR comeu os dígitos),
+    // deixa vazio em vez de chutar a emissão.
+    if (!campos.cnh_validade && /VALID|4\s*B/i.test(T)) {
       const nascIso = campos.data_nascimento;
       const nascBr = nascIso
         ? `${nascIso.slice(8, 10)}/${nascIso.slice(5, 7)}/${nascIso.slice(0, 4)}`
         : "";
-      const num = (d: string) => Number(d.slice(6) + d.slice(3, 5) + d.slice(0, 2));
-      let melhor = "";
-      let melhorNota = -Infinity;
+      const plausivel = (dd: string, mm: string, yy: string) =>
+        Number(dd) >= 1 && Number(dd) <= 31 && Number(mm) >= 1 && Number(mm) <= 12 &&
+        Number(yy) >= 1990 && Number(yy) <= 2100;
+      const kept: string[] = [];
       let fimAnt = 0;
       for (const m of T.matchAll(/(\d{2})\/(\d{2})\/(\d{4})/g)) {
-        const d = m[0];
         const i = m.index ?? 0;
-        // Só vale o que está entre a data anterior e esta (rótulo da vizinha não contamina)
         const gap = T.slice(Math.max(fimAnt, i - 40), i);
-        fimAnt = i + d.length;
-        if (d === nascBr) continue;
-        const y = Number(d.slice(6));
-        if (y < 1990 || y > 2100) continue;
-        let nota = 0;
-        if (/VALID/i.test(gap)) nota += 2;
-        if (/EMISS|HABILIT|NASC/i.test(gap)) nota -= 10;
-        if (nota > melhorNota || (nota === melhorNota && melhor && num(d) > num(melhor))) {
-          melhorNota = nota;
-          melhor = d;
-        }
+        fimAnt = i + m[0].length;
+        if (m[0] === nascBr || !plausivel(m[1], m[2], m[3])) continue;
+        if (/EMISS|HABILIT|NASC/i.test(gap)) continue;
+        kept.push(`${m[3]}-${m[2]}-${m[1]}`);
       }
-      if (melhor && melhorNota >= 0) {
-        campos.cnh_validade = `${melhor.slice(6)}-${melhor.slice(3, 5)}-${melhor.slice(0, 2)}`;
-        fontes.cnh_validade = "contexto";
+      if (kept.length > 0) {
+        // Excluídas emissão/habilitação/nascimento, a maior restante é a
+        // validade (nada na CNH é posterior a ela) — vale em qualquer ordem.
+        kept.sort();
+        campos.cnh_validade = kept[kept.length - 1];
+        fontes.cnh_validade = "max-data";
       }
     }
     if (!campos.data_nascimento) {
@@ -837,13 +765,20 @@ function ColaboradoresPage() {
         toast.info("IMPORTANDO DADOS", { id: TOAST_ID });
         const ocr = await ocrCnh(pdf);
         ocr.textos.forEach((tx, i) => {
-          if (faltando().length === 0) return;
+          // Sem early-return: extração é CPU puro (textos já reconhecidos) e a
+          // validade-max precisa ver todas as passadas.
           const r = extrairCamposCnh(tx);
           for (const k of Object.keys(total) as (keyof typeof total)[])
             if (!total[k] && r.campos[k]) {
               total[k] = r.campos[k];
               fontesTotal[k] = `ocr${i + 1}:${r.fontes[k] ?? "?"}`;
             }
+          // Validade: entre passadas vale a MAIOR (uma passada pode trazer a
+          // emissão embaralhada e outra a validade certa — ISO ordena cronológico).
+          if (r.campos.cnh_validade && (!total.cnh_validade || r.campos.cnh_validade > total.cnh_validade)) {
+            total.cnh_validade = r.campos.cnh_validade;
+            fontesTotal.cnh_validade = `ocr${i + 1}:${r.fontes.cnh_validade ?? "?"}-max`;
+          }
         });
         console.info("[CNH] fontes finais:", JSON.stringify(fontesTotal));
       }

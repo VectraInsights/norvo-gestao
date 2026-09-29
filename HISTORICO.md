@@ -3560,3 +3560,14 @@ Espelhado na Vercel.
   (normal, colado, rótulo no meio, 4a-misread, só-emissão→vazio,
   invertido, sem marcador, tabela) todos certos.
 - Espelhado na Vercel via push em main.
+
+## CNH: validade = maior data fora da emissão (29/09)
+
+- Localizadas no PDF: 4a emissão 29/12/2023, 4b validade 27/12/2028.
+  A cascata de regex foi substituída por regra única: excluídas datas
+  de EMISSÃO/HABILITAÇÃO/nascimento, a maior restante é a validade
+  (nada na CNH é posterior; tabela repete o valor). Dia/mês precisam
+  ser plausíveis; sem validade reconhecível, deixa vazio.
+- Entre passadas de OCR a validade usa o max (antes a 1ª vencia e
+  travava a errada); extração agora varre todos os recortes.
+- Espelhado na Vercel via push em main.
