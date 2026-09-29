@@ -3432,3 +3432,10 @@ Espelhado na Vercel.
 
 - Janela em linhas de largura cheia (4/5/3/2/4 colunas): nome,cpf,tel,email / cargo,status,admissao,demissao,salario / CNH / conta / VT+obs. Sem caixas, sem espaco vazio.
 - Telefone em linha unica separado por ; (converte p/ o formato / do banco); botao Outro numero removido.
+
+## Colaborador: caixa unica + telefone mask + nascimento + endereco (29/09)
+
+- Janela em caixa geral unica com faixas por secao (pessoais/endereco/CNH/conta/adicionais), linhas corridas em largura cheia.
+- Telefone com mascara ao digitar (00) 00000-0000, varios separados por ; .
+- Data de nascimento apos o CPF (OCR da CNH preenche). Endereco: rua,numero,complemento,bairro,cidade (autocomplete IBGE com todas as cidades + filtro UF),UF,CEP (ViaCEP preenche sozinho).
+- ATENCAO: exige migration 20260929140000_colaboradores_nascimento_endereco.sql no Supabase (Dashboard > SQL Editor). Sem ela, o app salva normalmente menos nascimento/endereco (com aviso). Arquivo em supabase/migrations.

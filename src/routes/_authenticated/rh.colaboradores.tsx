@@ -45,7 +45,7 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { ChevronLeft, ChevronRight, Users, Pencil, Plus, Trash2, X, FileUp } from "lucide-react";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import * as pdfjsLib from "pdfjs-dist";
 import pdfWorker from "pdfjs-dist/build/pdf.worker.min.mjs?url";
 pdfjsLib.GlobalWorkerOptions.workerSrc = pdfWorker;
@@ -88,6 +88,14 @@ type Colab = {
   cnh_validade: string | null;
   toxico_exame: string | null;
   optante_vt: boolean;
+  data_nascimento?: string | null;
+  logradouro?: string | null;
+  numero?: string | null;
+  complemento?: string | null;
+  bairro?: string | null;
+  cidade?: string | null;
+  uf?: string | null;
+  cep?: string | null;
 };
 
 const STATUS: Record<string, string> = {
@@ -98,6 +106,27 @@ const STATUS: Record<string, string> = {
 };
 
 const soDigitos = (s: string) => s.replace(/\D/g, "");
+
+const UFS = [
+  "AC", "AL", "AM", "AP", "BA", "CE", "DF", "ES", "GO", "MA", "MG", "MS", "MT",
+  "PA", "PB", "PE", "PI", "PR", "RJ", "RN", "RO", "RR", "RS", "SC", "SE", "SP", "TO",
+];
+
+// Máscara progressiva de telefone; vários números separados por ;
+function mascaraFone(dig: string) {
+  const d = dig.replace(/\D/g, "").slice(0, 11);
+  if (d.length === 0) return "";
+  if (d.length <= 2) return `(${d}`;
+  if (d.length <= 6) return `(${d.slice(0, 2)}) ${d.slice(2)}`;
+  if (d.length <= 10) return `(${d.slice(0, 2)}) ${d.slice(2, 6)}-${d.slice(6)}`;
+  return `(${d.slice(0, 2)}) ${d.slice(2, 7)}-${d.slice(7)}`;
+}
+function mascaraTelefones(v: string) {
+  return v
+    .split(";")
+    .map((s) => mascaraFone(s.trimStart()))
+    .join("; ");
+}
 
 const soma30meses = (d: string) => {
   const dt = new Date(d + "T00:00:00");
@@ -163,7 +192,43 @@ function formInicial() {
     toxico_exame: "",
     toxico_validade: "",
     optante_vt: false,
+    data_nascimento: "",
+    logradouro: "",
+    numero: "",
+    complemento: "",
+    bairro: "",
+    cidade: "",
+    uf: "",
+    cep: "",
   };
+}
+
+// Colunas novas (migration 20260929140000). O app funciona antes dela ser aplicada:
+// o save tenta com elas e, se o banco recusar (coluna inexistente), regrava sem elas.
+const COLS_NOVAS = [
+  "data_nascimento",
+  "logradouro",
+  "numero",
+  "complemento",
+  "bairro",
+  "cidade",
+  "uf",
+  "cep",
+] as const;
+let cacheColabNovos: boolean | null = null;
+async function temColunasNovas(): Promise<boolean> {
+  if (cacheColabNovos !== null) return cacheColabNovos;
+  try {
+    const { error } = await supabase
+      .from("colaboradores" as never)
+      .select("data_nascimento")
+      .limit(0);
+    cacheColabNovos =
+      !error || !/data_nascimento|column|PGRST204/i.test((error as any)?.message ?? "");
+  } catch {
+    cacheColabNovos = true;
+  }
+  return cacheColabNovos;
 }
 
 function ColaboradoresPage() {
@@ -293,6 +358,11 @@ function ColaboradoresPage() {
     if (val.length === 3) {
       set("cnh_validade", `${val[2]}-${val[1]}-${val[0]}`);
       achados.push("validade");
+    }
+    const nasc = T.match(/DATA NASCIMENTO[^0-9]{0,20}(\d{2})\/(\d{2})\/(\d{4})/)?.slice(1) ?? [];
+    if (nasc.length === 3) {
+      set("data_nascimento", `${nasc[2]}-${nasc[1]}-${nasc[0]}`);
+      achados.push("nascimento");
     }
     return achados;
   }
@@ -497,18 +567,20 @@ function ColaboradoresPage() {
     queryKey: ["colaboradores", empresa?.id],
     staleTime: 60_000,
     gcTime: 10 * 60_000,
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from("colaboradores" as never)
-        .select(
-          "id,nome,cpf,cargo,email,telefone,salario_base,data_admissao,data_demissao,status,pix,banco,agencia,conta,observacoes,cnh_numero,cnh_categoria,cnh_validade,toxico_exame,optante_vt",
-        )
-        .eq("empresa_id", empresa!.id)
-        .order("nome")
-        .limit(500);
-      if (error) throw error;
-      return (data ?? []) as unknown as Colab[];
-    },
+      queryFn: async () => {
+        const comNovas = await temColunasNovas();
+        const { data, error } = await supabase
+          .from("colaboradores" as never)
+          .select(
+            "id,nome,cpf,cargo,email,telefone,salario_base,data_admissao,data_demissao,status,pix,banco,agencia,conta,observacoes,cnh_numero,cnh_categoria,cnh_validade,toxico_exame,optante_vt" +
+              (comNovas ? ",data_nascimento,logradouro,numero,complemento,bairro,cidade,uf,cep" : ""),
+          )
+          .eq("empresa_id", empresa!.id)
+          .order("nome")
+          .limit(500);
+        if (error) throw error;
+        return (data ?? []) as unknown as Colab[];
+      },
   });
 
   const pageSize = 25;
@@ -559,6 +631,71 @@ function ColaboradoresPage() {
   const [novoCargo, setNovoCargo] = useState("");
   const [cargoEditId, setCargoEditId] = useState<string | null>(null);
   const [cargoEditNome, setCargoEditNome] = useState("");
+
+  // Municípios do IBGE (todas as cidades do Brasil), com cache local
+  type Mun = { nome: string; uf: string };
+  const [municipios, setMunicipios] = useState<Mun[]>([]);
+  const [cidadeFoco, setCidadeFoco] = useState(false);
+  useEffect(() => {
+    let vivo = true;
+    (async () => {
+      try {
+        const raw = localStorage.getItem("ibge-municipios-v1");
+        if (raw) {
+          const arr = JSON.parse(raw);
+          if (Array.isArray(arr) && arr.length > 5000) {
+            if (vivo) setMunicipios(arr);
+            return;
+          }
+        }
+        const r = await fetch(
+          "https://servicodados.ibge.gov.br/api/v1/localidades/municipios?orderBy=nome",
+        );
+        const j = await r.json();
+        const arr = (j as any[]).map((m) => ({
+          nome: String(m.nome ?? ""),
+          uf: String(m.microrregiao?.mesorregiao?.UF?.sigla ?? ""),
+        }));
+        try {
+          localStorage.setItem("ibge-municipios-v1", JSON.stringify(arr));
+        } catch {}
+        if (vivo) setMunicipios(arr);
+      } catch {}
+    })();
+    return () => {
+      vivo = false;
+    };
+  }, []);
+  const cidadeSugestoes = useMemo(() => {
+    const q = form.cidade.trim().toLowerCase();
+    return municipios
+      .filter((m) => (!form.uf || m.uf === form.uf) && (!q || m.nome.toLowerCase().includes(q)))
+      .slice(0, 50);
+  }, [municipios, form.cidade, form.uf]);
+
+  // ViaCEP: preenche endereço pelo CEP
+  async function buscarCep() {
+    const d = form.cep.replace(/\D/g, "");
+    if (d.length !== 8) return;
+    try {
+      const r = await fetch(`https://viacep.com.br/ws/${d}/json/`);
+      const j = await r.json();
+      if (j.erro) {
+        toast.error("CEP não encontrado");
+        return;
+      }
+      setForm((f) => ({
+        ...f,
+        logradouro: f.logradouro || j.logradouro || "",
+        bairro: f.bairro || j.bairro || "",
+        cidade: j.localidade || f.cidade,
+        uf: j.uf || f.uf,
+      }));
+      toast.success("Endereço preenchido pelo CEP");
+    } catch {
+      toast.error("Falha ao buscar CEP");
+    }
+  }
 
   // filtra a lista de cargos conforme o campo "novo cargo" (vazio = mostra todos), ordem alfabética
   const cargosFiltrados = useMemo(() => {
@@ -650,6 +787,14 @@ function ColaboradoresPage() {
       cnh_validade: c.cnh_validade ?? "",
       toxico_exame: c.toxico_exame ?? "",
       toxico_validade: c.toxico_exame ? soma30meses(c.toxico_exame) : "",
+      data_nascimento: (c as any).data_nascimento ?? "",
+      logradouro: (c as any).logradouro ?? "",
+      numero: (c as any).numero ?? "",
+      complemento: (c as any).complemento ?? "",
+      bairro: (c as any).bairro ?? "",
+      cidade: (c as any).cidade ?? "",
+      uf: (c as any).uf ?? "",
+      cep: (c as any).cep ?? "",
       optante_vt: c.optante_vt ?? false,
     });
     setOpen(true);
@@ -697,15 +842,36 @@ function ColaboradoresPage() {
         cnh_validade: form.cnh_validade || null,
         toxico_exame: form.toxico_exame || null,
         optante_vt: form.optante_vt,
+        data_nascimento: form.data_nascimento || null,
+        logradouro: form.logradouro.trim() || null,
+        numero: form.numero.trim() || null,
+        complemento: form.complemento.trim() || null,
+        bairro: form.bairro.trim() || null,
+        cidade: form.cidade.trim() || null,
+        uf: form.uf || null,
+        cep: form.cep.replace(/\D/g, "") || null,
       };
-      const tbl = supabase.from("colaboradores" as never) as any;
-      if (editing) {
-        const { error } = await tbl.update(payload).eq("id", editing.id);
-        if (error) throw error;
-      } else {
-        const { error } = await tbl.insert(payload);
-        if (error) throw error;
+      const semNovas = (p: any) => {
+        const c = { ...p };
+        for (const k of COLS_NOVAS) delete c[k];
+        return c;
+      };
+      const gravar = async (p: any) => {
+        const tbl = supabase.from("colaboradores" as never) as any;
+        if (editing) return tbl.update(p).eq("id", editing.id);
+        return tbl.insert(p);
+      };
+      let { error } = await gravar(payload);
+      if (error && /data_nascimento|logradouro|complemento|column|PGRST204/i.test(error.message ?? "")) {
+        // Migration ainda não aplicada no banco: salva sem os campos novos
+        cacheColabNovos = false;
+        ({ error } = await gravar(semNovas(payload)));
+        if (!error)
+          toast.warning(
+            "Salvo sem nascimento/endereço — aplique a migration 20260929140000 no Supabase e recarregue",
+          );
       }
+      if (error) throw error;
     },
     onSuccess: () => {
       toast.success(editing ? "Colaborador atualizado" : "Colaborador cadastrado");
@@ -874,239 +1040,359 @@ function ColaboradoresPage() {
                   </DialogTitle>
                 </DialogHeader>
                 <div className="flex-1 min-h-0 overflow-y-auto p-1">
-                  <div className="space-y-3 max-w-6xl">
-                    <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
-                      <div className="space-y-1">
-                        <Label>Nome *</Label>
-                        <Input value={form.nome} onChange={(e) => set("nome", e.target.value)} />
-                      </div>
-                      <div className="space-y-1">
-                        <Label>CPF *</Label>
-                        <Input
-                          placeholder="000.000.000-00"
-                          value={form.cpf}
-                          onChange={(e) => set("cpf", e.target.value)}
-                        />
-                      </div>
-                      <div className="space-y-1">
-                        <Label>Telefone(s) *</Label>
-                        <Input
-                          placeholder="(00) 00000-0000; (00) 00000-0000"
-                          value={form.telefone}
-                          onChange={(e) => set("telefone", e.target.value)}
-                        />
-                      </div>
-                      <div className="space-y-1">
-                        <Label>E-mail</Label>
-                        <Input
-                          type="email"
-                          value={form.email}
-                          onChange={(e) => set("email", e.target.value)}
-                        />
-                      </div>
-                    </div>
-                    <div className="grid grid-cols-2 gap-3 md:grid-cols-5">
-                      <div className="space-y-1">
-                        <Label>Cargo *</Label>
-                        <div className="relative">
+                  <div className="max-w-6xl border rounded bg-background overflow-hidden">
+                    <div className="p-2 space-y-3">
+                      <div className="grid grid-cols-2 gap-3 md:grid-cols-5">
+                        <div className="space-y-1">
+                          <Label>Nome *</Label>
+                          <Input value={form.nome} onChange={(e) => set("nome", e.target.value)} />
+                        </div>
+                        <div className="space-y-1">
+                          <Label>CPF *</Label>
                           <Input
-                            placeholder="Digite ou selecione o cargo"
-                            value={form.cargo}
-                            onChange={(e) => set("cargo", e.target.value)}
-                            onFocus={() => setCargoFoco(true)}
-                            onBlur={() => setTimeout(() => setCargoFoco(false), 200)}
-                            autoComplete="off"
+                            placeholder="000.000.000-00"
+                            value={form.cpf}
+                            onChange={(e) => set("cpf", e.target.value)}
                           />
-                          {cargoFoco && cargoSugestoes.length > 0 && (
-                            <div className="absolute z-20 mt-1 max-h-56 w-full overflow-y-auto rounded-md border bg-popover shadow-md">
-                              {cargoSugestoes.map((nome) => (
-                                <button
-                                  type="button"
-                                  key={nome}
-                                  className="w-full px-3 py-2 text-left text-sm hover:bg-muted"
-                                  onMouseDown={(e) => {
-                                    e.preventDefault();
-                                    set("cargo", nome);
-                                    setCargoFoco(false);
-                                  }}
-                                >
-                                  {nome}
-                                </button>
-                              ))}
-                            </div>
-                          )}
                         </div>
-                      </div>
-                      <div className="space-y-1">
-                        <Label>Status</Label>
-                        <Select value={form.status} onValueChange={(v) => set("status", v)}>
-                          <SelectTrigger>
-                            <SelectValue />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {Object.entries(STATUS).map(([k, v]) => (
-                              <SelectItem key={k} value={k}>
-                                {v}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      </div>
-                      <div className="space-y-1">
-                        <Label>Data de admissão *</Label>
-                        <DateInput
-                          value={form.data_admissao}
-                          onChange={(v) => set("data_admissao", v)}
-                        />
-                      </div>
-                      <div className="space-y-1">
-                        <Label>Data de demissão</Label>
-                        <DateInput
-                          value={form.data_demissao}
-                          onChange={(v) => set("data_demissao", v)}
-                        />
-                      </div>
-                      <div className="space-y-1">
-                        <Label>Salário base</Label>
-                        <MoneyInput
-                          value={form.salario_base}
-                          onChange={(v) => set("salario_base", v)}
-                        />
+                        <div className="space-y-1">
+                          <Label>Data de nascimento</Label>
+                          <DateInput
+                            value={form.data_nascimento}
+                            onChange={(v) => set("data_nascimento", v)}
+                          />
+                        </div>
+                        <div className="space-y-1">
+                          <Label>Telefone(s) *</Label>
+                          <Input
+                            placeholder="(00) 00000-0000; (00) 00000-0000"
+                            value={form.telefone}
+                            onChange={(e) => set("telefone", mascaraTelefones(e.target.value))}
+                          />
+                        </div>
+                        <div className="space-y-1">
+                          <Label>E-mail</Label>
+                          <Input
+                            type="email"
+                            value={form.email}
+                            onChange={(e) => set("email", e.target.value)}
+                          />
+                        </div>
                       </div>
                     </div>
-                    <div className="border rounded bg-background overflow-hidden">
-                      <div className="bg-primary/8 border-b border-primary/20 px-2 py-1 flex items-center justify-between gap-2">
-                        <div className="text-[10px] font-semibold uppercase tracking-wide text-primary/80">
-                          CNH
-                        </div>
-                        <label className="flex cursor-pointer items-center gap-1.5 rounded-md border bg-background px-2 py-1 text-[11px] font-medium hover:bg-muted">
-                          <FileUp className="h-3.5 w-3.5" /> Importar PDF da CNH
-                          <input
-                            type="file"
-                            accept=".pdf,application/pdf"
-                            className="hidden"
-                            onChange={(e) => {
-                              if (e.target.files?.[0]) importarCnhPdf(e.target.files[0]);
-                              e.currentTarget.value = "";
-                            }}
+                    <div className="bg-primary/8 text-primary/80 border-y border-primary/20 px-2 py-1 text-[10px] font-semibold uppercase tracking-wide">
+                      Endereço
+                    </div>
+                    <div className="p-2 space-y-3">
+                      <div className="grid grid-cols-2 gap-3 md:grid-cols-12">
+                        <div className="space-y-1 md:col-span-3">
+                          <Label>Rua / Av.</Label>
+                          <Input
+                            value={form.logradouro}
+                            onChange={(e) => set("logradouro", e.target.value)}
                           />
-                        </label>
-                      </div>
-                      <div className="p-2 space-y-3">
-                        <div className="grid grid-cols-2 gap-3 md:grid-cols-3">
-                          <div className="space-y-1">
-                            <Label>
-                              Nº da CNH {form.cargo.toLowerCase().includes("motorist") ? "*" : ""}
-                            </Label>
+                        </div>
+                        <div className="space-y-1 md:col-span-1">
+                          <Label>Número</Label>
+                          <Input
+                            value={form.numero}
+                            onChange={(e) => set("numero", e.target.value)}
+                          />
+                        </div>
+                        <div className="space-y-1 md:col-span-2">
+                          <Label>Complemento</Label>
+                          <Input
+                            value={form.complemento}
+                            onChange={(e) => set("complemento", e.target.value)}
+                          />
+                        </div>
+                        <div className="space-y-1 md:col-span-2">
+                          <Label>Bairro</Label>
+                          <Input
+                            value={form.bairro}
+                            onChange={(e) => set("bairro", e.target.value)}
+                          />
+                        </div>
+                        <div className="space-y-1 md:col-span-2">
+                          <Label>Cidade</Label>
+                          <div className="relative">
                             <Input
-                              value={form.cnh_numero}
-                              onChange={(e) => set("cnh_numero", e.target.value)}
+                              placeholder="Digite para buscar"
+                              value={form.cidade}
+                              onChange={(e) => set("cidade", e.target.value)}
+                              onFocus={() => setCidadeFoco(true)}
+                              onBlur={() => setTimeout(() => setCidadeFoco(false), 200)}
+                              autoComplete="off"
                             />
-                          </div>
-                          <div className="space-y-1">
-                            <Label>
-                              Categoria {form.cargo.toLowerCase().includes("motorist") ? "*" : ""}
-                            </Label>
-                            <Select
-                              value={form.cnh_categoria || ""}
-                              onValueChange={(v) => set("cnh_categoria", v)}
-                            >
-                              <SelectTrigger>
-                                <SelectValue placeholder="Selecione" />
-                              </SelectTrigger>
-                              <SelectContent>
-                                {["A", "B", "AB", "C", "D", "E", "AC", "AD", "AE"].map((c) => (
-                                  <SelectItem key={c} value={c}>
-                                    {c}
-                                  </SelectItem>
+                            {cidadeFoco && cidadeSugestoes.length > 0 && (
+                              <div className="absolute z-20 mt-1 max-h-56 w-full overflow-y-auto rounded-md border bg-popover shadow-md">
+                                {cidadeSugestoes.map((m) => (
+                                  <button
+                                    type="button"
+                                    key={m.uf + m.nome}
+                                    className="w-full px-3 py-2 text-left text-sm hover:bg-muted"
+                                    onMouseDown={(e) => {
+                                      e.preventDefault();
+                                      set("cidade", m.nome);
+                                      if (m.uf) set("uf", m.uf);
+                                      setCidadeFoco(false);
+                                    }}
+                                  >
+                                    {m.nome} — {m.uf}
+                                  </button>
                                 ))}
-                              </SelectContent>
-                            </Select>
-                          </div>
-                          <div className="space-y-1">
-                            <Label>Validade</Label>
-                            <DateInput
-                              value={form.cnh_validade}
-                              onChange={(v) => set("cnh_validade", v)}
-                            />
+                              </div>
+                            )}
                           </div>
                         </div>
-                        <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
-                          <div>
-                            <Label>
-                              Último exame toxicológico{" "}
-                              {form.cargo.toLowerCase().includes("motorist") ? "*" : ""}
-                            </Label>
+                        <div className="space-y-1 md:col-span-1">
+                          <Label>UF</Label>
+                          <Select
+                            value={form.uf || undefined}
+                            onValueChange={(v) => set("uf", v === "__limpar" ? "" : v)}
+                          >
+                            <SelectTrigger>
+                              <SelectValue placeholder="UF" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="__limpar">Limpar</SelectItem>
+                              {UFS.map((u) => (
+                                <SelectItem key={u} value={u}>
+                                  {u}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </div>
+                        <div className="space-y-1 md:col-span-1">
+                          <Label>CEP</Label>
+                          <Input
+                            placeholder="00000-000"
+                            value={form.cep}
+                            onChange={(e) =>
+                              set(
+                                "cep",
+                                e.target.value
+                                  .replace(/\D/g, "")
+                                  .slice(0, 8)
+                                  .replace(/(\d{5})(\d)/, "$1-$2"),
+                              )
+                            }
+                            onBlur={() => buscarCep()}
+                          />
+                        </div>
+                      </div>
+                      <div className="grid grid-cols-2 gap-3 md:grid-cols-5">
+                        <div className="space-y-1">
+                          <Label>Cargo *</Label>
+                          <div className="relative">
                             <Input
-                              type="date"
-                              value={form.toxico_exame}
-                              onChange={(e) =>
-                                setForm((f) => ({
-                                  ...f,
-                                  toxico_exame: e.target.value,
-                                  toxico_validade: e.target.value ? soma30meses(e.target.value) : "",
-                                }))
-                              }
+                              placeholder="Digite ou selecione o cargo"
+                              value={form.cargo}
+                              onChange={(e) => set("cargo", e.target.value)}
+                              onFocus={() => setCargoFoco(true)}
+                              onBlur={() => setTimeout(() => setCargoFoco(false), 200)}
+                              autoComplete="off"
                             />
-                          </div>
-                          <div>
-                            <Label>Validade do toxicológico</Label>
-                            <Input
-                              value={form.toxico_validade ? dateBR(form.toxico_validade) : ""}
-                              readOnly
-                            />
-                            <p className="mt-1 text-xs text-muted-foreground">
-                              {form.toxico_exame
-                                ? "2 anos e 6 meses após o exame (CTB art. 148-A)"
-                                : form.cargo.toLowerCase().includes("motorist")
-                                  ? "Obrigatório para motoristas de categoria C/D/E"
-                                  : "Exame obrigatório apenas para categorias C/D/E"}
-                            </p>
+                            {cargoFoco && cargoSugestoes.length > 0 && (
+                              <div className="absolute z-20 mt-1 max-h-56 w-full overflow-y-auto rounded-md border bg-popover shadow-md">
+                                {cargoSugestoes.map((nome) => (
+                                  <button
+                                    type="button"
+                                    key={nome}
+                                    className="w-full px-3 py-2 text-left text-sm hover:bg-muted"
+                                    onMouseDown={(e) => {
+                                      e.preventDefault();
+                                      set("cargo", nome);
+                                      setCargoFoco(false);
+                                    }}
+                                  >
+                                    {nome}
+                                  </button>
+                                ))}
+                              </div>
+                            )}
                           </div>
                         </div>
-                        {avisoToxico(form.toxico_validade) && (
-                          <p className="mt-2 text-xs text-warning-foreground">
-                            ⚠ {avisoToxico(form.toxico_validade)}
-                          </p>
-                        )}
+                        <div className="space-y-1">
+                          <Label>Status</Label>
+                          <Select value={form.status} onValueChange={(v) => set("status", v)}>
+                            <SelectTrigger>
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {Object.entries(STATUS).map(([k, v]) => (
+                                <SelectItem key={k} value={k}>
+                                  {v}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </div>
+                        <div className="space-y-1">
+                          <Label>Data de admissão *</Label>
+                          <DateInput
+                            value={form.data_admissao}
+                            onChange={(v) => set("data_admissao", v)}
+                          />
+                        </div>
+                        <div className="space-y-1">
+                          <Label>Data de demissão</Label>
+                          <DateInput
+                            value={form.data_demissao}
+                            onChange={(v) => set("data_demissao", v)}
+                          />
+                        </div>
+                        <div className="space-y-1">
+                          <Label>Salário base</Label>
+                          <MoneyInput
+                            value={form.salario_base}
+                            onChange={(v) => set("salario_base", v)}
+                          />
+                        </div>
                       </div>
                     </div>
-                    <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
-                      <div className="space-y-1">
-                        <Label>PIX</Label>
-                        <Input value={form.pix} onChange={(e) => set("pix", e.target.value)} />
+                    <div className="bg-primary/8 border-y border-primary/20 px-2 py-1 flex items-center justify-between gap-2">
+                      <div className="text-[10px] font-semibold uppercase tracking-wide text-primary/80">
+                        CNH
                       </div>
-                      <div className="space-y-1">
-                        <Label>Banco</Label>
-                        <Input value={form.banco} onChange={(e) => set("banco", e.target.value)} />
+                      <label className="flex cursor-pointer items-center gap-1.5 rounded-md border bg-background px-2 py-1 text-[11px] font-medium hover:bg-muted">
+                        <FileUp className="h-3.5 w-3.5" /> Importar PDF da CNH
+                        <input
+                          type="file"
+                          accept=".pdf,application/pdf"
+                          className="hidden"
+                          onChange={(e) => {
+                            if (e.target.files?.[0]) importarCnhPdf(e.target.files[0]);
+                            e.currentTarget.value = "";
+                          }}
+                        />
+                      </label>
+                    </div>
+                    <div className="p-2 space-y-3">
+                      <div className="grid grid-cols-2 gap-3 md:grid-cols-3">
+                        <div className="space-y-1">
+                          <Label>
+                            Nº da CNH {form.cargo.toLowerCase().includes("motorist") ? "*" : ""}
+                          </Label>
+                          <Input
+                            value={form.cnh_numero}
+                            onChange={(e) => set("cnh_numero", e.target.value)}
+                          />
+                        </div>
+                        <div className="space-y-1">
+                          <Label>
+                            Categoria {form.cargo.toLowerCase().includes("motorist") ? "*" : ""}
+                          </Label>
+                          <Select
+                            value={form.cnh_categoria || ""}
+                            onValueChange={(v) => set("cnh_categoria", v)}
+                          >
+                            <SelectTrigger>
+                              <SelectValue placeholder="Selecione" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {["A", "B", "AB", "C", "D", "E", "AC", "AD", "AE"].map((c) => (
+                                <SelectItem key={c} value={c}>
+                                  {c}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </div>
+                        <div className="space-y-1">
+                          <Label>Validade</Label>
+                          <DateInput
+                            value={form.cnh_validade}
+                            onChange={(v) => set("cnh_validade", v)}
+                          />
+                        </div>
                       </div>
+                      <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
+                        <div>
+                          <Label>
+                            Último exame toxicológico{" "}
+                            {form.cargo.toLowerCase().includes("motorist") ? "*" : ""}
+                          </Label>
+                          <Input
+                            type="date"
+                            value={form.toxico_exame}
+                            onChange={(e) =>
+                              setForm((f) => ({
+                                ...f,
+                                toxico_exame: e.target.value,
+                                toxico_validade: e.target.value ? soma30meses(e.target.value) : "",
+                              }))
+                            }
+                          />
+                        </div>
+                        <div>
+                          <Label>Validade do toxicológico</Label>
+                          <Input
+                            value={form.toxico_validade ? dateBR(form.toxico_validade) : ""}
+                            readOnly
+                          />
+                          <p className="mt-1 text-xs text-muted-foreground">
+                            {form.toxico_exame
+                              ? "2 anos e 6 meses após o exame (CTB art. 148-A)"
+                              : form.cargo.toLowerCase().includes("motorist")
+                                ? "Obrigatório para motoristas de categoria C/D/E"
+                                : "Exame obrigatório apenas para categorias C/D/E"}
+                          </p>
+                        </div>
+                      </div>
+                      {avisoToxico(form.toxico_validade) && (
+                        <p className="mt-2 text-xs text-warning-foreground">
+                          ⚠ {avisoToxico(form.toxico_validade)}
+                        </p>
+                      )}
+                    </div>
+                    <div className="bg-primary/8 text-primary/80 border-y border-primary/20 px-2 py-1 text-[10px] font-semibold uppercase tracking-wide">
+                      Dados da conta
+                    </div>
+                    <div className="p-2">
+                      <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
+                        <div className="space-y-1">
+                          <Label>PIX</Label>
+                          <Input value={form.pix} onChange={(e) => set("pix", e.target.value)} />
+                        </div>
+                        <div className="space-y-1">
+                          <Label>Banco</Label>
+                          <Input value={form.banco} onChange={(e) => set("banco", e.target.value)} />
+                        </div>
+                        <div className="space-y-1">
+                          <Label>Agência</Label>
+                          <Input
+                            value={form.agencia}
+                            onChange={(e) => set("agencia", e.target.value)}
+                          />
+                        </div>
+                        <div className="space-y-1">
+                          <Label>Conta</Label>
+                          <Input value={form.conta} onChange={(e) => set("conta", e.target.value)} />
+                        </div>
+                      </div>
+                    </div>
+                    <div className="bg-primary/8 text-primary/80 border-y border-primary/20 px-2 py-1 text-[10px] font-semibold uppercase tracking-wide">
+                      Adicionais
+                    </div>
+                    <div className="p-2 space-y-3">
+                      <label className="flex items-center gap-2 text-sm">
+                        <input
+                          type="checkbox"
+                          checked={form.optante_vt}
+                          onChange={(e) => set("optante_vt", e.target.checked)}
+                        />
+                        Optante pelo Vale-Transporte (desconto de 6% sobre salário base na folha)
+                      </label>
                       <div className="space-y-1">
-                        <Label>Agência</Label>
-                        <Input
-                          value={form.agencia}
-                          onChange={(e) => set("agencia", e.target.value)}
+                        <Label>Observações</Label>
+                        <Textarea
+                          rows={2}
+                          value={form.observacoes}
+                          onChange={(e) => set("observacoes", e.target.value)}
                         />
                       </div>
-                      <div className="space-y-1">
-                        <Label>Conta</Label>
-                        <Input value={form.conta} onChange={(e) => set("conta", e.target.value)} />
-                      </div>
-                    </div>
-                    <label className="flex items-center gap-2 text-sm">
-                      <input
-                        type="checkbox"
-                        checked={form.optante_vt}
-                        onChange={(e) => set("optante_vt", e.target.checked)}
-                      />
-                      Optante pelo Vale-Transporte (desconto de 6% sobre salário base na folha)
-                    </label>
-                    <div className="space-y-1">
-                      <Label>Observações</Label>
-                      <Textarea
-                        rows={2}
-                        value={form.observacoes}
-                        onChange={(e) => set("observacoes", e.target.value)}
-                      />
                     </div>
                   </div>
                 </div>
