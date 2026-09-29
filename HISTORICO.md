@@ -3279,3 +3279,11 @@ Espelhado na Vercel.
   ativa branca com texto verde). Cartao unico envolve todas
   as abas; titulo CT-e `text-3xl` -> `text-2xl` e container
   `px-6/pb-6/pt-2` -> `px-4/pb-4/pt-1` p/ caber na tela.
+
+## CT-e: listagem esticada ate o rodape (28/09)
+
+- Area da tabela `max-h-[220px]` fixo ->
+  `max-h-[calc(100vh-470px)] min-h-[200px]`: a caixa cresce
+  ate encostar no rodape sem criar barra de rolagem na pagina
+  (a rolagem fica so dentro da listagem, com cabecalho fixo).
+  `pb-4` -> `pb-2`. Em tela 900px mostra ~13 notas em vez de 6.

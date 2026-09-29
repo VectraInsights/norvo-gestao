@@ -4345,7 +4345,7 @@ function CtePage() {
   );
 
   return (
-    <div className="px-4 pb-4 pt-1 space-y-2">
+    <div className="px-4 pb-2 pt-1 space-y-2">
       <div className="border-l-4 border-blue-500 pl-4 py-0.5">
         <h1 className="text-display text-2xl leading-tight md:text-3xl">CT-e</h1>
       </div>
@@ -4527,7 +4527,7 @@ function CtePage() {
                     </span>
                     <span className="text-xs">Qtde NF-e: {mercadorias.length}</span>
                   </div>
-                  <div className="overflow-x-auto max-h-[220px]">
+                  <div className="overflow-auto max-h-[calc(100vh-470px)] min-h-[200px]">
                     <Table>
                       <TableHeader className="sticky top-0 bg-muted">
                         <TableRow>
