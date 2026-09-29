@@ -3324,3 +3324,11 @@ Espelhado na Vercel.
   padrao hoje-15 dias (era -14). Listagem sobre p/ colar
   nas datas; contadores da aba e do cabecalho da lista
   mostram `visiveis/total`.
+
+## CT-e: caixa ancorada no rodape, listagem cresce p/ cima (28/09)
+
+- Pagina `h-full flex flex-col`; Tabs/Card/CardContent/
+  TabsContent com `flex-1 min-h-0`: a caixa vai sempre ate
+  o rodape sem barra de rolagem na pagina. Filtros e botoes
+  com `shrink-0`; só a listagem rola por dentro e ocupa
+  todo o espaco livre (cresce p/ cima).

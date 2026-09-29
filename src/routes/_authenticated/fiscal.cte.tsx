@@ -4353,18 +4353,18 @@ function CtePage() {
   );
 
   return (
-    <div className="px-2 pb-2 pt-1 space-y-2">
-      <div className="border-l-4 border-blue-500 pl-4 py-0.5">
+    <div className="px-2 pb-2 pt-1 h-full flex flex-col gap-2">
+      <div className="border-l-4 border-blue-500 pl-4 py-0.5 shrink-0">
         <h1 className="text-display text-2xl leading-tight md:text-3xl">CT-e</h1>
       </div>
 
       {isLoading ? (
         <div className="text-sm text-muted-foreground">Carregando…</div>
       ) : (
-        <Tabs value={statusTab} onValueChange={setStatusTab}>
+        <Tabs value={statusTab} onValueChange={setStatusTab} className="flex-1 min-h-0 flex flex-col">
           {/* Cartão único: barra verde com título + abas + modo; conteúdo das abas abaixo */}
-          <Card className="overflow-hidden border-2 border-primary/20 shadow-panel">
-            <div className="bg-primary text-primary-foreground px-3 py-1.5 flex flex-wrap items-center gap-x-3 gap-y-1.5">
+          <Card className="overflow-hidden border-2 border-primary/20 shadow-panel flex-1 min-h-0 flex flex-col">
+            <div className="bg-primary text-primary-foreground px-3 py-1.5 flex flex-wrap items-center gap-x-3 gap-y-1.5 shrink-0">
               <h3 className="text-sm font-semibold flex items-center gap-2">
                 <Package className="h-4 w-4" /> Cadastro de Mercadorias para Embarque
               </h3>
@@ -4401,9 +4401,9 @@ function CtePage() {
                 </TabsTrigger>
               </TabsList>
             </div>
-            <CardContent className="p-3 space-y-3 bg-muted/20 overflow-visible">
-              <TabsContent value="embarque" className="mt-0">
-                <div className="border rounded p-2 bg-background space-y-2">
+            <CardContent className="p-3 bg-muted/20 overflow-visible flex-1 min-h-0 flex flex-col">
+              <TabsContent value="embarque" className="mt-0 flex-1 min-h-0 flex flex-col gap-3">
+                <div className="border rounded p-2 bg-background space-y-2 shrink-0">
                   <div className="grid grid-cols-1 lg:grid-cols-3 gap-3">
                     <div>
                       <Label className="text-xs font-semibold text-primary">
@@ -4481,7 +4481,7 @@ function CtePage() {
                 </div>
 
                 {/* Listagem das Notas Fiscais */}
-                <div className="border rounded overflow-hidden bg-background">
+                <div className="border rounded overflow-hidden bg-background flex-1 min-h-0 flex flex-col">
                   <div className="bg-primary/8 text-primary/80 border-b border-primary/20 px-2 py-1 flex items-center justify-between">
                     <span className="text-[10px] font-semibold uppercase tracking-wide">
                       Listagem das Notas Fiscais
@@ -4490,7 +4490,7 @@ function CtePage() {
                       Qtde NF-e: {mercadoriasSorted.length}/{mercadorias.length}
                     </span>
                   </div>
-                  <div className="overflow-auto max-h-[calc(100vh-470px)] min-h-[200px]">
+                  <div className="overflow-auto flex-1 min-h-0">
                     <Table className="min-w-[1280px]">
                       <TableHeader className="sticky top-0 bg-muted">
                         <TableRow>
@@ -4661,7 +4661,7 @@ function CtePage() {
                 </div>
 
                 {/* Ações de importação múltipla */}
-                <div className="flex flex-wrap gap-2">
+                <div className="flex flex-wrap gap-2 shrink-0">
                   <label className="flex items-center gap-2 px-3 py-2 border rounded bg-accent text-accent-foreground cursor-pointer hover:bg-accent/70 text-xs font-medium">
                     <UploadCloud className="h-4 w-4" /> Importar NFes (XML)
                     <input
