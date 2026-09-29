@@ -294,6 +294,61 @@ function ColaboradoresPage() {
     if (i === 0) return nm;
     return limparNome(toks.slice(i).join(" "));
   }
+  // Dígito verificador do CPF (módulo 11): o OCR troca dígitos (9→0, 1→7…),
+  // então CPF lido só vale se o DV fechar. Tenta ainda reparar 1 dígito.
+  function dvCpfOk(dig11: string): boolean {
+    if (!/^\d{11}$/.test(dig11) || /^(\d)\1{10}$/.test(dig11)) return false;
+    const dv = (n: number) => {
+      let s = 0;
+      for (let i = 0; i < n; i++) s += Number(dig11[i]) * (n + 1 - i);
+      const r = (s * 10) % 11;
+      return r === 10 ? 0 : r;
+    };
+    return dv(9) === Number(dig11[9]) && dv(10) === Number(dig11[10]);
+  }
+  const formatarCpf = (dig11: string) => dig11.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, "$1.$2.$3-$4");
+  // Todas as correções de 1 dígito com DV válido (vazio ou ambíguo = sem reparo).
+  function repararCpf(dig11: string): string[] {
+    const out = new Set<string>();
+    for (let pos = 0; pos < 11; pos++) {
+      for (let d = 0; d <= 9; d++) {
+        const t = dig11.slice(0, pos) + d + dig11.slice(pos + 1);
+        if (t !== dig11 && dvCpfOk(t)) out.add(t);
+      }
+    }
+    return [...out];
+  }
+  // Mais votado entre passadas (empate = primeiro); p/ categoria o desempate
+  // é pelo mais longo ("AE" vence "E" truncado pelo OCR).
+  function maisVotado(vals: string[], desempateLongo = false): string {
+    const freq = new Map<string, number>();
+    for (const v of vals) if (v) freq.set(v, (freq.get(v) ?? 0) + 1);
+    let best = "";
+    let bestN = 0;
+    for (const [v, n] of freq) {
+      if (n > bestN || (n === bestN && desempateLongo && v.length > best.length)) {
+        bestN = n;
+        best = v;
+      }
+    }
+    return best;
+  }
+  // Nome do rótulo vs nome do MRZ: se divergem em pessoa (rótulo pegou
+  // filiação), o MRZ vence (é o condutor); se é só truncamento do MRZ
+  // ("NUNE" vs "NUNES"), completa com o mais longo por palavra.
+  function escolherNome(rotulo: string, mrz: string): { nome: string; fonte: string } {
+    if (rotulo && !mrz) return { nome: rotulo, fonte: "rotulo" };
+    if (mrz && !rotulo) return { nome: mrz, fonte: "mrz" };
+    if (!rotulo || !mrz) return { nome: "", fonte: "" };
+    if (rotulo === mrz) return { nome: rotulo, fonte: "rotulo" };
+    const a = rotulo.split(" ");
+    const b = mrz.split(" ");
+    if (a.length === b.length && a.every((w, i) => w === b[i] || w.startsWith(b[i]) || b[i].startsWith(w))) {
+      return { nome: a.map((w, i) => (w.length >= b[i].length ? w : b[i])).join(" "), fonte: "mrz-completo" };
+    }
+    return { nome: mrz, fonte: "mrz" };
+  }
+  type PassCnh = { campos: CnhCampos; fontes: Record<string, string>; cpfs: string[]; tag: string };
   function limparNome(bruto: string): string {
     const toks = bruto.split(/\s+/).filter(Boolean);
     let ini = 0;
@@ -352,10 +407,12 @@ function ColaboradoresPage() {
   //     <CPF> <nº registro> <categoria>; validade = maior data do documento
   //  3) Fallback: maior sequência em maiúsculas fora do cabeçalho
   // Cobre o modelo digital antigo e o novo (gov.br + QR-CODE + MRZ).
-  function extrairCamposCnh(texto: string): { achados: string[]; campos: CnhCampos; fontes: Record<string, string> } {
+  function extrairCamposCnh(texto: string): { achados: string[]; campos: CnhCampos; fontes: Record<string, string>; cpfs: string[] } {
     const campos = CAMPOS_VAZIOS();
     // Qual estratégia venceu cada campo (só nomes — nenhum dado pessoal vai p/ log).
     const fontes: Record<string, string> = {};
+    // Nome do MRZ (pode vir truncado: "NUNE" por "NUNES") — decide no fim.
+    let nomeMrz = "";
     const T = texto.replace(/\s+/g, " ");
     const linhas = texto
       .split("\n")
@@ -398,18 +455,17 @@ function ColaboradoresPage() {
           .replace(/\s+/g, " ")
           .trim();
         const limpo = limparNome(nm);
-        if (limpo && !campos.nome) {
-          campos.nome = limpo;
-          fontes.nome = "mrz";
-        }
+        if (limpo) nomeMrz = limpo;
       }
     }
-    // CPF + nascimento lado a lado (layout da CNH: "136.983.846-80 18/07/1993")
+    // CPF: entre todos os formatos lidos, vale o 1º com DV válido.
+    // (OCR troca dígito: "139.933.206-19" por "139.933.296-19".)
     const par = T.match(/(\d{3}\.\d{3}\.\d{3}-\d{2})\s+(\d{2})\/(\d{2})\/(\d{4})/);
-    const cpf = par?.[1] ?? T.match(/(\d{3}\.\d{3}\.\d{3}-\d{2})/)?.[1] ?? "";
+    const cpfs = [...new Set([...T.matchAll(/(\d{3}\.\d{3}\.\d{3}-\d{2})/g)].map((m) => m[1]))];
+    const cpf = cpfs.find((c) => dvCpfOk(c.replace(/\D/g, ""))) ?? "";
     if (cpf && !campos.cpf) {
       campos.cpf = cpf;
-      fontes.cpf = "regex";
+      fontes.cpf = "regex-dv";
     }
     if (par && !campos.data_nascimento) {
       campos.data_nascimento = `${par[4]}-${par[3]}-${par[2]}`;
@@ -465,6 +521,10 @@ function ColaboradoresPage() {
       }
       console.log("[CNH-OCR] nome bruto", JSON.stringify(campos.nome));
       if (campos.nome && !fontes.nome) fontes.nome = "rotulo";
+      // Nome final: rótulo vs MRZ (MRZ trunca; rótulo pode pegar filiação).
+      const esc = escolherNome(campos.nome, nomeMrz);
+      campos.nome = esc.nome;
+      if (esc.nome) fontes.nome = esc.fonte;
     }
     // 2) Nº REGISTRO: rótulo (tolerante) -> linha do CPF -> linha do rótulo.
     // A linha do CPF no documento traz <CPF> <registro> <categoria> lado a lado.
@@ -565,7 +625,7 @@ function ColaboradoresPage() {
         fontes.data_nascimento = "rotulo";
       }
     }
-    return { achados: rotulosDe(campos), campos, fontes };
+    return { achados: rotulosDe(campos), campos, fontes, cpfs };
   }
 
   // OCR da imagem da CNH (a CNH digital exporta o documento como imagem): renderiza a
@@ -750,45 +810,79 @@ function ColaboradoresPage() {
         }
       }
       // 1) Camada de texto do PDF (rápida; modelos digitais costumam ter)
-      const total = CAMPOS_VAZIOS();
-      const fontesTotal: Record<string, string> = {};
+      const passes: PassCnh[] = [];
       if (texto.replace(/\s/g, "").length >= 50) {
         const r = extrairCamposCnh(texto);
-        Object.assign(total, r.campos);
-        Object.assign(fontesTotal, r.fontes);
+        passes.push({ campos: r.campos, fontes: r.fontes, cpfs: r.cpfs, tag: "texto" });
         console.info("[CNH] passada texto:", JSON.stringify(r.fontes));
       }
-      const faltando = () => (CNH_CORE as readonly string[]).filter((k) => !(total as any)[k]);
-      // 2) OCR complementa o que a camada de texto não trouxe (e vice-versa):
-      //    cada recorte preenche só os campos ainda vazios (primeiro acerto vence).
-      if (faltando().length > 0) {
+      const temPass = (k: keyof CnhCampos) => passes.some((p) => p.campos[k]);
+      // 2) OCR complementa: roda quando um campo central falta na camada de texto.
+      if (!((CNH_CORE as readonly string[]).every((k) => temPass(k as keyof CnhCampos)))) {
         toast.info("IMPORTANDO DADOS", { id: TOAST_ID });
         const ocr = await ocrCnh(pdf);
         ocr.textos.forEach((tx, i) => {
-          // Sem early-return: extração é CPU puro (textos já reconhecidos) e a
-          // validade-max precisa ver todas as passadas.
           const r = extrairCamposCnh(tx);
-          for (const k of Object.keys(total) as (keyof typeof total)[])
-            if (!total[k] && r.campos[k]) {
-              total[k] = r.campos[k];
-              fontesTotal[k] = `ocr${i + 1}:${r.fontes[k] ?? "?"}`;
-            }
-          // Validade: entre passadas vale a MAIOR (uma passada pode trazer a
-          // emissão embaralhada e outra a validade certa — ISO ordena cronológico).
-          if (r.campos.cnh_validade && (!total.cnh_validade || r.campos.cnh_validade > total.cnh_validade)) {
-            total.cnh_validade = r.campos.cnh_validade;
-            fontesTotal.cnh_validade = `ocr${i + 1}:${r.fontes.cnh_validade ?? "?"}-max`;
-          }
+          passes.push({ campos: r.campos, fontes: r.fontes, cpfs: r.cpfs, tag: `ocr${i + 1}` });
         });
-        console.info("[CNH] fontes finais:", JSON.stringify(fontesTotal));
+        console.info(
+          "[CNH] passes:",
+          passes.map((p) => `${p.tag}:${JSON.stringify(p.fontes)}`).join(" | "),
+        );
       }
-      // 3) Último recurso p/ o nº: leitura de dígitos na caixa Nº REGISTRO
+      // 3) Decisão por campo entre as passadas:
+      const total = CAMPOS_VAZIOS();
+      const fontesTotal: Record<string, string> = {};
+      const first = (k: keyof CnhCampos, tag = true) => {
+        const p = passes.find((x) => x.campos[k]);
+        if (p && tag) fontesTotal[k] = `${p.tag}:${p.fontes[k] ?? "?"}`;
+        return p?.campos[k] ?? "";
+      };
+      total.nome = sanearNome(first("nome"));
+      total.cnh_numero = first("cnh_numero");
+      total.data_nascimento = first("data_nascimento");
+      // CPF: só com DV válido; mais votado entre passadas; senão repara 1 dígito
+      // (único reparo possível) — nunca preenche CPF inválido.
+      total.cpf = maisVotado(passes.map((p) => p.campos.cpf));
+      if (total.cpf) {
+        const p = passes.find((x) => x.campos.cpf === total.cpf);
+        fontesTotal.cpf = `${p?.tag ?? "?"}:dv`;
+      } else {
+        const pool = [...new Set(passes.flatMap((p) => p.cpfs))].map((c) => c.replace(/\D/g, ""));
+        const reps = new Set<string>();
+        for (const d of pool) for (const r of repararCpf(d)) reps.add(r);
+        if (reps.size === 1) {
+          total.cpf = formatarCpf([...reps][0]);
+          fontesTotal.cpf = "reparado";
+        }
+      }
+      // Categoria: mais votada; empate = mais longa ("AE" vence "E" truncado).
+      total.cnh_categoria = maisVotado(
+        passes.map((p) => p.campos.cnh_categoria),
+        true,
+      );
+      if (total.cnh_categoria) {
+        const p = passes.find((x) => x.campos.cnh_categoria === total.cnh_categoria);
+        fontesTotal.cnh_categoria = `${p?.tag ?? "?"}:voto`;
+      }
+      // Validade: MAIOR entre passadas (ISO ordena cronológico).
+      {
+        const vals = passes.map((p) => p.campos.cnh_validade).filter(Boolean).sort();
+        if (vals.length > 0) {
+          total.cnh_validade = vals[vals.length - 1];
+          const p = passes.find((x) => x.campos.cnh_validade === total.cnh_validade);
+          fontesTotal.cnh_validade = `${p?.tag ?? "?"}:max`;
+        }
+      }
+      console.info("[CNH] decisão:", JSON.stringify(fontesTotal));
+      // 4) Último recurso p/ o nº: leitura de dígitos na caixa Nº REGISTRO
       if (!total.cnh_numero) {
         const reg = await ocrDigitosRegistro(pdf);
-        if (reg) total.cnh_numero = reg;
+        if (reg) {
+          total.cnh_numero = reg;
+          fontesTotal.cnh_numero = "digitos";
+        }
       }
-      // Corta caco de rótulo grudado na frente do nome ("MENTAÇÃO ROBERTO…" → "ROBERTO…")
-      if (total.nome) total.nome = sanearNome(total.nome);
       // Importar = ação explícita: sempre preenche com o lido (inclusive por cima
       // de valor sujo de importação anterior)
       if (total.nome) set("nome", total.nome);

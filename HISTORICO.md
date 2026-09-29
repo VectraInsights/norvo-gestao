@@ -3571,3 +3571,16 @@ Espelhado na Vercel.
 - Entre passadas de OCR a validade usa o max (antes a 1ª vencia e
   travava a errada); extração agora varre todos os recortes.
 - Espelhado na Vercel via push em main.
+
+## CNH: CPF com DV + categoria por voto + nome MRZ reconciliado (29/09)
+
+- CPF 296→206 (troca do OCR): agora só preenche CPF com dígito
+  verificador válido; entre passadas vale o mais votado; sem nenhum
+  válido, tenta reparar 1 dígito (caso real repara exato e único).
+  CPF inválido nunca mais é preenchido (fica p/ conferir).
+- Categoria E→AE (truncado): votação entre passadas, empate decide
+  pelo mais longo.
+- Nome: rótulo vs MRZ reconciliados — truncamento do MRZ ("NUNE")
+  completa com o rótulo; se divergirem em pessoa (filiação), o MRZ
+  (condutor) vence.
+- Espelhado na Vercel via push em main.
