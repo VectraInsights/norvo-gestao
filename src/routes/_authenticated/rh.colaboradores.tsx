@@ -521,22 +521,36 @@ function ColaboradoresPage() {
     if (campos.cnh_categoria && !["A", "B", "AB", "C", "D", "E", "AC", "AD", "AE"].includes(campos.cnh_categoria))
       campos.cnh_categoria = "";
     // Modelo novo: "4b VALIDADE 27/12/2028" e "3 DATA, LOCAL E UF DE NASCIMENTO 03/01/1964,..."
-    // O marcador 4b é a assinatura deste modelo (4a = emissão) — tenta ele primeiro.
+    // O marcador 4b é a assinatura deste modelo (4a = emissão). Como o OCR às
+    // vezes lê "4a" como "4b", coleta TODAS as datas marcadas B, descarta as
+    // grudadas em EMISSÃO e fica com a MAIOR (validade > emissão sempre).
     if (!campos.cnh_validade) {
-      const val4b =
-        T.match(/4\s*B\b[^0-9]{0,25}(\d{2})\/(\d{2})\/(\d{4})/i)?.slice(1) ?? [];
+      const datasB: string[] = [];
+      for (const m of T.matchAll(/4\s*B\b(.{0,40}?)(\d{2})\/(\d{2})\/(\d{4})/gi)) {
+        const gap: string = m[1];
+        if (/EMISS|HABILIT|NASC/i.test(gap)) continue;
+        const y = Number(m[4]);
+        if (y < 1990 || y > 2100) continue;
+        const iso = `${m[4]}-${m[3]}-${m[2]}`;
+        if (!datasB.includes(iso)) datasB.push(iso);
+      }
+      if (datasB.length > 0) {
+        datasB.sort();
+        campos.cnh_validade = datasB[datasB.length - 1];
+        fontes.cnh_validade = datasB.length > 1 ? "4b-max" : "4b";
+      }
+    }
+    if (!campos.cnh_validade) {
       const val =
-        val4b.length === 3
-          ? val4b
-          : (T.match(/VALIDADE\s*(\d{2})\/(\d{2})\/(\d{4})/)?.slice(1) ??
-            T.match(/\bVALID(?:ADE|E)?\D{0,15}(\d{2})\/(\d{2})\/(\d{4})/)?.slice(1) ??
-            (() => {
-              const m = apos(/VALID/i, /(\d{2}\/\d{2}\/\d{4})/, 60).match(/(\d{2})\/(\d{2})\/(\d{4})/);
-              return m ? m.slice(1) : [];
-            })());
+        T.match(/VALIDADE\s*(\d{2})\/(\d{2})\/(\d{4})/)?.slice(1) ??
+        T.match(/\bVALID(?:ADE|E)?\D{0,15}(\d{2})\/(\d{2})\/(\d{4})/)?.slice(1) ??
+        (() => {
+          const m = apos(/VALID/i, /(\d{2}\/\d{2}\/\d{4})/, 60).match(/(\d{2})\/(\d{2})\/(\d{4})/);
+          return m ? m.slice(1) : [];
+        })();
       if (val.length === 3) {
         campos.cnh_validade = `${val[2]}-${val[1]}-${val[0]}`;
-        fontes.cnh_validade = val4b.length === 3 ? "4b" : "rotulo";
+        fontes.cnh_validade = "rotulo";
       }
     }
     if (!campos.cnh_validade) {

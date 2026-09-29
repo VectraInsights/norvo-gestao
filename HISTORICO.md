@@ -3540,3 +3540,12 @@ Espelhado na Vercel.
 - Log `[CNH] fontes` registra qual estratégia venceu cada campo
   (só nomes, sem dados pessoais) p/ diagnosticar próximas falhas.
 - Espelhado na Vercel via push em main.
+
+## CNH: validade ignora 4a lido como 4b (29/09)
+
+- Log real mostrou `validade: ocr1:4b` com a data de emissão: o OCR
+  leu o "4a" como "4b". Agora coleta TODAS as datas marcadas B,
+  descarta as grudadas em EMISSÃO e fica com a maior (validade >
+  emissão sempre); se só sobrar a de emissão, deixa vazio.
+- Ordem restaurada: 4b-coletado → rótulo VALIDADE → contexto.
+- Espelhado na Vercel via push em main.
