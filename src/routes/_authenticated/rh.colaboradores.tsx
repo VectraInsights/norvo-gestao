@@ -362,71 +362,65 @@ function ColaboradoresPage() {
     }
   }
 
-  // Segunda passada p/ o nº da CNH: lê o conteúdo da caixa Nº REGISTRO (sem cor).
-  // Recortes justos na faixa da caixa, ampliados 3x, só dígitos, PSM palavra/linha.
-  // Só aceita sequência limpa de 9-12 dígitos — nunca concatena fragmentos.
+  // Segunda passada p/ o nº da CNH: OCR com caixas de posição na faixa do documento,
+  // localiza a palavra REGISTRO e pega a sequência de 9-12 dígitos logo abaixo dela.
+  // Independe de coordenada chutada. Só aceita dígitos limpos.
   async function ocrDigitosRegistro(orig: HTMLCanvasElement): Promise<string> {
     const { createWorker } = await import("tesseract.js");
-    // Cinza sem threshold (preserva traços finos)
-    const cinza = document.createElement("canvas");
-    cinza.width = orig.width;
-    cinza.height = orig.height;
-    const gc = cinza.getContext("2d");
-    if (!gc) return "";
-    gc.drawImage(orig, 0, 0);
+    const c = document.createElement("canvas");
+    const x = 0;
+    const y = Math.floor(orig.height * 0.03);
+    const w = Math.floor(orig.width * 0.62);
+    const h = Math.floor(orig.height * 0.55);
+    c.width = w * 2;
+    c.height = h * 2;
+    const g = c.getContext("2d");
+    if (!g) return "";
+    g.drawImage(orig, x, y, w, h, 0, 0, c.width, c.height);
     try {
-      const img = gc.getImageData(0, 0, cinza.width, cinza.height);
+      const img = g.getImageData(0, 0, c.width, c.height);
       const d = img.data;
       for (let i = 0; i < d.length; i += 4) {
         const gr = Math.round(0.299 * d[i] + 0.587 * d[i + 1] + 0.114 * d[i + 2]);
         d[i] = d[i + 1] = d[i + 2] = gr;
       }
-      gc.putImageData(img, 0, 0);
+      g.putImageData(img, 0, 0);
     } catch {}
-    // Caixa Nº REGISTRO: à esquerda, embaixo da foto (nº vertical "22899..." fica
-    // mais à esquerda e é preto/rotacionado — fora destes recortes)
-    const caixas = [
-      { x: 0.14, y: 0.44, w: 0.18, h: 0.1 },
-      { x: 0.12, y: 0.42, w: 0.22, h: 0.13 },
-    ];
     const worker = await createWorker("por");
     try {
-      for (const r of caixas) {
-        const c = document.createElement("canvas");
-        const x = Math.floor(cinza.width * r.x);
-        const y = Math.floor(cinza.height * r.y);
-        const w = Math.floor(cinza.width * r.w);
-        const h = Math.floor(cinza.height * r.h);
-        if (w < 10 || h < 10) continue;
-        c.width = w * 3;
-        c.height = h * 3;
-        c.getContext("2d")?.drawImage(cinza, x, y, w, h, 0, 0, c.width, c.height);
-        for (const psm of [8, 7, 6]) {
-          await worker.setParameters({
-            tessedit_char_whitelist: "0123456789",
-            tessedit_pageseg_mode: psm as any,
-          });
-          const { data } = await worker.recognize(c);
-          const t = data?.text ?? "";
-          console.log(
-            "[CNH-OCR] caixa",
-            JSON.stringify(r),
-            "psm" + psm,
-            JSON.stringify(t.slice(0, 200)),
-          );
-          const runs = t.match(/\d(?:[\d ]*\d)?/g) ?? [];
-          for (const run of runs) {
-            const dig = run.replace(/\D/g, "");
-            if (/^\d{9,12}$/.test(dig)) {
-              const idx = t.indexOf(run);
-              const antes = t.slice(Math.max(0, idx - 3), idx);
-              const depois = t.slice(idx + run.length, idx + run.length + 3);
-              if (!antes.includes("/") && !depois.includes("/")) return dig;
-            }
-          }
-        }
+      await worker.setParameters({ tessedit_pageseg_mode: 6 as any });
+      const { data } = await worker.recognize(c);
+      const words = ((data as any)?.words ?? []) as Array<{
+        text: string;
+        bbox: { x0: number; y0: number; x1: number; y1: number };
+      }>;
+      const label = words.find((wd) => /REGISTRO/i.test(wd.text));
+      console.log(
+        "[CNH-OCR] palavras",
+        words
+          .map((wd) => wd.text)
+          .join(" ")
+          .slice(0, 300),
+      );
+      if (!label) {
+        console.log("[CNH-OCR] registro: rótulo REGISTRO não achado");
+        return "";
       }
-      return "";
+      const lcx = (label.bbox.x0 + label.bbox.x1) / 2;
+      const cands = words
+        .map((wd) => {
+          const dig = (wd.text || "").replace(/\D/g, "");
+          if (!/^\d{9,12}$/.test(dig)) return null;
+          const cx = (wd.bbox.x0 + wd.bbox.x1) / 2;
+          const dy = wd.bbox.y0 - label.bbox.y1;
+          const dx = Math.abs(cx - lcx);
+          if (dy < -10 || dy > 400 || dx > 400) return null;
+          return { dig, dy, dx };
+        })
+        .filter(Boolean) as Array<{ dig: string; dy: number; dx: number }>;
+      cands.sort((a, b) => a.dy - b.dy || a.dx - b.dx);
+      console.log("[CNH-OCR] candidatos", JSON.stringify(cands));
+      return cands[0]?.dig ?? "";
     } finally {
       await worker.terminate();
     }
