@@ -259,6 +259,7 @@ function ColaboradoresPage() {
   // "SOBRENOME", "NOME") — modelo digital novo traz "2 e 1 NOME E SOBRENOME
   // ROBERTO DE SOUZA" tudo grudado.
   const FILLER_INICIO = new Set(["E", "NOME", "SOBRENOME", "SOBRENOMES"]);
+  const CATS_VALIDAS = ["A", "B", "AB", "C", "D", "E", "AC", "AD", "AE"];
   const semAcento = (s: string) => s.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
   // Primeiras palavras que nunca são nome: rótulos da CNH e seus fragmentos
   // (a camada de texto/OCR às vezes gruda "HABILITAÇÃO" — ou um caco como
@@ -595,7 +596,7 @@ function ColaboradoresPage() {
         if (campos.cnh_categoria) fontes.cnh_categoria = "linha-cpf";
       }
     }
-    if (campos.cnh_categoria && !["A", "B", "AB", "C", "D", "E", "AC", "AD", "AE"].includes(campos.cnh_categoria))
+    if (campos.cnh_categoria && !(CATS_VALIDAS as readonly string[]).includes(campos.cnh_categoria))
       campos.cnh_categoria = "";
     // VALIDADE (4b = 27/12/2028; 4a = emissão = 29/12/2023, lado a lado).
     // Regra única, à prova da ordem embaralhada do OCR: excluídas as datas
@@ -794,6 +795,64 @@ function ColaboradoresPage() {
     }
   }
 
+  // Passada de letras na caixa CAT HAB (mesma linha do Nº REGISTRO, à direita):
+  // o "AE" pequeno e vermelho vira "E" nos recortes grandes — em escala alta
+  // com whitelist ABCDE ele se resolve. Só aceita categoria válida.
+  async function ocrCategoriaBox(pdf: any): Promise<string> {
+    const { createWorker } = await import("tesseract.js");
+    const page = await pdf.getPage(1);
+    const scale = 6;
+    const viewport = page.getViewport({ scale });
+    const full = document.createElement("canvas");
+    full.width = Math.floor(viewport.width);
+    full.height = Math.floor(viewport.height);
+    const fctx = full.getContext("2d");
+    if (!fctx) return "";
+    await page.render({ canvasContext: fctx, viewport }).promise;
+    const caixas = [
+      { x: 0.34, y: 0.23, w: 0.12, h: 0.08 },
+      { x: 0.32, y: 0.21, w: 0.16, h: 0.11 },
+    ];
+    const worker = await createWorker("por");
+    try {
+      for (const r of caixas) {
+        const c = document.createElement("canvas");
+        const x = Math.floor(full.width * r.x);
+        const y = Math.floor(full.height * r.y);
+        const w = Math.floor(full.width * r.w);
+        const h = Math.floor(full.height * r.h);
+        if (w < 10 || h < 10) continue;
+        c.width = w;
+        c.height = h;
+        const g = c.getContext("2d");
+        if (!g) continue;
+        g.drawImage(full, x, y, w, h, 0, 0, c.width, c.height);
+        try {
+          const img = g.getImageData(0, 0, c.width, c.height);
+          const d = img.data;
+          for (let i = 0; i < d.length; i += 4) {
+            const gr = Math.round(0.299 * d[i] + 0.587 * d[i + 1] + 0.114 * d[i + 2]);
+            d[i] = d[i + 1] = d[i + 2] = gr;
+          }
+          g.putImageData(img, 0, 0);
+        } catch {}
+        for (const psm of [8, 7, 6]) {
+          await worker.setParameters({
+            tessedit_char_whitelist: "ABCDE",
+            tessedit_pageseg_mode: psm as any,
+          });
+          const { data } = await worker.recognize(c);
+          const t = (data?.text ?? "").toUpperCase().replace(/[^A-E]/g, "");
+          console.log("[CNH-OCR] caixa-cat", JSON.stringify(r), "psm" + psm, JSON.stringify(t.slice(0, 20)));
+          if ((CATS_VALIDAS as readonly string[]).includes(t)) return t;
+        }
+      }
+      return "";
+    } finally {
+      await worker.terminate();
+    }
+  }
+
   // Lê o PDF da CNH e preenche nome/CPF/CNH — texto direto ou OCR da imagem.
   // Mesmo id em todos os toasts: o "IMPORTANDO DADOS" aparece uma única vez
   // e o resultado final o substitui (sem empilhar).
@@ -887,13 +946,22 @@ function ColaboradoresPage() {
         }
       }
       // Categoria: mais votada; empate = mais longa ("AE" vence "E" truncado).
-      total.cnh_categoria = maisVotado(
-        passes.map((p) => p.campos.cnh_categoria),
-        true,
-      );
+      // Se veio vazia ou com 1 letra, a passada da caixa decide/desempata
+      // (voto dobrado): o box em escala alta resolve o "AE" pequeno.
+      const votosCat = passes.map((p) => p.campos.cnh_categoria);
+      let catVoto = maisVotado(votosCat, true);
+      if (catVoto.length <= 1) {
+        const box = await ocrCategoriaBox(pdf);
+        if (box) {
+          votosCat.push(box, box);
+          catVoto = maisVotado(votosCat, true);
+          console.info("[CNH] caixa-cat:", box);
+        }
+      }
+      total.cnh_categoria = catVoto;
       if (total.cnh_categoria) {
         const p = passes.find((x) => x.campos.cnh_categoria === total.cnh_categoria);
-        fontesTotal.cnh_categoria = `${p?.tag ?? "?"}:voto`;
+        fontesTotal.cnh_categoria = p ? `${p.tag}:voto` : "caixa";
       }
       // Validade: MAIOR entre passadas (ISO ordena cronológico).
       {

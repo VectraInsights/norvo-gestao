@@ -3585,6 +3585,15 @@ Espelhado na Vercel.
 - Nome rótulo×MRZ: completa truncamento, MRZ vence filiação.
 - Espelhado na Vercel via push em main.
 
+## CNH: passada da caixa CAT HAB p/ categoria (29/09)
+
+- "AE" pequeno e vermelho virava "E" nos recortes grandes de forma
+  sistemática (voto não salva erro repetido). Nova passada em escala
+  6x só na caixa, com whitelist ABCDE: roda quando o voto veio vazio
+  ou com 1 letra, valendo 2 votos (empate com o truncado resolve no
+  mais longo). Log `[CNH] caixa-cat`.
+- Espelhado na Vercel via push em main.
+
 ## CNH: CPF com DV + categoria por voto + nome MRZ reconciliado (29/09)
 
 - CPF 296→206 (troca do OCR): agora só preenche CPF com dígito
