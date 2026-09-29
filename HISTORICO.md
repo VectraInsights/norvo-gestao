@@ -3447,3 +3447,8 @@ Espelhado na Vercel.
 ## Colaborador largura cheia e compacto (29/09)
 
 - Janela sem max-w-6xl (usa a tela toda), espacamentos reduzidos e inputs/botoes h-8: tudo visivel sem rolagem no desktop.
+
+## Colaborador: importar no topo + CNH em linha unica (29/09)
+
+- Botao Importar PDF da CNH no topo da janela (ao lado do titulo); removido da secao CNH.
+- CNH + toxicos em linha unica de 5 colunas.

@@ -1033,11 +1033,25 @@ function ColaboradoresPage() {
               </DialogTrigger>
               <DialogContent className="flex flex-col">
                 <DialogHeader className="shrink-0">
-                  <DialogTitle>
-                    <span className="border-l-4 border-pink-500 pl-3">
-                      {editing ? "Editar colaborador" : "Novo colaborador"}
-                    </span>
-                  </DialogTitle>
+                  <div className="flex items-center justify-between gap-2 pr-8">
+                    <DialogTitle>
+                      <span className="border-l-4 border-pink-500 pl-3">
+                        {editing ? "Editar colaborador" : "Novo colaborador"}
+                      </span>
+                    </DialogTitle>
+                    <label className="flex h-8 cursor-pointer items-center gap-1.5 rounded-md border bg-background px-2 py-1 text-xs font-medium hover:bg-muted">
+                      <FileUp className="h-3.5 w-3.5" /> Importar PDF da CNH
+                      <input
+                        type="file"
+                        accept=".pdf,application/pdf"
+                        className="hidden"
+                        onChange={(e) => {
+                          if (e.target.files?.[0]) importarCnhPdf(e.target.files[0]);
+                          e.currentTarget.value = "";
+                        }}
+                      />
+                    </label>
+                  </div>
                 </DialogHeader>
                 <div className="flex-1 min-h-0 overflow-y-auto p-1">
                   <div className="border rounded bg-background overflow-hidden [&_input]:h-8 [&_button]:h-8">
@@ -1252,25 +1266,11 @@ function ColaboradoresPage() {
                         </div>
                       </div>
                     </div>
-                    <div className="bg-primary/8 border-y border-primary/20 px-2 py-1 flex items-center justify-between gap-2">
-                      <div className="text-[10px] font-semibold uppercase tracking-wide text-primary/80">
-                        CNH
-                      </div>
-                      <label className="flex cursor-pointer items-center gap-1.5 rounded-md border bg-background px-2 py-1 text-[11px] font-medium hover:bg-muted">
-                        <FileUp className="h-3.5 w-3.5" /> Importar PDF da CNH
-                        <input
-                          type="file"
-                          accept=".pdf,application/pdf"
-                          className="hidden"
-                          onChange={(e) => {
-                            if (e.target.files?.[0]) importarCnhPdf(e.target.files[0]);
-                            e.currentTarget.value = "";
-                          }}
-                        />
-                      </label>
+                    <div className="bg-primary/8 text-primary/80 border-y border-primary/20 px-2 py-1 text-[10px] font-semibold uppercase tracking-wide">
+                      CNH
                     </div>
                     <div className="p-2 space-y-2">
-                      <div className="grid grid-cols-2 gap-3 md:grid-cols-3">
+                      <div className="grid grid-cols-2 gap-3 md:grid-cols-5">
                         <div className="space-y-1">
                           <Label>
                             Nº da CNH {form.cargo.toLowerCase().includes("motorist") ? "*" : ""}
@@ -1307,9 +1307,7 @@ function ColaboradoresPage() {
                             onChange={(v) => set("cnh_validade", v)}
                           />
                         </div>
-                      </div>
-                      <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
-                        <div>
+                        <div className="space-y-1">
                           <Label>
                             Último exame toxicológico{" "}
                             {form.cargo.toLowerCase().includes("motorist") ? "*" : ""}
@@ -1326,7 +1324,7 @@ function ColaboradoresPage() {
                             }
                           />
                         </div>
-                        <div>
+                        <div className="space-y-1">
                           <Label>Validade do toxicológico</Label>
                           <Input
                             value={form.toxico_validade ? dateBR(form.toxico_validade) : ""}
