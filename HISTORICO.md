@@ -3261,3 +3261,12 @@ Espelhado na Vercel.
   na viewport, posicao persistida em localStorage);
   clique sem arrastar abre o chat. Painel move pela
   barra de titulo e respeita `max-w: 100vw-24px`.
+
+## Cabecalho compacto global (28/09)
+
+- Mesmo padrao do CT-e aplicado nas 46 telas via
+  componentes compartilhados (sem editar pagina a pagina):
+  `PageHeader` renderiza so titulo + linha colorida do
+  modulo (eyebrow/descricao ignorados, `mb-7` -> `mb-4`,
+  sem `border-b`); `Breadcrumbs` retorna null em todas
+  as rotas. Acoes do header (botoes a direita) mantidas.
