@@ -3374,3 +3374,8 @@ Espelhado na Vercel.
 
 - Dialog Novo/Editar colaborador em tela cheia (base ja era fullscreen; removido max-w-xl) com 2 colunas no desktop: dados pessoais a esquerda, CNH/banco/obs a direita.
 - Botao Importar PDF da CNH no bloco CNH (pdfjs-dist, que ja estava instalado): extrai texto e preenche nome/CPF (so se vazios) + numero/categoria/validade da CNH, com toast do que foi achado; avisa se PDF for digitalizado sem texto.
+
+## CNH digital: OCR da imagem (29/09)
+
+- O PDF da CNH digital exporta o documento como imagem (sem texto) e o QR e criptografado (VIO/Serpro, so API paga decodifica). Leitura agora via OCR: renderiza a pagina (pdfjs), recorta a regiao do documento e le com tesseract.js em portugues (lazy load).
+- Mesmos campos: nome/CPF (so se vazios) + numero/categoria/validade.

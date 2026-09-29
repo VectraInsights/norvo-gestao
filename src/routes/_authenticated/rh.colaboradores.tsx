@@ -174,7 +174,89 @@ function ColaboradoresPage() {
   const set = <K extends keyof typeof form>(k: K, v: (typeof form)[K]) =>
     setForm((f) => ({ ...f, [k]: v }));
 
-  // Lê o PDF da CNH (texto) e preenche nome/CPF/CNH — só preenche vazio em nome/CPF
+  // Extrai nome/CPF/CNH de um texto (camada de texto do PDF ou OCR) — retorna o que achou
+  function extrairCamposCnh(texto: string): string[] {
+    const T = texto.replace(/\s+/g, " ");
+    const achados: string[] = [];
+    const cpf = T.match(/(\d{3}\.\d{3}\.\d{3}-\d{2})/)?.[1] ?? "";
+    if (cpf && !form.cpf) {
+      set("cpf", cpf);
+      achados.push("CPF");
+    }
+    const nome =
+      T.match(/NOME\s+([A-ZÀ-ÚÃÕÇÉÍÓÚÂÊÔ ]{6,60}?)(?=\s+(?:DOC|CPF|RG|CNH|DATA|CATEG|VALID|HABIL|FILIAC|NACIONALIDADE|NATURALIDADE|ASS|LOCAL|OBS))/)
+        ?.[1]?.trim() ?? "";
+    if (nome && !form.nome.trim()) {
+      set("nome", nome);
+      achados.push("nome");
+    }
+    const reg =
+      T.match(/(?:N[ºo]\s*\.?\s*(?:REGISTRO|RENACH)|RENACH|REGISTRO)\s*(\d{9,12})/i)?.[1] ?? "";
+    if (reg) {
+      set("cnh_numero", reg);
+      achados.push("nº CNH");
+    }
+    const cat =
+      T.match(/CATEGORIA(?:\s+HAB\.?)?\s*([A-E]{1,2})\b/i)?.[1]?.toUpperCase() ??
+      T.match(/\bCAT\.?\s*HAB\.?\s*([A-E]{1,2})\b/i)?.[1]?.toUpperCase() ??
+      "";
+    if (cat && ["A", "B", "AB", "C", "D", "E", "AC", "AD", "AE"].includes(cat)) {
+      set("cnh_categoria", cat);
+      achados.push("categoria " + cat);
+    }
+    const val = T.match(/VALIDADE\s*(\d{2})\/(\d{2})\/(\d{4})/)?.slice(1) ?? [];
+    if (val.length === 3) {
+      set("cnh_validade", `${val[2]}-${val[1]}-${val[0]}`);
+      achados.push("validade");
+    }
+    return achados;
+  }
+
+  // OCR da imagem da CNH (a CNH digital exporta o documento como imagem): renderiza a
+  // página, recorta a região do documento e lê com tesseract (português)
+  async function ocrCnh(pdf: any): Promise<string> {
+    const { createWorker } = await import("tesseract.js");
+    const page = await pdf.getPage(1);
+    const scale = 3;
+    const viewport = page.getViewport({ scale });
+    const canvas = document.createElement("canvas");
+    canvas.width = Math.floor(viewport.width);
+    canvas.height = Math.floor(viewport.height);
+    const ctx = canvas.getContext("2d");
+    if (!ctx) throw new Error("Canvas indisponível");
+    await page.render({ canvasContext: ctx, viewport }).promise;
+    // Recorte da região do documento (esquerda/topo); fallback: página inteira
+    const recortes = [
+      { x: 0, y: 0.05, w: 0.62, h: 0.5 },
+      { x: 0, y: 0, w: 1, h: 1 },
+    ];
+    const worker = await createWorker("por");
+    try {
+      for (const r of recortes) {
+        const c = document.createElement("canvas");
+        c.width = Math.floor(canvas.width * r.w);
+        c.height = Math.floor(canvas.height * r.h);
+        c.getContext("2d")?.drawImage(
+          canvas,
+          Math.floor(canvas.width * r.x),
+          Math.floor(canvas.height * r.y),
+          c.width,
+          c.height,
+          0,
+          0,
+          c.width,
+          c.height,
+        );
+        const { data } = await worker.recognize(c);
+        if ((data?.text ?? "").replace(/\s/g, "").length > 30) return data.text;
+      }
+      return "";
+    } finally {
+      await worker.terminate();
+    }
+  }
+
+  // Lê o PDF da CNH e preenche nome/CPF/CNH — texto direto ou OCR da imagem
   async function importarCnhPdf(file: File) {
     try {
       toast.info("Lendo PDF da CNH…");
@@ -188,42 +270,11 @@ function ColaboradoresPage() {
           (tc.items as any[]).map((it) => (typeof it?.str === "string" ? it.str : "")).join(" ") +
           "\n";
       }
-      if (texto.replace(/\s/g, "").length < 50) {
-        toast.error("PDF sem texto legível (digitalizado?). Preencha manualmente.");
-        return;
-      }
-      const T = texto.replace(/\s+/g, " ");
-      const achados: string[] = [];
-      const cpf = T.match(/(\d{3}\.\d{3}\.\d{3}-\d{2})/)?.[1] ?? "";
-      if (cpf && !form.cpf) {
-        set("cpf", cpf);
-        achados.push("CPF");
-      }
-      const nome =
-        T.match(/NOME\s+([A-ZÀ-ÚÃÕÇÉÍÓÚÂÊÔ ]{6,60}?)(?=\s+(?:DOC|CPF|RG|CNH|DATA|CATEG|VALID|HABIL|FILIAC|NACIONALIDADE|NATURALIDADE|ASS|LOCAL|OBS))/)
-          ?.[1]?.trim() ?? "";
-      if (nome && !form.nome.trim()) {
-        set("nome", nome);
-        achados.push("nome");
-      }
-      const reg =
-        T.match(/(?:N[ºo]\s*\.?\s*(?:REGISTRO|RENACH)|RENACH|REGISTRO)\s*(\d{9,12})/i)?.[1] ?? "";
-      if (reg) {
-        set("cnh_numero", reg);
-        achados.push("nº CNH");
-      }
-      const cat =
-        T.match(/CATEGORIA(?:\s+HAB\.?)?\s*([A-E]{1,2})\b/i)?.[1]?.toUpperCase() ??
-        T.match(/\bCAT\.?\s*HAB\.?\s*([A-E]{1,2})\b/i)?.[1]?.toUpperCase() ??
-        "";
-      if (cat && ["A", "B", "AB", "C", "D", "E", "AC", "AD", "AE"].includes(cat)) {
-        set("cnh_categoria", cat);
-        achados.push("categoria " + cat);
-      }
-      const val = T.match(/VALIDADE\s*(\d{2})\/(\d{2})\/(\d{4})/)?.slice(1) ?? [];
-      if (val.length === 3) {
-        set("cnh_validade", `${val[2]}-${val[1]}-${val[0]}`);
-        achados.push("validade");
+      let achados = texto.replace(/\s/g, "").length >= 50 ? extrairCamposCnh(texto) : [];
+      if (achados.length === 0) {
+        toast.info("Lendo imagem do documento (OCR)… pode levar alguns segundos");
+        const ocr = await ocrCnh(pdf);
+        if (ocr) achados = extrairCamposCnh(ocr);
       }
       if (achados.length === 0) toast.warning("Nada reconhecido no PDF. Preencha manualmente.");
       else toast.success(`CNH lida: ${achados.join(", ")}`);
