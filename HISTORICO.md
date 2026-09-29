@@ -3458,3 +3458,7 @@ Espelhado na Vercel.
 - Banco via PAT: enum +suspenso; codigo integer sequencial por created_at (1-3 nos existentes), sequence+default+not null+unique. Migration 20260929150000 registrada.
 - Form: box ID readonly antes do cargo (Auto p/ novo); status Suspenso (pildora ambar); linha 1 em 12 cols (nome 4, cpf/nasc/tel/email 2); linha 2 ID1+cargo3+status/adm/dem/sal 2.
 - Cargos no dropdown: slice 12 -> 50 (query ja trazia todos; o resto aparecia so ao digitar).
+
+## CNH nascimento colado no CPF + status A-Z (29/09)
+
+- Nascimento vinha depois do CPF com digitos no meio (fora do alcance do padrao): agora extrai o par CPF+data juntos. Status em ordem alfabetica no dropdown.

@@ -100,11 +100,11 @@ type Colab = {
 };
 
 const STATUS: Record<string, string> = {
-  ativo: "Ativo",
-  ferias: "Férias",
   afastado: "Afastado",
-  suspenso: "Suspenso",
+  ativo: "Ativo",
   demitido: "Demitido",
+  ferias: "Férias",
+  suspenso: "Suspenso",
 };
 
 const soDigitos = (s: string) => s.replace(/\D/g, "");
@@ -272,10 +272,16 @@ function ColaboradoresPage() {
       .map((l) => l.trim())
       .filter(Boolean);
     const achados: string[] = [];
-    const cpf = T.match(/(\d{3}\.\d{3}\.\d{3}-\d{2})/)?.[1] ?? "";
+    // CPF + nascimento lado a lado (layout da CNH: "136.983.846-80 18/07/1993")
+    const par = T.match(/(\d{3}\.\d{3}\.\d{3}-\d{2})\s+(\d{2})\/(\d{2})\/(\d{4})/);
+    const cpf = par?.[1] ?? T.match(/(\d{3}\.\d{3}\.\d{3}-\d{2})/)?.[1] ?? "";
     if (cpf) {
       set("cpf", cpf);
       achados.push("CPF");
+    }
+    if (par) {
+      set("data_nascimento", `${par[4]}-${par[3]}-${par[2]}`);
+      achados.push("nascimento");
     }
     // Valor N caracteres APÓS um rótulo (p/ OCR com ordem embaralhada)
     const apos = (rotulo: RegExp, captura: RegExp, janela = 120) => {
