@@ -368,19 +368,6 @@ function ColaboradoresPage() {
   // dígitos — nunca concatena fragmentos.
   async function ocrDigitosRegistro(orig: HTMLCanvasElement): Promise<string> {
     const { createWorker } = await import("tesseract.js");
-    const checar = (t: string) => {
-      const runs = t.match(/\d(?:[\d ]*\d)?/g) ?? [];
-      for (const r of runs) {
-        const dig = r.replace(/\D/g, "");
-        if (/^\d{9,12}$/.test(dig)) {
-          const idx = t.indexOf(r);
-          const antes = t.slice(Math.max(0, idx - 3), idx);
-          const depois = t.slice(idx + r.length, idx + r.length + 3);
-          if (!antes.includes("/") && !depois.includes("/")) return dig;
-        }
-      }
-      return "";
-    };
     // Cinza sem threshold (preserva traços vermelhos finos)
     const cinza = document.createElement("canvas");
     cinza.width = orig.width;
@@ -398,12 +385,12 @@ function ColaboradoresPage() {
       gc.putImageData(img, 0, 0);
     } catch {}
     const crops = [
-      { x: 0.25, y: 0.42, w: 0.2, h: 0.1 }, // Nº REGISTRO (faixa do meio do documento)
-      { x: 0.2, y: 0.4, w: 0.25, h: 0.14 },
+      { x: 0.26, y: 0.37, w: 0.17, h: 0.09 }, // caixa Nº REGISTRO (entre foto e validades)
+      { x: 0.24, y: 0.36, w: 0.21, h: 0.12 },
     ];
+    const psms = ["8", "7"]; // 8 = palavra única, 7 = linha única
     const worker = await createWorker("por");
     try {
-      await worker.setParameters({ tessedit_char_whitelist: "0123456789" });
       for (const r of crops) {
         const c = document.createElement("canvas");
         const x = Math.floor(cinza.width * r.x);
@@ -413,11 +400,18 @@ function ColaboradoresPage() {
         c.width = w * 3;
         c.height = h * 3;
         c.getContext("2d")?.drawImage(cinza, x, y, w, h, 0, 0, c.width, c.height);
-        const { data } = await worker.recognize(c);
-        const t = data?.text ?? "";
-        console.log("[CNH-OCR] registro", JSON.stringify(r), JSON.stringify(t.slice(0, 200)));
-        const dig = checar(t);
-        if (dig) return dig;
+        for (const psm of psms) {
+          await worker.setParameters({
+            tessedit_char_whitelist: "0123456789",
+            tessedit_pageseg_mode: Number(psm) as any,
+          });
+          const { data } = await worker.recognize(c);
+          const t = data?.text ?? "";
+          console.log("[CNH-OCR] registro", JSON.stringify(r), "psm" + psm, JSON.stringify(t.slice(0, 200)));
+          const dig = t.replace(/\D/g, "");
+          // Palavra/linha única: só vale se quase tudo são os 9-12 dígitos
+          if (/^\d{9,12}$/.test(dig)) return dig;
+        }
       }
       return "";
     } finally {

@@ -3410,3 +3410,7 @@ Espelhado na Vercel.
 
 - Print mostrou o Nº REGISTRO no meio do documento (y~0.42-0.52): recortes ajustados p/ essa faixa.
 - Importar agora sempre preenche nome/CPF lidos (antes, valor sujo de teste anterior bloqueava o novo).
+
+## CNH OCR: recorte entre foto e validades + PSM palavra/linha (29/09)
+
+- Logs mostraram que o recorte pegava os codigos de validacao (baixo) e antes a data de validade: numero fica entre os dois (faixa y~0.37-0.48). Recortes ajustados + PSM 8/7 (palavra/linha unica) com aceite estrito 9-12 digitos.
