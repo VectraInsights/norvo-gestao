@@ -362,65 +362,75 @@ function ColaboradoresPage() {
     }
   }
 
-  // Segunda passada p/ o nº da CNH: OCR com caixas de posição na faixa do documento,
-  // localiza a palavra REGISTRO e pega a sequência de 9-12 dígitos logo abaixo dela.
-  // Independe de coordenada chutada. Só aceita dígitos limpos.
-  async function ocrDigitosRegistro(orig: HTMLCanvasElement): Promise<string> {
+  // Segunda passada p/ o nº da CNH: renderiza a página em escala alta e lê a caixa
+  // Nº REGISTRO (canto esquerdo do cartão, abaixo da foto). Só aceita sequência
+  // limpa de 9-12 dígitos — nunca concatena fragmentos.
+  async function ocrDigitosRegistro(pdf: any): Promise<string> {
     const { createWorker } = await import("tesseract.js");
-    const c = document.createElement("canvas");
-    const x = 0;
-    const y = Math.floor(orig.height * 0.03);
-    const w = Math.floor(orig.width * 0.62);
-    const h = Math.floor(orig.height * 0.55);
-    c.width = w * 2;
-    c.height = h * 2;
-    const g = c.getContext("2d");
-    if (!g) return "";
-    g.drawImage(orig, x, y, w, h, 0, 0, c.width, c.height);
-    try {
-      const img = g.getImageData(0, 0, c.width, c.height);
-      const d = img.data;
-      for (let i = 0; i < d.length; i += 4) {
-        const gr = Math.round(0.299 * d[i] + 0.587 * d[i + 1] + 0.114 * d[i + 2]);
-        d[i] = d[i + 1] = d[i + 2] = gr;
-      }
-      g.putImageData(img, 0, 0);
-    } catch {}
+    const page = await pdf.getPage(1);
+    const scale = 6;
+    const viewport = page.getViewport({ scale });
+    const full = document.createElement("canvas");
+    full.width = Math.floor(viewport.width);
+    full.height = Math.floor(viewport.height);
+    const fctx = full.getContext("2d");
+    if (!fctx) return "";
+    await page.render({ canvasContext: fctx, viewport }).promise;
+    // Caixa Nº REGISTRO: terço superior esquerdo do cartão, abaixo da foto
+    // (nº vertical da esquerda é preto/rotacionado — fora destes recortes)
+    const caixas = [
+      { x: 0.12, y: 0.23, w: 0.2, h: 0.08 },
+      { x: 0.1, y: 0.21, w: 0.24, h: 0.11 },
+    ];
     const worker = await createWorker("por");
     try {
-      await worker.setParameters({ tessedit_pageseg_mode: 6 as any });
-      const { data } = await worker.recognize(c);
-      const words = ((data as any)?.words ?? []) as Array<{
-        text: string;
-        bbox: { x0: number; y0: number; x1: number; y1: number };
-      }>;
-      const label = words.find((wd) => /REGISTRO/i.test(wd.text));
-      console.log(
-        "[CNH-OCR] palavras",
-        words
-          .map((wd) => wd.text)
-          .join(" ")
-          .slice(0, 300),
-      );
-      if (!label) {
-        console.log("[CNH-OCR] registro: rótulo REGISTRO não achado");
-        return "";
+      for (const r of caixas) {
+        const c = document.createElement("canvas");
+        const x = Math.floor(full.width * r.x);
+        const y = Math.floor(full.height * r.y);
+        const w = Math.floor(full.width * r.w);
+        const h = Math.floor(full.height * r.h);
+        if (w < 10 || h < 10) continue;
+        c.width = w;
+        c.height = h;
+        const g = c.getContext("2d");
+        if (!g) continue;
+        g.drawImage(full, x, y, w, h, 0, 0, c.width, c.height);
+        try {
+          const img = g.getImageData(0, 0, c.width, c.height);
+          const d = img.data;
+          for (let i = 0; i < d.length; i += 4) {
+            const gr = Math.round(0.299 * d[i] + 0.587 * d[i + 1] + 0.114 * d[i + 2]);
+            d[i] = d[i + 1] = d[i + 2] = gr;
+          }
+          g.putImageData(img, 0, 0);
+        } catch {}
+        for (const psm of [8, 7, 6]) {
+          await worker.setParameters({
+            tessedit_char_whitelist: "0123456789",
+            tessedit_pageseg_mode: psm as any,
+          });
+          const { data } = await worker.recognize(c);
+          const t = data?.text ?? "";
+          console.log(
+            "[CNH-OCR] caixa",
+            JSON.stringify(r),
+            "psm" + psm,
+            JSON.stringify(t.slice(0, 200)),
+          );
+          const runs = t.match(/\d(?:[\d ]*\d)?/g) ?? [];
+          for (const run of runs) {
+            const dig = run.replace(/\D/g, "");
+            if (/^\d{9,12}$/.test(dig)) {
+              const idx = t.indexOf(run);
+              const antes = t.slice(Math.max(0, idx - 3), idx);
+              const depois = t.slice(idx + run.length, idx + run.length + 3);
+              if (!antes.includes("/") && !depois.includes("/")) return dig;
+            }
+          }
+        }
       }
-      const lcx = (label.bbox.x0 + label.bbox.x1) / 2;
-      const cands = words
-        .map((wd) => {
-          const dig = (wd.text || "").replace(/\D/g, "");
-          if (!/^\d{9,12}$/.test(dig)) return null;
-          const cx = (wd.bbox.x0 + wd.bbox.x1) / 2;
-          const dy = wd.bbox.y0 - label.bbox.y1;
-          const dx = Math.abs(cx - lcx);
-          if (dy < -10 || dy > 400 || dx > 400) return null;
-          return { dig, dy, dx };
-        })
-        .filter(Boolean) as Array<{ dig: string; dy: number; dx: number }>;
-      cands.sort((a, b) => a.dy - b.dy || a.dx - b.dx);
-      console.log("[CNH-OCR] candidatos", JSON.stringify(cands));
-      return cands[0]?.dig ?? "";
+      return "";
     } finally {
       await worker.terminate();
     }
@@ -441,15 +451,13 @@ function ColaboradoresPage() {
           "\n";
       }
       let achados = texto.replace(/\s/g, "").length >= 50 ? extrairCamposCnh(texto) : [];
-      let origOcr: HTMLCanvasElement | null = null;
       if (achados.length === 0) {
         toast.info("Lendo imagem do documento (OCR)… pode levar alguns segundos");
         const ocr = await ocrCnh(pdf);
-        origOcr = ocr.orig;
         if (ocr.texto) achados = extrairCamposCnh(ocr.texto);
       }
-      if (!achados.includes("nº CNH") && origOcr) {
-        const reg = await ocrDigitosRegistro(origOcr);
+      if (!achados.includes("nº CNH")) {
+        const reg = await ocrDigitosRegistro(pdf);
         if (reg) {
           set("cnh_numero", reg);
           achados.push("nº CNH");
