@@ -419,6 +419,21 @@ function ColaboradoresPage() {
             JSON.stringify(t.slice(0, 200)),
           );
           const runs = t.match(/\d(?:[\d ]*\d)?/g) ?? [];
+          // Tokens separados (nº e data lado a lado NÃO podem se juntar)
+          const semDatas = t.replace(/\d{2}\/\d{2}\/\d{4}/g, " ");
+          const toks = semDatas.split(/\s+/);
+          for (const tk of toks) {
+            const dig = tk.replace(/\D/g, "");
+            if (/^\d{9,12}$/.test(dig)) return dig;
+          }
+          // Nº quebrado em 2 pedaços pelo OCR: junta vizinhos (sem / entre eles)
+          const onlyDig = toks
+            .map((tk) => tk.replace(/\D/g, ""))
+            .filter((d) => /^\d+$/.test(d));
+          for (let i = 0; i < onlyDig.length - 1; i++) {
+            const m = onlyDig[i] + onlyDig[i + 1];
+            if (/^\d{9,12}$/.test(m)) return m;
+          }
           for (const run of runs) {
             const dig = run.replace(/\D/g, "");
             if (/^\d{9,12}$/.test(dig)) {
