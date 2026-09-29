@@ -3439,3 +3439,7 @@ Espelhado na Vercel.
 - Telefone com mascara ao digitar (00) 00000-0000, varios separados por ; .
 - Data de nascimento apos o CPF (OCR da CNH preenche). Endereco: rua,numero,complemento,bairro,cidade (autocomplete IBGE com todas as cidades + filtro UF),UF,CEP (ViaCEP preenche sozinho).
 - ATENCAO: exige migration 20260929140000_colaboradores_nascimento_endereco.sql no Supabase (Dashboard > SQL Editor). Sem ela, o app salva normalmente menos nascimento/endereco (com aviso). Arquivo em supabase/migrations.
+
+## Migration colaboradores aplicada via API (29/09)
+
+- 20260929140000 aplicada com PAT via Management API/database/query (STATUS 201) e 8 colunas conferidas no information_schema (data_nascimento date + 7 text). App ja usa as colunas; fallback sem-migracao mantido por seguranca.
