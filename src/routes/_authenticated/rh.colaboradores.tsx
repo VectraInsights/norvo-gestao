@@ -69,6 +69,7 @@ export const Route = createFileRoute("/_authenticated/rh/colaboradores")({
 
 type Colab = {
   id: string;
+  codigo: number;
   nome: string;
   cpf: string | null;
   cargo: string | null;
@@ -102,6 +103,7 @@ const STATUS: Record<string, string> = {
   ativo: "Ativo",
   ferias: "Férias",
   afastado: "Afastado",
+  suspenso: "Suspenso",
   demitido: "Demitido",
 };
 
@@ -572,7 +574,7 @@ function ColaboradoresPage() {
         const { data, error } = await supabase
           .from("colaboradores" as never)
           .select(
-            "id,nome,cpf,cargo,email,telefone,salario_base,data_admissao,data_demissao,status,pix,banco,agencia,conta,observacoes,cnh_numero,cnh_categoria,cnh_validade,toxico_exame,optante_vt" +
+            "id,codigo,nome,cpf,cargo,email,telefone,salario_base,data_admissao,data_demissao,status,pix,banco,agencia,conta,observacoes,cnh_numero,cnh_categoria,cnh_validade,toxico_exame,optante_vt" +
               (comNovas ? ",data_nascimento,logradouro,numero,complemento,bairro,cidade,uf,cep" : ""),
           )
           .eq("empresa_id", empresa!.id)
@@ -624,7 +626,7 @@ function ColaboradoresPage() {
         nomes.push(c.nome);
       }
     }
-    return nomes.slice(0, 12);
+    return nomes.slice(0, 50);
   }, [cargos, form.cargo]);
 
   const [cargosOpen, setCargosOpen] = useState(false);
@@ -1056,12 +1058,12 @@ function ColaboradoresPage() {
                 <div className="flex-1 min-h-0 overflow-y-auto p-1">
                   <div className="border rounded bg-background overflow-hidden [&_input]:h-8 [&_button]:h-8">
                     <div className="p-2 space-y-2">
-                      <div className="grid grid-cols-2 gap-3 md:grid-cols-5">
-                        <div className="space-y-1">
+                      <div className="grid grid-cols-2 gap-3 md:grid-cols-12">
+                        <div className="space-y-1 md:col-span-4">
                           <Label>Nome *</Label>
                           <Input value={form.nome} onChange={(e) => set("nome", e.target.value)} />
                         </div>
-                        <div className="space-y-1">
+                        <div className="space-y-1 md:col-span-2">
                           <Label>CPF *</Label>
                           <Input
                             placeholder="000.000.000-00"
@@ -1069,14 +1071,14 @@ function ColaboradoresPage() {
                             onChange={(e) => set("cpf", e.target.value)}
                           />
                         </div>
-                        <div className="space-y-1">
+                        <div className="space-y-1 md:col-span-2">
                           <Label>Data de nascimento</Label>
                           <DateInput
                             value={form.data_nascimento}
                             onChange={(v) => set("data_nascimento", v)}
                           />
                         </div>
-                        <div className="space-y-1">
+                        <div className="space-y-1 md:col-span-2">
                           <Label>Telefone(s) *</Label>
                           <Input
                             placeholder="(00) 00000-0000; (00) 00000-0000"
@@ -1084,7 +1086,7 @@ function ColaboradoresPage() {
                             onChange={(e) => set("telefone", mascaraTelefones(e.target.value))}
                           />
                         </div>
-                        <div className="space-y-1">
+                        <div className="space-y-1 md:col-span-2">
                           <Label>E-mail</Label>
                           <Input
                             type="email"
@@ -1196,8 +1198,12 @@ function ColaboradoresPage() {
                           />
                         </div>
                       </div>
-                      <div className="grid grid-cols-2 gap-3 md:grid-cols-5">
-                        <div className="space-y-1">
+                      <div className="grid grid-cols-2 gap-3 md:grid-cols-12">
+                        <div className="space-y-1 md:col-span-1">
+                          <Label>ID</Label>
+                          <Input value={editing ? String(editing.codigo ?? "") : "Auto"} readOnly title="Código do funcionário por ordem de cadastro" />
+                        </div>
+                        <div className="space-y-1 md:col-span-3">
                           <Label>Cargo *</Label>
                           <div className="relative">
                             <Input
@@ -1228,7 +1234,7 @@ function ColaboradoresPage() {
                             )}
                           </div>
                         </div>
-                        <div className="space-y-1">
+                        <div className="space-y-1 md:col-span-2">
                           <Label>Status</Label>
                           <Select value={form.status} onValueChange={(v) => set("status", v)}>
                             <SelectTrigger>
@@ -1243,21 +1249,21 @@ function ColaboradoresPage() {
                             </SelectContent>
                           </Select>
                         </div>
-                        <div className="space-y-1">
+                        <div className="space-y-1 md:col-span-2">
                           <Label>Data de admissão *</Label>
                           <DateInput
                             value={form.data_admissao}
                             onChange={(v) => set("data_admissao", v)}
                           />
                         </div>
-                        <div className="space-y-1">
+                        <div className="space-y-1 md:col-span-2">
                           <Label>Data de demissão</Label>
                           <DateInput
                             value={form.data_demissao}
                             onChange={(v) => set("data_demissao", v)}
                           />
                         </div>
-                        <div className="space-y-1">
+                        <div className="space-y-1 md:col-span-2">
                           <Label>Salário base</Label>
                           <MoneyInput
                             value={form.salario_base}
@@ -1455,7 +1461,9 @@ function ColaboradoresPage() {
                           "inline-block rounded-full px-2 py-0.5 text-[11px] font-medium " +
                           (c.status === "ativo"
                             ? "bg-primary/15 text-primary"
-                            : "bg-muted text-muted-foreground")
+                            : c.status === "suspenso"
+                              ? "bg-amber-500/15 text-amber-700"
+                              : "bg-muted text-muted-foreground")
                         }
                       >
                         {STATUS[c.status] ?? c.status}

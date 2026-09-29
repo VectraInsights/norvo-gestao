@@ -343,20 +343,28 @@ export type Database = {
       colaboradores: {
         Row: {
           agencia: string | null;
+          bairro: string | null;
           banco: string | null;
           cargo: string | null;
+          cep: string | null;
+          cidade: string | null;
           cnh_categoria: string | null;
           cnh_numero: string | null;
           cnh_validade: string | null;
+          codigo: number;
+          complemento: string | null;
           conta: string | null;
           cpf: string | null;
           created_at: string;
           data_admissao: string | null;
           data_demissao: string | null;
+          data_nascimento: string | null;
           email: string | null;
           empresa_id: string;
           id: string;
+          logradouro: string | null;
           nome: string;
+          numero: string | null;
           observacoes: string | null;
           optante_vt: boolean;
           pix: string | null;
@@ -364,49 +372,32 @@ export type Database = {
           status: Database["public"]["Enums"]["colaborador_status"];
           telefone: string | null;
           toxico_exame: string | null;
+          uf: string | null;
           updated_at: string;
         };
         Insert: {
           agencia?: string | null;
+          bairro?: string | null;
           banco?: string | null;
           cargo?: string | null;
+          cep?: string | null;
+          cidade?: string | null;
           cnh_categoria?: string | null;
           cnh_numero?: string | null;
           cnh_validade?: string | null;
+          complemento?: string | null;
           conta?: string | null;
           cpf?: string | null;
           created_at?: string;
           data_admissao?: string | null;
           data_demissao?: string | null;
-          email?: string | null;
-          empresa_id: string;
-          id?: string;
-          nome: string;
-          observacoes?: string | null;
-          optante_vt?: boolean;
-          pix?: string | null;
-          salario_base?: number;
-          status?: Database["public"]["Enums"]["colaborador_status"];
-          telefone?: string | null;
-          toxico_exame?: string | null;
-          updated_at?: string;
-        };
-        Update: {
-          agencia?: string | null;
-          banco?: string | null;
-          cargo?: string | null;
-          cnh_categoria?: string | null;
-          cnh_numero?: string | null;
-          cnh_validade?: string | null;
-          conta?: string | null;
-          cpf?: string | null;
-          created_at?: string;
-          data_admissao?: string | null;
-          data_demissao?: string | null;
+          data_nascimento?: string | null;
           email?: string | null;
           empresa_id?: string;
           id?: string;
+          logradouro?: string | null;
           nome?: string;
+          numero?: string | null;
           observacoes?: string | null;
           optante_vt?: boolean;
           pix?: string | null;
@@ -414,7 +405,43 @@ export type Database = {
           status?: Database["public"]["Enums"]["colaborador_status"];
           telefone?: string | null;
           toxico_exame?: string | null;
-          updated_at?: string;
+          uf?: string | null;
+          updated_at?: string | null;
+          codigo?: number;
+        };
+        Update: {
+          agencia?: string | null;
+          bairro?: string | null;
+          banco?: string | null;
+          cargo?: string | null;
+          cep?: string | null;
+          cidade?: string | null;
+          cnh_categoria?: string | null;
+          cnh_numero?: string | null;
+          cnh_validade?: string | null;
+          complemento?: string | null;
+          conta?: string | null;
+          cpf?: string | null;
+          created_at?: string;
+          data_admissao?: string | null;
+          data_demissao?: string | null;
+          data_nascimento?: string | null;
+          email?: string | null;
+          empresa_id?: string;
+          id?: string;
+          logradouro?: string | null;
+          nome?: string;
+          numero?: string | null;
+          observacoes?: string | null;
+          optante_vt?: boolean;
+          pix?: string | null;
+          salario_base?: number;
+          status?: Database["public"]["Enums"]["colaborador_status"];
+          telefone?: string | null;
+          toxico_exame?: string | null;
+          uf?: string | null;
+          updated_at?: string | null;
+          codigo?: number;
         };
         Relationships: [
           {
@@ -3804,7 +3831,7 @@ export type Database = {
     Enums: {
       adiantamento_status: "aberto" | "descontado" | "cancelado";
       app_role: "owner" | "admin" | "financeiro" | "vendas" | "estoque" | "fiscal" | "viewer";
-      colaborador_status: "ativo" | "ferias" | "afastado" | "demitido";
+      colaborador_status: "ativo" | "ferias" | "afastado" | "suspenso" | "demitido";
       comissao_status: "prevista" | "aprovada" | "paga" | "cancelada";
       conta_financeira_tipo:
         | "corrente"
@@ -3956,7 +3983,7 @@ export const Constants = {
     Enums: {
       adiantamento_status: ["aberto", "descontado", "cancelado"],
       app_role: ["owner", "admin", "financeiro", "vendas", "estoque", "fiscal", "viewer"],
-      colaborador_status: ["ativo", "ferias", "afastado", "demitido"],
+      colaborador_status: ["ativo", "ferias", "afastado", "suspenso", "demitido"],
       comissao_status: ["prevista", "aprovada", "paga", "cancelada"],
       conta_financeira_tipo: [
         "corrente",
