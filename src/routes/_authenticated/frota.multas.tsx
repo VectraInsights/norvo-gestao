@@ -1,6 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { createFileRoute } from "@tanstack/react-router";
 import { DateInput } from "@/components/erp/date-input";
+import { Combobox } from "@/components/erp/combobox";
 import { MoneyInput } from "@/components/erp/money-input";
 import { PageHeader } from "@/components/erp/page-header";
 import { EmptyState } from "@/components/erp/empty-state";
@@ -428,18 +429,14 @@ function Multas() {
                   <div className="grid grid-cols-2 gap-3">
                     <div>
                       <Label>Veículo</Label>
-                      <Select value={form.veiculo_id} onValueChange={escolherVeiculo}>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Selecionar veículo…" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {veiculos?.map((v) => (
-                            <SelectItem key={v.id} value={v.id}>
-                              {v.placa}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
+                      <Combobox
+                        value={form.veiculo_id}
+                        onChange={escolherVeiculo}
+                        options={(veiculos ?? []).map((v) => ({ value: v.id, label: v.placa }))}
+                        placeholder="Selecionar veículo…"
+                        searchPlaceholder="Digite para buscar..."
+                        emptyText="Nenhum item encontrado."
+                      />
                     </div>
                     <div>
                       <Label>Placa *</Label>

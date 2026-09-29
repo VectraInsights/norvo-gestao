@@ -30,6 +30,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Combobox } from "@/components/erp/combobox";
 import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
@@ -583,59 +584,37 @@ export function LancamentosPage({ tipo }: { tipo: "receber" | "pagar" }) {
                   </div>
                   <div>
                     <Label>{tipo === "receber" ? "Cliente" : "Fornecedor"}</Label>
-                    <Select
+                    <Combobox
                       value={form.contato_id}
-                      onValueChange={(v) => setForm({ ...form, contato_id: v })}
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder="Selecionar contato" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {contatosOpt?.map((c) => (
-                          <SelectItem key={c.id} value={c.id}>
-                            {c.nome}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+                      onChange={(v) => setForm({ ...form, contato_id: v })}
+                      options={(contatosOpt ?? []).map((c) => ({ value: c.id, label: c.nome ?? "" }))}
+                      placeholder="Selecionar contato"
+                      searchPlaceholder="Digite para buscar..."
+                      emptyText="Nenhum item encontrado."
+                    />
                   </div>
                   <div className="grid grid-cols-2 gap-3">
                     <div>
                       <Label>Conta bancária</Label>
-                      <Select
+                      <Combobox
                         value={form.conta_bancaria_id}
-                        onValueChange={(v) => setForm({ ...form, conta_bancaria_id: v })}
-                      >
-                        <SelectTrigger>
-                          <SelectValue placeholder="Selecionar" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {contasOpt?.map((c) => (
-                            <SelectItem key={c.id} value={c.id}>
-                              {c.nome}
-                              {c.banco ? ` — ${c.banco}` : ""}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
+                        onChange={(v) => setForm({ ...form, conta_bancaria_id: v })}
+                        options={(contasOpt ?? []).map((c) => ({ value: c.id, label: `${c.nome ?? ""}${c.banco ? ` — ${c.banco}` : ""}` }))}
+                        placeholder="Selecionar"
+                        searchPlaceholder="Digite para buscar..."
+                        emptyText="Nenhum item encontrado."
+                      />
                     </div>
                     <div>
                       <Label>Categoria</Label>
-                      <Select
+                      <Combobox
                         value={form.categoria_id}
-                        onValueChange={(v) => setForm({ ...form, categoria_id: v })}
-                      >
-                        <SelectTrigger>
-                          <SelectValue placeholder="Selecionar" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {categoriasOpt?.map((c) => (
-                            <SelectItem key={c.id} value={c.id}>
-                              {c.nome}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
+                        onChange={(v) => setForm({ ...form, categoria_id: v })}
+                        options={(categoriasOpt ?? []).map((c) => ({ value: c.id, label: c.nome ?? "" }))}
+                        placeholder="Selecionar"
+                        searchPlaceholder="Digite para buscar..."
+                        emptyText="Nenhum item encontrado."
+                      />
                     </div>
                   </div>
                   <div className="grid grid-cols-2 gap-3">
@@ -1091,59 +1070,37 @@ export function LancamentosPage({ tipo }: { tipo: "receber" | "pagar" }) {
               </div>
               <div>
                 <Label>{tipo === "receber" ? "Cliente" : "Fornecedor"}</Label>
-                <Select
+                <Combobox
                   value={editing.contato_id}
-                  onValueChange={(v) => setEditing({ ...editing, contato_id: v })}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Selecionar contato" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {contatosOpt?.map((c) => (
-                      <SelectItem key={c.id} value={c.id}>
-                        {c.nome}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                  onChange={(v) => setEditing({ ...editing, contato_id: v })}
+                  options={(contatosOpt ?? []).map((c) => ({ value: c.id, label: c.nome ?? "" }))}
+                  placeholder="Selecionar contato"
+                  searchPlaceholder="Digite para buscar..."
+                  emptyText="Nenhum item encontrado."
+                />
               </div>
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <Label>Conta bancária</Label>
-                  <Select
+                  <Combobox
                     value={editing.conta_bancaria_id}
-                    onValueChange={(v) => setEditing({ ...editing, conta_bancaria_id: v })}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Selecionar" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {contasOpt?.map((c) => (
-                        <SelectItem key={c.id} value={c.id}>
-                          {c.nome}
-                          {c.banco ? ` — ${c.banco}` : ""}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                    onChange={(v) => setEditing({ ...editing, conta_bancaria_id: v })}
+                    options={(contasOpt ?? []).map((c) => ({ value: c.id, label: `${c.nome ?? ""}${c.banco ? ` — ${c.banco}` : ""}` }))}
+                    placeholder="Selecionar"
+                    searchPlaceholder="Digite para buscar..."
+                    emptyText="Nenhum item encontrado."
+                  />
                 </div>
                 <div>
                   <Label>Categoria</Label>
-                  <Select
+                  <Combobox
                     value={editing.categoria_id}
-                    onValueChange={(v) => setEditing({ ...editing, categoria_id: v })}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Selecionar" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {categoriasOpt?.map((c) => (
-                        <SelectItem key={c.id} value={c.id}>
-                          {c.nome}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                    onChange={(v) => setEditing({ ...editing, categoria_id: v })}
+                    options={(categoriasOpt ?? []).map((c) => ({ value: c.id, label: c.nome ?? "" }))}
+                    placeholder="Selecionar"
+                    searchPlaceholder="Digite para buscar..."
+                    emptyText="Nenhum item encontrado."
+                  />
                 </div>
               </div>
               <div className="grid grid-cols-2 gap-3">

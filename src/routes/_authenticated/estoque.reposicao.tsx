@@ -1,4 +1,5 @@
 import { MoneyInput } from "@/components/erp/money-input";
+import { Combobox } from "@/components/erp/combobox";
 import { createFileRoute } from "@tanstack/react-router";
 import { DateInput } from "@/components/erp/date-input";
 import { PageHeader } from "@/components/erp/page-header";
@@ -259,49 +260,15 @@ function Reposicao() {
           <Card className="mb-4 grid gap-4 p-4 sm:grid-cols-4">
             <div>
               <Label>Fornecedor *</Label>
-              <Select value={fornecedor} onValueChange={setFornecedor}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Selecione…" />
-                </SelectTrigger>
-                <SelectContent>
-                  {fornecedores.map((f) => (
-                    <SelectItem key={f.id} value={f.id}>
-                      {f.nome}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <Combobox value={fornecedor} onChange={setFornecedor} options={fornecedores.map((f) => ({ value: f.id, label: f.nome }))} placeholder="Selecione…" searchPlaceholder="Digite para buscar..." emptyText="Nenhum item encontrado." />
             </div>
             <div>
               <Label>Depósito destino</Label>
-              <Select value={depositoId} onValueChange={setDepositoId}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Opcional" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="sem-deposito">Sem depósito</SelectItem>
-                  {depositos.map((d) => (
-                    <SelectItem key={d.id} value={d.id}>
-                      {d.nome}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <Combobox value={depositoId} onChange={setDepositoId} options={[{ value: "sem-deposito", label: "Sem depósito" }, ...depositos.map((d) => ({ value: d.id, label: d.nome }))]} placeholder="Opcional" searchPlaceholder="Digite para buscar..." emptyText="Nenhum item encontrado." />
             </div>
             <div>
               <Label>Conta p/ pagamento</Label>
-              <Select value={contaBanco} onValueChange={setContaBanco}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Opcional" />
-                </SelectTrigger>
-                <SelectContent>
-                  {contas.map((c) => (
-                    <SelectItem key={c.id} value={c.id}>
-                      {c.nome}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <Combobox value={contaBanco} onChange={setContaBanco} options={contas.map((c) => ({ value: c.id, label: c.nome }))} placeholder="Opcional" searchPlaceholder="Digite para buscar..." emptyText="Nenhum item encontrado." />
             </div>
             <div>
               <Label>Previsão de entrega</Label>

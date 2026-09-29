@@ -1,6 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { createFileRoute } from "@tanstack/react-router";
 import { DateInput } from "@/components/erp/date-input";
+import { Combobox } from "@/components/erp/combobox";
 import { PageHeader } from "@/components/erp/page-header";
 import { EmptyState } from "@/components/erp/empty-state";
 import { Button } from "@/components/ui/button";
@@ -482,58 +483,45 @@ function Viagens() {
                 <div className="grid grid-cols-3 gap-3">
                   <div>
                     <Label>Cliente (pagador)</Label>
-                    <Select value={form.cliente_id} onValueChange={(v) => set("cliente_id", v)}>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Selecione…" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {clientes.map((c) => (
-                          <SelectItem key={c.id} value={c.id}>
-                            {c.nome}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+                    <Combobox
+                      value={form.cliente_id}
+                      onChange={(v) => set("cliente_id", v)}
+                      options={clientes.map((c) => ({ value: c.id, label: c.nome }))}
+                      placeholder="Selecione…"
+                      searchPlaceholder="Digite para buscar..."
+                      emptyText="Nenhum item encontrado."
+                    />
                   </div>
                   <div>
                     <Label>Motorista</Label>
-                    <Select value={form.motorista_id} onValueChange={(v) => set("motorista_id", v)}>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Selecione…" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {motoristas.map((m) => {
-                          const avisos = avisoDoc(m);
-                          return (
-                            <SelectItem key={m.id} value={m.id}>
-                              {m.nome}
-                              {avisos.length > 0 && (
-                                <span className="text-warning-foreground">
-                                  {" "}
-                                  ⚠ {avisos.join(" · ")}
-                                </span>
-                              )}
-                            </SelectItem>
-                          );
-                        })}
-                      </SelectContent>
-                    </Select>
+                    <Combobox
+                      value={form.motorista_id}
+                      onChange={(v) => set("motorista_id", v)}
+                      options={motoristas.map((m) => {
+                        const avisos = avisoDoc(m);
+                        return {
+                          value: m.id,
+                          label: avisos.length > 0 ? `${m.nome} ⚠ ${avisos.join(" · ")}` : m.nome,
+                        };
+                      })}
+                      placeholder="Selecione…"
+                      searchPlaceholder="Digite para buscar..."
+                      emptyText="Nenhum item encontrado."
+                    />
                   </div>
                   <div>
                     <Label>Veículo</Label>
-                    <Select value={form.veiculo_id} onValueChange={(v) => set("veiculo_id", v)}>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Selecione…" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {veiculosDisp.map((v) => (
-                          <SelectItem key={v.id} value={v.id}>
-                            {v.placa}
-                            {v.marca_modelo ? ` · ${v.marca_modelo}` : ""}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+                    <Combobox
+                      value={form.veiculo_id}
+                      onChange={(v) => set("veiculo_id", v)}
+                      options={veiculosDisp.map((v) => ({
+                        value: v.id,
+                        label: `${v.placa}${v.marca_modelo ? ` · ${v.marca_modelo}` : ""}`,
+                      }))}
+                      placeholder="Selecione…"
+                      searchPlaceholder="Digite para buscar..."
+                      emptyText="Nenhum item encontrado."
+                    />
                   </div>
                 </div>
                 <div className="grid grid-cols-2 gap-3">

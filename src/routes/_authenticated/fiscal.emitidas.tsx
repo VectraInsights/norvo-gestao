@@ -1,4 +1,5 @@
 import { MoneyInput } from "@/components/erp/money-input";
+import { Combobox } from "@/components/erp/combobox";
 import { createFileRoute } from "@tanstack/react-router";
 import { PageHeader } from "@/components/erp/page-header";
 import { EmptyState } from "@/components/erp/empty-state";
@@ -518,23 +519,14 @@ function NotasEmitidas() {
 
                 <div className="grid gap-2">
                   <Label htmlFor="cliente">Cliente destinatário</Label>
-                  <Select value={novaNotaContato} onValueChange={setNovaNotaContato}>
-                    <SelectTrigger id="cliente">
-                      <SelectValue placeholder="Selecione o cliente" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {contatos?.map((c) => (
-                        <SelectItem key={c.id} value={c.id}>
-                          {c.nome}
-                        </SelectItem>
-                      ))}
-                      {(!contatos || contatos.length === 0) && (
-                        <SelectItem value="none" disabled>
-                          Nenhum cliente cadastrado
-                        </SelectItem>
-                      )}
-                    </SelectContent>
-                  </Select>
+                  <Combobox
+                    value={novaNotaContato}
+                    onChange={setNovaNotaContato}
+                    options={(contatos ?? []).map((c) => ({ value: c.id, label: c.nome }))}
+                    placeholder="Selecione o cliente"
+                    searchPlaceholder="Digite para buscar..."
+                    emptyText="Nenhum cliente cadastrado."
+                  />
                 </div>
 
                 <div className="grid grid-cols-2 gap-4">

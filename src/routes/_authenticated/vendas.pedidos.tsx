@@ -5,6 +5,7 @@ import { StatusBadge } from "@/components/erp/status-badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { MoneyInput } from "@/components/erp/money-input";
+import { Combobox } from "@/components/erp/combobox";
 import { Label } from "@/components/ui/label";
 import { Card } from "@/components/ui/card";
 import {
@@ -488,51 +489,42 @@ function NovaVendaSheet({ onClose }: { onClose: () => void }) {
         <div className="grid grid-cols-2 gap-3">
           <div>
             <Label>Cliente</Label>
-            <Select value={clienteId} onValueChange={setClienteId}>
-              <SelectTrigger>
-                <SelectValue placeholder="Selecione" />
-              </SelectTrigger>
-              <SelectContent>
-                {clientes?.map((c) => (
-                  <SelectItem key={c.id} value={c.id}>
-                    {c.nome}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            <Combobox
+              value={clienteId}
+              onChange={setClienteId}
+              options={(clientes ?? []).map((c) => ({ value: c.id, label: c.nome }))}
+              placeholder="Selecione"
+              searchPlaceholder="Digite para buscar..."
+              emptyText="Nenhum item encontrado."
+            />
           </div>
           <div>
             <Label>Condição de pagamento</Label>
-            <Select value={condicaoId} onValueChange={setCondicaoId}>
-              <SelectTrigger>
-                <SelectValue placeholder="À vista" />
-              </SelectTrigger>
-              <SelectContent>
-                {condicoes?.map((c) => (
-                  <SelectItem key={c.id} value={c.id}>
-                    {c.nome}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            <Combobox
+              value={condicaoId}
+              onChange={setCondicaoId}
+              options={(condicoes ?? []).map((c) => ({ value: c.id, label: c.nome }))}
+              placeholder="À vista"
+              searchPlaceholder="Digite para buscar..."
+              emptyText="Nenhum item encontrado."
+            />
           </div>
         </div>
 
         <div>
           <div className="mb-2 flex items-end justify-between">
             <Label>Itens</Label>
-            <Select value="" onValueChange={addItem}>
-              <SelectTrigger className="w-56">
-                <SelectValue placeholder="+ Adicionar produto" />
-              </SelectTrigger>
-              <SelectContent>
-                {produtos?.map((p) => (
-                  <SelectItem key={p.id} value={p.id}>
-                    {p.nome} — {brl(Number(p.preco_venda ?? 0))}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            <Combobox
+              value=""
+              onChange={addItem}
+              options={(produtos ?? []).map((p) => ({
+                value: p.id,
+                label: p.nome + " — " + brl(Number(p.preco_venda ?? 0)),
+              }))}
+              placeholder="+ Adicionar produto"
+              searchPlaceholder="Digite para buscar..."
+              emptyText="Nenhum item encontrado."
+            />
           </div>
           {itens.length === 0 ? (
             <div className="rounded-md border border-dashed p-4 text-center text-sm text-muted-foreground">

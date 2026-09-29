@@ -7,6 +7,7 @@ import { toast } from "sonner";
 import { format, parse, isValid } from "date-fns";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Combobox } from "@/components/erp/combobox";
 
 type Opt = { id: string; nome: string };
 type Lanc = {
@@ -404,15 +405,7 @@ export function LancamentosToolbar({
           </DialogHeader>
           <div className="space-y-2">
             <label className="text-sm font-medium">Conta financeira (opcional)</label>
-            <Select value={contaSel} onValueChange={setContaSel}>
-              <SelectTrigger><SelectValue placeholder="Selecione uma conta" /></SelectTrigger>
-              <SelectContent>
-                <SelectItem value="__none">Sem conta vinculada</SelectItem>
-                {(contas ?? []).map((c) => (
-                  <SelectItem key={c.id} value={c.id}>{c.nome}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            <Combobox value={contaSel} onChange={setContaSel} options={[{ value: "__none", label: "Sem conta vinculada" }, ...((contas ?? []).map((c) => ({ value: c.id, label: c.nome })))]} placeholder="Selecione uma conta" searchPlaceholder="Digite para buscar..." emptyText="Nenhum item encontrado." />
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setPending(null)} disabled={saving}>Cancelar</Button>

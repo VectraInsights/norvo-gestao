@@ -7,6 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Card } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { MoneyInput } from "@/components/erp/money-input";
+import { Combobox } from "@/components/erp/combobox";
 import {
   Table,
   TableBody,
@@ -477,9 +478,9 @@ function FolhaPage() {
                 <div className="grid gap-3">
                   <div>
                     <Label>Colaborador</Label>
-                    <Select
+                    <Combobox
                       value={colaborador}
-                      onValueChange={(v) => {
+                      onChange={(v) => {
                         setColaborador(v);
                         const c = colabs.find((x) => x.id === v);
                         if (c && !editing) {
@@ -495,19 +496,14 @@ function FolhaPage() {
                           });
                         }
                       }}
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder="Selecione" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {colabs.map((c) => (
-                          <SelectItem key={c.id} value={c.id}>
-                            {c.nome}
-                            {c.optante_vt ? " (VT)" : ""}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+                      options={colabs.map((c) => ({
+                        value: c.id,
+                        label: c.nome + (c.optante_vt ? " (VT)" : ""),
+                      }))}
+                      placeholder="Selecione"
+                      searchPlaceholder="Digite para buscar..."
+                      emptyText="Nenhum item encontrado."
+                    />
                   </div>
                   <div className="grid grid-cols-3 gap-3">
                     <div className="space-y-1">

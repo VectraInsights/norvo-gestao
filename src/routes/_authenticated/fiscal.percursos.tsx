@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { MoneyInput } from "@/components/erp/money-input";
+import { Combobox } from "@/components/erp/combobox";
 import { Label } from "@/components/ui/label";
 import {
   Table,
@@ -1481,9 +1482,9 @@ function PercursosPage() {
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-1">
                       <div className="col-span-2">
                         <Label className="text-[10px] text-muted-foreground">Seguradora</Label>
-                        <Select
+                        <Combobox
                           value={editing?.seg_nome || ""}
-                          onValueChange={(v) => {
+                          onChange={(v) => {
                             const s = (seguradorasPerc || []).find((x) => x.nome === v);
                             setEditing((e: any) =>
                               e
@@ -1495,18 +1496,14 @@ function PercursosPage() {
                                 : e,
                             );
                           }}
-                        >
-                          <SelectTrigger className="h-7 text-xs">
-                            <SelectValue placeholder="Selecione seguradora" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {(seguradorasPerc || []).map((s) => (
-                              <SelectItem key={s.id} value={s.nome}>
-                                {s.nome}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
+                          options={(seguradorasPerc || []).map((s) => ({
+                            value: s.nome,
+                            label: s.nome,
+                          }))}
+                          placeholder="Selecione seguradora"
+                          searchPlaceholder="Digite para buscar..."
+                          emptyText="Nenhum item encontrado."
+                        />
                       </div>
                       <div className="col-span-2">
                         <T editing={editing} set={set} label="Apólice" k="seg_apolice" mono />

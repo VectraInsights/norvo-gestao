@@ -3597,6 +3597,18 @@ Espelhado na Vercel.
   compacto do encerramento MDF-e (não abrem como painel lateral).
 - Espelhado na Vercel via push em main.
 
+## Dropdowns editáveis com busca (29/09)
+
+- Novo `Combobox` reutilizável (`components/erp/combobox.tsx`, padrão
+  Popover+Command do financeiro): abre a lista e filtra digitando.
+- Convertidos ~45 selects de entidades: adiantamentos, comissões,
+  folha, pedidos, CRM, OS, projetos, viagens, multas, compras,
+  reposição, movimentações, inventário, produtos, contas, extrato,
+  receber, transferências, emitidas, percursos, recebidas + toolbar.
+  Lógicas extras (`__none__`, "Todos", VT, saldos) preservadas;
+  estáticos (status, dias, UF) mantidos como Select.
+- Espelhado na Vercel via push em main.
+
 ## CNH: passada da caixa CAT HAB p/ categoria (29/09)
 
 - "AE" pequeno e vermelho virava "E" nos recortes grandes de forma

@@ -9,6 +9,7 @@ import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { MoneyInput } from "@/components/erp/money-input";
+import { Combobox } from "@/components/erp/combobox";
 import {
   Table,
   TableBody,
@@ -419,18 +420,14 @@ function AdiantamentosPage() {
                 <div className="grid gap-4">
                   <div className="space-y-1.5">
                     <Label>Colaborador</Label>
-                    <Select value={colaborador} onValueChange={setColaborador}>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Selecione" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {colabs.map((c) => (
-                          <SelectItem key={c.id} value={c.id}>
-                            {c.nome}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+                    <Combobox
+                      value={colaborador}
+                      onChange={setColaborador}
+                      options={colabs.map((c) => ({ value: c.id, label: c.nome }))}
+                      placeholder="Selecione"
+                      searchPlaceholder="Digite o nome do colaborador..."
+                      emptyText="Nenhum colaborador encontrado."
+                    />
                   </div>
                   <div className="grid gap-2 sm:grid-cols-2">
                     <div className="space-y-1.5">

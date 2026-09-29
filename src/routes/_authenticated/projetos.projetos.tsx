@@ -9,6 +9,7 @@ import { Card } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Textarea } from "@/components/ui/textarea";
 import { MoneyInput } from "@/components/erp/money-input";
+import { Combobox } from "@/components/erp/combobox";
 import {
   Table,
   TableBody,
@@ -259,19 +260,17 @@ function ProjetosPage() {
                 <div className="grid grid-cols-2 gap-3">
                   <div>
                     <Label>Cliente</Label>
-                    <Select value={cliente} onValueChange={setCliente}>
-                      <SelectTrigger>
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="none">— sem cliente —</SelectItem>
-                        {clientes.map((c) => (
-                          <SelectItem key={c.id} value={c.id}>
-                            {c.nome}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+                    <Combobox
+                      value={cliente}
+                      onChange={setCliente}
+                      options={[
+                        { value: "none", label: "— sem cliente —" },
+                        ...clientes.map((c) => ({ value: c.id, label: c.nome })),
+                      ]}
+                      placeholder="Selecione"
+                      searchPlaceholder="Digite para buscar..."
+                      emptyText="Nenhum item encontrado."
+                    />
                   </div>
                   <div>
                     <Label>Status</Label>

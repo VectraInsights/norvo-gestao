@@ -4,6 +4,7 @@ import { EmptyState } from "@/components/erp/empty-state";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { MoneyInput } from "@/components/erp/money-input";
+import { Combobox } from "@/components/erp/combobox";
 import { Label } from "@/components/ui/label";
 import { Card } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -264,55 +265,30 @@ function Movimentacoes() {
                 >
                   <div>
                     <Label>Produto</Label>
-                    <Select
+                    <Combobox
                       value={tr.produto_id}
-                      onValueChange={(v) => setTr({ ...tr, produto_id: v })}
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder="Selecione" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {produtos?.map((p) => (
-                          <SelectItem key={p.id} value={p.id}>
-                            {p.nome} · estoque {num(p.estoque_atual ?? 0)}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+                      onChange={(v) => setTr({ ...tr, produto_id: v })}
+                      options={(produtos ?? []).map((p) => ({ value: p.id, label: `${p.nome} · estoque ${num(p.estoque_atual ?? 0)}` }))}
+                      placeholder="Selecione"
+                      searchPlaceholder="Digite para buscar..."
+                      emptyText="Nenhum item encontrado."
+                    />
                   </div>
                   <div className="grid grid-cols-2 gap-3">
                     <div>
                       <Label>De (origem)</Label>
-                      <Select value={tr.origem} onValueChange={(v) => setTr({ ...tr, origem: v })}>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Selecione" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {depositos.map((d) => (
-                            <SelectItem key={d.id} value={d.id}>
-                              {d.nome}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
+                      <Combobox value={tr.origem} onChange={(v) => setTr({ ...tr, origem: v })} options={depositos.map((d) => ({ value: d.id, label: d.nome }))} placeholder="Selecione" searchPlaceholder="Digite para buscar..." emptyText="Nenhum item encontrado." />
                     </div>
                     <div>
                       <Label>Para (destino)</Label>
-                      <Select
+                      <Combobox
                         value={tr.destino}
-                        onValueChange={(v) => setTr({ ...tr, destino: v })}
-                      >
-                        <SelectTrigger>
-                          <SelectValue placeholder="Selecione" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {depositos.map((d) => (
-                            <SelectItem key={d.id} value={d.id}>
-                              {d.nome}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
+                        onChange={(v) => setTr({ ...tr, destino: v })}
+                        options={depositos.map((d) => ({ value: d.id, label: d.nome }))}
+                        placeholder="Selecione"
+                        searchPlaceholder="Digite para buscar..."
+                        emptyText="Nenhum item encontrado."
+                      />
                     </div>
                   </div>
                   <div>
@@ -354,21 +330,14 @@ function Movimentacoes() {
                 <form onSubmit={submit} className="space-y-3">
                   <div>
                     <Label>Produto</Label>
-                    <Select
+                    <Combobox
                       value={form.produto_id}
-                      onValueChange={(v) => setForm({ ...form, produto_id: v })}
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder="Selecione" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {produtos?.map((p) => (
-                          <SelectItem key={p.id} value={p.id}>
-                            {p.nome} · estoque {num(p.estoque_atual ?? 0)}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+                      onChange={(v) => setForm({ ...form, produto_id: v })}
+                      options={(produtos ?? []).map((p) => ({ value: p.id, label: `${p.nome} · estoque ${num(p.estoque_atual ?? 0)}` }))}
+                      placeholder="Selecione"
+                      searchPlaceholder="Digite para buscar..."
+                      emptyText="Nenhum item encontrado."
+                    />
                   </div>
                   <div className="grid grid-cols-3 gap-3">
                     <div>

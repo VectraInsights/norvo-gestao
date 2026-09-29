@@ -1,4 +1,5 @@
 import { MoneyInput } from "@/components/erp/money-input";
+import { Combobox } from "@/components/erp/combobox";
 import { createFileRoute } from "@tanstack/react-router";
 import { PageHeader } from "@/components/erp/page-header";
 import { EmptyState } from "@/components/erp/empty-state";
@@ -192,19 +193,9 @@ function Inventario() {
             onChange={(e) => setBusca(e.target.value)}
           />
         </div>
-        <Select value={depositoId} onValueChange={setDepositoId}>
-          <SelectTrigger className="w-56">
-            <SelectValue placeholder="Depósito (opcional)" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="sem-deposito">Sem depósito</SelectItem>
-            {depositos.map((d) => (
-              <SelectItem key={d.id} value={d.id}>
-                {d.nome}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+        <div className="w-56">
+          <Combobox value={depositoId} onChange={setDepositoId} options={[{ value: "sem-deposito", label: "Sem depósito" }, ...depositos.map((d) => ({ value: d.id, label: d.nome }))]} placeholder="Depósito (opcional)" searchPlaceholder="Digite para buscar..." emptyText="Nenhum item encontrado." />
+        </div>
         <Button
           variant={somenteDiverg ? "default" : "outline"}
           onClick={() => setSomenteDiverg((v) => !v)}

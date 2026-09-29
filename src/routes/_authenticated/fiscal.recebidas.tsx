@@ -8,6 +8,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { DateInput } from "@/components/erp/date-input";
+import { Combobox } from "@/components/erp/combobox";
 import { MoneyInput } from "@/components/erp/money-input";
 import { 
   FileDown, Search, CheckCircle2, AlertCircle, XCircle, 
@@ -1566,9 +1567,9 @@ ${transportadora ? `<div class="section"><div class="section-title">TRANSPORTE</
                             <TableCell className="text-right text-tabular">{brl(p.valor)}</TableCell>
                             <TableCell className="text-right text-tabular font-medium text-foreground">{brl(p.qtd * p.valor)}</TableCell>
                             <TableCell>
-                              <Select
+                              <Combobox
                                 value={p.categoria || "__none__"}
-                                onValueChange={(v) => {
+                                onChange={(v) => {
                                   if (v === "__nova__") {
                                     setNovaCatContext({ origem: "import", index: i });
                                     setNovaCatNome("");
@@ -1579,18 +1580,15 @@ ${transportadora ? `<div class="section"><div class="section-title">TRANSPORTE</
                                   novas[i] = { ...novas[i], categoria: v === "__none__" ? "" : v };
                                   setImportResults({ ...importResults, produtos: novas });
                                 }}
-                              >
-                                <SelectTrigger className="h-7 text-xs">
-                                  <SelectValue placeholder="Selecione" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                  <SelectItem value="__none__">Sem categoria</SelectItem>
-                                  {catsFinanceiras.map((c) => (
-                                    <SelectItem key={c.id} value={c.nome}>{c.nome}</SelectItem>
-                                  ))}
-                                  <SelectItem value="__nova__" className="text-primary font-medium border-t mt-1">+ Nova categoria</SelectItem>
-                                </SelectContent>
-                              </Select>
+                                options={[
+                                  { value: "__none__", label: "Sem categoria" },
+                                  ...catsFinanceiras.map((c) => ({ value: c.nome, label: c.nome })),
+                                  { value: "__nova__", label: "+ Nova categoria" },
+                                ]}
+                                placeholder="Selecione"
+                                searchPlaceholder="Digite para buscar..."
+                                emptyText="Nenhum item encontrado."
+                              />
                             </TableCell>
                           </TableRow>
                         ))}
@@ -1791,9 +1789,9 @@ ${transportadora ? `<div class="section"><div class="section-title">TRANSPORTE</
                             <TableCell className="text-right text-xs">{brl(p.valorUnit)}</TableCell>
                             <TableCell className="text-right text-xs font-medium">{brl(p.valorTotal)}</TableCell>
                             <TableCell>
-                              <Select
+                              <Combobox
                                 value={p.categoria || "__none__"}
-                                onValueChange={(v) => {
+                                onChange={(v) => {
                                   if (v === "__nova__") {
                                     setNovaCatContext({ origem: "detalhe", index: i });
                                     setNovaCatNome("");
@@ -1804,18 +1802,15 @@ ${transportadora ? `<div class="section"><div class="section-title">TRANSPORTE</
                                   novas[i] = { ...novas[i], categoria: v === "__none__" ? "" : v };
                                   setNotaDetalhe({ ...notaDetalhe, produtos: novas });
                                 }}
-                              >
-                                <SelectTrigger className="h-7 text-xs">
-                                  <SelectValue placeholder="Selecione" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                  <SelectItem value="__none__">Sem categoria</SelectItem>
-                                  {catsFinanceiras.map((c) => (
-                                    <SelectItem key={c.id} value={c.nome}>{c.nome}</SelectItem>
-                                  ))}
-                                  <SelectItem value="__nova__" className="text-primary font-medium border-t mt-1">+ Nova categoria</SelectItem>
-                                </SelectContent>
-                              </Select>
+                                options={[
+                                  { value: "__none__", label: "Sem categoria" },
+                                  ...catsFinanceiras.map((c) => ({ value: c.nome, label: c.nome })),
+                                  { value: "__nova__", label: "+ Nova categoria" },
+                                ]}
+                                placeholder="Selecione"
+                                searchPlaceholder="Digite para buscar..."
+                                emptyText="Nenhum item encontrado."
+                              />
                             </TableCell>
                           </TableRow>
                         ))}
@@ -1899,24 +1894,21 @@ ${transportadora ? `<div class="section"><div class="section-title">TRANSPORTE</
                             ))}
                           </SelectContent>
                         </Select>
-                        <Select
+                        <Combobox
                           value={(p as any).conta_bancaria_id || "__none__"}
-                          onValueChange={(v) => {
+                          onChange={(v) => {
                             const novas = [...notaDetalhe.parcelas];
                             novas[i] = { ...novas[i], conta_bancaria_id: v === "__none__" ? "" : v } as any;
                             setNotaDetalhe({ ...notaDetalhe, parcelas: novas });
                           }}
-                        >
-                          <SelectTrigger className="h-8 text-xs w-[150px] shrink-0">
-                            <SelectValue placeholder="Banco/Caixa" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="__none__">Sem conta</SelectItem>
-                            {contasBancarias.map((c) => (
-                              <SelectItem key={c.id} value={c.id}>{c.nome}</SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
+                          options={[
+                            { value: "__none__", label: "Sem conta" },
+                            ...contasBancarias.map((c) => ({ value: c.id, label: c.nome })),
+                          ]}
+                          placeholder="Banco/Caixa"
+                          searchPlaceholder="Digite para buscar..."
+                          emptyText="Nenhum item encontrado."
+                        />
                         <TooltipProvider>
                           <Tooltip>
                             <TooltipTrigger asChild>

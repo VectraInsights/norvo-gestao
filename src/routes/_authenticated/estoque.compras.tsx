@@ -9,6 +9,7 @@ import { Label } from "@/components/ui/label";
 import { Card } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { MoneyInput } from "@/components/erp/money-input";
+import { Combobox } from "@/components/erp/combobox";
 import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from "@/components/ui/table";
@@ -204,12 +205,7 @@ function Compras() {
                 <div className="grid gap-4 sm:grid-cols-3">
                   <div>
                     <Label>Fornecedor</Label>
-                    <Select value={fornecedor} onValueChange={setFornecedor}>
-                      <SelectTrigger><SelectValue placeholder="Selecione…" /></SelectTrigger>
-                      <SelectContent>
-                        {fornecedores.map((f) => <SelectItem key={f.id} value={f.id}>{f.nome}</SelectItem>)}
-                      </SelectContent>
-                    </Select>
+                    <Combobox value={fornecedor} onChange={setFornecedor} options={fornecedores.map((f) => ({ value: f.id, label: f.nome }))} placeholder="Selecione…" searchPlaceholder="Digite para buscar..." emptyText="Nenhum item encontrado." />
                   </div>
                   <div>
                     <Label>Previsão de entrega</Label>
@@ -217,12 +213,7 @@ function Compras() {
                   </div>
                   <div>
                     <Label>Conta p/ pagamento</Label>
-                    <Select value={contaBanco} onValueChange={setContaBanco}>
-                      <SelectTrigger><SelectValue placeholder="Opcional" /></SelectTrigger>
-                      <SelectContent>
-                        {contas.map((c) => <SelectItem key={c.id} value={c.id}>{c.nome}</SelectItem>)}
-                      </SelectContent>
-                    </Select>
+                    <Combobox value={contaBanco} onChange={setContaBanco} options={contas.map((c) => ({ value: c.id, label: c.nome ?? "" }))} placeholder="Opcional" searchPlaceholder="Digite para buscar..." emptyText="Nenhum item encontrado." />
                   </div>
                 </div>
 
@@ -237,17 +228,12 @@ function Compras() {
                   <div className="space-y-2">
                     {itens.map((it, idx) => (
                       <div key={idx} className="grid grid-cols-[1fr_100px_140px_auto] items-end gap-2">
-                        <Select value={it.produto_id} onValueChange={(v) => {
+                        <Combobox value={it.produto_id} onChange={(v) => {
                           const prod = produtos.find((p) => p.id === v);
                           setItens((r) => r.map((x, i) => i === idx
                             ? { ...x, produto_id: v, custo_unitario: prod?.preco_custo ? String(prod.preco_custo) : x.custo_unitario }
                             : x));
-                        }}>
-                          <SelectTrigger><SelectValue placeholder="Produto" /></SelectTrigger>
-                          <SelectContent>
-                            {produtos.map((p) => <SelectItem key={p.id} value={p.id}>{p.nome}</SelectItem>)}
-                          </SelectContent>
-                        </Select>
+                        }} options={produtos.map((p) => ({ value: p.id, label: p.nome }))} placeholder="Produto" searchPlaceholder="Digite para buscar..." emptyText="Nenhum item encontrado." />
                         <MoneyInput prefix="" decimals={3} value={it.quantidade} onChange={(v) => setItens((r) => r.map((x, i) => i === idx ? { ...x, quantidade: v } : x))} />
                         <MoneyInput value={it.custo_unitario}
                           onChange={(v) => setItens((r) => r.map((x, i) => i === idx ? { ...x, custo_unitario: v } : x))} />

@@ -8,6 +8,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Card } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { MoneyInput } from "@/components/erp/money-input";
+import { Combobox } from "@/components/erp/combobox";
 import {
   Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogTrigger,
 } from "@/components/ui/dialog";
@@ -268,27 +269,29 @@ function CRM() {
               </div>
               <div>
                 <Label>Etapa</Label>
-                <Select value={etapa} onValueChange={setEtapa}>
-                  <SelectTrigger><SelectValue placeholder="Selecione" /></SelectTrigger>
-                  <SelectContent>
-                    {etapas.map((e) => (
-                      <SelectItem key={e.id} value={e.id}>{e.nome}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <Combobox
+                  value={etapa}
+                  onChange={setEtapa}
+                  options={etapas.map((e) => ({ value: e.id, label: e.nome }))}
+                  placeholder="Selecione"
+                  searchPlaceholder="Digite para buscar..."
+                  emptyText="Nenhum item encontrado."
+                />
               </div>
             </div>
             <div>
               <Label>Contato</Label>
-              <Select value={contato} onValueChange={setContato}>
-                <SelectTrigger><SelectValue placeholder="Sem contato" /></SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="none">— sem contato —</SelectItem>
-                  {contatos.map((c) => (
-                    <SelectItem key={c.id} value={c.id}>{c.nome}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <Combobox
+                value={contato}
+                onChange={setContato}
+                options={[
+                  { value: "none", label: "— sem contato —" },
+                  ...contatos.map((c) => ({ value: c.id, label: c.nome })),
+                ]}
+                placeholder="Sem contato"
+                searchPlaceholder="Digite para buscar..."
+                emptyText="Nenhum item encontrado."
+              />
             </div>
           </div>
           <DialogFooter className="gap-2">

@@ -8,6 +8,7 @@ import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { MoneyInput } from "@/components/erp/money-input";
+import { Combobox } from "@/components/erp/combobox";
 import {
   Table,
   TableBody,
@@ -383,18 +384,14 @@ function ComissoesPage() {
                 <div className="grid gap-4">
                   <div className="space-y-1.5">
                     <Label>Colaborador (motoristas)</Label>
-                    <Select value={colaborador} onValueChange={setColaborador}>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Selecione" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {colabs.map((c) => (
-                          <SelectItem key={c.id} value={c.id}>
-                            {c.nome}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+                    <Combobox
+                      value={colaborador}
+                      onChange={setColaborador}
+                      options={colabs.map((c) => ({ value: c.id, label: c.nome }))}
+                      placeholder="Selecione"
+                      searchPlaceholder="Digite para buscar..."
+                      emptyText="Nenhum item encontrado."
+                    />
                     {colabs.length === 0 && (
                       <p className="text-xs text-muted-foreground">
                         Nenhum motorista ativo com cargo cadastrado — cadastre em DP →

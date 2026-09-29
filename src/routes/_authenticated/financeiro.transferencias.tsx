@@ -11,6 +11,7 @@ import { MoneyInput } from "@/components/erp/money-input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Combobox } from "@/components/erp/combobox";
 import { ArrowLeftRight, Plus, Trash2 } from "lucide-react";
 import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
@@ -158,25 +159,11 @@ function TransferenciasPage() {
                 <div className="grid gap-2 sm:grid-cols-2">
                   <div className="space-y-1.5">
                     <Label>Conta de origem</Label>
-                    <Select value={origem} onValueChange={setOrigem}>
-                      <SelectTrigger><SelectValue placeholder="Selecione" /></SelectTrigger>
-                      <SelectContent>
-                        {contas.map((c) => (
-                          <SelectItem key={c.id} value={c.id}>{c.nome || c.banco} · {brl(c.saldo_atual)}</SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+                    <Combobox value={origem} onChange={setOrigem} options={contas.map((c) => ({ value: c.id, label: `${c.nome || c.banco} · ${brl(c.saldo_atual)}` }))} placeholder="Selecione" searchPlaceholder="Digite para buscar..." emptyText="Nenhum item encontrado." />
                   </div>
                   <div className="space-y-1.5">
                     <Label>Conta de destino</Label>
-                    <Select value={destino} onValueChange={setDestino}>
-                      <SelectTrigger><SelectValue placeholder="Selecione" /></SelectTrigger>
-                      <SelectContent>
-                        {contas.filter((c) => c.id !== origem).map((c) => (
-                          <SelectItem key={c.id} value={c.id}>{c.nome || c.banco} · {brl(c.saldo_atual)}</SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+                    <Combobox value={destino} onChange={setDestino} options={contas.filter((c) => c.id !== origem).map((c) => ({ value: c.id, label: `${c.nome || c.banco} · ${brl(c.saldo_atual)}` }))} placeholder="Selecione" searchPlaceholder="Digite para buscar..." emptyText="Nenhum item encontrado." />
                   </div>
                 </div>
                 <div className="space-y-1.5">

@@ -9,6 +9,7 @@ import { Card } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Textarea } from "@/components/ui/textarea";
 import { MoneyInput } from "@/components/erp/money-input";
+import { Combobox } from "@/components/erp/combobox";
 import {
   Table,
   TableBody,
@@ -295,35 +296,31 @@ function OSPage() {
                 <div className="grid grid-cols-2 gap-3">
                   <div>
                     <Label>Cliente</Label>
-                    <Select value={cliente} onValueChange={setCliente}>
-                      <SelectTrigger>
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="none">— sem cliente —</SelectItem>
-                        {clientes.map((c) => (
-                          <SelectItem key={c.id} value={c.id}>
-                            {c.nome}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+                    <Combobox
+                      value={cliente}
+                      onChange={setCliente}
+                      options={[
+                        { value: "none", label: "— sem cliente —" },
+                        ...clientes.map((c) => ({ value: c.id, label: c.nome })),
+                      ]}
+                      placeholder="Selecione"
+                      searchPlaceholder="Digite para buscar..."
+                      emptyText="Nenhum item encontrado."
+                    />
                   </div>
                   <div>
                     <Label>Projeto</Label>
-                    <Select value={projeto} onValueChange={setProjeto}>
-                      <SelectTrigger>
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="none">— sem projeto —</SelectItem>
-                        {projetos.map((p) => (
-                          <SelectItem key={p.id} value={p.id}>
-                            {p.nome}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+                    <Combobox
+                      value={projeto}
+                      onChange={setProjeto}
+                      options={[
+                        { value: "none", label: "— sem projeto —" },
+                        ...projetos.map((p) => ({ value: p.id, label: p.nome })),
+                      ]}
+                      placeholder="Selecione"
+                      searchPlaceholder="Digite para buscar..."
+                      emptyText="Nenhum item encontrado."
+                    />
                   </div>
                 </div>
                 <div className="grid grid-cols-2 gap-3">

@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Combobox } from "@/components/erp/combobox";
 import { ListTree, Search, X, Download, ArrowDownCircle, ArrowUpCircle, Scale } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -262,27 +263,9 @@ function ExtratoPage() {
             <SelectItem value="pagar">Saídas</SelectItem>
           </SelectContent>
         </Select>
-        <Select value={contaId} onValueChange={setContaId}>
-          <SelectTrigger className="h-9 w-[190px]"><SelectValue placeholder="Conta" /></SelectTrigger>
-          <SelectContent>
-            <SelectItem value="todas">Todas as contas</SelectItem>
-            {contas?.map((c) => <SelectItem key={c.id} value={c.id}>{c.nome}</SelectItem>)}
-          </SelectContent>
-        </Select>
-        <Select value={categoriaId} onValueChange={setCategoriaId}>
-          <SelectTrigger className="h-9 w-[190px]"><SelectValue placeholder="Categoria" /></SelectTrigger>
-          <SelectContent>
-            <SelectItem value="todas">Todas as categorias</SelectItem>
-            {categorias?.map((c) => <SelectItem key={c.id} value={c.id}>{c.nome}</SelectItem>)}
-          </SelectContent>
-        </Select>
-        <Select value={centroId} onValueChange={setCentroId}>
-          <SelectTrigger className="h-9 w-[190px]"><SelectValue placeholder="Centro de custo" /></SelectTrigger>
-          <SelectContent>
-            <SelectItem value="todos">Todos os centros</SelectItem>
-            {centros?.map((c) => <SelectItem key={c.id} value={c.id}>{c.nome}</SelectItem>)}
-          </SelectContent>
-        </Select>
+        <Combobox value={contaId} onChange={setContaId} options={[{ value: "todas", label: "Todas as contas" }, ...((contas ?? []).map((c) => ({ value: c.id, label: c.nome ?? "" })) )]} placeholder="Conta" searchPlaceholder="Digite para buscar..." emptyText="Nenhum item encontrado." />
+        <Combobox value={categoriaId} onChange={setCategoriaId} options={[{ value: "todas", label: "Todas as categorias" }, ...((categorias ?? []).map((c) => ({ value: c.id, label: c.nome ?? "" })) )]} placeholder="Categoria" searchPlaceholder="Digite para buscar..." emptyText="Nenhum item encontrado." />
+        <Combobox value={centroId} onChange={setCentroId} options={[{ value: "todos", label: "Todos os centros" }, ...((centros ?? []).map((c) => ({ value: c.id, label: c.nome ?? "" })) )]} placeholder="Centro de custo" searchPlaceholder="Digite para buscar..." emptyText="Nenhum item encontrado." />
         <div className="relative ml-auto w-full sm:w-72">
           <Search className="pointer-events-none absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
           <Input value={busca} onChange={(e) => setBusca(e.target.value)} placeholder="Pesquisar…" className="h-9 pl-8 pr-8" />

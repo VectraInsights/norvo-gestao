@@ -4,6 +4,7 @@ import { EmptyState } from "@/components/erp/empty-state";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { MoneyInput } from "@/components/erp/money-input";
+import { Combobox } from "@/components/erp/combobox";
 import { Label } from "@/components/ui/label";
 import { Card } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -313,24 +314,16 @@ function Produtos() {
                   </div>
                   <div>
                     <Label>Categoria</Label>
-                    <Select
+                    <Combobox
                       value={form.categoria || "__none__"}
-                      onValueChange={(v) =>
+                      onChange={(v) =>
                         setForm({ ...form, categoria: v === "__none__" ? "" : v })
                       }
-                    >
-                      <SelectTrigger className="w-full">
-                        <SelectValue placeholder="Selecione uma categoria" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="__none__">Sem categoria</SelectItem>
-                        {categorias.map((c) => (
-                          <SelectItem key={c} value={c}>
-                            {c}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+                      options={[{ value: "__none__", label: "Sem categoria" }, ...categorias.map((c) => ({ value: c, label: c }))]}
+                      placeholder="Selecione uma categoria"
+                      searchPlaceholder="Digite para buscar..."
+                      emptyText="Nenhum item encontrado."
+                    />
                   </div>
                   <div className="grid grid-cols-3 gap-3">
                     <div>
@@ -399,25 +392,19 @@ function Produtos() {
             setPagina(1);
           }}
         />
-        <Select
-          value={filtroCat}
-          onValueChange={(value) => {
-            setFiltroCat(value);
-            setPagina(1);
-          }}
-        >
-          <SelectTrigger className="w-48">
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="todas">Todas as categorias</SelectItem>
-            {categorias.map((c) => (
-              <SelectItem key={c} value={c}>
-                {c}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+        <div className="w-48">
+          <Combobox
+            value={filtroCat}
+            onChange={(value) => {
+              setFiltroCat(value);
+              setPagina(1);
+            }}
+            options={[{ value: "todas", label: "Todas as categorias" }, ...categorias.map((c) => ({ value: c, label: c }))]}
+            placeholder="Selecione"
+            searchPlaceholder="Digite para buscar..."
+            emptyText="Nenhum item encontrado."
+          />
+        </div>
       </div>
 
       {isLoading ? (

@@ -16,6 +16,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
 import { DateInput } from "@/components/erp/date-input";
+import { Combobox } from "@/components/erp/combobox";
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -444,12 +445,7 @@ function ContasFinanceiras() {
                           <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
                             <div>
                               <Label>Conta padrão para pagamento *</Label>
-                              <Select value={form.cartao_conta_pagamento_id} onValueChange={(v) => setForm({ ...form, cartao_conta_pagamento_id: v })}>
-                                <SelectTrigger><SelectValue placeholder="Selecione" /></SelectTrigger>
-                                <SelectContent>
-                                  {contasCorrentes.map((c) => (<SelectItem key={c.id} value={c.id}>{c.nome ?? c.banco}</SelectItem>))}
-                                </SelectContent>
-                              </Select>
+                              <Combobox value={form.cartao_conta_pagamento_id} onChange={(v) => setForm({ ...form, cartao_conta_pagamento_id: v })} options={contasCorrentes.map((c) => ({ value: c.id, label: c.nome ?? c.banco ?? "" }))} placeholder="Selecione" searchPlaceholder="Digite para buscar..." emptyText="Nenhum item encontrado." />
                             </div>
                             <div><Label>Dia do fechamento *</Label><MoneyInput required prefix="" decimals={0} value={form.cartao_dia_fechamento} onChange={(v) => setForm({ ...form, cartao_dia_fechamento: v })} /></div>
                             <div><Label>Dia do vencimento *</Label><MoneyInput required prefix="" decimals={0} value={form.cartao_dia_vencimento} onChange={(v) => setForm({ ...form, cartao_dia_vencimento: v })} /></div>
@@ -467,12 +463,7 @@ function ContasFinanceiras() {
                           <div><Label>Banco *</Label><Input required value={form.banco} onChange={(e) => setForm({ ...form, banco: e.target.value })} /></div>
                           <div>
                             <Label>Conta corrente vinculada *</Label>
-                            <Select value={form.conta_vinculada_id} onValueChange={(v) => setForm({ ...form, conta_vinculada_id: v })}>
-                              <SelectTrigger><SelectValue placeholder="Selecione" /></SelectTrigger>
-                              <SelectContent>
-                                {contasCorrentes.map((c) => (<SelectItem key={c.id} value={c.id}>{c.nome ?? c.banco}</SelectItem>))}
-                              </SelectContent>
-                            </Select>
+                            <Combobox value={form.conta_vinculada_id} onChange={(v) => setForm({ ...form, conta_vinculada_id: v })} options={contasCorrentes.map((c) => ({ value: c.id, label: c.nome ?? c.banco ?? "" }))} placeholder="Selecione" searchPlaceholder="Digite para buscar..." emptyText="Nenhum item encontrado." />
                           </div>
                         </div>
                       )}
@@ -488,12 +479,7 @@ function ContasFinanceiras() {
                             <div><Label>Banco *</Label><Input required value={form.banco} onChange={(e) => setForm({ ...form, banco: e.target.value })} /></div>
                             <div>
                               <Label>Conta corrente vinculada *</Label>
-                              <Select value={form.conta_vinculada_id} onValueChange={(v) => setForm({ ...form, conta_vinculada_id: v })}>
-                                <SelectTrigger><SelectValue placeholder="Selecione" /></SelectTrigger>
-                                <SelectContent>
-                                  {contasCorrentes.map((c) => (<SelectItem key={c.id} value={c.id}>{c.nome ?? c.banco}</SelectItem>))}
-                                </SelectContent>
-                              </Select>
+                              <Combobox value={form.conta_vinculada_id} onChange={(v) => setForm({ ...form, conta_vinculada_id: v })} options={contasCorrentes.map((c) => ({ value: c.id, label: c.nome ?? c.banco ?? "" }))} placeholder="Selecione" searchPlaceholder="Digite para buscar..." emptyText="Nenhum item encontrado." />
                             </div>
                           </div>
                           <div>
@@ -1298,30 +1284,15 @@ const ReconcileRow = memo(function ReconcileRow({
               </div>
               <div className="space-y-1">
                 <Label className="text-xs">Categoria <span className="text-destructive">*</span></Label>
-                <Select value={r.categoria_id} onValueChange={(v) => onSetRow(tx.id, { categoria_id: v })}>
-                  <SelectTrigger><SelectValue placeholder="Selecione" /></SelectTrigger>
-                  <SelectContent>
-                    {categorias.map((c) => <SelectItem key={c.id} value={c.id}>{c.nome}</SelectItem>)}
-                  </SelectContent>
-                </Select>
+                <Combobox value={r.categoria_id} onChange={(v) => onSetRow(tx.id, { categoria_id: v })} options={categorias.map((c) => ({ value: c.id, label: c.nome }))} placeholder="Selecione" searchPlaceholder="Digite para buscar..." emptyText="Nenhum item encontrado." />
               </div>
               <div className="space-y-1">
                 <Label className="text-xs">{tx.valor >= 0 ? "Cliente" : "Fornecedor"}</Label>
-                <Select value={r.contato_id} onValueChange={(v) => onSetRow(tx.id, { contato_id: v })}>
-                  <SelectTrigger><SelectValue placeholder="Selecione" /></SelectTrigger>
-                  <SelectContent>
-                    {contatos.map((c) => <SelectItem key={c.id} value={c.id}>{c.nome}</SelectItem>)}
-                  </SelectContent>
-                </Select>
+                <Combobox value={r.contato_id} onChange={(v) => onSetRow(tx.id, { contato_id: v })} options={contatos.map((c) => ({ value: c.id, label: c.nome }))} placeholder="Selecione" searchPlaceholder="Digite para buscar..." emptyText="Nenhum item encontrado." />
               </div>
               <div className="space-y-1">
                 <Label className="text-xs">Centro de custo</Label>
-                <Select value={r.centro_custo_id} onValueChange={(v) => onSetRow(tx.id, { centro_custo_id: v })}>
-                  <SelectTrigger><SelectValue placeholder="Selecione" /></SelectTrigger>
-                  <SelectContent>
-                    {centros.map((c) => <SelectItem key={c.id} value={c.id}>{c.nome}</SelectItem>)}
-                  </SelectContent>
-                </Select>
+                <Combobox value={r.centro_custo_id} onChange={(v) => onSetRow(tx.id, { centro_custo_id: v })} options={centros.map((c) => ({ value: c.id, label: c.nome }))} placeholder="Selecione" searchPlaceholder="Digite para buscar..." emptyText="Nenhum item encontrado." />
               </div>
             </div>
           )}
