@@ -142,7 +142,7 @@ function TransferenciasPage() {
             <DialogTrigger asChild>
               <Button><Plus className="mr-1.5 h-4 w-4" /> Nova transferência</Button>
             </DialogTrigger>
-            <DialogContent className="sm:max-w-lg">
+            <DialogContent className="max-h-[90vh] overflow-y-auto">
               <DialogHeader><DialogTitle>Nova transferência</DialogTitle></DialogHeader>
               <div className="grid gap-4">
                 <div className="grid gap-2 sm:grid-cols-2">

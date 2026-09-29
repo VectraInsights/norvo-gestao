@@ -105,7 +105,7 @@ export function AlterarSenhaDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-sm">
+      <DialogContent>
         <DialogHeader>
           <DialogTitle>Dados da conta</DialogTitle>
         </DialogHeader>

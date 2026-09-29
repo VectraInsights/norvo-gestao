@@ -357,7 +357,7 @@ function UsuariosPage() {
 
       {/* Novo usuário */}
       <Dialog open={openNovo} onOpenChange={setOpenNovo}>
-        <DialogContent className="max-w-lg">
+        <DialogContent>
           <DialogHeader>
             <DialogTitle>Criar acesso de usuário</DialogTitle>
           </DialogHeader>
@@ -440,7 +440,7 @@ function UsuariosPage() {
 
       {/* Editar permissões */}
       <Dialog open={!!editando} onOpenChange={(o) => !o && setEditando(null)}>
-        <DialogContent className="max-w-md">
+        <DialogContent>
           <DialogHeader>
             <DialogTitle>Dados de {editando?.nome}</DialogTitle>
           </DialogHeader>
@@ -501,7 +501,7 @@ function UsuariosPage() {
 
       {/* Resetar senha */}
       <Dialog open={!!resetando} onOpenChange={(o) => !o && setResetando(null)}>
-        <DialogContent className="max-w-sm">
+        <DialogContent>
           <DialogHeader>
             <DialogTitle>Redefinir senha de {resetando?.nome}</DialogTitle>
           </DialogHeader>

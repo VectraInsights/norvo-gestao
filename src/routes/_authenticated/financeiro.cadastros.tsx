@@ -298,7 +298,7 @@ function CadastrosPage() {
 
       {/* Dialog categoria */}
       <Dialog open={catOpen} onOpenChange={setCatOpen}>
-        <DialogContent className="sm:max-w-md">
+        <DialogContent>
           <DialogHeader><DialogTitle>{catForm.id ? "Editar categoria" : "Nova categoria"}</DialogTitle></DialogHeader>
           <form onSubmit={(e) => { e.preventDefault(); salvarCat.mutate(); }} className="space-y-3">
             <div>
@@ -326,7 +326,7 @@ function CadastrosPage() {
 
       {/* Dialog centro de custo */}
       <Dialog open={ccOpen} onOpenChange={setCcOpen}>
-        <DialogContent className="sm:max-w-md">
+        <DialogContent>
           <DialogHeader><DialogTitle>{ccForm.id ? "Editar centro de custo" : "Novo centro de custo"}</DialogTitle></DialogHeader>
           <form onSubmit={(e) => { e.preventDefault(); salvarCc.mutate(); }} className="space-y-3">
             <div className="grid grid-cols-3 gap-3">

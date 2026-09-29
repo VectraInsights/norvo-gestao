@@ -612,7 +612,7 @@ function ConfigFiscais() {
                   <Plus className="mr-2 h-4 w-4" /> Nova Regra CFOP
                 </Button>
               </DialogTrigger>
-              <DialogContent className="sm:max-w-[480px]">
+              <DialogContent>
                 <DialogHeader>
                   <DialogTitle>{editingCfopId ? "Editar Regra CFOP" : "Nova Regra de CFOP"}</DialogTitle>
                   <DialogDescription>

@@ -468,7 +468,7 @@ function FolhaPage() {
                   Novo lançamento
                 </Button>
               </DialogTrigger>
-              <DialogContent className="max-w-lg">
+              <DialogContent>
                 <DialogHeader>
                   <DialogTitle>
                     {editing ? "Editar lançamento" : "Novo lançamento de folha"}

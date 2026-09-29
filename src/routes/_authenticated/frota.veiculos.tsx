@@ -933,7 +933,7 @@ function Veiculos() {
 
       {/* Dialog gerenciar tipos */}
       <Dialog open={tiposOpen} onOpenChange={setTiposOpen}>
-        <DialogContent className="max-w-md">
+        <DialogContent>
           <DialogHeader>
             <DialogTitle>Tipos de veículo</DialogTitle>
           </DialogHeader>

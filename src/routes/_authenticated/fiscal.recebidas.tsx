@@ -1658,7 +1658,7 @@ ${transportadora ? `<div class="section"><div class="section-title">TRANSPORTE</
       </Tabs>
 
       <Dialog open={filtrosSalvosOpen} onOpenChange={setFiltrosSalvosOpen}>
-  <DialogContent className="sm:max-w-md">
+  <DialogContent>
   <DialogHeader><DialogTitle>Filtros salvos</DialogTitle></DialogHeader>
   <div className="space-y-4 py-2">
   <div className="flex gap-2">
@@ -1682,7 +1682,7 @@ ${transportadora ? `<div class="section"><div class="section-title">TRANSPORTE</
   </Dialog>
 
   <Dialog open={chaveImportModal} onOpenChange={setChaveImportModal}>
-        <DialogContent className="sm:max-w-md">
+        <DialogContent>
           <DialogHeader>
             <DialogTitle>Importar NF-e por Chave de Acesso</DialogTitle>
           </DialogHeader>
@@ -1736,7 +1736,7 @@ ${transportadora ? `<div class="section"><div class="section-title">TRANSPORTE</
 
       {/* Modal de detalhes da nota importada por chave */}
       <Dialog open={!!notaDetalhe} onOpenChange={(open) => { if (!open) setNotaDetalhe(null); }}>
-        <DialogContent className="sm:max-w-4xl max-h-[85vh] overflow-y-auto">
+        <DialogContent className="max-h-[85vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Detalhes da NF-e</DialogTitle>
           </DialogHeader>
@@ -1980,7 +1980,7 @@ ${transportadora ? `<div class="section"><div class="section-title">TRANSPORTE</
 
       {/* Dialog criar categoria inline */}
       <Dialog open={novaCatOpen} onOpenChange={(o) => { if (!o) { setNovaCatOpen(false); setNovaCatNome(""); setNovaCatContext(null); } }}>
-        <DialogContent className="sm:max-w-sm">
+        <DialogContent>
           <DialogHeader><DialogTitle>Nova categoria (Despesa)</DialogTitle></DialogHeader>
           <div className="space-y-3">
             <div>

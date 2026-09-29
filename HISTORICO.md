@@ -3585,6 +3585,18 @@ Espelhado na Vercel.
 - Nome rótulo×MRZ: completa truncamento, MRZ vence filiação.
 - Espelhado na Vercel via push em main.
 
+## Diálogos sempre em tela cheia (29/09)
+
+- Causa do painel lateral: `DialogContent` base é fullscreen, mas com
+  `max-w-*` + `inset-0` o painel grudava na esquerda. Removidos os
+  `max-w-*` de 23 diálogos (adiantamentos, colaboradores, comissões,
+  folha, clientes/CRM, pedidos, compras, fornecedores, contas, receber,
+  cadastros, empréstimos, transferências, fiscal, frota, projetos,
+  empresas, usuários, senha, menu) + Sheet de pedidos em fullscreen.
+- Mantidos os centralizados de propósito: paleta Ctrl+K e popup
+  compacto do encerramento MDF-e (não abrem como painel lateral).
+- Espelhado na Vercel via push em main.
+
 ## CNH: passada da caixa CAT HAB p/ categoria (29/09)
 
 - "AE" pequeno e vermelho virava "E" nos recortes grandes de forma

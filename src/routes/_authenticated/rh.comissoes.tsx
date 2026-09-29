@@ -374,7 +374,7 @@ function ComissoesPage() {
                   <Plus className="mr-1.5 h-4 w-4" /> Nova comissão
                 </Button>
               </DialogTrigger>
-              <DialogContent className="sm:max-w-md">
+              <DialogContent>
                 <DialogHeader>
                   <DialogTitle>
                     {editing ? "Editar comissão" : `Nova comissão · ${MESES[mes - 1]}/${ano}`}

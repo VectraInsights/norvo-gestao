@@ -198,7 +198,7 @@ function Compras() {
             <DialogTrigger asChild>
               <Button><Plus className="mr-1 h-4 w-4" /> Nova ordem</Button>
             </DialogTrigger>
-            <DialogContent className="max-w-3xl">
+            <DialogContent>
               <DialogHeader><DialogTitle>Nova ordem de compra</DialogTitle></DialogHeader>
               <div className="grid gap-4">
                 <div className="grid gap-4 sm:grid-cols-3">

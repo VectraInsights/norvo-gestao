@@ -1392,7 +1392,7 @@ function ColaboradoresPage() {
                   Cargos
                 </Button>
               </DialogTrigger>
-              <DialogContent className="max-w-md">
+              <DialogContent>
                 <DialogHeader>
                   <DialogTitle>Cargos</DialogTitle>
                 </DialogHeader>

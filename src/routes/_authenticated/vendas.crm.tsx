@@ -238,7 +238,7 @@ function CRM() {
       )}
 
       <Dialog open={open} onOpenChange={(v) => { setOpen(v); if (!v) reset(); }}>
-        <DialogContent className="sm:max-w-lg">
+        <DialogContent>
           <DialogHeader>
             <DialogTitle>{editing ? "Editar oportunidade" : "Nova oportunidade"}</DialogTitle>
           </DialogHeader>

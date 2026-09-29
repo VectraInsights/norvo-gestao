@@ -195,7 +195,7 @@ function EmprestimosPage() {
             <DialogTrigger asChild>
               <Button><Plus className="mr-1.5 h-4 w-4" /> Novo contrato</Button>
             </DialogTrigger>
-            <DialogContent className="sm:max-w-lg">
+            <DialogContent>
               <DialogHeader><DialogTitle>Novo contrato</DialogTitle></DialogHeader>
               <div className="grid gap-4">
                 <div className="grid gap-2 sm:grid-cols-2">

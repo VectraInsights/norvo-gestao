@@ -239,7 +239,7 @@ function ProjetosPage() {
                 Novo projeto
               </Button>
             </DialogTrigger>
-            <DialogContent className="max-w-lg">
+            <DialogContent>
               <DialogHeader>
                 <DialogTitle>{editing ? "Editar projeto" : "Novo projeto"}</DialogTitle>
               </DialogHeader>

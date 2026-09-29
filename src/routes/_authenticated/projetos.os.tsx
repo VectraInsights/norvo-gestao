@@ -273,7 +273,7 @@ function OSPage() {
                 Nova OS
               </Button>
             </DialogTrigger>
-            <DialogContent className="max-w-lg">
+            <DialogContent>
               <DialogHeader>
                 <DialogTitle>
                   {editing ? `OS #${editing.numero ?? ""}` : "Nova ordem de serviço"}

@@ -536,7 +536,7 @@ export function LancamentosPage({ tipo }: { tipo: "receber" | "pagar" }) {
                   Novo lançamento
                 </Button>
               </DialogTrigger>
-              <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-lg">
+              <DialogContent className="max-h-[90vh] overflow-y-auto">
                 <DialogHeader>
                   <DialogTitle>Novo lançamento — {titulo}</DialogTitle>
                 </DialogHeader>
@@ -1022,7 +1022,7 @@ export function LancamentosPage({ tipo }: { tipo: "receber" | "pagar" }) {
           if (!v && !salvarEdicao.isPending) setEditing(null);
         }}
       >
-        <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-lg">
+        <DialogContent className="max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Editar lançamento</DialogTitle>
           </DialogHeader>

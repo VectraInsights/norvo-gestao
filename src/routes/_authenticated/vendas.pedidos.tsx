@@ -480,7 +480,7 @@ function NovaVendaSheet({ onClose }: { onClose: () => void }) {
   const disabled = salvar.isPending;
 
   return (
-    <SheetContent className="w-full sm:max-w-2xl overflow-y-auto">
+    <SheetContent className="inset-0 m-0 h-screen w-screen max-w-none overflow-y-auto sm:max-w-none">
       <SheetHeader>
         <SheetTitle>Nova venda</SheetTitle>
       </SheetHeader>

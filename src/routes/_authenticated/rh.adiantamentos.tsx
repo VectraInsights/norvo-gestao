@@ -405,7 +405,7 @@ function AdiantamentosPage() {
                   <Plus className="mr-1.5 h-4 w-4" /> Novo adiantamento
                 </Button>
               </DialogTrigger>
-              <DialogContent className="sm:max-w-md">
+              <DialogContent>
                 <DialogHeader>
                   <DialogTitle>
                     {editando ? "Editar adiantamento" : "Novo adiantamento"}

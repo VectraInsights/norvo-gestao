@@ -59,7 +59,7 @@ export function MenuSettingsDialog({ prefs, onSave, onReset, collapsed }: Props)
           {!collapsed && <span>Personalizar menu</span>}
         </button>
       </DialogTrigger>
-      <DialogContent className="max-h-[85vh] overflow-y-auto sm:max-w-md">
+      <DialogContent className="max-h-[85vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Personalizar menu</DialogTitle>
           <DialogDescription>

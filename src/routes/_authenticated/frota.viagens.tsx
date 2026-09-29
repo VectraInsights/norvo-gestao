@@ -474,7 +474,7 @@ function Viagens() {
                 Nova viagem
               </Button>
             </DialogTrigger>
-            <DialogContent className="max-w-2xl">
+            <DialogContent>
               <DialogHeader>
                 <DialogTitle>{editing ? "Editar viagem" : "Nova viagem"}</DialogTitle>
               </DialogHeader>
@@ -814,7 +814,7 @@ function Viagens() {
       )}
 
       <Dialog open={!!despViagem} onOpenChange={(v) => !v && setDespViagem(null)}>
-        <DialogContent className="max-w-lg">
+        <DialogContent>
           <DialogHeader>
             <DialogTitle>Despesas da viagem {despViagem ? rota(despViagem) : ""}</DialogTitle>
           </DialogHeader>

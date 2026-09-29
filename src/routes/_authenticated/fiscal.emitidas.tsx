@@ -490,7 +490,7 @@ function NotasEmitidas() {
                 <Plus className="mr-2 h-4 w-4" /> Nova Emissão
               </Button>
             </DialogTrigger>
-            <DialogContent className="sm:max-w-[480px]">
+            <DialogContent>
               <DialogHeader>
                 <DialogTitle>Emitir Nota Fiscal (Rascunho)</DialogTitle>
                 <DialogDescription>
@@ -681,7 +681,7 @@ function NotasEmitidas() {
       </div>
 
       <Dialog open={filtrosSalvosOpen} onOpenChange={setFiltrosSalvosOpen}>
-        <DialogContent className="sm:max-w-md">
+        <DialogContent>
           <DialogHeader>
             <DialogTitle>Filtros salvos</DialogTitle>
             <DialogDescription>Salve uma combinação de tipo, status e busca para reutilizar depois.</DialogDescription>
