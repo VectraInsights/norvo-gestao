@@ -3379,3 +3379,7 @@ Espelhado na Vercel.
 
 - O PDF da CNH digital exporta o documento como imagem (sem texto) e o QR e criptografado (VIO/Serpro, so API paga decodifica). Leitura agora via OCR: renderiza a pagina (pdfjs), recorta a regiao do documento e le com tesseract.js em portugues (lazy load).
 - Mesmos campos: nome/CPF (so se vazios) + numero/categoria/validade.
+
+## CNH OCR: leitura por proximidade + contraste (29/09)
+
+- So o CPF vinha porque o OCR embaralha a ordem (rotulos de um lado, valores de outro). Fallback apos(rotulo, captura, janela) p/ nome/registro/categoria/validade + pre-processamento (cinza+contraste) contra o fundo verde + log [CNH-OCR] no console p/ ajuste fino.

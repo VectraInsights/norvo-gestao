@@ -174,7 +174,8 @@ function ColaboradoresPage() {
   const set = <K extends keyof typeof form>(k: K, v: (typeof form)[K]) =>
     setForm((f) => ({ ...f, [k]: v }));
 
-  // Extrai nome/CPF/CNH de um texto (camada de texto do PDF ou OCR) — retorna o que achou
+  // Extrai nome/CPF/CNH de um texto (camada de texto do PDF ou OCR) — retorna o que achou.
+  // Tenta rótulo+valor adjacentes e, se o OCR embaralhar a ordem, busca por proximidade.
   function extrairCamposCnh(texto: string): string[] {
     const T = texto.replace(/\s+/g, " ");
     const achados: string[] = [];
@@ -183,15 +184,29 @@ function ColaboradoresPage() {
       set("cpf", cpf);
       achados.push("CPF");
     }
-    const nome =
+    // Valor N caracteres após um rótulo (p/ OCR com ordem embaralhada)
+    const apos = (rotulo: RegExp, captura: RegExp, janela = 120) => {
+      const i = T.search(rotulo);
+      if (i < 0) return "";
+      return T.slice(i, i + janela).match(captura)?.[1]?.trim() ?? "";
+    };
+    let nome =
       T.match(/NOME\s+([A-ZÀ-ÚÃÕÇÉÍÓÚÂÊÔ ]{6,60}?)(?=\s+(?:DOC|CPF|RG|CNH|DATA|CATEG|VALID|HABIL|FILIAC|NACIONALIDADE|NATURALIDADE|ASS|LOCAL|OBS))/)
         ?.[1]?.trim() ?? "";
+    if (!nome) {
+      // Fallback: remove palavras-rótulo e pega a 1ª sequência longa em maiúsculas
+      const limpo = apos(/NOME/, /(.{10,200})/, 200)
+        .replace(/\b(DOC|IDENTIDADE|ORG|ORGAO|EMISSOR|UF|CPF|DATA|NASCIMENTO|FILIA[CÇ][AÃ]O|CATEGORIA|CAT|HAB|VALIDADE|PERMISSAO|ACC|REGISTRO|RENACH|HABILITA[CÇ][AÃ]O|OBSERVA[CÇ][OÕ]ES|LOCAL|EMISSAO)\b\.?/gi, " ")
+        .replace(/[^A-ZÀ-ÚÃÕÇÉÍÓÚÂÊÔ ]/g, " ");
+      nome = limpo.match(/([A-ZÀ-ÚÃÕÇÉÍÓÚÂÊÔ ]{6,60})/)?.[1]?.trim() ?? "";
+    }
     if (nome && !form.nome.trim()) {
       set("nome", nome);
       achados.push("nome");
     }
     const reg =
-      T.match(/(?:N[ºo]\s*\.?\s*(?:REGISTRO|RENACH)|RENACH|REGISTRO)\s*(\d{9,12})/i)?.[1] ?? "";
+      T.match(/(?:N[ºo]\s*\.?\s*(?:REGISTRO|RENACH)|RENACH|REGISTRO)\s*(\d{9,12})/i)?.[1] ??
+      apos(/REGISTRO|RENACH/i, /(\d{9,12})/, 80);
     if (reg) {
       set("cnh_numero", reg);
       achados.push("nº CNH");
@@ -199,12 +214,17 @@ function ColaboradoresPage() {
     const cat =
       T.match(/CATEGORIA(?:\s+HAB\.?)?\s*([A-E]{1,2})\b/i)?.[1]?.toUpperCase() ??
       T.match(/\bCAT\.?\s*HAB\.?\s*([A-E]{1,2})\b/i)?.[1]?.toUpperCase() ??
-      "";
+      apos(/CAT\.?\s*HAB|CATEGORIA/i, /\b([A-E]{1,2})\b/, 120).toUpperCase();
     if (cat && ["A", "B", "AB", "C", "D", "E", "AC", "AD", "AE"].includes(cat)) {
       set("cnh_categoria", cat);
       achados.push("categoria " + cat);
     }
-    const val = T.match(/VALIDADE\s*(\d{2})\/(\d{2})\/(\d{4})/)?.slice(1) ?? [];
+    const val =
+      T.match(/VALIDADE\s*(\d{2})\/(\d{2})\/(\d{4})/)?.slice(1) ??
+      (() => {
+        const m = apos(/VALID/i, /(\d{2}\/\d{2}\/\d{4})/, 60).match(/(\d{2})\/(\d{2})\/(\d{4})/);
+        return m ? m.slice(1) : [];
+      })();
     if (val.length === 3) {
       set("cnh_validade", `${val[2]}-${val[1]}-${val[0]}`);
       achados.push("validade");
@@ -225,6 +245,17 @@ function ColaboradoresPage() {
     const ctx = canvas.getContext("2d");
     if (!ctx) throw new Error("Canvas indisponível");
     await page.render({ canvasContext: ctx, viewport }).promise;
+    // Pré-processamento: cinza + contraste (fundo verde da CNH atrapalha o OCR)
+    try {
+      const img = ctx.getImageData(0, 0, canvas.width, canvas.height);
+      const d = img.data;
+      for (let i = 0; i < d.length; i += 4) {
+        const g = 0.299 * d[i] + 0.587 * d[i + 1] + 0.114 * d[i + 2];
+        const c = g < 110 ? 0 : g > 190 ? 255 : Math.round((g - 110) * 3.2);
+        d[i] = d[i + 1] = d[i + 2] = c;
+      }
+      ctx.putImageData(img, 0, 0);
+    } catch {}
     // Recorte da região do documento (esquerda/topo); fallback: página inteira
     const recortes = [
       { x: 0, y: 0.05, w: 0.62, h: 0.5 },
@@ -248,6 +279,7 @@ function ColaboradoresPage() {
           c.height,
         );
         const { data } = await worker.recognize(c);
+        console.log("[CNH-OCR] recorte", r, (data?.text ?? "").slice(0, 600));
         if ((data?.text ?? "").replace(/\s/g, "").length > 30) return data.text;
       }
       return "";
