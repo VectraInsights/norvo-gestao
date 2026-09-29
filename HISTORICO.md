@@ -3352,3 +3352,9 @@ Espelhado na Vercel.
   traco em remetente/destino/tomador/coleta/entrega. Select
   ampliado com as 10 colunas que a tabela usa (todas gravadas
   pelo proprio app, existencia confirmada no codigo).
+
+## Calendario: mes por extenso, sem botao Usar hoje (29/09)
+
+- calendar.tsx formatMonthDropdown short (mai.) -> long pt-BR capitalizado (Maio). Vale p/ todos os calendarios do app.
+- date-input.tsx: removido o botao Usar hoje do rodape do popover (mantido o texto Hoje).
+- Arquivos estavam com atributo Hidden no Windows e recusavam escrita; desocultados com attrib -H.

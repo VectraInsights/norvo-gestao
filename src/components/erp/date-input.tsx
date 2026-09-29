@@ -66,9 +66,8 @@ export function DateInput({ value, onChange, required, disabled, className, id, 
               }
             }}
           />
-          <div className="border-t px-3 py-2 flex items-center justify-between">
+          <div className="border-t px-3 py-2 flex items-center">
             <span className="text-xs text-muted-foreground">Hoje: {format(today, "dd/MM/yyyy")}</span>
-            <Button variant="ghost" size="sm" className="h-7 text-xs" onClick={() => { onChange(format(today, "yyyy-MM-dd")); setOpen(false); }}>Usar hoje</Button>
           </div>
         </PopoverContent>
       </Popover>
