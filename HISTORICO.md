@@ -3422,3 +3422,8 @@ Espelhado na Vercel.
 ## CNH OCR: mapa de vermelho em resolucao original (29/09)
 
 - O downscale p/ 200px diluia os tracos vermelhos finos ate sumirem (nenhuma regiao). Agora amostra pixels na resolucao original com vermelho estrito (exclui pele/laranja e fundo verde) e loga as celulas.
+
+## Colaboradores no padrao CT-e/MDF-e (29/09)
+
+- Lista: card com borda, barra verde com titulo+qtde, sub-barra Listagem + pagina, status em pildora (Ativo em destaque).
+- Janela: titulo com linha rosa do modulo RH; secoes em caixas padronizadas (Dados pessoais, Pagamento com PIX/Banco/Agencia/Conta, CNH sem fundo escuro, Adicionais com VT+Observacoes).
