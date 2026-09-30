@@ -92,7 +92,8 @@ import {
   excluirRejeitadosCteFn,
 } from "@/lib/sefaz-cte-server";
 import { SEFAZ_AMBIENTE } from "@/lib/sefaz-ambiente";
-import { pisoMinimoAntt, PISO_VIGENCIA } from "@/lib/piso-antt";
+import { pisoMinimoAntt, PISO_VIGENCIA, TIPOS_CARGA_ANTT } from "@/lib/piso-antt";
+import { emitirCiotFn } from "@/lib/antt-ciot-server";
 import { CFOPS_CTE, MOD_FRETE_OPTIONS, RESPONSAVEL_CTE_OPTIONS } from "@/lib/cfops-transporte";
 import { gerarDactePdf, DACTE_REV } from "@/lib/dacte-pdf";
 import { completarLogradouro, temTipoLogradouro } from "@/lib/endereco";
@@ -1356,6 +1357,9 @@ function CtePage() {
     motorista2Nome: "",
     motorista2Id: "",
     ciot: "",
+    ciotProtocolo: "",
+    ciotTipoPagto: "6",
+    ciotChave: "",
     placaVeiculo: "",
     placaReboque: "",
     semiReboque1: "",
@@ -1419,6 +1423,9 @@ function CtePage() {
     motorista2Nome: "",
     motorista2Id: "",
     ciot: "",
+    ciotProtocolo: "",
+    ciotTipoPagto: "6",
+    ciotChave: "",
     placaVeiculo: "",
     placaReboque: "",
     semiReboque1: "",
@@ -1594,6 +1601,111 @@ function CtePage() {
   // Valor cobrado de cada imposto = base (total da prestação) × alíquota
   const valorImposto = (aliq: any) =>
     ((totalPrestacao(form) * (parseFloat(aliq || "0") || 0)) / 100).toFixed(2);
+  // CIOT direto ANTT (ETC frota própria, sem TAC): usa certificado + mTLS.
+  // Exige CNPJ+cert e placas cadastrados na ANTT (pef@antt.gov.br), senão rejeita.
+  const [emitindoCiot, setEmitindoCiot] = useState(false);
+  const emitirCiot = async () => {
+    if (!empresa) {
+      toast.error("Selecione uma empresa");
+      return;
+    }
+    const emitCnpj = String((empresa as any).cnpj || "").replace(/\D/g, "");
+    const tomaCnpj = String(form.cnpjTomador || "").replace(/\D/g, "");
+    const destCnpj = String((mercadorias[0] as any)?.destCnpj || "").replace(/\D/g, "");
+    if (emitCnpj.length !== 14) {
+      toast.error("CNPJ da empresa inválido para o CIOT");
+      return;
+    }
+    if (tomaCnpj.length !== 14) {
+      toast.error("Informe o tomador (contratante) para emitir o CIOT");
+      return;
+    }
+    const placa = String(form.placaVeiculo || "").toUpperCase();
+    const veic = (veiculos || []).find((v: any) => String(v.placa || "").toUpperCase() === placa);
+    const eixos = Number((veic as any)?.quantidade_eixos) || 0;
+    if (!placa || !eixos) {
+      toast.error("Selecione a tração (com eixos) para emitir o CIOT");
+      return;
+    }
+    const km = Math.round(Number(String(form.distanciaKm || "").replace(",", ".")) || 0);
+    if (!km) {
+      toast.error("Distância (km) do percurso necessária para o CIOT");
+      return;
+    }
+    const vFrete = Number(String(form.vPrest || "").replace(",", ".")) || 0;
+    if (!(vFrete > 0)) {
+      toast.error("Valor do serviço precisa ser maior que zero");
+      return;
+    }
+    if (
+      !confirm(
+        `Emitir CIOT direto na ANTT (homologação)?\nFrete R$ ${vFrete.toFixed(2)} • ${km} km • ${placa} (${eixos} eixos).\nConfirmo que é FROTA PRÓPRIA, sem TAC/autônomo (TAC exige PSP).`,
+      )
+    )
+      return;
+    setEmitindoCiot(true);
+    try {
+      const tipoCarga = String((percursoMatch as any)?.tipo_carga_antt || "Carga Geral");
+      const tipoCodigo =
+        (TIPOS_CARGA_ANTT as readonly string[]).indexOf(tipoCarga as any) + 1 || 5;
+      const hoje = new Date();
+      const fmtD = (d: Date) => d.toISOString().slice(0, 10);
+      const dias = Math.max(1, Math.ceil((Number(String(form.distanciaKm || "").replace(",", ".")) || 0) / 800));
+      const fim = new Date(hoje.getTime() + dias * 86400000);
+      const chavePixPadrao = emitCnpj;
+      const ret: any = await emitirCiotFn({
+        data: {
+          empresaId: empresa.id,
+          input: {
+          tipoOperacao: 1,
+          contratado: { doc: emitCnpj, rntrc: rntrcFinal },
+          contratante: { doc: tomaCnpj },
+          destinatarioDoc: destCnpj || undefined,
+          veiculos: [
+            {
+              placa,
+              eixos,
+              rntrc: String((veic as any)?.rntrc || rntrcFinal || "").replace(/\D/g, ""),
+            },
+          ],
+          pagamento: {
+            tipo: Number((form as any).ciotTipoPagto || 6),
+            docCreditado: emitCnpj,
+            indPagamento: 0,
+            chavePix:
+              Number((form as any).ciotTipoPagto || 6) === 6
+                ? String((form as any).ciotChave || "").trim() || chavePixPadrao
+                : undefined,
+          },
+          origem: { cmun: String(form.cMunIni || "").replace(/\D/g, "") || undefined },
+          destino: { cmun: String(form.cMunFim || "").replace(/\D/g, "") || undefined },
+          distanciaKm: km,
+          qtdViagens: 1,
+          carga: {
+            peso: Number(String(form.peso || "").replace(",", ".")) || undefined,
+            tipoCodigo,
+          },
+          valorFrete: vFrete,
+          dataInicioViagem: fmtD(hoje),
+          dataFimViagem: fmtD(fim),
+          indAltoDesempenho: false,
+          indRetornoVazio: false,
+          composicaoVeicular: true,
+        },
+      },
+      });
+      if (ret?.sucesso && ret?.ciotCompleto) {
+        setForm((f: any) => ({ ...f, ciot: ret.ciotCompleto, ciotProtocolo: ret.protocolo || "" }));
+        toast.success(`CIOT ${ret.ciotCompleto} autorizado (prot. ${ret.protocolo || "—"})`);
+      } else {
+        toast.error("CIOT rejeitado", { description: `[${ret?.codigo || "?"}] ${ret?.mensagem || "sem resposta da ANTT"}` });
+      }
+    } catch (e: any) {
+      toast.error("Falha ao emitir CIOT", { description: e?.message });
+    } finally {
+      setEmitindoCiot(false);
+    }
+  };
   const num2 = (v: any) => parseFloat(v) || 0;
   const totalPrestacao = (f: typeof emptyForm) =>
     Math.max(
@@ -6775,12 +6887,51 @@ function CtePage() {
                         </Popover>
                       </div>
                       <div>
-                        <Label className="text-[10px] text-muted-foreground">CIOT</Label>
-                        <Input
-                          className="h-6 text-[10px]"
-                          placeholder="Nº CIOT"
-                          disabled={(form as any).finalidadeEmissao === "Complemento"}
-                        />
+                        <Label className="text-[10px] text-muted-foreground">CIOT (ANTT direto)</Label>
+                        <div className="flex gap-1">
+                          <Input
+                            className="h-6 text-[10px] font-mono"
+                            placeholder="Nº CIOT"
+                            value={form.ciot || ""}
+                            onChange={(e) => setForm((f: any) => ({ ...f, ciot: e.target.value }))}
+                            disabled={(form as any).finalidadeEmissao === "Complemento"}
+                          />
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            className="h-6 shrink-0 px-2 text-[10px]"
+                            disabled={emitindoCiot || (form as any).finalidadeEmissao === "Complemento"}
+                            onClick={emitirCiot}
+                            title="Emite CIOT direto na ANTT (homologação) — só frota própria, sem TAC"
+                          >
+                            {emitindoCiot ? "Emitindo…" : "Emitir"}
+                          </Button>
+                        </div>
+                        {(form as any).ciotProtocolo ? (
+                          <div className="text-[9px] text-muted-foreground">Prot. ANTT: {(form as any).ciotProtocolo}</div>
+                        ) : null}
+                        <div className="mt-1 flex gap-1">
+                          <Select
+                            value={String((form as any).ciotTipoPagto || "6")}
+                            onValueChange={(v) => setForm((f: any) => ({ ...f, ciotTipoPagto: v }))}
+                          >
+                            <SelectTrigger className="h-6 text-[10px]">
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="6">PIX</SelectItem>
+                              <SelectItem value="4">Conta pagamento</SelectItem>
+                              <SelectItem value="2">Conta corrente</SelectItem>
+                              <SelectItem value="5">Outros</SelectItem>
+                            </SelectContent>
+                          </Select>
+                          <Input
+                            className="h-6 text-[10px] font-mono"
+                            placeholder="Chave/doc (vazio = CNPJ)"
+                            value={(form as any).ciotChave || ""}
+                            onChange={(e) => setForm((f: any) => ({ ...f, ciotChave: e.target.value }))}
+                          />
+                        </div>
                       </div>
                     </div>
                     <div className="grid grid-cols-3 gap-1">
@@ -7609,6 +7760,7 @@ function CtePage() {
                                     semiReboque1: f0.semiReboque1 || "",
                                     semiReboque2: f0.semiReboque2 || "",
                                     ciot: "",
+                                    ciotProtocolo: "",
                                     pedagioPagto: "sem-pagamento",
                                     pedagioOperadora: "",
                                     pedagioCnpj: "",

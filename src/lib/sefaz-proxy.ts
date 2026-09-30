@@ -330,6 +330,17 @@ export async function handleSefazProxy(request: Request): Promise<Response> {
       case "consultarChave":
         result = await consultarPorChave(pfxBytes, senha, body.chave, cnpj, uf, ambiente);
         break;
+      case "anttCiotDeclarar": {
+        const { declararCiotAntt } = await import("@/lib/antt-ciot");
+        result = await declararCiotAntt({
+          pfx: pfxBytes,
+          senha,
+          env: "homologacao",
+          certCnpj: cnpj,
+          input: (body as any).input,
+        });
+        break;
+      }
       default:
         return json({ error: `Ação desconhecida: ${action}` }, 400);
     }

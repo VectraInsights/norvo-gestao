@@ -3788,3 +3788,19 @@ Espelhado na Vercel.
 - CIOT: sem IPEF contratada, sistema segue só registrando o número
   (campo/XML/DACTE já existiam) — nada a implantar.
 - Espelhado na Vercel via push em main.
+
+## Emissão de CIOT direto ANTT no CT-e (30/09)
+
+- Pesquisa: webservice PEF direto só p/ ETC frota própria (regra B115;
+  TAC exige IPEF); exige CNPJ+cert e placas cadastrados na ANTT
+  (pef@antt.gov.br); multa R$ 10.500; encerrar em 5 dias. CIOT
+  obrigatório no MDF-e desde 21/09 (homolog) / 23/11 (prod).
+- `lib/antt-ciot.ts`: payload DCS v1.1 (ints, BRT -03:00, RNTRC 9d,
+  ContratantesCargFrac, Justificativa null, IdentificadorPix auto) +
+  IdOperacao via /token+/gerar + mTLS A1. Server `antt-ciot-server`
+  + proxy `anttCiotDeclarar`, sempre homologação.
+- CT-e: campo CIOT ligado ao form + botão Emitir (com confirmação de
+  frota própria), tipo pagto + chave, protocolo exibido; CIOT zera ao
+  reaproveitar base; flui p/ MDF-e/DACTE/rascunho. TAC bloqueado pela
+  B115 com mensagem orientando IPEF/manual.
+- Espelhado na Vercel via push em main.
