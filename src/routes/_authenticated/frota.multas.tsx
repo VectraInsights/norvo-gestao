@@ -692,7 +692,7 @@ function Multas() {
                             </AlertDialogHeader>
                             <AlertDialogFooter>
                               <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                              <AlertDialogAction onClick={() => excluir.mutate(m.id)}>
+                              <AlertDialogAction data-acao onClick={() => excluir.mutate(m.id)}>
                                 Excluir
                               </AlertDialogAction>
                             </AlertDialogFooter>

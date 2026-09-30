@@ -3743,3 +3743,14 @@ Espelhado na Vercel.
 - Barra de progresso "Importando XML n/N" no topo + botão travado
   durante a importação.
 - Espelhado na Vercel via push em main.
+
+## CT-e sem placeholder + Enter confirma exclusão (30/09)
+
+- Placeholder "01 — /02 — /03 — Protocolo Pedidos" removido das
+  Observações Gerais do CT-e.
+- Diálogos de exclusão (12 no sistema): botão Excluir/Remover/Confirmar
+  marcado com `data-acao` e o `AlertDialogContent` foca nele ao abrir —
+  Enter confirma, Esc cancela. Diálogos não-destrutivos (Selecionar,
+  Concluir, navegação) mantêm o foco padrão. Confirms nativos
+  (`confirm()`) já confirmavam com Enter.
+- Espelhado na Vercel via push em main.

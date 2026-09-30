@@ -338,7 +338,7 @@ function UsuariosPage() {
                             </AlertDialogHeader>
                             <AlertDialogFooter>
                               <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                              <AlertDialogAction onClick={() => remover.mutate(m.id)}>
+                              <AlertDialogAction data-acao onClick={() => remover.mutate(m.id)}>
                                 Remover
                               </AlertDialogAction>
                             </AlertDialogFooter>

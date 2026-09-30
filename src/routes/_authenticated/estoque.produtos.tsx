@@ -571,6 +571,7 @@ function Produtos() {
           <AlertDialogFooter>
             <AlertDialogCancel>Cancelar</AlertDialogCancel>
             <AlertDialogAction
+              data-acao
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
               onClick={() => deleting && excluirMut.mutate(deleting.id)}
             >

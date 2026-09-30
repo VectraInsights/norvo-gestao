@@ -7691,7 +7691,6 @@ function CtePage() {
                 </div>
                 <Textarea
                   className="min-h-[120px] text-xs font-mono resize-y"
-                  placeholder={"01 — \n02 — \n03 — Protocolo Pedidos:"}
                   value={(form as any).obsGerais || ""}
                   onChange={(e) => setForm({ ...form, obsGerais: e.target.value } as any)}
                 />

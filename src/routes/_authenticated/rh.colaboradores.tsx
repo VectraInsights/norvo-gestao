@@ -1984,7 +1984,7 @@ function ColaboradoresPage() {
                             </AlertDialogHeader>
                             <AlertDialogFooter>
                               <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                              <AlertDialogAction onClick={() => del.mutate(c.id)}>
+                              <AlertDialogAction data-acao onClick={() => del.mutate(c.id)}>
                                 Excluir
                               </AlertDialogAction>
                             </AlertDialogFooter>

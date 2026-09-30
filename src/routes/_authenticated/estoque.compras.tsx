@@ -332,7 +332,7 @@ function Compras() {
                           </AlertDialogHeader>
                           <AlertDialogFooter>
                             <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                            <AlertDialogAction onClick={() => excluir.mutate(o.id)}>Excluir</AlertDialogAction>
+                            <AlertDialogAction data-acao onClick={() => excluir.mutate(o.id)}>Excluir</AlertDialogAction>
                           </AlertDialogFooter>
                         </AlertDialogContent>
                       </AlertDialog>

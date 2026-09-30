@@ -1092,7 +1092,7 @@ function Veiculos() {
                           </AlertDialogHeader>
                           <AlertDialogFooter>
                             <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                            <AlertDialogAction onClick={() => excluir.mutate(v.id)}>
+                            <AlertDialogAction data-acao onClick={() => excluir.mutate(v.id)}>
                               Excluir
                             </AlertDialogAction>
                           </AlertDialogFooter>
