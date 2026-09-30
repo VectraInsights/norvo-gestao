@@ -2466,21 +2466,11 @@ function CtePage() {
           return;
         }
         chavesNoLote.add(chaveNorm);
-        // Homologação: permite reutilizar a mesma NF-e em vários CT-es de teste —
-        // reativa (volta p/ pendente) em vez de bloquear. Produção continua bloqueando.
+        // NF-e já usada (em rascunho ou embarcada) não pode ser reutilizada em outro CT-e.
         const stExistente = statusPorChave.get(chaveNorm);
-        const emHomolog = SEFAZ_AMBIENTE === "homologacao";
-        if (!emHomolog && (chavesEmRascunho.has(chaveNorm) || (stExistente && stExistente !== "pendente"))) {
+        if (chavesEmRascunho.has(chaveNorm) || (stExistente && stExistente !== "pendente")) {
           reservadas++;
           return;
-        }
-        if (emHomolog && stExistente && stExistente !== "pendente") {
-          await supabase
-            .from("cte_nfes_pendentes" as any)
-            .update({ status: "pendente" })
-            .eq("empresa_id", empresa!.id)
-            .eq("chave", chaveNorm);
-          statusPorChave.set(chaveNorm, "pendente");
         }
         const peso = pesoB ? parseFloat(pesoB) : 1000;
         let qVolNum = Array.from(doc.querySelectorAll("transp > vol > qVol")).reduce(
@@ -2593,14 +2583,15 @@ function CtePage() {
           status: "pendente" as const,
         };
         const jaExiste = statusPorChave.has(chaveNorm);
-        const { error } =
-          emHomolog && jaExiste
-            ? await supabase
-                .from("cte_nfes_pendentes" as any)
-                .update(payload)
-                .eq("empresa_id", empresa!.id)
-                .eq("chave", chaveNorm)
-            : await supabase.from("cte_nfes_pendentes" as any).insert(payload);
+        // Se já existe (qualquer status pendente), ATUALIZA em vez de inserir:
+        // sem UNIQUE garantido no banco o insert duplicava a linha (23505 morto).
+        const { error } = jaExiste
+          ? await supabase
+              .from("cte_nfes_pendentes" as any)
+              .update(payload)
+              .eq("empresa_id", empresa!.id)
+              .eq("chave", chaveNorm)
+          : await supabase.from("cte_nfes_pendentes" as any).insert(payload);
         if (error) {
           if (
             (error as any).code === "23505" ||
@@ -3389,9 +3380,8 @@ function CtePage() {
         }
         const chavesUsadas =
           selecionadas.size > 0 ? Array.from(selecionadas) : mercadorias.map((m) => m.chave);
-        // Homologação: mantém NF-e como pendente p/ permitir 2º CT-e com a mesma nota em teste.
-        // Produção: baixa como embarcada normalmente.
-        if (empresa && chavesUsadas.length > 0 && SEFAZ_AMBIENTE !== "homologacao") {
+        // NF-e embarcada não pode ser reutilizada em outro CT-e: baixa sempre.
+        if (empresa && chavesUsadas.length > 0) {
           const { count, error: embErr } = await supabase
             .from("cte_nfes_pendentes" as any)
             .update({ status: "embarcada" })
