@@ -3714,3 +3714,7 @@ Espelhado na Vercel.
 ## Veiculos: dropdown RNTRC proprio corrigido (30/09)
 
 - O RNTRC usa dropdown proprio (nao o Combobox compartilhado): item em linha unica sem quebrar, popover com largura automatica, pesquisa separada da selecao (abre sempre limpa; texto digitado sem selecionar e aproveitado ao fechar).
+
+## Veiculos: RNTRC alinhado (30/09)
+
+- Itens do dropdown com numero em coluna fixa mono de 9 digitos (completa com zero a esquerda so na exibicao), traco e nome sempre na mesma reta; caixa fechada acompanha o mesmo formato.

@@ -845,9 +845,9 @@ function Veiculos() {
                       role="combobox"
                       className="h-10 w-full justify-between font-normal"
                     >
-                      <span className="truncate">
+                      <span className="truncate font-mono">
                         {form.rntrc
-                          ? `${form.rntrc}${rntrcDisponiveis.find((r) => r.rntrc === form.rntrc)?.nome ? ` — ${rntrcDisponiveis.find((r) => r.rntrc === form.rntrc)?.nome}` : ""}`
+                          ? `${form.rntrc.padStart(9, "0")}${rntrcDisponiveis.find((r) => r.rntrc === form.rntrc)?.nome ? ` — ${rntrcDisponiveis.find((r) => r.rntrc === form.rntrc)?.nome}` : ""}`
                           : "Selecione ou digite"}
                       </span>
                       <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
@@ -895,11 +895,12 @@ function Veiculos() {
                                   (form.rntrc === r.rntrc ? "opacity-100" : "opacity-0")
                                 }
                               />
-                              <span className="font-medium">{r.rntrc}</span>
+                              <span className="w-[9ch] shrink-0 font-mono tabular-nums">
+                                {r.rntrc.padStart(9, "0")}
+                              </span>
+                              <span className="shrink-0 text-muted-foreground">—</span>
                               {r.nome && (
-                                <span className="ml-2 truncate text-muted-foreground">
-                                  — {r.nome}
-                                </span>
+                                <span className="ml-2 truncate text-muted-foreground">{r.nome}</span>
                               )}
                             </CommandItem>
                           ))}
