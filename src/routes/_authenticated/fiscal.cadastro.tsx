@@ -8,7 +8,9 @@ import { Card } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
-import { Loader2, Plus, Search, Trash2, Users, Pencil } from "lucide-react";
+import { Loader2, Plus, Search, Trash2, Users, Pencil, ChevronLeft, ChevronRight } from "lucide-react";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { useMemo, useState } from "react";
@@ -51,6 +53,10 @@ function Cadastro() {
   const [deleting, setDeleting] = useState<Contato | null>(null);
   const [lookingUp, setLookingUp] = useState(false);
   const [busca, setBusca] = useState("");
+  const [pageSize, setPageSize] = useState(10);
+  const [pagina, setPagina] = useState(1);
+  const [selecionados, setSelecionados] = useState<Set<string>>(new Set());
+  const [confirmLote, setConfirmLote] = useState(false);
 
   const { data: contatos, isLoading } = useQuery({
     enabled: !!empresa,
@@ -78,6 +84,27 @@ function Cadastro() {
         || (c.cidade || "").toLowerCase().includes(q);
     });
   }, [contatos, busca]);
+
+  const totalPaginas = Math.max(1, Math.ceil(filtrados.length / pageSize));
+  const paginaAtual = Math.min(pagina, totalPaginas);
+  const visiveis = filtrados.slice((paginaAtual - 1) * pageSize, paginaAtual * pageSize);
+  const todosVisiveisSel = visiveis.length > 0 && visiveis.every((c) => selecionados.has(c.id));
+  const alternarTodosVisiveis = () => {
+    setSelecionados((ant) => {
+      const prox = new Set(ant);
+      if (todosVisiveisSel) visiveis.forEach((c) => prox.delete(c.id));
+      else visiveis.forEach((c) => prox.add(c.id));
+      return prox;
+    });
+  };
+  const alternarUm = (id: string) => {
+    setSelecionados((ant) => {
+      const prox = new Set(ant);
+      if (prox.has(id)) prox.delete(id);
+      else prox.add(id);
+      return prox;
+    });
+  };
 
   const lookupCnpj = async () => {
     const digits = onlyDigits(form.documento);
@@ -186,6 +213,23 @@ function Cadastro() {
     onError: (e: Error) => toast.error(e.message),
   });
 
+  const excluirLote = useMutation({
+    mutationFn: async (ids: string[]) => {
+      if (!empresa) throw new Error("Empresa não selecionada");
+      const { error } = await supabase.from("fiscal_cadastros").delete().eq("empresa_id", empresa.id).in("id", ids);
+      if (error) throw error;
+      return ids.length;
+    },
+    onSuccess: (n) => {
+      toast.success(`${n} cadastro(s) excluído(s)`);
+      setSelecionados(new Set());
+      setConfirmLote(false);
+      setPagina(1);
+      qc.invalidateQueries({ queryKey: ["fiscal-cadastro"] });
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
   const openEdit = (c: Contato) => {
     setEditing(c);
     setForm({
@@ -209,7 +253,29 @@ function Cadastro() {
       <div className="mb-3 flex flex-col gap-2 sm:flex-row sm:items-center">
         <div className="relative flex-1">
           <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-          <Input className="pl-8" placeholder="Buscar por nome, CPF/CNPJ ou cidade..." value={busca} onChange={(e) => setBusca(e.target.value)} />
+          <Input className="pl-8" placeholder="Buscar por nome, CPF/CNPJ ou cidade..." value={busca} onChange={(e) => { setBusca(e.target.value); setPagina(1); }} />
+        </div>
+        <div className="flex items-center gap-2">
+          <Button variant="outline" size="sm" onClick={alternarTodosVisiveis} disabled={visiveis.length === 0}>
+            {todosVisiveisSel ? "Limpar seleção" : "Selecionar visíveis"}
+          </Button>
+          {selecionados.size > 0 && (
+            <Button variant="destructive" size="sm" onClick={() => setConfirmLote(true)}>
+              <Trash2 className="mr-1 h-3.5 w-3.5" /> Excluir selecionados ({selecionados.size})
+            </Button>
+          )}
+          <Select value={String(pageSize)} onValueChange={(v) => { setPageSize(Number(v)); setPagina(1); }}>
+            <SelectTrigger className="w-24">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {[10, 20, 50, 100].map((n) => (
+                <SelectItem key={n} value={String(n)}>
+                  {n} / pág.
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </div>
       </div>
       {isLoading ? (
@@ -221,13 +287,18 @@ function Cadastro() {
           <Table>
             <TableHeader>
               <TableRow>
+                <TableHead className="w-10">
+                  <Checkbox checked={todosVisiveisSel} onCheckedChange={alternarTodosVisiveis} aria-label="Selecionar visíveis" />
+                </TableHead>
                 <TableHead>Nome</TableHead><TableHead>Documento</TableHead><TableHead>Cidade/UF</TableHead><TableHead>Contato</TableHead><TableHead className="w-20" />
               </TableRow>
             </TableHeader>
             <TableBody>
-              {filtrados.map((c) => (
+              {visiveis.map((c) => (
                 <TableRow key={c.id}>
-                  <TableCell className="font-medium">{c.nome}</TableCell>
+                  <TableCell>
+                    <Checkbox checked={selecionados.has(c.id)} onCheckedChange={() => alternarUm(c.id)} aria-label={`Selecionar ${c.nome}`} />
+                  </TableCell>                  <TableCell className="font-medium">{c.nome}</TableCell>
                   <TableCell className="text-tabular">{c.documento ? maskDoc(c.documento) : "—"}</TableCell>
                   <TableCell className="text-muted-foreground">{c.cidade ? `${c.cidade}${c.uf ? `/${c.uf}` : ""}` : "—"}</TableCell>
                   <TableCell className="text-muted-foreground">{c.telefone ?? c.email ?? "—"}</TableCell>
@@ -259,6 +330,22 @@ function Cadastro() {
               ))}
             </TableBody>
           </Table>
+          <div className="flex items-center justify-between border-t border-border/60 px-4 py-2 text-xs text-muted-foreground">
+            <span>
+              {filtrados.length} cadastro(s){selecionados.size > 0 && ` · ${selecionados.size} selecionado(s)`}
+            </span>
+            <div className="flex items-center gap-1">
+              <span>
+                Página {paginaAtual} de {totalPaginas}
+              </span>
+              <Button size="sm" variant="ghost" className="h-7 w-7 p-0" disabled={paginaAtual <= 1} onClick={() => setPagina(paginaAtual - 1)}>
+                <ChevronLeft className="h-4 w-4" />
+              </Button>
+              <Button size="sm" variant="ghost" className="h-7 w-7 p-0" disabled={paginaAtual >= totalPaginas} onClick={() => setPagina(paginaAtual + 1)}>
+                <ChevronRight className="h-4 w-4" />
+              </Button>
+            </div>
+          </div>
         </Card>
       )}
 
@@ -319,6 +406,27 @@ function Cadastro() {
               data-acao
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
               onClick={() => deleting && excluir.mutate(deleting.id)}
+            >
+              Excluir
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      <AlertDialog open={confirmLote} onOpenChange={(v) => { if (!v) setConfirmLote(false); }}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Excluir selecionados</AlertDialogTitle>
+            <AlertDialogDescription>
+              Tem certeza que deseja excluir <strong>{selecionados.size} cadastro(s)</strong>? Esta ação não pode ser desfeita.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              data-acao
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              onClick={() => excluirLote.mutate([...selecionados])}
             >
               Excluir
             </AlertDialogAction>
