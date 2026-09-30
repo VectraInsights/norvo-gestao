@@ -56,6 +56,40 @@ export const Route = createFileRoute("/_authenticated/fiscal/percursos")({
 
 type Percurso = Record<string, any> & { id: string };
 
+// Normaliza nome de cidade p/ comparar (minúsculas, sem acento)
+const normCidade = (s: any) =>
+  String(s || "")
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .trim();
+
+type Mun = { nome: string; uf: string; id: number };
+// Cache compartilhado com o cadastro de colaboradores
+async function carregarMunicipios(): Promise<Mun[]> {
+  try {
+    const raw = localStorage.getItem("ibge-municipios-v1");
+    if (raw) {
+      const arr = JSON.parse(raw);
+      if (Array.isArray(arr) && arr.length > 5000 && arr.some((m: any) => m.id))
+        return arr.map((m: any) => ({ nome: String(m.nome ?? ""), uf: String(m.uf ?? ""), id: Number(m.id ?? 0) }));
+    }
+  } catch {}
+  const r = await fetch(
+    "https://servicodados.ibge.gov.br/api/v1/localidades/municipios?orderBy=nome",
+  );
+  const j = await r.json();
+  const arr = (j as any[]).map((m) => ({
+    nome: String(m.nome ?? ""),
+    uf: String(m.microrregiao?.mesorregiao?.UF?.sigla ?? ""),
+    id: Number(m.id ?? 0),
+  }));
+  try {
+    localStorage.setItem("ibge-municipios-v1", JSON.stringify(arr));
+  } catch {}
+  return arr;
+}
+
 // Colunas editáveis. Remetente/destinatário/tomador formam a chave e NUNCA entram aqui.
 const EDITAVEIS = [
   "nome",
@@ -493,6 +527,42 @@ function PercursosPage() {
   const [percTab, setPercTab] = useState("geral");
   const [editing, setEditing] = useState<Percurso | null>(null);
   const [calcando, setCalcando] = useState(false);
+  // UF acompanha a cidade de entrega (IBGE); carrega uma vez
+  const [municipios, setMunicipios] = useState<Mun[]>([]);
+  useEffect(() => {
+    let vivo = true;
+    carregarMunicipios()
+      .then((arr) => {
+        if (vivo) setMunicipios(arr);
+      })
+      .catch(() => {});
+    return () => {
+      vivo = false;
+    };
+  }, []);
+  const resolverUfEntrega = () => {
+    const cid = normCidade(editing?.entrega_xmun);
+    if (!cid || municipios.length === 0) return;
+    const found = municipios.filter((m) => normCidade(m.nome) === cid);
+    if (found.length === 0) {
+      toast.warning("Cidade não encontrada no IBGE — confira a UF");
+      return;
+    }
+    const atual = String(editing?.entrega_uf || "").toUpperCase();
+    const mesma = found.find((m) => m.uf === atual);
+    const pick = mesma ?? found[0];
+    setEditing((e) =>
+      e
+        ? {
+            ...e,
+            entrega_uf: pick.uf,
+            ...(pick.id ? { entrega_cmun: String(pick.id) } : {}),
+          }
+        : e,
+    );
+    if (!mesma && found.length > 1)
+      toast.info(`UF ajustada para ${pick.uf} (${found.length} cidades com esse nome)`);
+  };
   const rotaRef = useRef<{ id: string | null; sig: string }>({ id: null, sig: "" });
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -1333,6 +1403,7 @@ function PercursosPage() {
                             className="h-6 text-[11px] flex-1 min-w-0"
                             value={editing.entrega_xmun || ""}
                             onChange={(e) => set("entrega_xmun", e.target.value.toUpperCase())}
+                            onBlur={() => resolverUfEntrega()}
                           />
                           <span className="text-[9px] text-muted-foreground shrink-0">UF</span>
                           <Input

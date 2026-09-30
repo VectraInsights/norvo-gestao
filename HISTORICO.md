@@ -3650,3 +3650,7 @@ Espelhado na Vercel.
 ## Percursos: so destino editavel (30/09)
 
 - Na Coleta/Entrega, apenas a cidade de Entrega editavel (maiuscula); coleta e UFs seguem somente-leitura.
+
+## Percursos: UF acompanha cidade de entrega (30/09)
+
+- Ao sair do campo Entrega, busca a cidade no IBGE (cache local compartilhado) e ajusta UF + cMun sozinhos; avisa se houver homonimas ou se nao achar.
