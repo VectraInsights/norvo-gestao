@@ -1507,8 +1507,20 @@ function PercursosPage() {
                           variant="ghost"
                           className="h-7 w-7"
                           title="Editar"
-                          onClick={() => {
-                            setEditing({ ...p });
+                          onClick={async () => {
+                            // A listagem traz poucas colunas: busca a linha
+                            // completa antes de editar, senão o salvar
+                            // sobrescreve CFOP/natureza/alíquotas/seguro com vazio.
+                            let full: any = null;
+                            try {
+                              const { data } = await supabase
+                                .from("cte_percursos" as any)
+                                .select("*")
+                                .eq("id", p.id)
+                                .maybeSingle();
+                              full = data || null;
+                            } catch {}
+                            setEditing({ ...(full ?? p) });
                             setPercTab("geral");
                           }}
                         >
