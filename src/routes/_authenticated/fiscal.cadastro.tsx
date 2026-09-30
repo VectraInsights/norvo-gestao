@@ -55,6 +55,10 @@ function Cadastro() {
   const [busca, setBusca] = useState("");
   const [pageSize, setPageSize] = useState(10);
   const [pagina, setPagina] = useState(1);
+  const [ordem, setOrdem] = useState<{ key: "nome" | "documento" | "ie" | "cidade" | "endereco" | "contato"; dir: 1 | -1 }>({
+    key: "nome",
+    dir: 1,
+  });
   const [selecionados, setSelecionados] = useState<Set<string>>(new Set());
   const [confirmLote, setConfirmLote] = useState(false);
 
@@ -87,7 +91,21 @@ function Cadastro() {
 
   const totalPaginas = Math.max(1, Math.ceil(filtrados.length / pageSize));
   const paginaAtual = Math.min(pagina, totalPaginas);
-  const visiveis = filtrados.slice((paginaAtual - 1) * pageSize, paginaAtual * pageSize);
+  const chOrd = (c: Contato): string => {
+    if (ordem.key === "documento") return (c.documento || "").replace(/\D/g, "");
+    if (ordem.key === "ie") return (c.ie || "").toLowerCase();
+    if (ordem.key === "cidade") return `${c.cidade || ""} ${c.uf || ""}`.toLowerCase();
+    if (ordem.key === "endereco") return (c.logradouro || "").toLowerCase();
+    if (ordem.key === "contato") return (c.telefone || c.email || "").toLowerCase();
+    return (c.nome || "").toLowerCase();
+  };
+  const ordenados = [...filtrados].sort((a, b) => chOrd(a).localeCompare(chOrd(b), "pt-BR") * ordem.dir);
+  const visiveis = ordenados.slice((paginaAtual - 1) * pageSize, paginaAtual * pageSize);
+  const alternarOrdem = (key: typeof ordem.key) => {
+    setOrdem((o) => (o.key === key ? { key, dir: o.dir === 1 ? -1 : 1 } : { key, dir: 1 }));
+  };
+  const setaOrdem = (key: typeof ordem.key) =>
+    ordem.key === key ? (ordem.dir === 1 ? " ▲" : " ▼") : "";
   const todosVisiveisSel = visiveis.length > 0 && visiveis.every((c) => selecionados.has(c.id));
   const alternarTodosVisiveis = () => {
     setSelecionados((ant) => {
@@ -267,13 +285,19 @@ function Cadastro() {
       ) : (
         <Card className="overflow-hidden shadow-panel">
           <div className="overflow-x-auto">
-          <Table className="min-w-[1080px]">
+          <Table className="min-w-[1280px]">
             <TableHeader>
               <TableRow>
                 <TableHead className="w-10">
                   <Checkbox className="rounded-none" checked={todosVisiveisSel} onCheckedChange={alternarTodosVisiveis} aria-label="Selecionar visíveis" />
                 </TableHead>
-                <TableHead>Nome</TableHead><TableHead>Documento</TableHead><TableHead>IE</TableHead><TableHead>Cidade/UF</TableHead><TableHead>Endereço</TableHead><TableHead>Contato</TableHead><TableHead className="w-20" />
+                <TableHead className="cursor-pointer select-none whitespace-nowrap" onClick={() => alternarOrdem("nome")} title="Ordenar por nome">Nome{setaOrdem("nome")}</TableHead>
+                <TableHead className="cursor-pointer select-none whitespace-nowrap" onClick={() => alternarOrdem("documento")} title="Ordenar por CPF/CNPJ">CPF/CNPJ{setaOrdem("documento")}</TableHead>
+                <TableHead className="cursor-pointer select-none whitespace-nowrap" onClick={() => alternarOrdem("ie")} title="Ordenar por IE">IE{setaOrdem("ie")}</TableHead>
+                <TableHead className="cursor-pointer select-none whitespace-nowrap" onClick={() => alternarOrdem("cidade")} title="Ordenar por cidade">Cidade/UF{setaOrdem("cidade")}</TableHead>
+                <TableHead className="cursor-pointer select-none whitespace-nowrap" onClick={() => alternarOrdem("endereco")} title="Ordenar por endereço">Endereço{setaOrdem("endereco")}</TableHead>
+                <TableHead className="cursor-pointer select-none whitespace-nowrap" onClick={() => alternarOrdem("contato")} title="Ordenar por contato">Contato{setaOrdem("contato")}</TableHead>
+                <TableHead className="w-20" />
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -281,14 +305,15 @@ function Cadastro() {
                 <TableRow key={c.id}>
                   <TableCell>
                     <Checkbox className="rounded-none" checked={selecionados.has(c.id)} onCheckedChange={() => alternarUm(c.id)} aria-label={`Selecionar ${c.nome}`} />
-                  </TableCell>                  <TableCell className="font-medium">{c.nome}</TableCell>
-                  <TableCell className="text-tabular">{c.documento ? maskDoc(c.documento) : "—"}</TableCell>
-                  <TableCell className="text-muted-foreground">{c.ie || "—"}</TableCell>
-                  <TableCell className="text-muted-foreground">{c.cidade ? `${c.cidade}${c.uf ? `/${c.uf}` : ""}` : "—"}</TableCell>
-                  <TableCell className="max-w-[320px] truncate text-muted-foreground" title={[c.logradouro, c.numero, c.bairro].filter(Boolean).join(", ")}>
+                  </TableCell>                  <TableCell className="font-medium whitespace-nowrap">{c.nome}</TableCell>
+                  <TableCell className="text-tabular whitespace-nowrap">{c.documento ? maskDoc(c.documento) : "—"}</TableCell>
+                  <TableCell className="text-muted-foreground whitespace-nowrap">{c.ie || "—"}</TableCell>
+                  <TableCell className="text-muted-foreground whitespace-nowrap">{c.cidade ? `${c.cidade}${c.uf ? `/${c.uf}` : ""}` : "—"}</TableCell>
+                  <TableCell className="text-muted-foreground whitespace-nowrap" title={[c.logradouro, c.numero, c.bairro].filter(Boolean).join(", ")}>
                     {([c.logradouro, c.numero].filter(Boolean).join(", ") || "—") + (c.bairro ? ` — ${c.bairro}` : "")}
                   </TableCell>
-                  <TableCell className="text-muted-foreground">{c.telefone ?? c.email ?? "—"}</TableCell>
+                  <TableCell className="text-muted-foreground whitespace-nowrap">{c.telefone ?? c.email ?? "—"}</TableCell>
+                  <TableCell className="text-muted-foreground whitespace-nowrap">{c.telefone ?? c.email ?? "—"}</TableCell>
                   <TableCell className="text-right">
                     <div className="flex items-center justify-end gap-1">
                       <TooltipProvider>
