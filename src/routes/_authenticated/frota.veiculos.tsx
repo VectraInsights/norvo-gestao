@@ -131,6 +131,21 @@ function formVazio() {
 const TIPOS_PADRAO = ["3/4", "Bitrem", "Cavalo Mecânico", "Carreta", "Toco", "Truck", "Van/Furgão"];
 const CATEGORIAS = ["Particular", "Aluguel", "Agregado", "Terceiro"];
 
+// Máscara CPF/CNPJ conforme digita (limite 14 números)
+function maskDoc(v: string) {
+  const d = String(v || "").replace(/\D/g, "").slice(0, 14);
+  if (d.length <= 11)
+    return d
+      .replace(/(\d{3})(\d)/, "$1.$2")
+      .replace(/(\d{3})(\d)/, "$1.$2")
+      .replace(/(\d{3})(\d{1,2})$/, "$1-$2");
+  return d
+    .replace(/^(\d{2})(\d)/, "$1.$2")
+    .replace(/^(\d{2})\.(\d{3})(\d)/, "$1.$2.$3")
+    .replace(/\.(\d{3})(\d)/, "$1/$2")
+    .replace(/(\d{4})(\d)/, "$1-$2");
+}
+
 function Veiculos() {
   const { data: empresa } = useEmpresaAtual();
   const qc = useQueryClient();
@@ -478,7 +493,7 @@ function Veiculos() {
       rntrc: v.rntrc ?? "",
       renavam: v.renavam ?? "",
       proprietario: (v as any).proprietario ?? "",
-      proprietario_doc: (v as any).proprietario_doc ?? "",
+      proprietario_doc: maskDoc((v as any).proprietario_doc ?? ""),
       quantidade_eixos: (v as any).quantidade_eixos ? String((v as any).quantidade_eixos) : "",
       categoria: (v as any).categoria ?? "",
       chassi: (v as any).chassi ?? "",
@@ -902,10 +917,7 @@ function Veiculos() {
                 <Label>CNPJ/CPF Proprietário</Label>
                 <Input
                   value={form.proprietario_doc}
-                  onChange={(e) =>
-                    set("proprietario_doc", e.target.value.replace(/[^\d./-]/g, "").slice(0, 18))
-                  }
-                  placeholder="Somente números"
+                  onChange={(e) => set("proprietario_doc", maskDoc(e.target.value))}
                   className="font-mono"
                 />
               </div>

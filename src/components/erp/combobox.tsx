@@ -70,8 +70,8 @@ export function Combobox({
                     setOpen(false);
                   }}
                 >
-                  <Check className={cn("mr-2 h-4 w-4", value === o.value ? "opacity-100" : "opacity-0")} />
-                  <span className="truncate">{rotulo(o)}</span>
+                  <Check className={cn("mr-2 h-4 w-4 shrink-0", value === o.value ? "opacity-100" : "opacity-0")} />
+                  <span className="min-w-0 flex-1 truncate whitespace-nowrap">{rotulo(o)}</span>
                 </CommandItem>
               ))}
             </CommandGroup>

@@ -3697,3 +3697,7 @@ Espelhado na Vercel.
 ## Padrao: botao Novo a direita da busca (30/09)
 
 - Percursos: Novo percurso a direita da busca. Veiculos: Novo veiculo saiu de cima e foi para a direita da busca (padrao a seguir nas telas).
+
+## Veiculos: RNTRC 1 linha + mascara doc (30/09)
+
+- Dropdowns do Combobox com item em linha unica (numero + empresa, sem quebrar; vale p/ RNTRC e demais). CNPJ/CPF do Proprietario sem placeholder, com mascara conforme digita (000.000.000-00 / 00.000.000/0000-00) e limite de 14 numeros; registros existentes abrem ja mascarados; salvar segue gravando so numeros.
