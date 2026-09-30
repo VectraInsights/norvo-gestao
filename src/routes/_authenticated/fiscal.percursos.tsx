@@ -465,7 +465,7 @@ async function geoPorCidade(
 async function calcDistDur(
   o: { cep: string; xmun: string; uf: string },
   d: { cep: string; xmun: string; uf: string },
-): Promise<{ km: string; h: string }> {
+): Promise<{ km: string; h: string; ferryKm: number }> {
   const dOrig = String(o.cep || "").replace(/\D/g, "");
   const dDst = String(d.cep || "").replace(/\D/g, "");
   const go = (await geoPorCep(dOrig)) || (await geoPorCidade(o.xmun, o.uf));
@@ -501,7 +501,7 @@ async function calcDistDur(
         gd.lon +
         "," +
         gd.lat +
-        "?overview=false&alternatives=true",
+        "?overview=false&alternatives=true&steps=true",
     );
     if (!r.ok) throw new Error("x");
     j = await r.json();
@@ -509,14 +509,21 @@ async function calcDistDur(
     throw new Error("Falha no calculo da rota (OSRM)");
   }
   const routes = (j && j.routes) || [];
-  if (!routes.length) throw new Error("Rota nao encontrada entre os CEPs");
-  const m = Math.min(...routes.map((x: any) => Number(x.distance) || Infinity));
-  if (!isFinite(m)) throw new Error("Rota nao encontrada entre os CEPs");
+  const validas = routes.filter((x: any) => isFinite(Number(x.distance)));
+  if (!validas.length) throw new Error("Rota nao encontrada entre os CEPs");
+  validas.sort((a: any, b: any) => Number(a.distance) - Number(b.distance));
+  const melhor = validas[0];
+  const m = Number(melhor.distance);
+  // Trechos de balsa (ex.: Belém>Macapá): informa no toast p/ conferência do frete
+  let ferryM = 0;
+  for (const leg of melhor.legs || [])
+    for (const st of (leg as any).steps || [])
+      if ((st as any).mode === "ferry") ferryM += Number((st as any).distance) || 0;
   const km = Math.round(m / 1000);
   const volante = km / 60;
   const dias = Math.max(1, Math.ceil(volante / 12));
   const total = Math.floor(volante + (dias > 1 ? 12 * dias : 0) + 0.4);
-  return { km: String(km), h: String(total) };
+  return { km: String(km), h: String(total), ferryKm: Math.round(ferryM / 1000) };
 }
 function PercursosPage() {
   const { data: empresa } = useEmpresaAtual();
@@ -541,6 +548,7 @@ function PercursosPage() {
     };
   }, []);
   const resolverUfEntrega = () => {
+    if (!editing) return;
     const cid = normCidade(editing?.entrega_xmun);
     if (!cid || municipios.length === 0) return;
     const found = municipios.filter((m) => normCidade(m.nome) === cid);
@@ -551,17 +559,21 @@ function PercursosPage() {
     const atual = String(editing?.entrega_uf || "").toUpperCase();
     const mesma = found.find((m) => m.uf === atual);
     const pick = mesma ?? found[0];
-    setEditing((e) =>
-      e
-        ? {
-            ...e,
-            entrega_uf: pick.uf,
-            ...(pick.id ? { entrega_cmun: String(pick.id) } : {}),
-          }
-        : e,
-    );
+    const atualizado = {
+      ...editing,
+      entrega_uf: pick.uf,
+      ...(pick.id ? { entrega_cmun: String(pick.id) } : {}),
+    };
+    setEditing((e) => (e ? { ...atualizado, id: e.id } : e));
     if (!mesma && found.length > 1)
       toast.info(`UF ajustada para ${pick.uf} (${found.length} cidades com esse nome)`);
+    // Recalcula na hora com os valores novos; trava o debounce p/ não repetir
+    try {
+      const { ori, dst, sig } = montarRota(atualizado as Percurso);
+      rotaRef.current.sig = sig;
+      if (!String(dst.cep).replace(/\D/g, "") && !String(dst.xmun).trim()) return;
+      void executarCalculo(ori, dst, (editing as Percurso | null)?.id ?? null);
+    } catch {}
   };
   const rotaRef = useRef<{ id: string | null; sig: string }>({ id: null, sig: "" });
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -724,19 +736,30 @@ function PercursosPage() {
       [digits(dst.cep), upper(dst.xmun), upper(dst.uf)].join("/");
     return { ori, dst, sig };
   };
-  const recalcular = async () => {
-    if (!editing) return;
-    const { ori, dst } = montarRota(editing);
+  // Cálculo compartilhado (botão, debounce e pós-UF): grava km/h se for o mesmo registro
+  const executarCalculo = async (
+    ori: { cep: string; xmun: string; uf: string },
+    dst: { cep: string; xmun: string; uf: string },
+    idAlvo: string | null,
+  ) => {
     setCalcando(true);
     try {
       const calc = await calcDistDur(ori, dst);
-      setEditing((e) => (e ? { ...e, distancia_km: calc.km, duracao_horas: calc.h } : e));
-      toast.success("Distancia recalculada: " + calc.km + " km / " + calc.h + " h");
+      setEditing((e) => (e && e.id === idAlvo ? { ...e, distancia_km: calc.km, duracao_horas: calc.h } : e));
+      toast.success(
+        "Distancia recalculada: " + calc.km + " km / " + calc.h + " h" +
+          (calc.ferryKm > 0 ? ` (inclui ${calc.ferryKm} km de balsa — confira o frete)` : ""),
+      );
     } catch (e: any) {
       toast.error(e && e.message ? e.message : "Falha no recalculo");
     } finally {
       setCalcando(false);
     }
+  };
+  const recalcular = async () => {
+    if (!editing) return;
+    const { ori, dst } = montarRota(editing);
+    await executarCalculo(ori, dst, editing.id);
   };
   useEffect(() => {
     if (!editing) {
@@ -752,19 +775,8 @@ function PercursosPage() {
     rotaRef.current.sig = sig;
     if (!String(dst.cep).replace(/\D/g, "") && !String(dst.xmun).trim()) return;
     if (timerRef.current) clearTimeout(timerRef.current);
-    timerRef.current = setTimeout(async () => {
-      setCalcando(true);
-      try {
-        const calc = await calcDistDur(ori, dst);
-        setEditing((e) =>
-          e && e.id === editing.id ? { ...e, distancia_km: calc.km, duracao_horas: calc.h } : e,
-        );
-        toast.success("Distancia recalculada: " + calc.km + " km / " + calc.h + " h");
-      } catch (e: any) {
-        toast.error(e && e.message ? e.message : "Falha no recalculo");
-      } finally {
-        setCalcando(false);
-      }
+    timerRef.current = setTimeout(() => {
+      void executarCalculo(ori, dst, editing.id);
     }, 900);
     return () => {
       if (timerRef.current) clearTimeout(timerRef.current);

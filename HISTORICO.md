@@ -3654,3 +3654,8 @@ Espelhado na Vercel.
 ## Percursos: UF acompanha cidade de entrega (30/09)
 
 - Ao sair do campo Entrega, busca a cidade no IBGE (cache local compartilhado) e ajusta UF + cMun sozinhos; avisa se houver homonimas ou se nao achar.
+
+## Percursos: recalculo forcado + aviso de balsa (30/09)
+
+- Ao sair da cidade de entrega (pos-UF), recalcula na hora com os valores novos e trava o debounce p/ nao repetir; calculo unificado em executarCalculo.
+- OSRM agora retorna ferryKm (steps=true): toast avisa quando inclui balsa. Medido: Formiga-Macapa 3907 km (com balsa Belem-Macapa), Formiga-Maraba 2276 km.
