@@ -1168,9 +1168,9 @@ function ColaboradoresPage() {
       }
       setForm((f) => ({
         ...f,
-        logradouro: f.logradouro || j.logradouro || "",
-        bairro: f.bairro || j.bairro || "",
-        cidade: j.localidade || f.cidade,
+        logradouro: (f.logradouro || j.logradouro || "").toUpperCase(),
+        bairro: (f.bairro || j.bairro || "").toUpperCase(),
+        cidade: (j.localidade || f.cidade).toUpperCase(),
         uf: j.uf || f.uf,
       }));
       toast.success("Endereço preenchido pelo CEP");
@@ -1302,7 +1302,7 @@ function ColaboradoresPage() {
         empresa_id: empresa.id,
         nome: form.nome.trim().toUpperCase(),
         cpf: form.cpf || null,
-        cargo: form.cargo.trim() || null,
+        cargo: form.cargo.trim().toUpperCase() || null,
         email: form.email || null,
         telefone:
           form.telefone
@@ -1315,21 +1315,21 @@ function ColaboradoresPage() {
         data_demissao: form.data_demissao || null,
         status: form.status,
         pix: form.pix || null,
-        banco: form.banco || null,
+        banco: form.banco.trim().toUpperCase() || null,
         agencia: form.agencia || null,
         conta: form.conta || null,
-        observacoes: form.observacoes || null,
+        observacoes: form.observacoes.trim().toUpperCase() || null,
         cnh_numero: form.cnh_numero.trim() || null,
         cnh_categoria: form.cnh_categoria.trim() || null,
         cnh_validade: form.cnh_validade || null,
         toxico_exame: form.toxico_exame || null,
         optante_vt: form.optante_vt,
         data_nascimento: form.data_nascimento || null,
-        logradouro: form.logradouro.trim() || null,
+        logradouro: form.logradouro.trim().toUpperCase() || null,
         numero: form.numero.trim() || null,
-        complemento: form.complemento.trim() || null,
-        bairro: form.bairro.trim() || null,
-        cidade: form.cidade.trim() || null,
+        complemento: form.complemento.trim().toUpperCase() || null,
+        bairro: form.bairro.trim().toUpperCase() || null,
+        cidade: form.cidade.trim().toUpperCase() || null,
         uf: form.uf || null,
         cep: form.cep.replace(/\D/g, "") || null,
       };
@@ -1586,7 +1586,7 @@ function ColaboradoresPage() {
                           <Label>Rua / Av.</Label>
                           <Input
                             value={form.logradouro}
-                            onChange={(e) => set("logradouro", e.target.value)}
+                            onChange={(e) => set("logradouro", e.target.value.toUpperCase())}
                           />
                         </div>
                         <div className="space-y-1 md:col-span-1">
@@ -1600,14 +1600,14 @@ function ColaboradoresPage() {
                           <Label>Complemento</Label>
                           <Input
                             value={form.complemento}
-                            onChange={(e) => set("complemento", e.target.value)}
+                            onChange={(e) => set("complemento", e.target.value.toUpperCase())}
                           />
                         </div>
                         <div className="space-y-1 md:col-span-2">
                           <Label>Bairro</Label>
                           <Input
                             value={form.bairro}
-                            onChange={(e) => set("bairro", e.target.value)}
+                            onChange={(e) => set("bairro", e.target.value.toUpperCase())}
                           />
                         </div>
                         <div className="space-y-1 md:col-span-2">
@@ -1616,7 +1616,7 @@ function ColaboradoresPage() {
                             <Input
                               placeholder="Digite para buscar"
                               value={form.cidade}
-                              onChange={(e) => set("cidade", e.target.value)}
+                              onChange={(e) => set("cidade", e.target.value.toUpperCase())}
                               onFocus={() => setCidadeFoco(true)}
                               onBlur={() => setTimeout(() => setCidadeFoco(false), 200)}
                               autoComplete="off"
@@ -1630,7 +1630,7 @@ function ColaboradoresPage() {
                                     className="w-full px-3 py-2 text-left text-sm hover:bg-muted"
                                     onMouseDown={(e) => {
                                       e.preventDefault();
-                                      set("cidade", m.nome);
+                                      set("cidade", m.nome.toUpperCase());
                                       if (m.uf) set("uf", m.uf);
                                       setCidadeFoco(false);
                                     }}
@@ -1690,7 +1690,7 @@ function ColaboradoresPage() {
                             <Input
                               placeholder="Digite ou selecione o cargo"
                               value={form.cargo}
-                              onChange={(e) => set("cargo", e.target.value)}
+                              onChange={(e) => set("cargo", e.target.value.toUpperCase())}
                               onFocus={() => setCargoFoco(true)}
                               onBlur={() => setTimeout(() => setCargoFoco(false), 200)}
                               autoComplete="off"
@@ -1702,11 +1702,11 @@ function ColaboradoresPage() {
                                     type="button"
                                     key={nome}
                                     className="w-full px-3 py-2 text-left text-sm hover:bg-muted"
-                                    onMouseDown={(e) => {
-                                      e.preventDefault();
-                                      set("cargo", nome);
-                                      setCargoFoco(false);
-                                    }}
+                                  onMouseDown={(e) => {
+                                    e.preventDefault();
+                                    set("cargo", nome.toUpperCase());
+                                    setCargoFoco(false);
+                                  }}
                                   >
                                     {nome}
                                   </button>
@@ -1853,7 +1853,7 @@ function ColaboradoresPage() {
                         </div>
                         <div className="space-y-1">
                           <Label>Banco</Label>
-                          <Input value={form.banco} onChange={(e) => set("banco", e.target.value)} />
+                          <Input value={form.banco} onChange={(e) => set("banco", e.target.value.toUpperCase())} />
                         </div>
                         <div className="space-y-1">
                           <Label>Agência</Label>
@@ -1877,7 +1877,7 @@ function ColaboradoresPage() {
                         <Textarea
                           rows={2}
                           value={form.observacoes}
-                          onChange={(e) => set("observacoes", e.target.value)}
+                          onChange={(e) => set("observacoes", e.target.value.toUpperCase())}
                         />
                       </div>
                     </div>

@@ -3630,3 +3630,7 @@ Espelhado na Vercel.
   Lógicas extras (`__none__`, "Todos", VT, saldos) preservadas;
   estáticos (status, dias, UF) mantidos como Select.
 - Espelhado na Vercel via push em main.
+
+## Colaborador: cadastro sempre maiusculo (30/09)
+
+- Inputs de texto forcam maiusculas (nome ja tinha; +cargo, logradouro, complemento, bairro, cidade, banco, observacoes), picks de cargo/cidade, ViaCEP e payload como garantia. Telefone auto-;, ID/ordenacao/VT/datas ja tinham vindo do remoto.
