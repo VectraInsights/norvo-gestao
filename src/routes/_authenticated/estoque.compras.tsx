@@ -194,7 +194,13 @@ function Compras() {
         eyebrow="Estoque"
         title="Ordens de compra"
         description="Cadastre compras, receba mercadoria e gere contas a pagar automaticamente."
-        actions={
+      />
+
+      <div className="mb-4 flex flex-col gap-2 sm:flex-row sm:items-center">
+        <div className="relative flex-1">
+          <Input placeholder="Buscar por número ou fornecedor…" value={busca} onChange={(e) => setBusca(e.target.value)} />
+        </div>
+        <div className="flex items-center gap-2">
           <Dialog open={open} onOpenChange={(v) => { setOpen(v); if (!v) reset(); }}>
             <DialogTrigger asChild>
               <Button><Plus className="mr-1 h-4 w-4" /> Nova ordem</Button>
@@ -263,11 +269,7 @@ function Compras() {
               </DialogFooter>
             </DialogContent>
           </Dialog>
-        }
-      />
-
-      <div className="mb-4 flex max-w-sm">
-        <Input placeholder="Buscar por número ou fornecedor…" value={busca} onChange={(e) => setBusca(e.target.value)} />
+        </div>
       </div>
 
       <Card>

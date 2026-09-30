@@ -390,138 +390,6 @@ function Multas() {
         eyebrow="Frota"
         title="Multas"
         description="Autos de infração dos veículos — cadastro manual ou sincronização SENATRAN."
-        actions={
-          <div className="flex gap-2">
-            <Button variant="outline" onClick={openConfig}>
-              <Settings2 className="mr-1 h-4 w-4" />
-              Configuração SENATRAN
-            </Button>
-            <Button
-              variant="outline"
-              onClick={() => sincronizar.mutate()}
-              disabled={sincronizar.isPending || !configSENATRAN?.ativo}
-            >
-              <RefreshCw
-                className={`mr-1 h-4 w-4 ${sincronizar.isPending ? "animate-spin" : ""}`}
-              />
-              {sincronizar.isPending ? "Sincronizando…" : "Sincronizar SENATRAN"}
-            </Button>
-            <Dialog
-              open={open}
-              onOpenChange={(v) => {
-                setOpen(v);
-                if (!v) reset();
-              }}
-            >
-              <DialogTrigger asChild>
-                <Button>
-                  <Plus className="mr-1 h-4 w-4" />
-                  Nova multa
-                </Button>
-              </DialogTrigger>
-              <DialogContent className="max-h-[90vh] overflow-y-auto">
-                <DialogHeader>
-                  <DialogTitle>
-                    {editing ? `Editar auto ${editing.auto_infracao ?? editing.id}` : "Nova multa"}
-                  </DialogTitle>
-                </DialogHeader>
-                <div className="grid gap-3">
-                  <div className="grid grid-cols-2 gap-3">
-                    <div>
-                      <Label>Veículo</Label>
-                      <Combobox
-                        value={form.veiculo_id}
-                        onChange={escolherVeiculo}
-                        options={(veiculos ?? []).map((v) => ({ value: v.id, label: v.placa }))}
-                        placeholder="Selecionar veículo…"
-                        searchPlaceholder="Digite para buscar..."
-                        emptyText="Nenhum item encontrado."
-                      />
-                    </div>
-                    <div>
-                      <Label>Placa *</Label>
-                      <Input
-                        className="uppercase"
-                        value={form.placa}
-                        onChange={(e) => set("placa", e.target.value)}
-                      />
-                    </div>
-                  </div>
-                  <div className="grid grid-cols-2 gap-3">
-                    <div>
-                      <Label>RENAVAM</Label>
-                      <Input
-                        value={form.renavam}
-                        onChange={(e) => set("renavam", e.target.value)}
-                      />
-                    </div>
-                    <div>
-                      <Label>PONTOS</Label>
-                      <MoneyInput
-                        prefix=""
-                        decimals={0}
-                        value={form.pontos}
-                        onChange={(v) => set("pontos", v)}
-                      />
-                    </div>
-                  </div>
-                  <div className="grid grid-cols-2 gap-3">
-                    <div>
-                      <Label>Auto de infração</Label>
-                      <Input
-                        value={form.auto_infracao}
-                        onChange={(e) => set("auto_infracao", e.target.value)}
-                      />
-                    </div>
-                    <div>
-                      <Label>Órgão autuador</Label>
-                      <Input
-                        value={form.orgao_autuador}
-                        onChange={(e) => set("orgao_autuador", e.target.value)}
-                      />
-                    </div>
-                  </div>
-                  <div className="grid grid-cols-3 gap-3">
-                    <div>
-                      <Label>Data da infração *</Label>
-                      <DateInput
-                        value={form.data_infracao}
-                        onChange={(v) => set("data_infracao", v)}
-                      />
-                    </div>
-                    <div>
-                      <Label>Vencimento</Label>
-                      <DateInput
-                        value={form.data_vencimento}
-                        onChange={(v) => set("data_vencimento", v)}
-                      />
-                    </div>
-                    <div>
-                      <Label>Valor</Label>
-                      <MoneyInput value={form.valor} onChange={(v) => set("valor", v)} />
-                    </div>
-                  </div>
-                  <div>
-                    <Label>Descrição / enquadramento</Label>
-                    <Textarea
-                      rows={2}
-                      value={form.descricao}
-                      onChange={(e) => set("descricao", e.target.value)}
-                    />
-                  </div>
-                </div>
-                <DialogFooter>
-                  <Button variant="outline" onClick={() => setOpen(false)}>
-                    Cancelar
-                  </Button>
-                  <Button onClick={() => save.mutate()} disabled={save.isPending}>
-                    {save.isPending ? "Salvando…" : "Salvar"}
-                  </Button>
-                </DialogFooter>
-              </DialogContent>
-            </Dialog>
-          </div>
-        }
       />
 
       <div className="mb-4 grid grid-cols-1 gap-3 sm:grid-cols-3">
@@ -583,6 +451,136 @@ function Multas() {
             <SelectItem value="contestada">Contestadas</SelectItem>
           </SelectContent>
         </Select>
+        <div className="ml-auto flex items-center gap-2">
+          <Button variant="outline" onClick={openConfig}>
+            <Settings2 className="mr-1 h-4 w-4" />
+            Configuração SENATRAN
+          </Button>
+          <Button
+            variant="outline"
+            onClick={() => sincronizar.mutate()}
+            disabled={sincronizar.isPending || !configSENATRAN?.ativo}
+          >
+            <RefreshCw
+              className={`mr-1 h-4 w-4 ${sincronizar.isPending ? "animate-spin" : ""}`}
+            />
+            {sincronizar.isPending ? "Sincronizando…" : "Sincronizar SENATRAN"}
+          </Button>
+          <Dialog
+            open={open}
+            onOpenChange={(v) => {
+              setOpen(v);
+              if (!v) reset();
+            }}
+          >
+            <DialogTrigger asChild>
+              <Button>
+                <Plus className="mr-1 h-4 w-4" />
+                Nova multa
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="max-h-[90vh] overflow-y-auto">
+              <DialogHeader>
+                <DialogTitle>
+                  {editing ? `Editar auto ${editing.auto_infracao ?? editing.id}` : "Nova multa"}
+                </DialogTitle>
+              </DialogHeader>
+              <div className="grid gap-3">
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <Label>Veículo</Label>
+                    <Combobox
+                      value={form.veiculo_id}
+                      onChange={escolherVeiculo}
+                      options={(veiculos ?? []).map((v) => ({ value: v.id, label: v.placa }))}
+                      placeholder="Selecionar veículo…"
+                      searchPlaceholder="Digite para buscar..."
+                      emptyText="Nenhum item encontrado."
+                    />
+                  </div>
+                  <div>
+                    <Label>Placa *</Label>
+                    <Input
+                      className="uppercase"
+                      value={form.placa}
+                      onChange={(e) => set("placa", e.target.value)}
+                    />
+                  </div>
+                </div>
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <Label>RENAVAM</Label>
+                    <Input
+                      value={form.renavam}
+                      onChange={(e) => set("renavam", e.target.value)}
+                    />
+                  </div>
+                  <div>
+                    <Label>PONTOS</Label>
+                    <MoneyInput
+                      prefix=""
+                      decimals={0}
+                      value={form.pontos}
+                      onChange={(v) => set("pontos", v)}
+                    />
+                  </div>
+                </div>
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <Label>Auto de infração</Label>
+                    <Input
+                      value={form.auto_infracao}
+                      onChange={(e) => set("auto_infracao", e.target.value)}
+                    />
+                  </div>
+                  <div>
+                    <Label>Órgão autuador</Label>
+                    <Input
+                      value={form.orgao_autuador}
+                      onChange={(e) => set("orgao_autuador", e.target.value)}
+                    />
+                  </div>
+                </div>
+                <div className="grid grid-cols-3 gap-3">
+                  <div>
+                    <Label>Data da infração *</Label>
+                    <DateInput
+                      value={form.data_infracao}
+                      onChange={(v) => set("data_infracao", v)}
+                    />
+                  </div>
+                  <div>
+                    <Label>Vencimento</Label>
+                    <DateInput
+                      value={form.data_vencimento}
+                      onChange={(v) => set("data_vencimento", v)}
+                    />
+                  </div>
+                  <div>
+                    <Label>Valor</Label>
+                    <MoneyInput value={form.valor} onChange={(v) => set("valor", v)} />
+                  </div>
+                </div>
+                <div>
+                  <Label>Descrição / enquadramento</Label>
+                  <Textarea
+                    rows={2}
+                    value={form.descricao}
+                    onChange={(e) => set("descricao", e.target.value)}
+                  />
+                </div>
+              </div>
+              <DialogFooter>
+                <Button variant="outline" onClick={() => setOpen(false)}>
+                  Cancelar
+                </Button>
+                <Button onClick={() => save.mutate()} disabled={save.isPending}>
+                  {save.isPending ? "Salvando…" : "Salvar"}
+                </Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
+        </div>
       </div>
 
       {isLoading ? (

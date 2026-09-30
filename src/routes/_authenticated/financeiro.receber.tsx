@@ -520,151 +520,6 @@ export function LancamentosPage({ tipo }: { tipo: "receber" | "pagar" }) {
         eyebrow="Financeiro"
         title={titulo}
         description={desc}
-        actions={
-          <div className="flex items-center gap-2">
-            <Button variant="outline" size="sm" className="h-9">
-              Adicionar trilha de auditoria
-            </Button>
-            <Dialog
-              open={open}
-              onOpenChange={(v) => {
-                if (!criar.isPending) setOpen(v);
-              }}
-            >
-              <DialogTrigger asChild>
-                <Button>
-                  <Plus className="mr-1 h-4 w-4" />
-                  Novo lançamento
-                </Button>
-              </DialogTrigger>
-              <DialogContent className="max-h-[90vh] overflow-y-auto">
-                <DialogHeader>
-                  <DialogTitle>Novo lançamento — {titulo}</DialogTitle>
-                </DialogHeader>
-                <form
-                  onSubmit={(e) => {
-                    e.preventDefault();
-                    criar.mutate(form);
-                  }}
-                  className="space-y-3"
-                >
-                  <div>
-                    <Label>Descrição *</Label>
-                    <Input
-                      required
-                      value={form.descricao}
-                      onChange={(e) => setForm({ ...form, descricao: e.target.value })}
-                    />
-                  </div>
-                  <div className="grid grid-cols-3 gap-3">
-                    <div>
-                      <Label>Valor (R$) *</Label>
-                      <MoneyInput
-                        required
-                        value={form.valor}
-                        onChange={(v) => setForm({ ...form, valor: v })}
-                        prefix=""
-                      />
-                    </div>
-                    <div>
-                      <Label>Emissão</Label>
-                      <DateInput
-                        value={form.data_emissao}
-                        onChange={(v) => setForm({ ...form, data_emissao: v })}
-                      />
-                    </div>
-                    <div>
-                      <Label>Vencimento *</Label>
-                      <DateInput
-                        required
-                        value={form.data_vencimento}
-                        onChange={(v) => setForm({ ...form, data_vencimento: v })}
-                      />
-                    </div>
-                  </div>
-                  <div>
-                    <Label>{tipo === "receber" ? "Cliente" : "Fornecedor"}</Label>
-                    <Combobox
-                      value={form.contato_id}
-                      onChange={(v) => setForm({ ...form, contato_id: v })}
-                      options={(contatosOpt ?? []).map((c) => ({ value: c.id, label: c.nome ?? "" }))}
-                      placeholder="Selecionar contato"
-                      searchPlaceholder="Digite para buscar..."
-                      emptyText="Nenhum item encontrado."
-                    />
-                  </div>
-                  <div className="grid grid-cols-2 gap-3">
-                    <div>
-                      <Label>Conta bancária</Label>
-                      <Combobox
-                        value={form.conta_bancaria_id}
-                        onChange={(v) => setForm({ ...form, conta_bancaria_id: v })}
-                        options={(contasOpt ?? []).map((c) => ({ value: c.id, label: `${c.nome ?? ""}${c.banco ? ` — ${c.banco}` : ""}` }))}
-                        placeholder="Selecionar"
-                        searchPlaceholder="Digite para buscar..."
-                        emptyText="Nenhum item encontrado."
-                      />
-                    </div>
-                    <div>
-                      <Label>Categoria</Label>
-                      <Combobox
-                        value={form.categoria_id}
-                        onChange={(v) => setForm({ ...form, categoria_id: v })}
-                        options={(categoriasOpt ?? []).map((c) => ({ value: c.id, label: c.nome ?? "" }))}
-                        placeholder="Selecionar"
-                        searchPlaceholder="Digite para buscar..."
-                        emptyText="Nenhum item encontrado."
-                      />
-                    </div>
-                  </div>
-                  <div className="grid grid-cols-2 gap-3">
-                    <div>
-                      <Label>Nº documento / NF</Label>
-                      <Input
-                        value={form.documento}
-                        onChange={(e) => setForm({ ...form, documento: e.target.value })}
-                      />
-                    </div>
-                    <div>
-                      <Label>Forma de pagamento</Label>
-                      <Select
-                        value={form.forma_pagamento || "__none"}
-                        onValueChange={(v) =>
-                          setForm({ ...form, forma_pagamento: v === "__none" ? "" : v })
-                        }
-                      >
-                        <SelectTrigger>
-                          <SelectValue placeholder="Selecionar" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="__none">Não informar</SelectItem>
-                          {FORMAS_PAGAMENTO.map((f) => (
-                            <SelectItem key={f} value={f}>
-                              {f}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
-                  </div>
-                  <div>
-                    <Label>Observações</Label>
-                    <Textarea
-                      rows={2}
-                      value={form.observacoes}
-                      onChange={(e) => setForm({ ...form, observacoes: e.target.value })}
-                    />
-                  </div>
-                  <DialogFooter>
-                    <Button type="submit" disabled={criar.isPending}>
-                      {criar.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}Salvar
-                    </Button>
-                  </DialogFooter>
-                </form>
-              </DialogContent>
-            </Dialog>
-          </div>
-        }
       />
 
       <div className="mb-3 flex flex-wrap items-center gap-2">
@@ -720,6 +575,149 @@ export function LancamentosPage({ tipo }: { tipo: "receber" | "pagar" }) {
               <X className="h-4 w-4" />
             </button>
           )}
+        </div>
+        <div className="flex items-center gap-2">
+          <Button variant="outline" size="sm" className="h-9">
+            Adicionar trilha de auditoria
+          </Button>
+          <Dialog
+            open={open}
+            onOpenChange={(v) => {
+              if (!criar.isPending) setOpen(v);
+            }}
+          >
+            <DialogTrigger asChild>
+              <Button>
+                <Plus className="mr-1 h-4 w-4" />
+                Novo lançamento
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="max-h-[90vh] overflow-y-auto">
+              <DialogHeader>
+                <DialogTitle>Novo lançamento — {titulo}</DialogTitle>
+              </DialogHeader>
+              <form
+                onSubmit={(e) => {
+                  e.preventDefault();
+                  criar.mutate(form);
+                }}
+                className="space-y-3"
+              >
+                <div>
+                  <Label>Descrição *</Label>
+                  <Input
+                    required
+                    value={form.descricao}
+                    onChange={(e) => setForm({ ...form, descricao: e.target.value })}
+                  />
+                </div>
+                <div className="grid grid-cols-3 gap-3">
+                  <div>
+                    <Label>Valor (R$) *</Label>
+                    <MoneyInput
+                      required
+                      value={form.valor}
+                      onChange={(v) => setForm({ ...form, valor: v })}
+                      prefix=""
+                    />
+                  </div>
+                  <div>
+                    <Label>Emissão</Label>
+                    <DateInput
+                      value={form.data_emissao}
+                      onChange={(v) => setForm({ ...form, data_emissao: v })}
+                    />
+                  </div>
+                  <div>
+                    <Label>Vencimento *</Label>
+                    <DateInput
+                      required
+                      value={form.data_vencimento}
+                      onChange={(v) => setForm({ ...form, data_vencimento: v })}
+                    />
+                  </div>
+                </div>
+                <div>
+                  <Label>{tipo === "receber" ? "Cliente" : "Fornecedor"}</Label>
+                  <Combobox
+                    value={form.contato_id}
+                    onChange={(v) => setForm({ ...form, contato_id: v })}
+                    options={(contatosOpt ?? []).map((c) => ({ value: c.id, label: c.nome ?? "" }))}
+                    placeholder="Selecionar contato"
+                    searchPlaceholder="Digite para buscar..."
+                    emptyText="Nenhum item encontrado."
+                  />
+                </div>
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <Label>Conta bancária</Label>
+                    <Combobox
+                      value={form.conta_bancaria_id}
+                      onChange={(v) => setForm({ ...form, conta_bancaria_id: v })}
+                      options={(contasOpt ?? []).map((c) => ({ value: c.id, label: `${c.nome ?? ""}${c.banco ? ` — ${c.banco}` : ""}` }))}
+                      placeholder="Selecionar"
+                      searchPlaceholder="Digite para buscar..."
+                      emptyText="Nenhum item encontrado."
+                    />
+                  </div>
+                  <div>
+                    <Label>Categoria</Label>
+                    <Combobox
+                      value={form.categoria_id}
+                      onChange={(v) => setForm({ ...form, categoria_id: v })}
+                      options={(categoriasOpt ?? []).map((c) => ({ value: c.id, label: c.nome ?? "" }))}
+                      placeholder="Selecionar"
+                      searchPlaceholder="Digite para buscar..."
+                      emptyText="Nenhum item encontrado."
+                    />
+                  </div>
+                </div>
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <Label>Nº documento / NF</Label>
+                    <Input
+                      value={form.documento}
+                      onChange={(e) => setForm({ ...form, documento: e.target.value })}
+                    />
+                  </div>
+                  <div>
+                    <Label>Forma de pagamento</Label>
+                    <Select
+                      value={form.forma_pagamento || "__none"}
+                      onValueChange={(v) =>
+                        setForm({ ...form, forma_pagamento: v === "__none" ? "" : v })
+                      }
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Selecionar" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="__none">Não informar</SelectItem>
+                        {FORMAS_PAGAMENTO.map((f) => (
+                          <SelectItem key={f} value={f}>
+                            {f}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+                <div>
+                  <Label>Observações</Label>
+                  <Textarea
+                    rows={2}
+                    value={form.observacoes}
+                    onChange={(e) => setForm({ ...form, observacoes: e.target.value })}
+                  />
+                </div>
+                <DialogFooter>
+                  <Button type="submit" disabled={criar.isPending}>
+                    {criar.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}Salvar
+                  </Button>
+                </DialogFooter>
+              </form>
+            </DialogContent>
+          </Dialog>
         </div>
       </div>
 

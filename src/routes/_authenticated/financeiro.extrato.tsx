@@ -202,16 +202,6 @@ function ExtratoPage() {
         eyebrow="Financeiro"
         title="Extrato de movimentações"
         description="Consulte entradas e saídas por período, conta financeira, categoria e centro de custo."
-        actions={
-          <div className="flex items-center gap-2">
-            <Button variant="outline" size="sm">
-              Adicionar trilha de auditoria
-            </Button>
-            <Button variant="outline" size="sm" onClick={exportarCsv} disabled={!linhas.length}>
-              <Download className="mr-1 h-4 w-4" />Exportar CSV
-            </Button>
-          </div>
-        }
       />
 
       <div className="mb-4 grid gap-3 sm:grid-cols-3">
@@ -275,6 +265,14 @@ function ExtratoPage() {
               <X className="h-4 w-4" />
             </button>
           )}
+        </div>
+        <div className="flex items-center gap-2">
+          <Button variant="outline" size="sm">
+            Adicionar trilha de auditoria
+          </Button>
+          <Button variant="outline" size="sm" onClick={exportarCsv} disabled={!linhas.length}>
+            <Download className="mr-1 h-4 w-4" />Exportar CSV
+          </Button>
         </div>
       </div>
 

@@ -267,11 +267,37 @@ function Produtos() {
         eyebrow="Estoque"
         title="Produtos"
         description="Cadastro de produtos, preços e saldos."
-        actions={
-          <div className="flex items-center gap-2">
-            <Button variant="outline" size="sm">
-              Adicionar trilha de auditoria
-            </Button>
+      />
+
+      <div className="mb-4 flex flex-col gap-2 sm:flex-row sm:items-center">
+        <div className="relative flex-1">
+          <Input
+            className="flex-1"
+            placeholder="Buscar por nome ou código…"
+            value={busca}
+            onChange={(e) => {
+              setBusca(e.target.value);
+              setPagina(1);
+            }}
+          />
+        </div>
+        <div className="w-48">
+          <Combobox
+            value={filtroCat}
+            onChange={(value) => {
+              setFiltroCat(value);
+              setPagina(1);
+            }}
+            options={[{ value: "todas", label: "Todas as categorias" }, ...categorias.map((c) => ({ value: c, label: c }))]}
+            placeholder="Selecione"
+            searchPlaceholder="Digite para buscar..."
+            emptyText="Nenhum item encontrado."
+          />
+        </div>
+        <div className="flex items-center gap-2">
+          <Button variant="outline" size="sm">
+            Adicionar trilha de auditoria
+          </Button>
             <Dialog
               open={open}
               onOpenChange={(v) => {
@@ -378,32 +404,6 @@ function Produtos() {
                 </form>
               </DialogContent>
             </Dialog>
-          </div>
-        }
-      />
-
-      <div className="mb-4 flex max-w-xl gap-2">
-        <Input
-          className="flex-1"
-          placeholder="Buscar por nome ou código…"
-          value={busca}
-          onChange={(e) => {
-            setBusca(e.target.value);
-            setPagina(1);
-          }}
-        />
-        <div className="w-48">
-          <Combobox
-            value={filtroCat}
-            onChange={(value) => {
-              setFiltroCat(value);
-              setPagina(1);
-            }}
-            options={[{ value: "todas", label: "Todas as categorias" }, ...categorias.map((c) => ({ value: c, label: c }))]}
-            placeholder="Selecione"
-            searchPlaceholder="Digite para buscar..."
-            emptyText="Nenhum item encontrado."
-          />
         </div>
       </div>
 

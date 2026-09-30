@@ -172,19 +172,10 @@ function Inventario() {
         eyebrow="Estoque"
         title="Inventário"
         description="Contagem física dos itens. Divergências viram ajustes de estoque automaticamente."
-        actions={
-          <Button
-            onClick={() => aplicarMut.mutate()}
-            disabled={aplicarMut.isPending || !divergencias.length}
-          >
-            <ClipboardCheck className="mr-1 h-4 w-4" />
-            {aplicarMut.isPending ? "Lançando…" : `Aplicar ${divergencias.length || ""} ajuste(s)`}
-          </Button>
-        }
       />
 
-      <div className="mb-4 flex flex-wrap items-center gap-2">
-        <div className="relative max-w-xs flex-1">
+      <div className="mb-4 flex flex-col gap-2 sm:flex-row sm:items-center">
+        <div className="relative flex-1">
           <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
           <Input
             className="pl-8"
@@ -213,6 +204,15 @@ function Inventario() {
             </span>
           </span>
         )}
+        <div className="flex items-center gap-2">
+          <Button
+            onClick={() => aplicarMut.mutate()}
+            disabled={aplicarMut.isPending || !divergencias.length}
+          >
+            <ClipboardCheck className="mr-1 h-4 w-4" />
+            {aplicarMut.isPending ? "Lançando…" : `Aplicar ${divergencias.length || ""} ajuste(s)`}
+          </Button>
+        </div>
       </div>
 
       {isLoading ? (
