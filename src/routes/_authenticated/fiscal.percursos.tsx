@@ -334,11 +334,13 @@ function Combo({
   value,
   onPick,
   opts,
+  placeholder = "Digite ou selecione",
 }: {
   label: string;
   value: string;
   onPick: (v: string) => void;
   opts: { v: string; label: string }[];
+  placeholder?: string;
 }) {
   const [open, setOpen] = useState(false);
   const [txt, setTxt] = useState("");
@@ -381,7 +383,7 @@ function Combo({
         <Input
           className="h-7 text-xs pr-6"
           value={open ? txt : sel ? sel.label : value || ""}
-          placeholder="Digite ou selecione"
+          placeholder={placeholder}
           onFocus={() => {
             setTxt("");
             setOpen(true);
@@ -1568,6 +1570,7 @@ function PercursosPage() {
                           <Combo
                             label="CFOP"
                             value={editing.cfop || ""}
+                            placeholder=""
                             onPick={(v) => {
                               const o = OPTS_CFOP.find((x) => x.v === v);
                               set("cfop", v);
@@ -1585,6 +1588,7 @@ function PercursosPage() {
                           <Combo
                             label="Natureza da Operação"
                             value={semNumCfop(editing.nat_operacao || "")}
+                            placeholder=""
                             onPick={(v) => set("nat_operacao", v)}
                             opts={OPTS_NAT}
                           />

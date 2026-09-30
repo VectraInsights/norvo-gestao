@@ -3680,3 +3680,7 @@ Espelhado na Vercel.
 ## Percursos: larguras CST/Natureza (30/09)
 
 - Linha fiscal: CST flexivel maxima, CFOP 130px, Natureza fixa 680px (cabe a maior descricao sem cortar).
+
+## Percursos: sem placeholder CFOP/Natureza (30/09)
+
+- CFOP e Natureza sem texto de fundo; larguras mantidas (CST flex, CFOP 130px, Natureza 680px). Combo aceita placeholder opcional.
