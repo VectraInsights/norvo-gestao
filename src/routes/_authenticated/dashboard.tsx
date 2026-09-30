@@ -24,7 +24,7 @@ import { Input } from "@/components/ui/input";
 import { lazy, Suspense, useState } from "react";
 import { useSelectedEmpresaId } from "@/hooks/use-empresa";
 import { toast } from "sonner";
-import { brl, dateBR } from "@/lib/format";
+import { brl, dateBR, maskDoc } from "@/lib/format";
 
 function soma30meses(d: string) {
   const dt = new Date(d + "T12:00:00");
@@ -684,7 +684,7 @@ function FirstEmpresa({ onCreated }: { onCreated: () => Promise<void> }) {
       const d = await res.json();
       setForm((f) => ({
         ...f,
-        cnpj: digits,
+        cnpj: maskDoc(digits),
         razao_social: d.razao_social ?? "",
         nome_fantasia: d.nome_fantasia || d.razao_social || "",
         email: d.email ?? "",
@@ -764,7 +764,7 @@ function FirstEmpresa({ onCreated }: { onCreated: () => Promise<void> }) {
               <div className="flex gap-2">
                 <Input
                   value={form.cnpj}
-                  onChange={(e) => setForm({ ...form, cnpj: e.target.value })}
+                  onChange={(e) => setForm({ ...form, cnpj: maskDoc(e.target.value) })}
                   onKeyDown={handleCnpjKeyDown}
                   placeholder="00.000.000/0000-00"
                 />

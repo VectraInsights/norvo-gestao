@@ -48,6 +48,7 @@ import { useEmpresaAtual } from "@/hooks/use-empresa";
 import { useState, useMemo, useRef, useEffect } from "react";
 import { toast } from "sonner";
 import { limparIE, validarIE } from "@/lib/ie";
+import { maskDoc } from "@/lib/format";
 import { CFOPS_CTE } from "@/lib/cfops-transporte";
 
 export const Route = createFileRoute("/_authenticated/fiscal/percursos")({
@@ -160,6 +161,7 @@ function T({
   set,
   on14,
   digits,
+  doc,
 }: {
   label: string;
   k: string;
@@ -169,6 +171,7 @@ function T({
   set: (k: string, v: any) => void;
   on14?: (digits: string) => void;
   digits?: boolean;
+  doc?: boolean;
 }) {
   return (
     <div>
@@ -177,7 +180,11 @@ function T({
         className={"h-7 text-xs" + (mono ? " font-mono" : "")}
         value={editing?.[k] ?? ""}
         onChange={(e) => {
-          const vv = digits ? e.target.value.replace(/\D/g, "") : e.target.value.toUpperCase();
+          const vv = doc
+            ? maskDoc(e.target.value)
+            : digits
+              ? e.target.value.replace(/\D/g, "")
+              : e.target.value.toUpperCase();
           set(k, vv);
           if (on14 && vv.replace(/\D/g, "").length === 14) on14(vv.replace(/\D/g, ""));
         }}
@@ -318,7 +325,7 @@ function ChaveEdit({
       <Input
         className="col-span-4 h-6 text-[11px]"
         value={doc || ""}
-        onChange={(e) => onDoc(e.target.value.replace(/\D/g, "").slice(0, 14))}
+        onChange={(e) => onDoc(maskDoc(e.target.value))}
         onBlur={onBlurDoc}
         placeholder="CNPJ"
         inputMode="numeric"
@@ -915,7 +922,12 @@ function PercursosPage() {
       const payload: Record<string, any> = {};
       for (const k of EDITAVEIS) {
         const v = (editing as any)[k];
-        const vv = k.endsWith("_ie") ? limparIE(v) : v;
+        const vv =
+          k.endsWith("_ie")
+            ? limparIE(v)
+            : k.endsWith("_cnpj")
+              ? String(v || "").replace(/\D/g, "")
+              : v;
         payload[k] =
           typeof vv === "string" ? vv.toUpperCase() : (vv ?? (k === "seg_repassar" ? false : ""));
       }
@@ -1327,7 +1339,7 @@ function PercursosPage() {
         e
           ? {
               ...e,
-              [kind + "_cnpj"]: d,
+              [kind + "_cnpj"]: maskDoc(d),
               [kind + "_nome"]: nome || e[kind + "_nome"] || "",
               [kind + "_xmun"]: cidade || e[kind + "_xmun"] || "",
               [kind + "_uf"]: uf || e[kind + "_uf"] || "",
@@ -1666,6 +1678,7 @@ function PercursosPage() {
                             label="CNPJ"
                             k="consig_cnpj"
                             mono
+                            doc
                             on14={(d: string) => lookupParte("consig", d)}
                           />
                         </div>
@@ -1696,6 +1709,7 @@ function PercursosPage() {
                             label="CNPJ"
                             k="redesp_cnpj"
                             mono
+                            doc
                             on14={(d: string) => lookupParte("redesp", d)}
                           />
                         </div>
@@ -1816,7 +1830,7 @@ function PercursosPage() {
                         />
                       </div>
                       <div className="md:col-span-4">
-                        <T editing={editing} set={set} label="CNPJ da seguradora" k="seg_cnpj" mono />
+                        <T editing={editing} set={set} label="CNPJ da seguradora" k="seg_cnpj" mono doc />
                       </div>
                       <div className="md:col-span-3">
                         <T editing={editing} set={set} label="Apólice" k="seg_apolice" mono />

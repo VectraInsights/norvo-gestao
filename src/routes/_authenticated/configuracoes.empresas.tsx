@@ -13,6 +13,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { getSelectedEmpresaId, setSelectedEmpresaId } from "@/hooks/use-empresa";
+import { maskDoc } from "@/lib/format";
 
 export const Route = createFileRoute("/_authenticated/configuracoes/empresas")({
   component: EmpresasPage,
@@ -73,7 +74,7 @@ function EmpresasPage() {
   const openEdit = (empresa: Empresa) => {
     setEditing(empresa);
     setForm({
-      cnpj: empresa.cnpj ?? "",
+      cnpj: maskDoc(empresa.cnpj ?? ""),
       nome_fantasia: empresa.nome_fantasia ?? "",
       razao_social: empresa.razao_social ?? "",
       email: empresa.email ?? "",
@@ -110,7 +111,7 @@ function EmpresasPage() {
       const d = await res.json();
       setForm((f) => ({
         ...f,
-        cnpj: digits,
+        cnpj: maskDoc(digits),
         razao_social: d.razao_social ?? "",
         nome_fantasia: d.nome_fantasia || d.razao_social || "",
         email: d.email ?? "",
@@ -202,7 +203,7 @@ function EmpresasPage() {
                   <Label>CNPJ</Label>
                   <div className="flex gap-2">
                     <Input placeholder="00.000.000/0000-00" value={form.cnpj}
-                      onChange={(e) => setForm({ ...form, cnpj: e.target.value })}
+                      onChange={(e) => setForm({ ...form, cnpj: maskDoc(e.target.value) })}
                       onKeyDown={handleCnpjKeyDown} />
                     <Button type="button" variant="outline" onClick={lookupCnpj} disabled={lookingUp || !form.cnpj}>
                       {lookingUp ? <Loader2 className="h-4 w-4 animate-spin" /> : <Search className="h-4 w-4" />}
@@ -261,7 +262,7 @@ function EmpresasPage() {
               <TableRow key={e.id}>
                 <TableCell className="font-medium">{e.nome_fantasia}</TableCell>
                 <TableCell className="text-muted-foreground">{e.razao_social ?? "—"}</TableCell>
-                <TableCell className="text-tabular">{e.cnpj ?? "—"}</TableCell>
+                <TableCell className="text-tabular">{e.cnpj ? maskDoc(e.cnpj) : "—"}</TableCell>
                 <TableCell className="text-muted-foreground">{e.cidade ? `${e.cidade}/${e.uf ?? ""}` : "—"}</TableCell>
                 <TableCell className="w-10">
                   <Button variant="ghost" size="icon" className="h-8 w-8" title="Editar" onClick={() => openEdit(e)}>

@@ -17,6 +17,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEmpresaAtual } from "@/hooks/use-empresa";
 import { toast } from "sonner";
 import { completarLogradouro } from "@/lib/endereco";
+import { maskDoc } from "@/lib/format";
 
 export const Route = createFileRoute("/_authenticated/fiscal/cadastro")({
   component: Cadastro,
@@ -97,7 +98,7 @@ function Cadastro() {
       if (!d) throw new Error("CNPJ não encontrado nas APIs públicas");
       setForm((f) => ({
         ...f,
-        documento: digits,
+        documento: maskDoc(digits),
         nome: d.razao_social || d.nome || d.nome_fantasia || f.nome,
         email: d.email ?? f.email,
         telefone: d.ddd_telefone_1 || d.telefone || f.telefone,
@@ -188,7 +189,7 @@ function Cadastro() {
   const openEdit = (c: Contato) => {
     setEditing(c);
     setForm({
-      nome: c.nome, documento: c.documento ?? "", ie: c.ie ?? "", email: c.email ?? "", telefone: c.telefone ?? "",
+      nome: c.nome, documento: maskDoc(c.documento ?? ""), ie: c.ie ?? "", email: c.email ?? "", telefone: c.telefone ?? "",
       cep: c.cep ?? "", logradouro: c.logradouro ?? "", numero: c.numero ?? "",
       complemento: c.complemento ?? "", bairro: c.bairro ?? "", cidade: c.cidade ?? "",
       uf: c.uf ?? "", observacoes: c.observacoes ?? "",
@@ -227,7 +228,7 @@ function Cadastro() {
               {filtrados.map((c) => (
                 <TableRow key={c.id}>
                   <TableCell className="font-medium">{c.nome}</TableCell>
-                  <TableCell className="text-tabular">{c.documento ?? "—"}</TableCell>
+                  <TableCell className="text-tabular">{c.documento ? maskDoc(c.documento) : "—"}</TableCell>
                   <TableCell className="text-muted-foreground">{c.cidade ? `${c.cidade}${c.uf ? `/${c.uf}` : ""}` : "—"}</TableCell>
                   <TableCell className="text-muted-foreground">{c.telefone ?? c.email ?? "—"}</TableCell>
                   <TableCell className="text-right">
@@ -268,7 +269,7 @@ function Cadastro() {
             <div>
               <Label>CPF/CNPJ</Label>
               <div className="flex gap-2">
-                <Input value={form.documento} onChange={(e) => setForm({ ...form, documento: e.target.value })}
+                <Input value={form.documento} onChange={(e) => setForm({ ...form, documento: maskDoc(e.target.value) })}
                   onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); lookupCnpj(); } }} />
                 <Button type="button" variant="outline" onClick={lookupCnpj} disabled={lookingUp || !form.documento}>
                   {lookingUp ? <Loader2 className="h-4 w-4 animate-spin" /> : <Search className="h-4 w-4" />}

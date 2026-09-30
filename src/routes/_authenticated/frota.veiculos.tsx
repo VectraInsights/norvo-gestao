@@ -62,7 +62,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEmpresaAtual } from "@/hooks/use-empresa";
 import { toast } from "sonner";
-import { num } from "@/lib/format";
+import { num, maskDoc } from "@/lib/format";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import {
   Command,
@@ -130,21 +130,6 @@ function formVazio() {
 
 const TIPOS_PADRAO = ["3/4", "Bitrem", "Cavalo Mecânico", "Carreta", "Toco", "Truck", "Van/Furgão"];
 const CATEGORIAS = ["Particular", "Aluguel", "Agregado", "Terceiro"];
-
-// Máscara CPF/CNPJ conforme digita (limite 14 números)
-function maskDoc(v: string) {
-  const d = String(v || "").replace(/\D/g, "").slice(0, 14);
-  if (d.length <= 11)
-    return d
-      .replace(/(\d{3})(\d)/, "$1.$2")
-      .replace(/(\d{3})(\d)/, "$1.$2")
-      .replace(/(\d{3})(\d{1,2})$/, "$1-$2");
-  return d
-    .replace(/^(\d{2})(\d)/, "$1.$2")
-    .replace(/^(\d{2})\.(\d{3})(\d)/, "$1.$2.$3")
-    .replace(/\.(\d{3})(\d)/, "$1/$2")
-    .replace(/(\d{4})(\d)/, "$1-$2");
-}
 
 function Veiculos() {
   const { data: empresa } = useEmpresaAtual();

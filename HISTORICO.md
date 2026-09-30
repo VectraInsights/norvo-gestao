@@ -3701,3 +3701,7 @@ Espelhado na Vercel.
 ## Veiculos: RNTRC 1 linha + mascara doc (30/09)
 
 - Dropdowns do Combobox com item em linha unica (numero + empresa, sem quebrar; vale p/ RNTRC e demais). CNPJ/CPF do Proprietario sem placeholder, com mascara conforme digita (000.000.000-00 / 00.000.000/0000-00) e limite de 14 numeros; registros existentes abrem ja mascarados; salvar segue gravando so numeros.
+
+## Mascara CPF/CNPJ em todo o sistema (30/09)
+
+- Novo maskDoc compartilhado em src/lib/format.ts (mascara conforme digita, limite 14 numeros). Aplicado em: contatos fiscal/cadastro, fornecedores, CPF do colaborador (salva e compara so numeros), CNPJ nova empresa (dashboard e configuracoes/empresas), CNPJ remetente/destinatario do CT-e manual, CNPJ consignatario/redespacho/seguradora + chave remetente/dest/tomador nos percursos (banco segue so numeros), veiculos usa o compartilhado. Buscas automaticas (Receita) e edicao abrem ja mascarados; tabelas de contatos/empresas exibem mascarado.

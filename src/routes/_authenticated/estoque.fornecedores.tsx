@@ -47,6 +47,7 @@ import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEmpresaAtual } from "@/hooks/use-empresa";
+import { maskDoc } from "@/lib/format";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/_authenticated/estoque/fornecedores")({
@@ -159,7 +160,7 @@ function Fornecedores() {
       if (!d) throw new Error("CNPJ não encontrado nas APIs públicas");
       setForm((f) => ({
         ...f,
-        documento: digits,
+        documento: maskDoc(digits),
         nome: d.razao_social || d.nome || d.nome_fantasia || f.nome,
         email: d.email ?? f.email,
         telefone: d.ddd_telefone_1 || d.telefone || f.telefone,
@@ -296,7 +297,7 @@ function Fornecedores() {
     setEditing(c);
     setForm({
       nome: c.nome,
-      documento: c.documento ?? "",
+      documento: maskDoc(c.documento ?? ""),
       email: c.email ?? "",
       telefone: c.telefone ?? "",
       cep: c.cep ?? "",
@@ -359,7 +360,7 @@ function Fornecedores() {
               {contatosVisiveis.map((c) => (
                 <TableRow key={c.id}>
                   <TableCell className="font-medium">{c.nome}</TableCell>
-                  <TableCell className="text-tabular">{c.documento ?? "—"}</TableCell>
+                  <TableCell className="text-tabular">{c.documento ? maskDoc(c.documento) : "—"}</TableCell>
                   <TableCell className="text-muted-foreground">
                     {c.email ?? c.telefone ?? "—"}
                   </TableCell>
@@ -467,7 +468,7 @@ function Fornecedores() {
               <div className="flex gap-2">
                 <Input
                   value={form.documento}
-                  onChange={(e) => setForm({ ...form, documento: e.target.value })}
+                  onChange={(e) => setForm({ ...form, documento: maskDoc(e.target.value) })}
                   onKeyDown={(e) => {
                     if (e.key === "Enter") {
                       e.preventDefault();

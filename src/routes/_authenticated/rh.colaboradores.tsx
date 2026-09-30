@@ -53,7 +53,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEmpresaAtual } from "@/hooks/use-empresa";
 import { toast } from "sonner";
-import { brl, dateBR } from "@/lib/format";
+import { brl, dateBR, maskDoc } from "@/lib/format";
 
 export const Route = createFileRoute("/_authenticated/rh/colaboradores")({
   component: ColaboradoresPage,
@@ -1251,7 +1251,7 @@ function ColaboradoresPage() {
     setEditing(c);
     setForm({
       nome: c.nome,
-      cpf: c.cpf ?? "",
+      cpf: maskDoc(c.cpf ?? ""),
       cargo: c.cargo ?? "",
       email: c.email ?? "",
       telefone: (c.telefone ?? "").split(" / ").filter(Boolean).join("; "),
@@ -1291,7 +1291,7 @@ function ColaboradoresPage() {
         const q = tbl2
           .select("id")
           .eq("empresa_id", empresa.id)
-          .eq("cpf", form.cpf.trim())
+          .eq("cpf", soDigitos(form.cpf))
           .limit(1);
         const { data: existente } = await (editing ? q.neq("id", editing.id) : q);
         if (existente && existente.length > 0) {
@@ -1301,7 +1301,7 @@ function ColaboradoresPage() {
       const payload: any = {
         empresa_id: empresa.id,
         nome: form.nome.trim().toUpperCase(),
-        cpf: form.cpf || null,
+        cpf: soDigitos(form.cpf) || null,
         cargo: form.cargo.trim().toUpperCase() || null,
         email: form.email || null,
         telefone:
@@ -1548,7 +1548,7 @@ function ColaboradoresPage() {
                           <Input
                             placeholder="000.000.000-00"
                             value={form.cpf}
-                            onChange={(e) => set("cpf", e.target.value)}
+                            onChange={(e) => set("cpf", maskDoc(e.target.value))}
                           />
                         </div>
                         <div className="space-y-1 md:col-span-2">

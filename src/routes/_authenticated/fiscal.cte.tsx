@@ -79,7 +79,7 @@ import {
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useEmpresaAtual } from "@/hooks/use-empresa";
-import { brl, dateBR, num } from "@/lib/format";
+import { brl, dateBR, num, maskDoc } from "@/lib/format";
 import { useState, useEffect, useMemo, useRef } from "react";
 import { toast } from "sonner";
 import { limparIE } from "@/lib/ie";
@@ -5172,7 +5172,7 @@ function CtePage() {
               <Label>CNPJ remetente</Label>
               <Input
                 value={manualNfe.emitCnpj}
-                onChange={(e) => setManualNfe((v) => ({ ...v, emitCnpj: e.target.value }))}
+                onChange={(e) => setManualNfe((v) => ({ ...v, emitCnpj: maskDoc(e.target.value) }))}
               />
             </div>
             <div className="col-span-2">
@@ -5187,7 +5187,7 @@ function CtePage() {
               <Label>CNPJ destinatário</Label>
               <Input
                 value={manualNfe.destCnpj}
-                onChange={(e) => setManualNfe((v) => ({ ...v, destCnpj: e.target.value }))}
+                onChange={(e) => setManualNfe((v) => ({ ...v, destCnpj: maskDoc(e.target.value) }))}
               />
             </div>
             <div>
