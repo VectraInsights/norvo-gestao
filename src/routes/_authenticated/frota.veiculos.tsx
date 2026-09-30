@@ -57,7 +57,7 @@ import {
   Upload,
   FileText,
 } from "lucide-react";
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEmpresaAtual } from "@/hooks/use-empresa";
@@ -146,6 +146,8 @@ function Veiculos() {
   const [isParsingPdf, setIsParsingPdf] = useState(false);
   const [tiposOpen, setTiposOpen] = useState(false);
   const [rntrcOpen, setRntrcOpen] = useState(false);
+  const [rntrcBusca, setRntrcBusca] = useState("");
+  const rntrcSelRef = useRef(false);
   const [novoTipo, setNovoTipo] = useState("");
 
   // Busca tipos do banco (ordem alfabética)
@@ -822,7 +824,21 @@ function Veiculos() {
               </div>
               <div>
                 <Label>RNTRC</Label>
-                <Popover open={rntrcOpen} onOpenChange={setRntrcOpen}>
+                <Popover
+                  open={rntrcOpen}
+                  onOpenChange={(v) => {
+                    setRntrcOpen(v);
+                    if (v) {
+                      rntrcSelRef.current = false;
+                      setRntrcBusca("");
+                    } else {
+                      if (!rntrcSelRef.current && rntrcBusca.trim())
+                        set("rntrc", rntrcBusca.trim().toUpperCase());
+                      rntrcSelRef.current = false;
+                      setRntrcBusca("");
+                    }
+                  }}
+                >
                   <PopoverTrigger asChild>
                     <Button
                       variant="outline"
@@ -837,12 +853,12 @@ function Veiculos() {
                       <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                     </Button>
                   </PopoverTrigger>
-                  <PopoverContent className="w-[350px] p-0" align="start">
+                  <PopoverContent className="w-max min-w-[350px] max-w-[90vw] p-0" align="start">
                     <Command>
                       <CommandInput
                         placeholder="Buscar RNTRC ou nome..."
-                        value={form.rntrc}
-                        onValueChange={(v) => set("rntrc", v.toUpperCase())}
+                        value={rntrcBusca}
+                        onValueChange={(v) => setRntrcBusca(v.toUpperCase())}
                       />
                       <CommandList>
                         <CommandEmpty>
@@ -851,13 +867,13 @@ function Veiculos() {
                             size="sm"
                             className="w-full justify-start text-xs"
                             onClick={() => {
-                              if (form.rntrc) {
-                                criarRntrc.mutate(form.rntrc);
+                              if (rntrcBusca.trim()) {
+                                criarRntrc.mutate(rntrcBusca.trim());
                                 setRntrcOpen(false);
                               }
                             }}
                           >
-                            <Plus className="mr-1 h-3 w-3" /> Salvar &quot;{form.rntrc}&quot;
+                            <Plus className="mr-1 h-3 w-3" /> Salvar &quot;{rntrcBusca}&quot;
                           </Button>
                         </CommandEmpty>
                         <CommandGroup>
@@ -867,18 +883,23 @@ function Veiculos() {
                               value={`${r.rntrc} ${r.nome}`}
                               onSelect={() => {
                                 set("rntrc", r.rntrc);
+                                rntrcSelRef.current = true;
+                                setRntrcBusca("");
                                 setRntrcOpen(false);
                               }}
+                              className="whitespace-nowrap"
                             >
                               <Check
                                 className={
-                                  "mr-2 h-4 w-4 " +
+                                  "mr-2 h-4 w-4 shrink-0 " +
                                   (form.rntrc === r.rntrc ? "opacity-100" : "opacity-0")
                                 }
                               />
                               <span className="font-medium">{r.rntrc}</span>
                               {r.nome && (
-                                <span className="ml-2 text-muted-foreground">— {r.nome}</span>
+                                <span className="ml-2 truncate text-muted-foreground">
+                                  — {r.nome}
+                                </span>
                               )}
                             </CommandItem>
                           ))}

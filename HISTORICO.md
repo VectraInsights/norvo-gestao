@@ -3710,3 +3710,7 @@ Espelhado na Vercel.
 
 - maskDoc reescrito por fatiamento (regex encadeada errava o ponto no CNPJ: 00.5907-89...). Agora CNPJ xx.xxx.xxx/xxxx-xx e CPF xxx.xxx.xxx-xx corretos em toda digitacao.
 - Combobox: item em linha unica sem quebrar (numero + empresa) e pesquisa limpa ao selecionar/fechar (nao mantem a empresa filtrada).
+
+## Veiculos: dropdown RNTRC proprio corrigido (30/09)
+
+- O RNTRC usa dropdown proprio (nao o Combobox compartilhado): item em linha unica sem quebrar, popover com largura automatica, pesquisa separada da selecao (abre sempre limpa; texto digitado sem selecionar e aproveitado ao fechar).
