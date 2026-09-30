@@ -3642,3 +3642,7 @@ Espelhado na Vercel.
 ## Login mais rapido: preload + preconnect (30/09)
 
 - Chunk do dashboard pre-carregado no /auth (navegacao pos-login instantanea) + preconnect p/ accounts.google.com e Supabase no head. Sessao persistente localStorage + auto-refresh ja existiam.
+
+## Zero oval limpo global: JetBrains Mono -> Inter (30/09)
+
+- O zero do JetBrains Mono tem ponto central (vira 8 em tamanho pequeno; confirmado renderizando o glifo). --font-mono agora e Inter + tabular-nums global (zero oval, colunas alinhadas). Import e pacote @fontsource/jetbrains-mono removidos. Consolas descartado (zero cortado).
