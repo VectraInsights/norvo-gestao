@@ -3767,3 +3767,12 @@ Espelhado na Vercel.
 - Fora: DRE e recebidas (relatórios/fluxo crítico, sem busca textual).
 - Corrigido TDZ em usuarios (busca usada antes de declarar).
 - Espelhado na Vercel via push em main.
+
+## Cadastro com IE/endereço + toast sem percurso (30/09)
+
+- Tabela com colunas IE e Endereço (logradouro, número + bairro, com
+  tooltip) e rolagem horizontal (min-w 1080px).
+- Toast "sem percurso" agora mostra o trio rem/dest/toma da NF-e, que é
+  a identidade da rota (cidades não contam no vínculo) — orienta qual
+  rota criar.
+- Espelhado na Vercel via push em main.
