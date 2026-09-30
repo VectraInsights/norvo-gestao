@@ -1556,7 +1556,7 @@ function PercursosPage() {
                     <p className="text-[11px] font-semibold">Fiscal</p>
                     <div className="space-y-1">
                       <div className="flex flex-col gap-1 md:flex-row">
-                        <div className="md:w-[32%]">
+                        <div className="md:flex-1">
                           <Combo
                             label="CST ICMS"
                             value={editing.icms_cst || "00"}
@@ -1581,7 +1581,7 @@ function PercursosPage() {
                             opts={OPTS_CFOP}
                           />
                         </div>
-                        <div className="md:flex-1">
+                        <div className="md:w-[680px] md:max-w-full md:shrink-0">
                           <Combo
                             label="Natureza da Operação"
                             value={semNumCfop(editing.nat_operacao || "")}

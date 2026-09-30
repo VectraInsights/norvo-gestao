@@ -3676,3 +3676,7 @@ Espelhado na Vercel.
 ## Percursos: CFOP so numero + toast curto (30/09)
 
 - Toast de recalculo agora so Percurso recalculado (automatico e no salvar). CFOP mostra e lista so o numero (5.351); Natureza mostra e lista so a descricao (numeros antigos salvos sao ocultados na exibicao). Busca do dropdown ignora pontos (digitar 5351 acha 5.351). Linha: CST mais larga (32%), CFOP estreita 130px, Natureza com o resto.
+
+## Percursos: larguras CST/Natureza (30/09)
+
+- Linha fiscal: CST flexivel maxima, CFOP 130px, Natureza fixa 680px (cabe a maior descricao sem cortar).
