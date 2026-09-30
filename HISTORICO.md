@@ -3723,3 +3723,7 @@ Espelhado na Vercel.
 
 - Query de percursos no CT-e lia so 5 colunas: avulso aplicava quase nada (entrega vinha da NF-e, faltavam dados de remetente/destinatario). Select ampliado com todas as colunas usadas (rota, fiscal, seguro, enderecos).
 - Entrega vinda do percurso nao e mais sobrescrita pela cidade da NF-e (trava por dialogo; ex. percurso MARABA x NF-e MACAPA).
+
+## Percursos: calculo de rota mais rapido (30/09)
+
+- Recalculo demorava: fetches externos sem timeout (travavam) e 2 roteadores em sequencia. Agora: timeout 8s na geolocalizacao e 12s na rota, 2 roteadores em paralelo (vence o 1o que responder) e cache em memoria da cidade/CEP na sessao.

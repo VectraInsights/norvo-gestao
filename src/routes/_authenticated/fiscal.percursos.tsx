@@ -479,7 +479,9 @@ async function geoPorCep(cep: string): Promise<{ lat: number; lon: number } | nu
   const d = String(cep || "").replace(/\D/g, "");
   if (d.length !== 8) return null;
   try {
-    const r = await fetch("https://brasilapi.com.br/api/cep/v2/" + d);
+    const r = await fetch("https://brasilapi.com.br/api/cep/v2/" + d, {
+      signal: AbortSignal.timeout(8000),
+    });
     if (r.ok) {
       const j = await r.json();
       const c = j && j.location && j.location.coordinates;
@@ -490,7 +492,9 @@ async function geoPorCep(cep: string): Promise<{ lat: number; lon: number } | nu
     /* proxima fonte */
   }
   try {
-    const r = await fetch("https://cep.awesomeapi.com.br/json/" + d);
+    const r = await fetch("https://cep.awesomeapi.com.br/json/" + d, {
+      signal: AbortSignal.timeout(8000),
+    });
     if (r.ok) {
       const j = await r.json();
       if (j && j.lat && j.lng) return { lat: Number(j.lat), lon: Number(j.lng) };
@@ -502,6 +506,7 @@ async function geoPorCep(cep: string): Promise<{ lat: number; lon: number } | nu
     const q = new URLSearchParams({ postalcode: d, country: "Brasil", format: "json", limit: "1" });
     const r = await fetch("https://nominatim.openstreetmap.org/search?" + q.toString(), {
       headers: { Accept: "application/json" },
+      signal: AbortSignal.timeout(8000),
     });
     if (r.ok) {
       const j = await r.json();
@@ -528,6 +533,7 @@ async function geoPorCidade(
     });
     const r = await fetch("https://nominatim.openstreetmap.org/search?" + q.toString(), {
       headers: { Accept: "application/json" },
+      signal: AbortSignal.timeout(8000),
     });
     if (!r.ok) return null;
     const j = await r.json();
@@ -537,13 +543,28 @@ async function geoPorCidade(
   }
   return null;
 }
+// Cache de geolocalização da sessão (evita reconsultar a mesma cidade/CEP)
+const geoCache = new Map<string, { lat: number; lon: number }>();
 async function calcDistDur(
   o: { cep: string; xmun: string; uf: string },
   d: { cep: string; xmun: string; uf: string },
 ): Promise<{ km: string; h: string; ferryKm: number }> {
   const dOrig = String(o.cep || "").replace(/\D/g, "");
   const dDst = String(d.cep || "").replace(/\D/g, "");
-  const go = (await geoPorCep(dOrig)) || (await geoPorCidade(o.xmun, o.uf));
+  // Cache da sessão: mesma cidade/CEP não reconsulta
+  const geoMemo = async (p: { cep: string; xmun: string; uf: string }) => {
+    const dd = String(p.cep || "").replace(/\D/g, "");
+    const key =
+      dd.length === 8
+        ? "cep:" + dd
+        : "cid:" + p.xmun.trim().toUpperCase() + "/" + p.uf.trim().toUpperCase();
+    const hit = geoCache.get(key);
+    if (hit) return hit;
+    const v = (await geoPorCep(dd)) || (await geoPorCidade(p.xmun, p.uf));
+    if (v) geoCache.set(key, v);
+    return v;
+  };
+  const go = await geoMemo(o);
   if (!go)
     throw new Error(
       "Origem nao localizada (CEP " +
@@ -554,7 +575,7 @@ async function calcDistDur(
         (o.uf || "?") +
         ") — confira o cadastro",
     );
-  const gd = (await geoPorCep(dDst)) || (await geoPorCidade(d.xmun, d.uf));
+  const gd = await geoMemo(d);
   if (!gd)
     throw new Error(
       "Destino nao localizado (CEP " +
@@ -565,41 +586,35 @@ async function calcDistDur(
         (d.uf || "?") +
         ") — confira o cadastro",
     );
-  // Roteadores gratuitos (mesmo formato OSRM); tenta o 2º se o 1º falhar
+  // Roteadores gratuitos (mesmo formato OSRM); corre em paralelo, vence o 1º que responder
   const rotaBases = [
     "https://router.project-osrm.org/route/v1/driving/",
     "https://routing.openstreetmap.de/routed-car/route/v1/driving/",
   ];
+  const rotaUrl =
+    (base: string) =>
+    base +
+    go.lon +
+    "," +
+    go.lat +
+    ";" +
+    gd.lon +
+    "," +
+    gd.lat +
+    "?overview=false&alternatives=true&steps=true";
+  const tentar = async (base: string) => {
+    const r = await fetch(rotaUrl(base), { signal: AbortSignal.timeout(12000) });
+    if (!r.ok) throw new Error("HTTP " + r.status);
+    const jj = await r.json();
+    if (!jj || !jj.routes || !jj.routes.length) throw new Error("sem rotas");
+    return jj;
+  };
   let j: any = null;
-  let lastErr = "";
-  for (const base of rotaBases) {
-    try {
-      const r = await fetch(
-        base +
-          go.lon +
-          "," +
-          go.lat +
-          ";" +
-          gd.lon +
-          "," +
-          gd.lat +
-          "?overview=false&alternatives=true&steps=true",
-      );
-      if (!r.ok) {
-        lastErr = "HTTP " + r.status;
-        continue;
-      }
-      const jj = await r.json();
-      if (jj && jj.routes && jj.routes.length) {
-        j = jj;
-        break;
-      }
-      lastErr = "sem rotas";
-    } catch {
-      lastErr = "rede";
-    }
+  try {
+    j = await Promise.any(rotaBases.map(tentar));
+  } catch {
+    throw new Error("Falha no calculo da rota — tente de novo");
   }
-  if (!j) throw new Error("Falha no calculo da rota (" + lastErr + ") — tente de novo");
   const routes = (j && j.routes) || [];
   const validas = routes.filter((x: any) => isFinite(Number(x.distance)));
   if (!validas.length) throw new Error("Rota nao encontrada entre os CEPs");
