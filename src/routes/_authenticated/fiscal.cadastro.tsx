@@ -203,7 +203,7 @@ function Cadastro() {
     <>
       <PageHeader eyebrow="Fiscal" title="Cadastro" description="Clientes e fornecedores juntos — remetentes, destinatários e tomadores usados no CT-e."
         actions={
-          <Button onClick={openCreate}><Plus className="mr-1 h-4 w-4" />Novo contato</Button>
+          <Button onClick={openCreate}><Plus className="mr-1 h-4 w-4" />Novo cadastro</Button>
         }
       />
       <div className="mb-3 flex flex-col gap-2 sm:flex-row sm:items-center">
@@ -264,7 +264,7 @@ function Cadastro() {
 
       <Dialog open={open} onOpenChange={(v) => { if (!criar.isPending && !editar.isPending) { setOpen(v); if (!v) { setEditing(null); setForm(emptyForm()); } } }}>
         <DialogContent className="max-h-[90vh] overflow-y-auto">
-          <DialogHeader><DialogTitle>{editing ? "Editar contato" : "Novo contato"}</DialogTitle></DialogHeader>
+          <DialogHeader><DialogTitle>{editing ? "Editar cadastro" : "Novo cadastro"}</DialogTitle></DialogHeader>
           <form onSubmit={(e) => { e.preventDefault(); if (editing) { editar.mutate({ ...form, id: editing.id }); } else { criar.mutate(form); } }} className="space-y-3">
             <div>
               <Label>CPF/CNPJ</Label>
