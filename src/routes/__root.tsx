@@ -107,6 +107,9 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     links: [
       { rel: "stylesheet", href: appCss },
       { rel: "icon", href: "/favicon.png", type: "image/png" },
+      // Acelera o login: DNS/TLS antecipados p/ Google e Supabase.
+      { rel: "preconnect", href: "https://accounts.google.com" },
+      { rel: "preconnect", href: "https://lfxhimtbuazezjkjlddj.supabase.co" },
     ],
   }),
   shellComponent: RootShell,

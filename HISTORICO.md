@@ -3638,3 +3638,7 @@ Espelhado na Vercel.
 ## Login Google sem flash da tela de login (30/09)
 
 - Causa: no retorno do OAuth o /auth mostrava o formulario enquanto trocava o codigo pela sessao, e so navegava quando a rota revalidava (~5s). Agora mostra Conectando... e assina SIGNED_IN p/ navegar na hora. (auth.tsx estava Hidden no Windows; desocultado.)
+
+## Login mais rapido: preload + preconnect (30/09)
+
+- Chunk do dashboard pre-carregado no /auth (navegacao pos-login instantanea) + preconnect p/ accounts.google.com e Supabase no head. Sessao persistente localStorage + auto-refresh ja existiam.

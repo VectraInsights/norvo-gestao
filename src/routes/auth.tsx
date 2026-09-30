@@ -1,4 +1,4 @@
-import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
+import { createFileRoute, useNavigate, useRouter, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -37,6 +37,7 @@ export function friendlyAuthError(error: { message?: string } | null | undefined
 
 function AuthPage() {
   const navigate = useNavigate();
+  const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -47,6 +48,8 @@ function AuthPage() {
 
   useEffect(() => {
     let vivo = true;
+    // Deixa o chunk do dashboard baixado: após o login a navegação é instantânea.
+    router.preloadRoute({ to: "/dashboard" }).catch(() => {});
     supabase.auth.getSession().then(({ data }) => {
       if (!vivo) return;
       if (data.session) navigate({ to: "/dashboard", replace: true });
@@ -61,7 +64,7 @@ function AuthPage() {
       vivo = false;
       sub.subscription.unsubscribe();
     };
-  }, [navigate]);
+  }, [navigate, router]);
 
   const handleGoogle = async () => {
     if (isDesktop) {
