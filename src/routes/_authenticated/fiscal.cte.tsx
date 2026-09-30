@@ -324,6 +324,7 @@ function CtePage() {
       emitXMun: string;
       emitIE?: string;
       emitLogradouro?: string;
+      emitNro?: string;
       emitBairro?: string;
       emitCEP?: string;
       emitFone?: string;
@@ -334,6 +335,7 @@ function CtePage() {
       destXMun: string;
       destIE?: string;
       destLogradouro?: string;
+      destNro?: string;
       destBairro?: string;
       destCEP?: string;
       destFone?: string;
@@ -1660,7 +1662,7 @@ function CtePage() {
       const { data, error } = await supabase
         .from("cte_nfes_pendentes" as any)
         .select(
-          "chave,n_nf,serie,emit_nome,emit_cnpj,emit_uf,emit_cmun,emit_xmun,dest_nome,dest_cnpj,dest_uf,dest_cmun,dest_xmun,valor,peso,data_emissao,tomador_nome,tomador_cnpj,tomador_uf,tomador_cmun,tomador_xmun,tomador_ie,tomador_logradouro,tomador_bairro,tomador_cep,mod_frete",
+          "chave,n_nf,serie,emit_nome,emit_cnpj,emit_uf,emit_cmun,emit_xmun,emit_ie,emit_logradouro,emit_nro,emit_bairro,emit_cep,emit_fone,dest_nome,dest_cnpj,dest_uf,dest_cmun,dest_xmun,dest_ie,dest_logradouro,dest_nro,dest_bairro,dest_cep,dest_fone,valor,peso,data_emissao,tomador_nome,tomador_cnpj,tomador_uf,tomador_cmun,tomador_xmun,tomador_ie,tomador_logradouro,tomador_bairro,tomador_cep,mod_frete",
         )
         .eq("empresa_id", empresa!.id)
         .eq("status", "pendente")
@@ -1727,14 +1729,26 @@ function CtePage() {
         serie: r.serie || "1",
         emit: r.emit_nome || "",
         emitCnpj: r.emit_cnpj || "",
-        emitUF: r.emit_uf || "",
-        emitCMun: r.emit_cmun || "",
-        emitXMun: r.emit_xmun || "",
-        dest: r.dest_nome || "",
-        destCnpj: r.dest_cnpj || "",
-        destUF: r.dest_uf || "",
-        destCMun: r.dest_cmun || "",
-        destXMun: r.dest_xmun || "",
+      emitUF: r.emit_uf || "",
+      emitCMun: r.emit_cmun || "",
+      emitXMun: r.emit_xmun || "",
+      emitIE: (r as any).emit_ie || "",
+      emitLogradouro: (r as any).emit_logradouro || "",
+      emitNro: (r as any).emit_nro || "",
+      emitBairro: (r as any).emit_bairro || "",
+      emitCEP: (r as any).emit_cep || "",
+      emitFone: (r as any).emit_fone || "",
+      dest: r.dest_nome || "",
+      destCnpj: r.dest_cnpj || "",
+      destUF: r.dest_uf || "",
+      destCMun: r.dest_cmun || "",
+      destXMun: r.dest_xmun || "",
+      destIE: (r as any).dest_ie || "",
+      destLogradouro: (r as any).dest_logradouro || "",
+      destNro: (r as any).dest_nro || "",
+      destBairro: (r as any).dest_bairro || "",
+      destCEP: (r as any).dest_cep || "",
+      destFone: (r as any).dest_fone || "",
         valor: Number(r.valor ?? 0),
         peso: Number(r.peso ?? 0),
         qVol: Number((r as any).qvol ?? 0),
@@ -2488,11 +2502,23 @@ function CtePage() {
           emit_uf: emitUF || null,
           emit_cmun: emitCMun || null,
           emit_xmun: emitXMun || null,
+          emit_ie: emitIE || null,
+          emit_logradouro: emitLog || null,
+          emit_nro: emitNro || null,
+          emit_bairro: emitBai || null,
+          emit_cep: emitCepFin || null,
+          emit_fone: emitFoneFin || null,
           dest_nome: destXNome,
           dest_cnpj: destCnpj,
           dest_uf: destUF || null,
           dest_cmun: destCMun || null,
           dest_xmun: destXMun || null,
+          dest_ie: destIE || null,
+          dest_logradouro: destLog || null,
+          dest_nro: destNro || null,
+          dest_bairro: destBai || null,
+          dest_cep: destCepFin || null,
+          dest_fone: destFoneFin || null,
           valor,
           peso,
           qvol: qVolNum || null,
@@ -2708,11 +2734,23 @@ function CtePage() {
               emit_uf: nf.emitUF,
               emit_cmun: nf.emitCMun,
               emit_xmun: nf.emitXMun,
+              emit_ie: (nf as any).emitIE || null,
+              emit_logradouro: (nf as any).emitLogradouro || null,
+              emit_nro: (nf as any).emitNro || null,
+              emit_bairro: (nf as any).emitBairro || null,
+              emit_cep: (nf as any).emitCEP || null,
+              emit_fone: (nf as any).emitFone || null,
               dest_nome: nf.dest,
               dest_cnpj: nf.destCnpj,
               dest_uf: nf.destUF,
               dest_cmun: nf.destCMun,
               dest_xmun: nf.destXMun,
+              dest_ie: (nf as any).destIE || null,
+              dest_logradouro: (nf as any).destLogradouro || null,
+              dest_nro: (nf as any).destNro || null,
+              dest_bairro: (nf as any).destBairro || null,
+              dest_cep: (nf as any).destCEP || null,
+              dest_fone: (nf as any).destFone || null,
               valor: nf.valor,
               peso: nf.peso,
               data_emissao: nf.data || null,
@@ -2753,11 +2791,23 @@ function CtePage() {
           emitUF: r.emitUF || "",
           emitCMun: r.emitCMun || "",
           emitXMun: r.emitXMun || "",
+          emitIE: r.emitIE || "",
+          emitLogradouro: r.emitLogradouro || "",
+          emitNro: r.emitNro || "",
+          emitBairro: r.emitBairro || "",
+          emitCEP: r.emitCEP || "",
+          emitFone: r.emitFone || "",
           dest: r.dest || "",
           destCnpj: r.destCnpj || "",
           destUF: r.destUF || "",
           destCMun: r.destCMun || "",
           destXMun: r.destXMun || "",
+          destIE: r.destIE || "",
+          destLogradouro: r.destLogradouro || "",
+          destNro: r.destNro || "",
+          destBairro: r.destBairro || "",
+          destCEP: r.destCEP || "",
+          destFone: r.destFone || "",
           valor: Number(r.valor ?? 0),
           peso: Number(r.peso ?? 0),
           data: r.data || "",
@@ -2935,11 +2985,23 @@ function CtePage() {
           emitUF: m.emitUF,
           emitCMun: m.emitCMun,
           emitXMun: m.emitXMun,
+          emitIE: m.emitIE || "",
+          emitLogradouro: m.emitLogradouro || "",
+          emitNro: m.emitNro || "",
+          emitBairro: m.emitBairro || "",
+          emitCEP: m.emitCEP || "",
+          emitFone: m.emitFone || "",
           dest: m.dest,
           destCnpj: m.destCnpj,
           destUF: m.destUF,
           destCMun: m.destCMun,
           destXMun: m.destXMun,
+          destIE: m.destIE || "",
+          destLogradouro: m.destLogradouro || "",
+          destNro: m.destNro || "",
+          destBairro: m.destBairro || "",
+          destCEP: m.destCEP || "",
+          destFone: m.destFone || "",
           valor: m.valor,
           peso: m.peso,
           qVol: (m as any).qVol || 0,
@@ -3286,11 +3348,23 @@ function CtePage() {
                   emit_uf: nf.emitUF || "",
                   emit_cmun: nf.emitCMun || "",
                   emit_xmun: nf.emitXMun || "",
+                  emit_ie: nf.emitIE || "",
+                  emit_logradouro: nf.emitLogradouro || "",
+                  emit_nro: nf.emitNro || "",
+                  emit_bairro: nf.emitBairro || "",
+                  emit_cep: nf.emitCEP || "",
+                  emit_fone: nf.emitFone || "",
                   dest_nome: nf.dest || "",
                   dest_cnpj: nf.destCnpj || "",
                   dest_uf: nf.destUF || "",
                   dest_cmun: nf.destCMun || "",
                   dest_xmun: nf.destXMun || "",
+                  dest_ie: nf.destIE || "",
+                  dest_logradouro: nf.destLogradouro || "",
+                  dest_nro: nf.destNro || "",
+                  dest_bairro: nf.destBairro || "",
+                  dest_cep: nf.destCEP || "",
+                  dest_fone: nf.destFone || "",
                   valor: nf.valor || 0,
                   peso: nf.peso || 0,
                   data_emissao: nf.data || null,
@@ -3420,11 +3494,23 @@ function CtePage() {
                     emit_uf: nf.emitUF || "",
                     emit_cmun: nf.emitCMun || "",
                     emit_xmun: nf.emitXMun || "",
+                    emit_ie: nf.emitIE || "",
+                    emit_logradouro: nf.emitLogradouro || "",
+                    emit_nro: nf.emitNro || "",
+                    emit_bairro: nf.emitBairro || "",
+                    emit_cep: nf.emitCEP || "",
+                    emit_fone: nf.emitFone || "",
                     dest_nome: nf.dest || "",
                     dest_cnpj: nf.destCnpj || "",
                     dest_uf: nf.destUF || "",
                     dest_cmun: nf.destCMun || "",
                     dest_xmun: nf.destXMun || "",
+                    dest_ie: nf.destIE || "",
+                    dest_logradouro: nf.destLogradouro || "",
+                    dest_nro: nf.destNro || "",
+                    dest_bairro: nf.destBairro || "",
+                    dest_cep: nf.destCEP || "",
+                    dest_fone: nf.destFone || "",
                     valor: nf.valor || 0,
                     peso: nf.peso || 0,
                     data_emissao: nf.data || null,
@@ -5644,7 +5730,7 @@ function CtePage() {
                     contatoByDoc.get((active.destCnpj || "").replace(/\D/g, "")) || percDes || {};
                   const emitIE = active.emitIE || cEmit.ie || "";
                   const emitLgr = active.emitLogradouro || cEmit.logradouro || "";
-                  const emitNro = cEmit.numero || "";
+                  const emitNro = active.emitNro || cEmit.numero || "";
                   const emitBai = active.emitBairro || cEmit.bairro || "";
                   const emitCid = active.emitXMun || cEmit.cidade || "";
                   const emitUF = active.emitUF || cEmit.uf || "";
@@ -5652,7 +5738,7 @@ function CtePage() {
                   const emitFone = active.emitFone || cEmit.telefone || "";
                   const destIE = active.destIE || cDest.ie || "";
                   const destLgr = active.destLogradouro || cDest.logradouro || "";
-                  const destNro = cDest.numero || "";
+                  const destNro = active.destNro || cDest.numero || "";
                   const destBai = active.destBairro || cDest.bairro || "";
                   const destCid = active.destXMun || cDest.cidade || "";
                   const destUF = active.destUF || cDest.uf || "";

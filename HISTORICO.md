@@ -3727,3 +3727,7 @@ Espelhado na Vercel.
 ## Percursos: calculo de rota mais rapido (30/09)
 
 - Recalculo demorava: fetches externos sem timeout (travavam) e 2 roteadores em sequencia. Agora: timeout 8s na geolocalizacao e 12s na rota, 2 roteadores em paralelo (vence o 1o que responder) e cache em memoria da cidade/CEP na sessao.
+
+## NF-e: endereco do XML salvo e exibido (30/09)
+
+- O XML era lido completo mas so endereco do tomador ia p/ o banco. Migration 20260930130000 (+12 colunas emit/dest IE, logradouro, nro, bairro, CEP, fone) aplicada. Import, rascunho (salva/cancela/exclui/edita) e listagem passam os dados; cartoes de remetente/destinatario mostram numero e fone do XML. Notas antigas passam a trazer ao reimportar o XML.
