@@ -38,6 +38,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Progress } from "@/components/ui/progress";
 import {
   Command,
   CommandEmpty,
@@ -297,6 +298,7 @@ function CtePage() {
   const qc = useQueryClient();
   const search = Route.useSearch();
   const [isParsing, setIsParsing] = useState(false);
+  const [importProgress, setImportProgress] = useState<{ feito: number; total: number } | null>(null);
   const [manualNfeOpen, setManualNfeOpen] = useState(false);
   const [manualNfe, setManualNfe] = useState({
     modelo: "55",
@@ -2263,93 +2265,142 @@ function CtePage() {
       return;
     }
     setIsParsing(true);
+    setImportProgress({ feito: 0, total: xmls.length });
+    // Concorrência limitada p/ gravações paralelas sem sobrecarregar o Supabase.
+    const mapPool = async <T, R>(
+      items: T[],
+      size: number,
+      fn: (item: T, idx: number) => Promise<R>,
+      onStep?: () => void,
+    ): Promise<R[]> => {
+      const out: R[] = new Array(items.length);
+      let cursor = 0;
+      await Promise.all(
+        Array.from({ length: Math.min(size, Math.max(items.length, 1)) }, async () => {
+          while (cursor < items.length) {
+            const i = cursor++;
+            out[i] = await fn(items[i], i);
+            onStep?.();
+          }
+        }),
+      );
+      return out;
+    };
+    // Cede o event loop p/ a barra de progresso pintar entre arquivos.
+    const pintar = () => new Promise<void>((r) => setTimeout(r, 0));
+    const tique = async () => {
+      setImportProgress((v) => (v ? { ...v, feito: Math.min(v.total, v.feito + 1) } : v));
+      await pintar();
+    };
     try {
-      const lookupContato = async (cnpj: string) => {
+      const contatoCache = new Map<string, Promise<any>>();
+      const contatoExistente = new Map<string, any>();
+      // Lookup com cache compartilhado: CNPJs repetidos (e workers paralelos)
+      // usam a mesma promise em voo — 1 query por documento no total.
+      const getContato = (cnpj: string): Promise<any> => {
         const doc = (cnpj || "").replace(/\D/g, "");
-        if (!doc || doc.length < 11) return null;
-        const { data } = await supabase
-          .from("fiscal_cadastros" as any)
-          .select("nome,logradouro,numero,bairro,cidade,uf,cep,telefone")
-          .eq("empresa_id", empresa!.id)
-          .eq("documento", doc)
-          .maybeSingle();
-        return data || null;
-      };
-      const upsertContatoFromNfe = async (
-        cnpj: string,
-        nome: string,
-        ie: string,
-        uf: string,
-        cidade: string,
-        logradouro: string,
-        bairro: string,
-        cep: string,
-        fone: string,
-        numero: string,
-      ) => {
-        const doc = (cnpj || "").replace(/\D/g, "");
-        if (!doc || doc.length < 11 || !nome) return;
-        const { data: existente } = await supabase
-          .from("fiscal_cadastros" as any)
-          .select("id,nome")
-          .eq("empresa_id", empresa!.id)
-          .eq("documento", doc)
-          .maybeSingle();
-        if (existente) {
-          const upd: Record<string, unknown> = {};
-          if (!(existente as any)?.nome && nome) upd.nome = nome;
-          if (ie) upd.ie = ie;
-          if (uf) upd.uf = uf;
-          if (cidade) upd.cidade = cidade;
-          if (logradouro) upd.logradouro = logradouro;
-          if (numero) upd.numero = numero;
-          if (bairro) upd.bairro = bairro;
-          if (cep) upd.cep = cep;
-          if (fone) upd.telefone = fone;
-          if (Object.keys(upd).length)
-            await supabase
-              .from("fiscal_cadastros" as any)
-              .update(upd)
-              .eq("empresa_id", empresa!.id)
-              .eq("documento", doc);
-          return;
-        }
-        const { error } = await supabase
-          .from("fiscal_cadastros" as any)
-          .insert({
-            empresa_id: empresa!.id,
-            nome,
-            documento: doc,
-            ie: ie || null,
-            uf: uf || null,
-            cidade: cidade || null,
-            logradouro: logradouro || null,
-            numero: numero || null,
-            bairro: bairro || null,
-            cep: cep || null,
-            telefone: fone || null,
-          });
-        if (error && /ie/i.test(error.message || "")) {
-          await supabase
+        if (!doc || doc.length < 11) return Promise.resolve(null);
+        const hit = contatoCache.get(doc);
+        if (hit) return hit;
+        const p: Promise<any> = Promise.resolve(
+          supabase
             .from("fiscal_cadastros" as any)
-            .insert({
-              empresa_id: empresa!.id,
-              nome,
-              documento: doc,
-              uf: uf || null,
-              cidade: cidade || null,
-              logradouro: logradouro || null,
-              numero: numero || null,
-              bairro: bairro || null,
-              cep: cep || null,
-              telefone: fone || null,
-            });
+            .select("id,documento,nome,ie,uf,cidade,logradouro,numero,bairro,cep,telefone")
+            .eq("empresa_id", empresa!.id)
+            .eq("documento", doc)
+            .maybeSingle(),
+        ).then(({ data }: any) => {
+          contatoExistente.set(doc, data || null);
+          return data || null;
+        });
+        contatoCache.set(doc, p);
+        return p;
+      };
+      type ContatoNfe = {
+        cnpj: string;
+        nome: string;
+        ie: string;
+        uf: string;
+        cidade: string;
+        logradouro: string;
+        bairro: string;
+        cep: string;
+        fone: string;
+        numero: string;
+      };
+      // Upserts de contato vão p/ fila e são gravados em lote no fim (era 1-3
+      // queries por XML em background). Primeiro a aparecer no lote vence.
+      const contatosUpsert = new Map<string, ContatoNfe>();
+      const queueContato = (c: ContatoNfe) => {
+        const doc = (c.cnpj || "").replace(/\D/g, "");
+        if (!doc || doc.length < 11 || !c.nome || contatosUpsert.has(doc)) return;
+        contatosUpsert.set(doc, c);
+      };
+      const inserirContatoComFallback = async (row: Record<string, unknown>) => {
+        const { error } = await supabase.from("fiscal_cadastros" as any).insert(row);
+        if (error && /ie/i.test(error.message || "")) {
+          const { ie: _ie, ...semIe } = row;
+          await supabase.from("fiscal_cadastros" as any).insert(semIe);
         }
       };
+      const flushContatos = async () => {
+        const lista = [...contatosUpsert.values()];
+        if (lista.length === 0) return;
+        const docDe = (c: ContatoNfe) => (c.cnpj || "").replace(/\D/g, "");
+        const novos = lista.filter((c) => !contatoExistente.get(docDe(c)));
+        if (novos.length > 0) {
+          const rows = novos.map((c) => ({
+            empresa_id: empresa!.id,
+            nome: c.nome,
+            documento: docDe(c),
+            ie: c.ie || null,
+            uf: c.uf || null,
+            cidade: c.cidade || null,
+            logradouro: c.logradouro || null,
+            numero: c.numero || null,
+            bairro: c.bairro || null,
+            cep: c.cep || null,
+            telefone: c.fone || null,
+          }));
+          const { error } = await supabase.from("fiscal_cadastros" as any).insert(rows);
+          if (error) {
+            // Concorrência externa ou IE duplicado: cai p/ linha a linha com fallback.
+            await mapPool(rows, 5, (r) => inserirContatoComFallback(r));
+          }
+        }
+        const docsNovos = new Set(novos.map(docDe));
+        const patches: { doc: string; upd: Record<string, unknown> }[] = [];
+        for (const c of lista) {
+          const doc = docDe(c);
+          const existente = contatoExistente.get(doc);
+          if (!existente || docsNovos.has(doc)) continue;
+          const upd: Record<string, unknown> = {};
+          if (!(existente as any)?.nome && c.nome) upd.nome = c.nome;
+          if (c.ie) upd.ie = c.ie;
+          if (c.uf) upd.uf = c.uf;
+          if (c.cidade) upd.cidade = c.cidade;
+          if (c.logradouro) upd.logradouro = c.logradouro;
+          if (c.numero) upd.numero = c.numero;
+          if (c.bairro) upd.bairro = c.bairro;
+          if (c.cep) upd.cep = c.cep;
+          if (c.fone) upd.telefone = c.fone;
+          if (Object.keys(upd).length) patches.push({ doc, upd });
+        }
+        await mapPool(patches, 5, (p) =>
+          Promise.resolve(
+            supabase.from("fiscal_cadastros" as any).update(p.upd).eq("empresa_id", empresa!.id).eq("documento", p.doc),
+          ),
+        );
+      };
+      // (upsert de contatos agora via queueContato + flushContatos em lote no fim)
       let added = 0;
       let duplicadas = 0;
       let reservadas = 0;
-      const novas: typeof mercadorias = [];
+      const chavesNoLote = new Set<string>();
+      const novasPorIndice: Array<(typeof mercadorias)[number] | null> = new Array(xmls.length).fill(null);
+      const extrasPorIndice: Array<{ transpIE: string; destIE: string; emitIE: string }> = new Array(
+        xmls.length,
+      ).fill(null);
       // Status atual no banco p/ bloquear reimport de NF reservada (rascunho) ou embarcada
       const { data: existentes } = await supabase
         .from("cte_nfes_pendentes" as any)
@@ -2361,7 +2412,7 @@ function CtePage() {
           String(r.status),
         ]),
       );
-      for (const file of xmls) {
+      const resultados = await mapPool(xmls, 5, async (file, fileIdx) => {
         const text = await file.text();
         const parser = new DOMParser();
         const doc = parser.parseFromString(text, "text/xml");
@@ -2408,19 +2459,20 @@ function CtePage() {
         const chaveNorm = chave.replace(/\D/g, "");
         if (!chaveNorm || chaveNorm.length < 20) {
           duplicadas++;
-          continue;
+          return;
         }
-        if (novas.some((m) => m.chave === chaveNorm)) {
+        if (chavesNoLote.has(chaveNorm)) {
           duplicadas++;
-          continue;
+          return;
         }
+        chavesNoLote.add(chaveNorm);
         // Homologação: permite reutilizar a mesma NF-e em vários CT-es de teste —
         // reativa (volta p/ pendente) em vez de bloquear. Produção continua bloqueando.
         const stExistente = statusPorChave.get(chaveNorm);
         const emHomolog = SEFAZ_AMBIENTE === "homologacao";
         if (!emHomolog && (chavesEmRascunho.has(chaveNorm) || (stExistente && stExistente !== "pendente"))) {
           reservadas++;
-          continue;
+          return;
         }
         if (emHomolog && stExistente && stExistente !== "pendente") {
           await supabase
@@ -2442,11 +2494,16 @@ function CtePage() {
           );
         const valor = parseFloat(vNF) || 0;
         const modFrete = doc.querySelector("transp > modFrete")?.textContent || "";
+        extrasPorIndice[fileIdx] = {
+          transpIE: doc.querySelector("transp > transporta > IE")?.textContent || "",
+          destIE,
+          emitIE,
+        };
 
         // Lookup endereço no cadastro fiscal (XML de NF-e pode não trazer endereço)
         const [emitContato, destContato] = await Promise.all([
-          lookupContato(emitCnpj),
-          lookupContato(destCnpj),
+          getContato(emitCnpj),
+          getContato(destCnpj),
         ]);
         const emitLog = emitLgr || (emitContato as any)?.logradouro || "";
         const emitNro = emitNroXml || (emitContato as any)?.numero || "";
@@ -2550,12 +2607,12 @@ function CtePage() {
             String(error.message).toLowerCase().includes("duplicate")
           ) {
             duplicadas++;
-            continue;
+            return;
           }
           toast.error(`Falha ao salvar NF ${nNF}: ${error.message}`);
-          continue;
+          return;
         }
-        novas.push({
+        novasPorIndice[fileIdx] = {
           chave: chaveNorm,
           nNF,
           serie,
@@ -2593,70 +2650,77 @@ function CtePage() {
           tomadorBairro: tomadorBai,
           tomadorCEP: tomadorCep,
           modFrete,
+        };
+        queueContato({
+          cnpj: emitCnpj,
+          nome: emitXNome,
+          ie: emitIE,
+          uf: emitUF,
+          cidade: emitXMun,
+          logradouro: emitLgr,
+          bairro: emitBairro,
+          cep: emitCEP,
+          fone: emitFone,
+          numero: emitNro,
         });
-        upsertContatoFromNfe(
-          emitCnpj,
-          emitXNome,
-          emitIE,
-          emitUF,
-          emitXMun,
-          emitLgr,
-          emitBairro,
-          emitCEP,
-          emitFone,
-          emitNro,
-        ).catch(() => {});
-        upsertContatoFromNfe(
-          destCnpj,
-          destXNome,
-          destIE,
-          destUF,
-          destXMun,
-          destLgr,
-          destBairro,
-          destCEP,
-          destFone,
-          destNro,
-        ).catch(() => {});
-        if (added === 0 && mercadorias.length === 0) {
-          const tomaByMod: Record<string, string> = {
-            "0": "0",
-            "1": "3",
-            "2": "4",
-            "3": "0",
-            "4": "3",
-            "9": "4",
-          };
-          const tomaIni = tomaByMod[modFrete] ?? "3";
-          let tomadorIE = destIE;
-          if (modFrete === "0") tomadorIE = emitIE;
-          else if (modFrete === "2")
-            tomadorIE = doc.querySelector("transp > transporta > IE")?.textContent || destIE;
+        queueContato({
+          cnpj: destCnpj,
+          nome: destXNome,
+          ie: destIE,
+          uf: destUF,
+          cidade: destXMun,
+          logradouro: destLgr,
+          bairro: destBairro,
+          cep: destCEP,
+          fone: destFone,
+          numero: destNro,
+        });
+        await tique();
+      });
+      // Ordem determinística (workers terminam fora de ordem): filtra nulos.
+      const novas = novasPorIndice.filter((n) => n !== null) as typeof mercadorias;
+      // Prefill do tomador a partir da 1ª NF-e do lote (antes: 1ª a terminar).
+      const primeiraNova = novas[0];
+      if (primeiraNova && mercadorias.length === 0) {
+        const primeiraIdx = novasPorIndice.findIndex((n) => n !== null);
+        const extra0 = extrasPorIndice[primeiraIdx] ?? { transpIE: "", destIE: "", emitIE: "" };
+        const tomaByMod: Record<string, string> = {
+          "0": "0",
+          "1": "3",
+          "2": "4",
+          "3": "0",
+          "4": "3",
+          "9": "4",
+        };
+        const tomaIni = tomaByMod[primeiraNova.modFrete] ?? "3";
+        let tomadorIE = extra0.destIE;
+        if (primeiraNova.modFrete === "0") tomadorIE = extra0.emitIE;
+        else if (primeiraNova.modFrete === "2") tomadorIE = extra0.transpIE || extra0.destIE;
           setForm((f) => ({
             ...f,
             toma: !f.cnpjTomador ? tomaIni : f.toma,
-            cnpjTomador: tomadorCnpj || f.cnpjTomador,
-            xNomeTomador: tomadorNome || f.xNomeTomador,
+            cnpjTomador: primeiraNova.tomadorCnpj || f.cnpjTomador,
+            xNomeTomador: primeiraNova.tomador || f.xNomeTomador,
             ieTomador: tomadorIE || f.ieTomador,
-            ufTomador: tomadorUF || f.ufTomador,
-            cMunTomador: tomadorCMun || f.cMunTomador,
-            xMunTomador: tomadorXMun || f.xMunTomador,
-            logradouroTomador: tomadorLog || f.logradouroTomador,
-            bairroTomador: tomadorBai || f.bairroTomador,
-            cepTomador: tomadorCep || f.cepTomador,
-            cMunIni: emitCMun || f.cMunIni,
-            xMunIni: emitXMun || f.xMunIni,
-            ufIni: emitUF || f.ufIni,
-            cMunFim: destCMun || f.cMunFim,
-            xMunFim: destXMun || f.xMunFim,
-            ufFim: destUF || f.ufFim,
-            cMunEnv: emitCMun || f.cMunEnv,
-            xMunEnv: emitXMun || f.xMunEnv,
-            ufEnv: emitUF || f.ufEnv,
+            ufTomador: primeiraNova.tomadorUF || f.ufTomador,
+            cMunTomador: primeiraNova.tomadorCMun || f.cMunTomador,
+            xMunTomador: primeiraNova.tomadorXMun || f.xMunTomador,
+            logradouroTomador: primeiraNova.tomadorLogradouro || f.logradouroTomador,
+            bairroTomador: primeiraNova.tomadorBairro || f.bairroTomador,
+            cepTomador: primeiraNova.tomadorCEP || f.cepTomador,
+            cMunIni: primeiraNova.emitCMun || f.cMunIni,
+            xMunIni: primeiraNova.emitXMun || f.xMunIni,
+            ufIni: primeiraNova.emitUF || f.ufIni,
+            cMunFim: primeiraNova.destCMun || f.cMunFim,
+            xMunFim: primeiraNova.destXMun || f.xMunFim,
+            ufFim: primeiraNova.destUF || f.ufFim,
+            cMunEnv: primeiraNova.emitCMun || f.cMunEnv,
+            xMunEnv: primeiraNova.emitXMun || f.xMunEnv,
+            ufEnv: primeiraNova.emitUF || f.ufEnv,
           }));
         }
-        added++;
-      }
+        added = novas.length;
+        await flushContatos();
       if (added > 0) {
         const merged = [...mercadorias, ...novas];
         setMercadorias(merged);
@@ -2686,6 +2750,7 @@ function CtePage() {
       toast.error("Falha ao ler XML", { description: e.message });
     } finally {
       setIsParsing(false);
+      setImportProgress(null);
     }
   };
 
@@ -4782,15 +4847,30 @@ function CtePage() {
                 </div>
 
                 {/* Ações de importação múltipla */}
+                {importProgress && (
+                  <div className="pointer-events-none fixed left-1/2 top-4 z-[60] w-[min(28rem,90vw)] -translate-x-1/2 rounded-lg border bg-background p-3 shadow-xl">
+                    <div className="mb-2 flex items-center justify-between text-xs font-medium">
+                      <span>
+                        Importando XML {importProgress.feito}/{importProgress.total}…
+                      </span>
+                      <span>
+                        {Math.round((importProgress.feito / Math.max(1, importProgress.total)) * 100)}%
+                      </span>
+                    </div>
+                    <Progress value={(importProgress.feito / Math.max(1, importProgress.total)) * 100} />
+                  </div>
+                )}
                 <div className="flex flex-wrap gap-2 shrink-0">
                   <label className="flex items-center gap-2 px-3 py-2 border rounded bg-accent text-accent-foreground cursor-pointer hover:bg-accent/70 text-xs font-medium">
-                    <UploadCloud className="h-4 w-4" /> Importar NFes (XML)
+                    <UploadCloud className="h-4 w-4" /> {isParsing ? "Importando…" : "Importar NFes (XML)"}
                     <input
                       type="file"
                       accept=".xml"
                       multiple
                       className="hidden"
+                      disabled={isParsing}
                       onChange={(e) => {
+                        if (isParsing) return;
                         if (e.target.files) handleImportNFeXml(e.target.files);
                         e.currentTarget.value = "";
                       }}

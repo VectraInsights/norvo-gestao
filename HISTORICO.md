@@ -3731,3 +3731,15 @@ Espelhado na Vercel.
 ## NF-e: endereco do XML salvo e exibido (30/09)
 
 - O XML era lido completo mas so endereco do tomador ia p/ o banco. Migration 20260930130000 (+12 colunas emit/dest IE, logradouro, nro, bairro, CEP, fone) aplicada. Import, rascunho (salva/cancela/exclui/edita) e listagem passam os dados; cartoes de remetente/destinatario mostram numero e fone do XML. Notas antigas passam a trazer ao reimportar o XML.
+
+## Importação de XML p/ embarque rápida + progresso (30/09)
+
+- 10s congelado: cada XML fazia ~4 idas sequenciais ao Supabase
+  (lookup emit+dest, insert, update) e `isParsing` nunca renderizava.
+- Agora: lookups com cache compartilhado (1 query por CNPJ, mesmo em
+  paralelo), gravações em até 5 paralelas, contatos em fila com insert
+  em lote + patches paralelos no fim. Regras intactas (homologação,
+  reservadas, duplicadas, tomador, toasts).
+- Barra de progresso "Importando XML n/N" no topo + botão travado
+  durante a importação.
+- Espelhado na Vercel via push em main.
