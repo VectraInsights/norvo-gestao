@@ -4997,7 +4997,8 @@ function CtePage() {
                             );
                           } catch {}
                           toast.info(
-                            `NF-e ${p0.nNF || ""} sem percurso — cadastre o percurso para continuar`,
+                            `NF-e ${p0.nNF || ""} sem percurso (rem. ${p0.emit || "—"} • dest. ${p0.dest || "—"} • toma. ${p0.tomador || "—"}) — cadastre o percurso para continuar`,
+                            { duration: 8000 },
                           );
                           navigate({ to: "/fiscal/percursos" } as any);
                           return;

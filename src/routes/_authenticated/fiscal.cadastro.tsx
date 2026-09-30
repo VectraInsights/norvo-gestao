@@ -266,13 +266,14 @@ function Cadastro() {
         <EmptyState icon={Users} title="Nenhum cadastro" description={busca ? "Nada encontrado para a busca." : "Cadastre o primeiro cadastro (cliente ou fornecedor)."} />
       ) : (
         <Card className="overflow-hidden shadow-panel">
-          <Table>
+          <div className="overflow-x-auto">
+          <Table className="min-w-[1080px]">
             <TableHeader>
               <TableRow>
                 <TableHead className="w-10">
                   <Checkbox className="rounded-none" checked={todosVisiveisSel} onCheckedChange={alternarTodosVisiveis} aria-label="Selecionar visíveis" />
                 </TableHead>
-                <TableHead>Nome</TableHead><TableHead>Documento</TableHead><TableHead>Cidade/UF</TableHead><TableHead>Contato</TableHead><TableHead className="w-20" />
+                <TableHead>Nome</TableHead><TableHead>Documento</TableHead><TableHead>IE</TableHead><TableHead>Cidade/UF</TableHead><TableHead>Endereço</TableHead><TableHead>Contato</TableHead><TableHead className="w-20" />
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -282,7 +283,11 @@ function Cadastro() {
                     <Checkbox className="rounded-none" checked={selecionados.has(c.id)} onCheckedChange={() => alternarUm(c.id)} aria-label={`Selecionar ${c.nome}`} />
                   </TableCell>                  <TableCell className="font-medium">{c.nome}</TableCell>
                   <TableCell className="text-tabular">{c.documento ? maskDoc(c.documento) : "—"}</TableCell>
+                  <TableCell className="text-muted-foreground">{c.ie || "—"}</TableCell>
                   <TableCell className="text-muted-foreground">{c.cidade ? `${c.cidade}${c.uf ? `/${c.uf}` : ""}` : "—"}</TableCell>
+                  <TableCell className="max-w-[320px] truncate text-muted-foreground" title={[c.logradouro, c.numero, c.bairro].filter(Boolean).join(", ")}>
+                    {([c.logradouro, c.numero].filter(Boolean).join(", ") || "—") + (c.bairro ? ` — ${c.bairro}` : "")}
+                  </TableCell>
                   <TableCell className="text-muted-foreground">{c.telefone ?? c.email ?? "—"}</TableCell>
                   <TableCell className="text-right">
                     <div className="flex items-center justify-end gap-1">
@@ -312,6 +317,7 @@ function Cadastro() {
               ))}
             </TableBody>
           </Table>
+          </div>
           <div className="flex items-center justify-between border-t border-border/60 px-4 py-2 text-xs text-muted-foreground">
             <span>
               {filtrados.length} cadastro(s){selecionados.size > 0 && ` · ${selecionados.size} selecionado(s)`}
