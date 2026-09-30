@@ -3672,3 +3672,7 @@ Espelhado na Vercel.
 ## Percursos: fallback de rota (30/09)
 
 - Recalculo de km/h parou: servidor OSRM demo instavel/fora. calcDistDur agora tenta 2 roteadores gratuitos em sequencia (project-osrm -> FOSSGIS openstreetmap.de, mesmo formato) e a mensagem de erro diz o motivo (HTTP/rede/sem rotas).
+
+## Percursos: CFOP so numero + toast curto (30/09)
+
+- Toast de recalculo agora so Percurso recalculado (automatico e no salvar). CFOP mostra e lista so o numero (5.351); Natureza mostra e lista so a descricao (numeros antigos salvos sao ocultados na exibicao). Busca do dropdown ignora pontos (digitar 5351 acha 5.351). Linha: CST mais larga (32%), CFOP estreita 130px, Natureza com o resto.

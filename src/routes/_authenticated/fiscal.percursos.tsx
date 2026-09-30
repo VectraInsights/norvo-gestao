@@ -317,42 +317,60 @@ const OPTS_CST: { v: string; label: string }[] = CSTS_ICMS.map(([v, d]) => ({
   v,
   label: v + " - " + d,
 }));
-const OPTS_CFOP: { v: string; label: string }[] = CFOPS_CTE.map((c) => ({
-  v: String(c.codigo).replace(/\D/g, ""),
-  label: c.descricao,
-}));
-// Natureza da Operação usa a mesma tabela (valor = descrição); atrelada ao CFOP
-const OPTS_NAT: { v: string; label: string }[] = OPTS_CFOP.map((o) => ({
-  v: o.label,
-  label: o.label,
-}));
+const fmtCfop = (dig: string) => dig.replace(/(\d)(\d{3})$/, "$1.$2");
+// Descrição sem o número (a Natureza mostra só o texto)
+const semNumCfop = (d: string) => String(d || "").replace(/^\d\.\d{3}\s*[—–-]\s*/, "");
+const OPTS_CFOP: { v: string; label: string }[] = CFOPS_CTE.map((c) => {
+  const dig = String(c.codigo).replace(/\D/g, "");
+  return { v: dig, label: fmtCfop(dig) };
+});
+// Natureza da Operação usa a mesma tabela (valor = descrição sem número)
+const OPTS_NAT: { v: string; label: string }[] = CFOPS_CTE.map((c) => {
+  const d = semNumCfop(c.descricao);
+  return { v: d, label: d };
+});
 function Combo({
   label,
   value,
   onPick,
   opts,
-  display,
 }: {
   label: string;
   value: string;
   onPick: (v: string) => void;
   opts: { v: string; label: string }[];
-  display?: (o: { v: string; label: string }) => string;
 }) {
   const [open, setOpen] = useState(false);
   const [txt, setTxt] = useState("");
   const sel = opts.find((o) => o.v === value);
   const q = normTxt(txt);
-  const list = (
-    q ? opts.filter((o) => normTxt(o.label).indexOf(q) >= 0 || normTxt(o.v).indexOf(q) >= 0) : opts
-  ).slice(0, 40);
+  const qDig = String(txt || "").replace(/\D/g, "");
+  const casa = (o: { v: string; label: string }) => {
+    if (!q) return true;
+    if (normTxt(o.label).indexOf(q) >= 0 || normTxt(o.v).indexOf(q) >= 0) return true;
+    if (qDig) {
+      const ld = o.label.replace(/\D/g, ""),
+        vd = o.v.replace(/\D/g, "");
+      if ((ld && ld.indexOf(qDig) >= 0) || (vd && vd.indexOf(qDig) >= 0)) return true;
+    }
+    return false;
+  };
+  const list = opts.filter(casa).slice(0, 40);
   const snap = () => {
     const t = normTxt(txt);
+    const td = String(txt || "").replace(/\D/g, "");
     if (!t) return;
     const hit = opts.find((o) => {
       const L = normTxt(o.label),
         V = normTxt(o.v);
-      return L === t || V === t || (t.length >= 2 && (L.indexOf(t) === 0 || V.indexOf(t) === 0));
+      if (L === t || V === t || (t.length >= 2 && (L.indexOf(t) === 0 || V.indexOf(t) === 0)))
+        return true;
+      if (td.length >= 2) {
+        const ld = o.label.replace(/\D/g, ""),
+          vd = o.v.replace(/\D/g, "");
+        if (ld === td || vd === td || ld.indexOf(td) === 0 || vd.indexOf(td) === 0) return true;
+      }
+      return false;
     });
     if (hit) onPick(hit.v);
   };
@@ -362,7 +380,7 @@ function Combo({
       <div className="relative">
         <Input
           className="h-7 text-xs pr-6"
-          value={open ? txt : sel ? (display ? display(sel) : sel.label) : value || ""}
+          value={open ? txt : sel ? sel.label : value || ""}
           placeholder="Digite ou selecione"
           onFocus={() => {
             setTxt("");
@@ -773,10 +791,7 @@ function PercursosPage() {
     try {
       const calc = await calcDistDur(ori, dst);
       setEditing((e) => (e && e.id === idAlvo ? { ...e, distancia_km: calc.km, duracao_horas: calc.h } : e));
-      toast.success(
-        "Distancia recalculada: " + calc.km + " km / " + calc.h + " h" +
-          (calc.ferryKm > 0 ? ` (inclui ${calc.ferryKm} km de balsa — confira o frete)` : ""),
-      );
+      toast.success("Percurso recalculado");
     } catch (e: any) {
       toast.error(e && e.message ? e.message : "Falha no recalculo");
     } finally {
@@ -927,7 +942,7 @@ function PercursosPage() {
         if (mudouRota) {
           payload.distancia_km = calc.km;
           payload.duracao_horas = calc.h;
-          toast.success("Distancia recalculada: " + calc.km + " km / " + calc.h + " h");
+          toast.success("Percurso recalculado");
         } else {
           if (!payload.distancia_km) payload.distancia_km = calc.km;
           if (!payload.duracao_horas) payload.duracao_horas = calc.h;
@@ -1541,7 +1556,7 @@ function PercursosPage() {
                     <p className="text-[11px] font-semibold">Fiscal</p>
                     <div className="space-y-1">
                       <div className="flex flex-col gap-1 md:flex-row">
-                        <div className="md:w-[20%]">
+                        <div className="md:w-[32%]">
                           <Combo
                             label="CST ICMS"
                             value={editing.icms_cst || "00"}
@@ -1549,23 +1564,27 @@ function PercursosPage() {
                             opts={OPTS_CST}
                           />
                         </div>
-                        <div className="md:w-[28%]">
+                        <div className="md:w-[130px] md:shrink-0">
                           <Combo
                             label="CFOP"
                             value={editing.cfop || ""}
                             onPick={(v) => {
                               const o = OPTS_CFOP.find((x) => x.v === v);
                               set("cfop", v);
-                              if (o) set("nat_operacao", o.label);
+                              if (o) {
+                                const d = CFOPS_CTE.find(
+                                  (x) => String(x.codigo).replace(/\D/g, "") === v,
+                                );
+                                if (d) set("nat_operacao", semNumCfop(d.descricao));
+                              }
                             }}
                             opts={OPTS_CFOP}
-                            display={(o) => o.v.replace(/(\d)(\d{3})$/, "$1.$2")}
                           />
                         </div>
                         <div className="md:flex-1">
                           <Combo
                             label="Natureza da Operação"
-                            value={editing.nat_operacao || ""}
+                            value={semNumCfop(editing.nat_operacao || "")}
                             onPick={(v) => set("nat_operacao", v)}
                             opts={OPTS_NAT}
                           />
