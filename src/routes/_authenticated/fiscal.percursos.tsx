@@ -499,24 +499,41 @@ async function calcDistDur(
         (d.uf || "?") +
         ") — confira o cadastro",
     );
+  // Roteadores gratuitos (mesmo formato OSRM); tenta o 2º se o 1º falhar
+  const rotaBases = [
+    "https://router.project-osrm.org/route/v1/driving/",
+    "https://routing.openstreetmap.de/routed-car/route/v1/driving/",
+  ];
   let j: any = null;
-  try {
-    const r = await fetch(
-      "https://router.project-osrm.org/route/v1/driving/" +
-        go.lon +
-        "," +
-        go.lat +
-        ";" +
-        gd.lon +
-        "," +
-        gd.lat +
-        "?overview=false&alternatives=true&steps=true",
-    );
-    if (!r.ok) throw new Error("x");
-    j = await r.json();
-  } catch {
-    throw new Error("Falha no calculo da rota (OSRM)");
+  let lastErr = "";
+  for (const base of rotaBases) {
+    try {
+      const r = await fetch(
+        base +
+          go.lon +
+          "," +
+          go.lat +
+          ";" +
+          gd.lon +
+          "," +
+          gd.lat +
+          "?overview=false&alternatives=true&steps=true",
+      );
+      if (!r.ok) {
+        lastErr = "HTTP " + r.status;
+        continue;
+      }
+      const jj = await r.json();
+      if (jj && jj.routes && jj.routes.length) {
+        j = jj;
+        break;
+      }
+      lastErr = "sem rotas";
+    } catch {
+      lastErr = "rede";
+    }
   }
+  if (!j) throw new Error("Falha no calculo da rota (" + lastErr + ") — tente de novo");
   const routes = (j && j.routes) || [];
   const validas = routes.filter((x: any) => isFinite(Number(x.distance)));
   if (!validas.length) throw new Error("Rota nao encontrada entre os CEPs");

@@ -3668,3 +3668,7 @@ Espelhado na Vercel.
 ## Percursos: CFOP/Natureza 1 linha separados (30/09)
 
 - Fiscal volta a 1 linha: CST (20%) + CFOP (28%, fechado mostra so o codigo 5.351) + Natureza da Operacao (resto, so a descricao). Caixas separadas removidas. Escolher o CFOP preenche a Natureza automaticamente; Natureza editavel independente.
+
+## Percursos: fallback de rota (30/09)
+
+- Recalculo de km/h parou: servidor OSRM demo instavel/fora. calcDistDur agora tenta 2 roteadores gratuitos em sequencia (project-osrm -> FOSSGIS openstreetmap.de, mesmo formato) e a mensagem de erro diz o motivo (HTTP/rede/sem rotas).
