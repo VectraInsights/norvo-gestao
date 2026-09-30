@@ -1177,16 +1177,28 @@ function PercursosPage() {
     }
     if (changed) setEditing((e) => (e ? { ...e, ...patch } : e));
   }, [editing?.consig_cnpj, editing?.redesp_cnpj]);
-  // Amarracao: prioridade da entrega = redespacho > destinatario
+  // Amarracao: prioridade da entrega = redespacho > destinatario.
+  // Mas cidade de entrega manual é preservada: só preenche a partir do
+  // destinatário quando a entrega está vazia (entrega pode diferir da
+  // cidade do dest., ex.: dest MACAPÁ/AP com entrega em MARABÁ/PA).
   useEffect(() => {
     if (!editing) return;
     const rx = (editing.redesp_xmun || "").trim();
     const ru = (editing.redesp_uf || "").trim();
     const hasRed = (editing.redesp_cnpj || "").replace(/\D/g, "").length === 14 && (rx || ru);
-    const nx = hasRed ? rx : editing.dest_xmun || "";
-    const nu = hasRed ? ru : editing.dest_uf || "";
-    if ((editing.entrega_xmun || "") !== nx || (editing.entrega_uf || "") !== nu) {
-      setEditing((e) => (e ? { ...e, entrega_xmun: nx, entrega_uf: nu } : e));
+    if (hasRed) {
+      if ((editing.entrega_xmun || "") !== rx || (editing.entrega_uf || "") !== ru) {
+        setEditing((e) => (e ? { ...e, entrega_xmun: rx, entrega_uf: ru } : e));
+      }
+      return;
+    }
+    if (
+      !(editing.entrega_xmun || "").trim() &&
+      ((editing.dest_xmun || "").trim() || (editing.dest_uf || "").trim())
+    ) {
+      setEditing((e) =>
+        e ? { ...e, entrega_xmun: e.dest_xmun || "", entrega_uf: e.dest_uf || "" } : e,
+      );
     }
   }, [
     editing?.redesp_cnpj,
@@ -1195,12 +1207,12 @@ function PercursosPage() {
     editing?.dest_xmun,
     editing?.dest_uf,
   ]);
-  // Amarracao: coleta segue o remetente
+  // Amarracao: coleta segue o remetente (mesma regra: só preenche se vazia).
   useEffect(() => {
     if (!editing) return;
     const nx = (editing.rem_xmun || "").trim();
     const nu = (editing.rem_uf || "").trim();
-    if ((editing.coleta_xmun || "") !== nx || (editing.coleta_uf || "") !== nu) {
+    if (!(editing.coleta_xmun || "").trim() && (nx || nu)) {
       setEditing((e) => (e ? { ...e, coleta_xmun: nx, coleta_uf: nu } : e));
     }
   }, [editing?.rem_xmun, editing?.rem_uf]);
