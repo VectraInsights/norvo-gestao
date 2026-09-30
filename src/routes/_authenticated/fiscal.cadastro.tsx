@@ -245,37 +245,19 @@ function Cadastro() {
 
   return (
     <>
-      <PageHeader eyebrow="Fiscal" title="Cadastro" description="Clientes e fornecedores juntos — remetentes, destinatários e tomadores usados no CT-e."
-        actions={
-          <Button onClick={openCreate}><Plus className="mr-1 h-4 w-4" />Novo cadastro</Button>
-        }
-      />
+      <PageHeader eyebrow="Fiscal" title="Cadastro" description="Clientes e fornecedores juntos — remetentes, destinatários e tomadores usados no CT-e." />
       <div className="mb-3 flex flex-col gap-2 sm:flex-row sm:items-center">
         <div className="relative flex-1">
           <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
           <Input className="pl-8" placeholder="Buscar por nome, CPF/CNPJ ou cidade..." value={busca} onChange={(e) => { setBusca(e.target.value); setPagina(1); }} />
         </div>
         <div className="flex items-center gap-2">
-          <Button variant="outline" size="sm" onClick={alternarTodosVisiveis} disabled={visiveis.length === 0}>
-            {todosVisiveisSel ? "Limpar seleção" : "Selecionar visíveis"}
-          </Button>
           {selecionados.size > 0 && (
             <Button variant="destructive" size="sm" onClick={() => setConfirmLote(true)}>
               <Trash2 className="mr-1 h-3.5 w-3.5" /> Excluir selecionados ({selecionados.size})
             </Button>
           )}
-          <Select value={String(pageSize)} onValueChange={(v) => { setPageSize(Number(v)); setPagina(1); }}>
-            <SelectTrigger className="w-24">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              {[10, 20, 50, 100].map((n) => (
-                <SelectItem key={n} value={String(n)}>
-                  {n} / pág.
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+          <Button onClick={openCreate}><Plus className="mr-1 h-4 w-4" />Novo cadastro</Button>
         </div>
       </div>
       {isLoading ? (
@@ -288,7 +270,7 @@ function Cadastro() {
             <TableHeader>
               <TableRow>
                 <TableHead className="w-10">
-                  <Checkbox checked={todosVisiveisSel} onCheckedChange={alternarTodosVisiveis} aria-label="Selecionar visíveis" />
+                  <Checkbox className="rounded-none" checked={todosVisiveisSel} onCheckedChange={alternarTodosVisiveis} aria-label="Selecionar visíveis" />
                 </TableHead>
                 <TableHead>Nome</TableHead><TableHead>Documento</TableHead><TableHead>Cidade/UF</TableHead><TableHead>Contato</TableHead><TableHead className="w-20" />
               </TableRow>
@@ -297,7 +279,7 @@ function Cadastro() {
               {visiveis.map((c) => (
                 <TableRow key={c.id}>
                   <TableCell>
-                    <Checkbox checked={selecionados.has(c.id)} onCheckedChange={() => alternarUm(c.id)} aria-label={`Selecionar ${c.nome}`} />
+                    <Checkbox className="rounded-none" checked={selecionados.has(c.id)} onCheckedChange={() => alternarUm(c.id)} aria-label={`Selecionar ${c.nome}`} />
                   </TableCell>                  <TableCell className="font-medium">{c.nome}</TableCell>
                   <TableCell className="text-tabular">{c.documento ? maskDoc(c.documento) : "—"}</TableCell>
                   <TableCell className="text-muted-foreground">{c.cidade ? `${c.cidade}${c.uf ? `/${c.uf}` : ""}` : "—"}</TableCell>
@@ -335,6 +317,18 @@ function Cadastro() {
               {filtrados.length} cadastro(s){selecionados.size > 0 && ` · ${selecionados.size} selecionado(s)`}
             </span>
             <div className="flex items-center gap-1">
+              <Select value={String(pageSize)} onValueChange={(v) => { setPageSize(Number(v)); setPagina(1); }}>
+                <SelectTrigger className="h-7 w-24 text-xs">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {[10, 20, 50, 100].map((n) => (
+                    <SelectItem key={n} value={String(n)}>
+                      {n} / pág.
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
               <span>
                 Página {paginaAtual} de {totalPaginas}
               </span>
