@@ -4978,6 +4978,22 @@ function CtePage() {
                         const semPerc = sel.filter((m) => !nfTemPercurso(m));
                         if (semPerc.length > 0) {
                           const p0 = semPerc[0] as any;
+                          // Diz exatamente qual perna do trio diverge da(s) rota(s)
+                          // existente(s): rem/dest/toma são CNPJs (cidade não vincula).
+                          const dg2 = (v: any) => String(v || "").replace(/\D/g, "");
+                          const tR = dg2(p0.emitCnpj);
+                          const tD = dg2(p0.destCnpj);
+                          const tT = dg2(p0.tomadorCnpj);
+                          const casa = (v: string, get: (r: any) => string) =>
+                            v && (percursos || []).some((r: any) => get(r) === v);
+                          const pernas: string[] = [];
+                          if (!casa(tR, (r: any) => dg2(r.rem_cnpj))) pernas.push(`remetente ${tR || "(vazio)"}`);
+                          if (!casa(tD, (r: any) => dg2(r.dest_cnpj))) pernas.push(`destinatário ${tD || "(vazio)"}`);
+                          if (!casa(tT, (r: any) => dg2(r.toma_cnpj))) pernas.push(`tomador ${tT || "(vazio)"}`);
+                          const detalhe =
+                            pernas.length > 0
+                              ? `Diverge: ${pernas.join(" • ")}.`
+                              : `Trio NF-e: ${tR}/${tD}/${tT}.`;
                           try {
                             localStorage.setItem(
                               "prefill_percurso_from_cte",
@@ -4997,8 +5013,8 @@ function CtePage() {
                             );
                           } catch {}
                           toast.info(
-                            `NF-e ${p0.nNF || ""} sem percurso (rem. ${p0.emit || "—"} • dest. ${p0.dest || "—"} • toma. ${p0.tomador || "—"}) — cadastre o percurso para continuar`,
-                            { duration: 8000 },
+                            `NF-e ${p0.nNF || ""} sem percurso (rem. ${p0.emit || "—"} • dest. ${p0.dest || "—"} • toma. ${p0.tomador || "—"}) — cadastre o percurso para continuar. ${detalhe}`,
+                            { duration: 10000 },
                           );
                           navigate({ to: "/fiscal/percursos" } as any);
                           return;
