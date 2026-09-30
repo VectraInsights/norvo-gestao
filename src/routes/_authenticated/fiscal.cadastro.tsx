@@ -139,7 +139,7 @@ function Cadastro() {
       if (error) throw error;
     },
     onSuccess: () => {
-      toast.success("Contato criado");
+      toast.success("Cadastro criado");
       setOpen(false); setForm(emptyForm());
       qc.invalidateQueries({ queryKey: ["fiscal-cadastro"] });
     },
@@ -153,7 +153,7 @@ function Cadastro() {
       if (doc) {
         const { data: existente } = await supabase.from("fiscal_cadastros")
           .select("id,nome").eq("empresa_id", empresa.id).eq("documento", doc).neq("id", input.id).maybeSingle();
-        if (existente) throw new Error(`Já existe outro contato com este CPF/CNPJ: ${existente.nome}`);
+        if (existente) throw new Error(`Já existe outro cadastro com este CPF/CNPJ: ${existente.nome}`);
       }
       const logrFinal = await completarLogradouro(input.logradouro || "", input.cep || "");
       const { error } = await supabase.from("fiscal_cadastros").update({
@@ -166,7 +166,7 @@ function Cadastro() {
       if (error) throw error;
     },
     onSuccess: () => {
-      toast.success("Contato atualizado");
+      toast.success("Cadastro atualizado");
       setOpen(false); setEditing(null); setForm(emptyForm());
       qc.invalidateQueries({ queryKey: ["fiscal-cadastro"] });
     },
@@ -179,7 +179,7 @@ function Cadastro() {
       if (error) throw error;
     },
     onSuccess: () => {
-      toast.success("Contato excluído");
+      toast.success("Cadastro excluído");
       setDeleting(null);
       qc.invalidateQueries({ queryKey: ["fiscal-cadastro"] });
     },
@@ -215,7 +215,7 @@ function Cadastro() {
       {isLoading ? (
         <div className="space-y-2">{Array.from({ length: 4 }).map((_, i) => <div key={i} className="h-12 animate-pulse rounded-md bg-muted/30" />)}</div>
       ) : !filtrados?.length ? (
-        <EmptyState icon={Users} title="Nenhum contato" description={busca ? "Nada encontrado para a busca." : "Cadastre o primeiro contato (cliente ou fornecedor)."} />
+        <EmptyState icon={Users} title="Nenhum cadastro" description={busca ? "Nada encontrado para a busca." : "Cadastre o primeiro cadastro (cliente ou fornecedor)."} />
       ) : (
         <Card className="overflow-hidden shadow-panel">
           <Table>
@@ -308,7 +308,7 @@ function Cadastro() {
       <AlertDialog open={!!deleting} onOpenChange={(v) => { if (!v) setDeleting(null); }}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Excluir contato</AlertDialogTitle>
+            <AlertDialogTitle>Excluir cadastro</AlertDialogTitle>
             <AlertDialogDescription>
               Tem certeza que deseja excluir <strong>{deleting?.nome}</strong>? Esta ação não pode ser desfeita.
             </AlertDialogDescription>
