@@ -3689,3 +3689,7 @@ Espelhado na Vercel.
 
 - Botao Cadastrar avulso ao lado da busca: abre rascunho em branco; Remetente/Destinatario/Tomador editaveis (CNPJ+Nome) so em registro novo, com busca automatica por CNPJ (contatos, senao BrasilAPI/ReceitaWS) preenchendo cidade/UF/CEP; coleta segue remetente, entrega segue destinatario; codigo sequencial e nome automaticos ao salvar.
 - Linha fiscal: CFOP 90px, Natureza 740px (maior descricao inteira), CST com o resto.
+
+## Percursos: botao Novo percurso (30/09)
+
+- Botao renomeado de Cadastrar avulso para Novo percurso.
