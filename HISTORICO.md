@@ -3646,3 +3646,7 @@ Espelhado na Vercel.
 ## Zero oval limpo global: JetBrains Mono -> Inter (30/09)
 
 - O zero do JetBrains Mono tem ponto central (vira 8 em tamanho pequeno; confirmado renderizando o glifo). --font-mono agora e Inter + tabular-nums global (zero oval, colunas alinhadas). Import e pacote @fontsource/jetbrains-mono removidos. Consolas descartado (zero cortado).
+
+## Percursos: so destino editavel (30/09)
+
+- Na Coleta/Entrega, apenas a cidade de Entrega editavel (maiuscula); coleta e UFs seguem somente-leitura.
