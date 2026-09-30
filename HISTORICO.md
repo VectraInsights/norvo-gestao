@@ -3634,3 +3634,7 @@ Espelhado na Vercel.
 ## Colaborador: cadastro sempre maiusculo (30/09)
 
 - Inputs de texto forcam maiusculas (nome ja tinha; +cargo, logradouro, complemento, bairro, cidade, banco, observacoes), picks de cargo/cidade, ViaCEP e payload como garantia. Telefone auto-;, ID/ordenacao/VT/datas ja tinham vindo do remoto.
+
+## Login Google sem flash da tela de login (30/09)
+
+- Causa: no retorno do OAuth o /auth mostrava o formulario enquanto trocava o codigo pela sessao, e so navegava quando a rota revalidava (~5s). Agora mostra Conectando... e assina SIGNED_IN p/ navegar na hora. (auth.tsx estava Hidden no Windows; desocultado.)

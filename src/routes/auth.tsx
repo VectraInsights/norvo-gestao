@@ -41,11 +41,26 @@ function AuthPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [nome, setNome] = useState("");
+  // Enquanto a sessão é verificada/trocada (retorno do OAuth), mostra
+  // "conectando" em vez do formulário — evita o flash da tela de login.
+  const [checking, setChecking] = useState(true);
 
   useEffect(() => {
+    let vivo = true;
     supabase.auth.getSession().then(({ data }) => {
+      if (!vivo) return;
       if (data.session) navigate({ to: "/dashboard", replace: true });
+      else setChecking(false);
     });
+    // Troca do código OAuth pode terminar depois: navega assim que entrar.
+    const { data: sub } = supabase.auth.onAuthStateChange((event, session) => {
+      if (event === "SIGNED_IN" && session)
+        navigate({ to: "/dashboard", replace: true });
+    });
+    return () => {
+      vivo = false;
+      sub.subscription.unsubscribe();
+    };
   }, [navigate]);
 
   const handleGoogle = async () => {
@@ -90,6 +105,17 @@ function AuthPage() {
     if (error) return toast.error(friendlyAuthError(error));
     toast.success("Conta criada! Verifique seu email para confirmar.");
   };
+
+  if (checking) {
+    return (
+      <main className="grid min-h-screen place-items-center" aria-busy="true" aria-label="Conectando">
+        <div className="flex flex-col items-center gap-3 text-muted-foreground">
+          <Loader2 className="h-8 w-8 animate-spin text-primary" aria-hidden="true" />
+          <p className="text-sm">Conectando…</p>
+        </div>
+      </main>
+    );
+  }
 
   return (
     <div className="grid min-h-screen lg:grid-cols-2">
