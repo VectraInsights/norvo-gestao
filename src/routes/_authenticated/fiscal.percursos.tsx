@@ -49,6 +49,7 @@ import { useState, useMemo, useRef, useEffect } from "react";
 import { toast } from "sonner";
 import { limparIE, validarIE } from "@/lib/ie";
 import { maskDoc } from "@/lib/format";
+import { TIPOS_CARGA_ANTT } from "@/lib/piso-antt";
 import { CFOPS_CTE } from "@/lib/cfops-transporte";
 
 export const Route = createFileRoute("/_authenticated/fiscal/percursos")({
@@ -103,6 +104,7 @@ const EDITAVEIS = [
   "entrega_uf",
   "cfop",
   "nat_operacao",
+  "tipo_carga_antt",
   "consig_cnpj",
   "consig_nome",
   "consig_ie",
@@ -375,6 +377,9 @@ const OPTS_NAT: { v: string; label: string }[] = CFOPS_CTE.map((c) => {
   const d = semNumCfop(c.descricao);
   return { v: d, label: d };
 });
+const OPTS_TIPO_CARGA: { v: string; label: string }[] = (TIPOS_CARGA_ANTT as readonly string[]).map(
+  (t) => ({ v: t, label: t }),
+);
 function Combo({
   label,
   value,
@@ -1817,6 +1822,17 @@ function PercursosPage() {
                             placeholder=""
                             onPick={(v) => set("nat_operacao", v)}
                             opts={OPTS_NAT}
+                          />
+                        </div>
+                      </div>
+                      <div className="flex flex-col gap-1 md:flex-row">
+                        <div className="md:flex-1">
+                          <Combo
+                            label="Tipo de carga (ANTT — piso mínimo)"
+                            value={editing.tipo_carga_antt || "Carga Geral"}
+                            placeholder=""
+                            onPick={(v) => set("tipo_carga_antt", v)}
+                            opts={OPTS_TIPO_CARGA}
                           />
                         </div>
                       </div>

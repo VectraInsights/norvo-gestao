@@ -92,6 +92,7 @@ import {
   excluirRejeitadosCteFn,
 } from "@/lib/sefaz-cte-server";
 import { SEFAZ_AMBIENTE } from "@/lib/sefaz-ambiente";
+import { pisoMinimoAntt, PISO_VIGENCIA } from "@/lib/piso-antt";
 import { CFOPS_CTE, MOD_FRETE_OPTIONS, RESPONSAVEL_CTE_OPTIONS } from "@/lib/cfops-transporte";
 import { gerarDactePdf, DACTE_REV } from "@/lib/dacte-pdf";
 import { completarLogradouro, temTipoLogradouro } from "@/lib/endereco";
@@ -1872,7 +1873,7 @@ function CtePage() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("veiculos" as never)
-        .select("id,placa,marca_modelo,tipo,renavam,rntrc,tag_pedagio")
+        .select("id,placa,marca_modelo,tipo,renavam,rntrc,tag_pedagio,quantidade_eixos")
         .eq("empresa_id", empresa!.id)
         .order("placa")
         .limit(100);
@@ -1885,6 +1886,7 @@ function CtePage() {
         renavam: string | null;
         rntrc: string | null;
         tag_pedagio: string | null;
+        quantidade_eixos: number | null;
       }>;
     },
   });
@@ -3615,7 +3617,7 @@ function CtePage() {
       const { data, error } = await supabase
         .from("cte_percursos" as any)
         .select(
-          "id,empresa_id,nome,codigo,created_at,cfop,coleta_cmun,coleta_xmun,coleta_uf,entrega_cmun,entrega_xmun,entrega_uf,distancia_km,duracao_horas,obs_gerais,icms_cst,icms_aliq,reducao_base,credito_outorgado,pis_aliq,cofins_aliq,ir_aliq,inss_aliq,csll_aliq,rem_cnpj,rem_nome,rem_ie,rem_uf,rem_cmun,rem_xmun,rem_logradouro,rem_nro,rem_bairro,rem_cep,rem_fone,dest_cnpj,dest_nome,dest_ie,dest_uf,dest_cmun,dest_xmun,dest_logradouro,dest_nro,dest_bairro,dest_cep,dest_fone,toma_tipo,toma_cnpj,toma_nome,toma_ie,toma_uf,toma_cmun,toma_xmun,toma_logradouro,toma_nro,toma_bairro,toma_cep,toma_fone,toma_email,consig_cnpj,consig_nome,consig_ie,consig_uf,consig_xmun,consig_cep,consig_logradouro,consig_nro,consig_bairro,redesp_cnpj,redesp_nome,redesp_ie,redesp_uf,redesp_xmun,redesp_cep,redesp_logradouro,redesp_nro,redesp_bairro,seg_nome,seg_cnpj,seg_apolice,seg_averbacao,seg_rctr_c,seg_rcf_dc,seg_adicional,seg_total,seg_repassar,seg_responsavel",
+          "id,empresa_id,nome,codigo,created_at,cfop,tipo_carga_antt,coleta_cmun,coleta_xmun,coleta_uf,entrega_cmun,entrega_xmun,entrega_uf,distancia_km,duracao_horas,obs_gerais,icms_cst,icms_aliq,reducao_base,credito_outorgado,pis_aliq,cofins_aliq,ir_aliq,inss_aliq,csll_aliq,rem_cnpj,rem_nome,rem_ie,rem_uf,rem_cmun,rem_xmun,rem_logradouro,rem_nro,rem_bairro,rem_cep,rem_fone,dest_cnpj,dest_nome,dest_ie,dest_uf,dest_cmun,dest_xmun,dest_logradouro,dest_nro,dest_bairro,dest_cep,dest_fone,toma_tipo,toma_cnpj,toma_nome,toma_ie,toma_uf,toma_cmun,toma_xmun,toma_logradouro,toma_nro,toma_bairro,toma_cep,toma_fone,toma_email,consig_cnpj,consig_nome,consig_ie,consig_uf,consig_xmun,consig_cep,consig_logradouro,consig_nro,consig_bairro,redesp_cnpj,redesp_nome,redesp_ie,redesp_uf,redesp_xmun,redesp_cep,redesp_logradouro,redesp_nro,redesp_bairro,seg_nome,seg_cnpj,seg_apolice,seg_averbacao,seg_rctr_c,seg_rcf_dc,seg_adicional,seg_total,seg_repassar,seg_responsavel",
         )
         .eq("empresa_id", empresa!.id)
         .order("nome");
@@ -3990,6 +3992,20 @@ function CtePage() {
     }
   };
   const percursoMatch = matchPercurso(docsAtuais());
+  // Piso mínimo ANTT (informativo, nunca bloqueia — homologação usa valores
+  // de teste): Tabela A pelo tipo de carga do percurso, eixos da tração e km.
+  const pisoAntt = useMemo(() => {
+    const tipo = String((percursoMatch as any)?.tipo_carga_antt || "Carga Geral");
+    const km = Number(String(form.distanciaKm || "").replace(",", ".")) || 0;
+    const veic = (veiculos || []).find(
+      (v: any) => String(v.placa || "").toUpperCase() === String(form.placaVeiculo || "").toUpperCase(),
+    );
+    const eixos = Number((veic as any)?.quantidade_eixos) || 0;
+    const piso = eixos > 0 && km > 0 ? pisoMinimoAntt(tipo, eixos, km) : null;
+    const vPrest = Number(String(form.vPrest || "").replace(",", ".")) || 0;
+    return { tipo, eixos, km, piso, vPrest, abaixo: piso !== null && vPrest > 0 && vPrest < piso };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [percursoMatch, form.distanciaKm, form.placaVeiculo, form.vPrest, veiculos]);
   // CT-es autorizados compatíveis com o percurso atual (complemento/substituição)
   const ctesCompativeis = useMemo(() => {
     const dg = (v: any) => String(v || "").replace(/\D/g, "");
@@ -7292,6 +7308,24 @@ function CtePage() {
                     Vale-pedágio (Lei 10.209/2001, art. 2º): não integra o frete nem a BC do ICMS e
                     não vai no CT-e — informar no MDF-e.
                   </p>
+                  {pisoAntt.piso !== null ? (
+                    <div
+                      className={`mt-1 rounded border px-2 py-1 text-[10px] ${pisoAntt.abaixo ? "border-destructive/50 bg-destructive/10 font-semibold text-destructive" : "text-muted-foreground border-primary/20 bg-primary/5"}`}
+                    >
+                      Piso mínimo ANTT ({pisoAntt.tipo}, {pisoAntt.eixos} eixos, {pisoAntt.km} km):{" "}
+                      <strong>{brl(pisoAntt.piso)}</strong>
+                      {pisoAntt.abaixo
+                        ? ` — serviço a ${brl(pisoAntt.vPrest)} ABAIXO do piso!`
+                        : " — serviço acima do piso."}{" "}
+                      <span className="opacity-70">({PISO_VIGENCIA}, informativo)</span>
+                    </div>
+                  ) : (
+                    (form.placaVeiculo || form.distanciaKm) ? (
+                      <div className="mt-1 text-[9px] text-muted-foreground">
+                        Piso ANTT indisponível: confira placa (eixos), distância e tipo de carga do percurso.
+                      </div>
+                    ) : null
+                  )}
                 </Card>
 
                 <Card className="p-1.5">

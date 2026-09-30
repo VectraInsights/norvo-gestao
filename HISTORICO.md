@@ -3776,3 +3776,15 @@ Espelhado na Vercel.
   a identidade da rota (cidades não contam no vínculo) — orienta qual
   rota criar.
 - Espelhado na Vercel via push em main.
+
+## Piso mínimo ANTT no CT-e (30/09)
+
+- `lib/piso-antt.ts`: Tabela A completa (12 tipos × eixos 2-9),
+  Portaria SUROC 22/2026. PISO = km × CCD + CC.
+- Percurso ganha Tipo de carga ANTT (default Carga Geral; migration
+  `..._percursos_tipo_carga`); CT-e cruza com eixos da tração e km,
+  mostrando o piso ao lado do Valor Serviço + alerta vermelho se
+  abaixo. Informativo, nunca bloqueia (homologação usa valores fake).
+- CIOT: sem IPEF contratada, sistema segue só registrando o número
+  (campo/XML/DACTE já existiam) — nada a implantar.
+- Espelhado na Vercel via push em main.
