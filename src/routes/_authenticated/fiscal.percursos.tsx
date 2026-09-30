@@ -822,8 +822,18 @@ function PercursosPage() {
     const temRedesp = digits(ed.redesp_cnpj).length === 14;
     const fbRem = contatoByDoc.get(digits(ed.rem_cnpj)) || {};
     const fbDst = contatoByDoc.get(digits(temRedesp ? ed.redesp_cnpj : ed.dest_cnpj)) || {};
+    // Cidade de coleta/entrega explícita e diferente da do cadastro/remetente/
+    // destinatário: o CEP (do endereço antigo) NÃO pode vencer — é descartado
+    // p/ a geocodificação usar a cidade nova. Ex.: entrega MARABÁ/PA com CEP
+    // de MACAPA/AP calculava a distância até Macapá.
+    const refCol = normCidade(ed.rem_xmun || (fbRem as any).cidade || "");
+    const refDst = normCidade(ed.dest_xmun || (fbDst as any).cidade || "");
+    const colMudou =
+      !!normCidade(ed.coleta_xmun) && !!refCol && normCidade(ed.coleta_xmun) !== refCol;
+    const dstMudou =
+      !!normCidade(ed.entrega_xmun) && !!refDst && normCidade(ed.entrega_xmun) !== refDst;
     const ori = {
-      cep: String(ed.rem_cep || fbRem.cep || ""),
+      cep: colMudou ? "" : String(ed.rem_cep || fbRem.cep || ""),
       xmun: String(ed.coleta_xmun || ed.rem_xmun || fbRem.cidade || ""),
       uf: String(ed.coleta_uf || ed.rem_uf || fbRem.uf || ""),
     };
@@ -834,7 +844,7 @@ function PercursosPage() {
           uf: String(ed.entrega_uf || ed.redesp_uf || ""),
         }
       : {
-          cep: String(ed.dest_cep || fbDst.cep || ""),
+          cep: dstMudou ? "" : String(ed.dest_cep || fbDst.cep || ""),
           xmun: String(ed.entrega_xmun || ed.dest_xmun || fbDst.cidade || ""),
           uf: String(ed.entrega_uf || ed.dest_uf || fbDst.uf || ""),
         };
