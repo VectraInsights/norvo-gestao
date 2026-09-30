@@ -40,6 +40,7 @@ import {
   Save,
   ChevronDown,
   RefreshCw,
+  Plus,
 } from "lucide-react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -284,6 +285,44 @@ function Parte({ titulo, nome, doc }: { titulo: string; nome: string; doc: strin
       <p className="col-span-4 text-[11px] text-muted-foreground truncate border rounded px-2 py-0.5 bg-transparent dark:bg-transparent">
         CNPJ {fmtDoc(doc)}
       </p>
+    </div>
+  );
+}
+// Remetente/Destinatário/Tomador editáveis (só em percurso novo/avulso)
+function ChaveEdit({
+  titulo,
+  nome,
+  doc,
+  onNome,
+  onDoc,
+  onBlurDoc,
+}: {
+  titulo: string;
+  nome: string;
+  doc: string;
+  onNome: (v: string) => void;
+  onDoc: (v: string) => void;
+  onBlurDoc: () => void;
+}) {
+  return (
+    <div className="grid grid-cols-12 gap-1 items-center">
+      <p className="col-span-2 text-xs font-semibold truncate border rounded px-2 py-0.5 bg-transparent dark:bg-transparent">
+        {titulo}
+      </p>
+      <Input
+        className="col-span-6 h-6 text-[11px]"
+        value={nome || ""}
+        onChange={(e) => onNome(e.target.value.toUpperCase())}
+        placeholder="Nome"
+      />
+      <Input
+        className="col-span-4 h-6 text-[11px]"
+        value={doc || ""}
+        onChange={(e) => onDoc(e.target.value.replace(/\D/g, "").slice(0, 14))}
+        onBlur={onBlurDoc}
+        placeholder="CNPJ"
+        inputMode="numeric"
+      />
     </div>
   );
 }
@@ -1249,6 +1288,94 @@ function PercursosPage() {
       toast.error(e.message || "Falha ao buscar CNPJ");
     }
   };
+  // Localiza Remetente/Destinatário/Tomador pelo CNPJ (percurso novo/avulso)
+  const lookupChave = async (kind: "rem" | "dest" | "toma", digits: string) => {
+    const d = String(digits || "").replace(/\D/g, "");
+    if (d.length !== 14 || !empresa) return;
+    try {
+      const row = contatoByDoc.get(d);
+      let nome = row?.nome || "",
+        cidade = row?.cidade || "",
+        uf = row?.uf || "",
+        cep = String(row?.cep || "").replace(/\D/g, "");
+      if (!nome || !cidade) {
+        let j: any = null;
+        for (const url of [
+          "https://brasilapi.com.br/api/cnpj/v1/" + d,
+          "https://receitaws.com.br/v1/cnpj/" + d,
+        ]) {
+          try {
+            const r = await fetch(url, { signal: AbortSignal.timeout(8000) });
+            if (r.ok) {
+              j = await r.json();
+              break;
+            }
+          } catch {}
+        }
+        if (j && j.status !== "ERROR") {
+          nome = nome || j.razao_social || j.nome || "";
+          cidade = cidade || j.municipio || j.city || "";
+          uf = uf || j.uf || j.state || "";
+          cep = cep || String(j.cep || j.zip || "").replace(/\D/g, "");
+        }
+      }
+      if (!nome && !cidade) {
+        toast.error("CNPJ nao encontrado");
+        return;
+      }
+      setEditing((e: any) =>
+        e
+          ? {
+              ...e,
+              [kind + "_cnpj"]: d,
+              [kind + "_nome"]: nome || e[kind + "_nome"] || "",
+              [kind + "_xmun"]: cidade || e[kind + "_xmun"] || "",
+              [kind + "_uf"]: uf || e[kind + "_uf"] || "",
+              [kind + "_cep"]: cep || e[kind + "_cep"] || "",
+              ...(kind === "dest"
+                ? {
+                    entrega_xmun: cidade || e.entrega_xmun || "",
+                    entrega_uf: uf || e.entrega_uf || "",
+                  }
+                : {}),
+            }
+          : e,
+      );
+      toast.success("Localizado");
+    } catch (e: any) {
+      toast.error(e.message || "Falha ao buscar CNPJ");
+    }
+  };
+  // Percurso avulso: rascunho em branco p/ cadastro manual
+  const novoAvulso = () => {
+    voltarCteRef.current = false;
+    setEditing({
+      id: "",
+      codigo: "NOVO",
+      nome: "",
+      rem_cnpj: "",
+      rem_nome: "",
+      rem_xmun: "",
+      rem_uf: "",
+      rem_cep: "",
+      dest_cnpj: "",
+      dest_nome: "",
+      dest_xmun: "",
+      dest_uf: "",
+      dest_cep: "",
+      toma_cnpj: "",
+      toma_nome: "",
+      coleta_xmun: "",
+      coleta_uf: "",
+      entrega_xmun: "",
+      entrega_uf: "",
+      pis_aliq: "0.65",
+      cofins_aliq: "3.00",
+      distancia_km: "",
+      duracao_horas: "",
+    } as Percurso);
+    setPercTab("geral");
+  };
   const set = (k: string, v: any) => setEditing((e: any) => (e ? { ...e, [k]: v } : e));
   const q = busca.trim().toLowerCase();
   const lista = (percursos || []).filter((p) => {
@@ -1277,14 +1404,19 @@ function PercursosPage() {
         description="Rotas padronizadas do CT-e (remetente + destinatário + tomador). Aplicadas automaticamente na emissão."
       />
 
-      <div className="flex items-center gap-2 max-w-md">
-        <Search className="h-4 w-4 text-muted-foreground shrink-0" />
-        <Input
-          className="h-8 text-xs"
-          placeholder="Buscar por código, nome, empresa ou CNPJ..."
-          value={busca}
-          onChange={(e) => setBusca(e.target.value)}
-        />
+      <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 max-w-md flex-1">
+          <Search className="h-4 w-4 text-muted-foreground shrink-0" />
+          <Input
+            className="h-8 text-xs"
+            placeholder="Buscar por código, nome, empresa ou CNPJ..."
+            value={busca}
+            onChange={(e) => setBusca(e.target.value)}
+          />
+        </div>
+        <Button size="sm" className="h-8 text-xs" onClick={novoAvulso}>
+          <Plus className="mr-1 h-3.5 w-3.5" /> Cadastrar avulso
+        </Button>
       </div>
 
       <Card className="overflow-hidden">
@@ -1409,13 +1541,44 @@ function PercursosPage() {
                 <TabsContent value="geral" className="mt-2 space-y-1 flex-1 flex flex-col min-h-0">
                   <div className="grid grid-cols-1 md:grid-cols-4 gap-2">
                     <div className="md:col-span-3 flex flex-col justify-between gap-2">
-                      <Parte titulo="Remetente" nome={editing.rem_nome} doc={editing.rem_cnpj} />
-                      <Parte
-                        titulo="Destinatário"
-                        nome={editing.dest_nome}
-                        doc={editing.dest_cnpj}
-                      />
-                      <Parte titulo="Tomador" nome={editing.toma_nome} doc={editing.toma_cnpj} />
+                      {editing.id ? (
+                        <>
+                          <Parte titulo="Remetente" nome={editing.rem_nome} doc={editing.rem_cnpj} />
+                          <Parte
+                            titulo="Destinatário"
+                            nome={editing.dest_nome}
+                            doc={editing.dest_cnpj}
+                          />
+                          <Parte titulo="Tomador" nome={editing.toma_nome} doc={editing.toma_cnpj} />
+                        </>
+                      ) : (
+                        <>
+                          <ChaveEdit
+                            titulo="Remetente"
+                            nome={editing.rem_nome}
+                            doc={editing.rem_cnpj}
+                            onNome={(v) => set("rem_nome", v)}
+                            onDoc={(v) => set("rem_cnpj", v)}
+                            onBlurDoc={() => lookupChave("rem", editing.rem_cnpj)}
+                          />
+                          <ChaveEdit
+                            titulo="Destinatário"
+                            nome={editing.dest_nome}
+                            doc={editing.dest_cnpj}
+                            onNome={(v) => set("dest_nome", v)}
+                            onDoc={(v) => set("dest_cnpj", v)}
+                            onBlurDoc={() => lookupChave("dest", editing.dest_cnpj)}
+                          />
+                          <ChaveEdit
+                            titulo="Tomador"
+                            nome={editing.toma_nome}
+                            doc={editing.toma_cnpj}
+                            onNome={(v) => set("toma_nome", v)}
+                            onDoc={(v) => set("toma_cnpj", v)}
+                            onBlurDoc={() => lookupChave("toma", editing.toma_cnpj)}
+                          />
+                        </>
+                      )}
                     </div>
                     <div className="border rounded px-2 py-1 h-full flex flex-col">
                       <div className="flex items-center justify-between">
@@ -1566,7 +1729,7 @@ function PercursosPage() {
                             opts={OPTS_CST}
                           />
                         </div>
-                        <div className="md:w-[130px] md:shrink-0">
+                        <div className="md:w-[90px] md:shrink-0">
                           <Combo
                             label="CFOP"
                             value={editing.cfop || ""}
@@ -1584,7 +1747,7 @@ function PercursosPage() {
                             opts={OPTS_CFOP}
                           />
                         </div>
-                        <div className="md:w-[680px] md:max-w-full md:shrink-0">
+                        <div className="md:w-[740px] md:max-w-full md:shrink-0">
                           <Combo
                             label="Natureza da Operação"
                             value={semNumCfop(editing.nat_operacao || "")}

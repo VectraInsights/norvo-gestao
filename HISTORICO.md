@@ -3684,3 +3684,8 @@ Espelhado na Vercel.
 ## Percursos: sem placeholder CFOP/Natureza (30/09)
 
 - CFOP e Natureza sem texto de fundo; larguras mantidas (CST flex, CFOP 130px, Natureza 680px). Combo aceita placeholder opcional.
+
+## Percursos: botao Cadastrar avulso + larguras (30/09)
+
+- Botao Cadastrar avulso ao lado da busca: abre rascunho em branco; Remetente/Destinatario/Tomador editaveis (CNPJ+Nome) so em registro novo, com busca automatica por CNPJ (contatos, senao BrasilAPI/ReceitaWS) preenchendo cidade/UF/CEP; coleta segue remetente, entrega segue destinatario; codigo sequencial e nome automaticos ao salvar.
+- Linha fiscal: CFOP 90px, Natureza 740px (maior descricao inteira), CST com o resto.
