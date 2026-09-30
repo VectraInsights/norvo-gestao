@@ -331,11 +331,13 @@ function Combo({
   value,
   onPick,
   opts,
+  display,
 }: {
   label: string;
   value: string;
   onPick: (v: string) => void;
   opts: { v: string; label: string }[];
+  display?: (o: { v: string; label: string }) => string;
 }) {
   const [open, setOpen] = useState(false);
   const [txt, setTxt] = useState("");
@@ -360,7 +362,7 @@ function Combo({
       <div className="relative">
         <Input
           className="h-7 text-xs pr-6"
-          value={open ? txt : sel ? sel.label : value || ""}
+          value={open ? txt : sel ? (display ? display(sel) : sel.label) : value || ""}
           placeholder="Digite ou selecione"
           onFocus={() => {
             setTxt("");
@@ -1522,7 +1524,7 @@ function PercursosPage() {
                     <p className="text-[11px] font-semibold">Fiscal</p>
                     <div className="space-y-1">
                       <div className="flex flex-col gap-1 md:flex-row">
-                        <div className="md:w-[45%]">
+                        <div className="md:w-[20%]">
                           <Combo
                             label="CST ICMS"
                             value={editing.icms_cst || "00"}
@@ -1530,12 +1532,9 @@ function PercursosPage() {
                             opts={OPTS_CST}
                           />
                         </div>
-                      </div>
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-1">
-                        <div className="border rounded p-2 space-y-1">
-                          <p className="text-[11px] font-semibold">CFOP</p>
+                        <div className="md:w-[28%]">
                           <Combo
-                            label="Código"
+                            label="CFOP"
                             value={editing.cfop || ""}
                             onPick={(v) => {
                               const o = OPTS_CFOP.find((x) => x.v === v);
@@ -1543,18 +1542,14 @@ function PercursosPage() {
                               if (o) set("nat_operacao", o.label);
                             }}
                             opts={OPTS_CFOP}
+                            display={(o) => o.v.replace(/(\d)(\d{3})$/, "$1.$2")}
                           />
                         </div>
-                        <div className="border rounded p-2 space-y-1">
-                          <p className="text-[11px] font-semibold">Natureza da Operação</p>
+                        <div className="md:flex-1">
                           <Combo
-                            label="Descrição"
+                            label="Natureza da Operação"
                             value={editing.nat_operacao || ""}
-                            onPick={(v) => {
-                              const o = OPTS_CFOP.find((x) => x.label === v);
-                              set("nat_operacao", v);
-                              if (o) set("cfop", o.v);
-                            }}
+                            onPick={(v) => set("nat_operacao", v)}
                             opts={OPTS_NAT}
                           />
                         </div>

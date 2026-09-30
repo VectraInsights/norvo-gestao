@@ -3664,3 +3664,7 @@ Espelhado na Vercel.
 
 - Aba Geral: CFOP e Natureza da Operacao em 2 caixas lado a lado, atreladas nos 2 sentidos (mesma tabela CFOP); ambas editaveis. Coluna nat_operacao criada no banco (migration 20260930120000 registrada).
 - Aba Seguro: Seguradora na mesma altura (h-7 via className novo no Combobox), Apolice estreita (3/12) e caixa CNPJ da seguradora entre elas (auto-preenche do cadastro; coluna seg_cnpj criada).
+
+## Percursos: CFOP/Natureza 1 linha separados (30/09)
+
+- Fiscal volta a 1 linha: CST (20%) + CFOP (28%, fechado mostra so o codigo 5.351) + Natureza da Operacao (resto, so a descricao). Caixas separadas removidas. Escolher o CFOP preenche a Natureza automaticamente; Natureza editavel independente.
