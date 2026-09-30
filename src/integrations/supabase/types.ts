@@ -1136,6 +1136,7 @@ export type Database = {
           id: string;
           inss_aliq: string | null;
           ir_aliq: string | null;
+          nat_operacao: string | null;
           nome: string;
           obs_gerais: string | null;
           pedagio_cnpj: string | null;
@@ -1168,6 +1169,7 @@ export type Database = {
           seg_adicional: string | null;
           seg_apolice: string | null;
           seg_averbacao: string | null;
+          seg_cnpj: string | null;
           seg_nome: string | null;
           seg_rcf_dc: string | null;
           seg_rctr_c: string | null;
@@ -1232,6 +1234,7 @@ export type Database = {
           id?: string;
           inss_aliq?: string | null;
           ir_aliq?: string | null;
+          nat_operacao?: string | null;
           nome: string;
           obs_gerais?: string | null;
           pedagio_cnpj?: string | null;
@@ -1264,6 +1267,7 @@ export type Database = {
           seg_adicional?: string | null;
           seg_apolice?: string | null;
           seg_averbacao?: string | null;
+          seg_cnpj?: string | null;
           seg_nome?: string | null;
           seg_rcf_dc?: string | null;
           seg_rctr_c?: string | null;
@@ -1328,6 +1332,7 @@ export type Database = {
           id?: string;
           inss_aliq?: string | null;
           ir_aliq?: string | null;
+          nat_operacao?: string | null;
           nome?: string;
           obs_gerais?: string | null;
           pedagio_cnpj?: string | null;
@@ -1360,6 +1365,7 @@ export type Database = {
           seg_adicional?: string | null;
           seg_apolice?: string | null;
           seg_averbacao?: string | null;
+          seg_cnpj?: string | null;
           seg_nome?: string | null;
           seg_rcf_dc?: string | null;
           seg_rctr_c?: string | null;

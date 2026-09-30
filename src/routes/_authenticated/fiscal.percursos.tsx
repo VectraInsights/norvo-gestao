@@ -100,6 +100,7 @@ const EDITAVEIS = [
   "entrega_xmun",
   "entrega_uf",
   "cfop",
+  "nat_operacao",
   "consig_cnpj",
   "consig_nome",
   "consig_ie",
@@ -119,6 +120,7 @@ const EDITAVEIS = [
   "redesp_nro",
   "redesp_bairro",
   "seg_nome",
+  "seg_cnpj",
   "seg_apolice",
   "seg_averbacao",
   "seg_rctr_c",
@@ -318,6 +320,11 @@ const OPTS_CST: { v: string; label: string }[] = CSTS_ICMS.map(([v, d]) => ({
 const OPTS_CFOP: { v: string; label: string }[] = CFOPS_CTE.map((c) => ({
   v: String(c.codigo).replace(/\D/g, ""),
   label: c.descricao,
+}));
+// Natureza da Operação usa a mesma tabela (valor = descrição); atrelada ao CFOP
+const OPTS_NAT: { v: string; label: string }[] = OPTS_CFOP.map((o) => ({
+  v: o.label,
+  label: o.label,
 }));
 function Combo({
   label,
@@ -674,7 +681,7 @@ function PercursosPage() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("seguradoras" as any)
-        .select("id,nome,apolice_numero,averbacao")
+        .select("id,nome,cnpj,apolice_numero,averbacao")
         .eq("empresa_id", empresa!.id)
         .eq("ativo", true)
         .order("nome")
@@ -683,6 +690,7 @@ function PercursosPage() {
       return (data ?? []) as unknown as Array<{
         id: string;
         nome: string;
+        cnpj: string | null;
         apolice_numero: string | null;
         averbacao: string | null;
       }>;
@@ -1522,12 +1530,32 @@ function PercursosPage() {
                             opts={OPTS_CST}
                           />
                         </div>
-                        <div className="md:flex-1">
+                      </div>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-1">
+                        <div className="border rounded p-2 space-y-1">
+                          <p className="text-[11px] font-semibold">CFOP</p>
                           <Combo
-                            label="CFOP"
+                            label="Código"
                             value={editing.cfop || ""}
-                            onPick={(v) => set("cfop", v)}
+                            onPick={(v) => {
+                              const o = OPTS_CFOP.find((x) => x.v === v);
+                              set("cfop", v);
+                              if (o) set("nat_operacao", o.label);
+                            }}
                             opts={OPTS_CFOP}
+                          />
+                        </div>
+                        <div className="border rounded p-2 space-y-1">
+                          <p className="text-[11px] font-semibold">Natureza da Operação</p>
+                          <Combo
+                            label="Descrição"
+                            value={editing.nat_operacao || ""}
+                            onPick={(v) => {
+                              const o = OPTS_CFOP.find((x) => x.label === v);
+                              set("nat_operacao", v);
+                              if (o) set("cfop", o.v);
+                            }}
+                            opts={OPTS_NAT}
                           />
                         </div>
                       </div>
@@ -1561,10 +1589,11 @@ function PercursosPage() {
                 <TabsContent value="seguro" className="mt-2 space-y-2">
                   <div className="border rounded p-2 space-y-1">
                     <p className="text-[11px] font-semibold">Seguro</p>
-                    <div className="grid grid-cols-2 md:grid-cols-4 gap-1">
-                      <div className="col-span-2">
+                    <div className="grid grid-cols-2 md:grid-cols-12 gap-1">
+                      <div className="md:col-span-5">
                         <Label className="text-[10px] text-muted-foreground">Seguradora</Label>
                         <Combobox
+                          className="h-7 text-xs"
                           value={editing?.seg_nome || ""}
                           onChange={(v) => {
                             const s = (seguradorasPerc || []).find((x) => x.nome === v);
@@ -1573,6 +1602,7 @@ function PercursosPage() {
                                 ? {
                                     ...e,
                                     seg_nome: v,
+                                    seg_cnpj: s?.cnpj || e.seg_cnpj || "",
                                     seg_apolice: s?.apolice_numero || e.seg_apolice || "",
                                   }
                                 : e,
@@ -1587,7 +1617,10 @@ function PercursosPage() {
                           emptyText="Nenhum item encontrado."
                         />
                       </div>
-                      <div className="col-span-2">
+                      <div className="md:col-span-4">
+                        <T editing={editing} set={set} label="CNPJ da seguradora" k="seg_cnpj" mono />
+                      </div>
+                      <div className="md:col-span-3">
                         <T editing={editing} set={set} label="Apólice" k="seg_apolice" mono />
                       </div>
                       <Num editing={editing} set={set} label="RCTR-C" k="seg_rctr_c" prefix="R$" />

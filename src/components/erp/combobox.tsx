@@ -22,6 +22,7 @@ type Props = {
   searchPlaceholder?: string;
   emptyText?: string;
   disabled?: boolean;
+  className?: string;
 };
 
 // Dropdown editável: abre a lista e filtra digitando (padrão do financeiro/contas).
@@ -33,6 +34,7 @@ export function Combobox({
   searchPlaceholder = "Digite para buscar...",
   emptyText = "Nenhum item encontrado.",
   disabled,
+  className,
 }: Props) {
   const [open, setOpen] = useState(false);
   const sel = options.find((o) => o.value === value);
@@ -45,7 +47,7 @@ export function Combobox({
           role="combobox"
           aria-expanded={open}
           disabled={disabled}
-          className="w-full justify-between font-normal"
+          className={cn("w-full justify-between font-normal", className)}
         >
           <span className={cn("truncate", !sel && "text-muted-foreground")}>
             {sel ? rotulo(sel) : placeholder}

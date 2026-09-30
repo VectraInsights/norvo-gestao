@@ -3659,3 +3659,8 @@ Espelhado na Vercel.
 
 - Ao sair da cidade de entrega (pos-UF), recalcula na hora com os valores novos e trava o debounce p/ nao repetir; calculo unificado em executarCalculo.
 - OSRM agora retorna ferryKm (steps=true): toast avisa quando inclui balsa. Medido: Formiga-Macapa 3907 km (com balsa Belem-Macapa), Formiga-Maraba 2276 km.
+
+## Percursos: CFOPxNatureza + CNPJ seguradora (30/09)
+
+- Aba Geral: CFOP e Natureza da Operacao em 2 caixas lado a lado, atreladas nos 2 sentidos (mesma tabela CFOP); ambas editaveis. Coluna nat_operacao criada no banco (migration 20260930120000 registrada).
+- Aba Seguro: Seguradora na mesma altura (h-7 via className novo no Combobox), Apolice estreita (3/12) e caixa CNPJ da seguradora entre elas (auto-preenche do cadastro; coluna seg_cnpj criada).
