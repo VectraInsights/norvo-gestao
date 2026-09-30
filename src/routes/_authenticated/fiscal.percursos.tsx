@@ -1330,10 +1330,9 @@ function PercursosPage() {
                             Entrega
                           </span>
                           <Input
-                            className="h-6 text-[11px] flex-1 min-w-0 bg-transparent dark:bg-transparent"
-                            readOnly
+                            className="h-6 text-[11px] flex-1 min-w-0"
                             value={editing.entrega_xmun || ""}
-                            onChange={(e) => set("entrega_xmun", e.target.value)}
+                            onChange={(e) => set("entrega_xmun", e.target.value.toUpperCase())}
                           />
                           <span className="text-[9px] text-muted-foreground shrink-0">UF</span>
                           <Input
