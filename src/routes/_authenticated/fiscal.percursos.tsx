@@ -1414,7 +1414,7 @@ function PercursosPage() {
             onChange={(e) => setBusca(e.target.value)}
           />
         </div>
-        <Button size="sm" className="h-8 text-xs" onClick={novoAvulso}>
+        <Button size="sm" className="h-8 text-xs shrink-0" onClick={novoAvulso}>
           <Plus className="mr-1 h-3.5 w-3.5" /> Novo percurso
         </Button>
       </div>

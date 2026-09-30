@@ -3693,3 +3693,7 @@ Espelhado na Vercel.
 ## Percursos: botao Novo percurso (30/09)
 
 - Botao renomeado de Cadastrar avulso para Novo percurso.
+
+## Padrao: botao Novo a direita da busca (30/09)
+
+- Percursos: Novo percurso a direita da busca. Veiculos: Novo veiculo saiu de cima e foi para a direita da busca (padrao a seguir nas telas).

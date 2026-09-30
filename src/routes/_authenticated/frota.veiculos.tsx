@@ -613,18 +613,32 @@ function Veiculos() {
           if (!v) reset();
         }}
       >
-        <DialogTrigger asChild>
-          <Button
-            className="mb-4"
-            onClick={() => {
-              reset();
-              setOpen(true);
-            }}
-          >
-            <Plus className="mr-1 h-4 w-4" />
-            Novo veículo
-          </Button>
-        </DialogTrigger>
+        <div className="mb-4 flex items-center gap-2">
+          <div className="relative max-w-sm flex-1">
+            <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+            <Input
+              className="pl-8"
+              placeholder="Buscar por placa, modelo…"
+              value={busca}
+              onChange={(e) => {
+                setBusca(e.target.value);
+                setPagina(1);
+              }}
+            />
+          </div>
+          <DialogTrigger asChild>
+            <Button
+              className="shrink-0"
+              onClick={() => {
+                reset();
+                setOpen(true);
+              }}
+            >
+              <Plus className="mr-1 h-4 w-4" />
+              Novo veículo
+            </Button>
+          </DialogTrigger>
+        </div>
         <DialogContent className="w-screen h-screen max-w-none max-h-none m-0 rounded-none overflow-y-auto">
           <DialogHeader>
             <DialogTitle>{editing ? `Editar ${editing.placa}` : "Novo veículo"}</DialogTitle>
@@ -978,19 +992,6 @@ function Veiculos() {
           </div>
         </DialogContent>
       </Dialog>
-
-      <div className="relative mb-4 max-w-sm">
-        <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-        <Input
-          className="pl-8"
-          placeholder="Buscar por placa, modelo…"
-          value={busca}
-          onChange={(e) => {
-            setBusca(e.target.value);
-            setPagina(1);
-          }}
-        />
-      </div>
 
       {isLoading ? (
         <Card className="overflow-hidden shadow-panel">
