@@ -12,8 +12,8 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Combobox } from "@/components/erp/combobox";
-import { ArrowLeftRight, Plus, Trash2 } from "lucide-react";
-import { useState } from "react";
+import { ArrowLeftRight, Plus, Search, Trash2 } from "lucide-react";
+import { useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEmpresaAtual } from "@/hooks/use-empresa";
@@ -46,6 +46,7 @@ function TransferenciasPage() {
   const [valor, setValor] = useState("0");
   const [descricao, setDescricao] = useState("Transferência entre contas");
   const [obs, setObs] = useState("");
+  const [busca, setBusca] = useState("");
 
   const { data: contas = [] } = useQuery({
     enabled: !!empresa,
@@ -80,6 +81,18 @@ function TransferenciasPage() {
     setOrigem(""); setDestino(""); setValor("0"); setObs("");
     setDescricao("Transferência entre contas"); setData(format(new Date(), "yyyy-MM-dd"));
   };
+
+  const filtrados = useMemo(() => {
+    const q = busca.trim().toLowerCase();
+    return (lista ?? []).filter((t) => {
+      if (!q) return true;
+      return (t.descricao || "").toLowerCase().includes(q)
+        || (t.observacoes || "").toLowerCase().includes(q)
+        || nomeConta(t.conta_origem_id).toLowerCase().includes(q)
+        || nomeConta(t.conta_destino_id).toLowerCase().includes(q);
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [lista, busca, contas]);
 
   const criar = useMutation({
     mutationFn: async () => {
@@ -138,7 +151,13 @@ function TransferenciasPage() {
         eyebrow="Financeiro"
         title="Transferências entre contas"
         description="Registro de controle interno: move o saldo entre contas da mesma empresa (não executa TED/PIX no banco)."
-        actions={
+      />
+      <div className="mb-3 flex flex-col gap-2 sm:flex-row sm:items-center">
+        <div className="relative flex-1">
+          <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+          <Input className="pl-8" placeholder="Buscar por descrição, conta de origem ou destino..." value={busca} onChange={(e) => setBusca(e.target.value)} />
+        </div>
+        <div className="flex items-center gap-2">
           <Dialog open={open} onOpenChange={(o) => { setOpen(o); if (!o) reset(); }}>
             <DialogTrigger asChild>
               <Button><Plus className="mr-1.5 h-4 w-4" /> Nova transferência</Button>
@@ -182,16 +201,16 @@ function TransferenciasPage() {
               </DialogFooter>
             </DialogContent>
           </Dialog>
-        }
-      />
+        </div>
+      </div>
 
       {isLoading ? (
         <div className="space-y-2">{[...Array(4)].map((_, i) => <Skeleton key={i} className="h-12 w-full" />)}</div>
-      ) : !lista?.length ? (
+      ) : !filtrados?.length ? (
         <EmptyState
           icon={ArrowLeftRight}
           title="Nenhuma transferência"
-          description="Registre movimentações de saldo entre as contas financeiras da empresa."
+          description={busca ? "Nada encontrado para a busca." : "Registre movimentações de saldo entre as contas financeiras da empresa."}
         />
       ) : (
         <Card className="shadow-panel">
@@ -207,7 +226,7 @@ function TransferenciasPage() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {lista.map((t) => (
+              {filtrados.map((t) => (
                 <TableRow key={t.id}>
                   <TableCell>{dateBR(t.data)}</TableCell>
                   <TableCell className="max-w-[280px] truncate">{t.descricao}</TableCell>

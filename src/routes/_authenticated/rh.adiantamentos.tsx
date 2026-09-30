@@ -33,8 +33,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { HandCoins, Pencil, Plus, Trash2 } from "lucide-react";
-import { useState } from "react";
+import { HandCoins, Pencil, Plus, Trash2, Search } from "lucide-react";
+import { useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEmpresaAtual } from "@/hooks/use-empresa";
@@ -84,6 +84,7 @@ function AdiantamentosPage() {
   const [recorrente, setRecorrente] = useState(false);
   const [diaRec, setDiaRec] = useState("20");
   const [editando, setEditando] = useState<Adiantamento | null>(null);
+  const [busca, setBusca] = useState("");
 
   const { data: colabs = [] } = useQuery({
     enabled: !!empresa,
@@ -115,6 +116,15 @@ function AdiantamentosPage() {
       return (data ?? []) as unknown as Adiantamento[];
     },
   });
+
+  const filtrados = useMemo(() => {
+    const q = busca.trim().toLowerCase();
+    if (!q) return lista ?? [];
+    return (lista ?? []).filter((a) =>
+      (a.colaboradores?.nome || "").toLowerCase().includes(q)
+      || (a.motivo || "").toLowerCase().includes(q),
+    );
+  }, [lista, busca]);
 
   const emAberto = (lista ?? [])
     .filter((a) => a.status === "aberto")
@@ -372,8 +382,13 @@ function AdiantamentosPage() {
         eyebrow="DP"
         title="Adiantamentos"
         description="Adiantamentos a colaboradores com integração automática ao contas a pagar — o status acompanha a baixa/conciliação do lançamento."
-        actions={
-          <div className="flex gap-2">
+      />
+      <div className="mb-3 flex flex-col gap-2 sm:flex-row sm:items-center">
+        <div className="relative flex-1">
+          <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+          <Input className="pl-8" placeholder="Buscar por colaborador ou motivo..." value={busca} onChange={(e) => setBusca(e.target.value)} />
+        </div>
+        <div className="flex items-center gap-2">
             <Button
               variant="outline"
               disabled={
@@ -492,9 +507,8 @@ function AdiantamentosPage() {
                 </DialogFooter>
               </DialogContent>
             </Dialog>
-          </div>
-        }
-      />
+        </div>
+      </div>
 
       {isLoading ? (
         <div className="space-y-2">
@@ -507,6 +521,12 @@ function AdiantamentosPage() {
           icon={HandCoins}
           title="Nenhum adiantamento"
           description="Registre adiantamentos salariais — avulsos ou recorrentes mensais."
+        />
+      ) : !filtrados.length ? (
+        <EmptyState
+          icon={HandCoins}
+          title="Nenhum resultado"
+          description="Nada encontrado para a busca."
         />
       ) : (
         <Card className="shadow-panel">
@@ -526,7 +546,7 @@ function AdiantamentosPage() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {lista.map((a) => (
+              {filtrados.map((a) => (
                 <TableRow key={a.id}>
                   <TableCell className="font-medium">{a.colaboradores?.nome ?? "—"}</TableCell>
                   <TableCell>{dateBR(a.data)}</TableCell>

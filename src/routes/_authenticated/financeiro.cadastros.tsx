@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { PageHeader } from "@/components/erp/page-header";
 import { EmptyState } from "@/components/erp/empty-state";
 import { Card } from "@/components/ui/card";
@@ -12,7 +12,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Plus, Pencil, Trash2, FolderCog, Loader2 } from "lucide-react";
+import { Plus, Pencil, Trash2, FolderCog, Loader2, Search } from "lucide-react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useEmpresaAtual } from "@/hooks/use-empresa";
@@ -40,6 +40,7 @@ type Centro = { id: string; nome: string; codigo: string | null; descricao: stri
 function CadastrosPage() {
   const { data: empresa } = useEmpresaAtual();
   const qc = useQueryClient();
+  const [busca, setBusca] = useState("");
 
   /* ---------------- Categorias ---------------- */
   const catKey = ["cadastros-categorias", empresa?.id] as const;
@@ -107,7 +108,13 @@ function CadastrosPage() {
 
   const pais = (categorias ?? []).filter((c) => !c.parent_id);
   const [catTipoTab, setCatTipoTab] = useState<"pagar" | "receber">("pagar");
-  const categoriasFiltradas = (categorias ?? []).filter((c) => c.tipo === catTipoTab);
+  const filtrados = useMemo(() => {
+    const q = busca.trim().toLowerCase();
+    const porTipo = (categorias ?? []).filter((c) => c.tipo === catTipoTab);
+    if (!q) return porTipo;
+    return porTipo.filter((c) => (c.nome || "").toLowerCase().includes(q));
+  }, [categorias, catTipoTab, busca]);
+  const categoriasFiltradas = filtrados;
 
   /* ---------------- Centros de custo ---------------- */
   const ccKey = ["cadastros-centros", empresa?.id] as const;
@@ -165,20 +172,34 @@ function CadastrosPage() {
     onError: (e: Error) => toast.error(e.message),
   });
 
+  const centrosFiltrados = useMemo(() => {
+    const q = busca.trim().toLowerCase();
+    if (!q) return centros ?? [];
+    return (centros ?? []).filter((c) =>
+      (c.nome || "").toLowerCase().includes(q)
+      || (c.codigo || "").toLowerCase().includes(q)
+      || (c.descricao || "").toLowerCase().includes(q),
+    );
+  }, [centros, busca]);
+
   return (
     <div className="p-6">
       <PageHeader
         eyebrow="Financeiro"
         title="Cadastros"
         description="Gerencie as categorias financeiras e os centros de custo utilizados nos lançamentos."
-        actions={
-          <div className="flex items-center gap-2">
-            <Button variant="outline" size="sm">
-              Adicionar trilha de auditoria
-            </Button>
-          </div>
-        }
       />
+      <div className="mb-3 flex flex-col gap-2 sm:flex-row sm:items-center">
+        <div className="relative flex-1">
+          <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+          <Input className="pl-8" placeholder="Buscar por nome, código ou descrição..." value={busca} onChange={(e) => setBusca(e.target.value)} />
+        </div>
+        <div className="flex items-center gap-2">
+          <Button variant="outline" size="sm">
+            Adicionar trilha de auditoria
+          </Button>
+        </div>
+      </div>
 
       <Tabs defaultValue="categorias">
         <TabsList>
@@ -205,7 +226,7 @@ function CadastrosPage() {
             <EmptyState
               icon={FolderCog}
               title={catTipoTab === "pagar" ? "Nenhuma categoria de despesa" : "Nenhuma categoria de receita"}
-              description="Crie a primeira categoria financeira deste tipo."
+              description={busca ? "Nada encontrado para a busca." : "Crie a primeira categoria financeira deste tipo."}
             />
           ) : (
             <Card className="overflow-hidden shadow-panel">
@@ -252,8 +273,8 @@ function CadastrosPage() {
           </div>
           {loadingCc ? (
             <div className="space-y-2">{Array.from({ length: 3 }).map((_, i) => <div key={i} className="h-12 animate-pulse rounded-md bg-muted/30" />)}</div>
-          ) : !centros?.length ? (
-            <EmptyState icon={FolderCog} title="Nenhum centro de custo" description="Crie centros de custo para classificar os lançamentos." />
+          ) : !centrosFiltrados?.length ? (
+            <EmptyState icon={FolderCog} title="Nenhum centro de custo" description={busca ? "Nada encontrado para a busca." : "Crie centros de custo para classificar os lançamentos."} />
           ) : (
             <Card className="overflow-hidden shadow-panel">
               <Table>
@@ -267,7 +288,7 @@ function CadastrosPage() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {centros.map((c) => (
+                  {centrosFiltrados.map((c) => (
                     <TableRow key={c.id}>
                       <TableCell className="text-tabular">{c.codigo ?? "—"}</TableCell>
                       <TableCell className="font-medium">{c.nome}</TableCell>

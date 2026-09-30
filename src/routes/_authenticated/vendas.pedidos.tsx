@@ -46,6 +46,7 @@ import {
   Plus,
   ShoppingCart,
   Trash2,
+  Search,
 } from "lucide-react";
 import { useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
@@ -99,6 +100,7 @@ function VendasPage() {
   const [open, setOpen] = useState(false);
   const [statusFilter, setStatusFilter] = useState<VendaStatus | "todos">("todos");
   const [pagina, setPagina] = useState(1);
+  const [busca, setBusca] = useState("");
 
   const { data: vendas, isLoading } = useQuery({
     enabled: !!empresa,
@@ -122,10 +124,20 @@ function VendasPage() {
     },
   });
 
+  const filtrados = useMemo(() => {
+    const q = busca.trim().toLowerCase();
+    if (!q) return vendas ?? [];
+    const qNum = q.replace(/^#/, "");
+    return (vendas ?? []).filter((v) =>
+      (v.cliente?.nome || "").toLowerCase().includes(q)
+      || (v.condicao?.nome || "").toLowerCase().includes(q)
+      || String(v.numero ?? "").includes(qNum),
+    );
+  }, [vendas, busca]);
   const pageSize = 25;
-  const totalPaginas = Math.max(1, Math.ceil((vendas?.length ?? 0) / pageSize));
+  const totalPaginas = Math.max(1, Math.ceil(filtrados.length / pageSize));
   const paginaAtual = Math.min(pagina, totalPaginas);
-  const vendasVisiveis = (vendas ?? []).slice((paginaAtual - 1) * pageSize, paginaAtual * pageSize);
+  const vendasVisiveis = filtrados.slice((paginaAtual - 1) * pageSize, paginaAtual * pageSize);
 
   const invalidateAll = () => {
     qc.invalidateQueries({ queryKey: ["vendas"] });
@@ -167,9 +179,14 @@ function VendasPage() {
         eyebrow="Vendas & CRM"
         title="Orçamentos"
         description="Proposta → pedido → faturamento. Ao faturar, o sistema baixa estoque, gera contas a receber e cria a nota fiscal."
-        actions={
-          <div className="flex items-center gap-2">
-            <Select
+      />
+      <div className="mb-3 flex flex-col gap-2 sm:flex-row sm:items-center">
+        <div className="relative flex-1">
+          <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+          <Input className="pl-8" placeholder="Buscar por cliente, número ou condição..." value={busca} onChange={(e) => { setBusca(e.target.value); setPagina(1); }} />
+        </div>
+        <div className="flex items-center gap-2">
+          <Select
               value={statusFilter}
               onValueChange={(v) => {
                 setStatusFilter(v as VendaStatus | "todos");
@@ -202,9 +219,8 @@ function VendasPage() {
                 }}
               />
             </Sheet>
-          </div>
-        }
-      />
+        </div>
+      </div>
 
       {isLoading ? (
         <div className="space-y-2">
@@ -217,6 +233,12 @@ function VendasPage() {
           icon={ShoppingCart}
           title="Nenhuma venda ainda"
           description="Crie sua primeira proposta ou pedido para começar."
+        />
+      ) : !filtrados.length ? (
+        <EmptyState
+          icon={ShoppingCart}
+          title="Nenhum resultado"
+          description="Nada encontrado para a busca."
         />
       ) : (
         <Card className="overflow-hidden shadow-panel">
@@ -312,7 +334,7 @@ function VendasPage() {
           <div className="flex items-center justify-between border-t px-4 py-3 text-sm text-muted-foreground">
             <span>
               Mostrando {(paginaAtual - 1) * pageSize + 1}–
-              {Math.min(paginaAtual * pageSize, vendas?.length ?? 0)} de {vendas?.length ?? 0}
+              {Math.min(paginaAtual * pageSize, filtrados.length)} de {filtrados.length}
             </span>
             <div className="flex items-center gap-1">
               <Button

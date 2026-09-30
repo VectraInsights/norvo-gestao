@@ -41,8 +41,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Users, Plus, ShieldCheck, KeyRound, Trash2, Pencil } from "lucide-react";
-import { useState } from "react";
+import { Users, Plus, Search, ShieldCheck, KeyRound, Trash2, Pencil } from "lucide-react";
+import { useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useEmpresaAtual } from "@/hooks/use-empresa";
@@ -90,6 +90,16 @@ function UsuariosPage() {
       return (data ?? []) as unknown as MembroRow[];
     },
   });
+
+  const [busca, setBusca] = useState("");
+  const filtrados = useMemo(() => {
+    const q = busca.trim().toLowerCase();
+    return (lista.data ?? []).filter((m) => {
+      if (!q) return true;
+      return (m.nome || "").toLowerCase().includes(q)
+        || (m.email || "").toLowerCase().includes(q);
+    });
+  }, [lista.data, busca]);
 
   const token = async () => {
     const {
@@ -245,21 +255,27 @@ function UsuariosPage() {
             ? "Crie usuários com senha padrão e defina quais módulos cada um pode usar."
             : "Gerencie os usuários desta empresa e os módulos que podem usar."
         }
-        actions={
+      />
+      <div className="mb-3 flex flex-col gap-2 sm:flex-row sm:items-center">
+        <div className="relative flex-1">
+          <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+          <Input className="pl-8" placeholder="Buscar por nome ou e-mail..." value={busca} onChange={(e) => setBusca(e.target.value)} />
+        </div>
+        <div className="flex items-center gap-2">
           <Button size="sm" onClick={() => setOpenNovo(true)}>
             <Plus className="h-4 w-4 mr-1" />
             Novo usuário
           </Button>
-        }
-      />
+        </div>
+      </div>
 
       <Card className="p-0 overflow-hidden">
         {lista.isLoading ? (
           <div className="p-6">
             <Skeleton className="h-32 w-full" />
           </div>
-        ) : !lista.data || lista.data.length === 0 ? (
-          <EmptyState icon={Users} title="Nenhum usuário" description="Crie o primeiro acesso." />
+        ) : !filtrados || filtrados.length === 0 ? (
+          <EmptyState icon={Users} title="Nenhum usuário" description={busca ? "Nada encontrado para a busca." : "Crie o primeiro acesso."} />
         ) : (
           <Table>
             <TableHeader>
@@ -272,7 +288,7 @@ function UsuariosPage() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {(lista.data ?? []).map((m) => (
+              {filtrados.map((m) => (
                 <TableRow key={m.id}>
                   <TableCell className="font-medium">{m.nome ?? "—"}</TableCell>
                   <TableCell className="text-muted-foreground">{m.email ?? "—"}</TableCell>

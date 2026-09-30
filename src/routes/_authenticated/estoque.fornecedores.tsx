@@ -43,7 +43,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEmpresaAtual } from "@/hooks/use-empresa";
@@ -105,6 +105,7 @@ function Fornecedores() {
   const [editing, setEditing] = useState<Contato | null>(null);
   const [deleting, setDeleting] = useState<Contato | null>(null);
   const [lookingUp, setLookingUp] = useState(false);
+  const [busca, setBusca] = useState("");
   const [pagina, setPagina] = useState(1);
 
   const { data: contatos, isLoading } = useQuery({
@@ -128,10 +129,20 @@ function Fornecedores() {
     },
   });
 
+  const filtrados = useMemo(() => {
+    const q = busca.trim().toLowerCase();
+    return (contatos ?? []).filter((c) => {
+      if (!q) return true;
+      return (c.nome || "").toLowerCase().includes(q)
+        || (c.documento || "").replace(/\D/g, "").includes(q.replace(/\D/g, ""))
+        || (c.cidade || "").toLowerCase().includes(q);
+    });
+  }, [contatos, busca]);
+
   const pageSize = 25;
-  const totalPaginas = Math.max(1, Math.ceil((contatos?.length ?? 0) / pageSize));
+  const totalPaginas = Math.max(1, Math.ceil(filtrados.length / pageSize));
   const paginaAtual = Math.min(pagina, totalPaginas);
-  const contatosVisiveis = (contatos ?? []).slice(
+  const contatosVisiveis = filtrados.slice(
     (paginaAtual - 1) * pageSize,
     paginaAtual * pageSize,
   );
@@ -326,24 +337,30 @@ function Fornecedores() {
         eyebrow="Estoque"
         title="Fornecedores"
         description="Fornecedores cadastrados para compras e reposição de estoque."
-        actions={
+      />
+      <div className="mb-3 flex flex-col gap-2 sm:flex-row sm:items-center">
+        <div className="relative flex-1">
+          <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+          <Input className="pl-8" placeholder="Buscar por nome, CPF/CNPJ ou cidade..." value={busca} onChange={(e) => { setBusca(e.target.value); setPagina(1); }} />
+        </div>
+        <div className="flex items-center gap-2">
           <Button onClick={openCreate}>
             <Plus className="mr-1 h-4 w-4" />
             Novo fornecedor
           </Button>
-        }
-      />
+        </div>
+      </div>
       {isLoading ? (
         <div className="space-y-2">
           {Array.from({ length: 4 }).map((_, i) => (
             <div key={i} className="h-12 animate-pulse rounded-md bg-muted/30" />
           ))}
         </div>
-      ) : !contatos?.length ? (
+      ) : !filtrados?.length ? (
         <EmptyState
           icon={Users}
           title="Nenhum fornecedor"
-          description="Cadastre seu primeiro fornecedor."
+          description={busca ? "Nada encontrado para a busca." : "Cadastre seu primeiro fornecedor."}
         />
       ) : (
         <Card className="overflow-hidden shadow-panel">
@@ -405,7 +422,7 @@ function Fornecedores() {
           <div className="flex items-center justify-between border-t px-4 py-3 text-sm text-muted-foreground">
             <span>
               Mostrando {(paginaAtual - 1) * pageSize + 1}–
-              {Math.min(paginaAtual * pageSize, contatos?.length ?? 0)} de {contatos?.length ?? 0}
+              {Math.min(paginaAtual * pageSize, filtrados?.length ?? 0)} de {filtrados?.length ?? 0}
             </span>
             <div className="flex items-center gap-1">
               <Button

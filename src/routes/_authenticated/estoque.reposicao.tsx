@@ -23,7 +23,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { PackagePlus, AlertTriangle, ShoppingCart, Trash2 } from "lucide-react";
+import { PackagePlus, AlertTriangle, ShoppingCart, Trash2, Search } from "lucide-react";
 import { useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -69,6 +69,7 @@ function Reposicao() {
   const [contaBanco, setContaBanco] = useState("");
   const [depositoId, setDepositoId] = useState("");
   const [dataPrev, setDataPrev] = useState("");
+  const [busca, setBusca] = useState("");
 
   const { data: produtos, isLoading } = useQuery({
     enabled: !!empresa,
@@ -101,16 +102,22 @@ function Reposicao() {
     [produtos],
   );
 
+  const filtrados = useMemo(() => {
+    const q = busca.trim().toLowerCase();
+    if (!q) return criticos;
+    return criticos.filter((p) => (p.nome || "").toLowerCase().includes(q));
+  }, [criticos, busca]);
+
   const linhaDe = (p: ProdRep): LinhaRep =>
     linhas[p.id] ?? { incluir: true, qtd: String(sugerir(p)) };
 
   const selecionados = useMemo(
     () =>
-      criticos
+      filtrados
         .map((p) => ({ prod: p, ...linhaDe(p) }))
         .filter((l) => l.incluir && Number(l.qtd.replace(",", ".")) > 0),
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [criticos, linhas],
+    [filtrados, linhas],
   );
 
   const valorEstimado = useMemo(
@@ -221,7 +228,13 @@ function Reposicao() {
         eyebrow="Estoque"
         title="Reposição"
         description="Itens no ou abaixo do estoque mínimo. Selecione e gere a ordem de compra de uma vez."
-        actions={
+      />
+      <div className="mb-3 flex flex-col gap-2 sm:flex-row sm:items-center">
+        <div className="relative flex-1">
+          <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+          <Input className="pl-8" placeholder="Buscar produto..." value={busca} onChange={(e) => setBusca(e.target.value)} />
+        </div>
+        <div className="flex items-center gap-2">
           <Button
             onClick={() => gerarOC.mutate()}
             disabled={gerarOC.isPending || !selecionados.length}
@@ -229,14 +242,20 @@ function Reposicao() {
             <ShoppingCart className="mr-1 h-4 w-4" />
             {gerarOC.isPending ? "Gerando…" : `Gerar ordem de compra (${selecionados.length})`}
           </Button>
-        }
-      />
+        </div>
+      </div>
 
       {isLoading ? null : !criticos.length ? (
         <EmptyState
           icon={PackagePlus}
           title="Nenhum produto abaixo do mínimo"
           description="Todos os itens estão acima do estoque mínimo. Configure mínimos em Estoque › Produtos para receber sugestões."
+        />
+      ) : !filtrados.length ? (
+        <EmptyState
+          icon={PackagePlus}
+          title="Nenhum produto encontrado"
+          description="Nada encontrado para a busca."
         />
       ) : (
         <>
@@ -291,7 +310,7 @@ function Reposicao() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {criticos.map((p) => {
+                {filtrados.map((p) => {
                   const l = linhaDe(p);
                   const qtdNum = Number(l.qtd.replace(",", "."));
                   const custo = Number(p.preco_custo ?? 0);

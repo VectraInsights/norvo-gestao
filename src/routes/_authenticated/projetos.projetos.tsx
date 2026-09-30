@@ -44,8 +44,8 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-import { Briefcase, ChevronLeft, ChevronRight, Plus, Trash2, Pencil } from "lucide-react";
-import { useState } from "react";
+import { Briefcase, ChevronLeft, ChevronRight, Plus, Trash2, Pencil, Search } from "lucide-react";
+import { useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEmpresaAtual } from "@/hooks/use-empresa";
@@ -107,6 +107,7 @@ function ProjetosPage() {
   const [orcamento, setOrcamento] = useState("0");
   const [cor, setCor] = useState("#3b82f6");
   const [pagina, setPagina] = useState(1);
+  const [busca, setBusca] = useState("");
 
   const { data: projetos, isLoading } = useQuery({
     enabled: !!empresa,
@@ -127,10 +128,19 @@ function ProjetosPage() {
     },
   });
 
+  const filtrados = useMemo(() => {
+    const q = busca.trim().toLowerCase();
+    if (!q) return projetos ?? [];
+    return (projetos ?? []).filter((p) =>
+      (p.nome || "").toLowerCase().includes(q)
+      || (p.contatos?.nome || "").toLowerCase().includes(q)
+      || (p.descricao || "").toLowerCase().includes(q),
+    );
+  }, [projetos, busca]);
   const pageSize = 25;
-  const totalPaginas = Math.max(1, Math.ceil((projetos?.length ?? 0) / pageSize));
+  const totalPaginas = Math.max(1, Math.ceil(filtrados.length / pageSize));
   const paginaAtual = Math.min(pagina, totalPaginas);
-  const projetosVisiveis = (projetos ?? []).slice(
+  const projetosVisiveis = filtrados.slice(
     (paginaAtual - 1) * pageSize,
     paginaAtual * pageSize,
   );
@@ -226,7 +236,13 @@ function ProjetosPage() {
       <PageHeader
         title="Projetos"
         description="Organize entregas, prazos e orçamentos por projeto."
-        actions={
+      />
+      <div className="mb-3 flex flex-col gap-2 sm:flex-row sm:items-center">
+        <div className="relative flex-1">
+          <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+          <Input className="pl-8" placeholder="Buscar por nome, cliente ou descrição..." value={busca} onChange={(e) => { setBusca(e.target.value); setPagina(1); }} />
+        </div>
+        <div className="flex items-center gap-2">
           <Dialog
             open={open}
             onOpenChange={(o) => {
@@ -324,19 +340,19 @@ function ProjetosPage() {
               </DialogFooter>
             </DialogContent>
           </Dialog>
-        }
-      />
+        </div>
+      </div>
 
       <Card className="p-0 overflow-hidden">
         {isLoading ? (
           <div className="p-6">
             <Skeleton className="h-32 w-full" />
           </div>
-        ) : !projetos || projetos.length === 0 ? (
+        ) : !filtrados || filtrados.length === 0 ? (
           <EmptyState
             icon={Briefcase}
             title="Nenhum projeto ainda"
-            description="Crie seu primeiro projeto para começar."
+            description={busca ? "Nada encontrado para a busca." : "Crie seu primeiro projeto para começar."}
           />
         ) : (
           <>
@@ -416,7 +432,7 @@ function ProjetosPage() {
             <div className="flex items-center justify-between border-t px-4 py-3 text-sm text-muted-foreground">
               <span>
                 Mostrando {(paginaAtual - 1) * pageSize + 1}–
-                {Math.min(paginaAtual * pageSize, projetos?.length ?? 0)} de {projetos?.length ?? 0}
+                {Math.min(paginaAtual * pageSize, filtrados.length)} de {filtrados.length}
               </span>
               <div className="flex items-center gap-1">
                 <Button

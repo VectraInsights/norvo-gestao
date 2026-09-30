@@ -45,7 +45,7 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Wrench, Plus, Trash2, Pencil } from "lucide-react";
+import { Wrench, Plus, Trash2, Pencil, Search } from "lucide-react";
 import { useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -118,6 +118,7 @@ function OSPage() {
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState<OS | null>(null);
   const [tab, setTab] = useState("abertas");
+  const [busca, setBusca] = useState("");
 
   const [titulo, setTitulo] = useState("");
   const [descricao, setDescricao] = useState("");
@@ -171,15 +172,26 @@ function OSPage() {
     },
   });
 
-  const filtered = useMemo(() => {
-    if (!ordens) return [];
-    if (tab === "abertas")
-      return ordens.filter((o) => ["aberta", "em_execucao", "aguardando"].includes(o.status));
-    if (tab === "concluidas")
-      return ordens.filter((o) => ["concluida", "faturada"].includes(o.status));
-    if (tab === "canceladas") return ordens.filter((o) => o.status === "cancelada");
-    return ordens;
-  }, [ordens, tab]);
+  const filtrados = useMemo(() => {
+    const q = busca.trim().toLowerCase();
+    const base = !ordens
+      ? []
+      : tab === "abertas"
+        ? ordens.filter((o) => ["aberta", "em_execucao", "aguardando"].includes(o.status))
+        : tab === "concluidas"
+          ? ordens.filter((o) => ["concluida", "faturada"].includes(o.status))
+          : tab === "canceladas"
+            ? ordens.filter((o) => o.status === "cancelada")
+            : ordens;
+    if (!q) return base;
+    const qNum = q.replace(/^#/, "");
+    return base.filter((o) =>
+      (o.titulo || "").toLowerCase().includes(q)
+      || (o.contatos?.nome || "").toLowerCase().includes(q)
+      || (o.projetos?.nome || "").toLowerCase().includes(q)
+      || (o.numero != null && String(o.numero).includes(qNum)),
+    );
+  }, [ordens, tab, busca]);
 
   const reset = () => {
     setEditing(null);
@@ -260,7 +272,13 @@ function OSPage() {
       <PageHeader
         title="Ordens de serviço"
         description="Registre chamados, execute e feche entregas com prazos e responsáveis."
-        actions={
+      />
+      <div className="mb-3 flex flex-col gap-2 sm:flex-row sm:items-center">
+        <div className="relative flex-1">
+          <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+          <Input className="pl-8" placeholder="Buscar por título, cliente, projeto ou número..." value={busca} onChange={(e) => setBusca(e.target.value)} />
+        </div>
+        <div className="flex items-center gap-2">
           <Dialog
             open={open}
             onOpenChange={(o) => {
@@ -380,8 +398,8 @@ function OSPage() {
               </DialogFooter>
             </DialogContent>
           </Dialog>
-        }
-      />
+        </div>
+      </div>
 
       <Tabs value={tab} onValueChange={setTab}>
         <TabsList>
@@ -397,11 +415,11 @@ function OSPage() {
           <div className="p-6">
             <Skeleton className="h-32 w-full" />
           </div>
-        ) : filtered.length === 0 ? (
+        ) : filtrados.length === 0 ? (
           <EmptyState
             icon={Wrench}
             title="Nenhuma OS"
-            description="Crie sua primeira ordem de serviço."
+            description={busca ? "Nada encontrado para a busca." : "Crie sua primeira ordem de serviço."}
           />
         ) : (
           <Table>
@@ -419,7 +437,7 @@ function OSPage() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {filtered.map((o) => (
+              {filtrados.map((o) => (
                 <TableRow key={o.id}>
                   <TableCell className="text-tabular">#{o.numero}</TableCell>
                   <TableCell className="font-medium">{o.titulo}</TableCell>

@@ -57,6 +57,7 @@ import {
   CheckCircle2,
   XCircle,
   Wallet,
+  Search,
 } from "lucide-react";
 import { useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
@@ -205,6 +206,7 @@ function Viagens() {
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState<Viagem | null>(null);
   const [pagina, setPagina] = useState(1);
+  const [busca, setBusca] = useState("");
   const [form, setForm] = useState(formVazio);
   const set = <K extends keyof typeof form>(k: K, v: (typeof form)[K]) =>
     setForm((f) => ({ ...f, [k]: v }));
@@ -250,10 +252,24 @@ function Viagens() {
     },
   });
 
+  const filtrados = useMemo(() => {
+    const q = busca.trim().toLowerCase();
+    return (viagens ?? []).filter((v) => {
+      if (!q) return true;
+      return (v.origem_cidade || "").toLowerCase().includes(q)
+        || (v.destino_cidade || "").toLowerCase().includes(q)
+        || (v.cliente?.nome || "").toLowerCase().includes(q)
+        || (v.motorista?.nome || "").toLowerCase().includes(q)
+        || (v.veiculo?.placa || "").toLowerCase().includes(q)
+        || (STATUS_LABEL[v.status] || v.status || "").toLowerCase().includes(q)
+        || (v.observacoes || "").toLowerCase().includes(q);
+    });
+  }, [viagens, busca]);
+
   const pageSize = 25;
-  const totalPaginas = Math.max(1, Math.ceil((viagens?.length ?? 0) / pageSize));
+  const totalPaginas = Math.max(1, Math.ceil(filtrados.length / pageSize));
   const paginaAtual = Math.min(pagina, totalPaginas);
-  const viagensVisiveis = (viagens ?? []).slice(
+  const viagensVisiveis = filtrados.slice(
     (paginaAtual - 1) * pageSize,
     paginaAtual * pageSize,
   );
@@ -461,7 +477,13 @@ function Viagens() {
         eyebrow="Frota"
         title="Viagens"
         description="Fretes com motorista, veículo e resultado por viagem."
-        actions={
+      />
+      <div className="mb-3 flex flex-col gap-2 sm:flex-row sm:items-center">
+        <div className="relative flex-1">
+          <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+          <Input className="pl-8" placeholder="Buscar por rota, cliente, motorista, placa ou status..." value={busca} onChange={(e) => { setBusca(e.target.value); setPagina(1); }} />
+        </div>
+        <div className="flex items-center gap-2">
           <Dialog
             open={open}
             onOpenChange={(v) => {
@@ -606,8 +628,8 @@ function Viagens() {
               </DialogFooter>
             </DialogContent>
           </Dialog>
-        }
-      />
+        </div>
+      </div>
       <div className="mb-4 grid gap-3 sm:grid-cols-3">
         <Card className="p-4 shadow-panel">
           <p className="text-xs font-medium text-muted-foreground">Em trânsito</p>
@@ -637,11 +659,11 @@ function Viagens() {
             ))}
           </div>
         </Card>
-      ) : !viagens?.length ? (
+      ) : !filtrados?.length ? (
         <EmptyState
           icon={ArrowLeftRight}
           title="Nenhuma viagem registrada"
-          description="Cadastre a viagem, lance diesel e pedágios, e conclua para gerar a receita automaticamente."
+          description={busca ? "Nada encontrado para a busca." : "Cadastre a viagem, lance diesel e pedágios, e conclua para gerar a receita automaticamente."}
         />
       ) : (
         <Card className="overflow-hidden shadow-panel">
@@ -770,7 +792,7 @@ function Viagens() {
           <div className="flex items-center justify-between border-t px-4 py-3 text-sm text-muted-foreground">
             <span>
               Mostrando {(paginaAtual - 1) * pageSize + 1}–
-              {Math.min(paginaAtual * pageSize, viagens?.length ?? 0)} de {viagens?.length ?? 0}
+              {Math.min(paginaAtual * pageSize, filtrados.length)} de {filtrados.length}
             </span>
             <div className="flex items-center gap-1">
               <Button

@@ -8,7 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Plus, Loader2, Search, Trash2, Pencil } from "lucide-react";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
@@ -54,6 +54,7 @@ function EmpresasPage() {
   const [form, setForm] = useState(emptyForm);
   const [editing, setEditing] = useState<Empresa | null>(null);
   const [lookingUp, setLookingUp] = useState(false);
+  const [busca, setBusca] = useState("");
 
   const { data: empresas } = useQuery({
     queryKey: ["empresas"],
@@ -64,6 +65,17 @@ function EmpresasPage() {
       if (error) throw error; return (data ?? []) as Empresa[];
     },
   });
+
+  const filtrados = useMemo(() => {
+    const q = busca.trim().toLowerCase();
+    return (empresas ?? []).filter((e) => {
+      if (!q) return true;
+      return (e.nome_fantasia || "").toLowerCase().includes(q)
+        || (e.razao_social || "").toLowerCase().includes(q)
+        || (e.cnpj || "").replace(/\D/g, "").includes(q.replace(/\D/g, ""))
+        || (e.cidade || "").toLowerCase().includes(q);
+    });
+  }, [empresas, busca]);
 
   const openNew = () => {
     setEditing(null);
@@ -192,8 +204,13 @@ function EmpresasPage() {
 
   return (
     <>
-      <PageHeader eyebrow="Configurações" title="Empresas" description="Empresas às quais você tem acesso."
-        actions={
+      <PageHeader eyebrow="Configurações" title="Empresas" description="Empresas às quais você tem acesso." />
+      <div className="mb-3 flex flex-col gap-2 sm:flex-row sm:items-center">
+        <div className="relative flex-1">
+          <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+          <Input className="pl-8" placeholder="Buscar por nome, CNPJ ou cidade..." value={busca} onChange={(e) => setBusca(e.target.value)} />
+        </div>
+        <div className="flex items-center gap-2">
           <Dialog open={open} onOpenChange={(v) => { setOpen(v); if (!v) setForm(emptyForm); }}>
             <DialogTrigger asChild><Button onClick={openNew}><Plus className="mr-1 h-4 w-4" />Nova empresa</Button></DialogTrigger>
             <DialogContent>
@@ -252,13 +269,13 @@ function EmpresasPage() {
               </form>
             </DialogContent>
           </Dialog>
-        }
-      />
+        </div>
+      </div>
       <Card className="overflow-hidden shadow-panel">
         <Table>
           <TableHeader><TableRow><TableHead>Nome fantasia</TableHead><TableHead>Razão social</TableHead><TableHead>CNPJ</TableHead><TableHead>Cidade</TableHead><TableHead className="w-10"></TableHead></TableRow></TableHeader>
           <TableBody>
-            {empresas?.map((e) => (
+            {filtrados.map((e) => (
               <TableRow key={e.id}>
                 <TableCell className="font-medium">{e.nome_fantasia}</TableCell>
                 <TableCell className="text-muted-foreground">{e.razao_social ?? "—"}</TableCell>

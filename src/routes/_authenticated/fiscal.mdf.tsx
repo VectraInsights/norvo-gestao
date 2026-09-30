@@ -225,6 +225,7 @@ function MdfPage() {
   const [mdfSitTab, setMdfSitTab] = useState("abertos");
   const [periodoIni, setPeriodoIni] = useState("");
   const [periodoFim, setPeriodoFim] = useState("");
+  const [busca, setBusca] = useState("");
 
   const { data: docs, isLoading } = useQuery({
     enabled: !!empresa,
@@ -256,6 +257,15 @@ function MdfPage() {
     } else if (d.status !== filtroStatus) return false;
     if (periodoIni && d.created_at < periodoIni) return false;
     if (periodoFim && d.created_at > periodoFim + "T23:59:59") return false;
+    const q = busca.trim().toLowerCase();
+    if (q) {
+      const alvo = [
+        d.numero ?? "", d.serie ?? "", d.status ?? "",
+        d.chave_acesso ?? "", d.uf_carregamento ?? "", d.uf_descarregamento ?? "",
+        d.protocolo_sefaz ?? "",
+      ].join(" ").toLowerCase();
+      if (!alvo.includes(q)) return false;
+    }
     return true;
   });
 
@@ -272,14 +282,20 @@ function MdfPage() {
         eyebrow="Fiscal"
         title="MDF-e"
         description="Manifesto Eletrônico de Documentos Fiscais (modelo 58). Emissão, vinculação de CT-e e encerramento."
-        actions={
+      />
+      <div className="mb-3 flex flex-col gap-2 sm:flex-row sm:items-center">
+        <div className="relative flex-1">
+          <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+          <Input className="pl-8" placeholder="Buscar por número, chave, UF ou status..." value={busca} onChange={(e) => setBusca(e.target.value)} />
+        </div>
+        <div className="flex items-center gap-2">
           <div className="flex gap-2">
 <Button size="sm" disabled={!empresa?.id} onClick={() => { if (empresa?.id) setOpen(true); }}>
   <Plus className="mr-1 h-4 w-4" /> Novo MDF-e
             </Button>
           </div>
-        }
-      />
+        </div>
+      </div>
 
       <Tabs value={filtroStatus} onValueChange={setFiltroStatus}>
         <div className="flex flex-wrap gap-3 items-end justify-between">
@@ -317,7 +333,7 @@ function MdfPage() {
         <EmptyState
           icon={RoadIcon}
           title="Nenhum MDF-e"
-          description="Manifestos emitidos aparecerão aqui. Clique em 'Novo MDF-e' para criar um manifesto vinculando CT-e do período."
+          description={busca ? "Nada encontrado para a busca na aba/filtros atuais." : "Manifestos emitidos aparecerão aqui. Clique em 'Novo MDF-e' para criar um manifesto vinculando CT-e do período."}
         />
       ) : (
         <Card className="overflow-hidden">

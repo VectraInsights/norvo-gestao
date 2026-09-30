@@ -3754,3 +3754,16 @@ Espelhado na Vercel.
   Concluir, navegação) mantêm o foco padrão. Confirms nativos
   (`confirm()`) já confirmavam com Enter.
 - Espelhado na Vercel via push em main.
+
+## Pesquisa em todas as listagens + botão à direita (30/09)
+
+- 21 telas ganharam busca com filtro (nome/doc/cidade/placa conforme a
+  entidade) e botão Novo à direita da pesquisa, sem actions no
+  PageHeader: empresas, usuários, movimentações, fornecedores,
+  reposição, cadastros, empréstimos, relatórios (só tabelas),
+  transferências, contas, viagens, MDF-e (dentro da aba ativa),
+  OS, projetos, adiantamentos, colaboradores, comissões, folha,
+  clientes, CRM (kanban), pedidos. Paginações/abas/KPIs integrados.
+- Fora: DRE e recebidas (relatórios/fluxo crítico, sem busca textual).
+- Corrigido TDZ em usuarios (busca usada antes de declarar).
+- Espelhado na Vercel via push em main.

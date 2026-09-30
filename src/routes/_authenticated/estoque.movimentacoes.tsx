@@ -33,8 +33,8 @@ import {
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
-import { ArrowLeftRight, Boxes, Plus } from "lucide-react";
-import { useState } from "react";
+import { ArrowLeftRight, Boxes, Plus, Search } from "lucide-react";
+import { useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEmpresaAtual } from "@/hooks/use-empresa";
@@ -93,6 +93,7 @@ function Movimentacoes() {
   const { data: empresa } = useEmpresaAtual();
   const qc = useQueryClient();
   const [open, setOpen] = useState(false);
+  const [busca, setBusca] = useState("");
   const [form, setForm] = useState(EMPTY_FORM);
   const [trOpen, setTrOpen] = useState(false);
   const [tr, setTr] = useState({
@@ -122,6 +123,17 @@ function Movimentacoes() {
       return (data ?? []) as unknown as Movimentacao[];
     },
   });
+
+  const filtrados = useMemo(() => {
+    const q = busca.trim().toLowerCase();
+    return (movs ?? []).filter((m) => {
+      if (!q) return true;
+      return (m.produto?.nome || "").toLowerCase().includes(q)
+        || (m.tipo || "").toLowerCase().includes(q)
+        || (m.deposito?.nome || "").toLowerCase().includes(q)
+        || (m.observacoes || "").toLowerCase().includes(q);
+    });
+  }, [movs, busca]);
 
   const { data: depositos = [] } = useQuery({
     enabled: !!empresa,
@@ -238,8 +250,13 @@ function Movimentacoes() {
         eyebrow="Estoque"
         title="Movimentações"
         description="Entradas, saídas e ajustes de invent��rio."
-        actions={
-          <div className="flex gap-2">
+      />
+      <div className="mb-3 flex flex-col gap-2 sm:flex-row sm:items-center">
+        <div className="relative flex-1">
+          <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+          <Input className="pl-8" placeholder="Buscar por produto, depósito ou observação..." value={busca} onChange={(e) => setBusca(e.target.value)} />
+        </div>
+        <div className="flex items-center gap-2">
             <Dialog
               open={trOpen}
               onOpenChange={(v) => {
@@ -385,9 +402,8 @@ function Movimentacoes() {
                 </form>
               </DialogContent>
             </Dialog>
-          </div>
-        }
-      />
+        </div>
+      </div>
 
       {isLoading ? (
         <Card className="overflow-hidden shadow-panel">
@@ -397,11 +413,11 @@ function Movimentacoes() {
             ))}
           </div>
         </Card>
-      ) : !movs?.length ? (
+      ) : !filtrados?.length ? (
         <EmptyState
           icon={Boxes}
           title="Sem movimentações"
-          description="Registre a primeira entrada de compras ou ajuste de inventário."
+          description={busca ? "Nada encontrado para a busca." : "Registre a primeira entrada de compras ou ajuste de inventário."}
         />
       ) : (
         <Card className="overflow-hidden shadow-panel">
@@ -418,7 +434,7 @@ function Movimentacoes() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {movs.map((m) => (
+              {filtrados.map((m) => (
                 <TableRow key={m.id}>
                   <TableCell className="text-tabular">{dateBR(m.data)}</TableCell>
                   <TableCell className="font-medium">{m.produto?.nome ?? "—"}</TableCell>

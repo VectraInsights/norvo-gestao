@@ -32,7 +32,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Percent, Plus, Trash2, HandCoins, Pencil } from "lucide-react";
+import { Percent, Plus, Trash2, HandCoins, Pencil, Search } from "lucide-react";
 import { useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -82,6 +82,7 @@ function ComissoesPage() {
   const [ano, setAno] = useState(now.getFullYear());
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState<Comissao | null>(null);
+  const [busca, setBusca] = useState("");
 
   const [colaborador, setColaborador] = useState("");
   const [descricao, setDescricao] = useState("");
@@ -144,7 +145,16 @@ function ComissoesPage() {
     },
   });
 
-  const total = (lista ?? []).reduce((s, c) => s + Number(c.valor), 0);
+  const filtrados = useMemo(() => {
+    const q = busca.trim().toLowerCase();
+    if (!q) return lista ?? [];
+    return (lista ?? []).filter((c) =>
+      (c.colaboradores?.nome || "").toLowerCase().includes(q)
+      || (c.descricao || "").toLowerCase().includes(q),
+    );
+  }, [lista, busca]);
+
+  const total = filtrados.reduce((s, c) => s + Number(c.valor), 0);
 
   const criar = useMutation({
     mutationFn: async () => {
@@ -319,9 +329,14 @@ function ComissoesPage() {
         eyebrow="DP"
         title="Comissões"
         description="Cálculo de comissões por colaborador e competência, com geração de contas a pagar."
-        actions={
-          <div className="flex flex-wrap gap-2">
-            <Select value={String(mes)} onValueChange={(v) => setMes(Number(v))}>
+      />
+      <div className="mb-3 flex flex-col gap-2 sm:flex-row sm:items-center">
+        <div className="relative flex-1">
+          <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+          <Input className="pl-8" placeholder="Buscar por colaborador ou descrição..." value={busca} onChange={(e) => setBusca(e.target.value)} />
+        </div>
+        <div className="flex flex-wrap items-center gap-2">
+          <Select value={String(mes)} onValueChange={(v) => setMes(Number(v))}>
               <SelectTrigger className="w-[110px]">
                 <SelectValue />
               </SelectTrigger>
@@ -428,9 +443,8 @@ function ComissoesPage() {
                 </DialogFooter>
               </DialogContent>
             </Dialog>
-          </div>
-        }
-      />
+        </div>
+      </div>
 
       {isLoading ? (
         <div className="space-y-2">
@@ -443,6 +457,12 @@ function ComissoesPage() {
           icon={Percent}
           title="Nenhuma comissão nesta competência"
           description="Lance comissões por colaborador e gere as contas a pagar automaticamente."
+        />
+      ) : !filtrados.length ? (
+        <EmptyState
+          icon={Percent}
+          title="Nenhum resultado"
+          description="Nada encontrado para a busca."
         />
       ) : (
         <Card className="shadow-panel">
@@ -462,7 +482,7 @@ function ComissoesPage() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {lista.map((c) => (
+              {filtrados.map((c) => (
                 <TableRow key={c.id}>
                   <TableCell className="font-medium">{c.colaboradores?.nome ?? "—"}</TableCell>
                   <TableCell className="max-w-[220px] truncate text-muted-foreground">

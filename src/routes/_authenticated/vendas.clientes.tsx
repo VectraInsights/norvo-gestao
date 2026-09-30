@@ -12,7 +12,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Loader2, Plus, Search, Trash2, Users, Pencil } from "lucide-react";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEmpresaAtual } from "@/hooks/use-empresa";
@@ -53,6 +53,7 @@ function Clientes() {
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [editing, setEditing] = useState<Contato | null>(null);
   const [deleting, setDeleting] = useState<Contato | null>(null);
+  const [busca, setBusca] = useState("");
   const toggleOne = (id: string) => setSelected((s) => { const n = new Set(s); n.has(id) ? n.delete(id) : n.add(id); return n; });
 
   const lookupCnpj = async () => {
@@ -118,6 +119,17 @@ function Clientes() {
       return (data ?? []) as Contato[];
     },
   });
+
+  const filtrados = useMemo(() => {
+    const q = busca.trim().toLowerCase();
+    if (!q) return contatos ?? [];
+    const qDig = q.replace(/\D/g, "");
+    return (contatos ?? []).filter((c) =>
+      (c.nome || "").toLowerCase().includes(q)
+      || (qDig && (c.documento || "").replace(/\D/g, "").includes(qDig))
+      || (c.cidade || "").toLowerCase().includes(q),
+    );
+  }, [contatos, busca]);
 
   const criar = useMutation({
     mutationFn: async (input: ReturnType<typeof emptyForm>) => {
@@ -255,11 +267,16 @@ function Clientes() {
   return (
     <>
       <PageHeader eyebrow="Vendas & CRM" title="Clientes e fornecedores" description="Cadastro unificado de contatos."
-        actions={
-          <div className="flex items-center gap-2">
-            <Button variant="outline" size="sm">
-              Adicionar trilha de auditoria
-            </Button>
+      />
+      <div className="mb-3 flex flex-col gap-2 sm:flex-row sm:items-center">
+        <div className="relative flex-1">
+          <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+          <Input className="pl-8" placeholder="Buscar por nome, CPF/CNPJ ou cidade..." value={busca} onChange={(e) => setBusca(e.target.value)} />
+        </div>
+        <div className="flex items-center gap-2">
+          <Button variant="outline" size="sm">
+            Adicionar trilha de auditoria
+          </Button>
             <Dialog open={open} onOpenChange={(v) => { if (!criar.isPending && !editar.isPending) { setOpen(v); if (!v) { setEditing(null); setForm(emptyForm()); } } }}>
               <DialogTrigger asChild><Button onClick={openCreate}><Plus className="mr-1 h-4 w-4" />Novo contato</Button></DialogTrigger>
               <DialogContent className="max-h-[90vh] overflow-y-auto">
@@ -322,13 +339,12 @@ function Clientes() {
               </form>
             </DialogContent>
             </Dialog>
-          </div>
-        }
-      />
+        </div>
+      </div>
       {isLoading ? (
         <div className="space-y-2">{Array.from({ length: 4 }).map((_, i) => <div key={i} className="h-12 animate-pulse rounded-md bg-muted/30" />)}</div>
-      ) : !contatos?.length ? (
-        <EmptyState icon={Users} title="Nenhum contato" description="Cadastre clientes, fornecedores e transportadoras." />
+      ) : !filtrados?.length ? (
+        <EmptyState icon={Users} title="Nenhum contato" description={busca ? "Nada encontrado para a busca." : "Cadastre clientes, fornecedores e transportadoras."} />
       ) : (
         <Card className="overflow-hidden shadow-panel">
           {selected.size > 0 && (
@@ -360,8 +376,8 @@ function Clientes() {
               <TableRow>
                 <TableHead className="w-10">
                   <Checkbox
-                    checked={contatos.length > 0 && selected.size === contatos.length}
-                    onCheckedChange={(v) => setSelected(v === true ? new Set(contatos.map((c) => c.id)) : new Set())}
+                    checked={filtrados.length > 0 && selected.size === filtrados.length}
+                    onCheckedChange={(v) => setSelected(v === true ? new Set(filtrados.map((c) => c.id)) : new Set())}
                     aria-label="Selecionar todos"
                   />
                 </TableHead>
@@ -369,7 +385,7 @@ function Clientes() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {contatos.map((c) => (
+              {filtrados.map((c) => (
                 <TableRow key={c.id} data-state={selected.has(c.id) ? "selected" : undefined}>
                   <TableCell>
                     <Checkbox checked={selected.has(c.id)} onCheckedChange={() => toggleOne(c.id)} aria-label={`Selecionar ${c.nome}`} />

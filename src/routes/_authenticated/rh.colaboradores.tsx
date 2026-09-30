@@ -44,7 +44,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-import { ChevronLeft, ChevronRight, Users, Pencil, Plus, Trash2, X, FileUp } from "lucide-react";
+import { ChevronLeft, ChevronRight, Users, Pencil, Plus, Trash2, X, FileUp, Search } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import * as pdfjsLib from "pdfjs-dist";
 import pdfWorker from "pdfjs-dist/build/pdf.worker.min.mjs?url";
@@ -248,6 +248,7 @@ function ColaboradoresPage() {
   const [editing, setEditing] = useState<Colab | null>(null);
   const [form, setForm] = useState(formInicial);
   const [pagina, setPagina] = useState(1);
+  const [busca, setBusca] = useState("");
   const set = <K extends keyof typeof form>(k: K, v: (typeof form)[K]) =>
     setForm((f) => ({ ...f, [k]: v }));
 
@@ -1035,15 +1036,24 @@ function ColaboradoresPage() {
   });
 
   const pageSize = 25;
-  const totalPaginas = Math.max(1, Math.ceil((colabs?.length ?? 0) / pageSize));
-  const paginaAtual = Math.min(pagina, totalPaginas);
   // Ordenação da listagem (padrão: nome A-Z); cabeçalhos clicáveis.
   const [ordem, setOrdem] = useState<{
     key: "codigo" | "nome" | "cargo" | "status" | "data_admissao" | "salario_base";
     dir: 1 | -1;
   }>({ key: "nome", dir: 1 });
+  const filtrados = useMemo(() => {
+    const q = busca.trim().toLowerCase();
+    if (!q) return colabs ?? [];
+    const qDig = q.replace(/\D/g, "");
+    return (colabs ?? []).filter((c) =>
+      (c.nome || "").toLowerCase().includes(q)
+      || (qDig && (c.cpf ?? "").replace(/\D/g, "").includes(qDig))
+      || (c.cargo || "").toLowerCase().includes(q)
+      || ((c as any).cidade || "").toLowerCase().includes(q),
+    );
+  }, [colabs, busca]);
   const colabsOrdenados = useMemo(() => {
-    const arr = [...(colabs ?? [])];
+    const arr = [...filtrados];
     const val = (c: Colab): string | number => {
       if (ordem.key === "codigo") return Number(c.codigo ?? 0);
       if (ordem.key === "salario_base") return Number(c.salario_base ?? 0);
@@ -1061,7 +1071,9 @@ function ColaboradoresPage() {
       return r * ordem.dir;
     });
     return arr;
-  }, [colabs, ordem]);
+  }, [filtrados, ordem]);
+  const totalPaginas = Math.max(1, Math.ceil(colabsOrdenados.length / pageSize));
+  const paginaAtual = Math.min(pagina, totalPaginas);
   const colabsVisiveis = colabsOrdenados.slice((paginaAtual - 1) * pageSize, paginaAtual * pageSize);
   const alternarOrdem = (key: typeof ordem.key) => {
     setOrdem((o) => (o.key === key ? { key, dir: o.dir === 1 ? -1 : 1 } : { key, dir: 1 }));
@@ -1384,8 +1396,13 @@ function ColaboradoresPage() {
       <PageHeader
         title="Colaboradores"
         description="Cadastro de funcionários, cargos e dados de pagamento."
-        actions={
-          <div className="flex gap-2">
+      />
+      <div className="mb-3 flex flex-col gap-2 sm:flex-row sm:items-center">
+        <div className="relative flex-1">
+          <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+          <Input className="pl-8" placeholder="Buscar por nome, CPF, cargo ou cidade..." value={busca} onChange={(e) => { setBusca(e.target.value); setPagina(1); }} />
+        </div>
+        <div className="flex items-center gap-2">
             <Dialog open={cargosOpen} onOpenChange={setCargosOpen}>
               <DialogTrigger asChild>
                 <Button size="sm" variant="outline">
@@ -1893,14 +1910,13 @@ function ColaboradoresPage() {
                 </DialogFooter>
               </DialogContent>
             </Dialog>
-          </div>
-        }
-      />
+        </div>
+      </div>
 
       <Card className="overflow-hidden border-2 border-primary/20 shadow-panel">
         <div className="bg-primary text-primary-foreground px-3 py-2 flex items-center justify-between">
           <h3 className="text-sm font-semibold">Colaboradores</h3>
-          <span className="text-xs opacity-80">Qtde: {colabs?.length ?? 0}</span>
+          <span className="text-xs opacity-80">Qtde: {colabsOrdenados.length}</span>
         </div>
         <div className="bg-primary/8 text-primary/80 border-b border-primary/20 px-3 py-1.5 flex items-center justify-between">
           <span className="text-[10px] font-semibold uppercase tracking-wide">
@@ -1919,6 +1935,12 @@ function ColaboradoresPage() {
             icon={Users}
             title="Nenhum colaborador ainda"
             description="Cadastre o primeiro colaborador."
+          />
+        ) : colabsOrdenados.length === 0 ? (
+          <EmptyState
+            icon={Users}
+            title="Nenhum resultado"
+            description="Nada encontrado para a busca."
           />
         ) : (
           <>
@@ -1999,7 +2021,7 @@ function ColaboradoresPage() {
             <div className="flex items-center justify-between border-t px-4 py-3 text-sm text-muted-foreground">
               <span>
                 Mostrando {(paginaAtual - 1) * pageSize + 1}–
-                {Math.min(paginaAtual * pageSize, colabs?.length ?? 0)} de {colabs?.length ?? 0}
+                {Math.min(paginaAtual * pageSize, colabsOrdenados.length)} de {colabsOrdenados.length}
               </span>
               <div className="flex items-center gap-1">
                 <Button

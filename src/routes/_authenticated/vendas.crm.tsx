@@ -15,7 +15,7 @@ import {
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
-import { Plus, Trash2, GripVertical } from "lucide-react";
+import { Plus, Trash2, GripVertical, Search } from "lucide-react";
 import { useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -61,6 +61,7 @@ function CRM() {
   const [contato, setContato] = useState<string>("none");
   const [etapa, setEtapa] = useState<string>("");
   const [activeId, setActiveId] = useState<string | null>(null);
+  const [busca, setBusca] = useState("");
 
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 5 } }));
 
@@ -103,12 +104,21 @@ function CRM() {
     },
   });
 
+  const filtrados = useMemo(() => {
+    const q = busca.trim().toLowerCase();
+    if (!q) return oports;
+    return oports.filter((o) =>
+      (o.titulo || "").toLowerCase().includes(q)
+      || (o.contatos?.nome || "").toLowerCase().includes(q),
+    );
+  }, [oports, busca]);
+
   const porEtapa = useMemo(() => {
     const m = new Map<string, Oport[]>();
     for (const e of etapas) m.set(e.id, []);
-    for (const o of oports) if (o.etapa_id && m.has(o.etapa_id)) m.get(o.etapa_id)!.push(o);
+    for (const o of filtrados) if (o.etapa_id && m.has(o.etapa_id)) m.get(o.etapa_id)!.push(o);
     return m;
-  }, [etapas, oports]);
+  }, [etapas, filtrados]);
 
   const totalPorEtapa = (id: string) =>
     (porEtapa.get(id) ?? []).reduce((s, o) => s + Number(o.valor || 0), 0);
@@ -205,12 +215,18 @@ function CRM() {
         eyebrow="Vendas & CRM"
         title="Funil de vendas"
         description="Arraste as oportunidades entre as etapas do funil."
-        actions={
+      />
+      <div className="mb-3 flex flex-col gap-2 sm:flex-row sm:items-center">
+        <div className="relative flex-1">
+          <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+          <Input className="pl-8" placeholder="Buscar por título ou cliente..." value={busca} onChange={(e) => setBusca(e.target.value)} />
+        </div>
+        <div className="flex items-center gap-2">
           <Button onClick={() => openNew()} disabled={etapas.length === 0}>
             <Plus className="mr-2 h-4 w-4" /> Nova oportunidade
           </Button>
-        }
-      />
+        </div>
+      </div>
 
       {loadEt || loadOp ? (
         <div className="grid grid-cols-1 gap-4 md:grid-cols-3 xl:grid-cols-6">

@@ -3,6 +3,7 @@ import { PageHeader } from "@/components/erp/page-header";
 import { EmptyState } from "@/components/erp/empty-state";
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
   Table,
@@ -19,7 +20,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { BarChart3, Boxes, Coins, Gauge, TimerOff } from "lucide-react";
+import { BarChart3, Boxes, Coins, Gauge, Search, TimerOff } from "lucide-react";
 import { useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery } from "@tanstack/react-query";
@@ -61,6 +62,7 @@ const CLASSE_COR: Record<string, string> = {
 function RelatoriosEstoque() {
   const { data: empresa } = useEmpresaAtual();
   const [janelaParados, setJanelaParados] = useState("90");
+  const [busca, setBusca] = useState("");
 
   const { data: produtos, isLoading: loadingProd } = useQuery({
     enabled: !!empresa,
@@ -168,13 +170,31 @@ function RelatoriosEstoque() {
 
   const loading = loadingProd || loadingMovs;
 
+  const filtradosAbc = useMemo(() => {
+    const q = busca.trim().toLowerCase();
+    if (!q) return analise.abc;
+    return analise.abc.filter((r) => (r.prod.nome || "").toLowerCase().includes(q));
+  }, [analise, busca]);
+
+  const filtradosParados = useMemo(() => {
+    const q = busca.trim().toLowerCase();
+    if (!q) return analise.parados;
+    return analise.parados.filter((r) => (r.prod.nome || "").toLowerCase().includes(q));
+  }, [analise, busca]);
+
   return (
     <>
       <PageHeader
         eyebrow="Estoque"
         title="Relatórios de estoque"
         description="Curva ABC, giro e itens parados — últimos 12 meses, valor ao custo padrão."
-        actions={
+      />
+      <div className="mb-3 flex flex-col gap-2 sm:flex-row sm:items-center">
+        <div className="relative flex-1">
+          <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+          <Input className="pl-8" placeholder="Buscar produto..." value={busca} onChange={(e) => setBusca(e.target.value)} />
+        </div>
+        <div className="flex items-center gap-2">
           <Select value={janelaParados} onValueChange={setJanelaParados}>
             <SelectTrigger className="w-52">
               <SelectValue />
@@ -185,8 +205,8 @@ function RelatoriosEstoque() {
               <SelectItem value="180">Parados há 180+ dias</SelectItem>
             </SelectContent>
           </Select>
-        }
-      />
+        </div>
+      </div>
 
       {loading ? (
         <div className="space-y-3">
@@ -257,7 +277,7 @@ function RelatoriosEstoque() {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {analise.abc.slice(0, 15).map((r) => (
+                    {filtradosAbc.slice(0, 15).map((r) => (
                       <TableRow key={r.prod.id}>
                         <TableCell className="font-medium">{r.prod.nome}</TableCell>
                         <TableCell className="text-right text-tabular">{brl(r.valor)}</TableCell>
@@ -282,9 +302,9 @@ function RelatoriosEstoque() {
                 Itens parados (dinheiro parado no estoque)
               </h3>
               <Card className="overflow-hidden shadow-panel">
-                {!analise.parados.length ? (
+                {!filtradosParados.length ? (
                   <div className="p-6 text-sm text-muted-foreground">
-                    Nenhum item parado na janela selecionada.
+                    {busca ? "Nada encontrado para a busca." : "Nenhum item parado na janela selecionada."}
                   </div>
                 ) : (
                   <Table>
@@ -297,7 +317,7 @@ function RelatoriosEstoque() {
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {analise.parados.map((r) => (
+                      {filtradosParados.map((r) => (
                         <TableRow key={r.prod.id}>
                           <TableCell className="font-medium">{r.prod.nome}</TableCell>
                           <TableCell className="text-right text-tabular">

@@ -12,7 +12,7 @@ import { MoneyInput } from "@/components/erp/money-input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Banknote, Plus, ChevronRight, Trash2, HandCoins } from "lucide-react";
+import { Banknote, Plus, ChevronRight, Trash2, HandCoins, Search } from "lucide-react";
 import { useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -73,6 +73,7 @@ function EmprestimosPage() {
   const [parcelas, setParcelas] = useState("12");
   const [contratacao, setContratacao] = useState(format(new Date(), "yyyy-MM-dd"));
   const [primeiro, setPrimeiro] = useState(format(addMonths(new Date(), 1), "yyyy-MM-dd"));
+  const [busca, setBusca] = useState("");
 
   const { data: lista, isLoading } = useQuery({
     enabled: !!empresa,
@@ -184,13 +185,28 @@ function EmprestimosPage() {
 
   const emprestimoSel = (lista ?? []).find((e) => e.id === sel) ?? null;
 
+  const filtrados = useMemo(() => {
+    const q = busca.trim().toLowerCase();
+    if (!q) return lista ?? [];
+    return (lista ?? []).filter((e) =>
+      (e.descricao || "").toLowerCase().includes(q)
+      || (e.credor || "").toLowerCase().includes(q),
+    );
+  }, [lista, busca]);
+
   return (
     <>
       <PageHeader
         eyebrow="Financeiro"
         title="Empréstimos e financiamentos"
         description="Controle contratos, parcelas (tabela Price), juros e amortização, e gere as contas a pagar."
-        actions={
+      />
+      <div className="mb-3 flex flex-col gap-2 sm:flex-row sm:items-center">
+        <div className="relative flex-1">
+          <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+          <Input className="pl-8" placeholder="Buscar por descrição ou credor..." value={busca} onChange={(e) => setBusca(e.target.value)} />
+        </div>
+        <div className="flex items-center gap-2">
           <Dialog open={open} onOpenChange={(o) => { setOpen(o); if (!o) reset(); }}>
             <DialogTrigger asChild>
               <Button><Plus className="mr-1.5 h-4 w-4" /> Novo contrato</Button>
@@ -256,8 +272,8 @@ function EmprestimosPage() {
               </DialogFooter>
             </DialogContent>
           </Dialog>
-        }
-      />
+        </div>
+      </div>
 
       {isLoading ? (
         <div className="space-y-2">{[...Array(4)].map((_, i) => <Skeleton key={i} className="h-12 w-full" />)}</div>
@@ -266,6 +282,12 @@ function EmprestimosPage() {
           icon={Banknote}
           title="Nenhum contrato"
           description="Cadastre empréstimos e financiamentos para acompanhar parcelas, juros e impacto no fluxo de caixa."
+        />
+      ) : !filtrados.length ? (
+        <EmptyState
+          icon={Banknote}
+          title="Nenhum contrato encontrado"
+          description="Nada encontrado para a busca."
         />
       ) : (
         <div className="grid gap-4 lg:grid-cols-[1fr_1.2fr]">
@@ -280,7 +302,7 @@ function EmprestimosPage() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {lista.map((e) => (
+                {filtrados.map((e) => (
                   <TableRow
                     key={e.id}
                     className={sel === e.id ? "bg-muted/50" : "cursor-pointer"}

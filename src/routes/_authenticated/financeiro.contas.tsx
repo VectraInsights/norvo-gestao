@@ -141,6 +141,7 @@ function ContasFinanceiras() {
   const autoConciliar = true;
   const [reconcilingId, setReconcilingId] = useState<string | null>(null);
   const [preparando, setPreparando] = useState<string | null>(null);
+  const [busca, setBusca] = useState("");
 
   const abrirConciliacao = async (id: string) => {
     if (!autoConciliar || !empresa?.id) { setReconcilingId(id); return; }
@@ -191,6 +192,18 @@ function ContasFinanceiras() {
   });
 
   const contasCorrentes = (contas ?? []).filter((c) => c.tipo === "corrente");
+
+  const filtrados = useMemo(() => {
+    const q = busca.trim().toLowerCase();
+    return (contas ?? []).filter((c) => {
+      if (!q) return true;
+      return (c.nome || "").toLowerCase().includes(q)
+        || (c.banco || "").toLowerCase().includes(q)
+        || (c.agencia || "").toLowerCase().includes(q)
+        || (c.conta || "").toLowerCase().includes(q)
+        || (TIPO_LABEL[c.tipo] || "").toLowerCase().includes(q);
+    });
+  }, [contas, busca]);
 
   const resetWizard = () => { setStep(1); setTipo("corrente"); setForm(initialForm("corrente")); };
 
@@ -328,8 +341,13 @@ function ContasFinanceiras() {
   return (
     <>
       <input ref={fileRef} type="file" accept=".ofx,.OFX,text/plain" className="hidden" onChange={handleFile} />
-      <PageHeader eyebrow="Financeiro" title="Contas financeiras" description="Cadastro e gestão das contas financeiras da empresa."
-        actions={
+      <PageHeader eyebrow="Financeiro" title="Contas financeiras" description="Cadastro e gestão das contas financeiras da empresa." />
+      <div className="mb-3 flex flex-col gap-2 sm:flex-row sm:items-center">
+        <div className="relative flex-1">
+          <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+          <Input className="pl-8" placeholder="Buscar por nome, banco, agência ou conta..." value={busca} onChange={(e) => setBusca(e.target.value)} />
+        </div>
+        <div className="flex items-center gap-2">
           <div className="flex items-center gap-3">
             <Button variant="outline" size="sm">
               Adicionar trilha de auditoria
@@ -562,10 +580,10 @@ function ContasFinanceiras() {
               </DialogContent>
             </Dialog>
           </div>
-        }
-      />
-      {!contas?.length ? (
-        <EmptyState icon={Banknote} title="Sem contas financeiras" description="Cadastre suas contas para acompanhar saldos e realizar conciliação." />
+        </div>
+      </div>
+      {!filtrados?.length ? (
+        <EmptyState icon={Banknote} title="Sem contas financeiras" description={busca ? "Nada encontrado para a busca." : "Cadastre suas contas para acompanhar saldos e realizar conciliação."} />
       ) : (
         <Card className="overflow-hidden shadow-panel">
           <Table>
@@ -574,7 +592,7 @@ function ContasFinanceiras() {
               <TableHead className="text-right">Saldo atual</TableHead><TableHead />
             </TableRow></TableHeader>
             <TableBody>
-              {contas.map((c) => (
+              {filtrados.map((c) => (
                 <TableRow key={c.id}>
                   <TableCell className="font-medium">
                     <div className="flex items-center gap-2">
