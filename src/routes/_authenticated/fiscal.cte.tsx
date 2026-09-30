@@ -3473,7 +3473,9 @@ function CtePage() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("cte_percursos" as any)
-        .select("id,empresa_id,nome,codigo,created_at")
+        .select(
+          "id,empresa_id,nome,codigo,created_at,cfop,coleta_cmun,coleta_xmun,coleta_uf,entrega_cmun,entrega_xmun,entrega_uf,distancia_km,duracao_horas,obs_gerais,icms_cst,icms_aliq,reducao_base,credito_outorgado,pis_aliq,cofins_aliq,ir_aliq,inss_aliq,csll_aliq,rem_cnpj,rem_nome,rem_ie,rem_uf,rem_cmun,rem_xmun,rem_logradouro,rem_nro,rem_bairro,rem_cep,rem_fone,dest_cnpj,dest_nome,dest_ie,dest_uf,dest_cmun,dest_xmun,dest_logradouro,dest_nro,dest_bairro,dest_cep,dest_fone,toma_tipo,toma_cnpj,toma_nome,toma_ie,toma_uf,toma_cmun,toma_xmun,toma_logradouro,toma_nro,toma_bairro,toma_cep,toma_fone,toma_email,consig_cnpj,consig_nome,consig_ie,consig_uf,consig_xmun,consig_cep,consig_logradouro,consig_nro,consig_bairro,redesp_cnpj,redesp_nome,redesp_ie,redesp_uf,redesp_xmun,redesp_cep,redesp_logradouro,redesp_nro,redesp_bairro,seg_nome,seg_cnpj,seg_apolice,seg_averbacao,seg_rctr_c,seg_rcf_dc,seg_adicional,seg_total,seg_repassar,seg_responsavel",
+        )
         .eq("empresa_id", empresa!.id)
         .order("nome");
       if (error) throw error;
@@ -3707,6 +3709,7 @@ function CtePage() {
 
       ...(r.obs_gerais ? { obsGerais: r.obs_gerais } : {}),
     }));
+    if (r.entrega_xmun) travarEntregaRef.current = true;
   };
   // Percurso é 100% automático e silencioso: salva/atualiza a cada emissão ou rascunho
   const persistirPercursoSilencioso = async () => {
@@ -3882,6 +3885,7 @@ function CtePage() {
   }, [docs, nfesTodas, percursoMatch, mercadorias, selecionadas, form.cnpjTomador]);
   useEffect(() => {
     percursoAplicadoKey.current = "";
+    travarEntregaRef.current = false;
   }, [open]);
   useEffect(() => {
     if (!open || percursos.length === 0) return;
@@ -3900,8 +3904,11 @@ function CtePage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open, form.cnpjTomador, mercadorias, selecionadas, percursos]);
   const entregaSrcRef = useRef("");
+  // Entrega vinda do percurso não é sobrescrita pela NF-e (ex.: redespacho p/ outra cidade)
+  const travarEntregaRef = useRef(false);
   useEffect(() => {
     if (!open) return;
+    if (travarEntregaRef.current) return;
     const hasRed = (form.cnpjRedespacho || "").replace(/\D/g, "").length === 14;
     const sel = mercadorias.filter((m) => selecionadas.has(m.chave));
     const a = (sel[0] || mercadorias[0] || {}) as any;

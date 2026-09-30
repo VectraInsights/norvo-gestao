@@ -3718,3 +3718,8 @@ Espelhado na Vercel.
 ## Veiculos: RNTRC alinhado (30/09)
 
 - Itens do dropdown com numero em coluna fixa mono de 9 digitos (completa com zero a esquerda so na exibicao), traco e nome sempre na mesma reta; caixa fechada acompanha o mesmo formato.
+
+## CT-e: percurso completo + entrega travada (30/09)
+
+- Query de percursos no CT-e lia so 5 colunas: avulso aplicava quase nada (entrega vinha da NF-e, faltavam dados de remetente/destinatario). Select ampliado com todas as colunas usadas (rota, fiscal, seguro, enderecos).
+- Entrega vinda do percurso nao e mais sobrescrita pela cidade da NF-e (trava por dialogo; ex. percurso MARABA x NF-e MACAPA).
