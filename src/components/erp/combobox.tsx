@@ -37,10 +37,17 @@ export function Combobox({
   className,
 }: Props) {
   const [open, setOpen] = useState(false);
+  const [q, setQ] = useState("");
   const sel = options.find((o) => o.value === value);
   const rotulo = (o: ComboOption) => o.label ?? "";
   return (
-    <Popover open={open} onOpenChange={setOpen}>
+    <Popover
+      open={open}
+      onOpenChange={(v) => {
+        setOpen(v);
+        if (!v) setQ("");
+      }}
+    >
       <PopoverTrigger asChild>
         <Button
           variant="outline"
@@ -57,7 +64,7 @@ export function Combobox({
       </PopoverTrigger>
       <PopoverContent className="w-[min(28rem,90vw)] p-0" align="start">
         <Command>
-          <CommandInput placeholder={searchPlaceholder} />
+          <CommandInput placeholder={searchPlaceholder} value={q} onValueChange={setQ} />
           <CommandList className="max-h-72">
             <CommandEmpty>{emptyText}</CommandEmpty>
             <CommandGroup>
@@ -67,8 +74,10 @@ export function Combobox({
                   value={`${rotulo(o)} ${o.value}`}
                   onSelect={() => {
                     onChange(o.value);
+                    setQ("");
                     setOpen(false);
                   }}
+                  className="whitespace-nowrap"
                 >
                   <Check className={cn("mr-2 h-4 w-4 shrink-0", value === o.value ? "opacity-100" : "opacity-0")} />
                   <span className="min-w-0 flex-1 truncate whitespace-nowrap">{rotulo(o)}</span>

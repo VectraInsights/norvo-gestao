@@ -20,14 +20,17 @@ export const cnpj = (v: string | null | undefined) => {
 // Máscara CPF/CNPJ conforme digita (limite 14 números)
 export function maskDoc(v: string | null | undefined) {
   const d = String(v || "").replace(/\D/g, "").slice(0, 14);
-  if (d.length <= 11)
-    return d
-      .replace(/(\d{3})(\d)/, "$1.$2")
-      .replace(/(\d{3})(\d)/, "$1.$2")
-      .replace(/(\d{3})(\d{1,2})$/, "$1-$2");
-  return d
-    .replace(/^(\d{2})(\d)/, "$1.$2")
-    .replace(/^(\d{2})\.(\d{3})(\d)/, "$1.$2.$3")
-    .replace(/\.(\d{3})(\d)/, "$1/$2")
-    .replace(/(\d{4})(\d)/, "$1-$2");
+  if (d.length <= 11) {
+    let r = d.slice(0, 3);
+    if (d.length > 3) r += "." + d.slice(3, 6);
+    if (d.length > 6) r += "." + d.slice(6, 9);
+    if (d.length > 9) r += "-" + d.slice(9, 11);
+    return r;
+  }
+  let r = d.slice(0, 2);
+  if (d.length > 2) r += "." + d.slice(2, 5);
+  if (d.length > 5) r += "." + d.slice(5, 8);
+  if (d.length > 8) r += "/" + d.slice(8, 12);
+  if (d.length > 12) r += "-" + d.slice(12, 14);
+  return r;
 }

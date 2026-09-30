@@ -3705,3 +3705,8 @@ Espelhado na Vercel.
 ## Mascara CPF/CNPJ em todo o sistema (30/09)
 
 - Novo maskDoc compartilhado em src/lib/format.ts (mascara conforme digita, limite 14 numeros). Aplicado em: contatos fiscal/cadastro, fornecedores, CPF do colaborador (salva e compara so numeros), CNPJ nova empresa (dashboard e configuracoes/empresas), CNPJ remetente/destinatario do CT-e manual, CNPJ consignatario/redespacho/seguradora + chave remetente/dest/tomador nos percursos (banco segue so numeros), veiculos usa o compartilhado. Buscas automaticas (Receita) e edicao abrem ja mascarados; tabelas de contatos/empresas exibem mascarado.
+
+## Correcao mascara + dropdown 1 linha (30/09)
+
+- maskDoc reescrito por fatiamento (regex encadeada errava o ponto no CNPJ: 00.5907-89...). Agora CNPJ xx.xxx.xxx/xxxx-xx e CPF xxx.xxx.xxx-xx corretos em toda digitacao.
+- Combobox: item em linha unica sem quebrar (numero + empresa) e pesquisa limpa ao selecionar/fechar (nao mantem a empresa filtrada).
