@@ -3839,3 +3839,7 @@ Espelhado na Vercel.
 ## CT-e: tooltip diagnostico percurso (01/10)
 
 - Caixa do percurso mostra no tooltip (hover) CFOP e seguradora lidos do banco, p/ diagnosticar caso de CFOP/seg nao aplicados com percurso unico cadastrado.
+
+## CIOT: bloqueia tracao de terceiro (01/10)
+
+- CIOT proprio agora exige cavalo com proprietario = CNPJ do emissor: query de veiculos traz proprietario/proprietario_doc, resumoCiot calcula donoOk, botao Emitir desabilita com aviso e emitirCiotLote barra com toast (divergente ou sem proprietario).

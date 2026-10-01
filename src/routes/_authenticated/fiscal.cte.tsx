@@ -1676,6 +1676,15 @@ function CtePage() {
       toast.error("Tração do 1º CT-e sem placa/eixos para o CIOT");
       return;
     }
+    if (!r.donoOk) {
+      const donoTxt = r.donoDoc
+        ? `está em nome de ${r.donoNome || "terceiro"} (${r.donoDoc.replace(/(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})/, "$1.$2.$3/$4-$5")})`
+        : "está sem proprietário cadastrado no veículo";
+      toast.error(`Tração ${r.placa} ${donoTxt}. CIOT próprio exige cavalo no CNPJ do emissor.`, {
+        duration: 8000,
+      });
+      return;
+    }
     if (!r.km) {
       toast.error("Distância (km) do 1º CT-e necessária para o CIOT");
       return;
@@ -2070,7 +2079,7 @@ function CtePage() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("veiculos" as never)
-        .select("id,placa,marca_modelo,tipo,renavam,rntrc,tag_pedagio,quantidade_eixos")
+        .select("id,placa,marca_modelo,tipo,renavam,rntrc,tag_pedagio,quantidade_eixos,proprietario,proprietario_doc")
         .eq("empresa_id", empresa!.id)
         .order("placa")
         .limit(100);
@@ -2084,6 +2093,8 @@ function CtePage() {
         rntrc: string | null;
         tag_pedagio: string | null;
         quantidade_eixos: number | null;
+        proprietario: string | null;
+        proprietario_doc: string | null;
       }>;
     },
   });
@@ -2105,6 +2116,13 @@ function CtePage() {
     const km = Math.round(Number(String(forms[0]?.distanciaKm || "").replace(",", ".")) || 0);
     const pesoTotal = forms.reduce((a, f) => a + (Number(String(f?.peso || "").replace(",", ".")) || 0), 0);
     const piso = eixos > 0 && km > 0 ? pisoMinimoAntt("Carga Geral", eixos, km) : null;
+    // CIOT próprio exige tração no CNPJ do emissor: compara o proprietário do
+    // cavalo (cadastro de veículos) com o CNPJ da empresa emissora do CT-e.
+    const emitCnpjCiot = String((empresa as any)?.cnpj || "").replace(/\D/g, "");
+    const veicTrac = (veiculos || []).find((v: any) => String(v.placa || "").toUpperCase() === placa);
+    const donoDoc = String((veicTrac as any)?.proprietario_doc || "").replace(/\D/g, "");
+    const donoNome = String((veicTrac as any)?.proprietario || "");
+    const donoOk = emitCnpjCiot.length === 14 && donoDoc.length > 0 && donoDoc === emitCnpjCiot;
     return {
       sel,
       forms,
@@ -2118,8 +2136,11 @@ function CtePage() {
       pesoTotal,
       piso,
       abaixo: piso !== null && valorTotal > 0 && valorTotal < piso,
+      donoDoc,
+      donoNome,
+      donoOk,
     };
-  }, [docsByStatus, ciotSel, veiculos]);
+  }, [docsByStatus, ciotSel, veiculos, empresa]);
   const { data: seguradoras } = useQuery({
     enabled: !!empresa,
     queryKey: ["seguradoras", empresa?.id],
@@ -5607,11 +5628,19 @@ function CtePage() {
                     Valores abaixo do piso mínimo — não será possível emitir.
                   </div>
                 )}
+                {resumoCiot && !resumoCiot.donoOk && (
+                  <div className="rounded border border-destructive/50 bg-destructive/10 px-2 py-1 text-xs font-semibold text-destructive">
+                    Tração {resumoCiot.placa || "—"}{" "}
+                    {resumoCiot.donoDoc
+                      ? `em nome de ${resumoCiot.donoNome || "terceiro"} — CIOT próprio exige cavalo no CNPJ do emissor.`
+                      : "sem proprietário cadastrado — informe o CNPJ do emissor no veículo."}
+                  </div>
+                )}
                 <AlertDialogFooter>
                   <AlertDialogCancel>Cancelar</AlertDialogCancel>
                   <AlertDialogAction
                     data-acao
-                    disabled={!resumoCiot || resumoCiot.abaixo || emitindoCiotLote}
+                    disabled={!resumoCiot || resumoCiot.abaixo || !resumoCiot.donoOk || emitindoCiotLote}
                     onClick={emitirCiotLote}
                   >
                     Emitir
