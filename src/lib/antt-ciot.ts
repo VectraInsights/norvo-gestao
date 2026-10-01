@@ -307,6 +307,48 @@ function codigoOk(json: any): { codigo: string; mensagem: string; protocolo: str
   return { codigo, mensagem, protocolo };
 }
 
+export type FrotaAnttArgs = {
+  pfx: Buffer;
+  senha: string;
+  env: AnttEnv;
+  interessadoDoc: string;
+  transportadorDoc: string;
+  rntrc: string;
+  placas: string[];
+};
+
+// Endpoints 01 (situação) + 02 (frota) do DCS: diagnóstico direto — dizem se
+// a ANTT conhece o RNTRC e cada placa em homologação, antes de declarar.
+export async function consultarFrotaAntt(args: FrotaAnttArgs): Promise<{
+  situacao: any;
+  frota: any;
+}> {
+  const base = ANTT_BASE[args.env];
+  const agent = agentMtls(args.pfx, args.senha);
+  const sit = await postJson({
+    agent,
+    base,
+    path: "/ConsultarSituacaoTransportador",
+    body: {
+      CpfCnpjInteressado: soDig(args.interessadoDoc),
+      CpfCnpjTransportador: soDig(args.transportadorDoc),
+      RNTRCTransportador: padRntrc9(args.rntrc),
+    },
+  });
+  const fro = await postJson({
+    agent,
+    base,
+    path: "/ConsultarFrotaTransportador",
+    body: {
+      CpfCnpjInteressado: soDig(args.interessadoDoc),
+      CpfCnpjTransportador: soDig(args.transportadorDoc),
+      RNTRCTransportador: padRntrc9(args.rntrc),
+      Placas: (args.placas || []).map((p) => String(p || "").toUpperCase()),
+    },
+  });
+  return { situacao: sit.json, frota: fro.json };
+}
+
 // Fluxo completo: B115 → IdOperacao → DeclaracaoOperacaoTransporte.
 export async function declararCiotAntt(args: {
   pfx: Buffer;

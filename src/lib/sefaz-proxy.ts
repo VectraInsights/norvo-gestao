@@ -341,6 +341,19 @@ export async function handleSefazProxy(request: Request): Promise<Response> {
         });
         break;
       }
+      case "anttConsultarFrota": {
+        const { consultarFrotaAntt } = await import("@/lib/antt-ciot");
+        result = await consultarFrotaAntt({
+          pfx: pfxBytes,
+          senha,
+          env: "homologacao",
+          interessadoDoc: String((body as any).interessadoDoc || cnpj),
+          transportadorDoc: String((body as any).transportadorDoc || cnpj),
+          rntrc: String((body as any).rntrc || ""),
+          placas: ((body as any).placas || []) as string[],
+        });
+        break;
+      }
       default:
         return json({ error: `Ação desconhecida: ${action}` }, 400);
     }

@@ -22,3 +22,21 @@ export const emitirCiotFn = createServerFn({ method: "POST" }).validator((d: { e
     input: data.input,
   });
 });
+// Diagnóstico 01+02 do DCS: situação do transportador + vínculo das placas.
+export const consultarFrotaAnttFn = createServerFn({ method: "POST" }).validator(
+  (d: { empresaId: string; interessadoDoc: string; transportadorDoc: string; rntrc: string; placas: string[] }) => d,
+).handler(async ({ data }) => {
+  if (SEFAZ_URL) return callProxy("anttConsultarFrota", data);
+  const { buscarCertificadoAtivo } = await import("@/lib/sefaz");
+  const { consultarFrotaAntt } = await import("@/lib/antt-ciot");
+  const cert = await buscarCertificadoAtivo(data.empresaId);
+  return consultarFrotaAntt({
+    pfx: cert.pfx,
+    senha: cert.senha,
+    env: "homologacao",
+    interessadoDoc: data.interessadoDoc,
+    transportadorDoc: data.transportadorDoc,
+    rntrc: data.rntrc,
+    placas: data.placas,
+  });
+});

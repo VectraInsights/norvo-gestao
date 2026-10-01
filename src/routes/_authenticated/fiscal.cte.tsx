@@ -93,7 +93,7 @@ import {
 } from "@/lib/sefaz-cte-server";
 import { SEFAZ_AMBIENTE } from "@/lib/sefaz-ambiente";
 import { pisoMinimoAntt, PISO_VIGENCIA } from "@/lib/piso-antt";
-import { emitirCiotFn } from "@/lib/antt-ciot-server";
+import { emitirCiotFn, consultarFrotaAnttFn } from "@/lib/antt-ciot-server";
 import { CFOPS_CTE, MOD_FRETE_OPTIONS, RESPONSAVEL_CTE_OPTIONS } from "@/lib/cfops-transporte";
 import { gerarDactePdf, DACTE_REV } from "@/lib/dacte-pdf";
 import { completarLogradouro, temTipoLogradouro } from "@/lib/endereco";
@@ -1707,9 +1707,34 @@ function CtePage() {
     },
   });
   const [ciotConfirma, setCiotConfirma] = useState(false);
+  const [ciotFrota, setCiotFrota] = useState<{ situacao: any; frota: any } | null>(null);
+  const [ciotFrotaLoading, setCiotFrotaLoading] = useState(false);
   const [confRascunho, setConfRascunho] = useState<CteDoc | null>(null);
   const [confLimpar, setConfLimpar] = useState(false);
   const [confExcSel, setConfExcSel] = useState(false);
+  const verificarFrotaCiot = async () => {
+    const r = resumoCiot;
+    if (!empresa || !r) {
+      toast.error("Selecione ao menos um CT-e autorizado");
+      return;
+    }
+    const emitCnpj = String((empresa as any).cnpj || "").replace(/\D/g, "");
+    const placas = [r.forms[0]?.placaVeiculo, r.forms[0]?.placaReboque, r.forms[0]?.semiReboque1, r.forms[0]?.semiReboque2]
+      .map((pl) => String(pl || "").trim().toUpperCase())
+      .filter(Boolean)
+      .filter((pl, i, a) => a.indexOf(pl) === i);
+    setCiotFrotaLoading(true);
+    try {
+      const ret: any = await consultarFrotaAnttFn({
+        data: { empresaId: empresa.id, interessadoDoc: emitCnpj, transportadorDoc: emitCnpj, rntrc: rntrcFinal, placas },
+      });
+      setCiotFrota({ situacao: ret?.situacao, frota: ret?.frota });
+    } catch (e: any) {
+      toast.error("Falha ao consultar ANTT", { description: e?.message });
+    } finally {
+      setCiotFrotaLoading(false);
+    }
+  };
   const emitirCiotLote = async () => {
     const r = resumoCiot;
     if (!empresa) {
@@ -5991,11 +6016,36 @@ function CtePage() {
                 <div className="bg-primary/8 border-b border-primary/20 -m-3 mb-1 px-2 py-1 text-[10px] font-semibold uppercase tracking-wide text-primary/80">
                   Operação CIOT — {ciotSel.size} CT-e(s)
                 </div>
-                <div className="flex justify-end">
+                <div className="flex justify-end gap-2">
+                  <Button size="sm" variant="outline" onClick={verificarFrotaCiot} disabled={ciotFrotaLoading || ciotSel.size === 0}>
+                    {ciotFrotaLoading ? "Consultando…" : "Verificar frota na ANTT"}
+                  </Button>
                   <Button size="sm" onClick={() => setCiotConfirma(true)} disabled={emitindoCiotLote || ciotSel.size === 0}>
                     {emitindoCiotLote ? "Emitindo…" : `Emitir CIOT (${ciotSel.size} CT-e)`}
                   </Button>
                 </div>
+                {ciotFrota && (
+                  <div className="rounded border px-2 py-1 text-[11px] space-y-0.5">
+                    <div>
+                      RNTRC: {String(ciotFrota.situacao?.RNTRCTransportador ?? ciotFrota.situacao?.rntrc ?? "—")}
+                      {" • "}Ativo: {String(ciotFrota.situacao?.RNTRCAtivo ?? ciotFrota.situacao?.rntrcAtivo ?? "—")}
+                      {" • "}Tipo: {String(ciotFrota.situacao?.TipoTransportador ?? ciotFrota.situacao?.tipo ?? "—")}
+                    </div>
+                    {(Array.isArray(ciotFrota.frota?.Frota) ? ciotFrota.frota.Frota : []).map((v: any, i: number) => (
+                      <div key={i} className="font-mono">
+                        {String(v.PlacaVeiculo ?? v.placa ?? "?")} → situação {String(v.SituacaoVeiculoFrotaTransportador ?? v.situacao ?? "?")}
+                      </div>
+                    ))}
+                    {String(ciotFrota.situacao?.Mensagem ?? ciotFrota.frota?.Mensagem ?? "") !== "" && (
+                      <div className="text-muted-foreground">
+                        {String(
+                          (Array.isArray(ciotFrota.situacao?.Mensagem) ? ciotFrota.situacao.Mensagem[0] : ciotFrota.situacao?.Mensagem) ||
+                            (Array.isArray(ciotFrota.frota?.Mensagem) ? ciotFrota.frota.Mensagem[0] : ciotFrota.frota?.Mensagem) || "",
+                        )}
+                      </div>
+                    )}
+                  </div>
+                )}
                 <p className="text-[10px] text-muted-foreground">
                   Direto na ANTT (homologação) — só frota própria, sem TAC. Tomador único obrigatório.
                 </p>
