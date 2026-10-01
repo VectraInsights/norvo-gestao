@@ -5481,15 +5481,21 @@ function CtePage() {
                         />
                       </TableHead>
                       <TableHead className="text-center">Número</TableHead>
-                      <TableHead className="text-center">Série</TableHead>
+                      <TableHead className="text-center">Placa</TableHead>
+                      <TableHead className="text-center">Motorista</TableHead>
+                      <TableHead className="text-center">Rota</TableHead>
+                      <TableHead className="text-center">Peso (kg)</TableHead>
+                      <TableHead className="text-center">Distância</TableHead>
                       <TableHead className="text-center">Valor</TableHead>
-                      <TableHead className="text-center">Tomador</TableHead>
-                      <TableHead className="text-center">Data</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
                     {docsByStatus.autorizados.map((d) => {
                       const f = formDeDocCiot(d);
+                      const info = infoCteLinha(d.xml_assinado);
+                      const ori = [String(f.xMunIni || ""), String(f.ufIni || "")].filter(Boolean).join("/");
+                      const dst = [String(f.xMunFim || ""), String(f.ufFim || "")].filter(Boolean).join("/");
+                      const rota = ori || dst ? `${ori || "—"} → ${dst || "—"}` : "—";
                       return (
                         <TableRow key={d.id}>
                           <TableCell>
@@ -5508,14 +5514,20 @@ function CtePage() {
                             />
                           </TableCell>
                           <TableCell className="font-mono text-center">{d.numero ?? "—"}</TableCell>
-                          <TableCell className="text-center">{d.serie ?? "—"}</TableCell>
-                          <TableCell className="text-right">{brl(Number(d.valor_servico) || 0)}</TableCell>
-                          <TableCell className="text-xs max-w-[200px] truncate" title={String(f.xNomeTomador || "")}>
-                            {String(f.xNomeTomador || "—")}
+                          <TableCell className="font-mono text-xs text-center">
+                            {info.placas.length ? info.placas.join(" / ") : "—"}
+                          </TableCell>
+                          <TableCell className="text-xs max-w-[160px] truncate" title={info.motorista || ""}>
+                            {info.motorista || "—"}
+                          </TableCell>
+                          <TableCell className="text-xs text-center">{rota}</TableCell>
+                          <TableCell className="text-center text-xs">
+                            {f.peso ? Number(String(f.peso).replace(",", "."))?.toLocaleString("pt-BR") : "—"}
                           </TableCell>
                           <TableCell className="text-center text-xs">
-                            {String(d.data_autorizacao || "").slice(0, 10) || "—"}
+                            {f.distanciaKm ? `${f.distanciaKm} km` : "—"}
                           </TableCell>
+                          <TableCell className="text-right">{brl(Number(d.valor_servico) || 0)}</TableCell>
                         </TableRow>
                       );
                     })}
