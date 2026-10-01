@@ -3847,3 +3847,7 @@ Espelhado na Vercel.
 ## Veiculos: dialogo em blocos + sem placeholders (01/10)
 
 - Cadastro de veiculos em 4 Cards com cabecalho destacado (Identificacao, Documentacao, Proprietario, Observacoes), padrao CT-e; removidos placeholders de chassi, TAG, proprietario e eixos; campos compactos h-7.
+
+## Veiculos: RNTRC puxa dono (01/10)
+
+- Ao selecionar RNTRC no cadastro, preenche CNPJ/CPF do proprietario (da lista ou do historico de veiculos) e o nome se vazio.

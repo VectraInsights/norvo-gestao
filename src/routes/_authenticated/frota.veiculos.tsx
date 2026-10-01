@@ -202,13 +202,13 @@ function Veiculos() {
     queryFn: async ({ signal }) => {
       const { data, error } = await supabase
         .from("veiculos" as never)
-        .select("proprietario, rntrc")
+        .select("proprietario, proprietario_doc, rntrc")
         .eq("empresa_id", empresa!.id)
         .not("rntrc", "is", null)
         .not("proprietario", "is", null)
         .abortSignal(signal);
       if (error) throw error;
-      return (data ?? []) as { proprietario: string; rntrc: string }[];
+      return (data ?? []) as { proprietario: string; proprietario_doc: string | null; rntrc: string }[];
     },
   });
 
@@ -223,10 +223,16 @@ function Veiculos() {
 
   // RNTRCs disponíveis: lista pré-cadastrada + histórico de veículos
   const rntrcDisponiveis = useMemo(() => {
-    const map = new Map<string, { rntrc: string; nome: string }>();
-    for (const r of rntrcLista ?? []) map.set(r.rntrc, { rntrc: r.rntrc, nome: r.nome });
+    const map = new Map<string, { rntrc: string; nome: string; cnpj: string }>();
+    for (const r of rntrcLista ?? [])
+      map.set(r.rntrc, { rntrc: r.rntrc, nome: r.nome, cnpj: r.cnpj || "" });
     for (const v of veiculosExistentes ?? [])
-      if (v.rntrc && !map.has(v.rntrc)) map.set(v.rntrc, { rntrc: v.rntrc, nome: "" });
+      if (v.rntrc && !map.has(v.rntrc))
+        map.set(v.rntrc, {
+          rntrc: v.rntrc,
+          nome: v.proprietario || "",
+          cnpj: String((v as any).proprietario_doc || "").replace(/\D/g, ""),
+        });
     return [...map.values()].sort((a, b) => a.rntrc.localeCompare(b.rntrc));
   }, [rntrcLista, veiculosExistentes]);
 
@@ -900,6 +906,12 @@ function Veiculos() {
                               value={`${r.rntrc} ${r.nome}`}
                               onSelect={() => {
                                 set("rntrc", r.rntrc);
+                                // RNTRC carrega o dono junto: preenche CNPJ/CPF do
+                                // proprietário (e o nome, se vazio)
+                                if (r.cnpj) {
+                                  set("proprietario_doc", maskDoc(r.cnpj));
+                                  if (!form.proprietario && r.nome) set("proprietario", r.nome);
+                                }
                                 rntrcSelRef.current = true;
                                 setRntrcBusca("");
                                 setRntrcOpen(false);
