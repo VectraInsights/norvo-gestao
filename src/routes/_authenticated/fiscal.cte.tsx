@@ -5947,19 +5947,19 @@ function CtePage() {
                 </AlertDialogHeader>
                 {resumoCiot && (
                   <div className="grid grid-cols-2 gap-2 text-sm">
-                    <div className="rounded border px-2 py-1">
+                    <div className="rounded border px-2 py-1 flex items-center justify-between gap-2">
                       <div className="text-[10px] text-muted-foreground">
                         Piso mínimo ANTT (distância {resumoCiot.km || "—"} km, {resumoCiot.eixos || "—"} eixos)
                       </div>
-                      <div className="font-semibold">
+                      <div className="font-semibold whitespace-nowrap">
                         {resumoCiot.piso !== null ? brl(resumoCiot.piso) : "—"}
                       </div>
                     </div>
-                    <div className="rounded border px-2 py-1">
+                    <div className="rounded border px-2 py-1 flex items-center justify-between gap-2">
                       <div className="text-[10px] text-muted-foreground">
                         Total CIOT
                       </div>
-                      <div className="font-semibold">{brl(resumoCiot.valorTotal)}</div>
+                      <div className="font-semibold whitespace-nowrap">{brl(resumoCiot.valorTotal)}</div>
                     </div>
                   </div>
                 )}
