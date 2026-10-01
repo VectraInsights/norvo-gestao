@@ -103,16 +103,90 @@ function MdfPage() {
   const [mdfPrefill, setMdfPrefill] = useState<string[] | null>(null);
   const [mdfDraft, setMdfDraft] = useState<{ id?: string; chaves: string[]; percursoUFs: string[]; observacoes: string; infoFisco: string; tipoMdf: "Normal" | "Globalizado"; isTransbordo: boolean; transb1: string; transb2: string; transb3: string } | null>(null);
   const [semRascunho, setSemRascunho] = useState(false);
+  // Prefill vindo do CT-e (Gerar MDF-e): NÃO abre diálogo — gera os rascunhos
+  // direto (1 por motorista+UF) e cai no Aguardando envio.
+  const [prefillPendente, setPrefillPendente] = useState<string[] | null>(null);
   useEffect(() => {
     let pre: any = null;
     try { pre = JSON.parse(localStorage.getItem("prefill_mdf_from_cte") || "null"); } catch { pre = null; }
     if (pre?.chaves?.length) {
       try { localStorage.removeItem("prefill_mdf_from_cte"); } catch {}
-      setMdfPrefill(pre.chaves);
-      setOpen(true);
+      setPrefillPendente(pre.chaves);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+  useEffect(() => {
+    if (!prefillPendente?.length || !empresa?.id) return;
+    const chaves = prefillPendente;
+    setPrefillPendente(null);
+    void gerarRascunhosDePrefill(chaves);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [prefillPendente, empresa?.id]);
+  const gerarRascunhosDePrefill = async (chaves: string[]) => {
+    const empId = (empresa as any)?.id;
+    if (!empId) return;
+    try {
+      const { data, error } = await supabase.from("cte_documentos" as any)
+        .select("chave_acesso,valor_servico,peso_carga,xml_assinado")
+        .eq("empresa_id", empId)
+        .in("chave_acesso", chaves);
+      if (error) throw error;
+      const docs = ((data as any[]) || []).filter(d => (d as any).chave_acesso);
+      if (!docs.length) { toast.error("CT-es não encontrados"); return; }
+      const grupos = new Map<string, { mot: string; uf: string; docs: any[] }>();
+      for (const d of docs) {
+        let f: any = {};
+        try { f = JSON.parse(String((d as any).xml_assinado || "{}")).form || {}; } catch {}
+        const mot = String(f.motoristaNome || "").trim().toUpperCase() || "SEM MOTORISTA";
+        const uf = String(f.ufFim || "").trim().toUpperCase() || "?";
+        const k = mot + "||" + uf;
+        if (!grupos.has(k)) grupos.set(k, { mot, uf, docs: [] });
+        grupos.get(k)!.docs.push({ ...(d as any), _f: f });
+      }
+      let ok = 0;
+      const falhas: string[] = [];
+      for (const g of grupos.values()) {
+        try {
+          const f0 = g.docs[0]._f;
+          const ufIni = String(f0.ufIni || "").toUpperCase();
+          if (!ufIni) { falhas.push(`${g.mot} • ${g.uf}: sem UF de carregamento`); continue; }
+          const chs = g.docs.map(d => String(d.chave_acesso));
+          const payload = {
+            empresa_id: empId, status: "rascunho", serie: "000",
+            qtd_cte: g.docs.length,
+            valor_total_carga: g.docs.reduce((s, d) => s + (Number(d.valor_servico) || 0), 0),
+            peso_total: g.docs.reduce((s, d) => s + (Number(d.peso_carga) || parseFloat(d._f?.peso) || 0), 0),
+            uf_carregamento: ufIni || null, uf_descarregamento: g.uf || null,
+            veiculo_tracao_id: null, ambiente: MDFE_AMBIENTE,
+            xml_assinado: JSON.stringify({ rascunho: true, chaves: chs, percursoUFs: caminhoUF(ufIni, g.uf), observacoes: "", infoFisco: "", tipoMdf: "Normal", isTransbordo: false, transb1: "", transb2: "", transb3: "" }),
+          } as any;
+          try {
+            const { data: outros } = await supabase.from("mdf_documentos" as any).select("id,xml_assinado").eq("empresa_id", empId).eq("status", "rascunho");
+            for (const r of (outros as any[]) || []) {
+              try {
+                const p = JSON.parse(String((r as any).xml_assinado || "{}"));
+                const ch = [...new Set([...(Array.isArray(p.chaves) ? p.chaves : [])])].sort();
+                if (ch.length && JSON.stringify(ch) === JSON.stringify([...chs].sort())) {
+                  await supabase.from("mdf_documentos" as any).delete().eq("id", (r as any).id);
+                }
+              } catch {}
+            }
+          } catch {}
+          const { error: insErr } = await supabase.from("mdf_documentos" as any).insert(payload);
+          if (insErr) throw insErr;
+          ok++;
+        } catch (e) {
+          falhas.push(`${g.mot} • ${g.uf}: ${(e as Error)?.message || "falha"}`);
+        }
+      }
+      if (ok > 0) toast.success(`${ok} MDFs gerados — confira no Aguardando envio`);
+      if (falhas.length > 0) toast.error(`${falhas.length} grupo(s) falharam`, { description: falhas.slice(0, 4).join("; ") });
+      setFiltroStatus("rascunho");
+      qc.invalidateQueries({ queryKey: ["mdf-documentos"] });
+    } catch (e) {
+      toast.error((e as Error)?.message || "Falha ao gerar rascunhos");
+    }
+  };
   const [openEncerrar, setOpenEncerrar] = useState(false);
   const [openCancelar, setOpenCancelar] = useState(false);
   const [mdfEncerrar, setMdfEncerrar] = useState<MdfDoc | null>(null);

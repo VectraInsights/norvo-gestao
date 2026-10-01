@@ -3923,3 +3923,7 @@ Espelhado na Vercel.
 ## MDF-e: Emitir gera rascunhos sozinho (01/10)
 
 - O botao Emitir MDF-e com selecao mista gera 1 rascunho por (motorista+UF) sozinho, avisa X MDFs gerados e cai no Aguardando envio; sem botao extra.
+
+## MDF-e: prefill gera rascunhos direto (01/10)
+
+- Gerar MDF-e no CT-e cria os rascunhos (1 por motorista+UF) ao chegar, sem abrir dialogo; toast X MDFs gerados e cai no Aguardando envio.
