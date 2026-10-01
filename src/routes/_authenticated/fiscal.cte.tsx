@@ -6135,12 +6135,16 @@ function CtePage() {
                 </div>
                 <div>
                   <Label className="text-[10px] text-muted-foreground">Percurso</Label>
-                  <Input
-                    className="h-7 text-xs font-mono w-[76px] text-center px-1 bg-transparent"
-                    value={percursoMatch?.codigo || "—"}
-                    readOnly
-                    title={percursoMatch?.nome || "Nenhum percurso associado"}
-                  />
+                    <Input
+                      className="h-7 text-xs font-mono w-[76px] text-center px-1 bg-transparent"
+                      value={percursoMatch?.codigo || "—"}
+                      readOnly
+                      title={
+                        percursoMatch
+                          ? `${percursoMatch?.nome || ""} — CFOP ${percursoMatch?.cfop || "—"} — Seg ${(percursoMatch as any)?.seg_nome || "—"}`
+                          : "Nenhum percurso associado"
+                      }
+                    />
                 </div>
               </div>
               <div className="border rounded p-3 bg-muted/20">

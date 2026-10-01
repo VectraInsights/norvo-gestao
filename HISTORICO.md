@@ -3835,3 +3835,7 @@ Espelhado na Vercel.
 ## CT-e: prefere percurso mais completo (01/10)
 
 - Havendo percursos duplicados p/ o mesmo trio (rem+dest+toma), o automatico pegava o 1o da lista (podia ser rascunho antigo sem CFOP/seguro). Agora prefere o mais completo: com CFOP > com seguro > com rota.
+
+## CT-e: tooltip diagnostico percurso (01/10)
+
+- Caixa do percurso mostra no tooltip (hover) CFOP e seguradora lidos do banco, p/ diagnosticar caso de CFOP/seg nao aplicados com percurso unico cadastrado.
