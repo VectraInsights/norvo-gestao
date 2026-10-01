@@ -3943,3 +3943,16 @@ Espelhado na Vercel.
 - CT-e antigo salvo sem destCnpj no JSON bloqueava ("sem destinatário").
   Cascata: NF-e vinculada → `<dest>` do XML assinado (nunca o 1º CNPJ
   solto, que seria o emitente) → tabela de NF-es pelas chNFe.
+
+## CIOT: um item por veículo + IdOp 12 chars (01/10)
+
+- Erro [205] triplo (sem automotor / eixos inválidos / IdOperacao
+  inválido): o front mandava os eixos da COMBINAÇÃO (cavalo+carretas)
+  num item único tipo automotor. Agora monta um item por placa do CT-e
+  (tração tipo 1 com só os eixos dela, reboques tipo 2) lendo
+  `quantidade_eixos` do cadastro; sem eixos na tração, barra local.
+- `/gerar` sem IdOperacao válido (12 chars) agora falha com mensagem
+  clara em vez de enviar CIOT como IdOperacao. Validação local de
+  IdOp/veículos/eixos roda ANTES do mTLS (evita as 3 chamadas lentas
+  para falhar no óbvio). mTLS com keep-alive + toast de progresso
+  ("Gerando IdOperacao…" → "Declarando…") na emissão.
