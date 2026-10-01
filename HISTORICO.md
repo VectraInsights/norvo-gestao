@@ -3879,3 +3879,7 @@ Espelhado na Vercel.
 ## IE instantanea no CT-e (01/10)
 
 - Contatos com cache 5min; CNPJs do CT-e (rem/dest/toma/consig/redesp) fora do cache sao buscados direto por documento e entram no cache na hora; novo cadastro via lookup entra no cache imediatamente.
+
+## Toma padrao CIF no Gerar CT-e (01/10)
+
+- Sem modFrete na NF-e o toma padrao passa a 0 (remetente, CIF) com tomador = emitente, igual a troca manual; conferencia de percurso usa o mesmo tomador efetivo.

@@ -4186,11 +4186,14 @@ function CtePage() {
   const nfTemPercurso = (m: any) => {
     if (!percursos || percursos.length === 0) return false;
     const dg = (v: any) => String(v || "").replace(/\D/g, "");
+    // Tomador efetivo: com modFrete vale o gravado (importação resolve 0→emit);
+    // sem modFrete o padrão é CIF (remetente)
+    const tEf = (m as any).modFrete ? dg((m as any).tomadorCnpj) : dg((m as any).emitCnpj);
     return percursos.some(
       (r) =>
         dg(r.rem_cnpj) === dg(m.emitCnpj) &&
         dg(r.dest_cnpj) === dg(m.destCnpj) &&
-        dg(r.toma_cnpj) === dg(m.tomadorCnpj),
+        dg(r.toma_cnpj) === tEf,
     );
   };
   const aplicarPercurso = (r: Record<string, any>) => {
@@ -5511,31 +5514,51 @@ function CtePage() {
                           "4": "3",
                           "9": "4",
                         };
+                        // Sem modFrete na NF-e o padrão é CIF (toma 0, remetente paga).
+                        // O "3" (frota própria) só vale quando explícito no cadastro.
                         const tomaSel = (first as any).modFrete
-                          ? (tomaByMod[(first as any).modFrete] ?? "3")
-                          : "3";
+                          ? (tomaByMod[(first as any).modFrete] ?? "0")
+                          : "0";
                         const tomCnpjDigits = (
                           ((first as any).tomadorCnpj || first.destCnpj || "") as string
                         ).replace(/\D/g, "");
                         const cTom = contatoByDoc.get(tomCnpjDigits) || {};
-                        lastLookupTomador.current = tomCnpjDigits;
+                        // Tomador consistente com o toma: 0/3 = remetente (emitente da NF-e),
+                        // 1/4 = destinatário, 2 = terceiros (igual à troca manual de toma).
+                        const tomaEhRemet = tomaSel === "0" || tomaSel === "3";
+                        const tCnpjRaw = tomaEhRemet
+                          ? (first as any).emitCnpj || ""
+                          : (first as any).tomadorCnpj || first.destCnpj || "";
+                        const tNomeRaw = tomaEhRemet
+                          ? first.emit || ""
+                          : (first as any).tomador || first.dest || "";
+                        const tUF = (tomaEhRemet ? (first as any).emitUF : (first as any).tomadorUF) || "";
+                        const tCMun = (tomaEhRemet ? (first as any).emitCMun : (first as any).tomadorCMun) || "";
+                        const tXMun = (tomaEhRemet ? (first as any).emitXMun : (first as any).tomadorXMun) || "";
+                        const tIE = (tomaEhRemet ? (first as any).emitIE : (first as any).tomadorIE) || "";
+                        const tLgr = (tomaEhRemet ? (first as any).emitLogradouro : (first as any).tomadorLogradouro) || "";
+                        const tBai = (tomaEhRemet ? (first as any).emitBairro : (first as any).tomadorBairro) || "";
+                        const tCEP = (tomaEhRemet ? (first as any).emitCEP : (first as any).tomadorCEP) || "";
+                        const cTom2 = contatoByDoc.get(String(tCnpjRaw || "").replace(/\D/g, "")) || cTom;
+                        lastLookupTomador.current = String(tCnpjRaw || "").replace(/\D/g, "");
+                        const tomF = {
+                          toma: tomaSel,
+                          cnpjTomador: tCnpjRaw,
+                          xNomeTomador: tNomeRaw,
+                          ufTomador: tUF || (cTom2 as any).uf || "",
+                          cMunTomador: tCMun,
+                          xMunTomador: tXMun || (cTom2 as any).cidade || "",
+                          ieTomador: tIE || (cTom2 as any).ie || "",
+                          logradouroTomador: tLgr || (cTom2 as any).logradouro || "",
+                          nroTomador: (cTom2 as any).numero || "",
+                          bairroTomador: tBai || (cTom2 as any).bairro || "",
+                          cepTomador: tCEP || String((cTom2 as any).cep || "").replace(/\D/g, "") || "",
+                          foneTomador: (cTom2 as any).telefone || "",
+                          emailTomador: "",
+                        };
                         setForm((f) => ({
                           ...f,
-                          toma: tomaSel,
-                          cnpjTomador: (first as any).tomadorCnpj || first.destCnpj || "",
-                          xNomeTomador: (first as any).tomador || first.dest || "",
-                          ufTomador: (first as any).tomadorUF || cTom.uf || "",
-                          cMunTomador: (first as any).tomadorCMun || "",
-                          xMunTomador: (first as any).tomadorXMun || cTom.cidade || "",
-                          ieTomador: (first as any).tomadorIE || cTom.ie || "",
-                          logradouroTomador:
-                            (first as any).tomadorLogradouro || cTom.logradouro || "",
-                          nroTomador: cTom.numero || "",
-                          bairroTomador: (first as any).tomadorBairro || cTom.bairro || "",
-                          cepTomador:
-                            (first as any).tomadorCEP || (cTom.cep || "").replace(/\D/g, "") || "",
-                          foneTomador: cTom.telefone || "",
-                          emailTomador: "",
+                          ...tomF,
                           cMunIni: (first as any).emitCMun || "",
                           xMunIni: (first as any).emitXMun || "",
                           ufIni: (first as any).emitUF || "",
@@ -5566,11 +5589,14 @@ function CtePage() {
                           {
                             remDoc: dgT(first.emitCnpj),
                             destDoc: dgT(first.destCnpj),
-                            tomaDoc: dgT(tomCnpjDigits),
+                            tomaDoc: dgT(tCnpjRaw),
                           },
                           frescos as any,
                         );
                         if (mPerc) aplicarPercurso(mPerc as any);
+                        // Toma/tomador recém-calculados prevalecem sobre o cadastro
+                        // (que pode ter aprendido o padrão antigo "3")
+                        setForm((f) => ({ ...f, ...tomF }));
                       }}
                     >
                       Gerar CT-e com {selecionadas.size || 0} selecionada(s)
