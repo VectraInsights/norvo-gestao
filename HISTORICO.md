@@ -3899,3 +3899,7 @@ Espelhado na Vercel.
 ## CIOT: piso pela maior distancia (01/10)
 
 - Piso minimo do lote calculado sobre a maior distancia entre os CT-es (ex. 2810 km), com rotulo atualizado.
+
+## MDF-e automatico por grupo (01/10)
+
+- Botao Emitir N MDF-es separados: 1 por (motorista+UF), cada um com motorista, UFs e percurso automaticos (menor caminho); resumo no fim. Emissao unica segue bloqueando selecao mista.
