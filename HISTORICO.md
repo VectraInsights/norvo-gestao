@@ -3867,3 +3867,7 @@ Espelhado na Vercel.
 ## Percurso preservado + lista ordenavel (01/10)
 
 - Salvamento silencioso do percurso (rascunho/emissao) nao apaga mais CFOP/seguro/rota/aliquotas com valores padrao do formulario: campo virgem preserva o cadastrado. Lista de percursos com cabecalho clicavel p/ ordenar, padrao codigo crescente.
+
+## Gerar CT-e aplica percurso + trava exclusao (01/10)
+
+- Botao Gerar CT-e recarrega percursos e aplica CFOP/seguro/rota na hora (nao depende de cache/efeito). Excluir percurso bloqueado se houver CT-e (rascunho ou emitido) com o mesmo trio.

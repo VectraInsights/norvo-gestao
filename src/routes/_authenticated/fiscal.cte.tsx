@@ -4095,25 +4095,31 @@ function CtePage() {
       tomaDoc: onlyDigitsPercurso(form.cnpjTomador),
     };
   };
-  const matchPercurso = (d: { remDoc: string; destDoc: string; tomaDoc: string }) => {
-    // Conferência estrita: só aplica com CNPJ de remetente + destinatário + tomador iguais
-    if (!percursos || percursos.length === 0) return null;
-    if (!d.remDoc || !d.destDoc || !d.tomaDoc) return null;
-    const cands = percursos.filter(
-      (r) =>
-        onlyDigitsPercurso(r.rem_cnpj) === d.remDoc &&
-        onlyDigitsPercurso(r.dest_cnpj) === d.destDoc &&
-        onlyDigitsPercurso(r.toma_cnpj) === d.tomaDoc,
-    );
-    if (cands.length === 0) return null;
-    // Havendo duplicadas p/ o mesmo trio, prefere a mais completa (com CFOP/seguro)
-    // em vez da primeira da lista (que pode ser um rascunho antigo sem fiscal).
+  const trioPercursoOk = (r: Record<string, any>, d: { remDoc: string; destDoc: string; tomaDoc: string }) =>
+    onlyDigitsPercurso(r.rem_cnpj) === d.remDoc &&
+    onlyDigitsPercurso(r.dest_cnpj) === d.destDoc &&
+    onlyDigitsPercurso(r.toma_cnpj) === d.tomaDoc;
+  // Havendo duplicadas p/ o mesmo trio, prefere a mais completa (com CFOP/seguro)
+  // em vez da primeira da lista (que pode ser um rascunho antigo sem fiscal).
+  const escolherPercurso = (cands: Array<Record<string, any>>) => {
     const score = (r: Record<string, any>) =>
       (r.cfop ? 4 : 0) +
       (r.seg_nome ? 2 : 0) +
       (r.seg_apolice ? 1 : 0) +
       (r.coleta_xmun && r.entrega_xmun ? 1 : 0);
     return cands.sort((a, b) => score(b) - score(a))[0] || null;
+  };
+  const matchPercurso = (
+    d: { remDoc: string; destDoc: string; tomaDoc: string },
+    lista?: Array<Record<string, any>>,
+  ) => {
+    // Conferência estrita: só aplica com CNPJ de remetente + destinatário + tomador iguais
+    const arr = lista ?? percursos;
+    if (!arr || arr.length === 0) return null;
+    if (!d.remDoc || !d.destDoc || !d.tomaDoc) return null;
+    const cands = arr.filter((r) => trioPercursoOk(r, d));
+    if (cands.length === 0) return null;
+    return escolherPercurso(cands);
   };
   // NF sem percurso cadastrado (rem+dest+toma) — linha vermelha + bloqueio no Gerar
   const nfTemPercurso = (m: any) => {
@@ -5376,7 +5382,7 @@ function CtePage() {
                       variant="outline"
                       size="sm"
                       disabled={selecionadas.size === 0}
-                      onClick={() => {
+                      onClick={async () => {
                         if (selecionadas.size === 0) {
                           toast.error("Selecione ao menos uma NF-e");
                           return;
@@ -5487,6 +5493,23 @@ function CtePage() {
                         setViewDoc(null);
                         setAba("geral");
                         setOpen(true);
+                        // Aplica o percurso na hora com dados frescos (recém-cadastrado
+                        // pode ainda não estar no cache): não depende do efeito.
+                        try {
+                          await qc.refetchQueries({ queryKey: ["cte-percursos", empresa?.id] });
+                        } catch {}
+                        const frescos = ((qc.getQueryData(["cte-percursos", empresa?.id]) as any[]) ??
+                          percursos) as any[];
+                        const dgT = (v: any) => String(v || "").replace(/\D/g, "");
+                        const mPerc = matchPercurso(
+                          {
+                            remDoc: dgT(first.emitCnpj),
+                            destDoc: dgT(first.destCnpj),
+                            tomaDoc: dgT(tomCnpjDigits),
+                          },
+                          frescos as any,
+                        );
+                        if (mPerc) aplicarPercurso(mPerc as any);
                       }}
                     >
                       Gerar CT-e com {selecionadas.size || 0} selecionada(s)

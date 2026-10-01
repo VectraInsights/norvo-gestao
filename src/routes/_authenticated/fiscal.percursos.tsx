@@ -1154,6 +1154,38 @@ function PercursosPage() {
 
   const excluir = useMutation({
     mutationFn: async (id: string) => {
+      // Não exclui percurso com CT-e feito (rascunho ou emitido): compara o trio
+      const alvo = (percursos || []).find((p) => p.id === id);
+      const dg = (v: any) => String(v || "").replace(/\D/g, "");
+      const trio = [dg(alvo?.rem_cnpj), dg(alvo?.dest_cnpj), dg(alvo?.toma_cnpj)];
+      if (alvo && trio.every(Boolean)) {
+        const { data: docs } = await supabase
+          .from("cte_documentos" as any)
+          .select("id,numero,status,xml_assinado")
+          .eq("empresa_id", empresa!.id)
+          .limit(500);
+        for (const doc of ((docs as any[]) || [])) {
+          let usa = false;
+          try {
+            const p = JSON.parse((doc as any).xml_assinado || "{}");
+            const f = p.form || {};
+            const n0 = (p.nfs || [])[0] || {};
+            usa =
+              dg(f.cnpjTomador) === trio[2] &&
+              dg(n0.emitCnpj) === trio[0] &&
+              dg(n0.destCnpj) === trio[1];
+          } catch {
+            usa = false;
+          }
+          if (usa) {
+            const st = String((doc as any).status || "");
+            const num = (doc as any).numero ? ` nº ${(doc as any).numero}` : "";
+            throw new Error(
+              `Percurso em uso no CT-e${num} (${st || "registrado"}) — exclua o documento primeiro`,
+            );
+          }
+        }
+      }
       const { error } = await supabase
         .from("cte_percursos" as any)
         .delete()
