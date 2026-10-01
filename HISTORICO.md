@@ -3931,3 +3931,15 @@ Espelhado na Vercel.
 ## MDF-e: aba padrao, colunas, CIOT e rascunho vincula (01/10)
 
 - Aba inicial Aguardando envio; lista sem status com placas/motorista/numero/serie/UFs/valor/peso/responsavel (rascunhos gravam esses dados). Emissao bloqueada sem CIOT em todo CT-e. Rascunho conta como vinculado (Com MDF-e) no CT-e e no dialogo.
+
+## Deploy: TanStack Start 1.168.60 (01/10)
+
+- Vercel bloqueou o deploy por XSS no @tanstack/react-start 1.168.27.
+  Atualizados react-start (1.168.60), react-router (1.170.41) e
+  router-plugin (1.168.42); routeTree.gen.ts regenerado (só reordena imports).
+
+## CIOT: destinatário via XML e banco (01/10)
+
+- CT-e antigo salvo sem destCnpj no JSON bloqueava ("sem destinatário").
+  Cascata: NF-e vinculada → `<dest>` do XML assinado (nunca o 1º CNPJ
+  solto, que seria o emitente) → tabela de NF-es pelas chNFe.
