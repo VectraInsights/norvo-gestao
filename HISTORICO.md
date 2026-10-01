@@ -3804,3 +3804,15 @@ Espelhado na Vercel.
   reaproveitar base; flui p/ MDF-e/DACTE/rascunho. TAC bloqueado pela
   B115 com mensagem orientando IPEF/manual.
 - Espelhado na Vercel via push em main.
+
+## Aba CIOT cobrindo vários CT-es (30/09)
+
+- Nova aba CIOT ao lado de Autorizados: seleciona 1+ CT-es (mesmo
+  tomador obrigatório), mostra operação (tipo carga, pagto, chave) e
+  emite um CIOT cobrindo todos — frete somado, tração/km do 1º,
+  confirmação de frota própria.
+- Persistência em `ciot_operacoes` (migration criada — aplicar no
+  banco) + CIOT/protocolo propagados p/ cada CT-e (MDF-e/DACTE leem
+  de lá); lista de emitidos na aba. Emissão individual removida do
+  diálogo (campo manual permanece p/ TAC/externo).
+- Espelhado na Vercel via push em main.

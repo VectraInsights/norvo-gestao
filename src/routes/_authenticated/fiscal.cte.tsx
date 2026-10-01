@@ -243,6 +243,15 @@ type CteDoc = {
   responsavel_emissao: string | null;
 };
 
+// form gravado dentro do xml_assinado do CT-e (rascunho/autorizado).
+function formDeDocCiot(d: { xml_assinado: string | null }): Record<string, any> {
+  try {
+    const j = JSON.parse(d.xml_assinado || "{}");
+    if (j && typeof j === "object" && j.form && typeof j.form === "object") return j.form;
+  } catch {}
+  return {};
+}
+
 // Placa(s), motorista e data de emissão direto do XML/form do CT-e p/ a tabela.
 function infoCteLinha(xmlAssinado: string | null): {
   placas: string[];
@@ -1603,99 +1612,164 @@ function CtePage() {
     ((totalPrestacao(form) * (parseFloat(aliq || "0") || 0)) / 100).toFixed(2);
   // CIOT direto ANTT (ETC frota própria, sem TAC): usa certificado + mTLS.
   // Exige CNPJ+cert e placas cadastrados na ANTT (pef@antt.gov.br), senão rejeita.
-  const [emitindoCiot, setEmitindoCiot] = useState(false);
-  const emitirCiot = async () => {
+  const [emitindoCiotLote, setEmitindoCiotLote] = useState(false);
+  // ---- Aba CIOT: uma operação ANTT cobrindo 1+ CT-es autorizados ----
+  const [ciotSel, setCiotSel] = useState<Set<string>>(new Set());
+  const [ciotTabTipo, setCiotTabTipo] = useState<string>("Carga Geral");
+  const [ciotTabPagto, setCiotTabPagto] = useState<string>("6");
+  const [ciotTabChave, setCiotTabChave] = useState<string>("");
+  const { data: ciotOps } = useQuery({
+    enabled: !!empresa,
+    queryKey: ["ciot-operacoes", empresa?.id],
+    staleTime: 60_000,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("ciot_operacoes" as any)
+        .select("id,ciot,ciot_verificador,protocolo,id_operacao,status,valor_frete,distancia_km,tipo_carga,placa,tomador_nome,created_at,cte_ids")
+        .eq("empresa_id", empresa!.id)
+        .order("created_at", { ascending: false })
+        .limit(100);
+      if (error) throw error;
+      return (data ?? []) as unknown as Array<Record<string, any>>;
+    },
+  });
+  const emitirCiotLote = async () => {
     if (!empresa) {
       toast.error("Selecione uma empresa");
       return;
     }
+    const sel = docsByStatus.autorizados.filter((d) => ciotSel.has(d.id));
+    if (sel.length === 0) {
+      toast.error("Selecione ao menos um CT-e autorizado");
+      return;
+    }
     const emitCnpj = String((empresa as any).cnpj || "").replace(/\D/g, "");
-    const tomaCnpj = String(form.cnpjTomador || "").replace(/\D/g, "");
-    const destCnpj = String((mercadorias[0] as any)?.destCnpj || "").replace(/\D/g, "");
     if (emitCnpj.length !== 14) {
       toast.error("CNPJ da empresa inválido para o CIOT");
       return;
     }
-    if (tomaCnpj.length !== 14) {
-      toast.error("Informe o tomador (contratante) para emitir o CIOT");
+    const forms = sel.map((d) => formDeDocCiot(d));
+    const tomas = [...new Set(forms.map((f) => String(f.cnpjTomador || "").replace(/\D/g, "")).filter(Boolean))];
+    if (tomas.length !== 1 || tomas[0].length !== 14) {
+      toast.error("Os CT-es precisam ter o mesmo tomador (contratante)");
       return;
     }
-    const placa = String(form.placaVeiculo || "").toUpperCase();
+    const tomaCnpj = tomas[0];
+    const tomaNome = String(forms[0]?.xNomeTomador || "");
+    const valorTotal = sel.reduce(
+      (a, d, i) => a + (Number(d.valor_servico) || Number(String(forms[i]?.vPrest || "").replace(",", ".")) || 0),
+      0,
+    );
+    if (!(valorTotal > 0)) {
+      toast.error("Valor do frete precisa ser maior que zero");
+      return;
+    }
+    const placa = String(forms[0]?.placaVeiculo || "").toUpperCase();
     const veic = (veiculos || []).find((v: any) => String(v.placa || "").toUpperCase() === placa);
     const eixos = Number((veic as any)?.quantidade_eixos) || 0;
     if (!placa || !eixos) {
-      toast.error("Selecione a tração (com eixos) para emitir o CIOT");
+      toast.error("Tração do 1º CT-e sem placa/eixos para o CIOT");
       return;
     }
-    const km = Math.round(Number(String(form.distanciaKm || "").replace(",", ".")) || 0);
+    const km = Math.round(Number(String(forms[0]?.distanciaKm || "").replace(",", ".")) || 0);
     if (!km) {
-      toast.error("Distância (km) do percurso necessária para o CIOT");
+      toast.error("Distância (km) do 1º CT-e necessária para o CIOT");
       return;
     }
-    const vFrete = Number(String(form.vPrest || "").replace(",", ".")) || 0;
-    if (!(vFrete > 0)) {
-      toast.error("Valor do serviço precisa ser maior que zero");
-      return;
-    }
+    const pesoTotal = forms.reduce((a, f) => a + (Number(String(f?.peso || "").replace(",", ".")) || 0), 0);
+    const destCnpj = String(forms[0]?.destCnpj || "").replace(/\D/g, "");
     if (
       !confirm(
-        `Emitir CIOT direto na ANTT (homologação)?\nFrete R$ ${vFrete.toFixed(2)} • ${km} km • ${placa} (${eixos} eixos).\nConfirmo que é FROTA PRÓPRIA, sem TAC/autônomo (TAC exige PSP).`,
+        `Emitir CIOT direto na ANTT (homologação) cobrindo ${sel.length} CT-e(s)?\nTomador ${tomaNome || tomaCnpj} • Frete total R$ ${valorTotal.toFixed(2)} • ${km} km • ${placa} (${eixos} eixos).\nConfirmo que é FROTA PRÓPRIA, sem TAC/autônomo (TAC exige PSP).`,
       )
     )
       return;
-    setEmitindoCiot(true);
+    setEmitindoCiotLote(true);
     try {
-      const tipoCarga = String((percursoMatch as any)?.tipo_carga_antt || "Carga Geral");
-      const tipoCodigo =
-        (TIPOS_CARGA_ANTT as readonly string[]).indexOf(tipoCarga as any) + 1 || 5;
+      const tipoCodigo = (TIPOS_CARGA_ANTT as readonly string[]).indexOf(ciotTabTipo as any) + 1 || 5;
       const hoje = new Date();
       const fmtD = (d: Date) => d.toISOString().slice(0, 10);
-      const dias = Math.max(1, Math.ceil((Number(String(form.distanciaKm || "").replace(",", ".")) || 0) / 800));
-      const fim = new Date(hoje.getTime() + dias * 86400000);
-      const chavePixPadrao = emitCnpj;
+      const fim = new Date(hoje.getTime() + Math.max(1, Math.ceil(km / 800)) * 86400000);
       const ret: any = await emitirCiotFn({
         data: {
           empresaId: empresa.id,
           input: {
-          tipoOperacao: 1,
-          contratado: { doc: emitCnpj, rntrc: rntrcFinal },
-          contratante: { doc: tomaCnpj },
-          destinatarioDoc: destCnpj || undefined,
-          veiculos: [
-            {
-              placa,
-              eixos,
-              rntrc: String((veic as any)?.rntrc || rntrcFinal || "").replace(/\D/g, ""),
+            tipoOperacao: 1,
+            contratado: { doc: emitCnpj, rntrc: rntrcFinal },
+            contratante: { doc: tomaCnpj },
+            destinatarioDoc: destCnpj || undefined,
+            veiculos: [
+              {
+                placa,
+                eixos,
+                rntrc: String((veic as any)?.rntrc || rntrcFinal || "").replace(/\D/g, ""),
+              },
+            ],
+            pagamento: {
+              tipo: Number(ciotTabPagto || 6),
+              docCreditado: emitCnpj,
+              indPagamento: 0,
+              chavePix: Number(ciotTabPagto || 6) === 6 ? ciotTabChave.trim() || emitCnpj : undefined,
             },
-          ],
-          pagamento: {
-            tipo: Number((form as any).ciotTipoPagto || 6),
-            docCreditado: emitCnpj,
-            indPagamento: 0,
-            chavePix:
-              Number((form as any).ciotTipoPagto || 6) === 6
-                ? String((form as any).ciotChave || "").trim() || chavePixPadrao
-                : undefined,
+            origem: { cmun: String(forms[0]?.cMunIni || "").replace(/\D/g, "") || undefined },
+            destino: { cmun: String(forms[0]?.cMunFim || "").replace(/\D/g, "") || undefined },
+            distanciaKm: km,
+            qtdViagens: 1,
+            carga: {
+              peso: pesoTotal || undefined,
+              tipoCodigo,
+            },
+            valorFrete: Math.round(valorTotal * 100) / 100,
+            dataInicioViagem: fmtD(hoje),
+            dataFimViagem: fmtD(fim),
+            indAltoDesempenho: false,
+            indRetornoVazio: false,
+            composicaoVeicular: true,
           },
-          origem: { cmun: String(form.cMunIni || "").replace(/\D/g, "") || undefined },
-          destino: { cmun: String(form.cMunFim || "").replace(/\D/g, "") || undefined },
-          distanciaKm: km,
-          qtdViagens: 1,
-          carga: {
-            peso: Number(String(form.peso || "").replace(",", ".")) || undefined,
-            tipoCodigo,
-          },
-          valorFrete: vFrete,
-          dataInicioViagem: fmtD(hoje),
-          dataFimViagem: fmtD(fim),
-          indAltoDesempenho: false,
-          indRetornoVazio: false,
-          composicaoVeicular: true,
         },
-      },
       });
       if (ret?.sucesso && ret?.ciotCompleto) {
-        setForm((f: any) => ({ ...f, ciot: ret.ciotCompleto, ciotProtocolo: ret.protocolo || "" }));
+        const chaves = sel.map((d) => String(d.chave_acesso || "").replace(/\D/g, "")).filter(Boolean);
+        await supabase.from("ciot_operacoes" as any).insert({
+          empresa_id: empresa.id,
+          ciot: ret.ciotCompleto,
+          ciot_verificador: ret.ciotVerificador || null,
+          protocolo: ret.protocolo || null,
+          id_operacao: ret.idOperacao || null,
+          ambiente: "homologacao",
+          status: "declarado",
+          valor_frete: Math.round(valorTotal * 100) / 100,
+          distancia_km: km,
+          tipo_carga: ciotTabTipo,
+          eixos,
+          placa,
+          tomador_cnpj: tomaCnpj,
+          tomador_nome: tomaNome || null,
+          emit_cnpj: emitCnpj,
+          cte_ids: sel.map((d) => d.id),
+          cte_chaves: chaves,
+          data_inicio: fmtD(hoje),
+          data_fim: fmtD(fim),
+        } as any);
+        // Propaga o CIOT p/ cada CT-e (MDF-e/DACTE leem de lá).
+        for (const d of sel) {
+          try {
+            const raw = JSON.parse(d.xml_assinado || "{}");
+            const f0 = raw && typeof raw === "object" && raw.form ? raw.form : {};
+            await supabase
+              .from("cte_documentos" as any)
+              .update({
+                xml_assinado: JSON.stringify({
+                  ...raw,
+                  form: { ...f0, ciot: ret.ciotCompleto, ciotProtocolo: ret.protocolo || "" },
+                }),
+              })
+              .eq("id", d.id);
+          } catch {}
+        }
+        setCiotSel(new Set());
+        qc.invalidateQueries({ queryKey: ["ciot-operacoes", empresa.id] });
+        qc.invalidateQueries({ queryKey: ["cte-documentos"] });
         toast.success(`CIOT ${ret.ciotCompleto} autorizado (prot. ${ret.protocolo || "—"})`);
       } else {
         toast.error("CIOT rejeitado", { description: `[${ret?.codigo || "?"}] ${ret?.mensagem || "sem resposta da ANTT"}` });
@@ -1703,7 +1777,7 @@ function CtePage() {
     } catch (e: any) {
       toast.error("Falha ao emitir CIOT", { description: e?.message });
     } finally {
-      setEmitindoCiot(false);
+      setEmitindoCiotLote(false);
     }
   };
   const num2 = (v: any) => parseFloat(v) || 0;
@@ -4675,6 +4749,12 @@ function CtePage() {
                 >
                   Autorizados ({docsByStatus.autorizados.length})
                 </TabsTrigger>
+                <TabsTrigger
+                  value="ciot"
+                  className="flex-1 text-xs px-3 py-1.5 font-medium text-white/80 hover:text-white hover:bg-white/10 data-[state=active]:bg-white data-[state=active]:text-green-900 data-[state=active]:font-bold data-[state=active]:shadow"
+                >
+                  CIOT ({(ciotOps ?? []).length})
+                </TabsTrigger>
               </TabsList>
             </div>
             <CardContent className="p-3 bg-muted/20 overflow-visible flex-1 min-h-0 flex flex-col">
@@ -5368,6 +5448,170 @@ function CtePage() {
               "autorizados",
               mdfVincTab === "com",
             )}
+          </TabsContent>
+          <TabsContent value="ciot" className="mt-0 space-y-3">
+            <Card className="overflow-hidden">
+              <div className="bg-primary/8 border-b border-primary/20 px-3 py-1.5 text-[10px] font-semibold uppercase tracking-wide text-primary/80">
+                CT-es autorizados — selecione para uma operação CIOT
+              </div>
+              {docsByStatus.autorizados.length === 0 ? (
+                <div className="p-4">
+                  <EmptyState icon={Truck} title="Nenhum CT-e autorizado" description="Autorize CT-es para emitir o CIOT cobrindo um ou vários." />
+                </div>
+              ) : (
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead className="w-10">
+                        <input
+                          type="checkbox"
+                          checked={
+                            docsByStatus.autorizados.length > 0 &&
+                            docsByStatus.autorizados.every((d) => ciotSel.has(d.id))
+                          }
+                          onChange={() => {
+                            setCiotSel((prev) => {
+                              const todos = docsByStatus.autorizados.map((d) => d.id);
+                              return todos.every((k) => prev.has(k))
+                                ? new Set()
+                                : new Set(todos);
+                            });
+                          }}
+                          title="Selecionar todos"
+                        />
+                      </TableHead>
+                      <TableHead className="text-center">Número</TableHead>
+                      <TableHead className="text-center">Série</TableHead>
+                      <TableHead className="text-center">Valor</TableHead>
+                      <TableHead className="text-center">Tomador</TableHead>
+                      <TableHead className="text-center">Data</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {docsByStatus.autorizados.map((d) => {
+                      const f = formDeDocCiot(d);
+                      return (
+                        <TableRow key={d.id}>
+                          <TableCell>
+                            <input
+                              type="checkbox"
+                              checked={ciotSel.has(d.id)}
+                              onChange={() =>
+                                setCiotSel((prev) => {
+                                  const next = new Set(prev);
+                                  if (next.has(d.id)) next.delete(d.id);
+                                  else next.add(d.id);
+                                  return next;
+                                })
+                              }
+                              title="Selecionar para o CIOT"
+                            />
+                          </TableCell>
+                          <TableCell className="font-mono text-center">{d.numero ?? "—"}</TableCell>
+                          <TableCell className="text-center">{d.serie ?? "—"}</TableCell>
+                          <TableCell className="text-right">{brl(Number(d.valor_servico) || 0)}</TableCell>
+                          <TableCell className="text-xs max-w-[200px] truncate" title={String(f.xNomeTomador || "")}>
+                            {String(f.xNomeTomador || "—")}
+                          </TableCell>
+                          <TableCell className="text-center text-xs">
+                            {String(d.data_autorizacao || "").slice(0, 10) || "—"}
+                          </TableCell>
+                        </TableRow>
+                      );
+                    })}
+                  </TableBody>
+                </Table>
+              )}
+            </Card>
+            {ciotSel.size > 0 && (
+              <Card className="p-3 space-y-2">
+                <div className="bg-primary/8 border-b border-primary/20 -m-3 mb-1 px-2 py-1 text-[10px] font-semibold uppercase tracking-wide text-primary/80">
+                  Operação CIOT — {ciotSel.size} CT-e(s)
+                </div>
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+                  <div>
+                    <Label className="text-[10px] text-muted-foreground">Tipo de carga (ANTT)</Label>
+                    <Select value={ciotTabTipo} onValueChange={setCiotTabTipo}>
+                      <SelectTrigger className="h-8 text-xs">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {(TIPOS_CARGA_ANTT as readonly string[]).map((t) => (
+                          <SelectItem key={t} value={t}>
+                            {t}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div>
+                    <Label className="text-[10px] text-muted-foreground">Pagamento</Label>
+                    <Select value={ciotTabPagto} onValueChange={setCiotTabPagto}>
+                      <SelectTrigger className="h-8 text-xs">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="6">PIX</SelectItem>
+                        <SelectItem value="4">Conta pagamento</SelectItem>
+                        <SelectItem value="2">Conta corrente</SelectItem>
+                        <SelectItem value="5">Outros</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="col-span-2">
+                    <Label className="text-[10px] text-muted-foreground">Chave/doc (vazio = CNPJ)</Label>
+                    <Input
+                      className="h-8 text-xs font-mono"
+                      value={ciotTabChave}
+                      onChange={(e) => setCiotTabChave(e.target.value)}
+                    />
+                  </div>
+                </div>
+                <div className="flex justify-end">
+                  <Button size="sm" onClick={emitirCiotLote} disabled={emitindoCiotLote}>
+                    {emitindoCiotLote ? "Emitindo…" : `Emitir CIOT (${ciotSel.size} CT-e)`}
+                  </Button>
+                </div>
+                <p className="text-[10px] text-muted-foreground">
+                  Direto na ANTT (homologação) — só frota própria, sem TAC. Tomador único obrigatório.
+                </p>
+              </Card>
+            )}
+            <Card className="overflow-hidden">
+              <div className="bg-primary/8 border-b border-primary/20 px-3 py-1.5 text-[10px] font-semibold uppercase tracking-wide text-primary/80">
+                CIOTs emitidos ({(ciotOps ?? []).length})
+              </div>
+              {!(ciotOps ?? []).length ? (
+                <div className="p-4">
+                  <EmptyState icon={Truck} title="Nenhum CIOT ainda" description="Selecione CT-es acima e emita." />
+                </div>
+              ) : (
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>CIOT</TableHead>
+                      <TableHead>Protocolo</TableHead>
+                      <TableHead className="text-right">Valor</TableHead>
+                      <TableHead className="text-center">CT-es</TableHead>
+                      <TableHead>Status</TableHead>
+                      <TableHead>Data</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {(ciotOps ?? []).map((o) => (
+                      <TableRow key={o.id}>
+                        <TableCell className="font-mono text-xs">{o.ciot}</TableCell>
+                        <TableCell className="font-mono text-xs">{o.protocolo || "—"}</TableCell>
+                        <TableCell className="text-right">{brl(Number(o.valor_frete) || 0)}</TableCell>
+                        <TableCell className="text-center">{Array.isArray(o.cte_ids) ? o.cte_ids.length : "—"}</TableCell>
+                        <TableCell className="text-xs">{o.status}</TableCell>
+                        <TableCell className="text-xs">{String(o.created_at || "").slice(0, 10)}</TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              )}
+            </Card>
           </TabsContent>
           <TabsContent value="rejeitados" className="mt-0">
             {docsByStatus.rejeitados.length > 0 && (
@@ -6896,42 +7140,12 @@ function CtePage() {
                             onChange={(e) => setForm((f: any) => ({ ...f, ciot: e.target.value }))}
                             disabled={(form as any).finalidadeEmissao === "Complemento"}
                           />
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            className="h-6 shrink-0 px-2 text-[10px]"
-                            disabled={emitindoCiot || (form as any).finalidadeEmissao === "Complemento"}
-                            onClick={emitirCiot}
-                            title="Emite CIOT direto na ANTT (homologação) — só frota própria, sem TAC"
-                          >
-                            {emitindoCiot ? "Emitindo…" : "Emitir"}
-                          </Button>
                         </div>
                         {(form as any).ciotProtocolo ? (
                           <div className="text-[9px] text-muted-foreground">Prot. ANTT: {(form as any).ciotProtocolo}</div>
-                        ) : null}
-                        <div className="mt-1 flex gap-1">
-                          <Select
-                            value={String((form as any).ciotTipoPagto || "6")}
-                            onValueChange={(v) => setForm((f: any) => ({ ...f, ciotTipoPagto: v }))}
-                          >
-                            <SelectTrigger className="h-6 text-[10px]">
-                              <SelectValue />
-                            </SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="6">PIX</SelectItem>
-                              <SelectItem value="4">Conta pagamento</SelectItem>
-                              <SelectItem value="2">Conta corrente</SelectItem>
-                              <SelectItem value="5">Outros</SelectItem>
-                            </SelectContent>
-                          </Select>
-                          <Input
-                            className="h-6 text-[10px] font-mono"
-                            placeholder="Chave/doc (vazio = CNPJ)"
-                            value={(form as any).ciotChave || ""}
-                            onChange={(e) => setForm((f: any) => ({ ...f, ciotChave: e.target.value }))}
-                          />
-                        </div>
+                        ) : (
+                          <div className="text-[9px] text-muted-foreground">Emissão na aba CIOT</div>
+                        )}
                       </div>
                     </div>
                     <div className="grid grid-cols-3 gap-1">
