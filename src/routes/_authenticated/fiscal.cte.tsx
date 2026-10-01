@@ -1601,6 +1601,7 @@ function CtePage() {
     setViewDoc(null);
     setPercPickOpen(false);
     aplicarPercurso(r);
+    percursoAplicadoKey.current = "pick|" + (r as any).id;
     setAba("geral");
     setOpen(true);
     toast.success(`Percurso ${r.codigo} aplicado`);
@@ -4018,6 +4019,16 @@ function CtePage() {
   };
   const aplicarPercurso = (r: Record<string, any>) => {
     const stdAliq = (v: any, fb: any) => (v && Number(v) !== 0 ? String(v) : fb);
+    // IE do destinatário: NF-e (XML) > contato > percurso > mantém
+    const destDocP = String(r.dest_cnpj || "").replace(/\D/g, "");
+    const nfeDest =
+      (mercadorias || []).find(
+        (mm: any) => String(mm.destCnpj || "").replace(/\D/g, "") === destDocP,
+      ) ||
+      (mercadorias || [])[0] ||
+      {};
+    const ieDestNfe = (nfeDest as any)?.destIE || "";
+    const ieDestContato = ((contatoByDoc.get(destDocP) || {}) as any)?.ie || "";
     setForm((f) => ({
       ...f,
       toma: r.toma_tipo || f.toma,
@@ -4036,6 +4047,7 @@ function CtePage() {
       cMunIni: r.coleta_cmun || f.cMunIni,
       xMunIni: r.coleta_xmun || f.xMunIni,
       ufIni: r.coleta_uf || f.ufIni,
+      ieDestinatario: ieDestNfe || ieDestContato || r.dest_ie || (f as any).ieDestinatario || "",
       cMunFim: r.entrega_cmun || f.cMunFim,
       xMunFim: r.entrega_xmun || f.xMunFim,
       ufFim: r.entrega_uf || f.ufFim,
@@ -4281,7 +4293,8 @@ function CtePage() {
     const m = matchPercurso(d);
     if (!m) return;
     const key = m.id + "|" + d.remDoc + "|" + d.destDoc + "|" + d.tomaDoc;
-    if (percursoAplicadoKey.current === key) return;
+    if (percursoAplicadoKey.current === key || percursoAplicadoKey.current === "pick|" + m.id)
+      return;
     percursoAplicadoKey.current = key;
     aplicarPercurso(m);
     // eslint-disable-next-line react-hooks/exhaustive-deps

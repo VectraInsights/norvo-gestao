@@ -3822,3 +3822,8 @@ Espelhado na Vercel.
 ## Piso ANTT: soma eixos cavalo + carretas (01/10)
 
 - O piso usava so os eixos do cavalo (3). Agora eixosCombinacao soma tracao + placaReboque/semiReboque1/semiReboque2 pelo cadastro de veiculos (vale no aviso do CT-e e no resumo do CIOT). Ex.: 3910 km Carga Geral 6 eixos = R$ 30.132,61 igual a calculadora ANTT.
+
+## CT-e: IE destino sempre + picker preservado (01/10)
+
+- aplicarPercurso agora preenche IE do destinatario (NF-e > contato > percurso > mantem); antes ele so era setado 1x no carregamento da pagina, da primeira NF-e da lista.
+- Escolha manual de percurso no picker nao e mais sobrescrita pela aplicacao automatica (chave pick+id).
