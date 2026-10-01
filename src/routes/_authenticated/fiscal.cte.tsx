@@ -1765,7 +1765,6 @@ function CtePage() {
     const valorTotal = r.valorTotal;
     const placa = r.placa;
     const km = r.km;
-    const veic = (veiculos || []).find((v: any) => String(v.placa || "").toUpperCase() === placa);
     const eixos = r.eixos;
     const pesoTotal = r.pesoTotal;
     // Destinatário vem da NF-e vinculada ao CT-e (não existe no form).
@@ -1792,8 +1791,36 @@ function CtePage() {
       return;
     }
     setEmitindoCiotLote(true);
+    const tProg = toast.loading("Gerando IdOperacao na ANTT…");
     try {
       const tipoCodigo = 5; // sempre Carga Geral
+      // ANTT valida eixos POR veículo: tração (tipo 1, só os eixos dela) +
+      // cada reboque (tipo 2, só os eixos dele). Enviar a soma da combinação
+      // num único item tipo 1 rejeita ([205] eixos inválidos / sem automotor).
+      const byPlacaCiot = (pl: string) =>
+        (veiculos || []).find((v: any) => String(v.placa || "").toUpperCase() === String(pl || "").toUpperCase());
+      const placasCiot = [forms[0]?.placaVeiculo, forms[0]?.placaReboque, forms[0]?.semiReboque1, forms[0]?.semiReboque2]
+        .map((pl) => String(pl || "").trim().toUpperCase())
+        .filter(Boolean)
+        .filter((pl, i, a) => a.indexOf(pl) === i);
+      const veicsCiot = placasCiot
+        .map((pl, i) => {
+          const cad = byPlacaCiot(pl) as any;
+          return {
+            placa: pl,
+            eixos: Number(cad?.quantidade_eixos) || 0,
+            rntrc: String(cad?.rntrc || rntrcFinal || "").replace(/\D/g, ""),
+            tipoVeiculo: i === 0 ? 1 : 2,
+          };
+        })
+        .filter((v) => v.eixos > 0);
+      if (veicsCiot.length === 0 || veicsCiot[0].tipoVeiculo !== 1) {
+        toast.dismiss(tProg);
+        toast.error("Tração sem eixos no cadastro do veículo — confira a placa em Frota → Veículos");
+        setEmitindoCiotLote(false);
+        return;
+      }
+      toast.loading("Declarando operação na ANTT…", { id: tProg });
       const hoje = new Date();
       const fmtD = (d: Date) => d.toISOString().slice(0, 10);
       const fim = new Date(hoje.getTime() + Math.max(1, Math.ceil(km / 800)) * 86400000);
@@ -1805,13 +1832,7 @@ function CtePage() {
             contratado: { doc: emitCnpj, rntrc: rntrcFinal },
             contratante: { doc: tomaCnpj },
             destinatarioDoc: destCnpj || undefined,
-            veiculos: [
-              {
-                placa,
-                eixos,
-                rntrc: String((veic as any)?.rntrc || rntrcFinal || "").replace(/\D/g, ""),
-              },
-            ],
+            veiculos: veicsCiot,
             pagamento: {
               tipo: 6,
               docCreditado: emitCnpj,
@@ -1882,8 +1903,10 @@ function CtePage() {
         toast.error("CIOT rejeitado", { description: `[${ret?.codigo || "?"}] ${ret?.mensagem || "sem resposta da ANTT"}` });
       }
     } catch (e: any) {
+      toast.dismiss(tProg);
       toast.error("Falha ao emitir CIOT", { description: e?.message });
     } finally {
+      toast.dismiss(tProg);
       setEmitindoCiotLote(false);
     }
   };

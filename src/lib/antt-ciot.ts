@@ -116,6 +116,16 @@ function odToDict(o: OrigemDestinoCiot, prefixoOrigem: boolean) {
 
 export function buildDeclaracaoPayload(inp: DeclaracaoCiotInput, idOperacao: string) {
   const p = inp.pagamento;
+  // Validação local antes do mTLS (evita 3 chamadas lentas p/ falhar no óbvio).
+  if (!/^[A-Za-z0-9]{12}$/.test(String(idOperacao || "")))
+    throw new Error(`IdOperacaoTransporte inválido (${idOperacao || "vazio"}): esperado 12 caracteres.`);
+  if (!Array.isArray(inp.veiculos) || !inp.veiculos.some((v) => Number((v as any).tipoVeiculo ?? 1) === 1))
+    throw new Error("É necessário informar ao menos um veículo do tipo automotor (tração).");
+  for (const v of inp.veiculos || []) {
+    const ex = Number((v as any).eixos);
+    if (!Number.isInteger(ex) || ex < 1)
+      throw new Error(`Quantidade de eixos inválida para a placa ${String((v as any).placa || "—")}: informe os eixos no cadastro do veículo.`);
+  }
   const infPag: Record<string, unknown> = {
     TipoPagamento: Number(p.tipo),
     CpfCnpjCreditado: soDig(p.docCreditado),
@@ -239,7 +249,7 @@ function agentMtls(pfx: Buffer, senha: string): https.Agent {
     passphrase: senha,
     rejectUnauthorized: false,
     minVersion: "TLSv1.2",
-    keepAlive: false,
+    keepAlive: true, // reusa a conexão mTLS nas 3 chamadas (/token, /gerar, declaração)
   });
 }
 
@@ -264,17 +274,17 @@ export async function gerarIdOperacaoAntt(
   if (g.json?.Sucesso === false)
     throw new Error(`ANTT /gerar rejeitou: ${JSON.stringify(g.json?.Mensagem || g.json?.Erros || g.json).slice(0, 300)}`);
   // /gerar retorna IdOperacaoTransporte (12 chars) que vai na DeclaracaoOperacaoTransporte.
-  const idOp =
+  const idOp = String(
     g.json?.Dados?.IdOperacaoTransporte ||
-    g.json?.IdOperacaoTransporte ||
-    g.json?.Dados?.idOperacaoTransporte ||
-    g.json?.idOperacaoTransporte ||
-    "";
-  if (idOp) return String(idOp);
-  // fallback: alguns ambientes HML retornam só CIOT
-  const ciot = g.json?.Dados?.CIOT || g.json?.CIOT || g.json?.ciot || "";
-  if (!ciot) throw new Error(`ANTT /gerar sem IdOperacaoTransporte nem CIOT: ${g.text.slice(0, 300)}`);
-  return String(ciot);
+      g.json?.IdOperacaoTransporte ||
+      g.json?.Dados?.idOperacaoTransporte ||
+      g.json?.idOperacaoTransporte ||
+      "",
+  ).trim();
+  // IdOperacaoTransporte tem que ter 12 chars — nunca usar o CIOT como
+  // substituto (a declaração rejeita com "IdOperacaoTransporte é inválido").
+  if (/^[A-Za-z0-9]{12}$/.test(idOp)) return idOp;
+  throw new Error(`ANTT /gerar sem IdOperacaoTransporte válido: ${g.text.slice(0, 300)}`);
 }
 
 function codigoOk(json: any): { codigo: string; mensagem: string; protocolo: string } {
