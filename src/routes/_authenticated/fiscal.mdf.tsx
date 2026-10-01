@@ -73,6 +73,25 @@ function distUF(a: string, b: string): number {
   return 99;
 }
 
+// Placa + motorista p/ a listagem: do rascunho (gravados) ou do XML emitido
+function infoMdfLinha(d: { xml_assinado: string | null }): { placa: string; motorista: string } {
+  try {
+    const p = JSON.parse(String(d.xml_assinado || ""));
+    if (p && typeof p === "object" && (p.rascunho || Array.isArray(p.chaves)) && !p.xml) {
+      return { placa: String(p.placa || ""), motorista: String(p.motNome || "") };
+    }
+  } catch {}
+  try {
+    let xml = String(d.xml_assinado || "");
+    try { const p = JSON.parse(xml); if (p?.xml) xml = String(p.xml); } catch {}
+    const placa = xml.match(/<veicTracao>[\s\S]*?<placa>([^<]+)<\/placa>/)?.[1]?.trim() || "";
+    const motorista = xml.match(/<condutor>[\s\S]*?<xNome>([^<]+)<\/xNome>/)?.[1]?.trim() || "";
+    return { placa, motorista };
+  } catch {
+    return { placa: "", motorista: "" };
+  }
+}
+
 // Menor caminho entre UFs (só as intermediárias, p/ o percurso do MDF-e)
 function caminhoUF(a: string, b: string): string[] {
   a = String(a || "").toUpperCase(); b = String(b || "").toUpperCase();
@@ -158,7 +177,7 @@ function MdfPage() {
             peso_total: g.docs.reduce((s, d) => s + (Number(d.peso_carga) || parseFloat(d._f?.peso) || 0), 0),
             uf_carregamento: ufIni || null, uf_descarregamento: g.uf || null,
             veiculo_tracao_id: null, ambiente: MDFE_AMBIENTE,
-            xml_assinado: JSON.stringify({ rascunho: true, chaves: chs, percursoUFs: caminhoUF(ufIni, g.uf), observacoes: "", infoFisco: "", tipoMdf: "Normal", isTransbordo: false, transb1: "", transb2: "", transb3: "" }),
+            xml_assinado: JSON.stringify({ rascunho: true, chaves: chs, percursoUFs: caminhoUF(ufIni, g.uf), observacoes: "", infoFisco: "", tipoMdf: "Normal", isTransbordo: false, transb1: "", transb2: "", transb3: "", placa: String(f0.placaVeiculo || ""), motNome: g.mot }),
           } as any;
           try {
             const { data: outros } = await supabase.from("mdf_documentos" as any).select("id,xml_assinado").eq("empresa_id", empId).eq("status", "rascunho");
@@ -318,7 +337,7 @@ function MdfPage() {
     setSemRascunho(true);
     setOpen(true);
   };
-  const [filtroStatus, setFiltroStatus] = useState("autorizados");
+  const [filtroStatus, setFiltroStatus] = useState("rascunho");
   const [mdfSitTab, setMdfSitTab] = useState("abertos");
   const [periodoIni, setPeriodoIni] = useState("");
   const [periodoFim, setPeriodoFim] = useState("");
@@ -434,32 +453,36 @@ function MdfPage() {
         />
       ) : (
         <Card className="overflow-hidden">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Número</TableHead>
-                <TableHead>Série</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead>CT-e</TableHead>
-                <TableHead>UF Carreg.</TableHead>
-                <TableHead>Valor Carga</TableHead>
-                <TableHead>Peso (kg)</TableHead>
-                <TableHead>Chave</TableHead>
-                <TableHead className="text-right">Ações</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {docsFiltrados.map(d => (
-                <TableRow key={d.id}>
-                  <TableCell className="font-mono">{d.numero ?? "—"}</TableCell>
-                  <TableCell>{d.serie ?? "1"}</TableCell>
-                  <TableCell><Badge variant={statusColor(d.status)}>{d.status}</Badge></TableCell>
-                  <TableCell>{d.qtd_cte ?? 0}</TableCell>
-                  <TableCell>{d.uf_carregamento ?? "—"}</TableCell>
-                  <TableCell>{d.valor_total_carga ? brl(d.valor_total_carga) : "—"}</TableCell>
-                  <TableCell>{d.peso_total ? num(d.peso_total) : "—"}</TableCell>
-                  <TableCell className="font-mono text-xs truncate max-w-[180px]">{d.chave_acesso ?? "—"}</TableCell>
-                  <TableCell className="text-right">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Placas</TableHead>
+                  <TableHead>Motorista</TableHead>
+                  <TableHead>Número</TableHead>
+                  <TableHead>Série</TableHead>
+                  <TableHead>UF Início</TableHead>
+                  <TableHead>UF Fim</TableHead>
+                  <TableHead>Valor</TableHead>
+                  <TableHead>Peso</TableHead>
+                  <TableHead>Responsável Emissão</TableHead>
+                  <TableHead className="text-right">Ações</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {docsFiltrados.map(d => {
+                  const info = infoMdfLinha(d);
+                  return (
+                  <TableRow key={d.id}>
+                    <TableCell className="font-mono text-xs">{info.placa || "—"}</TableCell>
+                    <TableCell className="text-xs max-w-[180px] truncate" title={info.motorista}>{info.motorista || "—"}</TableCell>
+                    <TableCell className="font-mono">{d.numero ?? "—"}</TableCell>
+                    <TableCell>{d.serie ?? "—"}</TableCell>
+                    <TableCell>{d.uf_carregamento ?? "—"}</TableCell>
+                    <TableCell>{d.uf_descarregamento ?? "—"}</TableCell>
+                    <TableCell>{d.valor_total_carga ? brl(d.valor_total_carga) : "—"}</TableCell>
+                    <TableCell>{d.peso_total ? num(d.peso_total) : "—"}</TableCell>
+                    <TableCell className="text-xs max-w-[140px] truncate" title={d.responsavel_emissao || ""}>{d.responsavel_emissao || "—"}</TableCell>
+                    <TableCell className="text-right">
                     <div className="flex gap-1 justify-end">
                       {d.status === "autorizado" && (
                         <>
@@ -525,7 +548,8 @@ function MdfPage() {
                     </div>
                   </TableCell>
                 </TableRow>
-              ))}
+                  );
+                })}
             </TableBody>
           </Table>
         </Card>
@@ -893,17 +917,25 @@ function DialogNovoMdf({ open, onOpenChange, empresaId, empresa, chavesIniciais,
     queryFn: async ({ signal }) => {
       const { data, error } = await supabase.from("mdf_documentos" as any)
         .select("xml_assinado").eq("empresa_id", empresaId)
-        .in("status", ["autorizado", "encerrado"]).limit(200).abortSignal(signal);
+        .in("status", ["autorizado", "encerrado", "rascunho"]).limit(200).abortSignal(signal);
       if (error) throw error;
       const set = new Set<string>();
       for (const r of (data as any[]) || []) {
         const x = String((r as any)?.xml_assinado || "");
         for (const m of x.matchAll(/<chCTe>(\d{44})<\/chCTe>/g)) set.add(m[1]);
+        try {
+          const p = JSON.parse(x);
+          for (const ch of (Array.isArray(p.chaves) ? p.chaves : [])) {
+            if (/^\d{44}$/.test(String(ch))) set.add(String(ch));
+          }
+        } catch {}
       }
       return set;
     },
   });
   const cteVinculado = (chave?: string | null) => !!chave && mdfChaves instanceof Set && (mdfChaves as Set<string>).has(chave);
+  // CT-es do rascunho em edição não contam como bloqueados p/ ele mesmo
+  const chavesEdicao = useMemo(() => new Set(rascunhoInicial?.chaves || []), [rascunhoInicial]);
   const [percursoUFs, setPercursoUFs] = useState<string[]>([]);
   const [tracaoSel, setTracaoSel] = useState("");
   const todasTracoes = useMemo(() => { const out: string[] = []; for (const c of (ctesDisponiveis || [])) { try { const p = JSON.parse((c as any).xml_assinado || "{}"); const pl = String(p.form?.placaVeiculo || "").toUpperCase(); if (pl && !out.includes(pl)) out.push(pl); } catch {} } return out.sort(); }, [ctesDisponiveis]);
@@ -997,8 +1029,9 @@ function DialogNovoMdf({ open, onOpenChange, empresaId, empresa, chavesIniciais,
     },
   });
   const transbAtivo = isTransbordo ? transbCtes : null;
-  // Bloqueado = em MDF-e ativo, exceto CT-e vindo do transbordo selecionado.
-  const cteBloqueado = (chave?: string | null) => !!chave && cteVinculado(chave) && !(transbAtivo?.has(chave));
+  // Bloqueado = em MDF-e ativo ou rascunho, exceto CT-e vindo do transbordo
+  // selecionado ou do próprio rascunho em edição.
+  const cteBloqueado = (chave?: string | null) => !!chave && cteVinculado(chave) && !chavesEdicao.has(chave) && !(transbAtivo?.has(chave));
   // Reenvio de transbordo: marca automaticamente os CT-es do manifesto origem
   // (uma vez por seleção; desmarcar manualmente é respeitado).
   const transbAutoRef = useRef("");
@@ -1238,7 +1271,8 @@ function DialogNovoMdf({ open, onOpenChange, empresaId, empresa, chavesIniciais,
             peso_total: ctes.reduce((s, c) => s + pesoDe(c), 0),
             uf_carregamento: ufIni || null, uf_descarregamento: g.uf || null,
             veiculo_tracao_id: (veic as any)?.id || null, ambiente: ambienteMdf,
-            xml_assinado: JSON.stringify({ rascunho: true, chaves, percursoUFs: caminhoUF(ufIni, g.uf), observacoes, infoFisco, tipoMdf, isTransbordo: false, transb1: "", transb2: "", transb3: "" }),
+            responsavel_emissao: respNome || null,
+            xml_assinado: JSON.stringify({ rascunho: true, chaves, percursoUFs: caminhoUF(ufIni, g.uf), observacoes, infoFisco, tipoMdf, isTransbordo: false, transb1: "", transb2: "", transb3: "", placa: tracaoSel || "", motNome: g.motNome }),
           } as any;
           try {
             const { data: outros } = await supabase.from("mdf_documentos" as any).select("id,xml_assinado").eq("empresa_id", empresaId).eq("status", "rascunho");
@@ -1290,6 +1324,14 @@ function DialogNovoMdf({ open, onOpenChange, empresaId, empresa, chavesIniciais,
       if (bloqueados.length) { toast.error("CT-e já vinculado a um MDF-e ativo — remova da seleção"); setLoading(false); return; }
       const ctesArr = (ctesDisponiveis || []).filter(c => ctesSelecionadas.has(c.chave_acesso || ""));
       const numero = String(Math.floor(Math.random() * 999999) + 1).padStart(9, "0");
+      // CIOT obrigatório em todo CT-e do manifesto (próprio ou não)
+      const semCiot = ctesArr.filter(c => !String(formDe(c).ciot || "").trim());
+      if (semCiot.length) {
+        const nums = semCiot.map(c => c.numero ?? "?").join(", ");
+        toast.error(`CT-e sem CIOT vinculado (${semCiot.length}): ${nums} — gere o CIOT antes de emitir`);
+        setLoading(false);
+        return;
+      }
       const firstForm = formDe(ctesArr[0]);
       const tpRodDe = (t?: string | null) => { const s = String(t || "").toLowerCase(); if (s.includes("cavalo")) return "03"; if (s.includes("truck")) return "01"; if (s.includes("toco")) return "02"; if (s.includes("van") || s.includes("furg")) return "04"; if (s.includes("utilit")) return "05"; return "06"; };
       const renavamDe = (placa: string) => (veiculos || []).find(v => String(v.placa || "").toUpperCase() === String(placa || "").toUpperCase())?.renavam || undefined;
@@ -1446,7 +1488,8 @@ function DialogNovoMdf({ open, onOpenChange, empresaId, empresa, chavesIniciais,
         qtd_cte: ctesArr.length, valor_total_carga: totalCarga, peso_total: pesoCarga,
         uf_carregamento: ufCarregamento || null, uf_descarregamento: ufDescarregamento || null,
         veiculo_tracao_id: (veic as any)?.id || null, ambiente: ambienteMdf,
-        xml_assinado: JSON.stringify({ rascunho: true, chaves, percursoUFs, observacoes, infoFisco, tipoMdf, isTransbordo, transb1, transb2, transb3 }),
+        responsavel_emissao: respNome || null,
+        xml_assinado: JSON.stringify({ rascunho: true, chaves, percursoUFs, observacoes, infoFisco, tipoMdf, isTransbordo, transb1, transb2, transb3, placa: tracaoSel || "", motNome: motNomes[0]?.nome || "" }),
       } as any;
       if (rascunhoInicial?.id) {
         const { error } = await supabase.from("mdf_documentos" as any).update(payload).eq("id", rascunhoInicial.id);

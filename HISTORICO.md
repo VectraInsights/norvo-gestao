@@ -3927,3 +3927,7 @@ Espelhado na Vercel.
 ## MDF-e: prefill gera rascunhos direto (01/10)
 
 - Gerar MDF-e no CT-e cria os rascunhos (1 por motorista+UF) ao chegar, sem abrir dialogo; toast X MDFs gerados e cai no Aguardando envio.
+
+## MDF-e: aba padrao, colunas, CIOT e rascunho vincula (01/10)
+
+- Aba inicial Aguardando envio; lista sem status com placas/motorista/numero/serie/UFs/valor/peso/responsavel (rascunhos gravam esses dados). Emissao bloqueada sem CIOT em todo CT-e. Rascunho conta como vinculado (Com MDF-e) no CT-e e no dialogo.

@@ -556,7 +556,7 @@ function CtePage() {
         .from("mdf_documentos" as any)
         .select("status,xml_assinado")
         .eq("empresa_id", (empresa as any).id)
-        .in("status", ["autorizado", "encerrado"])
+        .in("status", ["autorizado", "encerrado", "rascunho"])
         .limit(200)
         .abortSignal(signal);
       if (error) throw error;
