@@ -11,10 +11,17 @@ import https from "node:https";
 
 export const ANTT_BASE = {
   homologacao: "https://appservices-hml.antt.gov.br/pefServices/api",
-  producao: "https://appservices.antt.gov.br/pefServices/api",
+  // Produção DESABILITADA durante os testes: não há URL nem caminho de
+  // código que alcance o ambiente produtivo da ANTT.
 } as const;
 
 export type AnttEnv = keyof typeof ANTT_BASE;
+
+export function assertAnttEnv(env: string): asserts env is AnttEnv {
+  if (env !== "homologacao") {
+    throw new Error(`Operação ANTT bloqueada fora de homologacao: recebido ${env || "(vazio)"}`);
+  }
+}
 
 const CODIGOS_SUCESSO = new Set(["000000", "110", "111"]);
 
@@ -323,6 +330,7 @@ export async function consultarFrotaAntt(args: FrotaAnttArgs): Promise<{
   situacao: any;
   frota: any;
 }> {
+  assertAnttEnv(args.env);
   const base = ANTT_BASE[args.env];
   const agent = agentMtls(args.pfx, args.senha);
   const sit = await postJson({
@@ -358,6 +366,7 @@ export async function consultarCiotGeradoAntt(args: {
   codigo12: string;
   ano?: number;
 }): Promise<any> {
+  assertAnttEnv(args.env);
   const base = ANTT_BASE[args.env];
   const agent = agentMtls(args.pfx, args.senha);
   const body: Record<string, unknown> = { CodigoIdentificacaoOperacao: soDig(args.codigo12) };
@@ -374,6 +383,7 @@ export async function declararCiotAntt(args: {
   certCnpj: string;
   input: DeclaracaoCiotInput;
 }): Promise<CiotResultado> {
+  assertAnttEnv(args.env);
   const b115 = b115Ok(args.certCnpj, args.input.contratado.doc);
   if (!b115.ok) {
     return {
