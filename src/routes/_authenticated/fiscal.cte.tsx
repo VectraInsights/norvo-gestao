@@ -5944,12 +5944,6 @@ function CtePage() {
               <AlertDialogContent>
                 <AlertDialogHeader>
                   <AlertDialogTitle>Emitir CIOT</AlertDialogTitle>
-                  <AlertDialogDescription>
-                    {resumoCiot
-                      ? `${resumoCiot.sel.length} CT-e(s) • Tomador ${resumoCiot.tomaNome || resumoCiot.tomaCnpj} • Motorista ${resumoCiot.motoNome || "—"}`
-                      : "Nenhum CT-e selecionado"}
-                    . Confirmo que é FROTA PRÓPRIA, sem TAC/autônomo (TAC exige PSP).
-                  </AlertDialogDescription>
                 </AlertDialogHeader>
                 {resumoCiot && (
                   <div className="grid grid-cols-2 gap-2 text-sm">
