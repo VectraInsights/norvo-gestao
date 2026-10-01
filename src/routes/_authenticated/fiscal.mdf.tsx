@@ -1029,6 +1029,23 @@ function DialogNovoMdf({ open, onOpenChange, empresaId, empresa, chavesIniciais,
   };
   const ctesSelArr = useMemo(() => (ctesDisponiveis || []).filter(c => ctesSelecionadas.has(c.chave_acesso || "")), [ctesDisponiveis, ctesSelecionadas]);
   const ctesForms = useMemo(() => (ctesDisponiveis || []).filter(c => ctesSelecionadas.has(c.chave_acesso || "")).map(c => { try { const p = JSON.parse((c as any).xml_assinado || "{}"); return (p.form || {}) as Record<string, any>; } catch { return {} as Record<string, any>; } }), [ctesDisponiveis, ctesSelecionadas]);
+  // Grupos p/ manifestos separados: 1 MDF-e por (motorista + UF de descarga).
+  // Misturar gera tudo junto (errado) — a emissão barra e sugere os grupos.
+  const gruposMdf = useMemo(() => {
+    const map = new Map<string, { motId: string; motNome: string; uf: string; chaves: string[]; valor: number }>();
+    for (const c of ctesSelArr) {
+      const f = formDe(c);
+      const motId = String(f.motoristaId || "").trim();
+      const motNome = String(f.motoristaNome || "").trim().toUpperCase() || "SEM MOTORISTA";
+      const uf = String(f.ufFim || "").trim().toUpperCase() || "?";
+      const key = `${motId || motNome}||${uf}`;
+      let g = map.get(key);
+      if (!g) { g = { motId, motNome, uf, chaves: [], valor: 0 }; map.set(key, g); }
+      if (c.chave_acesso) g.chaves.push(c.chave_acesso);
+      g.valor += c.valor_servico || 0;
+    }
+    return [...map.values()].sort((a, b) => (a.motNome + a.uf).localeCompare(b.motNome + b.uf, "pt-BR"));
+  }, [ctesSelArr]);
   // Cidades derivadas + opções de encerramento (deve ser um dos destinos)
   const cidadeIniDerivada = useMemo(() => {
     if (ctesSelArr.length) {
@@ -1094,6 +1111,13 @@ function DialogNovoMdf({ open, onOpenChange, empresaId, empresa, chavesIniciais,
 
   const handleEmitir = async () => {
     if (!ctesSelecionadas.size) { toast.error("Selecione pelo menos 1 CT-e"); return; }
+    if (gruposMdf.length > 1) {
+      toast.error("Um MDF-e por motorista e UF de descarga", {
+        description: "Grupos: " + gruposMdf.map(g => `${g.motNome} • ${g.uf} (${g.chaves.length})`).join(" | ") + ". Use os botões de grupo abaixo para emitir um por vez.",
+        duration: 9000,
+      });
+      return;
+    }
     if (!tracaoSel) { toast.error("Selecione o veículo"); return; }
     if (!motNomes.length) { toast.error("CT-es sem motorista"); return; }
     if (!ufCarregamento || !ufDescarregamento) { toast.error("Percurso incompleto: UF de início/encerramento vêm dos CT-es"); return; }
@@ -1407,6 +1431,27 @@ function DialogNovoMdf({ open, onOpenChange, empresaId, empresa, chavesIniciais,
               </div>
             </div>
             <div className="p-2">
+            {gruposMdf.length > 1 && (
+              <div className="mb-2 rounded border border-amber-500/50 bg-amber-500/10 px-2 py-1.5">
+                <div className="text-[11px] font-semibold text-amber-700">
+                  Seleção mistura motorista/UF — gere 1 MDF-e por grupo:
+                </div>
+                <div className="mt-1 flex flex-wrap gap-1.5">
+                  {gruposMdf.map(g => (
+                    <Button
+                      key={`${g.motNome}||${g.uf}`}
+                      size="sm"
+                      variant="outline"
+                      className="h-6 text-[11px]"
+                      onClick={() => setCtesSelecionadas(new Set(g.chaves))}
+                      title="Selecionar só este grupo"
+                    >
+                      {g.motNome} • {g.uf} ({g.chaves.length} CT-e{g.chaves.length !== 1 ? "s" : ""})
+                    </Button>
+                  ))}
+                </div>
+              </div>
+            )}
             {ctesErro ? (
               <p className="text-sm text-destructive">Falha ao carregar CT-es: {String((ctesErro as any)?.message || ctesErro)}</p>
             ) : !ctesDisponiveis?.length ? (

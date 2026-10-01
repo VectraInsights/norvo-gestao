@@ -3891,3 +3891,7 @@ Espelhado na Vercel.
 ## CIOT: motorista unico + destinatario + valores explicados (01/10)
 
 - Lote CIOT exige mesmo motorista (aviso + bloqueio). Destinatario passa a vir da NF-e vinculada (era o motivo da rejeicao). Dialogo mostra composicao: piso do 1o CT-e (km/eixos) e total = soma dos fretes.
+
+## MDF-e por grupo + autorizados compacto (01/10)
+
+- Autorizados: cancelar selecionados ao lado do Gerar MDF-e; abas Sem/Com MDF-e na mesma linha (encostadas). MDF-e: selecao mista (motorista/UF) mostra grupos p/ emitir 1 por vez e bloqueia emissao conjunta.

@@ -4682,40 +4682,26 @@ function CtePage() {
                 <TableRow>
                   {rotulo === "autorizados" && !semSelecao && (
                     <TableHead className="w-6">
-                      <div className="flex items-center gap-1">
-                        <input
-                          type="checkbox"
-                          checked={
-                            lista
-                              .filter((d) => d.status === "autorizado" && d.chave_acesso)
-                              .every((d) => mdfSel.has(d.chave_acesso!)) &&
-                            lista.some((d) => d.status === "autorizado" && d.chave_acesso)
-                          }
-                          onChange={() => {
-                            const autorizados = lista
-                              .filter((d) => d.status === "autorizado" && d.chave_acesso)
-                              .map((d) => d.chave_acesso!);
-                            setMdfSel((prev) =>
-                              autorizados.every((k) => prev.has(k))
-                                ? new Set([...prev].filter((k) => !autorizados.includes(k)))
-                                : new Set([...prev, ...autorizados]),
-                            );
-                          }}
-                          title="Selecionar CT-es autorizados"
-                        />
-                        <Button
-                          type="button"
-                          size="icon"
-                          variant="ghost"
-                          className="h-6 w-6 text-destructive"
-                          disabled={!autorizadosSelecionados.length}
-                          onClick={cancelarSelecionados}
-                          title="Cancelar CT-es selecionados"
-                          aria-label="Cancelar CT-es selecionados"
-                        >
-                          <Ban className="h-3.5 w-3.5" />
-                        </Button>
-                      </div>
+                      <input
+                        type="checkbox"
+                        checked={
+                          lista
+                            .filter((d) => d.status === "autorizado" && d.chave_acesso)
+                            .every((d) => mdfSel.has(d.chave_acesso!)) &&
+                          lista.some((d) => d.status === "autorizado" && d.chave_acesso)
+                        }
+                        onChange={() => {
+                          const autorizados = lista
+                            .filter((d) => d.status === "autorizado" && d.chave_acesso)
+                            .map((d) => d.chave_acesso!);
+                          setMdfSel((prev) =>
+                            autorizados.every((k) => prev.has(k))
+                              ? new Set([...prev].filter((k) => !autorizados.includes(k)))
+                              : new Set([...prev, ...autorizados]),
+                          );
+                        }}
+                        title="Selecionar CT-es autorizados"
+                      />
                     </TableHead>
                   )}
                   {ehEnvio && !semSelecao && (
@@ -5796,42 +5782,54 @@ function CtePage() {
           </TabsContent>
           <TabsContent value="autorizados" className="mt-0">
             {docsByStatus.autorizados.length > 0 && (
-              <div className="mb-2 flex justify-end">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  disabled={mdfSel.size === 0}
-                  onClick={() => {
-                    try {
-                      localStorage.setItem(
-                        "prefill_mdf_from_cte",
-                        JSON.stringify({ chaves: [...mdfSel] }),
-                      );
-                    } catch {}
-                    setMdfSel(new Set());
-                    navigate({ to: "/fiscal/mdf" } as any);
-                  }}
-                >
-                  <Truck className="mr-1 h-3 w-3" /> Gerar MDF-e ({mdfSel.size})
-                </Button>
+              <div className="mb-1 flex items-center justify-between gap-2">
+                <Tabs value={mdfVincTab} onValueChange={setMdfVincTab}>
+                  <TabsList className="mb-0">
+                    <TabsTrigger
+                      value="sem"
+                      className="text-xs data-[state=active]:bg-primary/10 data-[state=active]:text-primary"
+                    >
+                      Sem MDF-e ({autSemMdf.length})
+                    </TabsTrigger>
+                    <TabsTrigger
+                      value="com"
+                      className="text-xs data-[state=active]:bg-primary/10 data-[state=active]:text-primary"
+                    >
+                      Com MDF-e ({autComMdf.length})
+                    </TabsTrigger>
+                  </TabsList>
+                </Tabs>
+                <div className="flex items-center gap-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    disabled={!autorizadosSelecionados.length}
+                    onClick={cancelarSelecionados}
+                    title="Cancelar CT-es selecionados"
+                  >
+                    <Ban className="mr-1 h-3.5 w-3.5" /> Cancelar selecionados
+                    {autorizadosSelecionados.length > 0 ? ` (${autorizadosSelecionados.length})` : ""}
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    disabled={mdfSel.size === 0}
+                    onClick={() => {
+                      try {
+                        localStorage.setItem(
+                          "prefill_mdf_from_cte",
+                          JSON.stringify({ chaves: [...mdfSel] }),
+                        );
+                      } catch {}
+                      setMdfSel(new Set());
+                      navigate({ to: "/fiscal/mdf" } as any);
+                    }}
+                  >
+                    <Truck className="mr-1 h-3 w-3" /> Gerar MDF-e ({mdfSel.size})
+                  </Button>
+                </div>
               </div>
             )}
-            <Tabs value={mdfVincTab} onValueChange={setMdfVincTab}>
-              <TabsList className="mb-2">
-                <TabsTrigger
-                  value="sem"
-                  className="text-xs data-[state=active]:bg-primary/10 data-[state=active]:text-primary"
-                >
-                  Sem MDF-e ({autSemMdf.length})
-                </TabsTrigger>
-                <TabsTrigger
-                  value="com"
-                  className="text-xs data-[state=active]:bg-primary/10 data-[state=active]:text-primary"
-                >
-                  Com MDF-e ({autComMdf.length})
-                </TabsTrigger>
-              </TabsList>
-            </Tabs>
             {renderTabelaDocs(
               mdfVincTab === "com" ? autComMdf : autSemMdf,
               "autorizados",
