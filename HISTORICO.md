@@ -3903,3 +3903,7 @@ Espelhado na Vercel.
 ## MDF-e automatico por grupo (01/10)
 
 - Botao Emitir N MDF-es separados: 1 por (motorista+UF), cada um com motorista, UFs e percurso automaticos (menor caminho); resumo no fim. Emissao unica segue bloqueando selecao mista.
+
+## Tela de erro mostra motivo (01/10)
+
+- RouteErrorState exibe a mensagem do erro (diagnostico) + protecao no calculo dos grupos do MDF.

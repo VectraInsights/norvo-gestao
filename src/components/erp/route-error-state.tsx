@@ -1,7 +1,13 @@
 import { AlertTriangle, RefreshCw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
-export function RouteErrorState() {
+export function RouteErrorState({ error }: { error?: unknown }) {
+  const msg =
+    error instanceof Error
+      ? error.message
+      : typeof error === "string"
+        ? error
+        : "";
   return (
     <main className="grid min-h-[50vh] place-items-center p-6" role="alert" aria-live="assertive">
       <section className="flex max-w-md flex-col items-center gap-3 text-center">
@@ -12,6 +18,11 @@ export function RouteErrorState() {
         <p className="text-sm text-muted-foreground">
           Ocorreu um problema ao carregar os dados. Tente novamente ou volte mais tarde.
         </p>
+        {msg && (
+          <p className="max-w-full break-words rounded border bg-muted px-2 py-1 font-mono text-[11px] text-muted-foreground">
+            {msg}
+          </p>
+        )}
         <Button type="button" variant="outline" onClick={() => window.location.reload()}>
           <RefreshCw data-icon="inline-start" />
           Tentar novamente

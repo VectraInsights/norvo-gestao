@@ -1055,19 +1055,23 @@ function DialogNovoMdf({ open, onOpenChange, empresaId, empresa, chavesIniciais,
   // Grupos p/ manifestos separados: 1 MDF-e por (motorista + UF de descarga).
   // Misturar gera tudo junto (errado) — a emissão barra e sugere os grupos.
   const gruposMdf = useMemo(() => {
-    const map = new Map<string, { motId: string; motNome: string; uf: string; chaves: string[]; valor: number }>();
-    for (const c of ctesSelArr) {
-      const f = formDe(c);
-      const motId = String(f.motoristaId || "").trim();
-      const motNome = String(f.motoristaNome || "").trim().toUpperCase() || "SEM MOTORISTA";
-      const uf = String(f.ufFim || "").trim().toUpperCase() || "?";
-      const key = `${motId || motNome}||${uf}`;
-      let g = map.get(key);
-      if (!g) { g = { motId, motNome, uf, chaves: [], valor: 0 }; map.set(key, g); }
-      if (c.chave_acesso) g.chaves.push(c.chave_acesso);
-      g.valor += c.valor_servico || 0;
+    try {
+      const map = new Map<string, { motId: string; motNome: string; uf: string; chaves: string[]; valor: number }>();
+      for (const c of ctesSelArr) {
+        const f = formDe(c);
+        const motId = String(f.motoristaId || "").trim();
+        const motNome = String(f.motoristaNome || "").trim().toUpperCase() || "SEM MOTORISTA";
+        const uf = String(f.ufFim || "").trim().toUpperCase() || "?";
+        const key = `${motId || motNome}||${uf}`;
+        let g = map.get(key);
+        if (!g) { g = { motId, motNome, uf, chaves: [], valor: 0 }; map.set(key, g); }
+        if (c.chave_acesso) g.chaves.push(c.chave_acesso);
+        g.valor += c.valor_servico || 0;
+      }
+      return [...map.values()].sort((a, b) => (a.motNome + a.uf).localeCompare(b.motNome + b.uf, "pt-BR"));
+    } catch {
+      return [];
     }
-    return [...map.values()].sort((a, b) => (a.motNome + a.uf).localeCompare(b.motNome + b.uf, "pt-BR"));
   }, [ctesSelArr]);
   // Cidades derivadas + opções de encerramento (deve ser um dos destinos)
   const cidadeIniDerivada = useMemo(() => {
