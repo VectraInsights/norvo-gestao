@@ -354,6 +354,17 @@ export async function handleSefazProxy(request: Request): Promise<Response> {
         });
         break;
       }
+      case "anttConsultarCiot": {
+        const { consultarCiotGeradoAntt } = await import("@/lib/antt-ciot");
+        result = await consultarCiotGeradoAntt({
+          pfx: pfxBytes,
+          senha,
+          env: "homologacao",
+          codigo12: String((body as any).codigo12 || ""),
+          ano: Number((body as any).ano) || undefined,
+        });
+        break;
+      }
       default:
         return json({ error: `Ação desconhecida: ${action}` }, 400);
     }

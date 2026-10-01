@@ -93,7 +93,7 @@ import {
 } from "@/lib/sefaz-cte-server";
 import { SEFAZ_AMBIENTE } from "@/lib/sefaz-ambiente";
 import { pisoMinimoAntt, PISO_VIGENCIA } from "@/lib/piso-antt";
-import { emitirCiotFn, consultarFrotaAnttFn } from "@/lib/antt-ciot-server";
+import { emitirCiotFn, consultarFrotaAnttFn, consultarCiotGeradoAnttFn } from "@/lib/antt-ciot-server";
 import { CFOPS_CTE, MOD_FRETE_OPTIONS, RESPONSAVEL_CTE_OPTIONS } from "@/lib/cfops-transporte";
 import { gerarDactePdf, DACTE_REV } from "@/lib/dacte-pdf";
 import { completarLogradouro, temTipoLogradouro } from "@/lib/endereco";
@@ -1707,8 +1707,11 @@ function CtePage() {
     },
   });
   const [ciotConfirma, setCiotConfirma] = useState(false);
-  const [ciotFrota, setCiotFrota] = useState<{ situacao: any; frota: any } | null>(null);
+  const [ciotFrota, setCiotFrota] = useState<Array<{ rntrc: string; situacao: any; frota: any }> | null>(null);
   const [ciotFrotaLoading, setCiotFrotaLoading] = useState(false);
+  const [ciotConsulta, setCiotConsulta] = useState("");
+  const [ciotConsultaRes, setCiotConsultaRes] = useState<any>(null);
+  const [ciotConsultaLoading, setCiotConsultaLoading] = useState(false);
   const [confRascunho, setConfRascunho] = useState<CteDoc | null>(null);
   const [confLimpar, setConfLimpar] = useState(false);
   const [confExcSel, setConfExcSel] = useState(false);
@@ -1719,20 +1722,58 @@ function CtePage() {
       return;
     }
     const emitCnpj = String((empresa as any).cnpj || "").replace(/\D/g, "");
+    const pad9 = (s: unknown) => {
+      const d = String(s || "").replace(/\D/g, "");
+      return d.length === 8 ? "0" + d : d;
+    };
+    const byPlaca = (pl: string) =>
+      (veiculos || []).find((v: any) => String(v.placa || "").toUpperCase() === String(pl || "").toUpperCase()) as any;
     const placas = [r.forms[0]?.placaVeiculo, r.forms[0]?.placaReboque, r.forms[0]?.semiReboque1, r.forms[0]?.semiReboque2]
       .map((pl) => String(pl || "").trim().toUpperCase())
       .filter(Boolean)
       .filter((pl, i, a) => a.indexOf(pl) === i);
+    // Agrupa por RNTRC do cadastro de cada placa: a TXE pode pertencer a um
+    // RNTRC diferente do RNTRC padrão da operação (cada grupo é consultado
+    // com o próprio RNTRC).
+    const grupos = new Map<string, string[]>();
+    for (const pl of placas) {
+      const rn = pad9(byPlaca(pl)?.rntrc || rntrcFinal);
+      if (!grupos.has(rn)) grupos.set(rn, []);
+      grupos.get(rn)!.push(pl);
+    }
     setCiotFrotaLoading(true);
     try {
-      const ret: any = await consultarFrotaAnttFn({
-        data: { empresaId: empresa.id, interessadoDoc: emitCnpj, transportadorDoc: emitCnpj, rntrc: rntrcFinal, placas },
-      });
-      setCiotFrota({ situacao: ret?.situacao, frota: ret?.frota });
+      const res: Array<{ rntrc: string; situacao: any; frota: any }> = [];
+      for (const [rn, pls] of grupos) {
+        const ret: any = await consultarFrotaAnttFn({
+          data: { empresaId: empresa.id, interessadoDoc: emitCnpj, transportadorDoc: emitCnpj, rntrc: rn, placas: pls },
+        });
+        res.push({ rntrc: rn, situacao: ret?.situacao, frota: ret?.frota });
+      }
+      setCiotFrota(res);
     } catch (e: any) {
       toast.error("Falha ao consultar ANTT", { description: e?.message });
     } finally {
       setCiotFrotaLoading(false);
+    }
+  };
+  const consultarCiotNaAntt = async () => {
+    if (!empresa) return;
+    const cod = ciotConsulta.replace(/\D/g, "");
+    if (cod.length !== 12) {
+      toast.error("Informe o CIOT com 12 dígitos");
+      return;
+    }
+    setCiotConsultaLoading(true);
+    try {
+      const ret: any = await consultarCiotGeradoAnttFn({
+        data: { empresaId: empresa.id, codigo12: cod, ano: new Date().getFullYear() },
+      });
+      setCiotConsultaRes(ret);
+    } catch (e: any) {
+      toast.error("Falha ao consultar CIOT", { description: e?.message });
+    } finally {
+      setCiotConsultaLoading(false);
     }
   };
   const emitirCiotLote = async () => {
@@ -1828,13 +1869,18 @@ function CtePage() {
         .map((pl) => String(pl || "").trim().toUpperCase())
         .filter(Boolean)
         .filter((pl, i, a) => a.indexOf(pl) === i);
+      // O RNTRC da operação é o da TRAÇÃO (dono do cavalo): a TXE pode estar
+      // num RNTRC diferente do padrão da empresa.
+      const rntrcContratado = String(
+        (byPlacaCiot(String(forms[0]?.placaVeiculo || "")) as any)?.rntrc || rntrcFinal || "",
+      ).replace(/\D/g, "");
       const veicsCiot = placasCiot
         .map((pl) => {
           const cad = byPlacaCiot(pl) as any;
           return {
             placa: pl,
             eixos: Number(cad?.quantidade_eixos) || 0,
-            rntrc: String(cad?.rntrc || rntrcFinal || "").replace(/\D/g, ""),
+            rntrc: String(cad?.rntrc || rntrcContratado || "").replace(/\D/g, ""),
           };
         })
         .filter((v) => v.eixos > 0);
@@ -1853,7 +1899,7 @@ function CtePage() {
           empresaId: empresa.id,
           input: {
             tipoOperacao: 1,
-            contratado: { doc: emitCnpj, rntrc: rntrcFinal },
+            contratado: { doc: emitCnpj, rntrc: rntrcContratado },
             contratante: { doc: tomaCnpj },
             destinatarioDoc: destCnpj || undefined,
             veiculos: veicsCiot,
@@ -1924,7 +1970,7 @@ function CtePage() {
         qc.invalidateQueries({ queryKey: ["cte-documentos"] });
         toast.success(`CIOT ${ret.ciotCompleto} autorizado (prot. ${ret.protocolo || "—"})`);
       } else {
-        toast.error("CIOT rejeitado", { description: `[${ret?.codigo || "?"}] ${ret?.mensagem || "sem resposta da ANTT"}` });
+        toast.error("CIOT rejeitado", { description: `[${ret?.codigo || "?"}] ${ret?.mensagem || "sem resposta da ANTT"} (IdOp ${ret?.idOperacao || "—"})` });
       }
     } catch (e: any) {
       toast.dismiss(tProg);
@@ -6025,25 +6071,37 @@ function CtePage() {
                   </Button>
                 </div>
                 {ciotFrota && (
-                  <div className="rounded border px-2 py-1 text-[11px] space-y-0.5">
-                    <div>
-                      RNTRC: {String(ciotFrota.situacao?.RNTRCTransportador ?? ciotFrota.situacao?.rntrc ?? "—")}
-                      {" • "}Ativo: {String(ciotFrota.situacao?.RNTRCAtivo ?? ciotFrota.situacao?.rntrcAtivo ?? "—")}
-                      {" • "}Tipo: {String(ciotFrota.situacao?.TipoTransportador ?? ciotFrota.situacao?.tipo ?? "—")}
-                    </div>
-                    {(Array.isArray(ciotFrota.frota?.Frota) ? ciotFrota.frota.Frota : []).map((v: any, i: number) => (
-                      <div key={i} className="font-mono">
-                        {String(v.PlacaVeiculo ?? v.placa ?? "?")} → situação {String(v.SituacaoVeiculoFrotaTransportador ?? v.situacao ?? "?")}
-                      </div>
-                    ))}
-                    {String(ciotFrota.situacao?.Mensagem ?? ciotFrota.frota?.Mensagem ?? "") !== "" && (
-                      <div className="text-muted-foreground">
-                        {String(
-                          (Array.isArray(ciotFrota.situacao?.Mensagem) ? ciotFrota.situacao.Mensagem[0] : ciotFrota.situacao?.Mensagem) ||
-                            (Array.isArray(ciotFrota.frota?.Mensagem) ? ciotFrota.frota.Mensagem[0] : ciotFrota.frota?.Mensagem) || "",
-                        )}
-                      </div>
-                    )}
+                  <div className="rounded border px-2 py-1 text-[11px] space-y-1">
+                    {ciotFrota.map((g, gi) => {
+                      const lista = Array.isArray(g.frota?.Frota) ? g.frota.Frota : [];
+                      const msg = String(
+                        (Array.isArray(g.situacao?.Mensagem) ? g.situacao.Mensagem[0] : g.situacao?.Mensagem) ||
+                          (Array.isArray(g.frota?.Mensagem) ? g.frota.Mensagem[0] : g.frota?.Mensagem) || "",
+                      );
+                      return (
+                        <div key={gi} className="space-y-0.5">
+                          <div>
+                            RNTRC: {String(g.situacao?.RNTRCTransportador ?? g.rntrc)}
+                            {" • "}Ativo: {String(g.situacao?.RNTRCAtivo ?? "—")}
+                            {" • "}Tipo: {String(g.situacao?.TipoTransportador ?? "—")}
+                          </div>
+                          {lista.map((v: any, i: number) => {
+                            const sit = Number(v.SituacaoVeiculoFrotaTransportador ?? v.situacao);
+                            return (
+                              <div key={i} className={sit === 1 ? "text-green-700 font-semibold" : "text-destructive font-semibold"}>
+                                {String(v.PlacaVeiculo ?? v.placa ?? "?")} → {sit === 1 ? "pertence à frota" : "NÃO pertence à frota"}
+                              </div>
+                            );
+                          })}
+                          {!lista.some((v: any) => Number(v.SituacaoVeiculoFrotaTransportador ?? v.situacao) === 1) && (
+                            <div className="text-destructive">
+                              Nenhuma placa deste RNTRC vinculada em homologação — peça o vínculo a pef@antt.gov.br; sem isso a declaração rejeita.
+                            </div>
+                          )}
+                          {msg !== "" && <div className="text-muted-foreground">{msg}</div>}
+                        </div>
+                      );
+                    })}
                   </div>
                 )}
                 <p className="text-[10px] text-muted-foreground">
@@ -6198,6 +6256,28 @@ function CtePage() {
             <Card className="overflow-hidden">
               <div className="bg-primary/8 border-b border-primary/20 px-3 py-1.5 text-[10px] font-semibold uppercase tracking-wide text-primary/80">
                 CIOTs emitidos ({(ciotOps ?? []).length})
+              </div>
+              <div className="flex items-center gap-2 px-3 py-2 border-b">
+                <Input
+                  className="h-8 max-w-[200px] font-mono text-xs"
+                  placeholder="Consultar CIOT (12 dígitos)"
+                  value={ciotConsulta}
+                  onChange={(e) => setCiotConsulta(e.target.value.replace(/\D/g, "").slice(0, 12))}
+                />
+                <Button size="sm" variant="outline" onClick={consultarCiotNaAntt} disabled={ciotConsultaLoading}>
+                  {ciotConsultaLoading ? "Consultando…" : "Consultar na ANTT"}
+                </Button>
+                {ciotConsultaRes && (
+                  <span className="text-[11px]">
+                    {String(
+                      (Array.isArray(ciotConsultaRes.Mensagem) ? ciotConsultaRes.Mensagem[0] : ciotConsultaRes.Mensagem) ||
+                        ciotConsultaRes.message || "",
+                    )}
+                    {ciotConsultaRes.CodigoIdentificacaoOperacao && ciotConsultaRes.CodigoIdentificacaoOperacao.length > 12
+                      ? ` • CIOT completo ${String(ciotConsultaRes.CodigoIdentificacaoOperacao)}`
+                      : ""}
+                  </span>
+                )}
               </div>
               {!(ciotOps ?? []).length ? (
                 <div className="p-4">

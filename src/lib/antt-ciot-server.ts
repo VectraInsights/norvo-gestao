@@ -40,3 +40,19 @@ export const consultarFrotaAnttFn = createServerFn({ method: "POST" }).validator
     placas: data.placas,
   });
 });
+// Consulta CIOT gerado (endpoint 08): com declaração vinculada, volta o CIOT16.
+export const consultarCiotGeradoAnttFn = createServerFn({ method: "POST" }).validator(
+  (d: { empresaId: string; codigo12: string; ano?: number }) => d,
+).handler(async ({ data }) => {
+  if (SEFAZ_URL) return callProxy("anttConsultarCiot", data);
+  const { buscarCertificadoAtivo } = await import("@/lib/sefaz");
+  const { consultarCiotGeradoAntt } = await import("@/lib/antt-ciot");
+  const cert = await buscarCertificadoAtivo(data.empresaId);
+  return consultarCiotGeradoAntt({
+    pfx: cert.pfx,
+    senha: cert.senha,
+    env: "homologacao",
+    codigo12: data.codigo12,
+    ano: data.ano,
+  });
+});

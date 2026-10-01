@@ -349,6 +349,23 @@ export async function consultarFrotaAntt(args: FrotaAnttArgs): Promise<{
   return { situacao: sit.json, frota: fro.json };
 }
 
+// Endpoint 08 do DCS: consulta a situação de um CIOT de 12 dígitos.
+// Se existir declaração vinculada, retorna o CIOT16 (12 + 4 verificador).
+export async function consultarCiotGeradoAntt(args: {
+  pfx: Buffer;
+  senha: string;
+  env: AnttEnv;
+  codigo12: string;
+  ano?: number;
+}): Promise<any> {
+  const base = ANTT_BASE[args.env];
+  const agent = agentMtls(args.pfx, args.senha);
+  const body: Record<string, unknown> = { CodigoIdentificacaoOperacao: soDig(args.codigo12) };
+  if (args.ano) body.AnoDeclaracao = Number(args.ano);
+  const r = await postJson({ agent, base, path: "/ConsultarCIOTGerado", body });
+  return r.json;
+}
+
 // Fluxo completo: B115 → IdOperacao → DeclaracaoOperacaoTransporte.
 export async function declararCiotAntt(args: {
   pfx: Buffer;
