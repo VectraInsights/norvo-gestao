@@ -2229,7 +2229,19 @@ function CtePage() {
     const km = Math.round(
       Math.max(0, ...forms.map((f) => Number(String(f?.distanciaKm || "").replace(",", ".")) || 0)),
     );
-    const pesoTotal = forms.reduce((a, f) => a + (Number(String(f?.peso || "").replace(",", ".")) || 0), 0);
+    const pesoTotal = sel.reduce((a, d, i) => {
+      const f = forms[i];
+      const fromForm = Number(String(f?.peso || "").replace(",", ".")) || 0;
+      if (fromForm > 0) return a + fromForm;
+      // fallback: lê qCarga direto do XML assinado
+      try {
+        const j = JSON.parse(d.xml_assinado || "{}");
+        const rawXml: string = typeof j.xml === "string" ? j.xml : "";
+        const m = rawXml.match(/<qCarga>([\d.,]+)<\/qCarga>/);
+        if (m) return a + (parseFloat(m[1].replace(",", ".")) || 0);
+      } catch {}
+      return a;
+    }, 0);
     const piso = eixos > 0 && km > 0 ? pisoMinimoAntt("Carga Geral", eixos, km) : null;
     // CIOT próprio exige tração no CNPJ do emissor: compara o proprietário do
     // cavalo (cadastro de veículos) com o CNPJ da empresa emissora do CT-e.
