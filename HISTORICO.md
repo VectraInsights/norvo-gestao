@@ -3887,3 +3887,7 @@ Espelhado na Vercel.
 ## Lote com leitura final (01/10)
 
 - Fim do envio em lote agora aguarda refetch de pendentes + documentos e ressincroniza o embarque: elimina NF-e fantasma sem precisar de F5.
+
+## CIOT: motorista unico + destinatario + valores explicados (01/10)
+
+- Lote CIOT exige mesmo motorista (aviso + bloqueio). Destinatario passa a vir da NF-e vinculada (era o motivo da rejeicao). Dialogo mostra composicao: piso do 1o CT-e (km/eixos) e total = soma dos fretes.

@@ -266,6 +266,17 @@ function formDeDocCiot(d: { xml_assinado: string | null }): Record<string, any> 
   return {};
 }
 
+// CNPJ do destinatário do CT-e (vem da NF-e vinculada, não do form)
+function destDoDocCiot(d: { xml_assinado: string | null }): string {
+  try {
+    const j = JSON.parse(d.xml_assinado || "{}");
+    const nfs = ((j as any).nfs || []) as any[];
+    return String(nfs[0]?.destCnpj || "").replace(/\D/g, "");
+  } catch {
+    return "";
+  }
+}
+
 // Placa(s), motorista e data de emissão direto do XML/form do CT-e p/ a tabela.
 function infoCteLinha(xmlAssinado: string | null): {
   placas: string[];
@@ -1703,6 +1714,10 @@ function CtePage() {
       toast.error("Os CT-es precisam ter o mesmo tomador (contratante)");
       return;
     }
+    if (!r.motoOk) {
+      toast.error("Os CT-es têm motoristas diferentes — uma operação CIOT exige o mesmo motorista");
+      return;
+    }
     if (r.abaixo) {
       toast.error("Valor abaixo do piso mínimo ANTT — emissão bloqueada");
       return;
@@ -1743,7 +1758,12 @@ function CtePage() {
     const veic = (veiculos || []).find((v: any) => String(v.placa || "").toUpperCase() === placa);
     const eixos = r.eixos;
     const pesoTotal = r.pesoTotal;
-    const destCnpj = String(forms[0]?.destCnpj || "").replace(/\D/g, "");
+    // Destinatário vem da NF-e vinculada ao CT-e (não existe no form)
+    const destCnpj = destDoDocCiot(sel[0]);
+    if (!destCnpj) {
+      toast.error("1º CT-e sem destinatário na NF-e vinculada — CIOT exige o destinatário");
+      return;
+    }
     setEmitindoCiotLote(true);
     try {
       const tipoCodigo = 5; // sempre Carga Geral
@@ -2167,6 +2187,13 @@ function CtePage() {
     const forms = sel.map((d) => formDeDocCiot(d));
     const tomas = [...new Set(forms.map((f) => String(f.cnpjTomador || "").replace(/\D/g, "")).filter(Boolean))];
     const tomaOk = tomas.length === 1 && tomas[0].length === 14;
+    // Uma operação CIOT = um motorista (não mistura condutores no lote)
+    const motos = [
+      ...new Set(
+        forms.map((f) => String(f.motoristaId || f.motoristaNome || "").trim().toUpperCase()).filter(Boolean),
+      ),
+    ];
+    const motoOk = motos.length === 1;
     const valorTotal = sel.reduce(
       (a, d, i) => a + (Number(d.valor_servico) || Number(String(forms[i]?.vPrest || "").replace(",", ".")) || 0),
       0,
@@ -2189,6 +2216,8 @@ function CtePage() {
       tomaCnpj: tomas[0] || "",
       tomaNome: String(forms[0]?.xNomeTomador || ""),
       tomaOk,
+      motoNome: String(forms[0]?.motoristaNome || ""),
+      motoOk,
       valorTotal,
       placa,
       eixos,
@@ -5916,7 +5945,7 @@ function CtePage() {
                   <AlertDialogTitle>Emitir CIOT</AlertDialogTitle>
                   <AlertDialogDescription>
                     {resumoCiot
-                      ? `${resumoCiot.sel.length} CT-e(s) • Tomador ${resumoCiot.tomaNome || resumoCiot.tomaCnpj}`
+                      ? `${resumoCiot.sel.length} CT-e(s) • Tomador ${resumoCiot.tomaNome || resumoCiot.tomaCnpj} • Motorista ${resumoCiot.motoNome || "—"}`
                       : "Nenhum CT-e selecionado"}
                     . Confirmo que é FROTA PRÓPRIA, sem TAC/autônomo (TAC exige PSP).
                   </AlertDialogDescription>
@@ -5924,15 +5953,24 @@ function CtePage() {
                 {resumoCiot && (
                   <div className="grid grid-cols-2 gap-2 text-sm">
                     <div className="rounded border px-2 py-1">
-                      <div className="text-[10px] text-muted-foreground">Piso mínimo ANTT</div>
+                      <div className="text-[10px] text-muted-foreground">
+                        Piso mínimo ANTT (1º CT-e • {resumoCiot.km || "—"} km • {resumoCiot.eixos || "—"} eixos)
+                      </div>
                       <div className="font-semibold">
                         {resumoCiot.piso !== null ? brl(resumoCiot.piso) : "—"}
                       </div>
                     </div>
                     <div className="rounded border px-2 py-1">
-                      <div className="text-[10px] text-muted-foreground">Total CIOT</div>
+                      <div className="text-[10px] text-muted-foreground">
+                        Total CIOT (soma dos {resumoCiot.sel.length} fretes)
+                      </div>
                       <div className="font-semibold">{brl(resumoCiot.valorTotal)}</div>
                     </div>
+                  </div>
+                )}
+                {resumoCiot && !resumoCiot.motoOk && (
+                  <div className="rounded border border-destructive/50 bg-destructive/10 px-2 py-1 text-xs font-semibold text-destructive">
+                    Motoristas diferentes nos CT-es — uma operação CIOT exige o mesmo motorista.
                   </div>
                 )}
                 {resumoCiot?.abaixo && (
@@ -5952,7 +5990,7 @@ function CtePage() {
                   <AlertDialogCancel>Cancelar</AlertDialogCancel>
                   <AlertDialogAction
                     data-acao
-                    disabled={!resumoCiot || resumoCiot.abaixo || !resumoCiot.donoOk || emitindoCiotLote}
+                    disabled={!resumoCiot || resumoCiot.abaixo || !resumoCiot.donoOk || !resumoCiot.motoOk || emitindoCiotLote}
                     onClick={emitirCiotLote}
                   >
                     Emitir
