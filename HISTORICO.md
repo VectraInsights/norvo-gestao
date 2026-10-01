@@ -3993,3 +3993,13 @@ Espelhado na Vercel.
   via `caminhoUF` — removido nos dois pontos e a função excluída.
   Percurso nasce vazio e a validação SEFAZ 663 cobra o preenchimento
   manual na emissão.
+
+## Sistema: zero janelas do navegador (01/10)
+
+- Varredura total: 22 `confirm()` + 2 `prompt()` convertidos para
+  AlertDialog/Dialog do sistema em 14 arquivos (fiscal: mdf,
+  percursos, recebidas, configurações, emitidas; financeiro:
+  cadastros, contas, receber; RH: folha, férias, comissões,
+  adiantamentos; configurações: index, empresas). Padrão Enter
+  confirma (`data-acao`) / Esc cancela; `prompt` de motivo/filtro
+  virou Dialog com campo. Grep confirma zero ocorrências.
