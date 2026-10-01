@@ -5955,7 +5955,7 @@ function CtePage() {
                   <div className="grid grid-cols-2 gap-2 text-sm">
                     <div className="rounded border px-2 py-1">
                       <div className="text-[10px] text-muted-foreground">
-                        Piso mínimo ANTT (maior distância • {resumoCiot.km || "—"} km • {resumoCiot.eixos || "—"} eixos)
+                        Piso mínimo ANTT (distância {resumoCiot.km || "—"} km, {resumoCiot.eixos || "—"} eixos)
                       </div>
                       <div className="font-semibold">
                         {resumoCiot.piso !== null ? brl(resumoCiot.piso) : "—"}
@@ -5963,7 +5963,7 @@ function CtePage() {
                     </div>
                     <div className="rounded border px-2 py-1">
                       <div className="text-[10px] text-muted-foreground">
-                        Total CIOT (soma dos {resumoCiot.sel.length} fretes)
+                        Total CIOT
                       </div>
                       <div className="font-semibold">{brl(resumoCiot.valorTotal)}</div>
                     </div>
