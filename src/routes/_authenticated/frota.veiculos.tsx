@@ -645,7 +645,7 @@ function Veiculos() {
           <DialogHeader>
             <DialogTitle>{editing ? `Editar ${editing.placa}` : "Novo veículo"}</DialogTitle>
           </DialogHeader>
-          <div className="grid gap-3">
+          <div className="grid gap-1.5">
             <div className="flex gap-2">
               <label className="flex items-center gap-2 px-3 py-2 border rounded bg-accent text-accent-foreground cursor-pointer hover:bg-accent/70 text-xs font-medium">
                 <FileText className="h-4 w-4" /> Importar CRLV (PDF)
@@ -667,57 +667,64 @@ function Veiculos() {
                 Preenche placa, RENAVAM, chassi e modelo automaticamente
               </span>
             </div>
-            <div className="grid grid-cols-3 gap-3">
-              <div>
-                <Label>Placa *</Label>
-                <Input
-                  className="uppercase"
-                  value={form.placa}
-                  onChange={(e) => set("placa", e.target.value)}
-                />
+            <Card className="p-1.5">
+              <div className="bg-primary/8 border-b border-primary/20 -m-1.5 mb-0.5 px-2 py-1 text-[10px] font-semibold uppercase tracking-wide text-primary/80">
+                Identificação
               </div>
-              <div>
-                <Label>Ano *</Label>
-                <Input
-                  type="number"
-                  value={form.ano}
-                  onChange={(e) => set("ano", e.target.value)}
-                />
-              </div>
-              <div>
-                <Label>Status *</Label>
-                <Select value={form.status} onValueChange={(v) => set("status", v)}>
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="ativo">Ativo</SelectItem>
-                    <SelectItem value="manutencao">Em manutenção</SelectItem>
-                    <SelectItem value="inativo">Inativo</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
-            <div className="grid grid-cols-[1fr_auto_auto] gap-3 items-end">
-              <div>
-                <Label>Marca / modelo *</Label>
-                <Input
-                  value={form.marca_modelo}
-                  onChange={(e) => set("marca_modelo", e.target.value)}
-                />
-              </div>
-              <div className="w-44">
-                <Label>Tipo *</Label>
+              <div className="space-y-1">
+                <div className="grid grid-cols-3 gap-1.5">
+                  <div>
+                    <Label className="text-[10px] text-muted-foreground">Placa *</Label>
+                    <Input
+                      className="uppercase h-7 text-xs"
+                      value={form.placa}
+                      onChange={(e) => set("placa", e.target.value)}
+                    />
+                  </div>
+                  <div>
+                    <Label className="text-[10px] text-muted-foreground">Ano *</Label>
+                    <Input
+                      type="number"
+                      className="h-7 text-xs"
+                      value={form.ano}
+                      onChange={(e) => set("ano", e.target.value)}
+                    />
+                  </div>
+                  <div>
+                    <Label className="text-[10px] text-muted-foreground">Status *</Label>
+                    <Select value={form.status} onValueChange={(v) => set("status", v)}>
+                      <SelectTrigger className="h-7 text-xs">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="ativo">Ativo</SelectItem>
+                        <SelectItem value="manutencao">Em manutenção</SelectItem>
+                        <SelectItem value="inativo">Inativo</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+                <div className="grid grid-cols-[1fr_auto_auto] gap-1.5 items-end">
+                  <div>
+                    <Label className="text-[10px] text-muted-foreground">Marca / modelo *</Label>
+                    <Input
+                      className="h-7 text-xs"
+                      value={form.marca_modelo}
+                      onChange={(e) => set("marca_modelo", e.target.value)}
+                    />
+                  </div>
+                  <div className="w-44">
+                    <Label className="text-[10px] text-muted-foreground">Tipo *</Label>
                 <Popover open={tipoOpen} onOpenChange={setTipoOpen}>
                   <PopoverTrigger asChild>
                     <Button
                       variant="outline"
                       role="combobox"
                       aria-expanded={tipoOpen}
-                      className="h-10 w-full justify-between font-normal"
+                      className="h-7 w-full justify-between font-normal text-xs"
                     >
                       <span>{form.tipo || "Selecione"}</span>
-                      <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                      <ChevronsUpDown className="ml-2 h-3 w-3 shrink-0 opacity-50" />
                     </Button>
                   </PopoverTrigger>
                   <PopoverContent className="w-[320px] p-0" align="start">
@@ -787,43 +794,53 @@ function Veiculos() {
                 </Popover>
               </div>
               <div>
-                <Label>Eixos *</Label>
+                <Label className="text-[10px] text-muted-foreground">Eixos *</Label>
                 <MoneyInput
                   prefix=""
                   decimals={0}
                   value={form.quantidade_eixos}
                   onChange={(v) => set("quantidade_eixos", v)}
-                  placeholder="2"
-                  className="w-16"
+                  className="w-16 h-7 text-xs"
                 />
               </div>
-            </div>
-            <div className="grid grid-cols-3 gap-3">
-              <div>
-                <Label>RENAVAM *</Label>
-                <Input value={form.renavam} onChange={(e) => set("renavam", e.target.value)} />
+                </div>
               </div>
-              <div>
-                <Label>Chassi *</Label>
-                <Input
-                  value={form.chassi}
-                  onChange={(e) => set("chassi", e.target.value.toUpperCase())}
-                  placeholder="17 caracteres"
-                  maxLength={17}
-                  className="uppercase font-mono text-xs"
-                />
+            </Card>
+            <Card className="p-1.5">
+              <div className="bg-primary/8 border-b border-primary/20 -m-1.5 mb-0.5 px-2 py-1 text-[10px] font-semibold uppercase tracking-wide text-primary/80">
+                Documentação
               </div>
-              <div>
-                <Label>TAG Pedágio</Label>
-                <Input
-                  value={form.tag_pedagio}
-                  onChange={(e) => set("tag_pedagio", e.target.value)}
-                  placeholder="Nº da TAG instalada"
-                  className="font-mono text-xs"
-                />
-              </div>
-              <div>
-                <Label>RNTRC</Label>
+              <div className="space-y-1">
+                <div className="grid grid-cols-3 gap-1.5">
+                  <div>
+                    <Label className="text-[10px] text-muted-foreground">RENAVAM *</Label>
+                    <Input
+                      className="h-7 text-xs"
+                      value={form.renavam}
+                      onChange={(e) => set("renavam", e.target.value)}
+                    />
+                  </div>
+                  <div>
+                    <Label className="text-[10px] text-muted-foreground">Chassi *</Label>
+                    <Input
+                      value={form.chassi}
+                      onChange={(e) => set("chassi", e.target.value.toUpperCase())}
+                      maxLength={17}
+                      className="uppercase font-mono text-xs h-7"
+                    />
+                  </div>
+                  <div>
+                    <Label className="text-[10px] text-muted-foreground">TAG Pedágio</Label>
+                    <Input
+                      value={form.tag_pedagio}
+                      onChange={(e) => set("tag_pedagio", e.target.value)}
+                      className="font-mono text-xs h-7"
+                    />
+                  </div>
+                </div>
+                <div className="grid grid-cols-3 gap-1.5">
+                  <div>
+                    <Label className="text-[10px] text-muted-foreground">RNTRC</Label>
                 <Popover
                   open={rntrcOpen}
                   onOpenChange={(v) => {
@@ -840,11 +857,11 @@ function Veiculos() {
                   }}
                 >
                   <PopoverTrigger asChild>
-                    <Button
-                      variant="outline"
-                      role="combobox"
-                      className="h-10 w-full justify-between font-normal"
-                    >
+                      <Button
+                        variant="outline"
+                        role="combobox"
+                        className="h-7 w-full justify-between font-normal text-xs"
+                      >
                       <span className="truncate font-mono">
                         {form.rntrc
                           ? `${form.rntrc.padStart(9, "0")}${rntrcDisponiveis.find((r) => r.rntrc === form.rntrc)?.nome ? ` — ${rntrcDisponiveis.find((r) => r.rntrc === form.rntrc)?.nome}` : ""}`
@@ -911,47 +928,61 @@ function Veiculos() {
                 </Popover>
               </div>
             </div>
-            <div className="grid grid-cols-2 gap-3">
-              <div>
-                <Label>Proprietário *</Label>
-                <Input
-                  value={form.proprietario}
-                  onChange={(e) => handleProprietarioChange(e.target.value)}
-                  placeholder="Nome do proprietário"
-                />
               </div>
-              <div>
-                <Label>CNPJ/CPF Proprietário</Label>
-                <Input
-                  value={form.proprietario_doc}
-                  onChange={(e) => set("proprietario_doc", maskDoc(e.target.value))}
-                  className="font-mono"
-                />
+            </Card>
+            <Card className="p-1.5">
+              <div className="bg-primary/8 border-b border-primary/20 -m-1.5 mb-0.5 px-2 py-1 text-[10px] font-semibold uppercase tracking-wide text-primary/80">
+                Proprietário
               </div>
-              <div>
-                <Label>Categoria *</Label>
-                <Select value={form.categoria} onValueChange={(v) => set("categoria", v)}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Selecione" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {CATEGORIAS.map((c) => (
-                      <SelectItem key={c} value={c.toLowerCase()}>
-                        {c}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+              <div className="space-y-1">
+                <div className="grid grid-cols-2 gap-1.5">
+                  <div>
+                    <Label className="text-[10px] text-muted-foreground">Proprietário *</Label>
+                    <Input
+                      className="h-7 text-xs"
+                      value={form.proprietario}
+                      onChange={(e) => handleProprietarioChange(e.target.value)}
+                    />
+                  </div>
+                  <div>
+                    <Label className="text-[10px] text-muted-foreground">CNPJ/CPF Proprietário</Label>
+                    <Input
+                      value={form.proprietario_doc}
+                      onChange={(e) => set("proprietario_doc", maskDoc(e.target.value))}
+                      className="font-mono h-7 text-xs"
+                    />
+                  </div>
+                </div>
+                <div className="grid grid-cols-2 gap-1.5">
+                  <div>
+                    <Label className="text-[10px] text-muted-foreground">Categoria *</Label>
+                    <Select value={form.categoria} onValueChange={(v) => set("categoria", v)}>
+                      <SelectTrigger className="h-7 text-xs">
+                        <SelectValue placeholder="Selecione" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {CATEGORIAS.map((c) => (
+                          <SelectItem key={c} value={c.toLowerCase()}>
+                            {c}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
               </div>
-            </div>
-            <div>
-              <Label>Observações</Label>
+                </div>
+              </div>
+            </Card>
+            <Card className="p-1.5">
+              <div className="bg-primary/8 border-b border-primary/20 -m-1.5 mb-0.5 px-2 py-1 text-[10px] font-semibold uppercase tracking-wide text-primary/80">
+                Observações
+              </div>
               <Textarea
                 rows={2}
+                className="text-xs"
                 value={form.observacoes}
                 onChange={(e) => set("observacoes", e.target.value)}
               />
-            </div>
+            </Card>
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setOpen(false)}>

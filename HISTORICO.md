@@ -3843,3 +3843,7 @@ Espelhado na Vercel.
 ## CIOT: bloqueia tracao de terceiro (01/10)
 
 - CIOT proprio agora exige cavalo com proprietario = CNPJ do emissor: query de veiculos traz proprietario/proprietario_doc, resumoCiot calcula donoOk, botao Emitir desabilita com aviso e emitirCiotLote barra com toast (divergente ou sem proprietario).
+
+## Veiculos: dialogo em blocos + sem placeholders (01/10)
+
+- Cadastro de veiculos em 4 Cards com cabecalho destacado (Identificacao, Documentacao, Proprietario, Observacoes), padrao CT-e; removidos placeholders de chassi, TAG, proprietario e eixos; campos compactos h-7.
