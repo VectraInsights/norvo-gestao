@@ -1794,9 +1794,9 @@ function CtePage() {
     const tProg = toast.loading("Gerando IdOperacao na ANTT…");
     try {
       const tipoCodigo = 5; // sempre Carga Geral
-      // ANTT valida eixos POR veículo: tração (tipo 1, só os eixos dela) +
-      // cada reboque (tipo 2, só os eixos dele). Enviar a soma da combinação
-      // num único item tipo 1 rejeita ([205] eixos inválidos / sem automotor).
+      // ANTT apura o tipo (automotor/implemento) no cadastro dela: o item
+      // leva só placa + eixos DO PRÓPRIO veículo (tração primeiro, reboques
+      // depois). Mandar a soma da combinação num item só rejeita ([205]).
       const byPlacaCiot = (pl: string) =>
         (veiculos || []).find((v: any) => String(v.placa || "").toUpperCase() === String(pl || "").toUpperCase());
       const placasCiot = [forms[0]?.placaVeiculo, forms[0]?.placaReboque, forms[0]?.semiReboque1, forms[0]?.semiReboque2]
@@ -1804,17 +1804,16 @@ function CtePage() {
         .filter(Boolean)
         .filter((pl, i, a) => a.indexOf(pl) === i);
       const veicsCiot = placasCiot
-        .map((pl, i) => {
+        .map((pl) => {
           const cad = byPlacaCiot(pl) as any;
           return {
             placa: pl,
             eixos: Number(cad?.quantidade_eixos) || 0,
             rntrc: String(cad?.rntrc || rntrcFinal || "").replace(/\D/g, ""),
-            tipoVeiculo: i === 0 ? 1 : 2,
           };
         })
         .filter((v) => v.eixos > 0);
-      if (veicsCiot.length === 0 || veicsCiot[0].tipoVeiculo !== 1) {
+      if (veicsCiot.length === 0) {
         toast.dismiss(tProg);
         toast.error("Tração sem eixos no cadastro do veículo — confira a placa em Frota → Veículos");
         setEmitindoCiotLote(false);

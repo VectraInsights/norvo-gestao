@@ -54,7 +54,7 @@ export function gerarIdentificadorPix(d?: Date): string {
   return `${x.getFullYear()}${p(x.getMonth() + 1)}${p(x.getDate())}${p(x.getHours())}${p(x.getMinutes())}${p(x.getSeconds())}`;
 }
 
-export type VeiculoCiot = { placa: string; eixos: number; rntrc?: string; tipoVeiculo?: number };
+export type VeiculoCiot = { placa: string; eixos: number; rntrc?: string };
 export type PagamentoCiot = {
   tipo: number; // 1 IP, 2 CC, 3 poupança, 4 conta pgto, 5 outros, 6 PIX
   docCreditado: string;
@@ -117,14 +117,15 @@ function odToDict(o: OrigemDestinoCiot, prefixoOrigem: boolean) {
 export function buildDeclaracaoPayload(inp: DeclaracaoCiotInput, idOperacao: string) {
   const p = inp.pagamento;
   // Validação local antes do mTLS (evita 3 chamadas lentas p/ falhar no óbvio).
-  if (!/^[A-Za-z0-9]{12}$/.test(String(idOperacao || "")))
-    throw new Error(`IdOperacaoTransporte inválido (${idOperacao || "vazio"}): esperado 12 caracteres.`);
-  if (!Array.isArray(inp.veiculos) || !inp.veiculos.some((v) => Number((v as any).tipoVeiculo ?? 1) === 1))
-    throw new Error("É necessário informar ao menos um veículo do tipo automotor (tração).");
+  // O tipo (automotor/implemento) é apurado pela ANTT no cadastro dela —
+  // o payload de referência leva só Placa/RNTRCVeiculo/NumeroEixos, com os
+  // eixos de CADA veículo (nunca a soma da combinação num item só).
+  if (!Array.isArray(inp.veiculos) || inp.veiculos.length === 0)
+    throw new Error("Informe ao menos a placa da tração com os eixos dela.");
   for (const v of inp.veiculos || []) {
     const ex = Number((v as any).eixos);
     if (!Number.isInteger(ex) || ex < 1)
-      throw new Error(`Quantidade de eixos inválida para a placa ${String((v as any).placa || "—")}: informe os eixos no cadastro do veículo.`);
+      throw new Error(`Quantidade de eixos inválida para a placa ${String((v as any).placa || "—")}: confira em Frota → Veículos.`);
   }
   const infPag: Record<string, unknown> = {
     TipoPagamento: Number(p.tipo),
@@ -154,9 +155,6 @@ export function buildDeclaracaoPayload(inp: DeclaracaoCiotInput, idOperacao: str
       Placa: String(v.placa || "").toUpperCase(),
       RNTRCVeiculo: v.rntrc ? padRntrc9(v.rntrc) : "",
       NumeroEixos: Number(v.eixos),
-      // 1 = automotor (cavalo/tração), 2 = implemento (reboque/semirreboque).
-      // O frontend envia apenas a tração, portanto sempre 1.
-      TipoVeiculo: Number(v.tipoVeiculo ?? 1),
     })),
     InfPagamento: [infPag],
   };
@@ -253,38 +251,51 @@ function agentMtls(pfx: Buffer, senha: string): https.Agent {
   });
 }
 
-// IdOperacaoTransporte (12 chars) via /token + /gerar (sem DLL).
+// Token JWT do /token com cache de 55min (evita 1 ida mTLS por emissão).
+let tokenCache: { token: string; exp: number } | null = null;
+
+// IdOperacaoTransporte via /token + /gerar (sem DLL). O /gerar retorna
+// {"Sucesso":true,"Dados":{"CIOT":"<12 chars>"}} e esse CIOT É o
+// IdOperacaoTransporte da declaração (regra B16; confirmado contra a
+// implementação de referência). Body do /token é literal "{}" e a chave
+// vai no HEADER; campo do /gerar é `cpfCnpj` (camelCase, do contratante).
 export async function gerarIdOperacaoAntt(
   agent: https.Agent,
   base: string,
   cnpjContratante: string,
 ): Promise<string> {
   const genBase = base.replace(/\/api$/, "");
-  const t = await postJson({ agent, base: genBase, path: "/token", body: "{}", headers: { chave: apiKeyDecodificada() } });
-  const token = t.json?.token || "";
-  if (t.status < 200 || t.status >= 300 || !token)
-    throw new Error(`ANTT /token falhou (HTTP ${t.status}): ${t.text.slice(0, 200)}`);
+  if (!tokenCache || Date.now() >= tokenCache.exp) {
+    const t = await postJson({ agent, base: genBase, path: "/token", body: "{}", headers: { chave: apiKeyDecodificada() } });
+    const token = String(t.json?.token || "");
+    if (t.status < 200 || t.status >= 300 || !token)
+      throw new Error(`ANTT /token falhou (HTTP ${t.status}): ${t.text.slice(0, 200)}`);
+    tokenCache = { token, exp: Date.now() + 55 * 60 * 1000 };
+  }
   const g = await postJson({
     agent,
     base: genBase,
     path: "/gerar",
     body: { cpfCnpj: soDig(cnpjContratante) },
-    headers: { Authorization: `Bearer ${token}` },
+    headers: { Authorization: `Bearer ${tokenCache.token}` },
   });
   if (g.json?.Sucesso === false)
     throw new Error(`ANTT /gerar rejeitou: ${JSON.stringify(g.json?.Mensagem || g.json?.Erros || g.json).slice(0, 300)}`);
-  // /gerar retorna IdOperacaoTransporte (12 chars) que vai na DeclaracaoOperacaoTransporte.
+  // /gerar retorna {"Sucesso":true,"Dados":{"CIOT":"<12 chars>"}} — esse
+  // CIOT é o IdOperacaoTransporte que vai na DeclaracaoOperacaoTransporte.
   const idOp = String(
-    g.json?.Dados?.IdOperacaoTransporte ||
+    g.json?.Dados?.CIOT ||
+      g.json?.CIOT ||
+      g.json?.Dados?.IdOperacaoTransporte ||
       g.json?.IdOperacaoTransporte ||
       g.json?.Dados?.idOperacaoTransporte ||
       g.json?.idOperacaoTransporte ||
+      g.json?.Dados?.ciot ||
+      g.json?.ciot ||
       "",
   ).trim();
-  // IdOperacaoTransporte tem que ter 12 chars — nunca usar o CIOT como
-  // substituto (a declaração rejeita com "IdOperacaoTransporte é inválido").
-  if (/^[A-Za-z0-9]{12}$/.test(idOp)) return idOp;
-  throw new Error(`ANTT /gerar sem IdOperacaoTransporte válido: ${g.text.slice(0, 300)}`);
+  if (idOp) return idOp;
+  throw new Error(`ANTT /gerar sem CIOT/IdOperacao: ${g.text.slice(0, 300)}`);
 }
 
 function codigoOk(json: any): { codigo: string; mensagem: string; protocolo: string } {

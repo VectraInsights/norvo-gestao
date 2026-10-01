@@ -3946,13 +3946,13 @@ Espelhado na Vercel.
 
 ## CIOT: um item por veículo + IdOp 12 chars (01/10)
 
-- Erro [205] triplo (sem automotor / eixos inválidos / IdOperacao
-  inválido): o front mandava os eixos da COMBINAÇÃO (cavalo+carretas)
-  num item único tipo automotor. Agora monta um item por placa do CT-e
-  (tração tipo 1 com só os eixos dela, reboques tipo 2) lendo
-  `quantidade_eixos` do cadastro; sem eixos na tração, barra local.
-- `/gerar` sem IdOperacao válido (12 chars) agora falha com mensagem
-  clara em vez de enviar CIOT como IdOperacao. Validação local de
-  IdOp/veículos/eixos roda ANTES do mTLS (evita as 3 chamadas lentas
-  para falhar no óbvio). mTLS com keep-alive + toast de progresso
-  ("Gerando IdOperacao…" → "Declarando…") na emissão.
+- Erro [205] (sem automotor / eixos inválidos / IdOperacao inválido):
+  o front mandava os eixos da COMBINAÇÃO (cavalo+carretas) num item
+  único. Agora monta um item por placa do CT-e (tração + reboques, cada
+  um só com os próprios eixos do cadastro); sem eixos, barra local.
+- Mapeado o fluxo real contra SDK de referência + DCS v1.1: o `/gerar`
+  retorna `Dados.CIOT` e esse CIOT É o IdOperacaoTransporte da
+  declaração (validação que o recusava foi revertida); item de veículo
+  leva só Placa/RNTRCVeiculo/NumeroEixos (TipoVeiculo removido);
+  token JWT com cache de 55min (economiza 1 ida mTLS por emissão);
+  mTLS com keep-alive + toast de progresso na emissão.
