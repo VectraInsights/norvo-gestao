@@ -985,20 +985,35 @@ function PercursosPage() {
           .trim()
           .toUpperCase();
       const temRedesp = digits(payload.redesp_cnpj).length === 14;
+      // Mesma regra da tela: cidade explícita diferente do cadastro descarta o CEP
+      // antigo p/ a geocodificação (senão o salvar recalcula p/ a cidade errada e
+      // grava por cima do valor certo). Ex.: entrega MARABÁ/PA com CEP de MACAPÁ/AP.
+      const fbRemS = contatoByDoc.get(digits(String((editing as any).rem_cnpj || ""))) || {};
+      const fbDstS = contatoByDoc.get(digits(String((editing as any).dest_cnpj || ""))) || {};
+      const refColS = normCidade((editing as any).rem_xmun || (fbRemS as any).cidade || "");
+      const refDstS = normCidade((editing as any).dest_xmun || (fbDstS as any).cidade || "");
+      const colMudouS =
+        !!normCidade(payload.coleta_xmun) && !!refColS && normCidade(payload.coleta_xmun) !== refColS;
+      const dstMudouS =
+        !!normCidade(payload.entrega_xmun) && !!refDstS && normCidade(payload.entrega_xmun) !== refDstS;
+      const redMudouS =
+        !!normCidade(payload.entrega_xmun) &&
+        !!normCidade(payload.redesp_xmun) &&
+        normCidade(payload.entrega_xmun) !== normCidade(payload.redesp_xmun);
       const sig = (cep: any, xmun: any, uf: any) => [digits(cep), upper(xmun), upper(uf)].join("/");
       const oriOrg = {
-        cep: String(payload.rem_cep || ""),
+        cep: colMudouS ? "" : String(payload.rem_cep || ""),
         xmun: String(payload.coleta_xmun || payload.rem_xmun || ""),
         uf: String(payload.coleta_uf || payload.rem_uf || ""),
       };
       const dstOrg = temRedesp
         ? {
-            cep: String(payload.redesp_cep || ""),
+            cep: redMudouS ? "" : String(payload.redesp_cep || ""),
             xmun: String(payload.entrega_xmun || payload.redesp_xmun || ""),
             uf: String(payload.entrega_uf || payload.redesp_uf || ""),
           }
         : {
-            cep: String(payload.dest_cep || ""),
+            cep: dstMudouS ? "" : String(payload.dest_cep || ""),
             xmun: String(payload.entrega_xmun || payload.dest_xmun || ""),
             uf: String(payload.entrega_uf || payload.dest_uf || ""),
           };
@@ -1013,12 +1028,22 @@ function PercursosPage() {
         .maybeSingle();
       const sv: any = salvo || {};
       const temRedespSv = digits(sv.redesp_cnpj).length === 14;
+      const refColSv = normCidade(sv.rem_xmun || "");
+      const refDstSv = normCidade(sv.dest_xmun || "");
+      const colMudouSv =
+        !!normCidade(sv.coleta_xmun) && !!refColSv && normCidade(sv.coleta_xmun) !== refColSv;
+      const dstMudouSv =
+        !!normCidade(sv.entrega_xmun) && !!refDstSv && normCidade(sv.entrega_xmun) !== refDstSv;
+      const redMudouSv =
+        !!normCidade(sv.entrega_xmun) &&
+        !!normCidade(sv.redesp_xmun) &&
+        normCidade(sv.entrega_xmun) !== normCidade(sv.redesp_xmun);
       const rotaSalva =
-        sig(sv.rem_cep, sv.coleta_xmun || sv.rem_xmun, sv.coleta_uf || sv.rem_uf) +
+        sig(colMudouSv ? "" : sv.rem_cep, sv.coleta_xmun || sv.rem_xmun, sv.coleta_uf || sv.rem_uf) +
         ">" +
         (temRedespSv
-          ? sig(sv.redesp_cep, sv.entrega_xmun || sv.redesp_xmun, sv.entrega_uf || sv.redesp_uf)
-          : sig(sv.dest_cep, sv.entrega_xmun || sv.dest_xmun, sv.entrega_uf || sv.dest_uf));
+          ? sig(redMudouSv ? "" : sv.redesp_cep, sv.entrega_xmun || sv.redesp_xmun, sv.entrega_uf || sv.redesp_uf)
+          : sig(dstMudouSv ? "" : sv.dest_cep, sv.entrega_xmun || sv.dest_xmun, sv.entrega_uf || sv.dest_uf));
       const mudouRota = rotaAtual !== rotaSalva;
       if (!payload.distancia_km || !payload.duracao_horas || mudouRota) {
         const calc = await calcDistDur(oriOrg, dstOrg);

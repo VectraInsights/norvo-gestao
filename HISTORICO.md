@@ -3827,3 +3827,7 @@ Espelhado na Vercel.
 
 - aplicarPercurso agora preenche IE do destinatario (NF-e > contato > percurso > mantem); antes ele so era setado 1x no carregamento da pagina, da primeira NF-e da lista.
 - Escolha manual de percurso no picker nao e mais sobrescrita pela aplicacao automatica (chave pick+id).
+
+## Percursos: salvar descarta CEP antigo (01/10)
+
+- Ao salvar, o recalculo usava o CEP antigo do contato e gravava a distancia da cidade errada por cima da certa (ex. MARABA com CEP de MACAPA). Mesma regra da tela aplicada no salvar e na comparacao com o salvo.
