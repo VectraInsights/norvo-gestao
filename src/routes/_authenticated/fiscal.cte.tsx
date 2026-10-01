@@ -1633,14 +1633,26 @@ function CtePage() {
       return (data ?? []) as unknown as Array<Record<string, any>>;
     },
   });
+  const [ciotConfirma, setCiotConfirma] = useState(false);
+  const [confRascunho, setConfRascunho] = useState<CteDoc | null>(null);
+  const [confLimpar, setConfLimpar] = useState(false);
+  const [confExcSel, setConfExcSel] = useState(false);
   const emitirCiotLote = async () => {
+    const r = resumoCiot;
     if (!empresa) {
       toast.error("Selecione uma empresa");
       return;
     }
-    const sel = docsByStatus.autorizados.filter((d) => ciotSel.has(d.id));
-    if (sel.length === 0) {
+    if (!r) {
       toast.error("Selecione ao menos um CT-e autorizado");
+      return;
+    }
+    if (!r.tomaOk) {
+      toast.error("Os CT-es precisam ter o mesmo tomador (contratante)");
+      return;
+    }
+    if (r.abaixo) {
+      toast.error("Valor abaixo do piso mínimo ANTT — emissão bloqueada");
       return;
     }
     const emitCnpj = String((empresa as any).cnpj || "").replace(/\D/g, "");
@@ -1648,42 +1660,29 @@ function CtePage() {
       toast.error("CNPJ da empresa inválido para o CIOT");
       return;
     }
-    const forms = sel.map((d) => formDeDocCiot(d));
-    const tomas = [...new Set(forms.map((f) => String(f.cnpjTomador || "").replace(/\D/g, "")).filter(Boolean))];
-    if (tomas.length !== 1 || tomas[0].length !== 14) {
-      toast.error("Os CT-es precisam ter o mesmo tomador (contratante)");
-      return;
-    }
-    const tomaCnpj = tomas[0];
-    const tomaNome = String(forms[0]?.xNomeTomador || "");
-    const valorTotal = sel.reduce(
-      (a, d, i) => a + (Number(d.valor_servico) || Number(String(forms[i]?.vPrest || "").replace(",", ".")) || 0),
-      0,
-    );
-    if (!(valorTotal > 0)) {
-      toast.error("Valor do frete precisa ser maior que zero");
-      return;
-    }
-    const placa = String(forms[0]?.placaVeiculo || "").toUpperCase();
-    const veic = (veiculos || []).find((v: any) => String(v.placa || "").toUpperCase() === placa);
-    const eixos = Number((veic as any)?.quantidade_eixos) || 0;
-    if (!placa || !eixos) {
+    if (!r.placa || !r.eixos) {
       toast.error("Tração do 1º CT-e sem placa/eixos para o CIOT");
       return;
     }
-    const km = Math.round(Number(String(forms[0]?.distanciaKm || "").replace(",", ".")) || 0);
-    if (!km) {
+    if (!r.km) {
       toast.error("Distância (km) do 1º CT-e necessária para o CIOT");
       return;
     }
-    const pesoTotal = forms.reduce((a, f) => a + (Number(String(f?.peso || "").replace(",", ".")) || 0), 0);
-    const destCnpj = String(forms[0]?.destCnpj || "").replace(/\D/g, "");
-    if (
-      !confirm(
-        `Emitir CIOT direto na ANTT (homologação) cobrindo ${sel.length} CT-e(s)?\nTomador ${tomaNome || tomaCnpj} • Frete total R$ ${valorTotal.toFixed(2)} • ${km} km • ${placa} (${eixos} eixos).\nConfirmo que é FROTA PRÓPRIA, sem TAC/autônomo (TAC exige PSP).`,
-      )
-    )
+    if (!(r.valorTotal > 0)) {
+      toast.error("Valor do frete precisa ser maior que zero");
       return;
+    }
+    const sel = r.sel;
+    const forms = r.forms;
+    const tomaCnpj = r.tomaCnpj;
+    const tomaNome = r.tomaNome;
+    const valorTotal = r.valorTotal;
+    const placa = r.placa;
+    const km = r.km;
+    const veic = (veiculos || []).find((v: any) => String(v.placa || "").toUpperCase() === placa);
+    const eixos = r.eixos;
+    const pesoTotal = r.pesoTotal;
+    const destCnpj = String(forms[0]?.destCnpj || "").replace(/\D/g, "");
     setEmitindoCiotLote(true);
     try {
       const tipoCodigo = (TIPOS_CARGA_ANTT as readonly string[]).indexOf(ciotTabTipo as any) + 1 || 5;
@@ -2076,6 +2075,40 @@ function CtePage() {
       }>;
     },
   });
+  // Resumo da operação CIOT (usado no diálogo e na emissão): frete somado,
+  // tração/km do 1º CT-e, piso ANTT. Abaixo do piso = emissão bloqueada.
+  // (Aqui embaixo por causa de `veiculos`, declarado acima.)
+  const resumoCiot = useMemo(() => {
+    const sel = docsByStatus.autorizados.filter((d) => ciotSel.has(d.id));
+    if (sel.length === 0) return null;
+    const forms = sel.map((d) => formDeDocCiot(d));
+    const tomas = [...new Set(forms.map((f) => String(f.cnpjTomador || "").replace(/\D/g, "")).filter(Boolean))];
+    const tomaOk = tomas.length === 1 && tomas[0].length === 14;
+    const valorTotal = sel.reduce(
+      (a, d, i) => a + (Number(d.valor_servico) || Number(String(forms[i]?.vPrest || "").replace(",", ".")) || 0),
+      0,
+    );
+    const placa = String(forms[0]?.placaVeiculo || "").toUpperCase();
+    const veic = (veiculos || []).find((v: any) => String(v.placa || "").toUpperCase() === placa);
+    const eixos = Number((veic as any)?.quantidade_eixos) || 0;
+    const km = Math.round(Number(String(forms[0]?.distanciaKm || "").replace(",", ".")) || 0);
+    const pesoTotal = forms.reduce((a, f) => a + (Number(String(f?.peso || "").replace(",", ".")) || 0), 0);
+    const piso = eixos > 0 && km > 0 ? pisoMinimoAntt(ciotTabTipo, eixos, km) : null;
+    return {
+      sel,
+      forms,
+      tomaCnpj: tomas[0] || "",
+      tomaNome: String(forms[0]?.xNomeTomador || ""),
+      tomaOk,
+      valorTotal,
+      placa,
+      eixos,
+      km,
+      pesoTotal,
+      piso,
+      abaixo: piso !== null && valorTotal > 0 && valorTotal < piso,
+    };
+  }, [docsByStatus, ciotSel, ciotTabTipo, veiculos]);
   const { data: seguradoras } = useQuery({
     enabled: !!empresa,
     queryKey: ["seguradoras", empresa?.id],
@@ -2958,7 +2991,6 @@ function CtePage() {
 
   const excluirRascunho = async (doc: CteDoc) => {
     if (!empresa) return;
-    if (!confirm("Excluir este rascunho? As NF-e voltam para pendentes.")) return;
     try {
       const parsed = JSON.parse(doc.xml_assinado || "{}");
       await supabase
@@ -3011,6 +3043,7 @@ function CtePage() {
         }
       }
       toast.success("Rascunho excluído — NF-e voltaram para pendentes");
+      setConfRascunho(null);
       qc.invalidateQueries({ queryKey: ["cte-documentos"] });
       qc.invalidateQueries({ queryKey: ["cte-nfes-pendentes", empresa.id] });
     } catch (e: any) {
@@ -4471,7 +4504,7 @@ function CtePage() {
                             size="icon"
                             variant="ghost"
                             className="h-7 w-7 text-destructive"
-                            onClick={() => excluirRascunho(d)}
+                            onClick={() => setConfRascunho(d)}
                             title="Excluir rascunho"
                           >
                             <Trash2 className="h-3.5 w-3.5" />
@@ -5077,23 +5110,7 @@ function CtePage() {
                   <Button
                     variant="outline"
                     size="sm"
-                    onClick={async () => {
-                      if (!empresa) return;
-                      if (mercadorias.length === 0) return;
-                      if (!confirm(`Remover ${mercadorias.length} NF-e(s) pendentes?`)) return;
-                      const { error } = await supabase
-                        .from("cte_nfes_pendentes" as any)
-                        .delete()
-                        .eq("empresa_id", empresa.id)
-                        .eq("status", "pendente");
-                      if (error) toast.error(error.message);
-                      else {
-                        setMercadorias([]);
-                        setSelecionadas(new Set());
-                        qc.invalidateQueries({ queryKey: ["cte-nfes-pendentes", empresa.id] });
-                        toast.success("Pendentes removidos");
-                      }
-                    }}
+                    onClick={() => setConfLimpar(true)}
                     disabled={mercadorias.length === 0}
                   >
                     <Trash2 className="mr-1 h-3 w-3" /> Limpar
@@ -5103,24 +5120,7 @@ function CtePage() {
                     size="sm"
                     disabled={selecionadas.size === 0}
                     title="Exclui do embarque apenas as NF-es selecionadas"
-                    onClick={async () => {
-                      if (!empresa || selecionadas.size === 0) return;
-                      const chaves = Array.from(selecionadas);
-                      if (!confirm(`Excluir ${chaves.length} NF-e(s) selecionada(s) do embarque?`))
-                        return;
-                      const { error } = await supabase
-                        .from("cte_nfes_pendentes" as any)
-                        .delete()
-                        .eq("empresa_id", empresa.id)
-                        .in("chave", chaves);
-                      if (error) toast.error(error.message);
-                      else {
-                        setMercadorias((atual) => atual.filter((m) => !selecionadas.has(m.chave)));
-                        setSelecionadas(new Set());
-                        qc.invalidateQueries({ queryKey: ["cte-nfes-pendentes", empresa.id] });
-                        toast.success(`${chaves.length} NF-e(s) excluída(s)`);
-                      }
-                    }}
+                    onClick={() => setConfExcSel(true)}
                   >
                     <Trash2 className="mr-1 h-3 w-3" /> Excluir selecionadas
                   </Button>
@@ -5580,7 +5580,7 @@ function CtePage() {
                   </div>
                 </div>
                 <div className="flex justify-end">
-                  <Button size="sm" onClick={emitirCiotLote} disabled={emitindoCiotLote}>
+                  <Button size="sm" onClick={() => setCiotConfirma(true)} disabled={emitindoCiotLote || ciotSel.size === 0}>
                     {emitindoCiotLote ? "Emitindo…" : `Emitir CIOT (${ciotSel.size} CT-e)`}
                   </Button>
                 </div>
@@ -5589,6 +5589,139 @@ function CtePage() {
                 </p>
               </Card>
             )}
+            <AlertDialog open={ciotConfirma} onOpenChange={setCiotConfirma}>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>Emitir CIOT</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    {resumoCiot
+                      ? `${resumoCiot.sel.length} CT-e(s) • Tomador ${resumoCiot.tomaNome || resumoCiot.tomaCnpj}`
+                      : "Nenhum CT-e selecionado"}
+                    . Confirmo que é FROTA PRÓPRIA, sem TAC/autônomo (TAC exige PSP).
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                {resumoCiot && (
+                  <div className="grid grid-cols-2 gap-2 text-sm">
+                    <div className="rounded border px-2 py-1">
+                      <div className="text-[10px] text-muted-foreground">Piso mínimo ANTT</div>
+                      <div className="font-semibold">
+                        {resumoCiot.piso !== null ? brl(resumoCiot.piso) : "—"}
+                      </div>
+                    </div>
+                    <div className="rounded border px-2 py-1">
+                      <div className="text-[10px] text-muted-foreground">Total CIOT</div>
+                      <div className="font-semibold">{brl(resumoCiot.valorTotal)}</div>
+                    </div>
+                  </div>
+                )}
+                {resumoCiot?.abaixo && (
+                  <div className="rounded border border-destructive/50 bg-destructive/10 px-2 py-1 text-xs font-semibold text-destructive">
+                    Valores abaixo do piso mínimo — não será possível emitir.
+                  </div>
+                )}
+                <AlertDialogFooter>
+                  <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                  <AlertDialogAction
+                    data-acao
+                    disabled={!resumoCiot || resumoCiot.abaixo || emitindoCiotLote}
+                    onClick={emitirCiotLote}
+                  >
+                    Emitir
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
+            <AlertDialog open={!!confRascunho} onOpenChange={(v) => { if (!v) setConfRascunho(null); }}>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>Excluir rascunho</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    Excluir este rascunho? As NF-e voltam para pendentes.
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                  <AlertDialogAction
+                    data-acao
+                    className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                    onClick={() => confRascunho && excluirRascunho(confRascunho)}
+                  >
+                    Excluir
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
+            <AlertDialog open={confLimpar} onOpenChange={setConfLimpar}>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>Remover pendentes</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    Remover {mercadorias.length} NF-e(s) pendentes do embarque?
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                  <AlertDialogAction
+                    data-acao
+                    className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                    onClick={async () => {
+                      if (!empresa || mercadorias.length === 0) return;
+                      const { error } = await supabase
+                        .from("cte_nfes_pendentes" as any)
+                        .delete()
+                        .eq("empresa_id", empresa.id)
+                        .eq("status", "pendente");
+                      if (error) toast.error(error.message);
+                      else {
+                        setMercadorias([]);
+                        setSelecionadas(new Set());
+                        qc.invalidateQueries({ queryKey: ["cte-nfes-pendentes", empresa.id] });
+                        toast.success("Pendentes removidos");
+                      }
+                      setConfLimpar(false);
+                    }}
+                  >
+                    Excluir
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
+            <AlertDialog open={confExcSel} onOpenChange={setConfExcSel}>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>Excluir selecionadas</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    Excluir {selecionadas.size} NF-e(s) selecionada(s) do embarque?
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                  <AlertDialogAction
+                    data-acao
+                    className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                    onClick={async () => {
+                      if (!empresa || selecionadas.size === 0) return;
+                      const chaves = Array.from(selecionadas);
+                      const { error } = await supabase
+                        .from("cte_nfes_pendentes" as any)
+                        .delete()
+                        .eq("empresa_id", empresa.id)
+                        .in("chave", chaves);
+                      if (error) toast.error(error.message);
+                      else {
+                        setMercadorias((atual) => atual.filter((m) => !selecionadas.has(m.chave)));
+                        setSelecionadas(new Set());
+                        qc.invalidateQueries({ queryKey: ["cte-nfes-pendentes", empresa.id] });
+                        toast.success(`${chaves.length} NF-e(s) excluída(s)`);
+                      }
+                      setConfExcSel(false);
+                    }}
+                  >
+                    Excluir
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
             <Card className="overflow-hidden">
               <div className="bg-primary/8 border-b border-primary/20 px-3 py-1.5 text-[10px] font-semibold uppercase tracking-wide text-primary/80">
                 CIOTs emitidos ({(ciotOps ?? []).length})
