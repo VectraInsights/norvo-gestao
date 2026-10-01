@@ -3915,3 +3915,7 @@ Espelhado na Vercel.
 ## CIOT: rotulos empilhados simples (01/10)
 
 - Dialogo volta a rotulo em cima + valor embaixo, so Piso minimo ANTT e Total CIOT.
+
+## MDF-e: lote gera rascunhos (01/10)
+
+- Botao Gerar N rascunhos separados: 1 rascunho por (motorista+UF) com UFs e percurso automaticos; cai no Aguardando envio p/ revisar e enviar um por vez.

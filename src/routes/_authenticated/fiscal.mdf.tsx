@@ -514,7 +514,7 @@ function MdfPage() {
         />
       )}
 
-      <DialogNovoMdf open={open && !!empresa?.id} onOpenChange={(v) => { setOpen(v); if (!v) { setMdfPrefill(null); setMdfDraft(null); setSemRascunho(false); } }} empresaId={empresa?.id || ""} empresa={empresa} chavesIniciais={mdfPrefill || undefined} rascunhoInicial={mdfDraft} permiteRascunho={!semRascunho} />
+      <DialogNovoMdf open={open && !!empresa?.id} onOpenChange={(v) => { setOpen(v); if (!v) { setMdfPrefill(null); setMdfDraft(null); setSemRascunho(false); } }} empresaId={empresa?.id || ""} empresa={empresa} chavesIniciais={mdfPrefill || undefined} rascunhoInicial={mdfDraft} permiteRascunho={!semRascunho} onLoteRascunhos={() => setFiltroStatus("rascunho")} />
     </div>
   );
 }
@@ -758,7 +758,7 @@ function EncerrarMdfButton({ mdf, empresaId, cnpj, onSuccess }: { mdf: MdfDoc; e
   </>);
 }
 
-function DialogNovoMdf({ open, onOpenChange, empresaId, empresa, chavesIniciais, rascunhoInicial, permiteRascunho = true }: { open: boolean; onOpenChange: (v: boolean) => void; empresaId: string; empresa?: any; chavesIniciais?: string[]; permiteRascunho?: boolean; rascunhoInicial?: { id?: string; chaves: string[]; percursoUFs: string[]; observacoes: string; infoFisco: string; tipoMdf: "Normal" | "Globalizado"; isTransbordo: boolean; transb1: string; transb2: string; transb3: string } | null }) {
+function DialogNovoMdf({ open, onOpenChange, empresaId, empresa, chavesIniciais, rascunhoInicial, permiteRascunho = true, onLoteRascunhos }: { open: boolean; onOpenChange: (v: boolean) => void; empresaId: string; empresa?: any; chavesIniciais?: string[]; permiteRascunho?: boolean; onLoteRascunhos?: () => void; rascunhoInicial?: { id?: string; chaves: string[]; percursoUFs: string[]; observacoes: string; infoFisco: string; tipoMdf: "Normal" | "Globalizado"; isTransbordo: boolean; transb1: string; transb2: string; transb3: string } | null }) {
   const qc = useQueryClient();
   const [loading, setLoading] = useState(false);
   const [ufCarregamento, setUfCarregamento] = useState("");
@@ -1136,140 +1136,63 @@ function DialogNovoMdf({ open, onOpenChange, empresaId, empresa, chavesIniciais,
     });
   };
 
-  // Monta o input de UM MDF-e p/ um grupo (motorista + UF): usado pelo lote.
-  // (A emissão única usa o próprio handleEmitir abaixo, sem alteração.)
-  const montarInputMdfLote = async (o: {
-    ctesArr: any[]; mot: { id: string; nome: string };
-    ufIni: string; ufFim: string; percurso: string[];
-  }) => {
-    const { ctesArr, mot, ufIni, ufFim, percurso } = o;
-    const veic = (veiculos || []).find(v => String(v.placa || "").toUpperCase() === tracaoSel);
-    if (!veic) throw new Error("Selecione o veículo");
-    const motFull = (motoristas || []).find(m => (mot.id && m.id === mot.id) || m.nome === mot.nome);
-    if (!motFull) throw new Error(`Motorista ${mot.nome || "?"} não encontrado no RH`);
-    const numero = String(Math.floor(Math.random() * 999999) + 1).padStart(9, "0");
-    const firstForm = formDe(ctesArr[0]);
-    if (!String(firstForm.cMunIni || "").trim()) throw new Error("CT-e sem município de coleta (cMunIni)");
-    const tpRodDe = (t?: string | null) => { const s = String(t || "").toLowerCase(); if (s.includes("cavalo")) return "03"; if (s.includes("truck")) return "01"; if (s.includes("toco")) return "02"; if (s.includes("van") || s.includes("furg")) return "04"; if (s.includes("utilit")) return "05"; return "06"; };
-    const renavamDe = (placa: string) => (veiculos || []).find(v => String(v.placa || "").toUpperCase() === String(placa || "").toUpperCase())?.renavam || undefined;
-    const { buildMdfXml, extrairContratantesDoCte } = await import("@/lib/sefaz-mdf");
-    const contratantesMdf: Array<{ xNome?: string; cnpj?: string; cpf?: string }> = [];
-    let proPredMdf = "";
-    for (const c of ctesArr) {
-      try {
-        const p = JSON.parse((c as any).xml_assinado || "{}");
-        const cteXml = String(p.xml || "");
-        for (const t of extrairContratantesDoCte(cteXml)) {
-          if (!contratantesMdf.some(o2 => (o2.cnpj || o2.cpf || o2.xNome) === (t.cnpj || t.cpf || t.xNome))) contratantesMdf.push(t);
-        }
-        if (!proPredMdf) proPredMdf = (cteXml.match(/<proPred>([^<]{1,120})<\/proPred>/)?.[1] || "").trim();
-      } catch {}
-    }
-    let emitCMun = "";
-    try {
-      const empUF = String((empresa as any)?.uf || "").toUpperCase();
-      const empXMun = String((empresa as any)?.cidade || "");
-      if (empUF && empXMun) {
-        const rI = await fetch("https://brasilapi.com.br/api/ibge/municipios/v1/" + empUF);
-        if (rI.ok) {
-          const arr = await rI.json();
-          const norm = (s: string) => (s || "").toUpperCase().normalize("NFD").replace(/[^A-Z ]/g, "").replace(/ +/g, " ").trim();
-          const hit = ((arr as any[]) || []).find((mm: any) => norm(mm.nome) === norm(empXMun));
-          if (hit?.codigo_ibge) emitCMun = String(hit.codigo_ibge);
-        }
-      }
-    } catch {}
-    if (!emitCMun) emitCMun = String(firstForm.cMunIni || "");
-    const formsG = ctesArr.map(c => formDe(c));
-    const segG = formsG.find(f => String(f.seguradoraNome || "").trim()) || {};
-    const ciotG = formsG.map(f => String(f.ciot || "").trim()).find(Boolean) || "";
-    const rebsG: string[] = [];
-    for (const f of formsG) for (const k of ["placaReboque", "semiReboque1", "semiReboque2"]) {
-      const p = String(f[k] || "").toUpperCase();
-      if (p && !rebsG.includes(p)) rebsG.push(p);
-    }
-    const input = {
-      empresaId, ambiente: ambienteMdf, serie: serieMdf || "000", numero,
-      ufCarregamento: ufIni, ufDescarregamento: ufFim,
-      emit: (() => {
-        const empUF = String((empresa as any)?.uf || "").toUpperCase();
-        const empXMun = String((empresa as any)?.cidade || "");
-        return { cnpj: String((empresa as any)?.cnpj || ""), ie: String((empresa as any)?.ie || ""), xNome: String((empresa as any)?.razao_social || (empresa as any)?.nome_fantasia || ""), uf: empUF || ufIni, cMun: emitCMun, xMun: empXMun || String(firstForm.xMunIni || ""), logradouro: String((empresa as any)?.logradouro || ""), nro: String((empresa as any)?.numero || ""), bairro: String((empresa as any)?.bairro || "") };
-      })(),
-      veicTrac: { placa: tracaoSel, uf: ufIni, rntrc: (veic as any)?.rntrc || "", tara: 0, renavam: (veic as any)?.renavam || undefined, tpRod: tpRodDe((veic as any)?.tipo), ciot: ciotG || undefined },
-      reboques: rebsG.slice(0, 3).map(p => ({ placa: p, uf: ufIni, tara: 0, renavam: renavamDe(p) })),
-      condutor: { cpf: (motFull as any)?.cpf || "", xNome: mot.nome },
-      ctes: ctesArr.map(c => { const f = formDe(c); return { chave: c.chave_acesso || "", valor: c.valor_servico || 0, pesoKG: pesoDe(c), cMunDescarga: String(f.cMunFim || ""), xMunDescarga: String(f.xMunFim || "") }; }),
-      infMunCarrega: [{ cMunCarrega: String(firstForm.cMunIni || ""), xMunCarrega: String(firstForm.xMunIni || "") }],
-      infPercurso: percurso.map(uf => ({ ufFim: uf })),
-      valorTotalCarga: ctesArr.reduce((s, c) => s + (c.valor_servico || 0), 0),
-      pesoTotalKG: ctesArr.reduce((s, c) => s + pesoDe(c), 0),
-      tipo: "normal" as "normal" | "transbordo",
-      tpEmit: tipoMdf === "Globalizado" ? "3" : "1",
-      seg: await segComCnpj({
-        xSeg: String((segG as any).seguradoraNome || ""),
-        nApol: String((segG as any).apolice || ""),
-        nAver: String((segG as any).averbacao || ""),
-        cnpjSeg: "",
-      }),
-      contratantes: contratantesMdf,
-      prodPred: { xProd: proPredMdf },
-      mdfesTransbordo: [],
-    };
-    const { xml } = buildMdfXml(input);
-    const res = await emitirMdfFn({
-      data: {
-        empresaId, xml, numero, serie: serieMdf, responsavel: respNome, veiculoTracaoId: (veic as any)?.id, motoristaId: (motFull as any)?.id,
-        ufCarregamento: ufIni, ufDescarregamento: ufFim,
-        qtdCtes: ctesArr.length, valorTotalCarga: input.valorTotalCarga, pesoTotal: input.pesoTotalKG,
-        percursoUFs: percurso, observacoes, infoFisco,
-        tipoMdf, isTransbordo: false, transbordo1: "", transbordo2: "", transbordo3: "",
-      } as any
-    });
-    return res;
-  };
-
-  // Lote: 1 MDF-e por (motorista + UF), cada um com seu percurso automático
-  const [emitindoLoteMdf, setEmitindoLoteMdf] = useState(false);
-  const emitirLoteMdf = async () => {
+  // Lote: gera 1 RASCUNHO por (motorista + UF), cada um com UFs e percurso
+  // automáticos — o envio é feito depois, um por vez, no Aguardando envio.
+  const [gerandoLote, setGerandoLote] = useState(false);
+  const gerarRascunhosLote = async () => {
     if (gruposMdf.length < 2) return;
-    if (!tracaoSel) { toast.error("Selecione o veículo"); return; }
-    if (isTransbordo) { toast.error("Transbordo: emita um por vez"); return; }
-    if (rascunhoInicial) { toast.error("Rascunho: emita um por vez"); return; }
-    setEmitindoLoteMdf(true);
+    if (isTransbordo) { toast.error("Transbordo: salve um por vez"); return; }
+    if (rascunhoInicial) { toast.error("Rascunho: salve um por vez"); return; }
+    if (!empresaId) return;
+    setGerandoLote(true);
     let ok = 0;
     const falhas: string[] = [];
     try {
+      const veic = (veiculos || []).find(v => String(v.placa || "").toUpperCase() === tracaoSel);
       for (const g of gruposMdf) {
         try {
-          if (!g.motId && !(motoristas || []).some(m => m.nome === g.motNome)) {
-            falhas.push(`${g.motNome} • ${g.uf}: motorista sem cadastro no RH`);
-            continue;
-          }
           const ctes = (ctesDisponiveis || []).filter(c => g.chaves.includes(c.chave_acesso || ""));
           if (!ctes.length) { falhas.push(`${g.motNome} • ${g.uf}: sem CT-es`); continue; }
           const f0 = formDe(ctes[0]);
           const ufIni = String(f0.ufIni || "").toUpperCase() || ufCarregamento;
           if (!ufIni) { falhas.push(`${g.motNome} • ${g.uf}: sem UF de carregamento`); continue; }
-          const percurso = caminhoUF(ufIni, g.uf);
-          const res: any = await montarInputMdfLote({
-            ctesArr: ctes,
-            mot: { id: g.motId, nome: g.motNome === "SEM MOTORISTA" ? "" : g.motNome },
-            ufIni, ufFim: g.uf, percurso,
-          });
-          if (res?.sucesso) ok++;
-          else falhas.push(`${g.motNome} • ${g.uf}: ${res?.cStat || ""} ${res?.xMotivo || "falha"}`.trim());
+          const chaves = g.chaves;
+          const payload = {
+            empresa_id: empresaId, status: "rascunho", serie: serieMdf || "000",
+            qtd_cte: ctes.length,
+            valor_total_carga: ctes.reduce((s, c) => s + (c.valor_servico || 0), 0),
+            peso_total: ctes.reduce((s, c) => s + pesoDe(c), 0),
+            uf_carregamento: ufIni || null, uf_descarregamento: g.uf || null,
+            veiculo_tracao_id: (veic as any)?.id || null, ambiente: ambienteMdf,
+            xml_assinado: JSON.stringify({ rascunho: true, chaves, percursoUFs: caminhoUF(ufIni, g.uf), observacoes, infoFisco, tipoMdf, isTransbordo: false, transb1: "", transb2: "", transb3: "" }),
+          } as any;
+          try {
+            const { data: outros } = await supabase.from("mdf_documentos" as any).select("id,xml_assinado").eq("empresa_id", empresaId).eq("status", "rascunho");
+            for (const r of (outros as any[]) || []) {
+              try {
+                const p = JSON.parse(String((r as any).xml_assinado || "{}"));
+                const ch = [...new Set([...(Array.isArray(p.chaves) ? p.chaves : [])])].sort();
+                if (ch.length && JSON.stringify(ch) === JSON.stringify([...chaves].sort())) {
+                  await supabase.from("mdf_documentos" as any).delete().eq("id", (r as any).id);
+                }
+              } catch {}
+            }
+          } catch {}
+          const { error } = await supabase.from("mdf_documentos" as any).insert(payload);
+          if (error) throw error;
+          ok++;
         } catch (e) {
           falhas.push(`${g.motNome} • ${g.uf}: ${(e as Error)?.message || "falha"}`);
         }
       }
     } finally {
-      setEmitindoLoteMdf(false);
+      setGerandoLote(false);
     }
-    if (ok > 0) toast.success(`${ok} MDF-e(s) emitido(s)`);
+    if (ok > 0) toast.success(`${ok} rascunho(s) criado(s) — envie no Aguardando envio`);
     if (falhas.length > 0) toast.error(`${falhas.length} grupo(s) falharam`, { description: falhas.slice(0, 4).join("; ") });
     qc.invalidateQueries({ queryKey: ["mdf-documentos"] });
     onOpenChange(false);
+    onLoteRascunhos?.();
   };
 
   const handleEmitir = async () => {
@@ -1603,11 +1526,11 @@ function DialogNovoMdf({ open, onOpenChange, empresaId, empresa, chavesIniciais,
                   <Button
                     size="sm"
                     className="h-6 text-[11px]"
-                    disabled={emitindoLoteMdf || !tracaoSel}
-                    onClick={emitirLoteMdf}
-                    title="Emite um MDF-e por grupo, cada um com seu motorista, UF e percurso"
+                    disabled={gerandoLote || !tracaoSel}
+                    onClick={gerarRascunhosLote}
+                    title="Cria um rascunho por grupo (motorista + UF) e abre o Aguardando envio"
                   >
-                    {emitindoLoteMdf ? "Emitindo…" : `Emitir ${gruposMdf.length} MDF-es separados`}
+                    {gerandoLote ? "Gerando…" : `Gerar ${gruposMdf.length} rascunhos separados`}
                   </Button>
                 </div>
                 <div className="mt-1 flex flex-wrap gap-1.5">
