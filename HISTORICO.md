@@ -3895,3 +3895,7 @@ Espelhado na Vercel.
 ## MDF-e por grupo + autorizados compacto (01/10)
 
 - Autorizados: cancelar selecionados ao lado do Gerar MDF-e; abas Sem/Com MDF-e na mesma linha (encostadas). MDF-e: selecao mista (motorista/UF) mostra grupos p/ emitir 1 por vez e bloqueia emissao conjunta.
+
+## CIOT: piso pela maior distancia (01/10)
+
+- Piso minimo do lote calculado sobre a maior distancia entre os CT-es (ex. 2810 km), com rotulo atualizado.

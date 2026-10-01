@@ -2179,7 +2179,7 @@ function CtePage() {
     },
   });
   // Resumo da operação CIOT (usado no diálogo e na emissão): frete somado,
-  // tração/km do 1º CT-e, piso ANTT. Abaixo do piso = emissão bloqueada.
+  // tração do 1º CT-e e MAIOR distância do lote p/ o piso ANTT. Abaixo do piso = bloqueada.
   // (Aqui embaixo por causa de `veiculos`, declarado acima.)
   const resumoCiot = useMemo(() => {
     const sel = docsByStatus.autorizados.filter((d) => ciotSel.has(d.id));
@@ -2200,7 +2200,10 @@ function CtePage() {
     );
     const placa = String(forms[0]?.placaVeiculo || "").toUpperCase();
     const eixos = eixosCombinacao(forms[0], veiculos || []);
-    const km = Math.round(Number(String(forms[0]?.distanciaKm || "").replace(",", ".")) || 0);
+    // Piso do lote usa a MAIOR distância entre os CT-es selecionados
+    const km = Math.round(
+      Math.max(0, ...forms.map((f) => Number(String(f?.distanciaKm || "").replace(",", ".")) || 0)),
+    );
     const pesoTotal = forms.reduce((a, f) => a + (Number(String(f?.peso || "").replace(",", ".")) || 0), 0);
     const piso = eixos > 0 && km > 0 ? pisoMinimoAntt("Carga Geral", eixos, km) : null;
     // CIOT próprio exige tração no CNPJ do emissor: compara o proprietário do
@@ -5952,7 +5955,7 @@ function CtePage() {
                   <div className="grid grid-cols-2 gap-2 text-sm">
                     <div className="rounded border px-2 py-1">
                       <div className="text-[10px] text-muted-foreground">
-                        Piso mínimo ANTT (1º CT-e • {resumoCiot.km || "—"} km • {resumoCiot.eixos || "—"} eixos)
+                        Piso mínimo ANTT (maior distância • {resumoCiot.km || "—"} km • {resumoCiot.eixos || "—"} eixos)
                       </div>
                       <div className="font-semibold">
                         {resumoCiot.piso !== null ? brl(resumoCiot.piso) : "—"}
