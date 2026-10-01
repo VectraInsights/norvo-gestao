@@ -3811,8 +3811,10 @@ Espelhado na Vercel.
   tomador obrigatório), mostra operação (tipo carga, pagto, chave) e
   emite um CIOT cobrindo todos — frete somado, tração/km do 1º,
   confirmação de frota própria.
-- Persistência em `ciot_operacoes` (migration criada — aplicar no
-  banco) + CIOT/protocolo propagados p/ cada CT-e (MDF-e/DACTE leem
-  de lá); lista de emitidos na aba. Emissão individual removida do
-  diálogo (campo manual permanece p/ TAC/externo).
+- Persistência em `ciot_operacoes` (migration aplicada no banco em
+  30/09 via Management API) + CIOT/protocolo propagados p/ cada CT-e
+  (MDF-e/DACTE leem de lá); lista de emitidos na aba. Emissão
+  individual removida do diálogo (campo manual permanece p/ TAC/externo).
+- `tipo_carga_antt` (piso ANTT) também aplicada. UNIQUE de nfes já
+  existia no banco e sem duplicatas — migration de dedup removida.
 - Espelhado na Vercel via push em main.
