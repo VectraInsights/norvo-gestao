@@ -245,12 +245,20 @@ function Veiculos() {
     }
   };
 
-  // Criar RNTRC na lista
+  // Criar RNTRC na lista — SEMPRE com CNPJ (RNTRC sem dono é inválido)
+  const [novoRntrcCnpj, setNovoRntrcCnpj] = useState("");
   const criarRntrc = useMutation({
-    mutationFn: async (rntrc: string) => {
+    mutationFn: async ({ rntrc, cnpj }: { rntrc: string; cnpj: string }) => {
       if (!empresa) throw new Error("Selecione uma empresa");
+      const doc = cnpj.replace(/\D/g, "");
+      if (doc.length !== 14) throw new Error("Informe o CNPJ do proprietário (14 dígitos)");
       const tbl = supabase.from("rntrc_lista" as never) as any;
-      const { error } = await tbl.insert({ empresa_id: empresa.id, rntrc: rntrc.trim() });
+      const { error } = await tbl.insert({
+        empresa_id: empresa.id,
+        rntrc: rntrc.trim().toUpperCase(),
+        nome: "",
+        cnpj: doc,
+      });
       if (error) {
         if (String(error.message).toLowerCase().includes("duplicate"))
           throw new Error("Este RNTRC já está na lista");
@@ -260,6 +268,7 @@ function Veiculos() {
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["rntrc_lista"] });
     },
+    onError: (e: Error) => toast.error(e.message),
   });
 
   const criarTipo = useMutation({
@@ -513,6 +522,15 @@ function Veiculos() {
         throw new Error("CNPJ/CPF do proprietário inválido (11 ou 14 dígitos)");
       if (!form.categoria) throw new Error("Categoria é obrigatória");
       if (!form.quantidade_eixos) throw new Error("Quantidade de eixos é obrigatória");
+      // RNTRC informado precisa existir na lista COM CNPJ (RNTRC sem dono é inválido)
+      const rntrcDig = form.rntrc.trim().toUpperCase();
+      if (rntrcDig) {
+        const entry = rntrcDisponiveis.find((r) => r.rntrc.toUpperCase() === rntrcDig);
+        if (!entry)
+          throw new Error("RNTRC não cadastrado — selecione na lista ou cadastre com CNPJ");
+        if (!entry.cnpj)
+          throw new Error("RNTRC sem CNPJ na lista — complete o CNPJ em Configurações");
+      }
       const payload: any = {
         empresa_id: empresa.id,
         placa,
@@ -849,18 +867,20 @@ function Veiculos() {
                     <Label className="text-[10px] text-muted-foreground">RNTRC</Label>
                 <Popover
                   open={rntrcOpen}
-                  onOpenChange={(v) => {
-                    setRntrcOpen(v);
-                    if (v) {
-                      rntrcSelRef.current = false;
-                      setRntrcBusca("");
-                    } else {
-                      if (!rntrcSelRef.current && rntrcBusca.trim())
-                        set("rntrc", rntrcBusca.trim().toUpperCase());
-                      rntrcSelRef.current = false;
-                      setRntrcBusca("");
-                    }
-                  }}
+                    onOpenChange={(v) => {
+                      setRntrcOpen(v);
+                      if (v) {
+                        rntrcSelRef.current = false;
+                        setRntrcBusca("");
+                        setNovoRntrcCnpj("");
+                      } else {
+                        if (!rntrcSelRef.current && rntrcBusca.trim())
+                          set("rntrc", rntrcBusca.trim().toUpperCase());
+                        rntrcSelRef.current = false;
+                        setRntrcBusca("");
+                        setNovoRntrcCnpj("");
+                      }
+                    }}
                 >
                   <PopoverTrigger asChild>
                       <Button
@@ -885,19 +905,40 @@ function Veiculos() {
                       />
                       <CommandList>
                         <CommandEmpty>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            className="w-full justify-start text-xs"
-                            onClick={() => {
-                              if (rntrcBusca.trim()) {
-                                criarRntrc.mutate(rntrcBusca.trim());
-                                setRntrcOpen(false);
-                              }
-                            }}
-                          >
-                            <Plus className="mr-1 h-3 w-3" /> Salvar &quot;{rntrcBusca}&quot;
-                          </Button>
+                          <div className="p-2 space-y-1.5">
+                            <div className="text-xs font-medium">
+                              Novo RNTRC &quot;{rntrcBusca}&quot; — informe o CNPJ do dono
+                            </div>
+                            <Input
+                              className="h-7 text-xs font-mono"
+                              value={novoRntrcCnpj}
+                              onChange={(e) => setNovoRntrcCnpj(maskDoc(e.target.value))}
+                            />
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="w-full justify-start text-xs"
+                              disabled={criarRntrc.isPending}
+                              onClick={() => {
+                                if (!rntrcBusca.trim()) return;
+                                criarRntrc.mutate(
+                                  { rntrc: rntrcBusca.trim(), cnpj: novoRntrcCnpj },
+                                  {
+                                    onSuccess: () => {
+                                      set("rntrc", rntrcBusca.trim().toUpperCase());
+                                      set("proprietario_doc", maskDoc(novoRntrcCnpj));
+                                      rntrcSelRef.current = true;
+                                      setRntrcBusca("");
+                                      setNovoRntrcCnpj("");
+                                      setRntrcOpen(false);
+                                    },
+                                  },
+                                );
+                              }}
+                            >
+                              <Plus className="mr-1 h-3 w-3" /> Salvar RNTRC com CNPJ
+                            </Button>
+                          </div>
                         </CommandEmpty>
                         <CommandGroup>
                           {rntrcDisponiveis.map((r) => (

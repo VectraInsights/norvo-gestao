@@ -266,7 +266,14 @@ function RntrcTab({ empresaId }: { empresaId: string }) {
   });
 
   const add = async () => {
-    if (!rntrc.trim() || !nome.trim() || !cnpj.trim()) return;
+    if (!rntrc.trim() || !nome.trim() || !cnpj.trim()) {
+      toast.error("RNTRC, nome e CNPJ são obrigatórios");
+      return;
+    }
+    if (cnpj.replace(/\D/g, "").length !== 14) {
+      toast.error("CNPJ do RNTRC precisa ter 14 dígitos");
+      return;
+    }
     const { error } = await supabase.from("rntrc_lista" as never).insert({ empresa_id: empresaId, rntrc: rntrc.trim().toUpperCase(), nome: nome.trim(), cnpj: cnpj.trim(), categoria: categoria || null });
     if (error) {
       if (String(error.message).toLowerCase().includes("duplicate")) return toast.error("Este RNTRC já está cadastrado");
@@ -286,7 +293,14 @@ function RntrcTab({ empresaId }: { empresaId: string }) {
   };
 
   const saveEdit = async (id: string) => {
-    if (!editRntrc.trim() || !editNome.trim() || !editCnpj.trim()) return;
+    if (!editRntrc.trim() || !editNome.trim() || !editCnpj.trim()) {
+      toast.error("RNTRC, nome e CNPJ são obrigatórios");
+      return;
+    }
+    if (editCnpj.replace(/\D/g, "").length !== 14) {
+      toast.error("CNPJ do RNTRC precisa ter 14 dígitos");
+      return;
+    }
     const { error } = await supabase.from("rntrc_lista" as never).update({ rntrc: editRntrc.trim().toUpperCase(), nome: editNome.trim(), cnpj: editCnpj.trim(), categoria: editCategoria || null }).eq("id", id);
     if (error) {
       if (String(error.message).toLowerCase().includes("duplicate")) return toast.error("Este RNTRC já está cadastrado");

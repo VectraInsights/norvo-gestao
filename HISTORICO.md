@@ -3851,3 +3851,7 @@ Espelhado na Vercel.
 ## Veiculos: RNTRC puxa dono (01/10)
 
 - Ao selecionar RNTRC no cadastro, preenche CNPJ/CPF do proprietario (da lista ou do historico de veiculos) e o nome se vazio.
+
+## RNTRC exige CNPJ (01/10)
+
+- Cadastro rapido de RNTRC no veiculo agora pede o CNPJ do dono (14 digitos); salvar veiculo barra RNTRC fora da lista ou sem CNPJ; Configuracoes valida RNTRC+nome+CNPJ 14 digitos com aviso.
