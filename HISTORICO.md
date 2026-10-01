@@ -3831,3 +3831,7 @@ Espelhado na Vercel.
 ## Percursos: salvar descarta CEP antigo (01/10)
 
 - Ao salvar, o recalculo usava o CEP antigo do contato e gravava a distancia da cidade errada por cima da certa (ex. MARABA com CEP de MACAPA). Mesma regra da tela aplicada no salvar e na comparacao com o salvo.
+
+## CT-e: prefere percurso mais completo (01/10)
+
+- Havendo percursos duplicados p/ o mesmo trio (rem+dest+toma), o automatico pegava o 1o da lista (podia ser rascunho antigo sem CFOP/seguro). Agora prefere o mais completo: com CFOP > com seguro > com rota.

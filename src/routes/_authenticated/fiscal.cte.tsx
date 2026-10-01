@@ -3997,14 +3997,21 @@ function CtePage() {
     // Conferência estrita: só aplica com CNPJ de remetente + destinatário + tomador iguais
     if (!percursos || percursos.length === 0) return null;
     if (!d.remDoc || !d.destDoc || !d.tomaDoc) return null;
-    return (
-      percursos.find(
-        (r) =>
-          onlyDigitsPercurso(r.rem_cnpj) === d.remDoc &&
-          onlyDigitsPercurso(r.dest_cnpj) === d.destDoc &&
-          onlyDigitsPercurso(r.toma_cnpj) === d.tomaDoc,
-      ) || null
+    const cands = percursos.filter(
+      (r) =>
+        onlyDigitsPercurso(r.rem_cnpj) === d.remDoc &&
+        onlyDigitsPercurso(r.dest_cnpj) === d.destDoc &&
+        onlyDigitsPercurso(r.toma_cnpj) === d.tomaDoc,
     );
+    if (cands.length === 0) return null;
+    // Havendo duplicadas p/ o mesmo trio, prefere a mais completa (com CFOP/seguro)
+    // em vez da primeira da lista (que pode ser um rascunho antigo sem fiscal).
+    const score = (r: Record<string, any>) =>
+      (r.cfop ? 4 : 0) +
+      (r.seg_nome ? 2 : 0) +
+      (r.seg_apolice ? 1 : 0) +
+      (r.coleta_xmun && r.entrega_xmun ? 1 : 0);
+    return cands.sort((a, b) => score(b) - score(a))[0] || null;
   };
   // NF sem percurso cadastrado (rem+dest+toma) — linha vermelha + bloqueio no Gerar
   const nfTemPercurso = (m: any) => {
