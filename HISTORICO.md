@@ -3883,3 +3883,7 @@ Espelhado na Vercel.
 ## Toma padrao CIF no Gerar CT-e (01/10)
 
 - Sem modFrete na NF-e o toma padrao passa a 0 (remetente, CIF) com tomador = emitente, igual a troca manual; conferencia de percurso usa o mesmo tomador efetivo.
+
+## Lote com leitura final (01/10)
+
+- Fim do envio em lote agora aguarda refetch de pendentes + documentos e ressincroniza o embarque: elimina NF-e fantasma sem precisar de F5.

@@ -3276,6 +3276,16 @@ function CtePage() {
       // embarcadas); zerar faria as demais "sumirem" até voltar.
       setSelecionadas(new Set());
       setForm({ ...emptyForm });
+      // Leitura final aguardada: garante embarque e documentos consistentes
+      // (sem depender da ordem das invalidações do meio do lote)
+      try {
+        await qc.refetchQueries({ queryKey: ["cte-nfes-pendentes", empresa?.id] });
+      } catch {}
+      try {
+        await qc.refetchQueries({ queryKey: ["cte-documentos"] });
+      } catch {}
+      const frescas = qc.getQueryData(["cte-nfes-pendentes", empresa?.id]) as any[];
+      if (Array.isArray(frescas)) setMercadorias(mapearPendentes(frescas) as any);
     }
     if (ok > 0) toast.success(`${ok} CT-e(s) enviado(s) p/ SEFAZ`);
     if (falhas > 0) toast.error(`${falhas} rascunho(s) falharam — verifique os erros acima`);
