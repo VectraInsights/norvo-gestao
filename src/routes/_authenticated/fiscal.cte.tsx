@@ -92,7 +92,7 @@ import {
   excluirRejeitadosCteFn,
 } from "@/lib/sefaz-cte-server";
 import { SEFAZ_AMBIENTE } from "@/lib/sefaz-ambiente";
-import { pisoMinimoAntt, PISO_VIGENCIA, TIPOS_CARGA_ANTT } from "@/lib/piso-antt";
+import { pisoMinimoAntt, PISO_VIGENCIA } from "@/lib/piso-antt";
 import { emitirCiotFn } from "@/lib/antt-ciot-server";
 import { CFOPS_CTE, MOD_FRETE_OPTIONS, RESPONSAVEL_CTE_OPTIONS } from "@/lib/cfops-transporte";
 import { gerarDactePdf, DACTE_REV } from "@/lib/dacte-pdf";
@@ -1615,9 +1615,6 @@ function CtePage() {
   const [emitindoCiotLote, setEmitindoCiotLote] = useState(false);
   // ---- Aba CIOT: uma operação ANTT cobrindo 1+ CT-es autorizados ----
   const [ciotSel, setCiotSel] = useState<Set<string>>(new Set());
-  const [ciotTabTipo, setCiotTabTipo] = useState<string>("Carga Geral");
-  const [ciotTabPagto, setCiotTabPagto] = useState<string>("6");
-  const [ciotTabChave, setCiotTabChave] = useState<string>("");
   const { data: ciotOps } = useQuery({
     enabled: !!empresa,
     queryKey: ["ciot-operacoes", empresa?.id],
@@ -1685,7 +1682,7 @@ function CtePage() {
     const destCnpj = String(forms[0]?.destCnpj || "").replace(/\D/g, "");
     setEmitindoCiotLote(true);
     try {
-      const tipoCodigo = (TIPOS_CARGA_ANTT as readonly string[]).indexOf(ciotTabTipo as any) + 1 || 5;
+      const tipoCodigo = 5; // sempre Carga Geral
       const hoje = new Date();
       const fmtD = (d: Date) => d.toISOString().slice(0, 10);
       const fim = new Date(hoje.getTime() + Math.max(1, Math.ceil(km / 800)) * 86400000);
@@ -1705,10 +1702,10 @@ function CtePage() {
               },
             ],
             pagamento: {
-              tipo: Number(ciotTabPagto || 6),
+              tipo: 6,
               docCreditado: emitCnpj,
               indPagamento: 0,
-              chavePix: Number(ciotTabPagto || 6) === 6 ? ciotTabChave.trim() || emitCnpj : undefined,
+              chavePix: emitCnpj,
             },
             origem: { cmun: String(forms[0]?.cMunIni || "").replace(/\D/g, "") || undefined },
             destino: { cmun: String(forms[0]?.cMunFim || "").replace(/\D/g, "") || undefined },
@@ -1739,7 +1736,7 @@ function CtePage() {
           status: "declarado",
           valor_frete: Math.round(valorTotal * 100) / 100,
           distancia_km: km,
-          tipo_carga: ciotTabTipo,
+          tipo_carga: "Carga Geral",
           eixos,
           placa,
           tomador_cnpj: tomaCnpj,
@@ -2093,7 +2090,7 @@ function CtePage() {
     const eixos = Number((veic as any)?.quantidade_eixos) || 0;
     const km = Math.round(Number(String(forms[0]?.distanciaKm || "").replace(",", ".")) || 0);
     const pesoTotal = forms.reduce((a, f) => a + (Number(String(f?.peso || "").replace(",", ".")) || 0), 0);
-    const piso = eixos > 0 && km > 0 ? pisoMinimoAntt(ciotTabTipo, eixos, km) : null;
+    const piso = eixos > 0 && km > 0 ? pisoMinimoAntt("Carga Geral", eixos, km) : null;
     return {
       sel,
       forms,
@@ -2108,7 +2105,7 @@ function CtePage() {
       piso,
       abaixo: piso !== null && valorTotal > 0 && valorTotal < piso,
     };
-  }, [docsByStatus, ciotSel, ciotTabTipo, veiculos]);
+  }, [docsByStatus, ciotSel, veiculos]);
   const { data: seguradoras } = useQuery({
     enabled: !!empresa,
     queryKey: ["seguradoras", empresa?.id],
@@ -5539,45 +5536,6 @@ function CtePage() {
               <Card className="p-3 space-y-2">
                 <div className="bg-primary/8 border-b border-primary/20 -m-3 mb-1 px-2 py-1 text-[10px] font-semibold uppercase tracking-wide text-primary/80">
                   Operação CIOT — {ciotSel.size} CT-e(s)
-                </div>
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
-                  <div>
-                    <Label className="text-[10px] text-muted-foreground">Tipo de carga (ANTT)</Label>
-                    <Select value={ciotTabTipo} onValueChange={setCiotTabTipo}>
-                      <SelectTrigger className="h-8 text-xs">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {(TIPOS_CARGA_ANTT as readonly string[]).map((t) => (
-                          <SelectItem key={t} value={t}>
-                            {t}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div>
-                    <Label className="text-[10px] text-muted-foreground">Pagamento</Label>
-                    <Select value={ciotTabPagto} onValueChange={setCiotTabPagto}>
-                      <SelectTrigger className="h-8 text-xs">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="6">PIX</SelectItem>
-                        <SelectItem value="4">Conta pagamento</SelectItem>
-                        <SelectItem value="2">Conta corrente</SelectItem>
-                        <SelectItem value="5">Outros</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div className="col-span-2">
-                    <Label className="text-[10px] text-muted-foreground">Chave/doc (vazio = CNPJ)</Label>
-                    <Input
-                      className="h-8 text-xs font-mono"
-                      value={ciotTabChave}
-                      onChange={(e) => setCiotTabChave(e.target.value)}
-                    />
-                  </div>
                 </div>
                 <div className="flex justify-end">
                   <Button size="sm" onClick={() => setCiotConfirma(true)} disabled={emitindoCiotLote || ciotSel.size === 0}>
