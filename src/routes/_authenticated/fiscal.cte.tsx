@@ -266,15 +266,21 @@ function formDeDocCiot(d: { xml_assinado: string | null }): Record<string, any> 
   return {};
 }
 
-// CNPJ do destinatário do CT-e (vem da NF-e vinculada, não do form)
+// CNPJ do destinatário do CT-e: 1º da NF-e vinculada (JSON), senão do
+// <dest> do XML assinado, senão "" (o chamador tenta o banco por chNFe).
 function destDoDocCiot(d: { xml_assinado: string | null }): string {
   try {
     const j = JSON.parse(d.xml_assinado || "{}");
     const nfs = ((j as any).nfs || []) as any[];
-    return String(nfs[0]?.destCnpj || "").replace(/\D/g, "");
-  } catch {
-    return "";
-  }
+    const nd = String(nfs[0]?.destCnpj || "").replace(/\D/g, "");
+    if (nd) return nd;
+    let raw = typeof (j as any).xml === "string" ? (j as any).xml : "";
+    if (!raw && String(d.xml_assinado || "").trim().startsWith("<")) raw = d.xml_assinado || "";
+    // Só dentro de <dest> — o 1º CNPJ solto do XML seria o do emitente.
+    const m = raw.match(/<dest>[\s\S]{0,3000}?<(CNPJ|CPF)>(\d{11,14})<\/(CNPJ|CPF)>/);
+    if (m) return (m[2] || "").replace(/\D/g, "");
+  } catch {}
+  return "";
 }
 
 // Placa(s), motorista e data de emissão direto do XML/form do CT-e p/ a tabela.
@@ -1760,8 +1766,25 @@ function CtePage() {
     const veic = (veiculos || []).find((v: any) => String(v.placa || "").toUpperCase() === placa);
     const eixos = r.eixos;
     const pesoTotal = r.pesoTotal;
-    // Destinatário vem da NF-e vinculada ao CT-e (não existe no form)
-    const destCnpj = destDoDocCiot(sel[0]);
+    // Destinatário vem da NF-e vinculada ao CT-e (não existe no form).
+    // Fallback final: busca na tabela de NF-es pelas chaves do XML.
+    let destCnpj = destDoDocCiot(sel[0]);
+    if (!destCnpj) {
+      try {
+        const chaves = [...(sel[0].xml_assinado || "").matchAll(/<chNFe>(\d{44})<\/chNFe>/g)].map((m) => m[1]);
+        if (chaves.length > 0 && empresa) {
+          const { data } = await supabase
+            .from("cte_nfes_pendentes" as any)
+            .select("dest_cnpj")
+            .eq("empresa_id", empresa.id)
+            .in("chave", chaves);
+          destCnpj =
+            ((data as any[]) || [])
+              .map((r) => String(r.dest_cnpj || "").replace(/\D/g, ""))
+              .find((d) => d.length >= 11) || "";
+        }
+      } catch {}
+    }
     if (!destCnpj) {
       toast.error("1º CT-e sem destinatário na NF-e vinculada — CIOT exige o destinatário");
       return;
