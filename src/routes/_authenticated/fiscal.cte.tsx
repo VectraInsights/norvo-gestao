@@ -542,11 +542,13 @@ function CtePage() {
 
   const docsByStatus = useMemo(() => {
     if (!docs) return { autorizados: [], rejeitados: [], cancelados: [], rascunhos: [] };
+    const byNum = (a: { numero: string | null }, b: { numero: string | null }) =>
+      (Number(a.numero) || 0) - (Number(b.numero) || 0);
     return {
-      autorizados: docs.filter((d) => d.status === "autorizado"),
-      rejeitados: docs.filter((d) => d.status === "rejeitado"),
-      cancelados: docs.filter((d) => d.status === "cancelado"),
-      rascunhos: docs.filter((d) => d.status === "rascunho"),
+      autorizados: docs.filter((d) => d.status === "autorizado").sort(byNum),
+      rejeitados: docs.filter((d) => d.status === "rejeitado").sort(byNum),
+      cancelados: docs.filter((d) => d.status === "cancelado").sort(byNum),
+      rascunhos: docs.filter((d) => d.status === "rascunho").sort(byNum),
     };
   }, [docs]);
 
