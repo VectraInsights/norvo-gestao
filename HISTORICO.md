@@ -3976,3 +3976,10 @@ Espelhado na Vercel.
   alerta quando nada está vinculado. Toast de rejeição mostra o IdOp
   usado. Consulta de CIOT de 12 dígitos (endpoint 08) no card de
   emitidos — com declaração vinculada, volta o CIOT16.
+
+## Fiscal: produção desabilitada, só homologação (01/10)
+
+- SEFAZ já era travada (constante + telas fixas). Na ANTT, removida a
+  URL de produção e o tipo `AnttEnv` só aceita homologação, com
+  `assertAnttEnv` nas 3 operações — nenhum caminho de código alcança
+  produção.
