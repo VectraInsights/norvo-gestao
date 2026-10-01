@@ -318,6 +318,46 @@ function infoCteLinha(xmlAssinado: string | null): {
   return { placas, motorista, dataEmi };
 }
 
+// Linha resumida de um documento p/ exibição e ordenação das tabelas
+function linhaDocs(d: CteDoc): {
+  placas: string;
+  motorista: string;
+  numero: number;
+  serie: string;
+  nfs: string;
+  valor: number;
+  responsavel: string;
+  dataEmi: string;
+} {
+  const info = infoCteLinha(d.xml_assinado);
+  let nfsArr: string[] = [];
+  try {
+    const j = JSON.parse(d.xml_assinado || "{}");
+    const nn = j.nfs?.map((n: any) => n.nNF).filter(Boolean) || [];
+    if (nn.length) nfsArr = nn;
+  } catch {}
+  if (nfsArr.length === 0) {
+    try {
+      const chaves = [...(d.xml_assinado || "").matchAll(/<chNFe>(\d{44})<\/chNFe>/g)].map(
+        (m) => m[1],
+      );
+      nfsArr = chaves.map((ch) => ch.slice(25, 34).replace(/^0+/, "") || "0");
+    } catch {
+      nfsArr = [];
+    }
+  }
+  return {
+    placas: info.placas.join(" / "),
+    motorista: info.motorista,
+    numero: Number(d.numero ?? 0),
+    serie: String(d.serie ?? ""),
+    nfs: nfsArr.join(", "),
+    valor: Number(d.valor_servico ?? 0),
+    responsavel: String((d as any).responsavel_emissao || ""),
+    dataEmi: info.dataEmi,
+  };
+}
+
 function CtePage() {
   const { data: empresa } = useEmpresaAtual();
   const qc = useQueryClient();
@@ -2005,6 +2045,10 @@ function CtePage() {
   const [aba, setAba] = useState("geral");
   const navigate = useNavigate();
   const [mdfSel, setMdfSel] = useState<Set<string>>(new Set());
+  // Lote de envio (aba Aguardando envio) + ordenação das tabelas de documentos
+  const [envSel, setEnvSel] = useState<Set<string>>(new Set());
+  const [enviandoLote, setEnviandoLote] = useState(false);
+  const [ordDocs, setOrdDocs] = useState<{ chave: string; dir: 1 | -1 } | null>(null);
   const fmtDataHora = (iso: any) => {
     try {
       const d = new Date(String(iso));
@@ -3083,7 +3127,7 @@ function CtePage() {
     }
   };
 
-  const editarRascunho = async (doc: CteDoc) => {
+  const editarRascunho = async (doc: CteDoc, silencioso = false) => {
     if (!empresa) return;
     try {
       const parsed = JSON.parse(doc.xml_assinado || "{}");
@@ -3131,13 +3175,50 @@ function CtePage() {
         setSelecionadas(new Set(parsed.chavesNFe || []));
       }
       setEditingRascunhoId(doc.id);
-      pularPercursoRef.current = true;
-      setOpen(true);
+      if (!silencioso) {
+        pularPercursoRef.current = true;
+        setOpen(true);
+      }
       qc.invalidateQueries({ queryKey: ["cte-documentos"] });
       qc.invalidateQueries({ queryKey: ["cte-nfes-pendentes", empresa.id] });
     } catch (e: any) {
+      if (silencioso) throw e;
       toast.error("Erro ao carregar rascunho", { description: e.message });
     }
+  };
+  // Envio em lote da aba Aguardando envio: carrega cada rascunho no formulário
+  // e reaproveita a mesma emissão individual (o mutateAsync usa o closure atual).
+  const emitirLatest = useRef<() => Promise<any>>(async () => null);
+  emitirLatest.current = () => emitir.mutateAsync() as unknown as Promise<any>;
+  const enviarSelecionados = async () => {
+    const alvo = docsByStatus.rascunhos.filter((d) => envSel.has(d.id));
+    if (alvo.length === 0 || enviandoLote) return;
+    setEnviandoLote(true);
+    let ok = 0;
+    let falhas = 0;
+    try {
+      for (const d of alvo) {
+        try {
+          setViewDoc(null);
+          await editarRascunho(d, true);
+          await new Promise((r) => setTimeout(r, 600));
+          const ret = await emitirLatest.current();
+          if ((ret as any)?.ignored) continue;
+          ok++;
+        } catch {
+          falhas++;
+        }
+      }
+    } finally {
+      setEnviandoLote(false);
+      setEnvSel(new Set());
+      setEditingRascunhoId(null);
+      setMercadorias([]);
+      setSelecionadas(new Set());
+      setForm({ ...emptyForm });
+    }
+    if (ok > 0) toast.success(`${ok} CT-e(s) enviado(s) p/ SEFAZ`);
+    if (falhas > 0) toast.error(`${falhas} rascunho(s) falharam — verifique os erros acima`);
   };
 
   const visualizarDoc = (doc: CteDoc) => {
@@ -4403,103 +4484,161 @@ function CtePage() {
   const autorizadosSelecionados = docsByStatus.autorizados.filter(
     (d) => d.chave_acesso && mdfSel.has(d.chave_acesso),
   );
-  const renderTabelaDocs = (lista: CteDoc[], rotulo: string, semSelecao = false) => (
-    <>
-      {lista.length === 0 ? (
-        <EmptyState icon={Truck} title="Nenhum CT-e" description={`Nenhum CT-e ${rotulo}.`} />
-      ) : (
-        <Card className="overflow-hidden">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                {rotulo === "autorizados" && !semSelecao && (
-                  <TableHead className="w-6">
-                    <div className="flex items-center gap-1">
-                      <input
-                        type="checkbox"
-                        checked={
-                          lista
-                            .filter((d) => d.status === "autorizado" && d.chave_acesso)
-                            .every((d) => mdfSel.has(d.chave_acesso!)) &&
-                          lista.some((d) => d.status === "autorizado" && d.chave_acesso)
-                        }
-                        onChange={() => {
-                          const autorizados = lista
-                            .filter((d) => d.status === "autorizado" && d.chave_acesso)
-                            .map((d) => d.chave_acesso!);
-                          setMdfSel((prev) =>
-                            autorizados.every((k) => prev.has(k))
-                              ? new Set([...prev].filter((k) => !autorizados.includes(k)))
-                              : new Set([...prev, ...autorizados]),
-                          );
-                        }}
-                        title="Selecionar CT-es autorizados"
-                      />
-                      <Button
-                        type="button"
-                        size="icon"
-                        variant="ghost"
-                        className="h-6 w-6 text-destructive"
-                        disabled={!autorizadosSelecionados.length}
-                        onClick={cancelarSelecionados}
-                        title="Cancelar CT-es selecionados"
-                        aria-label="Cancelar CT-es selecionados"
-                      >
-                        <Ban className="h-3.5 w-3.5" />
-                      </Button>
-                    </div>
-                  </TableHead>
-                )}
-                <TableHead className="text-center">Placa</TableHead>
-                <TableHead className="text-center">Motorista</TableHead>
-                <TableHead className="text-center">Número</TableHead>
-                <TableHead className="text-center">Série</TableHead>
-                <TableHead className="text-center">Notas Fiscais</TableHead>
-                <TableHead className="text-center">Valor</TableHead>
-                <TableHead className="text-center">Responsável</TableHead>
-                <TableHead className="text-center">Data Emissão</TableHead>
-                <TableHead className="text-center">Ações</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {lista.map((d) => {
-                const nNFs = (() => {
-                  try {
-                    const j = JSON.parse(d.xml_assinado || "{}");
-                    const nn = j.nfs?.map((n: any) => n.nNF).filter(Boolean) || [];
-                    if (nn.length) return nn;
-                  } catch {}
-                  try {
-                    const chaves = [
-                      ...(d.xml_assinado || "").matchAll(/<chNFe>(\d{44})<\/chNFe>/g),
-                    ].map((m) => m[1]);
-                    if (chaves.length === 0) return [];
-                    return chaves.map((ch) => ch.slice(25, 34).replace(/^0+/, "") || "0");
-                  } catch {
-                    return [];
-                  }
-                })();
-                const info = infoCteLinha(d.xml_assinado);
-                const isRascunho = d.status === "rascunho";
-                return (
-                  <TableRow key={d.id} className={isRascunho ? "bg-muted/30" : ""}>
-                    {rotulo === "autorizados" && !semSelecao && d.chave_acesso && (
-                      <TableCell>
+  const renderTabelaDocs = (lista: CteDoc[], rotulo: string, semSelecao = false) => {
+    const ehEnvio = rotulo === "aguardando envio";
+    // Ordenação por clique no cabeçalho (3º clique limpa)
+    const listaOrd = ordDocs
+      ? [...lista].sort((a, b) => {
+          const la = linhaDocs(a) as any;
+          const lb = linhaDocs(b) as any;
+          const va = la[ordDocs.chave];
+          const vb = lb[ordDocs.chave];
+          const cmp =
+            typeof va === "number" && typeof vb === "number"
+              ? va - vb
+              : String(va || "").localeCompare(String(vb || ""), "pt-BR", { numeric: true });
+          return cmp * ordDocs.dir;
+        })
+      : lista;
+    const TH = ({ k, label, className }: { k: string; label: string; className?: string }) => (
+      <TableHead className={"text-center " + (className || "")}>
+        <button
+          type="button"
+          className="inline-flex items-center gap-1 uppercase hover:text-foreground"
+          onClick={() =>
+            setOrdDocs((o) =>
+              !o || o.chave !== k
+                ? { chave: k, dir: 1 }
+                : o.dir === 1
+                  ? { chave: k, dir: -1 }
+                  : null,
+            )
+          }
+          title="Ordenar"
+        >
+          {label}
+          <span className="text-[9px] w-3 inline-block">
+            {ordDocs?.chave === k ? (ordDocs.dir === 1 ? "▲" : "▼") : ""}
+          </span>
+        </button>
+      </TableHead>
+    );
+    const envIds = lista.map((d) => d.id);
+    const envTodos = envIds.length > 0 && envIds.every((id) => envSel.has(id));
+    return (
+      <>
+        {lista.length === 0 ? (
+          <EmptyState icon={Truck} title="Nenhum CT-e" description={`Nenhum CT-e ${rotulo}.`} />
+        ) : (
+          <Card className="overflow-hidden">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  {rotulo === "autorizados" && !semSelecao && (
+                    <TableHead className="w-6">
+                      <div className="flex items-center gap-1">
                         <input
                           type="checkbox"
-                          checked={mdfSel.has(d.chave_acesso)}
-                          onChange={() =>
-                            setMdfSel((prev) => {
-                              const next = new Set(prev);
-                              if (next.has(d.chave_acesso!)) next.delete(d.chave_acesso!);
-                              else next.add(d.chave_acesso!);
-                              return next;
-                            })
+                          checked={
+                            lista
+                              .filter((d) => d.status === "autorizado" && d.chave_acesso)
+                              .every((d) => mdfSel.has(d.chave_acesso!)) &&
+                            lista.some((d) => d.status === "autorizado" && d.chave_acesso)
                           }
-                          title="Selecionar para MDF-e"
+                          onChange={() => {
+                            const autorizados = lista
+                              .filter((d) => d.status === "autorizado" && d.chave_acesso)
+                              .map((d) => d.chave_acesso!);
+                            setMdfSel((prev) =>
+                              autorizados.every((k) => prev.has(k))
+                                ? new Set([...prev].filter((k) => !autorizados.includes(k)))
+                                : new Set([...prev, ...autorizados]),
+                            );
+                          }}
+                          title="Selecionar CT-es autorizados"
                         />
-                      </TableCell>
-                    )}
+                        <Button
+                          type="button"
+                          size="icon"
+                          variant="ghost"
+                          className="h-6 w-6 text-destructive"
+                          disabled={!autorizadosSelecionados.length}
+                          onClick={cancelarSelecionados}
+                          title="Cancelar CT-es selecionados"
+                          aria-label="Cancelar CT-es selecionados"
+                        >
+                          <Ban className="h-3.5 w-3.5" />
+                        </Button>
+                      </div>
+                    </TableHead>
+                  )}
+                  {ehEnvio && !semSelecao && (
+                    <TableHead className="w-6">
+                      <input
+                        type="checkbox"
+                        checked={envTodos}
+                        onChange={() =>
+                          setEnvSel((prev) =>
+                            envTodos ? new Set() : new Set([...prev, ...envIds]),
+                          )
+                        }
+                        title="Selecionar todos p/ envio"
+                      />
+                    </TableHead>
+                  )}
+                  <TH k="placas" label="Placa" />
+                  <TH k="motorista" label="Motorista" />
+                  <TH k="numero" label="Número" />
+                  <TH k="serie" label="Série" />
+                  <TH k="nfs" label="Notas Fiscais" />
+                  <TH k="valor" label="Valor" />
+                  <TH k="responsavel" label="Responsável" />
+                  <TH k="dataEmi" label="Data Emissão" />
+                  <TableHead className="text-center">Ações</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {listaOrd.map((d) => {
+                  const L = linhaDocs(d);
+                  const nNFs = L.nfs ? L.nfs.split(", ") : [];
+                  const info = { placas: L.placas ? L.placas.split(" / ") : [], motorista: L.motorista, dataEmi: L.dataEmi };
+                  const isRascunho = d.status === "rascunho";
+                  return (
+                    <TableRow key={d.id} className={isRascunho ? "bg-muted/30" : ""}>
+                      {rotulo === "autorizados" && !semSelecao && d.chave_acesso && (
+                        <TableCell>
+                          <input
+                            type="checkbox"
+                            checked={mdfSel.has(d.chave_acesso)}
+                            onChange={() =>
+                              setMdfSel((prev) => {
+                                const next = new Set(prev);
+                                if (next.has(d.chave_acesso!)) next.delete(d.chave_acesso!);
+                                else next.add(d.chave_acesso!);
+                                return next;
+                              })
+                            }
+                            title="Selecionar para MDF-e"
+                          />
+                        </TableCell>
+                      )}
+                      {ehEnvio && !semSelecao && (
+                        <TableCell>
+                          <input
+                            type="checkbox"
+                            checked={envSel.has(d.id)}
+                            onChange={() =>
+                              setEnvSel((prev) => {
+                                const next = new Set(prev);
+                                if (next.has(d.id)) next.delete(d.id);
+                                else next.add(d.id);
+                                return next;
+                              })
+                            }
+                            title="Selecionar p/ envio"
+                          />
+                        </TableCell>
+                      )}
                     <TableCell className="font-mono text-xs">
                       {info.placas.length ? info.placas.join(" / ") : "—"}
                     </TableCell>
@@ -4780,9 +4919,9 @@ function CtePage() {
           </DialogContent>
         </Dialog>
       )}
-    </>
-  );
-
+      </>
+    );
+  };
   return (
     <div className="px-2 pb-2 pt-1 h-[calc(100dvh-88px)] sm:h-[calc(100dvh-104px)] lg:h-[calc(100dvh-120px)] min-h-[500px] flex flex-col gap-2">
       <div className="border-l-4 border-blue-500 pl-4 py-0.5 shrink-0">
@@ -5451,6 +5590,22 @@ function CtePage() {
             </DialogContent>
           </Dialog>
           <TabsContent value="rascunhos" className="mt-0">
+            {docsByStatus.rascunhos.length > 0 && (
+              <div className="mb-2 flex items-center justify-end gap-2">
+                <span className="text-xs text-muted-foreground">
+                  {envSel.size > 0 ? `${envSel.size} selecionado(s)` : "Marque os rascunhos p/ envio"}
+                </span>
+                <Button
+                  size="sm"
+                  disabled={envSel.size === 0 || enviandoLote}
+                  onClick={enviarSelecionados}
+                >
+                  {enviandoLote
+                    ? "Enviando…"
+                    : `Enviar selecionados${envSel.size > 0 ? ` (${envSel.size})` : ""}`}
+                </Button>
+              </div>
+            )}
             {renderTabelaDocs(docsByStatus.rascunhos, "aguardando envio")}
           </TabsContent>
           <TabsContent value="autorizados" className="mt-0">

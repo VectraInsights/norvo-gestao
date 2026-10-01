@@ -3855,3 +3855,7 @@ Espelhado na Vercel.
 ## RNTRC exige CNPJ (01/10)
 
 - Cadastro rapido de RNTRC no veiculo agora pede o CNPJ do dono (14 digitos); salvar veiculo barra RNTRC fora da lista ou sem CNPJ; Configuracoes valida RNTRC+nome+CNPJ 14 digitos com aviso.
+
+## CT-e: lote em Aguardando envio + ordenacao (01/10)
+
+- Aguardando envio com checkbox (individual + todos), botao Enviar selecionados (reaproveita emissao individual, um por vez, com resumo) e cabecalho clicavel p/ ordenar (3o clique limpa); ordenacao vale nas demais abas da lista.
