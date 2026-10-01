@@ -3983,3 +3983,13 @@ Espelhado na Vercel.
   URL de produção e o tipo `AnttEnv` só aceita homologação, com
   `assertAnttEnv` nas 3 operações — nenhum caminho de código alcança
   produção.
+
+## MDF: rascunho vincula no CT-e, percurso sempre manual (01/10)
+
+- Aba Sem/Com MDF-e do CT-e só lia `<chCTe>` do XML — rascunho (JSON
+  sem XML) nunca vinculava. Agora lê também `chaves` do JSON do
+  rascunho, igual ao diálogo do MDF-e (que já fazia).
+- Geração de rascunhos (prefill e lote) preenchia o percurso sozinha
+  via `caminhoUF` — removido nos dois pontos e a função excluída.
+  Percurso nasce vazio e a validação SEFAZ 663 cobra o preenchimento
+  manual na emissão.
