@@ -3956,3 +3956,12 @@ Espelhado na Vercel.
   leva só Placa/RNTRCVeiculo/NumeroEixos (TipoVeiculo removido);
   token JWT com cache de 55min (economiza 1 ida mTLS por emissão);
   mTLS com keep-alive + toast de progresso na emissão.
+
+## CIOT: botão verificar frota na ANTT (01/10)
+
+- [205] persistia (sem automotor + IdOp inválido) com eixos já aceitos:
+  a ANTT apura "automotor" no cadastro DELA de homologação. Botão
+  "Verificar frota na ANTT" na operação CIOT chama os endpoints 01+02
+  do DCS (situação do transportador + vínculo das placas) e mostra
+  RNTRC ativo/tipo + situação por placa — diz na hora se falta
+  cadastro em homologação (pef@antt.gov.br).
