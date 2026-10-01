@@ -1457,23 +1457,69 @@ function PercursosPage() {
   };
   const set = (k: string, v: any) => setEditing((e: any) => (e ? { ...e, [k]: v } : e));
   const q = busca.trim().toLowerCase();
-  const lista = (percursos || []).filter((p) => {
-    if (!q) return true;
-    return [
-      p.codigo,
-      p.nome,
-      p.rem_nome,
-      p.rem_cnpj,
-      p.dest_nome,
-      p.dest_cnpj,
-      p.toma_nome,
-      p.toma_cnpj,
-    ].some((v) =>
-      String(v || "")
-        .toLowerCase()
-        .includes(q),
-    );
+  // Ordenação da lista (padrão: código crescente)
+  const [ordPerc, setOrdPerc] = useState<{ chave: string; dir: 1 | -1 }>({
+    chave: "codigo",
+    dir: 1,
   });
+  const lista = (percursos || [])
+    .filter((p) => {
+      if (!q) return true;
+      return [
+        p.codigo,
+        p.nome,
+        p.rem_nome,
+        p.rem_cnpj,
+        p.dest_nome,
+        p.dest_cnpj,
+        p.toma_nome,
+        p.toma_cnpj,
+      ].some((v) =>
+        String(v || "")
+          .toLowerCase()
+          .includes(q),
+      );
+    })
+    .sort((a: any, b: any) => {
+      const val = (p: any) =>
+        ordPerc.chave === "codigo"
+          ? Number.parseInt(String(p.codigo || ""), 10) || 0
+          : ordPerc.chave === "nome"
+            ? String(p.nome || "")
+            : ordPerc.chave === "rota"
+              ? String(p.rem_nome || "") + " " + String(p.dest_nome || "")
+              : ordPerc.chave === "toma"
+                ? String(p.toma_nome || "")
+                : ordPerc.chave === "coleta"
+                  ? String(p.coleta_xmun || "") + " " + String(p.entrega_xmun || "")
+                  : "";
+      const va = val(a) as any;
+      const vb = val(b) as any;
+      const cmp =
+        typeof va === "number" && typeof vb === "number"
+          ? va - vb
+          : String(va || "").localeCompare(String(vb || ""), "pt-BR", { numeric: true });
+      return cmp * ordPerc.dir;
+    });
+  const THP = ({ k, label, className }: { k: string; label: string; className?: string }) => (
+    <TableHead className={className}>
+      <button
+        type="button"
+        className="inline-flex items-center gap-1 uppercase hover:text-foreground"
+        onClick={() =>
+          setOrdPerc((o) =>
+            o.chave !== k ? { chave: k, dir: 1 } : o.dir === 1 ? { chave: k, dir: -1 } : { chave: "codigo", dir: 1 },
+          )
+        }
+        title="Ordenar"
+      >
+        {label}
+        <span className="text-[9px] w-3 inline-block">
+          {ordPerc.chave === k ? (ordPerc.dir === 1 ? "▲" : "▼") : ""}
+        </span>
+      </button>
+    </TableHead>
+  );
 
   return (
     <div className="p-6 space-y-4">
@@ -1512,11 +1558,11 @@ function PercursosPage() {
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead className="w-20">Código</TableHead>
-                  <TableHead>Nome</TableHead>
-                  <TableHead>Remetente → Destinatário</TableHead>
-                  <TableHead>Tomador</TableHead>
-                  <TableHead>Coleta / Entrega</TableHead>
+                  <THP k="codigo" label="Código" className="w-20" />
+                  <THP k="nome" label="Nome" />
+                  <THP k="rota" label="Remetente → Destinatário" />
+                  <THP k="toma" label="Tomador" />
+                  <THP k="coleta" label="Coleta / Entrega" />
                   <TableHead className="w-24 text-right">Ações</TableHead>
                 </TableRow>
               </TableHeader>

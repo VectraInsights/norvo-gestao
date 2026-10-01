@@ -3863,3 +3863,7 @@ Espelhado na Vercel.
 ## CT-e: remove nota vale-pedagio (01/10)
 
 - Removida a observacao sobre vale-pedagio abaixo do Desconto na aba Transporte.
+
+## Percurso preservado + lista ordenavel (01/10)
+
+- Salvamento silencioso do percurso (rascunho/emissao) nao apaga mais CFOP/seguro/rota/aliquotas com valores padrao do formulario: campo virgem preserva o cadastrado. Lista de percursos com cabecalho clicavel p/ ordenar, padrao codigo crescente.

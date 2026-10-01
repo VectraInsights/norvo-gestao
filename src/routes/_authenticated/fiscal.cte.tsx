@@ -4214,12 +4214,13 @@ function CtePage() {
       const a = ((sel.length > 0 ? sel[0] : mercadorias[0]) || {}) as any;
       const { data: exPerc } = await supabase
         .from("cte_percursos" as any)
-        .select("id,codigo")
+        .select("*")
         .eq("empresa_id", empresa.id)
         .eq("rem_cnpj", d.remDoc)
         .eq("dest_cnpj", d.destDoc)
         .eq("toma_cnpj", d.tomaDoc)
         .maybeSingle();
+      const exP = ((exPerc as any) || {}) as Record<string, any>;
       let codigoPercurso = ((exPerc as any)?.codigo || "") as string;
       if (!codigoPercurso) {
         const { data: mx } = await supabase
@@ -4311,7 +4312,7 @@ function CtePage() {
         seg_rcf_dc: form.rcfDc || "",
         seg_adicional: form.segAdicional || "",
         seg_total: form.segTotal || "",
-        seg_repassar: form.segRepassar === "S",
+        seg_repassar: form.segRepassar ? form.segRepassar === "S" : undefined,
         seg_responsavel: form.segResponsavel || "",
         distancia_km: form.distanciaKm || "",
         duracao_horas: form.duracaoHoras || "",
@@ -4326,6 +4327,42 @@ function CtePage() {
         csll_aliq: form.csllAliq || "",
         obs_gerais: (form as any).obsGerais || "",
       };
+      // NUNCA apaga dado cadastrado com valor virgem do formulário: se o campo
+      // está vazio ou igual ao padrão inicial (ex.: CFOP 5353, coleta BH) e o
+      // percurso já tem valor, preserva o cadastrado. Evita que um rascunho
+      // salvo antes da aplicação zere CFOP/seguro/rota do cadastro.
+      const VIRGEM: Record<string, string> = {
+        cfop: "5353",
+        icms_cst: "00",
+        icms_aliq: "0.00",
+        reducao_base: "0.00",
+        credito_outorgado: "0.00",
+        pis_aliq: "0.00",
+        cofins_aliq: "0.00",
+        ir_aliq: "0.00",
+        inss_aliq: "0.00",
+        csll_aliq: "0.00",
+        seg_rctr_c: "0.00",
+        seg_rcf_dc: "0.00",
+        seg_adicional: "0.00",
+        seg_total: "0.00",
+        seg_responsavel: "4",
+        coleta_cmun: "3106200",
+        coleta_xmun: "BELO HORIZONTE",
+        coleta_uf: "MG",
+      };
+      for (const k of Object.keys(payload)) {
+        if (k === "empresa_id" || k === "codigo" || k === "nome") continue;
+        if (k === "seg_repassar") {
+          if ((payload as any)[k] === undefined) (payload as any)[k] = !!exP[k];
+          continue;
+        }
+        const fv = (payload as any)[k];
+        const ev = exP[k];
+        const dg = VIRGEM[k] !== undefined ? VIRGEM[k] : "";
+        const s = fv == null ? "" : String(fv);
+        if ((!s || s === dg) && ev != null && ev !== "") (payload as any)[k] = ev;
+      }
       for (const k of Object.keys(payload)) {
         if (k === "empresa_id") continue;
         const v = (payload as any)[k];
