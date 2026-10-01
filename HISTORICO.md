@@ -3818,3 +3818,7 @@ Espelhado na Vercel.
 - `tipo_carga_antt` (piso ANTT) também aplicada. UNIQUE de nfes já
   existia no banco e sem duplicatas — migration de dedup removida.
 - Espelhado na Vercel via push em main.
+
+## Piso ANTT: soma eixos cavalo + carretas (01/10)
+
+- O piso usava so os eixos do cavalo (3). Agora eixosCombinacao soma tracao + placaReboque/semiReboque1/semiReboque2 pelo cadastro de veiculos (vale no aviso do CT-e e no resumo do CIOT). Ex.: 3910 km Carga Geral 6 eixos = R$ 30.132,61 igual a calculadora ANTT.

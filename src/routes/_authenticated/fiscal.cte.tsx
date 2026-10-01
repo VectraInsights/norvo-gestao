@@ -109,6 +109,20 @@ function formatarCnpjPercurso(value: unknown) {
   return digits.replace(/(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})/, "$1.$2.$3/$4-$5");
 }
 
+// Eixos da combinação (ANTT conta cavalo + carretas): tração + reboques pela placa
+function eixosCombinacao(f: any, veics: any[]) {
+  const byPlaca = (p: string) =>
+    (veics || []).find((v: any) => String(v.placa || "").toUpperCase() === String(p || "").toUpperCase());
+  const trac = String(f?.placaVeiculo || "").toUpperCase();
+  let n = Number((byPlaca(trac) as any)?.quantidade_eixos) || 0;
+  for (const k of ["placaReboque", "semiReboque1", "semiReboque2"]) {
+    const p = String(f?.[k] || "").trim().toUpperCase();
+    if (!p || p === trac) continue;
+    n += Number((byPlaca(p) as any)?.quantidade_eixos) || 0;
+  }
+  return n;
+}
+
 /* Visor próprio de DACTE: tela cheia do sistema (sem a barra do navegador),
  * com Baixar, Imprimir, zoom e Fechar (Esc). */
 function DacteViewer({
@@ -2086,8 +2100,7 @@ function CtePage() {
       0,
     );
     const placa = String(forms[0]?.placaVeiculo || "").toUpperCase();
-    const veic = (veiculos || []).find((v: any) => String(v.placa || "").toUpperCase() === placa);
-    const eixos = Number((veic as any)?.quantidade_eixos) || 0;
+    const eixos = eixosCombinacao(forms[0], veiculos || []);
     const km = Math.round(Number(String(forms[0]?.distanciaKm || "").replace(",", ".")) || 0);
     const pesoTotal = forms.reduce((a, f) => a + (Number(String(f?.peso || "").replace(",", ".")) || 0), 0);
     const piso = eixos > 0 && km > 0 ? pisoMinimoAntt("Carga Geral", eixos, km) : null;
@@ -4213,15 +4226,12 @@ function CtePage() {
   const pisoAntt = useMemo(() => {
     const tipo = String((percursoMatch as any)?.tipo_carga_antt || "Carga Geral");
     const km = Number(String(form.distanciaKm || "").replace(",", ".")) || 0;
-    const veic = (veiculos || []).find(
-      (v: any) => String(v.placa || "").toUpperCase() === String(form.placaVeiculo || "").toUpperCase(),
-    );
-    const eixos = Number((veic as any)?.quantidade_eixos) || 0;
+    const eixos = eixosCombinacao(form, veiculos || []);
     const piso = eixos > 0 && km > 0 ? pisoMinimoAntt(tipo, eixos, km) : null;
     const vPrest = Number(String(form.vPrest || "").replace(",", ".")) || 0;
     return { tipo, eixos, km, piso, vPrest, abaixo: piso !== null && vPrest > 0 && vPrest < piso };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [percursoMatch, form.distanciaKm, form.placaVeiculo, form.vPrest, veiculos]);
+  }, [percursoMatch, form.distanciaKm, form.placaVeiculo, form.placaReboque, form.semiReboque1, form.semiReboque2, form.vPrest, veiculos]);
   // CT-es autorizados compatíveis com o percurso atual (complemento/substituição)
   const ctesCompativeis = useMemo(() => {
     const dg = (v: any) => String(v || "").replace(/\D/g, "");
