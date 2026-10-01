@@ -2332,12 +2332,24 @@ function CtePage() {
       fromContatos: false,
     };
   };
-  // Insert resiliente: tenta com `ie`, se a migration ainda não foi aplicada reinsere sem
+  // Insert resiliente: tenta com `ie`, se a migration ainda não foi aplicada reinsere sem.
+  // Entra no cache na hora (busca instantânea) em vez de esperar refetch.
   const insertContatoResiliente = async (row: Record<string, unknown>) => {
     const { error } = await supabase.from("fiscal_cadastros" as any).insert(row as any);
     if (error && /ie/i.test(error.message || "")) {
       const { ie: _omit, ...semIe } = row;
-      await supabase.from("fiscal_cadastros" as any).insert(semIe as any);
+      const retry = await supabase.from("fiscal_cadastros" as any).insert(semIe as any);
+      if (!retry.error && empresa) {
+        qc.setQueryData(["contatos-cte", empresa.id], (old: any) => [...(Array.isArray(old) ? old : []), semIe]);
+      } else if (empresa) {
+        qc.invalidateQueries({ queryKey: ["contatos-cte", empresa.id] });
+      }
+      return;
+    }
+    if (!error && empresa) {
+      qc.setQueryData(["contatos-cte", empresa.id], (old: any) => [...(Array.isArray(old) ? old : []), row]);
+    } else if (empresa) {
+      qc.invalidateQueries({ queryKey: ["contatos-cte", empresa.id] });
     }
   };
   const lookupConsignatario = async (digits: string) => {
@@ -2429,11 +2441,14 @@ function CtePage() {
   const { data: contatosCte } = useQuery({
     enabled: !!empresa,
     queryKey: ["contatos-cte", empresa?.id],
+    staleTime: 5 * 60_000,
+    gcTime: 15 * 60_000,
     queryFn: async (): Promise<any[]> => {
       const { data } = await supabase
         .from("fiscal_cadastros" as any)
         .select("documento,nome,ie,logradouro,numero,bairro,cidade,uf,cep,telefone")
-        .eq("empresa_id", empresa!.id);
+        .eq("empresa_id", empresa!.id)
+        .limit(5000);
       return (data ?? []) as any[];
     },
   });
@@ -2443,6 +2458,34 @@ function CtePage() {
       if ((c as any).documento) m.set(String((c as any).documento).replace(/\D/g, ""), c);
     return m;
   }, [contatosCte]);
+  // Busca instantânea: CNPJs do CT-e (rem/dest/toma/consig/redesp) que não estão
+  // no cache são buscados direto por documento (índice exato) e entram no cache
+  useEffect(() => {
+    if (!open || !empresa) return;
+    const sel = mercadorias.filter((m) => selecionadas.has(m.chave));
+    const a = (sel.length > 0 ? sel[0] : mercadorias[0] || {}) as any;
+    const docs = [a.emitCnpj, a.destCnpj, form.cnpjTomador, form.cnpjConsignatario, form.cnpjRedespacho]
+      .map((d) => String(d || "").replace(/\D/g, ""))
+      .filter((d) => d.length === 11 || d.length === 14)
+      .filter((d) => !contatoByDoc.has(d));
+    const unicos = [...new Set(docs)];
+    if (unicos.length === 0) return;
+    (async () => {
+      const { data } = await supabase
+        .from("fiscal_cadastros" as any)
+        .select("documento,nome,ie,logradouro,numero,bairro,cidade,uf,cep,telefone")
+        .eq("empresa_id", empresa.id)
+        .in("documento", unicos);
+      if (data && (data as any[]).length > 0) {
+        qc.setQueryData(["contatos-cte", empresa.id], (old: any) => {
+          const arr = Array.isArray(old) ? old : [];
+          const seen = new Set(arr.map((c: any) => String(c.documento || "").replace(/\D/g, "")));
+          return [...arr, ...(data as any[]).filter((c: any) => !seen.has(String(c.documento || "").replace(/\D/g, "")))];
+        });
+      }
+    })();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open, mercadorias, selecionadas, form.cnpjTomador, form.cnpjConsignatario, form.cnpjRedespacho, contatoByDoc]);
   // Tomador: troca de toma recalcula remetente/destinatário; CNPJ manual busca dados
   const [lookingUpTomador, setLookingUpTomador] = useState(false);
   const lastLookupTomador = useRef("");

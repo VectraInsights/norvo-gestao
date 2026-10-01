@@ -3875,3 +3875,7 @@ Espelhado na Vercel.
 ## Embarque nao some mais (01/10)
 
 - Aba de embarque e dialogo compartilhavam mercadorias: abrir rascunho trocava a lista e ESC/salvar deixava vazio. Agora refetch nao atropela dialogo aberto, fechar sem salvar restaura as pendentes e salvar/lote nao zera a lista (refetch repoe sem as reservadas).
+
+## IE instantanea no CT-e (01/10)
+
+- Contatos com cache 5min; CNPJs do CT-e (rem/dest/toma/consig/redesp) fora do cache sao buscados direto por documento e entram no cache na hora; novo cadastro via lookup entra no cache imediatamente.
