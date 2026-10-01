@@ -3,6 +3,7 @@ import { PageHeader } from "@/components/erp/page-header";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -282,6 +283,7 @@ function NotasRecebidas() {
   });
 
   // Modal de detalhes da nota importada por chave
+  const [confExcluirNota, setConfExcluirNota] = useState<NotaRecebida | null>(null);
   const [notaDetalhe, setNotaDetalhe] = useState<{
     id?: string;
     chave: string;
@@ -1396,9 +1398,7 @@ ${transportadora ? `<div class="section"><div class="section-title">TRANSPORTE</
                                 <TooltipTrigger asChild>
                                   <Button size="sm" variant="ghost" className="h-7 w-7 p-0 text-destructive hover:text-destructive"
                                     disabled={excluirNota.isPending}
-                                    onClick={() => {
-                                      if (confirm("Excluir esta nota e todos os lançamentos financeiros vinculados?")) excluirNota.mutate(n);
-                                    }}>
+                                    onClick={() => setConfExcluirNota(n)}>
                                     <Trash2 className="h-3.5 w-3.5" />
                                   </Button>
                                 </TooltipTrigger>
@@ -1994,6 +1994,27 @@ ${transportadora ? `<div class="section"><div class="section-title">TRANSPORTE</
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <AlertDialog open={!!confExcluirNota} onOpenChange={(v) => { if (!v) setConfExcluirNota(null); }}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Excluir nota</AlertDialogTitle>
+            <AlertDialogDescription>
+              Excluir esta nota e todos os lançamentos financeiros vinculados?
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              data-acao
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              onClick={() => confExcluirNota && excluirNota.mutate(confExcluirNota)}
+            >
+              Excluir
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </>
   );
 }

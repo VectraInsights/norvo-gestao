@@ -8,7 +8,17 @@ import { Label } from "@/components/ui/label";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogTrigger, DialogDescription } from "@/components/ui/dialog";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Banknote, Plus, Upload, Loader2, Link2, Check, Landmark, Wallet, CreditCard, TrendingUp, PiggyBank, DollarSign, Database, Coins, Trash2, Search, X } from "lucide-react";
@@ -177,6 +187,8 @@ function ContasFinanceiras() {
   const [importing, setImporting] = useState<string | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
   const [uploadContaId, setUploadContaId] = useState<string | null>(null);
+  const [confConta, setConfConta] = useState<ContaBancaria | null>(null);
+  const [confImport, setConfImport] = useState<{ problemas: string[]; contaId: string; rows: { empresa_id: string; conta_bancaria_id: string; fitid: string; data_transacao: string; valor: number; tipo: string; memo: string | null }[] } | null>(null);
 
   const { data: contas } = useQuery({
     enabled: !!empresa,
@@ -271,6 +283,17 @@ function ContasFinanceiras() {
 
   const triggerUpload = (contaId: string) => { setUploadContaId(contaId); fileRef.current?.click(); };
 
+  const executarImport = async (rows: { empresa_id: string; conta_bancaria_id: string; fitid: string; data_transacao: string; valor: number; tipo: string; memo: string | null }[], contaId: string) => {
+    const { error, count } = await supabase.from("ofx_transacoes")
+      .upsert(rows, { onConflict: "conta_bancaria_id,fitid", ignoreDuplicates: true, count: "exact" });
+    if (error) throw error;
+    const novas = count ?? 0;
+    const duplicadas = rows.length - novas;
+    toast.success(`${novas} nova(s) transação(ões) importada(s)${duplicadas > 0 ? ` · ${duplicadas} já existiam` : ""}`);
+    qc.invalidateQueries({ queryKey: ["ofx", contaId] });
+    setReconcilingId(contaId);
+  };
+
   const handleFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     e.target.value = "";
@@ -303,8 +326,13 @@ function ContasFinanceiras() {
           if (c1 && c2 && c1 !== c2) problemas.push(`Conta: OFX ${account.acctId} × conta ${conta.conta}`);
         }
         if (problemas.length) {
-          const msg = `Este OFX parece ser de outra conta:\n\n• ${problemas.join("\n• ")}\n\nDeseja importar mesmo assim?`;
-          if (!window.confirm(msg)) { toast.warning("Importação cancelada"); return; }
+          const rows = txs.map((t) => ({
+            empresa_id: empresa.id, conta_bancaria_id: uploadContaId, fitid: t.fitid,
+            data_transacao: t.data, valor: t.valor, tipo: t.tipo, memo: t.memo,
+          }));
+          setImporting(null); setUploadContaId(null);
+          setConfImport({ problemas, contaId: uploadContaId, rows });
+          return;
         }
       }
 
@@ -312,14 +340,7 @@ function ContasFinanceiras() {
         empresa_id: empresa.id, conta_bancaria_id: uploadContaId, fitid: t.fitid,
         data_transacao: t.data, valor: t.valor, tipo: t.tipo, memo: t.memo,
       }));
-      const { error, count } = await supabase.from("ofx_transacoes")
-        .upsert(rows, { onConflict: "conta_bancaria_id,fitid", ignoreDuplicates: true, count: "exact" });
-      if (error) throw error;
-      const novas = count ?? 0;
-      const duplicadas = rows.length - novas;
-      toast.success(`${novas} nova(s) transação(ões) importada(s)${duplicadas > 0 ? ` · ${duplicadas} já existiam` : ""}`);
-      qc.invalidateQueries({ queryKey: ["ofx", uploadContaId] });
-      setReconcilingId(uploadContaId);
+      await executarImport(rows, uploadContaId);
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Falha ao importar OFX");
     } finally { setImporting(null); setUploadContaId(null); }
@@ -613,11 +634,7 @@ function ContasFinanceiras() {
                   <TableCell className="text-right whitespace-nowrap">
                     <Button variant="ghost" size="sm" className="text-destructive hover:text-destructive"
                       disabled={excluir.isPending}
-                      onClick={() => {
-                        if (window.confirm(`Excluir a conta "${c.nome ?? c.banco}"? Extratos importados serão apagados e lançamentos vinculados ficarão sem conta.`)) {
-                          excluir.mutate(c.id);
-                        }
-                      }}>
+                      onClick={() => setConfConta(c)}>
                       <Trash2 className="mr-1 h-3 w-3" />Excluir
                     </Button>
                   </TableCell>
@@ -637,6 +654,59 @@ function ContasFinanceiras() {
         onImport={() => reconcilingId && triggerUpload(reconcilingId)}
         onClose={() => setReconcilingId(null)}
       />
+
+      <AlertDialog open={!!confConta} onOpenChange={(v) => { if (!v) setConfConta(null); }}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Excluir conta</AlertDialogTitle>
+            <AlertDialogDescription>
+              {confConta ? `Excluir a conta "${confConta.nome ?? confConta.banco}"? Extratos importados serão apagados e lançamentos vinculados ficarão sem conta.` : ""}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              data-acao
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              onClick={() => { if (confConta) excluir.mutate(confConta.id); setConfConta(null); }}
+            >
+              Excluir
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      <AlertDialog open={!!confImport} onOpenChange={(v) => { if (!v) setConfImport(null); }}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Confirmar importação</AlertDialogTitle>
+            <AlertDialogDescription>
+              {confImport ? `Este OFX parece ser de outra conta:\n\n• ${confImport.problemas.join("\n• ")}\n\nDeseja importar mesmo assim?` : ""}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={() => toast.warning("Importação cancelada")}>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              data-acao
+              onClick={async () => {
+                if (!confImport) return;
+                const { rows, contaId } = confImport;
+                setConfImport(null);
+                setImporting(contaId);
+                try {
+                  await executarImport(rows, contaId);
+                } catch (err) {
+                  toast.error(err instanceof Error ? err.message : "Falha ao importar OFX");
+                } finally {
+                  setImporting(null);
+                }
+              }}
+            >
+              Importar mesmo assim
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </>
   );
 }
@@ -702,6 +772,9 @@ function ReconcileDialog({ contaId, conta, empresaId, autoConciliar, importing, 
   const [sel, setSel] = useState<Set<string>>(new Set());
   const [rows, setRows] = useState<Record<string, RowState>>({});
   const [buscarModo, setBuscarModo] = useState<Record<string, boolean>>({});
+  const [confExtrato, setConfExtrato] = useState(false);
+  const [filtroOpen, setFiltroOpen] = useState(false);
+  const [nomeFiltro, setNomeFiltro] = useState("");
 
   useEffect(() => {
     if (!open) {
@@ -1024,6 +1097,7 @@ function ReconcileDialog({ contaId, conta, empresaId, autoConciliar, importing, 
   if (!open) return null;
 
   return (
+    <>
     <div className="fixed inset-0 z-50 flex flex-col bg-background">
       <div className="sticky top-0 z-10 flex items-center justify-between gap-3 border-b bg-background/95 px-4 py-3 backdrop-blur">
         <h2 className="text-xl font-semibold">{titulo}</h2>
@@ -1040,11 +1114,7 @@ function ReconcileDialog({ contaId, conta, empresaId, autoConciliar, importing, 
               size="sm"
               className="text-destructive hover:text-destructive"
               disabled={excluirExtrato.isPending}
-              onClick={() => {
-                if (window.confirm("Excluir todo o extrato OFX importado desta conta?\n\nSerão apagados TODOS os lançamentos criados/conciliados a partir dele, mesmo os já conciliados. Esta ação não pode ser desfeita.")) {
-                  excluirExtrato.mutate();
-                }
-              }}
+              onClick={() => setConfExtrato(true)}
             >
               {excluirExtrato.isPending ? <Loader2 className="mr-1 h-3 w-3 animate-spin" /> : <Trash2 className="mr-1 h-3 w-3" />}
               Excluir extrato importado
@@ -1090,10 +1160,7 @@ function ReconcileDialog({ contaId, conta, empresaId, autoConciliar, importing, 
                     </SelectContent>
                   </Select>
                 )}
-                <Button variant="outline" size="sm" disabled={filtrosSalvos.salvar.isPending || !authUser?.id} onClick={() => {
-                  const nome = window.prompt("Nome do filtro");
-                  if (nome?.trim()) filtrosSalvos.salvar.mutate({ nome, filtros: filtroAtual });
-                }}>
+                <Button variant="outline" size="sm" disabled={filtrosSalvos.salvar.isPending || !authUser?.id} onClick={() => { setNomeFiltro(""); setFiltroOpen(true); }}>
                   Salvar filtro
                 </Button>
                 <Button variant="ghost" size="sm" onClick={() => { setBusca(""); setFiltro("todos"); setOrdem("recentes"); setMes("todos"); setPagina(1); }}>
@@ -1206,6 +1273,64 @@ function ReconcileDialog({ contaId, conta, empresaId, autoConciliar, importing, 
         </div>
       </div>
     </div>
+
+      <AlertDialog open={confExtrato} onOpenChange={setConfExtrato}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Excluir extrato</AlertDialogTitle>
+            <AlertDialogDescription>
+              {"Excluir todo o extrato OFX importado desta conta?\n\nSerão apagados TODOS os lançamentos criados/conciliados a partir dele, mesmo os já conciliados. Esta ação não pode ser desfeita."}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              data-acao
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              onClick={() => excluirExtrato.mutate()}
+            >
+              Excluir extrato
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      <Dialog open={filtroOpen} onOpenChange={(v) => { if (!v) setFiltroOpen(false); }}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Salvar filtro</DialogTitle>
+            <DialogDescription>Informe um nome para identificar este filtro.</DialogDescription>
+          </DialogHeader>
+          <form
+            onSubmit={(e) => {
+              e.preventDefault();
+              if (nomeFiltro.trim()) {
+                filtrosSalvos.salvar.mutate({ nome: nomeFiltro.trim(), filtros: filtroAtual });
+                setFiltroOpen(false);
+              }
+            }}
+            className="space-y-3"
+          >
+            <div>
+              <Label>Nome do filtro</Label>
+              <Input
+                value={nomeFiltro}
+                onChange={(e) => setNomeFiltro(e.target.value)}
+                placeholder="Nome do filtro"
+              />
+            </div>
+            <DialogFooter>
+              <Button type="button" variant="outline" onClick={() => setFiltroOpen(false)}>
+                Cancelar
+              </Button>
+              <Button type="submit" data-acao disabled={!nomeFiltro.trim() || filtrosSalvos.salvar.isPending}>
+                Salvar
+              </Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
+    </>
   );
 }
 

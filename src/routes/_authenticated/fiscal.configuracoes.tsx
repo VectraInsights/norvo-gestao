@@ -9,6 +9,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Skeleton } from "@/components/ui/skeleton";
 import { 
   FolderCog, Shield, Landmark, Scale, FileText, CheckCircle2, 
@@ -83,6 +84,8 @@ function ConfigFiscais() {
   const [cfopTipo, setCfopTipo] = useState<"entrada" | "saida">("saida");
   const [cfopDesc, setCfopDesc] = useState("");
   const [editingCfopId, setEditingCfopId] = useState<string | null>(null);
+  const [confExcluirCert, setConfExcluirCert] = useState<CertificadoDigital | null>(null);
+  const [confExcluirCfop, setConfExcluirCfop] = useState<CFOPRule | null>(null);
 
   // Query de Configurações
   const { data: config, isLoading: loadingConfig } = useQuery({
@@ -292,9 +295,7 @@ function ConfigFiscais() {
   };
 
   // Excluir certificado — remove do Storage + marca como inativo
-  const handleExcluirCertificado = async (cert: CertificadoDigital) => {
-    if (!confirm("Tem certeza que deseja excluir o certificado digital ativo?")) return;
-
+  const executarExcluirCertificado = async (cert: CertificadoDigital) => {
     try {
       await supabase.storage.from("certificados").remove([cert.arquivo_path]);
       const { error } = await supabase
@@ -309,6 +310,7 @@ function ConfigFiscais() {
       const msg = err instanceof Error ? err.message : String(err);
       toast.error("Falha ao excluir certificado", { description: msg });
     }
+    setConfExcluirCert(null);
   };
 
   // CFOP Adicionar/Editar
@@ -344,15 +346,14 @@ function ConfigFiscais() {
     setEditingCfopId(null);
   };
 
-  const handleExcluirCFOP = (id: string) => {
-    if (confirm("Deseja mesmo excluir esta regra CFOP?")) {
-      const nextCfops = cfops.filter(c => c.id !== id);
-      setCfops(nextCfops);
-      if (empresa?.id) {
-        localStorage.setItem(`norvo_cfops_${empresa.id}`, JSON.stringify(nextCfops));
-      }
-      toast.success("Regra CFOP removida.");
+  const executarExcluirCFOP = (rule: CFOPRule) => {
+    const nextCfops = cfops.filter(c => c.id !== rule.id);
+    setCfops(nextCfops);
+    if (empresa?.id) {
+      localStorage.setItem(`norvo_cfops_${empresa.id}`, JSON.stringify(nextCfops));
     }
+    toast.success("Regra CFOP removida.");
+    setConfExcluirCfop(null);
   };
 
   const handleEditCFOP = (c: CFOPRule) => {
@@ -412,7 +413,7 @@ function ConfigFiscais() {
                     </div>
 
                     <div className="flex justify-end">
-                      <Button variant="outline" className="text-destructive hover:bg-destructive/10" onClick={() => handleExcluirCertificado(certificado)}>
+                      <Button variant="outline" className="text-destructive hover:bg-destructive/10" onClick={() => setConfExcluirCert(certificado)}>
                         Excluir Certificado
                       </Button>
                     </div>
@@ -703,7 +704,7 @@ function ConfigFiscais() {
                             <Button size="sm" variant="ghost" className="h-8 hover:bg-muted text-muted-foreground hover:text-foreground" onClick={() => handleEditCFOP(c)}>
                               <Edit2 className="h-3.5 w-3.5" />
                             </Button>
-                            <Button size="sm" variant="ghost" className="h-8 hover:bg-destructive/10 text-muted-foreground hover:text-destructive" onClick={() => handleExcluirCFOP(c.id)}>
+                            <Button size="sm" variant="ghost" className="h-8 hover:bg-destructive/10 text-muted-foreground hover:text-destructive" onClick={() => setConfExcluirCfop(c)}>
                               <Trash2 className="h-3.5 w-3.5" />
                             </Button>
                           </div>
@@ -717,6 +718,48 @@ function ConfigFiscais() {
           </Card>
         </TabsContent>
       </Tabs>
+
+      <AlertDialog open={!!confExcluirCert} onOpenChange={(v) => { if (!v) setConfExcluirCert(null); }}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Excluir certificado digital</AlertDialogTitle>
+            <AlertDialogDescription>
+              Tem certeza que deseja excluir o certificado digital ativo?
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              data-acao
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              onClick={() => confExcluirCert && executarExcluirCertificado(confExcluirCert)}
+            >
+              Excluir
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      <AlertDialog open={!!confExcluirCfop} onOpenChange={(v) => { if (!v) setConfExcluirCfop(null); }}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Excluir regra CFOP</AlertDialogTitle>
+            <AlertDialogDescription>
+              Deseja mesmo excluir esta regra CFOP?
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              data-acao
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              onClick={() => confExcluirCfop && executarExcluirCFOP(confExcluirCfop)}
+            >
+              Excluir
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </>
   );
 }

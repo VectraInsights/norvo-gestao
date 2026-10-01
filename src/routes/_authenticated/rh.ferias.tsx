@@ -23,6 +23,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEmpresaAtual } from "@/hooks/use-empresa";
 import { toast } from "sonner";
 import { dateBR, brl } from "@/lib/format";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 
 export const Route = createFileRoute("/_authenticated/rh/ferias")({
   component: FeriasPage,
@@ -154,6 +155,7 @@ function FeriasPage() {
   const [formFim, setFormFim] = useState("");
   const [formAbono, setFormAbono] = useState("");
   const [formDecimo, setFormDecimo] = useState(false);
+  const [confExcluir, setConfExcluir] = useState<Concessao | null>(null);
 
   const { data: colabs, isLoading: loadingColabs } = useQuery({
     enabled: !!empresa,
@@ -583,10 +585,7 @@ function FeriasPage() {
                                         </Badge>
                                         {c.status === "agendada" && (
                                           <Button variant="ghost" size="icon" className="h-7 w-7" title="Excluir"
-                                            onClick={() => {
-                                              if (confirm("Excluir esta concessão?"))
-                                                excluirConc.mutate(c.id);
-                                            }}>
+                                            onClick={() => setConfExcluir(c)}>
                                             <Trash2 className="h-3.5 w-3.5" />
                                           </Button>
                                         )}
@@ -607,6 +606,26 @@ function FeriasPage() {
           </Table>
         )}
       </Card>
+      <AlertDialog open={!!confExcluir} onOpenChange={(v) => { if (!v) setConfExcluir(null); }}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Excluir concessão</AlertDialogTitle>
+            <AlertDialogDescription>
+              Excluir esta concessão?
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              data-acao
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              onClick={() => { if (confExcluir) excluirConc.mutate(confExcluir.id); setConfExcluir(null); }}
+            >
+              Excluir
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

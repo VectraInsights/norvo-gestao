@@ -25,6 +25,7 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import {
   Select,
@@ -117,6 +118,8 @@ function NotasEmitidas() {
   const [pagina, setPagina] = useState(1);
   const [filtroSalvoNome, setFiltroSalvoNome] = useState("");
   const [filtrosSalvosOpen, setFiltrosSalvosOpen] = useState(false);
+  const [cancelarId, setCancelarId] = useState<string | null>(null);
+  const [motivoCancel, setMotivoCancel] = useState("");
   const { data: authUser } = useQuery({
     queryKey: ["auth-user-for-fiscal-emitidas-filters"],
     queryFn: async () => (await supabase.auth.getUser()).data.user,
@@ -414,10 +417,17 @@ function NotasEmitidas() {
   });
 
   const onCancelar = (id: string) => {
-    const motivo = prompt("Motivo do cancelamento (mín. 15 caracteres):");
-    if (!motivo || motivo.trim().length < 15)
+    setCancelarId(id);
+    setMotivoCancel("");
+  };
+
+  const confirmarCancelamento = () => {
+    if (!cancelarId) return;
+    if (motivoCancel.trim().length < 15)
       return toast.error("Motivo deve ter ao menos 15 caracteres");
-    cancelarMut.mutate({ id, motivo: motivo.trim() });
+    cancelarMut.mutate({ id: cancelarId, motivo: motivoCancel.trim() });
+    setCancelarId(null);
+    setMotivoCancel("");
   };
 
   const baixarXML = (nota: Nota) => {
@@ -701,6 +711,49 @@ function NotasEmitidas() {
             </div>
           </div>
           <DialogFooter><Button variant="outline" onClick={() => setFiltrosSalvosOpen(false)}>Fechar</Button></DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={!!cancelarId} onOpenChange={(v) => { if (!v) { setCancelarId(null); setMotivoCancel(""); } }}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Cancelar nota fiscal</DialogTitle>
+            <DialogDescription>
+              Informe o motivo do cancelamento (mínimo 15 caracteres). Esta justificativa será enviada à SEFAZ.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="grid gap-2 py-2">
+            <Label htmlFor="motivo-cancelamento">Motivo do cancelamento</Label>
+            <Textarea
+              id="motivo-cancelamento"
+              rows={4}
+              placeholder="Descreva o motivo do cancelamento (mín. 15 caracteres)"
+              value={motivoCancel}
+              onChange={(e) => setMotivoCancel(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" && !e.shiftKey) {
+                  e.preventDefault();
+                  confirmarCancelamento();
+                }
+              }}
+            />
+            <p className={`text-xs ${motivoCancel.trim().length < 15 ? "text-muted-foreground" : "text-emerald-600"}`}>
+              {motivoCancel.trim().length}/15 caracteres mínimos
+            </p>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => { setCancelarId(null); setMotivoCancel(""); }}>
+              Voltar
+            </Button>
+            <Button
+              data-acao
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              disabled={motivoCancel.trim().length < 15 || cancelarMut.isPending}
+              onClick={confirmarCancelamento}
+            >
+              {cancelarMut.isPending ? "Cancelando…" : "Confirmar cancelamento"}
+            </Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
 

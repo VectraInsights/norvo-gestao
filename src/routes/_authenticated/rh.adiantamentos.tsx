@@ -41,6 +41,7 @@ import { useEmpresaAtual } from "@/hooks/use-empresa";
 import { toast } from "sonner";
 import { brl, dateBR } from "@/lib/format";
 import { format } from "date-fns";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 
 export const Route = createFileRoute("/_authenticated/rh/adiantamentos")({
   component: AdiantamentosPage,
@@ -85,6 +86,8 @@ function AdiantamentosPage() {
   const [diaRec, setDiaRec] = useState("20");
   const [editando, setEditando] = useState<Adiantamento | null>(null);
   const [busca, setBusca] = useState("");
+  const [confLote, setConfLote] = useState(false);
+  const [confExcluir, setConfExcluir] = useState<Adiantamento | null>(null);
 
   const { data: colabs = [] } = useQuery({
     enabled: !!empresa,
@@ -397,14 +400,7 @@ function AdiantamentosPage() {
                   (a) => !a.lancamento_id && !a.recorrente && a.status !== "cancelado",
                 )
               }
-              onClick={() => {
-                if (
-                  confirm(
-                    `Gerar conta(s) a pagar para ${(lista ?? []).filter((a) => !a.lancamento_id && !a.recorrente && a.status !== "cancelado").length} adiantamento(s) pendente(s)?`,
-                  )
-                )
-                  gerarEmLote.mutate();
-              }}
+              onClick={() => setConfLote(true)}
             >
               <HandCoins className="h-4 w-4 mr-1" />
               Gerar contas a pagar
@@ -603,19 +599,7 @@ function AdiantamentosPage() {
                             ? "Exclui o adiantamento e as contas em aberto geradas por ele"
                             : "Excluir"
                         }
-                        onClick={() => {
-                          if (
-                            confirm(
-                              a.recorrente
-                                ? "Excluir este adiantamento recorrente?\n\nAs contas a pagar EM ABERTO geradas por ele também serão removidas (as já pagas ficam no histórico)."
-                                : "Excluir este adiantamento?" +
-                                    (a.lancamento_id
-                                      ? "\n\nA conta a pagar vinculada também será removida."
-                                      : ""),
-                            )
-                          )
-                            excluir.mutate(a);
-                        }}
+                        onClick={() => setConfExcluir(a)}
                       >
                         <Trash2 className="h-4 w-4" />
                       </Button>
@@ -627,6 +611,49 @@ function AdiantamentosPage() {
           </Table>
         </Card>
       )}
+      <AlertDialog open={confLote} onOpenChange={setConfLote}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Gerar contas a pagar</AlertDialogTitle>
+            <AlertDialogDescription>
+              {`Gerar conta(s) a pagar para ${(lista ?? []).filter((a) => !a.lancamento_id && !a.recorrente && a.status !== "cancelado").length} adiantamento(s) pendente(s)?`}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              data-acao
+              onClick={() => gerarEmLote.mutate()}
+            >
+              Gerar
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+      <AlertDialog open={!!confExcluir} onOpenChange={(v) => { if (!v) setConfExcluir(null); }}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Excluir adiantamento</AlertDialogTitle>
+            <AlertDialogDescription>
+              {confExcluir?.recorrente
+                ? "Excluir este adiantamento recorrente? As contas a pagar EM ABERTO geradas por ele também serão removidas (as já pagas ficam no histórico)."
+                : confExcluir?.lancamento_id
+                  ? "Excluir este adiantamento? A conta a pagar vinculada também será removida."
+                  : "Excluir este adiantamento?"}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              data-acao
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              onClick={() => { if (confExcluir) excluir.mutate(confExcluir); setConfExcluir(null); }}
+            >
+              Excluir
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </>
   );
 }

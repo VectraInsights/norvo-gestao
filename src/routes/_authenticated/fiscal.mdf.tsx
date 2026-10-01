@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Route as RoadIcon, Plus, FileText, Search, Trash2, Filter, Calendar, CheckCircle2, XCircle, AlertTriangle, RefreshCw, Send, FileDown, Truck, Users, RotateCcw, Pencil, Eye, Download } from "lucide-react";
@@ -189,6 +190,19 @@ function MdfPage() {
   const [mdfEncerrar, setMdfEncerrar] = useState<MdfDoc | null>(null);
   const [mdfCancelar, setMdfCancelar] = useState<MdfDoc | null>(null);
   const [mdfVer, setMdfVer] = useState<MdfDoc | null>(null);
+  const [confExcluir, setConfExcluir] = useState<MdfDoc | null>(null);
+  const excluirRejeitado = async (d: MdfDoc) => {
+    const { error } = await supabase.from("mdf_documentos" as any).delete().eq("id", d.id);
+    if (error) toast.error(error.message);
+    else { toast.success("Rejeitado excluído"); qc.invalidateQueries({ queryKey: ["mdf-documentos"] }); }
+    setConfExcluir(null);
+  };
+  const excluirRascunho = async (d: MdfDoc) => {
+    const { error } = await supabase.from("mdf_documentos" as any).delete().eq("id", d.id);
+    if (error) toast.error(error.message);
+    else { toast.success("Rascunho excluído"); qc.invalidateQueries({ queryKey: ["mdf-documentos"] }); }
+    setConfExcluir(null);
+  };
   const [consultandoChave, setConsultandoChave] = useState("");
   const xmlDeMdf = (d: MdfDoc) => {
     const raw = String(d.xml_assinado || "");
@@ -508,7 +522,7 @@ function MdfPage() {
                           <Button variant="ghost" size="sm" title={d.motivo_rejeicao ? `Rejeitado: ${d.motivo_rejeicao} — clique para tentar novamente` : "Tentar novamente"} onClick={() => reemitir(d)}>
                             <RotateCcw className="h-4 w-4" />
                           </Button>
-                          <Button variant="ghost" size="sm" title="Excluir rejeitado" onClick={async () => { if (!window.confirm(`Excluir MDF-e rejeitado #${d.numero || ""}?`)) return; const { error } = await supabase.from("mdf_documentos" as any).delete().eq("id", d.id); if (error) toast.error(error.message); else { toast.success("Rejeitado excluído"); qc.invalidateQueries({ queryKey: ["mdf-documentos"] }); } }}>
+                          <Button variant="ghost" size="sm" title="Excluir rejeitado" onClick={() => setConfExcluir(d)}>
                             <Trash2 className="h-4 w-4 text-destructive" />
                           </Button>
                         </>
@@ -518,7 +532,7 @@ function MdfPage() {
                           <Button variant="ghost" size="sm" title="Continuar editando" onClick={() => continuarRascunho(d)}>
                             <Pencil className="h-4 w-4" />
                           </Button>
-                          <Button variant="ghost" size="sm" title="Excluir rascunho" onClick={async () => { if (!window.confirm("Excluir este rascunho?")) return; const { error } = await supabase.from("mdf_documentos" as any).delete().eq("id", d.id); if (error) toast.error(error.message); else { toast.success("Rascunho excluído"); qc.invalidateQueries({ queryKey: ["mdf-documentos"] }); } }}>
+                          <Button variant="ghost" size="sm" title="Excluir rascunho" onClick={() => setConfExcluir(d)}>
                             <Trash2 className="h-4 w-4 text-destructive" />
                           </Button>
                         </>
@@ -591,6 +605,33 @@ function MdfPage() {
       )}
 
       <DialogNovoMdf open={open && !!empresa?.id} onOpenChange={(v) => { setOpen(v); if (!v) { setMdfPrefill(null); setMdfDraft(null); setSemRascunho(false); } }} empresaId={empresa?.id || ""} empresa={empresa} chavesIniciais={mdfPrefill || undefined} rascunhoInicial={mdfDraft} permiteRascunho={!semRascunho} onLoteRascunhos={() => setFiltroStatus("rascunho")} />
+
+      <AlertDialog open={!!confExcluir} onOpenChange={(v) => { if (!v) setConfExcluir(null); }}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>{confExcluir?.status === "rascunho" ? "Excluir rascunho" : "Excluir MDF-e rejeitado"}</AlertDialogTitle>
+            <AlertDialogDescription>
+              {confExcluir?.status === "rascunho"
+                ? "Excluir este rascunho?"
+                : `Excluir MDF-e rejeitado #${confExcluir?.numero || ""}?`}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              data-acao
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              onClick={() => {
+                if (!confExcluir) return;
+                if (confExcluir.status === "rascunho") void excluirRascunho(confExcluir);
+                else void excluirRejeitado(confExcluir);
+              }}
+            >
+              Excluir
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

@@ -6,6 +6,16 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Building2, Trash2, Plus, Pencil, Check, X } from "lucide-react";
@@ -403,6 +413,7 @@ function SeguradorasTab({ empresaId }: { empresaId: string }) {
   const [editCnpj, setEditCnpj] = useState("");
   const [editApolice, setEditApolice] = useState("");
   const [editAverbacao, setEditAverbacao] = useState("");
+  const [excluindo, setExcluindo] = useState<any | null>(null);
 
   const formatCnpj = (v: string) => {
     const d = v.replace(/\D/g, "").slice(0, 14);
@@ -461,11 +472,13 @@ function SeguradorasTab({ empresaId }: { empresaId: string }) {
 
   const cancelEdit = () => setEditingId(null);
 
-  const remove = async (id: string) => {
-    if (!confirm("Excluir esta seguradora?")) return;
-    const { error } = await supabase.from("seguradoras" as never).delete().eq("id", id);
+  const doExcluir = async () => {
+    if (!excluindo) return;
+    const { error } = await supabase.from("seguradoras" as never).delete().eq("id", excluindo.id);
     if (error) return toast.error(error.message);
+    setExcluindo(null);
     qc.invalidateQueries({ queryKey: ["seguradoras"] });
+    toast.success("Seguradora excluída");
   };
 
   return (
@@ -514,7 +527,7 @@ function SeguradorasTab({ empresaId }: { empresaId: string }) {
                 <TableCell>{r.averbacao || "—"}</TableCell>
                 <TableCell className="text-right gap-1">
                   <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => startEdit(r)}><Pencil className="h-4 w-4" /></Button>
-                  <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => remove(r.id)}><Trash2 className="h-4 w-4" /></Button>
+                  <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setExcluindo(r)}><Trash2 className="h-4 w-4" /></Button>
                 </TableCell>
               </TableRow>
             )
@@ -522,6 +535,22 @@ function SeguradorasTab({ empresaId }: { empresaId: string }) {
           {data?.length === 0 && <TableRow><TableCell colSpan={5} className="text-center text-muted-foreground text-sm">Nenhuma seguradora cadastrada</TableCell></TableRow>}
         </TableBody>
       </Table>
+      <AlertDialog open={!!excluindo} onOpenChange={(v) => { if (!v) setExcluindo(null); }}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Excluir seguradora</AlertDialogTitle>
+            <AlertDialogDescription>
+              Tem certeza que deseja excluir <strong>{excluindo?.nome}</strong>? Esta ação não pode ser desfeita.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction data-acao className="bg-destructive text-destructive-foreground hover:bg-destructive/90" onClick={doExcluir}>
+              Excluir
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </CardContent></Card>
   );
 }

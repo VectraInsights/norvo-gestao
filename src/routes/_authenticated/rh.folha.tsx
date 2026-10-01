@@ -24,6 +24,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import {
   Select,
   SelectContent,
@@ -132,6 +133,8 @@ function FolhaPage() {
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState<Folha | null>(null);
   const [busca, setBusca] = useState("");
+  const [confLote, setConfLote] = useState(false);
+  const [confExcluir, setConfExcluir] = useState<Folha | null>(null);
 
   const [colaborador, setColaborador] = useState("");
   const [salario, setSalario] = useState("0");
@@ -458,14 +461,7 @@ function FolhaPage() {
                 gerarEmLote.isPending ||
                 !(folhas ?? []).some((f) => f.status === "aberta" && !f.lancamento_id)
               }
-              onClick={() => {
-                if (
-                  confirm(
-                    `Gerar conta(s) a pagar para ${(folhas ?? []).filter((f) => f.status === "aberta" && !f.lancamento_id).length} lançamento(s) aberto(s)?`,
-                  )
-                )
-                  gerarEmLote.mutate(0);
-              }}
+              onClick={() => setConfLote(true)}
             >
               <HandCoins className="h-4 w-4 mr-1" />
               Gerar contas a pagar
@@ -742,16 +738,7 @@ function FolhaPage() {
                             size="icon"
                             className="h-7 w-7"
                             title="Excluir"
-                            onClick={() => {
-                              if (
-                                confirm(
-                                  f.lancamento_id
-                                    ? "Excluir este lançamento da folha?\n\nA conta a pagar vinculada também será removida."
-                                    : "Excluir este lançamento da folha?",
-                                )
-                              )
-                                excluir.mutate(f);
-                            }}
+                            onClick={() => setConfExcluir(f)}
                           >
                             <Trash2 className="h-3.5 w-3.5" />
                           </Button>
@@ -765,6 +752,47 @@ function FolhaPage() {
           </Table>
         )}
       </Card>
+      <AlertDialog open={confLote} onOpenChange={setConfLote}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Gerar contas a pagar</AlertDialogTitle>
+            <AlertDialogDescription>
+              {`Gerar conta(s) a pagar para ${(folhas ?? []).filter((f) => f.status === "aberta" && !f.lancamento_id).length} lançamento(s) aberto(s)?`}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              data-acao
+              onClick={() => gerarEmLote.mutate(0)}
+            >
+              Gerar
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+      <AlertDialog open={!!confExcluir} onOpenChange={(v) => { if (!v) setConfExcluir(null); }}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Excluir lançamento</AlertDialogTitle>
+            <AlertDialogDescription>
+              {confExcluir?.lancamento_id
+                ? "Excluir este lançamento da folha? A conta a pagar vinculada também será removida."
+                : "Excluir este lançamento da folha?"}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              data-acao
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              onClick={() => { if (confExcluir) excluir.mutate(confExcluir); setConfExcluir(null); }}
+            >
+              Excluir
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

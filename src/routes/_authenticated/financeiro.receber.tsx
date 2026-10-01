@@ -143,6 +143,8 @@ export function LancamentosPage({ tipo }: { tipo: "receber" | "pagar" }) {
     id: string;
     descricao: string;
   } | null>(null);
+  const [confLote, setConfLote] = useState(false);
+  const [confExclusao, setConfExclusao] = useState<string | null>(null);
 
   const listKey = ["lancamentos", empresa?.id, tipo] as const;
 
@@ -769,14 +771,7 @@ export function LancamentosPage({ tipo }: { tipo: "receber" | "pagar" }) {
                   size="sm"
                   variant="destructive"
                   disabled={excluirLote.isPending}
-                  onClick={() => {
-                    if (
-                      confirm(
-                        `Excluir ${selected.size} lançamento(s)?\n\nSe algum estiver conciliado, a transação do extrato voltará para "em aberto" (não será apagada).`,
-                      )
-                    )
-                      excluirLote.mutate([...selected]);
-                  }}
+                  onClick={() => setConfLote(true)}
                 >
                   <Trash2 className="mr-1 h-4 w-4" />
                   Excluir
@@ -938,12 +933,7 @@ export function LancamentosPage({ tipo }: { tipo: "receber" | "pagar" }) {
                                     setLancamentoBloqueado({ id: l.id, descricao: l.descricao });
                                     return;
                                   }
-                                  if (
-                                    confirm(
-                                      'Excluir lançamento?\n\nSe estiver conciliado, a transação do extrato voltará para "em aberto" (não será apagada).',
-                                    )
-                                  )
-                                    excluirLote.mutate([l.id]);
+                                  setConfExclusao(l.id);
                                 }}
                               >
                                 <Trash2 className="h-3.5 w-3.5" />
@@ -1168,12 +1158,55 @@ export function LancamentosPage({ tipo }: { tipo: "receber" | "pagar" }) {
           <AlertDialogFooter>
             <AlertDialogCancel>Cancelar</AlertDialogCancel>
             <AlertDialogAction
+              data-acao
               onClick={() => {
                 setLancamentoBloqueado(null);
                 navigate({ to: "/fiscal/recebidas" });
               }}
             >
               Ir para Notas de Compra
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      <AlertDialog open={confLote} onOpenChange={setConfLote}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Excluir lançamentos</AlertDialogTitle>
+            <AlertDialogDescription>
+              {`Excluir ${selected.size} lançamento(s)?\n\nSe algum estiver conciliado, a transação do extrato voltará para "em aberto" (não será apagada).`}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              data-acao
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              onClick={() => excluirLote.mutate([...selected])}
+            >
+              Excluir
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      <AlertDialog open={!!confExclusao} onOpenChange={(v) => { if (!v) setConfExclusao(null); }}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Excluir lançamento</AlertDialogTitle>
+            <AlertDialogDescription>
+              {'Excluir lançamento?\n\nSe estiver conciliado, a transação do extrato voltará para "em aberto" (não será apagada).'}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              data-acao
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              onClick={() => { if (confExclusao) excluirLote.mutate([confExclusao]); setConfExclusao(null); }}
+            >
+              Excluir
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

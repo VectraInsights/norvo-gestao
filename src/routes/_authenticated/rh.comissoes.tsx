@@ -40,6 +40,7 @@ import { useEmpresaAtual } from "@/hooks/use-empresa";
 import { toast } from "sonner";
 import { brl } from "@/lib/format";
 import { format } from "date-fns";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 
 export const Route = createFileRoute("/_authenticated/rh/comissoes")({
   component: ComissoesPage,
@@ -88,6 +89,8 @@ function ComissoesPage() {
   const [descricao, setDescricao] = useState("");
   const [base, setBase] = useState("0");
   const [percentual, setPercentual] = useState("0");
+  const [confLote, setConfLote] = useState(false);
+  const [confExcluir, setConfExcluir] = useState<Comissao | null>(null);
 
   const competencia = `${ano}-${String(mes).padStart(2, "0")}-01`;
   const valor = useMemo(
@@ -366,14 +369,7 @@ function ComissoesPage() {
                 gerarEmLote.isPending ||
                 !(lista ?? []).some((c) => !c.lancamento_id && c.status !== "cancelada")
               }
-              onClick={() => {
-                if (
-                  confirm(
-                    `Gerar conta(s) a pagar para ${(lista ?? []).filter((c) => !c.lancamento_id && c.status !== "cancelada").length} comissão(õe)s pendente(s)?`,
-                  )
-                )
-                  gerarEmLote.mutate();
-              }}
+              onClick={() => setConfLote(true)}
             >
               <HandCoins className="h-4 w-4 mr-1" />
               Gerar contas a pagar
@@ -522,16 +518,7 @@ function ComissoesPage() {
                         size="icon"
                         variant="ghost"
                         aria-label="Excluir"
-                        onClick={() => {
-                          if (
-                            confirm(
-                              c.lancamento_id
-                                ? "Excluir esta comissão?\n\nA conta a pagar vinculada também será removida."
-                                : "Excluir esta comissão?",
-                            )
-                          )
-                            excluir.mutate(c);
-                        }}
+                        onClick={() => setConfExcluir(c)}
                       >
                         <Trash2 className="h-4 w-4" />
                       </Button>
@@ -543,6 +530,47 @@ function ComissoesPage() {
           </Table>
         </Card>
       )}
+      <AlertDialog open={confLote} onOpenChange={setConfLote}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Gerar contas a pagar</AlertDialogTitle>
+            <AlertDialogDescription>
+              {`Gerar conta(s) a pagar para ${(lista ?? []).filter((c) => !c.lancamento_id && c.status !== "cancelada").length} comissão(õe)s pendente(s)?`}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              data-acao
+              onClick={() => gerarEmLote.mutate()}
+            >
+              Gerar
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+      <AlertDialog open={!!confExcluir} onOpenChange={(v) => { if (!v) setConfExcluir(null); }}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Excluir comissão</AlertDialogTitle>
+            <AlertDialogDescription>
+              {confExcluir?.lancamento_id
+                ? "Excluir esta comissão? A conta a pagar vinculada também será removida."
+                : "Excluir esta comissão?"}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              data-acao
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              onClick={() => { if (confExcluir) excluir.mutate(confExcluir); setConfExcluir(null); }}
+            >
+              Excluir
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </>
   );
 }

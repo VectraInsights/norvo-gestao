@@ -23,6 +23,7 @@ import {
   DialogTitle,
   DialogFooter,
 } from "@/components/ui/dialog";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   Select,
@@ -645,6 +646,7 @@ function PercursosPage() {
   const [busca, setBusca] = useState("");
   const [percTab, setPercTab] = useState("geral");
   const [editing, setEditing] = useState<Percurso | null>(null);
+  const [confExcluir, setConfExcluir] = useState<Percurso | null>(null);
   const [calcando, setCalcando] = useState(false);
   // UF acompanha a cidade de entrega (IBGE); carrega uma vez
   const [municipios, setMunicipios] = useState<Mun[]>([]);
@@ -1651,10 +1653,7 @@ function PercursosPage() {
                           variant="ghost"
                           className="h-7 w-7 text-destructive"
                           title="Excluir"
-                          onClick={() => {
-                            if (window.confirm(`Excluir o percurso "${p.nome}"?`))
-                              excluir.mutate(p.id);
-                          }}
+                          onClick={() => setConfExcluir(p)}
                         >
                           <Trash2 className="h-3.5 w-3.5" />
                         </Button>
@@ -2048,6 +2047,27 @@ function PercursosPage() {
           </div>
         </DialogContent>
       </Dialog>
+
+      <AlertDialog open={!!confExcluir} onOpenChange={(v) => { if (!v) setConfExcluir(null); }}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Excluir percurso</AlertDialogTitle>
+            <AlertDialogDescription>
+              {confExcluir && `Excluir o percurso "${confExcluir.nome}"?`}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              data-acao
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              onClick={() => confExcluir && excluir.mutate(confExcluir.id)}
+            >
+              Excluir
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

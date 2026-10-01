@@ -6,6 +6,16 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Plus, Loader2, Search, Trash2, Pencil } from "lucide-react";
 import { useMemo, useState } from "react";
@@ -55,6 +65,7 @@ function EmpresasPage() {
   const [editing, setEditing] = useState<Empresa | null>(null);
   const [lookingUp, setLookingUp] = useState(false);
   const [busca, setBusca] = useState("");
+  const [confirmExcluir, setConfirmExcluir] = useState(false);
 
   const { data: empresas } = useQuery({
     queryKey: ["empresas"],
@@ -190,13 +201,12 @@ function EmpresasPage() {
 
   const deleteEmpresa = async () => {
     if (!editing) return;
-    const ok = window.confirm(`Excluir ${editing.nome_fantasia}? Todos os dados vinculados a esta empresa também serão removidos.`);
-    if (!ok) return;
     const { error } = await supabase.from("empresas").delete().eq("id", editing.id);
     if (error) return toast.error(error.message);
     const remaining = (empresas ?? []).filter((empresa) => empresa.id !== editing.id);
     if (getSelectedEmpresaId() === editing.id && remaining[0]) setSelectedEmpresaId(remaining[0].id);
     toast.success("Empresa excluída");
+    setConfirmExcluir(false);
     setOpen(false); setEditing(null); setForm(emptyForm);
     await qc.invalidateQueries({ queryKey: ["empresas"] });
     await qc.invalidateQueries({ queryKey: ["dashboard-stats"] });
@@ -260,7 +270,7 @@ function EmpresasPage() {
                 </div>
                 <DialogFooter className="gap-2 sm:justify-between">
                   {editing && (
-                    <Button type="button" variant="destructive" onClick={deleteEmpresa}>
+                    <Button type="button" variant="destructive" onClick={() => setConfirmExcluir(true)}>
                       <Trash2 className="mr-2 h-4 w-4" />Excluir
                     </Button>
                   )}
@@ -269,6 +279,22 @@ function EmpresasPage() {
               </form>
             </DialogContent>
           </Dialog>
+          <AlertDialog open={confirmExcluir} onOpenChange={setConfirmExcluir}>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>Excluir {editing?.nome_fantasia}?</AlertDialogTitle>
+                <AlertDialogDescription>
+                  Esta ação é crítica e irreversível: todos os dados vinculados a esta empresa também serão removidos.
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                <AlertDialogAction data-acao className="bg-destructive text-destructive-foreground hover:bg-destructive/90" onClick={deleteEmpresa}>
+                  Excluir empresa
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
         </div>
       </div>
       <Card className="overflow-hidden shadow-panel">

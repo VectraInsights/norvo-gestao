@@ -11,6 +11,16 @@ import { Textarea } from "@/components/ui/textarea";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Plus, Pencil, Trash2, FolderCog, Loader2, Search } from "lucide-react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -130,6 +140,8 @@ function CadastrosPage() {
   });
 
   const [ccOpen, setCcOpen] = useState(false);
+  const [confCat, setConfCat] = useState<Categoria | null>(null);
+  const [confCc, setConfCc] = useState<Centro | null>(null);
   const [ccForm, setCcForm] = useState<{ id?: string; nome: string; codigo: string; descricao: string; ativo: boolean }>({
     nome: "", codigo: "", descricao: "", ativo: true,
   });
@@ -253,7 +265,7 @@ function CadastrosPage() {
                           <Pencil className="h-4 w-4" />
                         </Button>
                         <Button variant="ghost" size="icon" aria-label="Excluir" className="text-destructive"
-                          onClick={() => { if (confirm(`Excluir a categoria "${c.nome}"?`)) excluirCat.mutate(c.id); }}>
+                          onClick={() => setConfCat(c)}>
                           <Trash2 className="h-4 w-4" />
                         </Button>
                       </TableCell>
@@ -304,7 +316,7 @@ function CadastrosPage() {
                           <Pencil className="h-4 w-4" />
                         </Button>
                         <Button variant="ghost" size="icon" aria-label="Excluir" className="text-destructive"
-                          onClick={() => { if (confirm(`Excluir o centro de custo "${c.nome}"?`)) excluirCc.mutate(c.id); }}>
+                          onClick={() => setConfCc(c)}>
                           <Trash2 className="h-4 w-4" />
                         </Button>
                       </TableCell>
@@ -382,6 +394,48 @@ function CadastrosPage() {
           </form>
         </DialogContent>
       </Dialog>
+
+      <AlertDialog open={!!confCat} onOpenChange={(v) => { if (!v) setConfCat(null); }}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Excluir categoria</AlertDialogTitle>
+            <AlertDialogDescription>
+              {confCat ? `Excluir a categoria "${confCat.nome}"?` : ""}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              data-acao
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              onClick={() => { if (confCat) excluirCat.mutate(confCat.id); setConfCat(null); }}
+            >
+              Excluir
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      <AlertDialog open={!!confCc} onOpenChange={(v) => { if (!v) setConfCc(null); }}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Excluir centro de custo</AlertDialogTitle>
+            <AlertDialogDescription>
+              {confCc ? `Excluir o centro de custo "${confCc.nome}"?` : ""}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              data-acao
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              onClick={() => { if (confCc) excluirCc.mutate(confCc.id); setConfCc(null); }}
+            >
+              Excluir
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
