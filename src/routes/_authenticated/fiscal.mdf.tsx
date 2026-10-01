@@ -92,29 +92,7 @@ function infoMdfLinha(d: { xml_assinado: string | null }): { placa: string; moto
   }
 }
 
-// Menor caminho entre UFs (só as intermediárias, p/ o percurso do MDF-e)
-function caminhoUF(a: string, b: string): string[] {
-  a = String(a || "").toUpperCase(); b = String(b || "").toUpperCase();
-  if (!a || !b || a === b) return [];
-  const prev = new Map<string, string>([[a, ""]]);
-  const fila = [a];
-  while (fila.length) {
-    const u = fila.shift()!;
-    for (const v of UF_VIZINHOS[u] || []) {
-      if (prev.has(v)) continue;
-      prev.set(v, u);
-      if (v === b) {
-        const path = [b];
-        let cur = b;
-        while (prev.get(cur)) { cur = prev.get(cur)!; if (!cur) break; path.unshift(cur); }
-        return path.slice(1, -1);
-      }
-      fila.push(v);
-    }
-  }
-  return [];
-}
-
+// Percurso do MDF-e é SEMPRE manual (SEFAZ 663 valida na emissão).
 function MdfPage() {
   const { data: empresa } = useEmpresaAtual();
   const qc = useQueryClient();
@@ -177,7 +155,7 @@ function MdfPage() {
             peso_total: g.docs.reduce((s, d) => s + (Number(d.peso_carga) || parseFloat(d._f?.peso) || 0), 0),
             uf_carregamento: ufIni || null, uf_descarregamento: g.uf || null,
             veiculo_tracao_id: null, ambiente: MDFE_AMBIENTE,
-            xml_assinado: JSON.stringify({ rascunho: true, chaves: chs, percursoUFs: caminhoUF(ufIni, g.uf), observacoes: "", infoFisco: "", tipoMdf: "Normal", isTransbordo: false, transb1: "", transb2: "", transb3: "", placa: String(f0.placaVeiculo || ""), motNome: g.mot }),
+            xml_assinado: JSON.stringify({ rascunho: true, chaves: chs, percursoUFs: [], observacoes: "", infoFisco: "", tipoMdf: "Normal", isTransbordo: false, transb1: "", transb2: "", transb3: "", placa: String(f0.placaVeiculo || ""), motNome: g.mot }),
           } as any;
           try {
             const { data: outros } = await supabase.from("mdf_documentos" as any).select("id,xml_assinado").eq("empresa_id", empId).eq("status", "rascunho");
@@ -1243,8 +1221,8 @@ function DialogNovoMdf({ open, onOpenChange, empresaId, empresa, chavesIniciais,
     });
   };
 
-  // Lote: gera 1 RASCUNHO por (motorista + UF), cada um com UFs e percurso
-  // automáticos — o envio é feito depois, um por vez, no Aguardando envio.
+  // Lote: gera 1 RASCUNHO por (motorista + UF), cada um com UFs; o percurso
+  // NUNCA é preenchido sozinho — o usuário informa ao continuar o rascunho.
   const [gerandoLote, setGerandoLote] = useState(false);
   const gerarRascunhosLote = async () => {
     if (gruposMdf.length < 2) return;
@@ -1272,7 +1250,7 @@ function DialogNovoMdf({ open, onOpenChange, empresaId, empresa, chavesIniciais,
             uf_carregamento: ufIni || null, uf_descarregamento: g.uf || null,
             veiculo_tracao_id: (veic as any)?.id || null, ambiente: ambienteMdf,
             responsavel_emissao: respNome || null,
-            xml_assinado: JSON.stringify({ rascunho: true, chaves, percursoUFs: caminhoUF(ufIni, g.uf), observacoes, infoFisco, tipoMdf, isTransbordo: false, transb1: "", transb2: "", transb3: "", placa: tracaoSel || "", motNome: g.motNome }),
+            xml_assinado: JSON.stringify({ rascunho: true, chaves, percursoUFs: [], observacoes, infoFisco, tipoMdf, isTransbordo: false, transb1: "", transb2: "", transb3: "", placa: tracaoSel || "", motNome: g.motNome }),
           } as any;
           try {
             const { data: outros } = await supabase.from("mdf_documentos" as any).select("id,xml_assinado").eq("empresa_id", empresaId).eq("status", "rascunho");

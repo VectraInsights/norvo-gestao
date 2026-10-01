@@ -573,20 +573,42 @@ function CtePage() {
   });
   const mdfChaves = useMemo(() => {
     const set = new Set<string>();
+    const addCh = (v: unknown) => {
+      const d = String(v || "").replace(/\D/g, "");
+      if (d.length === 44) set.add(d);
+    };
     for (const r of mdfVinculos ?? []) {
       const x = String((r as any)?.xml_assinado || "");
       for (const m of x.matchAll(/<chCTe>(\d{44})<\/chCTe>/g)) set.add(m[1]);
+      // Rascunho não tem XML: as chaves estão no JSON (chaves: [chCTe...]).
+      try {
+        const p = JSON.parse(x);
+        if (p && typeof p === "object" && p.rascunho === true && Array.isArray(p.chaves)) {
+          for (const ch of p.chaves) addCh(ch);
+        }
+      } catch {}
     }
     return set;
   }, [mdfVinculos]);
-  // Status do manifesto (aberto x encerrado) por CT-e, p/ mensagens de bloqueio.
+  // Status do manifesto (aberto x encerrado x rascunho) por CT-e, p/ mensagens de bloqueio.
   const mdfStatusPorCte = useMemo(() => {
     const map = new Map<string, string>();
+    const addCh = (m: Map<string, string>, v: unknown, st: string) => {
+      const d = String(v || "").replace(/\D/g, "");
+      if (d.length === 44 && !m.has(d)) m.set(d, st);
+    };
     for (const r of mdfVinculos ?? []) {
       const x = String((r as any)?.xml_assinado || "");
+      const st = String((r as any)?.status || "");
       for (const m of x.matchAll(/<chCTe>(\d{44})<\/chCTe>/g)) {
-        if (!map.has(m[1])) map.set(m[1], String((r as any)?.status || ""));
+        if (!map.has(m[1])) map.set(m[1], st);
       }
+      try {
+        const p = JSON.parse(x);
+        if (p && typeof p === "object" && p.rascunho === true && Array.isArray(p.chaves)) {
+          for (const ch of p.chaves) addCh(map, ch, st);
+        }
+      } catch {}
     }
     return map;
   }, [mdfVinculos]);
