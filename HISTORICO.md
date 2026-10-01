@@ -3965,3 +3965,14 @@ Espelhado na Vercel.
   do DCS (situação do transportador + vínculo das placas) e mostra
   RNTRC ativo/tipo + situação por placa — diz na hora se falta
   cadastro em homologação (pef@antt.gov.br).
+
+## CIOT: RNTRC da tração + consulta CIOT08 (01/10)
+
+- Verificar agrupa as placas por RNTRC do cadastro de cada veículo
+  (a tração pode estar em RNTRC diferente do padrão) e consulta cada
+  grupo no próprio RNTRC; a declaração usa o RNTRC da tração como
+  RNTRCContratado (reboques herdam quando sem RNTRC próprio).
+- Situação da frota traduzida (1 = pertence, 0 = NÃO pertence) com
+  alerta quando nada está vinculado. Toast de rejeição mostra o IdOp
+  usado. Consulta de CIOT de 12 dígitos (endpoint 08) no card de
+  emitidos — com declaração vinculada, volta o CIOT16.
