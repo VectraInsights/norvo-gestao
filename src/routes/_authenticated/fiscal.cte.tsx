@@ -1970,14 +1970,17 @@ function CtePage() {
       }>;
     },
   });
-  useEffect(() => {
-    if (pendentesDB) {
-      const mapped = pendentesDB.map((r) => ({
-        chave: r.chave,
-        nNF: r.n_nf || "",
-        serie: r.serie || "1",
-        emit: r.emit_nome || "",
-        emitCnpj: r.emit_cnpj || "",
+  // Mapeia as NF-es pendentes (banco) p/ a lista de embarque. A aba de embarque
+  // e o diálogo COMPARTILHAM o estado `mercadorias`: ao abrir rascunho ele é
+  // trocado pelos itens do rascunho, então ao fechar sem salvar é preciso
+  // restaurar a lista das pendentes (senão as notas "somem" da tela).
+  const mapearPendentes = (rows: Array<Record<string, any>>) =>
+    rows.map((r) => ({
+      chave: r.chave,
+      nNF: r.n_nf || "",
+      serie: r.serie || "1",
+      emit: r.emit_nome || "",
+      emitCnpj: r.emit_cnpj || "",
       emitUF: r.emit_uf || "",
       emitCMun: r.emit_cmun || "",
       emitXMun: r.emit_xmun || "",
@@ -1998,22 +2001,30 @@ function CtePage() {
       destBairro: (r as any).dest_bairro || "",
       destCEP: (r as any).dest_cep || "",
       destFone: (r as any).dest_fone || "",
-        valor: Number(r.valor ?? 0),
-        peso: Number(r.peso ?? 0),
-        qVol: Number((r as any).qvol ?? 0),
-        data: r.data_emissao ? String(r.data_emissao).slice(0, 10) : "",
-        tomador: r.tomador_nome || "",
-        tomadorCnpj: r.tomador_cnpj || "",
-        tomadorUF: r.tomador_uf || "",
-        tomadorCMun: r.tomador_cmun || "",
-        tomadorXMun: r.tomador_xmun || "",
-        tomadorIE: r.tomador_ie || "",
-        tomadorLogradouro: r.tomador_logradouro || "",
-        tomadorBairro: r.tomador_bairro || "",
-        tomadorCEP: r.tomador_cep || "",
-        modFrete: r.mod_frete || "",
-      }));
-      setMercadorias(mapped);
+      valor: Number(r.valor ?? 0),
+      peso: Number(r.peso ?? 0),
+      qVol: Number((r as any).qvol ?? 0),
+      data: r.data_emissao ? String(r.data_emissao).slice(0, 10) : "",
+      tomador: r.tomador_nome || "",
+      tomadorCnpj: r.tomador_cnpj || "",
+      tomadorUF: r.tomador_uf || "",
+      tomadorCMun: r.tomador_cmun || "",
+      tomadorXMun: r.tomador_xmun || "",
+      tomadorIE: r.tomador_ie || "",
+      tomadorLogradouro: r.tomador_logradouro || "",
+      tomadorBairro: r.tomador_bairro || "",
+      tomadorCEP: r.tomador_cep || "",
+      modFrete: r.mod_frete || "",
+    }));
+  const sincronizarEmbarque = () => {
+    if (!pendentesDB) return;
+    setMercadorias(mapearPendentes(pendentesDB as any) as any);
+  };
+  useEffect(() => {
+    if (open) return; // diálogo aberto usa mercadorias próprias (rascunho/CT-e)
+    if (pendentesDB) {
+      const mapped = mapearPendentes(pendentesDB as any);
+      setMercadorias(mapped as any);
       if (mapped.length > 0 && mapped[0].emitCMun) {
         const first = mapped[0];
         setForm((f) => ({
@@ -2031,8 +2042,13 @@ function CtePage() {
         }));
       }
     }
-  }, [pendentesDB]);
+  }, [pendentesDB, open]);
 
+  // Fechar o diálogo SEM salvar (ESC/X/Cancelar): restaura a lista de embarque
+  const fecharDialogo = () => {
+    setOpen(false);
+    sincronizarEmbarque();
+  };
   // Motoristas (cargo contém Motorista), Veículos e Seguradoras para menus tipo CFOP
   const [motoristaOpen, setMotoristaOpen] = useState(false);
   const [motoristaQuery, setMotoristaQuery] = useState("");
@@ -3213,7 +3229,8 @@ function CtePage() {
       setEnviandoLote(false);
       setEnvSel(new Set());
       setEditingRascunhoId(null);
-      setMercadorias([]);
+      // NÃO zera mercadorias: o refetch das pendentes repõe a lista (sem as
+      // embarcadas); zerar faria as demais "sumirem" até voltar.
       setSelecionadas(new Set());
       setForm({ ...emptyForm });
     }
@@ -3432,7 +3449,8 @@ function CtePage() {
     onSuccess: () => {
       toast.success("Rascunho salvo");
       persistirPercursoSilencioso();
-      setMercadorias([]);
+      // NÃO zera mercadorias aqui: as NF-es do rascunho saem da lista sozinhas
+      // no refetch (status rascunho); zerar faria as demais "sumirem" até voltar.
       setSelecionadas(new Set());
       setEditingRascunhoId(null);
       qc.invalidateQueries({ queryKey: ["cte-documentos"] });
@@ -6144,14 +6162,14 @@ function CtePage() {
         open={open}
         onOpenChange={(o) => {
           if (o) setOpen(true);
-          else setOpen(false);
+          else fecharDialogo();
         }}
       >
         <DialogContent
           onEscapeKeyDown={(event) => {
             event.preventDefault();
             event.stopPropagation();
-            setOpen(false);
+            fecharDialogo();
           }}
           onKeyDown={(event) => event.stopPropagation()}
           className="w-screen h-screen max-w-none max-h-none m-0 rounded-none overflow-y-auto"

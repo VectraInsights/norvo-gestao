@@ -3871,3 +3871,7 @@ Espelhado na Vercel.
 ## Gerar CT-e aplica percurso + trava exclusao (01/10)
 
 - Botao Gerar CT-e recarrega percursos e aplica CFOP/seguro/rota na hora (nao depende de cache/efeito). Excluir percurso bloqueado se houver CT-e (rascunho ou emitido) com o mesmo trio.
+
+## Embarque nao some mais (01/10)
+
+- Aba de embarque e dialogo compartilhavam mercadorias: abrir rascunho trocava a lista e ESC/salvar deixava vazio. Agora refetch nao atropela dialogo aberto, fechar sem salvar restaura as pendentes e salvar/lote nao zera a lista (refetch repoe sem as reservadas).
