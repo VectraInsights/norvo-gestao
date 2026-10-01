@@ -54,7 +54,7 @@ export function gerarIdentificadorPix(d?: Date): string {
   return `${x.getFullYear()}${p(x.getMonth() + 1)}${p(x.getDate())}${p(x.getHours())}${p(x.getMinutes())}${p(x.getSeconds())}`;
 }
 
-export type VeiculoCiot = { placa: string; eixos: number; rntrc?: string };
+export type VeiculoCiot = { placa: string; eixos: number; rntrc?: string; tipoVeiculo?: number };
 export type PagamentoCiot = {
   tipo: number; // 1 IP, 2 CC, 3 poupança, 4 conta pgto, 5 outros, 6 PIX
   docCreditado: string;
@@ -144,6 +144,9 @@ export function buildDeclaracaoPayload(inp: DeclaracaoCiotInput, idOperacao: str
       Placa: String(v.placa || "").toUpperCase(),
       RNTRCVeiculo: v.rntrc ? padRntrc9(v.rntrc) : "",
       NumeroEixos: Number(v.eixos),
+      // 1 = automotor (cavalo/tração), 2 = implemento (reboque/semirreboque).
+      // O frontend envia apenas a tração, portanto sempre 1.
+      TipoVeiculo: Number(v.tipoVeiculo ?? 1),
     })),
     InfPagamento: [infPag],
   };
@@ -260,8 +263,17 @@ export async function gerarIdOperacaoAntt(
   });
   if (g.json?.Sucesso === false)
     throw new Error(`ANTT /gerar rejeitou: ${JSON.stringify(g.json?.Mensagem || g.json?.Erros || g.json).slice(0, 300)}`);
+  // /gerar retorna IdOperacaoTransporte (12 chars) que vai na DeclaracaoOperacaoTransporte.
+  const idOp =
+    g.json?.Dados?.IdOperacaoTransporte ||
+    g.json?.IdOperacaoTransporte ||
+    g.json?.Dados?.idOperacaoTransporte ||
+    g.json?.idOperacaoTransporte ||
+    "";
+  if (idOp) return String(idOp);
+  // fallback: alguns ambientes HML retornam só CIOT
   const ciot = g.json?.Dados?.CIOT || g.json?.CIOT || g.json?.ciot || "";
-  if (!ciot) throw new Error(`ANTT /gerar sem CIOT: ${g.text.slice(0, 300)}`);
+  if (!ciot) throw new Error(`ANTT /gerar sem IdOperacaoTransporte nem CIOT: ${g.text.slice(0, 300)}`);
   return String(ciot);
 }
 
