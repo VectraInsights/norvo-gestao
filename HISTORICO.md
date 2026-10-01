@@ -3911,3 +3911,7 @@ Espelhado na Vercel.
 ## MDF: crash has is not a function (01/10)
 
 - CT-e e MDF dividiam a chave mdf-chaves-cte com tipos diferentes (array x Set); ao navegar entre telas o MDF lia o cache errado e quebrava. Chaves separadas + guarda instanceof.
+
+## CIOT: rotulos empilhados simples (01/10)
+
+- Dialogo volta a rotulo em cima + valor embaixo, so Piso minimo ANTT e Total CIOT.
