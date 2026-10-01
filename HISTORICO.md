@@ -3919,3 +3919,7 @@ Espelhado na Vercel.
 ## MDF-e: lote gera rascunhos (01/10)
 
 - Botao Gerar N rascunhos separados: 1 rascunho por (motorista+UF) com UFs e percurso automaticos; cai no Aguardando envio p/ revisar e enviar um por vez.
+
+## MDF-e: Emitir gera rascunhos sozinho (01/10)
+
+- O botao Emitir MDF-e com selecao mista gera 1 rascunho por (motorista+UF) sozinho, avisa X MDFs gerados e cai no Aguardando envio; sem botao extra.

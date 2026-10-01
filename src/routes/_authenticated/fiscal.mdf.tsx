@@ -1188,7 +1188,7 @@ function DialogNovoMdf({ open, onOpenChange, empresaId, empresa, chavesIniciais,
     } finally {
       setGerandoLote(false);
     }
-    if (ok > 0) toast.success(`${ok} rascunho(s) criado(s) — envie no Aguardando envio`);
+    if (ok > 0) toast.success(`${ok} MDFs gerados — confira no Aguardando envio`);
     if (falhas.length > 0) toast.error(`${falhas.length} grupo(s) falharam`, { description: falhas.slice(0, 4).join("; ") });
     qc.invalidateQueries({ queryKey: ["mdf-documentos"] });
     onOpenChange(false);
@@ -1197,13 +1197,8 @@ function DialogNovoMdf({ open, onOpenChange, empresaId, empresa, chavesIniciais,
 
   const handleEmitir = async () => {
     if (!ctesSelecionadas.size) { toast.error("Selecione pelo menos 1 CT-e"); return; }
-    if (gruposMdf.length > 1) {
-      toast.error("Um MDF-e por motorista e UF de descarga", {
-        description: "Grupos: " + gruposMdf.map(g => `${g.motNome} • ${g.uf} (${g.chaves.length})`).join(" | ") + ". Use os botões de grupo abaixo para emitir um por vez.",
-        duration: 9000,
-      });
-      return;
-    }
+    // Seleção mista (motorista/UF): o próprio Emitir gera 1 rascunho por grupo
+    if (gruposMdf.length > 1) { await gerarRascunhosLote(); return; }
     if (!tracaoSel) { toast.error("Selecione o veículo"); return; }
     if (!motNomes.length) { toast.error("CT-es sem motorista"); return; }
     if (!ufCarregamento || !ufDescarregamento) { toast.error("Percurso incompleto: UF de início/encerramento vêm dos CT-es"); return; }
@@ -1519,19 +1514,8 @@ function DialogNovoMdf({ open, onOpenChange, empresaId, empresa, chavesIniciais,
             <div className="p-2">
             {gruposMdf.length > 1 && (
               <div className="mb-2 rounded border border-amber-500/50 bg-amber-500/10 px-2 py-1.5">
-                <div className="flex items-center justify-between gap-2">
-                  <div className="text-[11px] font-semibold text-amber-700">
-                    Seleção mistura motorista/UF — 1 MDF-e por grupo:
-                  </div>
-                  <Button
-                    size="sm"
-                    className="h-6 text-[11px]"
-                    disabled={gerandoLote || !tracaoSel}
-                    onClick={gerarRascunhosLote}
-                    title="Cria um rascunho por grupo (motorista + UF) e abre o Aguardando envio"
-                  >
-                    {gerandoLote ? "Gerando…" : `Gerar ${gruposMdf.length} rascunhos separados`}
-                  </Button>
+                <div className="text-[11px] font-semibold text-amber-700">
+                  Seleção mistura motorista/UF — ao emitir, o sistema gera 1 rascunho por grupo:
                 </div>
                 <div className="mt-1 flex flex-wrap gap-1.5">
                   {gruposMdf.map(g => (
