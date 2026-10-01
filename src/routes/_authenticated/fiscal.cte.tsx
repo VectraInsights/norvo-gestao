@@ -7990,10 +7990,6 @@ function CtePage() {
                       />
                     </div>
                   </div>
-                  <p className="text-[9px] text-muted-foreground mt-0.5">
-                    Vale-pedágio (Lei 10.209/2001, art. 2º): não integra o frete nem a BC do ICMS e
-                    não vai no CT-e — informar no MDF-e.
-                  </p>
                   {pisoAntt.piso !== null ? (
                     <div
                       className={`mt-1 rounded border px-2 py-1 text-[10px] ${pisoAntt.abaixo ? "border-destructive/50 bg-destructive/10 font-semibold text-destructive" : "text-muted-foreground border-primary/20 bg-primary/5"}`}

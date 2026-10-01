@@ -3859,3 +3859,7 @@ Espelhado na Vercel.
 ## CT-e: lote em Aguardando envio + ordenacao (01/10)
 
 - Aguardando envio com checkbox (individual + todos), botao Enviar selecionados (reaproveita emissao individual, um por vez, com resumo) e cabecalho clicavel p/ ordenar (3o clique limpa); ordenacao vale nas demais abas da lista.
+
+## CT-e: remove nota vale-pedagio (01/10)
+
+- Removida a observacao sobre vale-pedagio abaixo do Desconto na aba Transporte.
