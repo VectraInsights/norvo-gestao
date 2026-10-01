@@ -1823,7 +1823,7 @@ function CtePage() {
             distanciaKm: km,
             qtdViagens: 1,
             carga: {
-              peso: pesoTotal || undefined,
+              peso: pesoTotal > 0 ? Math.round(pesoTotal) : 1,
               tipoCodigo,
             },
             valorFrete: Math.round(valorTotal * 100) / 100,

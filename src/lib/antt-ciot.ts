@@ -158,7 +158,8 @@ export function buildDeclaracaoPayload(inp: DeclaracaoCiotInput, idOperacao: str
   od.QtdViagens = Number(inp.qtdViagens ?? 1);
   payload.OrigemDestino = [od];
   const cg: Record<string, unknown> = {};
-  if (inp.carga?.peso !== undefined) cg.PesoCarga = Number(inp.carga.peso);
+  // PesoCarga é obrigatório: usa o valor informado ou 1 como mínimo (ANTT rejeita 0 ou ausente).
+  cg.PesoCarga = inp.carga?.peso !== undefined ? Math.round(Number(inp.carga.peso)) || 1 : 1;
   if (inp.carga?.tipoCodigo !== undefined) cg.CodigoTipoCarga = Number(inp.carga.tipoCodigo);
   // CodigoNaturezaCarga é obrigatório para tipo de operação 1 (lotação).
   // Padrão 1 = Carga Geral quando não informado explicitamente.
