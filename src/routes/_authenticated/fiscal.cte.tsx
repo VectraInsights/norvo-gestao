@@ -546,9 +546,11 @@ function CtePage() {
 
   // CT-es já vinculados a MDF-e ativo (autorizado/encerrado): extrai chCTe
   // dos XMLs dos manifestos para as sub-abas Sem/Com MDF-e.
+  // Chave própria (NÃO "mdf-chaves-cte": o MDF guarda Set nessa chave e o
+  // cache é global — misturar quebrava o `.has` ao navegar entre as telas).
   const { data: mdfVinculos } = useQuery({
     enabled: !!empresa,
-    queryKey: ["mdf-chaves-cte", (empresa as any)?.id],
+    queryKey: ["mdf-vinculos-cte", (empresa as any)?.id],
     queryFn: async ({ signal }) => {
       const { data, error } = await supabase
         .from("mdf_documentos" as any)

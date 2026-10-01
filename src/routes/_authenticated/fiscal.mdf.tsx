@@ -829,7 +829,7 @@ function DialogNovoMdf({ open, onOpenChange, empresaId, empresa, chavesIniciais,
       return set;
     },
   });
-  const cteVinculado = (chave?: string | null) => !!chave && !!mdfChaves?.has(chave);
+  const cteVinculado = (chave?: string | null) => !!chave && mdfChaves instanceof Set && (mdfChaves as Set<string>).has(chave);
   const [percursoUFs, setPercursoUFs] = useState<string[]>([]);
   const [tracaoSel, setTracaoSel] = useState("");
   const todasTracoes = useMemo(() => { const out: string[] = []; for (const c of (ctesDisponiveis || [])) { try { const p = JSON.parse((c as any).xml_assinado || "{}"); const pl = String(p.form?.placaVeiculo || "").toUpperCase(); if (pl && !out.includes(pl)) out.push(pl); } catch {} } return out.sort(); }, [ctesDisponiveis]);
