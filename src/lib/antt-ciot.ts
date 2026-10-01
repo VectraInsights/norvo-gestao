@@ -70,7 +70,7 @@ export type OrigemDestinoCiot = {
   lat?: number;
   lon?: number;
 };
-export type CargaCiot = { peso?: number; tipoCodigo?: number };
+export type CargaCiot = { peso?: number; tipoCodigo?: number; naturezaCodigo?: number };
 
 export type DeclaracaoCiotInput = {
   tipoOperacao?: number; // 1 lotação (padrão), 2 fracionada, 3 TAC-agregado
@@ -160,6 +160,9 @@ export function buildDeclaracaoPayload(inp: DeclaracaoCiotInput, idOperacao: str
   const cg: Record<string, unknown> = {};
   if (inp.carga?.peso !== undefined) cg.PesoCarga = Number(inp.carga.peso);
   if (inp.carga?.tipoCodigo !== undefined) cg.CodigoTipoCarga = Number(inp.carga.tipoCodigo);
+  // CodigoNaturezaCarga é obrigatório para tipo de operação 1 (lotação).
+  // Padrão 1 = Carga Geral quando não informado explicitamente.
+  cg.CodigoNaturezaCarga = Number(inp.carga?.naturezaCodigo ?? 1);
   if (Object.keys(cg).length) payload.DadosCarga = cg;
   payload.InfIndicadoresOperacionais = {
     IndAltoDesempenho: !!inp.indAltoDesempenho,
