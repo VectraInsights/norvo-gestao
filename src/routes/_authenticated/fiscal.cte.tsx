@@ -92,7 +92,7 @@ import {
   excluirRejeitadosCteFn,
 } from "@/lib/sefaz-cte-server";
 import { SEFAZ_AMBIENTE } from "@/lib/sefaz-ambiente";
-import { pisoMinimoAntt, PISO_VIGENCIA } from "@/lib/piso-antt";
+import { pisoMinimoAntt } from "@/lib/piso-antt";
 import { emitirCiotFn, consultarFrotaAnttFn, consultarCiotGeradoAnttFn } from "@/lib/antt-ciot-server";
 import { CFOPS_CTE, MOD_FRETE_OPTIONS, RESPONSAVEL_CTE_OPTIONS } from "@/lib/cfops-transporte";
 import { gerarDactePdf, DACTE_REV } from "@/lib/dacte-pdf";
@@ -4709,17 +4709,6 @@ function CtePage() {
     }
   };
   const percursoMatch = matchPercurso(docsAtuais());
-  // Piso mínimo ANTT (informativo, nunca bloqueia — homologação usa valores
-  // de teste): Tabela A pelo tipo de carga do percurso, eixos da tração e km.
-  const pisoAntt = useMemo(() => {
-    const tipo = String((percursoMatch as any)?.tipo_carga_antt || "Carga Geral");
-    const km = Number(String(form.distanciaKm || "").replace(",", ".")) || 0;
-    const eixos = eixosCombinacao(form, veiculos || []);
-    const piso = eixos > 0 && km > 0 ? pisoMinimoAntt(tipo, eixos, km) : null;
-    const vPrest = Number(String(form.vPrest || "").replace(",", ".")) || 0;
-    return { tipo, eixos, km, piso, vPrest, abaixo: piso !== null && vPrest > 0 && vPrest < piso };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [percursoMatch, form.distanciaKm, form.placaVeiculo, form.placaReboque, form.semiReboque1, form.semiReboque2, form.vPrest, veiculos]);
   // CT-es autorizados compatíveis com o percurso atual (complemento/substituição)
   const ctesCompativeis = useMemo(() => {
     const dg = (v: any) => String(v || "").replace(/\D/g, "");
@@ -8532,24 +8521,6 @@ function CtePage() {
                       />
                     </div>
                   </div>
-                  {pisoAntt.piso !== null ? (
-                    <div
-                      className={`mt-1 rounded border px-2 py-1 text-[10px] ${pisoAntt.abaixo ? "border-destructive/50 bg-destructive/10 font-semibold text-destructive" : "text-muted-foreground border-primary/20 bg-primary/5"}`}
-                    >
-                      Piso mínimo ANTT ({pisoAntt.tipo}, {pisoAntt.eixos} eixos, {pisoAntt.km} km):{" "}
-                      <strong>{brl(pisoAntt.piso)}</strong>
-                      {pisoAntt.abaixo
-                        ? ` — serviço a ${brl(pisoAntt.vPrest)} ABAIXO do piso!`
-                        : " — serviço acima do piso."}{" "}
-                      <span className="opacity-70">({PISO_VIGENCIA}, informativo)</span>
-                    </div>
-                  ) : (
-                    (form.placaVeiculo || form.distanciaKm) ? (
-                      <div className="mt-1 text-[9px] text-muted-foreground">
-                        Piso ANTT indisponível: confira placa (eixos), distância e tipo de carga do percurso.
-                      </div>
-                    ) : null
-                  )}
                 </Card>
 
                 <Card className="p-1.5">
