@@ -3320,12 +3320,16 @@ function CtePage() {
         .delete()
         .eq("id", doc.id);
       if (delErr) throw delErr;
-      if (parsed.nfs && parsed.nfs.length > 0) {
-        for (const nf of parsed.nfs) {
-          const { error: upErr } = await supabase.from("cte_nfes_pendentes" as any).upsert(
-            {
-              empresa_id: empresa.id,
-              chave: nf.chave,
+      setConfRascunho(null);
+      qc.invalidateQueries({ queryKey: ["cte-documentos"] });
+      toast.success("Rascunho excluído");
+      try {
+        if (parsed.nfs && parsed.nfs.length > 0) {
+          for (const nf of parsed.nfs) {
+            const { error: upErr } = await supabase.from("cte_nfes_pendentes" as any).upsert(
+              {
+                empresa_id: empresa.id,
+                chave: nf.chave,
               n_nf: nf.nNF,
               serie: nf.serie,
               emit_nome: nf.emit,
@@ -3364,12 +3368,12 @@ function CtePage() {
             { onConflict: "empresa_id,chave" },
           );
           if (upErr) throw upErr;
+          }
         }
+        qc.invalidateQueries({ queryKey: ["cte-nfes-pendentes", empresa.id] });
+      } catch (e: any) {
+        toast.warning("NF-e não voltaram para pendentes", { description: e.message });
       }
-      toast.success("Rascunho excluído — NF-e voltaram para pendentes");
-      setConfRascunho(null);
-      qc.invalidateQueries({ queryKey: ["cte-documentos"] });
-      qc.invalidateQueries({ queryKey: ["cte-nfes-pendentes", empresa.id] });
     } catch (e: any) {
       toast.error("Erro ao excluir rascunho", { description: e.message });
     }
