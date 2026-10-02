@@ -7602,7 +7602,6 @@ function CtePage() {
                           <PopoverContent className="w-[360px] p-0" align="start">
                             <Command shouldFilter={false}>
                               <CommandInput
-                                placeholder="Buscar seguradora..."
                                 value={seguradoraQuery}
                                 onValueChange={setSeguradoraQuery}
                               />
@@ -7668,7 +7667,6 @@ function CtePage() {
                         <Label className="text-[10px] text-muted-foreground">Apólice</Label>
                         <Input
                           className="h-6 text-[10px]"
-                          placeholder="Nº Apólice"
                           value={form.apolice}
                           onChange={(e) => setForm({ ...form, apolice: e.target.value })}
                         />
@@ -7697,7 +7695,6 @@ function CtePage() {
                         <Label className="text-[10px] text-muted-foreground">Nº Averbação</Label>
                         <Input
                           className="h-6 text-[10px]"
-                          placeholder="Nº Averbação"
                           value={form.averbacao}
                           onChange={(e) => setForm({ ...form, averbacao: e.target.value })}
                         />
@@ -7724,7 +7721,6 @@ function CtePage() {
                         <Label className="text-[10px] text-muted-foreground">RCTR-C</Label>
                         <Input
                           className="h-6 text-[10px]"
-                          placeholder="0.00"
                           value={form.rctrC || ""}
                           onChange={(e) => setForm({ ...form, rctrC: e.target.value })}
                         />
@@ -7733,7 +7729,6 @@ function CtePage() {
                         <Label className="text-[10px] text-muted-foreground">RCF-DC</Label>
                         <Input
                           className="h-6 text-[10px]"
-                          placeholder="0.00"
                           value={form.rcfDc || ""}
                           onChange={(e) => setForm({ ...form, rcfDc: e.target.value })}
                         />
@@ -7742,7 +7737,6 @@ function CtePage() {
                         <Label className="text-[10px] text-muted-foreground">V. Adicional</Label>
                         <Input
                           className="h-6 text-[10px]"
-                          placeholder="0.00"
                           value={form.segAdicional || ""}
                           onChange={(e) => setForm({ ...form, segAdicional: e.target.value })}
                         />
@@ -7752,7 +7746,6 @@ function CtePage() {
                           <Label className="text-[10px] text-muted-foreground">Total Seguro</Label>
                           <Input
                             className="h-6 text-[10px]"
-                            placeholder="0.00"
                             value={form.segTotal || ""}
                             onChange={(e) => setForm({ ...form, segTotal: e.target.value })}
                           />
@@ -7797,7 +7790,6 @@ function CtePage() {
                           <PopoverContent className="w-[360px] p-0" align="start">
                             <Command shouldFilter={false}>
                               <CommandInput
-                                placeholder="Buscar motorista..."
                                 value={motoristaQuery}
                                 onValueChange={setMotoristaQuery}
                               />
@@ -7855,11 +7847,10 @@ function CtePage() {
                         </Popover>
                       </div>
                       <div>
-                        <Label className="text-[10px] text-muted-foreground">CIOT (ANTT direto)</Label>
+                        <Label className="text-[10px] text-muted-foreground">CIOT</Label>
                         <div className="flex gap-1">
                           <Input
                             className="h-6 text-[10px] font-mono"
-                            placeholder="Nº CIOT"
                             value={form.ciot || ""}
                             onChange={(e) => setForm((f: any) => ({ ...f, ciot: e.target.value }))}
                             disabled={(form as any).finalidadeEmissao === "Complemento"}
@@ -7900,7 +7891,6 @@ function CtePage() {
                           <PopoverContent className="w-[320px] p-0" align="start">
                             <Command shouldFilter={false}>
                               <CommandInput
-                                placeholder="Buscar placa..."
                                 value={veiculoQuery}
                                 onValueChange={setVeiculoQuery}
                               />
@@ -8017,7 +8007,6 @@ function CtePage() {
                           <PopoverContent className="w-[320px] p-0" align="start">
                             <Command shouldFilter={false}>
                               <CommandInput
-                                placeholder="Buscar placa..."
                                 value={veiculoQuery}
                                 onValueChange={setVeiculoQuery}
                               />
@@ -8136,7 +8125,6 @@ function CtePage() {
                           <PopoverContent className="w-[320px] p-0" align="start">
                             <Command shouldFilter={false}>
                               <CommandInput
-                                placeholder="Buscar placa..."
                                 value={veiculoQuery}
                                 onValueChange={setVeiculoQuery}
                               />
@@ -8265,7 +8253,6 @@ function CtePage() {
                             <PopoverContent className="w-[360px] p-0" align="start">
                               <Command shouldFilter={false}>
                                 <CommandInput
-                                  placeholder="Buscar motorista..."
                                   value={motorista2Query}
                                   onValueChange={setMotorista2Query}
                                 />
@@ -8490,7 +8477,6 @@ function CtePage() {
                       <Label className="text-[10px] text-muted-foreground">CNPJ Operadora</Label>
                       <Input
                         className="h-6 text-[11px] font-mono"
-                        placeholder="00.000.000/0000-00"
                         disabled={pagtoSeguro(form.pedagioPagto) === "sem-pagamento"}
                         value={fmtCnpjInput(form.pedagioCnpj || "")}
                         onChange={(e) =>
@@ -8528,7 +8514,6 @@ function CtePage() {
                       <Label className="text-[10px] text-muted-foreground">Nº TAG</Label>
                       <Input
                         className="h-6 text-[11px]"
-                        placeholder="Nº TAG"
                         disabled={pagtoSeguro(form.pedagioPagto) === "sem-pagamento"}
                         value={form.pedagioTag || ""}
                         onChange={(e) => setForm({ ...form, pedagioTag: e.target.value })}
