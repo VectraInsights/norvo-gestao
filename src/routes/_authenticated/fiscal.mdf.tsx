@@ -183,7 +183,7 @@ function MdfPage() {
           falhas.push(`${g.mot} • ${g.uf}: ${(e as Error)?.message || "falha"}`);
         }
       }
-      if (ok > 0) toast.success(`${ok} MDFs gerados — confira no Aguardando envio`);
+      if (ok > 0) toast.success(`${ok} MDFs gerados`);
       if (falhas.length > 0) toast.error(`${falhas.length} grupo(s) falharam`, { description: falhas.slice(0, 4).join("; ") });
       setFiltroStatus("rascunho");
       invalidarMdf();
@@ -1481,7 +1481,7 @@ function DialogNovoMdf({ open, onOpenChange, empresaId, empresa, chavesIniciais,
     } finally {
       setGerandoLote(false);
     }
-    if (ok > 0) toast.success(`${ok} MDFs gerados — confira no Aguardando envio`);
+    if (ok > 0) toast.success(`${ok} MDFs gerados`);
     if (falhas.length > 0) toast.error(`${falhas.length} grupo(s) falharam`, { description: falhas.slice(0, 4).join("; ") });
     invalidarMdf();
     onOpenChange(false);
