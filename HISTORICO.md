@@ -4015,6 +4015,16 @@ Espelhado na Vercel.
 - `dhEmi`/`dhEvento` saíam `+00:00` (servidor em UTC); agora sempre
   horário de Brasília `-03:00` (`dhBrt()`), nos dois modelos.
 
+## CT-e: MG Normal via SincV4 + toast honesto (02/10)
+
+- 404 em MG no Normal: o endpoint `CTeRecepcaoV4` não existe em MG
+  (criado por analogia). Oficial (Portal CT-e + SPED-MG): Normal usa
+  `CTeRecepcaoSincV4` (homolog e produção) — corrigido URLs e
+  namespace; log agora mostra o modelo enviado.
+- Lote mostrava verde "enviado(s) p/ SEFAZ" mesmo com rejeição: `ok`
+  só conta `sucesso === true`, resto vira falha.
+- Botão/diálogo "Preencher lote" viraram "Preencher CIOT".
+
 ## MDF-e: tooltip no Emitir bloqueado (02/10)
 
 - Botao Emitir MDF-e mostra ao passar o mouse o que falta (percurso, veiculo, motorista, UFs).
