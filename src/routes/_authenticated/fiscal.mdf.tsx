@@ -205,6 +205,29 @@ function MdfPage() {
   const [justLote, setJustLote] = useState("ERRO DE EMISSAO DO MDF-E");
   const [loteMdfProc, setLoteMdfProc] = useState(false);
   const trocarAbaMdf = (v: string) => { setFiltroStatus(v); setRascSel(new Set()); setAutSel(new Set()); };
+  // Emissão em lote: carrega cada rascunho no diálogo e emite em sequência
+  const emitirLoteRef = useRef<(() => Promise<void>) | null>(null);
+  const emitirLoteMdf = async () => {
+    const ids = (docsFiltrados || []).filter(d => d.status === "rascunho" && rascSel.has(d.id)).map(d => d.id);
+    if (!ids.length || loteMdfProc) return;
+    setLoteMdfProc(true);
+    try {
+      for (const id of ids) {
+        const d = (docs || []).find(x => x.id === id);
+        if (!d) continue;
+        continuarRascunho(d);
+        await new Promise(r => setTimeout(r, 1000));
+        try { await emitirLoteRef.current?.(); } catch {}
+        await new Promise(r => setTimeout(r, 400));
+      }
+    } finally {
+      setLoteMdfProc(false);
+      setRascSel(new Set());
+      setOpen(false);
+      invalidarMdf();
+    }
+    toast.success("Emissão em lote concluída");
+  };
   const excluirRejeitado = async (d: MdfDoc) => {
     const { error } = await supabase.from("mdf_documentos" as any).delete().eq("id", d.id);
     if (error) toast.error(error.message);
@@ -493,6 +516,9 @@ function MdfPage() {
           {filtroStatus === "rascunho" ? (
             <>
               <span className="text-xs text-muted-foreground">{rascSel.size > 0 ? `${rascSel.size} selecionado(s)` : "Marque os rascunhos p/ excluir"}</span>
+              <Button size="sm" disabled={rascSel.size === 0 || loteMdfProc} onClick={() => void emitirLoteMdf()}>
+                <Send className="mr-1 h-4 w-4" /> {loteMdfProc ? "Emitindo…" : "Emitir selecionados"}{rascSel.size > 0 && !loteMdfProc ? ` (${rascSel.size})` : ""}
+              </Button>
               <Button size="sm" variant="outline" disabled={rascSel.size === 0 || loteMdfProc} onClick={() => setConfLoteRasc(true)}>
                 <Trash2 className="mr-1 h-4 w-4" /> Excluir selecionados{rascSel.size > 0 ? ` (${rascSel.size})` : ""}
               </Button>
@@ -717,7 +743,7 @@ function MdfPage() {
         />
       )}
 
-      <DialogNovoMdf open={open && !!empresa?.id} onOpenChange={(v) => { setOpen(v); if (!v) { setMdfPrefill(null); setMdfDraft(null); setSemRascunho(false); } }} empresaId={empresa?.id || ""} empresa={empresa} chavesIniciais={mdfPrefill || undefined} rascunhoInicial={mdfDraft} permiteRascunho={!semRascunho} onLoteRascunhos={() => setFiltroStatus("rascunho")} />
+      <DialogNovoMdf open={open && !!empresa?.id} onOpenChange={(v) => { setOpen(v); if (!v) { setMdfPrefill(null); setMdfDraft(null); setSemRascunho(false); } }} empresaId={empresa?.id || ""} empresa={empresa} chavesIniciais={mdfPrefill || undefined} rascunhoInicial={mdfDraft} permiteRascunho={!semRascunho} onLoteRascunhos={() => setFiltroStatus("rascunho")} emitRef={emitirLoteRef} />
 
       <AlertDialog open={!!confExcluir} onOpenChange={(v) => { if (!v) setConfExcluir(null); }}>
         <AlertDialogContent>
@@ -1035,7 +1061,7 @@ function EncerrarMdfButton({ mdf, empresaId, cnpj, onSuccess }: { mdf: MdfDoc; e
   </>);
 }
 
-function DialogNovoMdf({ open, onOpenChange, empresaId, empresa, chavesIniciais, rascunhoInicial, permiteRascunho = true, onLoteRascunhos }: { open: boolean; onOpenChange: (v: boolean) => void; empresaId: string; empresa?: any; chavesIniciais?: string[]; permiteRascunho?: boolean; onLoteRascunhos?: () => void; rascunhoInicial?: { id?: string; chaves: string[]; percursoUFs: string[]; observacoes: string; infoFisco: string; tipoMdf: "Normal" | "Globalizado"; isTransbordo: boolean; transb1: string; transb2: string; transb3: string } | null }) {
+function DialogNovoMdf({ open, onOpenChange, empresaId, empresa, chavesIniciais, rascunhoInicial, permiteRascunho = true, onLoteRascunhos, emitRef }: { open: boolean; onOpenChange: (v: boolean) => void; empresaId: string; empresa?: any; chavesIniciais?: string[]; permiteRascunho?: boolean; onLoteRascunhos?: () => void; emitRef?: React.MutableRefObject<(() => Promise<void>) | null>; rascunhoInicial?: { id?: string; chaves: string[]; percursoUFs: string[]; observacoes: string; infoFisco: string; tipoMdf: "Normal" | "Globalizado"; isTransbordo: boolean; transb1: string; transb2: string; transb3: string } | null }) {
   const qc = useQueryClient();
   // MDF mudou (criou/excluiu/emitou): atualiza lista + vínculos do CT-e na hora
   const invalidarMdf = () => {
@@ -1658,6 +1684,7 @@ function DialogNovoMdf({ open, onOpenChange, empresaId, empresa, chavesIniciais,
     } catch (e: unknown) { toast.error(e instanceof Error ? e.message : "Erro ao emitir MDF-e"); }
     setLoading(false);
   };
+  if (emitRef) emitRef.current = handleEmitir;
 
   const handleSalvarRascunho = async () => {
     if (!ctesSelecionadas.size) { toast.error("Selecione pelo menos 1 CT-e"); return; }
