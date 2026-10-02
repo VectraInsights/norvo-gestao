@@ -1232,6 +1232,16 @@ function DialogNovoMdf({ open, onOpenChange, empresaId, empresa, chavesIniciais,
   }, [ctesSelArr]);
   const reboques = useMemo(() => { const out: string[] = []; for (const f of ctesForms) for (const k of ["placaReboque", "semiReboque1", "semiReboque2"]) { const p = String(f[k] || "").toUpperCase(); if (p && !out.includes(p)) out.push(p); } return out; }, [ctesForms]);
   const motNomes = useMemo(() => { const out: Array<{ id: string; nome: string }> = []; for (const f of ctesForms) for (const k of [["motoristaId", "motoristaNome"], ["motorista2Id", "motorista2Nome"]] as const) { const nm = String(f[k[1]] || "").trim(); if (nm && !out.some(o => o.nome === nm)) out.push({ id: String(f[k[0]] || ""), nome: nm }); } return out; }, [ctesForms]);
+  // Motivo do botão Emitir estar bloqueado (tooltip — botão desabilitado não mostra title próprio)
+  const motivoEmitirBloqueado = useMemo(() => {
+    const m: string[] = [];
+    if (!tracaoSel) m.push("selecione o veículo de tração");
+    if (!ctesSelecionadas.size) m.push("selecione ao menos um CT-e");
+    if (!motNomes.length) m.push("informe o motorista (vem do CT-e)");
+    if (!ufCarregamento || !ufDescarregamento) m.push("informe UF início e UF encerramento");
+    for (const e of errosPercurso) m.push(e.replace(/\s*\(SEFAZ 663\)\.?$/, ""));
+    return m.length ? `Para emitir: ${m.join("; ")}.` : "";
+  }, [tracaoSel, ctesSelecionadas, motNomes, ufCarregamento, ufDescarregamento, errosPercurso]);
   const cpfDe = (id: string, nome: string) => ((motoristas || []).find(m => (id && m.id === id) || m.nome === nome)?.cpf || "");
   // CNPJ da seguradora p/ o infSeg (699): no transbordo não há chCTe no XML
   // e o servidor não completa; resolve aqui pelo nome (mesma regra do servidor).
@@ -1766,9 +1776,11 @@ function DialogNovoMdf({ open, onOpenChange, empresaId, empresa, chavesIniciais,
                 {loading ? "Salvando..." : "Salvar Rascunho"}
               </Button>
               )}
-              <Button className="h-8" onClick={handleEmitir} disabled={loading || !tracaoSel || !ctesSelecionadas.size || !motNomes.length || !ufCarregamento || !ufDescarregamento || !!errosPercurso.length}>
-                <Send className="mr-1 h-4 w-4" /> {loading ? "Emitindo..." : "Emitir MDF-e"}
-              </Button>
+              <span title={motivoEmitirBloqueado || undefined} className="inline-flex">
+                <Button className="h-8" onClick={handleEmitir} disabled={loading || !tracaoSel || !ctesSelecionadas.size || !motNomes.length || !ufCarregamento || !ufDescarregamento || !!errosPercurso.length}>
+                  <Send className="mr-1 h-4 w-4" /> {loading ? "Emitindo..." : "Emitir MDF-e"}
+                </Button>
+              </span>
             </div>
           </div>
           </div>

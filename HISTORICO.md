@@ -4003,3 +4003,7 @@ Espelhado na Vercel.
   adiantamentos; configurações: index, empresas). Padrão Enter
   confirma (`data-acao`) / Esc cancela; `prompt` de motivo/filtro
   virou Dialog com campo. Grep confirma zero ocorrências.
+
+## MDF-e: tooltip no Emitir bloqueado (02/10)
+
+- Botao Emitir MDF-e mostra ao passar o mouse o que falta (percurso, veiculo, motorista, UFs).
