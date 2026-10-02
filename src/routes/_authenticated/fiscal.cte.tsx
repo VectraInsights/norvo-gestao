@@ -5534,8 +5534,22 @@ function CtePage() {
                                     if (e.target.checked) {
                                       const red = (form as any).modoEmbarque === "simplificado";
                                       if (!red) {
-                                        // CT-e Avulso: uma NF-e por vez — trocar limpa a anterior
-                                        setSelecionadas(new Set([m.chave]));
+                                        // CT-e Avulso: várias NF-es desde que mesmo remetente + destinatário
+                                        const kR = (x: (typeof mercadorias)[number]) => x.emitCnpj || x.emit;
+                                        const kD = (x: (typeof mercadorias)[number]) => x.destCnpj || x.dest;
+                                        const ref = mercadorias.find((x) => selecionadas.has(x.chave));
+                                        if (ref) {
+                                          if (kR(ref) !== kR(m)) {
+                                            toast.error("O CT-e exige o mesmo remetente");
+                                            return;
+                                          }
+                                          if (kD(ref) !== kD(m)) {
+                                            toast.error("O CT-e exige o mesmo destinatário");
+                                            return;
+                                          }
+                                        }
+                                        next.add(m.chave);
+                                        setSelecionadas(next);
                                         return;
                                       }
                                       // CT-e Simplificado: várias, só do mesmo remetente + tomador
