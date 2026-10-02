@@ -316,6 +316,10 @@ export function buildCteNormalXml(input: CteInputCompleto): { xml: string; chave
   };
   if (!input.rem) throw new Error("CT-e Normal exige remetente (rem)");
   if (!input.dest) throw new Error("CT-e Normal exige destinatario (dest)");
+  // MG homologação (regra 646): razão social do REMETENTE tem que ser o padrão
+  const remHml = input.ambiente === "homologacao"
+    ? { ...input.rem, xNome: HOMOLOG_TOMADOR_NOME }
+    : input.rem;
 
   // toma3 (0/1/2) ou toma4 (3/4 com endereço)
   const tomaXml = ["0", "1", "2"].includes(toma)
@@ -399,7 +403,7 @@ export function buildCteNormalXml(input: CteInputCompleto): { xml: string; chave
     <emit>
       <CNPJ>${cnpjLimpo}</CNPJ>${/^\d{2,14}$/.test(String(input.emit.ie || "")) ? `<IE>${input.emit.ie}</IE>` : ""}<xNome>${escCte(input.emit.xNome)}</xNome>${enderEmit}<CRT>${crt}</CRT>
     </emit>
-    ${parteXml("rem", "enderReme", input.rem, "remetente")}
+    ${parteXml("rem", "enderReme", remHml, "remetente")}
     ${parteXml("dest", "enderDest", input.dest, "destinatario")}
     ${vPrestXml}
     ${impXml}
