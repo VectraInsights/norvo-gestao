@@ -4015,3 +4015,7 @@ Espelhado na Vercel.
 ## CT-e veiculo 1 linha + TAG/VPO (02/10)
 
 - Dropdowns de tração/reboques mostram placa + modelo numa única linha. Campos Nº TAG e Identificador VPO trocaram de lugar.
+
+## CT-e preencher lote CIOT/pedagio (02/10)
+
+- Aba Aguardando envio: botao Preencher lote aplica Nº CIOT, pagto pedagio, operadora (+CNPJ), VPO e vale nos rascunhos marcados; vazio mantem valor atual. Dialogos de exclusao movidos p/ nivel da pagina (estavam na aba CIOT e não abriam).
