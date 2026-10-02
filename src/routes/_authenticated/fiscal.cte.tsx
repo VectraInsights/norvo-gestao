@@ -3500,7 +3500,8 @@ function CtePage() {
   const emitirLatest = useRef<() => Promise<any>>(async () => null);
   emitirLatest.current = () => emitir.mutateAsync() as unknown as Promise<any>;
   const enviarSelecionados = async () => {
-    const alvo = docsByStatus.rascunhos.filter((d) => envSel.has(d.id));
+    // Segue a ordem exibida na tabela (ex.: NF crescente) — não a de criação
+    const alvo = ordenarListaDocs(docsByStatus.rascunhos.filter((d) => envSel.has(d.id)));
     if (alvo.length === 0 || enviandoLote) return;
     setEnviandoLote(true);
     let ok = 0;
@@ -4844,10 +4845,10 @@ function CtePage() {
   const autorizadosSelecionados = docsByStatus.autorizados.filter(
     (d) => d.chave_acesso && mdfSel.has(d.chave_acesso),
   );
-  const renderTabelaDocs = (lista: CteDoc[], rotulo: string, semSelecao = false) => {
-    const ehEnvio = rotulo === "aguardando envio";
-    // Ordenação por clique no cabeçalho (3º clique limpa)
-    const listaOrd = ordDocs
+  // Ordem exibida na tabela de documentos (respeita o clique no cabeçalho);
+  // o envio em lote segue essa ordem
+  const ordenarListaDocs = (lista: CteDoc[]) =>
+    ordDocs
       ? [...lista].sort((a, b) => {
           const la = linhaDocs(a) as any;
           const lb = linhaDocs(b) as any;
@@ -4860,6 +4861,10 @@ function CtePage() {
           return cmp * ordDocs.dir;
         })
       : lista;
+  const renderTabelaDocs = (lista: CteDoc[], rotulo: string, semSelecao = false) => {
+    const ehEnvio = rotulo === "aguardando envio";
+    // Ordenação por clique no cabeçalho (3º clique limpa) — mesma usada no envio em lote
+    const listaOrd = ordenarListaDocs(lista);
     const TH = ({ k, label, className }: { k: string; label: string; className?: string }) => (
       <TableHead className={"text-center " + (className || "")}>
         <button
