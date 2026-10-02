@@ -7937,12 +7937,10 @@ function CtePage() {
                                               : "opacity-0")
                                           }
                                         />
-                                        <div className="flex flex-col">
-                                          <span className="text-xs font-mono">{v.placa}</span>
-                                          <span className="text-[10px] text-muted-foreground">
-                                            {v.marca_modelo || v.tipo || ""}
-                                          </span>
-                                        </div>
+                                        <span className="text-xs font-mono truncate">
+                                          {v.placa}
+                                          {(v.marca_modelo || v.tipo) ? ` — ${v.marca_modelo || v.tipo}` : ""}
+                                        </span>
                                       </CommandItem>
                                     ))}
                                   {veiculoQuery &&
@@ -8053,12 +8051,10 @@ function CtePage() {
                                               : "opacity-0")
                                           }
                                         />
-                                        <div className="flex flex-col">
-                                          <span className="text-xs font-mono">{v.placa}</span>
-                                          <span className="text-[10px] text-muted-foreground">
-                                            {v.marca_modelo || v.tipo || ""}
-                                          </span>
-                                        </div>
+                                        <span className="text-xs font-mono truncate">
+                                          {v.placa}
+                                          {(v.marca_modelo || v.tipo) ? ` — ${v.marca_modelo || v.tipo}` : ""}
+                                        </span>
                                       </CommandItem>
                                     ))}
                                   {veiculoQuery &&
@@ -8171,12 +8167,10 @@ function CtePage() {
                                               : "opacity-0")
                                           }
                                         />
-                                        <div className="flex flex-col">
-                                          <span className="text-xs font-mono">{v.placa}</span>
-                                          <span className="text-[10px] text-muted-foreground">
-                                            {v.marca_modelo || v.tipo || ""}
-                                          </span>
-                                        </div>
+                                        <span className="text-xs font-mono truncate">
+                                          {v.placa}
+                                          {(v.marca_modelo || v.tipo) ? ` — ${v.marca_modelo || v.tipo}` : ""}
+                                        </span>
                                       </CommandItem>
                                     ))}
                                   {veiculoQuery &&
@@ -8511,12 +8505,14 @@ function CtePage() {
                       />
                     </div>
                     <div className="md:col-span-2">
-                      <Label className="text-[10px] text-muted-foreground">Nº TAG</Label>
+                      <Label className="text-[10px] text-muted-foreground">Identificador VPO</Label>
                       <Input
                         className="h-6 text-[11px]"
                         disabled={pagtoSeguro(form.pedagioPagto) === "sem-pagamento"}
-                        value={form.pedagioTag || ""}
-                        onChange={(e) => setForm({ ...form, pedagioTag: e.target.value })}
+                        value={(form as any).pedagioIdentVPO || ""}
+                        onChange={(e) =>
+                          setForm({ ...form, pedagioIdentVPO: e.target.value } as any)
+                        }
                       />
                     </div>
                     <div className="md:col-span-2">
@@ -8531,14 +8527,12 @@ function CtePage() {
                       />
                     </div>
                     <div className="md:col-span-2">
-                      <Label className="text-[10px] text-muted-foreground">Identificador VPO</Label>
+                      <Label className="text-[10px] text-muted-foreground">Nº TAG</Label>
                       <Input
                         className="h-6 text-[11px]"
                         disabled={pagtoSeguro(form.pedagioPagto) === "sem-pagamento"}
-                        value={(form as any).pedagioIdentVPO || ""}
-                        onChange={(e) =>
-                          setForm({ ...form, pedagioIdentVPO: e.target.value } as any)
-                        }
+                        value={form.pedagioTag || ""}
+                        onChange={(e) => setForm({ ...form, pedagioTag: e.target.value })}
                       />
                     </div>
                   </div>
