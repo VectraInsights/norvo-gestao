@@ -5170,7 +5170,7 @@ function CtePage() {
             if (!v) setCteCancelarLote(false);
           }}
         >
-          <DialogContent>
+          <DialogContent className="inset-auto left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-[420px] max-w-[calc(100vw-2rem)] h-auto max-h-[90vh] p-4 gap-3">
             <DialogHeader>
               <DialogTitle>Cancelar CT-es selecionados</DialogTitle>
             </DialogHeader>
@@ -5234,7 +5234,7 @@ function CtePage() {
             if (!v) setCteCancelar(null);
           }}
         >
-          <DialogContent>
+          <DialogContent className="inset-auto left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-[420px] max-w-[calc(100vw-2rem)] h-auto max-h-[90vh] p-4 gap-3">
             <DialogHeader>
               <DialogTitle>Cancelar CT-e</DialogTitle>
             </DialogHeader>
