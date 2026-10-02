@@ -327,6 +327,11 @@ export function buildCteNormalXml(input: CteInputCompleto): { xml: string; chave
         return `<toma4><toma>${toma}</toma>${docXml({ cnpj: t.cnpj, cpf: t.cpf, papel: "tomador" })}${ieXml(t.ie)}<xNome>${escCte(xNomeToma4.slice(0, 60))}</xNome>${enderXml("enderToma", t)}${t.email ? `<email>${escCte(String(t.email).trim().slice(0, 60))}</email>` : ""}</toma4>`;
       })();
 
+  // indIEToma do ide (XSD exige antes do toma3/toma4): 1=Contribuinte,
+  // 9=Não contribuinte, 2=Isento — MG não aceita 2 (regra G024).
+  const ieTomaN = toma === "0" ? input.rem?.ie : (input.tomador as any)?.ie;
+  const indIETomaN = ieTomaN && ieTomaN !== "ISENTO" ? "1" : (input.ufEnv === "MG" ? "9" : "2");
+
   const enderEmit = `<enderEmit><xLgr>${escCte((input.emit.logradouro || "RUA").length >= 2 ? (input.emit.logradouro || "RUA") : "RUA GERAL")}</xLgr><nro>${escCte(input.emit.nro || "SN")}</nro><xBairro>${escCte((input.emit.bairro || "CENTRO").length >= 2 ? (input.emit.bairro || "CENTRO") : "CENTRO")}</xBairro><cMun>${String(input.emit.cMun || "").replace(/\D/g, "").padStart(7, "0")}</cMun><xMun>${escCte(input.emit.xMun)}</xMun><CEP>${String(input.emit.cep || "").replace(/\D/g, "").padStart(8, "0")}</CEP><UF>${escCte(String(input.emit.uf || "").toUpperCase())}</UF></enderEmit>`;
 
   // ICMS (mesma regra do Simplificado) + IBSCBS 2026
@@ -346,7 +351,8 @@ export function buildCteNormalXml(input: CteInputCompleto): { xml: string; chave
   const vIBSUF = Math.round(vBCNum * 0.001 * 100) / 100;
   const vCBS = Math.round(vBCNum * 0.009 * 100) / 100;
   const ibsXml = `<IBSCBS><CST>000</CST><cClassTrib>000001</cClassTrib><gIBSCBS><vBC>${vBC}</vBC><gIBSUF><pIBSUF>0.10</pIBSUF><vIBSUF>${vIBSUF.toFixed(2)}</vIBSUF></gIBSUF><gIBSMun><pIBSMun>0.00</pIBSMun><vIBSMun>0.00</vIBSMun></gIBSMun><vIBS>${vIBSUF.toFixed(2)}</vIBS><gCBS><pCBS>0.90</pCBS><vCBS>${vCBS.toFixed(2)}</vCBS></gCBS></gIBSCBS></IBSCBS>`;
-  impXml = impXml.replace(/<\/imp>$/, `${ibsXml}</imp>`);
+  // XSD Normal: vTotDFe é filho do <imp> (não existe grupo <total>)
+  impXml = impXml.replace(/<\/imp>$/, `${ibsXml}<vTotDFe>${Number(input.vPrest || 0).toFixed(2)}</vTotDFe></imp>`);
 
   // vPrest com componentes (soma = vTPrest; fallback FRETE único)
   const vTPrest = Number(input.vPrest || 0);
@@ -376,7 +382,6 @@ export function buildCteNormalXml(input: CteInputCompleto): { xml: string; chave
   ).join("");
   const ciotXml = (input.modalRod as any)?.ciot ? `<CIOT>${escCte(String((input.modalRod as any).ciot).replace(/\D/g, ""))}</CIOT>` : "";
 
-  const vTotDFe = vTPrest.toFixed(2);
   const qrBase = (input.ufEnv || input.emit.uf)?.toUpperCase() === "MG" ? "portalcte.fazenda.mg.gov.br/portalcte/sistema/qrcode.xhtml" : "dfeportal.svrs.rs.gov.br/cteQrCode";
   const xml = `<?xml version="1.0" encoding="UTF-8"?>
 <CTe xmlns="http://www.portalfiscal.inf.br/cte">
@@ -388,6 +393,7 @@ export function buildCteNormalXml(input: CteInputCompleto): { xml: string; chave
       <modal>01</modal><tpServ>${input.tpServ || "0"}</tpServ>
       <UFIni>${escCte(String(input.ufIni || "").toUpperCase())}</UFIni><UFFim>${escCte(String(input.ufFim || "").toUpperCase())}</UFFim>
       <retira>${input.retira || "1"}</retira>
+      <indIEToma>${indIETomaN}</indIEToma>
       ${tomaXml}
     </ide>
     <emit>
