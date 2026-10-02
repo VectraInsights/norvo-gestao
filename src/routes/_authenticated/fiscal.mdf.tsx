@@ -385,7 +385,13 @@ function MdfPage() {
     } catch { toast.error("Rascunho ilegível"); }
   };
   const reemitir = (d: MdfDoc) => {
-    const xml = String((d as any).xml_assinado || "");
+    const raw = String((d as any).xml_assinado || "");
+    // Rascunho convertido em rejeitado: volta a editar com os mesmos dados
+    try {
+      const p = JSON.parse(raw);
+      if (p?.rascunho && Array.isArray(p.chaves) && p.chaves.length) { continuarRascunho(d); return; }
+    } catch {}
+    const xml = raw;
     const chaves = [...xml.matchAll(/<chCTe>(\d{44})<\/chCTe>/g)].map(m => m[1]);
     const unicas = [...new Set(chaves)];
     const percurso = [...xml.matchAll(/<UFPer>([A-Z]{2})<\/UFPer>/g)].map(m => m[1]);
@@ -1518,10 +1524,18 @@ function DialogNovoMdf({ open, onOpenChange, empresaId, empresa, chavesIniciais,
     if (!ctesSelecionadas.size) { toast.error("Selecione pelo menos 1 CT-e"); return; }
     // Seleção mista (motorista/UF): o próprio Emitir gera 1 rascunho por grupo
     if (gruposMdf.length > 1) { await gerarRascunhosLote(); return; }
-    if (!tracaoSel) { toast.error("Selecione o veículo"); return; }
-    if (!motNomes.length) { toast.error("CT-es sem motorista"); return; }
-    if (!ufCarregamento || !ufDescarregamento) { toast.error("Percurso incompleto: UF de início/encerramento vêm dos CT-es"); return; }
-    if (errosPercurso.length) { toast.error(errosPercurso[0]); return; }
+    // Falha local com rascunho: vira rejeitado (com motivo) em vez de ficar parado
+    const rejeitarRascunho = async (motivo: string) => {
+      if (!rascunhoInicial?.id) return;
+      try {
+        await supabase.from("mdf_documentos" as any).update({ status: "rejeitado", motivo_rejeicao: motivo }).eq("id", rascunhoInicial.id);
+        invalidarMdf();
+      } catch {}
+    };
+    if (!tracaoSel) { toast.error("Selecione o veículo"); await rejeitarRascunho("Sem veículo de tração"); return; }
+    if (!motNomes.length) { toast.error("CT-es sem motorista"); await rejeitarRascunho("CT-es sem motorista"); return; }
+    if (!ufCarregamento || !ufDescarregamento) { toast.error("Percurso incompleto: UF de início/encerramento vêm dos CT-es"); await rejeitarRascunho("Percurso incompleto (UF início/fim)"); return; }
+    if (errosPercurso.length) { toast.error(errosPercurso[0]); await rejeitarRascunho(errosPercurso[0]); return; }
     const _firstCheck = (() => { try { const p = JSON.parse((ctesSelArr[0] as any)?.xml_assinado || "{}"); return (p.form || {}) as Record<string, any>; } catch { return {} as Record<string, any>; } })();
     if (!String(_firstCheck.cMunIni || "").trim()) { toast.error("CT-e sem município de coleta (cMunIni) — complete no CT-e"); return; }
 
@@ -1532,14 +1546,16 @@ function DialogNovoMdf({ open, onOpenChange, empresaId, empresa, chavesIniciais,
     setLoading(true);
     try {
       const bloqueados = [...ctesSelecionadas].filter(c => cteBloqueado(c));
-      if (bloqueados.length) { toast.error("CT-e já vinculado a um MDF-e ativo — remova da seleção"); setLoading(false); return; }
+      if (bloqueados.length) { toast.error("CT-e já vinculado a um MDF-e ativo — remova da seleção"); await rejeitarRascunho("CT-e já vinculado a um MDF-e ativo"); setLoading(false); return; }
       const ctesArr = (ctesDisponiveis || []).filter(c => ctesSelecionadas.has(c.chave_acesso || ""));
       const numero = String(Math.floor(Math.random() * 999999) + 1).padStart(9, "0");
       // CIOT obrigatório em todo CT-e do manifesto (próprio ou não)
       const semCiot = ctesArr.filter(c => !String(formDe(c).ciot || "").trim());
       if (semCiot.length) {
         const nums = semCiot.map(c => c.numero ?? "?").join(", ");
-        toast.error(`CT-e sem CIOT vinculado (${semCiot.length}): ${nums} — gere o CIOT antes de emitir`);
+        const motivo = `CT-e sem CIOT vinculado (${semCiot.length}): ${nums}`;
+        toast.error(`${motivo} — gere o CIOT antes de emitir`);
+        await rejeitarRascunho(motivo);
         setLoading(false);
         return;
       }
@@ -1681,7 +1697,14 @@ function DialogNovoMdf({ open, onOpenChange, empresaId, empresa, chavesIniciais,
       onOpenChange(false);
       setCtesSelecionadas(new Set()); setTracaoSel(""); setUfCarregamento(""); setUfDescarregamento(""); setCidadeFimSel(""); setPercursoUFs([]); setObservacoes(""); setInfoFisco(""); setIsTransbordo(false); setTransb1(""); setTransb2(""); setTransb3(""); setTipoMdf("Normal"); setPercursoSelIdx(null);
       invalidarMdf();
-    } catch (e: unknown) { toast.error(e instanceof Error ? e.message : "Erro ao emitir MDF-e"); }
+    } catch (e: unknown) {
+      const motivo = e instanceof Error ? e.message : "Erro ao emitir MDF-e";
+      toast.error(motivo);
+      if (rascunhoInicial?.id) {
+        try { await supabase.from("mdf_documentos" as any).update({ status: "rejeitado", motivo_rejeicao: motivo }).eq("id", rascunhoInicial.id); } catch {}
+        invalidarMdf();
+      }
+    }
     setLoading(false);
   };
   if (emitRef) emitRef.current = handleEmitir;
