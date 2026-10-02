@@ -97,6 +97,12 @@ function infoMdfLinha(d: { xml_assinado: string | null }): { placa: string; moto
 function MdfPage() {
   const { data: empresa } = useEmpresaAtual();
   const qc = useQueryClient();
+  // MDF mudou (criou/excluiu/cancelou): atualiza lista + vínculos do CT-e na hora
+  const invalidarMdf = () => {
+    qc.invalidateQueries({ queryKey: ["mdf-documentos"] });
+    qc.invalidateQueries({ queryKey: ["mdf-vinculos-cte"] });
+    qc.invalidateQueries({ queryKey: ["mdf-chaves-cte"] });
+  };
   const [open, setOpen] = useState(false);
   const [mdfPrefill, setMdfPrefill] = useState<string[] | null>(null);
   const [mdfDraft, setMdfDraft] = useState<{ id?: string; chaves: string[]; percursoUFs: string[]; observacoes: string; infoFisco: string; tipoMdf: "Normal" | "Globalizado"; isTransbordo: boolean; transb1: string; transb2: string; transb3: string } | null>(null);
@@ -180,7 +186,7 @@ function MdfPage() {
       if (ok > 0) toast.success(`${ok} MDFs gerados — confira no Aguardando envio`);
       if (falhas.length > 0) toast.error(`${falhas.length} grupo(s) falharam`, { description: falhas.slice(0, 4).join("; ") });
       setFiltroStatus("rascunho");
-      qc.invalidateQueries({ queryKey: ["mdf-documentos"] });
+      invalidarMdf();
     } catch (e) {
       toast.error((e as Error)?.message || "Falha ao gerar rascunhos");
     }
@@ -194,13 +200,13 @@ function MdfPage() {
   const excluirRejeitado = async (d: MdfDoc) => {
     const { error } = await supabase.from("mdf_documentos" as any).delete().eq("id", d.id);
     if (error) toast.error(error.message);
-    else { toast.success("Rejeitado excluído"); qc.invalidateQueries({ queryKey: ["mdf-documentos"] }); }
+    else { toast.success("Rejeitado excluído"); invalidarMdf(); }
     setConfExcluir(null);
   };
   const excluirRascunho = async (d: MdfDoc) => {
     const { error } = await supabase.from("mdf_documentos" as any).delete().eq("id", d.id);
     if (error) toast.error(error.message);
-    else { toast.success("Rascunho excluído"); qc.invalidateQueries({ queryKey: ["mdf-documentos"] }); }
+    else { toast.success("Rascunho excluído"); invalidarMdf(); }
     setConfExcluir(null);
   };
   const [consultandoChave, setConsultandoChave] = useState("");
@@ -554,7 +560,7 @@ function MdfPage() {
             <p className="text-sm text-muted-foreground">Confirma o encerramento do manifesto? Esta ação é irreversível.</p>
             <DialogFooter>
               <Button variant="outline" onClick={() => setOpenEncerrar(false)}>Cancelar</Button>
-              <EncerrarMdfButton mdf={mdfEncerrar} empresaId={empresa!.id} cnpj={String((empresa as any)?.cnpj || "")} onSuccess={() => { setOpenEncerrar(false); setMdfEncerrar(null); qc.invalidateQueries({ queryKey: ["mdf-documentos"] }); }} />
+              <EncerrarMdfButton mdf={mdfEncerrar} empresaId={empresa!.id} cnpj={String((empresa as any)?.cnpj || "")} onSuccess={() => { setOpenEncerrar(false); setMdfEncerrar(null); invalidarMdf(); }} />
             </DialogFooter>
           </DialogContent>
         </Dialog>
@@ -586,7 +592,7 @@ function MdfPage() {
                   if (res.sucesso) toast.success("MDF-e cancelado com sucesso!");
                   else toast.error(`Erro: ${res.xMotivo}`);
                   setOpenCancelar(false); setMdfCancelar(null); setJustificativa("");
-                  qc.invalidateQueries({ queryKey: ["mdf-documentos"] });
+                  invalidarMdf();
                 } catch (e: unknown) { toast.error(e instanceof Error ? e.message : "Erro ao cancelar"); }
               }}>Confirmar Cancelamento</Button>
             </DialogFooter>
@@ -877,6 +883,12 @@ function EncerrarMdfButton({ mdf, empresaId, cnpj, onSuccess }: { mdf: MdfDoc; e
 
 function DialogNovoMdf({ open, onOpenChange, empresaId, empresa, chavesIniciais, rascunhoInicial, permiteRascunho = true, onLoteRascunhos }: { open: boolean; onOpenChange: (v: boolean) => void; empresaId: string; empresa?: any; chavesIniciais?: string[]; permiteRascunho?: boolean; onLoteRascunhos?: () => void; rascunhoInicial?: { id?: string; chaves: string[]; percursoUFs: string[]; observacoes: string; infoFisco: string; tipoMdf: "Normal" | "Globalizado"; isTransbordo: boolean; transb1: string; transb2: string; transb3: string } | null }) {
   const qc = useQueryClient();
+  // MDF mudou (criou/excluiu/emitou): atualiza lista + vínculos do CT-e na hora
+  const invalidarMdf = () => {
+    qc.invalidateQueries({ queryKey: ["mdf-documentos"] });
+    qc.invalidateQueries({ queryKey: ["mdf-vinculos-cte"] });
+    qc.invalidateQueries({ queryKey: ["mdf-chaves-cte"] });
+  };
   const [loading, setLoading] = useState(false);
   const [ufCarregamento, setUfCarregamento] = useState("");
   const [ufDescarregamento, setUfDescarregamento] = useState("");
@@ -1317,7 +1329,7 @@ function DialogNovoMdf({ open, onOpenChange, empresaId, empresa, chavesIniciais,
     }
     if (ok > 0) toast.success(`${ok} MDFs gerados — confira no Aguardando envio`);
     if (falhas.length > 0) toast.error(`${falhas.length} grupo(s) falharam`, { description: falhas.slice(0, 4).join("; ") });
-    qc.invalidateQueries({ queryKey: ["mdf-documentos"] });
+    invalidarMdf();
     onOpenChange(false);
     onLoteRascunhos?.();
   };
@@ -1488,7 +1500,7 @@ function DialogNovoMdf({ open, onOpenChange, empresaId, empresa, chavesIniciais,
 
       onOpenChange(false);
       setCtesSelecionadas(new Set()); setTracaoSel(""); setUfCarregamento(""); setUfDescarregamento(""); setCidadeFimSel(""); setPercursoUFs([]); setObservacoes(""); setInfoFisco(""); setIsTransbordo(false); setTransb1(""); setTransb2(""); setTransb3(""); setTipoMdf("Normal"); setPercursoSelIdx(null);
-      qc.invalidateQueries({ queryKey: ["mdf-documentos"] });
+      invalidarMdf();
     } catch (e: unknown) { toast.error(e instanceof Error ? e.message : "Erro ao emitir MDF-e"); }
     setLoading(false);
   };
@@ -1531,7 +1543,7 @@ function DialogNovoMdf({ open, onOpenChange, empresaId, empresa, chavesIniciais,
       }
       toast.success("Rascunho salvo!");
       onOpenChange(false);
-      qc.invalidateQueries({ queryKey: ["mdf-documentos"] });
+      invalidarMdf();
     } catch (e: unknown) { toast.error(e instanceof Error ? e.message : "Erro ao salvar rascunho"); }
     setLoading(false);
   };
