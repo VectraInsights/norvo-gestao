@@ -197,6 +197,14 @@ function MdfPage() {
   const [mdfCancelar, setMdfCancelar] = useState<MdfDoc | null>(null);
   const [mdfVer, setMdfVer] = useState<MdfDoc | null>(null);
   const [confExcluir, setConfExcluir] = useState<MdfDoc | null>(null);
+  // Seleção em lote: rascunhos (excluir) e autorizados (cancelar)
+  const [rascSel, setRascSel] = useState<Set<string>>(new Set());
+  const [autSel, setAutSel] = useState<Set<string>>(new Set());
+  const [confLoteRasc, setConfLoteRasc] = useState(false);
+  const [confLoteCanc, setConfLoteCanc] = useState(false);
+  const [justLote, setJustLote] = useState("ERRO DE EMISSAO DO MDF-E");
+  const [loteMdfProc, setLoteMdfProc] = useState(false);
+  const trocarAbaMdf = (v: string) => { setFiltroStatus(v); setRascSel(new Set()); setAutSel(new Set()); };
   const excluirRejeitado = async (d: MdfDoc) => {
     const { error } = await supabase.from("mdf_documentos" as any).delete().eq("id", d.id);
     if (error) toast.error(error.message);
@@ -208,6 +216,42 @@ function MdfPage() {
     if (error) toast.error(error.message);
     else { toast.success("Rascunho excluído"); invalidarMdf(); }
     setConfExcluir(null);
+  };
+  // ids selecionáveis na lista atual
+  const excluirLoteRascunhos = async () => {
+    const ids = idsRascSel.filter(id => rascSel.has(id));
+    if (!ids.length || loteMdfProc) return;
+    setLoteMdfProc(true);
+    let ok = 0, falhas = 0;
+    for (const id of ids) {
+      const { error } = await supabase.from("mdf_documentos" as any).delete().eq("id", id);
+      if (error) falhas++; else ok++;
+    }
+    setRascSel(new Set());
+    invalidarMdf();
+    setConfLoteRasc(false);
+    setLoteMdfProc(false);
+    if (ok) toast.success(`${ok} rascunho(s) excluído(s)`);
+    if (falhas) toast.error(`${falhas} rascunho(s) falharam`);
+  };
+  const cancelarLoteMdf = async () => {
+    if (!empresa || !justLote.trim() || loteMdfProc) return;
+    const alvos = (docsFiltrados || []).filter(d => d.status === "autorizado" && autSel.has(d.id) && d.chave_acesso);
+    if (!alvos.length) return;
+    setLoteMdfProc(true);
+    let ok = 0, falhas = 0;
+    for (const d of alvos) {
+      try {
+        const res = await cancelarMdfFn({ data: { empresaId: empresa.id, chave: d.chave_acesso!, justificativa: justLote.trim(), cnpj: String((empresa as any)?.cnpj || ""), uf: d.uf_carregamento || "", protocolo: d.protocolo_sefaz || "" } });
+        if ((res as any)?.sucesso) ok++; else falhas++;
+      } catch { falhas++; }
+    }
+    setAutSel(new Set());
+    invalidarMdf();
+    setConfLoteCanc(false);
+    setLoteMdfProc(false);
+    if (ok) toast.success(`${ok} MDF-e(s) cancelado(s)`);
+    if (falhas) toast.error(`${falhas} MDF-e(s) falharam`);
   };
   const [consultandoChave, setConsultandoChave] = useState("");
   const xmlDeMdf = (d: MdfDoc) => {
@@ -389,6 +433,9 @@ function MdfPage() {
     if (s === "cancelado" || s === "rejeitado") return "destructive";
     return "outline";
   };
+  // ids selecionáveis na lista atual (após docsFiltrados)
+  const idsRascSel = (docsFiltrados || []).filter(d => d.status === "rascunho").map(d => d.id);
+  const idsAutSel = (docsFiltrados || []).filter(d => d.status === "autorizado").map(d => d.id);
 
   return (
     <div className="p-6 space-y-6">
@@ -411,7 +458,7 @@ function MdfPage() {
         </div>
       </div>
 
-      <Tabs value={filtroStatus} onValueChange={setFiltroStatus}>
+      <Tabs value={filtroStatus} onValueChange={trocarAbaMdf}>
         <div className="flex flex-wrap gap-3 items-end justify-between">
           <TabsList className="h-auto flex-wrap">
             <TabsTrigger value="rascunho" className="text-xs">Aguardando envio ({statusCounts.rascunho})</TabsTrigger>
@@ -441,6 +488,26 @@ function MdfPage() {
         </Tabs>
       )}
 
+      {(filtroStatus === "rascunho" || filtroStatus === "autorizados") && docsFiltrados.length > 0 && (
+        <div className="flex items-center justify-end gap-2">
+          {filtroStatus === "rascunho" ? (
+            <>
+              <span className="text-xs text-muted-foreground">{rascSel.size > 0 ? `${rascSel.size} selecionado(s)` : "Marque os rascunhos p/ excluir"}</span>
+              <Button size="sm" variant="outline" disabled={rascSel.size === 0 || loteMdfProc} onClick={() => setConfLoteRasc(true)}>
+                <Trash2 className="mr-1 h-4 w-4" /> Excluir selecionados{rascSel.size > 0 ? ` (${rascSel.size})` : ""}
+              </Button>
+            </>
+          ) : (
+            <>
+              <span className="text-xs text-muted-foreground">{autSel.size > 0 ? `${autSel.size} selecionado(s)` : "Marque os autorizados p/ cancelar"}</span>
+              <Button size="sm" variant="destructive" disabled={autSel.size === 0 || loteMdfProc} onClick={() => { setJustLote("ERRO DE EMISSAO DO MDF-E"); setConfLoteCanc(true); }}>
+                <XCircle className="mr-1 h-4 w-4" /> Cancelar selecionados{autSel.size > 0 ? ` (${autSel.size})` : ""}
+              </Button>
+            </>
+          )}
+        </div>
+      )}
+
       {isLoading ? (
         <div className="text-sm text-muted-foreground">Carregando…</div>
       ) : !docsFiltrados.length ? (
@@ -454,6 +521,26 @@ function MdfPage() {
             <Table>
               <TableHeader>
                 <TableRow>
+                  {filtroStatus === "rascunho" && idsRascSel.length > 0 && (
+                    <TableHead className="w-6">
+                      <input
+                        type="checkbox"
+                        checked={idsRascSel.every(id => rascSel.has(id))}
+                        onChange={() => setRascSel(prev => idsRascSel.every(id => prev.has(id)) ? new Set() : new Set([...prev, ...idsRascSel]))}
+                        title="Selecionar todos"
+                      />
+                    </TableHead>
+                  )}
+                  {filtroStatus === "autorizados" && idsAutSel.length > 0 && (
+                    <TableHead className="w-6">
+                      <input
+                        type="checkbox"
+                        checked={idsAutSel.every(id => autSel.has(id))}
+                        onChange={() => setAutSel(prev => idsAutSel.every(id => prev.has(id)) ? new Set() : new Set([...prev, ...idsAutSel]))}
+                        title="Selecionar todos"
+                      />
+                    </TableHead>
+                  )}
                   <TableHead>Placas</TableHead>
                   <TableHead>Motorista</TableHead>
                   <TableHead>Número</TableHead>
@@ -471,6 +558,26 @@ function MdfPage() {
                   const info = infoMdfLinha(d);
                   return (
                   <TableRow key={d.id}>
+                    {d.status === "rascunho" && filtroStatus === "rascunho" && (
+                      <TableCell>
+                        <input
+                          type="checkbox"
+                          checked={rascSel.has(d.id)}
+                          onChange={() => setRascSel(prev => { const next = new Set(prev); if (next.has(d.id)) next.delete(d.id); else next.add(d.id); return next; })}
+                          title="Selecionar p/ excluir"
+                        />
+                      </TableCell>
+                    )}
+                    {d.status === "autorizado" && filtroStatus === "autorizados" && (
+                      <TableCell>
+                        <input
+                          type="checkbox"
+                          checked={autSel.has(d.id)}
+                          onChange={() => setAutSel(prev => { const next = new Set(prev); if (next.has(d.id)) next.delete(d.id); else next.add(d.id); return next; })}
+                          title="Selecionar p/ cancelar"
+                        />
+                      </TableCell>
+                    )}
                     <TableCell className="font-mono text-xs">{info.placa || "—"}</TableCell>
                     <TableCell className="text-xs max-w-[180px] truncate" title={info.motorista}>{info.motorista || "—"}</TableCell>
                     <TableCell className="font-mono">{d.numero ?? "—"}</TableCell>
@@ -638,6 +745,53 @@ function MdfPage() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      <AlertDialog open={confLoteRasc} onOpenChange={setConfLoteRasc}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Excluir rascunhos</AlertDialogTitle>
+            <AlertDialogDescription>
+              Excluir {rascSel.size} rascunho(s) selecionado(s)? Os CT-es voltam a ficar sem MDF-e.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              data-acao
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              onClick={() => void excluirLoteRascunhos()}
+              disabled={loteMdfProc}
+            >
+              {loteMdfProc ? "Excluindo…" : "Excluir"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      <Dialog open={confLoteCanc} onOpenChange={setConfLoteCanc}>
+        <DialogContent className="inset-auto left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-[420px] max-w-[calc(100vw-2rem)] h-auto max-h-[90vh] p-4 gap-3">
+          <DialogHeader><DialogTitle>Cancelar {autSel.size} MDF-e(s)</DialogTitle></DialogHeader>
+          <div className="space-y-2">
+            <div>
+              <Label>Motivo (obrigatório — vale para todos)</Label>
+              <Select value={justLote} onValueChange={setJustLote}>
+                <SelectTrigger><SelectValue placeholder="Selecione o motivo" /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="ERRO DE EMISSAO DO MDF-E">ERRO DE EMISSÃO DO MDF-E</SelectItem>
+                  <SelectItem value="CLIENTE CANCELOU O SERVICO">CLIENTE CANCELOU O SERVIÇO</SelectItem>
+                  <SelectItem value="FALTA DE ENERGIA/IMPOSSIBILIDADE TECNICA">FALTA DE ENERGIA/IMPOSSIBILIDADE TÉCNICA</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setConfLoteCanc(false)}>Voltar</Button>
+            <Button variant="destructive" disabled={!justLote.trim() || loteMdfProc} onClick={() => void cancelarLoteMdf()}>
+              {loteMdfProc ? "Cancelando…" : "Confirmar Cancelamento"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
