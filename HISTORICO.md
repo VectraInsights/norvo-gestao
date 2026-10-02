@@ -4004,6 +4004,17 @@ Espelhado na Vercel.
   confirma (`data-acao`) / Esc cancela; `prompt` de motivo/filtro
   virou Dialog com campo. Grep confirma zero ocorrências.
 
+## CT-e: exportar, rateio Simp e dhEmi (02/10)
+
+- Diálogo de exportação: título "Exportar", "Selecione o formato:",
+  opções só PDF / XML / PDF-XML; botão da aba virou "Exportar (N)".
+- Simplificado com 2+ NF-es repetia o frete cheio em cada `det`
+  (2×4404 com total 4404). Agora rateia por det proporcional ao valor
+  das NF-es (último absorve centavos; soma fecha no total; `vRec` =
+  `vPrest` por det, regra G043 ok). Validado em vitest temporário.
+- `dhEmi`/`dhEvento` saíam `+00:00` (servidor em UTC); agora sempre
+  horário de Brasília `-03:00` (`dhBrt()`), nos dois modelos.
+
 ## MDF-e: tooltip no Emitir bloqueado (02/10)
 
 - Botao Emitir MDF-e mostra ao passar o mouse o que falta (percurso, veiculo, motorista, UFs).
