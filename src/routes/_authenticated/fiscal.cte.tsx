@@ -3312,14 +3312,16 @@ function CtePage() {
 
   const excluirRascunho = async (doc: CteDoc) => {
     if (!empresa) return;
+    if (!doc.id) { toast.error("Rascunho sem id — recarregue a página (Ctrl+F5)"); return; }
     try {
       let parsed: any = {};
       try { parsed = JSON.parse(doc.xml_assinado || "{}"); } catch { parsed = {}; }
-      const { error: delErr } = await supabase
+      const { error: delErr, count } = await supabase
         .from("cte_documentos" as any)
-        .delete()
+        .delete({ count: "exact" })
         .eq("id", doc.id);
       if (delErr) throw delErr;
+      if (!count) throw new Error("o banco não removeu o rascunho (0 linhas afetadas)");
       setConfRascunho(null);
       qc.invalidateQueries({ queryKey: ["cte-documentos"] });
       toast.success("Rascunho excluído");
