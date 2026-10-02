@@ -4025,6 +4025,15 @@ Espelhado na Vercel.
   só conta `sucesso === true`, resto vira falha.
 - Botão/diálogo "Preencher lote" viraram "Preencher CIOT".
 
+## CT-e Normal: 225 resolvido via XSD oficial (02/10)
+
+- Baixado o XSD oficial (`cteTiposBasico_v4.00.xsd`, NT2026.002) e
+  extraída a sequência do TCTe: faltava `<indIEToma>` no `ide`
+  (antes do toma3/toma4) e o `vTotDFe` é filho do `<imp>` — não
+  existe grupo `<total>` no Normal (só no Simp). Corrigidos os dois;
+  validado em vitest temporário. `infModal` é `xs:any skip`, então
+  rodo/veículos não eram a causa.
+
 ## MDF-e: tooltip no Emitir bloqueado (02/10)
 
 - Botao Emitir MDF-e mostra ao passar o mouse o que falta (percurso, veiculo, motorista, UFs).
