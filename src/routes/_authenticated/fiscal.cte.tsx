@@ -5224,6 +5224,17 @@ function CtePage() {
                               </Button>
                             </>
                           )}
+                          {d.status === "rejeitado" && String(d.xml_assinado || "").includes("<") && (
+                            <Button
+                              size="icon"
+                              variant="ghost"
+                              className="h-7 w-7 text-sky-600"
+                              onClick={() => downloadXml(d)}
+                              title="Baixar XML rejeitado (para diagnóstico)"
+                            >
+                              <FileCode className="h-3.5 w-3.5" />
+                            </Button>
+                          )}
                         </>
                       )}
                       {!isRascunho && !cancBloq && (
