@@ -4023,3 +4023,7 @@ Espelhado na Vercel.
 ## CT-e trava coleta/entrega da NF-e (02/10)
 
 - aplicarPercurso não sobrescreve cidade/UF de coleta e entrega quando a carga informa; trava da entrega só quando percurso foi a fonte. Aviso quando percurso diverge da NF-e.
+
+## CT-e percurso manda + Enter rascunho (02/10)
+
+- Entrega/coleta do percurso nunca mais perdem p/ NF-e (trava preservada ao reeditar rascunho). Enter em campo de texto do formulario salva rascunho.
