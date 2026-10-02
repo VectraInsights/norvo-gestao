@@ -29,8 +29,9 @@ export const CTE_ENDPOINTS = {
     consulta: "https://cte-homologacao.svrs.rs.gov.br/ws/CTeConsultaV4/CTeConsultaV4.asmx",
     statusServico: "https://cte-homologacao.svrs.rs.gov.br/ws/CTeStatusServicoV4/CTeStatusServicoV4.asmx",
     recepcaoEvento: "https://cte-homologacao.svrs.rs.gov.br/ws/CTeRecepcaoEventoV4/CTeRecepcaoEventoV4.asmx",
-    // MG tem autorizador próprio — CT-e Simplificado usa CTeRecepcaoSimpV4
+    // MG tem autorizador próprio — Simplificado usa CTeRecepcaoSimpV4, Normal usa CTeRecepcaoV4
     mg_recepcao: "https://hcte.fazenda.mg.gov.br/cte/services/CTeRecepcaoSimpV4",
+    mg_recepcao_normal: "https://hcte.fazenda.mg.gov.br/cte/services/CTeRecepcaoV4",
     mg_consulta: "https://hcte.fazenda.mg.gov.br/cte/services/CTeConsultaV4",
     mg_status: "https://hcte.fazenda.mg.gov.br/cte/services/CTeStatusServicoV4",
     mg_evento: "https://hcte.fazenda.mg.gov.br/cte/services/CTeRecepcaoEventoV4",
@@ -42,6 +43,7 @@ export const CTE_ENDPOINTS = {
     statusServico: "https://cte.svrs.rs.gov.br/ws/CTeStatusServicoV4/CTeStatusServicoV4.asmx",
     recepcaoEvento: "https://cte.svrs.rs.gov.br/ws/CTeRecepcaoEventoV4/CTeRecepcaoEventoV4.asmx",
     mg_recepcao: "https://cte.fazenda.mg.gov.br/cte/services/CTeRecepcaoSimpV4",
+    mg_recepcao_normal: "https://cte.fazenda.mg.gov.br/cte/services/CTeRecepcaoV4",
     mg_consulta: "https://cte.fazenda.mg.gov.br/cte/services/CTeConsultaV4",
     mg_status: "https://cte.fazenda.mg.gov.br/cte/services/CTeStatusServicoV4",
     mg_evento: "https://cte.fazenda.mg.gov.br/cte/services/CTeRecepcaoEventoV4",
@@ -55,13 +57,14 @@ function getCteEndpoints(ambiente: Ambiente, uf?: string) {
   if (uf?.toUpperCase() === "MG") {
     return {
       recepcao: (base as any).mg_recepcao,
+      recepcaoNormal: (base as any).mg_recepcao_normal,
       retRecepcao: base.retRecepcao,
       consulta: (base as any).mg_consulta,
       statusServico: (base as any).mg_status,
       recepcaoEvento: (base as any).mg_evento,
     };
   }
-  return base;
+  return { ...base, recepcaoNormal: base.recepcao };
 }
 
 // IBGE UF
@@ -96,10 +99,15 @@ export interface CteInputCompleto {
   tomador: TomadorCte;
   vPrest: number; vCarga: number; pesoKg: number; cfop: string;
   tpServ?: string;
+  // Normal (avulso) vs Simplificado: só o Simplificado usa <CTeSimp>
+  modelo?: "normal" | "simp";
+  componentes?: Array<{ xNome: string; vComp: number }>;
+  vRec?: number;
+  retira?: string;
   docAnt?: { chaves: string[]; tpPrest?: string };
   obs?: string;
   infCTeNorm?: { proPred?: string; xOutCat?: string };
-  modalRod?: { rntrc: string; ciot?: string; veiculos?: Array<{ placa: string; uf: string; renavam?: string; rntrc?: string }>; motoristas?: Array<{ xNome: string; cpf: string }> };
+  modalRod?: { rntrc: string; ciot?: string; veiculos?: Array<{ placa: string; uf: string; renavam?: string; rntrc?: string; tpRod?: string; tpCar?: string; tara?: number; capKG?: number }>; motoristas?: Array<{ xNome: string; cpf: string }> };
   chavesNFe?: string[];
   icms?: { CST: string; vBC: number; pICMS: number; vICMS: number };
   impostos?: { pisAliq?: number; cofinsAliq?: number; irAliq?: number; inssAliq?: number; csllAliq?: number };
@@ -107,6 +115,7 @@ export interface CteInputCompleto {
 
 export function buildCteXml(input: CteInputCompleto): { xml: string; chave: string } {
   assertSefazAmbiente(input.ambiente);
+  if (input.modelo === "normal") return buildCteNormalXml(input);
   const rntrcRaw = String(input.modalRod?.rntrc || (input as any).rntrc || "ISENTO").toUpperCase();
   let rntrcXml = rntrcRaw === "ISENTO" ? "ISENTO" : rntrcRaw.replace(/\D/g, "");
   while (rntrcXml.length > 8 && rntrcXml.startsWith("0")) rntrcXml = rntrcXml.slice(1);
@@ -231,6 +240,171 @@ export function buildCteXml(input: CteInputCompleto): { xml: string; chave: stri
   return { xml, chave };
 }
 
+// Escapa texto livre p/ XML (& < > " ')
+function escCte(v: unknown): string {
+  return String(v ?? "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&apos;");
+}
+
+// CT-e Normal 4.00 (tpCTe=0): root <CTe>, toma3/toma4 no ide, rem/dest,
+// vPrest com componentes, infCTeNorm (infCarga/infDoc/infModal).
+export function buildCteNormalXml(input: CteInputCompleto): { xml: string; chave: string } {
+  assertSefazAmbiente(input.ambiente);
+  const rntrcRaw = String(input.modalRod?.rntrc || (input as any).rntrc || "ISENTO").toUpperCase();
+  let rntrcXml = rntrcRaw === "ISENTO" ? "ISENTO" : rntrcRaw.replace(/\D/g, "");
+  while (rntrcXml.length > 8 && rntrcXml.startsWith("0")) rntrcXml = rntrcXml.slice(1);
+  if (!/^(ISENTO|\d{8})$/.test(rntrcXml)) throw new Error(`RNTRC invalido para a SEFAZ (8 digitos ou ISENTO): ${input.modalRod?.rntrc || (input as any).rntrc || ""}`);
+  const motoXml = (((input.modalRod as any)?.motoristas || []) as Array<{ xNome?: string; cpf?: string }>).map(m => {
+    const nm = String(m?.xNome || "").toUpperCase().slice(0, 60).trim();
+    const cpf = String(m?.cpf || "").replace(/\D/g, "");
+    return (nm.length >= 2 && /^\d{11}$/.test(cpf)) ? `<moto><xNome>${escCte(nm)}</xNome><CPF>${cpf}</CPF></moto>` : "";
+  }).join("");
+  const now = new Date();
+  const tzOffset = now.getTimezoneOffset();
+  const tzH = String(Math.floor(Math.abs(tzOffset) / 60)).padStart(2, "0");
+  const tzM = String(Math.abs(tzOffset) % 60).padStart(2, "0");
+  const tzSign = tzOffset <= 0 ? "+" : "-";
+  const dhEmi = now.getFullYear() + "-" +
+    String(now.getMonth() + 1).padStart(2, "0") + "-" +
+    String(now.getDate()).padStart(2, "0") + "T" +
+    String(now.getHours()).padStart(2, "0") + ":" +
+    String(now.getMinutes()).padStart(2, "0") + ":" +
+    String(now.getSeconds()).padStart(2, "0") +
+    tzSign + tzH + ":" + tzM;
+  const cUF = codigoUF(input.ufEnv || input.emit.uf);
+  const aamm = dhEmi.slice(2,4) + dhEmi.slice(5,7);
+  const cnpjLimpo = input.emit.cnpj.replace(/\D/g,"").padStart(14,"0");
+  const serie = String(parseInt(input.serie || "1", 10));
+  const seriePadded = serie.padStart(3,"0");
+  const nCT = String(parseInt(input.numero || "1", 10));
+  const nCTPadded = nCT.padStart(9,"0");
+  const cCT = String(Math.floor(Math.random()*100000000)).padStart(8,"0");
+  const chave = gerarChaveCte(cUF, aamm, cnpjLimpo, "57", seriePadded, nCTPadded, "1", cCT);
+  const id = `CTe${chave}`;
+  const natOp = input.natOp || "PRESTACAO DE SERVICO DE TRANSPORTE";
+  const toma = String(input.tomador.toma || "0");
+  if (!/^[0-4]$/.test(toma)) throw new Error(`Tomador invalido no CT-e Normal (0-4): ${toma}`);
+  const crtRaw = String(input.emit.crt || "3").toLowerCase().trim();
+  const crt = /^[1-4]$/.test(crtRaw) ? crtRaw : crtRaw.includes("mei") ? "4" : crtRaw.includes("simples") ? "1" : "3";
+
+  // Endereços (rem/dest/toma4): xLgr+nro+xBairro+cMun+xMun+CEP+UF
+  const enderXml = (tag: string, e: any) => {
+    const cMun = String(e?.cMun || "").replace(/\D/g, "").padStart(7, "0");
+    const cep = String(e?.cep || "").replace(/\D/g, "").padStart(8, "0");
+    const xLgr = String(e?.logradouro || "").trim();
+    const xBairro = String(e?.bairro || "").trim();
+    return `<${tag}><xLgr>${escCte(xLgr.length >= 2 ? xLgr : "RUA GERAL")}</xLgr><nro>${escCte(String(e?.nro || "SN").trim() || "SN")}</nro><xBairro>${escCte(xBairro.length >= 2 ? xBairro : "CENTRO")}</xBairro><cMun>${cMun}</cMun><xMun>${escCte(e?.xMun || "")}</xMun><CEP>${cep}</CEP><UF>${escCte(String(e?.uf || "").toUpperCase())}</UF></${tag}>`;
+  };
+  const docXml = (p: any) => {
+    const cnpj = String(p?.cnpj || "").replace(/\D/g, "");
+    const cpf = String(p?.cpf || "").replace(/\D/g, "");
+    if (cnpj.length === 14) return `<CNPJ>${cnpj}</CNPJ>`;
+    if (cpf.length === 11) return `<CPF>${cpf}</CPF>`;
+    throw new Error("CT-e Normal exige CNPJ (14) ou CPF (11) do " + (p?.papel || "participante"));
+  };
+  const ieXml = (ie: unknown) => /^\d{2,14}$/.test(String(ie || "")) ? `<IE>${String(ie)}</IE>` : "";
+  const parteXml = (tag: string, enderTag: string, p: any, papel: string) => {
+    const xNome = String(p?.xNome || "").trim();
+    if (xNome.length < 2) throw new Error(`CT-e Normal exige nome do ${papel}`);
+    return `<${tag}>${docXml({ ...p, papel })}${ieXml(p?.ie)}<xNome>${escCte(xNome.slice(0, 60))}</xNome>${p?.xFant && String(p.xFant).trim().length >= 2 ? `<xFant>${escCte(String(p.xFant).trim().slice(0, 60))}</xFant>` : ""}${p?.fone ? `<fone>${escCte(String(p.fone).replace(/\D/g, "").slice(0, 11))}</fone>` : ""}${enderXml(enderTag, p)}${p?.email ? `<email>${escCte(String(p.email).trim().slice(0, 60))}</email>` : ""}</${tag}>`;
+  };
+  if (!input.rem) throw new Error("CT-e Normal exige remetente (rem)");
+  if (!input.dest) throw new Error("CT-e Normal exige destinatario (dest)");
+
+  // toma3 (0/1/2) ou toma4 (3/4 com endereço)
+  const tomaXml = ["0", "1", "2"].includes(toma)
+    ? `<toma3><toma>${toma}</toma></toma3>`
+    : (() => {
+        const t = input.tomador;
+        const xNomeToma4 = input.ambiente === "homologacao" ? HOMOLOG_TOMADOR_NOME : String(t.xNome || "").trim();
+        if (xNomeToma4.length < 2) throw new Error("CT-e Normal exige nome do tomador");
+        return `<toma4><toma>${toma}</toma>${docXml({ cnpj: t.cnpj, cpf: t.cpf, papel: "tomador" })}${ieXml(t.ie)}<xNome>${escCte(xNomeToma4.slice(0, 60))}</xNome>${enderXml("enderToma", t)}${t.email ? `<email>${escCte(String(t.email).trim().slice(0, 60))}</email>` : ""}</toma4>`;
+      })();
+
+  const enderEmit = `<enderEmit><xLgr>${escCte((input.emit.logradouro || "RUA").length >= 2 ? (input.emit.logradouro || "RUA") : "RUA GERAL")}</xLgr><nro>${escCte(input.emit.nro || "SN")}</nro><xBairro>${escCte((input.emit.bairro || "CENTRO").length >= 2 ? (input.emit.bairro || "CENTRO") : "CENTRO")}</xBairro><cMun>${String(input.emit.cMun || "").replace(/\D/g, "").padStart(7, "0")}</cMun><xMun>${escCte(input.emit.xMun)}</xMun><CEP>${String(input.emit.cep || "").replace(/\D/g, "").padStart(8, "0")}</CEP><UF>${escCte(String(input.emit.uf || "").toUpperCase())}</UF></enderEmit>`;
+
+  // ICMS (mesma regra do Simplificado) + IBSCBS 2026
+  const icms = input.icms || { CST: "00", vBC: input.vPrest, pICMS: 0, vICMS: 0 };
+  const cst = (icms.CST || "00").padStart(2,"0");
+  const vBC = Number(icms.vBC ?? input.vPrest).toFixed(2);
+  const pICMS = Number(icms.pICMS ?? 0).toFixed(2);
+  const vICMS = Number(icms.vICMS ?? 0).toFixed(2);
+  let impXml: string;
+  if (cst === "00") impXml = `<imp><ICMS><ICMS00><CST>00</CST><vBC>${vBC}</vBC><pICMS>${pICMS}</pICMS><vICMS>${vICMS}</vICMS></ICMS00></ICMS></imp>`;
+  else if (cst === "20") impXml = `<imp><ICMS><ICMS20><CST>20</CST><pRedBC>0.00</pRedBC><vBC>${vBC}</vBC><pICMS>${pICMS}</pICMS><vICMS>${vICMS}</vICMS></ICMS20></ICMS></imp>`;
+  else if (cst === "40" || cst === "41" || cst === "45" || cst === "51") impXml = `<imp><ICMS><ICMS45><CST>${cst}</CST></ICMS45></ICMS></imp>`;
+  else if (cst === "60") impXml = `<imp><ICMS><ICMS60><CST>60</CST><vBCSTRet>0.00</vBCSTRet><vICMSSTRet>0.00</vICMSSTRet><pICMSSTRet>0.00</pICMSSTRet><vCred>0.00</vCred></ICMS60></ICMS></imp>`;
+  else if (cst === "90") impXml = `<imp><ICMS><ICMS90><CST>90</CST><pRedBC>0.00</pRedBC><vBC>${vBC}</vBC><pICMS>${pICMS}</pICMS><vICMS>${vICMS}</vICMS><vCred>0.00</vCred></ICMS90></ICMS></imp>`;
+  else throw new Error("CST " + cst + " nao existe no CT-e (valido: 00, 20, 40, 41, 45, 51, 60, 90)");
+  const vBCNum = Number(vBC);
+  const vIBSUF = Math.round(vBCNum * 0.001 * 100) / 100;
+  const vCBS = Math.round(vBCNum * 0.009 * 100) / 100;
+  const ibsXml = `<IBSCBS><CST>000</CST><cClassTrib>000001</cClassTrib><gIBSCBS><vBC>${vBC}</vBC><gIBSUF><pIBSUF>0.10</pIBSUF><vIBSUF>${vIBSUF.toFixed(2)}</vIBSUF></gIBSUF><gIBSMun><pIBSMun>0.00</pIBSMun><vIBSMun>0.00</vIBSMun></gIBSMun><vIBS>${vIBSUF.toFixed(2)}</vIBS><gCBS><pCBS>0.90</pCBS><vCBS>${vCBS.toFixed(2)}</vCBS></gCBS></gIBSCBS></IBSCBS>`;
+  impXml = impXml.replace(/<\/imp>$/, `${ibsXml}</imp>`);
+
+  // vPrest com componentes (soma = vTPrest; fallback FRETE único)
+  const vTPrest = Number(input.vPrest || 0);
+  const compsIn = (input.componentes || []).filter(c => Number(c.vComp) > 0).map(c => ({ xNome: String(c.xNome || "OUTROS").slice(0, 60).toUpperCase(), vComp: Number(c.vComp) }));
+  const somaComps = compsIn.reduce((s, c) => s + c.vComp, 0);
+  const comps = compsIn.length && somaComps <= vTPrest + 0.005
+    ? [...compsIn, ...(vTPrest - somaComps > 0.004 ? [{ xNome: "FRETE", vComp: Math.round((vTPrest - somaComps) * 100) / 100 }] : [])]
+    : [{ xNome: "FRETE", vComp: Math.round(vTPrest * 100) / 100 }];
+  const vRec = Number(input.vRec ?? vTPrest);
+  const vPrestXml = `<vPrest><vTPrest>${vTPrest.toFixed(2)}</vTPrest><vRec>${vRec.toFixed(2)}</vRec>${comps.map(c => `<Comp><xNome>${escCte(c.xNome)}</xNome><vComp>${c.vComp.toFixed(2)}</vComp></Comp>`).join("")}</vPrest>`;
+
+  // infDoc: <chave> por NF-e (+ docAnt quando houver)
+  const chsNfe = [...new Set(((input.chavesNFe || []).map(c => String(c).replace(/\D/g, "")).filter(c => c.length === 44)))];
+  if (!chsNfe.length) throw new Error("CT-e Normal exige ao menos 1 NF-e vinculada");
+  const docAntChs = [...new Set(((input.docAnt?.chaves || []).map(c => String(c).replace(/\D/g, "")).filter(c => c.length === 44)))];
+  const tpDocAnt = input.docAnt?.tpPrest === "2" ? "2" : "1";
+  const infDocXml = `<infDoc>${chsNfe.map(ch => `<infNFe><chave>${ch}</chave></infNFe>`).join("")}${docAntChs.map(ch => `<infDocAnt><chCTe>${ch}</chCTe><tpPrest>${tpDocAnt}</tpPrest></infDocAnt>`).join("")}</infDoc>`;
+
+  // Modal rodoviário: mesma estrutura do Simplificado (RNTRC + moto + tração + reboques)
+  const veics = ((input.modalRod as any)?.veiculos || []) as Array<{ placa?: string; uf?: string; renavam?: string; tpRod?: string; tpCar?: string; tara?: number; capKG?: number }>;
+  const veicTrac = veics[0];
+  const veicTracXml = veicTrac?.placa
+    ? `<veicTracao><placa>${escCte(String(veicTrac.placa).toUpperCase())}</placa>${veicTrac.renavam ? `<RENAVAM>${escCte(veicTrac.renavam)}</RENAVAM>` : ""}<tara>${Number(veicTrac.tara || 0).toFixed(0)}</tara><tpRod>${veicTrac.tpRod || "06"}</tpRod><tpCar>${veicTrac.tpCar || "00"}</tpCar><UF>${escCte(String(veicTrac.uf || input.ufIni || "").toUpperCase())}</UF></veicTracao>`
+    : "";
+  const veicRebXml = veics.slice(1, 4).filter(v => v?.placa).map(v =>
+    `<veicReboque><placa>${escCte(String(v.placa).toUpperCase())}</placa>${v.renavam ? `<RENAVAM>${escCte(v.renavam)}</RENAVAM>` : ""}<tara>${Number((v as any).tara || 0).toFixed(0)}</tara><capKG>${Number((v as any).capKG || 0).toFixed(0)}</capKG><tpCar>${(v as any).tpCar || "00"}</tpCar><UF>${escCte(String(v.uf || input.ufIni || "").toUpperCase())}</UF></veicReboque>`
+  ).join("");
+  const ciotXml = (input.modalRod as any)?.ciot ? `<CIOT>${escCte(String((input.modalRod as any).ciot).replace(/\D/g, ""))}</CIOT>` : "";
+
+  const vTotDFe = vTPrest.toFixed(2);
+  const qrBase = (input.ufEnv || input.emit.uf)?.toUpperCase() === "MG" ? "portalcte.fazenda.mg.gov.br/portalcte/sistema/qrcode.xhtml" : "dfeportal.svrs.rs.gov.br/cteQrCode";
+  const xml = `<?xml version="1.0" encoding="UTF-8"?>
+<CTe xmlns="http://www.portalfiscal.inf.br/cte">
+  <infCte Id="${id}" versao="4.00">
+    <ide>
+      <cUF>${cUF}</cUF><cCT>${cCT}</cCT><CFOP>${input.cfop}</CFOP><natOp>${escCte(natOp)}</natOp><mod>57</mod><serie>${serie}</serie><nCT>${nCT}</nCT><dhEmi>${dhEmi}</dhEmi>
+      <tpImp>1</tpImp><tpEmis>1</tpEmis><cDV>${chave.slice(-1)}</cDV><tpAmb>${SEFAZ_TP_AMB}</tpAmb><tpCTe>0</tpCTe><procEmi>0</procEmi><verProc>NORVO_1.0</verProc>
+      <cMunEnv>${input.cMunEnv}</cMunEnv><xMunEnv>${escCte(input.xMunEnv)}</xMunEnv><UFEnv>${escCte(String(input.ufEnv || "").toUpperCase())}</UFEnv>
+      <modal>01</modal><tpServ>${input.tpServ || "0"}</tpServ>
+      <UFIni>${escCte(String(input.ufIni || "").toUpperCase())}</UFIni><UFFim>${escCte(String(input.ufFim || "").toUpperCase())}</UFFim>
+      <retira>${input.retira || "1"}</retira>
+      ${tomaXml}
+    </ide>
+    <emit>
+      <CNPJ>${cnpjLimpo}</CNPJ>${/^\d{2,14}$/.test(String(input.emit.ie || "")) ? `<IE>${input.emit.ie}</IE>` : ""}<xNome>${escCte(input.emit.xNome)}</xNome>${enderEmit}<CRT>${crt}</CRT>
+    </emit>
+    ${parteXml("rem", "enderReme", input.rem, "remetente")}
+    ${parteXml("dest", "enderDest", input.dest, "destinatario")}
+    ${vPrestXml}
+    ${impXml}
+    <infCTeNorm>
+      <infCarga>
+        <vCarga>${Number(input.vCarga || 0).toFixed(2)}</vCarga><proPred>${escCte(input.infCTeNorm?.proPred || "CARGA GERAL")}</proPred>
+        <infQ><cUnid>01</cUnid><tpMed>00</tpMed><qCarga>${Number(input.pesoKg || 0).toFixed(4)}</qCarga></infQ>
+      </infCarga>
+      ${infDocXml}
+      <infModal versaoModal="4.00"><rodo><RNTRC>${rntrcXml}</RNTRC>${motoXml}${ciotXml}${veicTracXml}${veicRebXml}</rodo></infModal>
+    </infCTeNorm>
+    <infRespTec><CNPJ>${cnpjLimpo}</CNPJ><xContato>SUPORTE TECNICO</xContato><email>suporte@vectrainsights.com.br</email><fone>3139952572</fone></infRespTec>
+  </infCte>
+  <infCTeSupl><qrCodCTe>https://${qrBase}?chCTe=${chave}&amp;tpAmb=${SEFAZ_TP_AMB}</qrCodCTe></infCTeSupl>
+</CTe>`;
+  return { xml, chave };
+}
+
 async function soapRequest(url:string, body:string, action:string, agent?:https.Agent): Promise<string>{
   const u = new URL(url);
   const host = u.hostname.toLowerCase();
@@ -299,13 +473,17 @@ export async function emitirCte(pfx:Buffer, senha:string, xml:string, ambiente:A
   const isMG = uf?.toUpperCase() === "MG";
   console.log("[CTE-SEFAZ] UF:", uf, "isMG:", isMG, "ambiente:", ambiente, "endpoint:", isMG ? ep.recepcao : ep.recepcao);
   if (isMG) {
-    // MG CT-e Simplificado: namespace CTeRecepcaoSimpV4
-    const ns = "http://www.portalfiscal.inf.br/cte/wsdl/CTeRecepcaoSimpV4";
+    // MG: Simplificado usa CTeRecepcaoSimpV4; Normal usa CTeRecepcaoV4
+    const isSimp = xml.includes("<CTeSimp");
+    const ns = isSimp
+      ? "http://www.portalfiscal.inf.br/cte/wsdl/CTeRecepcaoSimpV4"
+      : "http://www.portalfiscal.inf.br/cte/wsdl/CTeRecepcaoV4";
+    const urlRecepcao = (isSimp ? ep.recepcao : (ep as any).recepcaoNormal) || ep.recepcao;
     const body=`<cteDadosMsg xmlns="${ns}">${dadosBase64}</cteDadosMsg>`;
     const envelope = `<?xml version="1.0" encoding="utf-8"?><soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/"><soap:Body>${body}</soap:Body></soap:Envelope>`;
     console.log("[CTE-SEFAZ] Envelope SOAP (tamanho):", Buffer.byteLength(envelope));
-    const u=new URL(ep.recepcao);
-    console.log("[CTE-SEFAZ] Endpoint URL:", ep.recepcao);
+    const u=new URL(urlRecepcao);
+    console.log("[CTE-SEFAZ] Endpoint URL:", urlRecepcao);
     const agent = createSefazAgent(pfx,senha);
     let ret: string;
     try {

@@ -3901,6 +3901,30 @@ function CtePage() {
             form,
             input: {
               ambiente: SEFAZ_AMBIENTE,
+              // Avulso = CT-e Normal (tpCTe 0); Simplificado = CTeSimp
+              modelo: (form as any).modoEmbarque === "simplificado" ? "simp" : "normal",
+              retira: "1",
+              rem: {
+                cnpj: m0.emitCnpj, xNome: m0.emit,
+                uf: m0.emitUF, cMun: m0.emitCMun, xMun: m0.emitXMun,
+                ie: m0.emitIE, cep: m0.emitCEP, logradouro: m0.emitLogradouro,
+                nro: m0.emitNro, bairro: m0.emitBairro, fone: m0.emitFone,
+              },
+              dest: {
+                cnpj: m0.destCnpj, xNome: m0.dest,
+                uf: m0.destUF, cMun: m0.destCMun, xMun: m0.destXMun,
+                ie: form.ieDestinatario || m0.destIE, cep: m0.destCEP, logradouro: m0.destLogradouro,
+                nro: m0.destNro, bairro: m0.destBairro, fone: m0.destFone,
+              },
+              componentes: [
+                { xNome: "FRETE", vComp: num2(form.vPrest) },
+                ...(num2(form.taxaColeta) > 0 ? [{ xNome: "COLETA", vComp: num2(form.taxaColeta) }] : []),
+                ...(num2(form.taxaEntrega) > 0 ? [{ xNome: "ENTREGA", vComp: num2(form.taxaEntrega) }] : []),
+                ...(num2(form.adValorem) > 0 ? [{ xNome: "AD VALOREM", vComp: num2(form.adValorem) }] : []),
+                ...(num2(form.gris) > 0 ? [{ xNome: "GRIS", vComp: num2(form.gris) }] : []),
+                ...(num2(form.outrosPed) > 0 ? [{ xNome: "OUTROS", vComp: num2(form.outrosPed) }] : []),
+                ...((form as any).adicionalPed && num2((form as any).adicionalPed) > 0 ? [{ xNome: "ADICIONAL", vComp: num2((form as any).adicionalPed) }] : []),
+              ],
               toma: form.toma,
               cnpjTomador: form.cnpjTomador,
               xNomeTomador: form.xNomeTomador,
@@ -3917,20 +3941,22 @@ function CtePage() {
                 rntrc: rntrcFinal,
                 motoristas: motoristasXml(),
                 veiculos: (() => {
-                  const vv = (veiculos || []).find(
-                    (v) =>
-                      String(v.placa || "").toUpperCase() ===
-                      String(form.placaVeiculo || "").toUpperCase(),
-                  );
-                  return form.placaVeiculo
-                    ? [
-                        {
-                          placa: String(form.placaVeiculo).toUpperCase(),
-                          uf: empresa.uf || "MG",
-                          renavam: (vv as any)?.renavam || undefined,
-                        },
-                      ]
-                    : [];
+                  const tpRodDeTipo = (t: any) => { const s = String(t || "").toLowerCase(); if (s.includes("cavalo")) return "03"; if (s.includes("truck") && !s.includes("bitruck")) return "01"; if (s.includes("toco")) return "02"; if (s.includes("van") || s.includes("furg")) return "04"; if (s.includes("utilit")) return "05"; return "06"; };
+                  const itemVeic = (placa: string) => {
+                    const vv = (veiculos || []).find((v) => String(v.placa || "").toUpperCase() === String(placa || "").toUpperCase());
+                    return {
+                      placa: String(placa).toUpperCase(),
+                      uf: empresa.uf || "MG",
+                      renavam: (vv as any)?.renavam || undefined,
+                      tpRod: tpRodDeTipo((vv as any)?.tipo),
+                      tpCar: "00",
+                    };
+                  };
+                  const out = form.placaVeiculo ? [itemVeic(form.placaVeiculo)] : [];
+                  for (const p of [form.placaReboque, form.semiReboque1, form.semiReboque2]) {
+                    if (String(p || "").trim()) out.push(itemVeic(p));
+                  }
+                  return out;
                 })(),
               },
               cMunEnv: form.cMunEnv,
@@ -4305,6 +4331,22 @@ function CtePage() {
           empresaId: empresa.id,
           input: {
             ambiente: SEFAZ_AMBIENTE,
+            modelo: (form as any).modoEmbarque === "simplificado" ? "simp" : "normal",
+            retira: "1",
+            rem: (() => { const a = (mercadorias.find((m) => chaves.includes(m.chave)) || mercadorias[0] || {}) as any; return {
+              cnpj: a.emitCnpj, xNome: a.emit, uf: a.emitUF, cMun: a.emitCMun, xMun: a.emitXMun,
+              ie: a.emitIE, cep: a.emitCEP, logradouro: a.emitLogradouro, nro: a.emitNro, bairro: a.emitBairro, fone: a.emitFone }; })(),
+            dest: (() => { const a = (mercadorias.find((m) => chaves.includes(m.chave)) || mercadorias[0] || {}) as any; return {
+              cnpj: a.destCnpj, xNome: a.dest, uf: a.destUF, cMun: a.destCMun, xMun: a.destXMun,
+              ie: form.ieDestinatario || a.destIE, cep: a.destCEP, logradouro: a.destLogradouro, nro: a.destNro, bairro: a.destBairro, fone: a.destFone }; })(),
+            componentes: [
+              { xNome: "FRETE", vComp: num2(form.vPrest) },
+              ...(num2(form.taxaColeta) > 0 ? [{ xNome: "COLETA", vComp: num2(form.taxaColeta) }] : []),
+              ...(num2(form.taxaEntrega) > 0 ? [{ xNome: "ENTREGA", vComp: num2(form.taxaEntrega) }] : []),
+              ...(num2(form.adValorem) > 0 ? [{ xNome: "AD VALOREM", vComp: num2(form.adValorem) }] : []),
+              ...(num2(form.gris) > 0 ? [{ xNome: "GRIS", vComp: num2(form.gris) }] : []),
+              ...(num2(form.outrosPed) > 0 ? [{ xNome: "OUTROS", vComp: num2(form.outrosPed) }] : []),
+            ],
             toma: form.toma,
             cnpjTomador: form.cnpjTomador,
             xNomeTomador: form.xNomeTomador,
@@ -8898,8 +8940,7 @@ function CtePage() {
                   </div>
                 )}
                 <p className="text-[9px] text-muted-foreground mt-1">
-                  CT-e Simplificado MG transmite sempre como Normal / Rodoviário; demais opções
-                  ficam salvas no rascunho.
+                  Avulso transmite como CT-e Normal; Simplificado transmite como CTeSimp.
                 </p>
               </Card>
             </TabsContent>
