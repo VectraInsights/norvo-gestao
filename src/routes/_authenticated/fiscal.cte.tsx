@@ -1685,6 +1685,7 @@ function CtePage() {
     setPercPickOpen(false);
     aplicarPercurso(r);
     percursoAplicadoKey.current = "pick|" + (r as any).id;
+    if ((r as any).entrega_xmun) travarPendenteRef.current = true;
     setAba("geral");
     setOpen(true);
     toast.success(`Percurso ${r.codigo} aplicado`);
@@ -3438,6 +3439,8 @@ function CtePage() {
     try {
       const parsed = JSON.parse(doc.xml_assinado || "{}");
       if (parsed.form) setForm(parsed.form);
+      // Rascunho restaurado manda: trava a entrega salva p/ a NF-e não sobrescrever
+      if ((parsed.form as any)?.xMunFim) travarPendenteRef.current = true;
       setViewDoc(null);
       setAba("geral");
       if (parsed.nfs && parsed.nfs.length > 0) {
@@ -4455,19 +4458,6 @@ function CtePage() {
   };
   const aplicarPercurso = (r: Record<string, any>) => {
     const stdAliq = (v: any, fb: any) => (v && Number(v) !== 0 ? String(v) : fb);
-    // TRAVA: coleta/entrega seguem a NF-e — percurso só preenche quando a carga não informa cidade
-    const nfTemColeta = (mercadorias || []).some((mm: any) => mm.emitXMun || mm.emitUF);
-    const nfTemEntrega = (mercadorias || []).some((mm: any) => mm.destXMun || mm.destUF);
-    const nfDest = (mercadorias || []).find((mm: any) => mm.destXMun || mm.destUF) as any;
-    if (nfTemEntrega && r.entrega_xmun && r.entrega_uf) {
-      const px = String(r.entrega_xmun || "").toUpperCase().trim();
-      const pu = String(r.entrega_uf || "").toUpperCase().trim();
-      const nx = String(nfDest?.destXMun || "").toUpperCase().trim();
-      const nu = String(nfDest?.destUF || "").toUpperCase().trim();
-      if (nx && (nx !== px || (nu && pu && nu !== pu))) {
-        toast.warning(`Percurso ${r.codigo || ""} indica entrega ${r.entrega_xmun}/${r.entrega_uf}, mas a NF-e é ${nfDest.destXMun}/${nfDest.destUF} — mantida a NF-e.`.replace("  ", " "));
-      }
-    }
     // IE do destinatário: NF-e (XML) > contato > percurso > mantém
     const destDocP = String(r.dest_cnpj || "").replace(/\D/g, "");
     const nfeDest =
@@ -4493,13 +4483,13 @@ function CtePage() {
       cepTomador: r.toma_cep || f.cepTomador,
       foneTomador: r.toma_fone || f.foneTomador,
       emailTomador: r.toma_email || f.emailTomador,
-      cMunIni: nfTemColeta ? (f.cMunIni || "") : (r.coleta_cmun || f.cMunIni),
-      xMunIni: nfTemColeta ? (f.xMunIni || "") : (r.coleta_xmun || f.xMunIni),
-      ufIni: nfTemColeta ? (f.ufIni || "") : (r.coleta_uf || f.ufIni),
+      cMunIni: r.coleta_cmun || f.cMunIni,
+      xMunIni: r.coleta_xmun || f.xMunIni,
+      ufIni: r.coleta_uf || f.ufIni,
       ieDestinatario: ieDestNfe || ieDestContato || r.dest_ie || (f as any).ieDestinatario || "",
-      cMunFim: nfTemEntrega ? (f.cMunFim || "") : (r.entrega_cmun || f.cMunFim),
-      xMunFim: nfTemEntrega ? (f.xMunFim || "") : (r.entrega_xmun || f.xMunFim),
-      ufFim: nfTemEntrega ? (f.ufFim || "") : (r.entrega_uf || f.ufFim),
+      cMunFim: r.entrega_cmun || f.cMunFim,
+      xMunFim: r.entrega_xmun || f.xMunFim,
+      ufFim: r.entrega_uf || f.ufFim,
       cfop: r.cfop || f.cfop,
       cnpjConsignatario: r.consig_cnpj || f.cnpjConsignatario,
       xNomeConsignatario: r.consig_nome || f.xNomeConsignatario,
@@ -4542,8 +4532,7 @@ function CtePage() {
 
       ...(r.obs_gerais ? { obsGerais: r.obs_gerais } : {}),
     }));
-    // Só trava a entrega no percurso quando ele foi a fonte (carga sem cidade de destino)
-    if (r.entrega_xmun && !nfTemEntrega) travarEntregaRef.current = true;
+    if (r.entrega_xmun) travarEntregaRef.current = true;
   };
   // Percurso é 100% automático e silencioso: salva/atualiza a cada emissão ou rascunho
   const persistirPercursoSilencioso = async () => {
@@ -4767,7 +4756,9 @@ function CtePage() {
   }, [docs, nfesTodas, percursoMatch, mercadorias, selecionadas, form.cnpjTomador]);
   useEffect(() => {
     percursoAplicadoKey.current = "";
-    travarEntregaRef.current = false;
+    // Preserva trava armada antes de abrir (rascunho/percurso manual); senão libera p/ NF-e preencher
+    travarEntregaRef.current = travarPendenteRef.current;
+    travarPendenteRef.current = false;
   }, [open]);
   useEffect(() => {
     if (!open || percursos.length === 0) return;
@@ -4789,6 +4780,8 @@ function CtePage() {
   const entregaSrcRef = useRef("");
   // Entrega vinda do percurso não é sobrescrita pela NF-e (ex.: redespacho p/ outra cidade)
   const travarEntregaRef = useRef(false);
+  // Armado antes de abrir (rascunho restaurado, percurso manual): o reset do open preserva
+  const travarPendenteRef = useRef(false);
   useEffect(() => {
     if (!open) return;
     if (travarEntregaRef.current) return;
@@ -6633,7 +6626,21 @@ function CtePage() {
             event.stopPropagation();
             fecharDialogo();
           }}
-          onKeyDown={(event) => event.stopPropagation()}
+          onKeyDown={(event) => {
+            event.stopPropagation();
+            // Enter em campo de texto salva rascunho (textarea quebra linha; checkbox/radio/file ficam fora)
+            if (event.key === "Enter" && !event.shiftKey && !event.ctrlKey && !event.altKey && !event.metaKey) {
+              const t = event.target as HTMLElement;
+              if (
+                t.tagName === "INPUT" &&
+                !["checkbox", "radio", "file", "button", "submit", "hidden"].includes((t as HTMLInputElement).type) &&
+                !t.closest('[role="combobox"],[role="listbox"],[role="option"],[role="dialog"],[data-radix-popper-content-wrapper]')
+              ) {
+                event.preventDefault();
+                if (!salvarRascunho.isPending) salvarRascunho.mutate();
+              }
+            }
+          }}
           className="w-screen h-screen max-w-none max-h-none m-0 rounded-none overflow-y-auto"
         >
           <DialogHeader>
