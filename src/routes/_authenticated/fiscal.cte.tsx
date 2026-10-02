@@ -9215,10 +9215,10 @@ function CtePage() {
             emitIE: f.emit?.ie || "ISENTO",
             respEmissao: respNome,
             tomadorCnpj: f.cnpjTomador || "",
-            // Manter igual a HOMOLOG_TOMADOR_NOME em sefaz-cte.ts (SEFAZ-MG exige em homologação, erro 938)
+            // Manter igual a HOMOLOG_TOMADOR_NOME em sefaz-cte.ts (SEFAZ exige em homologação: 646 rem / 649 dest)
             tomadorNome:
               SEFAZ_AMBIENTE === "homologacao"
-                ? "CTE EMITIDO EM AMBIENTE DE HOMOLOGACAO - SEM VALOR FISCAL"
+                ? "CT-E EMITIDO EM AMBIENTE DE HOMOLOGACAO - SEM VALOR FISCAL"
                 : "",
             tomadorEndereco:
               `${(f.logradouroTomador || "").trim()}${f.nroTomador ? ", " + f.nroTomador : ""}${f.bairroTomador ? " - " + f.bairroTomador : ""}`.trim(),
@@ -9226,7 +9226,10 @@ function CtePage() {
             tomadorCidade: f.xMunTomador || "",
             tomadorUF: f.ufTomador || "",
             remCnpj: first.emitCnpj || "",
-            remNome: first.emit || "",
+            remNome:
+              SEFAZ_AMBIENTE === "homologacao"
+                ? "CT-E EMITIDO EM AMBIENTE DE HOMOLOGACAO - SEM VALOR FISCAL"
+                : first.emit || "",
             remCidade: first.emitXMun || cRem.cidade || "",
             remUF: first.emitUF || cRem.uf || "",
             remEndereco: first.emitLogradouro || cRem.logradouro || "",
@@ -9235,7 +9238,10 @@ function CtePage() {
             remIE: first.emitIE || cRem.ie || "",
             remFone: first.emitFone || cRem.telefone || "",
             destCnpj: first.destCnpj || "",
-            destNome: first.dest || "",
+            destNome:
+              SEFAZ_AMBIENTE === "homologacao"
+                ? "CT-E EMITIDO EM AMBIENTE DE HOMOLOGACAO - SEM VALOR FISCAL"
+                : first.dest || "",
             destCidade: first.destXMun || cDst.cidade || "",
             destUF: first.destUF || cDst.uf || "",
             destEndereco: first.destLogradouro || cDst.logradouro || "",

@@ -4061,3 +4061,19 @@ Espelhado na Vercel.
 ## CT-e percurso manda + Enter rascunho (02/10)
 
 - Entrega/coleta do percurso nunca mais perdem p/ NF-e (trava preservada ao reeditar rascunho). Enter em campo de texto do formulario salva rascunho.
+
+## CT-e: rejeição 649 do destinatário em homologação (02/10)
+
+- Causa: `buildCteNormalXml` só forçava a razão social padrão no `rem` (646);
+  o `dest` ia com o nome real da NF-e e a SEFAZ-MG devolvia 649
+  ("Razao Social do destinatario diferente de CT-E EMITIDO EM AMBIENTE DE
+  HOMOLOGACAO - SEM VALOR FISCAL"). O 217 no consSit depois é esperado
+  (rejeitado não grava na base).
+- Correção: literal confirmado na base Oobj/MOC 3.00 — é `CT-E ...` COM hífen
+  (o nosso estava `CTE ...` sem hífen). `HOMOLOG_TOMADOR_NOME` corrigido em
+  `sefaz-cte.ts` e `buildCteNormalXml` agora força o literal em `rem` (646)
+  E `dest` (649) quando `ambiente=homologacao` (vale p/ emissão direta e
+  proxy Vercel, que usam o mesmo builder; Simp já forçava o toma).
+- Preview DACTE em homologação mostra rem/dest/tomador com o literal;
+  logs `[CTE-DEBUG]`/`[CTE-PROXY-DEBUG]` passam a registrar
+  toma/modelo/rem.xNome/dest.xNome p/ diagnóstico direto.

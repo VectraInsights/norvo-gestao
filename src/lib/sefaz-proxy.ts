@@ -174,6 +174,7 @@ export async function handleSefazProxy(request: Request): Promise<Response> {
         } };
         const { xml, chave } = buildCteXml(input);
         console.log("[CTE-PROXY-DEBUG] tomador xNome:", input.tomador?.xNome, "CNPJ:", input.tomador?.cnpj);
+        console.log("[CTE-PROXY-DEBUG] rem/dest:", JSON.stringify({ toma: (input as any).tomador?.toma ?? (input as any).toma, modelo: (input as any).modelo, rem: (input as any).rem?.xNome, dest: (input as any).dest?.xNome }));
         console.info("[CTE-PROXY] XML gerado para emissão", { chave, ambiente: cteAmbiente });
         const ret = await emitirCte(pfxBytes, senha, xml, cteAmbiente, emitUf);
         const supa3 = createClient(process.env.SUPABASE_URL||"", process.env.SUPABASE_SERVICE_ROLE_KEY||"");

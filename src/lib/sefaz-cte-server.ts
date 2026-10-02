@@ -74,6 +74,7 @@ export const emitirCteFn = createServerFn({ method: "POST" }).validator((d: { em
     icms: data.input.icms || { CST: form.icmsCST || "00", vBC: Number(form.icmsBase || 0), pICMS: Number(form.icmsAliq || 7), vICMS: Number(form.icmsValor || 0) },
   };
   console.log("[CTE-DEBUG] tomador xNome:", input.tomador?.xNome, "CNPJ:", input.tomador?.cnpj, "hex:", Buffer.from(input.tomador?.xNome||"").toString("hex"));
+  console.log("[CTE-DEBUG] rem/dest:", JSON.stringify({ toma: (input as any).tomador?.toma ?? (input as any).toma, modelo: (input as any).modelo, rem: (input as any).rem?.xNome, dest: (input as any).dest?.xNome }));
   const { xml, chave } = buildCteXml(input);
   console.info("[CTE] XML gerado", { chave, bytes: Buffer.byteLength(xml, "utf8") });
   console.info("[CTE] dados de emissão preparados", { temTomador: Boolean(input.tomador), temEmitente: Boolean(input.emit) });

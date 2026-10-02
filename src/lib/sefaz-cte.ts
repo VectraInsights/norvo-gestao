@@ -17,9 +17,11 @@ export { buscarCertificadoAtivo };
 
 export type Ambiente = "homologacao" | "producao";
 
-// SEFAZ-MG exige em homologação (erro 938) que a razão social do tomador seja
-// literalmente este texto. Manter sincronizado com o preview em fiscal.cte.tsx.
-export const HOMOLOG_TOMADOR_NOME = "CTE EMITIDO EM AMBIENTE DE HOMOLOGACAO - SEM VALOR FISCAL";
+// SEFAZ exige em homologação (tpAmb=2) a razão social literal em rem/dest/toma:
+// "CT-E EMITIDO EM AMBIENTE DE HOMOLOGACAO - SEM VALOR FISCAL" (com hífen em CT-E).
+// Regras: 646 (remetente), 649 (destinatário), 650 (tomador quando toma3/toma4 tem xNome).
+// Ref: MOC 3.00 + base Oobj (G002/G005). Manter sincronizado com o preview em fiscal.cte.tsx.
+export const HOMOLOG_TOMADOR_NOME = "CT-E EMITIDO EM AMBIENTE DE HOMOLOGACAO - SEM VALOR FISCAL";
 
 export const CTE_ENDPOINTS = {
   homologacao: {
@@ -316,10 +318,15 @@ export function buildCteNormalXml(input: CteInputCompleto): { xml: string; chave
   };
   if (!input.rem) throw new Error("CT-e Normal exige remetente (rem)");
   if (!input.dest) throw new Error("CT-e Normal exige destinatario (dest)");
-  // MG homologação (regra 646): razão social do REMETENTE tem que ser o padrão
+  // Homologação (tpAmb=2): SEFAZ exige a razão social literal em REMETENTE (646)
+  // e DESTINATÁRIO (649). Sem isso o doc é rejeitado (o 217 no consSit depois é
+  // esperado: rejeitado não grava na base).
   const remHml = input.ambiente === "homologacao"
     ? { ...input.rem, xNome: HOMOLOG_TOMADOR_NOME }
     : input.rem;
+  const destHml = input.ambiente === "homologacao"
+    ? { ...input.dest, xNome: HOMOLOG_TOMADOR_NOME }
+    : input.dest;
 
   // toma3 (0/1/2) ou toma4 (3/4 com endereço)
   const tomaXml = ["0", "1", "2"].includes(toma)
@@ -404,7 +411,7 @@ export function buildCteNormalXml(input: CteInputCompleto): { xml: string; chave
       <CNPJ>${cnpjLimpo}</CNPJ>${/^\d{2,14}$/.test(String(input.emit.ie || "")) ? `<IE>${input.emit.ie}</IE>` : ""}<xNome>${escCte(input.emit.xNome)}</xNome>${enderEmit}<CRT>${crt}</CRT>
     </emit>
     ${parteXml("rem", "enderReme", remHml, "remetente")}
-    ${parteXml("dest", "enderDest", input.dest, "destinatario")}
+    ${parteXml("dest", "enderDest", destHml, "destinatario")}
     ${vPrestXml}
     ${impXml}
     <infCTeNorm>
