@@ -1394,24 +1394,7 @@ function CtePage() {
       toast.error("Erro ao gerar PDF", { description: e.message });
     }
   };
-  // Baixa XML/PDF dos autorizados marcados (Sem e Com MDF-e) — um por vez
-  const baixarXmlSilencioso = (doc: CteDoc) => {
-    if (!doc.xml_assinado) return false;
-    let xmlContent = doc.xml_assinado;
-    try {
-      const parsed = JSON.parse(doc.xml_assinado);
-      if (parsed.xml) xmlContent = parsed.xml;
-    } catch {}
-    if (!xmlContent || !xmlContent.includes("<")) return false;
-    const blob = new Blob([xmlContent], { type: "application/xml" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = `${(doc.chave_acesso || "").replace(/\D/g, "") || doc.numero || "0"}.xml`;
-    a.click();
-    URL.revokeObjectURL(url);
-    return true;
-  };
+  // Baixa XML/PDF dos autorizados marcados (Sem e Com MDF-e) em um único zip
   const importarLote = async () => {
     const docs =
       mdfVincTab === "com"
@@ -1419,35 +1402,52 @@ function CtePage() {
         : autSemMdf.filter((d) => d.chave_acesso && mdfSel.has(d.chave_acesso));
     if (!docs.length || impProc) return;
     setImpProc(true);
-    let ok = 0;
-    let falhas = 0;
     try {
+      const { default: JSZip } = await import("jszip");
+      const zip = new JSZip();
+      let ok = 0;
+      let falhas = 0;
       for (const d of docs) {
+        const base = (d.chave_acesso || "").replace(/\D/g, "") || String(d.numero || "0");
         try {
-          if (impTipo !== "pdf" && !baixarXmlSilencioso(d)) throw new Error("sem XML");
+          if (impTipo !== "pdf") {
+            if (!d.xml_assinado) throw new Error("sem XML");
+            let xmlContent = d.xml_assinado;
+            try {
+              const parsed = JSON.parse(d.xml_assinado);
+              if (parsed.xml) xmlContent = parsed.xml;
+            } catch {}
+            if (!xmlContent || !xmlContent.includes("<")) throw new Error("sem XML");
+            zip.file(`${base}.xml`, xmlContent);
+          }
           if (impTipo !== "xml") {
             const pdfBlob = await gerarDacteBlob(d);
             if (!pdfBlob) throw new Error("sem PDF");
-            const url = URL.createObjectURL(pdfBlob);
-            const a = document.createElement("a");
-            a.href = url;
-            a.download = `${(d.chave_acesso || "").replace(/\D/g, "") || d.numero || "0"}.pdf`;
-            a.click();
-            URL.revokeObjectURL(url);
+            zip.file(`${base}.pdf`, pdfBlob);
           }
           ok++;
         } catch {
           falhas++;
         }
-        await new Promise((r) => setTimeout(r, 700));
       }
+      if (ok) {
+        const agora = new Date();
+        const stamp = `${agora.getFullYear()}${String(agora.getMonth() + 1).padStart(2, "0")}${String(agora.getDate()).padStart(2, "0")}-${String(agora.getHours()).padStart(2, "0")}${String(agora.getMinutes()).padStart(2, "0")}`;
+        const content = await zip.generateAsync({ type: "blob" });
+        const url = URL.createObjectURL(content);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = `ctes-${stamp}.zip`;
+        a.click();
+        URL.revokeObjectURL(url);
+        toast.success(`${ok} documento(s) no zip`);
+      }
+      if (falhas) toast.error(`${falhas} falharam`);
     } finally {
       setImpProc(false);
       setImpOpen(false);
       setImpSel(new Set());
     }
-    if (ok) toast.success(`${ok} documento(s) baixado(s)`);
-    if (falhas) toast.error(`${falhas} falharam`);
   };
   const visualizarPdf = async (doc: CteDoc) => {
     try {
