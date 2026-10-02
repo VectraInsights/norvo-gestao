@@ -4011,3 +4011,7 @@ Espelhado na Vercel.
 ## CT-e Transporte limpo (02/10)
 
 - Rótulo CIOT sem (ANTT direto); removidos 15 placeholders de exemplo na aba Transporte (Nº CIOT, averbação, apólice, TAG, CNPJ, 0.00, buscas). Tooltip do Emitir simplificado p/ Necessário informar percurso.
+
+## CT-e veiculo 1 linha + TAG/VPO (02/10)
+
+- Dropdowns de tração/reboques mostram placa + modelo numa única linha. Campos Nº TAG e Identificador VPO trocaram de lugar.
