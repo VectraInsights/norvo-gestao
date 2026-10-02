@@ -1394,6 +1394,61 @@ function CtePage() {
       toast.error("Erro ao gerar PDF", { description: e.message });
     }
   };
+  // Baixa XML/PDF dos autorizados marcados (Sem e Com MDF-e) — um por vez
+  const baixarXmlSilencioso = (doc: CteDoc) => {
+    if (!doc.xml_assinado) return false;
+    let xmlContent = doc.xml_assinado;
+    try {
+      const parsed = JSON.parse(doc.xml_assinado);
+      if (parsed.xml) xmlContent = parsed.xml;
+    } catch {}
+    if (!xmlContent || !xmlContent.includes("<")) return false;
+    const blob = new Blob([xmlContent], { type: "application/xml" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `${(doc.chave_acesso || "").replace(/\D/g, "") || doc.numero || "0"}.xml`;
+    a.click();
+    URL.revokeObjectURL(url);
+    return true;
+  };
+  const importarLote = async () => {
+    const docs =
+      mdfVincTab === "com"
+        ? autComMdf.filter((d) => impSel.has(d.id))
+        : autSemMdf.filter((d) => d.chave_acesso && mdfSel.has(d.chave_acesso));
+    if (!docs.length || impProc) return;
+    setImpProc(true);
+    let ok = 0;
+    let falhas = 0;
+    try {
+      for (const d of docs) {
+        try {
+          if (impTipo !== "pdf" && !baixarXmlSilencioso(d)) throw new Error("sem XML");
+          if (impTipo !== "xml") {
+            const pdfBlob = await gerarDacteBlob(d);
+            if (!pdfBlob) throw new Error("sem PDF");
+            const url = URL.createObjectURL(pdfBlob);
+            const a = document.createElement("a");
+            a.href = url;
+            a.download = `${(d.chave_acesso || "").replace(/\D/g, "") || d.numero || "0"}.pdf`;
+            a.click();
+            URL.revokeObjectURL(url);
+          }
+          ok++;
+        } catch {
+          falhas++;
+        }
+        await new Promise((r) => setTimeout(r, 700));
+      }
+    } finally {
+      setImpProc(false);
+      setImpOpen(false);
+      setImpSel(new Set());
+    }
+    if (ok) toast.success(`${ok} documento(s) baixado(s)`);
+    if (falhas) toast.error(`${falhas} falharam`);
+  };
   const visualizarPdf = async (doc: CteDoc) => {
     try {
       const pdfBlob = await gerarDacteBlob(doc);
@@ -2232,6 +2287,11 @@ function CtePage() {
   const [aba, setAba] = useState("geral");
   const navigate = useNavigate();
   const [mdfSel, setMdfSel] = useState<Set<string>>(new Set());
+  // Importação em lote (XML/PDF) dos autorizados — vale p/ Sem e Com MDF-e
+  const [impSel, setImpSel] = useState<Set<string>>(new Set());
+  const [impOpen, setImpOpen] = useState(false);
+  const [impTipo, setImpTipo] = useState<"pdf" | "xml" | "ambos">("ambos");
+  const [impProc, setImpProc] = useState(false);
   // Lote de envio (aba Aguardando envio) + ordenação das tabelas de documentos
   const [envSel, setEnvSel] = useState<Set<string>>(new Set());
   const [enviandoLote, setEnviandoLote] = useState(false);
@@ -4885,7 +4945,7 @@ function CtePage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open, mercadorias, selecionadas, percursos, contatoByDoc]);
   const autorizadosSelecionados = docsByStatus.autorizados.filter(
-    (d) => d.chave_acesso && mdfSel.has(d.chave_acesso),
+    (d) => d.chave_acesso && mdfSel.has(d.chave_acesso) && !mdfChaves?.has(d.chave_acesso),
   );
   // Ordem exibida na tabela de documentos (respeita o clique no cabeçalho);
   // o envio em lote segue essa ordem
@@ -4979,6 +5039,23 @@ function CtePage() {
                       />
                     </TableHead>
                   )}
+                  {rotulo === "autorizados" && semSelecao && lista.length > 0 && (
+                    <TableHead className="w-6">
+                      <input
+                        type="checkbox"
+                        checked={lista.every((d) => impSel.has(d.id))}
+                        onChange={() => {
+                          const ids = lista.map((d) => d.id);
+                          setImpSel((prev) =>
+                            ids.every((k) => prev.has(k))
+                              ? new Set([...prev].filter((k) => !ids.includes(k)))
+                              : new Set([...prev, ...ids]),
+                          );
+                        }}
+                        title="Selecionar todos p/ importar"
+                      />
+                    </TableHead>
+                  )}
                   <TH k="placas" label="Placa" />
                   <TH k="motorista" label="Motorista" />
                   <TH k="numero" label="Número" />
@@ -4996,6 +5073,9 @@ function CtePage() {
                   const nNFs = L.nfs ? L.nfs.split(", ") : [];
                   const info = { placas: L.placas ? L.placas.split(" / ") : [], motorista: L.motorista, dataEmi: L.dataEmi };
                   const isRascunho = d.status === "rascunho";
+                  // Com MDF-e ativo: sem botão de cancelar em hipótese alguma
+                  const stMdfRow = d.chave_acesso ? mdfStatusPorCte.get(d.chave_acesso) : undefined;
+                  const cancBloq = stMdfRow === "autorizado" || stMdfRow === "encerrado";
                   return (
                     <TableRow key={d.id} className={isRascunho ? "bg-muted/30" : ""}>
                       {rotulo === "autorizados" && !semSelecao && d.chave_acesso && (
@@ -5012,6 +5092,23 @@ function CtePage() {
                               })
                             }
                             title="Selecionar para MDF-e"
+                          />
+                        </TableCell>
+                      )}
+                      {rotulo === "autorizados" && semSelecao && (
+                        <TableCell>
+                          <input
+                            type="checkbox"
+                            checked={impSel.has(d.id)}
+                            onChange={() =>
+                              setImpSel((prev) => {
+                                const next = new Set(prev);
+                                if (next.has(d.id)) next.delete(d.id);
+                                else next.add(d.id);
+                                return next;
+                              })
+                            }
+                            title="Selecionar p/ importar"
                           />
                         </TableCell>
                       )}
@@ -5125,7 +5222,7 @@ function CtePage() {
                           )}
                         </>
                       )}
-                      {!isRascunho && (
+                      {!isRascunho && !cancBloq && (
                         <Button
                           size="icon"
                           variant="ghost"
@@ -5258,6 +5355,32 @@ function CtePage() {
                 }}
               >
                 Confirmar cancelamento
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+      )}
+      {impOpen && (
+        <Dialog open={impOpen} onOpenChange={setImpOpen}>
+          <DialogContent className="inset-auto left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-[420px] max-w-[calc(100vw-2rem)] h-auto max-h-[90vh] p-4 gap-3">
+            <DialogHeader>
+              <DialogTitle>Importar XML/PDF</DialogTitle>
+            </DialogHeader>
+            <div className="space-y-2">
+              <Label>O que baixar ({mdfVincTab === "com" ? impSel.size : autSemMdf.filter((d) => d.chave_acesso && mdfSel.has(d.chave_acesso)).length} selecionado(s))</Label>
+              <div className="flex flex-col gap-1.5">
+                {(["pdf", "xml", "ambos"] as const).map((v) => (
+                  <label key={v} className="flex items-center gap-2 text-sm cursor-pointer">
+                    <input type="radio" name="imp-tipo" checked={impTipo === v} onChange={() => setImpTipo(v)} />
+                    {v === "pdf" ? "Somente PDF (DACTE)" : v === "xml" ? "Somente XML" : "PDF + XML (ambos)"}
+                  </label>
+                ))}
+              </div>
+            </div>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setImpOpen(false)}>Voltar</Button>
+              <Button disabled={impProc} onClick={() => void importarLote()}>
+                {impProc ? "Baixando…" : "Baixar"}
               </Button>
             </DialogFooter>
           </DialogContent>
@@ -6069,7 +6192,7 @@ function CtePage() {
           <TabsContent value="autorizados" className="mt-0">
             {docsByStatus.autorizados.length > 0 && (
               <div className="mb-1 flex items-center justify-between gap-2">
-                <Tabs value={mdfVincTab} onValueChange={setMdfVincTab}>
+                <Tabs value={mdfVincTab} onValueChange={(v) => { setMdfVincTab(v); setImpSel(new Set()); }}>
                   <TabsList className="mb-0">
                     <TabsTrigger
                       value="sem"
@@ -6112,6 +6235,15 @@ function CtePage() {
                     }}
                   >
                     <Truck className="mr-1 h-3 w-3" /> Gerar MDF-e ({mdfSel.size})
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    disabled={(mdfVincTab === "com" ? impSel.size : autSemMdf.filter((d) => d.chave_acesso && mdfSel.has(d.chave_acesso)).length) === 0 || impProc}
+                    onClick={() => setImpOpen(true)}
+                    title="Baixar XML/PDF dos selecionados"
+                  >
+                    <Download className="mr-1 h-3 w-3" /> Importar XML/PDF ({mdfVincTab === "com" ? impSel.size : autSemMdf.filter((d) => d.chave_acesso && mdfSel.has(d.chave_acesso)).length})
                   </Button>
                 </div>
               </div>
