@@ -3574,7 +3574,9 @@ function CtePage() {
           await new Promise((r) => setTimeout(r, 600));
           const ret = await emitirLatest.current();
           if ((ret as any)?.ignored) continue;
-          ok++;
+          // Verde só com autorização real: rejeição/erro conta como falha.
+          if ((ret as any)?.sucesso) ok++;
+          else falhas++;
         } catch {
           falhas++;
         }
@@ -6176,7 +6178,7 @@ function CtePage() {
                   title="Preenche Nº CIOT e dados do pedágio nos rascunhos marcados"
                   onClick={() => { setLoteCiot(""); setLoteModo("manter"); setLoteOperadora(""); setLoteVpo(""); setLoteVale(""); setLoteCiotOpen(true); }}
                 >
-                  Preencher lote
+                  Preencher CIOT
                 </Button>
                 <Button
                   size="sm"
@@ -6629,7 +6631,7 @@ function CtePage() {
       <AlertDialog open={loteCiotOpen} onOpenChange={setLoteCiotOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Preencher lote ({envSel.size} rascunho{envSel.size !== 1 ? "s" : ""})</AlertDialogTitle>
+            <AlertDialogTitle>Preencher CIOT ({envSel.size} rascunho{envSel.size !== 1 ? "s" : ""})</AlertDialogTitle>
             <AlertDialogDescription>
               Aplica nos rascunhos marcados. Campos vazios mantêm o valor atual de cada um.
             </AlertDialogDescription>

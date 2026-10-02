@@ -29,9 +29,10 @@ export const CTE_ENDPOINTS = {
     consulta: "https://cte-homologacao.svrs.rs.gov.br/ws/CTeConsultaV4/CTeConsultaV4.asmx",
     statusServico: "https://cte-homologacao.svrs.rs.gov.br/ws/CTeStatusServicoV4/CTeStatusServicoV4.asmx",
     recepcaoEvento: "https://cte-homologacao.svrs.rs.gov.br/ws/CTeRecepcaoEventoV4/CTeRecepcaoEventoV4.asmx",
-    // MG tem autorizador próprio — Simplificado usa CTeRecepcaoSimpV4, Normal usa CTeRecepcaoV4
+    // MG tem autorizador próprio — Simplificado usa CTeRecepcaoSimpV4, Normal usa CTeRecepcaoSincV4
+    // (fontes: Portal CT-e webServices.aspx e SPED-MG; NÃO existe CTeRecepcaoV4 em MG)
     mg_recepcao: "https://hcte.fazenda.mg.gov.br/cte/services/CTeRecepcaoSimpV4",
-    mg_recepcao_normal: "https://hcte.fazenda.mg.gov.br/cte/services/CTeRecepcaoV4",
+    mg_recepcao_normal: "https://hcte.fazenda.mg.gov.br/cte/services/CTeRecepcaoSincV4",
     mg_consulta: "https://hcte.fazenda.mg.gov.br/cte/services/CTeConsultaV4",
     mg_status: "https://hcte.fazenda.mg.gov.br/cte/services/CTeStatusServicoV4",
     mg_evento: "https://hcte.fazenda.mg.gov.br/cte/services/CTeRecepcaoEventoV4",
@@ -43,7 +44,7 @@ export const CTE_ENDPOINTS = {
     statusServico: "https://cte.svrs.rs.gov.br/ws/CTeStatusServicoV4/CTeStatusServicoV4.asmx",
     recepcaoEvento: "https://cte.svrs.rs.gov.br/ws/CTeRecepcaoEventoV4/CTeRecepcaoEventoV4.asmx",
     mg_recepcao: "https://cte.fazenda.mg.gov.br/cte/services/CTeRecepcaoSimpV4",
-    mg_recepcao_normal: "https://cte.fazenda.mg.gov.br/cte/services/CTeRecepcaoV4",
+    mg_recepcao_normal: "https://cte.fazenda.mg.gov.br/cte/services/CTeRecepcaoSincV4",
     mg_consulta: "https://cte.fazenda.mg.gov.br/cte/services/CTeConsultaV4",
     mg_status: "https://cte.fazenda.mg.gov.br/cte/services/CTeStatusServicoV4",
     mg_evento: "https://cte.fazenda.mg.gov.br/cte/services/CTeRecepcaoEventoV4",
@@ -477,13 +478,13 @@ export async function emitirCte(pfx:Buffer, senha:string, xml:string, ambiente:A
   const dadosBase64 = compressed.toString("base64");
   console.log("[CTE-SEFAZ] Base64 comprimido (primeiros 200):", dadosBase64.slice(0, 200));
   const isMG = uf?.toUpperCase() === "MG";
-  console.log("[CTE-SEFAZ] UF:", uf, "isMG:", isMG, "ambiente:", ambiente, "endpoint:", isMG ? ep.recepcao : ep.recepcao);
+  console.log("[CTE-SEFAZ] UF:", uf, "isMG:", isMG, "ambiente:", ambiente, "modelo:", xml.includes("<CTeSimp") ? "simp" : "normal");
   if (isMG) {
-    // MG: Simplificado usa CTeRecepcaoSimpV4; Normal usa CTeRecepcaoV4
+    // MG: Simplificado usa CTeRecepcaoSimpV4; Normal usa CTeRecepcaoSincV4
     const isSimp = xml.includes("<CTeSimp");
     const ns = isSimp
       ? "http://www.portalfiscal.inf.br/cte/wsdl/CTeRecepcaoSimpV4"
-      : "http://www.portalfiscal.inf.br/cte/wsdl/CTeRecepcaoV4";
+      : "http://www.portalfiscal.inf.br/cte/wsdl/CTeRecepcaoSincV4";
     const urlRecepcao = (isSimp ? ep.recepcao : (ep as any).recepcaoNormal) || ep.recepcao;
     const body=`<cteDadosMsg xmlns="${ns}">${dadosBase64}</cteDadosMsg>`;
     const envelope = `<?xml version="1.0" encoding="utf-8"?><soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/"><soap:Body>${body}</soap:Body></soap:Envelope>`;
