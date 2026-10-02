@@ -391,7 +391,7 @@ export function buildCteNormalXml(input: CteInputCompleto): { xml: string; chave
       <tpImp>1</tpImp><tpEmis>1</tpEmis><cDV>${chave.slice(-1)}</cDV><tpAmb>${SEFAZ_TP_AMB}</tpAmb><tpCTe>0</tpCTe><procEmi>0</procEmi><verProc>NORVO_1.0</verProc>
       <cMunEnv>${input.cMunEnv}</cMunEnv><xMunEnv>${escCte(input.xMunEnv)}</xMunEnv><UFEnv>${escCte(String(input.ufEnv || "").toUpperCase())}</UFEnv>
       <modal>01</modal><tpServ>${input.tpServ || "0"}</tpServ>
-      <UFIni>${escCte(String(input.ufIni || "").toUpperCase())}</UFIni><UFFim>${escCte(String(input.ufFim || "").toUpperCase())}</UFFim>
+      <cMunIni>${input.cMunIni}</cMunIni><xMunIni>${escCte(input.xMunIni)}</xMunIni><UFIni>${escCte(String(input.ufIni || "").toUpperCase())}</UFIni><cMunFim>${input.cMunFim}</cMunFim><xMunFim>${escCte(input.xMunFim)}</xMunFim><UFFim>${escCte(String(input.ufFim || "").toUpperCase())}</UFFim>
       <retira>${input.retira || "1"}</retira>
       <indIEToma>${indIETomaN}</indIEToma>
       ${tomaXml}
