@@ -6193,97 +6193,6 @@ function CtePage() {
                 </AlertDialogFooter>
               </AlertDialogContent>
             </AlertDialog>
-            <AlertDialog open={!!confRascunho} onOpenChange={(v) => { if (!v) setConfRascunho(null); }}>
-              <AlertDialogContent>
-                <AlertDialogHeader>
-                  <AlertDialogTitle>Excluir rascunho</AlertDialogTitle>
-                  <AlertDialogDescription>
-                    Excluir este rascunho? As NF-e voltam para pendentes.
-                  </AlertDialogDescription>
-                </AlertDialogHeader>
-                <AlertDialogFooter>
-                  <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                  <AlertDialogAction
-                    data-acao
-                    className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-                    onClick={() => confRascunho && excluirRascunho(confRascunho)}
-                  >
-                    Excluir
-                  </AlertDialogAction>
-                </AlertDialogFooter>
-              </AlertDialogContent>
-            </AlertDialog>
-            <AlertDialog open={confLimpar} onOpenChange={setConfLimpar}>
-              <AlertDialogContent>
-                <AlertDialogHeader>
-                  <AlertDialogTitle>Remover pendentes</AlertDialogTitle>
-                  <AlertDialogDescription>
-                    Remover {mercadorias.length} NF-e(s) pendentes do embarque?
-                  </AlertDialogDescription>
-                </AlertDialogHeader>
-                <AlertDialogFooter>
-                  <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                  <AlertDialogAction
-                    data-acao
-                    className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-                    onClick={async () => {
-                      if (!empresa || mercadorias.length === 0) return;
-                      const { error } = await supabase
-                        .from("cte_nfes_pendentes" as any)
-                        .delete()
-                        .eq("empresa_id", empresa.id)
-                        .eq("status", "pendente");
-                      if (error) toast.error(error.message);
-                      else {
-                        setMercadorias([]);
-                        setSelecionadas(new Set());
-                        qc.invalidateQueries({ queryKey: ["cte-nfes-pendentes", empresa.id] });
-                        toast.success("Pendentes removidos");
-                      }
-                      setConfLimpar(false);
-                    }}
-                  >
-                    Excluir
-                  </AlertDialogAction>
-                </AlertDialogFooter>
-              </AlertDialogContent>
-            </AlertDialog>
-            <AlertDialog open={confExcSel} onOpenChange={setConfExcSel}>
-              <AlertDialogContent>
-                <AlertDialogHeader>
-                  <AlertDialogTitle>Excluir selecionadas</AlertDialogTitle>
-                  <AlertDialogDescription>
-                    Excluir {selecionadas.size} NF-e(s) selecionada(s) do embarque?
-                  </AlertDialogDescription>
-                </AlertDialogHeader>
-                <AlertDialogFooter>
-                  <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                  <AlertDialogAction
-                    data-acao
-                    className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-                    onClick={async () => {
-                      if (!empresa || selecionadas.size === 0) return;
-                      const chaves = Array.from(selecionadas);
-                      const { error } = await supabase
-                        .from("cte_nfes_pendentes" as any)
-                        .delete()
-                        .eq("empresa_id", empresa.id)
-                        .in("chave", chaves);
-                      if (error) toast.error(error.message);
-                      else {
-                        setMercadorias((atual) => atual.filter((m) => !selecionadas.has(m.chave)));
-                        setSelecionadas(new Set());
-                        qc.invalidateQueries({ queryKey: ["cte-nfes-pendentes", empresa.id] });
-                        toast.success(`${chaves.length} NF-e(s) excluída(s)`);
-                      }
-                      setConfExcSel(false);
-                    }}
-                  >
-                    Excluir
-                  </AlertDialogAction>
-                </AlertDialogFooter>
-              </AlertDialogContent>
-            </AlertDialog>
             <Card className="overflow-hidden">
               <div className="bg-primary/8 border-b border-primary/20 px-3 py-1.5 text-[10px] font-semibold uppercase tracking-wide text-primary/80">
                 CIOTs emitidos ({(ciotOps ?? []).length})
@@ -6371,6 +6280,97 @@ function CtePage() {
           </CardContent>
           </Card>
         </Tabs>
+      <AlertDialog open={!!confRascunho} onOpenChange={(v) => { if (!v) setConfRascunho(null); }}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Excluir rascunho</AlertDialogTitle>
+            <AlertDialogDescription>
+              Excluir este rascunho? As NF-e voltam para pendentes.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              data-acao
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              onClick={() => confRascunho && excluirRascunho(confRascunho)}
+            >
+              Excluir
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+      <AlertDialog open={confLimpar} onOpenChange={setConfLimpar}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Remover pendentes</AlertDialogTitle>
+            <AlertDialogDescription>
+              Remover {mercadorias.length} NF-e(s) pendentes do embarque?
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              data-acao
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              onClick={async () => {
+                if (!empresa || mercadorias.length === 0) return;
+                const { error } = await supabase
+                  .from("cte_nfes_pendentes" as any)
+                  .delete()
+                  .eq("empresa_id", empresa.id)
+                  .eq("status", "pendente");
+                if (error) toast.error(error.message);
+                else {
+                  setMercadorias([]);
+                  setSelecionadas(new Set());
+                  qc.invalidateQueries({ queryKey: ["cte-nfes-pendentes", empresa.id] });
+                  toast.success("Pendentes removidos");
+                }
+                setConfLimpar(false);
+              }}
+            >
+              Excluir
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+      <AlertDialog open={confExcSel} onOpenChange={setConfExcSel}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Excluir selecionadas</AlertDialogTitle>
+            <AlertDialogDescription>
+              Excluir {selecionadas.size} NF-e(s) selecionada(s) do embarque?
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              data-acao
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              onClick={async () => {
+                if (!empresa || selecionadas.size === 0) return;
+                const chaves = Array.from(selecionadas);
+                const { error } = await supabase
+                  .from("cte_nfes_pendentes" as any)
+                  .delete()
+                  .eq("empresa_id", empresa.id)
+                  .in("chave", chaves);
+                if (error) toast.error(error.message);
+                else {
+                  setMercadorias((atual) => atual.filter((m) => !selecionadas.has(m.chave)));
+                  setSelecionadas(new Set());
+                  qc.invalidateQueries({ queryKey: ["cte-nfes-pendentes", empresa.id] });
+                  toast.success(`${chaves.length} NF-e(s) excluída(s)`);
+                }
+                setConfExcSel(false);
+              }}
+            >
+              Excluir
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
       )}
       <Dialog open={manualNfeOpen} onOpenChange={setManualNfeOpen}>
         <DialogContent
