@@ -1737,6 +1737,14 @@ function CtePage() {
   const [confRascunho, setConfRascunho] = useState<CteDoc | null>(null);
   const [confLimpar, setConfLimpar] = useState(false);
   const [confExcSel, setConfExcSel] = useState(false);
+  // Preenchimento em lote (CIOT + pedágio) nos rascunhos selecionados
+  const [loteCiotOpen, setLoteCiotOpen] = useState(false);
+  const [loteCiot, setLoteCiot] = useState("");
+  const [loteModo, setLoteModo] = useState("manter");
+  const [loteOperadora, setLoteOperadora] = useState("");
+  const [loteVpo, setLoteVpo] = useState("");
+  const [loteVale, setLoteVale] = useState("");
+  const [loteSalvando, setLoteSalvando] = useState(false);
   const verificarFrotaCiot = async () => {
     const r = resumoCiot;
     if (!empresa || !r) {
@@ -3378,6 +3386,50 @@ function CtePage() {
       }
     } catch (e: any) {
       toast.error("Erro ao excluir rascunho", { description: e.message });
+    }
+  };
+
+  // Aplica CIOT + dados do pedágio nos rascunhos marcados (só preenche o que foi informado)
+  const aplicarLoteCiotPedagio = async () => {
+    if (!empresa || envSel.size === 0 || loteSalvando) return;
+    if (!loteCiot.trim() && loteModo === "manter" && !loteOperadora && !loteVpo.trim() && !(parseFloat(loteVale) > 0)) {
+      toast.error("Informe ao menos um campo para aplicar no lote");
+      return;
+    }
+    setLoteSalvando(true);
+    try {
+      const alvos = docsByStatus.rascunhos.filter((d) => envSel.has(d.id));
+      let ok = 0;
+      const erros: string[] = [];
+      for (const doc of alvos) {
+        try {
+          const parsed = JSON.parse(doc.xml_assinado || "{}");
+          const f = { ...(parsed.form || {}) };
+          if (loteCiot.trim()) f.ciot = loteCiot.trim();
+          if (loteModo !== "manter") f.pedagioPagto = loteModo;
+          if (loteOperadora) {
+            f.pedagioOperadora = loteOperadora;
+            const op = PEDAGIO_OPERADORAS.find((o) => o.nome === loteOperadora);
+            if (op) f.pedagioCnpj = op.cnpj;
+          }
+          if (loteVpo.trim()) f.pedagioIdentVPO = loteVpo.trim();
+          if (parseFloat(loteVale) > 0) f.valePedagio = loteVale;
+          const { error } = await supabase
+            .from("cte_documentos" as any)
+            .update({ xml_assinado: JSON.stringify({ ...parsed, form: f }) })
+            .eq("id", doc.id);
+          if (error) throw error;
+          ok++;
+        } catch (e: any) {
+          erros.push(`${doc.numero ?? "?"}: ${e.message}`);
+        }
+      }
+      qc.invalidateQueries({ queryKey: ["cte-documentos"] });
+      setLoteCiotOpen(false);
+      if (ok) toast.success(`${ok} rascunho(s) atualizado(s)`);
+      if (erros.length) toast.error(`${erros.length} falharam`, { description: erros.slice(0, 3).join(" | ") });
+    } finally {
+      setLoteSalvando(false);
     }
   };
 
@@ -5935,6 +5987,15 @@ function CtePage() {
                 </span>
                 <Button
                   size="sm"
+                  variant="outline"
+                  disabled={envSel.size === 0}
+                  title="Preenche Nº CIOT e dados do pedágio nos rascunhos marcados"
+                  onClick={() => { setLoteCiot(""); setLoteModo("manter"); setLoteOperadora(""); setLoteVpo(""); setLoteVale(""); setLoteCiotOpen(true); }}
+                >
+                  Preencher lote
+                </Button>
+                <Button
+                  size="sm"
                   disabled={envSel.size === 0 || enviandoLote}
                   onClick={enviarSelecionados}
                 >
@@ -6368,6 +6429,59 @@ function CtePage() {
               }}
             >
               Excluir
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+      <AlertDialog open={loteCiotOpen} onOpenChange={setLoteCiotOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Preencher lote ({envSel.size} rascunho{envSel.size !== 1 ? "s" : ""})</AlertDialogTitle>
+            <AlertDialogDescription>
+              Aplica nos rascunhos marcados. Campos vazios mantêm o valor atual de cada um.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <div className="grid grid-cols-2 gap-2">
+            <div>
+              <Label className="text-[11px] text-muted-foreground">Nº CIOT</Label>
+              <Input className="h-8 font-mono" value={loteCiot} onChange={(e) => setLoteCiot(e.target.value.replace(/\D/g, "").slice(0, 12))} maxLength={12} />
+            </div>
+            <div>
+              <Label className="text-[11px] text-muted-foreground">Pagto. pedágio</Label>
+              <Select value={loteModo} onValueChange={setLoteModo}>
+                <SelectTrigger className="h-8"><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="manter">Manter atual</SelectItem>
+                  <SelectItem value="tag-transportador">TAG Transportador</SelectItem>
+                  <SelectItem value="tag-tomador">TAG Tomador</SelectItem>
+                  <SelectItem value="free-flow">Free Flow</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <Label className="text-[11px] text-muted-foreground">Operadora</Label>
+              <Select value={loteOperadora || undefined} onValueChange={setLoteOperadora}>
+                <SelectTrigger className="h-8"><SelectValue placeholder="Manter atual" /></SelectTrigger>
+                <SelectContent>
+                  {PEDAGIO_OPERADORAS.map((o) => (
+                    <SelectItem key={o.nome} value={o.nome}>{o.nome}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <Label className="text-[11px] text-muted-foreground">Identificador VPO</Label>
+              <Input className="h-8 font-mono" value={loteVpo} onChange={(e) => setLoteVpo(e.target.value)} />
+            </div>
+            <div>
+              <Label className="text-[11px] text-muted-foreground">Vale-pedágio (R$)</Label>
+              <MoneyInput className="h-8" value={loteVale} onChange={setLoteVale} />
+            </div>
+          </div>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction data-acao onClick={aplicarLoteCiotPedagio} disabled={loteSalvando}>
+              {loteSalvando ? "Aplicando…" : "Aplicar no lote"}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
