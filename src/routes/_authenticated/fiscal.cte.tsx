@@ -5997,9 +5997,11 @@ function CtePage() {
           <TabsContent value="rascunhos" className="mt-0">
             {docsByStatus.rascunhos.length > 0 && (
               <div className="mb-2 flex items-center justify-end gap-2">
+                {envSel.size > 0 && (
                 <span className="text-xs text-muted-foreground">
-                  {envSel.size > 0 ? `${envSel.size} selecionado(s)` : "Marque os rascunhos p/ envio"}
+                  {`${envSel.size} selecionado(s)`}
                 </span>
+                )}
                 <Button
                   size="sm"
                   variant="outline"

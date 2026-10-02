@@ -515,7 +515,7 @@ function MdfPage() {
         <div className="flex items-center justify-end gap-2">
           {filtroStatus === "rascunho" ? (
             <>
-              <span className="text-xs text-muted-foreground">{rascSel.size > 0 ? `${rascSel.size} selecionado(s)` : "Marque os rascunhos p/ excluir"}</span>
+              {rascSel.size > 0 && (<span className="text-xs text-muted-foreground">{`${rascSel.size} selecionado(s)`}</span>)}
               <Button size="sm" disabled={rascSel.size === 0 || loteMdfProc} onClick={() => void emitirLoteMdf()}>
                 <Send className="mr-1 h-4 w-4" /> {loteMdfProc ? "Emitindo…" : "Emitir selecionados"}{rascSel.size > 0 && !loteMdfProc ? ` (${rascSel.size})` : ""}
               </Button>
@@ -525,7 +525,7 @@ function MdfPage() {
             </>
           ) : (
             <>
-              <span className="text-xs text-muted-foreground">{autSel.size > 0 ? `${autSel.size} selecionado(s)` : "Marque os autorizados p/ cancelar"}</span>
+              {autSel.size > 0 && (<span className="text-xs text-muted-foreground">{`${autSel.size} selecionado(s)`}</span>)}
               <Button size="sm" variant="destructive" disabled={autSel.size === 0 || loteMdfProc} onClick={() => { setJustLote("ERRO DE EMISSAO DO MDF-E"); setConfLoteCanc(true); }}>
                 <XCircle className="mr-1 h-4 w-4" /> Cancelar selecionados{autSel.size > 0 ? ` (${autSel.size})` : ""}
               </Button>
