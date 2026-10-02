@@ -4019,3 +4019,7 @@ Espelhado na Vercel.
 ## CT-e preencher lote CIOT/pedagio (02/10)
 
 - Aba Aguardando envio: botao Preencher lote aplica Nº CIOT, pagto pedagio, operadora (+CNPJ), VPO e vale nos rascunhos marcados; vazio mantem valor atual. Dialogos de exclusao movidos p/ nivel da pagina (estavam na aba CIOT e não abriam).
+
+## CT-e trava coleta/entrega da NF-e (02/10)
+
+- aplicarPercurso não sobrescreve cidade/UF de coleta e entrega quando a carga informa; trava da entrega só quando percurso foi a fonte. Aviso quando percurso diverge da NF-e.
