@@ -4033,6 +4033,8 @@ Espelhado na Vercel.
   existe grupo `<total>` no Normal (só no Simp). Corrigidos os dois;
   validado em vitest temporário. `infModal` é `xs:any skip`, então
   rodo/veículos não eram a causa.
+- Rodada 2 (XML 531 em mãos): o `ide` do Normal também exige
+  `cMunIni/xMunIni/UFIni/cMunFim/xMunFim/UFFim` — adicionados.
 
 ## MDF-e: tooltip no Emitir bloqueado (02/10)
 
