@@ -4071,6 +4071,7 @@ function CtePage() {
                 cep: empresa.cep,
               } as any,
               chavesNFe: chaves,
+              valoresNFe: chaves.map((ch) => Number((mercadorias.find((m) => m.chave === ch) as any)?.valor) || 0),
             },
           },
         });
@@ -4495,6 +4496,7 @@ function CtePage() {
               cep: empresa.cep,
             } as any,
             chavesNFe: chaves,
+            valoresNFe: chaves.map((ch) => Number((mercadorias.find((m) => m.chave === ch) as any)?.valor) || 0),
           },
         },
       });
@@ -5364,15 +5366,15 @@ function CtePage() {
         <Dialog open={impOpen} onOpenChange={setImpOpen}>
           <DialogContent className="inset-auto left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-[420px] max-w-[calc(100vw-2rem)] h-auto max-h-[90vh] p-4 gap-3">
             <DialogHeader>
-              <DialogTitle>Importar XML/PDF</DialogTitle>
+              <DialogTitle>Exportar</DialogTitle>
             </DialogHeader>
             <div className="space-y-2">
-              <Label>O que baixar ({mdfVincTab === "com" ? impSel.size : autSemMdf.filter((d) => d.chave_acesso && mdfSel.has(d.chave_acesso)).length} selecionado(s))</Label>
+              <Label>Selecione o formato:</Label>
               <div className="flex flex-col gap-1.5">
                 {(["pdf", "xml", "ambos"] as const).map((v) => (
                   <label key={v} className="flex items-center gap-2 text-sm cursor-pointer">
                     <input type="radio" name="imp-tipo" checked={impTipo === v} onChange={() => setImpTipo(v)} />
-                    {v === "pdf" ? "Somente PDF (DACTE)" : v === "xml" ? "Somente XML" : "PDF + XML (ambos)"}
+                    {v === "pdf" ? "PDF" : v === "xml" ? "XML" : "PDF/XML"}
                   </label>
                 ))}
               </div>
@@ -6243,7 +6245,7 @@ function CtePage() {
                     onClick={() => setImpOpen(true)}
                     title="Baixar XML/PDF dos selecionados"
                   >
-                    <Download className="mr-1 h-3 w-3" /> Importar XML/PDF ({mdfVincTab === "com" ? impSel.size : autSemMdf.filter((d) => d.chave_acesso && mdfSel.has(d.chave_acesso)).length})
+                    <Download className="mr-1 h-3 w-3" /> Exportar ({mdfVincTab === "com" ? impSel.size : autSemMdf.filter((d) => d.chave_acesso && mdfSel.has(d.chave_acesso)).length})
                   </Button>
                 </div>
               </div>

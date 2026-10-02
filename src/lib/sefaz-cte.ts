@@ -109,8 +109,22 @@ export interface CteInputCompleto {
   infCTeNorm?: { proPred?: string; xOutCat?: string };
   modalRod?: { rntrc: string; ciot?: string; veiculos?: Array<{ placa: string; uf: string; renavam?: string; rntrc?: string; tpRod?: string; tpCar?: string; tara?: number; capKG?: number }>; motoristas?: Array<{ xNome: string; cpf: string }> };
   chavesNFe?: string[];
+  // Valores das NF-es na MESMA ordem das chaves (p/ ratear vPrest/vRec por det no Simp)
+  valoresNFe?: number[];
   icms?: { CST: string; vBC: number; pICMS: number; vICMS: number };
   impostos?: { pisAliq?: number; cofinsAliq?: number; irAliq?: number; inssAliq?: number; csllAliq?: number };
+}
+
+// Data/hora de emissão no fuso de Brasília (SEFAZ exige o horário local;
+// servidor roda em UTC e getTimezoneOffset daria +00:00).
+export function dhBrt(date = new Date()): string {
+  const f = new Intl.DateTimeFormat("sv-SE", {
+    timeZone: "America/Sao_Paulo",
+    year: "numeric", month: "2-digit", day: "2-digit",
+    hour: "2-digit", minute: "2-digit", second: "2-digit",
+    hour12: false,
+  });
+  return f.format(date).replace(" ", "T").replace("T24:", "T00:") + "-03:00";
 }
 
 export function buildCteXml(input: CteInputCompleto): { xml: string; chave: string } {
@@ -125,20 +139,7 @@ export function buildCteXml(input: CteInputCompleto): { xml: string; chave: stri
     const cpf = String(m?.cpf || "").replace(/\D/g, "");
     return (nm.length >= 2 && /^\d{11}$/.test(cpf)) ? `<moto><xNome>${nm}</xNome><CPF>${cpf}</CPF></moto>` : "";
   }).join("");
-  const now = new Date();
-  const tzOffset = now.getTimezoneOffset(); // minutes; negative for UTC+ (e.g. UTC-3 → +180)
-  const tzH = String(Math.floor(Math.abs(tzOffset) / 60)).padStart(2, "0");
-  const tzM = String(Math.abs(tzOffset) % 60).padStart(2, "0");
-  // XSD TDateTimeUTC: TZD = +hh:mm or -hh:mm
-  // getTimezoneOffset: positive = west of UTC (e.g. 180 = UTC-3 → "+03:00")
-  const tzSign = tzOffset <= 0 ? "+" : "-";
-  const dhEmi = now.getFullYear() + "-" +
-    String(now.getMonth() + 1).padStart(2, "0") + "-" +
-    String(now.getDate()).padStart(2, "0") + "T" +
-    String(now.getHours()).padStart(2, "0") + ":" +
-    String(now.getMinutes()).padStart(2, "0") + ":" +
-    String(now.getSeconds()).padStart(2, "0") +
-    tzSign + tzH + ":" + tzM;
+  const dhEmi = dhBrt();
   const cUF = codigoUF(input.ufEnv || input.emit.uf);
   const aamm = dhEmi.slice(2,4) + dhEmi.slice(5,7);
   const cnpjLimpo = input.emit.cnpj.replace(/\D/g,"").padStart(14,"0");
@@ -202,8 +203,24 @@ export function buildCteXml(input: CteInputCompleto): { xml: string; chave: stri
     const parcial = tp === "2" && chNFeDet.length === 44 ? `<infNFeTranspParcial><chNFe>${chNFeDet}</chNFeTranspParcial>` : "";
     return chs.map(ch => `<infDocAnt><chCTe>${ch}</chCTe><tpPrest>${tp}</tpPrest>${parcial}</infDocAnt>`).join("");
   };
-  const infNFeXml = (input.chavesNFe && input.chavesNFe.length > 0)
-    ? input.chavesNFe.map((ch, i) => `<det nItem="${i+1}"><cMunIni>${input.cMunIni}</cMunIni><xMunIni>${input.xMunIni}</xMunIni><cMunFim>${input.cMunFim}</cMunFim><xMunFim>${input.xMunFim}</xMunFim><vPrest>${input.vPrest.toFixed(2)}</vPrest><vRec>${input.vPrest.toFixed(2)}</vRec><infNFe><chNFe>${ch.replace(/\D/g,"")}</chNFe></infNFe>${docAntXml(ch)}</det>`).join("")
+  // Rateio de vPrest/vRec por det (MOC 4.00: a soma dos dets compõe o total).
+  // Pesos = valores das NF-es na ordem das chaves; sem valores, divisão igual.
+  // Centavos em inteiro; o último det absorve o resto p/ somar exato.
+  const chsSimp = (input.chavesNFe || []).map((c) => String(c).replace(/\D/g, "")).filter((c) => c.length === 44);
+  const pesosSimp = chsSimp.map((_, i) => Number(input.valoresNFe?.[i]) || 0);
+  const somaPesosSimp = pesosSimp.reduce((a, b) => a + b, 0);
+  const totalCentSimp = Math.round(Number(input.vPrest) * 100);
+  let accCentSimp = 0;
+  const detXml = (ch: string, i: number, n: number) => {
+    const w = somaPesosSimp > 0 ? pesosSimp[i] / somaPesosSimp : 1 / n;
+    let cent = Math.round(totalCentSimp * w);
+    if (i === n - 1) cent = totalCentSimp - accCentSimp;
+    else accCentSimp += cent;
+    const v = (cent / 100).toFixed(2);
+    return `<det nItem="${i + 1}"><cMunIni>${input.cMunIni}</cMunIni><xMunIni>${input.xMunIni}</xMunIni><cMunFim>${input.cMunFim}</cMunFim><xMunFim>${input.xMunFim}</xMunFim><vPrest>${v}</vPrest><vRec>${v}</vRec><infNFe><chNFe>${ch}</chNFe></infNFe>${docAntXml(ch)}</det>`;
+  };
+  const infNFeXml = (chsSimp.length > 0)
+    ? chsSimp.map((ch, i) => detXml(ch, i, chsSimp.length)).join("")
     : `<det nItem="1"><cMunIni>${input.cMunIni}</cMunIni><xMunIni>${input.xMunIni}</xMunIni><cMunFim>${input.cMunFim}</cMunFim><xMunFim>${input.xMunFim}</xMunFim><vPrest>${input.vPrest.toFixed(2)}</vPrest><vRec>${input.vPrest.toFixed(2)}</vRec><infNFe><chNFe>00000000000000000000000000000000000000000000</chNFe></infNFe>${docAntXml("")}</det>`;
 
   // CTeSimp — root element <CTeSimp>, not <CTe>
@@ -258,18 +275,7 @@ export function buildCteNormalXml(input: CteInputCompleto): { xml: string; chave
     const cpf = String(m?.cpf || "").replace(/\D/g, "");
     return (nm.length >= 2 && /^\d{11}$/.test(cpf)) ? `<moto><xNome>${escCte(nm)}</xNome><CPF>${cpf}</CPF></moto>` : "";
   }).join("");
-  const now = new Date();
-  const tzOffset = now.getTimezoneOffset();
-  const tzH = String(Math.floor(Math.abs(tzOffset) / 60)).padStart(2, "0");
-  const tzM = String(Math.abs(tzOffset) % 60).padStart(2, "0");
-  const tzSign = tzOffset <= 0 ? "+" : "-";
-  const dhEmi = now.getFullYear() + "-" +
-    String(now.getMonth() + 1).padStart(2, "0") + "-" +
-    String(now.getDate()).padStart(2, "0") + "T" +
-    String(now.getHours()).padStart(2, "0") + ":" +
-    String(now.getMinutes()).padStart(2, "0") + ":" +
-    String(now.getSeconds()).padStart(2, "0") +
-    tzSign + tzH + ":" + tzM;
+  const dhEmi = dhBrt();
   const cUF = codigoUF(input.ufEnv || input.emit.uf);
   const aamm = dhEmi.slice(2,4) + dhEmi.slice(5,7);
   const cnpjLimpo = input.emit.cnpj.replace(/\D/g,"").padStart(14,"0");
@@ -585,7 +591,7 @@ export async function consultarCtePorChave(pfx:Buffer, senha:string, chave:strin
 
 export async function cancelarCte(pfx:Buffer, senha:string, chave:string, justificativa:string, ambiente:Ambiente, cnpj:string, uf?: string, protocolo?: string):Promise<{ sucesso:boolean; cStat:string; xMotivo:string }>{
   const ep=getCteEndpoints(ambiente, uf);
-  const dhEvento=new Date().toISOString().replace(/\.\d{3}Z$/,"+00:00");
+  const dhEvento = dhBrt();
   const nSeq="001";
   const tpEvento="110111";
   const cOrgao = codigoUF(uf || "MG");
