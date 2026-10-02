@@ -6280,6 +6280,7 @@ function CtePage() {
           </CardContent>
           </Card>
         </Tabs>
+      )}
       <AlertDialog open={!!confRascunho} onOpenChange={(v) => { if (!v) setConfRascunho(null); }}>
         <AlertDialogContent>
           <AlertDialogHeader>
@@ -6371,7 +6372,6 @@ function CtePage() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
-      )}
       <Dialog open={manualNfeOpen} onOpenChange={setManualNfeOpen}>
         <DialogContent
           onEscapeKeyDown={(event) => {
