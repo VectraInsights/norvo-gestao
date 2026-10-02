@@ -3862,6 +3862,50 @@ function CtePage() {
     }
     return a;
   };
+  // Veículos que entram no modal (tração + reboques). No CT-e 4.00 o <rodo> só
+  // aceita RNTRC, então esses dados alimentam o <compl> (PLACA/PlacaFinal) e o
+  // DACTE — a mesma lista usada na prévia do XML.
+  const veiculosXml = () => {
+    const tpRodDeTipo = (t: any) => {
+      const s = String(t || "").toLowerCase();
+      if (s.includes("cavalo")) return "03";
+      if (s.includes("truck") && !s.includes("bitruck")) return "01";
+      if (s.includes("toco")) return "02";
+      if (s.includes("van") || s.includes("furg")) return "04";
+      if (s.includes("utilit")) return "05";
+      return "06";
+    };
+    const itemVeic = (placa: string) => {
+      const vv = (veiculos || []).find(
+        (v) => String(v.placa || "").toUpperCase() === String(placa || "").toUpperCase(),
+      );
+      return {
+        placa: String(placa).toUpperCase(),
+        uf: (empresa as any)?.uf || "MG",
+        renavam: (vv as any)?.renavam || undefined,
+        tpRod: tpRodDeTipo((vv as any)?.tipo),
+        tpCar: "00",
+      };
+    };
+    const out = form.placaVeiculo ? [itemVeic(form.placaVeiculo)] : [];
+    for (const p of [form.placaReboque, (form as any).semiReboque1, (form as any).semiReboque2]) {
+      if (String(p || "").trim()) out.push(itemVeic(p));
+    }
+    return out;
+  };
+  // Espécie (tipo) do veículo de tração — vai como ObsCont EspecieVeiculo.
+  const especieVeiculoXml = () =>
+    String(
+      ((veiculos || []).find(
+        (v) =>
+          String(v.placa || "").toUpperCase() === String(form.placaVeiculo || "").toUpperCase(),
+      ) as any)?.tipo || "",
+    ).trim();
+  // Observações livres do CT-e (o DACTE já imprime as mesmas).
+  const obsCte = () =>
+    [(form as any).obsGerais, (form as any).obsAnulacao, (form as any).obsGlobalizado]
+      .filter(Boolean)
+      .join(" • ");
   const emitir = useMutation({
     mutationFn: async () => {
       if (viewDoc) throw new Error("Feche a visualização para emitir um novo CT-e");
@@ -4009,25 +4053,14 @@ function CtePage() {
               modalRod: {
                 rntrc: rntrcFinal,
                 motoristas: motoristasXml(),
-                veiculos: (() => {
-                  const tpRodDeTipo = (t: any) => { const s = String(t || "").toLowerCase(); if (s.includes("cavalo")) return "03"; if (s.includes("truck") && !s.includes("bitruck")) return "01"; if (s.includes("toco")) return "02"; if (s.includes("van") || s.includes("furg")) return "04"; if (s.includes("utilit")) return "05"; return "06"; };
-                  const itemVeic = (placa: string) => {
-                    const vv = (veiculos || []).find((v) => String(v.placa || "").toUpperCase() === String(placa || "").toUpperCase());
-                    return {
-                      placa: String(placa).toUpperCase(),
-                      uf: empresa.uf || "MG",
-                      renavam: (vv as any)?.renavam || undefined,
-                      tpRod: tpRodDeTipo((vv as any)?.tipo),
-                      tpCar: "00",
-                    };
-                  };
-                  const out = form.placaVeiculo ? [itemVeic(form.placaVeiculo)] : [];
-                  for (const p of [form.placaReboque, form.semiReboque1, form.semiReboque2]) {
-                    if (String(p || "").trim()) out.push(itemVeic(p));
-                  }
-                  return out;
-                })(),
+                veiculos: veiculosXml(),
               },
+              // Modal minimal no XML (<rodo> só com RNTRC): placa, motorista,
+              // espécie, eixos e observações viajam no <compl>.
+              responsavelEmissao: respNome,
+              especieVeiculo: especieVeiculoXml(),
+              eixosTotal: eixosCombinacao(form, veiculos || []),
+              obs: obsCte(),
               cMunEnv: form.cMunEnv,
               xMunEnv: form.xMunEnv,
               ufEnv: form.ufEnv,
@@ -4433,26 +4466,14 @@ function CtePage() {
             modalRod: {
               rntrc: rntrcFinal,
               motoristas: motoristasXml(),
-              veiculos: (() => {
-                const vv = (veiculos || []).find(
-                  (v) =>
-                    String(v.placa || "").toUpperCase() ===
-                    String(form.placaVeiculo || "").toUpperCase(),
-                );
-                return form.placaVeiculo
-                  ? [
-                      {
-                        placa: String(form.placaVeiculo).toUpperCase(),
-                        uf: empresa.uf || "MG",
-                        renavam: (vv as any)?.renavam || undefined,
-                      },
-                    ]
-                  : [];
-              })(),
+              veiculos: veiculosXml(),
             },
-            obsGerais: (form as any).obsGerais || "",
-            obsAnulacao: (form as any).obsAnulacao || "",
-            obsGlobalizado: (form as any).obsGlobalizado || "",
+            // Igual à emissão real: <rodo> só com RNTRC e <compl> com
+            // placa/motorista/espécie/eixos + observações livres.
+            responsavelEmissao: respNome,
+            especieVeiculo: especieVeiculoXml(),
+            eixosTotal: eixosCombinacao(form, veiculos || []),
+            obs: obsCte(),
             reducaoBase: parseFloat((form as any).reducaoBase) || 0,
             cMunEnv: form.cMunEnv,
             xMunEnv: form.xMunEnv,

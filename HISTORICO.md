@@ -4086,3 +4086,27 @@ Espelhado na Vercel.
 - Preview DACTE em homologação mostra rem/dest/tomador com o literal;
   logs `[CTE-DEBUG]`/`[CTE-PROXY-DEBUG]` passam a registrar
   toma/modelo/rem.xNome/dest.xNome p/ diagnóstico direto.
+
+## CT-e: modal rodoviário minimalista + compl (02/10)
+
+- O `<rodo>` do CT-e Normal e do Simplificado passa a ter **só `<RNTRC>`**
+  (padrão do sistema legado): saíram `<moto>`, `<veicTracao>`,
+  `<veicReboque>` e `<CIOT>` — grupos que existem no MDF-e/leiautes
+  antigos e que só passavam porque `infModal` é `xs:any
+  processContents="skip"` (o validador não checa o conteúdo do modal).
+- Placa/motorista/espécie/eixos e observações agora viajam no `<compl>`
+  (entre `</ide>` e `<emit>`): `<xEmi>`, `<xObs>` ("Placa X Motorista Y
+  CPF Z" + obs livre) e `ObsCont` `CPFMOTORISTA`, `PLACA`,
+  `EspecieVeiculo`, `PlacaFinal`, `Quantidade_Eixos`. Limites do leiaute
+  respeitados: xEmi 20, xObs 2000, ObsCont xCampo 20 + xTexto 160 (até 10).
+- `fiscal.cte.tsx`: helpers `veiculosXml()`, `especieVeiculoXml()` e
+  `obsCte()`; a emissão e a prévia do XML passam a enviar
+  `responsavelEmissao`, `especieVeiculo`, `eixosTotal` e `obs` — a prévia
+  antes mandava só a tração (o `PlacaFinal` sairia igual ao `PLACA`).
+- DACTE/P-VISUALIZAÇÃO seguem iguais: leem `compl/xEmi` (Informações
+  Adicionais), os `ObsCont`/`ObsFisco` (OBSERVAÇÕES) e caem no
+  formulário/frota quando o XML não traz veículos.
+- Novo `src/lib/sefaz-cte.test.ts` (7 testes: rodo só com RNTRC, conteúdo
+  e posição do `<compl>`, tração como `PlacaFinal` sem reboque, limites de
+  xEmi/xObs, omissão do compl e Simplificado sem `<moto>`).
+
