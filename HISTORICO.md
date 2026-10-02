@@ -4007,3 +4007,7 @@ Espelhado na Vercel.
 ## MDF-e: tooltip no Emitir bloqueado (02/10)
 
 - Botao Emitir MDF-e mostra ao passar o mouse o que falta (percurso, veiculo, motorista, UFs).
+
+## CT-e Transporte limpo (02/10)
+
+- Rótulo CIOT sem (ANTT direto); removidos 15 placeholders de exemplo na aba Transporte (Nº CIOT, averbação, apólice, TAG, CNPJ, 0.00, buscas). Tooltip do Emitir simplificado p/ Necessário informar percurso.
