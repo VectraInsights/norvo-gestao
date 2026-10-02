@@ -2295,6 +2295,9 @@ function CtePage() {
   // Lote de envio (aba Aguardando envio) + ordenação das tabelas de documentos
   const [envSel, setEnvSel] = useState<Set<string>>(new Set());
   const [enviandoLote, setEnviandoLote] = useState(false);
+  // Espelho em ref: onSuccess do emitir precisa saber se está no lote
+  // (state dentro do closure chega defasado no meio do loop).
+  const enviandoLoteRef = useRef(false);
   const [ordDocs, setOrdDocs] = useState<{ chave: string; dir: 1 | -1 } | null>(null);
   const fmtDataHora = (iso: any) => {
     try {
@@ -3564,6 +3567,7 @@ function CtePage() {
     const alvo = ordenarListaDocs(docsByStatus.rascunhos.filter((d) => envSel.has(d.id)));
     if (alvo.length === 0 || enviandoLote) return;
     setEnviandoLote(true);
+    enviandoLoteRef.current = true;
     let ok = 0;
     let falhas = 0;
     try {
@@ -3571,7 +3575,9 @@ function CtePage() {
         try {
           setViewDoc(null);
           await editarRascunho(d, true);
-          await new Promise((r) => setTimeout(r, 600));
+          // Espera o form propagar p/ o closure da emissão (setState é
+          // assíncrono; sem isso o lote reenviaria os dados do item anterior).
+          await new Promise((r) => setTimeout(r, 150));
           const ret = await emitirLatest.current();
           if ((ret as any)?.ignored) continue;
           // Verde só com autorização real: rejeição/erro conta como falha.
@@ -3583,6 +3589,7 @@ function CtePage() {
       }
     } finally {
       setEnviandoLote(false);
+      enviandoLoteRef.current = false;
       setEnvSel(new Set());
       setEditingRascunhoId(null);
       // NÃO zera mercadorias: o refetch das pendentes repõe a lista (sem as
@@ -3600,7 +3607,7 @@ function CtePage() {
       const frescas = qc.getQueryData(["cte-nfes-pendentes", empresa?.id]) as any[];
       if (Array.isArray(frescas)) setMercadorias(mapearPendentes(frescas) as any);
     }
-    if (ok > 0) toast.success(`${ok} CT-e(s) enviado(s) p/ SEFAZ`);
+    if (ok > 0) toast.success(`${ok} CT-e(s) autorizado(s)`);
     if (falhas > 0) toast.error(`${falhas} rascunho(s) falharam — verifique os erros acima`);
   };
 
@@ -4084,12 +4091,13 @@ function CtePage() {
     },
     onSuccess: async (ret: any) => {
       if ((ret as any)?.ignored) return;
+      // No lote, o resumo final já cobre: evita 1 toast por CT-e.
+      const emLote = enviandoLoteRef.current;
       if (ret?.sucesso) {
-        toast.success(
-          `CT-e ${ret.chave} autorizado` + (ret.protocolo ? ` prot ${ret.protocolo}` : ""),
-        );
+        if (!emLote) toast.success("CT-e autorizado");
         setOpen(false);
-        persistirPercursoSilencioso();
+        // Roda em segundo plano: não segura o envio (principalmente no lote).
+        persistirPercursoSilencioso().catch(() => {});
         try {
           const plSync = String(form.placaVeiculo || "").toUpperCase();
           const tgSync = String(form.pedagioTag || "").trim();

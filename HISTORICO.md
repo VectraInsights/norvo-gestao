@@ -4062,6 +4062,15 @@ Espelhado na Vercel.
 
 - Entrega/coleta do percurso nunca mais perdem p/ NF-e (trava preservada ao reeditar rascunho). Enter em campo de texto do formulario salva rascunho.
 
+## CT-e: toast simples + lote mais rápido (02/10)
+
+- Toast individual agora só "CT-e autorizado" (sem chave/protocolo); no lote,
+  sem toast por CT-e — só o resumo "N CT-e(s) autorizado(s)".
+- Lote: espera entre itens 600ms → 150ms (só p/ o form propagar no closure) +
+  `persistirPercursoSilencioso` em segundo plano (não segura o envio).
+  O restante do tempo é SEFAZ + certificado + banco — sequencial por
+  segurança (mesmo número não pode sair duplicado).
+
 ## CT-e: rejeição 649 do destinatário em homologação (02/10)
 
 - Causa: `buildCteNormalXml` só forçava a razão social padrão no `rem` (646);
