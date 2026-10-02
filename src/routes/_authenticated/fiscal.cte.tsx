@@ -3313,14 +3313,16 @@ function CtePage() {
   const excluirRascunho = async (doc: CteDoc) => {
     if (!empresa) return;
     try {
-      const parsed = JSON.parse(doc.xml_assinado || "{}");
-      await supabase
+      let parsed: any = {};
+      try { parsed = JSON.parse(doc.xml_assinado || "{}"); } catch { parsed = {}; }
+      const { error: delErr } = await supabase
         .from("cte_documentos" as any)
         .delete()
         .eq("id", doc.id);
+      if (delErr) throw delErr;
       if (parsed.nfs && parsed.nfs.length > 0) {
         for (const nf of parsed.nfs) {
-          await supabase.from("cte_nfes_pendentes" as any).upsert(
+          const { error: upErr } = await supabase.from("cte_nfes_pendentes" as any).upsert(
             {
               empresa_id: empresa.id,
               chave: nf.chave,
@@ -3361,6 +3363,7 @@ function CtePage() {
             },
             { onConflict: "empresa_id,chave" },
           );
+          if (upErr) throw upErr;
         }
       }
       toast.success("Rascunho excluído — NF-e voltaram para pendentes");
