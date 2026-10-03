@@ -130,6 +130,27 @@ export function dhBrt(date = new Date()): string {
   return f.format(date).replace(" ", "T").replace("T24:", "T00:") + "-03:00";
 }
 
+// Normaliza início/fim do form pelo XML gerado (fonte autoritativa): o form
+// que o front manda pode ter UF errada (ex. MARABA/AP) e é ele que o DACTE
+// usa como fallback. Vale p/ Normal e Simplificado (dets têm a mesma rota).
+export function formUfsDoXml(xml: string, form: any): any {
+  const pick = (re: RegExp) => xml.match(re)?.[1] || "";
+  const f = { ...(form || {}) };
+  const cIni = pick(/<cMunIni>(\d{7})<\/cMunIni>/);
+  const xIni = pick(/<xMunIni>([^<]{2,60})<\/xMunIni>/);
+  const uIni = pick(/<UFIni>([A-Z]{2})<\/UFIni>/);
+  const cFim = pick(/<cMunFim>(\d{7})<\/cMunFim>/);
+  const xFim = pick(/<xMunFim>([^<]{2,60})<\/xMunFim>/);
+  const uFim = pick(/<UFFim>([A-Z]{2})<\/UFFim>/);
+  if (cIni) f.cMunIni = cIni;
+  if (xIni) f.xMunIni = xIni;
+  if (uIni) f.ufIni = uIni;
+  if (cFim) f.cMunFim = cFim;
+  if (xFim) f.xMunFim = xFim;
+  if (uFim) f.ufFim = uFim;
+  return f;
+}
+
 export function buildCteXml(input: CteInputCompleto): { xml: string; chave: string } {
   assertSefazAmbiente(input.ambiente);
   if (input.modelo === "normal") return buildCteNormalXml(input);

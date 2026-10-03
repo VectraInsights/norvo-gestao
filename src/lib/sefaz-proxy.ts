@@ -145,7 +145,7 @@ export async function handleSefazProxy(request: Request): Promise<Response> {
 
     switch (action) {
       case "emitirCte": {
-        const { buildCteXml, emitirCte } = await import("@/lib/sefaz-cte");
+        const { buildCteXml, emitirCte, formUfsDoXml } = await import("@/lib/sefaz-cte");
         const { createClient: createClient2 } = await import("@supabase/supabase-js");
         const supa2 = createClient2(process.env.SUPABASE_URL||"", process.env.SUPABASE_SERVICE_ROLE_KEY||"");
         const { data: emp } = await supa2.from("empresas").select("cnpj, uf, ie, razao_social, nome_fantasia, logradouro, numero, complemento, bairro, cidade, cep, regime_tributario").eq("id", empresaId).single();
@@ -178,7 +178,7 @@ export async function handleSefazProxy(request: Request): Promise<Response> {
         console.info("[CTE-PROXY] XML gerado para emissão", { chave, ambiente: cteAmbiente });
         const ret = await emitirCte(pfxBytes, senha, xml, cteAmbiente, emitUf);
         const supa3 = createClient(process.env.SUPABASE_URL||"", process.env.SUPABASE_SERVICE_ROLE_KEY||"");
-        if (ret.sucesso) await supa3.from("cte_documentos").insert({ empresa_id: empresaId, chave_acesso: chave, numero: proximo, serie: input.serie, status: "autorizado", xml_assinado: JSON.stringify({ xml, form: (body as any).form || {} }), protocolo_sefaz: ret.protocolo, ambiente: cteAmbiente, data_autorizacao: new Date().toISOString(), valor_servico: input.vPrest, peso_carga: Number((input as any).pesoKg ?? (body as any)?.form?.peso ?? 0) || null, responsavel_emissao: (body as any).responsavel || null } as any);
+        if (ret.sucesso) await supa3.from("cte_documentos").insert({ empresa_id: empresaId, chave_acesso: chave, numero: proximo, serie: input.serie, status: "autorizado", xml_assinado: JSON.stringify({ xml, form: formUfsDoXml(xml, (body as any).form || {}) }), protocolo_sefaz: ret.protocolo, ambiente: cteAmbiente, data_autorizacao: new Date().toISOString(), valor_servico: input.vPrest, peso_carga: Number((input as any).pesoKg ?? (body as any)?.form?.peso ?? 0) || null, responsavel_emissao: (body as any).responsavel || null } as any);
         else await supa3.from("cte_documentos").insert({ empresa_id: empresaId, chave_acesso: chave, numero: proximo, serie: input.serie, status: "rejeitado", xml_assinado: xml, motivo_rejeicao: ret.xMotivo, ambiente: cteAmbiente } as any);
         if (ret.sucesso) {
           const chUsadas = ((inp as any).chavesNFe || []).map((c: any) => String(c).replace(/\D/g, "")).filter(Boolean);
