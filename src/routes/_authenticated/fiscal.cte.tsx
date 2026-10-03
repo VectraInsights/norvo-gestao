@@ -8121,7 +8121,7 @@ function CtePage() {
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                 {/* Consignatário */}
-                <Card className="p-3">
+                <Card className="p-3 min-h-[148px]">
                   <div className="bg-primary/8 border-b border-primary/20 -m-3 mb-2 px-2 py-1 flex items-center gap-2">
                     <div className="h-6 w-6 rounded bg-amber-500/10 grid place-items-center">
                       <Building2 className="h-3.5 w-3.5 text-amber-600" />
@@ -8232,7 +8232,7 @@ function CtePage() {
                 </Card>
 
                 {/* Redespacho */}
-                <Card className="p-3">
+                <Card className="p-3 min-h-[148px]">
                   <div className="bg-primary/8 border-b border-primary/20 -m-3 mb-2 px-2 py-1 flex items-center gap-2">
                     <div className="h-6 w-6 rounded bg-violet-500/10 grid place-items-center">
                       <Truck className="h-3.5 w-3.5 text-violet-600" />
@@ -8341,12 +8341,12 @@ function CtePage() {
                   )}
                 </Card>
               </div>
-              <Card className="p-3">
+              <Card className="p-3 flex min-h-0 flex-1 flex-col">
                 <div className="bg-primary/8 border-b border-primary/20 -m-3 mb-1 px-2 py-1 text-[10px] font-semibold uppercase tracking-wide text-primary/80">
                   Observações Gerais
                 </div>
                 <Textarea
-                  className="min-h-[48px] text-xs font-mono resize-none"
+                  className="min-h-[48px] flex-1 text-xs font-mono resize-none"
                   value={(form as any).obsGerais || ""}
                   onChange={(e) => setForm({ ...form, obsGerais: e.target.value } as any)}
                 />
@@ -8358,7 +8358,7 @@ function CtePage() {
               <Card className="overflow-hidden flex min-h-0 flex-1 flex-col">
                 <div className="min-h-0 flex-1 overflow-y-auto overflow-x-auto">
                   <Table>
-                    <TableHeader className="sticky top-0 bg-muted">
+                    <TableHeader className="sticky top-0 bg-primary/10">
                       <TableRow>
                         <TableHead className="w-6">
                           <input
@@ -8492,7 +8492,7 @@ function CtePage() {
                 <button
                   type="button"
                   onClick={() => setManualNfeOpen(true)}
-                  className="px-2 pt-1 shrink-0 text-left text-[11px] text-muted-foreground hover:text-foreground"
+                  className="px-2 pt-1 shrink-0 text-left text-[12px] font-medium text-primary hover:underline"
                 >
                   + Inserir NF-e manual
                 </button>
@@ -8505,7 +8505,7 @@ function CtePage() {
                   const totP = base.reduce((a, m) => a + Number(m.peso || 0), 0);
                   const totV = base.reduce((a, m) => a + Number(m.valor || 0), 0);
                   return (
-                    <div className="grid grid-cols-[1fr_90px_110px_130px] border-t bg-muted/40 text-xs font-semibold shrink-0">
+                    <div className="grid grid-cols-[1fr_90px_110px_130px] border-t border-primary/20 bg-primary/10 text-xs font-semibold shrink-0">
                       <div className="px-2 py-1.5">
                         TOTAL — {base.length} NF-e(s) • VOL / KG / VALOR
                       </div>
