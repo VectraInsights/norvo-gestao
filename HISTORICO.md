@@ -4165,9 +4165,7 @@ Espelhado na Vercel.
   prévia resolvem o cMun pela cidade+UF (backstop p/ percursos
   antigos). Visualizar CT-e carrega as NF-es do documento.
 
-## CT-e: DACTE lê cidades/UF por regex (03/10)
-
-- O DACTE tentava o XML primeiro (`tag()`), mas o `querySelector`
+## CT-e: DACTE lê cidades/UF por regex (03/10)- O DACTE tentava o XML primeiro (`tag()`), mas o `querySelector`
   falha em silêncio com namespace conforme o motor — caía no form
   velho (AP). Leitura do `ide` agora por regex no XML cru, comprovada
   contra o XML do 542 (MARABA/PA).
@@ -4188,4 +4186,11 @@ Espelhado na Vercel.
 
 - Manifest, ícones, `sw.js` e registro removidos p/ eliminar qualquer
   dúvida de código velho em cache. Versão `v <sha>` no menu mantida.
+
+## CT-e: DACTE usava UF do destinatário no término (03/10)
+
+- Diagnóstico em tela provou dados certos (`ide=PA tag=PA form=PA`)
+  e PDF errado: o renderizador montava "cidade da entrega + UF do
+  destinatário" (`destinoCidade` + `destUF`). Troca de 1 campo p/
+  `destinoUF`. Toast temporário removido.
 
