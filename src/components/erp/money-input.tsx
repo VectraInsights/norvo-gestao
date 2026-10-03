@@ -14,7 +14,7 @@ type Props = Omit<React.InputHTMLAttributes<HTMLInputElement>, "value" | "onChan
  * Emits the raw decimal string (e.g. "1234.56" or "-1234.56") via onChange.
  */
 export const MoneyInput = forwardRef<HTMLInputElement, Props>(function MoneyInput(
-  { value, onChange, allowNegative = false, prefix = "R$", decimals = 2, className, onFocus, onClick, ...rest },
+  { value, onChange, allowNegative = false, prefix = "R$", decimals = 2, className, onFocus, onClick, onDoubleClick, ...rest },
   ref,
 ) {
   const raw = value === null || value === undefined ? "" : String(value);
@@ -35,6 +35,17 @@ export const MoneyInput = forwardRef<HTMLInputElement, Props>(function MoneyInpu
       try { el.setSelectionRange(len, len); } catch {}
     });
   };
+  // Leva o caret p/ o fim SOMENTE se não houver seleção ativa — sem isso
+  // o duplo-clique (e qualquer seleção com o mouse) era desfeito logo depois
+  const keepOrEnd = (el: HTMLInputElement | null) => {
+    if (!el) return;
+    // Defer para após o browser posicionar o caret / aplicar a seleção
+    requestAnimationFrame(() => {
+      try {
+        if (el.selectionStart === el.selectionEnd) el.setSelectionRange(el.value.length, el.value.length);
+      } catch {}
+    });
+  };
 
   return (
     <div className="relative">
@@ -50,12 +61,17 @@ export const MoneyInput = forwardRef<HTMLInputElement, Props>(function MoneyInpu
         className={`${prefix ? "pl-9" : ""} text-right ${className ?? ""}`}
         value={display}
         onFocus={(e) => {
-          moveCaretToEnd(e.currentTarget);
+          keepOrEnd(e.currentTarget);
           (onFocus as any)?.(e);
         }}
         onClick={(e) => {
-          moveCaretToEnd(e.currentTarget);
+          keepOrEnd(e.currentTarget);
           (onClick as any)?.(e);
+        }}
+        onDoubleClick={(e) => {
+          // Duplo-clique seleciona o valor inteiro
+          try { e.currentTarget.setSelectionRange(0, e.currentTarget.value.length); } catch {}
+          (onDoubleClick as any)?.(e);
         }}
         onKeyDown={(e) => {
           // Sempre manter caret no fim antes de processar a tecla — garante empurrão para esquerda
