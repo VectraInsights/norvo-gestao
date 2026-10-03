@@ -670,16 +670,6 @@ function PercursosPage() {
   // Saída com volta ao CT-e (salvar ou fechar): cobre a lista de imediato;
   // a navegação desmonta a página atrás do véu (não precisa desligar)
   const [saindoCte, setSaindoCte] = useState(false);
-  const [chegadaCte, setChegadaCte] = useState(() => {
-    try {
-      return !!(
-        localStorage.getItem("edit_percurso_from_cte") ||
-        localStorage.getItem("prefill_percurso_from_cte")
-      );
-    } catch {
-      return false;
-    }
-  });
   const [confExcluir, setConfExcluir] = useState<Percurso | null>(null);
   const [calcando, setCalcando] = useState(false);
   // UF acompanha a cidade de entrega (IBGE); carrega uma vez
