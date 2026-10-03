@@ -5309,12 +5309,11 @@ function CtePage() {
                           )}
                         </>
                       )}
-                      {!isRascunho && !cancBloq && (
+                      {!isRascunho && !cancBloq && d.status === "autorizado" && (
                         <Button
                           size="icon"
                           variant="ghost"
                           className="h-7 w-7 text-destructive"
-                          disabled={d.status !== "autorizado"}
                           onClick={() => {
                             if (!d.chave_acesso) return;
                             const stMdf = mdfStatusPorCte.get(d.chave_acesso);
