@@ -7641,7 +7641,7 @@ function CtePage() {
             </TabsList>
 
             {/* === TAB: Geral === */}
-            <TabsContent value="geral" className="mt-2 min-h-0 flex-1 space-y-3 overflow-hidden data-[state=inactive]:hidden data-[state=active]:flex data-[state=active]:flex-col">
+            <TabsContent value="geral" className="mt-2 min-h-0 flex-1 space-y-2 overflow-y-auto data-[state=inactive]:hidden data-[state=active]:flex data-[state=active]:flex-col">
               {viewDoc && (
                 <Card className="p-3">
                   <div className="bg-primary/8 border-b border-primary/20 -m-3 mb-2 px-2 py-1 text-[10px] font-semibold uppercase tracking-wide text-primary/80">
@@ -8349,7 +8349,7 @@ function CtePage() {
                   Observações Gerais
                 </div>
                 <Textarea
-                  className="min-h-[60px] text-xs font-mono resize-none"
+                  className="min-h-[48px] text-xs font-mono resize-none"
                   value={(form as any).obsGerais || ""}
                   onChange={(e) => setForm({ ...form, obsGerais: e.target.value } as any)}
                 />
