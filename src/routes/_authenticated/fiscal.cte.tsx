@@ -64,6 +64,7 @@ import {
   Filter,
   Calendar,
   ChevronsUpDown,
+  Check,
   ReceiptText,
   Pencil,
   FilePenLine,
