@@ -4179,10 +4179,13 @@ Espelhado na Vercel.
 - Rodapé do menu mostra `v <sha do commit>` (Vercel injeta) — dá p/
   conferir na hora se o deploy atual está rodando.
 
-## CT-e: PDF velho no app instalado (03/10)
-
-- XML (PA) + sistema (PA) certos e PDF (AP) errado com código novo =
+## CT-e: PDF velho no app instalado (03/10)- XML (PA) + sistema (PA) certos e PDF (AP) errado com código novo =
   contexto desatualizado: o app instalado (PWA) fica com o JS velho
   na memória; F5 na aba do navegador não o atualiza. Solução: fechar
   o app instalado por completo e reabrir (ou reinstalar).
+
+## Sistema: PWA removido (03/10)
+
+- Manifest, ícones, `sw.js` e registro removidos p/ eliminar qualquer
+  dúvida de código velho em cache. Versão `v <sha>` no menu mantida.
 
