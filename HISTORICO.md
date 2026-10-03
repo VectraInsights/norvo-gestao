@@ -4135,4 +4135,8 @@ Espelhado na Vercel.
 - Blindagem final: UF de início/fim sempre derivada do código IBGE
   do município na emissão, na prévia e no DACTE — nem que o campo UF
   esteja errado, o "MARABA/AP" não se repete.
+- XML 538 conferido: `UFFim=PA` correto no XML; o PDF mostrava AP
+  porque o `querySelector` não casa tags com namespace e tudo caía
+  no fallback do form. DACTE agora remove os `xmlns` só p/ leitura e
+  lê o XML de verdade.
 
