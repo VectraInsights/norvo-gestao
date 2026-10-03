@@ -4129,4 +4129,7 @@ Espelhado na Vercel.
   `mercadorias`): merge agora dedupa por chave. Devoluções (cancelar
   e botão) informam a contagem real; zero linhas vira aviso em vez de
   silêncio.
+- Devolução nunca rouba NF com dono: antes de voltar p/ `pendente`,
+  exclui as vinculadas a CT-e autorizado ou rascunho (valia p/ o
+  cancelar e p/ o botão; o toast diz quantas foram mantidas).
 
