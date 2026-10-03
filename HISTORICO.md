@@ -4282,4 +4282,6 @@ Espelhado na Vercel.
   reencontra o doc).
 - Chegada ao percurso via CT-e cobre a lista com spinner até o editor
   abrir (transição direta, sem flash da listagem).
+- Ida ao percurso leva a linha junto: o editor nasce aberto de primeira
+  (atualiza em 2º plano); salvar/fechar com volta cobre a lista na hora.
 
