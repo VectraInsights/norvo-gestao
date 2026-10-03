@@ -4251,4 +4251,8 @@ Espelhado na Vercel.
   sutis entre colunas, fonte 13px.
 - Menu lateral recolhe sozinho ao entrar numa subcategoria (ex.
   /fiscal/cte); expansor manual continua valendo.
+- Trilho mostra só categorias (ícone do grupo expande e abre o
+  submenu); divisórias da tabela fortes.
+- Lápis do percurso: salva o andamento, e ao salvar/fechar volta
+  reabrindo o CT-e que estava sendo feito (rascunho ou novo).
 
