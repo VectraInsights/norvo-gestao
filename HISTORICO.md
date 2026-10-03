@@ -4275,4 +4275,11 @@ Espelhado na Vercel.
   todas as marcações (embarque, lote, MDF-e, importação).
 - Volta do percurso sem flash: o diálogo já nasce aberto com o snapshot
   (antes esperava os documentos carregarem, mostrando o embarque no meio).
+- Volta restaurava form + seleção mas NÃO as NF-es: emissão voltava
+  vazia (percurso "—", dots vermelhos) quando o CT-e ainda não era
+  rascunho ou as notas estavam reservadas. Snapshot agora leva as
+  mercadorias; salvar rascunho mantém o id (evita duplicar e a volta
+  reencontra o doc).
+- Chegada ao percurso via CT-e cobre a lista com spinner até o editor
+  abrir (transição direta, sem flash da listagem).
 
