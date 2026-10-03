@@ -531,7 +531,9 @@ function linhaDocs(d: CteDoc): {
   } catch {}
   if (nfsArr.length === 0) {
     try {
-      const chaves = [...(d.xml_assinado || "").matchAll(/<chNFe>(\d{44})<\/chNFe>/g)].map(
+      // <chNFe> (Simplificado) ou <infNFe><chave> (Normal): o número da NF-e
+      // vai embutido na chave (9 dígitos). Sem isso caía no "1" da contagem.
+      const chaves = [...(d.xml_assinado || "").matchAll(/<(?:chNFe|chave)>(\d{44})<\/(?:chNFe|chave)>/g)].map(
         (m) => m[1],
       );
       nfsArr = chaves.map((ch) => ch.slice(25, 34).replace(/^0+/, "") || "0");
@@ -5517,8 +5519,8 @@ function CtePage() {
                       ) : null}
                     </TableCell>
                     <TableCell>{d.serie ?? "—"}</TableCell>
-                    <TableCell className="text-xs">
-                      {nNFs.length > 0 ? nNFs.join(", ") : d.chave_acesso ? "1" : "—"}
+                    <TableCell className="text-xs max-w-[220px] truncate" title={nNFs.join(", ")}>
+                      {nNFs.length > 0 ? nNFs.join(", ") : d.chave_acesso ? "—" : "—"}
                     </TableCell>
                     <TableCell className="text-right">
                       {brl(Number(d.valor_servico ?? 0))}
@@ -5532,7 +5534,7 @@ function CtePage() {
                     <TableCell className="text-xs whitespace-nowrap">
                       {info.dataEmi || "—"}
                     </TableCell>
-                    <TableCell className="flex gap-1 justify-end whitespace-nowrap pl-1">
+                    <TableCell className="flex gap-1 justify-end pl-1 flex-wrap max-w-[220px]">
                       {isRascunho ? (
                         <>
                           <Button
