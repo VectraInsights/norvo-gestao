@@ -4245,3 +4245,10 @@ Espelhado na Vercel.
   Divergente deixa a Tributação vermelha, com o esperado no tooltip.
   Fora de MG não opina.
 
+## Sistema: tabela centralizada + menu auto-hide (03/10)
+
+- Tabela do CT-e: tudo centralizado sob o cabeçalho, divisórias
+  sutis entre colunas, fonte 13px.
+- Menu lateral recolhe sozinho ao entrar numa subcategoria (ex.
+  /fiscal/cte); expansor manual continua valendo.
+
