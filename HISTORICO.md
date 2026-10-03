@@ -4255,4 +4255,8 @@ Espelhado na Vercel.
   submenu); divisórias da tabela fortes.
 - Lápis do percurso: salva o andamento, e ao salvar/fechar volta
   reabrindo o CT-e que estava sendo feito (rascunho ou novo).
+- Volta do percurso reaplica a linha FRESCA do banco sobre a emissão
+  (qualquer campo alterado, ex. ICMS, reflete na hora; antes o rascunho
+  restaurado cobria a edição).
+- Botão do embarque renomeado: "Mesmo trecho" → "Mesmo percurso".
 
