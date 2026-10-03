@@ -4194,3 +4194,14 @@ Espelhado na Vercel.
   destinatário" (`destinoCidade` + `destUF`). Troca de 1 campo p/
   `destinoUF`. Toast temporário removido.
 
+## CT-e: CC-e carta de correção (03/10)
+
+- Botão CC-e nos autorizados + diálogo próprio (texto mín. 15,
+  contador, aviso do que não corrige). Evento 110110 via
+  `CTeRecepcaoEventoV4` (MG e SVRS), sucesso = 135, testado em vitest.
+- Inutilização: MG não publica o serviço (nem HML nem produção) e o
+  CT-e 4.00 não o prevê nas tabelas oficiais — nada a implementar;
+  numeração pulada segue sem uso.
+- Revert de cancel no servidor também extrai `<infNFe><chave>`
+  (antes só `<chNFe>`).
+
