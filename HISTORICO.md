@@ -4288,4 +4288,6 @@ Espelhado na Vercel.
   nas 4 abas; conteúdo em escala automática (AbaFit) sem nenhuma rolagem;
   dots com tooltip do que falta; sem placeholders; "Selecione placa" no
   padrão; caption "Emissão na aba CIOT" removida.
+- Impostos em largura fixa de 7 dígitos (R$ 136px / % 96px, CST e crédito
+  flexíveis): a aba comprime e o ajuste automático amplia a tabela de NF-es.
 
