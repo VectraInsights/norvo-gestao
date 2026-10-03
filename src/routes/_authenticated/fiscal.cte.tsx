@@ -394,6 +394,38 @@ function ufPorCMunIBGE(cMun: unknown): string {
   return UF_POR_IBGE[String(cMun || "").replace(/\D/g, "").slice(0, 2)] || "";
 }
 
+// Resolve o cMun IBGE por cidade+UF (backstop p/ percursos antigos salvos sem
+// o código: sem ele o CT-e herda o cMun da NF-e e a UF sai errada).
+// Cache em memória; se falhar, devolve "" (chamador mantém o valor atual).
+const cmunIBGEFixCache = new Map<string, string>();
+async function resolverCMunIBGE(xmun: unknown, uf: unknown): Promise<string> {
+  const xu = String(xmun || "").trim();
+  const uu = String(uf || "").trim().toUpperCase();
+  if (!xu || !uu) return "";
+  const key = xu.toUpperCase() + "|" + uu;
+  if (cmunIBGEFixCache.has(key)) return cmunIBGEFixCache.get(key)!;
+  try {
+    const r = await fetch(
+      `https://brasilapi.com.br/api/ibge/municipios/v1/${encodeURIComponent(uu)}`,
+    );
+    if (!r.ok) return "";
+    const arr = (await r.json()) as any[];
+    const norm = (s: string) =>
+      (s || "")
+        .toUpperCase()
+        .normalize("NFD")
+        .replace(/[^A-Z ]/g, "")
+        .replace(/ +/g, " ")
+        .trim();
+    const hit = (arr || []).find((m) => norm(m.nome) === norm(xu));
+    const cod = hit?.codigo_ibge ? String(hit.codigo_ibge) : "";
+    cmunIBGEFixCache.set(key, cod);
+    return cod;
+  } catch {
+    return "";
+  }
+}
+
 // Chaves das NF-es vinculadas ao CT-e: Simplificado usa <chNFe>, Normal usa
 // <infNFe><chave>. Escopo restrito (não confundir com <chCTe> de docAnt).
 // Aceita o XML puro ou o JSON gravado ({xml, form} de autorizado, {nfs} de rascunho).
@@ -3792,7 +3824,7 @@ function CtePage() {
     if (falhas > 0) toast.error(`${falhas} rascunho(s) falharam — verifique os erros acima`);
   };
 
-  const visualizarDoc = (doc: CteDoc) => {
+  const visualizarDoc = async (doc: CteDoc) => {
     try {
       const parsed = JSON.parse(doc.xml_assinado || "{}");
       if (parsed.form) setForm({ ...emptyForm, ...parsed.form });
@@ -3802,6 +3834,22 @@ function CtePage() {
     }
     setEditingRascunhoId(null);
     setViewDoc(doc);
+    setSelecionadas(new Set());
+    // Mostra as NF-es DO DOCUMENTO (não as do embarque): sem isso a aba de
+    // mercadorias exibe notas que não têm nada a ver com o CT-e aberto.
+    try {
+      const chs = chavesNFeDoXml(doc.xml_assinado);
+      if (chs.length && empresa) {
+        const { data } = await supabase
+          .from("cte_nfes_pendentes" as any)
+          .select(
+            "chave,n_nf,serie,emit_nome,emit_cnpj,emit_uf,emit_cmun,emit_xmun,emit_ie,emit_logradouro,emit_nro,emit_bairro,emit_cep,emit_fone,dest_nome,dest_cnpj,dest_uf,dest_cmun,dest_xmun,dest_ie,dest_logradouro,dest_nro,dest_bairro,dest_cep,dest_fone,valor,peso,data_emissao,tomador_nome,tomador_cnpj,tomador_uf,tomador_cmun,tomador_xmun,tomador_ie,tomador_logradouro,tomador_bairro,tomador_cep,mod_frete",
+          )
+          .eq("empresa_id", empresa.id)
+          .in("chave", chs);
+        if (((data as any[]) || []).length) setMercadorias(mapearPendentes(data as any) as any);
+      }
+    } catch {}
     setAba("geral");
     setOpen(true);
   };
@@ -4144,6 +4192,11 @@ function CtePage() {
         }
         if (pend.length > 0) throw new Error("Para emitir informe: " + pend.join("; "));
         validarPedagio(form);
+        // cMun da prestação (não da NF-e): resolve pela cidade+UF quando divergente/vazio
+        const cMunIniFix =
+          (await resolverCMunIBGE(form.xMunIni, form.ufIni)) || form.cMunIni;
+        const cMunFimFix =
+          (await resolverCMunIBGE(form.xMunFim, form.ufFim)) || form.cMunFim;
         const ret: any = await emitirCteFn({
           data: {
             empresaId: empresa.id,
@@ -4212,12 +4265,12 @@ function CtePage() {
               cMunEnv: form.cMunEnv,
               xMunEnv: form.xMunEnv,
               ufEnv: form.ufEnv,
-              cMunIni: form.cMunIni,
+              cMunIni: cMunIniFix,
               xMunIni: form.xMunIni,
-              ufIni: ufPorCMunIBGE(form.cMunIni) || form.ufIni,
-              cMunFim: form.cMunFim,
+              ufIni: ufPorCMunIBGE(cMunIniFix) || form.ufIni,
+              cMunFim: cMunFimFix,
               xMunFim: form.xMunFim,
-              ufFim: ufPorCMunIBGE(form.cMunFim) || form.ufFim,
+              ufFim: ufPorCMunIBGE(cMunFimFix) || form.ufFim,
               icms: {
                 CST: form.icmsCST,
                 vBC: totalPrestacao(form),
@@ -4643,6 +4696,10 @@ function CtePage() {
       if (!empresa) throw new Error("Empresa não selecionada");
       const chaves =
         selecionadas.size > 0 ? Array.from(selecionadas) : mercadorias.map((m) => m.chave);
+      const cMunIniFix =
+        (await resolverCMunIBGE(form.xMunIni, form.ufIni)) || form.cMunIni;
+      const cMunFimFix =
+        (await resolverCMunIBGE(form.xMunFim, form.ufFim)) || form.cMunFim;
 
       return previewCteXmlFn({
         data: {
@@ -4704,12 +4761,12 @@ function CtePage() {
             cMunEnv: form.cMunEnv,
             xMunEnv: form.xMunEnv,
             ufEnv: form.ufEnv,
-            cMunIni: form.cMunIni,
+            cMunIni: cMunIniFix,
             xMunIni: form.xMunIni,
-            ufIni: ufPorCMunIBGE(form.cMunIni) || form.ufIni,
-            cMunFim: form.cMunFim,
+            ufIni: ufPorCMunIBGE(cMunIniFix) || form.ufIni,
+            cMunFim: cMunFimFix,
             xMunFim: form.xMunFim,
-            ufFim: ufPorCMunIBGE(form.cMunFim) || form.ufFim,
+            ufFim: ufPorCMunIBGE(cMunFimFix) || form.ufFim,
             icms: {
               CST: form.icmsCST,
               vBC: totalPrestacao(form),

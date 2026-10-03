@@ -986,6 +986,24 @@ function PercursosPage() {
           if (!payload[col] && fb[k]) payload[col] = fb[k];
         }
       }
+      // cMun de coleta/entrega pelo IBGE (a tela não tem campo p/ código):
+      // sem ele o CT-e herda o cMun da NF-e e a UF sai errada (ex. MARABA/AP).
+      const cmunDe = (xmun: any, uf: any) => {
+        const cands = (municipios || []).filter((m) => normCidade(m.nome) === normCidade(xmun));
+        if (!cands.length) return "";
+        const same =
+          cands.find((m) => String(m.uf || "").toUpperCase() === String(uf || "").toUpperCase()) ||
+          cands[0];
+        return same?.id ? String(same.id) : "";
+      };
+      if (!payload.coleta_cmun && payload.coleta_xmun && payload.coleta_uf) {
+        const c = cmunDe(payload.coleta_xmun, payload.coleta_uf);
+        if (c) payload.coleta_cmun = c;
+      }
+      if (!payload.entrega_cmun && payload.entrega_xmun && payload.entrega_uf) {
+        const c = cmunDe(payload.entrega_xmun, payload.entrega_uf);
+        if (c) payload.entrega_cmun = c;
+      }
       if (!empresa) throw new Error("Empresa nao selecionada");
       const digits = (s: any) => String(s || "").replace(/\D/g, "");
       const upper = (s: any) =>
