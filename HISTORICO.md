@@ -4224,3 +4224,12 @@ Espelhado na Vercel.
 - Erros da SEFAZ traduzidos (`erroSefazAmigavel`): HTML/HTTP vira
   texto curto, rejeição de negócio mantém o motivo limpo.
 
+## CT-e: dots por aba no lugar do checklist (03/10)
+
+- Removidos selo do percurso e barra "Pronto p/ emitir" (mentia:
+  marcava tudo ok sem valor).
+- Abas com dot verde (completa) / vermelho (faltando): Geral
+  (tomador+percurso+início/fim), Transporte (tração/motorista/RNTRC+
+  valor+seguro), Tributação e Carga (CFOP/CST/alíquota+NF-es);
+  Observações sempre verde. Sem dots em leitura.
+
