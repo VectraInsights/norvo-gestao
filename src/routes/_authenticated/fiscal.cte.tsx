@@ -1916,6 +1916,7 @@ function CtePage() {
   const limparFormularioAoSair = () => {
     setOpen(false);
     setForm({ ...emptyForm });
+    setPercursoAplicado(null);
     setMercadorias([]);
     setSelecionadas(new Set());
     setEditingRascunhoId(null);
@@ -4670,6 +4671,11 @@ function CtePage() {
     form: any;
   } | null>(null);
   const percursoAplicadoKey = useRef("");
+  const [percursoAplicado, setPercursoAplicado] = useState<{
+    codigo: string;
+    nome: string;
+    em: string;
+  } | null>(null);
   const pularPercursoRef = useRef(false);
   const { data: percursosDB, error: percursosError } = useQuery({
     enabled: !!empresa,
@@ -4981,6 +4987,11 @@ function CtePage() {
       ...(r.obs_gerais ? { obsGerais: r.obs_gerais } : {}),
     }));
     if (r.entrega_xmun) travarEntregaRef.current = true;
+    setPercursoAplicado({
+      codigo: String(r.codigo || ""),
+      nome: String(r.nome || ""),
+      em: new Date().toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" }),
+    });
   };
   // Percurso é 100% automático e silencioso: salva/atualiza a cada emissão ou rascunho
   const persistirPercursoSilencioso = async () => {
@@ -5193,6 +5204,7 @@ function CtePage() {
   }, [docs, nfesTodas, percursoMatch, mercadorias, selecionadas, form.cnpjTomador]);
   useEffect(() => {
     percursoAplicadoKey.current = "";
+    setPercursoAplicado(null);
     // Preserva trava armada antes de abrir (rascunho/percurso manual); senão libera p/ NF-e preencher
     travarEntregaRef.current = travarPendenteRef.current;
     travarPendenteRef.current = false;
@@ -7268,7 +7280,34 @@ function CtePage() {
             <p className="text-sm text-muted-foreground">
               Emissão de CT-e (57) — versão 4.00 via mTLS SEFAZ.
             </p>
+            {!viewDoc && percursoAplicado && (
+              <p
+                className="mt-1 text-[11px] text-muted-foreground"
+                title="Coleta/entrega, tomador, CFOP e impostos vieram deste percurso. Edições manuais posteriores prevalecem."
+              >
+                Percurso {percursoAplicado.codigo} aplicado às {percursoAplicado.em}
+                {percursoAplicado.nome ? ` • ${percursoAplicado.nome}` : ""}
+              </p>
+            )}
           </DialogHeader>
+          {viewDoc && (
+            <div
+              className={`mt-2 rounded-md border px-3 py-1.5 text-xs font-semibold ${
+                viewDoc.status === "autorizado"
+                  ? "border-green-300 bg-green-50 text-green-800 dark:border-green-800 dark:bg-green-950/40 dark:text-green-200"
+                  : viewDoc.status === "rejeitado"
+                    ? "border-red-300 bg-red-50 text-red-800 dark:border-red-800 dark:bg-red-950/40 dark:text-red-200"
+                    : "border-border bg-muted/40 text-muted-foreground"
+              }`}
+            >
+              CT-e {viewDoc.numero ?? ""} •{" "}
+              {viewDoc.status === "autorizado"
+                ? "Autorizado — somente leitura"
+                : viewDoc.status === "rejeitado"
+                  ? `Rejeitado — ${viewDoc.motivo_rejeicao || "ver motivo"}`
+                  : "Cancelado — somente leitura"}
+            </div>
+          )}
 
           <Tabs value={aba} onValueChange={setAba} className="w-full">
             <TabsList className="w-full justify-start gap-0 bg-muted/50 rounded-t-md">
@@ -9545,9 +9584,58 @@ function CtePage() {
             </TabsContent>
           </Tabs>
 
+          {!viewDoc &&
+            (() => {
+              const itens = [
+                {
+                  label: "Tomador",
+                  ok:
+                    String(form.cnpjTomador || "").replace(/\D/g, "").length === 14 &&
+                    !!String(form.xNomeTomador || "").trim(),
+                },
+                { label: "Percurso", ok: !!percursoMatch },
+                {
+                  label: "Tração/motorista",
+                  ok:
+                    !!String(form.placaVeiculo || "").trim() &&
+                    !!(
+                      String((form as any).motoristaNome || "").trim() ||
+                      (form as any).motoristaId
+                    ),
+                },
+                {
+                  label: "Tributos",
+                  ok: !!String(form.cfop || "").trim() && !!String(form.icmsCST || "").trim(),
+                },
+                { label: "NF-es", ok: mercadorias.length > 0 },
+                {
+                  label: "Seguro",
+                  ok:
+                    (form as any).finalidadeEmissao === "Complemento" ||
+                    !!String(form.seguradoraNome || "").trim(),
+                },
+              ];
+              const prontos = itens.filter((i) => i.ok).length;
+              return (
+                <div className="flex flex-wrap items-center gap-x-3 gap-y-1 rounded-md border bg-muted/30 px-3 py-1.5 text-[11px]">
+                  <span className="font-semibold uppercase tracking-wide text-muted-foreground">
+                    Pronto p/ emitir {prontos}/{itens.length}
+                  </span>
+                  {itens.map((i) => (
+                    <span
+                      key={i.label}
+                      className={`inline-flex items-center gap-1 font-medium ${i.ok ? "text-green-700 dark:text-green-300" : "text-muted-foreground"}`}
+                    >
+                      {i.ok ? <Check className="h-3 w-3" /> : <X className="h-3 w-3" />}
+                      {i.label}
+                    </span>
+                  ))}
+                </div>
+              );
+            })()}
           <DialogFooter className="gap-2">
-            <Button variant="outline" onClick={limparFormularioAoSair}>
-              <Ban className="mr-1 h-3.5 w-3.5" /> Cancelar
+            <Button variant="ghost" onClick={limparFormularioAoSair}>
+              <Ban className="mr-1 h-3.5 w-3.5" /> Fechar
             </Button>
             {!viewDoc && (
               <>
@@ -9580,6 +9668,7 @@ function CtePage() {
                 <Button
                   onClick={() => emitir.mutate()}
                   disabled={emitir.isPending || !form.cnpjTomador || !form.xNomeTomador}
+                  className="px-6 font-semibold"
                 >
                   {emitir.isPending ? (
                     "Enviando..."
