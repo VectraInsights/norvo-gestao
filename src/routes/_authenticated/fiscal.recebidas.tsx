@@ -100,6 +100,13 @@ function parseParcelasDoXml(xml: string) {
   }
 }
 
+// nNF ocupa os dígitos 26-34 da chave de acesso (44); serve de fallback quando o XML não traz <nNF>
+function nNFdaChave(chave: string): string {
+  const d = (chave || "").replace(/\D/g, "");
+  if (d.length !== 44) return "";
+  return String(parseInt(d.substring(25, 34), 10));
+}
+
 function NotasRecebidas() {
   const { data: empresa } = useEmpresaAtual();
   const qc = useQueryClient();
@@ -344,6 +351,8 @@ function NotasRecebidas() {
           }
         }
 
+        if (!nNF) nNF = nNFdaChave(result.nota.chave);
+
         setNotaDetalhe({
           chave: result.nota.chave,
           emitente: result.nota.emitente,
@@ -435,7 +444,7 @@ function NotasRecebidas() {
                     doc.querySelector("infNFe")?.getAttribute("Id")?.replace(/^NFe/, "") || "";
       const emit = doc.querySelector("emit > xNome")?.textContent || "";
       const cnpj = doc.querySelector("emit > CNPJ")?.textContent || "45.997.418/0001-09";
-      const nNF = doc.querySelector("ide > nNF")?.textContent || "1042";
+      const nNF = doc.querySelector("ide > nNF")?.textContent || nNFdaChave(chNFe);
       const vNFStr = doc.querySelector("total > ICMSTot > vNF")?.textContent;
       const vNF = vNFStr ? parseFloat(vNFStr) : 0;
 
@@ -739,8 +748,10 @@ function NotasRecebidas() {
       localStorage.setItem(storageKey, JSON.stringify(chavesJaImportadas));
 
       setNotas(prev => [{
+        id: notaId,
         chave: importResults.chave, emitente: importResults.emitente, cnpj: importResults.cnpj,
-        valor: importResults.total, data_emissao: new Date().toISOString(), situacao_sefaz: "autorizada"
+        valor: importResults.total, data_emissao: new Date().toISOString(), situacao_sefaz: "autorizada",
+        numero_nf: importResults.nNF, xml_completo: ""
       }, ...prev]);
 
       qc.invalidateQueries({ queryKey: ["produtos"] });
@@ -947,12 +958,15 @@ function NotasRecebidas() {
 
       // 6. Adicionar à lista local
       setNotas(prev => [{
+        id: notaId,
         chave: notaDetalhe.chave,
         emitente: notaDetalhe.emitente,
         cnpj: notaDetalhe.cnpj,
         valor: notaDetalhe.valor,
         data_emissao: notaDetalhe.data,
-        situacao_sefaz: "autorizada"
+        situacao_sefaz: "autorizada",
+        numero_nf: notaDetalhe.nNF,
+        xml_completo: notaDetalhe.xml
       }, ...prev]);
 
       // 7. Invalidação de React Query
@@ -1090,43 +1104,48 @@ function NotasRecebidas() {
   });
 
   const handleVerNota = async (n: NotaRecebida) => {
-    if (n.xml_completo || n.id) {
-      // Se já lançada, prioriza dados salvos (categoria e parcelas editadas)
-      if (n.id) {
-        const { data: itens } = await supabase.from("notas_importadas_itens" as never).select("codigo, nome, quantidade, unidade, valor_unitario, valor_total, categoria").eq("nota_id", n.id as any);
-        const { data: parcelasDB } = await supabase.from("notas_importadas_parcelas" as never).select("numero, data_vencimento, valor, lancamento_id").eq("nota_id", n.id as any);
-        if (itens && (itens as any).length > 0) {
-          const produtos = (itens as any).map((it: any) => ({ codigo: it.codigo, nome: it.nome, qtd: Number(it.quantidade), un: it.unidade, valorUnit: Number(it.valor_unitario), valorTotal: Number(it.valor_total), categoria: it.categoria || "" }));
-          let parcelas: { numero: string; dataVencimento: string; valor: number; forma_pagamento: string; conta_bancaria_id: string }[] = [];
-          if (parcelasDB && (parcelasDB as any).length > 0) {
-            const lancIds = (parcelasDB as any[]).map((p: any) => p.lancamento_id).filter(Boolean);
-            let lancMap = new Map<string, any>();
-            if (lancIds.length > 0) {
-              const { data: lancs } = await supabase.from("lancamentos_financeiros").select("id, forma_pagamento, conta_bancaria_id").in("id", lancIds);
-              (lancs as any[] || []).forEach((l: any) => lancMap.set(l.id, l));
-            }
-            parcelas = (parcelasDB as any[]).map((p: any) => {
-              const lanc = lancMap.get(p.lancamento_id);
-              return { numero: p.numero, dataVencimento: p.data_vencimento, valor: Number(p.valor), forma_pagamento: lanc?.forma_pagamento || "Boleto", conta_bancaria_id: lanc?.conta_bancaria_id || "" };
-            });
-          }
-          const xml = n.xml_completo || "";
-          const nNF = n.numero_nf || "";
-          setNotaDetalhe({ id: n.id, chave: n.chave, emitente: n.emitente, cnpj: n.cnpj, nNF, data: n.data_emissao, valor: n.valor, produtos, parcelas, xml });
-          return;
+    // Nota já importada: o detalhe monta só com dados locais — a SEFAZ (homologação) não resolve chave de produção
+    if (n.id) {
+      const { data: itens } = await supabase.from("notas_importadas_itens" as never).select("codigo, nome, quantidade, unidade, valor_unitario, valor_total, categoria").eq("nota_id", n.id as any);
+      const { data: parcelasDB } = await supabase.from("notas_importadas_parcelas" as never).select("numero, data_vencimento, valor, lancamento_id").eq("nota_id", n.id as any);
+      const produtos = ((itens as any[]) || []).map((it: any) => ({ codigo: it.codigo, nome: it.nome, qtd: Number(it.quantidade), un: it.unidade, valorUnit: Number(it.valor_unitario), valorTotal: Number(it.valor_total), categoria: it.categoria || "" }));
+      let parcelas: { numero: string; dataVencimento: string; valor: number; forma_pagamento: string; conta_bancaria_id: string }[] = [];
+      if (parcelasDB && (parcelasDB as any).length > 0) {
+        const lancIds = (parcelasDB as any[]).map((p: any) => p.lancamento_id).filter(Boolean);
+        const lancMap = new Map<string, any>();
+        if (lancIds.length > 0) {
+          const { data: lancs } = await supabase.from("lancamentos_financeiros").select("id, forma_pagamento, conta_bancaria_id").in("id", lancIds);
+          ((lancs as any[]) || []).forEach((l: any) => lancMap.set(l.id, l));
         }
+        parcelas = (parcelasDB as any[]).map((p: any) => {
+          const lanc = lancMap.get(p.lancamento_id);
+          return { numero: p.numero, dataVencimento: p.data_vencimento, valor: Number(p.valor), forma_pagamento: lanc?.forma_pagamento || "Boleto", conta_bancaria_id: lanc?.conta_bancaria_id || "" };
+        });
       }
-      // Fallback: parse do XML quando ainda não há itens salvos ou nota não lançada
-      const xml = n.xml_completo || "";
-      if (xml) {
-        const produtos = parseProdutosDoXml(xml);
-        const parser = new DOMParser();
-        const doc = parser.parseFromString(xml, "text/xml");
-        const nNF = doc.querySelector("nNF")?.textContent || n.numero_nf || "";
-        const parcelas = parseParcelasDoXml(xml);
-        setNotaDetalhe({ id: n.id, chave: n.chave, emitente: n.emitente, cnpj: n.cnpj, nNF, data: n.data_emissao, valor: n.valor, produtos, parcelas, xml });
-        return;
-      }
+      setNotaDetalhe({
+        id: n.id,
+        chave: n.chave,
+        emitente: n.emitente,
+        cnpj: n.cnpj,
+        nNF: n.numero_nf || nNFdaChave(n.chave),
+        data: n.data_emissao,
+        valor: n.valor,
+        produtos,
+        parcelas,
+        xml: n.xml_completo || "",
+      });
+      return;
+    }
+    // Sem registro local: tenta o XML em memória antes de consultar a SEFAZ
+    if (n.xml_completo) {
+      const xml = n.xml_completo;
+      const produtos = parseProdutosDoXml(xml);
+      const parser = new DOMParser();
+      const doc = parser.parseFromString(xml, "text/xml");
+      const nNF = doc.querySelector("nNF")?.textContent || n.numero_nf || nNFdaChave(n.chave);
+      const parcelas = parseParcelasDoXml(xml);
+      setNotaDetalhe({ id: n.id, chave: n.chave, emitente: n.emitente, cnpj: n.cnpj, nNF, data: n.data_emissao, valor: n.valor, produtos, parcelas, xml });
+      return;
     }
     if (!empresa) return;
     toast.info("Buscando detalhes da nota na SEFAZ...");
@@ -1137,7 +1156,7 @@ function NotasRecebidas() {
         const produtos = parseProdutosDoXml(xml);
         const parser = new DOMParser();
         const doc = parser.parseFromString(xml, "text/xml");
-        const nNF = doc.querySelector("nNF")?.textContent || "";
+        const nNF = doc.querySelector("nNF")?.textContent || n.numero_nf || nNFdaChave(n.chave);
         const parcelas = parseParcelasDoXml(xml);
         setNotaDetalhe({
           id: n.id,
@@ -1321,46 +1340,31 @@ ${transportadora ? `<div class="section"><div class="section-title">TRANSPORTE</
 
           <Card className="overflow-hidden border-muted shadow-panel bg-card/60 backdrop-blur-sm">
             <div className="overflow-x-auto">
-              <Table>
-                <TableHeader className="bg-muted/40">
+              <Table className="[&_td]:px-2 [&_td]:py-1.5 [&_td]:text-[13px] [&_td]:text-center [&_th]:px-2 [&_td]:border-l [&_td]:border-border [&_td:first-child]:border-l-0 [&_th]:border-l [&_th]:border-border [&_th:first-child]:border-l-0">
+                <TableHeader>
                   <TableRow>
-                    <TableHead className="font-semibold text-foreground">Emitente</TableHead>
-                    <TableHead className="font-semibold text-foreground">NF-e</TableHead>
-                    <TableHead className="font-semibold text-foreground">Emissão</TableHead>
-                    <TableHead className="text-right font-semibold text-foreground">Valor</TableHead>
-                    <TableHead className="font-semibold text-foreground">Situação</TableHead>
-                    <TableHead className="w-24" />
+                    <TableHead className="text-center">Emitente</TableHead>
+                    <TableHead className="text-center">NF-e</TableHead>
+                    <TableHead className="text-center">Emissão</TableHead>
+                    <TableHead className="text-center">Valor</TableHead>
+                    <TableHead className="text-center w-24">Ações</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {filteredNotas.map((n) => {
-                    const getSefazBadge = (status: typeof n.situacao_sefaz) => {
-                      return status === "autorizada" ? (
-                        <span className="inline-flex items-center text-[11px] font-medium text-emerald-600 dark:text-emerald-400">
-                          <Check className="mr-1 h-3 w-3" /> Autorizada
-                        </span>
-                      ) : (
-                        <span className="inline-flex items-center text-[11px] font-medium text-muted-foreground line-through">
-                          <XCircle className="mr-1 h-3 w-3 text-destructive" /> Cancelada
-                        </span>
-                      );
-                    };
-
                     return (
                       <TableRow key={n.chave} className="transition-colors hover:bg-muted/30 cursor-pointer" onClick={() => handleVerNota(n)}>
                         <TableCell className="max-w-[220px]">
                           <div className="font-medium text-foreground truncate">{n.emitente}</div>
-                          <div className="text-xs text-muted-foreground">{n.cnpj}</div>
                         </TableCell>
                         <TableCell className="text-tabular text-muted-foreground">
-                          <div className="font-mono text-xs">{n.numero_nf || "—"}</div>
-                          <div className="font-mono text-[10px] text-muted-foreground/60 truncate max-w-[140px]">{n.chave}</div>
+                          <div className="font-mono text-xs">{n.numero_nf || nNFdaChave(n.chave) || "—"}</div>
+                          <div className="font-mono text-[10px] text-muted-foreground/60 truncate max-w-[140px] mx-auto">{n.chave}</div>
                         </TableCell>
                         <TableCell className="text-tabular text-muted-foreground">{dateBR(n.data_emissao)}</TableCell>
-                        <TableCell className="text-right text-tabular font-medium text-foreground">{brl(n.valor)}</TableCell>
-                        <TableCell>{getSefazBadge(n.situacao_sefaz)}</TableCell>
-                        <TableCell className="text-right">
-                          <div className="flex items-center justify-end gap-0.5" onClick={(e) => e.stopPropagation()}>
+                        <TableCell className="text-tabular font-medium text-foreground">{brl(n.valor)}</TableCell>
+                        <TableCell>
+                          <div className="flex items-center justify-center gap-0.5" onClick={(e) => e.stopPropagation()}>
                             <TooltipProvider>
                               <Tooltip>
                                 <TooltipTrigger asChild>
