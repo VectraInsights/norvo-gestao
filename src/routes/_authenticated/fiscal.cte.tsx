@@ -7379,12 +7379,16 @@ function CtePage() {
           onKeyDown={(event) => {
             event.stopPropagation();
             // Enter em campo de texto salva rascunho (textarea quebra linha; checkbox/radio/file ficam fora)
+            if (viewDoc) return; // somente leitura: Enter não faz nada
             if (event.key === "Enter" && !event.shiftKey && !event.ctrlKey && !event.altKey && !event.metaKey) {
               const t = event.target as HTMLElement;
+              // Só no diálogo principal: ignora popovers/combos e diálogos aninhados
+              const dlg = t.closest('[role="dialog"]');
+              if (dlg && dlg !== event.currentTarget) return;
               if (
                 t.tagName === "INPUT" &&
                 !["checkbox", "radio", "file", "button", "submit", "hidden"].includes((t as HTMLInputElement).type) &&
-                !t.closest('[role="combobox"],[role="listbox"],[role="option"],[role="dialog"],[data-radix-popper-content-wrapper]')
+                !t.closest('[role="combobox"],[role="listbox"],[role="option"],[data-radix-popper-content-wrapper]')
               ) {
                 event.preventDefault();
                 if (!salvarRascunho.isPending) salvarRascunho.mutate();

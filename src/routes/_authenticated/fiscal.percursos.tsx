@@ -1736,7 +1736,27 @@ function PercursosPage() {
           if (!v) fecharVoltandoCte();
         }}
       >
-        <DialogContent className="p-3 sm:p-4">
+        <DialogContent
+          className="p-3 sm:p-4"
+          onKeyDown={(event) => {
+            // Enter em campo de texto salva o percurso (a validação do salvar
+            // barra quando faltar obrigatório; textarea quebra linha)
+            if (event.key === "Enter" && !event.shiftKey && !event.ctrlKey && !event.altKey && !event.metaKey) {
+              const t = event.target as HTMLElement;
+              // Só no diálogo principal: ignora popovers/combos e diálogos aninhados
+              const dlg = t.closest('[role="dialog"]');
+              if (dlg && dlg !== event.currentTarget) return;
+              if (
+                t.tagName === "INPUT" &&
+                !["checkbox", "radio", "file", "button", "submit", "hidden"].includes((t as HTMLInputElement).type) &&
+                !t.closest('[role="combobox"],[role="listbox"],[role="option"],[data-radix-popper-content-wrapper]')
+              ) {
+                event.preventDefault();
+                if (editing && !salvar.isPending) salvar.mutate();
+              }
+            }
+          }}
+        >
           <div className="flex flex-col h-full gap-2">
             <DialogHeader>
               <DialogTitle className="text-sm">
