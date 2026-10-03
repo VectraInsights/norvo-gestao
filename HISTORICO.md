@@ -4233,3 +4233,9 @@ Espelhado na Vercel.
   valor+seguro), Tributação e Carga (CFOP/CST/alíquota+NF-es);
   Observações sempre verde. Sem dots em leitura.
 
+## CT-e: lista sem rolagem + NF por número (03/10)
+
+- Ações quebram em 2 linhas quando preciso (sem barra horizontal);
+  placas lado a lado; NOTAS FISCAIS mostra os números
+  (extraídos da chave, vale p/ Normal e Simplificado) com tooltip.
+
