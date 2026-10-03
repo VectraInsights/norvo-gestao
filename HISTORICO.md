@@ -4132,4 +4132,7 @@ Espelhado na Vercel.
 - Devolução nunca rouba NF com dono: antes de voltar p/ `pendente`,
   exclui as vinculadas a CT-e autorizado ou rascunho (valia p/ o
   cancelar e p/ o botão; o toast diz quantas foram mantidas).
+- Blindagem final: UF de início/fim sempre derivada do código IBGE
+  do município na emissão, na prévia e no DACTE — nem que o campo UF
+  esteja errado, o "MARABA/AP" não se repete.
 
