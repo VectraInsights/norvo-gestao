@@ -4026,7 +4026,6 @@ Espelhado na Vercel.
 - Botão/diálogo "Preencher lote" viraram "Preencher CIOT".
 
 ## CT-e Normal: 225 resolvido via XSD oficial (02/10)
-
 - Baixado o XSD oficial (`cteTiposBasico_v4.00.xsd`, NT2026.002) e
   extraída a sequência do TCTe: faltava `<indIEToma>` no `ide`
   (antes do toma3/toma4) e o `vTotDFe` é filho do `<imp>` — não
@@ -4107,4 +4106,16 @@ Espelhado na Vercel.
   Suíte completa: 25 testes passando (`npm test`).
 - Gerado conferido contra o arquivo do Desktop: idêntico, mudando apenas chave de
   acesso, `cCT`/`cDV` e `dhEmi` (valores por emissão).
+
+## CT-e: UF início/fim via IBGE + percurso exige UF (03/10)
+
+- DACTE saía "MARABA, AP": cidade vinha da entrega do percurso, mas a
+  UF caía no fallback da NF-e (destinatário) porque o percurso estava
+  sem `entrega_uf`. `aplicarPercurso` agora deriva a UF pelo código
+  IBGE do município (2 primeiros dígitos) quando a UF do percurso
+  está vazia (vale p/ coleta e entrega).
+- Salvar percurso com cidade de coleta/entrega sem a UF agora é
+  bloqueado ("UF da coleta"/"UF da entrega"). Percurso 1 precisa ter
+  a UF de entrega preenchida (PA). O CT-e 531 já autorizado com AP
+  não tem como corrigir no documento — só cancelando e reemitindo.
 
