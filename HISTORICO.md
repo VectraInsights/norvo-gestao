@@ -4172,12 +4172,17 @@ Espelhado na Vercel.
   velho (AP). Leitura do `ide` agora por regex no XML cru, comprovada
   contra o XML do 542 (MARABA/PA).
 
-## CT-e: resumo no cancelar + versão no menu (03/10)
-
-- Cancelar (1 ou lote): "1 CT-e cancelado" / "N CT-es cancelados" e
+## CT-e: resumo no cancelar + versão no menu (03/10)- Cancelar (1 ou lote): "1 CT-e cancelado" / "N CT-es cancelados" e
   "1 NF-e devolvida" / "N NF-es devolvidas" — sem spam por item.
 - Botão "Devolver NF-es" removido dos Cancelados (a devolução segue
   automática no cancelar, preservando NF com dono).
 - Rodapé do menu mostra `v <sha do commit>` (Vercel injeta) — dá p/
   conferir na hora se o deploy atual está rodando.
+
+## CT-e: PDF velho no app instalado (03/10)
+
+- XML (PA) + sistema (PA) certos e PDF (AP) errado com código novo =
+  contexto desatualizado: o app instalado (PWA) fica com o JS velho
+  na memória; F5 na aba do navegador não o atualiza. Solução: fechar
+  o app instalado por completo e reabrir (ou reinstalar).
 

@@ -89,9 +89,6 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       },
       { name: "author", content: "Norvo" },
       { name: "theme-color", content: "#14532d" },
-      { name: "mobile-web-app-capable", content: "yes" },
-      { name: "apple-mobile-web-app-capable", content: "yes" },
-      { name: "apple-mobile-web-app-status-bar-style", content: "default" },
       { property: "og:title", content: "Norvo — Gestão financeira, vendas, estoque e fiscal" },
       {
         property: "og:description",
@@ -110,8 +107,6 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     links: [
       { rel: "stylesheet", href: appCss },
       { rel: "icon", href: "/favicon.png", type: "image/png" },
-      { rel: "apple-touch-icon", href: "/icon-192.png" },
-      { rel: "manifest", href: "/manifest.webmanifest" },
       // Acelera o login: DNS/TLS antecipados p/ Google e Supabase.
       { rel: "preconnect", href: "https://accounts.google.com" },
       { rel: "preconnect", href: "https://lfxhimtbuazezjkjlddj.supabase.co" },
@@ -150,12 +145,6 @@ function RootComponent() {
       router.invalidate();
       if (event !== "SIGNED_OUT") queryClient.invalidateQueries();
     });
-    // PWA: registra o service worker p/ permitir "Instalar app" no Chrome.
-    try {
-      if (typeof window !== "undefined" && "serviceWorker" in navigator) {
-        navigator.serviceWorker.register("/sw.js").catch(() => {});
-      }
-    } catch {}
     return () => sub.subscription.unsubscribe();
   }, [router, queryClient]);
 
