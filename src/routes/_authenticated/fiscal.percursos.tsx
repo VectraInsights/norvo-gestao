@@ -42,6 +42,7 @@ import {
   ChevronDown,
   RefreshCw,
   Plus,
+  Loader2,
 } from "lucide-react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -646,6 +647,18 @@ function PercursosPage() {
   const [busca, setBusca] = useState("");
   const [percTab, setPercTab] = useState("geral");
   const [editing, setEditing] = useState<Percurso | null>(null);
+  // Chegada via CT-e (lápis ou Gerar): cobre a lista até o editor abrir,
+  // p/ a transição ser direta sem flash da listagem
+  const [chegadaCte, setChegadaCte] = useState(() => {
+    try {
+      return !!(
+        localStorage.getItem("edit_percurso_from_cte") ||
+        localStorage.getItem("prefill_percurso_from_cte")
+      );
+    } catch {
+      return false;
+    }
+  });
   const [confExcluir, setConfExcluir] = useState<Percurso | null>(null);
   const [calcando, setCalcando] = useState(false);
   // UF acompanha a cidade de entrega (IBGE); carrega uma vez
@@ -736,6 +749,8 @@ function PercursosPage() {
         } else toast.error("Percurso não encontrado");
       } catch {
         toast.error("Falha ao abrir percurso");
+      } finally {
+        setChegadaCte(false);
       }
     })();
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -763,6 +778,7 @@ function PercursosPage() {
     voltarCteRef.current = pre.returnTo === "/fiscal/cte";
     if (existe) {
       toast.success("Percurso já cadastrado — de volta ao CT-e");
+      setChegadaCte(false);
       if (voltarCteRef.current) {
         voltarCteRef.current = false;
         navigate({ to: "/fiscal/cte" } as any);
@@ -810,6 +826,7 @@ function PercursosPage() {
       })
       .catch(() => {});
     setPercTab("geral");
+    setChegadaCte(false);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [empresa?.id, (percursos || []).length]);
 
@@ -1620,6 +1637,11 @@ function PercursosPage() {
 
   return (
     <div className="p-6 space-y-4">
+      {chegadaCte && !editing && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-background">
+          <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+        </div>
+      )}
       <PageHeader
         eyebrow="Fiscal"
         title="Percursos"

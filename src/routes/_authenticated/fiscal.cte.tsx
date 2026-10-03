@@ -627,7 +627,12 @@ function CtePage() {
       modFrete: string;
       qVol?: number;
     }>
-  >([]);
+  >(() => {
+    // Volta do percurso: mercadorias restauradas junto (o snapshot é a única
+    // fonte quando o CT-e ainda não virou rascunho ou as NF-es estão reservadas)
+    const s = lerSnapshotCte();
+    return (Array.isArray(s?.mercadorias) ? s.mercadorias : []) as any;
+  });
   const [selecionadas, setSelecionadas] = useState<Set<string>>(
     () => {
       const s = lerSnapshotCte();
@@ -3836,6 +3841,7 @@ function CtePage() {
       } else {
         if (snap.form) setForm((f) => ({ ...emptyForm, ...snap.form }));
         if (Array.isArray(snap.selecionadas)) setSelecionadas(new Set(snap.selecionadas));
+        if (Array.isArray(snap.mercadorias)) setMercadorias(snap.mercadorias as any);
       }
       // Percurso fresco direto do banco (bypassa o cache da lista)
       if (snap.percursoId) {
@@ -4171,7 +4177,7 @@ function CtePage() {
           modFrete: m.modFrete,
         }));
       const proximo = 1;
-      const { error } = await supabase.from("cte_documentos" as any).insert({
+      const { data: novoDoc, error } = await supabase.from("cte_documentos" as any).insert({
         empresa_id: empresa.id,
         status: "rascunho",
         numero: proximo,
@@ -4179,7 +4185,7 @@ function CtePage() {
         valor_servico: totalPrestacao(form),
         peso_carga: parseFloat(form.peso) || 0,
         xml_assinado: JSON.stringify({ form, chavesNFe: chaves, nfs: nfsSalvas }),
-      } as any);
+      } as any).select("id").single();
       if (error) throw error;
       if (editingRascunhoId) {
         await supabase
@@ -4195,14 +4201,17 @@ function CtePage() {
           .in("chave", chaves)
           .eq("empresa_id", empresa.id);
       }
+      // Devolve o id: mantém a edição vinculada (sem isso o próximo salvar
+      // duplicava o rascunho e a volta do percurso não achava o doc)
+      return (novoDoc as any)?.id as string;
     },
-    onSuccess: () => {
+    onSuccess: (novoId) => {
       toast.success("Rascunho salvo");
       persistirPercursoSilencioso();
       // NÃO zera mercadorias aqui: as NF-es do rascunho saem da lista sozinhas
       // no refetch (status rascunho); zerar faria as demais "sumirem" até voltar.
       setSelecionadas(new Set());
-      setEditingRascunhoId(null);
+      setEditingRascunhoId((novoId as string) ?? null);
       qc.invalidateQueries({ queryKey: ["cte-documentos"] });
       qc.invalidateQueries({ queryKey: ["cte-nfes-pendentes", empresa!.id] });
       setOpen(false);
@@ -7713,6 +7722,7 @@ function CtePage() {
                             JSON.stringify({
                               form,
                               selecionadas: [...selecionadas],
+                              mercadorias,
                               editingRascunhoId,
                               percursoId: (percursoMatch as any).id,
                             }),
