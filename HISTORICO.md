@@ -4259,4 +4259,9 @@ Espelhado na Vercel.
   (qualquer campo alterado, ex. ICMS, reflete na hora; antes o rascunho
   restaurado cobria a edição).
 - Botão do embarque renomeado: "Mesmo trecho" → "Mesmo percurso".
+- Enter em qualquer campo de texto da emissão salva o CT-e como
+  rascunho (antes o handler nunca disparava: o seletor excluía o
+  próprio diálogo; também não salva em modo somente leitura).
+- Enter em qualquer campo do percurso salva (a validação existente
+  barra com aviso se faltar obrigatório).
 
