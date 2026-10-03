@@ -646,9 +646,30 @@ function PercursosPage() {
   const voltarCteRef = useRef(false);
   const [busca, setBusca] = useState("");
   const [percTab, setPercTab] = useState("geral");
-  const [editing, setEditing] = useState<Percurso | null>(null);
+  const [editing, setEditing] = useState<Percurso | null>(() => {
+    // Ida via CT-e (lápis): a linha já vem junto — o editor nasce aberto
+    // de primeira, sem esperar o fetch (sem flash da listagem)
+    try {
+      const ed = JSON.parse(localStorage.getItem("edit_percurso_from_cte") || "null");
+      if (ed?.row) return { ...(ed.row as Percurso) };
+    } catch {}
+    return null;
+  });
   // Chegada via CT-e (lápis ou Gerar): cobre a lista até o editor abrir,
   // p/ a transição ser direta sem flash da listagem
+  const [chegadaCte, setChegadaCte] = useState(() => {
+    try {
+      return !!(
+        localStorage.getItem("edit_percurso_from_cte") ||
+        localStorage.getItem("prefill_percurso_from_cte")
+      );
+    } catch {
+      return false;
+    }
+  });
+  // Saída com volta ao CT-e (salvar ou fechar): cobre a lista de imediato;
+  // a navegação desmonta a página atrás do véu (não precisa desligar)
+  const [saindoCte, setSaindoCte] = useState(false);
   const [chegadaCte, setChegadaCte] = useState(() => {
     try {
       return !!(
@@ -724,31 +745,35 @@ function PercursosPage() {
 
   // Chegada via CT-e (lápis ao lado do percurso): abre a edição direto e volta ao salvar
   useEffect(() => {
-    if (!empresa) return;
     let ed: any = null;
     try {
       ed = JSON.parse(localStorage.getItem("edit_percurso_from_cte") || "null");
     } catch {
       ed = null;
     }
-    if (!ed?.id) return;
+    if (!ed?.id && !ed?.row) return;
+    if (!ed.row && !empresa) return; // sem linha junto, espera a empresa p/ buscar
     try {
       localStorage.removeItem("edit_percurso_from_cte");
     } catch {}
     voltarCteRef.current = ed.returnTo === "/fiscal/cte";
+    setPercTab("geral");
+    setChegadaCte(false);
+    // A linha veio junto (abre na hora); atualiza em 2º plano p/ não exibir dado velho
+    const idAlvo = ed.id || (ed.row as any)?.id;
+    if (!idAlvo) return;
     (async () => {
       try {
         const { data } = await supabase
           .from("cte_percursos" as any)
           .select("*")
-          .eq("id", ed.id)
+          .eq("id", idAlvo)
           .maybeSingle();
         if (data) {
           setEditing({ ...(data as any) });
-          setPercTab("geral");
-        } else toast.error("Percurso não encontrado");
+        } else if (!ed.row) toast.error("Percurso não encontrado");
       } catch {
-        toast.error("Falha ao abrir percurso");
+        if (!ed.row) toast.error("Falha ao abrir percurso");
       } finally {
         setChegadaCte(false);
       }
@@ -1228,11 +1253,20 @@ function PercursosPage() {
 
   // Fecha o editor voltando ao CT-e em andamento (lápis), se for o caso
   const fecharVoltandoCte = () => {
-    setEditing(null);
     if (voltarCteRef.current) {
+      // Cobre a lista na hora: a navegação desmonta a página atrás do véu
+      setSaindoCte(true);
+      setEditing(null);
       voltarCteRef.current = false;
       navigate({ to: "/fiscal/cte" } as any);
+      return;
     }
+    setEditing(null);
+  };
+  // Salvar com volta ao CT-e: cobre a lista de imediato (re "saindoCte")
+  const salvarPercurso = () => {
+    if (voltarCteRef.current) setSaindoCte(true);
+    if (editing && !salvar.isPending) salvar.mutate();
   };
   const excluir = useMutation({
     mutationFn: async (id: string) => {
@@ -1637,8 +1671,8 @@ function PercursosPage() {
 
   return (
     <div className="p-6 space-y-4">
-      {chegadaCte && !editing && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-background">
+      {(saindoCte || (chegadaCte && !editing)) && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-background">
           <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
         </div>
       )}
@@ -1774,7 +1808,7 @@ function PercursosPage() {
                 !t.closest('[role="combobox"],[role="listbox"],[role="option"],[data-radix-popper-content-wrapper]')
               ) {
                 event.preventDefault();
-                if (editing && !salvar.isPending) salvar.mutate();
+                if (editing && !salvar.isPending) salvarPercurso();
               }
             }
           }}
@@ -2145,7 +2179,7 @@ function PercursosPage() {
               <Button variant="outline" onClick={() => fecharVoltandoCte()}>
                 Fechar
               </Button>
-              <Button onClick={() => salvar.mutate()} disabled={salvar.isPending}>
+              <Button onClick={() => salvarPercurso()} disabled={salvar.isPending}>
                 <Save className="mr-1 h-3 w-3" /> Salvar
               </Button>
             </DialogFooter>

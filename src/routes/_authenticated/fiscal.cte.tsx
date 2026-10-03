@@ -7715,7 +7715,11 @@ function CtePage() {
                         try {
                           localStorage.setItem(
                             "edit_percurso_from_cte",
-                            JSON.stringify({ id: (percursoMatch as any).id, returnTo: "/fiscal/cte" }),
+                            JSON.stringify({
+                              id: (percursoMatch as any).id,
+                              row: percursoMatch,
+                              returnTo: "/fiscal/cte",
+                            }),
                           );
                           localStorage.setItem(
                             "cte_progress_snapshot",
