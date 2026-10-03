@@ -3353,7 +3353,9 @@ function CtePage() {
         added = novas.length;
         await flushContatos();
       if (added > 0) {
-        const merged = [...mercadorias, ...novas];
+        // Dedupe por chave: reimportar NF já presente (ex. devolvida) não duplica na lista
+        const vistas = new Set(mercadorias.map((m) => m.chave));
+        const merged = [...mercadorias, ...novas.filter((n) => !vistas.has(n.chave))];
         setMercadorias(merged);
         const somaV = merged.reduce((a, m) => a + (m.valor || 0), 0);
         const somaP = merged.reduce((a, m) => a + (m.peso || 0), 0);
@@ -4312,6 +4314,12 @@ function CtePage() {
             console.log("[CTE-CANCEL-REVERT] update count:", count);
             if (revErr)
               toast.error(`CT-e cancelado, mas falha ao devolver NF-e: ${revErr.message}`);
+            else if (count)
+              toast.success(`${count} NF-e(s) devolvida(s) p/ embarque`);
+            else if (!rascunhoNfs.length)
+              toast.warning(
+                "CT-e cancelado, mas as NF-es não foram encontradas para devolução",
+              );
             if (!count || count === 0) {
               for (const nf of rascunhoNfs) {
                 if (!nf?.chave) continue;
@@ -4387,14 +4395,18 @@ function CtePage() {
         toast.info("Nenhuma NF-e encontrada nos CT-es cancelados");
         return;
       }
-      const { error } = await supabase
+      const { count, error } = await supabase
         .from("cte_nfes_pendentes" as any)
         .update({ status: "pendente" })
         .in("chave", [...chaves])
-        .eq("empresa_id", empresa.id);
+        .eq("empresa_id", empresa.id)
+        .select("chave", { count: "exact", head: true });
       if (error) throw error;
       qc.invalidateQueries({ queryKey: ["cte-nfes-pendentes", empresa.id] });
-      toast.success(`${chaves.size} NF-e(s) devolvidas p/ embarque`);
+      if (count)
+        toast.success(`${count} NF-e(s) devolvidas p/ embarque`);
+      else
+        toast.warning("NF-es dos cancelados não encontradas para devolução");
     } catch (e: any) {
       toast.error("Falha ao devolver NF-es", { description: e.message });
     } finally {
