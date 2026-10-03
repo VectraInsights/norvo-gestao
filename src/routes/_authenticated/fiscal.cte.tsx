@@ -82,7 +82,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useEmpresaAtual } from "@/hooks/use-empresa";
 import { brl, dateBR, num, maskDoc } from "@/lib/format";
-import { useState, useEffect, useLayoutEffect, useMemo, useRef, type ReactNode } from "react";
+import { useState, useEffect, useMemo, useRef, type ReactNode } from "react";
 import { toast } from "sonner";
 import { limparIE } from "@/lib/ie";
 import {
@@ -562,35 +562,6 @@ function lerSnapshotCte(): any {
   } catch {
     return null;
   }
-}
-
-// Conteúdo da aba em escala p/ caber sem rolagem: mede a altura natural e
-// aplica zoom (<1) quando excede o espaço. O rodapé fica estático.
-function AbaFit({ children, cls }: { children: ReactNode; cls?: string }) {
-  const outerRef = useRef<HTMLDivElement>(null);
-  const innerRef = useRef<HTMLDivElement>(null);
-  useLayoutEffect(() => {
-    const medir = () => {
-      const o = outerRef.current,
-        i = innerRef.current;
-      if (!o || !i) return;
-      (i.style as any).zoom = "1";
-      const disp = o.clientHeight;
-      const need = i.scrollHeight;
-      const s = disp > 0 && need > disp ? disp / need : 1;
-      (i.style as any).zoom = String(s >= 1 ? 1 : s);
-    };
-    medir();
-    window.addEventListener("resize", medir);
-    return () => window.removeEventListener("resize", medir);
-  });
-  return (
-    <div ref={outerRef} className="min-h-0 flex-1 overflow-hidden">
-      <div ref={innerRef} className={cls || "space-y-3"}>
-        {children}
-      </div>
-    </div>
-  );
 }
 
 function CtePage() {
@@ -7555,8 +7526,7 @@ function CtePage() {
             </TabsList>
 
             {/* === TAB: Geral === */}
-            <TabsContent value="geral" className="mt-2 min-h-0 flex-1 overflow-hidden data-[state=inactive]:hidden data-[state=active]:flex data-[state=active]:flex-col">
-              <AbaFit>
+            <TabsContent value="geral" className="mt-2 min-h-0 flex-1 space-y-3 overflow-hidden data-[state=inactive]:hidden data-[state=active]:flex data-[state=active]:flex-col">
               {viewDoc && (
                 <Card className="p-3">
                   <div className="bg-primary/8 border-b border-primary/20 -m-3 mb-2 px-2 py-1 text-[10px] font-semibold uppercase tracking-wide text-primary/80">
@@ -8261,14 +8231,12 @@ function CtePage() {
                   )}
                 </Card>
               </div>
-              </AbaFit>
             </TabsContent>
 
             {/* === TAB: Doc Mercadorias === */}
-            <TabsContent value="docs" className="mt-2 min-h-0 flex-1 overflow-hidden data-[state=inactive]:hidden data-[state=active]:flex data-[state=active]:flex-col">
-              <AbaFit>
-              <Card className="overflow-hidden">
-                <div className="overflow-x-auto">
+            <TabsContent value="docs" className="mt-2 min-h-0 flex-1 space-y-3 overflow-hidden data-[state=inactive]:hidden data-[state=active]:flex data-[state=active]:flex-col">
+              <Card className="overflow-hidden flex min-h-0 flex-1 flex-col">
+                <div className="min-h-0 flex-1 overflow-y-auto overflow-x-auto">
                   <Table>
                     <TableHeader className="sticky top-0 bg-muted">
                       <TableRow>
@@ -8404,7 +8372,7 @@ function CtePage() {
                 <button
                   type="button"
                   onClick={() => setManualNfeOpen(true)}
-                  className="px-2 pt-1 text-left text-[11px] text-muted-foreground hover:text-foreground"
+                  className="px-2 pt-1 shrink-0 text-left text-[11px] text-muted-foreground hover:text-foreground"
                 >
                   + Inserir NF-e manual
                 </button>
@@ -8417,7 +8385,7 @@ function CtePage() {
                   const totP = base.reduce((a, m) => a + Number(m.peso || 0), 0);
                   const totV = base.reduce((a, m) => a + Number(m.valor || 0), 0);
                   return (
-                    <div className="grid grid-cols-[1fr_90px_110px_130px] border-t bg-muted/40 text-xs font-semibold">
+                    <div className="grid grid-cols-[1fr_90px_110px_130px] border-t bg-muted/40 text-xs font-semibold shrink-0">
                       <div className="px-2 py-1.5">
                         TOTAL — {base.length} NF-e(s) • VOL / KG / VALOR
                       </div>
@@ -8437,7 +8405,7 @@ function CtePage() {
               </Card>
 
               {/* Tributação (fundida nesta aba) */}
-              <Card className="p-3">
+              <Card className="p-3 shrink-0">
                 <div className="bg-primary/8 border-b border-primary/20 -m-3 mb-2 px-2 py-1 flex items-center gap-1.5">
                   <ReceiptText className="h-3.5 w-3.5 text-primary" />
                   <h5 className="text-[10px] font-semibold uppercase tracking-wide text-primary/80">
@@ -8609,12 +8577,10 @@ function CtePage() {
                   aplicados ao gerar o CT-e.
                 </p>
               </Card>
-              </AbaFit>
             </TabsContent>
 
             {/* === TAB: Seguros/Veículos === */}
-            <TabsContent value="seguros" className="mt-2 min-h-0 flex-1 overflow-hidden data-[state=inactive]:hidden data-[state=active]:flex data-[state=active]:flex-col">
-              <AbaFit cls="space-y-1.5">
+            <TabsContent value="seguros" className="mt-2 min-h-0 flex-1 space-y-1.5 overflow-hidden data-[state=inactive]:hidden data-[state=active]:flex data-[state=active]:flex-col">
               <div className="grid grid-cols-1 xl:grid-cols-2 gap-1.5">
                 <Card className="p-1.5">
                   <div className="bg-primary/8 border-b border-primary/20 -m-1.5 mb-0.5 px-2 py-1 text-[10px] font-semibold uppercase tracking-wide text-primary/80">
@@ -9784,14 +9750,12 @@ function CtePage() {
                   Avulso transmite como CT-e Normal; Simplificado transmite como CTeSimp.
                 </p>
               </Card>
-              </AbaFit>
             </TabsContent>
 
             {/* TAB Status removida: finalidade foi para o Transporte; situação aparece na Geral em modo visualização */}
 
             {/* === TAB: Observações === */}
-            <TabsContent value="obs" className="mt-2 min-h-0 flex-1 overflow-hidden data-[state=inactive]:hidden data-[state=active]:flex data-[state=active]:flex-col">
-              <AbaFit>
+            <TabsContent value="obs" className="mt-2 min-h-0 flex-1 space-y-3 overflow-hidden data-[state=inactive]:hidden data-[state=active]:flex data-[state=active]:flex-col">
               <Card className="p-3">
                 <div className="bg-primary/8 border-b border-primary/20 -m-3 mb-1 px-2 py-1 text-[10px] font-semibold uppercase tracking-wide text-primary/80">
                   Observações Gerais
@@ -9822,7 +9786,6 @@ function CtePage() {
                   onChange={(e) => setForm({ ...form, obsGlobalizado: e.target.value } as any)}
                 />
               </Card>
-              </AbaFit>
             </TabsContent>
           </Tabs>
 
