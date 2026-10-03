@@ -8524,7 +8524,7 @@ function CtePage() {
                       
                     />
                   </div>
-                  <div className="min-w-[260px] flex-1">
+                  <div className="w-[136px] shrink-0">
                     <Label className="text-[10px] text-muted-foreground">
                       Valor do crédito outorgado/presumido (R$)
                     </Label>
