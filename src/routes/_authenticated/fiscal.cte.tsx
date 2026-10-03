@@ -82,7 +82,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useEmpresaAtual } from "@/hooks/use-empresa";
 import { brl, dateBR, num, maskDoc } from "@/lib/format";
-import { useState, useEffect, useMemo, useRef, type ReactNode } from "react";
+import { useState, useEffect, useLayoutEffect, useMemo, useRef, type ReactNode } from "react";
 import { toast } from "sonner";
 import { limparIE } from "@/lib/ie";
 import {
@@ -562,6 +562,35 @@ function lerSnapshotCte(): any {
   } catch {
     return null;
   }
+}
+
+// Conteúdo da aba em escala p/ caber sem rolagem: mede a altura natural e
+// aplica zoom (<1) quando excede o espaço. O rodapé fica estático.
+function AbaFit({ children, cls }: { children: ReactNode; cls?: string }) {
+  const outerRef = useRef<HTMLDivElement>(null);
+  const innerRef = useRef<HTMLDivElement>(null);
+  useLayoutEffect(() => {
+    const medir = () => {
+      const o = outerRef.current,
+        i = innerRef.current;
+      if (!o || !i) return;
+      (i.style as any).zoom = "1";
+      const disp = o.clientHeight;
+      const need = i.scrollHeight;
+      const s = disp > 0 && need > disp ? disp / need : 1;
+      (i.style as any).zoom = String(s >= 1 ? 1 : s);
+    };
+    medir();
+    window.addEventListener("resize", medir);
+    return () => window.removeEventListener("resize", medir);
+  });
+  return (
+    <div ref={outerRef} className="min-h-0 flex-1 overflow-hidden">
+      <div ref={innerRef} className={cls || "space-y-3"}>
+        {children}
+      </div>
+    </div>
+  );
 }
 
 function CtePage() {
@@ -5310,7 +5339,7 @@ function CtePage() {
   const aliqIcmsOk =
     aliqIcmsEsp === null ||
     (Number.isFinite(aliqIcmsNum) && Math.abs(aliqIcmsNum - aliqIcmsEsp) < 0.005);
-  const tabOk = (() => {
+  const tabFalta: Record<string, string[]> = (() => {
     const soDig = (v: any) => String(v || "").replace(/\D/g, "");
     const numBR = (v: any) => {
       const s = String(v ?? "").trim();
@@ -5325,29 +5354,40 @@ function CtePage() {
     const fimOk = !!String(form.xMunFim || "").trim() && !!String(form.ufFim || "").trim();
     const rntrcOk =
       !!rntrcFinal && !/^ISENTO$/i.test(rntrcFinal) && soDig(rntrcFinal).length === 8;
-    return {
-      geral: tomOk && !!percursoMatch && iniOk && fimOk,
-      transporte:
-        !!String(form.placaVeiculo || "").trim() &&
-        !!(
-          String((form as any).motoristaNome || "").trim() || (form as any).motoristaId
-        ) &&
-        rntrcOk &&
-        numBR(form.vPrest) > 0 &&
-        ((form as any).finalidadeEmissao === "Complemento" ||
-          !!String(form.seguradoraNome || "").trim()),
-      trib:
-        !!String(form.cfop || "").trim() &&
-        !!String(form.icmsCST || "").trim() &&
-        String(form.icmsAliq ?? "").trim() !== "" &&
-        mercadorias.length > 0 &&
-        aliqIcmsOk,
-      obs: true,
-    };
+    const geral: string[] = [];
+    if (!tomOk) geral.push("tomador incompleto");
+    if (!percursoMatch) geral.push("sem percurso");
+    if (!iniOk) geral.push("coleta incompleta");
+    if (!fimOk) geral.push("entrega incompleta");
+    const transporte: string[] = [];
+    if (!String(form.placaVeiculo || "").trim()) transporte.push("placa da tração");
+    if (!(String((form as any).motoristaNome || "").trim() || (form as any).motoristaId))
+      transporte.push("motorista");
+    if (!rntrcOk) transporte.push("RNTRC");
+    if (!(numBR(form.vPrest) > 0)) transporte.push("valor do serviço");
+    if (
+      (form as any).finalidadeEmissao !== "Complemento" &&
+      !String(form.seguradoraNome || "").trim()
+    )
+      transporte.push("seguradora");
+    const trib: string[] = [];
+    if (!String(form.cfop || "").trim()) trib.push("CFOP");
+    if (!String(form.icmsCST || "").trim()) trib.push("CST");
+    if (String(form.icmsAliq ?? "").trim() === "") trib.push("alíquota ICMS");
+    if (mercadorias.length === 0) trib.push("NF-es");
+    if (!aliqIcmsOk && aliqIcmsEsp !== null) trib.push(`alíquota esperada ${aliqIcmsEsp}% p/ a rota`);
+    return { geral, transporte, trib, obs: [] };
   })();
-  const tabDot = (ok: boolean) =>
+  const tabOk = (() => ({
+    geral: tabFalta.geral.length === 0,
+    transporte: tabFalta.transporte.length === 0,
+    trib: tabFalta.trib.length === 0,
+    obs: true,
+  }))();
+  const tabDot = (ok: boolean, falta: string[] = []) =>
     !viewDoc ? (
       <span
+        title={ok ? undefined : `Falta: ${falta.join("; ")}`}
         className={`mr-1 h-1.5 w-1.5 rounded-full ${ok ? "bg-green-500" : "bg-red-500"}`}
       />
     ) : null;
@@ -6018,7 +6058,7 @@ function CtePage() {
                 onChange={(e) => setCceTexto(e.target.value)}
                 rows={4}
                 maxLength={1000}
-                placeholder="Descreva o que corrige (ex.: endereço de entrega, placa, observação)…"
+                
               />
               <div className="text-right text-[11px] text-muted-foreground">
                 {cceTexto.trim().length}/1000
@@ -6682,7 +6722,7 @@ function CtePage() {
               </DialogHeader>
               <Input
                 className="h-7 text-xs"
-                placeholder="Buscar por número ou nome..."
+                
                 value={percPickQuery}
                 onChange={(e) => setPercPickQuery(e.target.value)}
               />
@@ -7059,7 +7099,7 @@ function CtePage() {
               <div className="flex items-center gap-2 px-3 py-2 border-b">
                 <Input
                   className="h-8 max-w-[200px] font-mono text-xs"
-                  placeholder="Consultar CIOT (12 dígitos)"
+                  
                   value={ciotConsulta}
                   onChange={(e) => setCiotConsulta(e.target.value.replace(/\D/g, "").slice(0, 12))}
                 />
@@ -7302,7 +7342,7 @@ function CtePage() {
               <Input
                 value={manualNfe.modelo}
                 onChange={(e) => setManualNfe((v) => ({ ...v, modelo: e.target.value }))}
-                placeholder="55"
+                
               />
             </div>
             <div>
@@ -7315,7 +7355,7 @@ function CtePage() {
                     chave: e.target.value.replace(/\D/g, "").slice(0, 44),
                   }))
                 }
-                placeholder="44 dígitos"
+                
                 maxLength={44}
               />
             </div>
@@ -7324,7 +7364,7 @@ function CtePage() {
               <Input
                 value={manualNfe.nNF}
                 onChange={(e) => setManualNfe((v) => ({ ...v, nNF: e.target.value }))}
-                placeholder="Ex.: 12345"
+                
               />
             </div>
             <div>
@@ -7339,7 +7379,7 @@ function CtePage() {
               <Input
                 value={manualNfe.emit}
                 onChange={(e) => setManualNfe((v) => ({ ...v, emit: e.target.value }))}
-                placeholder="Nome ou razão social"
+                
               />
             </div>
             <div>
@@ -7354,7 +7394,7 @@ function CtePage() {
               <Input
                 value={manualNfe.dest}
                 onChange={(e) => setManualNfe((v) => ({ ...v, dest: e.target.value }))}
-                placeholder="Nome ou razão social"
+                
               />
             </div>
             <div>
@@ -7436,9 +7476,9 @@ function CtePage() {
               }
             }
           }}
-          className="w-screen h-screen max-w-none max-h-none m-0 rounded-none overflow-y-auto"
+          className="w-screen h-screen max-w-none max-h-none m-0 rounded-none overflow-hidden flex flex-col"
         >
-          <DialogHeader>
+          <DialogHeader className="shrink-0">
             <DialogTitle className="flex items-center gap-2">
               <Truck className="h-5 w-5 text-primary" />{" "}
               {(form as any).modoEmbarque === "simplificado"
@@ -7451,7 +7491,7 @@ function CtePage() {
           </DialogHeader>
           {viewDoc && (
             <div
-              className={`mt-2 rounded-md border px-3 py-1.5 text-xs font-semibold ${
+              className={`mt-2 shrink-0 rounded-md border px-3 py-1.5 text-xs font-semibold ${
                 viewDoc.status === "autorizado"
                   ? "border-green-300 bg-green-50 text-green-800 dark:border-green-800 dark:bg-green-950/40 dark:text-green-200"
                   : viewDoc.status === "rejeitado"
@@ -7468,14 +7508,14 @@ function CtePage() {
             </div>
           )}
 
-          <Tabs value={aba} onValueChange={setAba} className="w-full">
-            <TabsList className="w-full justify-start gap-0 bg-muted/50 rounded-t-md">
+          <Tabs value={aba} onValueChange={setAba} className="w-full flex min-h-0 flex-1 flex-col">
+            <TabsList className="w-full shrink-0 justify-start gap-0 bg-muted/50 rounded-t-md">
               <TabsTrigger
                 value="geral"
                 className="rounded-t-md rounded-b-none text-xs data-[state=active]:bg-background data-[state=active]:shadow-sm data-[state=active]:text-primary"
                 title={tabOk.geral ? "Aba completa" : "Faltam dados nesta aba"}
               >
-                {tabDot(tabOk.geral)}
+                {tabDot(tabOk.geral, tabFalta.geral)}
                 <Settings2 className="mr-1 h-3 w-3" />
                 Geral
               </TabsTrigger>
@@ -7484,7 +7524,7 @@ function CtePage() {
                 className="rounded-t-md rounded-b-none text-xs data-[state=active]:bg-background data-[state=active]:shadow-sm data-[state=active]:text-primary"
                 title={tabOk.transporte ? "Aba completa" : "Faltam dados nesta aba"}
               >
-                {tabDot(tabOk.transporte)}
+                {tabDot(tabOk.transporte, tabFalta.transporte)}
                 <Truck className="mr-1 h-3 w-3" />
                 Transporte
               </TabsTrigger>
@@ -7499,7 +7539,7 @@ function CtePage() {
                       : "Faltam dados nesta aba"
                 }
               >
-                {tabDot(tabOk.trib)}
+                {tabDot(tabOk.trib, tabFalta.trib)}
                 <FileText className="mr-1 h-3 w-3" />
                 Tributação e Carga
               </TabsTrigger>
@@ -7515,7 +7555,8 @@ function CtePage() {
             </TabsList>
 
             {/* === TAB: Geral === */}
-            <TabsContent value="geral" className="mt-3 space-y-3">
+            <TabsContent value="geral" className="mt-2 min-h-0 flex-1 overflow-hidden data-[state=inactive]:hidden data-[state=active]:flex data-[state=active]:flex-col">
+              <AbaFit>
               {viewDoc && (
                 <Card className="p-3">
                   <div className="bg-primary/8 border-b border-primary/20 -m-3 mb-2 px-2 py-1 text-[10px] font-semibold uppercase tracking-wide text-primary/80">
@@ -7645,7 +7686,7 @@ function CtePage() {
                     <PopoverContent className="w-[480px] p-0" align="start">
                       <Command shouldFilter={false}>
                         <CommandInput
-                          placeholder="Ou digite o CNPJ do tomador..."
+                          
                           value={tomadorQuery}
                           onValueChange={(v) => {
                             setTomadorQuery(v);
@@ -7766,7 +7807,7 @@ function CtePage() {
                       <PopoverContent className="w-[480px] p-0" align="start">
                         <Command shouldFilter={false}>
                           <CommandInput
-                            placeholder="Digite 5352 ou 5.352 ou comércio..."
+                            
                             value={cfopQuery}
                             onValueChange={setCfopQuery}
                           />
@@ -7819,7 +7860,7 @@ function CtePage() {
                         readOnly
                         tabIndex={-1}
                         className="h-7 text-xs flex-1 min-w-0 bg-transparent"
-                        placeholder="Município"
+                        
                         value={form.xMunIni}
                         title="Segue o remetente"
                       />
@@ -7828,7 +7869,7 @@ function CtePage() {
                         tabIndex={-1}
                         title="Segue o remetente"
                         className="h-7 text-xs w-14 text-center shrink-0 bg-transparent"
-                        placeholder="UF"
+                        
                         value={form.ufIni}
                         maxLength={2}
                       />
@@ -7841,7 +7882,7 @@ function CtePage() {
                         readOnly
                         tabIndex={-1}
                         className="h-7 text-xs flex-1 min-w-0 bg-transparent"
-                        placeholder="Município"
+                        
                         value={form.xMunFim}
                         title="Segue redespacho/destinatario"
                       />
@@ -7850,7 +7891,7 @@ function CtePage() {
                         tabIndex={-1}
                         title="Segue redespacho/destinatario"
                         className="h-7 text-xs w-14 text-center shrink-0 bg-transparent"
-                        placeholder="UF"
+                        
                         value={form.ufFim}
                         maxLength={2}
                       />
@@ -8014,7 +8055,7 @@ function CtePage() {
                     <div className="ml-auto flex items-center gap-1">
                       <Input
                         className="h-6 text-[10px] w-44 font-mono"
-                        placeholder="CNPJ — digite p/ buscar"
+                        
                         value={fmtCnpjInput(form.cnpjConsignatario || "")}
                         onChange={(e) => {
                           const digits = e.target.value.replace(/\D/g, "").slice(0, 14);
@@ -8125,7 +8166,7 @@ function CtePage() {
                     <div className="ml-auto flex items-center gap-1">
                       <Input
                         className="h-6 text-[10px] w-44 font-mono"
-                        placeholder="CNPJ — digite p/ buscar"
+                        
                         value={fmtCnpjInput(form.cnpjRedespacho || "")}
                         onChange={(e) => {
                           const digits = e.target.value.replace(/\D/g, "").slice(0, 14);
@@ -8220,10 +8261,12 @@ function CtePage() {
                   )}
                 </Card>
               </div>
+              </AbaFit>
             </TabsContent>
 
             {/* === TAB: Doc Mercadorias === */}
-            <TabsContent value="docs" className="mt-3 space-y-3">
+            <TabsContent value="docs" className="mt-2 min-h-0 flex-1 overflow-hidden data-[state=inactive]:hidden data-[state=active]:flex data-[state=active]:flex-col">
+              <AbaFit>
               <Card className="overflow-hidden">
                 <div className="flex items-center justify-between gap-2 bg-primary/8 border-b border-primary/20 px-3 py-1.5">
                   <div className="text-[10px] font-semibold uppercase tracking-wide text-primary/80">
@@ -8450,7 +8493,7 @@ function CtePage() {
                       prefix=""
                       value={(form as any).reducaoBase || "0.00"}
                       onChange={() => {}}
-                      placeholder="0,00"
+                      
                     />
                   </div>
                   <div>
@@ -8460,7 +8503,7 @@ function CtePage() {
                       prefix=""
                       value={form.icmsAliq}
                       onChange={() => {}}
-                      placeholder="0,00"
+                      
                     />
                   </div>
                   <div>
@@ -8469,7 +8512,7 @@ function CtePage() {
                       className="h-7 text-xs bg-muted"
                       value={totalPrestacao(form).toFixed(2)}
                       onChange={() => {}}
-                      placeholder="0,00"
+                      
                     />
                   </div>
                   <div>
@@ -8478,7 +8521,7 @@ function CtePage() {
                       className="h-7 text-xs bg-muted"
                       value={form.icmsValor}
                       onChange={() => {}}
-                      placeholder="0,00"
+                      
                     />
                   </div>
                   <div className="md:col-span-3">
@@ -8489,7 +8532,7 @@ function CtePage() {
                       className="h-7 text-xs bg-muted"
                       value={(form as any).creditoOutorgado || "0.00"}
                       onChange={() => {}}
-                      placeholder="0,00"
+                      
                     />
                   </div>
                 </div>
@@ -8501,7 +8544,7 @@ function CtePage() {
                       prefix=""
                       value={form.pisAliq}
                       onChange={() => {}}
-                      placeholder="0,00"
+                      
                     />
                   </div>
                   <div>
@@ -8511,7 +8554,7 @@ function CtePage() {
                       prefix=""
                       value={form.cofinsAliq}
                       onChange={() => {}}
-                      placeholder="0,00"
+                      
                     />
                   </div>
                   <div>
@@ -8521,7 +8564,7 @@ function CtePage() {
                       prefix=""
                       value="0.10"
                       onChange={() => {}}
-                      placeholder="0,00"
+                      
                     />
                   </div>
                   <div>
@@ -8531,7 +8574,7 @@ function CtePage() {
                       prefix=""
                       value="0.90"
                       onChange={() => {}}
-                      placeholder="0,00"
+                      
                     />
                   </div>
                 </div>
@@ -8542,7 +8585,7 @@ function CtePage() {
                       className="h-7 text-xs bg-muted"
                       value={valorImposto(form.pisAliq)}
                       onChange={() => {}}
-                      placeholder="0,00"
+                      
                     />
                   </div>
                   <div>
@@ -8551,7 +8594,7 @@ function CtePage() {
                       className="h-7 text-xs bg-muted"
                       value={valorImposto(form.cofinsAliq)}
                       onChange={() => {}}
-                      placeholder="0,00"
+                      
                     />
                   </div>
                   <div>
@@ -8560,7 +8603,7 @@ function CtePage() {
                       className="h-7 text-xs bg-muted"
                       value={valorImposto("0.10")}
                       onChange={() => {}}
-                      placeholder="0,00"
+                      
                     />
                   </div>
                   <div>
@@ -8569,7 +8612,7 @@ function CtePage() {
                       className="h-7 text-xs bg-muted"
                       value={valorImposto("0.90")}
                       onChange={() => {}}
-                      placeholder="0,00"
+                      
                     />
                   </div>
                 </div>
@@ -8578,10 +8621,12 @@ function CtePage() {
                   aplicados ao gerar o CT-e.
                 </p>
               </Card>
+              </AbaFit>
             </TabsContent>
 
             {/* === TAB: Seguros/Veículos === */}
-            <TabsContent value="seguros" className="mt-1">
+            <TabsContent value="seguros" className="mt-2 min-h-0 flex-1 overflow-hidden data-[state=inactive]:hidden data-[state=active]:flex data-[state=active]:flex-col">
+              <AbaFit cls="space-y-1.5">
               <div className="grid grid-cols-1 xl:grid-cols-2 gap-1.5">
                 <Card className="p-1.5">
                   <div className="bg-primary/8 border-b border-primary/20 -m-1.5 mb-0.5 px-2 py-1 text-[10px] font-semibold uppercase tracking-wide text-primary/80">
@@ -8864,9 +8909,7 @@ function CtePage() {
                         </div>
                         {(form as any).ciotProtocolo ? (
                           <div className="text-[9px] text-muted-foreground">Prot. ANTT: {(form as any).ciotProtocolo}</div>
-                        ) : (
-                          <div className="text-[9px] text-muted-foreground">Emissão na aba CIOT</div>
-                        )}
+                        ) : null}
                       </div>
                     </div>
                     <div className="grid grid-cols-3 gap-1">
@@ -8886,7 +8929,7 @@ function CtePage() {
                               variant="outline"
                               role="combobox"
                               aria-expanded={veiculoOpen === "placaVeiculo"}
-                              className="h-6 text-[10px] justify-between w-full font-mono uppercase font-normal"
+                              className="h-6 text-[10px] justify-between w-full font-mono font-normal"
                             >
                               <span className="truncate">
                                 {form.placaVeiculo || "Selecione placa"}
@@ -9000,7 +9043,7 @@ function CtePage() {
                               variant="outline"
                               role="combobox"
                               aria-expanded={veiculoOpen === "semi1"}
-                              className="h-6 text-[10px] justify-between w-full font-mono uppercase font-normal"
+                              className="h-6 text-[10px] justify-between w-full font-mono font-normal"
                             >
                               <span className="truncate">
                                 {form.semiReboque1 || "Selecione placa"}
@@ -9116,7 +9159,7 @@ function CtePage() {
                               variant="outline"
                               role="combobox"
                               aria-expanded={veiculoOpen === "semi2"}
-                              className="h-6 text-[10px] justify-between w-full font-mono uppercase font-normal"
+                              className="h-6 text-[10px] justify-between w-full font-mono font-normal"
                             >
                               <span className="truncate">
                                 {form.semiReboque2 || "Selecione placa"}
@@ -9735,7 +9778,7 @@ function CtePage() {
                       ) : (
                         <Input
                           className="h-6 text-[10px] font-mono"
-                          placeholder="Chave do CT-e original (44 dígitos, outra empresa)"
+                          
                           value={(form as any).cteReferenciado || ""}
                           onChange={(e) =>
                             setForm({
@@ -9753,18 +9796,20 @@ function CtePage() {
                   Avulso transmite como CT-e Normal; Simplificado transmite como CTeSimp.
                 </p>
               </Card>
+              </AbaFit>
             </TabsContent>
 
             {/* TAB Status removida: finalidade foi para o Transporte; situação aparece na Geral em modo visualização */}
 
             {/* === TAB: Observações === */}
-            <TabsContent value="obs" className="mt-3 space-y-3">
+            <TabsContent value="obs" className="mt-2 min-h-0 flex-1 overflow-hidden data-[state=inactive]:hidden data-[state=active]:flex data-[state=active]:flex-col">
+              <AbaFit>
               <Card className="p-3">
                 <div className="bg-primary/8 border-b border-primary/20 -m-3 mb-1 px-2 py-1 text-[10px] font-semibold uppercase tracking-wide text-primary/80">
                   Observações Gerais
                 </div>
                 <Textarea
-                  className="min-h-[120px] text-xs font-mono resize-y"
+                  className="min-h-[120px] text-xs font-mono resize-none"
                   value={(form as any).obsGerais || ""}
                   onChange={(e) => setForm({ ...form, obsGerais: e.target.value } as any)}
                 />
@@ -9774,7 +9819,7 @@ function CtePage() {
                   Observações CT-e Anulação/Substituição
                 </div>
                 <Textarea
-                  className="min-h-[60px] text-xs font-mono resize-y"
+                  className="min-h-[60px] text-xs font-mono resize-none"
                   value={(form as any).obsAnulacao || ""}
                   onChange={(e) => setForm({ ...form, obsAnulacao: e.target.value } as any)}
                 />
@@ -9784,15 +9829,16 @@ function CtePage() {
                   Observações CT-e Globalizado
                 </div>
                 <Textarea
-                  className="min-h-[60px] text-xs font-mono resize-y"
+                  className="min-h-[60px] text-xs font-mono resize-none"
                   value={(form as any).obsGlobalizado || ""}
                   onChange={(e) => setForm({ ...form, obsGlobalizado: e.target.value } as any)}
                 />
               </Card>
+              </AbaFit>
             </TabsContent>
           </Tabs>
 
-          <DialogFooter className="gap-2">
+          <DialogFooter className="gap-2 shrink-0 border-t pt-3">
             <Button variant="ghost" onClick={limparFormularioAoSair}>
               <Ban className="mr-1 h-3.5 w-3.5" /> Fechar
             </Button>
@@ -9833,7 +9879,7 @@ function CtePage() {
                     "Enviando..."
                   ) : (
                     <>
-                      <Truck className="mr-1 h-3.5 w-3.5" /> Enviar Doc-e
+                      <Truck className="mr-1 h-3.5 w-3.5" /> Enviar CT-e
                     </>
                   )}
                 </Button>
