@@ -1,5 +1,5 @@
 import { createServerFn } from "@tanstack/react-start";
-import { SEFAZ_AMBIENTE, SEFAZ_TP_AMB } from "@/lib/sefaz-ambiente";
+import { SEFAZ_AMBIENTE, SEFAZ_TP_AMB, maskDoc } from "@/lib/sefaz-ambiente";
 const SEFAZ_URL = (() => { try { const imp = typeof import.meta !== "undefined" ? (import.meta as any).env : undefined; const a = imp?.SEFAZ_URL || imp?.VITE_SEFAZ_URL || ""; const b = typeof process !== "undefined" ? (process.env.SEFAZ_URL || process.env.VITE_SEFAZ_URL || "") : ""; return a || b; } catch { return ""; } })();
 async function callProxy(action: string, body: Record<string, unknown>) {
   const res = await fetch(SEFAZ_URL, { method: "POST", headers: { "Content-Type": "application/json", Authorization: `Bearer ${process.env.SUPABASE_SERVICE_ROLE_KEY || ""}` }, body: JSON.stringify({ action, ...body, ambiente: SEFAZ_AMBIENTE, tpAmb: SEFAZ_TP_AMB }) });
@@ -24,8 +24,8 @@ export const emitirCteFn = createServerFn({ method: "POST" }).validator((d: { em
   const form = (data.input as any).form || {};
   const emitCnpj = emp?.cnpj || cli.cnpj || "";
   const emitUf = emp?.uf || cli.uf || "MG";
-  console.log("[CTE-DEBUG] empCnpj:", emp?.cnpj, "empUf:", emp?.uf, "emitCnpj:", emitCnpj, "emitUf:", emitUf, "ambiente:", ambiente);
-  console.log("[CTE-DEBUG] form:", JSON.stringify(form));
+  console.log("[CTE-DEBUG] empCnpj:", maskDoc(emp?.cnpj), "empUf:", emp?.uf, "emitCnpj:", maskDoc(emitCnpj), "emitUf:", emitUf, "ambiente:", ambiente);
+  console.log("[CTE-DEBUG] form campos:", Object.keys(form).length, "tomador:", maskDoc(form.cnpjTomador));
   const input = { ...data.input, ambiente, numero: proximo, serie: data.input.serie || "1",
     cfop: data.input.cfop || form.cfop || "6352",
     vPrest: Number(data.input.vPrest || form.vPrest || 0),
@@ -73,10 +73,10 @@ export const emitirCteFn = createServerFn({ method: "POST" }).validator((d: { em
     modalRod: data.input.modalRod || { rntrc: form.rntrc || "ISENTO" },
     icms: data.input.icms || { CST: form.icmsCST || "00", vBC: Number(form.icmsBase || 0), pICMS: Number(form.icmsAliq || 7), vICMS: Number(form.icmsValor || 0) },
   };
-  console.log("[CTE-DEBUG] tomador xNome:", input.tomador?.xNome, "CNPJ:", input.tomador?.cnpj, "hex:", Buffer.from(input.tomador?.xNome||"").toString("hex"));
+  console.log("[CTE-DEBUG] tomador xNome:", input.tomador?.xNome, "CNPJ:", maskDoc(input.tomador?.cnpj));
   console.log("[CTE-DEBUG] rem/dest:", JSON.stringify({ toma: (input as any).tomador?.toma ?? (input as any).toma, modelo: (input as any).modelo, rem: (input as any).rem?.xNome, dest: (input as any).dest?.xNome }));
   const { xml, chave } = buildCteXml(input);
-  console.info("[CTE] XML gerado", { chave, bytes: Buffer.byteLength(xml, "utf8") });
+  console.info("[CTE] XML gerado", { chave: maskDoc(chave), bytes: Buffer.byteLength(xml, "utf8") });
   console.info("[CTE] dados de emissão preparados", { temTomador: Boolean(input.tomador), temEmitente: Boolean(input.emit) });
   const ret = await emitirCte(cert.pfx, cert.senha, xml, ambiente, cert.uf);
   if (ret.sucesso) {
@@ -145,7 +145,7 @@ export const cancelarCteFn = createServerFn({ method: "POST" }).validator((d:{em
   const { createClient }=await import("@supabase/supabase-js");
   const supa=createClient(process.env.SUPABASE_URL||"",process.env.SUPABASE_SERVICE_ROLE_KEY||"");
   const ambiente = SEFAZ_AMBIENTE;
-  console.log(`[CTE-CANCEL] empresa=${data.empresaId} ambiente=${ambiente} tpAmb=${SEFAZ_TP_AMB} chave=${data.chave} configIgnorada=true`);
+  console.log(`[CTE-CANCEL] empresa=${data.empresaId} ambiente=${ambiente} tpAmb=${SEFAZ_TP_AMB} chave=${maskDoc(data.chave)} configIgnorada=true`);
   const ret=await cancelarCte(cert.pfx, cert.senha, data.chave, data.justificativa, ambiente, cert.cnpj, cert.uf, data.protocolo);
   if(ret.sucesso) {
     await supa.from("cte_documentos").update({status:"cancelado"} as any).eq("chave_acesso",data.chave);
@@ -173,6 +173,6 @@ export const enviarCceCteFn = createServerFn({ method: "POST" }).validator((d:{e
   const { buscarCertificadoAtivo, enviarCceCte } = await import("@/lib/sefaz-cte");
   const cert=await buscarCertificadoAtivo(data.empresaId);
   const ambiente = SEFAZ_AMBIENTE;
-  console.log(`[CTE-CCE] empresa=${data.empresaId} ambiente=${ambiente} chave=${data.chave}`);
+  console.log(`[CTE-CCE] empresa=${data.empresaId} ambiente=${ambiente} chave=${maskDoc(data.chave)}`);
   return enviarCceCte(cert.pfx, cert.senha, data.chave, data.correcao, ambiente, cert.cnpj, cert.uf);
 });

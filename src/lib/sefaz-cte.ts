@@ -286,6 +286,10 @@ function escCte(v: unknown): string {
   return String(v ?? "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&apos;");
 }
 
+// Mascara documentos em log / tradução de erros: ver sefaz-ambiente.ts
+import { maskDoc } from "@/lib/sefaz-ambiente";
+export { maskDoc, erroSefazAmigavel } from "@/lib/sefaz-ambiente";
+
 // Chaves das NF-es vinculadas num XML de CT-e (ambos os modelos):
 // Simplificado usa <chNFe>, Normal usa <infNFe><chave>. Escopo restrito
 // (não confundir com <chCTe> de docAnt). Uso no servidor (revert de cancel).
@@ -590,7 +594,8 @@ export async function emitirCte(pfx:Buffer, senha:string, xml:string, ambiente:A
   // V4 Sinc — MOC exige GZip + Base64 no cteDadosMsg
   const compressed = zlib.gzipSync(Buffer.from(xmlAss, "utf-8"));
   const dadosBase64 = compressed.toString("base64");
-  console.log("[CTE-SEFAZ] Base64 comprimido (primeiros 200):", dadosBase64.slice(0, 200));
+  // Base64 omitido (decodifica p/ o XML com dados): só o tamanho p/ diagnóstico
+  console.log("[CTE-SEFAZ] payload comprimido, bytes:", dadosBase64.length);
   const isMG = uf?.toUpperCase() === "MG";
   console.log("[CTE-SEFAZ] UF:", uf, "isMG:", isMG, "ambiente:", ambiente, "modelo:", xml.includes("<CTeSimp") ? "simp" : "normal");
   if (isMG) {
@@ -613,7 +618,7 @@ export async function emitirCte(pfx:Buffer, senha:string, xml:string, ambiente:A
         "Content-Type": "text/xml; charset=utf-8",
         "SOAPAction": `${ns}/cteRecepcao`,
         "Content-Length": Buffer.byteLength(envelope)
-      }},res=>{let d="";res.on("data",c=>d+=c);res.on("end",()=>{console.log("[CTE-SEFAZ] HTTP status:", res.statusCode);console.log("[CTE-SEFAZ] Resposta SEFAZ COMPLETA:", d);res.statusCode&&res.statusCode>=400?reject(new Error(`CTe HTTP ${res.statusCode}: ${d.slice(0,500)}`)):resolve(d);});});
+      }},res=>{let d="";res.on("data",c=>d+=c);res.on("end",()=>{console.log("[CTE-SEFAZ] HTTP status:", res.statusCode);console.log("[CTE-SEFAZ] Resposta SEFAZ COMPLETA:", d.replace(/\d{44}/g, (m)=>maskDoc(m)));res.statusCode&&res.statusCode>=400?reject(new Error(`CTe HTTP ${res.statusCode}: ${d.slice(0,500)}`)):resolve(d);});});
       req.on("error",reject); req.write(envelope); req.end();
     }));
     } catch (e) {
@@ -624,7 +629,7 @@ export async function emitirCte(pfx:Buffer, senha:string, xml:string, ambiente:A
       return reconciliarEmissao(pfx, senha, { sucesso: false, cStat: "", xMotivo: msg + " (sem resposta da SEFAZ)", chave: chN, protocolo: undefined, xmlRet: "" }, ambiente, uf);
     }
     const cStat=ret.match(/<cStat>(\d+)<\/cStat>/)?.[1]||""; const xMotivo=ret.match(/<xMotivo>([^<]+)<\/xMotivo>/)?.[1]||""; const ch=ret.match(/<chCTe>(\d{44})<\/chCTe>/)?.[1]||xml.match(/Id="CTe(\d{44})"/)?.[1]; const prot=ret.match(/<nProt>(\d+)<\/nProt>/)?.[1]||ret.match(/<protCTe[^>]*>[\s\S]*?<nProt>(\d+)<\/nProt>/)?.[1];
-    console.log("[CTE-SEFAZ-RESP] cStat:", cStat, "xMotivo:", xMotivo, "chave:", ch, "protocolo:", prot);
+    console.log("[CTE-SEFAZ-RESP] cStat:", cStat, "xMotivo:", xMotivo, "chave:", maskDoc(ch), "protocolo:", prot);
     return reconciliarEmissao(pfx, senha, { sucesso: cStat==="100"||cStat==="104"||cStat==="103", cStat, xMotivo, chave: ch, protocolo: prot, xmlRet: ret }, ambiente, uf);
   }
   // SVRS usa namespace v4 (CTeRecepcaoSincV4)
@@ -699,7 +704,7 @@ export async function consultarCtePorChave(pfx:Buffer, senha:string, chave:strin
   const dhEmi = tag("dhEmi");
   // nCT/serie/modelo decodificados da chave (posições 21-34: mod 21-22, serie 23-25, nCT 26-34)
   const modelo = ch.slice(20,22), serie = String(parseInt(ch.slice(22,25),10)), nCT = String(parseInt(ch.slice(25,34),10));
-  console.log("[CTE-DIST] resumo:", isResumo, "emit:", emitCnpj, emitNome, "dhEmi:", dhEmi);
+  console.log("[CTE-DIST] resumo:", isResumo, "emit:", maskDoc(emitCnpj), emitNome, "dhEmi:", dhEmi);
   if (!emitCnpj) return { sucesso:false, cStat, xMotivo: "Documento sem emitente identificável" };
   return { sucesso:true, cStat, xMotivo, chave: ch, emitCnpj, emitNome, emitIE, dhEmi, nCT, serie, modelo };
 }
@@ -716,8 +721,8 @@ export async function cancelarCte(pfx:Buffer, senha:string, chave:string, justif
   const evento=`<eventoCTe xmlns="http://www.portalfiscal.inf.br/cte" versao="4.00"><infEvento Id="ID${tpEvento}${chaveFmt}${nSeq}"><cOrgao>${cOrgao}</cOrgao><tpAmb>${SEFAZ_TP_AMB}</tpAmb><CNPJ>${cnpjFmt}</CNPJ><chCTe>${chaveFmt}</chCTe><dhEvento>${dhEvento}</dhEvento><tpEvento>${tpEvento}</tpEvento><nSeqEvento>${nSeq}</nSeqEvento><detEvento versaoEvento="4.00"><evCancCTe><descEvento>Cancelamento</descEvento><nProt>${nProtFmt}</nProt><xJust>${justificativa}</xJust></evCancCTe></detEvento></infEvento></eventoCTe>`;
   console.info("[CTE-CANCEL] evento preparado", { bytes: Buffer.byteLength(evento, "utf8") });
   const ass=signXml(evento, pfx, senha);
-  console.log("[CTE-CANCEL] XML assinado (500 chars):", ass.slice(0, 500));
-  console.log("[CTE-CANCEL] URI na assinatura:", ass.match(/URI="([^"]+)"/)?.[1] || "NAO_ENCONTRADO");
+  console.log("[CTE-CANCEL] XML assinado, bytes:", Buffer.byteLength(ass, "utf8"));
+  console.log("[CTE-CANCEL] URI na assinatura:", maskDoc(ass.match(/URI="([^"]+)"/)?.[1] || ""));
   const isMG = uf?.toUpperCase() === "MG";
   if (isMG) {
     const ns = "http://www.portalfiscal.inf.br/cte/wsdl/CTeRecepcaoEventoV4";
@@ -744,7 +749,7 @@ export async function cancelarCte(pfx:Buffer, senha:string, chave:string, justif
       } catch {}
       throw e;
     }
-    console.log("[CTE-CANCEL] Resposta MG:", ret.slice(0, 1000));
+    console.log("[CTE-CANCEL] Resposta MG, bytes:", ret.length);
     const cStat=ret.match(/<cStat>(\d+)<\/cStat>/)?.[1]||""; const xMotivo=ret.match(/<xMotivo>([^<]+)<\/xMotivo>/)?.[1]||"";
     return { sucesso:cStat==="135"||cStat==="155", cStat, xMotivo };
   }

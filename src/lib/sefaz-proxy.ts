@@ -5,7 +5,7 @@
  */
 
 import { createClient } from "@supabase/supabase-js";
-import { MDFE_AMBIENTE, MDFE_TP_AMB, SEFAZ_AMBIENTE, SEFAZ_TP_AMB } from "@/lib/sefaz-ambiente";
+import { MDFE_AMBIENTE, MDFE_TP_AMB, SEFAZ_AMBIENTE, SEFAZ_TP_AMB, maskDoc } from "@/lib/sefaz-ambiente";
 
 function json(data: unknown, status = 200) {
   return new Response(JSON.stringify(data), {
@@ -111,7 +111,7 @@ export async function handleSefazProxy(request: Request): Promise<Response> {
     const ambiente = SEFAZ_AMBIENTE;
     const startNsu = nfeConfig?.last_nsu || undefined;
     const configuredAmbiente = nfeConfig?.ambiente || "(vazio)";
-    console.log("[sefaz-proxy] ambiente:", ambiente, "tpAmb:", SEFAZ_TP_AMB, "configIgnorada:", configuredAmbiente, "cnpj:", cnpj, "uf:", uf, "startNsu:", startNsu || "(zero)");
+    console.log("[sefaz-proxy] ambiente:", ambiente, "tpAmb:", SEFAZ_TP_AMB, "configIgnorada:", configuredAmbiente, "cnpj:", maskDoc(cnpj), "uf:", uf, "startNsu:", startNsu || "(zero)");
 
     // Cooldown: verificar se já passou o tempo mínimo entre consultas
     if (action === "consultar" && nfeConfig?.last_query_at) {
@@ -157,7 +157,7 @@ export async function handleSefazProxy(request: Request): Promise<Response> {
         const cli = inp.emit || {};
         const emitCnpj = cli.cnpj || emp?.cnpj || "";
         const emitUf = emp?.uf || cli.uf || uf;
-        console.log("[CTE-PROXY-DEBUG] empCnpj:", emp?.cnpj, "empUf:", emp?.uf, "emitCnpj:", emitCnpj, "emitUf:", emitUf, "ambiente:", cteAmbiente);
+        console.log("[CTE-PROXY-DEBUG] empCnpj:", maskDoc(emp?.cnpj), "empUf:", emp?.uf, "emitCnpj:", maskDoc(emitCnpj), "emitUf:", emitUf, "ambiente:", cteAmbiente);
         const input = { ...inp, ambiente: cteAmbiente, numero: proximo, serie: inp.serie || "1", emit: {
           cnpj: emitCnpj,
           xNome: cli.xNome || emp?.razao_social || emp?.nome_fantasia || "EMITENTE",
@@ -173,9 +173,9 @@ export async function handleSefazProxy(request: Request): Promise<Response> {
           cep: cli.cep || emp?.cep || "00000000",
         } };
         const { xml, chave } = buildCteXml(input);
-        console.log("[CTE-PROXY-DEBUG] tomador xNome:", input.tomador?.xNome, "CNPJ:", input.tomador?.cnpj);
+        console.log("[CTE-PROXY-DEBUG] tomador xNome:", input.tomador?.xNome, "CNPJ:", maskDoc(input.tomador?.cnpj));
         console.log("[CTE-PROXY-DEBUG] rem/dest:", JSON.stringify({ toma: (input as any).tomador?.toma ?? (input as any).toma, modelo: (input as any).modelo, rem: (input as any).rem?.xNome, dest: (input as any).dest?.xNome }));
-        console.info("[CTE-PROXY] XML gerado para emissão", { chave, ambiente: cteAmbiente });
+        console.info("[CTE-PROXY] XML gerado para emissão", { chave: maskDoc(chave), ambiente: cteAmbiente });
         const ret = await emitirCte(pfxBytes, senha, xml, cteAmbiente, emitUf);
         const supa3 = createClient(process.env.SUPABASE_URL||"", process.env.SUPABASE_SERVICE_ROLE_KEY||"");
         if (ret.sucesso) await supa3.from("cte_documentos").insert({ empresa_id: empresaId, chave_acesso: chave, numero: proximo, serie: input.serie, status: "autorizado", xml_assinado: JSON.stringify({ xml, form: formUfsDoXml(xml, (body as any).form || {}) }), protocolo_sefaz: ret.protocolo, ambiente: cteAmbiente, data_autorizacao: new Date().toISOString(), valor_servico: input.vPrest, peso_carga: Number((input as any).pesoKg ?? (body as any)?.form?.peso ?? 0) || null, responsavel_emissao: (body as any).responsavel || null } as any);
@@ -199,7 +199,7 @@ export async function handleSefazProxy(request: Request): Promise<Response> {
       case "cancelarCte": {
         const { cancelarCte, extrairChavesNFeXml } = await import("@/lib/sefaz-cte");
         const ambCanc = SEFAZ_AMBIENTE;
-        console.log("[CTE-CANCEL] ambiente:", ambCanc, "tpAmb:", SEFAZ_TP_AMB, "chave:", (body as any).chave, "configIgnorada: true");
+        console.log("[CTE-CANCEL] ambiente:", ambCanc, "tpAmb:", SEFAZ_TP_AMB, "chave:", maskDoc((body as any).chave), "configIgnorada: true");
         result = await cancelarCte(pfxBytes, senha, (body as any).chave, (body as any).justificativa, ambCanc, cnpj, uf, (body as any).protocolo);
         if ((result as any).sucesso) {
           const { createClient: cc } = await import("@supabase/supabase-js");

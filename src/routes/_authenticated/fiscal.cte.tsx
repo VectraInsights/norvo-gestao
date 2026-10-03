@@ -94,7 +94,7 @@ import {
   previewCteXmlFn,
   excluirRejeitadosCteFn,
 } from "@/lib/sefaz-cte-server";
-import { SEFAZ_AMBIENTE } from "@/lib/sefaz-ambiente";
+import { SEFAZ_AMBIENTE, erroSefazAmigavel } from "@/lib/sefaz-ambiente";
 import { pisoMinimoAntt } from "@/lib/piso-antt";
 import { emitirCiotFn, consultarFrotaAnttFn, consultarCiotGeradoAnttFn } from "@/lib/antt-ciot-server";
 import { CFOPS_CTE, MOD_FRETE_OPTIONS, RESPONSAVEL_CTE_OPTIONS } from "@/lib/cfops-transporte";
@@ -1607,20 +1607,6 @@ function CtePage() {
       return pdfBlob;
     } catch (e: any) {
       throw e;
-    }
-  };
-  const downloadPdf = async (doc: CteDoc) => {
-    try {
-      const pdfBlob = await gerarDacteBlob(doc);
-      const url = URL.createObjectURL(pdfBlob);
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = `${(doc.chave_acesso || "").replace(/\D/g, "") || doc.numero || "0"}.pdf`;
-      a.click();
-      URL.revokeObjectURL(url);
-      toast.success("PDF baixado");
-    } catch (e: any) {
-      toast.error("Erro ao gerar PDF", { description: e.message });
     }
   };
   // Baixa XML/PDF dos autorizados marcados (Sem e Com MDF-e) em um único zip
@@ -4445,15 +4431,8 @@ function CtePage() {
           setSelecionadas(new Set());
         }
       } else {
-        console.error("[CTE-EMIT] resposta inesperada da emissao:", ret);
-        toast.error(
-          ret?.xMotivo ||
-            ret?.motivo ||
-            "Resposta SEFAZ sem motivo (cStat " +
-              (ret?.cStat || "?") +
-              "). Retorno: " +
-              (JSON.stringify(ret || null) || "").slice(0, 200),
-        );
+        console.error("[CTE-EMIT] resposta inesperada da emissao, cStat:", ret?.cStat);
+        toast.error(erroSefazAmigavel(ret?.cStat, ret?.xMotivo || ret?.motivo));
       }
       qc.invalidateQueries({ queryKey: ["cte-documentos"] });
     },
@@ -4495,7 +4474,7 @@ function CtePage() {
         setCceDoc(null);
         setCceTexto("");
       } else
-        toast.error(`[${ret?.cStat || "?"}] ${ret?.mensagem || ret?.xMotivo || "CC-e rejeitada"}`);
+        toast.error(erroSefazAmigavel(ret?.cStat, ret?.mensagem || ret?.xMotivo));
     },
     onError: (e: Error) => toast.error(e.message),
   });
@@ -4545,7 +4524,7 @@ function CtePage() {
               );
           }
         }
-      } else if (!vars?.quiet) toast.error((ret as any).xMotivo || "Falha ao cancelar");
+      } else if (!vars?.quiet) toast.error(erroSefazAmigavel((ret as any)?.cStat, (ret as any).xMotivo));
       qc.invalidateQueries({ queryKey: ["cte-documentos"] });
     },
     onError: (e: Error) => toast.error(e.message),
@@ -5489,7 +5468,7 @@ function CtePage() {
                           />
                         </TableCell>
                       )}
-                    <TableCell className="font-mono text-xs">
+                    <TableCell className="font-mono text-xs whitespace-nowrap">
                       {info.placas.length ? info.placas.join(" / ") : "—"}
                     </TableCell>
                     <TableCell
@@ -5559,24 +5538,6 @@ function CtePage() {
                                 title="Visualizar DACTE"
                               >
                                 <Eye className="h-3.5 w-3.5" />
-                              </Button>
-                              <Button
-                                size="icon"
-                                variant="ghost"
-                                className="h-7 w-7 text-sky-600"
-                                onClick={() => downloadXml(d)}
-                                title="Baixar XML"
-                              >
-                                <FileCode className="h-3.5 w-3.5" />
-                              </Button>
-                              <Button
-                                size="icon"
-                                variant="ghost"
-                                className="h-7 w-7 text-amber-600"
-                                onClick={() => downloadPdf(d)}
-                                title="Baixar DACTE (PDF)"
-                              >
-                                <Download className="h-3.5 w-3.5" />
                               </Button>
                               <Button
                                 size="icon"
@@ -6290,7 +6251,7 @@ function CtePage() {
                       variant="outline"
                       size="sm"
                       disabled={selecionadas.size === 0}
-                      title="Seleciona todas as notas visíveis com o mesmo remetente e destinatário da primeira selecionada"
+                      title="Seleciona todas as notas visíveis do mesmo trecho (mesmo remetente e destinatário da primeira selecionada)"
                       onClick={() => {
                         const ref = mercadoriasSorted.find((m) => selecionadas.has(m.chave));
                         if (!ref) {
@@ -6306,7 +6267,7 @@ function CtePage() {
                         toast.success(`${iguais.length} NF-e(s) selecionadas`);
                       }}
                     >
-                      <Copy className="mr-1 h-3 w-3" /> Mesmo rem./dest.
+                      <Copy className="mr-1 h-3 w-3" /> Mesmo trecho
                     </Button>
                     <Button
                       variant="outline"
@@ -6762,7 +6723,7 @@ function CtePage() {
                             />
                           </TableCell>
                           <TableCell className="font-mono text-center">{d.numero ?? "—"}</TableCell>
-                          <TableCell className="font-mono text-xs text-center">
+                          <TableCell className="font-mono text-xs text-center whitespace-nowrap">
                             {info.placas.length ? info.placas.join(" / ") : "—"}
                           </TableCell>
                           <TableCell className="text-xs max-w-[160px] truncate" title={info.motorista || ""}>
