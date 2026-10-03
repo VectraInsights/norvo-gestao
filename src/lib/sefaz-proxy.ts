@@ -197,7 +197,7 @@ export async function handleSefazProxy(request: Request): Promise<Response> {
         break;
       }
       case "cancelarCte": {
-        const { cancelarCte } = await import("@/lib/sefaz-cte");
+        const { cancelarCte, extrairChavesNFeXml } = await import("@/lib/sefaz-cte");
         const ambCanc = SEFAZ_AMBIENTE;
         console.log("[CTE-CANCEL] ambiente:", ambCanc, "tpAmb:", SEFAZ_TP_AMB, "chave:", (body as any).chave, "configIgnorada: true");
         result = await cancelarCte(pfxBytes, senha, (body as any).chave, (body as any).justificativa, ambCanc, cnpj, uf, (body as any).protocolo);
@@ -208,10 +208,15 @@ export async function handleSefazProxy(request: Request): Promise<Response> {
           const { data: docXml } = await s.from("cte_documentos").select("xml_assinado").eq("chave_acesso", (body as any).chave).maybeSingle();
           let xmlStr = (docXml as any)?.xml_assinado || "";
           try { const p = JSON.parse(xmlStr); if (p.xml) xmlStr = p.xml; } catch {}
-          const chavesNfe = [...xmlStr.matchAll(/<chNFe>(\d{44})<\/chNFe>/g)].map(m => m[1]);
+          const chavesNfe = extrairChavesNFeXml(xmlStr);
           if (chavesNfe.length > 0) await s.from("cte_nfes_pendentes" as any).update({ status: "pendente" }).in("chave", chavesNfe).eq("empresa_id", empresaId);
         }
         return json(result);
+      }
+      case "enviarCceCte": {
+        const { enviarCceCte } = await import("@/lib/sefaz-cte");
+        result = await enviarCceCte(pfxBytes, senha, (body as any).chave, (body as any).correcao, SEFAZ_AMBIENTE, cnpj, uf);
+        break;
       }
       case "consultarMdf": {
         const { consultarMdf } = await import("@/lib/sefaz-mdf");

@@ -286,6 +286,82 @@ function escCte(v: unknown): string {
   return String(v ?? "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&apos;");
 }
 
+// Chaves das NF-es vinculadas num XML de CT-e (ambos os modelos):
+// Simplificado usa <chNFe>, Normal usa <infNFe><chave>. Escopo restrito
+// (não confundir com <chCTe> de docAnt). Uso no servidor (revert de cancel).
+export function extrairChavesNFeXml(xmlAssinado: string | null): string[] {
+  const out = new Set<string>();
+  const x = String(xmlAssinado || "");
+  try {
+    const p = JSON.parse(x);
+    if (p && typeof p === "object" && typeof p.xml === "string" && p.xml.includes("<")) {
+      for (const c of extrairChavesNFeXml(p.xml)) out.add(c);
+      return [...out];
+    }
+  } catch {}
+  for (const m of x.matchAll(/<chNFe>(\d{44})<\/chNFe>/g)) out.add(m[1]);
+  for (const m of x.matchAll(/<infNFe>\s*<chave>(\d{44})<\/chave>/g)) out.add(m[1]);
+  return [...out];
+}
+
+// CC-e — Carta de Correção Eletrônica (evento 110110). Não corrige valores,
+// CFOP, tomador, datas ou documentos vinculados; só texto complementar.
+// Em homologação vale qualquer texto ≥15 caracteres.
+export const CCE_COND_USO =
+  "A Carta de Correcao e disciplinada pelo Art. 58-B do CONVENIO/SINIEF 06/89: Fica permitida a utilizacao de carta de correcao, para regularizacao de erro ocorrido na emissao de documentos fiscais relativos a prestacao de servico de transporte, desde que o erro nao esteja relacionado com as variaveis que determinam o valor do imposto tais como: base de calculo, aliquota, diferenca de preco, quantidade, valor da prestacao, documentos fiscais de origem, dados do tomador, etc.";
+
+export function buildCceEvento(chave: string, cnpj: string, correcao: string): string {
+  const ch = String(chave || "").replace(/\D/g, "");
+  if (ch.length !== 44) throw new Error("Chave do CT-e inválida p/ CC-e");
+  const xc = String(correcao || "").trim().replace(/\s+/g, " ");
+  if (xc.length < 15) throw new Error("Correção com no mínimo 15 caracteres");
+  if (xc.length > 1000) throw new Error("Correção com no máximo 1000 caracteres");
+  const cnpjFmt = String(cnpj || "").replace(/\D/g, "").padStart(14, "0");
+  const dhEvento = dhBrt();
+  const nSeq = "001";
+  const cOrgao = ch.slice(0, 2);
+  return `<eventoCTe xmlns="http://www.portalfiscal.inf.br/cte" versao="4.00"><infEvento Id="ID110110${ch}${nSeq}"><cOrgao>${cOrgao}</cOrgao><tpAmb>${SEFAZ_TP_AMB}</tpAmb><CNPJ>${cnpjFmt}</CNPJ><chCTe>${ch}</chCTe><dhEvento>${dhEvento}</dhEvento><tpEvento>110110</tpEvento><nSeqEvento>${nSeq}</nSeqEvento><detEvento versaoEvento="4.00"><evCCe><descEvento>Carta de Correcao</descEvento><xCondUso>${CCE_COND_USO}</xCondUso><xCorrecao>${escCte(xc)}</xCorrecao></evCCe></detEvento></infEvento></eventoCTe>`;
+}
+
+export async function enviarCceCte(pfx: Buffer, senha: string, chave: string, correcao: string, ambiente: Ambiente, cnpj: string, uf?: string): Promise<{ sucesso: boolean; cStat: string; xMotivo: string; protocolo?: string }> {
+  assertSefazAmbiente(ambiente);
+  const ep = getCteEndpoints(ambiente, uf);
+  const xml = buildCceEvento(chave, cnpj, correcao);
+  const ass = signXml(xml, pfx, senha);
+  console.info("[CTE-CCE] evento preparado", { bytes: Buffer.byteLength(ass, "utf8") });
+  const ns = "http://www.portalfiscal.inf.br/cte/wsdl/CTeRecepcaoEventoV4";
+  const isMG = uf?.toUpperCase() === "MG";
+  let ret: string;
+  if (isMG) {
+    const body = `<cteDadosMsg xmlns="${ns}">${ass}</cteDadosMsg>`;
+    const envelope = `<?xml version="1.0" encoding="utf-8"?><soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/"><soap:Body>${body}</soap:Body></soap:Envelope>`;
+    const u = new URL(ep.recepcaoEvento);
+    const agent = createSefazAgent(pfx, senha);
+    ret = await new Promise<string>((resolve, reject) => {
+      const req = https.request({ hostname: u.hostname, port: 443, path: u.pathname, method: "POST", agent, headers: {
+        "Content-Type": "text/xml; charset=utf-8",
+        "SOAPAction": `${ns}/cteRecepcaoEvento`,
+        "Content-Length": Buffer.byteLength(envelope),
+      } }, (res) => {
+        let d = "";
+        res.on("data", (c) => (d += c));
+        res.on("end", () => (res.statusCode && res.statusCode >= 400 ? reject(new Error(`CTe HTTP ${res.statusCode}: ${d.slice(0, 500)}`)) : resolve(d)));
+      });
+      req.on("error", reject);
+      req.write(envelope);
+      req.end();
+    });
+  } else {
+    const body = `<CTeRecepcaoEventoV4 xmlns="${ns}"><cteDadosMsg xmlns="${ns}">${ass}</cteDadosMsg></CTeRecepcaoEventoV4>`;
+    ret = await soapRequest(ep.recepcaoEvento, body, `${ns}/cteRecepcaoEvento`, createSefazAgent(pfx, senha));
+  }
+  const cStat = ret.match(/<cStat>(\d+)<\/cStat>/)?.[1] || "";
+  const xMotivo = ret.match(/<xMotivo>([^<]+)<\/xMotivo>/)?.[1] || "";
+  const prot = ret.match(/<nProt>(\d+)<\/nProt>/)?.[1] || undefined;
+  console.log("[CTE-CCE] cStat:", cStat, "xMotivo:", xMotivo);
+  return { sucesso: cStat === "135", cStat, xMotivo, protocolo: prot };
+}
+
 // CT-e Normal 4.00 (tpCTe=0): root <CTe>, toma3/toma4 no ide, rem/dest,
 // vPrest com componentes, infCTeNorm (infCarga/infDoc/infModal).
 export function buildCteNormalXml(input: CteInputCompleto): { xml: string; chave: string } {

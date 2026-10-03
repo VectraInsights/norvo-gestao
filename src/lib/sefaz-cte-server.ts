@@ -150,10 +150,11 @@ export const cancelarCteFn = createServerFn({ method: "POST" }).validator((d:{em
   if(ret.sucesso) {
     await supa.from("cte_documentos").update({status:"cancelado"} as any).eq("chave_acesso",data.chave);
     // Devolve as NF-es para pendentes (fonte da verdade no servidor)
+    const { extrairChavesNFeXml } = await import("@/lib/sefaz-cte");
     const { data: docXml } = await supa.from("cte_documentos").select("xml_assinado").eq("chave_acesso", data.chave).maybeSingle();
     let xmlStr = (docXml as any)?.xml_assinado || "";
     try { const p = JSON.parse(xmlStr); if (p.xml) xmlStr = p.xml; } catch {}
-    const chavesNfe = [...xmlStr.matchAll(/<chNFe>(\d{44})<\/chNFe>/g)].map(m => m[1]);
+    const chavesNfe = extrairChavesNFeXml(xmlStr);
     if (chavesNfe.length > 0) await supa.from("cte_nfes_pendentes" as any).update({ status: "pendente" }).in("chave", chavesNfe).eq("empresa_id", data.empresaId);
   }
   return ret;
@@ -165,4 +166,13 @@ export const excluirRejeitadosCteFn = createServerFn({ method: "POST" }).validat
   const { error }=await supa.from("cte_documentos" as any).delete().eq("empresa_id",data.empresaId).eq("status","rejeitado");
   if(error) throw new Error(error.message);
   return { ok:true };
+});
+
+export const enviarCceCteFn = createServerFn({ method: "POST" }).validator((d:{empresaId:string;chave:string;correcao:string})=>d).handler(async ({data})=>{
+  if(SEFAZ_URL) return callProxy("enviarCceCte", data);
+  const { buscarCertificadoAtivo, enviarCceCte } = await import("@/lib/sefaz-cte");
+  const cert=await buscarCertificadoAtivo(data.empresaId);
+  const ambiente = SEFAZ_AMBIENTE;
+  console.log(`[CTE-CCE] empresa=${data.empresaId} ambiente=${ambiente} chave=${data.chave}`);
+  return enviarCceCte(cert.pfx, cert.senha, data.chave, data.correcao, ambiente, cert.cnpj, cert.uf);
 });

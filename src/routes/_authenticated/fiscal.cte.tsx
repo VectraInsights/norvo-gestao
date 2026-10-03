@@ -68,6 +68,7 @@ import {
   Check,
   ReceiptText,
   Pencil,
+  FilePenLine,
   Download,
   Eye,
   Settings2,
@@ -89,6 +90,7 @@ import {
   emitirCteFn,
   consultarCteFn,
   cancelarCteFn,
+  enviarCceCteFn,
   previewCteXmlFn,
   excluirRejeitadosCteFn,
 } from "@/lib/sefaz-cte-server";
@@ -4473,6 +4475,29 @@ function CtePage() {
   } | null>(null);
   const [cteCancelarLote, setCteCancelarLote] = useState(false);
   const [motivoCanc, setMotivoCanc] = useState("ERRO DE EMISSAO DO CT-E");
+  // CC-e (carta de correção, evento 110110): só texto complementar, nunca valores
+  const [cceDoc, setCceDoc] = useState<CteDoc | null>(null);
+  const [cceTexto, setCceTexto] = useState("");
+  const enviarCce = useMutation({
+    mutationFn: async () => {
+      if (!empresa) throw new Error("Empresa não selecionada");
+      if (!cceDoc?.chave_acesso) throw new Error("CT-e sem chave");
+      const txt = cceTexto.trim().replace(/\s+/g, " ");
+      if (txt.length < 15) throw new Error("Correção com no mínimo 15 caracteres");
+      return enviarCceCteFn({
+        data: { empresaId: empresa.id, chave: cceDoc.chave_acesso, correcao: txt },
+      });
+    },
+    onSuccess: (ret: any) => {
+      if (ret?.sucesso) {
+        toast.success(`CC-e registrada${ret?.protocolo ? ` (prot. ${ret.protocolo})` : ""}`);
+        setCceDoc(null);
+        setCceTexto("");
+      } else
+        toast.error(`[${ret?.cStat || "?"}] ${ret?.mensagem || ret?.xMotivo || "CC-e rejeitada"}`);
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
   const cancelarSelecionados = async () => {
     const docsSelecionados = docsByStatus.autorizados.filter(
       (d) => d.chave_acesso && mdfSel.has(d.chave_acesso),
@@ -5541,6 +5566,18 @@ function CtePage() {
                               >
                                 <Download className="h-3.5 w-3.5" />
                               </Button>
+                              <Button
+                                size="icon"
+                                variant="ghost"
+                                className="h-7 w-7 text-emerald-600"
+                                onClick={() => {
+                                  setCceDoc(d);
+                                  setCceTexto("");
+                                }}
+                                title="Carta de Correção (CC-e)"
+                              >
+                                <FilePenLine className="h-3.5 w-3.5" />
+                              </Button>
                             </>
                           )}
                           {d.status === "rejeitado" && String(d.xml_assinado || "").includes("<") && (
@@ -5782,6 +5819,48 @@ function CtePage() {
                 }}
               >
                 Confirmar Cancelamento
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+      )}
+      {cceDoc && (
+        <Dialog
+          open={!!cceDoc}
+          onOpenChange={(v) => {
+            if (!v) setCceDoc(null);
+          }}
+        >
+          <DialogContent className="inset-auto left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-[480px] max-w-[calc(100vw-2rem)] h-auto max-h-[90vh] p-4 gap-3">
+            <DialogHeader>
+              <DialogTitle>Carta de Correção — CT-e {cceDoc.numero ?? ""}</DialogTitle>
+            </DialogHeader>
+            <div className="space-y-2">
+              <Label>Correção (mín. 15 caracteres)</Label>
+              <Textarea
+                value={cceTexto}
+                onChange={(e) => setCceTexto(e.target.value)}
+                rows={4}
+                maxLength={1000}
+                placeholder="Descreva o que corrige (ex.: endereço de entrega, placa, observação)…"
+              />
+              <div className="text-right text-[11px] text-muted-foreground">
+                {cceTexto.trim().length}/1000
+              </div>
+              <p className="text-[11px] text-muted-foreground">
+                Não corrige valores, CFOP, tomador, datas nem documentos vinculados —
+                esses casos exigem cancelar e reemitir.
+              </p>
+            </div>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setCceDoc(null)}>
+                Voltar
+              </Button>
+              <Button
+                disabled={cceTexto.trim().length < 15 || enviarCce.isPending}
+                onClick={() => enviarCce.mutate()}
+              >
+                {enviarCce.isPending ? "Enviando…" : "Enviar CC-e"}
               </Button>
             </DialogFooter>
           </DialogContent>
