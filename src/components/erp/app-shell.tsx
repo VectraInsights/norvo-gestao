@@ -85,17 +85,33 @@ export function AppShell({ children }: { children: ReactNode }) {
   useEffect(() => {
     const depth = location.pathname.split("/").filter(Boolean).length;
     if (depth >= 2 && (lastDepth.current === null || lastDepth.current < 2)) {
-      setCollapsed(true);
-      try {
-        window.localStorage.setItem("norvo-sidebar-collapsed", "1");
-      } catch {
-        // localStorage indisponível
+      // Expansão manual feita no clique consome a vez: não recolhe de volta
+      if (expansaoManualRef.current) expansaoManualRef.current = false;
+      else {
+        setCollapsed(true);
+        try {
+          window.localStorage.setItem("norvo-sidebar-collapsed", "1");
+        } catch {
+          // localStorage indisponível
+        }
       }
     }
     lastDepth.current = depth;
   }, [location.pathname]);
   // Todos os grupos começam fechados por padrão
   const [openGroups, setOpenGroups] = useState<Record<string, boolean>>({});
+  // No trilho (recolhido), clicar num ícone expande mostrando os submenus
+  const expansaoManualRef = useRef(false);
+  const expandir = (grupo?: string) => {
+    expansaoManualRef.current = true;
+    setCollapsed(false);
+    try {
+      window.localStorage.setItem("norvo-sidebar-collapsed", "0");
+    } catch {
+      // localStorage indisponível
+    }
+    if (grupo) setOpenGroups((g) => ({ ...g, [grupo]: true }));
+  };
   const closeAllGroups = useCallback(() => setOpenGroups({}), []);
   const toggleGroup = (label: string) => {
     setOpenGroups((g) => ({ ...g, [label]: !g[label] }));
@@ -415,6 +431,9 @@ export function AppShell({ children }: { children: ReactNode }) {
                   <Link
                     to="/dashboard"
                     data-nav-focusable
+                    onClick={() => {
+                      if (collapsed) expandir();
+                    }}
                     aria-current={active ? "page" : undefined}
                     className={cn(
                       "mb-2 flex touch-manipulation items-center rounded-md text-sm font-medium transition-colors",
@@ -487,7 +506,10 @@ export function AppShell({ children }: { children: ReactNode }) {
                         const link = (
                           <Link
                             to={item.to}
-                            onClick={() => setNavigating(true)}
+                            onClick={() => {
+                              setNavigating(true);
+                              if (collapsed) expandir(group.label);
+                            }}
                             data-nav-focusable
                             data-nav-group={group.label}
                             aria-current={active ? "page" : undefined}
