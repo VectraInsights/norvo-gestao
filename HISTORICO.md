@@ -4144,7 +4144,6 @@ Espelhado na Vercel.
   dois caminhos de gravação) — DACTE certo mesmo com bundle antigo.
 
 ## CT-e: DACTE em construtor único + PWA (03/10)
-
 - Não precisa de dois: a prévia recebe o XML (`previewCteXmlFn`
   retorna), então usa o mesmo `gerarDacteBlob` via componente
   `PreviewDacte` — o objeto form-based de ~140 linhas foi removido.
@@ -4154,4 +4153,12 @@ Espelhado na Vercel.
 - PWA: `manifest.webmanifest` + ícones 192/512 + `sw.js` mínimo +
   registro no `__root` — Chrome no PC passa a oferecer Instalar.
   100% online (sem cache).
+
+## CT-e: visualizar não reescreve percurso/entrega (03/10)
+
+- Abrir os dados de um CT-e mostrava o percurso do EMBARQUE (ex.
+  0003) em vez do documento (0001): `docsAtuais()` agora usa as NF-es
+  do próprio doc (via `nfesTodas`) quando visualizando.
+- Efeitos de auto-percurso/entrega/coleta não rodam em visualização
+  (antes reescreviam o form exibido com dados do embarque).
 
