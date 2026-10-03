@@ -5343,13 +5343,12 @@ function CtePage() {
     if (String(form.icmsAliq ?? "").trim() === "") trib.push("alíquota ICMS");
     if (mercadorias.length === 0) trib.push("NF-es");
     if (!aliqIcmsOk && aliqIcmsEsp !== null) trib.push(`alíquota esperada ${aliqIcmsEsp}% p/ a rota`);
-    return { geral, transporte, trib, obs: [] };
+    return { geral, transporte, trib };
   })();
   const tabOk = (() => ({
     geral: tabFalta.geral.length === 0,
     transporte: tabFalta.transporte.length === 0,
     trib: tabFalta.trib.length === 0,
-    obs: true,
   }))();
   const tabDot = (ok: boolean, falta: string[] = []) =>
     !viewDoc ? (
@@ -7510,15 +7509,6 @@ function CtePage() {
                 <FileText className="mr-1 h-3 w-3" />
                 Tributação e Carga
               </TabsTrigger>
-              <TabsTrigger
-                value="obs"
-                className="rounded-t-md rounded-b-none text-xs data-[state=active]:bg-background data-[state=active]:shadow-sm data-[state=active]:text-primary"
-                title="Aba completa"
-              >
-                {tabDot(true)}
-                <FileCode className="mr-1 h-3 w-3" />
-                Observações
-              </TabsTrigger>
             </TabsList>
 
             {/* === TAB: Geral === */}
@@ -7746,9 +7736,7 @@ function CtePage() {
                     </Button>
                   </div>
                 </div>
-              </div>
-              <div className="border rounded p-3 bg-muted/20">
-                <div className="flex flex-wrap items-start gap-x-3 gap-y-2">
+                <div className="flex flex-wrap items-start gap-x-3 gap-y-2 col-span-full border-t pt-2">
                   <div className="flex-[2_1_320px] max-w-[700px] min-w-0">
                     <Label className="text-[10px] text-muted-foreground">CFOP Saída</Label>
                     <Popover open={cfopOpen} onOpenChange={setCfopOpen}>
@@ -8227,6 +8215,16 @@ function CtePage() {
                   )}
                 </Card>
               </div>
+              <Card className="p-3">
+                <div className="bg-primary/8 border-b border-primary/20 -m-3 mb-1 px-2 py-1 text-[10px] font-semibold uppercase tracking-wide text-primary/80">
+                  Observações Gerais
+                </div>
+                <Textarea
+                  className="min-h-[60px] text-xs font-mono resize-none"
+                  value={(form as any).obsGerais || ""}
+                  onChange={(e) => setForm({ ...form, obsGerais: e.target.value } as any)}
+                />
+              </Card>
             </TabsContent>
 
             {/* === TAB: Doc Mercadorias === */}
@@ -8470,7 +8468,7 @@ function CtePage() {
                     />
                   </div>
                   <div className="w-[136px] shrink-0">
-                    <Label className="text-[10px] text-muted-foreground">Valor ICMS (R$)</Label>
+                    <Label className="text-[10px] text-muted-foreground">ICMS (R$)</Label>
                     <MoneyInput
                       className="h-7 text-xs bg-muted"
                       value={form.icmsValor}
@@ -8480,7 +8478,7 @@ function CtePage() {
                   </div>
                   <div className="w-[136px] shrink-0">
                     <Label className="text-[10px] text-muted-foreground">
-                      Valor do crédito outorgado/presumido (R$)
+                      Crédito outorgado/presumido (R$)
                     </Label>
                     <MoneyInput
                       className="h-7 text-xs bg-muted"
@@ -8532,7 +8530,7 @@ function CtePage() {
                     />
                   </div>
                   <div className="w-[136px] shrink-0">
-                    <Label className="text-[10px] text-muted-foreground">Valor PIS (R$)</Label>
+                    <Label className="text-[10px] text-muted-foreground">PIS (R$)</Label>
                     <MoneyInput
                       className="h-7 text-xs bg-muted"
                       value={valorImposto(form.pisAliq)}
@@ -8541,7 +8539,7 @@ function CtePage() {
                     />
                   </div>
                   <div className="w-[136px] shrink-0">
-                    <Label className="text-[10px] text-muted-foreground">Valor COFINS (R$)</Label>
+                    <Label className="text-[10px] text-muted-foreground">COFINS (R$)</Label>
                     <MoneyInput
                       className="h-7 text-xs bg-muted"
                       value={valorImposto(form.cofinsAliq)}
@@ -8550,7 +8548,7 @@ function CtePage() {
                     />
                   </div>
                   <div className="w-[136px] shrink-0">
-                    <Label className="text-[10px] text-muted-foreground">Valor IBS (R$)</Label>
+                    <Label className="text-[10px] text-muted-foreground">IBS (R$)</Label>
                     <MoneyInput
                       className="h-7 text-xs bg-muted"
                       value={valorImposto("0.10")}
@@ -8559,7 +8557,7 @@ function CtePage() {
                     />
                   </div>
                   <div className="w-[136px] shrink-0">
-                    <Label className="text-[10px] text-muted-foreground">Valor CBS (R$)</Label>
+                    <Label className="text-[10px] text-muted-foreground">CBS (R$)</Label>
                     <MoneyInput
                       className="h-7 text-xs bg-muted"
                       value={valorImposto("0.90")}
@@ -9745,22 +9743,6 @@ function CtePage() {
                 <p className="text-[9px] text-muted-foreground mt-1">
                   Avulso transmite como CT-e Normal; Simplificado transmite como CTeSimp.
                 </p>
-              </Card>
-            </TabsContent>
-
-            {/* TAB Status removida: finalidade foi para o Transporte; situação aparece na Geral em modo visualização */}
-
-            {/* === TAB: Observações === */}
-            <TabsContent value="obs" className="mt-2 min-h-0 flex-1 space-y-3 overflow-hidden data-[state=inactive]:hidden data-[state=active]:flex data-[state=active]:flex-col">
-              <Card className="p-3">
-                <div className="bg-primary/8 border-b border-primary/20 -m-3 mb-1 px-2 py-1 text-[10px] font-semibold uppercase tracking-wide text-primary/80">
-                  Observações Gerais
-                </div>
-                <Textarea
-                  className="min-h-[120px] text-xs font-mono resize-none"
-                  value={(form as any).obsGerais || ""}
-                  onChange={(e) => setForm({ ...form, obsGerais: e.target.value } as any)}
-                />
               </Card>
             </TabsContent>
           </Tabs>
