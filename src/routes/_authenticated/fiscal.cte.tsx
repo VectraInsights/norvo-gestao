@@ -63,9 +63,7 @@ import {
   Trash2,
   Filter,
   Calendar,
-  CheckCircle2,
   ChevronsUpDown,
-  Check,
   ReceiptText,
   Pencil,
   FilePenLine,
@@ -1902,7 +1900,6 @@ function CtePage() {
   const limparFormularioAoSair = () => {
     setOpen(false);
     setForm({ ...emptyForm });
-    setPercursoAplicado(null);
     setMercadorias([]);
     setSelecionadas(new Set());
     setEditingRascunhoId(null);
@@ -4650,11 +4647,6 @@ function CtePage() {
     form: any;
   } | null>(null);
   const percursoAplicadoKey = useRef("");
-  const [percursoAplicado, setPercursoAplicado] = useState<{
-    codigo: string;
-    nome: string;
-    em: string;
-  } | null>(null);
   const pularPercursoRef = useRef(false);
   const { data: percursosDB, error: percursosError } = useQuery({
     enabled: !!empresa,
@@ -4966,11 +4958,6 @@ function CtePage() {
       ...(r.obs_gerais ? { obsGerais: r.obs_gerais } : {}),
     }));
     if (r.entrega_xmun) travarEntregaRef.current = true;
-    setPercursoAplicado({
-      codigo: String(r.codigo || ""),
-      nome: String(r.nome || ""),
-      em: new Date().toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" }),
-    });
   };
   // Percurso é 100% automático e silencioso: salva/atualiza a cada emissão ou rascunho
   const persistirPercursoSilencioso = async () => {
@@ -5147,6 +5134,48 @@ function CtePage() {
     }
   };
   const percursoMatch = matchPercurso(docsAtuais());
+  // Estado por aba p/ o dot (verde completa / vermelha faltando). Espelha as
+  // exigências da emissão; Observações nunca bloqueia. Sem dots em leitura.
+  const tabOk = (() => {
+    const soDig = (v: any) => String(v || "").replace(/\D/g, "");
+    const numBR = (v: any) => {
+      const s = String(v ?? "").trim();
+      if (!s) return 0;
+      return s.includes(",")
+        ? Number(s.replace(/\./g, "").replace(",", ".")) || 0
+        : parseFloat(s) || 0;
+    };
+    const tomOk =
+      soDig(form.cnpjTomador).length === 14 && !!String(form.xNomeTomador || "").trim();
+    const iniOk = !!String(form.xMunIni || "").trim() && !!String(form.ufIni || "").trim();
+    const fimOk = !!String(form.xMunFim || "").trim() && !!String(form.ufFim || "").trim();
+    const rntrcOk =
+      !!rntrcFinal && !/^ISENTO$/i.test(rntrcFinal) && soDig(rntrcFinal).length === 8;
+    return {
+      geral: tomOk && !!percursoMatch && iniOk && fimOk,
+      transporte:
+        !!String(form.placaVeiculo || "").trim() &&
+        !!(
+          String((form as any).motoristaNome || "").trim() || (form as any).motoristaId
+        ) &&
+        rntrcOk &&
+        numBR(form.vPrest) > 0 &&
+        ((form as any).finalidadeEmissao === "Complemento" ||
+          !!String(form.seguradoraNome || "").trim()),
+      trib:
+        !!String(form.cfop || "").trim() &&
+        !!String(form.icmsCST || "").trim() &&
+        String(form.icmsAliq ?? "").trim() !== "" &&
+        mercadorias.length > 0,
+      obs: true,
+    };
+  })();
+  const tabDot = (ok: boolean) =>
+    !viewDoc ? (
+      <span
+        className={`mr-1 h-1.5 w-1.5 rounded-full ${ok ? "bg-green-500" : "bg-red-500"}`}
+      />
+    ) : null;
   // CT-es autorizados compatíveis com o percurso atual (complemento/substituição)
   const ctesCompativeis = useMemo(() => {
     const dg = (v: any) => String(v || "").replace(/\D/g, "");
@@ -5183,7 +5212,6 @@ function CtePage() {
   }, [docs, nfesTodas, percursoMatch, mercadorias, selecionadas, form.cnpjTomador]);
   useEffect(() => {
     percursoAplicadoKey.current = "";
-    setPercursoAplicado(null);
     // Preserva trava armada antes de abrir (rascunho/percurso manual); senão libera p/ NF-e preencher
     travarEntregaRef.current = travarPendenteRef.current;
     travarPendenteRef.current = false;
@@ -7241,15 +7269,6 @@ function CtePage() {
             <p className="text-sm text-muted-foreground">
               Emissão de CT-e (57) — versão 4.00 via mTLS SEFAZ.
             </p>
-            {!viewDoc && percursoAplicado && (
-              <p
-                className="mt-1 text-[11px] text-muted-foreground"
-                title="Coleta/entrega, tomador, CFOP e impostos vieram deste percurso. Edições manuais posteriores prevalecem."
-              >
-                Percurso {percursoAplicado.codigo} aplicado às {percursoAplicado.em}
-                {percursoAplicado.nome ? ` • ${percursoAplicado.nome}` : ""}
-              </p>
-            )}
           </DialogHeader>
           {viewDoc && (
             <div
@@ -7275,28 +7294,36 @@ function CtePage() {
               <TabsTrigger
                 value="geral"
                 className="rounded-t-md rounded-b-none text-xs data-[state=active]:bg-background data-[state=active]:shadow-sm data-[state=active]:text-primary"
+                title={tabOk.geral ? "Aba completa" : "Faltam dados nesta aba"}
               >
+                {tabDot(tabOk.geral)}
                 <Settings2 className="mr-1 h-3 w-3" />
                 Geral
               </TabsTrigger>
               <TabsTrigger
                 value="seguros"
                 className="rounded-t-md rounded-b-none text-xs data-[state=active]:bg-background data-[state=active]:shadow-sm data-[state=active]:text-primary"
+                title={tabOk.transporte ? "Aba completa" : "Faltam dados nesta aba"}
               >
+                {tabDot(tabOk.transporte)}
                 <Truck className="mr-1 h-3 w-3" />
                 Transporte
               </TabsTrigger>
               <TabsTrigger
                 value="docs"
                 className="rounded-t-md rounded-b-none text-xs data-[state=active]:bg-background data-[state=active]:shadow-sm data-[state=active]:text-primary"
+                title={tabOk.trib ? "Aba completa" : "Faltam dados nesta aba"}
               >
+                {tabDot(tabOk.trib)}
                 <FileText className="mr-1 h-3 w-3" />
                 Tributação e Carga
               </TabsTrigger>
               <TabsTrigger
                 value="obs"
                 className="rounded-t-md rounded-b-none text-xs data-[state=active]:bg-background data-[state=active]:shadow-sm data-[state=active]:text-primary"
+                title="Aba completa"
               >
+                {tabDot(true)}
                 <FileCode className="mr-1 h-3 w-3" />
                 Observações
               </TabsTrigger>
@@ -9545,55 +9572,6 @@ function CtePage() {
             </TabsContent>
           </Tabs>
 
-          {!viewDoc &&
-            (() => {
-              const itens = [
-                {
-                  label: "Tomador",
-                  ok:
-                    String(form.cnpjTomador || "").replace(/\D/g, "").length === 14 &&
-                    !!String(form.xNomeTomador || "").trim(),
-                },
-                { label: "Percurso", ok: !!percursoMatch },
-                {
-                  label: "Tração/motorista",
-                  ok:
-                    !!String(form.placaVeiculo || "").trim() &&
-                    !!(
-                      String((form as any).motoristaNome || "").trim() ||
-                      (form as any).motoristaId
-                    ),
-                },
-                {
-                  label: "Tributos",
-                  ok: !!String(form.cfop || "").trim() && !!String(form.icmsCST || "").trim(),
-                },
-                { label: "NF-es", ok: mercadorias.length > 0 },
-                {
-                  label: "Seguro",
-                  ok:
-                    (form as any).finalidadeEmissao === "Complemento" ||
-                    !!String(form.seguradoraNome || "").trim(),
-                },
-              ];
-              const prontos = itens.filter((i) => i.ok).length;
-              return (
-                <div className="flex flex-wrap items-center gap-x-3 gap-y-1 rounded-md border bg-muted/30 px-3 py-1.5 text-[11px]">
-                  <span className="font-semibold uppercase tracking-wide text-muted-foreground">
-                    Pronto p/ emitir {prontos}/{itens.length}
-                  </span>
-                  {itens.map((i) => (
-                    <span
-                      key={i.label}
-                      className={`inline-flex items-center gap-1 font-medium ${i.ok ? "text-green-700 dark:text-green-300" : "text-muted-foreground"}`}
-                    >
-                      {i.ok ? <Check className="h-3 w-3" /> : <X className="h-3 w-3" />}
-                      {i.label}
-                    </span>
-                  ))}
-                </div>
-              );
-            })()}
           <DialogFooter className="gap-2">
             <Button variant="ghost" onClick={limparFormularioAoSair}>
               <Ban className="mr-1 h-3.5 w-3.5" /> Fechar
