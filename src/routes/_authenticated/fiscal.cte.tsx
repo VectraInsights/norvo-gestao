@@ -3613,6 +3613,10 @@ function CtePage() {
       if (delErr) throw delErr;
       if (!count) throw new Error("o banco não removeu o rascunho (0 linhas afetadas)");
       setConfRascunho(null);
+      // Limpa a memória de seleção: sem isso as NF-es do rascunho voltam
+      // a pendentes e reaparecem marcadas no embarque
+      setSelecionadas(new Set());
+      if (editingRascunhoId === doc.id) setEditingRascunhoId(null);
       qc.invalidateQueries({ queryKey: ["cte-documentos"] });
       toast.success("Rascunho excluído");
       try {
@@ -6013,7 +6017,7 @@ function CtePage() {
       {isLoading ? (
         <div className="text-sm text-muted-foreground">Carregando…</div>
       ) : (
-        <Tabs value={statusTab} onValueChange={setStatusTab} className="flex-1 min-h-0 flex flex-col">
+        <Tabs value={statusTab} onValueChange={(v) => { setStatusTab(v); setSelecionadas(new Set()); setEnvSel(new Set()); setMdfSel(new Set()); setImpSel(new Set()); }} className="flex-1 min-h-0 flex flex-col">
           {/* Cartão único: barra verde com título + abas + modo; conteúdo das abas abaixo */}
           <Card className="overflow-hidden border-2 border-primary/20 shadow-panel flex-1 min-h-0 flex flex-col">
             <div className="bg-primary text-primary-foreground px-3 py-1.5 flex flex-wrap items-center gap-x-3 gap-y-1.5 shrink-0">
