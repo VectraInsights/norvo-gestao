@@ -5460,6 +5460,19 @@ function CtePage() {
     if (!fimOk) geral.push("entrega incompleta");
     const transporte: string[] = [];
     if (!String(form.placaVeiculo || "").trim()) transporte.push("placa da tração");
+    // Cavalo sem carreta: mesma regra da emissão (tração cadastrada que traciona exige Reboque 1)
+    const vvTrac = (veiculos || []).find(
+      (v: any) =>
+        String(v.placa || "").toUpperCase() ===
+        String(form.placaVeiculo || "").toUpperCase(),
+    );
+    if (
+      String(form.placaVeiculo || "").trim() &&
+      vvTrac &&
+      Traciona((vvTrac as any).tipo) &&
+      !String(form.semiReboque1 || "").trim()
+    )
+      transporte.push("placa da carreta");
     if (!(String((form as any).motoristaNome || "").trim() || (form as any).motoristaId))
       transporte.push("motorista");
     if (!rntrcOk) transporte.push("RNTRC");
