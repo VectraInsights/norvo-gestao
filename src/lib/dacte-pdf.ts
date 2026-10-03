@@ -449,7 +449,7 @@ export function gerarDactePdf(data: DacteData): Blob {
   const cfiCols: Array<[string, string, number]> = [
     ["CFOP - Natureza da Prestação", cfopTxt, 100],
     ["Início da Prestação", `${cut(D(data.origemCidade), 30)}, ${D(data.origemUF)}`, 48],
-    ["Término da Prestação", `${cut(D(data.destinoCidade), 30)}, ${D(data.destUF)}`, 0],
+    ["Término da Prestação", `${cut(D(data.destinoCidade), 30)}, ${D(data.destinoUF)}`, 0],
   ];
   let cfiX = M + 2;
   cfiCols.forEach(([l, v, w]) => {

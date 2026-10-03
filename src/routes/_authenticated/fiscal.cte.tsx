@@ -860,17 +860,6 @@ function CtePage() {
       // conforme o motor — o DACTE saía com a UF do form (ex. MARABA/AP).
       const ideXml = xmlStr.match(/<ide>([\s\S]*?)<\/ide>/)?.[1] || "";
       const ideTag = (t: string) => ideXml.match(new RegExp(`<${t}>([^<]*)<\/${t}>`))?.[1] || "";
-      // TEMP-DIAG: mostra de onde saiu a UF do término (remover após diagnóstico)
-      try {
-        const _uIde = ideTag("UFFim");
-        const _uTag =
-          xmlDoc.querySelector("infCte > ide > UFFim")?.textContent || "";
-        let _uForm = "";
-        try {
-          _uForm = String(JSON.parse(doc.xml_assinado || "{}")?.form?.ufFim || "");
-        } catch {}
-        toast.info(`DIAG término: ide=${_uIde || "?"} tag=${_uTag || "?"} form=${_uForm || "?"}`);
-      } catch {}
       const nFes = Array.from(xmlDoc.querySelectorAll("det")).map((det) => ({
         nNF: det.querySelector("infNFe > ide > nNF")?.textContent || "",
         serie: det.querySelector("infNFe > ide > serie")?.textContent || "1",
