@@ -8413,7 +8413,7 @@ function CtePage() {
                   </h5>
                 </div>
                 <div className="flex flex-wrap items-end gap-x-2 gap-y-2">
-                  <div className="min-w-[240px] flex-1">
+                  <div className="min-w-[240px] max-w-[800px] flex-1">
                     <Label className="text-[10px] text-muted-foreground">* CST</Label>
                     <Select value={form.icmsCST} onValueChange={() => {}} disabled>
                       <SelectTrigger className="h-7 text-xs">
