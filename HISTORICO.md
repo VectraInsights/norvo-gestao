@@ -4284,4 +4284,8 @@ Espelhado na Vercel.
   abrir (transição direta, sem flash da listagem).
 - Ida ao percurso leva a linha junto: o editor nasce aberto de primeira
   (atualiza em 2º plano); salvar/fechar com volta cobre a lista na hora.
+- Emissão: rodapé estático (Fechar/Salvar/Pré/Enviar CT-e) na mesma altura
+  nas 4 abas; conteúdo em escala automática (AbaFit) sem nenhuma rolagem;
+  dots com tooltip do que falta; sem placeholders; "Selecione placa" no
+  padrão; caption "Emissão na aba CIOT" removida.
 
