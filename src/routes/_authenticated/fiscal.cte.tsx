@@ -15,6 +15,7 @@ import {
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogHeader,
   DialogTitle,
   DialogFooter,
@@ -81,7 +82,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useEmpresaAtual } from "@/hooks/use-empresa";
 import { brl, dateBR, num, maskDoc } from "@/lib/format";
-import { useState, useEffect, useMemo, useRef } from "react";
+import { useState, useEffect, useMemo, useRef, type ReactNode } from "react";
 import { toast } from "sonner";
 import { limparIE } from "@/lib/ie";
 import {
@@ -230,6 +231,104 @@ function DacteViewer({
         />
       </div>
     </div>
+  );
+}
+
+/* Prévia DACTE pelo MESMO construtor do emitido (gerarDacteBlob lê o XML):
+ * evita o segundo construtor só-p/-prévia divergir de novo. */
+function PreviewDacte({
+  chave,
+  numero,
+  serie,
+  xmlAssinado,
+  titulo,
+  subtitulo,
+  nomeArquivo,
+  gerar,
+  acoes,
+  onClose,
+}: {
+  chave: string;
+  numero: string;
+  serie: string;
+  xmlAssinado: string;
+  titulo: string;
+  subtitulo?: string;
+  nomeArquivo: string;
+  gerar: (doc: CteDoc) => Promise<Blob>;
+  acoes?: ReactNode;
+  onClose: () => void;
+}) {
+  const [url, setUrl] = useState<string | null>(null);
+  const [erro, setErro] = useState("");
+  useEffect(() => {
+    let vivo = true;
+    setUrl(null);
+    setErro("");
+    gerar({
+      chave_acesso: chave,
+      numero,
+      serie,
+      xml_assinado: xmlAssinado,
+      status: "rascunho",
+      valor_servico: null,
+      created_at: new Date().toISOString(),
+      motivo_rejeicao: null,
+      protocolo_sefaz: null,
+      ambiente: "homologacao",
+      data_autorizacao: null,
+      responsavel_emissao: null,
+    } as CteDoc)
+      .then((blob) => {
+        if (vivo) setUrl(URL.createObjectURL(blob));
+      })
+      .catch((e: any) => {
+        if (vivo) setErro(e?.message || "Falha ao gerar prévia");
+      });
+    return () => {
+      vivo = false;
+      setUrl((u) => {
+        if (u) URL.revokeObjectURL(u);
+        return null;
+      });
+    };
+  }, [chave, numero, serie, xmlAssinado]);
+  if (erro) {
+    return (
+      <Dialog open onOpenChange={(v) => { if (!v) onClose(); }}>
+        <DialogContent className="w-[420px] max-w-[calc(100vw-2rem)]">
+          <DialogHeader>
+            <DialogTitle>{titulo}</DialogTitle>
+            <DialogDescription>{erro}</DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="outline" onClick={onClose}>Fechar</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    );
+  }
+  if (!url) {
+    return (
+      <Dialog open onOpenChange={(v) => { if (!v) onClose(); }}>
+        <DialogContent className="w-[420px] max-w-[calc(100vw-2rem)]">
+          <DialogHeader>
+            <DialogTitle>{titulo}</DialogTitle>
+            <DialogDescription>Gerando prévia…</DialogDescription>
+          </DialogHeader>
+        </DialogContent>
+      </Dialog>
+    );
+  }
+  return (
+    <DacteViewer
+      titulo={titulo}
+      subtitulo={subtitulo}
+      url={url}
+      nomeArquivo={nomeArquivo}
+      onClose={onClose}
+      acoes={acoes}
+    />
   );
 }
 
@@ -731,6 +830,34 @@ function CtePage() {
         valor: parseFloat(det.querySelector("infNFe > total > ICMSTot > vNF")?.textContent || "0"),
         chave: det.querySelector("chNFe")?.textContent || "",
       }));
+      // Normal não tem <det>: NF-es em infDoc/infNFe/chave, completadas via pendentes
+      try {
+        const chavesDoc = Array.from(xmlDoc.querySelectorAll("infDoc > infNFe > chave"))
+          .map((e) => (e.textContent || "").replace(/\D/g, ""))
+          .filter((c) => c.length === 44);
+        const faltam = chavesDoc.filter(
+          (c) => !nFes.some((n) => String(n.chave || "").replace(/\D/g, "") === c),
+        );
+        if (empresa && faltam.length) {
+          const { data: rows } = await supabase
+            .from("cte_nfes_pendentes" as any)
+            .select("chave,n_nf,serie,valor")
+            .eq("empresa_id", (empresa as any).id)
+            .in("chave", faltam);
+          const porChave = new Map(
+            ((rows as any[]) || []).map((r) => [String(r.chave).replace(/\D/g, ""), r]),
+          );
+          for (const c of faltam) {
+            const r = porChave.get(c) as any;
+            nFes.push({
+              nNF: String(r?.n_nf || ""),
+              serie: String(r?.serie || "1"),
+              valor: Number(r?.valor) || 0,
+              chave: c,
+            });
+          }
+        }
+      } catch {}
       const gIcms = ["ICMS00", "ICMS20", "ICMS45", "ICMS60", "ICMS90", "ICMSOutraUF"].find((g) =>
         tag("infCte > imp > ICMS > " + g + " > CST"),
       );
@@ -973,8 +1100,8 @@ function CtePage() {
             .order("codigo", { ascending: false })
             .limit(1);
           const last = parseInt((((mx as any[]) || [])[0] as any)?.codigo || "0", 10) || 0;
-          const detX1 = tag("det > xMunIni") || "";
-          const detX2 = tag("det > xMunFim") || "";
+          const detX1 = tag("det > xMunIni") || tag("infCte > ide > xMunIni") || "";
+          const detX2 = tag("det > xMunFim") || tag("infCte > ide > xMunFim") || "";
           const nmA = tag("infCte > emit > xNome") || remD;
           let nmB = tag("infCte > toma > xNome") || "";
           if (!nmB || nmB.startsWith("CTE EMITIDO EM AMBIENTE DE HOMOLOGACAO")) nmB = dstD;
@@ -1169,9 +1296,12 @@ function CtePage() {
       } catch {}
       let totQVol = 0;
       try {
-        const chavesNfeXml = Array.from(xmlDoc.querySelectorAll("det > infNFe > chNFe"))
+        const chavesNfeXml = [
+          ...Array.from(xmlDoc.querySelectorAll("det > infNFe > chNFe")),
+          ...Array.from(xmlDoc.querySelectorAll("infDoc > infNFe > chave")),
+        ]
           .map((e) => ((e as any).textContent || "").replace(/\D/g, ""))
-          .filter((c) => c.length >= 20);
+          .filter((c, i, a) => c.length >= 20 && a.indexOf(c) === i);
         if (empresa && chavesNfeXml.length) {
           const { data: qrows } = await supabase
             .from("cte_nfes_pendentes" as any)
@@ -4467,7 +4597,6 @@ function CtePage() {
   };
 
   const [previewOpen, setPreviewOpen] = useState(false);
-  const lastPreviewUrl = useRef<string | null>(null);
   const [viewUrl, setViewUrl] = useState<string | null>(null);
   const [viewNum, setViewNum] = useState("");
   const [previewData, setPreviewData] = useState<{
@@ -9317,197 +9446,38 @@ function CtePage() {
         </DialogContent>
       </Dialog>
 
-      {/* Visor próprio de Pré-Visualização DACTE */}
-      {previewOpen &&
-        previewData &&
-        (() => {
-          const f = { ...form, ...previewData.form };
-          const baseNfes =
-            selecionadas.size > 0
-              ? mercadorias.filter((m) => selecionadas.has(m.chave))
-              : mercadorias;
-          const nFes = baseNfes.map((m: any) => ({
-            nNF: m.nNF || "",
-            serie: m.serie || "1",
-            valor: m.valor || 0,
-            chave: m.chave || "",
-          }));
-          const first = mercadorias[0] || ({} as any);
-          const cRem = contatoByDoc.get(((first as any).emitCnpj || "").replace(/\D/g, "")) || {};
-          const cDst = contatoByDoc.get(((first as any).destCnpj || "").replace(/\D/g, "")) || {};
-          const pdfBlob = gerarDactePdf({
-            chave: previewData.chave,
-            numero: previewData.proximo,
-            serie: f.serie || "1",
-            ambiente: SEFAZ_AMBIENTE,
-            dataEmissao: new Date().toISOString(),
-            emitCnpj: f.emit?.cnpj || "",
-            emitNome: f.emit?.xNome || f.xNomeTomador || "",
-            emitEndereco:
-              `${f.emit?.logradouro || ""} ${f.emit?.nro || ""} ${f.emit?.bairro || ""}`.trim(),
-            emitCidade: f.emit?.xMun || f.xMunEnv || "",
-            emitUF: f.emit?.uf || f.ufEnv || "",
-            emitBairro: (f.emit as any)?.bairro || "",
-            emitCEP: (f.emit as any)?.cep || "",
-            emitFone: (f.emit as any)?.fone || "",
-            emitIE: f.emit?.ie || "ISENTO",
-            respEmissao: respNome,
-            tomadorCnpj: f.cnpjTomador || "",
-            // Manter igual a HOMOLOG_TOMADOR_NOME em sefaz-cte.ts (SEFAZ exige em homologação: 646 rem / 649 dest)
-            tomadorNome:
-              SEFAZ_AMBIENTE === "homologacao"
-                ? "CT-E EMITIDO EM AMBIENTE DE HOMOLOGACAO - SEM VALOR FISCAL"
-                : "",
-            tomadorEndereco:
-              `${(f.logradouroTomador || "").trim()}${f.nroTomador ? ", " + f.nroTomador : ""}${f.bairroTomador ? " - " + f.bairroTomador : ""}`.trim(),
-            tomadorFone: f.foneTomador || "",
-            tomadorCidade: f.xMunTomador || "",
-            tomadorUF: f.ufTomador || "",
-            remCnpj: first.emitCnpj || "",
-            remNome:
-              SEFAZ_AMBIENTE === "homologacao"
-                ? "CT-E EMITIDO EM AMBIENTE DE HOMOLOGACAO - SEM VALOR FISCAL"
-                : first.emit || "",
-            remCidade: first.emitXMun || cRem.cidade || "",
-            remUF: first.emitUF || cRem.uf || "",
-            remEndereco: first.emitLogradouro || cRem.logradouro || "",
-            remBairro: first.emitBairro || cRem.bairro || "",
-            remCEP: first.emitCEP || (cRem.cep || "").replace(/\D/g, "") || "",
-            remIE: first.emitIE || cRem.ie || "",
-            remFone: first.emitFone || cRem.telefone || "",
-            destCnpj: first.destCnpj || "",
-            destNome:
-              SEFAZ_AMBIENTE === "homologacao"
-                ? "CT-E EMITIDO EM AMBIENTE DE HOMOLOGACAO - SEM VALOR FISCAL"
-                : first.dest || "",
-            destCidade: first.destXMun || cDst.cidade || "",
-            destUF: first.destUF || cDst.uf || "",
-            destEndereco: first.destLogradouro || cDst.logradouro || "",
-            destBairro: first.destBairro || cDst.bairro || "",
-            destCEP: first.destCEP || (cDst.cep || "").replace(/\D/g, "") || "",
-            destIE: first.destIE || cDst.ie || "",
-            destFone: first.destFone || cDst.telefone || "",
-            cfop: f.cfop || "5353",
-            cfopDescricao: CFOPS_CTE.find((c) => c.codigo === (f.cfop || "5353"))?.descricao || "",
-            naturezaOperacao: "TRANSPORTE INTERESTADUAL - INDUSTRIAL",
-            origemCidade: f.xMunIni || "",
-            origemUF: ufPorCMunIBGE(f.cMunIni) || f.ufIni || "",
-            destinoCidade: f.xMunFim || "",
-            destinoUF: ufPorCMunIBGE(f.cMunFim) || f.ufFim || "",
-            valorServico: totalPrestacao({ ...emptyForm, ...(f as any) }),
-            valorCarga: f.vCarga || 0,
-            qtdVol: (() => {
-              const q = baseNfes.reduce((a: number, m: any) => a + Number((m as any).qVol || 0), 0);
-              return q > 0 ? String(q) : "";
-            })(),
-            infQ: [{ q: String((f as any).peso ?? (f as any).pesoKg ?? 0), um: "KG" }],
-            pesoKg: f.pesoKg || 0,
-            icmsCST: f.icmsCST || "00",
-            icmsBase: f.icms?.vBC || f.vPrest || 0,
-            icmsAliq: f.icms?.pICMS || 0,
-            icmsValor: f.icms?.vICMS || 0,
-            reducaoBase: (f as any).reducaoBase || 0,
-            produtoPredominante: (f as any).produtoPredominante || "",
-            outrasCaract: (f as any).outrasCaracteristicas || "",
-            nFes,
-            comps: (
-              [
-                ["Frete Valor", f.vPrest],
-                ["Coleta", (f as any).taxaColeta],
-                ["Entrega", (f as any).taxaEntrega],
-                ["Ad Valorem", (f as any).adValorem],
-                ["GRIS", (f as any).gris],
-                ["Outros", (f as any).outrosPed],
-                ["Desconto", (f as any).descontoPed],
-                ["Adicional", (f as any).adicionalPed],
-              ] as Array<[string, any]>
-            )
-              .filter(([, vv]) => Number(vv) !== 0)
-              .map(([nn, vv]) => ({ nome: nn, valor: Number(vv) || 0 })),
-            placa: f.placaVeiculo || "",
-            placaReboque: f.placaReboque || "",
-            rntrc: f.rntrc || rntrcFinal || "",
-            veiculos: [
-              f.placaVeiculo,
-              f.placaReboque,
-              (f as any).semiReboque1,
-              (f as any).semiReboque2,
-            ]
-              .map((p) => String(p || "").toUpperCase())
-              .filter(Boolean)
-              .filter((p, i, a) => a.indexOf(p) === i)
-              .map((p) => {
-                const fv = (veiculos || []).find((v) => String(v.placa || "").toUpperCase() === p);
-                return {
-                  tipo: "Própria",
-                  placa: p,
-                  renavam: (fv as any)?.renavam || "",
-                  uf: (empresa as any)?.uf || "MG",
-                  rntrc: (fv as any)?.rntrc || f.rntrc || rntrcFinal || "",
-                };
-              })
-              .slice(0, 4),
-            seguradoraNome: f.seguradoraNome || "",
-            apolice: f.apolice || "",
-            averbacao: f.averbacao || "",
-            numeroAverbacao: f.averbacao || "",
-            motoNome: f.motoristaNome || "",
-            motoCPF: (motoristas || []).find((m: any) => m.id === f.motoristaId)?.cpf || "",
-            moto2Nome: (f as any).motorista2Nome || "",
-            moto2CPF:
-              ((motoristas || []).find((m: any) => m.id === (f as any).motorista2Id) as any)?.cpf ||
-              "",
-            ciot: f.ciot || "",
-            segCNPJ: (seguradoras || []).find((s: any) => s.id === f.seguradoraId)?.cnpj || "",
-            valePedagio: f.valePedagio || "",
-            valePedFornCNPJ: f.pedagioCnpj || "",
-            valePedComprov: (f as any).pedagioIdentVPO || f.pedagioTag || "",
-            valePedRespCNPJ: (f as any).pedagioRespCnpj || "",
-            obs:
-              [(f as any).obsGerais, (f as any).obsAnulacao, (f as any).obsGlobalizado]
-                .filter(Boolean)
-                .join(" • ") || "",
-            protocolo: "",
-            logoDataUrl: JUVENAL_LOGO || undefined,
-          });
-          const url = URL.createObjectURL(pdfBlob);
-          if (lastPreviewUrl.current && lastPreviewUrl.current !== url)
-            URL.revokeObjectURL(lastPreviewUrl.current);
-          lastPreviewUrl.current = url;
-          return (
-            <DacteViewer
-              titulo="Pré-Visualização DACTE"
-              subtitulo={`Nº ${previewData.proximo} • Homologação (testes) • Chave ${previewData.chave}`}
-              url={url}
-              nomeArquivo={`DACTE-${previewData.proximo}.pdf`}
-              onClose={() => {
-                if (lastPreviewUrl.current) {
-                  URL.revokeObjectURL(lastPreviewUrl.current);
-                  lastPreviewUrl.current = null;
-                }
+      {/* Visor próprio de Pré-Visualização DACTE (mesmo construtor do emitido) */}
+      {previewOpen && previewData && (
+        <PreviewDacte
+          chave={previewData.chave}
+          numero={previewData.proximo}
+          serie={String((form as any).serie || (previewData.form as any)?.serie || "1")}
+          xmlAssinado={JSON.stringify({ xml: previewData.xml, form: previewData.form })}
+          titulo="Pré-Visualização DACTE"
+          subtitulo={`Nº ${previewData.proximo} • Homologação (testes) • Chave ${previewData.chave}`}
+          nomeArquivo={`DACTE-${previewData.proximo}.pdf`}
+          gerar={(d) => gerarDacteBlob(d as CteDoc)}
+          acoes={
+            <Button
+              size="sm"
+              onClick={() => {
                 setPreviewOpen(false);
+                emitir.mutate();
               }}
-              acoes={
-                <Button
-                  size="sm"
-                  onClick={() => {
-                    setPreviewOpen(false);
-                    emitir.mutate();
-                  }}
-                  disabled={emitir.isPending || !form.cnpjTomador || !form.xNomeTomador}
-                >
-                  {emitir.isPending ? (
-                    "Enviando..."
-                  ) : (
-                    <>
-                      <Truck className="mr-1 h-3.5 w-3.5" /> Enviar Doc-e
-                    </>
-                  )}
-                </Button>
-              }
-            />
-          );
-        })()}
+              disabled={emitir.isPending || !form.cnpjTomador || !form.xNomeTomador}
+            >
+              {emitir.isPending ? (
+                "Enviando..."
+              ) : (
+                <>
+                  <Truck className="mr-1 h-3.5 w-3.5" /> Enviar Doc-e
+                </>
+              )}
+            </Button>
+          }
+          onClose={() => setPreviewOpen(false)}
+        />
+      )}
 
       {/* Visor próprio DACTE (emitidos) */}
       {viewUrl && (
