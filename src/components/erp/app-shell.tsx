@@ -466,7 +466,28 @@ export function AppShell({ children }: { children: ReactNode }) {
               const panelId = `nav-group-${group.label.replace(/\W+/g, "-").toLowerCase()}`;
               return (
                 <div key={group.label} className="mb-2">
-                  {!collapsed && (
+                  {collapsed ? (
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <button
+                          type="button"
+                          onClick={() => expandir(group.label)}
+                          aria-label={group.label}
+                          title={group.label}
+                          className={cn(
+                            "flex w-full touch-manipulation items-center justify-center rounded-md p-2 text-sm transition-colors",
+                            "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sidebar-ring",
+                            groupActive
+                              ? "bg-sidebar-primary text-sidebar-primary-foreground"
+                              : "text-sidebar-foreground hover:bg-sidebar-accent",
+                          )}
+                        >
+                          <GroupIcon className="h-4 w-4 shrink-0" />
+                        </button>
+                      </TooltipTrigger>
+                      <TooltipContent side="right">{group.label}</TooltipContent>
+                    </Tooltip>
+                  ) : (
                     <button
                       type="button"
                       data-nav-focusable
@@ -493,7 +514,7 @@ export function AppShell({ children }: { children: ReactNode }) {
                       />
                     </button>
                   )}
-                  {isOpen && (
+                  {isOpen && !collapsed && (
                     <div
                       id={panelId}
                       role="group"

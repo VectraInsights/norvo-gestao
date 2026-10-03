@@ -1209,6 +1209,14 @@ function PercursosPage() {
     onError: (e: Error) => toast.error(e.message),
   });
 
+  // Fecha o editor voltando ao CT-e em andamento (lápis), se for o caso
+  const fecharVoltandoCte = () => {
+    setEditing(null);
+    if (voltarCteRef.current) {
+      voltarCteRef.current = false;
+      navigate({ to: "/fiscal/cte" } as any);
+    }
+  };
   const excluir = useMutation({
     mutationFn: async (id: string) => {
       // Não exclui percurso com CT-e feito (rascunho ou emitido): compara o trio
@@ -1725,7 +1733,7 @@ function PercursosPage() {
       <Dialog
         open={!!editing}
         onOpenChange={(v) => {
-          if (!v) setEditing(null);
+          if (!v) fecharVoltandoCte();
         }}
       >
         <DialogContent className="p-3 sm:p-4">
@@ -2092,7 +2100,7 @@ function PercursosPage() {
               </Tabs>
             )}
             <DialogFooter>
-              <Button variant="outline" onClick={() => setEditing(null)}>
+              <Button variant="outline" onClick={() => fecharVoltandoCte()}>
                 Fechar
               </Button>
               <Button onClick={() => salvar.mutate()} disabled={salvar.isPending}>

@@ -3776,6 +3776,33 @@ function CtePage() {
       toast.error("Erro ao carregar rascunho", { description: e.message });
     }
   };
+  // Volta do percurso (lápis): reabre o CT-e que estava sendo feito
+  const resumeCteRef = useRef(false);
+  useEffect(() => {
+    if (!empresa || resumeCteRef.current) return;
+    let snap: any = null;
+    try {
+      snap = JSON.parse(localStorage.getItem("cte_progress_snapshot") || "null");
+    } catch {
+      snap = null;
+    }
+    if (!snap) return;
+    resumeCteRef.current = true;
+    try {
+      localStorage.removeItem("cte_progress_snapshot");
+    } catch {}
+    const d = ((docs || []) as CteDoc[]).find((x) => x.id === snap.editingRascunhoId);
+    if (d) {
+      void editarRascunho(d);
+      return;
+    }
+    if (snap.form) setForm((f) => ({ ...emptyForm, ...snap.form }));
+    if (Array.isArray(snap.selecionadas)) setSelecionadas(new Set(snap.selecionadas));
+    setViewDoc(null);
+    setAba("geral");
+    setOpen(true);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [empresa, docs]);
   // Envio em lote da aba Aguardando envio: carrega cada rascunho no formulário
   // e reaproveita a mesma emissão individual (o mutateAsync usa o closure atual).
   const emitirLatest = useRef<() => Promise<any>>(async () => null);
@@ -5388,7 +5415,7 @@ function CtePage() {
           <EmptyState icon={Truck} title="Nenhum CT-e" description={`Nenhum CT-e ${rotulo}.`} />
         ) : (
           <Card className="overflow-hidden">
-            <Table className="[&_td]:px-2 [&_td]:py-1.5 [&_td]:text-[13px] [&_td]:text-center [&_th]:px-2 [&_td]:border-l [&_td]:border-border/40 [&_td:first-child]:border-l-0 [&_th]:border-l [&_th]:border-border/40 [&_th:first-child]:border-l-0">
+            <Table className="[&_td]:px-2 [&_td]:py-1.5 [&_td]:text-[13px] [&_td]:text-center [&_th]:px-2 [&_td]:border-l [&_td]:border-border [&_td:first-child]:border-l-0 [&_th]:border-l [&_th]:border-border [&_th:first-child]:border-l-0">
               <TableHeader>
                 <TableRow>
                   {rotulo === "autorizados" && !semSelecao && (
@@ -7552,14 +7579,22 @@ function CtePage() {
                       size="icon"
                       variant="ghost"
                       className="h-7 w-7 shrink-0 text-muted-foreground"
-                      disabled={!percursoMatch?.id}
+                      disabled={!percursoMatch?.id || !!viewDoc}
                       title="Editar este percurso"
                       onClick={() => {
-                        if (!percursoMatch?.id) return;
+                        if (!percursoMatch?.id || viewDoc) return;
                         try {
                           localStorage.setItem(
                             "edit_percurso_from_cte",
                             JSON.stringify({ id: (percursoMatch as any).id, returnTo: "/fiscal/cte" }),
+                          );
+                          localStorage.setItem(
+                            "cte_progress_snapshot",
+                            JSON.stringify({
+                              form,
+                              selecionadas: [...selecionadas],
+                              editingRascunhoId,
+                            }),
                           );
                         } catch {}
                         navigate({ to: "/fiscal/percursos" } as any);
