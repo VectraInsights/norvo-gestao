@@ -21,6 +21,11 @@ export default defineConfig(({ mode, command }) => {
   for (const [key, value] of Object.entries(publicEnv)) {
     if (value) envDefine[`import.meta.env.${key}`] = JSON.stringify(value);
   }
+  // Versão visível no rodapé do menu (mata a dúvida "está no deploy?").
+  // A Vercel injeta VERCEL_GIT_COMMIT_SHA automaticamente a cada build.
+  envDefine["__BUILD_SHA__"] = JSON.stringify(
+    (process.env.VERCEL_GIT_COMMIT_SHA || "").slice(0, 7) || "local",
+  );
 
 
   const config: UserConfig = {

@@ -547,6 +547,11 @@ export function AppShell({ children }: { children: ReactNode }) {
           )}
 
           <div className="border-t border-sidebar-border p-3">
+            {!collapsed && (
+              <div className="px-3 pb-1 text-[10px] text-muted-foreground" title="Versão do código em execução">
+                v {typeof __BUILD_SHA__ !== "undefined" ? __BUILD_SHA__ : "local"}
+              </div>
+            )}
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <button

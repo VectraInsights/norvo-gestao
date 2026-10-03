@@ -4494,6 +4494,7 @@ function CtePage() {
       protocolo?: string;
       ambiente?: string;
       justificativa: string;
+      quiet?: boolean;
     }) => {
       if (!empresa) throw new Error("Empresa não selecionada");
       const just = String(justificativa || "");
@@ -4503,54 +4504,70 @@ function CtePage() {
       });
       return { ...ret, chave };
     },
-    onSuccess: async (ret: any) => {
+    onSuccess: async (ret: any, vars: any) => {
       if ((ret as any)?.sucesso) {
-        toast.success("CT-e cancelado");
+        if (!vars?.quiet) toast.success("CT-e cancelado");
         if (empresa && ret?.chave) {
-          const { data: doc } = await supabase
-            .from("cte_documentos" as any)
-            .select("xml_assinado")
-            .eq("chave_acesso", ret.chave)
-            .maybeSingle();
-          let rascunhoNfs: any[] = [];
-          try {
-            const p = JSON.parse(doc?.xml_assinado || "{}");
-            if (p.nfs) rascunhoNfs = p.nfs;
-          } catch {}
-          const chavesNfe = chavesNFeDoXml(doc?.xml_assinado || "");
-          console.log(
-            "[CTE-CANCEL-REVERT] chave:",
-            ret.chave,
-            "chavesNfe:",
-            chavesNfe,
-            "rascunhoNfs:",
-            rascunhoNfs.length,
-          );
-          if (chavesNfe.length > 0) {
-            // Não rouba NF já reutilizada em outro CT-e autorizado/rascunho
-            const emUso = await chavesEmUso();
-            const livres = chavesNfe.filter((c) => !emUso.has(c));
-            if (livres.length === 0) return;
-            const { count, error: revErr } = await supabase
-              .from("cte_nfes_pendentes" as any)
-              .update({ status: "pendente" })
-              .in("chave", livres)
-              .eq("empresa_id", empresa.id)
-              .select("chave", { count: "exact", head: true });
-            console.log("[CTE-CANCEL-REVERT] update count:", count);
-            if (revErr)
-              toast.error(`CT-e cancelado, mas falha ao devolver NF-e: ${revErr.message}`);
-            else if (count)
-              toast.success(`${count} NF-e(s) devolvida(s) p/ embarque`);
-            else if (!rascunhoNfs.length)
+          const r = await reverterNfesCancelado(ret.chave);
+          if (!vars?.quiet) {
+            if (r.devolvidas === 1) toast.success("1 NF-e devolvida p/ embarque");
+            else if (r.devolvidas > 1)
+              toast.success(`${r.devolvidas} NF-es devolvidas p/ embarque`);
+            else if (!r.encontrouNf)
               toast.warning(
                 "CT-e cancelado, mas as NF-es não foram encontradas para devolução",
               );
-            if (!count || count === 0) {
-              for (const nf of rascunhoNfs) {
-                if (!nf?.chave) continue;
-                await supabase.from("cte_nfes_pendentes" as any).upsert(
-                  {
+          }
+        }
+      } else if (!vars?.quiet) toast.error((ret as any).xMotivo || "Falha ao cancelar");
+      qc.invalidateQueries({ queryKey: ["cte-documentos"] });
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+  // Devolve p/ embarque as NF-es de um CT-e cancelado (sem toast: o chamador resume).
+  const reverterNfesCancelado = async (
+    chaveCte: string,
+  ): Promise<{ devolvidas: number; encontrouNf: boolean }> => {
+    const zerado = { devolvidas: 0, encontrouNf: false };
+    if (!empresa || !chaveCte) return zerado;
+    const { data: doc } = await supabase
+      .from("cte_documentos" as any)
+      .select("xml_assinado")
+      .eq("chave_acesso", chaveCte)
+      .maybeSingle();
+    let rascunhoNfs: any[] = [];
+    try {
+      const p = JSON.parse(doc?.xml_assinado || "{}");
+      if (p.nfs) rascunhoNfs = p.nfs;
+    } catch {}
+    const chavesNfe = chavesNFeDoXml(doc?.xml_assinado || "");
+    console.log(
+      "[CTE-CANCEL-REVERT] chave:",
+      chaveCte,
+      "chavesNfe:",
+      chavesNfe,
+      "rascunhoNfs:",
+      rascunhoNfs.length,
+    );
+    if (chavesNfe.length === 0) return zerado;
+    // Não rouba NF já reutilizada em outro CT-e autorizado/rascunho
+    const emUso = await chavesEmUso();
+    const livres = chavesNfe.filter((c) => !emUso.has(c));
+    if (livres.length === 0) return { devolvidas: 0, encontrouNf: true };
+    const { count, error: revErr } = await supabase
+      .from("cte_nfes_pendentes" as any)
+      .update({ status: "pendente" })
+      .in("chave", livres)
+      .eq("empresa_id", empresa.id)
+      .select("chave", { count: "exact", head: true });
+    console.log("[CTE-CANCEL-REVERT] update count:", count);
+    if (revErr) throw new Error(revErr.message);
+    if (!count || count === 0) {
+      for (const nf of rascunhoNfs) {
+        if (!nf?.chave) continue;
+        await supabase.from("cte_nfes_pendentes" as any).upsert(
+          {
                     empresa_id: empresa.id,
                     chave: nf.chave,
                     n_nf: nf.nNF,
@@ -4598,17 +4615,9 @@ function CtePage() {
               );
             }
             qc.invalidateQueries({ queryKey: ["cte-nfes-pendentes", empresa.id] });
-          }
-        }
-      } else toast.error((ret as any).xMotivo || "Falha ao cancelar");
-      qc.invalidateQueries({ queryKey: ["cte-documentos"] });
-    },
-    onError: (e: Error) => toast.error(e.message),
-  });
+            return { devolvidas: count || 0, encontrouNf: true };
+  };
 
-  // Reparo: devolve p/ embarque as NF-es presas em CT-es já cancelados
-  // (cancelamentos antigos de CT-e Normal não revertiam: o extrator só lia <chNFe>).
-  const [devolvendoNfes, setDevolvendoNfes] = useState(false);
   // NF-es vinculadas a CT-e autorizado ou rascunho NUNCA voltam (já têm dono).
   const chavesEmUso = async (): Promise<Set<string>> => {
     const emUso = new Set<string>();
@@ -4623,46 +4632,6 @@ function CtePage() {
       for (const c of chavesNFeDoXml((d as any)?.xml_assinado)) emUso.add(c);
     }
     return emUso;
-  };
-  const devolverNfesCancelados = async () => {
-    if (!empresa || devolvendoNfes) return;
-    const docs = docsByStatus.cancelados;
-    if (!docs.length) return;
-    setDevolvendoNfes(true);
-    try {
-      const chaves = new Set<string>();
-      for (const d of docs) for (const c of chavesNFeDoXml(d.xml_assinado)) chaves.add(c);
-      const emUso = await chavesEmUso();
-      const livres = [...chaves].filter((c) => !emUso.has(c));
-      const presas = chaves.size - livres.length;
-      if (!livres.length) {
-        toast.info(
-          presas > 0
-            ? "Todas as NF-es dos cancelados já estão em CT-e autorizado/rascunho"
-            : "Nenhuma NF-e encontrada nos CT-es cancelados",
-        );
-        return;
-      }
-      const { count, error } = await supabase
-        .from("cte_nfes_pendentes" as any)
-        .update({ status: "pendente" })
-        .in("chave", livres)
-        .eq("empresa_id", empresa.id)
-        .select("chave", { count: "exact", head: true });
-      if (error) throw error;
-      qc.invalidateQueries({ queryKey: ["cte-nfes-pendentes", empresa.id] });
-      if (count)
-        toast.success(
-          `${count} NF-e(s) devolvidas p/ embarque` +
-            (presas > 0 ? ` (${presas} mantidas em CT-e válido)` : ""),
-        );
-      else
-        toast.warning("NF-es dos cancelados não encontradas para devolução");
-    } catch (e: any) {
-      toast.error("Falha ao devolver NF-es", { description: e.message });
-    } finally {
-      setDevolvendoNfes(false);
-    }
   };
 
   const [previewOpen, setPreviewOpen] = useState(false);
@@ -5702,20 +5671,39 @@ function CtePage() {
                 onClick={async () => {
                   const docsLote = [...autorizadosSelecionados];
                   setCteCancelarLote(false);
+                  let ok = 0;
+                  let falhas = 0;
+                  let devolvidas = 0;
                   for (const d of docsLote) {
                     if (!d.chave_acesso) continue;
                     const st = mdfStatusPorCte.get(d.chave_acesso);
                     if (st) continue;
                     try {
-                      await cancelar.mutateAsync({
+                      const r: any = await cancelar.mutateAsync({
                         chave: d.chave_acesso,
                         protocolo: d.protocolo_sefaz || undefined,
                         ambiente: SEFAZ_AMBIENTE,
                         justificativa: motivoCanc,
+                        quiet: true,
                       });
-                    } catch {}
+                      if (r?.sucesso) {
+                        ok++;
+                        try {
+                          const rr = await reverterNfesCancelado(d.chave_acesso);
+                          devolvidas += rr.devolvidas;
+                        } catch {}
+                      } else falhas++;
+                    } catch {
+                      falhas++;
+                    }
                   }
                   setMdfSel(new Set());
+                  if (ok === 1) toast.success("1 CT-e cancelado");
+                  else if (ok > 1) toast.success(`${ok} CT-es cancelados`);
+                  if (devolvidas === 1) toast.success("1 NF-e devolvida p/ embarque");
+                  else if (devolvidas > 1)
+                    toast.success(`${devolvidas} NF-es devolvidas p/ embarque`);
+                  if (falhas > 0) toast.error(`${falhas} cancelamento(s) falharam`);
                 }}
               >
                 Confirmar cancelamento
@@ -6890,20 +6878,7 @@ function CtePage() {
             )}
             {renderTabelaDocs(docsByStatus.rejeitados, "rejeitados")}
           </TabsContent>
-          <TabsContent value="cancelados" className="mt-0 space-y-2">
-            {docsByStatus.cancelados.length > 0 && (
-              <div className="flex justify-end">
-                <Button
-                  size="sm"
-                  variant="outline"
-                  onClick={devolverNfesCancelados}
-                  disabled={devolvendoNfes}
-                  title="Devolve para embarque as NF-es dos CT-es cancelados"
-                >
-                  {devolvendoNfes ? "Devolvendo…" : "Devolver NF-es p/ embarque"}
-                </Button>
-              </div>
-            )}
+          <TabsContent value="cancelados" className="mt-0">
             {renderTabelaDocs(docsByStatus.cancelados, "cancelados")}
           </TabsContent>
           </CardContent>
