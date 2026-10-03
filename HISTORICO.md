@@ -4087,26 +4087,24 @@ Espelhado na Vercel.
   logs `[CTE-DEBUG]`/`[CTE-PROXY-DEBUG]` passam a registrar
   toma/modelo/rem.xNome/dest.xNome p/ diagnóstico direto.
 
-## CT-e: modal rodoviário minimalista + compl (02/10)
+## CT-e: modal rodoviário no <rodo> conforme XML de referência (02/10)
 
-- O `<rodo>` do CT-e Normal e do Simplificado passa a ter **só `<RNTRC>`**
-  (padrão do sistema legado): saíram `<moto>`, `<veicTracao>`,
-  `<veicReboque>` e `<CIOT>` — grupos que existem no MDF-e/leiautes
-  antigos e que só passavam porque `infModal` é `xs:any
-  processContents="skip"` (o validador não checa o conteúdo do modal).
-- Placa/motorista/espécie/eixos e observações agora viajam no `<compl>`
-  (entre `</ide>` e `<emit>`): `<xEmi>`, `<xObs>` ("Placa X Motorista Y
-  CPF Z" + obs livre) e `ObsCont` `CPFMOTORISTA`, `PLACA`,
-  `EspecieVeiculo`, `PlacaFinal`, `Quantidade_Eixos`. Limites do leiaute
-  respeitados: xEmi 20, xObs 2000, ObsCont xCampo 20 + xTexto 160 (até 10).
-- `fiscal.cte.tsx`: helpers `veiculosXml()`, `especieVeiculoXml()` e
-  `obsCte()`; a emissão e a prévia do XML passam a enviar
-  `responsavelEmissao`, `especieVeiculo`, `eixosTotal` e `obs` — a prévia
-  antes mandava só a tração (o `PlacaFinal` sairia igual ao `PLACA`).
-- DACTE/P-VISUALIZAÇÃO seguem iguais: leem `compl/xEmi` (Informações
-  Adicionais), os `ObsCont`/`ObsFisco` (OBSERVAÇÕES) e caem no
-  formulário/frota quando o XML não traz veículos.
-- Novo `src/lib/sefaz-cte.test.ts` (7 testes: rodo só com RNTRC, conteúdo
-  e posição do `<compl>`, tração como `PlacaFinal` sem reboque, limites de
-  xEmi/xObs, omissão do compl e Simplificado sem `<moto>`).
+- **Revertido o "modal minimalista + `<compl>`"**: o `<rodo>` do CT-e Normal volta a
+  carregar `<RNTRC>` + `<moto>` + `<veicTracao>` + `<veicReboque>`, na mesma ordem do
+  XML de referência (`31261003919614000160570010000005311429212600.xml`), que é o
+  formato já aceito pela SEFAZ-MG em homologação. Saiu o `<compl>` (xEmi/xObs/ObsCont),
+  que não existe no documento de referência.
+- Ordem no `<rodo>` (Normal e Simplificado):
+  `RNTRC` → `moto` → `veicTracao` (placa, RENAVAM, tara, tpRod, tpCar, UF) →
+  `veicReboque` ×3 (placa, RENAVAM, tara, capKG, tpCar, UF).
+- `sefaz-cte.ts` voltou a montar `motoXml`/`ciotXml`/`veicTracXml`/`veicRebXml` no
+  `buildCteNormalXml`; `fiscal.cte.tsx` voltou a enviar `modalRod` (tração + reboques +
+  motoristas) na emissão e na prévia do XML.
+- DACTE volta a ler placa/motorista direto do `<rodo>` (em vez de campos de texto).
+- `src/lib/sefaz-cte.test.ts` reescrito com 6 testes sobre o formato de referência:
+  conteúdo do `<rodo>`, ordem RNTRC→moto→tração→reboque, ausência de `<compl>`/`<CIOT>`,
+  omissão quando não informado, NF-e + QR Code, e o Simplificado com `<moto>`.
+  Suíte completa: 25 testes passando (`npm test`).
+- Gerado conferido contra o arquivo do Desktop: idêntico, mudando apenas chave de
+  acesso, `cCT`/`cDV` e `dhEmi` (valores por emissão).
 

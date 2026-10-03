@@ -109,14 +109,6 @@ export interface CteInputCompleto {
   retira?: string;
   docAnt?: { chaves: string[]; tpPrest?: string };
   obs?: string;
-  // <compl> automático (padrão sistema legado): montado pelo emissor a partir
-  // das placas (modalRod.veiculos), motorista (modalRod.motoristas) e obs.
-  // PLACA = tração, PlacaFinal = último reboque (ou tração se só cavalo).
-  // Limites do leiaute 4.00: xCaracAd 15, xCaracSer 30, xEmi 20, xObs 2000,
-  // ObsCont/ObsFisco xCampo 20 + xTexto 160 (até 10 cada).
-  responsavelEmissao?: string;
-  especieVeiculo?: string;
-  eixosTotal?: number;
   infCTeNorm?: { proPred?: string; xOutCat?: string };
   modalRod?: { rntrc: string; ciot?: string; veiculos?: Array<{ placa: string; uf: string; renavam?: string; rntrc?: string; tpRod?: string; tpCar?: string; tara?: number; capKG?: number }>; motoristas?: Array<{ xNome: string; cpf: string }> };
   chavesNFe?: string[];
@@ -145,10 +137,11 @@ export function buildCteXml(input: CteInputCompleto): { xml: string; chave: stri
   let rntrcXml = rntrcRaw === "ISENTO" ? "ISENTO" : rntrcRaw.replace(/\D/g, "");
   while (rntrcXml.length > 8 && rntrcXml.startsWith("0")) rntrcXml = rntrcXml.slice(1);
   if (!/^(ISENTO|\d{8})$/.test(rntrcXml)) throw new Error(`RNTRC invalido para a SEFAZ (8 digitos ou ISENTO): ${input.modalRod?.rntrc || (input as any).rntrc || ""}`);
-  // Modal rodoviário do CT-e 4.00 (CTeModalRodoviario_v4.00.xsd): o <rodo> tem
-  // SOMENTE <RNTRC> e, opcionalmente, até 10 <occ>. Não existem <moto>,
-  // <veicTracao>, <veicReboque>, <lacRodo> nem <CIOT> (esses são do MDF-e).
-  // Qualquer um deles no <rodo> = Rejeição 225 (Falha no Schema XML).
+  const motoXml = (((input.modalRod as any)?.motoristas || []) as Array<{ xNome?: string; cpf?: string }>).map(m => {
+    const nm = String(m?.xNome || "").toUpperCase().slice(0, 60).trim();
+    const cpf = String(m?.cpf || "").replace(/\D/g, "");
+    return (nm.length >= 2 && /^\d{11}$/.test(cpf)) ? `<moto><xNome>${nm}</xNome><CPF>${cpf}</CPF></moto>` : "";
+  }).join("");
   const dhEmi = dhBrt();
   const cUF = codigoUF(input.ufEnv || input.emit.uf);
   const aamm = dhEmi.slice(2,4) + dhEmi.slice(5,7);
@@ -257,7 +250,7 @@ export function buildCteXml(input: CteInputCompleto): { xml: string; chave: stri
       <infQ><cUnid>01</cUnid><tpMed>00</tpMed><qCarga>${input.pesoKg.toFixed(4)}</qCarga></infQ>
     </infCarga>
     ${infNFeXml}
-    <infModal versaoModal="4.00"><rodo><RNTRC>${rntrcXml}</RNTRC></rodo></infModal>
+    <infModal versaoModal="4.00"><rodo><RNTRC>${rntrcXml}</RNTRC>${motoXml}</rodo></infModal>
     ${impXml}
     <total><vTPrest>${input.vPrest.toFixed(2)}</vTPrest><vTRec>${input.vPrest.toFixed(2)}</vTRec><vTotDFe>${vTotDFe}</vTotDFe></total>
     <infRespTec><CNPJ>${cnpjLimpo}</CNPJ><xContato>SUPORTE TECNICO</xContato><email>suporte@vectrainsights.com.br</email><fone>3139952572</fone></infRespTec>
@@ -280,40 +273,11 @@ export function buildCteNormalXml(input: CteInputCompleto): { xml: string; chave
   let rntrcXml = rntrcRaw === "ISENTO" ? "ISENTO" : rntrcRaw.replace(/\D/g, "");
   while (rntrcXml.length > 8 && rntrcXml.startsWith("0")) rntrcXml = rntrcXml.slice(1);
   if (!/^(ISENTO|\d{8})$/.test(rntrcXml)) throw new Error(`RNTRC invalido para a SEFAZ (8 digitos ou ISENTO): ${input.modalRod?.rntrc || (input as any).rntrc || ""}`);
-  // Modal minimalista: <rodo> leva SÓ o RNTRC (schema 4.00). Placa, motorista,
-  // espécie e eixos viajam no <compl> como texto + ObsCont — nunca como
-  // <moto>/<veicTracao>/<veicReboque>/<CIOT>, que não existem no CT-e 4.00.
-  const veicsCompl = (((input.modalRod as any)?.veiculos || []) as Array<{ placa?: string }>)
-    .map((v) => String(v?.placa || "").toUpperCase().trim()).filter(Boolean);
-  const placaTrac = veicsCompl[0] || "";
-  const placaFinal = veicsCompl.length > 1 ? veicsCompl[veicsCompl.length - 1] : placaTrac;
-  const motsCompl = (((input.modalRod as any)?.motoristas || []) as Array<{ xNome?: string; cpf?: string }>)
-    .map((m) => ({ nm: String(m?.xNome || "").toUpperCase().trim(), cpf: String(m?.cpf || "").replace(/\D/g, "") }))
-    .filter((m) => m.nm.length >= 2 && /^\d{11}$/.test(m.cpf));
-  const mot1 = motsCompl[0];
-  // xObs no formato do legado: "Placa <REBOQUE> Motorista <NOME> CPF <CPF>" + entrega/obs.
-  const xObsBits: string[] = [];
-  if (placaFinal) xObsBits.push(`Placa ${placaFinal}`);
-  if (mot1) xObsBits.push(`Motorista ${mot1.nm} CPF ${mot1.cpf}`);
-  const obsLivre = String((input as any).obs || "").trim();
-  if (obsLivre) xObsBits.push(obsLivre);
-  const xObsTxt = xObsBits.join(" ").slice(0, 2000); // compl/xObs: 1-2000 no leiaute
-  const xEmiTxt = String((input as any).responsavelEmissao || "").trim().toUpperCase().slice(0, 20); // compl/xEmi: 1-20
-  const especieTxt = String((input as any).especieVeiculo || "").trim().toUpperCase().slice(0, 160);
-  const eixosNum = Number((input as any).eixosTotal) || 0;
-  // ObsCont: xCampo 1-20 e xTexto 1-160, até 10 ocorrências (compl/ObsCont).
-  const obsCont = (campo: string, texto: string) =>
-    texto ? `<ObsCont xCampo="${campo.slice(0, 20)}"><xTexto>${escCte(texto.slice(0, 160))}</xTexto></ObsCont>` : "";
-  const complInner = [
-    xEmiTxt ? `<xEmi>${escCte(xEmiTxt)}</xEmi>` : "",
-    xObsTxt ? `<xObs>${escCte(xObsTxt)}</xObs>` : "",
-    mot1 ? obsCont("CPFMOTORISTA", mot1.cpf) : "",
-    placaTrac ? obsCont("PLACA", placaTrac) : "",
-    especieTxt ? obsCont("EspecieVeiculo", especieTxt) : "",
-    placaFinal ? obsCont("PlacaFinal", placaFinal) : "",
-    eixosNum > 0 ? obsCont("Quantidade_Eixos", String(eixosNum)) : "",
-  ].join("");
-  const complXml = complInner ? `<compl>${complInner}</compl>` : "";
+  const motoXml = (((input.modalRod as any)?.motoristas || []) as Array<{ xNome?: string; cpf?: string }>).map(m => {
+    const nm = String(m?.xNome || "").toUpperCase().slice(0, 60).trim();
+    const cpf = String(m?.cpf || "").replace(/\D/g, "");
+    return (nm.length >= 2 && /^\d{11}$/.test(cpf)) ? `<moto><xNome>${escCte(nm)}</xNome><CPF>${cpf}</CPF></moto>` : "";
+  }).join("");
   const dhEmi = dhBrt();
   const cUF = codigoUF(input.ufEnv || input.emit.uf);
   const aamm = dhEmi.slice(2,4) + dhEmi.slice(5,7);
@@ -418,10 +382,16 @@ export function buildCteNormalXml(input: CteInputCompleto): { xml: string; chave
   const tpDocAnt = input.docAnt?.tpPrest === "2" ? "2" : "1";
   const infDocXml = `<infDoc>${chsNfe.map(ch => `<infNFe><chave>${ch}</chave></infNFe>`).join("")}${docAntChs.map(ch => `<infDocAnt><chCTe>${ch}</chCTe><tpPrest>${tpDocAnt}</tpPrest></infDocAnt>`).join("")}</infDoc>`;
 
-  // Modal rodoviário minimalista: <rodo> leva SÓ o <RNTRC>. O CT-e 4.00 não
-  // tem <CIOT>, <moto>, <veicTracao> nem <veicReboque> (o CIOT da ANTT viaja no
-  // MDF-e). A placa/motorista seguem no cadastro, no DACTE e no <compl> como
-  // texto — nunca no <rodo>, que é o que gerava Rejeição 225.
+  // Modal rodoviário: mesma estrutura do Simplificado (RNTRC + moto + tração + reboques)
+  const veics = ((input.modalRod as any)?.veiculos || []) as Array<{ placa?: string; uf?: string; renavam?: string; tpRod?: string; tpCar?: string; tara?: number; capKG?: number }>;
+  const veicTrac = veics[0];
+  const veicTracXml = veicTrac?.placa
+    ? `<veicTracao><placa>${escCte(String(veicTrac.placa).toUpperCase())}</placa>${veicTrac.renavam ? `<RENAVAM>${escCte(veicTrac.renavam)}</RENAVAM>` : ""}<tara>${Number(veicTrac.tara || 0).toFixed(0)}</tara><tpRod>${veicTrac.tpRod || "06"}</tpRod><tpCar>${veicTrac.tpCar || "00"}</tpCar><UF>${escCte(String(veicTrac.uf || input.ufIni || "").toUpperCase())}</UF></veicTracao>`
+    : "";
+  const veicRebXml = veics.slice(1, 4).filter(v => v?.placa).map(v =>
+    `<veicReboque><placa>${escCte(String(v.placa).toUpperCase())}</placa>${v.renavam ? `<RENAVAM>${escCte(v.renavam)}</RENAVAM>` : ""}<tara>${Number((v as any).tara || 0).toFixed(0)}</tara><capKG>${Number((v as any).capKG || 0).toFixed(0)}</capKG><tpCar>${(v as any).tpCar || "00"}</tpCar><UF>${escCte(String(v.uf || input.ufIni || "").toUpperCase())}</UF></veicReboque>`
+  ).join("");
+  const ciotXml = (input.modalRod as any)?.ciot ? `<CIOT>${escCte(String((input.modalRod as any).ciot).replace(/\D/g, ""))}</CIOT>` : "";
 
   const qrBase = (input.ufEnv || input.emit.uf)?.toUpperCase() === "MG" ? "portalcte.fazenda.mg.gov.br/portalcte/sistema/qrcode.xhtml" : "dfeportal.svrs.rs.gov.br/cteQrCode";
   const xml = `<?xml version="1.0" encoding="UTF-8"?>
@@ -437,7 +407,6 @@ export function buildCteNormalXml(input: CteInputCompleto): { xml: string; chave
       <indIEToma>${indIETomaN}</indIEToma>
       ${tomaXml}
     </ide>
-    ${complXml}
     <emit>
       <CNPJ>${cnpjLimpo}</CNPJ>${/^\d{2,14}$/.test(String(input.emit.ie || "")) ? `<IE>${input.emit.ie}</IE>` : ""}<xNome>${escCte(input.emit.xNome)}</xNome>${enderEmit}<CRT>${crt}</CRT>
     </emit>
@@ -451,7 +420,7 @@ export function buildCteNormalXml(input: CteInputCompleto): { xml: string; chave
         <infQ><cUnid>01</cUnid><tpMed>00</tpMed><qCarga>${Number(input.pesoKg || 0).toFixed(4)}</qCarga></infQ>
       </infCarga>
       ${infDocXml}
-      <infModal versaoModal="4.00"><rodo><RNTRC>${rntrcXml}</RNTRC></rodo></infModal>
+      <infModal versaoModal="4.00"><rodo><RNTRC>${rntrcXml}</RNTRC>${motoXml}${ciotXml}${veicTracXml}${veicRebXml}</rodo></infModal>
     </infCTeNorm>
     <infRespTec><CNPJ>${cnpjLimpo}</CNPJ><xContato>SUPORTE TECNICO</xContato><email>suporte@vectrainsights.com.br</email><fone>3139952572</fone></infRespTec>
   </infCte>
