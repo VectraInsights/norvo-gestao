@@ -4139,4 +4139,7 @@ Espelhado na Vercel.
   porque o `querySelector` não casa tags com namespace e tudo caía
   no fallback do form. DACTE agora remove os `xmlns` só p/ leitura e
   lê o XML de verdade.
+- Blindagem servidor: o form gravado junto ao documento agora tem
+  início/fim sobrescritos pelos valores do XML (`formUfsDoXml`, nos
+  dois caminhos de gravação) — DACTE certo mesmo com bundle antigo.
 
