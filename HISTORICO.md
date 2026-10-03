@@ -4239,3 +4239,9 @@ Espelhado na Vercel.
   placas lado a lado; NOTAS FISCAIS mostra os números
   (extraídos da chave, vale p/ Normal e Simplificado) com tooltip.
 
+## CT-e: dot valida alíquota de ICMS da rota (03/10)
+
+- Origem MG: SP/RJ/PR/SC/RS esperam 12%, demais destinos 7%.
+  Divergente deixa a Tributação vermelha, com o esperado no tooltip.
+  Fora de MG não opina.
+
