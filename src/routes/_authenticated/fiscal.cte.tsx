@@ -837,6 +837,81 @@ function CtePage() {
     }
     return s;
   }, [docs]);
+  // NF-es já consumidas por CT-e AUTORIZADO (nº por chave): emitir com elas é bloqueado
+  const chavesEmAutorizado = useMemo(() => {
+    const m = new Map<string, string>();
+    for (const d of docs ?? []) {
+      if ((d as any).status !== "autorizado") continue;
+      const num = String((d as any).numero ?? "?");
+      const grav = (k: string) => {
+        if (k && !m.has(k)) m.set(k, num);
+      };
+      try {
+        const p = JSON.parse((d as any).xml_assinado || "{}");
+        for (const c of p.chavesNFe || []) grav(String(c).replace(/\D/g, ""));
+        for (const nf of p.nfs || []) grav(String(nf?.chave || "").replace(/\D/g, ""));
+        const xml = String(p.xml || "");
+        for (const mt of xml.matchAll(/<(?:chNFe|chave)>(\d{44})<\/(?:chNFe|chave)>/g))
+          grav(mt[1]);
+      } catch {
+        const xml = String((d as any).xml_assinado || "");
+        for (const mt of xml.matchAll(/<(?:chNFe|chave)>(\d{44})<\/(?:chNFe|chave)>/g))
+          grav(mt[1]);
+      }
+    }
+    return m;
+  }, [docs]);
+  // Chaves por rascunho (p/ excluir o próprio da checagem na emissão)
+  const chavesPorRascunho = useMemo(() => {
+    const m = new Map<string, Set<string>>();
+    for (const d of docs ?? []) {
+      if ((d as any).status !== "rascunho") continue;
+      const s = new Set<string>();
+      try {
+        const p = JSON.parse((d as any).xml_assinado || "{}");
+        for (const c of p.chavesNFe || []) s.add(String(c).replace(/\D/g, ""));
+        for (const nf of p.nfs || []) if (nf?.chave) s.add(String(nf.chave).replace(/\D/g, ""));
+      } catch {}
+      m.set((d as any).id, s);
+    }
+    return m;
+  }, [docs]);
+  const nNFDaChave = (ch: string) => {
+    const dg = String(ch).replace(/\D/g, "");
+    const m = (mercadorias || []).find(
+      (x: any) => String(x.chave).replace(/\D/g, "") === dg,
+    ) as any;
+    if (m?.nNF) return String(m.nNF);
+    for (const doc of docs ?? []) {
+      try {
+        const p = JSON.parse((doc as any).xml_assinado || "{}");
+        const nf = (p.nfs || []).find((n: any) => String(n?.chave).replace(/\D/g, "") === dg);
+        if (nf?.nNF) return String(nf.nNF);
+      } catch {}
+    }
+    return dg.slice(-8);
+  };
+  // Uma NF-e = um CT-e: lista NF-es da seleção já usadas em autorizado ou em
+  // outro rascunho (o próprio rascunho em edição é ignorado)
+  const chavesBloqueadas = (chaves: string[], ignorarRascunhoId?: string | null) => {
+    const out: Array<{ chave: string; onde: string }> = [];
+    for (const c of chaves) {
+      const k = String(c).replace(/\D/g, "");
+      const numAut = chavesEmAutorizado.get(k);
+      if (numAut) {
+        out.push({ chave: k, onde: `CT-e ${numAut}` });
+        continue;
+      }
+      for (const [rid, set] of chavesPorRascunho) {
+        if (rid === ignorarRascunhoId) continue;
+        if (set.has(k)) {
+          out.push({ chave: k, onde: "outro rascunho" });
+          break;
+        }
+      }
+    }
+    return out;
+  };
 
   const downloadXml = (doc: CteDoc) => {
     if (!doc.xml_assinado) throw new Error("XML sem dados para gerar PDF");
@@ -3935,9 +4010,34 @@ function CtePage() {
     enviandoLoteRef.current = true;
     let ok = 0;
     let falhas = 0;
+    let ignorados = 0;
+    // Chaves autorizadas DURANTE o lote (o docs ainda não recarregou entre itens)
+    const emitidasNoLote = new Set<string>();
     try {
       for (const d of alvo) {
         try {
+          // Pula rascunho com NF-e já usada (autorizado, outro rascunho ou item anterior do lote)
+          let chsDoc: string[] = [];
+          try {
+            const p = JSON.parse((d as any).xml_assinado || "{}");
+            chsDoc = [
+              ...((p.chavesNFe || []) as any[]),
+              ...((p.nfs || []) as any[]).map((n: any) => n?.chave),
+            ]
+              .map((c) => String(c || "").replace(/\D/g, ""))
+              .filter(Boolean);
+          } catch {}
+          const bloqDoc = chavesBloqueadas(chsDoc, (d as any).id);
+          const repetNoLote = chsDoc.filter((c) => emitidasNoLote.has(c));
+          if (bloqDoc.length > 0 || repetNoLote.length > 0) {
+            ignorados++;
+            const b0 = bloqDoc[0];
+            toast.warning(
+              `Rascunho ignorado: NF-e ${nNFDaChave(bloqDoc[0]?.chave || repetNoLote[0])} já utilizada` +
+                (b0 ? ` em ${b0.onde}` : " neste lote"),
+            );
+            continue;
+          }
           setViewDoc(null);
           await editarRascunho(d, true);
           // Espera o form propagar p/ o closure da emissão (setState é
@@ -3946,8 +4046,10 @@ function CtePage() {
           const ret = await emitirLatest.current();
           if ((ret as any)?.ignored) continue;
           // Verde só com autorização real: rejeição/erro conta como falha.
-          if ((ret as any)?.sucesso) ok++;
-          else falhas++;
+          if ((ret as any)?.sucesso) {
+            ok++;
+            for (const c of chsDoc) emitidasNoLote.add(c);
+          } else falhas++;
         } catch {
           falhas++;
         }
@@ -3973,6 +4075,8 @@ function CtePage() {
       if (Array.isArray(frescas)) setMercadorias(mapearPendentes(frescas) as any);
     }
     if (ok > 0) toast.success(`${ok} CT-e(s) autorizado(s)`);
+    if (ignorados > 0)
+      toast.warning(`${ignorados} rascunho(s) ignorado(s): NF-e já utilizada em outro CT-e`);
     if (falhas > 0) toast.error(`${falhas} rascunho(s) falharam — verifique os erros acima`);
   };
 
@@ -4259,6 +4363,14 @@ function CtePage() {
 
         const chaves =
           selecionadas.size > 0 ? Array.from(selecionadas) : mercadorias.map((m) => m.chave);
+        // Uma NF-e = um CT-e: barra na hora se a NF-e já foi autorizada ou está em outro rascunho
+        const bloq = chavesBloqueadas(chaves, editingRascunhoId);
+        if (bloq.length > 0) {
+          const b0 = bloq[0];
+          throw new Error(
+            `NF-e ${nNFDaChave(b0.chave)} já utilizada em ${b0.onde} — cancele o CT-e ou escolha outras NF-es`,
+          );
+        }
         if (chaves.length > 0) {
           const sel = mercadorias.filter((m) => chaves.includes(m.chave));
           const dests = new Set(sel.map((m) => m.destCnpj || m.dest));
