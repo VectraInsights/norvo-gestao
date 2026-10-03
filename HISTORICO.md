@@ -4264,4 +4264,8 @@ Espelhado na Vercel.
   próprio diálogo; também não salva em modo somente leitura).
 - Enter em qualquer campo do percurso salva (a validação existente
   barra com aviso se faltar obrigatório).
+- MoneyInput (valores do percurso e CT-e): o clique/foco forçava o
+  cursor p/ o fim e desmanchava qualquer seleção — por isso o
+  duplo-clique não selecionava. Agora só vai p/ o fim quando não há
+  seleção, e o duplo-clique seleciona o valor inteiro.
 
