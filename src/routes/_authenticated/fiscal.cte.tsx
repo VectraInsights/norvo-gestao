@@ -7580,9 +7580,6 @@ function CtePage() {
                 ? "Conhecimento de Transporte Simplificado"
                 : "Conhecimento de Transporte Avulso"}
             </DialogTitle>
-            <p className="text-sm text-muted-foreground">
-              Emissão de CT-e (57) — versão 4.00 via mTLS SEFAZ.
-            </p>
           </DialogHeader>
           {viewDoc && (
             <div
