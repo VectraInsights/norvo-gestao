@@ -2955,7 +2955,9 @@ function CtePage() {
         ...f,
         cnpjConsignatario: digits,
         xNomeConsignatario: d.nome || f.xNomeConsignatario,
-        ieConsignatario: (d as any).ie || f.ieConsignatario,
+        // IE: APIs públicas não retornam; completa pelo cadastro (contato) quando houver
+        ieConsignatario:
+          (d as any).ie || (contatoByDoc.get(digits) as any)?.ie || f.ieConsignatario,
         ufConsignatario: d.uf || f.ufConsignatario,
         xMunConsignatario: d.cidade || f.xMunConsignatario,
         cepConsignatario: d.cep || f.cepConsignatario,
@@ -2997,7 +2999,8 @@ function CtePage() {
         ...f,
         cnpjRedespacho: digits,
         xNomeRedespacho: d.nome || f.xNomeRedespacho,
-        ieRedespacho: (d as any).ie || f.ieRedespacho,
+        // IE: APIs públicas não retornam; completa pelo cadastro (contato) quando houver
+        ieRedespacho: (d as any).ie || (contatoByDoc.get(digits) as any)?.ie || f.ieRedespacho,
         ufRedespacho: d.uf || f.ufRedespacho,
         xMunRedespacho: d.cidade || f.xMunRedespacho,
         cepRedespacho: d.cep || f.cepRedespacho,
@@ -8048,26 +8051,31 @@ function CtePage() {
                           </h5>
                         </div>
                         <div className="space-y-0.5 text-[10px]">
-                          <p className="font-medium text-xs">{active.emit || "—"}</p>
-                          <p className="text-muted-foreground">
-                            CNPJ:{" "}
-                            {active.emitCnpj
-                              ? active.emitCnpj.replace(
-                                  /(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})/,
-                                  "$1.$2.$3/$4-$5",
-                                )
-                              : "—"}{" "}
-                            {emitIE ? `IE: ${emitIE}` : ""}
+                          <p>
+                            <span className="font-medium text-xs">{active.emit || "—"}</span>{" "}
+                            <span className="text-muted-foreground">
+                              CNPJ:{" "}
+                              {active.emitCnpj
+                                ? active.emitCnpj.replace(
+                                    /(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})/,
+                                    "$1.$2.$3/$4-$5",
+                                  )
+                                : "—"}{" "}
+                              {emitIE ? `IE: ${emitIE}` : ""}
+                            </span>
                           </p>
                           <p className="text-muted-foreground">
-                            {[emitLgr && `${emitLgr}${emitNro ? `, ${emitNro}` : ""}`, emitBai]
+                            {[
+                              emitLgr && `${emitLgr}${emitNro ? `, ${emitNro}` : ""}`,
+                              emitBai,
+                              emitCid,
+                              emitUF,
+                              emitCEP ? `CEP: ${emitCEP}` : "",
+                            ]
                               .filter(Boolean)
-                              .join(" — ") || "—"}
+                              .join(", ") || "—"}
                           </p>
-                          <p className="text-muted-foreground">
-                            {emitCid || "—"}-{emitUF || "—"} {emitCEP ? `CEP: ${emitCEP}` : ""}
-                          </p>
-                          {emitFone && <p className="text-muted-foreground">Fone: {emitFone}</p>}
+                          <p className="text-muted-foreground">Fone: {emitFone || "—"}</p>
                         </div>
                       </Card>
 
@@ -8082,32 +8090,37 @@ function CtePage() {
                           </h5>
                         </div>
                         <div className="space-y-0.5 text-[10px]">
-                          <p className="font-medium text-xs">{active.dest || "—"}</p>
-                          <p className="text-muted-foreground">
-                            CNPJ:{" "}
-                            {active.destCnpj
-                              ? active.destCnpj.replace(
-                                  /(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})/,
-                                  "$1.$2.$3/$4-$5",
-                                )
-                              : "—"}{" "}
-                            {destIE ||
-                            (
-                              (contatoByDoc.get(String(active.destCnpj || "").replace(/\D/g, "")) ||
-                                {}) as any
-                            ).ie
-                              ? `IE: ${destIE || ((contatoByDoc.get(String(active.destCnpj || "").replace(/\D/g, "")) || {}) as any).ie}`
-                              : ""}
+                          <p>
+                            <span className="font-medium text-xs">{active.dest || "—"}</span>{" "}
+                            <span className="text-muted-foreground">
+                              CNPJ:{" "}
+                              {active.destCnpj
+                                ? active.destCnpj.replace(
+                                    /(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})/,
+                                    "$1.$2.$3/$4-$5",
+                                  )
+                                : "—"}{" "}
+                              {destIE ||
+                              (
+                                (contatoByDoc.get(String(active.destCnpj || "").replace(/\D/g, "")) ||
+                                  {}) as any
+                              ).ie
+                                ? `IE: ${destIE || ((contatoByDoc.get(String(active.destCnpj || "").replace(/\D/g, "")) || {}) as any).ie}`
+                                : ""}
+                            </span>
                           </p>
                           <p className="text-muted-foreground">
-                            {[destLgr && `${destLgr}${destNro ? `, ${destNro}` : ""}`, destBai]
+                            {[
+                              destLgr && `${destLgr}${destNro ? `, ${destNro}` : ""}`,
+                              destBai,
+                              destCid,
+                              destUF,
+                              destCEP ? `CEP: ${destCEP}` : "",
+                            ]
                               .filter(Boolean)
-                              .join(" — ") || "—"}
+                              .join(", ") || "—"}
                           </p>
-                          <p className="text-muted-foreground">
-                            {destCid || "—"}-{destUF || "—"} {destCEP ? `CEP: ${destCEP}` : ""}
-                          </p>
-                          {destFone && <p className="text-muted-foreground">Fone: {destFone}</p>}
+                          <p className="text-muted-foreground">Fone: {destFone || "—"}</p>
                         </div>
                       </Card>
                     </div>
@@ -8121,7 +8134,7 @@ function CtePage() {
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                 {/* Consignatário */}
-                <Card className="p-3 min-h-[148px]">
+                <Card className="p-3">
                   <div className="bg-primary/8 border-b border-primary/20 -m-3 mb-2 px-2 py-1 flex items-center gap-2">
                     <div className="h-6 w-6 rounded bg-amber-500/10 grid place-items-center">
                       <Building2 className="h-3.5 w-3.5 text-amber-600" />
@@ -8198,30 +8211,39 @@ function CtePage() {
                   </div>
                   {form.xNomeConsignatario || form.cnpjConsignatario ? (
                     <div className="space-y-0.5 text-[10px]">
-                      <p className="font-medium text-xs">{form.xNomeConsignatario || "—"}</p>
-                      <p className="text-muted-foreground flex items-center gap-1 flex-wrap">
-                        CNPJ: {form.cnpjConsignatario ? fmtCnpjInput(form.cnpjConsignatario) : "—"}{" "}
-                        {form.ieConsignatario ||
-                        (
-                          (contatoByDoc.get(
-                            String(form.cnpjConsignatario || "").replace(/\D/g, ""),
-                          ) || {}) as any
-                        ).ie
-                          ? `IE: ${form.ieConsignatario || ((contatoByDoc.get(String(form.cnpjConsignatario || "").replace(/\D/g, "")) || {}) as any).ie}`
-                          : ""}
+                      <p>
+                        <span className="font-medium text-xs">
+                          {form.xNomeConsignatario || "—"}
+                        </span>{" "}
+                        <span className="text-muted-foreground">
+                          CNPJ:{" "}
+                          {form.cnpjConsignatario ? fmtCnpjInput(form.cnpjConsignatario) : "—"}{" "}
+                          {form.ieConsignatario ||
+                          (
+                            (contatoByDoc.get(
+                              String(form.cnpjConsignatario || "").replace(/\D/g, ""),
+                            ) || {}) as any
+                          ).ie
+                            ? `IE: ${form.ieConsignatario || ((contatoByDoc.get(String(form.cnpjConsignatario || "").replace(/\D/g, "")) || {}) as any).ie}`
+                            : ""}
+                        </span>
                       </p>
                       <p className="text-muted-foreground">
                         {[
                           form.logradouroConsignatario &&
                             `${form.logradouroConsignatario}${form.nroConsignatario ? `, ${form.nroConsignatario}` : ""}`,
                           form.bairroConsignatario,
+                          form.xMunConsignatario,
+                          form.ufConsignatario,
+                          form.cepConsignatario ? `CEP: ${form.cepConsignatario}` : "",
                         ]
                           .filter(Boolean)
-                          .join(" — ") || "—"}
+                          .join(", ") || "—"}
                       </p>
                       <p className="text-muted-foreground">
-                        {form.xMunConsignatario || "—"}-{form.ufConsignatario || "—"}{" "}
-                        {form.cepConsignatario ? `CEP: ${form.cepConsignatario}` : ""}
+                        Fone:{" "}
+                        {(contatoByDoc.get(String(form.cnpjConsignatario || "").replace(/\D/g, "")) || {})
+                          .telefone || "—"}
                       </p>
                     </div>
                   ) : (
@@ -8232,7 +8254,7 @@ function CtePage() {
                 </Card>
 
                 {/* Redespacho */}
-                <Card className="p-3 min-h-[148px]">
+                <Card className="p-3">
                   <div className="bg-primary/8 border-b border-primary/20 -m-3 mb-2 px-2 py-1 flex items-center gap-2">
                     <div className="h-6 w-6 rounded bg-violet-500/10 grid place-items-center">
                       <Truck className="h-3.5 w-3.5 text-violet-600" />
@@ -8309,29 +8331,36 @@ function CtePage() {
                   </div>
                   {form.xNomeRedespacho || form.cnpjRedespacho ? (
                     <div className="space-y-0.5 text-[10px]">
-                      <p className="font-medium text-xs">{form.xNomeRedespacho || "—"}</p>
-                      <p className="text-muted-foreground flex items-center gap-1 flex-wrap">
-                        CNPJ: {form.cnpjRedespacho ? fmtCnpjInput(form.cnpjRedespacho) : "—"}{" "}
-                        {form.ieRedespacho ||
-                        (
-                          (contatoByDoc.get(String(form.cnpjRedespacho || "").replace(/\D/g, "")) ||
-                            {}) as any
-                        ).ie
-                          ? `IE: ${form.ieRedespacho || ((contatoByDoc.get(String(form.cnpjRedespacho || "").replace(/\D/g, "")) || {}) as any).ie}`
-                          : ""}
+                      <p>
+                        <span className="font-medium text-xs">{form.xNomeRedespacho || "—"}</span>{" "}
+                        <span className="text-muted-foreground">
+                          CNPJ:{" "}
+                          {form.cnpjRedespacho ? fmtCnpjInput(form.cnpjRedespacho) : "—"}{" "}
+                          {form.ieRedespacho ||
+                          (
+                            (contatoByDoc.get(String(form.cnpjRedespacho || "").replace(/\D/g, "")) ||
+                              {}) as any
+                          ).ie
+                            ? `IE: ${form.ieRedespacho || ((contatoByDoc.get(String(form.cnpjRedespacho || "").replace(/\D/g, "")) || {}) as any).ie}`
+                            : ""}
+                        </span>
                       </p>
                       <p className="text-muted-foreground">
                         {[
                           form.logradouroRedespacho &&
                             `${form.logradouroRedespacho}${form.nroRedespacho ? `, ${form.nroRedespacho}` : ""}`,
                           form.bairroRedespacho,
+                          form.xMunRedespacho,
+                          form.ufRedespacho,
+                          form.cepRedespacho ? `CEP: ${form.cepRedespacho}` : "",
                         ]
                           .filter(Boolean)
-                          .join(" — ") || "—"}
+                          .join(", ") || "—"}
                       </p>
                       <p className="text-muted-foreground">
-                        {form.xMunRedespacho || "—"}-{form.ufRedespacho || "—"}{" "}
-                        {form.cepRedespacho ? `CEP: ${form.cepRedespacho}` : ""}
+                        Fone:{" "}
+                        {(contatoByDoc.get(String(form.cnpjRedespacho || "").replace(/\D/g, "")) || {})
+                          .telefone || "—"}
                       </p>
                     </div>
                   ) : (
