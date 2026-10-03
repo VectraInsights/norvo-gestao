@@ -1122,6 +1122,14 @@ function NotasRecebidas() {
           return { numero: p.numero, dataVencimento: p.data_vencimento, valor: Number(p.valor), forma_pagamento: lanc?.forma_pagamento || "Boleto", conta_bancaria_id: lanc?.conta_bancaria_id || "" };
         });
       }
+      // Sem itens salvos mas com XML guardado: parseia o XML (comportamento anterior)
+      const xmlLocal = n.xml_completo || "";
+      let produtosFinais = produtos;
+      let parcelasFinais = parcelas;
+      if (produtos.length === 0 && xmlLocal) {
+        produtosFinais = parseProdutosDoXml(xmlLocal);
+        if (parcelas.length === 0) parcelasFinais = parseParcelasDoXml(xmlLocal);
+      }
       setNotaDetalhe({
         id: n.id,
         chave: n.chave,
@@ -1130,9 +1138,9 @@ function NotasRecebidas() {
         nNF: n.numero_nf || nNFdaChave(n.chave),
         data: n.data_emissao,
         valor: n.valor,
-        produtos,
-        parcelas,
-        xml: n.xml_completo || "",
+        produtos: produtosFinais,
+        parcelas: parcelasFinais,
+        xml: xmlLocal,
       });
       return;
     }
@@ -1359,7 +1367,6 @@ ${transportadora ? `<div class="section"><div class="section-title">TRANSPORTE</
                         </TableCell>
                         <TableCell className="text-tabular text-muted-foreground">
                           <div className="font-mono text-xs">{n.numero_nf || nNFdaChave(n.chave) || "—"}</div>
-                          <div className="font-mono text-[10px] text-muted-foreground/60 truncate max-w-[140px] mx-auto">{n.chave}</div>
                         </TableCell>
                         <TableCell className="text-tabular text-muted-foreground">{dateBR(n.data_emissao)}</TableCell>
                         <TableCell className="text-tabular font-medium text-foreground">{brl(n.valor)}</TableCell>
