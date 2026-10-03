@@ -4268,4 +4268,6 @@ Espelhado na Vercel.
   cursor p/ o fim e desmanchava qualquer seleção — por isso o
   duplo-clique não selecionava. Agora só vai p/ o fim quando não há
   seleção, e o duplo-clique seleciona o valor inteiro.
+- Seleção + dígito recomeça o número do zero (o anterior apaga);
+  seleção + Backspace/Delete limpa o campo.
 
