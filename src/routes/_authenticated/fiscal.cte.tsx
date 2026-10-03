@@ -283,6 +283,32 @@ function destDoDocCiot(d: { xml_assinado: string | null }): string {
   return "";
 }
 
+// Chaves das NF-es vinculadas ao CT-e: Simplificado usa <chNFe>, Normal usa
+// <infNFe><chave>. Escopo restrito (não confundir com <chCTe> de docAnt).
+// Aceita o XML puro ou o JSON gravado ({xml, form} de autorizado, {nfs} de rascunho).
+function chavesNFeDoXml(xmlAssinado: string | null): string[] {
+  const out = new Set<string>();
+  const x = String(xmlAssinado || "");
+  try {
+    const p = JSON.parse(x);
+    if (p && typeof p === "object") {
+      if (typeof p.xml === "string" && p.xml.includes("<")) {
+        for (const c of chavesNFeDoXml(p.xml)) out.add(c);
+      }
+      if (Array.isArray(p.nfs)) {
+        for (const nf of p.nfs) {
+          const d = String(nf?.chave || "").replace(/\D/g, "");
+          if (d.length === 44) out.add(d);
+        }
+      }
+      if (out.size > 0) return [...out];
+    }
+  } catch {}
+  for (const m of x.matchAll(/<chNFe>(\d{44})<\/chNFe>/g)) out.add(m[1]);
+  for (const m of x.matchAll(/<infNFe>\s*<chave>(\d{44})<\/chave>/g)) out.add(m[1]);
+  return [...out];
+}
+
 // Placa(s), motorista e data de emissão direto do XML/form do CT-e p/ a tabela.
 function infoCteLinha(xmlAssinado: string | null): {
   placas: string[];
@@ -4262,14 +4288,12 @@ function CtePage() {
             .select("xml_assinado")
             .eq("chave_acesso", ret.chave)
             .maybeSingle();
-          let xmlStr = doc?.xml_assinado || "";
           let rascunhoNfs: any[] = [];
           try {
-            const p = JSON.parse(xmlStr);
-            if (p.xml) xmlStr = p.xml;
+            const p = JSON.parse(doc?.xml_assinado || "{}");
             if (p.nfs) rascunhoNfs = p.nfs;
           } catch {}
-          const chavesNfe = [...xmlStr.matchAll(/<chNFe>(\d{44})<\/chNFe>/g)].map((m: any) => m[1]);
+          const chavesNfe = chavesNFeDoXml(doc?.xml_assinado || "");
           console.log(
             "[CTE-CANCEL-REVERT] chave:",
             ret.chave,
@@ -4347,6 +4371,36 @@ function CtePage() {
     },
     onError: (e: Error) => toast.error(e.message),
   });
+
+  // Reparo: devolve p/ embarque as NF-es presas em CT-es já cancelados
+  // (cancelamentos antigos de CT-e Normal não revertiam: o extrator só lia <chNFe>).
+  const [devolvendoNfes, setDevolvendoNfes] = useState(false);
+  const devolverNfesCancelados = async () => {
+    if (!empresa || devolvendoNfes) return;
+    const docs = docsByStatus.cancelados;
+    if (!docs.length) return;
+    setDevolvendoNfes(true);
+    try {
+      const chaves = new Set<string>();
+      for (const d of docs) for (const c of chavesNFeDoXml(d.xml_assinado)) chaves.add(c);
+      if (!chaves.size) {
+        toast.info("Nenhuma NF-e encontrada nos CT-es cancelados");
+        return;
+      }
+      const { error } = await supabase
+        .from("cte_nfes_pendentes" as any)
+        .update({ status: "pendente" })
+        .in("chave", [...chaves])
+        .eq("empresa_id", empresa.id);
+      if (error) throw error;
+      qc.invalidateQueries({ queryKey: ["cte-nfes-pendentes", empresa.id] });
+      toast.success(`${chaves.size} NF-e(s) devolvidas p/ embarque`);
+    } catch (e: any) {
+      toast.error("Falha ao devolver NF-es", { description: e.message });
+    } finally {
+      setDevolvendoNfes(false);
+    }
+  };
 
   const [previewOpen, setPreviewOpen] = useState(false);
   const lastPreviewUrl = useRef<string | null>(null);
@@ -6559,7 +6613,20 @@ function CtePage() {
             )}
             {renderTabelaDocs(docsByStatus.rejeitados, "rejeitados")}
           </TabsContent>
-          <TabsContent value="cancelados" className="mt-0">
+          <TabsContent value="cancelados" className="mt-0 space-y-2">
+            {docsByStatus.cancelados.length > 0 && (
+              <div className="flex justify-end">
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={devolverNfesCancelados}
+                  disabled={devolvendoNfes}
+                  title="Devolve para embarque as NF-es dos CT-es cancelados"
+                >
+                  {devolvendoNfes ? "Devolvendo…" : "Devolver NF-es p/ embarque"}
+                </Button>
+              </div>
+            )}
             {renderTabelaDocs(docsByStatus.cancelados, "cancelados")}
           </TabsContent>
           </CardContent>
