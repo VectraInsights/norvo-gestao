@@ -4273,4 +4273,6 @@ Espelhado na Vercel.
 - Excluir rascunho limpa a seleção (as NF-es voltavam a pendentes e
   reapareciam marcadas no embarque); trocar de aba da página limpa
   todas as marcações (embarque, lote, MDF-e, importação).
+- Volta do percurso sem flash: o diálogo já nasce aberto com o snapshot
+  (antes esperava os documentos carregarem, mostrando o embarque no meio).
 
