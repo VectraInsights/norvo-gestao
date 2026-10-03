@@ -8454,8 +8454,8 @@ function CtePage() {
                     Impostos
                   </h5>
                 </div>
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
-                  <div>
+                <div className="flex flex-wrap items-end gap-x-2 gap-y-2">
+                  <div className="min-w-[240px] flex-1">
                     <Label className="text-[10px] text-muted-foreground">* CST</Label>
                     <Select value={form.icmsCST} onValueChange={() => {}} disabled>
                       <SelectTrigger className="h-7 text-xs">
@@ -8486,7 +8486,7 @@ function CtePage() {
                       </SelectContent>
                     </Select>
                   </div>
-                  <div>
+                  <div className="w-[136px] shrink-0">
                     <Label className="text-[10px] text-muted-foreground">Redução de Base (%)</Label>
                     <MoneyInput
                       className="h-7 text-xs bg-muted"
@@ -8496,7 +8496,7 @@ function CtePage() {
                       
                     />
                   </div>
-                  <div>
+                  <div className="w-[96px] shrink-0">
                     <Label className="text-[10px] text-muted-foreground">Alíquota ICMS (%)</Label>
                     <MoneyInput
                       className="h-7 text-xs bg-muted"
@@ -8506,7 +8506,7 @@ function CtePage() {
                       
                     />
                   </div>
-                  <div>
+                  <div className="w-[136px] shrink-0">
                     <Label className="text-[10px] text-muted-foreground">Base Cálculo (R$)</Label>
                     <MoneyInput
                       className="h-7 text-xs bg-muted"
@@ -8515,7 +8515,7 @@ function CtePage() {
                       
                     />
                   </div>
-                  <div>
+                  <div className="w-[136px] shrink-0">
                     <Label className="text-[10px] text-muted-foreground">Valor ICMS (R$)</Label>
                     <MoneyInput
                       className="h-7 text-xs bg-muted"
@@ -8524,7 +8524,7 @@ function CtePage() {
                       
                     />
                   </div>
-                  <div className="md:col-span-3">
+                  <div className="min-w-[260px] flex-1">
                     <Label className="text-[10px] text-muted-foreground">
                       Valor do crédito outorgado/presumido (R$)
                     </Label>
@@ -8536,8 +8536,8 @@ function CtePage() {
                     />
                   </div>
                 </div>
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-1 mt-2">
-                  <div>
+                <div className="flex flex-wrap items-end gap-x-2 gap-y-1 mt-2">
+                  <div className="w-[96px] shrink-0">
                     <Label className="text-[10px] text-muted-foreground">PIS (%)</Label>
                     <MoneyInput
                       className="h-7 text-xs bg-muted"
@@ -8547,7 +8547,7 @@ function CtePage() {
                       
                     />
                   </div>
-                  <div>
+                  <div className="w-[96px] shrink-0">
                     <Label className="text-[10px] text-muted-foreground">COFINS (%)</Label>
                     <MoneyInput
                       className="h-7 text-xs bg-muted"
@@ -8557,7 +8557,7 @@ function CtePage() {
                       
                     />
                   </div>
-                  <div>
+                  <div className="w-[96px] shrink-0">
                     <Label className="text-[10px] text-muted-foreground">IBS (%)</Label>
                     <MoneyInput
                       className="h-7 text-xs bg-muted"
@@ -8567,7 +8567,7 @@ function CtePage() {
                       
                     />
                   </div>
-                  <div>
+                  <div className="w-[96px] shrink-0">
                     <Label className="text-[10px] text-muted-foreground">CBS (%)</Label>
                     <MoneyInput
                       className="h-7 text-xs bg-muted"
@@ -8578,8 +8578,8 @@ function CtePage() {
                     />
                   </div>
                 </div>
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-1 mt-1">
-                  <div>
+                <div className="flex flex-wrap items-end gap-x-2 gap-y-1 mt-1">
+                  <div className="w-[136px] shrink-0">
                     <Label className="text-[10px] text-muted-foreground">Valor PIS (R$)</Label>
                     <MoneyInput
                       className="h-7 text-xs bg-muted"
@@ -8588,7 +8588,7 @@ function CtePage() {
                       
                     />
                   </div>
-                  <div>
+                  <div className="w-[136px] shrink-0">
                     <Label className="text-[10px] text-muted-foreground">Valor COFINS (R$)</Label>
                     <MoneyInput
                       className="h-7 text-xs bg-muted"
@@ -8597,7 +8597,7 @@ function CtePage() {
                       
                     />
                   </div>
-                  <div>
+                  <div className="w-[136px] shrink-0">
                     <Label className="text-[10px] text-muted-foreground">Valor IBS (R$)</Label>
                     <MoneyInput
                       className="h-7 text-xs bg-muted"
@@ -8606,7 +8606,7 @@ function CtePage() {
                       
                     />
                   </div>
-                  <div>
+                  <div className="w-[136px] shrink-0">
                     <Label className="text-[10px] text-muted-foreground">Valor CBS (R$)</Label>
                     <MoneyInput
                       className="h-7 text-xs bg-muted"
