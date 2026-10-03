@@ -4768,6 +4768,25 @@ function CtePage() {
   // === Percursos: remetente+destino+tomador pré-salvos (autopreenchimento) ===
   const onlyDigitsPercurso = (v: any) => String(v || "").replace(/\D/g, "");
   const docsAtuais = () => {
+    // Visualizando doc existente: trio das NF-es DO DOCUMENTO (não do embarque),
+    // senão a tela mostra o percurso errado (ex. 0003 no lugar do 0001).
+    if (viewDoc?.chave_acesso) {
+      const nfMap = new Map(
+        ((nfesTodas || []) as any[]).map((n) => [String(n.chave).replace(/\D/g, ""), n]),
+      );
+      const first = chavesNFeDoXml(viewDoc.xml_assinado)
+        .map((c) => nfMap.get(c))
+        .find(Boolean) as any;
+      if (first) {
+        return {
+          remDoc: onlyDigitsPercurso(first.emit_cnpj),
+          remNome: first.emit_nome || "",
+          destDoc: onlyDigitsPercurso(first.dest_cnpj),
+          destNome: first.dest_nome || "",
+          tomaDoc: onlyDigitsPercurso(form.cnpjTomador),
+        };
+      }
+    }
     const sel = mercadorias.filter((m) => selecionadas.has(m.chave));
     const a = ((sel.length > 0 ? sel[0] : mercadorias[0]) || {}) as any;
     return {
@@ -5113,6 +5132,7 @@ function CtePage() {
   }, [open]);
   useEffect(() => {
     if (!open || percursos.length === 0) return;
+    if (viewDoc) return; // visualização: não reescreve o doc com percurso ao vivo
     if (pularPercursoRef.current) {
       pularPercursoRef.current = false;
       return;
@@ -5127,7 +5147,7 @@ function CtePage() {
     percursoAplicadoKey.current = key;
     aplicarPercurso(m);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [open, form.cnpjTomador, mercadorias, selecionadas, percursos]);
+  }, [open, viewDoc, form.cnpjTomador, mercadorias, selecionadas, percursos]);
   const entregaSrcRef = useRef("");
   // Entrega vinda do percurso não é sobrescrita pela NF-e (ex.: redespacho p/ outra cidade)
   const travarEntregaRef = useRef(false);
@@ -5135,6 +5155,7 @@ function CtePage() {
   const travarPendenteRef = useRef(false);
   useEffect(() => {
     if (!open) return;
+    if (viewDoc) return; // visualização: não reescreve o doc com a NF-e do embarque
     if (travarEntregaRef.current) return;
     const hasRed = (form.cnpjRedespacho || "").replace(/\D/g, "").length === 14;
     const sel = mercadorias.filter((m) => selecionadas.has(m.chave));
@@ -5184,6 +5205,7 @@ function CtePage() {
   const coletaSrcRef = useRef("");
   useEffect(() => {
     if (!open) return;
+    if (viewDoc) return; // visualização: não reescreve o doc com a NF-e do embarque
     const sel2 = mercadorias.filter((m) => selecionadas.has(m.chave));
     const b = (sel2[0] || mercadorias[0] || {}) as any;
     if (!b.emitCnpj && !b.emitXMun) return;
