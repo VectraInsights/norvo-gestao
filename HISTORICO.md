@@ -4119,3 +4119,11 @@ Espelhado na Vercel.
   a UF de entrega preenchida (PA). O CT-e 531 já autorizado com AP
   não tem como corrigir no documento — só cancelando e reemitindo.
 
+## CT-e: cancelamento devolve NF do Normal (03/10)
+
+- Cancelar CT-e Normal não devolvia as NF-es: o extrator só lia
+  `<chNFe>` (Simplificado); Normal usa `<infNFe><chave>`. Novo
+  `chavesNFeDoXml` cobre os dois formatos (+ JSON de rascunho).
+- Botão "Devolver NF-es p/ embarque" na aba Cancelados repara os que
+  já ficaram presos (volta p/ `pendente`, liberando a reimportação).
+
