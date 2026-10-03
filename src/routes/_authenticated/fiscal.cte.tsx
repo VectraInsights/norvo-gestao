@@ -5139,6 +5139,25 @@ function CtePage() {
   const percursoMatch = matchPercurso(docsAtuais());
   // Estado por aba p/ o dot (verde completa / vermelha faltando). Espelha as
   // exigências da emissão; Observações nunca bloqueia. Sem dots em leitura.
+  // Alíquota de ICMS esperada p/ a rota (origem MG): Sul/Sudeste listado = 12%,
+  // demais destinos = 7%. Fora de MG não opina (retorna null).
+  const aliqIcmsEsperada = (ufIni: any, ufFim: any): number | null => {
+    const d = String(ufFim || "").toUpperCase();
+    if (String(ufIni || "").toUpperCase() !== "MG" || !d) return null;
+    return ["SP", "RJ", "PR", "SC", "RS"].includes(d) ? 12 : 7;
+  };
+  // Alíquota atual x esperada p/ a rota (explica o dot vermelho da Tributação)
+  const aliqIcmsNum = (() => {
+    const s = String(form.icmsAliq ?? "").trim();
+    if (!s) return NaN;
+    return s.includes(",")
+      ? Number(s.replace(/\./g, "").replace(",", "."))
+      : parseFloat(s);
+  })();
+  const aliqIcmsEsp = aliqIcmsEsperada(form.ufIni, form.ufFim);
+  const aliqIcmsOk =
+    aliqIcmsEsp === null ||
+    (Number.isFinite(aliqIcmsNum) && Math.abs(aliqIcmsNum - aliqIcmsEsp) < 0.005);
   const tabOk = (() => {
     const soDig = (v: any) => String(v || "").replace(/\D/g, "");
     const numBR = (v: any) => {
@@ -5169,7 +5188,8 @@ function CtePage() {
         !!String(form.cfop || "").trim() &&
         !!String(form.icmsCST || "").trim() &&
         String(form.icmsAliq ?? "").trim() !== "" &&
-        mercadorias.length > 0,
+        mercadorias.length > 0 &&
+        aliqIcmsOk,
       obs: true,
     };
   })();
@@ -7315,7 +7335,13 @@ function CtePage() {
               <TabsTrigger
                 value="docs"
                 className="rounded-t-md rounded-b-none text-xs data-[state=active]:bg-background data-[state=active]:shadow-sm data-[state=active]:text-primary"
-                title={tabOk.trib ? "Aba completa" : "Faltam dados nesta aba"}
+                title={
+                  tabOk.trib
+                    ? "Aba completa"
+                    : aliqIcmsEsp !== null && !aliqIcmsOk
+                      ? `Alíquota ICMS deveria ser ${aliqIcmsEsp}% p/ ${String(form.ufIni || "").toUpperCase()}→${String(form.ufFim || "").toUpperCase()}`
+                      : "Faltam dados nesta aba"
+                }
               >
                 {tabDot(tabOk.trib)}
                 <FileText className="mr-1 h-3 w-3" />
