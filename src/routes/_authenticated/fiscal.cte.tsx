@@ -8268,24 +8268,7 @@ function CtePage() {
             <TabsContent value="docs" className="mt-2 min-h-0 flex-1 overflow-hidden data-[state=inactive]:hidden data-[state=active]:flex data-[state=active]:flex-col">
               <AbaFit>
               <Card className="overflow-hidden">
-                <div className="flex items-center justify-between gap-2 bg-primary/8 border-b border-primary/20 px-3 py-1.5">
-                  <div className="text-[10px] font-semibold uppercase tracking-wide text-primary/80">
-                    Mercadorias Transportadas —{" "}
-                    {mercadorias.filter((m) => selecionadas.has(m.chave)).length ||
-                      mercadorias.length}{" "}
-                    NF-e(s)
-                  </div>
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    className="h-7 text-xs"
-                    onClick={() => setManualNfeOpen(true)}
-                  >
-                    <Plus className="mr-1 h-3.5 w-3.5" /> Inserir NF-e manual
-                  </Button>
-                </div>
-                <div className="overflow-x-auto max-h-[240px]">
+                <div className="overflow-x-auto">
                   <Table>
                     <TableHeader className="sticky top-0 bg-muted">
                       <TableRow>
@@ -8418,6 +8401,13 @@ function CtePage() {
                     </TableBody>
                   </Table>
                 </div>
+                <button
+                  type="button"
+                  onClick={() => setManualNfeOpen(true)}
+                  className="px-2 pt-1 text-left text-[11px] text-muted-foreground hover:text-foreground"
+                >
+                  + Inserir NF-e manual
+                </button>
                 {(() => {
                   const base =
                     selecionadas.size > 0
