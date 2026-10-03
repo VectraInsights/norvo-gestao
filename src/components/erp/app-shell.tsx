@@ -112,6 +112,14 @@ export function AppShell({ children }: { children: ReactNode }) {
     }
     if (grupo) setOpenGroups({ [grupo]: true });
   };
+  const recolher = () => {
+    setCollapsed(true);
+    try {
+      window.localStorage.setItem("norvo-sidebar-collapsed", "1");
+    } catch {
+      // localStorage indisponível
+    }
+  };
   const closeAllGroups = useCallback(() => setOpenGroups({}), []);
   const toggleGroup = (label: string) => {
     // Acordeão: abrir um grupo fecha os demais; clicar no aberto fecha tudo
@@ -536,6 +544,7 @@ export function AppShell({ children }: { children: ReactNode }) {
                             onClick={() => {
                               setNavigating(true);
                               if (collapsed) expandir(group.label);
+                              else recolher();
                             }}
                             data-nav-focusable
                             data-nav-group={group.label}
