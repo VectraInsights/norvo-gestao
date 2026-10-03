@@ -719,6 +719,10 @@ function CtePage() {
         toast.error("XML inválido");
         return;
       }
+      // querySelector não casa elementos com namespace default: remove as
+      // declarações xmlns para leitura (só leitura — o XML original é intacto).
+      // Sem isso, todos os tag() devolvem "" e o DACTE usa só o form.
+      xmlStr = xmlStr.replace(/\s+xmlns(?::[\w-]+)?="[^"]*"/g, "");
       const xmlDoc = parser.parseFromString(xmlStr, "text/xml");
       const tag = (sel: string) => xmlDoc.querySelector(sel)?.textContent || "";
       const nFes = Array.from(xmlDoc.querySelectorAll("det")).map((det) => ({
