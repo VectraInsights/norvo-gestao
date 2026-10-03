@@ -283,6 +283,18 @@ function destDoDocCiot(d: { xml_assinado: string | null }): string {
   return "";
 }
 
+// UF pelo código IBGE do município (2 primeiros dígitos). O IBGE é a fonte
+// autoritativa: evita término "MARABA/AP" quando a UF veio do destinatário.
+const UF_POR_IBGE: Record<string, string> = {
+  "11": "RO", "12": "AC", "13": "AM", "14": "RR", "15": "PA", "16": "AP", "17": "TO",
+  "21": "MA", "22": "PI", "23": "CE", "24": "RN", "25": "PB", "26": "PE", "27": "AL",
+  "28": "SE", "29": "BA", "31": "MG", "32": "ES", "33": "RJ", "35": "SP",
+  "41": "PR", "42": "SC", "43": "RS", "50": "MS", "51": "MT", "52": "GO", "53": "DF",
+};
+function ufPorCMunIBGE(cMun: unknown): string {
+  return UF_POR_IBGE[String(cMun || "").replace(/\D/g, "").slice(0, 2)] || "";
+}
+
 // Chaves das NF-es vinculadas ao CT-e: Simplificado usa <chNFe>, Normal usa
 // <infNFe><chave>. Escopo restrito (não confundir com <chCTe> de docAnt).
 // Aceita o XML puro ou o JSON gravado ({xml, form} de autorizado, {nfs} de rascunho).
@@ -4068,10 +4080,10 @@ function CtePage() {
               ufEnv: form.ufEnv,
               cMunIni: form.cMunIni,
               xMunIni: form.xMunIni,
-              ufIni: form.ufIni,
+              ufIni: ufPorCMunIBGE(form.cMunIni) || form.ufIni,
               cMunFim: form.cMunFim,
               xMunFim: form.xMunFim,
-              ufFim: form.ufFim,
+              ufFim: ufPorCMunIBGE(form.cMunFim) || form.ufFim,
               icms: {
                 CST: form.icmsCST,
                 vBC: totalPrestacao(form),
@@ -4561,10 +4573,10 @@ function CtePage() {
             ufEnv: form.ufEnv,
             cMunIni: form.cMunIni,
             xMunIni: form.xMunIni,
-            ufIni: form.ufIni,
+            ufIni: ufPorCMunIBGE(form.cMunIni) || form.ufIni,
             cMunFim: form.cMunFim,
             xMunFim: form.xMunFim,
-            ufFim: form.ufFim,
+            ufFim: ufPorCMunIBGE(form.cMunFim) || form.ufFim,
             icms: {
               CST: form.icmsCST,
               vBC: totalPrestacao(form),
@@ -4675,16 +4687,6 @@ function CtePage() {
   };
   const aplicarPercurso = (r: Record<string, any>) => {
     const stdAliq = (v: any, fb: any) => (v && Number(v) !== 0 ? String(v) : fb);
-    // UF pelo código IBGE do município (2 primeiros dígitos): o percurso pode
-    // estar com cidade preenchida e UF vazia — sem isso a UF cai no fallback
-    // da NF-e (destinatário) e o CT-e sai com fim errado (ex. MARABA/AP).
-    const UF_POR_IBGE: Record<string, string> = {
-      "11": "RO", "12": "AC", "13": "AM", "14": "RR", "15": "PA", "16": "AP", "17": "TO",
-      "21": "MA", "22": "PI", "23": "CE", "24": "RN", "25": "PB", "26": "PE", "27": "AL",
-      "28": "SE", "29": "BA", "31": "MG", "32": "ES", "33": "RJ", "35": "SP",
-      "41": "PR", "42": "SC", "43": "RS", "50": "MS", "51": "MT", "52": "GO", "53": "DF",
-    };
-    const ufPorCMun = (cMun: unknown) => UF_POR_IBGE[String(cMun || "").replace(/\D/g, "").slice(0, 2)] || "";
     // IE do destinatário: NF-e (XML) > contato > percurso > mantém
     const destDocP = String(r.dest_cnpj || "").replace(/\D/g, "");
     const nfeDest =
@@ -4712,11 +4714,11 @@ function CtePage() {
       emailTomador: r.toma_email || f.emailTomador,
       cMunIni: r.coleta_cmun || f.cMunIni,
       xMunIni: r.coleta_xmun || f.xMunIni,
-      ufIni: r.coleta_uf || ufPorCMun(r.coleta_cmun) || f.ufIni,
+      ufIni: r.coleta_uf || ufPorCMunIBGE(r.coleta_cmun) || f.ufIni,
       ieDestinatario: ieDestNfe || ieDestContato || r.dest_ie || (f as any).ieDestinatario || "",
       cMunFim: r.entrega_cmun || f.cMunFim,
       xMunFim: r.entrega_xmun || f.xMunFim,
-      ufFim: r.entrega_uf || ufPorCMun(r.entrega_cmun) || f.ufFim,
+      ufFim: r.entrega_uf || ufPorCMunIBGE(r.entrega_cmun) || f.ufFim,
       cfop: r.cfop || f.cfop,
       cnpjConsignatario: r.consig_cnpj || f.cnpjConsignatario,
       xNomeConsignatario: r.consig_nome || f.xNomeConsignatario,
@@ -9385,9 +9387,9 @@ function CtePage() {
             cfopDescricao: CFOPS_CTE.find((c) => c.codigo === (f.cfop || "5353"))?.descricao || "",
             naturezaOperacao: "TRANSPORTE INTERESTADUAL - INDUSTRIAL",
             origemCidade: f.xMunIni || "",
-            origemUF: f.ufIni || "",
+            origemUF: ufPorCMunIBGE(f.cMunIni) || f.ufIni || "",
             destinoCidade: f.xMunFim || "",
-            destinoUF: f.ufFim || "",
+            destinoUF: ufPorCMunIBGE(f.cMunFim) || f.ufFim || "",
             valorServico: totalPrestacao({ ...emptyForm, ...(f as any) }),
             valorCarga: f.vCarga || 0,
             qtdVol: (() => {
