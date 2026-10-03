@@ -554,6 +554,16 @@ function linhaDocs(d: CteDoc): {
   };
 }
 
+// Volta do percurso (lápis): andamento salvo antes de ir editar. Lido nos
+// initializers p/ o diálogo já nascer aberto (sem flash do embarque).
+function lerSnapshotCte(): any {
+  try {
+    return JSON.parse(localStorage.getItem("cte_progress_snapshot") || "null");
+  } catch {
+    return null;
+  }
+}
+
 function CtePage() {
   const { data: empresa } = useEmpresaAtual();
   const qc = useQueryClient();
@@ -618,7 +628,12 @@ function CtePage() {
       qVol?: number;
     }>
   >([]);
-  const [selecionadas, setSelecionadas] = useState<Set<string>>(new Set());
+  const [selecionadas, setSelecionadas] = useState<Set<string>>(
+    () => {
+      const s = lerSnapshotCte();
+      return Array.isArray(s?.selecionadas) ? new Set(s.selecionadas as string[]) : new Set<string>();
+    },
+  );
   const [confRemetente, setConfRemetente] = useState<{ nome: string; chaves: string[] } | null>(
     null,
   );
@@ -635,7 +650,9 @@ function CtePage() {
     key: "nNF",
     dir: "asc",
   });
-  const [editingRascunhoId, setEditingRascunhoId] = useState<string | null>(null);
+  const [editingRascunhoId, setEditingRascunhoId] = useState<string | null>(
+    () => lerSnapshotCte()?.editingRascunhoId ?? null,
+  );
   const [statusTab, setStatusTab] = useState("embarque");
   const [mdfVincTab, setMdfVincTab] = useState("sem");
   const [respNome, setRespNome] = useState("");
@@ -1677,7 +1694,8 @@ function CtePage() {
     }
   };
 
-  const [open, setOpen] = useState(false);
+  // Volta do percurso: já nasce aberto (o snapshot é consumido no efeito abaixo)
+  const [open, setOpen] = useState(() => !!lerSnapshotCte());
   const emptyForm = {
     toma: "3",
     ieDestinatario: "",
@@ -1838,7 +1856,10 @@ function CtePage() {
   ];
   const PAGTO_VALIDOS = ["free-flow", "tag-transportador", "tag-tomador", "sem-pagamento"];
   const pagtoSeguro = (v: any) => (PAGTO_VALIDOS.includes(v) ? v : "sem-pagamento");
-  const [form, setForm] = useState(emptyForm);
+  const [form, setForm] = useState(() => {
+    const s = lerSnapshotCte();
+    return s?.form ? { ...emptyForm, ...s.form } : { ...emptyForm };
+  });
   const adicionarNfeManual = () => {
     const emit = manualNfe.emit.trim();
     const dest = manualNfe.dest.trim();
@@ -3780,22 +3801,31 @@ function CtePage() {
       toast.error("Erro ao carregar rascunho", { description: e.message });
     }
   };
-  // Volta do percurso (lápis): reabre o CT-e que estava sendo feito
-  // e reaplica o percurso FRESCO do banco (qualquer edição reflete na hora)
+  // Volta do percurso (lápis): o diálogo já nasceu aberto com o snapshot
+  // (initializers); aqui só consome o snapshot e finaliza o estado. O
+  // enriquecimento (rascunho + percurso FRESCO) roda no efeito seguinte,
+  // quando os documentos chegarem — sem flash da tela de embarque.
+  const snapPendenteRef = useRef<any>(null);
   const resumeCteRef = useRef(false);
   useEffect(() => {
     if (!empresa || resumeCteRef.current) return;
-    let snap: any = null;
-    try {
-      snap = JSON.parse(localStorage.getItem("cte_progress_snapshot") || "null");
-    } catch {
-      snap = null;
-    }
+    const snap = lerSnapshotCte();
     if (!snap) return;
     resumeCteRef.current = true;
     try {
       localStorage.removeItem("cte_progress_snapshot");
     } catch {}
+    setViewDoc(null);
+    setAba("geral");
+    setOpen(true);
+    if (snap.editingRascunhoId || snap.percursoId) snapPendenteRef.current = snap;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [empresa]);
+  // Enriquecimento da volta: rascunho completo + percurso fresco do banco
+  useEffect(() => {
+    const snap = snapPendenteRef.current;
+    if (!empresa || !snap || !docs) return;
+    snapPendenteRef.current = null;
     (async () => {
       const d = ((docs || []) as CteDoc[]).find((x) => x.id === snap.editingRascunhoId);
       if (d) {
@@ -3885,9 +3915,7 @@ function CtePage() {
           }
         } catch {}
       }
-      setViewDoc(null);
-      setAba("geral");
-      setOpen(true);
+      // Diálogo já está aberto com o snapshot; aqui só enriqueceu por baixo
     })();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [empresa, docs]);
