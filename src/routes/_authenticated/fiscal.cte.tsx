@@ -659,6 +659,23 @@ function CtePage() {
     () => lerSnapshotCte()?.editingRascunhoId ?? null,
   );
   const [statusTab, setStatusTab] = useState("embarque");
+  // Trocar de aba apaga TODA a memória e volta ao padrão (seleções, filtros, ordenação)
+  const trocarAba = (v: string) => {
+    setStatusTab(v);
+    setSelecionadas(new Set());
+    setEnvSel(new Set());
+    setMdfSel(new Set());
+    setImpSel(new Set());
+    setFiltroRemetente("TODOS REMETENTES");
+    setFiltroDestinatario("TODOS OS DESTINATÁRIOS");
+    const hoje = new Date();
+    const ini = new Date();
+    ini.setDate(hoje.getDate() - 15);
+    setPeriodoIni(ini.toISOString().slice(0, 10));
+    setPeriodoFim(hoje.toISOString().slice(0, 10));
+    setSortConfig({ key: "nNF", dir: "asc" });
+    setOrdDocs(null);
+  };
   const [mdfVincTab, setMdfVincTab] = useState("sem");
   const [respNome, setRespNome] = useState("");
   const [filtrosSalvosOpen, setFiltrosSalvosOpen] = useState(false);
@@ -6172,7 +6189,7 @@ function CtePage() {
       {isLoading ? (
         <div className="text-sm text-muted-foreground">Carregando…</div>
       ) : (
-        <Tabs value={statusTab} onValueChange={(v) => { setStatusTab(v); setSelecionadas(new Set()); setEnvSel(new Set()); setMdfSel(new Set()); setImpSel(new Set()); }} className="flex-1 min-h-0 flex flex-col">
+        <Tabs value={statusTab} onValueChange={trocarAba} className="flex-1 min-h-0 flex flex-col">
           {/* Cartão único: barra verde com título + abas + modo; conteúdo das abas abaixo */}
           <Card className="overflow-hidden border-2 border-primary/20 shadow-panel flex-1 min-h-0 flex flex-col">
             <div className="bg-primary text-primary-foreground px-3 py-1.5 flex flex-wrap items-center gap-x-3 gap-y-1.5 shrink-0">
