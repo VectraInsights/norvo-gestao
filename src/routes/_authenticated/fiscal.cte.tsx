@@ -7608,7 +7608,7 @@ function CtePage() {
               <TabsTrigger
                 value="geral"
                 className="rounded-t-md rounded-b-none text-xs data-[state=active]:bg-background data-[state=active]:shadow-sm data-[state=active]:text-primary"
-                title={tabOk.geral ? "Aba completa" : "Faltam dados nesta aba"}
+                title={tabOk.geral ? "Aba completa" : `Falta: ${tabFalta.geral.join("; ")}`}
               >
                 {tabDot(tabOk.geral, tabFalta.geral)}
                 <Settings2 className="mr-1 h-3 w-3" />
@@ -7617,7 +7617,7 @@ function CtePage() {
               <TabsTrigger
                 value="seguros"
                 className="rounded-t-md rounded-b-none text-xs data-[state=active]:bg-background data-[state=active]:shadow-sm data-[state=active]:text-primary"
-                title={tabOk.transporte ? "Aba completa" : "Faltam dados nesta aba"}
+                title={tabOk.transporte ? "Aba completa" : `Falta: ${tabFalta.transporte.join("; ")}`}
               >
                 {tabDot(tabOk.transporte, tabFalta.transporte)}
                 <Truck className="mr-1 h-3 w-3" />
@@ -7629,9 +7629,7 @@ function CtePage() {
                 title={
                   tabOk.trib
                     ? "Aba completa"
-                    : aliqIcmsEsp !== null && !aliqIcmsOk
-                      ? `Alíquota ICMS deveria ser ${aliqIcmsEsp}% p/ ${String(form.ufIni || "").toUpperCase()}→${String(form.ufFim || "").toUpperCase()}`
-                      : "Faltam dados nesta aba"
+                    : `Falta: ${tabFalta.trib.join("; ")}`
                 }
               >
                 {tabDot(tabOk.trib, tabFalta.trib)}
