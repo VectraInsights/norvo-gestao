@@ -3777,6 +3777,7 @@ function CtePage() {
     }
   };
   // Volta do percurso (lápis): reabre o CT-e que estava sendo feito
+  // e reaplica o percurso FRESCO do banco (qualquer edição reflete na hora)
   const resumeCteRef = useRef(false);
   useEffect(() => {
     if (!empresa || resumeCteRef.current) return;
@@ -3791,16 +3792,99 @@ function CtePage() {
     try {
       localStorage.removeItem("cte_progress_snapshot");
     } catch {}
-    const d = ((docs || []) as CteDoc[]).find((x) => x.id === snap.editingRascunhoId);
-    if (d) {
-      void editarRascunho(d);
-      return;
-    }
-    if (snap.form) setForm((f) => ({ ...emptyForm, ...snap.form }));
-    if (Array.isArray(snap.selecionadas)) setSelecionadas(new Set(snap.selecionadas));
-    setViewDoc(null);
-    setAba("geral");
-    setOpen(true);
+    (async () => {
+      const d = ((docs || []) as CteDoc[]).find((x) => x.id === snap.editingRascunhoId);
+      if (d) {
+        // Silencioso p/ NÃO armar o pularPercurso (senão o ICMS editado seria ignorado)
+        try {
+          await editarRascunho(d, true);
+        } catch {}
+      } else {
+        if (snap.form) setForm((f) => ({ ...emptyForm, ...snap.form }));
+        if (Array.isArray(snap.selecionadas)) setSelecionadas(new Set(snap.selecionadas));
+      }
+      // Percurso fresco direto do banco (bypassa o cache da lista)
+      if (snap.percursoId) {
+        try {
+          await qc.invalidateQueries({ queryKey: ["cte-percursos", empresa.id] });
+          const { data } = await supabase
+            .from("cte_percursos" as any)
+            .select("*")
+            .eq("id", snap.percursoId)
+            .maybeSingle();
+          const r = data as any;
+          if (r) {
+            const stdAliq = (v: any, fb: any) => (v && Number(v) !== 0 ? String(v) : fb);
+            setForm((f: any) => ({
+              ...f,
+              toma: r.toma_tipo || f.toma,
+              cnpjTomador: r.toma_cnpj || f.cnpjTomador,
+              xNomeTomador: r.toma_nome || f.xNomeTomador,
+              ieTomador: r.toma_ie || f.ieTomador,
+              ufTomador: r.toma_uf || f.ufTomador,
+              cMunTomador: r.toma_cmun || f.cMunTomador,
+              xMunTomador: r.toma_xmun || f.xMunTomador,
+              logradouroTomador: r.toma_logradouro || f.logradouroTomador,
+              nroTomador: r.toma_nro || f.nroTomador,
+              bairroTomador: r.toma_bairro || f.bairroTomador,
+              cepTomador: r.toma_cep || f.cepTomador,
+              foneTomador: r.toma_fone || f.foneTomador,
+              emailTomador: r.toma_email || f.emailTomador,
+              cMunIni: r.coleta_cmun || f.cMunIni,
+              xMunIni: r.coleta_xmun || f.xMunIni,
+              ufIni: r.coleta_uf || ufPorCMunIBGE(r.coleta_cmun) || f.ufIni,
+              ieDestinatario: f.ieDestinatario || r.dest_ie || f.ieDestinatario,
+              cMunFim: r.entrega_cmun || f.cMunFim,
+              xMunFim: r.entrega_xmun || f.xMunFim,
+              ufFim: r.entrega_uf || ufPorCMunIBGE(r.entrega_cmun) || f.ufFim,
+              cfop: r.cfop || f.cfop,
+              cnpjConsignatario: r.consig_cnpj || f.cnpjConsignatario,
+              xNomeConsignatario: r.consig_nome || f.xNomeConsignatario,
+              ieConsignatario: r.consig_ie || f.ieConsignatario,
+              ufConsignatario: r.consig_uf || f.ufConsignatario,
+              xMunConsignatario: r.consig_xmun || f.xMunConsignatario,
+              cepConsignatario: r.consig_cep || f.cepConsignatario,
+              logradouroConsignatario: r.consig_logradouro || f.logradouroConsignatario,
+              nroConsignatario: r.consig_nro || f.nroConsignatario,
+              bairroConsignatario: r.consig_bairro || f.bairroConsignatario,
+              cnpjRedespacho: r.redesp_cnpj || f.cnpjRedespacho,
+              xNomeRedespacho: r.redesp_nome || f.xNomeRedespacho,
+              ieRedespacho: r.redesp_ie || f.ieRedespacho,
+              ufRedespacho: r.redesp_uf || f.ufRedespacho,
+              xMunRedespacho: r.redesp_xmun || f.xMunRedespacho,
+              cepRedespacho: r.redesp_cep || f.cepRedespacho,
+              logradouroRedespacho: r.redesp_logradouro || f.logradouroRedespacho,
+              nroRedespacho: r.redesp_nro || f.nroRedespacho,
+              bairroRedespacho: r.redesp_bairro || f.bairroRedespacho,
+              seguradoraNome: r.seg_nome || f.seguradoraNome,
+              apolice: r.seg_apolice || f.apolice,
+              averbacao: r.seg_averbacao || f.averbacao,
+              rctrC: r.seg_rctr_c || f.rctrC,
+              rcfDc: r.seg_rcf_dc || f.rcfDc,
+              segAdicional: r.seg_adicional || f.segAdicional,
+              segTotal: r.seg_total || f.segTotal,
+              segRepassar: r.seg_repassar ? "S" : f.segRepassar,
+              segResponsavel: r.seg_responsavel || f.segResponsavel,
+              distanciaKm: r.distancia_km || f.distanciaKm,
+              duracaoHoras: r.duracao_horas || f.duracaoHoras,
+              icmsCST: r.icms_cst || f.icmsCST,
+              icmsAliq: r.icms_aliq || f.icmsAliq,
+              reducaoBase: (r.reducao_base || (f as any).reducaoBase) as string,
+              creditoOutorgado: (r.credito_outorgado || (f as any).creditoOutorgado) as string,
+              pisAliq: stdAliq(r.pis_aliq, f.pisAliq),
+              cofinsAliq: stdAliq(r.cofins_aliq, f.cofinsAliq),
+              irAliq: r.ir_aliq || f.irAliq,
+              inssAliq: r.inss_aliq || f.inssAliq,
+              csllAliq: r.csll_aliq || f.csllAliq,
+              ...(r.obs_gerais ? { obsGerais: r.obs_gerais } : {}),
+            }));
+          }
+        } catch {}
+      }
+      setViewDoc(null);
+      setAba("geral");
+      setOpen(true);
+    })();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [empresa, docs]);
   // Envio em lote da aba Aguardando envio: carrega cada rascunho no formulário
@@ -6329,7 +6413,7 @@ function CtePage() {
                       variant="outline"
                       size="sm"
                       disabled={selecionadas.size === 0}
-                      title="Seleciona todas as notas visíveis do mesmo trecho (mesmo remetente e destinatário da primeira selecionada)"
+                      title="Seleciona todas as notas visíveis do mesmo percurso (mesmo remetente e destinatário da primeira selecionada)"
                       onClick={() => {
                         const ref = mercadoriasSorted.find((m) => selecionadas.has(m.chave));
                         if (!ref) {
@@ -6345,7 +6429,7 @@ function CtePage() {
                         toast.success(`${iguais.length} NF-e(s) selecionadas`);
                       }}
                     >
-                      <Copy className="mr-1 h-3 w-3" /> Mesmo trecho
+                      <Copy className="mr-1 h-3 w-3" /> Mesmo percurso
                     </Button>
                     <Button
                       variant="outline"
@@ -7594,6 +7678,7 @@ function CtePage() {
                               form,
                               selecionadas: [...selecionadas],
                               editingRascunhoId,
+                              percursoId: (percursoMatch as any).id,
                             }),
                           );
                         } catch {}
