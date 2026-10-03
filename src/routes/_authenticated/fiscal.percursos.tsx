@@ -709,6 +709,37 @@ function PercursosPage() {
     },
   });
 
+  // Chegada via CT-e (lápis ao lado do percurso): abre a edição direto e volta ao salvar
+  useEffect(() => {
+    if (!empresa) return;
+    let ed: any = null;
+    try {
+      ed = JSON.parse(localStorage.getItem("edit_percurso_from_cte") || "null");
+    } catch {
+      ed = null;
+    }
+    if (!ed?.id) return;
+    try {
+      localStorage.removeItem("edit_percurso_from_cte");
+    } catch {}
+    voltarCteRef.current = ed.returnTo === "/fiscal/cte";
+    (async () => {
+      try {
+        const { data } = await supabase
+          .from("cte_percursos" as any)
+          .select("*")
+          .eq("id", ed.id)
+          .maybeSingle();
+        if (data) {
+          setEditing({ ...(data as any) });
+          setPercTab("geral");
+        } else toast.error("Percurso não encontrado");
+      } catch {
+        toast.error("Falha ao abrir percurso");
+      }
+    })();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [empresa]);
   // Chegada via CT-e (Gerar sem percurso): abre rascunho pré-preenchido e volta ao salvar
   useEffect(() => {
     if (!empresa || !percursos) return;

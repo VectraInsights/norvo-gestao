@@ -7537,6 +7537,7 @@ function CtePage() {
                 </div>
                 <div>
                   <Label className="text-[10px] text-muted-foreground">Percurso</Label>
+                  <div className="flex items-center gap-1">
                     <Input
                       className="h-7 text-xs font-mono w-[76px] text-center px-1 bg-transparent"
                       value={percursoMatch?.codigo || "—"}
@@ -7547,6 +7548,26 @@ function CtePage() {
                           : "Nenhum percurso associado"
                       }
                     />
+                    <Button
+                      size="icon"
+                      variant="ghost"
+                      className="h-7 w-7 shrink-0 text-muted-foreground"
+                      disabled={!percursoMatch?.id}
+                      title="Editar este percurso"
+                      onClick={() => {
+                        if (!percursoMatch?.id) return;
+                        try {
+                          localStorage.setItem(
+                            "edit_percurso_from_cte",
+                            JSON.stringify({ id: (percursoMatch as any).id, returnTo: "/fiscal/cte" }),
+                          );
+                        } catch {}
+                        navigate({ to: "/fiscal/percursos" } as any);
+                      }}
+                    >
+                      <Pencil className="h-3.5 w-3.5" />
+                    </Button>
+                  </div>
                 </div>
               </div>
               <div className="border rounded p-3 bg-muted/20">
