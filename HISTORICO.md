@@ -4270,4 +4270,7 @@ Espelhado na Vercel.
   seleção, e o duplo-clique seleciona o valor inteiro.
 - Seleção + dígito recomeça o número do zero (o anterior apaga);
   seleção + Backspace/Delete limpa o campo.
+- Excluir rascunho limpa a seleção (as NF-es voltavam a pendentes e
+  reapareciam marcadas no embarque); trocar de aba da página limpa
+  todas as marcações (embarque, lote, MDF-e, importação).
 
