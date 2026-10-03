@@ -5368,7 +5368,7 @@ function CtePage() {
           <EmptyState icon={Truck} title="Nenhum CT-e" description={`Nenhum CT-e ${rotulo}.`} />
         ) : (
           <Card className="overflow-hidden">
-            <Table>
+            <Table className="[&_td]:px-2 [&_td]:py-1.5 [&_td]:text-[11px] [&_th]:px-2">
               <TableHeader>
                 <TableRow>
                   {rotulo === "autorizados" && !semSelecao && (
@@ -5503,7 +5503,7 @@ function CtePage() {
                       {info.placas.length ? info.placas.join(" / ") : "—"}
                     </TableCell>
                     <TableCell
-                      className="text-xs max-w-[160px] truncate"
+                      className="text-xs max-w-[120px] truncate"
                       title={info.motorista || ""}
                     >
                       {info.motorista || "—"}
@@ -5520,14 +5520,14 @@ function CtePage() {
                       ) : null}
                     </TableCell>
                     <TableCell>{d.serie ?? "—"}</TableCell>
-                    <TableCell className="text-xs max-w-[220px] truncate" title={nNFs.join(", ")}>
+                    <TableCell className="text-xs max-w-[180px] truncate" title={nNFs.join(", ")}>
                       {nNFs.length > 0 ? nNFs.join(", ") : d.chave_acesso ? "—" : "—"}
                     </TableCell>
                     <TableCell className="text-right">
                       {brl(Number(d.valor_servico ?? 0))}
                     </TableCell>
                     <TableCell
-                      className="text-xs max-w-[140px] truncate"
+                      className="text-xs max-w-[100px] truncate"
                       title={(d as any).responsavel_emissao || ""}
                     >
                       {(d as any).responsavel_emissao || "—"}
@@ -5535,7 +5535,7 @@ function CtePage() {
                     <TableCell className="text-xs whitespace-nowrap">
                       {info.dataEmi || "—"}
                     </TableCell>
-                    <TableCell className="flex gap-1 justify-end pl-1 flex-wrap max-w-[220px]">
+                    <TableCell className="flex gap-0.5 justify-end pl-1 whitespace-nowrap [&_button]:h-6 [&_button]:w-6 [&_svg]:h-3 [&_svg]:w-3">
                       {isRascunho ? (
                         <>
                           <Button
