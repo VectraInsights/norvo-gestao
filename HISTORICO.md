@@ -4161,4 +4161,9 @@ Espelhado na Vercel.
   do próprio doc (via `nfesTodas`) quando visualizando.
 - Efeitos de auto-percurso/entrega/coleta não rodam em visualização
   (antes reescreviam o form exibido com dados do embarque).
+- Causa raiz do MARABA/AP: percurso sem `entrega_cmun` fazia o
+  `cMunFim` herdar a NF-e (Macapá) e a UF derivava AP. Salvar
+  percurso agora preenche `coleta/entrega_cmun` pelo IBGE; emissão e
+  prévia resolvem o cMun pela cidade+UF (backstop p/ percursos
+  antigos). Visualizar CT-e carrega as NF-es do documento.
 
