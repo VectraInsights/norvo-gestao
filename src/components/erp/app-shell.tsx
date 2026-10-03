@@ -79,6 +79,21 @@ export function AppShell({ children }: { children: ReactNode }) {
       return next;
     });
   };
+  // Subcategoria aberta (ex. /fiscal/cte) esconde o menu p/ dar espaço —
+  // só ao entrar vindo de rota de topo; entre sub-rotas respeita o manual.
+  const lastDepth = useRef<number | null>(null);
+  useEffect(() => {
+    const depth = location.pathname.split("/").filter(Boolean).length;
+    if (depth >= 2 && (lastDepth.current === null || lastDepth.current < 2)) {
+      setCollapsed(true);
+      try {
+        window.localStorage.setItem("norvo-sidebar-collapsed", "1");
+      } catch {
+        // localStorage indisponível
+      }
+    }
+    lastDepth.current = depth;
+  }, [location.pathname]);
   // Todos os grupos começam fechados por padrão
   const [openGroups, setOpenGroups] = useState<Record<string, boolean>>({});
   const closeAllGroups = useCallback(() => setOpenGroups({}), []);

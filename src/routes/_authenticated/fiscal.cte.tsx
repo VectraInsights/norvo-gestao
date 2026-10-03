@@ -5388,7 +5388,7 @@ function CtePage() {
           <EmptyState icon={Truck} title="Nenhum CT-e" description={`Nenhum CT-e ${rotulo}.`} />
         ) : (
           <Card className="overflow-hidden">
-            <Table className="[&_td]:px-2 [&_td]:py-1.5 [&_td]:text-[11px] [&_th]:px-2">
+            <Table className="[&_td]:px-2 [&_td]:py-1.5 [&_td]:text-[13px] [&_td]:text-center [&_th]:px-2 [&_td]:border-l [&_td]:border-border/40 [&_td:first-child]:border-l-0 [&_th]:border-l [&_th]:border-border/40 [&_th:first-child]:border-l-0">
               <TableHeader>
                 <TableRow>
                   {rotulo === "autorizados" && !semSelecao && (
@@ -5543,7 +5543,7 @@ function CtePage() {
                     <TableCell className="text-xs max-w-[180px] truncate" title={nNFs.join(", ")}>
                       {nNFs.length > 0 ? nNFs.join(", ") : d.chave_acesso ? "—" : "—"}
                     </TableCell>
-                    <TableCell className="text-right">
+                    <TableCell className="text-center">
                       {brl(Number(d.valor_servico ?? 0))}
                     </TableCell>
                     <TableCell
@@ -5555,7 +5555,7 @@ function CtePage() {
                     <TableCell className="text-xs whitespace-nowrap">
                       {info.dataEmi || "—"}
                     </TableCell>
-                    <TableCell className="flex gap-0.5 justify-end pl-1 whitespace-nowrap [&_button]:h-6 [&_button]:w-6 [&_svg]:h-3 [&_svg]:w-3">
+                    <TableCell className="flex gap-0.5 justify-center pl-1 whitespace-nowrap [&_button]:h-6 [&_button]:w-6 [&_svg]:h-3 [&_svg]:w-3">
                       {isRascunho ? (
                         <>
                           <Button
