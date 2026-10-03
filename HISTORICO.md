@@ -4205,3 +4205,12 @@ Espelhado na Vercel.
 - Revert de cancel no servidor também extrai `<infNFe><chave>`
   (antes só `<chNFe>`).
 
+## CT-e: layout da emissão (03/10)
+
+- Rodapé com hierarquia: Fechar (fantasma), Rascunho/Prévia
+  secundários, Enviar em destaque. "Cancelar" virou "Fechar".
+- Barra "Pronto p/ emitir n/6" (tomador, percurso, tração/motorista,
+  tributos, NF-es, seguro) — só informativa.
+- Selo "Percurso 0001 aplicado às HH:MM" no cabeçalho do diálogo.
+- Faixa de somente leitura no autorizado/rejeitado/cancelado.
+
