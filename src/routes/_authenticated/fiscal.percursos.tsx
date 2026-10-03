@@ -926,6 +926,12 @@ function PercursosPage() {
     mutationFn: async () => {
       if (!editing) throw new Error("Nada para salvar");
       const pend: string[] = [];
+      // Coleta/entrega: cidade sem UF gera CT-e com fim errado (UF cai no
+      // fallback da NF-e). Exige a UF junto.
+      if (String((editing as any).coleta_xmun || "").trim() && !String((editing as any).coleta_uf || "").trim())
+        pend.push("UF da coleta");
+      if (String((editing as any).entrega_xmun || "").trim() && !String((editing as any).entrega_uf || "").trim())
+        pend.push("UF da entrega");
       for (const p of [
         { k: "consig", label: "Consignatario" },
         { k: "redesp", label: "Redespacho" },

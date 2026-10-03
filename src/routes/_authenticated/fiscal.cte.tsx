@@ -4573,6 +4573,16 @@ function CtePage() {
   };
   const aplicarPercurso = (r: Record<string, any>) => {
     const stdAliq = (v: any, fb: any) => (v && Number(v) !== 0 ? String(v) : fb);
+    // UF pelo código IBGE do município (2 primeiros dígitos): o percurso pode
+    // estar com cidade preenchida e UF vazia — sem isso a UF cai no fallback
+    // da NF-e (destinatário) e o CT-e sai com fim errado (ex. MARABA/AP).
+    const UF_POR_IBGE: Record<string, string> = {
+      "11": "RO", "12": "AC", "13": "AM", "14": "RR", "15": "PA", "16": "AP", "17": "TO",
+      "21": "MA", "22": "PI", "23": "CE", "24": "RN", "25": "PB", "26": "PE", "27": "AL",
+      "28": "SE", "29": "BA", "31": "MG", "32": "ES", "33": "RJ", "35": "SP",
+      "41": "PR", "42": "SC", "43": "RS", "50": "MS", "51": "MT", "52": "GO", "53": "DF",
+    };
+    const ufPorCMun = (cMun: unknown) => UF_POR_IBGE[String(cMun || "").replace(/\D/g, "").slice(0, 2)] || "";
     // IE do destinatário: NF-e (XML) > contato > percurso > mantém
     const destDocP = String(r.dest_cnpj || "").replace(/\D/g, "");
     const nfeDest =
@@ -4600,11 +4610,11 @@ function CtePage() {
       emailTomador: r.toma_email || f.emailTomador,
       cMunIni: r.coleta_cmun || f.cMunIni,
       xMunIni: r.coleta_xmun || f.xMunIni,
-      ufIni: r.coleta_uf || f.ufIni,
+      ufIni: r.coleta_uf || ufPorCMun(r.coleta_cmun) || f.ufIni,
       ieDestinatario: ieDestNfe || ieDestContato || r.dest_ie || (f as any).ieDestinatario || "",
       cMunFim: r.entrega_cmun || f.cMunFim,
       xMunFim: r.entrega_xmun || f.xMunFim,
-      ufFim: r.entrega_uf || f.ufFim,
+      ufFim: r.entrega_uf || ufPorCMun(r.entrega_cmun) || f.ufFim,
       cfop: r.cfop || f.cfop,
       cnpjConsignatario: r.consig_cnpj || f.cnpjConsignatario,
       xNomeConsignatario: r.consig_nome || f.xNomeConsignatario,
