@@ -4214,3 +4214,13 @@ Espelhado na Vercel.
 - Selo "Percurso 0001 aplicado às HH:MM" no cabeçalho do diálogo.
 - Faixa de somente leitura no autorizado/rejeitado/cancelado.
 
+## CT-e: lista, logs e erros (03/10)
+
+- Linha do autorizado enxuta: saíram Baixar XML/PDF (ficam no
+  Exportar); placas lado a lado (`whitespace-nowrap`); botão
+  "Mesmo rem./dest." virou "Mesmo trecho".
+- Logs sem dados sensíveis: CNPJ/CPF/chave mascarados, sem dump de
+  form/XML/base64 (`maskDoc` em sefaz-ambiente).
+- Erros da SEFAZ traduzidos (`erroSefazAmigavel`): HTML/HTTP vira
+  texto curto, rejeição de negócio mantém o motivo limpo.
+
