@@ -856,6 +856,10 @@ function CtePage() {
       xmlStr = xmlStr.replace(/\s+xmlns(?::[\w-]+)?="[^"]*"/g, "");
       const xmlDoc = parser.parseFromString(xmlStr, "text/xml");
       const tag = (sel: string) => xmlDoc.querySelector(sel)?.textContent || "";
+      // Leitura imune a namespace (regex no XML cru): querySelector pode falhar
+      // conforme o motor — o DACTE saía com a UF do form (ex. MARABA/AP).
+      const ideXml = xmlStr.match(/<ide>([\s\S]*?)<\/ide>/)?.[1] || "";
+      const ideTag = (t: string) => ideXml.match(new RegExp(`<${t}>([^<]*)<\/${t}>`))?.[1] || "";
       const nFes = Array.from(xmlDoc.querySelectorAll("det")).map((det) => ({
         nNF: det.querySelector("infNFe > ide > nNF")?.textContent || "",
         serie: det.querySelector("infNFe > ide > serie")?.textContent || "1",
@@ -1477,11 +1481,23 @@ function CtePage() {
           "",
         naturezaOperacao: tag("infCte > ide > natOp") || "TRANSPORTE",
         origemCidade:
-          tag("det > xMunIni") || tag("infCte > ide > xMunIni") || pjForm.xMunIni || percColX || "",
-        origemUF: tag("infCte > ide > UFIni") || pjForm.ufIni || percColU || "",
+          tag("det > xMunIni") ||
+          ideTag("xMunIni") ||
+          tag("infCte > ide > xMunIni") ||
+          pjForm.xMunIni ||
+          percColX ||
+          "",
+        origemUF:
+          ideTag("UFIni") || tag("infCte > ide > UFIni") || pjForm.ufIni || percColU || "",
         destinoCidade:
-          tag("det > xMunFim") || tag("infCte > ide > xMunFim") || pjForm.xMunFim || percEntX || "",
-        destinoUF: tag("infCte > ide > UFFim") || pjForm.ufFim || percEntU || "",
+          tag("det > xMunFim") ||
+          ideTag("xMunFim") ||
+          tag("infCte > ide > xMunFim") ||
+          pjForm.xMunFim ||
+          percEntX ||
+          "",
+        destinoUF:
+          ideTag("UFFim") || tag("infCte > ide > UFFim") || pjForm.ufFim || percEntU || "",
         valorServico:
           parseFloat(tag("infCte > vPrest > vTPrest")) || Number(doc.valor_servico) || 0,
         valorCarga:
