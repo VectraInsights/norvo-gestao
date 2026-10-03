@@ -4154,9 +4154,7 @@ Espelhado na Vercel.
   registro no `__root` — Chrome no PC passa a oferecer Instalar.
   100% online (sem cache).
 
-## CT-e: visualizar não reescreve percurso/entrega (03/10)
-
-- Abrir os dados de um CT-e mostrava o percurso do EMBARQUE (ex.
+## CT-e: visualizar não reescreve percurso/entrega (03/10)- Abrir os dados de um CT-e mostrava o percurso do EMBARQUE (ex.
   0003) em vez do documento (0001): `docsAtuais()` agora usa as NF-es
   do próprio doc (via `nfesTodas`) quando visualizando.
 - Efeitos de auto-percurso/entrega/coleta não rodam em visualização
@@ -4166,4 +4164,11 @@ Espelhado na Vercel.
   percurso agora preenche `coleta/entrega_cmun` pelo IBGE; emissão e
   prévia resolvem o cMun pela cidade+UF (backstop p/ percursos
   antigos). Visualizar CT-e carrega as NF-es do documento.
+
+## CT-e: DACTE lê cidades/UF por regex (03/10)
+
+- O DACTE tentava o XML primeiro (`tag()`), mas o `querySelector`
+  falha em silêncio com namespace conforme o motor — caía no form
+  velho (AP). Leitura do `ide` agora por regex no XML cru, comprovada
+  contra o XML do 542 (MARABA/PA).
 
