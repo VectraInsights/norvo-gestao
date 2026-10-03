@@ -295,9 +295,16 @@ function chavesNFeDoXml(xmlAssinado: string | null): string[] {
       if (typeof p.xml === "string" && p.xml.includes("<")) {
         for (const c of chavesNFeDoXml(p.xml)) out.add(c);
       }
+      // nfs[] (rascunho com dados) e chavesNFe[] (rascunho só com chaves)
       if (Array.isArray(p.nfs)) {
         for (const nf of p.nfs) {
           const d = String(nf?.chave || "").replace(/\D/g, "");
+          if (d.length === 44) out.add(d);
+        }
+      }
+      if (Array.isArray(p.chavesNFe)) {
+        for (const c of p.chavesNFe) {
+          const d = String(c || "").replace(/\D/g, "");
           if (d.length === 44) out.add(d);
         }
       }
@@ -4305,10 +4312,14 @@ function CtePage() {
             rascunhoNfs.length,
           );
           if (chavesNfe.length > 0) {
+            // Não rouba NF já reutilizada em outro CT-e autorizado/rascunho
+            const emUso = await chavesEmUso();
+            const livres = chavesNfe.filter((c) => !emUso.has(c));
+            if (livres.length === 0) return;
             const { count, error: revErr } = await supabase
               .from("cte_nfes_pendentes" as any)
               .update({ status: "pendente" })
-              .in("chave", chavesNfe)
+              .in("chave", livres)
               .eq("empresa_id", empresa.id)
               .select("chave", { count: "exact", head: true });
             console.log("[CTE-CANCEL-REVERT] update count:", count);
@@ -4383,6 +4394,21 @@ function CtePage() {
   // Reparo: devolve p/ embarque as NF-es presas em CT-es já cancelados
   // (cancelamentos antigos de CT-e Normal não revertiam: o extrator só lia <chNFe>).
   const [devolvendoNfes, setDevolvendoNfes] = useState(false);
+  // NF-es vinculadas a CT-e autorizado ou rascunho NUNCA voltam (já têm dono).
+  const chavesEmUso = async (): Promise<Set<string>> => {
+    const emUso = new Set<string>();
+    if (!empresa) return emUso;
+    const { data } = await supabase
+      .from("cte_documentos" as any)
+      .select("xml_assinado")
+      .eq("empresa_id", empresa.id)
+      .in("status", ["autorizado", "rascunho"])
+      .limit(500);
+    for (const d of ((data as any[]) || [])) {
+      for (const c of chavesNFeDoXml((d as any)?.xml_assinado)) emUso.add(c);
+    }
+    return emUso;
+  };
   const devolverNfesCancelados = async () => {
     if (!empresa || devolvendoNfes) return;
     const docs = docsByStatus.cancelados;
@@ -4391,20 +4417,30 @@ function CtePage() {
     try {
       const chaves = new Set<string>();
       for (const d of docs) for (const c of chavesNFeDoXml(d.xml_assinado)) chaves.add(c);
-      if (!chaves.size) {
-        toast.info("Nenhuma NF-e encontrada nos CT-es cancelados");
+      const emUso = await chavesEmUso();
+      const livres = [...chaves].filter((c) => !emUso.has(c));
+      const presas = chaves.size - livres.length;
+      if (!livres.length) {
+        toast.info(
+          presas > 0
+            ? "Todas as NF-es dos cancelados já estão em CT-e autorizado/rascunho"
+            : "Nenhuma NF-e encontrada nos CT-es cancelados",
+        );
         return;
       }
       const { count, error } = await supabase
         .from("cte_nfes_pendentes" as any)
         .update({ status: "pendente" })
-        .in("chave", [...chaves])
+        .in("chave", livres)
         .eq("empresa_id", empresa.id)
         .select("chave", { count: "exact", head: true });
       if (error) throw error;
       qc.invalidateQueries({ queryKey: ["cte-nfes-pendentes", empresa.id] });
       if (count)
-        toast.success(`${count} NF-e(s) devolvidas p/ embarque`);
+        toast.success(
+          `${count} NF-e(s) devolvidas p/ embarque` +
+            (presas > 0 ? ` (${presas} mantidas em CT-e válido)` : ""),
+        );
       else
         toast.warning("NF-es dos cancelados não encontradas para devolução");
     } catch (e: any) {
