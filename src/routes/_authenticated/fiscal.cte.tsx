@@ -1787,8 +1787,6 @@ function CtePage() {
     chaveCompAnulacao: "",
     dataDeclaracao: "",
     obsGerais: "",
-    obsAnulacao: "",
-    obsGlobalizado: "",
     adicionalPed: "0.00",
     descontoPed: "0.00",
     outrosPed: "0.00",
@@ -4897,8 +4895,6 @@ function CtePage() {
               })(),
             },
             obsGerais: (form as any).obsGerais || "",
-            obsAnulacao: (form as any).obsAnulacao || "",
-            obsGlobalizado: (form as any).obsGlobalizado || "",
             reducaoBase: parseFloat((form as any).reducaoBase) || 0,
             cMunEnv: form.cMunEnv,
             xMunEnv: form.xMunEnv,
@@ -9764,26 +9760,6 @@ function CtePage() {
                   className="min-h-[120px] text-xs font-mono resize-none"
                   value={(form as any).obsGerais || ""}
                   onChange={(e) => setForm({ ...form, obsGerais: e.target.value } as any)}
-                />
-              </Card>
-              <Card className="p-3">
-                <div className="bg-primary/8 border-b border-primary/20 -m-3 mb-1 px-2 py-1 text-[10px] font-semibold uppercase tracking-wide text-primary/80">
-                  Observações CT-e Anulação/Substituição
-                </div>
-                <Textarea
-                  className="min-h-[60px] text-xs font-mono resize-none"
-                  value={(form as any).obsAnulacao || ""}
-                  onChange={(e) => setForm({ ...form, obsAnulacao: e.target.value } as any)}
-                />
-              </Card>
-              <Card className="p-3">
-                <div className="bg-primary/8 border-b border-primary/20 -m-3 mb-1 px-2 py-1 text-[10px] font-semibold uppercase tracking-wide text-primary/80">
-                  Observações CT-e Globalizado
-                </div>
-                <Textarea
-                  className="min-h-[60px] text-xs font-mono resize-none"
-                  value={(form as any).obsGlobalizado || ""}
-                  onChange={(e) => setForm({ ...form, obsGlobalizado: e.target.value } as any)}
                 />
               </Card>
             </TabsContent>
