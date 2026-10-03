@@ -4143,3 +4143,15 @@ Espelhado na Vercel.
   início/fim sobrescritos pelos valores do XML (`formUfsDoXml`, nos
   dois caminhos de gravação) — DACTE certo mesmo com bundle antigo.
 
+## CT-e: DACTE em construtor único + PWA (03/10)
+
+- Não precisa de dois: a prévia recebe o XML (`previewCteXmlFn`
+  retorna), então usa o mesmo `gerarDacteBlob` via componente
+  `PreviewDacte` — o objeto form-based de ~140 linhas foi removido.
+- De quebra, o DACTE do Normal agora lista as NF-es (lia só `det`
+  do Simp; agora lê `infDoc/infNFe/chave` + pendentes) e o
+  auto-percurso usa cidades do `ide` quando não há `det`.
+- PWA: `manifest.webmanifest` + ícones 192/512 + `sw.js` mínimo +
+  registro no `__root` — Chrome no PC passa a oferecer Instalar.
+  100% online (sem cache).
+
