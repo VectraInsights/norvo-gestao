@@ -74,8 +74,25 @@ export const MoneyInput = forwardRef<HTMLInputElement, Props>(function MoneyInpu
           (onDoubleClick as any)?.(e);
         }}
         onKeyDown={(e) => {
-          // Sempre manter caret no fim antes de processar a tecla — garante empurrão para esquerda
           const el = e.currentTarget as HTMLInputElement;
+          const selIni = el.selectionStart ?? el.value.length;
+          const selFim = el.selectionEnd ?? el.value.length;
+          // Com seleção ativa, dígito recomeça o número do zero (apaga o
+          // anterior) em vez de anexar no fim; apagar limpa o campo
+          if (selFim > selIni) {
+            if (/^\d$/.test(e.key)) {
+              e.preventDefault();
+              onChange((Number(e.key) / f).toFixed(decimals));
+              moveCaretToEnd(el);
+              return;
+            }
+            if (e.key === "Backspace" || e.key === "Delete") {
+              e.preventDefault();
+              onChange("");
+              return;
+            }
+          }
+          // Sempre manter caret no fim antes de processar a tecla — garante empurrão para esquerda
           if (el.selectionStart !== el.value.length || el.selectionEnd !== el.value.length) {
             e.preventDefault();
             moveCaretToEnd(el);
