@@ -110,11 +110,12 @@ export function AppShell({ children }: { children: ReactNode }) {
     } catch {
       // localStorage indisponível
     }
-    if (grupo) setOpenGroups((g) => ({ ...g, [grupo]: true }));
+    if (grupo) setOpenGroups({ [grupo]: true });
   };
   const closeAllGroups = useCallback(() => setOpenGroups({}), []);
   const toggleGroup = (label: string) => {
-    setOpenGroups((g) => ({ ...g, [label]: !g[label] }));
+    // Acordeão: abrir um grupo fecha os demais; clicar no aberto fecha tudo
+    setOpenGroups((g) => (g[label] ? {} : { [label]: true }));
   };
   const sidebarRef = useRef<HTMLElement | null>(null);
   const navRef = useRef<HTMLElement | null>(null);
@@ -261,7 +262,12 @@ export function AppShell({ children }: { children: ReactNode }) {
         const groupLabel = target.getAttribute("data-nav-group");
         if (target.tagName === "BUTTON" && groupLabel) {
           ev.preventDefault();
-          setOpenGroups((g) => ({ ...g, [groupLabel]: ev.key === "ArrowRight" }));
+          setOpenGroups((g) => {
+            if (ev.key === "ArrowRight") return { [groupLabel]: true };
+            const novo = { ...g };
+            delete novo[groupLabel];
+            return novo;
+          });
         }
         return;
       }
