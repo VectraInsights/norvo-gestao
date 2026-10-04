@@ -617,6 +617,15 @@ function NotasRecebidas() {
       forma_pagamento: "Boleto",
       conta_bancaria_id: "",
     }));
+    if (parsedParcelas.length === 0) {
+      parsedParcelas.push({
+        numero: "001",
+        dataVencimento: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split("T")[0],
+        valor: totalCalculado,
+        forma_pagamento: "Boleto",
+        conta_bancaria_id: "",
+      });
+    }
 
     return { chave: parsedChave, emitente: parsedEmitente, cnpj, nNF, total: totalCalculado, produtos: parsedProdutos, parcelas: parsedParcelas };
   };
@@ -655,9 +664,7 @@ function NotasRecebidas() {
 
       setImportResults(pendentes[0]);
       setFilaXml(pendentes.slice(1));
-      toast.success(pendentes.length === 1
-        ? "XML analisado e mapeado com sucesso! Verifique os itens antes de confirmar."
-        : `${pendentes.length} XMLs analisados. Confirme cada nota na sequência.`);
+      toast.success("XML(s) importados(s).");
     } finally {
       setIsProcessing(false);
     }
@@ -1707,43 +1714,144 @@ function NotasRecebidas() {
                   </div>
                 </div>
 
-                <div className="grid gap-4 sm:grid-cols-2">
-                  <div className="flex gap-3 rounded-lg border border-emerald-500/20 bg-emerald-500/5 p-4">
-                    <CheckCircle2 className="h-5 w-5 text-emerald-500 shrink-0" />
-                    <div>
-                      <h4 className="text-sm font-semibold text-foreground">Estoque Pronto</h4>
-                      <p className="text-xs text-muted-foreground mt-0.5">
-                        {importResults.produtos.length} produtos identificados e {importResults.produtos.reduce((acc, p) => acc + p.qtd, 0)} unidades serão somadas ao estoque atual.
-                      </p>
-                    </div>
+                <div className="flex gap-3 rounded-lg border border-emerald-500/20 bg-emerald-500/5 p-4">
+                  <CheckCircle2 className="h-5 w-5 text-emerald-500 shrink-0" />
+                  <div>
+                    <h4 className="text-sm font-semibold text-foreground">Estoque Pronto</h4>
+                    <p className="text-xs text-muted-foreground mt-0.5">
+                      {importResults.produtos.length} produtos identificados e {importResults.produtos.reduce((acc, p) => acc + p.qtd, 0)} unidades serão somadas ao estoque atual.
+                    </p>
                   </div>
+                </div>
 
-                  <div className="flex gap-3 rounded-lg border border-sky-500/20 bg-sky-500/5 p-4">
-                    <Archive className="h-5 w-5 text-sky-500 shrink-0" />
-                    <div>
-                      <h4 className="text-sm font-semibold text-foreground">Financeiro Programado</h4>
-                      {importResults.parcelas.length > 0 ? (
-                        <div className="mt-1 space-y-1">
-                          <p className="text-xs text-muted-foreground">
-                            {importResults.parcelas.length} parcela(s) serão geradas para {importResults.emitente}:
-                          </p>
-                          {importResults.parcelas.map((parc, i) => (
-                            <div key={i} className="flex justify-between text-xs">
-                              <span className="text-muted-foreground">{parc.numero} — {dateBR(parc.dataVencimento)}</span>
-                              <span className="font-medium text-tabular">{brl(parc.valor)}</span>
-                            </div>
-                          ))}
-                          <p className="text-xs text-muted-foreground pt-1 border-t">
-                            Total: <span className="font-medium">{brl(importResults.parcelas.reduce((acc, p) => acc + p.valor, 0))}</span>
-                          </p>
-                        </div>
-                      ) : (
-                        <p className="text-xs text-muted-foreground mt-0.5">
-                          Será gerado 1 título a pagar para o fornecedor {importResults.emitente} no valor de {brl(importResults.total)} com vencimento em 30 dias.
-                        </p>
-                      )}
+                <div className="rounded-lg border border-sky-500/20 bg-sky-500/5 p-4">
+                  <div className="flex items-center justify-between mb-2">
+                    <div className="flex items-center gap-2">
+                      <Archive className="h-5 w-5 text-sky-500 shrink-0" />
+                      <h4 className="text-sm font-semibold text-foreground">Parcelas do Contas a Pagar</h4>
                     </div>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      className="h-7 text-xs"
+                      onClick={() => {
+                        const novas = [...importResults.parcelas];
+                        const ultima = novas[novas.length - 1];
+                        const baseMs = ultima?.dataVencimento ? Date.parse(`${ultima.dataVencimento}T00:00:00`) : NaN;
+                        const base = Number.isNaN(baseMs) ? Date.now() : baseMs;
+                        novas.push({
+                          numero: String(novas.length + 1).padStart(3, "0"),
+                          dataVencimento: new Date(base + 30 * 24 * 60 * 60 * 1000).toISOString().split("T")[0],
+                          valor: 0,
+                          forma_pagamento: "Boleto",
+                          conta_bancaria_id: "",
+                        });
+                        setImportResults({ ...importResults, parcelas: novas });
+                      }}
+                    >
+                      + Adicionar Parcela
+                    </Button>
                   </div>
+                  {importResults.parcelas.length === 0 ? (
+                    <p className="text-xs text-muted-foreground">
+                      Nenhuma parcela. Adicione parcelas manualmente ou deixe vazio para gerar 1 título com vencimento em 30 dias.
+                    </p>
+                  ) : (
+                    <div className="space-y-2">
+                      {importResults.parcelas.map((p, i) => (
+                        <div key={i} className="flex flex-wrap items-center gap-2">
+                          <Input
+                            className="h-8 w-16 text-xs font-mono text-center shrink-0"
+                            value={p.numero}
+                            onChange={(e) => {
+                              const novas = [...importResults.parcelas];
+                              novas[i] = { ...novas[i], numero: e.target.value };
+                              setImportResults({ ...importResults, parcelas: novas });
+                            }}
+                          />
+                          <DateInput
+                            className="h-8 text-xs shrink-0 w-[160px]"
+                            value={p.dataVencimento}
+                            onChange={(v) => {
+                              const novas = [...importResults.parcelas];
+                              novas[i] = { ...novas[i], dataVencimento: v };
+                              setImportResults({ ...importResults, parcelas: novas });
+                            }}
+                          />
+                          <MoneyInput
+                            value={String(p.valor ?? 0)}
+                            onChange={(v) => {
+                              const novas = [...importResults.parcelas];
+                              novas[i] = { ...novas[i], valor: parseFloat(v) || 0 };
+                              setImportResults({ ...importResults, parcelas: novas });
+                            }}
+                            className="h-8 text-xs text-right w-[140px] shrink-0"
+                            placeholder="0,00"
+                          />
+                          <Select
+                            value={p.forma_pagamento || "Boleto"}
+                            onValueChange={(v) => {
+                              const novas = [...importResults.parcelas];
+                              novas[i] = { ...novas[i], forma_pagamento: v };
+                              setImportResults({ ...importResults, parcelas: novas });
+                            }}
+                          >
+                            <SelectTrigger className="h-8 text-xs w-[150px] shrink-0">
+                              <SelectValue placeholder="Forma" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {FORMAS_PARCELA.map((f) => (
+                                <SelectItem key={f} value={f}>{f}</SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                          <Combobox
+                            value={p.conta_bancaria_id || "__none__"}
+                            onChange={(v) => {
+                              const novas = [...importResults.parcelas];
+                              novas[i] = { ...novas[i], conta_bancaria_id: v === "__none__" ? "" : v };
+                              setImportResults({ ...importResults, parcelas: novas });
+                            }}
+                            options={[
+                              { value: "__none__", label: "Sem conta" },
+                              ...contasBancarias.map((c) => ({ value: c.id, label: c.nome })),
+                            ]}
+                            placeholder="Banco/Caixa"
+                            searchPlaceholder="Digite para buscar..."
+                            emptyText="Nenhum item encontrado."
+                          />
+                          <TooltipProvider>
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <Button
+                                  size="sm"
+                                  variant="ghost"
+                                  className="h-8 w-8 p-0 text-destructive hover:bg-destructive/10 shrink-0"
+                                  onClick={() => {
+                                    const novas = importResults.parcelas.filter((_, idx) => idx !== i);
+                                    setImportResults({ ...importResults, parcelas: novas });
+                                  }}
+                                >
+                                  <XCircle className="h-4 w-4" />
+                                </Button>
+                              </TooltipTrigger>
+                              <TooltipContent>Remover parcela</TooltipContent>
+                            </Tooltip>
+                          </TooltipProvider>
+                        </div>
+                      ))}
+                      <div className="flex justify-end">
+                        <span className="text-xs text-muted-foreground">
+                          Total parcelas: {brl(importResults.parcelas.reduce((acc, p) => acc + p.valor, 0))}
+                          {importResults.parcelas.reduce((acc, p) => acc + p.valor, 0) !== importResults.total && (
+                            <span className="text-destructive ml-2">
+                              (diferente do total da NF-e: {brl(importResults.total)})
+                            </span>
+                          )}
+                        </span>
+                      </div>
+                    </div>
+                  )}
                 </div>
 
                 <div className="flex justify-end gap-2 pt-2">
