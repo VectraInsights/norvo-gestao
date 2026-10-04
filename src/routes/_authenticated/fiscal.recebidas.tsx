@@ -303,6 +303,8 @@ function NotasRecebidas() {
   const [isProcessing, setIsProcessing] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [importResults, setImportResults] = useState<ParsedXMLResult | null>(null);
+  // Notas restantes do lote após a atual em conferência (importação de vários XMLs)
+  const [filaXml, setFilaXml] = useState<ParsedXMLResult[]>([]);
   const [validarXML, setValidarXML] = useState(true);
 
   // Ações de manifestação do destinatário (ciência, confirmação, desconhecimento)
@@ -503,9 +505,90 @@ function NotasRecebidas() {
     }
   };
 
+  // Parseia um arquivo XML em ParsedXMLResult; retorna null para duplicadas (com toast)
+  const parseArquivoXml = async (fileItem: SelectedFileItem): Promise<ParsedXMLResult | null> => {
+    const text = await fileItem.file.text();
+
+    // Tentativa de parse XML via DOMParser
+    const parser = new DOMParser();
+    const doc = parser.parseFromString(text, "text/xml");
+
+    const chNFe = doc.querySelector("chNFe")?.textContent ||
+                  doc.querySelector("infNFe")?.getAttribute("Id")?.replace(/^NFe/, "") || "";
+    const emit = doc.querySelector("emit > xNome")?.textContent || "";
+    const cnpj = doc.querySelector("emit > CNPJ")?.textContent || "45.997.418/0001-09";
+    const nNF = doc.querySelector("ide > nNF")?.textContent || nNFdaChave(chNFe);
+    const vNFStr = doc.querySelector("total > ICMSTot > vNF")?.textContent;
+    const vNF = vNFStr ? parseFloat(vNFStr) : 0;
+
+    const detNodes = Array.from(doc.querySelectorAll("det"));
+
+    let parsedChave = chNFe;
+    let parsedEmitente = emit;
+    let parsedProdutos: { codigo: string; nome: string; qtd: number; un: string; valor: number; categoria: string }[] = [];
+
+    if (detNodes.length > 0) {
+      parsedProdutos = detNodes.map((det) => {
+        const cProd = det.querySelector("prod > cProd")?.textContent || "PROD" + Math.floor(Math.random() * 1000);
+        const xProd = det.querySelector("prod > xProd")?.textContent || "Produto do XML";
+        const qCom = parseFloat(det.querySelector("prod > qCom")?.textContent || "1");
+        const uCom = det.querySelector("prod > uCom")?.textContent || "UN";
+        const vUnCom = parseFloat(det.querySelector("prod > vUnCom")?.textContent || "100");
+        return { codigo: cProd, nome: xProd, qtd: qCom, un: uCom, valor: vUnCom, categoria: "" };
+      });
+    } else {
+      // Fallback estruturado baseado no arquivo caso não seja XML padrão SEFAZ
+      const fileHash = String(Math.abs(fileItem.name.split("").reduce((acc, c) => (acc << 5) - acc + c.charCodeAt(0), 0))) + fileItem.size;
+      parsedChave = "352608" + fileHash.padStart(38, "0").slice(-38);
+      parsedEmitente = fileItem.name.replace(/\.[^/.]+$/, "").replace(/[-_]/g, " ").toUpperCase() + " LTDA";
+      parsedProdutos = [
+        { codigo: "PROD-" + fileHash.slice(0, 4), nome: `Item ${fileItem.name.replace(/\.xml$/i, "")} Wireless`, qtd: 5, un: "UN", valor: 150.00, categoria: "" },
+        { codigo: "PROD-" + fileHash.slice(4, 8), nome: `Acessório ${fileItem.name.replace(/\.xml$/i, "")} Pro`, qtd: 3, un: "UN", valor: 110.00, categoria: "" },
+        { codigo: "PROD-" + fileHash.slice(8, 12), nome: `Componente IPS ${fileItem.name.replace(/\.xml$/i, "")}`, qtd: 2, un: "UN", valor: 450.00, categoria: "" }
+      ];
+    }
+
+    // Verificar se a chave já foi importada (localStorage + banco)
+    const storageKey = `imported_xml_chaves_${empresa?.id || "default"}`;
+    const chavesJaImportadas: string[] = JSON.parse(localStorage.getItem(storageKey) || "[]");
+
+    if (chavesJaImportadas.includes(parsedChave)) {
+      toast.error("NF já importada.");
+      return null;
+    }
+
+    // Verificar no banco de dados
+    if (empresa && parsedChave) {
+      const { data: existente } = await supabase
+        .from("notas_importadas" as never)
+        .select("id")
+        .eq("empresa_id", empresa.id)
+        .eq("chave_acesso", parsedChave)
+        .maybeSingle();
+      if (existente) {
+        toast.error("NF já importada.");
+        return null;
+      }
+    }
+
+    const totalCalculado = vNF || parsedProdutos.reduce((acc, p) => acc + (p.qtd * p.valor), 0);
+
+    // Parse parcelas do XML (cobr/dup)
+    const dupNodes = Array.from(doc.querySelectorAll("cobr > dup"));
+    const parsedParcelas = dupNodes.map((dup) => ({
+      numero: dup.querySelector("nDup")?.textContent || "",
+      dataVencimento: dup.querySelector("dVenc")?.textContent || "",
+      valor: parseFloat(dup.querySelector("vDup")?.textContent || "0"),
+      forma_pagamento: "Boleto",
+      conta_bancaria_id: "",
+    }));
+
+    return { chave: parsedChave, emitente: parsedEmitente, cnpj, nNF, total: totalCalculado, produtos: parsedProdutos, parcelas: parsedParcelas };
+  };
+
   const handleProcessarImportacao = async () => {
     if (selectedFiles.length === 0) return;
-    
+
     // Fortalecer testes do módulo fiscal: Validar se todos os arquivos são XML antes de processar
     const invalidFiles = selectedFiles.filter(f => !f.name.toLowerCase().endsWith('.xml'));
     if (invalidFiles.length > 0) {
@@ -516,102 +599,32 @@ function NotasRecebidas() {
     setIsProcessing(true);
 
     try {
-      const fileItem = selectedFiles[0];
-      const text = await fileItem.file.text();
-
-      // Tentativa de parse XML via DOMParser
-      const parser = new DOMParser();
-      const doc = parser.parseFromString(text, "text/xml");
-      
-      const chNFe = doc.querySelector("chNFe")?.textContent || 
-                    doc.querySelector("infNFe")?.getAttribute("Id")?.replace(/^NFe/, "") || "";
-      const emit = doc.querySelector("emit > xNome")?.textContent || "";
-      const cnpj = doc.querySelector("emit > CNPJ")?.textContent || "45.997.418/0001-09";
-      const nNF = doc.querySelector("ide > nNF")?.textContent || nNFdaChave(chNFe);
-      const vNFStr = doc.querySelector("total > ICMSTot > vNF")?.textContent;
-      const vNF = vNFStr ? parseFloat(vNFStr) : 0;
-
-      const detNodes = Array.from(doc.querySelectorAll("det"));
-
-      let parsedChave = chNFe;
-      let parsedEmitente = emit;
-      let parsedProdutos: { codigo: string; nome: string; qtd: number; un: string; valor: number; categoria: string }[] = [];
-
-      if (detNodes.length > 0) {
-        parsedProdutos = detNodes.map((det) => {
-          const cProd = det.querySelector("prod > cProd")?.textContent || "PROD" + Math.floor(Math.random() * 1000);
-          const xProd = det.querySelector("prod > xProd")?.textContent || "Produto do XML";
-          const qCom = parseFloat(det.querySelector("prod > qCom")?.textContent || "1");
-          const uCom = det.querySelector("prod > uCom")?.textContent || "UN";
-          const vUnCom = parseFloat(det.querySelector("prod > vUnCom")?.textContent || "100");
-          return { codigo: cProd, nome: xProd, qtd: qCom, un: uCom, valor: vUnCom, categoria: "" };
-        });
-      } else {
-        // Fallback estruturado baseado no arquivo caso não seja XML padrão SEFAZ
-        const fileHash = String(Math.abs(fileItem.name.split("").reduce((acc, c) => (acc << 5) - acc + c.charCodeAt(0), 0))) + fileItem.size;
-        parsedChave = "352608" + fileHash.padStart(38, "0").slice(-38);
-        parsedEmitente = fileItem.name.replace(/\.[^/.]+$/, "").replace(/[-_]/g, " ").toUpperCase() + " LTDA";
-        parsedProdutos = [
-          { codigo: "PROD-" + fileHash.slice(0, 4), nome: `Item ${fileItem.name.replace(/\.xml$/i, "")} Wireless`, qtd: 5, un: "UN", valor: 150.00, categoria: "" },
-          { codigo: "PROD-" + fileHash.slice(4, 8), nome: `Acessório ${fileItem.name.replace(/\.xml$/i, "")} Pro`, qtd: 3, un: "UN", valor: 110.00, categoria: "" },
-          { codigo: "PROD-" + fileHash.slice(8, 12), nome: `Componente IPS ${fileItem.name.replace(/\.xml$/i, "")}`, qtd: 2, un: "UN", valor: 450.00, categoria: "" }
-        ];
-      }
-
-      // Verificar se a chave já foi importada (localStorage + banco)
-      const storageKey = `imported_xml_chaves_${empresa?.id || "default"}`;
-      const chavesJaImportadas: string[] = JSON.parse(localStorage.getItem(storageKey) || "[]");
-
-      if (chavesJaImportadas.includes(parsedChave)) {
-        setIsProcessing(false);
-        toast.error(`Nota ${parsedChave.slice(0, 14)}... já importada anteriormente. Ignorando.`);
-        return;
-      }
-
-      // Verificar no banco de dados
-      if (empresa && parsedChave) {
-        const { data: existente } = await supabase
-          .from("notas_importadas" as never)
-          .select("id")
-          .eq("empresa_id", empresa.id)
-          .eq("chave_acesso", parsedChave)
-          .maybeSingle();
-        if (existente) {
-          setIsProcessing(false);
-          toast.error(`Nota ${parsedChave.slice(0, 14)}... já existe no sistema. Ignorando.`);
-          return;
+      // Processa TODOS os arquivos selecionados; duplicadas são puladas com aviso
+      const pendentes: ParsedXMLResult[] = [];
+      for (const f of selectedFiles) {
+        try {
+          const r = await parseArquivoXml(f);
+          if (!r) continue;
+          if (pendentes.some((p) => p.chave === r.chave)) {
+            toast.error("NF já importada.");
+            continue;
+          }
+          pendentes.push(r);
+        } catch (e: any) {
+          toast.error(`Erro na leitura do XML: ${f.name}`, {
+            description: "Verifique se o arquivo está no formato padrão da SEFAZ ou se não está corrompido. " + e.message
+          });
         }
       }
+      if (pendentes.length === 0) return;
 
-      const totalCalculado = vNF || parsedProdutos.reduce((acc, p) => acc + (p.qtd * p.valor), 0);
-
-      // Parse parcelas do XML (cobr/dup)
-      const dupNodes = Array.from(doc.querySelectorAll("cobr > dup"));
-      const parsedParcelas = dupNodes.map((dup) => ({
-        numero: dup.querySelector("nDup")?.textContent || "",
-        dataVencimento: dup.querySelector("dVenc")?.textContent || "",
-        valor: parseFloat(dup.querySelector("vDup")?.textContent || "0"),
-        forma_pagamento: "Boleto",
-        conta_bancaria_id: "",
-      }));
-
-      setImportResults({
-        chave: parsedChave,
-        emitente: parsedEmitente,
-        cnpj,
-        nNF,
-        total: totalCalculado,
-        produtos: parsedProdutos,
-        parcelas: parsedParcelas,
-      });
-
+      setImportResults(pendentes[0]);
+      setFilaXml(pendentes.slice(1));
+      toast.success(pendentes.length === 1
+        ? "XML analisado e mapeado com sucesso! Verifique os itens antes de confirmar."
+        : `${pendentes.length} XMLs analisados. Confirme cada nota na sequência.`);
+    } finally {
       setIsProcessing(false);
-      toast.success("XML analisado e mapeado com sucesso! Verifique os itens antes de confirmar.");
-    } catch (e: any) {
-      setIsProcessing(false);
-      toast.error("Erro na leitura do XML", {
-        description: "Verifique se o arquivo está no formato padrão da SEFAZ ou se não está corrompido. " + e.message
-      });
     }
   };
 
@@ -846,9 +859,15 @@ function NotasRecebidas() {
       const msgParcelas = importResults.parcelas.length > 0
         ? ` e ${importResults.parcelas.length} parcela(s) no contas a pagar`
         : " e 1 conta a pagar (venc. 30 dias)";
-      toast.success(`Importação Concluída! ${importResults.produtos.length} produtos (${totalQtd} un.)${msgParcelas}.`);
-      setSelectedFiles([]);
-      setImportResults(null);
+      if (filaXml.length > 0) {
+        toast.success(`Importação Concluída! ${importResults.produtos.length} produtos (${totalQtd} un.)${msgParcelas}. Abrindo a próxima nota da fila (${filaXml.length} restante(s)).`);
+        setImportResults(filaXml[0]);
+        setFilaXml(filaXml.slice(1));
+      } else {
+        toast.success(`Importação Concluída! ${importResults.produtos.length} produtos (${totalQtd} un.)${msgParcelas}.`);
+        setSelectedFiles([]);
+        setImportResults(null);
+      }
     } catch (err: any) {
       toast.error("Falha na gravação", { description: err.message });
     } finally {
@@ -1581,6 +1600,11 @@ function NotasRecebidas() {
                 <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
                   <div>
                     <CardTitle className="text-lg">Resultado da Análise do XML</CardTitle>
+                    {filaXml.length > 0 && (
+                      <span className="inline-flex items-center rounded-full bg-primary/10 px-2 py-0.5 text-[11px] font-medium text-primary">
+                        Fila: {filaXml.length} nota(s) restante(s) após confirmar
+                      </span>
+                    )}
                     <CardDescription className="text-foreground/80 mt-1">
                       Fornecedor: <strong className="font-semibold">{importResults.emitente}</strong>
                     </CardDescription>
@@ -1687,7 +1711,7 @@ function NotasRecebidas() {
                 </div>
 
                 <div className="flex justify-end gap-2 pt-2">
-                  <Button variant="outline" disabled={isSaving} onClick={() => setImportResults(null)}>Cancelar</Button>
+                  <Button variant="outline" disabled={isSaving} onClick={() => { setImportResults(null); setFilaXml([]); }}>Cancelar</Button>
                   <Button onClick={handleConfirmarXmlUpload} disabled={isSaving} className="bg-emerald-600 hover:bg-emerald-700 text-white">
                     {isSaving ? (
                       <>
