@@ -578,16 +578,7 @@ function NotasRecebidas() {
       ];
     }
 
-    // Verificar se a chave já foi importada (localStorage + banco)
-    const storageKey = `imported_xml_chaves_${empresa?.id || "default"}`;
-    const chavesJaImportadas: string[] = JSON.parse(localStorage.getItem(storageKey) || "[]");
-
-    if (chavesJaImportadas.includes(parsedChave)) {
-      toast.error("NF já importada.");
-      return null;
-    }
-
-    // Verificar no banco de dados
+    // Verificar no banco de dados (fonte da verdade: excluir a nota libera a chave)
     if (empresa && parsedChave) {
       const { data: existente } = await supabase
         .from("notas_importadas" as never)
@@ -874,10 +865,6 @@ function NotasRecebidas() {
         }
       }
 
-      const storageKey = `imported_xml_chaves_${empresa.id}`;
-      const chavesJaImportadas: string[] = JSON.parse(localStorage.getItem(storageKey) || "[]");
-      chavesJaImportadas.push(importResults.chave);
-      localStorage.setItem(storageKey, JSON.stringify(chavesJaImportadas));
 
       setNotas(prev => [{
         id: notaId,
