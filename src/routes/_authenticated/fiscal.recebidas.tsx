@@ -734,9 +734,7 @@ function NotasRecebidas() {
         return;
       }
 
-      let totalQtd = 0;
       for (const p of importResults.produtos) {
-        totalQtd += p.qtd;
         const { data: prodExistente } = await supabase
           .from("produtos")
           .select("id, estoque_atual")
@@ -891,15 +889,11 @@ function NotasRecebidas() {
       qc.invalidateQueries({ queryKey: ["lancamentos"] });
       qc.invalidateQueries({ queryKey: ["dashboard-stats"] });
 
-      const msgParcelas = importResults.parcelas.length > 0
-        ? ` e ${importResults.parcelas.length} parcela(s) no contas a pagar`
-        : " e 1 conta a pagar (venc. 30 dias)";
+      toast.success("Importação concluída.");
       if (filaXml.length > 0) {
-        toast.success(`Importação Concluída! ${importResults.produtos.length} produtos (${totalQtd} un.)${msgParcelas}. Abrindo a próxima nota da fila (${filaXml.length} restante(s)).`);
         setImportResults(filaXml[0]);
         setFilaXml(filaXml.slice(1));
       } else {
-        toast.success(`Importação Concluída! ${importResults.produtos.length} produtos (${totalQtd} un.)${msgParcelas}.`);
         setSelectedFiles([]);
         setImportResults(null);
       }
