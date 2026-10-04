@@ -276,7 +276,9 @@ function NotasRecebidas() {
   // Criação inline de categoria (para o Select de categoria dos produtos importados)
   const [novaCatOpen, setNovaCatOpen] = useState(false);
   const [novaCatNome, setNovaCatNome] = useState("");
-  const [novaCatContext, setNovaCatContext] = useState<{ origem: "import" | "detalhe"; index: number } | null>(null);
+  const [novaCatContext, setNovaCatContext] = useState<{ origem: "import" | "import-todas" | "detalhe"; index: number } | null>(null);
+  const [mesmaCategoria, setMesmaCategoria] = useState(false);
+  const [categoriaUnica, setCategoriaUnica] = useState("");
   const criarCategoriaInline = useMutation({
     mutationFn: async (nome: string) => {
       if (!empresa) throw new Error("Empresa não selecionada");
@@ -302,6 +304,9 @@ function NotasRecebidas() {
           const novas = [...importResults.produtos];
           novas[novaCatContext.index] = { ...novas[novaCatContext.index], categoria: cat.nome };
           setImportResults({ ...importResults, produtos: novas });
+        } else if (novaCatContext.origem === "import-todas" && importResults) {
+          setImportResults({ ...importResults, produtos: importResults.produtos.map((p) => ({ ...p, categoria: cat.nome })) });
+          setCategoriaUnica(cat.nome);
         } else if (novaCatContext.origem === "detalhe" && notaDetalhe) {
           const novas = [...notaDetalhe.produtos];
           novas[novaCatContext.index] = { ...novas[novaCatContext.index], categoria: cat.nome };
@@ -664,6 +669,7 @@ function NotasRecebidas() {
 
       setImportResults(pendentes[0]);
       setFilaXml(pendentes.slice(1));
+      setMesmaCategoria(false);
       toast.success("XML(s) importados(s).");
     } finally {
       setIsProcessing(false);
@@ -900,6 +906,7 @@ function NotasRecebidas() {
       if (filaXml.length > 0) {
         setImportResults(filaXml[0]);
         setFilaXml(filaXml.slice(1));
+        setMesmaCategoria(false);
       } else {
         setSelectedFiles([]);
         setImportResults(null);
@@ -1661,6 +1668,56 @@ function NotasRecebidas() {
               <CardContent className="p-6 space-y-6">
                 <div className="space-y-3">
                   <h4 className="text-sm font-semibold text-foreground">Produtos Importados</h4>
+                  {importResults.produtos.length > 1 && (
+                    <div className="flex flex-wrap items-center gap-3">
+                      <div className="flex items-center space-x-2">
+                        <input
+                          type="checkbox"
+                          id="mesma-categoria"
+                          className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary"
+                          checked={mesmaCategoria}
+                          onChange={(e) => {
+                            const on = e.target.checked;
+                            setMesmaCategoria(on);
+                            if (on) {
+                              const cat = importResults.produtos[0]?.categoria || "";
+                              setCategoriaUnica(cat);
+                              setImportResults({ ...importResults, produtos: importResults.produtos.map((p) => ({ ...p, categoria: cat })) });
+                            }
+                          }}
+                        />
+                        <label htmlFor="mesma-categoria" className="text-xs font-medium text-foreground cursor-pointer">
+                          Mesma categoria para todas as peças
+                        </label>
+                      </div>
+                      {mesmaCategoria && (
+                        <div className="w-[220px]">
+                          <Combobox
+                            value={categoriaUnica || "__none__"}
+                            onChange={(v) => {
+                              if (v === "__nova__") {
+                                setNovaCatContext({ origem: "import-todas", index: -1 });
+                                setNovaCatNome("");
+                                setNovaCatOpen(true);
+                                return;
+                              }
+                              const cat = v === "__none__" ? "" : v;
+                              setCategoriaUnica(cat);
+                              setImportResults({ ...importResults, produtos: importResults.produtos.map((p) => ({ ...p, categoria: cat })) });
+                            }}
+                            options={[
+                              { value: "__none__", label: "Sem categoria" },
+                              ...catsFinanceiras.map((c) => ({ value: c.nome, label: c.nome })),
+                              { value: "__nova__", label: "+ Nova categoria" },
+                            ]}
+                            placeholder="Selecione"
+                            searchPlaceholder="Digite para buscar..."
+                            emptyText="Nenhum item encontrado."
+                          />
+                        </div>
+                      )}
+                    </div>
+                  )}
                   <div className="border rounded-md overflow-hidden bg-background/50">
                     <Table>
                       <TableHeader className="bg-muted/40">
@@ -1684,6 +1741,9 @@ function NotasRecebidas() {
                             <TableCell className="text-right text-tabular">{brl(p.valor)}</TableCell>
                             <TableCell className="text-right text-tabular font-medium text-foreground">{brl(p.qtd * p.valor)}</TableCell>
                             <TableCell>
+                              {mesmaCategoria ? (
+                                <span className="text-xs text-muted-foreground">{p.categoria || "Sem categoria"}</span>
+                              ) : (
                               <Combobox
                                 value={p.categoria || "__none__"}
                                 onChange={(v) => {
@@ -1706,6 +1766,7 @@ function NotasRecebidas() {
                                 searchPlaceholder="Digite para buscar..."
                                 emptyText="Nenhum item encontrado."
                               />
+                              )}
                             </TableCell>
                           </TableRow>
                         ))}
