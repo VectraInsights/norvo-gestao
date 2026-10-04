@@ -48,6 +48,14 @@ interface NotaRecebida {
 
 const FORMAS_PARCELA = ["Boleto", "Cartão de crédito", "Cartão de débito", "Cheque", "Dinheiro", "Duplicata", "Pix", "Transferência", "Outros"] as const;
 
+// modFrete (transp) -> descrição exibida no campo "Frete por Conta" do DANFE
+const FRETE_POR_CONTA: Record<string, string> = {
+  "0": "0 - Emitente",
+  "1": "1 - Destinatário",
+  "2": "2 - Terceiros",
+  "9": "9 - Sem Frete",
+};
+
 interface ParsedXMLResult {
   chave: string;
   emitente: string;
@@ -142,11 +150,14 @@ function parseDanfeDoXml(xml: string): Partial<DanfeData> {
     out.destCidade = txt("dest > enderDest > xMun");
     out.destUF = txt("dest > enderDest > UF");
     out.destIE = txt("dest > IE");
+    out.destFone = txt("dest > enderDest > fone");
     // Ide / operação
     out.naturezaOperacao = txt("ide > natOp");
     out.cfop = txt("det > prod > CFOP");
     out.serie = txt("ide > serie");
     out.dhEmi = txt("ide > dhEmi") || txt("ide > dEmi");
+    out.tpEntradaSaida = "1";
+    out.emitIESubst = txt("emit > IEST");
     // Totais
     out.valorProdutos = num("total > ICMSTot > vProd");
     out.valorFrete = num("total > ICMSTot > vFrete");
@@ -155,30 +166,54 @@ function parseDanfeDoXml(xml: string): Partial<DanfeData> {
     out.valorOutras = num("total > ICMSTot > vOutro");
     out.baseIcms = num("total > ICMSTot > vBC");
     out.valorIcms = num("total > ICMSTot > vICMS");
+    out.baseIcmsST = num("total > ICMSTot > vBCST");
+    out.valorIcmsST = num("total > ICMSTot > vST");
     // Transporte
     out.transportadora = txt("transp > transporta > xNome");
     out.transpCnpj = txt("transp > transporta > CNPJ") || txt("transp > transporta > CPF");
     out.transpEndereco = txt("transp > transporta > xEnder");
     out.transpCidade = txt("transp > transporta > xMun");
     out.transpUF = txt("transp > transporta > UF");
+    out.transpIE = txt("transp > transporta > IE");
+    out.fretePorConta = FRETE_POR_CONTA[txt("transp > modFrete")] || "";
+    out.placa = txt("transp > veicTransp > placa");
+    out.placaUF = txt("transp > veicTransp > UF");
     out.volumes = txt("transp > vol > qVol");
+    out.especie = txt("transp > vol > esp");
+    out.marca = txt("transp > vol > marca");
+    out.numeracao = txt("transp > vol > nVol");
     out.pesoBruto = txt("transp > vol > pesoB");
     out.pesoLiquido = txt("transp > vol > pesoL");
+    // ISSQN
+    out.issqnInscMun = txt("emit > IM");
+    out.issqnTotalServicos = num("total > ISSQNtot > vServ");
+    out.issqnBase = num("total > ISSQNtot > vBC");
+    out.issqnValor = num("total > ISSQNtot > vISS");
     // Info complementar / protocolo
     out.infoComplementares = txt("infAdic > infCpl");
     out.protocolo = txt("protNFe > infProt > nProt");
+    out.protocoloData = txt("protNFe > infProt > dhRecbto");
     return out;
   } catch {
     return {};
   }
 }
 
-// CFOP por item, alinhado à ordem dos produtos (para popular a coluna CFOP do DANFE)
-function cfopsDoXml(xml: string): string[] {
+// Campos fiscais por item (NCM/CST/CFOP/IPI/alíquotas), na ordem dos <det>
+function itensFiscaisDoXml(xml: string): { ncm: string; cst: string; cfop: string; vIpi: string; aliqIcms: string; aliqIpi: string; vBC: string; vICMS: string }[] {
   try {
     const parser = new DOMParser();
     const doc = parser.parseFromString(xml, "text/xml");
-    return Array.from(doc.querySelectorAll("det")).map((d) => d.querySelector("prod > CFOP")?.textContent || "");
+    return Array.from(doc.querySelectorAll("det")).map((d) => ({
+      ncm: d.querySelector("prod > NCM")?.textContent || "",
+      cst: (d.querySelector("imposto > ICMS > CST")?.textContent || d.querySelector("imposto > ICMS > CSOSN")?.textContent || d.querySelector("imposto > IPI > CST")?.textContent || ""),
+      cfop: d.querySelector("prod > CFOP")?.textContent || "",
+      vIpi: d.querySelector("imposto > IPI > vIPI")?.textContent || "",
+      aliqIcms: d.querySelector("imposto > ICMS > pICMS")?.textContent || "",
+      aliqIpi: d.querySelector("imposto > IPI > pIPI")?.textContent || "",
+      vBC: d.querySelector("imposto > ICMS > vBC")?.textContent || "",
+      vICMS: d.querySelector("imposto > ICMS > vICMS")?.textContent || "",
+    }));
   } catch {
     return [];
   }
@@ -1290,7 +1325,7 @@ function NotasRecebidas() {
   // Monta o DanfeData a partir dos dados carregados + campos extras do XML.
   const montarDanfe = (d: DadosNota): DanfeData => {
     const extra = d.xml ? parseDanfeDoXml(d.xml) : {};
-    const cfops = d.xml ? cfopsDoXml(d.xml) : [];
+    const fisc = d.xml ? itensFiscaisDoXml(d.xml) : [];
     const serie = extra.serie || nSerieDaChave(d.chave);
     return {
       ...extra,
@@ -1301,10 +1336,17 @@ function NotasRecebidas() {
       ambiente: "producao",
       emitNome: d.emitente,
       emitCnpj: d.cnpj,
-      produtos: d.produtos.map((p, i) => ({
-        codigo: p.codigo, nome: p.nome, qtd: p.qtd, un: p.un,
-        valorUnit: p.valorUnit, valorTotal: p.valorTotal, cfop: cfops[i] || extra.cfop || "",
-      })),
+      produtos: d.produtos.map((p, i) => {
+        const f = fisc[i];
+        return {
+          codigo: p.codigo, nome: p.nome, qtd: p.qtd, un: p.un,
+          valorUnit: p.valorUnit, valorTotal: p.valorTotal,
+          cfop: f?.cfop || extra.cfop || "",
+          ncm: f?.ncm || "", cst: f?.cst || "",
+          vIpi: f?.vIpi || "", aliqIcms: f?.aliqIcms || "", aliqIpi: f?.aliqIpi || "",
+          baseIcms: f?.vBC || "", vIcms: f?.vICMS || "",
+        };
+      }),
       parcelas: d.parcelas.map((p) => ({ numero: p.numero, dataVencimento: p.dataVencimento, valor: p.valor })),
       valorTotal: d.valor,
     };

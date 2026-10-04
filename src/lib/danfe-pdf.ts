@@ -1,9 +1,11 @@
 import { jsPDF } from "jspdf";
 import JsBarcode from "./vendor/jsbarcode.bundle.cjs";
-export const DANFE_REV = "20260918-n1";
+export const DANFE_REV = "20261003-n2";
 
-// DANFE no mesmo estilo visual do DACTE (dacte-pdf.ts): retrato A4, P&B,
-// caixas com borda 0.2, rótulos uppercase bold 5.5, valores 6-7pt, barras CODE-128.
+// DANFE no layout oficial da SEFAZ (NF-e modelo 55, retrato A4, P&B):
+// canhoto no topo, cabeçalho emitente/DANFE/código-de-barras+chave, e as seções
+// Destinatário, Fatura, Cálculo do Imposto, Transportador, Produtos, ISSQN e
+// Dados Adicionais, com rótulos uppercase miúdos e valores abaixo, como no modelo.
 export interface DanfeProduto {
   codigo: string;
   nome: string;
@@ -13,6 +15,12 @@ export interface DanfeProduto {
   valorTotal: number;
   cfop?: string;
   cst?: string;
+  ncm?: string;
+  baseIcms?: number | string;
+  vIcms?: number | string;
+  vIpi?: number | string;
+  aliqIcms?: number | string;
+  aliqIpi?: number | string;
 }
 
 export interface DanfeParcela {
@@ -30,6 +38,8 @@ export interface DanfeData {
   ambiente?: string;
   naturezaOperacao?: string;
   cfop?: string;
+  fl?: string;
+  tpEntradaSaida?: string; // "0" entrada | "1" saída
   // Emitente
   emitNome: string;
   emitCnpj: string;
@@ -40,6 +50,7 @@ export interface DanfeData {
   emitUF?: string;
   emitFone?: string;
   emitIE?: string;
+  emitIESubst?: string;
   // Destinatário
   destNome?: string;
   destCnpj?: string;
@@ -48,6 +59,7 @@ export interface DanfeData {
   destCEP?: string;
   destCidade?: string;
   destUF?: string;
+  destFone?: string;
   destIE?: string;
   // Totais
   valorProdutos?: number;
@@ -57,6 +69,8 @@ export interface DanfeData {
   valorOutras?: number;
   baseIcms?: number;
   valorIcms?: number;
+  baseIcmsST?: number;
+  valorIcmsST?: number;
   valorTotal: number;
   // Transporte
   transportadora?: string;
@@ -64,16 +78,29 @@ export interface DanfeData {
   transpEndereco?: string;
   transpCidade?: string;
   transpUF?: string;
+  transpIE?: string;
+  fretePorConta?: string;
+  antt?: string;
+  placa?: string;
+  placaUF?: string;
   volumes?: string;
+  especie?: string;
+  marca?: string;
+  numeracao?: string;
   pesoBruto?: string;
   pesoLiquido?: string;
-  // Itens
+  // ISSQN
+  issqnInscMun?: string;
+  issqnTotalServicos?: number | string;
+  issqnBase?: number | string;
+  issqnValor?: number | string;
+  // Itens / parcelas / rodapé
   produtos: DanfeProduto[];
   parcelas?: DanfeParcela[];
   infoComplementares?: string;
   protocolo?: string;
+  protocoloData?: string;
   logoDataUrl?: string;
-  fl?: string;
 }
 
 function fmtCnpj(v: string): string {
@@ -113,6 +140,15 @@ function fmtData(v: string): string {
   return v;
 }
 
+function fmtDH(v: string): string {
+  try {
+    const d = new Date(v);
+    if (isNaN(d.getTime())) return fmtData(v);
+    const p = (n: number) => String(n).padStart(2, "0");
+    return `${p(d.getDate())}/${p(d.getMonth() + 1)}/${d.getFullYear()} ${p(d.getHours())}:${p(d.getMinutes())}`;
+  } catch { return v || ""; }
+}
+
 function cfopFmt(cfop: string): string {
   const d = (cfop || "").replace(/\D/g, "");
   return d.length === 4 ? `${d[0]}.${d.slice(1)}` : (cfop || "");
@@ -130,10 +166,18 @@ function barcodePng(chave: string): string | null {
   } catch { return null; }
 }
 
+interface Col {
+  label: string;
+  value?: string;
+  w: number;
+  align?: "l" | "c" | "r";
+  vsize?: number;
+}
+
 export function gerarDanfePdf(data: DanfeData): Blob {
   const doc = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4" });
-  const W = 210, M = 6, CW = W - 2 * M;
-  const LIM = 291;
+  const W = 210, M = 5, CW = W - 2 * M;
+  const LIM = 292;
   let y = M;
 
   const setFont = (w: "bold" | "normal", s: number) => { doc.setFont("helvetica", w); doc.setFontSize(s); };
@@ -141,146 +185,249 @@ export function gerarDanfePdf(data: DanfeData): Blob {
   const border = () => { doc.setDrawColor(0, 0, 0); doc.setLineWidth(0.2); };
   const box = (x: number, yy: number, w: number, h: number) => { border(); doc.rect(x, yy, w, h, "S"); };
   const vline = (x: number, yy: number, h: number) => { border(); doc.line(x, yy, x, yy + h); };
-  const hline = (x1: number, x2: number, yy: number) => { border(); doc.line(x1, yy, x2, yy); };
-  const lab = (t: string, x: number, yy: number) => { black(); setFont("bold", 5.5); doc.text(t, x, yy); };
-  const val = (t: string, x: number, yy: number, s = 7) => { black(); setFont("normal", s); doc.text(String(t || ""), x, yy); };
-  const valB = (t: string, x: number, yy: number, s = 7) => { black(); setFont("bold", s); doc.text(String(t || ""), x, yy); };
+  const lab = (t: string, x: number, yy: number) => { black(); setFont("bold", 4.6); doc.text(String(t || "").toUpperCase(), x, yy); };
   const need = (h: number) => { if (y + h > LIM) { doc.addPage(); y = M; } };
-  const cut = (t: string, n: number) => String(t || "").slice(0, n).toUpperCase();
+  const cut = (t: string, n: number) => String(t || "").slice(0, n);
   const D = (v: any) => (v === undefined || v === null || v === "" ? "" : String(v));
   const ctr = (t: string, xx: number, yy: number, s: number, bold = false) => {
     black(); setFont(bold ? "bold" : "normal", s);
     try { (doc as any).text(t, xx, yy, { align: "center" }); } catch { doc.text(t, xx, yy); }
   };
-  const right = (t: string, xx: number, yy: number, s = 6) => {
+  const drawVal = (t: string, x: number, w: number, yy: number, align: "l" | "c" | "r", s: number) => {
     black(); setFont("normal", s);
-    try { (doc as any).text(t, xx, yy, { align: "right" }); } catch { doc.text(t, xx - doc.getTextWidth(t), yy); }
+    if (align === "r") { try { (doc as any).text(t, x + w - 1, yy, { align: "right" }); } catch { doc.text(t, x + 1, yy); } }
+    else if (align === "c") { try { (doc as any).text(t, x + w / 2, yy, { align: "center" }); } catch { doc.text(t, x + 1, yy); } }
+    else doc.text(t, x + 1, yy);
   };
 
-  // ---- Cabeçalho: emitente (esq) | DANFE + barras + chave (dir) ----
-  const colL = 118, colR = CW - colL - 2, rx = M + colL + 2;
-  const headH = 34;
-  box(M, y, colL, headH);
-  if (data.logoDataUrl) { try { doc.addImage(data.logoDataUrl as string, "PNG", M + 2, y + 2, 26, 12); } catch {} }
-  const ex = M + 30;
-  valB(cut(D(data.emitNome) || "EMPRESA", 44), ex, y + 4, 7);
-  setFont("normal", 6); black();
-  doc.text(`Endereço : ${cut(D(data.emitEndereco), 60)}`, ex, y + 8);
-  doc.text(`Bairro : ${cut(D(data.emitBairro), 34)}   CEP : ${D(data.emitCEP)}`, ex, y + 11.5);
-  doc.text(`Município : ${cut(D(data.emitCidade), 30)}   UF : ${D(data.emitUF)}`, ex, y + 15);
-  doc.text(`Fone : ${D(data.emitFone)}`, ex, y + 18.5);
-  doc.text(`CPF / CNPJ : ${fmtCnpj(data.emitCnpj)}`, ex, y + 22);
-  doc.text(`Insc. Est. : ${cut(D(data.emitIE), 18)}`, ex, y + 25.5);
-  doc.text(`Natureza da Operação : ${cut(D(data.naturezaOperacao), 40)}`, ex, y + 29.5);
+  // Linha de células: rótulo uppercase no topo + valor abaixo, separadores verticais
+  const linha = (h: number, cols: Col[], valY?: number): number => {
+    box(M, y, CW, h);
+    let x = M;
+    cols.forEach((c, i) => {
+      if (i > 0) vline(x, y, h);
+      lab(c.label, x + 1, y + 2.6);
+      if (c.value) drawVal(c.value, x, c.w, y + (valY ?? h - 1.4), c.align || "l", c.vsize ?? 7);
+      x += c.w;
+    });
+    y += h;
+    return y;
+  };
 
-  // Coluna direita: DANFE, modelo/série/número, entrada/saída, barras, chave
-  box(rx, y, colR, headH);
-  ctr("DANFE", rx + colR / 2, y + 4.5, 9, true);
-  setFont("normal", 4.5); black();
-  ctr("Documento Auxiliar da Nota Fiscal Eletrônica", rx + colR / 2, y + 7, 4.2);
-  ctr("0 - ENTRADA   1 - SAÍDA", rx + colR / 2, y + 9.5, 4.5, true);
-  hline(rx + 2, rx + colR - 2, y + 11);
-  setFont("normal", 5); black();
-  doc.text(`MODELO`, rx + 2, y + 14);
-  doc.text(`SÉRIE`, rx + 22, y + 14);
-  doc.text(`NÚMERO`, rx + 40, y + 14);
-  doc.text(`FL`, rx + 60, y + 14);
-  valB("55", rx + 2, y + 17.5, 6);
-  valB(String(data.serie || "1").padStart(3, "0"), rx + 22, y + 17.5, 6);
-  valB(fmtInt(data.numero), rx + 40, y + 17.5, 6);
-  valB(D(data.fl) || "1/1", rx + 60, y + 17.5, 6);
-  vline(rx + 20, y + 11.5, 8);
-  vline(rx + 38, y + 11.5, 8);
-  vline(rx + 58, y + 11.5, 8);
+  // Barra de título de seção (fundo cinza-claro, texto bold)
+  const secao = (titulo: string): number => {
+    need(6);
+    doc.setFillColor(214, 214, 214);
+    doc.rect(M, y, CW, 4, "F");
+    border(); doc.rect(M, y, CW, 4, "S");
+    black(); setFont("bold", 5.4);
+    doc.text(titulo.toUpperCase(), M + 1, y + 2.8);
+    y += 4;
+    return y;
+  };
+
+  // ================= CANHOTO (recibo de entrega) =================
+  const canH = 9;
+  box(M, y, CW, canH);
+  setFont("normal", 6); black();
+  doc.text(`Recebemos de ${cut(D(data.emitNome).toUpperCase(), 78)} a mercadoria abaixo discriminada`, M + 1.5, y + 5.5);
+  vline(M + 132, y, canH);
+  vline(M + 160, y, canH);
+  lab("Data de Recebimento", M + 133, y + 2.6);
+  lab("Identificação e Assinatura do Recebedor", M + 161, y + 2.6);
+  y += canH;
+  // linha de corte tracejada
+  doc.saveGraphicsState();
+  try { (doc as any).setLineDashPattern([2, 2], 0); } catch {}
+  border(); doc.line(M, y + 1, M + CW, y + 1);
+  try { (doc as any).restoreGraphicsState(); } catch {}
+  border();
+  y += 2.5;
+
+  // ================= CABEÇALHO: emitente | DANFE | barras+chave =================
+  const headH = 30;
+  const wE = 70, wD = 55, wB = CW - wE - wD;
+  box(M, y, wE, headH);
+  box(M + wE, y, wD, headH);
+  box(M + wE + wD, y, wB, headH);
+  // Emitente
+  if (data.logoDataUrl) { try { doc.addImage(data.logoDataUrl as string, "PNG", M + 2, y + 2, 24, 10); } catch {} }
+  setFont("bold", 7); black();
+  doc.text(cut(D(data.emitNome).toUpperCase(), 40), M + 1.5, y + 5);
+  setFont("normal", 5.6); black();
+  doc.text(cut(D(data.emitEndereco), 46), M + 1.5, y + 9);
+  doc.text(`${cut(D(data.emitBairro), 22)}  CEP: ${D(data.emitCEP)}`, M + 1.5, y + 12);
+  doc.text(`${cut(D(data.emitCidade), 26)} / ${D(data.emitUF)}  Fone: ${D(data.emitFone)}`, M + 1.5, y + 15);
+  setFont("bold", 5.6); black();
+  doc.text(`CNPJ: ${fmtCnpj(data.emitCnpj)}   IE: ${D(data.emitIE)}`, M + 1.5, y + 19);
+  // Bloco DANFE
+  const dx = M + wE;
+  ctr("DANFE", dx + wD / 2, y + 5, 10, true);
+  setFont("normal", 4.4); black();
+  ctr("Documento Auxiliar da Nota Fiscal Eletrônica", dx + wD / 2, y + 8, 4.4);
+  ctr("Não permite efeito tributário / não substitui a nota fiscal", dx + wD / 2, y + 10.4, 4);
+  const tp = D(data.tpEntradaSaida) || "1";
+  setFont("bold", 5.4); black();
+  ctr(`0 - ENTRADA      1 - SAÍDA`, dx + wD / 2, y + 14, 5.4, true);
+  // destaca o tipo aplicável
+  const tpX = tp === "0" ? dx + wD / 2 - 16 : dx + wD / 2 + 10;
+  border(); doc.rect(tpX - 1.6, y + 11.4, 3.2, 3.2, "S");
+  setFont("bold", 6); black();
+  ctr(`Nº ${fmtInt(data.numero)}`, dx + wD / 2, y + 19, 6, true);
+  ctr(`SÉRIE ${String(data.serie || "1").padStart(3, "0")}   FOLHA ${D(data.fl) || "1/1"}`, dx + wD / 2, y + 23, 5.4, true);
+  // Bloco barras + chave
+  const bx = M + wE + wD;
   const barsImg = barcodePng(data.chave);
   if (barsImg) {
     try {
       const props = (doc as any).getImageProperties(barsImg);
       const ratio = props.width / props.height;
-      let iw = 8 * ratio, ih = 8;
-      const maxW = colR - 6;
+      let iw = 9 * ratio, ih = 9;
+      const maxW = wB - 6;
       if (iw > maxW) { iw = maxW; ih = iw / ratio; }
-      doc.addImage(barsImg, "PNG", rx + (colR - iw) / 2, y + 21, iw, ih);
+      doc.addImage(barsImg, "PNG", bx + (wB - iw) / 2, y + 2, iw, ih);
     } catch {}
   }
-  setFont("normal", 4.5); black();
-  ctr("CHAVE DE ACESSO", rx + colR / 2, y + 30.5, 4.5, true);
-  ctr(fmtChave(data.chave), rx + colR / 2, y + 33, 5.5, true);
-  y += headH + 1;
+  lab("Chave de Acesso", bx + (wB - 20) / 2, y + 14);
+  setFont("bold", 5.6); black();
+  ctr(fmtChave(data.chave), bx + wB / 2, y + 18, 5.6, true);
+  setFont("normal", 4.2); black();
+  ctr("Consulta de autenticidade no portal nacional da NF-e", bx + wB / 2, y + 22, 4.2);
+  ctr("www.nfe.fazenda.gov.br ou no site da Sefaz Autorizada", bx + wB / 2, y + 24.4, 4.2);
+  y += headH;
 
-  // ---- Emissão / entrada-saída ----
-  const emiH = 6;
-  box(M, y, CW, emiH);
-  const colsEmi: Array<[string, string, number]> = [
-    ["Data de Emissão", fmtData(D(data.dhEmi || data.dataEmissao)), 30],
-    ["Data de Entrada / Saída", "", 34],
-    ["Hora de Entrada / Saída", "", 30],
-    ["CFOP", cfopFmt(D(data.cfop)), 20],
-    ["Nº da Nota Fiscal", fmtInt(data.numero), 0],
+  // ================= NATUREZA / PROTOCOLO =================
+  linha(7, [
+    { label: "Natureza da Operação", value: cut(D(data.naturezaOperacao).toUpperCase(), 60), w: 118 },
+    { label: "Protocolo de Autorização de Uso", value: `${D(data.protocolo)}  ${fmtDH(D(data.protocoloData))}`, w: CW - 118, vsize: 6 },
+  ]);
+  linha(7, [
+    { label: "Inscrição Estadual", value: D(data.emitIE), w: 66 },
+    { label: "Insc. Estadual do Subst. Tribut.", value: D(data.emitIESubst), w: 66 },
+    { label: "CNPJ", value: fmtCnpj(data.emitCnpj), w: CW - 132 },
+  ]);
+
+  // ================= DESTINATÁRIO / REMETENTE =================
+  secao("Destinatário / Remetente");
+  linha(7, [
+    { label: "Nome / Razão Social", value: cut(D(data.destNome).toUpperCase(), 66), w: 118 },
+    { label: "CNPJ / CPF", value: fmtCnpj(D(data.destCnpj)), w: 50 },
+    { label: "Data da Emissão", value: fmtData(D(data.dhEmi || data.dataEmissao)), w: CW - 168, align: "c" },
+  ]);
+  linha(7, [
+    { label: "Endereço", value: cut(D(data.destEndereco).toUpperCase(), 62), w: 108 },
+    { label: "Bairro / Distrito", value: cut(D(data.destBairro), 34), w: 60 },
+    { label: "CEP", value: D(data.destCEP), w: CW - 168 },
+  ]);
+  linha(7, [
+    { label: "Município", value: cut(D(data.destCidade).toUpperCase(), 50), w: 88 },
+    { label: "UF", value: D(data.destUF), w: 12, align: "c" },
+    { label: "Fone / Fax", value: D(data.destFone), w: 48 },
+    { label: "Inscrição Estadual", value: D(data.destIE), w: CW - 148 },
+  ]);
+
+  // ================= FATURA / DUPLICATAS =================
+  const parcelas = data.parcelas || [];
+  if (parcelas.length > 0) {
+    secao("Fatura / Duplicatas");
+    const somaParc = parcelas.reduce((a, p) => a + (Number(p.valor) || 0), 0);
+    linha(7, [
+      { label: "Número da Fatura", value: D(parcelas[0]?.numero) || fmtInt(data.numero), w: 60 },
+      { label: "Valor Original", value: fmtNum(somaParc || data.valorTotal), w: 46, align: "r" },
+      { label: "Valor do Desconto", value: fmtNum(data.valorDesconto ?? 0), w: 46, align: "r" },
+      { label: "Valor Líquido", value: fmtNum(data.valorTotal), w: CW - 152, align: "r" },
+    ]);
+    const perRow = 4;
+    const colW = CW / perRow;
+    for (let i = 0; i < parcelas.length; i += perRow) {
+      need(6);
+      const chunk = parcelas.slice(i, i + perRow);
+      box(M, y, CW, 5.5);
+      chunk.forEach((pc, c) => {
+        const cx = M + c * colW;
+        if (c > 0) vline(cx, y, 5.5);
+        setFont("normal", 5); black();
+        doc.text(`${D(pc.numero) || String(i + c + 1)}`, cx + 1.5, y + 2.4);
+        doc.text(fmtData(D(pc.dataVencimento)), cx + 1.5, y + 4.6);
+        drawVal(fmtNum(pc.valor), cx, colW, y + 3.6, "r", 5.4);
+      });
+      y += 5.5;
+    }
+  }
+
+  // ================= CÁLCULO DO IMPOSTO =================
+  secao("Cálculo do Imposto");
+  const vp = data.valorProdutos !== undefined ? data.valorProdutos : (data.produtos || []).reduce((a, p) => a + (Number(p.valorTotal) || 0), 0);
+  linha(7, [
+    { label: "Base de Cálculo do ICMS", value: fmtNum(data.baseIcms ?? 0), w: 40, align: "r" },
+    { label: "Valor do ICMS", value: fmtNum(data.valorIcms ?? 0), w: 40, align: "r" },
+    { label: "Base de Cálculo ICMS S.T.", value: fmtNum(data.baseIcmsST ?? 0), w: 40, align: "r" },
+    { label: "Valor do ICMS S.T.", value: fmtNum(data.valorIcmsST ?? 0), w: 40, align: "r" },
+    { label: "Valor Total dos Produtos", value: fmtNum(vp), w: CW - 160, align: "r" },
+  ]);
+  linha(7, [
+    { label: "Valor do Frete", value: fmtNum(data.valorFrete ?? 0), w: 40, align: "r" },
+    { label: "Valor do Seguro", value: fmtNum(data.valorSeguro ?? 0), w: 40, align: "r" },
+    { label: "Desconto", value: fmtNum(data.valorDesconto ?? 0), w: 40, align: "r" },
+    { label: "Outras Desp. Acessórias", value: fmtNum(data.valorOutras ?? 0), w: 40, align: "r" },
+    { label: "Valor Total da Nota", value: fmtNum(data.valorTotal), w: CW - 160, align: "r", vsize: 7.5 },
+  ]);
+
+  // ================= TRANSPORTADOR / VOLUMES =================
+  secao("Transportador / Volumes Transportados");
+  linha(7, [
+    { label: "Razão Social", value: cut(D(data.transportadora).toUpperCase(), 46), w: 78 },
+    { label: "Frete por Conta", value: D(data.fretePorConta) || "9 - Sem Frete", w: 30, vsize: 6 },
+    { label: "Código ANTT", value: D(data.antt), w: 20 },
+    { label: "Placa do Veículo", value: D(data.placa), w: 25, align: "c" },
+    { label: "UF", value: D(data.placaUF), w: 10, align: "c" },
+    { label: "CNPJ / CPF", value: fmtCnpj(D(data.transpCnpj)), w: CW - 163, vsize: 6 },
+  ]);
+  linha(7, [
+    { label: "Endereço", value: cut(D(data.transpEndereco).toUpperCase(), 56), w: 98 },
+    { label: "Município", value: cut(D(data.transpCidade), 40), w: 60 },
+    { label: "UF", value: D(data.transpUF), w: 10, align: "c" },
+    { label: "Inscrição Estadual", value: D(data.transpIE), w: CW - 168 },
+  ]);
+  linha(7, [
+    { label: "Quantidade", value: D(data.volumes), w: 33, align: "r" },
+    { label: "Espécie", value: D(data.especie), w: 33 },
+    { label: "Marca", value: D(data.marca), w: 34 },
+    { label: "Numeração", value: D(data.numeracao), w: 34 },
+    { label: "Peso Bruto", value: D(data.pesoBruto), w: 33, align: "r" },
+    { label: "Peso Líquido", value: D(data.pesoLiquido), w: CW - 167, align: "r" },
+  ]);
+
+  // ================= DADOS DOS PRODUTOS / SERVIÇOS =================
+  secao("Dados dos Produtos / Serviços");
+  const pcols: Array<{ h: string; w: number; align: "l" | "c" | "r" }> = [
+    { h: "CÓDIGO", w: 14, align: "l" },
+    { h: "DESCRIÇÃO DO PRODUTO / SERVIÇO", w: 51, align: "l" },
+    { h: "NCM/SH", w: 12, align: "c" },
+    { h: "CST", w: 7, align: "c" },
+    { h: "CFOP", w: 9, align: "c" },
+    { h: "UN", w: 7, align: "c" },
+    { h: "QUANT.", w: 13, align: "r" },
+    { h: "VLR. UNIT.", w: 15, align: "r" },
+    { h: "VLR. TOTAL", w: 15, align: "r" },
+    { h: "B. CÁLC. ICMS", w: 13, align: "r" },
+    { h: "VLR. ICMS", w: 13, align: "r" },
+    { h: "VLR. IPI", w: 11, align: "r" },
+    { h: "AL. ICMS", w: 10, align: "r" },
+    { h: "AL. IPI", w: 10, align: "r" },
   ];
-  let emx = M + 2;
-  colsEmi.forEach(([l, v, w]) => {
-    lab(l, emx, y + 2.5);
-    val(v, emx, y + 5, 6);
-    if (w) { vline(emx + w, y, emiH); emx += w + 2; }
-  });
-  y += emiH + 1;
-
-  // ---- Destinatário / remetente ----
-  const destH = 20;
-  box(M, y, CW, destH);
-  setFont("bold", 6); black();
-  doc.text("DESTINATÁRIO / REMETENTE", M + 2, y + 3.5);
-  const dRows: Array<[string, string, string, string]> = [
-    [`Nome / Razão Social : ${cut(D(data.destNome), 60)}`, `CPF / CNPJ : ${fmtCnpj(D(data.destCnpj))}`, `Data de Emissão : ${fmtData(D(data.dhEmi || data.dataEmissao))}`],
-    [`Endereço : ${cut(D(data.destEndereco), 60)}`, `Bairro : ${cut(D(data.destBairro), 26)}`, `CEP : ${D(data.destCEP)}`],
-    [`Município : ${cut(D(data.destCidade), 40)}`, `UF : ${D(data.destUF)}`, `Insc. Est. : ${cut(D(data.destIE), 18)}`],
-  ] as any;
-  let dyy = y + 8;
-  dRows.forEach((r) => {
-    const rr = r as unknown as string[];
-    setFont("normal", 6); black();
-    doc.text(rr[0], M + 2, dyy);
-    doc.text(rr[1], M + 96, dyy);
-    doc.text(rr[2], M + 150, dyy);
-    dyy += 4;
-  });
-  y += destH + 1;
-
-  // ---- Produtos / serviços ----
-  const titH = 3.5;
-  box(M, y, CW, titH);
-  ctr("DADOS DOS PRODUTOS / SERVIÇOS", W / 2, y + 2.5, 6, true);
-  y += titH;
-  const colDefs: Array<[string, number, "l" | "c" | "r"]> = [
-    ["CÓDIGO", 18, "l"],
-    ["DESCRIÇÃO DO PRODUTO / SERVIÇO", 62, "l"],
-    ["CFOP", 12, "c"],
-    ["UN", 10, "c"],
-    ["QUANT.", 16, "r"],
-    ["V. UNITÁRIO", 20, "r"],
-    ["V. TOTAL", 20, "r"],
-    ["B. CÁLC. ICMS", 18, "r"],
-    ["V. ICMS", 22, "r"],
-  ];
-  const headPH = 5;
   const drawProdHead = () => {
-    need(headPH + 4);
-    box(M, y, CW, headPH);
-    let cx = M;
-    colDefs.forEach(([h, w]) => {
-      black(); setFont("bold", 4.8);
-      const tx = h === "DESCRIÇÃO DO PRODUTO / SERVIÇO" ? cx + 1 : cx + w / 2;
-      try { (doc as any).text(h, tx, y + 3.2, { align: h.startsWith("DESCRI") || h === "CÓDIGO" ? "left" : "center" }); }
-      catch { doc.text(h, cx + 1, y + 3.2); }
-      if (cx > M) vline(cx, y, headPH);
-      cx += w;
+    box(M, y, CW, 5);
+    let x = M;
+    pcols.forEach((c, i) => {
+      if (i > 0) vline(x, y, 5);
+      black(); setFont("bold", 3.9);
+      try { (doc as any).text(c.h, x + c.w / 2, y + 3.2, { align: "center" }); } catch { doc.text(c.h, x + 0.5, y + 3.2); }
+      x += c.w;
     });
-    vline(M + 18, y, headPH);
-    y += headPH;
+    y += 5;
   };
   drawProdHead();
-  const rowH = 4.2;
   const produtos = data.produtos || [];
   if (produtos.length === 0) {
     need(8);
@@ -289,138 +436,71 @@ export function gerarDanfePdf(data: DanfeData): Blob {
     y += 8;
   } else {
     produtos.forEach((p) => {
-      need(rowH + 4);
+      const descLines = doc.splitTextToSize(cut(D(p.nome).toUpperCase(), 120), 51 - 1.5) as string[];
+      const nLines = Math.min(3, Math.max(1, descLines.length));
+      const rowH = 2.4 + nLines * 2.5;
+      if (y + rowH > LIM) { doc.addPage(); y = M; secao("Dados dos Produtos / Serviços"); drawProdHead(); }
       box(M, y, CW, rowH);
-      let cx = M;
-      const cells: Array<[string, number, "l" | "c" | "r"]> = [
-        [cut(D(p.codigo), 12), 18, "l"],
-        [cut(D(p.nome), 44), 62, "l"],
-        [cfopFmt(D(p.cfop)), 12, "c"],
-        [cut(D(p.un), 6), 10, "c"],
-        [fmtQtd(D(p.qtd)), 16, "r"],
-        [fmtNum(p.valorUnit), 20, "r"],
-        [fmtNum(p.valorTotal), 20, "r"],
-        ["", 18, "r"],
-        ["", 22, "r"],
+      let x = M;
+      const cells: Array<[string, number, "l" | "c" | "r", number]> = [
+        [cut(D(p.codigo), 12), 14, "l", 4.6],
+        ["", 51, "l", 4.6],
+        [D(p.ncm), 12, "c", 4.6],
+        [D(p.cst), 7, "c", 4.4],
+        [cfopFmt(D(p.cfop)), 9, "c", 4.4],
+        [cut(D(p.un), 5), 7, "c", 4.6],
+        [fmtQtd(D(p.qtd)), 13, "r", 4.6],
+        [fmtNum(p.valorUnit), 15, "r", 4.6],
+        [fmtNum(p.valorTotal), 15, "r", 4.6],
+        [fmtNum(p.baseIcms ?? 0), 13, "r", 4.6],
+        [fmtNum(p.vIcms ?? 0), 13, "r", 4.6],
+        [fmtNum(p.vIpi ?? 0), 11, "r", 4.6],
+        [fmtNum(p.aliqIcms ?? 0), 10, "r", 4.4],
+        [fmtNum(p.aliqIpi ?? 0), 10, "r", 4.4],
       ];
-      cells.forEach(([txt, w, align], i) => {
-        black(); setFont("normal", 5);
-        if (i > 0) vline(cx, y, rowH);
-        if (txt) {
-          if (align === "r") right(txt, cx + w - 1, y + 2.9, 5);
-          else if (align === "c") ctr(txt, cx + w / 2, y + 2.9, 5);
-          else doc.text(txt, cx + 1, y + 2.9);
+      cells.forEach(([txt, w, align, s], i) => {
+        if (i > 0) vline(x, y, rowH);
+        if (i === 1) {
+          black(); setFont("normal", 4.6);
+          doc.text(descLines.slice(0, nLines), x + 0.8, y + 2.6);
+        } else if (txt) {
+          drawVal(txt, x, w, y + 2.6, align, s);
         }
-        cx += w;
+        x += w;
       });
       y += rowH;
     });
   }
 
-  // ---- Totais ----
-  need(14);
-  const totH = 4;
-  box(M, y, CW, totH);
-  ctr("CÁLCULO DO IMPOSTO", W / 2, y + 2.8, 6, true);
-  y += totH;
-  const vp = data.valorProdutos !== undefined ? data.valorProdutos : produtos.reduce((a, p) => a + (Number(p.valorTotal) || 0), 0);
-  const totCols: Array<[string, string, number]> = [
-    ["Base de Cálculo ICMS", fmtNum(data.baseIcms ?? 0), 34],
-    ["Valor do ICMS", fmtNum(data.valorIcms ?? 0), 30],
-    ["Valor do Frete", fmtNum(data.valorFrete ?? 0), 26],
-    ["Valor do Seguro", fmtNum(data.valorSeguro ?? 0), 26],
-    ["Desconto", fmtNum(data.valorDesconto ?? 0), 26],
-    ["Outras Despesas", fmtNum(data.valorOutras ?? 0), 0],
-  ];
-  const totValH = 7;
-  box(M, y, CW, totValH);
-  let tx = M + 2;
-  totCols.forEach(([l, v, w]) => {
-    lab(l, tx, y + 2.5);
-    val(v, tx, y + 5.5, 6);
-    if (w) { vline(tx + w, y, totValH); tx += w + 2; }
-  });
-  y += totValH;
-  const totRowH = 7;
-  box(M, y, CW, totRowH);
-  lab("Valor Total dos Produtos", M + 2, y + 2.5);
-  val(fmtNum(vp), M + 2, y + 5.5, 6);
-  vline(M + 40, y, totRowH);
-  setFont("bold", 6); black();
-  doc.text("VALOR TOTAL DA NOTA", M + 44, y + 2.5);
-  { const s = fmtNum(data.valorTotal); setFont("bold", 9); black(); doc.text(s, M + 44, y + 6); }
-  y += totRowH + 1;
+  // ================= CÁLCULO DO ISSQN =================
+  secao("Cálculo do ISSQN");
+  linha(7, [
+    { label: "Inscrição Municipal", value: D(data.issqnInscMun), w: 50 },
+    { label: "Valor Total dos Serviços", value: fmtNum(data.issqnTotalServicos ?? 0), w: 50, align: "r" },
+    { label: "Base de Cálculo do ISSQN", value: fmtNum(data.issqnBase ?? 0), w: 50, align: "r" },
+    { label: "Valor do ISSQN", value: fmtNum(data.issqnValor ?? 0), w: CW - 150, align: "r" },
+  ]);
 
-  // ---- Transportador / volumes ----
-  const trH = 12;
-  box(M, y, CW, trH);
-  setFont("bold", 6); black();
-  doc.text("TRANSPORTADOR / VOLUMES TRANSPORTADOS", M + 2, y + 3.5);
-  setFont("normal", 6); black();
-  doc.text(`Razão Social : ${cut(D(data.transportadora), 50)}`, M + 2, y + 7.5);
-  doc.text(`CPF / CNPJ : ${fmtCnpj(D(data.transpCnpj))}`, M + 100, y + 7.5);
-  doc.text(`Endereço : ${cut(D(data.transpEndereco), 46)}`, M + 150, y + 7.5);
-  doc.text(`Município : ${cut(D(data.transpCidade), 40)}`, M + 2, y + 10.8);
-  doc.text(`UF : ${D(data.transpUF)}`, M + 100, y + 10.8);
-  doc.text(`Quantidade : ${D(data.volumes)}`, M + 116, y + 10.8);
-  doc.text(`Peso Bruto : ${D(data.pesoBruto)}`, M + 146, y + 10.8);
-  doc.text(`Peso Líquido : ${D(data.pesoLiquido)}`, M + 172, y + 10.8);
-  y += trH + 1;
-
-  // ---- Duplicatas / parcelas ----
-  const parcelas = data.parcelas || [];
-  if (parcelas.length > 0) {
-    need(12);
-    const dpTitleH = 3.5;
-    box(M, y, CW, dpTitleH);
-    ctr("DUPLICATAS", W / 2, y + 2.5, 6, true);
-    y += dpTitleH;
-    const perRow = 3;
-    const dpColW = CW / perRow;
-    for (let i = 0; i < parcelas.length; i += perRow) {
-      need(6);
-      const chunk = parcelas.slice(i, i + perRow);
-      box(M, y, CW, 5.5);
-      chunk.forEach((pc, c) => {
-        const cx = M + c * dpColW;
-        if (c > 0) vline(cx, y, 5.5);
-        setFont("normal", 5); black();
-        doc.text(`Nº ${D(pc.numero) || String(i + c + 1)}`, cx + 1.5, y + 2.2);
-        doc.text(`Venc. ${fmtData(D(pc.dataVencimento))}`, cx + 1.5, y + 4.5);
-        right(fmtNum(pc.valor), cx + dpColW - 1.5, y + 3.4, 5.5);
-      });
-      y += 5.5;
-    }
-    y += 1;
-  }
-
-  // ---- Informações complementares ----
-  const isHom = (data.ambiente || "") === "homologacao";
-  need(20);
-  const iaH = 14;
+  // ================= DADOS ADICIONAIS =================
+  secao("Dados Adicionais");
+  need(22);
+  const iaH = 20;
   box(M, y, CW, iaH);
-  setFont("bold", 6); black();
-  doc.text("Informações Complementares", M + 2, y + 3.5);
+  vline(M + 130, y, iaH);
+  lab("Informações Complementares", M + 1, y + 2.6);
+  lab("Reservado ao Fisco", M + 131, y + 2.6);
   if (D(data.infoComplementares)) {
-    setFont("normal", 5); black();
-    const lines = doc.splitTextToSize(String(data.infoComplementares), CW - 4);
-    doc.text(lines.slice(0, 4), M + 2, y + 7.5);
+    setFont("normal", 4.8); black();
+    const lines = doc.splitTextToSize(String(data.infoComplementares), 130 - 3) as string[];
+    doc.text(lines.slice(0, 7), M + 1, y + 6);
   }
-  if (D(data.protocolo)) {
-    setFont("normal", 5); black();
-    doc.text(`Protocolo de Autorização : ${D(data.protocolo)}`, M + 2, y + iaH - 2);
-  }
+  const isHom = (data.ambiente || "") === "homologacao";
   if (isHom) {
-    doc.setTextColor(170, 170, 170);
-    ctr("AMBIENTE DE HOMOLOGAÇÃO - SEM VALOR FISCAL", W / 2, y + iaH / 2 + 1, 9, true);
+    doc.setTextColor(150, 150, 150);
+    ctr("AMBIENTE DE HOMOLOGAÇÃO - SEM VALOR FISCAL", M + 65, y + iaH / 2 + 2, 7, true);
     black();
   }
-  y += iaH + 1;
-
-  // ---- Rodapé ----
-  need(8);
-  setFont("normal", 4.5); doc.setTextColor(120, 120, 120);
-  ctr("DANFE gerado pelo sistema Norvo Gestão — sem valor fiscal (representação do documento importado).", W / 2, y + 3, 4.5);
+  y += iaH;
 
   return doc.output("blob");
 }
