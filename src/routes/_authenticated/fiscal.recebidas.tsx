@@ -1387,8 +1387,8 @@ function NotasRecebidas() {
 
           <Card className="overflow-hidden border-muted shadow-panel bg-card/60 backdrop-blur-sm">
             <div className="overflow-x-auto">
-              <Table className="[&_td]:px-2 [&_td]:py-1.5 [&_td]:text-[13px] [&_td]:text-center [&_th]:px-2 [&_td]:border-l [&_td]:border-border [&_td:first-child]:border-l-0 [&_th]:border-l [&_th]:border-primary/20 [&_th:first-child]:border-l-0">
-                <TableHeader className="bg-primary/10 [&_th]:text-primary/80">
+              <Table className="[&_td]:px-2 [&_td]:py-1.5 [&_td]:text-[13px] [&_td]:text-center [&_th]:px-2 [&_td]:border-l [&_td]:border-border [&_td:first-child]:border-l-0 [&_th]:border-l [&_th]:border-white/25 [&_th:first-child]:border-l-0">
+                <TableHeader className="bg-primary supports-[backdrop-filter]:bg-primary [&_th]:text-primary-foreground">
                   <TableRow>
                     <TableHead className="text-center">Emitente</TableHead>
                     <TableHead className="text-center">NF-e</TableHead>
