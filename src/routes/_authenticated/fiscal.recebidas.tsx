@@ -1805,92 +1805,106 @@ function NotasRecebidas() {
                       Nenhuma parcela. Adicione parcelas manualmente ou deixe vazio para gerar 1 título com vencimento em 30 dias.
                     </p>
                   ) : (
-                    <div className="space-y-2">
-                      {importResults.parcelas.map((p, i) => (
-                        <div key={i} className="flex flex-wrap items-center gap-2">
-                          <Input
-                            className="h-8 w-16 text-xs font-mono text-center shrink-0"
-                            value={p.numero}
-                            onChange={(e) => {
-                              const novas = [...importResults.parcelas];
-                              novas[i] = { ...novas[i], numero: e.target.value };
-                              setImportResults({ ...importResults, parcelas: novas });
-                            }}
-                          />
-                          <DateInput
-                            className="h-8 text-xs shrink-0 w-[160px]"
-                            value={p.dataVencimento}
-                            onChange={(v) => {
-                              const novas = [...importResults.parcelas];
-                              novas[i] = { ...novas[i], dataVencimento: v };
-                              setImportResults({ ...importResults, parcelas: novas });
-                            }}
-                          />
-                          <MoneyInput
-                            value={String(p.valor ?? 0)}
-                            onChange={(v) => {
-                              const novas = [...importResults.parcelas];
-                              novas[i] = { ...novas[i], valor: parseFloat(v) || 0 };
-                              setImportResults({ ...importResults, parcelas: novas });
-                            }}
-                            className="h-8 text-xs text-right w-[140px] shrink-0"
-                            placeholder="0,00"
-                          />
-                          <Select
-                            value={p.forma_pagamento || "Boleto"}
-                            onValueChange={(v) => {
-                              const novas = [...importResults.parcelas];
-                              novas[i] = { ...novas[i], forma_pagamento: v };
-                              setImportResults({ ...importResults, parcelas: novas });
-                            }}
-                          >
-                            <SelectTrigger className="h-8 text-xs w-[150px] shrink-0">
-                              <SelectValue placeholder="Forma" />
-                            </SelectTrigger>
-                            <SelectContent>
-                              {FORMAS_PARCELA.map((f) => (
-                                <SelectItem key={f} value={f}>{f}</SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
-                          <Combobox
-                            value={p.conta_bancaria_id || "__none__"}
-                            onChange={(v) => {
-                              const novas = [...importResults.parcelas];
-                              novas[i] = { ...novas[i], conta_bancaria_id: v === "__none__" ? "" : v };
-                              setImportResults({ ...importResults, parcelas: novas });
-                            }}
-                            options={[
-                              { value: "__none__", label: "Sem conta" },
-                              ...contasBancarias.map((c) => ({ value: c.id, label: c.nome })),
-                            ]}
-                            placeholder="Banco/Caixa"
-                            searchPlaceholder="Digite para buscar..."
-                            emptyText="Nenhum item encontrado."
-                          />
-                          <TooltipProvider>
-                            <Tooltip>
-                              <TooltipTrigger asChild>
-                                <Button
-                                  size="sm"
-                                  variant="ghost"
-                                  className="h-8 w-8 p-0 text-destructive hover:bg-destructive/10 shrink-0"
-                                  onClick={() => {
-                                    const novas = importResults.parcelas.filter((_, idx) => idx !== i);
-                                    setImportResults({ ...importResults, parcelas: novas });
-                                  }}
-                                >
-                                  <XCircle className="h-4 w-4" />
-                                </Button>
-                              </TooltipTrigger>
-                              <TooltipContent>Remover parcela</TooltipContent>
-                            </Tooltip>
-                          </TooltipProvider>
-                        </div>
-                      ))}
-                      <div className="flex justify-end">
+                    <div className="rounded-md border border-sky-500/20 bg-background overflow-hidden">
+                      <div className="hidden md:grid grid-cols-[64px_150px_140px_150px_1fr_36px] gap-2 border-b border-sky-500/10 bg-muted/40 px-3 py-1.5 text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
+                        <span>Nº</span>
+                        <span>Vencimento</span>
+                        <span>Valor</span>
+                        <span>Forma</span>
+                        <span>Conta</span>
+                        <span />
+                      </div>
+                      <div className="divide-y divide-sky-500/10">
+                        {importResults.parcelas.map((p, i) => (
+                          <div key={i} className="grid grid-cols-2 md:grid-cols-[64px_150px_140px_150px_1fr_36px] gap-2 px-3 py-2 items-center">
+                            <Input
+                              className="h-8 w-full text-xs font-mono text-center"
+                              value={p.numero}
+                              onChange={(e) => {
+                                const novas = [...importResults.parcelas];
+                                novas[i] = { ...novas[i], numero: e.target.value };
+                                setImportResults({ ...importResults, parcelas: novas });
+                              }}
+                            />
+                            <DateInput
+                              className="h-8 text-xs w-full"
+                              value={p.dataVencimento}
+                              onChange={(v) => {
+                                const novas = [...importResults.parcelas];
+                                novas[i] = { ...novas[i], dataVencimento: v };
+                                setImportResults({ ...importResults, parcelas: novas });
+                              }}
+                            />
+                            <MoneyInput
+                              value={String(p.valor ?? 0)}
+                              onChange={(v) => {
+                                const novas = [...importResults.parcelas];
+                                novas[i] = { ...novas[i], valor: parseFloat(v) || 0 };
+                                setImportResults({ ...importResults, parcelas: novas });
+                              }}
+                              className="h-8 text-xs text-right w-full"
+                              placeholder="0,00"
+                            />
+                            <Select
+                              value={p.forma_pagamento || "Boleto"}
+                              onValueChange={(v) => {
+                                const novas = [...importResults.parcelas];
+                                novas[i] = { ...novas[i], forma_pagamento: v };
+                                setImportResults({ ...importResults, parcelas: novas });
+                              }}
+                            >
+                              <SelectTrigger className="h-8 text-xs w-full">
+                                <SelectValue placeholder="Forma" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                {FORMAS_PARCELA.map((f) => (
+                                  <SelectItem key={f} value={f}>{f}</SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                            <div className="w-full">
+                              <Combobox
+                                value={p.conta_bancaria_id || "__none__"}
+                                onChange={(v) => {
+                                  const novas = [...importResults.parcelas];
+                                  novas[i] = { ...novas[i], conta_bancaria_id: v === "__none__" ? "" : v };
+                                  setImportResults({ ...importResults, parcelas: novas });
+                                }}
+                                options={[
+                                  { value: "__none__", label: "Sem conta" },
+                                  ...contasBancarias.map((c) => ({ value: c.id, label: c.nome })),
+                                ]}
+                                placeholder="Banco/Caixa"
+                                searchPlaceholder="Digite para buscar..."
+                                emptyText="Nenhum item encontrado."
+                              />
+                            </div>
+                            <div className="col-span-2 md:col-span-1 flex justify-end">
+                              <TooltipProvider>
+                                <Tooltip>
+                                  <TooltipTrigger asChild>
+                                    <Button
+                                      size="sm"
+                                      variant="ghost"
+                                      className="h-8 w-8 p-0 text-destructive hover:bg-destructive/10 shrink-0"
+                                      onClick={() => {
+                                        const novas = importResults.parcelas.filter((_, idx) => idx !== i);
+                                        setImportResults({ ...importResults, parcelas: novas });
+                                      }}
+                                    >
+                                      <XCircle className="h-4 w-4" />
+                                    </Button>
+                                  </TooltipTrigger>
+                                  <TooltipContent>Remover parcela</TooltipContent>
+                                </Tooltip>
+                              </TooltipProvider>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                      <div className="flex justify-end border-t border-sky-500/10 bg-muted/30 px-3 py-1.5">
                         <span className="text-xs text-muted-foreground">
-                          Total parcelas: {brl(importResults.parcelas.reduce((acc, p) => acc + p.valor, 0))}
+                          Total parcelas: <span className="font-semibold text-foreground">{brl(importResults.parcelas.reduce((acc, p) => acc + p.valor, 0))}</span>
                           {importResults.parcelas.reduce((acc, p) => acc + p.valor, 0) !== importResults.total && (
                             <span className="text-destructive ml-2">
                               (diferente do total da NF-e: {brl(importResults.total)})
