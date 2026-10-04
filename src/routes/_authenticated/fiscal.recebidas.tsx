@@ -918,6 +918,19 @@ function NotasRecebidas() {
     }
   };
 
+  const handleIgnorarNota = () => {
+    if (!importResults) return;
+    if (filaXml.length > 0) {
+      setImportResults(filaXml[0]);
+      setFilaXml(filaXml.slice(1));
+      setMesmaCategoria(false);
+    } else {
+      setSelectedFiles([]);
+      setImportResults(null);
+    }
+    toast.info("Nota ignorada.");
+  };
+
   const handleLancarNota = async () => {
     if (!notaDetalhe || !empresa) return;
     setIsSaving(true);
@@ -1917,6 +1930,9 @@ function NotasRecebidas() {
 
                 <div className="flex justify-end gap-2 pt-2">
                   <Button variant="outline" disabled={isSaving} onClick={() => { setImportResults(null); setFilaXml([]); }}>Cancelar</Button>
+                  <Button variant="outline" disabled={isSaving} onClick={handleIgnorarNota} className="text-amber-700 hover:bg-amber-500/10">
+                    Ignorar Nota
+                  </Button>
                   <Button onClick={handleConfirmarXmlUpload} disabled={isSaving} className="bg-emerald-600 hover:bg-emerald-700 text-white">
                     {isSaving ? (
                       <>
