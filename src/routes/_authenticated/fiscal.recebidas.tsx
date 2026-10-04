@@ -27,6 +27,8 @@ import { useEmpresaAtual } from "@/hooks/use-empresa";
 import { useMutation } from "@tanstack/react-query";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { consultarNFePorChaveFn } from "@/lib/sefaz-server";
+import { gerarDanfePdf, DANFE_REV, type DanfeData } from "@/lib/danfe-pdf";
+import { PdfViewer } from "@/components/erp/pdf-viewer";
 
 export const Route = createFileRoute("/_authenticated/fiscal/recebidas")({
   component: NotasRecebidas,
@@ -105,6 +107,81 @@ function nNFdaChave(chave: string): string {
   const d = (chave || "").replace(/\D/g, "");
   if (d.length !== 44) return "";
   return String(parseInt(d.substring(25, 34), 10));
+}
+
+// série ocupa os dígitos 23-25 da chave; fallback quando o XML não traz <serie>
+function nSerieDaChave(chave: string): string {
+  const d = (chave || "").replace(/\D/g, "");
+  if (d.length !== 44) return "";
+  return String(parseInt(d.substring(22, 25), 10));
+}
+
+// Extrai do XML os campos do DANFE que não estão na lista de notas (emitente completo,
+// destinatário, totais, transporte, duplicatas). Tudo é opcional — o PDF tolera ausências.
+function parseDanfeDoXml(xml: string): Partial<DanfeData> {
+  try {
+    const parser = new DOMParser();
+    const doc = parser.parseFromString(xml, "text/xml");
+    const txt = (sel: string) => doc.querySelector(sel)?.textContent || "";
+    const num = (sel: string) => { const v = parseFloat(txt(sel)); return isNaN(v) ? undefined : v; };
+    const out: Partial<DanfeData> = {};
+    // Emitente
+    out.emitEndereco = [txt("emit > enderEmit > xLgr"), txt("emit > enderEmit > nro")].filter(Boolean).join(", ");
+    out.emitBairro = txt("emit > enderEmit > xBairro");
+    out.emitCEP = txt("emit > enderEmit > CEP");
+    out.emitCidade = txt("emit > enderEmit > xMun");
+    out.emitUF = txt("emit > enderEmit > UF");
+    out.emitFone = txt("emit > enderEmit > fone");
+    out.emitIE = txt("emit > IE");
+    // Destinatário
+    out.destNome = txt("dest > xNome");
+    out.destCnpj = txt("dest > CNPJ") || txt("dest > CPF");
+    out.destEndereco = [txt("dest > enderDest > xLgr"), txt("dest > enderDest > nro")].filter(Boolean).join(", ");
+    out.destBairro = txt("dest > enderDest > xBairro");
+    out.destCEP = txt("dest > enderDest > CEP");
+    out.destCidade = txt("dest > enderDest > xMun");
+    out.destUF = txt("dest > enderDest > UF");
+    out.destIE = txt("dest > IE");
+    // Ide / operação
+    out.naturezaOperacao = txt("ide > natOp");
+    out.cfop = txt("det > prod > CFOP");
+    out.serie = txt("ide > serie");
+    out.dhEmi = txt("ide > dhEmi") || txt("ide > dEmi");
+    // Totais
+    out.valorProdutos = num("total > ICMSTot > vProd");
+    out.valorFrete = num("total > ICMSTot > vFrete");
+    out.valorSeguro = num("total > ICMSTot > vSeg");
+    out.valorDesconto = num("total > ICMSTot > vDesc");
+    out.valorOutras = num("total > ICMSTot > vOutro");
+    out.baseIcms = num("total > ICMSTot > vBC");
+    out.valorIcms = num("total > ICMSTot > vICMS");
+    // Transporte
+    out.transportadora = txt("transp > transporta > xNome");
+    out.transpCnpj = txt("transp > transporta > CNPJ") || txt("transp > transporta > CPF");
+    out.transpEndereco = txt("transp > transporta > xEnder");
+    out.transpCidade = txt("transp > transporta > xMun");
+    out.transpUF = txt("transp > transporta > UF");
+    out.volumes = txt("transp > vol > qVol");
+    out.pesoBruto = txt("transp > vol > pesoB");
+    out.pesoLiquido = txt("transp > vol > pesoL");
+    // Info complementar / protocolo
+    out.infoComplementares = txt("infAdic > infCpl");
+    out.protocolo = txt("protNFe > infProt > nProt");
+    return out;
+  } catch {
+    return {};
+  }
+}
+
+// CFOP por item, alinhado à ordem dos produtos (para popular a coluna CFOP do DANFE)
+function cfopsDoXml(xml: string): string[] {
+  try {
+    const parser = new DOMParser();
+    const doc = parser.parseFromString(xml, "text/xml");
+    return Array.from(doc.querySelectorAll("det")).map((d) => d.querySelector("prod > CFOP")?.textContent || "");
+  } catch {
+    return [];
+  }
 }
 
 function NotasRecebidas() {
@@ -303,6 +380,12 @@ function NotasRecebidas() {
     parcelas: { numero: string; dataVencimento: string; valor: number; forma_pagamento: string; conta_bancaria_id: string }[];
     xml: string;
   } | null>(null);
+
+  // Prévia do DANFE (mesmo viewer do CT-e) aberta pelo botão "ver detalhes"
+  const [pdfNota, setPdfNota] = useState<{ url: string; nome: string; subtitulo: string; nota: NotaRecebida } | null>(null);
+  const fecharPdfNota = () => {
+    setPdfNota((p) => { if (p) URL.revokeObjectURL(p.url); return null; });
+  };
 
   const handleImportarPorChave = async () => {
     if (!empresa) return toast.error("Empresa não selecionada");
@@ -1103,13 +1186,28 @@ function NotasRecebidas() {
     return matchSearch && matchMes;
   });
 
-  const handleVerNota = async (n: NotaRecebida) => {
-    // Nota já importada: o detalhe monta só com dados locais — a SEFAZ (homologação) não resolve chave de produção
+  type DadosNota = {
+    id?: string;
+    chave: string;
+    emitente: string;
+    cnpj: string;
+    valor: number;
+    data: string;
+    nNF: string;
+    produtos: { codigo: string; nome: string; qtd: number; un: string; valorUnit: number; valorTotal: number; categoria: string }[];
+    parcelas: { numero: string; dataVencimento: string; valor: number; forma_pagamento: string; conta_bancaria_id: string }[];
+    xml: string;
+  };
+
+  // Carrega os dados completos da nota (itens/parcelas) preferindo o registro local;
+  // só recorre à SEFAZ quando não há id nem XML guardado. Compartilhado pelo diálogo
+  // de detalhes e pela geração do DANFE.
+  const carregarDadosNota = async (n: NotaRecebida): Promise<DadosNota | null> => {
     if (n.id) {
       const { data: itens } = await supabase.from("notas_importadas_itens" as never).select("codigo, nome, quantidade, unidade, valor_unitario, valor_total, categoria").eq("nota_id", n.id as any);
       const { data: parcelasDB } = await supabase.from("notas_importadas_parcelas" as never).select("numero, data_vencimento, valor, lancamento_id").eq("nota_id", n.id as any);
       const produtos = ((itens as any[]) || []).map((it: any) => ({ codigo: it.codigo, nome: it.nome, qtd: Number(it.quantidade), un: it.unidade, valorUnit: Number(it.valor_unitario), valorTotal: Number(it.valor_total), categoria: it.categoria || "" }));
-      let parcelas: { numero: string; dataVencimento: string; valor: number; forma_pagamento: string; conta_bancaria_id: string }[] = [];
+      let parcelas: DadosNota["parcelas"] = [];
       if (parcelasDB && (parcelasDB as any).length > 0) {
         const lancIds = (parcelasDB as any[]).map((p: any) => p.lancamento_id).filter(Boolean);
         const lancMap = new Map<string, any>();
@@ -1122,7 +1220,6 @@ function NotasRecebidas() {
           return { numero: p.numero, dataVencimento: p.data_vencimento, valor: Number(p.valor), forma_pagamento: lanc?.forma_pagamento || "Boleto", conta_bancaria_id: lanc?.conta_bancaria_id || "" };
         });
       }
-      // Sem itens salvos mas com XML guardado: parseia o XML (comportamento anterior)
       const xmlLocal = n.xml_completo || "";
       let produtosFinais = produtos;
       let parcelasFinais = parcelas;
@@ -1130,21 +1227,12 @@ function NotasRecebidas() {
         produtosFinais = parseProdutosDoXml(xmlLocal);
         if (parcelas.length === 0) parcelasFinais = parseParcelasDoXml(xmlLocal);
       }
-      setNotaDetalhe({
-        id: n.id,
-        chave: n.chave,
-        emitente: n.emitente,
-        cnpj: n.cnpj,
-        nNF: n.numero_nf || nNFdaChave(n.chave),
-        data: n.data_emissao,
-        valor: n.valor,
-        produtos: produtosFinais,
-        parcelas: parcelasFinais,
-        xml: xmlLocal,
-      });
-      return;
+      return {
+        id: n.id, chave: n.chave, emitente: n.emitente, cnpj: n.cnpj,
+        nNF: n.numero_nf || nNFdaChave(n.chave), data: n.data_emissao, valor: n.valor,
+        produtos: produtosFinais, parcelas: parcelasFinais, xml: xmlLocal,
+      };
     }
-    // Sem registro local: tenta o XML em memória antes de consultar a SEFAZ
     if (n.xml_completo) {
       const xml = n.xml_completo;
       const produtos = parseProdutosDoXml(xml);
@@ -1152,10 +1240,9 @@ function NotasRecebidas() {
       const doc = parser.parseFromString(xml, "text/xml");
       const nNF = doc.querySelector("nNF")?.textContent || n.numero_nf || nNFdaChave(n.chave);
       const parcelas = parseParcelasDoXml(xml);
-      setNotaDetalhe({ id: n.id, chave: n.chave, emitente: n.emitente, cnpj: n.cnpj, nNF, data: n.data_emissao, valor: n.valor, produtos, parcelas, xml });
-      return;
+      return { id: n.id, chave: n.chave, emitente: n.emitente, cnpj: n.cnpj, nNF, data: n.data_emissao, valor: n.valor, produtos, parcelas, xml };
     }
-    if (!empresa) return;
+    if (!empresa) return null;
     toast.info("Buscando detalhes da nota na SEFAZ...");
     try {
       const result = await consultarNFePorChaveFn({ data: { empresaId: empresa.id, chave: n.chave } });
@@ -1166,24 +1253,51 @@ function NotasRecebidas() {
         const doc = parser.parseFromString(xml, "text/xml");
         const nNF = doc.querySelector("nNF")?.textContent || n.numero_nf || nNFdaChave(n.chave);
         const parcelas = parseParcelasDoXml(xml);
-        setNotaDetalhe({
-          id: n.id,
-          chave: n.chave,
-          emitente: n.emitente,
-          cnpj: n.cnpj,
-          nNF,
-          data: n.data_emissao,
-          valor: n.valor,
-          produtos,
-          parcelas,
-          xml,
-        });
-      } else {
-        toast.error(result.erro || "Não foi possível buscar detalhes");
+        return { id: n.id, chave: n.chave, emitente: n.emitente, cnpj: n.cnpj, nNF, data: n.data_emissao, valor: n.valor, produtos, parcelas, xml };
       }
+      toast.error(result.erro || "Não foi possível buscar detalhes");
+      return null;
     } catch {
       toast.error("Erro ao consultar SEFAZ");
+      return null;
     }
+  };
+
+  const handleVerNota = async (n: NotaRecebida) => {
+    const d = await carregarDadosNota(n);
+    if (d) setNotaDetalhe(d);
+  };
+
+  // Monta o DanfeData a partir dos dados carregados + campos extras do XML.
+  const montarDanfe = (d: DadosNota): DanfeData => {
+    const extra = d.xml ? parseDanfeDoXml(d.xml) : {};
+    const cfops = d.xml ? cfopsDoXml(d.xml) : [];
+    const serie = extra.serie || nSerieDaChave(d.chave);
+    return {
+      ...extra,
+      chave: d.chave,
+      numero: d.nNF || nNFdaChave(d.chave),
+      serie,
+      dataEmissao: d.data,
+      ambiente: "producao",
+      emitNome: d.emitente,
+      emitCnpj: d.cnpj,
+      produtos: d.produtos.map((p, i) => ({
+        codigo: p.codigo, nome: p.nome, qtd: p.qtd, un: p.un,
+        valorUnit: p.valorUnit, valorTotal: p.valorTotal, cfop: cfops[i] || extra.cfop || "",
+      })),
+      parcelas: d.parcelas.map((p) => ({ numero: p.numero, dataVencimento: p.dataVencimento, valor: p.valor })),
+      valorTotal: d.valor,
+    };
+  };
+
+  const abrirPdfDaNota = async (n: NotaRecebida) => {
+    const d = await carregarDadosNota(n);
+    if (!d) return;
+    const blob = gerarDanfePdf(montarDanfe(d));
+    const url = URL.createObjectURL(blob);
+    const numero = d.nNF || nNFdaChave(n.chave) || "—";
+    setPdfNota((p) => { if (p) URL.revokeObjectURL(p.url); return { url, nome: `DANFE_${numero}.pdf`, subtitulo: `${d.emitente} — NF-e ${numero}`, nota: n }; });
   };
 
   const handleBaixarXml = (n: NotaRecebida) => {
@@ -1197,93 +1311,18 @@ function NotasRecebidas() {
     URL.revokeObjectURL(url);
   };
 
-  const handleBaixarPdf = (n: NotaRecebida) => {
-    // Parse XML para extrair dados detalhados
-    let produtos: { codigo: string; nome: string; qtd: number; un: string; valorUnit: number; valorTotal: number }[] = [];
-    let destinatario = { nome: "", cnpj: "", endereco: "" };
-    let transportadora = "";
-    if (n.xml_completo) {
-      try {
-        const parser = new DOMParser();
-        const doc = parser.parseFromString(n.xml_completo, "text/xml");
-        const detNodes = Array.from(doc.querySelectorAll("det"));
-        produtos = detNodes.map((det) => ({
-          codigo: det.querySelector("prod > cProd")?.textContent || "",
-          nome: det.querySelector("prod > xProd")?.textContent || "",
-          qtd: parseFloat(det.querySelector("prod > qCom")?.textContent || "0"),
-          un: det.querySelector("prod > uCom")?.textContent || "UN",
-          valorUnit: parseFloat(det.querySelector("prod > vUnCom")?.textContent || "0"),
-          valorTotal: parseFloat(det.querySelector("prod > vProd")?.textContent || "0"),
-        }));
-        destinatario = {
-          nome: doc.querySelector("dest > xNome")?.textContent || "",
-          cnpj: doc.querySelector("dest > CNPJ")?.textContent || doc.querySelector("dest > CPF")?.textContent || "",
-          endereco: [doc.querySelector("dest > enderDest > xLgr")?.textContent, doc.querySelector("dest > enderDest > nro")?.textContent, doc.querySelector("dest > enderDest > xBairro")?.textContent].filter(Boolean).join(", "),
-        };
-        transportadora = doc.querySelector("transp > transp > xNome")?.textContent || "";
-      } catch { /* XML parse error */ }
-    }
-    const nNF = n.numero_nf || "";
-    const dataEmissao = n.data_emissao ? dateBR(n.data_emissao) : "—";
-    const chaveFormatada = n.chave.replace(/(\d{4})/g, "$1 ").trim();
-
-    const html = `<!DOCTYPE html><html><head><meta charset="utf-8"><title>NF-e ${nNF}</title>
-<style>
-  *{margin:0;padding:0;box-sizing:border-box}
-  body{font-family:"Arial",sans-serif;font-size:11px;color:#000;background:#fff;padding:10px}
-  .nf-header{background:#1a1a2e;color:#fff;padding:8px 12px;display:flex;justify-content:space-between;align-items:center;margin-bottom:6px}
-  .nf-header h1{font-size:13px;letter-spacing:1px}
-  .nf-header .num{font-size:11px;opacity:.8}
-  .section{border:1px solid #999;margin-bottom:6px;padding:6px 8px}
-  .section-title{background:#e8e8e8;padding:2px 6px;font-weight:bold;font-size:10px;text-transform:uppercase;margin-bottom:4px;letter-spacing:.5px}
-  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:0 16px}
-  .field{margin-bottom:3px}.label{font-weight:bold;font-size:9px;text-transform:uppercase;color:#444}.val{font-size:11px}
-  table{width:100%;border-collapse:collapse;margin-top:4px}
-  th{background:#e8e8e8;border:1px solid #999;padding:3px 5px;font-size:9px;text-transform:uppercase;text-align:left}
-  td{border:1px solid #ccc;padding:3px 5px;font-size:10px}
-  .text-right{text-align:right}.text-center{text-align:center}
-  .total-row{font-weight:bold;background:#f5f5f5}
-  .chave{background:#f0f0f0;padding:6px 8px;border:1px solid #999;margin-top:6px;text-align:center;font-size:10px;letter-spacing:1px}
-  .chave strong{display:block;font-size:9px;margin-bottom:2px;color:#444}
-  .footer{margin-top:8px;text-align:center;font-size:8px;color:#666}
-  @media print{body{padding:0}.nf-header{background:#1a1a2e!important;-webkit-print-color-adjust:exact;print-color-adjust:exact}}
-</style></head><body>
-<div class="nf-header"><h1>NOTA FISCAL ELETRÔNICA — NF-e</h1><div class="num">Nº ${nNF}</div></div>
-<div class="section">
-  <div class="grid2">
-    <div class="field"><div class="label">Documento Fiscal</div><div class="val">NF-e — Modelo 55</div></div>
-    <div class="field"><div class="label">Data de Emissão</div><div class="val">${dataEmissao}</div></div>
-  </div>
-</div>
-<div class="section">
-  <div class="section-title">EMITENTE</div>
-  <div class="grid2">
-    <div><div class="field"><div class="label">Razão Social</div><div class="val">${n.emitente}</div></div>
-    <div class="field"><div class="label">CNPJ</div><div class="val">${n.cnpj}</div></div></div>
-    <div><div class="field"><div class="label">Situação</div><div class="val">${n.situacao_sefaz === "autorizada" ? "Autorizada" : "Cancelada"}</div></div></div>
-  </div>
-</div>
-${destinatario.nome ? `<div class="section"><div class="section-title">DESTINATÁRIO</div>
-<div class="grid2"><div><div class="field"><div class="label">Razão Social</div><div class="val">${destinatario.nome}</div></div>
-<div class="field"><div class="label">CNPJ/CPF</div><div class="val">${destinatario.cnpj}</div></div></div>
-<div><div class="field"><div class="label">Endereço</div><div class="val">${destinatario.endereco}</div></div></div></div></div>` : ""}
-<div class="section">
-  <div class="section-title">PRODUTOS / SERVIÇOS</div>
-  <table>
-    <thead><tr><th>Código</th><th>Descrição</th><th class="text-center">Qtd</th><th class="text-center">UN</th><th class="text-right">Valor Unit.</th><th class="text-right">Valor Total</th></tr></thead>
-    <tbody>
-      ${produtos.length > 0 ? produtos.map(p => `<tr><td>${p.codigo}</td><td>${p.nome}</td><td class="text-center">${p.qtd}</td><td class="text-center">${p.un}</td><td class="text-right">${brl(p.valorUnit)}</td><td class="text-right">${brl(p.valorTotal)}</td></tr>`).join("") : `<tr><td colspan="6" style="text-align:center;color:#666">Produto(s) do XML</td></tr>`}
-      <tr class="total-row"><td colspan="5" class="text-right">VALOR TOTAL</td><td class="text-right">${brl(n.valor)}</td></tr>
-    </tbody>
-  </table>
-</div>
-${transportadora ? `<div class="section"><div class="section-title">TRANSPORTE</div><div class="field"><div class="label">Transportadora</div><div class="val">${transportadora}</div></div></div>` : ""}
-<div class="chave"><strong>CHAVE DE ACESSO</strong>${chaveFormatada}</div>
-<div class="footer">Documento gerado pelo sistema Norvo Gestão — ${new Date().toLocaleString("pt-BR")}</div>
-<script>window.onload=()=>{window.print();window.onafterprint=()=>window.close()}</script>
-</body></html>`;
-    const w = window.open("", "_blank");
-    if (w) { w.document.write(html); w.document.close(); }
+  // "Baixar PDF" gera o mesmo DANFE exibido na prévia (mesmo construtor do CT-e).
+  const handleBaixarPdf = async (n: NotaRecebida) => {
+    const d = await carregarDadosNota(n);
+    if (!d) return;
+    const blob = gerarDanfePdf(montarDanfe(d));
+    const url = URL.createObjectURL(blob);
+    const numero = d.nNF || nNFdaChave(n.chave) || "nota";
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `DANFE_${numero}.pdf`;
+    a.click();
+    URL.revokeObjectURL(url);
   };
 
   return (
@@ -1375,11 +1414,11 @@ ${transportadora ? `<div class="section"><div class="section-title">TRANSPORTE</
                             <TooltipProvider>
                               <Tooltip>
                                 <TooltipTrigger asChild>
-                                  <Button size="sm" variant="ghost" className="h-7 w-7 p-0" onClick={() => handleVerNota(n)}>
+                                  <Button size="sm" variant="ghost" className="h-7 w-7 p-0" onClick={() => abrirPdfDaNota(n)}>
                                     <Eye className="h-3.5 w-3.5" />
                                   </Button>
                                 </TooltipTrigger>
-                                <TooltipContent>Ver detalhes</TooltipContent>
+                                <TooltipContent>Ver detalhes (DANFE)</TooltipContent>
                               </Tooltip>
                             </TooltipProvider>
                             {n.xml_completo && (
@@ -2026,6 +2065,30 @@ ${transportadora ? `<div class="section"><div class="section-title">TRANSPORTE</
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {pdfNota && (
+        <PdfViewer
+          titulo="DANFE — Nota de Compra"
+          subtitulo={pdfNota.subtitulo}
+          url={pdfNota.url}
+          nomeArquivo={pdfNota.nome}
+          rev={DANFE_REV}
+          onClose={fecharPdfNota}
+          acoes={
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={async () => {
+                const nota = pdfNota.nota;
+                fecharPdfNota();
+                await handleVerNota(nota);
+              }}
+            >
+              Detalhes / Lançar
+            </Button>
+          }
+        />
+      )}
     </>
   );
 }
