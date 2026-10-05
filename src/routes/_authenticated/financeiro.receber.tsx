@@ -154,18 +154,24 @@ export function LancamentosPage({ tipo }: { tipo: "receber" | "pagar" }) {
     staleTime: 30_000,
     gcTime: 10 * 60_000,
     queryFn: async ({ signal }): Promise<Lancamento[]> => {
-      const { data, error } = await supabase
-        .from("lancamentos_financeiros")
-        .select(
-          "id,descricao,valor,status,data_vencimento,created_at,created_by,contato:contatos(nome),categoria_id",
-        )
-        .eq("empresa_id", empresa!.id)
-        .eq("tipo", tipo)
-        .order("data_vencimento", { ascending: true })
-        .limit(2000)
-        .abortSignal(signal);
-      if (error) throw error;
-      return (data ?? []) as unknown as Lancamento[];
+      // Busca em páginas de 1000 para nunca cortar a lista (o período filtra depois)
+      const todas: unknown[] = [];
+      for (let ini = 0; ; ini += 1000) {
+        const { data, error } = await supabase
+          .from("lancamentos_financeiros")
+          .select(
+            "id,descricao,valor,status,data_vencimento,created_at,created_by,contato:contatos(nome),categoria_id",
+          )
+          .eq("empresa_id", empresa!.id)
+          .eq("tipo", tipo)
+          .order("data_vencimento", { ascending: true })
+          .range(ini, ini + 999)
+          .abortSignal(signal);
+        if (error) throw error;
+        todas.push(...(data ?? []));
+        if (!data || data.length < 1000) break;
+      }
+      return todas as unknown as Lancamento[];
     },
   });
 

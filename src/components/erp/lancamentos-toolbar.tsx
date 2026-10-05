@@ -340,9 +340,7 @@ export function LancamentosToolbar({
       const criadosMsg = `${pending.criados.categorias} categoria(s) e ${pending.criados.contatos} contato(s) criado(s) automaticamente`;
 
       if (!novos.length) {
-        toast.warning(`Nenhum lançamento importado — ${duplicados.length} duplicata(s) ignorada(s)`, {
-          description: `${criadosMsg}\n${duplicados.slice(0, 5).join("\n")}`,
-        });
+        toast.warning("Importação concluída");
         setPending(null);
         onImported();
         return;
@@ -350,13 +348,7 @@ export function LancamentosToolbar({
 
       const { error } = await supabase.from("lancamentos_financeiros").insert(novos);
       if (error) throw error;
-      const nRec = novos.filter((x) => x.tipo === "receber").length;
-      const nPag = novos.length - nRec;
-      toast.success(`Importado(s): ${nRec} receita(s), ${nPag} despesa(s)`, {
-        description: duplicados.length
-          ? `${criadosMsg}\n${duplicados.length} duplicata(s) ignorada(s):\n${duplicados.slice(0, 5).join("\n")}`
-          : criadosMsg,
-      });
+      toast.success("Importação concluída");
       setPending(null);
       onImported();
     } catch (e) {
