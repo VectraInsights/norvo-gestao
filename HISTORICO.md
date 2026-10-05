@@ -4501,6 +4501,13 @@ Espelhado na Vercel.
   (mantém a fila e o botão de continuar) ou Encerrar (descarta o restante).
 - Validado com `tsc` zerado e `npm run build` OK.
 
+## Análise com caixas separadas e rodapé fixo (05/10)
+
+- Cabeçalho compacto em 2 linhas; Produtos, Condição e Parcelas em caixas
+  com cabeçalho destacado; ações em caixa separada fixa no rodapé e rolagem
+  só no conteúdo.
+- Validado com `tsc` zerado e `npm run build` OK.
+
 ## Upload compacto + trilha de auditoria funcional (05/10)
 
 - Aba de importação enxuta (dropzone, listas e textos compactos) para caber

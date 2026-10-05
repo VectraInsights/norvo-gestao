@@ -89,9 +89,9 @@ export function CondicaoPagamento({
 
   return (
     <div className="space-y-4">
-      <div>
-        <h4 className="text-sm font-semibold text-foreground mb-2">Condição de pagamento</h4>
-        <div className="grid grid-cols-2 gap-2 md:grid-cols-5">
+      <div className="overflow-hidden rounded-lg border">
+        <div className="border-b border-primary/20 bg-primary/8 px-3 py-1.5 text-[11px] font-semibold uppercase tracking-wide text-primary/80">Condição de pagamento</div>
+        <div className="grid grid-cols-2 gap-2 p-3 md:grid-cols-5">
           <div>
             <span className="text-xs text-muted-foreground">Parcelamento</span>
             <Select
@@ -160,11 +160,11 @@ export function CondicaoPagamento({
         </div>
       </div>
 
-      <div>
-        <div className="flex items-center justify-between mb-2">
-          <div className="flex items-center gap-2">
-            <Archive className="h-4 w-4 text-primary" />
-            <h4 className="text-sm font-semibold text-foreground">Parcelas</h4>
+      <div className="overflow-hidden rounded-lg border">
+        <div className="flex items-center justify-between gap-2 border-b border-primary/20 bg-primary/8 px-3 py-1.5">
+          <div className="flex items-center gap-2 text-[11px] font-semibold uppercase tracking-wide text-primary/80">
+            <Archive className="h-3.5 w-3.5" />
+            Parcelas
           </div>
           <Button
             size="sm"
@@ -184,6 +184,7 @@ export function CondicaoPagamento({
             <Plus className="mr-1 h-3.5 w-3.5" /> Adicionar Parcela
           </Button>
         </div>
+        <div className="p-3">
         {parcelas.length === 0 ? (
           <p className="text-xs text-muted-foreground">
             {emptyHint || "Altere a condição acima para gerar as parcelas."}
@@ -270,6 +271,7 @@ export function CondicaoPagamento({
             </div>
           </div>
         )}
+        </div>
       </div>
     </div>
   );

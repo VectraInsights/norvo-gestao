@@ -1687,32 +1687,35 @@ function NotasRecebidas() {
           )}
 
           <Dialog open={analiseOpen && !!importResults} onOpenChange={(o) => { if (!o && importResults) setConfSair(true); else setAnaliseOpen(o); }}>
-            <DialogContent className="block">
+            <DialogContent className="flex flex-col">
               <DialogTitle className="sr-only">Lançar notas fiscais</DialogTitle>
               {importResults && (
-            <Card className="border-muted bg-card/60 backdrop-blur-sm shadow-panel overflow-hidden animate-in fade-in slide-in-from-bottom-2 duration-300">
-              <CardHeader className="bg-muted/30">
-                <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-                  <div>
-                    <CardTitle className="text-lg">Resultado da Análise do XML</CardTitle>
+            <Card className="flex min-h-0 flex-1 flex-col border-muted bg-card/60 backdrop-blur-sm shadow-panel overflow-hidden animate-in fade-in slide-in-from-bottom-2 duration-300">
+              <CardHeader className="shrink-0 bg-muted/30 py-3">
+                <div className="flex items-center justify-between gap-3">
+                  <div className="min-w-0">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <CardTitle className="text-base">Resultado da Análise do XML</CardTitle>
                     {filaXml.length > 0 && (
                       <span className="inline-flex items-center rounded-full bg-primary/10 px-2 py-0.5 text-[11px] font-medium text-primary">
                         Fila: {filaXml.length} nota(s) restante(s) após confirmar
                       </span>
                     )}
-                    <CardDescription className="text-foreground/80 mt-1">
+                    </div>
+                    <CardDescription className="truncate text-xs">
                       Fornecedor: <strong className="font-semibold">{importResults.emitente}</strong>
                     </CardDescription>
                   </div>
-                  <div className="text-right">
-                    <span className="text-xs text-muted-foreground">Valor Total do XML</span>
-                    <div className="text-xl font-bold text-foreground">{brl(importResults.total)}</div>
+                  <div className="shrink-0 text-right">
+                    <span className="text-[11px] text-muted-foreground">Total do XML</span>
+                    <div className="text-lg font-bold leading-tight text-foreground">{brl(importResults.total)}</div>
                   </div>
                 </div>
               </CardHeader>
-              <CardContent className="p-6 space-y-6">
-                <div className="space-y-3">
-                  <h4 className="text-sm font-semibold text-foreground">Produtos Importados</h4>
+              <CardContent className="min-h-0 flex-1 space-y-4 overflow-y-auto p-4 sm:p-6">
+                <div className="overflow-hidden rounded-lg border">
+                  <div className="border-b border-primary/20 bg-primary/8 px-3 py-1.5 text-[11px] font-semibold uppercase tracking-wide text-primary/80">Produtos Importados</div>
+                  <div className="space-y-3 p-3">
                   {importResults.produtos.length > 1 && (
                     <div className="flex flex-wrap items-center gap-3">
                       <div className="flex items-center space-x-2">
@@ -1818,6 +1821,7 @@ function NotasRecebidas() {
                       </TableBody>
                     </Table>
                   </div>
+                  </div>
                 </div>
 
                 <div className="rounded-lg border border-primary/20 bg-primary/5 p-4">
@@ -1832,7 +1836,9 @@ function NotasRecebidas() {
                   />
                 </div>
 
-                <div className="sticky bottom-0 flex justify-end gap-2 border-t border-border bg-card py-2 pt-2">
+              </CardContent>
+              <div className="shrink-0 border-t border-border bg-card p-3">
+                <div className="flex justify-end gap-2">
                   <Button variant="outline" disabled={isSaving} onClick={() => setConfSair(true)}>Cancelar</Button>
                   <Button variant="outline" disabled={isSaving} onClick={handleIgnorarNota} className="text-amber-700 hover:bg-amber-500/10 dark:text-amber-400">
                     Ignorar Nota
@@ -1848,7 +1854,7 @@ function NotasRecebidas() {
                     )}
                   </Button>
                 </div>
-              </CardContent>
+              </div>
             </Card>
               )}
             </DialogContent>
