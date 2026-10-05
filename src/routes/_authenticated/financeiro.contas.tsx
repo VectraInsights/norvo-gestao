@@ -23,7 +23,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import { Banknote, Plus, Upload, Loader2, Link2, Check, Landmark, Wallet, CreditCard, TrendingUp, PiggyBank, DollarSign, Database, Coins, Trash2, Search, X, ArrowLeft, ChevronLeft, ChevronRight, ChevronDown, Pencil } from "lucide-react";
+import { Banknote, Plus, Upload, Loader2, Link2, Check, Landmark, Wallet, CreditCard, TrendingUp, PiggyBank, DollarSign, Database, Coins, Trash2, Search, X, ChevronLeft, ChevronRight, ChevronDown, Pencil } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
@@ -268,12 +268,23 @@ function ContaDetalhe({ contaId, contas, empresaId, tabInicial, onVoltar, onSele
     });
   };
 
+  // Esc volta para a lista (sem roubar o Esc de diálogos abertos)
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key !== "Escape") return;
+      const t = e.target as HTMLElement;
+      if (t && (t.tagName === "INPUT" || t.tagName === "TEXTAREA" || t.isContentEditable)) return;
+      if (document.querySelector('[role="dialog"]')) return;
+      e.preventDefault();
+      onVoltar();
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [onVoltar]);
+
   return (
     <div className="space-y-4">
       <div className="flex flex-wrap items-center gap-2">
-        <Button variant="ghost" size="sm" onClick={onVoltar}>
-          <ArrowLeft className="mr-1 h-4 w-4" />Voltar
-        </Button>
         <div className="min-w-[220px] flex-1 sm:max-w-xs">
           <Combobox
             value={contaId}
@@ -310,7 +321,7 @@ function ContaDetalhe({ contaId, contas, empresaId, tabInicial, onVoltar, onSele
       </div>
 
       <div className="grid gap-3 md:grid-cols-2">
-        <Card className="flex items-center gap-1 p-3 shadow-panel">
+        <Card className="flex items-center gap-1 bg-primary/[0.04] p-3 shadow-panel">
           <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => shiftMes(-1)}>
             <ChevronLeft className="h-4 w-4" />
           </Button>
@@ -319,7 +330,7 @@ function ContaDetalhe({ contaId, contas, empresaId, tabInicial, onVoltar, onSele
             <ChevronRight className="h-4 w-4" />
           </Button>
         </Card>
-        <Card className="flex items-center justify-end gap-6 p-3 shadow-panel">
+        <Card className="flex items-center justify-end gap-6 bg-primary/[0.04] p-3 shadow-panel">
           <div className="text-right">
             <div className="text-[11px] text-muted-foreground">Saldo atual</div>
             <div className="text-tabular text-sm font-bold">{brl(Number(conta?.saldo_atual) || 0)}</div>
@@ -354,7 +365,7 @@ function ContaDetalhe({ contaId, contas, empresaId, tabInicial, onVoltar, onSele
               <Button size="sm" onClick={() => onAbrirConciliacao(contaId)}>Abrir conciliação</Button>
             </div>
           </div>
-          <Card className="overflow-hidden">
+          <Card className="overflow-hidden bg-primary/[0.04]">
             <div className="grid grid-cols-3 divide-x border-b">
               {[
                 { k: "todos" as const, label: "Todos", n: (ofxPend ?? []).length, cls: "text-primary" },
@@ -398,7 +409,7 @@ function ContaDetalhe({ contaId, contas, empresaId, tabInicial, onVoltar, onSele
         </TabsContent>
 
         <TabsContent value="movs" className="space-y-3">
-          <Card className="overflow-hidden">
+          <Card className="overflow-hidden bg-primary/[0.04]">
             <div className="grid grid-cols-3 divide-x border-b">
               <div className="px-3 py-2 text-center">
                 <div className="text-[11px] text-muted-foreground">Tudo</div>
@@ -1056,7 +1067,7 @@ function ContasFinanceiras() {
       {!filtrados?.length ? (
         <EmptyState icon={Banknote} title="Sem contas financeiras" description={busca ? "Nada encontrado para a busca." : "Cadastre suas contas para acompanhar saldos e realizar conciliação."} />
       ) : (
-        <Card className="overflow-hidden shadow-panel">
+        <Card className="overflow-hidden bg-primary/[0.04] shadow-panel">
           <Table className="[&_td]:py-3 [&_th]:py-3">
             <TableHeader><TableRow>
               <TableHead className="text-[13px]">Banco</TableHead><TableHead className="text-[13px]">Nome da conta</TableHead><TableHead className="text-[13px]">Tipo de conta</TableHead>
