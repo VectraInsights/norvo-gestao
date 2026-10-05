@@ -4413,6 +4413,17 @@ Espelhado na Vercel.
 - Validado com `tsc` (página zerada), `vitest` e `npm run build` OK.
 - Arquivo: `src/routes/_authenticated/fiscal.recebidas.tsx`.
 
+## Ações da lista: olho na DANFE + lápis edita (05/10)
+
+- Olho volta a abrir só a prévia da DANFE no sistema (`abrirPdfDaNota`);
+  edição vai para o lápis novo (`handleVerNota`), que abre o diálogo de
+  detalhes/lançamento. Ordem final: olho, baixar XML, baixar PDF, editar,
+  excluir (coluna Ações alargada).
+- O sumiço do ícone de XML no print era o deploy anterior: o botão só
+  aparecia com XML guardado. Agora aparece sempre (busca na SEFAZ e grava
+  se faltar).
+- Validado com `tsc` (página zerada), `vitest` e `npm run build` OK.
+
 ## Tipos dos bundles vendorizados (05/10)
 
 - O erro `TS7016` era o TypeScript reclamando que os dois arquivos JS

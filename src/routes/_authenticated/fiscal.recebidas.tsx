@@ -1497,7 +1497,7 @@ function NotasRecebidas() {
                     <TableHead className="text-center">Fornecedor</TableHead>
                     <TableHead className="text-center">Série - NF</TableHead>
                     <TableHead className="text-center">Valor (R$)</TableHead>
-                    <TableHead className="text-center w-28">Ações</TableHead>
+                    <TableHead className="text-center w-36">Ações</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -1517,11 +1517,11 @@ function NotasRecebidas() {
                             <TooltipProvider>
                               <Tooltip>
                                 <TooltipTrigger asChild>
-                                  <Button size="sm" variant="ghost" className="h-7 w-7 p-0" onClick={() => handleVerNota(n)}>
+                                  <Button size="sm" variant="ghost" className="h-7 w-7 p-0" onClick={() => abrirPdfDaNota(n)}>
                                     <Eye className="h-3.5 w-3.5" />
                                   </Button>
                                 </TooltipTrigger>
-                                <TooltipContent>Ver detalhes</TooltipContent>
+                                <TooltipContent>Ver DANFE</TooltipContent>
                               </Tooltip>
                             </TooltipProvider>
                             <TooltipProvider>
@@ -1542,6 +1542,16 @@ function NotasRecebidas() {
                                   </Button>
                                 </TooltipTrigger>
                                 <TooltipContent>Baixar PDF</TooltipContent>
+                              </Tooltip>
+                            </TooltipProvider>
+                            <TooltipProvider>
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <Button size="sm" variant="ghost" className="h-7 w-7 p-0" onClick={() => handleVerNota(n)}>
+                                    <Pencil className="h-3.5 w-3.5" />
+                                  </Button>
+                                </TooltipTrigger>
+                                <TooltipContent>Editar</TooltipContent>
                               </Tooltip>
                             </TooltipProvider>
                             <TooltipProvider>
