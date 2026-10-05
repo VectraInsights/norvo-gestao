@@ -4536,6 +4536,14 @@ Espelhado na Vercel.
   validado de verdade).
 - Validado com `npm run build` OK.
 
+## DANFE sem corte + conta padrão editável (05/10)
+
+- Emitente com quebra em até 3 linhas (nunca corta); canhoto sem corte.
+- Contas financeiras: clique na linha abre a edição; coluna Padrão com
+  checkbox exclusivo (só uma por empresa, vale no criar e no editar).
+- Conta padrão puxada sozinha em todo novo lançamento (NF, pagar, receber).
+- Validado com `tsc`, `vitest` e `npm run build` OK.
+
 ## Upload compacto + trilha de auditoria funcional (05/10)
 
 - Aba de importação enxuta (dropzone, listas e textos compactos) para caber

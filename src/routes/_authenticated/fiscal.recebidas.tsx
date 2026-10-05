@@ -292,14 +292,15 @@ function NotasRecebidas() {
     queryFn: async ({ signal }) => {
       const { data, error } = await supabase
         .from("contas_bancarias")
-        .select("id, nome")
+        .select("id, nome, padrao")
         .eq("empresa_id", empresa!.id)
         .order("nome")
         .abortSignal(signal);
       if (error) throw error;
-      return (data ?? []) as { id: string; nome: string }[];
+      return (data ?? []) as { id: string; nome: string; padrao?: boolean | null }[];
     },
   });
+  const contaPadraoId = (contasBancarias as any[]).find((c) => c.padrao)?.id as string | undefined;
 
   // Categorias financeiras (pagar) para Select no modal
   const { data: catsFinanceiras = [] } = useQuery({
@@ -1856,6 +1857,7 @@ function NotasRecebidas() {
                     contas={contasBancarias}
                     formas={FORMAS_PARCELA}
                     travarRegen={!!importResults.temDups}
+                    contaPadrao={contaPadraoId}
                     emptyHint="Nenhuma parcela. Altere a condição acima para gerar, adicione manualmente ou deixe vazio para gerar 1 título com vencimento em 30 dias."
                   />
                 </div>
@@ -2055,6 +2057,7 @@ function NotasRecebidas() {
                   contas={contasBancarias}
                   formas={FORMAS_PARCELA}
                   travarRegen={!!notaDetalhe.xml && notaDetalhe.parcelas.length > 0 && (notaDetalhe.xml.match(/<dup[\s>]/g) || []).length > 0}
+                  contaPadrao={contaPadraoId}
                   emptyHint="Nenhuma parcela no XML. Altere a condição acima para gerar, adicione manualmente ou deixe vazio para lançar como pagamento único."
                 />
               </div>

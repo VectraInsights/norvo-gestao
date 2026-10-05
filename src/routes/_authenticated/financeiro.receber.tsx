@@ -198,7 +198,7 @@ export function LancamentosPage({ tipo }: { tipo: "receber" | "pagar" }) {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("contas_bancarias")
-        .select("id,nome,banco")
+        .select("id,nome,banco,padrao")
         .eq("empresa_id", empresa!.id)
         .eq("ativo", true)
         .order("nome")
@@ -207,6 +207,7 @@ export function LancamentosPage({ tipo }: { tipo: "receber" | "pagar" }) {
       return data ?? [];
     },
   });
+  const contaPadraoId = ((contasOpt ?? []) as any[]).find((c) => c.padrao)?.id as string | undefined;
 
   const { data: categoriasOpt } = useQuery({
     enabled: !!empresa,
@@ -585,7 +586,11 @@ export function LancamentosPage({ tipo }: { tipo: "receber" | "pagar" }) {
           <Dialog
             open={open}
             onOpenChange={(v) => {
-              if (!criar.isPending) setOpen(v);
+              if (criar.isPending) return;
+              if (v && !form.conta_bancaria_id && contaPadraoId) {
+                setForm((f) => (f.conta_bancaria_id ? f : { ...f, conta_bancaria_id: contaPadraoId }));
+              }
+              setOpen(v);
             }}
           >
             <DialogTrigger asChild>

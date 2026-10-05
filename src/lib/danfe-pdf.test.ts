@@ -77,6 +77,16 @@ describe("DANFE layout oficial", () => {
     expect(pages).toBe(1);
   });
 
+  it("nome longo do emitente quebra em linhas sem cortar", async () => {
+    const blob = gerarDanfePdf({
+      ...sample,
+      emitNome: "PERIM COMERCIO ATACADISTA E VAREJISTA DE AUTO PECAS LTDA",
+    });
+    const raw = Buffer.from(await blob.arrayBuffer()).toString("latin1");
+    expect(raw).toContain("VAREJISTA");
+    expect(raw).toContain("PECAS LTDA");
+  });
+
   it("com XML à vista mostra PAGAMENTO e esconde fatura inventada", async () => {
     const blob = gerarDanfePdf({
       ...sample,

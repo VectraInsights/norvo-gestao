@@ -228,18 +228,6 @@ export function gerarDanfePdf(data: DanfeData): Blob {
     black(); setFont(bold ? "bold" : "normal", s);
     try { (doc as any).text(t, xx, yy, { align: "center" }); } catch { doc.text(t, xx, yy); }
   };
-  // Texto com auto-ajuste: reduz a fonte até caber na largura (como no modelo)
-  const fitCtr = (t: string, xx: number, yy: number, s: number, maxW: number, bold = true) => {
-    let fs = s;
-    black(); setFont(bold ? "bold" : "normal", fs);
-    try {
-      while ((doc as any).getTextWidth(t) > maxW && fs > 5) {
-        fs -= 0.5;
-        setFont(bold ? "bold" : "normal", fs);
-      }
-      (doc as any).text(t, xx, yy, { align: "center" });
-    } catch { doc.text(t, xx, yy); }
-  };
   const drawVal = (t: string, x: number, w: number, yy: number, align: "l" | "c" | "r", s: number, bold = false, fit = false) => {
     black(); let fs = s;
     setFont(bold ? "bold" : "normal", fs);
@@ -281,7 +269,7 @@ export function gerarDanfePdf(data: DanfeData): Blob {
   };
 
   // ================= CANHOTO (recibo de entrega, padrão FSIST) =================
-  const canhotoTxt = `RECEBEMOS DE ${cut(D(data.emitNome).toUpperCase(), 60)} OS PRODUTOS E/OU SERVIÇOS CONSTANTES DA NOTA FISCAL ELETRÔNICA INDICADA ABAIXO. EMISSÃO: ${fmtData(D(data.dhEmi || data.dataEmissao))} VALOR TOTAL: R$ ${fmtNum(data.valorTotal)} DESTINATÁRIO: ${cut(D(data.destNome).toUpperCase(), 40)} - ${cut(D(data.destEndereco).toUpperCase(), 60)}`;
+  const canhotoTxt = `RECEBEMOS DE ${D(data.emitNome).toUpperCase()} OS PRODUTOS E/OU SERVIÇOS CONSTANTES DA NOTA FISCAL ELETRÔNICA INDICADA ABAIXO. EMISSÃO: ${fmtData(D(data.dhEmi || data.dataEmissao))} VALOR TOTAL: R$ ${fmtNum(data.valorTotal)} DESTINATÁRIO: ${cut(D(data.destNome).toUpperCase(), 40)} - ${cut(D(data.destEndereco).toUpperCase(), 60)}`;
   setFont("normal", 5.2);
   const canLines = doc.splitTextToSize(canhotoTxt, CW - 40 - 3) as string[];
   const textH = 2.5 + canLines.length * 2.6;
@@ -319,13 +307,34 @@ export function gerarDanfePdf(data: DanfeData): Blob {
   box(M, y, wE, headH);
   box(M + wE, y, wD, headH);
   box(M + wE + wD, y, wB, headH);
-  // Emitente (centralizado, como no modelo)
+  // Emitente (centralizado, como no modelo; nome quebra em até 3 linhas, nunca corta)
   ctr("IDENTIFICAÇÃO DO EMITENTE", M + wE / 2, y + 3, 4.6);
-  fitCtr(cut(D(data.emitNome).toUpperCase(), 44), M + wE / 2, y + 8.4, 9, wE - 4);
+  const nomeEmit = D(data.emitNome).toUpperCase();
+  setFont("bold", 9); black();
+  let nomeLines = doc.splitTextToSize(nomeEmit, wE - 4) as string[];
+  let nomeSize = 9;
+  while (nomeLines.length > 3 && nomeSize > 6) {
+    nomeSize -= 0.5;
+    setFont("bold", nomeSize);
+    nomeLines = doc.splitTextToSize(nomeEmit, wE - 4) as string[];
+  }
+  nomeLines = nomeLines.slice(0, 3);
+  const nomeLH = 3.4;
+  let ey = y + 5 + nomeSize * 0.32;
+  nomeLines.forEach((ln, li) => {
+    ctr(ln, M + wE / 2, ey + li * nomeLH, nomeSize, true);
+  });
+  ey += nomeLines.length * nomeLH + 1.5;
   setFont("normal", 6); black();
-  ctr(cut(D(data.emitEndereco).toUpperCase(), 44), M + wE / 2, y + 13, 6);
-  ctr(`${cut(D(data.emitBairro).toUpperCase(), 20)} - ${D(data.emitCEP)}`, M + wE / 2, y + 16.6, 6);
-  ctr(`${cut(D(data.emitCidade).toUpperCase(), 22)} - ${D(data.emitUF)} Fone/Fax: ${D(data.emitFone)}`, M + wE / 2, y + 20.2, 6);
+  const endLines = [
+    cut(D(data.emitEndereco).toUpperCase(), 44),
+    `${cut(D(data.emitBairro).toUpperCase(), 20)} - ${D(data.emitCEP)}`,
+    `${cut(D(data.emitCidade).toUpperCase(), 22)} - ${D(data.emitUF)} Fone/Fax: ${D(data.emitFone)}`,
+  ];
+  endLines.forEach((ln, li) => {
+    if (ey + li * 3.4 > y + headH - 1) return;
+    ctr(ln, M + wE / 2, ey + li * 3.4, 6);
+  });
   // Bloco DANFE
   const dx = M + wE;
   ctr("DANFE", dx + wD / 2, y + 6.4, 13, true);

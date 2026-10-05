@@ -41,6 +41,7 @@ export function CondicaoPagamento({
   contas,
   formas,
   emptyHint,
+  contaPadrao,
   travarRegen,
 }: {
   total: number;
@@ -49,6 +50,8 @@ export function CondicaoPagamento({
   contas: Array<{ id: string; nome: string }>;
   formas: readonly string[] | string[];
   emptyHint?: string;
+  // Conta padrão da empresa (pré-selecionada em todo novo lançamento)
+  contaPadrao?: string;
   // Com dados vindos da nota (XML): o topo carimba forma/conta nas linhas,
   // mas NUNCA recalcula datas e valores.
   travarRegen?: boolean;
@@ -71,7 +74,8 @@ export function CondicaoPagamento({
   });
   const [contaTop, setContaTop] = useState(() => {
     const cs = [...new Set(parcelas.map((p) => p.conta_bancaria_id).filter(Boolean))];
-    return cs.length === 1 ? cs[0] : "__none__";
+    if (cs.length === 1) return cs[0];
+    return contaPadrao || "__none__";
   });
 
   // Parcelamento acompanha a quantidade real de linhas (XML, adicionar/remover)

@@ -56,7 +56,7 @@ type TipoConta = "corrente" | "caixa" | "cartao_credito" | "investimento" | "pou
 type ContaBancaria = {
   id: string; nome: string | null; banco: string | null;
   agencia: string | null; conta: string | null; saldo_atual: number;
-  tipo: TipoConta;
+  tipo: TipoConta; padrao?: boolean | null;
 };
 
 type OfxRow = {
@@ -197,7 +197,7 @@ function ContasFinanceiras() {
   gcTime: 15 * 60_000,
   queryFn: async ({ signal }): Promise<ContaBancaria[]> => {
       const { data, error } = await supabase.from("contas_bancarias")
-        .select("id,nome,banco,agencia,conta,saldo_atual,tipo")
+        .select("id,nome,banco,agencia,conta,saldo_atual,tipo,padrao")
         .eq("empresa_id", empresa!.id).order("banco").abortSignal(signal);
       if (error) throw error; return (data ?? []) as ContaBancaria[];
     },
@@ -217,11 +217,97 @@ function ContasFinanceiras() {
     });
   }, [contas, busca]);
 
-  const resetWizard = () => { setStep(1); setTipo("corrente"); setForm(initialForm("corrente")); };
+  const resetWizard = () => { setStep(1); setTipo("corrente"); setForm(initialForm("corrente")); setEditandoId(null); };
+  const [editandoId, setEditandoId] = useState<string | null>(null);
+
+  // Padrão exclusivo: só uma conta por empresa
+  const definirPadrao = async (id: string | null) => {
+    if (!empresa) return;
+    await supabase.from("contas_bancarias").update({ padrao: false }).eq("empresa_id", empresa.id);
+    if (id) {
+      const { error } = await supabase.from("contas_bancarias").update({ padrao: true }).eq("id", id);
+      if (error) { toast.error(error.message); return; }
+    }
+    qc.invalidateQueries({ queryKey: ["contas-bancarias"] });
+    qc.invalidateQueries({ queryKey: ["contas-opt"] });
+    qc.invalidateQueries({ queryKey: ["contas"] });
+  };
+
+  const abrirEdicao = async (c: ContaBancaria) => {
+    const { data, error } = await supabase.from("contas_bancarias").select("*").eq("id", c.id).maybeSingle();
+    if (error || !data) { toast.error("Não foi possível carregar a conta."); return; }
+    const d = data as any;
+    setTipo(d.tipo as TipoConta);
+    setForm({
+      ...initialForm(d.tipo as TipoConta),
+      nome: d.nome ?? "", banco: d.banco ?? "", agencia: d.agencia ?? "", conta: d.conta ?? "",
+      modalidade: d.modalidade ?? "", padrao: !!d.padrao,
+      conta_vinculada_id: d.conta_vinculada_id ?? "",
+      cartao_ultimos4: d.cartao_ultimos4 ?? "", cartao_bandeira: d.cartao_bandeira ?? "",
+      cartao_emissor: d.cartao_emissor ?? "", cartao_conta_pagamento_id: d.cartao_conta_pagamento_id ?? "",
+      cartao_dia_fechamento: d.cartao_dia_fechamento != null ? String(d.cartao_dia_fechamento) : "",
+      cartao_dia_vencimento: d.cartao_dia_vencimento != null ? String(d.cartao_dia_vencimento) : "",
+    });
+    setEditandoId(c.id);
+    setStep(2);
+    setOpen(true);
+  };
+
+  const payloadEdicao = (input: FormState): Record<string, unknown> => {
+    const p: Record<string, unknown> = {
+      nome: input.nome || input.banco || TIPO_LABEL[input.tipo],
+      padrao: input.padrao,
+    };
+    if (input.tipo === "corrente") {
+      Object.assign(p, {
+        banco: input.banco, agencia: input.agencia, conta: input.conta,
+        modalidade: input.modalidade || null,
+      });
+    } else if (input.tipo === "caixa" || input.tipo === "outras") {
+      // só nome + padrão
+    } else if (input.tipo === "cartao_credito") {
+      Object.assign(p, {
+        cartao_ultimos4: input.cartao_ultimos4, cartao_bandeira: input.cartao_bandeira,
+        cartao_emissor: input.cartao_emissor,
+        cartao_conta_pagamento_id: input.cartao_conta_pagamento_id || null,
+        cartao_dia_fechamento: input.cartao_dia_fechamento ? Number(input.cartao_dia_fechamento) : null,
+        cartao_dia_vencimento: input.cartao_dia_vencimento ? Number(input.cartao_dia_vencimento) : null,
+      });
+    } else if (input.tipo === "investimento" || input.tipo === "aplicacao_automatica") {
+      Object.assign(p, { banco: input.banco, conta_vinculada_id: input.conta_vinculada_id || null });
+    } else if (input.tipo === "poupanca") {
+      Object.assign(p, { banco: input.banco, conta_vinculada_id: input.conta_vinculada_id || null, modalidade: input.modalidade || null });
+    }
+    return p;
+  };
+
+  const salvarEdicao = useMutation({
+    mutationFn: async (input: FormState) => {
+      if (!editandoId) throw new Error("Conta não selecionada");
+      if (input.padrao) await definirPadraoRaw(editandoId);
+      const { error } = await supabase.from("contas_bancarias").update(payloadEdicao(input) as never).eq("id", editandoId);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      toast.success("Conta atualizada"); setOpen(false); resetWizard();
+      qc.invalidateQueries({ queryKey: ["contas-bancarias"] });
+      qc.invalidateQueries({ queryKey: ["contas-opt"] });
+      qc.invalidateQueries({ queryKey: ["contas"] });
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+  // zera as demais antes de marcar (sem toasts/invalidações próprias)
+  const definirPadraoRaw = async (id: string | null) => {
+    if (!empresa) return;
+    await supabase.from("contas_bancarias").update({ padrao: false }).eq("empresa_id", empresa.id);
+    if (id) await supabase.from("contas_bancarias").update({ padrao: true }).eq("id", id);
+  };
 
   const criar = useMutation({
     mutationFn: async (input: FormState) => {
       if (!empresa) throw new Error("Empresa não selecionada");
+      if (input.padrao) await definirPadraoRaw(null);
       const saldo = Number(input.saldo_dia_anterior || input.saldo_inicial || 0);
       const payload: Record<string, unknown> = {
         empresa_id: empresa.id,
@@ -377,9 +463,10 @@ function ContasFinanceiras() {
             <Dialog open={open} onOpenChange={(v) => { if (!criar.isPending) { setOpen(v); if (!v) resetWizard(); } }}>
               <DialogTrigger asChild><Button><Plus className="mr-1 h-4 w-4" />Nova conta</Button></DialogTrigger>
               <DialogContent className="max-h-[90vh] overflow-y-auto">
-                <DialogHeader><DialogTitle>Cadastrar conta financeira</DialogTitle></DialogHeader>
+                <DialogHeader><DialogTitle>{editandoId ? "Editar conta financeira" : "Cadastrar conta financeira"}</DialogTitle></DialogHeader>
 
-                {/* Step 1 - tipo */}
+                {/* Step 1 - tipo (só no cadastro; tipo não muda na edição) */}
+                {!editandoId && (
                 <Card className={cn("p-4 space-y-3", step !== 1 && "opacity-70")}>
                   <div className="flex items-center gap-2">
                     <div className={cn("h-5 w-5 rounded-full flex items-center justify-center text-[10px] font-bold",
@@ -408,6 +495,7 @@ function ContasFinanceiras() {
                     </>
                   )}
                 </Card>
+                )}
 
                 {/* Step 2 - dados */}
                 {step === 2 && (
@@ -417,7 +505,7 @@ function ContasFinanceiras() {
                       <h3 className="font-semibold text-sm">Preencha os dados *</h3>
                     </div>
 
-                    <form onSubmit={(e) => { e.preventDefault(); if (podeContinuarStep2()) setStep(3); }} className="space-y-3">
+                    <form onSubmit={(e) => { e.preventDefault(); if (!podeContinuarStep2()) return; if (editandoId) salvarEdicao.mutate(form); else setStep(3); }} className="space-y-3">
                       {form.tipo === "corrente" && (
                         <>
                           <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
@@ -532,7 +620,9 @@ function ContasFinanceiras() {
                       )}
 
                       <div>
-                        <Button type="submit" disabled={!podeContinuarStep2()}>Continuar</Button>
+                        <Button type="submit" disabled={!podeContinuarStep2() || salvarEdicao.isPending}>
+                          {salvarEdicao.isPending ? "Salvando..." : editandoId ? "Salvar alterações" : "Continuar"}
+                        </Button>
                       </div>
                     </form>
                   </Card>
@@ -610,11 +700,12 @@ function ContasFinanceiras() {
           <Table>
             <TableHeader><TableRow>
               <TableHead>Nome</TableHead><TableHead>Tipo</TableHead><TableHead>Ag/Conta</TableHead>
-              <TableHead className="text-right">Saldo atual</TableHead><TableHead />
+              <TableHead className="text-right">Saldo atual</TableHead>
+              <TableHead className="w-16 text-center">Padrão</TableHead><TableHead />
             </TableRow></TableHeader>
             <TableBody>
               {filtrados.map((c) => (
-                <TableRow key={c.id}>
+                <TableRow key={c.id} className="cursor-pointer" onClick={() => void abrirEdicao(c)}>
                   <TableCell className="font-medium">
                     <div className="flex items-center gap-2">
                       {(() => {
@@ -631,7 +722,14 @@ function ContasFinanceiras() {
                   <TableCell><Badge variant="secondary">{TIPO_LABEL[c.tipo]}</Badge></TableCell>
                   <TableCell className="text-tabular">{c.agencia ?? "—"}/{c.conta ?? "—"}</TableCell>
                   <TableCell className="text-right text-tabular font-medium">{brl(c.saldo_atual)}</TableCell>
-                  <TableCell className="text-right whitespace-nowrap">
+                  <TableCell className="text-center" onClick={(e) => e.stopPropagation()}>
+                    <Checkbox
+                      checked={!!c.padrao}
+                      onCheckedChange={() => void definirPadrao(c.padrao ? null : c.id)}
+                      aria-label="Conta padrão"
+                    />
+                  </TableCell>
+                  <TableCell className="text-right whitespace-nowrap" onClick={(e) => e.stopPropagation()}>
                     <Button variant="ghost" size="sm" className="text-destructive hover:text-destructive"
                       disabled={excluir.isPending}
                       onClick={() => setConfConta(c)}>
