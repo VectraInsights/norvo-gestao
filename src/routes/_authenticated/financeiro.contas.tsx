@@ -1843,7 +1843,7 @@ const ReconcileRow = memo(function ReconcileRow({
   const nomeContato = r.contato_id ? (contatos.find((c) => c.id === r.contato_id)?.nome ?? "—") : "Informação não recebida";
 
   return (
-    <div className="grid grid-cols-1 items-center gap-2 md:grid-cols-[1fr_auto_1fr]">
+    <div className="grid grid-cols-1 items-stretch gap-2 md:grid-cols-[1fr_auto_1fr]">
       {/* banco */}
       <Card className="overflow-hidden">
         <div className="flex items-center justify-between gap-2 border-b px-3 py-2">
@@ -1869,7 +1869,7 @@ const ReconcileRow = memo(function ReconcileRow({
         </div>
       </Card>
 
-      <div className="flex justify-center">
+      <div className="flex items-center justify-center">
         <Button size="sm" disabled={conciliando} onClick={() => onConciliar(tx, r)}>
           {conciliando ? <Loader2 className="mr-1 h-3.5 w-3.5 animate-spin" /> : <Check className="mr-1 h-3.5 w-3.5" />}
           Conciliar
