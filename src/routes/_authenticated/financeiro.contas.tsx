@@ -1222,7 +1222,7 @@ type RowState = {
   lancamento_id: string;
 };
 
-const PAGE_SIZE = 10;
+const PAGE_SIZE = 15;
 
 const emptyRow = (memo: string | null): RowState => ({
   descricao: memo ?? "", categoria_id: "", contato_id: "", centro_custo_id: "", lancamento_id: "",
@@ -1236,9 +1236,9 @@ function ReconcileDialog({ contaId, conta, empresaId, autoConciliar, importing, 
   const [busca, setBusca] = useState("");
   const [buscaDebounced, setBuscaDebounced] = useState("");
   const [filtro, setFiltro] = useState<"todos" | "recebimentos" | "pagamentos">("todos");
-  const [ordem, setOrdem] = useState<"recentes" | "antigos" | "maior" | "menor">("recentes");
+  const [ordem, setOrdem] = useState<"recentes" | "antigos" | "maior" | "menor">("antigos");
   const [mes, setMes] = useState("todos");
-  const [pagina, setPagina] = useState(1);
+  const [visiveisQtd, setVisiveisQtd] = useState(PAGE_SIZE);
   const { data: authUser } = useQuery({
     queryKey: ["auth-user-for-saved-filters"],
     queryFn: async () => (await supabase.auth.getUser()).data.user,
@@ -1255,16 +1255,14 @@ function ReconcileDialog({ contaId, conta, empresaId, autoConciliar, importing, 
   const [rows, setRows] = useState<Record<string, RowState>>({});
   const [buscarModo, setBuscarModo] = useState<Record<string, boolean>>({});
   const [confExtrato, setConfExtrato] = useState(false);
-  const [filtroOpen, setFiltroOpen] = useState(false);
-  const [nomeFiltro, setNomeFiltro] = useState("");
 
   useEffect(() => {
     if (!open) {
       setBusca("");
       setFiltro("todos");
-      setOrdem("recentes");
+      setOrdem("antigos");
       setMes("todos");
-      setPagina(1);
+      setVisiveisQtd(PAGE_SIZE);
       setSel(new Set());
       setRows({});
       setBuscarModo({});
@@ -1527,13 +1525,11 @@ function ReconcileDialog({ contaId, conta, empresaId, autoConciliar, importing, 
       });
   }, [porMes, filtro, q, ordem]);
 
-  // Paginação: renderizar centenas de cards de uma vez trava a tela.
-  const totalPaginas = Math.max(1, Math.ceil(visiveis.length / PAGE_SIZE));
-  const paginaAtual = Math.min(pagina, totalPaginas);
-  useEffect(() => { setPagina(1); }, [q, filtro, ordem, mes, contaId]);
+  // Carregar mais: renderizar centenas de cards de uma vez trava a tela.
+  useEffect(() => { setVisiveisQtd(PAGE_SIZE); }, [q, filtro, ordem, mes, contaId]);
   const daPagina = useMemo(
-    () => visiveis.slice((paginaAtual - 1) * PAGE_SIZE, paginaAtual * PAGE_SIZE),
-    [visiveis, paginaAtual],
+    () => visiveis.slice(0, visiveisQtd),
+    [visiveis, visiveisQtd],
   );
 
   const catsReceber = useMemo(() => (categorias ?? []).filter((c) => c.tipo === "receber"), [categorias]);
@@ -1561,6 +1557,26 @@ function ReconcileDialog({ contaId, conta, empresaId, autoConciliar, importing, 
     setSel(new Set());
   };
 
+  // Sugestão visível: pré-seleciona o lançamento de mesmo valor e data
+  useEffect(() => {
+    if (!txs || !lancamentosAbertos) return;
+    setRows((prev) => {
+      const next = { ...prev };
+      let changed = false;
+      for (const tx of txs) {
+        if (tx.status === "conciliada") continue;
+        const cur = next[tx.id] ?? emptyRow(tx.memo);
+        if (cur.lancamento_id) continue;
+        const match = lancamentosAbertos.find((l) =>
+          Math.abs(Number(l.valor) - Math.abs(Number(tx.valor))) < 0.01 &&
+          l.data_vencimento === tx.data_transacao
+        );
+        if (match) { next[tx.id] = { ...cur, lancamento_id: match.id }; changed = true; }
+      }
+      return changed ? next : prev;
+    });
+  }, [txs, lancamentosAbertos]);
+
 
   const titulo = conta ? `Contas financeiras — ${conta.nome ?? conta.banco ?? ""}` : "Conciliação bancária";
 
@@ -1571,9 +1587,9 @@ function ReconcileDialog({ contaId, conta, empresaId, autoConciliar, importing, 
     const valores = salvo.filtros as Partial<typeof filtroAtual>;
     setBusca(typeof valores.busca === "string" ? valores.busca : "");
     setFiltro(valores.filtro === "recebimentos" || valores.filtro === "pagamentos" ? valores.filtro : "todos");
-    setOrdem(valores.ordem === "antigos" || valores.ordem === "maior" || valores.ordem === "menor" ? valores.ordem : "recentes");
+    setOrdem(valores.ordem === "antigos" || valores.ordem === "maior" || valores.ordem === "menor" ? valores.ordem : "antigos");
     setMes(typeof valores.mes === "string" ? valores.mes : "todos");
-    setPagina(1);
+    setVisiveisQtd(PAGE_SIZE);
   };
 
   if (!open) return null;
@@ -1607,10 +1623,7 @@ function ReconcileDialog({ contaId, conta, empresaId, autoConciliar, importing, 
                     </SelectContent>
                   </Select>
                 )}
-                <Button variant="outline" size="sm" className="h-8 text-xs" disabled={filtrosSalvos.salvar.isPending || !authUser?.id} onClick={() => { setNomeFiltro(""); setFiltroOpen(true); }}>
-                  Salvar filtro
-                </Button>
-                <Button variant="ghost" size="sm" className="h-8 text-xs" onClick={() => { setBusca(""); setFiltro("todos"); setOrdem("recentes"); setMes("todos"); setPagina(1); }}>
+                <Button variant="ghost" size="sm" className="h-8 text-xs" onClick={() => { setBusca(""); setFiltro("todos"); setOrdem("antigos"); setMes("todos"); setVisiveisQtd(PAGE_SIZE); }}>
                   <Trash2 className="mr-1 h-3 w-3" />Limpar filtros
                 </Button>
               </div>
@@ -1637,21 +1650,9 @@ function ReconcileDialog({ contaId, conta, empresaId, autoConciliar, importing, 
             </div>
 
             <div className="flex flex-wrap items-center gap-2">
-              <Button variant="outline" size="sm"
-                onClick={() => setSel(sel.size === visiveis.length ? new Set() : new Set(visiveis.map((t) => t.id)))}>
-                {sel.size === visiveis.length && visiveis.length > 0 ? "Limpar seleção" : "Selecionar lançamentos"}
-              </Button>
-              <Button variant="outline" size="sm" disabled={!sel.size || criarEConciliar.isPending} onClick={conciliarSelecionados}>
-                {criarEConciliar.isPending && <Loader2 className="mr-1 h-3 w-3 animate-spin" />}Conciliar
-              </Button>
-              <Button variant="outline" size="sm" disabled={!sel.size || excluirTx.isPending}
-                onClick={() => excluirTx.mutate(Array.from(sel))}>
-                <Trash2 className="mr-1 h-3 w-3" />Excluir
-              </Button>
-
-              <div className="ml-auto">
+              <div>
                 <Select value={ordem} onValueChange={(v) => setOrdem(v as typeof ordem)}>
-                  <SelectTrigger className="h-8 w-[170px]"><SelectValue /></SelectTrigger>
+                  <SelectTrigger className="h-8 w-[170px] text-xs"><SelectValue /></SelectTrigger>
                   <SelectContent>
                     <SelectItem value="recentes">Mais recentes</SelectItem>
                     <SelectItem value="antigos">Mais antigos</SelectItem>
@@ -1660,6 +1661,17 @@ function ReconcileDialog({ contaId, conta, empresaId, autoConciliar, importing, 
                   </SelectContent>
                 </Select>
               </div>
+              <Button variant="outline" size="sm" className="h-8 text-xs"
+                onClick={() => setSel(sel.size === visiveis.length ? new Set() : new Set(visiveis.map((t) => t.id)))}>
+                {sel.size === visiveis.length && visiveis.length > 0 ? "Limpar seleção" : "Selecionar lançamentos"}
+              </Button>
+              <Button variant="outline" size="sm" className="h-8 text-xs" disabled={!sel.size || criarEConciliar.isPending} onClick={conciliarSelecionados}>
+                {criarEConciliar.isPending && <Loader2 className="mr-1 h-3 w-3 animate-spin" />}Conciliar
+              </Button>
+              <Button variant="outline" size="sm" className="h-8 text-xs" disabled={!sel.size || excluirTx.isPending}
+                onClick={() => excluirTx.mutate(Array.from(sel))}>
+                <Trash2 className="mr-1 h-3 w-3" />Excluir
+              </Button>
             </div>
 
             <div className="grid grid-cols-1 gap-2 text-xs font-medium md:grid-cols-[1fr_auto_1fr]">
@@ -1699,16 +1711,13 @@ function ReconcileDialog({ contaId, conta, empresaId, autoConciliar, importing, 
                   />
                 ))}
 
-                {totalPaginas > 1 && (
+                {visiveis.length > daPagina.length && (
                   <div className="flex items-center justify-center gap-3 py-4 text-sm">
-                    <Button variant="outline" size="sm" disabled={paginaAtual <= 1} onClick={() => setPagina(paginaAtual - 1)}>
-                      Anterior
-                    </Button>
                     <span className="text-muted-foreground">
-                      Página {paginaAtual} de {totalPaginas} — {visiveis.length} lançamentos
+                      Mostrando {daPagina.length} de {visiveis.length} lançamentos
                     </span>
-                    <Button variant="outline" size="sm" disabled={paginaAtual >= totalPaginas} onClick={() => setPagina(paginaAtual + 1)}>
-                      Próxima
+                    <Button variant="outline" size="sm" onClick={() => setVisiveisQtd((q) => q + 15)}>
+                      Carregar mais lançamentos
                     </Button>
                   </div>
                 )}
@@ -1738,42 +1747,6 @@ function ReconcileDialog({ contaId, conta, empresaId, autoConciliar, importing, 
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
-
-      <Dialog open={filtroOpen} onOpenChange={(v) => { if (!v) setFiltroOpen(false); }}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Salvar filtro</DialogTitle>
-            <DialogDescription>Informe um nome para identificar este filtro.</DialogDescription>
-          </DialogHeader>
-          <form
-            onSubmit={(e) => {
-              e.preventDefault();
-              if (nomeFiltro.trim()) {
-                filtrosSalvos.salvar.mutate({ nome: nomeFiltro.trim(), filtros: filtroAtual });
-                setFiltroOpen(false);
-              }
-            }}
-            className="space-y-3"
-          >
-            <div>
-              <Label>Nome do filtro</Label>
-              <Input
-                value={nomeFiltro}
-                onChange={(e) => setNomeFiltro(e.target.value)}
-                placeholder="Nome do filtro"
-              />
-            </div>
-            <DialogFooter>
-              <Button type="button" variant="outline" onClick={() => setFiltroOpen(false)}>
-                Cancelar
-              </Button>
-              <Button type="submit" data-acao disabled={!nomeFiltro.trim() || filtrosSalvos.salvar.isPending}>
-                Salvar
-              </Button>
-            </DialogFooter>
-          </form>
-        </DialogContent>
-      </Dialog>
     </>
     );
 

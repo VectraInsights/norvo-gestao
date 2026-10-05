@@ -4610,3 +4610,12 @@ Espelhado na Vercel.
   "Abrir conciliação" removido e contadores em azul.
 - Item Conciliação removido do menu Financeiro.
 - Validado com `tsc` (só baseline) e `npm run build` OK.
+
+## Conciliação otimizada + logos Itaú/Sicoob (05/10)
+
+- Ordem sempre crescente (padrão e resets); botão Salvar filtro removido.
+- Sugestão visível: pré-seleciona o lançamento de mesmo valor e data.
+- Ordenar à esquerda; "Carregar mais" de 15 em 15 no lugar de páginas.
+- Tela compacta (linhas, contadores, filtros e legenda enxutos).
+- Logos Itaú e Sicoob da área de trabalho aplicadas em 512.
+- Validado com `tsc` (só baseline) e `npm run build` OK.
