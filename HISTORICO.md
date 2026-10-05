@@ -4455,6 +4455,20 @@ Espelhado na Vercel.
   tamanho de arquivo; "Conta para tudo" vira "Conta de pagamento".
 - Validado com `tsc` zerado, `vitest` (decimais/CFOP no PDF) e build OK.
 
+## Parcelas estilo Conta Azul + verde no escuro (05/10)
+
+- Novo `CondicaoPagamento` (`components/erp/condicao-pagamento.tsx`):
+  condição (parcelamento Nx, 1º vencimento, intervalo, forma, conta) gera as
+  linhas; cada linha edita vencimento/valor/% automático/forma/conta, com
+  total e alerta de divergência. Conta e forma do topo valem para todas.
+- Aplicado nos dois editores de Notas de Compra (análise do XML e diálogo
+  de detalhes); componente reseta por nota (`key` por chave).
+- Escuro 100% verde: `--ring`, `--sidebar-primary` e `--sidebar-ring` do
+  `.dark` de laranja para verde; sem laranja no tema.
+- Contas a pagar/receber trabalham por título único (sem parcelas) — não
+  alterados; parcelamento lá seria novo comportamento.
+- Validado com `tsc` zerado e `npm run build` OK.
+
 ## Tema padronizado: tudo no verde, sem cor por módulo (05/10)
 
 - Removido o sistema de cor por módulo (`MODULE_COLORS` no PageHeader vira
