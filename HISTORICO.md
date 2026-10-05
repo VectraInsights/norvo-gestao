@@ -4475,6 +4475,13 @@ Espelhado na Vercel.
   ajusta ao adicionar/remover (antes fixo em 1x com 3 linhas do XML).
 - Validado com `tsc` zerado e `npm run build` OK.
 
+## Lançamento abre em tela cheia sozinho (05/10)
+
+- Ao terminar o Processar XMLs, a análise abre em tela cheia para ir
+  lançando nota por nota (antes ficava escondida no fim da aba, só com o
+  toast). Fechar mantém a fila, com botão "Continuar lançando notas".
+- Validado com `tsc` zerado e `npm run build` OK.
+
 ## Tema padronizado: tudo no verde, sem cor por módulo (05/10)
 
 - Removido o sistema de cor por módulo (`MODULE_COLORS` no PageHeader vira

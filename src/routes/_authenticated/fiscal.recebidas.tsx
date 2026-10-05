@@ -359,6 +359,8 @@ function NotasRecebidas() {
   const [importResults, setImportResults] = useState<ParsedXMLResult | null>(null);
   // Notas restantes do lote após a atual em conferência (importação de vários XMLs)
   const [filaXml, setFilaXml] = useState<ParsedXMLResult[]>([]);
+  // Tela de lançamento: abre sozinha ao terminar o processamento
+  const [analiseOpen, setAnaliseOpen] = useState(false);
   const [validarXML, setValidarXML] = useState(true);
 
   // Ações de manifestação do destinatário (ciência, confirmação, desconhecimento)
@@ -675,6 +677,7 @@ function NotasRecebidas() {
       setImportResults(pendentes[0]);
       setFilaXml(pendentes.slice(1));
       setMesmaCategoria(false);
+      setAnaliseOpen(true);
       toast.success("XML(s) importados(s).");
     } finally {
       setIsProcessing(false);
@@ -911,6 +914,7 @@ function NotasRecebidas() {
       } else {
         setSelectedFiles([]);
         setImportResults(null);
+        setAnaliseOpen(false);
       }
     } catch (err: any) {
       toast.error("Falha na gravação", { description: err.message });
@@ -928,6 +932,7 @@ function NotasRecebidas() {
     } else {
       setSelectedFiles([]);
       setImportResults(null);
+      setAnaliseOpen(false);
     }
     toast.info("Nota ignorada.");
   };
@@ -1683,7 +1688,16 @@ function NotasRecebidas() {
             </Card>
           </div>
 
-          {importResults && (
+          {importResults && !analiseOpen && (
+            <Button onClick={() => setAnaliseOpen(true)} className="bg-primary hover:bg-primary/90 text-white">
+              Continuar lançando notas ({filaXml.length + 1} restante(s))
+            </Button>
+          )}
+
+          <Dialog open={analiseOpen && !!importResults} onOpenChange={(o) => { if (!o) setAnaliseOpen(false); }}>
+            <DialogContent>
+              <DialogTitle className="sr-only">Lançar notas fiscais</DialogTitle>
+              {importResults && (
             <Card className="border-muted bg-card/60 backdrop-blur-sm shadow-panel overflow-hidden animate-in fade-in slide-in-from-bottom-2 duration-300">
               <CardHeader className="bg-muted/30">
                 <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
@@ -1844,7 +1858,9 @@ function NotasRecebidas() {
                 </div>
               </CardContent>
             </Card>
-          )}
+              )}
+            </DialogContent>
+          </Dialog>
         </TabsContent>
       </Tabs>
 
