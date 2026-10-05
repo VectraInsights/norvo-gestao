@@ -4495,6 +4495,12 @@ Espelhado na Vercel.
   e barra de ações fixa no rodapé.
 - Validado com `npm run build` OK.
 
+## Saída com pendências pergunta o destino (05/10)
+
+- Fechar/X ou Cancelar com notas por lançar pergunta: Continuar depois
+  (mantém a fila e o botão de continuar) ou Encerrar (descarta o restante).
+- Validado com `tsc` zerado e `npm run build` OK.
+
 ## Upload compacto + trilha de auditoria funcional (05/10)
 
 - Aba de importação enxuta (dropzone, listas e textos compactos) para caber

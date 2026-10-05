@@ -360,6 +360,8 @@ function NotasRecebidas() {
   const [filaXml, setFilaXml] = useState<ParsedXMLResult[]>([]);
   // Tela de lançamento: abre sozinha ao terminar o processamento
   const [analiseOpen, setAnaliseOpen] = useState(false);
+  // Saída com pendências: continuar depois (mantém a fila) ou encerrar (descarta)
+  const [confSair, setConfSair] = useState(false);
 
   // Ações de manifestação do destinatário (ciência, confirmação, desconhecimento)
   const [chaveImportModal, setChaveImportModal] = useState(false);
@@ -1684,7 +1686,7 @@ function NotasRecebidas() {
             </Button>
           )}
 
-          <Dialog open={analiseOpen && !!importResults} onOpenChange={(o) => { if (!o) setAnaliseOpen(false); }}>
+          <Dialog open={analiseOpen && !!importResults} onOpenChange={(o) => { if (!o && importResults) setConfSair(true); else setAnaliseOpen(o); }}>
             <DialogContent className="block">
               <DialogTitle className="sr-only">Lançar notas fiscais</DialogTitle>
               {importResults && (
@@ -1831,7 +1833,7 @@ function NotasRecebidas() {
                 </div>
 
                 <div className="sticky bottom-0 flex justify-end gap-2 border-t border-border bg-card py-2 pt-2">
-                  <Button variant="outline" disabled={isSaving} onClick={() => { setImportResults(null); setFilaXml([]); }}>Cancelar</Button>
+                  <Button variant="outline" disabled={isSaving} onClick={() => setConfSair(true)}>Cancelar</Button>
                   <Button variant="outline" disabled={isSaving} onClick={handleIgnorarNota} className="text-amber-700 hover:bg-amber-500/10 dark:text-amber-400">
                     Ignorar Nota
                   </Button>
@@ -1851,6 +1853,25 @@ function NotasRecebidas() {
               )}
             </DialogContent>
           </Dialog>
+          <AlertDialog open={confSair} onOpenChange={setConfSair}>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>Sair sem lançar tudo?</AlertDialogTitle>
+                <AlertDialogDescription>
+                  Ainda há {(filaXml?.length ?? 0) + 1} nota(s) para lançar. Continuar depois mantém a fila no botão "Continuar lançando notas"; encerrar descarta o restante.
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel onClick={() => setAnaliseOpen(false)}>Continuar depois</AlertDialogCancel>
+                <AlertDialogAction
+                  className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                  onClick={() => { setConfSair(false); setAnaliseOpen(false); setImportResults(null); setFilaXml([]); }}
+                >
+                  Encerrar
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
         </TabsContent>
       </Tabs>
 
