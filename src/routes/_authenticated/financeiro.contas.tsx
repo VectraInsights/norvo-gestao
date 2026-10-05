@@ -301,24 +301,24 @@ function ContaDetalhe({ contaId, contas, empresaId, tabInicial, onVoltar, onSele
             </DropdownMenu>
           )}
         </div>
-        <div className="grid w-full gap-3 sm:w-[300px]">
-          <Card className="flex items-center gap-1 bg-primary/[0.04] p-3 shadow-panel">
-            <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => shiftMes(-1)}>
-              <ChevronLeft className="h-4 w-4" />
+        <div className="grid w-full gap-2 sm:w-[260px]">
+          <Card className="flex items-center gap-1 bg-primary/[0.04] p-2 shadow-panel">
+            <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => shiftMes(-1)}>
+              <ChevronLeft className="h-3.5 w-3.5" />
             </Button>
-            <span className="min-w-36 flex-1 text-center text-sm font-semibold">{mesLabel}</span>
-            <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => shiftMes(1)}>
-              <ChevronRight className="h-4 w-4" />
+            <span className="min-w-28 flex-1 text-center text-xs font-semibold">{mesLabel}</span>
+            <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => shiftMes(1)}>
+              <ChevronRight className="h-3.5 w-3.5" />
             </Button>
           </Card>
-          <Card className="flex items-center justify-end gap-6 bg-primary/[0.04] p-3 shadow-panel">
+          <Card className="flex items-center justify-end gap-4 bg-primary/[0.04] p-2 shadow-panel">
             <div className="text-right">
-              <div className="text-[11px] text-muted-foreground">Saldo atual</div>
-              <div className="text-tabular text-sm font-bold">{brl(Number(conta?.saldo_atual) || 0)}</div>
+              <div className="text-[10px] text-muted-foreground">Saldo atual</div>
+              <div className="text-tabular text-xs font-bold">{brl(Number(conta?.saldo_atual) || 0)}</div>
             </div>
             <div className="text-right">
-              <div className="text-[11px] text-muted-foreground">Pendente de conciliação</div>
-              <div className="text-tabular text-sm font-bold">{brl(valorPendente)}</div>
+              <div className="text-[10px] text-muted-foreground">Pendente de conciliação</div>
+              <div className="text-tabular text-xs font-bold">{brl(valorPendente)}</div>
             </div>
           </Card>
         </div>
