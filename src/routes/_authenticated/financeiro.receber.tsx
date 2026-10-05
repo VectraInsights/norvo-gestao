@@ -423,7 +423,7 @@ export function LancamentosPage({ tipo }: { tipo: "receber" | "pagar" }) {
   type SortKey = "descricao" | "contato" | "data_vencimento" | "valor" | "status";
   const [sort, setSort] = useState<{ key: SortKey; dir: "asc" | "desc" }>({
     key: "data_vencimento",
-    dir: "desc",
+    dir: "asc",
   });
   const toggleSort = (key: SortKey) =>
     setSort((s) =>
