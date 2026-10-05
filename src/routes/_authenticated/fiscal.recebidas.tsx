@@ -14,7 +14,7 @@ import { CondicaoPagamento } from "@/components/erp/condicao-pagamento";
 import { MoneyInput } from "@/components/erp/money-input";
 import { 
   FileDown, Search, AlertCircle, XCircle, 
-  UploadCloud, FileCode, Check, ArrowRight, RefreshCw, Archive, Calendar, KeyRound,
+  UploadCloud, Check, RefreshCw, KeyRound,
   Eye, Download, FileText, Trash2, Pencil
 } from "lucide-react";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
@@ -353,7 +353,6 @@ function NotasRecebidas() {
   });
   // Importação XML State
   const [dragging, setDragging] = useState(false);
-  const [selectedFiles, setSelectedFiles] = useState<SelectedFileItem[]>([]);
   const [isProcessing, setIsProcessing] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [importResults, setImportResults] = useState<ParsedXMLResult | null>(null);
@@ -361,7 +360,6 @@ function NotasRecebidas() {
   const [filaXml, setFilaXml] = useState<ParsedXMLResult[]>([]);
   // Tela de lançamento: abre sozinha ao terminar o processamento
   const [analiseOpen, setAnaliseOpen] = useState(false);
-  const [validarXML, setValidarXML] = useState(true);
 
   // Ações de manifestação do destinatário (ciência, confirmação, desconhecimento)
   const [chaveImportModal, setChaveImportModal] = useState(false);
@@ -578,8 +576,7 @@ function NotasRecebidas() {
         name: f.name,
         size: f.size
       }));
-      setSelectedFiles(filesList);
-      toast.success(`${filesList.length} arquivos selecionados para importação.`);
+      void processarArquivos(filesList);
     }
   };
 
@@ -590,8 +587,8 @@ function NotasRecebidas() {
         name: f.name,
         size: f.size
       }));
-      setSelectedFiles(filesList);
-      toast.success(`${filesList.length} arquivos selecionados.`);
+      e.target.value = "";
+      void processarArquivos(filesList);
     }
   };
 
@@ -676,11 +673,11 @@ function NotasRecebidas() {
     return { chave: parsedChave, emitente: parsedEmitente, cnpj, nNF, total: totalCalculado, xml: text, produtos: parsedProdutos, parcelas: parsedParcelas };
   };
 
-  const handleProcessarImportacao = async () => {
-    if (selectedFiles.length === 0) return;
+  // Processa os arquivos na hora (seleção ou arrasto já disparam a análise)
+  const processarArquivos = async (arquivos: SelectedFileItem[]) => {
+    if (arquivos.length === 0 || isProcessing) return;
 
-    // Fortalecer testes do módulo fiscal: Validar se todos os arquivos são XML antes de processar
-    const invalidFiles = selectedFiles.filter(f => !f.name.toLowerCase().endsWith('.xml'));
+    const invalidFiles = arquivos.filter(f => !f.name.toLowerCase().endsWith('.xml'));
     if (invalidFiles.length > 0) {
       toast.error(`Arquivo inválido detectado: ${invalidFiles[0].name}. Apenas arquivos .xml são permitidos.`);
       return;
@@ -689,9 +686,9 @@ function NotasRecebidas() {
     setIsProcessing(true);
 
     try {
-      // Processa TODOS os arquivos selecionados; duplicadas são puladas com aviso
+      // Processa TODOS os arquivos; duplicadas são puladas com aviso
       const pendentes: ParsedXMLResult[] = [];
-      for (const f of selectedFiles) {
+      for (const f of arquivos) {
         try {
           const r = await parseArquivoXml(f);
           if (!r) continue;
@@ -947,7 +944,6 @@ function NotasRecebidas() {
         setFilaXml(filaXml.slice(1));
         setMesmaCategoria(false);
       } else {
-        setSelectedFiles([]);
         setImportResults(null);
         setAnaliseOpen(false);
       }
@@ -965,7 +961,6 @@ function NotasRecebidas() {
       setFilaXml(filaXml.slice(1));
       setMesmaCategoria(false);
     } else {
-      setSelectedFiles([]);
       setImportResults(null);
       setAnaliseOpen(false);
     }
@@ -1653,54 +1648,12 @@ function NotasRecebidas() {
                     />
                   </label>
                   <p className="text-xs text-muted-foreground mt-1">Apenas arquivos no formato .xml</p>
+                  {isProcessing && (
+                    <p className="text-xs font-medium text-primary mt-1 flex items-center gap-1.5">
+                      <RefreshCw className="h-3.5 w-3.5 animate-spin" /> Lendo XMLs...
+                    </p>
+                  )}
                 </div>
-
-                {selectedFiles.length > 0 && (
-                  <div className="space-y-2">
-                    <h4 className="text-sm font-medium text-foreground">Arquivos Selecionados:</h4>
-                    <div className="max-h-[96px] overflow-y-auto border rounded-md p-2 divide-y divide-border bg-background/50">
-                      {selectedFiles.map((file, i) => (
-                        <div key={i} className="flex items-center gap-2 py-1.5 px-2 text-xs">
-                          <div className="flex items-center gap-2">
-                            <FileCode className="h-4 w-4 text-muted-foreground" />
-                            <span className="font-medium truncate max-w-[260px]">{file.name}</span>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center space-x-2">
-                        <input
-                          type="checkbox"
-                          id="validar-xml"
-                          className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary"
-                          checked={validarXML}
-                          onChange={(e) => setValidarXML(e.target.checked)}
-                        />
-                        <label htmlFor="validar-xml" className="text-xs font-medium text-foreground cursor-pointer">
-                          Validar XML antes de importar
-                        </label>
-                      </div>
-                      <Button 
-                        onClick={handleProcessarImportacao} 
-                        disabled={isProcessing}
-                        className="w-full sm:w-auto"
-                      >
-                        {isProcessing ? (
-                          <>
-                            <RefreshCw className="mr-2 h-4 w-4 animate-spin" />
-                            Lendo XMLs...
-                          </>
-                        ) : (
-                          <>
-                            <ArrowRight className="mr-2 h-4 w-4" />
-                            Processar XMLs
-                          </>
-                        )}
-                      </Button>
-                    </div>
-                  </div>
-                )}
               </CardContent>
             </Card>
 

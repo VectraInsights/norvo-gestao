@@ -4482,6 +4482,13 @@ Espelhado na Vercel.
   toast). Fechar mantém a fila, com botão "Continuar lançando notas".
 - Validado com `tsc` zerado e `npm run build` OK.
 
+## Importação processa na hora, sem tela de processar (05/10)
+
+- Selecionar ou arrastar XMLs já dispara a análise e abre o lançamento;
+  removidos lista de selecionados, checkbox de validação, botão Processar e
+  estados mortos.
+- Validado com `tsc` zerado, `vitest` e `npm run build` OK.
+
 ## Upload compacto + trilha de auditoria funcional (05/10)
 
 - Aba de importação enxuta (dropzone, listas e textos compactos) para caber
