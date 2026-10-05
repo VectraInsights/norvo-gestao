@@ -160,6 +160,8 @@ export function CondicaoPagamento({
         </div>
       </div>
 
+      {/* Parcelas só aparecem no parcelamento (2+); com 1, a condição já resolve */}
+      {parcelas.length !== 1 && (
       <div className="overflow-hidden rounded-lg border">
         <div className="flex items-center justify-between gap-2 border-b border-primary/20 bg-primary/8 px-3 py-1.5">
           <div className="flex items-center gap-2 text-[11px] font-semibold uppercase tracking-wide text-primary/80">
@@ -260,6 +262,7 @@ export function CondicaoPagamento({
         )}
         </div>
       </div>
+      )}
     </div>
   );
 }

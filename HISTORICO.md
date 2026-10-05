@@ -4514,6 +4514,12 @@ Espelhado na Vercel.
   para todas as parcelas.
 - Validado com `tsc` zerado e `npm run build` OK.
 
+## Parcelas só no parcelamento (05/10)
+
+- Caixa de parcelas aparece só com 2+ linhas; com 1x a condição já resolve
+  (mudar o Nx gera as linhas).
+- Validado com `tsc` zerado e `npm run build` OK.
+
 ## Upload compacto + trilha de auditoria funcional (05/10)
 
 - Aba de importação enxuta (dropzone, listas e textos compactos) para caber
