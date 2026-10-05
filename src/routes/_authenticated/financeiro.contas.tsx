@@ -1590,23 +1590,14 @@ function ReconcileDialog({ contaId, conta, empresaId, autoConciliar, importing, 
 
 
         <div className="w-full">
-          {!inline && (
-          <div className="mb-3 flex items-center gap-2 text-sm font-medium">
-            Conciliações pendentes
-            <Badge variant="secondary">{pendentes.length}</Badge>
-          </div>
-          )}
-
-        <div className="mt-4 space-y-4">
-            <div>
-              <Label className="text-xs text-muted-foreground">Pesquise o lançamento bancário</Label>
-              <div className="mt-1 flex flex-wrap items-center gap-2">
-                <div className="relative w-full max-w-sm">
-                  <Search className="pointer-events-none absolute left-2 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                  <Input className="pl-8" placeholder="Descrição ou valor" value={busca} onChange={(e) => setBusca(e.target.value)} />
+        <div className="space-y-2">
+            <div className="flex flex-wrap items-center gap-2">
+                <div className="relative w-full max-w-xs">
+                  <Search className="pointer-events-none absolute left-2 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
+                  <Input className="pl-8 h-8 text-[13px]" placeholder="Descrição ou valor" value={busca} onChange={(e) => setBusca(e.target.value)} />
                 </div>
                 <Select value={mes} onValueChange={setMes}>
-                  <SelectTrigger className="w-[180px]"><SelectValue placeholder="Mês" /></SelectTrigger>
+                  <SelectTrigger className="h-8 text-xs w-[150px]"><SelectValue placeholder="Mês" /></SelectTrigger>
                   <SelectContent>
                     <SelectItem value="todos">Todos os meses</SelectItem>
                     {mesesDisponiveis.map((m) => (
@@ -1616,16 +1607,16 @@ function ReconcileDialog({ contaId, conta, empresaId, autoConciliar, importing, 
                 </Select>
                 {filtrosSalvos.filtros.length > 0 && (
                   <Select onValueChange={aplicarFiltroSalvo}>
-                    <SelectTrigger className="w-[190px]"><SelectValue placeholder="Filtros salvos" /></SelectTrigger>
+                    <SelectTrigger className="h-8 text-xs w-[160px]"><SelectValue placeholder="Filtros salvos" /></SelectTrigger>
                     <SelectContent>
                       {filtrosSalvos.filtros.map((salvo) => <SelectItem key={salvo.id} value={salvo.id}>{salvo.nome}</SelectItem>)}
                     </SelectContent>
                   </Select>
                 )}
-                <Button variant="outline" size="sm" disabled={filtrosSalvos.salvar.isPending || !authUser?.id} onClick={() => { setNomeFiltro(""); setFiltroOpen(true); }}>
+                <Button variant="outline" size="sm" className="h-8 text-xs" disabled={filtrosSalvos.salvar.isPending || !authUser?.id} onClick={() => { setNomeFiltro(""); setFiltroOpen(true); }}>
                   Salvar filtro
                 </Button>
-                <Button variant="ghost" size="sm" onClick={() => { setBusca(""); setFiltro("todos"); setOrdem("recentes"); setMes("todos"); setPagina(1); }}>
+                <Button variant="ghost" size="sm" className="h-8 text-xs" onClick={() => { setBusca(""); setFiltro("todos"); setOrdem("recentes"); setMes("todos"); setPagina(1); }}>
                   <Trash2 className="mr-1 h-3 w-3" />Limpar filtros
                 </Button>
 
@@ -1643,12 +1634,12 @@ function ReconcileDialog({ contaId, conta, empresaId, autoConciliar, importing, 
                   type="button"
                   onClick={() => setFiltro(c.k)}
                   className={cn(
-                    "border-r px-4 py-3 text-center last:border-r-0 transition-colors hover:bg-muted/50",
+                    "border-r px-3 py-1.5 text-center last:border-r-0 transition-colors hover:bg-muted/50",
                     filtro === c.k && "border-t-2 border-t-primary bg-muted/40"
                   )}
                 >
-                  <div className="text-sm text-muted-foreground">{c.label}</div>
-                  <div className={cn("text-lg font-semibold", c.cls)}>{c.n}</div>
+                  <div className="text-[11px] text-muted-foreground">{c.label}</div>
+                  <div className={cn("text-base font-semibold", c.cls)}>{c.n}</div>
                 </button>
               ))}
             </div>
@@ -1679,10 +1670,10 @@ function ReconcileDialog({ contaId, conta, empresaId, autoConciliar, importing, 
               </div>
             </div>
 
-            <div className="grid grid-cols-1 gap-3 text-sm font-medium md:grid-cols-[1fr_auto_1fr]">
-              <div className="flex items-center gap-2"><span className="rounded bg-destructive px-1.5 text-xs text-destructive-foreground">B</span>Lançamentos do banco</div>
+            <div className="grid grid-cols-1 gap-2 text-xs font-medium md:grid-cols-[1fr_auto_1fr]">
+              <div className="flex items-center gap-2"><span className="rounded bg-destructive px-1.5 text-[11px] text-destructive-foreground">B</span>Lançamentos do banco</div>
               <div />
-              <div className="flex items-center gap-2"><Link2 className="h-4 w-4 text-primary" />Lançamentos do sistema</div>
+              <div className="flex items-center gap-2"><Link2 className="h-3.5 w-3.5 text-primary" />Lançamentos do sistema</div>
             </div>
 
             {isLoading ? (
@@ -1694,7 +1685,7 @@ function ReconcileDialog({ contaId, conta, empresaId, autoConciliar, importing, 
             ) : !visiveis.length ? (
               <div className="py-8 text-center text-sm text-muted-foreground">Tudo conciliado. 🎉</div>
             ) : (
-              <div className="space-y-4">
+              <div className="space-y-2">
                 {daPagina.map((tx) => (
                   <ReconcileRow
                     key={tx.id}
@@ -1860,42 +1851,42 @@ const ReconcileRow = memo(function ReconcileRow({
   const nomeContato = r.contato_id ? (contatos.find((c) => c.id === r.contato_id)?.nome ?? "—") : "Informação não recebida";
 
   return (
-    <div className="grid grid-cols-1 items-center gap-3 md:grid-cols-[1fr_auto_1fr]">
+    <div className="grid grid-cols-1 items-center gap-2 md:grid-cols-[1fr_auto_1fr]">
       {/* banco */}
       <Card className="overflow-hidden">
-        <div className="flex items-center justify-between gap-2 border-b px-4 py-3">
-          <div className="flex items-center gap-3">
+        <div className="flex items-center justify-between gap-2 border-b px-3 py-2">
+          <div className="flex items-center gap-2">
             <Checkbox checked={selected} onCheckedChange={() => onToggleSel(tx.id)} />
-            <span className="text-sm font-semibold">{format(data, "dd/MM/yyyy")}</span>
-            <span className="text-xs text-muted-foreground capitalize">{format(data, "EEEE")}</span>
+            <span className="text-[13px] font-semibold">{format(data, "dd/MM/yyyy")}</span>
+            <span className="text-[11px] text-muted-foreground capitalize">{format(data, "EEEE")}</span>
           </div>
-          <span className={cn("text-tabular font-semibold", tx.valor < 0 ? "text-destructive" : "text-success")}>
+          <span className={cn("text-tabular text-sm font-semibold", tx.valor < 0 ? "text-destructive" : "text-success")}>
             {brl(tx.valor)}
           </span>
         </div>
-        <div className="space-y-1 px-4 py-3 text-sm">
+        <div className="space-y-0.5 px-3 py-2 text-[13px]">
           <div className="font-medium">{tx.memo ?? "—"}</div>
-          <div className="text-muted-foreground"><span className="font-medium text-foreground">Cliente:</span> {nomeContato}</div>
-          <div className="text-muted-foreground"><span className="font-medium text-foreground">CPF/CNPJ:</span> Informação não recebida</div>
+          <div className="text-xs text-muted-foreground"><span className="font-medium text-foreground">Cliente:</span> {nomeContato}</div>
+          <div className="text-xs text-muted-foreground"><span className="font-medium text-foreground">CPF/CNPJ:</span> Informação não recebida</div>
         </div>
-        <div className="flex items-center justify-between border-t bg-muted/30 px-4 py-2">
-          <Badge variant="secondary" className="text-xs">Integração manual</Badge>
-          <Button variant="outline" size="sm" onClick={() => onExcluir(tx.id)} disabled={excluindo}>
+        <div className="flex items-center justify-between border-t bg-muted/30 px-3 py-1.5">
+          <Badge variant="secondary" className="text-[11px]">Integração manual</Badge>
+          <Button variant="outline" size="sm" className="h-7 text-xs" onClick={() => onExcluir(tx.id)} disabled={excluindo}>
             <Trash2 className="mr-1 h-3 w-3" />Excluir
           </Button>
         </div>
       </Card>
 
       <div className="flex justify-center">
-        <Button disabled={conciliando} onClick={() => onConciliar(tx, r)}>
-          {conciliando ? <Loader2 className="mr-1 h-4 w-4 animate-spin" /> : <Check className="mr-1 h-4 w-4" />}
+        <Button size="sm" disabled={conciliando} onClick={() => onConciliar(tx, r)}>
+          {conciliando ? <Loader2 className="mr-1 h-3.5 w-3.5 animate-spin" /> : <Check className="mr-1 h-3.5 w-3.5" />}
           Conciliar
         </Button>
       </div>
 
       {/* sistema */}
       <Card className="overflow-hidden">
-        <div className="flex items-center justify-between gap-2 border-b px-4 py-3">
+        <div className="flex items-center justify-between gap-2 border-b px-3 py-2">
           <div className="flex gap-1">
             <Button size="sm" variant={modoBusca ? "outline" : "default"} onClick={() => onSetModoBusca(tx.id, false)}>
               Novo lançamento
@@ -1905,7 +1896,7 @@ const ReconcileRow = memo(function ReconcileRow({
             </Button>
           </div>
         </div>
-        <div className="px-4 py-3">
+        <div className="px-3 py-2">
           {modoBusca ? (
             <div className="space-y-1">
               <Label className="text-xs">Lançamento existente</Label>
@@ -1917,7 +1908,7 @@ const ReconcileRow = memo(function ReconcileRow({
               />
             </div>
           ) : (
-            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+            <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
               <div className="space-y-1">
                 <Label className="text-xs">Descrição <span className="text-destructive">*</span></Label>
                 <Input value={r.descricao} onChange={(e) => onSetRow(tx.id, { descricao: e.target.value })} placeholder="Descrição" />
