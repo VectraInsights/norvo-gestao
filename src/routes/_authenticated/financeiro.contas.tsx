@@ -1082,9 +1082,6 @@ function ContasFinanceiras() {
                   </TableCell>
                   <TableCell>
                     <div className="font-semibold text-foreground">{c.nome ?? c.banco ?? "—"}</div>
-                    {c.padrao ? (
-                      <span className="mt-0.5 inline-flex items-center rounded-full bg-primary/10 px-2 py-0.5 text-[11px] font-medium text-primary">Padrão</span>
-                    ) : null}
                   </TableCell>
                   <TableCell><Badge variant="secondary">{TIPO_LABEL[c.tipo]}</Badge></TableCell>
                   <TableCell onClick={(e) => e.stopPropagation()}>
