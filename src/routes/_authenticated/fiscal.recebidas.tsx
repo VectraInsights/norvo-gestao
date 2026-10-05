@@ -413,7 +413,7 @@ function NotasRecebidas() {
     xml: string;
   } | null>(null);
 
-  // Prévia do DANFE (mesmo viewer do CT-e) aberta pelo botão "ver detalhes"
+  // Prévia do DANFE (mesmo viewer do CT-e) aberta pelo botão "Ver DANFE" do diálogo de detalhes
   const [pdfNota, setPdfNota] = useState<{ url: string; nome: string; subtitulo: string; nota: NotaRecebida } | null>(null);
   const fecharPdfNota = () => {
     setPdfNota((p) => { if (p) URL.revokeObjectURL(p.url); return null; });
@@ -1446,35 +1446,35 @@ function NotasRecebidas() {
               <Table className="[&_td]:px-2 [&_td]:py-1.5 [&_td]:text-[13px] [&_td]:text-center [&_th]:px-2 [&_td]:border-l [&_td]:border-border [&_td:first-child]:border-l-0 [&_th]:border-l [&_th]:border-white/25 [&_th:first-child]:border-l-0">
                 <TableHeader className="bg-primary supports-[backdrop-filter]:bg-primary [&_th]:text-primary-foreground">
                   <TableRow>
-                    <TableHead className="text-center">Emitente</TableHead>
-                    <TableHead className="text-center">NF-e</TableHead>
                     <TableHead className="text-center">Emissão</TableHead>
-                    <TableHead className="text-center">Valor</TableHead>
-                    <TableHead className="text-center w-24">Ações</TableHead>
+                    <TableHead className="text-center">Fornecedor</TableHead>
+                    <TableHead className="text-center">Série - NF</TableHead>
+                    <TableHead className="text-center">Valor (R$)</TableHead>
+                    <TableHead className="text-center w-28">Ações</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {filteredNotas.map((n) => {
                     return (
                       <TableRow key={n.chave} className="transition-colors hover:bg-muted/30 cursor-pointer" onClick={() => handleVerNota(n)}>
+                        <TableCell className="text-tabular text-muted-foreground whitespace-nowrap">{dateBR(n.data_emissao)}</TableCell>
                         <TableCell className="max-w-[220px]">
                           <div className="font-medium text-foreground truncate">{n.emitente}</div>
                         </TableCell>
-                        <TableCell className="text-tabular text-muted-foreground">
-                          <div className="font-mono text-xs">{n.numero_nf || nNFdaChave(n.chave) || "—"}</div>
+                        <TableCell className="text-tabular text-muted-foreground whitespace-nowrap">
+                          <div className="font-mono text-xs">{[nSerieDaChave(n.chave), n.numero_nf || nNFdaChave(n.chave)].filter(Boolean).join(" - ") || "—"}</div>
                         </TableCell>
-                        <TableCell className="text-tabular text-muted-foreground">{dateBR(n.data_emissao)}</TableCell>
-                        <TableCell className="text-tabular font-medium text-foreground">{brl(n.valor)}</TableCell>
+                        <TableCell className="text-tabular font-medium text-foreground whitespace-nowrap">{brl(n.valor)}</TableCell>
                         <TableCell>
                           <div className="flex items-center justify-center gap-0.5" onClick={(e) => e.stopPropagation()}>
                             <TooltipProvider>
                               <Tooltip>
                                 <TooltipTrigger asChild>
-                                  <Button size="sm" variant="ghost" className="h-7 w-7 p-0" onClick={() => abrirPdfDaNota(n)}>
+                                  <Button size="sm" variant="ghost" className="h-7 w-7 p-0" onClick={() => handleVerNota(n)}>
                                     <Eye className="h-3.5 w-3.5" />
                                   </Button>
                                 </TooltipTrigger>
-                                <TooltipContent>Ver detalhes (DANFE)</TooltipContent>
+                                <TooltipContent>Ver detalhes</TooltipContent>
                               </Tooltip>
                             </TooltipProvider>
                             {n.xml_completo && (
@@ -1482,7 +1482,7 @@ function NotasRecebidas() {
                                 <Tooltip>
                                   <TooltipTrigger asChild>
                                     <Button size="sm" variant="ghost" className="h-7 w-7 p-0" onClick={() => handleBaixarXml(n)}>
-                                      <FileCode className="h-3.5 w-3.5" />
+                                      <Download className="h-3.5 w-3.5" />
                                     </Button>
                                   </TooltipTrigger>
                                   <TooltipContent>Baixar XML</TooltipContent>
@@ -2212,6 +2212,22 @@ function NotasRecebidas() {
                 <div className="flex gap-2">
                   <Button variant="outline" onClick={() => setNotaDetalhe(null)}>
                     Cancelar
+                  </Button>
+                  <Button
+                    variant="outline"
+                    onClick={() => abrirPdfDaNota({
+                      id: notaDetalhe.id,
+                      chave: notaDetalhe.chave,
+                      emitente: notaDetalhe.emitente,
+                      cnpj: notaDetalhe.cnpj,
+                      valor: notaDetalhe.valor,
+                      data_emissao: notaDetalhe.data,
+                      situacao_sefaz: "autorizada",
+                      numero_nf: notaDetalhe.nNF,
+                      xml_completo: notaDetalhe.xml,
+                    })}
+                  >
+                    <FileText className="mr-2 h-4 w-4" /> Ver DANFE
                   </Button>
                   <Button onClick={notaDetalhe.id ? handleAlterarNota : handleLancarNota} disabled={isSaving} className={notaDetalhe.id ? "bg-amber-600 hover:bg-amber-700 text-white" : ""}>
                     {isSaving ? (

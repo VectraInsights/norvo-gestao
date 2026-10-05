@@ -4371,3 +4371,16 @@ Espelhado na Vercel.
   Valor/Forma/Conta com cabeçalho, divisórias e rodapé de total (`0265f3c`).
 - Arquivo: `src/routes/_authenticated/fiscal.recebidas.tsx`.
 
+## Notas de Compra no padrão Conta Azul (05/10)
+
+- Tabela reordenada como na referência: Emissão | Fornecedor | Série - NF
+  ("1 - 142223", série via `nSerieDaChave` + número) | Valor (R$) | Ações.
+  Sem coluna Situação e sem ícone de avião.
+- Ações com 4 ícones: olho abre os detalhes (antes abria a prévia do DANFE),
+  seta-baixo (`Download`) baixa o XML, `FileText` baixa o PDF, lixeira exclui.
+- Prévia do DANFE segue disponível via botão "Ver DANFE" no rodapé do
+  diálogo de detalhes (`abrirPdfDaNota` reaproveitado, sem código morto).
+- Validado com `npm run build` (tsc da página zerado; erros restantes são do
+  baseline pré-existente).
+- Arquivo: `src/routes/_authenticated/fiscal.recebidas.tsx`.
+
