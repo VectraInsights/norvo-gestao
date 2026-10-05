@@ -191,18 +191,17 @@ export function CondicaoPagamento({
           </p>
         ) : (
           <div className="rounded-md border overflow-hidden">
-            <div className="hidden md:grid grid-cols-[36px_150px_130px_70px_1fr_1fr_36px] gap-2 border-b bg-muted/40 px-3 py-1.5 text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
+            <div className="hidden md:grid grid-cols-[36px_150px_130px_70px_1fr_36px] gap-2 border-b bg-muted/40 px-3 py-1.5 text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
               <span>Nº</span>
               <span>Vencimento</span>
               <span>Valor (R$)</span>
               <span>%</span>
               <span>Forma de pagamento</span>
-              <span>Conta para pagamento</span>
               <span />
             </div>
             <div className="divide-y">
               {parcelas.map((p, i) => (
-                <div key={i} className="grid grid-cols-2 md:grid-cols-[36px_150px_130px_70px_1fr_1fr_36px] gap-2 px-3 py-2 items-center">
+                <div key={i} className="grid grid-cols-2 md:grid-cols-[36px_150px_130px_70px_1fr_36px] gap-2 px-3 py-2 items-center">
                   <span className="text-xs font-medium text-muted-foreground">{i + 1}</span>
                   <DateInput
                     className="h-8 text-xs w-full"
@@ -229,18 +228,6 @@ export function CondicaoPagamento({
                       ))}
                     </SelectContent>
                   </Select>
-                  <Combobox
-                    value={p.conta_bancaria_id || "__none__"}
-                    onChange={(v) => setRow(i, { conta_bancaria_id: v === "__none__" ? "" : v })}
-                    options={[
-                      { value: "__none__", label: "Sem conta" },
-                      ...contas.map((c) => ({ value: c.id, label: c.nome })),
-                    ]}
-                    placeholder="Conta para pagamento"
-                    searchPlaceholder="Digite para buscar..."
-                    emptyText="Nenhuma conta encontrada."
-                    className="h-8 text-xs"
-                  />
                   <div className="col-span-2 md:col-span-1 flex justify-end">
                     <TooltipProvider>
                       <Tooltip>

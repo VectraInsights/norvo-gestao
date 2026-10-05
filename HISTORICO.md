@@ -4508,6 +4508,12 @@ Espelhado na Vercel.
   só no conteúdo.
 - Validado com `tsc` zerado e `npm run build` OK.
 
+## Conta só no topo da condição (05/10)
+
+- Coluna "Conta para pagamento" removida das linhas; vale a conta do topo
+  para todas as parcelas.
+- Validado com `tsc` zerado e `npm run build` OK.
+
 ## Upload compacto + trilha de auditoria funcional (05/10)
 
 - Aba de importação enxuta (dropzone, listas e textos compactos) para caber
