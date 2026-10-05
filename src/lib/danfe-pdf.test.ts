@@ -76,4 +76,17 @@ describe("DANFE layout oficial", () => {
     const pages = (raw.match(/\/Type\s*\/Page[^s]/g) || []).length;
     expect(pages).toBe(1);
   });
+
+  it("com XML à vista mostra PAGAMENTO e esconde fatura inventada", async () => {
+    const blob = gerarDanfePdf({
+      ...sample,
+      temXml: true,
+      temDupsXml: false,
+      pagamentos: [{ forma: "Pagamento Instantâneo (PIX)", valor: 2076 }],
+    });
+    const raw = Buffer.from(await blob.arrayBuffer()).toString("latin1");
+    expect(raw).toContain("PAGAMENTO");
+    expect(raw).toContain("R$ 2.076,00");
+    expect(raw).not.toContain("FATURA");
+  });
 });

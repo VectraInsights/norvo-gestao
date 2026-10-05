@@ -110,6 +110,10 @@ export interface DanfeData {
   // Itens / parcelas / rodapé
   produtos: DanfeProduto[];
   parcelas?: DanfeParcela[];
+  // Pagamento à vista do XML (<pag>) e flags de origem
+  pagamentos?: Array<{ forma: string; valor: number }>;
+  temDupsXml?: boolean;
+  temXml?: boolean;
   infoComplementares?: string;
   protocolo?: string;
   protocoloData?: string;
@@ -201,6 +205,7 @@ interface Col {
   align?: "l" | "c" | "r";
   vsize?: number;
   lsize?: number;
+  fit?: boolean;
 }
 
 export function gerarDanfePdf(data: DanfeData): Blob {
@@ -223,8 +228,29 @@ export function gerarDanfePdf(data: DanfeData): Blob {
     black(); setFont(bold ? "bold" : "normal", s);
     try { (doc as any).text(t, xx, yy, { align: "center" }); } catch { doc.text(t, xx, yy); }
   };
-  const drawVal = (t: string, x: number, w: number, yy: number, align: "l" | "c" | "r", s: number, bold = false) => {
-    black(); setFont(bold ? "bold" : "normal", s);
+  // Texto com auto-ajuste: reduz a fonte até caber na largura (como no modelo)
+  const fitCtr = (t: string, xx: number, yy: number, s: number, maxW: number, bold = true) => {
+    let fs = s;
+    black(); setFont(bold ? "bold" : "normal", fs);
+    try {
+      while ((doc as any).getTextWidth(t) > maxW && fs > 5) {
+        fs -= 0.5;
+        setFont(bold ? "bold" : "normal", fs);
+      }
+      (doc as any).text(t, xx, yy, { align: "center" });
+    } catch { doc.text(t, xx, yy); }
+  };
+  const drawVal = (t: string, x: number, w: number, yy: number, align: "l" | "c" | "r", s: number, bold = false, fit = false) => {
+    black(); let fs = s;
+    setFont(bold ? "bold" : "normal", fs);
+    if (fit && t) {
+      try {
+        while ((doc as any).getTextWidth(t) > w - 2 && fs > 5) {
+          fs -= 0.5;
+          setFont(bold ? "bold" : "normal", fs);
+        }
+      } catch {}
+    }
     if (align === "r") { try { (doc as any).text(t, x + w - 1, yy, { align: "right" }); } catch { doc.text(t, x + 1, yy); } }
     else if (align === "c") { try { (doc as any).text(t, x + w / 2, yy, { align: "center" }); } catch { doc.text(t, x + 1, yy); } }
     else doc.text(t, x + 1, yy);
@@ -247,7 +273,7 @@ export function gerarDanfePdf(data: DanfeData): Blob {
     cols.forEach((c, i) => {
       if (i > 0) vline(x, y, h);
       lab(c.label, x + 1, y + 2.6, c.lsize ?? 5);
-      if (c.value) drawVal(c.value, x, c.w, y + (valY ?? h - 1.2), c.align || "l", c.vsize ?? 7, true);
+      if (c.value) drawVal(c.value, x, c.w, y + (valY ?? h - 1.2), c.align || "l", c.vsize ?? 7, true, !!c.fit);
       x += c.w;
     });
     y += h;
@@ -295,7 +321,7 @@ export function gerarDanfePdf(data: DanfeData): Blob {
   box(M + wE + wD, y, wB, headH);
   // Emitente (centralizado, como no modelo)
   ctr("IDENTIFICAÇÃO DO EMITENTE", M + wE / 2, y + 3, 4.6);
-  ctr(cut(D(data.emitNome).toUpperCase(), 38), M + wE / 2, y + 8.4, 9, true);
+  fitCtr(cut(D(data.emitNome).toUpperCase(), 44), M + wE / 2, y + 8.4, 9, wE - 4);
   setFont("normal", 6); black();
   ctr(cut(D(data.emitEndereco).toUpperCase(), 44), M + wE / 2, y + 13, 6);
   ctr(`${cut(D(data.emitBairro).toUpperCase(), 20)} - ${D(data.emitCEP)}`, M + wE / 2, y + 16.6, 6);
@@ -340,7 +366,7 @@ export function gerarDanfePdf(data: DanfeData): Blob {
 
   // ================= NATUREZA / PROTOCOLO =================
   linha(9, [
-    { label: "Natureza da Operação", value: cut(D(data.naturezaOperacao).toUpperCase(), 60), w: 120, vsize: 7.5 },
+    { label: "Natureza da Operação", value: cut(D(data.naturezaOperacao).toUpperCase(), 60), w: 120, vsize: 7.5, fit: true },
     { label: "Protocolo de Autorização de Uso", value: `${D(data.protocolo)}${D(data.protocoloData) ? ` - ${fmtDH(D(data.protocoloData))}` : ""}`, w: CW - 120, vsize: 6.5 },
   ]);
   linha(8, [
@@ -353,7 +379,7 @@ export function gerarDanfePdf(data: DanfeData): Blob {
   // ================= DESTINATÁRIO / REMETENTE =================
   titulo("Destinatário / Remetente");
   linha(8, [
-    { label: "Nome / Razão Social", value: cut(D(data.destNome).toUpperCase(), 64), w: 112, vsize: 7.5 },
+    { label: "Nome / Razão Social", value: cut(D(data.destNome).toUpperCase(), 64), w: 112, vsize: 7.5, fit: true },
     { label: "CNPJ / CPF", value: fmtCnpj(D(data.destCnpj)), w: 52 },
     { label: "Data da Emissão", value: fmtData(D(data.dhEmi || data.dataEmissao)), w: CW - 164, align: "c" },
   ]);
@@ -371,14 +397,33 @@ export function gerarDanfePdf(data: DanfeData): Blob {
     { label: "Hora da Saída/Entrada", value: D(data.horaSaidaEnt), w: CW - 174, align: "c" },
   ]);
 
-  // ================= FATURA / DUPLICATAS =================
-  titulo("Fatura / Duplicata");
+  // ================= PAGAMENTO (à vista, do XML) / FATURA (duplicatas) =================
   const parcelas = data.parcelas || [];
-  if (parcelas.length === 0) {
+  const pags = data.pagamentos || [];
+  if (data.temXml && pags.length > 0) {
+    titulo("Pagamento");
+    need(8 * pags.length);
+    box(M, y, CW, 8 * pags.length);
+    pags.forEach((pg, pi) => {
+      const ry = y + pi * 8;
+      if (pi > 0) doc.line(M, ry, M + CW, ry);
+      lab("Forma", M + 1, ry + 2.6, 4.4);
+      drawVal(cut(D(pg.forma), 60), M, 140, ry + 6.6, "l", 6.5, true);
+      vline(M + 140, ry, 8);
+      lab("Valor", M + 141, ry + 2.6, 4.4);
+      drawVal(`R$ ${fmtNum(pg.valor)}`, M + 140, CW - 140, ry + 6.6, "r", 6.5, true);
+    });
+    y += 8 * pags.length;
+  }
+  // Fatura só com duplicatas do XML; sem XML, valem as parcelas locais
+  const mostraFatura = data.temXml ? !!data.temDupsXml && parcelas.length > 0 : parcelas.length > 0;
+  if (!data.temXml && parcelas.length === 0) {
+    titulo("Fatura / Duplicata");
     need(8);
     box(M, y, CW, 8);
     y += 8;
-  } else {
+  } else if (mostraFatura) {
+    titulo("Fatura / Duplicata");
     need(9);
     const bw = CW / parcelas.length;
     box(M, y, CW, 9);
@@ -466,7 +511,7 @@ export function gerarDanfePdf(data: DanfeData): Blob {
     { h: "CÓDIGO PRODUTO", w: 12, align: "l" },
     { h: "DESCRIÇÃO DO PRODUTO / SERVIÇO", w: 54, align: "l" },
     { h: "NCM/SH", w: 14, align: "c" },
-    { h: "O/CST", w: 8, align: "c" },
+    { h: "O/CSOSN", w: 8, align: "c" },
     { h: "CFOP", w: 9, align: "c" },
     { h: "UN", w: 6, align: "c" },
     { h: "QUANT", w: 11, align: "r" },

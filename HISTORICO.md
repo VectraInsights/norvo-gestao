@@ -4520,6 +4520,16 @@ Espelhado na Vercel.
   (mudar o Nx gera as linhas).
 - Validado com `tsc` zerado e `npm run build` OK.
 
+## DANFE: CSOSN, PAGAMENTO e anti-estouro (05/10)
+
+- O/CST agora lê CSOSN do Simples (ICMSSN101/102/201/202/500/900) e o
+  cabeçalho vira O/CSOSN como no FSIST.
+- Seção PAGAMENTO (forma + valor do `<pag>`) quando há pagamento à vista;
+  fatura só com duplicatas do XML — sem inventar parcela.
+- Textos longos (emitente, natureza, destinatário) com auto-ajuste de fonte
+  para não estourar as caixas.
+- Validado com `tsc` zerado, `vitest` e `npm run build` OK.
+
 ## Upload compacto + trilha de auditoria funcional (05/10)
 
 - Aba de importação enxuta (dropzone, listas e textos compactos) para caber

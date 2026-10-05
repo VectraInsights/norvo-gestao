@@ -63,6 +63,7 @@ interface ParsedXMLResult {
   nNF: string;
   total: number;
   xml: string;
+  temDups: boolean;
   produtos: { codigo: string; nome: string; qtd: number; un: string; valor: number; categoria: string }[];
   parcelas: { numero: string; dataVencimento: string; valor: number; forma_pagamento: string; conta_bancaria_id: string }[];
 }
@@ -205,7 +206,19 @@ function parseDanfeDoXml(xml: string): Partial<DanfeData> {
     out.issqnTotalServicos = num("total > ISSQNtot > vServ");
     out.issqnBase = num("total > ISSQNtot > vBC");
     out.issqnValor = num("total > ISSQNtot > vISS");
-    // Info complementar / protocolo
+    // Pagamento à vista (<pag><detPag>): forma + valor (quando não há duplicatas)
+    const TPAG: Record<string, string> = {
+      "01": "Dinheiro", "02": "Cheque", "03": "Cartão de Crédito", "04": "Cartão de Débito",
+      "05": "Crédito Loja", "10": "Vale Alimentação", "11": "Vale Refeição", "12": "Vale Presente",
+      "13": "Vale Combustível", "14": "Duplicata Mercantil", "15": "Boleto Bancário",
+      "16": "Depósito Bancário", "17": "Pagamento Instantâneo (PIX)", "18": "Transferência Bancária",
+      "19": "Programa de fidelidade", "90": "Sem pagamento", "99": "Outros",
+    };
+    out.pagamentos = Array.from(doc.querySelectorAll("pag > detPag")).map((p) => ({
+      forma: TPAG[(p.querySelector("tPag")?.textContent || "").trim()] || (p.querySelector("tPag")?.textContent || ""),
+      valor: parseFloat(p.querySelector("vPag")?.textContent || "0") || 0,
+    }));
+    out.temDupsXml = doc.querySelectorAll("cobr > dup").length > 0;
     out.infoComplementares = txt("infAdic > infCpl");
     out.protocolo = txt("protNFe > infProt > nProt");
     out.protocoloData = txt("protNFe > infProt > dhRecbto");
@@ -220,10 +233,18 @@ function itensFiscaisDoXml(xml: string): { ncm: string; cst: string; cfop: strin
   try {
     const parser = new DOMParser();
     const doc = parser.parseFromString(xml, "text/xml");
-    return Array.from(doc.querySelectorAll("det")).map((d) => ({
-      ncm: d.querySelector("prod > NCM")?.textContent || "",
-      cst: (d.querySelector("imposto > ICMS > CST")?.textContent || d.querySelector("imposto > ICMS > CSOSN")?.textContent || d.querySelector("imposto > IPI > CST")?.textContent || ""),
-      cfop: d.querySelector("prod > CFOP")?.textContent || "",
+    return Array.from(doc.querySelectorAll("det")).map((d) => {
+      // CST (lucro real/presumido) ou CSOSN (Simples: ICMSSN101/102/201/202/500/900)
+      const icmsG = d.querySelector("imposto > ICMS") || d.querySelector("imposto > ICMSSN101")
+        || d.querySelector("imposto > ICMSSN102") || d.querySelector("imposto > ICMSSN201")
+        || d.querySelector("imposto > ICMSSN202") || d.querySelector("imposto > ICMSSN500")
+        || d.querySelector("imposto > ICMSSN900");
+      return {
+        ncm: d.querySelector("prod > NCM")?.textContent || d.querySelector("prod NCM")?.textContent || "",
+        cst: icmsG?.querySelector("CST")?.textContent || icmsG?.querySelector("CSOSN")?.textContent
+          || d.querySelector("imposto CST")?.textContent || d.querySelector("imposto CSOSN")?.textContent
+          || d.querySelector("imposto > IPI > CST")?.textContent || "",
+        cfop: d.querySelector("prod > CFOP")?.textContent || d.querySelector("prod CFOP")?.textContent || "",
       vIpi: d.querySelector("imposto > IPI > vIPI")?.textContent || "",
       aliqIcms: d.querySelector("imposto > ICMS > pICMS")?.textContent || "",
       aliqIpi: d.querySelector("imposto > IPI > pIPI")?.textContent || "",
@@ -236,7 +257,8 @@ function itensFiscaisDoXml(xml: string): { ncm: string; cst: string; cfop: strin
       uCom: d.querySelector("prod > uCom")?.textContent || "",
       vUnCom: d.querySelector("prod > vUnCom")?.textContent || "",
       vProd: d.querySelector("prod > vProd")?.textContent || "",
-    }));
+      };
+    });
   } catch {
     return [];
   }
@@ -672,7 +694,7 @@ function NotasRecebidas() {
       });
     }
 
-    return { chave: parsedChave, emitente: parsedEmitente, cnpj, nNF, total: totalCalculado, xml: text, produtos: parsedProdutos, parcelas: parsedParcelas };
+    return { chave: parsedChave, emitente: parsedEmitente, cnpj, nNF, total: totalCalculado, xml: text, temDups: dupNodes.length > 0, produtos: parsedProdutos, parcelas: parsedParcelas };
   };
 
   // Processa os arquivos na hora (seleção ou arrasto já disparam a análise)
@@ -1393,6 +1415,7 @@ function NotasRecebidas() {
       chave: d.chave,
       numero: d.nNF || nNFdaChave(d.chave),
       serie,
+      temXml: !!d.xml,
       dataEmissao: d.data,
       ambiente: "producao",
       emitNome: d.emitente,
@@ -1703,7 +1726,7 @@ function NotasRecebidas() {
                     )}
                     </div>
                     <CardDescription className="truncate text-xs">
-                      Fornecedor: <strong className="font-semibold">{importResults.emitente}</strong>
+                      NF-e {[nSerieDaChave(importResults.chave), importResults.nNF].filter(Boolean).join(" - ")} · Fornecedor: <strong className="font-semibold">{importResults.emitente}</strong>
                     </CardDescription>
                   </div>
                   <div className="shrink-0 text-right">
@@ -1832,6 +1855,7 @@ function NotasRecebidas() {
                     onChange={(parcelas) => setImportResults({ ...importResults, parcelas })}
                     contas={contasBancarias}
                     formas={FORMAS_PARCELA}
+                    travarRegen={!!importResults.temDups}
                     emptyHint="Nenhuma parcela. Altere a condição acima para gerar, adicione manualmente ou deixe vazio para gerar 1 título com vencimento em 30 dias."
                   />
                 </div>
@@ -2030,6 +2054,7 @@ function NotasRecebidas() {
                   onChange={(parcelas) => setNotaDetalhe({ ...notaDetalhe, parcelas })}
                   contas={contasBancarias}
                   formas={FORMAS_PARCELA}
+                  travarRegen={!!notaDetalhe.xml && notaDetalhe.parcelas.length > 0 && (notaDetalhe.xml.match(/<dup[\s>]/g) || []).length > 0}
                   emptyHint="Nenhuma parcela no XML. Altere a condição acima para gerar, adicione manualmente ou deixe vazio para lançar como pagamento único."
                 />
               </div>

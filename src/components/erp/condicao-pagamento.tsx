@@ -41,6 +41,7 @@ export function CondicaoPagamento({
   contas,
   formas,
   emptyHint,
+  travarRegen,
 }: {
   total: number;
   parcelas: CondicaoParcela[];
@@ -48,14 +49,30 @@ export function CondicaoPagamento({
   contas: Array<{ id: string; nome: string }>;
   formas: readonly string[] | string[];
   emptyHint?: string;
+  // Com dados vindos da nota (XML): o topo carimba forma/conta nas linhas,
+  // mas NUNCA recalcula datas e valores.
+  travarRegen?: boolean;
 }) {
   const [nx, setNx] = useState(() => String(Math.min(12, Math.max(1, parcelas.length || 1))));
   const [primeiro, setPrimeiro] = useState(
     parcelas[0]?.dataVencimento || new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split("T")[0],
   );
-  const [intervalo, setIntervalo] = useState("30");
-  const [formaTop, setFormaTop] = useState("Boleto");
-  const [contaTop, setContaTop] = useState("__none__");
+  const [intervalo, setIntervalo] = useState(() => {
+    if (parcelas.length > 1) {
+      const a = Date.parse(`${parcelas[0]?.dataVencimento || ""}T00:00:00`);
+      const b = Date.parse(`${parcelas[1]?.dataVencimento || ""}T00:00:00`);
+      if (!Number.isNaN(a) && !Number.isNaN(b)) return String(Math.max(0, Math.round((b - a) / 86400000)));
+    }
+    return "30";
+  });
+  const [formaTop, setFormaTop] = useState(() => {
+    const fs = [...new Set(parcelas.map((p) => p.forma_pagamento).filter(Boolean))];
+    return fs.length === 1 ? fs[0] : "Boleto";
+  });
+  const [contaTop, setContaTop] = useState(() => {
+    const cs = [...new Set(parcelas.map((p) => p.conta_bancaria_id).filter(Boolean))];
+    return cs.length === 1 ? cs[0] : "__none__";
+  });
 
   // Parcelamento acompanha a quantidade real de linhas (XML, adicionar/remover)
   useEffect(() => {
@@ -87,6 +104,12 @@ export function CondicaoPagamento({
     onChange(novas);
   };
 
+  // Só carimba forma/conta nas linhas, sem tocar em datas e valores
+  const carimbar = (forma: string, conta: string) => {
+    const contaId = conta === "__none__" ? "" : conta;
+    onChange(parcelas.map((p) => ({ ...p, forma_pagamento: forma, conta_bancaria_id: contaId })));
+  };
+
   return (
     <div className="space-y-4">
       <div className="overflow-hidden rounded-lg border">
@@ -96,6 +119,7 @@ export function CondicaoPagamento({
             <span className="text-xs text-muted-foreground">Parcelamento</span>
             <Select
               value={nx}
+              disabled={travarRegen}
               onValueChange={(v) => { setNx(v); gerar(v, primeiro, intervalo, formaTop, contaTop); }}
             >
               <SelectTrigger className="h-8 text-xs w-full">
@@ -113,6 +137,7 @@ export function CondicaoPagamento({
             <DateInput
               className="h-8 text-xs w-full"
               value={primeiro}
+              disabled={travarRegen}
               onChange={(v) => { setPrimeiro(v); gerar(nx, v, intervalo, formaTop, contaTop); }}
             />
           </div>
@@ -123,6 +148,7 @@ export function CondicaoPagamento({
               decimals={0}
               className="h-8 text-xs w-full"
               value={intervalo}
+              disabled={travarRegen}
               onChange={(v) => { setIntervalo(v); gerar(nx, primeiro, v, formaTop, contaTop); }}
             />
           </div>
@@ -130,7 +156,7 @@ export function CondicaoPagamento({
             <span className="text-xs text-muted-foreground">Forma de pagamento</span>
             <Select
               value={formaTop}
-              onValueChange={(v) => { setFormaTop(v); gerar(nx, primeiro, intervalo, v, contaTop); }}
+              onValueChange={(v) => { setFormaTop(v); if (travarRegen) carimbar(v, contaTop); else gerar(nx, primeiro, intervalo, v, contaTop); }}
             >
               <SelectTrigger className="h-8 text-xs w-full">
                 <SelectValue />
@@ -146,7 +172,7 @@ export function CondicaoPagamento({
             <span className="text-xs text-muted-foreground">Conta de pagamento</span>
             <Combobox
               value={contaTop}
-              onChange={(v) => { setContaTop(v); gerar(nx, primeiro, intervalo, formaTop, v); }}
+              onChange={(v) => { setContaTop(v); if (travarRegen) carimbar(formaTop, v); else gerar(nx, primeiro, intervalo, formaTop, v); }}
               options={[
                 { value: "__none__", label: "Sem conta" },
                 ...contas.map((c) => ({ value: c.id, label: c.nome })),
