@@ -4291,3 +4291,83 @@ Espelhado na Vercel.
 - Impostos em largura fixa de 7 dígitos (R$ 136px / % 96px, CST e crédito
   flexíveis): a aba comprime e o ajuste automático amplia a tabela de NF-es.
 
+## CT-e emissão: acabamento do layout e travas (03/10)
+
+- Crédito outorgado na mesma largura fixa 136px (`e07f4d1`); tabela de NF sem
+  cabeçalho, botão discreto antes do total, sem scroll interno (`6560408`);
+  impostos em 2 linhas com todas as caixas em 136px (`0569f98`); fim do
+  encolhimento — rolagem só na lista de NF-es, resto travado (`ed8fd0e`);
+  CST com largura máxima de 800px (`82af036`).
+- Observações unificadas na aba Geral: emissão passa a 3 abas com títulos
+  curtos (`681a34c`, `06df040`); Geral com rolagem própria e observações
+  compactas (`e64ccad`); subtítulo da emissão removido (`62edfb7`); cartões
+  com altura fixa, obs elástica e tabela com destaque (`0bc0853`).
+- Blocos da Geral em 3 linhas; IE passa a vir do cadastro no lookup
+  (`2aea3bc`); tooltip da aba lista o que falta (`30f41ce`); dot da
+  Transporte cobra carreta quando a tração é cavalo (`1a7c8e5`).
+- Trava uma NF-e = um CT-e (`027e888`): mapas `chavesEmAutorizado` /
+  `chavesPorRascunho` + `chavesBloqueadas()` barram na emissão e no lote
+  (lote pula o rascunho com toast "já utilizada" e conta ignorados);
+  trocar de aba reseta filtros e ordenação ao padrão (`d0cb894`).
+- Arquivo: `src/routes/_authenticated/fiscal.cte.tsx`.
+
+## Notas de Compra: número visível, detalhe local e tabela padrão (03/10)
+
+- Número da NF-e na lista: estado local pós-importação leva
+  id/numero_nf/xml e `nNFdaChave` (dígitos 26–34) como fallback quando o XML
+  não traz `<nNF>` (`ce1afb3`).
+- Olho (ver detalhes) não chama mais a SEFAZ para nota já importada: monta
+  o diálogo só com dados do banco + XML guardado (homologação não resolve
+  chave de produção); fallback parseia o XML local quando há id sem itens
+  salvos (`ce1afb3`, `85fa607`).
+- Tabela no padrão do CT-e: saem colunas Situação/CNPJ e a sublinha da chave
+  (o número identifica); divisórias entre colunas e cabeçalho centralizado.
+- Arquivo: `src/routes/_authenticated/fiscal.recebidas.tsx`.
+
+## Menu lateral: acordeão + auto-recolhe (03/10)
+
+- Abrir um grupo fecha os demais (`toggleGroup` exclusivo; expandir no trilho
+  e setas seguem a mesma regra) (`da87cd6`).
+- Clicar num submenu com a barra expandida recolhe sozinho (helper
+  `recolher()` + persistência em localStorage) p/ dar espaço na tela
+  (`2262c70`).
+- Arquivo: `src/components/erp/app-shell.tsx`.
+
+## Notas de Compra: DANFE em PDF + cabeçalhos verdes (03/10)
+
+- Botão ver detalhes abre o DANFE em PDF: `gerarDanfePdf` + `PdfViewer`
+  compartilhado (extraído do viewer do CT-e); "Baixar PDF" e "Detalhes /
+  Lançar" usam o mesmo construtor (`1ec462f`: `danfe-pdf.ts`, `pdf-viewer.tsx`,
+  `fiscal.recebidas.tsx`).
+- Cabeçalho da lista no verde do sistema: sólido como a barra do CT-e
+  (`2785923`, `b79e4c7`).
+
+## Notas de Compra: importação em fila + DANFE oficial (03/10)
+
+- Importação de múltiplos XMLs em fila: estado `filaXml`, `parseArquivoXml`
+  por arquivo (com fallback estruturado) e toast curto "NF já importada."
+  para duplicada local/banco (`0313e88`).
+- DANFE no layout oficial SEFAZ (`378c6ad`, `DANFE_REV 20261003-n2`):
+  canhoto no topo, emitente/DANFE/barras+chave, Destinatário, Fatura,
+  Cálculo do Imposto (+ST), Transportador (IE/frete/ANTT/placa), Produtos
+  completa (NCM, base/valor/alíq. ICMS e IPI), ISSQN e Dados Adicionais.
+- Toast de importação resumido para "Importação concluída." (`7249a47`).
+
+## Notas de Compra: análise do XML com parcelas, categoria e fila (03/10)
+
+- Carta de análise com editor de parcelas por nota (nº, vencimento, valor,
+  forma, conta, remover/adicionar); XML sem duplicatas pré-preenche 1
+  parcela editável (total, venc. 30 dias); toast de parse vira
+  "XML(s) importados(s)." (`986bac6`).
+- Checkbox "mesma categoria para todas as peças" (2+ produtos): unifica num
+  único combobox (com "+ Nova categoria"); linhas mostram texto; estado
+  reseta a cada análise/fila (`57e4a04`).
+- Botão "Ignorar Nota" descarta a atual e avança a fila (`4c41c19`); botão e
+  dialog de "Filtros salvos" removidos desta tela (`c5e4cba`).
+- Reimportação após excluir volta a funcionar: banco (`notas_importadas`) é
+  a única fonte de duplicidade; lista `imported_xml_chaves` do localStorage
+  removida (`b458ab8`).
+- Editor de parcelas em mini-tabela alinhada: colunas fixas Nº/Vencimento/
+  Valor/Forma/Conta com cabeçalho, divisórias e rodapé de total (`0265f3c`).
+- Arquivo: `src/routes/_authenticated/fiscal.recebidas.tsx`.
+
