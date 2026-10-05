@@ -61,6 +61,7 @@ interface ParsedXMLResult {
   cnpj: string;
   nNF: string;
   total: number;
+  xml: string;
   produtos: { codigo: string; nome: string; qtd: number; un: string; valor: number; categoria: string }[];
   parcelas: { numero: string; dataVencimento: string; valor: number; forma_pagamento: string; conta_bancaria_id: string }[];
 }
@@ -364,7 +365,7 @@ function NotasRecebidas() {
     (async () => {
       const { data: notasDb } = await supabase
         .from("notas_importadas" as never)
-        .select("id,empresa_id,chave_acesso,emitente,cnpj_emitente,valor_total,data_emissao,numero_nf,created_at")
+        .select("id,empresa_id,chave_acesso,emitente,cnpj_emitente,valor_total,data_emissao,numero_nf,xml_completo,created_at")
         .eq("empresa_id", empresa.id)
         .order("created_at", { ascending: false })
         .limit(500);
@@ -378,7 +379,7 @@ function NotasRecebidas() {
           data_emissao: n.data_emissao || "",
           situacao_sefaz: "autorizada" as const,
           numero_nf: n.numero_nf || "",
-          xml_completo: "",
+          xml_completo: (n as any).xml_completo || "",
         })));
       }
     })();
@@ -629,7 +630,7 @@ function NotasRecebidas() {
       });
     }
 
-    return { chave: parsedChave, emitente: parsedEmitente, cnpj, nNF, total: totalCalculado, produtos: parsedProdutos, parcelas: parsedParcelas };
+    return { chave: parsedChave, emitente: parsedEmitente, cnpj, nNF, total: totalCalculado, xml: text, produtos: parsedProdutos, parcelas: parsedParcelas };
   };
 
   const handleProcessarImportacao = async () => {
@@ -782,7 +783,7 @@ function NotasRecebidas() {
           data_emissao: new Date().toISOString().split("T")[0],
           valor_total: importResults.total,
           situacao: "lancada",
-          xml_completo: null,
+          xml_completo: importResults.xml || null,
         } as any)
         .select("id")
         .single();
@@ -886,7 +887,7 @@ function NotasRecebidas() {
         id: notaId,
         chave: importResults.chave, emitente: importResults.emitente, cnpj: importResults.cnpj,
         valor: importResults.total, data_emissao: new Date().toISOString(), situacao_sefaz: "autorizada",
-        numero_nf: importResults.nNF, xml_completo: ""
+        numero_nf: importResults.nNF, xml_completo: importResults.xml || ""
       }, ...prev]);
 
       qc.invalidateQueries({ queryKey: ["produtos"] });
@@ -1367,18 +1368,42 @@ function NotasRecebidas() {
     };
   };
 
+  // Garante o XML da nota: usa o guardado ou busca na SEFAZ (cura notas antigas
+  // lançadas sem XML) e grava de volta no banco + estado local.
+  const garantirXmlNota = async (n: NotaRecebida): Promise<string> => {
+    if (n.xml_completo) return n.xml_completo;
+    if (!empresa) return "";
+    try {
+      const result = await consultarNFePorChaveFn({ data: { empresaId: empresa.id, chave: n.chave } });
+      const xml = (result as any)?.xml || "";
+      if (xml && n.id) {
+        await (supabase.from("notas_importadas" as never) as any).update({ xml_completo: xml }).eq("id", n.id);
+        setNotas((prev) => prev.map((x) => (x.chave === n.chave ? { ...x, xml_completo: xml } : x)));
+      }
+      return xml;
+    } catch {
+      return "";
+    }
+  };
+
   const abrirPdfDaNota = async (n: NotaRecebida) => {
     const d = await carregarDadosNota(n);
     if (!d) return;
+    if (!d.xml) {
+      const xml = await garantirXmlNota(n);
+      if (!xml) { toast.error("XML não disponível para esta nota."); return; }
+      d.xml = xml;
+    }
     const blob = gerarDanfePdf(montarDanfe(d));
     const url = URL.createObjectURL(blob);
     const numero = d.nNF || nNFdaChave(n.chave) || "—";
     setPdfNota((p) => { if (p) URL.revokeObjectURL(p.url); return { url, nome: `DANFE_${numero}.pdf`, subtitulo: `${d.emitente} — NF-e ${numero}`, nota: n }; });
   };
 
-  const handleBaixarXml = (n: NotaRecebida) => {
-    if (!n.xml_completo) return;
-    const blob = new Blob([n.xml_completo], { type: "application/xml" });
+  const handleBaixarXml = async (n: NotaRecebida) => {
+    const xml = n.xml_completo || await garantirXmlNota(n);
+    if (!xml) { toast.error("XML não disponível para esta nota."); return; }
+    const blob = new Blob([xml], { type: "application/xml" });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
@@ -1391,6 +1416,11 @@ function NotasRecebidas() {
   const handleBaixarPdf = async (n: NotaRecebida) => {
     const d = await carregarDadosNota(n);
     if (!d) return;
+    if (!d.xml) {
+      const xml = await garantirXmlNota(n);
+      if (!xml) { toast.error("XML não disponível para esta nota."); return; }
+      d.xml = xml;
+    }
     const blob = gerarDanfePdf(montarDanfe(d));
     const url = URL.createObjectURL(blob);
     const numero = d.nNF || nNFdaChave(n.chave) || "nota";
@@ -1494,18 +1524,16 @@ function NotasRecebidas() {
                                 <TooltipContent>Ver detalhes</TooltipContent>
                               </Tooltip>
                             </TooltipProvider>
-                            {n.xml_completo && (
-                              <TooltipProvider>
-                                <Tooltip>
-                                  <TooltipTrigger asChild>
-                                    <Button size="sm" variant="ghost" className="h-7 w-7 p-0" onClick={() => handleBaixarXml(n)}>
-                                      <Download className="h-3.5 w-3.5" />
-                                    </Button>
-                                  </TooltipTrigger>
-                                  <TooltipContent>Baixar XML</TooltipContent>
-                                </Tooltip>
-                              </TooltipProvider>
-                            )}
+                            <TooltipProvider>
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <Button size="sm" variant="ghost" className="h-7 w-7 p-0" onClick={() => handleBaixarXml(n)}>
+                                    <Download className="h-3.5 w-3.5" />
+                                  </Button>
+                                </TooltipTrigger>
+                                <TooltipContent>Baixar XML</TooltipContent>
+                              </Tooltip>
+                            </TooltipProvider>
                             <TooltipProvider>
                               <Tooltip>
                                 <TooltipTrigger asChild>

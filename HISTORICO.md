@@ -4400,6 +4400,19 @@ Espelhado na Vercel.
 - Teste `danfe-pdf.test.ts` com os dados da NF-e 15545 da PD DIESEL: PDF de
   1 página com todas as seções (`npx vitest run` OK) + `npm run build` OK.
 
+## DANFE vazio: XML descartado no lançamento (05/10)
+
+- Causa: `handleConfirmarXmlUpload` gravava `xml_completo: null` e o
+  `ParsedXMLResult` nem carregava o texto do arquivo — o DANFE saía só com
+  os dados do banco (sem emitente, destinatário, protocolo, NCM/CFOP).
+- Fix: `ParsedXMLResult` leva o `xml` cru; lançamento por arquivo salva o
+  XML no banco e no estado; listagem passa a ler `xml_completo` do banco.
+- Cura das antigas: `garantirXmlNota()` busca o XML na SEFAZ quando falta
+  e grava de volta (banco + tela); prévia/baixas de PDF e XML usam-na, e o
+  botão de XML aparece sempre.
+- Validado com `tsc` (página zerada), `vitest` e `npm run build` OK.
+- Arquivo: `src/routes/_authenticated/fiscal.recebidas.tsx`.
+
 ## Tipos dos bundles vendorizados (05/10)
 
 - O erro `TS7016` era o TypeScript reclamando que os dois arquivos JS
