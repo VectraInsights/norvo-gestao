@@ -35,11 +35,11 @@ const sample: DanfeData = {
   protocoloData: "2026-09-10T11:24:50-03:00",
   fretePorConta: "1-Por conta do Dest",
   volumes: "1",
-  pesoBruto: "2,400",
-  pesoLiquido: "2,400",
+  pesoBruto: "2.400",
+  pesoLiquido: "2.400",
   produtos: [
-    { codigo: "000846", nome: "BICO INJETOR 0433175489 - P1786 DSLA160P1786 - BOSCH", qtd: 6, un: "PC", valorUnit: 243, valorTotal: 1458, cfop: "5405", cst: "060", ncm: "84099969", desconto: 0, baseIcms: 0, vIcms: 0, vIpi: 0, aliqIcms: 0, aliqIpi: 0 },
-    { codigo: "003957", nome: "REPARO F000431702 - BOSCH", qtd: 6, un: "PC", valorUnit: 62, valorTotal: 372, cfop: "5405", cst: "060", ncm: "84139190", desconto: 0, baseIcms: 0, vIcms: 0, vIpi: 0, aliqIcms: 0, aliqIpi: 0 },
+    { codigo: "000846", nome: "BICO INJETOR 0433175489 - P1786 DSLA160P1786 - BOSCH", qtd: "6.0000", un: "PC", valorUnit: "243.0000", valorTotal: "1458.00", cfop: "5405", cst: "060", ncm: "84099969", desconto: 0, baseIcms: 0, vIcms: 0, vIpi: 0, aliqIcms: 0, aliqIpi: 0 },
+    { codigo: "003957", nome: "REPARO F000431702 - BOSCH", qtd: "6.0000", un: "PC", valorUnit: "62.0000", valorTotal: "372.00", cfop: "5405", cst: "060", ncm: "84139190", desconto: 0, baseIcms: 0, vIcms: 0, vIpi: 0, aliqIcms: 0, aliqIpi: 0 },
   ],
   parcelas: [
     { numero: "001", dataVencimento: "2026-10-08", valor: 623.46 },
@@ -65,6 +65,10 @@ describe("DANFE layout oficial", () => {
       "131267897249223",
       "1.870,00",
       "VALOR DESC",
+      "6,0000",
+      "243,0000",
+      "2,400",
+      "5405",
       "RESERVADO AO FISCO",
     ]) {
       expect(raw).toContain(s);

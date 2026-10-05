@@ -12,8 +12,8 @@ export interface DanfeProduto {
   nome: string;
   qtd: number | string;
   un: string;
-  valorUnit: number;
-  valorTotal: number;
+  valorUnit: number | string;
+  valorTotal: number | string;
   cfop?: string;
   cst?: string;
   ncm?: string;
@@ -127,6 +127,20 @@ function fmtNum(v: number | string): string {
   return (Number(v) || 0).toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 }
 
+// Como o modelo impresso: preserva as casas do XML (6,0000 / 243,0000 / 2,400);
+// número JS vira 2 casas. Milhar com ponto, decimal com vírgula.
+function fmtVal(v: number | string | undefined | null): string {
+  if (v === undefined || v === null || v === "") return typeof v === "number" ? fmtNum(v) : "";
+  if (typeof v === "number") return fmtNum(v);
+  const s = String(v).trim();
+  const m = s.match(/^(-?)(\d+)(?:[.,](\d+))?$/);
+  if (!m) return s;
+  const thou = m[2].replace(/^0+(?=\d)/, "").replace(/\B(?=(\d{3})+(?!\d))/g, ".");
+  const dec = (m[3] || "").slice(0, 4);
+  const dd = dec.length <= 2 ? (dec + "00").slice(0, 2) : dec;
+  return m[1] + thou + "," + dd;
+}
+
 function fmtQtd(v: string | number): string {
   const s = String(v === undefined || v === null ? "" : v).trim();
   const m = s.match(/^(-?\d+)([.,](\d+))?$/);
@@ -218,7 +232,8 @@ export function gerarDanfePdf(data: DanfeData): Blob {
 
   // Título de seção no padrão do modelo: texto pequeno acima da caixa, sem faixa.
   const titulo = (t: string) => {
-    need(4);
+    need(5.5);
+    y += 1.2;
     black(); setFont("normal", 5.2);
     doc.text(String(t || "").toUpperCase(), M + 0.5, y + 2.4);
     y += 3.2;
@@ -239,27 +254,29 @@ export function gerarDanfePdf(data: DanfeData): Blob {
     return y;
   };
 
-  // ================= CANHOTO (recibo de entrega) =================
+  // ================= CANHOTO (recibo de entrega, padrão FSIST) =================
   const canhotoTxt = `RECEBEMOS DE ${cut(D(data.emitNome).toUpperCase(), 60)} OS PRODUTOS E/OU SERVIÇOS CONSTANTES DA NOTA FISCAL ELETRÔNICA INDICADA ABAIXO. EMISSÃO: ${fmtData(D(data.dhEmi || data.dataEmissao))} VALOR TOTAL: R$ ${fmtNum(data.valorTotal)} DESTINATÁRIO: ${cut(D(data.destNome).toUpperCase(), 40)} - ${cut(D(data.destEndereco).toUpperCase(), 60)}`;
-  setFont("normal", 5.4);
-  const canLines = doc.splitTextToSize(canhotoTxt, CW - 3) as string[];
-  const canH = 3 + canLines.length * 2.7;
-  need(canH + 12);
-  box(M, y, CW, canH);
+  setFont("normal", 5.2);
+  const canLines = doc.splitTextToSize(canhotoTxt, CW - 40 - 3) as string[];
+  const textH = 2.5 + canLines.length * 2.6;
+  const dataH = 10;
+  const wNFe = 40;
+  need(textH + dataH + 3);
+  // texto à esquerda + box NF-e à direita ocupando as duas linhas
+  box(M, y, CW - wNFe, textH);
   black();
   doc.text(canLines, M + 1.5, y + 2.8);
-  y += canH;
-  const recH = 10;
-  const wNFe = 40, wData = 32;
-  box(M, y, wData, recH);
-  box(M + wData, y, CW - wData - wNFe, recH);
-  box(M + CW - wNFe, y, wNFe, recH);
+  box(M + CW - wNFe, y, wNFe, textH + dataH);
+  ctr("NF-e", M + CW - wNFe / 2, y + 4.5, 11, true);
+  ctr(`Nº. ${fmtNFe(data.numero)}`, M + CW - wNFe / 2, y + 9.5, 7.5, true);
+  ctr(`Série ${fmtSerie(data.serie)}`, M + CW - wNFe / 2, y + 13.5, 7, true);
+  y += textH;
+  const wData = 32;
+  box(M, y, wData, dataH);
+  box(M + wData, y, CW - wData - wNFe, dataH);
   lab("Data de Recebimento", M + 1, y + 2.6);
   lab("Identificação e Assinatura do Recebedor", M + wData + 1, y + 2.6);
-  ctr("NF-e", M + CW - wNFe / 2, y + 3.4, 10, true);
-  ctr(`Nº. ${fmtNFe(data.numero)}`, M + CW - wNFe / 2, y + 6.4, 7.5, true);
-  ctr(`Série ${fmtSerie(data.serie)}`, M + CW - wNFe / 2, y + 9, 7, true);
-  y += recH;
+  y += dataH;
   // linha de corte tracejada
   doc.saveGraphicsState();
   try { (doc as any).setLineDashPattern([2, 2], 0); } catch {}
@@ -267,6 +284,7 @@ export function gerarDanfePdf(data: DanfeData): Blob {
   try { (doc as any).restoreGraphicsState(); } catch {}
   border();
   y += 2.5;
+  y += 1.2;
 
   // ================= CABEÇALHO: emitente | DANFE | barras+chave =================
   const headH = 36;
@@ -288,14 +306,15 @@ export function gerarDanfePdf(data: DanfeData): Blob {
   ctr("Documento Auxiliar da Nota", dx + wD / 2, y + 10, 5);
   ctr("Fiscal Eletrônica", dx + wD / 2, y + 12.6, 5);
   const tp = D(data.tpEntradaSaida) || "1";
-  // 0 - ENTRADA / 1 - SAÍDA com o tipo aplicável emoldurado
-  black(); setFont("normal", 5.4);
-  const t0x = dx + 4, t1x = dx + wD / 2 + 1;
-  doc.text("0 - ENTRADA", t0x, y + 17);
-  doc.text("1 - SAÍDA", t1x, y + 17);
-  border();
-  if (tp === "0") doc.rect(t0x - 1.5, y + 14.2, 20, 4.4, "S");
-  else doc.rect(t1x - 1.5, y + 14.2, 18, 4.4, "S");
+  // "0 - ENTRADA  1 - SAÍDA  [dígito]" centralizado, quadrinho com o tipo ativo
+  black(); setFont("normal", 5.2);
+  const s0 = "0 - ENTRADA", s1 = "1 - SAÍDA";
+  const w0 = doc.getTextWidth(s0), w1 = doc.getTextWidth(s1);
+  let ex = dx + Math.max(1, (wD - (w0 + 3 + w1 + 2 + 5)) / 2);
+  doc.text(s0, ex, y + 17); ex += w0 + 3;
+  doc.text(s1, ex, y + 17); ex += w1 + 2;
+  border(); doc.rect(ex, y + 14.2, 5, 4.6, "S");
+  ctr(tp === "0" ? "0" : "1", ex + 2.5, y + 17.6, 6, true);
   ctr(`Nº. ${fmtNFe(data.numero)}`, dx + wD / 2, y + 23.4, 8, true);
   ctr(`Série ${fmtSerie(data.serie)}`, dx + wD / 2, y + 27.4, 7, true);
   ctr(`Folha ${D(data.fl) || "1/1"}`, dx + wD / 2, y + 31, 6);
@@ -317,6 +336,7 @@ export function gerarDanfePdf(data: DanfeData): Blob {
   ctr("Consulta de autenticidade no portal nacional da NF-e", bx + wB / 2, y + 28, 4.6);
   ctr("www.nfe.fazenda.gov.br/portal ou no site da Sefaz Autorizadora", bx + wB / 2, y + 30.8, 4.6);
   y += headH;
+  y += 1.2;
 
   // ================= NATUREZA / PROTOCOLO =================
   linha(9, [
@@ -436,8 +456,8 @@ export function gerarDanfePdf(data: DanfeData): Blob {
     { label: "Espécie", value: D(data.especie), w: 30 },
     { label: "Marca", value: D(data.marca), w: 30 },
     { label: "Numeração", value: D(data.numeracao), w: 30 },
-    { label: "Peso Bruto", value: D(data.pesoBruto), w: 43, align: "r", vsize: 7 },
-    { label: "Peso Líquido", value: D(data.pesoLiquido), w: CW - 157, align: "r", vsize: 7 },
+    { label: "Peso Bruto", value: fmtVal(D(data.pesoBruto)), w: 43, align: "r", vsize: 7 },
+    { label: "Peso Líquido", value: fmtVal(D(data.pesoLiquido)), w: CW - 157, align: "r", vsize: 7 },
   ]);
 
   // ================= DADOS DOS PRODUTOS / SERVIÇOS =================
@@ -459,10 +479,7 @@ export function gerarDanfePdf(data: DanfeData): Blob {
     { h: "ALÍQ. ICMS", w: 8, align: "r" },
     { h: "ALÍQ. IPI", w: 8, align: "r" },
   ];
-  const cfopFmt = (cfop: string): string => {
-    const d = (cfop || "").replace(/\D/g, "");
-    return d.length === 4 ? `${d[0]}.${d.slice(1)}` : (cfop || "");
-  };
+  const cfopFmt = (cfop: string): string => (cfop || "").replace(/\D/g, "");
   const drawProdHead = () => {
     need(6);
     box(M, y, CW, 6);
@@ -500,15 +517,15 @@ export function gerarDanfePdf(data: DanfeData): Blob {
         [cut(D(p.cst), 5), 8, "c", 4.4],
         [cfopFmt(D(p.cfop)), 9, "c", 4.4],
         [cut(D(p.un), 5), 6, "c", 4.6],
-        [fmtQtd(D(p.qtd)), 11, "r", 4.6],
-        [fmtNum(p.valorUnit), 13, "r", 4.6],
-        [fmtNum(p.valorTotal), 14, "r", 4.6],
-        [fmtNum(p.desconto ?? 0), 11, "r", 4.6],
-        [fmtNum(p.baseIcms ?? 0), 11, "r", 4.6],
-        [fmtNum(p.vIcms ?? 0), 11, "r", 4.6],
-        [fmtNum(p.vIpi ?? 0), 10, "r", 4.6],
-        [fmtNum(p.aliqIcms ?? 0), 8, "r", 4.4],
-        [fmtNum(p.aliqIpi ?? 0), 8, "r", 4.4],
+        [fmtVal(D(p.qtd)), 11, "r", 4.6],
+        [fmtVal(p.valorUnit), 13, "r", 4.6],
+        [fmtVal(p.valorTotal), 14, "r", 4.6],
+        [fmtVal(p.desconto ?? 0), 11, "r", 4.6],
+        [fmtVal(p.baseIcms ?? 0), 11, "r", 4.6],
+        [fmtVal(p.vIcms ?? 0), 11, "r", 4.6],
+        [fmtVal(p.vIpi ?? 0), 10, "r", 4.6],
+        [fmtVal(p.aliqIcms ?? 0), 8, "r", 4.4],
+        [fmtVal(p.aliqIpi ?? 0), 8, "r", 4.4],
       ];
       cells.forEach(([txt, w, align, s], i) => {
         if (i > 0) vline(x, y, rowH);

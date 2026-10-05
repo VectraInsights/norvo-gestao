@@ -4444,6 +4444,17 @@ Espelhado na Vercel.
 - Validado com `tsc` (página zerada), `vitest` e `npm run build` OK.
 - Arquivo: `src/routes/_authenticated/fiscal.recebidas.tsx`.
 
+## DANFE espelho do FSIST + ajustes da análise (05/10)
+
+- Itens com valores exatos do XML: código/nome/qtd/un/valores passam a sair
+  do `<det>` (`itensFiscaisDoXml` + `montarDanfe`), com casas preservadas
+  (`6,0000`, `243,0000`, `2,400` via `fmtVal`); CFOP sem ponto (`5405`).
+- Canhoto no formato FSIST (box NF-e lateral nas duas linhas), respiro entre
+  seções e quadrinho de entrada/saída com o dígito ativo.
+- Análise: botão "Ver DANFE" fora do diálogo de edição; selecionados sem
+  tamanho de arquivo; "Conta para tudo" vira "Conta de pagamento".
+- Validado com `tsc` zerado, `vitest` (decimais/CFOP no PDF) e build OK.
+
 ## Tipos dos bundles vendorizados (05/10)
 
 - O erro `TS7016` era o TypeScript reclamando que os dois arquivos JS

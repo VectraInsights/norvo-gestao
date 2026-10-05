@@ -215,7 +215,7 @@ function parseDanfeDoXml(xml: string): Partial<DanfeData> {
 }
 
 // Campos fiscais por item (NCM/CST/CFOP/IPI/alíquotas), na ordem dos <det>
-function itensFiscaisDoXml(xml: string): { ncm: string; cst: string; cfop: string; vIpi: string; aliqIcms: string; aliqIpi: string; vBC: string; vICMS: string; vDesc: string }[] {
+function itensFiscaisDoXml(xml: string): { ncm: string; cst: string; cfop: string; vIpi: string; aliqIcms: string; aliqIpi: string; vBC: string; vICMS: string; vDesc: string; cProd: string; xProd: string; qCom: string; uCom: string; vUnCom: string; vProd: string }[] {
   try {
     const parser = new DOMParser();
     const doc = parser.parseFromString(xml, "text/xml");
@@ -229,6 +229,12 @@ function itensFiscaisDoXml(xml: string): { ncm: string; cst: string; cfop: strin
       vBC: d.querySelector("imposto > ICMS > vBC")?.textContent || "",
       vICMS: d.querySelector("imposto > ICMS > vICMS")?.textContent || "",
       vDesc: d.querySelector("prod > vDesc")?.textContent || "",
+      cProd: d.querySelector("prod > cProd")?.textContent || "",
+      xProd: d.querySelector("prod > xProd")?.textContent || "",
+      qCom: d.querySelector("prod > qCom")?.textContent || "",
+      uCom: d.querySelector("prod > uCom")?.textContent || "",
+      vUnCom: d.querySelector("prod > vUnCom")?.textContent || "",
+      vProd: d.querySelector("prod > vProd")?.textContent || "",
     }));
   } catch {
     return [];
@@ -1359,8 +1365,9 @@ function NotasRecebidas() {
       produtos: d.produtos.map((p, i) => {
         const f = fisc[i];
         return {
-          codigo: p.codigo, nome: p.nome, qtd: p.qtd, un: p.un,
-          valorUnit: p.valorUnit, valorTotal: p.valorTotal,
+          codigo: f?.cProd || p.codigo, nome: f?.xProd || p.nome,
+          qtd: f?.qCom || p.qtd, un: f?.uCom || p.un,
+          valorUnit: f?.vUnCom || p.valorUnit, valorTotal: f?.vProd || p.valorTotal,
           cfop: f?.cfop || extra.cfop || "",
           ncm: f?.ncm || "", cst: f?.cst || "",
           desconto: f?.vDesc || "",
@@ -1615,12 +1622,11 @@ function NotasRecebidas() {
                     <h4 className="text-sm font-medium text-foreground">Arquivos Selecionados:</h4>
                     <div className="max-h-[160px] overflow-y-auto border rounded-md p-2 divide-y divide-border bg-background/50">
                       {selectedFiles.map((file, i) => (
-                        <div key={i} className="flex items-center justify-between py-1.5 px-2 text-xs">
+                        <div key={i} className="flex items-center gap-2 py-1.5 px-2 text-xs">
                           <div className="flex items-center gap-2">
                             <FileCode className="h-4 w-4 text-muted-foreground" />
                             <span className="font-medium truncate max-w-[260px]">{file.name}</span>
                           </div>
-                          <span className="text-muted-foreground">{(file.size / 1024).toFixed(1)} KB</span>
                         </div>
                       ))}
                     </div>
@@ -1830,10 +1836,10 @@ function NotasRecebidas() {
                           } : prev);
                         }}
                         options={[
-                          { value: "__none__", label: "Conta para tudo: sem conta" },
+                          { value: "__none__", label: "Sem conta" },
                           ...contasBancarias.map((c) => ({ value: c.id, label: c.nome })),
                         ]}
-                        placeholder="Conta para tudo"
+                        placeholder="Conta de pagamento"
                         searchPlaceholder="Digite para buscar..."
                         emptyText="Nenhuma conta encontrada."
                       />
@@ -2254,22 +2260,6 @@ function NotasRecebidas() {
                 <div className="flex gap-2">
                   <Button variant="outline" onClick={() => setNotaDetalhe(null)}>
                     Cancelar
-                  </Button>
-                  <Button
-                    variant="outline"
-                    onClick={() => abrirPdfDaNota({
-                      id: notaDetalhe.id,
-                      chave: notaDetalhe.chave,
-                      emitente: notaDetalhe.emitente,
-                      cnpj: notaDetalhe.cnpj,
-                      valor: notaDetalhe.valor,
-                      data_emissao: notaDetalhe.data,
-                      situacao_sefaz: "autorizada",
-                      numero_nf: notaDetalhe.nNF,
-                      xml_completo: notaDetalhe.xml,
-                    })}
-                  >
-                    <FileText className="mr-2 h-4 w-4" /> Ver DANFE
                   </Button>
                   <Button onClick={notaDetalhe.id ? handleAlterarNota : handleLancarNota} disabled={isSaving} className={notaDetalhe.id ? "bg-amber-600 hover:bg-amber-700 text-white" : ""}>
                     {isSaving ? (
