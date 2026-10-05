@@ -16,7 +16,6 @@ import {
   ListTree,
   FolderCog,
   ArrowLeftRight,
-  Link2,
   PieChart,
   BarChart3,
   Percent,
@@ -59,7 +58,6 @@ const RAW_NAV: NavGroup[] = [
       { to: "/financeiro/pagar", label: "Contas a pagar", icon: ReceiptText },
       { to: "/financeiro/fluxo", label: "Fluxo de caixa", icon: Wallet },
       { to: "/financeiro/contas", label: "Contas financeiras", icon: Banknote },
-      { to: "/financeiro/conciliacao", label: "Conciliação bancária", icon: Link2 },
       {
         to: "/financeiro/transferencias",
         label: "Transferências entre contas",

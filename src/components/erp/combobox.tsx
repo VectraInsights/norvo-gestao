@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Check, ChevronsUpDown } from "lucide-react";
+import { Check, ChevronsUpDown, Plus } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import {
@@ -12,7 +12,7 @@ import {
 } from "@/components/ui/command";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 
-export type ComboOption = { value: string; label: string };
+export type ComboOption = { value: string; label: string; icone?: string };
 
 type Props = {
   value: string;
@@ -23,6 +23,8 @@ type Props = {
   emptyText?: string;
   disabled?: boolean;
   className?: string;
+  // Ação de rodapé (ex.: "Adicionar nova conta")
+  footer?: { label: string; onClick: () => void };
 };
 
 // Dropdown editável: abre a lista e filtra digitando (padrão do financeiro/contas).
@@ -35,6 +37,7 @@ export function Combobox({
   emptyText = "Nenhum item encontrado.",
   disabled,
   className,
+  footer,
 }: Props) {
   const [open, setOpen] = useState(false);
   const [q, setQ] = useState("");
@@ -56,8 +59,11 @@ export function Combobox({
           disabled={disabled}
           className={cn("w-full justify-between font-normal", className)}
         >
-          <span className={cn("truncate", !sel && "text-muted-foreground")}>
-            {sel ? rotulo(sel) : placeholder}
+          <span className={cn("flex min-w-0 items-center gap-2 truncate", !sel && "text-muted-foreground")}>
+            {sel?.icone && (
+              <img src={sel.icone} alt="" className="h-5 w-5 rounded object-contain bg-white ring-1 ring-border shrink-0" />
+            )}
+            <span className="truncate">{sel ? rotulo(sel) : placeholder}</span>
           </span>
           <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
         </Button>
@@ -80,11 +86,25 @@ export function Combobox({
                   className="whitespace-nowrap"
                 >
                   <Check className={cn("mr-2 h-4 w-4 shrink-0", value === o.value ? "opacity-100" : "opacity-0")} />
+                  {o.icone && (
+                    <img src={o.icone} alt="" className="mr-2 h-5 w-5 rounded object-contain bg-white ring-1 ring-border shrink-0" />
+                  )}
                   <span className="min-w-0 flex-1 truncate whitespace-nowrap">{rotulo(o)}</span>
                 </CommandItem>
               ))}
             </CommandGroup>
           </CommandList>
+          {footer && (
+            <button
+              className="flex w-full items-center gap-2 border-t border-border px-3 py-2 text-xs font-medium text-primary hover:bg-muted/60"
+              onClick={() => {
+                setOpen(false);
+                footer.onClick();
+              }}
+            >
+              <Plus className="h-3.5 w-3.5" />{footer.label}
+            </button>
+          )}
         </Command>
       </PopoverContent>
     </Popover>

@@ -4530,7 +4530,6 @@ Espelhado na Vercel.
 - Validado com `tsc` zerado, `vitest` e `npm run build` OK.
 
 ## Toast curto + * em obrigatório (05/10)
-
 - Erro de categoria sem produto vira só "Categoria obrigatória".
 - `*` no cabeçalho Categoria das duas tabelas de produtos (único campo
   validado de verdade).
@@ -4575,3 +4574,14 @@ Espelhado na Vercel.
 - Fix: `src/lib/vendor/vendor.d.ts` com `declare module "*.cjs"`.
   `tsc` zerado nesses arquivos; teste e build revalidados.
 
+
+## Contas financeiras estilo Conta Azul (05/10)
+
+- Lista com Banco, Nome (+Padrão), Tipo, Conciliações (pendências),
+  Extrato (Importar), Padrão, Editar e Excluir; clique abre o detalhe.
+- Detalhe por conta com seletor (logos + adicionar nova conta), mês,
+  saldos, abas Conciliações pendentes e Movimentações (dias expansíveis).
+- Menu "Ações da conta" (Editar, Importar OFX, Excluir); conciliação mora
+  dentro da conta — item removido do menu Financeiro.
+- Combobox com ícone por opção e ação de rodapé.
+- Validado com `tsc` (só baseline) e `npm run build` OK.

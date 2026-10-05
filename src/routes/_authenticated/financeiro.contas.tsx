@@ -20,8 +20,10 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import { Banknote, Plus, Upload, Loader2, Link2, Check, Landmark, Wallet, CreditCard, TrendingUp, PiggyBank, DollarSign, Database, Coins, Trash2, Search, X } from "lucide-react";
+import { Banknote, Plus, Upload, Loader2, Link2, Check, Landmark, Wallet, CreditCard, TrendingUp, PiggyBank, DollarSign, Database, Coins, Trash2, Search, X, ArrowLeft, ChevronLeft, ChevronRight, ChevronDown, Pencil } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
@@ -141,6 +143,325 @@ async function autoConciliarConta(contaId: string, empresaId: string): Promise<n
   return ok;
 }
 
+function ContaDetalhe({ contaId, contas, empresaId, tabInicial, onVoltar, onSelecionar, onNovaConta, onEditar, onImportar, onExcluir, onAbrirConciliacao }: {
+  contaId: string;
+  contas: ContaBancaria[];
+  empresaId: string | null;
+  tabInicial: "pendentes" | "movs";
+  onVoltar: () => void;
+  onSelecionar: (id: string) => void;
+  onNovaConta: () => void;
+  onEditar: (c: ContaBancaria) => void;
+  onImportar: (id: string) => void;
+  onExcluir: (c: ContaBancaria) => void;
+  onAbrirConciliacao: (id: string) => void;
+}) {
+  const qc = useQueryClient();
+  const [tab, setTab] = useState<"pendentes" | "movs">(tabInicial);
+  const [mes, setMes] = useState(() => {
+    const n = new Date();
+    return `${n.getFullYear()}-${String(n.getMonth() + 1).padStart(2, "0")}`;
+  });
+  const [busca, setBusca] = useState("");
+  const [filtroPend, setFiltroPend] = useState<"todos" | "recebimentos" | "pagamentos">("todos");
+  const [expand, setExpand] = useState<Set<string>>(new Set());
+  const [conciliando, setConciliando] = useState(false);
+
+  const conta = (contas ?? []).find((c) => c.id === contaId) ?? null;
+
+  const { data: ofxPend, isLoading: loadingPend } = useQuery({
+    enabled: !!contaId,
+    queryKey: ["ofx-pend", contaId] as const,
+    queryFn: async () => {
+      const { data, error } = await supabase.from("ofx_transacoes")
+        .select("id,data_transacao,valor,tipo,memo,status")
+        .eq("conta_bancaria_id", contaId).neq("status", "conciliada")
+        .order("data_transacao", { ascending: false }).limit(1000);
+      if (error) throw error;
+      return (data ?? []) as { id: string; data_transacao: string; valor: number; tipo: string; memo: string | null; status: string }[];
+    },
+  });
+
+  const mesIni = `${mes}-01`;
+  const mesFim = (() => {
+    const [y, m] = mes.split("-").map(Number);
+    return `${mes}-${String(new Date(y, m, 0).getDate()).padStart(2, "0")}`;
+  })();
+  const { data: lancs, isLoading: loadingMovs } = useQuery({
+    enabled: !!contaId,
+    queryKey: ["lancs-conta", contaId, mes] as const,
+    queryFn: async () => {
+      const { data, error } = await supabase.from("lancamentos_financeiros")
+        .select("id,descricao,valor,tipo,status,data_vencimento,data_pagamento")
+        .eq("conta_bancaria_id", contaId)
+        .gte("data_vencimento", mesIni).lte("data_vencimento", mesFim)
+        .order("data_vencimento", { ascending: false }).limit(2000);
+      if (error) throw error;
+      return (data ?? []) as { id: string; descricao: string; valor: number; tipo: string; status: string; data_vencimento: string; data_pagamento: string | null }[];
+    },
+  });
+
+  const shiftMes = (dir: number) => {
+    const [y, m] = mes.split("-").map(Number);
+    const d = new Date(y, m - 1 + dir, 1);
+    setMes(`${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`);
+  };
+  const mesLabel = (() => {
+    const s = new Date(`${mes}-01T00:00:00`).toLocaleDateString("pt-BR", { month: "long", year: "numeric" });
+    return s.charAt(0).toUpperCase() + s.slice(1);
+  })();
+
+  const pendFiltrados = useMemo(() => {
+    const q = busca.trim().toLowerCase();
+    return (ofxPend ?? []).filter((t) => {
+      if (filtroPend === "recebimentos" && !(Number(t.valor) > 0)) return false;
+      if (filtroPend === "pagamentos" && !(Number(t.valor) < 0)) return false;
+      if (!q) return true;
+      return (t.memo || "").toLowerCase().includes(q) || String(t.valor).includes(q);
+    });
+  }, [ofxPend, busca, filtroPend]);
+  const nRec = (ofxPend ?? []).filter((t) => Number(t.valor) > 0).length;
+  const nPag = (ofxPend ?? []).filter((t) => Number(t.valor) < 0).length;
+  const valorPendente = (ofxPend ?? []).reduce((a, t) => a + Math.abs(Number(t.valor) || 0), 0);
+
+  const gruposDia = useMemo(() => {
+    const m = new Map<string, { dia: string; rows: NonNullable<typeof lancs> }>();
+    for (const l of lancs ?? []) {
+      const dia = (l.data_vencimento || "").slice(0, 10);
+      if (!m.has(dia)) m.set(dia, { dia, rows: [] });
+      m.get(dia)!.rows.push(l);
+    }
+    return [...m.values()].sort((a, b) => (a.dia < b.dia ? 1 : -1)).map((g) => {
+      const net = g.rows.reduce((a, l) => a + (l.tipo === "receber" ? Number(l.valor) : -Number(l.valor)), 0);
+      const pend = g.rows.some((l) => ["aberto", "vencido", "parcial"].includes(l.status));
+      const dt = new Date(`${g.dia}T00:00:00`);
+      return {
+        ...g, net, pend,
+        rotulo: dt.toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit", year: "numeric" }),
+        semana: dt.toLocaleDateString("pt-BR", { weekday: "long" }),
+      };
+    });
+  }, [lancs]);
+  const diasComPend = gruposDia.filter((g) => g.pend).length;
+
+  const conciliarAuto = async () => {
+    if (!empresaId) return;
+    setConciliando(true);
+    try {
+      const ok = await autoConciliarConta(contaId, empresaId);
+      toast.success(ok > 0 ? `${ok} lançamento(s) conciliado(s)` : "Nada para conciliar automaticamente");
+      qc.invalidateQueries({ queryKey: ["ofx-pend", contaId] });
+      qc.invalidateQueries({ queryKey: ["ofx-pendentes"] });
+      qc.invalidateQueries({ queryKey: ["lanc-abertos"] });
+      qc.invalidateQueries({ queryKey: ["lancamentos"] });
+    } finally {
+      setConciliando(false);
+    }
+  };
+
+  const toggleDia = (dia: string) => {
+    setExpand((prev) => {
+      const n = new Set(prev);
+      if (n.has(dia)) n.delete(dia);
+      else n.add(dia);
+      return n;
+    });
+  };
+
+  return (
+    <div className="space-y-4">
+      <div className="flex flex-wrap items-center gap-2">
+        <Button variant="ghost" size="sm" onClick={onVoltar}>
+          <ArrowLeft className="mr-1 h-4 w-4" />Voltar
+        </Button>
+        <div className="min-w-[220px] flex-1 sm:max-w-xs">
+          <Combobox
+            value={contaId}
+            onChange={(v) => { if (v && v !== contaId) onSelecionar(v); }}
+            options={(contas ?? []).map((c) => ({ value: c.id, label: c.nome ?? c.banco ?? "—", icone: detectBancoByNome(c.banco)?.logo }))}
+            placeholder="Selecionar conta"
+            searchPlaceholder="Digite para buscar..."
+            emptyText="Nenhuma conta encontrada."
+            footer={{ label: "Adicionar nova conta", onClick: onNovaConta }}
+          />
+        </div>
+        <div className="ml-auto flex flex-wrap items-center gap-2">
+          {conta && (
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline" size="sm">
+                  Ações da conta <ChevronDown className="ml-1 h-3.5 w-3.5" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuItem onClick={() => onEditar(conta)}>
+                  <Pencil className="mr-2 h-3.5 w-3.5" />Editar conta
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => onImportar(contaId)}>
+                  <Upload className="mr-2 h-3.5 w-3.5" />Importar extrato (OFX)
+                </DropdownMenuItem>
+                <DropdownMenuItem className="text-destructive focus:text-destructive" onClick={() => onExcluir(conta)}>
+                  <Trash2 className="mr-2 h-3.5 w-3.5" />Excluir conta
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          )}
+        </div>
+      </div>
+
+      <Card className="p-4 shadow-panel">
+        <div className="flex flex-wrap items-center gap-3">
+          <div className="flex items-center gap-1">
+            <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => shiftMes(-1)}>
+              <ChevronLeft className="h-4 w-4" />
+            </Button>
+            <span className="min-w-36 text-center text-sm font-semibold">{mesLabel}</span>
+            <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => shiftMes(1)}>
+              <ChevronRight className="h-4 w-4" />
+            </Button>
+          </div>
+          <div className="ml-auto flex items-center gap-6">
+            <div className="text-right">
+              <div className="text-[11px] text-muted-foreground">Saldo atual</div>
+              <div className="text-tabular text-sm font-bold">{brl(Number(conta?.saldo_atual) || 0)}</div>
+            </div>
+            <div className="text-right">
+              <div className="text-[11px] text-muted-foreground">Pendente de conciliação</div>
+              <div className="text-tabular text-sm font-bold">{brl(valorPendente)}</div>
+            </div>
+          </div>
+        </div>
+      </Card>
+
+      <Tabs value={tab} onValueChange={(v) => setTab(v as "pendentes" | "movs")}>
+        <TabsList>
+          <TabsTrigger value="pendentes">Conciliações pendentes</TabsTrigger>
+          <TabsTrigger value="movs">Movimentações</TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="pendentes" className="space-y-3">
+          <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+            <div className="relative max-w-xs flex-1">
+              <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+              <Input className="pl-8 h-9" placeholder="Descrição ou valor" value={busca} onChange={(e) => setBusca(e.target.value)} />
+            </div>
+            <div className="ml-auto flex flex-wrap gap-2">
+              <Button variant="outline" size="sm" onClick={() => onImportar(contaId)}>
+                <Upload className="mr-1 h-3.5 w-3.5" />Importar OFX
+              </Button>
+              <Button variant="outline" size="sm" disabled={conciliando} onClick={() => void conciliarAuto()}>
+                {conciliando ? <Loader2 className="mr-1 h-3.5 w-3.5 animate-spin" /> : <Link2 className="mr-1 h-3.5 w-3.5" />}
+                Conciliar automaticamente
+              </Button>
+              <Button size="sm" onClick={() => onAbrirConciliacao(contaId)}>Abrir conciliação</Button>
+            </div>
+          </div>
+          <Card className="overflow-hidden">
+            <div className="grid grid-cols-3 divide-x border-b">
+              {[
+                { k: "todos" as const, label: "Todos", n: (ofxPend ?? []).length, cls: "text-primary" },
+                { k: "recebimentos" as const, label: "Recebimentos", n: nRec, cls: "text-success" },
+                { k: "pagamentos" as const, label: "Pagamentos", n: nPag, cls: "text-destructive" },
+              ].map((c) => (
+                <button
+                  key={c.k}
+                  onClick={() => setFiltroPend(c.k)}
+                  className={`px-3 py-2 text-center ${filtroPend === c.k ? "bg-muted/60" : ""}`}
+                >
+                  <div className="text-[11px] text-muted-foreground">{c.label}</div>
+                  <div className={`text-lg font-bold ${c.cls}`}>{c.n}</div>
+                </button>
+              ))}
+            </div>
+            {loadingPend ? (
+              <p className="p-6 text-center text-sm text-muted-foreground">Carregando...</p>
+            ) : pendFiltrados.length === 0 ? (
+              <div className="p-6">
+                <EmptyState icon={Check} title="Sem pendências" description="Nenhum lançamento do extrato aguardando conciliação." />
+              </div>
+            ) : (
+              <Table>
+                <TableBody>
+                  {pendFiltrados.map((t) => (
+                    <TableRow key={t.id}>
+                      <TableCell className="text-tabular text-muted-foreground whitespace-nowrap">
+                        {t.data_transacao ? new Date(`${t.data_transacao}T00:00:00`).toLocaleDateString("pt-BR") : "—"}
+                      </TableCell>
+                      <TableCell>{t.memo || (Number(t.valor) < 0 ? "Pagamento" : "Recebimento")}</TableCell>
+                      <TableCell className={`text-right text-tabular font-medium ${Number(t.valor) < 0 ? "text-destructive" : "text-success"}`}>
+                        {brl(Number(t.valor))}
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            )}
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="movs" className="space-y-3">
+          <Card className="overflow-hidden">
+            <div className="grid grid-cols-3 divide-x border-b">
+              <div className="px-3 py-2 text-center">
+                <div className="text-[11px] text-muted-foreground">Tudo</div>
+                <div className="text-lg font-bold">{gruposDia.length}</div>
+              </div>
+              <div className="px-3 py-2 text-center">
+                <div className="text-[11px] text-muted-foreground">Dias sem pendências</div>
+                <div className="text-lg font-bold text-success">{gruposDia.length - diasComPend}</div>
+              </div>
+              <div className="px-3 py-2 text-center">
+                <div className="text-[11px] text-muted-foreground">Dias com pendências</div>
+                <div className="text-lg font-bold text-warning-foreground">{diasComPend}</div>
+              </div>
+            </div>
+            {loadingMovs ? (
+              <p className="p-6 text-center text-sm text-muted-foreground">Carregando...</p>
+            ) : gruposDia.length === 0 ? (
+              <div className="p-6">
+                <EmptyState icon={Banknote} title="Sem movimentações" description={`Nenhum lançamento nesta conta em ${mesLabel}.`} />
+              </div>
+            ) : (
+              <div className="divide-y">
+                {gruposDia.map((g) => (
+                  <div key={g.dia}>
+                    <button className="flex w-full items-center gap-3 px-4 py-2.5 text-left hover:bg-muted/40" onClick={() => toggleDia(g.dia)}>
+                      <span className="text-sm font-semibold">{g.rotulo}</span>
+                      <span className="text-xs capitalize text-muted-foreground">{g.semana}</span>
+                      {g.pend && (
+                        <span className="rounded-full bg-warning/15 px-2 py-0.5 text-[11px] font-medium text-warning-foreground">pendente</span>
+                      )}
+                      <span className={`ml-auto text-tabular text-sm font-bold ${g.net < 0 ? "text-destructive" : "text-foreground"}`}>
+                        {brl(g.net)}
+                      </span>
+                      <ChevronRight className={`h-4 w-4 text-muted-foreground transition-transform ${expand.has(g.dia) ? "rotate-90" : ""}`} />
+                    </button>
+                    {expand.has(g.dia) && (
+                      <div className="border-t bg-muted/20">
+                        {g.rows.map((l) => (
+                          <div key={l.id} className="flex items-center gap-3 px-8 py-1.5 text-sm">
+                            <span className="min-w-0 flex-1 truncate">{l.descricao || "—"}</span>
+                            <span className={`rounded-full px-2 py-0.5 text-[11px] font-medium ${l.status === "pago" || l.status === "conciliada" ? "bg-success/10 text-success" : l.status === "vencido" ? "bg-destructive/10 text-destructive" : "bg-muted text-muted-foreground"}`}>
+                              {l.status}
+                            </span>
+                            <span className={`text-tabular font-medium ${l.tipo === "receber" ? "text-success" : "text-destructive"}`}>
+                              {l.tipo === "receber" ? "+" : "-"}{brl(Number(l.valor))}
+                            </span>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            )}
+          </Card>
+        </TabsContent>
+      </Tabs>
+    </div>
+  );
+}
+
 function ContasFinanceiras() {
   const { data: empresa } = useEmpresaAtual();
   const qc = useQueryClient();
@@ -152,6 +473,31 @@ function ContasFinanceiras() {
   const [reconcilingId, setReconcilingId] = useState<string | null>(null);
   const [preparando, setPreparando] = useState<string | null>(null);
   const [busca, setBusca] = useState("");
+  // Detalhe da conta selecionada (estilo Conta Azul: conciliações + movimentações)
+  const [detalheId, setDetalheId] = useState<string | null>(null);
+  const [detalheTab, setDetalheTab] = useState<"pendentes" | "movs">("pendentes");
+
+  // Pendências de conciliação por conta (para os badges da lista)
+  const { data: ofxPendentes } = useQuery({
+    enabled: !!empresa,
+    queryKey: ["ofx-pendentes", empresa?.id] as const,
+    staleTime: 60_000,
+    queryFn: async (): Promise<{ conta_bancaria_id: string; valor: number }[]> => {
+      const { data, error } = await supabase.from("ofx_transacoes")
+        .select("conta_bancaria_id,valor")
+        .eq("empresa_id", empresa!.id).neq("status", "conciliada").limit(2000);
+      if (error) throw error;
+      return (data ?? []) as { conta_bancaria_id: string; valor: number }[];
+    },
+  });
+  const pendPorConta = useMemo(() => {
+    const m = new Map<string, number>();
+    for (const t of ofxPendentes ?? []) {
+      if (!t.conta_bancaria_id) continue;
+      m.set(t.conta_bancaria_id, (m.get(t.conta_bancaria_id) ?? 0) + 1);
+    }
+    return m;
+  }, [ofxPendentes]);
 
   const abrirConciliacao = async (id: string) => {
     if (!autoConciliar || !empresa?.id) { setReconcilingId(id); return; }
@@ -449,6 +795,22 @@ function ContasFinanceiras() {
     <>
       <input ref={fileRef} type="file" accept=".ofx,.OFX,text/plain" className="hidden" onChange={handleFile} />
       <PageHeader eyebrow="Financeiro" title="Contas financeiras" description="Cadastro e gestão das contas financeiras da empresa." />
+      {detalheId ? (
+        <ContaDetalhe
+          contaId={detalheId}
+          contas={contas ?? []}
+          empresaId={empresa?.id ?? null}
+          tabInicial={detalheTab}
+          onVoltar={() => setDetalheId(null)}
+          onSelecionar={(id) => setDetalheId(id)}
+          onNovaConta={() => { resetWizard(); setOpen(true); }}
+          onEditar={(c) => void abrirEdicao(c)}
+          onImportar={(id) => triggerUpload(id)}
+          onExcluir={(c) => setConfConta(c)}
+          onAbrirConciliacao={(id) => setReconcilingId(id)}
+        />
+      ) : (
+      <>
       <div className="mb-3 flex flex-col gap-2 sm:flex-row sm:items-center">
         <div className="relative flex-1">
           <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
@@ -699,29 +1061,45 @@ function ContasFinanceiras() {
         <Card className="overflow-hidden shadow-panel">
           <Table>
             <TableHeader><TableRow>
-              <TableHead>Nome</TableHead><TableHead>Tipo</TableHead><TableHead>Ag/Conta</TableHead>
-              <TableHead className="text-right">Saldo atual</TableHead>
+              <TableHead>Banco</TableHead><TableHead>Nome da conta</TableHead><TableHead>Tipo de conta</TableHead>
+              <TableHead>Conciliações</TableHead><TableHead>Extrato bancário</TableHead>
               <TableHead className="w-16 text-center">Padrão</TableHead><TableHead />
             </TableRow></TableHeader>
             <TableBody>
-              {filtrados.map((c) => (
-                <TableRow key={c.id} className="cursor-pointer" onClick={() => void abrirEdicao(c)}>
-                  <TableCell className="font-medium">
-                    <div className="flex items-center gap-2">
-                      {(() => {
-                        const b = detectBancoByNome(c.banco);
-                        return b ? (
-                          <img src={b.logo} alt={b.nome} className="h-6 w-6 rounded object-contain bg-white ring-1 ring-border shrink-0" />
-                        ) : (
-                          <div className="h-6 w-6 rounded bg-muted grid place-items-center shrink-0"><Banknote className="h-3 w-3 text-muted-foreground" /></div>
-                        );
-                      })()}
-                      <span>{c.nome ?? c.banco ?? "—"}</span>
-                    </div>
+              {filtrados.map((c) => {
+                const pend = pendPorConta.get(c.id) ?? 0;
+                return (
+                <TableRow key={c.id} className="cursor-pointer" onClick={() => { setDetalheTab("movs"); setDetalheId(c.id); }}>
+                  <TableCell>
+                    {(() => {
+                      const b = detectBancoByNome(c.banco);
+                      return b ? (
+                        <img src={b.logo} alt={b.nome} className="h-6 w-6 rounded object-contain bg-white ring-1 ring-border shrink-0" />
+                      ) : (
+                        <div className="h-6 w-6 rounded bg-muted grid place-items-center shrink-0"><Banknote className="h-3 w-3 text-muted-foreground" /></div>
+                      );
+                    })()}
+                  </TableCell>
+                  <TableCell>
+                    <div className="font-medium text-foreground">{c.nome ?? c.banco ?? "—"}</div>
+                    {c.padrao ? (
+                      <span className="mt-0.5 inline-flex items-center rounded-full bg-primary/10 px-2 py-0.5 text-[11px] font-medium text-primary">Padrão</span>
+                    ) : null}
                   </TableCell>
                   <TableCell><Badge variant="secondary">{TIPO_LABEL[c.tipo]}</Badge></TableCell>
-                  <TableCell className="text-tabular">{c.agencia ?? "—"}/{c.conta ?? "—"}</TableCell>
-                  <TableCell className="text-right text-tabular font-medium">{brl(c.saldo_atual)}</TableCell>
+                  <TableCell onClick={(e) => e.stopPropagation()}>
+                    <button
+                      className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${pend > 0 ? "bg-warning/15 text-warning-foreground" : "bg-success/10 text-success"}`}
+                      onClick={() => { setDetalheTab("pendentes"); setDetalheId(c.id); }}
+                    >
+                      {pend > 0 ? `${pend} pendente(s)` : "Sem pendências"}
+                    </button>
+                  </TableCell>
+                  <TableCell onClick={(e) => e.stopPropagation()}>
+                    <Button variant="ghost" size="sm" onClick={() => triggerUpload(c.id)}>
+                      <Upload className="mr-1 h-3 w-3" />Importar
+                    </Button>
+                  </TableCell>
                   <TableCell className="text-center" onClick={(e) => e.stopPropagation()}>
                     <Checkbox
                       checked={!!c.padrao}
@@ -730,6 +1108,9 @@ function ContasFinanceiras() {
                     />
                   </TableCell>
                   <TableCell className="text-right whitespace-nowrap" onClick={(e) => e.stopPropagation()}>
+                    <Button variant="ghost" size="sm" onClick={() => void abrirEdicao(c)}>
+                      <Pencil className="mr-1 h-3 w-3" />Editar
+                    </Button>
                     <Button variant="ghost" size="sm" className="text-destructive hover:text-destructive"
                       disabled={excluir.isPending}
                       onClick={() => setConfConta(c)}>
@@ -737,11 +1118,13 @@ function ContasFinanceiras() {
                     </Button>
                   </TableCell>
                 </TableRow>
-              ))}
+                );
+              })}
             </TableBody>
           </Table>
         </Card>
       )}
+      </>)}
 
       <ReconcileDialog
         contaId={reconcilingId}
@@ -766,7 +1149,7 @@ function ContasFinanceiras() {
             <AlertDialogAction
               data-acao
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-              onClick={() => { if (confConta) excluir.mutate(confConta.id); setConfConta(null); }}
+              onClick={() => { if (confConta) { excluir.mutate(confConta.id); if (confConta.id === detalheId) setDetalheId(null); } setConfConta(null); }}
             >
               Excluir
             </AlertDialogAction>
