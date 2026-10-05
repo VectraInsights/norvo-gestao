@@ -306,7 +306,7 @@ export function LancamentosPage({ tipo }: { tipo: "receber" | "pagar" }) {
   const clearSel = () => setSelected(new Set());
 
   // Lotes de 100 ids: URL longa demais dá Bad Request no PostgREST
-  const emLotes = async (ids: string[], fn: (lote: string[]) => Promise<unknown>) => {
+  const emLotes = async (ids: string[], fn: (lote: string[]) => PromiseLike<unknown>) => {
     for (let i = 0; i < ids.length; i += 100) {
       await fn(ids.slice(i, i + 100));
     }
