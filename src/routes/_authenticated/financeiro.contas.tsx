@@ -1654,8 +1654,8 @@ function ReconcileDialog({ contaId, conta, empresaId, autoConciliar, importing, 
             <div className="grid grid-cols-3 overflow-hidden rounded-md border">
               {([
                 { k: "todos", label: "Todos", n: porMes.length, cls: "text-blue-600 dark:text-blue-400" },
-                { k: "recebimentos", label: "Recebimentos", n: recebimentos, cls: "text-blue-600 dark:text-blue-400" },
-                { k: "pagamentos", label: "Pagamentos", n: pagamentos, cls: "text-blue-600 dark:text-blue-400" },
+                { k: "recebimentos", label: "Recebimentos", n: recebimentos, cls: "text-success" },
+                { k: "pagamentos", label: "Pagamentos", n: pagamentos, cls: "text-destructive" },
               ] as const).map((c) => (
                 <button
                   key={c.k}
