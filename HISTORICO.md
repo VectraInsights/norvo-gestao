@@ -4489,6 +4489,12 @@ Espelhado na Vercel.
   estados mortos.
 - Validado com `tsc` zerado, `vitest` e `npm run build` OK.
 
+## Rolagem liberada na tela de lançamento (05/10)
+
+- Diálogo de análise com scroll funcionando (grade base travava a rolagem)
+  e barra de ações fixa no rodapé.
+- Validado com `npm run build` OK.
+
 ## Upload compacto + trilha de auditoria funcional (05/10)
 
 - Aba de importação enxuta (dropzone, listas e textos compactos) para caber

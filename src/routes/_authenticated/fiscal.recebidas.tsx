@@ -1685,7 +1685,7 @@ function NotasRecebidas() {
           )}
 
           <Dialog open={analiseOpen && !!importResults} onOpenChange={(o) => { if (!o) setAnaliseOpen(false); }}>
-            <DialogContent>
+            <DialogContent className="block">
               <DialogTitle className="sr-only">Lançar notas fiscais</DialogTitle>
               {importResults && (
             <Card className="border-muted bg-card/60 backdrop-blur-sm shadow-panel overflow-hidden animate-in fade-in slide-in-from-bottom-2 duration-300">
@@ -1830,7 +1830,7 @@ function NotasRecebidas() {
                   />
                 </div>
 
-                <div className="flex justify-end gap-2 pt-2">
+                <div className="sticky bottom-0 flex justify-end gap-2 border-t border-border bg-card py-2 pt-2">
                   <Button variant="outline" disabled={isSaving} onClick={() => { setImportResults(null); setFilaXml([]); }}>Cancelar</Button>
                   <Button variant="outline" disabled={isSaving} onClick={handleIgnorarNota} className="text-amber-700 hover:bg-amber-500/10 dark:text-amber-400">
                     Ignorar Nota
