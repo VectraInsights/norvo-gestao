@@ -162,7 +162,6 @@ function ContaDetalhe({ contaId, contas, empresaId, tabInicial, onVoltar, onSele
     return `${n.getFullYear()}-${String(n.getMonth() + 1).padStart(2, "0")}`;
   });
   const [expand, setExpand] = useState<Set<string>>(new Set());
-  const [conciliando, setConciliando] = useState(false);
 
   const conta = (contas ?? []).find((c) => c.id === contaId) ?? null;
 
@@ -230,21 +229,6 @@ function ContaDetalhe({ contaId, contas, empresaId, tabInicial, onVoltar, onSele
   }, [lancs]);
   const diasComPend = gruposDia.filter((g) => g.pend).length;
 
-  const conciliarAuto = async () => {
-    if (!empresaId) return;
-    setConciliando(true);
-    try {
-      const ok = await autoConciliarConta(contaId, empresaId);
-      toast.success(ok > 0 ? `${ok} lançamento(s) conciliado(s)` : "Nada para conciliar automaticamente");
-      qc.invalidateQueries({ queryKey: ["ofx-pend", contaId] });
-      qc.invalidateQueries({ queryKey: ["ofx-pendentes"] });
-      qc.invalidateQueries({ queryKey: ["lanc-abertos"] });
-      qc.invalidateQueries({ queryKey: ["lancamentos"] });
-    } finally {
-      setConciliando(false);
-    }
-  };
-
   const toggleDia = (dia: string) => {
     setExpand((prev) => {
       const n = new Set(prev);
@@ -283,6 +267,11 @@ function ContaDetalhe({ contaId, contas, empresaId, tabInicial, onVoltar, onSele
               footer={{ label: "Adicionar nova conta", onClick: onNovaConta }}
             />
           </div>
+          {conta && (
+            <Button variant="outline" size="sm" onClick={() => onImportar(contaId)}>
+              <Upload className="mr-1 h-3.5 w-3.5" />Importar OFX
+            </Button>
+          )}
           {conta && (
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
@@ -331,15 +320,6 @@ function ContaDetalhe({ contaId, contas, empresaId, tabInicial, onVoltar, onSele
         </TabsList>
 
         <TabsContent value="pendentes" className="space-y-3">
-          <div className="flex flex-wrap gap-2">
-            <Button variant="outline" size="sm" onClick={() => onImportar(contaId)}>
-              <Upload className="mr-1 h-3.5 w-3.5" />Importar OFX
-            </Button>
-            <Button variant="outline" size="sm" disabled={conciliando} onClick={() => void conciliarAuto()}>
-              {conciliando ? <Loader2 className="mr-1 h-3.5 w-3.5 animate-spin" /> : <Link2 className="mr-1 h-3.5 w-3.5" />}
-              Conciliar automaticamente
-            </Button>
-          </div>
           <ReconcileDialog
             contaId={contaId}
             conta={conta}
@@ -1610,10 +1590,12 @@ function ReconcileDialog({ contaId, conta, empresaId, autoConciliar, importing, 
 
 
         <div className="w-full">
+          {!inline && (
           <div className="mb-3 flex items-center gap-2 text-sm font-medium">
             Conciliações pendentes
             <Badge variant="secondary">{pendentes.length}</Badge>
           </div>
+          )}
 
         <div className="mt-4 space-y-4">
             <div>
