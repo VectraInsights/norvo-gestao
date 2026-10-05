@@ -270,19 +270,19 @@ function ContaDetalhe({ contaId, contas, empresaId, tabInicial, onVoltar, onSele
 
   return (
     <div className="space-y-4">
-      <div className="flex flex-wrap items-center gap-2">
-        <div className="min-w-[220px] flex-1 sm:max-w-xs">
-          <Combobox
-            value={contaId}
-            onChange={(v) => { if (v && v !== contaId) onSelecionar(v); }}
-            options={(contas ?? []).map((c) => ({ value: c.id, label: c.nome ?? c.banco ?? "—", icone: detectBancoByNome(c.banco)?.logo }))}
-            placeholder="Selecionar conta"
-            searchPlaceholder="Digite para buscar..."
-            emptyText="Nenhuma conta encontrada."
-            footer={{ label: "Adicionar nova conta", onClick: onNovaConta }}
-          />
-        </div>
-        <div className="ml-auto flex flex-wrap items-center gap-2">
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div className="flex flex-wrap items-center gap-2">
+          <div className="min-w-[220px] flex-1 sm:max-w-xs">
+            <Combobox
+              value={contaId}
+              onChange={(v) => { if (v && v !== contaId) onSelecionar(v); }}
+              options={(contas ?? []).map((c) => ({ value: c.id, label: c.nome ?? c.banco ?? "—", icone: detectBancoByNome(c.banco)?.logo }))}
+              placeholder="Selecionar conta"
+              searchPlaceholder="Digite para buscar..."
+              emptyText="Nenhuma conta encontrada."
+              footer={{ label: "Adicionar nova conta", onClick: onNovaConta }}
+            />
+          </div>
           {conta && (
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
@@ -290,7 +290,7 @@ function ContaDetalhe({ contaId, contas, empresaId, tabInicial, onVoltar, onSele
                   Ações da conta <ChevronDown className="ml-1 h-3.5 w-3.5" />
                 </Button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent align="end">
+              <DropdownMenuContent align="start">
                 <DropdownMenuItem onClick={() => onEditar(conta)}>
                   <Pencil className="mr-2 h-3.5 w-3.5" />Editar conta
                 </DropdownMenuItem>
@@ -301,28 +301,27 @@ function ContaDetalhe({ contaId, contas, empresaId, tabInicial, onVoltar, onSele
             </DropdownMenu>
           )}
         </div>
-      </div>
-
-      <div className="grid justify-start gap-3 md:grid-cols-[280px_auto]">
-        <Card className="flex items-center gap-1 bg-primary/[0.04] p-3 shadow-panel">
-          <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => shiftMes(-1)}>
-            <ChevronLeft className="h-4 w-4" />
-          </Button>
-          <span className="min-w-36 flex-1 text-center text-sm font-semibold">{mesLabel}</span>
-          <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => shiftMes(1)}>
-            <ChevronRight className="h-4 w-4" />
-          </Button>
-        </Card>
-        <Card className="flex items-center justify-end gap-6 bg-primary/[0.04] p-3 shadow-panel">
-          <div className="text-right">
-            <div className="text-[11px] text-muted-foreground">Saldo atual</div>
-            <div className="text-tabular text-sm font-bold">{brl(Number(conta?.saldo_atual) || 0)}</div>
-          </div>
-          <div className="text-right">
-            <div className="text-[11px] text-muted-foreground">Pendente de conciliação</div>
-            <div className="text-tabular text-sm font-bold">{brl(valorPendente)}</div>
-          </div>
-        </Card>
+        <div className="grid w-full gap-3 sm:w-[300px]">
+          <Card className="flex items-center gap-1 bg-primary/[0.04] p-3 shadow-panel">
+            <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => shiftMes(-1)}>
+              <ChevronLeft className="h-4 w-4" />
+            </Button>
+            <span className="min-w-36 flex-1 text-center text-sm font-semibold">{mesLabel}</span>
+            <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => shiftMes(1)}>
+              <ChevronRight className="h-4 w-4" />
+            </Button>
+          </Card>
+          <Card className="flex items-center justify-end gap-6 bg-primary/[0.04] p-3 shadow-panel">
+            <div className="text-right">
+              <div className="text-[11px] text-muted-foreground">Saldo atual</div>
+              <div className="text-tabular text-sm font-bold">{brl(Number(conta?.saldo_atual) || 0)}</div>
+            </div>
+            <div className="text-right">
+              <div className="text-[11px] text-muted-foreground">Pendente de conciliação</div>
+              <div className="text-tabular text-sm font-bold">{brl(valorPendente)}</div>
+            </div>
+          </Card>
+        </div>
       </div>
 
       <Tabs value={tab} onValueChange={(v) => setTab(v as "pendentes" | "movs")}>
