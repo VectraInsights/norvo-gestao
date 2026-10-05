@@ -309,29 +309,27 @@ function ContaDetalhe({ contaId, contas, empresaId, tabInicial, onVoltar, onSele
         </div>
       </div>
 
-      <Card className="p-4 shadow-panel">
-        <div className="flex flex-wrap items-center gap-3">
-          <div className="flex items-center gap-1">
-            <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => shiftMes(-1)}>
-              <ChevronLeft className="h-4 w-4" />
-            </Button>
-            <span className="min-w-36 text-center text-sm font-semibold">{mesLabel}</span>
-            <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => shiftMes(1)}>
-              <ChevronRight className="h-4 w-4" />
-            </Button>
+      <div className="grid gap-3 md:grid-cols-2">
+        <Card className="flex items-center gap-1 p-3 shadow-panel">
+          <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => shiftMes(-1)}>
+            <ChevronLeft className="h-4 w-4" />
+          </Button>
+          <span className="min-w-36 flex-1 text-center text-sm font-semibold">{mesLabel}</span>
+          <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => shiftMes(1)}>
+            <ChevronRight className="h-4 w-4" />
+          </Button>
+        </Card>
+        <Card className="flex items-center justify-end gap-6 p-3 shadow-panel">
+          <div className="text-right">
+            <div className="text-[11px] text-muted-foreground">Saldo atual</div>
+            <div className="text-tabular text-sm font-bold">{brl(Number(conta?.saldo_atual) || 0)}</div>
           </div>
-          <div className="ml-auto flex items-center gap-6">
-            <div className="text-right">
-              <div className="text-[11px] text-muted-foreground">Saldo atual</div>
-              <div className="text-tabular text-sm font-bold">{brl(Number(conta?.saldo_atual) || 0)}</div>
-            </div>
-            <div className="text-right">
-              <div className="text-[11px] text-muted-foreground">Pendente de conciliação</div>
-              <div className="text-tabular text-sm font-bold">{brl(valorPendente)}</div>
-            </div>
+          <div className="text-right">
+            <div className="text-[11px] text-muted-foreground">Pendente de conciliação</div>
+            <div className="text-tabular text-sm font-bold">{brl(valorPendente)}</div>
           </div>
-        </div>
-      </Card>
+        </Card>
+      </div>
 
       <Tabs value={tab} onValueChange={(v) => setTab(v as "pendentes" | "movs")}>
         <TabsList>
