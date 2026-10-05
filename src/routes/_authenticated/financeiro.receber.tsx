@@ -528,9 +528,19 @@ export function LancamentosPage({ tipo }: { tipo: "receber" | "pagar" }) {
   };
   const abaLabelQuitado = tipo === "receber" ? "Recebidos" : "Pagos";
 
-  const allIds = filtrados.map((l) => l.id);
+  const allIds = lancamentosVisiveis.map((l) => l.id);
   const allChecked = allIds.length > 0 && allIds.every((id) => selected.has(id));
-  const toggleAll = () => setSelected(allChecked ? new Set() : new Set(allIds));
+  const toggleAll = () => {
+    if (allChecked) {
+      setSelected((s) => {
+        const n = new Set(s);
+        allIds.forEach((id) => n.delete(id));
+        return n;
+      });
+    } else {
+      setSelected((s) => new Set([...s, ...allIds]));
+    }
+  };
 
   const titulo = tipo === "receber" ? "Contas a receber" : "Contas a pagar";
   const desc =
