@@ -4433,6 +4433,17 @@ Espelhado na Vercel.
   (titulo/subtitulo/url/acoes/rev) para os demais usos.
 - Validado com `tsc` zerado e `npm run build` OK.
 
+## Análise do XML: conta única + sem Estoque Pronto + sem lápis (05/10)
+
+- Parcelas da análise com UMA conta para tudo: seletor "Conta para tudo"
+  no cabeçalho carimba todas as parcelas (novas herdam); coluna Conta por
+  linha removida. Reseta a cada XML da fila.
+- Aviso "Estoque Pronto" removido da análise.
+- Lápis removido das ações (o clique na linha já abre a edição): ordem
+  final olho, XML, PDF, lixeira.
+- Validado com `tsc` (página zerada), `vitest` e `npm run build` OK.
+- Arquivo: `src/routes/_authenticated/fiscal.recebidas.tsx`.
+
 ## Tipos dos bundles vendorizados (05/10)
 
 - O erro `TS7016` era o TypeScript reclamando que os dois arquivos JS

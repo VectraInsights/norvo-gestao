@@ -12,7 +12,7 @@ import { DateInput } from "@/components/erp/date-input";
 import { Combobox } from "@/components/erp/combobox";
 import { MoneyInput } from "@/components/erp/money-input";
 import { 
-  FileDown, Search, CheckCircle2, AlertCircle, XCircle, 
+  FileDown, Search, AlertCircle, XCircle, 
   UploadCloud, FileCode, Check, ArrowRight, RefreshCw, Archive, Calendar, KeyRound,
   Eye, Download, FileText, Trash2, Pencil
 } from "lucide-react";
@@ -352,6 +352,8 @@ function NotasRecebidas() {
   const [importResults, setImportResults] = useState<ParsedXMLResult | null>(null);
   // Notas restantes do lote após a atual em conferência (importação de vários XMLs)
   const [filaXml, setFilaXml] = useState<ParsedXMLResult[]>([]);
+  // Conta única para todas as parcelas da análise em conferência
+  const [contaImportacao, setContaImportacao] = useState("__none__");
   const [validarXML, setValidarXML] = useState(true);
 
   // Ações de manifestação do destinatário (ciência, confirmação, desconhecimento)
@@ -668,6 +670,7 @@ function NotasRecebidas() {
       setImportResults(pendentes[0]);
       setFilaXml(pendentes.slice(1));
       setMesmaCategoria(false);
+      setContaImportacao("__none__");
       toast.success("XML(s) importados(s).");
     } finally {
       setIsProcessing(false);
@@ -901,6 +904,7 @@ function NotasRecebidas() {
         setImportResults(filaXml[0]);
         setFilaXml(filaXml.slice(1));
         setMesmaCategoria(false);
+        setContaImportacao("__none__");
       } else {
         setSelectedFiles([]);
         setImportResults(null);
@@ -918,6 +922,7 @@ function NotasRecebidas() {
       setImportResults(filaXml[0]);
       setFilaXml(filaXml.slice(1));
       setMesmaCategoria(false);
+      setContaImportacao("__none__");
     } else {
       setSelectedFiles([]);
       setImportResults(null);
@@ -1497,7 +1502,7 @@ function NotasRecebidas() {
                     <TableHead className="text-center">Fornecedor</TableHead>
                     <TableHead className="text-center">Série - NF</TableHead>
                     <TableHead className="text-center">Valor (R$)</TableHead>
-                    <TableHead className="text-center w-36">Ações</TableHead>
+                    <TableHead className="text-center w-28">Ações</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -1542,16 +1547,6 @@ function NotasRecebidas() {
                                   </Button>
                                 </TooltipTrigger>
                                 <TooltipContent>Baixar PDF</TooltipContent>
-                              </Tooltip>
-                            </TooltipProvider>
-                            <TooltipProvider>
-                              <Tooltip>
-                                <TooltipTrigger asChild>
-                                  <Button size="sm" variant="ghost" className="h-7 w-7 p-0" onClick={() => handleVerNota(n)}>
-                                    <Pencil className="h-3.5 w-3.5" />
-                                  </Button>
-                                </TooltipTrigger>
-                                <TooltipContent>Editar</TooltipContent>
                               </Tooltip>
                             </TooltipProvider>
                             <TooltipProvider>
@@ -1817,43 +1812,53 @@ function NotasRecebidas() {
                   </div>
                 </div>
 
-                <div className="flex gap-3 rounded-lg border border-emerald-500/20 bg-emerald-500/5 p-4">
-                  <CheckCircle2 className="h-5 w-5 text-emerald-500 shrink-0" />
-                  <div>
-                    <h4 className="text-sm font-semibold text-foreground">Estoque Pronto</h4>
-                    <p className="text-xs text-muted-foreground mt-0.5">
-                      {importResults.produtos.length} produtos identificados e {importResults.produtos.reduce((acc, p) => acc + p.qtd, 0)} unidades serão somadas ao estoque atual.
-                    </p>
-                  </div>
-                </div>
-
                 <div className="rounded-lg border border-sky-500/20 bg-sky-500/5 p-4">
-                  <div className="flex items-center justify-between mb-2">
+                  <div className="flex flex-wrap items-center justify-between gap-2 mb-2">
                     <div className="flex items-center gap-2">
                       <Archive className="h-5 w-5 text-sky-500 shrink-0" />
                       <h4 className="text-sm font-semibold text-foreground">Parcelas do Contas a Pagar</h4>
                     </div>
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      className="h-7 text-xs"
-                      onClick={() => {
-                        const novas = [...importResults.parcelas];
-                        const ultima = novas[novas.length - 1];
-                        const baseMs = ultima?.dataVencimento ? Date.parse(`${ultima.dataVencimento}T00:00:00`) : NaN;
-                        const base = Number.isNaN(baseMs) ? Date.now() : baseMs;
-                        novas.push({
-                          numero: String(novas.length + 1).padStart(3, "0"),
-                          dataVencimento: new Date(base + 30 * 24 * 60 * 60 * 1000).toISOString().split("T")[0],
-                          valor: 0,
-                          forma_pagamento: "Boleto",
-                          conta_bancaria_id: "",
-                        });
-                        setImportResults({ ...importResults, parcelas: novas });
-                      }}
-                    >
-                      + Adicionar Parcela
-                    </Button>
+                    <div className="flex items-center gap-2">
+                      <Combobox
+                        value={contaImportacao}
+                        onChange={(v) => {
+                          setContaImportacao(v);
+                          const id = v === "__none__" ? "" : v;
+                          setImportResults((prev) => prev ? {
+                            ...prev,
+                            parcelas: prev.parcelas.map((p) => ({ ...p, conta_bancaria_id: id })),
+                          } : prev);
+                        }}
+                        options={[
+                          { value: "__none__", label: "Conta para tudo: sem conta" },
+                          ...contasBancarias.map((c) => ({ value: c.id, label: c.nome })),
+                        ]}
+                        placeholder="Conta para tudo"
+                        searchPlaceholder="Digite para buscar..."
+                        emptyText="Nenhuma conta encontrada."
+                      />
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className="h-7 text-xs"
+                        onClick={() => {
+                          const novas = [...importResults.parcelas];
+                          const ultima = novas[novas.length - 1];
+                          const baseMs = ultima?.dataVencimento ? Date.parse(`${ultima.dataVencimento}T00:00:00`) : NaN;
+                          const base = Number.isNaN(baseMs) ? Date.now() : baseMs;
+                          novas.push({
+                            numero: String(novas.length + 1).padStart(3, "0"),
+                            dataVencimento: new Date(base + 30 * 24 * 60 * 60 * 1000).toISOString().split("T")[0],
+                            valor: 0,
+                            forma_pagamento: "Boleto",
+                            conta_bancaria_id: contaImportacao === "__none__" ? "" : contaImportacao,
+                          });
+                          setImportResults({ ...importResults, parcelas: novas });
+                        }}
+                      >
+                        + Adicionar Parcela
+                      </Button>
+                    </div>
                   </div>
                   {importResults.parcelas.length === 0 ? (
                     <p className="text-xs text-muted-foreground">
@@ -1861,17 +1866,16 @@ function NotasRecebidas() {
                     </p>
                   ) : (
                     <div className="rounded-md border border-sky-500/20 bg-background overflow-hidden">
-                      <div className="hidden md:grid grid-cols-[64px_150px_140px_150px_1fr_36px] gap-2 border-b border-sky-500/10 bg-muted/40 px-3 py-1.5 text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
+                      <div className="hidden md:grid grid-cols-[64px_150px_140px_1fr_36px] gap-2 border-b border-sky-500/10 bg-muted/40 px-3 py-1.5 text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
                         <span>Nº</span>
                         <span>Vencimento</span>
                         <span>Valor</span>
                         <span>Forma</span>
-                        <span>Conta</span>
                         <span />
                       </div>
                       <div className="divide-y divide-sky-500/10">
                         {importResults.parcelas.map((p, i) => (
-                          <div key={i} className="grid grid-cols-2 md:grid-cols-[64px_150px_140px_150px_1fr_36px] gap-2 px-3 py-2 items-center">
+                          <div key={i} className="grid grid-cols-2 md:grid-cols-[64px_150px_140px_1fr_36px] gap-2 px-3 py-2 items-center">
                             <Input
                               className="h-8 w-full text-xs font-mono text-center"
                               value={p.numero}
@@ -1917,23 +1921,6 @@ function NotasRecebidas() {
                                 ))}
                               </SelectContent>
                             </Select>
-                            <div className="w-full">
-                              <Combobox
-                                value={p.conta_bancaria_id || "__none__"}
-                                onChange={(v) => {
-                                  const novas = [...importResults.parcelas];
-                                  novas[i] = { ...novas[i], conta_bancaria_id: v === "__none__" ? "" : v };
-                                  setImportResults({ ...importResults, parcelas: novas });
-                                }}
-                                options={[
-                                  { value: "__none__", label: "Sem conta" },
-                                  ...contasBancarias.map((c) => ({ value: c.id, label: c.nome })),
-                                ]}
-                                placeholder="Banco/Caixa"
-                                searchPlaceholder="Digite para buscar..."
-                                emptyText="Nenhum item encontrado."
-                              />
-                            </div>
                             <div className="col-span-2 md:col-span-1 flex justify-end">
                               <TooltipProvider>
                                 <Tooltip>
