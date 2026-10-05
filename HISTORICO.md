@@ -4591,3 +4591,8 @@ Espelhado na Vercel.
 - `public/bancos/bradesco.png` trocada pela nova marca (512x512, padrão
   das demais).
 - Validado com `npm run build` OK.
+
+## Contas maiores na lista (05/10)
+
+- Linhas da lista com fonte e logos maiores (logo 40px).
+- Validado com `npm run build` OK.

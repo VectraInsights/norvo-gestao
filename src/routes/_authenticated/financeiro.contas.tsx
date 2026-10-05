@@ -1059,29 +1059,29 @@ function ContasFinanceiras() {
         <EmptyState icon={Banknote} title="Sem contas financeiras" description={busca ? "Nada encontrado para a busca." : "Cadastre suas contas para acompanhar saldos e realizar conciliação."} />
       ) : (
         <Card className="overflow-hidden shadow-panel">
-          <Table>
+          <Table className="[&_td]:py-3 [&_th]:py-3">
             <TableHeader><TableRow>
-              <TableHead>Banco</TableHead><TableHead>Nome da conta</TableHead><TableHead>Tipo de conta</TableHead>
-              <TableHead>Conciliações</TableHead><TableHead>Extrato bancário</TableHead>
-              <TableHead className="w-16 text-center">Padrão</TableHead><TableHead />
+              <TableHead className="text-[13px]">Banco</TableHead><TableHead className="text-[13px]">Nome da conta</TableHead><TableHead className="text-[13px]">Tipo de conta</TableHead>
+              <TableHead className="text-[13px]">Conciliações</TableHead><TableHead className="text-[13px]">Extrato bancário</TableHead>
+              <TableHead className="w-16 text-center text-[13px]">Padrão</TableHead><TableHead />
             </TableRow></TableHeader>
             <TableBody>
               {filtrados.map((c) => {
                 const pend = pendPorConta.get(c.id) ?? 0;
                 return (
-                <TableRow key={c.id} className="cursor-pointer" onClick={() => { setDetalheTab("movs"); setDetalheId(c.id); }}>
+                <TableRow key={c.id} className="cursor-pointer text-[15px]" onClick={() => { setDetalheTab("movs"); setDetalheId(c.id); }}>
                   <TableCell>
                     {(() => {
                       const b = detectBancoByNome(c.banco);
                       return b ? (
-                        <img src={b.logo} alt={b.nome} className="h-6 w-6 rounded object-contain bg-white ring-1 ring-border shrink-0" />
+                        <img src={b.logo} alt={b.nome} className="h-10 w-10 rounded object-contain bg-white ring-1 ring-border shrink-0" />
                       ) : (
-                        <div className="h-6 w-6 rounded bg-muted grid place-items-center shrink-0"><Banknote className="h-3 w-3 text-muted-foreground" /></div>
+                        <div className="h-10 w-10 rounded bg-muted grid place-items-center shrink-0"><Banknote className="h-5 w-5 text-muted-foreground" /></div>
                       );
                     })()}
                   </TableCell>
                   <TableCell>
-                    <div className="font-medium text-foreground">{c.nome ?? c.banco ?? "—"}</div>
+                    <div className="font-semibold text-foreground">{c.nome ?? c.banco ?? "—"}</div>
                     {c.padrao ? (
                       <span className="mt-0.5 inline-flex items-center rounded-full bg-primary/10 px-2 py-0.5 text-[11px] font-medium text-primary">Padrão</span>
                     ) : null}
