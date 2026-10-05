@@ -4424,6 +4424,15 @@ Espelhado na Vercel.
   se faltar).
 - Validado com `tsc` (página zerada), `vitest` e `npm run build` OK.
 
+## Visor de PDF próprio do sistema (05/10)
+
+- `PdfViewer` (`components/erp/pdf-viewer.tsx`) não usa mais o plugin do
+  navegador (`iframe` com cara de Adobe): renderiza as páginas com
+  `pdfjs-dist` em canvas, com barra verde do sistema, paginação, zoom real,
+  ajuste à largura, loading e impressão via janela própria. Mesma API
+  (titulo/subtitulo/url/acoes/rev) para os demais usos.
+- Validado com `tsc` zerado e `npm run build` OK.
+
 ## Tipos dos bundles vendorizados (05/10)
 
 - O erro `TS7016` era o TypeScript reclamando que os dois arquivos JS
