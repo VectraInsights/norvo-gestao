@@ -4400,3 +4400,12 @@ Espelhado na Vercel.
 - Teste `danfe-pdf.test.ts` com os dados da NF-e 15545 da PD DIESEL: PDF de
   1 página com todas as seções (`npx vitest run` OK) + `npm run build` OK.
 
+## Tipos dos bundles vendorizados (05/10)
+
+- O erro `TS7016` era o TypeScript reclamando que os dois arquivos JS
+  vendorizados (`jsbarcode.bundle.cjs` e `qrcode.bundle.cjs`, usados nas
+  barras/QR de DANFE/DACTE/DAMDFE) não têm declaração de tipos — nunca
+  quebrou o build, só aparecia no `tsc --noEmit`.
+- Fix: `src/lib/vendor/vendor.d.ts` com `declare module "*.cjs"`.
+  `tsc` zerado nesses arquivos; teste e build revalidados.
+
