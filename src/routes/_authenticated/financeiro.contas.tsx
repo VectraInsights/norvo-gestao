@@ -320,7 +320,7 @@ function ContaDetalhe({ contaId, contas, empresaId, tabInicial, onVoltar, onSele
         </div>
       </div>
 
-      <div className="grid gap-3 md:grid-cols-2">
+      <div className="grid justify-start gap-3 md:grid-cols-[280px_auto]">
         <Card className="flex items-center gap-1 bg-primary/[0.04] p-3 shadow-panel">
           <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => shiftMes(-1)}>
             <ChevronLeft className="h-4 w-4" />
