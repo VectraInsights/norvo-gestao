@@ -86,11 +86,11 @@ const STATUS_LABEL: Record<string, string> = {
   cancelado: "Cancelado",
 };
 const STATUS_COLOR: Record<string, string> = {
-  planejado: "bg-slate-500/10 text-slate-600 border-slate-500/20",
-  em_andamento: "bg-blue-500/10 text-blue-600 border-blue-500/20",
-  pausado: "bg-amber-500/10 text-amber-600 border-amber-500/20",
-  concluido: "bg-emerald-500/10 text-emerald-600 border-emerald-500/20",
-  cancelado: "bg-rose-500/10 text-rose-600 border-rose-500/20",
+  planejado: "bg-primary/10 text-primary border-primary/20",
+  em_andamento: "bg-primary/10 text-primary border-primary/20",
+  pausado: "bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/20",
+  concluido: "bg-success/10 text-success border-success/20",
+  cancelado: "bg-destructive/10 text-destructive border-destructive/20",
 };
 
 function ProjetosPage() {

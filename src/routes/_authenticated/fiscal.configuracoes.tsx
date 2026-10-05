@@ -397,8 +397,8 @@ function ConfigFiscais() {
                   </div>
                 ) : certificado ? (
                   <div className="space-y-6">
-                    <div className="flex gap-4 items-start rounded-lg border border-emerald-500/20 bg-emerald-500/5 p-4">
-                      <CheckCircle2 className="h-6 w-6 text-emerald-500 shrink-0 mt-0.5" />
+                    <div className="flex gap-4 items-start rounded-lg border border-primary/20 bg-primary/5 p-4">
+                      <CheckCircle2 className="h-6 w-6 text-primary shrink-0 mt-0.5" />
                       <div className="space-y-1 flex-1">
                         <h4 className="text-sm font-semibold text-foreground">Certificado Digital Ativo e Válido</h4>
                         <p className="text-xs text-muted-foreground">O certificado digital está pronto para autenticar e assinar suas notas fiscais.</p>
@@ -569,8 +569,8 @@ function ConfigFiscais() {
                       </div>
                     </div>
 
-                    <div className="flex gap-2.5 rounded-lg border border-sky-500/20 bg-sky-500/5 p-4 mt-2">
-                      <Scale className="h-5 w-5 text-sky-500 shrink-0 mt-0.5" />
+                    <div className="flex gap-2.5 rounded-lg border border-primary/20 bg-primary/5 p-4 mt-2">
+                      <Scale className="h-5 w-5 text-primary shrink-0 mt-0.5" />
                       <div className="space-y-0.5 text-xs text-muted-foreground leading-relaxed">
                         <span className="font-semibold text-foreground block">Tributação Simplificada</span>
                         No Simples Nacional, os tributos são unificados na guia DAS e as alíquotas individuais (PIS/COFINS) costumam ser configuradas como 0% para fins de preenchimento na nota (sendo declaradas apenas no Simples).
@@ -690,12 +690,12 @@ function ConfigFiscais() {
                     return (
                       <TableRow key={c.id} className="transition-colors hover:bg-muted/30">
                         <TableCell className="font-semibold text-foreground max-w-[200px] truncate">{c.nome}</TableCell>
-                        <TableCell className="font-mono font-bold text-sky-600 dark:text-sky-400 text-sm">{c.cfop}</TableCell>
+                        <TableCell className="font-mono font-bold text-primary text-sm">{c.cfop}</TableCell>
                         <TableCell>
                           {c.tipo === "saida" ? (
-                            <span className="inline-flex items-center rounded-full bg-emerald-500/10 px-2 py-0.5 text-[11px] font-medium text-emerald-600 dark:text-emerald-400">Saída</span>
+                            <span className="inline-flex items-center rounded-full bg-primary/10 px-2 py-0.5 text-[11px] font-medium text-primary">Saída</span>
                           ) : (
-                            <span className="inline-flex items-center rounded-full bg-blue-500/10 px-2 py-0.5 text-[11px] font-medium text-blue-600 dark:text-blue-400">Entrada</span>
+                            <span className="inline-flex items-center rounded-full bg-primary/10 px-2 py-0.5 text-[11px] font-medium text-primary">Entrada</span>
                           )}
                         </TableCell>
                         <TableCell className="text-xs text-muted-foreground leading-relaxed max-w-[320px] truncate">{c.descricao}</TableCell>

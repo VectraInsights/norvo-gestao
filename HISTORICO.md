@@ -4455,6 +4455,18 @@ Espelhado na Vercel.
   tamanho de arquivo; "Conta para tudo" vira "Conta de pagamento".
 - Validado com `tsc` zerado, `vitest` (decimais/CFOP no PDF) e build OK.
 
+## Tema padronizado: tudo no verde, sem cor por módulo (05/10)
+
+- Removido o sistema de cor por módulo (`MODULE_COLORS` no PageHeader vira
+  borda primária única; `nav-config` já não tinha `color/colorBg`).
+- Cores fixas decorativas (emerald/sky/blue/violet/teal/pink/stone/green)
+  convertidas para tokens: marca/informativo vira `primary`/`muted`,
+  concluído/pago vira `success`, erro/cancelado vira `destructive`.
+- Âmbar mantido só como cor de alerta (homologação, vencimentos, avisos) e
+  vermelho só para erro/exclusão; gráficos mantêm paleta própria.
+- Claro segue verde; escuro mantém verde + laranja (tokens já existentes).
+- Validado com `tsc` (só baseline) e `npm run build` OK.
+
 ## Tipos dos bundles vendorizados (05/10)
 
 - O erro `TS7016` era o TypeScript reclamando que os dois arquivos JS

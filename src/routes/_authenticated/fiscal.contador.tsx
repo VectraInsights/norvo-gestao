@@ -381,11 +381,11 @@ function PainelContador() {
               {historico.map((log) => {
                 const getStatusBadge = (status: typeof log.status) => {
                   return status === "enviado" ? (
-                    <span className="inline-flex items-center rounded-full bg-emerald-500/10 px-2 py-0.5 text-xs font-medium text-emerald-600 dark:text-emerald-400">
+                    <span className="inline-flex items-center rounded-full bg-primary/10 px-2 py-0.5 text-xs font-medium text-primary">
                       <Check className="mr-1 h-3 w-3" /> Enviado
                     </span>
                   ) : (
-                    <span className="inline-flex items-center rounded-full bg-slate-500/10 px-2 py-0.5 text-xs font-medium text-slate-600 dark:text-slate-400">
+                    <span className="inline-flex items-center rounded-full bg-muted px-2 py-0.5 text-xs font-medium text-muted-foreground">
                       <Download className="mr-1 h-3 w-3" /> Exportado Local
                     </span>
                   );

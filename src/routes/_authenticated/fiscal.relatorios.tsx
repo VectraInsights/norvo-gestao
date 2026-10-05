@@ -169,7 +169,7 @@ function RelatoriosFiscais() {
             <Card className="border-muted bg-card/60 backdrop-blur-sm shadow-panel">
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                 <CardTitle className="text-xs font-semibold text-muted-foreground uppercase">Valor Total Notas</CardTitle>
-                <ArrowUpRight className="h-4 w-4 text-emerald-500" />
+                <ArrowUpRight className="h-4 w-4 text-primary" />
               </CardHeader>
               <CardContent>
                 <div className="text-2xl font-bold text-foreground">{brl(stats.valorTotal)}</div>
@@ -180,7 +180,7 @@ function RelatoriosFiscais() {
             <Card className="border-muted bg-card/60 backdrop-blur-sm shadow-panel">
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                 <CardTitle className="text-xs font-semibold text-muted-foreground uppercase">Fornecedores</CardTitle>
-                <Landmark className="h-4 w-4 text-sky-500" />
+                <Landmark className="h-4 w-4 text-primary" />
               </CardHeader>
               <CardContent>
                 <div className="text-2xl font-bold text-foreground">{stats.fornecedoresSorted.length}</div>
@@ -191,7 +191,7 @@ function RelatoriosFiscais() {
             <Card className="border-muted bg-card/60 backdrop-blur-sm shadow-panel">
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                 <CardTitle className="text-xs font-semibold text-muted-foreground uppercase">Notas Importadas</CardTitle>
-                <FileText className="h-4 w-4 text-emerald-500" />
+                <FileText className="h-4 w-4 text-primary" />
               </CardHeader>
               <CardContent>
                 <div className="text-2xl font-bold text-foreground">{stats.notasAutorizadas}</div>
@@ -314,7 +314,7 @@ function RelatoriosFiscais() {
                         <TableCell className="text-tabular text-muted-foreground">{n.data_emissao}</TableCell>
                         <TableCell className="text-right text-tabular font-medium text-foreground">{brl(Number(n.valor_total) || 0)}</TableCell>
                         <TableCell>
-                          <span className={`text-xs font-medium ${n.situacao === "lancada" ? "text-emerald-600" : n.situacao === "cancelada" ? "text-destructive" : "text-muted-foreground"}`}>
+                          <span className={`text-xs font-medium ${n.situacao === "lancada" ? "text-primary" : n.situacao === "cancelada" ? "text-destructive" : "text-muted-foreground"}`}>
                             {n.situacao || "—"}
                           </span>
                         </TableCell>

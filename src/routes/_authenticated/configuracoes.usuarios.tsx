@@ -297,10 +297,10 @@ function UsuariosPage() {
                       variant="secondary"
                       className={
                         m.role === "owner"
-                          ? "bg-violet-500/15 text-violet-600 dark:text-violet-400"
+                          ? "bg-primary/10 text-primary"
                           : m.role === "admin"
-                            ? "bg-sky-500/15 text-sky-600 dark:text-sky-400"
-                            : ""
+                            ? "bg-secondary text-secondary-foreground"
+                            : "bg-muted text-muted-foreground"
                       }
                     >
                       <ShieldCheck className="mr-1 h-3 w-3" />

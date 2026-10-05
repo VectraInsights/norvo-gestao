@@ -624,13 +624,13 @@ function MdfPage() {
                       {d.status === "autorizado" && (
                         <>
                           <Button variant="ghost" size="sm" title="Visualizar" onClick={() => setMdfVer(d)}>
-                            <Eye className="h-4 w-4 text-sky-600" />
+                            <Eye className="h-4 w-4 text-primary" />
                           </Button>
                           <Button variant="ghost" size="sm" title="Baixar XML" onClick={() => baixarXmlMdf(d)}>
-                            <Download className="h-4 w-4 text-amber-600" />
+                            <Download className="h-4 w-4 text-primary" />
                           </Button>
                           <Button variant="ghost" size="sm" title="Baixar PDF (DAMDFE)" onClick={() => baixarPdfMdf(d)}>
-                            <FileDown className="h-4 w-4 text-emerald-600" />
+                            <FileDown className="h-4 w-4 text-primary" />
                           </Button>
                           <Button variant="ghost" size="sm" title="Consultar SEFAZ" disabled={consultandoChave === d.chave_acesso} onClick={() => consultarMdf(d)}>
                             <Search className="h-4 w-4" />
@@ -646,13 +646,13 @@ function MdfPage() {
                       {(d.status === "encerrado" || d.status === "cancelado") && (
                         <>
                           <Button variant="ghost" size="sm" title="Visualizar" onClick={() => setMdfVer(d)}>
-                            <Eye className="h-4 w-4 text-sky-600" />
+                            <Eye className="h-4 w-4 text-primary" />
                           </Button>
                           <Button variant="ghost" size="sm" title="Baixar XML" onClick={() => baixarXmlMdf(d)}>
-                            <Download className="h-4 w-4 text-amber-600" />
+                            <Download className="h-4 w-4 text-primary" />
                           </Button>
                           <Button variant="ghost" size="sm" title="Baixar PDF (DAMDFE)" onClick={() => baixarPdfMdf(d)}>
-                            <FileDown className="h-4 w-4 text-emerald-600" />
+                            <FileDown className="h-4 w-4 text-primary" />
                           </Button>
                           <Button variant="ghost" size="sm" title="Consultar SEFAZ" disabled={consultandoChave === d.chave_acesso} onClick={() => consultarMdf(d)}>
                             <Search className="h-4 w-4" />
@@ -662,7 +662,7 @@ function MdfPage() {
                       {d.status === "rejeitado" && (
                         <>
                           <Button variant="ghost" size="sm" title="Baixar XML" onClick={() => baixarXmlMdf(d)}>
-                            <Download className="h-4 w-4 text-amber-600" />
+                            <Download className="h-4 w-4 text-primary" />
                           </Button>
                           <Button variant="ghost" size="sm" title={d.motivo_rejeicao ? `Rejeitado: ${d.motivo_rejeicao} — clique para tentar novamente` : "Tentar novamente"} onClick={() => reemitir(d)}>
                             <RotateCcw className="h-4 w-4" />
@@ -869,7 +869,7 @@ function DialogVerMdf({ d, xml, onClose, onBaixarXml, onBaixarPdf }: { d: MdfDoc
         <DialogHeader>
           <DialogTitle>
             MDF-e #{d.numero ?? "—"} <Badge variant={d.status === "autorizado" ? "default" : "secondary"} className="ml-1">{d.status}</Badge>
-            <span className="rounded bg-amber-100 px-1.5 py-0.5 text-xs font-normal text-amber-800 ml-2">Homologação (testes)</span>
+            <span className="rounded bg-amber-100 px-1.5 py-0.5 text-xs font-normal text-amber-800 ml-2 dark:bg-amber-950/30 dark:text-amber-200">Homologação (testes)</span>
           </DialogTitle>
         </DialogHeader>
         <div className="space-y-2">
@@ -892,10 +892,10 @@ function DialogVerMdf({ d, xml, onClose, onBaixarXml, onBaixarPdf }: { d: MdfDoc
                 </div>
               </div>
               <div className="grid grid-cols-2 md:grid-cols-[minmax(0,1fr)_88px_minmax(0,1fr)_88px] gap-2">
-                <div className="min-w-0"><Label className="text-xs whitespace-nowrap">Cidade Início</Label><Input className="h-6 text-[11px] bg-stone-200 dark:bg-muted" readOnly value={dd.munCarrega} /></div>
-                <div><Label className="text-xs whitespace-nowrap">UF</Label><Input className="h-6 px-1 text-[11px] bg-stone-200 dark:bg-muted" readOnly value={dd.ufIni} /></div>
-                <div className="min-w-0"><Label className="text-xs whitespace-nowrap">Cidade Encerramento</Label><Input className="h-6 text-[11px] bg-stone-200 dark:bg-muted" readOnly value={dd.munDescarrega} /></div>
-                <div><Label className="text-xs whitespace-nowrap">UF</Label><Input className="h-6 px-1 text-[11px] bg-stone-200 dark:bg-muted" readOnly value={dd.ufFim} /></div>
+                <div className="min-w-0"><Label className="text-xs whitespace-nowrap">Cidade Início</Label><Input className="h-6 text-[11px] bg-muted" readOnly value={dd.munCarrega} /></div>
+                <div><Label className="text-xs whitespace-nowrap">UF</Label><Input className="h-6 px-1 text-[11px] bg-muted" readOnly value={dd.ufIni} /></div>
+                <div className="min-w-0"><Label className="text-xs whitespace-nowrap">Cidade Encerramento</Label><Input className="h-6 text-[11px] bg-muted" readOnly value={dd.munDescarrega} /></div>
+                <div><Label className="text-xs whitespace-nowrap">UF</Label><Input className="h-6 px-1 text-[11px] bg-muted" readOnly value={dd.ufFim} /></div>
               </div>
             </div>
             <div className="border rounded-md p-2 space-y-1">
@@ -1794,7 +1794,7 @@ function DialogNovoMdf({ open, onOpenChange, empresaId, empresa, chavesIniciais,
                       <label className="flex items-center gap-1 text-[11px] cursor-pointer"><input type="radio" checked={tipoMdf === "Globalizado"} onChange={() => setTipoMdf("Globalizado")} className="h-3 w-3" /> Globalizado</label>
                     </div>
                   </div>
-                  <div><Label className="text-xs">Reboque(s)</Label><div className="flex h-6 w-fit max-w-full items-center justify-between gap-1 whitespace-nowrap rounded-md border border-input bg-stone-200 dark:bg-muted px-3 py-2 text-[11px] shadow-sm font-mono"><span className="truncate">{reboques.length ? reboques.map(p => { const v = (veiculos || []).find(x => String(x.placa || "").toUpperCase() === p); return v?.renavam ? `${p} • RENAVAM ${v.renavam}` : p; }).join(", ") : "—"}</span></div></div>
+                  <div><Label className="text-xs">Reboque(s)</Label><div className="flex h-6 w-fit max-w-full items-center justify-between gap-1 whitespace-nowrap rounded-md border border-input bg-muted px-3 py-2 text-[11px] shadow-sm font-mono"><span className="truncate">{reboques.length ? reboques.map(p => { const v = (veiculos || []).find(x => String(x.placa || "").toUpperCase() === p); return v?.renavam ? `${p} • RENAVAM ${v.renavam}` : p; }).join(", ") : "—"}</span></div></div>
                   <div><Label className="text-xs">CIOT</Label><p className="font-mono text-xs">{ciotMdf || "—"}</p></div>
                 </div>
                 <div className="space-y-1">
@@ -1804,7 +1804,7 @@ function DialogNovoMdf({ open, onOpenChange, empresaId, empresa, chavesIniciais,
                 </div>
               </div>
               <div className="grid grid-cols-2 md:grid-cols-[minmax(0,1fr)_170px_minmax(0,1fr)_170px] gap-2">
-                <div className="min-w-0"><Label className="text-xs whitespace-nowrap">Cidade Início</Label><Input className="h-6 text-[11px] bg-stone-200 dark:bg-muted" readOnly value={cidadeIniDerivada} /></div>
+                <div className="min-w-0"><Label className="text-xs whitespace-nowrap">Cidade Início</Label><Input className="h-6 text-[11px] bg-muted" readOnly value={cidadeIniDerivada} /></div>
                 <div><Label className="text-xs whitespace-nowrap" title="UF de Início">UF Início</Label>
                   <Select value={ufCarregamento} onValueChange={setUfCarregamento}>
                     <SelectTrigger className="h-6 px-1 text-[11px] font-mono"><SelectValue placeholder="UF" /></SelectTrigger>
@@ -1816,7 +1816,7 @@ function DialogNovoMdf({ open, onOpenChange, empresaId, empresa, chavesIniciais,
                     <SelectTrigger className="h-6 text-[11px]"><SelectValue /></SelectTrigger>
                     <SelectContent>{cidadesFimOptions.map(c => (<SelectItem key={c} value={c}>{c}</SelectItem>))}</SelectContent>
                   </Select>
-                ) : (<Input className="h-6 text-[11px] bg-stone-200 dark:bg-muted" readOnly value={cidadeFimDerivada} />)}</div>
+                ) : (<Input className="h-6 text-[11px] bg-muted" readOnly value={cidadeFimDerivada} />)}</div>
                 <div><Label className="text-xs whitespace-nowrap" title="UF de Encerramento">UF Encerramento</Label>
                   <Select value={ufDescarregamento} onValueChange={setUfDescarregamento}>
                     <SelectTrigger className="h-6 px-1 text-[11px] font-mono"><SelectValue placeholder="UF" /></SelectTrigger>
@@ -1866,7 +1866,7 @@ function DialogNovoMdf({ open, onOpenChange, empresaId, empresa, chavesIniciais,
             <div className="p-2">
             {gruposMdf.length > 1 && (
               <div className="mb-2 rounded border border-amber-500/50 bg-amber-500/10 px-2 py-1.5">
-                <div className="text-[11px] font-semibold text-amber-700">
+                <div className="text-[11px] font-semibold text-amber-700 dark:text-amber-400">
                   Seleção mistura motorista/UF — ao emitir, o sistema gera 1 rascunho por grupo:
                 </div>
                 <div className="mt-1 flex flex-wrap gap-1.5">

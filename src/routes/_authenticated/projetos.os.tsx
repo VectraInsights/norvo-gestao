@@ -92,12 +92,12 @@ const STATUS_LABEL: Record<string, string> = {
   faturada: "Faturada",
 };
 const STATUS_COLOR: Record<string, string> = {
-  aberta: "bg-slate-500/10 text-slate-600 border-slate-500/20",
-  em_execucao: "bg-blue-500/10 text-blue-600 border-blue-500/20",
-  aguardando: "bg-amber-500/10 text-amber-600 border-amber-500/20",
-  concluida: "bg-emerald-500/10 text-emerald-600 border-emerald-500/20",
-  cancelada: "bg-rose-500/10 text-rose-600 border-rose-500/20",
-  faturada: "bg-violet-500/10 text-violet-600 border-violet-500/20",
+  aberta: "bg-primary/10 text-primary border-primary/20",
+  em_execucao: "bg-primary/10 text-primary border-primary/20",
+  aguardando: "bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/20",
+  concluida: "bg-success/10 text-success border-success/20",
+  cancelada: "bg-destructive/10 text-destructive border-destructive/20",
+  faturada: "bg-success/10 text-success border-success/20",
 };
 const PRIO_LABEL: Record<string, string> = {
   baixa: "Baixa",
@@ -106,10 +106,10 @@ const PRIO_LABEL: Record<string, string> = {
   urgente: "Urgente",
 };
 const PRIO_COLOR: Record<string, string> = {
-  baixa: "text-slate-500",
-  media: "text-blue-500",
-  alta: "text-amber-500",
-  urgente: "text-rose-600 font-semibold",
+  baixa: "text-muted-foreground",
+  media: "text-primary",
+  alta: "text-amber-600 dark:text-amber-400",
+  urgente: "text-destructive font-semibold",
 };
 
 function OSPage() {

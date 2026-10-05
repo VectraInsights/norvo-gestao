@@ -1534,7 +1534,7 @@ function ColaboradoresPage() {
                 <DialogHeader className="shrink-0">
                   <div className="flex items-center justify-between gap-2 pr-8">
                     <DialogTitle>
-                      <span className="border-l-4 border-pink-500 pl-3">
+                      <span className="border-l-4 border-primary pl-3">
                         {editing ? "Editar colaborador" : "Novo colaborador"}
                       </span>
                     </DialogTitle>
@@ -1969,7 +1969,7 @@ function ColaboradoresPage() {
                           (c.status === "ativo"
                             ? "bg-primary/15 text-primary"
                             : c.status === "suspenso"
-                              ? "bg-amber-500/15 text-amber-700"
+                              ? "bg-amber-500/15 text-amber-700 dark:text-amber-400"
                               : "bg-muted text-muted-foreground")
                         }
                       >

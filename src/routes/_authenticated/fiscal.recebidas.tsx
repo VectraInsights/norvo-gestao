@@ -1818,10 +1818,10 @@ function NotasRecebidas() {
                   </div>
                 </div>
 
-                <div className="rounded-lg border border-sky-500/20 bg-sky-500/5 p-4">
+                <div className="rounded-lg border border-primary/20 bg-primary/5 p-4">
                   <div className="flex flex-wrap items-center justify-between gap-2 mb-2">
                     <div className="flex items-center gap-2">
-                      <Archive className="h-5 w-5 text-sky-500 shrink-0" />
+                      <Archive className="h-5 w-5 text-primary shrink-0" />
                       <h4 className="text-sm font-semibold text-foreground">Parcelas do Contas a Pagar</h4>
                     </div>
                     <div className="flex items-center gap-2">
@@ -1871,15 +1871,15 @@ function NotasRecebidas() {
                       Nenhuma parcela. Adicione parcelas manualmente ou deixe vazio para gerar 1 título com vencimento em 30 dias.
                     </p>
                   ) : (
-                    <div className="rounded-md border border-sky-500/20 bg-background overflow-hidden">
-                      <div className="hidden md:grid grid-cols-[64px_150px_140px_1fr_36px] gap-2 border-b border-sky-500/10 bg-muted/40 px-3 py-1.5 text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
+                    <div className="rounded-md border border-primary/20 bg-background overflow-hidden">
+                      <div className="hidden md:grid grid-cols-[64px_150px_140px_1fr_36px] gap-2 border-b border-primary/10 bg-muted/40 px-3 py-1.5 text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
                         <span>Nº</span>
                         <span>Vencimento</span>
                         <span>Valor</span>
                         <span>Forma</span>
                         <span />
                       </div>
-                      <div className="divide-y divide-sky-500/10">
+                      <div className="divide-y divide-primary/10">
                         {importResults.parcelas.map((p, i) => (
                           <div key={i} className="grid grid-cols-2 md:grid-cols-[64px_150px_140px_1fr_36px] gap-2 px-3 py-2 items-center">
                             <Input
@@ -1950,7 +1950,7 @@ function NotasRecebidas() {
                           </div>
                         ))}
                       </div>
-                      <div className="flex justify-end border-t border-sky-500/10 bg-muted/30 px-3 py-1.5">
+                      <div className="flex justify-end border-t border-primary/10 bg-muted/30 px-3 py-1.5">
                         <span className="text-xs text-muted-foreground">
                           Total parcelas: <span className="font-semibold text-foreground">{brl(importResults.parcelas.reduce((acc, p) => acc + p.valor, 0))}</span>
                           {importResults.parcelas.reduce((acc, p) => acc + p.valor, 0) !== importResults.total && (
@@ -1966,10 +1966,10 @@ function NotasRecebidas() {
 
                 <div className="flex justify-end gap-2 pt-2">
                   <Button variant="outline" disabled={isSaving} onClick={() => { setImportResults(null); setFilaXml([]); }}>Cancelar</Button>
-                  <Button variant="outline" disabled={isSaving} onClick={handleIgnorarNota} className="text-amber-700 hover:bg-amber-500/10">
+                  <Button variant="outline" disabled={isSaving} onClick={handleIgnorarNota} className="text-amber-700 hover:bg-amber-500/10 dark:text-amber-400">
                     Ignorar Nota
                   </Button>
-                  <Button onClick={handleConfirmarXmlUpload} disabled={isSaving} className="bg-emerald-600 hover:bg-emerald-700 text-white">
+                  <Button onClick={handleConfirmarXmlUpload} disabled={isSaving} className="bg-primary hover:bg-primary/90 text-white">
                     {isSaving ? (
                       <>
                         <RefreshCw className="mr-2 h-4 w-4 animate-spin" />
@@ -2261,7 +2261,7 @@ function NotasRecebidas() {
                   <Button variant="outline" onClick={() => setNotaDetalhe(null)}>
                     Cancelar
                   </Button>
-                  <Button onClick={notaDetalhe.id ? handleAlterarNota : handleLancarNota} disabled={isSaving} className={notaDetalhe.id ? "bg-amber-600 hover:bg-amber-700 text-white" : ""}>
+                  <Button onClick={notaDetalhe.id ? handleAlterarNota : handleLancarNota} disabled={isSaving} className={notaDetalhe.id ? "bg-primary hover:bg-primary/90 text-white" : ""}>
                     {isSaving ? (
                       <><RefreshCw className="mr-2 h-4 w-4 animate-spin" /> {notaDetalhe.id ? "Salvando..." : "Lançando..."}</>
                     ) : notaDetalhe.id ? (

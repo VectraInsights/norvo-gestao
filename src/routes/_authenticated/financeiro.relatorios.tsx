@@ -136,7 +136,7 @@ function RelatoriosPage() {
       <div className="mb-6 grid gap-3 sm:grid-cols-3">
         <Card className="p-4 shadow-panel">
           <p className="text-xs uppercase tracking-wide text-muted-foreground">A receber em aberto</p>
-          <p className="mt-1 text-2xl font-semibold text-emerald-600">{brl(rel.abertoReceber)}</p>
+          <p className="mt-1 text-2xl font-semibold text-success">{brl(rel.abertoReceber)}</p>
         </Card>
         <Card className="p-4 shadow-panel">
           <p className="text-xs uppercase tracking-wide text-muted-foreground">A pagar em aberto</p>

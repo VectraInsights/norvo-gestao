@@ -691,12 +691,12 @@ function FolhaPage() {
                     <span
                       className={`rounded-md px-2 py-0.5 text-xs ${
                         f.status === "paga"
-                          ? "bg-emerald-500/10 text-emerald-600"
+                          ? "bg-success/10 text-success"
                           : f.status === "cancelada"
-                            ? "bg-rose-500/10 text-rose-600"
+                            ? "bg-destructive/10 text-destructive"
                             : f.status === "lançada"
-                              ? "bg-sky-500/10 text-sky-600"
-                              : "bg-amber-500/10 text-amber-600"
+                              ? "bg-primary/10 text-primary"
+                              : "bg-amber-500/10 text-amber-600 dark:text-amber-400"
                       }`}
                     >
                       {f.status}

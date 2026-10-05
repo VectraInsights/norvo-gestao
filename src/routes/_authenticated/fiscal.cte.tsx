@@ -5499,7 +5499,7 @@ function CtePage() {
     !viewDoc ? (
       <span
         title={ok ? undefined : `Falta: ${falta.join("; ")}`}
-        className={`mr-1 h-1.5 w-1.5 rounded-full ${ok ? "bg-green-500" : "bg-red-500"}`}
+        className={`mr-1 h-1.5 w-1.5 rounded-full ${ok ? "bg-success" : "bg-destructive"}`}
       />
     ) : null;
   // CT-es autorizados compatíveis com o percurso atual (complemento/substituição)
@@ -5887,7 +5887,7 @@ function CtePage() {
                               <Button
                                 size="icon"
                                 variant="ghost"
-                                className="h-7 w-7 text-sky-600"
+                                className="h-7 w-7 text-primary"
                                 onClick={() => visualizarPdf(d)}
                                 title="Visualizar DACTE"
                               >
@@ -5896,7 +5896,7 @@ function CtePage() {
                               <Button
                                 size="icon"
                                 variant="ghost"
-                                className="h-7 w-7 text-emerald-600"
+                                className="h-7 w-7 text-primary"
                                 onClick={() => {
                                   setCceDoc(d);
                                   setCceTexto("");
@@ -5911,7 +5911,7 @@ function CtePage() {
                             <Button
                               size="icon"
                               variant="ghost"
-                              className="h-7 w-7 text-sky-600"
+                              className="h-7 w-7 text-primary"
                               onClick={() => downloadXml(d)}
                               title="Baixar XML rejeitado (para diagnóstico)"
                             >
@@ -5954,7 +5954,7 @@ function CtePage() {
                         <Button
                           size="icon"
                           variant="ghost"
-                          className="h-7 w-7 text-emerald-600"
+                          className="h-7 w-7 text-primary"
                           onClick={() => visualizarDoc(d)}
                           title="Ver dados e status"
                         >
@@ -5965,7 +5965,7 @@ function CtePage() {
                         <Button
                           size="icon"
                           variant="ghost"
-                          className="h-7 w-7 text-violet-600"
+                          className="h-7 w-7 text-primary"
                           onClick={() => substituirCte(d)}
                           title="Emitir CT-e de substituição"
                         >
@@ -5976,7 +5976,7 @@ function CtePage() {
                         <Button
                           size="icon"
                           variant="ghost"
-                          className="h-7 w-7 text-emerald-700"
+                          className="h-7 w-7 text-primary"
                           onClick={() => complementarCte(d)}
                           title="Emitir CT-e complementar"
                           aria-label="Emitir CT-e complementar"
@@ -6198,7 +6198,7 @@ function CtePage() {
   };
   return (
     <div className="px-2 pb-2 pt-1 h-[calc(100dvh-88px)] sm:h-[calc(100dvh-104px)] lg:h-[calc(100dvh-120px)] min-h-[500px] flex flex-col gap-2">
-      <div className="border-l-4 border-blue-500 pl-4 py-0.5 shrink-0">
+      <div className="border-l-4 border-primary pl-4 py-0.5 shrink-0">
         <h1 className="text-display text-2xl leading-tight md:text-3xl">CT-e</h1>
       </div>
 
@@ -6438,7 +6438,7 @@ function CtePage() {
                           mercadoriasSorted.map((m) => (
                             <TableRow
                               key={m.chave}
-                              className={"text-xs" + (!nfTemPercurso(m) ? " text-red-600" : "")}
+                              className={"text-xs" + (!nfTemPercurso(m) ? " text-destructive" : "")}
                               title={!nfTemPercurso(m) ? "Sem percurso cadastrado" : undefined}
                               data-selected={selecionadas.has(m.chave)}
                             >
@@ -7129,7 +7129,7 @@ function CtePage() {
                           {lista.map((v: any, i: number) => {
                             const sit = Number(v.SituacaoVeiculoFrotaTransportador ?? v.situacao);
                             return (
-                              <div key={i} className={sit === 1 ? "text-green-700 font-semibold" : "text-destructive font-semibold"}>
+                              <div key={i} className={sit === 1 ? "text-success font-semibold" : "text-destructive font-semibold"}>
                                 {String(v.PlacaVeiculo ?? v.placa ?? "?")} → {sit === 1 ? "pertence à frota" : "NÃO pertence à frota"}
                               </div>
                             );
@@ -7601,9 +7601,9 @@ function CtePage() {
             <div
               className={`mt-2 shrink-0 rounded-md border px-3 py-1.5 text-xs font-semibold ${
                 viewDoc.status === "autorizado"
-                  ? "border-green-300 bg-green-50 text-green-800 dark:border-green-800 dark:bg-green-950/40 dark:text-green-200"
+                  ? "border-success/30 bg-success/10 text-success dark:border-success dark:bg-success/20 dark:text-success"
                   : viewDoc.status === "rejeitado"
-                    ? "border-red-300 bg-red-50 text-red-800 dark:border-red-800 dark:bg-red-950/40 dark:text-red-200"
+                    ? "border-destructive/30 bg-destructive/10 text-destructive dark:border-destructive dark:bg-destructive/20 dark:text-destructive"
                     : "border-border bg-muted/40 text-muted-foreground"
               }`}
             >
@@ -8054,8 +8054,8 @@ function CtePage() {
                       {/* Remetente */}
                       <Card className="p-3">
                         <div className="bg-primary/8 border-b border-primary/20 -m-3 mb-2 px-2 py-1 flex items-center gap-2">
-                          <div className="h-6 w-6 rounded bg-emerald-500/10 grid place-items-center">
-                            <UploadCloud className="h-3.5 w-3.5 text-emerald-600" />
+                          <div className="h-6 w-6 rounded bg-primary/10 grid place-items-center">
+                            <UploadCloud className="h-3.5 w-3.5 text-primary" />
                           </div>
                           <h5 className="text-[10px] font-semibold uppercase tracking-wide text-primary/80">
                             Remetente
@@ -8093,8 +8093,8 @@ function CtePage() {
                       {/* Destinatário */}
                       <Card className="p-3">
                         <div className="bg-primary/8 border-b border-primary/20 -m-3 mb-2 px-2 py-1 flex items-center gap-2">
-                          <div className="h-6 w-6 rounded bg-sky-500/10 grid place-items-center">
-                            <Package className="h-3.5 w-3.5 text-sky-600" />
+                          <div className="h-6 w-6 rounded bg-primary/10 grid place-items-center">
+                            <Package className="h-3.5 w-3.5 text-primary" />
                           </div>
                           <h5 className="text-[10px] font-semibold uppercase tracking-wide text-primary/80">
                             Destinatário
@@ -8267,8 +8267,8 @@ function CtePage() {
                 {/* Redespacho */}
                 <Card className="p-3">
                   <div className="bg-primary/8 border-b border-primary/20 -m-3 mb-2 px-2 py-1 flex items-center gap-2">
-                    <div className="h-6 w-6 rounded bg-violet-500/10 grid place-items-center">
-                      <Truck className="h-3.5 w-3.5 text-violet-600" />
+                    <div className="h-6 w-6 rounded bg-primary/10 grid place-items-center">
+                      <Truck className="h-3.5 w-3.5 text-primary" />
                     </div>
                     <h5 className="text-[10px] font-semibold uppercase tracking-wide text-primary/80">
                       Redespacho

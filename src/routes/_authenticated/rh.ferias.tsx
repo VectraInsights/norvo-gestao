@@ -133,15 +133,15 @@ const SIT_LABEL: Record<SitKey, string> = {
 const SIT_BADGE: Record<SitKey, string> = {
   sem_admissao: "bg-amber-500/15 text-amber-600 dark:text-amber-400",
   vencida: "bg-destructive/15 text-destructive",
-  vencendo: "bg-sky-500/15 text-sky-600 dark:text-sky-400",
-  em_dia: "bg-emerald-500/15 text-emerald-600 dark:text-emerald-400",
+  vencendo: "bg-primary/10 text-primary",
+  em_dia: "bg-success/10 text-success",
 };
 const CONC_STATUS: Record<string, string> = {
   agendada: "Agendada", em_gozo: "Em gozo", concluida: "Concluída", cancelada: "Cancelada",
 };
 const CONC_BADGE: Record<string, string> = {
-  agendada: "bg-sky-500/15 text-sky-600 dark:text-sky-400",
-  em_gozo: "bg-emerald-500/15 text-emerald-600 dark:text-emerald-400",
+  agendada: "bg-primary/10 text-primary",
+  em_gozo: "bg-success/10 text-success",
   concluida: "bg-muted text-muted-foreground",
   cancelada: "bg-destructive/10 text-destructive",
 };
@@ -338,10 +338,10 @@ function FeriasPage() {
         </Card>
       )}
       {alertas.vencendo.length > 0 && (
-        <Card className="flex items-start gap-3 border-sky-500/40 bg-sky-500/5 p-4">
-          <CalendarClock className="h-5 w-5 shrink-0 text-sky-600 dark:text-sky-400" />
+        <Card className="flex items-start gap-3 border-primary/40 bg-primary/5 p-4">
+          <CalendarClock className="h-5 w-5 shrink-0 text-primary" />
           <div className="text-sm">
-            <p className="font-medium text-sky-600 dark:text-sky-400">
+            <p className="font-medium text-primary">
               {alertas.vencendo.length} colaborador(es) com prazo vencendo em até 60 dias
             </p>
             <p className="text-muted-foreground">
@@ -439,7 +439,7 @@ function FeriasPage() {
                                               limite {dateBR(ciclo.limite)}
                                             </span>
                                             {vencido && <Badge variant="secondary" className="bg-destructive/10 text-destructive">vencido</Badge>}
-                                            {venceBreve && <Badge variant="secondary" className="bg-sky-500/15 text-sky-600">vence em breve</Badge>}
+                                            {venceBreve && <Badge variant="secondary" className="bg-primary/10 text-primary">vence em breve</Badge>}
                                           </div>
                                           <div>
                                             {saldo > 0 && (

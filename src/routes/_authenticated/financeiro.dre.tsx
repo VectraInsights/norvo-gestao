@@ -126,7 +126,7 @@ function DrePage() {
           <div className="mb-4 grid gap-3 sm:grid-cols-3">
             <Card className="p-4 shadow-panel">
               <p className="text-xs uppercase tracking-wide text-muted-foreground">Receitas</p>
-              <p className="mt-1 text-2xl font-semibold text-emerald-600">{brl(total(linhas.totRec))}</p>
+              <p className="mt-1 text-2xl font-semibold text-success">{brl(total(linhas.totRec))}</p>
             </Card>
             <Card className="p-4 shadow-panel">
               <p className="text-xs uppercase tracking-wide text-muted-foreground">Despesas</p>

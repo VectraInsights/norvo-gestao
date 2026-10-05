@@ -592,7 +592,7 @@ export function AppShell({ children }: { children: ReactNode }) {
                               className={cn(
                                 "shrink-0 rounded-md p-2 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sidebar-ring",
                                 fav
-                                  ? "text-amber-400"
+                                  ? "text-amber-600 dark:text-amber-400"
                                   : "text-sidebar-foreground/40 hover:text-sidebar-foreground",
                               )}
                             >

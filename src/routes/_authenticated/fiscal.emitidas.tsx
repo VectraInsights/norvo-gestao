@@ -588,7 +588,7 @@ function NotasEmitidas() {
         <Card className="mb-6 border-muted bg-card/60 shadow-panel backdrop-blur-sm">
           <CardContent className="flex flex-wrap items-center gap-x-8 gap-y-3 p-4 text-sm">
             <div className="flex items-center gap-1.5">
-              <span className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse"></span>
+              <span className="h-2 w-2 rounded-full bg-primary animate-pulse"></span>
               <span className="text-muted-foreground">Ambiente:</span>
               <strong className="capitalize text-foreground font-medium">
                 Homologação (testes)
@@ -737,7 +737,7 @@ function NotasEmitidas() {
                 }
               }}
             />
-            <p className={`text-xs ${motivoCancel.trim().length < 15 ? "text-muted-foreground" : "text-emerald-600"}`}>
+            <p className={`text-xs ${motivoCancel.trim().length < 15 ? "text-muted-foreground" : "text-primary"}`}>
               {motivoCancel.trim().length}/15 caracteres mínimos
             </p>
           </div>
@@ -800,19 +800,19 @@ function NotasEmitidas() {
                     switch (tipo) {
                       case "nfe":
                         return (
-                          <span className="rounded bg-sky-500/10 text-sky-600 dark:text-sky-400 px-1.5 py-0.5 text-[11px] font-bold uppercase">
+                          <span className="rounded bg-primary/10 text-primary px-1.5 py-0.5 text-[11px] font-bold uppercase">
                             NF-e
                           </span>
                         );
                       case "nfse":
                         return (
-                          <span className="rounded bg-amber-500/10 text-amber-600 dark:text-amber-400 px-1.5 py-0.5 text-[11px] font-bold uppercase">
+                          <span className="rounded bg-primary/10 text-primary px-1.5 py-0.5 text-[11px] font-bold uppercase">
                             NFS-e
                           </span>
                         );
                       case "nfce":
                         return (
-                          <span className="rounded bg-purple-500/10 text-purple-600 dark:text-purple-400 px-1.5 py-0.5 text-[11px] font-bold uppercase">
+                          <span className="rounded bg-primary/10 text-primary px-1.5 py-0.5 text-[11px] font-bold uppercase">
                             NFC-e
                           </span>
                         );
