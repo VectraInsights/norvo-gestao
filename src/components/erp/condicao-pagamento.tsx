@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -49,13 +49,18 @@ export function CondicaoPagamento({
   formas: readonly string[] | string[];
   emptyHint?: string;
 }) {
-  const [nx, setNx] = useState("1");
+  const [nx, setNx] = useState(() => String(Math.min(12, Math.max(1, parcelas.length || 1))));
   const [primeiro, setPrimeiro] = useState(
     parcelas[0]?.dataVencimento || new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split("T")[0],
   );
   const [intervalo, setIntervalo] = useState("30");
   const [formaTop, setFormaTop] = useState("Boleto");
   const [contaTop, setContaTop] = useState("__none__");
+
+  // Parcelamento acompanha a quantidade real de linhas (XML, adicionar/remover)
+  useEffect(() => {
+    setNx(String(Math.min(12, Math.max(1, parcelas.length || 1))));
+  }, [parcelas.length]);
 
   const gerar = (nStr: string, prim: string, intervStr: string, forma: string, conta: string) => {
     const n = Math.min(48, Math.max(1, parseInt(nStr, 10) || 1));

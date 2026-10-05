@@ -4469,6 +4469,12 @@ Espelhado na Vercel.
   alterados; parcelamento lá seria novo comportamento.
 - Validado com `tsc` zerado e `npm run build` OK.
 
+## Parcelamento acompanha as linhas (05/10)
+
+- `CondicaoPagamento`: seletor Nx nasce da quantidade real de parcelas e se
+  ajusta ao adicionar/remover (antes fixo em 1x com 3 linhas do XML).
+- Validado com `tsc` zerado e `npm run build` OK.
+
 ## Tema padronizado: tudo no verde, sem cor por módulo (05/10)
 
 - Removido o sistema de cor por módulo (`MODULE_COLORS` no PageHeader vira
