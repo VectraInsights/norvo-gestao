@@ -4585,3 +4585,9 @@ Espelhado na Vercel.
   dentro da conta — item removido do menu Financeiro.
 - Combobox com ícone por opção e ação de rodapé.
 - Validado com `tsc` (só baseline) e `npm run build` OK.
+
+## Logo Bradesco atualizada (05/10)
+
+- `public/bancos/bradesco.png` trocada pela nova marca (512x512, padrão
+  das demais).
+- Validado com `npm run build` OK.
