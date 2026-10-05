@@ -59,9 +59,9 @@ export function Combobox({
           disabled={disabled}
           className={cn("w-full justify-between font-normal", className)}
         >
-          <span className={cn("flex min-w-0 items-center gap-2 truncate", !sel && "text-muted-foreground")}>
+          <span className={cn("flex min-w-0 items-center gap-2 truncate text-[15px]", !sel && "text-muted-foreground")}>
             {sel?.icone && (
-              <img src={sel.icone} alt="" className="h-5 w-5 rounded object-contain bg-white ring-1 ring-border shrink-0" />
+              <img src={sel.icone} alt="" className="h-8 w-8 rounded object-contain bg-white ring-1 ring-border shrink-0" />
             )}
             <span className="truncate">{sel ? rotulo(sel) : placeholder}</span>
           </span>
@@ -87,9 +87,9 @@ export function Combobox({
                 >
                   <Check className={cn("mr-2 h-4 w-4 shrink-0", value === o.value ? "opacity-100" : "opacity-0")} />
                   {o.icone && (
-                    <img src={o.icone} alt="" className="mr-2 h-5 w-5 rounded object-contain bg-white ring-1 ring-border shrink-0" />
+                    <img src={o.icone} alt="" className="mr-2 h-8 w-8 rounded object-contain bg-white ring-1 ring-border shrink-0" />
                   )}
-                  <span className="min-w-0 flex-1 truncate whitespace-nowrap">{rotulo(o)}</span>
+                  <span className="min-w-0 flex-1 truncate whitespace-nowrap text-[15px]">{rotulo(o)}</span>
                 </CommandItem>
               ))}
             </CommandGroup>

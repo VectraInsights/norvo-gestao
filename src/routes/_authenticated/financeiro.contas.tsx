@@ -1069,7 +1069,7 @@ function ContasFinanceiras() {
               {filtrados.map((c) => {
                 const pend = pendPorConta.get(c.id) ?? 0;
                 return (
-                <TableRow key={c.id} className="cursor-pointer text-[15px]" onClick={() => { setDetalheTab("movs"); setDetalheId(c.id); }}>
+                <TableRow key={c.id} className="cursor-pointer text-[15px]" onClick={() => { setDetalheTab("pendentes"); setDetalheId(c.id); }}>
                   <TableCell>
                     {(() => {
                       const b = detectBancoByNome(c.banco);
