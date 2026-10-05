@@ -23,7 +23,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import { Banknote, Plus, Upload, Loader2, Link2, Check, Landmark, Wallet, CreditCard, TrendingUp, PiggyBank, DollarSign, Database, Coins, Trash2, Search, X, ChevronLeft, ChevronRight, ChevronDown, Pencil } from "lucide-react";
+import { Banknote, Plus, Upload, Loader2, Link2, Check, Landmark, Wallet, CreditCard, TrendingUp, PiggyBank, DollarSign, Database, Coins, Trash2, Search, X, ChevronLeft, ChevronRight, ChevronDown, Pencil, Sparkles } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
 import { DateInput } from "@/components/erp/date-input";
 import { Combobox } from "@/components/erp/combobox";
@@ -1298,7 +1298,7 @@ function ReconcileDialog({ contaId, conta, empresaId, autoConciliar, importing, 
     queryKey: ["lanc-abertos", empresaId] as const,
     queryFn: async () => {
       const { data, error } = await supabase.from("lancamentos_financeiros")
-        .select("id,descricao,valor,tipo,status,data_vencimento")
+        .select("id,descricao,valor,tipo,status,data_vencimento,conta_bancaria_id,categoria_id,contato_id,centro_custo_id")
         .eq("empresa_id", empresaId!).in("status", ["aberto", "vencido", "parcial"])
         .order("data_vencimento").limit(200);
       if (error) throw error;
@@ -1680,6 +1680,7 @@ function ReconcileDialog({ contaId, conta, empresaId, autoConciliar, importing, 
                     onSetModoBusca={setModoBusca}
                     onConciliar={(t, r) => criarEConciliar.mutate({ tx: t, r })}
                     onExcluir={(id) => excluirTx.mutate([id])}
+                    empresaId={empresaId}
                   />
                 ))}
 
@@ -1764,25 +1765,66 @@ const EMPTY_LANC: LancOpt[] = [];
 
 type Opcao = { id: string; nome: string };
 
-function BuscarLancamentoDialog({ open, onClose, tx, lancamentos, value, onConfirm }: {
+function BuscarLancamentoDialog({ open, onClose, tx, lancamentos, value, onConfirm, onNovo, empresaId, contatos, centros }: {
   open: boolean;
   onClose: () => void;
   tx: OfxRow;
   lancamentos: LancOpt[];
   value: string;
   onConfirm: (id: string) => void;
+  onNovo: () => void;
+  empresaId: string | null;
+  contatos: { id: string; nome: string }[];
+  centros: { id: string; nome: string }[];
 }) {
   const [q, setQ] = useState("");
   const [dias, setDias] = useState("30");
+  const [contaF, setContaF] = useState("todas");
+  const [catF, setCatF] = useState("todas");
+  const [contatoF, setContatoF] = useState("todas");
+  const [centroF, setCentroF] = useState("todas");
+  const [sitF, setSitF] = useState("todas");
+  const [tipoF, setTipoF] = useState(() => (Number(tx.valor) >= 0 ? "receber" : "pagar"));
   const [sel, setSel] = useState(value);
   useEffect(() => {
-    if (open) { setSel(value); setQ(""); }
-  }, [open, value]);
+    if (open) {
+      setSel(value); setQ("");
+      setTipoF(Number(tx.valor) >= 0 ? "receber" : "pagar");
+    }
+  }, [open, value, tx.valor]);
+
+  const { data: contasBusca = [] } = useQuery({
+    enabled: open && !!empresaId,
+    queryKey: ["contas-busca", empresaId] as const,
+    queryFn: async () => {
+      const { data, error } = await supabase.from("contas_bancarias")
+        .select("id,nome").eq("empresa_id", empresaId!).order("nome").limit(200);
+      if (error) throw error;
+      return (data ?? []) as { id: string; nome: string }[];
+    },
+  });
+  const { data: catsBusca = [] } = useQuery({
+    enabled: open && !!empresaId,
+    queryKey: ["cats-busca", empresaId] as const,
+    queryFn: async () => {
+      const { data, error } = await supabase.from("categorias_financeiras")
+        .select("id,nome,tipo").eq("empresa_id", empresaId!).order("nome").limit(500);
+      if (error) throw error;
+      return (data ?? []) as { id: string; nome: string; tipo: string }[];
+    },
+  });
+  const nomeConta = (id?: string | null) => (contasBusca ?? []).find((c) => c.id === id)?.nome ?? "—";
 
   const base = new Date(`${tx.data_transacao}T00:00:00`).getTime();
   const filtrados = useMemo(() => {
     const termo = q.trim().toLowerCase();
     return (lancamentos ?? []).filter((l) => {
+      if (l.tipo !== tipoF) return false;
+      if (contaF !== "todas" && (l.conta_bancaria_id ?? "") !== contaF) return false;
+      if (catF !== "todas" && (l.categoria_id ?? "") !== catF) return false;
+      if (contatoF !== "todas" && (l.contato_id ?? "") !== contatoF) return false;
+      if (centroF !== "todas" && (l.centro_custo_id ?? "") !== centroF) return false;
+      if (sitF !== "todas" && l.status !== sitF) return false;
       if (dias !== "todos") {
         const dv = new Date(`${l.data_vencimento}T00:00:00`).getTime();
         if (Number.isNaN(dv) || Number.isNaN(base) || Math.abs(dv - base) > Number(dias) * 86400000) return false;
@@ -1792,7 +1834,9 @@ function BuscarLancamentoDialog({ open, onClose, tx, lancamentos, value, onConfi
         || String(l.valor).includes(termo.replace(",", "."))
         || (l.data_vencimento || "").includes(termo);
     }).slice(0, 100);
-  }, [lancamentos, q, dias, base]);
+  }, [lancamentos, q, dias, base, contaF, catF, contatoF, centroF, sitF, tipoF]);
+  const temFiltro = q.trim() !== "" || dias !== "30" || contaF !== "todas" || catF !== "todas" || contatoF !== "todas" || centroF !== "todas" || sitF !== "todas";
+  const limparFiltros = () => { setQ(""); setDias("30"); setContaF("todas"); setCatF("todas"); setContatoF("todas"); setCentroF("todas"); setSitF("todas"); };
 
   const escolhido = (lancamentos ?? []).find((l) => l.id === sel);
   const vBanco = Math.abs(Number(tx.valor) || 0);
@@ -1803,30 +1847,128 @@ function BuscarLancamentoDialog({ open, onClose, tx, lancamentos, value, onConfi
     <Dialog open={open} onOpenChange={(o) => { if (!o) onClose(); }}>
       <DialogContent className="flex flex-col">
         <DialogHeader className="shrink-0">
-          <DialogTitle>Escolha o lançamento para conciliar com o valor do banco</DialogTitle>
-          <DialogDescription>
-            {Number(tx.valor) >= 0 ? "Recebimento" : "Pagamento"} de {brl(vBanco)} em{" "}
-            {tx.data_transacao ? new Date(`${tx.data_transacao}T00:00:00`).toLocaleDateString("pt-BR") : "—"}
-            {" · "}{tx.memo || "—"}
-          </DialogDescription>
+          <DialogTitle>Escolha os lançamentos para conciliar com o valor do banco</DialogTitle>
         </DialogHeader>
         <div className="flex min-h-0 flex-1 flex-col gap-3 overflow-hidden">
-          <div className="flex shrink-0 flex-wrap items-end gap-2">
-            <div className="relative max-w-xs flex-1">
-              <Search className="pointer-events-none absolute left-2 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
-              <Input className="pl-8 h-8 text-[13px]" placeholder="Descrição, valor ou data" value={q} onChange={(e) => setQ(e.target.value)} />
+          <div className="flex shrink-0 items-center gap-3 rounded-lg border bg-primary/[0.04] p-3">
+            <div className="grid h-11 w-11 shrink-0 place-items-center rounded-md bg-primary text-lg font-bold text-primary-foreground">B</div>
+            <div className="min-w-0">
+              <div className="text-sm font-semibold">
+                {Number(tx.valor) >= 0 ? "Recebimento" : "Pagamento"} importado de {brl(vBanco)}
+              </div>
+              <div className="text-xs text-muted-foreground">
+                Data do lançamento no extrato: <strong className="text-foreground">{tx.data_transacao ? new Date(`${tx.data_transacao}T00:00:00`).toLocaleDateString("pt-BR") : "—"}</strong>
+              </div>
+              <div className="truncate text-xs text-muted-foreground">
+                Descrição: <strong className="text-foreground">{tx.memo || "—"}</strong>
+              </div>
             </div>
-            <Select value={dias} onValueChange={setDias}>
-              <SelectTrigger className="h-8 text-xs w-[170px]"><SelectValue /></SelectTrigger>
-              <SelectContent>
-                <SelectItem value="7">Vencimento ± 7 dias</SelectItem>
-                <SelectItem value="15">Vencimento ± 15 dias</SelectItem>
-                <SelectItem value="30">Vencimento ± 30 dias</SelectItem>
-                <SelectItem value="90">Vencimento ± 90 dias</SelectItem>
-                <SelectItem value="todos">Todos os vencimentos</SelectItem>
-              </SelectContent>
-            </Select>
           </div>
+          <div className="grid shrink-0 grid-cols-2 gap-2 md:grid-cols-6">
+            <div>
+              <span className="text-xs text-muted-foreground">Vencimento ± dias</span>
+              <Select value={dias} onValueChange={setDias}>
+                <SelectTrigger className="h-8 text-xs w-full"><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="7">7 dias</SelectItem>
+                  <SelectItem value="15">15 dias</SelectItem>
+                  <SelectItem value="30">30 dias</SelectItem>
+                  <SelectItem value="90">90 dias</SelectItem>
+                  <SelectItem value="todos">Todos</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <span className="text-xs text-muted-foreground">Pesquisar</span>
+              <div className="relative">
+                <Search className="pointer-events-none absolute left-2 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
+                <Input className="pl-8 h-8 text-[13px]" placeholder="Descrição, valor" value={q} onChange={(e) => setQ(e.target.value)} />
+              </div>
+            </div>
+            <div>
+              <span className="text-xs text-muted-foreground">Conta</span>
+              <Select value={contaF} onValueChange={setContaF}>
+                <SelectTrigger className="h-8 text-xs w-full"><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="todas">Todas</SelectItem>
+                  {(contasBusca ?? []).map((c) => (
+                    <SelectItem key={c.id} value={c.id}>{c.nome}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <span className="text-xs text-muted-foreground">Tipo</span>
+              <Select value={tipoF} onValueChange={setTipoF}>
+                <SelectTrigger className="h-8 text-xs w-full"><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="receber">Recebimentos</SelectItem>
+                  <SelectItem value="pagar">Pagamentos</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <span className="text-xs text-muted-foreground">Mais filtros</span>
+              <div className="grid grid-cols-2 gap-1">
+                <Select value={catF} onValueChange={setCatF}>
+                  <SelectTrigger className="h-8 text-xs w-full"><SelectValue placeholder="Categoria" /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="todas">Todas categorias</SelectItem>
+                    {(catsBusca ?? []).filter((c) => c.tipo === tipoF).map((c) => (
+                      <SelectItem key={c.id} value={c.id}>{c.nome}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <Select value={sitF} onValueChange={setSitF}>
+                  <SelectTrigger className="h-8 text-xs w-full"><SelectValue placeholder="Situação" /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="todas">Todas</SelectItem>
+                    <SelectItem value="aberto">Em aberto</SelectItem>
+                    <SelectItem value="vencido">Vencido</SelectItem>
+                    <SelectItem value="parcial">Parcial</SelectItem>
+                  </SelectContent>
+                </Select>
+                <Select value={contatoF} onValueChange={setContatoF}>
+                  <SelectTrigger className="h-8 text-xs w-full"><SelectValue placeholder="Cliente/Fornecedor" /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="todas">Todos</SelectItem>
+                    {(contatos ?? []).map((c) => (
+                      <SelectItem key={c.id} value={c.id}>{c.nome}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <Select value={centroF} onValueChange={setCentroF}>
+                  <SelectTrigger className="h-8 text-xs w-full"><SelectValue placeholder="Centro de custo" /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="todas">Todos</SelectItem>
+                    {(centros ?? []).map((c) => (
+                      <SelectItem key={c.id} value={c.id}>{c.nome}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+            <div>
+              <span className="text-xs text-muted-foreground">Novo</span>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="outline" size="sm" className="h-8 text-xs w-full">
+                    Novo <ChevronDown className="ml-1 h-3.5 w-3.5" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="start">
+                  <DropdownMenuItem onClick={onNovo}>Pagamento / Recebimento</DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </div>
+          </div>
+          {temFiltro && (
+            <div className="shrink-0">
+              <Button variant="ghost" size="sm" className="h-7 text-xs" onClick={limparFiltros}>
+                <Trash2 className="mr-1 h-3 w-3" />Limpar filtros
+              </Button>
+            </div>
+          )}
           <div className="min-h-0 flex-1 overflow-y-auto rounded-md border">
             {filtrados.length === 0 ? (
               <div className="p-6">
@@ -1839,6 +1981,7 @@ function BuscarLancamentoDialog({ open, onClose, tx, lancamentos, value, onConfi
                     <TableHead className="w-10" />
                     <TableHead>Vencimento</TableHead>
                     <TableHead>Descrição</TableHead>
+                    <TableHead>Conta</TableHead>
                     <TableHead>Situação</TableHead>
                     <TableHead className="text-right">Valor (R$)</TableHead>
                   </TableRow>
@@ -1853,6 +1996,7 @@ function BuscarLancamentoDialog({ open, onClose, tx, lancamentos, value, onConfi
                         {l.data_vencimento ? new Date(`${l.data_vencimento}T00:00:00`).toLocaleDateString("pt-BR") : "—"}
                       </TableCell>
                       <TableCell className="max-w-[280px] truncate">{l.descricao || "—"}</TableCell>
+                      <TableCell className="max-w-[140px] truncate text-muted-foreground">{nomeConta(l.conta_bancaria_id)}</TableCell>
                       <TableCell>
                         <span className="rounded-full bg-muted px-2 py-0.5 text-[11px] font-medium text-muted-foreground">{l.status}</span>
                       </TableCell>
@@ -1877,7 +2021,7 @@ function BuscarLancamentoDialog({ open, onClose, tx, lancamentos, value, onConfi
               <span className={`text-tabular font-bold ${dif === 0 && sel ? "text-success" : "text-amber-600 dark:text-amber-400"}`}>{brl(dif)}</span>
             </div>
             <Button variant="outline" onClick={onClose}>Cancelar</Button>
-            <Button disabled={!sel} onClick={() => onConfirm(sel)}>Selecionar</Button>
+            <Button disabled={!sel} onClick={() => onConfirm(sel)}>Conciliar</Button>
           </div>
         </div>
       </DialogContent>
@@ -1887,7 +2031,7 @@ function BuscarLancamentoDialog({ open, onClose, tx, lancamentos, value, onConfi
 
 const ReconcileRow = memo(function ReconcileRow({
   tx, r, modoBusca, selected, categorias, contatos, centros, lancamentosAbertos,
-  conciliando, excluindo, onToggleSel, onSetRow, onSetModoBusca, onConciliar, onExcluir,
+  conciliando, excluindo, onToggleSel, onSetRow, onSetModoBusca, onConciliar, onExcluir, empresaId,
 }: {
   tx: OfxRow;
   r: RowState;
@@ -1904,6 +2048,7 @@ const ReconcileRow = memo(function ReconcileRow({
   onSetModoBusca: (id: string, v: boolean) => void;
   onConciliar: (tx: OfxRow, r: RowState) => void;
   onExcluir: (id: string) => void;
+  empresaId: string | null;
 }) {
   const data = new Date(tx.data_transacao + "T00:00:00");
   const nomeContato = r.contato_id ? (contatos.find((c) => c.id === r.contato_id)?.nome ?? "—") : "Informação não recebida";
@@ -1912,6 +2057,11 @@ const ReconcileRow = memo(function ReconcileRow({
   const rotuloSel = lancSel
     ? `${format(new Date(lancSel.data_vencimento + "T00:00:00"), "dd/MM")} — ${lancSel.descricao} (${brl(Number(lancSel.valor))})`
     : "Pesquisar por valor, descrição ou data";
+  // Sugestão do sistema (mesmo valor e data): exibida logo no Novo lançamento
+  const sugestao = useMemo(() => (lancamentosAbertos ?? []).find((l) =>
+    Math.abs(Number(l.valor) - Math.abs(Number(tx.valor))) < 0.01 &&
+    l.data_vencimento === tx.data_transacao
+  ), [lancamentosAbertos, tx.valor, tx.data_transacao]);
 
   return (
     <div className="grid grid-cols-1 items-stretch gap-2 md:grid-cols-[1fr_auto_1fr]">
@@ -1954,7 +2104,7 @@ const ReconcileRow = memo(function ReconcileRow({
             <Button size="sm" variant={modoBusca ? "outline" : "default"} onClick={() => onSetModoBusca(tx.id, false)}>
               Novo lançamento
             </Button>
-            <Button size="sm" variant={modoBusca ? "default" : "outline"} onClick={() => onSetModoBusca(tx.id, true)}>
+            <Button size="sm" variant={modoBusca ? "default" : "outline"} onClick={() => { onSetModoBusca(tx.id, true); setBuscaOpen(true); }}>
               <Search className="mr-1 h-3 w-3" />Buscar lançamento
             </Button>
           </div>
@@ -1974,10 +2124,29 @@ const ReconcileRow = memo(function ReconcileRow({
                 lancamentos={lancamentosAbertos}
                 value={r.lancamento_id}
                 onConfirm={(id) => { onSetRow(tx.id, { lancamento_id: id }); setBuscaOpen(false); }}
+                onNovo={() => { onSetModoBusca(tx.id, false); setBuscaOpen(false); }}
+                empresaId={empresaId}
+                contatos={contatos}
+                centros={centros}
               />
             </div>
           ) : (
             <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+              {sugestao && !r.lancamento_id && (
+                <div className="col-span-full flex flex-wrap items-center gap-2 rounded-md border border-success/30 bg-success/10 px-3 py-2">
+                  <Sparkles className="h-4 w-4 shrink-0 text-success" />
+                  <span className="text-xs">
+                    <strong>Encontramos:</strong>{" "}
+                    {format(new Date(sugestao.data_vencimento + "T00:00:00"), "dd/MM")} — {sugestao.descricao} ({brl(Number(sugestao.valor))})
+                  </span>
+                  <Button
+                    size="sm" variant="outline" className="ml-auto h-7 text-xs"
+                    onClick={() => { onSetRow(tx.id, { lancamento_id: sugestao.id }); onSetModoBusca(tx.id, true); }}
+                  >
+                    Usar sugestão
+                  </Button>
+                </div>
+              )}
               <div className="space-y-1">
                 <Label className="text-xs">Descrição <span className="text-destructive">*</span></Label>
                 <Input value={r.descricao} onChange={(e) => onSetRow(tx.id, { descricao: e.target.value })} placeholder="Descrição" />
@@ -2004,4 +2173,4 @@ const ReconcileRow = memo(function ReconcileRow({
 
 
 
-type LancOpt = { id: string; descricao: string; valor: number; tipo: string; status: string; data_vencimento: string };
+type LancOpt = { id: string; descricao: string; valor: number; tipo: string; status: string; data_vencimento: string; conta_bancaria_id?: string | null; categoria_id?: string | null; contato_id?: string | null; centro_custo_id?: string | null };

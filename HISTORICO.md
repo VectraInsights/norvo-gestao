@@ -4626,3 +4626,12 @@ Espelhado na Vercel.
   lançamento bancário, busca, período ±dias, tabela com situação e rodapé
   com valor do banco/selecionado/diferença.
 - Validado com `tsc` (só baseline) e `npm run build` OK.
+
+## Busca de lançamento em tela cheia direta (05/10)
+
+- "Buscar lançamento" abre direto a tela cheia (resumo do banco, busca,
+  período, conta, tipo, categoria/cliente/centro/situação, tabela e rodapé
+  banco/selecionado/diferença); menu Novo volta ao formulário.
+- Sugestão do sistema (mesmo valor e data) exibida no topo do Novo
+  lançamento com botão Usar sugestão.
+- Validado com `tsc` (só baseline) e `npm run build` OK.
