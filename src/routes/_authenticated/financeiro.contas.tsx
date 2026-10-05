@@ -308,9 +308,6 @@ function ContaDetalhe({ contaId, contas, empresaId, tabInicial, onVoltar, onSele
                 <DropdownMenuItem onClick={() => onEditar(conta)}>
                   <Pencil className="mr-2 h-3.5 w-3.5" />Editar conta
                 </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => onImportar(contaId)}>
-                  <Upload className="mr-2 h-3.5 w-3.5" />Importar extrato (OFX)
-                </DropdownMenuItem>
                 <DropdownMenuItem className="text-destructive focus:text-destructive" onClick={() => onExcluir(conta)}>
                   <Trash2 className="mr-2 h-3.5 w-3.5" />Excluir conta
                 </DropdownMenuItem>
