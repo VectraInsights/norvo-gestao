@@ -143,7 +143,7 @@ async function autoConciliarConta(contaId: string, empresaId: string): Promise<n
   return ok;
 }
 
-function ContaDetalhe({ contaId, contas, empresaId, tabInicial, onVoltar, onSelecionar, onNovaConta, onEditar, onImportar, onExcluir, onAbrirConciliacao }: {
+function ContaDetalhe({ contaId, contas, empresaId, tabInicial, onVoltar, onSelecionar, onNovaConta, onEditar, onImportar, onExcluir }: {
   contaId: string;
   contas: ContaBancaria[];
   empresaId: string | null;
@@ -154,7 +154,6 @@ function ContaDetalhe({ contaId, contas, empresaId, tabInicial, onVoltar, onSele
   onEditar: (c: ContaBancaria) => void;
   onImportar: (id: string) => void;
   onExcluir: (c: ContaBancaria) => void;
-  onAbrirConciliacao: (id: string) => void;
 }) {
   const qc = useQueryClient();
   const [tab, setTab] = useState<"pendentes" | "movs">(tabInicial);
@@ -162,14 +161,12 @@ function ContaDetalhe({ contaId, contas, empresaId, tabInicial, onVoltar, onSele
     const n = new Date();
     return `${n.getFullYear()}-${String(n.getMonth() + 1).padStart(2, "0")}`;
   });
-  const [busca, setBusca] = useState("");
-  const [filtroPend, setFiltroPend] = useState<"todos" | "recebimentos" | "pagamentos">("todos");
   const [expand, setExpand] = useState<Set<string>>(new Set());
   const [conciliando, setConciliando] = useState(false);
 
   const conta = (contas ?? []).find((c) => c.id === contaId) ?? null;
 
-  const { data: ofxPend, isLoading: loadingPend } = useQuery({
+  const { data: ofxPend } = useQuery({
     enabled: !!contaId,
     queryKey: ["ofx-pend", contaId] as const,
     queryFn: async () => {
@@ -211,17 +208,6 @@ function ContaDetalhe({ contaId, contas, empresaId, tabInicial, onVoltar, onSele
     return s.charAt(0).toUpperCase() + s.slice(1);
   })();
 
-  const pendFiltrados = useMemo(() => {
-    const q = busca.trim().toLowerCase();
-    return (ofxPend ?? []).filter((t) => {
-      if (filtroPend === "recebimentos" && !(Number(t.valor) > 0)) return false;
-      if (filtroPend === "pagamentos" && !(Number(t.valor) < 0)) return false;
-      if (!q) return true;
-      return (t.memo || "").toLowerCase().includes(q) || String(t.valor).includes(q);
-    });
-  }, [ofxPend, busca, filtroPend]);
-  const nRec = (ofxPend ?? []).filter((t) => Number(t.valor) > 0).length;
-  const nPag = (ofxPend ?? []).filter((t) => Number(t.valor) < 0).length;
   const valorPendente = (ofxPend ?? []).reduce((a, t) => a + Math.abs(Number(t.valor) || 0), 0);
 
   const gruposDia = useMemo(() => {
@@ -346,63 +332,25 @@ function ContaDetalhe({ contaId, contas, empresaId, tabInicial, onVoltar, onSele
         </TabsList>
 
         <TabsContent value="pendentes" className="space-y-3">
-          <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
-            <div className="relative max-w-xs flex-1">
-              <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-              <Input className="pl-8 h-9" placeholder="Descrição ou valor" value={busca} onChange={(e) => setBusca(e.target.value)} />
-            </div>
-            <div className="ml-auto flex flex-wrap gap-2">
-              <Button variant="outline" size="sm" onClick={() => onImportar(contaId)}>
-                <Upload className="mr-1 h-3.5 w-3.5" />Importar OFX
-              </Button>
-              <Button variant="outline" size="sm" disabled={conciliando} onClick={() => void conciliarAuto()}>
-                {conciliando ? <Loader2 className="mr-1 h-3.5 w-3.5 animate-spin" /> : <Link2 className="mr-1 h-3.5 w-3.5" />}
-                Conciliar automaticamente
-              </Button>
-              <Button size="sm" onClick={() => onAbrirConciliacao(contaId)}>Abrir conciliação</Button>
-            </div>
+          <div className="flex flex-wrap gap-2">
+            <Button variant="outline" size="sm" onClick={() => onImportar(contaId)}>
+              <Upload className="mr-1 h-3.5 w-3.5" />Importar OFX
+            </Button>
+            <Button variant="outline" size="sm" disabled={conciliando} onClick={() => void conciliarAuto()}>
+              {conciliando ? <Loader2 className="mr-1 h-3.5 w-3.5 animate-spin" /> : <Link2 className="mr-1 h-3.5 w-3.5" />}
+              Conciliar automaticamente
+            </Button>
           </div>
-          <Card className="overflow-hidden bg-primary/[0.04]">
-            <div className="grid grid-cols-3 divide-x border-b">
-              {[
-                { k: "todos" as const, label: "Todos", n: (ofxPend ?? []).length, cls: "text-primary" },
-                { k: "recebimentos" as const, label: "Recebimentos", n: nRec, cls: "text-success" },
-                { k: "pagamentos" as const, label: "Pagamentos", n: nPag, cls: "text-destructive" },
-              ].map((c) => (
-                <button
-                  key={c.k}
-                  onClick={() => setFiltroPend(c.k)}
-                  className={`px-3 py-2 text-center ${filtroPend === c.k ? "bg-muted/60" : ""}`}
-                >
-                  <div className="text-[11px] text-muted-foreground">{c.label}</div>
-                  <div className={`text-lg font-bold ${c.cls}`}>{c.n}</div>
-                </button>
-              ))}
-            </div>
-            {loadingPend ? (
-              <p className="p-6 text-center text-sm text-muted-foreground">Carregando...</p>
-            ) : pendFiltrados.length === 0 ? (
-              <div className="p-6">
-                <EmptyState icon={Check} title="Sem pendências" description="Nenhum lançamento do extrato aguardando conciliação." />
-              </div>
-            ) : (
-              <Table>
-                <TableBody>
-                  {pendFiltrados.map((t) => (
-                    <TableRow key={t.id}>
-                      <TableCell className="text-tabular text-muted-foreground whitespace-nowrap">
-                        {t.data_transacao ? new Date(`${t.data_transacao}T00:00:00`).toLocaleDateString("pt-BR") : "—"}
-                      </TableCell>
-                      <TableCell>{t.memo || (Number(t.valor) < 0 ? "Pagamento" : "Recebimento")}</TableCell>
-                      <TableCell className={`text-right text-tabular font-medium ${Number(t.valor) < 0 ? "text-destructive" : "text-success"}`}>
-                        {brl(Number(t.valor))}
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            )}
-          </Card>
+          <ReconcileDialog
+            contaId={contaId}
+            conta={conta}
+            empresaId={empresaId}
+            autoConciliar={false}
+            importing={false}
+            onImport={() => onImportar(contaId)}
+            onClose={() => {}}
+            inline
+          />
         </TabsContent>
 
         <TabsContent value="movs" className="space-y-3">
@@ -853,7 +801,6 @@ function ContasFinanceiras() {
           onEditar={(c) => void abrirEdicao(c)}
           onImportar={(id) => triggerUpload(id)}
           onExcluir={(c) => setConfConta(c)}
-          onAbrirConciliacao={(id) => setReconcilingId(id)}
         />
       ) : (
       <>
@@ -1308,7 +1255,7 @@ const emptyRow = (memo: string | null): RowState => ({
   descricao: memo ?? "", categoria_id: "", contato_id: "", centro_custo_id: "", lancamento_id: "",
 });
 
-function ReconcileDialog({ contaId, conta, empresaId, autoConciliar, importing, onImport, onClose }: { contaId: string | null; conta: ContaBancaria | null; empresaId: string | null; autoConciliar: boolean; importing: boolean; onImport: () => void; onClose: () => void }) {
+function ReconcileDialog({ contaId, conta, empresaId, autoConciliar, importing, onImport, onClose, inline }: { contaId: string | null; conta: ContaBancaria | null; empresaId: string | null; autoConciliar: boolean; importing: boolean; onImport: () => void; onClose: () => void; inline?: boolean }) {
   const autoRunRef = useRef<Set<string>>(new Set());
   const qc = useQueryClient();
   const open = !!contaId;
@@ -1352,7 +1299,7 @@ function ReconcileDialog({ contaId, conta, empresaId, autoConciliar, importing, 
   }, [open]);
 
   useEffect(() => {
-    if (!open) return;
+    if (!open || inline) return;
     const onKey = (e: KeyboardEvent) => {
       if (e.key === "Escape") {
         const t = e.target as HTMLElement;
@@ -1365,7 +1312,7 @@ function ReconcileDialog({ contaId, conta, empresaId, autoConciliar, importing, 
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [open, onClose]);
+  }, [open, onClose, inline]);
 
   const { data: txs, isLoading } = useQuery({
     enabled: open && !!empresaId,
@@ -1658,37 +1605,9 @@ function ReconcileDialog({ contaId, conta, empresaId, autoConciliar, importing, 
 
   if (!open) return null;
 
-  return (
+  const corpoConciliacao = (
     <>
-    <div className="fixed inset-0 z-50 flex flex-col bg-background">
-      <div className="sticky top-0 z-10 flex items-center justify-between gap-3 border-b bg-background/95 px-4 py-3 backdrop-blur">
-        <h2 className="text-xl font-semibold">{titulo}</h2>
-        <div className="flex items-center gap-2">
-          {conta?.tipo === "corrente" && (
-            <Button variant="default" size="sm" disabled={importing} onClick={onImport}>
-              {importing ? <Loader2 className="mr-1 h-3 w-3 animate-spin" /> : <Upload className="mr-1 h-3 w-3" />}
-              Importar OFX
-            </Button>
-          )}
-          {txs && txs.length > 0 && (
-            <Button
-              variant="outline"
-              size="sm"
-              className="text-destructive hover:text-destructive"
-              disabled={excluirExtrato.isPending}
-              onClick={() => setConfExtrato(true)}
-            >
-              {excluirExtrato.isPending ? <Loader2 className="mr-1 h-3 w-3 animate-spin" /> : <Trash2 className="mr-1 h-3 w-3" />}
-              Excluir extrato importado
-            </Button>
-          )}
-          <Button variant="ghost" size="icon" onClick={onClose} aria-label="Fechar">
-            <X className="h-5 w-5" />
-          </Button>
-        </div>
-      </div>
-
-      <div className="flex-1 overflow-y-auto px-4 py-4">
+      <div className={inline ? "" : "flex-1 overflow-y-auto px-4 py-4"}>
 
 
         <div className="w-full">
@@ -1734,9 +1653,9 @@ function ReconcileDialog({ contaId, conta, empresaId, autoConciliar, importing, 
 
             <div className="grid grid-cols-3 overflow-hidden rounded-md border">
               {([
-                { k: "todos", label: "Todos", n: porMes.length, cls: "text-primary" },
-                { k: "recebimentos", label: "Recebimentos", n: recebimentos, cls: "text-success" },
-                { k: "pagamentos", label: "Pagamentos", n: pagamentos, cls: "text-destructive" },
+                { k: "todos", label: "Todos", n: porMes.length, cls: "text-blue-600 dark:text-blue-400" },
+                { k: "recebimentos", label: "Recebimentos", n: recebimentos, cls: "text-blue-600 dark:text-blue-400" },
+                { k: "pagamentos", label: "Pagamentos", n: pagamentos, cls: "text-blue-600 dark:text-blue-400" },
               ] as const).map((c) => (
                 <button
                   key={c.k}
@@ -1834,7 +1753,6 @@ function ReconcileDialog({ contaId, conta, empresaId, autoConciliar, importing, 
           </div>
         </div>
       </div>
-    </div>
 
       <AlertDialog open={confExtrato} onOpenChange={setConfExtrato}>
         <AlertDialogContent>
@@ -1892,6 +1810,42 @@ function ReconcileDialog({ contaId, conta, empresaId, autoConciliar, importing, 
           </form>
         </DialogContent>
       </Dialog>
+    </>
+    );
+
+  if (inline) return corpoConciliacao;
+
+  return (
+    <>
+    <div className="fixed inset-0 z-50 flex flex-col bg-background">
+      <div className="sticky top-0 z-10 flex items-center justify-between gap-3 border-b bg-background/95 px-4 py-3 backdrop-blur">
+        <h2 className="text-xl font-semibold">{titulo}</h2>
+        <div className="flex items-center gap-2">
+          {conta?.tipo === "corrente" && (
+            <Button variant="default" size="sm" disabled={importing} onClick={onImport}>
+              {importing ? <Loader2 className="mr-1 h-3 w-3 animate-spin" /> : <Upload className="mr-1 h-3 w-3" />}
+              Importar OFX
+            </Button>
+          )}
+          {txs && txs.length > 0 && (
+            <Button
+              variant="outline"
+              size="sm"
+              className="text-destructive hover:text-destructive"
+              disabled={excluirExtrato.isPending}
+              onClick={() => setConfExtrato(true)}
+            >
+              {excluirExtrato.isPending ? <Loader2 className="mr-1 h-3 w-3 animate-spin" /> : <Trash2 className="mr-1 h-3 w-3" />}
+              Excluir extrato importado
+            </Button>
+          )}
+          <Button variant="ghost" size="icon" onClick={onClose} aria-label="Fechar">
+            <X className="h-5 w-5" />
+          </Button>
+        </div>
+      </div>
+      {corpoConciliacao}
+    </div>
     </>
   );
 }

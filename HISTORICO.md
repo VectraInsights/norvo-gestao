@@ -4602,3 +4602,11 @@ Espelhado na Vercel.
 - Botão abre o histórico real: criar, editar, excluir e definir padrão
   gravam quem/quando/o quê em `auditoria_eventos`.
 - Validado com `tsc` (só baseline) e `npm run build` OK.
+
+## Conciliação dentro da conta (05/10)
+
+- Aba Conciliações pendentes embute o motor de conciliação (busca,
+  filtros, contadores, vincular/criar/excluir por lançamento); botão
+  "Abrir conciliação" removido e contadores em azul.
+- Item Conciliação removido do menu Financeiro.
+- Validado com `tsc` (só baseline) e `npm run build` OK.
