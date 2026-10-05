@@ -25,8 +25,6 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Banknote, Plus, Upload, Loader2, Link2, Check, Landmark, Wallet, CreditCard, TrendingUp, PiggyBank, DollarSign, Database, Coins, Trash2, Search, X, ChevronLeft, ChevronRight, ChevronDown, Pencil } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
 import { DateInput } from "@/components/erp/date-input";
 import { Combobox } from "@/components/erp/combobox";
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
@@ -1300,7 +1298,7 @@ function ReconcileDialog({ contaId, conta, empresaId, autoConciliar, importing, 
     queryKey: ["lanc-abertos", empresaId] as const,
     queryFn: async () => {
       const { data, error } = await supabase.from("lancamentos_financeiros")
-        .select("id,descricao,valor,tipo,data_vencimento")
+        .select("id,descricao,valor,tipo,status,data_vencimento")
         .eq("empresa_id", empresaId!).in("status", ["aberto", "vencido", "parcial"])
         .order("data_vencimento").limit(200);
       if (error) throw error;
@@ -1762,9 +1760,130 @@ function ReconcileDialog({ contaId, conta, empresaId, autoConciliar, importing, 
 }
 
 const EMPTY: { id: string; nome: string }[] = [];
-const EMPTY_LANC: { id: string; descricao: string; valor: number; tipo: string; data_vencimento: string }[] = [];
+const EMPTY_LANC: LancOpt[] = [];
 
 type Opcao = { id: string; nome: string };
+
+function BuscarLancamentoDialog({ open, onClose, tx, lancamentos, value, onConfirm }: {
+  open: boolean;
+  onClose: () => void;
+  tx: OfxRow;
+  lancamentos: LancOpt[];
+  value: string;
+  onConfirm: (id: string) => void;
+}) {
+  const [q, setQ] = useState("");
+  const [dias, setDias] = useState("30");
+  const [sel, setSel] = useState(value);
+  useEffect(() => {
+    if (open) { setSel(value); setQ(""); }
+  }, [open, value]);
+
+  const base = new Date(`${tx.data_transacao}T00:00:00`).getTime();
+  const filtrados = useMemo(() => {
+    const termo = q.trim().toLowerCase();
+    return (lancamentos ?? []).filter((l) => {
+      if (dias !== "todos") {
+        const dv = new Date(`${l.data_vencimento}T00:00:00`).getTime();
+        if (Number.isNaN(dv) || Number.isNaN(base) || Math.abs(dv - base) > Number(dias) * 86400000) return false;
+      }
+      if (!termo) return true;
+      return (l.descricao ?? "").toLowerCase().includes(termo)
+        || String(l.valor).includes(termo.replace(",", "."))
+        || (l.data_vencimento || "").includes(termo);
+    }).slice(0, 100);
+  }, [lancamentos, q, dias, base]);
+
+  const escolhido = (lancamentos ?? []).find((l) => l.id === sel);
+  const vBanco = Math.abs(Number(tx.valor) || 0);
+  const vSel = escolhido ? Number(escolhido.valor) || 0 : 0;
+  const dif = Math.round((vBanco - vSel) * 100) / 100;
+
+  return (
+    <Dialog open={open} onOpenChange={(o) => { if (!o) onClose(); }}>
+      <DialogContent className="flex flex-col">
+        <DialogHeader className="shrink-0">
+          <DialogTitle>Escolha o lançamento para conciliar com o valor do banco</DialogTitle>
+          <DialogDescription>
+            {Number(tx.valor) >= 0 ? "Recebimento" : "Pagamento"} de {brl(vBanco)} em{" "}
+            {tx.data_transacao ? new Date(`${tx.data_transacao}T00:00:00`).toLocaleDateString("pt-BR") : "—"}
+            {" · "}{tx.memo || "—"}
+          </DialogDescription>
+        </DialogHeader>
+        <div className="flex min-h-0 flex-1 flex-col gap-3 overflow-hidden">
+          <div className="flex shrink-0 flex-wrap items-end gap-2">
+            <div className="relative max-w-xs flex-1">
+              <Search className="pointer-events-none absolute left-2 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
+              <Input className="pl-8 h-8 text-[13px]" placeholder="Descrição, valor ou data" value={q} onChange={(e) => setQ(e.target.value)} />
+            </div>
+            <Select value={dias} onValueChange={setDias}>
+              <SelectTrigger className="h-8 text-xs w-[170px]"><SelectValue /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="7">Vencimento ± 7 dias</SelectItem>
+                <SelectItem value="15">Vencimento ± 15 dias</SelectItem>
+                <SelectItem value="30">Vencimento ± 30 dias</SelectItem>
+                <SelectItem value="90">Vencimento ± 90 dias</SelectItem>
+                <SelectItem value="todos">Todos os vencimentos</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="min-h-0 flex-1 overflow-y-auto rounded-md border">
+            {filtrados.length === 0 ? (
+              <div className="p-6">
+                <EmptyState icon={Search} title="Nenhum resultado encontrado" description="Selecione outros filtros para refazer sua busca." />
+              </div>
+            ) : (
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead className="w-10" />
+                    <TableHead>Vencimento</TableHead>
+                    <TableHead>Descrição</TableHead>
+                    <TableHead>Situação</TableHead>
+                    <TableHead className="text-right">Valor (R$)</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {filtrados.map((l) => (
+                    <TableRow key={l.id} className="cursor-pointer" onClick={() => setSel(l.id)}>
+                      <TableCell>
+                        <Checkbox checked={sel === l.id} onCheckedChange={() => setSel(l.id)} aria-label="Selecionar lançamento" />
+                      </TableCell>
+                      <TableCell className="text-tabular whitespace-nowrap">
+                        {l.data_vencimento ? new Date(`${l.data_vencimento}T00:00:00`).toLocaleDateString("pt-BR") : "—"}
+                      </TableCell>
+                      <TableCell className="max-w-[280px] truncate">{l.descricao || "—"}</TableCell>
+                      <TableCell>
+                        <span className="rounded-full bg-muted px-2 py-0.5 text-[11px] font-medium text-muted-foreground">{l.status}</span>
+                      </TableCell>
+                      <TableCell className="text-right text-tabular font-medium">{brl(Number(l.valor))}</TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            )}
+          </div>
+          <div className="flex shrink-0 flex-wrap items-center gap-x-6 gap-y-1 border-t pt-2 text-sm">
+            <div className="ml-auto text-right">
+              <span className="text-[11px] text-muted-foreground">Valor do banco </span>
+              <span className="text-tabular font-bold">{brl(vBanco)}</span>
+            </div>
+            <div className="text-right">
+              <span className="text-[11px] text-muted-foreground">Selecionado </span>
+              <span className="text-tabular font-bold text-primary">{brl(vSel)}</span>
+            </div>
+            <div className="text-right">
+              <span className="text-[11px] text-muted-foreground">Diferença </span>
+              <span className={`text-tabular font-bold ${dif === 0 && sel ? "text-success" : "text-amber-600 dark:text-amber-400"}`}>{brl(dif)}</span>
+            </div>
+            <Button variant="outline" onClick={onClose}>Cancelar</Button>
+            <Button disabled={!sel} onClick={() => onConfirm(sel)}>Selecionar</Button>
+          </div>
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
+}
 
 const ReconcileRow = memo(function ReconcileRow({
   tx, r, modoBusca, selected, categorias, contatos, centros, lancamentosAbertos,
@@ -1777,7 +1896,7 @@ const ReconcileRow = memo(function ReconcileRow({
   categorias: Opcao[];
   contatos: Opcao[];
   centros: Opcao[];
-  lancamentosAbertos: { id: string; descricao: string; valor: number; data_vencimento: string }[];
+  lancamentosAbertos: LancOpt[];
   conciliando: boolean;
   excluindo: boolean;
   onToggleSel: (id: string) => void;
@@ -1788,6 +1907,11 @@ const ReconcileRow = memo(function ReconcileRow({
 }) {
   const data = new Date(tx.data_transacao + "T00:00:00");
   const nomeContato = r.contato_id ? (contatos.find((c) => c.id === r.contato_id)?.nome ?? "—") : "Informação não recebida";
+  const [buscaOpen, setBuscaOpen] = useState(false);
+  const lancSel = lancamentosAbertos.find((l) => l.id === r.lancamento_id);
+  const rotuloSel = lancSel
+    ? `${format(new Date(lancSel.data_vencimento + "T00:00:00"), "dd/MM")} — ${lancSel.descricao} (${brl(Number(lancSel.valor))})`
+    : "Pesquisar por valor, descrição ou data";
 
   return (
     <div className="grid grid-cols-1 items-stretch gap-2 md:grid-cols-[1fr_auto_1fr]">
@@ -1839,11 +1963,17 @@ const ReconcileRow = memo(function ReconcileRow({
           {modoBusca ? (
             <div className="space-y-1">
               <Label className="text-xs">Lançamento existente</Label>
-              <LancamentoPicker
-                valorRef={Math.abs(tx.valor)}
+              <Button variant="outline" className="w-full justify-between font-normal" onClick={() => setBuscaOpen(true)}>
+                <span className={cn("truncate", !lancSel && "text-muted-foreground")}>{rotuloSel}</span>
+                <Search className="ml-2 h-4 w-4 shrink-0 opacity-60" />
+              </Button>
+              <BuscarLancamentoDialog
+                open={buscaOpen}
+                onClose={() => setBuscaOpen(false)}
+                tx={tx}
                 lancamentos={lancamentosAbertos}
                 value={r.lancamento_id}
-                onChange={(v) => onSetRow(tx.id, { lancamento_id: v })}
+                onConfirm={(id) => { onSetRow(tx.id, { lancamento_id: id }); setBuscaOpen(false); }}
               />
             </div>
           ) : (
@@ -1874,76 +2004,4 @@ const ReconcileRow = memo(function ReconcileRow({
 
 
 
-type LancOpt = { id: string; descricao: string; valor: number; data_vencimento: string };
-
-function LancamentoPicker({ valorRef, lancamentos, value, onChange }: {
-  valorRef: number;
-  lancamentos: LancOpt[];
-  value: string;
-  onChange: (v: string) => void;
-}) {
-  const [open, setOpen] = useState(false);
-  const [q, setQ] = useState("");
-
-  const selecionado = value ? lancamentos.find((l) => l.id === value) : undefined;
-
-  const lista = useMemo(() => {
-    const termo = q.trim().toLowerCase();
-    const digitos = termo.replace(/[^\d]/g, "");
-    const base = lancamentos.filter((l) => {
-      if (!termo) return true;
-      const valorTxt = Number(l.valor).toFixed(2);
-      const valorBr = brl(Number(l.valor)).toLowerCase();
-      const dataTxt = format(new Date(l.data_vencimento + "T00:00:00"), "dd/MM/yyyy");
-      return (
-        (l.descricao ?? "").toLowerCase().includes(termo) ||
-        valorTxt.includes(termo) ||
-        valorBr.includes(termo) ||
-        dataTxt.includes(termo) ||
-        (digitos.length >= 2 && valorTxt.replace(".", "").includes(digitos))
-      );
-    });
-    return base
-      .slice()
-      .sort((a, b) => Math.abs(Number(a.valor) - valorRef) - Math.abs(Number(b.valor) - valorRef))
-      .slice(0, 80);
-  }, [lancamentos, q, valorRef]);
-
-  const label = selecionado
-    ? `${format(new Date(selecionado.data_vencimento + "T00:00:00"), "dd/MM")} — ${selecionado.descricao} (${brl(Number(selecionado.valor))})`
-    : "Pesquise por valor, descrição ou data";
-
-  return (
-    <Popover open={open} onOpenChange={setOpen}>
-      <PopoverTrigger asChild>
-        <Button variant="outline" role="combobox" className="w-full justify-between font-normal">
-          <span className={cn("truncate", !selecionado && "text-muted-foreground")}>{label}</span>
-          <Search className="ml-2 h-4 w-4 shrink-0 opacity-60" />
-        </Button>
-      </PopoverTrigger>
-      <PopoverContent className="w-[min(28rem,90vw)] p-0" align="start">
-        <Command shouldFilter={false}>
-          <CommandInput value={q} onValueChange={setQ} placeholder="Digite valor, nome ou descrição..." />
-          <CommandList className="max-h-72">
-            <CommandEmpty>Nenhum lançamento encontrado.</CommandEmpty>
-            <CommandGroup>
-              {lista.map((l) => (
-                <CommandItem
-                  key={l.id}
-                  value={l.id}
-                  onSelect={() => { onChange(l.id); setOpen(false); }}
-                >
-                  <Check className={cn("mr-2 h-4 w-4", value === l.id ? "opacity-100" : "opacity-0")} />
-                  <span className="truncate">
-                    {format(new Date(l.data_vencimento + "T00:00:00"), "dd/MM")} — {l.descricao}
-                  </span>
-                  <span className="ml-auto pl-2 text-tabular text-xs text-muted-foreground">{brl(Number(l.valor))}</span>
-                </CommandItem>
-              ))}
-            </CommandGroup>
-          </CommandList>
-        </Command>
-      </PopoverContent>
-    </Popover>
-  );
-}
+type LancOpt = { id: string; descricao: string; valor: number; tipo: string; status: string; data_vencimento: string };

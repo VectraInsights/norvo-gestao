@@ -4619,3 +4619,10 @@ Espelhado na Vercel.
 - Tela compacta (linhas, contadores, filtros e legenda enxutos).
 - Logos Itaú e Sicoob da área de trabalho aplicadas em 512.
 - Validado com `tsc` (só baseline) e `npm run build` OK.
+
+## Buscar lançamento em tela cheia (05/10)
+
+- "Buscar lançamento" abre tela cheia estilo Conta Azul: resumo do
+  lançamento bancário, busca, período ±dias, tabela com situação e rodapé
+  com valor do banco/selecionado/diferença.
+- Validado com `tsc` (só baseline) e `npm run build` OK.
