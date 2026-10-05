@@ -419,6 +419,7 @@ function NotasRecebidas() {
     onSuccess: (_data: unknown, nota: NotaRecebida) => {
       setNotas(prev => prev.filter(n => n.chave !== nota.chave));
       qc.invalidateQueries({ queryKey: ["lancamentos"] });
+      void registrarAuditoria("excluir", `NF-e ${nota.numero_nf || ""} (${nota.emitente}) excluída`, { chave: nota.chave, numero_nf: nota.numero_nf, valor: nota.valor });
       toast.success("Nota e lançamentos vinculados excluídos com sucesso.");
     },
     onError: (e: Error) => toast.error(e.message),
@@ -439,7 +440,40 @@ function NotasRecebidas() {
     xml: string;
   } | null>(null);
 
-  // Prévia do DANFE (mesmo viewer do CT-e) aberta pelo botão "Ver DANFE" do diálogo de detalhes
+  // Trilha de auditoria (tabela auditoria_eventos): quem lançou/alterou/excluiu cada nota
+  const [trilhaOpen, setTrilhaOpen] = useState(false);
+  const registrarAuditoria = async (acao: string, descricao: string, detalhes: Record<string, any> = {}) => {
+    try {
+      if (!empresa) return;
+      const { data: sess } = await supabase.auth.getUser();
+      const u = sess?.user;
+      if (!u) return;
+      const nome = ((u.user_metadata as any)?.nome as string) || u.email || "";
+      await supabase.from("auditoria_eventos" as never).insert({
+        empresa_id: empresa.id,
+        user_id: u.id,
+        modulo: "fiscal",
+        acao,
+        entidade: "nota_compra",
+        detalhes: { ...detalhes, descricao, user_nome: nome, user_email: u.email || "" },
+      } as any);
+    } catch { /* trilha indisponível: não bloqueia o fluxo */ }
+  };
+  const trilhaQuery = useQuery({
+    enabled: trilhaOpen && !!empresa,
+    queryKey: ["auditoria-notas", empresa?.id],
+    queryFn: async () => {
+      const { data, error } = await supabase.from("auditoria_eventos" as never)
+        .select("id,created_at,acao,detalhes")
+        .eq("empresa_id", empresa!.id as never)
+        .eq("modulo", "fiscal")
+        .eq("entidade", "nota_compra")
+        .order("created_at", { ascending: false })
+        .limit(200);
+      if (error) throw error;
+      return (data ?? []) as any[];
+    },
+  });
   const [pdfNota, setPdfNota] = useState<{ url: string; nome: string; subtitulo: string; nota: NotaRecebida } | null>(null);
   const fecharPdfNota = () => {
     setPdfNota((p) => { if (p) URL.revokeObjectURL(p.url); return null; });
@@ -907,6 +941,7 @@ function NotasRecebidas() {
       qc.invalidateQueries({ queryKey: ["dashboard-stats"] });
 
       toast.success("Importação concluída.");
+      void registrarAuditoria("lancar", `NF-e ${importResults.nNF} (${importResults.emitente}) lançada: ${brl(importResults.total)}`, { chave: importResults.chave, numero_nf: importResults.nNF, valor: importResults.total });
       if (filaXml.length > 0) {
         setImportResults(filaXml[0]);
         setFilaXml(filaXml.slice(1));
@@ -1144,6 +1179,7 @@ function NotasRecebidas() {
         ? ` e ${notaDetalhe.parcelas.length} parcela(s) no contas a pagar`
         : " (sem parcelas — estoque atualizado)";
       toast.success(`Nota lançada! ${notaDetalhe.produtos.length} produtos (${totalQtd} un.)${msgParcelas}.`);
+      void registrarAuditoria("lancar", `NF-e ${notaDetalhe.nNF} (${notaDetalhe.emitente}) lançada: ${brl(notaDetalhe.valor)}`, { chave: notaDetalhe.chave, numero_nf: notaDetalhe.nNF, valor: notaDetalhe.valor });
       setNotaDetalhe(null);
     } catch (err: any) {
       toast.error("Falha ao lançar nota", { description: err.message });
@@ -1239,6 +1275,7 @@ function NotasRecebidas() {
       qc.invalidateQueries({ queryKey: ["lancamentos"] });
       qc.invalidateQueries({ queryKey: ["dashboard-stats"] });
       toast.success("Nota alterada com sucesso");
+      void registrarAuditoria("alterar", `NF-e ${notaDetalhe.nNF} (${notaDetalhe.emitente}) alterada: ${brl(notaDetalhe.valor)}`, { chave: notaDetalhe.chave, numero_nf: notaDetalhe.nNF, valor: notaDetalhe.valor });
       setNotaDetalhe(null);
     } catch (err: any) {
       toast.error("Falha ao alterar nota", { description: err.message });
@@ -1452,8 +1489,8 @@ function NotasRecebidas() {
         description="Consulte notas fiscais emitidas contra seu CNPJ e importe XMLs para o estoque e financeiro." 
         actions={
           <div className="flex items-center gap-2">
-            <Button variant="outline" size="sm">
-              Adicionar trilha de auditoria
+            <Button variant="outline" size="sm" onClick={() => setTrilhaOpen(true)}>
+              Trilha de auditoria
             </Button>
           </div>
         }
@@ -1580,30 +1617,30 @@ function NotasRecebidas() {
           </Card>
         </TabsContent>
 
-        <TabsContent value="xml" className="space-y-6">
-          <div className="grid gap-6 md:grid-cols-3">
+        <TabsContent value="xml" className="space-y-4">
+          <div className="grid gap-4 md:grid-cols-3">
             <Card className="md:col-span-2 border-muted bg-card/60 backdrop-blur-sm shadow-panel">
-              <CardHeader>
+              <CardHeader className="pb-2">
                 <CardTitle>Área de Upload</CardTitle>
                 <CardDescription>
                   Arraste os arquivos XML de seus fornecedores ou clique para selecionar. Você pode importar múltiplos arquivos de uma só vez.
                 </CardDescription>
               </CardHeader>
-              <CardContent className="space-y-6">
+              <CardContent className="space-y-3">
                 <div
                   onDragEnter={handleDrag}
                   onDragOver={handleDrag}
                   onDragLeave={handleDrag}
                   onDrop={handleDrop}
-                  className={`border-2 border-dashed rounded-lg p-10 flex flex-col items-center justify-center transition-colors ${
+                  className={`border-2 border-dashed rounded-lg p-4 flex flex-col items-center justify-center transition-colors ${
                     dragging ? "border-primary bg-primary/5" : "border-muted hover:border-primary/50"
                   }`}
                 >
-                  <UploadCloud className="h-12 w-12 text-muted-foreground mb-4" />
+                  <UploadCloud className="h-8 w-8 text-muted-foreground mb-1" />
                   <p className="text-sm font-medium text-foreground text-center">
                     Arraste os arquivos XML aqui ou
                   </p>
-                  <label className="mt-2 cursor-pointer">
+                  <label className="mt-1 cursor-pointer">
                     <span className="inline-flex items-center rounded-md bg-primary px-3 py-2 text-xs font-semibold text-primary-foreground shadow-sm hover:bg-primary/90">
                       Selecionar Arquivos
                     </span>
@@ -1615,13 +1652,13 @@ function NotasRecebidas() {
                       onChange={handleFileChange}
                     />
                   </label>
-                  <p className="text-xs text-muted-foreground mt-2">Apenas arquivos no formato .xml</p>
+                  <p className="text-xs text-muted-foreground mt-1">Apenas arquivos no formato .xml</p>
                 </div>
 
                 {selectedFiles.length > 0 && (
-                  <div className="space-y-3">
+                  <div className="space-y-2">
                     <h4 className="text-sm font-medium text-foreground">Arquivos Selecionados:</h4>
-                    <div className="max-h-[160px] overflow-y-auto border rounded-md p-2 divide-y divide-border bg-background/50">
+                    <div className="max-h-[96px] overflow-y-auto border rounded-md p-2 divide-y divide-border bg-background/50">
                       {selectedFiles.map((file, i) => (
                         <div key={i} className="flex items-center gap-2 py-1.5 px-2 text-xs">
                           <div className="flex items-center gap-2">
@@ -1668,10 +1705,10 @@ function NotasRecebidas() {
             </Card>
 
             <Card className="border-muted bg-card/60 backdrop-blur-sm shadow-panel">
-              <CardHeader>
+              <CardHeader className="pb-2">
                 <CardTitle className="text-base font-semibold">Como funciona?</CardTitle>
               </CardHeader>
-              <CardContent className="space-y-4 text-sm text-muted-foreground leading-relaxed">
+              <CardContent className="space-y-2 text-sm text-muted-foreground leading-relaxed">
                 <div>
                   <h5 className="font-medium text-foreground mb-1">1. Leitura de Dados</h5>
                   <p className="text-xs">O sistema lê o XML, identifica o fornecedor, produtos e valores fiscais de tributos.</p>
@@ -2087,6 +2124,43 @@ function NotasRecebidas() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      <Dialog open={trilhaOpen} onOpenChange={setTrilhaOpen}>
+        <DialogContent className="max-h-[85vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Trilha de auditoria — Notas de Compra</DialogTitle>
+          </DialogHeader>
+          {trilhaQuery.isLoading ? (
+            <p className="text-sm text-muted-foreground py-6 text-center">Carregando...</p>
+          ) : trilhaQuery.isError ? (
+            <p className="text-sm text-muted-foreground py-6 text-center">Trilha indisponível no momento.</p>
+          ) : (trilhaQuery.data ?? []).length === 0 ? (
+            <p className="text-sm text-muted-foreground py-6 text-center">Nenhum evento registrado ainda. Lançar, alterar ou excluir notas gera registros aqui.</p>
+          ) : (
+            <div className="divide-y divide-border">
+              {(trilhaQuery.data ?? []).map((ev: any) => (
+                <div key={ev.id} className="flex items-start gap-3 py-2.5">
+                  <span className={`mt-0.5 inline-flex shrink-0 items-center rounded-full px-2 py-0.5 text-[11px] font-medium ${
+                    ev.acao === "excluir" ? "bg-destructive/10 text-destructive"
+                    : ev.acao === "alterar" ? "bg-primary/10 text-primary"
+                    : "bg-success/10 text-success"
+                  }`}>
+                    {ev.acao === "excluir" ? "Excluiu" : ev.acao === "alterar" ? "Alterou" : "Lançou"}
+                  </span>
+                  <div className="min-w-0 flex-1">
+                    <p className="text-sm text-foreground">{ev.detalhes?.descricao || "—"}</p>
+                    <p className="text-xs text-muted-foreground">
+                      {ev.detalhes?.user_nome || ev.detalhes?.user_email || "—"}
+                      {" · "}
+                      {ev.created_at ? new Date(ev.created_at).toLocaleString("pt-BR") : ""}
+                    </p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
 
       {pdfNota && (
         <PdfViewer

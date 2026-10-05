@@ -4482,6 +4482,16 @@ Espelhado na Vercel.
   toast). Fechar mantém a fila, com botão "Continuar lançando notas".
 - Validado com `tsc` zerado e `npm run build` OK.
 
+## Upload compacto + trilha de auditoria funcional (05/10)
+
+- Aba de importação enxuta (dropzone, listas e textos compactos) para caber
+  na tela sem rolagem da página.
+- Botão "Trilha de auditoria" (antes placeholder sem ação) abre o histórico
+  real: cada lançamento/alteração/exclusão de nota grava quem, quando e o
+  quê na tabela `auditoria_eventos` (com fallback silencioso se a tabela não
+  existir no banco).
+- Validado com `tsc` zerado e `npm run build` OK.
+
 ## Tema padronizado: tudo no verde, sem cor por módulo (05/10)
 
 - Removido o sistema de cor por módulo (`MODULE_COLORS` no PageHeader vira
