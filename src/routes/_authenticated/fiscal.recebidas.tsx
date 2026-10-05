@@ -805,7 +805,7 @@ function NotasRecebidas() {
       // Validar categorias obrigatórias
       const semCategoria = importResults.produtos.filter(p => !p.categoria || p.categoria.trim() === "");
       if (semCategoria.length > 0) {
-        toast.error(`Categoria obrigatória: ${semCategoria.map(p => p.nome).join(", ")}`);
+        toast.error("Categoria obrigatória");
         setIsSaving(false);
         return;
       }
@@ -1095,7 +1095,7 @@ function NotasRecebidas() {
       // Validar categorias obrigatórias
       const semCategoria = notaDetalhe.produtos.filter(p => !p.categoria || p.categoria.trim() === "");
       if (semCategoria.length > 0) {
-        toast.error(`Categoria obrigatória: ${semCategoria.map(p => p.nome).join(", ")}`);
+        toast.error("Categoria obrigatória");
         setIsSaving(false);
         return;
       }
@@ -1213,7 +1213,7 @@ function NotasRecebidas() {
     try {
       const semCategoria = notaDetalhe.produtos.filter(p => !p.categoria || p.categoria.trim() === "");
       if (semCategoria.length > 0) {
-        toast.error(`Categoria obrigat��ria: ${semCategoria.map(p => p.nome).join(", ")}`);
+        toast.error("Categoria obrigatória");
         setIsSaving(false);
         return;
       }
@@ -1799,7 +1799,7 @@ function NotasRecebidas() {
                           <TableHead className="text-center">UN</TableHead>
                           <TableHead className="text-right">Unitário</TableHead>
                           <TableHead className="text-right">Subtotal</TableHead>
-                          <TableHead className="w-[160px]">Categoria</TableHead>
+                          <TableHead className="w-[160px]">Categoria *</TableHead>
                         </TableRow>
                       </TableHeader>
                       <TableBody>
@@ -2002,7 +2002,7 @@ function NotasRecebidas() {
                           <TableHead className="text-xs">Un.</TableHead>
                           <TableHead className="text-xs text-right">V. Unit.</TableHead>
                           <TableHead className="text-xs text-right">V. Total</TableHead>
-                          <TableHead className="text-xs w-[160px]">Categoria</TableHead>
+                          <TableHead className="text-xs w-[160px]">Categoria *</TableHead>
                         </TableRow>
                       </TableHeader>
                       <TableBody>

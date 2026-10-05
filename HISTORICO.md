@@ -4521,7 +4521,6 @@ Espelhado na Vercel.
 - Validado com `tsc` zerado e `npm run build` OK.
 
 ## DANFE: CSOSN, PAGAMENTO e anti-estouro (05/10)
-
 - O/CST agora lê CSOSN do Simples (ICMSSN101/102/201/202/500/900) e o
   cabeçalho vira O/CSOSN como no FSIST.
 - Seção PAGAMENTO (forma + valor do `<pag>`) quando há pagamento à vista;
@@ -4529,6 +4528,13 @@ Espelhado na Vercel.
 - Textos longos (emitente, natureza, destinatário) com auto-ajuste de fonte
   para não estourar as caixas.
 - Validado com `tsc` zerado, `vitest` e `npm run build` OK.
+
+## Toast curto + * em obrigatório (05/10)
+
+- Erro de categoria sem produto vira só "Categoria obrigatória".
+- `*` no cabeçalho Categoria das duas tabelas de produtos (único campo
+  validado de verdade).
+- Validado com `npm run build` OK.
 
 ## Upload compacto + trilha de auditoria funcional (05/10)
 
