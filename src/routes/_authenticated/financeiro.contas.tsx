@@ -1237,7 +1237,6 @@ function ReconcileDialog({ contaId, conta, empresaId, autoConciliar, importing, 
   const [buscaDebounced, setBuscaDebounced] = useState("");
   const [filtro, setFiltro] = useState<"todos" | "recebimentos" | "pagamentos">("todos");
   const [ordem, setOrdem] = useState<"recentes" | "antigos" | "maior" | "menor">("antigos");
-  const [mes, setMes] = useState("todos");
   const [visiveisQtd, setVisiveisQtd] = useState(PAGE_SIZE);
   const { data: authUser } = useQuery({
     queryKey: ["auth-user-for-saved-filters"],
@@ -1261,7 +1260,6 @@ function ReconcileDialog({ contaId, conta, empresaId, autoConciliar, importing, 
       setBusca("");
       setFiltro("todos");
       setOrdem("antigos");
-      setMes("todos");
       setVisiveisQtd(PAGE_SIZE);
       setSel(new Set());
       setRows({});
@@ -1493,21 +1491,7 @@ function ReconcileDialog({ contaId, conta, empresaId, autoConciliar, importing, 
     [txs],
   );
 
-  const mesesDisponiveis = useMemo(
-    () => Array.from(new Set(pendentes.map((t) => (t.data_transacao ?? "").slice(0, 7)).filter(Boolean))).sort((a, b) => b.localeCompare(a)),
-    [pendentes],
-  );
-  const labelMes = (m: string) => {
-    const [y, mm] = m.split("-");
-    const nomes = ["janeiro", "fevereiro", "março", "abril", "maio", "junho", "julho", "agosto", "setembro", "outubro", "novembro", "dezembro"];
-    const n = nomes[Number(mm) - 1] ?? mm;
-    return `${n.charAt(0).toUpperCase()}${n.slice(1)}/${y}`;
-  };
-
-  const porMes = useMemo(
-    () => pendentes.filter((t) => mes === "todos" || (t.data_transacao ?? "").slice(0, 7) === mes),
-    [pendentes, mes],
-  );
+  const porMes = pendentes;
 
   const recebimentos = useMemo(() => porMes.filter((t) => t.valor >= 0).length, [porMes]);
   const pagamentos = porMes.length - recebimentos;
@@ -1526,7 +1510,7 @@ function ReconcileDialog({ contaId, conta, empresaId, autoConciliar, importing, 
   }, [porMes, filtro, q, ordem]);
 
   // Carregar mais: renderizar centenas de cards de uma vez trava a tela.
-  useEffect(() => { setVisiveisQtd(PAGE_SIZE); }, [q, filtro, ordem, mes, contaId]);
+  useEffect(() => { setVisiveisQtd(PAGE_SIZE); }, [q, filtro, ordem, contaId]);
   const daPagina = useMemo(
     () => visiveis.slice(0, visiveisQtd),
     [visiveis, visiveisQtd],
@@ -1580,7 +1564,7 @@ function ReconcileDialog({ contaId, conta, empresaId, autoConciliar, importing, 
 
   const titulo = conta ? `Contas financeiras — ${conta.nome ?? conta.banco ?? ""}` : "Conciliação bancária";
 
-  const filtroAtual = { busca, filtro, ordem, mes };
+  const filtroAtual = { busca, filtro, ordem };
   const aplicarFiltroSalvo = (id: string) => {
     const salvo = filtrosSalvos.filtros.find((item) => item.id === id);
     if (!salvo) return;
@@ -1588,7 +1572,6 @@ function ReconcileDialog({ contaId, conta, empresaId, autoConciliar, importing, 
     setBusca(typeof valores.busca === "string" ? valores.busca : "");
     setFiltro(valores.filtro === "recebimentos" || valores.filtro === "pagamentos" ? valores.filtro : "todos");
     setOrdem(valores.ordem === "antigos" || valores.ordem === "maior" || valores.ordem === "menor" ? valores.ordem : "antigos");
-    setMes(typeof valores.mes === "string" ? valores.mes : "todos");
     setVisiveisQtd(PAGE_SIZE);
   };
 
@@ -1606,15 +1589,6 @@ function ReconcileDialog({ contaId, conta, empresaId, autoConciliar, importing, 
                   <Search className="pointer-events-none absolute left-2 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
                   <Input className="pl-8 h-8 text-[13px]" placeholder="Descrição ou valor" value={busca} onChange={(e) => setBusca(e.target.value)} />
                 </div>
-                <Select value={mes} onValueChange={setMes}>
-                  <SelectTrigger className="h-8 text-xs w-[150px]"><SelectValue placeholder="Mês" /></SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="todos">Todos os meses</SelectItem>
-                    {mesesDisponiveis.map((m) => (
-                      <SelectItem key={m} value={m}>{labelMes(m)}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
                 {filtrosSalvos.filtros.length > 0 && (
                   <Select onValueChange={aplicarFiltroSalvo}>
                     <SelectTrigger className="h-8 text-xs w-[160px]"><SelectValue placeholder="Filtros salvos" /></SelectTrigger>
@@ -1623,7 +1597,7 @@ function ReconcileDialog({ contaId, conta, empresaId, autoConciliar, importing, 
                     </SelectContent>
                   </Select>
                 )}
-                <Button variant="ghost" size="sm" className="h-8 text-xs" onClick={() => { setBusca(""); setFiltro("todos"); setOrdem("antigos"); setMes("todos"); setVisiveisQtd(PAGE_SIZE); }}>
+                <Button variant="ghost" size="sm" className="h-8 text-xs" onClick={() => { setBusca(""); setFiltro("todos"); setOrdem("antigos"); setVisiveisQtd(PAGE_SIZE); }}>
                   <Trash2 className="mr-1 h-3 w-3" />Limpar filtros
                 </Button>
               </div>
