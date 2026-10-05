@@ -302,7 +302,7 @@ function ContaDetalhe({ contaId, contas, empresaId, tabInicial, onVoltar, onSele
             <span className="text-[11px] text-muted-foreground">Saldo atual </span>
             <span className="text-tabular text-xs font-bold">{brl(Number(conta?.saldo_atual) || 0)}</span>
             <span className="text-[11px] text-muted-foreground"> · Pendente </span>
-            <span className="text-tabular text-xs font-bold">{brl(valorPendente)}</span>
+            <span className={`text-tabular text-xs font-bold ${valorPendente > 0 ? "text-amber-600 dark:text-amber-400" : "text-muted-foreground"}`}>{brl(valorPendente)}</span>
           </div>
         </div>
       </div>
