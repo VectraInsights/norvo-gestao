@@ -305,27 +305,40 @@ export function LancamentosPage({ tipo }: { tipo: "receber" | "pagar" }) {
   // allIds calculado depois dos filtros (mais abaixo, via `filtrados`)
   const clearSel = () => setSelected(new Set());
 
+  // Lotes de 100 ids: URL longa demais dá Bad Request no PostgREST
+  const emLotes = async (ids: string[], fn: (lote: string[]) => Promise<unknown>) => {
+    for (let i = 0; i < ids.length; i += 100) {
+      await fn(ids.slice(i, i + 100));
+    }
+  };
+
   const excluirLote = useMutation({
     mutationFn: async (ids: string[]) => {
       // Desvincula parcelas de notas importadas antes de excluir
-      await supabase
+      await emLotes(ids, (lote) => supabase
         .from("notas_importadas_parcelas" as never)
         .update({ lancamento_id: null } as never)
-        .in("lancamento_id", ids);
+        .in("lancamento_id", lote)
+        .then((r) => { if (r.error) throw r.error; }));
       // Desvincula folhas vinculadas (fallback se trigger não disparar via client)
-      await supabase
+      await emLotes(ids, (lote) => supabase
         .from("folha_pagamento" as never)
         .update({ status: "aberta", lancamento_id: null, data_pagamento: null } as never)
-        .in("lancamento_id", ids);
+        .in("lancamento_id", lote)
+        .then((r) => { if (r.error) throw r.error; }));
       // Desvincula das transações OFX antes de excluir — a transação bancária
       // volta para "aberto" (podendo ser reconciliada novamente), mas não é apagada.
-      const { error: eOfx } = await supabase
-        .from("ofx_transacoes")
-        .update({ status: "aberto", lancamento_id: null })
-        .in("lancamento_id", ids);
-      if (eOfx) throw eOfx;
-      const { error } = await supabase.from("lancamentos_financeiros").delete().in("id", ids);
-      if (error) throw error;
+      await emLotes(ids, async (lote) => {
+        const { error: eOfx } = await supabase
+          .from("ofx_transacoes")
+          .update({ status: "aberto", lancamento_id: null })
+          .in("lancamento_id", lote);
+        if (eOfx) throw eOfx;
+      });
+      await emLotes(ids, async (lote) => {
+        const { error } = await supabase.from("lancamentos_financeiros").delete().in("id", lote);
+        if (error) throw error;
+      });
     },
     onSuccess: () => {
       toast.success("Lançamentos excluídos");
@@ -347,8 +360,10 @@ export function LancamentosPage({ tipo }: { tipo: "receber" | "pagar" }) {
         status === "pago"
           ? { status, data_pagamento: format(new Date(), "yyyy-MM-dd") }
           : { status };
-      const { error } = await supabase.from("lancamentos_financeiros").update(patch).in("id", ids);
-      if (error) throw error;
+      await emLotes(ids, async (lote) => {
+        const { error } = await supabase.from("lancamentos_financeiros").update(patch).in("id", lote);
+        if (error) throw error;
+      });
     },
     onSuccess: () => {
       toast.success("Status alterado");
@@ -497,7 +512,7 @@ export function LancamentosPage({ tipo }: { tipo: "receber" | "pagar" }) {
     l.descricao.toLowerCase().includes(buscaNorm) ||
     (l.contato?.nome ?? "").toLowerCase().includes(buscaNorm);
   const filtrados = noPeriodo.filter(filtroAba).filter(aplicaBusca);
-  const pageSize = 25;
+  const [pageSize, setPageSize] = useState(10);
   const totalPaginas = Math.max(1, Math.ceil(filtrados.length / pageSize));
   const paginaAtual = Math.min(pagina, totalPaginas);
   const lancamentosVisiveis = filtrados.slice((paginaAtual - 1) * pageSize, paginaAtual * pageSize);
@@ -961,10 +976,23 @@ export function LancamentosPage({ tipo }: { tipo: "receber" | "pagar" }) {
             </TableBody>
           </Table>
           <div className="flex items-center justify-between border-t px-4 py-3 text-sm text-muted-foreground">
-            <span>
-              Mostrando {(paginaAtual - 1) * pageSize + 1}–
-              {Math.min(paginaAtual * pageSize, filtrados.length)} de {filtrados.length}
-            </span>
+            <div className="flex items-center gap-2">
+              <span>
+                Mostrando {(paginaAtual - 1) * pageSize + 1}–
+                {Math.min(paginaAtual * pageSize, filtrados.length)} de {filtrados.length}
+              </span>
+              <Select
+                value={String(pageSize)}
+                onValueChange={(v) => { setPageSize(Number(v)); setPagina(1); }}
+              >
+                <SelectTrigger className="h-7 w-[76px] text-xs"><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  {["10", "25", "50", "100"].map((n) => (
+                    <SelectItem key={n} value={n}>{n} / pág.</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
             <div className="flex items-center gap-1">
               <Button
                 type="button"
