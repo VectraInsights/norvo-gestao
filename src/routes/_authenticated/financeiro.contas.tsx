@@ -1619,9 +1619,7 @@ function ReconcileDialog({ contaId, conta, empresaId, autoConciliar, importing, 
                 <Button variant="ghost" size="sm" className="h-8 text-xs" onClick={() => { setBusca(""); setFiltro("todos"); setOrdem("recentes"); setMes("todos"); setPagina(1); }}>
                   <Trash2 className="mr-1 h-3 w-3" />Limpar filtros
                 </Button>
-
               </div>
-            </div>
 
             <div className="grid grid-cols-3 overflow-hidden rounded-md border">
               {([
