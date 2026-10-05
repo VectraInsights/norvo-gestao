@@ -4384,3 +4384,19 @@ Espelhado na Vercel.
   baseline pré-existente).
 - Arquivo: `src/routes/_authenticated/fiscal.recebidas.tsx`.
 
+## DANFE no layout oficial do modelo impresso (05/10)
+
+- `danfe-pdf.ts` reescrito (`DANFE_REV 20261005-oficial`, fonte serifada, sem
+  faixas cinzas): canhoto com box NF-e Nº (`000.015.545`) + Série; cabeçalho
+  com emitente centralizado, DANFE com 0-ENTRADA/1-SAÍDA emoldurado, Nº com
+  zeros, barras + chave + portal; natureza + protocolo; IE/IM/IEST/CNPJ;
+  destinatário com data/hora de saída; fatura em blocos Num/Venc/Valor;
+  imposto em 9 colunas (II, ICMS UF remet., FCP, PIS, IPI, ICMS UF dest.,
+  trib., COFINS); transporte com frete curto (`1-Por conta do Dest`);
+  produtos com coluna VALOR DESC; ISSQN; adicionais + rodapé de impressão.
+- Dados novos vindos do XML (`fiscal.recebidas.tsx`): IM do emitente,
+  saída (`dhSaiEnt`), totais (vII, vPIS, vCOFINS, vIPI, UF remet/dest, FCP,
+  trib.) e `vDesc` por item (`itensFiscaisDoXml` + `montarDanfe`).
+- Teste `danfe-pdf.test.ts` com os dados da NF-e 15545 da PD DIESEL: PDF de
+  1 página com todas as seções (`npx vitest run` OK) + `npm run build` OK.
+

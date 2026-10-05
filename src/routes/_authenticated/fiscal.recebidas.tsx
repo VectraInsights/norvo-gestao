@@ -47,12 +47,12 @@ interface NotaRecebida {
 
 const FORMAS_PARCELA = ["Boleto", "Cartão de crédito", "Cartão de débito", "Cheque", "Dinheiro", "Duplicata", "Pix", "Transferência", "Outros"] as const;
 
-// modFrete (transp) -> descrição exibida no campo "Frete por Conta" do DANFE
+// modFrete (transp) -> texto impresso no campo "Frete" do DANFE (padrão do modelo oficial)
 const FRETE_POR_CONTA: Record<string, string> = {
-  "0": "0 - Emitente",
-  "1": "1 - Destinatário",
-  "2": "2 - Terceiros",
-  "9": "9 - Sem Frete",
+  "0": "0-Por conta do Rem",
+  "1": "1-Por conta do Dest",
+  "2": "2-Por conta de Terceiros",
+  "9": "9-Sem Frete",
 };
 
 interface ParsedXMLResult {
@@ -140,6 +140,7 @@ function parseDanfeDoXml(xml: string): Partial<DanfeData> {
     out.emitUF = txt("emit > enderEmit > UF");
     out.emitFone = txt("emit > enderEmit > fone");
     out.emitIE = txt("emit > IE");
+    out.emitIM = txt("emit > IM");
     // Destinatário
     out.destNome = txt("dest > xNome");
     out.destCnpj = txt("dest > CNPJ") || txt("dest > CPF");
@@ -155,6 +156,12 @@ function parseDanfeDoXml(xml: string): Partial<DanfeData> {
     out.cfop = txt("det > prod > CFOP");
     out.serie = txt("ide > serie");
     out.dhEmi = txt("ide > dhEmi") || txt("ide > dEmi");
+    const dhSai = txt("ide > dhSaiEnt") || txt("ide > dSaiEnt");
+    if (dhSai) {
+      out.dataSaidaEnt = dhSai;
+      const tm = dhSai.match(/T(\d{2}:\d{2})(?::(\d{2}))?/);
+      if (tm) out.horaSaidaEnt = tm[2] ? `${tm[1]}:${tm[2]}` : tm[1];
+    }
     out.tpEntradaSaida = "1";
     out.emitIESubst = txt("emit > IEST");
     // Totais
@@ -167,6 +174,14 @@ function parseDanfeDoXml(xml: string): Partial<DanfeData> {
     out.valorIcms = num("total > ICMSTot > vICMS");
     out.baseIcmsST = num("total > ICMSTot > vBCST");
     out.valorIcmsST = num("total > ICMSTot > vST");
+    out.vImpImportacao = num("total > ICMSTot > vII");
+    out.vIcmsUfRemet = num("total > ICMSTot > vICMSUFRemet");
+    out.vFcpUfDest = num("total > ICMSTot > vFCPUFDest");
+    out.valorPis = num("total > ICMSTot > vPIS");
+    out.valorIpi = num("total > ICMSTot > vIPI");
+    out.vIcmsUfDest = num("total > ICMSTot > vICMSUFDest");
+    out.vTotTrib = num("total > ICMSTot > vTotTrib");
+    out.valorCofins = num("total > ICMSTot > vCOFINS");
     // Transporte
     out.transportadora = txt("transp > transporta > xNome");
     out.transpCnpj = txt("transp > transporta > CNPJ") || txt("transp > transporta > CPF");
@@ -199,7 +214,7 @@ function parseDanfeDoXml(xml: string): Partial<DanfeData> {
 }
 
 // Campos fiscais por item (NCM/CST/CFOP/IPI/alíquotas), na ordem dos <det>
-function itensFiscaisDoXml(xml: string): { ncm: string; cst: string; cfop: string; vIpi: string; aliqIcms: string; aliqIpi: string; vBC: string; vICMS: string }[] {
+function itensFiscaisDoXml(xml: string): { ncm: string; cst: string; cfop: string; vIpi: string; aliqIcms: string; aliqIpi: string; vBC: string; vICMS: string; vDesc: string }[] {
   try {
     const parser = new DOMParser();
     const doc = parser.parseFromString(xml, "text/xml");
@@ -212,6 +227,7 @@ function itensFiscaisDoXml(xml: string): { ncm: string; cst: string; cfop: strin
       aliqIpi: d.querySelector("imposto > IPI > pIPI")?.textContent || "",
       vBC: d.querySelector("imposto > ICMS > vBC")?.textContent || "",
       vICMS: d.querySelector("imposto > ICMS > vICMS")?.textContent || "",
+      vDesc: d.querySelector("prod > vDesc")?.textContent || "",
     }));
   } catch {
     return [];
@@ -1341,6 +1357,7 @@ function NotasRecebidas() {
           valorUnit: p.valorUnit, valorTotal: p.valorTotal,
           cfop: f?.cfop || extra.cfop || "",
           ncm: f?.ncm || "", cst: f?.cst || "",
+          desconto: f?.vDesc || "",
           vIpi: f?.vIpi || "", aliqIcms: f?.aliqIcms || "", aliqIpi: f?.aliqIpi || "",
           baseIcms: f?.vBC || "", vIcms: f?.vICMS || "",
         };
