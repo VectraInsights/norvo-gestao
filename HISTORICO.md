@@ -4596,3 +4596,9 @@ Espelhado na Vercel.
 
 - Linhas da lista com fonte e logos maiores (logo 40px).
 - Validado com `npm run build` OK.
+
+## Trilha de auditoria nas contas (05/10)
+
+- Botão abre o histórico real: criar, editar, excluir e definir padrão
+  gravam quem/quando/o quê em `auditoria_eventos`.
+- Validado com `tsc` (só baseline) e `npm run build` OK.

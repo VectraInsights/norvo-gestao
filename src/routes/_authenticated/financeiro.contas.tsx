@@ -572,6 +572,40 @@ function ContasFinanceiras() {
     });
   }, [contas, busca]);
 
+  // Trilha de auditoria (tabela auditoria_eventos): quem criou/editou/excluiu/definiu padrão
+  const [trilhaOpen, setTrilhaOpen] = useState(false);
+  const registrarAuditoria = async (acao: string, descricao: string, detalhes: Record<string, any> = {}) => {
+    try {
+      if (!empresa) return;
+      const { data: sess } = await supabase.auth.getUser();
+      const u = sess?.user;
+      if (!u) return;
+      const nome = ((u.user_metadata as any)?.nome as string) || u.email || "";
+      await supabase.from("auditoria_eventos" as never).insert({
+        empresa_id: empresa.id,
+        user_id: u.id,
+        modulo: "financeiro",
+        acao,
+        entidade: "conta_financeira",
+        detalhes: { ...detalhes, descricao, user_nome: nome, user_email: u.email || "" },
+      } as any);
+    } catch { /* trilha indisponível: não bloqueia o fluxo */ }
+  };
+  const trilhaQuery = useQuery({
+    enabled: trilhaOpen && !!empresa,
+    queryKey: ["auditoria-contas", empresa?.id],
+    queryFn: async () => {
+      const { data, error } = await supabase.from("auditoria_eventos" as never)
+        .select("id,created_at,acao,detalhes")
+        .eq("empresa_id", empresa!.id as never)
+        .eq("modulo", "financeiro")
+        .eq("entidade", "conta_financeira")
+        .order("created_at", { ascending: false })
+        .limit(200);
+      if (error) throw error;
+      return (data ?? []) as any[];
+    },
+  });
   const resetWizard = () => { setStep(1); setTipo("corrente"); setForm(initialForm("corrente")); setEditandoId(null); };
   const [editandoId, setEditandoId] = useState<string | null>(null);
 
@@ -582,6 +616,8 @@ function ContasFinanceiras() {
     if (id) {
       const { error } = await supabase.from("contas_bancarias").update({ padrao: true }).eq("id", id);
       if (error) { toast.error(error.message); return; }
+      const nome = (contas ?? []).find((c) => c.id === id)?.nome ?? "";
+      void registrarAuditoria("padrao", `Conta "${nome}" definida como padrão`, { conta_id: id });
     }
     qc.invalidateQueries({ queryKey: ["contas-bancarias"] });
     qc.invalidateQueries({ queryKey: ["contas-opt"] });
@@ -643,8 +679,9 @@ function ContasFinanceiras() {
       const { error } = await supabase.from("contas_bancarias").update(payloadEdicao(input) as never).eq("id", editandoId);
       if (error) throw error;
     },
-    onSuccess: () => {
+    onSuccess: (_data: unknown, input: FormState) => {
       toast.success("Conta atualizada"); setOpen(false); resetWizard();
+      void registrarAuditoria("alterar", `Conta "${input.nome || input.banco || ""}" alterada`, { conta_id: editandoId, nome: input.nome });
       qc.invalidateQueries({ queryKey: ["contas-bancarias"] });
       qc.invalidateQueries({ queryKey: ["contas-opt"] });
       qc.invalidateQueries({ queryKey: ["contas"] });
@@ -700,8 +737,9 @@ function ContasFinanceiras() {
       const { error } = await supabase.from("contas_bancarias").insert(payload as never);
       if (error) throw error;
     },
-    onSuccess: () => {
+    onSuccess: (_data: unknown, input: FormState) => {
       toast.success("Conta criada"); setOpen(false); resetWizard();
+      void registrarAuditoria("criar", `Conta "${input.nome || input.banco || ""}" criada`, { nome: input.nome, tipo: input.tipo });
       qc.invalidateQueries({ queryKey: ["contas-bancarias"] });
     },
     onError: (e: Error) => toast.error(e.message),
@@ -715,8 +753,10 @@ function ContasFinanceiras() {
       const { error } = await supabase.from("contas_bancarias").delete().eq("id", id);
       if (error) throw error;
     },
-    onSuccess: () => {
+    onSuccess: (_data: unknown, id: string) => {
       toast.success("Conta excluída");
+      const nome = (contas ?? []).find((c) => c.id === id)?.nome ?? "";
+      void registrarAuditoria("excluir", `Conta "${nome}" excluída`, { conta_id: id });
       qc.invalidateQueries({ queryKey: ["contas-bancarias"] });
     },
     onError: (e: Error) => toast.error(e.message),
@@ -827,8 +867,8 @@ function ContasFinanceiras() {
         </div>
         <div className="flex items-center gap-2">
           <div className="flex items-center gap-3">
-            <Button variant="outline" size="sm">
-              Adicionar trilha de auditoria
+            <Button variant="outline" size="sm" onClick={() => setTrilhaOpen(true)}>
+              Trilha de auditoria
             </Button>
 
             <Dialog open={open} onOpenChange={(v) => { if (!criar.isPending) { setOpen(v); if (!v) resetWizard(); } }}>
@@ -1162,6 +1202,44 @@ function ContasFinanceiras() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      <Dialog open={trilhaOpen} onOpenChange={setTrilhaOpen}>
+        <DialogContent className="max-h-[85vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Trilha de auditoria — Contas financeiras</DialogTitle>
+          </DialogHeader>
+          {trilhaQuery.isLoading ? (
+            <p className="text-sm text-muted-foreground py-6 text-center">Carregando...</p>
+          ) : trilhaQuery.isError ? (
+            <p className="text-sm text-muted-foreground py-6 text-center">Trilha indisponível no momento.</p>
+          ) : (trilhaQuery.data ?? []).length === 0 ? (
+            <p className="text-sm text-muted-foreground py-6 text-center">Nenhum evento registrado ainda. Criar, editar, excluir ou definir padrão gera registros aqui.</p>
+          ) : (
+            <div className="divide-y divide-border">
+              {(trilhaQuery.data ?? []).map((ev: any) => (
+                <div key={ev.id} className="flex items-start gap-3 py-2.5">
+                  <span className={`mt-0.5 inline-flex shrink-0 items-center rounded-full px-2 py-0.5 text-[11px] font-medium ${
+                    ev.acao === "excluir" ? "bg-destructive/10 text-destructive"
+                    : ev.acao === "alterar" ? "bg-primary/10 text-primary"
+                    : ev.acao === "padrao" ? "bg-warning/15 text-warning-foreground"
+                    : "bg-success/10 text-success"
+                  }`}>
+                    {ev.acao === "excluir" ? "Excluiu" : ev.acao === "alterar" ? "Alterou" : ev.acao === "padrao" ? "Padrão" : "Criou"}
+                  </span>
+                  <div className="min-w-0 flex-1">
+                    <p className="text-sm text-foreground">{ev.detalhes?.descricao || "—"}</p>
+                    <p className="text-xs text-muted-foreground">
+                      {ev.detalhes?.user_nome || ev.detalhes?.user_email || "—"}
+                      {" · "}
+                      {ev.created_at ? new Date(ev.created_at).toLocaleString("pt-BR") : ""}
+                    </p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
 
       <AlertDialog open={!!confImport} onOpenChange={(v) => { if (!v) setConfImport(null); }}>
         <AlertDialogContent>
