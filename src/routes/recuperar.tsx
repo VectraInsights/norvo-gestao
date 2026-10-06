@@ -29,32 +29,34 @@ function RecuperarSenha() {
   };
 
   return (
-    <main className="flex min-h-screen items-center justify-center p-6">
-      <div className="w-full max-w-sm">
-        <h1 className="text-display text-3xl">Recuperar senha</h1>
+    <main className="flex min-h-screen items-center justify-center bg-background p-6 sm:p-10">
+      <div className="erp-surface w-full max-w-sm rounded-2xl p-8 sm:p-10">
+        <h1 className="text-display text-3xl tracking-tight">Recuperar senha</h1>
 
         {sent ? (
           <div className="mt-6 space-y-4">
-            <div className="flex items-start gap-3 rounded-lg border bg-muted/40 p-4">
-              <MailCheck className="mt-0.5 h-5 w-5 shrink-0 text-primary" />
-              <p className="text-sm text-muted-foreground">
-                Se existir uma conta para <strong>{email}</strong>, você receberá
+            <div className="flex items-start gap-3 rounded-xl border bg-muted/40 p-4 shadow-sm">
+              <div className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-primary/10 text-primary">
+                <MailCheck className="h-4 w-4" />
+              </div>
+              <p className="text-sm leading-relaxed text-muted-foreground">
+                Se existir uma conta para <strong className="text-foreground">{email}</strong>, você receberá
                 um link para definir uma nova senha. Verifique também a caixa de
                 spam.
               </p>
             </div>
-            <Button asChild variant="outline" className="w-full">
+            <Button asChild variant="outline" className="h-10 w-full rounded-xl shadow-sm transition-all hover:-translate-y-px hover:shadow-md">
               <Link to="/auth">Voltar para o login</Link>
             </Button>
           </div>
         ) : (
           <>
-            <p className="mt-1 text-sm text-muted-foreground">
+            <p className="mt-1.5 text-sm leading-relaxed text-muted-foreground">
               Informe seu email e enviaremos um link para você criar uma nova
               senha.
             </p>
-            <form onSubmit={handleSubmit} className="mt-6 space-y-3">
-              <div>
+            <form onSubmit={handleSubmit} className="mt-6 space-y-4">
+              <div className="grid gap-1.5">
                 <Label htmlFor="email-rec">Email</Label>
                 <Input
                   id="email-rec"
@@ -62,17 +64,18 @@ function RecuperarSenha() {
                   required
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
+                  className="h-10 rounded-xl"
                 />
               </div>
-              <Button type="submit" className="w-full" disabled={loading}>
+              <Button type="submit" className="h-10 w-full rounded-xl shadow-sm transition-all hover:-translate-y-px hover:shadow-md" disabled={loading}>
                 {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                 Enviar link de recuperação
               </Button>
             </form>
-            <p className="mt-6 text-center text-xs text-muted-foreground">
+            <p className="mt-8 text-center text-xs text-muted-foreground">
               <Link
                 to="/auth"
-                className="underline underline-offset-4 hover:text-foreground"
+                className="underline underline-offset-4 transition-colors hover:text-foreground"
               >
                 ← Voltar para o login
               </Link>

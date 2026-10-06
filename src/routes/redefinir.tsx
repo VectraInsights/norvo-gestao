@@ -52,11 +52,12 @@ function RedefinirSenha() {
 
   if (!ready) {
     return (
-      <main className="flex min-h-screen items-center justify-center p-6">
-        <div className="w-full max-w-sm text-center">
-          <Loader2 className="mx-auto h-6 w-6 animate-spin text-muted-foreground" />
-          <p className="mt-4 text-sm text-muted-foreground">
-            Validando seu link de recuperação...
+      <main className="flex min-h-screen items-center justify-center bg-background p-6">
+        <div className="erp-surface flex w-full max-w-xs flex-col items-center gap-3 rounded-2xl p-8 text-center">
+          <Loader2 className="h-6 w-6 animate-spin text-primary" />
+          <p className="text-sm font-medium">Validando seu link…</p>
+          <p className="text-xs text-muted-foreground">
+            Aguarde enquanto confirmamos sua recuperação
           </p>
         </div>
       </main>
@@ -64,14 +65,14 @@ function RedefinirSenha() {
   }
 
   return (
-    <main className="flex min-h-screen items-center justify-center p-6">
-      <div className="w-full max-w-sm">
-        <h1 className="text-display text-3xl">Definir nova senha</h1>
-        <p className="mt-1 text-sm text-muted-foreground">
+    <main className="flex min-h-screen items-center justify-center bg-background p-6 sm:p-10">
+      <div className="erp-surface w-full max-w-sm rounded-2xl p-8 sm:p-10">
+        <h1 className="text-display text-3xl tracking-tight">Definir nova senha</h1>
+        <p className="mt-1.5 text-sm leading-relaxed text-muted-foreground">
           Escolha uma senha forte com pelo menos 8 caracteres.
         </p>
-        <form onSubmit={handleSubmit} className="mt-6 space-y-3">
-          <div>
+        <form onSubmit={handleSubmit} className="mt-6 space-y-4">
+          <div className="grid gap-1.5">
             <Label htmlFor="nova-senha">Nova senha</Label>
             <Input
               id="nova-senha"
@@ -80,9 +81,10 @@ function RedefinirSenha() {
               minLength={8}
               value={password}
               onChange={(e) => setPassword(e.target.value)}
+              className="h-10 rounded-xl"
             />
           </div>
-          <div>
+          <div className="grid gap-1.5">
             <Label htmlFor="confirma-senha">Confirmar nova senha</Label>
             <Input
               id="confirma-senha"
@@ -91,17 +93,18 @@ function RedefinirSenha() {
               minLength={8}
               value={confirm}
               onChange={(e) => setConfirm(e.target.value)}
+              className="h-10 rounded-xl"
             />
           </div>
-          <Button type="submit" className="w-full" disabled={loading}>
+          <Button type="submit" className="h-10 w-full rounded-xl shadow-sm transition-all hover:-translate-y-px hover:shadow-md" disabled={loading}>
             {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
             Salvar nova senha
           </Button>
         </form>
-        <p className="mt-6 text-center text-xs text-muted-foreground">
+        <p className="mt-8 text-center text-xs text-muted-foreground">
           <Link
             to="/auth"
-            className="underline underline-offset-4 hover:text-foreground"
+            className="underline underline-offset-4 transition-colors hover:text-foreground"
           >
             ← Voltar para o login
           </Link>

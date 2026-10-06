@@ -4780,3 +4780,9 @@ Espelhado na Vercel.
 - Auth com checking em card, campos h-10 rounded-xl e botões com
   hover elevado.
 - Paleta intacta; `tsc` limpo nos tocados e `npm run build` OK.
+
+## Repaginação: recuperar + redefinir (06/10)
+
+- Ambas em card `erp-surface` rounded-2xl com respiro; campos h-10
+  rounded-xl, botões com hover elevado; loading em card.
+- Paleta intacta; `tsc` limpo nos tocados e `npm run build` OK.
