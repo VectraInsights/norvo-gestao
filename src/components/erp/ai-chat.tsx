@@ -130,10 +130,10 @@ export function AIChat() {
         }}
         style={style}
         title="Assistente — clique para abrir, arraste para mover"
-        className="fixed z-50 h-10 w-10 rounded-full shadow-md bg-primary text-primary-foreground hover:bg-primary/90 touch-none select-none cursor-grab active:cursor-grabbing"
+        className="fixed z-50 h-12 w-12 rounded-2xl shadow-lg bg-primary text-primary-foreground hover:bg-primary/90 hover:-translate-y-0.5 hover:shadow-xl transition-all touch-none select-none cursor-grab active:cursor-grabbing"
         size="icon"
       >
-        <MessageSquare className="h-4 w-4" />
+        <MessageSquare className="h-5 w-5" />
       </Button>
     );
   }
@@ -142,7 +142,7 @@ export function AIChat() {
     ? { left: panelPos.x, top: panelPos.y }
     : { bottom: BTN_MARGIN, right: BTN_MARGIN };
   return (
-    <Card style={panelStyle} className="fixed z-50 w-[380px] max-w-[calc(100vw-24px)] max-h-[520px] flex flex-col shadow-2xl border-primary/20">
+    <Card style={panelStyle} className="fixed z-50 w-[380px] max-w-[calc(100vw-24px)] max-h-[560px] flex flex-col overflow-hidden rounded-2xl shadow-2xl border-primary/20">
       <CardHeader
         onPointerDown={(e) => {
           (e.currentTarget as HTMLElement).setPointerCapture?.(e.pointerId);
@@ -168,17 +168,23 @@ export function AIChat() {
           });
         }}
         title="Arraste para mover"
-        className="flex flex-row items-center justify-between space-y-0 p-3 bg-primary text-primary-foreground rounded-t-lg touch-none select-none cursor-grab active:cursor-grabbing"
+        className="flex flex-row items-center justify-between space-y-0 rounded-t-2xl p-4 bg-primary text-primary-foreground touch-none select-none cursor-grab active:cursor-grabbing"
       >
-        <div className="flex items-center gap-2">
-          <Bot className="h-4 w-4" />
-          <span className="text-sm font-semibold">Assistente Norvo</span>
+        <div className="flex items-center gap-2.5">
+          <div className="grid h-8 w-8 place-items-center rounded-xl bg-primary-foreground/15">
+            <Bot className="h-4 w-4" />
+          </div>
+          <div>
+            <div className="text-sm font-semibold tracking-tight">Assistente Norvo</div>
+            <div className="text-[11px] opacity-80">Sempre por aqui quando precisar</div>
+          </div>
         </div>
         <Button
           variant="ghost"
           size="icon"
-          className="h-7 w-7 text-primary-foreground hover:bg-primary-foreground/20"
+          className="h-8 w-8 rounded-xl text-primary-foreground hover:bg-primary-foreground/20"
           onClick={() => setOpen(false)}
+          aria-label="Fechar assistente"
         >
           <X className="h-4 w-4" />
         </Button>
@@ -186,18 +192,18 @@ export function AIChat() {
 
       <CardContent className="flex-1 overflow-hidden p-0 flex flex-col min-h-0">
         {/* Área de mensagens */}
-        <div ref={scrollRef} className="flex-1 overflow-y-auto p-3 space-y-3 min-h-0 max-h-[340px]">
+        <div ref={scrollRef} className="flex-1 overflow-y-auto p-4 space-y-3 min-h-0 max-h-[360px]">
           {messages.length === 0 && (
             <div className="space-y-3">
-              <p className="text-xs text-muted-foreground text-center">
+              <p className="text-[13px] leading-relaxed text-muted-foreground text-center">
                 Olá! Sou o assistente do Norvo Gestão. Como posso ajudar?
               </p>
-              <div className="grid grid-cols-1 gap-1.5">
+              <div className="grid grid-cols-1 gap-2">
                 {SUGESTOES.map((s) => (
                   <Button
                     key={s}
                     variant="outline"
-                    className="h-auto py-2 px-3 text-xs text-left justify-start font-normal"
+                    className="h-auto justify-start rounded-xl px-3.5 py-2.5 text-left text-xs font-normal shadow-sm transition-all hover:-translate-y-px hover:shadow-md"
                     onClick={() => send(s)}
                   >
                     {s}
@@ -210,21 +216,21 @@ export function AIChat() {
           {messages.map((m, i) => (
             <div key={i} className={`flex gap-2 ${m.role === "user" ? "justify-end" : "justify-start"}`}>
               {m.role === "assistant" && (
-                <div className="h-6 w-6 rounded-full bg-primary/10 flex items-center justify-center shrink-0 mt-0.5">
+                <div className="h-7 w-7 rounded-xl bg-primary/10 flex items-center justify-center shrink-0 mt-0.5">
                   <Bot className="h-3.5 w-3.5 text-primary" />
                 </div>
               )}
               <div
-                className={`max-w-[80%] rounded-lg px-3 py-2 text-xs leading-relaxed ${
+                className={`max-w-[80%] px-3.5 py-2.5 text-[13px] leading-relaxed shadow-sm ${
                   m.role === "user"
-                    ? "bg-primary text-primary-foreground"
-                    : "bg-muted"
+                    ? "rounded-2xl rounded-br-md bg-primary text-primary-foreground"
+                    : "rounded-2xl rounded-bl-md bg-muted"
                 }`}
               >
                 {m.content}
               </div>
               {m.role === "user" && (
-                <div className="h-6 w-6 rounded-full bg-muted flex items-center justify-center shrink-0 mt-0.5">
+                <div className="h-7 w-7 rounded-xl bg-muted flex items-center justify-center shrink-0 mt-0.5">
                   <User className="h-3.5 w-3.5" />
                 </div>
               )}
@@ -233,10 +239,10 @@ export function AIChat() {
 
           {loading && (
             <div className="flex gap-2 items-start">
-              <div className="h-6 w-6 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
+              <div className="h-7 w-7 rounded-xl bg-primary/10 flex items-center justify-center shrink-0">
                 <Bot className="h-3.5 w-3.5 text-primary" />
               </div>
-              <div className="bg-muted rounded-lg px-3 py-2 flex items-center gap-1.5">
+              <div className="rounded-2xl rounded-bl-md bg-muted px-3.5 py-2.5 flex items-center gap-1.5">
                 <Loader2 className="h-3 w-3 animate-spin" />
                 <span className="text-xs text-muted-foreground">Pensando...</span>
               </div>
@@ -245,21 +251,21 @@ export function AIChat() {
         </div>
 
         {/* Input */}
-        <div className="p-3 border-t">
+        <div className="border-t bg-card p-4">
           <form
             onSubmit={(e) => { e.preventDefault(); send(); }}
-            className="flex gap-2"
+            className="flex gap-2.5"
           >
             <Input
               ref={inputRef}
               value={input}
               onChange={(e) => setInput(e.target.value)}
               placeholder="Digite sua pergunta..."
-              className="text-xs"
+              className="h-10 rounded-xl text-[13px]"
               disabled={loading}
             />
-            <Button type="submit" size="icon" disabled={loading || !input.trim()} className="shrink-0 h-9 w-9">
-              <Send className="h-3.5 w-3.5" />
+            <Button type="submit" size="icon" disabled={loading || !input.trim()} className="h-10 w-10 shrink-0 rounded-xl shadow-sm" aria-label="Enviar mensagem">
+              <Send className="h-4 w-4" />
             </Button>
           </form>
         </div>

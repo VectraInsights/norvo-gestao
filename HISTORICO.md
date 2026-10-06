@@ -4720,3 +4720,10 @@ Espelhado na Vercel.
 - Toast rounded-2xl com ícone Wifi/WifiOff, respiro maior e sombra;
   semântica sucesso/alerta mantida.
 - Paleta intacta; `tsc` limpo nos tocados e `npm run build` OK.
+
+## Repaginação: ai-chat (06/10)
+
+- Fecha a fundação: FAB rounded-2xl h-12 com hover elevado; painel
+  rounded-2xl; header com avatar e subtítulo; bolhas com canto
+  direcional; sugestões e input com respiro.
+- Paleta intacta; `tsc` limpo nos tocados e `npm run build` OK.
