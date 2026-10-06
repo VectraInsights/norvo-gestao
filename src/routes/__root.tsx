@@ -32,7 +32,7 @@ function NotFoundComponent() {
         </p>
         <div className="mt-8">
           <Link
-            to="/"
+            to="/dashboard"
             className="inline-flex h-10 items-center justify-center gap-2 rounded-xl bg-primary px-5 text-sm font-medium text-primary-foreground shadow-sm transition-all hover:-translate-y-px hover:shadow-md hover:opacity-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
           >
             Voltar ao início
@@ -65,7 +65,7 @@ function ErrorComponent({ error, reset }: { error: unknown; reset: () => void })
             Tentar novamente
           </button>
           <a
-            href="/"
+            href="/dashboard"
             className="inline-flex h-10 items-center justify-center gap-2 rounded-xl border border-input bg-background px-5 text-sm font-medium text-foreground shadow-sm transition-all hover:-translate-y-px hover:bg-accent hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
           >
             Início

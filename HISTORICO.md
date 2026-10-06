@@ -4902,3 +4902,9 @@ Espelhado na Vercel.
 - Nova venda -> /vendas/vendas; Lançamento -> /financeiro/extrato;
   Novo contato -> /vendas/clientes (eram 404).
 - `tsc` limpo nos tocados e `npm run build` OK.
+
+## Fix: voltar ao início vai ao dashboard (06/10)
+
+- 404 e erro: botões agora levam a `/dashboard` (iam para `/`,
+  que devolvia ao login).
+- `tsc` limpo nos tocados e `npm run build` OK.
