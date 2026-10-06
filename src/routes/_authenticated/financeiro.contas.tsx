@@ -253,9 +253,9 @@ function ContaDetalhe({ contaId, contas, empresaId, tabInicial, onVoltar, onSele
   }, [onVoltar]);
 
   return (
-    <div className="space-y-4">
-      <div className="flex flex-wrap items-center gap-2">
-        <div className="min-w-[200px] flex-1 sm:max-w-[240px]">
+    <div className="space-y-5 sm:space-y-6">
+      <div className="flex flex-wrap items-center gap-2.5">
+        <div className="min-w-[200px] flex-1 sm:max-w-[260px]">
           <Combobox
             value={contaId}
             onChange={(v) => { if (v && v !== contaId) onSelecionar(v); }}
@@ -264,18 +264,19 @@ function ContaDetalhe({ contaId, contas, empresaId, tabInicial, onVoltar, onSele
             searchPlaceholder="Digite para buscar..."
             emptyText="Nenhuma conta encontrada."
             footer={{ label: "Adicionar nova conta", onClick: onNovaConta }}
+            className="h-10"
           />
         </div>
         {conta && (
-          <Button variant="outline" size="sm" onClick={() => onImportar(contaId)}>
-            <Upload className="mr-1 h-3.5 w-3.5" />Importar OFX
+          <Button variant="outline" size="sm" onClick={() => onImportar(contaId)} className="h-10 rounded-xl px-4 shadow-sm">
+            <Upload className="mr-1.5 h-3.5 w-3.5" />Importar OFX
           </Button>
         )}
         {conta && (
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="outline" size="sm">
-                Ações da conta <ChevronDown className="ml-1 h-3.5 w-3.5" />
+              <Button variant="outline" size="sm" className="h-10 rounded-xl px-4 shadow-sm">
+                Ações da conta <ChevronDown className="ml-1.5 h-3.5 w-3.5" />
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="start">
@@ -288,32 +289,36 @@ function ContaDetalhe({ contaId, contas, empresaId, tabInicial, onVoltar, onSele
             </DropdownMenuContent>
           </DropdownMenu>
         )}
-        <div className="ml-auto flex flex-wrap items-center gap-x-4 gap-y-1">
-          <div className="flex items-center gap-1">
-            <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => shiftMes(-1)}>
-              <ChevronLeft className="h-3.5 w-3.5" />
+        <div className="ml-auto flex flex-wrap items-center gap-2.5">
+          <div className="flex items-center gap-1 rounded-xl border bg-card px-1.5 py-1 shadow-sm">
+            <Button variant="ghost" size="icon" className="h-8 w-8 rounded-lg" onClick={() => shiftMes(-1)} aria-label="Mês anterior">
+              <ChevronLeft className="h-4 w-4" />
             </Button>
-            <span className="min-w-28 text-center text-xs font-semibold">{mesLabel}</span>
-            <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => shiftMes(1)}>
-              <ChevronRight className="h-3.5 w-3.5" />
+            <span className="min-w-32 text-center text-sm font-semibold">{mesLabel}</span>
+            <Button variant="ghost" size="icon" className="h-8 w-8 rounded-lg" onClick={() => shiftMes(1)} aria-label="Próximo mês">
+              <ChevronRight className="h-4 w-4" />
             </Button>
           </div>
-          <div className="text-right">
-            <span className="text-[11px] text-muted-foreground">Saldo atual </span>
-            <span className="text-tabular text-xs font-bold">{brl(Number(conta?.saldo_atual) || 0)}</span>
-            <span className="text-[11px] text-muted-foreground"> · Pendente de conciliação </span>
-            <span className={`text-tabular text-xs font-bold ${valorPendente > 0 ? "text-amber-600 dark:text-amber-400" : "text-muted-foreground"}`}>{brl(valorPendente)}</span>
+          <div className="rounded-2xl border bg-card px-4 py-2 text-right shadow-sm">
+            <div>
+              <span className="text-[11px] text-muted-foreground">Saldo atual </span>
+              <span className="text-tabular text-sm font-bold">{brl(Number(conta?.saldo_atual) || 0)}</span>
+            </div>
+            <div>
+              <span className="text-[11px] text-muted-foreground">Pendente de conciliação </span>
+              <span className={`text-tabular text-sm font-bold ${valorPendente > 0 ? "text-amber-600 dark:text-amber-400" : "text-muted-foreground"}`}>{brl(valorPendente)}</span>
+            </div>
           </div>
         </div>
       </div>
 
       <Tabs value={tab} onValueChange={(v) => setTab(v as "pendentes" | "movs")}>
-        <TabsList>
+        <TabsList className="h-auto flex-wrap gap-1">
           <TabsTrigger value="pendentes">Conciliações pendentes</TabsTrigger>
           <TabsTrigger value="movs">Movimentações</TabsTrigger>
         </TabsList>
 
-        <TabsContent value="pendentes" className="space-y-3">
+        <TabsContent value="pendentes" className="mt-4 space-y-4">
           <ReconcileDialog
             contaId={contaId}
             conta={conta}
@@ -326,52 +331,52 @@ function ContaDetalhe({ contaId, contas, empresaId, tabInicial, onVoltar, onSele
           />
         </TabsContent>
 
-        <TabsContent value="movs" className="space-y-3">
-          <Card className="overflow-hidden bg-primary/[0.04]">
-            <div className="grid grid-cols-3 divide-x border-b">
-              <div className="px-3 py-2 text-center">
-                <div className="text-[11px] text-muted-foreground">Tudo</div>
-                <div className="text-lg font-bold">{gruposDia.length}</div>
+        <TabsContent value="movs" className="mt-4 space-y-4">
+          <Card className="overflow-hidden rounded-2xl bg-primary/[0.04] shadow-panel">
+            <div className="grid grid-cols-3 divide-x divide-border/60 border-b border-border/60">
+              <div className="px-4 py-3 text-center">
+                <div className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground">Tudo</div>
+                <div className="mt-1 text-xl font-bold text-tabular">{gruposDia.length}</div>
               </div>
-              <div className="px-3 py-2 text-center">
-                <div className="text-[11px] text-muted-foreground">Dias sem pendências</div>
-                <div className="text-lg font-bold text-success">{gruposDia.length - diasComPend}</div>
+              <div className="px-4 py-3 text-center">
+                <div className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground">Dias sem pendências</div>
+                <div className="mt-1 text-xl font-bold text-success text-tabular">{gruposDia.length - diasComPend}</div>
               </div>
-              <div className="px-3 py-2 text-center">
-                <div className="text-[11px] text-muted-foreground">Dias com pendências</div>
-                <div className="text-lg font-bold text-warning-foreground">{diasComPend}</div>
+              <div className="px-4 py-3 text-center">
+                <div className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground">Dias com pendências</div>
+                <div className="mt-1 text-xl font-bold text-warning-foreground text-tabular">{diasComPend}</div>
               </div>
             </div>
             {loadingMovs ? (
-              <p className="p-6 text-center text-sm text-muted-foreground">Carregando...</p>
+              <div className="space-y-2.5 p-4 sm:p-6">{Array.from({ length: 4 }).map((_, i) => <div key={i} className="h-12 animate-pulse rounded-xl bg-muted/30" />)}</div>
             ) : gruposDia.length === 0 ? (
-              <div className="p-6">
+              <div className="p-4 sm:p-6">
                 <EmptyState icon={Banknote} title="Sem movimentações" description={`Nenhum lançamento nesta conta em ${mesLabel}.`} />
               </div>
             ) : (
-              <div className="divide-y">
+              <div className="divide-y divide-border/60">
                 {gruposDia.map((g) => (
                   <div key={g.dia}>
-                    <button className="flex w-full items-center gap-3 px-4 py-2.5 text-left hover:bg-muted/40" onClick={() => toggleDia(g.dia)}>
+                    <button className="flex w-full items-center gap-3 px-4 py-3 text-left transition-colors hover:bg-accent/40 sm:px-5" onClick={() => toggleDia(g.dia)}>
                       <span className="text-sm font-semibold">{g.rotulo}</span>
                       <span className="text-xs capitalize text-muted-foreground">{g.semana}</span>
                       {g.pend && (
-                        <span className="rounded-full bg-warning/15 px-2 py-0.5 text-[11px] font-medium text-warning-foreground">pendente</span>
+                        <span className="rounded-full bg-warning/15 px-2.5 py-1 text-[11px] font-medium text-warning-foreground shadow-sm">pendente</span>
                       )}
                       <span className={`ml-auto text-tabular text-sm font-bold ${g.net < 0 ? "text-destructive" : "text-foreground"}`}>
                         {brl(g.net)}
                       </span>
-                      <ChevronRight className={`h-4 w-4 text-muted-foreground transition-transform ${expand.has(g.dia) ? "rotate-90" : ""}`} />
+                      <ChevronRight className={`h-4 w-4 shrink-0 text-muted-foreground transition-transform ${expand.has(g.dia) ? "rotate-90" : ""}`} />
                     </button>
                     {expand.has(g.dia) && (
-                      <div className="border-t bg-muted/20">
+                      <div className="border-t border-border/60 bg-muted/20">
                         {g.rows.map((l) => (
-                          <div key={l.id} className="flex items-center gap-3 px-8 py-1.5 text-sm">
+                          <div key={l.id} className="flex items-center gap-3 px-4 py-2 text-sm sm:px-8">
                             <span className="min-w-0 flex-1 truncate">{l.descricao || "—"}</span>
-                            <span className={`rounded-full px-2 py-0.5 text-[11px] font-medium ${l.status === "pago" || l.status === "conciliada" ? "bg-success/10 text-success" : l.status === "vencido" ? "bg-destructive/10 text-destructive" : "bg-muted text-muted-foreground"}`}>
+                            <span className={`shrink-0 rounded-full px-2.5 py-1 text-[11px] font-medium shadow-sm ${l.status === "pago" || l.status === "conciliada" ? "bg-success/10 text-success" : l.status === "vencido" ? "bg-destructive/10 text-destructive" : "bg-muted text-muted-foreground"}`}>
                               {l.status}
                             </span>
-                            <span className={`text-tabular font-medium ${l.tipo === "receber" ? "text-success" : "text-destructive"}`}>
+                            <span className={`shrink-0 text-tabular font-semibold ${l.tipo === "receber" ? "text-success" : "text-destructive"}`}>
                               {l.tipo === "receber" ? "+" : "-"}{brl(Number(l.valor))}
                             </span>
                           </div>

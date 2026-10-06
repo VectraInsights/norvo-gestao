@@ -4937,3 +4937,9 @@ Espelhado na Vercel.
   colada na borda arredondada); aplicado na lista, no diálogo
   de busca e no combobox.
 - `tsc` só baseline; build OK.
+
+## Repaginação visível: detalhe da conta (06/10)
+
+- Barra com seletor h-10, botões maiores, mês e saldos em cards;
+  resumo do mês, dias e lançamentos com respiro e hover.
+- Lógica intacta; `tsc` só baseline; build OK.
