@@ -39,9 +39,9 @@ export const Route = createFileRoute("/_authenticated/financeiro/cadastros")({
     ],
   }),
   errorComponent: ({ error }) => (
-    <div className="p-6 text-sm text-destructive" role="alert">Falha: {error.message}</div>
+    <div className="rounded-2xl border border-destructive/40 bg-destructive/5 p-5 text-sm leading-relaxed text-destructive shadow-sm" role="alert">Falha: {error instanceof Error ? error.message : "erro desconhecido"}</div>
   ),
-  notFoundComponent: () => <div className="p-6 text-sm">Página não encontrada.</div>,
+  notFoundComponent: () => <div className="rounded-2xl border bg-card p-8 text-center text-sm text-muted-foreground shadow-panel">Página não encontrada.</div>,
 });
 
 type Categoria = { id: string; nome: string; tipo: "receber" | "pagar"; parent_id: string | null; cor: string | null };
@@ -195,45 +195,45 @@ function CadastrosPage() {
   }, [centros, busca]);
 
   return (
-    <div className="p-6">
+    <div className="space-y-6">
       <PageHeader
         eyebrow="Financeiro"
         title="Cadastros"
         description="Gerencie as categorias financeiras e os centros de custo utilizados nos lançamentos."
       />
-      <div className="mb-3 flex flex-col gap-2 sm:flex-row sm:items-center">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
         <div className="relative flex-1">
-          <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-          <Input className="pl-8" placeholder="Buscar por nome, código ou descrição..." value={busca} onChange={(e) => setBusca(e.target.value)} />
+          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+          <Input className="h-10 rounded-xl pl-10 shadow-sm" placeholder="Buscar por nome, código ou descrição..." value={busca} onChange={(e) => setBusca(e.target.value)} />
         </div>
         <div className="flex items-center gap-2">
-          <Button variant="outline" size="sm">
+          <Button variant="outline" size="sm" className="h-10 rounded-xl px-4 shadow-sm">
             Adicionar trilha de auditoria
           </Button>
         </div>
       </div>
 
       <Tabs defaultValue="categorias">
-        <TabsList>
+        <TabsList className="h-auto flex-wrap gap-1">
           <TabsTrigger value="categorias">Categorias financeiras</TabsTrigger>
           <TabsTrigger value="centros">Centros de custo</TabsTrigger>
         </TabsList>
 
         {/* Categorias */}
-        <TabsContent value="categorias" className="mt-4">
-          <div className="mb-3 flex items-center justify-between gap-3">
+        <TabsContent value="categorias" className="mt-4 space-y-4">
+          <div className="flex flex-wrap items-center justify-between gap-3">
             <Tabs value={catTipoTab} onValueChange={(v) => setCatTipoTab(v as "pagar" | "receber")}>
-              <TabsList>
+              <TabsList className="h-auto flex-wrap gap-1">
                 <TabsTrigger value="pagar">Despesas</TabsTrigger>
                 <TabsTrigger value="receber">Receitas</TabsTrigger>
               </TabsList>
             </Tabs>
-            <Button size="sm" onClick={() => { setCatForm({ nome: "", tipo: catTipoTab, parent_id: "none" }); setCatOpen(true); }}>
-              <Plus className="mr-1 h-4 w-4" />Nova categoria
+            <Button size="sm" onClick={() => { setCatForm({ nome: "", tipo: catTipoTab, parent_id: "none" }); setCatOpen(true); }} className="h-10 rounded-xl px-5 shadow-sm transition-all hover:-translate-y-px hover:shadow-md">
+              <Plus className="mr-1.5 h-4 w-4" />Nova categoria
             </Button>
           </div>
           {loadingCat ? (
-            <div className="space-y-2">{Array.from({ length: 4 }).map((_, i) => <div key={i} className="h-12 animate-pulse rounded-md bg-muted/30" />)}</div>
+            <div className="space-y-2.5">{Array.from({ length: 4 }).map((_, i) => <div key={i} className="h-12 animate-pulse rounded-xl bg-muted/30" />)}</div>
           ) : !categoriasFiltradas.length ? (
             <EmptyState
               icon={FolderCog}
@@ -241,7 +241,7 @@ function CadastrosPage() {
               description={busca ? "Nada encontrado para a busca." : "Crie a primeira categoria financeira deste tipo."}
             />
           ) : (
-            <Card className="overflow-hidden shadow-panel">
+            <Card className="overflow-hidden rounded-2xl shadow-panel">
               <Table>
                 <TableHeader>
                   <TableRow>
@@ -252,7 +252,7 @@ function CadastrosPage() {
                 </TableHeader>
                 <TableBody>
                   {categoriasFiltradas.map((c) => (
-                    <TableRow key={c.id}>
+                    <TableRow key={c.id} className="transition-colors hover:bg-accent/30">
                       <TableCell className={c.parent_id ? "pl-8 text-muted-foreground" : "font-medium"}>{c.nome}</TableCell>
                       <TableCell>
                         <Badge variant="secondary" className={c.tipo === "receber" ? "bg-success/15 text-success" : "bg-destructive/15 text-destructive"}>
@@ -260,11 +260,11 @@ function CadastrosPage() {
                         </Badge>
                       </TableCell>
                       <TableCell className="text-right">
-                        <Button variant="ghost" size="icon" aria-label="Editar"
+                        <Button variant="ghost" size="icon" aria-label="Editar" className="h-8 w-8 rounded-lg"
                           onClick={() => { setCatForm({ id: c.id, nome: c.nome, tipo: c.tipo, parent_id: c.parent_id ?? "none" }); setCatOpen(true); }}>
                           <Pencil className="h-4 w-4" />
                         </Button>
-                        <Button variant="ghost" size="icon" aria-label="Excluir" className="text-destructive"
+                        <Button variant="ghost" size="icon" aria-label="Excluir" className="h-8 w-8 rounded-lg text-destructive"
                           onClick={() => setConfCat(c)}>
                           <Trash2 className="h-4 w-4" />
                         </Button>
@@ -277,18 +277,18 @@ function CadastrosPage() {
           )}
         </TabsContent>
 
-        <TabsContent value="centros" className="mt-4">
-          <div className="mb-3 flex justify-end">
-            <Button size="sm" onClick={() => { setCcForm({ nome: "", codigo: "", descricao: "", ativo: true }); setCcOpen(true); }}>
-              <Plus className="mr-1 h-4 w-4" />Novo centro de custo
+        <TabsContent value="centros" className="mt-4 space-y-4">
+          <div className="flex justify-end">
+            <Button size="sm" onClick={() => { setCcForm({ nome: "", codigo: "", descricao: "", ativo: true }); setCcOpen(true); }} className="h-10 rounded-xl px-5 shadow-sm transition-all hover:-translate-y-px hover:shadow-md">
+              <Plus className="mr-1.5 h-4 w-4" />Novo centro de custo
             </Button>
           </div>
           {loadingCc ? (
-            <div className="space-y-2">{Array.from({ length: 3 }).map((_, i) => <div key={i} className="h-12 animate-pulse rounded-md bg-muted/30" />)}</div>
+            <div className="space-y-2.5">{Array.from({ length: 3 }).map((_, i) => <div key={i} className="h-12 animate-pulse rounded-xl bg-muted/30" />)}</div>
           ) : !centrosFiltrados?.length ? (
             <EmptyState icon={FolderCog} title="Nenhum centro de custo" description={busca ? "Nada encontrado para a busca." : "Crie centros de custo para classificar os lançamentos."} />
           ) : (
-            <Card className="overflow-hidden shadow-panel">
+            <Card className="overflow-hidden rounded-2xl shadow-panel">
               <Table>
                 <TableHeader>
                   <TableRow>
@@ -301,7 +301,7 @@ function CadastrosPage() {
                 </TableHeader>
                 <TableBody>
                   {centrosFiltrados.map((c) => (
-                    <TableRow key={c.id}>
+                    <TableRow key={c.id} className="transition-colors hover:bg-accent/30">
                       <TableCell className="text-tabular">{c.codigo ?? "—"}</TableCell>
                       <TableCell className="font-medium">{c.nome}</TableCell>
                       <TableCell className="text-muted-foreground">{c.descricao ?? "—"}</TableCell>
@@ -311,11 +311,11 @@ function CadastrosPage() {
                         </Badge>
                       </TableCell>
                       <TableCell className="text-right">
-                        <Button variant="ghost" size="icon" aria-label="Editar"
+                        <Button variant="ghost" size="icon" aria-label="Editar" className="h-8 w-8 rounded-lg"
                           onClick={() => { setCcForm({ id: c.id, nome: c.nome, codigo: c.codigo ?? "", descricao: c.descricao ?? "", ativo: c.ativo }); setCcOpen(true); }}>
                           <Pencil className="h-4 w-4" />
                         </Button>
-                        <Button variant="ghost" size="icon" aria-label="Excluir" className="text-destructive"
+                        <Button variant="ghost" size="icon" aria-label="Excluir" className="h-8 w-8 rounded-lg text-destructive"
                           onClick={() => setConfCc(c)}>
                           <Trash2 className="h-4 w-4" />
                         </Button>
@@ -331,25 +331,25 @@ function CadastrosPage() {
 
       {/* Dialog categoria */}
       <Dialog open={catOpen} onOpenChange={setCatOpen}>
-        <DialogContent>
-          <DialogHeader><DialogTitle>{catForm.id ? "Editar categoria" : "Nova categoria"}</DialogTitle></DialogHeader>
-          <form onSubmit={(e) => { e.preventDefault(); salvarCat.mutate(); }} className="space-y-3">
-            <div>
+        <DialogContent className="sm:max-w-md sm:inset-auto sm:left-1/2 sm:top-1/2 sm:-translate-x-1/2 sm:-translate-y-1/2 sm:h-auto sm:max-h-[90vh] sm:w-full">
+          <DialogHeader className="gap-1.5 pb-1"><DialogTitle className="tracking-tight">{catForm.id ? "Editar categoria" : "Nova categoria"}</DialogTitle></DialogHeader>
+          <form onSubmit={(e) => { e.preventDefault(); salvarCat.mutate(); }} className="space-y-4">
+            <div className="grid gap-1.5">
               <Label>Nome *</Label>
-              <Input required value={catForm.nome} onChange={(e) => setCatForm({ ...catForm, nome: e.target.value })} />
+              <Input required value={catForm.nome} onChange={(e) => setCatForm({ ...catForm, nome: e.target.value })} className="h-10 rounded-xl" />
             </div>
-            <div>
+            <div className="grid gap-1.5">
               <Label>Tipo *</Label>
               <Select value={catForm.tipo} onValueChange={(v) => setCatForm({ ...catForm, tipo: v as "receber" | "pagar", parent_id: "none" })}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectTrigger className="h-10 rounded-xl"><SelectValue /></SelectTrigger>
                 <SelectContent>
                   <SelectItem value="receber">Receita</SelectItem>
                   <SelectItem value="pagar">Despesa</SelectItem>
                 </SelectContent>
               </Select>
             </div>
-            <DialogFooter>
-              <Button type="submit" disabled={salvarCat.isPending}>
+            <DialogFooter className="gap-2">
+              <Button type="submit" disabled={salvarCat.isPending} className="h-10 rounded-xl px-6 shadow-sm transition-all hover:-translate-y-px hover:shadow-md">
                 {salvarCat.isPending && <Loader2 className="mr-1 h-4 w-4 animate-spin" />}Salvar
               </Button>
             </DialogFooter>
@@ -359,35 +359,35 @@ function CadastrosPage() {
 
       {/* Dialog centro de custo */}
       <Dialog open={ccOpen} onOpenChange={setCcOpen}>
-        <DialogContent>
-          <DialogHeader><DialogTitle>{ccForm.id ? "Editar centro de custo" : "Novo centro de custo"}</DialogTitle></DialogHeader>
-          <form onSubmit={(e) => { e.preventDefault(); salvarCc.mutate(); }} className="space-y-3">
-            <div className="grid grid-cols-3 gap-3">
-              <div>
+        <DialogContent className="sm:max-w-md sm:inset-auto sm:left-1/2 sm:top-1/2 sm:-translate-x-1/2 sm:-translate-y-1/2 sm:h-auto sm:max-h-[90vh] sm:w-full">
+          <DialogHeader className="gap-1.5 pb-1"><DialogTitle className="tracking-tight">{ccForm.id ? "Editar centro de custo" : "Novo centro de custo"}</DialogTitle></DialogHeader>
+          <form onSubmit={(e) => { e.preventDefault(); salvarCc.mutate(); }} className="space-y-4">
+            <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+              <div className="grid gap-1.5">
                 <Label>Código</Label>
-                <Input value={ccForm.codigo} onChange={(e) => setCcForm({ ...ccForm, codigo: e.target.value })} />
+                <Input value={ccForm.codigo} onChange={(e) => setCcForm({ ...ccForm, codigo: e.target.value })} className="h-10 rounded-xl" />
               </div>
-              <div className="col-span-2">
+              <div className="col-span-2 grid gap-1.5">
                 <Label>Nome *</Label>
-                <Input required value={ccForm.nome} onChange={(e) => setCcForm({ ...ccForm, nome: e.target.value })} />
+                <Input required value={ccForm.nome} onChange={(e) => setCcForm({ ...ccForm, nome: e.target.value })} className="h-10 rounded-xl" />
               </div>
             </div>
-            <div>
+            <div className="grid gap-1.5">
               <Label>Descrição</Label>
-              <Textarea value={ccForm.descricao} onChange={(e) => setCcForm({ ...ccForm, descricao: e.target.value })} />
+              <Textarea value={ccForm.descricao} onChange={(e) => setCcForm({ ...ccForm, descricao: e.target.value })} className="rounded-xl" />
             </div>
-            <div>
+            <div className="grid gap-1.5">
               <Label>Status</Label>
               <Select value={ccForm.ativo ? "1" : "0"} onValueChange={(v) => setCcForm({ ...ccForm, ativo: v === "1" })}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectTrigger className="h-10 rounded-xl"><SelectValue /></SelectTrigger>
                 <SelectContent>
                   <SelectItem value="1">Ativo</SelectItem>
                   <SelectItem value="0">Inativo</SelectItem>
                 </SelectContent>
               </Select>
             </div>
-            <DialogFooter>
-              <Button type="submit" disabled={salvarCc.isPending}>
+            <DialogFooter className="gap-2">
+              <Button type="submit" disabled={salvarCc.isPending} className="h-10 rounded-xl px-6 shadow-sm transition-all hover:-translate-y-px hover:shadow-md">
                 {salvarCc.isPending && <Loader2 className="mr-1 h-4 w-4 animate-spin" />}Salvar
               </Button>
             </DialogFooter>
@@ -396,18 +396,18 @@ function CadastrosPage() {
       </Dialog>
 
       <AlertDialog open={!!confCat} onOpenChange={(v) => { if (!v) setConfCat(null); }}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Excluir categoria</AlertDialogTitle>
-            <AlertDialogDescription>
+        <AlertDialogContent className="rounded-2xl">
+          <AlertDialogHeader className="gap-1.5">
+            <AlertDialogTitle className="tracking-tight">Excluir categoria</AlertDialogTitle>
+            <AlertDialogDescription className="leading-relaxed">
               {confCat ? `Excluir a categoria "${confCat.nome}"?` : ""}
             </AlertDialogDescription>
           </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+          <AlertDialogFooter className="gap-2">
+            <AlertDialogCancel className="h-10 rounded-xl">Cancelar</AlertDialogCancel>
             <AlertDialogAction
               data-acao
-              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              className="h-10 rounded-xl bg-destructive text-destructive-foreground hover:bg-destructive/90"
               onClick={() => { if (confCat) excluirCat.mutate(confCat.id); setConfCat(null); }}
             >
               Excluir
@@ -417,18 +417,18 @@ function CadastrosPage() {
       </AlertDialog>
 
       <AlertDialog open={!!confCc} onOpenChange={(v) => { if (!v) setConfCc(null); }}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Excluir centro de custo</AlertDialogTitle>
-            <AlertDialogDescription>
+        <AlertDialogContent className="rounded-2xl">
+          <AlertDialogHeader className="gap-1.5">
+            <AlertDialogTitle className="tracking-tight">Excluir centro de custo</AlertDialogTitle>
+            <AlertDialogDescription className="leading-relaxed">
               {confCc ? `Excluir o centro de custo "${confCc.nome}"?` : ""}
             </AlertDialogDescription>
           </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+          <AlertDialogFooter className="gap-2">
+            <AlertDialogCancel className="h-10 rounded-xl">Cancelar</AlertDialogCancel>
             <AlertDialogAction
               data-acao
-              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              className="h-10 rounded-xl bg-destructive text-destructive-foreground hover:bg-destructive/90"
               onClick={() => { if (confCc) excluirCc.mutate(confCc.id); setConfCc(null); }}
             >
               Excluir

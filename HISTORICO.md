@@ -4970,3 +4970,9 @@ Espelhado na Vercel.
 - KPIs em cards com hover, seletores h-10, tabelas com hover e
   erros em card.
 - Lógica intacta; `tsc` limpo nos tocados e `npm run build` OK.
+
+## Repaginação visível: cadastros + transferências (06/10)
+
+- Busca h-10, abas e tabelas com hover, diálogos centralizados
+  com campos h-10 e erros em card.
+- Lógica intacta; `tsc` limpo nos tocados e `npm run build` OK.

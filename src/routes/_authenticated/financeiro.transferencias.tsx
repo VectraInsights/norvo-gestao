@@ -24,8 +24,8 @@ import { format } from "date-fns";
 export const Route = createFileRoute("/_authenticated/financeiro/transferencias")({
   component: TransferenciasPage,
   errorComponent: ({ error }) => (
-    <div role="alert" className="rounded-md border border-destructive/40 bg-destructive/5 p-4 text-sm text-destructive">
-      Erro: {error.message}
+    <div role="alert" className="rounded-2xl border border-destructive/40 bg-destructive/5 p-5 text-sm leading-relaxed text-destructive shadow-sm">
+      Erro: {error instanceof Error ? error.message : "erro desconhecido"}
     </div>
   ),
 });
@@ -152,50 +152,50 @@ function TransferenciasPage() {
         title="Transferências entre contas"
         description="Registro de controle interno: move o saldo entre contas da mesma empresa (não executa TED/PIX no banco)."
       />
-      <div className="mb-3 flex flex-col gap-2 sm:flex-row sm:items-center">
+      <div className="mb-4 flex flex-col gap-3 sm:mb-6 sm:flex-row sm:items-center">
         <div className="relative flex-1">
-          <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-          <Input className="pl-8" placeholder="Buscar por descrição, conta de origem ou destino..." value={busca} onChange={(e) => setBusca(e.target.value)} />
+          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+          <Input className="h-10 rounded-xl pl-10 shadow-sm" placeholder="Buscar por descrição, conta de origem ou destino..." value={busca} onChange={(e) => setBusca(e.target.value)} />
         </div>
         <div className="flex items-center gap-2">
           <Dialog open={open} onOpenChange={(o) => { setOpen(o); if (!o) reset(); }}>
             <DialogTrigger asChild>
-              <Button><Plus className="mr-1.5 h-4 w-4" /> Nova transferência</Button>
+              <Button className="h-10 rounded-xl px-5 shadow-md transition-all hover:-translate-y-px hover:shadow-lg"><Plus className="mr-1.5 h-4 w-4" /> Nova transferência</Button>
             </DialogTrigger>
-            <DialogContent className="max-h-[90vh] overflow-y-auto">
-              <DialogHeader><DialogTitle>Nova transferência</DialogTitle></DialogHeader>
+            <DialogContent className="max-h-[90vh] overflow-y-auto rounded-2xl sm:max-w-lg sm:inset-auto sm:left-1/2 sm:top-1/2 sm:-translate-x-1/2 sm:-translate-y-1/2 sm:h-auto sm:w-full">
+              <DialogHeader className="gap-1.5 pb-1"><DialogTitle className="tracking-tight">Nova transferência</DialogTitle></DialogHeader>
               <div className="grid gap-4">
-                <div className="grid gap-2 sm:grid-cols-2">
-                  <div className="space-y-1.5">
+                <div className="grid gap-3 sm:grid-cols-2">
+                  <div className="grid gap-1.5">
                     <Label>Data</Label>
-                    <DateInput value={data} onChange={setData} />
+                    <DateInput value={data} onChange={setData} className="h-10" />
                   </div>
-                  <div className="space-y-1.5">
+                  <div className="grid gap-1.5">
                     <Label>Valor</Label>
-                    <MoneyInput value={valor} onChange={setValor} />
+                    <MoneyInput value={valor} onChange={setValor} className="h-10" />
                   </div>
                 </div>
-                <div className="grid gap-2 sm:grid-cols-2">
-                  <div className="space-y-1.5">
+                <div className="grid gap-3 sm:grid-cols-2">
+                  <div className="grid gap-1.5">
                     <Label>Conta de origem</Label>
-                    <Combobox value={origem} onChange={setOrigem} options={contas.map((c) => ({ value: c.id, label: `${c.nome || c.banco} · ${brl(c.saldo_atual)}` }))} placeholder="Selecione" searchPlaceholder="Digite para buscar..." emptyText="Nenhum item encontrado." />
+                    <Combobox value={origem} onChange={setOrigem} options={contas.map((c) => ({ value: c.id, label: `${c.nome || c.banco} · ${brl(c.saldo_atual)}` }))} placeholder="Selecione" searchPlaceholder="Digite para buscar..." emptyText="Nenhum item encontrado." className="h-10" />
                   </div>
-                  <div className="space-y-1.5">
+                  <div className="grid gap-1.5">
                     <Label>Conta de destino</Label>
-                    <Combobox value={destino} onChange={setDestino} options={contas.filter((c) => c.id !== origem).map((c) => ({ value: c.id, label: `${c.nome || c.banco} · ${brl(c.saldo_atual)}` }))} placeholder="Selecione" searchPlaceholder="Digite para buscar..." emptyText="Nenhum item encontrado." />
+                    <Combobox value={destino} onChange={setDestino} options={contas.filter((c) => c.id !== origem).map((c) => ({ value: c.id, label: `${c.nome || c.banco} · ${brl(c.saldo_atual)}` }))} placeholder="Selecione" searchPlaceholder="Digite para buscar..." emptyText="Nenhum item encontrado." className="h-10" />
                   </div>
                 </div>
-                <div className="space-y-1.5">
+                <div className="grid gap-1.5">
                   <Label>Descrição</Label>
-                  <Input value={descricao} onChange={(e) => setDescricao(e.target.value)} />
+                  <Input value={descricao} onChange={(e) => setDescricao(e.target.value)} className="h-10 rounded-xl" />
                 </div>
-                <div className="space-y-1.5">
+                <div className="grid gap-1.5">
                   <Label>Observações</Label>
-                  <Input value={obs} onChange={(e) => setObs(e.target.value)} placeholder="Opcional" />
+                  <Input value={obs} onChange={(e) => setObs(e.target.value)} placeholder="Opcional" className="h-10 rounded-xl" />
                 </div>
               </div>
-              <DialogFooter>
-                <Button onClick={() => criar.mutate()} disabled={criar.isPending}>
+              <DialogFooter className="gap-2">
+                <Button onClick={() => criar.mutate()} disabled={criar.isPending} className="h-10 rounded-xl px-6 shadow-sm transition-all hover:-translate-y-px hover:shadow-md">
                   {criar.isPending ? "Salvando..." : "Transferir"}
                 </Button>
               </DialogFooter>
@@ -205,7 +205,7 @@ function TransferenciasPage() {
       </div>
 
       {isLoading ? (
-        <div className="space-y-2">{[...Array(4)].map((_, i) => <Skeleton key={i} className="h-12 w-full" />)}</div>
+        <div className="space-y-2.5">{[...Array(4)].map((_, i) => <Skeleton key={i} className="h-12 w-full rounded-xl" />)}</div>
       ) : !filtrados?.length ? (
         <EmptyState
           icon={ArrowLeftRight}
@@ -213,7 +213,7 @@ function TransferenciasPage() {
           description={busca ? "Nada encontrado para a busca." : "Registre movimentações de saldo entre as contas financeiras da empresa."}
         />
       ) : (
-        <Card className="shadow-panel">
+        <Card className="overflow-hidden rounded-2xl shadow-panel">
           <Table>
             <TableHeader>
               <TableRow>
@@ -227,15 +227,16 @@ function TransferenciasPage() {
             </TableHeader>
             <TableBody>
               {filtrados.map((t) => (
-                <TableRow key={t.id}>
-                  <TableCell>{dateBR(t.data)}</TableCell>
-                  <TableCell className="max-w-[280px] truncate">{t.descricao}</TableCell>
-                  <TableCell>{nomeConta(t.conta_origem_id)}</TableCell>
-                  <TableCell>{nomeConta(t.conta_destino_id)}</TableCell>
-                  <TableCell className="text-right font-medium">{brl(t.valor)}</TableCell>
+                <TableRow key={t.id} className="transition-colors hover:bg-accent/30">
+                  <TableCell className="text-tabular">{dateBR(t.data)}</TableCell>
+                  <TableCell className="max-w-[280px] truncate font-medium">{t.descricao}</TableCell>
+                  <TableCell className="text-muted-foreground">{nomeConta(t.conta_origem_id)}</TableCell>
+                  <TableCell className="text-muted-foreground">{nomeConta(t.conta_destino_id)}</TableCell>
+                  <TableCell className="text-right font-medium text-tabular">{brl(t.valor)}</TableCell>
                   <TableCell>
                     <Button
                       variant="ghost" size="icon" aria-label="Excluir transferência"
+                      className="h-8 w-8 rounded-lg"
                       onClick={() => excluir.mutate(t.id)}
                     >
                       <Trash2 className="h-4 w-4" />
