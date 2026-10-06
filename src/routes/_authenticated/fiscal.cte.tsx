@@ -6215,7 +6215,7 @@ function CtePage() {
               <h3 className="text-sm font-semibold flex items-center gap-2">
                 <Package className="h-4 w-4" /> Cadastro de Mercadorias para Embarque
               </h3>
-              <TabsList className="bg-white/25 p-1 gap-1 flex-1">
+              <TabsList className="bg-white/25 p-1 gap-1 flex-1 rounded-xl">
                 <TabsTrigger
                   value="embarque"
                   className="flex-1 text-xs px-3 py-1.5 font-medium text-white/80 hover:text-white hover:bg-white/10 data-[state=active]:bg-white data-[state=active]:text-green-900 data-[state=active]:font-bold data-[state=active]:shadow"
@@ -7019,7 +7019,7 @@ function CtePage() {
           </TabsContent>
           <TabsContent value="ciot" className="mt-0 space-y-3">
             <Card className="overflow-hidden rounded-2xl shadow-panel">
-              <div className="bg-primary/8 border-b border-primary/20 px-3 py-1.5 text-[10px] font-semibold uppercase tracking-wide text-primary/80">
+              <div className="bg-primary/8 border-b border-primary/20 px-4 py-2.5 text-[11px] font-semibold uppercase tracking-wider text-primary/80">
                 CT-es autorizados — selecione para uma operação CIOT
               </div>
               {docsByStatus.autorizados.length === 0 ? (
@@ -7105,7 +7105,7 @@ function CtePage() {
             </Card>
             {ciotSel.size > 0 && (
               <Card className="p-3 space-y-2">
-                <div className="bg-primary/8 border-b border-primary/20 -m-3 mb-1 px-2 py-1 text-[10px] font-semibold uppercase tracking-wide text-primary/80">
+                <div className="bg-primary/8 border-b border-primary/20 -m-3 mb-2 px-3 py-2 text-[11px] font-semibold uppercase tracking-wider text-primary/80">
                   Operação CIOT — {ciotSel.size} CT-e(s)
                 </div>
                 <div className="flex justify-end gap-2">
@@ -7210,7 +7210,7 @@ function CtePage() {
               </AlertDialogContent>
             </AlertDialog>
             <Card className="overflow-hidden rounded-2xl shadow-panel">
-              <div className="bg-primary/8 border-b border-primary/20 px-3 py-1.5 text-[10px] font-semibold uppercase tracking-wide text-primary/80">
+              <div className="bg-primary/8 border-b border-primary/20 px-4 py-2.5 text-[11px] font-semibold uppercase tracking-wider text-primary/80">
                 CIOTs emitidos ({(ciotOps ?? []).length})
               </div>
               <div className="flex items-center gap-2 px-3 py-2 border-b">
@@ -7668,7 +7668,7 @@ function CtePage() {
             <TabsContent value="geral" className="mt-2 min-h-0 flex-1 space-y-2 overflow-y-auto data-[state=inactive]:hidden data-[state=active]:flex data-[state=active]:flex-col">
               {viewDoc && (
                 <Card className="p-3">
-                  <div className="bg-primary/8 border-b border-primary/20 -m-3 mb-2 px-2 py-1 text-[10px] font-semibold uppercase tracking-wide text-primary/80">
+                  <div className="bg-primary/8 border-b border-primary/20 -m-3 mb-2 px-3 py-2 text-[11px] font-semibold uppercase tracking-wider text-primary/80">
                     Situação do CT-e
                   </div>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
@@ -8066,7 +8066,7 @@ function CtePage() {
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                       {/* Remetente */}
                       <Card className="p-3">
-                        <div className="bg-primary/8 border-b border-primary/20 -m-3 mb-2 px-2 py-1 flex items-center gap-2">
+                        <div className="bg-primary/8 border-b border-primary/20 -m-3 mb-2 px-3 py-2 flex items-center gap-2">
                           <div className="h-6 w-6 rounded bg-primary/10 grid place-items-center">
                             <UploadCloud className="h-3.5 w-3.5 text-primary" />
                           </div>
@@ -8105,7 +8105,7 @@ function CtePage() {
 
                       {/* Destinatário */}
                       <Card className="p-3">
-                        <div className="bg-primary/8 border-b border-primary/20 -m-3 mb-2 px-2 py-1 flex items-center gap-2">
+                        <div className="bg-primary/8 border-b border-primary/20 -m-3 mb-2 px-3 py-2 flex items-center gap-2">
                           <div className="h-6 w-6 rounded bg-primary/10 grid place-items-center">
                             <Package className="h-3.5 w-3.5 text-primary" />
                           </div>
@@ -8159,7 +8159,7 @@ function CtePage() {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                 {/* Consignatário */}
                 <Card className="p-3">
-                  <div className="bg-primary/8 border-b border-primary/20 -m-3 mb-2 px-2 py-1 flex items-center gap-2">
+                  <div className="bg-primary/8 border-b border-primary/20 -m-3 mb-2 px-3 py-2 flex items-center gap-2">
                     <div className="h-6 w-6 rounded bg-amber-500/10 grid place-items-center">
                       <Building2 className="h-3.5 w-3.5 text-amber-600" />
                     </div>
@@ -8279,7 +8279,7 @@ function CtePage() {
 
                 {/* Redespacho */}
                 <Card className="p-3">
-                  <div className="bg-primary/8 border-b border-primary/20 -m-3 mb-2 px-2 py-1 flex items-center gap-2">
+                  <div className="bg-primary/8 border-b border-primary/20 -m-3 mb-2 px-3 py-2 flex items-center gap-2">
                     <div className="h-6 w-6 rounded bg-primary/10 grid place-items-center">
                       <Truck className="h-3.5 w-3.5 text-primary" />
                     </div>
@@ -8395,7 +8395,7 @@ function CtePage() {
                 </Card>
               </div>
               <Card className="p-3 flex min-h-0 flex-1 flex-col">
-                <div className="bg-primary/8 border-b border-primary/20 -m-3 mb-1 px-2 py-1 text-[10px] font-semibold uppercase tracking-wide text-primary/80">
+                <div className="bg-primary/8 border-b border-primary/20 -m-3 mb-2 px-3 py-2 text-[11px] font-semibold uppercase tracking-wider text-primary/80">
                   Observações Gerais
                 </div>
                 <Textarea
@@ -8579,7 +8579,7 @@ function CtePage() {
 
               {/* Tributação (fundida nesta aba) */}
               <Card className="p-3 shrink-0">
-                <div className="bg-primary/8 border-b border-primary/20 -m-3 mb-2 px-2 py-1 flex items-center gap-1.5">
+                <div className="bg-primary/8 border-b border-primary/20 -m-3 mb-2 px-3 py-2 flex items-center gap-2">
                   <ReceiptText className="h-3.5 w-3.5 text-primary" />
                   <h5 className="text-[10px] font-semibold uppercase tracking-wide text-primary/80">
                     Impostos
@@ -8755,8 +8755,8 @@ function CtePage() {
             {/* === TAB: Seguros/Veículos === */}
             <TabsContent value="seguros" className="mt-2 min-h-0 flex-1 space-y-1.5 overflow-hidden data-[state=inactive]:hidden data-[state=active]:flex data-[state=active]:flex-col">
               <div className="grid grid-cols-1 xl:grid-cols-2 gap-1.5">
-                <Card className="p-1.5">
-                  <div className="bg-primary/8 border-b border-primary/20 -m-1.5 mb-0.5 px-2 py-1 text-[10px] font-semibold uppercase tracking-wide text-primary/80">
+                <Card className="p-3 sm:p-4 rounded-2xl shadow-sm">
+                  <div className="bg-primary/8 border-b border-primary/20 -m-3 sm:-m-4 mb-2 px-3 py-2 text-[11px] font-semibold uppercase tracking-wider text-primary/80">
                     Seguro da Carga
                   </div>
                   <div className="space-y-0.5">
@@ -8943,8 +8943,8 @@ function CtePage() {
                   </div>
                 </Card>
 
-                <Card className="p-1.5">
-                  <div className="bg-primary/8 border-b border-primary/20 -m-1.5 mb-0.5 px-2 py-1 text-[10px] font-semibold uppercase tracking-wide text-primary/80">
+                <Card className="p-3 sm:p-4 rounded-2xl shadow-sm">
+                  <div className="bg-primary/8 border-b border-primary/20 -m-3 sm:-m-4 mb-2 px-3 py-2 text-[11px] font-semibold uppercase tracking-wider text-primary/80">
                     Dados do Veículo / Motorista
                   </div>
                   <div className="space-y-0.5">
@@ -9488,8 +9488,8 @@ function CtePage() {
                 </Card>
 
                 {/* Pedágio / Taxas / Despesas Acessórias (ex-aba Taxas) */}
-                <Card className="p-1.5">
-                  <div className="bg-primary/8 border-b border-primary/20 -m-1.5 mb-0.5 px-2 py-1 text-[10px] font-semibold uppercase tracking-wide text-primary/80">
+                <Card className="p-3 sm:p-4 rounded-2xl shadow-sm">
+                  <div className="bg-primary/8 border-b border-primary/20 -m-3 sm:-m-4 mb-2 px-3 py-2 text-[11px] font-semibold uppercase tracking-wider text-primary/80">
                     Componentes do Frete
                   </div>
                   <div className="grid grid-cols-2 md:grid-cols-3 gap-1">
@@ -9552,8 +9552,8 @@ function CtePage() {
                   </div>
                 </Card>
 
-                <Card className="p-1.5">
-                  <div className="bg-primary/8 border-b border-primary/20 -m-1.5 mb-0.5 px-2 py-1 text-[10px] font-semibold uppercase tracking-wide text-primary/80">
+                <Card className="p-3 sm:p-4 rounded-2xl shadow-sm">
+                  <div className="bg-primary/8 border-b border-primary/20 -m-3 sm:-m-4 mb-2 px-3 py-2 text-[11px] font-semibold uppercase tracking-wider text-primary/80">
                     Forma de Pagamento do Pedágio
                   </div>
                   <div className="flex flex-wrap gap-3 text-[10px]">
@@ -9697,7 +9697,7 @@ function CtePage() {
                 </Card>
               </div>
               <Card className="p-1.5 mt-1.5">
-                <div className="bg-primary/8 border-b border-primary/20 -m-1.5 mb-0.5 px-2 py-1 text-[10px] font-semibold uppercase tracking-wide text-primary/80">
+                <div className="bg-primary/8 border-b border-primary/20 -m-3 sm:-m-4 mb-2 px-3 py-2 text-[11px] font-semibold uppercase tracking-wider text-primary/80">
                   Finalidade e Documentos Referenciados
                 </div>
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-1">

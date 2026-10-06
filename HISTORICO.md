@@ -4908,3 +4908,11 @@ Espelhado na Vercel.
 - 404 e erro: botões agora levam a `/dashboard` (iam para `/`,
   que devolvia ao login).
 - `tsc` limpo nos tocados e `npm run build` OK.
+
+## Repaginação visível: fiscal.cte (seções) (06/10)
+
+- 15 cabeçalhos de seção com mais presença (px-4/py-2.5,
+  tracking maior); cards de seção com p-3/4 e rounded-2xl;
+  margens negativas alinhadas; abas da barra verde com raio.
+- Campos densos e DACTE intactos; paleta intacta.
+- `tsc`: 55 = baseline (zero novos); build OK.
