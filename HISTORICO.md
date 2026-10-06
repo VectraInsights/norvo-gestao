@@ -4733,3 +4733,10 @@ Espelhado na Vercel.
 - Respiro maior (mb-6/8, gap-4, pl-5) e título com tracking; ações
   com gap-2.5; linha do módulo mantida.
 - Paleta intacta; `tsc` limpo nos tocados e `npm run build` OK.
+
+## Repaginação: status-badge + route-error-state + combobox (06/10)
+
+- Badge em pill com sombra; erro de rota em card com respiro e botão
+  elevado; combobox com gatilho h-10 rounded-xl, popover rounded-2xl
+  e itens rounded-lg.
+- Paleta intacta; `tsc` limpo nos tocados e `npm run build` OK.

@@ -57,21 +57,21 @@ export function Combobox({
           role="combobox"
           aria-expanded={open}
           disabled={disabled}
-          className={cn("w-full justify-between font-normal", className)}
+          className={cn("h-10 w-full justify-between rounded-xl px-3 font-normal shadow-sm transition-all hover:shadow-md", className)}
         >
           <span className={cn("flex min-w-0 items-center gap-2 truncate text-[15px]", !sel && "text-muted-foreground")}>
             {sel?.icone && (
-              <img src={sel.icone} alt="" className="h-6 w-6 rounded object-contain bg-white ring-1 ring-border shrink-0" />
+              <img src={sel.icone} alt="" className="h-6 w-6 rounded-lg object-contain bg-white ring-1 ring-border shrink-0" />
             )}
             <span className="truncate">{sel ? rotulo(sel) : placeholder}</span>
           </span>
           <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
         </Button>
       </PopoverTrigger>
-      <PopoverContent className="w-[min(28rem,90vw)] p-0" align="start">
+      <PopoverContent className="w-[min(28rem,90vw)] overflow-hidden rounded-2xl p-0 shadow-xl" align="start">
         <Command>
           <CommandInput placeholder={searchPlaceholder} value={q} onValueChange={setQ} />
-          <CommandList className="max-h-72">
+          <CommandList className="max-h-72 p-1">
             <CommandEmpty>{emptyText}</CommandEmpty>
             <CommandGroup>
               {options.map((o) => (
@@ -83,11 +83,11 @@ export function Combobox({
                     setQ("");
                     setOpen(false);
                   }}
-                  className="whitespace-nowrap"
+                  className="whitespace-nowrap rounded-lg"
                 >
                   <Check className={cn("mr-2 h-4 w-4 shrink-0", value === o.value ? "opacity-100" : "opacity-0")} />
                   {o.icone && (
-                    <img src={o.icone} alt="" className="mr-2 h-6 w-6 rounded object-contain bg-white ring-1 ring-border shrink-0" />
+                    <img src={o.icone} alt="" className="mr-2 h-6 w-6 rounded-lg object-contain bg-white ring-1 ring-border shrink-0" />
                   )}
                   <span className="min-w-0 flex-1 truncate whitespace-nowrap text-[15px]">{rotulo(o)}</span>
                 </CommandItem>
@@ -96,7 +96,7 @@ export function Combobox({
           </CommandList>
           {footer && (
             <button
-              className="flex w-full items-center gap-2 border-t border-border px-3 py-2 text-xs font-medium text-primary hover:bg-muted/60"
+              className="flex w-full items-center gap-2 border-t border-border px-4 py-2.5 text-xs font-medium text-primary transition-colors hover:bg-muted/60"
               onClick={() => {
                 setOpen(false);
                 footer.onClick();

@@ -21,7 +21,7 @@ const TONE: Record<string, string> = {
 
 export function StatusBadge({ status, className }: { status: string; className?: string }) {
   return (
-    <Badge variant="secondary" className={cn(TONE[status] ?? "bg-muted text-muted-foreground", "capitalize", className)}>
+    <Badge variant="secondary" className={cn(TONE[status] ?? "bg-muted text-muted-foreground", "rounded-full px-2.5 py-0.5 font-medium capitalize shadow-sm", className)}>
       {status}
     </Badge>
   );
