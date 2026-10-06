@@ -4808,3 +4808,10 @@ Espelhado na Vercel.
   linhas vazias com respiro e diálogo de exclusão em card.
 - `tsc`: 4 erros são baseline do HEAD (tabelas `as never`);
   build OK. Paleta intacta.
+
+## Repaginação: configuracoes.empresas (06/10)
+
+- 2ª das 4 telas de Configurações: busca h-10 com ícone, botão Nova
+  em destaque, formulário com campos h-10 e grids responsivos,
+  tabela com hover e linha vazia, diálogos em card.
+- Paleta intacta; `tsc` limpo nos tocados e `npm run build` OK.

@@ -215,33 +215,33 @@ function EmpresasPage() {
   return (
     <>
       <PageHeader eyebrow="Configurações" title="Empresas" description="Empresas às quais você tem acesso." />
-      <div className="mb-3 flex flex-col gap-2 sm:flex-row sm:items-center">
+      <div className="mb-4 flex flex-col gap-3 sm:mb-6 sm:flex-row sm:items-center">
         <div className="relative flex-1">
-          <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-          <Input className="pl-8" placeholder="Buscar por nome, CNPJ ou cidade..." value={busca} onChange={(e) => setBusca(e.target.value)} />
+          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+          <Input className="h-10 rounded-xl pl-10 shadow-sm" placeholder="Buscar por nome, CNPJ ou cidade..." value={busca} onChange={(e) => setBusca(e.target.value)} />
         </div>
         <div className="flex items-center gap-2">
           <Dialog open={open} onOpenChange={(v) => { setOpen(v); if (!v) setForm(emptyForm); }}>
-            <DialogTrigger asChild><Button onClick={openNew}><Plus className="mr-1 h-4 w-4" />Nova empresa</Button></DialogTrigger>
-            <DialogContent>
-              <DialogHeader><DialogTitle>{editing ? "Editar empresa" : "Nova empresa"}</DialogTitle></DialogHeader>
-              <form onSubmit={submit} className="space-y-3">
-                <div>
+            <DialogTrigger asChild><Button onClick={openNew} className="h-10 shrink-0 whitespace-nowrap rounded-xl px-5 shadow-sm transition-all hover:-translate-y-px hover:shadow-md"><Plus className="mr-1.5 h-4 w-4" />Nova empresa</Button></DialogTrigger>
+            <DialogContent className="sm:max-w-2xl">
+              <DialogHeader className="gap-1.5 pb-1"><DialogTitle className="tracking-tight">{editing ? "Editar empresa" : "Nova empresa"}</DialogTitle></DialogHeader>
+              <form onSubmit={submit} className="space-y-4">
+                <div className="grid gap-1.5">
                   <Label>CNPJ</Label>
                   <div className="flex gap-2">
-                    <Input placeholder="00.000.000/0000-00" value={form.cnpj}
+                    <Input placeholder="00.000.000/0000-00" value={form.cnpj} className="h-10 rounded-xl"
                       onChange={(e) => setForm({ ...form, cnpj: maskDoc(e.target.value) })}
                       onKeyDown={handleCnpjKeyDown} />
-                    <Button type="button" variant="outline" onClick={lookupCnpj} disabled={lookingUp || !form.cnpj}>
+                    <Button type="button" variant="outline" onClick={lookupCnpj} disabled={lookingUp || !form.cnpj} className="h-10 w-10 shrink-0 rounded-xl shadow-sm">
                       {lookingUp ? <Loader2 className="h-4 w-4 animate-spin" /> : <Search className="h-4 w-4" />}
                     </Button>
                   </div>
                 </div>
-                <div><Label>Nome da empresa <span className="text-destructive">*</span></Label><Input required value={form.nome_fantasia} onChange={(e) => setForm({ ...form, nome_fantasia: e.target.value })} /></div>
-                <div><Label>Razão social</Label><Input value={form.razao_social} onChange={(e) => setForm({ ...form, razao_social: e.target.value })} /></div>
-                <div><Label>Regime tributário</Label>
+                <div className="grid gap-1.5"><Label>Nome da empresa <span className="text-destructive">*</span></Label><Input required value={form.nome_fantasia} onChange={(e) => setForm({ ...form, nome_fantasia: e.target.value })} className="h-10 rounded-xl" /></div>
+                <div className="grid gap-1.5"><Label>Razão social</Label><Input value={form.razao_social} onChange={(e) => setForm({ ...form, razao_social: e.target.value })} className="h-10 rounded-xl" /></div>
+                <div className="grid gap-1.5"><Label>Regime tributário</Label>
                   <Select value={(form as any).regime_tributario} onValueChange={v => setForm({ ...form, regime_tributario: v } as any)}>
-                    <SelectTrigger><SelectValue placeholder="Selecione" /></SelectTrigger>
+                    <SelectTrigger className="h-10 rounded-xl"><SelectValue placeholder="Selecione" /></SelectTrigger>
                     <SelectContent>
                       <SelectItem value="simples">Simples Nacional</SelectItem>
                       <SelectItem value="lucro_presumido">Lucro Presumido</SelectItem>
@@ -249,47 +249,47 @@ function EmpresasPage() {
                       <SelectItem value="mei">MEI</SelectItem>
                     </SelectContent>
                   </Select>
-                  <p className="text-[10px] text-muted-foreground mt-1">Usado para PIS/COFINS automático no CT-e.</p>
+                  <p className="text-[11px] leading-relaxed text-muted-foreground">Usado para PIS/COFINS automático no CT-e.</p>
                 </div>
-                <div className="grid grid-cols-2 gap-3">
-                  <div><Label>Email</Label><Input type="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} /></div>
-                  <div><Label>Telefone</Label><Input value={form.telefone} onChange={(e) => setForm({ ...form, telefone: e.target.value })} /></div>
+                <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                  <div className="grid gap-1.5"><Label>Email</Label><Input type="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} className="h-10 rounded-xl" /></div>
+                  <div className="grid gap-1.5"><Label>Telefone</Label><Input value={form.telefone} onChange={(e) => setForm({ ...form, telefone: e.target.value })} className="h-10 rounded-xl" /></div>
                 </div>
-                <div className="grid grid-cols-[1fr_100px] gap-3">
-                  <div><Label>Logradouro</Label><Input value={form.logradouro} onChange={(e) => setForm({ ...form, logradouro: e.target.value })} /></div>
-                  <div><Label>Número</Label><Input value={form.numero} onChange={(e) => setForm({ ...form, numero: e.target.value })} /></div>
+                <div className="grid grid-cols-1 gap-3 sm:grid-cols-[1fr_100px]">
+                  <div className="grid gap-1.5"><Label>Logradouro</Label><Input value={form.logradouro} onChange={(e) => setForm({ ...form, logradouro: e.target.value })} className="h-10 rounded-xl" /></div>
+                  <div className="grid gap-1.5"><Label>Número</Label><Input value={form.numero} onChange={(e) => setForm({ ...form, numero: e.target.value })} className="h-10 rounded-xl" /></div>
                 </div>
-                <div className="grid grid-cols-2 gap-3">
-                  <div><Label>Bairro</Label><Input value={form.bairro} onChange={(e) => setForm({ ...form, bairro: e.target.value })} /></div>
-                  <div><Label>Complemento</Label><Input value={form.complemento} onChange={(e) => setForm({ ...form, complemento: e.target.value })} /></div>
+                <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                  <div className="grid gap-1.5"><Label>Bairro</Label><Input value={form.bairro} onChange={(e) => setForm({ ...form, bairro: e.target.value })} className="h-10 rounded-xl" /></div>
+                  <div className="grid gap-1.5"><Label>Complemento</Label><Input value={form.complemento} onChange={(e) => setForm({ ...form, complemento: e.target.value })} className="h-10 rounded-xl" /></div>
                 </div>
-                <div className="grid grid-cols-[1fr_80px_120px] gap-3">
-                  <div><Label>Cidade</Label><Input value={form.cidade} onChange={(e) => setForm({ ...form, cidade: e.target.value })} /></div>
-                  <div><Label>UF</Label><Input maxLength={2} value={form.uf} onChange={(e) => setForm({ ...form, uf: e.target.value.toUpperCase() })} /></div>
-                  <div><Label>CEP</Label><Input value={form.cep} onChange={(e) => setForm({ ...form, cep: e.target.value })} /></div>
+                <div className="grid grid-cols-2 gap-3 sm:grid-cols-[1fr_80px_120px]">
+                  <div className="grid gap-1.5"><Label>Cidade</Label><Input value={form.cidade} onChange={(e) => setForm({ ...form, cidade: e.target.value })} className="h-10 rounded-xl" /></div>
+                  <div className="grid gap-1.5"><Label>UF</Label><Input maxLength={2} value={form.uf} onChange={(e) => setForm({ ...form, uf: e.target.value.toUpperCase() })} className="h-10 rounded-xl" /></div>
+                  <div className="grid gap-1.5"><Label>CEP</Label><Input value={form.cep} onChange={(e) => setForm({ ...form, cep: e.target.value })} className="h-10 rounded-xl" /></div>
                 </div>
                 <DialogFooter className="gap-2 sm:justify-between">
                   {editing && (
-                    <Button type="button" variant="destructive" onClick={() => setConfirmExcluir(true)}>
+                    <Button type="button" variant="destructive" onClick={() => setConfirmExcluir(true)} className="h-10 rounded-xl px-5">
                       <Trash2 className="mr-2 h-4 w-4" />Excluir
                     </Button>
                   )}
-                  <Button type="submit">Salvar</Button>
+                  <Button type="submit" className="h-10 rounded-xl px-6 shadow-sm transition-all hover:-translate-y-px hover:shadow-md">Salvar</Button>
                 </DialogFooter>
               </form>
             </DialogContent>
           </Dialog>
           <AlertDialog open={confirmExcluir} onOpenChange={setConfirmExcluir}>
-            <AlertDialogContent>
-              <AlertDialogHeader>
-                <AlertDialogTitle>Excluir {editing?.nome_fantasia}?</AlertDialogTitle>
-                <AlertDialogDescription>
+            <AlertDialogContent className="rounded-2xl">
+              <AlertDialogHeader className="gap-1.5">
+                <AlertDialogTitle className="tracking-tight">Excluir {editing?.nome_fantasia}?</AlertDialogTitle>
+                <AlertDialogDescription className="leading-relaxed">
                   Esta ação é crítica e irreversível: todos os dados vinculados a esta empresa também serão removidos.
                 </AlertDialogDescription>
               </AlertDialogHeader>
-              <AlertDialogFooter>
-                <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                <AlertDialogAction data-acao className="bg-destructive text-destructive-foreground hover:bg-destructive/90" onClick={deleteEmpresa}>
+              <AlertDialogFooter className="gap-2">
+                <AlertDialogCancel className="h-10 rounded-xl">Cancelar</AlertDialogCancel>
+                <AlertDialogAction data-acao className="h-10 rounded-xl bg-destructive text-destructive-foreground hover:bg-destructive/90" onClick={deleteEmpresa}>
                   Excluir empresa
                 </AlertDialogAction>
               </AlertDialogFooter>
@@ -297,23 +297,26 @@ function EmpresasPage() {
           </AlertDialog>
         </div>
       </div>
-      <Card className="overflow-hidden shadow-panel">
+      <Card className="overflow-hidden rounded-2xl shadow-panel">
         <Table>
-          <TableHeader><TableRow><TableHead>Nome fantasia</TableHead><TableHead>Razão social</TableHead><TableHead>CNPJ</TableHead><TableHead>Cidade</TableHead><TableHead className="w-10"></TableHead></TableRow></TableHeader>
+          <TableHeader><TableRow><TableHead>Nome fantasia</TableHead><TableHead>Razão social</TableHead><TableHead>CNPJ</TableHead><TableHead>Cidade</TableHead><TableHead className="w-12" /></TableRow></TableHeader>
           <TableBody>
             {filtrados.map((e) => (
-              <TableRow key={e.id}>
+              <TableRow key={e.id} className="transition-colors hover:bg-accent/30">
                 <TableCell className="font-medium">{e.nome_fantasia}</TableCell>
                 <TableCell className="text-muted-foreground">{e.razao_social ?? "—"}</TableCell>
                 <TableCell className="text-tabular">{e.cnpj ? maskDoc(e.cnpj) : "—"}</TableCell>
                 <TableCell className="text-muted-foreground">{e.cidade ? `${e.cidade}/${e.uf ?? ""}` : "—"}</TableCell>
-                <TableCell className="w-10">
-                  <Button variant="ghost" size="icon" className="h-8 w-8" title="Editar" onClick={() => openEdit(e)}>
+                <TableCell className="w-12">
+                  <Button variant="ghost" size="icon" className="h-8 w-8 rounded-lg" title="Editar" onClick={() => openEdit(e)}>
                     <Pencil className="h-4 w-4" />
                   </Button>
                 </TableCell>
               </TableRow>
             ))}
+            {filtrados.length === 0 && (
+              <TableRow><TableCell colSpan={5} className="py-8 text-center text-sm text-muted-foreground">Nenhuma empresa encontrada.</TableCell></TableRow>
+            )}
           </TableBody>
         </Table>
       </Card>
