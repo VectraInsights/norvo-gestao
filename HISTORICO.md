@@ -4792,3 +4792,11 @@ Espelhado na Vercel.
 - Fecha as públicas: card rounded-2xl com respiro, ícone maior,
   campos h-10 rounded-xl, grid responsivo e CTA em destaque.
 - Paleta intacta; `tsc` limpo nos tocados e `npm run build` OK.
+
+## Repaginação: dashboard (06/10)
+
+- Cards KPI e seções com p-6, rounded-2xl e respiro; atalhos com
+  hover elevado; listas com hover; vazios em card; skeleton e
+  FirstEmpresa com campos h-10 e CTA em destaque.
+- Chave `empresas/resumo` (era `empresas`, colidia) e `error`
+  tipado; paleta intacta; `tsc` limpo e build OK.

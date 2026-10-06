@@ -41,9 +41,9 @@ export const Route = createFileRoute("/_authenticated/dashboard")({
   errorComponent: ({ error }) => (
     <div
       role="alert"
-      className="rounded-md border border-destructive/40 bg-destructive/5 p-4 text-sm text-destructive"
+      className="rounded-2xl border border-destructive/40 bg-destructive/5 p-5 text-sm leading-relaxed text-destructive shadow-sm"
     >
-      Não foi possível carregar o dashboard: {error.message}
+      Não foi possível carregar o dashboard: {error instanceof Error ? error.message : "erro desconhecido"}
     </div>
   ),
 });
@@ -90,13 +90,13 @@ function Dashboard() {
   const qc = useQueryClient();
 
   const { data: empresas, isLoading: loadingEmp } = useQuery({
-    queryKey: ["empresas"],
+    queryKey: ["empresas", "resumo"],
     staleTime: 5 * 60_000,
     gcTime: 15 * 60_000,
     queryFn: async ({ signal }) => {
       const { data, error } = await supabase
         .from("empresas")
-        .select("id,nome_fantasia")
+        .select("id,nome_fantasia,razao_social,cnpj,created_at")
         .order("created_at")
         .abortSignal(signal);
       if (error) throw error;
@@ -383,28 +383,30 @@ function Dashboard() {
         description="Visão geral da operação em tempo real."
       />
 
-      <Card className="erp-surface mb-6 overflow-hidden border-primary/15 bg-gradient-to-br from-card via-card to-primary/[0.04]">
-        <CardContent className="p-4 sm:p-5">
-          <div className="mb-3 flex items-center justify-between gap-3">
+      <Card className="erp-surface mb-6 overflow-hidden rounded-2xl border-primary/15 bg-gradient-to-br from-card via-card to-primary/[0.04] sm:mb-8">
+        <CardContent className="p-5 sm:p-6">
+          <div className="mb-4 flex items-center justify-between gap-3">
             <div>
-              <h2 className="text-sm font-semibold">Ações rápidas</h2>
-              <p className="text-xs text-muted-foreground">
+              <h2 className="text-sm font-semibold tracking-tight">Ações rápidas</h2>
+              <p className="mt-0.5 text-xs text-muted-foreground">
                 Acesse as tarefas mais usadas sem navegar pelo menu.
               </p>
             </div>
-            <Plus className="h-4 w-4 text-primary" aria-hidden="true" />
+            <span className="grid h-9 w-9 place-items-center rounded-xl bg-primary/10">
+              <Plus className="h-4 w-4 text-primary" aria-hidden="true" />
+            </span>
           </div>
-          <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
+          <div className="grid gap-2.5 sm:grid-cols-2 lg:grid-cols-4">
             {atalhos.map((atalho) => {
               const Icon = atalho.icon;
               return (
                 <Button
                   key={atalho.to}
                   variant="outline"
-                  className="h-auto justify-between px-3 py-3 text-left"
+                  className="h-auto justify-between rounded-xl px-4 py-3.5 text-left shadow-sm transition-all hover:-translate-y-px hover:shadow-md"
                   onClick={() => navigate({ to: atalho.to })}
                 >
-                  <span className="flex items-center gap-2">
+                  <span className="flex items-center gap-2.5">
                     <Icon className="h-4 w-4 text-primary" aria-hidden="true" />
                     {atalho.label}
                   </span>
@@ -416,27 +418,27 @@ function Dashboard() {
         </CardContent>
       </Card>
 
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4 lg:gap-5">
         {loadingStats
           ? Array.from({ length: 8 }).map((_, i) => (
-              <Card key={i} className="shadow-panel">
-                <CardContent className="p-5">
-                  <Skeleton className="h-3 w-24" />
-                  <Skeleton className="mt-4 h-7 w-32" />
+              <Card key={i} className="rounded-2xl shadow-panel">
+                <CardContent className="p-6">
+                  <Skeleton className="h-3 w-24 rounded-full" />
+                  <Skeleton className="mt-4 h-7 w-32 rounded-lg" />
                 </CardContent>
               </Card>
             ))
           : cards.map((c) => (
               <Card
                 key={c.label}
-                className="group shadow-panel transition-all duration-200 hover:-translate-y-0.5 hover:border-primary/25 hover:shadow-lg"
+                className="group rounded-2xl shadow-panel transition-all duration-200 hover:-translate-y-0.5 hover:border-primary/25 hover:shadow-lg"
               >
-                <CardContent className="p-5">
+                <CardContent className="p-6">
                   <div className="flex items-center justify-between text-muted-foreground">
                     <span className="text-xs font-medium uppercase tracking-[0.12em]">
                       {c.label}
                     </span>
-                    <span className="rounded-lg bg-muted/70 p-2 transition-colors group-hover:bg-primary/10">
+                    <span className="rounded-xl bg-muted/70 p-2.5 transition-colors group-hover:bg-primary/10">
                       <c.icon className={`h-4 w-4 ${c.tone}`} aria-hidden="true" />
                     </span>
                   </div>
@@ -448,38 +450,38 @@ function Dashboard() {
             ))}
       </div>
 
-      <div className="mt-8 grid gap-4 lg:grid-cols-3">
-        <Card className="shadow-panel lg:col-span-2">
-          <CardContent className="p-5">
-            <div className="mb-4 flex items-center justify-between gap-3">
+      <div className="mt-8 grid gap-4 lg:grid-cols-3 lg:gap-5 lg:mt-10">
+        <Card className="rounded-2xl shadow-panel lg:col-span-2">
+          <CardContent className="p-6">
+            <div className="mb-5 flex items-center justify-between gap-3">
               <div>
                 <p className="text-xs font-medium uppercase tracking-[0.12em] text-muted-foreground">
                   Desempenho
                 </p>
-                <h3 className="mt-1 font-semibold">Receita — últimos 30 dias</h3>
+                <h3 className="mt-1 font-semibold tracking-tight">Receita — últimos 30 dias</h3>
               </div>
               <Badge variant="secondary">{brl(stats?.receitaMes ?? 0)}</Badge>
             </div>
             {loadingStats || !stats ? (
-              <Skeleton className="h-56 w-full" />
+              <Skeleton className="h-56 w-full rounded-xl" />
             ) : (
-              <Suspense fallback={<Skeleton className="h-56 w-full" />}>
+              <Suspense fallback={<Skeleton className="h-56 w-full rounded-xl" />}>
                 <ReceitaChart data={stats.serie} />
               </Suspense>
             )}
           </CardContent>
         </Card>
 
-        <Card className="shadow-panel">
-          <CardContent className="p-5">
-            <div className="mb-4 flex items-center justify-between gap-3">
+        <Card className="rounded-2xl shadow-panel">
+          <CardContent className="p-6">
+            <div className="mb-5 flex items-center justify-between gap-3">
               <div>
                 <p className="text-xs font-medium uppercase tracking-[0.12em] text-muted-foreground">
                   Atenção
                 </p>
-                <h3 className="mt-1 font-semibold">Alertas & estoque baixo</h3>
+                <h3 className="mt-1 font-semibold tracking-tight">Alertas & estoque baixo</h3>
               </div>
-              <span className="rounded-lg bg-warning/15 p-2">
+              <span className="rounded-xl bg-warning/15 p-2.5">
                 <AlertTriangle className="h-4 w-4 text-warning-foreground" aria-hidden="true" />
               </span>
             </div>
@@ -487,9 +489,12 @@ function Dashboard() {
             !stats?.estoqueBaixo?.length &&
             !cnhVencendo?.length &&
             !multasVencendo?.length ? (
-              <p className="text-sm text-muted-foreground">Nenhum alerta ativo. 🎉</p>
+              <div className="rounded-xl bg-muted/40 px-4 py-6 text-center">
+                <p className="text-sm font-medium">Nenhum alerta ativo. 🎉</p>
+                <p className="mt-1 text-xs text-muted-foreground">Tudo em dia por aqui.</p>
+              </div>
             ) : (
-              <ul className="space-y-2">
+              <ul className="space-y-1">
                 {cnhVencendo
                   ?.flatMap((c) => {
                     const itens: {
@@ -525,7 +530,7 @@ function Dashboard() {
                     return itens;
                   })
                   .map((a) => (
-                    <li key={a.key} className="flex items-center justify-between text-sm">
+                    <li key={a.key} className="-mx-2 flex items-center justify-between gap-2 rounded-lg px-2 py-1.5 text-sm transition-colors hover:bg-accent/40">
                       <span className="truncate">
                         <strong>
                           {cnhVencendo?.find((c) => c.id === a.key.split("-")[0])?.nome}
@@ -549,7 +554,7 @@ function Dashboard() {
                     (new Date(m.data_vencimento + "T12:00:00").getTime() - Date.now()) / 86400_000,
                   );
                   return (
-                    <li key={m.id} className="flex items-center justify-between text-sm">
+                    <li key={m.id} className="-mx-2 flex items-center justify-between gap-2 rounded-lg px-2 py-1.5 text-sm transition-colors hover:bg-accent/40">
                       <span className="truncate">
                         <strong>{m.placa}</strong> — multa{" "}
                         {m.auto_infracao ? `auto ${m.auto_infracao}` : ""}{" "}
@@ -569,7 +574,7 @@ function Dashboard() {
                   );
                 })}
                 {stats?.estoqueBaixo?.slice(0, 5).map((p) => (
-                  <li key={p.id} className="flex items-center justify-between text-sm">
+                  <li key={p.id} className="-mx-2 flex items-center justify-between gap-2 rounded-lg px-2 py-1.5 text-sm transition-colors hover:bg-accent/40">
                     <span className="truncate">
                       <strong>{p.nome}</strong> — estoque {Number(p.estoque_atual)}{" "}
                       {p.unidade ?? ""}
@@ -580,9 +585,9 @@ function Dashboard() {
                   </li>
                 ))}
                 {alertas?.map((a) => (
-                  <li key={a.id} className="rounded-md bg-accent/30 p-2 text-sm">
+                  <li key={a.id} className="rounded-xl bg-accent/30 p-3 text-sm shadow-sm">
                     <div className="font-medium">{a.titulo}</div>
-                    <div className="text-xs text-muted-foreground">{a.mensagem}</div>
+                    <div className="mt-0.5 text-xs leading-relaxed text-muted-foreground">{a.mensagem}</div>
                   </li>
                 ))}
               </ul>
@@ -591,26 +596,29 @@ function Dashboard() {
         </Card>
       </div>
 
-      <div className="mt-4">
-        <Card className="shadow-panel">
-          <CardContent className="p-5">
-            <div className="mb-3 flex items-center justify-between">
-              <h3 className="font-semibold">Próximos recebimentos</h3>
+      <div className="mt-4 lg:mt-5">
+        <Card className="rounded-2xl shadow-panel">
+          <CardContent className="p-6">
+            <div className="mb-4 flex items-center justify-between gap-3">
+              <h3 className="font-semibold tracking-tight">Próximos recebimentos</h3>
               <Badge variant="secondary">{proximosReceber?.length ?? 0}</Badge>
             </div>
             {!proximosReceber?.length ? (
-              <p className="text-sm text-muted-foreground">Sem lançamentos em aberto.</p>
+              <div className="rounded-xl bg-muted/40 px-4 py-6 text-center">
+                <p className="text-sm font-medium">Sem lançamentos em aberto.</p>
+                <p className="mt-1 text-xs text-muted-foreground">Novos recebimentos aparecem aqui.</p>
+              </div>
             ) : (
-              <ul className="divide-y">
+              <ul className="divide-y divide-border/60">
                 {proximosReceber.map((l) => (
-                  <li key={l.id} className="flex items-center justify-between py-2">
+                  <li key={l.id} className="-mx-2 flex items-center justify-between gap-3 rounded-lg px-2 py-2.5 transition-colors hover:bg-accent/40">
                     <div className="min-w-0">
                       <div className="truncate text-sm font-medium">{l.descricao}</div>
-                      <div className="text-xs text-muted-foreground">
+                      <div className="mt-0.5 text-xs text-muted-foreground">
                         {l.contato?.nome ?? "—"} · vence {dateBR(l.data_vencimento)}
                       </div>
                     </div>
-                    <div className="text-tabular text-sm font-medium">{brl(l.valor)}</div>
+                    <div className="shrink-0 text-tabular text-sm font-semibold">{brl(l.valor)}</div>
                   </li>
                 ))}
               </ul>
@@ -625,13 +633,13 @@ function Dashboard() {
 function DashboardSkeleton() {
   return (
     <>
-      <Skeleton className="mb-8 h-16 w-64" />
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      <Skeleton className="mb-8 h-16 w-64 rounded-2xl" />
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4 lg:gap-5">
         {Array.from({ length: 8 }).map((_, i) => (
-          <Card key={i} className="shadow-panel">
-            <CardContent className="p-5">
-              <Skeleton className="h-3 w-24" />
-              <Skeleton className="mt-4 h-7 w-32" />
+          <Card key={i} className="rounded-2xl shadow-panel">
+            <CardContent className="p-6">
+              <Skeleton className="h-3 w-24 rounded-full" />
+              <Skeleton className="mt-4 h-7 w-32 rounded-lg" />
             </CardContent>
           </Card>
         ))}
@@ -747,19 +755,19 @@ function FirstEmpresa({ onCreated }: { onCreated: () => Promise<void> }) {
   };
 
   return (
-    <div className="mx-auto max-w-lg">
+    <div className="mx-auto max-w-xl">
       <PageHeader
         eyebrow="Bem-vindo"
         title="Cadastre sua empresa"
         description="Informe o CNPJ para preenchermos os dados automaticamente."
       />
-      <Card className="shadow-panel">
-        <CardContent className="p-6">
-          <div className="mb-4 grid h-10 w-10 place-items-center rounded-md bg-accent text-accent-foreground">
-            <Building2 className="h-5 w-5" />
+      <Card className="rounded-2xl shadow-panel">
+        <CardContent className="p-6 sm:p-8">
+          <div className="mb-5 grid h-12 w-12 place-items-center rounded-2xl bg-accent text-accent-foreground shadow-sm">
+            <Building2 className="h-6 w-6" />
           </div>
           <form onSubmit={submit} className="space-y-4">
-            <div>
+            <div className="grid gap-1.5">
               <label className="text-sm font-medium">CNPJ</label>
               <div className="flex gap-2">
                 <Input
@@ -767,18 +775,20 @@ function FirstEmpresa({ onCreated }: { onCreated: () => Promise<void> }) {
                   onChange={(e) => setForm({ ...form, cnpj: maskDoc(e.target.value) })}
                   onKeyDown={handleCnpjKeyDown}
                   placeholder="00.000.000/0000-00"
+                  className="h-10 rounded-xl"
                 />
                 <Button
                   type="button"
                   variant="outline"
                   onClick={lookupCnpj}
                   disabled={lookingUp || !form.cnpj}
+                  className="h-10 shrink-0 rounded-xl px-4 shadow-sm"
                 >
                   {lookingUp ? "..." : "Buscar"}
                 </Button>
               </div>
             </div>
-            <div>
+            <div className="grid gap-1.5">
               <label className="text-sm font-medium">
                 Nome da empresa <span className="text-destructive">*</span>
               </label>
@@ -787,15 +797,16 @@ function FirstEmpresa({ onCreated }: { onCreated: () => Promise<void> }) {
                 value={form.nome_fantasia}
                 onChange={(e) => setForm({ ...form, nome_fantasia: e.target.value })}
                 placeholder="Minha Empresa Ltda"
+                className="h-10 rounded-xl"
               />
             </div>
-            <Button type="submit" className="w-full" disabled={criarMut.isPending}>
+            <Button type="submit" className="h-11 w-full rounded-xl text-base shadow-md transition-all hover:-translate-y-px hover:shadow-lg" disabled={criarMut.isPending}>
               {criarMut.isPending ? "Criando…" : "Criar empresa"}
             </Button>
           </form>
         </CardContent>
       </Card>
-      <div className="mt-4">
+      <div className="mt-4 lg:mt-5">
         <EmptyState
           icon={Package}
           title="O que virá a seguir"
