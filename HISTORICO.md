@@ -4746,3 +4746,11 @@ Espelhado na Vercel.
 - Vazio com ícone maior e título xl; data com botão rounded-lg e
   popover rounded-2xl; dinheiro com h-10 rounded-xl e tabular.
 - Paleta intacta; `tsc` limpo nos tocados e `npm run build` OK.
+
+## Repaginação: periodo-filter + condicao-pagamento + pdf-viewer (06/10)
+
+- Período com botões rounded-xl e popover rounded-2xl; condição com
+  cards rounded-2xl, campos h-9 e linhas com hover; PDF com header,
+  botões e estados em card.
+- MoneyInput passa a usar `cn` (resolve conflito h-10/h-8).
+- Paleta intacta; `tsc` limpo nos tocados e `npm run build` OK.

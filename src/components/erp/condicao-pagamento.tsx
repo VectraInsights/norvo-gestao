@@ -116,9 +116,9 @@ export function CondicaoPagamento({
 
   return (
     <div className="space-y-4">
-      <div className="overflow-hidden rounded-lg border">
-        <div className="border-b border-primary/20 bg-primary/8 px-3 py-1.5 text-[11px] font-semibold uppercase tracking-wide text-primary/80">Condição de pagamento</div>
-        <div className="grid grid-cols-2 gap-2 p-3 md:grid-cols-5">
+      <div className="overflow-hidden rounded-2xl border shadow-panel">
+        <div className="border-b border-primary/20 bg-primary/8 px-4 py-2.5 text-[11px] font-semibold uppercase tracking-wide text-primary/80">Condição de pagamento</div>
+        <div className="grid grid-cols-2 gap-3 p-4 md:grid-cols-5">
           <div>
             <span className="text-xs text-muted-foreground">Parcelamento</span>
             <Select
@@ -126,7 +126,7 @@ export function CondicaoPagamento({
               disabled={travarRegen}
               onValueChange={(v) => { setNx(v); gerar(v, primeiro, intervalo, formaTop, contaTop); }}
             >
-              <SelectTrigger className="h-8 text-xs w-full">
+              <SelectTrigger className="h-9 rounded-xl text-xs w-full shadow-sm">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
@@ -139,7 +139,7 @@ export function CondicaoPagamento({
           <div>
             <span className="text-xs text-muted-foreground">1º Vencimento</span>
             <DateInput
-              className="h-8 text-xs w-full"
+              className="h-9 text-xs w-full"
               value={primeiro}
               disabled={travarRegen}
               onChange={(v) => { setPrimeiro(v); gerar(nx, v, intervalo, formaTop, contaTop); }}
@@ -150,7 +150,7 @@ export function CondicaoPagamento({
             <MoneyInput
               prefix=""
               decimals={0}
-              className="h-8 text-xs w-full"
+              className="h-9 text-xs w-full"
               value={intervalo}
               disabled={travarRegen}
               onChange={(v) => { setIntervalo(v); gerar(nx, primeiro, v, formaTop, contaTop); }}
@@ -162,7 +162,7 @@ export function CondicaoPagamento({
               value={formaTop}
               onValueChange={(v) => { setFormaTop(v); if (travarRegen) carimbar(v, contaTop); else gerar(nx, primeiro, intervalo, v, contaTop); }}
             >
-              <SelectTrigger className="h-8 text-xs w-full">
+              <SelectTrigger className="h-9 rounded-xl text-xs w-full shadow-sm">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
@@ -184,7 +184,7 @@ export function CondicaoPagamento({
               placeholder="Conta de pagamento"
               searchPlaceholder="Digite para buscar..."
               emptyText="Nenhuma conta encontrada."
-              className="h-8 text-xs"
+              className="h-9 text-xs"
             />
           </div>
         </div>
@@ -192,8 +192,8 @@ export function CondicaoPagamento({
 
       {/* Parcelas só aparecem no parcelamento (2+); com 1, a condição já resolve */}
       {parcelas.length !== 1 && (
-      <div className="overflow-hidden rounded-lg border">
-        <div className="flex items-center justify-between gap-2 border-b border-primary/20 bg-primary/8 px-3 py-1.5">
+      <div className="overflow-hidden rounded-2xl border shadow-panel">
+        <div className="flex items-center justify-between gap-2 border-b border-primary/20 bg-primary/8 px-4 py-2.5">
           <div className="flex items-center gap-2 text-[11px] font-semibold uppercase tracking-wide text-primary/80">
             <Archive className="h-3.5 w-3.5" />
             Parcelas
@@ -201,7 +201,7 @@ export function CondicaoPagamento({
           <Button
             size="sm"
             variant="outline"
-            className="h-7 text-xs"
+            className="h-8 rounded-xl px-3 text-xs shadow-sm transition-all hover:-translate-y-px hover:shadow-md"
             onClick={() => {
               const ult = parcelas[parcelas.length - 1];
               onChange([...parcelas, {
@@ -216,14 +216,14 @@ export function CondicaoPagamento({
             <Plus className="mr-1 h-3.5 w-3.5" /> Adicionar Parcela
           </Button>
         </div>
-        <div className="p-3">
+        <div className="p-4">
         {parcelas.length === 0 ? (
-          <p className="text-xs text-muted-foreground">
+          <p className="text-xs leading-relaxed text-muted-foreground">
             {emptyHint || "Altere a condição acima para gerar as parcelas."}
           </p>
         ) : (
-          <div className="rounded-md border overflow-hidden">
-            <div className="hidden md:grid grid-cols-[36px_150px_130px_70px_1fr_36px] gap-2 border-b bg-muted/40 px-3 py-1.5 text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
+          <div className="rounded-xl border overflow-hidden">
+            <div className="hidden md:grid grid-cols-[36px_150px_130px_70px_1fr_36px] gap-2 border-b bg-muted/40 px-4 py-2 text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
               <span>Nº</span>
               <span>Vencimento</span>
               <span>Valor (R$)</span>
@@ -233,25 +233,25 @@ export function CondicaoPagamento({
             </div>
             <div className="divide-y">
               {parcelas.map((p, i) => (
-                <div key={i} className="grid grid-cols-2 md:grid-cols-[36px_150px_130px_70px_1fr_36px] gap-2 px-3 py-2 items-center">
+                <div key={i} className="grid grid-cols-2 md:grid-cols-[36px_150px_130px_70px_1fr_36px] gap-2 px-4 py-2.5 items-center transition-colors hover:bg-accent/30">
                   <span className="text-xs font-medium text-muted-foreground">{i + 1}</span>
                   <DateInput
-                    className="h-8 text-xs w-full"
+                    className="h-9 text-xs w-full"
                     value={p.dataVencimento}
                     onChange={(v) => setRow(i, { dataVencimento: v })}
                   />
                   <MoneyInput
                     value={String(p.valor ?? 0)}
                     onChange={(v) => setRow(i, { valor: parseFloat(v) || 0 })}
-                    className="h-8 text-xs text-right w-full"
+                    className="h-9 text-xs text-right w-full"
                     placeholder="0,00"
                   />
-                  <Input className="h-8 text-xs text-right" value={pct(p.valor, total)} readOnly tabIndex={-1} />
+                  <Input className="h-9 rounded-xl text-xs text-right text-tabular" value={pct(p.valor, total)} readOnly tabIndex={-1} />
                   <Select
                     value={p.forma_pagamento || "Boleto"}
                     onValueChange={(v) => setRow(i, { forma_pagamento: v })}
                   >
-                    <SelectTrigger className="h-8 text-xs w-full">
+                    <SelectTrigger className="h-9 rounded-xl text-xs w-full shadow-sm">
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
@@ -280,7 +280,7 @@ export function CondicaoPagamento({
                 </div>
               ))}
             </div>
-            <div className="flex justify-end border-t bg-muted/30 px-3 py-1.5">
+            <div className="flex justify-end border-t bg-muted/30 px-4 py-2.5">
               <span className="text-xs text-muted-foreground">
                 Total parcelas: <span className="font-semibold text-foreground">{brl(parcelas.reduce((a, p) => a + p.valor, 0))}</span>
                 {Math.abs(parcelas.reduce((a, p) => a + p.valor, 0) - total) > 0.009 && (

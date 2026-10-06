@@ -1,5 +1,6 @@
 import { forwardRef } from "react";
 import { Input } from "@/components/ui/input";
+import { cn } from "@/lib/utils";
 
 type Props = Omit<React.InputHTMLAttributes<HTMLInputElement>, "value" | "onChange" | "type"> & {
   value: string | number;
@@ -58,7 +59,7 @@ export const MoneyInput = forwardRef<HTMLInputElement, Props>(function MoneyInpu
         ref={ref}
         type="text"
         inputMode="decimal"
-        className={`${prefix ? "pl-10" : ""} h-10 rounded-xl text-right text-tabular shadow-sm transition-shadow focus-visible:shadow-md ${className ?? ""}`}
+        className={cn(`${prefix ? "pl-10" : ""} h-10 rounded-xl text-right text-tabular shadow-sm transition-shadow focus-visible:shadow-md`, className)}
         value={display}
         onFocus={(e) => {
           keepOrEnd(e.currentTarget);

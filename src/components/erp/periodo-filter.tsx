@@ -115,28 +115,28 @@ export function PeriodoFilter({ value, onChange }: { value: Periodo; onChange: (
   };
 
   return (
-    <div className="inline-flex items-center gap-1">
+    <div className="inline-flex items-center gap-1.5">
       {podeNavegar && (
-        <Button size="sm" variant="outline" className="px-2" aria-label="Período anterior" onClick={() => navegar(-1)}>
+        <Button size="sm" variant="outline" className="h-9 w-9 rounded-xl px-0 shadow-sm transition-all hover:-translate-y-px hover:shadow-md" aria-label="Período anterior" onClick={() => navegar(-1)}>
           <ChevronLeft className="h-4 w-4" />
         </Button>
       )}
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>
-        <Button size="sm" variant="outline">
-          <CalendarIcon className="mr-1 h-4 w-4" />
+        <Button size="sm" variant="outline" className="h-9 rounded-xl px-3 shadow-sm transition-all hover:-translate-y-px hover:shadow-md">
+          <CalendarIcon className="mr-1.5 h-4 w-4" />
           Período: {value.label}
         </Button>
       </PopoverTrigger>
-      <PopoverContent align="start" className="w-auto p-0">
+      <PopoverContent align="start" className="w-auto overflow-hidden rounded-2xl p-0 shadow-xl">
         <div className="flex">
-          <div className="flex w-48 flex-col border-r p-1">
+          <div className="flex w-52 flex-col gap-0.5 border-r p-2">
             {PRESETS.map((p) => (
               <button
                 key={p.k}
                 type="button"
                 onClick={() => applyPreset(p.k)}
-                className={`rounded px-2 py-1.5 text-left text-sm hover:bg-muted ${value.label === p.label ? "bg-muted font-medium" : ""}`}
+                className={`rounded-lg px-3 py-2 text-left text-sm transition-colors hover:bg-muted ${value.label === p.label ? "bg-muted font-medium" : ""}`}
               >
                 {p.label}
               </button>
@@ -144,21 +144,21 @@ export function PeriodoFilter({ value, onChange }: { value: Periodo; onChange: (
             <button
               type="button"
               onClick={() => applyPreset("custom")}
-              className={`rounded px-2 py-1.5 text-left text-sm hover:bg-muted ${mode === "custom" ? "bg-muted font-medium" : ""}`}
+              className={`rounded-lg px-3 py-2 text-left text-sm transition-colors hover:bg-muted ${mode === "custom" ? "bg-muted font-medium" : ""}`}
             >
               Período personalizado
             </button>
           </div>
           {mode === "custom" && (
-            <div className="p-3">
-              <div className="mb-2 grid grid-cols-2 gap-2">
+            <div className="p-4">
+              <div className="mb-3 grid grid-cols-2 gap-2.5">
                 <div>
                   <Label className="text-xs">De</Label>
                   <Input
                     placeholder="dd/mm/aaaa"
                     value={fromStr}
                     onChange={(e) => setFromStr(e.target.value)}
-                    className="h-8"
+                    className="h-9 rounded-xl"
                   />
                 </div>
                 <div>
@@ -167,7 +167,7 @@ export function PeriodoFilter({ value, onChange }: { value: Periodo; onChange: (
                     placeholder="dd/mm/aaaa"
                     value={toStr}
                     onChange={(e) => setToStr(e.target.value)}
-                    className="h-8"
+                    className="h-9 rounded-xl"
                   />
                 </div>
               </div>
@@ -183,8 +183,8 @@ export function PeriodoFilter({ value, onChange }: { value: Periodo; onChange: (
                 numberOfMonths={1}
                 className="pointer-events-auto p-0"
               />
-              <div className="mt-2 flex justify-end">
-                <Button size="sm" onClick={applyCustom}>Aplicar</Button>
+              <div className="mt-3 flex justify-end">
+                <Button size="sm" className="h-9 rounded-xl px-5 shadow-sm transition-all hover:-translate-y-px hover:shadow-md" onClick={applyCustom}>Aplicar</Button>
               </div>
             </div>
           )}
@@ -192,7 +192,7 @@ export function PeriodoFilter({ value, onChange }: { value: Periodo; onChange: (
       </PopoverContent>
     </Popover>
       {podeNavegar && (
-        <Button size="sm" variant="outline" className="px-2" aria-label="Próximo período" onClick={() => navegar(1)}>
+        <Button size="sm" variant="outline" className="h-9 w-9 rounded-xl px-0 shadow-sm transition-all hover:-translate-y-px hover:shadow-md" aria-label="Próximo período" onClick={() => navegar(1)}>
           <ChevronRight className="h-4 w-4" />
         </Button>
       )}

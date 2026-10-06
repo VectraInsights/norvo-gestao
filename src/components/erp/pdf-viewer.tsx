@@ -148,30 +148,32 @@ export function PdfViewer({
 
   return (
     <div className="fixed inset-0 z-[100] flex flex-col bg-background">
-      <div className="flex flex-wrap items-center gap-2 bg-primary px-4 py-2 text-primary-foreground">
-        <FileText className="h-4 w-4" />
-        <span className="font-semibold">{titulo}</span>
+      <div className="flex flex-wrap items-center gap-2 bg-primary px-5 py-2.5 text-primary-foreground shadow-md">
+        <div className="grid h-8 w-8 place-items-center rounded-xl bg-primary-foreground/15">
+          <FileText className="h-4 w-4" />
+        </div>
+        <span className="font-semibold tracking-tight">{titulo}</span>
         {subtitulo && (
           <span className="max-w-full truncate text-xs text-primary-foreground/80">{subtitulo}</span>
         )}
-        <div className="ml-auto flex items-center gap-1">
+        <div className="ml-auto flex flex-wrap items-center gap-1.5">
           <Button
             size="icon"
             variant="ghost"
-            className="h-8 w-8 text-primary-foreground hover:bg-white/15 hover:text-primary-foreground"
+            className="h-8 w-8 rounded-lg text-primary-foreground hover:bg-white/15 hover:text-primary-foreground"
             title="Página anterior"
             disabled={page <= 1}
             onClick={() => irPara(page - 1)}
           >
             <ChevronLeft className="h-4 w-4" />
           </Button>
-          <span className="min-w-14 text-center text-xs">
+          <span className="min-w-14 text-center text-xs text-tabular">
             {page}/{numPages}
           </span>
           <Button
             size="icon"
             variant="ghost"
-            className="h-8 w-8 text-primary-foreground hover:bg-white/15 hover:text-primary-foreground"
+            className="h-8 w-8 rounded-lg text-primary-foreground hover:bg-white/15 hover:text-primary-foreground"
             title="Próxima página"
             disabled={page >= numPages}
             onClick={() => irPara(page + 1)}
@@ -182,17 +184,17 @@ export function PdfViewer({
           <Button
             size="icon"
             variant="ghost"
-            className="h-8 w-8 text-primary-foreground hover:bg-white/15 hover:text-primary-foreground"
+            className="h-8 w-8 rounded-lg text-primary-foreground hover:bg-white/15 hover:text-primary-foreground"
             title="Reduzir zoom"
             onClick={() => setZoom((z) => Math.max(50, z - 10))}
           >
             −
           </Button>
-          <span className="w-12 text-center text-xs">{zoom}%</span>
+          <span className="w-12 text-center text-xs text-tabular">{zoom}%</span>
           <Button
             size="icon"
             variant="ghost"
-            className="h-8 w-8 text-primary-foreground hover:bg-white/15 hover:text-primary-foreground"
+            className="h-8 w-8 rounded-lg text-primary-foreground hover:bg-white/15 hover:text-primary-foreground"
             title="Ajustar à largura"
             onClick={() => setZoom(100)}
           >
@@ -201,7 +203,7 @@ export function PdfViewer({
           <Button
             size="icon"
             variant="ghost"
-            className="h-8 w-8 text-primary-foreground hover:bg-white/15 hover:text-primary-foreground"
+            className="h-8 w-8 rounded-lg text-primary-foreground hover:bg-white/15 hover:text-primary-foreground"
             title="Ampliar zoom"
             onClick={() => setZoom((z) => Math.min(300, z + 10))}
           >
@@ -211,18 +213,19 @@ export function PdfViewer({
           <Button
             size="sm"
             variant="secondary"
+            className="h-8 rounded-xl shadow-sm"
             onClick={baixar}
           >
             <Download className="mr-1 h-3.5 w-3.5" /> Baixar
           </Button>
-          <Button size="sm" variant="secondary" onClick={imprimir} disabled={printing || loading}>
+          <Button size="sm" variant="secondary" className="h-8 rounded-xl shadow-sm" onClick={imprimir} disabled={printing || loading}>
             <Printer className="mr-1 h-3.5 w-3.5" /> {printing ? "Gerando..." : "Imprimir"}
           </Button>
           {acoes}
           <Button
             size="icon"
             variant="ghost"
-            className="h-8 w-8 text-primary-foreground hover:bg-white/15 hover:text-primary-foreground"
+            className="h-8 w-8 rounded-lg text-primary-foreground hover:bg-white/15 hover:text-primary-foreground"
             title="Fechar (Esc)"
             onClick={onClose}
           >
@@ -230,22 +233,22 @@ export function PdfViewer({
           </Button>
         </div>
       </div>
-      <div ref={wrapRef} className="flex flex-1 items-start justify-center overflow-auto bg-muted/40 p-4">
+      <div ref={wrapRef} className="flex flex-1 items-start justify-center overflow-auto bg-muted/40 p-6">
         {loading && (
-          <div className="mt-20 flex items-center gap-2 text-sm text-muted-foreground">
+          <div className="erp-surface mt-20 flex items-center gap-2.5 rounded-2xl px-6 py-4 text-sm text-muted-foreground">
             <Loader2 className="h-5 w-5 animate-spin" /> Carregando documento...
           </div>
         )}
         {!loading && erro && (
-          <div className="mt-20 text-center text-sm text-muted-foreground">
-            <p>{erro}</p>
-            <Button size="sm" variant="outline" className="mt-3" onClick={baixar}>
+          <div className="erp-surface mt-20 rounded-2xl p-8 text-center text-sm text-muted-foreground">
+            <p className="leading-relaxed">{erro}</p>
+            <Button size="sm" variant="outline" className="mt-4 h-9 rounded-xl px-5 shadow-sm" onClick={baixar}>
               <Download className="mr-1 h-3.5 w-3.5" /> Baixar PDF
             </Button>
           </div>
         )}
         {!loading && !erro && (
-          <canvas ref={canvasRef} className="bg-white shadow-panel" />
+          <canvas ref={canvasRef} className="rounded-lg bg-white shadow-panel" />
         )}
       </div>
     </div>
