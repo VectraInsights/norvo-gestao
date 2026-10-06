@@ -4990,3 +4990,9 @@ Espelhado na Vercel.
 - Nova subcategoria herda tipo e pai (tipo travado, pai à mostra);
   duplicada passa a valer por pai.
 - `tsc` limpo nos tocados e `npm run build` OK.
+
+## Categorias lado a lado (06/10)
+
+- Receitas e Despesas em colunas simultâneas, cada uma com
+  contador e botão Nova; sem abas nem coluna Tipo.
+- `tsc` limpo nos tocados e `npm run build` OK.

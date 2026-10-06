@@ -118,14 +118,14 @@ function CadastrosPage() {
   });
 
   const pais = (categorias ?? []).filter((c) => !c.parent_id);
-  const [catTipoTab, setCatTipoTab] = useState<"pagar" | "receber">("pagar");
-  const filtrados = useMemo(() => {
+  const filtrarTipo = (tipo: "pagar" | "receber") => {
     const q = busca.trim().toLowerCase();
-    const porTipo = (categorias ?? []).filter((c) => c.tipo === catTipoTab);
+    const porTipo = (categorias ?? []).filter((c) => c.tipo === tipo);
     if (!q) return porTipo;
     return porTipo.filter((c) => (c.nome || "").toLowerCase().includes(q));
-  }, [categorias, catTipoTab, busca]);
-  const categoriasFiltradas = filtrados;
+  };
+  const receitasFiltradas = filtrarTipo("receber");
+  const despesasFiltradas = filtrarTipo("pagar");
 
   /* ---------------- Centros de custo ---------------- */
   const ccKey = ["cadastros-centros", empresa?.id] as const;
@@ -222,59 +222,62 @@ function CadastrosPage() {
 
         {/* Categorias */}
         <TabsContent value="categorias" className="mt-4 space-y-4">
-          <div className="flex flex-wrap items-center justify-between gap-3">
-            <Tabs value={catTipoTab} onValueChange={(v) => setCatTipoTab(v as "pagar" | "receber")}>
-              <TabsList className="h-auto flex-wrap gap-1">
-                <TabsTrigger value="pagar">Despesas</TabsTrigger>
-                <TabsTrigger value="receber">Receitas</TabsTrigger>
-              </TabsList>
-            </Tabs>
-            <Button size="sm" onClick={() => { setCatForm({ nome: "", tipo: catTipoTab, parent_id: "none" }); setCatOpen(true); }} className="h-10 rounded-xl px-5 shadow-sm transition-all hover:-translate-y-px hover:shadow-md">
-              <Plus className="mr-1.5 h-4 w-4" />Nova categoria
-            </Button>
-          </div>
           {loadingCat ? (
-            <div className="space-y-2.5">{Array.from({ length: 4 }).map((_, i) => <div key={i} className="h-12 animate-pulse rounded-xl bg-muted/30" />)}</div>
-          ) : !categoriasFiltradas.length ? (
-            <EmptyState
-              icon={FolderCog}
-              title={catTipoTab === "pagar" ? "Nenhuma categoria de despesa" : "Nenhuma categoria de receita"}
-              description={busca ? "Nada encontrado para a busca." : "Crie a primeira categoria financeira deste tipo."}
-            />
+            <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+              {[0, 1].map((col) => (
+                <div key={col} className="space-y-2.5">{Array.from({ length: 4 }).map((_, i) => <div key={i} className="h-12 animate-pulse rounded-xl bg-muted/30" />)}</div>
+              ))}
+            </div>
           ) : (
-            <Card className="overflow-hidden rounded-2xl shadow-panel">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Nome</TableHead>
-                    <TableHead className="w-36 text-right">Ações</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {categoriasFiltradas.map((c) => (
-                    <TableRow key={c.id} className="transition-colors hover:bg-accent/30">
-                      <TableCell className={c.parent_id ? "pl-8 text-muted-foreground" : "font-medium"}>{c.nome}</TableCell>
-                      <TableCell className="text-right">
-                        <div className="flex items-center justify-end gap-1">
-                          <Button variant="ghost" size="icon" aria-label="Cadastrar subcategoria" title="Cadastrar subcategoria" className="h-8 w-8 rounded-lg"
-                            onClick={() => { setCatForm({ nome: "", tipo: c.tipo, parent_id: c.id }); setCatOpen(true); }}>
-                            <PlusCircle className="h-4 w-4" />
-                          </Button>
-                          <Button variant="ghost" size="icon" aria-label="Editar categoria" title="Editar categoria" className="h-8 w-8 rounded-lg"
-                            onClick={() => { setCatForm({ id: c.id, nome: c.nome, tipo: c.tipo, parent_id: c.parent_id ?? "none" }); setCatOpen(true); }}>
-                            <Pencil className="h-4 w-4" />
-                          </Button>
-                          <Button variant="ghost" size="icon" aria-label="Remover categoria" title="Remover categoria" className="h-8 w-8 rounded-lg text-destructive"
-                            onClick={() => setConfCat(c)}>
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
-                        </div>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </Card>
+            <div className="grid grid-cols-1 items-start gap-4 lg:grid-cols-2">
+              {([
+                { tipo: "receber", titulo: "Receitas", lista: receitasFiltradas },
+                { tipo: "pagar", titulo: "Despesas", lista: despesasFiltradas },
+              ] as const).map((col) => (
+                <Card key={col.tipo} className="overflow-hidden rounded-2xl shadow-panel">
+                  <div className="flex items-center justify-between gap-2 border-b border-border/60 px-4 py-3">
+                    <div className="flex items-center gap-2">
+                      <span className="text-sm font-semibold tracking-tight">{col.titulo}</span>
+                      <Badge variant="secondary">{col.lista.length}</Badge>
+                    </div>
+                    <Button size="sm" onClick={() => { setCatForm({ nome: "", tipo: col.tipo, parent_id: "none" }); setCatOpen(true); }} className="h-8 rounded-lg px-3 text-xs shadow-sm">
+                      <Plus className="mr-1 h-3.5 w-3.5" />Nova
+                    </Button>
+                  </div>
+                  {col.lista.length === 0 ? (
+                    <p className="px-4 py-8 text-center text-sm text-muted-foreground">
+                      {busca ? "Nada encontrado para a busca." : `Nenhuma categoria de ${col.tipo === "pagar" ? "despesa" : "receita"}.`}
+                    </p>
+                  ) : (
+                    <Table>
+                      <TableBody>
+                        {col.lista.map((c) => (
+                          <TableRow key={c.id} className="transition-colors hover:bg-accent/30">
+                            <TableCell className={c.parent_id ? "pl-8 text-muted-foreground" : "font-medium"}>{c.nome}</TableCell>
+                            <TableCell className="w-28">
+                              <div className="flex items-center justify-end gap-1">
+                                <Button variant="ghost" size="icon" aria-label="Cadastrar subcategoria" title="Cadastrar subcategoria" className="h-8 w-8 rounded-lg"
+                                  onClick={() => { setCatForm({ nome: "", tipo: c.tipo, parent_id: c.id }); setCatOpen(true); }}>
+                                  <PlusCircle className="h-4 w-4" />
+                                </Button>
+                                <Button variant="ghost" size="icon" aria-label="Editar categoria" title="Editar categoria" className="h-8 w-8 rounded-lg"
+                                  onClick={() => { setCatForm({ id: c.id, nome: c.nome, tipo: c.tipo, parent_id: c.parent_id ?? "none" }); setCatOpen(true); }}>
+                                  <Pencil className="h-4 w-4" />
+                                </Button>
+                                <Button variant="ghost" size="icon" aria-label="Remover categoria" title="Remover categoria" className="h-8 w-8 rounded-lg text-destructive"
+                                  onClick={() => setConfCat(c)}>
+                                  <Trash2 className="h-4 w-4" />
+                                </Button>
+                              </div>
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  )}
+                </Card>
+              ))}
+            </div>
           )}
         </TabsContent>
 
