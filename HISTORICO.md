@@ -4727,3 +4727,9 @@ Espelhado na Vercel.
   rounded-2xl; header com avatar e subtítulo; bolhas com canto
   direcional; sugestões e input com respiro.
 - Paleta intacta; `tsc` limpo nos tocados e `npm run build` OK.
+
+## Repaginação: page-header (06/10)
+
+- Respiro maior (mb-6/8, gap-4, pl-5) e título com tracking; ações
+  com gap-2.5; linha do módulo mantida.
+- Paleta intacta; `tsc` limpo nos tocados e `npm run build` OK.
