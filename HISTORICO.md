@@ -4761,3 +4761,14 @@ Espelhado na Vercel.
   diálogo rounded-2xl e campos h-10; charts com tooltip em card e
   eixos sem linhas (paletas mantidas).
 - Paleta intacta; `tsc` limpo nos tocados e `npm run build` OK.
+
+## Repaginação: ui/* primitivos (06/10)
+
+- Raio e sombra padronizados: button rounded-xl com hover elevado;
+  card rounded-2xl + shadow-panel (p-6/8); dialog/sheet/drawer com
+  cantos 2xl; popover/select/dropdown/command/hover-card rounded-xl
+  ou 2xl com shadow-xl; input/textarea/select rounded-xl; badge
+  pill; tabs, toggle, checkbox, calendar, menubar, context-menu,
+  nav-menu, otp, table (px-4/py-3.5), tooltip, sonner e sidebar.
+- Paleta intacta (tooltip/toggle revisados sem mudar cor); `tsc`
+  limpo nos tocados (só baseline em lib/hooks) e build OK.
