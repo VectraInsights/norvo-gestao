@@ -4689,3 +4689,9 @@ Espelhado na Vercel.
 - Conteúdo com respiro generoso e container `max-w-[1440px]`; card
   sem-acesso em `rounded-2xl` com sombra.
 - Paleta intacta; `tsc` limpo nos tocados e `npm run build` OK.
+
+## Repaginação: command-palette (06/10)
+
+- Gatilho h-9 rounded-xl com sombra e hover elevado; itens de página
+  com `rounded-lg`.
+- Paleta intacta; `tsc` limpo nos tocados e `npm run build` OK.

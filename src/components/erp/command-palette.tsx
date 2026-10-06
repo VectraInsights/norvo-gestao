@@ -117,13 +117,13 @@ export function CommandPalette() {
     <>
       <Button
         variant="outline" size="sm"
-        className="h-8 gap-2 px-2 text-xs text-muted-foreground"
+        className="h-9 gap-2 rounded-xl px-3 text-xs text-muted-foreground shadow-sm transition-all hover:-translate-y-px hover:shadow-md"
         aria-label="Abrir busca global (Ctrl K ou Ctrl /)"
         onClick={() => setOpen(true)}
       >
         <Search className="h-3.5 w-3.5" />
         <span className="hidden sm:inline">Buscar…</span>
-        <kbd className="ml-1 hidden rounded border bg-muted px-1.5 py-0.5 font-mono text-[10px] sm:inline">⌘K</kbd>
+        <kbd className="ml-1 hidden rounded-md border bg-muted px-1.5 py-0.5 font-mono text-[10px] sm:inline">⌘K</kbd>
       </Button>
 
       <CommandDialog open={open} onOpenChange={fechar}>
@@ -135,7 +135,7 @@ export function CommandPalette() {
             {ROUTES.filter((r) => rotaVisivel(r.to))
               .filter((r) => !term || r.label.toLowerCase().includes(term.toLowerCase()))
               .map((r) => (
-                <CommandItem key={r.to} value={r.label} onSelect={() => go(r.to)}>
+                <CommandItem key={r.to} value={r.label} onSelect={() => go(r.to)} className="rounded-lg">
                   {r.label}
                 </CommandItem>
               ))}
