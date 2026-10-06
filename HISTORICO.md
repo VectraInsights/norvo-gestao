@@ -4635,3 +4635,12 @@ Espelhado na Vercel.
 - Sugestão do sistema (mesmo valor e data) exibida no topo do Novo
   lançamento com botão Usar sugestão.
 - Validado com `tsc` (só baseline) e `npm run build` OK.
+
+## Busca direta + filtros completos + sugestão upfront (06/10)
+
+- "Buscar lançamento" abre direto a tela cheia (sem etapa intermediária;
+  sair volta ao Novo).
+- Filtros da imagem: conta, tipo, categoria, cliente/fornecedor, centro de
+  custo, situação + menu Novo; tabela com conta e rodapé com diferença.
+- Sugestão do sistema exibida no topo do Novo lançamento.
+- Validado com `tsc` (só baseline) e `npm run build` OK.

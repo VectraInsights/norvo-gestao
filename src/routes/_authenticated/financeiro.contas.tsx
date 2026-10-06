@@ -1,5 +1,5 @@
 import { MoneyInput } from "@/components/erp/money-input";
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { PageHeader } from "@/components/erp/page-header";
 import { EmptyState } from "@/components/erp/empty-state";
 import { Button } from "@/components/ui/button";
@@ -39,8 +39,10 @@ import { useFiltrosSalvos } from "@/hooks/use-filtros-salvos";
 import { detectBancoByNome, detectBancoByCodigo, formatContaComDigito, normalizaContaNumero } from "@/lib/bancos";
 
 export const Route = createFileRoute("/_authenticated/financeiro/contas")({
-  validateSearch: (search: Record<string, unknown>): { conciliar?: string } => ({
+  validateSearch: (search: Record<string, unknown>): { conciliar?: string; conta?: string; tab?: string } => ({
     conciliar: typeof search.conciliar === "string" ? search.conciliar : undefined,
+    conta: typeof search.conta === "string" ? search.conta : undefined,
+    tab: search.tab === "movs" || search.tab === "pendentes" ? search.tab : undefined,
   }),
   component: ContasFinanceiras,
   errorComponent: ({ error }) => (
@@ -398,9 +400,22 @@ function ContasFinanceiras() {
   const [reconcilingId, setReconcilingId] = useState<string | null>(null);
   const [preparando, setPreparando] = useState<string | null>(null);
   const [busca, setBusca] = useState("");
-  // Detalhe da conta selecionada (estilo Conta Azul: conciliações + movimentações)
-  const [detalheId, setDetalheId] = useState<string | null>(null);
-  const [detalheTab, setDetalheTab] = useState<"pendentes" | "movs">("pendentes");
+  // Detalhe da conta selecionada (persiste na URL: F5 mantém a conciliação)
+  const searchParams = Route.useSearch();
+  const navigate = useNavigate();
+  const [detalheId, setDetalheId] = useState<string | null>(searchParams.conta ?? null);
+  const [detalheTab, setDetalheTab] = useState<"pendentes" | "movs">(
+    searchParams.tab === "movs" ? "movs" : "pendentes",
+  );
+  useEffect(() => {
+    navigate({
+      search: {
+        ...(searchParams.conciliar ? { conciliar: searchParams.conciliar } : {}),
+        ...(detalheId ? { conta: detalheId, tab: detalheTab } : {}),
+      } as any,
+      replace: true,
+    });
+  }, [detalheId, detalheTab]);
 
   // Pendências de conciliação por conta (para os badges da lista)
   const { data: ofxPendentes } = useQuery({
@@ -2100,53 +2115,39 @@ const ReconcileRow = memo(function ReconcileRow({
       {/* sistema */}
       <Card className="overflow-hidden">
         <div className="flex items-center justify-between gap-2 border-b px-3 py-2">
-          <div className="flex gap-1">
-            <Button size="sm" variant={modoBusca ? "outline" : "default"} onClick={() => onSetModoBusca(tx.id, false)}>
-              Novo lançamento
-            </Button>
-            <Button size="sm" variant={modoBusca ? "default" : "outline"} onClick={() => { onSetModoBusca(tx.id, true); setBuscaOpen(true); }}>
-              <Search className="mr-1 h-3 w-3" />Buscar lançamento
-            </Button>
-          </div>
+          <span className="text-xs font-semibold">Novo lançamento</span>
+          <Button size="sm" variant="outline" onClick={() => setBuscaOpen(true)}>
+            <Search className="mr-1 h-3 w-3" />Buscar lançamento
+          </Button>
         </div>
         <div className="px-3 py-2">
-          {modoBusca ? (
-            <div className="space-y-1">
-              <Label className="text-xs">Lançamento existente</Label>
-              <Button variant="outline" className="w-full justify-between font-normal" onClick={() => setBuscaOpen(true)}>
-                <span className={cn("truncate", !lancSel && "text-muted-foreground")}>{rotuloSel}</span>
-                <Search className="ml-2 h-4 w-4 shrink-0 opacity-60" />
-              </Button>
-              <BuscarLancamentoDialog
-                open={buscaOpen}
-                onClose={() => setBuscaOpen(false)}
-                tx={tx}
-                lancamentos={lancamentosAbertos}
-                value={r.lancamento_id}
-                onConfirm={(id) => { onSetRow(tx.id, { lancamento_id: id }); setBuscaOpen(false); }}
-                onNovo={() => { onSetModoBusca(tx.id, false); setBuscaOpen(false); }}
-                empresaId={empresaId}
-                contatos={contatos}
-                centros={centros}
-              />
-            </div>
-          ) : (
-            <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
-              {sugestao && !r.lancamento_id && (
-                <div className="col-span-full flex flex-wrap items-center gap-2 rounded-md border border-success/30 bg-success/10 px-3 py-2">
-                  <Sparkles className="h-4 w-4 shrink-0 text-success" />
-                  <span className="text-xs">
-                    <strong>Encontramos:</strong>{" "}
-                    {format(new Date(sugestao.data_vencimento + "T00:00:00"), "dd/MM")} — {sugestao.descricao} ({brl(Number(sugestao.valor))})
-                  </span>
-                  <Button
-                    size="sm" variant="outline" className="ml-auto h-7 text-xs"
-                    onClick={() => { onSetRow(tx.id, { lancamento_id: sugestao.id }); onSetModoBusca(tx.id, true); }}
-                  >
-                    Usar sugestão
-                  </Button>
-                </div>
-              )}
+          <BuscarLancamentoDialog
+            open={buscaOpen}
+            onClose={() => setBuscaOpen(false)}
+            tx={tx}
+            lancamentos={lancamentosAbertos}
+            value={r.lancamento_id}
+            onConfirm={(id) => { onSetRow(tx.id, { lancamento_id: id }); setBuscaOpen(false); }}
+            onNovo={() => setBuscaOpen(false)}
+            empresaId={empresaId}
+            contatos={contatos}
+            centros={centros}
+          />
+          <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+            {r.lancamento_id && lancSel ? (
+              <div className="col-span-full flex flex-wrap items-center gap-2 rounded-md border border-primary/30 bg-primary/10 px-3 py-2">
+                <Link2 className="h-4 w-4 shrink-0 text-primary" />
+                <span className="text-xs">
+                  <strong>Vinculado:</strong> {rotuloSel}
+                </span>
+                <Button
+                  size="sm" variant="ghost" className="ml-auto h-7 text-xs"
+                  onClick={() => onSetRow(tx.id, { lancamento_id: "" })}
+                >
+                  <X className="mr-1 h-3 w-3" />Desvincular
+                </Button>
+              </div>
+            ) : null}
               <div className="space-y-1">
                 <Label className="text-xs">Descrição <span className="text-destructive">*</span></Label>
                 <Input value={r.descricao} onChange={(e) => onSetRow(tx.id, { descricao: e.target.value })} placeholder="Descrição" />
@@ -2163,6 +2164,20 @@ const ReconcileRow = memo(function ReconcileRow({
                 <Label className="text-xs">Centro de custo</Label>
                 <Combobox value={r.centro_custo_id} onChange={(v) => onSetRow(tx.id, { centro_custo_id: v })} options={centros.map((c) => ({ value: c.id, label: c.nome }))} placeholder="Selecione" searchPlaceholder="Digite para buscar..." emptyText="Nenhum item encontrado." />
               </div>
+            </div>
+          {sugestao && !r.lancamento_id && (
+            <div className="col-span-full flex flex-wrap items-center gap-2 rounded-md border border-success/30 bg-success/10 px-3 py-2">
+              <Sparkles className="h-4 w-4 shrink-0 text-success" />
+              <span className="text-xs">
+                <strong>Encontramos:</strong>{" "}
+                {format(new Date(sugestao.data_vencimento + "T00:00:00"), "dd/MM")} — {sugestao.descricao} ({brl(Number(sugestao.valor))})
+              </span>
+              <Button
+                size="sm" variant="outline" className="ml-auto h-7 text-xs"
+                onClick={() => onSetRow(tx.id, { lancamento_id: sugestao.id })}
+              >
+                Usar sugestão
+              </Button>
             </div>
           )}
         </div>
