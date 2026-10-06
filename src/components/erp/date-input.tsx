@@ -46,12 +46,12 @@ export function DateInput({ value, onChange, required, disabled, className, id, 
             tabIndex={-1}
             aria-label="Abrir calendário"
             title="Escolher no calendário"
-            className="absolute right-0.5 h-7 w-7 shrink-0 text-muted-foreground hover:text-foreground"
+            className="absolute right-1 h-8 w-8 shrink-0 rounded-lg text-muted-foreground transition-colors hover:text-foreground"
           >
             <CalendarIcon className="h-4 w-4" />
           </Button>
         </PopoverTrigger>
-        <PopoverContent className="w-auto p-0 shadow-lg border" align="end">
+        <PopoverContent className="w-auto overflow-hidden rounded-2xl border p-0 shadow-xl" align="end">
           <Calendar
             mode="single"
             locale={ptBR}
@@ -66,7 +66,7 @@ export function DateInput({ value, onChange, required, disabled, className, id, 
               }
             }}
           />
-          <div className="border-t px-3 py-2 flex items-center">
+          <div className="flex items-center border-t bg-muted/40 px-4 py-2.5">
             <span className="text-xs text-muted-foreground">Hoje: {format(today, "dd/MM/yyyy")}</span>
           </div>
         </PopoverContent>

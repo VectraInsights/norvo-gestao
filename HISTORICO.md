@@ -4740,3 +4740,9 @@ Espelhado na Vercel.
   elevado; combobox com gatilho h-10 rounded-xl, popover rounded-2xl
   e itens rounded-lg.
 - Paleta intacta; `tsc` limpo nos tocados e `npm run build` OK.
+
+## Repaginação: empty-state + date-input + money-input (06/10)
+
+- Vazio com ícone maior e título xl; data com botão rounded-lg e
+  popover rounded-2xl; dinheiro com h-10 rounded-xl e tabular.
+- Paleta intacta; `tsc` limpo nos tocados e `npm run build` OK.

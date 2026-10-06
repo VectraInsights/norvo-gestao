@@ -50,7 +50,7 @@ export const MoneyInput = forwardRef<HTMLInputElement, Props>(function MoneyInpu
   return (
     <div className="relative">
       {prefix && (
-        <span className="absolute left-2 top-1/2 -translate-y-1/2 text-xs text-muted-foreground pointer-events-none">
+        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[13px] font-medium text-muted-foreground pointer-events-none">
           {prefix}
         </span>
       )}
@@ -58,7 +58,7 @@ export const MoneyInput = forwardRef<HTMLInputElement, Props>(function MoneyInpu
         ref={ref}
         type="text"
         inputMode="decimal"
-        className={`${prefix ? "pl-9" : ""} text-right ${className ?? ""}`}
+        className={`${prefix ? "pl-10" : ""} h-10 rounded-xl text-right text-tabular shadow-sm transition-shadow focus-visible:shadow-md ${className ?? ""}`}
         value={display}
         onFocus={(e) => {
           keepOrEnd(e.currentTarget);
