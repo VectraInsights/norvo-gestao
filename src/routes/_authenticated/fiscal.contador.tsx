@@ -171,22 +171,22 @@ function PainelContador() {
         description="Facilite o trabalho da sua contabilidade exportando XMLs e relatórios de forma organizada." 
       />
 
-      <div className="mt-6 grid gap-6 lg:grid-cols-3">
+      <div className="mt-6 grid gap-4 sm:mt-8 lg:grid-cols-3 lg:gap-5">
         {/* Painel de Configuração de Exportação */}
-        <Card className="lg:col-span-2 border-muted bg-card/60 backdrop-blur-sm shadow-panel">
-          <CardHeader>
-            <CardTitle className="text-base font-semibold">Configuração do Fechamento Fiscal</CardTitle>
-            <CardDescription>Selecione o período e os documentos fiscais que farão parte do pacote de exportação.</CardDescription>
+        <Card className="rounded-2xl lg:col-span-2 border-muted bg-card/60 backdrop-blur-sm shadow-panel">
+          <CardHeader className="pb-2">
+            <CardTitle className="text-base font-semibold tracking-tight">Configuração do Fechamento Fiscal</CardTitle>
+            <CardDescription className="leading-relaxed">Selecione o período e os documentos fiscais que farão parte do pacote de exportação.</CardDescription>
           </CardHeader>
           <CardContent className="space-y-6">
             <div className="grid gap-4 sm:grid-cols-2">
-              <div className="grid gap-2">
+              <div className="grid gap-1.5">
                 <Label htmlFor="periodo">Período de Referência</Label>
                 <Select value={periodo} onValueChange={(v) => {
                   setPeriodo(v);
                   setAssunto(`Fechamento Fiscal Norvo - Período ${v.replace("-", "/")}`);
                 }}>
-                  <SelectTrigger id="periodo" className="bg-background">
+                  <SelectTrigger id="periodo" className="h-10 rounded-xl bg-background shadow-sm">
                     <Calendar className="mr-2 h-4 w-4 text-muted-foreground" />
                     <SelectValue placeholder="Selecione o período" />
                   </SelectTrigger>
@@ -202,8 +202,8 @@ function PainelContador() {
             {/* Checklist de Documentos */}
             <div className="space-y-3">
               <Label className="text-sm font-semibold text-foreground">Documentos a Incluir no Pacote</Label>
-              <div className="grid gap-3 rounded-lg border border-border p-4 bg-background/50">
-                <div className="flex items-center space-x-3">
+              <div className="grid gap-1 rounded-2xl border border-border bg-background/50 p-3 sm:p-4">
+                <div className="flex items-center gap-3 rounded-lg px-2 py-1 transition-colors hover:bg-accent/40">
                   <Checkbox 
                     id="nfe" 
                     checked={exportNfe} 
@@ -215,7 +215,7 @@ function PainelContador() {
                   </Label>
                 </div>
                 
-                <div className="flex items-center space-x-3 border-t pt-3">
+                <div className="flex items-center gap-3 rounded-lg border-t px-2 py-2.5 transition-colors hover:bg-accent/40">
                   <Checkbox 
                     id="nfse" 
                     checked={exportNfse} 
@@ -227,7 +227,7 @@ function PainelContador() {
                   </Label>
                 </div>
 
-                <div className="flex items-center space-x-3 border-t pt-3">
+                <div className="flex items-center gap-3 rounded-lg border-t px-2 py-2.5 transition-colors hover:bg-accent/40">
                   <Checkbox 
                     id="nfce" 
                     checked={exportNfce} 
@@ -239,7 +239,7 @@ function PainelContador() {
                   </Label>
                 </div>
 
-                <div className="flex items-center space-x-3 border-t pt-3">
+                <div className="flex items-center gap-3 rounded-lg border-t px-2 py-2.5 transition-colors hover:bg-accent/40">
                   <Checkbox 
                     id="entradas" 
                     checked={exportEntradas} 
@@ -251,7 +251,7 @@ function PainelContador() {
                   </Label>
                 </div>
 
-                <div className="flex items-center space-x-3 border-t pt-3">
+                <div className="flex items-center gap-3 rounded-lg border-t px-2 py-2.5 transition-colors hover:bg-accent/40">
                   <Checkbox 
                     id="relatorios" 
                     checked={exportRelatorios} 
@@ -272,7 +272,7 @@ function PainelContador() {
                 variant="outline" 
                 onClick={handleBaixarZip}
                 disabled={downloading}
-                className="w-full sm:w-auto h-10"
+                className="h-10 w-full rounded-xl px-5 shadow-sm transition-all hover:-translate-y-px hover:shadow-md sm:w-auto"
               >
                 {downloading ? (
                   <>
@@ -291,48 +291,49 @@ function PainelContador() {
         </Card>
 
         {/* Envio direto para o contador */}
-        <Card className="border-muted bg-card/60 backdrop-blur-sm shadow-panel">
-          <CardHeader>
-            <CardTitle className="text-base font-semibold">Envio para o Contador</CardTitle>
-            <CardDescription>Encaminhe o link do pacote compactado diretamente por e-mail.</CardDescription>
+        <Card className="rounded-2xl border-muted bg-card/60 backdrop-blur-sm shadow-panel">
+          <CardHeader className="pb-2">
+            <CardTitle className="text-base font-semibold tracking-tight">Envio para o Contador</CardTitle>
+            <CardDescription className="leading-relaxed">Encaminhe o link do pacote compactado diretamente por e-mail.</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
-            <div className="grid gap-2">
+            <div className="grid gap-1.5">
               <Label htmlFor="email">E-mail do Contador</Label>
               <div className="relative">
-                <Mail className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                <Mail className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                 <Input 
                   id="email" 
                   type="email" 
                   value={emailContador}
                   onChange={(e) => setEmailContador(e.target.value)}
                   placeholder="contabilidade@empresa.com"
-                  className="pl-10"
+                  className="h-10 rounded-xl pl-10"
                 />
               </div>
             </div>
 
-            <div className="grid gap-2">
+            <div className="grid gap-1.5">
               <Label htmlFor="assunto">Assunto</Label>
               <Input 
                 id="assunto" 
                 value={assunto}
                 onChange={(e) => setAssunto(e.target.value)}
+                className="h-10 rounded-xl"
               />
             </div>
 
-            <div className="grid gap-2">
+            <div className="grid gap-1.5">
               <Label htmlFor="mensagem">Mensagem</Label>
               <Textarea 
                 id="mensagem" 
                 rows={4}
-                className="resize-none leading-relaxed text-xs"
+                className="resize-none rounded-xl leading-relaxed text-xs"
                 value={mensagem}
                 onChange={(e) => setMensagem(e.target.value)}
               />
             </div>
 
-            <div className="flex items-start gap-2.5 rounded-lg bg-primary/5 p-3 text-xs text-primary border border-primary/10">
+            <div className="flex items-start gap-2.5 rounded-xl border border-primary/10 bg-primary/5 p-3.5 text-xs leading-relaxed text-primary shadow-sm">
               <AlertCircle className="h-4 w-4 shrink-0" />
               <span>O contador receberá um e-mail com acesso seguro para baixar o pacote de XMLs e relatórios.</span>
             </div>
@@ -340,7 +341,7 @@ function PainelContador() {
             <Button 
               onClick={handleEnviarEmail} 
               disabled={sending}
-              className="w-full h-10 shadow-sm"
+              className="h-11 w-full rounded-xl text-base shadow-md transition-all hover:-translate-y-px hover:shadow-lg"
             >
               {sending ? (
                 <>
@@ -359,10 +360,10 @@ function PainelContador() {
       </div>
 
       {/* Histórico de Fechamentos Fiscais */}
-      <Card className="mt-6 border-muted bg-card/60 backdrop-blur-sm shadow-panel overflow-hidden">
-        <CardHeader className="border-b border-muted">
-          <CardTitle>Histórico de Fechamentos e Exportações Fiscais</CardTitle>
-          <CardDescription>Acompanhe o registro de tudo que foi gerado e enviado para a sua contabilidade.</CardDescription>
+      <Card className="mt-6 rounded-2xl sm:mt-8 border-muted bg-card/60 backdrop-blur-sm shadow-panel overflow-hidden">
+        <CardHeader className="border-b border-muted pb-4">
+          <CardTitle className="tracking-tight">Histórico de Fechamentos e Exportações Fiscais</CardTitle>
+          <CardDescription className="leading-relaxed">Acompanhe o registro de tudo que foi gerado e enviado para a sua contabilidade.</CardDescription>
         </CardHeader>
         <div className="overflow-x-auto">
           <Table>
@@ -392,16 +393,16 @@ function PainelContador() {
                 };
 
                 return (
-                  <TableRow key={log.id} className="transition-colors hover:bg-muted/30">
+                  <TableRow key={log.id} className="transition-colors hover:bg-accent/30">
                     <TableCell className="text-tabular text-muted-foreground">{dateBR(log.data)}</TableCell>
                     <TableCell className="font-semibold text-foreground">{log.periodo}</TableCell>
                     <TableCell className="font-medium text-foreground truncate max-w-[200px]">
                       {log.destinatario}
                     </TableCell>
                     <TableCell>
-                      <div className="flex flex-wrap gap-1">
+                      <div className="flex flex-wrap gap-1.5">
                         {log.documentos.map((doc, idx) => (
-                          <span key={idx} className="rounded bg-muted px-1.5 py-0.5 text-[10px] text-muted-foreground font-medium">
+                          <span key={idx} className="rounded-md bg-muted px-2 py-1 text-[10px] text-muted-foreground font-medium">
                             {doc}
                           </span>
                         ))}
@@ -410,7 +411,7 @@ function PainelContador() {
                     <TableCell className="text-tabular text-muted-foreground">{log.tamanho}</TableCell>
                     <TableCell>{getStatusBadge(log.status)}</TableCell>
                     <TableCell className="text-right">
-                      <Button size="sm" variant="ghost" className="h-8 hover:bg-muted" onClick={() => toast.success("Iniciando download do pacote histórico...")}>
+                      <Button size="sm" variant="ghost" className="h-8 w-8 rounded-lg hover:bg-accent" onClick={() => toast.success("Iniciando download do pacote histórico...")}>
                         <Download className="h-3.5 w-3.5" />
                       </Button>
                     </TableCell>

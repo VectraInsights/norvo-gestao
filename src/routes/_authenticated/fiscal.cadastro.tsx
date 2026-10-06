@@ -24,7 +24,7 @@ import { maskDoc } from "@/lib/format";
 export const Route = createFileRoute("/_authenticated/fiscal/cadastro")({
   component: Cadastro,
   errorComponent: ({ error }) => (
-    <div className="p-6 text-sm text-destructive" role="alert">Falha: {error.message}</div>
+    <div className="rounded-2xl border border-destructive/40 bg-destructive/5 p-5 text-sm leading-relaxed text-destructive shadow-sm" role="alert">Falha: {error instanceof Error ? error.message : "erro desconhecido"}</div>
   ),
 });
 
@@ -264,32 +264,32 @@ function Cadastro() {
   return (
     <>
       <PageHeader eyebrow="Fiscal" title="Cadastro" description="Clientes e fornecedores juntos — remetentes, destinatários e tomadores usados no CT-e." />
-      <div className="mb-3 flex flex-col gap-2 sm:flex-row sm:items-center">
+      <div className="mb-4 flex flex-col gap-3 sm:mb-6 sm:flex-row sm:items-center">
         <div className="relative flex-1">
-          <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-          <Input className="pl-8" placeholder="Buscar por nome, CPF/CNPJ ou cidade..." value={busca} onChange={(e) => { setBusca(e.target.value); setPagina(1); }} />
+          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+          <Input className="h-10 rounded-xl pl-10 shadow-sm" placeholder="Buscar por nome, CPF/CNPJ ou cidade..." value={busca} onChange={(e) => { setBusca(e.target.value); setPagina(1); }} />
         </div>
         <div className="flex items-center gap-2">
           {selecionados.size > 0 && (
-            <Button variant="destructive" size="sm" onClick={() => setConfirmLote(true)}>
-              <Trash2 className="mr-1 h-3.5 w-3.5" /> Excluir selecionados ({selecionados.size})
+            <Button variant="destructive" size="sm" onClick={() => setConfirmLote(true)} className="h-10 rounded-xl px-4">
+              <Trash2 className="mr-1.5 h-3.5 w-3.5" /> Excluir selecionados ({selecionados.size})
             </Button>
           )}
-          <Button onClick={openCreate}><Plus className="mr-1 h-4 w-4" />Novo cadastro</Button>
+          <Button onClick={openCreate} className="h-10 rounded-xl px-5 shadow-sm transition-all hover:-translate-y-px hover:shadow-md"><Plus className="mr-1.5 h-4 w-4" />Novo cadastro</Button>
         </div>
       </div>
       {isLoading ? (
-        <div className="space-y-2">{Array.from({ length: 4 }).map((_, i) => <div key={i} className="h-12 animate-pulse rounded-md bg-muted/30" />)}</div>
+        <div className="space-y-2.5">{Array.from({ length: 4 }).map((_, i) => <div key={i} className="h-12 animate-pulse rounded-xl bg-muted/30" />)}</div>
       ) : !filtrados?.length ? (
         <EmptyState icon={Users} title="Nenhum cadastro" description={busca ? "Nada encontrado para a busca." : "Cadastre o primeiro cadastro (cliente ou fornecedor)."} />
       ) : (
-        <Card className="overflow-hidden shadow-panel">
+        <Card className="overflow-hidden rounded-2xl shadow-panel">
           <div className="overflow-x-auto">
           <Table className="min-w-[1280px]">
             <TableHeader>
               <TableRow>
                 <TableHead className="w-10">
-                  <Checkbox className="rounded-none" checked={todosVisiveisSel} onCheckedChange={alternarTodosVisiveis} aria-label="Selecionar visíveis" />
+                  <Checkbox checked={todosVisiveisSel} onCheckedChange={alternarTodosVisiveis} aria-label="Selecionar visíveis" />
                 </TableHead>
                 <TableHead className="cursor-pointer select-none whitespace-nowrap" onClick={() => alternarOrdem("nome")} title="Ordenar por nome">Nome{setaOrdem("nome")}</TableHead>
                 <TableHead className="cursor-pointer select-none whitespace-nowrap" onClick={() => alternarOrdem("documento")} title="Ordenar por CPF/CNPJ">CPF/CNPJ{setaOrdem("documento")}</TableHead>
@@ -302,9 +302,9 @@ function Cadastro() {
             </TableHeader>
             <TableBody>
               {visiveis.map((c) => (
-                <TableRow key={c.id}>
+                <TableRow key={c.id} className="transition-colors hover:bg-accent/30">
                   <TableCell>
-                    <Checkbox className="rounded-none" checked={selecionados.has(c.id)} onCheckedChange={() => alternarUm(c.id)} aria-label={`Selecionar ${c.nome}`} />
+                    <Checkbox checked={selecionados.has(c.id)} onCheckedChange={() => alternarUm(c.id)} aria-label={`Selecionar ${c.nome}`} />
                   </TableCell>                  <TableCell className="font-medium whitespace-nowrap">{c.nome}</TableCell>
                   <TableCell className="text-tabular whitespace-nowrap">{c.documento ? maskDoc(c.documento) : "—"}</TableCell>
                   <TableCell className="text-muted-foreground whitespace-nowrap">{c.ie || "—"}</TableCell>
@@ -319,7 +319,7 @@ function Cadastro() {
                       <TooltipProvider>
                         <Tooltip>
                           <TooltipTrigger asChild>
-                            <Button size="sm" variant="ghost" className="h-7 w-7 p-0" onClick={() => openEdit(c)}>
+                            <Button size="sm" variant="ghost" className="h-8 w-8 rounded-lg p-0" onClick={() => openEdit(c)}>
                               <Pencil className="h-3.5 w-3.5" />
                             </Button>
                           </TooltipTrigger>
@@ -329,7 +329,7 @@ function Cadastro() {
                       <TooltipProvider>
                         <Tooltip>
                           <TooltipTrigger asChild>
-                            <Button size="sm" variant="ghost" className="h-7 w-7 p-0 text-destructive hover:bg-destructive/10" onClick={() => setDeleting(c)}>
+                            <Button size="sm" variant="ghost" className="h-8 w-8 rounded-lg p-0 text-destructive hover:bg-destructive/10" onClick={() => setDeleting(c)}>
                               <Trash2 className="h-3.5 w-3.5" />
                             </Button>
                           </TooltipTrigger>
@@ -343,13 +343,13 @@ function Cadastro() {
             </TableBody>
           </Table>
           </div>
-          <div className="flex items-center justify-between border-t border-border/60 px-4 py-2 text-xs text-muted-foreground">
+          <div className="flex flex-wrap items-center justify-between gap-2 border-t border-border/60 px-4 py-2.5 text-xs text-muted-foreground">
             <span>
               {filtrados.length} cadastro(s){selecionados.size > 0 && ` · ${selecionados.size} selecionado(s)`}
             </span>
-            <div className="flex items-center gap-1">
+            <div className="flex items-center gap-1.5">
               <Select value={String(pageSize)} onValueChange={(v) => { setPageSize(Number(v)); setPagina(1); }}>
-                <SelectTrigger className="h-7 w-24 text-xs">
+                <SelectTrigger className="h-8 w-28 rounded-lg text-xs">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -360,13 +360,13 @@ function Cadastro() {
                   ))}
                 </SelectContent>
               </Select>
-              <span>
+              <span className="text-tabular">
                 Página {paginaAtual} de {totalPaginas}
               </span>
-              <Button size="sm" variant="ghost" className="h-7 w-7 p-0" disabled={paginaAtual <= 1} onClick={() => setPagina(paginaAtual - 1)}>
+              <Button size="sm" variant="ghost" className="h-8 w-8 rounded-lg p-0" disabled={paginaAtual <= 1} onClick={() => setPagina(paginaAtual - 1)}>
                 <ChevronLeft className="h-4 w-4" />
               </Button>
-              <Button size="sm" variant="ghost" className="h-7 w-7 p-0" disabled={paginaAtual >= totalPaginas} onClick={() => setPagina(paginaAtual + 1)}>
+              <Button size="sm" variant="ghost" className="h-8 w-8 rounded-lg p-0" disabled={paginaAtual >= totalPaginas} onClick={() => setPagina(paginaAtual + 1)}>
                 <ChevronRight className="h-4 w-4" />
               </Button>
             </div>
@@ -375,41 +375,41 @@ function Cadastro() {
       )}
 
       <Dialog open={open} onOpenChange={(v) => { if (!criar.isPending && !editar.isPending) { setOpen(v); if (!v) { setEditing(null); setForm(emptyForm()); } } }}>
-        <DialogContent className="max-h-[90vh] overflow-y-auto">
-          <DialogHeader><DialogTitle>{editing ? "Editar cadastro" : "Novo cadastro"}</DialogTitle></DialogHeader>
-          <form onSubmit={(e) => { e.preventDefault(); if (editing) { editar.mutate({ ...form, id: editing.id }); } else { criar.mutate(form); } }} className="space-y-3">
-            <div>
+        <DialogContent className="max-h-[90vh] overflow-y-auto rounded-2xl sm:max-w-2xl">
+          <DialogHeader className="gap-1.5 pb-1"><DialogTitle className="tracking-tight">{editing ? "Editar cadastro" : "Novo cadastro"}</DialogTitle></DialogHeader>
+          <form onSubmit={(e) => { e.preventDefault(); if (editing) { editar.mutate({ ...form, id: editing.id }); } else { criar.mutate(form); } }} className="space-y-4">
+            <div className="grid gap-1.5">
               <Label>CPF/CNPJ</Label>
               <div className="flex gap-2">
-                <Input value={form.documento} onChange={(e) => setForm({ ...form, documento: maskDoc(e.target.value) })}
+                <Input value={form.documento} onChange={(e) => setForm({ ...form, documento: maskDoc(e.target.value) })} className="h-10 rounded-xl"
                   onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); lookupCnpj(); } }} />
-                <Button type="button" variant="outline" onClick={lookupCnpj} disabled={lookingUp || !form.documento}>
+                <Button type="button" variant="outline" onClick={lookupCnpj} disabled={lookingUp || !form.documento} className="h-10 w-10 shrink-0 rounded-xl shadow-sm">
                   {lookingUp ? <Loader2 className="h-4 w-4 animate-spin" /> : <Search className="h-4 w-4" />}
                 </Button>
               </div>
             </div>
-            <div><Label>Nome / Razão social *</Label><Input required value={form.nome} onChange={(e) => setForm({ ...form, nome: e.target.value })} /></div>
-            <div className="grid grid-cols-2 gap-3">
-              <div><Label>IE / ISENTO</Label><Input value={form.ie} onChange={(e) => setForm({ ...form, ie: e.target.value.toUpperCase() })} /></div>
-              <div><Label>Telefone</Label><Input value={form.telefone} onChange={(e) => setForm({ ...form, telefone: e.target.value })} /></div>
+            <div className="grid gap-1.5"><Label>Nome / Razão social *</Label><Input required value={form.nome} onChange={(e) => setForm({ ...form, nome: e.target.value })} className="h-10 rounded-xl" /></div>
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+              <div className="grid gap-1.5"><Label>IE / ISENTO</Label><Input value={form.ie} onChange={(e) => setForm({ ...form, ie: e.target.value.toUpperCase() })} className="h-10 rounded-xl" /></div>
+              <div className="grid gap-1.5"><Label>Telefone</Label><Input value={form.telefone} onChange={(e) => setForm({ ...form, telefone: e.target.value })} className="h-10 rounded-xl" /></div>
             </div>
-            <div><Label>Email</Label><Input type="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} /></div>
-            <div className="grid grid-cols-3 gap-3">
-              <div><Label>CEP</Label><Input value={form.cep} onChange={(e) => setForm({ ...form, cep: e.target.value })} /></div>
-              <div className="col-span-2"><Label>Logradouro</Label><Input value={form.logradouro} onChange={(e) => setForm({ ...form, logradouro: e.target.value })} /></div>
+            <div className="grid gap-1.5"><Label>Email</Label><Input type="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} className="h-10 rounded-xl" /></div>
+            <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+              <div className="grid gap-1.5"><Label>CEP</Label><Input value={form.cep} onChange={(e) => setForm({ ...form, cep: e.target.value })} className="h-10 rounded-xl" /></div>
+              <div className="col-span-2 grid gap-1.5"><Label>Logradouro</Label><Input value={form.logradouro} onChange={(e) => setForm({ ...form, logradouro: e.target.value })} className="h-10 rounded-xl" /></div>
             </div>
-            <div className="grid grid-cols-3 gap-3">
-              <div><Label>Número</Label><Input value={form.numero} onChange={(e) => setForm({ ...form, numero: e.target.value })} /></div>
-              <div className="col-span-2"><Label>Complemento</Label><Input value={form.complemento} onChange={(e) => setForm({ ...form, complemento: e.target.value })} /></div>
+            <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+              <div className="grid gap-1.5"><Label>Número</Label><Input value={form.numero} onChange={(e) => setForm({ ...form, numero: e.target.value })} className="h-10 rounded-xl" /></div>
+              <div className="col-span-2 grid gap-1.5"><Label>Complemento</Label><Input value={form.complemento} onChange={(e) => setForm({ ...form, complemento: e.target.value })} className="h-10 rounded-xl" /></div>
             </div>
-            <div className="grid grid-cols-3 gap-3">
-              <div><Label>Bairro</Label><Input value={form.bairro} onChange={(e) => setForm({ ...form, bairro: e.target.value })} /></div>
-              <div><Label>Cidade</Label><Input value={form.cidade} onChange={(e) => setForm({ ...form, cidade: e.target.value })} /></div>
-              <div><Label>UF</Label><Input maxLength={2} value={form.uf} onChange={(e) => setForm({ ...form, uf: e.target.value.toUpperCase() })} /></div>
+            <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+              <div className="grid gap-1.5"><Label>Bairro</Label><Input value={form.bairro} onChange={(e) => setForm({ ...form, bairro: e.target.value })} className="h-10 rounded-xl" /></div>
+              <div className="grid gap-1.5"><Label>Cidade</Label><Input value={form.cidade} onChange={(e) => setForm({ ...form, cidade: e.target.value })} className="h-10 rounded-xl" /></div>
+              <div className="grid gap-1.5"><Label>UF</Label><Input maxLength={2} value={form.uf} onChange={(e) => setForm({ ...form, uf: e.target.value.toUpperCase() })} className="h-10 rounded-xl" /></div>
             </div>
-            <div><Label>Observações</Label><Textarea rows={3} value={form.observacoes} onChange={(e) => setForm({ ...form, observacoes: e.target.value })} /></div>
-            <DialogFooter>
-              <Button type="submit" disabled={criar.isPending || editar.isPending}>
+            <div className="grid gap-1.5"><Label>Observações</Label><Textarea rows={3} value={form.observacoes} onChange={(e) => setForm({ ...form, observacoes: e.target.value })} className="rounded-xl" /></div>
+            <DialogFooter className="gap-2">
+              <Button type="submit" disabled={criar.isPending || editar.isPending} className="h-10 rounded-xl px-6 shadow-sm transition-all hover:-translate-y-px hover:shadow-md">
                 {(criar.isPending || editar.isPending) && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}Salvar
               </Button>
             </DialogFooter>
@@ -418,18 +418,18 @@ function Cadastro() {
       </Dialog>
 
       <AlertDialog open={!!deleting} onOpenChange={(v) => { if (!v) setDeleting(null); }}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Excluir cadastro</AlertDialogTitle>
-            <AlertDialogDescription>
+        <AlertDialogContent className="rounded-2xl">
+          <AlertDialogHeader className="gap-1.5">
+            <AlertDialogTitle className="tracking-tight">Excluir cadastro</AlertDialogTitle>
+            <AlertDialogDescription className="leading-relaxed">
               Tem certeza que deseja excluir <strong>{deleting?.nome}</strong>? Esta ação não pode ser desfeita.
             </AlertDialogDescription>
           </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+          <AlertDialogFooter className="gap-2">
+            <AlertDialogCancel className="h-10 rounded-xl">Cancelar</AlertDialogCancel>
             <AlertDialogAction
               data-acao
-              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              className="h-10 rounded-xl bg-destructive text-destructive-foreground hover:bg-destructive/90"
               onClick={() => deleting && excluir.mutate(deleting.id)}
             >
               Excluir
@@ -439,18 +439,18 @@ function Cadastro() {
       </AlertDialog>
 
       <AlertDialog open={confirmLote} onOpenChange={(v) => { if (!v) setConfirmLote(false); }}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Excluir selecionados</AlertDialogTitle>
-            <AlertDialogDescription>
+        <AlertDialogContent className="rounded-2xl">
+          <AlertDialogHeader className="gap-1.5">
+            <AlertDialogTitle className="tracking-tight">Excluir selecionados</AlertDialogTitle>
+            <AlertDialogDescription className="leading-relaxed">
               Tem certeza que deseja excluir <strong>{selecionados.size} cadastro(s)</strong>? Esta ação não pode ser desfeita.
             </AlertDialogDescription>
           </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+          <AlertDialogFooter className="gap-2">
+            <AlertDialogCancel className="h-10 rounded-xl">Cancelar</AlertDialogCancel>
             <AlertDialogAction
               data-acao
-              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              className="h-10 rounded-xl bg-destructive text-destructive-foreground hover:bg-destructive/90"
               onClick={() => excluirLote.mutate([...selecionados])}
             >
               Excluir

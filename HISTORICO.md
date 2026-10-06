@@ -4835,3 +4835,12 @@ Espelhado na Vercel.
   rounded-2xl com hover, ícones em tile, charts com tooltip em card
   e eixos limpos, tabela com hover.
 - Paleta intacta; `tsc` limpo nos tocados e `npm run build` OK.
+
+## Repaginação: fiscal.contador + fiscal.cadastro (06/10)
+
+- Contador com cards rounded-2xl, checklist com hover, campos h-10,
+  CTA em destaque e histórico com respiro.
+- Cadastro com busca h-10, tabela com hover, paginação e diálogos
+  em card; `error` tipado. Obs.: há 2 células "Contato" idênticas
+  por linha (bug prévio, mantido).
+- Paleta intacta; `tsc` limpo nos tocados e `npm run build` OK.
