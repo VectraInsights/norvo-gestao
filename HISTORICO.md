@@ -4852,3 +4852,12 @@ Espelhado na Vercel.
 - Emitidas com header, faixa de ambiente, filtros h-10, diálogos
   em card e tabela com hover; `error` tipado.
 - Paleta intacta; `tsc` limpo nos tocados e `npm run build` OK.
+
+## Repaginação: fiscal.mdf + fiscal.recebidas (06/10)
+
+- MDF-e com lista em rounded-2xl, busca h-10, abas e ações em
+  lote com respiro; diálogos em card (formulário fiscal denso e
+  DAMDFE intactos).
+- Recebidas com abas, busca h-10, tabela com hover, dropzone em
+  card e análise com respiro (DANFE/XML intactos).
+- Paleta intacta; `tsc` limpo nos tocados e `npm run build` OK.

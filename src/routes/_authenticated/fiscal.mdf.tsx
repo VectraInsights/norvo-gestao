@@ -467,21 +467,21 @@ function MdfPage() {
   const idsAutSel = (docsFiltrados || []).filter(d => d.status === "autorizado").map(d => d.id);
 
   return (
-    <div className="p-6 space-y-6">
+    <div className="space-y-6">
       <PageHeader
         eyebrow="Fiscal"
         title="MDF-e"
         description="Manifesto Eletrônico de Documentos Fiscais (modelo 58). Emissão, vinculação de CT-e e encerramento."
       />
-      <div className="mb-3 flex flex-col gap-2 sm:flex-row sm:items-center">
+      <div className="mb-4 flex flex-col gap-3 sm:mb-6 sm:flex-row sm:items-center">
         <div className="relative flex-1">
-          <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-          <Input className="pl-8" placeholder="Buscar por número, chave, UF ou status..." value={busca} onChange={(e) => setBusca(e.target.value)} />
+          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+          <Input className="h-10 rounded-xl pl-10 shadow-sm" placeholder="Buscar por número, chave, UF ou status..." value={busca} onChange={(e) => setBusca(e.target.value)} />
         </div>
         <div className="flex items-center gap-2">
           <div className="flex gap-2">
-<Button size="sm" disabled={!empresa?.id} onClick={() => { if (empresa?.id) setOpen(true); }}>
-  <Plus className="mr-1 h-4 w-4" /> Novo MDF-e
+<Button size="sm" disabled={!empresa?.id} onClick={() => { if (empresa?.id) setOpen(true); }} className="h-10 rounded-xl px-5 shadow-sm transition-all hover:-translate-y-px hover:shadow-md">
+  <Plus className="mr-1.5 h-4 w-4" /> Novo MDF-e
             </Button>
           </div>
         </div>
@@ -489,7 +489,7 @@ function MdfPage() {
 
       <Tabs value={filtroStatus} onValueChange={trocarAbaMdf}>
         <div className="flex flex-wrap gap-3 items-end justify-between">
-          <TabsList className="h-auto flex-wrap">
+          <TabsList className="h-auto flex-wrap gap-1 rounded-xl">
             <TabsTrigger value="rascunho" className="text-xs">Aguardando envio ({statusCounts.rascunho})</TabsTrigger>
             <TabsTrigger value="rejeitado" className="text-xs">Rejeitados ({statusCounts.rejeitado})</TabsTrigger>
             <TabsTrigger value="cancelado" className="text-xs">Cancelados ({statusCounts.cancelado})</TabsTrigger>
@@ -510,7 +510,7 @@ function MdfPage() {
 
       {filtroStatus === "autorizados" && (
         <Tabs value={mdfSitTab} onValueChange={setMdfSitTab}>
-          <TabsList className="h-auto flex-wrap">
+          <TabsList className="h-auto flex-wrap gap-1 rounded-xl">
             <TabsTrigger value="abertos" className="text-xs">Abertos ({statusCounts.autorizado})</TabsTrigger>
             <TabsTrigger value="encerrados" className="text-xs">Encerrados ({statusCounts.encerrado})</TabsTrigger>
           </TabsList>
@@ -518,22 +518,22 @@ function MdfPage() {
       )}
 
       {(filtroStatus === "rascunho" || filtroStatus === "autorizados") && docsFiltrados.length > 0 && (
-        <div className="flex items-center justify-end gap-2">
+        <div className="flex flex-wrap items-center justify-end gap-2">
           {filtroStatus === "rascunho" ? (
             <>
               {rascSel.size > 0 && (<span className="text-xs text-muted-foreground">{`${rascSel.size} selecionado(s)`}</span>)}
-              <Button size="sm" disabled={rascSel.size === 0 || loteMdfProc} onClick={() => void emitirLoteMdf()}>
-                <Send className="mr-1 h-4 w-4" /> {loteMdfProc ? "Emitindo…" : "Emitir selecionados"}{rascSel.size > 0 && !loteMdfProc ? ` (${rascSel.size})` : ""}
+              <Button size="sm" disabled={rascSel.size === 0 || loteMdfProc} onClick={() => void emitirLoteMdf()} className="h-9 rounded-xl px-4 shadow-sm">
+                <Send className="mr-1.5 h-4 w-4" /> {loteMdfProc ? "Emitindo…" : "Emitir selecionados"}{rascSel.size > 0 && !loteMdfProc ? ` (${rascSel.size})` : ""}
               </Button>
-              <Button size="sm" variant="outline" disabled={rascSel.size === 0 || loteMdfProc} onClick={() => setConfLoteRasc(true)}>
-                <Trash2 className="mr-1 h-4 w-4" /> Excluir selecionados{rascSel.size > 0 ? ` (${rascSel.size})` : ""}
+              <Button size="sm" variant="outline" disabled={rascSel.size === 0 || loteMdfProc} onClick={() => setConfLoteRasc(true)} className="h-9 rounded-xl px-4 shadow-sm">
+                <Trash2 className="mr-1.5 h-4 w-4" /> Excluir selecionados{rascSel.size > 0 ? ` (${rascSel.size})` : ""}
               </Button>
             </>
           ) : (
             <>
               {autSel.size > 0 && (<span className="text-xs text-muted-foreground">{`${autSel.size} selecionado(s)`}</span>)}
-              <Button size="sm" variant="destructive" disabled={autSel.size === 0 || loteMdfProc} onClick={() => { setJustLote("ERRO DE EMISSAO DO MDF-E"); setConfLoteCanc(true); }}>
-                <XCircle className="mr-1 h-4 w-4" /> Cancelar selecionados{autSel.size > 0 ? ` (${autSel.size})` : ""}
+              <Button size="sm" variant="destructive" disabled={autSel.size === 0 || loteMdfProc} onClick={() => { setJustLote("ERRO DE EMISSAO DO MDF-E"); setConfLoteCanc(true); }} className="h-9 rounded-xl px-4">
+                <XCircle className="mr-1.5 h-4 w-4" /> Cancelar selecionados{autSel.size > 0 ? ` (${autSel.size})` : ""}
               </Button>
             </>
           )}
@@ -541,7 +541,7 @@ function MdfPage() {
       )}
 
       {isLoading ? (
-        <div className="text-sm text-muted-foreground">Carregando…</div>
+        <div className="space-y-2.5">{Array.from({ length: 4 }).map((_, i) => <div key={i} className="h-12 animate-pulse rounded-xl bg-muted/30" />)}</div>
       ) : !docsFiltrados.length ? (
         <EmptyState
           icon={RoadIcon}
@@ -549,7 +549,7 @@ function MdfPage() {
           description={busca ? "Nada encontrado para a busca na aba/filtros atuais." : "Manifestos emitidos aparecerão aqui. Clique em 'Novo MDF-e' para criar um manifesto vinculando CT-e do período."}
         />
       ) : (
-        <Card className="overflow-hidden">
+        <Card className="overflow-hidden rounded-2xl shadow-panel">
             <Table>
               <TableHeader>
                 <TableRow>
@@ -589,7 +589,7 @@ function MdfPage() {
                 {docsFiltrados.map(d => {
                   const info = infoMdfLinha(d);
                   return (
-                  <TableRow key={d.id}>
+                  <TableRow key={d.id} className="transition-colors hover:bg-accent/30">
                     {d.status === "rascunho" && filtroStatus === "rascunho" && (
                       <TableCell>
                         <input
@@ -623,61 +623,61 @@ function MdfPage() {
                     <div className="flex gap-1 justify-end">
                       {d.status === "autorizado" && (
                         <>
-                          <Button variant="ghost" size="sm" title="Visualizar" onClick={() => setMdfVer(d)}>
+                          <Button variant="ghost" size="sm" className="h-8 w-8 rounded-lg p-0" title="Visualizar" onClick={() => setMdfVer(d)}>
                             <Eye className="h-4 w-4 text-primary" />
                           </Button>
-                          <Button variant="ghost" size="sm" title="Baixar XML" onClick={() => baixarXmlMdf(d)}>
+                          <Button variant="ghost" size="sm" className="h-8 w-8 rounded-lg p-0" title="Baixar XML" onClick={() => baixarXmlMdf(d)}>
                             <Download className="h-4 w-4 text-primary" />
                           </Button>
-                          <Button variant="ghost" size="sm" title="Baixar PDF (DAMDFE)" onClick={() => baixarPdfMdf(d)}>
+                          <Button variant="ghost" size="sm" className="h-8 w-8 rounded-lg p-0" title="Baixar PDF (DAMDFE)" onClick={() => baixarPdfMdf(d)}>
                             <FileDown className="h-4 w-4 text-primary" />
                           </Button>
-                          <Button variant="ghost" size="sm" title="Consultar SEFAZ" disabled={consultandoChave === d.chave_acesso} onClick={() => consultarMdf(d)}>
+                          <Button variant="ghost" size="sm" className="h-8 w-8 rounded-lg p-0" title="Consultar SEFAZ" disabled={consultandoChave === d.chave_acesso} onClick={() => consultarMdf(d)}>
                             <Search className="h-4 w-4" />
                           </Button>
-                          <Button variant="ghost" size="sm" onClick={() => { setMdfEncerrar(d); setOpenEncerrar(true); }} title="Encerrar">
+                          <Button variant="ghost" size="sm" className="h-8 w-8 rounded-lg p-0" onClick={() => { setMdfEncerrar(d); setOpenEncerrar(true); }} title="Encerrar">
                             <CheckCircle2 className="h-4 w-4" />
                           </Button>
-                          <Button variant="ghost" size="sm" onClick={() => { setMdfCancelar(d); setJustificativa("ERRO DE EMISSAO DO MDF-E"); setOpenCancelar(true); }} title="Cancelar">
+                          <Button variant="ghost" size="sm" className="h-8 w-8 rounded-lg p-0" onClick={() => { setMdfCancelar(d); setJustificativa("ERRO DE EMISSAO DO MDF-E"); setOpenCancelar(true); }} title="Cancelar">
                             <XCircle className="h-4 w-4 text-destructive" />
                           </Button>
                         </>
                       )}
                       {(d.status === "encerrado" || d.status === "cancelado") && (
                         <>
-                          <Button variant="ghost" size="sm" title="Visualizar" onClick={() => setMdfVer(d)}>
+                          <Button variant="ghost" size="sm" className="h-8 w-8 rounded-lg p-0" title="Visualizar" onClick={() => setMdfVer(d)}>
                             <Eye className="h-4 w-4 text-primary" />
                           </Button>
-                          <Button variant="ghost" size="sm" title="Baixar XML" onClick={() => baixarXmlMdf(d)}>
+                          <Button variant="ghost" size="sm" className="h-8 w-8 rounded-lg p-0" title="Baixar XML" onClick={() => baixarXmlMdf(d)}>
                             <Download className="h-4 w-4 text-primary" />
                           </Button>
-                          <Button variant="ghost" size="sm" title="Baixar PDF (DAMDFE)" onClick={() => baixarPdfMdf(d)}>
+                          <Button variant="ghost" size="sm" className="h-8 w-8 rounded-lg p-0" title="Baixar PDF (DAMDFE)" onClick={() => baixarPdfMdf(d)}>
                             <FileDown className="h-4 w-4 text-primary" />
                           </Button>
-                          <Button variant="ghost" size="sm" title="Consultar SEFAZ" disabled={consultandoChave === d.chave_acesso} onClick={() => consultarMdf(d)}>
+                          <Button variant="ghost" size="sm" className="h-8 w-8 rounded-lg p-0" title="Consultar SEFAZ" disabled={consultandoChave === d.chave_acesso} onClick={() => consultarMdf(d)}>
                             <Search className="h-4 w-4" />
                           </Button>
                         </>
                       )}
                       {d.status === "rejeitado" && (
                         <>
-                          <Button variant="ghost" size="sm" title="Baixar XML" onClick={() => baixarXmlMdf(d)}>
+                          <Button variant="ghost" size="sm" className="h-8 w-8 rounded-lg p-0" title="Baixar XML" onClick={() => baixarXmlMdf(d)}>
                             <Download className="h-4 w-4 text-primary" />
                           </Button>
-                          <Button variant="ghost" size="sm" title={d.motivo_rejeicao ? `Rejeitado: ${d.motivo_rejeicao} — clique para tentar novamente` : "Tentar novamente"} onClick={() => reemitir(d)}>
+                          <Button variant="ghost" size="sm" className="h-8 w-8 rounded-lg p-0" title={d.motivo_rejeicao ? `Rejeitado: ${d.motivo_rejeicao} — clique para tentar novamente` : "Tentar novamente"} onClick={() => reemitir(d)}>
                             <RotateCcw className="h-4 w-4" />
                           </Button>
-                          <Button variant="ghost" size="sm" title="Excluir rejeitado" onClick={() => setConfExcluir(d)}>
+                          <Button variant="ghost" size="sm" className="h-8 w-8 rounded-lg p-0" title="Excluir rejeitado" onClick={() => setConfExcluir(d)}>
                             <Trash2 className="h-4 w-4 text-destructive" />
                           </Button>
                         </>
                       )}
                       {d.status === "rascunho" && (
                         <>
-                          <Button variant="ghost" size="sm" title="Continuar editando" onClick={() => continuarRascunho(d)}>
+                          <Button variant="ghost" size="sm" className="h-8 w-8 rounded-lg p-0" title="Continuar editando" onClick={() => continuarRascunho(d)}>
                             <Pencil className="h-4 w-4" />
                           </Button>
-                          <Button variant="ghost" size="sm" title="Excluir rascunho" onClick={() => setConfExcluir(d)}>
+                          <Button variant="ghost" size="sm" className="h-8 w-8 rounded-lg p-0" title="Excluir rascunho" onClick={() => setConfExcluir(d)}>
                             <Trash2 className="h-4 w-4 text-destructive" />
                           </Button>
                         </>
@@ -694,11 +694,11 @@ function MdfPage() {
 
       {mdfEncerrar && (
         <Dialog open={openEncerrar} onOpenChange={setOpenEncerrar}>
-          <DialogContent>
-            <DialogHeader><DialogTitle>Encerrar MDF-e #{mdfEncerrar.numero}</DialogTitle></DialogHeader>
-            <p className="text-sm text-muted-foreground">Confirma o encerramento do manifesto? Esta ação é irreversível.</p>
-            <DialogFooter>
-              <Button variant="outline" onClick={() => setOpenEncerrar(false)}>Cancelar</Button>
+          <DialogContent className="sm:max-w-md">
+            <DialogHeader className="gap-1.5 pb-1"><DialogTitle className="tracking-tight">Encerrar MDF-e #{mdfEncerrar.numero}</DialogTitle></DialogHeader>
+            <p className="text-sm leading-relaxed text-muted-foreground">Confirma o encerramento do manifesto? Esta ação é irreversível.</p>
+            <DialogFooter className="gap-2">
+              <Button variant="outline" onClick={() => setOpenEncerrar(false)} className="h-10 rounded-xl">Cancelar</Button>
               <EncerrarMdfButton mdf={mdfEncerrar} empresaId={empresa!.id} cnpj={String((empresa as any)?.cnpj || "")} onSuccess={() => { setOpenEncerrar(false); setMdfEncerrar(null); invalidarMdf(); }} />
             </DialogFooter>
           </DialogContent>
@@ -707,13 +707,13 @@ function MdfPage() {
 
       {mdfCancelar && (
         <Dialog open={openCancelar} onOpenChange={setOpenCancelar}>
-          <DialogContent>
-            <DialogHeader><DialogTitle>Cancelar MDF-e #{mdfCancelar.numero}</DialogTitle></DialogHeader>
+          <DialogContent className="sm:max-w-md">
+            <DialogHeader className="gap-1.5 pb-1"><DialogTitle className="tracking-tight">Cancelar MDF-e #{mdfCancelar.numero}</DialogTitle></DialogHeader>
             <div className="space-y-2">
-              <div>
+              <div className="grid gap-1.5">
                 <Label>Motivo (obrigatório)</Label>
                 <Select value={justificativa} onValueChange={setJustificativa}>
-                  <SelectTrigger><SelectValue placeholder="Selecione o motivo" /></SelectTrigger>
+                  <SelectTrigger className="h-10 rounded-xl"><SelectValue placeholder="Selecione o motivo" /></SelectTrigger>
                   <SelectContent>
                     <SelectItem value="ERRO DE EMISSAO DO MDF-E">ERRO DE EMISSÃO DO MDF-E</SelectItem>
                     <SelectItem value="CLIENTE CANCELOU O SERVICO">CLIENTE CANCELOU O SERVIÇO</SelectItem>
@@ -722,9 +722,9 @@ function MdfPage() {
                 </Select>
               </div>
             </div>
-            <DialogFooter>
-              <Button variant="outline" onClick={() => { setOpenCancelar(false); setJustificativa(""); }}>Voltar</Button>
-              <Button variant="destructive" disabled={!justificativa.trim()} onClick={async () => {
+            <DialogFooter className="gap-2">
+              <Button variant="outline" onClick={() => { setOpenCancelar(false); setJustificativa(""); }} className="h-10 rounded-xl">Voltar</Button>
+              <Button variant="destructive" disabled={!justificativa.trim()} className="h-10 rounded-xl px-5" onClick={async () => {
                 if (!empresa || !mdfCancelar.chave_acesso) return;
                 try {
                   const res = await cancelarMdfFn({ data: { empresaId: empresa.id, chave: mdfCancelar.chave_acesso, justificativa: justificativa.trim(), cnpj: String((empresa as any)?.cnpj || ""), uf: mdfCancelar.uf_carregamento || "", protocolo: mdfCancelar.protocolo_sefaz || "" } });
@@ -752,20 +752,20 @@ function MdfPage() {
       <DialogNovoMdf open={open && !!empresa?.id} onOpenChange={(v) => { setOpen(v); if (!v) { setMdfPrefill(null); setMdfDraft(null); setSemRascunho(false); } }} empresaId={empresa?.id || ""} empresa={empresa} chavesIniciais={mdfPrefill || undefined} rascunhoInicial={mdfDraft} permiteRascunho={!semRascunho} onLoteRascunhos={() => setFiltroStatus("rascunho")} emitRef={emitirLoteRef} />
 
       <AlertDialog open={!!confExcluir} onOpenChange={(v) => { if (!v) setConfExcluir(null); }}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>{confExcluir?.status === "rascunho" ? "Excluir rascunho" : "Excluir MDF-e rejeitado"}</AlertDialogTitle>
-            <AlertDialogDescription>
+        <AlertDialogContent className="rounded-2xl">
+          <AlertDialogHeader className="gap-1.5">
+            <AlertDialogTitle className="tracking-tight">{confExcluir?.status === "rascunho" ? "Excluir rascunho" : "Excluir MDF-e rejeitado"}</AlertDialogTitle>
+            <AlertDialogDescription className="leading-relaxed">
               {confExcluir?.status === "rascunho"
                 ? "Excluir este rascunho?"
                 : `Excluir MDF-e rejeitado #${confExcluir?.numero || ""}?`}
             </AlertDialogDescription>
           </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+          <AlertDialogFooter className="gap-2">
+            <AlertDialogCancel className="h-10 rounded-xl">Cancelar</AlertDialogCancel>
             <AlertDialogAction
               data-acao
-              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              className="h-10 rounded-xl bg-destructive text-destructive-foreground hover:bg-destructive/90"
               onClick={() => {
                 if (!confExcluir) return;
                 if (confExcluir.status === "rascunho") void excluirRascunho(confExcluir);
@@ -779,18 +779,18 @@ function MdfPage() {
       </AlertDialog>
 
       <AlertDialog open={confLoteRasc} onOpenChange={setConfLoteRasc}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Excluir rascunhos</AlertDialogTitle>
-            <AlertDialogDescription>
+        <AlertDialogContent className="rounded-2xl">
+          <AlertDialogHeader className="gap-1.5">
+            <AlertDialogTitle className="tracking-tight">Excluir rascunhos</AlertDialogTitle>
+            <AlertDialogDescription className="leading-relaxed">
               Excluir {rascSel.size} rascunho(s) selecionado(s)? Os CT-es voltam a ficar sem MDF-e.
             </AlertDialogDescription>
           </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+          <AlertDialogFooter className="gap-2">
+            <AlertDialogCancel className="h-10 rounded-xl">Cancelar</AlertDialogCancel>
             <AlertDialogAction
               data-acao
-              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              className="h-10 rounded-xl bg-destructive text-destructive-foreground hover:bg-destructive/90"
               onClick={() => void excluirLoteRascunhos()}
               disabled={loteMdfProc}
             >
@@ -801,13 +801,13 @@ function MdfPage() {
       </AlertDialog>
 
       <Dialog open={confLoteCanc} onOpenChange={setConfLoteCanc}>
-        <DialogContent className="inset-auto left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-[420px] max-w-[calc(100vw-2rem)] h-auto max-h-[90vh] p-4 gap-3">
-          <DialogHeader><DialogTitle>Cancelar {autSel.size} MDF-e(s)</DialogTitle></DialogHeader>
+        <DialogContent className="inset-auto left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-[420px] max-w-[calc(100vw-2rem)] h-auto max-h-[90vh] p-4 gap-3 rounded-2xl sm:p-6">
+          <DialogHeader className="gap-1.5 pb-1"><DialogTitle className="tracking-tight">Cancelar {autSel.size} MDF-e(s)</DialogTitle></DialogHeader>
           <div className="space-y-2">
-            <div>
+            <div className="grid gap-1.5">
               <Label>Motivo (obrigatório — vale para todos)</Label>
               <Select value={justLote} onValueChange={setJustLote}>
-                <SelectTrigger><SelectValue placeholder="Selecione o motivo" /></SelectTrigger>
+                <SelectTrigger className="h-10 rounded-xl"><SelectValue placeholder="Selecione o motivo" /></SelectTrigger>
                 <SelectContent>
                   <SelectItem value="ERRO DE EMISSAO DO MDF-E">ERRO DE EMISSÃO DO MDF-E</SelectItem>
                   <SelectItem value="CLIENTE CANCELOU O SERVICO">CLIENTE CANCELOU O SERVIÇO</SelectItem>
@@ -816,9 +816,9 @@ function MdfPage() {
               </Select>
             </div>
           </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setConfLoteCanc(false)}>Voltar</Button>
-            <Button variant="destructive" disabled={!justLote.trim() || loteMdfProc} onClick={() => void cancelarLoteMdf()}>
+          <DialogFooter className="gap-2">
+            <Button variant="outline" onClick={() => setConfLoteCanc(false)} className="h-10 rounded-xl">Voltar</Button>
+            <Button variant="destructive" disabled={!justLote.trim() || loteMdfProc} onClick={() => void cancelarLoteMdf()} className="h-10 rounded-xl px-5">
               {loteMdfProc ? "Cancelando…" : "Confirmar Cancelamento"}
             </Button>
           </DialogFooter>
@@ -1772,7 +1772,7 @@ function DialogNovoMdf({ open, onOpenChange, empresaId, empresa, chavesIniciais,
         <div className="overflow-hidden p-0 flex flex-col" style={{ minHeight: 0, overflow: "hidden" }}>
           <div className="space-y-1 flex-1 flex flex-col" style={{ minHeight: 0 }}>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-1">
-            <div className="border rounded-md overflow-hidden">
+            <div className="border rounded-xl overflow-hidden">
               <div className="bg-primary/8 border-b border-primary/20 px-2 py-1 text-[10px] font-semibold uppercase tracking-wide text-primary/80">Dados do Veículo / Motorista</div>
               <div className="p-2 space-y-1">
               <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
@@ -1826,7 +1826,7 @@ function DialogNovoMdf({ open, onOpenChange, empresaId, empresa, chavesIniciais,
               </div>
             </div>
             </div>
-            <div className="border rounded-md overflow-hidden">
+            <div className="border rounded-xl overflow-hidden">
               <div className="bg-primary/8 border-b border-primary/20 px-2 py-1 text-[10px] font-semibold uppercase tracking-wide text-primary/80">Dados do Manifesto</div>
               <div className="p-2 space-y-1">
               <div className="grid grid-cols-2 md:grid-cols-5 gap-1">
@@ -1852,7 +1852,7 @@ function DialogNovoMdf({ open, onOpenChange, empresaId, empresa, chavesIniciais,
             </div>
           </div>
 
-          <div className="border rounded-md overflow-hidden shrink-0 h-[190px]">
+          <div className="border rounded-xl overflow-hidden shrink-0 h-[190px]">
             <div className="bg-primary/8 border-b border-primary/20 px-2 py-1 text-[10px] font-semibold uppercase tracking-wide text-primary/80 flex items-center justify-between gap-2">
               <span>Conhecimentos ({ctesSelArr.length} vinculados){tracaoSel ? ` • placa ${tracaoSel}` : ""}</span>
               <div className="flex items-center gap-2">
@@ -1946,7 +1946,7 @@ function DialogNovoMdf({ open, onOpenChange, empresaId, empresa, chavesIniciais,
                   <tbody>
                     {percursoUFs.length === 0 ? (<tr><td colSpan={3} className="text-center text-muted-foreground py-2">Nenhuma UF. Adicione na ordem do trajeto (repetir é permitido).</td></tr>) : percursoUFs.map((uf, idx) => (
                       <tr key={`${idx}-${uf}`} className={"cursor-pointer " + (percursoSelIdx === idx ? "bg-primary/10" : "hover:bg-muted/50")} onClick={() => setPercursoSelIdx(idx)}>
-                        <td className="px-1 py-0.5 font-mono">{idx + 1}º</td><td className="px-1 py-0.5 font-mono font-bold">{uf}</td><td className="px-1 py-0.5"><Button variant="ghost" size="sm" className="h-4 px-1 text-[10px]" onClick={e => { e.stopPropagation(); excluirPercurso(idx); }}>✕</Button></td>
+                        <td className="px-1 py-0.5 font-mono">{idx + 1}º</td><td className="px-1 py-0.5 font-mono font-bold">{uf}</td><td className="px-1 py-0.5"><Button variant="ghost" size="sm" className="h-6 w-6 rounded-md p-0 text-[10px]" onClick={e => { e.stopPropagation(); excluirPercurso(idx); }}>✕</Button></td>
                       </tr>
                     ))}
                   </tbody>

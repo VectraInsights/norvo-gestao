@@ -1510,7 +1510,7 @@ function NotasRecebidas() {
         description="Consulte notas fiscais emitidas contra seu CNPJ e importe XMLs para o estoque e financeiro." 
         actions={
           <div className="flex items-center gap-2">
-            <Button variant="outline" size="sm" onClick={() => setTrilhaOpen(true)}>
+            <Button variant="outline" size="sm" onClick={() => setTrilhaOpen(true)} className="h-10 rounded-xl px-4 shadow-sm">
               Trilha de auditoria
             </Button>
           </div>
@@ -1518,19 +1518,19 @@ function NotasRecebidas() {
       />
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-        <TabsList className="bg-muted/80 p-1 w-full max-w-[400px]">
+        <TabsList className="bg-muted/80 h-auto w-full max-w-[420px] flex-wrap gap-1 rounded-xl p-1.5">
           <TabsTrigger value="manifesto" className="flex-1 text-xs sm:text-sm">Notas de Compra</TabsTrigger>
           <TabsTrigger value="xml" className="flex-1 text-xs sm:text-sm">Importação de XML</TabsTrigger>
         </TabsList>
 
         <TabsContent value="manifesto" className="space-y-4">
-          <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <div className="flex flex-1 gap-2 max-w-md">
               <div className="relative flex-1">
-                <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+                <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                 <Input
                   placeholder="Buscar por emitente, CNPJ ou chave..."
-                  className="pl-9 h-9"
+                  className="h-10 rounded-xl pl-10 shadow-sm"
                   value={search}
                   onChange={(e) => setSearch(e.target.value)}
                 />
@@ -1538,7 +1538,7 @@ function NotasRecebidas() {
               <select
                 value={filtroMes}
                 onChange={(e) => setFiltroMes(e.target.value)}
-                className="h-9 rounded-md border border-input bg-background px-3 text-sm"
+                className="h-10 shrink-0 rounded-xl border border-input bg-background px-3.5 text-sm font-medium shadow-sm transition-all hover:shadow-md"
               >
                 <option value="todos">Todos os meses</option>
                 {mesesDisponiveis.map(m => {
@@ -1552,14 +1552,14 @@ function NotasRecebidas() {
             <Button 
               variant="outline" 
               onClick={() => setChaveImportModal(true)}
-              className="w-full sm:w-auto h-9"
+              className="h-10 w-full shrink-0 whitespace-nowrap rounded-xl px-4 shadow-sm transition-all hover:-translate-y-px hover:shadow-md sm:w-auto"
             >
               <KeyRound className="mr-2 h-4 w-4" />
               Importar por Chave
             </Button>
           </div>
 
-          <Card className="overflow-hidden border-muted shadow-panel bg-card/60 backdrop-blur-sm">
+          <Card className="overflow-hidden rounded-2xl border-muted shadow-panel bg-card/60 backdrop-blur-sm">
             <div className="overflow-x-auto">
               <Table className="[&_td]:px-2 [&_td]:py-1.5 [&_td]:text-[13px] [&_td]:text-center [&_th]:px-2 [&_td]:border-l [&_td]:border-border [&_td:first-child]:border-l-0 [&_th]:border-l [&_th]:border-white/25 [&_th:first-child]:border-l-0">
                 <TableHeader className="bg-primary supports-[backdrop-filter]:bg-primary [&_th]:text-primary-foreground">
@@ -1574,7 +1574,7 @@ function NotasRecebidas() {
                 <TableBody>
                   {filteredNotas.map((n) => {
                     return (
-                      <TableRow key={n.chave} className="transition-colors hover:bg-muted/30 cursor-pointer" onClick={() => handleVerNota(n)}>
+                      <TableRow key={n.chave} className="transition-colors hover:bg-accent/30 cursor-pointer" onClick={() => handleVerNota(n)}>
                         <TableCell className="text-tabular text-muted-foreground whitespace-nowrap">{dateBR(n.data_emissao)}</TableCell>
                         <TableCell className="max-w-[220px]">
                           <div className="font-medium text-foreground truncate">{n.emitente}</div>
@@ -1588,7 +1588,7 @@ function NotasRecebidas() {
                             <TooltipProvider>
                               <Tooltip>
                                 <TooltipTrigger asChild>
-                                  <Button size="sm" variant="ghost" className="h-7 w-7 p-0" onClick={() => abrirPdfDaNota(n)}>
+                                  <Button size="sm" variant="ghost" className="h-8 w-8 rounded-lg p-0" onClick={() => abrirPdfDaNota(n)}>
                                     <Eye className="h-3.5 w-3.5" />
                                   </Button>
                                 </TooltipTrigger>
@@ -1598,7 +1598,7 @@ function NotasRecebidas() {
                             <TooltipProvider>
                               <Tooltip>
                                 <TooltipTrigger asChild>
-                                  <Button size="sm" variant="ghost" className="h-7 w-7 p-0" onClick={() => handleBaixarXml(n)}>
+                                  <Button size="sm" variant="ghost" className="h-8 w-8 rounded-lg p-0" onClick={() => handleBaixarXml(n)}>
                                     <Download className="h-3.5 w-3.5" />
                                   </Button>
                                 </TooltipTrigger>
@@ -1608,7 +1608,7 @@ function NotasRecebidas() {
                             <TooltipProvider>
                               <Tooltip>
                                 <TooltipTrigger asChild>
-                                  <Button size="sm" variant="ghost" className="h-7 w-7 p-0" onClick={() => handleBaixarPdf(n)}>
+                                  <Button size="sm" variant="ghost" className="h-8 w-8 rounded-lg p-0" onClick={() => handleBaixarPdf(n)}>
                                     <FileText className="h-3.5 w-3.5" />
                                   </Button>
                                 </TooltipTrigger>
@@ -1618,7 +1618,7 @@ function NotasRecebidas() {
                             <TooltipProvider>
                               <Tooltip>
                                 <TooltipTrigger asChild>
-                                  <Button size="sm" variant="ghost" className="h-7 w-7 p-0 text-destructive hover:text-destructive"
+                                  <Button size="sm" variant="ghost" className="h-8 w-8 rounded-lg p-0 text-destructive hover:text-destructive"
                                     disabled={excluirNota.isPending}
                                     onClick={() => setConfExcluirNota(n)}>
                                     <Trash2 className="h-3.5 w-3.5" />
@@ -1639,11 +1639,11 @@ function NotasRecebidas() {
         </TabsContent>
 
         <TabsContent value="xml" className="space-y-4">
-          <div className="grid gap-4 md:grid-cols-3">
-            <Card className="md:col-span-2 border-muted bg-card/60 backdrop-blur-sm shadow-panel">
+          <div className="grid gap-4 sm:gap-5 md:grid-cols-3">
+            <Card className="rounded-2xl md:col-span-2 border-muted bg-card/60 backdrop-blur-sm shadow-panel">
               <CardHeader className="pb-2">
-                <CardTitle>Área de Upload</CardTitle>
-                <CardDescription>
+                <CardTitle className="tracking-tight">Área de Upload</CardTitle>
+                <CardDescription className="leading-relaxed">
                   Arraste os arquivos XML de seus fornecedores ou clique para selecionar. Você pode importar múltiplos arquivos de uma só vez.
                 </CardDescription>
               </CardHeader>
@@ -1653,16 +1653,18 @@ function NotasRecebidas() {
                   onDragOver={handleDrag}
                   onDragLeave={handleDrag}
                   onDrop={handleDrop}
-                  className={`border-2 border-dashed rounded-lg p-4 flex flex-col items-center justify-center transition-colors ${
-                    dragging ? "border-primary bg-primary/5" : "border-muted hover:border-primary/50"
+                  className={`border-2 border-dashed rounded-2xl p-6 sm:p-8 flex flex-col items-center justify-center transition-all ${
+                    dragging ? "border-primary bg-primary/5 shadow-md" : "border-muted hover:border-primary/50 hover:shadow-md"
                   }`}
                 >
-                  <UploadCloud className="h-8 w-8 text-muted-foreground mb-1" />
-                  <p className="text-sm font-medium text-foreground text-center">
+                  <span className="grid h-14 w-14 place-items-center rounded-2xl bg-muted/60">
+                    <UploadCloud className="h-6 w-6 text-muted-foreground" />
+                  </span>
+                  <p className="mt-3 text-sm font-medium text-foreground text-center">
                     Arraste os arquivos XML aqui ou
                   </p>
-                  <label className="mt-1 cursor-pointer">
-                    <span className="inline-flex items-center rounded-md bg-primary px-3 py-2 text-xs font-semibold text-primary-foreground shadow-sm hover:bg-primary/90">
+                  <label className="mt-2 cursor-pointer">
+                    <span className="inline-flex h-9 items-center rounded-xl bg-primary px-4 text-xs font-semibold text-primary-foreground shadow-sm transition-all hover:-translate-y-px hover:bg-primary/90 hover:shadow-md">
                       Selecionar Arquivos
                     </span>
                     <input
@@ -1673,9 +1675,9 @@ function NotasRecebidas() {
                       onChange={handleFileChange}
                     />
                   </label>
-                  <p className="text-xs text-muted-foreground mt-1">Apenas arquivos no formato .xml</p>
+                  <p className="text-xs text-muted-foreground mt-2">Apenas arquivos no formato .xml</p>
                   {isProcessing && (
-                    <p className="text-xs font-medium text-primary mt-1 flex items-center gap-1.5">
+                    <p className="text-xs font-medium text-primary mt-2 flex items-center gap-1.5">
                       <RefreshCw className="h-3.5 w-3.5 animate-spin" /> Lendo XMLs...
                     </p>
                   )}
@@ -1683,9 +1685,9 @@ function NotasRecebidas() {
               </CardContent>
             </Card>
 
-            <Card className="border-muted bg-card/60 backdrop-blur-sm shadow-panel">
+            <Card className="rounded-2xl border-muted bg-card/60 backdrop-blur-sm shadow-panel">
               <CardHeader className="pb-2">
-                <CardTitle className="text-base font-semibold">Como funciona?</CardTitle>
+                <CardTitle className="text-base font-semibold tracking-tight">Como funciona?</CardTitle>
               </CardHeader>
               <CardContent className="space-y-2 text-sm text-muted-foreground leading-relaxed">
                 <div>
@@ -1705,7 +1707,7 @@ function NotasRecebidas() {
           </div>
 
           {importResults && !analiseOpen && (
-            <Button onClick={() => setAnaliseOpen(true)} className="bg-primary hover:bg-primary/90 text-white">
+            <Button onClick={() => setAnaliseOpen(true)} className="h-10 rounded-xl px-5 text-white shadow-md transition-all hover:-translate-y-px hover:bg-primary/90 hover:shadow-lg">
               Continuar lançando notas ({filaXml.length + 1} restante(s))
             </Button>
           )}
@@ -1737,9 +1739,9 @@ function NotasRecebidas() {
                 </div>
               </CardHeader>
               <CardContent className="min-h-0 flex-1 space-y-4 overflow-y-auto p-4 sm:p-6">
-                <div className="overflow-hidden rounded-lg border">
-                  <div className="border-b border-primary/20 bg-primary/8 px-3 py-1.5 text-[11px] font-semibold uppercase tracking-wide text-primary/80">Produtos Importados</div>
-                  <div className="space-y-3 p-3">
+                <div className="overflow-hidden rounded-2xl border">
+                  <div className="border-b border-primary/20 bg-primary/8 px-4 py-2.5 text-[11px] font-semibold uppercase tracking-wide text-primary/80">Produtos Importados</div>
+                  <div className="space-y-3 p-4">
                   {importResults.produtos.length > 1 && (
                     <div className="flex flex-wrap items-center gap-3">
                       <div className="flex items-center space-x-2">
@@ -1790,7 +1792,7 @@ function NotasRecebidas() {
                       )}
                     </div>
                   )}
-                  <div className="border rounded-md overflow-hidden bg-background/50">
+                  <div className="border rounded-xl overflow-hidden bg-background/50 shadow-sm">
                     <Table>
                       <TableHeader className="bg-muted/40">
                         <TableRow>
@@ -1848,7 +1850,7 @@ function NotasRecebidas() {
                   </div>
                 </div>
 
-                <div className="rounded-lg border border-primary/20 bg-primary/5 p-4">
+                <div className="rounded-2xl border border-primary/20 bg-primary/5 p-4 sm:p-5 shadow-sm">
                   <CondicaoPagamento
                     key={importResults.chave + importResults.total}
                     total={importResults.total}
@@ -1863,13 +1865,13 @@ function NotasRecebidas() {
                 </div>
 
               </CardContent>
-              <div className="shrink-0 border-t border-border bg-card p-3">
-                <div className="flex justify-end gap-2">
-                  <Button variant="outline" disabled={isSaving} onClick={() => setConfSair(true)}>Cancelar</Button>
-                  <Button variant="outline" disabled={isSaving} onClick={handleIgnorarNota} className="text-amber-700 hover:bg-amber-500/10 dark:text-amber-400">
+              <div className="shrink-0 border-t border-border bg-card p-3 sm:p-4">
+                <div className="flex flex-wrap justify-end gap-2">
+                  <Button variant="outline" disabled={isSaving} onClick={() => setConfSair(true)} className="h-10 rounded-xl">Cancelar</Button>
+                  <Button variant="outline" disabled={isSaving} onClick={handleIgnorarNota} className="h-10 rounded-xl text-amber-700 hover:bg-amber-500/10 dark:text-amber-400">
                     Ignorar Nota
                   </Button>
-                  <Button onClick={handleConfirmarXmlUpload} disabled={isSaving} className="bg-primary hover:bg-primary/90 text-white">
+                  <Button onClick={handleConfirmarXmlUpload} disabled={isSaving} className="h-10 rounded-xl px-5 text-white shadow-md transition-all hover:-translate-y-px hover:bg-primary/90 hover:shadow-lg">
                     {isSaving ? (
                       <>
                         <RefreshCw className="mr-2 h-4 w-4 animate-spin" />
