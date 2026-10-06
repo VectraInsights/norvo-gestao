@@ -221,7 +221,7 @@ function UsuariosPage() {
 
   if (!ehAdmin) {
     return (
-      <Card className="p-8 text-center text-sm text-muted-foreground">
+      <Card className="rounded-2xl p-8 text-center text-sm leading-relaxed text-muted-foreground shadow-panel sm:p-10">
         Apenas administradores da empresa acessam esta página.
       </Card>
     );
@@ -256,26 +256,30 @@ function UsuariosPage() {
             : "Gerencie os usuários desta empresa e os módulos que podem usar."
         }
       />
-      <div className="mb-3 flex flex-col gap-2 sm:flex-row sm:items-center">
+      <div className="mb-4 flex flex-col gap-3 sm:mb-6 sm:flex-row sm:items-center">
         <div className="relative flex-1">
-          <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-          <Input className="pl-8" placeholder="Buscar por nome ou e-mail..." value={busca} onChange={(e) => setBusca(e.target.value)} />
+          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+          <Input className="h-10 rounded-xl pl-10 shadow-sm" placeholder="Buscar por nome ou e-mail..." value={busca} onChange={(e) => setBusca(e.target.value)} />
         </div>
         <div className="flex items-center gap-2">
-          <Button size="sm" onClick={() => setOpenNovo(true)}>
-            <Plus className="h-4 w-4 mr-1" />
+          <Button size="sm" onClick={() => setOpenNovo(true)} className="h-10 rounded-xl px-5 shadow-sm transition-all hover:-translate-y-px hover:shadow-md">
+            <Plus className="mr-1.5 h-4 w-4" />
             Novo usuário
           </Button>
         </div>
       </div>
 
-      <Card className="p-0 overflow-hidden">
+      <Card className="overflow-hidden rounded-2xl p-0 shadow-panel">
         {lista.isLoading ? (
-          <div className="p-6">
-            <Skeleton className="h-32 w-full" />
+          <div className="space-y-3 p-6">
+            <Skeleton className="h-10 w-full rounded-xl" />
+            <Skeleton className="h-10 w-full rounded-xl" />
+            <Skeleton className="h-10 w-2/3 rounded-xl" />
           </div>
         ) : !filtrados || filtrados.length === 0 ? (
-          <EmptyState icon={Users} title="Nenhum usuário" description={busca ? "Nada encontrado para a busca." : "Crie o primeiro acesso."} />
+          <div className="p-4 sm:p-6">
+            <EmptyState icon={Users} title="Nenhum usuário" description={busca ? "Nada encontrado para a busca." : "Crie o primeiro acesso."} />
+          </div>
         ) : (
           <Table>
             <TableHeader>
@@ -284,12 +288,12 @@ function UsuariosPage() {
                 <TableHead>E-mail</TableHead>
                 <TableHead>Papel</TableHead>
                 <TableHead>Módulos</TableHead>
-                <TableHead className="w-32"></TableHead>
+                <TableHead className="w-36" />
               </TableRow>
             </TableHeader>
             <TableBody>
               {filtrados.map((m) => (
-                <TableRow key={m.id}>
+                <TableRow key={m.id} className="transition-colors hover:bg-accent/30">
                   <TableCell className="font-medium">{m.nome ?? "—"}</TableCell>
                   <TableCell className="text-muted-foreground">{m.email ?? "—"}</TableCell>
                   <TableCell>
@@ -313,7 +317,7 @@ function UsuariosPage() {
                         <Button
                           variant="ghost"
                           size="icon"
-                          className="h-8 w-8"
+                          className="h-8 w-8 rounded-lg"
                           title="Editar permissões"
                           onClick={() => abrirEdicao(m)}
                         >
@@ -324,7 +328,7 @@ function UsuariosPage() {
                         <Button
                           variant="ghost"
                           size="icon"
-                          className="h-8 w-8"
+                          className="h-8 w-8 rounded-lg"
                           title="Resetar senha"
                           onClick={() => {
                             setResetando(m);
@@ -338,23 +342,23 @@ function UsuariosPage() {
                             <Button
                               variant="ghost"
                               size="icon"
-                              className="h-8 w-8"
+                              className="h-8 w-8 rounded-lg"
                               title="Remover acesso"
                             >
                               <Trash2 className="h-4 w-4" />
                             </Button>
                           </AlertDialogTrigger>
-                          <AlertDialogContent>
-                            <AlertDialogHeader>
-                              <AlertDialogTitle>Remover acesso de {m.nome}?</AlertDialogTitle>
-                              <AlertDialogDescription>
+                          <AlertDialogContent className="rounded-2xl">
+                            <AlertDialogHeader className="gap-1.5">
+                              <AlertDialogTitle className="tracking-tight">Remover acesso de {m.nome}?</AlertDialogTitle>
+                              <AlertDialogDescription className="leading-relaxed">
                                 Ele perderá o acesso a esta empresa imediatamente. A conta de login
                                 continua existindo.
                               </AlertDialogDescription>
                             </AlertDialogHeader>
-                            <AlertDialogFooter>
-                              <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                              <AlertDialogAction data-acao onClick={() => remover.mutate(m.id)}>
+                            <AlertDialogFooter className="gap-2">
+                              <AlertDialogCancel className="h-10 rounded-xl">Cancelar</AlertDialogCancel>
+                              <AlertDialogAction data-acao onClick={() => remover.mutate(m.id)} className="h-10 rounded-xl">
                                 Remover
                               </AlertDialogAction>
                             </AlertDialogFooter>
@@ -373,45 +377,48 @@ function UsuariosPage() {
 
       {/* Novo usuário */}
       <Dialog open={openNovo} onOpenChange={setOpenNovo}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Criar acesso de usuário</DialogTitle>
+        <DialogContent className="sm:max-w-lg">
+          <DialogHeader className="gap-1.5 pb-1">
+            <DialogTitle className="tracking-tight">Criar acesso de usuário</DialogTitle>
           </DialogHeader>
-          <div className="grid gap-3">
-            <div>
+          <div className="grid gap-4">
+            <div className="grid gap-1.5">
               <Label>Nome *</Label>
               <Input
                 value={formN.nome}
                 onChange={(e) => setFormN((f) => ({ ...f, nome: e.target.value }))}
+                className="h-10 rounded-xl"
               />
             </div>
-            <div className="grid grid-cols-2 gap-3">
-              <div>
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+              <div className="grid gap-1.5">
                 <Label>E-mail *</Label>
                 <Input
                   type="email"
                   value={formN.email}
                   onChange={(e) => setFormN((f) => ({ ...f, email: e.target.value }))}
+                  className="h-10 rounded-xl"
                 />
               </div>
-              <div>
+              <div className="grid gap-1.5">
                 <Label>Senha padrão *</Label>
                 <Input
                   value={formN.senha}
                   onChange={(e) => setFormN((f) => ({ ...f, senha: e.target.value }))}
+                  className="h-10 rounded-xl"
                 />
-                <p className="mt-1 text-xs text-muted-foreground">
+                <p className="text-xs leading-relaxed text-muted-foreground">
                   A pessoa troca a senha em “Minha conta”.
                 </p>
               </div>
             </div>
-            <div>
+            <div className="grid gap-1.5">
               <Label>Papel</Label>
               <Select
                 value={formN.papel}
                 onValueChange={(v) => setFormN((f) => ({ ...f, papel: v }))}
               >
-                <SelectTrigger>
+                <SelectTrigger className="h-10 rounded-xl">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -421,33 +428,34 @@ function UsuariosPage() {
               </Select>
             </div>
             {formN.papel === "viewer" && (
-              <div>
+              <div className="grid gap-1.5">
                 <Label>Módulos permitidos</Label>
-                <div className="grid grid-cols-2 gap-1 rounded-md border p-3">
+                <div className="grid grid-cols-1 gap-1 rounded-2xl border bg-muted/30 p-4 sm:grid-cols-2">
                   {MODULOS.map((m) => (
-                    <label key={m.key} className="flex items-center gap-2 text-sm">
+                    <label key={m.key} className="flex cursor-pointer items-center gap-2.5 rounded-lg px-2 py-1.5 text-sm transition-colors hover:bg-accent">
                       <input
                         type="checkbox"
                         checked={formN.modulos.includes(m.key)}
                         onChange={() =>
                           setFormN((f) => ({ ...f, modulos: toggleModulo(f.modulos, m.key) }))
                         }
+                        className="h-4 w-4 accent-primary"
                       />
                       {m.label}
                     </label>
                   ))}
                 </div>
-                <p className="mt-1 text-xs text-muted-foreground">
+                <p className="text-xs leading-relaxed text-muted-foreground">
                   Sem marcação, o usuário vê apenas o Dashboard.
                 </p>
               </div>
             )}
           </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setOpenNovo(false)}>
+          <DialogFooter className="gap-2">
+            <Button variant="outline" onClick={() => setOpenNovo(false)} className="h-10 rounded-xl">
               Cancelar
             </Button>
-            <Button onClick={() => criar.mutate()} disabled={criar.isPending}>
+            <Button onClick={() => criar.mutate()} disabled={criar.isPending} className="h-10 rounded-xl px-6 shadow-sm transition-all hover:-translate-y-px hover:shadow-md">
               Criar acesso
             </Button>
           </DialogFooter>
@@ -456,24 +464,24 @@ function UsuariosPage() {
 
       {/* Editar permissões */}
       <Dialog open={!!editando} onOpenChange={(o) => !o && setEditando(null)}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Dados de {editando?.nome}</DialogTitle>
+        <DialogContent className="sm:max-w-lg">
+          <DialogHeader className="gap-1.5 pb-1">
+            <DialogTitle className="tracking-tight">Dados de {editando?.nome}</DialogTitle>
           </DialogHeader>
           {editando && (
-            <div className="grid gap-3">
-              <div>
+            <div className="grid gap-4">
+              <div className="grid gap-1.5">
                 <Label>Nome</Label>
-                <Input value={formE.nome} onChange={(e) => setFormE((f) => ({ ...f, nome: e.target.value }))} />
+                <Input value={formE.nome} onChange={(e) => setFormE((f) => ({ ...f, nome: e.target.value }))} className="h-10 rounded-xl" />
               </div>
               {editando.role !== "owner" && (
-                <div>
+                <div className="grid gap-1.5">
                   <Label>Papel</Label>
                   <Select
                     value={formE.papel}
                     onValueChange={(v) => setFormE((f) => ({ ...f, papel: v }))}
                   >
-                    <SelectTrigger>
+                    <SelectTrigger className="h-10 rounded-xl">
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
@@ -484,17 +492,18 @@ function UsuariosPage() {
                 </div>
               )}
               {editando.role !== "owner" && formE.papel === "viewer" && (
-                <div>
+                <div className="grid gap-1.5">
                   <Label>Módulos permitidos</Label>
-                  <div className="grid grid-cols-2 gap-1 rounded-md border p-3">
+                  <div className="grid grid-cols-1 gap-1 rounded-2xl border bg-muted/30 p-4 sm:grid-cols-2">
                     {MODULOS.map((m) => (
-                      <label key={m.key} className="flex items-center gap-2 text-sm">
+                      <label key={m.key} className="flex cursor-pointer items-center gap-2.5 rounded-lg px-2 py-1.5 text-sm transition-colors hover:bg-accent">
                         <input
                           type="checkbox"
                           checked={formE.modulos.includes(m.key)}
                           onChange={() =>
                             setFormE((f) => ({ ...f, modulos: toggleModulo(f.modulos, m.key) }))
                           }
+                          className="h-4 w-4 accent-primary"
                         />
                         {m.label}
                       </label>
@@ -504,11 +513,11 @@ function UsuariosPage() {
               )}
             </div>
           )}
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setEditando(null)}>
+          <DialogFooter className="gap-2">
+            <Button variant="outline" onClick={() => setEditando(null)} className="h-10 rounded-xl">
               Cancelar
             </Button>
-            <Button onClick={() => salvarEdicao.mutate()} disabled={salvarEdicao.isPending}>
+            <Button onClick={() => salvarEdicao.mutate()} disabled={salvarEdicao.isPending} className="h-10 rounded-xl px-6 shadow-sm transition-all hover:-translate-y-px hover:shadow-md">
               Salvar
             </Button>
           </DialogFooter>
@@ -517,19 +526,19 @@ function UsuariosPage() {
 
       {/* Resetar senha */}
       <Dialog open={!!resetando} onOpenChange={(o) => !o && setResetando(null)}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Redefinir senha de {resetando?.nome}</DialogTitle>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader className="gap-1.5 pb-1">
+            <DialogTitle className="tracking-tight">Redefinir senha de {resetando?.nome}</DialogTitle>
           </DialogHeader>
-          <div>
+          <div className="grid gap-1.5">
             <Label>Nova senha padrão</Label>
-            <Input value={novaSenha} onChange={(e) => setNovaSenha(e.target.value)} />
+            <Input value={novaSenha} onChange={(e) => setNovaSenha(e.target.value)} className="h-10 rounded-xl" />
           </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setResetando(null)}>
+          <DialogFooter className="gap-2">
+            <Button variant="outline" onClick={() => setResetando(null)} className="h-10 rounded-xl">
               Cancelar
             </Button>
-            <Button onClick={() => resetar.mutate()} disabled={resetar.isPending}>
+            <Button onClick={() => resetar.mutate()} disabled={resetar.isPending} className="h-10 rounded-xl px-6 shadow-sm transition-all hover:-translate-y-px hover:shadow-md">
               Redefinir
             </Button>
           </DialogFooter>

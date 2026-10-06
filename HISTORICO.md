@@ -4815,3 +4815,10 @@ Espelhado na Vercel.
   em destaque, formulário com campos h-10 e grids responsivos,
   tabela com hover e linha vazia, diálogos em card.
 - Paleta intacta; `tsc` limpo nos tocados e `npm run build` OK.
+
+## Repaginação: configuracoes.usuarios (06/10)
+
+- 3ª das 4 telas de Configurações: busca h-10, botão Novo em
+  destaque, tabela com hover, badges pill, módulos em card com
+  hover, diálogos com campos h-10.
+- Paleta intacta; `tsc` limpo nos tocados e `npm run build` OK.
