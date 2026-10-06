@@ -4844,3 +4844,11 @@ Espelhado na Vercel.
   em card; `error` tipado. Obs.: há 2 células "Contato" idênticas
   por linha (bug prévio, mantido).
 - Paleta intacta; `tsc` limpo nos tocados e `npm run build` OK.
+
+## Repaginação: fiscal.configuracoes + fiscal.emitidas (06/10)
+
+- Configurações com abas, cards rounded-2xl, dropzone e diálogos
+  com respiro; aviso A3 nos tokens de alerta.
+- Emitidas com header, faixa de ambiente, filtros h-10, diálogos
+  em card e tabela com hover; `error` tipado.
+- Paleta intacta; `tsc` limpo nos tocados e `npm run build` OK.

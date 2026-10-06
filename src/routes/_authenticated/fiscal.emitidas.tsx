@@ -86,20 +86,20 @@ interface NfeConfig {
   natureza_operacao: string | null;
 }
 
-function FiscalError({ error, reset }: { error: Error; reset: () => void }) {
+function FiscalError({ error, reset }: { error: unknown; reset: () => void }) {
   return (
-    <div className="flex flex-col items-center gap-3 rounded-lg border border-destructive/20 bg-destructive/5 p-8 text-center animate-in fade-in zoom-in duration-300">
-      <div className="flex h-12 w-12 items-center justify-center rounded-full bg-destructive/10">
+    <div className="flex flex-col items-center gap-3 rounded-2xl border border-destructive/20 bg-destructive/5 p-8 text-center shadow-sm animate-in fade-in zoom-in duration-300 sm:p-10">
+      <div className="grid h-14 w-14 place-items-center rounded-2xl bg-destructive/10">
         <AlertTriangle className="h-6 w-6 text-destructive" />
       </div>
-      <div className="text-base font-semibold text-foreground">
+      <div className="text-base font-semibold tracking-tight text-foreground">
         Ops! Ocorreu um problema no módulo fiscal
       </div>
-      <div className="max-w-[300px] text-xs leading-relaxed text-muted-foreground">
+      <div className="max-w-[320px] text-xs leading-relaxed text-muted-foreground">
         Não conseguimos carregar os dados das notas fiscais agora. Detalhes técnicos:{" "}
-        <code className="bg-muted px-1 py-0.5 rounded">{error.message}</code>
+        <code className="rounded-md bg-muted px-1.5 py-0.5">{error instanceof Error ? error.message : "erro desconhecido"}</code>
       </div>
-      <Button size="sm" variant="outline" onClick={reset} className="mt-2">
+      <Button size="sm" variant="outline" onClick={reset} className="mt-2 h-9 rounded-xl px-5 shadow-sm">
         Tentar novamente
       </Button>
     </div>
@@ -488,35 +488,35 @@ function NotasEmitidas() {
           description="Controle e emissão de notas fiscais de venda e prestação de serviços (NF-e, NFS-e, NFC-e)."
         />
 
-        <div className="flex items-center gap-2">
-          <Button variant="outline" size="sm">
+        <div className="flex shrink-0 items-center gap-2">
+          <Button variant="outline" size="sm" className="h-10 rounded-xl px-4 shadow-sm">
             Adicionar trilha de auditoria
           </Button>
           <Dialog open={modalOpen} onOpenChange={setModalOpen}>
             <DialogTrigger asChild>
               <Button
                 onClick={() => setModalOpen(true)}
-                className="w-full sm:w-auto shadow-sm transition-transform hover:scale-[1.02] active:scale-[0.98]"
+                className="h-10 w-full rounded-xl px-5 shadow-md transition-all hover:-translate-y-px hover:shadow-lg sm:w-auto"
               >
                 <Plus className="mr-2 h-4 w-4" /> Nova Emissão
               </Button>
             </DialogTrigger>
-            <DialogContent>
-              <DialogHeader>
-                <DialogTitle>Emitir Nota Fiscal (Rascunho)</DialogTitle>
-                <DialogDescription>
+            <DialogContent className="sm:max-w-lg">
+              <DialogHeader className="gap-1.5 pb-1">
+                <DialogTitle className="tracking-tight">Emitir Nota Fiscal (Rascunho)</DialogTitle>
+                <DialogDescription className="leading-relaxed">
                   Crie um novo rascunho de nota fiscal. Ela ficará pronta para emissão na lista
                   principal.
                 </DialogDescription>
               </DialogHeader>
-              <div className="grid gap-4 py-4">
-                <div className="grid gap-2">
+              <div className="grid gap-4 py-2">
+                <div className="grid gap-1.5">
                   <Label htmlFor="tipo">Tipo de Operação</Label>
                   <Select
                     value={novaNotaTipo}
                     onValueChange={(v: "nfe" | "nfse" | "nfce") => setNovaNotaTipo(v)}
                   >
-                    <SelectTrigger id="tipo">
+                    <SelectTrigger id="tipo" className="h-10 rounded-xl">
                       <SelectValue placeholder="Selecione o tipo de nota" />
                     </SelectTrigger>
                     <SelectContent>
@@ -527,7 +527,7 @@ function NotasEmitidas() {
                   </Select>
                 </div>
 
-                <div className="grid gap-2">
+                <div className="grid gap-1.5">
                   <Label htmlFor="cliente">Cliente destinatário</Label>
                   <Combobox
                     value={novaNotaContato}
@@ -536,31 +536,34 @@ function NotasEmitidas() {
                     placeholder="Selecione o cliente"
                     searchPlaceholder="Digite para buscar..."
                     emptyText="Nenhum cliente cadastrado."
+                    className="h-10"
                   />
                 </div>
 
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="grid gap-2">
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="grid gap-1.5">
                     <Label htmlFor="numero">Número</Label>
                     <Input
                       id="numero"
                       value={novaNotaNumero}
                       onChange={(e) => setNovaNotaNumero(e.target.value)}
                       placeholder="Auto"
+                      className="h-10 rounded-xl"
                     />
                   </div>
-                  <div className="grid gap-2">
+                  <div className="grid gap-1.5">
                     <Label htmlFor="serie">Série</Label>
                     <Input
                       id="serie"
                       value={novaNotaSerie}
                       onChange={(e) => setNovaNotaSerie(e.target.value)}
                       placeholder="1"
+                      className="h-10 rounded-xl"
                     />
                   </div>
                 </div>
 
-                <div className="grid gap-2">
+                <div className="grid gap-1.5">
                   <Label htmlFor="valor">Valor Total (R$)</Label>
                   <MoneyInput
                     id="valor"
@@ -568,14 +571,15 @@ function NotasEmitidas() {
                     placeholder="0,00"
                     value={novaNotaValor}
                     onChange={setNovaNotaValor}
+                    className="h-10"
                   />
                 </div>
               </div>
-              <DialogFooter>
-                <Button variant="outline" onClick={() => setModalOpen(false)}>
+              <DialogFooter className="gap-2">
+                <Button variant="outline" onClick={() => setModalOpen(false)} className="h-10 rounded-xl">
                   Cancelar
                 </Button>
-                <Button onClick={() => criarNotaMut.mutate()} disabled={criarNotaMut.isPending}>
+                <Button onClick={() => criarNotaMut.mutate()} disabled={criarNotaMut.isPending} className="h-10 rounded-xl px-6 shadow-sm transition-all hover:-translate-y-px hover:shadow-md">
                   {criarNotaMut.isPending ? "Criando..." : "Criar Rascunho"}
                 </Button>
               </DialogFooter>
@@ -585,9 +589,9 @@ function NotasEmitidas() {
       </div>
 
       {config && (
-        <Card className="mb-6 border-muted bg-card/60 shadow-panel backdrop-blur-sm">
-          <CardContent className="flex flex-wrap items-center gap-x-8 gap-y-3 p-4 text-sm">
-            <div className="flex items-center gap-1.5">
+        <Card className="mb-6 rounded-2xl sm:mb-8 border-muted bg-card/60 shadow-panel backdrop-blur-sm">
+          <CardContent className="flex flex-wrap items-center gap-x-8 gap-y-3 p-4 text-sm sm:p-5">
+            <div className="flex items-center gap-2">
               <span className="h-2 w-2 rounded-full bg-primary animate-pulse"></span>
               <span className="text-muted-foreground">Ambiente:</span>
               <strong className="capitalize text-foreground font-medium">
@@ -604,7 +608,7 @@ function NotasEmitidas() {
                 {config.proximo_numero ?? "—"}
               </strong>
             </div>
-            <div className="rounded bg-primary/10 px-2 py-0.5 text-xs text-primary font-medium">
+            <div className="rounded-lg bg-primary/10 px-2.5 py-1 text-xs text-primary font-medium shadow-sm">
               {config.regime_tributario === "simples" ? "Simples Nacional" : "Lucro Presumido"}
             </div>
           </CardContent>
@@ -612,7 +616,7 @@ function NotasEmitidas() {
       )}
 
       {/* Filtros e Busca */}
-      <div className="mb-6 flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+      <div className="mb-6 flex flex-col gap-4 sm:mb-8 md:flex-row md:items-center md:justify-between">
         <Tabs
           value={activeTab}
           onValueChange={(value) => {
@@ -621,7 +625,7 @@ function NotasEmitidas() {
           }}
           className="w-full md:w-auto"
         >
-          <TabsList className="grid grid-cols-4 md:w-auto bg-muted/80 p-1">
+          <TabsList className="grid grid-cols-4 rounded-xl md:w-auto bg-muted/80 p-1">
             <TabsTrigger value="todas" className="text-xs">
               Todas
             </TabsTrigger>
@@ -639,10 +643,10 @@ function NotasEmitidas() {
 
         <div className="flex flex-1 gap-2 md:max-w-md md:justify-end">
           <div className="relative flex-1">
-            <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
             <Input
               placeholder="Buscar por cliente, nº, chave..."
-              className="pl-9 h-9"
+              className="h-10 rounded-xl pl-10 shadow-sm"
               value={searchTerm}
               onChange={(e) => {
                 setSearchTerm(e.target.value);
@@ -658,7 +662,7 @@ function NotasEmitidas() {
               setPagina(1);
             }}
           >
-            <SelectTrigger className="w-[140px] h-9">
+            <SelectTrigger className="h-10 w-[150px] rounded-xl shadow-sm">
               <SelectValue placeholder="Status" />
             </SelectTrigger>
             <SelectContent>
@@ -673,7 +677,7 @@ function NotasEmitidas() {
             type="button"
             variant="outline"
             size="icon"
-            className="h-9 w-9 shrink-0"
+            className="h-10 w-10 shrink-0 rounded-xl shadow-sm"
             aria-label="Filtros salvos"
             onClick={() => setFiltrosSalvosOpen(true)}
           >
@@ -683,42 +687,43 @@ function NotasEmitidas() {
       </div>
 
       <Dialog open={filtrosSalvosOpen} onOpenChange={setFiltrosSalvosOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Filtros salvos</DialogTitle>
-            <DialogDescription>Salve uma combinação de tipo, status e busca para reutilizar depois.</DialogDescription>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader className="gap-1.5 pb-1">
+            <DialogTitle className="tracking-tight">Filtros salvos</DialogTitle>
+            <DialogDescription className="leading-relaxed">Salve uma combinação de tipo, status e busca para reutilizar depois.</DialogDescription>
           </DialogHeader>
           <div className="space-y-4 py-2">
             <div className="flex gap-2">
-              <Input value={filtroSalvoNome} onChange={(event) => setFiltroSalvoNome(event.target.value)} placeholder="Nome do filtro" />
+              <Input value={filtroSalvoNome} onChange={(event) => setFiltroSalvoNome(event.target.value)} placeholder="Nome do filtro" className="h-10 rounded-xl" />
               <Button
                 disabled={!filtroSalvoNome.trim() || filtrosSalvos.salvar.isPending}
                 onClick={() => filtrosSalvos.salvar.mutate({ nome: filtroSalvoNome, filtros: { activeTab, searchTerm, statusFilter } }, { onSuccess: () => { setFiltroSalvoNome(""); toast.success("Filtro salvo"); } })}
+                className="h-10 shrink-0 whitespace-nowrap rounded-xl px-4 shadow-sm"
               >
                 Salvar
               </Button>
             </div>
             <div className="space-y-2">
-              {filtrosSalvos.filtros.length === 0 ? <p className="text-sm text-muted-foreground">Nenhum filtro salvo.</p> : filtrosSalvos.filtros.map((filtro) => (
-                <div key={filtro.id} className="flex items-center justify-between rounded-md border px-3 py-2">
-                  <span className="text-sm">{filtro.nome}</span>
-                  <div className="flex gap-1">
-                    <Button size="sm" variant="ghost" onClick={() => { const valores = filtro.filtros as { activeTab?: string; searchTerm?: string; statusFilter?: string }; setActiveTab(valores.activeTab ?? "todas"); setSearchTerm(valores.searchTerm ?? ""); setStatusFilter(valores.statusFilter ?? "todos"); setPagina(1); setFiltrosSalvosOpen(false); }}>Aplicar</Button>
-                    <Button size="sm" variant="ghost" className="text-destructive" onClick={() => filtrosSalvos.excluir.mutate(filtro.id)}>Excluir</Button>
+              {filtrosSalvos.filtros.length === 0 ? <p className="rounded-xl bg-muted/40 px-4 py-5 text-center text-sm text-muted-foreground">Nenhum filtro salvo.</p> : filtrosSalvos.filtros.map((filtro) => (
+                <div key={filtro.id} className="flex items-center justify-between gap-2 rounded-xl border px-4 py-2.5 shadow-sm transition-all hover:shadow-md">
+                  <span className="min-w-0 flex-1 truncate text-sm font-medium">{filtro.nome}</span>
+                  <div className="flex shrink-0 gap-1">
+                    <Button size="sm" variant="ghost" className="h-8 rounded-lg" onClick={() => { const valores = filtro.filtros as { activeTab?: string; searchTerm?: string; statusFilter?: string }; setActiveTab(valores.activeTab ?? "todas"); setSearchTerm(valores.searchTerm ?? ""); setStatusFilter(valores.statusFilter ?? "todos"); setPagina(1); setFiltrosSalvosOpen(false); }}>Aplicar</Button>
+                    <Button size="sm" variant="ghost" className="h-8 rounded-lg text-destructive" onClick={() => filtrosSalvos.excluir.mutate(filtro.id)}>Excluir</Button>
                   </div>
                 </div>
               ))}
             </div>
           </div>
-          <DialogFooter><Button variant="outline" onClick={() => setFiltrosSalvosOpen(false)}>Fechar</Button></DialogFooter>
+          <DialogFooter><Button variant="outline" onClick={() => setFiltrosSalvosOpen(false)} className="h-10 rounded-xl">Fechar</Button></DialogFooter>
         </DialogContent>
       </Dialog>
 
       <Dialog open={!!cancelarId} onOpenChange={(v) => { if (!v) { setCancelarId(null); setMotivoCancel(""); } }}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Cancelar nota fiscal</DialogTitle>
-            <DialogDescription>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader className="gap-1.5 pb-1">
+            <DialogTitle className="tracking-tight">Cancelar nota fiscal</DialogTitle>
+            <DialogDescription className="leading-relaxed">
               Informe o motivo do cancelamento (mínimo 15 caracteres). Esta justificativa será enviada à SEFAZ.
             </DialogDescription>
           </DialogHeader>
@@ -736,18 +741,19 @@ function NotasEmitidas() {
                   confirmarCancelamento();
                 }
               }}
+              className="rounded-xl"
             />
             <p className={`text-xs ${motivoCancel.trim().length < 15 ? "text-muted-foreground" : "text-primary"}`}>
               {motivoCancel.trim().length}/15 caracteres mínimos
             </p>
           </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => { setCancelarId(null); setMotivoCancel(""); }}>
+          <DialogFooter className="gap-2">
+            <Button variant="outline" onClick={() => { setCancelarId(null); setMotivoCancel(""); }} className="h-10 rounded-xl">
               Voltar
             </Button>
             <Button
               data-acao
-              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              className="h-10 rounded-xl bg-destructive px-5 text-destructive-foreground hover:bg-destructive/90"
               disabled={motivoCancel.trim().length < 15 || cancelarMut.isPending}
               onClick={confirmarCancelamento}
             >
@@ -758,10 +764,10 @@ function NotasEmitidas() {
       </Dialog>
 
       {loadingNotas ? (
-        <Card className="shadow-panel">
+        <Card className="rounded-2xl shadow-panel">
           <CardContent className="space-y-3 p-6">
             {Array.from({ length: 5 }).map((_, i) => (
-              <Skeleton key={i} className="h-10 w-full rounded" />
+              <Skeleton key={i} className="h-10 w-full rounded-xl" />
             ))}
           </CardContent>
         </Card>
@@ -772,7 +778,7 @@ function NotasEmitidas() {
           description="Refine seus filtros ou realize uma nova emissão para gerar rascunhos de notas fiscais."
         />
       ) : (
-        <Card className="overflow-hidden border-muted shadow-panel bg-card/60 backdrop-blur-sm">
+        <Card className="overflow-hidden rounded-2xl border-muted shadow-panel bg-card/60 backdrop-blur-sm">
           <div className="overflow-x-auto">
             <Table>
               <TableHeader className="bg-muted/40">
@@ -800,25 +806,25 @@ function NotasEmitidas() {
                     switch (tipo) {
                       case "nfe":
                         return (
-                          <span className="rounded bg-primary/10 text-primary px-1.5 py-0.5 text-[11px] font-bold uppercase">
+                          <span className="rounded-md bg-primary/10 text-primary px-2 py-1 text-[11px] font-bold uppercase shadow-sm">
                             NF-e
                           </span>
                         );
                       case "nfse":
                         return (
-                          <span className="rounded bg-primary/10 text-primary px-1.5 py-0.5 text-[11px] font-bold uppercase">
+                          <span className="rounded-md bg-primary/10 text-primary px-2 py-1 text-[11px] font-bold uppercase shadow-sm">
                             NFS-e
                           </span>
                         );
                       case "nfce":
                         return (
-                          <span className="rounded bg-primary/10 text-primary px-1.5 py-0.5 text-[11px] font-bold uppercase">
+                          <span className="rounded-md bg-primary/10 text-primary px-2 py-1 text-[11px] font-bold uppercase shadow-sm">
                             NFC-e
                           </span>
                         );
                       default:
                         return (
-                          <span className="rounded bg-muted px-1.5 py-0.5 text-[11px] font-bold uppercase">
+                          <span className="rounded-md bg-muted px-2 py-1 text-[11px] font-bold uppercase shadow-sm">
                             {n.tipo.toUpperCase()}
                           </span>
                         );
@@ -826,7 +832,7 @@ function NotasEmitidas() {
                   };
 
                   return (
-                    <TableRow key={n.id} className="transition-colors hover:bg-muted/30">
+                    <TableRow key={n.id} className="transition-colors hover:bg-accent/30">
                       <TableCell>{getTipoLabel(n.tipo)}</TableCell>
                       <TableCell className="text-tabular font-medium text-foreground">
                         {n.numero ? `${n.numero}/${n.serie ?? "1"}` : "—/—"}
@@ -855,7 +861,7 @@ function NotasEmitidas() {
                                 variant="ghost"
                                 disabled={busy}
                                 onClick={() => emitirMut.mutate(n.id)}
-                                className="h-8 text-primary hover:bg-primary/10"
+                                className="h-8 rounded-lg px-3 text-primary hover:bg-primary/10"
                               >
                                 <Send className="mr-1 h-3.5 w-3.5" />
                                 {busy ? "Emitindo…" : "Emitir"}
@@ -868,7 +874,7 @@ function NotasEmitidas() {
                                 size="sm"
                                 variant="ghost"
                                 onClick={() => baixarXML(n)}
-                                className="h-8 hover:bg-muted"
+                                className="h-8 rounded-lg px-3 hover:bg-accent"
                               >
                                 <Download className="mr-1 h-3.5 w-3.5" />
                                 XML
@@ -879,7 +885,7 @@ function NotasEmitidas() {
                                   size="sm"
                                   variant="ghost"
                                   disabled={busy}
-                                  className="h-8 text-destructive hover:bg-destructive/10"
+                                  className="h-8 rounded-lg px-3 text-destructive hover:bg-destructive/10"
                                   onClick={() => onCancelar(n.id)}
                                 >
                                   <Ban className="mr-1 h-3.5 w-3.5" />

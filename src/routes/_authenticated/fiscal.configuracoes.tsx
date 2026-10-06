@@ -373,8 +373,8 @@ function ConfigFiscais() {
         description="Gerencie seu certificado digital A1, configure alíquotas de impostos e parâmetros de emissão." 
       />
 
-      <Tabs value={activeTab} onValueChange={setActiveTab} className="mt-6 space-y-6">
-        <TabsList className="bg-muted/80 p-1 w-full max-w-[500px] flex">
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="mt-6 space-y-6 sm:mt-8">
+        <TabsList className="bg-muted/80 h-auto w-full max-w-[560px] flex-wrap gap-1 rounded-xl p-1.5">
           <TabsTrigger value="certificado" className="flex-1 text-xs sm:text-sm">Certificado Digital</TabsTrigger>
           <TabsTrigger value="tributos" className="flex-1 text-xs sm:text-sm">Tributos e Regimes</TabsTrigger>
           <TabsTrigger value="cfop" className="flex-1 text-xs sm:text-sm">CFOP & Naturezas</TabsTrigger>
@@ -382,28 +382,30 @@ function ConfigFiscais() {
 
         {/* ABA CERTIFICADO DIGITAL */}
         <TabsContent value="certificado" className="space-y-6">
-          <div className="grid gap-6 md:grid-cols-3">
-            <Card className="md:col-span-2 border-muted bg-card/60 backdrop-blur-sm shadow-panel">
-              <CardHeader>
-                <CardTitle className="text-base font-semibold">Certificado A1 (Arquivo)</CardTitle>
-                <CardDescription>
+          <div className="grid gap-4 sm:gap-5 md:grid-cols-3 lg:gap-6">
+            <Card className="rounded-2xl md:col-span-2 border-muted bg-card/60 backdrop-blur-sm shadow-panel">
+              <CardHeader className="pb-2">
+                <CardTitle className="text-base font-semibold tracking-tight">Certificado A1 (Arquivo)</CardTitle>
+                <CardDescription className="leading-relaxed">
                   Faça o upload do seu certificado digital modelo A1 (extensão .pfx ou .p12). A validade padrão é de 1 ano.
                 </CardDescription>
               </CardHeader>
               <CardContent>
                 {loadingCert ? (
                   <div className="space-y-3">
-                    <Skeleton className="h-16 w-full" />
+                    <Skeleton className="h-16 w-full rounded-xl" />
                   </div>
                 ) : certificado ? (
                   <div className="space-y-6">
-                    <div className="flex gap-4 items-start rounded-lg border border-primary/20 bg-primary/5 p-4">
-                      <CheckCircle2 className="h-6 w-6 text-primary shrink-0 mt-0.5" />
-                      <div className="space-y-1 flex-1">
-                        <h4 className="text-sm font-semibold text-foreground">Certificado Digital Ativo e Válido</h4>
-                        <p className="text-xs text-muted-foreground">O certificado digital está pronto para autenticar e assinar suas notas fiscais.</p>
+                    <div className="flex gap-4 items-start rounded-2xl border border-primary/20 bg-primary/5 p-5 shadow-sm">
+                      <span className="grid h-11 w-11 shrink-0 place-items-center rounded-xl bg-primary/10">
+                        <CheckCircle2 className="h-6 w-6 text-primary" />
+                      </span>
+                      <div className="min-w-0 flex-1 space-y-1">
+                        <h4 className="text-sm font-semibold tracking-tight text-foreground">Certificado Digital Ativo e Válido</h4>
+                        <p className="text-xs leading-relaxed text-muted-foreground">O certificado digital está pronto para autenticar e assinar suas notas fiscais.</p>
                         
-                        <div className="grid gap-x-6 gap-y-1.5 grid-cols-2 pt-3 text-xs">
+                        <div className="grid grid-cols-1 gap-2 pt-3 text-xs sm:grid-cols-2 sm:gap-x-6">
                           <div><span className="text-muted-foreground">CNPJ Associado:</span> <strong className="text-foreground">{empresa?.cnpj ?? "—"}</strong></div>
                           <div><span className="text-muted-foreground">Empresa:</span> <strong className="text-foreground">{empresa?.nome_fantasia ?? "—"}</strong></div>
                           <div><span className="text-muted-foreground">Arquivo:</span> <strong className="text-foreground">{certificado.arquivo_nome}</strong></div>
@@ -413,16 +415,18 @@ function ConfigFiscais() {
                     </div>
 
                     <div className="flex justify-end">
-                      <Button variant="outline" className="text-destructive hover:bg-destructive/10" onClick={() => setConfExcluirCert(certificado)}>
+                      <Button variant="outline" className="h-10 rounded-xl px-5 text-destructive shadow-sm hover:bg-destructive/10" onClick={() => setConfExcluirCert(certificado)}>
                         Excluir Certificado
                       </Button>
                     </div>
                   </div>
                 ) : (
                   <form onSubmit={handleUploadCertificado} className="space-y-4">
-                    <div className="border-2 border-dashed border-muted hover:border-primary/50 rounded-lg p-8 flex flex-col items-center justify-center transition-colors">
-                      <Upload className="h-10 w-10 text-muted-foreground mb-3" />
-                      <p className="text-sm font-medium text-foreground text-center">Selecione o arquivo do Certificado A1 (.pfx ou .p12)</p>
+                    <div className="border-2 border-dashed border-muted hover:border-primary/50 rounded-2xl p-8 sm:p-10 flex flex-col items-center justify-center transition-all hover:shadow-md">
+                      <span className="grid h-14 w-14 place-items-center rounded-2xl bg-muted/60">
+                        <Upload className="h-6 w-6 text-muted-foreground" />
+                      </span>
+                      <p className="mt-4 text-sm font-medium text-foreground text-center">Selecione o arquivo do Certificado A1 (.pfx ou .p12)</p>
                       <input
                         ref={certFileRef}
                         type="file"
@@ -434,29 +438,30 @@ function ConfigFiscais() {
                         type="button"
                         variant="outline"
                         size="sm"
-                        className="mt-3"
+                        className="mt-4 h-9 rounded-xl px-4 shadow-sm"
                         onClick={() => certFileRef.current?.click()}
                       >
                         {certFile ? certFile.name : "Selecionar Arquivo"}
                       </Button>
                     </div>
 
-                    <div className="grid gap-2 max-w-sm">
+                    <div className="grid gap-1.5 max-w-sm">
                       <Label htmlFor="senha-cert">Senha do Certificado</Label>
                       <div className="relative">
-                        <Key className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                        <Key className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                         <Input 
                           id="senha-cert" 
                           type={showCertPassword ? "text" : "password"}
                           placeholder="Digite a senha de proteção" 
-                          className="pl-10 pr-10 h-10"
+                          className="h-10 rounded-xl pl-10 pr-10"
                           value={certPassword}
                           onChange={(e) => setCertPassword(e.target.value)}
                         />
                         <button
                           type="button"
                           onClick={() => setShowCertPassword(!showCertPassword)}
-                          className="absolute right-3 top-3 h-4 w-4 text-muted-foreground hover:text-foreground"
+                          aria-label={showCertPassword ? "Ocultar senha" : "Mostrar senha"}
+                          className="absolute right-2 top-1/2 grid h-7 w-7 -translate-y-1/2 place-items-center rounded-lg text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
                         >
                           {showCertPassword ? (
                             <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94"/><path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19"/><line x1="1" y1="1" x2="23" y2="23"/></svg>
@@ -467,7 +472,7 @@ function ConfigFiscais() {
                       </div>
                     </div>
 
-                    <Button type="submit" disabled={isUploadingCert || !certFile} className="w-full sm:w-auto h-10">
+                    <Button type="submit" disabled={isUploadingCert || !certFile} className="h-10 w-full rounded-xl px-6 shadow-sm transition-all hover:-translate-y-px hover:shadow-md sm:w-auto">
                       {isUploadingCert ? "Validando e Salvando..." : "Salvar Certificado"}
                     </Button>
                   </form>
@@ -475,18 +480,18 @@ function ConfigFiscais() {
               </CardContent>
             </Card>
 
-            <Card className="border-muted bg-card/60 backdrop-blur-sm shadow-panel">
-              <CardHeader>
-                <CardTitle className="text-base font-semibold">Certificado A3 (Físico)</CardTitle>
+            <Card className="rounded-2xl border-muted bg-card/60 backdrop-blur-sm shadow-panel">
+              <CardHeader className="pb-2">
+                <CardTitle className="text-base font-semibold tracking-tight">Certificado A3 (Físico)</CardTitle>
               </CardHeader>
               <CardContent className="space-y-4 text-sm text-muted-foreground leading-relaxed">
-                <div className="flex gap-2 text-yellow-600 dark:text-yellow-400">
-                  <AlertTriangle className="h-5 w-5 shrink-0 mt-0.5" />
-                  <p className="text-xs">
+                <div className="flex gap-2.5 rounded-xl border border-warning/30 bg-warning/10 p-3.5 text-xs leading-relaxed text-warning-foreground shadow-sm">
+                  <AlertTriangle className="h-5 w-5 shrink-0" />
+                  <p>
                     Certificados A3 (cartão/token físico) requerem a instalação do emissor local / assinador na máquina onde a nota é emitida.
                   </p>
                 </div>
-                <p className="text-xs">
+                <p className="text-xs leading-relaxed">
                   Recomendamos fortemente o uso do certificado **A1 (arquivo digital)**, pois permite a emissão de notas diretamente pela nuvem, de qualquer dispositivo, de forma 100% automatizada e sem dependência de hardware conectado.
                 </p>
               </CardContent>
@@ -496,26 +501,26 @@ function ConfigFiscais() {
 
         {/* ABA TRIBUTOS E REGIMES */}
         <TabsContent value="tributos" className="space-y-6">
-          <Card className="border-muted bg-card/60 backdrop-blur-sm shadow-panel">
-            <CardHeader>
-              <CardTitle>Regime Tributário e Alíquotas Padrão</CardTitle>
-              <CardDescription>
+          <Card className="rounded-2xl border-muted bg-card/60 backdrop-blur-sm shadow-panel">
+            <CardHeader className="pb-2">
+              <CardTitle className="tracking-tight">Regime Tributário e Alíquotas Padrão</CardTitle>
+              <CardDescription className="leading-relaxed">
                 Defina o regime fiscal da sua empresa e configure as alíquotas de tributos que serão preenchidas automaticamente nas propostas/vendas.
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">
               {loadingConfig ? (
                 <div className="space-y-3">
-                  <Skeleton className="h-10 w-full" />
-                  <Skeleton className="h-10 w-full" />
+                  <Skeleton className="h-10 w-full rounded-xl" />
+                  <Skeleton className="h-10 w-full rounded-xl" />
                 </div>
               ) : (
-                <div className="grid gap-6 sm:grid-cols-2">
+                <div className="grid gap-6 sm:gap-8 lg:grid-cols-2">
                   <div className="space-y-4">
-                    <div className="grid gap-2">
+                    <div className="grid gap-1.5">
                       <Label htmlFor="regime">Regime Tributário</Label>
                       <Select value={regime} onValueChange={setRegime}>
-                        <SelectTrigger id="regime">
+                        <SelectTrigger id="regime" className="h-10 rounded-xl">
                           <SelectValue placeholder="Selecione o regime" />
                         </SelectTrigger>
                         <SelectContent>
@@ -526,50 +531,52 @@ function ConfigFiscais() {
                       </Select>
                     </div>
 
-                    <div className="grid gap-2">
+                    <div className="grid gap-1.5">
                       <Label htmlFor="cnae">CNAE Principal</Label>
                       <Input 
                         id="cnae" 
                         placeholder="Ex: 6201-5/01" 
                         value={cnae} 
                         onChange={(e) => setCnae(e.target.value)} 
+                        className="h-10 rounded-xl"
                       />
                     </div>
 
-                    <div className="grid gap-2">
+                    <div className="grid gap-1.5">
                       <Label htmlFor="nat">Natureza de Operação Padrão</Label>
                       <Input 
                         id="nat" 
                         placeholder="Ex: Venda de mercadoria" 
                         value={natOp} 
                         onChange={(e) => setNatOp(e.target.value)} 
+                        className="h-10 rounded-xl"
                       />
                     </div>
                   </div>
 
                   <div className="space-y-4">
-                    <h4 className="text-sm font-semibold text-foreground">Alíquotas Padrão para Cálculo</h4>
+                    <h4 className="text-sm font-semibold tracking-tight text-foreground">Alíquotas Padrão para Cálculo</h4>
                     
-                    <div className="grid grid-cols-2 gap-4">
-                      <div className="grid gap-2">
+                    <div className="grid grid-cols-2 gap-3 sm:gap-4">
+                      <div className="grid gap-1.5">
                         <Label htmlFor="iss">ISS (%) - Serviços</Label>
-                        <MoneyInput id="iss" prefix="" value={issRate} onChange={setIssRate} />
+                        <MoneyInput id="iss" prefix="" value={issRate} onChange={setIssRate} className="h-10" />
                       </div>
-                      <div className="grid gap-2">
+                      <div className="grid gap-1.5">
                         <Label htmlFor="icms">ICMS (%) - Vendas</Label>
-                        <MoneyInput id="icms" prefix="" value={icmsRate} onChange={setIcmsRate} />
+                        <MoneyInput id="icms" prefix="" value={icmsRate} onChange={setIcmsRate} className="h-10" />
                       </div>
-                      <div className="grid gap-2">
+                      <div className="grid gap-1.5">
                         <Label htmlFor="pis">PIS (%)</Label>
-                        <MoneyInput id="pis" prefix="" value={pisRate} onChange={setPisRate} />
+                        <MoneyInput id="pis" prefix="" value={pisRate} onChange={setPisRate} className="h-10" />
                       </div>
-                      <div className="grid gap-2">
+                      <div className="grid gap-1.5">
                         <Label htmlFor="cofins">COFINS (%)</Label>
-                        <MoneyInput id="cofins" prefix="" value={cofinsRate} onChange={setCofinsRate} />
+                        <MoneyInput id="cofins" prefix="" value={cofinsRate} onChange={setCofinsRate} className="h-10" />
                       </div>
                     </div>
 
-                    <div className="flex gap-2.5 rounded-lg border border-primary/20 bg-primary/5 p-4 mt-2">
+                    <div className="flex gap-2.5 rounded-2xl border border-primary/20 bg-primary/5 p-4 shadow-sm sm:p-5">
                       <Scale className="h-5 w-5 text-primary shrink-0 mt-0.5" />
                       <div className="space-y-0.5 text-xs text-muted-foreground leading-relaxed">
                         <span className="font-semibold text-foreground block">Tributação Simplificada</span>
@@ -580,11 +587,11 @@ function ConfigFiscais() {
                 </div>
               )}
 
-              <div className="flex justify-end gap-2 pt-2 border-t">
+              <div className="flex justify-end gap-2 border-t border-border/60 pt-4">
                 <Button 
                   onClick={() => updateConfigMut.mutate()} 
                   disabled={updateConfigMut.isPending}
-                  className="h-10"
+                  className="h-10 rounded-xl px-6 shadow-sm transition-all hover:-translate-y-px hover:shadow-md"
                 >
                   {updateConfigMut.isPending ? "Salvando..." : "Salvar Configurações"}
                 </Button>
@@ -597,8 +604,8 @@ function ConfigFiscais() {
         <TabsContent value="cfop" className="space-y-4">
           <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
             <div>
-              <h3 className="text-base font-semibold text-foreground">Regras de CFOP e Naturezas de Operação</h3>
-              <p className="text-xs text-muted-foreground mt-0.5">As regras de CFOP guiam a tributação de acordo com o destino, origem e tipo da transação fiscal.</p>
+              <h3 className="text-base font-semibold tracking-tight text-foreground">Regras de CFOP e Naturezas de Operação</h3>
+              <p className="mt-1 text-xs leading-relaxed text-muted-foreground">As regras de CFOP guiam a tributação de acordo com o destino, origem e tipo da transação fiscal.</p>
             </div>
             
             <Dialog open={cfopModalOpen} onOpenChange={setCfopModalOpen}>
@@ -609,42 +616,44 @@ function ConfigFiscais() {
                   setCfopValor("");
                   setCfopDesc("");
                   setCfopModalOpen(true);
-                }} className="h-9">
+                }} className="h-10 shrink-0 whitespace-nowrap rounded-xl px-5 shadow-sm transition-all hover:-translate-y-px hover:shadow-md">
                   <Plus className="mr-2 h-4 w-4" /> Nova Regra CFOP
                 </Button>
               </DialogTrigger>
-              <DialogContent>
-                <DialogHeader>
-                  <DialogTitle>{editingCfopId ? "Editar Regra CFOP" : "Nova Regra de CFOP"}</DialogTitle>
-                  <DialogDescription>
+              <DialogContent className="sm:max-w-lg">
+                <DialogHeader className="gap-1.5 pb-1">
+                  <DialogTitle className="tracking-tight">{editingCfopId ? "Editar Regra CFOP" : "Nova Regra de CFOP"}</DialogTitle>
+                  <DialogDescription className="leading-relaxed">
                     Defina o código CFOP e sua descrição para seleção automática nas operações de entrada ou saída.
                   </DialogDescription>
                 </DialogHeader>
-                <div className="grid gap-4 py-4">
-                  <div className="grid gap-2">
+                <div className="grid gap-4 py-2">
+                  <div className="grid gap-1.5">
                     <Label htmlFor="cfop-nome">Nome da Natureza</Label>
                     <Input 
                       id="cfop-nome" 
                       placeholder="Ex: Venda de mercadoria interna"
                       value={cfopNome}
                       onChange={(e) => setCfopNome(e.target.value)}
+                      className="h-10 rounded-xl"
                     />
                   </div>
 
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="grid gap-2">
+                  <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                    <div className="grid gap-1.5">
                       <Label htmlFor="cfop-val">Código CFOP</Label>
                       <Input 
                         id="cfop-val" 
                         placeholder="Ex: 5102"
                         value={cfopValor}
                         onChange={(e) => setCfopValor(e.target.value)}
+                        className="h-10 rounded-xl"
                       />
                     </div>
-                    <div className="grid gap-2">
+                    <div className="grid gap-1.5">
                       <Label htmlFor="cfop-tipo">Fluxo</Label>
                       <Select value={cfopTipo} onValueChange={(v: "entrada" | "saida") => setCfopTipo(v)}>
-                        <SelectTrigger id="cfop-tipo">
+                        <SelectTrigger id="cfop-tipo" className="h-10 rounded-xl">
                           <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
@@ -655,25 +664,26 @@ function ConfigFiscais() {
                     </div>
                   </div>
 
-                  <div className="grid gap-2">
+                  <div className="grid gap-1.5">
                     <Label htmlFor="cfop-desc">Descrição Fiscal</Label>
                     <Input 
                       id="cfop-desc" 
                       placeholder="Finalidade fiscal da natureza de operação"
                       value={cfopDesc}
                       onChange={(e) => setCfopDesc(e.target.value)}
+                      className="h-10 rounded-xl"
                     />
                   </div>
                 </div>
-                <DialogFooter>
-                  <Button variant="outline" onClick={() => setCfopModalOpen(false)}>Cancelar</Button>
-                  <Button onClick={handleSalvarCFOP}>Salvar Regra</Button>
+                <DialogFooter className="gap-2">
+                  <Button variant="outline" onClick={() => setCfopModalOpen(false)} className="h-10 rounded-xl">Cancelar</Button>
+                  <Button onClick={handleSalvarCFOP} className="h-10 rounded-xl px-6 shadow-sm transition-all hover:-translate-y-px hover:shadow-md">Salvar Regra</Button>
                 </DialogFooter>
               </DialogContent>
             </Dialog>
           </div>
 
-          <Card className="overflow-hidden border-muted shadow-panel bg-card/60 backdrop-blur-sm">
+          <Card className="overflow-hidden rounded-2xl border-muted shadow-panel bg-card/60 backdrop-blur-sm">
             <div className="overflow-x-auto">
               <Table>
                 <TableHeader className="bg-muted/40">
@@ -688,23 +698,23 @@ function ConfigFiscais() {
                 <TableBody>
                   {cfops.map((c) => {
                     return (
-                      <TableRow key={c.id} className="transition-colors hover:bg-muted/30">
+                      <TableRow key={c.id} className="transition-colors hover:bg-accent/30">
                         <TableCell className="font-semibold text-foreground max-w-[200px] truncate">{c.nome}</TableCell>
-                        <TableCell className="font-mono font-bold text-primary text-sm">{c.cfop}</TableCell>
+                        <TableCell className="font-mono font-bold text-primary text-sm text-tabular">{c.cfop}</TableCell>
                         <TableCell>
                           {c.tipo === "saida" ? (
-                            <span className="inline-flex items-center rounded-full bg-primary/10 px-2 py-0.5 text-[11px] font-medium text-primary">Saída</span>
+                            <span className="inline-flex items-center rounded-full bg-primary/10 px-2.5 py-1 text-[11px] font-medium text-primary shadow-sm">Saída</span>
                           ) : (
-                            <span className="inline-flex items-center rounded-full bg-primary/10 px-2 py-0.5 text-[11px] font-medium text-primary">Entrada</span>
+                            <span className="inline-flex items-center rounded-full bg-primary/10 px-2.5 py-1 text-[11px] font-medium text-primary shadow-sm">Entrada</span>
                           )}
                         </TableCell>
                         <TableCell className="text-xs text-muted-foreground leading-relaxed max-w-[320px] truncate">{c.descricao}</TableCell>
                         <TableCell className="text-right">
                           <div className="flex justify-end gap-1">
-                            <Button size="sm" variant="ghost" className="h-8 hover:bg-muted text-muted-foreground hover:text-foreground" onClick={() => handleEditCFOP(c)}>
+                            <Button size="sm" variant="ghost" className="h-8 w-8 rounded-lg hover:bg-accent text-muted-foreground hover:text-foreground" onClick={() => handleEditCFOP(c)}>
                               <Edit2 className="h-3.5 w-3.5" />
                             </Button>
-                            <Button size="sm" variant="ghost" className="h-8 hover:bg-destructive/10 text-muted-foreground hover:text-destructive" onClick={() => setConfExcluirCfop(c)}>
+                            <Button size="sm" variant="ghost" className="h-8 w-8 rounded-lg hover:bg-destructive/10 text-muted-foreground hover:text-destructive" onClick={() => setConfExcluirCfop(c)}>
                               <Trash2 className="h-3.5 w-3.5" />
                             </Button>
                           </div>
@@ -720,18 +730,18 @@ function ConfigFiscais() {
       </Tabs>
 
       <AlertDialog open={!!confExcluirCert} onOpenChange={(v) => { if (!v) setConfExcluirCert(null); }}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Excluir certificado digital</AlertDialogTitle>
-            <AlertDialogDescription>
+        <AlertDialogContent className="rounded-2xl">
+          <AlertDialogHeader className="gap-1.5">
+            <AlertDialogTitle className="tracking-tight">Excluir certificado digital</AlertDialogTitle>
+            <AlertDialogDescription className="leading-relaxed">
               Tem certeza que deseja excluir o certificado digital ativo?
             </AlertDialogDescription>
           </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+          <AlertDialogFooter className="gap-2">
+            <AlertDialogCancel className="h-10 rounded-xl">Cancelar</AlertDialogCancel>
             <AlertDialogAction
               data-acao
-              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              className="h-10 rounded-xl bg-destructive text-destructive-foreground hover:bg-destructive/90"
               onClick={() => confExcluirCert && executarExcluirCertificado(confExcluirCert)}
             >
               Excluir
@@ -741,18 +751,18 @@ function ConfigFiscais() {
       </AlertDialog>
 
       <AlertDialog open={!!confExcluirCfop} onOpenChange={(v) => { if (!v) setConfExcluirCfop(null); }}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Excluir regra CFOP</AlertDialogTitle>
-            <AlertDialogDescription>
+        <AlertDialogContent className="rounded-2xl">
+          <AlertDialogHeader className="gap-1.5">
+            <AlertDialogTitle className="tracking-tight">Excluir regra CFOP</AlertDialogTitle>
+            <AlertDialogDescription className="leading-relaxed">
               Deseja mesmo excluir esta regra CFOP?
             </AlertDialogDescription>
           </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+          <AlertDialogFooter className="gap-2">
+            <AlertDialogCancel className="h-10 rounded-xl">Cancelar</AlertDialogCancel>
             <AlertDialogAction
               data-acao
-              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              className="h-10 rounded-xl bg-destructive text-destructive-foreground hover:bg-destructive/90"
               onClick={() => confExcluirCfop && executarExcluirCFOP(confExcluirCfop)}
             >
               Excluir
