@@ -4916,3 +4916,11 @@ Espelhado na Vercel.
   margens negativas alinhadas; abas da barra verde com raio.
 - Campos densos e DACTE intactos; paleta intacta.
 - `tsc`: 55 = baseline (zero novos); build OK.
+
+## Reverte seções do CT-e (regressão visual) (06/10)
+
+- Dono reportou textos deslocados nos cabeçalhos do formulário
+  CT-e após `4824b3a`; arquivo voltou ao estado de `9fb15ba`.
+- Lição: formulário fiscal denso não recebe polish; melhorias
+  visíveis ficam em listas, cards, filtros e navegação.
+- `tsc` 55 = baseline; build OK.
