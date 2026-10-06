@@ -15,8 +15,8 @@ import { brl } from "@/lib/format";
 export const Route = createFileRoute("/_authenticated/financeiro/conciliacao")({
   component: ConciliacaoPage,
   errorComponent: ({ error }) => (
-    <div role="alert" className="rounded-md border border-destructive/40 bg-destructive/5 p-4 text-sm text-destructive">
-      Erro: {error.message}
+    <div role="alert" className="rounded-2xl border border-destructive/40 bg-destructive/5 p-5 text-sm leading-relaxed text-destructive shadow-sm">
+      Erro: {error instanceof Error ? error.message : "erro desconhecido"}
     </div>
   ),
 });
@@ -63,32 +63,32 @@ function ConciliacaoPage() {
       />
 
       {isLoading ? (
-        <div className="space-y-2">{[...Array(3)].map((_, i) => <Skeleton key={i} className="h-14 w-full" />)}</div>
+        <div className="space-y-2.5">{[...Array(3)].map((_, i) => <Skeleton key={i} className="h-14 w-full rounded-xl" />)}</div>
       ) : !data?.length ? (
         <EmptyState
           icon={Landmark}
           title="Nenhuma conta financeira"
           description="Cadastre uma conta financeira e importe o extrato OFX para começar a conciliar."
-          action={<Button asChild><Link to="/financeiro/contas">Ir para Contas financeiras</Link></Button>}
+          action={<Button asChild className="h-10 rounded-xl px-5 shadow-sm"><Link to="/financeiro/contas">Ir para Contas financeiras</Link></Button>}
         />
       ) : (
         <>
-          <div className="mb-4 grid gap-3 sm:grid-cols-3">
-            <Card className="p-4 shadow-panel">
-              <p className="text-xs uppercase tracking-wide text-muted-foreground">Pendentes de conciliação</p>
-              <p className="mt-1 text-2xl font-semibold">{totalPendentes}</p>
+          <div className="mb-6 grid gap-4 sm:gap-5 lg:grid-cols-3">
+            <Card className="rounded-2xl p-5 shadow-panel transition-all duration-200 hover:-translate-y-1 hover:shadow-lg sm:p-6">
+              <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">Pendentes de conciliação</p>
+              <p className="mt-1.5 text-2xl font-semibold tracking-tight text-tabular">{totalPendentes}</p>
             </Card>
-            <Card className="p-4 shadow-panel">
-              <p className="text-xs uppercase tracking-wide text-muted-foreground">Contas com pendências</p>
-              <p className="mt-1 text-2xl font-semibold">{data.filter((c) => c.pendentes > 0).length}</p>
+            <Card className="rounded-2xl p-5 shadow-panel transition-all duration-200 hover:-translate-y-1 hover:shadow-lg sm:p-6">
+              <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">Contas com pendências</p>
+              <p className="mt-1.5 text-2xl font-semibold tracking-tight text-tabular">{data.filter((c) => c.pendentes > 0).length}</p>
             </Card>
-            <Card className="p-4 shadow-panel">
-              <p className="text-xs uppercase tracking-wide text-muted-foreground">Saldo total</p>
-              <p className="mt-1 text-2xl font-semibold">{brl(data.reduce((s, c) => s + Number(c.saldo_atual), 0))}</p>
+            <Card className="rounded-2xl p-5 shadow-panel transition-all duration-200 hover:-translate-y-1 hover:shadow-lg sm:p-6">
+              <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">Saldo total</p>
+              <p className="mt-1.5 text-2xl font-semibold tracking-tight text-tabular">{brl(data.reduce((s, c) => s + Number(c.saldo_atual), 0))}</p>
             </Card>
           </div>
 
-          <Card className="shadow-panel">
+          <Card className="overflow-hidden rounded-2xl shadow-panel">
             <Table>
               <TableHeader>
                 <TableRow>
@@ -101,17 +101,17 @@ function ConciliacaoPage() {
               </TableHeader>
               <TableBody>
                 {data.map((c) => (
-                  <TableRow key={c.id}>
-                    <TableCell className="font-medium">{c.nome || c.banco || "Conta"}</TableCell>
-                    <TableCell className="text-right">{brl(c.saldo_atual)}</TableCell>
-                    <TableCell className="text-right text-muted-foreground">{c.conciliadas}</TableCell>
+                  <TableRow key={c.id} className="transition-colors hover:bg-accent/30">
+                    <TableCell className="font-medium tracking-tight">{c.nome || c.banco || "Conta"}</TableCell>
+                    <TableCell className="text-right text-tabular font-medium">{brl(c.saldo_atual)}</TableCell>
+                    <TableCell className="text-right text-muted-foreground text-tabular">{c.conciliadas}</TableCell>
                     <TableCell className="text-right">
                       {c.pendentes > 0
                         ? <Badge variant="destructive">{c.pendentes}</Badge>
                         : <Badge variant="secondary">0</Badge>}
                     </TableCell>
                     <TableCell className="text-right">
-                      <Button asChild size="sm" variant="outline">
+                      <Button asChild size="sm" variant="outline" className="h-9 rounded-xl px-4 shadow-sm">
                         <Link to="/financeiro/contas" search={{ conciliar: c.id }}>
                           <Link2 className="mr-1.5 h-4 w-4" /> Conciliar
                         </Link>

@@ -24,8 +24,8 @@ import { addMonths, format } from "date-fns";
 export const Route = createFileRoute("/_authenticated/financeiro/emprestimos")({
   component: EmprestimosPage,
   errorComponent: ({ error }) => (
-    <div role="alert" className="rounded-md border border-destructive/40 bg-destructive/5 p-4 text-sm text-destructive">
-      Erro: {error.message}
+    <div role="alert" className="rounded-2xl border border-destructive/40 bg-destructive/5 p-5 text-sm leading-relaxed text-destructive shadow-sm">
+      Erro: {error instanceof Error ? error.message : "erro desconhecido"}
     </div>
   ),
 });
@@ -201,72 +201,72 @@ function EmprestimosPage() {
         title="Empréstimos e financiamentos"
         description="Controle contratos, parcelas (tabela Price), juros e amortização, e gere as contas a pagar."
       />
-      <div className="mb-3 flex flex-col gap-2 sm:flex-row sm:items-center">
+      <div className="mb-4 flex flex-col gap-3 sm:mb-6 sm:flex-row sm:items-center">
         <div className="relative flex-1">
-          <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-          <Input className="pl-8" placeholder="Buscar por descrição ou credor..." value={busca} onChange={(e) => setBusca(e.target.value)} />
+          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+          <Input className="h-10 rounded-xl pl-10 shadow-sm" placeholder="Buscar por descrição ou credor..." value={busca} onChange={(e) => setBusca(e.target.value)} />
         </div>
         <div className="flex items-center gap-2">
           <Dialog open={open} onOpenChange={(o) => { setOpen(o); if (!o) reset(); }}>
             <DialogTrigger asChild>
-              <Button><Plus className="mr-1.5 h-4 w-4" /> Novo contrato</Button>
+              <Button className="h-10 rounded-xl px-5 shadow-md transition-all hover:-translate-y-px hover:shadow-lg"><Plus className="mr-1.5 h-4 w-4" /> Novo contrato</Button>
             </DialogTrigger>
-            <DialogContent>
-              <DialogHeader><DialogTitle>Novo contrato</DialogTitle></DialogHeader>
+            <DialogContent className="max-h-[90vh] overflow-y-auto rounded-2xl sm:max-w-lg sm:inset-auto sm:left-1/2 sm:top-1/2 sm:-translate-x-1/2 sm:-translate-y-1/2 sm:h-auto sm:w-full">
+              <DialogHeader className="gap-1.5 pb-1"><DialogTitle className="tracking-tight">Novo contrato</DialogTitle></DialogHeader>
               <div className="grid gap-4">
-                <div className="grid gap-2 sm:grid-cols-2">
-                  <div className="space-y-1.5">
+                <div className="grid gap-3 sm:grid-cols-2">
+                  <div className="grid gap-1.5">
                     <Label>Tipo</Label>
                     <Select value={tipo} onValueChange={(v) => setTipo(v as typeof tipo)}>
-                      <SelectTrigger><SelectValue /></SelectTrigger>
+                      <SelectTrigger className="h-10 rounded-xl"><SelectValue /></SelectTrigger>
                       <SelectContent>
                         <SelectItem value="emprestimo">Empréstimo</SelectItem>
                         <SelectItem value="financiamento">Financiamento</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
-                  <div className="space-y-1.5">
+                  <div className="grid gap-1.5">
                     <Label>Credor</Label>
-                    <Input value={credor} onChange={(e) => setCredor(e.target.value)} placeholder="Banco / instituição" />
+                    <Input value={credor} onChange={(e) => setCredor(e.target.value)} placeholder="Banco / instituição" className="h-10 rounded-xl" />
                   </div>
                 </div>
-                <div className="space-y-1.5">
+                <div className="grid gap-1.5">
                   <Label>Descrição</Label>
-                  <Input value={descricao} onChange={(e) => setDescricao(e.target.value)} placeholder="Ex.: Capital de giro" />
+                  <Input value={descricao} onChange={(e) => setDescricao(e.target.value)} placeholder="Ex.: Capital de giro" className="h-10 rounded-xl" />
                 </div>
-                <div className="grid gap-2 sm:grid-cols-3">
-                  <div className="space-y-1.5">
+                <div className="grid gap-3 sm:grid-cols-3">
+                  <div className="grid gap-1.5">
                     <Label>Valor contratado</Label>
-                    <MoneyInput value={principal} onChange={setPrincipal} />
+                    <MoneyInput value={principal} onChange={setPrincipal} className="h-10" />
                   </div>
-                  <div className="space-y-1.5">
+                  <div className="grid gap-1.5">
                     <Label>Juros % a.m.</Label>
-                    <MoneyInput prefix="" value={taxa} onChange={setTaxa} />
+                    <MoneyInput prefix="" value={taxa} onChange={setTaxa} className="h-10" />
                   </div>
-                  <div className="space-y-1.5">
+                  <div className="grid gap-1.5">
                     <Label>Parcelas</Label>
-                    <MoneyInput prefix="" decimals={0} value={parcelas} onChange={setParcelas} />
+                    <MoneyInput prefix="" decimals={0} value={parcelas} onChange={setParcelas} className="h-10" />
                   </div>
                 </div>
-                <div className="grid gap-2 sm:grid-cols-2">
-                  <div className="space-y-1.5">
+                <div className="grid gap-3 sm:grid-cols-2">
+                  <div className="grid gap-1.5">
                     <Label>Contratação</Label>
-                    <DateInput value={contratacao} onChange={setContratacao} />
+                    <DateInput value={contratacao} onChange={setContratacao} className="h-10" />
                   </div>
-                  <div className="space-y-1.5">
+                  <div className="grid gap-1.5">
                     <Label>1º vencimento</Label>
-                    <DateInput value={primeiro} onChange={setPrimeiro} />
+                    <DateInput value={primeiro} onChange={setPrimeiro} className="h-10" />
                   </div>
                 </div>
                 {previa && (
-                  <p className="rounded-md bg-muted/50 p-3 text-sm text-muted-foreground">
+                  <p className="rounded-xl border bg-muted/50 p-3.5 text-sm leading-relaxed text-muted-foreground shadow-sm">
                     Parcela estimada: <strong className="text-foreground">{brl(previa.parcela)}</strong> ·
                     Total a pagar: <strong className="text-foreground">{brl(previa.total)}</strong>
                   </p>
                 )}
               </div>
-              <DialogFooter>
-                <Button onClick={() => criar.mutate()} disabled={criar.isPending}>
+              <DialogFooter className="gap-2">
+                <Button onClick={() => criar.mutate()} disabled={criar.isPending} className="h-10 rounded-xl px-6 shadow-sm transition-all hover:-translate-y-px hover:shadow-md">
                   {criar.isPending ? "Salvando..." : "Cadastrar"}
                 </Button>
               </DialogFooter>
@@ -276,7 +276,7 @@ function EmprestimosPage() {
       </div>
 
       {isLoading ? (
-        <div className="space-y-2">{[...Array(4)].map((_, i) => <Skeleton key={i} className="h-12 w-full" />)}</div>
+        <div className="space-y-2.5">{[...Array(4)].map((_, i) => <Skeleton key={i} className="h-12 w-full rounded-xl" />)}</div>
       ) : !lista?.length ? (
         <EmptyState
           icon={Banknote}
@@ -290,8 +290,8 @@ function EmprestimosPage() {
           description="Nada encontrado para a busca."
         />
       ) : (
-        <div className="grid gap-4 lg:grid-cols-[1fr_1.2fr]">
-          <Card className="shadow-panel">
+        <div className="grid gap-4 sm:gap-5 lg:grid-cols-[1fr_1.2fr]">
+          <Card className="overflow-hidden rounded-2xl shadow-panel">
             <Table>
               <TableHeader>
                 <TableRow>
@@ -305,18 +305,18 @@ function EmprestimosPage() {
                 {filtrados.map((e) => (
                   <TableRow
                     key={e.id}
-                    className={sel === e.id ? "bg-muted/50" : "cursor-pointer"}
+                    className={sel === e.id ? "bg-muted/50" : "cursor-pointer transition-colors hover:bg-accent/30"}
                     onClick={() => setSel(e.id)}
                   >
                     <TableCell>
-                      <div className="font-medium">{e.descricao}</div>
-                      <div className="text-xs text-muted-foreground">
+                      <div className="font-medium tracking-tight">{e.descricao}</div>
+                      <div className="mt-0.5 text-xs text-muted-foreground">
                         {e.tipo === "financiamento" ? "Financiamento" : "Empréstimo"}
                         {e.credor ? ` · ${e.credor}` : ""} · {dateBR(e.data_contratacao)}
                       </div>
                     </TableCell>
-                    <TableCell className="text-right">{brl(e.valor_principal)}</TableCell>
-                    <TableCell className="text-right text-muted-foreground">{e.parcelas}x</TableCell>
+                    <TableCell className="text-right text-tabular font-medium">{brl(e.valor_principal)}</TableCell>
+                    <TableCell className="text-right text-muted-foreground text-tabular">{e.parcelas}x</TableCell>
                     <TableCell><ChevronRight className="h-4 w-4 text-muted-foreground" /></TableCell>
                   </TableRow>
                 ))}
@@ -324,15 +324,15 @@ function EmprestimosPage() {
             </Table>
           </Card>
 
-          <Card className="shadow-panel">
+          <Card className="overflow-hidden rounded-2xl shadow-panel">
             {!emprestimoSel ? (
-              <p className="p-6 text-sm text-muted-foreground">Selecione um contrato para ver as parcelas.</p>
+              <p className="p-8 text-center text-sm leading-relaxed text-muted-foreground">Selecione um contrato para ver as parcelas.</p>
             ) : (
               <>
-                <div className="flex flex-wrap items-center justify-between gap-2 border-b border-border/60 px-4 py-3">
+                <div className="flex flex-wrap items-center justify-between gap-2 border-b border-border/60 px-5 py-3.5">
                   <div>
-                    <p className="text-sm font-semibold">{emprestimoSel.descricao}</p>
-                    <p className="text-xs text-muted-foreground">
+                    <p className="text-sm font-semibold tracking-tight">{emprestimoSel.descricao}</p>
+                    <p className="mt-0.5 text-xs text-muted-foreground">
                       {emprestimoSel.parcelas}x · {Number(emprestimoSel.taxa_juros_mensal)}% a.m.
                     </p>
                   </div>
@@ -341,10 +341,11 @@ function EmprestimosPage() {
                       size="sm" variant="outline"
                       onClick={() => gerarContasPagar.mutate(emprestimoSel.id)}
                       disabled={gerarContasPagar.isPending}
+                      className="h-9 rounded-xl px-4 shadow-sm"
                     >
                       <HandCoins className="mr-1.5 h-4 w-4" /> Gerar contas a pagar
                     </Button>
-                    <Button size="sm" variant="ghost" aria-label="Excluir contrato" onClick={() => excluir.mutate(emprestimoSel.id)}>
+                    <Button size="sm" variant="ghost" aria-label="Excluir contrato" onClick={() => excluir.mutate(emprestimoSel.id)} className="h-9 w-9 rounded-xl">
                       <Trash2 className="h-4 w-4" />
                     </Button>
                   </div>
@@ -363,7 +364,7 @@ function EmprestimosPage() {
                     </TableHeader>
                     <TableBody>
                       {parcelasSel.map((p) => (
-                        <TableRow key={p.id}>
+                        <TableRow key={p.id} className="transition-colors hover:bg-accent/30">
                           <TableCell>{p.numero}</TableCell>
                           <TableCell>{dateBR(p.data_vencimento)}</TableCell>
                           <TableCell className="text-right font-medium">{brl(p.valor)}</TableCell>

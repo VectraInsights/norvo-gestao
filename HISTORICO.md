@@ -4976,3 +4976,9 @@ Espelhado na Vercel.
 - Busca h-10, abas e tabelas com hover, diálogos centralizados
   com campos h-10 e erros em card.
 - Lógica intacta; `tsc` limpo nos tocados e `npm run build` OK.
+
+## Repaginação visível: empréstimos + conciliação (06/10)
+
+- Fecha o Financeiro: busca h-10, tabelas com hover, diálogos
+  centralizados e erros em card.
+- Lógica intacta; `tsc` limpo nos tocados e `npm run build` OK.
