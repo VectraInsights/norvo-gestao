@@ -4930,3 +4930,10 @@ Espelhado na Vercel.
 - Lista com busca h-10, botões em destaque, linhas com hover,
   logos em tile, pills e ações com respiro; diálogos em card.
 - Lógica intacta; `tsc` só baseline; build OK.
+
+## Fix: logos dos bancos cortadas (06/10)
+
+- Tile branco com respiro interno e arte em 28px (era a arte
+  colada na borda arredondada); aplicado na lista, no diálogo
+  de busca e no combobox.
+- `tsc` só baseline; build OK.

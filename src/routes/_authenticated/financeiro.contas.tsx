@@ -1053,7 +1053,9 @@ function ContasFinanceiras() {
                     {(() => {
                       const b = detectBancoByNome(c.banco);
                       return b ? (
-                        <img src={b.logo} alt={b.nome} className="h-11 w-11 rounded-xl object-contain bg-white shadow-sm ring-1 ring-border shrink-0" />
+                        <div className="grid h-11 w-11 shrink-0 place-items-center rounded-xl bg-white shadow-sm ring-1 ring-border">
+                          <img src={b.logo} alt={b.nome} className="h-7 w-7 object-contain" />
+                        </div>
                       ) : (
                         <div className="h-11 w-11 rounded-xl bg-muted grid place-items-center shrink-0 shadow-sm"><Banknote className="h-5 w-5 text-muted-foreground" /></div>
                       );
@@ -1878,7 +1880,9 @@ function BuscarLancamentoDialog({ open, onClose, tx, lancamentos, value, onConfi
         <div className="flex min-h-0 flex-1 flex-col gap-3 overflow-hidden">
           <div className="flex shrink-0 items-center gap-3 rounded-lg border bg-primary/[0.04] p-3">
             {logoBanco ? (
-              <img src={logoBanco} alt="" className="h-11 w-11 rounded-md object-contain bg-white ring-1 ring-border shrink-0" />
+              <div className="grid h-11 w-11 shrink-0 place-items-center rounded-xl bg-white shadow-sm ring-1 ring-border">
+                <img src={logoBanco} alt="" className="h-7 w-7 object-contain" />
+              </div>
             ) : (
               <div className="grid h-11 w-11 shrink-0 place-items-center rounded-md bg-primary text-lg font-bold text-primary-foreground">B</div>
             )}
