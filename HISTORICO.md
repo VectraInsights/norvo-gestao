@@ -4958,3 +4958,9 @@ Espelhado na Vercel.
 - Abas, busca h-10, botões em destaque; tabela com hover, ações
   maiores, paginação e diálogos em card (vale para pagar).
 - Lógica intacta; `tsc` só baseline; build OK.
+
+## Repaginação visível: extrato + fluxo (06/10)
+
+- Extrato com KPIs em cards com tile, filtros h-10, tabela com
+  hover e erros em card; fluxo com card e estados com respiro.
+- Lógica intacta; `tsc` limpo nos tocados e `npm run build` OK.

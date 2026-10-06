@@ -28,9 +28,9 @@ export const Route = createFileRoute("/_authenticated/financeiro/extrato")({
     ],
   }),
   errorComponent: ({ error }) => (
-    <div className="p-6 text-sm text-destructive" role="alert">Falha: {error.message}</div>
+    <div className="rounded-2xl border border-destructive/40 bg-destructive/5 p-5 text-sm leading-relaxed text-destructive shadow-sm" role="alert">Falha: {error instanceof Error ? error.message : "erro desconhecido"}</div>
   ),
-  notFoundComponent: () => <div className="p-6 text-sm">Página não encontrada.</div>,
+  notFoundComponent: () => <div className="rounded-2xl border bg-card p-8 text-center text-sm text-muted-foreground shadow-panel">Página não encontrada.</div>,
 });
 
 const brl = (n: number) => Number(n).toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
@@ -197,41 +197,47 @@ function ExtratoPage() {
   };
 
   return (
-    <div className="p-6">
+    <div className="space-y-6">
       <PageHeader
         eyebrow="Financeiro"
         title="Extrato de movimentações"
         description="Consulte entradas e saídas por período, conta financeira, categoria e centro de custo."
       />
 
-      <div className="mb-4 grid gap-3 sm:grid-cols-3">
-        <Card className="flex items-center gap-3 p-4">
-          <ArrowDownCircle className="h-8 w-8 text-success" />
-          <div>
-            <p className="text-xs text-muted-foreground">Entradas</p>
-            <p className="text-lg font-semibold text-tabular">{brl(entradas)}</p>
+      <div className="grid gap-4 sm:gap-5 lg:grid-cols-3">
+        <Card className="flex items-center gap-4 rounded-2xl p-5 shadow-panel transition-all duration-200 hover:-translate-y-1 hover:shadow-lg sm:p-6">
+          <span className="grid h-12 w-12 shrink-0 place-items-center rounded-2xl bg-success/10">
+            <ArrowDownCircle className="h-6 w-6 text-success" />
+          </span>
+          <div className="min-w-0">
+            <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">Entradas</p>
+            <p className="mt-1 truncate text-xl font-semibold text-tabular">{brl(entradas)}</p>
           </div>
         </Card>
-        <Card className="flex items-center gap-3 p-4">
-          <ArrowUpCircle className="h-8 w-8 text-destructive" />
-          <div>
-            <p className="text-xs text-muted-foreground">Saídas</p>
-            <p className="text-lg font-semibold text-tabular">{brl(saidas)}</p>
+        <Card className="flex items-center gap-4 rounded-2xl p-5 shadow-panel transition-all duration-200 hover:-translate-y-1 hover:shadow-lg sm:p-6">
+          <span className="grid h-12 w-12 shrink-0 place-items-center rounded-2xl bg-destructive/10">
+            <ArrowUpCircle className="h-6 w-6 text-destructive" />
+          </span>
+          <div className="min-w-0">
+            <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">Saídas</p>
+            <p className="mt-1 truncate text-xl font-semibold text-tabular">{brl(saidas)}</p>
           </div>
         </Card>
-        <Card className="flex items-center gap-3 p-4">
-          <Scale className="h-8 w-8 text-primary" />
-          <div>
-            <p className="text-xs text-muted-foreground">Resultado do período</p>
-            <p className="text-lg font-semibold text-tabular">{brl(entradas - saidas)}</p>
+        <Card className="flex items-center gap-4 rounded-2xl p-5 shadow-panel transition-all duration-200 hover:-translate-y-1 hover:shadow-lg sm:p-6">
+          <span className="grid h-12 w-12 shrink-0 place-items-center rounded-2xl bg-primary/10">
+            <Scale className="h-6 w-6 text-primary" />
+          </span>
+          <div className="min-w-0">
+            <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">Resultado do período</p>
+            <p className="mt-1 truncate text-xl font-semibold text-tabular">{brl(entradas - saidas)}</p>
           </div>
         </Card>
       </div>
 
-      <div className="mb-3 flex flex-wrap items-center gap-2">
+      <div className="flex flex-wrap items-center gap-2.5">
         <PeriodoFilter value={periodo} onChange={setPeriodo} />
         <Select value={base} onValueChange={(v) => setBase(v as typeof base)}>
-          <SelectTrigger className="h-9 w-[190px]"><SelectValue /></SelectTrigger>
+          <SelectTrigger className="h-10 w-[190px] rounded-xl shadow-sm"><SelectValue /></SelectTrigger>
           <SelectContent>
             <SelectItem value="pagamento">Data de pagamento</SelectItem>
             <SelectItem value="vencimento">Data de vencimento</SelectItem>
@@ -239,51 +245,51 @@ function ExtratoPage() {
           </SelectContent>
         </Select>
         <Select value={somenteQuitados} onValueChange={(v) => setSomenteQuitados(v as typeof somenteQuitados)}>
-          <SelectTrigger className="h-9 w-[190px]"><SelectValue /></SelectTrigger>
+          <SelectTrigger className="h-10 w-[190px] rounded-xl shadow-sm"><SelectValue /></SelectTrigger>
           <SelectContent>
             <SelectItem value="quitados">Somente realizados</SelectItem>
             <SelectItem value="todos">Realizados e previstos</SelectItem>
           </SelectContent>
         </Select>
         <Select value={tipo} onValueChange={(v) => setTipo(v as typeof tipo)}>
-          <SelectTrigger className="h-9 w-[150px]"><SelectValue /></SelectTrigger>
+          <SelectTrigger className="h-10 w-[150px] rounded-xl shadow-sm"><SelectValue /></SelectTrigger>
           <SelectContent>
             <SelectItem value="todos">Todos os tipos</SelectItem>
             <SelectItem value="receber">Entradas</SelectItem>
             <SelectItem value="pagar">Saídas</SelectItem>
           </SelectContent>
         </Select>
-        <Combobox value={contaId} onChange={setContaId} options={[{ value: "todas", label: "Todas as contas" }, ...((contas ?? []).map((c) => ({ value: c.id, label: c.nome ?? "" })) )]} placeholder="Conta" searchPlaceholder="Digite para buscar..." emptyText="Nenhum item encontrado." />
-        <Combobox value={categoriaId} onChange={setCategoriaId} options={[{ value: "todas", label: "Todas as categorias" }, ...((categorias ?? []).map((c) => ({ value: c.id, label: c.nome ?? "" })) )]} placeholder="Categoria" searchPlaceholder="Digite para buscar..." emptyText="Nenhum item encontrado." />
-        <Combobox value={centroId} onChange={setCentroId} options={[{ value: "todos", label: "Todos os centros" }, ...((centros ?? []).map((c) => ({ value: c.id, label: c.nome ?? "" })) )]} placeholder="Centro de custo" searchPlaceholder="Digite para buscar..." emptyText="Nenhum item encontrado." />
+        <Combobox value={contaId} onChange={setContaId} options={[{ value: "todas", label: "Todas as contas" }, ...((contas ?? []).map((c) => ({ value: c.id, label: c.nome ?? "" })) )]} placeholder="Conta" searchPlaceholder="Digite para buscar..." emptyText="Nenhum item encontrado." className="h-10" />
+        <Combobox value={categoriaId} onChange={setCategoriaId} options={[{ value: "todas", label: "Todas as categorias" }, ...((categorias ?? []).map((c) => ({ value: c.id, label: c.nome ?? "" })) )]} placeholder="Categoria" searchPlaceholder="Digite para buscar..." emptyText="Nenhum item encontrado." className="h-10" />
+        <Combobox value={centroId} onChange={setCentroId} options={[{ value: "todos", label: "Todos os centros" }, ...((centros ?? []).map((c) => ({ value: c.id, label: c.nome ?? "" })) )]} placeholder="Centro de custo" searchPlaceholder="Digite para buscar..." emptyText="Nenhum item encontrado." className="h-10" />
         <div className="relative ml-auto w-full sm:w-72">
-          <Search className="pointer-events-none absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-          <Input value={busca} onChange={(e) => setBusca(e.target.value)} placeholder="Pesquisar…" className="h-9 pl-8 pr-8" />
+          <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+          <Input value={busca} onChange={(e) => setBusca(e.target.value)} placeholder="Pesquisar…" className="h-10 rounded-xl pl-10 pr-10 shadow-sm" />
           {busca && (
             <button type="button" onClick={() => setBusca("")} aria-label="Limpar busca"
-              className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground">
+              className="absolute right-2.5 top-1/2 grid h-6 w-6 -translate-y-1/2 place-items-center rounded-lg text-muted-foreground transition-colors hover:bg-accent hover:text-foreground">
               <X className="h-4 w-4" />
             </button>
           )}
         </div>
         <div className="flex items-center gap-2">
-          <Button variant="outline" size="sm">
+          <Button variant="outline" size="sm" className="h-10 rounded-xl px-4 shadow-sm">
             Adicionar trilha de auditoria
           </Button>
-          <Button variant="outline" size="sm" onClick={exportarCsv} disabled={!linhas.length}>
-            <Download className="mr-1 h-4 w-4" />Exportar CSV
+          <Button variant="outline" size="sm" onClick={exportarCsv} disabled={!linhas.length} className="h-10 rounded-xl px-4 shadow-sm transition-all hover:-translate-y-px hover:shadow-md">
+            <Download className="mr-1.5 h-4 w-4" />Exportar CSV
           </Button>
         </div>
       </div>
 
       {isLoading ? (
-        <div className="space-y-2" aria-label="Carregando">
-          {Array.from({ length: 5 }).map((_, i) => <div key={i} className="h-12 animate-pulse rounded-md bg-muted/30" />)}
+        <div className="space-y-2.5" aria-label="Carregando">
+          {Array.from({ length: 5 }).map((_, i) => <div key={i} className="h-12 animate-pulse rounded-xl bg-muted/30" />)}
         </div>
       ) : !linhas.length ? (
         <EmptyState icon={ListTree} title="Nenhuma movimentação no período" description="Ajuste os filtros acima para ampliar a consulta." />
       ) : (
-        <Card className="overflow-x-auto shadow-panel">
+        <Card className="overflow-x-auto rounded-2xl shadow-panel">
           <Table>
             <TableHeader>
               <TableRow>
@@ -301,7 +307,7 @@ function ExtratoPage() {
             </TableHeader>
             <TableBody>
               {linhas.map(({ m, assinado, saldo }) => (
-                <TableRow key={m.id}>
+                <TableRow key={m.id} className="transition-colors hover:bg-accent/30">
                   <TableCell className="text-tabular whitespace-nowrap">{format(parseDia(dataRef(m)), "dd/MM/yyyy")}</TableCell>
                   <TableCell className="font-medium">
                     {m.descricao}

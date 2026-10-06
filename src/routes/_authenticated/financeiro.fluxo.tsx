@@ -69,14 +69,14 @@ function FluxoCaixa() {
         title="Fluxo de caixa"
         description="Projeção de entradas e saídas dos próximos 30 dias."
       />
-      <Card className="shadow-panel">
-        <CardContent className="p-6">
+      <Card className="rounded-2xl shadow-panel">
+        <CardContent className="p-6 sm:p-8">
           {error ? (
-            <p className="text-sm text-destructive">Falha ao carregar fluxo: {(error as Error).message}</p>
+            <p className="rounded-xl border border-destructive/30 bg-destructive/5 px-4 py-3 text-sm leading-relaxed text-destructive">Falha ao carregar fluxo: {(error as Error).message}</p>
           ) : isLoading || !data ? (
-            <div className="h-80 animate-pulse rounded-md bg-muted/30" aria-label="Carregando gráfico" />
+            <div className="h-80 animate-pulse rounded-2xl bg-muted/30" aria-label="Carregando gráfico" />
           ) : (
-            <Suspense fallback={<div className="h-80 animate-pulse rounded-md bg-muted/30" />}>
+            <Suspense fallback={<div className="h-80 animate-pulse rounded-2xl bg-muted/30" />}>
               <FluxoChart data={data} />
             </Suspense>
           )}
@@ -86,10 +86,10 @@ function FluxoCaixa() {
   );
 }
 
-function FluxoError({ error }: { error: Error }) {
+function FluxoError({ error }: { error: unknown }) {
   return (
-    <div className="p-6 text-sm text-destructive" role="alert">
-      Não foi possível carregar o fluxo de caixa: {error.message}
+    <div className="rounded-2xl border border-destructive/40 bg-destructive/5 p-5 text-sm leading-relaxed text-destructive shadow-sm" role="alert">
+      Não foi possível carregar o fluxo de caixa: {error instanceof Error ? error.message : "erro desconhecido"}
     </div>
   );
 }
