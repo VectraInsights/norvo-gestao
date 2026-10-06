@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useMemo, useState } from "react";
+import { Fragment, useMemo, useState } from "react";
 import { PageHeader } from "@/components/erp/page-header";
 import { EmptyState } from "@/components/erp/empty-state";
 import { Card } from "@/components/ui/card";
@@ -22,7 +22,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Plus, Pencil, Trash2, FolderCog, Loader2, Search, PlusCircle } from "lucide-react";
+import { Plus, Pencil, Trash2, FolderCog, Loader2, Search, PlusCircle, ChevronRight } from "lucide-react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useEmpresaAtual } from "@/hooks/use-empresa";
@@ -117,7 +117,15 @@ function CadastrosPage() {
     onError: (e: Error) => toast.error(e.message),
   });
 
-  const pais = (categorias ?? []).filter((c) => !c.parent_id);
+  const [expandCat, setExpandCat] = useState<Set<string>>(new Set());
+  const toggleCat = (id: string) => {
+    setExpandCat((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  };
   const filtrarTipo = (tipo: "pagar" | "receber") => {
     const q = busca.trim().toLowerCase();
     const porTipo = (categorias ?? []).filter((c) => c.tipo === tipo);
@@ -233,50 +241,124 @@ function CadastrosPage() {
               {([
                 { tipo: "receber", titulo: "Receitas", lista: receitasFiltradas },
                 { tipo: "pagar", titulo: "Despesas", lista: despesasFiltradas },
-              ] as const).map((col) => (
+              ] as const).map((col) => {
+                const emBusca = busca.trim() !== "";
+                const pais = col.lista.filter((c) => !c.parent_id);
+                const filhosDe = new Map<string, typeof col.lista>();
+                for (const c of col.lista) {
+                  if (!c.parent_id) continue;
+                  if (!filhosDe.has(c.parent_id)) filhosDe.set(c.parent_id, []);
+                  filhosDe.get(c.parent_id)!.push(c);
+                }
+                const idsPais = new Set(pais.map((p) => p.id));
+                const orfas = col.lista.filter((c) => c.parent_id && !idsPais.has(c.parent_id));
+                const acoes = (c: (typeof col.lista)[number]) => (
+                  <div className="flex items-center justify-end gap-1">
+                    {!c.parent_id && (
+                      <Button variant="ghost" size="icon" aria-label="Cadastrar subcategoria" title="Cadastrar subcategoria" className="h-8 w-8 rounded-lg"
+                        onClick={(e) => { e.stopPropagation(); setCatForm({ nome: "", tipo: c.tipo, parent_id: c.id }); setCatOpen(true); }}>
+                        <PlusCircle className="h-4 w-4" />
+                      </Button>
+                    )}
+                    <Button variant="ghost" size="icon" aria-label="Editar categoria" title="Editar categoria" className="h-8 w-8 rounded-lg"
+                      onClick={(e) => { e.stopPropagation(); setCatForm({ id: c.id, nome: c.nome, tipo: c.tipo, parent_id: c.parent_id ?? "none" }); setCatOpen(true); }}>
+                      <Pencil className="h-4 w-4" />
+                    </Button>
+                    <Button variant="ghost" size="icon" aria-label="Remover categoria" title="Remover categoria" className="h-8 w-8 rounded-lg text-destructive"
+                      onClick={(e) => { e.stopPropagation(); setConfCat(c); }}>
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  </div>
+                );
+                return (
                 <Card key={col.tipo} className="overflow-hidden rounded-2xl shadow-panel">
-                  <div className="flex items-center justify-between gap-2 border-b border-border/60 px-4 py-3">
+                  <div className="flex items-center justify-between gap-2 border-b border-border/60 bg-muted/40 px-4 py-3">
                     <div className="flex items-center gap-2">
                       <span className="text-sm font-semibold tracking-tight">{col.titulo}</span>
                       <Badge variant="secondary">{col.lista.length}</Badge>
                     </div>
                     <Button size="sm" onClick={() => { setCatForm({ nome: "", tipo: col.tipo, parent_id: "none" }); setCatOpen(true); }} className="h-8 rounded-lg px-3 text-xs shadow-sm">
-                      <Plus className="mr-1 h-3.5 w-3.5" />Nova
+                      <Plus className="mr-1 h-3.5 w-3.5" />Nova categoria
                     </Button>
                   </div>
                   {col.lista.length === 0 ? (
                     <p className="px-4 py-8 text-center text-sm text-muted-foreground">
                       {busca ? "Nada encontrado para a busca." : `Nenhuma categoria de ${col.tipo === "pagar" ? "despesa" : "receita"}.`}
                     </p>
-                  ) : (
+                  ) : emBusca ? (
                     <Table>
                       <TableBody>
                         {col.lista.map((c) => (
                           <TableRow key={c.id} className="transition-colors hover:bg-accent/30">
-                            <TableCell className={c.parent_id ? "pl-8 text-muted-foreground" : "font-medium"}>{c.nome}</TableCell>
-                            <TableCell className="w-28">
-                              <div className="flex items-center justify-end gap-1">
-                                <Button variant="ghost" size="icon" aria-label="Cadastrar subcategoria" title="Cadastrar subcategoria" className="h-8 w-8 rounded-lg"
-                                  onClick={() => { setCatForm({ nome: "", tipo: c.tipo, parent_id: c.id }); setCatOpen(true); }}>
-                                  <PlusCircle className="h-4 w-4" />
-                                </Button>
-                                <Button variant="ghost" size="icon" aria-label="Editar categoria" title="Editar categoria" className="h-8 w-8 rounded-lg"
-                                  onClick={() => { setCatForm({ id: c.id, nome: c.nome, tipo: c.tipo, parent_id: c.parent_id ?? "none" }); setCatOpen(true); }}>
-                                  <Pencil className="h-4 w-4" />
-                                </Button>
-                                <Button variant="ghost" size="icon" aria-label="Remover categoria" title="Remover categoria" className="h-8 w-8 rounded-lg text-destructive"
-                                  onClick={() => setConfCat(c)}>
-                                  <Trash2 className="h-4 w-4" />
-                                </Button>
-                              </div>
+                            <TableCell className={c.parent_id ? "text-muted-foreground" : "font-medium"}>
+                              <span className="flex items-center gap-2">
+                                {c.parent_id && <span className="h-4 w-1 shrink-0 rounded-full bg-primary/30" />}
+                                {c.nome}
+                              </span>
                             </TableCell>
+                            <TableCell className="w-28">{acoes(c)}</TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  ) : (
+                    <Table>
+                      <TableBody>
+                        {pais.map((p) => {
+                          const filhos = filhosDe.get(p.id) ?? [];
+                          const aberto = expandCat.has(p.id);
+                          return (
+                            <Fragment key={p.id}>
+                              <TableRow
+                                className="cursor-pointer bg-muted/40 transition-colors hover:bg-muted/60"
+                                onClick={() => filhos.length > 0 && toggleCat(p.id)}
+                              >
+                                <TableCell className="font-medium">
+                                  <span className="flex items-center gap-1.5">
+                                    {filhos.length > 0 ? (
+                                      <ChevronRight className={`h-4 w-4 shrink-0 text-muted-foreground transition-transform ${aberto ? "rotate-90" : ""}`} />
+                                    ) : (
+                                      <span className="w-4 shrink-0" />
+                                    )}
+                                    {p.nome}
+                                    {filhos.length > 0 && (
+                                      <Badge variant="secondary" className="ml-1">{filhos.length}</Badge>
+                                    )}
+                                  </span>
+                                </TableCell>
+                                <TableCell className="w-28">{acoes(p)}</TableCell>
+                              </TableRow>
+                              {aberto && filhos.map((f) => (
+                                <TableRow key={f.id} className="bg-background transition-colors hover:bg-accent/30">
+                                  <TableCell className="text-muted-foreground">
+                                    <span className="flex items-center gap-2 pl-6">
+                                      <span className="h-4 w-1 shrink-0 rounded-full bg-primary/30" />
+                                      {f.nome}
+                                    </span>
+                                  </TableCell>
+                                  <TableCell className="w-28">{acoes(f)}</TableCell>
+                                </TableRow>
+                              ))}
+                            </Fragment>
+                          );
+                        })}
+                        {orfas.map((c) => (
+                          <TableRow key={c.id} className="bg-background transition-colors hover:bg-accent/30">
+                            <TableCell className="text-muted-foreground">
+                              <span className="flex items-center gap-2">
+                                <span className="h-4 w-1 shrink-0 rounded-full bg-primary/30" />
+                                {c.nome}
+                              </span>
+                            </TableCell>
+                            <TableCell className="w-28">{acoes(c)}</TableCell>
                           </TableRow>
                         ))}
                       </TableBody>
                     </Table>
                   )}
                 </Card>
-              ))}
+                );
+              })}
             </div>
           )}
         </TabsContent>

@@ -4996,3 +4996,10 @@ Espelhado na Vercel.
 - Receitas e Despesas em colunas simultâneas, cada uma com
   contador e botão Nova; sem abas nem coluna Tipo.
 - `tsc` limpo nos tocados e `npm run build` OK.
+
+## Categorias colapsáveis (06/10)
+
+- Botão "Nova categoria"; subs colapsadas abrindo no clique com
+  chevron e contador; pai com fundo próprio e sub com barra de
+  destaque; busca mostra tudo expandido.
+- `tsc` limpo nos tocados e `npm run build` OK.
