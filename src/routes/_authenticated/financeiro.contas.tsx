@@ -790,19 +790,19 @@ function ContasFinanceiras() {
         />
       ) : (
       <>
-      <div className="mb-3 flex flex-col gap-2 sm:flex-row sm:items-center">
+      <div className="mb-4 flex flex-col gap-3 sm:mb-6 sm:flex-row sm:items-center">
         <div className="relative flex-1">
-          <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-          <Input className="pl-8" placeholder="Buscar por nome, banco, agência ou conta..." value={busca} onChange={(e) => setBusca(e.target.value)} />
+          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+          <Input className="h-10 rounded-xl pl-10 shadow-sm" placeholder="Buscar por nome, banco, agência ou conta..." value={busca} onChange={(e) => setBusca(e.target.value)} />
         </div>
         <div className="flex items-center gap-2">
-          <div className="flex items-center gap-3">
-            <Button variant="outline" size="sm" onClick={() => setTrilhaOpen(true)}>
+          <div className="flex items-center gap-2.5">
+            <Button variant="outline" size="sm" onClick={() => setTrilhaOpen(true)} className="h-10 rounded-xl px-4 shadow-sm">
               Trilha de auditoria
             </Button>
 
             <Dialog open={open} onOpenChange={(v) => { if (!criar.isPending) { setOpen(v); if (!v) resetWizard(); } }}>
-              <DialogTrigger asChild><Button><Plus className="mr-1 h-4 w-4" />Nova conta</Button></DialogTrigger>
+              <DialogTrigger asChild><Button className="h-10 rounded-xl px-5 shadow-md transition-all hover:-translate-y-px hover:shadow-lg"><Plus className="mr-1.5 h-4 w-4" />Nova conta</Button></DialogTrigger>
               <DialogContent className="max-h-[90vh] overflow-y-auto">
                 <DialogHeader><DialogTitle>{editandoId ? "Editar conta financeira" : "Cadastrar conta financeira"}</DialogTitle></DialogHeader>
 
@@ -1037,7 +1037,7 @@ function ContasFinanceiras() {
       {!filtrados?.length ? (
         <EmptyState icon={Banknote} title="Sem contas financeiras" description={busca ? "Nada encontrado para a busca." : "Cadastre suas contas para acompanhar saldos e realizar conciliação."} />
       ) : (
-        <Card className="overflow-hidden bg-primary/[0.04] shadow-panel">
+        <Card className="overflow-hidden rounded-2xl bg-primary/[0.04] shadow-panel">
           <Table className="[&_td]:py-3 [&_th]:py-3">
             <TableHeader><TableRow>
               <TableHead className="text-[13px]">Banco</TableHead><TableHead className="text-[13px]">Nome da conta</TableHead><TableHead className="text-[13px]">Tipo de conta</TableHead>
@@ -1048,32 +1048,32 @@ function ContasFinanceiras() {
               {filtrados.map((c) => {
                 const pend = pendPorConta.get(c.id) ?? 0;
                 return (
-                <TableRow key={c.id} className="cursor-pointer text-[15px]" onClick={() => { setDetalheTab("pendentes"); setDetalheId(c.id); }}>
+                <TableRow key={c.id} className="cursor-pointer text-[15px] transition-colors hover:bg-accent/30" onClick={() => { setDetalheTab("pendentes"); setDetalheId(c.id); }}>
                   <TableCell>
                     {(() => {
                       const b = detectBancoByNome(c.banco);
                       return b ? (
-                        <img src={b.logo} alt={b.nome} className="h-10 w-10 rounded object-contain bg-white ring-1 ring-border shrink-0" />
+                        <img src={b.logo} alt={b.nome} className="h-11 w-11 rounded-xl object-contain bg-white shadow-sm ring-1 ring-border shrink-0" />
                       ) : (
-                        <div className="h-10 w-10 rounded bg-muted grid place-items-center shrink-0"><Banknote className="h-5 w-5 text-muted-foreground" /></div>
+                        <div className="h-11 w-11 rounded-xl bg-muted grid place-items-center shrink-0 shadow-sm"><Banknote className="h-5 w-5 text-muted-foreground" /></div>
                       );
                     })()}
                   </TableCell>
                   <TableCell>
-                    <div className="font-semibold text-foreground">{c.nome ?? c.banco ?? "—"}</div>
+                    <div className="font-semibold tracking-tight text-foreground">{c.nome ?? c.banco ?? "—"}</div>
                   </TableCell>
                   <TableCell><Badge variant="secondary">{TIPO_LABEL[c.tipo]}</Badge></TableCell>
                   <TableCell onClick={(e) => e.stopPropagation()}>
                     <button
-                      className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${pend > 0 ? "bg-warning/15 text-warning-foreground" : "bg-success/10 text-success"}`}
+                      className={`inline-flex items-center rounded-full px-2.5 py-1 text-xs font-medium shadow-sm transition-all hover:-translate-y-px hover:shadow-md ${pend > 0 ? "bg-warning/15 text-warning-foreground" : "bg-success/10 text-success"}`}
                       onClick={() => { setDetalheTab("pendentes"); setDetalheId(c.id); }}
                     >
                       {pend > 0 ? `${pend} pendente(s)` : "Sem pendências"}
                     </button>
                   </TableCell>
                   <TableCell onClick={(e) => e.stopPropagation()}>
-                    <Button variant="ghost" size="sm" onClick={() => triggerUpload(c.id)}>
-                      <Upload className="mr-1 h-3 w-3" />Importar
+                    <Button variant="ghost" size="sm" onClick={() => triggerUpload(c.id)} className="h-8 rounded-lg px-3">
+                      <Upload className="mr-1.5 h-3 w-3" />Importar
                     </Button>
                   </TableCell>
                   <TableCell className="text-center" onClick={(e) => e.stopPropagation()}>
@@ -1084,13 +1084,13 @@ function ContasFinanceiras() {
                     />
                   </TableCell>
                   <TableCell className="text-right whitespace-nowrap" onClick={(e) => e.stopPropagation()}>
-                    <Button variant="ghost" size="sm" onClick={() => void abrirEdicao(c)}>
-                      <Pencil className="mr-1 h-3 w-3" />Editar
+                    <Button variant="ghost" size="sm" onClick={() => void abrirEdicao(c)} className="h-8 rounded-lg px-3">
+                      <Pencil className="mr-1.5 h-3 w-3" />Editar
                     </Button>
-                    <Button variant="ghost" size="sm" className="text-destructive hover:text-destructive"
+                    <Button variant="ghost" size="sm" className="h-8 rounded-lg px-3 text-destructive hover:text-destructive"
                       disabled={excluir.isPending}
                       onClick={() => setConfConta(c)}>
-                      <Trash2 className="mr-1 h-3 w-3" />Excluir
+                      <Trash2 className="mr-1.5 h-3 w-3" />Excluir
                     </Button>
                   </TableCell>
                 </TableRow>
@@ -1113,18 +1113,18 @@ function ContasFinanceiras() {
       />
 
       <AlertDialog open={!!confConta} onOpenChange={(v) => { if (!v) setConfConta(null); }}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Excluir conta</AlertDialogTitle>
-            <AlertDialogDescription>
+        <AlertDialogContent className="rounded-2xl">
+          <AlertDialogHeader className="gap-1.5">
+            <AlertDialogTitle className="tracking-tight">Excluir conta</AlertDialogTitle>
+            <AlertDialogDescription className="leading-relaxed">
               {confConta ? `Excluir a conta "${confConta.nome ?? confConta.banco}"? Extratos importados serão apagados e lançamentos vinculados ficarão sem conta.` : ""}
             </AlertDialogDescription>
           </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+          <AlertDialogFooter className="gap-2">
+            <AlertDialogCancel className="h-10 rounded-xl">Cancelar</AlertDialogCancel>
             <AlertDialogAction
               data-acao
-              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              className="h-10 rounded-xl bg-destructive text-destructive-foreground hover:bg-destructive/90"
               onClick={() => { if (confConta) { excluir.mutate(confConta.id); if (confConta.id === detalheId) setDetalheId(null); } setConfConta(null); }}
             >
               Excluir
@@ -1134,21 +1134,21 @@ function ContasFinanceiras() {
       </AlertDialog>
 
       <Dialog open={trilhaOpen} onOpenChange={setTrilhaOpen}>
-        <DialogContent className="max-h-[85vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle>Trilha de auditoria — Contas financeiras</DialogTitle>
+        <DialogContent className="max-h-[85vh] overflow-y-auto rounded-2xl sm:max-w-lg">
+          <DialogHeader className="gap-1.5 pb-1">
+            <DialogTitle className="tracking-tight">Trilha de auditoria — Contas financeiras</DialogTitle>
           </DialogHeader>
           {trilhaQuery.isLoading ? (
             <p className="text-sm text-muted-foreground py-6 text-center">Carregando...</p>
           ) : trilhaQuery.isError ? (
             <p className="text-sm text-muted-foreground py-6 text-center">Trilha indisponível no momento.</p>
           ) : (trilhaQuery.data ?? []).length === 0 ? (
-            <p className="text-sm text-muted-foreground py-6 text-center">Nenhum evento registrado ainda. Criar, editar, excluir ou definir padrão gera registros aqui.</p>
+            <p className="text-sm leading-relaxed text-muted-foreground py-6 text-center">Nenhum evento registrado ainda. Criar, editar, excluir ou definir padrão gera registros aqui.</p>
           ) : (
-            <div className="divide-y divide-border">
+            <div className="divide-y divide-border/60">
               {(trilhaQuery.data ?? []).map((ev: any) => (
-                <div key={ev.id} className="flex items-start gap-3 py-2.5">
-                  <span className={`mt-0.5 inline-flex shrink-0 items-center rounded-full px-2 py-0.5 text-[11px] font-medium ${
+                <div key={ev.id} className="flex items-start gap-3 rounded-lg px-2 py-2.5 transition-colors hover:bg-accent/40">
+                  <span className={`mt-0.5 inline-flex shrink-0 items-center rounded-full px-2.5 py-1 text-[11px] font-medium shadow-sm ${
                     ev.acao === "excluir" ? "bg-destructive/10 text-destructive"
                     : ev.acao === "alterar" ? "bg-primary/10 text-primary"
                     : ev.acao === "padrao" ? "bg-warning/15 text-warning-foreground"
@@ -1158,7 +1158,7 @@ function ContasFinanceiras() {
                   </span>
                   <div className="min-w-0 flex-1">
                     <p className="text-sm text-foreground">{ev.detalhes?.descricao || "—"}</p>
-                    <p className="text-xs text-muted-foreground">
+                    <p className="mt-0.5 text-xs text-muted-foreground">
                       {ev.detalhes?.user_nome || ev.detalhes?.user_email || "—"}
                       {" · "}
                       {ev.created_at ? new Date(ev.created_at).toLocaleString("pt-BR") : ""}
@@ -1172,17 +1172,18 @@ function ContasFinanceiras() {
       </Dialog>
 
       <AlertDialog open={!!confImport} onOpenChange={(v) => { if (!v) setConfImport(null); }}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Confirmar importação</AlertDialogTitle>
-            <AlertDialogDescription>
+        <AlertDialogContent className="rounded-2xl">
+          <AlertDialogHeader className="gap-1.5">
+            <AlertDialogTitle className="tracking-tight">Confirmar importação</AlertDialogTitle>
+            <AlertDialogDescription className="whitespace-pre-line leading-relaxed">
               {confImport ? `Este OFX parece ser de outra conta:\n\n• ${confImport.problemas.join("\n• ")}\n\nDeseja importar mesmo assim?` : ""}
             </AlertDialogDescription>
           </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel onClick={() => toast.warning("Importação cancelada")}>Cancelar</AlertDialogCancel>
+          <AlertDialogFooter className="gap-2">
+            <AlertDialogCancel onClick={() => toast.warning("Importação cancelada")} className="h-10 rounded-xl">Cancelar</AlertDialogCancel>
             <AlertDialogAction
               data-acao
+              className="h-10 rounded-xl px-5 shadow-sm transition-all hover:-translate-y-px hover:shadow-md"
               onClick={async () => {
                 if (!confImport) return;
                 const { rows, contaId } = confImport;

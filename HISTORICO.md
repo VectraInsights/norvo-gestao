@@ -4924,3 +4924,9 @@ Espelhado na Vercel.
 - Lição: formulário fiscal denso não recebe polish; melhorias
   visíveis ficam em listas, cards, filtros e navegação.
 - `tsc` 55 = baseline; build OK.
+
+## Repaginação visível: financeiro.contas lista (06/10)
+
+- Lista com busca h-10, botões em destaque, linhas com hover,
+  logos em tile, pills e ações com respiro; diálogos em card.
+- Lógica intacta; `tsc` só baseline; build OK.
