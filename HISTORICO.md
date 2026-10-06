@@ -4896,3 +4896,9 @@ Espelhado na Vercel.
   vazia; no refresh com cache frio o React quebrava (#310).
   Movido para o topo do componente.
 - `tsc` limpo nos tocados e `npm run build` OK.
+
+## Fix: atalhos do dashboard com rotas inexistentes (06/10)
+
+- Nova venda -> /vendas/vendas; Lançamento -> /financeiro/extrato;
+  Novo contato -> /vendas/clientes (eram 404).
+- `tsc` limpo nos tocados e `npm run build` OK.
