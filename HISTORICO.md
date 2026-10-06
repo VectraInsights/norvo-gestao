@@ -4714,3 +4714,9 @@ Espelhado na Vercel.
 - Gatilho rounded-xl com hover elevado; diálogo rounded-2xl; itens
   rounded-xl com sombra e hover; kbd/botões com `rounded-lg`.
 - Paleta intacta; `tsc` limpo nos tocados e `npm run build` OK.
+
+## Repaginação: connection-status (06/10)
+
+- Toast rounded-2xl com ícone Wifi/WifiOff, respiro maior e sombra;
+  semântica sucesso/alerta mantida.
+- Paleta intacta; `tsc` limpo nos tocados e `npm run build` OK.

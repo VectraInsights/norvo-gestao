@@ -1,4 +1,6 @@
 import { useEffect, useState } from "react";
+import { Wifi, WifiOff } from "lucide-react";
+import { cn } from "@/lib/utils";
 
 export function ConnectionStatus() {
   const [online, setOnline] = useState(true);
@@ -30,9 +32,17 @@ export function ConnectionStatus() {
     <div
       role="status"
       aria-live="polite"
-      className={`fixed inset-x-3 bottom-3 z-50 rounded-lg border px-4 py-3 text-center text-sm shadow-lg sm:inset-x-auto sm:right-4 sm:w-auto ${online ? "border-success/40 bg-success/10 text-success-foreground" : "border-warning/50 bg-warning/15 text-warning-foreground"}`}
+      className={cn(
+        "fixed inset-x-4 bottom-4 z-50 flex max-w-md items-center gap-2.5 rounded-2xl border px-5 py-3.5 text-sm font-medium shadow-xl backdrop-blur transition-all sm:inset-x-auto sm:bottom-6 sm:right-6 sm:w-auto",
+        online
+          ? "border-success/40 bg-success/10 text-success-foreground"
+          : "border-warning/50 bg-warning/15 text-warning-foreground",
+      )}
     >
-      {online ? "Conexão restabelecida." : "Você está sem conexão. As alterações serão retomadas quando a rede voltar."}
+      {online ? <Wifi className="h-4 w-4 shrink-0" /> : <WifiOff className="h-4 w-4 shrink-0" />}
+      <span className="leading-relaxed">
+        {online ? "Conexão restabelecida." : "Você está sem conexão. As alterações serão retomadas quando a rede voltar."}
+      </span>
     </div>
   );
 }
