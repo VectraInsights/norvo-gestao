@@ -4666,3 +4666,12 @@ Espelhado na Vercel.
 - Raios 1rem, sombras suaves em camadas, foco elegante, tipografia com
   hierarquia, scrollbar sutil, `card-hover`; paleta intacta.
 - Validado com `npm run build` OK.
+
+## Empresas no switcher + __root (06/10)
+
+- Switcher mostra razao_social/CNPJ como fallback, estados de
+  carregamento/erro, retry e auto-correcao do id salvo; queryKeys
+  separadas (`resumo`/`lista`) para nao colidir no cache.
+- `__root`: 404/erro em card com respiro, botoes com hover elevado;
+  paleta intacta.
+- Validado com `tsc` (limpo nos tocados) e `npm run build` OK.

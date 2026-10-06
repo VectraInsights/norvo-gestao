@@ -12,6 +12,7 @@ import {
   Settings,
   LogOut,
   ChevronDown,
+  Check,
   Star,
   Sun,
   Moon,
@@ -134,22 +135,37 @@ export function AppShell({ children }: { children: ReactNode }) {
     queryFn: async () => (await supabase.auth.getUser()).data.user,
   });
 
-  const { data: empresas } = useQuery({
-    queryKey: ["empresas"],
+  const { data: empresas, isLoading: empresasLoading, isError: empresasErro, refetch: recarregarEmpresas } = useQuery({
+    queryKey: ["empresas", "resumo"],
+    staleTime: 5 * 60_000,
+    gcTime: 15 * 60_000,
+    retry: 1,
     queryFn: async () => {
-      // A tabela empresas NÃO tem coluna "nome" (usar nome_fantasia).
+      // Colunas usadas pelo switcher + fallback (razao_social/cnpj).
       const { data, error } = await supabase
         .from("empresas")
-        .select("id,nome_fantasia,cnpj,created_at")
-        .order("created_at");
+        .select("id,nome_fantasia,razao_social,cnpj,created_at")
+        .order("created_at")
+        .limit(100);
       if (error) throw error;
-      return data;
+      return data ?? [];
     },
   });
 
   const selectedId = useSelectedEmpresaId();
+  const nomeEmpresa = (e: any) =>
+    (e?.nome_fantasia?.trim() || e?.razao_social?.trim() || (e?.cnpj ? String(e.cnpj) : "") || "Empresa sem nome");
   const currentEmpresa =
-    (selectedId && empresas?.find((e) => e.id === selectedId)) || empresas?.[0];
+    (selectedId && empresas?.find((e) => e.id === selectedId)) || empresas?.[0] as any;
+
+  // Se o id salvo não existe mais (empresa excluída), migra para a primeira válida.
+  useEffect(() => {
+    if (!empresas || empresas.length === 0) return;
+    if (selectedId && !empresas.some((e) => e.id === selectedId)) {
+      setSelectedEmpresaId(empresas[0].id);
+      qc.invalidateQueries();
+    }
+  }, [empresas, selectedId, qc]);
 
   const { data: meuNome } = useQuery({
     queryKey: ["meu-nome", currentEmpresa?.id, user?.id],
@@ -397,16 +413,16 @@ export function AppShell({ children }: { children: ReactNode }) {
                 >
                   {collapsed ? (
                     <span className="grid h-7 w-7 place-items-center rounded bg-primary/10 text-xs font-semibold">
-                      {currentEmpresa?.nome_fantasia?.[0]?.toUpperCase() ?? "?"}
+                      {(nomeEmpresa(currentEmpresa))?.[0]?.toUpperCase() ?? "?"}
                     </span>
                   ) : (
                     <>
                       <div className="min-w-0">
                         <div className="truncate font-medium">
-                          {currentEmpresa?.nome_fantasia ?? "Nenhuma empresa"}
+                          {empresasLoading ? "Carregando empresas…" : nomeEmpresa(currentEmpresa) ?? "Nenhuma empresa"}
                         </div>
                         <div className="truncate text-xs text-muted-foreground">
-                          {currentEmpresa?.cnpj ?? "Cadastre sua empresa"}
+                          {currentEmpresa?.cnpj ?? (empresasLoading ? "Aguarde" : "Cadastre sua empresa")}
                         </div>
                       </div>
                       <ChevronDown className="h-4 w-4 shrink-0 opacity-60" />
@@ -414,13 +430,28 @@ export function AppShell({ children }: { children: ReactNode }) {
                   )}
                 </button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent className="w-56" align="start">
+              <DropdownMenuContent className="w-64" align="start">
                 <DropdownMenuLabel>Empresas</DropdownMenuLabel>
-                {empresas?.map((e) => (
-                  <DropdownMenuItem key={e.id} onSelect={() => handleSelectEmpresa(e.id)}>
-                    {e.nome_fantasia} {currentEmpresa?.id === e.id ? "✓" : ""}
+                {empresasLoading && (
+                  <div className="px-2 py-1.5 text-xs text-muted-foreground">Carregando empresas…</div>
+                )}
+                {empresasErro && (
+                  <DropdownMenuItem onSelect={(e) => { e.preventDefault(); recarregarEmpresas(); }}>
+                    Falha ao carregar — clique para tentar de novo
                   </DropdownMenuItem>
-                ))}
+                )}
+                {!empresasLoading && !empresasErro && (empresas?.length ?? 0) === 0 && (
+                  <div className="px-2 py-1.5 text-xs text-muted-foreground">Nenhuma empresa encontrada</div>
+                )}
+                {(empresas ?? []).map((e) => {
+                  const ativa = currentEmpresa?.id === e.id;
+                  return (
+                    <DropdownMenuItem key={e.id} onSelect={() => handleSelectEmpresa(e.id)}>
+                      <Check className={cn("h-3.5 w-3.5", ativa ? "opacity-100" : "opacity-0")} />
+                      <span className="min-w-0 flex-1 truncate">{nomeEmpresa(e)}</span>
+                    </DropdownMenuItem>
+                  );
+                })}
                 <DropdownMenuSeparator />
                 {souSuperAdmin && (
                   <DropdownMenuItem onSelect={() => navigate({ to: "/configuracoes/empresas" })}>

@@ -68,7 +68,7 @@ function EmpresasPage() {
   const [confirmExcluir, setConfirmExcluir] = useState(false);
 
   const { data: empresas } = useQuery({
-    queryKey: ["empresas"],
+    queryKey: ["empresas", "lista"],
     staleTime: 5 * 60_000,
     gcTime: 15 * 60_000,
     queryFn: async () => {
