@@ -4644,3 +4644,11 @@ Espelhado na Vercel.
   custo, situação + menu Novo; tabela com conta e rodapé com diferença.
 - Sugestão do sistema exibida no topo do Novo lançamento.
 - Validado com `tsc` (só baseline) e `npm run build` OK.
+
+## Busca com período -3d e menu Mais filtros (06/10)
+
+- Período padrão: do lançamento até 3 dias antes (opções 3/7/15/30).
+- "Mais filtros" vira menu (categoria, cliente/fornecedor, centro de
+  custo, situação) com chips e limpar; botão Novo removido.
+- Rodapé com Conciliar em destaque.
+- Validado com `tsc` (só baseline) e `npm run build` OK.

@@ -1780,25 +1780,25 @@ const EMPTY_LANC: LancOpt[] = [];
 
 type Opcao = { id: string; nome: string };
 
-function BuscarLancamentoDialog({ open, onClose, tx, lancamentos, value, onConfirm, onNovo, empresaId, contatos, centros }: {
+function BuscarLancamentoDialog({ open, onClose, tx, lancamentos, value, onConfirm, empresaId, contatos, centros }: {
   open: boolean;
   onClose: () => void;
   tx: OfxRow;
   lancamentos: LancOpt[];
   value: string;
   onConfirm: (id: string) => void;
-  onNovo: () => void;
   empresaId: string | null;
   contatos: { id: string; nome: string }[];
   centros: { id: string; nome: string }[];
 }) {
   const [q, setQ] = useState("");
-  const [dias, setDias] = useState("30");
+  const [dias, setDias] = useState("3");
   const [contaF, setContaF] = useState("todas");
   const [catF, setCatF] = useState("todas");
   const [contatoF, setContatoF] = useState("todas");
   const [centroF, setCentroF] = useState("todas");
   const [sitF, setSitF] = useState("todas");
+  const [extras, setExtras] = useState<string[]>([]);
   const [tipoF, setTipoF] = useState(() => (Number(tx.valor) >= 0 ? "receber" : "pagar"));
   const [sel, setSel] = useState(value);
   useEffect(() => {
@@ -1842,7 +1842,8 @@ function BuscarLancamentoDialog({ open, onClose, tx, lancamentos, value, onConfi
       if (sitF !== "todas" && l.status !== sitF) return false;
       if (dias !== "todos") {
         const dv = new Date(`${l.data_vencimento}T00:00:00`).getTime();
-        if (Number.isNaN(dv) || Number.isNaN(base) || Math.abs(dv - base) > Number(dias) * 86400000) return false;
+        // janela para trás: do lançamento até N dias antes
+        if (Number.isNaN(dv) || Number.isNaN(base) || dv > base || dv < base - Number(dias) * 86400000) return false;
       }
       if (!termo) return true;
       return (l.descricao ?? "").toLowerCase().includes(termo)
@@ -1850,8 +1851,9 @@ function BuscarLancamentoDialog({ open, onClose, tx, lancamentos, value, onConfi
         || (l.data_vencimento || "").includes(termo);
     }).slice(0, 100);
   }, [lancamentos, q, dias, base, contaF, catF, contatoF, centroF, sitF, tipoF]);
-  const temFiltro = q.trim() !== "" || dias !== "30" || contaF !== "todas" || catF !== "todas" || contatoF !== "todas" || centroF !== "todas" || sitF !== "todas";
-  const limparFiltros = () => { setQ(""); setDias("30"); setContaF("todas"); setCatF("todas"); setContatoF("todas"); setCentroF("todas"); setSitF("todas"); };
+  const temFiltro = q.trim() !== "" || dias !== "3" || contaF !== "todas" || catF !== "todas" || contatoF !== "todas" || centroF !== "todas" || sitF !== "todas" || extras.length > 0;
+  const limparFiltros = () => { setQ(""); setDias("3"); setContaF("todas"); setCatF("todas"); setContatoF("todas"); setCentroF("todas"); setSitF("todas"); setExtras([]); };
+  const alternarExtra = (k: string) => setExtras((prev) => (prev.includes(k) ? prev.filter((x) => x !== k) : [...prev, k]));
 
   const escolhido = (lancamentos ?? []).find((l) => l.id === sel);
   const vBanco = Math.abs(Number(tx.valor) || 0);
@@ -1879,16 +1881,16 @@ function BuscarLancamentoDialog({ open, onClose, tx, lancamentos, value, onConfi
               </div>
             </div>
           </div>
-          <div className="grid shrink-0 grid-cols-2 gap-2 md:grid-cols-6">
+          <div className="grid shrink-0 grid-cols-2 gap-2 md:grid-cols-5">
             <div>
-              <span className="text-xs text-muted-foreground">Vencimento ± dias</span>
+              <span className="text-xs text-muted-foreground">Vencimento até 3 dias antes</span>
               <Select value={dias} onValueChange={setDias}>
                 <SelectTrigger className="h-8 text-xs w-full"><SelectValue /></SelectTrigger>
                 <SelectContent>
+                  <SelectItem value="3">3 dias</SelectItem>
                   <SelectItem value="7">7 dias</SelectItem>
                   <SelectItem value="15">15 dias</SelectItem>
                   <SelectItem value="30">30 dias</SelectItem>
-                  <SelectItem value="90">90 dias</SelectItem>
                   <SelectItem value="todos">Todos</SelectItem>
                 </SelectContent>
               </Select>
@@ -1924,59 +1926,88 @@ function BuscarLancamentoDialog({ open, onClose, tx, lancamentos, value, onConfi
             </div>
             <div>
               <span className="text-xs text-muted-foreground">Mais filtros</span>
-              <div className="grid grid-cols-2 gap-1">
-                <Select value={catF} onValueChange={setCatF}>
-                  <SelectTrigger className="h-8 text-xs w-full"><SelectValue placeholder="Categoria" /></SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="todas">Todas categorias</SelectItem>
-                    {(catsBusca ?? []).filter((c) => c.tipo === tipoF).map((c) => (
-                      <SelectItem key={c.id} value={c.id}>{c.nome}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                <Select value={sitF} onValueChange={setSitF}>
-                  <SelectTrigger className="h-8 text-xs w-full"><SelectValue placeholder="Situação" /></SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="todas">Todas</SelectItem>
-                    <SelectItem value="aberto">Em aberto</SelectItem>
-                    <SelectItem value="vencido">Vencido</SelectItem>
-                    <SelectItem value="parcial">Parcial</SelectItem>
-                  </SelectContent>
-                </Select>
-                <Select value={contatoF} onValueChange={setContatoF}>
-                  <SelectTrigger className="h-8 text-xs w-full"><SelectValue placeholder="Cliente/Fornecedor" /></SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="todas">Todos</SelectItem>
-                    {(contatos ?? []).map((c) => (
-                      <SelectItem key={c.id} value={c.id}>{c.nome}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                <Select value={centroF} onValueChange={setCentroF}>
-                  <SelectTrigger className="h-8 text-xs w-full"><SelectValue placeholder="Centro de custo" /></SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="todas">Todos</SelectItem>
-                    {(centros ?? []).map((c) => (
-                      <SelectItem key={c.id} value={c.id}>{c.nome}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
-            <div>
-              <span className="text-xs text-muted-foreground">Novo</span>
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <Button variant="outline" size="sm" className="h-8 text-xs w-full">
-                    Novo <ChevronDown className="ml-1 h-3.5 w-3.5" />
+                    Mais filtros <ChevronDown className="ml-1 h-3.5 w-3.5" />
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="start">
-                  <DropdownMenuItem onClick={onNovo}>Pagamento / Recebimento</DropdownMenuItem>
+                  {[
+                    { k: "categoria", label: "Categoria" },
+                    { k: "contato", label: "Cliente/Fornecedor" },
+                    { k: "centro", label: "Centro de custo" },
+                    { k: "situacao", label: "Situação" },
+                  ].map((o) => (
+                    <DropdownMenuItem key={o.k} onClick={() => alternarExtra(o.k)}>
+                      <Check className={cn("mr-2 h-3.5 w-3.5", extras.includes(o.k) ? "opacity-100" : "opacity-0")} />
+                      {o.label}
+                    </DropdownMenuItem>
+                  ))}
                 </DropdownMenuContent>
               </DropdownMenu>
             </div>
           </div>
+          {extras.length > 0 && (
+            <div className="grid shrink-0 grid-cols-2 gap-2 md:grid-cols-4">
+              {extras.includes("categoria") && (
+                <div>
+                  <span className="text-xs text-muted-foreground">Categoria</span>
+                  <Select value={catF} onValueChange={setCatF}>
+                    <SelectTrigger className="h-8 text-xs w-full"><SelectValue placeholder="Categoria" /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="todas">Todas categorias</SelectItem>
+                      {(catsBusca ?? []).filter((c) => c.tipo === tipoF).map((c) => (
+                        <SelectItem key={c.id} value={c.id}>{c.nome}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
+              {extras.includes("contato") && (
+                <div>
+                  <span className="text-xs text-muted-foreground">Cliente/Fornecedor</span>
+                  <Select value={contatoF} onValueChange={setContatoF}>
+                    <SelectTrigger className="h-8 text-xs w-full"><SelectValue placeholder="Cliente/Fornecedor" /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="todas">Todos</SelectItem>
+                      {(contatos ?? []).map((c) => (
+                        <SelectItem key={c.id} value={c.id}>{c.nome}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
+              {extras.includes("centro") && (
+                <div>
+                  <span className="text-xs text-muted-foreground">Centro de custo</span>
+                  <Select value={centroF} onValueChange={setCentroF}>
+                    <SelectTrigger className="h-8 text-xs w-full"><SelectValue placeholder="Centro de custo" /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="todas">Todos</SelectItem>
+                      {(centros ?? []).map((c) => (
+                        <SelectItem key={c.id} value={c.id}>{c.nome}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
+              {extras.includes("situacao") && (
+                <div>
+                  <span className="text-xs text-muted-foreground">Situação</span>
+                  <Select value={sitF} onValueChange={setSitF}>
+                    <SelectTrigger className="h-8 text-xs w-full"><SelectValue placeholder="Situação" /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="todas">Todas</SelectItem>
+                      <SelectItem value="aberto">Em aberto</SelectItem>
+                      <SelectItem value="vencido">Vencido</SelectItem>
+                      <SelectItem value="parcial">Parcial</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
+            </div>
+          )}
           {temFiltro && (
             <div className="shrink-0">
               <Button variant="ghost" size="sm" className="h-7 text-xs" onClick={limparFiltros}>
@@ -2036,7 +2067,9 @@ function BuscarLancamentoDialog({ open, onClose, tx, lancamentos, value, onConfi
               <span className={`text-tabular font-bold ${dif === 0 && sel ? "text-success" : "text-amber-600 dark:text-amber-400"}`}>{brl(dif)}</span>
             </div>
             <Button variant="outline" onClick={onClose}>Cancelar</Button>
-            <Button disabled={!sel} onClick={() => onConfirm(sel)}>Conciliar</Button>
+            <Button disabled={!sel} onClick={() => onConfirm(sel)}>
+              <Check className="mr-1 h-4 w-4" />Conciliar
+            </Button>
           </div>
         </div>
       </DialogContent>
@@ -2128,7 +2161,6 @@ const ReconcileRow = memo(function ReconcileRow({
             lancamentos={lancamentosAbertos}
             value={r.lancamento_id}
             onConfirm={(id) => { onSetRow(tx.id, { lancamento_id: id }); setBuscaOpen(false); }}
-            onNovo={() => setBuscaOpen(false)}
             empresaId={empresaId}
             contatos={contatos}
             centros={centros}
