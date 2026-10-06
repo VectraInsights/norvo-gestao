@@ -96,7 +96,7 @@ function CadastrosPage() {
       }
     },
     onSuccess: () => {
-      toast.success("Categoria salva");
+      toast.success(catForm.id || catForm.parent_id === "none" ? "Categoria salva" : "Subcategoria salva");
       setCatOpen(false);
       qc.invalidateQueries({ queryKey: ["cadastros-categorias"] });
       qc.invalidateQueries({ queryKey: ["categorias-opt"] });
@@ -458,23 +458,10 @@ function CadastrosPage() {
         <DialogContent className="sm:max-w-md sm:inset-auto sm:left-1/2 sm:top-1/2 sm:-translate-x-1/2 sm:-translate-y-1/2 sm:h-auto sm:max-h-[90vh] sm:w-full">
           <DialogHeader className="gap-1.5 pb-1"><DialogTitle className="tracking-tight">{catForm.id ? "Editar categoria" : catForm.parent_id !== "none" ? "Nova subcategoria" : "Nova categoria"}</DialogTitle></DialogHeader>
           <form onSubmit={(e) => { e.preventDefault(); salvarCat.mutate(); }} className="space-y-4">
-            {catForm.parent_id !== "none" && !catForm.id ? (
+            {catForm.id ? (
               <>
                 <div className="grid gap-1.5">
-                  <Label>Categoria</Label>
-                  <div className="flex h-10 items-center rounded-xl border bg-muted/40 px-3 text-sm font-medium">
-                    {(categorias ?? []).find((c) => c.id === catForm.parent_id)?.nome ?? "—"}
-                  </div>
-                </div>
-                <div className="grid gap-1.5">
-                  <Label>Subcategoria *</Label>
-                  <Input required value={catForm.nome} onChange={(e) => setCatForm({ ...catForm, nome: e.target.value })} className="h-10 rounded-xl" placeholder="Ex.: Material de escritório" />
-                </div>
-              </>
-            ) : (
-              <>
-                <div className="grid gap-1.5">
-                  <Label>{catForm.id ? "Nome *" : "Categoria *"}</Label>
+                  <Label>Nome *</Label>
                   <Input required value={catForm.nome} onChange={(e) => setCatForm({ ...catForm, nome: e.target.value })} className="h-10 rounded-xl" />
                 </div>
                 <div className="grid gap-1.5">
@@ -487,6 +474,47 @@ function CadastrosPage() {
                     </SelectContent>
                   </Select>
                 </div>
+              </>
+            ) : (
+              <>
+                <div className="grid gap-1.5">
+                  <Label>Categoria pai (opcional)</Label>
+                  <Select value={catForm.parent_id} onValueChange={(v) => {
+                    const pai = (categorias ?? []).find((c) => c.id === v);
+                    setCatForm({ ...catForm, parent_id: v, tipo: pai?.tipo ?? catForm.tipo });
+                  }}>
+                    <SelectTrigger className="h-10 rounded-xl"><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="none">Nenhuma (categoria principal)</SelectItem>
+                      {(categorias ?? []).filter((c) => !c.parent_id && c.tipo === catForm.tipo).map((c) => (
+                        <SelectItem key={c.id} value={c.id}>{c.nome}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                {catForm.parent_id !== "none" ? (
+                  <div className="grid gap-1.5">
+                    <Label>Subcategoria *</Label>
+                    <Input required value={catForm.nome} onChange={(e) => setCatForm({ ...catForm, nome: e.target.value })} className="h-10 rounded-xl" placeholder="Ex.: Material de escritório" />
+                  </div>
+                ) : (
+                  <>
+                    <div className="grid gap-1.5">
+                      <Label>Categoria *</Label>
+                      <Input required value={catForm.nome} onChange={(e) => setCatForm({ ...catForm, nome: e.target.value })} className="h-10 rounded-xl" />
+                    </div>
+                    <div className="grid gap-1.5">
+                      <Label>Tipo *</Label>
+                      <Select value={catForm.tipo} onValueChange={(v) => setCatForm({ ...catForm, tipo: v as "receber" | "pagar", parent_id: "none" })}>
+                        <SelectTrigger className="h-10 rounded-xl"><SelectValue /></SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="receber">Receita</SelectItem>
+                          <SelectItem value="pagar">Despesa</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </>
+                )}
               </>
             )}
             <DialogFooter className="gap-2">

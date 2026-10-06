@@ -5016,3 +5016,19 @@ Espelhado na Vercel.
 - Sem seletor de pai: sub mostra "Categoria" fixa + campo
   "Subcategoria"; principal mostra "Categoria" + Tipo.
 - `tsc` limpo nos tocados e `npm run build` OK.
+
+## Subcategoria direto no diálogo de Nova categoria (06/10)
+
+- Diálogo de Nova categoria ganhou "Categoria pai (opcional)":
+  ao escolher um pai, o formulário vira modo subcategoria (campo
+  "Subcategoria", tipo herdado do pai); "Nenhuma" segue criando
+  categoria principal (Categoria + Tipo). Dá pra voltar a "Nenhuma"
+  a qualquer momento (sem seletor, a escolha ficava presa).
+- Botão "+" da linha ("Cadastrar subcategoria") voltou a funcionar:
+  abre o diálogo com o pai já selecionado. Antes só expandia a linha
+  — o fluxo inline (`novaSubDe`/`novaSubNome`/`salvarSub`) ficou órfão
+  num refactor e foi removido.
+- Toast diferencia "Categoria salva" / "Subcategoria salva"; validação
+  de duplicada (pai + tipo + nome) e invalidações de cache inalteradas.
+- Validado com `tsc` zerado nos tocados e `npm run build` OK.
+- Arquivo: `src/routes/_authenticated/financeiro.cadastros.tsx`.
