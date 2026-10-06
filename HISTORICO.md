@@ -4889,3 +4889,10 @@ Espelhado na Vercel.
   respiro.
 - Paleta intacta; `tsc` limpo nos tocados e `npm run build` OK.
 - Nota: dar Ctrl+F5 após o deploy para ver sem cache.
+
+## Fix: hooks do dashboard após return (erro #310) (06/10)
+
+- `useNavigate()` estava depois dos returns de loading/empresa
+  vazia; no refresh com cache frio o React quebrava (#310).
+  Movido para o topo do componente.
+- `tsc` limpo nos tocados e `npm run build` OK.

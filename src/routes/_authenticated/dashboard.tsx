@@ -88,6 +88,8 @@ function friendlyEmpresaError(error: { message?: string; code?: string }) {
 
 function Dashboard() {
   const qc = useQueryClient();
+  // Hooks sempre no topo: antes de qualquer return (evita erro #310 no refresh com cache frio).
+  const navigate = useNavigate();
 
   const { data: empresas, isLoading: loadingEmp } = useQuery({
     queryKey: ["empresas", "resumo"],
@@ -316,7 +318,6 @@ function Dashboard() {
     );
   }
 
-  const navigate = useNavigate();
   const atalhos = [
     { label: "Nova venda", desc: "Emita em segundos", to: "/vendas/nova", icon: ShoppingCart },
     { label: "Lançamento financeiro", desc: "Pagar ou receber", to: "/financeiro/lancamentos", icon: Wallet },
