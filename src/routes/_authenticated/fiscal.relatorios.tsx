@@ -142,102 +142,102 @@ function RelatoriosFiscais() {
           title="Relatórios e Dashboards" 
           description="Análise detalhada de notas de compra, fornecedores e resumo de operações." 
         />
-        <div className="flex items-center gap-2">
+        <div className="flex shrink-0 items-center gap-2.5">
           <select
             value={periodo}
             onChange={(e) => setPeriodo(e.target.value)}
-            className="h-9 rounded-md border border-input bg-background px-3 text-sm"
+            className="h-10 rounded-xl border border-input bg-background px-3.5 text-sm font-medium shadow-sm transition-all hover:shadow-md"
           >
             {periodos.map(p => (
               <option key={p.value} value={p.value}>{p.label}</option>
             ))}
           </select>
-          <Button onClick={handleExportExcel} variant="outline" className="shadow-sm" disabled={!stats}>
+          <Button onClick={handleExportExcel} variant="outline" className="h-10 rounded-xl px-4 shadow-sm transition-all hover:-translate-y-px hover:shadow-md" disabled={!stats}>
             <FileSpreadsheet className="mr-2 h-4 w-4" /> Exportar XLS
           </Button>
         </div>
       </div>
 
       {isLoading ? (
-        <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          {Array.from({ length: 4 }).map((_, i) => <Skeleton key={i} className="h-28" />)}
+        <div className="mt-6 grid gap-4 sm:grid-cols-2 sm:mt-8 lg:grid-cols-4 lg:gap-5">
+          {Array.from({ length: 4 }).map((_, i) => <Skeleton key={i} className="h-28 rounded-2xl" />)}
         </div>
       ) : stats ? (
         <>
           {/* KPI Cards */}
-          <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-            <Card className="border-muted bg-card/60 backdrop-blur-sm shadow-panel">
+          <div className="mt-6 grid gap-4 sm:grid-cols-2 sm:mt-8 lg:grid-cols-4 lg:gap-5">
+            <Card className="rounded-2xl border-muted bg-card/60 backdrop-blur-sm shadow-panel transition-all duration-200 hover:-translate-y-0.5 hover:shadow-lg">
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-xs font-semibold text-muted-foreground uppercase">Valor Total Notas</CardTitle>
-                <ArrowUpRight className="h-4 w-4 text-primary" />
+                <CardTitle className="text-xs font-semibold uppercase tracking-[0.08em] text-muted-foreground">Valor Total Notas</CardTitle>
+                <span className="rounded-xl bg-primary/10 p-2"><ArrowUpRight className="h-4 w-4 text-primary" /></span>
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold text-foreground">{brl(stats.valorTotal)}</div>
-                <p className="text-[11px] text-muted-foreground mt-1">{stats.totalNotas} nota(s) no período</p>
+                <div className="text-display text-2xl font-bold tracking-tight text-foreground">{brl(stats.valorTotal)}</div>
+                <p className="mt-1.5 text-[11px] text-muted-foreground">{stats.totalNotas} nota(s) no período</p>
               </CardContent>
             </Card>
 
-            <Card className="border-muted bg-card/60 backdrop-blur-sm shadow-panel">
+            <Card className="rounded-2xl border-muted bg-card/60 backdrop-blur-sm shadow-panel transition-all duration-200 hover:-translate-y-0.5 hover:shadow-lg">
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-xs font-semibold text-muted-foreground uppercase">Fornecedores</CardTitle>
-                <Landmark className="h-4 w-4 text-primary" />
+                <CardTitle className="text-xs font-semibold uppercase tracking-[0.08em] text-muted-foreground">Fornecedores</CardTitle>
+                <span className="rounded-xl bg-primary/10 p-2"><Landmark className="h-4 w-4 text-primary" /></span>
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold text-foreground">{stats.fornecedoresSorted.length}</div>
-                <p className="text-[11px] text-muted-foreground mt-1">Fornecedores distintos no período</p>
+                <div className="text-display text-2xl font-bold tracking-tight text-foreground">{stats.fornecedoresSorted.length}</div>
+                <p className="mt-1.5 text-[11px] text-muted-foreground">Fornecedores distintos no período</p>
               </CardContent>
             </Card>
 
-            <Card className="border-muted bg-card/60 backdrop-blur-sm shadow-panel">
+            <Card className="rounded-2xl border-muted bg-card/60 backdrop-blur-sm shadow-panel transition-all duration-200 hover:-translate-y-0.5 hover:shadow-lg">
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-xs font-semibold text-muted-foreground uppercase">Notas Importadas</CardTitle>
-                <FileText className="h-4 w-4 text-primary" />
+                <CardTitle className="text-xs font-semibold uppercase tracking-[0.08em] text-muted-foreground">Notas Importadas</CardTitle>
+                <span className="rounded-xl bg-primary/10 p-2"><FileText className="h-4 w-4 text-primary" /></span>
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold text-foreground">{stats.notasAutorizadas}</div>
-                <p className="text-[11px] text-muted-foreground mt-1">Notas recebidas e processadas</p>
+                <div className="text-display text-2xl font-bold tracking-tight text-foreground">{stats.notasAutorizadas}</div>
+                <p className="mt-1.5 text-[11px] text-muted-foreground">Notas recebidas e processadas</p>
               </CardContent>
             </Card>
 
-            <Card className="border-muted bg-card/60 backdrop-blur-sm shadow-panel">
+            <Card className="rounded-2xl border-muted bg-card/60 backdrop-blur-sm shadow-panel transition-all duration-200 hover:-translate-y-0.5 hover:shadow-lg">
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-xs font-semibold text-muted-foreground uppercase">Canceladas</CardTitle>
-                <Ban className="h-4 w-4 text-destructive" />
+                <CardTitle className="text-xs font-semibold uppercase tracking-[0.08em] text-muted-foreground">Canceladas</CardTitle>
+                <span className="rounded-xl bg-destructive/10 p-2"><Ban className="h-4 w-4 text-destructive" /></span>
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold text-foreground">{stats.notasCanceladas}</div>
-                <p className="text-[11px] text-muted-foreground mt-1">Notas canceladas no período</p>
+                <div className="text-display text-2xl font-bold tracking-tight text-foreground">{stats.notasCanceladas}</div>
+                <p className="mt-1.5 text-[11px] text-muted-foreground">Notas canceladas no período</p>
               </CardContent>
             </Card>
           </div>
 
           {/* Gráficos */}
-          <div className="mt-6 grid gap-6 md:grid-cols-3">
-            <Card className="md:col-span-2 border-muted bg-card/60 backdrop-blur-sm shadow-panel">
-              <CardHeader>
-                <CardTitle>Evolução de Notas de Compra</CardTitle>
-                <CardDescription>Valor total de notas recebidas nos últimos 6 meses.</CardDescription>
+          <div className="mt-6 grid gap-4 sm:mt-8 md:grid-cols-3 lg:gap-5">
+            <Card className="rounded-2xl md:col-span-2 border-muted bg-card/60 backdrop-blur-sm shadow-panel">
+              <CardHeader className="pb-2">
+                <CardTitle className="tracking-tight">Evolução de Notas de Compra</CardTitle>
+                <CardDescription className="leading-relaxed">Valor total de notas recebidas nos últimos 6 meses.</CardDescription>
               </CardHeader>
               <CardContent>
                 <div className="h-80 w-full">
                   <ResponsiveContainer width="100%" height="100%">
                     <BarChart data={stats.evolucao} margin={{ top: 20, right: 30, left: 10, bottom: 5 }}>
-                      <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)" />
-                      <XAxis dataKey="mes" stroke="var(--color-muted-foreground)" fontSize={11} />
-                      <YAxis stroke="var(--color-muted-foreground)" fontSize={11} tickFormatter={(v) => `R$ ${v / 1000}k`} />
-                      <Tooltip formatter={(v: number) => brl(v)} contentStyle={{ background: "var(--color-card)", border: "1px solid var(--color-border)" }} />
+                      <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)" vertical={false} />
+                      <XAxis dataKey="mes" stroke="var(--color-muted-foreground)" fontSize={11} tickLine={false} axisLine={false} tickMargin={8} />
+                      <YAxis stroke="var(--color-muted-foreground)" fontSize={11} tickFormatter={(v) => `R$ ${v / 1000}k`} tickLine={false} axisLine={false} />
+                      <Tooltip formatter={(v: number) => brl(v)} contentStyle={{ background: "var(--color-card)", border: "1px solid var(--color-border)", borderRadius: 12, padding: "8px 12px", boxShadow: "var(--shadow-panel)" }} />
                       <Legend verticalAlign="top" height={36} iconSize={12} iconType="rect" wrapperStyle={{ fontSize: 12 }} />
-                      <Bar dataKey="valor" name="Valor Notas" fill="#0ea5e9" radius={[4, 4, 0, 0]} />
+                      <Bar dataKey="valor" name="Valor Notas" fill="#0ea5e9" radius={[8, 8, 0, 0]} />
                     </BarChart>
                   </ResponsiveContainer>
                 </div>
               </CardContent>
             </Card>
 
-            <Card className="border-muted bg-card/60 backdrop-blur-sm shadow-panel">
-              <CardHeader>
-                <CardTitle>Top Fornecedores</CardTitle>
-                <CardDescription>Maiores fornecedores por valor no período.</CardDescription>
+            <Card className="rounded-2xl border-muted bg-card/60 backdrop-blur-sm shadow-panel">
+              <CardHeader className="pb-2">
+                <CardTitle className="tracking-tight">Top Fornecedores</CardTitle>
+                <CardDescription className="leading-relaxed">Maiores fornecedores por valor no período.</CardDescription>
               </CardHeader>
               <CardContent className="flex flex-col items-center justify-center">
                 {stats.fornecedoresSorted.length > 0 ? (
@@ -259,7 +259,7 @@ function RelatoriosFiscais() {
                               <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                             ))}
                           </Pie>
-                          <Tooltip formatter={(v: number) => brl(v)} contentStyle={{ background: "var(--color-card)", border: "1px solid var(--color-border)" }} />
+                          <Tooltip formatter={(v: number) => brl(v)} contentStyle={{ background: "var(--color-card)", border: "1px solid var(--color-border)", borderRadius: 12, padding: "8px 12px", boxShadow: "var(--shadow-panel)" }} />
                         </PieChart>
                       </ResponsiveContainer>
                     </div>
@@ -283,10 +283,10 @@ function RelatoriosFiscais() {
           </div>
 
           {/* Tabela Detalhada */}
-          <Card className="mt-6 border-muted bg-card/60 backdrop-blur-sm shadow-panel overflow-hidden">
-            <CardHeader className="border-b border-muted">
-              <CardTitle>Notas no Período</CardTitle>
-              <CardDescription>Lista de todas as notas recebidas no período selecionado.</CardDescription>
+          <Card className="mt-6 rounded-2xl sm:mt-8 border-muted bg-card/60 backdrop-blur-sm shadow-panel overflow-hidden">
+            <CardHeader className="border-b border-muted pb-4">
+              <CardTitle className="tracking-tight">Notas no Período</CardTitle>
+              <CardDescription className="leading-relaxed">Lista de todas as notas recebidas no período selecionado.</CardDescription>
             </CardHeader>
             <div className="overflow-x-auto">
               <Table>
@@ -308,7 +308,7 @@ function RelatoriosFiscais() {
                     </TableRow>
                   ) : (
                     stats.todasNotasMes.map((n) => (
-                      <TableRow key={n.id} className="transition-colors hover:bg-muted/30">
+                      <TableRow key={n.id} className="transition-colors hover:bg-accent/30">
                         <TableCell className="font-mono text-xs">{n.numero_nf || "—"}</TableCell>
                         <TableCell className="font-medium text-foreground">{n.emitente}</TableCell>
                         <TableCell className="text-tabular text-muted-foreground">{n.data_emissao}</TableCell>

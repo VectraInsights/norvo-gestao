@@ -4828,3 +4828,10 @@ Espelhado na Vercel.
 - 4ª e última das Configurações: filtros em card rounded-2xl com
   campos h-10, tabela com hover, vazios com respiro.
 - Paleta intacta; `tsc` limpo nos tocados e `npm run build` OK.
+
+## Repaginação: fiscal.notas + fiscal.relatorios (06/10)
+
+- `notas` é só redirect (sem mudança); relatórios com KPIs em
+  rounded-2xl com hover, ícones em tile, charts com tooltip em card
+  e eixos limpos, tabela com hover.
+- Paleta intacta; `tsc` limpo nos tocados e `npm run build` OK.
