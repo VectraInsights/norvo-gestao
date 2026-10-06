@@ -381,7 +381,7 @@ export function LancamentosToolbar({
       />
 
       <Dialog open={!!pending} onOpenChange={(o) => { if (!o && !saving) setPending(null); }}>
-        <DialogContent className="rounded-2xl sm:max-w-md">
+        <DialogContent className="rounded-2xl sm:max-w-md sm:inset-auto sm:left-1/2 sm:top-1/2 sm:-translate-x-1/2 sm:-translate-y-1/2 sm:h-auto sm:max-h-[90vh] sm:w-full">
           <DialogHeader className="gap-1.5 pb-1">
             <DialogTitle className="tracking-tight">Vincular conta financeira</DialogTitle>
             <DialogDescription>

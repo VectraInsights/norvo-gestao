@@ -25,7 +25,7 @@ export function ShortcutsDialog() {
           <span className="hidden sm:inline">Atalhos</span>
         </Button>
       </DialogTrigger>
-      <DialogContent className="rounded-2xl sm:max-w-md">
+      <DialogContent className="rounded-2xl sm:max-w-md sm:inset-auto sm:left-1/2 sm:top-1/2 sm:-translate-x-1/2 sm:-translate-y-1/2 sm:h-auto sm:max-h-[90vh] sm:w-full">
         <DialogHeader className="gap-1.5 pb-2">
           <DialogTitle className="tracking-tight">Atalhos do teclado</DialogTitle>
           <DialogDescription className="leading-relaxed">

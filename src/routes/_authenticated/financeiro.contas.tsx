@@ -1141,7 +1141,7 @@ function ContasFinanceiras() {
       </AlertDialog>
 
       <Dialog open={trilhaOpen} onOpenChange={setTrilhaOpen}>
-        <DialogContent className="max-h-[85vh] overflow-y-auto rounded-2xl sm:max-w-lg">
+        <DialogContent className="max-h-[85vh] overflow-y-auto rounded-2xl sm:max-w-lg sm:inset-auto sm:left-1/2 sm:top-1/2 sm:-translate-x-1/2 sm:-translate-y-1/2 sm:h-auto sm:max-h-[90vh] sm:w-full">
           <DialogHeader className="gap-1.5 pb-1">
             <DialogTitle className="tracking-tight">Trilha de auditoria — Contas financeiras</DialogTitle>
           </DialogHeader>
@@ -2140,16 +2140,21 @@ const ReconcileRow = memo(function ReconcileRow({
   const rotuloSel = lancSel
     ? `${format(new Date(lancSel.data_vencimento + "T00:00:00"), "dd/MM")} — ${lancSel.descricao} (${brl(Number(lancSel.valor))})`
     : "Pesquisar por valor, descrição ou data";
-  // Sugestão do sistema (mesmo valor e data): exibida logo no Novo lançamento
+  // Sugestão do sistema (mesmo valor e data): vira o card da direita no padrão Conta Azul
   const sugestao = useMemo(() => (lancamentosAbertos ?? []).find((l) =>
     Math.abs(Number(l.valor) - Math.abs(Number(tx.valor))) < 0.01 &&
     l.data_vencimento === tx.data_transacao
   ), [lancamentosAbertos, tx.valor, tx.data_transacao]);
+  const [ignorado, setIgnorado] = useState(false);
+  const mostraSugestao = !!sugestao && !r.lancamento_id && !ignorado;
+  const sugestaoContato = sugestao?.contato_id ? (contatos.find((c) => c.id === sugestao.contato_id)?.nome ?? "—") : "Informação não recebida";
+  const sugestaoCategoria = sugestao?.categoria_id ? (categorias.find((c) => c.id === sugestao.categoria_id)?.nome ?? "—") : "—";
+  const sugestaoData = sugestao ? new Date(`${sugestao.data_vencimento}T00:00:00`) : null;
 
   return (
     <div className="grid grid-cols-1 items-stretch gap-2 md:grid-cols-[1fr_auto_1fr]">
       {/* banco */}
-      <Card className="overflow-hidden">
+      <Card className={cn("overflow-hidden", mostraSugestao && "border-t-[3px] border-t-success")}>
         <div className="flex items-center justify-between gap-2 border-b px-3 py-2">
           <div className="flex items-center gap-2">
             <Checkbox checked={selected} onCheckedChange={() => onToggleSel(tx.id)} />
@@ -2173,15 +2178,69 @@ const ReconcileRow = memo(function ReconcileRow({
         </div>
       </Card>
 
-      <div className="flex items-center justify-center">
-        <Button size="sm" disabled={conciliando} onClick={() => onConciliar(tx, r)}>
+      <div className="flex flex-col items-center justify-center gap-2 py-1">
+        {mostraSugestao && (
+          <span className="inline-flex items-center gap-1 rounded-full bg-success/15 px-2.5 py-1 text-[11px] font-semibold text-success shadow-sm">
+            Encontramos <Sparkles className="h-3 w-3" />
+          </span>
+        )}
+        <Button
+          size="sm" disabled={conciliando}
+          onClick={() => (mostraSugestao && sugestao ? onConciliar(tx, { ...r, lancamento_id: sugestao.id }) : onConciliar(tx, r))}
+        >
           {conciliando ? <Loader2 className="mr-1 h-3.5 w-3.5 animate-spin" /> : <Check className="mr-1 h-3.5 w-3.5" />}
           Conciliar
         </Button>
       </div>
 
       {/* sistema */}
-      <Card className="overflow-hidden">
+      <Card className={cn("overflow-hidden", mostraSugestao && "border-t-[3px] border-t-success")}>
+        <BuscarLancamentoDialog
+          open={buscaOpen}
+          onClose={() => setBuscaOpen(false)}
+          tx={tx}
+          lancamentos={lancamentosAbertos}
+          value={r.lancamento_id}
+          onConfirm={(id) => { onSetRow(tx.id, { lancamento_id: id }); setBuscaOpen(false); }}
+          empresaId={empresaId}
+          logoBanco={logoBanco}
+          contatos={contatos}
+          centros={centros}
+        />
+        {mostraSugestao && sugestao && sugestaoData ? (
+          <>
+            <div className="flex items-center justify-between gap-2 border-b px-3 py-2">
+              <span className={cn("text-tabular text-sm font-semibold", tx.valor < 0 ? "text-destructive" : "text-success")}>
+                {brl(Number(sugestao.valor))}
+              </span>
+              <span className="text-xs">
+                <span className="font-semibold">{format(sugestaoData, "dd/MM/yyyy")}</span>{" "}
+                <span className="text-muted-foreground capitalize">{format(sugestaoData, "EEEE")}</span>
+              </span>
+            </div>
+            <div className="space-y-0.5 px-3 py-2 text-[13px]">
+              <div className="font-medium">{sugestao.descricao}</div>
+              <div className="text-xs text-muted-foreground">
+                <span className="font-medium text-foreground">{tx.valor >= 0 ? "Cliente" : "Fornecedor"}:</span> {sugestaoContato}
+              </div>
+              <div className="text-xs text-muted-foreground">
+                <span className="font-medium text-foreground">Categoria:</span> {sugestaoCategoria}
+              </div>
+            </div>
+            <div className="flex items-center justify-between gap-2 border-t bg-muted/30 px-3 py-1.5">
+              <Badge variant="secondary" className="text-[11px]">Sugestão do sistema</Badge>
+              <div className="flex items-center gap-1">
+                <Button size="sm" variant="outline" className="h-7 text-xs" onClick={() => setBuscaOpen(true)}>
+                  Editar
+                </Button>
+                <Button size="sm" variant="outline" className="h-7 text-xs" onClick={() => setIgnorado(true)}>
+                  Desvincular
+                </Button>
+              </div>
+            </div>
+          </>
+        ) : (
+        <>
         <div className="flex items-center justify-between gap-2 border-b px-3 py-2">
           <span className="text-xs font-semibold">Novo lançamento</span>
           <Button size="sm" variant="outline" onClick={() => setBuscaOpen(true)}>
@@ -2189,18 +2248,6 @@ const ReconcileRow = memo(function ReconcileRow({
           </Button>
         </div>
         <div className="px-3 py-2">
-          <BuscarLancamentoDialog
-            open={buscaOpen}
-            onClose={() => setBuscaOpen(false)}
-            tx={tx}
-            lancamentos={lancamentosAbertos}
-            value={r.lancamento_id}
-            onConfirm={(id) => { onSetRow(tx.id, { lancamento_id: id }); setBuscaOpen(false); }}
-            empresaId={empresaId}
-            logoBanco={logoBanco}
-            contatos={contatos}
-            centros={centros}
-          />
           <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
             {r.lancamento_id && lancSel ? (
               <div className="col-span-full flex flex-wrap items-center gap-2 rounded-md border border-primary/30 bg-primary/10 px-3 py-2">
@@ -2233,22 +2280,9 @@ const ReconcileRow = memo(function ReconcileRow({
                 <Combobox value={r.centro_custo_id} onChange={(v) => onSetRow(tx.id, { centro_custo_id: v })} options={centros.map((c) => ({ value: c.id, label: c.nome }))} placeholder="Selecione" searchPlaceholder="Digite para buscar..." emptyText="Nenhum item encontrado." />
               </div>
             </div>
-          {sugestao && !r.lancamento_id && (
-            <div className="col-span-full flex flex-wrap items-center gap-2 rounded-md border border-success/30 bg-success/10 px-3 py-2">
-              <Sparkles className="h-4 w-4 shrink-0 text-success" />
-              <span className="text-xs">
-                <strong>Encontramos:</strong>{" "}
-                {format(new Date(sugestao.data_vencimento + "T00:00:00"), "dd/MM")} — {sugestao.descricao} ({brl(Number(sugestao.valor))})
-              </span>
-              <Button
-                size="sm" variant="outline" className="ml-auto h-7 text-xs"
-                onClick={() => onSetRow(tx.id, { lancamento_id: sugestao.id })}
-              >
-                Usar sugestão
-              </Button>
-            </div>
-          )}
-        </div>
+          </div>
+        </>
+        )}
       </Card>
     </div>
   );

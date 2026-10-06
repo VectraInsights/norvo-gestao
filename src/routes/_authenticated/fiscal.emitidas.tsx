@@ -501,7 +501,7 @@ function NotasEmitidas() {
                 <Plus className="mr-2 h-4 w-4" /> Nova Emissão
               </Button>
             </DialogTrigger>
-            <DialogContent className="sm:max-w-lg">
+            <DialogContent className="sm:max-w-lg sm:inset-auto sm:left-1/2 sm:top-1/2 sm:-translate-x-1/2 sm:-translate-y-1/2 sm:h-auto sm:max-h-[90vh] sm:w-full">
               <DialogHeader className="gap-1.5 pb-1">
                 <DialogTitle className="tracking-tight">Emitir Nota Fiscal (Rascunho)</DialogTitle>
                 <DialogDescription className="leading-relaxed">
@@ -687,7 +687,7 @@ function NotasEmitidas() {
       </div>
 
       <Dialog open={filtrosSalvosOpen} onOpenChange={setFiltrosSalvosOpen}>
-        <DialogContent className="sm:max-w-md">
+        <DialogContent className="sm:max-w-md sm:inset-auto sm:left-1/2 sm:top-1/2 sm:-translate-x-1/2 sm:-translate-y-1/2 sm:h-auto sm:max-h-[90vh] sm:w-full">
           <DialogHeader className="gap-1.5 pb-1">
             <DialogTitle className="tracking-tight">Filtros salvos</DialogTitle>
             <DialogDescription className="leading-relaxed">Salve uma combinação de tipo, status e busca para reutilizar depois.</DialogDescription>
@@ -720,7 +720,7 @@ function NotasEmitidas() {
       </Dialog>
 
       <Dialog open={!!cancelarId} onOpenChange={(v) => { if (!v) { setCancelarId(null); setMotivoCancel(""); } }}>
-        <DialogContent className="sm:max-w-md">
+        <DialogContent className="sm:max-w-md sm:inset-auto sm:left-1/2 sm:top-1/2 sm:-translate-x-1/2 sm:-translate-y-1/2 sm:h-auto sm:max-h-[90vh] sm:w-full">
           <DialogHeader className="gap-1.5 pb-1">
             <DialogTitle className="tracking-tight">Cancelar nota fiscal</DialogTitle>
             <DialogDescription className="leading-relaxed">

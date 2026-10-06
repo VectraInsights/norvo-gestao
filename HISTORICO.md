@@ -4943,3 +4943,12 @@ Espelhado na Vercel.
 - Barra com seletor h-10, botões maiores, mês e saldos em cards;
   resumo do mês, dias e lançamentos com respiro e hover.
 - Lógica intacta; `tsc` só baseline; build OK.
+
+## Conciliação estilo Conta Azul + centralização de diálogos (06/10)
+
+- Sugestão (mesmo valor+data) vira card à direita com valor, data,
+  contato e categoria; "Encontramos" no meio e Conciliar vincula
+  direto; Desvincular volta ao formulário; lógica intacta.
+- Corrigidos 16 diálogos que no desktop ficavam grudados na
+  esquerda (faltava centralização com `sm:max-w-*`).
+- `tsc` só baseline; build OK.

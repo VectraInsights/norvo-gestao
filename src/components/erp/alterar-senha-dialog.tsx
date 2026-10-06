@@ -105,7 +105,7 @@ export function AlterarSenhaDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="rounded-2xl sm:max-w-md">
+      <DialogContent className="rounded-2xl sm:max-w-md sm:inset-auto sm:left-1/2 sm:top-1/2 sm:-translate-x-1/2 sm:-translate-y-1/2 sm:h-auto sm:max-h-[90vh] sm:w-full">
         <DialogHeader className="gap-1 pb-1">
           <DialogTitle className="tracking-tight">Dados da conta</DialogTitle>
         </DialogHeader>
