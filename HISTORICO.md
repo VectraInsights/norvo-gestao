@@ -4695,3 +4695,10 @@ Espelhado na Vercel.
 - Gatilho h-9 rounded-xl com sombra e hover elevado; itens de página
   com `rounded-lg`.
 - Paleta intacta; `tsc` limpo nos tocados e `npm run build` OK.
+
+## Repaginação: notifications-bell (06/10)
+
+- Sino rounded-xl h-9 com hover elevado; badge com anel; popover
+  rounded-2xl; vazio com respiro; itens px-4 py-3.5 com hover.
+- Corrige TS de baseline (`ref_tabela`/`ref_id` via cast, sem mudar
+  schema); paleta intacta; `tsc` limpo e build OK.

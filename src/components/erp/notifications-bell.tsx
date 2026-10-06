@@ -81,18 +81,18 @@ export function NotificationsBell() {
   return (
     <Popover>
       <PopoverTrigger asChild>
-        <Button variant="ghost" size="icon" className="relative" aria-label="Notificações">
+        <Button variant="ghost" size="icon" className="relative h-9 w-9 rounded-xl transition-all hover:-translate-y-px" aria-label="Notificações">
           <Bell className="h-4 w-4" />
           {naoLidos > 0 && (
-            <span className="absolute right-1 top-1 grid h-4 min-w-4 place-items-center rounded-full bg-destructive px-1 text-[10px] font-semibold text-destructive-foreground">
+            <span className="absolute right-1 top-1 grid h-4 min-w-4 place-items-center rounded-full bg-destructive px-1 text-[10px] font-semibold text-destructive-foreground shadow-sm ring-2 ring-background">
               {naoLidos > 9 ? "9+" : naoLidos}
             </span>
           )}
         </Button>
       </PopoverTrigger>
-      <PopoverContent align="end" className="w-[calc(100vw-2rem)] max-w-96 p-0 shadow-xl">
-        <div className="flex items-center justify-between border-b px-4 py-2.5">
-          <div className="text-sm font-medium">Notificações</div>
+      <PopoverContent align="end" className="w-[calc(100vw-2rem)] max-w-96 overflow-hidden rounded-2xl p-0 shadow-xl">
+        <div className="flex items-center justify-between gap-2 border-b px-4 py-3">
+          <div className="text-sm font-semibold tracking-tight">Notificações</div>
           {naoLidos > 0 && (
             <Button
               variant="ghost"
@@ -106,12 +106,12 @@ export function NotificationsBell() {
         </div>
         <ScrollArea className="max-h-96">
           {alertas.length === 0 ? (
-            <div className="flex flex-col items-center gap-2 p-8 text-center">
-              <div className="grid h-10 w-10 place-items-center rounded-full bg-muted text-muted-foreground">
-                <Bell className="h-4 w-4" aria-hidden="true" />
+            <div className="flex flex-col items-center gap-2 p-10 text-center">
+              <div className="grid h-12 w-12 place-items-center rounded-2xl bg-muted text-muted-foreground shadow-sm">
+                <Bell className="h-5 w-5" aria-hidden="true" />
               </div>
-              <p className="text-sm font-medium">Tudo em dia</p>
-              <p className="text-xs text-muted-foreground">
+              <p className="mt-1 text-sm font-semibold tracking-tight">Tudo em dia</p>
+              <p className="max-w-[220px] text-xs leading-relaxed text-muted-foreground">
                 Nenhuma notificação pendente para esta empresa.
               </p>
             </div>
@@ -119,10 +119,12 @@ export function NotificationsBell() {
             <ul className="divide-y">
               {alertas.map((a) => {
                 const Icon = SEV_ICON[a.severidade as keyof typeof SEV_ICON] ?? Info;
+                const refTabela = (a as any).ref_tabela as string | null;
+                const refId = (a as any).ref_id as string | null;
                 return (
                   <li
                     key={a.id}
-                    className={"flex gap-3 p-3 " + (a.lido ? "opacity-60" : "bg-accent/30")}
+                    className={"flex gap-3 px-4 py-3.5 transition-colors hover:bg-accent/40 " + (a.lido ? "opacity-60" : "bg-accent/30")}
                   >
                     <Icon
                       className={
@@ -143,12 +145,12 @@ export function NotificationsBell() {
                       </div>
                     </div>
                     <div className="flex shrink-0 items-start gap-1">
-                      {a.ref_tabela && a.ref_id && (
+                      {refTabela && refId && (
                         <Button
                           variant="ghost"
                           size="icon"
-                          className="h-6 w-6"
-                          onClick={() => abrirReferencia(a.ref_tabela, a.ref_id)}
+                          className="h-7 w-7 rounded-lg"
+                          onClick={() => abrirReferencia(refTabela, refId)}
                           aria-label="Abrir registro relacionado"
                         >
                           <ExternalLink className="h-3 w-3" />
@@ -158,7 +160,7 @@ export function NotificationsBell() {
                         <Button
                           variant="ghost"
                           size="icon"
-                          className="h-6 w-6"
+                          className="h-7 w-7 rounded-lg"
                           onClick={() => marcarLido.mutate(a.id)}
                           aria-label="Marcar como lida"
                         >
