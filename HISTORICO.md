@@ -4964,3 +4964,9 @@ Espelhado na Vercel.
 - Extrato com KPIs em cards com tile, filtros h-10, tabela com
   hover e erros em card; fluxo com card e estados com respiro.
 - Lógica intacta; `tsc` limpo nos tocados e `npm run build` OK.
+
+## Repaginação visível: dre + relatórios (06/10)
+
+- KPIs em cards com hover, seletores h-10, tabelas com hover e
+  erros em card.
+- Lógica intacta; `tsc` limpo nos tocados e `npm run build` OK.

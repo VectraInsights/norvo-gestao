@@ -14,8 +14,8 @@ import { differenceInCalendarDays, parseISO } from "date-fns";
 export const Route = createFileRoute("/_authenticated/financeiro/relatorios")({
   component: RelatoriosPage,
   errorComponent: ({ error }) => (
-    <div role="alert" className="rounded-md border border-destructive/40 bg-destructive/5 p-4 text-sm text-destructive">
-      Erro: {error.message}
+    <div role="alert" className="rounded-2xl border border-destructive/40 bg-destructive/5 p-5 text-sm leading-relaxed text-destructive shadow-sm">
+      Erro: {error instanceof Error ? error.message : "erro desconhecido"}
     </div>
   ),
 });
@@ -120,7 +120,7 @@ function RelatoriosPage() {
     return (
       <>
         <PageHeader eyebrow="Financeiro" title="Relatórios financeiros" />
-        <div className="space-y-2">{[...Array(6)].map((_, i) => <Skeleton key={i} className="h-12 w-full" />)}</div>
+        <div className="space-y-2.5">{[...Array(6)].map((_, i) => <Skeleton key={i} className="h-12 w-full rounded-xl" />)}</div>
       </>
     );
   }
@@ -133,32 +133,32 @@ function RelatoriosPage() {
         description="Antiguidade de saldos (aging), inadimplência, ranking de clientes e fornecedores e curva ABC por categoria."
       />
 
-      <div className="mb-6 grid gap-3 sm:grid-cols-3">
-        <Card className="p-4 shadow-panel">
-          <p className="text-xs uppercase tracking-wide text-muted-foreground">A receber em aberto</p>
-          <p className="mt-1 text-2xl font-semibold text-success">{brl(rel.abertoReceber)}</p>
+      <div className="mb-6 grid gap-4 sm:gap-5 lg:grid-cols-3">
+        <Card className="rounded-2xl p-5 shadow-panel transition-all duration-200 hover:-translate-y-1 hover:shadow-lg sm:p-6">
+          <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">A receber em aberto</p>
+          <p className="mt-1.5 text-2xl font-semibold tracking-tight text-success text-tabular">{brl(rel.abertoReceber)}</p>
         </Card>
-        <Card className="p-4 shadow-panel">
-          <p className="text-xs uppercase tracking-wide text-muted-foreground">A pagar em aberto</p>
-          <p className="mt-1 text-2xl font-semibold text-destructive">{brl(rel.abertoPagar)}</p>
+        <Card className="rounded-2xl p-5 shadow-panel transition-all duration-200 hover:-translate-y-1 hover:shadow-lg sm:p-6">
+          <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">A pagar em aberto</p>
+          <p className="mt-1.5 text-2xl font-semibold tracking-tight text-destructive text-tabular">{brl(rel.abertoPagar)}</p>
         </Card>
-        <Card className="p-4 shadow-panel">
-          <p className="text-xs uppercase tracking-wide text-muted-foreground">Inadimplência (vencido)</p>
-          <p className="mt-1 text-2xl font-semibold text-destructive">{brl(rel.inadimplencia)}</p>
+        <Card className="rounded-2xl p-5 shadow-panel transition-all duration-200 hover:-translate-y-1 hover:shadow-lg sm:p-6">
+          <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">Inadimplência (vencido)</p>
+          <p className="mt-1.5 text-2xl font-semibold tracking-tight text-destructive text-tabular">{brl(rel.inadimplencia)}</p>
         </Card>
       </div>
 
       <Tabs defaultValue="aging">
-        <TabsList>
+        <TabsList className="h-auto flex-wrap gap-1">
           <TabsTrigger value="aging">Antiguidade</TabsTrigger>
           <TabsTrigger value="ranking">Clientes & fornecedores</TabsTrigger>
           <TabsTrigger value="abc">Curva ABC</TabsTrigger>
         </TabsList>
 
-        <TabsContent value="aging" className="mt-4 grid gap-4 lg:grid-cols-2">
+        <TabsContent value="aging" className="mt-4 grid gap-4 sm:mt-5 lg:grid-cols-2 lg:gap-5">
           {([["Recebíveis", rel.agingReceber], ["Pagáveis", rel.agingPagar]] as const).map(([titulo, linhas]) => (
-            <Card key={titulo} className="shadow-panel">
-              <div className="border-b border-border/60 px-4 py-3 text-sm font-semibold">{titulo}</div>
+            <Card key={titulo} className="overflow-hidden rounded-2xl shadow-panel">
+              <div className="border-b border-border/60 px-5 py-3.5 text-sm font-semibold tracking-tight">{titulo}</div>
               <Table>
                 <TableHeader>
                   <TableRow>
@@ -169,7 +169,7 @@ function RelatoriosPage() {
                 </TableHeader>
                 <TableBody>
                   {linhas.map((l) => (
-                    <TableRow key={l.faixa}>
+                    <TableRow key={l.faixa} className="transition-colors hover:bg-accent/30">
                       <TableCell>{l.faixa}</TableCell>
                       <TableCell className="text-right text-muted-foreground">{l.qtd}</TableCell>
                       <TableCell className="text-right font-medium">{brl(l.total)}</TableCell>
@@ -181,10 +181,10 @@ function RelatoriosPage() {
           ))}
         </TabsContent>
 
-        <TabsContent value="ranking" className="mt-4 grid gap-4 lg:grid-cols-2">
+        <TabsContent value="ranking" className="mt-4 grid gap-4 sm:mt-5 lg:grid-cols-2 lg:gap-5">
           {([["Top 10 clientes (recebido)", rel.topClientes], ["Top 10 fornecedores (pago)", rel.topFornecedores]] as const).map(([titulo, linhas]) => (
-            <Card key={titulo} className="shadow-panel">
-              <div className="border-b border-border/60 px-4 py-3 text-sm font-semibold">{titulo}</div>
+            <Card key={titulo} className="overflow-hidden rounded-2xl shadow-panel">
+              <div className="border-b border-border/60 px-5 py-3.5 text-sm font-semibold tracking-tight">{titulo}</div>
               <Table>
                 <TableHeader>
                   <TableRow><TableHead>Nome</TableHead><TableHead className="text-right">Valor</TableHead></TableRow>
@@ -193,7 +193,7 @@ function RelatoriosPage() {
                   {linhas.length === 0 ? (
                     <TableRow><TableCell colSpan={2} className="text-sm text-muted-foreground">Sem dados.</TableCell></TableRow>
                   ) : linhas.map((l) => (
-                    <TableRow key={l.nome}>
+                    <TableRow key={l.nome} className="transition-colors hover:bg-accent/30">
                       <TableCell className="max-w-[240px] truncate">{l.nome}</TableCell>
                       <TableCell className="text-right font-medium">{brl(l.total)}</TableCell>
                     </TableRow>
@@ -204,10 +204,10 @@ function RelatoriosPage() {
           ))}
         </TabsContent>
 
-        <TabsContent value="abc" className="mt-4 grid gap-4 lg:grid-cols-2">
+        <TabsContent value="abc" className="mt-4 grid gap-4 sm:mt-5 lg:grid-cols-2 lg:gap-5">
           {([["Despesas por categoria", rel.curvaDespesas], ["Receitas por categoria", rel.curvaReceitas]] as const).map(([titulo, linhas]) => (
-            <Card key={titulo} className="shadow-panel">
-              <div className="border-b border-border/60 px-4 py-3 text-sm font-semibold">{titulo}</div>
+            <Card key={titulo} className="overflow-hidden rounded-2xl shadow-panel">
+              <div className="border-b border-border/60 px-5 py-3.5 text-sm font-semibold tracking-tight">{titulo}</div>
               <Table>
                 <TableHeader>
                   <TableRow>
@@ -221,7 +221,7 @@ function RelatoriosPage() {
                   {linhas.length === 0 ? (
                     <TableRow><TableCell colSpan={4} className="text-sm text-muted-foreground">Sem dados.</TableCell></TableRow>
                   ) : linhas.map((l) => (
-                    <TableRow key={l.nome}>
+                    <TableRow key={l.nome} className="transition-colors hover:bg-accent/30">
                       <TableCell className="max-w-[220px] truncate">{l.nome}</TableCell>
                       <TableCell className="text-right font-medium">{brl(l.total)}</TableCell>
                       <TableCell className="text-right text-muted-foreground">{l.pct.toFixed(1)}%</TableCell>

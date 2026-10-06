@@ -14,8 +14,8 @@ import { cn } from "@/lib/utils";
 export const Route = createFileRoute("/_authenticated/financeiro/dre")({
   component: DrePage,
   errorComponent: ({ error }) => (
-    <div role="alert" className="rounded-md border border-destructive/40 bg-destructive/5 p-4 text-sm text-destructive">
-      Erro: {error.message}
+    <div role="alert" className="rounded-2xl border border-destructive/40 bg-destructive/5 p-5 text-sm leading-relaxed text-destructive shadow-sm">
+      Erro: {error instanceof Error ? error.message : "erro desconhecido"}
     </div>
   ),
 });
@@ -101,16 +101,16 @@ function DrePage() {
         title="DRE — Demonstração do resultado"
         description="Receitas e despesas por categoria, mês a mês, com resultado do período."
         actions={
-          <div className="flex gap-2">
+          <div className="flex shrink-0 gap-2">
             <Select value={regime} onValueChange={(v) => setRegime(v as "caixa" | "competencia")}>
-              <SelectTrigger className="w-[170px]"><SelectValue /></SelectTrigger>
+              <SelectTrigger className="h-10 w-[170px] rounded-xl shadow-sm"><SelectValue /></SelectTrigger>
               <SelectContent>
                 <SelectItem value="caixa">Regime de caixa</SelectItem>
                 <SelectItem value="competencia">Competência</SelectItem>
               </SelectContent>
             </Select>
             <Select value={String(ano)} onValueChange={(v) => setAno(Number(v))}>
-              <SelectTrigger className="w-[110px]"><SelectValue /></SelectTrigger>
+              <SelectTrigger className="h-10 w-[110px] rounded-xl shadow-sm"><SelectValue /></SelectTrigger>
               <SelectContent>
                 {anos.map((a) => <SelectItem key={a} value={String(a)}>{a}</SelectItem>)}
               </SelectContent>
@@ -120,27 +120,27 @@ function DrePage() {
       />
 
       {isLoading ? (
-        <div className="space-y-2">{[...Array(6)].map((_, i) => <Skeleton key={i} className="h-10 w-full" />)}</div>
+        <div className="space-y-2.5">{[...Array(6)].map((_, i) => <Skeleton key={i} className="h-10 w-full rounded-xl" />)}</div>
       ) : (
         <>
-          <div className="mb-4 grid gap-3 sm:grid-cols-3">
-            <Card className="p-4 shadow-panel">
-              <p className="text-xs uppercase tracking-wide text-muted-foreground">Receitas</p>
-              <p className="mt-1 text-2xl font-semibold text-success">{brl(total(linhas.totRec))}</p>
+          <div className="mb-6 grid gap-4 sm:gap-5 lg:grid-cols-3">
+            <Card className="rounded-2xl p-5 shadow-panel transition-all duration-200 hover:-translate-y-1 hover:shadow-lg sm:p-6">
+              <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">Receitas</p>
+              <p className="mt-1.5 text-2xl font-semibold tracking-tight text-success text-tabular">{brl(total(linhas.totRec))}</p>
             </Card>
-            <Card className="p-4 shadow-panel">
-              <p className="text-xs uppercase tracking-wide text-muted-foreground">Despesas</p>
-              <p className="mt-1 text-2xl font-semibold text-destructive">{brl(total(linhas.totDesp))}</p>
+            <Card className="rounded-2xl p-5 shadow-panel transition-all duration-200 hover:-translate-y-1 hover:shadow-lg sm:p-6">
+              <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">Despesas</p>
+              <p className="mt-1.5 text-2xl font-semibold tracking-tight text-destructive text-tabular">{brl(total(linhas.totDesp))}</p>
             </Card>
-            <Card className="p-4 shadow-panel">
-              <p className="text-xs uppercase tracking-wide text-muted-foreground">Resultado</p>
-              <p className={cn("mt-1 text-2xl font-semibold", total(linhas.resultado) < 0 && "text-destructive")}>
+            <Card className="rounded-2xl p-5 shadow-panel transition-all duration-200 hover:-translate-y-1 hover:shadow-lg sm:p-6">
+              <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">Resultado</p>
+              <p className={cn("mt-1.5 text-2xl font-semibold tracking-tight text-tabular", total(linhas.resultado) < 0 && "text-destructive")}>
                 {brl(total(linhas.resultado))}
               </p>
             </Card>
           </div>
 
-          <Card className="overflow-x-auto shadow-panel">
+          <Card className="overflow-x-auto rounded-2xl shadow-panel">
             <Table>
               <TableHeader>
                 <TableRow>
@@ -156,7 +156,7 @@ function DrePage() {
                   <TableCell className="text-right font-semibold">{brl(total(linhas.totRec))}</TableCell>
                 </TableRow>
                 {linhas.rec.map((r) => (
-                  <TableRow key={`r-${r.nome}`}>
+                  <TableRow key={`r-${r.nome}`} className="transition-colors hover:bg-accent/30">
                     <TableCell className="pl-6 text-muted-foreground">{r.nome}</TableCell>
                     {r.meses.map((v, i) => <TableCell key={i} className="text-right">{v ? brl(v) : "—"}</TableCell>)}
                     <TableCell className="text-right font-medium">{brl(r.total)}</TableCell>
@@ -169,7 +169,7 @@ function DrePage() {
                   <TableCell className="text-right font-semibold">{brl(total(linhas.totDesp))}</TableCell>
                 </TableRow>
                 {linhas.desp.map((r) => (
-                  <TableRow key={`d-${r.nome}`}>
+                  <TableRow key={`d-${r.nome}`} className="transition-colors hover:bg-accent/30">
                     <TableCell className="pl-6 text-muted-foreground">{r.nome}</TableCell>
                     {r.meses.map((v, i) => <TableCell key={i} className="text-right">{v ? brl(v) : "—"}</TableCell>)}
                     <TableCell className="text-right font-medium">{brl(r.total)}</TableCell>
