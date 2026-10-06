@@ -150,6 +150,44 @@ function CadastrosPage() {
 
   const [ccOpen, setCcOpen] = useState(false);
   const [confCat, setConfCat] = useState<Categoria | null>(null);
+  const [exclInfo, setExclInfo] = useState<{ lanc: number; filhos: number } | null>(null);
+  const [substituta, setSubstituta] = useState("none");
+
+  const iniciarExclusaoCat = async (c: Categoria) => {
+    setConfCat(c);
+    setExclInfo(null);
+    setSubstituta("none");
+    if (!empresa) return;
+    const [{ count: lanc }, { data: filhos }] = await Promise.all([
+      supabase.from("lancamentos_financeiros").select("id", { count: "exact", head: true }).eq("empresa_id", empresa.id).eq("categoria_id", c.id),
+      supabase.from("categorias_financeiras").select("id").eq("empresa_id", empresa.id).eq("parent_id", c.id),
+    ]);
+    setExclInfo({ lanc: lanc ?? 0, filhos: (filhos ?? []).length });
+  };
+
+  const confirmarExclusaoCat = async () => {
+    if (!confCat || !empresa) return;
+    const precisa = (exclInfo?.lanc ?? 0) > 0 || (exclInfo?.filhos ?? 0) > 0;
+    if (precisa && substituta === "none") {
+      toast.error("Escolha a categoria que vai receber os lançamentos e subcategorias");
+      return;
+    }
+    try {
+      if (substituta !== "none") {
+        const { error: e1 } = await supabase.from("lancamentos_financeiros")
+          .update({ categoria_id: substituta }).eq("empresa_id", empresa.id).eq("categoria_id", confCat.id);
+        if (e1) throw e1;
+        const { error: e2 } = await supabase.from("categorias_financeiras")
+          .update({ parent_id: substituta }).eq("empresa_id", empresa.id).eq("parent_id", confCat.id);
+        if (e2) throw e2;
+      }
+      await excluirCat.mutateAsync(confCat.id);
+      setConfCat(null);
+      setExclInfo(null);
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Não foi possível excluir");
+    }
+  };
   const [confCc, setConfCc] = useState<Centro | null>(null);
   const [ccForm, setCcForm] = useState<{ id?: string; nome: string; codigo: string; descricao: string; ativo: boolean }>({
     nome: "", codigo: "", descricao: "", ativo: true,
@@ -265,7 +303,7 @@ function CadastrosPage() {
                       <Pencil className="h-4 w-4" />
                     </Button>
                     <Button variant="ghost" size="icon" aria-label="Remover categoria" title="Remover categoria" className="h-8 w-8 rounded-lg text-destructive"
-                      onClick={(e) => { e.stopPropagation(); setConfCat(c); }}>
+                      onClick={(e) => { e.stopPropagation(); void iniciarExclusaoCat(c); }}>
                       <Trash2 className="h-4 w-4" />
                     </Button>
                   </div>
@@ -420,11 +458,6 @@ function CadastrosPage() {
         <DialogContent className="sm:max-w-md sm:inset-auto sm:left-1/2 sm:top-1/2 sm:-translate-x-1/2 sm:-translate-y-1/2 sm:h-auto sm:max-h-[90vh] sm:w-full">
           <DialogHeader className="gap-1.5 pb-1"><DialogTitle className="tracking-tight">{catForm.id ? "Editar categoria" : catForm.parent_id !== "none" ? "Nova subcategoria" : "Nova categoria"}</DialogTitle></DialogHeader>
           <form onSubmit={(e) => { e.preventDefault(); salvarCat.mutate(); }} className="space-y-4">
-            {catForm.parent_id !== "none" && (
-              <p className="rounded-xl border bg-muted/40 px-3.5 py-2.5 text-xs leading-relaxed text-muted-foreground">
-                Categoria pai: <strong className="text-foreground">{(categorias ?? []).find((c) => c.id === catForm.parent_id)?.nome ?? "—"}</strong>
-              </p>
-            )}
             <div className="grid gap-1.5">
               <Label>Nome *</Label>
               <Input required value={catForm.nome} onChange={(e) => setCatForm({ ...catForm, nome: e.target.value })} className="h-10 rounded-xl" />
@@ -438,6 +471,31 @@ function CadastrosPage() {
                   <SelectItem value="pagar">Despesa</SelectItem>
                 </SelectContent>
               </Select>
+            </div>
+            <div className="grid gap-1.5">
+              <Label>Categoria pai (opcional)</Label>
+              <Select
+                value={catForm.parent_id}
+                onValueChange={(v) => {
+                  if (v === "none") {
+                    setCatForm({ ...catForm, parent_id: "none" });
+                    return;
+                  }
+                  const pai = (categorias ?? []).find((c) => c.id === v);
+                  setCatForm({ ...catForm, parent_id: v, tipo: (pai?.tipo as "receber" | "pagar") ?? catForm.tipo });
+                }}
+              >
+                <SelectTrigger className="h-10 rounded-xl"><SelectValue placeholder="Nenhuma (categoria principal)" /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="none">Nenhuma (categoria principal)</SelectItem>
+                  {(categorias ?? [])
+                    .filter((c) => !c.parent_id && c.tipo === catForm.tipo && c.id !== catForm.id)
+                    .map((c) => (
+                      <SelectItem key={c.id} value={c.id}>{c.nome}</SelectItem>
+                    ))}
+                </SelectContent>
+              </Select>
+              <p className="text-[11px] leading-relaxed text-muted-foreground">Deixe em branco para criar uma categoria principal.</p>
             </div>
             <DialogFooter className="gap-2">
               <Button type="submit" disabled={salvarCat.isPending} className="h-10 rounded-xl px-6 shadow-sm transition-all hover:-translate-y-px hover:shadow-md">
@@ -486,7 +544,7 @@ function CadastrosPage() {
         </DialogContent>
       </Dialog>
 
-      <AlertDialog open={!!confCat} onOpenChange={(v) => { if (!v) setConfCat(null); }}>
+      <AlertDialog open={!!confCat} onOpenChange={(v) => { if (!v) { setConfCat(null); setExclInfo(null); } }}>
         <AlertDialogContent className="rounded-2xl">
           <AlertDialogHeader className="gap-1.5">
             <AlertDialogTitle className="tracking-tight">Excluir categoria</AlertDialogTitle>
@@ -494,12 +552,35 @@ function CadastrosPage() {
               {confCat ? `Excluir a categoria "${confCat.nome}"?` : ""}
             </AlertDialogDescription>
           </AlertDialogHeader>
+          {confCat && exclInfo !== null && (exclInfo.lanc > 0 || exclInfo.filhos > 0) && (
+            <div className="grid gap-3 rounded-2xl border bg-muted/40 p-4">
+              <p className="text-xs leading-relaxed text-muted-foreground">
+                <strong className="text-foreground">{exclInfo.lanc}</strong> lançamento(s) e{" "}
+                <strong className="text-foreground">{exclInfo.filhos}</strong> subcategoria(s) usam esta categoria.
+                Escolha abaixo para onde movê-los.
+              </p>
+              <div className="grid gap-1.5">
+                <Label>Mover para *</Label>
+                <Select value={substituta} onValueChange={setSubstituta}>
+                  <SelectTrigger className="h-10 rounded-xl"><SelectValue placeholder="Selecione a categoria" /></SelectTrigger>
+                  <SelectContent>
+                    {(categorias ?? [])
+                      .filter((c) => c.tipo === confCat.tipo && c.id !== confCat.id && c.parent_id !== confCat.id)
+                      .map((c) => (
+                        <SelectItem key={c.id} value={c.id}>{c.parent_id ? `↳ ${c.nome}` : c.nome}</SelectItem>
+                      ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+          )}
           <AlertDialogFooter className="gap-2">
             <AlertDialogCancel className="h-10 rounded-xl">Cancelar</AlertDialogCancel>
             <AlertDialogAction
               data-acao
               className="h-10 rounded-xl bg-destructive text-destructive-foreground hover:bg-destructive/90"
-              onClick={() => { if (confCat) excluirCat.mutate(confCat.id); setConfCat(null); }}
+              disabled={exclInfo === null || excluirCat.isPending}
+              onClick={() => void confirmarExclusaoCat()}
             >
               Excluir
             </AlertDialogAction>

@@ -5003,3 +5003,10 @@ Espelhado na Vercel.
   chevron e contador; pai com fundo próprio e sub com barra de
   destaque; busca mostra tudo expandido.
 - `tsc` limpo nos tocados e `npm run build` OK.
+
+## Categorias: pai no cadastro + remanejo + blur padrão (06/10)
+
+- Diálogo ganha "Categoria pai (opcional)" (troca ajusta o tipo).
+- Excluir mostra vínculos e exige categoria de destino, movendo
+  lançamentos e subs antes de apagar.
+- Blur aplicado também nas confirmações; `tsc`/`build` OK.
