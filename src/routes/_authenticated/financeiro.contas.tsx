@@ -1696,6 +1696,7 @@ function ReconcileDialog({ contaId, conta, empresaId, autoConciliar, importing, 
                     onConciliar={(t, r) => criarEConciliar.mutate({ tx: t, r })}
                     onExcluir={(id) => excluirTx.mutate([id])}
                     empresaId={empresaId}
+                    logoBanco={conta?.banco ? detectBancoByNome(conta.banco)?.logo ?? null : null}
                   />
                 ))}
 
@@ -1780,7 +1781,7 @@ const EMPTY_LANC: LancOpt[] = [];
 
 type Opcao = { id: string; nome: string };
 
-function BuscarLancamentoDialog({ open, onClose, tx, lancamentos, value, onConfirm, empresaId, contatos, centros }: {
+function BuscarLancamentoDialog({ open, onClose, tx, lancamentos, value, onConfirm, empresaId, contatos, centros, logoBanco }: {
   open: boolean;
   onClose: () => void;
   tx: OfxRow;
@@ -1790,6 +1791,7 @@ function BuscarLancamentoDialog({ open, onClose, tx, lancamentos, value, onConfi
   empresaId: string | null;
   contatos: { id: string; nome: string }[];
   centros: { id: string; nome: string }[];
+  logoBanco?: string | null;
 }) {
   const [q, setQ] = useState("");
   const [dias, setDias] = useState("3");
@@ -1799,7 +1801,7 @@ function BuscarLancamentoDialog({ open, onClose, tx, lancamentos, value, onConfi
   const [centroF, setCentroF] = useState("todas");
   const [sitF, setSitF] = useState("todas");
   const [extras, setExtras] = useState<string[]>([]);
-  const [tipoF, setTipoF] = useState(() => (Number(tx.valor) >= 0 ? "receber" : "pagar"));
+  const [tipoF, setTipoF] = useState<"receber" | "pagar" | "todos">(() => (Number(tx.valor) >= 0 ? "receber" : "pagar"));
   const [sel, setSel] = useState(value);
   useEffect(() => {
     if (open) {
@@ -1831,10 +1833,16 @@ function BuscarLancamentoDialog({ open, onClose, tx, lancamentos, value, onConfi
   const nomeConta = (id?: string | null) => (contasBusca ?? []).find((c) => c.id === id)?.nome ?? "—";
 
   const base = new Date(`${tx.data_transacao}T00:00:00`).getTime();
+  const fmtCurta = (t: number) => new Date(t).toLocaleDateString("pt-BR");
+  const rangeLabel = (n: string) => {
+    if (n === "todos" || Number.isNaN(base)) return "Todos os vencimentos";
+    const ini = base - Number(n) * 86400000;
+    return `${fmtCurta(ini)} a ${fmtCurta(base)}`;
+  };
   const filtrados = useMemo(() => {
     const termo = q.trim().toLowerCase();
     return (lancamentos ?? []).filter((l) => {
-      if (l.tipo !== tipoF) return false;
+      if (tipoF !== "todos" && l.tipo !== tipoF) return false;
       if (contaF !== "todas" && (l.conta_bancaria_id ?? "") !== contaF) return false;
       if (catF !== "todas" && (l.categoria_id ?? "") !== catF) return false;
       if (contatoF !== "todas" && (l.contato_id ?? "") !== contatoF) return false;
@@ -1868,7 +1876,11 @@ function BuscarLancamentoDialog({ open, onClose, tx, lancamentos, value, onConfi
         </DialogHeader>
         <div className="flex min-h-0 flex-1 flex-col gap-3 overflow-hidden">
           <div className="flex shrink-0 items-center gap-3 rounded-lg border bg-primary/[0.04] p-3">
-            <div className="grid h-11 w-11 shrink-0 place-items-center rounded-md bg-primary text-lg font-bold text-primary-foreground">B</div>
+            {logoBanco ? (
+              <img src={logoBanco} alt="" className="h-11 w-11 rounded-md object-contain bg-white ring-1 ring-border shrink-0" />
+            ) : (
+              <div className="grid h-11 w-11 shrink-0 place-items-center rounded-md bg-primary text-lg font-bold text-primary-foreground">B</div>
+            )}
             <div className="min-w-0">
               <div className="text-sm font-semibold">
                 {Number(tx.valor) >= 0 ? "Recebimento" : "Pagamento"} importado de {brl(vBanco)}
@@ -1883,15 +1895,14 @@ function BuscarLancamentoDialog({ open, onClose, tx, lancamentos, value, onConfi
           </div>
           <div className="grid shrink-0 grid-cols-2 gap-2 md:grid-cols-5">
             <div>
-              <span className="text-xs text-muted-foreground">Vencimento até 3 dias antes</span>
+              <span className="text-xs text-muted-foreground">Período de vencimento</span>
               <Select value={dias} onValueChange={setDias}>
-                <SelectTrigger className="h-8 text-xs w-full"><SelectValue /></SelectTrigger>
+                <SelectTrigger className="h-8 text-xs w-full"><SelectValue>{rangeLabel(dias)}</SelectValue></SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="3">3 dias</SelectItem>
-                  <SelectItem value="7">7 dias</SelectItem>
-                  <SelectItem value="15">15 dias</SelectItem>
-                  <SelectItem value="30">30 dias</SelectItem>
-                  <SelectItem value="todos">Todos</SelectItem>
+                  {["3", "7", "15", "30"].map((n) => (
+                    <SelectItem key={n} value={n}>{rangeLabel(n)} ({n} dias)</SelectItem>
+                  ))}
+                  <SelectItem value="todos">Todos os vencimentos</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -1916,13 +1927,26 @@ function BuscarLancamentoDialog({ open, onClose, tx, lancamentos, value, onConfi
             </div>
             <div>
               <span className="text-xs text-muted-foreground">Tipo</span>
-              <Select value={tipoF} onValueChange={setTipoF}>
-                <SelectTrigger className="h-8 text-xs w-full"><SelectValue /></SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="receber">Recebimentos</SelectItem>
-                  <SelectItem value="pagar">Pagamentos</SelectItem>
-                </SelectContent>
-              </Select>
+              {tipoF === "todos" ? (
+                <Select value={tipoF} onValueChange={(v) => setTipoF(v as "receber" | "pagar" | "todos")}>
+                  <SelectTrigger className="h-8 text-xs w-full"><SelectValue placeholder="Tipo" /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="receber">Recebimentos, Transferência de entrada</SelectItem>
+                    <SelectItem value="pagar">Pagamentos, Transferência de saída</SelectItem>
+                  </SelectContent>
+                </Select>
+              ) : (
+                <button
+                  onClick={() => setTipoF("todos")}
+                  title="Mostrar todos os tipos"
+                  className="flex h-8 w-full items-center justify-between gap-1 rounded-md border bg-muted/40 px-2 text-left text-xs"
+                >
+                  <span className="truncate">
+                    Tipo de lançamento: {tipoF === "receber" ? "Recebimentos, Transferência de entrada" : "Pagamentos, Transferência de saída"}
+                  </span>
+                  <X className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
+                </button>
+              )}
             </div>
             <div>
               <span className="text-xs text-muted-foreground">Mais filtros</span>
@@ -1957,7 +1981,7 @@ function BuscarLancamentoDialog({ open, onClose, tx, lancamentos, value, onConfi
                     <SelectTrigger className="h-8 text-xs w-full"><SelectValue placeholder="Categoria" /></SelectTrigger>
                     <SelectContent>
                       <SelectItem value="todas">Todas categorias</SelectItem>
-                      {(catsBusca ?? []).filter((c) => c.tipo === tipoF).map((c) => (
+                      {(catsBusca ?? []).filter((c) => tipoF === "todos" || c.tipo === tipoF).map((c) => (
                         <SelectItem key={c.id} value={c.id}>{c.nome}</SelectItem>
                       ))}
                     </SelectContent>
@@ -2079,7 +2103,7 @@ function BuscarLancamentoDialog({ open, onClose, tx, lancamentos, value, onConfi
 
 const ReconcileRow = memo(function ReconcileRow({
   tx, r, modoBusca, selected, categorias, contatos, centros, lancamentosAbertos,
-  conciliando, excluindo, onToggleSel, onSetRow, onSetModoBusca, onConciliar, onExcluir, empresaId,
+  conciliando, excluindo, onToggleSel, onSetRow, onSetModoBusca, onConciliar, onExcluir, empresaId, logoBanco,
 }: {
   tx: OfxRow;
   r: RowState;
@@ -2097,6 +2121,7 @@ const ReconcileRow = memo(function ReconcileRow({
   onConciliar: (tx: OfxRow, r: RowState) => void;
   onExcluir: (id: string) => void;
   empresaId: string | null;
+  logoBanco?: string | null;
 }) {
   const data = new Date(tx.data_transacao + "T00:00:00");
   const nomeContato = r.contato_id ? (contatos.find((c) => c.id === r.contato_id)?.nome ?? "—") : "Informação não recebida";
@@ -2162,6 +2187,7 @@ const ReconcileRow = memo(function ReconcileRow({
             value={r.lancamento_id}
             onConfirm={(id) => { onSetRow(tx.id, { lancamento_id: id }); setBuscaOpen(false); }}
             empresaId={empresaId}
+            logoBanco={logoBanco}
             contatos={contatos}
             centros={centros}
           />

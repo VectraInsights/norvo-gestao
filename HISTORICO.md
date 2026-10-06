@@ -4652,3 +4652,11 @@ Espelhado na Vercel.
   custo, situação) com chips e limpar; botão Novo removido.
 - Rodapé com Conciliar em destaque.
 - Validado com `tsc` (só baseline) e `npm run build` OK.
+
+## Busca com tipo automático e logo do banco (06/10)
+
+- Período mostra as datas puxadas (ex.: 03/10 a 06/10); logo do banco no
+  resumo no lugar do "B".
+- Tipo detectado sozinho (saída = pagamentos, entrada = recebimentos) em
+  chip com X para ver tudo.
+- Validado com `tsc` (só baseline) e `npm run build` OK.
