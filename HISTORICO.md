@@ -4786,3 +4786,9 @@ Espelhado na Vercel.
 - Ambas em card `erp-surface` rounded-2xl com respiro; campos h-10
   rounded-xl, botões com hover elevado; loading em card.
 - Paleta intacta; `tsc` limpo nos tocados e `npm run build` OK.
+
+## Repaginação: onboarding (06/10)
+
+- Fecha as públicas: card rounded-2xl com respiro, ícone maior,
+  campos h-10 rounded-xl, grid responsivo e CTA em destaque.
+- Paleta intacta; `tsc` limpo nos tocados e `npm run build` OK.

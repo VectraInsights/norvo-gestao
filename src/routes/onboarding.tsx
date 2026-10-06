@@ -123,46 +123,46 @@ function OnboardingPage() {
   };
 
   return (
-    <div className="grid min-h-screen place-items-center bg-gradient-to-br from-background via-background to-primary/5 p-4">
-      <Card className="w-full max-w-lg shadow-panel">
-        <CardHeader className="text-center">
-          <div className="mx-auto mb-3 grid h-14 w-14 place-items-center rounded-2xl bg-gradient-to-br from-primary to-primary/70 text-primary-foreground shadow-[0_4px_16px_-4px_var(--color-primary)] ring-1 ring-primary/30">
-            <Building2 className="h-7 w-7" />
+    <div className="grid min-h-screen place-items-center bg-gradient-to-br from-background via-background to-primary/5 p-4 sm:p-8">
+      <Card className="w-full max-w-lg rounded-2xl shadow-panel">
+        <CardHeader className="gap-2 pb-2 text-center sm:pt-8">
+          <div className="mx-auto mb-2 grid h-16 w-16 place-items-center rounded-2xl bg-gradient-to-br from-primary to-primary/70 text-primary-foreground shadow-[0_4px_16px_-4px_var(--color-primary)] ring-1 ring-primary/30">
+            <Building2 className="h-8 w-8" />
           </div>
-          <CardTitle className="text-display text-2xl">Bem-vindo(a) ao Norvo!</CardTitle>
-          <CardDescription>
+          <CardTitle className="text-display text-3xl tracking-tight">Bem-vindo(a) ao Norvo!</CardTitle>
+          <CardDescription className="mx-auto max-w-sm leading-relaxed">
             Falta só um passo: cadastre sua primeira empresa para começar a usar o sistema.
           </CardDescription>
         </CardHeader>
-        <CardContent>
+        <CardContent className="sm:px-8">
           <form onSubmit={submit} className="space-y-4">
-            <div>
+            <div className="grid gap-1.5">
               <Label>CNPJ (opcional)</Label>
               <div className="flex gap-2">
-                <Input placeholder="00.000.000/0000-00" value={form.cnpj}
+                <Input placeholder="00.000.000/0000-00" value={form.cnpj} className="h-10 rounded-xl"
                   onChange={(e) => setForm({ ...form, cnpj: e.target.value })} />
-                <Button type="button" variant="outline" onClick={lookupCnpj}
+                <Button type="button" variant="outline" onClick={lookupCnpj} className="h-10 w-10 shrink-0 rounded-xl shadow-sm"
                   disabled={lookingUp || !form.cnpj}
                   title="Buscar dados na Receita Federal">
                   {lookingUp ? <Loader2 className="h-4 w-4 animate-spin" /> : <Search className="h-4 w-4" />}
                 </Button>
               </div>
             </div>
-            <div>
+            <div className="grid gap-1.5">
               <Label>Nome da empresa <span className="text-destructive">*</span></Label>
-              <Input required value={form.nome_fantasia}
+              <Input required value={form.nome_fantasia} className="h-10 rounded-xl"
                 onChange={(e) => setForm({ ...form, nome_fantasia: e.target.value })}
                 placeholder="Ex.: Minha Empresa LTDA" />
             </div>
-            <div>
+            <div className="grid gap-1.5">
               <Label>Razão social</Label>
-              <Input value={form.razao_social}
+              <Input value={form.razao_social} className="h-10 rounded-xl"
                 onChange={(e) => setForm({ ...form, razao_social: e.target.value })} />
             </div>
-            <div>
+            <div className="grid gap-1.5">
               <Label>Regime tributário <span className="text-muted-foreground text-xs">(usado p/ PIS/COFINS no CT-e)</span></Label>
               <Select value={form.regime_tributario} onValueChange={v => setForm({ ...form, regime_tributario: v })}>
-                <SelectTrigger><SelectValue placeholder="Selecione" /></SelectTrigger>
+                <SelectTrigger className="h-10 rounded-xl"><SelectValue placeholder="Selecione" /></SelectTrigger>
                 <SelectContent>
                   <SelectItem value="simples">Simples Nacional</SelectItem>
                   <SelectItem value="lucro_presumido">Lucro Presumido</SelectItem>
@@ -170,25 +170,25 @@ function OnboardingPage() {
                   <SelectItem value="mei">MEI</SelectItem>
                 </SelectContent>
               </Select>
-              <p className="text-[10px] text-muted-foreground mt-1">Preenchido automaticamente ao buscar CNPJ. PIS 0,65%/3% (Presumido) ou 1,65%/7,6% (Real) será aplicado no CT-e.</p>
+              <p className="text-[11px] leading-relaxed text-muted-foreground">Preenchido automaticamente ao buscar CNPJ. PIS 0,65%/3% (Presumido) ou 1,65%/7,6% (Real) será aplicado no CT-e.</p>
             </div>
-            <div className="grid grid-cols-2 gap-3">
-              <div>
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+              <div className="grid gap-1.5">
                 <Label>Email</Label>
-                <Input type="email" value={form.email}
+                <Input type="email" value={form.email} className="h-10 rounded-xl"
                   onChange={(e) => setForm({ ...form, email: e.target.value })} />
               </div>
-              <div>
+              <div className="grid gap-1.5">
                 <Label>Telefone</Label>
-                <Input value={form.telefone}
+                <Input value={form.telefone} className="h-10 rounded-xl"
                   onChange={(e) => setForm({ ...form, telefone: e.target.value })} />
               </div>
             </div>
-            <Button type="submit" className="w-full" disabled={saving}>
+            <Button type="submit" className="h-11 w-full rounded-xl text-base shadow-md transition-all hover:-translate-y-px hover:shadow-lg" disabled={saving}>
               {saving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
               Criar empresa e começar
             </Button>
-            <p className="text-center text-xs text-muted-foreground">
+            <p className="pb-2 text-center text-xs leading-relaxed text-muted-foreground">
               Você poderá complementar endereço e outros dados depois em Configurações → Empresas.
             </p>
           </form>
