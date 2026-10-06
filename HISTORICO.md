@@ -4822,3 +4822,9 @@ Espelhado na Vercel.
   destaque, tabela com hover, badges pill, módulos em card com
   hover, diálogos com campos h-10.
 - Paleta intacta; `tsc` limpo nos tocados e `npm run build` OK.
+
+## Repaginação: configuracoes.auditoria (06/10)
+
+- 4ª e última das Configurações: filtros em card rounded-2xl com
+  campos h-10, tabela com hover, vazios com respiro.
+- Paleta intacta; `tsc` limpo nos tocados e `npm run build` OK.
