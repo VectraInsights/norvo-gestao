@@ -5010,3 +5010,9 @@ Espelhado na Vercel.
 - Excluir mostra vínculos e exige categoria de destino, movendo
   lançamentos e subs antes de apagar.
 - Blur aplicado também nas confirmações; `tsc`/`build` OK.
+
+## Diálogo de categoria simplificado (06/10)
+
+- Sem seletor de pai: sub mostra "Categoria" fixa + campo
+  "Subcategoria"; principal mostra "Categoria" + Tipo.
+- `tsc` limpo nos tocados e `npm run build` OK.

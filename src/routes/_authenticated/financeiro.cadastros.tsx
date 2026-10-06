@@ -458,45 +458,37 @@ function CadastrosPage() {
         <DialogContent className="sm:max-w-md sm:inset-auto sm:left-1/2 sm:top-1/2 sm:-translate-x-1/2 sm:-translate-y-1/2 sm:h-auto sm:max-h-[90vh] sm:w-full">
           <DialogHeader className="gap-1.5 pb-1"><DialogTitle className="tracking-tight">{catForm.id ? "Editar categoria" : catForm.parent_id !== "none" ? "Nova subcategoria" : "Nova categoria"}</DialogTitle></DialogHeader>
           <form onSubmit={(e) => { e.preventDefault(); salvarCat.mutate(); }} className="space-y-4">
-            <div className="grid gap-1.5">
-              <Label>Nome *</Label>
-              <Input required value={catForm.nome} onChange={(e) => setCatForm({ ...catForm, nome: e.target.value })} className="h-10 rounded-xl" />
-            </div>
-            <div className="grid gap-1.5">
-              <Label>Tipo *</Label>
-              <Select value={catForm.tipo} onValueChange={(v) => setCatForm({ ...catForm, tipo: v as "receber" | "pagar", parent_id: "none" })} disabled={catForm.parent_id !== "none" && !catForm.id}>
-                <SelectTrigger className="h-10 rounded-xl"><SelectValue /></SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="receber">Receita</SelectItem>
-                  <SelectItem value="pagar">Despesa</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="grid gap-1.5">
-              <Label>Categoria pai (opcional)</Label>
-              <Select
-                value={catForm.parent_id}
-                onValueChange={(v) => {
-                  if (v === "none") {
-                    setCatForm({ ...catForm, parent_id: "none" });
-                    return;
-                  }
-                  const pai = (categorias ?? []).find((c) => c.id === v);
-                  setCatForm({ ...catForm, parent_id: v, tipo: (pai?.tipo as "receber" | "pagar") ?? catForm.tipo });
-                }}
-              >
-                <SelectTrigger className="h-10 rounded-xl"><SelectValue placeholder="Nenhuma (categoria principal)" /></SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="none">Nenhuma (categoria principal)</SelectItem>
-                  {(categorias ?? [])
-                    .filter((c) => !c.parent_id && c.tipo === catForm.tipo && c.id !== catForm.id)
-                    .map((c) => (
-                      <SelectItem key={c.id} value={c.id}>{c.nome}</SelectItem>
-                    ))}
-                </SelectContent>
-              </Select>
-              <p className="text-[11px] leading-relaxed text-muted-foreground">Deixe em branco para criar uma categoria principal.</p>
-            </div>
+            {catForm.parent_id !== "none" && !catForm.id ? (
+              <>
+                <div className="grid gap-1.5">
+                  <Label>Categoria</Label>
+                  <div className="flex h-10 items-center rounded-xl border bg-muted/40 px-3 text-sm font-medium">
+                    {(categorias ?? []).find((c) => c.id === catForm.parent_id)?.nome ?? "—"}
+                  </div>
+                </div>
+                <div className="grid gap-1.5">
+                  <Label>Subcategoria *</Label>
+                  <Input required value={catForm.nome} onChange={(e) => setCatForm({ ...catForm, nome: e.target.value })} className="h-10 rounded-xl" placeholder="Ex.: Material de escritório" />
+                </div>
+              </>
+            ) : (
+              <>
+                <div className="grid gap-1.5">
+                  <Label>{catForm.id ? "Nome *" : "Categoria *"}</Label>
+                  <Input required value={catForm.nome} onChange={(e) => setCatForm({ ...catForm, nome: e.target.value })} className="h-10 rounded-xl" />
+                </div>
+                <div className="grid gap-1.5">
+                  <Label>Tipo *</Label>
+                  <Select value={catForm.tipo} onValueChange={(v) => setCatForm({ ...catForm, tipo: v as "receber" | "pagar", parent_id: "none" })}>
+                    <SelectTrigger className="h-10 rounded-xl"><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="receber">Receita</SelectItem>
+                      <SelectItem value="pagar">Despesa</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </>
+            )}
             <DialogFooter className="gap-2">
               <Button type="submit" disabled={salvarCat.isPending} className="h-10 rounded-xl px-6 shadow-sm transition-all hover:-translate-y-px hover:shadow-md">
                 {salvarCat.isPending && <Loader2 className="mr-1 h-4 w-4 animate-spin" />}Salvar
