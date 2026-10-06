@@ -4800,3 +4800,11 @@ Espelhado na Vercel.
   FirstEmpresa com campos h-10 e CTA em destaque.
 - Chave `empresas/resumo` (era `empresas`, colidia) e `error`
   tipado; paleta intacta; `tsc` limpo e build OK.
+
+## Repaginação: configuracoes.index (06/10)
+
+- 1ª das 4 telas de Configurações: abas com wrap, cards rounded-2xl
+  com p-5/6, formulários h-10 responsivos, botões com hover elevado,
+  linhas vazias com respiro e diálogo de exclusão em card.
+- `tsc`: 4 erros são baseline do HEAD (tabelas `as never`);
+  build OK. Paleta intacta.

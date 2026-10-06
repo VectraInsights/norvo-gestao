@@ -35,17 +35,17 @@ function Configuracoes() {
   return (
     <>
       <PageHeader eyebrow="Sistema" title="Configurações" description="Empresa, categorias, condições de pagamento e configuração fiscal." />
-      <div className="mb-4">
-        <Link to="/configuracoes/empresas" className="inline-flex items-center gap-2 text-sm text-primary hover:underline">
+      <div className="mb-6">
+        <Link to="/configuracoes/empresas" className="-ml-2 inline-flex items-center gap-2 rounded-lg px-2 py-1.5 text-sm font-medium text-primary transition-colors hover:bg-accent">
           <Building2 className="h-4 w-4" /> Gerenciar empresas
         </Link>
       </div>
 
       {!empresa ? (
-        <Card><CardContent className="p-6 text-sm text-muted-foreground">Cadastre uma empresa primeiro.</CardContent></Card>
+        <Card className="rounded-2xl"><CardContent className="p-8 text-center text-sm text-muted-foreground">Cadastre uma empresa primeiro.</CardContent></Card>
       ) : (
         <Tabs defaultValue="categorias">
-          <TabsList>
+          <TabsList className="h-auto flex-wrap gap-1">
             <TabsTrigger value="categorias">Categorias financeiras</TabsTrigger>
             <TabsTrigger value="condicoes">Condições de pagamento</TabsTrigger>
             <TabsTrigger value="rntrc">RNTRC</TabsTrigger>
@@ -94,14 +94,14 @@ function CategoriasTab({ empresaId }: { empresaId: string }) {
   const ordered = all.filter((c) => c.tipo === tipo);
 
   return (
-    <Card className="mt-4 shadow-panel"><CardContent className="p-4">
-      <div className="mb-3 grid grid-cols-[2fr_1fr_auto] gap-2">
-        <Input placeholder="Nova categoria" value={nome} onChange={(e) => setNome(e.target.value)} />
+    <Card className="mt-4 rounded-2xl shadow-panel"><CardContent className="p-5 sm:p-6">
+      <div className="mb-4 grid grid-cols-1 gap-2.5 sm:grid-cols-[2fr_1fr_auto]">
+        <Input placeholder="Nova categoria" value={nome} onChange={(e) => setNome(e.target.value)} className="h-10 rounded-xl" />
         <Select value={tipo} onValueChange={(v) => setTipo(v as "receber" | "pagar")}>
-          <SelectTrigger><SelectValue /></SelectTrigger>
+          <SelectTrigger className="h-10 rounded-xl"><SelectValue /></SelectTrigger>
           <SelectContent><SelectItem value="receber">Receita</SelectItem><SelectItem value="pagar">Despesa</SelectItem></SelectContent>
         </Select>
-        <Button onClick={add}><Plus className="mr-1 h-4 w-4" />Adicionar</Button>
+        <Button onClick={add} className="h-10 shrink-0 whitespace-nowrap rounded-xl px-4 shadow-sm transition-all hover:-translate-y-px hover:shadow-md"><Plus className="mr-1.5 h-4 w-4" />Adicionar</Button>
       </div>
       <Table>
         <TableHeader><TableRow><TableHead>Nome</TableHead><TableHead>Tipo</TableHead><TableHead /></TableRow></TableHeader>
@@ -146,12 +146,12 @@ function CondicoesTab({ empresaId }: { empresaId: string }) {
   };
 
   return (
-    <Card className="mt-4 shadow-panel"><CardContent className="p-4">
-      <div className="mb-3 grid grid-cols-[2fr_1fr_1fr_auto] gap-2">
-        <Input placeholder="Ex.: 30/60/90" value={form.nome} onChange={(e) => setForm({ ...form, nome: e.target.value })} />
-        <MoneyInput placeholder="Parcelas" prefix="" decimals={0} value={form.parcelas} onChange={(v) => setForm({ ...form, parcelas: v })} />
-        <MoneyInput placeholder="Intervalo (dias)" prefix="" decimals={0} value={form.intervalo_dias} onChange={(v) => setForm({ ...form, intervalo_dias: v })} />
-        <Button onClick={add}><Plus className="mr-1 h-4 w-4" />Adicionar</Button>
+    <Card className="mt-4 rounded-2xl shadow-panel"><CardContent className="p-5 sm:p-6">
+      <div className="mb-4 grid grid-cols-1 gap-2.5 sm:grid-cols-[2fr_1fr_1fr_auto]">
+        <Input placeholder="Ex.: 30/60/90" value={form.nome} onChange={(e) => setForm({ ...form, nome: e.target.value })} className="h-10 rounded-xl" />
+        <MoneyInput placeholder="Parcelas" prefix="" decimals={0} value={form.parcelas} onChange={(v) => setForm({ ...form, parcelas: v })} className="h-10" />
+        <MoneyInput placeholder="Intervalo (dias)" prefix="" decimals={0} value={form.intervalo_dias} onChange={(v) => setForm({ ...form, intervalo_dias: v })} className="h-10" />
+        <Button onClick={add} className="h-10 shrink-0 whitespace-nowrap rounded-xl px-4 shadow-sm transition-all hover:-translate-y-px hover:shadow-md"><Plus className="mr-1.5 h-4 w-4" />Adicionar</Button>
       </div>
       <Table>
         <TableHeader><TableRow><TableHead>Nome</TableHead><TableHead className="text-right">Parcelas</TableHead><TableHead className="text-right">Intervalo (dias)</TableHead><TableHead /></TableRow></TableHeader>
@@ -202,16 +202,16 @@ function NFeConfigTab({ empresaId }: { empresaId: string }) {
   };
 
   return (
-    <Card className="mt-4 shadow-panel"><CardContent className="p-4 space-y-3">
-      <div className="grid grid-cols-2 gap-3">
-        <div>
+    <Card className="mt-4 rounded-2xl shadow-panel"><CardContent className="p-5 sm:p-6 space-y-4">
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+        <div className="grid gap-1.5">
           <Label>Ambiente</Label>
-          <div className="flex h-9 items-center rounded-md border bg-amber-50 px-3 text-sm text-amber-800 dark:bg-amber-950/30 dark:text-amber-200">Homologação (testes)</div>
+          <div className="flex h-10 items-center rounded-xl border bg-amber-50 px-3.5 text-sm text-amber-800 shadow-sm dark:bg-amber-950/30 dark:text-amber-200">Homologação (testes)</div>
         </div>
-        <div>
+        <div className="grid gap-1.5">
           <Label>Regime tributário</Label>
           <Select value={form.regime_tributario} onValueChange={(v) => setForm({ ...form, regime_tributario: v })}>
-            <SelectTrigger><SelectValue /></SelectTrigger>
+            <SelectTrigger className="h-10 rounded-xl"><SelectValue /></SelectTrigger>
             <SelectContent>
               <SelectItem value="simples">Simples Nacional</SelectItem>
               <SelectItem value="presumido">Lucro Presumido</SelectItem>
@@ -220,13 +220,13 @@ function NFeConfigTab({ empresaId }: { empresaId: string }) {
             </SelectContent>
           </Select>
         </div>
-        <div><Label>Série</Label><Input type="number" value={form.serie} onChange={(e) => setForm({ ...form, serie: e.target.value })} /></div>
-        <div><Label>Próximo número</Label><Input type="number" value={form.proximo_numero} onChange={(e) => setForm({ ...form, proximo_numero: e.target.value })} /></div>
-        <div><Label>CNAE</Label><Input value={form.cnae} onChange={(e) => setForm({ ...form, cnae: e.target.value })} /></div>
-        <div><Label>Natureza da operação</Label><Input value={form.natureza_operacao} onChange={(e) => setForm({ ...form, natureza_operacao: e.target.value })} /></div>
+        <div className="grid gap-1.5"><Label>Série</Label><Input type="number" value={form.serie} onChange={(e) => setForm({ ...form, serie: e.target.value })} className="h-10 rounded-xl" /></div>
+        <div className="grid gap-1.5"><Label>Próximo número</Label><Input type="number" value={form.proximo_numero} onChange={(e) => setForm({ ...form, proximo_numero: e.target.value })} className="h-10 rounded-xl" /></div>
+        <div className="grid gap-1.5"><Label>CNAE</Label><Input value={form.cnae} onChange={(e) => setForm({ ...form, cnae: e.target.value })} className="h-10 rounded-xl" /></div>
+        <div className="grid gap-1.5"><Label>Natureza da operação</Label><Input value={form.natureza_operacao} onChange={(e) => setForm({ ...form, natureza_operacao: e.target.value })} className="h-10 rounded-xl" /></div>
       </div>
-      <Button onClick={save}>Salvar configuração</Button>
-      <p className="text-xs text-muted-foreground">
+      <Button onClick={save} className="h-10 rounded-xl px-6 shadow-sm transition-all hover:-translate-y-px hover:shadow-md">Salvar configuração</Button>
+      <p className="text-xs leading-relaxed text-muted-foreground">
         A emissão real de NF-e exige integração com um provedor homologado (Focus NFe, PlugNotas, Nfe.io). O ambiente atual usa um stub para simular o fluxo completo.
       </p>
     </CardContent></Card>
@@ -330,10 +330,10 @@ function RntrcTab({ empresaId }: { empresaId: string }) {
   };
 
   return (
-    <Card className="mt-4 shadow-panel"><CardContent className="p-4">
-      <p className="text-xs text-muted-foreground mb-3">RNTRCs pré-cadastrados aparecem como opções ao preencher veículos.</p>
-      <div className="mb-3 grid grid-cols-[1fr_2fr_1.5fr_1fr_auto] gap-2">
-        <Input placeholder="RNTRC *" value={rntrc} onChange={(e) => setRntrc(e.target.value.toUpperCase())} className="uppercase" />
+    <Card className="mt-4 rounded-2xl shadow-panel"><CardContent className="p-5 sm:p-6">
+      <p className="mb-4 text-xs leading-relaxed text-muted-foreground">RNTRCs pré-cadastrados aparecem como opções ao preencher veículos.</p>
+      <div className="mb-4 grid grid-cols-1 gap-2.5 sm:grid-cols-2 lg:grid-cols-[1fr_2fr_1.5fr_1fr_auto]">
+        <Input placeholder="RNTRC *" value={rntrc} onChange={(e) => setRntrc(e.target.value.toUpperCase())} className="h-10 rounded-xl uppercase" />
         <Input
           placeholder="CNPJ *"
           value={cnpj}
@@ -345,17 +345,18 @@ function RntrcTab({ empresaId }: { empresaId: string }) {
           }}
           onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); const digits = cnpj.replace(/\D/g, ""); if (digits.length === 14 && !nome.trim()) lookupCnpj(cnpj); } }}
           disabled={lookingUp}
+          className="h-10 rounded-xl"
         />
-        <Input placeholder="Nome / Razão Social *" value={nome} onChange={(e) => setNome(e.target.value)} />
+        <Input placeholder="Nome / Razão Social *" value={nome} onChange={(e) => setNome(e.target.value)} className="h-10 rounded-xl" />
         <Select value={categoria} onValueChange={setCategoria}>
-          <SelectTrigger className="h-9"><SelectValue placeholder="Categoria" /></SelectTrigger>
+          <SelectTrigger className="h-10 rounded-xl"><SelectValue placeholder="Categoria" /></SelectTrigger>
           <SelectContent>
             <SelectItem value="ETC">ETC</SelectItem>
             <SelectItem value="TAC">TAC</SelectItem>
             <SelectItem value="CTC">CTC</SelectItem>
           </SelectContent>
         </Select>
-        <Button onClick={add} disabled={lookingUp}><Plus className="mr-1 h-4 w-4" />Adicionar</Button>
+        <Button onClick={add} disabled={lookingUp} className="h-10 shrink-0 whitespace-nowrap rounded-xl px-4 shadow-sm transition-all hover:-translate-y-px hover:shadow-md"><Plus className="mr-1.5 h-4 w-4" />Adicionar</Button>
       </div>
       <Table>
         <TableHeader><TableRow><TableHead>RNTRC</TableHead><TableHead>CNPJ</TableHead><TableHead>Nome</TableHead><TableHead>Categoria</TableHead><TableHead /></TableRow></TableHeader>
@@ -363,12 +364,12 @@ function RntrcTab({ empresaId }: { empresaId: string }) {
           {data?.map((r: any) => (
             editingId === r.id ? (
               <TableRow key={r.id}>
-                <TableCell><Input value={editRntrc} onChange={(e) => setEditRntrc(e.target.value.toUpperCase())} className="h-8 uppercase" /></TableCell>
-                <TableCell><Input value={editCnpj} onChange={(e) => setEditCnpj(formatCnpj(e.target.value))} className="h-8" /></TableCell>
-                <TableCell><Input value={editNome} onChange={(e) => setEditNome(e.target.value)} className="h-8" /></TableCell>
+                <TableCell><Input value={editRntrc} onChange={(e) => setEditRntrc(e.target.value.toUpperCase())} className="h-9 rounded-xl uppercase" /></TableCell>
+                <TableCell><Input value={editCnpj} onChange={(e) => setEditCnpj(formatCnpj(e.target.value))} className="h-9 rounded-xl" /></TableCell>
+                <TableCell><Input value={editNome} onChange={(e) => setEditNome(e.target.value)} className="h-9 rounded-xl" /></TableCell>
                 <TableCell>
                   <Select value={editCategoria} onValueChange={setEditCategoria}>
-                    <SelectTrigger className="h-8"><SelectValue placeholder="Categoria" /></SelectTrigger>
+                    <SelectTrigger className="h-9 rounded-xl"><SelectValue placeholder="Categoria" /></SelectTrigger>
                     <SelectContent>
                       <SelectItem value="ETC">ETC</SelectItem>
                       <SelectItem value="TAC">TAC</SelectItem>
@@ -377,8 +378,8 @@ function RntrcTab({ empresaId }: { empresaId: string }) {
                   </Select>
                 </TableCell>
                 <TableCell className="text-right gap-1">
-                  <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => saveEdit(r.id)}><Check className="h-4 w-4" /></Button>
-                  <Button variant="ghost" size="icon" className="h-8 w-8" onClick={cancelEdit}><X className="h-4 w-4" /></Button>
+                  <Button variant="ghost" size="icon" className="h-8 w-8 rounded-lg" onClick={() => saveEdit(r.id)}><Check className="h-4 w-4" /></Button>
+                  <Button variant="ghost" size="icon" className="h-8 w-8 rounded-lg" onClick={cancelEdit}><X className="h-4 w-4" /></Button>
                 </TableCell>
               </TableRow>
             ) : (
@@ -388,13 +389,13 @@ function RntrcTab({ empresaId }: { empresaId: string }) {
                 <TableCell>{r.nome}</TableCell>
                 <TableCell>{r.categoria || "—"}</TableCell>
                 <TableCell className="text-right gap-1">
-                  <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => startEdit(r)}><Pencil className="h-4 w-4" /></Button>
-                  <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => remove(r.id)}><Trash2 className="h-4 w-4" /></Button>
+                  <Button variant="ghost" size="icon" className="h-8 w-8 rounded-lg" onClick={() => startEdit(r)}><Pencil className="h-4 w-4" /></Button>
+                  <Button variant="ghost" size="icon" className="h-8 w-8 rounded-lg" onClick={() => remove(r.id)}><Trash2 className="h-4 w-4" /></Button>
                 </TableCell>
               </TableRow>
             )
           ))}
-          {data?.length === 0 && <TableRow><TableCell colSpan={5} className="text-center text-muted-foreground text-sm">Nenhum RNTRC cadastrado</TableCell></TableRow>}
+          {data?.length === 0 && <TableRow><TableCell colSpan={5} className="py-8 text-center text-sm text-muted-foreground">Nenhum RNTRC cadastrado</TableCell></TableRow>}
         </TableBody>
       </Table>
     </CardContent></Card>
@@ -482,9 +483,9 @@ function SeguradorasTab({ empresaId }: { empresaId: string }) {
   };
 
   return (
-    <Card className="mt-4 shadow-panel"><CardContent className="p-4">
-      <p className="text-xs text-muted-foreground mb-3">Seguradoras e apólices aparecem como opções na aba Transporte do CT-e.</p>
-      <div className="mb-3 grid grid-cols-[1.5fr_2fr_1fr_1fr_auto] gap-2">
+    <Card className="mt-4 rounded-2xl shadow-panel"><CardContent className="p-5 sm:p-6">
+      <p className="mb-4 text-xs leading-relaxed text-muted-foreground">Seguradoras e apólices aparecem como opções na aba Transporte do CT-e.</p>
+      <div className="mb-4 grid grid-cols-1 gap-2.5 sm:grid-cols-2 lg:grid-cols-[1.5fr_2fr_1fr_1fr_auto]">
         <Input
           placeholder="CNPJ *"
           value={cnpj}
@@ -494,11 +495,12 @@ function SeguradorasTab({ empresaId }: { empresaId: string }) {
             if (formatted.replace(/\D/g, "").length === 14) lookupCnpj(formatted, setNome);
           }}
           disabled={lookingUp}
+          className="h-10 rounded-xl"
         />
-        <Input placeholder="Nome / Razão Social *" value={nome} onChange={(e) => setNome(e.target.value)} />
-        <Input placeholder="Nº Apólice" value={apolice} onChange={(e) => setApolice(e.target.value)} />
-        <Input placeholder="Averbação" value={averbacao} onChange={(e) => setAverbacao(e.target.value)} />
-        <Button onClick={add} disabled={lookingUp}><Plus className="mr-1 h-4 w-4" />Adicionar</Button>
+        <Input placeholder="Nome / Razão Social *" value={nome} onChange={(e) => setNome(e.target.value)} className="h-10 rounded-xl" />
+        <Input placeholder="Nº Apólice" value={apolice} onChange={(e) => setApolice(e.target.value)} className="h-10 rounded-xl" />
+        <Input placeholder="Averbação" value={averbacao} onChange={(e) => setAverbacao(e.target.value)} className="h-10 rounded-xl" />
+        <Button onClick={add} disabled={lookingUp} className="h-10 shrink-0 whitespace-nowrap rounded-xl px-4 shadow-sm transition-all hover:-translate-y-px hover:shadow-md"><Plus className="mr-1.5 h-4 w-4" />Adicionar</Button>
       </div>
       <Table>
         <TableHeader><TableRow><TableHead>CNPJ</TableHead><TableHead>Nome</TableHead><TableHead>Apólice</TableHead><TableHead>Averbação</TableHead><TableHead /></TableRow></TableHeader>
@@ -510,13 +512,13 @@ function SeguradorasTab({ empresaId }: { empresaId: string }) {
                   const formatted = formatCnpj(e.target.value);
                   setEditCnpj(formatted);
                   if (formatted.replace(/\D/g, "").length === 14) lookupCnpj(formatted, setEditNome);
-                }} className="h-8" /></TableCell>
-                <TableCell><Input value={editNome} onChange={(e) => setEditNome(e.target.value)} className="h-8" /></TableCell>
-                <TableCell><Input value={editApolice} onChange={(e) => setEditApolice(e.target.value)} className="h-8" /></TableCell>
-                <TableCell><Input value={editAverbacao} onChange={(e) => setEditAverbacao(e.target.value)} className="h-8" /></TableCell>
+                }} className="h-9 rounded-xl" /></TableCell>
+                <TableCell><Input value={editNome} onChange={(e) => setEditNome(e.target.value)} className="h-9 rounded-xl" /></TableCell>
+                <TableCell><Input value={editApolice} onChange={(e) => setEditApolice(e.target.value)} className="h-9 rounded-xl" /></TableCell>
+                <TableCell><Input value={editAverbacao} onChange={(e) => setEditAverbacao(e.target.value)} className="h-9 rounded-xl" /></TableCell>
                 <TableCell className="text-right gap-1">
-                  <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => saveEdit(r.id)}><Check className="h-4 w-4" /></Button>
-                  <Button variant="ghost" size="icon" className="h-8 w-8" onClick={cancelEdit}><X className="h-4 w-4" /></Button>
+                  <Button variant="ghost" size="icon" className="h-8 w-8 rounded-lg" onClick={() => saveEdit(r.id)}><Check className="h-4 w-4" /></Button>
+                  <Button variant="ghost" size="icon" className="h-8 w-8 rounded-lg" onClick={cancelEdit}><X className="h-4 w-4" /></Button>
                 </TableCell>
               </TableRow>
             ) : (
@@ -526,26 +528,26 @@ function SeguradorasTab({ empresaId }: { empresaId: string }) {
                 <TableCell>{r.apolice_numero || "—"}</TableCell>
                 <TableCell>{r.averbacao || "—"}</TableCell>
                 <TableCell className="text-right gap-1">
-                  <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => startEdit(r)}><Pencil className="h-4 w-4" /></Button>
-                  <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setExcluindo(r)}><Trash2 className="h-4 w-4" /></Button>
+                  <Button variant="ghost" size="icon" className="h-8 w-8 rounded-lg" onClick={() => startEdit(r)}><Pencil className="h-4 w-4" /></Button>
+                  <Button variant="ghost" size="icon" className="h-8 w-8 rounded-lg" onClick={() => setExcluindo(r)}><Trash2 className="h-4 w-4" /></Button>
                 </TableCell>
               </TableRow>
             )
           ))}
-          {data?.length === 0 && <TableRow><TableCell colSpan={5} className="text-center text-muted-foreground text-sm">Nenhuma seguradora cadastrada</TableCell></TableRow>}
+          {data?.length === 0 && <TableRow><TableCell colSpan={5} className="py-8 text-center text-sm text-muted-foreground">Nenhuma seguradora cadastrada</TableCell></TableRow>}
         </TableBody>
       </Table>
       <AlertDialog open={!!excluindo} onOpenChange={(v) => { if (!v) setExcluindo(null); }}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Excluir seguradora</AlertDialogTitle>
-            <AlertDialogDescription>
+        <AlertDialogContent className="rounded-2xl">
+          <AlertDialogHeader className="gap-1.5">
+            <AlertDialogTitle className="tracking-tight">Excluir seguradora</AlertDialogTitle>
+            <AlertDialogDescription className="leading-relaxed">
               Tem certeza que deseja excluir <strong>{excluindo?.nome}</strong>? Esta ação não pode ser desfeita.
             </AlertDialogDescription>
           </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Cancelar</AlertDialogCancel>
-            <AlertDialogAction data-acao className="bg-destructive text-destructive-foreground hover:bg-destructive/90" onClick={doExcluir}>
+          <AlertDialogFooter className="gap-2">
+            <AlertDialogCancel className="h-10 rounded-xl">Cancelar</AlertDialogCancel>
+            <AlertDialogAction data-acao className="h-10 rounded-xl bg-destructive text-destructive-foreground hover:bg-destructive/90" onClick={doExcluir}>
               Excluir
             </AlertDialogAction>
           </AlertDialogFooter>
