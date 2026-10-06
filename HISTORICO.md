@@ -4982,3 +4982,11 @@ Espelhado na Vercel.
 - Fecha o Financeiro: busca h-10, tabelas com hover, diálogos
   centralizados e erros em card.
 - Lógica intacta; `tsc` limpo nos tocados e `npm run build` OK.
+
+## Categorias estilo Conta Azul (06/10)
+
+- Tabela sem coluna Tipo (abas Despesas/Receitas já separam);
+  ações em sequência: subcategoria, editar, remover.
+- Nova subcategoria herda tipo e pai (tipo travado, pai à mostra);
+  duplicada passa a valer por pai.
+- `tsc` limpo nos tocados e `npm run build` OK.

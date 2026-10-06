@@ -22,7 +22,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Plus, Pencil, Trash2, FolderCog, Loader2, Search } from "lucide-react";
+import { Plus, Pencil, Trash2, FolderCog, Loader2, Search, PlusCircle } from "lucide-react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useEmpresaAtual } from "@/hooks/use-empresa";
@@ -76,8 +76,9 @@ function CadastrosPage() {
       if (!catForm.nome.trim()) throw new Error("Informe o nome");
       const norm = (s: string) =>
         s.trim().toLocaleLowerCase("pt-BR").normalize("NFD").replace(/\p{Diacritic}/gu, "");
+      const paiAlvo = catForm.parent_id === "none" ? null : catForm.parent_id;
       const duplicada = (categorias ?? []).some(
-        (c) => c.id !== catForm.id && c.tipo === catForm.tipo && norm(c.nome) === norm(catForm.nome),
+        (c) => c.id !== catForm.id && c.tipo === catForm.tipo && (c.parent_id ?? null) === paiAlvo && norm(c.nome) === norm(catForm.nome),
       );
       if (duplicada) throw new Error("Já existe uma categoria com esse nome para este tipo");
       const payload = {
@@ -246,28 +247,28 @@ function CadastrosPage() {
                 <TableHeader>
                   <TableRow>
                     <TableHead>Nome</TableHead>
-                    <TableHead>Tipo</TableHead>
-                    <TableHead />
+                    <TableHead className="w-36 text-right">Ações</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {categoriasFiltradas.map((c) => (
                     <TableRow key={c.id} className="transition-colors hover:bg-accent/30">
                       <TableCell className={c.parent_id ? "pl-8 text-muted-foreground" : "font-medium"}>{c.nome}</TableCell>
-                      <TableCell>
-                        <Badge variant="secondary" className={c.tipo === "receber" ? "bg-success/15 text-success" : "bg-destructive/15 text-destructive"}>
-                          {c.tipo === "receber" ? "Receita" : "Despesa"}
-                        </Badge>
-                      </TableCell>
                       <TableCell className="text-right">
-                        <Button variant="ghost" size="icon" aria-label="Editar" className="h-8 w-8 rounded-lg"
-                          onClick={() => { setCatForm({ id: c.id, nome: c.nome, tipo: c.tipo, parent_id: c.parent_id ?? "none" }); setCatOpen(true); }}>
-                          <Pencil className="h-4 w-4" />
-                        </Button>
-                        <Button variant="ghost" size="icon" aria-label="Excluir" className="h-8 w-8 rounded-lg text-destructive"
-                          onClick={() => setConfCat(c)}>
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
+                        <div className="flex items-center justify-end gap-1">
+                          <Button variant="ghost" size="icon" aria-label="Cadastrar subcategoria" title="Cadastrar subcategoria" className="h-8 w-8 rounded-lg"
+                            onClick={() => { setCatForm({ nome: "", tipo: c.tipo, parent_id: c.id }); setCatOpen(true); }}>
+                            <PlusCircle className="h-4 w-4" />
+                          </Button>
+                          <Button variant="ghost" size="icon" aria-label="Editar categoria" title="Editar categoria" className="h-8 w-8 rounded-lg"
+                            onClick={() => { setCatForm({ id: c.id, nome: c.nome, tipo: c.tipo, parent_id: c.parent_id ?? "none" }); setCatOpen(true); }}>
+                            <Pencil className="h-4 w-4" />
+                          </Button>
+                          <Button variant="ghost" size="icon" aria-label="Remover categoria" title="Remover categoria" className="h-8 w-8 rounded-lg text-destructive"
+                            onClick={() => setConfCat(c)}>
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </div>
                       </TableCell>
                     </TableRow>
                   ))}
@@ -332,15 +333,20 @@ function CadastrosPage() {
       {/* Dialog categoria */}
       <Dialog open={catOpen} onOpenChange={setCatOpen}>
         <DialogContent className="sm:max-w-md sm:inset-auto sm:left-1/2 sm:top-1/2 sm:-translate-x-1/2 sm:-translate-y-1/2 sm:h-auto sm:max-h-[90vh] sm:w-full">
-          <DialogHeader className="gap-1.5 pb-1"><DialogTitle className="tracking-tight">{catForm.id ? "Editar categoria" : "Nova categoria"}</DialogTitle></DialogHeader>
+          <DialogHeader className="gap-1.5 pb-1"><DialogTitle className="tracking-tight">{catForm.id ? "Editar categoria" : catForm.parent_id !== "none" ? "Nova subcategoria" : "Nova categoria"}</DialogTitle></DialogHeader>
           <form onSubmit={(e) => { e.preventDefault(); salvarCat.mutate(); }} className="space-y-4">
+            {catForm.parent_id !== "none" && (
+              <p className="rounded-xl border bg-muted/40 px-3.5 py-2.5 text-xs leading-relaxed text-muted-foreground">
+                Categoria pai: <strong className="text-foreground">{(categorias ?? []).find((c) => c.id === catForm.parent_id)?.nome ?? "—"}</strong>
+              </p>
+            )}
             <div className="grid gap-1.5">
               <Label>Nome *</Label>
               <Input required value={catForm.nome} onChange={(e) => setCatForm({ ...catForm, nome: e.target.value })} className="h-10 rounded-xl" />
             </div>
             <div className="grid gap-1.5">
               <Label>Tipo *</Label>
-              <Select value={catForm.tipo} onValueChange={(v) => setCatForm({ ...catForm, tipo: v as "receber" | "pagar", parent_id: "none" })}>
+              <Select value={catForm.tipo} onValueChange={(v) => setCatForm({ ...catForm, tipo: v as "receber" | "pagar", parent_id: "none" })} disabled={catForm.parent_id !== "none" && !catForm.id}>
                 <SelectTrigger className="h-10 rounded-xl"><SelectValue /></SelectTrigger>
                 <SelectContent>
                   <SelectItem value="receber">Receita</SelectItem>
