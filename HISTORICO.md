@@ -4754,3 +4754,10 @@ Espelhado na Vercel.
   botões e estados em card.
 - MoneyInput passa a usar `cn` (resolve conflito h-10/h-8).
 - Paleta intacta; `tsc` limpo nos tocados e `npm run build` OK.
+
+## Repaginação: toolbar + senha + charts (06/10)
+
+- Toolbar em card rounded-2xl com botões elevados; senha com
+  diálogo rounded-2xl e campos h-10; charts com tooltip em card e
+  eixos sem linhas (paletas mantidas).
+- Paleta intacta; `tsc` limpo nos tocados e `npm run build` OK.

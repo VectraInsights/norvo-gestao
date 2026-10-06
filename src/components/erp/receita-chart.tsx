@@ -17,12 +17,12 @@ export default function ReceitaChart({ data }: { data: ReceitaPoint[] }) {
               <stop offset="100%" stopColor="var(--color-primary)" stopOpacity={0} />
             </linearGradient>
           </defs>
-          <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)" />
-          <XAxis dataKey="data" stroke="var(--color-muted-foreground)" fontSize={11} />
-          <YAxis stroke="var(--color-muted-foreground)" fontSize={11} tickFormatter={brl} width={70} />
+          <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)" vertical={false} />
+          <XAxis dataKey="data" stroke="var(--color-muted-foreground)" fontSize={11} tickLine={false} axisLine={false} tickMargin={8} />
+          <YAxis stroke="var(--color-muted-foreground)" fontSize={11} tickFormatter={brl} width={70} tickLine={false} axisLine={false} />
           <Tooltip
             formatter={(v: number | string) => brl(Number(v))}
-            contentStyle={{ background: "var(--color-card)", border: "1px solid var(--color-border)" }}
+            contentStyle={{ background: "var(--color-card)", border: "1px solid var(--color-border)", borderRadius: 12, padding: "8px 12px", boxShadow: "var(--shadow-panel)" }}
           />
           <Area type="monotone" dataKey="total" stroke="var(--color-primary)" strokeWidth={2} fill="url(#recGrad)" name="Receita" />
         </AreaChart>

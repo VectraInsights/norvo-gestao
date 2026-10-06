@@ -105,44 +105,45 @@ export function AlterarSenhaDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent>
-        <DialogHeader>
-          <DialogTitle>Dados da conta</DialogTitle>
+      <DialogContent className="rounded-2xl sm:max-w-md">
+        <DialogHeader className="gap-1 pb-1">
+          <DialogTitle className="tracking-tight">Dados da conta</DialogTitle>
         </DialogHeader>
-        <div className="grid gap-3">
-          <div>
+        <div className="grid gap-4">
+          <div className="grid gap-1.5">
             <Label>Nome *</Label>
-            <Input value={nome} onChange={(e) => setNome(e.target.value)} />
+            <Input value={nome} onChange={(e) => setNome(e.target.value)} className="h-10 rounded-xl" />
           </div>
-          <div className="border-t pt-3">
-            <p className="mb-2 text-xs text-muted-foreground">
+          <div className="border-t pt-4">
+            <p className="mb-3 text-xs leading-relaxed text-muted-foreground">
               Preencha abaixo somente para trocar a senha.
             </p>
             <div className="grid gap-3">
-              <div>
+              <div className="grid gap-1.5">
                 <Label>Senha atual</Label>
-                <Input type="password" value={atual} onChange={(e) => setAtual(e.target.value)} />
+                <Input type="password" value={atual} onChange={(e) => setAtual(e.target.value)} className="h-10 rounded-xl" />
               </div>
-              <div>
+              <div className="grid gap-1.5">
                 <Label>Nova senha</Label>
-                <Input type="password" value={nova} onChange={(e) => setNova(e.target.value)} />
+                <Input type="password" value={nova} onChange={(e) => setNova(e.target.value)} className="h-10 rounded-xl" />
               </div>
-              <div>
+              <div className="grid gap-1.5">
                 <Label>Confirmar nova senha</Label>
                 <Input
                   type="password"
                   value={confirma}
                   onChange={(e) => setConfirma(e.target.value)}
+                  className="h-10 rounded-xl"
                 />
               </div>
             </div>
           </div>
         </div>
-        <DialogFooter>
-          <Button variant="outline" onClick={() => onOpenChange(false)}>
+        <DialogFooter className="gap-2">
+          <Button variant="outline" className="h-10 rounded-xl px-5" onClick={() => onOpenChange(false)}>
             Cancelar
           </Button>
-          <Button onClick={salvar} disabled={saving}>
+          <Button className="h-10 rounded-xl px-5 shadow-sm transition-all hover:-translate-y-px hover:shadow-md" onClick={salvar} disabled={saving}>
             Salvar
           </Button>
         </DialogFooter>

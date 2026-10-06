@@ -359,18 +359,18 @@ export function LancamentosToolbar({
   };
 
   return (
-    <div className="mb-4 flex flex-wrap items-center gap-2 rounded-md border bg-muted/30 px-3 py-2">
-      <Button size="sm" variant="outline" onClick={baixarModelo}>
-        <FileSpreadsheet className="mr-1 h-4 w-4" />Modelo de planilha
+    <div className="mb-6 flex flex-wrap items-center gap-2.5 rounded-2xl border bg-card px-4 py-3 shadow-panel">
+      <Button size="sm" variant="outline" className="h-9 rounded-xl px-3.5 shadow-sm transition-all hover:-translate-y-px hover:shadow-md" onClick={baixarModelo}>
+        <FileSpreadsheet className="mr-1.5 h-4 w-4" />Modelo de planilha
       </Button>
-      <Button size="sm" variant="outline" onClick={exportar}>
-        <Download className="mr-1 h-4 w-4" />Exportar
+      <Button size="sm" variant="outline" className="h-9 rounded-xl px-3.5 shadow-sm transition-all hover:-translate-y-px hover:shadow-md" onClick={exportar}>
+        <Download className="mr-1.5 h-4 w-4" />Exportar
       </Button>
-      <Button size="sm" variant="outline" onClick={() => window.print()}>
-        <Printer className="mr-1 h-4 w-4" />Imprimir
+      <Button size="sm" variant="outline" className="h-9 rounded-xl px-3.5 shadow-sm transition-all hover:-translate-y-px hover:shadow-md" onClick={() => window.print()}>
+        <Printer className="mr-1.5 h-4 w-4" />Imprimir
       </Button>
-      <Button size="sm" variant="outline" onClick={() => fileRef.current?.click()}>
-        <Upload className="mr-1 h-4 w-4" />Importar planilha
+      <Button size="sm" variant="outline" className="h-9 rounded-xl px-3.5 shadow-sm transition-all hover:-translate-y-px hover:shadow-md" onClick={() => fileRef.current?.click()}>
+        <Upload className="mr-1.5 h-4 w-4" />Importar planilha
       </Button>
       <input
         ref={fileRef}
@@ -381,9 +381,9 @@ export function LancamentosToolbar({
       />
 
       <Dialog open={!!pending} onOpenChange={(o) => { if (!o && !saving) setPending(null); }}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Vincular conta financeira</DialogTitle>
+        <DialogContent className="rounded-2xl sm:max-w-md">
+          <DialogHeader className="gap-1.5 pb-1">
+            <DialogTitle className="tracking-tight">Vincular conta financeira</DialogTitle>
             <DialogDescription>
               {pending ? (
                 <>
@@ -395,13 +395,13 @@ export function LancamentosToolbar({
               ) : null}
             </DialogDescription>
           </DialogHeader>
-          <div className="space-y-2">
+          <div className="space-y-2.5">
             <label className="text-sm font-medium">Conta financeira (opcional)</label>
             <Combobox value={contaSel} onChange={setContaSel} options={[{ value: "__none", label: "Sem conta vinculada" }, ...((contas ?? []).map((c) => ({ value: c.id, label: c.nome })))]} placeholder="Selecione uma conta" searchPlaceholder="Digite para buscar..." emptyText="Nenhum item encontrado." />
           </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setPending(null)} disabled={saving}>Cancelar</Button>
-            <Button onClick={confirmarImportacao} disabled={saving}>
+          <DialogFooter className="gap-2">
+            <Button variant="outline" className="h-10 rounded-xl px-5" onClick={() => setPending(null)} disabled={saving}>Cancelar</Button>
+            <Button className="h-10 rounded-xl px-5 shadow-sm transition-all hover:-translate-y-px hover:shadow-md" onClick={confirmarImportacao} disabled={saving}>
               {saving ? "Importando..." : "Confirmar importação"}
             </Button>
           </DialogFooter>
