@@ -4861,3 +4861,12 @@ Espelhado na Vercel.
 - Recebidas com abas, busca h-10, tabela com hover, dropzone em
   card e análise com respiro (DANFE/XML intactos).
 - Paleta intacta; `tsc` limpo nos tocados e `npm run build` OK.
+
+## Repaginação: fiscal.percursos + fiscal.cte (parte 1) (06/10)
+
+- Percursos com lista em rounded-2xl, busca h-10, linhas com
+  hover e diálogo de exclusão em card (editor fiscal intacto).
+- CT-e parte 1 (lista): header com respiro, skeletons, card
+  principal e tabelas em rounded-2xl, linhas com hover.
+- `tsc`: erros do cte são baseline do HEAD; build OK.
+- Paleta intacta.

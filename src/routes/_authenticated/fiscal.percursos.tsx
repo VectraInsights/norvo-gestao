@@ -1660,7 +1660,7 @@ function PercursosPage() {
   );
 
   return (
-    <div className="p-6 space-y-4">
+    <div className="space-y-4 sm:space-y-6">
       {(saindoCte || (chegadaCte && !editing)) && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center bg-background">
           <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
@@ -1672,31 +1672,33 @@ function PercursosPage() {
         description="Rotas padronizadas do CT-e (remetente + destinatário + tomador). Aplicadas automaticamente na emissão."
       />
 
-      <div className="flex items-center gap-2">
-        <div className="flex items-center gap-2 max-w-md flex-1">
-          <Search className="h-4 w-4 text-muted-foreground shrink-0" />
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+        <div className="flex flex-1 items-center gap-2.5">
+          <Search className="h-4 w-4 shrink-0 text-muted-foreground" />
           <Input
-            className="h-8 text-xs"
+            className="h-10 rounded-xl shadow-sm"
             placeholder="Buscar por código, nome, empresa ou CNPJ..."
             value={busca}
             onChange={(e) => setBusca(e.target.value)}
           />
         </div>
-        <Button size="sm" className="h-8 text-xs shrink-0" onClick={novoAvulso}>
-          <Plus className="mr-1 h-3.5 w-3.5" /> Novo percurso
+        <Button size="sm" className="h-10 shrink-0 whitespace-nowrap rounded-xl px-5 shadow-sm transition-all hover:-translate-y-px hover:shadow-md" onClick={novoAvulso}>
+          <Plus className="mr-1.5 h-3.5 w-3.5" /> Novo percurso
         </Button>
       </div>
 
-      <Card className="overflow-hidden">
+      <Card className="overflow-hidden rounded-2xl shadow-panel">
         <CardContent className="p-0">
           {isLoading ? (
-            <p className="p-4 text-sm text-muted-foreground">Carregando…</p>
+            <div className="space-y-2.5 p-4 sm:p-6">{Array.from({ length: 4 }).map((_, i) => <div key={i} className="h-12 animate-pulse rounded-xl bg-muted/30" />)}</div>
           ) : lista.length === 0 ? (
-            <EmptyState
-              icon={RoadIcon}
-              title="Nenhum percurso"
-              description="Os percursos são criados automaticamente ao emitir CT-e ou salvar rascunho."
-            />
+            <div className="p-4 sm:p-6">
+              <EmptyState
+                icon={RoadIcon}
+                title="Nenhum percurso"
+                description="Os percursos são criados automaticamente ao emitir CT-e ou salvar rascunho."
+              />
+            </div>
           ) : (
             <Table>
               <TableHeader>
@@ -1711,9 +1713,9 @@ function PercursosPage() {
               </TableHeader>
               <TableBody>
                 {lista.map((p) => (
-                  <TableRow key={p.id}>
+                  <TableRow key={p.id} className="transition-colors hover:bg-accent/30">
                     <TableCell>
-                      <Badge className="bg-primary/15 text-primary font-mono">
+                      <Badge className="bg-primary/15 font-mono text-primary shadow-sm">
                         {p.codigo || "—"}
                       </Badge>
                     </TableCell>
@@ -1736,7 +1738,7 @@ function PercursosPage() {
                         <Button
                           size="icon"
                           variant="ghost"
-                          className="h-7 w-7"
+                          className="h-8 w-8 rounded-lg"
                           title="Editar"
                           onClick={async () => {
                             // A listagem traz poucas colunas: busca a linha
@@ -1760,7 +1762,7 @@ function PercursosPage() {
                         <Button
                           size="icon"
                           variant="ghost"
-                          className="h-7 w-7 text-destructive"
+                          className="h-8 w-8 rounded-lg text-destructive"
                           title="Excluir"
                           onClick={() => setConfExcluir(p)}
                         >
@@ -1821,7 +1823,7 @@ function PercursosPage() {
                 onValueChange={setPercTab}
                 className="flex-1 flex flex-col min-h-0"
               >
-                <TabsList className="w-fit h-8">
+                <TabsList className="h-9 w-fit rounded-xl">
                   <TabsTrigger
                     value="geral"
                     className="text-xs data-[state=active]:bg-primary/10 data-[state=active]:text-primary"
@@ -1877,7 +1879,7 @@ function PercursosPage() {
                         </>
                       )}
                     </div>
-                    <div className="border rounded px-2 py-1 h-full flex flex-col">
+                    <div className="flex h-full flex-col rounded-xl border px-2 py-1">
                       <div className="flex items-center justify-between">
                         <p className="text-[11px] font-semibold">Coleta / Entrega</p>
                         <Button
@@ -1953,7 +1955,7 @@ function PercursosPage() {
                   </div>
 
                   <div className="space-y-2">
-                    <div className="border rounded px-2 py-1 space-y-1">
+                    <div className="space-y-1 rounded-xl border px-2 py-1">
                       <p className="text-[11px] font-semibold">Consignatário</p>
                       <div className="grid grid-cols-12 gap-1">
                         <div className="col-span-2">
@@ -1984,7 +1986,7 @@ function PercursosPage() {
                         </div>
                       </div>
                     </div>
-                    <div className="border rounded px-2 py-1 space-y-1">
+                    <div className="space-y-1 rounded-xl border px-2 py-1">
                       <p className="text-[11px] font-semibold">Redespacho</p>
                       <div className="grid grid-cols-12 gap-1">
                         <div className="col-span-2">
@@ -2178,18 +2180,18 @@ function PercursosPage() {
       </Dialog>
 
       <AlertDialog open={!!confExcluir} onOpenChange={(v) => { if (!v) setConfExcluir(null); }}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Excluir percurso</AlertDialogTitle>
-            <AlertDialogDescription>
+        <AlertDialogContent className="rounded-2xl">
+          <AlertDialogHeader className="gap-1.5">
+            <AlertDialogTitle className="tracking-tight">Excluir percurso</AlertDialogTitle>
+            <AlertDialogDescription className="leading-relaxed">
               {confExcluir && `Excluir o percurso "${confExcluir.nome}"?`}
             </AlertDialogDescription>
           </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+          <AlertDialogFooter className="gap-2">
+            <AlertDialogCancel className="h-10 rounded-xl">Cancelar</AlertDialogCancel>
             <AlertDialogAction
               data-acao
-              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              className="h-10 rounded-xl bg-destructive text-destructive-foreground hover:bg-destructive/90"
               onClick={() => confExcluir && excluir.mutate(confExcluir.id)}
             >
               Excluir

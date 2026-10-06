@@ -5690,7 +5690,7 @@ function CtePage() {
         {lista.length === 0 ? (
           <EmptyState icon={Truck} title="Nenhum CT-e" description={`Nenhum CT-e ${rotulo}.`} />
         ) : (
-          <Card className="overflow-hidden">
+          <Card className="overflow-hidden rounded-2xl shadow-panel">
             <Table className="[&_td]:px-2 [&_td]:py-1.5 [&_td]:text-[13px] [&_td]:text-center [&_th]:px-2 [&_td]:border-l [&_td]:border-border [&_td:first-child]:border-l-0 [&_th]:border-l [&_th]:border-border [&_th:first-child]:border-l-0">
               <TableHeader>
                 <TableRow>
@@ -5770,7 +5770,7 @@ function CtePage() {
                   const stMdfRow = d.chave_acesso ? mdfStatusPorCte.get(d.chave_acesso) : undefined;
                   const cancBloq = stMdfRow === "autorizado" || stMdfRow === "encerrado";
                   return (
-                    <TableRow key={d.id} className={isRascunho ? "bg-muted/30" : ""}>
+                    <TableRow key={d.id} className={isRascunho ? "bg-muted/30 transition-colors hover:bg-accent/30" : "transition-colors hover:bg-accent/30"}>
                       {rotulo === "autorizados" && !semSelecao && d.chave_acesso && (
                         <TableCell>
                           <input
@@ -6197,18 +6197,18 @@ function CtePage() {
     );
   };
   return (
-    <div className="px-2 pb-2 pt-1 h-[calc(100dvh-88px)] sm:h-[calc(100dvh-104px)] lg:h-[calc(100dvh-120px)] min-h-[500px] flex flex-col gap-2">
-      <div className="border-l-4 border-primary pl-4 py-0.5 shrink-0">
-        <h1 className="text-display text-2xl leading-tight md:text-3xl">CT-e</h1>
+    <div className="px-2 pb-2 pt-1 h-[calc(100dvh-88px)] sm:h-[calc(100dvh-104px)] lg:h-[calc(100dvh-120px)] min-h-[500px] flex flex-col gap-3">
+      <div className="border-l-4 border-primary pl-4 sm:pl-5 py-1 shrink-0">
+        <h1 className="text-display text-2xl leading-tight tracking-tight md:text-3xl">CT-e</h1>
       </div>
 
       {isLoading ? (
-        <div className="text-sm text-muted-foreground">Carregando…</div>
+        <div className="space-y-2.5">{Array.from({ length: 4 }).map((_, i) => <div key={i} className="h-12 animate-pulse rounded-xl bg-muted/30" />)}</div>
       ) : (
         <Tabs value={statusTab} onValueChange={trocarAba} className="flex-1 min-h-0 flex flex-col">
           {/* Cartão único: barra verde com título + abas + modo; conteúdo das abas abaixo */}
-          <Card className="overflow-hidden border-2 border-primary/20 shadow-panel flex-1 min-h-0 flex flex-col">
-            <div className="bg-primary text-primary-foreground px-3 py-1.5 flex flex-wrap items-center gap-x-3 gap-y-1.5 shrink-0">
+          <Card className="overflow-hidden rounded-2xl border-2 border-primary/20 shadow-panel flex-1 min-h-0 flex flex-col">
+            <div className="bg-primary text-primary-foreground px-4 py-2 flex flex-wrap items-center gap-x-3 gap-y-1.5 shrink-0">
               <h3 className="text-sm font-semibold flex items-center gap-2">
                 <Package className="h-4 w-4" /> Cadastro de Mercadorias para Embarque
               </h3>
@@ -6253,7 +6253,7 @@ function CtePage() {
             </div>
             <CardContent className="p-3 bg-muted/20 overflow-visible flex-1 min-h-0 flex flex-col">
               <TabsContent value="embarque" className="mt-0 flex-1 min-h-0 flex flex-col gap-3">
-                <div className="border rounded p-2 bg-background space-y-2 shrink-0">
+                <div className="border rounded-xl bg-background p-3 space-y-2 shrink-0 shadow-sm">
                   <div className="grid grid-cols-1 lg:grid-cols-3 gap-3">
                     <div>
                       <Label className="text-xs font-semibold text-primary">
@@ -7013,7 +7013,7 @@ function CtePage() {
             )}
           </TabsContent>
           <TabsContent value="ciot" className="mt-0 space-y-3">
-            <Card className="overflow-hidden">
+            <Card className="overflow-hidden rounded-2xl shadow-panel">
               <div className="bg-primary/8 border-b border-primary/20 px-3 py-1.5 text-[10px] font-semibold uppercase tracking-wide text-primary/80">
                 CT-es autorizados — selecione para uma operação CIOT
               </div>
@@ -7060,7 +7060,7 @@ function CtePage() {
                       const dst = [String(f.xMunFim || ""), String(f.ufFim || "")].filter(Boolean).join("/");
                       const rota = ori || dst ? `${ori || "—"} → ${dst || "—"}` : "—";
                       return (
-                        <TableRow key={d.id}>
+                        <TableRow key={d.id} className="transition-colors hover:bg-accent/30">
                           <TableCell>
                             <input
                               type="checkbox"
@@ -7203,7 +7203,7 @@ function CtePage() {
                 </AlertDialogFooter>
               </AlertDialogContent>
             </AlertDialog>
-            <Card className="overflow-hidden">
+            <Card className="overflow-hidden rounded-2xl shadow-panel">
               <div className="bg-primary/8 border-b border-primary/20 px-3 py-1.5 text-[10px] font-semibold uppercase tracking-wide text-primary/80">
                 CIOTs emitidos ({(ciotOps ?? []).length})
               </div>
@@ -7247,7 +7247,7 @@ function CtePage() {
                   </TableHeader>
                   <TableBody>
                     {(ciotOps ?? []).map((o) => (
-                      <TableRow key={o.id}>
+                      <TableRow key={o.id} className="transition-colors hover:bg-accent/30">
                         <TableCell className="font-mono text-xs">{o.ciot}</TableCell>
                         <TableCell className="font-mono text-xs">{o.protocolo || "—"}</TableCell>
                         <TableCell className="text-right">{brl(Number(o.valor_frete) || 0)}</TableCell>
