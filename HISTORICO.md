@@ -4952,3 +4952,9 @@ Espelhado na Vercel.
 - Corrigidos 16 diálogos que no desktop ficavam grudados na
   esquerda (faltava centralização com `sm:max-w-*`).
 - `tsc` só baseline; build OK.
+
+## Repaginação visível: receber + pagar (06/10)
+
+- Abas, busca h-10, botões em destaque; tabela com hover, ações
+  maiores, paginação e diálogos em card (vale para pagar).
+- Lógica intacta; `tsc` só baseline; build OK.

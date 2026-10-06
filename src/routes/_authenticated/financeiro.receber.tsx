@@ -556,8 +556,8 @@ export function LancamentosPage({ tipo }: { tipo: "receber" | "pagar" }) {
         description={desc}
       />
 
-      <div className="mb-3 flex flex-wrap items-center gap-2">
-        <div className="inline-flex rounded-md border bg-muted/30 p-1 text-sm">
+      <div className="mb-4 flex flex-wrap items-center gap-2.5 sm:mb-6">
+        <div className="inline-flex rounded-xl border bg-muted/30 p-1.5 text-sm shadow-sm">
           {(
             [
               { k: "todos", label: `Todos (${cont.todos})` },
@@ -574,7 +574,7 @@ export function LancamentosPage({ tipo }: { tipo: "receber" | "pagar" }) {
                 setPagina(1);
                 clearSel();
               }}
-              className={`rounded px-3 py-1.5 transition-colors ${aba === t.k ? "bg-background shadow-sm font-medium" : "text-muted-foreground hover:text-foreground"}`}
+              className={`rounded-lg px-4 py-2 transition-all ${aba === t.k ? "bg-background shadow-md font-medium" : "text-muted-foreground hover:text-foreground"}`}
             >
               {t.label}
             </button>
@@ -588,7 +588,7 @@ export function LancamentosPage({ tipo }: { tipo: "receber" | "pagar" }) {
           }}
         />
         <div className="relative ml-auto w-full sm:w-80">
-          <Search className="pointer-events-none absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+          <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
           <Input
             value={busca}
             onChange={(e) => {
@@ -597,13 +597,13 @@ export function LancamentosPage({ tipo }: { tipo: "receber" | "pagar" }) {
               clearSel();
             }}
             placeholder="Pesquisar por descrição ou contato…"
-            className="h-9 pl-8 pr-8"
+            className="h-10 rounded-xl pl-10 pr-10 shadow-sm"
           />
           {busca && (
             <button
               type="button"
               onClick={() => setBusca("")}
-              className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+              className="absolute right-2.5 top-1/2 grid h-6 w-6 -translate-y-1/2 place-items-center rounded-lg text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
               aria-label="Limpar busca"
             >
               <X className="h-4 w-4" />
@@ -611,7 +611,7 @@ export function LancamentosPage({ tipo }: { tipo: "receber" | "pagar" }) {
           )}
         </div>
         <div className="flex items-center gap-2">
-          <Button variant="outline" size="sm" className="h-9">
+          <Button variant="outline" size="sm" className="h-10 rounded-xl px-4 shadow-sm">
             Adicionar trilha de auditoria
           </Button>
           <Dialog
@@ -625,57 +625,61 @@ export function LancamentosPage({ tipo }: { tipo: "receber" | "pagar" }) {
             }}
           >
             <DialogTrigger asChild>
-              <Button>
-                <Plus className="mr-1 h-4 w-4" />
+              <Button className="h-10 rounded-xl px-5 shadow-md transition-all hover:-translate-y-px hover:shadow-lg">
+                <Plus className="mr-1.5 h-4 w-4" />
                 Novo lançamento
               </Button>
             </DialogTrigger>
-            <DialogContent className="max-h-[90vh] overflow-y-auto">
-              <DialogHeader>
-                <DialogTitle>Novo lançamento — {titulo}</DialogTitle>
+            <DialogContent className="max-h-[90vh] overflow-y-auto rounded-2xl sm:max-w-2xl sm:inset-auto sm:left-1/2 sm:top-1/2 sm:-translate-x-1/2 sm:-translate-y-1/2 sm:h-auto sm:w-full">
+              <DialogHeader className="gap-1.5 pb-1">
+                <DialogTitle className="tracking-tight">Novo lançamento — {titulo}</DialogTitle>
               </DialogHeader>
               <form
                 onSubmit={(e) => {
                   e.preventDefault();
                   criar.mutate(form);
                 }}
-                className="space-y-3"
+                className="space-y-4"
               >
-                <div>
+                <div className="grid gap-1.5">
                   <Label>Descrição *</Label>
                   <Input
                     required
                     value={form.descricao}
                     onChange={(e) => setForm({ ...form, descricao: e.target.value })}
+                    className="h-10 rounded-xl"
                   />
                 </div>
-                <div className="grid grid-cols-3 gap-3">
-                  <div>
+                <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+                  <div className="grid gap-1.5">
                     <Label>Valor (R$) *</Label>
                     <MoneyInput
                       required
                       value={form.valor}
                       onChange={(v) => setForm({ ...form, valor: v })}
                       prefix=""
+                      className="h-10"
                     />
                   </div>
-                  <div>
+                  <div className="grid gap-1.5">
                     <Label>Emissão</Label>
                     <DateInput
                       value={form.data_emissao}
                       onChange={(v) => setForm({ ...form, data_emissao: v })}
+                      className="h-10"
                     />
                   </div>
-                  <div>
+                  <div className="grid gap-1.5">
                     <Label>Vencimento *</Label>
                     <DateInput
                       required
                       value={form.data_vencimento}
                       onChange={(v) => setForm({ ...form, data_vencimento: v })}
+                      className="h-10"
                     />
                   </div>
                 </div>
-                <div>
+                <div className="grid gap-1.5">
                   <Label>{tipo === "receber" ? "Cliente" : "Fornecedor"}</Label>
                   <Combobox
                     value={form.contato_id}
@@ -684,10 +688,11 @@ export function LancamentosPage({ tipo }: { tipo: "receber" | "pagar" }) {
                     placeholder="Selecionar contato"
                     searchPlaceholder="Digite para buscar..."
                     emptyText="Nenhum item encontrado."
+                    className="h-10"
                   />
                 </div>
-                <div className="grid grid-cols-2 gap-3">
-                  <div>
+                <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                  <div className="grid gap-1.5">
                     <Label>Conta bancária</Label>
                     <Combobox
                       value={form.conta_bancaria_id}
@@ -696,9 +701,10 @@ export function LancamentosPage({ tipo }: { tipo: "receber" | "pagar" }) {
                       placeholder="Selecionar"
                       searchPlaceholder="Digite para buscar..."
                       emptyText="Nenhum item encontrado."
+                      className="h-10"
                     />
                   </div>
-                  <div>
+                  <div className="grid gap-1.5">
                     <Label>Categoria</Label>
                     <Combobox
                       value={form.categoria_id}
@@ -707,18 +713,20 @@ export function LancamentosPage({ tipo }: { tipo: "receber" | "pagar" }) {
                       placeholder="Selecionar"
                       searchPlaceholder="Digite para buscar..."
                       emptyText="Nenhum item encontrado."
+                      className="h-10"
                     />
                   </div>
                 </div>
-                <div className="grid grid-cols-2 gap-3">
-                  <div>
+                <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                  <div className="grid gap-1.5">
                     <Label>Nº documento / NF</Label>
                     <Input
                       value={form.documento}
                       onChange={(e) => setForm({ ...form, documento: e.target.value })}
+                      className="h-10 rounded-xl"
                     />
                   </div>
-                  <div>
+                  <div className="grid gap-1.5">
                     <Label>Forma de pagamento</Label>
                     <Select
                       value={form.forma_pagamento || "__none"}
@@ -726,7 +734,7 @@ export function LancamentosPage({ tipo }: { tipo: "receber" | "pagar" }) {
                         setForm({ ...form, forma_pagamento: v === "__none" ? "" : v })
                       }
                     >
-                      <SelectTrigger>
+                      <SelectTrigger className="h-10 rounded-xl">
                         <SelectValue placeholder="Selecionar" />
                       </SelectTrigger>
                       <SelectContent>
@@ -740,16 +748,17 @@ export function LancamentosPage({ tipo }: { tipo: "receber" | "pagar" }) {
                     </Select>
                   </div>
                 </div>
-                <div>
+                <div className="grid gap-1.5">
                   <Label>Observações</Label>
                   <Textarea
                     rows={2}
                     value={form.observacoes}
                     onChange={(e) => setForm({ ...form, observacoes: e.target.value })}
+                    className="rounded-xl"
                   />
                 </div>
-                <DialogFooter>
-                  <Button type="submit" disabled={criar.isPending}>
+                <DialogFooter className="gap-2">
+                  <Button type="submit" disabled={criar.isPending} className="h-10 rounded-xl px-6 shadow-sm transition-all hover:-translate-y-px hover:shadow-md">
                     {criar.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}Salvar
                   </Button>
                 </DialogFooter>
@@ -770,9 +779,9 @@ export function LancamentosPage({ tipo }: { tipo: "receber" | "pagar" }) {
       />
 
       {isLoading ? (
-        <div className="space-y-2" aria-label="Carregando">
+        <div className="space-y-2.5" aria-label="Carregando">
           {Array.from({ length: 4 }).map((_, i) => (
-            <div key={i} className="h-12 animate-pulse rounded-md bg-muted/30" />
+            <div key={i} className="h-12 animate-pulse rounded-xl bg-muted/30" />
           ))}
         </div>
       ) : !filtrados.length ? (
@@ -782,9 +791,9 @@ export function LancamentosPage({ tipo }: { tipo: "receber" | "pagar" }) {
           description="Ajuste a aba acima ou crie um novo lançamento."
         />
       ) : (
-        <Card className="overflow-hidden shadow-panel">
+        <Card className="overflow-hidden rounded-2xl shadow-panel">
           {selected.size > 0 && (
-            <div className="flex flex-wrap items-center gap-2 border-b bg-muted/40 px-3 py-2 text-sm">
+            <div className="flex flex-wrap items-center gap-2 border-b border-border/60 bg-muted/40 px-4 py-2.5 text-sm">
               <span className="font-medium">{selected.size} selecionado(s)</span>
               <div className="ml-auto flex flex-wrap gap-2">
                 <Select
@@ -792,7 +801,7 @@ export function LancamentosPage({ tipo }: { tipo: "receber" | "pagar" }) {
                     alterarStatusLote.mutate({ ids: [...selected], status: v as "aberto" })
                   }
                 >
-                  <SelectTrigger className="h-8 w-[180px]">
+                  <SelectTrigger className="h-9 w-[190px] rounded-xl shadow-sm">
                     <SelectValue placeholder="Alterar status" />
                   </SelectTrigger>
                   <SelectContent>
@@ -808,11 +817,12 @@ export function LancamentosPage({ tipo }: { tipo: "receber" | "pagar" }) {
                   variant="destructive"
                   disabled={excluirLote.isPending}
                   onClick={() => setConfLote(true)}
+                  className="h-9 rounded-xl px-4"
                 >
-                  <Trash2 className="mr-1 h-4 w-4" />
+                  <Trash2 className="mr-1.5 h-4 w-4" />
                   Excluir
                 </Button>
-                <Button size="sm" variant="ghost" onClick={clearSel}>
+                <Button size="sm" variant="ghost" onClick={clearSel} className="h-9 rounded-xl px-4">
                   Limpar
                 </Button>
               </div>
@@ -842,7 +852,7 @@ export function LancamentosPage({ tipo }: { tipo: "receber" | "pagar" }) {
               {lancamentosVisiveis.map((l) => {
                 const emAndamento = marcarPago.isPending && marcarPago.variables?.id === l.id;
                 return (
-                  <TableRow key={l.id} data-state={selected.has(l.id) ? "selected" : undefined}>
+                  <TableRow key={l.id} data-state={selected.has(l.id) ? "selected" : undefined} className="transition-colors hover:bg-accent/30">
                     <TableCell onClick={(e) => e.stopPropagation()}>
                       <Checkbox
                         checked={selected.has(l.id)}
@@ -861,7 +871,7 @@ export function LancamentosPage({ tipo }: { tipo: "receber" | "pagar" }) {
                           return cat ? (
                             <Badge
                               variant="outline"
-                              className="mt-0.5 text-[10px] font-normal border-muted-foreground/30 text-muted-foreground"
+                              className="mt-1 rounded-md px-2 py-0.5 text-[10px] font-normal shadow-sm border-muted-foreground/30 text-muted-foreground"
                             >
                               {cat.nome}
                             </Badge>
@@ -887,7 +897,7 @@ export function LancamentosPage({ tipo }: { tipo: "receber" | "pagar" }) {
                               <Button
                                 variant="ghost"
                                 size="icon"
-                                className="h-7 w-7"
+                                className="h-8 w-8 rounded-lg"
                                 onClick={() => abrirEdicao(l.id)}
                               >
                                 <Pencil className="h-3.5 w-3.5" />
@@ -903,7 +913,7 @@ export function LancamentosPage({ tipo }: { tipo: "receber" | "pagar" }) {
                                 <Button
                                   variant="ghost"
                                   size="icon"
-                                  className="h-7 w-7"
+                                  className="h-8 w-8 rounded-lg"
                                   disabled={emAndamento}
                                   onClick={() => marcarPago.mutate({ id: l.id, valor: l.valor })}
                                 >
@@ -921,7 +931,7 @@ export function LancamentosPage({ tipo }: { tipo: "receber" | "pagar" }) {
                                 <Button
                                   variant="ghost"
                                   size="icon"
-                                  className="h-7 w-7"
+                                  className="h-8 w-8 rounded-lg"
                                   onClick={() =>
                                     alterarStatusLote.mutate({ ids: [l.id], status: "aberto" })
                                   }
@@ -940,7 +950,7 @@ export function LancamentosPage({ tipo }: { tipo: "receber" | "pagar" }) {
                                 <Button
                                   variant="ghost"
                                   size="icon"
-                                  className="h-7 w-7"
+                                  className="h-8 w-8 rounded-lg"
                                   onClick={() =>
                                     alterarStatusLote.mutate({ ids: [l.id], status: "cancelado" })
                                   }
@@ -958,7 +968,7 @@ export function LancamentosPage({ tipo }: { tipo: "receber" | "pagar" }) {
                               <Button
                                 variant="ghost"
                                 size="icon"
-                                className="h-7 w-7 text-destructive hover:text-destructive"
+                                className="h-8 w-8 rounded-lg text-destructive hover:text-destructive"
                                 onClick={async () => {
                                   const { data: vinculada } = await supabase
                                     .from("notas_importadas_parcelas" as never)
@@ -985,9 +995,9 @@ export function LancamentosPage({ tipo }: { tipo: "receber" | "pagar" }) {
               })}
             </TableBody>
           </Table>
-          <div className="flex items-center justify-between border-t px-4 py-3 text-sm text-muted-foreground">
-            <div className="flex items-center gap-2">
-              <span>
+          <div className="flex flex-wrap items-center justify-between gap-2 border-t border-border/60 px-4 py-3 text-sm text-muted-foreground">
+            <div className="flex items-center gap-2.5">
+              <span className="text-tabular">
                 Mostrando {(paginaAtual - 1) * pageSize + 1}–
                 {Math.min(paginaAtual * pageSize, filtrados.length)} de {filtrados.length}
               </span>
@@ -995,7 +1005,7 @@ export function LancamentosPage({ tipo }: { tipo: "receber" | "pagar" }) {
                 value={String(pageSize)}
                 onValueChange={(v) => { setPageSize(Number(v)); setPagina(1); }}
               >
-                <SelectTrigger className="h-7 w-[76px] text-xs"><SelectValue /></SelectTrigger>
+                <SelectTrigger className="h-8 w-[88px] rounded-lg text-xs shadow-sm"><SelectValue /></SelectTrigger>
                 <SelectContent>
                   {["10", "25", "50", "100"].map((n) => (
                     <SelectItem key={n} value={n}>{n} / pág.</SelectItem>
@@ -1003,7 +1013,7 @@ export function LancamentosPage({ tipo }: { tipo: "receber" | "pagar" }) {
                 </SelectContent>
               </Select>
             </div>
-            <div className="flex items-center gap-1">
+            <div className="flex items-center gap-1.5">
               <Button
                 type="button"
                 variant="outline"
@@ -1011,10 +1021,11 @@ export function LancamentosPage({ tipo }: { tipo: "receber" | "pagar" }) {
                 aria-label="Página anterior"
                 disabled={paginaAtual === 1}
                 onClick={() => setPagina((value) => Math.max(1, value - 1))}
+                className="h-8 w-8 rounded-lg p-0 shadow-sm"
               >
                 <ChevronLeft className="h-4 w-4" />
               </Button>
-              <span className="px-2 text-xs">
+              <span className="px-2 text-xs text-tabular">
                 Página {paginaAtual} de {totalPaginas}
               </span>
               <Button
@@ -1024,6 +1035,7 @@ export function LancamentosPage({ tipo }: { tipo: "receber" | "pagar" }) {
                 aria-label="Próxima página"
                 disabled={paginaAtual === totalPaginas}
                 onClick={() => setPagina((value) => Math.min(totalPaginas, value + 1))}
+                className="h-8 w-8 rounded-lg p-0 shadow-sm"
               >
                 <ChevronRight className="h-4 w-4" />
               </Button>
@@ -1038,9 +1050,9 @@ export function LancamentosPage({ tipo }: { tipo: "receber" | "pagar" }) {
           if (!v && !salvarEdicao.isPending) setEditing(null);
         }}
       >
-        <DialogContent className="max-h-[90vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle>Editar lançamento</DialogTitle>
+        <DialogContent className="max-h-[90vh] overflow-y-auto rounded-2xl sm:max-w-2xl sm:inset-auto sm:left-1/2 sm:top-1/2 sm:-translate-x-1/2 sm:-translate-y-1/2 sm:h-auto sm:w-full">
+          <DialogHeader className="gap-1.5 pb-1">
+            <DialogTitle className="tracking-tight">Editar lançamento</DialogTitle>
           </DialogHeader>
           {editing && (
             <form
@@ -1048,16 +1060,16 @@ export function LancamentosPage({ tipo }: { tipo: "receber" | "pagar" }) {
                 e.preventDefault();
                 salvarEdicao.mutate(editing);
               }}
-              className="space-y-3"
+              className="space-y-4"
             >
               {(editing.created_by ||
                 (editing.observacoes ?? "").includes("adiantamento recorrente")) && (
-                <p className="flex items-center gap-2 text-xs text-muted-foreground">
+                <p className="flex flex-wrap items-center gap-2 rounded-xl border bg-muted/40 px-3.5 py-2.5 text-xs text-muted-foreground">
                   <span>
                     {editing.created_by ? (
                       <>
                         Lançado por{" "}
-                        <span className="font-medium">{perfis[editing.created_by] ?? "—"}</span> ·{" "}
+                        <span className="font-medium text-foreground">{perfis[editing.created_by] ?? "—"}</span> ·{" "}
                         {format(new Date(editing.created_at), "dd/MM/yyyy HH:mm")}
                       </>
                     ) : (
@@ -1065,47 +1077,51 @@ export function LancamentosPage({ tipo }: { tipo: "receber" | "pagar" }) {
                     )}
                   </span>
                   {(editing.observacoes ?? "").includes("adiantamento recorrente") && (
-                    <span className="rounded bg-muted px-1.5 py-0.5 text-[10px] uppercase tracking-wide">
+                    <span className="rounded-md bg-muted px-2 py-0.5 text-[10px] uppercase tracking-wide shadow-sm">
                       recorrência
                     </span>
                   )}
                 </p>
               )}
-              <div>
+              <div className="grid gap-1.5">
                 <Label>Descrição *</Label>
                 <Input
                   required
                   value={editing.descricao}
                   onChange={(e) => setEditing({ ...editing, descricao: e.target.value })}
+                  className="h-10 rounded-xl"
                 />
               </div>
-              <div className="grid grid-cols-3 gap-3">
-                <div>
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+                <div className="grid gap-1.5">
                   <Label>Valor (R$) *</Label>
                   <MoneyInput
                     required
                     value={editing.valor}
                     onChange={(v) => setEditing({ ...editing, valor: v })}
                     prefix=""
+                    className="h-10"
                   />
                 </div>
-                <div>
+                <div className="grid gap-1.5">
                   <Label>Emissão</Label>
                   <DateInput
                     value={editing.data_emissao}
                     onChange={(v) => setEditing({ ...editing, data_emissao: v })}
+                    className="h-10"
                   />
                 </div>
-                <div>
+                <div className="grid gap-1.5">
                   <Label>Vencimento *</Label>
                   <DateInput
                     required
                     value={editing.data_vencimento}
                     onChange={(v) => setEditing({ ...editing, data_vencimento: v })}
+                    className="h-10"
                   />
                 </div>
               </div>
-              <div>
+              <div className="grid gap-1.5">
                 <Label>{tipo === "receber" ? "Cliente" : "Fornecedor"}</Label>
                 <Combobox
                   value={editing.contato_id}
@@ -1114,10 +1130,11 @@ export function LancamentosPage({ tipo }: { tipo: "receber" | "pagar" }) {
                   placeholder="Selecionar contato"
                   searchPlaceholder="Digite para buscar..."
                   emptyText="Nenhum item encontrado."
+                  className="h-10"
                 />
               </div>
-              <div className="grid grid-cols-2 gap-3">
-                <div>
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                <div className="grid gap-1.5">
                   <Label>Conta bancária</Label>
                   <Combobox
                     value={editing.conta_bancaria_id}
@@ -1126,9 +1143,10 @@ export function LancamentosPage({ tipo }: { tipo: "receber" | "pagar" }) {
                     placeholder="Selecionar"
                     searchPlaceholder="Digite para buscar..."
                     emptyText="Nenhum item encontrado."
+                    className="h-10"
                   />
                 </div>
-                <div>
+                <div className="grid gap-1.5">
                   <Label>Categoria</Label>
                   <Combobox
                     value={editing.categoria_id}
@@ -1137,18 +1155,20 @@ export function LancamentosPage({ tipo }: { tipo: "receber" | "pagar" }) {
                     placeholder="Selecionar"
                     searchPlaceholder="Digite para buscar..."
                     emptyText="Nenhum item encontrado."
+                    className="h-10"
                   />
                 </div>
               </div>
-              <div className="grid grid-cols-2 gap-3">
-                <div>
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                <div className="grid gap-1.5">
                   <Label>Nº documento / NF</Label>
                   <Input
                     value={editing.documento}
                     onChange={(e) => setEditing({ ...editing, documento: e.target.value })}
+                    className="h-10 rounded-xl"
                   />
                 </div>
-                <div>
+                <div className="grid gap-1.5">
                   <Label>Forma de pagamento</Label>
                   <Select
                     value={editing.forma_pagamento || "__none"}
@@ -1156,7 +1176,7 @@ export function LancamentosPage({ tipo }: { tipo: "receber" | "pagar" }) {
                       setEditing({ ...editing, forma_pagamento: v === "__none" ? "" : v })
                     }
                   >
-                    <SelectTrigger>
+                    <SelectTrigger className="h-10 rounded-xl">
                       <SelectValue placeholder="Selecionar" />
                     </SelectTrigger>
                     <SelectContent>
@@ -1170,16 +1190,17 @@ export function LancamentosPage({ tipo }: { tipo: "receber" | "pagar" }) {
                   </Select>
                 </div>
               </div>
-              <div>
+              <div className="grid gap-1.5">
                 <Label>Observações</Label>
                 <Textarea
                   rows={2}
                   value={editing.observacoes}
                   onChange={(e) => setEditing({ ...editing, observacoes: e.target.value })}
+                  className="rounded-xl"
                 />
               </div>
-              <DialogFooter>
-                <Button type="submit" disabled={salvarEdicao.isPending}>
+              <DialogFooter className="gap-2">
+                <Button type="submit" disabled={salvarEdicao.isPending} className="h-10 rounded-xl px-6 shadow-sm transition-all hover:-translate-y-px hover:shadow-md">
                   {salvarEdicao.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                   Salvar alterações
                 </Button>
@@ -1195,19 +1216,20 @@ export function LancamentosPage({ tipo }: { tipo: "receber" | "pagar" }) {
           if (!v) setLancamentoBloqueado(null);
         }}
       >
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Lançamento vinculado a nota fiscal</AlertDialogTitle>
-            <AlertDialogDescription>
+        <AlertDialogContent className="rounded-2xl">
+          <AlertDialogHeader className="gap-1.5">
+            <AlertDialogTitle className="tracking-tight">Lançamento vinculado a nota fiscal</AlertDialogTitle>
+            <AlertDialogDescription className="leading-relaxed">
               Não é possível excluir este lançamento diretamente por aqui, pois ele foi gerado
               automaticamente a partir de uma nota fiscal importada. As alterações devem ser feitas
               em <strong>Fiscal → Notas de Compra</strong>.
             </AlertDialogDescription>
           </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+          <AlertDialogFooter className="gap-2">
+            <AlertDialogCancel className="h-10 rounded-xl">Cancelar</AlertDialogCancel>
             <AlertDialogAction
               data-acao
+              className="h-10 rounded-xl px-5 shadow-sm"
               onClick={() => {
                 setLancamentoBloqueado(null);
                 navigate({ to: "/fiscal/recebidas" });
@@ -1220,18 +1242,18 @@ export function LancamentosPage({ tipo }: { tipo: "receber" | "pagar" }) {
       </AlertDialog>
 
       <AlertDialog open={confLote} onOpenChange={setConfLote}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Excluir lançamentos</AlertDialogTitle>
-            <AlertDialogDescription>
+        <AlertDialogContent className="rounded-2xl">
+          <AlertDialogHeader className="gap-1.5">
+            <AlertDialogTitle className="tracking-tight">Excluir lançamentos</AlertDialogTitle>
+            <AlertDialogDescription className="whitespace-pre-line leading-relaxed">
               {`Excluir ${selected.size} lançamento(s)?\n\nSe algum estiver conciliado, a transação do extrato voltará para "em aberto" (não será apagada).`}
             </AlertDialogDescription>
           </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+          <AlertDialogFooter className="gap-2">
+            <AlertDialogCancel className="h-10 rounded-xl">Cancelar</AlertDialogCancel>
             <AlertDialogAction
               data-acao
-              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              className="h-10 rounded-xl bg-destructive text-destructive-foreground hover:bg-destructive/90"
               onClick={() => excluirLote.mutate([...selected])}
             >
               Excluir
@@ -1241,18 +1263,18 @@ export function LancamentosPage({ tipo }: { tipo: "receber" | "pagar" }) {
       </AlertDialog>
 
       <AlertDialog open={!!confExclusao} onOpenChange={(v) => { if (!v) setConfExclusao(null); }}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Excluir lançamento</AlertDialogTitle>
-            <AlertDialogDescription>
+        <AlertDialogContent className="rounded-2xl">
+          <AlertDialogHeader className="gap-1.5">
+            <AlertDialogTitle className="tracking-tight">Excluir lançamento</AlertDialogTitle>
+            <AlertDialogDescription className="whitespace-pre-line leading-relaxed">
               {'Excluir lançamento?\n\nSe estiver conciliado, a transação do extrato voltará para "em aberto" (não será apagada).'}
             </AlertDialogDescription>
           </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+          <AlertDialogFooter className="gap-2">
+            <AlertDialogCancel className="h-10 rounded-xl">Cancelar</AlertDialogCancel>
             <AlertDialogAction
               data-acao
-              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              className="h-10 rounded-xl bg-destructive text-destructive-foreground hover:bg-destructive/90"
               onClick={() => { if (confExclusao) excluirLote.mutate([confExclusao]); setConfExclusao(null); }}
             >
               Excluir
