@@ -4708,3 +4708,9 @@ Espelhado na Vercel.
 - Gatilho h-9 rounded-xl com hover elevado; diálogo rounded-2xl;
   linhas com hover e kbd em pill com sombra.
 - Paleta intacta; `tsc` limpo nos tocados e `npm run build` OK.
+
+## Repaginação: menu-settings-dialog (06/10)
+
+- Gatilho rounded-xl com hover elevado; diálogo rounded-2xl; itens
+  rounded-xl com sombra e hover; kbd/botões com `rounded-lg`.
+- Paleta intacta; `tsc` limpo nos tocados e `npm run build` OK.
