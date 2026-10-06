@@ -62,13 +62,13 @@
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-ring: var(--sidebar-ring);
 
-  --shadow-panel: 0 1px 2px oklch(0.22 0.02 60 / 0.05), 0 12px 32px -16px oklch(0.22 0.02 60 / 0.14);
-  --shadow-lift: 0 2px 4px oklch(0.22 0.02 60 / 0.06), 0 20px 44px -20px oklch(0.22 0.02 60 / 0.22);
+  --shadow-panel: 0 1px 2px oklch(0.22 0.02 60 / 0.06), 0 16px 40px -20px oklch(0.22 0.02 60 / 0.18);
+  --shadow-lift: 0 2px 6px oklch(0.22 0.02 60 / 0.08), 0 28px 56px -24px oklch(0.22 0.02 60 / 0.28);
   --shadow-glow: 0 0 0 1px oklch(0.47 0.13 150 / 0.15), 0 8px 32px -8px oklch(0.47 0.13 150 / 0.25);
 }
 
 :root {
-  --radius: 1rem;
+  --radius: 1.25rem;
 
   /* Base neutra, ações em esmeralda e estados bem diferenciados */
   --background: oklch(0.965 0.008 90);
@@ -188,8 +188,8 @@
   }
   .erp-table-wrap { overflow-x: auto; border: 1px solid var(--color-border); border-radius: var(--radius-lg); background: var(--color-card); box-shadow: var(--shadow-panel); }
   .erp-table-wrap table thead { background: color-mix(in oklab, var(--color-muted) 62%, transparent); }
-  .erp-table-wrap table th { white-space: nowrap; font-size: 0.7rem; font-weight: 650; letter-spacing: 0.06em; text-transform: uppercase; color: var(--color-muted-foreground); padding-block: 0.75rem; }
-  .erp-table-wrap table td { padding-block: 0.75rem; }
+  .erp-table-wrap table th { white-space: nowrap; font-size: 0.72rem; font-weight: 650; letter-spacing: 0.08em; text-transform: uppercase; color: var(--color-muted-foreground); padding-block: 1rem; }
+  .erp-table-wrap table td { padding-block: 1rem; }
   .erp-table-wrap table tbody tr { transition: background-color 140ms ease; }
   .erp-table-wrap table tbody tr:hover { background: color-mix(in oklab, var(--color-accent) 38%, transparent); }
   .card-hover { transition: box-shadow 200ms ease, transform 200ms ease; }

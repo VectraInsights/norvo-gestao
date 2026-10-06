@@ -4878,3 +4878,14 @@ Espelhado na Vercel.
   destaque (DACTE e campos fiscais densos intactos).
 - `tsc`: 55 erros iguais ao HEAD (zero novos); build OK.
 - Paleta intacta.
+
+## Repaginação visível: base + piloto dashboard (06/10)
+
+- Direção nova (pedido do dono): visível, clean e intuitivo.
+- Base: raio 16→20px, sombras maiores e suaves, tabelas com
+  respiro (th/td 1rem, tracking maior).
+- Dashboard piloto: ações rápidas em cards grandes com descrição,
+  KPIs horizontais com tile e valor maior, seções com mais
+  respiro.
+- Paleta intacta; `tsc` limpo nos tocados e `npm run build` OK.
+- Nota: dar Ctrl+F5 após o deploy para ver sem cache.

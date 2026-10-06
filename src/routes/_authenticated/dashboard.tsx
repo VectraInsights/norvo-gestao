@@ -318,10 +318,10 @@ function Dashboard() {
 
   const navigate = useNavigate();
   const atalhos = [
-    { label: "Nova venda", to: "/vendas/nova", icon: ShoppingCart },
-    { label: "Lançamento financeiro", to: "/financeiro/lancamentos", icon: Wallet },
-    { label: "Novo produto", to: "/estoque/produtos", icon: Package },
-    { label: "Novo contato", to: "/cadastros/contatos", icon: Users },
+    { label: "Nova venda", desc: "Emita em segundos", to: "/vendas/nova", icon: ShoppingCart },
+    { label: "Lançamento financeiro", desc: "Pagar ou receber", to: "/financeiro/lancamentos", icon: Wallet },
+    { label: "Novo produto", desc: "Amplie o catálogo", to: "/estoque/produtos", icon: Package },
+    { label: "Novo contato", desc: "Cliente ou fornecedor", to: "/cadastros/contatos", icon: Users },
   ];
 
   const cards = [
@@ -383,34 +383,39 @@ function Dashboard() {
         description="Visão geral da operação em tempo real."
       />
 
-      <Card className="erp-surface mb-6 overflow-hidden rounded-2xl border-primary/15 bg-gradient-to-br from-card via-card to-primary/[0.04] sm:mb-8">
-        <CardContent className="p-5 sm:p-6">
-          <div className="mb-4 flex items-center justify-between gap-3">
+      <Card className="erp-surface mb-8 overflow-hidden rounded-2xl border-primary/15 bg-gradient-to-br from-card via-card to-primary/[0.04] sm:mb-10">
+        <CardContent className="p-6 sm:p-8">
+          <div className="mb-5 flex items-center justify-between gap-3">
             <div>
-              <h2 className="text-sm font-semibold tracking-tight">Ações rápidas</h2>
-              <p className="mt-0.5 text-xs text-muted-foreground">
+              <h2 className="text-base font-semibold tracking-tight">Ações rápidas</h2>
+              <p className="mt-1 text-sm text-muted-foreground">
                 Acesse as tarefas mais usadas sem navegar pelo menu.
               </p>
             </div>
-            <span className="grid h-9 w-9 place-items-center rounded-xl bg-primary/10">
-              <Plus className="h-4 w-4 text-primary" aria-hidden="true" />
+            <span className="grid h-11 w-11 place-items-center rounded-2xl bg-primary text-primary-foreground shadow-md">
+              <Plus className="h-5 w-5" aria-hidden="true" />
             </span>
           </div>
-          <div className="grid gap-2.5 sm:grid-cols-2 lg:grid-cols-4">
+          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
             {atalhos.map((atalho) => {
               const Icon = atalho.icon;
               return (
                 <Button
                   key={atalho.to}
                   variant="outline"
-                  className="h-auto justify-between rounded-xl px-4 py-3.5 text-left shadow-sm transition-all hover:-translate-y-px hover:shadow-md"
+                  className="h-auto items-center justify-between gap-3 rounded-2xl bg-background px-4 py-4 text-left shadow-sm transition-all hover:-translate-y-1 hover:border-primary/30 hover:shadow-lg"
                   onClick={() => navigate({ to: atalho.to })}
                 >
-                  <span className="flex items-center gap-2.5">
-                    <Icon className="h-4 w-4 text-primary" aria-hidden="true" />
-                    {atalho.label}
+                  <span className="flex min-w-0 items-center gap-3">
+                    <span className="grid h-11 w-11 shrink-0 place-items-center rounded-2xl bg-primary/10">
+                      <Icon className="h-5 w-5 text-primary" aria-hidden="true" />
+                    </span>
+                    <span className="min-w-0">
+                      <span className="block truncate text-sm font-semibold">{atalho.label}</span>
+                      <span className="block truncate text-xs text-muted-foreground">{atalho.desc}</span>
+                    </span>
                   </span>
-                  <ArrowRight className="h-3.5 w-3.5 text-muted-foreground" aria-hidden="true" />
+                  <ArrowRight className="h-4 w-4 shrink-0 text-muted-foreground" aria-hidden="true" />
                 </Button>
               );
             })}
@@ -418,7 +423,7 @@ function Dashboard() {
         </CardContent>
       </Card>
 
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4 lg:gap-5">
+      <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-4 lg:gap-6">
         {loadingStats
           ? Array.from({ length: 8 }).map((_, i) => (
               <Card key={i} className="rounded-2xl shadow-panel">
@@ -431,28 +436,28 @@ function Dashboard() {
           : cards.map((c) => (
               <Card
                 key={c.label}
-                className="group rounded-2xl shadow-panel transition-all duration-200 hover:-translate-y-0.5 hover:border-primary/25 hover:shadow-lg"
+                className="group rounded-2xl shadow-panel transition-all duration-200 hover:-translate-y-1 hover:border-primary/25 hover:shadow-lg"
               >
-                <CardContent className="p-6">
-                  <div className="flex items-center justify-between text-muted-foreground">
-                    <span className="text-xs font-medium uppercase tracking-[0.12em]">
+                <CardContent className="flex items-center gap-4 p-6">
+                  <span className="grid h-12 w-12 shrink-0 place-items-center rounded-2xl bg-muted/70 transition-colors group-hover:bg-primary/10">
+                    <c.icon className={`h-5 w-5 ${c.tone}`} aria-hidden="true" />
+                  </span>
+                  <span className="min-w-0">
+                    <span className="block truncate text-xs font-medium uppercase tracking-[0.1em] text-muted-foreground">
                       {c.label}
                     </span>
-                    <span className="rounded-xl bg-muted/70 p-2.5 transition-colors group-hover:bg-primary/10">
-                      <c.icon className={`h-4 w-4 ${c.tone}`} aria-hidden="true" />
+                    <span className="mt-1 block truncate text-display text-[1.7rem] font-semibold leading-tight text-tabular">
+                      {c.value}
                     </span>
-                  </div>
-                  <div className="mt-4 text-display text-2xl font-semibold text-tabular">
-                    {c.value}
-                  </div>
+                  </span>
                 </CardContent>
               </Card>
             ))}
       </div>
 
-      <div className="mt-8 grid gap-4 lg:grid-cols-3 lg:gap-5 lg:mt-10">
+      <div className="mt-10 grid gap-5 lg:grid-cols-3 lg:gap-6 lg:mt-12">
         <Card className="rounded-2xl shadow-panel lg:col-span-2">
-          <CardContent className="p-6">
+          <CardContent className="p-6 sm:p-8">
             <div className="mb-5 flex items-center justify-between gap-3">
               <div>
                 <p className="text-xs font-medium uppercase tracking-[0.12em] text-muted-foreground">
@@ -473,16 +478,16 @@ function Dashboard() {
         </Card>
 
         <Card className="rounded-2xl shadow-panel">
-          <CardContent className="p-6">
+          <CardContent className="p-6 sm:p-8">
             <div className="mb-5 flex items-center justify-between gap-3">
               <div>
                 <p className="text-xs font-medium uppercase tracking-[0.12em] text-muted-foreground">
                   Atenção
                 </p>
-                <h3 className="mt-1 font-semibold tracking-tight">Alertas & estoque baixo</h3>
+                <h3 className="mt-1.5 text-base font-semibold tracking-tight">Alertas & estoque baixo</h3>
               </div>
-              <span className="rounded-xl bg-warning/15 p-2.5">
-                <AlertTriangle className="h-4 w-4 text-warning-foreground" aria-hidden="true" />
+              <span className="grid h-11 w-11 place-items-center rounded-2xl bg-warning/15">
+                <AlertTriangle className="h-5 w-5 text-warning-foreground" aria-hidden="true" />
               </span>
             </div>
             {!alertas?.length &&
@@ -596,11 +601,11 @@ function Dashboard() {
         </Card>
       </div>
 
-      <div className="mt-4 lg:mt-5">
+      <div className="mt-5 lg:mt-6">
         <Card className="rounded-2xl shadow-panel">
-          <CardContent className="p-6">
+          <CardContent className="p-6 sm:p-8">
             <div className="mb-4 flex items-center justify-between gap-3">
-              <h3 className="font-semibold tracking-tight">Próximos recebimentos</h3>
+              <h3 className="text-base font-semibold tracking-tight">Próximos recebimentos</h3>
               <Badge variant="secondary">{proximosReceber?.length ?? 0}</Badge>
             </div>
             {!proximosReceber?.length ? (
