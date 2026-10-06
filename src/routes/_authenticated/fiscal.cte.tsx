@@ -297,13 +297,13 @@ function PreviewDacte({
   if (erro) {
     return (
       <Dialog open onOpenChange={(v) => { if (!v) onClose(); }}>
-        <DialogContent className="w-[420px] max-w-[calc(100vw-2rem)]">
-          <DialogHeader>
-            <DialogTitle>{titulo}</DialogTitle>
-            <DialogDescription>{erro}</DialogDescription>
+        <DialogContent className="w-[420px] max-w-[calc(100vw-2rem)] rounded-2xl sm:p-6">
+          <DialogHeader className="gap-1.5 pb-1">
+            <DialogTitle className="tracking-tight">{titulo}</DialogTitle>
+            <DialogDescription className="leading-relaxed">{erro}</DialogDescription>
           </DialogHeader>
           <DialogFooter>
-            <Button variant="outline" onClick={onClose}>Fechar</Button>
+            <Button variant="outline" onClick={onClose} className="h-10 rounded-xl">Fechar</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
@@ -312,10 +312,10 @@ function PreviewDacte({
   if (!url) {
     return (
       <Dialog open onOpenChange={(v) => { if (!v) onClose(); }}>
-        <DialogContent className="w-[420px] max-w-[calc(100vw-2rem)]">
-          <DialogHeader>
-            <DialogTitle>{titulo}</DialogTitle>
-            <DialogDescription>Gerando prévia…</DialogDescription>
+        <DialogContent className="w-[420px] max-w-[calc(100vw-2rem)] rounded-2xl sm:p-6">
+          <DialogHeader className="gap-1.5 pb-1">
+            <DialogTitle className="tracking-tight">{titulo}</DialogTitle>
+            <DialogDescription className="leading-relaxed">Gerando prévia…</DialogDescription>
           </DialogHeader>
         </DialogContent>
       </Dialog>
@@ -6000,18 +6000,18 @@ function CtePage() {
             if (!v) setCteCancelarLote(false);
           }}
         >
-          <DialogContent className="inset-auto left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-[420px] max-w-[calc(100vw-2rem)] h-auto max-h-[90vh] p-4 gap-3">
-            <DialogHeader>
-              <DialogTitle>Cancelar CT-es selecionados</DialogTitle>
+          <DialogContent className="inset-auto left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-[420px] max-w-[calc(100vw-2rem)] h-auto max-h-[90vh] p-4 gap-3 rounded-2xl sm:p-6">
+            <DialogHeader className="gap-1.5 pb-1">
+              <DialogTitle className="tracking-tight">Cancelar CT-es selecionados</DialogTitle>
             </DialogHeader>
-            <p className="text-sm text-muted-foreground">
+            <p className="text-sm leading-relaxed text-muted-foreground">
               Serão cancelados {autorizadosSelecionados.length} CT-e(s) autorizado(s). O
               processamento será feito um por vez.
             </p>
-            <div className="space-y-2">
+            <div className="grid gap-1.5">
               <Label>Motivo (obrigatório)</Label>
               <Select value={motivoCanc} onValueChange={setMotivoCanc}>
-                <SelectTrigger>
+                <SelectTrigger className="h-10 rounded-xl">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -6025,13 +6025,14 @@ function CtePage() {
                 </SelectContent>
               </Select>
             </div>
-            <DialogFooter>
-              <Button variant="outline" onClick={() => setCteCancelarLote(false)}>
+            <DialogFooter className="gap-2">
+              <Button variant="outline" onClick={() => setCteCancelarLote(false)} className="h-10 rounded-xl">
                 Voltar
               </Button>
               <Button
                 variant="destructive"
                 disabled={cancelar.isPending || motivoCanc.length < 15}
+                className="h-10 rounded-xl px-5"
                 onClick={async () => {
                   const docsLote = [...autorizadosSelecionados];
                   setCteCancelarLote(false);
@@ -6078,24 +6079,24 @@ function CtePage() {
       )}
       {impOpen && (
         <Dialog open={impOpen} onOpenChange={setImpOpen}>
-          <DialogContent className="inset-auto left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-[420px] max-w-[calc(100vw-2rem)] h-auto max-h-[90vh] p-4 gap-3">
-            <DialogHeader>
-              <DialogTitle>Exportar</DialogTitle>
+          <DialogContent className="inset-auto left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-[420px] max-w-[calc(100vw-2rem)] h-auto max-h-[90vh] p-4 gap-3 rounded-2xl sm:p-6">
+            <DialogHeader className="gap-1.5 pb-1">
+              <DialogTitle className="tracking-tight">Exportar</DialogTitle>
             </DialogHeader>
-            <div className="space-y-2">
+            <div className="grid gap-1.5">
               <Label>Selecione o formato:</Label>
-              <div className="flex flex-col gap-1.5">
-                {(["pdf", "xml", "ambos"] as const).map((v) => (
-                  <label key={v} className="flex items-center gap-2 text-sm cursor-pointer">
-                    <input type="radio" name="imp-tipo" checked={impTipo === v} onChange={() => setImpTipo(v)} />
+              <div className="flex flex-col gap-1">
+                {((["pdf", "xml", "ambos"] as const)).map((v) => (
+                  <label key={v} className="flex cursor-pointer items-center gap-2.5 rounded-lg px-2 py-1.5 text-sm transition-colors hover:bg-accent">
+                    <input type="radio" name="imp-tipo" checked={impTipo === v} onChange={() => setImpTipo(v)} className="h-4 w-4 accent-primary" />
                     {v === "pdf" ? "PDF" : v === "xml" ? "XML" : "PDF/XML"}
                   </label>
                 ))}
               </div>
             </div>
-            <DialogFooter>
-              <Button variant="outline" onClick={() => setImpOpen(false)}>Voltar</Button>
-              <Button disabled={impProc} onClick={() => void importarLote()}>
+            <DialogFooter className="gap-2">
+              <Button variant="outline" onClick={() => setImpOpen(false)} className="h-10 rounded-xl">Voltar</Button>
+              <Button disabled={impProc} onClick={() => void importarLote()} className="h-10 rounded-xl px-5 shadow-sm">
                 {impProc ? "Baixando…" : "Baixar"}
               </Button>
             </DialogFooter>
@@ -6109,14 +6110,14 @@ function CtePage() {
             if (!v) setCteCancelar(null);
           }}
         >
-          <DialogContent className="inset-auto left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-[420px] max-w-[calc(100vw-2rem)] h-auto max-h-[90vh] p-4 gap-3">
-            <DialogHeader>
-              <DialogTitle>Cancelar CT-e</DialogTitle>
+          <DialogContent className="inset-auto left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-[420px] max-w-[calc(100vw-2rem)] h-auto max-h-[90vh] p-4 gap-3 rounded-2xl sm:p-6">
+            <DialogHeader className="gap-1.5 pb-1">
+              <DialogTitle className="tracking-tight">Cancelar CT-e</DialogTitle>
             </DialogHeader>
-            <div className="space-y-2">
+            <div className="grid gap-1.5">
               <Label>Motivo (obrigatório)</Label>
               <Select value={motivoCanc} onValueChange={setMotivoCanc}>
-                <SelectTrigger>
+                <SelectTrigger className="h-10 rounded-xl">
                   <SelectValue placeholder="Selecione o motivo" />
                 </SelectTrigger>
                 <SelectContent>
@@ -6130,13 +6131,14 @@ function CtePage() {
                 </SelectContent>
               </Select>
             </div>
-            <DialogFooter>
-              <Button variant="outline" onClick={() => setCteCancelar(null)}>
+            <DialogFooter className="gap-2">
+              <Button variant="outline" onClick={() => setCteCancelar(null)} className="h-10 rounded-xl">
                 Voltar
               </Button>
               <Button
                 variant="destructive"
                 disabled={!motivoCanc.trim() || cancelar.isPending}
+                className="h-10 rounded-xl px-5"
                 onClick={() => {
                   if (!cteCancelar) return;
                   cancelar.mutate(
@@ -6158,34 +6160,35 @@ function CtePage() {
             if (!v) setCceDoc(null);
           }}
         >
-          <DialogContent className="inset-auto left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-[480px] max-w-[calc(100vw-2rem)] h-auto max-h-[90vh] p-4 gap-3">
-            <DialogHeader>
-              <DialogTitle>Carta de Correção — CT-e {cceDoc.numero ?? ""}</DialogTitle>
+          <DialogContent className="inset-auto left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-[480px] max-w-[calc(100vw-2rem)] h-auto max-h-[90vh] p-4 gap-3 rounded-2xl sm:p-6">
+            <DialogHeader className="gap-1.5 pb-1">
+              <DialogTitle className="tracking-tight">Carta de Correção — CT-e {cceDoc.numero ?? ""}</DialogTitle>
             </DialogHeader>
-            <div className="space-y-2">
+            <div className="grid gap-2">
               <Label>Correção (mín. 15 caracteres)</Label>
               <Textarea
                 value={cceTexto}
                 onChange={(e) => setCceTexto(e.target.value)}
                 rows={4}
                 maxLength={1000}
-                
+                className="rounded-xl leading-relaxed"
               />
-              <div className="text-right text-[11px] text-muted-foreground">
+              <div className="text-right text-[11px] text-muted-foreground text-tabular">
                 {cceTexto.trim().length}/1000
               </div>
-              <p className="text-[11px] text-muted-foreground">
+              <p className="text-[11px] leading-relaxed text-muted-foreground">
                 Não corrige valores, CFOP, tomador, datas nem documentos vinculados —
                 esses casos exigem cancelar e reemitir.
               </p>
             </div>
-            <DialogFooter>
-              <Button variant="outline" onClick={() => setCceDoc(null)}>
+            <DialogFooter className="gap-2">
+              <Button variant="outline" onClick={() => setCceDoc(null)} className="h-10 rounded-xl">
                 Voltar
               </Button>
               <Button
                 disabled={cceTexto.trim().length < 15 || enviarCce.isPending}
                 onClick={() => enviarCce.mutate()}
+                className="h-10 rounded-xl px-5 shadow-sm transition-all hover:-translate-y-px hover:shadow-md"
               >
                 {enviarCce.isPending ? "Enviando…" : "Enviar CC-e"}
               </Button>
@@ -6801,17 +6804,18 @@ function CtePage() {
               if (!o) setConfRemetente(null);
             }}
           >
-            <AlertDialogContent>
-              <AlertDialogHeader>
-                <AlertDialogTitle>Selecionar todas do remetente?</AlertDialogTitle>
-                <AlertDialogDescription>
+            <AlertDialogContent className="rounded-2xl">
+              <AlertDialogHeader className="gap-1.5">
+                <AlertDialogTitle className="tracking-tight">Selecionar todas do remetente?</AlertDialogTitle>
+                <AlertDialogDescription className="leading-relaxed">
                   {confRemetente &&
                     `Selecionar todas as ${confRemetente.chaves.length + 1} NF-e de ${confRemetente.nome}?`}
                 </AlertDialogDescription>
               </AlertDialogHeader>
-              <AlertDialogFooter>
-                <AlertDialogCancel>Cancelar</AlertDialogCancel>
+              <AlertDialogFooter className="gap-2">
+                <AlertDialogCancel className="h-10 rounded-xl">Cancelar</AlertDialogCancel>
                 <AlertDialogAction
+                  className="h-10 rounded-xl px-5 shadow-sm transition-all hover:-translate-y-px hover:shadow-md"
                   onClick={() => {
                     if (confRemetente)
                       setSelecionadas((prev) => new Set([...prev, ...confRemetente.chaves]));
@@ -6826,18 +6830,18 @@ function CtePage() {
           <Dialog open={percPickOpen} onOpenChange={setPercPickOpen}>
             <DialogContent
               onEscapeKeyDown={(event) => event.stopPropagation()}
-              className="fixed inset-0 left-0 top-0 translate-x-0 translate-y-0 w-screen h-screen max-w-none max-h-none rounded-none p-6 overflow-y-auto"
+              className="fixed inset-0 left-0 top-0 translate-x-0 translate-y-0 w-screen h-screen max-w-none max-h-none rounded-none p-6 overflow-y-auto sm:p-8"
             >
-              <DialogHeader>
-                <DialogTitle>Novo CT-e — escolher percurso</DialogTitle>
+              <DialogHeader className="mx-auto w-full max-w-3xl gap-1.5 pb-1">
+                <DialogTitle className="tracking-tight">Novo CT-e — escolher percurso</DialogTitle>
               </DialogHeader>
               <Input
-                className="h-7 text-xs"
-                
+                className="h-10 rounded-xl shadow-sm mx-auto w-full max-w-3xl"
+                placeholder="Buscar percurso por código, nome ou CNPJ..."
                 value={percPickQuery}
                 onChange={(e) => setPercPickQuery(e.target.value)}
               />
-              <div className="max-h-64 overflow-y-auto space-y-1">
+              <div className="mx-auto max-h-64 w-full max-w-3xl space-y-1.5 overflow-y-auto">
                 {percursos
                   .filter((r) => {
                     if (!percPickQuery) return true;
@@ -6862,10 +6866,10 @@ function CtePage() {
                       onClick={() => setPercPickSel(r.codigo)}
                       onDoubleClick={() => novoAvulsoDePercurso(r)}
                       className={
-                        "w-full text-left text-xs px-2 py-1.5 rounded border " +
+                        "w-full rounded-xl border px-3.5 py-2.5 text-left text-xs shadow-sm transition-all hover:-translate-y-px hover:shadow-md " +
                         (percPickSel === r.codigo
                           ? "border-primary bg-primary/10"
-                          : "border-transparent hover:bg-muted")
+                          : "border-border bg-card hover:bg-accent")
                       }
                       title="Dois cliques para usar direto"
                     >
@@ -6896,13 +6900,13 @@ function CtePage() {
                     </button>
                   ))}
                 {percursos.length === 0 && (
-                  <p className="text-xs text-muted-foreground">
+                  <p className="rounded-xl bg-muted/40 px-4 py-6 text-center text-xs leading-relaxed text-muted-foreground">
                     Nenhum percurso cadastrado. Cadastre em Fiscal → Percursos.
                   </p>
                 )}
               </div>
-              <DialogFooter>
-                <Button variant="outline" onClick={() => setPercPickOpen(false)}>
+              <DialogFooter className="mx-auto w-full max-w-3xl gap-2">
+                <Button variant="outline" onClick={() => setPercPickOpen(false)} className="h-10 rounded-xl">
                   Cancelar
                 </Button>
                 <Button
@@ -6911,6 +6915,7 @@ function CtePage() {
                     const r = percursos.find((x) => x.codigo === percPickSel);
                     if (r) novoAvulsoDePercurso(r);
                   }}
+                  className="h-10 rounded-xl px-6 shadow-sm transition-all hover:-translate-y-px hover:shadow-md"
                 >
                   Usar percurso
                 </Button>
@@ -7151,9 +7156,9 @@ function CtePage() {
               </Card>
             )}
             <AlertDialog open={ciotConfirma} onOpenChange={setCiotConfirma}>
-              <AlertDialogContent>
-                <AlertDialogHeader>
-                  <AlertDialogTitle>Emitir CIOT</AlertDialogTitle>
+              <AlertDialogContent className="rounded-2xl">
+                <AlertDialogHeader className="gap-1.5">
+                  <AlertDialogTitle className="tracking-tight">Emitir CIOT</AlertDialogTitle>
                 </AlertDialogHeader>
                 {resumoCiot && (
                   <div className="grid grid-cols-2 gap-2 text-sm">
@@ -7191,12 +7196,13 @@ function CtePage() {
                       : "sem proprietário cadastrado — informe o CNPJ do emissor no veículo."}
                   </div>
                 )}
-                <AlertDialogFooter>
-                  <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                <AlertDialogFooter className="gap-2">
+                  <AlertDialogCancel className="h-10 rounded-xl">Cancelar</AlertDialogCancel>
                   <AlertDialogAction
                     data-acao
                     disabled={!resumoCiot || resumoCiot.abaixo || !resumoCiot.donoOk || !resumoCiot.motoOk || emitindoCiotLote}
                     onClick={emitirCiotLote}
+                    className="h-10 rounded-xl px-5 shadow-sm transition-all hover:-translate-y-px hover:shadow-md"
                   >
                     Emitir
                   </AlertDialogAction>
@@ -7292,18 +7298,18 @@ function CtePage() {
         </Tabs>
       )}
       <AlertDialog open={!!confRascunho} onOpenChange={(v) => { if (!v) setConfRascunho(null); }}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Excluir rascunho</AlertDialogTitle>
-            <AlertDialogDescription>
+        <AlertDialogContent className="rounded-2xl">
+          <AlertDialogHeader className="gap-1.5">
+            <AlertDialogTitle className="tracking-tight">Excluir rascunho</AlertDialogTitle>
+            <AlertDialogDescription className="leading-relaxed">
               Excluir este rascunho? As NF-e voltam para pendentes.
             </AlertDialogDescription>
           </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+          <AlertDialogFooter className="gap-2">
+            <AlertDialogCancel className="h-10 rounded-xl">Cancelar</AlertDialogCancel>
             <AlertDialogAction
               data-acao
-              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              className="h-10 rounded-xl bg-destructive text-destructive-foreground hover:bg-destructive/90"
               onClick={() => confRascunho && excluirRascunho(confRascunho)}
             >
               Excluir
@@ -7312,18 +7318,18 @@ function CtePage() {
         </AlertDialogContent>
       </AlertDialog>
       <AlertDialog open={confLimpar} onOpenChange={setConfLimpar}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Remover pendentes</AlertDialogTitle>
-            <AlertDialogDescription>
+        <AlertDialogContent className="rounded-2xl">
+          <AlertDialogHeader className="gap-1.5">
+            <AlertDialogTitle className="tracking-tight">Remover pendentes</AlertDialogTitle>
+            <AlertDialogDescription className="leading-relaxed">
               Remover {mercadorias.length} NF-e(s) pendentes do embarque?
             </AlertDialogDescription>
           </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+          <AlertDialogFooter className="gap-2">
+            <AlertDialogCancel className="h-10 rounded-xl">Cancelar</AlertDialogCancel>
             <AlertDialogAction
               data-acao
-              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              className="h-10 rounded-xl bg-destructive text-destructive-foreground hover:bg-destructive/90"
               onClick={async () => {
                 if (!empresa || mercadorias.length === 0) return;
                 const { error } = await supabase
@@ -7347,18 +7353,18 @@ function CtePage() {
         </AlertDialogContent>
       </AlertDialog>
       <AlertDialog open={confExcSel} onOpenChange={setConfExcSel}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Excluir selecionadas</AlertDialogTitle>
-            <AlertDialogDescription>
+        <AlertDialogContent className="rounded-2xl">
+          <AlertDialogHeader className="gap-1.5">
+            <AlertDialogTitle className="tracking-tight">Excluir selecionadas</AlertDialogTitle>
+            <AlertDialogDescription className="leading-relaxed">
               Excluir {selecionadas.size} NF-e(s) selecionada(s) do embarque?
             </AlertDialogDescription>
           </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+          <AlertDialogFooter className="gap-2">
+            <AlertDialogCancel className="h-10 rounded-xl">Cancelar</AlertDialogCancel>
             <AlertDialogAction
               data-acao
-              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              className="h-10 rounded-xl bg-destructive text-destructive-foreground hover:bg-destructive/90"
               onClick={async () => {
                 if (!empresa || selecionadas.size === 0) return;
                 const chaves = Array.from(selecionadas);
@@ -7383,22 +7389,22 @@ function CtePage() {
         </AlertDialogContent>
       </AlertDialog>
       <AlertDialog open={loteCiotOpen} onOpenChange={setLoteCiotOpen}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Preencher CIOT ({envSel.size} rascunho{envSel.size !== 1 ? "s" : ""})</AlertDialogTitle>
-            <AlertDialogDescription>
+        <AlertDialogContent className="rounded-2xl">
+          <AlertDialogHeader className="gap-1.5">
+            <AlertDialogTitle className="tracking-tight">Preencher CIOT ({envSel.size} rascunho{envSel.size !== 1 ? "s" : ""})</AlertDialogTitle>
+            <AlertDialogDescription className="leading-relaxed">
               Aplica nos rascunhos marcados. Campos vazios mantêm o valor atual de cada um.
             </AlertDialogDescription>
           </AlertDialogHeader>
-          <div className="grid grid-cols-2 gap-2">
-            <div>
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+            <div className="grid gap-1.5">
               <Label className="text-[11px] text-muted-foreground">Nº CIOT</Label>
-              <Input className="h-8 font-mono" value={loteCiot} onChange={(e) => setLoteCiot(e.target.value.replace(/\D/g, "").slice(0, 12))} maxLength={12} />
+              <Input className="h-9 rounded-xl font-mono" value={loteCiot} onChange={(e) => setLoteCiot(e.target.value.replace(/\D/g, "").slice(0, 12))} maxLength={12} />
             </div>
-            <div>
+            <div className="grid gap-1.5">
               <Label className="text-[11px] text-muted-foreground">Pagto. pedágio</Label>
               <Select value={loteModo} onValueChange={setLoteModo}>
-                <SelectTrigger className="h-8"><SelectValue /></SelectTrigger>
+                <SelectTrigger className="h-9 rounded-xl"><SelectValue /></SelectTrigger>
                 <SelectContent>
                   <SelectItem value="manter">Manter atual</SelectItem>
                   <SelectItem value="tag-transportador">TAG Transportador</SelectItem>
@@ -7407,10 +7413,10 @@ function CtePage() {
                 </SelectContent>
               </Select>
             </div>
-            <div>
+            <div className="grid gap-1.5">
               <Label className="text-[11px] text-muted-foreground">Operadora</Label>
               <Select value={loteOperadora || undefined} onValueChange={setLoteOperadora}>
-                <SelectTrigger className="h-8"><SelectValue placeholder="Manter atual" /></SelectTrigger>
+                <SelectTrigger className="h-9 rounded-xl"><SelectValue placeholder="Manter atual" /></SelectTrigger>
                 <SelectContent>
                   {PEDAGIO_OPERADORAS.map((o) => (
                     <SelectItem key={o.nome} value={o.nome}>{o.nome}</SelectItem>
@@ -7418,18 +7424,18 @@ function CtePage() {
                 </SelectContent>
               </Select>
             </div>
-            <div>
+            <div className="grid gap-1.5">
               <Label className="text-[11px] text-muted-foreground">Identificador VPO</Label>
-              <Input className="h-8 font-mono" value={loteVpo} onChange={(e) => setLoteVpo(e.target.value)} />
+              <Input className="h-9 rounded-xl font-mono" value={loteVpo} onChange={(e) => setLoteVpo(e.target.value)} />
             </div>
-            <div>
+            <div className="grid gap-1.5">
               <Label className="text-[11px] text-muted-foreground">Vale-pedágio (R$)</Label>
-              <MoneyInput className="h-8" value={loteVale} onChange={setLoteVale} />
+              <MoneyInput className="h-9" value={loteVale} onChange={setLoteVale} />
             </div>
           </div>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Cancelar</AlertDialogCancel>
-            <AlertDialogAction data-acao onClick={aplicarLoteCiotPedagio} disabled={loteSalvando}>
+          <AlertDialogFooter className="gap-2">
+            <AlertDialogCancel className="h-10 rounded-xl">Cancelar</AlertDialogCancel>
+            <AlertDialogAction data-acao onClick={aplicarLoteCiotPedagio} disabled={loteSalvando} className="h-10 rounded-xl px-5 shadow-sm">
               {loteSalvando ? "Aplicando…" : "Aplicar no lote"}
             </AlertDialogAction>
           </AlertDialogFooter>
@@ -7444,19 +7450,19 @@ function CtePage() {
           }}
           onKeyDown={(event) => event.stopPropagation()}
         >
-          <DialogHeader>
-            <DialogTitle>Inserir NF-e manualmente</DialogTitle>
+          <DialogHeader className="gap-1.5 pb-1">
+            <DialogTitle className="tracking-tight">Inserir NF-e manualmente</DialogTitle>
           </DialogHeader>
-          <div className="grid grid-cols-2 gap-3">
-            <div>
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+            <div className="grid gap-1.5">
               <Label>Modelo</Label>
               <Input
                 value={manualNfe.modelo}
                 onChange={(e) => setManualNfe((v) => ({ ...v, modelo: e.target.value }))}
-                
+                className="h-10 rounded-xl"
               />
             </div>
-            <div>
+            <div className="grid gap-1.5">
               <Label>Chave NF-e</Label>
               <Input
                 value={manualNfe.chave}
@@ -7466,92 +7472,99 @@ function CtePage() {
                     chave: e.target.value.replace(/\D/g, "").slice(0, 44),
                   }))
                 }
-                
+                className="h-10 rounded-xl font-mono"
                 maxLength={44}
               />
             </div>
-            <div>
+            <div className="grid gap-1.5">
               <Label>Nº NF-e</Label>
               <Input
                 value={manualNfe.nNF}
                 onChange={(e) => setManualNfe((v) => ({ ...v, nNF: e.target.value }))}
-                
+                className="h-10 rounded-xl"
               />
             </div>
-            <div>
+            <div className="grid gap-1.5">
               <Label>Série</Label>
               <Input
                 value={manualNfe.serie}
                 onChange={(e) => setManualNfe((v) => ({ ...v, serie: e.target.value }))}
+                className="h-10 rounded-xl"
               />
             </div>
-            <div className="col-span-2">
+            <div className="col-span-1 grid gap-1.5 sm:col-span-2">
               <Label>Remetente *</Label>
               <Input
                 value={manualNfe.emit}
                 onChange={(e) => setManualNfe((v) => ({ ...v, emit: e.target.value }))}
-                
+                className="h-10 rounded-xl"
               />
             </div>
-            <div>
+            <div className="grid gap-1.5">
               <Label>CNPJ remetente</Label>
               <Input
                 value={manualNfe.emitCnpj}
                 onChange={(e) => setManualNfe((v) => ({ ...v, emitCnpj: maskDoc(e.target.value) }))}
+                className="h-10 rounded-xl"
               />
             </div>
-            <div className="col-span-2">
+            <div className="col-span-1 grid gap-1.5 sm:col-span-2">
               <Label>Destinatário *</Label>
               <Input
                 value={manualNfe.dest}
                 onChange={(e) => setManualNfe((v) => ({ ...v, dest: e.target.value }))}
-                
+                className="h-10 rounded-xl"
               />
             </div>
-            <div>
+            <div className="grid gap-1.5">
               <Label>CNPJ destinatário</Label>
               <Input
                 value={manualNfe.destCnpj}
                 onChange={(e) => setManualNfe((v) => ({ ...v, destCnpj: maskDoc(e.target.value) }))}
+                className="h-10 rounded-xl"
               />
             </div>
-            <div>
+            <div className="grid gap-1.5">
               <Label>Data</Label>
               <DateInput
                 value={manualNfe.data}
                 onChange={(data) => setManualNfe((v) => ({ ...v, data }))}
+                className="h-10"
               />
             </div>
-            <div>
+            <div className="grid gap-1.5">
               <Label>Quantidade</Label>
               <Input
                 inputMode="decimal"
                 value={manualNfe.qtde}
                 onChange={(e) => setManualNfe((v) => ({ ...v, qtde: e.target.value }))}
+                className="h-10 rounded-xl text-tabular"
               />
             </div>
-            <div>
+            <div className="grid gap-1.5">
               <Label>Quantidade de peso (kg)</Label>
               <Input
                 inputMode="decimal"
                 value={manualNfe.peso}
                 onChange={(e) => setManualNfe((v) => ({ ...v, peso: e.target.value }))}
+                className="h-10 rounded-xl text-tabular"
               />
             </div>
-            <div>
+            <div className="grid gap-1.5">
               <Label>Valor da NF-e</Label>
               <Input
                 inputMode="decimal"
                 value={manualNfe.valor}
                 onChange={(e) => setManualNfe((v) => ({ ...v, valor: e.target.value }))}
+                className="h-10 rounded-xl text-tabular"
               />
             </div>
           </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setManualNfeOpen(false)}>
+          <DialogFooter className="gap-2">
+            <Button variant="outline" onClick={() => setManualNfeOpen(false)} className="h-10 rounded-xl">
               Cancelar
             </Button>
-            <Button onClick={adicionarNfeManual}>Adicionar NF-e</Button>
+            <Button onClick={adicionarNfeManual} className="h-10 rounded-xl px-6 shadow-sm transition-all hover:-translate-y-px hover:shadow-md">Adicionar NF-e</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
@@ -7599,7 +7612,7 @@ function CtePage() {
           </DialogHeader>
           {viewDoc && (
             <div
-              className={`mt-2 shrink-0 rounded-md border px-3 py-1.5 text-xs font-semibold ${
+              className={`mt-2 shrink-0 rounded-xl border px-4 py-2.5 text-xs font-semibold shadow-sm ${
                 viewDoc.status === "autorizado"
                   ? "border-success/30 bg-success/10 text-success dark:border-success dark:bg-success/20 dark:text-success"
                   : viewDoc.status === "rejeitado"
@@ -7617,7 +7630,7 @@ function CtePage() {
           )}
 
           <Tabs value={aba} onValueChange={setAba} className="w-full flex min-h-0 flex-1 flex-col">
-            <TabsList className="w-full shrink-0 justify-start gap-0 bg-muted/50 rounded-t-md">
+            <TabsList className="w-full shrink-0 justify-start gap-1 rounded-t-xl bg-muted/50 p-1">
               <TabsTrigger
                 value="geral"
                 className="rounded-t-md rounded-b-none text-xs data-[state=active]:bg-background data-[state=active]:shadow-sm data-[state=active]:text-primary"
@@ -9913,9 +9926,9 @@ function CtePage() {
             </TabsContent>
           </Tabs>
 
-          <DialogFooter className="gap-2 shrink-0 border-t pt-3">
-            <Button variant="ghost" onClick={limparFormularioAoSair}>
-              <Ban className="mr-1 h-3.5 w-3.5" /> Fechar
+          <DialogFooter className="gap-2 shrink-0 border-t border-border/60 pt-4">
+            <Button variant="ghost" onClick={limparFormularioAoSair} className="h-10 rounded-xl">
+              <Ban className="mr-1.5 h-3.5 w-3.5" /> Fechar
             </Button>
             {!viewDoc && (
               <>
@@ -9923,12 +9936,13 @@ function CtePage() {
                   variant="outline"
                   onClick={() => salvarRascunho.mutate()}
                   disabled={salvarRascunho.isPending}
+                  className="h-10 rounded-xl shadow-sm"
                 >
                   {salvarRascunho.isPending ? (
                     "Salvando..."
                   ) : (
                     <>
-                      <FileText className="mr-1 h-3.5 w-3.5" /> Salvar Rascunho
+                      <FileText className="mr-1.5 h-3.5 w-3.5" /> Salvar Rascunho
                     </>
                   )}
                 </Button>
@@ -9936,25 +9950,26 @@ function CtePage() {
                   variant="outline"
                   onClick={() => previewXml.mutate()}
                   disabled={previewXml.isPending || !form.cnpjTomador || !form.xNomeTomador}
+                  className="h-10 rounded-xl shadow-sm"
                 >
                   {previewXml.isPending ? (
                     "Gerando..."
                   ) : (
                     <>
-                      <FileText className="mr-1 h-3.5 w-3.5" /> Pré Visualizar
+                      <FileText className="mr-1.5 h-3.5 w-3.5" /> Pré Visualizar
                     </>
                   )}
                 </Button>
                 <Button
                   onClick={() => emitir.mutate()}
                   disabled={emitir.isPending || !form.cnpjTomador || !form.xNomeTomador}
-                  className="px-6 font-semibold"
+                  className="h-10 rounded-xl px-6 font-semibold shadow-md transition-all hover:-translate-y-px hover:shadow-lg"
                 >
                   {emitir.isPending ? (
                     "Enviando..."
                   ) : (
                     <>
-                      <Truck className="mr-1 h-3.5 w-3.5" /> Enviar CT-e
+                      <Truck className="mr-1.5 h-3.5 w-3.5" /> Enviar CT-e
                     </>
                   )}
                 </Button>

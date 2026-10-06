@@ -4870,3 +4870,11 @@ Espelhado na Vercel.
   principal e tabelas em rounded-2xl, linhas com hover.
 - `tsc`: erros do cte são baseline do HEAD; build OK.
 - Paleta intacta.
+
+## Repaginação: fiscal.cte parte 2 (diálogos) (06/10)
+
+- Fecha o Fiscal: 6 AlertDialogs + cancelar/exportar/CC-e/percurso/
+  manual-NF-e em card, botões h-10, rodapé do formulário em
+  destaque (DACTE e campos fiscais densos intactos).
+- `tsc`: 55 erros iguais ao HEAD (zero novos); build OK.
+- Paleta intacta.
