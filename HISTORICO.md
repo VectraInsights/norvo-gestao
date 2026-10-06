@@ -5032,3 +5032,19 @@ Espelhado na Vercel.
   de duplicada (pai + tipo + nome) e invalidações de cache inalteradas.
 - Validado com `tsc` zerado nos tocados e `npm run build` OK.
 - Arquivo: `src/routes/_authenticated/financeiro.cadastros.tsx`.
+
+## Diálogo de Nova categoria: Tipo, Categoria, Subcategoria (06/10)
+
+- Reescreve o cadastro do item acima (sem "categoria pai"): ordem de
+  cima pra baixo é Tipo *, Categoria *, Subcategoria (só Tipo e
+  Categoria obrigatórios/asterisco). Subcategoria vazia cria a
+  categoria principal; preenchida cria a sub — localizando a principal
+  pelo nome+tipo (normalização sem acento) ou criando ela antes se não
+  existir (toast "Categoria e subcategoria salvas").
+- Botão "+" da linha abre o diálogo com Tipo e Categoria já preenchidos
+  (só falta digitar a sub). Edição segue Nome + Tipo, sem sub.
+- Duplicada: principal barra mesmo nome no tipo; sub barra mesmo nome
+  naquela categoria. `catForm` perde o sentinel "none" (`sub` no lugar
+  de `parent_id`).
+- Validado com `tsc` zerado nos tocados e `npm run build` OK.
+- Arquivo: `src/routes/_authenticated/financeiro.cadastros.tsx`.

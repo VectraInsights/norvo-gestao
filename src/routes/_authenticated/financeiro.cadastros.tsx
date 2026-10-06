@@ -66,37 +66,73 @@ function CadastrosPage() {
   });
 
   const [catOpen, setCatOpen] = useState(false);
-  const [catForm, setCatForm] = useState<{ id?: string; nome: string; tipo: "receber" | "pagar"; parent_id: string }>({
-    nome: "", tipo: "pagar", parent_id: "none",
+  const [catForm, setCatForm] = useState<{ id?: string; tipo: "receber" | "pagar"; nome: string; sub: string }>({
+    tipo: "pagar", nome: "", sub: "",
   });
 
   const salvarCat = useMutation({
-    mutationFn: async () => {
+    mutationFn: async (): Promise<string> => {
       if (!empresa) throw new Error("Empresa não selecionada");
       if (!catForm.nome.trim()) throw new Error("Informe o nome");
       const norm = (s: string) =>
         s.trim().toLocaleLowerCase("pt-BR").normalize("NFD").replace(/\p{Diacritic}/gu, "");
-      const paiAlvo = catForm.parent_id === "none" ? null : catForm.parent_id;
-      const duplicada = (categorias ?? []).some(
-        (c) => c.id !== catForm.id && c.tipo === catForm.tipo && (c.parent_id ?? null) === paiAlvo && norm(c.nome) === norm(catForm.nome),
-      );
-      if (duplicada) throw new Error("Já existe uma categoria com esse nome para este tipo");
-      const payload = {
-        empresa_id: empresa.id,
-        nome: catForm.nome.trim(),
-        tipo: catForm.tipo,
-        parent_id: catForm.parent_id === "none" ? null : catForm.parent_id,
+      const lista = categorias ?? [];
+      const inserir = async (nome: string, parentId: string | null) => {
+        const { error } = await supabase.from("categorias_financeiras").insert({
+          empresa_id: empresa.id, nome, tipo: catForm.tipo, parent_id: parentId,
+        });
+        if (error) {
+          if ((error as any).code === "23505") throw new Error("Já existe uma categoria com esse nome para este tipo");
+          throw error;
+        }
       };
-      const { error } = catForm.id
-        ? await supabase.from("categorias_financeiras").update(payload).eq("id", catForm.id)
-        : await supabase.from("categorias_financeiras").insert(payload);
-      if (error) {
-        if ((error as any).code === "23505") throw new Error("Já existe uma categoria com esse nome para este tipo");
-        throw error;
+
+      if (catForm.id) {
+        const parentAtual = lista.find((c) => c.id === catForm.id)?.parent_id ?? null;
+        const duplicada = lista.some(
+          (c) => c.id !== catForm.id && c.tipo === catForm.tipo && (c.parent_id ?? null) === parentAtual && norm(c.nome) === norm(catForm.nome),
+        );
+        if (duplicada) throw new Error("Já existe uma categoria com esse nome para este tipo");
+        const { error } = await supabase.from("categorias_financeiras")
+          .update({ nome: catForm.nome.trim(), tipo: catForm.tipo }).eq("id", catForm.id);
+        if (error) {
+          if ((error as any).code === "23505") throw new Error("Já existe uma categoria com esse nome para este tipo");
+          throw error;
+        }
+        return "Categoria salva";
       }
+
+      const nomeCat = catForm.nome.trim();
+      const nomeSub = catForm.sub.trim();
+      if (!nomeSub) {
+        const duplicada = lista.some((c) => !c.parent_id && c.tipo === catForm.tipo && norm(c.nome) === norm(nomeCat));
+        if (duplicada) throw new Error("Já existe uma categoria com esse nome para este tipo");
+        await inserir(nomeCat, null);
+        return "Categoria salva";
+      }
+      const pai = lista.find((c) => !c.parent_id && c.tipo === catForm.tipo && norm(c.nome) === norm(nomeCat));
+      let paiId: string;
+      let criouPai = false;
+      if (pai) {
+        paiId = pai.id;
+      } else {
+        const { data: novo, error } = await supabase.from("categorias_financeiras").insert({
+          empresa_id: empresa.id, nome: nomeCat, tipo: catForm.tipo, parent_id: null,
+        }).select("id").single();
+        if (error) {
+          if ((error as any).code === "23505") throw new Error("Já existe uma categoria com esse nome para este tipo");
+          throw error;
+        }
+        paiId = novo!.id;
+        criouPai = true;
+      }
+      const duplicada = lista.some((c) => c.parent_id === paiId && norm(c.nome) === norm(nomeSub));
+      if (duplicada) throw new Error("Já existe uma subcategoria com esse nome nesta categoria");
+      await inserir(nomeSub, paiId);
+      return criouPai ? "Categoria e subcategoria salvas" : "Subcategoria salva";
     },
-    onSuccess: () => {
-      toast.success(catForm.id || catForm.parent_id === "none" ? "Categoria salva" : "Subcategoria salva");
+    onSuccess: (msg) => {
+      toast.success(msg);
       setCatOpen(false);
       qc.invalidateQueries({ queryKey: ["cadastros-categorias"] });
       qc.invalidateQueries({ queryKey: ["categorias-opt"] });
@@ -294,12 +330,12 @@ function CadastrosPage() {
                   <div className="flex items-center justify-end gap-1">
                     {!c.parent_id && (
                       <Button variant="ghost" size="icon" aria-label="Cadastrar subcategoria" title="Cadastrar subcategoria" className="h-8 w-8 rounded-lg"
-                        onClick={(e) => { e.stopPropagation(); setCatForm({ nome: "", tipo: c.tipo, parent_id: c.id }); setCatOpen(true); }}>
+                        onClick={(e) => { e.stopPropagation(); setCatForm({ tipo: c.tipo, nome: c.nome, sub: "" }); setCatOpen(true); }}>
                         <PlusCircle className="h-4 w-4" />
                       </Button>
                     )}
                     <Button variant="ghost" size="icon" aria-label="Editar categoria" title="Editar categoria" className="h-8 w-8 rounded-lg"
-                      onClick={(e) => { e.stopPropagation(); setCatForm({ id: c.id, nome: c.nome, tipo: c.tipo, parent_id: c.parent_id ?? "none" }); setCatOpen(true); }}>
+                      onClick={(e) => { e.stopPropagation(); setCatForm({ id: c.id, nome: c.nome, tipo: c.tipo, sub: "" }); setCatOpen(true); }}>
                       <Pencil className="h-4 w-4" />
                     </Button>
                     <Button variant="ghost" size="icon" aria-label="Remover categoria" title="Remover categoria" className="h-8 w-8 rounded-lg text-destructive"
@@ -315,7 +351,7 @@ function CadastrosPage() {
                       <span className="text-sm font-semibold tracking-tight">{col.titulo}</span>
                       <Badge variant="secondary">{col.lista.length}</Badge>
                     </div>
-                    <Button size="sm" onClick={() => { setCatForm({ nome: "", tipo: col.tipo, parent_id: "none" }); setCatOpen(true); }} className="h-8 rounded-lg px-3 text-xs shadow-sm">
+                    <Button size="sm" onClick={() => { setCatForm({ tipo: col.tipo, nome: "", sub: "" }); setCatOpen(true); }} className="h-8 rounded-lg px-3 text-xs shadow-sm">
                       <Plus className="mr-1 h-3.5 w-3.5" />Nova categoria
                     </Button>
                   </div>
@@ -456,7 +492,7 @@ function CadastrosPage() {
       {/* Dialog categoria */}
       <Dialog open={catOpen} onOpenChange={setCatOpen}>
         <DialogContent className="sm:max-w-md sm:inset-auto sm:left-1/2 sm:top-1/2 sm:-translate-x-1/2 sm:-translate-y-1/2 sm:h-auto sm:max-h-[90vh] sm:w-full">
-          <DialogHeader className="gap-1.5 pb-1"><DialogTitle className="tracking-tight">{catForm.id ? "Editar categoria" : catForm.parent_id !== "none" ? "Nova subcategoria" : "Nova categoria"}</DialogTitle></DialogHeader>
+          <DialogHeader className="gap-1.5 pb-1"><DialogTitle className="tracking-tight">{catForm.id ? "Editar categoria" : "Nova categoria"}</DialogTitle></DialogHeader>
           <form onSubmit={(e) => { e.preventDefault(); salvarCat.mutate(); }} className="space-y-4">
             {catForm.id ? (
               <>
@@ -466,7 +502,7 @@ function CadastrosPage() {
                 </div>
                 <div className="grid gap-1.5">
                   <Label>Tipo *</Label>
-                  <Select value={catForm.tipo} onValueChange={(v) => setCatForm({ ...catForm, tipo: v as "receber" | "pagar", parent_id: "none" })}>
+                  <Select value={catForm.tipo} onValueChange={(v) => setCatForm({ ...catForm, tipo: v as "receber" | "pagar" })}>
                     <SelectTrigger className="h-10 rounded-xl"><SelectValue /></SelectTrigger>
                     <SelectContent>
                       <SelectItem value="receber">Receita</SelectItem>
@@ -478,43 +514,23 @@ function CadastrosPage() {
             ) : (
               <>
                 <div className="grid gap-1.5">
-                  <Label>Categoria pai (opcional)</Label>
-                  <Select value={catForm.parent_id} onValueChange={(v) => {
-                    const pai = (categorias ?? []).find((c) => c.id === v);
-                    setCatForm({ ...catForm, parent_id: v, tipo: pai?.tipo ?? catForm.tipo });
-                  }}>
+                  <Label>Tipo *</Label>
+                  <Select value={catForm.tipo} onValueChange={(v) => setCatForm({ ...catForm, tipo: v as "receber" | "pagar" })}>
                     <SelectTrigger className="h-10 rounded-xl"><SelectValue /></SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="none">Nenhuma (categoria principal)</SelectItem>
-                      {(categorias ?? []).filter((c) => !c.parent_id && c.tipo === catForm.tipo).map((c) => (
-                        <SelectItem key={c.id} value={c.id}>{c.nome}</SelectItem>
-                      ))}
+                      <SelectItem value="receber">Receita</SelectItem>
+                      <SelectItem value="pagar">Despesa</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
-                {catForm.parent_id !== "none" ? (
-                  <div className="grid gap-1.5">
-                    <Label>Subcategoria *</Label>
-                    <Input required value={catForm.nome} onChange={(e) => setCatForm({ ...catForm, nome: e.target.value })} className="h-10 rounded-xl" placeholder="Ex.: Material de escritório" />
-                  </div>
-                ) : (
-                  <>
-                    <div className="grid gap-1.5">
-                      <Label>Categoria *</Label>
-                      <Input required value={catForm.nome} onChange={(e) => setCatForm({ ...catForm, nome: e.target.value })} className="h-10 rounded-xl" />
-                    </div>
-                    <div className="grid gap-1.5">
-                      <Label>Tipo *</Label>
-                      <Select value={catForm.tipo} onValueChange={(v) => setCatForm({ ...catForm, tipo: v as "receber" | "pagar", parent_id: "none" })}>
-                        <SelectTrigger className="h-10 rounded-xl"><SelectValue /></SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="receber">Receita</SelectItem>
-                          <SelectItem value="pagar">Despesa</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-                  </>
-                )}
+                <div className="grid gap-1.5">
+                  <Label>Categoria *</Label>
+                  <Input required value={catForm.nome} onChange={(e) => setCatForm({ ...catForm, nome: e.target.value })} className="h-10 rounded-xl" />
+                </div>
+                <div className="grid gap-1.5">
+                  <Label>Subcategoria</Label>
+                  <Input value={catForm.sub} onChange={(e) => setCatForm({ ...catForm, sub: e.target.value })} className="h-10 rounded-xl" />
+                </div>
               </>
             )}
             <DialogFooter className="gap-2">
