@@ -111,10 +111,11 @@ function AuthPage() {
 
   if (checking) {
     return (
-      <main className="grid min-h-screen place-items-center" aria-busy="true" aria-label="Conectando">
-        <div className="flex flex-col items-center gap-3 text-muted-foreground">
+      <main className="grid min-h-screen place-items-center bg-background px-4" aria-busy="true" aria-label="Conectando">
+        <div className="erp-surface flex flex-col items-center gap-3 rounded-2xl p-8 text-center">
           <Loader2 className="h-8 w-8 animate-spin text-primary" aria-hidden="true" />
-          <p className="text-sm">Conectando…</p>
+          <p className="text-sm font-medium">Conectando…</p>
+          <p className="text-xs text-muted-foreground">Verificando sua sessão</p>
         </div>
       </main>
     );
@@ -123,29 +124,29 @@ function AuthPage() {
   return (
     <div className="grid min-h-screen lg:grid-cols-2">
       {/* Lado esquerdo — marca */}
-      <aside className="hidden flex-col justify-between bg-primary p-12 text-primary-foreground lg:flex">
-        <Link to="/" className="flex items-center gap-2">
-          <div className="grid h-10 w-10 place-items-center rounded-lg bg-primary-foreground/10 backdrop-blur">
+      <aside className="hidden flex-col justify-between bg-primary p-12 text-primary-foreground lg:flex xl:p-16">
+        <Link to="/" className="flex items-center gap-2.5">
+          <div className="grid h-10 w-10 place-items-center rounded-xl bg-primary-foreground/10 shadow-sm backdrop-blur">
             <img src={norvoLogo} alt="" width={28} height={28} className="h-7 w-7" />
           </div>
           <span className="text-display text-xl">Norvo</span>
         </Link>
         <div>
-          <p className="text-display text-4xl leading-tight">
+          <p className="text-display text-4xl leading-tight tracking-tight xl:text-5xl">
             "Menos abas abertas.<br /><em>Mais decisões tomadas.</em>"
           </p>
-          <p className="mt-4 text-sm text-primary-foreground/70">Gestão financeira, comercial, estoque e fiscal em um só ambiente.</p>
+          <p className="mt-5 max-w-md text-sm leading-relaxed text-primary-foreground/70">Gestão financeira, comercial, estoque e fiscal em um só ambiente.</p>
         </div>
         <p className="text-xs uppercase tracking-widest text-primary-foreground/60">Norvo · v0.1</p>
       </aside>
 
       {/* Formulário */}
-      <main className="flex items-center justify-center p-6">
+      <main className="flex items-center justify-center p-6 sm:p-10">
         <div className="w-full max-w-sm">
-          <h1 className="text-display text-3xl">Acesse sua conta</h1>
-          <p className="mt-1 text-sm text-muted-foreground">Ou crie uma nova em segundos.</p>
+          <h1 className="text-display text-3xl tracking-tight">Acesse sua conta</h1>
+          <p className="mt-1.5 text-sm text-muted-foreground">Ou crie uma nova em segundos.</p>
 
-          <Button variant="outline" className="mt-6 w-full" onClick={handleGoogle} disabled={loading}>
+          <Button variant="outline" className="mt-6 h-10 w-full rounded-xl shadow-sm transition-all hover:-translate-y-px hover:shadow-md" onClick={handleGoogle} disabled={loading}>
             <svg className="mr-2 h-4 w-4" viewBox="0 0 24 24"><path fill="#EA4335" d="M12 10v4h5.5c-.7 2-2.6 3.5-5.5 3.5A5.5 5.5 0 016.5 12 5.5 5.5 0 0112 6.5c1.4 0 2.6.5 3.6 1.4L18.4 5C16.7 3.4 14.5 2.5 12 2.5A9.5 9.5 0 002.5 12 9.5 9.5 0 0012 21.5c5.4 0 9.3-3.8 9.3-9.2 0-.7-.1-1.4-.2-2H12z"/></svg>
             Continuar com Google
           </Button>
@@ -159,37 +160,37 @@ function AuthPage() {
               <TabsTrigger value="login">Entrar</TabsTrigger>
               <TabsTrigger value="signup">Criar conta</TabsTrigger>
             </TabsList>
-            <TabsContent value="login" className="mt-4">
-              <form onSubmit={handleLogin} className="space-y-3">
-                <div><Label htmlFor="e1">Email</Label><Input id="e1" type="email" required value={email} onChange={(e) => setEmail(e.target.value)} /></div>
-                <div><Label htmlFor="p1">Senha</Label><Input id="p1" type="password" required value={password} onChange={(e) => setPassword(e.target.value)} /></div>
-                <Button type="submit" className="w-full" disabled={loading}>
+            <TabsContent value="login" className="mt-5">
+              <form onSubmit={handleLogin} className="space-y-4">
+                <div className="grid gap-1.5"><Label htmlFor="e1">Email</Label><Input id="e1" type="email" required value={email} onChange={(e) => setEmail(e.target.value)} className="h-10 rounded-xl" /></div>
+                <div className="grid gap-1.5"><Label htmlFor="p1">Senha</Label><Input id="p1" type="password" required value={password} onChange={(e) => setPassword(e.target.value)} className="h-10 rounded-xl" /></div>
+                <Button type="submit" className="h-10 w-full rounded-xl shadow-sm transition-all hover:-translate-y-px hover:shadow-md" disabled={loading}>
                   {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}Entrar
                 </Button>
                 <div className="text-right">
                   <Link
                     to="/recuperar"
-                    className="text-xs text-muted-foreground underline underline-offset-4 hover:text-foreground"
+                    className="text-xs text-muted-foreground underline underline-offset-4 transition-colors hover:text-foreground"
                   >
                     Esqueci minha senha
                   </Link>
                 </div>
               </form>
             </TabsContent>
-            <TabsContent value="signup" className="mt-4">
-              <form onSubmit={handleSignup} className="space-y-3">
-                <div><Label htmlFor="n2">Nome completo</Label><Input id="n2" required value={nome} onChange={(e) => setNome(e.target.value)} /></div>
-                <div><Label htmlFor="e2">Email</Label><Input id="e2" type="email" required value={email} onChange={(e) => setEmail(e.target.value)} /></div>
-                <div><Label htmlFor="p2">Senha</Label><Input id="p2" type="password" required minLength={6} value={password} onChange={(e) => setPassword(e.target.value)} /></div>
-                <Button type="submit" className="w-full" disabled={loading}>
+            <TabsContent value="signup" className="mt-5">
+              <form onSubmit={handleSignup} className="space-y-4">
+                <div className="grid gap-1.5"><Label htmlFor="n2">Nome completo</Label><Input id="n2" required value={nome} onChange={(e) => setNome(e.target.value)} className="h-10 rounded-xl" /></div>
+                <div className="grid gap-1.5"><Label htmlFor="e2">Email</Label><Input id="e2" type="email" required value={email} onChange={(e) => setEmail(e.target.value)} className="h-10 rounded-xl" /></div>
+                <div className="grid gap-1.5"><Label htmlFor="p2">Senha</Label><Input id="p2" type="password" required minLength={6} value={password} onChange={(e) => setPassword(e.target.value)} className="h-10 rounded-xl" /></div>
+                <Button type="submit" className="h-10 w-full rounded-xl shadow-sm transition-all hover:-translate-y-px hover:shadow-md" disabled={loading}>
                   {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}Criar conta
                 </Button>
               </form>
             </TabsContent>
           </Tabs>
 
-          <p className="mt-6 text-center text-xs text-muted-foreground">
-            <Link to="/" className="underline underline-offset-4 hover:text-foreground">← Voltar para o site</Link>
+          <p className="mt-8 text-center text-xs text-muted-foreground">
+            <Link to="/" className="underline underline-offset-4 transition-colors hover:text-foreground">← Voltar para o site</Link>
           </p>
         </div>
       </main>

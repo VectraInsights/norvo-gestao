@@ -4772,3 +4772,11 @@ Espelhado na Vercel.
   nav-menu, otp, table (px-4/py-3.5), tooltip, sonner e sidebar.
 - Paleta intacta (tooltip/toggle revisados sem mudar cor); `tsc`
   limpo nos tocados (só baseline em lib/hooks) e build OK.
+
+## Repaginação: index + auth (06/10)
+
+- Landing com CTAs rounded-xl e hover elevado, cards de módulos com
+  sombra e respiro (hexes da marca mantidos).
+- Auth com checking em card, campos h-10 rounded-xl e botões com
+  hover elevado.
+- Paleta intacta; `tsc` limpo nos tocados e `npm run build` OK.
