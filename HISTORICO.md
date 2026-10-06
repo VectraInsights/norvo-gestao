@@ -4660,3 +4660,9 @@ Espelhado na Vercel.
 - Tipo detectado sozinho (saída = pagamentos, entrada = recebimentos) em
   chip com X para ver tudo.
 - Validado com `tsc` (só baseline) e `npm run build` OK.
+
+## Repaginação: fundação styles.css (06/10)
+
+- Raios 1rem, sombras suaves em camadas, foco elegante, tipografia com
+  hierarquia, scrollbar sutil, `card-hover`; paleta intacta.
+- Validado com `npm run build` OK.
