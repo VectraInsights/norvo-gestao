@@ -4675,3 +4675,9 @@ Espelhado na Vercel.
 - `__root`: 404/erro em card com respiro, botoes com hover elevado;
   paleta intacta.
 - Validado com `tsc` (limpo nos tocados) e `npm run build` OK.
+
+## Repaginação: route autenticada (06/10)
+
+- `pending` e gate de empresa em cards com respiro (spinner + textos);
+  gate usa chave própria `empresas/gate` só com `id` para não colidir.
+- Paleta intacta; `tsc` limpo nos tocados e `npm run build` OK.

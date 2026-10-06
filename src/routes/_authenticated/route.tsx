@@ -13,8 +13,12 @@ export const Route = createFileRoute("/_authenticated")({
     if (error || !data.user) throw redirect({ to: "/auth" });
   },
   pendingComponent: () => (
-    <main className="grid h-screen place-items-center" aria-busy="true" aria-label="Carregando página">
-      <Loader2 className="size-8 animate-spin text-primary" aria-hidden="true" />
+    <main className="grid min-h-screen place-items-center bg-background px-4" aria-busy="true" aria-label="Carregando página">
+      <div className="erp-surface flex w-full max-w-xs flex-col items-center gap-3 p-8 text-center">
+        <Loader2 className="size-8 animate-spin text-primary" aria-hidden="true" />
+        <p className="text-sm font-medium text-foreground">Preparando seu painel…</p>
+        <p className="text-xs text-muted-foreground">Buscando sessão e permissões</p>
+      </div>
     </main>
   ),
   errorComponent: RouteErrorState,
@@ -31,12 +35,15 @@ export const Route = createFileRoute("/_authenticated")({
 function RequireEmpresa({ children }: { children: ReactNode }) {
   const navigate = useNavigate();
   const { data, isLoading, isError } = useQuery({
-    queryKey: ["empresas"],
+    queryKey: ["empresas", "gate"],
+    staleTime: 5 * 60_000,
+    gcTime: 15 * 60_000,
+    retry: 1,
     queryFn: async () => {
-      // A tabela empresas NÃO tem coluna "nome".
-      const { data, error } = await supabase.from("empresas").select("id,created_at").order("created_at");
+      // Gate só precisa saber se existe ao menos uma empresa.
+      const { data, error } = await supabase.from("empresas").select("id,created_at").order("created_at").limit(5);
       if (error) throw error;
-      return data;
+      return data ?? [];
     },
   });
 
@@ -47,8 +54,12 @@ function RequireEmpresa({ children }: { children: ReactNode }) {
 
   if (isLoading) {
     return (
-      <div className="grid h-full min-h-[50vh] place-items-center text-muted-foreground">
-        <Loader2 className="mr-2 h-5 w-5 animate-spin" /> Carregando...
+      <div className="grid min-h-[50vh] place-items-center px-4">
+        <div className="erp-surface flex w-full max-w-xs flex-col items-center gap-3 p-8 text-center">
+          <Loader2 className="size-6 animate-spin text-primary" aria-hidden="true" />
+          <p className="text-sm font-medium text-foreground">Carregando empresa…</p>
+          <p className="text-xs text-muted-foreground">Verificando seu acesso</p>
+        </div>
       </div>
     );
   }
