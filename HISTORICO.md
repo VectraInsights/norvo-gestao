@@ -4681,3 +4681,11 @@ Espelhado na Vercel.
 - `pending` e gate de empresa em cards com respiro (spinner + textos);
   gate usa chave própria `empresas/gate` só com `id` para não colidir.
 - Paleta intacta; `tsc` limpo nos tocados e `npm run build` OK.
+
+## Repaginação: app-shell (06/10)
+
+- Sidebar 272/76px, itens rounded-xl com respiro, switcher com borda,
+  sombra e hover elevado; header h-16 com paddings maiores.
+- Conteúdo com respiro generoso e container `max-w-[1440px]`; card
+  sem-acesso em `rounded-2xl` com sombra.
+- Paleta intacta; `tsc` limpo nos tocados e `npm run build` OK.

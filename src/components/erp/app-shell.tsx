@@ -354,7 +354,7 @@ export function AppShell({ children }: { children: ReactNode }) {
       <div
         className={cn(
           "grid min-h-screen bg-background",
-          collapsed ? "lg:grid-cols-[72px_1fr]" : "lg:grid-cols-[260px_1fr]",
+          collapsed ? "lg:grid-cols-[76px_1fr]" : "lg:grid-cols-[272px_1fr]",
         )}
       >
         {/* Sidebar */}
@@ -365,15 +365,15 @@ export function AppShell({ children }: { children: ReactNode }) {
           aria-label={open ? "Menu principal" : undefined}
           className={cn(
             "border-r border-sidebar-border bg-sidebar text-sidebar-foreground flex flex-col shadow-[8px_0_28px_-24px_oklch(0.2_0.02_60_/_0.55)]",
-            "fixed inset-y-0 left-0 z-40 -translate-x-full transition-all lg:sticky lg:top-0 lg:h-screen lg:translate-x-0",
-            collapsed ? "w-[72px]" : "w-[260px]",
+            "fixed inset-y-0 left-0 z-40 -translate-x-full transition-all duration-300 lg:sticky lg:top-0 lg:h-screen lg:translate-x-0",
+            collapsed ? "w-[76px]" : "w-[272px]",
             open && "translate-x-0",
           )}
         >
           <div
             className={cn(
-              "flex h-16 items-center gap-3 border-b border-sidebar-border",
-              collapsed ? "justify-center px-2" : "px-5",
+              "flex h-[68px] items-center gap-3 border-b border-sidebar-border",
+              collapsed ? "justify-center px-2" : "px-4",
             )}
           >
             <div className="relative shrink-0">
@@ -407,8 +407,8 @@ export function AppShell({ children }: { children: ReactNode }) {
               <DropdownMenuTrigger asChild>
                 <button
                   className={cn(
-                    "flex w-full items-center rounded-md bg-sidebar-accent/60 text-left text-sm hover:bg-sidebar-accent",
-                    collapsed ? "justify-center p-2" : "justify-between px-3 py-2",
+                    "flex w-full items-center rounded-xl border border-sidebar-border bg-sidebar-accent/60 text-left text-sm shadow-sm transition-all hover:-translate-y-px hover:bg-sidebar-accent hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sidebar-ring",
+                    collapsed ? "justify-center p-2" : "justify-between gap-2 px-3 py-2.5",
                   )}
                 >
                   {collapsed ? (
@@ -464,7 +464,7 @@ export function AppShell({ children }: { children: ReactNode }) {
 
           <nav
             ref={navRef}
-            className="min-h-0 flex-1 overflow-y-auto p-3"
+            className="min-h-0 flex-1 space-y-1 overflow-y-auto p-3"
             aria-label="Navegação principal"
             onKeyDown={onNavKeyDown}
           >
@@ -481,7 +481,7 @@ export function AppShell({ children }: { children: ReactNode }) {
                     }}
                     aria-current={active ? "page" : undefined}
                     className={cn(
-                      "mb-2 flex touch-manipulation items-center rounded-md text-sm font-medium transition-colors",
+                      "mb-2 flex touch-manipulation items-center rounded-xl text-sm font-medium transition-colors",
                       "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sidebar-ring",
                       collapsed ? "justify-center p-2" : "min-h-11 gap-2.5 px-3 py-2 lg:min-h-0",
                       active
@@ -520,7 +520,7 @@ export function AppShell({ children }: { children: ReactNode }) {
                           aria-label={group.label}
                           title={group.label}
                           className={cn(
-                            "flex w-full touch-manipulation items-center justify-center rounded-md p-2 text-sm transition-colors",
+                            "flex w-full touch-manipulation items-center justify-center rounded-xl p-2 text-sm transition-colors",
                             "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sidebar-ring",
                             groupActive
                               ? "bg-sidebar-primary text-sidebar-primary-foreground"
@@ -541,7 +541,7 @@ export function AppShell({ children }: { children: ReactNode }) {
                       aria-expanded={isOpen}
                       aria-controls={panelId}
                       className={cn(
-                        "flex w-full touch-manipulation select-none items-center gap-2.5 rounded-md px-3 text-sm font-medium transition-colors",
+                        "flex w-full touch-manipulation select-none items-center gap-2.5 rounded-xl px-3 text-sm font-medium transition-colors",
                         "min-h-11 py-2 lg:min-h-0 lg:py-2",
                         "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sidebar-ring",
                         groupActive && !isOpen
@@ -581,7 +581,7 @@ export function AppShell({ children }: { children: ReactNode }) {
                             data-nav-group={group.label}
                             aria-current={active ? "page" : undefined}
                             className={cn(
-                              "flex flex-1 touch-manipulation items-center rounded-md text-sm transition-colors",
+                              "flex flex-1 touch-manipulation items-center rounded-xl text-sm transition-colors",
                               "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sidebar-ring",
                               collapsed
                                 ? "justify-center p-2"
@@ -621,7 +621,7 @@ export function AppShell({ children }: { children: ReactNode }) {
                               }
                               title={fav ? "Remover dos favoritos" : "Adicionar aos favoritos"}
                               className={cn(
-                                "shrink-0 rounded-md p-2 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sidebar-ring",
+                                "shrink-0 rounded-xl p-2 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sidebar-ring",
                                 fav
                                   ? "text-amber-600 dark:text-amber-400"
                                   : "text-sidebar-foreground/40 hover:text-sidebar-foreground",
@@ -660,7 +660,7 @@ export function AppShell({ children }: { children: ReactNode }) {
               <DropdownMenuTrigger asChild>
                 <button
                   className={cn(
-                    "flex w-full items-center rounded-md text-left text-sm hover:bg-sidebar-accent",
+                    "flex w-full items-center rounded-xl text-left text-sm hover:bg-sidebar-accent",
                     collapsed ? "justify-center p-2" : "gap-2 px-3 py-2",
                   )}
                 >
@@ -703,7 +703,7 @@ export function AppShell({ children }: { children: ReactNode }) {
 
         {/* Conteúdo */}
         <div className="flex min-w-0 flex-col">
-          <header className="sticky top-0 z-20 flex h-14 items-center justify-between border-b border-border/60 bg-background/85 px-4 shadow-[0_1px_12px_-10px_oklch(0.2_0.02_60_/_0.5)] backdrop-blur lg:px-8">
+          <header className="sticky top-0 z-20 flex h-16 items-center justify-between gap-3 border-b border-border/60 bg-background/85 px-4 shadow-[0_1px_12px_-10px_oklch(0.2_0.02_60_/_0.5)] backdrop-blur sm:px-6 lg:px-10">
             <div className="flex items-center gap-2">
               <Button
                 variant="ghost"
@@ -755,7 +755,7 @@ export function AppShell({ children }: { children: ReactNode }) {
           <main
             id="conteudo-principal"
             tabIndex={-1}
-            className="relative min-w-0 flex-1 overflow-auto px-3 py-4 outline-none sm:px-5 sm:py-6 lg:p-8"
+            className="relative min-w-0 flex-1 overflow-auto px-4 py-6 outline-none sm:px-6 sm:py-8 lg:px-10 lg:py-10"
           >
             {navigating && (
               <div className="pointer-events-none fixed inset-x-0 top-0 z-[70] h-0.5 overflow-hidden bg-primary/15">
@@ -763,19 +763,19 @@ export function AppShell({ children }: { children: ReactNode }) {
               </div>
             )}
             {semAcesso ? (
-              <Card className="mx-auto mt-10 max-w-md p-8 text-center">
-                <ShieldAlert className="mx-auto mb-3 h-10 w-10 text-muted-foreground" />
-                <h2 className="mb-1 text-lg font-semibold">Sem acesso a este módulo</h2>
-                <p className="text-sm text-muted-foreground">
+              <Card className="mx-auto mt-10 w-full max-w-md rounded-2xl p-8 text-center shadow-panel sm:p-10">
+                <ShieldAlert className="mx-auto mb-4 h-10 w-10 text-muted-foreground" />
+                <h2 className="mb-2 text-lg font-semibold tracking-tight">Sem acesso a este módulo</h2>
+                <p className="text-sm leading-relaxed text-muted-foreground">
                   Seu usuário não tem permissão para esta área. Solicite acesso ao administrador da
                   sua empresa.
                 </p>
               </Card>
             ) : (
-              <>
+              <div className="mx-auto w-full max-w-[1440px]">
                 <Breadcrumbs />
                 {children}
-              </>
+              </div>
             )}
           </main>
         </div>
