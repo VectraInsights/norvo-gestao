@@ -4702,3 +4702,9 @@ Espelhado na Vercel.
   rounded-2xl; vazio com respiro; itens px-4 py-3.5 com hover.
 - Corrige TS de baseline (`ref_tabela`/`ref_id` via cast, sem mudar
   schema); paleta intacta; `tsc` limpo e build OK.
+
+## Repaginação: shortcuts-dialog (06/10)
+
+- Gatilho h-9 rounded-xl com hover elevado; diálogo rounded-2xl;
+  linhas com hover e kbd em pill com sombra.
+- Paleta intacta; `tsc` limpo nos tocados e `npm run build` OK.
