@@ -5359,3 +5359,6 @@ pm run build OK.
 - Coluna "Chave de acesso" após Valor (ordenavel; 44 dig truncados com
   tooltip completo); ordem das demais mantida.
 - Validado com `npm run build` OK.
+- Nomes inteiros: remetente/destinatario/tomador e chave por extenso com
+  rolagem horizontal (`min-w-max`); placeholders das buscas removidos.
+- Validado com `npm run build` OK.
