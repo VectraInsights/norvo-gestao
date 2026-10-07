@@ -6507,9 +6507,9 @@ function CtePage() {
                       Qtde NF-e: {mercadoriasSorted.length}/{mercadorias.length}
                     </span>
                   </div>
-                  <div className="overflow-auto flex-1 min-h-0">
-                    <Table className="min-w-[1280px]">
-                      <TableHeader className="sticky top-0 bg-muted">
+                  <div className="overflow-y-auto overflow-x-hidden flex-1 min-h-0">
+                    <Table className="[&_td]:px-1.5 [&_td]:py-1 [&_th]:px-1.5 [&_th]:py-1.5">
+                      <TableHeader className="sticky top-0 z-10 bg-muted">
                         <TableRow>
                           <TableHead className="w-6">
                             <input
@@ -6567,12 +6567,13 @@ function CtePage() {
                               { key: "serie", label: "Série" },
                               { key: "data", label: "Data Emissão" },
                               { key: "valor", label: "Valor" },
+                              { key: "chave", label: "Chave de acesso" },
                               { key: "peso", label: "Peso" },
                             ] as const
                           ).map((col) => (
                             <TableHead
                               key={col.key}
-                              className="text-xs cursor-pointer select-none hover:bg-muted/80"
+                              className="text-[11px] whitespace-nowrap cursor-pointer select-none hover:bg-muted/80"
                               onClick={() =>
                                 setSortConfig((s) =>
                                   s.key === col.key
@@ -6603,7 +6604,7 @@ function CtePage() {
                           mercadoriasSorted.map((m) => (
                             <TableRow
                               key={m.chave}
-                              className={"text-xs" + (!nfTemPercurso(m) ? " text-destructive" : "")}
+                              className={"text-[11px]" + (!nfTemPercurso(m) ? " text-destructive" : "")}
                               title={!nfTemPercurso(m) ? "Sem percurso cadastrado" : undefined}
                               data-selected={selecionadas.has(m.chave)}
                             >
@@ -6671,7 +6672,7 @@ function CtePage() {
                                   }}
                                 />
                               </TableCell>
-                              <TableCell className="truncate max-w-[200px]" title={m.emit}>
+                              <TableCell className="truncate max-w-[150px]" title={m.emit}>
                                 {m.emit}
                               </TableCell>
                               <TableCell className="font-mono text-[10px]">
@@ -6682,7 +6683,7 @@ function CtePage() {
                                     )
                                   : "—"}
                               </TableCell>
-                              <TableCell className="truncate max-w-[200px]" title={m.dest}>
+                              <TableCell className="truncate max-w-[150px]" title={m.dest}>
                                 {m.dest}
                               </TableCell>
                               <TableCell className="font-mono text-[10px]">
@@ -6694,15 +6695,18 @@ function CtePage() {
                                   : "—"}
                               </TableCell>
                               <TableCell
-                                className="truncate max-w-[200px] text-amber-700"
+                                className="truncate max-w-[150px] text-amber-700"
                                 title={m.tomador}
                               >
                                 {m.tomador || "—"}
                               </TableCell>
-                              <TableCell className="font-mono">{m.nNF}</TableCell>
-                              <TableCell>{m.serie}</TableCell>
-                              <TableCell>{m.data ? dateBR(m.data) : "—"}</TableCell>
-                              <TableCell className="text-right">{brl(m.valor)}</TableCell>
+                              <TableCell className="font-mono whitespace-nowrap">{m.nNF}</TableCell>
+                              <TableCell className="whitespace-nowrap">{m.serie}</TableCell>
+                              <TableCell className="whitespace-nowrap">{m.data ? dateBR(m.data) : "—"}</TableCell>
+                              <TableCell className="text-right whitespace-nowrap">{brl(m.valor)}</TableCell>
+                              <TableCell className="font-mono text-[10px] truncate max-w-[170px] whitespace-nowrap" title={m.chave}>
+                                {m.chave}
+                              </TableCell>
                               <TableCell className="text-right">
                                 {Number(m.peso).toLocaleString("pt-BR", {
                                   minimumFractionDigits: 2,
