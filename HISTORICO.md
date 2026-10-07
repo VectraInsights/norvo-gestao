@@ -5267,11 +5267,18 @@ pm run build OK.
 - Validado com `npm run build` OK.
 
 ## Busca por valor + pernas + abas sem rolagem (07/10)
-
 - Busca do Pagar/Receber casa tambem valor ("25,00" acha 25.00; a partir
   de 2 digitos p/ "0" nao casar tudo).
 - Pernas de transferencia aparecem SOMENTE com busca ativa (lista e
   totais seguem limpos sem busca).
 - Fileira Todos/Vencidos/etc sem `overflow-x-auto`: quebra de linha +
   botoes/contadores compactos.
+- Validado com `npm run build` OK.
+
+## DRE sem limite + colunas compactas (07/10)
+
+- Query em paginas de 1000 (antes `.limit(20000)` cortava a DRE em
+  empresa grande sem aviso).
+- Padding das celulas reduzido p/ os 14 meses caberem sem rolagem
+  lateral em tela normal.
 - Validado com `npm run build` OK.
