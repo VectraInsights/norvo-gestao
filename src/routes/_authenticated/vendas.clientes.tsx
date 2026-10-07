@@ -168,8 +168,9 @@ function Clientes() {
       });
       if (error) throw error;
     },
-    onSuccess: () => {
+    onSuccess: (_d, input) => {
       toast.success("Contato criado");
+      void registrarAuditoria("criar", `Contato "${input.nome}" criado`, { nome: input.nome });
       setOpen(false); setForm(emptyForm());
       qc.invalidateQueries({ queryKey: ["contatos"] });
       qc.invalidateQueries({ queryKey: ["dashboard-stats"] });
@@ -213,8 +214,9 @@ function Clientes() {
       }).eq("id", input.id);
       if (error) throw error;
     },
-    onSuccess: () => {
+    onSuccess: (_d, input) => {
       toast.success("Contato atualizado");
+      void registrarAuditoria("alterar", `Contato "${input.nome}" alterado`, { contato_id: input.id });
       setOpen(false); setEditing(null); setForm(emptyForm());
       qc.invalidateQueries({ queryKey: ["contatos"] });
     },
@@ -229,6 +231,7 @@ function Clientes() {
     },
     onSuccess: (_d, ids) => {
       toast.success(`${ids.length} contato(s) excluído(s)`);
+      void registrarAuditoria("excluir", `${ids.length} contato(s) excluído(s)`, { qtd: ids.length });
       setSelected(new Set());
       qc.invalidateQueries({ queryKey: ["contatos"] });
       qc.invalidateQueries({ queryKey: ["dashboard-stats"] });
@@ -264,6 +267,41 @@ function Clientes() {
     setOpen(true);
   };
 
+  // Trilha de auditoria (tabela auditoria_eventos): quem criou/editou/excluiu
+  const [trilhaOpen, setTrilhaOpen] = useState(false);
+  const registrarAuditoria = async (acao: string, descricao: string, detalhes: Record<string, any> = {}) => {
+    try {
+      if (!empresa) return;
+      const { data: sess } = await supabase.auth.getUser();
+      const u = sess?.user;
+      if (!u) return;
+      const nome = ((u.user_metadata as any)?.nome as string) || u.email || "";
+      await supabase.from("auditoria_eventos" as never).insert({
+        empresa_id: empresa.id,
+        user_id: u.id,
+        modulo: "vendas",
+        acao,
+        entidade: "contato",
+        detalhes: { ...detalhes, descricao, user_nome: nome, user_email: u.email || "" },
+      } as any);
+    } catch { /* trilha indisponível: não bloqueia o fluxo */ }
+  };
+  const trilhaQuery = useQuery({
+    enabled: trilhaOpen && !!empresa,
+    queryKey: ["auditoria-contatos", empresa?.id],
+    queryFn: async () => {
+      const { data, error } = await supabase.from("auditoria_eventos" as never)
+        .select("id,created_at,acao,detalhes")
+        .eq("empresa_id", empresa!.id as never)
+        .eq("modulo", "vendas")
+        .eq("entidade", "contato")
+        .order("created_at", { ascending: false })
+        .limit(200);
+      if (error) throw error;
+      return (data ?? []) as any[];
+    },
+  });
+
   return (
     <>
       <PageHeader eyebrow="Vendas & CRM" title="Clientes e fornecedores" description="Cadastro unificado de contatos."
@@ -274,8 +312,8 @@ function Clientes() {
           <Input className="pl-8" placeholder="Buscar por nome, CPF/CNPJ ou cidade..." value={busca} onChange={(e) => setBusca(e.target.value)} />
         </div>
         <div className="flex items-center gap-2">
-          <Button variant="outline" size="sm">
-            Adicionar trilha de auditoria
+          <Button variant="ghost" size="sm" onClick={() => setTrilhaOpen(true)} className="h-9 rounded-xl px-4 active:scale-95">
+            Trilha de auditoria
           </Button>
             <Dialog open={open} onOpenChange={(v) => { if (!criar.isPending && !editar.isPending) { setOpen(v); if (!v) { setEditing(null); setForm(emptyForm()); } } }}>
               <DialogTrigger asChild><Button onClick={openCreate}><Plus className="mr-1 h-4 w-4" />Novo contato</Button></DialogTrigger>
@@ -445,6 +483,39 @@ function Clientes() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      <Dialog open={trilhaOpen} onOpenChange={setTrilhaOpen}>
+        <DialogContent className="max-h-[85vh] overflow-y-auto rounded-2xl sm:max-w-lg">
+          <DialogHeader className="gap-1.5 pb-1">
+            <DialogTitle className="tracking-tight">Trilha de auditoria — Clientes e fornecedores</DialogTitle>
+          </DialogHeader>
+          {trilhaQuery.isLoading ? (
+            <p className="py-6 text-center text-sm text-muted-foreground">Carregando...</p>
+          ) : trilhaQuery.isError ? (
+            <p className="py-6 text-center text-sm text-muted-foreground">Trilha indisponível no momento.</p>
+          ) : (trilhaQuery.data ?? []).length === 0 ? (
+            <p className="py-6 text-center text-sm leading-relaxed text-muted-foreground">Nenhum evento registrado ainda. Criar, editar ou excluir gera registros aqui.</p>
+          ) : (
+            <div className="divide-y divide-border/60">
+              {(trilhaQuery.data ?? []).map((ev: any) => (
+                <div key={ev.id} className="flex items-start gap-3 rounded-lg px-2 py-2.5 transition-colors hover:bg-accent/40">
+                  <span className={`mt-0.5 inline-flex shrink-0 items-center rounded-full px-2.5 py-1 text-[11px] font-medium shadow-sm ${
+                    ev.acao === "excluir" ? "bg-destructive/10 text-destructive"
+                    : ev.acao === "alterar" ? "bg-primary/10 text-primary"
+                    : "bg-success/10 text-success"
+                  }`}>
+                    {ev.acao === "excluir" ? "Excluiu" : ev.acao === "alterar" ? "Alterou" : "Criou"}
+                  </span>
+                  <div className="min-w-0 flex-1">
+                    <p className="text-sm text-foreground">{ev.detalhes?.descricao || "—"}</p>
+                    <p className="mt-0.5 text-xs text-muted-foreground">{ev.detalhes?.user_nome || ev.detalhes?.user_email || "—"}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </>
   );
 }

@@ -5073,3 +5073,17 @@ Espelhado na Vercel.
   `Adicionar trilha de auditoria` vira `ghost` (terciario).
 - Logica, queries, dialogs e paginacao intactos; `npm run build` OK.
 - Arquivo: `src/routes/_authenticated/financeiro.receber.tsx`.
+
+## Trilha de auditoria ligada em 6 telas + Novo menor (07/10)
+
+- `Novo lancamento` (receber/pagar) reduzido: `h-10 px-5` para `size=sm h-9 px-4 text-sm`.
+- Botao morto `Adicionar trilha de auditoria` (sem onClick) vira `Trilha de auditoria`
+  `ghost h-9` funcional, igual a `financeiro.contas`/`fiscal.recebidas`:
+  `receber/pagar` (entidade `lancamento_financeiro`, registra criar/alterar/excluir),
+  `clientes` (`vendas/contato`), `produtos` (`estoque/produto`),
+  `cadastros` (`financeiro/cadastro_financeiro`),
+  `extrato` (somente leitura, le `lancamento_financeiro`),
+  `emitidas` (`fiscal/nota_emitida`, registra criar/emitir/cancelar).
+- Logica intacta; `npm run build` OK.
+- Arquivos: `financeiro.receber.tsx`, `vendas.clientes.tsx`, `estoque.produtos.tsx`,
+  `financeiro.cadastros.tsx`, `financeiro.extrato.tsx`, `fiscal.emitidas.tsx`.

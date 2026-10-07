@@ -9,6 +9,7 @@ import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Combobox } from "@/components/erp/combobox";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { ListTree, Search, X, Download, ArrowDownCircle, ArrowUpCircle, Scale } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -80,6 +81,24 @@ function ExtratoPage() {
   const [centroId, setCentroId] = useState("todos");
   const [somenteQuitados, setSomenteQuitados] = useState<"todos" | "quitados">("quitados");
   const [busca, setBusca] = useState("");
+
+  // Trilha de auditoria (somente leitura: mostra eventos de lançamentos)
+  const [trilhaOpen, setTrilhaOpen] = useState(false);
+  const trilhaQuery = useQuery({
+    enabled: trilhaOpen && !!empresa,
+    queryKey: ["auditoria-extrato", empresa?.id],
+    queryFn: async () => {
+      const { data, error } = await supabase.from("auditoria_eventos" as never)
+        .select("id,created_at,acao,detalhes")
+        .eq("empresa_id", empresa!.id as never)
+        .eq("modulo", "financeiro")
+        .eq("entidade", "lancamento_financeiro")
+        .order("created_at", { ascending: false })
+        .limit(200);
+      if (error) throw error;
+      return (data ?? []) as any[];
+    },
+  });
 
   const { data: movs, isLoading } = useQuery({
     enabled: !!empresa,
@@ -273,8 +292,8 @@ function ExtratoPage() {
           )}
         </div>
         <div className="flex items-center gap-2">
-          <Button variant="outline" size="sm" className="h-10 rounded-xl px-4 shadow-sm">
-            Adicionar trilha de auditoria
+          <Button variant="ghost" size="sm" onClick={() => setTrilhaOpen(true)} className="h-9 rounded-xl px-4 active:scale-95">
+            Trilha de auditoria
           </Button>
           <Button variant="outline" size="sm" onClick={exportarCsv} disabled={!linhas.length} className="h-10 rounded-xl px-4 shadow-sm transition-all hover:-translate-y-px hover:shadow-md">
             <Download className="mr-1.5 h-4 w-4" />Exportar CSV
@@ -333,6 +352,39 @@ function ExtratoPage() {
           </Table>
         </Card>
       )}
+
+      <Dialog open={trilhaOpen} onOpenChange={setTrilhaOpen}>
+        <DialogContent className="max-h-[85vh] overflow-y-auto rounded-2xl sm:max-w-lg">
+          <DialogHeader className="gap-1.5 pb-1">
+            <DialogTitle className="tracking-tight">Trilha de auditoria — Extrato</DialogTitle>
+          </DialogHeader>
+          {trilhaQuery.isLoading ? (
+            <p className="py-6 text-center text-sm text-muted-foreground">Carregando...</p>
+          ) : trilhaQuery.isError ? (
+            <p className="py-6 text-center text-sm text-muted-foreground">Trilha indisponível no momento.</p>
+          ) : (trilhaQuery.data ?? []).length === 0 ? (
+            <p className="py-6 text-center text-sm leading-relaxed text-muted-foreground">Nenhum evento registrado ainda. Movimentações em Receber/Pagar geram registros aqui.</p>
+          ) : (
+            <div className="divide-y divide-border/60">
+              {(trilhaQuery.data ?? []).map((ev: any) => (
+                <div key={ev.id} className="flex items-start gap-3 rounded-lg px-2 py-2.5 transition-colors hover:bg-accent/40">
+                  <span className={`mt-0.5 inline-flex shrink-0 items-center rounded-full px-2.5 py-1 text-[11px] font-medium shadow-sm ${
+                    ev.acao === "excluir" ? "bg-destructive/10 text-destructive"
+                    : ev.acao === "alterar" ? "bg-primary/10 text-primary"
+                    : "bg-success/10 text-success"
+                  }`}>
+                    {ev.acao === "excluir" ? "Excluiu" : ev.acao === "alterar" ? "Alterou" : "Criou"}
+                  </span>
+                  <div className="min-w-0 flex-1">
+                    <p className="text-sm text-foreground">{ev.detalhes?.descricao || "—"}</p>
+                    <p className="mt-0.5 text-xs text-muted-foreground">{ev.detalhes?.user_nome || ev.detalhes?.user_email || "—"}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

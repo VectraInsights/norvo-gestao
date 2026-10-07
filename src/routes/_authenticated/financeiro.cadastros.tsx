@@ -52,6 +52,41 @@ function CadastrosPage() {
   const qc = useQueryClient();
   const [busca, setBusca] = useState("");
 
+  // Trilha de auditoria (tabela auditoria_eventos): quem criou/editou/excluiu
+  const [trilhaOpen, setTrilhaOpen] = useState(false);
+  const registrarAuditoria = async (acao: string, descricao: string, detalhes: Record<string, any> = {}) => {
+    try {
+      if (!empresa) return;
+      const { data: sess } = await supabase.auth.getUser();
+      const u = sess?.user;
+      if (!u) return;
+      const nome = ((u.user_metadata as any)?.nome as string) || u.email || "";
+      await supabase.from("auditoria_eventos" as never).insert({
+        empresa_id: empresa.id,
+        user_id: u.id,
+        modulo: "financeiro",
+        acao,
+        entidade: "cadastro_financeiro",
+        detalhes: { ...detalhes, descricao, user_nome: nome, user_email: u.email || "" },
+      } as any);
+    } catch { /* trilha indisponível: não bloqueia o fluxo */ }
+  };
+  const trilhaQuery = useQuery({
+    enabled: trilhaOpen && !!empresa,
+    queryKey: ["auditoria-cadastros", empresa?.id],
+    queryFn: async () => {
+      const { data, error } = await supabase.from("auditoria_eventos" as never)
+        .select("id,created_at,acao,detalhes")
+        .eq("empresa_id", empresa!.id as never)
+        .eq("modulo", "financeiro")
+        .eq("entidade", "cadastro_financeiro")
+        .order("created_at", { ascending: false })
+        .limit(200);
+      if (error) throw error;
+      return (data ?? []) as any[];
+    },
+  });
+
   /* ---------------- Categorias ---------------- */
   const catKey = ["cadastros-categorias", empresa?.id] as const;
   const { data: categorias, isLoading: loadingCat } = useQuery({
@@ -133,6 +168,7 @@ function CadastrosPage() {
     },
     onSuccess: (msg) => {
       toast.success(msg);
+      void registrarAuditoria("criar", msg, { nome: catForm.nome });
       setCatOpen(false);
       qc.invalidateQueries({ queryKey: ["cadastros-categorias"] });
       qc.invalidateQueries({ queryKey: ["categorias-opt"] });
@@ -145,8 +181,9 @@ function CadastrosPage() {
       const { error } = await supabase.from("categorias_financeiras").delete().eq("id", id);
       if (error) throw error;
     },
-    onSuccess: () => {
+    onSuccess: (_d, id) => {
       toast.success("Categoria excluída");
+      void registrarAuditoria("excluir", "Categoria excluída", { categoria_id: id });
       qc.invalidateQueries({ queryKey: ["cadastros-categorias"] });
       qc.invalidateQueries({ queryKey: ["categorias-opt"] });
     },
@@ -247,6 +284,7 @@ function CadastrosPage() {
     },
     onSuccess: () => {
       toast.success("Centro de custo salvo");
+      void registrarAuditoria("criar", `Centro de custo "${ccForm.nome.trim()}" salvo`, { nome: ccForm.nome.trim() });
       setCcOpen(false);
       qc.invalidateQueries({ queryKey: ["cadastros-centros"] });
       qc.invalidateQueries({ queryKey: ["centros-custo"] });
@@ -259,8 +297,9 @@ function CadastrosPage() {
       const { error } = await supabase.from("centros_custo").delete().eq("id", id);
       if (error) throw error;
     },
-    onSuccess: () => {
+    onSuccess: (_d, id) => {
       toast.success("Centro de custo excluído");
+      void registrarAuditoria("excluir", "Centro de custo excluído", { centro_id: id });
       qc.invalidateQueries({ queryKey: ["cadastros-centros"] });
       qc.invalidateQueries({ queryKey: ["centros-custo"] });
     },
@@ -290,8 +329,8 @@ function CadastrosPage() {
           <Input className="h-10 rounded-xl pl-10 shadow-sm" placeholder="Buscar por nome, código ou descrição..." value={busca} onChange={(e) => setBusca(e.target.value)} />
         </div>
         <div className="flex items-center gap-2">
-          <Button variant="outline" size="sm" className="h-10 rounded-xl px-4 shadow-sm">
-            Adicionar trilha de auditoria
+          <Button variant="ghost" size="sm" onClick={() => setTrilhaOpen(true)} className="h-9 rounded-xl px-4 active:scale-95">
+            Trilha de auditoria
           </Button>
         </div>
       </div>
@@ -644,6 +683,39 @@ function CadastrosPage() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      <Dialog open={trilhaOpen} onOpenChange={setTrilhaOpen}>
+        <DialogContent className="max-h-[85vh] overflow-y-auto rounded-2xl sm:max-w-lg">
+          <DialogHeader className="gap-1.5 pb-1">
+            <DialogTitle className="tracking-tight">Trilha de auditoria — Cadastros</DialogTitle>
+          </DialogHeader>
+          {trilhaQuery.isLoading ? (
+            <p className="py-6 text-center text-sm text-muted-foreground">Carregando...</p>
+          ) : trilhaQuery.isError ? (
+            <p className="py-6 text-center text-sm text-muted-foreground">Trilha indisponível no momento.</p>
+          ) : (trilhaQuery.data ?? []).length === 0 ? (
+            <p className="py-6 text-center text-sm leading-relaxed text-muted-foreground">Nenhum evento registrado ainda. Criar ou excluir gera registros aqui.</p>
+          ) : (
+            <div className="divide-y divide-border/60">
+              {(trilhaQuery.data ?? []).map((ev: any) => (
+                <div key={ev.id} className="flex items-start gap-3 rounded-lg px-2 py-2.5 transition-colors hover:bg-accent/40">
+                  <span className={`mt-0.5 inline-flex shrink-0 items-center rounded-full px-2.5 py-1 text-[11px] font-medium shadow-sm ${
+                    ev.acao === "excluir" ? "bg-destructive/10 text-destructive"
+                    : ev.acao === "alterar" ? "bg-primary/10 text-primary"
+                    : "bg-success/10 text-success"
+                  }`}>
+                    {ev.acao === "excluir" ? "Excluiu" : ev.acao === "alterar" ? "Alterou" : "Criou"}
+                  </span>
+                  <div className="min-w-0 flex-1">
+                    <p className="text-sm text-foreground">{ev.detalhes?.descricao || "—"}</p>
+                    <p className="mt-0.5 text-xs text-muted-foreground">{ev.detalhes?.user_nome || ev.detalhes?.user_email || "—"}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
