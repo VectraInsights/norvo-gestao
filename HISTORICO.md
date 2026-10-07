@@ -5149,6 +5149,14 @@ Espelhado na Vercel.
 - `npm run build` OK.
 - Arquivo: `src/components/erp/periodo-filter.tsx`.
 
+## Fluxo de caixa com KPIs (07/10)
+
+- 3 cards compactos `h-[96px]` (Entradas/Saidas/Saldo projetado, derivados
+  dos mesmos 30 dias da query, sem alterar busca) + grafico com padding
+  `p-4 sm:p-6` (era `p-6 sm:p-8`); skeleton acompanha.
+- `npm run build` OK.
+- Arquivo: `src/routes/_authenticated/financeiro.fluxo.tsx`.
+
 ## Mes atual com nome do mes + sem overflow (07/10)
 
 - Preset `Mês atual` passa a rotular com o nome do mes (`Agosto/2027`);
