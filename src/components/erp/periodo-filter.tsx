@@ -35,7 +35,7 @@ const PRESETS: { k: PresetKey; label: string; range: () => Periodo }[] = [
   { k: "prox30", label: "Próximos 30 dias", range: () => ({ from: startOfDay(new Date()), to: endOfDay(addDays(new Date(), 30)), label: "Próximos 30 dias" }) },
   { k: "ult7", label: "Últimos 7 dias", range: () => ({ from: startOfDay(subDays(new Date(), 7)), to: endOfDay(new Date()), label: "Últimos 7 dias" }) },
   { k: "ult30", label: "Últimos 30 dias", range: () => ({ from: startOfDay(subDays(new Date(), 30)), to: endOfDay(new Date()), label: "Últimos 30 dias" }) },
-  { k: "mesatual", label: "Mês atual", range: () => ({ from: startOfMonth(new Date()), to: endOfMonth(new Date()), label: "Mês atual" }) },
+  { k: "mesatual", label: "Mês atual", range: () => { const d = new Date(); const f = startOfMonth(d); return { from: f, to: endOfMonth(d), label: nomeMesAno(f) }; } },
   { k: "anoatual", label: "Ano atual", range: () => ({ from: startOfYear(new Date()), to: endOfYear(new Date()), label: "Ano atual" }) },
   { k: "todos", label: "Todo o período", range: () => PERIODO_TODOS },
 ];

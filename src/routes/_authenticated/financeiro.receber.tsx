@@ -601,7 +601,7 @@ export function LancamentosPage({ tipo }: { tipo: "receber" | "pagar" }) {
       />
 
       <div className="mb-4 flex flex-wrap items-center gap-2.5 sm:mb-6 lg:flex-nowrap">
-        <div className="inline-flex max-w-full shrink overflow-x-auto whitespace-nowrap rounded-xl border bg-muted/30 p-1.5 text-sm shadow-sm">
+        <div className="inline-flex max-w-full min-w-0 shrink overflow-x-auto whitespace-nowrap rounded-xl border bg-muted/30 p-1.5 text-sm shadow-sm">
           {(
             [
               { k: "todos", nome: "Todos", n: cont.todos },

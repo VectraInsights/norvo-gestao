@@ -5149,6 +5149,14 @@ Espelhado na Vercel.
 - `npm run build` OK.
 - Arquivo: `src/components/erp/periodo-filter.tsx`.
 
+## Mes atual com nome do mes + sem overflow (07/10)
+
+- Preset `Mês atual` passa a rotular com o nome do mes (`Agosto/2027`);
+  antes exibia o texto fixo `Mês atual` no botao.
+- Abas com `min-w-0`: encolhem com rolagem interna em vez de estourar
+  a pagina (o `EmptyState`, ja centralizado, volta a aparecer no centro).
+- `npm run build` OK.
+
 ## Periodo com largura total (07/10)
 
 - Botao do periodo de `w-[210px]` para `w-[300px]`: intervalo personalizado
