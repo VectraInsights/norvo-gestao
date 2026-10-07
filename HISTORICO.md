@@ -5387,3 +5387,7 @@ pm run build OK.
   sticky translucido grudava no card e deixava as linhas passarem por
   baixo aparecendo através; só a barra de acoes continua grudada.
 - Validado com `npm run build` OK.
+- Excluir contrato limpa o Pagar (07/10): confirmacao passa a avisar;
+  contas pendentes geradas pelo contrato sao removidas, as pagas ficam
+  (toast informa as quantidades).
+- Validado com `npm run build` OK.
