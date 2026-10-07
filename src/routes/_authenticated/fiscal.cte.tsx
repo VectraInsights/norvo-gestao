@@ -6567,8 +6567,8 @@ function CtePage() {
                               { key: "serie", label: "Série" },
                               { key: "data", label: "Data Emissão" },
                               { key: "valor", label: "Valor" },
-                              { key: "chave", label: "Chave de acesso" },
                               { key: "peso", label: "Peso" },
+                              { key: "chave", label: "Chave de acesso" },
                             ] as const
                           ).map((col) => (
                             <TableHead
@@ -6704,14 +6704,14 @@ function CtePage() {
                               <TableCell className="whitespace-nowrap">{m.serie}</TableCell>
                               <TableCell className="whitespace-nowrap">{m.data ? dateBR(m.data) : "—"}</TableCell>
                               <TableCell className="text-right whitespace-nowrap">{brl(m.valor)}</TableCell>
-                              <TableCell className="font-mono text-[10px] truncate max-w-[170px] whitespace-nowrap" title={m.chave}>
-                                {m.chave}
-                              </TableCell>
-                              <TableCell className="text-right">
+                              <TableCell className="text-right whitespace-nowrap">
                                 {Number(m.peso).toLocaleString("pt-BR", {
                                   minimumFractionDigits: 2,
                                   maximumFractionDigits: 2,
                                 })}
+                              </TableCell>
+                              <TableCell className="font-mono text-[10px] truncate max-w-[170px] whitespace-nowrap" title={m.chave}>
+                                {m.chave}
                               </TableCell>
                             </TableRow>
                           ))
