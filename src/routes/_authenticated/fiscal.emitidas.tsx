@@ -146,17 +146,23 @@ function NotasEmitidas() {
     staleTime: 30_000,
     gcTime: 10 * 60_000,
     queryFn: async ({ signal }) => {
-      const { data, error } = await supabase
-        .from("notas_fiscais")
-        .select(
-          "id,numero,serie,status,valor_total,data_emissao,chave,tipo,contato:contatos(nome),venda:vendas(numero)",
-        )
-        .eq("empresa_id", empresa!.id)
-        .order("created_at", { ascending: false })
-        .limit(200)
-        .abortSignal(signal);
-      if (error) throw error;
-      return (data ?? []) as unknown as Nota[];
+      // Busca em páginas para nunca cortar o histórico (sem limite silencioso)
+      const todas: unknown[] = [];
+      for (let ini = 0; ; ini += 500) {
+        const { data, error } = await supabase
+          .from("notas_fiscais")
+          .select(
+            "id,numero,serie,status,valor_total,data_emissao,chave,tipo,contato:contatos(nome),venda:vendas(numero)",
+          )
+          .eq("empresa_id", empresa!.id)
+          .order("created_at", { ascending: false })
+          .range(ini, ini + 499)
+          .abortSignal(signal);
+        if (error) throw error;
+        todas.push(...((data as unknown[]) ?? []));
+        if (!data || (data as unknown[]).length < 500) break;
+      }
+      return todas as unknown as Nota[];
     },
   });
 
@@ -185,14 +191,20 @@ function NotasEmitidas() {
     staleTime: 10 * 60_000,
     gcTime: 30 * 60_000,
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from("contatos")
-        .select("id, nome")
-        .eq("empresa_id", empresa!.id)
-        .order("nome")
-        .limit(1000);
-      if (error) throw error;
-      return data ?? [];
+      // Busca em páginas para nunca cortar a lista (sem limite silencioso)
+      const todos: unknown[] = [];
+      for (let ini = 0; ; ini += 1000) {
+        const { data, error } = await supabase
+          .from("contatos")
+          .select("id, nome")
+          .eq("empresa_id", empresa!.id)
+          .order("nome")
+          .range(ini, ini + 999);
+        if (error) throw error;
+        todos.push(...((data as unknown[]) ?? []));
+        if (!data || (data as unknown[]).length < 1000) break;
+      }
+      return todos as { id: string; nome: string }[];
     },
   });
 
