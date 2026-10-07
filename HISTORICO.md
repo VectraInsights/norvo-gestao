@@ -5296,3 +5296,13 @@ pm run build OK.
 - Pernas de transferencia seguem no Extrato (decisao standing); tabela mantem
   `overflow-x-auto` por ser larga (10 colunas) — rolagem só em tela estreita.
 - Validado com `npm run build` OK.
+
+## Relatorios em portugues direto (07/10)
+
+- Abas renomeadas: "Antiguidade" -> "Atrasos por tempo", "Curva ABC" ->
+  "Gastos por categoria"; "Recebíveis/Pagáveis" -> "A receber/A pagar".
+- Faixas claras ("No prazo (a vencer)", "Atrasado 0–30 dias"...) + linha
+  de total em aberto + frase explicativa em cada aba.
+- Curva ABC agora mostra a Classe (A ate 80%, B ate 95%, C o resto) com
+  legenda; ranking com subtitulos.
+- Validado com `npm run build` OK.
