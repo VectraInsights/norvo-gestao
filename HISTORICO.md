@@ -5444,6 +5444,10 @@ pm run build OK.
 - FISCAL COMPLETO: CTe, MDF-e, Percursos, Emitidas, Recebidas, Cadastro,
   Relatorios, Contador, Configuracoes.
 - Validado com `npm run build` OK.
+- Compras sem cortes + busca por valor (07/10): ordens em paginas
+  (antes 500); fornecedores/produtos/contas sem range (corte em 1000).
+  Busca casa tambem o total da ordem.
+- Validado com `npm run build` OK.
 - Novo credor + Importar PDF + sem placeholders (07/10): rodapé e
   dialogo "Novo credor" (segue tipo fornecedor); botao "Importar PDF";
   placeholders removidos da tela de contratos.
