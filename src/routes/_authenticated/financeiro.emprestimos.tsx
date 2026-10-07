@@ -81,10 +81,16 @@ function EmprestimosPage() {
     staleTime: 30_000,
     gcTime: 10 * 60_000,
     queryFn: async () => {
-      const { data, error } = await supabase.from("emprestimos" as never)
-        .select("id,tipo,descricao,credor,valor_principal,taxa_juros_mensal,parcelas,data_contratacao,primeiro_vencimento,status").eq("empresa_id", empresa!.id).order("data_contratacao", { ascending: false }).limit(300);
-      if (error) throw error;
-      return (data ?? []) as unknown as Emprestimo[];
+      // Busca em páginas de 1000 para nunca cortar a lista (sem limite silencioso)
+      const todas: unknown[] = [];
+      for (let ini = 0; ; ini += 1000) {
+        const { data, error } = await supabase.from("emprestimos" as never)
+          .select("id,tipo,descricao,credor,valor_principal,taxa_juros_mensal,parcelas,data_contratacao,primeiro_vencimento,status").eq("empresa_id", empresa!.id).order("data_contratacao", { ascending: false }).range(ini, ini + 999);
+        if (error) throw error;
+        todas.push(...(data ?? []));
+        if (!data || (data as unknown[]).length < 1000) break;
+      }
+      return todas as unknown as Emprestimo[];
     },
   });
 
@@ -92,10 +98,16 @@ function EmprestimosPage() {
     enabled: !!sel,
     queryKey: ["emprestimo-parcelas", sel],
     queryFn: async () => {
-      const { data, error } = await supabase.from("emprestimo_parcelas" as never)
-        .select("id,emprestimo_id,numero,data_vencimento,valor,valor_juros,valor_amortizacao,status,lancamento_id").eq("emprestimo_id", sel!).order("numero").limit(500);
-      if (error) throw error;
-      return (data ?? []) as unknown as Parcela[];
+      // Parcelas de um único contrato: busca em páginas (sem limite silencioso)
+      const todas: unknown[] = [];
+      for (let ini = 0; ; ini += 1000) {
+        const { data, error } = await supabase.from("emprestimo_parcelas" as never)
+          .select("id,emprestimo_id,numero,data_vencimento,valor,valor_juros,valor_amortizacao,status,lancamento_id").eq("emprestimo_id", sel!).order("numero").range(ini, ini + 999);
+        if (error) throw error;
+        todas.push(...(data ?? []));
+        if (!data || (data as unknown[]).length < 1000) break;
+      }
+      return todas as unknown as Parcela[];
     },
   });
 
@@ -187,11 +199,15 @@ function EmprestimosPage() {
 
   const filtrados = useMemo(() => {
     const q = busca.trim().toLowerCase();
+    const qDig = q.replace(/\D/g, "");
     if (!q) return lista ?? [];
-    return (lista ?? []).filter((e) =>
-      (e.descricao || "").toLowerCase().includes(q)
-      || (e.credor || "").toLowerCase().includes(q),
-    );
+    return (lista ?? []).filter((e) => {
+      if ((e.descricao || "").toLowerCase().includes(q)) return true;
+      if ((e.credor || "").toLowerCase().includes(q)) return true;
+      // Pesquisa por valor: "25,00" acha 25000.00 (a partir de 2 dígitos)
+      if (qDig.length >= 2 && Number(e.valor_principal || 0).toFixed(2).replace(/\D/g, "").includes(qDig)) return true;
+      return false;
+    });
   }, [lista, busca]);
 
   return (
