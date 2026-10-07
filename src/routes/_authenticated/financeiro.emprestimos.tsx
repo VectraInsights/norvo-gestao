@@ -12,8 +12,8 @@ import { MoneyInput } from "@/components/erp/money-input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Banknote, Plus, ChevronRight, Trash2, HandCoins, Search, Pencil, Check, X } from "lucide-react";
-import { useMemo, useState } from "react";
+import { Banknote, Plus, ChevronRight, Trash2, HandCoins, Search, Pencil, Check, X, FileUp } from "lucide-react";
+import { useMemo, useRef, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEmpresaAtual } from "@/hooks/use-empresa";
@@ -77,6 +77,10 @@ function EmprestimosPage() {
   // Edição manual de parcela (valor + vencimento): p/ contratos com carência,
   // balões ou parcelas irregulares que o Price não representa
   const [editParc, setEditParc] = useState<{ id: string; valor: string; venc: string } | null>(null);
+  // Importação do cronograma do PDF do banco (Anexo com Parc/Dt.vencto/Valor)
+  const pdfInputRef = useRef<HTMLInputElement | null>(null);
+  const [pdfLendo, setPdfLendo] = useState(false);
+  const [pdfPrev, setPdfPrev] = useState<Array<{ numero: number; venc: string; valor: number }> | null>(null);
 
   const { data: lista, isLoading } = useQuery({
     enabled: !!empresa,
@@ -167,20 +171,92 @@ function EmprestimosPage() {
       const v = Number(editParc?.valor) || 0;
       if (v <= 0) throw new Error("Informe o valor da parcela");
       if (!editParc?.venc) throw new Error("Informe o vencimento");
-      // Reparte juros/amortização proporcionalmente p/ a soma continuar fechando
-      const oldV = Number(alvo.valor) || 0;
-      let juros = 0;
-      if (oldV > 0) juros = Number((((Number(alvo.valor_juros) || 0) * v) / oldV).toFixed(2));
-      const amort = Number((v - juros).toFixed(2));
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const { error } = await (supabase.from("emprestimo_parcelas" as never) as any)
-        .update({ valor: v, data_vencimento: editParc.venc, valor_juros: juros, valor_amortizacao: amort })
-        .eq("id", alvo.id);
-      if (error) throw error;
+      await gravarParcela(alvo, v, editParc.venc);
     },
     onSuccess: () => {
       toast.success("Parcela atualizada");
       setEditParc(null);
+      qc.invalidateQueries({ queryKey: ["emprestimo-parcelas"] });
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+  // Reparte juros/amortização proporcionalmente p/ a soma continuar fechando
+  const gravarParcela = async (alvo: Parcela, v: number, venc: string) => {
+    const oldV = Number(alvo.valor) || 0;
+    let juros = 0;
+    if (oldV > 0) juros = Number((((Number(alvo.valor_juros) || 0) * v) / oldV).toFixed(2));
+    const amort = Number((v - juros).toFixed(2));
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { error } = await (supabase.from("emprestimo_parcelas" as never) as any)
+      .update({ valor: v, data_vencimento: venc, valor_juros: juros, valor_amortizacao: amort })
+      .eq("id", alvo.id);
+    if (error) throw error;
+  };
+
+  // Lê o PDF do banco e extrai o cronograma (linhas "NNº DD/MM/AAAA R$ X.XXX,XX")
+  const lerPdfBanco = async (file: File) => {
+    setPdfLendo(true);
+    try {
+      const buf = await file.arrayBuffer();
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const pdfjsLib: any = await import("pdfjs-dist");
+      try {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const workerMod: any = await import("pdfjs-dist/build/pdf.worker.min.mjs?url");
+        pdfjsLib.GlobalWorkerOptions.workerSrc = workerMod.default || workerMod;
+      } catch {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const w2: any = await import("pdfjs-dist/build/pdf.worker.mjs?url");
+        pdfjsLib.GlobalWorkerOptions.workerSrc = w2.default || w2;
+      }
+      const pdf = await pdfjsLib.getDocument({ data: buf, verbosity: 0 }).promise;
+      let texto = "";
+      for (let pg = 1; pg <= pdf.numPages; pg++) {
+        const page = await pdf.getPage(pg);
+        const tc = await page.getTextContent();
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        texto += (tc.items as any[]).map((it) => (typeof it?.str === "string" ? it.str : "")).join(" ") + "\n";
+      }
+      const re = /(\d{1,3})\s*º\s*(\d{2})\/(\d{2})\/(\d{4})\s*R\$\s*([\d.,]+)/g;
+      const achadas = new Map<number, { numero: number; venc: string; valor: number }>();
+      let m: RegExpExecArray | null;
+      while ((m = re.exec(texto)) !== null) {
+        const numero = Number(m[1]);
+        const bruto = String(m[5]).replace(/[^\d.,]/g, "");
+        const norm = bruto.includes(",") ? bruto.replace(/\./g, "").replace(",", ".") : bruto;
+        const valor = Number(norm) || 0;
+        if (!numero || !valor) continue;
+        if (!achadas.has(numero))
+          achadas.set(numero, { numero, venc: `${m[4]}-${m[3]}-${m[2]}`, valor });
+      }
+      const linhas = [...achadas.values()].sort((a, b) => a.numero - b.numero);
+      if (!linhas.length) throw new Error("Nenhuma parcela encontrada no PDF (esperado: Nº + data + R$ valor)");
+      setPdfPrev(linhas);
+    } catch (e: unknown) {
+      toast.error(e instanceof Error ? e.message : "Falha ao ler o PDF");
+    } finally {
+      setPdfLendo(false);
+      if (pdfInputRef.current) pdfInputRef.current.value = "";
+    }
+  };
+
+  const aplicarPdf = useMutation({
+    mutationFn: async (linhas: Array<{ numero: number; venc: string; valor: number }>) => {
+      const porNum = new Map(parcelasSel.map((p) => [p.numero, p]));
+      let ok = 0, travadas = 0, ausentes = 0;
+      for (const l of linhas) {
+        const alvo = porNum.get(l.numero);
+        if (!alvo) { ausentes++; continue; }
+        if (alvo.lancamento_id) { travadas++; continue; }
+        await gravarParcela(alvo, l.valor, l.venc);
+        ok++;
+      }
+      return { ok, travadas, ausentes };
+    },
+    onSuccess: ({ ok, travadas, ausentes }) => {
+      toast.success(`Cronograma aplicado: ${ok} parcela(s) atualizadas${travadas ? `, ${travadas} já lançada(s) preservada(s)` : ""}${ausentes ? `, ${ausentes} nº(s) fora do contrato` : ""}`);
+      setPdfPrev(null);
       qc.invalidateQueries({ queryKey: ["emprestimo-parcelas"] });
     },
     onError: (e: Error) => toast.error(e.message),
@@ -387,6 +463,26 @@ function EmprestimosPage() {
                     </p>
                   </div>
                   <div className="flex gap-2">
+                    <input
+                      ref={pdfInputRef}
+                      type="file"
+                      accept=".pdf,application/pdf"
+                      className="hidden"
+                      aria-label="Selecionar PDF do banco"
+                      onChange={(e) => {
+                        const f = e.target.files?.[0];
+                        if (f && emprestimoSel) void lerPdfBanco(f);
+                      }}
+                    />
+                    <Button
+                      size="sm" variant="outline"
+                      onClick={() => pdfInputRef.current?.click()}
+                      disabled={pdfLendo || parcelasSel.length === 0}
+                      title="Lê o PDF do banco e aplica o cronograma (valor e vencimento) nas parcelas em aberto"
+                      className="h-9 rounded-xl px-4 shadow-sm"
+                    >
+                      <FileUp className="mr-1.5 h-4 w-4" /> {pdfLendo ? "Lendo PDF…" : "Importar PDF do banco"}
+                    </Button>
                     <Button
                       size="sm" variant="outline"
                       onClick={() => gerarContasPagar.mutate(emprestimoSel.id)}
@@ -472,6 +568,63 @@ function EmprestimosPage() {
           </Card>
         </div>
       )}
+      <Dialog open={pdfPrev !== null} onOpenChange={(o) => { if (!o) setPdfPrev(null); }}>
+        <DialogContent className="max-h-[90vh] overflow-y-auto rounded-2xl sm:max-w-2xl">
+          <DialogHeader className="gap-1.5 pb-1">
+            <DialogTitle className="tracking-tight">Cronograma do PDF ({pdfPrev?.length ?? 0} parcelas)</DialogTitle>
+          </DialogHeader>
+          <p className="text-sm leading-relaxed text-muted-foreground">
+            Confira os valores do banco contra as parcelas atuais. Aplicar atualiza valor e
+            vencimento das parcelas em aberto; as já lançadas no Contas a pagar são preservadas.
+          </p>
+          <div className="max-h-[50vh] overflow-y-auto rounded-xl border">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>#</TableHead>
+                  <TableHead className="text-right">Atual</TableHead>
+                  <TableHead className="text-right">Novo (PDF)</TableHead>
+                  <TableHead>Situação</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {(pdfPrev ?? []).map((l) => {
+                  const atual = parcelasSel.find((p) => p.numero === l.numero);
+                  const sit = !atual
+                    ? "Nº fora do contrato"
+                    : atual.lancamento_id
+                      ? "Já lançada (preservada)"
+                      : Number(atual.valor) === l.valor && atual.data_vencimento === l.venc
+                        ? "Igual"
+                        : "Vai atualizar";
+                  return (
+                    <TableRow key={l.numero} className="transition-colors hover:bg-accent/30">
+                      <TableCell>{l.numero}</TableCell>
+                      <TableCell className="text-right text-muted-foreground text-tabular">
+                        {atual ? `${dateBR(atual.data_vencimento)} · ${brl(atual.valor)}` : "—"}
+                      </TableCell>
+                      <TableCell className="text-right font-medium text-tabular">{dateBR(l.venc)} · {brl(l.valor)}</TableCell>
+                      <TableCell>
+                        <Badge variant={sit === "Vai atualizar" ? "default" : "outline"}>{sit}</Badge>
+                      </TableCell>
+                    </TableRow>
+                  );
+                })}
+              </TableBody>
+            </Table>
+          </div>
+          <DialogFooter className="gap-2">
+            <Button variant="ghost" onClick={() => setPdfPrev(null)} className="h-10 rounded-xl">Cancelar</Button>
+            <Button
+              onClick={() => pdfPrev && aplicarPdf.mutate(pdfPrev)}
+              disabled={aplicarPdf.isPending}
+              className="h-10 rounded-xl px-6"
+            >
+              {aplicarPdf.isPending ? "Aplicando..." : "Aplicar cronograma"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </>
   );
 }
