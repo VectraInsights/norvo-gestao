@@ -5215,3 +5215,13 @@ Espelhado na Vercel.
 - Tabela com padding reduzido (`[&_td]:px-3 [&_td]:py-2`).
 - Dialog interno intacto; `npm run build` OK.
 - Arquivo: `src/routes/_authenticated/financeiro.transferencias.tsx`.
+
+## Combobox com rolagem isolada (07/10)
+
+- Pesquisa de contatos (e demais Combobox) reescrita sem cmdk:
+  filtro proprio com acento, lista nativa max-h-72 overflow-y-auto com
+  overscroll-contain + wheel/touch isolados, limite de 100 linhas com
+  aviso 'digite para refinar', teclado (setas + Enter) preservado.
+- Mesma interface (props) — todos os usos seguem iguais; 
+pm run build OK.
+- Arquivo: src/components/erp/combobox.tsx.
