@@ -5048,3 +5048,16 @@ Espelhado na Vercel.
   de `parent_id`).
 - Validado com `tsc` zerado nos tocados e `npm run build` OK.
 - Arquivo: `src/routes/_authenticated/financeiro.cadastros.tsx`.
+
+## Dashboard reestruturado: primarias + acoes em barra + secundarias (07/10)
+
+- Metricas primarias (Receita/A receber/A pagar/Saldo) em `grid gap-3 lg:grid-cols-4`
+  com `h-[120px] p-4`, icone `h-9` + label `text-xs uppercase` + valor `text-2xl`;
+  sem descricoes longas, sem Card-hero.
+- Acoes rapidas viram barra horizontal `flex flex-wrap gap-2` com `Button h-10 px-4`
+  (icone + texto curto, `title` com a desc); removidos `Plus`/`ArrowRight` e o
+  `Card erp-surface` com `grid h-auto py-4`.
+- Secundarias (Vendas/NF-e/Clientes/Produtos) em `grid gap-3` com `h-[96px] p-4`,
+  fundo `bg-muted/30`, icone `h-8` neutro, valor `text-xl` — hierarquia secundaria.
+- Logica, queries, handlers e rotas intactos; `npm run build` OK.
+- Arquivo: `src/routes/_authenticated/dashboard.tsx`.

@@ -15,8 +15,6 @@ import {
   AlertTriangle,
   ShoppingCart,
   FileText,
-  Plus,
-  ArrowRight,
 } from "lucide-react";
 import { EmptyState } from "@/components/erp/empty-state";
 import { Button } from "@/components/ui/button";
@@ -384,70 +382,91 @@ function Dashboard() {
         description="Visão geral da operação em tempo real."
       />
 
-      <Card className="erp-surface mb-8 overflow-hidden rounded-2xl border-primary/15 bg-gradient-to-br from-card via-card to-primary/[0.04] sm:mb-10">
-        <CardContent className="p-6 sm:p-8">
-          <div className="mb-5 flex items-center justify-between gap-3">
-            <div>
-              <h2 className="text-base font-semibold tracking-tight">Ações rápidas</h2>
-              <p className="mt-1 text-sm text-muted-foreground">
-                Acesse as tarefas mais usadas sem navegar pelo menu.
-              </p>
-            </div>
-            <span className="grid h-11 w-11 place-items-center rounded-2xl bg-primary text-primary-foreground shadow-md">
-              <Plus className="h-5 w-5" aria-hidden="true" />
-            </span>
-          </div>
-          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-            {atalhos.map((atalho) => {
-              const Icon = atalho.icon;
-              return (
-                <Button
-                  key={atalho.to}
-                  variant="outline"
-                  className="h-auto items-center justify-between gap-3 rounded-2xl bg-background px-4 py-4 text-left shadow-sm transition-all hover:-translate-y-1 hover:border-primary/30 hover:shadow-lg"
-                  onClick={() => navigate({ to: atalho.to })}
-                >
-                  <span className="flex min-w-0 items-center gap-3">
-                    <span className="grid h-11 w-11 shrink-0 place-items-center rounded-2xl bg-primary/10">
-                      <Icon className="h-5 w-5 text-primary" aria-hidden="true" />
-                    </span>
-                    <span className="min-w-0">
-                      <span className="block truncate text-sm font-semibold">{atalho.label}</span>
-                      <span className="block truncate text-xs text-muted-foreground">{atalho.desc}</span>
-                    </span>
-                  </span>
-                  <ArrowRight className="h-4 w-4 shrink-0 text-muted-foreground" aria-hidden="true" />
-                </Button>
-              );
-            })}
-          </div>
-        </CardContent>
-      </Card>
-
-      <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-4 lg:gap-6">
+      {/* Métricas primárias — 4 cards compactos h-[120px], sem descrições */}
+      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
         {loadingStats
-          ? Array.from({ length: 8 }).map((_, i) => (
+          ? Array.from({ length: 4 }).map((_, i) => (
               <Card key={i} className="rounded-2xl shadow-panel">
-                <CardContent className="p-6">
-                  <Skeleton className="h-3 w-24 rounded-full" />
-                  <Skeleton className="mt-4 h-7 w-32 rounded-lg" />
+                <CardContent className="flex h-[120px] items-center gap-3 p-4">
+                  <Skeleton className="h-9 w-9 rounded-xl" />
+                  <div className="min-w-0 flex-1">
+                    <Skeleton className="h-3 w-24 rounded-full" />
+                    <Skeleton className="mt-2 h-7 w-28 rounded-lg" />
+                  </div>
                 </CardContent>
               </Card>
             ))
-          : cards.map((c) => (
+          : cards.slice(0, 4).map((c) => (
               <Card
                 key={c.label}
-                className="group rounded-2xl shadow-panel transition-all duration-200 hover:-translate-y-1 hover:border-primary/25 hover:shadow-lg"
+                className="group rounded-2xl shadow-panel transition-all duration-200 hover:-translate-y-0.5 hover:border-primary/25 hover:shadow-md"
               >
-                <CardContent className="flex items-center gap-4 p-6">
-                  <span className="grid h-12 w-12 shrink-0 place-items-center rounded-2xl bg-muted/70 transition-colors group-hover:bg-primary/10">
-                    <c.icon className={`h-5 w-5 ${c.tone}`} aria-hidden="true" />
+                <CardContent className="flex h-[120px] items-center gap-3 p-4">
+                  <span className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-muted/70 transition-colors group-hover:bg-primary/10">
+                    <c.icon className={`h-4 w-4 ${c.tone}`} aria-hidden="true" />
                   </span>
-                  <span className="min-w-0">
-                    <span className="block truncate text-xs font-medium uppercase tracking-[0.1em] text-muted-foreground">
+                  <span className="min-w-0 flex-1">
+                    <span className="block truncate text-xs font-medium uppercase tracking-[0.08em] text-muted-foreground">
                       {c.label}
                     </span>
-                    <span className="mt-1 block truncate text-display text-[1.7rem] font-semibold leading-tight text-tabular">
+                    <span className="mt-1 block truncate text-2xl font-semibold leading-tight text-tabular">
+                      {c.value}
+                    </span>
+                  </span>
+                </CardContent>
+              </Card>
+            ))}
+      </div>
+
+      {/* Ações rápidas — barra horizontal button-group, não cards grandes */}
+      <div className="mt-4 flex flex-wrap items-center gap-2">
+        <span className="mr-1 text-xs font-medium uppercase tracking-[0.08em] text-muted-foreground">
+          Ações rápidas
+        </span>
+        {atalhos.map((atalho) => {
+          const Icon = atalho.icon;
+          return (
+            <Button
+              key={atalho.to}
+              variant="outline"
+              size="default"
+              className="h-10 gap-2 rounded-xl px-4 text-sm font-medium shadow-sm hover:border-primary/30 hover:shadow-md active:scale-95"
+              onClick={() => navigate({ to: atalho.to })}
+              title={atalho.desc}
+            >
+              <Icon className="h-4 w-4 text-primary" aria-hidden="true" />
+              {atalho.label}
+            </Button>
+          );
+        })}
+      </div>
+
+      {/* Métricas secundárias — 4 cards menores, hierarquia secundária */}
+      <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+        {loadingStats
+          ? Array.from({ length: 4 }).map((_, i) => (
+              <Card key={i} className="rounded-2xl shadow-panel">
+                <CardContent className="flex h-[96px] items-center gap-3 p-4">
+                  <Skeleton className="h-8 w-8 rounded-lg" />
+                  <div className="min-w-0 flex-1">
+                    <Skeleton className="h-3 w-20 rounded-full" />
+                    <Skeleton className="mt-2 h-6 w-16 rounded-lg" />
+                  </div>
+                </CardContent>
+              </Card>
+            ))
+          : cards.slice(4).map((c) => (
+              <Card
+                key={c.label}
+                className="rounded-2xl bg-muted/30 shadow-panel transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md"
+              >
+                <CardContent className="flex h-[96px] items-center gap-3 p-4">
+                  <span className="grid h-8 w-8 shrink-0 place-items-center rounded-lg bg-background shadow-sm">
+                    <c.icon className="h-4 w-4 text-muted-foreground" aria-hidden="true" />
+                  </span>
+                  <span className="min-w-0 flex-1">
+                    <span className="block truncate text-xs text-muted-foreground">{c.label}</span>
+                    <span className="mt-0.5 block truncate text-xl font-semibold leading-tight text-tabular">
                       {c.value}
                     </span>
                   </span>
