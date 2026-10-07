@@ -5406,3 +5406,7 @@ pm run build OK.
   Conciliacao. O novo contato já entra selecionado; cadastro completo
   segue em Clientes e fornecedores.
 - Validado com `npm run build` OK.
+- Rolagem horizontal no bloco do embarque (07/10): o `Table` criava um
+  container interno com rolagem propria que roubava a barra; rolagem
+  interna desligada p/ a barra fixa abaixo ativar de verdade.
+- Validado com `npm run build` OK.
