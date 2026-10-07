@@ -9,8 +9,9 @@ import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Combobox } from "@/components/erp/combobox";
+import { TransferenciaDialog } from "@/components/erp/transferencia-dialog";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { ListTree, Search, X, Download, ArrowDownCircle, ArrowUpCircle, Scale } from "lucide-react";
+import { ListTree, Search, X, Download, ArrowDownCircle, ArrowUpCircle, Scale, ArrowLeftRight } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useEmpresaAtual } from "@/hooks/use-empresa";
@@ -81,6 +82,7 @@ function ExtratoPage() {
   const [centroId, setCentroId] = useState("todos");
   const [somenteQuitados, setSomenteQuitados] = useState<"todos" | "quitados">("quitados");
   const [busca, setBusca] = useState("");
+  const [transfOpen, setTransfOpen] = useState(false);
 
   // Auditoria (somente leitura: mostra eventos de lançamentos)
   const [trilhaOpen, setTrilhaOpen] = useState(false);
@@ -295,11 +297,15 @@ function ExtratoPage() {
           <Button variant="ghost" size="sm" onClick={() => setTrilhaOpen(true)} className="h-9 rounded-xl px-4 active:scale-95">
             Auditoria
           </Button>
+          <Button variant="outline" size="sm" onClick={() => setTransfOpen(true)} className="h-10 rounded-xl px-4 shadow-sm transition-all hover:-translate-y-px hover:shadow-md">
+            <ArrowLeftRight className="mr-1.5 h-4 w-4" />Transferir
+          </Button>
           <Button variant="outline" size="sm" onClick={exportarCsv} disabled={!linhas.length} className="h-10 rounded-xl px-4 shadow-sm transition-all hover:-translate-y-px hover:shadow-md">
             <Download className="mr-1.5 h-4 w-4" />Exportar CSV
           </Button>
         </div>
       </div>
+      <TransferenciaDialog open={transfOpen} onOpenChange={setTransfOpen} />
 
       {isLoading ? (
         <div className="space-y-2.5" aria-label="Carregando">

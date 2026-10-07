@@ -23,10 +23,11 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import { Banknote, Plus, Upload, Loader2, Link2, Check, Landmark, Wallet, CreditCard, TrendingUp, PiggyBank, DollarSign, Database, Coins, Trash2, Search, X, ChevronLeft, ChevronRight, ChevronDown, Pencil, Sparkles } from "lucide-react";
+import { Banknote, Plus, Upload, Loader2, Link2, Check, Landmark, Wallet, CreditCard, TrendingUp, PiggyBank, DollarSign, Database, Coins, Trash2, Search, X, ChevronLeft, ChevronRight, ChevronDown, Pencil, Sparkles, ArrowLeftRight } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
 import { DateInput } from "@/components/erp/date-input";
 import { Combobox } from "@/components/erp/combobox";
+import { TransferenciaDialog } from "@/components/erp/transferencia-dialog";
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -406,6 +407,7 @@ function ContasFinanceiras() {
   const [reconcilingId, setReconcilingId] = useState<string | null>(null);
   const [preparando, setPreparando] = useState<string | null>(null);
   const [busca, setBusca] = useState("");
+  const [transfOpen, setTransfOpen] = useState(false);
   // Detalhe da conta selecionada (persiste na URL: F5 mantém a conciliação)
   const searchParams = Route.useSearch();
   const navigate = useNavigate();
@@ -806,6 +808,10 @@ function ContasFinanceiras() {
             <Button variant="ghost" size="sm" onClick={() => setTrilhaOpen(true)} className="h-9 rounded-xl px-4 active:scale-95">
               Auditoria
             </Button>
+            <Button variant="outline" size="sm" onClick={() => setTransfOpen(true)} className="h-9 rounded-xl px-4 text-sm shadow-sm transition-all hover:shadow-md active:scale-95">
+              <ArrowLeftRight className="mr-1 h-3.5 w-3.5" />Transferir
+            </Button>
+            <TransferenciaDialog open={transfOpen} onOpenChange={setTransfOpen} />
 
             <Dialog open={open} onOpenChange={(v) => { if (!criar.isPending) { setOpen(v); if (!v) resetWizard(); } }}>
               <DialogTrigger asChild><Button size="sm" className="h-9 rounded-xl px-4 text-sm shadow-sm transition-all hover:shadow-md active:scale-95"><Plus className="mr-1 h-3.5 w-3.5" />Nova conta</Button></DialogTrigger>

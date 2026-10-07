@@ -5238,3 +5238,13 @@ pm run build OK.
 - 
 pm run build OK.
 - Arquivos: inanceiro.transferencias.tsx, supabase/migrations/20261007120000_transferencias_reabrir_pernas.sql.
+
+## Atalho Transferir no Extrato e nas Contas (07/10)
+
+- Dialog de transferencia extraido para components/erp/transferencia-dialog.tsx
+  (mesma logica, pernas berto); pagina de Transferencias passa a usa-lo.
+- Botoes Transferir no Extrato (ao lado de Exportar) e nas Contas
+  (ao lado de Auditoria); pagina de Transferencias mantida.
+- Migration 20261007120000 aplicada no Supabase remoto (pernas reabertas).
+- 
+pm run build OK.
