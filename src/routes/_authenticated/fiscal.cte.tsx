@@ -659,9 +659,13 @@ function CtePage() {
     () => lerSnapshotCte()?.editingRascunhoId ?? null,
   );
   const [statusTab, setStatusTab] = useState("embarque");
+  const [buscaDocs, setBuscaDocs] = useState("");
+  const [buscaEmb, setBuscaEmb] = useState("");
   // Trocar de aba apaga TODA a memória e volta ao padrão (seleções, filtros, ordenação)
   const trocarAba = (v: string) => {
     setStatusTab(v);
+    setBuscaDocs("");
+    setBuscaEmb("");
     setSelecionadas(new Set());
     setEnvSel(new Set());
     setMdfSel(new Set());
@@ -723,7 +727,24 @@ function CtePage() {
     return true;
   };
   const mercadoriasSorted = useMemo(() => {
-    const arr = mercadorias.filter((m) => dentroPeriodo(m.data));
+    const buscaNorm = buscaEmb.trim().toLowerCase();
+    const buscaDig = buscaNorm.replace(/\D/g, "");
+    const arr = mercadorias.filter((m) => {
+      if (!dentroPeriodo(m.data)) return false;
+      if (buscaNorm) {
+        const texto = `${(m as any).nNF || ""} ${(m as any).chave || ""} ${(m as any).emit || ""} ${(m as any).dest || ""}`.toLowerCase();
+        const casaTexto = texto.includes(buscaNorm);
+        // Pesquisa por valor: "25,00" acha 25.00 (a partir de 2 dígitos)
+        const casaValor =
+          buscaDig.length >= 2 &&
+          Number((m as any).valor || 0)
+            .toFixed(2)
+            .replace(/\D/g, "")
+            .includes(buscaDig);
+        if (!casaTexto && !casaValor) return false;
+      }
+      return true;
+    });
     arr.sort((a, b) => {
       const va = (a as any)[sortConfig.key] ?? "";
       const vb = (b as any)[sortConfig.key] ?? "";
@@ -736,7 +757,7 @@ function CtePage() {
       return 0;
     });
     return arr;
-  }, [mercadorias, sortConfig, periodoIni, periodoFim]);
+  }, [mercadorias, sortConfig, periodoIni, periodoFim, buscaEmb]);
 
   const { data: docs, isLoading } = useQuery({
     enabled: !!empresa,
@@ -775,6 +796,70 @@ function CtePage() {
       rascunhos: docs.filter((d) => d.status === "rascunho").sort(byNum),
     };
   }, [docs]);
+
+  // Busca + período nas abas de documentos (nº, chave, motivo, valor)
+  const buscaDocsNorm = buscaDocs.trim().toLowerCase();
+  const buscaDocsDig = buscaDocsNorm.replace(/\D/g, "");
+  const docCasaBusca = (d: CteDoc) => {
+    if (!buscaDocsNorm) return true;
+    if (String(d.numero ?? "").toLowerCase().includes(buscaDocsNorm)) return true;
+    if (String(d.chave_acesso ?? "").toLowerCase().includes(buscaDocsNorm)) return true;
+    if (String(d.motivo_rejeicao ?? "").toLowerCase().includes(buscaDocsNorm)) return true;
+    // Pesquisa por valor: "25,00" acha 25.00 (a partir de 2 dígitos)
+    if (
+      buscaDocsDig.length >= 2 &&
+      Number(d.valor_servico || 0).toFixed(2).replace(/\D/g, "").includes(buscaDocsDig)
+    )
+      return true;
+    return false;
+  };
+  const docDataRef = (d: CteDoc) => ((d.data_autorizacao ?? d.created_at) || "").slice(0, 10);
+  const docsFiltrados = useMemo(
+    () => ({
+      autorizados: docsByStatus.autorizados.filter((d) => dentroPeriodo(docDataRef(d))).filter(docCasaBusca),
+      rejeitados: docsByStatus.rejeitados.filter((d) => dentroPeriodo(docDataRef(d))).filter(docCasaBusca),
+      cancelados: docsByStatus.cancelados.filter((d) => dentroPeriodo(docDataRef(d))).filter(docCasaBusca),
+      rascunhos: docsByStatus.rascunhos.filter((d) => dentroPeriodo(docDataRef(d))).filter(docCasaBusca),
+    }),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [docsByStatus, buscaDocsNorm, buscaDocsDig, periodoIni, periodoFim],
+  );
+
+  // Barra de filtro compartilhada (período + busca); função pura p/ não remontar o input
+  const barraFiltroDocs = () => (
+    <div className="mb-2 flex flex-wrap items-center gap-1.5">
+      <DateInput
+        value={periodoIni}
+        onChange={setPeriodoIni}
+        className="h-7 text-xs w-[150px] shrink-0"
+      />
+      <span className="text-xs shrink-0">Até</span>
+      <DateInput
+        value={periodoFim}
+        onChange={setPeriodoFim}
+        className="h-7 text-xs w-[150px] shrink-0"
+      />
+      <div className="relative ml-auto w-full sm:w-60">
+        <Search className="pointer-events-none absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
+        <Input
+          value={buscaDocs}
+          onChange={(e) => setBuscaDocs(e.target.value)}
+          placeholder="Buscar nº, chave, motivo, valor…"
+          className="h-7 rounded-lg pl-8 pr-8 text-xs"
+        />
+        {buscaDocs && (
+          <button
+            type="button"
+            onClick={() => setBuscaDocs("")}
+            aria-label="Limpar busca"
+            className="absolute right-1.5 top-1/2 grid h-5 w-5 -translate-y-1/2 place-items-center rounded-md text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
+          >
+            <X className="h-3.5 w-3.5" />
+          </button>
+        )}
+      </div>
+    </div>
+  );
 
   // CT-es já vinculados a MDF-e ativo (autorizado/encerrado): extrai chCTe
   // dos XMLs dos manifestos para as sub-abas Sem/Com MDF-e.
@@ -844,13 +929,13 @@ function CtePage() {
   }, [mdfVinculos]);
   const autSemMdf = useMemo(
     () =>
-      docsByStatus.autorizados.filter((d) => !d.chave_acesso || !mdfChaves?.has(d.chave_acesso)),
-    [docsByStatus, mdfChaves],
+      docsFiltrados.autorizados.filter((d) => !d.chave_acesso || !mdfChaves?.has(d.chave_acesso)),
+    [docsFiltrados, mdfChaves],
   );
   const autComMdf = useMemo(
     () =>
-      docsByStatus.autorizados.filter((d) => !!d.chave_acesso && !!mdfChaves?.has(d.chave_acesso)),
-    [docsByStatus, mdfChaves],
+      docsFiltrados.autorizados.filter((d) => !!d.chave_acesso && !!mdfChaves?.has(d.chave_acesso)),
+    [docsFiltrados, mdfChaves],
   );
 
   // Chaves reservadas em rascunhos (inclui rascunhos antigos, cujas NF-es foram deletadas do banco)
@@ -5695,7 +5780,7 @@ function CtePage() {
     }));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open, mercadorias, selecionadas, percursos, contatoByDoc]);
-  const autorizadosSelecionados = docsByStatus.autorizados.filter(
+  const autorizadosSelecionados = docsFiltrados.autorizados.filter(
     (d) => d.chave_acesso && mdfSel.has(d.chave_acesso) && !mdfChaves?.has(d.chave_acesso),
   );
   // Ordem exibida na tabela de documentos (respeita o clique no cabeçalho);
@@ -6284,25 +6369,25 @@ function CtePage() {
                   value="rascunhos"
                   className="flex-1 text-xs px-3 py-1.5 font-medium text-white/80 hover:text-white hover:bg-white/10 data-[state=active]:bg-white data-[state=active]:text-green-900 data-[state=active]:font-bold data-[state=active]:shadow"
                 >
-                  Aguardando envio ({docsByStatus.rascunhos.length})
+                  Aguardando envio ({docsFiltrados.rascunhos.length})
                 </TabsTrigger>
                 <TabsTrigger
                   value="rejeitados"
                   className="flex-1 text-xs px-3 py-1.5 font-medium text-white/80 hover:text-white hover:bg-white/10 data-[state=active]:bg-white data-[state=active]:text-green-900 data-[state=active]:font-bold data-[state=active]:shadow"
                 >
-                  Rejeitados ({docsByStatus.rejeitados.length})
+                  Rejeitados ({docsFiltrados.rejeitados.length})
                 </TabsTrigger>
                 <TabsTrigger
                   value="cancelados"
                   className="flex-1 text-xs px-3 py-1.5 font-medium text-white/80 hover:text-white hover:bg-white/10 data-[state=active]:bg-white data-[state=active]:text-green-900 data-[state=active]:font-bold data-[state=active]:shadow"
                 >
-                  Cancelados ({docsByStatus.cancelados.length})
+                  Cancelados ({docsFiltrados.cancelados.length})
                 </TabsTrigger>
                 <TabsTrigger
                   value="autorizados"
                   className="flex-1 text-xs px-3 py-1.5 font-medium text-white/80 hover:text-white hover:bg-white/10 data-[state=active]:bg-white data-[state=active]:text-green-900 data-[state=active]:font-bold data-[state=active]:shadow"
                 >
-                  Autorizados ({docsByStatus.autorizados.length})
+                  Autorizados ({docsFiltrados.autorizados.length})
                 </TabsTrigger>
                 <TabsTrigger
                   value="ciot"
@@ -6395,11 +6480,30 @@ function CtePage() {
 
                 {/* Listagem das Notas Fiscais */}
                 <div className="border rounded overflow-hidden bg-background flex-1 min-h-0 flex flex-col">
-                  <div className="bg-primary/8 text-primary/80 border-b border-primary/20 px-2 py-1 flex items-center justify-between">
-                    <span className="text-[10px] font-semibold uppercase tracking-wide">
+                  <div className="bg-primary/8 text-primary/80 border-b border-primary/20 px-2 py-1 flex items-center justify-between gap-2">
+                    <span className="text-[10px] font-semibold uppercase tracking-wide shrink-0">
                       Listagem das Notas Fiscais
                     </span>
-                    <span className="text-xs">
+                    <div className="relative w-52 shrink-0">
+                      <Search className="pointer-events-none absolute left-2 top-1/2 h-3 w-3 -translate-y-1/2 text-muted-foreground" />
+                      <Input
+                        value={buscaEmb}
+                        onChange={(e) => setBuscaEmb(e.target.value)}
+                        placeholder="Buscar nº, chave, emitente…"
+                        className="h-6 rounded-md pl-7 pr-7 text-[11px]"
+                      />
+                      {buscaEmb && (
+                        <button
+                          type="button"
+                          onClick={() => setBuscaEmb("")}
+                          aria-label="Limpar busca"
+                          className="absolute right-1 top-1/2 grid h-4 w-4 -translate-y-1/2 place-items-center rounded text-muted-foreground hover:bg-accent hover:text-foreground"
+                        >
+                          <X className="h-3 w-3" />
+                        </button>
+                      )}
+                    </div>
+                    <span className="text-xs shrink-0">
                       Qtde NF-e: {mercadoriasSorted.length}/{mercadorias.length}
                     </span>
                   </div>
@@ -6981,7 +7085,8 @@ function CtePage() {
             </DialogContent>
           </Dialog>
           <TabsContent value="rascunhos" className="mt-0">
-            {docsByStatus.rascunhos.length > 0 && (
+            {barraFiltroDocs()}
+            {docsFiltrados.rascunhos.length > 0 && (
               <div className="mb-2 flex items-center justify-end gap-2">
                 {envSel.size > 0 && (
                 <span className="text-xs text-muted-foreground">
@@ -7008,10 +7113,11 @@ function CtePage() {
                 </Button>
               </div>
             )}
-            {renderTabelaDocs(docsByStatus.rascunhos, "aguardando envio")}
+            {renderTabelaDocs(docsFiltrados.rascunhos, "aguardando envio")}
           </TabsContent>
           <TabsContent value="autorizados" className="mt-0">
-            {docsByStatus.autorizados.length > 0 && (
+            {barraFiltroDocs()}
+            {docsFiltrados.autorizados.length > 0 && (
               <div className="mb-1 flex items-center justify-between gap-2">
                 <Tabs value={mdfVincTab} onValueChange={(v) => { setMdfVincTab(v); setImpSel(new Set()); }}>
                   <TabsList className="mb-0">
@@ -7076,11 +7182,12 @@ function CtePage() {
             )}
           </TabsContent>
           <TabsContent value="ciot" className="mt-0 space-y-3">
+            {barraFiltroDocs()}
             <Card className="overflow-hidden rounded-2xl shadow-panel">
               <div className="bg-primary/8 border-b border-primary/20 px-3 py-1.5 text-[10px] font-semibold uppercase tracking-wide text-primary/80">
                 CT-es autorizados — selecione para uma operação CIOT
               </div>
-              {docsByStatus.autorizados.length === 0 ? (
+              {docsFiltrados.autorizados.length === 0 ? (
                 <div className="p-4">
                   <EmptyState icon={Truck} title="Nenhum CT-e autorizado" description="Autorize CT-es para emitir o CIOT cobrindo um ou vários." />
                 </div>
@@ -7092,12 +7199,12 @@ function CtePage() {
                         <input
                           type="checkbox"
                           checked={
-                            docsByStatus.autorizados.length > 0 &&
-                            docsByStatus.autorizados.every((d) => ciotSel.has(d.id))
+                            docsFiltrados.autorizados.length > 0 &&
+                            docsFiltrados.autorizados.every((d) => ciotSel.has(d.id))
                           }
                           onChange={() => {
                             setCiotSel((prev) => {
-                              const todos = docsByStatus.autorizados.map((d) => d.id);
+                              const todos = docsFiltrados.autorizados.map((d) => d.id);
                               return todos.every((k) => prev.has(k))
                                 ? new Set()
                                 : new Set(todos);
@@ -7116,7 +7223,7 @@ function CtePage() {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {docsByStatus.autorizados.map((d) => {
+                    {docsFiltrados.autorizados.map((d) => {
                       const f = formDeDocCiot(d);
                       const info = infoCteLinha(d.xml_assinado);
                       const ori = [String(f.xMunIni || ""), String(f.ufIni || "")].filter(Boolean).join("/");
@@ -7326,7 +7433,8 @@ function CtePage() {
             </Card>
           </TabsContent>
           <TabsContent value="rejeitados" className="mt-0">
-            {docsByStatus.rejeitados.length > 0 && (
+            {barraFiltroDocs()}
+            {docsFiltrados.rejeitados.length > 0 && (
               <div className="mb-2 flex justify-end">
                 <Button
                   variant="outline"
@@ -7346,10 +7454,11 @@ function CtePage() {
                 </Button>
               </div>
             )}
-            {renderTabelaDocs(docsByStatus.rejeitados, "rejeitados")}
+            {renderTabelaDocs(docsFiltrados.rejeitados, "rejeitados")}
           </TabsContent>
           <TabsContent value="cancelados" className="mt-0">
-            {renderTabelaDocs(docsByStatus.cancelados, "cancelados")}
+            {barraFiltroDocs()}
+            {renderTabelaDocs(docsFiltrados.cancelados, "cancelados")}
           </TabsContent>
           </CardContent>
           </Card>
