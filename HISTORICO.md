@@ -5414,3 +5414,7 @@ pm run build OK.
   tela cheia padrao do app com todos os campos (CNPJ busca na Receita,
   IE, tipo, email, telefone, endereco, observacoes).
 - Validado com `npm run build` OK.
+- Credor unico no Novo contrato (07/10): Fornecedor + Credor viraram um
+  só campo (seletor do cadastro, com Novo fornecedor); o nome gravado
+  segue alimentando o Fornecedor do Pagar.
+- Validado com `npm run build` OK.
