@@ -40,18 +40,29 @@ function RelatoriosPage() {
     enabled: !!empresa,
     queryKey: ["relatorios-fin", empresa?.id],
     queryFn: async () => {
-      const [{ data: lancs, error }, { data: contatos }, { data: cats }] = await Promise.all([
-        supabase.from("lancamentos_financeiros")
+      // Busca em páginas de 1000 para nunca cortar o relatório (sem limite silencioso)
+      const lancs: unknown[] = [];
+      for (let ini = 0; ; ini += 1000) {
+        const { data, error } = await supabase.from("lancamentos_financeiros")
           .select("id,valor,valor_pago,tipo,status,data_vencimento,contato_id,categoria_id")
-          .eq("empresa_id", empresa!.id).neq("status", "cancelado").is("transferencia_id", null).limit(20000),
-        supabase.from("contatos").select("id,nome").eq("empresa_id", empresa!.id).limit(5000),
-        supabase.from("categorias_financeiras").select("id,nome").eq("empresa_id", empresa!.id),
-      ]);
-      if (error) throw error;
+          .eq("empresa_id", empresa!.id).neq("status", "cancelado").is("transferencia_id", null)
+          .range(ini, ini + 999);
+        if (error) throw error;
+        lancs.push(...(data ?? []));
+        if (!data || data.length < 1000) break;
+      }
+      const contatos: { id: string; nome: string }[] = [];
+      for (let ini = 0; ; ini += 1000) {
+        const { data } = await supabase.from("contatos").select("id,nome")
+          .eq("empresa_id", empresa!.id).range(ini, ini + 999);
+        contatos.push(...((data ?? []) as { id: string; nome: string }[]));
+        if (!data || data.length < 1000) break;
+      }
+      const { data: cats } = await supabase.from("categorias_financeiras").select("id,nome").eq("empresa_id", empresa!.id);
       return {
-        lancs: (lancs ?? []) as Lanc[],
-        contatos: new Map((contatos ?? []).map((c) => [c.id, c.nome as string])),
-        cats: new Map((cats ?? []).map((c) => [c.id, c.nome as string])),
+        lancs: lancs as Lanc[],
+        contatos: new Map(contatos.map((c) => [c.id, c.nome as string])),
+        cats: new Map(((cats ?? []) as { id: string; nome: string }[]).map((c) => [c.id, c.nome as string])),
       };
     },
   });
