@@ -155,12 +155,12 @@ function TransferenciasPage() {
       <div className="mb-4 flex flex-col gap-3 sm:mb-6 sm:flex-row sm:items-center">
         <div className="relative flex-1">
           <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-          <Input className="h-10 rounded-xl pl-10 shadow-sm" placeholder="Buscar por descrição, conta de origem ou destino..." value={busca} onChange={(e) => setBusca(e.target.value)} />
+          <Input className="h-9 rounded-xl pl-10 shadow-sm" placeholder="Buscar por descrição, conta de origem ou destino..." value={busca} onChange={(e) => setBusca(e.target.value)} />
         </div>
         <div className="flex items-center gap-2">
           <Dialog open={open} onOpenChange={(o) => { setOpen(o); if (!o) reset(); }}>
             <DialogTrigger asChild>
-              <Button className="h-10 rounded-xl px-5 shadow-md transition-all hover:-translate-y-px hover:shadow-lg"><Plus className="mr-1.5 h-4 w-4" /> Nova transferência</Button>
+              <Button size="sm" className="h-9 rounded-xl px-4 text-sm shadow-sm transition-all hover:shadow-md active:scale-95"><Plus className="mr-1 h-3.5 w-3.5" /> Nova transferência</Button>
             </DialogTrigger>
             <DialogContent className="max-h-[90vh] overflow-y-auto rounded-2xl sm:max-w-lg sm:inset-auto sm:left-1/2 sm:top-1/2 sm:-translate-x-1/2 sm:-translate-y-1/2 sm:h-auto sm:w-full">
               <DialogHeader className="gap-1.5 pb-1"><DialogTitle className="tracking-tight">Nova transferência</DialogTitle></DialogHeader>
@@ -214,7 +214,7 @@ function TransferenciasPage() {
         />
       ) : (
         <Card className="overflow-hidden rounded-2xl shadow-panel">
-          <Table>
+          <Table className="[&_td]:px-3 [&_td]:py-2 [&_th]:px-3 [&_th]:py-2">
             <TableHeader>
               <TableRow>
                 <TableHead>Data</TableHead>

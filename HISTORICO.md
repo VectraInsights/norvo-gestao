@@ -5207,3 +5207,11 @@ Espelhado na Vercel.
   (`30/09/2026 — 07/10/2026`) aparece por inteiro, sem `...`; `title` com o texto
   completo no hover. Largura segue fixa, setas nao saem do lugar.
 - `npm run build` OK.
+
+## Transferencias compactadas (07/10)
+
+- Barra: busca `h-10` para `h-9`; `Nova transferência` de `h-10 px-5`
+  para `size=sm h-9 px-4 text-sm`.
+- Tabela com padding reduzido (`[&_td]:px-3 [&_td]:py-2`).
+- Dialog interno intacto; `npm run build` OK.
+- Arquivo: `src/routes/_authenticated/financeiro.transferencias.tsx`.
