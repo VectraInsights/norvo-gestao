@@ -1,7 +1,8 @@
-import { useRef, useState } from "react";
+import { useRef, useState, type ReactNode } from "react";
 import * as XLSX from "xlsx-js-style";
 import { Button } from "@/components/ui/button";
-import { Download, Printer, Upload, FileSpreadsheet } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { Download, Printer, Upload, FileSpreadsheet, Search, X } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { format, parse, isValid } from "date-fns";
@@ -63,6 +64,7 @@ export function LancamentosToolbar({
   categorias,
   contas,
   onImported,
+  busca,
 }: {
   tipo: "receber" | "pagar";
   empresaId: string | undefined;
@@ -71,6 +73,7 @@ export function LancamentosToolbar({
   categorias: Opt[] | undefined;
   contas: Opt[] | undefined;
   onImported: () => void;
+  busca?: ReactNode;
 }) {
   const fileRef = useRef<HTMLInputElement>(null);
   const [pending, setPending] = useState<{ inserts: Insert[]; criados: { categorias: number; contatos: number } } | null>(null);
@@ -360,6 +363,7 @@ export function LancamentosToolbar({
 
   return (
     <div className="mb-6 flex flex-wrap items-center gap-2.5 rounded-2xl border bg-card px-4 py-3 shadow-panel">
+      {busca && <div className="min-w-[200px] flex-1">{busca}</div>}
       <Button size="sm" variant="outline" className="h-9 rounded-xl px-3.5 shadow-sm transition-all hover:-translate-y-px hover:shadow-md" onClick={baixarModelo}>
         <FileSpreadsheet className="mr-1.5 h-4 w-4" />Modelo de planilha
       </Button>

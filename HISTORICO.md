@@ -5134,6 +5134,14 @@ Espelhado na Vercel.
 - `npm run build` OK.
 - Arquivos: `financeiro.receber.tsx`, `components/erp/periodo-filter.tsx`.
 
+## Busca na barra de baixo (07/10)
+
+- Pesquisa sai da linha 1 e vai para dentro da barra de planilha
+  (`LancamentosToolbar` ganha prop `busca`), a esquerda de Modelo de planilha,
+  com `h-9` igual aos botoes; linha 1 fica so com abas + periodo + Auditoria + Novo.
+- Corrigido contador duplicado no bulk-bar (`selecionado(s)` aparecia 2x).
+- `npm run build` OK.
+
 ## Periodo com largura total (07/10)
 
 - Botao do periodo de `w-[210px]` para `w-[300px]`: intervalo personalizado

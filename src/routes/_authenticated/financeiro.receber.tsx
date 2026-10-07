@@ -634,29 +634,6 @@ export function LancamentosPage({ tipo }: { tipo: "receber" | "pagar" }) {
             }}
           />
         </div>
-        <div className="relative min-w-[160px] flex-1 lg:max-w-xs">
-          <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-          <Input
-            value={busca}
-            onChange={(e) => {
-              setBusca(e.target.value);
-              setPagina(1);
-              clearSel();
-            }}
-            placeholder="Pesquisar por descrição ou contato…"
-            className="h-10 rounded-xl pl-10 pr-10 shadow-sm"
-          />
-          {busca && (
-            <button
-              type="button"
-              onClick={() => setBusca("")}
-              className="absolute right-2.5 top-1/2 grid h-6 w-6 -translate-y-1/2 place-items-center rounded-lg text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
-              aria-label="Limpar busca"
-            >
-              <X className="h-4 w-4" />
-            </button>
-          )}
-        </div>
         <div className="flex shrink-0 items-center gap-2 lg:ml-auto">
           <Button variant="ghost" size="sm" onClick={() => setTrilhaOpen(true)} className="h-9 rounded-xl px-4 active:scale-95">
             Auditoria
@@ -823,6 +800,31 @@ export function LancamentosPage({ tipo }: { tipo: "receber" | "pagar" }) {
         categorias={categoriasOpt?.map((c) => ({ id: c.id, nome: c.nome ?? "" }))}
         contas={contasOpt?.map((c) => ({ id: c.id, nome: c.nome ?? "" }))}
         onImported={invalidate}
+        busca={
+          <div className="relative w-full">
+            <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+            <Input
+              value={busca}
+              onChange={(e) => {
+                setBusca(e.target.value);
+                setPagina(1);
+                clearSel();
+              }}
+              placeholder="Pesquisar por descrição ou contato…"
+              className="h-9 rounded-xl pl-10 pr-10 shadow-sm"
+            />
+            {busca && (
+              <button
+                type="button"
+                onClick={() => setBusca("")}
+                className="absolute right-2.5 top-1/2 grid h-6 w-6 -translate-y-1/2 place-items-center rounded-lg text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
+                aria-label="Limpar busca"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            )}
+          </div>
+        }
       />
 
       {isLoading ? (
@@ -841,7 +843,6 @@ export function LancamentosPage({ tipo }: { tipo: "receber" | "pagar" }) {
         <Card className="overflow-hidden rounded-2xl shadow-panel">
           {selected.size > 0 && (
             <div className="sticky top-16 z-10 flex flex-wrap items-center gap-2 border-b border-border/60 bg-background/95 px-4 py-2.5 text-sm shadow-sm backdrop-blur">
-              <span className="font-medium">{selected.size} selecionado(s)</span>
               <span className="font-medium">{selected.size} selecionado(s)</span>
               <div className="ml-auto flex flex-wrap gap-2">
                 <Select
