@@ -604,12 +604,12 @@ export function LancamentosPage({ tipo }: { tipo: "receber" | "pagar" }) {
         <div className="inline-flex max-w-full shrink overflow-x-auto whitespace-nowrap rounded-xl border bg-muted/30 p-1.5 text-sm shadow-sm">
           {(
             [
-              { k: "todos", label: `Todos (${cont.todos})` },
-              { k: "vencidos", label: `Vencidos (${cont.vencidos})` },
-              { k: "avencer", label: `A vencer (${cont.avencer})` },
-              { k: "quitados", label: `${abaLabelQuitado} (${cont.quitados})` },
-              { k: "cancelados", label: `Cancelados (${cont.cancelados})` },
-            ] as { k: Aba; label: string }[]
+              { k: "todos", nome: "Todos", n: cont.todos },
+              { k: "vencidos", nome: "Vencidos", n: cont.vencidos },
+              { k: "avencer", nome: "A vencer", n: cont.avencer },
+              { k: "quitados", nome: abaLabelQuitado, n: cont.quitados },
+              { k: "cancelados", nome: "Cancelados", n: cont.cancelados },
+            ] as { k: Aba; nome: string; n: number }[]
           ).map((t) => (
             <button
               key={t.k}
@@ -621,7 +621,7 @@ export function LancamentosPage({ tipo }: { tipo: "receber" | "pagar" }) {
               }}
               className={`whitespace-nowrap rounded-lg px-3 py-2 transition-all ${aba === t.k ? "bg-background shadow-md font-medium" : "text-muted-foreground hover:text-foreground"}`}
             >
-              {t.label}
+              {t.nome} <span className="inline-block w-[54px] text-left tabular-nums">({t.n})</span>
             </button>
           ))}
         </div>

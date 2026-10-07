@@ -116,16 +116,18 @@ export function PeriodoFilter({ value, onChange }: { value: Periodo; onChange: (
 
   return (
     <div className="inline-flex items-center gap-1.5">
-      {podeNavegar && (
-        <Button size="sm" variant="outline" className="h-9 w-9 rounded-xl px-0 shadow-sm transition-all hover:-translate-y-px hover:shadow-md" aria-label="Período anterior" onClick={() => navegar(-1)}>
+      {podeNavegar ? (
+        <Button size="sm" variant="outline" className="h-9 w-9 shrink-0 rounded-xl px-0 shadow-sm transition-all hover:-translate-y-px hover:shadow-md" aria-label="Período anterior" onClick={() => navegar(-1)}>
           <ChevronLeft className="h-4 w-4" />
         </Button>
+      ) : (
+        <span aria-hidden="true" className="h-9 w-9 shrink-0" />
       )}
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>
-        <Button size="sm" variant="outline" className="h-9 rounded-xl px-3 shadow-sm transition-all hover:-translate-y-px hover:shadow-md">
-          <CalendarIcon className="mr-1.5 h-4 w-4" />
-          Período: {value.label}
+        <Button size="sm" variant="outline" className="h-9 w-[210px] justify-start rounded-xl px-3 shadow-sm transition-all hover:-translate-y-px hover:shadow-md">
+          <CalendarIcon className="mr-1.5 h-4 w-4 shrink-0" />
+          <span className="truncate tabular-nums">Período: {value.label}</span>
         </Button>
       </PopoverTrigger>
       <PopoverContent align="start" className="w-auto overflow-hidden rounded-2xl p-0 shadow-xl">
@@ -191,10 +193,12 @@ export function PeriodoFilter({ value, onChange }: { value: Periodo; onChange: (
         </div>
       </PopoverContent>
     </Popover>
-      {podeNavegar && (
-        <Button size="sm" variant="outline" className="h-9 w-9 rounded-xl px-0 shadow-sm transition-all hover:-translate-y-px hover:shadow-md" aria-label="Próximo período" onClick={() => navegar(1)}>
+      {podeNavegar ? (
+        <Button size="sm" variant="outline" className="h-9 w-9 shrink-0 rounded-xl px-0 shadow-sm transition-all hover:-translate-y-px hover:shadow-md" aria-label="Próximo período" onClick={() => navegar(1)}>
           <ChevronRight className="h-4 w-4" />
         </Button>
+      ) : (
+        <span aria-hidden="true" className="h-9 w-9 shrink-0" />
       )}
     </div>
   );

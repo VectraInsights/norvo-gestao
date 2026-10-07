@@ -5124,3 +5124,12 @@ Espelhado na Vercel.
 - Largura das abas (ex. `Todos (1142)`) nao empurra mais os botoes para baixo.
 - `npm run build` OK.
 - Arquivo: `src/routes/_authenticated/financeiro.receber.tsx`.
+
+## Abas e periodo com largura fixa (07/10)
+
+- Contador das abas com largura fixa (`w-[54px] tabular-nums`): `Todos (3)`
+  ocupa o mesmo espaco que `Todos (1142)`; setas do periodo nao saem do lugar.
+- Botao do periodo com `w-[210px]` + label truncado; setas anterior/proximo
+  reservam espaco (`span h-9 w-9`) mesmo quando inativas.
+- `npm run build` OK.
+- Arquivos: `financeiro.receber.tsx`, `components/erp/periodo-filter.tsx`.
