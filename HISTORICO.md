@@ -5362,3 +5362,8 @@ pm run build OK.
 - Nomes inteiros: remetente/destinatario/tomador e chave por extenso com
   rolagem horizontal (`min-w-max`); placeholders das buscas removidos.
 - Validado com `npm run build` OK.
+- Embarque com altura fixa (`max-h-60vh`): barras vertical/horizontal
+  presas no container, cabecalho sempre visivel.
+- Novo contrato lê o PDF antes: preenche valor/taxa/datas e cadastra
+  direto com o cronograma do banco (sem Price).
+- Validado com `npm run build` OK.
