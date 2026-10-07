@@ -5095,3 +5095,14 @@ Espelhado na Vercel.
   bulk `sticky`, Novo `h-9` e trilha funcional.
 - `npm run build` OK.
 - Arquivo: `src/routes/_authenticated/financeiro.receber.tsx`.
+
+## Trilha centralizada + aba Cancelados (07/10)
+
+- Trilha de auditoria em Receber/Pagar vira modal pequeno centralizado
+  (`sm:inset-auto sm:left-1/2 sm:top-1/2 sm:-translate-x-1/2 sm:-translate-y-1/2
+  sm:max-w-lg`), igual ao Novo lancamento — antes abria em tela cheia/lateral.
+- Nova aba `Cancelados (n)`: `Todos` passa a excluir cancelados;
+  cancelado some das abas operacionais mas reaparece em Cancelados,
+  onde o Reabrir (volta para `aberto`) fica disponivel na linha.
+- `npm run build` OK.
+- Arquivo: `src/routes/_authenticated/financeiro.receber.tsx`.

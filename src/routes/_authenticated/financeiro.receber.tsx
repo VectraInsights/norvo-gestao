@@ -536,14 +536,15 @@ export function LancamentosPage({ tipo }: { tipo: "receber" | "pagar" }) {
   const noPeriodo = sorted.filter((l) => dentroPeriodo(l.data_vencimento));
 
   // Aba: Vencidos (aberto/parcial e vencimento < hoje) | A vencer (aberto/parcial e vencimento >= hoje) | Quitados (pago, vencimento < hoje)
-  type Aba = "todos" | "vencidos" | "avencer" | "quitados";
+  type Aba = "todos" | "vencidos" | "avencer" | "quitados" | "cancelados";
   const [aba, setAba] = useState<Aba>("avencer");
   const hojeStr = format(new Date(), "yyyy-MM-dd");
   const emAberto = (s: string) => s === "aberto" || s === "parcial" || s === "vencido";
   const filtroAba = (l: Lancamento) => {
-    if (aba === "todos") return true;
+    if (aba === "todos") return l.status !== "cancelado";
     if (aba === "vencidos") return emAberto(l.status) && l.data_vencimento < hojeStr;
     if (aba === "avencer") return emAberto(l.status) && l.data_vencimento >= hojeStr;
+    if (aba === "cancelados") return l.status === "cancelado";
     return l.status === "pago";
   };
   const [busca, setBusca] = useState("");
@@ -559,7 +560,7 @@ export function LancamentosPage({ tipo }: { tipo: "receber" | "pagar" }) {
   const paginaAtual = Math.min(pagina, totalPaginas);
   const lancamentosVisiveis = filtrados.slice((paginaAtual - 1) * pageSize, paginaAtual * pageSize);
   const cont = {
-    todos: noPeriodo.filter(aplicaBusca).length,
+    todos: noPeriodo.filter((l) => l.status !== "cancelado").filter(aplicaBusca).length,
     vencidos: noPeriodo
       .filter((l) => emAberto(l.status) && l.data_vencimento < hojeStr)
       .filter(aplicaBusca).length,
@@ -567,6 +568,7 @@ export function LancamentosPage({ tipo }: { tipo: "receber" | "pagar" }) {
       .filter((l) => emAberto(l.status) && l.data_vencimento >= hojeStr)
       .filter(aplicaBusca).length,
     quitados: noPeriodo.filter((l) => l.status === "pago").filter(aplicaBusca).length,
+    cancelados: noPeriodo.filter((l) => l.status === "cancelado").filter(aplicaBusca).length,
   };
   const abaLabelQuitado = tipo === "receber" ? "Recebidos" : "Pagos";
 
@@ -606,6 +608,7 @@ export function LancamentosPage({ tipo }: { tipo: "receber" | "pagar" }) {
               { k: "vencidos", label: `Vencidos (${cont.vencidos})` },
               { k: "avencer", label: `A vencer (${cont.avencer})` },
               { k: "quitados", label: `${abaLabelQuitado} (${cont.quitados})` },
+              { k: "cancelados", label: `Cancelados (${cont.cancelados})` },
             ] as { k: Aba; label: string }[]
           ).map((t) => (
             <button
@@ -1327,7 +1330,7 @@ export function LancamentosPage({ tipo }: { tipo: "receber" | "pagar" }) {
       </AlertDialog>
 
       <Dialog open={trilhaOpen} onOpenChange={setTrilhaOpen}>
-        <DialogContent className="max-h-[85vh] overflow-y-auto rounded-2xl sm:max-w-lg">
+        <DialogContent className="max-h-[85vh] overflow-y-auto rounded-2xl sm:inset-auto sm:left-1/2 sm:top-1/2 sm:h-auto sm:max-h-[85vh] sm:w-full sm:max-w-lg sm:-translate-x-1/2 sm:-translate-y-1/2">
           <DialogHeader className="gap-1.5 pb-1">
             <DialogTitle className="tracking-tight">Trilha de auditoria — {titulo}</DialogTitle>
           </DialogHeader>
