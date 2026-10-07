@@ -556,25 +556,66 @@ export function LancamentosPage({ tipo }: { tipo: "receber" | "pagar" }) {
   const [busca, setBusca] = useState("");
   const [pagina, setPagina] = useState(1);
   const buscaNorm = busca.trim().toLowerCase();
-  const aplicaBusca = (l: Lancamento) =>
-    !buscaNorm ||
-    l.descricao.toLowerCase().includes(buscaNorm) ||
-    (l.contato?.nome ?? "").toLowerCase().includes(buscaNorm);
-  const filtrados = noPeriodo.filter(filtroAba).filter(aplicaBusca);
+  const buscaDig = buscaNorm.replace(/\D/g, "");
+  const aplicaBusca = (l: Lancamento) => {
+    if (!buscaNorm) return true;
+    if (l.descricao.toLowerCase().includes(buscaNorm)) return true;
+    if ((l.contato?.nome ?? "").toLowerCase().includes(buscaNorm)) return true;
+    // Pesquisa por valor: "25,00" acha 25.00 (só a partir de 2 dígitos p/ "0" não casar tudo)
+    if (buscaDig.length >= 2) {
+      const valorDig = Number(l.valor || 0)
+        .toFixed(2)
+        .replace(/\D/g, "");
+      if (valorDig.includes(buscaDig)) return true;
+    }
+    return false;
+  };
+  // Pernas de transferência aparecem SOMENTE na busca (lista continua limpa)
+  const { data: pernasBusca } = useQuery({
+    enabled: !!empresa && buscaNorm.length > 0,
+    queryKey: ["lancamentos-pernas", empresa?.id, tipo] as const,
+    staleTime: 30_000,
+    gcTime: 10 * 60_000,
+    queryFn: async ({ signal }): Promise<Lancamento[]> => {
+      const todas: unknown[] = [];
+      for (let ini = 0; ; ini += 1000) {
+        const { data, error } = await supabase
+          .from("lancamentos_financeiros")
+          .select(
+            "id,descricao,valor,status,data_vencimento,created_at,created_by,contato:contatos(nome),categoria_id",
+          )
+          .eq("empresa_id", empresa!.id)
+          .eq("tipo", tipo)
+          .not("transferencia_id", "is", null)
+          .order("data_vencimento", { ascending: true })
+          .range(ini, ini + 999)
+          .abortSignal(signal);
+        if (error) throw error;
+        todas.push(...(data ?? []));
+        if (!data || data.length < 1000) break;
+      }
+      return todas as unknown as Lancamento[];
+    },
+  });
+  const pernasNoPeriodo = buscaNorm
+    ? (pernasBusca ?? []).filter((l) => dentroPeriodo(l.data_vencimento))
+    : [];
+  const base = [...noPeriodo, ...pernasNoPeriodo];
+  const filtrados = base.filter(filtroAba).filter(aplicaBusca);
   const [pageSize, setPageSize] = useState(10);
   const totalPaginas = Math.max(1, Math.ceil(filtrados.length / pageSize));
   const paginaAtual = Math.min(pagina, totalPaginas);
   const lancamentosVisiveis = filtrados.slice((paginaAtual - 1) * pageSize, paginaAtual * pageSize);
   const cont = {
-    todos: noPeriodo.filter((l) => l.status !== "cancelado").filter(aplicaBusca).length,
-    vencidos: noPeriodo
+    todos: base.filter((l) => l.status !== "cancelado").filter(aplicaBusca).length,
+    vencidos: base
       .filter((l) => emAberto(l.status) && l.data_vencimento < hojeStr)
       .filter(aplicaBusca).length,
-    avencer: noPeriodo
+    avencer: base
       .filter((l) => emAberto(l.status) && l.data_vencimento >= hojeStr)
       .filter(aplicaBusca).length,
-    quitados: noPeriodo.filter((l) => l.status === "pago").filter(aplicaBusca).length,
-    cancelados: noPeriodo.filter((l) => l.status === "cancelado").filter(aplicaBusca).length,
+    quitados: base.filter((l) => l.status === "pago").filter(aplicaBusca).length,
+    cancelados: base.filter((l) => l.status === "cancelado").filter(aplicaBusca).length,
   };
   const abaLabelQuitado = tipo === "receber" ? "Recebidos" : "Pagos";
 
@@ -607,7 +648,7 @@ export function LancamentosPage({ tipo }: { tipo: "receber" | "pagar" }) {
       />
 
       <div className="mb-4 flex flex-wrap items-center gap-2.5 sm:mb-6 lg:flex-nowrap">
-        <div className="inline-flex max-w-full min-w-0 shrink overflow-x-auto whitespace-nowrap rounded-xl border bg-muted/30 p-1.5 text-sm shadow-sm">
+        <div className="inline-flex max-w-full min-w-0 flex-wrap items-center gap-0.5 whitespace-nowrap rounded-xl border bg-muted/30 p-1.5 text-[13px] shadow-sm">
           {(
             [
               { k: "todos", nome: "Todos", n: cont.todos },
@@ -625,9 +666,9 @@ export function LancamentosPage({ tipo }: { tipo: "receber" | "pagar" }) {
                 setPagina(1);
                 clearSel();
               }}
-              className={`whitespace-nowrap rounded-lg px-3 py-2 transition-all ${aba === t.k ? "bg-background shadow-md font-medium" : "text-muted-foreground hover:text-foreground"}`}
+              className={`whitespace-nowrap rounded-lg px-2.5 py-1.5 transition-all ${aba === t.k ? "bg-background shadow-md font-medium" : "text-muted-foreground hover:text-foreground"}`}
             >
-              {t.nome} <span className="inline-block w-[54px] text-left tabular-nums">({t.n})</span>
+              {t.nome} <span className="inline-block w-[46px] text-left tabular-nums">({t.n})</span>
             </button>
           ))}
         </div>
