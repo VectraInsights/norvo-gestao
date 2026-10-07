@@ -9,6 +9,12 @@ import {
   startOfDay, endOfDay, startOfMonth, endOfMonth, startOfYear, endOfYear,
   addDays, subDays, addMonths, addYears, format, parse, isValid,
 } from "date-fns";
+import { ptBR } from "date-fns/locale";
+
+const nomeMesAno = (d: Date) => {
+  const s = format(d, "MMMM/yyyy", { locale: ptBR });
+  return s.charAt(0).toUpperCase() + s.slice(1);
+};
 
 export type Periodo = { from: Date | null; to: Date | null; label: string };
 
@@ -61,7 +67,7 @@ function shiftPeriodo(p: Periodo, preset: PresetKey, dir: 1 | -1): Periodo | nul
     }
     case "mesatual": {
       const f = startOfMonth(addMonths(p.from, dir));
-      return { from: f, to: endOfMonth(f), label: format(f, "MM/yyyy") };
+      return { from: f, to: endOfMonth(f), label: nomeMesAno(f) };
     }
     case "anoatual": {
       const f = startOfYear(addYears(p.from, dir));

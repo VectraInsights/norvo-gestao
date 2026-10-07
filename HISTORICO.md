@@ -5142,6 +5142,13 @@ Espelhado na Vercel.
 - Corrigido contador duplicado no bulk-bar (`selecionado(s)` aparecia 2x).
 - `npm run build` OK.
 
+## Periodo com nome do mes (07/10)
+
+- Navegacao mensal passa de `MM/yyyy` (`08/2027`) para nome do mes
+  (`Agosto/2027`, `ptBR` capitalizado) no `shiftPeriodo` (`mesatual`).
+- `npm run build` OK.
+- Arquivo: `src/components/erp/periodo-filter.tsx`.
+
 ## Periodo com largura total (07/10)
 
 - Botao do periodo de `w-[210px]` para `w-[300px]`: intervalo personalizado
