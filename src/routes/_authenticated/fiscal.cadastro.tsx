@@ -68,14 +68,20 @@ function Cadastro() {
     staleTime: 2 * 60_000,
     gcTime: 15 * 60_000,
     queryFn: async ({ signal }) => {
-      const { data, error } = await supabase.from("fiscal_cadastros")
-        .select("id,nome,documento,ie,email,telefone,cep,logradouro,numero,complemento,bairro,cidade,uf,observacoes")
-        .eq("empresa_id", empresa!.id)
-        .order("nome")
-        .limit(500)
-        .abortSignal(signal);
-      if (error) throw error;
-      return (data ?? []) as Contato[];
+      // Busca em páginas para nunca cortar a lista (sem limite silencioso)
+      const todos: unknown[] = [];
+      for (let ini = 0; ; ini += 500) {
+        const { data, error } = await supabase.from("fiscal_cadastros")
+          .select("id,nome,documento,ie,email,telefone,cep,logradouro,numero,complemento,bairro,cidade,uf,observacoes")
+          .eq("empresa_id", empresa!.id)
+          .order("nome")
+          .range(ini, ini + 499)
+          .abortSignal(signal);
+        if (error) throw error;
+        todos.push(...((data as unknown[]) ?? []));
+        if (!data || (data as unknown[]).length < 500) break;
+      }
+      return todos as unknown as Contato[];
     },
   });
 
