@@ -5288,3 +5288,11 @@ pm run build OK.
   `.limit(5000)` cortavam aging/ranking/curva sem aviso).
 - Abas e tabelas já sem rolagem indevida; sem busca (agregados, sem alvo textual).
 - Validado com `npm run build` OK.
+
+## Extrato sem limite + busca por valor (07/10)
+
+- Lancamentos em paginas de 1000 (antes `.limit(5000)` cortava o extrato sem aviso).
+- Busca casa tambem valor ("25,00" acha 25.00; a partir de 2 digitos).
+- Pernas de transferencia seguem no Extrato (decisao standing); tabela mantem
+  `overflow-x-auto` por ser larga (10 colunas) — rolagem só em tela estreita.
+- Validado com `npm run build` OK.
