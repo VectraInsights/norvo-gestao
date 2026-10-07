@@ -892,42 +892,6 @@ export function LancamentosPage({ tipo }: { tipo: "receber" | "pagar" }) {
         />
       ) : (
         <Card className="overflow-hidden rounded-2xl shadow-panel">
-          {selected.size > 0 && (
-            <div className="sticky top-16 z-10 flex flex-wrap items-center gap-2 border-b border-border/60 bg-background px-4 py-2.5 text-sm shadow-sm">
-              <span className="font-medium">{selected.size} selecionado(s)</span>
-              <div className="ml-auto flex flex-wrap gap-2">
-                <Select
-                  onValueChange={(v) =>
-                    alterarStatusLote.mutate({ ids: [...selected], status: v as "aberto" })
-                  }
-                >
-                  <SelectTrigger className="h-9 w-[190px] rounded-xl shadow-sm">
-                    <SelectValue placeholder="Alterar status" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="aberto">Aberto</SelectItem>
-                    <SelectItem value="pago">Pago</SelectItem>
-                    <SelectItem value="parcial">Parcial</SelectItem>
-                    <SelectItem value="vencido">Vencido</SelectItem>
-                    <SelectItem value="cancelado">Cancelado</SelectItem>
-                  </SelectContent>
-                </Select>
-                <Button
-                  size="sm"
-                  variant="destructive"
-                  disabled={excluirLote.isPending}
-                  onClick={() => setConfLote(true)}
-                  className="h-9 rounded-xl px-4"
-                >
-                  <Trash2 className="mr-1.5 h-4 w-4" />
-                  Excluir
-                </Button>
-                <Button size="sm" variant="ghost" onClick={clearSel} className="h-9 rounded-xl px-4">
-                  Limpar
-                </Button>
-              </div>
-            </div>
-          )}
           <Table className="[&_td]:px-3 [&_td]:py-2 [&_th]:px-3">
             {/* Cabeçalho estático e opaco: o sticky global translúcido deixava
                 as linhas passarem por baixo aparecendo através */}
@@ -947,7 +911,44 @@ export function LancamentosPage({ tipo }: { tipo: "receber" | "pagar" }) {
                   Valor
                 </SortHead>
                 <SortHead k="status">Status</SortHead>
-                <TableHead />
+                <TableHead className="text-right">
+                  {selected.size > 0 && (
+                    <div className="flex items-center justify-end gap-1.5 py-0.5">
+                      <span className="mr-1 whitespace-nowrap text-xs font-medium normal-case tracking-normal text-foreground">
+                        {selected.size} selecionado(s)
+                      </span>
+                      <Select
+                        onValueChange={(v) =>
+                          alterarStatusLote.mutate({ ids: [...selected], status: v as "aberto" })
+                        }
+                      >
+                        <SelectTrigger className="h-8 w-[170px] rounded-lg text-xs shadow-sm">
+                          <SelectValue placeholder="Alterar status" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="aberto">Aberto</SelectItem>
+                          <SelectItem value="pago">Pago</SelectItem>
+                          <SelectItem value="parcial">Parcial</SelectItem>
+                          <SelectItem value="vencido">Vencido</SelectItem>
+                          <SelectItem value="cancelado">Cancelado</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      <Button
+                        size="sm"
+                        variant="destructive"
+                        disabled={excluirLote.isPending}
+                        onClick={() => setConfLote(true)}
+                        className="h-8 rounded-lg px-3 text-xs"
+                      >
+                        <Trash2 className="mr-1 h-3.5 w-3.5" />
+                        Excluir
+                      </Button>
+                      <Button size="sm" variant="ghost" onClick={clearSel} className="h-8 rounded-lg px-3 text-xs">
+                        Limpar
+                      </Button>
+                    </div>
+                  )}
+                </TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
