@@ -5335,7 +5335,6 @@ pm run build OK.
 - Validado com `npm run build` OK.
 
 ## Emprestimos com parcelas ajustaveis (07/10)
-
 - Cada parcela (Aberta) tem lapis p/ ajustar valor e vencimento: cobre
   carencia, baloes e cronogramas irregulares do banco (ex.: 6x 142,18 +
   6x 263 mil + 48x 410 mil) que o Price sozinho nao representa.
@@ -5343,4 +5342,20 @@ pm run build OK.
   parcela ja Lancada nao pode ser alterada (preserva o Contas a pagar).
 - Cabecalho do contrato mostra a soma das parcelas (confere com o anexo
   do banco); aviso no Novo contrato orienta a ajustar apos cadastrar.
+- Validado com `npm run build` OK.
+
+## Emprestimos importa PDF do banco (07/10)
+
+- Botao "Importar PDF do banco" no contrato: le o PDF (pdfjs, padrao
+  frota/RH), extrai linhas "NNº DD/MM/AAAA R$ X" do anexo, mostra previa
+  (atual x novo, situacao por linha) e aplica valor+vencimento nas
+  parcelas em aberto; lancadas sao preservadas, regex validado no node.
+- Validado com `npm run build` OK.
+
+## Embarque sem rolagem lateral + chave (07/10)
+
+- Listagem de NF-es: sem `min-width` e sem rolagem horizontal (só vertical);
+  fonte 11px, celulas compactas, nomes truncados, cabecalho sticky com z-10.
+- Coluna "Chave de acesso" após Valor (ordenavel; 44 dig truncados com
+  tooltip completo); ordem das demais mantida.
 - Validado com `npm run build` OK.
