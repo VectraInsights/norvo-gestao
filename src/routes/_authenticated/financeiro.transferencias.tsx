@@ -110,8 +110,8 @@ function TransferenciasPage() {
       if (error) throw error;
 
       const base = {
-        empresa_id: empresa.id, data_emissao: data, data_vencimento: data, data_pagamento: data,
-        status: "pago", valor: v, valor_pago: v, transferencia_id: tr.id,
+        empresa_id: empresa.id, data_emissao: data, data_vencimento: data,
+        status: "aberto", valor: v, transferencia_id: tr.id,
       };
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const { error: e2 } = await (supabase.from("lancamentos_financeiros") as any).insert([
@@ -133,6 +133,15 @@ function TransferenciasPage() {
 
   const excluir = useMutation({
     mutationFn: async (id: string) => {
+      // Desvincula do extrato antes de excluir (perna conciliada volta a "em aberto")
+      const { data: pernas } = await supabase.from("lancamentos_financeiros")
+        .select("id").eq("transferencia_id", id);
+      const ids = (pernas ?? []).map((p: { id: string }) => p.id);
+      if (ids.length) {
+        const { error: eOfx } = await supabase.from("ofx_transacoes")
+          .update({ status: "aberto", lancamento_id: null }).in("lancamento_id", ids);
+        if (eOfx) throw eOfx;
+      }
       const { error } = await supabase.from("transferencias_contas" as never).delete().eq("id", id);
       if (error) throw error;
     },

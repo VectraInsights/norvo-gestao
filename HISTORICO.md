@@ -5225,3 +5225,16 @@ Espelhado na Vercel.
 - Mesma interface (props) — todos os usos seguem iguais; 
 pm run build OK.
 - Arquivo: src/components/erp/combobox.tsx.
+
+## Transferencia aparece na conciliacao (07/10)
+
+- Causa: pernas nasciam pago e a conciliacao so lista berto/vencido/parcial.
+- Novas transferencias nascem berto (sem alor_pago/data_pagamento);
+  conciliacao (manual + automatica por valor+data) quita ao conciliar.
+- Excluir transferencia desvincula o extrato antes (perna conciliada volta
+  a 'em aberto', igual ao excluir de receber/pagar).
+- Migration 20261007120000 reabre pernas pago nunca vinculadas ao extrato.
+  APLICAR via dashboard SQL Editor (padrao das ultimas).
+- 
+pm run build OK.
+- Arquivos: inanceiro.transferencias.tsx, supabase/migrations/20261007120000_transferencias_reabrir_pernas.sql.
