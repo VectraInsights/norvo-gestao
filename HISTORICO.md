@@ -5165,6 +5165,15 @@ Espelhado na Vercel.
 - Dialogs de conciliacao e detalhe intactos; `npm run build` OK.
 - Arquivo: `src/routes/_authenticated/financeiro.contas.tsx`.
 
+## Conciliacao: vinculado sobrepoe o formulario (07/10)
+
+- `ReconcileRow`: com lancamento vinculado, o card da direita vira resumo
+  (valor/data, descricao, contato, categoria + `Vinculado` + Editar/Desvincular)
+  no lugar do banner + formulario (padrao Conta Azul da imagem 2);
+  `Editar` troca o vinculo, `Desvincular` volta ao `Novo lançamento`.
+- Borda verde tambem no vinculado; `rotuloSel` morto removido.
+- `npm run build` OK.
+
 ## Fluxo com seletor de periodo (07/10)
 
 - `PeriodoFilter` (mesmo de Receber/Pagar) acima do grafico; padrao mantido

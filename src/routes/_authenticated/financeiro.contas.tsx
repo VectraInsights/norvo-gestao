@@ -2137,9 +2137,6 @@ const ReconcileRow = memo(function ReconcileRow({
   const nomeContato = r.contato_id ? (contatos.find((c) => c.id === r.contato_id)?.nome ?? "—") : "Informação não recebida";
   const [buscaOpen, setBuscaOpen] = useState(false);
   const lancSel = lancamentosAbertos.find((l) => l.id === r.lancamento_id);
-  const rotuloSel = lancSel
-    ? `${format(new Date(lancSel.data_vencimento + "T00:00:00"), "dd/MM")} — ${lancSel.descricao} (${brl(Number(lancSel.valor))})`
-    : "Pesquisar por valor, descrição ou data";
   // Sugestão do sistema (mesmo valor e data): vira o card da direita no padrão Conta Azul
   const sugestao = useMemo(() => (lancamentosAbertos ?? []).find((l) =>
     Math.abs(Number(l.valor) - Math.abs(Number(tx.valor))) < 0.01 &&
@@ -2194,7 +2191,7 @@ const ReconcileRow = memo(function ReconcileRow({
       </div>
 
       {/* sistema */}
-      <Card className={cn("overflow-hidden", mostraSugestao && "border-t-[3px] border-t-success")}>
+      <Card className={cn("overflow-hidden", (mostraSugestao || (r.lancamento_id && lancSel)) && "border-t-[3px] border-t-success")}>
         <BuscarLancamentoDialog
           open={buscaOpen}
           onClose={() => setBuscaOpen(false)}
@@ -2239,6 +2236,40 @@ const ReconcileRow = memo(function ReconcileRow({
               </div>
             </div>
           </>
+        ) : r.lancamento_id && lancSel ? (
+        <>
+          <div className="flex items-center justify-between gap-2 border-b px-3 py-2">
+            <span className={cn("text-tabular text-sm font-semibold", tx.valor < 0 ? "text-destructive" : "text-success")}>
+              {brl(Number(lancSel.valor))}
+            </span>
+            <span className="text-xs">
+              <span className="font-semibold">{format(new Date(`${lancSel.data_vencimento}T00:00:00`), "dd/MM/yyyy")}</span>{" "}
+              <span className="text-muted-foreground capitalize">{format(new Date(`${lancSel.data_vencimento}T00:00:00`), "EEEE")}</span>
+            </span>
+          </div>
+          <div className="space-y-0.5 px-3 py-2 text-[13px]">
+            <div className="font-medium">{lancSel.descricao}</div>
+            <div className="text-xs text-muted-foreground">
+              <span className="font-medium text-foreground">{tx.valor >= 0 ? "Cliente" : "Fornecedor"}:</span>{" "}
+              {lancSel.contato_id ? (contatos.find((c) => c.id === lancSel.contato_id)?.nome ?? "—") : "Não informado"}
+            </div>
+            <div className="text-xs text-muted-foreground">
+              <span className="font-medium text-foreground">Categoria:</span>{" "}
+              {lancSel.categoria_id ? (categorias.find((c) => c.id === lancSel.categoria_id)?.nome ?? "—") : "—"}
+            </div>
+          </div>
+          <div className="flex items-center justify-between gap-2 border-t bg-muted/30 px-3 py-1.5">
+            <Badge variant="secondary" className="text-[11px]">Vinculado</Badge>
+            <div className="flex items-center gap-1">
+              <Button size="sm" variant="outline" className="h-7 text-xs" onClick={() => setBuscaOpen(true)}>
+                Editar
+              </Button>
+              <Button size="sm" variant="outline" className="h-7 text-xs" onClick={() => onSetRow(tx.id, { lancamento_id: "" })}>
+                Desvincular
+              </Button>
+            </div>
+          </div>
+        </>
         ) : (
         <>
         <div className="flex items-center justify-between gap-2 border-b px-3 py-2">
@@ -2249,20 +2280,6 @@ const ReconcileRow = memo(function ReconcileRow({
         </div>
         <div className="px-3 py-2">
           <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
-            {r.lancamento_id && lancSel ? (
-              <div className="col-span-full flex flex-wrap items-center gap-2 rounded-md border border-primary/30 bg-primary/10 px-3 py-2">
-                <Link2 className="h-4 w-4 shrink-0 text-primary" />
-                <span className="text-xs">
-                  <strong>Vinculado:</strong> {rotuloSel}
-                </span>
-                <Button
-                  size="sm" variant="ghost" className="ml-auto h-7 text-xs"
-                  onClick={() => onSetRow(tx.id, { lancamento_id: "" })}
-                >
-                  <X className="mr-1 h-3 w-3" />Desvincular
-                </Button>
-              </div>
-            ) : null}
               <div className="space-y-1">
                 <Label className="text-xs">Descrição <span className="text-destructive">*</span></Label>
                 <Input value={r.descricao} onChange={(e) => onSetRow(tx.id, { descricao: e.target.value })} placeholder="Descrição" />
