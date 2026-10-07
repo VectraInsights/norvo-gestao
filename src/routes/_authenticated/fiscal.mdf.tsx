@@ -418,14 +418,20 @@ function MdfPage() {
     enabled: !!empresa,
     queryKey: ["mdf-documentos", empresa?.id],
     queryFn: async (): Promise<MdfDoc[]> => {
-      const { data, error } = await supabase.from("mdf_documentos" as any)
-        .select("id,numero,serie,status,qtd_cte,chave_acesso,created_at,motivo_rejeicao,protocolo_sefaz,uf_carregamento,uf_descarregamento,valor_total_carga,peso_total,veiculo_tracao_id,motorista_id,xml_assinado,xml_protocolo,responsavel_emissao,responsavel_encerramento,data_encerramento")
-        .eq("empresa_id", empresa!.id)
-        .eq("ambiente", MDFE_AMBIENTE)
-        .order("created_at", { ascending: false })
-        .limit(100);
-      if (error) throw error;
-      return (data ?? []) as unknown as MdfDoc[];
+      // Busca em páginas para nunca cortar o histórico (sem limite silencioso)
+      const todos: unknown[] = [];
+      for (let ini = 0; ; ini += 500) {
+        const { data, error } = await supabase.from("mdf_documentos" as any)
+          .select("id,numero,serie,status,qtd_cte,chave_acesso,created_at,motivo_rejeicao,protocolo_sefaz,uf_carregamento,uf_descarregamento,valor_total_carga,peso_total,veiculo_tracao_id,motorista_id,xml_assinado,xml_protocolo,responsavel_emissao,responsavel_encerramento,data_encerramento")
+          .eq("empresa_id", empresa!.id)
+          .eq("ambiente", MDFE_AMBIENTE)
+          .order("created_at", { ascending: false })
+          .range(ini, ini + 499);
+        if (error) throw error;
+        todos.push(...((data as unknown[]) ?? []));
+        if (!data || (data as unknown[]).length < 500) break;
+      }
+      return todos as unknown as MdfDoc[];
     },
   });
 
@@ -1114,15 +1120,21 @@ function DialogNovoMdf({ open, onOpenChange, empresaId, empresa, chavesIniciais,
     enabled: !!empresaId && open,
     queryKey: ["ctes-para-mdf", empresaId],
     queryFn: async (): Promise<CteDoc[]> => {
-      const { data, error } = await supabase.from("cte_documentos" as any)
-        .select("id,numero,serie,chave_acesso,status,valor_servico,peso_carga,xml_assinado,data_autorizacao")
-        .eq("empresa_id", empresaId)
-        .eq("status", "autorizado")
-        .eq("ambiente", MDFE_AMBIENTE)
-        .order("created_at", { ascending: false })
-        .limit(50);
-      if (error) throw error;
-      return (data ?? []) as unknown as CteDoc[];
+      // Busca em páginas: com corte, CT-e autorizado antigo não entrava no MDF-e
+      const todos: unknown[] = [];
+      for (let ini = 0; ; ini += 500) {
+        const { data, error } = await supabase.from("cte_documentos" as any)
+          .select("id,numero,serie,chave_acesso,status,valor_servico,peso_carga,xml_assinado,data_autorizacao")
+          .eq("empresa_id", empresaId)
+          .eq("status", "autorizado")
+          .eq("ambiente", MDFE_AMBIENTE)
+          .order("created_at", { ascending: false })
+          .range(ini, ini + 499);
+        if (error) throw error;
+        todos.push(...((data as unknown[]) ?? []));
+        if (!data || (data as unknown[]).length < 500) break;
+      }
+      return todos as unknown as CteDoc[];
     },
   });
 
@@ -1132,20 +1144,24 @@ function DialogNovoMdf({ open, onOpenChange, empresaId, empresa, chavesIniciais,
     enabled: !!empresaId && open,
     queryKey: ["mdf-chaves-cte", empresaId],
     queryFn: async ({ signal }) => {
-      const { data, error } = await supabase.from("mdf_documentos" as any)
-        .select("xml_assinado").eq("empresa_id", empresaId)
-        .in("status", ["autorizado", "encerrado", "rascunho"]).limit(200).abortSignal(signal);
-      if (error) throw error;
+      // Busca em páginas: com corte, CT-e de MDF-e antigo escapava e entrava em outro manifesto
       const set = new Set<string>();
-      for (const r of (data as any[]) || []) {
-        const x = String((r as any)?.xml_assinado || "");
-        for (const m of x.matchAll(/<chCTe>(\d{44})<\/chCTe>/g)) set.add(m[1]);
-        try {
-          const p = JSON.parse(x);
-          for (const ch of (Array.isArray(p.chaves) ? p.chaves : [])) {
-            if (/^\d{44}$/.test(String(ch))) set.add(String(ch));
-          }
-        } catch {}
+      for (let ini = 0; ; ini += 500) {
+        const { data, error } = await supabase.from("mdf_documentos" as any)
+          .select("xml_assinado").eq("empresa_id", empresaId)
+          .in("status", ["autorizado", "encerrado", "rascunho"]).range(ini, ini + 499).abortSignal(signal);
+        if (error) throw error;
+        for (const r of (data as any[]) || []) {
+          const x = String((r as any)?.xml_assinado || "");
+          for (const m of x.matchAll(/<chCTe>(\d{44})<\/chCTe>/g)) set.add(m[1]);
+          try {
+            const p = JSON.parse(x);
+            for (const ch of (Array.isArray(p.chaves) ? p.chaves : [])) {
+              if (/^\d{44}$/.test(String(ch))) set.add(String(ch));
+            }
+          } catch {}
+        }
+        if (!data || (data as any[]).length < 500) break;
       }
       return set;
     },
@@ -1169,11 +1185,17 @@ function DialogNovoMdf({ open, onOpenChange, empresaId, empresa, chavesIniciais,
     enabled: !!empresaId && open && isTransbordo,
     queryKey: ["mdf-encerrados", empresaId],
     queryFn: async ({ signal }) => {
-      const { data, error } = await supabase.from("mdf_documentos" as any)
-        .select("chave_acesso,numero,veiculo_tracao_id,motorista_id,xml_assinado").eq("empresa_id", empresaId)
-        .eq("status", "encerrado").order("created_at", { ascending: false }).limit(100).abortSignal(signal);
-      if (error) throw error;
-      const rows = (data ?? []) as unknown as Array<{ chave_acesso: string | null; numero: string | null; veiculo_tracao_id: string | null; motorista_id: string | null; xml_assinado: string | null }>;
+      // Busca em páginas para o transbordo nunca cortar (sem limite silencioso)
+      const todos: unknown[] = [];
+      for (let ini = 0; ; ini += 500) {
+        const { data, error } = await supabase.from("mdf_documentos" as any)
+          .select("chave_acesso,numero,veiculo_tracao_id,motorista_id,xml_assinado").eq("empresa_id", empresaId)
+          .eq("status", "encerrado").order("created_at", { ascending: false }).range(ini, ini + 499).abortSignal(signal);
+        if (error) throw error;
+        todos.push(...((data as unknown[]) ?? []));
+        if (!data || (data as unknown[]).length < 500) break;
+      }
+      const rows = todos as unknown as Array<{ chave_acesso: string | null; numero: string | null; veiculo_tracao_id: string | null; motorista_id: string | null; xml_assinado: string | null }>;
       const motIds = [...new Set(rows.map(r => String(r.motorista_id || "")).filter(Boolean))];
       let motMap = new Map<string, string>();
       if (motIds.length) {
