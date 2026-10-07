@@ -1,5 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { DateInput } from "@/components/erp/date-input";
+import { Combobox } from "@/components/erp/combobox";
 import { PageHeader } from "@/components/erp/page-header";
 import { EmptyState } from "@/components/erp/empty-state";
 import { Button } from "@/components/ui/button";
@@ -34,6 +35,7 @@ type Emprestimo = {
   id: string; tipo: "emprestimo" | "financiamento"; descricao: string; credor: string | null;
   valor_principal: number; taxa_juros_mensal: number; parcelas: number;
   data_contratacao: string; primeiro_vencimento: string | null; status: string;
+  conta_credito_id: string | null;
 };
 type Parcela = {
   id: string; emprestimo_id: string; numero: number; data_vencimento: string;
@@ -132,6 +134,12 @@ function EmprestimosPage() {
   const [contratacao, setContratacao] = useState(format(new Date(), "yyyy-MM-dd"));
   const [primeiro, setPrimeiro] = useState(format(addMonths(new Date(), 1), "yyyy-MM-dd"));
   const [busca, setBusca] = useState("");
+  // Fornecedor (contato) + conta bancária do contrato
+  const [fornId, setFornId] = useState("");
+  const [contaId, setContaId] = useState("");
+  // Edição do cabeçalho do contrato (não mexe em valor/parcelas/datas: parcelas já geradas)
+  const [editOpen, setEditOpen] = useState(false);
+  const [editForm, setEditForm] = useState({ descricao: "", credor: "", contaId: "" });
   // Edição manual de parcela (valor + vencimento): p/ contratos com carência,
   // balões ou parcelas irregulares que o Price não representa
   const [editParc, setEditParc] = useState<{ id: string; valor: string; venc: string } | null>(null);
@@ -151,7 +159,7 @@ function EmprestimosPage() {
       const todas: unknown[] = [];
       for (let ini = 0; ; ini += 1000) {
         const { data, error } = await supabase.from("emprestimos" as never)
-          .select("id,tipo,descricao,credor,valor_principal,taxa_juros_mensal,parcelas,data_contratacao,primeiro_vencimento,status").eq("empresa_id", empresa!.id).order("data_contratacao", { ascending: false }).range(ini, ini + 999);
+          .select("id,tipo,descricao,credor,valor_principal,taxa_juros_mensal,parcelas,data_contratacao,primeiro_vencimento,status,conta_credito_id").eq("empresa_id", empresa!.id).order("data_contratacao", { ascending: false }).range(ini, ini + 999);
         if (error) throw error;
         todas.push(...(data ?? []));
         if (!data || (data as unknown[]).length < 1000) break;
@@ -159,6 +167,40 @@ function EmprestimosPage() {
       return todas as unknown as Emprestimo[];
     },
   });
+
+  const { data: contatosEmp = [] } = useQuery({
+    enabled: !!empresa,
+    queryKey: ["emprestimos-contatos", empresa?.id],
+    staleTime: 10 * 60_000,
+    gcTime: 30 * 60_000,
+    queryFn: async () => {
+      const { data, error } = await supabase.from("contatos")
+        .select("id,nome").eq("empresa_id", empresa!.id).in("tipo", ["fornecedor", "ambos"] as never).order("nome");
+      if (error) throw error;
+      return (data ?? []) as unknown as Array<{ id: string; nome: string | null }>;
+    },
+  });
+
+  const { data: contasEmp = [] } = useQuery({
+    enabled: !!empresa,
+    queryKey: ["emprestimos-contas", empresa?.id],
+    staleTime: 10 * 60_000,
+    gcTime: 30 * 60_000,
+    queryFn: async () => {
+      const { data, error } = await supabase.from("contas_bancarias")
+        .select("id,nome").eq("empresa_id", empresa!.id).order("nome");
+      if (error) throw error;
+      return (data ?? []) as unknown as Array<{ id: string; nome: string | null }>;
+    },
+  });
+
+  const nomeConta = (id: string | null) => (contasEmp ?? []).find((c) => c.id === id)?.nome ?? "";
+  // Fornecedor do contrato = contato cujo nome confere com o credor
+  const contatoIdDoCredor = (credorTxt: string | null) => {
+    const n = (credorTxt || "").trim().toLowerCase();
+    if (!n) return null;
+    return (contatosEmp ?? []).find((c) => (c.nome || "").trim().toLowerCase() === n)?.id ?? null;
+  };
 
   const { data: parcelasSel = [] } = useQuery({
     enabled: !!sel,
@@ -190,7 +232,7 @@ function EmprestimosPage() {
     setTaxa("0"); setParcelas("12");
     setContratacao(format(new Date(), "yyyy-MM-dd"));
     setPrimeiro(format(addMonths(new Date(), 1), "yyyy-MM-dd"));
-    setPdfNovo(null);
+    setPdfNovo(null); setFornId(""); setContaId("");
   };
 
   const criar = useMutation({
@@ -208,6 +250,7 @@ function EmprestimosPage() {
         empresa_id: empresa.id, tipo, descricao, credor: credor || null,
         valor_principal: p, taxa_juros_mensal: Number(taxa) || 0, parcelas: n,
         data_contratacao: contratacao, primeiro_vencimento: primeiro,
+        conta_credito_id: contaId || null,
       }).select("id").single();
       if (error) throw error;
 
@@ -292,12 +335,15 @@ function EmprestimosPage() {
       const pendentes = parcelasSel.filter((p) => !p.lancamento_id && p.status === "aberta");
       if (!pendentes.length) throw new Error("Nenhuma parcela pendente sem lançamento");
       const emp = (lista ?? []).find((e) => e.id === emprestimoId);
+      const contatoId = contatoIdDoCredor(emp?.credor ?? null);
+      const contaBancariaId = (emp as Emprestimo | undefined)?.conta_credito_id ?? null;
       for (const p of pendentes) {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const { data: lanc, error } = await (supabase.from("lancamentos_financeiros") as any).insert({
           empresa_id: empresa.id, tipo: "pagar", status: "aberto",
           descricao: `${emp?.descricao ?? "Empréstimo"} — parcela ${p.numero}/${emp?.parcelas ?? ""}`,
           valor: p.valor, data_emissao: format(new Date(), "yyyy-MM-dd"), data_vencimento: p.data_vencimento,
+          contato_id: contatoId, conta_bancaria_id: contaBancariaId,
         }).select("id").single();
         if (error) throw error;
         await supabase.from("emprestimo_parcelas" as never)
@@ -308,6 +354,25 @@ function EmprestimosPage() {
       toast.success("Contas a pagar geradas");
       qc.invalidateQueries({ queryKey: ["emprestimo-parcelas"] });
       qc.invalidateQueries({ queryKey: ["lancamentos"] });
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+  const salvarContrato = useMutation({
+    mutationFn: async () => {
+      if (!emprestimoSel) throw new Error("Selecione um contrato");
+      if (!editForm.descricao.trim()) throw new Error("Informe a descrição");
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const { error } = await (supabase.from("emprestimos" as never) as any).update({
+        descricao: editForm.descricao, credor: editForm.credor || null,
+        conta_credito_id: editForm.contaId || null,
+      }).eq("id", emprestimoSel.id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      toast.success("Contrato atualizado");
+      setEditOpen(false);
+      qc.invalidateQueries({ queryKey: ["emprestimos"] });
     },
     onError: (e: Error) => toast.error(e.message),
   });
@@ -401,6 +466,29 @@ function EmprestimosPage() {
                     </Select>
                   </div>
                   <div className="grid gap-1.5">
+                    <Label>Conta bancária</Label>
+                    <Combobox
+                      value={contaId} onChange={setContaId}
+                      options={(contasEmp ?? []).map((c) => ({ value: c.id, label: c.nome ?? "" }))}
+                      placeholder="Conta (opcional)"
+                    />
+                  </div>
+                </div>
+                <div className="grid gap-3 sm:grid-cols-2">
+                  <div className="grid gap-1.5">
+                    <Label>Fornecedor</Label>
+                    <Combobox
+                      value={fornId}
+                      onChange={(v) => {
+                        setFornId(v);
+                        const nome = (contatosEmp ?? []).find((c) => c.id === v)?.nome ?? "";
+                        if (nome && !credor) setCredor(nome);
+                      }}
+                      options={(contatosEmp ?? []).map((c) => ({ value: c.id, label: c.nome ?? "" }))}
+                      placeholder="Fornecedor (opcional)"
+                    />
+                  </div>
+                  <div className="grid gap-1.5">
                     <Label>Credor</Label>
                     <Input value={credor} onChange={(e) => setCredor(e.target.value)} placeholder="Banco / instituição" className="h-10 rounded-xl" />
                   </div>
@@ -446,6 +534,39 @@ function EmprestimosPage() {
               <DialogFooter className="gap-2">
                 <Button onClick={() => criar.mutate()} disabled={criar.isPending} className="h-10 rounded-xl px-6 shadow-sm transition-all hover:-translate-y-px hover:shadow-md">
                   {criar.isPending ? "Salvando..." : "Cadastrar"}
+                </Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
+          <Dialog open={editOpen} onOpenChange={setEditOpen}>
+            <DialogContent className="max-h-[90vh] overflow-y-auto rounded-2xl sm:max-w-lg">
+              <DialogHeader className="gap-1.5 pb-1"><DialogTitle className="tracking-tight">Editar contrato</DialogTitle></DialogHeader>
+              <p className="text-sm leading-relaxed text-muted-foreground">
+                Valor, taxa, parcelas e datas não mudam aqui (as parcelas já foram geradas —
+                ajuste cada uma no lápis da lista).
+              </p>
+              <div className="grid gap-4">
+                <div className="grid gap-1.5">
+                  <Label>Descrição</Label>
+                  <Input value={editForm.descricao} onChange={(e) => setEditForm({ ...editForm, descricao: e.target.value })} className="h-10 rounded-xl" />
+                </div>
+                <div className="grid gap-1.5">
+                  <Label>Credor</Label>
+                  <Input value={editForm.credor} onChange={(e) => setEditForm({ ...editForm, credor: e.target.value })} placeholder="Banco / instituição" className="h-10 rounded-xl" />
+                </div>
+                <div className="grid gap-1.5">
+                  <Label>Conta bancária</Label>
+                  <Combobox
+                    value={editForm.contaId}
+                    onChange={(v) => setEditForm({ ...editForm, contaId: v })}
+                    options={(contasEmp ?? []).map((c) => ({ value: c.id, label: c.nome ?? "" }))}
+                    placeholder="Conta (opcional)"
+                  />
+                </div>
+              </div>
+              <DialogFooter className="gap-2">
+                <Button onClick={() => salvarContrato.mutate()} disabled={salvarContrato.isPending} className="h-10 rounded-xl px-6">
+                  {salvarContrato.isPending ? "Salvando..." : "Salvar"}
                 </Button>
               </DialogFooter>
             </DialogContent>
@@ -512,9 +633,23 @@ function EmprestimosPage() {
                     <p className="text-sm font-semibold tracking-tight">{emprestimoSel.descricao}</p>
                     <p className="mt-0.5 text-xs text-muted-foreground">
                       {emprestimoSel.parcelas}x · {Number(emprestimoSel.taxa_juros_mensal)}% a.m. · Soma das parcelas: <strong className="text-foreground">{brl(somaParcelasSel)}</strong>
+                      {emprestimoSel.credor ? ` · ${emprestimoSel.credor}` : ""}
+                      {nomeConta(emprestimoSel.conta_credito_id) ? ` · ${nomeConta(emprestimoSel.conta_credito_id)}` : ""}
                     </p>
                   </div>
                   <div className="flex gap-2">
+                    <Button
+                      size="sm" variant="outline"
+                      onClick={() => {
+                        if (!emprestimoSel) return;
+                        setEditForm({ descricao: emprestimoSel.descricao, credor: emprestimoSel.credor ?? "", contaId: emprestimoSel.conta_credito_id ?? "" });
+                        setEditOpen(true);
+                      }}
+                      title="Editar dados do contrato (não altera parcelas)"
+                      className="h-9 rounded-xl px-4 shadow-sm"
+                    >
+                      <Pencil className="mr-1.5 h-4 w-4" /> Editar contrato
+                    </Button>
                     <Button
                       size="sm" variant="outline"
                       onClick={() => gerarContasPagar.mutate(emprestimoSel.id)}

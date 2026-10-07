@@ -72,7 +72,7 @@ import { useNavigate } from "@tanstack/react-router";
 import { format } from "date-fns";
 import { LancamentosToolbar } from "@/components/erp/lancamentos-toolbar";
 import { DateInput } from "@/components/erp/date-input";
-import { PeriodoFilter, periodoProx7, type Periodo } from "@/components/erp/periodo-filter";
+import { PeriodoFilter, PERIODO_TODOS, type Periodo } from "@/components/erp/periodo-filter";
 import { usePerfisMap } from "@/hooks/use-perfis";
 
 export const Route = createFileRoute("/_authenticated/financeiro/receber")({
@@ -533,7 +533,7 @@ export function LancamentosPage({ tipo }: { tipo: "receber" | "pagar" }) {
   );
 
   // Filtro de período (aplicado sobre data_vencimento)
-  const [periodo, setPeriodo] = useState<Periodo>(() => periodoProx7());
+  const [periodo, setPeriodo] = useState<Periodo>(() => PERIODO_TODOS);
   const dentroPeriodo = (dataStr: string) => {
     if (!periodo.from || !periodo.to) return true;
     const d = new Date(dataStr + "T12:00:00");
@@ -893,7 +893,7 @@ export function LancamentosPage({ tipo }: { tipo: "receber" | "pagar" }) {
       ) : (
         <Card className="overflow-hidden rounded-2xl shadow-panel">
           {selected.size > 0 && (
-            <div className="sticky top-16 z-10 flex flex-wrap items-center gap-2 border-b border-border/60 bg-background/95 px-4 py-2.5 text-sm shadow-sm backdrop-blur">
+            <div className="sticky top-16 z-10 flex flex-wrap items-center gap-2 border-b border-border/60 bg-background px-4 py-2.5 text-sm shadow-sm">
               <span className="font-medium">{selected.size} selecionado(s)</span>
               <div className="ml-auto flex flex-wrap gap-2">
                 <Select

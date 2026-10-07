@@ -759,6 +759,35 @@ function CtePage() {
     return arr;
   }, [mercadorias, sortConfig, periodoIni, periodoFim, buscaEmb]);
 
+  // Barra horizontal fixa: proxy sincronizado grudado no fim do bloco da listagem
+  const embScrollRef = useRef<HTMLDivElement>(null);
+  const embBarRef = useRef<HTMLDivElement>(null);
+  const embLockRef = useRef(false);
+  const [embWide, setEmbWide] = useState(0);
+  const [embOverflow, setEmbOverflow] = useState(false);
+  useEffect(() => {
+    const el = embScrollRef.current;
+    if (!el) return;
+    const medir = () => {
+      setEmbWide(el.scrollWidth);
+      setEmbOverflow(el.scrollWidth > el.clientWidth + 1);
+    };
+    medir();
+    window.addEventListener("resize", medir);
+    return () => window.removeEventListener("resize", medir);
+  }, [mercadoriasSorted.length]);
+  const syncEmb = (origem: "tab" | "bar") => {
+    const tab = embScrollRef.current;
+    const bar = embBarRef.current;
+    if (!tab || !bar || embLockRef.current) return;
+    embLockRef.current = true;
+    if (origem === "tab") bar.scrollLeft = tab.scrollLeft;
+    else tab.scrollLeft = bar.scrollLeft;
+    requestAnimationFrame(() => {
+      embLockRef.current = false;
+    });
+  };
+
   const { data: docs, isLoading } = useQuery({
     enabled: !!empresa,
     queryKey: ["cte-documentos", empresa?.id],
@@ -6505,7 +6534,7 @@ function CtePage() {
                       Qtde NF-e: {mercadoriasSorted.length}/{mercadorias.length}
                     </span>
                   </div>
-                  <div className="overflow-auto flex-1 min-h-0 min-w-0 max-h-[60vh]">
+                  <div ref={embScrollRef} onScroll={() => syncEmb("tab")} className="overflow-auto flex-1 min-h-0 min-w-0 max-h-[60vh]">
                     <Table className="min-w-max [&_td]:px-1.5 [&_td]:py-1 [&_th]:px-1.5 [&_th]:py-1.5">
                       <TableHeader className="sticky top-0 z-10 bg-muted">
                         <TableRow>
@@ -6716,6 +6745,17 @@ function CtePage() {
                         )}
                       </TableBody>
                     </Table>
+                    {embOverflow && (
+                      <div className="sticky bottom-0 z-10 border-t border-border/60 bg-background">
+                        <div
+                          ref={embBarRef}
+                          onScroll={() => syncEmb("bar")}
+                          className="overflow-x-auto overflow-y-hidden"
+                        >
+                          <div style={{ width: embWide }} className="h-4" />
+                        </div>
+                      </div>
+                    )}
                   </div>
                 </div>
 
