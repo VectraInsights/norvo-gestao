@@ -5324,3 +5324,12 @@ pm run build OK.
   docs — NF de documento antigo escapava e permitia emitir CT-e duplicado.
 - Rolagem do dialogo de emissao mantida só na lista de NF-es (decisao standing).
 - Validado com `npm run build` OK.
+
+## CTe busca + periodo nas abas (07/10)
+
+- Busca nas abas de documentos (nº, chave, motivo de rejeicao, valor) e
+  na listagem de embarque (nº, chave, emitente, destinatario, valor).
+- Filtro de periodo (mesmo do embarque) nas abas Aguardando/Rejeitados/
+  Cancelados/Autorizados/CIOT; contadores acompanham o filtro.
+- Troca de aba zera buscas (decisao standing de reset total).
+- Validado com `npm run build` OK.
