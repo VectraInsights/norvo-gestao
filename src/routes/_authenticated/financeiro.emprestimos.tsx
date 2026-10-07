@@ -129,7 +129,6 @@ function EmprestimosPage() {
 
   const [tipo, setTipo] = useState<"emprestimo" | "financiamento">("emprestimo");
   const [descricao, setDescricao] = useState("");
-  const [credor, setCredor] = useState("");
   const [principal, setPrincipal] = useState("0");
   const [taxa, setTaxa] = useState("0");
   const [parcelas, setParcelas] = useState("12");
@@ -137,7 +136,7 @@ function EmprestimosPage() {
   const [primeiro, setPrimeiro] = useState(format(addMonths(new Date(), 1), "yyyy-MM-dd"));
   const [busca, setBusca] = useState("");
   // Fornecedor (contato) + conta bancária do contrato
-  const [fornId, setFornId] = useState("");
+  const [credorId, setCredorId] = useState("");
   const [contaId, setContaId] = useState("");
   // Edição do cabeçalho do contrato (não mexe em valor/parcelas/datas: parcelas já geradas)
   const [editOpen, setEditOpen] = useState(false);
@@ -231,8 +230,10 @@ function EmprestimosPage() {
     return { parcela: linhas[0]?.valor ?? 0, total: linhas.reduce((s, l) => s + l.valor, 0) };
   }, [principal, parcelas, taxa, primeiro]);
 
+  const nomeCredorNovo = (contatosEmp ?? []).find((c) => c.id === credorId)?.nome ?? "";
+
   const reset = () => {
-    setTipo("emprestimo"); setDescricao(""); setCredor(""); setPrincipal("0");
+    setTipo("emprestimo"); setDescricao(""); setCredorId(""); setPrincipal("0");
     setTaxa("0"); setParcelas("12");
     setContratacao(format(new Date(), "yyyy-MM-dd"));
     setPrimeiro(format(addMonths(new Date(), 1), "yyyy-MM-dd"));
@@ -251,7 +252,7 @@ function EmprestimosPage() {
 
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const { data: emp, error } = await (supabase.from("emprestimos" as never) as any).insert({
-        empresa_id: empresa.id, tipo, descricao, credor: credor || null,
+        empresa_id: empresa.id, tipo, descricao, credor: nomeCredorNovo || null,
         valor_principal: p, taxa_juros_mensal: Number(taxa) || 0, parcelas: n,
         data_contratacao: contratacao, primeiro_vencimento: primeiro,
         conta_credito_id: contaId || null,
@@ -503,25 +504,15 @@ function EmprestimosPage() {
                     />
                   </div>
                 </div>
-                <div className="grid gap-3 sm:grid-cols-2">
-                  <div className="grid gap-1.5">
-                    <Label>Fornecedor</Label>
-                    <Combobox
-                      value={fornId}
-                      onChange={(v) => {
-                        setFornId(v);
-                        const nome = (contatosEmp ?? []).find((c) => c.id === v)?.nome ?? "";
-                        if (nome && !credor) setCredor(nome);
-                      }}
-                      options={(contatosEmp ?? []).map((c) => ({ value: c.id, label: c.nome ?? "" }))}
-                      placeholder="Fornecedor (opcional)"
-                      footer={{ label: "Novo fornecedor", onClick: () => setNovoFornOpen(true) }}
-                    />
-                  </div>
-                  <div className="grid gap-1.5">
-                    <Label>Credor</Label>
-                    <Input value={credor} onChange={(e) => setCredor(e.target.value)} placeholder="Banco / instituição" className="h-10 rounded-xl" />
-                  </div>
+                <div className="grid gap-1.5">
+                  <Label>Credor</Label>
+                  <Combobox
+                    value={credorId}
+                    onChange={setCredorId}
+                    options={(contatosEmp ?? []).map((c) => ({ value: c.id, label: c.nome ?? "" }))}
+                    placeholder="Banco / instituição (opcional)"
+                    footer={{ label: "Novo fornecedor", onClick: () => setNovoFornOpen(true) }}
+                  />
                 </div>
                 <div className="grid gap-1.5">
                   <Label>Descrição</Label>
@@ -574,8 +565,7 @@ function EmprestimosPage() {
             open={novoFornOpen}
             onOpenChange={setNovoFornOpen}
             onCriado={(c) => {
-              setFornId(c.id);
-              if (!credor) setCredor(c.nome);
+              setCredorId(c.id);
             }}
           />
           <Dialog open={editOpen} onOpenChange={setEditOpen}>
