@@ -5435,6 +5435,9 @@ pm run build OK.
 - Cadastro sem limite silencioso (07/10): fiscal_cadastros em paginas
   (antes 500). Busca, ordenacao e paginacao mantidas.
 - Validado com `npm run build` OK.
+- Relatorios fiscal sem corte implicito (07/10): notas em paginas
+  (sem range o Supabase corta em 1000). KPIs, graficos e tabela mantidos.
+- Validado com `npm run build` OK.
 - Novo credor + Importar PDF + sem placeholders (07/10): rodapé e
   dialogo "Novo credor" (segue tipo fornecedor); botao "Importar PDF";
   placeholders removidos da tela de contratos.
