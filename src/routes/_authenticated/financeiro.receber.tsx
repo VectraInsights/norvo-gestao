@@ -600,8 +600,8 @@ export function LancamentosPage({ tipo }: { tipo: "receber" | "pagar" }) {
         description={desc}
       />
 
-      <div className="mb-4 flex flex-wrap items-center gap-2.5 sm:mb-6">
-        <div className="inline-flex rounded-xl border bg-muted/30 p-1.5 text-sm shadow-sm">
+      <div className="mb-4 flex flex-wrap items-center gap-2.5 sm:mb-6 lg:flex-nowrap">
+        <div className="inline-flex max-w-full shrink overflow-x-auto whitespace-nowrap rounded-xl border bg-muted/30 p-1.5 text-sm shadow-sm">
           {(
             [
               { k: "todos", label: `Todos (${cont.todos})` },
@@ -619,20 +619,22 @@ export function LancamentosPage({ tipo }: { tipo: "receber" | "pagar" }) {
                 setPagina(1);
                 clearSel();
               }}
-              className={`rounded-lg px-4 py-2 transition-all ${aba === t.k ? "bg-background shadow-md font-medium" : "text-muted-foreground hover:text-foreground"}`}
+              className={`whitespace-nowrap rounded-lg px-3 py-2 transition-all ${aba === t.k ? "bg-background shadow-md font-medium" : "text-muted-foreground hover:text-foreground"}`}
             >
               {t.label}
             </button>
           ))}
         </div>
-        <PeriodoFilter
-          value={periodo}
-          onChange={(p) => {
-            setPeriodo(p);
-            clearSel();
-          }}
-        />
-        <div className="relative ml-auto w-full sm:w-80">
+        <div className="shrink-0">
+          <PeriodoFilter
+            value={periodo}
+            onChange={(p) => {
+              setPeriodo(p);
+              clearSel();
+            }}
+          />
+        </div>
+        <div className="relative min-w-[160px] flex-1 lg:max-w-xs">
           <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
           <Input
             value={busca}
@@ -655,7 +657,7 @@ export function LancamentosPage({ tipo }: { tipo: "receber" | "pagar" }) {
             </button>
           )}
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex shrink-0 items-center gap-2 lg:ml-auto">
           <Button variant="ghost" size="sm" onClick={() => setTrilhaOpen(true)} className="h-9 rounded-xl px-4 active:scale-95">
             Auditoria
           </Button>

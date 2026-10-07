@@ -5115,3 +5115,12 @@ Espelhado na Vercel.
 - Dialog da Auditoria com rolagem interna (`max-h-[85vh] overflow-y-auto`):
   a lista rola dentro do modal, a pagina nao cresce.
 - `npm run build` OK.
+
+## Filtros travados em cima (07/10)
+
+- Barra de filtros em `lg:flex-nowrap`: abas com scroll horizontal
+  (`overflow-x-auto whitespace-nowrap`, botoes `px-3`), periodo `shrink-0`,
+  busca `flex-1 min-w-[160px] lg:max-w-xs`, Auditoria+Novo `shrink-0 ml-auto`.
+- Largura das abas (ex. `Todos (1142)`) nao empurra mais os botoes para baixo.
+- `npm run build` OK.
+- Arquivo: `src/routes/_authenticated/financeiro.receber.tsx`.
