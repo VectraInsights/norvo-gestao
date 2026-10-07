@@ -5399,3 +5399,10 @@ pm run build OK.
   selecionar, o cabecalho fixo só ganha os botoes a direita (contador,
   status, excluir, limpar).
 - Validado com `npm run build` OK.
+- Novo contato rapido global (07/10): componente `NovoContatoDialog`
+  (nome + tipo + CPF/CNPJ + telefone) no rodapé de todo seletor de
+  cliente/fornecedor: Emprestimos, Pagar/Receber (novo e edicao),
+  Notas Emitidas, Pedidos, Compras, Viagens, OS, Projetos, CRM e
+  Conciliacao. O novo contato já entra selecionado; cadastro completo
+  segue em Clientes e fornecedores.
+- Validado com `npm run build` OK.
