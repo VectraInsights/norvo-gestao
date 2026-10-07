@@ -16,6 +16,8 @@ type Props = {
   empresaId: string | undefined;
   /** Quando fixo, o campo Tipo some e usa este valor */
   tipoFixo?: TipoContatoRapido;
+  /** Título personalizado (ex.: "Novo credor" mantendo tipo fornecedor) */
+  titulo?: string;
   open: boolean;
   onOpenChange: (v: boolean) => void;
   onCriado: (c: { id: string; nome: string }) => void;
@@ -31,7 +33,7 @@ const emptyForm = () => ({
 // Cadastro de contato em tela cheia, com os dados completos (mesmos campos de
 // Vendas → Clientes e fornecedores), p/ usar dentro de qualquer tela que peça
 // cliente/fornecedor (rodapé "Novo ..." dos Comboboxes).
-export function NovoContatoDialog({ empresaId, tipoFixo, open, onOpenChange, onCriado }: Props) {
+export function NovoContatoDialog({ empresaId, tipoFixo, titulo, open, onOpenChange, onCriado }: Props) {
   const qc = useQueryClient();
   const [form, setForm] = useState(emptyForm);
   const [lookingUp, setLookingUp] = useState(false);
@@ -159,7 +161,7 @@ export function NovoContatoDialog({ empresaId, tipoFixo, open, onOpenChange, onC
       <DialogContent className="fixed inset-0 left-0 top-0 translate-x-0 translate-y-0 w-screen h-screen max-w-none max-h-none rounded-none p-6 overflow-y-auto sm:p-8">
         <DialogHeader className="gap-1.5 pb-1">
           <DialogTitle className="tracking-tight">
-            Novo {tipoFixo === "fornecedor" ? "fornecedor" : tipoFixo === "cliente" ? "cliente" : "contato"}
+            {titulo ?? (tipoFixo === "fornecedor" ? "Novo fornecedor" : tipoFixo === "cliente" ? "Novo cliente" : "Novo contato")}
           </DialogTitle>
         </DialogHeader>
         <div className="grid gap-3">

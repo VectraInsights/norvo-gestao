@@ -446,7 +446,7 @@ function EmprestimosPage() {
       <div className="mb-4 flex flex-col gap-3 sm:mb-6 sm:flex-row sm:items-center">
         <div className="relative flex-1">
           <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-          <Input className="h-10 rounded-xl pl-10 shadow-sm" placeholder="Buscar por descrição, credor ou valor..." value={busca} onChange={(e) => setBusca(e.target.value)} />
+          <Input className="h-10 rounded-xl pl-10 shadow-sm" value={busca} onChange={(e) => setBusca(e.target.value)} />
         </div>
         <div className="flex items-center gap-2">
           <Dialog open={open} onOpenChange={(o) => { setOpen(o); if (!o) reset(); }}>
@@ -468,7 +468,7 @@ function EmprestimosPage() {
               />
               {!pdfNovo ? (
                 <Button variant="outline" onClick={() => pdfNovoRef.current?.click()} disabled={pdfLendoNovo} className="h-10 rounded-xl">
-                  <FileUp className="mr-1.5 h-4 w-4" /> {pdfLendoNovo ? "Lendo PDF…" : "Ler PDF do banco e preencher"}
+                  <FileUp className="mr-1.5 h-4 w-4" /> {pdfLendoNovo ? "Lendo PDF…" : "Importar PDF"}
                 </Button>
               ) : (
                 <div className="flex items-center justify-between gap-2 rounded-xl border bg-muted/50 p-3 text-sm shadow-sm">
@@ -500,7 +500,6 @@ function EmprestimosPage() {
                     <Combobox
                       value={contaId} onChange={setContaId}
                       options={(contasEmp ?? []).map((c) => ({ value: c.id, label: c.nome ?? "" }))}
-                      placeholder="Conta (opcional)"
                     />
                   </div>
                 </div>
@@ -510,13 +509,12 @@ function EmprestimosPage() {
                     value={credorId}
                     onChange={setCredorId}
                     options={(contatosEmp ?? []).map((c) => ({ value: c.id, label: c.nome ?? "" }))}
-                    placeholder="Banco / instituição (opcional)"
-                    footer={{ label: "Novo fornecedor", onClick: () => setNovoFornOpen(true) }}
+                    footer={{ label: "Novo credor", onClick: () => setNovoFornOpen(true) }}
                   />
                 </div>
                 <div className="grid gap-1.5">
                   <Label>Descrição</Label>
-                  <Input value={descricao} onChange={(e) => setDescricao(e.target.value)} placeholder="Ex.: Capital de giro" className="h-10 rounded-xl" />
+                  <Input value={descricao} onChange={(e) => setDescricao(e.target.value)} className="h-10 rounded-xl" />
                 </div>
                 <div className="grid gap-3 sm:grid-cols-3">
                   <div className="grid gap-1.5">
@@ -562,6 +560,7 @@ function EmprestimosPage() {
           <NovoContatoDialog
             empresaId={empresa?.id}
             tipoFixo="fornecedor"
+            titulo="Novo credor"
             open={novoFornOpen}
             onOpenChange={setNovoFornOpen}
             onCriado={(c) => {
@@ -582,7 +581,7 @@ function EmprestimosPage() {
                 </div>
                 <div className="grid gap-1.5">
                   <Label>Credor</Label>
-                  <Input value={editForm.credor} onChange={(e) => setEditForm({ ...editForm, credor: e.target.value })} placeholder="Banco / instituição" className="h-10 rounded-xl" />
+                  <Input value={editForm.credor} onChange={(e) => setEditForm({ ...editForm, credor: e.target.value })} className="h-10 rounded-xl" />
                 </div>
                 <div className="grid gap-1.5">
                   <Label>Conta bancária</Label>
@@ -590,7 +589,6 @@ function EmprestimosPage() {
                     value={editForm.contaId}
                     onChange={(v) => setEditForm({ ...editForm, contaId: v })}
                     options={(contasEmp ?? []).map((c) => ({ value: c.id, label: c.nome ?? "" }))}
-                    placeholder="Conta (opcional)"
                   />
                 </div>
               </div>
