@@ -104,18 +104,24 @@ function ExtratoPage() {
     enabled: !!empresa,
     queryKey: ["extrato", empresa?.id] as const,
     queryFn: async ({ signal }): Promise<Mov[]> => {
-      const { data, error } = await supabase
-        .from("lancamentos_financeiros")
-        .select(
-          "id,descricao,tipo,valor,valor_pago,status,data_emissao,data_vencimento,data_pagamento,created_at,created_by,documento,forma_pagamento,observacoes," +
-            "contato:contatos(nome),categoria:categorias_financeiras(nome),conta:contas_bancarias(nome),centro:centros_custo(nome)",
-        )
-        .eq("empresa_id", empresa!.id)
-        .order("data_vencimento", { ascending: false })
-        .limit(5000)
-        .abortSignal(signal);
-      if (error) throw error;
-      return (data ?? []) as unknown as Mov[];
+      // Busca em páginas de 1000 para nunca cortar o extrato (sem limite silencioso)
+      const todas: unknown[] = [];
+      for (let ini = 0; ; ini += 1000) {
+        const { data, error } = await supabase
+          .from("lancamentos_financeiros")
+          .select(
+            "id,descricao,tipo,valor,valor_pago,status,data_emissao,data_vencimento,data_pagamento,created_at,created_by,documento,forma_pagamento,observacoes," +
+              "contato:contatos(nome),categoria:categorias_financeiras(nome),conta:contas_bancarias(nome),centro:centros_custo(nome)",
+          )
+          .eq("empresa_id", empresa!.id)
+          .order("data_vencimento", { ascending: false })
+          .range(ini, ini + 999)
+          .abortSignal(signal);
+        if (error) throw error;
+        todas.push(...(data ?? []));
+        if (!data || data.length < 1000) break;
+      }
+      return todas as unknown as Mov[];
     },
   });
 
@@ -166,6 +172,7 @@ function ExtratoPage() {
 
   const filtrados = useMemo(() => {
     const q = busca.trim().toLowerCase();
+    const qDig = q.replace(/\D/g, "");
     return (movs ?? [])
       .filter((m) => {
         if (somenteQuitados === "quitados" && m.status !== "pago" && m.status !== "parcial") return false;
@@ -176,7 +183,18 @@ function ExtratoPage() {
         const d = parseDia(dataRef(m));
         if (periodo.from && d < periodo.from) return false;
         if (periodo.to && d > periodo.to) return false;
-        if (q && !`${m.descricao} ${m.contato?.nome ?? ""} ${m.documento ?? ""}`.toLowerCase().includes(q)) return false;
+        if (q) {
+          const texto = `${m.descricao} ${m.contato?.nome ?? ""} ${m.documento ?? ""}`.toLowerCase();
+          const casaTexto = texto.includes(q);
+          // Pesquisa por valor: "25,00" acha 25.00 (a partir de 2 dígitos)
+          const casaValor =
+            qDig.length >= 2 &&
+            Number(m.valor || 0)
+              .toFixed(2)
+              .replace(/\D/g, "")
+              .includes(qDig);
+          if (!casaTexto && !casaValor) return false;
+        }
         return true;
       })
       .sort((a, b) => dataRef(a).localeCompare(dataRef(b)));
