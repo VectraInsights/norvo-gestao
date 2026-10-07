@@ -5391,3 +5391,7 @@ pm run build OK.
   contas pendentes geradas pelo contrato sao removidas, as pagas ficam
   (toast informa as quantidades).
 - Validado com `npm run build` OK.
+- Embarque compacto + barra fixa abaixo (07/10): filtros (modo/situacao/
+  periodo) em 1 linha; barra horizontal fixa fora da rolagem, logo abaixo
+  da tabela, sincronizada (sempre visivel quando ha overflow).
+- Validado com `npm run build` OK.
