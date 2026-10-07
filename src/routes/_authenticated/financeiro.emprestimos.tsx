@@ -12,7 +12,7 @@ import { MoneyInput } from "@/components/erp/money-input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Banknote, Plus, ChevronRight, Trash2, HandCoins, Search } from "lucide-react";
+import { Banknote, Plus, ChevronRight, Trash2, HandCoins, Search, Pencil, Check, X } from "lucide-react";
 import { useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -74,6 +74,9 @@ function EmprestimosPage() {
   const [contratacao, setContratacao] = useState(format(new Date(), "yyyy-MM-dd"));
   const [primeiro, setPrimeiro] = useState(format(addMonths(new Date(), 1), "yyyy-MM-dd"));
   const [busca, setBusca] = useState("");
+  // Edição manual de parcela (valor + vencimento): p/ contratos com carência,
+  // balões ou parcelas irregulares que o Price não representa
+  const [editParc, setEditParc] = useState<{ id: string; valor: string; venc: string } | null>(null);
 
   const { data: lista, isLoading } = useQuery({
     enabled: !!empresa,
@@ -149,9 +152,36 @@ function EmprestimosPage() {
       if (e2) throw e2;
     },
     onSuccess: () => {
-      toast.success("Contrato cadastrado com parcelas geradas");
+      toast.success("Contrato cadastrado — ajuste as parcelas se o banco usar valores diferentes");
       qc.invalidateQueries({ queryKey: ["emprestimos"] });
       setOpen(false); reset();
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+  const salvarParcela = useMutation({
+    mutationFn: async () => {
+      const alvo = parcelasSel.find((p) => p.id === editParc?.id);
+      if (!alvo) throw new Error("Parcela não encontrada");
+      if (alvo.lancamento_id) throw new Error("Parcela já lançada no Contas a pagar — não pode ser alterada");
+      const v = Number(editParc?.valor) || 0;
+      if (v <= 0) throw new Error("Informe o valor da parcela");
+      if (!editParc?.venc) throw new Error("Informe o vencimento");
+      // Reparte juros/amortização proporcionalmente p/ a soma continuar fechando
+      const oldV = Number(alvo.valor) || 0;
+      let juros = 0;
+      if (oldV > 0) juros = Number((((Number(alvo.valor_juros) || 0) * v) / oldV).toFixed(2));
+      const amort = Number((v - juros).toFixed(2));
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const { error } = await (supabase.from("emprestimo_parcelas" as never) as any)
+        .update({ valor: v, data_vencimento: editParc.venc, valor_juros: juros, valor_amortizacao: amort })
+        .eq("id", alvo.id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      toast.success("Parcela atualizada");
+      setEditParc(null);
+      qc.invalidateQueries({ queryKey: ["emprestimo-parcelas"] });
     },
     onError: (e: Error) => toast.error(e.message),
   });
@@ -196,6 +226,7 @@ function EmprestimosPage() {
   });
 
   const emprestimoSel = (lista ?? []).find((e) => e.id === sel) ?? null;
+  const somaParcelasSel = parcelasSel.reduce((s, p) => s + (Number(p.valor) || 0), 0);
 
   const filtrados = useMemo(() => {
     const q = busca.trim().toLowerCase();
@@ -215,12 +246,12 @@ function EmprestimosPage() {
       <PageHeader
         eyebrow="Financeiro"
         title="Empréstimos e financiamentos"
-        description="Controle contratos, parcelas (tabela Price), juros e amortização, e gere as contas a pagar."
+        description="Controle contratos e ajuste cada parcela (valor e vencimento) quando o banco usar carência ou valores diferentes do Price. Depois, gere as contas a pagar."
       />
       <div className="mb-4 flex flex-col gap-3 sm:mb-6 sm:flex-row sm:items-center">
         <div className="relative flex-1">
           <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-          <Input className="h-10 rounded-xl pl-10 shadow-sm" placeholder="Buscar por descrição ou credor..." value={busca} onChange={(e) => setBusca(e.target.value)} />
+          <Input className="h-10 rounded-xl pl-10 shadow-sm" placeholder="Buscar por descrição, credor ou valor..." value={busca} onChange={(e) => setBusca(e.target.value)} />
         </div>
         <div className="flex items-center gap-2">
           <Dialog open={open} onOpenChange={(o) => { setOpen(o); if (!o) reset(); }}>
@@ -278,6 +309,9 @@ function EmprestimosPage() {
                   <p className="rounded-xl border bg-muted/50 p-3.5 text-sm leading-relaxed text-muted-foreground shadow-sm">
                     Parcela estimada: <strong className="text-foreground">{brl(previa.parcela)}</strong> ·
                     Total a pagar: <strong className="text-foreground">{brl(previa.total)}</strong>
+                    <br />
+                    Valores iguais (Price). Se o banco usar carência ou parcelas diferentes,
+                    cadastre e ajuste cada parcela na lista do contrato.
                   </p>
                 )}
               </div>
@@ -349,7 +383,7 @@ function EmprestimosPage() {
                   <div>
                     <p className="text-sm font-semibold tracking-tight">{emprestimoSel.descricao}</p>
                     <p className="mt-0.5 text-xs text-muted-foreground">
-                      {emprestimoSel.parcelas}x · {Number(emprestimoSel.taxa_juros_mensal)}% a.m.
+                      {emprestimoSel.parcelas}x · {Number(emprestimoSel.taxa_juros_mensal)}% a.m. · Soma das parcelas: <strong className="text-foreground">{brl(somaParcelasSel)}</strong>
                     </p>
                   </div>
                   <div className="flex gap-2">
@@ -376,14 +410,29 @@ function EmprestimosPage() {
                         <TableHead className="text-right">Juros</TableHead>
                         <TableHead className="text-right">Amortização</TableHead>
                         <TableHead>Situação</TableHead>
+                        <TableHead className="w-16" />
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {parcelasSel.map((p) => (
+                      {parcelasSel.map((p) => {
+                        const editando = editParc?.id === p.id;
+                        return (
                         <TableRow key={p.id} className="transition-colors hover:bg-accent/30">
                           <TableCell>{p.numero}</TableCell>
-                          <TableCell>{dateBR(p.data_vencimento)}</TableCell>
-                          <TableCell className="text-right font-medium">{brl(p.valor)}</TableCell>
+                          <TableCell>
+                            {editando ? (
+                              <DateInput value={editParc.venc} onChange={(v) => setEditParc({ ...editParc, venc: v })} className="h-8 text-xs" />
+                            ) : (
+                              dateBR(p.data_vencimento)
+                            )}
+                          </TableCell>
+                          <TableCell className="text-right font-medium">
+                            {editando ? (
+                              <MoneyInput value={editParc.valor} onChange={(v) => setEditParc({ ...editParc, valor: v })} className="h-8 text-xs" />
+                            ) : (
+                              brl(p.valor)
+                            )}
+                          </TableCell>
                           <TableCell className="text-right text-muted-foreground">{brl(p.valor_juros)}</TableCell>
                           <TableCell className="text-right text-muted-foreground">{brl(p.valor_amortizacao)}</TableCell>
                           <TableCell>
@@ -391,8 +440,30 @@ function EmprestimosPage() {
                               {p.lancamento_id ? "Lançada" : "Aberta"}
                             </Badge>
                           </TableCell>
+                          <TableCell>
+                            {editando ? (
+                              <div className="flex gap-1">
+                                <Button size="sm" variant="ghost" aria-label="Salvar parcela" onClick={() => salvarParcela.mutate()} disabled={salvarParcela.isPending} className="h-8 w-8 rounded-lg">
+                                  <Check className="h-4 w-4" />
+                                </Button>
+                                <Button size="sm" variant="ghost" aria-label="Cancelar edição" onClick={() => setEditParc(null)} className="h-8 w-8 rounded-lg">
+                                  <X className="h-4 w-4" />
+                                </Button>
+                              </div>
+                            ) : !p.lancamento_id ? (
+                              <Button
+                                size="sm" variant="ghost" aria-label={`Ajustar parcela ${p.numero}`}
+                                title="Ajustar valor e vencimento"
+                                onClick={() => setEditParc({ id: p.id, valor: String(p.valor ?? 0), venc: p.data_vencimento })}
+                                className="h-8 w-8 rounded-lg"
+                              >
+                                <Pencil className="h-4 w-4" />
+                              </Button>
+                            ) : null}
+                          </TableCell>
                         </TableRow>
-                      ))}
+                        );
+                      })}
                     </TableBody>
                   </Table>
                 </div>
