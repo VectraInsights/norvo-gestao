@@ -5061,3 +5061,15 @@ Espelhado na Vercel.
   fundo `bg-muted/30`, icone `h-8` neutro, valor `text-xl` — hierarquia secundaria.
 - Logica, queries, handlers e rotas intactos; `npm run build` OK.
 - Arquivo: `src/routes/_authenticated/dashboard.tsx`.
+
+## Financeiro receber/pagar: tabela compacta + acoes em menu (07/10)
+
+- `LancamentosPage` atende `/financeiro/receber` e `/financeiro/pagar` (mesmo arquivo).
+- Acoes da linha (Editar/Pagar/Reabrir/Cancelar/Excluir) saem de 5 icones `ghost h-8`
+  para `DropdownMenu` em `⋮` (`MoreHorizontal`); handlers e confirm de NF vinculada intactos.
+- Tabela com padding reduzido (`[&_td]:px-3 [&_td]:py-2`); bulk-bar vira `sticky top-16`
+  com `bg-background/95 backdrop-blur` (nao desloca mais a tabela).
+- Hierarquia de botoes: `Novo lancamento` primario com `active:scale-95`;
+  `Adicionar trilha de auditoria` vira `ghost` (terciario).
+- Logica, queries, dialogs e paginacao intactos; `npm run build` OK.
+- Arquivo: `src/routes/_authenticated/financeiro.receber.tsx`.
