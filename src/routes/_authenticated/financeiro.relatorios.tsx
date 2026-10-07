@@ -26,11 +26,11 @@ type Lanc = {
 };
 
 const FAIXAS = [
-  { label: "A vencer", test: (d: number) => d < 0 },
-  { label: "0 a 30 dias", test: (d: number) => d >= 0 && d <= 30 },
-  { label: "31 a 60 dias", test: (d: number) => d > 30 && d <= 60 },
-  { label: "61 a 90 dias", test: (d: number) => d > 60 && d <= 90 },
-  { label: "Acima de 90 dias", test: (d: number) => d > 90 },
+  { label: "No prazo (a vencer)", test: (d: number) => d < 0 },
+  { label: "Atrasado 0–30 dias", test: (d: number) => d >= 0 && d <= 30 },
+  { label: "Atrasado 31–60 dias", test: (d: number) => d > 30 && d <= 60 },
+  { label: "Atrasado 61–90 dias", test: (d: number) => d > 60 && d <= 90 },
+  { label: "Atrasado +90 dias", test: (d: number) => d > 90 },
 ];
 
 function RelatoriosPage() {
@@ -108,7 +108,8 @@ function RelatoriosPage() {
       let acc = 0;
       return rows.map((r) => {
         acc += r.total;
-        return { ...r, pct: (r.total / soma) * 100, acumulado: (acc / soma) * 100 };
+        const acumulado = (acc / soma) * 100;
+        return { ...r, pct: (r.total / soma) * 100, acumulado, classe: acumulado <= 80 ? "A" : acumulado <= 95 ? "B" : "C" };
       });
     };
 
@@ -141,7 +142,7 @@ function RelatoriosPage() {
       <PageHeader
         eyebrow="Financeiro"
         title="Relatórios financeiros"
-        description="Antiguidade de saldos (aging), inadimplência, ranking de clientes e fornecedores e curva ABC por categoria."
+        description="Contas em aberto por tempo de atraso, maiores clientes e fornecedores e gastos por categoria."
       />
 
       <div className="mb-6 grid gap-4 sm:gap-5 lg:grid-cols-3">
@@ -154,28 +155,34 @@ function RelatoriosPage() {
           <p className="mt-1.5 text-2xl font-semibold tracking-tight text-destructive text-tabular">{brl(rel.abertoPagar)}</p>
         </Card>
         <Card className="rounded-2xl p-5 shadow-panel transition-all duration-200 hover:-translate-y-1 hover:shadow-lg sm:p-6">
-          <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">Inadimplência (vencido)</p>
+          <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">Inadimplência a receber</p>
           <p className="mt-1.5 text-2xl font-semibold tracking-tight text-destructive text-tabular">{brl(rel.inadimplencia)}</p>
         </Card>
       </div>
 
-      <Tabs defaultValue="aging">
+      <Tabs defaultValue="atrasos">
         <TabsList className="h-auto flex-wrap gap-1">
-          <TabsTrigger value="aging">Antiguidade</TabsTrigger>
-          <TabsTrigger value="ranking">Clientes & fornecedores</TabsTrigger>
-          <TabsTrigger value="abc">Curva ABC</TabsTrigger>
+          <TabsTrigger value="atrasos">Atrasos por tempo</TabsTrigger>
+          <TabsTrigger value="ranking">Clientes e fornecedores</TabsTrigger>
+          <TabsTrigger value="abc">Gastos por categoria</TabsTrigger>
         </TabsList>
 
-        <TabsContent value="aging" className="mt-4 grid gap-4 sm:mt-5 lg:grid-cols-2 lg:gap-5">
-          {([["Recebíveis", rel.agingReceber], ["Pagáveis", rel.agingPagar]] as const).map(([titulo, linhas]) => (
+        <TabsContent value="atrasos" className="mt-4 grid gap-4 sm:mt-5 lg:grid-cols-2 lg:gap-5">
+          <p className="text-sm text-muted-foreground lg:col-span-2">
+            Contas em aberto agrupadas pelo tempo de atraso a partir do vencimento. "No prazo" ainda não venceu.
+          </p>
+          {([["A receber", rel.agingReceber], ["A pagar", rel.agingPagar]] as const).map(([titulo, linhas]) => (
             <Card key={titulo} className="overflow-hidden rounded-2xl shadow-panel">
-              <div className="border-b border-border/60 px-5 py-3.5 text-sm font-semibold tracking-tight">{titulo}</div>
+              <div className="border-b border-border/60 px-5 py-3.5">
+                <p className="text-sm font-semibold tracking-tight">{titulo}</p>
+                <p className="text-xs text-muted-foreground">Em aberto, por tempo de atraso</p>
+              </div>
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>Faixa</TableHead>
+                    <TableHead>Situação</TableHead>
                     <TableHead className="text-right">Qtd.</TableHead>
-                    <TableHead className="text-right">Valor</TableHead>
+                    <TableHead className="text-right">Valor restante</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -186,6 +193,11 @@ function RelatoriosPage() {
                       <TableCell className="text-right font-medium">{brl(l.total)}</TableCell>
                     </TableRow>
                   ))}
+                  <TableRow className="bg-muted/40 font-medium">
+                    <TableCell>Total em aberto</TableCell>
+                    <TableCell className="text-right text-tabular">{linhas.reduce((s, l) => s + l.qtd, 0)}</TableCell>
+                    <TableCell className="text-right text-tabular">{brl(linhas.reduce((s, l) => s + l.total, 0))}</TableCell>
+                  </TableRow>
                 </TableBody>
               </Table>
             </Card>
@@ -193,9 +205,15 @@ function RelatoriosPage() {
         </TabsContent>
 
         <TabsContent value="ranking" className="mt-4 grid gap-4 sm:mt-5 lg:grid-cols-2 lg:gap-5">
-          {([["Top 10 clientes (recebido)", rel.topClientes], ["Top 10 fornecedores (pago)", rel.topFornecedores]] as const).map(([titulo, linhas]) => (
+          <p className="text-sm text-muted-foreground lg:col-span-2">
+            Quem mais movimentou: soma dos valores já recebidos e já pagos por contato.
+          </p>
+          {([["Maiores clientes (valores recebidos)", rel.topClientes], ["Maiores fornecedores (valores pagos)", rel.topFornecedores]] as const).map(([titulo, linhas]) => (
             <Card key={titulo} className="overflow-hidden rounded-2xl shadow-panel">
-              <div className="border-b border-border/60 px-5 py-3.5 text-sm font-semibold tracking-tight">{titulo}</div>
+              <div className="border-b border-border/60 px-5 py-3.5">
+                <p className="text-sm font-semibold tracking-tight">{titulo}</p>
+                <p className="text-xs text-muted-foreground">Top 10 por valor movimentado</p>
+              </div>
               <Table>
                 <TableHeader>
                   <TableRow><TableHead>Nome</TableHead><TableHead className="text-right">Valor</TableHead></TableRow>
@@ -216,12 +234,19 @@ function RelatoriosPage() {
         </TabsContent>
 
         <TabsContent value="abc" className="mt-4 grid gap-4 sm:mt-5 lg:grid-cols-2 lg:gap-5">
+          <p className="text-sm text-muted-foreground lg:col-span-2">
+            Onde o dinheiro entra e sai por categoria. Classe A: categorias que somam 80% do total; B: até 95%; C: o resto.
+          </p>
           {([["Despesas por categoria", rel.curvaDespesas], ["Receitas por categoria", rel.curvaReceitas]] as const).map(([titulo, linhas]) => (
             <Card key={titulo} className="overflow-hidden rounded-2xl shadow-panel">
-              <div className="border-b border-border/60 px-5 py-3.5 text-sm font-semibold tracking-tight">{titulo}</div>
+              <div className="border-b border-border/60 px-5 py-3.5">
+                <p className="text-sm font-semibold tracking-tight">{titulo}</p>
+                <p className="text-xs text-muted-foreground">Só valores já recebidos/pagos</p>
+              </div>
               <Table>
                 <TableHeader>
                   <TableRow>
+                    <TableHead className="w-12">Classe</TableHead>
                     <TableHead>Categoria</TableHead>
                     <TableHead className="text-right">Valor</TableHead>
                     <TableHead className="text-right">%</TableHead>
@@ -230,9 +255,14 @@ function RelatoriosPage() {
                 </TableHeader>
                 <TableBody>
                   {linhas.length === 0 ? (
-                    <TableRow><TableCell colSpan={4} className="text-sm text-muted-foreground">Sem dados.</TableCell></TableRow>
+                    <TableRow><TableCell colSpan={5} className="text-sm text-muted-foreground">Sem dados.</TableCell></TableRow>
                   ) : linhas.map((l) => (
                     <TableRow key={l.nome} className="transition-colors hover:bg-accent/30">
+                      <TableCell>
+                        <span className="inline-grid h-6 w-6 place-items-center rounded-full bg-primary/10 text-xs font-semibold text-primary">
+                          {l.classe}
+                        </span>
+                      </TableCell>
                       <TableCell className="max-w-[220px] truncate">{l.nome}</TableCell>
                       <TableCell className="text-right font-medium">{brl(l.total)}</TableCell>
                       <TableCell className="text-right text-muted-foreground">{l.pct.toFixed(1)}%</TableCell>
