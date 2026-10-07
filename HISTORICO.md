@@ -5370,3 +5370,13 @@ pm run build OK.
 - Importação pós-criação removida do detalhe (virava retrabalho); ficam
   PDF na criação + lápis manual por parcela.
 - Validado com `npm run build` OK.
+- Emprestimo com fornecedor+conta e editavel (07/10): Novo contrato tem
+  Fornecedor (combo, preenche credor) e Conta bancaria (`conta_credito_id`);
+  Gerar contas a pagar leva contato+conta (Fornecedor deixa de sair "—");
+  botao Editar contrato (descricao/credor/conta; valor/parcelas/datas
+  fixos pos-geracao).
+- Pagar/Receber com periodo "Todo o período" por padrao (07/10).
+- Barra de acoes da selecao opaca (sem linhas vazando por tras) (07/10).
+- Embarque com barra horizontal fixa grudada no bloco (proxy
+  sincronizado; some quando cabe tudo) (07/10).
+- Validado com `npm run build` OK.
