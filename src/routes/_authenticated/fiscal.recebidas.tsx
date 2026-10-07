@@ -463,7 +463,7 @@ function NotasRecebidas() {
     xml: string;
   } | null>(null);
 
-  // Trilha de auditoria (tabela auditoria_eventos): quem lançou/alterou/excluiu cada nota
+  // Auditoria (tabela auditoria_eventos): quem lançou/alterou/excluiu cada nota
   const [trilhaOpen, setTrilhaOpen] = useState(false);
   const registrarAuditoria = async (acao: string, descricao: string, detalhes: Record<string, any> = {}) => {
     try {
@@ -1511,7 +1511,7 @@ function NotasRecebidas() {
         actions={
           <div className="flex items-center gap-2">
             <Button variant="outline" size="sm" onClick={() => setTrilhaOpen(true)} className="h-10 rounded-xl px-4 shadow-sm">
-              Trilha de auditoria
+              Auditoria
             </Button>
           </div>
         }
@@ -2138,7 +2138,7 @@ function NotasRecebidas() {
       <Dialog open={trilhaOpen} onOpenChange={setTrilhaOpen}>
         <DialogContent className="max-h-[85vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>Trilha de auditoria — Notas de Compra</DialogTitle>
+            <DialogTitle>Auditoria — Notas de Compra</DialogTitle>
           </DialogHeader>
           {trilhaQuery.isLoading ? (
             <p className="text-sm text-muted-foreground py-6 text-center">Carregando...</p>

@@ -82,7 +82,7 @@ function ExtratoPage() {
   const [somenteQuitados, setSomenteQuitados] = useState<"todos" | "quitados">("quitados");
   const [busca, setBusca] = useState("");
 
-  // Trilha de auditoria (somente leitura: mostra eventos de lançamentos)
+  // Auditoria (somente leitura: mostra eventos de lançamentos)
   const [trilhaOpen, setTrilhaOpen] = useState(false);
   const trilhaQuery = useQuery({
     enabled: trilhaOpen && !!empresa,
@@ -293,7 +293,7 @@ function ExtratoPage() {
         </div>
         <div className="flex items-center gap-2">
           <Button variant="ghost" size="sm" onClick={() => setTrilhaOpen(true)} className="h-9 rounded-xl px-4 active:scale-95">
-            Trilha de auditoria
+            Auditoria
           </Button>
           <Button variant="outline" size="sm" onClick={exportarCsv} disabled={!linhas.length} className="h-10 rounded-xl px-4 shadow-sm transition-all hover:-translate-y-px hover:shadow-md">
             <Download className="mr-1.5 h-4 w-4" />Exportar CSV
@@ -356,7 +356,7 @@ function ExtratoPage() {
       <Dialog open={trilhaOpen} onOpenChange={setTrilhaOpen}>
         <DialogContent className="max-h-[85vh] overflow-y-auto rounded-2xl sm:max-w-lg">
           <DialogHeader className="gap-1.5 pb-1">
-            <DialogTitle className="tracking-tight">Trilha de auditoria — Extrato</DialogTitle>
+            <DialogTitle className="tracking-tight">Auditoria — Extrato</DialogTitle>
           </DialogHeader>
           {trilhaQuery.isLoading ? (
             <p className="py-6 text-center text-sm text-muted-foreground">Carregando...</p>

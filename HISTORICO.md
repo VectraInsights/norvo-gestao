@@ -5106,3 +5106,12 @@ Espelhado na Vercel.
   onde o Reabrir (volta para `aberto`) fica disponivel na linha.
 - `npm run build` OK.
 - Arquivo: `src/routes/_authenticated/financeiro.receber.tsx`.
+
+## Novo compacto + Auditoria renomeada (07/10)
+
+- `Novo lancamento` em Receber/Pagar: `h-9 px-4 text-sm` para `size=sm h-8 px-3 text-xs`.
+- Botao e titulos `Trilha de auditoria` renomeados para `Auditoria` nas 8 telas
+  (receber/pagar, contas, cadastros, extrato, recebidas, emitidas, produtos, clientes).
+- Dialog da Auditoria com rolagem interna (`max-h-[85vh] overflow-y-auto`):
+  a lista rola dentro do modal, a pagina nao cresce.
+- `npm run build` OK.

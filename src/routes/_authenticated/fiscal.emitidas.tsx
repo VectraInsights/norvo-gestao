@@ -207,7 +207,7 @@ function NotasEmitidas() {
     qc.invalidateQueries({ queryKey: ["nfe-config"] });
   };
 
-  // Trilha de auditoria (tabela auditoria_eventos): quem criou/emitiu/cancelou
+  // Auditoria (tabela auditoria_eventos): quem criou/emitiu/cancelou
   const [trilhaOpen, setTrilhaOpen] = useState(false);
   const registrarAuditoria = async (acao: string, descricao: string, detalhes: Record<string, any> = {}) => {
     try {
@@ -528,7 +528,7 @@ function NotasEmitidas() {
 
         <div className="flex shrink-0 items-center gap-2">
           <Button variant="ghost" size="sm" onClick={() => setTrilhaOpen(true)} className="h-9 rounded-xl px-4 active:scale-95">
-            Trilha de auditoria
+            Auditoria
           </Button>
           <Dialog open={modalOpen} onOpenChange={setModalOpen}>
             <DialogTrigger asChild>
@@ -977,7 +977,7 @@ function NotasEmitidas() {
       <Dialog open={trilhaOpen} onOpenChange={setTrilhaOpen}>
         <DialogContent className="max-h-[85vh] overflow-y-auto rounded-2xl sm:max-w-lg">
           <DialogHeader className="gap-1.5 pb-1">
-            <DialogTitle className="tracking-tight">Trilha de auditoria — Notas de Saída</DialogTitle>
+            <DialogTitle className="tracking-tight">Auditoria — Notas de Saída</DialogTitle>
           </DialogHeader>
           {trilhaQuery.isLoading ? (
             <p className="py-6 text-center text-sm text-muted-foreground">Carregando...</p>

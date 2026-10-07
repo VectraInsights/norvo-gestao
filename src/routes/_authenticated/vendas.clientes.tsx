@@ -267,7 +267,7 @@ function Clientes() {
     setOpen(true);
   };
 
-  // Trilha de auditoria (tabela auditoria_eventos): quem criou/editou/excluiu
+  // Auditoria (tabela auditoria_eventos): quem criou/editou/excluiu
   const [trilhaOpen, setTrilhaOpen] = useState(false);
   const registrarAuditoria = async (acao: string, descricao: string, detalhes: Record<string, any> = {}) => {
     try {
@@ -313,7 +313,7 @@ function Clientes() {
         </div>
         <div className="flex items-center gap-2">
           <Button variant="ghost" size="sm" onClick={() => setTrilhaOpen(true)} className="h-9 rounded-xl px-4 active:scale-95">
-            Trilha de auditoria
+            Auditoria
           </Button>
             <Dialog open={open} onOpenChange={(v) => { if (!criar.isPending && !editar.isPending) { setOpen(v); if (!v) { setEditing(null); setForm(emptyForm()); } } }}>
               <DialogTrigger asChild><Button onClick={openCreate}><Plus className="mr-1 h-4 w-4" />Novo contato</Button></DialogTrigger>
@@ -487,7 +487,7 @@ function Clientes() {
       <Dialog open={trilhaOpen} onOpenChange={setTrilhaOpen}>
         <DialogContent className="max-h-[85vh] overflow-y-auto rounded-2xl sm:max-w-lg">
           <DialogHeader className="gap-1.5 pb-1">
-            <DialogTitle className="tracking-tight">Trilha de auditoria — Clientes e fornecedores</DialogTitle>
+            <DialogTitle className="tracking-tight">Auditoria — Clientes e fornecedores</DialogTitle>
           </DialogHeader>
           {trilhaQuery.isLoading ? (
             <p className="py-6 text-center text-sm text-muted-foreground">Carregando...</p>

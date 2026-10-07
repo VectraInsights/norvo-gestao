@@ -508,7 +508,7 @@ function ContasFinanceiras() {
     });
   }, [contas, busca]);
 
-  // Trilha de auditoria (tabela auditoria_eventos): quem criou/editou/excluiu/definiu padrão
+  // Auditoria (tabela auditoria_eventos): quem criou/editou/excluiu/definiu padrão
   const [trilhaOpen, setTrilhaOpen] = useState(false);
   const registrarAuditoria = async (acao: string, descricao: string, detalhes: Record<string, any> = {}) => {
     try {
@@ -803,7 +803,7 @@ function ContasFinanceiras() {
         <div className="flex items-center gap-2">
           <div className="flex items-center gap-2.5">
             <Button variant="outline" size="sm" onClick={() => setTrilhaOpen(true)} className="h-10 rounded-xl px-4 shadow-sm">
-              Trilha de auditoria
+              Auditoria
             </Button>
 
             <Dialog open={open} onOpenChange={(v) => { if (!criar.isPending) { setOpen(v); if (!v) resetWizard(); } }}>
@@ -1143,7 +1143,7 @@ function ContasFinanceiras() {
       <Dialog open={trilhaOpen} onOpenChange={setTrilhaOpen}>
         <DialogContent className="max-h-[85vh] overflow-y-auto rounded-2xl sm:max-w-lg sm:inset-auto sm:left-1/2 sm:top-1/2 sm:-translate-x-1/2 sm:-translate-y-1/2 sm:h-auto sm:max-h-[90vh] sm:w-full">
           <DialogHeader className="gap-1.5 pb-1">
-            <DialogTitle className="tracking-tight">Trilha de auditoria — Contas financeiras</DialogTitle>
+            <DialogTitle className="tracking-tight">Auditoria — Contas financeiras</DialogTitle>
           </DialogHeader>
           {trilhaQuery.isLoading ? (
             <p className="text-sm text-muted-foreground py-6 text-center">Carregando...</p>

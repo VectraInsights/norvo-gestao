@@ -240,7 +240,7 @@ export function LancamentosPage({ tipo }: { tipo: "receber" | "pagar" }) {
     qc.invalidateQueries({ queryKey: ["folha"] });
   };
 
-  // Trilha de auditoria (tabela auditoria_eventos): quem criou/editou/excluiu
+  // Auditoria (tabela auditoria_eventos): quem criou/editou/excluiu
   const [trilhaOpen, setTrilhaOpen] = useState(false);
   const registrarAuditoria = async (acao: string, descricao: string, detalhes: Record<string, any> = {}) => {
     try {
@@ -657,7 +657,7 @@ export function LancamentosPage({ tipo }: { tipo: "receber" | "pagar" }) {
         </div>
         <div className="flex items-center gap-2">
           <Button variant="ghost" size="sm" onClick={() => setTrilhaOpen(true)} className="h-9 rounded-xl px-4 active:scale-95">
-            Trilha de auditoria
+            Auditoria
           </Button>
           <Dialog
             open={open}
@@ -670,8 +670,8 @@ export function LancamentosPage({ tipo }: { tipo: "receber" | "pagar" }) {
             }}
           >
             <DialogTrigger asChild>
-              <Button size="sm" className="h-9 rounded-xl px-4 text-sm shadow-sm transition-all hover:-translate-y-px hover:shadow-md active:scale-95">
-                <Plus className="mr-1.5 h-4 w-4" />
+              <Button size="sm" className="h-8 rounded-xl px-3 text-xs shadow-sm transition-all hover:shadow-md active:scale-95">
+                <Plus className="mr-1 h-3.5 w-3.5" />
                 Novo lançamento
               </Button>
             </DialogTrigger>
@@ -1332,7 +1332,7 @@ export function LancamentosPage({ tipo }: { tipo: "receber" | "pagar" }) {
       <Dialog open={trilhaOpen} onOpenChange={setTrilhaOpen}>
         <DialogContent className="max-h-[85vh] overflow-y-auto rounded-2xl sm:inset-auto sm:left-1/2 sm:top-1/2 sm:h-auto sm:max-h-[85vh] sm:w-full sm:max-w-lg sm:-translate-x-1/2 sm:-translate-y-1/2">
           <DialogHeader className="gap-1.5 pb-1">
-            <DialogTitle className="tracking-tight">Trilha de auditoria — {titulo}</DialogTitle>
+            <DialogTitle className="tracking-tight">Auditoria — {titulo}</DialogTitle>
           </DialogHeader>
           {trilhaQuery.isLoading ? (
             <p className="py-6 text-center text-sm text-muted-foreground">Carregando...</p>

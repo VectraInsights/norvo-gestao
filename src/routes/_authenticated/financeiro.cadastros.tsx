@@ -52,7 +52,7 @@ function CadastrosPage() {
   const qc = useQueryClient();
   const [busca, setBusca] = useState("");
 
-  // Trilha de auditoria (tabela auditoria_eventos): quem criou/editou/excluiu
+  // Auditoria (tabela auditoria_eventos): quem criou/editou/excluiu
   const [trilhaOpen, setTrilhaOpen] = useState(false);
   const registrarAuditoria = async (acao: string, descricao: string, detalhes: Record<string, any> = {}) => {
     try {
@@ -330,7 +330,7 @@ function CadastrosPage() {
         </div>
         <div className="flex items-center gap-2">
           <Button variant="ghost" size="sm" onClick={() => setTrilhaOpen(true)} className="h-9 rounded-xl px-4 active:scale-95">
-            Trilha de auditoria
+            Auditoria
           </Button>
         </div>
       </div>
@@ -687,7 +687,7 @@ function CadastrosPage() {
       <Dialog open={trilhaOpen} onOpenChange={setTrilhaOpen}>
         <DialogContent className="max-h-[85vh] overflow-y-auto rounded-2xl sm:max-w-lg">
           <DialogHeader className="gap-1.5 pb-1">
-            <DialogTitle className="tracking-tight">Trilha de auditoria — Cadastros</DialogTitle>
+            <DialogTitle className="tracking-tight">Auditoria — Cadastros</DialogTitle>
           </DialogHeader>
           {trilhaQuery.isLoading ? (
             <p className="py-6 text-center text-sm text-muted-foreground">Carregando...</p>
