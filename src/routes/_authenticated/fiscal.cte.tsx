@@ -6427,82 +6427,68 @@ function CtePage() {
             </div>
             <CardContent className="p-3 bg-muted/20 overflow-visible flex-1 min-h-0 flex flex-col">
               <TabsContent value="embarque" className="mt-0 flex-1 min-h-0 flex flex-col gap-3">
-                <div className="border rounded-xl bg-background p-3 space-y-2 shrink-0 shadow-sm">
-                  <div className="grid grid-cols-1 lg:grid-cols-3 gap-3">
-                    <div>
-                      <Label className="text-xs font-semibold text-primary">
-                        Embarque via CT-e
-                      </Label>
-                      <div className="flex flex-col gap-1 mt-1 text-xs">
-                        <label className="flex items-center gap-1">
-                          <input
-                            type="radio"
-                            name="modo-embarque"
-                            checked={(form as any).modoEmbarque !== "simplificado"}
-                            onClick={() => setSelecionadas(new Set())}
-                            onChange={() => setForm((f) => ({ ...f, modoEmbarque: "avulso" }))}
-                          />{" "}
-                          CT-e Avulso
-                        </label>
-                        <label className="flex items-center gap-1">
-                          <input
-                            type="radio"
-                            name="modo-embarque"
-                            checked={(form as any).modoEmbarque === "simplificado"}
-                            onClick={() => setSelecionadas(new Set())}
-                            onChange={() =>
-                              setForm((f) => ({ ...f, modoEmbarque: "simplificado" }))
-                            }
-                          />{" "}
-                          CT-e Simplificado
-                        </label>
-                      </div>
-                    </div>
-                    <div>
-                      <Label className="text-xs font-semibold text-primary">
-                        Situação de Embarque
-                      </Label>
-                      <div className="flex flex-col gap-1 mt-1 text-xs">
-                        <label className="flex items-center gap-1">
-                          <input type="radio" checked readOnly /> Pendentes de Liberação
-                        </label>
-                        <label className="flex items-center gap-1 opacity-60">
-                          <input type="radio" disabled /> Embarques Liberados
-                        </label>
-                      </div>
-                    </div>
-                    <div>
-                      <Label className="text-xs font-semibold text-primary">
-                        Período de Entrada
-                      </Label>
-                      <div className="flex flex-wrap items-center gap-1.5 mt-1">
-                        <DateInput
-                          value={periodoIni}
-                          onChange={setPeriodoIni}
-                          className="h-7 text-xs w-[150px] shrink-0"
-                        />
-                        <span className="text-xs shrink-0">Até</span>
-                        <DateInput
-                          value={periodoFim}
-                          onChange={setPeriodoFim}
-                          className="h-7 text-xs w-[150px] shrink-0"
-                        />
-                        {filtrosSalvos.filtros.length > 0 && (
-                          <Select onValueChange={aplicarFiltroSalvo}>
-                            <SelectTrigger className="h-7 w-[150px] text-xs">
-                              <SelectValue placeholder="Filtros salvos" />
-                            </SelectTrigger>
-                            <SelectContent>
-                              {filtrosSalvos.filtros.map((salvo) => (
-                                <SelectItem key={salvo.id} value={salvo.id}>
-                                  {salvo.nome}
-                                </SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
-                        )}
-                      </div>
-                    </div>
+                <div className="border rounded-xl bg-background px-3 py-1.5 shrink-0 shadow-sm flex flex-wrap items-center gap-x-5 gap-y-1 text-xs">
+                  <div className="flex items-center gap-2.5">
+                    <span className="font-semibold text-primary whitespace-nowrap">Embarque via CT-e</span>
+                    <label className="flex items-center gap-1 whitespace-nowrap">
+                      <input
+                        type="radio"
+                        name="modo-embarque"
+                        checked={(form as any).modoEmbarque !== "simplificado"}
+                        onClick={() => setSelecionadas(new Set())}
+                        onChange={() => setForm((f) => ({ ...f, modoEmbarque: "avulso" }))}
+                      />{" "}
+                      CT-e Avulso
+                    </label>
+                    <label className="flex items-center gap-1 whitespace-nowrap">
+                      <input
+                        type="radio"
+                        name="modo-embarque"
+                        checked={(form as any).modoEmbarque === "simplificado"}
+                        onClick={() => setSelecionadas(new Set())}
+                        onChange={() =>
+                          setForm((f) => ({ ...f, modoEmbarque: "simplificado" }))
+                        }
+                      />{" "}
+                      CT-e Simplificado
+                    </label>
+                  </div>
+                  <div className="flex items-center gap-2.5">
+                    <span className="font-semibold text-primary whitespace-nowrap">Situação</span>
+                    <label className="flex items-center gap-1 whitespace-nowrap">
+                      <input type="radio" checked readOnly /> Pendentes de Liberação
+                    </label>
+                    <label className="flex items-center gap-1 opacity-60 whitespace-nowrap">
+                      <input type="radio" disabled /> Embarques Liberados
+                    </label>
+                  </div>
+                  <div className="ml-auto flex flex-wrap items-center gap-1.5">
+                    <span className="font-semibold text-primary whitespace-nowrap">Período</span>
+                    <DateInput
+                      value={periodoIni}
+                      onChange={setPeriodoIni}
+                      className="h-7 text-xs w-[150px] shrink-0"
+                    />
+                    <span className="shrink-0">Até</span>
+                    <DateInput
+                      value={periodoFim}
+                      onChange={setPeriodoFim}
+                      className="h-7 text-xs w-[150px] shrink-0"
+                    />
+                    {filtrosSalvos.filtros.length > 0 && (
+                      <Select onValueChange={aplicarFiltroSalvo}>
+                        <SelectTrigger className="h-7 w-[150px] text-xs">
+                          <SelectValue placeholder="Filtros salvos" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {filtrosSalvos.filtros.map((salvo) => (
+                            <SelectItem key={salvo.id} value={salvo.id}>
+                              {salvo.nome}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    )}
                   </div>
                 </div>
 
@@ -6745,18 +6731,18 @@ function CtePage() {
                         )}
                       </TableBody>
                     </Table>
-                    {embOverflow && (
-                      <div className="sticky bottom-0 z-10 border-t border-border/60 bg-background">
-                        <div
-                          ref={embBarRef}
-                          onScroll={() => syncEmb("bar")}
-                          className="overflow-x-auto overflow-y-hidden"
-                        >
-                          <div style={{ width: embWide }} className="h-4" />
-                        </div>
-                      </div>
-                    )}
                   </div>
+                  {embOverflow && (
+                    <div className="shrink-0 border-t border-border/60 bg-background" title="Rolagem horizontal da listagem">
+                      <div
+                        ref={embBarRef}
+                        onScroll={() => syncEmb("bar")}
+                        className="overflow-x-auto overflow-y-hidden"
+                      >
+                        <div style={{ width: embWide }} className="h-3.5" />
+                      </div>
+                    </div>
+                  )}
                 </div>
 
                 {/* Ações de importação múltipla */}
