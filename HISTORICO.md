@@ -5367,3 +5367,6 @@ pm run build OK.
 - Novo contrato lê o PDF antes: preenche valor/taxa/datas e cadastra
   direto com o cronograma do banco (sem Price).
 - Validado com `npm run build` OK.
+- Importação pós-criação removida do detalhe (virava retrabalho); ficam
+  PDF na criação + lápis manual por parcela.
+- Validado com `npm run build` OK.
