@@ -568,30 +568,68 @@ function EmprestimosPage() {
             }}
           />
           <Dialog open={editOpen} onOpenChange={setEditOpen}>
-            <DialogContent className="fixed inset-0 left-0 top-0 translate-x-0 translate-y-0 w-screen h-screen max-w-none max-h-none rounded-none p-6 overflow-y-auto sm:p-8">
+            <DialogContent className="max-h-[90vh] overflow-y-auto rounded-2xl sm:max-w-lg">
               <DialogHeader className="gap-1.5 pb-1"><DialogTitle className="tracking-tight">Editar contrato</DialogTitle></DialogHeader>
-              <p className="text-sm leading-relaxed text-muted-foreground">
-                Valor, taxa, parcelas e datas não mudam aqui (as parcelas já foram geradas —
-                ajuste cada uma no lápis da lista).
-              </p>
+              {emprestimoSel && (
               <div className="grid gap-4">
-                <div className="grid gap-1.5">
-                  <Label>Descrição</Label>
-                  <Input value={editForm.descricao} onChange={(e) => setEditForm({ ...editForm, descricao: e.target.value })} className="h-10 rounded-xl" />
+                <div className="grid gap-3 sm:grid-cols-2">
+                  <div className="grid gap-1.5">
+                    <Label>Tipo</Label>
+                    <Select value={emprestimoSel.tipo} disabled>
+                      <SelectTrigger className="h-10 rounded-xl"><SelectValue /></SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="emprestimo">Empréstimo</SelectItem>
+                        <SelectItem value="financiamento">Financiamento</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="grid gap-1.5">
+                    <Label>Conta bancária</Label>
+                    <Combobox
+                      value={editForm.contaId}
+                      onChange={(v) => setEditForm({ ...editForm, contaId: v })}
+                      options={(contasEmp ?? []).map((c) => ({ value: c.id, label: c.nome ?? "" }))}
+                    />
+                  </div>
                 </div>
                 <div className="grid gap-1.5">
                   <Label>Credor</Label>
                   <Input value={editForm.credor} onChange={(e) => setEditForm({ ...editForm, credor: e.target.value })} className="h-10 rounded-xl" />
                 </div>
                 <div className="grid gap-1.5">
-                  <Label>Conta bancária</Label>
-                  <Combobox
-                    value={editForm.contaId}
-                    onChange={(v) => setEditForm({ ...editForm, contaId: v })}
-                    options={(contasEmp ?? []).map((c) => ({ value: c.id, label: c.nome ?? "" }))}
-                  />
+                  <Label>Descrição</Label>
+                  <Input value={editForm.descricao} onChange={(e) => setEditForm({ ...editForm, descricao: e.target.value })} className="h-10 rounded-xl" />
                 </div>
+                <div className="grid gap-3 sm:grid-cols-3">
+                  <div className="grid gap-1.5">
+                    <Label>Valor contratado</Label>
+                    <MoneyInput value={String(emprestimoSel.valor_principal ?? 0)} onChange={() => {}} disabled className="h-10" />
+                  </div>
+                  <div className="grid gap-1.5">
+                    <Label>Juros % a.m.</Label>
+                    <MoneyInput prefix="" value={String(emprestimoSel.taxa_juros_mensal ?? 0)} onChange={() => {}} disabled className="h-10" />
+                  </div>
+                  <div className="grid gap-1.5">
+                    <Label>Parcelas</Label>
+                    <MoneyInput prefix="" decimals={0} value={String(emprestimoSel.parcelas ?? 0)} onChange={() => {}} disabled className="h-10" />
+                  </div>
+                </div>
+                <div className="grid gap-3 sm:grid-cols-2">
+                  <div className="grid gap-1.5">
+                    <Label>Contratação</Label>
+                    <DateInput value={emprestimoSel.data_contratacao} onChange={() => {}} disabled className="h-10" />
+                  </div>
+                  <div className="grid gap-1.5">
+                    <Label>1º vencimento</Label>
+                    <DateInput value={emprestimoSel.primeiro_vencimento ?? ""} onChange={() => {}} disabled className="h-10" />
+                  </div>
+                </div>
+                <p className="rounded-xl border bg-muted/50 p-3 text-xs leading-relaxed text-muted-foreground">
+                  Valor, taxa, parcelas e datas não mudam aqui (as parcelas já foram geradas —
+                  ajuste cada uma no lápis da lista).
+                </p>
               </div>
+              )}
               <DialogFooter className="gap-2">
                 <Button onClick={() => salvarContrato.mutate()} disabled={salvarContrato.isPending} className="h-10 rounded-xl px-6">
                   {salvarContrato.isPending ? "Salvando..." : "Salvar"}
