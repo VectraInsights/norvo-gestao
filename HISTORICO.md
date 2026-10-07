@@ -5133,3 +5133,10 @@ Espelhado na Vercel.
   reservam espaco (`span h-9 w-9`) mesmo quando inativas.
 - `npm run build` OK.
 - Arquivos: `financeiro.receber.tsx`, `components/erp/periodo-filter.tsx`.
+
+## Periodo com largura total (07/10)
+
+- Botao do periodo de `w-[210px]` para `w-[300px]`: intervalo personalizado
+  (`30/09/2026 — 07/10/2026`) aparece por inteiro, sem `...`; `title` com o texto
+  completo no hover. Largura segue fixa, setas nao saem do lugar.
+- `npm run build` OK.
