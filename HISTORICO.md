@@ -5265,3 +5265,13 @@ pm run build OK.
   (`nav-config.ts`); rota/pagina `/financeiro/transferencias` e o dialog
   seguem existindo (atalhos em Contas/Pagar/Receber).
 - Validado com `npm run build` OK.
+
+## Busca por valor + pernas + abas sem rolagem (07/10)
+
+- Busca do Pagar/Receber casa tambem valor ("25,00" acha 25.00; a partir
+  de 2 digitos p/ "0" nao casar tudo).
+- Pernas de transferencia aparecem SOMENTE com busca ativa (lista e
+  totais seguem limpos sem busca).
+- Fileira Todos/Vencidos/etc sem `overflow-x-auto`: quebra de linha +
+  botoes/contadores compactos.
+- Validado com `npm run build` OK.
