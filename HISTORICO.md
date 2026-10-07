@@ -5418,3 +5418,7 @@ pm run build OK.
   só campo (seletor do cadastro, com Novo fornecedor); o nome gravado
   segue alimentando o Fornecedor do Pagar.
 - Validado com `npm run build` OK.
+- Novo credor + Importar PDF + sem placeholders (07/10): rodapé e
+  dialogo "Novo credor" (segue tipo fornecedor); botao "Importar PDF";
+  placeholders removidos da tela de contratos.
+- Validado com `npm run build` OK.
