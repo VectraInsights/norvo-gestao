@@ -5383,3 +5383,7 @@ pm run build OK.
 - Pagar/Receber abre na aba Todos (antes A vencer); periodo padrao
   revertido (07/10).
 - Validado com `npm run build` OK.
+- Cabecalho do Pagar estatico e opaco (07/10): o `TableHeader` global e
+  sticky translucido grudava no card e deixava as linhas passarem por
+  baixo aparecendo através; só a barra de acoes continua grudada.
+- Validado com `npm run build` OK.
