@@ -5422,6 +5422,10 @@ pm run build OK.
   guarda de vinculo e encerrados em paginas (antes 100/50/200/100).
   Guarda de vinculo total: CT-e de MDF-e antigo nao entra em outro.
 - Validado com `npm run build` OK.
+- Percursos sem limites silenciosos (07/10): lista, seguradoras e
+  contatos em paginas (contatos nem tinha range: corte em 1000).
+  Guarda "em uso" total: percurso usado por doc antigo nao e excluido.
+- Validado com `npm run build` OK.
 - Novo credor + Importar PDF + sem placeholders (07/10): rodapé e
   dialogo "Novo credor" (segue tipo fornecedor); botao "Importar PDF";
   placeholders removidos da tela de contratos.
