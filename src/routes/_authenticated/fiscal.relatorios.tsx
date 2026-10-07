@@ -38,14 +38,21 @@ function RelatoriosFiscais() {
     enabled: !!empresa,
     queryKey: ["notas-importadas-relatorio", empresa?.id],
     queryFn: async ({ signal }) => {
-      const { data, error } = await supabase
-        .from("notas_importadas" as never)
-        .select("id, emitente, cnpj_emitente, numero_nf, data_emissao, valor_total, situacao")
-        .eq("empresa_id", empresa!.id)
-        .order("data_emissao", { ascending: false })
-        .abortSignal(signal);
-      if (error) throw error;
-      return (data ?? []) as any[];
+      // Busca em páginas: sem range, o Supabase corta em 1000 (sem aviso)
+      const todas: unknown[] = [];
+      for (let ini = 0; ; ini += 1000) {
+        const { data, error } = await supabase
+          .from("notas_importadas" as never)
+          .select("id, emitente, cnpj_emitente, numero_nf, data_emissao, valor_total, situacao")
+          .eq("empresa_id", empresa!.id)
+          .order("data_emissao", { ascending: false })
+          .range(ini, ini + 999)
+          .abortSignal(signal);
+        if (error) throw error;
+        todas.push(...((data as unknown[]) ?? []));
+        if (!data || (data as unknown[]).length < 1000) break;
+      }
+      return todas as any[];
     },
   });
 
