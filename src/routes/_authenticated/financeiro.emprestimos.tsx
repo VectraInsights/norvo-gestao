@@ -237,7 +237,7 @@ function EmprestimosPage() {
     setTaxa("0"); setParcelas("12");
     setContratacao(format(new Date(), "yyyy-MM-dd"));
     setPrimeiro(format(addMonths(new Date(), 1), "yyyy-MM-dd"));
-    setPdfNovo(null); setFornId(""); setContaId("");
+    setPdfNovo(null); setCredorId(""); setContaId("");
   };
 
   const criar = useMutation({
@@ -568,7 +568,7 @@ function EmprestimosPage() {
             }}
           />
           <Dialog open={editOpen} onOpenChange={setEditOpen}>
-            <DialogContent className="max-h-[90vh] overflow-y-auto rounded-2xl sm:max-w-lg">
+            <DialogContent className="fixed inset-0 left-0 top-0 translate-x-0 translate-y-0 w-screen h-screen max-w-none max-h-none rounded-none p-6 overflow-y-auto sm:p-8">
               <DialogHeader className="gap-1.5 pb-1"><DialogTitle className="tracking-tight">Editar contrato</DialogTitle></DialogHeader>
               <p className="text-sm leading-relaxed text-muted-foreground">
                 Valor, taxa, parcelas e datas não mudam aqui (as parcelas já foram geradas —
