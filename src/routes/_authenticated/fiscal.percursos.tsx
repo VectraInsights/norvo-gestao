@@ -722,14 +722,20 @@ function PercursosPage() {
     staleTime: 2 * 60_000,
     gcTime: 15 * 60_000,
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from("cte_percursos" as any)
-        .select("id,empresa_id,codigo,nome,created_at,rem_nome,rem_cnpj,dest_nome,dest_cnpj,toma_nome,toma_cnpj,coleta_xmun,coleta_uf,entrega_xmun,entrega_uf")
-        .eq("empresa_id", empresa!.id)
-        .order("codigo")
-        .limit(500);
-      if (error) throw error;
-      return (data ?? []) as unknown as Percurso[];
+      // Busca em páginas para nunca cortar a lista (sem limite silencioso)
+      const todos: unknown[] = [];
+      for (let ini = 0; ; ini += 500) {
+        const { data, error } = await supabase
+          .from("cte_percursos" as any)
+          .select("id,empresa_id,codigo,nome,created_at,rem_nome,rem_cnpj,dest_nome,dest_cnpj,toma_nome,toma_cnpj,coleta_xmun,coleta_uf,entrega_xmun,entrega_uf")
+          .eq("empresa_id", empresa!.id)
+          .order("codigo")
+          .range(ini, ini + 499);
+        if (error) throw error;
+        todos.push(...((data as unknown[]) ?? []));
+        if (!data || (data as unknown[]).length < 500) break;
+      }
+      return todos as unknown as Percurso[];
     },
   });
 
@@ -849,15 +855,21 @@ function PercursosPage() {
     enabled: !!empresa,
     queryKey: ["seguradoras-perc", empresa?.id],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from("seguradoras" as any)
-        .select("id,nome,cnpj,apolice_numero,averbacao")
-        .eq("empresa_id", empresa!.id)
-        .eq("ativo", true)
-        .order("nome")
-        .limit(100);
-      if (error) throw error;
-      return (data ?? []) as unknown as Array<{
+      // Busca em páginas para nunca cortar a lista (sem limite silencioso)
+      const todos: unknown[] = [];
+      for (let ini = 0; ; ini += 500) {
+        const { data, error } = await supabase
+          .from("seguradoras" as any)
+          .select("id,nome,cnpj,apolice_numero,averbacao")
+          .eq("empresa_id", empresa!.id)
+          .eq("ativo", true)
+          .order("nome")
+          .range(ini, ini + 499);
+        if (error) throw error;
+        todos.push(...((data as unknown[]) ?? []));
+        if (!data || (data as unknown[]).length < 500) break;
+      }
+      return todos as unknown as Array<{
         id: string;
         nome: string;
         cnpj: string | null;
@@ -870,11 +882,18 @@ function PercursosPage() {
     enabled: !!empresa,
     queryKey: ["contatos-cte", empresa?.id],
     queryFn: async (): Promise<any[]> => {
-      const { data } = await supabase
-        .from("contatos" as any)
-        .select("id,documento,nome,ie,logradouro,numero,bairro,cidade,uf,cep,telefone")
-        .eq("empresa_id", empresa!.id);
-      return (data ?? []) as any[];
+      // Busca em páginas: sem range, o Supabase corta em 1000 (sem aviso)
+      const todos: unknown[] = [];
+      for (let ini = 0; ; ini += 1000) {
+        const { data } = await supabase
+          .from("contatos" as any)
+          .select("id,documento,nome,ie,logradouro,numero,bairro,cidade,uf,cep,telefone")
+          .eq("empresa_id", empresa!.id)
+          .range(ini, ini + 999);
+        todos.push(...((data as unknown[]) ?? []));
+        if (!data || (data as unknown[]).length < 1000) break;
+      }
+      return todos as any[];
     },
   });
   const contatoByDoc = useMemo(() => {
@@ -1265,31 +1284,35 @@ function PercursosPage() {
       const dg = (v: any) => String(v || "").replace(/\D/g, "");
       const trio = [dg(alvo?.rem_cnpj), dg(alvo?.dest_cnpj), dg(alvo?.toma_cnpj)];
       if (alvo && trio.every(Boolean)) {
-        const { data: docs } = await supabase
-          .from("cte_documentos" as any)
-          .select("id,numero,status,xml_assinado")
-          .eq("empresa_id", empresa!.id)
-          .limit(500);
-        for (const doc of ((docs as any[]) || [])) {
-          let usa = false;
-          try {
-            const p = JSON.parse((doc as any).xml_assinado || "{}");
-            const f = p.form || {};
-            const n0 = (p.nfs || [])[0] || {};
-            usa =
-              dg(f.cnpjTomador) === trio[2] &&
-              dg(n0.emitCnpj) === trio[0] &&
-              dg(n0.destCnpj) === trio[1];
-          } catch {
-            usa = false;
+        // Busca em páginas: com corte, percurso em uso por doc antigo era excluído
+        for (let ini = 0; ; ini += 500) {
+          const { data: docs } = await supabase
+            .from("cte_documentos" as any)
+            .select("id,numero,status,xml_assinado")
+            .eq("empresa_id", empresa!.id)
+            .range(ini, ini + 499);
+          for (const doc of ((docs as any[]) || [])) {
+            let usa = false;
+            try {
+              const p = JSON.parse((doc as any).xml_assinado || "{}");
+              const f = p.form || {};
+              const n0 = (p.nfs || [])[0] || {};
+              usa =
+                dg(f.cnpjTomador) === trio[2] &&
+                dg(n0.emitCnpj) === trio[0] &&
+                dg(n0.destCnpj) === trio[1];
+            } catch {
+              usa = false;
+            }
+            if (usa) {
+              const st = String((doc as any).status || "");
+              const num = (doc as any).numero ? ` nº ${(doc as any).numero}` : "";
+              throw new Error(
+                `Percurso em uso no CT-e${num} (${st || "registrado"}) — exclua o documento primeiro`,
+              );
+            }
           }
-          if (usa) {
-            const st = String((doc as any).status || "");
-            const num = (doc as any).numero ? ` nº ${(doc as any).numero}` : "";
-            throw new Error(
-              `Percurso em uso no CT-e${num} (${st || "registrado"}) — exclua o documento primeiro`,
-            );
-          }
+          if (!docs || (docs as any[]).length < 500) break;
         }
       }
       const { error } = await supabase
