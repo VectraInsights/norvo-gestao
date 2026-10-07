@@ -744,17 +744,23 @@ function CtePage() {
     staleTime: 30_000,
     gcTime: 10 * 60_000,
     queryFn: async (): Promise<CteDoc[]> => {
-      const { data, error } = await supabase
-        .from("cte_documentos" as any)
-        .select(
-          "id,numero,serie,status,valor_servico,chave_acesso,created_at,motivo_rejeicao,protocolo_sefaz,xml_assinado,ambiente,data_autorizacao,responsavel_emissao",
-        )
-        .eq("empresa_id", empresa!.id)
-        .eq("ambiente", SEFAZ_AMBIENTE)
-        .order("created_at", { ascending: false })
-        .limit(100);
-      if (error) throw error;
-      return (data ?? []) as unknown as CteDoc[];
+      // Busca em páginas para nunca cortar o histórico (sem limite silencioso)
+      const todos: unknown[] = [];
+      for (let ini = 0; ; ini += 500) {
+        const { data, error } = await supabase
+          .from("cte_documentos" as any)
+          .select(
+            "id,numero,serie,status,valor_servico,chave_acesso,created_at,motivo_rejeicao,protocolo_sefaz,xml_assinado,ambiente,data_autorizacao,responsavel_emissao",
+          )
+          .eq("empresa_id", empresa!.id)
+          .eq("ambiente", SEFAZ_AMBIENTE)
+          .order("created_at", { ascending: false })
+          .range(ini, ini + 499);
+        if (error) throw error;
+        todos.push(...((data as unknown[]) ?? []));
+        if (!data || (data as unknown[]).length < 500) break;
+      }
+      return todos as unknown as CteDoc[];
     },
   });
 
@@ -778,15 +784,21 @@ function CtePage() {
     enabled: !!empresa,
     queryKey: ["mdf-vinculos-cte", (empresa as any)?.id],
     queryFn: async ({ signal }) => {
-      const { data, error } = await supabase
-        .from("mdf_documentos" as any)
-        .select("status,xml_assinado")
-        .eq("empresa_id", (empresa as any).id)
-        .in("status", ["autorizado", "encerrado", "rascunho"])
-        .limit(200)
-        .abortSignal(signal);
-      if (error) throw error;
-      return (data ?? []) as unknown as Array<{ status: string; xml_assinado: string | null }>;
+      // Busca em páginas para o cruzamento Sem/Com MDF-e nunca cortar (sem limite silencioso)
+      const todos: unknown[] = [];
+      for (let ini = 0; ; ini += 500) {
+        const { data, error } = await supabase
+          .from("mdf_documentos" as any)
+          .select("status,xml_assinado")
+          .eq("empresa_id", (empresa as any).id)
+          .in("status", ["autorizado", "encerrado", "rascunho"])
+          .range(ini, ini + 499)
+          .abortSignal(signal);
+        if (error) throw error;
+        todos.push(...((data as unknown[]) ?? []));
+        if (!data || (data as unknown[]).length < 500) break;
+      }
+      return todos as unknown as Array<{ status: string; xml_assinado: string | null }>;
     },
   });
   const mdfChaves = useMemo(() => {
@@ -2106,14 +2118,20 @@ function CtePage() {
     queryKey: ["ciot-operacoes", empresa?.id],
     staleTime: 60_000,
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from("ciot_operacoes" as any)
-        .select("id,ciot,ciot_verificador,protocolo,id_operacao,status,valor_frete,distancia_km,tipo_carga,placa,tomador_nome,created_at,cte_ids")
-        .eq("empresa_id", empresa!.id)
-        .order("created_at", { ascending: false })
-        .limit(100);
-      if (error) throw error;
-      return (data ?? []) as unknown as Array<Record<string, any>>;
+      // Busca em páginas para nunca cortar o histórico (sem limite silencioso)
+      const todas: unknown[] = [];
+      for (let ini = 0; ; ini += 500) {
+        const { data, error } = await supabase
+          .from("ciot_operacoes" as any)
+          .select("id,ciot,ciot_verificador,protocolo,id_operacao,status,valor_frete,distancia_km,tipo_carga,placa,tomador_nome,created_at,cte_ids")
+          .eq("empresa_id", empresa!.id)
+          .order("created_at", { ascending: false })
+          .range(ini, ini + 499);
+        if (error) throw error;
+        todas.push(...((data as unknown[]) ?? []));
+        if (!data || (data as unknown[]).length < 500) break;
+      }
+      return todas as unknown as Array<Record<string, any>>;
     },
   });
   const [ciotConfirma, setCiotConfirma] = useState(false);
@@ -2466,17 +2484,23 @@ function CtePage() {
     staleTime: 30_000,
     gcTime: 10 * 60_000,
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from("cte_nfes_pendentes" as any)
-        .select(
-          "chave,n_nf,serie,emit_nome,emit_cnpj,emit_uf,emit_cmun,emit_xmun,emit_ie,emit_logradouro,emit_nro,emit_bairro,emit_cep,emit_fone,dest_nome,dest_cnpj,dest_uf,dest_cmun,dest_xmun,dest_ie,dest_logradouro,dest_nro,dest_bairro,dest_cep,dest_fone,valor,peso,data_emissao,tomador_nome,tomador_cnpj,tomador_uf,tomador_cmun,tomador_xmun,tomador_ie,tomador_logradouro,tomador_bairro,tomador_cep,mod_frete",
-        )
-        .eq("empresa_id", empresa!.id)
-        .eq("status", "pendente")
-        .order("created_at")
-        .limit(1000);
-      if (error) throw error;
-      return (data ?? []) as unknown as Array<{
+      // Busca em páginas para nunca cortar as pendentes (sem limite silencioso)
+      const todas: unknown[] = [];
+      for (let ini = 0; ; ini += 1000) {
+        const { data, error } = await supabase
+          .from("cte_nfes_pendentes" as any)
+          .select(
+            "chave,n_nf,serie,emit_nome,emit_cnpj,emit_uf,emit_cmun,emit_xmun,emit_ie,emit_logradouro,emit_nro,emit_bairro,emit_cep,emit_fone,dest_nome,dest_cnpj,dest_uf,dest_cmun,dest_xmun,dest_ie,dest_logradouro,dest_nro,dest_bairro,dest_cep,dest_fone,valor,peso,data_emissao,tomador_nome,tomador_cnpj,tomador_uf,tomador_cmun,tomador_xmun,tomador_ie,tomador_logradouro,tomador_bairro,tomador_cep,mod_frete",
+          )
+          .eq("empresa_id", empresa!.id)
+          .eq("status", "pendente")
+          .order("created_at")
+          .range(ini, ini + 999);
+        if (error) throw error;
+        todas.push(...((data as unknown[]) ?? []));
+        if (!data || (data as unknown[]).length < 1000) break;
+      }
+      return todas as unknown as Array<{
         chave: string;
         n_nf: string | null;
         serie: string | null;
@@ -2513,13 +2537,19 @@ function CtePage() {
     staleTime: 2 * 60_000,
     gcTime: 15 * 60_000,
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from("cte_nfes_pendentes" as any)
-        .select("chave,emit_cnpj,emit_nome,dest_cnpj,dest_nome")
-        .eq("empresa_id", empresa!.id)
-        .limit(2000);
-      if (error) throw error;
-      return (data ?? []) as unknown as Array<{
+      // Busca em páginas para o cruzamento nunca cortar (sem limite silencioso)
+      const todas: unknown[] = [];
+      for (let ini = 0; ; ini += 1000) {
+        const { data, error } = await supabase
+          .from("cte_nfes_pendentes" as any)
+          .select("chave,emit_cnpj,emit_nome,dest_cnpj,dest_nome")
+          .eq("empresa_id", empresa!.id)
+          .range(ini, ini + 999);
+        if (error) throw error;
+        todas.push(...((data as unknown[]) ?? []));
+        if (!data || (data as unknown[]).length < 1000) break;
+      }
+      return todas as unknown as Array<{
         chave: string;
         emit_cnpj: string | null;
         emit_nome: string | null;
@@ -2654,16 +2684,22 @@ function CtePage() {
     enabled: !!empresa,
     queryKey: ["cte-motoristas", empresa?.id],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from("colaboradores" as never)
-        .select("id,nome,cargo,cpf")
-        .eq("empresa_id", empresa!.id)
-        .eq("status", "ativo")
-        .ilike("cargo", "%motorist%")
-        .order("nome")
-        .limit(100);
-      if (error) throw error;
-      return (data ?? []) as unknown as Array<{
+      // Busca em páginas para nunca cortar a lista (sem limite silencioso)
+      const todos: unknown[] = [];
+      for (let ini = 0; ; ini += 500) {
+        const { data, error } = await supabase
+          .from("colaboradores" as never)
+          .select("id,nome,cargo,cpf")
+          .eq("empresa_id", empresa!.id)
+          .eq("status", "ativo")
+          .ilike("cargo", "%motorist%")
+          .order("nome")
+          .range(ini, ini + 499);
+        if (error) throw error;
+        todos.push(...((data as unknown[]) ?? []));
+        if (!data || (data as unknown[]).length < 500) break;
+      }
+      return todos as unknown as Array<{
         id: string;
         nome: string;
         cargo: string;
@@ -2703,14 +2739,20 @@ function CtePage() {
     enabled: !!empresa,
     queryKey: ["veiculos-cte", empresa?.id],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from("veiculos" as never)
-        .select("id,placa,marca_modelo,tipo,renavam,rntrc,tag_pedagio,quantidade_eixos,proprietario,proprietario_doc")
-        .eq("empresa_id", empresa!.id)
-        .order("placa")
-        .limit(100);
-      if (error) throw error;
-      return (data ?? []) as unknown as Array<{
+      // Busca em páginas para nunca cortar a frota (sem limite silencioso)
+      const todos: unknown[] = [];
+      for (let ini = 0; ; ini += 500) {
+        const { data, error } = await supabase
+          .from("veiculos" as never)
+          .select("id,placa,marca_modelo,tipo,renavam,rntrc,tag_pedagio,quantidade_eixos,proprietario,proprietario_doc")
+          .eq("empresa_id", empresa!.id)
+          .order("placa")
+          .range(ini, ini + 499);
+        if (error) throw error;
+        todos.push(...((data as unknown[]) ?? []));
+        if (!data || (data as unknown[]).length < 500) break;
+      }
+      return todos as unknown as Array<{
         id: string;
         placa: string;
         marca_modelo: string | null;
@@ -2795,15 +2837,21 @@ function CtePage() {
     enabled: !!empresa,
     queryKey: ["seguradoras", empresa?.id],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from("seguradoras" as never)
-        .select("id,nome,cnpj,apolice_numero,averbacao")
-        .eq("empresa_id", empresa!.id)
-        .eq("ativo", true)
-        .order("nome")
-        .limit(100);
-      if (error) throw error;
-      return (data ?? []) as unknown as Array<{
+      // Busca em páginas para nunca cortar a lista (sem limite silencioso)
+      const todos: unknown[] = [];
+      for (let ini = 0; ; ini += 500) {
+        const { data, error } = await supabase
+          .from("seguradoras" as never)
+          .select("id,nome,cnpj,apolice_numero,averbacao")
+          .eq("empresa_id", empresa!.id)
+          .eq("ativo", true)
+          .order("nome")
+          .range(ini, ini + 499);
+        if (error) throw error;
+        todos.push(...((data as unknown[]) ?? []));
+        if (!data || (data as unknown[]).length < 500) break;
+      }
+      return todos as unknown as Array<{
         id: string;
         nome: string;
         cnpj: string | null;
@@ -3037,12 +3085,18 @@ function CtePage() {
     staleTime: 5 * 60_000,
     gcTime: 15 * 60_000,
     queryFn: async (): Promise<any[]> => {
-      const { data } = await supabase
-        .from("fiscal_cadastros" as any)
-        .select("documento,nome,ie,logradouro,numero,bairro,cidade,uf,cep,telefone")
-        .eq("empresa_id", empresa!.id)
-        .limit(5000);
-      return (data ?? []) as any[];
+      // Busca em páginas para o complemento nunca cortar (sem limite silencioso)
+      const todos: unknown[] = [];
+      for (let ini = 0; ; ini += 1000) {
+        const { data } = await supabase
+          .from("fiscal_cadastros" as any)
+          .select("documento,nome,ie,logradouro,numero,bairro,cidade,uf,cep,telefone")
+          .eq("empresa_id", empresa!.id)
+          .range(ini, ini + 999);
+        todos.push(...((data as unknown[]) ?? []));
+        if (!data || (data as unknown[]).length < 1000) break;
+      }
+      return todos as any[];
     },
   });
   const contatoByDoc = useMemo(() => {
@@ -4906,17 +4960,21 @@ function CtePage() {
   };
 
   // NF-es vinculadas a CT-e autorizado ou rascunho NUNCA voltam (já têm dono).
+  // Busca em páginas: com corte, NF de documento antigo escapava e duplicava emissão.
   const chavesEmUso = async (): Promise<Set<string>> => {
     const emUso = new Set<string>();
     if (!empresa) return emUso;
-    const { data } = await supabase
-      .from("cte_documentos" as any)
-      .select("xml_assinado")
-      .eq("empresa_id", empresa.id)
-      .in("status", ["autorizado", "rascunho"])
-      .limit(500);
-    for (const d of ((data as any[]) || [])) {
-      for (const c of chavesNFeDoXml((d as any)?.xml_assinado)) emUso.add(c);
+    for (let ini = 0; ; ini += 500) {
+      const { data } = await supabase
+        .from("cte_documentos" as any)
+        .select("xml_assinado")
+        .eq("empresa_id", empresa.id)
+        .in("status", ["autorizado", "rascunho"])
+        .range(ini, ini + 499);
+      for (const d of ((data as any[]) || [])) {
+        for (const c of chavesNFeDoXml((d as any)?.xml_assinado)) emUso.add(c);
+      }
+      if (!data || (data as any[]).length < 500) break;
     }
     return emUso;
   };
