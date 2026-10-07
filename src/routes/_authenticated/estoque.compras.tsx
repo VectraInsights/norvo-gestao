@@ -10,6 +10,7 @@ import { Card } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { MoneyInput } from "@/components/erp/money-input";
 import { Combobox } from "@/components/erp/combobox";
+import { NovoContatoDialog } from "@/components/erp/novo-contato-dialog";
 import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from "@/components/ui/table";
@@ -56,6 +57,7 @@ function Compras() {
   const [open, setOpen] = useState(false);
   const [busca, setBusca] = useState("");
   const [fornecedor, setFornecedor] = useState<string>("");
+  const [novoFornOpen, setNovoFornOpen] = useState(false);
   const [dataPrev, setDataPrev] = useState("");
   const [contaBanco, setContaBanco] = useState<string>("");
   const [obs, setObs] = useState("");
@@ -211,7 +213,7 @@ function Compras() {
                 <div className="grid gap-4 sm:grid-cols-3">
                   <div>
                     <Label>Fornecedor</Label>
-                    <Combobox value={fornecedor} onChange={setFornecedor} options={fornecedores.map((f) => ({ value: f.id, label: f.nome }))} placeholder="Selecione…" searchPlaceholder="Digite para buscar..." emptyText="Nenhum item encontrado." />
+                    <Combobox value={fornecedor} onChange={setFornecedor} options={fornecedores.map((f) => ({ value: f.id, label: f.nome }))} placeholder="Selecione…" searchPlaceholder="Digite para buscar..." emptyText="Nenhum item encontrado." footer={{ label: "Novo fornecedor", onClick: () => setNovoFornOpen(true) }} />
                   </div>
                   <div>
                     <Label>Previsão de entrega</Label>
@@ -269,6 +271,13 @@ function Compras() {
               </DialogFooter>
             </DialogContent>
           </Dialog>
+          <NovoContatoDialog
+            empresaId={empresa?.id}
+            tipoFixo="fornecedor"
+            open={novoFornOpen}
+            onOpenChange={setNovoFornOpen}
+            onCriado={(c) => setFornecedor(c.id)}
+          />
         </div>
       </div>
 

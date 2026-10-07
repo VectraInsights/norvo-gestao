@@ -10,6 +10,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Textarea } from "@/components/ui/textarea";
 import { MoneyInput } from "@/components/erp/money-input";
 import { Combobox } from "@/components/erp/combobox";
+import { NovoContatoDialog } from "@/components/erp/novo-contato-dialog";
 import {
   Table,
   TableBody,
@@ -123,6 +124,7 @@ function OSPage() {
   const [titulo, setTitulo] = useState("");
   const [descricao, setDescricao] = useState("");
   const [cliente, setCliente] = useState<string>("none");
+  const [novoClienteOpen, setNovoClienteOpen] = useState(false);
   const [projeto, setProjeto] = useState<string>("none");
   const [status, setStatus] = useState<string>("aberta");
   const [prioridade, setPrioridade] = useState<string>("media");
@@ -324,6 +326,7 @@ function OSPage() {
                       placeholder="Selecione"
                       searchPlaceholder="Digite para buscar..."
                       emptyText="Nenhum item encontrado."
+                      footer={{ label: "Novo cliente", onClick: () => setNovoClienteOpen(true) }}
                     />
                   </div>
                   <div>
@@ -398,6 +401,13 @@ function OSPage() {
               </DialogFooter>
             </DialogContent>
           </Dialog>
+          <NovoContatoDialog
+            empresaId={empresa?.id}
+            tipoFixo="cliente"
+            open={novoClienteOpen}
+            onOpenChange={setNovoClienteOpen}
+            onCriado={(c) => setCliente(c.id)}
+          />
         </div>
       </div>
 

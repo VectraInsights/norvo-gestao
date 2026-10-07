@@ -2,6 +2,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { DateInput } from "@/components/erp/date-input";
 import { Combobox } from "@/components/erp/combobox";
+import { NovoContatoDialog } from "@/components/erp/novo-contato-dialog";
 import { PageHeader } from "@/components/erp/page-header";
 import { EmptyState } from "@/components/erp/empty-state";
 import { Button } from "@/components/ui/button";
@@ -204,6 +205,7 @@ function Viagens() {
   const { data: empresa } = useEmpresaAtual();
   const qc = useQueryClient();
   const [open, setOpen] = useState(false);
+  const [novoClienteOpen, setNovoClienteOpen] = useState(false);
   const [editing, setEditing] = useState<Viagem | null>(null);
   const [pagina, setPagina] = useState(1);
   const [busca, setBusca] = useState("");
@@ -512,6 +514,7 @@ function Viagens() {
                       placeholder="Selecione…"
                       searchPlaceholder="Digite para buscar..."
                       emptyText="Nenhum item encontrado."
+                      footer={{ label: "Novo cliente", onClick: () => setNovoClienteOpen(true) }}
                     />
                   </div>
                   <div>
@@ -628,6 +631,13 @@ function Viagens() {
               </DialogFooter>
             </DialogContent>
           </Dialog>
+          <NovoContatoDialog
+            empresaId={empresa?.id}
+            tipoFixo="cliente"
+            open={novoClienteOpen}
+            onOpenChange={setNovoClienteOpen}
+            onCriado={(c) => set("cliente_id", c.id)}
+          />
         </div>
       </div>
       <div className="mb-4 grid gap-3 sm:grid-cols-3">

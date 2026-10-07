@@ -1,6 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { DateInput } from "@/components/erp/date-input";
 import { Combobox } from "@/components/erp/combobox";
+import { NovoContatoDialog } from "@/components/erp/novo-contato-dialog";
 import { PageHeader } from "@/components/erp/page-header";
 import { EmptyState } from "@/components/erp/empty-state";
 import { Button } from "@/components/ui/button";
@@ -141,6 +142,7 @@ function EmprestimosPage() {
   // Edição do cabeçalho do contrato (não mexe em valor/parcelas/datas: parcelas já geradas)
   const [editOpen, setEditOpen] = useState(false);
   const [confExcluir, setConfExcluir] = useState(false);
+  const [novoFornOpen, setNovoFornOpen] = useState(false);
   const [editForm, setEditForm] = useState({ descricao: "", credor: "", contaId: "" });
   // Edição manual de parcela (valor + vencimento): p/ contratos com carência,
   // balões ou parcelas irregulares que o Price não representa
@@ -513,6 +515,7 @@ function EmprestimosPage() {
                       }}
                       options={(contatosEmp ?? []).map((c) => ({ value: c.id, label: c.nome ?? "" }))}
                       placeholder="Fornecedor (opcional)"
+                      footer={{ label: "Novo fornecedor", onClick: () => setNovoFornOpen(true) }}
                     />
                   </div>
                   <div className="grid gap-1.5">
@@ -565,6 +568,16 @@ function EmprestimosPage() {
               </DialogFooter>
             </DialogContent>
           </Dialog>
+          <NovoContatoDialog
+            empresaId={empresa?.id}
+            tipoFixo="fornecedor"
+            open={novoFornOpen}
+            onOpenChange={setNovoFornOpen}
+            onCriado={(c) => {
+              setFornId(c.id);
+              if (!credor) setCredor(c.nome);
+            }}
+          />
           <Dialog open={editOpen} onOpenChange={setEditOpen}>
             <DialogContent className="max-h-[90vh] overflow-y-auto rounded-2xl sm:max-w-lg">
               <DialogHeader className="gap-1.5 pb-1"><DialogTitle className="tracking-tight">Editar contrato</DialogTitle></DialogHeader>

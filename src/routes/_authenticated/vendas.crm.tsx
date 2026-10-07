@@ -9,6 +9,7 @@ import { Card } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { MoneyInput } from "@/components/erp/money-input";
 import { Combobox } from "@/components/erp/combobox";
+import { NovoContatoDialog } from "@/components/erp/novo-contato-dialog";
 import {
   Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogTrigger,
 } from "@/components/ui/dialog";
@@ -59,6 +60,7 @@ function CRM() {
   const [prob, setProb] = useState("50");
   const [dataPrev, setDataPrev] = useState("");
   const [contato, setContato] = useState<string>("none");
+  const [novoContatoOpen, setNovoContatoOpen] = useState(false);
   const [etapa, setEtapa] = useState<string>("");
   const [activeId, setActiveId] = useState<string | null>(null);
   const [busca, setBusca] = useState("");
@@ -307,6 +309,7 @@ function CRM() {
                 placeholder="Sem contato"
                 searchPlaceholder="Digite para buscar..."
                 emptyText="Nenhum item encontrado."
+                footer={{ label: "Novo contato", onClick: () => setNovoContatoOpen(true) }}
               />
             </div>
           </div>
@@ -323,6 +326,12 @@ function CRM() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+      <NovoContatoDialog
+        empresaId={empresa?.id}
+        open={novoContatoOpen}
+        onOpenChange={setNovoContatoOpen}
+        onCriado={(c) => setContato(c.id)}
+      />
     </>
   );
 }

@@ -1,5 +1,6 @@
 import { MoneyInput } from "@/components/erp/money-input";
 import { Combobox } from "@/components/erp/combobox";
+import { NovoContatoDialog } from "@/components/erp/novo-contato-dialog";
 import { createFileRoute } from "@tanstack/react-router";
 import { PageHeader } from "@/components/erp/page-header";
 import { EmptyState } from "@/components/erp/empty-state";
@@ -136,6 +137,7 @@ function NotasEmitidas() {
   const [novaNotaValor, setNovaNotaValor] = useState<string>("");
   const [novaNotaNumero, setNovaNotaNumero] = useState<string>("");
   const [novaNotaSerie, setNovaNotaSerie] = useState<string>("1");
+  const [novoClienteOpen, setNovoClienteOpen] = useState(false);
 
   // Query de Notas reais
   const { data: notasReais, isLoading: loadingNotas } = useQuery({
@@ -575,6 +577,7 @@ function NotasEmitidas() {
                     searchPlaceholder="Digite para buscar..."
                     emptyText="Nenhum cliente cadastrado."
                     className="h-10"
+                    footer={{ label: "Novo cliente", onClick: () => setNovoClienteOpen(true) }}
                   />
                 </div>
 
@@ -623,6 +626,13 @@ function NotasEmitidas() {
               </DialogFooter>
             </DialogContent>
           </Dialog>
+          <NovoContatoDialog
+            empresaId={empresa?.id}
+            tipoFixo="cliente"
+            open={novoClienteOpen}
+            onOpenChange={setNovoClienteOpen}
+            onCriado={(c) => setNovaNotaContato(c.id)}
+          />
         </div>
       </div>
 

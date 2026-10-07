@@ -27,6 +27,7 @@ import { Banknote, Plus, Upload, Loader2, Link2, Check, Landmark, Wallet, Credit
 import { Checkbox } from "@/components/ui/checkbox";
 import { DateInput } from "@/components/erp/date-input";
 import { Combobox } from "@/components/erp/combobox";
+import { NovoContatoDialog } from "@/components/erp/novo-contato-dialog";
 import { TransferenciaDialog } from "@/components/erp/transferencia-dialog";
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
@@ -2143,6 +2144,7 @@ const ReconcileRow = memo(function ReconcileRow({
   const data = new Date(tx.data_transacao + "T00:00:00");
   const nomeContato = r.contato_id ? (contatos.find((c) => c.id === r.contato_id)?.nome ?? "—") : "Informação não recebida";
   const [buscaOpen, setBuscaOpen] = useState(false);
+  const [novoContatoOpen, setNovoContatoOpen] = useState(false);
   const lancSel = lancamentosAbertos.find((l) => l.id === r.lancamento_id);
   // Sugestão do sistema (mesmo valor e data): vira o card da direita no padrão Conta Azul
   const sugestao = useMemo(() => (lancamentosAbertos ?? []).find((l) =>
@@ -2297,7 +2299,7 @@ const ReconcileRow = memo(function ReconcileRow({
               </div>
               <div className="space-y-1">
                 <Label className="text-xs">{tx.valor >= 0 ? "Cliente" : "Fornecedor"}</Label>
-                <Combobox value={r.contato_id} onChange={(v) => onSetRow(tx.id, { contato_id: v })} options={contatos.map((c) => ({ value: c.id, label: c.nome }))} placeholder="Selecione" searchPlaceholder="Digite para buscar..." emptyText="Nenhum item encontrado." />
+                <Combobox value={r.contato_id} onChange={(v) => onSetRow(tx.id, { contato_id: v })} options={contatos.map((c) => ({ value: c.id, label: c.nome }))} placeholder="Selecione" searchPlaceholder="Digite para buscar..." emptyText="Nenhum item encontrado." footer={{ label: "Novo contato", onClick: () => setNovoContatoOpen(true) }} />
               </div>
               <div className="space-y-1">
                 <Label className="text-xs">Centro de custo</Label>
@@ -2308,6 +2310,13 @@ const ReconcileRow = memo(function ReconcileRow({
         </>
         )}
       </Card>
+      <NovoContatoDialog
+        empresaId={empresaId ?? undefined}
+        tipoFixo={tx.valor >= 0 ? "cliente" : "fornecedor"}
+        open={novoContatoOpen}
+        onOpenChange={setNovoContatoOpen}
+        onCriado={(c) => onSetRow(tx.id, { contato_id: c.id })}
+      />
     </div>
   );
 });

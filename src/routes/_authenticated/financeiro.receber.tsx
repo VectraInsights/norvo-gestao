@@ -31,6 +31,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Combobox } from "@/components/erp/combobox";
+import { NovoContatoDialog } from "@/components/erp/novo-contato-dialog";
 import { TransferenciaDialog } from "@/components/erp/transferencia-dialog";
 import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -146,6 +147,12 @@ export function LancamentosPage({ tipo }: { tipo: "receber" | "pagar" }) {
     descricao: string;
   } | null>(null);
   const [confLote, setConfLote] = useState(false);
+  const [novoContatoOpen, setNovoContatoOpen] = useState(false);
+  const [novoContatoAlvo, setNovoContatoAlvo] = useState<"form" | "edit">("form");
+  const abrirNovoContato = (alvo: "form" | "edit") => {
+    setNovoContatoAlvo(alvo);
+    setNovoContatoOpen(true);
+  };
   const [confExclusao, setConfExclusao] = useState<string | null>(null);
 
   const listKey = ["lancamentos", empresa?.id, tipo] as const;
@@ -764,6 +771,7 @@ export function LancamentosPage({ tipo }: { tipo: "receber" | "pagar" }) {
                     searchPlaceholder="Digite para buscar..."
                     emptyText="Nenhum item encontrado."
                     className="h-10"
+                    footer={{ label: "Novo contato", onClick: () => abrirNovoContato("form") }}
                   />
                 </div>
                 <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
@@ -1234,6 +1242,7 @@ export function LancamentosPage({ tipo }: { tipo: "receber" | "pagar" }) {
                   searchPlaceholder="Digite para buscar..."
                   emptyText="Nenhum item encontrado."
                   className="h-10"
+                  footer={{ label: "Novo contato", onClick: () => abrirNovoContato("edit") }}
                 />
               </div>
               <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
@@ -1421,6 +1430,16 @@ export function LancamentosPage({ tipo }: { tipo: "receber" | "pagar" }) {
           )}
         </DialogContent>
       </Dialog>
+      <NovoContatoDialog
+        empresaId={empresa?.id}
+        tipoFixo={tipo === "receber" ? "cliente" : "fornecedor"}
+        open={novoContatoOpen}
+        onOpenChange={setNovoContatoOpen}
+        onCriado={(c) => {
+          if (novoContatoAlvo === "edit" && editing) setEditing({ ...editing, contato_id: c.id });
+          else setForm((f) => ({ ...f, contato_id: c.id }));
+        }}
+      />
     </>
   );
 }

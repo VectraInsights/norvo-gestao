@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { MoneyInput } from "@/components/erp/money-input";
 import { Combobox } from "@/components/erp/combobox";
+import { NovoContatoDialog } from "@/components/erp/novo-contato-dialog";
 import { Label } from "@/components/ui/label";
 import { Card } from "@/components/ui/card";
 import {
@@ -371,6 +372,7 @@ function VendasPage() {
 function NovaVendaSheet({ onClose }: { onClose: () => void }) {
   const { data: empresa } = useEmpresaAtual();
   const [clienteId, setClienteId] = useState<string>("");
+  const [novoClienteOpen, setNovoClienteOpen] = useState(false);
   const [condicaoId, setCondicaoId] = useState<string>("");
   const [observacoes, setObs] = useState("");
   const [itens, setItens] = useState<Item[]>([]);
@@ -518,6 +520,7 @@ function NovaVendaSheet({ onClose }: { onClose: () => void }) {
               placeholder="Selecione"
               searchPlaceholder="Digite para buscar..."
               emptyText="Nenhum item encontrado."
+              footer={{ label: "Novo cliente", onClick: () => setNovoClienteOpen(true) }}
             />
           </div>
           <div>
@@ -655,6 +658,13 @@ function NovaVendaSheet({ onClose }: { onClose: () => void }) {
           Criar pedido
         </Button>
       </SheetFooter>
+      <NovoContatoDialog
+        empresaId={empresa?.id}
+        tipoFixo="cliente"
+        open={novoClienteOpen}
+        onOpenChange={setNovoClienteOpen}
+        onCriado={(c) => setClienteId(c.id)}
+      />
     </SheetContent>
   );
 }
