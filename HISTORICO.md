@@ -5258,3 +5258,10 @@ pm run build OK.
   e nao inflam os cards; seguem no Extrato, Transferencias e conciliacao.
 - 
 pm run build OK.
+
+## Menu sem Transferencias entre contas (07/10)
+
+- Subcategoria "Transferências entre contas" removida do menu Financeiro
+  (`nav-config.ts`); rota/pagina `/financeiro/transferencias` e o dialog
+  seguem existindo (atalhos em Contas/Pagar/Receber).
+- Validado com `npm run build` OK.
