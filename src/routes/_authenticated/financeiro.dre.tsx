@@ -39,20 +39,24 @@ function DrePage() {
     enabled: !!empresa,
     queryKey: ["dre", empresa?.id, ano],
     queryFn: async () => {
-      const [{ data: lancs, error }, { data: cats }] = await Promise.all([
-        supabase.from("lancamentos_financeiros")
+      // Busca em páginas de 1000 para nunca cortar a DRE (sem limite silencioso)
+      const lancs: unknown[] = [];
+      for (let ini = 0; ; ini += 1000) {
+        const { data, error } = await supabase.from("lancamentos_financeiros")
           .select("valor,valor_pago,tipo,status,data_vencimento,data_pagamento,categoria_id,transferencia_id")
           .eq("empresa_id", empresa!.id)
           .neq("status", "cancelado")
           .is("transferencia_id", null)
           .gte("data_vencimento", `${ano - 1}-01-01`)
           .lte("data_vencimento", `${ano + 1}-12-31`)
-          .limit(20000),
-        supabase.from("categorias_financeiras")
-          .select("id,nome,tipo").eq("empresa_id", empresa!.id),
-      ]);
-      if (error) throw error;
-      return { lancs: (lancs ?? []) as Lanc[], cats: (cats ?? []) as Cat[] };
+          .range(ini, ini + 999);
+        if (error) throw error;
+        lancs.push(...(data ?? []));
+        if (!data || data.length < 1000) break;
+      }
+      const { data: cats } = await supabase.from("categorias_financeiras")
+        .select("id,nome,tipo").eq("empresa_id", empresa!.id);
+      return { lancs: lancs as Lanc[], cats: (cats ?? []) as Cat[] };
     },
   });
 
@@ -142,7 +146,7 @@ function DrePage() {
           </div>
 
           <Card className="overflow-x-auto rounded-2xl shadow-panel">
-            <Table>
+            <Table className="[&_td]:px-1.5 [&_th]:px-1.5">
               <TableHeader>
                 <TableRow>
                   <TableHead className="min-w-[200px]">Categoria</TableHead>
