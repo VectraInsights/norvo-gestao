@@ -5087,3 +5087,11 @@ Espelhado na Vercel.
 - Logica intacta; `npm run build` OK.
 - Arquivos: `financeiro.receber.tsx`, `vendas.clientes.tsx`, `estoque.produtos.tsx`,
   `financeiro.cadastros.tsx`, `financeiro.extrato.tsx`, `fiscal.emitidas.tsx`.
+
+## Financeiro receber/pagar: acoes de volta na linha estilo CT-e (07/10)
+
+- `DropdownMenu` em `⋮` revertido para icones inline na linha (Editar/Pagar/Reabrir/
+  Cancelar/Excluir com `Tooltip`), igual ao CT-e; mantidos tabela compacta,
+  bulk `sticky`, Novo `h-9` e trilha funcional.
+- `npm run build` OK.
+- Arquivo: `src/routes/_authenticated/financeiro.receber.tsx`.

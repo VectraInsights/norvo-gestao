@@ -33,12 +33,7 @@ import {
 import { Combobox } from "@/components/erp/combobox";
 import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import {
   ChevronLeft,
   ChevronRight,
@@ -55,7 +50,6 @@ import {
   Search,
   X,
   Pencil,
-  MoreHorizontal,
 } from "lucide-react";
 import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
@@ -939,71 +933,105 @@ export function LancamentosPage({ tipo }: { tipo: "receber" | "pagar" }) {
                       </Badge>
                     </TableCell>
                     <TableCell className="px-3 py-2 text-right">
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-8 w-8 rounded-lg active:scale-95"
-                            aria-label="Ações"
-                          >
-                            <MoreHorizontal className="h-4 w-4" />
-                          </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end" className="w-48">
-                          <DropdownMenuItem onClick={() => abrirEdicao(l.id)}>
-                            <Pencil className="mr-2 h-3.5 w-3.5" />
-                            Editar
-                          </DropdownMenuItem>
-                          {l.status !== "pago" && (
-                            <DropdownMenuItem
-                              disabled={emAndamento}
-                              onClick={() => marcarPago.mutate({ id: l.id, valor: l.valor })}
-                            >
-                              <Check className="mr-2 h-3.5 w-3.5" />
-                              Marcar como pago
-                            </DropdownMenuItem>
-                          )}
-                          {l.status !== "aberto" && (
-                            <DropdownMenuItem
-                              onClick={() =>
-                                alterarStatusLote.mutate({ ids: [l.id], status: "aberto" })
-                              }
-                            >
-                              <RotateCcw className="mr-2 h-3.5 w-3.5" />
-                              Reabrir
-                            </DropdownMenuItem>
-                          )}
-                          {l.status !== "cancelado" && (
-                            <DropdownMenuItem
-                              onClick={() =>
-                                alterarStatusLote.mutate({ ids: [l.id], status: "cancelado" })
-                              }
-                            >
-                              <Ban className="mr-2 h-3.5 w-3.5" />
-                              Cancelar
-                            </DropdownMenuItem>
-                          )}
-                          <DropdownMenuItem
-                            className="text-destructive focus:text-destructive"
-                            onClick={async () => {
-                              const { data: vinculada } = await supabase
-                                .from("notas_importadas_parcelas" as never)
-                                .select("id")
-                                .eq("lancamento_id", l.id)
-                                .maybeSingle();
-                              if (vinculada) {
-                                setLancamentoBloqueado({ id: l.id, descricao: l.descricao });
-                                return;
-                              }
-                              setConfExclusao(l.id);
-                            }}
-                          >
-                            <Trash2 className="mr-2 h-3.5 w-3.5" />
-                            Excluir
-                          </DropdownMenuItem>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
+                      <div className="flex items-center justify-end gap-1">
+                        <TooltipProvider>
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-8 w-8 rounded-lg active:scale-95"
+                                onClick={() => abrirEdicao(l.id)}
+                              >
+                                <Pencil className="h-3.5 w-3.5" />
+                              </Button>
+                            </TooltipTrigger>
+                            <TooltipContent>Editar</TooltipContent>
+                          </Tooltip>
+                        </TooltipProvider>
+                        {l.status !== "pago" && (
+                          <TooltipProvider>
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  className="h-8 w-8 rounded-lg active:scale-95"
+                                  disabled={emAndamento}
+                                  onClick={() => marcarPago.mutate({ id: l.id, valor: l.valor })}
+                                >
+                                  <Check className="h-3.5 w-3.5" />
+                                </Button>
+                              </TooltipTrigger>
+                              <TooltipContent>Marcar como pago</TooltipContent>
+                            </Tooltip>
+                          </TooltipProvider>
+                        )}
+                        {l.status !== "aberto" && (
+                          <TooltipProvider>
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  className="h-8 w-8 rounded-lg active:scale-95"
+                                  onClick={() =>
+                                    alterarStatusLote.mutate({ ids: [l.id], status: "aberto" })
+                                  }
+                                >
+                                  <RotateCcw className="h-3.5 w-3.5" />
+                                </Button>
+                              </TooltipTrigger>
+                              <TooltipContent>Reabrir</TooltipContent>
+                            </Tooltip>
+                          </TooltipProvider>
+                        )}
+                        {l.status !== "cancelado" && (
+                          <TooltipProvider>
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  className="h-8 w-8 rounded-lg active:scale-95"
+                                  onClick={() =>
+                                    alterarStatusLote.mutate({ ids: [l.id], status: "cancelado" })
+                                  }
+                                >
+                                  <Ban className="h-3.5 w-3.5" />
+                                </Button>
+                              </TooltipTrigger>
+                              <TooltipContent>Cancelar (mantém histórico)</TooltipContent>
+                            </Tooltip>
+                          </TooltipProvider>
+                        )}
+                        <TooltipProvider>
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-8 w-8 rounded-lg text-destructive hover:text-destructive active:scale-95"
+                                onClick={async () => {
+                                  const { data: vinculada } = await supabase
+                                    .from("notas_importadas_parcelas" as never)
+                                    .select("id")
+                                    .eq("lancamento_id", l.id)
+                                    .maybeSingle();
+                                  if (vinculada) {
+                                    setLancamentoBloqueado({ id: l.id, descricao: l.descricao });
+                                    return;
+                                  }
+                                  setConfExclusao(l.id);
+                                }}
+                              >
+                                <Trash2 className="h-3.5 w-3.5" />
+                              </Button>
+                            </TooltipTrigger>
+                            <TooltipContent>Excluir (apaga)</TooltipContent>
+                          </Tooltip>
+                        </TooltipProvider>
+                      </div>
                     </TableCell>
                   </TableRow>
                 );
