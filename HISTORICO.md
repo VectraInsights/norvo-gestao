@@ -5380,3 +5380,6 @@ pm run build OK.
 - Embarque com barra horizontal fixa grudada no bloco (proxy
   sincronizado; some quando cabe tudo) (07/10).
 - Validado com `npm run build` OK.
+- Pagar/Receber abre na aba Todos (antes A vencer); periodo padrao
+  revertido (07/10).
+- Validado com `npm run build` OK.
