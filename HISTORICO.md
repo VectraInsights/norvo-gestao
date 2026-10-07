@@ -5410,3 +5410,7 @@ pm run build OK.
   container interno com rolagem propria que roubava a barra; rolagem
   interna desligada p/ a barra fixa abaixo ativar de verdade.
 - Validado com `npm run build` OK.
+- Novo contato em tela cheia e completo (07/10): dialogo rapido virou
+  tela cheia padrao do app com todos os campos (CNPJ busca na Receita,
+  IE, tipo, email, telefone, endereco, observacoes).
+- Validado com `npm run build` OK.
