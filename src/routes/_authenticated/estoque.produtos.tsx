@@ -147,17 +147,23 @@ function Produtos() {
     staleTime: 60_000,
     gcTime: 10 * 60_000,
     queryFn: async ({ signal }) => {
-      const { data, error } = await supabase
-        .from("produtos")
-        .select(
-          "id,codigo,nome,categoria,unidade,estoque_atual,estoque_minimo,preco_custo,preco_venda,ativo",
-        )
-        .eq("empresa_id", empresa!.id)
-        .order("nome")
-        .limit(1000)
-        .abortSignal(signal);
-      if (error) throw error;
-      return (data ?? []) as unknown as Produto[];
+      // Busca em páginas para nunca cortar a lista (sem limite silencioso)
+      const todos: unknown[] = [];
+      for (let ini = 0; ; ini += 1000) {
+        const { data, error } = await supabase
+          .from("produtos")
+          .select(
+            "id,codigo,nome,categoria,unidade,estoque_atual,estoque_minimo,preco_custo,preco_venda,ativo",
+          )
+          .eq("empresa_id", empresa!.id)
+          .order("nome")
+          .range(ini, ini + 999)
+          .abortSignal(signal);
+        if (error) throw error;
+        todos.push(...((data as unknown[]) ?? []));
+        if (!data || (data as unknown[]).length < 1000) break;
+      }
+      return todos as unknown as Produto[];
     },
   });
 
@@ -258,10 +264,19 @@ function Produtos() {
     let base = produtos;
     if (filtroCat !== "todas") base = base.filter((p) => p.categoria === filtroCat);
     const q = busca.trim().toLowerCase();
+    const qDig = q.replace(/\D/g, "");
     if (!q) return base;
-    return base.filter(
-      (p) => p.nome.toLowerCase().includes(q) || (p.codigo ?? "").toLowerCase().includes(q),
-    );
+    return base.filter((p) => {
+      if (p.nome.toLowerCase().includes(q)) return true;
+      if ((p.codigo ?? "").toLowerCase().includes(q)) return true;
+      // Pesquisa por preço: "25,00" acha 25.00 (a partir de 2 dígitos)
+      if (qDig.length >= 2) {
+        for (const v of [p.preco_venda, p.preco_custo]) {
+          if (Number(v || 0).toFixed(2).replace(/\D/g, "").includes(qDig)) return true;
+        }
+      }
+      return false;
+    });
   }, [produtos, busca, filtroCat]);
 
   const pageSize = 25;
