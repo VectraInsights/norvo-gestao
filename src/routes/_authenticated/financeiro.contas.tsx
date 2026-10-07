@@ -34,6 +34,7 @@ import { useEmpresaAtual } from "@/hooks/use-empresa";
 import { toast } from "sonner";
 import { parseOfxFull } from "@/lib/ofx";
 import { format } from "date-fns";
+import { ptBR } from "date-fns/locale";
 import { cn } from "@/lib/utils";
 import { useFiltrosSalvos } from "@/hooks/use-filtros-salvos";
 import { detectBancoByNome, detectBancoByCodigo, formatContaComDigito, normalizaContaNumero } from "@/lib/bancos";
@@ -2156,7 +2157,7 @@ const ReconcileRow = memo(function ReconcileRow({
           <div className="flex items-center gap-2">
             <Checkbox checked={selected} onCheckedChange={() => onToggleSel(tx.id)} />
             <span className="text-[13px] font-semibold">{format(data, "dd/MM/yyyy")}</span>
-            <span className="text-[11px] text-muted-foreground capitalize">{format(data, "EEEE")}</span>
+            <span className="text-[11px] text-muted-foreground capitalize">{format(data, "EEEE", { locale: ptBR })}</span>
           </div>
           <span className={cn("text-tabular text-sm font-semibold", tx.valor < 0 ? "text-destructive" : "text-success")}>
             {brl(tx.valor)}
@@ -2212,7 +2213,7 @@ const ReconcileRow = memo(function ReconcileRow({
               </span>
               <span className="text-xs">
                 <span className="font-semibold">{format(sugestaoData, "dd/MM/yyyy")}</span>{" "}
-                <span className="text-muted-foreground capitalize">{format(sugestaoData, "EEEE")}</span>
+                <span className="text-muted-foreground capitalize">{format(sugestaoData, "EEEE", { locale: ptBR })}</span>
               </span>
             </div>
             <div className="space-y-0.5 px-3 py-2 text-[13px]">
@@ -2244,7 +2245,7 @@ const ReconcileRow = memo(function ReconcileRow({
             </span>
             <span className="text-xs">
               <span className="font-semibold">{format(new Date(`${lancSel.data_vencimento}T00:00:00`), "dd/MM/yyyy")}</span>{" "}
-              <span className="text-muted-foreground capitalize">{format(new Date(`${lancSel.data_vencimento}T00:00:00`), "EEEE")}</span>
+              <span className="text-muted-foreground capitalize">{format(new Date(`${lancSel.data_vencimento}T00:00:00`), "EEEE", { locale: ptBR })}</span>
             </span>
           </div>
           <div className="space-y-0.5 px-3 py-2 text-[13px]">

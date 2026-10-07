@@ -5174,6 +5174,13 @@ Espelhado na Vercel.
 - Borda verde tambem no vinculado; `rotuloSel` morto removido.
 - `npm run build` OK.
 
+## Conciliacao em portugues (07/10)
+
+- Dia da semana dos cards (`EEEE`) com `locale ptBR`: `Tuesday` vira
+  `terça-feira` (com `capitalize` vira `Terça-feira`) nos 3 pontos
+  (banco, sugestao e vinculado).
+- `npm run build` OK.
+
 ## Fluxo com seletor de periodo (07/10)
 
 - `PeriodoFilter` (mesmo de Receber/Pagar) acima do grafico; padrao mantido
