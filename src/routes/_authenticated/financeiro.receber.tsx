@@ -72,7 +72,7 @@ import { useNavigate } from "@tanstack/react-router";
 import { format } from "date-fns";
 import { LancamentosToolbar } from "@/components/erp/lancamentos-toolbar";
 import { DateInput } from "@/components/erp/date-input";
-import { PeriodoFilter, PERIODO_TODOS, type Periodo } from "@/components/erp/periodo-filter";
+import { PeriodoFilter, periodoProx7, type Periodo } from "@/components/erp/periodo-filter";
 import { usePerfisMap } from "@/hooks/use-perfis";
 
 export const Route = createFileRoute("/_authenticated/financeiro/receber")({
@@ -533,7 +533,7 @@ export function LancamentosPage({ tipo }: { tipo: "receber" | "pagar" }) {
   );
 
   // Filtro de período (aplicado sobre data_vencimento)
-  const [periodo, setPeriodo] = useState<Periodo>(() => PERIODO_TODOS);
+  const [periodo, setPeriodo] = useState<Periodo>(() => periodoProx7());
   const dentroPeriodo = (dataStr: string) => {
     if (!periodo.from || !periodo.to) return true;
     const d = new Date(dataStr + "T12:00:00");
@@ -543,7 +543,7 @@ export function LancamentosPage({ tipo }: { tipo: "receber" | "pagar" }) {
 
   // Aba: Vencidos (aberto/parcial e vencimento < hoje) | A vencer (aberto/parcial e vencimento >= hoje) | Quitados (pago, vencimento < hoje)
   type Aba = "todos" | "vencidos" | "avencer" | "quitados" | "cancelados";
-  const [aba, setAba] = useState<Aba>("avencer");
+  const [aba, setAba] = useState<Aba>("todos");
   const hojeStr = format(new Date(), "yyyy-MM-dd");
   const emAberto = (s: string) => s === "aberto" || s === "parcial" || s === "vencido";
   const filtroAba = (l: Lancamento) => {
