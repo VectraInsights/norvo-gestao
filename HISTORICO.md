@@ -5248,3 +5248,13 @@ pm run build OK.
 - Migration 20261007120000 aplicada no Supabase remoto (pernas reabertas).
 - 
 pm run build OK.
+
+## Transferir no Pagar/Receber + pernas fora do resultado (07/10)
+
+- Botao Transferir vai para Receber/Pagar (ao lado de Auditoria) e sai do
+  Extrato; mantido nas Contas e na pagina de Transferencias.
+- Pernas (	ransferencia_id) fora de Receber/Pagar, Dashboard (a receber,
+  a pagar, proximos), Fluxo, DRE e Relatorios: somem do Sem categoria
+  e nao inflam os cards; seguem no Extrato, Transferencias e conciliacao.
+- 
+pm run build OK.

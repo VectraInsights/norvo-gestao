@@ -43,7 +43,7 @@ function RelatoriosPage() {
       const [{ data: lancs, error }, { data: contatos }, { data: cats }] = await Promise.all([
         supabase.from("lancamentos_financeiros")
           .select("id,valor,valor_pago,tipo,status,data_vencimento,contato_id,categoria_id")
-          .eq("empresa_id", empresa!.id).neq("status", "cancelado").limit(20000),
+          .eq("empresa_id", empresa!.id).neq("status", "cancelado").is("transferencia_id", null).limit(20000),
         supabase.from("contatos").select("id,nome").eq("empresa_id", empresa!.id).limit(5000),
         supabase.from("categorias_financeiras").select("id,nome").eq("empresa_id", empresa!.id),
       ]);

@@ -123,6 +123,7 @@ function Dashboard() {
             .select("valor,valor_pago")
             .eq("empresa_id", eid)
             .eq("tipo", "receber")
+            .is("transferencia_id", null)
             .in("status", ["aberto", "parcial", "vencido"])
             .abortSignal(signal),
           supabase
@@ -130,6 +131,7 @@ function Dashboard() {
             .select("valor,valor_pago")
             .eq("empresa_id", eid)
             .eq("tipo", "pagar")
+            .is("transferencia_id", null)
             .in("status", ["aberto", "parcial", "vencido"])
             .abortSignal(signal),
           supabase
@@ -295,6 +297,7 @@ function Dashboard() {
         .select("id,descricao,valor,data_vencimento,contato:contatos(nome)")
         .eq("empresa_id", empresa!.id)
         .eq("tipo", "receber")
+        .is("transferencia_id", null)
         .in("status", ["aberto", "parcial", "vencido"])
         .order("data_vencimento")
         .limit(5)

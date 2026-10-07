@@ -41,9 +41,10 @@ function DrePage() {
     queryFn: async () => {
       const [{ data: lancs, error }, { data: cats }] = await Promise.all([
         supabase.from("lancamentos_financeiros")
-          .select("valor,valor_pago,tipo,status,data_vencimento,data_pagamento,categoria_id")
+          .select("valor,valor_pago,tipo,status,data_vencimento,data_pagamento,categoria_id,transferencia_id")
           .eq("empresa_id", empresa!.id)
           .neq("status", "cancelado")
+          .is("transferencia_id", null)
           .gte("data_vencimento", `${ano - 1}-01-01`)
           .lte("data_vencimento", `${ano + 1}-12-31`)
           .limit(20000),

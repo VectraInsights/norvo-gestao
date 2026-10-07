@@ -51,6 +51,7 @@ function FluxoCaixa() {
         .select("tipo,valor,valor_pago,data_vencimento,status")
         .eq("empresa_id", empresa!.id)
         .in("status", ["aberto", "parcial", "vencido"])
+        .is("transferencia_id", null)
         .gte("data_vencimento", format(ini, "yyyy-MM-dd"))
         .lte("data_vencimento", format(fim, "yyyy-MM-dd"))
         .abortSignal(signal);

@@ -31,6 +31,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Combobox } from "@/components/erp/combobox";
+import { TransferenciaDialog } from "@/components/erp/transferencia-dialog";
 import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
@@ -50,6 +51,7 @@ import {
   Search,
   X,
   Pencil,
+  ArrowLeftRight,
 } from "lucide-react";
 import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
@@ -154,6 +156,8 @@ export function LancamentosPage({ tipo }: { tipo: "receber" | "pagar" }) {
     staleTime: 30_000,
     gcTime: 10 * 60_000,
     queryFn: async ({ signal }): Promise<Lancamento[]> => {
+      // Pernas de transferência (transferencia_id) vivem na página de
+      // Transferências + conciliação — fora desta lista.
       // Busca em páginas de 1000 para nunca cortar a lista (o período filtra depois)
       const todas: unknown[] = [];
       for (let ini = 0; ; ini += 1000) {
@@ -164,6 +168,7 @@ export function LancamentosPage({ tipo }: { tipo: "receber" | "pagar" }) {
           )
           .eq("empresa_id", empresa!.id)
           .eq("tipo", tipo)
+          .is("transferencia_id", null)
           .order("data_vencimento", { ascending: true })
           .range(ini, ini + 999)
           .abortSignal(signal);
@@ -242,6 +247,7 @@ export function LancamentosPage({ tipo }: { tipo: "receber" | "pagar" }) {
 
   // Auditoria (tabela auditoria_eventos): quem criou/editou/excluiu
   const [trilhaOpen, setTrilhaOpen] = useState(false);
+  const [transfOpen, setTransfOpen] = useState(false);
   const registrarAuditoria = async (acao: string, descricao: string, detalhes: Record<string, any> = {}) => {
     try {
       if (!empresa) return;
@@ -638,6 +644,10 @@ export function LancamentosPage({ tipo }: { tipo: "receber" | "pagar" }) {
           <Button variant="ghost" size="sm" onClick={() => setTrilhaOpen(true)} className="h-9 rounded-xl px-4 active:scale-95">
             Auditoria
           </Button>
+          <Button variant="outline" size="sm" onClick={() => setTransfOpen(true)} className="h-9 rounded-xl px-4 shadow-sm active:scale-95">
+            <ArrowLeftRight className="mr-1 h-3.5 w-3.5" />Transferir
+          </Button>
+          <TransferenciaDialog open={transfOpen} onOpenChange={setTransfOpen} />
           <Dialog
             open={open}
             onOpenChange={(v) => {
