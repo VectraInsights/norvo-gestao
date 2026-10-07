@@ -6505,7 +6505,7 @@ function CtePage() {
                       Qtde NF-e: {mercadoriasSorted.length}/{mercadorias.length}
                     </span>
                   </div>
-                  <div className="overflow-auto flex-1 min-h-0 min-w-0">
+                  <div className="overflow-auto flex-1 min-h-0 min-w-0 max-h-[60vh]">
                     <Table className="min-w-max [&_td]:px-1.5 [&_td]:py-1 [&_th]:px-1.5 [&_th]:py-1.5">
                       <TableHeader className="sticky top-0 z-10 bg-muted">
                         <TableRow>

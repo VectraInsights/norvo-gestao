@@ -40,7 +40,65 @@ type Parcela = {
   valor: number; valor_juros: number; valor_amortizacao: number; status: string; lancamento_id: string | null;
 };
 
-/** Tabela Price: parcela fixa. Juros 0 → divisão simples. */
+/** Extrai o texto de todas as páginas de um PDF (pdfjs, padrão frota/RH). */
+async function extrairTextoPdf(file: File): Promise<string> {
+  const buf = await file.arrayBuffer();
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const pdfjsLib: any = await import("pdfjs-dist");
+  try {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const workerMod: any = await import("pdfjs-dist/build/pdf.worker.min.mjs?url");
+    pdfjsLib.GlobalWorkerOptions.workerSrc = workerMod.default || workerMod;
+  } catch {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const w2: any = await import("pdfjs-dist/build/pdf.worker.mjs?url");
+    pdfjsLib.GlobalWorkerOptions.workerSrc = w2.default || w2;
+  }
+  const pdf = await pdfjsLib.getDocument({ data: buf, verbosity: 0 }).promise;
+  let texto = "";
+  for (let pg = 1; pg <= pdf.numPages; pg++) {
+    const page = await pdf.getPage(pg);
+    const tc = await page.getTextContent();
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    texto += (tc.items as any[]).map((it) => (typeof it?.str === "string" ? it.str : "")).join(" ") + "\n";
+  }
+  return texto;
+}
+
+type LinhaPdf = { numero: number; venc: string; valor: number };
+
+/** Cronograma do anexo do banco: linhas "NNº DD/MM/AAAA R$ X.XXX,XX". */
+function extrairCronograma(texto: string): LinhaPdf[] {
+  const re = /(\d{1,3})\s*º\s*(\d{2})\/(\d{2})\/(\d{4})\s*R\$\s*([\d.,]+)/g;
+  const achadas = new Map<number, LinhaPdf>();
+  let m: RegExpExecArray | null;
+  while ((m = re.exec(texto)) !== null) {
+    const numero = Number(m[1]);
+    const bruto = String(m[5]).replace(/[^\d.,]/g, "");
+    const norm = bruto.includes(",") ? bruto.replace(/\./g, "").replace(",", ".") : bruto;
+    const valor = Number(norm) || 0;
+    if (!numero || !valor) continue;
+    if (!achadas.has(numero))
+      achadas.set(numero, { numero, venc: `${m[4]}-${m[3]}-${m[2]}`, valor });
+  }
+  return [...achadas.values()].sort((a, b) => a.numero - b.numero);
+}
+
+/** Cabeçalho da proposta: valor financiado, taxa a.m., nº parcelas, 1º venc, contratação. */
+function extrairCabecalhoPdf(texto: string): { principal?: string; taxa?: string; primeiro?: string; contratacao?: string } {
+  const out: { principal?: string; taxa?: string; primeiro?: string; contratacao?: string } = {};
+  const br = (s: string) => s.replace(/\./g, "").replace(",", ".");
+  let m: RegExpMatchArray | null;
+  m = texto.match(/VALOR TOTAL FINANCIADO:?\s*([\d.,]+)/i);
+  if (m && Number(br(m[1]))) out.principal = br(m[1]);
+  m = texto.match(/([\d,]+)\s*%\s*a\.m\./i);
+  if (m && Number(br(m[1]))) out.taxa = br(m[1]);
+  m = texto.match(/(?:PRIMEIRA PARCELA[^0-9]*|1.? VENCIMENTO\s*)(\d{2})[./](\d{2})[./](\d{4})/i);
+  if (m) out.primeiro = `${m[3]}-${m[2]}-${m[1]}`;
+  m = texto.match(/DATA DA OPERAÇÃO:?\s*(\d{2})[./](\d{2})[./](\d{4})/i);
+  if (m) out.contratacao = `${m[3]}-${m[2]}-${m[1]}`;
+  return out;
+}
 function gerarPrice(principal: number, taxaPct: number, n: number, primeiro: Date) {
   const i = taxaPct / 100;
   const pmt = i === 0 ? principal / n : (principal * i) / (1 - Math.pow(1 + i, -n));
@@ -79,8 +137,12 @@ function EmprestimosPage() {
   const [editParc, setEditParc] = useState<{ id: string; valor: string; venc: string } | null>(null);
   // Importação do cronograma do PDF do banco (Anexo com Parc/Dt.vencto/Valor)
   const pdfInputRef = useRef<HTMLInputElement | null>(null);
+  const pdfNovoRef = useRef<HTMLInputElement | null>(null);
   const [pdfLendo, setPdfLendo] = useState(false);
+  const [pdfLendoNovo, setPdfLendoNovo] = useState(false);
   const [pdfPrev, setPdfPrev] = useState<Array<{ numero: number; venc: string; valor: number }> | null>(null);
+  // Cronograma lido no "Novo contrato": ao cadastrar, usa ele em vez do Price
+  const [pdfNovo, setPdfNovo] = useState<{ linhas: Array<{ numero: number; venc: string; valor: number }>; total: number } | null>(null);
 
   const { data: lista, isLoading } = useQuery({
     enabled: !!empresa,
@@ -131,6 +193,7 @@ function EmprestimosPage() {
     setTaxa("0"); setParcelas("12");
     setContratacao(format(new Date(), "yyyy-MM-dd"));
     setPrimeiro(format(addMonths(new Date(), 1), "yyyy-MM-dd"));
+    setPdfNovo(null);
   };
 
   const criar = useMutation({
@@ -138,8 +201,10 @@ function EmprestimosPage() {
       if (!empresa) throw new Error("Selecione uma empresa");
       if (!descricao.trim()) throw new Error("Informe a descrição");
       const p = Number(principal) || 0;
-      const n = Number(parcelas) || 0;
-      if (p <= 0 || n <= 0) throw new Error("Informe valor e número de parcelas");
+      if (p <= 0) throw new Error("Informe o valor contratado");
+      const comPdf = !!pdfNovo?.linhas.length;
+      const n = comPdf ? pdfNovo!.linhas.length : Number(parcelas) || 0;
+      if (n <= 0) throw new Error("Informe o número de parcelas");
 
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const { data: emp, error } = await (supabase.from("emprestimos" as never) as any).insert({
@@ -149,14 +214,21 @@ function EmprestimosPage() {
       }).select("id").single();
       if (error) throw error;
 
-      const linhas = gerarPrice(p, Number(taxa) || 0, n, new Date(`${primeiro}T00:00:00`))
-        .map((l) => ({ ...l, empresa_id: empresa.id, emprestimo_id: emp.id }));
+      // Com PDF: cronograma do banco; sem PDF: Price com parcelas iguais
+      const linhas = comPdf
+        ? pdfNovo!.linhas.map((l) => ({
+            numero: l.numero, data_vencimento: l.venc, valor: l.valor,
+            valor_juros: 0, valor_amortizacao: l.valor,
+          }))
+        : gerarPrice(p, Number(taxa) || 0, n, new Date(`${primeiro}T00:00:00`));
+      const linhasIns = linhas.map((l) => ({ ...l, empresa_id: empresa.id, emprestimo_id: emp.id }));
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const { error: e2 } = await (supabase.from("emprestimo_parcelas" as never) as any).insert(linhas);
+      const { error: e2 } = await (supabase.from("emprestimo_parcelas" as never) as any).insert(linhasIns);
       if (e2) throw e2;
+      return comPdf;
     },
-    onSuccess: () => {
-      toast.success("Contrato cadastrado — ajuste as parcelas se o banco usar valores diferentes");
+    onSuccess: (comPdf) => {
+      toast.success(comPdf ? "Contrato cadastrado com o cronograma do PDF" : "Contrato cadastrado — ajuste as parcelas se o banco usar valores diferentes");
       qc.invalidateQueries({ queryKey: ["emprestimos"] });
       setOpen(false); reset();
     },
@@ -198,39 +270,8 @@ function EmprestimosPage() {
   const lerPdfBanco = async (file: File) => {
     setPdfLendo(true);
     try {
-      const buf = await file.arrayBuffer();
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const pdfjsLib: any = await import("pdfjs-dist");
-      try {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const workerMod: any = await import("pdfjs-dist/build/pdf.worker.min.mjs?url");
-        pdfjsLib.GlobalWorkerOptions.workerSrc = workerMod.default || workerMod;
-      } catch {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const w2: any = await import("pdfjs-dist/build/pdf.worker.mjs?url");
-        pdfjsLib.GlobalWorkerOptions.workerSrc = w2.default || w2;
-      }
-      const pdf = await pdfjsLib.getDocument({ data: buf, verbosity: 0 }).promise;
-      let texto = "";
-      for (let pg = 1; pg <= pdf.numPages; pg++) {
-        const page = await pdf.getPage(pg);
-        const tc = await page.getTextContent();
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        texto += (tc.items as any[]).map((it) => (typeof it?.str === "string" ? it.str : "")).join(" ") + "\n";
-      }
-      const re = /(\d{1,3})\s*º\s*(\d{2})\/(\d{2})\/(\d{4})\s*R\$\s*([\d.,]+)/g;
-      const achadas = new Map<number, { numero: number; venc: string; valor: number }>();
-      let m: RegExpExecArray | null;
-      while ((m = re.exec(texto)) !== null) {
-        const numero = Number(m[1]);
-        const bruto = String(m[5]).replace(/[^\d.,]/g, "");
-        const norm = bruto.includes(",") ? bruto.replace(/\./g, "").replace(",", ".") : bruto;
-        const valor = Number(norm) || 0;
-        if (!numero || !valor) continue;
-        if (!achadas.has(numero))
-          achadas.set(numero, { numero, venc: `${m[4]}-${m[3]}-${m[2]}`, valor });
-      }
-      const linhas = [...achadas.values()].sort((a, b) => a.numero - b.numero);
+      const texto = await extrairTextoPdf(file);
+      const linhas = extrairCronograma(texto);
       if (!linhas.length) throw new Error("Nenhuma parcela encontrada no PDF (esperado: Nº + data + R$ valor)");
       setPdfPrev(linhas);
     } catch (e: unknown) {
@@ -238,6 +279,29 @@ function EmprestimosPage() {
     } finally {
       setPdfLendo(false);
       if (pdfInputRef.current) pdfInputRef.current.value = "";
+    }
+  };
+
+  // PDF antes do contrato: preenche o formulário + guarda o cronograma p/ o cadastro
+  const lerPdfNovo = async (file: File) => {
+    setPdfLendoNovo(true);
+    try {
+      const texto = await extrairTextoPdf(file);
+      const linhas = extrairCronograma(texto);
+      if (!linhas.length) throw new Error("Nenhuma parcela encontrada no PDF (esperado: Nº + data + R$ valor)");
+      const cab = extrairCabecalhoPdf(texto);
+      if (cab.principal) setPrincipal(cab.principal);
+      if (cab.taxa) setTaxa(cab.taxa);
+      if (cab.primeiro) setPrimeiro(cab.primeiro);
+      if (cab.contratacao) setContratacao(cab.contratacao);
+      setParcelas(String(linhas.length));
+      setPdfNovo({ linhas, total: linhas.reduce((s, l) => s + l.valor, 0) });
+      toast.success(`PDF lido: ${linhas.length} parcelas`);
+    } catch (e: unknown) {
+      toast.error(e instanceof Error ? e.message : "Falha ao ler o PDF");
+    } finally {
+      setPdfLendoNovo(false);
+      if (pdfNovoRef.current) pdfNovoRef.current.value = "";
     }
   };
 
@@ -336,6 +400,34 @@ function EmprestimosPage() {
             </DialogTrigger>
             <DialogContent className="max-h-[90vh] overflow-y-auto rounded-2xl sm:max-w-lg sm:inset-auto sm:left-1/2 sm:top-1/2 sm:-translate-x-1/2 sm:-translate-y-1/2 sm:h-auto sm:w-full">
               <DialogHeader className="gap-1.5 pb-1"><DialogTitle className="tracking-tight">Novo contrato</DialogTitle></DialogHeader>
+              <input
+                ref={pdfNovoRef}
+                type="file"
+                accept=".pdf,application/pdf"
+                className="hidden"
+                aria-label="Selecionar PDF do banco"
+                onChange={(e) => {
+                  const f = e.target.files?.[0];
+                  if (f) void lerPdfNovo(f);
+                }}
+              />
+              {!pdfNovo ? (
+                <Button variant="outline" onClick={() => pdfNovoRef.current?.click()} disabled={pdfLendoNovo} className="h-10 rounded-xl">
+                  <FileUp className="mr-1.5 h-4 w-4" /> {pdfLendoNovo ? "Lendo PDF…" : "Ler PDF do banco e preencher"}
+                </Button>
+              ) : (
+                <div className="flex items-center justify-between gap-2 rounded-xl border bg-muted/50 p-3 text-sm shadow-sm">
+                  <span className="leading-relaxed text-muted-foreground">
+                    PDF lido: <strong className="text-foreground">{pdfNovo.linhas.length} parcelas</strong> ·
+                    Total <strong className="text-foreground">{brl(pdfNovo.total)}</strong>
+                    <br />
+                    O contrato será criado com o cronograma do banco.
+                  </span>
+                  <Button size="sm" variant="ghost" aria-label="Descartar PDF" onClick={() => setPdfNovo(null)} className="h-8 w-8 shrink-0 rounded-lg">
+                    <X className="h-4 w-4" />
+                  </Button>
+                </div>
+              )}
               <div className="grid gap-4">
                 <div className="grid gap-3 sm:grid-cols-2">
                   <div className="grid gap-1.5">
@@ -381,13 +473,13 @@ function EmprestimosPage() {
                     <DateInput value={primeiro} onChange={setPrimeiro} className="h-10" />
                   </div>
                 </div>
-                {previa && (
+                {previa && !pdfNovo && (
                   <p className="rounded-xl border bg-muted/50 p-3.5 text-sm leading-relaxed text-muted-foreground shadow-sm">
                     Parcela estimada: <strong className="text-foreground">{brl(previa.parcela)}</strong> ·
                     Total a pagar: <strong className="text-foreground">{brl(previa.total)}</strong>
                     <br />
                     Valores iguais (Price). Se o banco usar carência ou parcelas diferentes,
-                    cadastre e ajuste cada parcela na lista do contrato.
+                    leia o PDF acima ou ajuste cada parcela na lista do contrato.
                   </p>
                 )}
               </div>
