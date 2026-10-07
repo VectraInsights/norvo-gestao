@@ -5395,3 +5395,7 @@ pm run build OK.
   periodo) em 1 linha; barra horizontal fixa fora da rolagem, logo abaixo
   da tabela, sincronizada (sempre visivel quando ha overflow).
 - Validado com `npm run build` OK.
+- Selecao dentro do cabecalho (07/10): barra separada eliminada; ao
+  selecionar, o cabecalho fixo só ganha os botoes a direita (contador,
+  status, excluir, limpar).
+- Validado com `npm run build` OK.
