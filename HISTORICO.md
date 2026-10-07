@@ -5333,3 +5333,14 @@ pm run build OK.
   Cancelados/Autorizados/CIOT; contadores acompanham o filtro.
 - Troca de aba zera buscas (decisao standing de reset total).
 - Validado com `npm run build` OK.
+
+## Emprestimos com parcelas ajustaveis (07/10)
+
+- Cada parcela (Aberta) tem lapis p/ ajustar valor e vencimento: cobre
+  carencia, baloes e cronogramas irregulares do banco (ex.: 6x 142,18 +
+  6x 263 mil + 48x 410 mil) que o Price sozinho nao representa.
+- Juros/amortizacao repartidos proporcionalmente p/ a soma fechar;
+  parcela ja Lancada nao pode ser alterada (preserva o Contas a pagar).
+- Cabecalho do contrato mostra a soma das parcelas (confere com o anexo
+  do banco); aviso no Novo contrato orienta a ajustar apos cadastrar.
+- Validado com `npm run build` OK.
