@@ -6,8 +6,10 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { useEmpresaAtual } from "@/hooks/use-empresa";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery } from "@tanstack/react-query";
-import { format, addDays, startOfDay } from "date-fns";
+import { format, addDays, startOfDay, endOfDay, differenceInCalendarDays } from "date-fns";
 import { ArrowDownRight, ArrowUpRight, Wallet } from "lucide-react";
+import { useState } from "react";
+import { PeriodoFilter, type Periodo } from "@/components/erp/periodo-filter";
 import type { FluxoPoint } from "@/components/erp/fluxo-chart";
 
 const brl = (n: number) =>
@@ -31,25 +33,32 @@ type LancamentoRow = {
 
 function FluxoCaixa() {
   const { data: empresa } = useEmpresaAtual();
+  const [periodo, setPeriodo] = useState<Periodo>(() => {
+    const hoje = new Date();
+    return { from: startOfDay(hoje), to: endOfDay(addDays(hoje, 30)), label: "Próximos 30 dias" };
+  });
   const { data, isLoading, error } = useQuery({
     enabled: !!empresa,
-    queryKey: ["fluxo", empresa?.id] as const,
+    queryKey: ["fluxo", empresa?.id, periodo.from?.getTime() ?? null, periodo.to?.getTime() ?? null] as const,
     queryFn: async ({ signal }): Promise<FluxoPoint[]> => {
       const hoje = startOfDay(new Date());
-      const fim = addDays(hoje, 30);
+      const ini = periodo.from ?? hoje;
+      const fimRaw = periodo.to ?? addDays(hoje, 30);
+      const dias = Math.min(Math.max(differenceInCalendarDays(fimRaw, ini), 1), 366);
+      const fim = addDays(ini, dias);
       const { data, error } = await supabase
         .from("lancamentos_financeiros")
         .select("tipo,valor,valor_pago,data_vencimento,status")
         .eq("empresa_id", empresa!.id)
         .in("status", ["aberto", "parcial", "vencido"])
-        .gte("data_vencimento", format(hoje, "yyyy-MM-dd"))
+        .gte("data_vencimento", format(ini, "yyyy-MM-dd"))
         .lte("data_vencimento", format(fim, "yyyy-MM-dd"))
         .abortSignal(signal);
       if (error) throw error;
 
       const buckets = new Map<string, FluxoPoint>();
-      for (let i = 0; i <= 30; i++) {
-        const d = addDays(hoje, i);
+      for (let i = 0; i <= dias; i++) {
+        const d = addDays(ini, i);
         buckets.set(format(d, "yyyy-MM-dd"), { data: format(d, "dd/MM"), entradas: 0, saidas: 0, saldo: 0 });
       }
       for (const l of (data ?? []) as LancamentoRow[]) {
@@ -72,8 +81,13 @@ function FluxoCaixa() {
       <PageHeader
         eyebrow="Financeiro"
         title="Fluxo de caixa"
-        description="Projeção de entradas e saídas dos próximos 30 dias."
+        description="Projeção de entradas e saídas do período selecionado."
       />
+      <div className="mb-4 flex flex-wrap items-center gap-2.5 sm:mb-6">
+        <div className="shrink-0">
+          <PeriodoFilter value={periodo} onChange={setPeriodo} />
+        </div>
+      </div>
       {/* KPIs compactos — mesma hierarquia secundária do Dashboard */}
       <div className="grid gap-3 sm:grid-cols-3">
         {isLoading || !data ? (

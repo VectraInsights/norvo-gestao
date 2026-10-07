@@ -5157,6 +5157,13 @@ Espelhado na Vercel.
 - `npm run build` OK.
 - Arquivo: `src/routes/_authenticated/financeiro.fluxo.tsx`.
 
+## Fluxo com seletor de periodo (07/10)
+
+- `PeriodoFilter` (mesmo de Receber/Pagar) acima do grafico; padrao mantido
+  nos `Próximos 30 dias`; query filtra `data_vencimento` pelo periodo
+  (limite de 366 dias) e KPIs/grafico acompanham.
+- `npm run build` OK.
+
 ## Mes atual com nome do mes + sem overflow (07/10)
 
 - Preset `Mês atual` passa a rotular com o nome do mes (`Agosto/2027`);
