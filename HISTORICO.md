@@ -5306,3 +5306,11 @@ pm run build OK.
 - Curva ABC agora mostra a Classe (A ate 80%, B ate 95%, C o resto) com
   legenda; ranking com subtitulos.
 - Validado com `npm run build` OK.
+
+## Emprestimos sem limite + busca por valor (07/10)
+
+- Contratos e parcelas em paginas de 1000 (antes `.limit(300)` e
+  `.limit(500)` cortavam sem aviso).
+- Busca casa tambem valor principal ("25,00" acha 25000.00).
+- Sem abas/rolagem indevida na pagina.
+- Validado com `npm run build` OK.
