@@ -131,7 +131,7 @@ export function PeriodoFilter({ value, onChange }: { value: Periodo; onChange: (
       )}
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>
-        <Button size="sm" variant="outline" title={`Período: ${value.label}`} className="h-9 w-[300px] justify-start rounded-xl px-3 shadow-sm transition-all hover:-translate-y-px hover:shadow-md">
+        <Button size="sm" variant="outline" title={`Período: ${value.label}`} className="h-9 w-[300px] justify-center rounded-xl px-3 shadow-sm transition-all hover:-translate-y-px hover:shadow-md">
           <CalendarIcon className="mr-1.5 h-4 w-4 shrink-0" />
           <span className="truncate tabular-nums">Período: {value.label}</span>
         </Button>

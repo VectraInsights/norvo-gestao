@@ -5157,6 +5157,11 @@ Espelhado na Vercel.
   a pagina (o `EmptyState`, ja centralizado, volta a aparecer no centro).
 - `npm run build` OK.
 
+## Periodo centralizado (07/10)
+
+- Texto do botao do periodo (`Período: ...`) centralizado (`justify-center`).
+- `npm run build` OK.
+
 ## Periodo com largura total (07/10)
 
 - Botao do periodo de `w-[210px]` para `w-[300px]`: intervalo personalizado
