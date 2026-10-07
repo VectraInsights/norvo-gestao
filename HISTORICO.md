@@ -5157,6 +5157,14 @@ Espelhado na Vercel.
 - `npm run build` OK.
 - Arquivo: `src/routes/_authenticated/financeiro.fluxo.tsx`.
 
+## Contas financeiras compactadas (07/10)
+
+- Barra: busca `h-10` para `h-9`; Auditoria `outline h-10` para `ghost h-9`;
+  `Nova conta` de `h-10 px-5` para `size=sm h-9 px-4 text-sm`.
+- Tabela principal com padding reduzido (`[&_td]:px-3 [&_td]:py-2`).
+- Dialogs de conciliacao e detalhe intactos; `npm run build` OK.
+- Arquivo: `src/routes/_authenticated/financeiro.contas.tsx`.
+
 ## Fluxo com seletor de periodo (07/10)
 
 - `PeriodoFilter` (mesmo de Receber/Pagar) acima do grafico; padrao mantido

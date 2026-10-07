@@ -798,16 +798,16 @@ function ContasFinanceiras() {
       <div className="mb-4 flex flex-col gap-3 sm:mb-6 sm:flex-row sm:items-center">
         <div className="relative flex-1">
           <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-          <Input className="h-10 rounded-xl pl-10 shadow-sm" placeholder="Buscar por nome, banco, agência ou conta..." value={busca} onChange={(e) => setBusca(e.target.value)} />
+          <Input className="h-9 rounded-xl pl-10 shadow-sm" placeholder="Buscar por nome, banco, agência ou conta..." value={busca} onChange={(e) => setBusca(e.target.value)} />
         </div>
         <div className="flex items-center gap-2">
           <div className="flex items-center gap-2.5">
-            <Button variant="outline" size="sm" onClick={() => setTrilhaOpen(true)} className="h-10 rounded-xl px-4 shadow-sm">
+            <Button variant="ghost" size="sm" onClick={() => setTrilhaOpen(true)} className="h-9 rounded-xl px-4 active:scale-95">
               Auditoria
             </Button>
 
             <Dialog open={open} onOpenChange={(v) => { if (!criar.isPending) { setOpen(v); if (!v) resetWizard(); } }}>
-              <DialogTrigger asChild><Button className="h-10 rounded-xl px-5 shadow-md transition-all hover:-translate-y-px hover:shadow-lg"><Plus className="mr-1.5 h-4 w-4" />Nova conta</Button></DialogTrigger>
+              <DialogTrigger asChild><Button size="sm" className="h-9 rounded-xl px-4 text-sm shadow-sm transition-all hover:shadow-md active:scale-95"><Plus className="mr-1 h-3.5 w-3.5" />Nova conta</Button></DialogTrigger>
               <DialogContent className="max-h-[90vh] overflow-y-auto">
                 <DialogHeader><DialogTitle>{editandoId ? "Editar conta financeira" : "Cadastrar conta financeira"}</DialogTitle></DialogHeader>
 
@@ -1043,7 +1043,7 @@ function ContasFinanceiras() {
         <EmptyState icon={Banknote} title="Sem contas financeiras" description={busca ? "Nada encontrado para a busca." : "Cadastre suas contas para acompanhar saldos e realizar conciliação."} />
       ) : (
         <Card className="overflow-hidden rounded-2xl bg-primary/[0.04] shadow-panel">
-          <Table className="[&_td]:py-3 [&_th]:py-3">
+          <Table className="[&_td]:px-3 [&_td]:py-2 [&_th]:px-3 [&_th]:py-2">
             <TableHeader><TableRow>
               <TableHead className="text-[13px]">Banco</TableHead><TableHead className="text-[13px]">Nome da conta</TableHead><TableHead className="text-[13px]">Tipo de conta</TableHead>
               <TableHead className="text-[13px]">Conciliações</TableHead><TableHead className="text-[13px]">Extrato bancário</TableHead>
