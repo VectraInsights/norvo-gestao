@@ -568,7 +568,7 @@ function EmprestimosPage() {
             }}
           />
           <Dialog open={editOpen} onOpenChange={setEditOpen}>
-            <DialogContent className="max-h-[90vh] overflow-y-auto rounded-2xl sm:max-w-lg">
+            <DialogContent className="max-h-[90vh] overflow-y-auto rounded-2xl sm:max-w-lg sm:inset-auto sm:left-1/2 sm:top-1/2 sm:-translate-x-1/2 sm:-translate-y-1/2 sm:h-auto sm:w-full">
               <DialogHeader className="gap-1.5 pb-1"><DialogTitle className="tracking-tight">Editar contrato</DialogTitle></DialogHeader>
               {emprestimoSel && (
               <div className="grid gap-4">
