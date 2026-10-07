@@ -844,7 +844,6 @@ function CtePage() {
         <Input
           value={buscaDocs}
           onChange={(e) => setBuscaDocs(e.target.value)}
-          placeholder="Buscar nº, chave, motivo, valor…"
           className="h-7 rounded-lg pl-8 pr-8 text-xs"
         />
         {buscaDocs && (
@@ -6489,7 +6488,6 @@ function CtePage() {
                       <Input
                         value={buscaEmb}
                         onChange={(e) => setBuscaEmb(e.target.value)}
-                        placeholder="Buscar nº, chave, emitente…"
                         className="h-6 rounded-md pl-7 pr-7 text-[11px]"
                       />
                       {buscaEmb && (
@@ -6507,8 +6505,8 @@ function CtePage() {
                       Qtde NF-e: {mercadoriasSorted.length}/{mercadorias.length}
                     </span>
                   </div>
-                  <div className="overflow-auto flex-1 min-h-0">
-                    <Table className="w-max min-w-full [&_td]:px-1.5 [&_td]:py-1 [&_th]:px-1.5 [&_th]:py-1.5">
+                  <div className="overflow-auto flex-1 min-h-0 min-w-0">
+                    <Table className="min-w-max [&_td]:px-1.5 [&_td]:py-1 [&_th]:px-1.5 [&_th]:py-1.5">
                       <TableHeader className="sticky top-0 z-10 bg-muted">
                         <TableRow>
                           <TableHead className="w-6">
