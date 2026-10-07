@@ -5314,3 +5314,13 @@ pm run build OK.
 - Busca casa tambem valor principal ("25,00" acha 25000.00).
 - Sem abas/rolagem indevida na pagina.
 - Validado com `npm run build` OK.
+
+## CTe sem limites silenciosos (07/10)
+
+- 10 queries em paginas (documentos, MDF-vinculos, CIOT, NF-es pendentes
+  e todas, motoristas, veiculos, seguradoras, cadastros): antes cortavam
+  em 100/200/1000/2000/5000 sem aviso.
+- Correcao critica: `chavesEmUso` (guarda de duplicidade) cortava em 500
+  docs — NF de documento antigo escapava e permitia emitir CT-e duplicado.
+- Rolagem do dialogo de emissao mantida só na lista de NF-es (decisao standing).
+- Validado com `npm run build` OK.
