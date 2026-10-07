@@ -5432,6 +5432,9 @@ pm run build OK.
 - Recebidas sem limite silencioso (07/10): notas importadas em paginas
   (antes 500). Auditoria mantida em 200 (trilha).
 - Validado com `npm run build` OK.
+- Cadastro sem limite silencioso (07/10): fiscal_cadastros em paginas
+  (antes 500). Busca, ordenacao e paginacao mantidas.
+- Validado com `npm run build` OK.
 - Novo credor + Importar PDF + sem placeholders (07/10): rodapé e
   dialogo "Novo credor" (segue tipo fornecedor); botao "Importar PDF";
   placeholders removidos da tela de contratos.
