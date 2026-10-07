@@ -391,18 +391,23 @@ function NotasRecebidas() {
   const [chaveInput, setChaveInput] = useState("");
   const [isImportingByKey, setIsImportingByKey] = useState(false);
 
-  // Carregar notas do banco ao montar
+  // Carregar notas do banco ao montar (em páginas: sem corte silencioso)
   useEffect(() => {
     if (!empresa) return;
     (async () => {
-      const { data: notasDb } = await supabase
-        .from("notas_importadas" as never)
-        .select("id,empresa_id,chave_acesso,emitente,cnpj_emitente,valor_total,data_emissao,numero_nf,xml_completo,created_at")
-        .eq("empresa_id", empresa.id)
-        .order("created_at", { ascending: false })
-        .limit(500);
-      if (notasDb && Array.isArray(notasDb)) {
-        setNotas((notasDb as any[]).map(n => ({
+      const todas: unknown[] = [];
+      for (let ini = 0; ; ini += 500) {
+        const { data: notasDb } = await supabase
+          .from("notas_importadas" as never)
+          .select("id,empresa_id,chave_acesso,emitente,cnpj_emitente,valor_total,data_emissao,numero_nf,xml_completo,created_at")
+          .eq("empresa_id", empresa.id)
+          .order("created_at", { ascending: false })
+          .range(ini, ini + 499);
+        todas.push(...((notasDb as unknown[]) ?? []));
+        if (!notasDb || (notasDb as unknown[]).length < 500) break;
+      }
+      if (Array.isArray(todas)) {
+        setNotas((todas as any[]).map(n => ({
           id: n.id,
           chave: n.chave_acesso,
           emitente: n.emitente,
