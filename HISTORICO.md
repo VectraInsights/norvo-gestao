@@ -5418,6 +5418,10 @@ pm run build OK.
   só campo (seletor do cadastro, com Novo fornecedor); o nome gravado
   segue alimentando o Fornecedor do Pagar.
 - Validado com `npm run build` OK.
+- MDFe sem limites silenciosos (07/10): documentos, CT-es disponiveis,
+  guarda de vinculo e encerrados em paginas (antes 100/50/200/100).
+  Guarda de vinculo total: CT-e de MDF-e antigo nao entra em outro.
+- Validado com `npm run build` OK.
 - Novo credor + Importar PDF + sem placeholders (07/10): rodapé e
   dialogo "Novo credor" (segue tipo fornecedor); botao "Importar PDF";
   placeholders removidos da tela de contratos.
