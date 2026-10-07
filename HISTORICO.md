@@ -5276,9 +5276,15 @@ pm run build OK.
 - Validado com `npm run build` OK.
 
 ## DRE sem limite + colunas compactas (07/10)
-
 - Query em paginas de 1000 (antes `.limit(20000)` cortava a DRE em
   empresa grande sem aviso).
 - Padding das celulas reduzido p/ os 14 meses caberem sem rolagem
   lateral em tela normal.
+- Validado com `npm run build` OK.
+
+## Relatorios sem limite silencioso (07/10)
+
+- Lancamentos e contatos em paginas de 1000 (antes `.limit(20000)` e
+  `.limit(5000)` cortavam aging/ranking/curva sem aviso).
+- Abas e tabelas já sem rolagem indevida; sem busca (agregados, sem alvo textual).
 - Validado com `npm run build` OK.
