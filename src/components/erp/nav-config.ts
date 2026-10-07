@@ -58,11 +58,6 @@ const RAW_NAV: NavGroup[] = [
       { to: "/financeiro/pagar", label: "Contas a pagar", icon: ReceiptText },
       { to: "/financeiro/fluxo", label: "Fluxo de caixa", icon: Wallet },
       { to: "/financeiro/contas", label: "Contas financeiras", icon: Banknote },
-      {
-        to: "/financeiro/transferencias",
-        label: "Transferências entre contas",
-        icon: ArrowLeftRight,
-      },
       { to: "/financeiro/emprestimos", label: "Empréstimos e financiamentos", icon: Banknote },
       { to: "/financeiro/dre", label: "DRE / Resultado", icon: PieChart },
       { to: "/financeiro/relatorios", label: "Relatórios financeiros", icon: BarChart3 },
