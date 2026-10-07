@@ -12,6 +12,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { MoneyInput } from "@/components/erp/money-input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Banknote, Plus, ChevronRight, Trash2, HandCoins, Search, Pencil, Check, X, FileUp } from "lucide-react";
 import { useMemo, useRef, useState } from "react";
@@ -139,6 +140,7 @@ function EmprestimosPage() {
   const [contaId, setContaId] = useState("");
   // Edição do cabeçalho do contrato (não mexe em valor/parcelas/datas: parcelas já geradas)
   const [editOpen, setEditOpen] = useState(false);
+  const [confExcluir, setConfExcluir] = useState(false);
   const [editForm, setEditForm] = useState({ descricao: "", credor: "", contaId: "" });
   // Edição manual de parcela (valor + vencimento): p/ contratos com carência,
   // balões ou parcelas irregulares que o Price não representa
@@ -379,13 +381,38 @@ function EmprestimosPage() {
 
   const excluir = useMutation({
     mutationFn: async (id: string) => {
+      // Contas a pagar geradas pelo contrato: pendentes (aberto) somem junto; pagas ficam
+      const { data: parcs } = await supabase.from("emprestimo_parcelas" as never)
+        .select("lancamento_id").eq("emprestimo_id", id);
+      const ids = ((parcs as unknown as Array<{ lancamento_id: string | null }>) ?? [])
+        .map((p) => p.lancamento_id).filter(Boolean) as string[];
+      let removidas = 0, mantidas = 0;
+      if (ids.length) {
+        const { data: lancs } = await supabase.from("lancamentos_financeiros")
+          .select("id,status").in("id", ids);
+        const abertas = ((lancs as unknown as Array<{ id: string; status: string }>) ?? [])
+          .filter((l) => l.status === "aberto").map((l) => l.id);
+        mantidas = ids.length - abertas.length;
+        if (abertas.length) {
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          const { error: eDel } = await (supabase.from("lancamentos_financeiros") as any).delete().in("id", abertas);
+          if (eDel) throw eDel;
+          removidas = abertas.length;
+        }
+      }
+      await supabase.from("emprestimo_parcelas" as never).delete().eq("emprestimo_id", id);
       const { error } = await supabase.from("emprestimos" as never).delete().eq("id", id);
       if (error) throw error;
+      return { removidas, mantidas };
     },
-    onSuccess: () => {
-      toast.success("Contrato excluído");
+    onSuccess: ({ removidas, mantidas }) => {
+      toast.success(
+        `Contrato excluído${removidas ? `; ${removidas} conta(s) pendente(s) removidas` : ""}${mantidas ? `; ${mantidas} já paga(s) mantidas no Pagar` : ""}`,
+      );
       setSel(null);
+      setConfExcluir(false);
       qc.invalidateQueries({ queryKey: ["emprestimos"] });
+      qc.invalidateQueries({ queryKey: ["lancamentos"] });
     },
     onError: (e: Error) => toast.error(e.message),
   });
@@ -658,7 +685,7 @@ function EmprestimosPage() {
                     >
                       <HandCoins className="mr-1.5 h-4 w-4" /> Gerar contas a pagar
                     </Button>
-                    <Button size="sm" variant="ghost" aria-label="Excluir contrato" onClick={() => excluir.mutate(emprestimoSel.id)} className="h-9 w-9 rounded-xl">
+                    <Button size="sm" variant="ghost" aria-label="Excluir contrato" onClick={() => setConfExcluir(true)} className="h-9 w-9 rounded-xl">
                       <Trash2 className="h-4 w-4" />
                     </Button>
                   </div>
@@ -735,6 +762,27 @@ function EmprestimosPage() {
           </Card>
         </div>
       )}
+      <AlertDialog open={confExcluir} onOpenChange={setConfExcluir}>
+        <AlertDialogContent className="rounded-2xl">
+          <AlertDialogHeader className="gap-1.5">
+            <AlertDialogTitle className="tracking-tight">Excluir contrato</AlertDialogTitle>
+            <AlertDialogDescription className="leading-relaxed">
+              Excluir "{emprestimoSel?.descricao}"? As contas a pagar pendentes geradas por ele
+              serão removidas; as já pagas serão mantidas.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter className="gap-2">
+            <AlertDialogCancel className="h-10 rounded-xl">Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              data-acao
+              className="h-10 rounded-xl bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              onClick={() => emprestimoSel && excluir.mutate(emprestimoSel.id)}
+            >
+              {excluir.isPending ? "Excluindo..." : "Excluir"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </>
   );
 }
