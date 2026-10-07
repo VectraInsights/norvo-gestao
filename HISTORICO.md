@@ -5438,6 +5438,12 @@ pm run build OK.
 - Relatorios fiscal sem corte implicito (07/10): notas em paginas
   (sem range o Supabase corta em 1000). KPIs, graficos e tabela mantidos.
 - Validado com `npm run build` OK.
+- Contador e Configuracoes revisados sem alteracao (07/10): Contador e
+  100% mock (sem queries); Configuracoes sem lista paginavel (CFOP em
+  localStorage, config/certificado single-row).
+- FISCAL COMPLETO: CTe, MDF-e, Percursos, Emitidas, Recebidas, Cadastro,
+  Relatorios, Contador, Configuracoes.
+- Validado com `npm run build` OK.
 - Novo credor + Importar PDF + sem placeholders (07/10): rodapé e
   dialogo "Novo credor" (segue tipo fornecedor); botao "Importar PDF";
   placeholders removidos da tela de contratos.
