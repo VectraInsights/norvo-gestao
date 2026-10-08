@@ -5539,3 +5539,12 @@ pm run build OK.
 - Acoes h-8 rounded-lg; lixeira vermelha; confirms rounded-2xl.
 - So JSX/Tailwind, sem logica.
 - Validado com `npm run build` OK.
+## Comissoes no padrao visual (08/10)
+
+- Eyebrow "DP / RH"; busca h-9 rounded-xl com botao limpar;
+  seletores mes/ano h-9 rounded-xl; botoes Gerar/Nova h-9.
+- Dialogo rounded-2xl centralizado com rodape h-10;
+  skeleton em linhas; card rounded-2xl; tabela compacta.
+- Acoes h-8 rounded-lg; lixeira vermelha; confirms rounded-2xl.
+- So JSX/Tailwind, sem logica.
+- Validado com `npm run build` OK.
