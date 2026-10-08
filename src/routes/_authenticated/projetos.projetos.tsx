@@ -6,7 +6,6 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card } from "@/components/ui/card";
-import { Skeleton } from "@/components/ui/skeleton";
 import { Textarea } from "@/components/ui/textarea";
 import { MoneyInput } from "@/components/erp/money-input";
 import { Combobox } from "@/components/erp/combobox";
@@ -45,7 +44,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-import { Briefcase, ChevronLeft, ChevronRight, Plus, Trash2, Pencil, Search } from "lucide-react";
+import { Briefcase, ChevronLeft, ChevronRight, Plus, Trash2, Pencil, Search, X } from "lucide-react";
 import { useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -253,13 +252,24 @@ function ProjetosPage() {
   return (
     <div className="space-y-6">
       <PageHeader
+        eyebrow="Projetos"
         title="Projetos"
         description="Organize entregas, prazos e orçamentos por projeto."
       />
-      <div className="mb-3 flex flex-col gap-2 sm:flex-row sm:items-center">
+      <div className="mb-4 flex flex-col gap-2 sm:mb-6 sm:flex-row sm:items-center">
         <div className="relative flex-1">
-          <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-          <Input className="pl-8" placeholder="Buscar por nome, cliente ou descrição..." value={busca} onChange={(e) => { setBusca(e.target.value); setPagina(1); }} />
+          <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+          <Input className="h-9 rounded-xl pl-10 pr-10 shadow-sm" placeholder="Buscar por nome, cliente ou descrição..." value={busca} onChange={(e) => { setBusca(e.target.value); setPagina(1); }} />
+          {busca && (
+            <button
+              type="button"
+              onClick={() => { setBusca(""); setPagina(1); }}
+              className="absolute right-2.5 top-1/2 grid h-6 w-6 -translate-y-1/2 place-items-center rounded-lg text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
+              aria-label="Limpar busca"
+            >
+              <X className="h-4 w-4" />
+            </button>
+          )}
         </div>
         <div className="flex items-center gap-2">
           <Dialog
@@ -270,14 +280,14 @@ function ProjetosPage() {
             }}
           >
             <DialogTrigger asChild>
-              <Button size="sm">
-                <Plus className="h-4 w-4 mr-1" />
+              <Button size="sm" className="h-9 rounded-xl px-4 text-sm shadow-sm transition-all hover:shadow-md active:scale-95">
+                <Plus className="mr-1 h-3.5 w-3.5" />
                 Novo projeto
               </Button>
             </DialogTrigger>
-            <DialogContent>
-              <DialogHeader>
-                <DialogTitle>{editing ? "Editar projeto" : "Novo projeto"}</DialogTitle>
+            <DialogContent className="max-h-[90vh] overflow-y-auto rounded-2xl sm:max-w-lg sm:inset-auto sm:left-1/2 sm:top-1/2 sm:-translate-x-1/2 sm:-translate-y-1/2 sm:h-auto sm:w-full">
+              <DialogHeader className="gap-1.5 pb-1">
+                <DialogTitle className="tracking-tight">{editing ? "Editar projeto" : "Novo projeto"}</DialogTitle>
               </DialogHeader>
               <div className="grid gap-3">
                 <div>
@@ -311,7 +321,7 @@ function ProjetosPage() {
                   <div>
                     <Label>Status</Label>
                     <Select value={status} onValueChange={setStatus}>
-                      <SelectTrigger>
+                      <SelectTrigger className="h-10 rounded-xl shadow-sm">
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
@@ -350,11 +360,11 @@ function ProjetosPage() {
                   </div>
                 </div>
               </div>
-              <DialogFooter>
-                <Button variant="outline" onClick={() => setOpen(false)}>
+              <DialogFooter className="gap-2">
+                <Button variant="outline" onClick={() => setOpen(false)} className="h-10 rounded-xl px-6">
                   Cancelar
                 </Button>
-                <Button onClick={() => save.mutate()} disabled={save.isPending}>
+                <Button onClick={() => save.mutate()} disabled={save.isPending} className="h-10 rounded-xl px-6 shadow-sm transition-all hover:-translate-y-px hover:shadow-md">
                   Salvar
                 </Button>
               </DialogFooter>
@@ -370,10 +380,12 @@ function ProjetosPage() {
         </div>
       </div>
 
-      <Card className="p-0 overflow-hidden">
+      <Card className="overflow-hidden rounded-2xl shadow-panel">
         {isLoading ? (
-          <div className="p-6">
-            <Skeleton className="h-32 w-full" />
+          <div className="space-y-2.5 p-4" aria-label="Carregando">
+            {Array.from({ length: 4 }).map((_, i) => (
+              <div key={i} className="h-12 animate-pulse rounded-xl bg-muted/30" />
+            ))}
           </div>
         ) : !filtrados || filtrados.length === 0 ? (
           <EmptyState
@@ -383,8 +395,8 @@ function ProjetosPage() {
           />
         ) : (
           <>
-            <Table>
-              <TableHeader>
+            <Table className="[&_td]:px-3 [&_td]:py-2 [&_th]:px-3">
+              <TableHeader className="static bg-card supports-[backdrop-filter]:bg-card">
                 <TableRow>
                   <TableHead>Projeto</TableHead>
                   <TableHead>Cliente</TableHead>
@@ -409,7 +421,7 @@ function ProjetosPage() {
                     <TableCell>{p.contatos?.nome ?? "—"}</TableCell>
                     <TableCell>
                       <span
-                        className={`inline-flex items-center rounded-md border px-2 py-0.5 text-xs ${STATUS_COLOR[p.status] ?? ""}`}
+                        className={`inline-flex items-center rounded-full px-2 py-0.5 text-[11px] font-medium ${STATUS_COLOR[p.status] ?? ""}`}
                       >
                         {STATUS_LABEL[p.status] ?? p.status}
                       </span>
@@ -423,7 +435,7 @@ function ProjetosPage() {
                         <Button
                           variant="ghost"
                           size="icon"
-                          className="h-8 w-8"
+                          className="h-8 w-8 rounded-lg"
                           title="Editar"
                           onClick={() => openEdit(p)}
                         >
@@ -431,11 +443,11 @@ function ProjetosPage() {
                         </Button>
                         <AlertDialog>
                           <AlertDialogTrigger asChild>
-                            <Button variant="ghost" size="icon" className="h-8 w-8">
+                            <Button variant="ghost" size="icon" className="h-8 w-8 rounded-lg text-destructive hover:bg-destructive/10" title="Excluir">
                               <Trash2 className="h-4 w-4" />
                             </Button>
                           </AlertDialogTrigger>
-                          <AlertDialogContent>
+                          <AlertDialogContent className="rounded-2xl">
                             <AlertDialogHeader>
                               <AlertDialogTitle>Excluir projeto?</AlertDialogTitle>
                               <AlertDialogDescription>

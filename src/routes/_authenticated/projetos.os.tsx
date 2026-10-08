@@ -6,7 +6,6 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card } from "@/components/ui/card";
-import { Skeleton } from "@/components/ui/skeleton";
 import { Textarea } from "@/components/ui/textarea";
 import { MoneyInput } from "@/components/erp/money-input";
 import { Combobox } from "@/components/erp/combobox";
@@ -46,7 +45,7 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Wrench, Plus, Trash2, Pencil, Search } from "lucide-react";
+import { Wrench, Plus, Trash2, Pencil, Search, X } from "lucide-react";
 import { useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -297,13 +296,24 @@ function OSPage() {
   return (
     <div className="space-y-6">
       <PageHeader
+        eyebrow="Projetos"
         title="Ordens de serviço"
         description="Registre chamados, execute e feche entregas com prazos e responsáveis."
       />
-      <div className="mb-3 flex flex-col gap-2 sm:flex-row sm:items-center">
+      <div className="mb-4 flex flex-col gap-2 sm:mb-6 sm:flex-row sm:items-center">
         <div className="relative flex-1">
-          <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-          <Input className="pl-8" placeholder="Buscar por título, cliente, projeto ou número..." value={busca} onChange={(e) => setBusca(e.target.value)} />
+          <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+          <Input className="h-9 rounded-xl pl-10 pr-10 shadow-sm" placeholder="Buscar por título, cliente, projeto ou número..." value={busca} onChange={(e) => setBusca(e.target.value)} />
+          {busca && (
+            <button
+              type="button"
+              onClick={() => setBusca("")}
+              className="absolute right-2.5 top-1/2 grid h-6 w-6 -translate-y-1/2 place-items-center rounded-lg text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
+              aria-label="Limpar busca"
+            >
+              <X className="h-4 w-4" />
+            </button>
+          )}
         </div>
         <div className="flex items-center gap-2">
           <Dialog
@@ -314,14 +324,14 @@ function OSPage() {
             }}
           >
             <DialogTrigger asChild>
-              <Button size="sm">
-                <Plus className="h-4 w-4 mr-1" />
+              <Button size="sm" className="h-9 rounded-xl px-4 text-sm shadow-sm transition-all hover:shadow-md active:scale-95">
+                <Plus className="mr-1 h-3.5 w-3.5" />
                 Nova OS
               </Button>
             </DialogTrigger>
-            <DialogContent>
-              <DialogHeader>
-                <DialogTitle>
+            <DialogContent className="max-h-[90vh] overflow-y-auto rounded-2xl sm:max-w-lg sm:inset-auto sm:left-1/2 sm:top-1/2 sm:-translate-x-1/2 sm:-translate-y-1/2 sm:h-auto sm:w-full">
+              <DialogHeader className="gap-1.5 pb-1">
+                <DialogTitle className="tracking-tight">
                   {editing ? `OS #${editing.numero ?? ""}` : "Nova ordem de serviço"}
                 </DialogTitle>
               </DialogHeader>
@@ -373,7 +383,7 @@ function OSPage() {
                   <div>
                     <Label>Status</Label>
                     <Select value={status} onValueChange={setStatus}>
-                      <SelectTrigger>
+                      <SelectTrigger className="h-10 rounded-xl shadow-sm">
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
@@ -388,7 +398,7 @@ function OSPage() {
                   <div>
                     <Label>Prioridade</Label>
                     <Select value={prioridade} onValueChange={setPrioridade}>
-                      <SelectTrigger>
+                      <SelectTrigger className="h-10 rounded-xl shadow-sm">
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
@@ -416,11 +426,11 @@ function OSPage() {
                   <Textarea rows={2} value={obs} onChange={(e) => setObs(e.target.value)} />
                 </div>
               </div>
-              <DialogFooter>
-                <Button variant="outline" onClick={() => setOpen(false)}>
+              <DialogFooter className="gap-2">
+                <Button variant="outline" onClick={() => setOpen(false)} className="h-10 rounded-xl px-6">
                   Cancelar
                 </Button>
-                <Button onClick={() => save.mutate()} disabled={save.isPending}>
+                <Button onClick={() => save.mutate()} disabled={save.isPending} className="h-10 rounded-xl px-6 shadow-sm transition-all hover:-translate-y-px hover:shadow-md">
                   Salvar
                 </Button>
               </DialogFooter>
@@ -437,18 +447,20 @@ function OSPage() {
       </div>
 
       <Tabs value={tab} onValueChange={setTab}>
-        <TabsList>
-          <TabsTrigger value="abertas">Abertas</TabsTrigger>
-          <TabsTrigger value="concluidas">Concluídas</TabsTrigger>
-          <TabsTrigger value="canceladas">Canceladas</TabsTrigger>
-          <TabsTrigger value="todas">Todas</TabsTrigger>
+        <TabsList className="rounded-xl shadow-sm">
+          <TabsTrigger value="abertas" className="rounded-lg">Abertas</TabsTrigger>
+          <TabsTrigger value="concluidas" className="rounded-lg">Concluídas</TabsTrigger>
+          <TabsTrigger value="canceladas" className="rounded-lg">Canceladas</TabsTrigger>
+          <TabsTrigger value="todas" className="rounded-lg">Todas</TabsTrigger>
         </TabsList>
       </Tabs>
 
-      <Card className="p-0 overflow-hidden">
+      <Card className="overflow-hidden rounded-2xl shadow-panel">
         {isLoading ? (
-          <div className="p-6">
-            <Skeleton className="h-32 w-full" />
+          <div className="space-y-2.5 p-4" aria-label="Carregando">
+            {Array.from({ length: 4 }).map((_, i) => (
+              <div key={i} className="h-12 animate-pulse rounded-xl bg-muted/30" />
+            ))}
           </div>
         ) : filtrados.length === 0 ? (
           <EmptyState
@@ -457,8 +469,8 @@ function OSPage() {
             description={busca ? "Nada encontrado para a busca." : "Crie sua primeira ordem de serviço."}
           />
         ) : (
-          <Table>
-            <TableHeader>
+          <Table className="[&_td]:px-3 [&_td]:py-2 [&_th]:px-3">
+            <TableHeader className="static bg-card supports-[backdrop-filter]:bg-card">
               <TableRow>
                 <TableHead className="w-16">Nº</TableHead>
                 <TableHead>Título</TableHead>
@@ -495,7 +507,7 @@ function OSPage() {
                   </TableCell>
                   <TableCell>
                     <span
-                      className={`inline-flex items-center rounded-md border px-2 py-0.5 text-xs ${STATUS_COLOR[o.status] ?? ""}`}
+                      className={`inline-flex items-center rounded-full px-2 py-0.5 text-[11px] font-medium ${STATUS_COLOR[o.status] ?? ""}`}
                     >
                       {STATUS_LABEL[o.status] ?? o.status}
                     </span>
@@ -507,7 +519,7 @@ function OSPage() {
                       <Button
                         variant="ghost"
                         size="icon"
-                        className="h-8 w-8"
+                        className="h-8 w-8 rounded-lg"
                         title="Editar"
                         onClick={() => openEdit(o)}
                       >
@@ -515,11 +527,11 @@ function OSPage() {
                       </Button>
                       <AlertDialog>
                         <AlertDialogTrigger asChild>
-                          <Button variant="ghost" size="icon" className="h-8 w-8">
+                          <Button variant="ghost" size="icon" className="h-8 w-8 rounded-lg text-destructive hover:bg-destructive/10" title="Excluir">
                             <Trash2 className="h-4 w-4" />
                           </Button>
                         </AlertDialogTrigger>
-                        <AlertDialogContent>
+                        <AlertDialogContent className="rounded-2xl">
                           <AlertDialogHeader>
                             <AlertDialogTitle>Excluir OS #{o.numero}?</AlertDialogTitle>
                             <AlertDialogDescription>

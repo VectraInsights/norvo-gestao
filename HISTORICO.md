@@ -5601,3 +5601,13 @@ pm run build OK.
 - FISCAL COMPLETO tambem no visual.
 - So JSX/Tailwind, sem logica.
 - Validado com `npm run build` OK.
+## Projetos no padrao visual (08/10)
+
+- OS e Projetos: eyebrow "Projetos"; busca h-9 rounded-xl
+  com botao limpar; botoes h-9 rounded-xl; abas OS em
+  barra rounded-xl.
+- Dialogos rounded-2xl centralizados com rodape h-10;
+  seletores h-10; cards rounded-2xl; tabelas compactas;
+  status em pills; acoes h-8 rounded-lg; confirms rounded-2xl.
+- So JSX/Tailwind, sem logica.
+- Validado com `npm run build` OK.
