@@ -5578,3 +5578,10 @@ pm run build OK.
   cabecalho estatico.
 - So JSX/Tailwind, sem logica.
 - Validado com `npm run build` OK.
+## MDF-e no padrao visual (08/10)
+
+- 2 dialogos pequenos com rounded-2xl; tabela principal
+  compacta com cabecalho estatico.
+- Fullscreens de emissao e pickers internos mantidos.
+- So JSX/Tailwind, sem logica.
+- Validado com `npm run build` OK.

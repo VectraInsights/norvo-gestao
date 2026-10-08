@@ -556,8 +556,8 @@ function MdfPage() {
         />
       ) : (
         <Card className="overflow-hidden rounded-2xl shadow-panel">
-            <Table>
-              <TableHeader>
+            <Table className="[&_td]:px-3 [&_td]:py-2 [&_th]:px-3">
+              <TableHeader className="static bg-card supports-[backdrop-filter]:bg-card">
                 <TableRow>
                   {filtroStatus === "rascunho" && idsRascSel.length > 0 && (
                     <TableHead className="w-6">
@@ -700,7 +700,7 @@ function MdfPage() {
 
       {mdfEncerrar && (
         <Dialog open={openEncerrar} onOpenChange={setOpenEncerrar}>
-          <DialogContent className="sm:max-w-md sm:inset-auto sm:left-1/2 sm:top-1/2 sm:-translate-x-1/2 sm:-translate-y-1/2 sm:h-auto sm:max-h-[90vh] sm:w-full">
+          <DialogContent className="max-h-[90vh] overflow-y-auto rounded-2xl sm:max-w-md sm:inset-auto sm:left-1/2 sm:top-1/2 sm:-translate-x-1/2 sm:-translate-y-1/2 sm:h-auto sm:w-full">
             <DialogHeader className="gap-1.5 pb-1"><DialogTitle className="tracking-tight">Encerrar MDF-e #{mdfEncerrar.numero}</DialogTitle></DialogHeader>
             <p className="text-sm leading-relaxed text-muted-foreground">Confirma o encerramento do manifesto? Esta ação é irreversível.</p>
             <DialogFooter className="gap-2">
@@ -713,7 +713,7 @@ function MdfPage() {
 
       {mdfCancelar && (
         <Dialog open={openCancelar} onOpenChange={setOpenCancelar}>
-          <DialogContent className="sm:max-w-md sm:inset-auto sm:left-1/2 sm:top-1/2 sm:-translate-x-1/2 sm:-translate-y-1/2 sm:h-auto sm:max-h-[90vh] sm:w-full">
+          <DialogContent className="max-h-[90vh] overflow-y-auto rounded-2xl sm:max-w-md sm:inset-auto sm:left-1/2 sm:top-1/2 sm:-translate-x-1/2 sm:-translate-y-1/2 sm:h-auto sm:w-full">
             <DialogHeader className="gap-1.5 pb-1"><DialogTitle className="tracking-tight">Cancelar MDF-e #{mdfCancelar.numero}</DialogTitle></DialogHeader>
             <div className="space-y-2">
               <div className="grid gap-1.5">
