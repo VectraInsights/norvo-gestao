@@ -7,7 +7,6 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Skeleton } from "@/components/ui/skeleton";
 import { MoneyInput } from "@/components/erp/money-input";
 import { Combobox } from "@/components/erp/combobox";
 import {
@@ -33,7 +32,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { HandCoins, Pencil, Plus, Trash2, Search } from "lucide-react";
+import { HandCoins, Pencil, Plus, Trash2, Search, X } from "lucide-react";
 import { useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -382,18 +381,30 @@ function AdiantamentosPage() {
   return (
     <>
       <PageHeader
-        eyebrow="DP"
+        eyebrow="DP / RH"
         title="Adiantamentos"
         description="Adiantamentos a colaboradores com integração automática ao contas a pagar — o status acompanha a baixa/conciliação do lançamento."
       />
-      <div className="mb-3 flex flex-col gap-2 sm:flex-row sm:items-center">
+      <div className="mb-4 flex flex-col gap-2 sm:mb-6 sm:flex-row sm:items-center">
         <div className="relative flex-1">
-          <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-          <Input className="pl-8" placeholder="Buscar por colaborador ou motivo..." value={busca} onChange={(e) => setBusca(e.target.value)} />
+          <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+          <Input className="h-9 rounded-xl pl-10 pr-10 shadow-sm" placeholder="Buscar por colaborador ou motivo..." value={busca} onChange={(e) => setBusca(e.target.value)} />
+          {busca && (
+            <button
+              type="button"
+              onClick={() => setBusca("")}
+              className="absolute right-2.5 top-1/2 grid h-6 w-6 -translate-y-1/2 place-items-center rounded-lg text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
+              aria-label="Limpar busca"
+            >
+              <X className="h-4 w-4" />
+            </button>
+          )}
         </div>
         <div className="flex items-center gap-2">
             <Button
+              size="sm"
               variant="outline"
+              className="h-9 rounded-xl px-4 text-sm shadow-sm transition-all hover:shadow-md active:scale-95"
               disabled={
                 gerarEmLote.isPending ||
                 !(lista ?? []).some(
@@ -402,7 +413,7 @@ function AdiantamentosPage() {
               }
               onClick={() => setConfLote(true)}
             >
-              <HandCoins className="h-4 w-4 mr-1" />
+              <HandCoins className="mr-1 h-3.5 w-3.5" />
               Gerar contas a pagar
             </Button>
             <Dialog
@@ -413,13 +424,13 @@ function AdiantamentosPage() {
               }}
             >
               <DialogTrigger asChild>
-                <Button>
-                  <Plus className="mr-1.5 h-4 w-4" /> Novo adiantamento
+                <Button size="sm" className="h-9 rounded-xl px-4 text-sm shadow-sm transition-all hover:shadow-md active:scale-95">
+                  <Plus className="mr-1 h-3.5 w-3.5" /> Novo adiantamento
                 </Button>
               </DialogTrigger>
-              <DialogContent>
-                <DialogHeader>
-                  <DialogTitle>
+              <DialogContent className="max-h-[90vh] overflow-y-auto rounded-2xl sm:max-w-lg sm:inset-auto sm:left-1/2 sm:top-1/2 sm:-translate-x-1/2 sm:-translate-y-1/2 sm:h-auto sm:w-full">
+                <DialogHeader className="gap-1.5 pb-1">
+                  <DialogTitle className="tracking-tight">
                     {editando ? "Editar adiantamento" : "Novo adiantamento"}
                   </DialogTitle>
                   {editando && (
@@ -489,10 +500,11 @@ function AdiantamentosPage() {
                     />
                   </div>
                 </div>
-                <DialogFooter>
+                <DialogFooter className="gap-2">
                   <Button
                     onClick={() => (editando ? salvarEdicao.mutate() : criar.mutate())}
                     disabled={criar.isPending || salvarEdicao.isPending}
+                    className="h-10 rounded-xl px-6 shadow-sm transition-all hover:-translate-y-px hover:shadow-md"
                   >
                     {criar.isPending || salvarEdicao.isPending
                       ? "Salvando..."
@@ -507,9 +519,9 @@ function AdiantamentosPage() {
       </div>
 
       {isLoading ? (
-        <div className="space-y-2">
+        <div className="space-y-2.5" aria-label="Carregando">
           {[...Array(4)].map((_, i) => (
-            <Skeleton key={i} className="h-12 w-full" />
+            <div key={i} className="h-12 animate-pulse rounded-xl bg-muted/30" />
           ))}
         </div>
       ) : !lista?.length ? (
@@ -525,12 +537,12 @@ function AdiantamentosPage() {
           description="Nada encontrado para a busca."
         />
       ) : (
-        <Card className="shadow-panel">
+        <Card className="overflow-hidden rounded-2xl shadow-panel">
           <div className="flex items-center justify-between border-b border-border/60 px-4 py-3 text-sm">
             <span className="font-semibold">Em aberto: {brl(emAberto)}</span>
           </div>
-          <Table>
-            <TableHeader>
+          <Table className="[&_td]:px-3 [&_td]:py-2 [&_th]:px-3">
+            <TableHeader className="static bg-card supports-[backdrop-filter]:bg-card">
               <TableRow>
                 <TableHead>Colaborador</TableHead>
                 <TableHead>Data</TableHead>
@@ -566,6 +578,7 @@ function AdiantamentosPage() {
                         <Button
                           size="icon"
                           variant="ghost"
+                          className="h-8 w-8 rounded-lg"
                           aria-label="Gerar conta a pagar"
                           title={
                             a.lancamento_id ? "Já lançado no financeiro" : "Gerar conta a pagar"
@@ -579,6 +592,7 @@ function AdiantamentosPage() {
                       <Button
                         size="icon"
                         variant="ghost"
+                        className="h-8 w-8 rounded-lg"
                         aria-label="Editar"
                         title={
                           a.lancamento_id
@@ -593,6 +607,7 @@ function AdiantamentosPage() {
                       <Button
                         size="icon"
                         variant="ghost"
+                        className="h-8 w-8 rounded-lg text-destructive hover:bg-destructive/10"
                         aria-label="Excluir"
                         title={
                           a.recorrente
@@ -612,7 +627,7 @@ function AdiantamentosPage() {
         </Card>
       )}
       <AlertDialog open={confLote} onOpenChange={setConfLote}>
-        <AlertDialogContent>
+        <AlertDialogContent className="rounded-2xl">
           <AlertDialogHeader>
             <AlertDialogTitle>Gerar contas a pagar</AlertDialogTitle>
             <AlertDialogDescription>
@@ -631,7 +646,7 @@ function AdiantamentosPage() {
         </AlertDialogContent>
       </AlertDialog>
       <AlertDialog open={!!confExcluir} onOpenChange={(v) => { if (!v) setConfExcluir(null); }}>
-        <AlertDialogContent>
+        <AlertDialogContent className="rounded-2xl">
           <AlertDialogHeader>
             <AlertDialogTitle>Excluir adiantamento</AlertDialogTitle>
             <AlertDialogDescription>

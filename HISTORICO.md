@@ -5530,3 +5530,12 @@ pm run build OK.
 - Confirm com rounded-2xl.
 - So JSX/Tailwind, sem logica.
 - Validado com `npm run build` OK.
+## Adiantamentos no padrao visual (08/10)
+
+- Eyebrow "DP / RH"; busca h-9 rounded-xl com botao limpar;
+  botoes Gerar/Novo h-9 rounded-xl.
+- Dialogo rounded-2xl centralizado com rodape h-10;
+  skeleton em linhas; card rounded-2xl; tabela compacta.
+- Acoes h-8 rounded-lg; lixeira vermelha; confirms rounded-2xl.
+- So JSX/Tailwind, sem logica.
+- Validado com `npm run build` OK.
