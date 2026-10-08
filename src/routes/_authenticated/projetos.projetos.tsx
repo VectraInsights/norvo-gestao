@@ -117,27 +117,37 @@ function ProjetosPage() {
     staleTime: 30_000,
     gcTime: 10 * 60_000,
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from("projetos" as never)
-        .select(
-          "id,nome,descricao,status,data_inicio,data_prevista,data_conclusao,orcamento,cor,cliente_id,created_at,contatos:cliente_id(nome)",
-        )
-        .eq("empresa_id", empresa!.id)
-        .order("created_at", { ascending: false })
-        .limit(1000);
-      if (error) throw error;
-      return (data ?? []) as unknown as Projeto[];
+      // Busca em páginas para nunca cortar a lista (sem limite silencioso)
+      const todos: unknown[] = [];
+      for (let ini = 0; ; ini += 1000) {
+        const { data, error } = await supabase
+          .from("projetos" as never)
+          .select(
+            "id,nome,descricao,status,data_inicio,data_prevista,data_conclusao,orcamento,cor,cliente_id,created_at,contatos:cliente_id(nome)",
+          )
+          .eq("empresa_id", empresa!.id)
+          .order("created_at", { ascending: false })
+          .range(ini, ini + 999);
+        if (error) throw error;
+        todos.push(...((data as unknown[]) ?? []));
+        if (!data || (data as unknown[]).length < 1000) break;
+      }
+      return todos as unknown as Projeto[];
     },
   });
 
   const filtrados = useMemo(() => {
     const q = busca.trim().toLowerCase();
     if (!q) return projetos ?? [];
-    return (projetos ?? []).filter((p) =>
-      (p.nome || "").toLowerCase().includes(q)
-      || (p.contatos?.nome || "").toLowerCase().includes(q)
-      || (p.descricao || "").toLowerCase().includes(q),
-    );
+    const qDig = q.replace(/\D/g, "");
+    return (projetos ?? []).filter((p) => {
+      if ((p.nome || "").toLowerCase().includes(q)) return true;
+      if ((p.contatos?.nome || "").toLowerCase().includes(q)) return true;
+      if ((p.descricao || "").toLowerCase().includes(q)) return true;
+      // Pesquisa por orçamento: "25,00" acha 25.00 (a partir de 2 dígitos)
+      if (qDig.length >= 2 && Number((p as any).orcamento || 0).toFixed(2).replace(/\D/g, "").includes(qDig)) return true;
+      return false;
+    });
   }, [projetos, busca]);
   const pageSize = 25;
   const totalPaginas = Math.max(1, Math.ceil(filtrados.length / pageSize));
@@ -151,13 +161,20 @@ function ProjetosPage() {
     enabled: !!empresa,
     queryKey: ["contatos-cliente", empresa?.id],
     queryFn: async () => {
-      const { data } = await supabase
-        .from("contatos")
-        .select("id,nome")
-        .eq("empresa_id", empresa!.id)
-        .in("tipo", ["cliente", "ambos"])
-        .order("nome");
-      return data ?? [];
+      // Busca em páginas: sem range, o Supabase corta em 1000 (sem aviso)
+      const todos: unknown[] = [];
+      for (let ini = 0; ; ini += 1000) {
+        const { data } = await supabase
+          .from("contatos")
+          .select("id,nome")
+          .eq("empresa_id", empresa!.id)
+          .in("tipo", ["cliente", "ambos"])
+          .order("nome")
+          .range(ini, ini + 999);
+        todos.push(...((data as unknown[]) ?? []));
+        if (!data || (data as unknown[]).length < 1000) break;
+      }
+      return todos as { id: string; nome: string }[];
     },
   });
 

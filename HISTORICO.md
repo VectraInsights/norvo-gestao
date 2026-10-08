@@ -5491,3 +5491,11 @@ pm run build OK.
   e veiculos do seletor em paginas; busca casa frete.
 - FROTA COMPLETO: Veiculos, Viagens, Multas.
 - Validado com `npm run build` OK.
+## Projetos sem cortes + busca por valor (08/10)
+
+- OS em paginas (antes corte em 1000); seletores de clientes
+  e projetos em paginas; busca casa valor.
+- Projetos em paginas (antes 1000); seletor de clientes em
+  paginas; busca casa orcamento ("25,00" acha 25.00).
+- PROJETOS COMPLETO: Projetos, Ordens de servico.
+- Validado com `npm run build` OK.

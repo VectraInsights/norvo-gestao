@@ -136,15 +136,22 @@ function OSPage() {
     enabled: !!empresa,
     queryKey: ["ordens_servico", empresa?.id],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from("ordens_servico" as never)
-        .select(
-          "id,empresa_id,cliente_id,projeto_id,numero,titulo,descricao,status,data_abertura,data_prevista,data_conclusao,valor,created_at,contatos:cliente_id(nome), projetos:projeto_id(nome,cor)",
-        )
-        .eq("empresa_id", empresa!.id)
-        .order("created_at", { ascending: false });
-      if (error) throw error;
-      return (data ?? []) as unknown as OS[];
+      // Busca em páginas: sem range, o Supabase corta em 1000 (sem aviso)
+      const todas: unknown[] = [];
+      for (let ini = 0; ; ini += 1000) {
+        const { data, error } = await supabase
+          .from("ordens_servico" as never)
+          .select(
+            "id,empresa_id,cliente_id,projeto_id,numero,titulo,descricao,status,data_abertura,data_prevista,data_conclusao,valor,created_at,contatos:cliente_id(nome), projetos:projeto_id(nome,cor)",
+          )
+          .eq("empresa_id", empresa!.id)
+          .order("created_at", { ascending: false })
+          .range(ini, ini + 999);
+        if (error) throw error;
+        todas.push(...((data as unknown[]) ?? []));
+        if (!data || (data as unknown[]).length < 1000) break;
+      }
+      return todas as unknown as OS[];
     },
   });
 
@@ -152,13 +159,20 @@ function OSPage() {
     enabled: !!empresa,
     queryKey: ["contatos-cliente", empresa?.id],
     queryFn: async () => {
-      const { data } = await supabase
-        .from("contatos")
-        .select("id,nome")
-        .eq("empresa_id", empresa!.id)
-        .in("tipo", ["cliente", "ambos"])
-        .order("nome");
-      return data ?? [];
+      // Busca em páginas: sem range, o Supabase corta em 1000 (sem aviso)
+      const todos: unknown[] = [];
+      for (let ini = 0; ; ini += 1000) {
+        const { data } = await supabase
+          .from("contatos")
+          .select("id,nome")
+          .eq("empresa_id", empresa!.id)
+          .in("tipo", ["cliente", "ambos"])
+          .order("nome")
+          .range(ini, ini + 999);
+        todos.push(...((data as unknown[]) ?? []));
+        if (!data || (data as unknown[]).length < 1000) break;
+      }
+      return todos as { id: string; nome: string }[];
     },
   });
 
@@ -166,11 +180,18 @@ function OSPage() {
     enabled: !!empresa,
     queryKey: ["projetos-select", empresa?.id],
     queryFn: async () => {
-      const { data } = await (supabase.from("projetos" as never) as any)
-        .select("id,nome")
-        .eq("empresa_id", empresa!.id)
-        .order("nome");
-      return (data ?? []) as { id: string; nome: string }[];
+      // Busca em páginas: sem range, o Supabase corta em 1000 (sem aviso)
+      const todos: unknown[] = [];
+      for (let ini = 0; ; ini += 1000) {
+        const { data } = await (supabase.from("projetos" as never) as any)
+          .select("id,nome")
+          .eq("empresa_id", empresa!.id)
+          .order("nome")
+          .range(ini, ini + 999);
+        todos.push(...((data as unknown[]) ?? []));
+        if (!data || (data as unknown[]).length < 1000) break;
+      }
+      return todos as { id: string; nome: string }[];
     },
   });
 
@@ -187,12 +208,16 @@ function OSPage() {
             : ordens;
     if (!q) return base;
     const qNum = q.replace(/^#/, "");
-    return base.filter((o) =>
-      (o.titulo || "").toLowerCase().includes(q)
-      || (o.contatos?.nome || "").toLowerCase().includes(q)
-      || (o.projetos?.nome || "").toLowerCase().includes(q)
-      || (o.numero != null && String(o.numero).includes(qNum)),
-    );
+    const qDig = q.replace(/\D/g, "");
+    return base.filter((o) => {
+      if ((o.titulo || "").toLowerCase().includes(q)) return true;
+      if ((o.contatos?.nome || "").toLowerCase().includes(q)) return true;
+      if ((o.projetos?.nome || "").toLowerCase().includes(q)) return true;
+      if (o.numero != null && String(o.numero).includes(qNum)) return true;
+      // Pesquisa por valor: "25,00" acha 25.00 (a partir de 2 dígitos)
+      if (qDig.length >= 2 && Number((o as any).valor || 0).toFixed(2).replace(/\D/g, "").includes(qDig)) return true;
+      return false;
+    });
   }, [ordens, tab, busca]);
 
   const reset = () => {
