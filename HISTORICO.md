@@ -5585,3 +5585,9 @@ pm run build OK.
 - Fullscreens de emissao e pickers internos mantidos.
 - So JSX/Tailwind, sem logica.
 - Validado com `npm run build` OK.
+## Percursos no padrao visual (08/10)
+
+- Tabela compacta com cabecalho estatico; dialogo de
+  edicao com rounded-2xl.
+- So JSX/Tailwind, sem logica.
+- Validado com `npm run build` OK.

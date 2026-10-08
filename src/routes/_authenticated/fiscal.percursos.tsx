@@ -1723,8 +1723,8 @@ function PercursosPage() {
               />
             </div>
           ) : (
-            <Table>
-              <TableHeader>
+            <Table className="[&_td]:px-3 [&_td]:py-2 [&_th]:px-3">
+              <TableHeader className="static bg-card supports-[backdrop-filter]:bg-card">
                 <TableRow>
                   <THP k="codigo" label="Código" className="w-20" />
                   <THP k="nome" label="Nome" />
@@ -1808,7 +1808,7 @@ function PercursosPage() {
         }}
       >
         <DialogContent
-          className="p-3 sm:p-4"
+          className="rounded-2xl p-3 sm:p-4"
           onKeyDown={(event) => {
             // Enter em campo de texto salva o percurso (a validação do salvar
             // barra quando faltar obrigatório; textarea quebra linha)
