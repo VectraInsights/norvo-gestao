@@ -249,6 +249,7 @@ function UsuariosPage() {
   return (
     <div className="space-y-6">
       <PageHeader
+        eyebrow="Configurações"
         title="Usuários e acessos"
         description={
           souSuperAdmin
@@ -281,8 +282,8 @@ function UsuariosPage() {
             <EmptyState icon={Users} title="Nenhum usuário" description={busca ? "Nada encontrado para a busca." : "Crie o primeiro acesso."} />
           </div>
         ) : (
-          <Table>
-            <TableHeader>
+          <Table className="[&_td]:px-3 [&_td]:py-2 [&_th]:px-3">
+            <TableHeader className="static bg-card supports-[backdrop-filter]:bg-card">
               <TableRow>
                 <TableHead>Nome</TableHead>
                 <TableHead>E-mail</TableHead>
@@ -377,7 +378,7 @@ function UsuariosPage() {
 
       {/* Novo usuário */}
       <Dialog open={openNovo} onOpenChange={setOpenNovo}>
-        <DialogContent className="sm:max-w-lg sm:inset-auto sm:left-1/2 sm:top-1/2 sm:-translate-x-1/2 sm:-translate-y-1/2 sm:h-auto sm:max-h-[90vh] sm:w-full">
+        <DialogContent className="max-h-[90vh] overflow-y-auto rounded-2xl sm:max-w-lg sm:inset-auto sm:left-1/2 sm:top-1/2 sm:-translate-x-1/2 sm:-translate-y-1/2 sm:h-auto sm:w-full">
           <DialogHeader className="gap-1.5 pb-1">
             <DialogTitle className="tracking-tight">Criar acesso de usuário</DialogTitle>
           </DialogHeader>
@@ -464,7 +465,7 @@ function UsuariosPage() {
 
       {/* Editar permissões */}
       <Dialog open={!!editando} onOpenChange={(o) => !o && setEditando(null)}>
-        <DialogContent className="sm:max-w-lg sm:inset-auto sm:left-1/2 sm:top-1/2 sm:-translate-x-1/2 sm:-translate-y-1/2 sm:h-auto sm:max-h-[90vh] sm:w-full">
+        <DialogContent className="max-h-[90vh] overflow-y-auto rounded-2xl sm:max-w-lg sm:inset-auto sm:left-1/2 sm:top-1/2 sm:-translate-x-1/2 sm:-translate-y-1/2 sm:h-auto sm:w-full">
           <DialogHeader className="gap-1.5 pb-1">
             <DialogTitle className="tracking-tight">Dados de {editando?.nome}</DialogTitle>
           </DialogHeader>
@@ -526,7 +527,7 @@ function UsuariosPage() {
 
       {/* Resetar senha */}
       <Dialog open={!!resetando} onOpenChange={(o) => !o && setResetando(null)}>
-        <DialogContent className="sm:max-w-md sm:inset-auto sm:left-1/2 sm:top-1/2 sm:-translate-x-1/2 sm:-translate-y-1/2 sm:h-auto sm:max-h-[90vh] sm:w-full">
+        <DialogContent className="max-h-[90vh] overflow-y-auto rounded-2xl sm:max-w-md sm:inset-auto sm:left-1/2 sm:top-1/2 sm:-translate-x-1/2 sm:-translate-y-1/2 sm:h-auto sm:w-full">
           <DialogHeader className="gap-1.5 pb-1">
             <DialogTitle className="tracking-tight">Redefinir senha de {resetando?.nome}</DialogTitle>
           </DialogHeader>

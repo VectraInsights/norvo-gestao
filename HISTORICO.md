@@ -5556,3 +5556,11 @@ pm run build OK.
   (mesma altura do MoneyInput).
 - So JSX/Tailwind, sem logica.
 - Validado com `npm run build` OK.
+## Usuarios: retoques finais do padrao (08/10)
+
+- Eyebrow "Configuracoes"; tabela compacta com cabecalho
+  estatico; dialogos com rounded-2xl.
+- Empresas, Auditoria e indice ja estavam no padrao.
+- CONFIG COMPLETO no visual.
+- So JSX/Tailwind, sem logica.
+- Validado com `npm run build` OK.
