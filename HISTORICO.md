@@ -5455,3 +5455,18 @@ pm run build OK.
   dialogo "Novo credor" (segue tipo fornecedor); botao "Importar PDF";
   placeholders removidos da tela de contratos.
 - Validado com `npm run build` OK.
+## Estoque restante sem cortes + busca por valor (08/10)
+
+- Fornecedores em paginas (antes 1000); busca casa email e telefone
+  (digitos em qualquer formato).
+- Movimentacoes em paginas (antes 200) + seletor de produtos em paginas
+  (antes 1000); busca casa quantidade e custo ("25,00" acha 25.00).
+- Inventario em paginas (produtos e depositos, antes corte em 1000);
+  busca casa estoque e custo.
+- Reposicao em paginas (produtos, fornecedores, contas, depositos);
+  busca casa custo unitario.
+- Relatorios em paginas (produtos + saidas 12m); busca ABC e parados
+  casa valor ("25,00" acha 25.00).
+- ESTOQUE COMPLETO: Compras, Produtos, Fornecedores, Movimentacoes,
+  Inventario, Reposicao, Relatorios.
+- Validado com `npm run build` OK.

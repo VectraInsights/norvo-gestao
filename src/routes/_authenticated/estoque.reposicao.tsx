@@ -75,15 +75,22 @@ function Reposicao() {
     enabled: !!empresa,
     queryKey: ["produtos-reposicao", empresa?.id],
     queryFn: async ({ signal }) => {
-      const { data, error } = await supabase
-        .from("produtos")
-        .select("id,nome,unidade,estoque_atual,estoque_minimo,preco_custo")
-        .eq("empresa_id", empresa!.id)
-        .eq("ativo", true)
-        .order("nome")
-        .abortSignal(signal);
-      if (error) throw error;
-      return (data ?? []) as ProdRep[];
+      // Busca em páginas: sem range, o Supabase corta em 1000 (sem aviso)
+      const todos: unknown[] = [];
+      for (let ini = 0; ; ini += 1000) {
+        const { data, error } = await supabase
+          .from("produtos")
+          .select("id,nome,unidade,estoque_atual,estoque_minimo,preco_custo")
+          .eq("empresa_id", empresa!.id)
+          .eq("ativo", true)
+          .order("nome")
+          .range(ini, ini + 999)
+          .abortSignal(signal);
+        if (error) throw error;
+        todos.push(...((data as unknown[]) ?? []));
+        if (!data || (data as unknown[]).length < 1000) break;
+      }
+      return todos as ProdRep[];
     },
   });
   const criticos = useMemo(
@@ -105,7 +112,13 @@ function Reposicao() {
   const filtrados = useMemo(() => {
     const q = busca.trim().toLowerCase();
     if (!q) return criticos;
-    return criticos.filter((p) => (p.nome || "").toLowerCase().includes(q));
+    const qDig = q.replace(/\D/g, "");
+    return criticos.filter((p) => {
+      if ((p.nome || "").toLowerCase().includes(q)) return true;
+      // Pesquisa por custo: "25,00" acha 25.00 (a partir de 2 dígitos)
+      if (qDig.length >= 2 && Number(p.preco_custo || 0).toFixed(2).replace(/\D/g, "").includes(qDig)) return true;
+      return false;
+    });
   }, [criticos, busca]);
 
   const linhaDe = (p: ProdRep): LinhaRep =>
@@ -133,15 +146,22 @@ function Reposicao() {
     enabled: !!empresa,
     queryKey: ["contatos-fornecedor-rep", empresa?.id],
     queryFn: async ({ signal }) => {
-      const { data, error } = await supabase
-        .from("contatos")
-        .select("id,nome")
-        .eq("empresa_id", empresa!.id)
-        .in("tipo", ["fornecedor", "ambos"])
-        .order("nome")
-        .abortSignal(signal);
-      if (error) throw error;
-      return (data ?? []) as { id: string; nome: string }[];
+      // Busca em páginas: sem range, o Supabase corta em 1000 (sem aviso)
+      const todos: unknown[] = [];
+      for (let ini = 0; ; ini += 1000) {
+        const { data, error } = await supabase
+          .from("contatos")
+          .select("id,nome")
+          .eq("empresa_id", empresa!.id)
+          .in("tipo", ["fornecedor", "ambos"])
+          .order("nome")
+          .range(ini, ini + 999)
+          .abortSignal(signal);
+        if (error) throw error;
+        todos.push(...((data as unknown[]) ?? []));
+        if (!data || (data as unknown[]).length < 1000) break;
+      }
+      return todos as { id: string; nome: string }[];
     },
   });
 
@@ -149,13 +169,20 @@ function Reposicao() {
     enabled: !!empresa,
     queryKey: ["contas-rep", empresa?.id],
     queryFn: async ({ signal }) => {
-      const { data, error } = await supabase
-        .from("contas_bancarias")
-        .select("id,nome")
-        .eq("empresa_id", empresa!.id)
-        .abortSignal(signal);
-      if (error) throw error;
-      return (data ?? []) as { id: string; nome: string }[];
+      // Busca em páginas: sem range, o Supabase corta em 1000 (sem aviso)
+      const todos: unknown[] = [];
+      for (let ini = 0; ; ini += 1000) {
+        const { data, error } = await supabase
+          .from("contas_bancarias")
+          .select("id,nome")
+          .eq("empresa_id", empresa!.id)
+          .range(ini, ini + 999)
+          .abortSignal(signal);
+        if (error) throw error;
+        todos.push(...((data as unknown[]) ?? []));
+        if (!data || (data as unknown[]).length < 1000) break;
+      }
+      return todos as { id: string; nome: string }[];
     },
   });
 
@@ -163,15 +190,22 @@ function Reposicao() {
     enabled: !!empresa,
     queryKey: ["depositos-rep", empresa?.id],
     queryFn: async ({ signal }) => {
-      const { data, error } = await supabase
-        .from("depositos")
-        .select("id,nome")
-        .eq("empresa_id", empresa!.id)
-        .eq("ativo", true)
-        .order("nome")
-        .abortSignal(signal);
-      if (error) throw error;
-      return (data ?? []) as { id: string; nome: string }[];
+      // Busca em páginas: sem range, o Supabase corta em 1000 (sem aviso)
+      const todos: unknown[] = [];
+      for (let ini = 0; ; ini += 1000) {
+        const { data, error } = await supabase
+          .from("depositos")
+          .select("id,nome")
+          .eq("empresa_id", empresa!.id)
+          .eq("ativo", true)
+          .order("nome")
+          .range(ini, ini + 999)
+          .abortSignal(signal);
+        if (error) throw error;
+        todos.push(...((data as unknown[]) ?? []));
+        if (!data || (data as unknown[]).length < 1000) break;
+      }
+      return todos as { id: string; nome: string }[];
     },
   });
 

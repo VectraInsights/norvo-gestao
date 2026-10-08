@@ -68,15 +68,22 @@ function RelatoriosEstoque() {
     enabled: !!empresa,
     queryKey: ["produtos-rel", empresa?.id],
     queryFn: async ({ signal }) => {
-      const { data, error } = await supabase
-        .from("produtos")
-        .select("id,nome,unidade,estoque_atual,preco_custo")
-        .eq("empresa_id", empresa!.id)
-        .eq("ativo", true)
-        .order("nome")
-        .abortSignal(signal);
-      if (error) throw error;
-      return (data ?? []) as ProdRel[];
+      // Busca em páginas: sem range, o Supabase corta em 1000 (sem aviso)
+      const todos: unknown[] = [];
+      for (let ini = 0; ; ini += 1000) {
+        const { data, error } = await supabase
+          .from("produtos")
+          .select("id,nome,unidade,estoque_atual,preco_custo")
+          .eq("empresa_id", empresa!.id)
+          .eq("ativo", true)
+          .order("nome")
+          .range(ini, ini + 999)
+          .abortSignal(signal);
+        if (error) throw error;
+        todos.push(...((data as unknown[]) ?? []));
+        if (!data || (data as unknown[]).length < 1000) break;
+      }
+      return todos as ProdRel[];
     },
   });
 
@@ -86,15 +93,22 @@ function RelatoriosEstoque() {
     queryFn: async ({ signal }) => {
       const desde = new Date();
       desde.setFullYear(desde.getFullYear() - 1);
-      const { data, error } = await supabase
-        .from("movimentacoes_estoque")
-        .select("produto_id,quantidade,data")
-        .eq("empresa_id", empresa!.id)
-        .eq("tipo", "saida")
-        .gte("data", desde.toISOString().slice(0, 10))
-        .abortSignal(signal);
-      if (error) throw error;
-      return (data ?? []) as MovSaida[];
+      // Busca em páginas: saídas de 12 meses podem passar de 1000 (sem aviso)
+      const todas: unknown[] = [];
+      for (let ini = 0; ; ini += 1000) {
+        const { data, error } = await supabase
+          .from("movimentacoes_estoque")
+          .select("produto_id,quantidade,data")
+          .eq("empresa_id", empresa!.id)
+          .eq("tipo", "saida")
+          .gte("data", desde.toISOString().slice(0, 10))
+          .range(ini, ini + 999)
+          .abortSignal(signal);
+        if (error) throw error;
+        todas.push(...((data as unknown[]) ?? []));
+        if (!data || (data as unknown[]).length < 1000) break;
+      }
+      return todas as MovSaida[];
     },
   });
   const analise = useMemo(() => {
@@ -173,13 +187,28 @@ function RelatoriosEstoque() {
   const filtradosAbc = useMemo(() => {
     const q = busca.trim().toLowerCase();
     if (!q) return analise.abc;
-    return analise.abc.filter((r) => (r.prod.nome || "").toLowerCase().includes(q));
+    const qDig = q.replace(/\D/g, "");
+    return analise.abc.filter((r) => {
+      if ((r.prod.nome || "").toLowerCase().includes(q)) return true;
+      // Pesquisa por valor: "25,00" acha 25.00 (a partir de 2 dígitos)
+      if (qDig.length >= 2 && Number(r.valor || 0).toFixed(2).replace(/\D/g, "").includes(qDig)) return true;
+      return false;
+    });
   }, [analise, busca]);
 
   const filtradosParados = useMemo(() => {
     const q = busca.trim().toLowerCase();
     if (!q) return analise.parados;
-    return analise.parados.filter((r) => (r.prod.nome || "").toLowerCase().includes(q));
+    const qDig = q.replace(/\D/g, "");
+    return analise.parados.filter((r) => {
+      if ((r.prod.nome || "").toLowerCase().includes(q)) return true;
+      // Pesquisa por valor parado: "25,00" acha 25.00 (a partir de 2 dígitos)
+      if (qDig.length >= 2) {
+        const v = Number(r.prod.estoque_atual ?? 0) * Number(r.prod.preco_custo ?? 0);
+        if (v.toFixed(2).replace(/\D/g, "").includes(qDig)) return true;
+      }
+      return false;
+    });
   }, [analise, busca]);
 
   return (

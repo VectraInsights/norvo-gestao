@@ -63,15 +63,22 @@ function Inventario() {
     enabled: !!empresa,
     queryKey: ["produtos-inventario", empresa?.id],
     queryFn: async ({ signal }) => {
-      const { data, error } = await supabase
-        .from("produtos")
-        .select("id,nome,unidade,estoque_atual,preco_custo")
-        .eq("empresa_id", empresa!.id)
-        .eq("ativo", true)
-        .order("nome")
-        .abortSignal(signal);
-      if (error) throw error;
-      return (data ?? []) as ProdInv[];
+      // Busca em páginas: sem range, o Supabase corta em 1000 (sem aviso)
+      const todos: unknown[] = [];
+      for (let ini = 0; ; ini += 1000) {
+        const { data, error } = await supabase
+          .from("produtos")
+          .select("id,nome,unidade,estoque_atual,preco_custo")
+          .eq("empresa_id", empresa!.id)
+          .eq("ativo", true)
+          .order("nome")
+          .range(ini, ini + 999)
+          .abortSignal(signal);
+        if (error) throw error;
+        todos.push(...((data as unknown[]) ?? []));
+        if (!data || (data as unknown[]).length < 1000) break;
+      }
+      return todos as ProdInv[];
     },
   });
 
@@ -79,15 +86,22 @@ function Inventario() {
     enabled: !!empresa,
     queryKey: ["depositos-inventario", empresa?.id],
     queryFn: async ({ signal }) => {
-      const { data, error } = await supabase
-        .from("depositos")
-        .select("id,nome")
-        .eq("empresa_id", empresa!.id)
-        .eq("ativo", true)
-        .order("nome")
-        .abortSignal(signal);
-      if (error) throw error;
-      return (data ?? []) as { id: string; nome: string }[];
+      // Busca em páginas: sem range, o Supabase corta em 1000 (sem aviso)
+      const todos: unknown[] = [];
+      for (let ini = 0; ; ini += 1000) {
+        const { data, error } = await supabase
+          .from("depositos")
+          .select("id,nome")
+          .eq("empresa_id", empresa!.id)
+          .eq("ativo", true)
+          .order("nome")
+          .range(ini, ini + 999)
+          .abortSignal(signal);
+        if (error) throw error;
+        todos.push(...((data as unknown[]) ?? []));
+        if (!data || (data as unknown[]).length < 1000) break;
+      }
+      return todos as { id: string; nome: string }[];
     },
   });
 
@@ -120,7 +134,17 @@ function Inventario() {
     let base = produtos ?? [];
     if (busca.trim()) {
       const s = busca.toLowerCase();
-      base = base.filter((p) => p.nome.toLowerCase().includes(s));
+      const sDig = s.replace(/\D/g, "");
+      base = base.filter((p) => {
+        if (p.nome.toLowerCase().includes(s)) return true;
+        // Pesquisa por estoque/custo: "25,00" acha 25.00 (a partir de 2 dígitos)
+        if (sDig.length >= 2) {
+          for (const v of [p.estoque_atual, p.preco_custo]) {
+            if (Number(v || 0).toFixed(2).replace(/\D/g, "").includes(sDig)) return true;
+          }
+        }
+        return false;
+      });
     }
     if (somenteDiverg) {
       const ids = new Set(divergencias.map((d) => d.prod.id));
