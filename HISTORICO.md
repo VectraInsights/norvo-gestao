@@ -5572,3 +5572,9 @@ pm run build OK.
 - Fullscreen de analise do XML mantido (intencional).
 - So JSX/Tailwind, sem logica.
 - Validado com `npm run build` OK.
+## Emitidas no padrao visual (08/10)
+
+- 3 dialogos com rounded-2xl; tabela compacta com
+  cabecalho estatico.
+- So JSX/Tailwind, sem logica.
+- Validado com `npm run build` OK.

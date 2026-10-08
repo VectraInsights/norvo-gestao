@@ -553,7 +553,7 @@ function NotasEmitidas() {
                 <Plus className="mr-2 h-4 w-4" /> Nova Emissão
               </Button>
             </DialogTrigger>
-            <DialogContent className="sm:max-w-lg sm:inset-auto sm:left-1/2 sm:top-1/2 sm:-translate-x-1/2 sm:-translate-y-1/2 sm:h-auto sm:max-h-[90vh] sm:w-full">
+            <DialogContent className="max-h-[90vh] overflow-y-auto rounded-2xl sm:max-w-lg sm:inset-auto sm:left-1/2 sm:top-1/2 sm:-translate-x-1/2 sm:-translate-y-1/2 sm:h-auto sm:w-full">
               <DialogHeader className="gap-1.5 pb-1">
                 <DialogTitle className="tracking-tight">Emitir Nota Fiscal (Rascunho)</DialogTitle>
                 <DialogDescription className="leading-relaxed">
@@ -747,7 +747,7 @@ function NotasEmitidas() {
       </div>
 
       <Dialog open={filtrosSalvosOpen} onOpenChange={setFiltrosSalvosOpen}>
-        <DialogContent className="sm:max-w-md sm:inset-auto sm:left-1/2 sm:top-1/2 sm:-translate-x-1/2 sm:-translate-y-1/2 sm:h-auto sm:max-h-[90vh] sm:w-full">
+        <DialogContent className="max-h-[90vh] overflow-y-auto rounded-2xl sm:max-w-md sm:inset-auto sm:left-1/2 sm:top-1/2 sm:-translate-x-1/2 sm:-translate-y-1/2 sm:h-auto sm:w-full">
           <DialogHeader className="gap-1.5 pb-1">
             <DialogTitle className="tracking-tight">Filtros salvos</DialogTitle>
             <DialogDescription className="leading-relaxed">Salve uma combinação de tipo, status e busca para reutilizar depois.</DialogDescription>
@@ -780,7 +780,7 @@ function NotasEmitidas() {
       </Dialog>
 
       <Dialog open={!!cancelarId} onOpenChange={(v) => { if (!v) { setCancelarId(null); setMotivoCancel(""); } }}>
-        <DialogContent className="sm:max-w-md sm:inset-auto sm:left-1/2 sm:top-1/2 sm:-translate-x-1/2 sm:-translate-y-1/2 sm:h-auto sm:max-h-[90vh] sm:w-full">
+        <DialogContent className="max-h-[90vh] overflow-y-auto rounded-2xl sm:max-w-md sm:inset-auto sm:left-1/2 sm:top-1/2 sm:-translate-x-1/2 sm:-translate-y-1/2 sm:h-auto sm:w-full">
           <DialogHeader className="gap-1.5 pb-1">
             <DialogTitle className="tracking-tight">Cancelar nota fiscal</DialogTitle>
             <DialogDescription className="leading-relaxed">
@@ -840,8 +840,8 @@ function NotasEmitidas() {
       ) : (
         <Card className="overflow-hidden rounded-2xl border-muted shadow-panel bg-card/60 backdrop-blur-sm">
           <div className="overflow-x-auto">
-            <Table>
-              <TableHeader className="bg-muted/40">
+            <Table className="[&_td]:px-3 [&_td]:py-2 [&_th]:px-3">
+              <TableHeader className="static bg-card supports-[backdrop-filter]:bg-card">
                 <TableRow>
                   <TableHead className="font-semibold text-foreground">Operação</TableHead>
                   <TableHead className="font-semibold text-foreground">Nº/Série</TableHead>
