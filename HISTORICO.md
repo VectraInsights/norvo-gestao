@@ -5622,3 +5622,11 @@ pm run build OK.
   - Páginas: Produtos, Compras, Inventário, Movimentações, Reposição, Relatórios, Fornecedores.
 - Sem mudança de lógica ou comportamento. Validado com 
 pm run build OK.
+## Fornecedores: fix Skeleton is not defined (08/10)
+
+- `/estoque/fornecedores` quebrava com "Skeleton is not defined": o
+  refactor visual usou `<Skeleton>` no loading sem o import (única
+  página do Estoque sem ele). Adicionado
+  `import { Skeleton } from "@/components/ui/skeleton"`.
+- `tsc` sem erros novos no arquivo (só baseline pré-existente).
+- Validado com `npm run build` OK.
