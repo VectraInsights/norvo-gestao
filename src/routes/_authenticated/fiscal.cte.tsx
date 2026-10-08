@@ -7638,6 +7638,7 @@ function CtePage() {
       </AlertDialog>
       <Dialog open={manualNfeOpen} onOpenChange={setManualNfeOpen}>
         <DialogContent
+          className="rounded-2xl"
           onEscapeKeyDown={(event) => {
             event.preventDefault();
             event.stopPropagation();
@@ -7771,6 +7772,7 @@ function CtePage() {
         }}
       >
         <DialogContent
+          className="max-h-[90vh] overflow-y-auto rounded-2xl"
           onEscapeKeyDown={(event) => {
             event.preventDefault();
             event.stopPropagation();

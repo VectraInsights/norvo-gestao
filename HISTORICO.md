@@ -5591,3 +5591,13 @@ pm run build OK.
   edicao com rounded-2xl.
 - So JSX/Tailwind, sem logica.
 - Validado com `npm run build` OK.
+## Fiscal visual completo (08/10)
+
+- Configuracoes: dialogo CFOP com rounded-2xl.
+- CT-e: NF-e manual e emissao com rounded-2xl (sem mudar
+  tamanho/posicao); fullscreens mantidos.
+- Relatorios, Contador e Cadastro ja estavam no padrao;
+  Notas e shim sem tela.
+- FISCAL COMPLETO tambem no visual.
+- So JSX/Tailwind, sem logica.
+- Validado com `npm run build` OK.
