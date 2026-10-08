@@ -5509,3 +5509,14 @@ pm run build OK.
   excluir com rounded-2xl e lixeira em vermelho.
 - So JSX/Tailwind, sem logica.
 - Validado com `npm run build` OK.
+## Folha no padrao visual (08/10)
+
+- Cabecalho com eyebrow "DP / RH"; busca h-9 rounded-xl com
+  botao limpar (X); botoes Gerar/Novo h-9 rounded-xl.
+- Competencia h-9 rounded-xl; total do mes em card rounded-xl.
+- Card rounded-2xl shadow-panel; tabela compacta; skeleton
+  em linhas; status em pills; acoes h-8 rounded-lg.
+- Dialogo rounded-2xl centralizado com rodape h-10;
+  confirms com rounded-2xl.
+- So JSX/Tailwind, sem logica.
+- Validado com `npm run build` OK.

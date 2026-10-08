@@ -5,7 +5,6 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card } from "@/components/ui/card";
-import { Skeleton } from "@/components/ui/skeleton";
 import { MoneyInput } from "@/components/erp/money-input";
 import { Combobox } from "@/components/erp/combobox";
 import {
@@ -33,7 +32,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
-import { Wallet, Plus, Pencil, Trash2, HandCoins, Search } from "lucide-react";
+import { Wallet, Plus, Pencil, Trash2, HandCoins, Search, X } from "lucide-react";
 import { useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -445,25 +444,37 @@ function FolhaPage() {
   return (
     <div className="space-y-6">
       <PageHeader
+        eyebrow="DP / RH"
         title="Folha de pagamento"
         description="Gere a folha mensal por colaborador. INSS e IRRF são calculados automaticamente. Ao criar, um lançamento é gerado em Contas a pagar."
       />
-      <div className="mb-3 flex flex-col gap-2 sm:flex-row sm:items-center">
+      <div className="mb-4 flex flex-col gap-2 sm:mb-6 sm:flex-row sm:items-center">
         <div className="relative flex-1">
-          <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-          <Input className="pl-8" placeholder="Buscar por colaborador..." value={busca} onChange={(e) => setBusca(e.target.value)} />
+          <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+          <Input className="h-9 rounded-xl pl-10 pr-10 shadow-sm" placeholder="Buscar por colaborador..." value={busca} onChange={(e) => setBusca(e.target.value)} />
+          {busca && (
+            <button
+              type="button"
+              onClick={() => setBusca("")}
+              className="absolute right-2.5 top-1/2 grid h-6 w-6 -translate-y-1/2 place-items-center rounded-lg text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
+              aria-label="Limpar busca"
+            >
+              <X className="h-4 w-4" />
+            </button>
+          )}
         </div>
         <div className="flex items-center gap-2">
             <Button
               size="sm"
               variant="outline"
+              className="h-9 rounded-xl px-4 text-sm shadow-sm transition-all hover:shadow-md active:scale-95"
               disabled={
                 gerarEmLote.isPending ||
                 !(folhas ?? []).some((f) => f.status === "aberta" && !f.lancamento_id)
               }
               onClick={() => setConfLote(true)}
             >
-              <HandCoins className="h-4 w-4 mr-1" />
+              <HandCoins className="mr-1 h-3.5 w-3.5" />
               Gerar contas a pagar
             </Button>
             <Dialog
@@ -474,14 +485,14 @@ function FolhaPage() {
               }}
             >
               <DialogTrigger asChild>
-                <Button size="sm">
-                  <Plus className="h-4 w-4 mr-1" />
+                <Button size="sm" className="h-9 rounded-xl px-4 text-sm shadow-sm transition-all hover:shadow-md active:scale-95">
+                  <Plus className="mr-1 h-3.5 w-3.5" />
                   Novo lançamento
                 </Button>
               </DialogTrigger>
-              <DialogContent>
-                <DialogHeader>
-                  <DialogTitle>
+              <DialogContent className="max-h-[90vh] overflow-y-auto rounded-2xl sm:max-w-lg sm:inset-auto sm:left-1/2 sm:top-1/2 sm:-translate-x-1/2 sm:-translate-y-1/2 sm:h-auto sm:w-full">
+                <DialogHeader className="gap-1.5 pb-1">
+                  <DialogTitle className="tracking-tight">
                     {editing ? "Editar lançamento" : "Novo lançamento de folha"}
                   </DialogTitle>
                 </DialogHeader>
@@ -597,13 +608,14 @@ function FolhaPage() {
                     <span className="font-semibold text-tabular">{brl(liquido)}</span>
                   </div>
                 </div>
-                <DialogFooter>
-                  <Button variant="outline" onClick={() => setOpen(false)}>
+                <DialogFooter className="gap-2">
+                  <Button variant="outline" onClick={() => setOpen(false)} className="h-10 rounded-xl px-6">
                     Cancelar
                   </Button>
                   <Button
                     onClick={() => createOrUpdate.mutate()}
                     disabled={createOrUpdate.isPending}
+                    className="h-10 rounded-xl px-6 shadow-sm transition-all hover:-translate-y-px hover:shadow-md"
                   >
                     {editing ? "Salvar" : "Lançar"}
                   </Button>
@@ -618,7 +630,7 @@ function FolhaPage() {
           <Label>Competência</Label>
           <div className="flex gap-2">
             <Select value={String(mes)} onValueChange={(v) => setMes(Number(v))}>
-              <SelectTrigger className="w-28">
+              <SelectTrigger className="h-9 w-28 rounded-xl shadow-sm">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
@@ -631,22 +643,24 @@ function FolhaPage() {
             </Select>
             <Input
               type="number"
-              className="w-24"
+              className="h-9 w-24 rounded-xl shadow-sm"
               value={ano}
               onChange={(e) => setAno(Number(e.target.value))}
             />
           </div>
         </div>
-        <div className="ml-auto rounded-md border bg-card px-4 py-2 text-sm">
+        <div className="ml-auto rounded-xl border bg-card px-4 py-2 text-sm shadow-sm">
           <span className="text-muted-foreground">Total líquido do mês: </span>
           <span className="font-semibold text-tabular">{brl(total)}</span>
         </div>
       </div>
 
-      <Card className="p-0 overflow-hidden">
+      <Card className="overflow-hidden rounded-2xl shadow-panel">
         {isLoading ? (
-          <div className="p-6">
-            <Skeleton className="h-32 w-full" />
+          <div className="space-y-2.5 p-4" aria-label="Carregando">
+            {Array.from({ length: 4 }).map((_, i) => (
+              <div key={i} className="h-12 animate-pulse rounded-xl bg-muted/30" />
+            ))}
           </div>
         ) : !folhas || folhas.length === 0 ? (
           <EmptyState
@@ -661,8 +675,8 @@ function FolhaPage() {
             description="Nada encontrado para a busca."
           />
         ) : (
-          <Table>
-            <TableHeader>
+          <Table className="[&_td]:px-3 [&_td]:py-2 [&_th]:px-3">
+            <TableHeader className="static bg-card supports-[backdrop-filter]:bg-card">
               <TableRow>
                 <TableHead>Colaborador</TableHead>
                 <TableHead className="text-right">Salário</TableHead>
@@ -689,14 +703,14 @@ function FolhaPage() {
                   </TableCell>
                   <TableCell>
                     <span
-                      className={`rounded-md px-2 py-0.5 text-xs ${
+                      className={`inline-block rounded-full px-2 py-0.5 text-[11px] font-medium ${
                         f.status === "paga"
-                          ? "bg-success/10 text-success"
+                          ? "bg-success/15 text-success"
                           : f.status === "cancelada"
                             ? "bg-destructive/10 text-destructive"
                             : f.status === "lançada"
-                              ? "bg-primary/10 text-primary"
-                              : "bg-amber-500/10 text-amber-600 dark:text-amber-400"
+                              ? "bg-primary/15 text-primary"
+                              : "bg-amber-500/15 text-amber-700 dark:text-amber-400"
                       }`}
                     >
                       {f.status}
@@ -712,7 +726,7 @@ function FolhaPage() {
                                 <Button
                                   variant="ghost"
                                   size="icon"
-                                  className="h-7 w-7"
+                                  className="h-8 w-8 rounded-lg"
                                   onClick={() => pay.mutate(f.id)}
                                   disabled={pay.isPending}
                                 >
@@ -726,7 +740,7 @@ function FolhaPage() {
                             <Button
                               variant="ghost"
                               size="icon"
-                              className="h-7 w-7"
+                              className="h-8 w-8 rounded-lg"
                               title="Editar"
                               onClick={() => abrirEdicao(f)}
                             >
@@ -736,7 +750,7 @@ function FolhaPage() {
                           <Button
                             variant="ghost"
                             size="icon"
-                            className="h-7 w-7"
+                            className="h-8 w-8 rounded-lg text-destructive hover:bg-destructive/10"
                             title="Excluir"
                             onClick={() => setConfExcluir(f)}
                           >
@@ -753,7 +767,7 @@ function FolhaPage() {
         )}
       </Card>
       <AlertDialog open={confLote} onOpenChange={setConfLote}>
-        <AlertDialogContent>
+        <AlertDialogContent className="rounded-2xl">
           <AlertDialogHeader>
             <AlertDialogTitle>Gerar contas a pagar</AlertDialogTitle>
             <AlertDialogDescription>
@@ -772,7 +786,7 @@ function FolhaPage() {
         </AlertDialogContent>
       </AlertDialog>
       <AlertDialog open={!!confExcluir} onOpenChange={(v) => { if (!v) setConfExcluir(null); }}>
-        <AlertDialogContent>
+        <AlertDialogContent className="rounded-2xl">
           <AlertDialogHeader>
             <AlertDialogTitle>Excluir lançamento</AlertDialogTitle>
             <AlertDialogDescription>
