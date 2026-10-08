@@ -5520,3 +5520,13 @@ pm run build OK.
   confirms com rounded-2xl.
 - So JSX/Tailwind, sem logica.
 - Validado com `npm run build` OK.
+## Ferias no padrao visual (08/10)
+
+- Cabecalho com eyebrow "DP / RH"; alertas em cards rounded-2xl.
+- Card rounded-2xl shadow-panel; tabela compacta; skeleton
+  em linhas; expandir em botao rounded-lg com aria-label.
+- Periodos e formularios inline em rounded-xl; botoes
+  Conceder/Agendar h-8/h-9 rounded; lixeira vermelha h-8.
+- Confirm com rounded-2xl.
+- So JSX/Tailwind, sem logica.
+- Validado com `npm run build` OK.

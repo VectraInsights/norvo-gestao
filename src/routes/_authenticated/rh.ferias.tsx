@@ -9,7 +9,6 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Skeleton } from "@/components/ui/skeleton";
 import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from "@/components/ui/table";
@@ -319,12 +318,13 @@ function FeriasPage() {
   return (
     <div className="space-y-6">
       <PageHeader
+        eyebrow="DP / RH"
         title="Férias"
         description="Controle automático a partir da data de admissão: períodos aquisitivos, prazos de concessão e saldos."
       />
 
       {alertas.vencidos.length > 0 && (
-        <Card className="flex items-start gap-3 border-destructive/40 bg-destructive/5 p-4">
+        <Card className="flex items-start gap-3 rounded-2xl border-destructive/40 bg-destructive/5 p-4 shadow-sm">
           <AlertTriangle className="h-5 w-5 shrink-0 text-destructive" />
           <div className="text-sm">
             <p className="font-medium text-destructive">
@@ -338,7 +338,7 @@ function FeriasPage() {
         </Card>
       )}
       {alertas.vencendo.length > 0 && (
-        <Card className="flex items-start gap-3 border-primary/40 bg-primary/5 p-4">
+        <Card className="flex items-start gap-3 rounded-2xl border-primary/40 bg-primary/5 p-4 shadow-sm">
           <CalendarClock className="h-5 w-5 shrink-0 text-primary" />
           <div className="text-sm">
             <p className="font-medium text-primary">
@@ -352,15 +352,19 @@ function FeriasPage() {
         </Card>
       )}
 
-      <Card className="p-0 overflow-hidden">
+      <Card className="overflow-hidden rounded-2xl shadow-panel">
         {loadingColabs || loadingConc ? (
-          <div className="p-6"><Skeleton className="h-32 w-full" /></div>
+          <div className="space-y-2.5 p-4" aria-label="Carregando">
+            {Array.from({ length: 4 }).map((_, i) => (
+              <div key={i} className="h-12 animate-pulse rounded-xl bg-muted/30" />
+            ))}
+          </div>
         ) : !linhas || linhas.length === 0 ? (
           <EmptyState icon={Sun} title="Nenhum colaborador ativo"
             description="Cadastre colaboradores com data de admissão para acompanhar as férias automaticamente." />
         ) : (
-          <Table>
-            <TableHeader>
+          <Table className="[&_td]:px-3 [&_td]:py-2 [&_th]:px-3">
+            <TableHeader className="static bg-card supports-[backdrop-filter]:bg-card">
               <TableRow>
                 <TableHead className="w-8"></TableHead>
                 <TableHead>Colaborador</TableHead>
@@ -383,8 +387,9 @@ function FeriasPage() {
                       <TableCell className="px-2">
                         <button
                           type="button"
-                          className="cursor-pointer rounded p-0.5 hover:bg-muted"
+                          className="grid h-7 w-7 cursor-pointer place-items-center rounded-lg transition-colors hover:bg-accent"
                           onClick={() => toggleExpandido(l.colab.id)}
+                          aria-label={isOpen ? "Recolher períodos" : "Expandir períodos"}
                         >
                           <ChevronRight
                             className={`h-4 w-4 transition-transform ${isOpen ? "rotate-90" : ""}`}
@@ -430,7 +435,7 @@ function FeriasPage() {
                                     const venceBreve = !vencido && ciclo.limite <= limite60;
                                     return (
                                       <div key={ciclo.inicio}>
-                                        <div className="flex items-center justify-between rounded-md border px-3 py-2 text-sm">
+                                        <div className="flex items-center justify-between rounded-xl border px-3 py-2 text-sm shadow-sm">
                                           <div className="flex items-center gap-3">
                                             <span className="text-tabular whitespace-nowrap">
                                               {dateBR(ciclo.inicio)} → {dateBR(ciclo.fim)}
@@ -445,6 +450,7 @@ function FeriasPage() {
                                             {saldo > 0 && (
                                               <Button
                                                 variant="outline" size="sm"
+                                                className="h-8 rounded-lg px-3 shadow-sm active:scale-95"
                                                 onClick={() => {
                                                 setCicloSel(ciclo.inicio);
                                                 setFormInicio(""); setFormFim(""); setFormAbono(""); setFormDecimo(false);
@@ -458,7 +464,7 @@ function FeriasPage() {
 
                                         {/* Formulário de concessão inline — abaixo do período selecionado */}
                                         {cicloSel === ciclo.inicio && (
-                                          <div className="mt-2 rounded-md border border-primary/30 bg-background p-4">
+                                          <div className="mt-2 rounded-xl border border-primary/30 bg-background p-4 shadow-sm">
                                             <p className="mb-3 text-sm font-medium">
                                               Conceder férias — período {dateBR(cicloSel)}
                                             </p>
@@ -534,8 +540,8 @@ function FeriasPage() {
                                                 </div>
                                               )}
                                               <div className="flex justify-end gap-2">
-                                                <Button variant="outline" size="sm" onClick={() => setCicloSel(null)}>Cancelar</Button>
-                                                <Button size="sm" onClick={() => saveConcessao.mutate()} disabled={saveConcessao.isPending}>
+                                                <Button variant="outline" size="sm" onClick={() => setCicloSel(null)} className="h-9 rounded-xl px-4">Cancelar</Button>
+                                                <Button size="sm" onClick={() => saveConcessao.mutate()} disabled={saveConcessao.isPending} className="h-9 rounded-xl px-4 shadow-sm transition-all hover:shadow-md active:scale-95">
                                                   {saveConcessao.isPending ? "Agendando..." : "Agendar férias"}
                                                 </Button>
                                               </div>
@@ -555,7 +561,7 @@ function FeriasPage() {
                                 <p className="mb-2 text-sm font-medium">Concessões</p>
                                 <div className="space-y-2">
                                   {minhasConcessoes.map((c) => (
-                                    <div key={c.id} className={`rounded-md border px-3 py-2 text-sm ${c.status === "cancelada" ? "opacity-50" : ""}`}>
+                                    <div key={c.id} className={`rounded-xl border px-3 py-2 text-sm shadow-sm ${c.status === "cancelada" ? "opacity-50" : ""}`}>
                                       <div className="flex items-center justify-between gap-2">
                                         <span className="text-tabular whitespace-nowrap">
                                           {dateBR(c.data_inicio_gozo)} → {dateBR(c.data_fim_gozo)}
@@ -572,7 +578,7 @@ function FeriasPage() {
                                         {c.status !== "cancelada" && (
                                           <Select value={c.status}
                                             onValueChange={(v) => setStatusConc.mutate({ id: c.id, status: v })}>
-                                            <SelectTrigger className="h-8 w-36"><SelectValue /></SelectTrigger>
+                                            <SelectTrigger className="h-8 w-36 rounded-lg shadow-sm"><SelectValue /></SelectTrigger>
                                             <SelectContent>
                                               {Object.entries(CONC_STATUS).map(([k, v]) => (
                                                 <SelectItem key={k} value={k}>{v}</SelectItem>
@@ -584,7 +590,7 @@ function FeriasPage() {
                                           {CONC_STATUS[c.status] ?? c.status}
                                         </Badge>
                                         {c.status === "agendada" && (
-                                          <Button variant="ghost" size="icon" className="h-7 w-7" title="Excluir"
+                                          <Button variant="ghost" size="icon" className="h-8 w-8 rounded-lg text-destructive hover:bg-destructive/10" title="Excluir"
                                             onClick={() => setConfExcluir(c)}>
                                             <Trash2 className="h-3.5 w-3.5" />
                                           </Button>
@@ -607,7 +613,7 @@ function FeriasPage() {
         )}
       </Card>
       <AlertDialog open={!!confExcluir} onOpenChange={(v) => { if (!v) setConfExcluir(null); }}>
-        <AlertDialogContent>
+        <AlertDialogContent className="rounded-2xl">
           <AlertDialogHeader>
             <AlertDialogTitle>Excluir concessão</AlertDialogTitle>
             <AlertDialogDescription>
