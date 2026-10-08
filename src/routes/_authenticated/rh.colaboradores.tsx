@@ -7,7 +7,6 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card } from "@/components/ui/card";
-import { Skeleton } from "@/components/ui/skeleton";
 import { Textarea } from "@/components/ui/textarea";
 import { MoneyInput } from "@/components/erp/money-input";
 import {
@@ -1394,22 +1393,33 @@ function ColaboradoresPage() {
   return (
     <div className="space-y-4">
       <PageHeader
+        eyebrow="DP / RH"
         title="Colaboradores"
         description="Cadastro de funcionários, cargos e dados de pagamento."
       />
-      <div className="mb-3 flex flex-col gap-2 sm:flex-row sm:items-center">
+      <div className="mb-4 flex flex-col gap-2 sm:mb-6 sm:flex-row sm:items-center">
         <div className="relative flex-1">
-          <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-          <Input className="pl-8" placeholder="Buscar por nome, CPF, cargo ou cidade..." value={busca} onChange={(e) => { setBusca(e.target.value); setPagina(1); }} />
+          <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+          <Input className="h-9 rounded-xl pl-10 pr-10 shadow-sm" placeholder="Buscar por nome, CPF, cargo ou cidade..." value={busca} onChange={(e) => { setBusca(e.target.value); setPagina(1); }} />
+          {busca && (
+            <button
+              type="button"
+              onClick={() => { setBusca(""); setPagina(1); }}
+              className="absolute right-2.5 top-1/2 grid h-6 w-6 -translate-y-1/2 place-items-center rounded-lg text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
+              aria-label="Limpar busca"
+            >
+              <X className="h-4 w-4" />
+            </button>
+          )}
         </div>
         <div className="flex items-center gap-2">
             <Dialog open={cargosOpen} onOpenChange={setCargosOpen}>
               <DialogTrigger asChild>
-                <Button size="sm" variant="outline">
+                <Button size="sm" variant="outline" className="h-9 rounded-xl px-4 text-sm shadow-sm transition-all hover:shadow-md active:scale-95">
                   Cargos
                 </Button>
               </DialogTrigger>
-              <DialogContent>
+              <DialogContent className="max-h-[90vh] overflow-y-auto rounded-2xl sm:max-w-lg sm:inset-auto sm:left-1/2 sm:top-1/2 sm:-translate-x-1/2 sm:-translate-y-1/2 sm:h-auto sm:w-full">
                 <DialogHeader>
                   <DialogTitle>Cargos</DialogTitle>
                 </DialogHeader>
@@ -1525,18 +1535,16 @@ function ColaboradoresPage() {
               }}
             >
               <DialogTrigger asChild>
-                <Button size="sm">
-                  <Plus className="h-4 w-4 mr-1" />
+                <Button size="sm" className="h-9 rounded-xl px-4 text-sm shadow-sm transition-all hover:shadow-md active:scale-95">
+                  <Plus className="mr-1 h-3.5 w-3.5" />
                   Novo colaborador
                 </Button>
               </DialogTrigger>
-              <DialogContent className="flex flex-col">
-                <DialogHeader className="shrink-0">
+              <DialogContent className="flex max-h-[90vh] flex-col overflow-y-auto rounded-2xl sm:max-w-2xl sm:inset-auto sm:left-1/2 sm:top-1/2 sm:-translate-x-1/2 sm:-translate-y-1/2 sm:h-auto sm:w-full">
+                <DialogHeader className="shrink-0 gap-1.5 pb-1">
                   <div className="flex items-center justify-between gap-2 pr-8">
-                    <DialogTitle>
-                      <span className="border-l-4 border-primary pl-3">
-                        {editing ? "Editar colaborador" : "Novo colaborador"}
-                      </span>
+                    <DialogTitle className="tracking-tight">
+                      {editing ? "Editar colaborador" : "Novo colaborador"}
                     </DialogTitle>
                     <label className="flex h-8 cursor-pointer items-center gap-1.5 rounded-md border bg-background px-2 py-1 text-xs font-medium hover:bg-muted">
                       <FileUp className="h-3.5 w-3.5" /> Importar PDF da CNH
@@ -1913,22 +1921,12 @@ function ColaboradoresPage() {
         </div>
       </div>
 
-      <Card className="overflow-hidden border-2 border-primary/20 shadow-panel">
-        <div className="bg-primary text-primary-foreground px-3 py-2 flex items-center justify-between">
-          <h3 className="text-sm font-semibold">Colaboradores</h3>
-          <span className="text-xs opacity-80">Qtde: {colabsOrdenados.length}</span>
-        </div>
-        <div className="bg-primary/8 text-primary/80 border-b border-primary/20 px-3 py-1.5 flex items-center justify-between">
-          <span className="text-[10px] font-semibold uppercase tracking-wide">
-            Listagem de colaboradores
-          </span>
-          <span className="text-xs">
-            Página {paginaAtual} de {totalPaginas}
-          </span>
-        </div>
+      <Card className="overflow-hidden rounded-2xl shadow-panel">
         {isLoading ? (
-          <div className="p-6">
-            <Skeleton className="h-32 w-full" />
+          <div className="space-y-2.5 p-4" aria-label="Carregando">
+            {Array.from({ length: 5 }).map((_, i) => (
+              <div key={i} className="h-12 animate-pulse rounded-xl bg-muted/30" />
+            ))}
           </div>
         ) : !colabs || colabs.length === 0 ? (
           <EmptyState
@@ -1944,8 +1942,8 @@ function ColaboradoresPage() {
           />
         ) : (
           <>
-            <Table>
-              <TableHeader>
+            <Table className="[&_td]:px-3 [&_td]:py-2 [&_th]:px-3">
+              <TableHeader className="static bg-card supports-[backdrop-filter]:bg-card">
                 <TableRow>
                   <TableHead className="cursor-pointer select-none whitespace-nowrap" onClick={() => alternarOrdem("codigo")} title="Ordenar por ID">ID{setaOrdem("codigo")}</TableHead>
                   <TableHead className="cursor-pointer select-none" onClick={() => alternarOrdem("nome")} title="Ordenar por nome">Nome{setaOrdem("nome")}</TableHead>
@@ -1985,7 +1983,7 @@ function ColaboradoresPage() {
                         <Button
                           variant="ghost"
                           size="icon"
-                          className="h-8 w-8"
+                          className="h-8 w-8 rounded-lg"
                           title="Editar"
                           onClick={() => openEdit(c)}
                         >
@@ -1993,11 +1991,11 @@ function ColaboradoresPage() {
                         </Button>
                         <AlertDialog>
                           <AlertDialogTrigger asChild>
-                            <Button variant="ghost" size="icon" className="h-8 w-8">
+                            <Button variant="ghost" size="icon" className="h-8 w-8 rounded-lg text-destructive hover:bg-destructive/10" title="Excluir">
                               <Trash2 className="h-4 w-4" />
                             </Button>
                           </AlertDialogTrigger>
-                          <AlertDialogContent>
+                          <AlertDialogContent className="rounded-2xl">
                             <AlertDialogHeader>
                               <AlertDialogTitle>Excluir colaborador?</AlertDialogTitle>
                               <AlertDialogDescription>

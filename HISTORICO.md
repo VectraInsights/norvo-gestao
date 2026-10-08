@@ -5499,3 +5499,13 @@ pm run build OK.
   paginas; busca casa orcamento ("25,00" acha 25.00).
 - PROJETOS COMPLETO: Projetos, Ordens de servico.
 - Validado com `npm run build` OK.
+## Colaboradores no padrao visual (08/10)
+
+- Cabecalho com eyebrow "DP / RH"; busca h-9 rounded-xl com
+  botao limpar (X); botoes Cargos/Novo h-9 rounded-xl.
+- Card sem faixas coloridas (rounded-2xl shadow-panel);
+  tabela compacta ([&_td]:px-3 py-2); skeleton em linhas.
+- Dialogos rounded-2xl centralizados; titulo sem tarja;
+  excluir com rounded-2xl e lixeira em vermelho.
+- So JSX/Tailwind, sem logica.
+- Validado com `npm run build` OK.
