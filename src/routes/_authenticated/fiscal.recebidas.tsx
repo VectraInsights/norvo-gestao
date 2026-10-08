@@ -1893,7 +1893,7 @@ function NotasRecebidas() {
             </DialogContent>
           </Dialog>
           <AlertDialog open={confSair} onOpenChange={setConfSair}>
-            <AlertDialogContent>
+            <AlertDialogContent className="rounded-2xl">
               <AlertDialogHeader>
                 <AlertDialogTitle>Sair sem lançar tudo?</AlertDialogTitle>
                 <AlertDialogDescription>
@@ -1915,9 +1915,9 @@ function NotasRecebidas() {
       </Tabs>
 
   <Dialog open={chaveImportModal} onOpenChange={setChaveImportModal}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Importar NF-e por Chave de Acesso</DialogTitle>
+        <DialogContent className="max-h-[90vh] overflow-y-auto rounded-2xl sm:max-w-lg sm:inset-auto sm:left-1/2 sm:top-1/2 sm:-translate-x-1/2 sm:-translate-y-1/2 sm:h-auto sm:w-full">
+          <DialogHeader className="gap-1.5 pb-1">
+            <DialogTitle className="tracking-tight">Importar NF-e por Chave de Acesso</DialogTitle>
           </DialogHeader>
           <div className="space-y-4 py-2">
             <p className="text-sm text-muted-foreground">
@@ -1943,13 +1943,14 @@ function NotasRecebidas() {
               {chaveInput.replace(/\D/g, "").length}/44 dígitos
             </p>
           </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => { setChaveImportModal(false); setChaveInput(""); }}>
+          <DialogFooter className="gap-2">
+            <Button variant="outline" onClick={() => { setChaveImportModal(false); setChaveInput(""); }} className="h-10 rounded-xl px-6">
               Cancelar
             </Button>
             <Button
               onClick={handleImportarPorChave}
               disabled={isImportingByKey || chaveInput.replace(/\D/g, "").length !== 44}
+              className="h-10 rounded-xl px-6 shadow-sm transition-all hover:-translate-y-px hover:shadow-md"
             >
               {isImportingByKey ? (
                 <>
@@ -1969,9 +1970,9 @@ function NotasRecebidas() {
 
       {/* Modal de detalhes da nota importada por chave */}
       <Dialog open={!!notaDetalhe} onOpenChange={(open) => { if (!open) setNotaDetalhe(null); }}>
-        <DialogContent className="max-h-[85vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle>Detalhes da NF-e</DialogTitle>
+        <DialogContent className="max-h-[90vh] overflow-y-auto rounded-2xl sm:max-w-lg sm:inset-auto sm:left-1/2 sm:top-1/2 sm:-translate-x-1/2 sm:-translate-y-1/2 sm:h-auto sm:w-full">
+          <DialogHeader className="gap-1.5 pb-1">
+            <DialogTitle className="tracking-tight">Detalhes da NF-e</DialogTitle>
           </DialogHeader>
           {notaDetalhe && (
             <div className="space-y-4">
@@ -2096,8 +2097,8 @@ function NotasRecebidas() {
 
       {/* Dialog criar categoria inline */}
       <Dialog open={novaCatOpen} onOpenChange={(o) => { if (!o) { setNovaCatOpen(false); setNovaCatNome(""); setNovaCatContext(null); } }}>
-        <DialogContent>
-          <DialogHeader><DialogTitle>Nova categoria (Despesa)</DialogTitle></DialogHeader>
+        <DialogContent className="max-h-[90vh] overflow-y-auto rounded-2xl sm:max-w-md sm:inset-auto sm:left-1/2 sm:top-1/2 sm:-translate-x-1/2 sm:-translate-y-1/2 sm:h-auto sm:w-full">
+          <DialogHeader className="gap-1.5 pb-1"><DialogTitle className="tracking-tight">Nova categoria (Despesa)</DialogTitle></DialogHeader>
           <div className="space-y-3">
             <div>
               <label className="text-sm font-medium">Nome *</label>
@@ -2110,9 +2111,9 @@ function NotasRecebidas() {
               />
             </div>
           </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => { setNovaCatOpen(false); setNovaCatNome(""); setNovaCatContext(null); }}>Cancelar</Button>
-            <Button disabled={criarCategoriaInline.isPending || !novaCatNome.trim()} onClick={() => criarCategoriaInline.mutate(novaCatNome)}>
+          <DialogFooter className="gap-2">
+            <Button variant="outline" onClick={() => { setNovaCatOpen(false); setNovaCatNome(""); setNovaCatContext(null); }} className="h-10 rounded-xl px-6">Cancelar</Button>
+            <Button disabled={criarCategoriaInline.isPending || !novaCatNome.trim()} onClick={() => criarCategoriaInline.mutate(novaCatNome)} className="h-10 rounded-xl px-6 shadow-sm transition-all hover:-translate-y-px hover:shadow-md">
               {criarCategoriaInline.isPending ? <><RefreshCw className="mr-2 h-4 w-4 animate-spin" /> Salvando...</> : "Criar categoria"}
             </Button>
           </DialogFooter>
@@ -2120,7 +2121,7 @@ function NotasRecebidas() {
       </Dialog>
 
       <AlertDialog open={!!confExcluirNota} onOpenChange={(v) => { if (!v) setConfExcluirNota(null); }}>
-        <AlertDialogContent>
+        <AlertDialogContent className="rounded-2xl">
           <AlertDialogHeader>
             <AlertDialogTitle>Excluir nota</AlertDialogTitle>
             <AlertDialogDescription>
@@ -2141,9 +2142,9 @@ function NotasRecebidas() {
       </AlertDialog>
 
       <Dialog open={trilhaOpen} onOpenChange={setTrilhaOpen}>
-        <DialogContent className="max-h-[85vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle>Auditoria — Notas de Compra</DialogTitle>
+        <DialogContent className="max-h-[90vh] overflow-y-auto rounded-2xl sm:max-w-lg sm:inset-auto sm:left-1/2 sm:top-1/2 sm:-translate-x-1/2 sm:-translate-y-1/2 sm:h-auto sm:w-full">
+          <DialogHeader className="gap-1.5 pb-1">
+            <DialogTitle className="tracking-tight">Auditoria — Notas de Compra</DialogTitle>
           </DialogHeader>
           {trilhaQuery.isLoading ? (
             <p className="text-sm text-muted-foreground py-6 text-center">Carregando...</p>

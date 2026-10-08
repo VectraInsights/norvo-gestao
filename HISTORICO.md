@@ -5564,3 +5564,11 @@ pm run build OK.
 - CONFIG COMPLETO no visual.
 - So JSX/Tailwind, sem logica.
 - Validado com `npm run build` OK.
+## Recebidas no padrao visual (08/10)
+
+- 4 dialogos (chave, detalhes, categoria, auditoria) com
+  rounded-2xl centralizados e rodape h-10; 2 confirms
+  com rounded-2xl.
+- Fullscreen de analise do XML mantido (intencional).
+- So JSX/Tailwind, sem logica.
+- Validado com `npm run build` OK.
