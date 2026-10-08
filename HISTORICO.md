@@ -5548,3 +5548,11 @@ pm run build OK.
 - Acoes h-8 rounded-lg; lixeira vermelha; confirms rounded-2xl.
 - So JSX/Tailwind, sem logica.
 - Validado com `npm run build` OK.
+## Calculadora no padrao visual (08/10)
+
+- Cabecalho com eyebrow "DP / RH"; abas em barra rounded-xl.
+- Paineis de entrada e resultado em cards rounded-2xl;
+  inputs numericos/data e seletores h-10 rounded-xl
+  (mesma altura do MoneyInput).
+- So JSX/Tailwind, sem logica.
+- Validado com `npm run build` OK.

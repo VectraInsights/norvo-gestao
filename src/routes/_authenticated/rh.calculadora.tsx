@@ -95,21 +95,22 @@ function CalculadoraPage() {
   return (
     <div>
       <PageHeader
+        eyebrow="DP / RH"
         title="Calculadora trabalhista"
         description="Simulação rápida de valores (salário, férias, 13º, horas extras e rescisão) com as tabelas de 2026. Estimativa — não vinculada a nenhum funcionário."
       />
       <Tabs defaultValue="salario">
-        <TabsList>
-          <TabsTrigger value="salario">Salário líquido</TabsTrigger>
-          <TabsTrigger value="ferias">Férias</TabsTrigger>
-          <TabsTrigger value="decimo">13º salário</TabsTrigger>
-          <TabsTrigger value="extras">Horas extras</TabsTrigger>
-          <TabsTrigger value="rescisao">Rescisão</TabsTrigger>
+        <TabsList className="rounded-xl shadow-sm">
+          <TabsTrigger value="salario" className="rounded-lg">Salário líquido</TabsTrigger>
+          <TabsTrigger value="ferias" className="rounded-lg">Férias</TabsTrigger>
+          <TabsTrigger value="decimo" className="rounded-lg">13º salário</TabsTrigger>
+          <TabsTrigger value="extras" className="rounded-lg">Horas extras</TabsTrigger>
+          <TabsTrigger value="rescisao" className="rounded-lg">Rescisão</TabsTrigger>
         </TabsList>
 
         <TabsContent value="salario">
           <div className="grid gap-4 md:grid-cols-2">
-            <Card className="space-y-3 p-4">
+            <Card className="space-y-3 rounded-2xl p-5 shadow-panel">
               <div><Label>Salário bruto</Label><MoneyInput value={salBruto} onChange={setSalBruto} /></div>
               <div><Label>Outros proventos</Label><MoneyInput value={salProv} onChange={setSalProv} /></div>
               <div><Label>Outros descontos</Label><MoneyInput value={salDesc} onChange={setSalDesc} /></div>
@@ -121,7 +122,7 @@ function CalculadoraPage() {
               <div><Label>Odontológico</Label><MoneyInput value={salOdonto} onChange={setSalOdonto} /></div>
               <div><Label>Alimentação</Label><MoneyInput value={salAlim} onChange={setSalAlim} /></div>
             </Card>
-            <Card className="p-4">
+            <Card className="rounded-2xl p-5 shadow-panel">
               <Linha rotulo="Salário bruto" valor={rSal.bruto} />
               <Linha rotulo="Proventos" valor={rSal.proventos} />
               <Linha rotulo="INSS" valor={rSal.inss} subtrair />
@@ -138,16 +139,16 @@ function CalculadoraPage() {
 
         <TabsContent value="ferias">
           <div className="grid gap-4 md:grid-cols-2">
-            <Card className="space-y-3 p-4">
+            <Card className="space-y-3 rounded-2xl p-5 shadow-panel">
               <div><Label>Salário base</Label><MoneyInput value={ferSal} onChange={setFerSal} /></div>
-              <div><Label>Dias de gozo (1–30)</Label><Input type="number" min={1} max={30} value={ferDias} onChange={(e) => setFerDias(e.target.value)} /></div>
-              <div><Label>Abono vendido em dias (0–10)</Label><Input type="number" min={0} max={10} value={ferAbono} onChange={(e) => setFerAbono(e.target.value)} /></div>
+              <div><Label>Dias de gozo (1–30)</Label><Input type="number" className="h-10 rounded-xl shadow-sm" min={1} max={30} value={ferDias} onChange={(e) => setFerDias(e.target.value)} /></div>
+              <div><Label>Abono vendido em dias (0–10)</Label><Input type="number" className="h-10 rounded-xl shadow-sm" min={0} max={10} value={ferAbono} onChange={(e) => setFerAbono(e.target.value)} /></div>
               <label className="flex items-center gap-2 text-sm">
                 <Checkbox checked={ferDecimo} onCheckedChange={(v) => setFerDecimo(v === true)} />
                 Adiantar 13º junto
               </label>
             </Card>
-            <Card className="p-4">
+            <Card className="rounded-2xl p-5 shadow-panel">
               <Linha rotulo={`Férias (${rFer.diasGozo}d × 1/30)`} valor={rFer.proporcional} />
               <Linha rotulo="Adicional constitucional (⅓)" valor={rFer.terco} />
               <Linha rotulo="INSS" valor={rFer.inssFerias} subtrair />
@@ -171,12 +172,12 @@ function CalculadoraPage() {
 
         <TabsContent value="decimo">
           <div className="grid gap-4 md:grid-cols-2">
-            <Card className="space-y-3 p-4">
+            <Card className="space-y-3 rounded-2xl p-5 shadow-panel">
               <div><Label>Salário bruto mensal</Label><MoneyInput value={decSal} onChange={setDecSal} /></div>
-              <div><Label>Meses trabalhados (1–12)</Label><Input type="number" min={1} max={12} value={decMeses} onChange={(e) => setDecMeses(e.target.value)} /></div>
+              <div><Label>Meses trabalhados (1–12)</Label><Input type="number" className="h-10 rounded-xl shadow-sm" min={1} max={12} value={decMeses} onChange={(e) => setDecMeses(e.target.value)} /></div>
               <p className="text-xs text-muted-foreground">Na prática, a 1ª parcela (até novembro) sai sem descontos; os descontos incidem na 2ª parcela.</p>
             </Card>
-            <Card className="p-4">
+            <Card className="rounded-2xl p-5 shadow-panel">
               <Linha rotulo={`13º bruto (${rDec.meses}/12)`} valor={rDec.bruto} />
               <Linha rotulo="INSS" valor={rDec.inss} subtrair />
               <Linha rotulo="IRRF" valor={rDec.irrf} subtrair />
@@ -187,12 +188,12 @@ function CalculadoraPage() {
 
         <TabsContent value="extras">
           <div className="grid gap-4 md:grid-cols-2">
-            <Card className="space-y-3 p-4">
+            <Card className="space-y-3 rounded-2xl p-5 shadow-panel">
               <div><Label>Salário base</Label><MoneyInput value={heSal} onChange={setHeSal} /></div>
-              <div><Label>Horas a 50%</Label><Input type="number" min={0} value={he50} onChange={(e) => setHe50(e.target.value)} /></div>
-              <div><Label>Horas a 100%</Label><Input type="number" min={0} value={he100} onChange={(e) => setHe100(e.target.value)} /></div>
+              <div><Label>Horas a 50%</Label><Input type="number" className="h-10 rounded-xl shadow-sm" min={0} value={he50} onChange={(e) => setHe50(e.target.value)} /></div>
+              <div><Label>Horas a 100%</Label><Input type="number" className="h-10 rounded-xl shadow-sm" min={0} value={he100} onChange={(e) => setHe100(e.target.value)} /></div>
             </Card>
-            <Card className="p-4">
+            <Card className="rounded-2xl p-5 shadow-panel">
               <Linha rotulo="Valor da hora (sal/220)" valor={rHe.valorHora} />
               <Linha rotulo="Extras 50%" valor={rHe.total50} />
               <Linha rotulo="Extras 100%" valor={rHe.total100} />
@@ -203,18 +204,18 @@ function CalculadoraPage() {
 
         <TabsContent value="rescisao">
           <div className="grid gap-4 md:grid-cols-2">
-            <Card className="space-y-3 p-4">
+            <Card className="space-y-3 rounded-2xl p-5 shadow-panel">
               <div><Label>Tipo de rescisão</Label>
                 <Select value={reTipo} onValueChange={(v) => setReTipo(v as TipoRescisao)}>
-                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectTrigger className="h-10 rounded-xl shadow-sm"><SelectValue /></SelectTrigger>
                   <SelectContent>
                     {TIPOS_RESCISAO.map((t) => <SelectItem key={t.value} value={t.value}>{t.label}</SelectItem>)}
                   </SelectContent>
                 </Select>
               </div>
               <div><Label>Salário base</Label><MoneyInput value={reSal} onChange={setReSal} /></div>
-              <div><Label>Data de admissão</Label><Input type="date" value={reAdm} onChange={(e) => setReAdm(e.target.value)} /></div>
-              <div><Label>Data de rescisão</Label><Input type="date" value={reResc} onChange={(e) => setReResc(e.target.value)} /></div>
+              <div><Label>Data de admissão</Label><Input type="date" className="h-10 rounded-xl shadow-sm" value={reAdm} onChange={(e) => setReAdm(e.target.value)} /></div>
+              <div><Label>Data de rescisão</Label><Input type="date" className="h-10 rounded-xl shadow-sm" value={reResc} onChange={(e) => setReResc(e.target.value)} /></div>
               <label className="flex items-center gap-2 text-sm">
                 <Checkbox checked={reTemVenc} onCheckedChange={(v) => setReTemVenc(v === true)} />
                 Tem férias vencidas
@@ -222,7 +223,7 @@ function CalculadoraPage() {
               {reTemVenc && (
                 <div><Label>Quantidade</Label>
                   <Select value={reVencSel} onValueChange={setReVencSel}>
-                    <SelectTrigger><SelectValue /></SelectTrigger>
+                    <SelectTrigger className="h-10 rounded-xl shadow-sm"><SelectValue /></SelectTrigger>
                     <SelectContent>
                       <SelectItem value="30">30 dias (1 período)</SelectItem>
                       <SelectItem value="60">60 dias (2 períodos)</SelectItem>
@@ -230,9 +231,9 @@ function CalculadoraPage() {
                   </Select>
                 </div>
               )}
-              <div><Label>Aviso prévio (dias, 0 = trabalhado)</Label><Input type="number" min={0} max={90} value={reAviso} onChange={(e) => setReAviso(e.target.value)} /></div>
+              <div><Label>Aviso prévio (dias, 0 = trabalhado)</Label><Input type="number" className="h-10 rounded-xl shadow-sm" min={0} max={90} value={reAviso} onChange={(e) => setReAviso(e.target.value)} /></div>
             </Card>
-            <Card className="p-4">
+            <Card className="rounded-2xl p-5 shadow-panel">
               {rRe.verbas.map((v) => (
                 <Linha key={v.nome} rotulo={v.nome} valor={Math.abs(v.valor)} subtrair={v.valor < 0} />
               ))}
