@@ -165,17 +165,23 @@ function Multas() {
     enabled: !!empresa,
     queryKey: ["multas", empresa?.id],
     queryFn: async ({ signal }) => {
-      const { data, error } = await supabase
-        .from("multas" as never)
-        .select(
-          "id,veiculo_id,placa,renavam,orgao_autuador,auto_infracao,data_infracao,descricao,valor,data_vencimento,pontos,status,origem",
-        )
-        .eq("empresa_id", empresa!.id)
-        .order("data_infracao", { ascending: false })
-        .limit(500)
-        .abortSignal(signal);
-      if (error) throw error;
-      return (data ?? []) as unknown as Multa[];
+      // Busca em páginas para nunca cortar a lista (sem limite silencioso)
+      const todas: unknown[] = [];
+      for (let ini = 0; ; ini += 1000) {
+        const { data, error } = await supabase
+          .from("multas" as never)
+          .select(
+            "id,veiculo_id,placa,renavam,orgao_autuador,auto_infracao,data_infracao,descricao,valor,data_vencimento,pontos,status,origem",
+          )
+          .eq("empresa_id", empresa!.id)
+          .order("data_infracao", { ascending: false })
+          .range(ini, ini + 999)
+          .abortSignal(signal);
+        if (error) throw error;
+        todas.push(...((data as unknown[]) ?? []));
+        if (!data || (data as unknown[]).length < 1000) break;
+      }
+      return todas as unknown as Multa[];
     },
   });
 
@@ -183,14 +189,21 @@ function Multas() {
     enabled: !!empresa,
     queryKey: ["veiculos", empresa?.id],
     queryFn: async ({ signal }) => {
-      const { data, error } = await supabase
-        .from("veiculos" as never)
-        .select("id,placa,renavam")
-        .eq("empresa_id", empresa!.id)
-        .order("placa")
-        .abortSignal(signal);
-      if (error) throw error;
-      return (data ?? []) as unknown as VeiculoOpcao[];
+      // Busca em páginas: sem range, o Supabase corta em 1000 (sem aviso)
+      const todos: unknown[] = [];
+      for (let ini = 0; ; ini += 1000) {
+        const { data, error } = await supabase
+          .from("veiculos" as never)
+          .select("id,placa,renavam")
+          .eq("empresa_id", empresa!.id)
+          .order("placa")
+          .range(ini, ini + 999)
+          .abortSignal(signal);
+        if (error) throw error;
+        todos.push(...((data as unknown[]) ?? []));
+        if (!data || (data as unknown[]).length < 1000) break;
+      }
+      return todos as unknown as VeiculoOpcao[];
     },
   });
 
@@ -373,9 +386,13 @@ function Multas() {
     if (filtroStatus !== "todas" && m.status !== filtroStatus) return false;
     if (!busca.trim()) return true;
     const s = busca.toLowerCase();
-    return [m.placa, m.auto_infracao, m.orgao_autuador, m.renavam, m.descricao].some((x) =>
+    const sDig = s.replace(/\D/g, "");
+    if ([m.placa, m.auto_infracao, m.orgao_autuador, m.renavam, m.descricao].some((x) =>
       (x ?? "").toLowerCase().includes(s),
-    );
+    )) return true;
+    // Pesquisa por valor: "25,00" acha 25.00 (a partir de 2 dígitos)
+    if (sDig.length >= 2 && Number(m.valor || 0).toFixed(2).replace(/\D/g, "").includes(sDig)) return true;
+    return false;
   });
 
   const pageSize = 25;

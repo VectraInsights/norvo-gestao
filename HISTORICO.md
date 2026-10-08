@@ -5481,3 +5481,13 @@ pm run build OK.
 - CRM: oportunidades e contatos em paginas; busca casa valor.
 - VENDAS COMPLETO: Vendas, Pedidos, Clientes, CRM.
 - Validado com `npm run build` OK.
+## Frota sem cortes + busca por valor (08/10)
+
+- Multas em paginas (antes 500) + seletor de veiculos em paginas;
+  busca casa valor ("25,00" acha 25.00).
+- Veiculos em paginas (antes 500); tipos, RNTRCs e mapa
+  proprietario-RNTRC em paginas; busca casa ano/eixos.
+- Viagens em paginas (antes 1000); despesas, clientes, motoristas
+  e veiculos do seletor em paginas; busca casa frete.
+- FROTA COMPLETO: Veiculos, Viagens, Multas.
+- Validado com `npm run build` OK.

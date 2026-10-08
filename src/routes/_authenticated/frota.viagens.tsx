@@ -226,45 +226,62 @@ function Viagens() {
     staleTime: 30_000,
     gcTime: 10 * 60_000,
     queryFn: async ({ signal }) => {
-      const { data, error } = await supabase
-        .from("viagens" as never)
-        .select(
-          "id,empresa_id,cliente_id,motorista_id,veiculo_id,status,data_saida,data_chegada,origem_cidade,origem_uf,destino_cidade,destino_uf,valor_frete,observacoes,created_at,cliente:contatos(nome), motorista:colaboradores(nome), veiculo:veiculos(placa)",
-        )
-        .eq("empresa_id", empresa!.id)
-        .order("created_at", { ascending: false })
-        .limit(1000)
-        .abortSignal(signal);
-      if (error) throw error;
-      return (data ?? []) as unknown as Viagem[];
+      // Busca em páginas para nunca cortar a lista (sem limite silencioso)
+      const todas: unknown[] = [];
+      for (let ini = 0; ; ini += 1000) {
+        const { data, error } = await supabase
+          .from("viagens" as never)
+          .select(
+            "id,empresa_id,cliente_id,motorista_id,veiculo_id,status,data_saida,data_chegada,origem_cidade,origem_uf,destino_cidade,destino_uf,valor_frete,observacoes,created_at,cliente:contatos(nome), motorista:colaboradores(nome), veiculo:veiculos(placa)",
+          )
+          .eq("empresa_id", empresa!.id)
+          .order("created_at", { ascending: false })
+          .range(ini, ini + 999)
+          .abortSignal(signal);
+        if (error) throw error;
+        todas.push(...((data as unknown[]) ?? []));
+        if (!data || (data as unknown[]).length < 1000) break;
+      }
+      return todas as unknown as Viagem[];
     },
   });
   const { data: despesas } = useQuery({
     enabled: !!empresa,
     queryKey: ["viagem-despesas", empresa?.id],
     queryFn: async ({ signal }) => {
-      const { data, error } = await supabase
-        .from("viagem_despesas" as never)
-        .select("id,viagem_id,tipo,descricao,valor,data")
-        .eq("empresa_id", empresa!.id)
-        .order("data")
-        .abortSignal(signal);
-      if (error) throw error;
-      return (data ?? []) as unknown as Despesa[];
+      // Busca em páginas: sem range, o Supabase corta em 1000 (sem aviso)
+      const todas: unknown[] = [];
+      for (let ini = 0; ; ini += 1000) {
+        const { data, error } = await supabase
+          .from("viagem_despesas" as never)
+          .select("id,viagem_id,tipo,descricao,valor,data")
+          .eq("empresa_id", empresa!.id)
+          .order("data")
+          .range(ini, ini + 999)
+          .abortSignal(signal);
+        if (error) throw error;
+        todas.push(...((data as unknown[]) ?? []));
+        if (!data || (data as unknown[]).length < 1000) break;
+      }
+      return todas as unknown as Despesa[];
     },
   });
 
   const filtrados = useMemo(() => {
     const q = busca.trim().toLowerCase();
+    const qDig = q.replace(/\D/g, "");
     return (viagens ?? []).filter((v) => {
       if (!q) return true;
-      return (v.origem_cidade || "").toLowerCase().includes(q)
-        || (v.destino_cidade || "").toLowerCase().includes(q)
-        || (v.cliente?.nome || "").toLowerCase().includes(q)
-        || (v.motorista?.nome || "").toLowerCase().includes(q)
-        || (v.veiculo?.placa || "").toLowerCase().includes(q)
-        || (STATUS_LABEL[v.status] || v.status || "").toLowerCase().includes(q)
-        || (v.observacoes || "").toLowerCase().includes(q);
+      if ((v.origem_cidade || "").toLowerCase().includes(q)) return true;
+      if ((v.destino_cidade || "").toLowerCase().includes(q)) return true;
+      if ((v.cliente?.nome || "").toLowerCase().includes(q)) return true;
+      if ((v.motorista?.nome || "").toLowerCase().includes(q)) return true;
+      if ((v.veiculo?.placa || "").toLowerCase().includes(q)) return true;
+      if ((STATUS_LABEL[v.status] || v.status || "").toLowerCase().includes(q)) return true;
+      if ((v.observacoes || "").toLowerCase().includes(q)) return true;
+      // Pesquisa por frete: "25,00" acha 25.00 (a partir de 2 dígitos)
+      if (qDig.length >= 2 && Number((v as any).valor_frete || 0).toFixed(2).replace(/\D/g, "").includes(qDig)) return true;
+      return false;
     });
   }, [viagens, busca]);
 
@@ -303,15 +320,22 @@ function Viagens() {
     enabled: !!empresa,
     queryKey: ["contatos-cliente-viagem", empresa?.id],
     queryFn: async ({ signal }) => {
-      const { data, error } = await supabase
-        .from("contatos")
-        .select("id,nome")
-        .eq("empresa_id", empresa!.id)
-        .in("tipo", ["cliente", "ambos"])
-        .order("nome")
-        .abortSignal(signal);
-      if (error) throw error;
-      return (data ?? []) as Opcao[];
+      // Busca em páginas: sem range, o Supabase corta em 1000 (sem aviso)
+      const todos: unknown[] = [];
+      for (let ini = 0; ; ini += 1000) {
+        const { data, error } = await supabase
+          .from("contatos")
+          .select("id,nome")
+          .eq("empresa_id", empresa!.id)
+          .in("tipo", ["cliente", "ambos"])
+          .order("nome")
+          .range(ini, ini + 999)
+          .abortSignal(signal);
+        if (error) throw error;
+        todos.push(...((data as unknown[]) ?? []));
+        if (!data || (data as unknown[]).length < 1000) break;
+      }
+      return todos as Opcao[];
     },
   });
 
@@ -319,16 +343,23 @@ function Viagens() {
     enabled: !!empresa,
     queryKey: ["motoristas-viagem", empresa?.id],
     queryFn: async ({ signal }) => {
-      const { data, error } = await supabase
-        .from("colaboradores" as never)
-        .select("id,nome,cnh_validade,toxico_exame")
-        .eq("empresa_id", empresa!.id)
-        .eq("status", "ativo")
-        .ilike("cargo", "%motorist%")
-        .order("nome")
-        .abortSignal(signal);
-      if (error) throw error;
-      return (data ?? []) as unknown as Motorista[];
+      // Busca em páginas: sem range, o Supabase corta em 1000 (sem aviso)
+      const todos: unknown[] = [];
+      for (let ini = 0; ; ini += 1000) {
+        const { data, error } = await supabase
+          .from("colaboradores" as never)
+          .select("id,nome,cnh_validade,toxico_exame")
+          .eq("empresa_id", empresa!.id)
+          .eq("status", "ativo")
+          .ilike("cargo", "%motorist%")
+          .order("nome")
+          .range(ini, ini + 999)
+          .abortSignal(signal);
+        if (error) throw error;
+        todos.push(...((data as unknown[]) ?? []));
+        if (!data || (data as unknown[]).length < 1000) break;
+      }
+      return todos as unknown as Motorista[];
     },
   });
 
@@ -336,15 +367,22 @@ function Viagens() {
     enabled: !!empresa,
     queryKey: ["veiculos-disp", empresa?.id],
     queryFn: async ({ signal }) => {
-      const { data, error } = await supabase
-        .from("veiculos" as never)
-        .select("id,placa,marca_modelo")
-        .eq("empresa_id", empresa!.id)
-        .neq("status", "inativo")
-        .order("placa")
-        .abortSignal(signal);
-      if (error) throw error;
-      return (data ?? []) as unknown as {
+      // Busca em páginas: sem range, o Supabase corta em 1000 (sem aviso)
+      const todos: unknown[] = [];
+      for (let ini = 0; ; ini += 1000) {
+        const { data, error } = await supabase
+          .from("veiculos" as never)
+          .select("id,placa,marca_modelo")
+          .eq("empresa_id", empresa!.id)
+          .neq("status", "inativo")
+          .order("placa")
+          .range(ini, ini + 999)
+          .abortSignal(signal);
+        if (error) throw error;
+        todos.push(...((data as unknown[]) ?? []));
+        if (!data || (data as unknown[]).length < 1000) break;
+      }
+      return todos as unknown as {
         id: string;
         placa: string;
         marca_modelo: string | null;

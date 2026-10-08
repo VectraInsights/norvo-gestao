@@ -155,14 +155,21 @@ function Veiculos() {
     enabled: !!empresa,
     queryKey: ["veiculos_tipos", empresa?.id],
     queryFn: async ({ signal }) => {
-      const { data, error } = await supabase
-        .from("veiculos_tipos" as never)
-        .select("id, nome")
-        .eq("empresa_id", empresa!.id)
-        .order("nome")
-        .abortSignal(signal);
-      if (error) throw error;
-      return (data ?? []) as { id: string; nome: string }[];
+      // Busca em páginas: sem range, o Supabase corta em 1000 (sem aviso)
+      const todos: unknown[] = [];
+      for (let ini = 0; ; ini += 1000) {
+        const { data, error } = await supabase
+          .from("veiculos_tipos" as never)
+          .select("id, nome")
+          .eq("empresa_id", empresa!.id)
+          .order("nome")
+          .range(ini, ini + 999)
+          .abortSignal(signal);
+        if (error) throw error;
+        todos.push(...((data as unknown[]) ?? []));
+        if (!data || (data as unknown[]).length < 1000) break;
+      }
+      return todos as { id: string; nome: string }[];
     },
   });
 
@@ -178,14 +185,21 @@ function Veiculos() {
     enabled: !!empresa,
     queryKey: ["rntrc_lista", empresa?.id],
     queryFn: async ({ signal }) => {
-      const { data, error } = await supabase
-        .from("rntrc_lista" as never)
-        .select("id, rntrc, nome, cnpj, categoria")
-        .eq("empresa_id", empresa!.id)
-        .order("rntrc")
-        .abortSignal(signal);
-      if (error) throw error;
-      return (data ?? []) as {
+      // Busca em páginas: sem range, o Supabase corta em 1000 (sem aviso)
+      const todos: unknown[] = [];
+      for (let ini = 0; ; ini += 1000) {
+        const { data, error } = await supabase
+          .from("rntrc_lista" as never)
+          .select("id, rntrc, nome, cnpj, categoria")
+          .eq("empresa_id", empresa!.id)
+          .order("rntrc")
+          .range(ini, ini + 999)
+          .abortSignal(signal);
+        if (error) throw error;
+        todos.push(...((data as unknown[]) ?? []));
+        if (!data || (data as unknown[]).length < 1000) break;
+      }
+      return todos as {
         id: string;
         rntrc: string;
         nome: string;
@@ -200,15 +214,22 @@ function Veiculos() {
     enabled: !!empresa,
     queryKey: ["veiculos_rntrc_map", empresa?.id],
     queryFn: async ({ signal }) => {
-      const { data, error } = await supabase
-        .from("veiculos" as never)
-        .select("proprietario, proprietario_doc, rntrc")
-        .eq("empresa_id", empresa!.id)
-        .not("rntrc", "is", null)
-        .not("proprietario", "is", null)
-        .abortSignal(signal);
-      if (error) throw error;
-      return (data ?? []) as { proprietario: string; proprietario_doc: string | null; rntrc: string }[];
+      // Busca em páginas: sem range, o Supabase corta em 1000 (sem aviso)
+      const todos: unknown[] = [];
+      for (let ini = 0; ; ini += 1000) {
+        const { data, error } = await supabase
+          .from("veiculos" as never)
+          .select("proprietario, proprietario_doc, rntrc")
+          .eq("empresa_id", empresa!.id)
+          .not("rntrc", "is", null)
+          .not("proprietario", "is", null)
+          .range(ini, ini + 999)
+          .abortSignal(signal);
+        if (error) throw error;
+        todos.push(...((data as unknown[]) ?? []));
+        if (!data || (data as unknown[]).length < 1000) break;
+      }
+      return todos as { proprietario: string; proprietario_doc: string | null; rntrc: string }[];
     },
   });
 
@@ -466,17 +487,23 @@ function Veiculos() {
     enabled: !!empresa,
     queryKey: ["veiculos", empresa?.id],
     queryFn: async ({ signal }) => {
-      const { data, error } = await supabase
-        .from("veiculos" as never)
-        .select(
-          "id,placa,marca_modelo,tipo,ano,rntrc,renavam,proprietario,proprietario_doc,quantidade_eixos,categoria,chassi,tag_pedagio,status,observacoes",
-        )
-        .eq("empresa_id", empresa!.id)
-        .order("placa")
-        .limit(500)
-        .abortSignal(signal);
-      if (error) throw error;
-      return (data ?? []) as unknown as Veiculo[];
+      // Busca em páginas para nunca cortar a lista (sem limite silencioso)
+      const todos: unknown[] = [];
+      for (let ini = 0; ; ini += 1000) {
+        const { data, error } = await supabase
+          .from("veiculos" as never)
+          .select(
+            "id,placa,marca_modelo,tipo,ano,rntrc,renavam,proprietario,proprietario_doc,quantidade_eixos,categoria,chassi,tag_pedagio,status,observacoes",
+          )
+          .eq("empresa_id", empresa!.id)
+          .order("placa")
+          .range(ini, ini + 999)
+          .abortSignal(signal);
+        if (error) throw error;
+        todos.push(...((data as unknown[]) ?? []));
+        if (!data || (data as unknown[]).length < 1000) break;
+      }
+      return todos as unknown as Veiculo[];
     },
   });
 
@@ -607,7 +634,8 @@ function Veiculos() {
   const lista = (veiculos ?? []).filter((v) => {
     if (!busca.trim()) return true;
     const s = busca.toLowerCase();
-    return [
+    const sDig = s.replace(/\D/g, "");
+    if ([
       v.placa,
       v.marca_modelo,
       v.tipo,
@@ -616,7 +644,13 @@ function Veiculos() {
       (v as any).proprietario_doc,
       (v as any).categoria,
       (v as any).chassi,
-    ].some((x) => (x ?? "").toLowerCase().includes(s));
+    ].some((x) => (x ?? "").toLowerCase().includes(s))) return true;
+    // Pesquisa por ano/eixos: dígitos casam o número exato
+    if (sDig.length >= 2) {
+      if (v.ano != null && String(v.ano).includes(sDig)) return true;
+      if ((v as any).quantidade_eixos != null && String((v as any).quantidade_eixos).includes(sDig)) return true;
+    }
+    return false;
   });
 
   const pageSize = 25;
