@@ -5448,6 +5448,9 @@ pm run build OK.
   (antes 500); fornecedores/produtos/contas sem range (corte em 1000).
   Busca casa tambem o total da ordem.
 - Validado com `npm run build` OK.
+- Produtos sem corte + busca por preco (08/10): lista em paginas
+  (antes 1000); busca casa venda e custo ("25,00" acha 25.00).
+- Validado com `npm run build` OK.
 - Novo credor + Importar PDF + sem placeholders (07/10): rodapé e
   dialogo "Novo credor" (segue tipo fornecedor); botao "Importar PDF";
   placeholders removidos da tela de contratos.
