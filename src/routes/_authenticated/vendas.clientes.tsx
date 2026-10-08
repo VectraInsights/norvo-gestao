@@ -112,11 +112,17 @@ function Clientes() {
     enabled: !!empresa,
     queryKey: ["contatos", empresa?.id] as const,
     queryFn: async ({ signal }): Promise<Contato[]> => {
-      const { data, error } = await supabase.from("contatos")
-        .select("id,nome,tipo,documento,email,telefone,ie,cep,logradouro,numero,complemento,bairro,cidade,uf,observacoes")
-        .eq("empresa_id", empresa!.id).order("nome").abortSignal(signal);
-      if (error) throw error;
-      return (data ?? []) as Contato[];
+      // Busca em páginas: sem range, o Supabase corta em 1000 (sem aviso)
+      const todos: unknown[] = [];
+      for (let ini = 0; ; ini += 1000) {
+        const { data, error } = await supabase.from("contatos")
+          .select("id,nome,tipo,documento,email,telefone,ie,cep,logradouro,numero,complemento,bairro,cidade,uf,observacoes")
+          .eq("empresa_id", empresa!.id).order("nome").range(ini, ini + 999).abortSignal(signal);
+        if (error) throw error;
+        todos.push(...((data as unknown[]) ?? []));
+        if (!data || (data as unknown[]).length < 1000) break;
+      }
+      return todos as Contato[];
     },
   });
 
@@ -124,11 +130,15 @@ function Clientes() {
     const q = busca.trim().toLowerCase();
     if (!q) return contatos ?? [];
     const qDig = q.replace(/\D/g, "");
-    return (contatos ?? []).filter((c) =>
-      (c.nome || "").toLowerCase().includes(q)
-      || (qDig && (c.documento || "").replace(/\D/g, "").includes(qDig))
-      || (c.cidade || "").toLowerCase().includes(q),
-    );
+    return (contatos ?? []).filter((c) => {
+      if ((c.nome || "").toLowerCase().includes(q)) return true;
+      if (qDig && (c.documento || "").replace(/\D/g, "").includes(qDig)) return true;
+      if ((c.cidade || "").toLowerCase().includes(q)) return true;
+      if ((c.email || "").toLowerCase().includes(q)) return true;
+      // Pesquisa por telefone: dígitos casam em qualquer formato
+      if (qDig.length >= 4 && (c.telefone || "").replace(/\D/g, "").includes(qDig)) return true;
+      return false;
+    });
   }, [contatos, busca]);
 
   const criar = useMutation({

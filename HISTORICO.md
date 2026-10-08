@@ -5470,3 +5470,14 @@ pm run build OK.
 - ESTOQUE COMPLETO: Compras, Produtos, Fornecedores, Movimentacoes,
   Inventario, Reposicao, Relatorios.
 - Validado com `npm run build` OK.
+## Vendas sem cortes + busca por valor (08/10)
+
+- Vendas faturadas em paginas (antes 200); ganha busca
+  (cliente, numero, condicao, valor).
+- Pedidos em paginas (antes 200); seletores de clientes, condicoes
+  e produtos em paginas; busca casa valor ("25,00" acha 25.00).
+- Clientes em paginas (antes corte em 1000); busca casa email
+  e telefone. Auditoria mantida em 200 (trilha).
+- CRM: oportunidades e contatos em paginas; busca casa valor.
+- VENDAS COMPLETO: Vendas, Pedidos, Clientes, CRM.
+- Validado com `npm run build` OK.

@@ -109,19 +109,25 @@ function VendasPage() {
     staleTime: 30_000,
     gcTime: 10 * 60_000,
     queryFn: async ({ signal }): Promise<VendaRow[]> => {
-      let q = supabase
-        .from("vendas")
-        .select(
-          "id,numero,data,status,total,cliente:contatos(nome),condicao:condicoes_pagamento(nome)",
-        )
-        .eq("empresa_id", empresa!.id)
-        .order("created_at", { ascending: false })
-        .limit(200)
-        .abortSignal(signal);
-      if (statusFilter !== "todos") q = q.eq("status", statusFilter);
-      const { data, error } = await q;
-      if (error) throw error;
-      return (data ?? []) as unknown as VendaRow[];
+      // Busca em páginas para nunca cortar a lista (sem limite silencioso)
+      const todas: unknown[] = [];
+      for (let ini = 0; ; ini += 1000) {
+        let q = supabase
+          .from("vendas")
+          .select(
+            "id,numero,data,status,total,cliente:contatos(nome),condicao:condicoes_pagamento(nome)",
+          )
+          .eq("empresa_id", empresa!.id)
+          .order("created_at", { ascending: false })
+          .range(ini, ini + 999)
+          .abortSignal(signal);
+        if (statusFilter !== "todos") q = q.eq("status", statusFilter);
+        const { data, error } = await q;
+        if (error) throw error;
+        todas.push(...((data as unknown[]) ?? []));
+        if (!data || (data as unknown[]).length < 1000) break;
+      }
+      return todas as unknown as VendaRow[];
     },
   });
 
@@ -129,11 +135,15 @@ function VendasPage() {
     const q = busca.trim().toLowerCase();
     if (!q) return vendas ?? [];
     const qNum = q.replace(/^#/, "");
-    return (vendas ?? []).filter((v) =>
-      (v.cliente?.nome || "").toLowerCase().includes(q)
-      || (v.condicao?.nome || "").toLowerCase().includes(q)
-      || String(v.numero ?? "").includes(qNum),
-    );
+    const qDig = q.replace(/\D/g, "");
+    return (vendas ?? []).filter((v) => {
+      if ((v.cliente?.nome || "").toLowerCase().includes(q)) return true;
+      if ((v.condicao?.nome || "").toLowerCase().includes(q)) return true;
+      if (String(v.numero ?? "").includes(qNum)) return true;
+      // Pesquisa por valor: "25,00" acha 25.00 (a partir de 2 dígitos)
+      if (qDig.length >= 2 && Number(v.total || 0).toFixed(2).replace(/\D/g, "").includes(qDig)) return true;
+      return false;
+    });
   }, [vendas, busca]);
   const pageSize = 25;
   const totalPaginas = Math.max(1, Math.ceil(filtrados.length / pageSize));
@@ -381,45 +391,66 @@ function NovaVendaSheet({ onClose }: { onClose: () => void }) {
     enabled: !!empresa,
     queryKey: ["contatos-clientes", empresa?.id] as const,
     queryFn: async ({ signal }) => {
-      const { data, error } = await supabase
-        .from("contatos")
-        .select("id,nome")
-        .eq("empresa_id", empresa!.id)
-        .in("tipo", ["cliente", "ambos"])
-        .order("nome")
-        .abortSignal(signal);
-      if (error) throw error;
-      return data ?? [];
+      // Busca em páginas: sem range, o Supabase corta em 1000 (sem aviso)
+      const todos: unknown[] = [];
+      for (let ini = 0; ; ini += 1000) {
+        const { data, error } = await supabase
+          .from("contatos")
+          .select("id,nome")
+          .eq("empresa_id", empresa!.id)
+          .in("tipo", ["cliente", "ambos"])
+          .order("nome")
+          .range(ini, ini + 999)
+          .abortSignal(signal);
+        if (error) throw error;
+        todos.push(...((data as unknown[]) ?? []));
+        if (!data || (data as unknown[]).length < 1000) break;
+      }
+      return todos as { id: string; nome: string }[];
     },
   });
   const { data: condicoes } = useQuery({
     enabled: !!empresa,
     queryKey: ["condicoes", empresa?.id] as const,
     queryFn: async ({ signal }) => {
-      const { data, error } = await supabase
-        .from("condicoes_pagamento")
-        .select("id,nome")
-        .eq("empresa_id", empresa!.id)
-        .eq("ativo", true)
-        .order("nome")
-        .abortSignal(signal);
-      if (error) throw error;
-      return data ?? [];
+      // Busca em páginas: sem range, o Supabase corta em 1000 (sem aviso)
+      const todos: unknown[] = [];
+      for (let ini = 0; ; ini += 1000) {
+        const { data, error } = await supabase
+          .from("condicoes_pagamento")
+          .select("id,nome")
+          .eq("empresa_id", empresa!.id)
+          .eq("ativo", true)
+          .order("nome")
+          .range(ini, ini + 999)
+          .abortSignal(signal);
+        if (error) throw error;
+        todos.push(...((data as unknown[]) ?? []));
+        if (!data || (data as unknown[]).length < 1000) break;
+      }
+      return todos as { id: string; nome: string }[];
     },
   });
   const { data: produtos } = useQuery({
     enabled: !!empresa,
     queryKey: ["produtos-select", empresa?.id] as const,
     queryFn: async ({ signal }) => {
-      const { data, error } = await supabase
-        .from("produtos")
-        .select("id,nome,preco_venda")
-        .eq("empresa_id", empresa!.id)
-        .eq("ativo", true)
-        .order("nome")
-        .abortSignal(signal);
-      if (error) throw error;
-      return data ?? [];
+      // Busca em páginas: sem range, o Supabase corta em 1000 (sem aviso)
+      const todos: unknown[] = [];
+      for (let ini = 0; ; ini += 1000) {
+        const { data, error } = await supabase
+          .from("produtos")
+          .select("id,nome,preco_venda")
+          .eq("empresa_id", empresa!.id)
+          .eq("ativo", true)
+          .order("nome")
+          .range(ini, ini + 999)
+          .abortSignal(signal);
+        if (error) throw error;
+        todos.push(...((data as unknown[]) ?? []));
+        if (!data || (data as unknown[]).length < 1000) break;
+      }
+      return todos as { id: string; nome: string; preco_venda: number }[];
     },
   });
 
