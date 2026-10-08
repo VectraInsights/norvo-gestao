@@ -36,9 +36,17 @@ export const Route = createFileRoute("/_authenticated/estoque/inventario")({
   errorComponent: ({ error }) => (
     <div
       role="alert"
-      className="rounded-md border border-destructive/40 bg-destructive/5 p-4 text-sm text-destructive"
+      className="rounded-2xl border border-destructive/20 bg-destructive/5 p-6 text-center shadow-sm animate-in fade-in zoom-in duration-300 sm:p-10"
     >
-      Não foi possível carregar o inventário: {error.message}
+      <div className="grid h-14 w-14 place-items-center rounded-2xl bg-destructive/10">
+        <Search className="h-6 w-6 text-destructive" />
+      </div>
+      <p className="mt-4 text-base font-semibold tracking-tight text-foreground">
+        Não foi possível carregar o inventário
+      </p>
+      <p className="mt-1 text-sm text-muted-foreground">
+        {error instanceof Error ? error.message : "Erro desconhecido"}
+      </p>
     </div>
   ),
 });
@@ -201,12 +209,7 @@ function Inventario() {
       <div className="mb-4 flex flex-col gap-2 sm:flex-row sm:items-center">
         <div className="relative flex-1">
           <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-          <Input
-            className="pl-8"
-            placeholder="Buscar produto…"
-            value={busca}
-            onChange={(e) => setBusca(e.target.value)}
-          />
+          <Input className="h-9 rounded-xl pl-10 pr-10 shadow-sm" placeholder="Buscar produto…" value={busca} onChange={(e) => setBusca(e.target.value)} />
         </div>
         <div className="w-56">
           <Combobox value={depositoId} onChange={setDepositoId} options={[{ value: "sem-deposito", label: "Sem depósito" }, ...depositos.map((d) => ({ value: d.id, label: d.nome }))]} placeholder="Depósito (opcional)" searchPlaceholder="Digite para buscar..." emptyText="Nenhum item encontrado." />
@@ -255,7 +258,7 @@ function Inventario() {
         />
       ) : (
         <Card className="overflow-hidden shadow-panel">
-          <Table>
+          <Table className="[&_td]:px-3 [&_th]:px-3">
             <TableHeader>
               <TableRow>
                 <TableHead>Produto</TableHead>

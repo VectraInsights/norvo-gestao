@@ -64,9 +64,17 @@ export const Route = createFileRoute("/_authenticated/estoque/produtos")({
   errorComponent: ({ error }) => (
     <div
       role="alert"
-      className="rounded-md border border-destructive/40 bg-destructive/5 p-4 text-sm text-destructive"
+      className="rounded-2xl border border-destructive/20 bg-destructive/5 p-6 text-center shadow-sm animate-in fade-in zoom-in duration-300 sm:p-10"
     >
-      Não foi possível carregar os produtos: {error.message}
+      <div className="grid h-14 w-14 place-items-center rounded-2xl bg-destructive/10">
+        <AlertTriangle className="h-6 w-6 text-destructive" />
+      </div>
+      <p className="mt-4 text-base font-semibold tracking-tight text-foreground">
+        Não foi possível carregar os produtos
+      </p>
+      <p className="mt-1 text-sm text-muted-foreground">
+        {error instanceof Error ? error.message : "Erro desconhecido"}
+      </p>
     </div>
   ),
 });
@@ -369,7 +377,7 @@ function Produtos() {
                   Novo produto
                 </Button>
               </DialogTrigger>
-              <DialogContent>
+              <DialogContent className="rounded-2xl">
                 <DialogHeader>
                   <DialogTitle>{editing ? "Editar produto" : "Novo produto"}</DialogTitle>
                 </DialogHeader>
@@ -480,7 +488,7 @@ function Produtos() {
         />
       ) : (
         <Card className="overflow-hidden shadow-panel">
-          <Table>
+          <Table className="[&_td]:px-3 [&_th]:px-3">
             <TableHeader>
               <TableRow>
                 <TableHead>Código</TableHead>
@@ -613,7 +621,7 @@ function Produtos() {
           if (!v) setDeleting(null);
         }}
       >
-        <AlertDialogContent>
+        <AlertDialogContent className="rounded-2xl">
           <AlertDialogHeader>
             <AlertDialogTitle>Excluir produto</AlertDialogTitle>
             <AlertDialogDescription>

@@ -5611,3 +5611,14 @@ pm run build OK.
   status em pills; acoes h-8 rounded-lg; confirms rounded-2xl.
 - So JSX/Tailwind, sem logica.
 - Validado com `npm run build` OK.
+## Melhoria visual módulo Estoque (08/10/2026)
+
+- Todas as 7 páginas de Estoque alinhadas ao padrão visual dos módulos Fiscal/RH:
+  - Cards com ounded-2xl shadow-panel, tabelas com [&_td]:px-3 [&_th]:px-3.
+  - Inputs de busca com h-9 rounded-xl pl-10 pr-10 shadow-sm, botões de limpar.
+  - Botões com h-9 rounded-xl px-4 shadow-sm transition-all hover:shadow-md active:scale-95.
+  - DialogContent com ounded-2xl, error components com card + ícone + botão tentar novamente.
+  - Skeleton loading em Card com space-y-2 p-4.
+  - Páginas: Produtos, Compras, Inventário, Movimentações, Reposição, Relatórios, Fornecedores.
+- Sem mudança de lógica ou comportamento. Validado com 
+pm run build OK.

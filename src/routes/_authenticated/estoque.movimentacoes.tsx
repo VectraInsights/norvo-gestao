@@ -67,9 +67,17 @@ export const Route = createFileRoute("/_authenticated/estoque/movimentacoes")({
   errorComponent: ({ error }) => (
     <div
       role="alert"
-      className="rounded-md border border-destructive/40 bg-destructive/5 p-4 text-sm text-destructive"
+      className="rounded-2xl border border-destructive/20 bg-destructive/5 p-6 text-center shadow-sm animate-in fade-in zoom-in duration-300 sm:p-10"
     >
-      Não foi possível carregar as movimentações: {error.message}
+      <div className="grid h-14 w-14 place-items-center rounded-2xl bg-destructive/10">
+        <Search className="h-6 w-6 text-destructive" />
+      </div>
+      <p className="mt-4 text-base font-semibold tracking-tight text-foreground">
+        Não foi possível carregar as movimentações
+      </p>
+      <p className="mt-1 text-sm text-muted-foreground">
+        {error instanceof Error ? error.message : "Erro desconhecido"}
+      </p>
     </div>
   ),
 });
@@ -269,12 +277,12 @@ function Movimentacoes() {
       <PageHeader
         eyebrow="Estoque"
         title="Movimentações"
-        description="Entradas, saídas e ajustes de invent��rio."
+        description="Entradas, saídas e ajustes de inventário."
       />
       <div className="mb-3 flex flex-col gap-2 sm:flex-row sm:items-center">
         <div className="relative flex-1">
           <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-          <Input className="pl-8" placeholder="Buscar por produto, depósito ou observação..." value={busca} onChange={(e) => setBusca(e.target.value)} />
+          <Input className="h-9 rounded-xl pl-10 pr-10 shadow-sm" placeholder="Buscar por produto, depósito ou observação..." value={busca} onChange={(e) => setBusca(e.target.value)} />
         </div>
         <div className="flex items-center gap-2">
             <Dialog
@@ -284,12 +292,12 @@ function Movimentacoes() {
               }}
             >
               <DialogTrigger asChild>
-                <Button variant="outline">
+                <Button variant="outline" className="h-9 rounded-xl px-4 shadow-sm transition-all hover:shadow-md active:scale-95">
                   <ArrowLeftRight className="mr-1 h-4 w-4" />
                   Transferir
                 </Button>
               </DialogTrigger>
-              <DialogContent>
+              <DialogContent className="rounded-2xl">
                 <DialogHeader>
                   <DialogTitle>Transferir entre depósitos</DialogTitle>
                 </DialogHeader>
@@ -341,7 +349,7 @@ function Movimentacoes() {
                     />
                   </div>
                   <DialogFooter>
-                    <Button type="submit" disabled={transferirMut.isPending}>
+                    <Button type="submit" disabled={transferirMut.isPending} className="h-10 rounded-xl px-6">
                       {transferirMut.isPending ? "Transferindo…" : "Confirmar"}
                     </Button>
                   </DialogFooter>
@@ -355,12 +363,12 @@ function Movimentacoes() {
               }}
             >
               <DialogTrigger asChild>
-                <Button>
+                <Button className="h-9 rounded-xl px-4 shadow-sm transition-all hover:shadow-md active:scale-95">
                   <Plus className="mr-1 h-4 w-4" />
                   Nova movimentação
                 </Button>
               </DialogTrigger>
-              <DialogContent>
+              <DialogContent className="rounded-2xl">
                 <DialogHeader>
                   <DialogTitle>Nova movimentação</DialogTitle>
                 </DialogHeader>
@@ -415,7 +423,7 @@ function Movimentacoes() {
                     />
                   </div>
                   <DialogFooter>
-                    <Button type="submit" disabled={registrarMut.isPending}>
+                    <Button type="submit" disabled={registrarMut.isPending} className="h-10 rounded-xl px-6">
                       {registrarMut.isPending ? "Registrando…" : "Registrar"}
                     </Button>
                   </DialogFooter>
@@ -441,7 +449,7 @@ function Movimentacoes() {
         />
       ) : (
         <Card className="overflow-hidden shadow-panel">
-          <Table>
+          <Table className="[&_td]:px-3 [&_th]:px-3">
             <TableHeader>
               <TableRow>
                 <TableHead>Data</TableHead>

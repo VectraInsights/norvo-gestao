@@ -53,8 +53,19 @@ import { toast } from "sonner";
 export const Route = createFileRoute("/_authenticated/estoque/fornecedores")({
   component: Fornecedores,
   errorComponent: ({ error }) => (
-    <div className="p-6 text-sm text-destructive" role="alert">
-      Falha: {error.message}
+    <div
+      role="alert"
+      className="rounded-2xl border border-destructive/20 bg-destructive/5 p-6 text-center shadow-sm animate-in fade-in zoom-in duration-300 sm:p-10"
+    >
+      <div className="grid h-14 w-14 place-items-center rounded-2xl bg-destructive/10">
+        <Search className="h-6 w-6 text-destructive" />
+      </div>
+      <p className="mt-4 text-base font-semibold tracking-tight text-foreground">
+        Não foi possível carregar os fornecedores
+      </p>
+      <p className="mt-1 text-sm text-muted-foreground">
+        {error instanceof Error ? error.message : "Erro desconhecido"}
+      </p>
     </div>
   ),
 });
@@ -101,7 +112,7 @@ function Fornecedores() {
   const { data: empresa } = useEmpresaAtual();
   const qc = useQueryClient();
   const [open, setOpen] = useState(false);
-  const [form, setForm] = useState(emptyForm);
+  const [form, setForm] = useState(emptyForm());
   const [editing, setEditing] = useState<Contato | null>(null);
   const [deleting, setDeleting] = useState<Contato | null>(null);
   const [lookingUp, setLookingUp] = useState(false);
@@ -352,21 +363,23 @@ function Fornecedores() {
       <div className="mb-3 flex flex-col gap-2 sm:flex-row sm:items-center">
         <div className="relative flex-1">
           <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-          <Input className="pl-8" placeholder="Buscar por nome, CPF/CNPJ ou cidade..." value={busca} onChange={(e) => { setBusca(e.target.value); setPagina(1); }} />
+          <Input className="h-9 rounded-xl pl-10 pr-10 shadow-sm" placeholder="Buscar por nome, CPF/CNPJ ou cidade..." value={busca} onChange={(e) => { setBusca(e.target.value); setPagina(1); }} />
         </div>
         <div className="flex items-center gap-2">
-          <Button onClick={openCreate}>
+          <Button onClick={openCreate} className="h-9 rounded-xl px-4 shadow-sm transition-all hover:shadow-md active:scale-95">
             <Plus className="mr-1 h-4 w-4" />
             Novo fornecedor
           </Button>
         </div>
       </div>
       {isLoading ? (
-        <div className="space-y-2">
-          {Array.from({ length: 4 }).map((_, i) => (
-            <div key={i} className="h-12 animate-pulse rounded-md bg-muted/30" />
-          ))}
-        </div>
+        <Card className="overflow-hidden shadow-panel">
+          <div className="space-y-2 p-4">
+            {Array.from({ length: 4 }).map((_, i) => (
+              <Skeleton key={i} className="h-12 animate-pulse rounded-xl bg-muted/30" />
+            ))}
+          </div>
+        </Card>
       ) : !filtrados?.length ? (
         <EmptyState
           icon={Users}
@@ -375,7 +388,7 @@ function Fornecedores() {
         />
       ) : (
         <Card className="overflow-hidden shadow-panel">
-          <Table>
+          <Table className="[&_td]:px-3 [&_th]:px-3">
             <TableHeader>
               <TableRow>
                 <TableHead>Nome</TableHead>
@@ -476,7 +489,7 @@ function Fornecedores() {
           }
         }}
       >
-        <DialogContent className="max-h-[90vh] overflow-y-auto">
+        <DialogContent className="max-h-[90vh] overflow-y-auto rounded-2xl">
           <DialogHeader>
             <DialogTitle>{editing ? "Editar fornecedor" : "Novo fornecedor"}</DialogTitle>
           </DialogHeader>
@@ -627,7 +640,7 @@ function Fornecedores() {
               />
             </div>
             <DialogFooter>
-              <Button type="submit" disabled={criar.isPending || editar.isPending}>
+              <Button type="submit" disabled={criar.isPending || editar.isPending} className="h-10 rounded-xl px-6">
                 {(criar.isPending || editar.isPending) && (
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                 )}
@@ -644,7 +657,7 @@ function Fornecedores() {
           if (!v) setDeleting(null);
         }}
       >
-        <AlertDialogContent>
+        <AlertDialogContent className="rounded-2xl">
           <AlertDialogHeader>
             <AlertDialogTitle>Excluir fornecedor</AlertDialogTitle>
             <AlertDialogDescription>

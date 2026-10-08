@@ -24,7 +24,7 @@ import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-import { ShoppingCart, Plus, Trash2, Check, X } from "lucide-react";
+import { ShoppingCart, Plus, Trash2, Check, X, Search } from "lucide-react";
 import { useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -35,8 +35,19 @@ import { brl, dateBR } from "@/lib/format";
 export const Route = createFileRoute("/_authenticated/estoque/compras")({
   component: Compras,
   errorComponent: ({ error }) => (
-    <div role="alert" className="rounded-md border border-destructive/40 bg-destructive/5 p-4 text-sm text-destructive">
-      Erro ao carregar ordens de compra: {error.message}
+    <div
+      role="alert"
+      className="rounded-2xl border border-destructive/20 bg-destructive/5 p-6 text-center shadow-sm animate-in fade-in zoom-in duration-300 sm:p-10"
+    >
+      <div className="grid h-14 w-14 place-items-center rounded-2xl bg-destructive/10">
+        <X className="h-6 w-6 text-destructive" />
+      </div>
+      <p className="mt-4 text-base font-semibold tracking-tight text-foreground">
+        Erro ao carregar ordens de compra
+      </p>
+      <p className="mt-1 text-sm text-muted-foreground">
+        {error instanceof Error ? error.message : "Erro desconhecido"}
+      </p>
     </div>
   ),
 });
@@ -227,17 +238,28 @@ function Compras() {
         description="Cadastre compras, receba mercadoria e gere contas a pagar automaticamente."
       />
 
-      <div className="mb-4 flex flex-col gap-2 sm:flex-row sm:items-center">
+      <div className="mb-4 flex flex-col gap-2 sm:mb-6 sm:flex-row sm:items-center">
         <div className="relative flex-1">
-          <Input placeholder="Buscar por número ou fornecedor…" value={busca} onChange={(e) => setBusca(e.target.value)} />
+          <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+          <Input className="h-9 rounded-xl pl-10 pr-10 shadow-sm" placeholder="Buscar por número ou fornecedor…" value={busca} onChange={(e) => setBusca(e.target.value)} />
+          {busca && (
+            <button
+              type="button"
+              onClick={() => setBusca("")}
+              className="absolute right-2.5 top-1/2 grid h-6 w-6 -translate-y-1/2 place-items-center rounded-lg text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
+              aria-label="Limpar busca"
+            >
+              <X className="h-4 w-4" />
+            </button>
+          )}
         </div>
         <div className="flex items-center gap-2">
           <Dialog open={open} onOpenChange={(v) => { setOpen(v); if (!v) reset(); }}>
             <DialogTrigger asChild>
-              <Button><Plus className="mr-1 h-4 w-4" /> Nova ordem</Button>
+              <Button size="sm" className="h-9 rounded-xl px-4 text-sm shadow-sm transition-all hover:shadow-md active:scale-95"><Plus className="mr-1 h-3.5 w-3.5" /> Nova ordem</Button>
             </DialogTrigger>
-            <DialogContent>
-              <DialogHeader><DialogTitle>Nova ordem de compra</DialogTitle></DialogHeader>
+            <DialogContent className="max-h-[90vh] overflow-y-auto rounded-2xl sm:max-w-2xl sm:inset-auto sm:left-1/2 sm:top-1/2 sm:-translate-x-1/2 sm:-translate-y-1/2 sm:h-auto sm:w-full">
+              <DialogHeader className="gap-1.5 pb-1"><DialogTitle className="tracking-tight">Nova ordem de compra</DialogTitle></DialogHeader>
               <div className="grid gap-4">
                 <div className="grid gap-4 sm:grid-cols-3">
                   <div>
@@ -257,7 +279,7 @@ function Compras() {
                 <div>
                   <div className="mb-2 flex items-center justify-between">
                     <Label>Itens</Label>
-                    <Button type="button" variant="outline" size="sm"
+                    <Button type="button" variant="outline" size="sm" className="h-8 rounded-lg px-3 shadow-sm active:scale-95"
                       onClick={() => setItens((r) => [...r, { produto_id: "", quantidade: "1", custo_unitario: "0" }])}>
                       <Plus className="mr-1 h-3 w-3" /> Item
                     </Button>
@@ -274,7 +296,7 @@ function Compras() {
                         <MoneyInput prefix="" decimals={3} value={it.quantidade} onChange={(v) => setItens((r) => r.map((x, i) => i === idx ? { ...x, quantidade: v } : x))} />
                         <MoneyInput value={it.custo_unitario}
                           onChange={(v) => setItens((r) => r.map((x, i) => i === idx ? { ...x, custo_unitario: v } : x))} />
-                        <Button type="button" variant="ghost" size="icon"
+                        <Button type="button" variant="ghost" size="icon" className="h-8 w-8 rounded-lg text-destructive hover:bg-destructive/10"
                           onClick={() => setItens((r) => r.filter((_, i) => i !== idx))}
                           disabled={itens.length === 1}>
                           <Trash2 className="h-4 w-4" />
@@ -292,9 +314,9 @@ function Compras() {
                   <Input value={obs} onChange={(e) => setObs(e.target.value)} placeholder="Opcional" />
                 </div>
               </div>
-              <DialogFooter>
-                <Button variant="outline" onClick={() => setOpen(false)}>Cancelar</Button>
-                <Button onClick={() => criar.mutate()} disabled={criar.isPending}>
+              <DialogFooter className="gap-2">
+                <Button variant="outline" onClick={() => setOpen(false)} className="h-10 rounded-xl px-6">Cancelar</Button>
+                <Button onClick={() => criar.mutate()} disabled={criar.isPending} className="h-10 rounded-xl px-6 shadow-sm transition-all hover:-translate-y-px hover:shadow-md">
                   {criar.isPending ? "Salvando…" : "Criar ordem"}
                 </Button>
               </DialogFooter>
@@ -310,17 +332,17 @@ function Compras() {
         </div>
       </div>
 
-      <Card>
+      <Card className="overflow-hidden rounded-2xl shadow-panel">
         {isLoading ? (
-          <div className="space-y-2 p-4">
-            {Array.from({ length: 4 }).map((_, i) => <Skeleton key={i} className="h-10 w-full" />)}
+          <div className="space-y-2.5 p-4" aria-label="Carregando">
+            {Array.from({ length: 4 }).map((_, i) => <div key={i} className="h-12 animate-pulse rounded-xl bg-muted/30" />)}
           </div>
         ) : lista.length === 0 ? (
           <EmptyState icon={ShoppingCart} title="Nenhuma ordem de compra"
             description="Registre pedidos aos fornecedores para controlar entregas, estoque e pagamentos." />
         ) : (
-          <Table>
-            <TableHeader>
+          <Table className="[&_td]:px-3 [&_th]:px-3">
+            <TableHeader className="static bg-card supports-[backdrop-filter]:bg-card">
               <TableRow>
                 <TableHead>Nº</TableHead>
                 <TableHead>Fornecedor</TableHead>
@@ -343,27 +365,27 @@ function Compras() {
                   <TableCell className="text-right">
                     <div className="flex justify-end gap-1">
                       {o.status === "rascunho" && (
-                        <Button variant="outline" size="sm"
+                        <Button variant="outline" size="sm" className="h-8 rounded-lg px-3 shadow-sm active:scale-95"
                           onClick={() => mudarStatus.mutate({ id: o.id, status: "enviada" })}>
                           Enviar
                         </Button>
                       )}
                       {(o.status === "rascunho" || o.status === "enviada") && (
-                        <Button size="sm" onClick={() => mudarStatus.mutate({ id: o.id, status: "recebida" })}>
+                        <Button size="sm" onClick={() => mudarStatus.mutate({ id: o.id, status: "recebida" })} className="h-8 rounded-lg px-3 shadow-sm transition-all hover:shadow-md active:scale-95">
                           <Check className="mr-1 h-3 w-3" /> Receber
                         </Button>
                       )}
                       {o.status !== "cancelada" && o.status !== "recebida" && (
-                        <Button variant="ghost" size="sm"
+                        <Button variant="ghost" size="sm" className="h-8 w-8 rounded-lg p-0"
                           onClick={() => mudarStatus.mutate({ id: o.id, status: "cancelada" })}>
                           <X className="h-3 w-3" />
                         </Button>
                       )}
                       <AlertDialog>
                         <AlertDialogTrigger asChild>
-                          <Button variant="ghost" size="icon"><Trash2 className="h-4 w-4" /></Button>
+                          <Button variant="ghost" size="icon" className="h-8 w-8 rounded-lg text-destructive hover:bg-destructive/10"><Trash2 className="h-4 w-4" /></Button>
                         </AlertDialogTrigger>
-                        <AlertDialogContent>
+                        <AlertDialogContent className="rounded-2xl">
                           <AlertDialogHeader>
                             <AlertDialogTitle>Excluir ordem #{o.numero}?</AlertDialogTitle>
                             <AlertDialogDescription>
