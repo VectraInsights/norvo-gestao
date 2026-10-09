@@ -5663,3 +5663,10 @@ pm run build OK.
   estilo identico ao Gerenciar empresas. 	sc sem erros novos e
   
 pm run build OK.
+
+## Configuracoes: abas no estilo dos links (09/10)
+
+- Abas (Categorias, Condicoes, RNTRC, Seguradoras, NF-e) sem o
+  fundo cinza: viram links de texto verdes como os de cima, com a
+  ativa destacada. 	sc sem erros novos e 
+pm run build OK.
