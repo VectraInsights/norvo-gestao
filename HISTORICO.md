@@ -5630,3 +5630,12 @@ pm run build OK.
   `import { Skeleton } from "@/components/ui/skeleton"`.
 - `tsc` sem erros novos no arquivo (só baseline pré-existente).
 - Validado com `npm run build` OK.
+
+## Nav: Configuracoes fiscais em Configuracoes + Fiscal alfabetico (09/10)
+
+- Grupo 'Acessos' virou 'Configuracoes' com: Configuracoes,
+  Configuracoes fiscais (/fiscal/configuracoes, rota mantida),
+  Usuarios e acessos. Excecao de sort do Fiscal removida: todos
+  os grupos agora ordenam itens de A-Z (pt-BR).
+- Rota /fiscal/configuracoes mantida (sem quebra de links/permissoes);
+  so mudou o grupo no menu. 	sc limpo em nav-config.
