@@ -5721,3 +5721,10 @@ pm run build OK.
   tabela public.ncm com 10.516 NCMs vigentes (Gecex 926/2026).
 - Seed em lotes de 500 com ON CONFLICT; RLS leitura autenticados.
 
+
+## CT-e item 1: toma + docAnt (09/10)
+
+- Builder traduz modFrete da tela p/ toma oficial (0/3/4); 9 bloqueado.
+- tomaByMod virou identidade; docAnt emiDocAnt agrupado por CNPJ.
+- 11/11 testes vitest; 	sc identico a baseline; uild OK.
+
