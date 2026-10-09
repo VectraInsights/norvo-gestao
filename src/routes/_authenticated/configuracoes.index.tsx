@@ -37,7 +37,7 @@ function Configuracoes() {
   const navLinkCls =
     "-ml-2 inline-flex items-center gap-2 rounded-lg px-2 py-1.5 text-sm font-medium text-primary transition-colors hover:bg-accent";
   const tabLinkCls =
-    "rounded-lg px-2 py-1.5 text-sm font-medium text-muted-foreground transition-colors hover:bg-accent hover:text-primary hover:shadow-none data-[state=active]:bg-accent data-[state=active]:text-primary data-[state=active]:shadow-none";
+    "rounded-lg px-2 py-1.5 text-sm font-medium text-muted-foreground transition-colors hover:bg-accent hover:text-primary hover:shadow-none data-[state=active]:bg-transparent data-[state=active]:text-primary data-[state=active]:shadow-none";
 
   return (
     <>
