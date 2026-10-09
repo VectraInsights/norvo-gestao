@@ -5691,3 +5691,9 @@ pm run build OK.
   via ?secao= (ativa sublinhada); rotas antigas redirecionam.
 - 	sc sem erros novos e 
 pm run build OK.
+
+## Configuracoes: tudo inline, sem redirecionamentos (09/10)
+
+- Fiscais, Empresas e Usuarios abrem inline em ?secao= (lazy);
+  rotas antigas redirecionam ao hub; 5 stubs excluidos; busca e
+  +Nova empresa apontam ao hub. 	sc/uild OK.
