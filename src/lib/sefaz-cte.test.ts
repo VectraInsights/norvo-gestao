@@ -279,3 +279,17 @@ describe("<ICMSSN> no Simples Nacional (CRT 1/4)", () => {
     expect(buildNormal()).toContain("<ICMS00><CST>00</CST>");
   });
 });
+
+describe("<compl> no CT-e Normal (após infCTeNorm)", () => {
+  it("inclui <compl><xObs> quando há observação", () => {
+    const xml = buildNormal({ obsGerais: "ENTREGA AGENDAR COM JOAO" } as any);
+
+    expect(xml).toContain("<compl><xObs>ENTREGA AGENDAR COM JOAO</xObs></compl>");
+    expect(xml.indexOf("<compl>")).toBeGreaterThan(xml.indexOf("</infCTeNorm>"));
+    expect(xml.indexOf("<compl>")).toBeLessThan(xml.indexOf("<infRespTec>"));
+  });
+
+  it("omite <compl> sem observação", () => {
+    expect(buildNormal()).not.toContain("<compl>");
+  });
+});

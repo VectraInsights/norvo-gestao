@@ -550,6 +550,9 @@ export function buildCteNormalXml(input: CteInputCompleto): { xml: string; chave
   const veicTracXml = veicTracaoXml(veics, input.ufIni);
   const veicRebXml = veicReboqueXml(veics, input.ufIni);
 
+  // <compl> oficial (filho de infCte, após infCTeNorm): só xObs do form.
+  const obsLiv = String((input as any).obsGerais || "").trim();
+  const complXml = obsLiv ? `<compl><xObs>${escCte(obsLiv.slice(0, 2000))}</xObs></compl>` : "";
   // <seg> oficial (infCTeNorm, 0-n): respSeg só admite 4 (emitente) ou 5 (tomador).
   const segIn = (input as any).seg || {};
   const segResp = String(segIn.resp || "") === "5" ? "5" : "4";
@@ -585,7 +588,7 @@ export function buildCteNormalXml(input: CteInputCompleto): { xml: string; chave
       </infCarga>
       ${infDocXml}${docAntXmlN}
       <infModal versaoModal="4.00"><rodo><RNTRC>${rntrcXml}</RNTRC>${motoXml}${veicTracXml}${veicRebXml}</rodo></infModal>${segXml}
-    </infCTeNorm>
+    </infCTeNorm>${complXml}
     <infRespTec><CNPJ>${cnpjLimpo}</CNPJ><xContato>SUPORTE TECNICO</xContato><email>suporte@vectrainsights.com.br</email><fone>3139952572</fone></infRespTec>
   </infCte>
   <infCTeSupl><qrCodCTe>https://${qrBase}?chCTe=${chave}&amp;tpAmb=${SEFAZ_TP_AMB}</qrCodCTe></infCTeSupl>

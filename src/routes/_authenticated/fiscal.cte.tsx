@@ -4742,6 +4742,7 @@ function CtePage() {
                 csllAliq: parseFloat(form.csllAliq) || 0,
               },
               serie: "1",
+              obsGerais: (form as any).obsGerais || "",
               tomador: {
                 toma: form.toma as any,
                 cnpj: form.cnpjTomador,
