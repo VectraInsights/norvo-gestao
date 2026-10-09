@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { describe, expect, it } from "vitest";
-import { buildCteNormalXml, buildCteXml } from "./sefaz-cte";
+import { buildCteNormalXml, buildCteXml, docAntOficial, tomaSefazDeModFrete } from "./sefaz-cte";
 
 // Base mínima válida para emissão em homologação (SEFAZ_AMBIENTE é fixo).
 // Os valores reproduzem o CT-e de referência (chave ...5311429212600).
@@ -144,5 +144,51 @@ describe("CT-e Simplificado 4.00 — modal rodoviário", () => {
 
     expect(xml).toContain("<RNTRC>00839402</RNTRC>");
     expect(xml).toContain("<moto><xNome>ROBERTO DE SOUZA</xNome><CPF>69751773687</CPF></moto>");
+  });
+});
+
+describe("toma: modFrete da tela vira tomador oficial SEFAZ", () => {
+  it("0/3 -> 0 (remetente), 1/4 -> 3 (destinatário), 2 -> 4 (outros)", () => {
+    expect(tomaSefazDeModFrete("0")).toBe("0");
+    expect(tomaSefazDeModFrete("3")).toBe("0");
+    expect(tomaSefazDeModFrete("1")).toBe("3");
+    expect(tomaSefazDeModFrete("4")).toBe("3");
+    expect(tomaSefazDeModFrete("2")).toBe("4");
+  });
+
+  it("9 ou vazio lançam erro claro (não geram XML inválido)", () => {
+    expect(() => tomaSefazDeModFrete("9")).toThrow(/sem transporte|Tomador inválido/);
+    expect(() => tomaSefazDeModFrete("")).toThrow();
+  });
+
+  it("normal com FOB (1) emite toma4=3 (nunca expedidor sem <exped>)", () => {
+    const xml = buildNormal({
+      tomador: { ...(baseCte().tomador as any), toma: "1" },
+    });
+
+    expect(xml).toContain("<toma4><toma>3</toma>");
+    expect(xml).not.toContain("<toma3><toma>1</toma>");
+  });
+});
+
+describe("<docAnt> oficial (agrupado por emitente)", () => {
+  const ch1 = "35251021306287000152570010000000011000000010";
+  const ch2 = "35251021306287000152570010000000021000000020";
+
+  it("agrupa chaves pelo CNPJ em <emiDocAnt> sem <infDocAnt>", () => {
+    const xml = docAntOficial([ch1, ch2]);
+
+    expect(xml).toContain("<docAnt><emiDocAnt><CNPJ>21306287000152</CNPJ>");
+    expect(xml).toContain(`<idDocAnt><idDocAntEle><chCTe>${ch1}</chCTe></idDocAntEle></idDocAnt>`);
+    expect(xml).toContain(`<chCTe>${ch2}</chCTe>`);
+    expect(xml).not.toContain("<infDocAnt>");
+    expect(xml).not.toContain("tpPrest");
+  });
+
+  it("normal inclui o <docAnt> dentro do <infDoc>", () => {
+    const xml = buildNormal({ docAnt: { chaves: [ch1] } });
+
+    expect(xml).toContain("<docAnt><emiDocAnt><CNPJ>21306287000152</CNPJ>");
+    expect(xml).not.toContain("<infDocAnt>");
   });
 });

@@ -4644,6 +4644,7 @@ function CtePage() {
           if (!String(form.apolice || "").trim()) pend.push("Apolice do seguro");
           if (!String(form.segResponsavel || "").trim()) pend.push("Responsavel do seguro");
         }
+        if (String((form as any).toma) === "9") pend.push("operação sem transporte não gera CT-e (troque o tomador)");
         if (pend.length > 0) throw new Error("Para emitir informe: " + pend.join("; "));
         validarPedagio(form);
         // cMun da prestação (não da NF-e): resolve pela cidade+UF quando divergente/vazio
@@ -6880,19 +6881,11 @@ function CtePage() {
                           destCMun?: string;
                           destXMun?: string;
                         };
-                        const tomaByMod: Record<string, string> = {
-                          "0": "0",
-                          "1": "3",
-                          "2": "4",
-                          "3": "0",
-                          "4": "3",
-                          "9": "4",
-                        };
-                        // Sem modFrete na NF-e o padrão é CIF (toma 0, remetente paga).
-                        // O "3" (frota própria) só vale quando explícito no cadastro.
-                        const tomaSel = (first as any).modFrete
-                          ? (tomaByMod[(first as any).modFrete] ?? "0")
-                          : "0";
+                        // modFrete da NF-e vira o "toma" da tela 1:1 (a tradução p/ o
+                        // tomador oficial do CT-e acontece no builder sefaz-cte).
+                        // Sem modFrete o padrão é CIF (remetente paga).
+                        const mfToma = String((first as any).modFrete || "0");
+                        const tomaSel = ["0", "1", "2", "3", "4", "9"].includes(mfToma) ? mfToma : "0";
                         const tomCnpjDigits = (
                           ((first as any).tomadorCnpj || first.destCnpj || "") as string
                         ).replace(/\D/g, "");

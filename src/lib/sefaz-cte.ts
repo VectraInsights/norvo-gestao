@@ -151,6 +151,42 @@ export function formUfsDoXml(xml: string, form: any): any {
   return f;
 }
 
+// A tela trabalha com o modFrete da NF-e (0=CIF remetente, 1=FOB destinatário,
+// 2=terceiros, 3=próprio remetente, 4=próprio destinatário, 9=sem transporte).
+// O CT-e exige o tomador oficial (0=remetente, 1=expedidor, 2=recebedor,
+// 3=destinatário, 4=outros). Tradução única usada pelos dois modelos;
+// expedidor/recebedor não são emitidos (sem grupo <exped>/<receb> no form).
+export function tomaSefazDeModFrete(ui: unknown): string {
+  const v = String(ui ?? "").trim();
+  if (v === "0" || v === "3") return "0";
+  if (v === "1" || v === "4") return "3";
+  if (v === "2") return "4";
+  throw new Error(
+    `Tomador inválido p/ CT-e (${v || "vazio"}): use remetente, destinatário ou terceiros`,
+  );
+}
+
+// <docAnt> oficial: agrupa as chaves pelo CNPJ do emitente (posições 7–20 da chave).
+// O leiaute não tem <infDocAnt> nem tpPrest — a forma antiga era rejeitada no schema.
+export function docAntOficial(chaves: unknown): string {
+  const chs = [...new Set(
+    (Array.isArray(chaves) ? chaves : [])
+      .map((c) => String(c).replace(/\D/g, ""))
+      .filter((c) => c.length === 44),
+  )];
+  if (!chs.length) return "";
+  const porEmit = new Map<string, string[]>();
+  for (const ch of chs) {
+    const doc = ch.slice(6, 20);
+    if (!/^\d{14}$/.test(doc)) throw new Error(`Chave de CT-e anterior inválida: ${ch}`);
+    if (!porEmit.has(doc)) porEmit.set(doc, []);
+    porEmit.get(doc)!.push(ch);
+  }
+  return `<docAnt>${[...porEmit].map(([doc, lista]) =>
+    `<emiDocAnt><CNPJ>${doc}</CNPJ>${lista.map((c) => `<idDocAnt><idDocAntEle><chCTe>${c}</chCTe></idDocAntEle></idDocAnt>`).join("")}</emiDocAnt>`
+  ).join("")}</docAnt>`;
+}
+
 export function buildCteXml(input: CteInputCompleto): { xml: string; chave: string } {
   assertSefazAmbiente(input.ambiente);
   if (input.modelo === "normal") return buildCteNormalXml(input);
@@ -175,7 +211,7 @@ export function buildCteXml(input: CteInputCompleto): { xml: string; chave: stri
   const chave = gerarChaveCte(cUF, aamm, cnpjLimpo, "57", seriePadded, nCTPadded, "1", cCT);
   const id = `CTe${chave}`;
   const natOp = input.natOp || "PRESTACAO DE SERVICO DE TRANSPORTE";
-  const toma = input.tomador.toma;
+  const toma = tomaSefazDeModFrete(input.tomador.toma);
   const crtRaw = String(input.emit.crt || "3").toLowerCase().trim();
   const crt = /^[1-4]$/.test(crtRaw) ? crtRaw : crtRaw.includes("mei") ? "4" : crtRaw.includes("simples") ? "1" : "3";
   const xNomeToma = input.ambiente === "homologacao" ? HOMOLOG_TOMADOR_NOME : input.tomador.xNome;
@@ -218,14 +254,12 @@ export function buildCteXml(input: CteInputCompleto): { xml: string; chave: stri
   const vTotDFe = input.vPrest.toFixed(2);
   impXml = impXml.replace(/<\/imp>$/, `${ibsXml}</imp>`);
 
-  // infNFe — schema exige <chNFe>, não <chave>
+  // docAnt oficial (agrupado por emitente). O parcial de transporte usa tag
+  // própria ainda sem confirmação no MOC do Simplificado — verificar (item 1b).
   const docAntXml = (rawDet: string) => {
     const chNFeDet = String(rawDet).replace(/\D/g, "");
-    const chs = [...new Set((input.docAnt?.chaves || []).map(c => String(c).replace(/\D/g, "")).filter(c => c.length === 44))];
-    if (chs.length === 0) return "";
-    const tp = input.docAnt?.tpPrest === "2" ? "2" : "1";
-    const parcial = tp === "2" && chNFeDet.length === 44 ? `<infNFeTranspParcial><chNFe>${chNFeDet}</chNFeTranspParcial>` : "";
-    return chs.map(ch => `<infDocAnt><chCTe>${ch}</chCTe><tpPrest>${tp}</tpPrest>${parcial}</infDocAnt>`).join("");
+    const parcial = (input.docAnt?.tpPrest === "2" && chNFeDet.length === 44) ? `<infNFeTranspParcial><chNFe>${chNFeDet}</chNFeTranspParcial>` : "";
+    return docAntOficial(input.docAnt?.chaves) + parcial;
   };
   // Rateio de vPrest/vRec por det (MOC 4.00: a soma dos dets compõe o total).
   // Pesos = valores das NF-es na ordem das chaves; sem valores, divisão igual.
@@ -391,8 +425,7 @@ export function buildCteNormalXml(input: CteInputCompleto): { xml: string; chave
   const chave = gerarChaveCte(cUF, aamm, cnpjLimpo, "57", seriePadded, nCTPadded, "1", cCT);
   const id = `CTe${chave}`;
   const natOp = input.natOp || "PRESTACAO DE SERVICO DE TRANSPORTE";
-  const toma = String(input.tomador.toma || "0");
-  if (!/^[0-4]$/.test(toma)) throw new Error(`Tomador invalido no CT-e Normal (0-4): ${toma}`);
+  const toma = tomaSefazDeModFrete(input.tomador.toma);
   const crtRaw = String(input.emit.crt || "3").toLowerCase().trim();
   const crt = /^[1-4]$/.test(crtRaw) ? crtRaw : crtRaw.includes("mei") ? "4" : crtRaw.includes("simples") ? "1" : "3";
 
@@ -479,9 +512,8 @@ export function buildCteNormalXml(input: CteInputCompleto): { xml: string; chave
   // infDoc: <chave> por NF-e (+ docAnt quando houver)
   const chsNfe = [...new Set(((input.chavesNFe || []).map(c => String(c).replace(/\D/g, "")).filter(c => c.length === 44)))];
   if (!chsNfe.length) throw new Error("CT-e Normal exige ao menos 1 NF-e vinculada");
-  const docAntChs = [...new Set(((input.docAnt?.chaves || []).map(c => String(c).replace(/\D/g, "")).filter(c => c.length === 44)))];
-  const tpDocAnt = input.docAnt?.tpPrest === "2" ? "2" : "1";
-  const infDocXml = `<infDoc>${chsNfe.map(ch => `<infNFe><chave>${ch}</chave></infNFe>`).join("")}${docAntChs.map(ch => `<infDocAnt><chCTe>${ch}</chCTe><tpPrest>${tpDocAnt}</tpPrest></infDocAnt>`).join("")}</infDoc>`;
+  const docAntXmlN = docAntOficial(input.docAnt?.chaves);
+  const infDocXml = `<infDoc>${chsNfe.map(ch => `<infNFe><chave>${ch}</chave></infNFe>`).join("")}${docAntXmlN}</infDoc>`;
 
   // Modal rodoviário: mesma estrutura do Simplificado (RNTRC + moto + tração + reboques)
   const veics = ((input.modalRod as any)?.veiculos || []) as Array<{ placa?: string; uf?: string; renavam?: string; tpRod?: string; tpCar?: string; tara?: number; capKG?: number }>;
