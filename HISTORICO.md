@@ -5714,3 +5714,10 @@ pm run build OK.
 - Produto ganha campo NCM com busca + validacao 8 digitos.
 - BrasilAPI descartada (defasada desde 2022). 	sc/uild OK.
 
+
+## NCM aplicado no banco (09/10)
+
+- Migration 20261009120000_ncm aplicada via pooler (PGURL do dono);
+  tabela public.ncm com 10.516 NCMs vigentes (Gecex 926/2026).
+- Seed em lotes de 500 com ON CONFLICT; RLS leitura autenticados.
+
