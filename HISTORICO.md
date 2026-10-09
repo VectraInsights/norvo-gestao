@@ -5760,3 +5760,11 @@ pm run build OK.
 - Sem tara/capacidade, sem OCC, sem CIOT/valePed (fora do 4.00).
 - 22/22 testes; 	sc identico a baseline; uild OK.
 
+
+## RTC fase 2 atras de flag (09/10)
+
+- Migration tc_config + cclasstrib (14 cods) aplicada no banco.
+- Aba Reforma Tributaria (toggle + cClassTrib); builder emite grupos
+  novos so com fase2 ligada (padrao: tudo como hoje).
+- 27/27 testes; 	sc identico; uild OK.
+
