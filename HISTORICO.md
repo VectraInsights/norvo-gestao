@@ -5740,3 +5740,10 @@ pm run build OK.
 - Helpers veicTracaoXml/veicReboqueXml unicos; simp ganha tracao+reboque.
 - 15/15 testes; 	sc identico a baseline; uild OK.
 
+
+## CT-e item 4: seg + posicao docAnt + revert CIOT (09/10)
+
+- <seg> (respSeg 4/5, xSeg, nApol, nAver) no Normal; MOC nao
+  tem CIOT/valePed no 4.00: revert CIOT do XML (form/DACTE mantidos).
+- docAnt como filho de infCTeNorm. 17/17 testes; 	sc/build OK.
+
