@@ -5747,3 +5747,9 @@ pm run build OK.
   tem CIOT/valePed no 4.00: revert CIOT do XML (form/DACTE mantidos).
 - docAnt como filho de infCTeNorm. 17/17 testes; 	sc/build OK.
 
+
+## CT-e item 5: ICMSSN no Simples (09/10)
+
+- CRT 1/4 emite <ICMSSN> com CSOSN; CST exige CSOSN p/ SN.
+- 20/20 testes; 	sc identico a baseline; uild OK.
+
