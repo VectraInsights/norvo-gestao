@@ -5656,3 +5656,10 @@ pm run build OK.
 - Fiscal segue em ordem alfabetica. 	sc sem erros novos
   (4 de baseline em configuracoes.index) e 
 pm run build OK.
+
+## Configuracoes: atalhos no mesmo estilo (09/10)
+
+- Cards-hub removidos; Fiscais e Usuarios viram links de texto no
+  estilo identico ao Gerenciar empresas. 	sc sem erros novos e
+  
+pm run build OK.
