@@ -64,7 +64,7 @@ const baseCte = (over: Record<string, any> = {}) => ({
     uf: "MG",
     cMun: "3126109",
     xMun: "FORMIGA",
-    crt: "1",
+    crt: "3",
     logradouro: "ADEMAR DOS SANTOS BARBOSA",
     nro: "135",
     bairro: "SAO SEBASTIAO",
@@ -253,5 +253,29 @@ describe("<docAnt> oficial (agrupado por emitente)", () => {
 
     expect(xml).toContain("</infDoc><docAnt><emiDocAnt><CNPJ>21306287000152</CNPJ>");
     expect(xml).not.toContain("<infDocAnt>");
+  });
+});
+
+describe("<ICMSSN> no Simples Nacional (CRT 1/4)", () => {
+  it("CRT 1 com CSOSN emite <ICMSSN> (normal e simp)", () => {
+    const sn = { emit: { ...(baseCte().emit as any), crt: "1" }, icms: { CST: "102", vBC: 4404, pICMS: 0, vICMS: 0 } };
+    const xmlN = buildNormal(sn);
+    const xmlS = buildCteXml(baseCte({ modelo: "simp", ...sn }) as any).xml;
+
+    for (const xml of [xmlN, xmlS]) {
+      expect(xml).toContain("<ICMSSN><CST>102</CST></ICMSSN>");
+      expect(xml).not.toContain("<ICMS00>");
+    }
+  });
+
+  it("CRT 1 sem CSOSN lança erro claro (não gera XML inválido)", () => {
+    expect(() => buildNormal({
+      emit: { ...(baseCte().emit as any), crt: "1" },
+      icms: { CST: "00", vBC: 4404, pICMS: 0, vICMS: 0 },
+    })).toThrow(/CSOSN/);
+  });
+
+  it("CRT 3 mantém <ICMS00> (sem regressão)", () => {
+    expect(buildNormal()).toContain("<ICMS00><CST>00</CST>");
   });
 });

@@ -4637,6 +4637,7 @@ function CtePage() {
         }
         if (!(parseFloat(form.vPrest) > 0)) pend.push("Valor do servico maior que zero");
         if (!String(form.icmsCST || "").trim()) pend.push("CST do ICMS");
+        if (/^(simples|mei)$/i.test(String(empresa?.regime_tributario || "simples")) && !["101", "102", "103", "201", "202", "203", "300", "400", "500", "900"].includes(String(form.icmsCST || "").padStart(3, "0"))) pend.push("CSOSN do Simples (101/102/103/201/202/203/300/400/500/900)");
         if (!String(form.cfop || "").trim()) pend.push("CFOP");
         if (!String(form.icmsAliq || "").trim()) pend.push("Aliquota do ICMS");
         if ((form as any).finalidadeEmissao !== "Complemento") {
@@ -8791,7 +8792,7 @@ function CtePage() {
                 <div className="flex flex-wrap items-end gap-x-2 gap-y-2">
                   <div className="min-w-[240px] max-w-[800px] flex-1">
                     <Label className="text-[10px] text-muted-foreground">* CST</Label>
-                    <Select value={form.icmsCST} onValueChange={() => {}} disabled>
+                    <Select value={form.icmsCST} onValueChange={(v) => { if (/^(simples|mei)$/i.test(String(empresa?.regime_tributario || "simples"))) setForm((f: any) => ({ ...f, icmsCST: v })); }} disabled={!/^(simples|mei)$/i.test(String(empresa?.regime_tributario || "simples"))}>
                       <SelectTrigger className="h-7 text-xs">
                         <SelectValue />
                       </SelectTrigger>
@@ -8817,6 +8818,16 @@ function CtePage() {
                           tributária
                         </SelectItem>
                         <SelectItem value="90">90 — Outras</SelectItem>
+                        <SelectItem value="101">101 — SN com permissão de crédito</SelectItem>
+                        <SelectItem value="102">102 — SN sem permissão de crédito</SelectItem>
+                        <SelectItem value="103">103 — SN isenção para faixa de receita</SelectItem>
+                        <SelectItem value="201">201 — SN com ST e permissão de crédito</SelectItem>
+                        <SelectItem value="202">202 — SN com ST sem permissão de crédito</SelectItem>
+                        <SelectItem value="203">203 — SN isenção com ST para faixa de receita</SelectItem>
+                        <SelectItem value="300">300 — SN imune</SelectItem>
+                        <SelectItem value="400">400 — SN não tributada</SelectItem>
+                        <SelectItem value="500">500 — SN com ST já recolhido</SelectItem>
+                        <SelectItem value="900">900 — SN outros</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>

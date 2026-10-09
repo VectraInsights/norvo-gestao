@@ -151,6 +151,9 @@ export function formUfsDoXml(xml: string, form: any): any {
   return f;
 }
 
+// CSOSN do Simples Nacional (CRT 1 e MEI 4): o <ICMS> vira <ICMSSN> com CST de 3 dígitos.
+const CSOSN_SN = ["101", "102", "103", "201", "202", "203", "300", "400", "500", "900"];
+
 // A tela trabalha com o modFrete da NF-e (0=CIF remetente, 1=FOB destinatário,
 // 2=terceiros, 3=próprio remetente, 4=próprio destinatário, 9=sem transporte).
 // O CT-e exige o tomador oficial (0=remetente, 1=expedidor, 2=recebedor,
@@ -253,7 +256,12 @@ export function buildCteXml(input: CteInputCompleto): { xml: string; chave: stri
   const pICMS = Number(icms.pICMS ?? 0).toFixed(2);
   const vICMS = Number(icms.vICMS ?? 0).toFixed(2);
   let impXml: string;
-  if (cst === "00") impXml = `<imp><ICMS><ICMS00><CST>00</CST><vBC>${vBC}</vBC><pICMS>${pICMS}</pICMS><vICMS>${vICMS}</vICMS></ICMS00></ICMS></imp>`;
+  if (crt === "1" || crt === "4") {
+    const csosn = String(icms.CST || "").padStart(3, "0");
+    if (!CSOSN_SN.includes(csosn)) throw new Error(`CRT ${crt} (Simples/MEI) exige CSOSN (101/102/103/201/202/203/300/400/500/900), recebido: ${icms.CST || "vazio"}`);
+    impXml = `<imp><ICMS><ICMSSN><CST>${csosn}</CST></ICMSSN></ICMS></imp>`;
+  }
+  else if (cst === "00") impXml = `<imp><ICMS><ICMS00><CST>00</CST><vBC>${vBC}</vBC><pICMS>${pICMS}</pICMS><vICMS>${vICMS}</vICMS></ICMS00></ICMS></imp>`;
   else if (cst === "20") impXml = `<imp><ICMS><ICMS20><CST>20</CST><pRedBC>0.00</pRedBC><vBC>${vBC}</vBC><pICMS>${pICMS}</pICMS><vICMS>${vICMS}</vICMS></ICMS20></ICMS></imp>`;
   else if (cst === "40" || cst === "41" || cst === "45" || cst === "51") impXml = `<imp><ICMS><ICMS45><CST>${cst}</CST></ICMS45></ICMS></imp>`;
   else if (cst === "60") impXml = `<imp><ICMS><ICMS60><CST>60</CST><vBCSTRet>0.00</vBCSTRet><vICMSSTRet>0.00</vICMSSTRet><pICMSSTRet>0.00</pICMSSTRet><vCred>0.00</vCred></ICMS60></ICMS></imp>`;
@@ -503,7 +511,12 @@ export function buildCteNormalXml(input: CteInputCompleto): { xml: string; chave
   const pICMS = Number(icms.pICMS ?? 0).toFixed(2);
   const vICMS = Number(icms.vICMS ?? 0).toFixed(2);
   let impXml: string;
-  if (cst === "00") impXml = `<imp><ICMS><ICMS00><CST>00</CST><vBC>${vBC}</vBC><pICMS>${pICMS}</pICMS><vICMS>${vICMS}</vICMS></ICMS00></ICMS></imp>`;
+  if (crt === "1" || crt === "4") {
+    const csosn = String(icms.CST || "").padStart(3, "0");
+    if (!CSOSN_SN.includes(csosn)) throw new Error(`CRT ${crt} (Simples/MEI) exige CSOSN (101/102/103/201/202/203/300/400/500/900), recebido: ${icms.CST || "vazio"}`);
+    impXml = `<imp><ICMS><ICMSSN><CST>${csosn}</CST></ICMSSN></ICMS></imp>`;
+  }
+  else if (cst === "00") impXml = `<imp><ICMS><ICMS00><CST>00</CST><vBC>${vBC}</vBC><pICMS>${pICMS}</pICMS><vICMS>${vICMS}</vICMS></ICMS00></ICMS></imp>`;
   else if (cst === "20") impXml = `<imp><ICMS><ICMS20><CST>20</CST><pRedBC>0.00</pRedBC><vBC>${vBC}</vBC><pICMS>${pICMS}</pICMS><vICMS>${vICMS}</vICMS></ICMS20></ICMS></imp>`;
   else if (cst === "40" || cst === "41" || cst === "45" || cst === "51") impXml = `<imp><ICMS><ICMS45><CST>${cst}</CST></ICMS45></ICMS></imp>`;
   else if (cst === "60") impXml = `<imp><ICMS><ICMS60><CST>60</CST><vBCSTRet>0.00</vBCSTRet><vICMSSTRet>0.00</vICMSSTRet><pICMSSTRet>0.00</pICMSSTRet><vCred>0.00</vCred></ICMS60></ICMS></imp>`;
