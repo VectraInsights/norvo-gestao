@@ -34,21 +34,25 @@ function Configuracoes() {
   const { data: empresa } = useEmpresaAtual();
   const { pode, ehAdmin } = usePermissoes();
   const mostrarFiscais = pode("fiscal");
+  const navLinkCls =
+    "-ml-2 inline-flex items-center gap-2 rounded-lg px-2 py-1.5 text-sm font-medium text-primary transition-colors hover:bg-accent";
+  const tabLinkCls =
+    "rounded-lg px-2 py-1.5 text-sm font-medium text-muted-foreground transition-colors hover:bg-accent hover:text-primary hover:shadow-none data-[state=active]:bg-accent data-[state=active]:text-primary data-[state=active]:shadow-none";
 
   return (
     <>
       <PageHeader eyebrow="Sistema" title="Configurações" description="Empresa, categorias, condições de pagamento e configuração fiscal." />
       <div className="mb-6 flex flex-wrap items-center gap-x-1 gap-y-1">
-        <Link to="/configuracoes/empresas" className="-ml-2 inline-flex items-center gap-2 rounded-lg px-2 py-1.5 text-sm font-medium text-primary transition-colors hover:bg-accent">
+        <Link to="/configuracoes/empresas" className={navLinkCls}>
           <Building2 className="h-4 w-4" /> Gerenciar empresas
         </Link>
         {mostrarFiscais && (
-          <Link to="/fiscal/configuracoes" className="-ml-2 inline-flex items-center gap-2 rounded-lg px-2 py-1.5 text-sm font-medium text-primary transition-colors hover:bg-accent">
+          <Link to="/fiscal/configuracoes" className={navLinkCls}>
             <Settings2 className="h-4 w-4" /> Configurações fiscais
           </Link>
         )}
         {ehAdmin && (
-          <Link to="/configuracoes/usuarios" className="-ml-2 inline-flex items-center gap-2 rounded-lg px-2 py-1.5 text-sm font-medium text-primary transition-colors hover:bg-accent">
+          <Link to="/configuracoes/usuarios" className={navLinkCls}>
             <ShieldCheck className="h-4 w-4" /> Usuários e acessos
           </Link>
         )}
@@ -58,12 +62,12 @@ function Configuracoes() {
         <Card className="rounded-2xl"><CardContent className="p-8 text-center text-sm text-muted-foreground">Cadastre uma empresa primeiro.</CardContent></Card>
       ) : (
         <Tabs defaultValue="categorias">
-          <TabsList className="h-auto flex-wrap gap-1">
-            <TabsTrigger value="categorias">Categorias financeiras</TabsTrigger>
-            <TabsTrigger value="condicoes">Condições de pagamento</TabsTrigger>
-            <TabsTrigger value="rntrc">RNTRC</TabsTrigger>
-            <TabsTrigger value="seguradoras">Seguradoras</TabsTrigger>
-            <TabsTrigger value="nfe">Configuração NF-e</TabsTrigger>
+          <TabsList className="h-auto flex-wrap justify-start gap-1 bg-transparent p-0 shadow-none">
+            <TabsTrigger value="categorias" className={tabLinkCls}>Categorias financeiras</TabsTrigger>
+            <TabsTrigger value="condicoes" className={tabLinkCls}>Condições de pagamento</TabsTrigger>
+            <TabsTrigger value="rntrc" className={tabLinkCls}>RNTRC</TabsTrigger>
+            <TabsTrigger value="seguradoras" className={tabLinkCls}>Seguradoras</TabsTrigger>
+            <TabsTrigger value="nfe" className={tabLinkCls}>Configuração NF-e</TabsTrigger>
           </TabsList>
           <TabsContent value="categorias"><CategoriasTab empresaId={empresa.id} /></TabsContent>
           <TabsContent value="condicoes"><CondicoesTab empresaId={empresa.id} /></TabsContent>
