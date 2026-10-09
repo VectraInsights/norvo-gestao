@@ -145,6 +145,24 @@ describe("CT-e Simplificado 4.00 — modal rodoviário", () => {
     expect(xml).toContain("<RNTRC>00839402</RNTRC>");
     expect(xml).toContain("<moto><xNome>ROBERTO DE SOUZA</xNome><CPF>69751773687</CPF></moto>");
   });
+
+  it("inclui tração e reboques no <rodo> quando informados", () => {
+    const { xml } = buildCteXml(
+      baseCte({
+        modelo: "simp",
+        modalRod: {
+          rntrc: "00839402",
+          veiculos: [
+            { placa: "RIR3D23", uf: "MG", renavam: "01259943272", tpRod: "03", tpCar: "00" },
+            { placa: "HNG0404", uf: "MG", renavam: "00234674024", tpCar: "00" },
+          ],
+        },
+      }) as any,
+    );
+
+    expect(xml).toContain("<veicTracao><placa>RIR3D23</placa>");
+    expect(xml).toContain("<veicReboque><placa>HNG0404</placa>");
+  });
 });
 
 describe("toma: modFrete da tela vira tomador oficial SEFAZ", () => {

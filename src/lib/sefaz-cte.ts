@@ -193,6 +193,21 @@ export function ciotXml(modalRod: unknown): string {
   return d ? `<CIOT>${d}</CIOT>` : "";
 }
 
+type VeicRod = { placa?: string; uf?: string; renavam?: string; tpRod?: string; tpCar?: string; tara?: number; capKG?: number };
+
+// Tração/reboques do modal rodoviário — mesma regra nos dois modelos.
+export function veicTracaoXml(veics: VeicRod[] | undefined, ufIni: string): string {
+  const v = (veics || [])[0];
+  if (!v?.placa) return "";
+  return `<veicTracao><placa>${escCte(String(v.placa).toUpperCase())}</placa>${v.renavam ? `<RENAVAM>${escCte(v.renavam)}</RENAVAM>` : ""}<tara>${Number(v.tara || 0).toFixed(0)}</tara><tpRod>${v.tpRod || "06"}</tpRod><tpCar>${v.tpCar || "00"}</tpCar><UF>${escCte(String(v.uf || ufIni || "").toUpperCase())}</UF></veicTracao>`;
+}
+
+export function veicReboqueXml(veics: VeicRod[] | undefined, ufIni: string): string {
+  return ((veics || []).slice(1, 4).filter((v) => v?.placa)).map((v) =>
+    `<veicReboque><placa>${escCte(String(v.placa).toUpperCase())}</placa>${v.renavam ? `<RENAVAM>${escCte(v.renavam)}</RENAVAM>` : ""}<tara>${Number((v as any).tara || 0).toFixed(0)}</tara><capKG>${Number((v as any).capKG || 0).toFixed(0)}</capKG><tpCar>${(v as any).tpCar || "00"}</tpCar><UF>${escCte(String(v.uf || ufIni || "").toUpperCase())}</UF></veicReboque>`
+  ).join("");
+}
+
 export function buildCteXml(input: CteInputCompleto): { xml: string; chave: string } {
   assertSefazAmbiente(input.ambiente);
   if (input.modelo === "normal") return buildCteNormalXml(input);
@@ -205,6 +220,8 @@ export function buildCteXml(input: CteInputCompleto): { xml: string; chave: stri
     const cpf = String(m?.cpf || "").replace(/\D/g, "");
     return (nm.length >= 2 && /^\d{11}$/.test(cpf)) ? `<moto><xNome>${nm}</xNome><CPF>${cpf}</CPF></moto>` : "";
   }).join("");
+  const veicTracXmlS = veicTracaoXml(((input.modalRod as any)?.veiculos || []) as any, input.ufIni);
+  const veicRebXmlS = veicReboqueXml(((input.modalRod as any)?.veiculos || []) as any, input.ufIni);
   const dhEmi = dhBrt();
   const cUF = codigoUF(input.ufEnv || input.emit.uf);
   const aamm = dhEmi.slice(2,4) + dhEmi.slice(5,7);
@@ -311,7 +328,7 @@ export function buildCteXml(input: CteInputCompleto): { xml: string; chave: stri
       <infQ><cUnid>01</cUnid><tpMed>00</tpMed><qCarga>${input.pesoKg.toFixed(4)}</qCarga></infQ>
     </infCarga>
     ${infNFeXml}
-    <infModal versaoModal="4.00"><rodo><RNTRC>${rntrcXml}</RNTRC>${motoXml}${ciotXml(input.modalRod)}</rodo></infModal>
+    <infModal versaoModal="4.00"><rodo><RNTRC>${rntrcXml}</RNTRC>${motoXml}${ciotXml(input.modalRod)}${veicTracXmlS}${veicRebXmlS}</rodo></infModal>
     ${impXml}
     <total><vTPrest>${input.vPrest.toFixed(2)}</vTPrest><vTRec>${input.vPrest.toFixed(2)}</vTRec><vTotDFe>${vTotDFe}</vTotDFe></total>
     <infRespTec><CNPJ>${cnpjLimpo}</CNPJ><xContato>SUPORTE TECNICO</xContato><email>suporte@vectrainsights.com.br</email><fone>3139952572</fone></infRespTec>
@@ -521,15 +538,10 @@ export function buildCteNormalXml(input: CteInputCompleto): { xml: string; chave
   const docAntXmlN = docAntOficial(input.docAnt?.chaves);
   const infDocXml = `<infDoc>${chsNfe.map(ch => `<infNFe><chave>${ch}</chave></infNFe>`).join("")}${docAntXmlN}</infDoc>`;
 
-  // Modal rodoviário: mesma estrutura do Simplificado (RNTRC + moto + tração + reboques)
+  // Modal rodoviário: RNTRC + moto + tração + reboques (regra única p/ os dois modelos)
   const veics = ((input.modalRod as any)?.veiculos || []) as Array<{ placa?: string; uf?: string; renavam?: string; tpRod?: string; tpCar?: string; tara?: number; capKG?: number }>;
-  const veicTrac = veics[0];
-  const veicTracXml = veicTrac?.placa
-    ? `<veicTracao><placa>${escCte(String(veicTrac.placa).toUpperCase())}</placa>${veicTrac.renavam ? `<RENAVAM>${escCte(veicTrac.renavam)}</RENAVAM>` : ""}<tara>${Number(veicTrac.tara || 0).toFixed(0)}</tara><tpRod>${veicTrac.tpRod || "06"}</tpRod><tpCar>${veicTrac.tpCar || "00"}</tpCar><UF>${escCte(String(veicTrac.uf || input.ufIni || "").toUpperCase())}</UF></veicTracao>`
-    : "";
-  const veicRebXml = veics.slice(1, 4).filter(v => v?.placa).map(v =>
-    `<veicReboque><placa>${escCte(String(v.placa).toUpperCase())}</placa>${v.renavam ? `<RENAVAM>${escCte(v.renavam)}</RENAVAM>` : ""}<tara>${Number((v as any).tara || 0).toFixed(0)}</tara><capKG>${Number((v as any).capKG || 0).toFixed(0)}</capKG><tpCar>${(v as any).tpCar || "00"}</tpCar><UF>${escCte(String(v.uf || input.ufIni || "").toUpperCase())}</UF></veicReboque>`
-  ).join("");
+  const veicTracXml = veicTracaoXml(veics, input.ufIni);
+  const veicRebXml = veicReboqueXml(veics, input.ufIni);
   const ciotXmlN = ciotXml(input.modalRod);
 
   const qrBase = (input.ufEnv || input.emit.uf)?.toUpperCase() === "MG" ? "portalcte.fazenda.mg.gov.br/portalcte/sistema/qrcode.xhtml" : "dfeportal.svrs.rs.gov.br/cteQrCode";
