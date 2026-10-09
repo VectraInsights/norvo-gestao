@@ -5734,3 +5734,9 @@ pm run build OK.
 - Helper ciotXml + form.ciot no modalRod (2 emissores + servidor).
 - 14/14 testes; 	sc identico a baseline; uild OK.
 
+
+## CT-e item 3: rodo no simplificado (09/10)
+
+- Helpers veicTracaoXml/veicReboqueXml unicos; simp ganha tracao+reboque.
+- 15/15 testes; 	sc identico a baseline; uild OK.
+
