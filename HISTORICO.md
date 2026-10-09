@@ -5684,3 +5684,10 @@ pm run build OK.
 - /configuracoes e o menu do avatar com entrada unica.
 - 	sc sem erros novos e 
 pm run build OK.
+
+## Configuracoes: secao inline na inicial (09/10)
+
+- Links das 5 secoes trocam o conteudo na propria /configuracoes
+  via ?secao= (ativa sublinhada); rotas antigas redirecionam.
+- 	sc sem erros novos e 
+pm run build OK.
