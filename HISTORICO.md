@@ -5646,3 +5646,13 @@ pm run build OK.
   Usuarios e acessos. O Configuracoes geral (/configuracoes) segue
   acessivel pelo menu do usuario (avatar) e pela busca, sem repetir
   na sidebar. 	sc limpo em nav-config.
+
+## Nav: sidebar sem grupo Configuracoes, tudo no geral (09/10)
+
+- Grupo Configuracoes removido da sidebar; Fiscais e Usuarios e
+  acessos passam para o Configuracoes geral: cards-hub na pagina
+  /configuracoes (respeitando permissao fiscal/admin) + itens no
+  menu do usuario (avatar) e na busca.
+- Fiscal segue em ordem alfabetica. 	sc sem erros novos
+  (4 de baseline em configuracoes.index) e 
+pm run build OK.
