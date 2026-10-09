@@ -21,32 +21,43 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Building2, Trash2, Plus, Pencil, Check, X, Settings2, ShieldCheck, Tags, CalendarClock, FileText, Truck, Umbrella } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useEmpresaAtual } from "@/hooks/use-empresa";
 import { usePermissoes } from "@/hooks/use-permissoes";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/_authenticated/configuracoes/")({
   component: Configuracoes,
+  validateSearch: (search: Record<string, unknown>): { secao?: string } => ({
+    secao: (search.secao as string) || undefined,
+  }),
 });
 
-export const configNavLinkCls =
-  "-ml-2 inline-flex items-center gap-2 rounded-lg px-2 py-1.5 text-sm font-medium text-primary transition-colors hover:bg-accent";
+const SECOES = ["categorias", "condicoes", "rntrc", "seguradoras", "nfe"] as const;
+type SecaoId = (typeof SECOES)[number];
 
 function Configuracoes() {
+  const { data: empresa } = useEmpresaAtual();
   const { pode, ehAdmin } = usePermissoes();
+  const { secao } = Route.useSearch();
   const mostrarFiscais = pode("fiscal");
+  const secaoAtual: SecaoId = (SECOES as readonly string[]).includes(secao ?? "")
+    ? (secao as SecaoId)
+    : "categorias";
+  const cls = (id: SecaoId) =>
+    `${configNavLinkCls}${secaoAtual === id ? " underline underline-offset-4 decoration-2" : ""}`;
 
   return (
     <>
       <PageHeader eyebrow="Sistema" title="Configurações" description="Tudo em um só lugar: empresa, usuários, fiscal e cadastros de apoio." />
       <div className="mb-6 flex flex-wrap items-center gap-x-1 gap-y-1">
-        <Link to="/configuracoes/categorias" className={configNavLinkCls}>
+        <Link to="/configuracoes" search={{ secao: "categorias" }} className={cls("categorias")}>
           <Tags className="h-4 w-4" /> Categorias financeiras
         </Link>
-        <Link to="/configuracoes/condicoes" className={configNavLinkCls}>
+        <Link to="/configuracoes" search={{ secao: "condicoes" }} className={cls("condicoes")}>
           <CalendarClock className="h-4 w-4" /> Condições de pagamento
         </Link>
-        <Link to="/configuracoes/nfe" className={configNavLinkCls}>
+        <Link to="/configuracoes" search={{ secao: "nfe" }} className={cls("nfe")}>
           <FileText className="h-4 w-4" /> Configuração NF-e
         </Link>
         {mostrarFiscais && (
@@ -57,10 +68,10 @@ function Configuracoes() {
         <Link to="/configuracoes/empresas" className={configNavLinkCls}>
           <Building2 className="h-4 w-4" /> Gerenciar empresas
         </Link>
-        <Link to="/configuracoes/rntrc" className={configNavLinkCls}>
+        <Link to="/configuracoes" search={{ secao: "rntrc" }} className={cls("rntrc")}>
           <Truck className="h-4 w-4" /> RNTRC
         </Link>
-        <Link to="/configuracoes/seguradoras" className={configNavLinkCls}>
+        <Link to="/configuracoes" search={{ secao: "seguradoras" }} className={cls("seguradoras")}>
           <Umbrella className="h-4 w-4" /> Seguradoras
         </Link>
         {ehAdmin && (
@@ -69,10 +80,23 @@ function Configuracoes() {
           </Link>
         )}
       </div>
-      <Card className="rounded-2xl"><CardContent className="p-8 text-center text-sm text-muted-foreground">Escolha um item acima para configurar.</CardContent></Card>
+      {!empresa ? (
+        <Card className="rounded-2xl"><CardContent className="p-8 text-center text-sm text-muted-foreground">Cadastre uma empresa primeiro.</CardContent></Card>
+      ) : (
+        <>
+          {secaoAtual === "categorias" && <CategoriasTab empresaId={empresa.id} />}
+          {secaoAtual === "condicoes" && <CondicoesTab empresaId={empresa.id} />}
+          {secaoAtual === "rntrc" && <RntrcTab empresaId={empresa.id} />}
+          {secaoAtual === "seguradoras" && <SeguradorasTab empresaId={empresa.id} />}
+          {secaoAtual === "nfe" && <NFeConfigTab empresaId={empresa.id} />}
+        </>
+      )}
     </>
   );
 }
+
+export const configNavLinkCls =
+  "-ml-2 inline-flex items-center gap-2 rounded-lg px-2 py-1.5 text-sm font-medium text-primary transition-colors hover:bg-accent";
 
 export function CategoriasTab({ empresaId }: { empresaId: string }) {
   const qc = useQueryClient();
