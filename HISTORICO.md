@@ -5753,3 +5753,10 @@ pm run build OK.
 - CRT 1/4 emite <ICMSSN> com CSOSN; CST exige CSOSN p/ SN.
 - 20/20 testes; 	sc identico a baseline; uild OK.
 
+
+## CT-e compl no XML (09/10)
+
+- <compl><xObs> (obsGerais, 2000 chars) apos infCTeNorm no Normal.
+- Sem tara/capacidade, sem OCC, sem CIOT/valePed (fora do 4.00).
+- 22/22 testes; 	sc identico a baseline; uild OK.
+
