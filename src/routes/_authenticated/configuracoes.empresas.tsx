@@ -1,4 +1,4 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, redirect } from "@tanstack/react-router";
 import { PageHeader } from "@/components/erp/page-header";
 import { Card } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -26,7 +26,9 @@ import { getSelectedEmpresaId, setSelectedEmpresaId } from "@/hooks/use-empresa"
 import { maskDoc } from "@/lib/format";
 
 export const Route = createFileRoute("/_authenticated/configuracoes/empresas")({
-  component: EmpresasPage,
+  beforeLoad: () => {
+    throw redirect({ to: "/configuracoes", search: { secao: "empresas" } });
+  },
 });
 
 const emptyForm = {
@@ -58,7 +60,7 @@ function friendlyEmpresaError(error: { message?: string; code?: string }) {
   return error.message ?? "Não foi possível salvar a empresa";
 }
 
-function EmpresasPage() {
+export function EmpresasPage() {
   const qc = useQueryClient();
   const [open, setOpen] = useState(false);
   const [form, setForm] = useState(emptyForm);

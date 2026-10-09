@@ -19,12 +19,7 @@ import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
 import { Route as AuthenticatedDashboardRouteImport } from './routes/_authenticated/dashboard'
 import { Route as AuthenticatedConfiguracoesIndexRouteImport } from './routes/_authenticated/configuracoes.index'
 import { Route as AuthenticatedConfiguracoesAuditoriaRouteImport } from './routes/_authenticated/configuracoes.auditoria'
-import { Route as AuthenticatedConfiguracoesCategoriasRouteImport } from './routes/_authenticated/configuracoes.categorias'
-import { Route as AuthenticatedConfiguracoesCondicoesRouteImport } from './routes/_authenticated/configuracoes.condicoes'
 import { Route as AuthenticatedConfiguracoesEmpresasRouteImport } from './routes/_authenticated/configuracoes.empresas'
-import { Route as AuthenticatedConfiguracoesNfeRouteImport } from './routes/_authenticated/configuracoes.nfe'
-import { Route as AuthenticatedConfiguracoesRntrcRouteImport } from './routes/_authenticated/configuracoes.rntrc'
-import { Route as AuthenticatedConfiguracoesSeguradorasRouteImport } from './routes/_authenticated/configuracoes.seguradoras'
 import { Route as AuthenticatedConfiguracoesUsuariosRouteImport } from './routes/_authenticated/configuracoes.usuarios'
 import { Route as AuthenticatedEstoqueComprasRouteImport } from './routes/_authenticated/estoque.compras'
 import { Route as AuthenticatedEstoqueFornecedoresRouteImport } from './routes/_authenticated/estoque.fornecedores'
@@ -121,40 +116,10 @@ const AuthenticatedConfiguracoesAuditoriaRoute =
     path: '/configuracoes/auditoria',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
-const AuthenticatedConfiguracoesCategoriasRoute =
-  AuthenticatedConfiguracoesCategoriasRouteImport.update({
-    id: '/configuracoes/categorias',
-    path: '/configuracoes/categorias',
-    getParentRoute: () => AuthenticatedRouteRoute,
-  } as any)
-const AuthenticatedConfiguracoesCondicoesRoute =
-  AuthenticatedConfiguracoesCondicoesRouteImport.update({
-    id: '/configuracoes/condicoes',
-    path: '/configuracoes/condicoes',
-    getParentRoute: () => AuthenticatedRouteRoute,
-  } as any)
 const AuthenticatedConfiguracoesEmpresasRoute =
   AuthenticatedConfiguracoesEmpresasRouteImport.update({
     id: '/configuracoes/empresas',
     path: '/configuracoes/empresas',
-    getParentRoute: () => AuthenticatedRouteRoute,
-  } as any)
-const AuthenticatedConfiguracoesNfeRoute =
-  AuthenticatedConfiguracoesNfeRouteImport.update({
-    id: '/configuracoes/nfe',
-    path: '/configuracoes/nfe',
-    getParentRoute: () => AuthenticatedRouteRoute,
-  } as any)
-const AuthenticatedConfiguracoesRntrcRoute =
-  AuthenticatedConfiguracoesRntrcRouteImport.update({
-    id: '/configuracoes/rntrc',
-    path: '/configuracoes/rntrc',
-    getParentRoute: () => AuthenticatedRouteRoute,
-  } as any)
-const AuthenticatedConfiguracoesSeguradorasRoute =
-  AuthenticatedConfiguracoesSeguradorasRouteImport.update({
-    id: '/configuracoes/seguradoras',
-    path: '/configuracoes/seguradoras',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
 const AuthenticatedConfiguracoesUsuariosRoute =
@@ -425,12 +390,7 @@ export interface FileRoutesByFullPath {
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/configuracoes/auditoria': typeof AuthenticatedConfiguracoesAuditoriaRoute
-  '/configuracoes/categorias': typeof AuthenticatedConfiguracoesCategoriasRoute
-  '/configuracoes/condicoes': typeof AuthenticatedConfiguracoesCondicoesRoute
   '/configuracoes/empresas': typeof AuthenticatedConfiguracoesEmpresasRoute
-  '/configuracoes/nfe': typeof AuthenticatedConfiguracoesNfeRoute
-  '/configuracoes/rntrc': typeof AuthenticatedConfiguracoesRntrcRoute
-  '/configuracoes/seguradoras': typeof AuthenticatedConfiguracoesSeguradorasRoute
   '/configuracoes/usuarios': typeof AuthenticatedConfiguracoesUsuariosRoute
   '/estoque/compras': typeof AuthenticatedEstoqueComprasRoute
   '/estoque/fornecedores': typeof AuthenticatedEstoqueFornecedoresRoute
@@ -486,12 +446,7 @@ export interface FileRoutesByTo {
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/configuracoes/auditoria': typeof AuthenticatedConfiguracoesAuditoriaRoute
-  '/configuracoes/categorias': typeof AuthenticatedConfiguracoesCategoriasRoute
-  '/configuracoes/condicoes': typeof AuthenticatedConfiguracoesCondicoesRoute
   '/configuracoes/empresas': typeof AuthenticatedConfiguracoesEmpresasRoute
-  '/configuracoes/nfe': typeof AuthenticatedConfiguracoesNfeRoute
-  '/configuracoes/rntrc': typeof AuthenticatedConfiguracoesRntrcRoute
-  '/configuracoes/seguradoras': typeof AuthenticatedConfiguracoesSeguradorasRoute
   '/configuracoes/usuarios': typeof AuthenticatedConfiguracoesUsuariosRoute
   '/estoque/compras': typeof AuthenticatedEstoqueComprasRoute
   '/estoque/fornecedores': typeof AuthenticatedEstoqueFornecedoresRoute
@@ -549,12 +504,7 @@ export interface FileRoutesById {
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/_authenticated/dashboard': typeof AuthenticatedDashboardRoute
   '/_authenticated/configuracoes/auditoria': typeof AuthenticatedConfiguracoesAuditoriaRoute
-  '/_authenticated/configuracoes/categorias': typeof AuthenticatedConfiguracoesCategoriasRoute
-  '/_authenticated/configuracoes/condicoes': typeof AuthenticatedConfiguracoesCondicoesRoute
   '/_authenticated/configuracoes/empresas': typeof AuthenticatedConfiguracoesEmpresasRoute
-  '/_authenticated/configuracoes/nfe': typeof AuthenticatedConfiguracoesNfeRoute
-  '/_authenticated/configuracoes/rntrc': typeof AuthenticatedConfiguracoesRntrcRoute
-  '/_authenticated/configuracoes/seguradoras': typeof AuthenticatedConfiguracoesSeguradorasRoute
   '/_authenticated/configuracoes/usuarios': typeof AuthenticatedConfiguracoesUsuariosRoute
   '/_authenticated/estoque/compras': typeof AuthenticatedEstoqueComprasRoute
   '/_authenticated/estoque/fornecedores': typeof AuthenticatedEstoqueFornecedoresRoute
@@ -612,12 +562,7 @@ export interface FileRouteTypes {
     | '/sitemap.xml'
     | '/dashboard'
     | '/configuracoes/auditoria'
-    | '/configuracoes/categorias'
-    | '/configuracoes/condicoes'
     | '/configuracoes/empresas'
-    | '/configuracoes/nfe'
-    | '/configuracoes/rntrc'
-    | '/configuracoes/seguradoras'
     | '/configuracoes/usuarios'
     | '/estoque/compras'
     | '/estoque/fornecedores'
@@ -673,12 +618,7 @@ export interface FileRouteTypes {
     | '/sitemap.xml'
     | '/dashboard'
     | '/configuracoes/auditoria'
-    | '/configuracoes/categorias'
-    | '/configuracoes/condicoes'
     | '/configuracoes/empresas'
-    | '/configuracoes/nfe'
-    | '/configuracoes/rntrc'
-    | '/configuracoes/seguradoras'
     | '/configuracoes/usuarios'
     | '/estoque/compras'
     | '/estoque/fornecedores'
@@ -735,12 +675,7 @@ export interface FileRouteTypes {
     | '/sitemap.xml'
     | '/_authenticated/dashboard'
     | '/_authenticated/configuracoes/auditoria'
-    | '/_authenticated/configuracoes/categorias'
-    | '/_authenticated/configuracoes/condicoes'
     | '/_authenticated/configuracoes/empresas'
-    | '/_authenticated/configuracoes/nfe'
-    | '/_authenticated/configuracoes/rntrc'
-    | '/_authenticated/configuracoes/seguradoras'
     | '/_authenticated/configuracoes/usuarios'
     | '/_authenticated/estoque/compras'
     | '/_authenticated/estoque/fornecedores'
@@ -870,46 +805,11 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedConfiguracoesAuditoriaRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
-    '/_authenticated/configuracoes/categorias': {
-      id: '/_authenticated/configuracoes/categorias'
-      path: '/configuracoes/categorias'
-      fullPath: '/configuracoes/categorias'
-      preLoaderRoute: typeof AuthenticatedConfiguracoesCategoriasRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
-    '/_authenticated/configuracoes/condicoes': {
-      id: '/_authenticated/configuracoes/condicoes'
-      path: '/configuracoes/condicoes'
-      fullPath: '/configuracoes/condicoes'
-      preLoaderRoute: typeof AuthenticatedConfiguracoesCondicoesRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
     '/_authenticated/configuracoes/empresas': {
       id: '/_authenticated/configuracoes/empresas'
       path: '/configuracoes/empresas'
       fullPath: '/configuracoes/empresas'
       preLoaderRoute: typeof AuthenticatedConfiguracoesEmpresasRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
-    '/_authenticated/configuracoes/nfe': {
-      id: '/_authenticated/configuracoes/nfe'
-      path: '/configuracoes/nfe'
-      fullPath: '/configuracoes/nfe'
-      preLoaderRoute: typeof AuthenticatedConfiguracoesNfeRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
-    '/_authenticated/configuracoes/rntrc': {
-      id: '/_authenticated/configuracoes/rntrc'
-      path: '/configuracoes/rntrc'
-      fullPath: '/configuracoes/rntrc'
-      preLoaderRoute: typeof AuthenticatedConfiguracoesRntrcRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
-    '/_authenticated/configuracoes/seguradoras': {
-      id: '/_authenticated/configuracoes/seguradoras'
-      path: '/configuracoes/seguradoras'
-      fullPath: '/configuracoes/seguradoras'
-      preLoaderRoute: typeof AuthenticatedConfiguracoesSeguradorasRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/configuracoes/usuarios': {
@@ -1226,12 +1126,7 @@ declare module '@tanstack/react-router' {
 interface AuthenticatedRouteRouteChildren {
   AuthenticatedDashboardRoute: typeof AuthenticatedDashboardRoute
   AuthenticatedConfiguracoesAuditoriaRoute: typeof AuthenticatedConfiguracoesAuditoriaRoute
-  AuthenticatedConfiguracoesCategoriasRoute: typeof AuthenticatedConfiguracoesCategoriasRoute
-  AuthenticatedConfiguracoesCondicoesRoute: typeof AuthenticatedConfiguracoesCondicoesRoute
   AuthenticatedConfiguracoesEmpresasRoute: typeof AuthenticatedConfiguracoesEmpresasRoute
-  AuthenticatedConfiguracoesNfeRoute: typeof AuthenticatedConfiguracoesNfeRoute
-  AuthenticatedConfiguracoesRntrcRoute: typeof AuthenticatedConfiguracoesRntrcRoute
-  AuthenticatedConfiguracoesSeguradorasRoute: typeof AuthenticatedConfiguracoesSeguradorasRoute
   AuthenticatedConfiguracoesUsuariosRoute: typeof AuthenticatedConfiguracoesUsuariosRoute
   AuthenticatedEstoqueComprasRoute: typeof AuthenticatedEstoqueComprasRoute
   AuthenticatedEstoqueFornecedoresRoute: typeof AuthenticatedEstoqueFornecedoresRoute
@@ -1283,16 +1178,8 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedDashboardRoute: AuthenticatedDashboardRoute,
   AuthenticatedConfiguracoesAuditoriaRoute:
     AuthenticatedConfiguracoesAuditoriaRoute,
-  AuthenticatedConfiguracoesCategoriasRoute:
-    AuthenticatedConfiguracoesCategoriasRoute,
-  AuthenticatedConfiguracoesCondicoesRoute:
-    AuthenticatedConfiguracoesCondicoesRoute,
   AuthenticatedConfiguracoesEmpresasRoute:
     AuthenticatedConfiguracoesEmpresasRoute,
-  AuthenticatedConfiguracoesNfeRoute: AuthenticatedConfiguracoesNfeRoute,
-  AuthenticatedConfiguracoesRntrcRoute: AuthenticatedConfiguracoesRntrcRoute,
-  AuthenticatedConfiguracoesSeguradorasRoute:
-    AuthenticatedConfiguracoesSeguradorasRoute,
   AuthenticatedConfiguracoesUsuariosRoute:
     AuthenticatedConfiguracoesUsuariosRoute,
   AuthenticatedEstoqueComprasRoute: AuthenticatedEstoqueComprasRoute,

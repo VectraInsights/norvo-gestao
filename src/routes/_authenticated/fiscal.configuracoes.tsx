@@ -1,5 +1,5 @@
 import { MoneyInput } from "@/components/erp/money-input";
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, redirect } from "@tanstack/react-router";
 import { PageHeader } from "@/components/erp/page-header";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -24,7 +24,9 @@ import { dateBR } from "@/lib/format";
 import forge from "node-forge";
 
 export const Route = createFileRoute("/_authenticated/fiscal/configuracoes")({
-  component: ConfigFiscais,
+  beforeLoad: () => {
+    throw redirect({ to: "/configuracoes", search: { secao: "fiscais" } });
+  },
 });
 
 interface NfeConfig {
@@ -64,7 +66,7 @@ const INITIAL_CFOPS: CFOPRule[] = [
   { id: "5", nome: "Compra para comercialização (Estadual)", cfop: "1102", tipo: "entrada", descricao: "Compra de mercadoria para comercialização dentro do estado." }
 ];
 
-function ConfigFiscais() {
+export function ConfigFiscais() {
   const { data: empresa } = useEmpresaAtual();
   const qc = useQueryClient();
   const [activeTab, setActiveTab] = useState<string>("certificado");

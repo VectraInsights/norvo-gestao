@@ -11,7 +11,9 @@ import { useSelectedEmpresaId } from "@/hooks/use-empresa";
 import { usePermissoes } from "@/hooks/use-permissoes";
 import { moduloDaRota } from "@/lib/permissoes";
 
-const ROUTES: { label: string; to: string; hint?: string }[] = [
+type RotaBusca = { label: string; to: string; secao?: string; hint?: string };
+
+const ROUTES: RotaBusca[] = [
   { label: "Dashboard", to: "/dashboard" },
   { label: "Contas a receber", to: "/financeiro/receber" },
   { label: "Contas a pagar", to: "/financeiro/pagar" },
@@ -27,7 +29,7 @@ const ROUTES: { label: string; to: string; hint?: string }[] = [
   { label: "Notas de compra (Entradas & XMLs)", to: "/fiscal/recebidas" },
   { label: "Relatórios fiscais", to: "/fiscal/relatorios" },
   { label: "Painel do contador / Exportação", to: "/fiscal/contador" },
-  { label: "Configurações fiscais (Certificado & Alíquotas)", to: "/fiscal/configuracoes" },
+  { label: "Configurações fiscais (Certificado & Alíquotas)", to: "/configuracoes", secao: "fiscais" },
   { label: "Projetos", to: "/projetos/projetos" },
   { label: "Ordens de serviço", to: "/projetos/os" },
   { label: "Colaboradores", to: "/rh/colaboradores" },
@@ -35,12 +37,13 @@ const ROUTES: { label: string; to: string; hint?: string }[] = [
   { label: "Férias", to: "/rh/ferias" },
   { label: "Calculadora trabalhista", to: "/rh/calculadora" },
   { label: "Configurações", to: "/configuracoes" },
-  { label: "Categorias financeiras", to: "/configuracoes/categorias" },
-  { label: "Condições de pagamento", to: "/configuracoes/condicoes" },
-  { label: "RNTRC", to: "/configuracoes/rntrc" },
-  { label: "Seguradoras", to: "/configuracoes/seguradoras" },
-  { label: "Configuração NF-e", to: "/configuracoes/nfe" },
-  { label: "Usuários e acessos", to: "/configuracoes/usuarios" },
+  { label: "Categorias financeiras", to: "/configuracoes", secao: "categorias" },
+  { label: "Condições de pagamento", to: "/configuracoes", secao: "condicoes" },
+  { label: "RNTRC", to: "/configuracoes", secao: "rntrc" },
+  { label: "Seguradoras", to: "/configuracoes", secao: "seguradoras" },
+  { label: "Configuração NF-e", to: "/configuracoes", secao: "nfe" },
+  { label: "Gerenciar empresas", to: "/configuracoes", secao: "empresas" },
+  { label: "Usuários e acessos", to: "/configuracoes", secao: "usuarios" },
 ];
 
 export function CommandPalette() {
@@ -64,9 +67,10 @@ export function CommandPalette() {
   const enabled = open && !!empresaId && term.length >= 2;
 
   const { pode, ehAdmin } = usePermissoes();
-  const rotaVisivel = (to: string) => {
-    if (to === "/configuracoes/usuarios") return ehAdmin;
-    return pode(moduloDaRota(to));
+  const rotaVisivel = (r: RotaBusca) => {
+    if (r.secao === "usuarios") return ehAdmin;
+    if (r.secao === "fiscais") return pode("fiscal");
+    return pode(moduloDaRota(r.to));
   };
 
   const { data: contatos } = useQuery({
@@ -116,7 +120,12 @@ export function CommandPalette() {
     },
   });
 
-  const go = (to: string) => { setOpen(false); setQ(""); navigate({ to }); };
+  const go = (dest: RotaBusca | string) => {
+    setOpen(false); setQ("");
+    if (typeof dest === "string") navigate({ to: dest });
+    else if (dest.secao) navigate({ to: "/configuracoes", search: { secao: dest.secao } });
+    else navigate({ to: dest.to });
+  };
   const fechar = (nextOpen: boolean) => { setOpen(nextOpen); if (!nextOpen) setQ(""); };
 
   return (
@@ -138,10 +147,10 @@ export function CommandPalette() {
           <CommandEmpty>{term.length < 2 ? "Digite ao menos 2 caracteres." : "Nada encontrado."}</CommandEmpty>
 
           <CommandGroup heading="Páginas">
-            {ROUTES.filter((r) => rotaVisivel(r.to))
+            {ROUTES.filter((r) => rotaVisivel(r))
               .filter((r) => !term || r.label.toLowerCase().includes(term.toLowerCase()))
               .map((r) => (
-                <CommandItem key={r.to} value={r.label} onSelect={() => go(r.to)} className="rounded-lg">
+                <CommandItem key={`${r.to}-${r.label}`} value={r.label} onSelect={() => go(r)} className="rounded-lg">
                   {r.label}
                 </CommandItem>
               ))}

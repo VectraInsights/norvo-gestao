@@ -18,12 +18,12 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Building2, Trash2, Plus, Pencil, Check, X, Settings2, ShieldCheck, Tags, CalendarClock, FileText, Truck, Umbrella } from "lucide-react";
+import { Building2, Trash2, Plus, Pencil, Check, X, Settings2, ShieldCheck, ShieldAlert, Tags, CalendarClock, FileText, Truck, Umbrella } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEmpresaAtual } from "@/hooks/use-empresa";
 import { usePermissoes } from "@/hooks/use-permissoes";
-import { useEffect, useState } from "react";
+import { lazy, Suspense, useEffect, useState } from "react";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/_authenticated/configuracoes/")({
@@ -33,8 +33,46 @@ export const Route = createFileRoute("/_authenticated/configuracoes/")({
   }),
 });
 
-const SECOES = ["categorias", "condicoes", "rntrc", "seguradoras", "nfe"] as const;
+const SECOES = ["categorias", "condicoes", "nfe", "fiscais", "empresas", "rntrc", "seguradoras", "usuarios"] as const;
 type SecaoId = (typeof SECOES)[number];
+
+const ConfigFiscaisSecao = lazy(() =>
+  import("./fiscal.configuracoes").then((m) => ({ default: m.ConfigFiscais })),
+);
+const EmpresasSecao = lazy(() =>
+  import("./configuracoes.empresas").then((m) => ({ default: m.EmpresasPage })),
+);
+const UsuariosSecao = lazy(() =>
+  import("./configuracoes.usuarios").then((m) => ({ default: m.UsuariosPage })),
+);
+
+function SecaoLoading() {
+  return (
+    <div className="space-y-2.5" aria-hidden>
+      {[0, 1, 2].map((i) => (
+        <div key={i} className="h-12 animate-pulse rounded-xl bg-muted/30" />
+      ))}
+    </div>
+  );
+}
+
+function SemEmpresa() {
+  return (
+    <Card className="rounded-2xl"><CardContent className="p-8 text-center text-sm text-muted-foreground">Cadastre uma empresa primeiro.</CardContent></Card>
+  );
+}
+
+function SemAcessoSecao() {
+  return (
+    <Card className="rounded-2xl"><CardContent className="flex items-center gap-3 p-8">
+      <ShieldAlert className="h-6 w-6 shrink-0 text-muted-foreground" />
+      <div>
+        <p className="text-sm font-semibold tracking-tight">Sem acesso a esta seção</p>
+        <p className="text-sm leading-relaxed text-muted-foreground">Solicite acesso ao administrador da sua empresa.</p>
+      </div>
+    </CardContent></Card>
+  );
+}
 
 function Configuracoes() {
   const { data: empresa } = useEmpresaAtual();
@@ -61,11 +99,11 @@ function Configuracoes() {
           <FileText className="h-4 w-4" /> Configuração NF-e
         </Link>
         {mostrarFiscais && (
-          <Link to="/fiscal/configuracoes" className={configNavLinkCls}>
+          <Link to="/configuracoes" search={{ secao: "fiscais" }} className={cls("fiscais")}>
             <Settings2 className="h-4 w-4" /> Configurações fiscais
           </Link>
         )}
-        <Link to="/configuracoes/empresas" className={configNavLinkCls}>
+        <Link to="/configuracoes" search={{ secao: "empresas" }} className={cls("empresas")}>
           <Building2 className="h-4 w-4" /> Gerenciar empresas
         </Link>
         <Link to="/configuracoes" search={{ secao: "rntrc" }} className={cls("rntrc")}>
@@ -75,22 +113,25 @@ function Configuracoes() {
           <Umbrella className="h-4 w-4" /> Seguradoras
         </Link>
         {ehAdmin && (
-          <Link to="/configuracoes/usuarios" className={configNavLinkCls}>
+          <Link to="/configuracoes" search={{ secao: "usuarios" }} className={cls("usuarios")}>
             <ShieldCheck className="h-4 w-4" /> Usuários e acessos
           </Link>
         )}
       </div>
-      {!empresa ? (
-        <Card className="rounded-2xl"><CardContent className="p-8 text-center text-sm text-muted-foreground">Cadastre uma empresa primeiro.</CardContent></Card>
-      ) : (
-        <>
-          {secaoAtual === "categorias" && <CategoriasTab empresaId={empresa.id} />}
-          {secaoAtual === "condicoes" && <CondicoesTab empresaId={empresa.id} />}
-          {secaoAtual === "rntrc" && <RntrcTab empresaId={empresa.id} />}
-          {secaoAtual === "seguradoras" && <SeguradorasTab empresaId={empresa.id} />}
-          {secaoAtual === "nfe" && <NFeConfigTab empresaId={empresa.id} />}
-        </>
+      {secaoAtual === "categorias" && (empresa ? <CategoriasTab empresaId={empresa.id} /> : <SemEmpresa />)}
+      {secaoAtual === "condicoes" && (empresa ? <CondicoesTab empresaId={empresa.id} /> : <SemEmpresa />)}
+      {secaoAtual === "rntrc" && (empresa ? <RntrcTab empresaId={empresa.id} /> : <SemEmpresa />)}
+      {secaoAtual === "seguradoras" && (empresa ? <SeguradorasTab empresaId={empresa.id} /> : <SemEmpresa />)}
+      {secaoAtual === "nfe" && (empresa ? <NFeConfigTab empresaId={empresa.id} /> : <SemEmpresa />)}
+      {secaoAtual === "fiscais" && (mostrarFiscais ? (
+        <Suspense fallback={<SecaoLoading />}><ConfigFiscaisSecao /></Suspense>
+      ) : <SemAcessoSecao />)}
+      {secaoAtual === "empresas" && (
+        <Suspense fallback={<SecaoLoading />}><EmpresasSecao /></Suspense>
       )}
+      {secaoAtual === "usuarios" && (ehAdmin ? (
+        <Suspense fallback={<SecaoLoading />}><UsuariosSecao /></Suspense>
+      ) : <SemAcessoSecao />)}
     </>
   );
 }

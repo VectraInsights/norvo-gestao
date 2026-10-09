@@ -454,7 +454,7 @@ export function AppShell({ children }: { children: ReactNode }) {
                 })}
                 <DropdownMenuSeparator />
                 {souSuperAdmin && (
-                  <DropdownMenuItem onSelect={() => navigate({ to: "/configuracoes/empresas" })}>
+                  <DropdownMenuItem onSelect={() => navigate({ to: "/configuracoes", search: { secao: "empresas" } })}>
                     + Nova empresa
                   </DropdownMenuItem>
                 )}

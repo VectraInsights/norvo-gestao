@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any -- colunas novas (modulos/nome/email) ainda não estão em types.ts */
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, redirect } from "@tanstack/react-router";
 import { PageHeader } from "@/components/erp/page-header";
 import { EmptyState } from "@/components/erp/empty-state";
 import { Button } from "@/components/ui/button";
@@ -52,7 +52,9 @@ import { MODULOS } from "@/lib/permissoes";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/_authenticated/configuracoes/usuarios")({
-  component: UsuariosPage,
+  beforeLoad: () => {
+    throw redirect({ to: "/configuracoes", search: { secao: "usuarios" } });
+  },
 });
 
 type MembroRow = {
@@ -72,7 +74,7 @@ const PAPEL_LABEL: Record<string, string> = {
 
 const SENHA_PADRAO = "Norvo@2026";
 
-function UsuariosPage() {
+export function UsuariosPage() {
   const { data: empresa } = useEmpresaAtual();
   const { ehAdmin, souSuperAdmin } = usePermissoes();
   const qc = useQueryClient();
