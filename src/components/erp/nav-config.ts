@@ -23,12 +23,9 @@ import {
   FileDown,
   Handshake,
   FileSearch,
-  Settings2,
   FileOutput,
   FileInput,
-  Settings,
   Sun,
-  ShieldCheck,
   ClipboardList,
   PackagePlus,
   Truck,
@@ -130,14 +127,6 @@ const RAW_NAV: NavGroup[] = [
       { to: "/fiscal/cadastro", label: "Cadastro", icon: BookUser },
       { to: "/fiscal/relatorios", label: "Relatórios e Dashboards", icon: BarChart3 },
       { to: "/fiscal/contador", label: "Painel do Contador", icon: Handshake },
-    ],
-  },
-  {
-    label: "Configurações",
-    icon: Settings,
-    items: [
-      { to: "/fiscal/configuracoes", label: "Configurações fiscais", icon: Settings2 },
-      { to: "/configuracoes/usuarios", label: "Usuários e acessos", icon: ShieldCheck },
     ],
   },
 ];

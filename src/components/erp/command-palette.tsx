@@ -35,6 +35,7 @@ const ROUTES: { label: string; to: string; hint?: string }[] = [
   { label: "Férias", to: "/rh/ferias" },
   { label: "Calculadora trabalhista", to: "/rh/calculadora" },
   { label: "Configurações", to: "/configuracoes" },
+  { label: "Usuários e acessos", to: "/configuracoes/usuarios" },
 ];
 
 export function CommandPalette() {

@@ -18,10 +18,11 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Building2, Trash2, Plus, Pencil, Check, X } from "lucide-react";
+import { Building2, Trash2, Plus, Pencil, Check, X, Settings2, ShieldCheck, ChevronRight } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEmpresaAtual } from "@/hooks/use-empresa";
+import { usePermissoes } from "@/hooks/use-permissoes";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 
@@ -31,6 +32,8 @@ export const Route = createFileRoute("/_authenticated/configuracoes/")({
 
 function Configuracoes() {
   const { data: empresa } = useEmpresaAtual();
+  const { pode, ehAdmin } = usePermissoes();
+  const mostrarFiscais = pode("fiscal");
 
   return (
     <>
@@ -40,6 +43,43 @@ function Configuracoes() {
           <Building2 className="h-4 w-4" /> Gerenciar empresas
         </Link>
       </div>
+
+      {(mostrarFiscais || ehAdmin) && (
+        <div className="mb-6 grid grid-cols-1 gap-3 sm:grid-cols-2">
+          {mostrarFiscais && (
+            <Link to="/fiscal/configuracoes" className="block rounded-2xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
+              <Card className="rounded-2xl shadow-panel transition-all hover:-translate-y-px hover:shadow-md">
+                <CardContent className="flex items-center gap-3 p-4 sm:p-5">
+                  <span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-primary/10">
+                    <Settings2 className="h-5 w-5 text-primary" />
+                  </span>
+                  <span className="min-w-0 flex-1">
+                    <span className="block truncate text-sm font-semibold tracking-tight">Configurações fiscais</span>
+                    <span className="block text-xs leading-relaxed text-muted-foreground">Certificado digital, alíquotas e CFOP.</span>
+                  </span>
+                  <ChevronRight className="h-4 w-4 shrink-0 text-muted-foreground" />
+                </CardContent>
+              </Card>
+            </Link>
+          )}
+          {ehAdmin && (
+            <Link to="/configuracoes/usuarios" className="block rounded-2xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
+              <Card className="rounded-2xl shadow-panel transition-all hover:-translate-y-px hover:shadow-md">
+                <CardContent className="flex items-center gap-3 p-4 sm:p-5">
+                  <span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-primary/10">
+                    <ShieldCheck className="h-5 w-5 text-primary" />
+                  </span>
+                  <span className="min-w-0 flex-1">
+                    <span className="block truncate text-sm font-semibold tracking-tight">Usuários e acessos</span>
+                    <span className="block text-xs leading-relaxed text-muted-foreground">Quem acessa e quais módulos pode usar.</span>
+                  </span>
+                  <ChevronRight className="h-4 w-4 shrink-0 text-muted-foreground" />
+                </CardContent>
+              </Card>
+            </Link>
+          )}
+        </div>
+      )}
 
       {!empresa ? (
         <Card className="rounded-2xl"><CardContent className="p-8 text-center text-sm text-muted-foreground">Cadastre uma empresa primeiro.</CardContent></Card>
