@@ -5697,3 +5697,12 @@ pm run build OK.
 - Fiscais, Empresas e Usuarios abrem inline em ?secao= (lazy);
   rotas antigas redirecionam ao hub; 5 stubs excluidos; busca e
   +Nova empresa apontam ao hub. 	sc/uild OK.
+
+## Placeholders removidos (09/10)
+
+- Removidos ~200 placeholders de inputs, selects e comboboxes em
+  44 arquivos (buscas, formularios, filtros, paleta, onboarding).
+- Excecao: CT-e, MDF-e, emitidas e recebidas intactos (regra fiscal).
+- 	sc identico a baseline (117 linhas) e 
+pm run build OK.
+
