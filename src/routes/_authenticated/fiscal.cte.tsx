@@ -4643,6 +4643,7 @@ function CtePage() {
           if (!String(form.seguradoraNome || "").trim()) pend.push("Seguradora");
           if (!String(form.apolice || "").trim()) pend.push("Apolice do seguro");
           if (!String(form.segResponsavel || "").trim()) pend.push("Responsavel do seguro");
+          if (!["4", "5"].includes(String(form.segResponsavel || ""))) pend.push("responsável do seguro deve ser Emitente (4) ou Tomador (5)");
         }
         if (String((form as any).toma) === "9") pend.push("operação sem transporte não gera CT-e (troque o tomador)");
         if (pend.length > 0) throw new Error("Para emitir informe: " + pend.join("; "));
@@ -4697,7 +4698,6 @@ function CtePage() {
               rntrc: rntrcFinal,
               modalRod: {
                 rntrc: rntrcFinal,
-                ciot: (form as any).ciot || undefined,
                 motoristas: motoristasXml(),
                 veiculos: (() => {
                   const tpRodDeTipo = (t: any) => { const s = String(t || "").toLowerCase(); if (s.includes("cavalo")) return "03"; if (s.includes("truck") && !s.includes("bitruck")) return "01"; if (s.includes("toco")) return "02"; if (s.includes("van") || s.includes("furg")) return "04"; if (s.includes("utilit")) return "05"; return "06"; };
@@ -4755,6 +4755,12 @@ function CtePage() {
                 cep: form.cepTomador || undefined,
                 fone: form.foneTomador || undefined,
                 email: form.emailTomador || undefined,
+              },
+              seg: {
+                resp: form.segResponsavel,
+                xSeg: form.seguradoraNome,
+                nApol: form.apolice,
+                nAver: form.averbacao,
               },
               emit: {
                 xNome: empresa.razao_social || empresa.nome_fantasia,
@@ -5181,7 +5187,6 @@ function CtePage() {
             rntrc: rntrcFinal,
             modalRod: {
               rntrc: rntrcFinal,
-              ciot: (form as any).ciot || undefined,
               motoristas: motoristasXml(),
               veiculos: (() => {
                 const vv = (veiculos || []).find(
@@ -5239,6 +5244,12 @@ function CtePage() {
               cep: form.cepTomador || undefined,
               fone: form.foneTomador || undefined,
               email: form.emailTomador || undefined,
+            },
+            seg: {
+              resp: form.segResponsavel,
+              xSeg: form.seguradoraNome,
+              nApol: form.apolice,
+              nAver: form.averbacao,
             },
             emit: {
               xNome: empresa.razao_social || empresa.nome_fantasia,

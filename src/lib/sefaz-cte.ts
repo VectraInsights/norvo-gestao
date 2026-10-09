@@ -187,12 +187,6 @@ export function docAntOficial(chaves: unknown): string {
   ).join("")}</docAnt>`;
 }
 
-// <CIOT> só com dígitos; em branco some (tag vazia seria rejeitada).
-export function ciotXml(modalRod: unknown): string {
-  const d = String((modalRod as any)?.ciot || "").replace(/\D/g, "");
-  return d ? `<CIOT>${d}</CIOT>` : "";
-}
-
 type VeicRod = { placa?: string; uf?: string; renavam?: string; tpRod?: string; tpCar?: string; tara?: number; capKG?: number };
 
 // Tração/reboques do modal rodoviário — mesma regra nos dois modelos.
@@ -328,7 +322,7 @@ export function buildCteXml(input: CteInputCompleto): { xml: string; chave: stri
       <infQ><cUnid>01</cUnid><tpMed>00</tpMed><qCarga>${input.pesoKg.toFixed(4)}</qCarga></infQ>
     </infCarga>
     ${infNFeXml}
-    <infModal versaoModal="4.00"><rodo><RNTRC>${rntrcXml}</RNTRC>${motoXml}${ciotXml(input.modalRod)}${veicTracXmlS}${veicRebXmlS}</rodo></infModal>
+    <infModal versaoModal="4.00"><rodo><RNTRC>${rntrcXml}</RNTRC>${motoXml}${veicTracXmlS}${veicRebXmlS}</rodo></infModal>
     ${impXml}
     <total><vTPrest>${input.vPrest.toFixed(2)}</vTPrest><vTRec>${input.vPrest.toFixed(2)}</vTRec><vTotDFe>${vTotDFe}</vTotDFe></total>
     <infRespTec><CNPJ>${cnpjLimpo}</CNPJ><xContato>SUPORTE TECNICO</xContato><email>suporte@vectrainsights.com.br</email><fone>3139952572</fone></infRespTec>
@@ -532,17 +526,23 @@ export function buildCteNormalXml(input: CteInputCompleto): { xml: string; chave
   const vRec = Number(input.vRec ?? vTPrest);
   const vPrestXml = `<vPrest><vTPrest>${vTPrest.toFixed(2)}</vTPrest><vRec>${vRec.toFixed(2)}</vRec>${comps.map(c => `<Comp><xNome>${escCte(c.xNome)}</xNome><vComp>${c.vComp.toFixed(2)}</vComp></Comp>`).join("")}</vPrest>`;
 
-  // infDoc: <chave> por NF-e (+ docAnt quando houver)
+  // infDoc: <chave> por NF-e. docAnt é irmão (filho de infCTeNorm, após infDoc).
   const chsNfe = [...new Set(((input.chavesNFe || []).map(c => String(c).replace(/\D/g, "")).filter(c => c.length === 44)))];
   if (!chsNfe.length) throw new Error("CT-e Normal exige ao menos 1 NF-e vinculada");
   const docAntXmlN = docAntOficial(input.docAnt?.chaves);
-  const infDocXml = `<infDoc>${chsNfe.map(ch => `<infNFe><chave>${ch}</chave></infNFe>`).join("")}${docAntXmlN}</infDoc>`;
+  const infDocXml = `<infDoc>${chsNfe.map(ch => `<infNFe><chave>${ch}</chave></infNFe>`).join("")}</infDoc>`;
 
   // Modal rodoviário: RNTRC + moto + tração + reboques (regra única p/ os dois modelos)
   const veics = ((input.modalRod as any)?.veiculos || []) as Array<{ placa?: string; uf?: string; renavam?: string; tpRod?: string; tpCar?: string; tara?: number; capKG?: number }>;
   const veicTracXml = veicTracaoXml(veics, input.ufIni);
   const veicRebXml = veicReboqueXml(veics, input.ufIni);
-  const ciotXmlN = ciotXml(input.modalRod);
+
+  // <seg> oficial (infCTeNorm, 0-n): respSeg só admite 4 (emitente) ou 5 (tomador).
+  const segIn = (input as any).seg || {};
+  const segResp = String(segIn.resp || "") === "5" ? "5" : "4";
+  const segXml = (segIn.xSeg || segIn.nApol || segIn.nAver)
+    ? `<seg><respSeg>${segResp}</respSeg>${segIn.xSeg ? `<xSeg>${escCte(String(segIn.xSeg).slice(0, 30))}</xSeg>` : ""}${segIn.nApol ? `<nApol>${escCte(String(segIn.nApol).slice(0, 20))}</nApol>` : ""}${segIn.nAver ? `<nAver>${escCte(String(segIn.nAver).slice(0, 20))}</nAver>` : ""}</seg>`
+    : "";
 
   const qrBase = (input.ufEnv || input.emit.uf)?.toUpperCase() === "MG" ? "portalcte.fazenda.mg.gov.br/portalcte/sistema/qrcode.xhtml" : "dfeportal.svrs.rs.gov.br/cteQrCode";
   const xml = `<?xml version="1.0" encoding="UTF-8"?>
@@ -570,8 +570,8 @@ export function buildCteNormalXml(input: CteInputCompleto): { xml: string; chave
         <vCarga>${Number(input.vCarga || 0).toFixed(2)}</vCarga><proPred>${escCte(input.infCTeNorm?.proPred || "CARGA GERAL")}</proPred>
         <infQ><cUnid>01</cUnid><tpMed>00</tpMed><qCarga>${Number(input.pesoKg || 0).toFixed(4)}</qCarga></infQ>
       </infCarga>
-      ${infDocXml}
-      <infModal versaoModal="4.00"><rodo><RNTRC>${rntrcXml}</RNTRC>${motoXml}${ciotXmlN}${veicTracXml}${veicRebXml}</rodo></infModal>
+      ${infDocXml}${docAntXmlN}
+      <infModal versaoModal="4.00"><rodo><RNTRC>${rntrcXml}</RNTRC>${motoXml}${veicTracXml}${veicRebXml}</rodo></infModal>${segXml}
     </infCTeNorm>
     <infRespTec><CNPJ>${cnpjLimpo}</CNPJ><xContato>SUPORTE TECNICO</xContato><email>suporte@vectrainsights.com.br</email><fone>3139952572</fone></infRespTec>
   </infCte>

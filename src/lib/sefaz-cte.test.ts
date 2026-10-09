@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { describe, expect, it } from "vitest";
-import { buildCteNormalXml, buildCteXml, ciotXml, docAntOficial, tomaSefazDeModFrete } from "./sefaz-cte";
+import { buildCteNormalXml, buildCteXml, docAntOficial, tomaSefazDeModFrete } from "./sefaz-cte";
 
 // Base mínima válida para emissão em homologação (SEFAZ_AMBIENTE é fixo).
 // Os valores reproduzem o CT-e de referência (chave ...5311429212600).
@@ -189,16 +189,17 @@ describe("toma: modFrete da tela vira tomador oficial SEFAZ", () => {
   });
 });
 
-describe("<CIOT> no modal rodoviário (normal e simplificado)", () => {
-  it("normal emite o CIOT do form", () => {
+describe("CIOT fora do XML do CT-e (dado ANTT, não vai no leiaute 4.00)", () => {
+  it("normal nunca emite <CIOT> mesmo com ciot no form", () => {
     const xml = buildNormal({
       modalRod: { ...(baseCte().modalRod as any), ciot: "123456789012" },
     });
 
-    expect(xml).toContain("<CIOT>123456789012</CIOT>");
+    expect(xml).not.toContain("<CIOT>");
+    expect(xml).toContain("<RNTRC>00839402</RNTRC>");
   });
 
-  it("simplificado emite o CIOT do form", () => {
+  it("simplificado nunca emite <CIOT>", () => {
     const { xml } = buildCteXml(
       baseCte({
         modelo: "simp",
@@ -206,15 +207,30 @@ describe("<CIOT> no modal rodoviário (normal e simplificado)", () => {
       }) as any,
     );
 
-    expect(xml).toContain("<CIOT>123456789012</CIOT>");
+    expect(xml).not.toContain("<CIOT>");
+  });
+});
+
+describe("<seg> no CT-e Normal (infCTeNorm, após infModal)", () => {
+  const comSeg = {
+    seg: { resp: "4", xSeg: "SEGURADORA TESTE SA", nApol: "12345", nAver: "678" },
+  };
+
+  it("emite respSeg/xSeg/nApol/nAver após o infModal", () => {
+    const xml = buildNormal(comSeg);
+
+    expect(xml).toContain("<seg><respSeg>4</respSeg><xSeg>SEGURADORA TESTE SA</xSeg><nApol>12345</nApol><nAver>678</nAver></seg>");
+    expect(xml.indexOf("<seg>")).toBeGreaterThan(xml.indexOf("</infModal>"));
+    expect(xml.indexOf("<seg>")).toBeLessThan(xml.indexOf("</infCTeNorm>"));
   });
 
-  it("CIOT em branco não gera tag vazia", () => {
-    expect(ciotXml({ ciot: "   " })).toBe("");
-    expect(ciotXml({})).toBe("");
-    const xml = buildNormal({ modalRod: { rntrc: "00839402" } });
+  it("respSeg só admite 4/5 (outros viram 4)", () => {
+    expect(buildNormal({ seg: { resp: "2", xSeg: "SEG" } })).toContain("<respSeg>4</respSeg>");
+    expect(buildNormal({ seg: { resp: "5", xSeg: "SEG" } })).toContain("<respSeg>5</respSeg>");
+  });
 
-    expect(xml).not.toContain("<CIOT>");
+  it("sem dados de seguro omite o grupo", () => {
+    expect(buildNormal()).not.toContain("<seg>");
   });
 });
 
@@ -232,10 +248,10 @@ describe("<docAnt> oficial (agrupado por emitente)", () => {
     expect(xml).not.toContain("tpPrest");
   });
 
-  it("normal inclui o <docAnt> dentro do <infDoc>", () => {
+  it("normal inclui o <docAnt> como irmão do <infDoc> (filho de infCTeNorm)", () => {
     const xml = buildNormal({ docAnt: { chaves: [ch1] } });
 
-    expect(xml).toContain("<docAnt><emiDocAnt><CNPJ>21306287000152</CNPJ>");
+    expect(xml).toContain("</infDoc><docAnt><emiDocAnt><CNPJ>21306287000152</CNPJ>");
     expect(xml).not.toContain("<infDocAnt>");
   });
 });

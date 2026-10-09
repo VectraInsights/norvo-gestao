@@ -70,7 +70,7 @@ export const emitirCteFn = createServerFn({ method: "POST" }).validator((d: { em
       bairro: cli.bairro || emp?.bairro || "CENTRO",
       cep: cli.cep || emp?.cep || "00000000",
     },
-    modalRod: data.input.modalRod || { rntrc: form.rntrc || "ISENTO", ciot: form.ciot || undefined },
+    modalRod: data.input.modalRod || { rntrc: form.rntrc || "ISENTO" },
     icms: data.input.icms || { CST: form.icmsCST || "00", vBC: Number(form.icmsBase || 0), pICMS: Number(form.icmsAliq || 7), vICMS: Number(form.icmsValor || 0) },
   };
   console.log("[CTE-DEBUG] tomador xNome:", input.tomador?.xNome, "CNPJ:", maskDoc(input.tomador?.cnpj));
