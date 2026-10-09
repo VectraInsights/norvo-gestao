@@ -11,6 +11,8 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Switch } from "@/components/ui/switch";
+import { Combobox } from "@/components/erp/combobox";
 import { 
   FolderCog, Shield, Landmark, Scale, FileText, CheckCircle2, 
   Upload, Key, AlertTriangle, HelpCircle, Plus, Edit2, Trash2, Check 
@@ -65,6 +67,95 @@ const INITIAL_CFOPS: CFOPRule[] = [
   { id: "4", nome: "Devolução de compra para industrialização", cfop: "5201", tipo: "saida", descricao: "Devolução de mercadoria comprada para processo industrial." },
   { id: "5", nome: "Compra para comercialização (Estadual)", cfop: "1102", tipo: "entrada", descricao: "Compra de mercadoria para comercialização dentro do estado." }
 ];
+
+function RtcTab({ empresaId }: { empresaId: string }) {
+  const qc = useQueryClient();
+  const [ativo, setAtivo] = useState(false);
+  const [cc, setCc] = useState("000001");
+  const cfg = useQuery({
+    queryKey: ["rtc-config", empresaId],
+    queryFn: async () => {
+      const { data, error } = await supabase.from("rtc_config" as never)
+        .select("fase2_ativo,cclasstrib_padrao").eq("empresa_id", empresaId).maybeSingle();
+      if (error) throw error;
+      return (data ?? null) as unknown as { fase2_ativo: boolean; cclasstrib_padrao: string } | null;
+    },
+  });
+  const { data: ccs } = useQuery({
+    queryKey: ["cclasstrib-lista"],
+    staleTime: 24 * 60 * 60_000,
+    queryFn: async () => {
+      const { data, error } = await supabase.from("cclasstrib" as never)
+        .select("codigo,descricao").order("codigo").limit(1000);
+      if (error) throw error;
+      return ((data ?? []) as unknown) as { codigo: string; descricao: string }[];
+    },
+  });
+  useEffect(() => {
+    if (cfg.data) {
+      setAtivo(!!cfg.data.fase2_ativo);
+      setCc(cfg.data.cclasstrib_padrao || "000001");
+    }
+  }, [cfg.data]);
+  const salvar = useMutation({
+    mutationFn: async () => {
+      const cod = cc.replace(/\D/g, "");
+      if (cod.length !== 6) throw new Error("cClassTrib precisa ter 6 dígitos");
+      const { error } = await supabase.from("rtc_config" as never).upsert({
+        empresa_id: empresaId, fase2_ativo: ativo, cclasstrib_padrao: cod,
+      } as never, { onConflict: "empresa_id" });
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      toast.success("Reforma tributária salva");
+      qc.invalidateQueries({ queryKey: ["rtc-config"] });
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+  const temTabela = (ccs?.length ?? 0) > 0;
+  return (
+    <Card className="rounded-2xl border-muted bg-card/60 backdrop-blur-sm shadow-panel">
+      <CardHeader className="pb-2">
+        <CardTitle className="text-base font-semibold tracking-tight">Reforma Tributária (IBS/CBS) — fase 2</CardTitle>
+        <CardDescription className="leading-relaxed">
+          Deixe desligado até a SEFAZ exigir. Ao ligar, o CT-e usa o cClassTrib real e libera ISUF, compras gov e split no XML.
+        </CardDescription>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        {cfg.isLoading ? (
+          <Skeleton className="h-16 w-full rounded-xl" />
+        ) : (
+          <>
+            <div className="flex items-center justify-between gap-3 rounded-xl border px-3.5 py-3">
+              <div>
+                <p className="text-sm font-medium">Fase 2 ativa</p>
+                <p className="text-xs leading-relaxed text-muted-foreground">Liga cClassTrib real, ISUF, compras gov e split no XML.</p>
+              </div>
+              <Switch checked={ativo} onCheckedChange={setAtivo} />
+            </div>
+            <div className="grid gap-1.5">
+              <Label>cClassTrib padrão</Label>
+              {temTabela ? (
+                <Combobox
+                  value={cc}
+                  onChange={setCc}
+                  options={(ccs ?? []).map((n) => ({ value: n.codigo, label: `${n.codigo} — ${n.descricao.slice(0, 60)}` }))}
+                  emptyText="Nenhum item encontrado."
+                />
+              ) : (
+                <Input value={cc} onChange={(e) => setCc(e.target.value.replace(/\D/g, "").slice(0, 6))} className="h-10 rounded-xl font-mono" />
+              )}
+              <p className="text-[11px] leading-relaxed text-muted-foreground">Usado no IBS/CBS com a fase 2 ligada. Desligada, sai 000001.</p>
+            </div>
+            <Button onClick={() => salvar.mutate()} disabled={salvar.isPending} className="h-10 rounded-xl px-6 shadow-sm transition-all hover:-translate-y-px hover:shadow-md">
+              {salvar.isPending ? "Salvando…" : "Salvar"}
+            </Button>
+          </>
+        )}
+      </CardContent>
+    </Card>
+  );
+}
 
 export function ConfigFiscais() {
   const { data: empresa } = useEmpresaAtual();
@@ -380,6 +471,7 @@ export function ConfigFiscais() {
           <TabsTrigger value="certificado" className="flex-1 text-xs sm:text-sm">Certificado Digital</TabsTrigger>
           <TabsTrigger value="tributos" className="flex-1 text-xs sm:text-sm">Tributos e Regimes</TabsTrigger>
           <TabsTrigger value="cfop" className="flex-1 text-xs sm:text-sm">CFOP & Naturezas</TabsTrigger>
+          <TabsTrigger value="rtc" className="flex-1 text-xs sm:text-sm">Reforma Tributária</TabsTrigger>
         </TabsList>
 
         {/* ABA CERTIFICADO DIGITAL */}
@@ -728,6 +820,9 @@ export function ConfigFiscais() {
               </Table>
             </div>
           </Card>
+        </TabsContent>
+        <TabsContent value="rtc" className="space-y-4">
+          {empresa ? <RtcTab empresaId={empresa.id} /> : null}
         </TabsContent>
       </Tabs>
 

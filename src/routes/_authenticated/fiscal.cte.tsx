@@ -2879,6 +2879,21 @@ function CtePage() {
       }>;
     },
   });
+  // RTC fase 2 (flag por empresa): cClassTrib real e grupos novos quando ligada.
+  const { data: rtcCfg } = useQuery({
+    enabled: !!empresa,
+    queryKey: ["rtc-config", empresa?.id],
+    staleTime: 5 * 60_000,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("rtc_config" as never)
+        .select("fase2_ativo,cclasstrib_padrao")
+        .eq("empresa_id", empresa!.id)
+        .maybeSingle();
+      if (error) throw error;
+      return (data ?? null) as unknown as { fase2_ativo: boolean; cclasstrib_padrao: string } | null;
+    },
+  });
   // Resumo da operação CIOT (usado no diálogo e na emissão): frete somado,
   // tração do 1º CT-e e MAIOR distância do lote p/ o piso ANTT. Abaixo do piso = bloqueada.
   // (Aqui embaixo por causa de `veiculos`, declarado acima.)
@@ -4692,6 +4707,8 @@ function CtePage() {
               cMunTomador: form.cMunTomador,
               xMunTomador: form.xMunTomador,
               cfop: form.cfop,
+              rtc: { fase2: rtcCfg?.fase2_ativo === true },
+              cClassTrib: rtcCfg?.cclasstrib_padrao || "000001",
               tpServ: "0",
               vPrest: totalPrestacao(form),
               vCarga: parseFloat(form.vCarga) || 0,
@@ -5182,6 +5199,8 @@ function CtePage() {
             cMunTomador: form.cMunTomador,
             xMunTomador: form.xMunTomador,
             cfop: form.cfop,
+            rtc: { fase2: rtcCfg?.fase2_ativo === true },
+            cClassTrib: rtcCfg?.cclasstrib_padrao || "000001",
             tpServ: "0",
             vPrest: totalPrestacao(form),
             vCarga: parseFloat(form.vCarga) || 0,

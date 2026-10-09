@@ -109,6 +109,9 @@ export interface CteInputCompleto {
   retira?: string;
   docAnt?: { chaves: string[]; tpPrest?: string };
   obs?: string;
+  // RTC fase 2 (atrás de flag por empresa): cClassTrib real; desligado usa 000001.
+  rtc?: { fase2?: boolean };
+  cClassTrib?: string;
   infCTeNorm?: { proPred?: string; xOutCat?: string };
   modalRod?: { rntrc: string; ciot?: string; veiculos?: Array<{ placa: string; uf: string; renavam?: string; rntrc?: string; tpRod?: string; tpCar?: string; tara?: number; capKG?: number }>; motoristas?: Array<{ xNome: string; cpf: string }> };
   chavesNFe?: string[];
@@ -153,6 +156,67 @@ export function formUfsDoXml(xml: string, form: any): any {
 
 // CSOSN do Simples Nacional (CRT 1 e MEI 4): o <ICMS> vira <ICMSSN> com CST de 3 dígitos.
 const CSOSN_SN = ["101", "102", "103", "201", "202", "203", "300", "400", "500", "900"];
+
+// RTC fase 2 (atrás de flag por empresa em input.rtc.fase2).
+export function rtcFase2(input: unknown): boolean {
+  return (input as any)?.rtc?.fase2 === true;
+}
+
+// cClassTrib real quando a fase 2 está ligada e o código é válido; senão 000001.
+export function cClassTribEfetivo(input: unknown): string {
+  const cc = String((input as any)?.cClassTrib || "");
+  return rtcFase2(input) && /^\d{6}$/.test(cc) ? cc : "000001";
+}
+
+// ISUF (emitente/destinatário, 8-9 dígitos). Chamadas atrás da flag; inválido some.
+export function isufTag(tag: "ISUFEmit" | "ISUF", v: unknown): string {
+  const d = String(v || "").replace(/\D/g, "");
+  return /^[0-9]{8,9}$/.test(d) ? `<${tag}>${d}</${tag}>` : "";
+}
+
+// gCompraGov (ide) + tpPagAnt/gPagAntecipado (ide): só com fase 2 e dados válidos.
+export function compraGovXml(input: unknown): string {
+  if (!rtcFase2(input)) return "";
+  const g = (input as any)?.compraGov || {};
+  const ente = String(g.tpEnte ?? "");
+  const pred = Number(g.pRedutor);
+  const op = String(g.tpOp ?? "");
+  if (!/^[1-4]$/.test(ente) || !/^[1-4]$/.test(op) || !(pred > 0)) return "";
+  const refs = (Array.isArray(g.refDFe) ? g.refDFe : [])
+    .map((c: unknown) => String(c).replace(/\D/g, ""))
+    .filter((c: string) => c.length === 44);
+  return `<gCompraGov><tpEnteGov>${ente}</tpEnteGov><pRedutor>${pred.toFixed(4)}</pRedutor><tpOpGov>${op}</tpOpGov>${refs.map((c: string) => `<refDFeAnt>${c}</refDFeAnt>`).join("")}</gCompraGov>`;
+}
+
+export function pagAntXml(input: unknown): string {
+  if (!rtcFase2(input)) return "";
+  const p = (input as any)?.pagAnt;
+  const t = String(p?.tipo || "");
+  if (t !== "1" && t !== "3") return "";
+  if (t === "1") return `<tpPagAnt>1</tpPagAnt>`;
+  const chs = (Array.isArray(p?.chaves) ? p.chaves : [])
+    .map((c: unknown) => String(c).replace(/\D/g, ""))
+    .filter((c: string) => c.length === 44);
+  if (!chs.length) throw new Error("tpPagAnt=3 exige ao menos 1 chave de DFe de antecipação");
+  return `<tpPagAnt>3</tpPagAnt><gPagAntecipado>${chs.map((c: string) => `<chDFePagAnt>${c}</chDFePagAnt>`).join("")}</gPagAntecipado>`;
+}
+
+// pgtoVinc (split payment, filho de infCte antes do infCTeSupl): só com fase 2.
+export function pgtoVincXml(input: unknown): string {
+  if (!rtcFase2(input)) return "";
+  const list = Array.isArray((input as any)?.pgtoVinc) ? (input as any).pgtoVinc : [];
+  if (!list.length) return "";
+  const items = list.map((pg: any, i: number) => {
+    const id = String(pg?.idTransacao || "");
+    const meio = String(pg?.tpMeio || "");
+    const rec = String(pg?.cnpjReceb || "").replace(/\D/g, "");
+    const base = String(pg?.cnpjBase || "").replace(/\D/g, "");
+    if (id.length < 2 || id.length > 35 || !/^\d{1,2}$/.test(meio) || rec.length !== 14 || base.length !== 8)
+      throw new Error(`pgtoVinc[${i}] inválido: idTransacao (2-35), tpMeio (2), cnpjReceb (14) e cnpjBase (8)`);
+    return `<pgto nPag="${String(i + 1).padStart(3, "0")}"><idTransacao>${escCte(id)}</idTransacao><tpMeioPgto>${meio.padStart(2, "0")}</tpMeioPgto><cnpjReceb>${rec}</cnpjReceb><cnpjBasePsp>${base}</cnpjBasePsp></pgto>`;
+  });
+  return `<pgtoVinc>${items.join("")}</pgtoVinc>`;
+}
 
 // A tela trabalha com o modFrete da NF-e (0=CIF remetente, 1=FOB destinatário,
 // 2=terceiros, 3=próprio remetente, 4=próprio destinatário, 9=sem transporte).
@@ -273,7 +337,7 @@ export function buildCteXml(input: CteInputCompleto): { xml: string; chave: stri
   const vBCNum = Number(vBC);
   const vIBSUF = Math.round(vBCNum * 0.001 * 100) / 100;
   const vCBS = Math.round(vBCNum * 0.009 * 100) / 100;
-  const ibsXml = `<IBSCBS><CST>000</CST><cClassTrib>000001</cClassTrib><gIBSCBS><vBC>${vBC}</vBC><gIBSUF><pIBSUF>0.10</pIBSUF><vIBSUF>${vIBSUF.toFixed(2)}</vIBSUF></gIBSUF><gIBSMun><pIBSMun>0.00</pIBSMun><vIBSMun>0.00</vIBSMun></gIBSMun><vIBS>${vIBSUF.toFixed(2)}</vIBS><gCBS><pCBS>0.90</pCBS><vCBS>${vCBS.toFixed(2)}</vCBS></gCBS></gIBSCBS></IBSCBS>`;
+  const ibsXml = `<IBSCBS><CST>000</CST><cClassTrib>${cClassTribEfetivo(input)}</cClassTrib><gIBSCBS><vBC>${vBC}</vBC><gIBSUF><pIBSUF>0.10</pIBSUF><vIBSUF>${vIBSUF.toFixed(2)}</vIBSUF></gIBSUF><gIBSMun><pIBSMun>0.00</pIBSMun><vIBSMun>0.00</vIBSMun></gIBSMun><vIBS>${vIBSUF.toFixed(2)}</vIBS><gCBS><pCBS>0.90</pCBS><vCBS>${vCBS.toFixed(2)}</vCBS></gCBS></gIBSCBS></IBSCBS>`;
   // NT 2026.002 (XSD oficial): no CTeSimp o <imp> termina no IBSCBS; o vTotDFe é
   // filho do <total> (vTPrest+vTRec+vTotDFe). Em 2026, vTotDFe = vTPrest.
   const vTotDFe = input.vPrest.toFixed(2);
@@ -317,10 +381,10 @@ export function buildCteXml(input: CteInputCompleto): { xml: string; chave: stri
       <cMunEnv>${input.cMunEnv}</cMunEnv><xMunEnv>${input.xMunEnv}</xMunEnv><UFEnv>${input.ufEnv}</UFEnv>
       <modal>01</modal><tpServ>${input.tpServ || "0"}</tpServ>
       <UFIni>${input.ufIni}</UFIni><UFFim>${input.ufFim}</UFFim>
-      <retira>1</retira>
+      <retira>1</retira>${compraGovXml(input)}${pagAntXml(input)}
     </ide>
     <emit>
-      <CNPJ>${cnpjLimpo}</CNPJ>${input.emit.ie && /^\d{2,14}$/.test(input.emit.ie) ? `<IE>${input.emit.ie}</IE>` : ""}<xNome>${input.emit.xNome}</xNome>${input.emit.xFant && input.emit.xFant.length >= 2 ? `<xFant>${input.emit.xFant}</xFant>` : ""}${enderEmit}<CRT>${crt}</CRT>
+      <CNPJ>${cnpjLimpo}</CNPJ>${input.emit.ie && /^\d{2,14}$/.test(input.emit.ie) ? `<IE>${input.emit.ie}</IE>` : ""}<xNome>${input.emit.xNome}</xNome>${input.emit.xFant && input.emit.xFant.length >= 2 ? `<xFant>${input.emit.xFant}</xFant>` : ""}${rtcFase2(input) ? isufTag("ISUFEmit", (input.emit as any)?.isuf) : ""}${enderEmit}<CRT>${crt}</CRT>
     </emit>
     <toma>
       <toma>${toma}</toma><indIEToma>${indIEToma}</indIEToma><CNPJ>${cnpjToma}</CNPJ>${indIEToma !== "9" && input.tomador.ie && input.tomador.ie !== "ISENTO" ? `<IE>${input.tomador.ie}</IE>` : ""}<xNome>${xNomeToma}</xNome>${input.tomador.fone ? `<fone>${input.tomador.fone}</fone>` : ""}<enderToma><xLgr>${(input.tomador.logradouro || "RUA").length >= 2 ? (input.tomador.logradouro || "RUA") : "RUA GERAL"}</xLgr><nro>${input.tomador.nro || "SN"}</nro><xBairro>${(input.tomador.bairro || "CENTRO").length >= 2 ? (input.tomador.bairro || "CENTRO") : "CENTRO"}</xBairro><cMun>${input.tomador.cMun}</cMun><xMun>${input.tomador.xMun}</xMun><CEP>${cepToma}</CEP><UF>${input.tomador.uf}</UF></enderToma>${input.tomador.email ? `<email>${input.tomador.email}</email>` : ""}
@@ -334,7 +398,7 @@ export function buildCteXml(input: CteInputCompleto): { xml: string; chave: stri
     ${impXml}
     <total><vTPrest>${input.vPrest.toFixed(2)}</vTPrest><vTRec>${input.vPrest.toFixed(2)}</vTRec><vTotDFe>${vTotDFe}</vTotDFe></total>
     <infRespTec><CNPJ>${cnpjLimpo}</CNPJ><xContato>SUPORTE TECNICO</xContato><email>suporte@vectrainsights.com.br</email><fone>3139952572</fone></infRespTec>
-  </infCte>
+  </infCte>${pgtoVincXml(input)}
   <infCTeSupl><qrCodCTe>https://${(input.ufEnv || input.emit.uf)?.toUpperCase() === "MG" ? "portalcte.fazenda.mg.gov.br/portalcte/sistema/qrcode.xhtml" : "dfeportal.svrs.rs.gov.br/cteQrCode"}?chCTe=${chave}&amp;tpAmb=${SEFAZ_TP_AMB}</qrCodCTe></infCTeSupl>
 </CTeSimp>`;
   return { xml, chave };
@@ -473,7 +537,7 @@ export function buildCteNormalXml(input: CteInputCompleto): { xml: string; chave
   const parteXml = (tag: string, enderTag: string, p: any, papel: string) => {
     const xNome = String(p?.xNome || "").trim();
     if (xNome.length < 2) throw new Error(`CT-e Normal exige nome do ${papel}`);
-    return `<${tag}>${docXml({ ...p, papel })}${ieXml(p?.ie)}<xNome>${escCte(xNome.slice(0, 60))}</xNome>${p?.xFant && String(p.xFant).trim().length >= 2 ? `<xFant>${escCte(String(p.xFant).trim().slice(0, 60))}</xFant>` : ""}${p?.fone ? `<fone>${escCte(String(p.fone).replace(/\D/g, "").slice(0, 11))}</fone>` : ""}${enderXml(enderTag, p)}${p?.email ? `<email>${escCte(String(p.email).trim().slice(0, 60))}</email>` : ""}</${tag}>`;
+    return `<${tag}>${docXml({ ...p, papel })}${ieXml(p?.ie)}<xNome>${escCte(xNome.slice(0, 60))}</xNome>${p?.xFant && String(p.xFant).trim().length >= 2 ? `<xFant>${escCte(String(p.xFant).trim().slice(0, 60))}</xFant>` : ""}${p?.fone ? `<fone>${escCte(String(p.fone).replace(/\D/g, "").slice(0, 11))}</fone>` : ""}${rtcFase2(input) ? isufTag("ISUF", p?.isuf) : ""}${enderXml(enderTag, p)}${p?.email ? `<email>${escCte(String(p.email).trim().slice(0, 60))}</email>` : ""}</${tag}>`;
   };
   if (!input.rem) throw new Error("CT-e Normal exige remetente (rem)");
   if (!input.dest) throw new Error("CT-e Normal exige destinatario (dest)");
@@ -525,7 +589,7 @@ export function buildCteNormalXml(input: CteInputCompleto): { xml: string; chave
   const vBCNum = Number(vBC);
   const vIBSUF = Math.round(vBCNum * 0.001 * 100) / 100;
   const vCBS = Math.round(vBCNum * 0.009 * 100) / 100;
-  const ibsXml = `<IBSCBS><CST>000</CST><cClassTrib>000001</cClassTrib><gIBSCBS><vBC>${vBC}</vBC><gIBSUF><pIBSUF>0.10</pIBSUF><vIBSUF>${vIBSUF.toFixed(2)}</vIBSUF></gIBSUF><gIBSMun><pIBSMun>0.00</pIBSMun><vIBSMun>0.00</vIBSMun></gIBSMun><vIBS>${vIBSUF.toFixed(2)}</vIBS><gCBS><pCBS>0.90</pCBS><vCBS>${vCBS.toFixed(2)}</vCBS></gCBS></gIBSCBS></IBSCBS>`;
+  const ibsXml = `<IBSCBS><CST>000</CST><cClassTrib>${cClassTribEfetivo(input)}</cClassTrib><gIBSCBS><vBC>${vBC}</vBC><gIBSUF><pIBSUF>0.10</pIBSUF><vIBSUF>${vIBSUF.toFixed(2)}</vIBSUF></gIBSUF><gIBSMun><pIBSMun>0.00</pIBSMun><vIBSMun>0.00</vIBSMun></gIBSMun><vIBS>${vIBSUF.toFixed(2)}</vIBS><gCBS><pCBS>0.90</pCBS><vCBS>${vCBS.toFixed(2)}</vCBS></gCBS></gIBSCBS></IBSCBS>`;
   // XSD Normal: vTotDFe é filho do <imp> (não existe grupo <total>)
   impXml = impXml.replace(/<\/imp>$/, `${ibsXml}<vTotDFe>${Number(input.vPrest || 0).toFixed(2)}</vTotDFe></imp>`);
 
@@ -572,10 +636,10 @@ export function buildCteNormalXml(input: CteInputCompleto): { xml: string; chave
       <cMunIni>${input.cMunIni}</cMunIni><xMunIni>${escCte(input.xMunIni)}</xMunIni><UFIni>${escCte(String(input.ufIni || "").toUpperCase())}</UFIni><cMunFim>${input.cMunFim}</cMunFim><xMunFim>${escCte(input.xMunFim)}</xMunFim><UFFim>${escCte(String(input.ufFim || "").toUpperCase())}</UFFim>
       <retira>${input.retira || "1"}</retira>
       <indIEToma>${indIETomaN}</indIEToma>
-      ${tomaXml}
+      ${tomaXml}${compraGovXml(input)}${pagAntXml(input)}
     </ide>
     <emit>
-      <CNPJ>${cnpjLimpo}</CNPJ>${/^\d{2,14}$/.test(String(input.emit.ie || "")) ? `<IE>${input.emit.ie}</IE>` : ""}<xNome>${escCte(input.emit.xNome)}</xNome>${enderEmit}<CRT>${crt}</CRT>
+      <CNPJ>${cnpjLimpo}</CNPJ>${/^\d{2,14}$/.test(String(input.emit.ie || "")) ? `<IE>${input.emit.ie}</IE>` : ""}<xNome>${escCte(input.emit.xNome)}</xNome>${rtcFase2(input) ? isufTag("ISUFEmit", (input.emit as any)?.isuf) : ""}${enderEmit}<CRT>${crt}</CRT>
     </emit>
     ${parteXml("rem", "enderReme", remHml, "remetente")}
     ${parteXml("dest", "enderDest", destHml, "destinatario")}
@@ -590,7 +654,7 @@ export function buildCteNormalXml(input: CteInputCompleto): { xml: string; chave
       <infModal versaoModal="4.00"><rodo><RNTRC>${rntrcXml}</RNTRC>${motoXml}${veicTracXml}${veicRebXml}</rodo></infModal>${segXml}
     </infCTeNorm>${complXml}
     <infRespTec><CNPJ>${cnpjLimpo}</CNPJ><xContato>SUPORTE TECNICO</xContato><email>suporte@vectrainsights.com.br</email><fone>3139952572</fone></infRespTec>
-  </infCte>
+  </infCte>${pgtoVincXml(input)}
   <infCTeSupl><qrCodCTe>https://${qrBase}?chCTe=${chave}&amp;tpAmb=${SEFAZ_TP_AMB}</qrCodCTe></infCTeSupl>
 </CTe>`;
   return { xml, chave };

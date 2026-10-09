@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { describe, expect, it } from "vitest";
-import { buildCteNormalXml, buildCteXml, docAntOficial, tomaSefazDeModFrete } from "./sefaz-cte";
+import { buildCteNormalXml, buildCteXml, cClassTribEfetivo, compraGovXml, docAntOficial, isufTag, pagAntXml, pgtoVincXml, rtcFase2, tomaSefazDeModFrete } from "./sefaz-cte";
 
 // Base mínima válida para emissão em homologação (SEFAZ_AMBIENTE é fixo).
 // Os valores reproduzem o CT-e de referência (chave ...5311429212600).
@@ -277,6 +277,55 @@ describe("<ICMSSN> no Simples Nacional (CRT 1/4)", () => {
 
   it("CRT 3 mantém <ICMS00> (sem regressão)", () => {
     expect(buildNormal()).toContain("<ICMS00><CST>00</CST>");
+  });
+});
+
+describe("RTC fase 2 (atrás de flag): cClassTrib, ISUF, compras gov, split", () => {
+  const CH = "35251021306287000152570010000000011000000010";
+  const comFase2 = { rtc: { fase2: true } };
+
+  it("desligada: cClassTrib 000001 e nenhum grupo novo", () => {
+    expect(cClassTribEfetivo({})).toBe("000001");
+    expect(cClassTribEfetivo({ rtc: { fase2: true }, cClassTrib: "abc" })).toBe("000001");
+    expect(rtcFase2({})).toBe(false);
+    const xml = buildNormal({ cClassTrib: "200002" });
+    expect(xml).toContain("<cClassTrib>000001</cClassTrib>");
+    expect(xml).not.toContain("<pgtoVinc>");
+    expect(xml).not.toContain("<gCompraGov>");
+  });
+
+  it("ligada: cClassTrib real no Normal e no Simp", () => {
+    const xmlN = buildNormal({ ...comFase2, cClassTrib: "200002" });
+    const xmlS = buildCteXml(baseCte({ modelo: "simp", ...comFase2, cClassTrib: "200002" }) as any).xml;
+    expect(xmlN).toContain("<cClassTrib>200002</cClassTrib>");
+    expect(xmlS).toContain("<cClassTrib>200002</cClassTrib>");
+  });
+
+  it("ISUF só com fase 2 e 8-9 dígitos", () => {
+    expect(isufTag("ISUFEmit", "12345678")).toBe("<ISUFEmit>12345678</ISUFEmit>");
+    expect(isufTag("ISUF", "123")).toBe("");
+    const xml = buildNormal({ ...comFase2, emit: { ...(baseCte().emit as any), isuf: "123456789" } });
+    expect(xml).toContain("<ISUFEmit>123456789</ISUFEmit>");
+    expect(buildNormal()).not.toContain("ISUF");
+  });
+
+  it("gCompraGov válida entra no ide; inválida some", () => {
+    const gov = { compraGov: { tpEnte: "1", pRedutor: 10, tpOp: "1", refDFe: [CH] } };
+    const xml = buildNormal({ ...comFase2, ...gov });
+    expect(xml).toContain("<gCompraGov><tpEnteGov>1</tpEnteGov><pRedutor>10.0000</pRedutor><tpOpGov>1</tpOpGov>");
+    expect(xml).toContain(`<refDFeAnt>${CH}</refDFeAnt>`);
+    expect(compraGovXml({})).toBe("");
+    expect(compraGovXml({ rtc: { fase2: true }, compraGov: { tpEnte: "9" } })).toBe("");
+  });
+
+  it("tpPagAnt 1 sai direto; 3 exige chave; pgtoVinc valida campos", () => {
+    expect(pagAntXml({ rtc: { fase2: true }, pagAnt: { tipo: "1" } })).toBe("<tpPagAnt>1</tpPagAnt>");
+    expect(pagAntXml({})).toBe("");
+    expect(() => pagAntXml({ rtc: { fase2: true }, pagAnt: { tipo: "3", chaves: [] } })).toThrow();
+    const pg = { pgtoVinc: [{ idTransacao: "TX1", tpMeio: "3", cnpjReceb: "12345678000199", cnpjBase: "12345678" }] };
+    expect(pgtoVincXml({ rtc: { fase2: true }, ...pg })).toContain('<pgto nPag="001"><idTransacao>TX1</idTransacao><tpMeioPgto>03</tpMeioPgto>');
+    expect(() => pgtoVincXml({ rtc: { fase2: true }, pgtoVinc: [{ idTransacao: "X" }] })).toThrow();
+    expect(pgtoVincXml({})).toBe("");
   });
 });
 
