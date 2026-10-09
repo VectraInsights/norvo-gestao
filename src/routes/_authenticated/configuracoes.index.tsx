@@ -18,10 +18,9 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Building2, Trash2, Plus, Pencil, Check, X, Settings2, ShieldCheck } from "lucide-react";
+import { Building2, Trash2, Plus, Pencil, Check, X, Settings2, ShieldCheck, Tags, CalendarClock, FileText, Truck, Umbrella } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { useEmpresaAtual } from "@/hooks/use-empresa";
 import { usePermissoes } from "@/hooks/use-permissoes";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
@@ -30,57 +29,52 @@ export const Route = createFileRoute("/_authenticated/configuracoes/")({
   component: Configuracoes,
 });
 
+export const configNavLinkCls =
+  "-ml-2 inline-flex items-center gap-2 rounded-lg px-2 py-1.5 text-sm font-medium text-primary transition-colors hover:bg-accent";
+
 function Configuracoes() {
-  const { data: empresa } = useEmpresaAtual();
   const { pode, ehAdmin } = usePermissoes();
   const mostrarFiscais = pode("fiscal");
-  const navLinkCls =
-    "-ml-2 inline-flex items-center gap-2 rounded-lg px-2 py-1.5 text-sm font-medium text-primary transition-colors hover:bg-accent";
-  const tabLinkCls =
-    "rounded-lg px-2 py-1.5 text-sm font-medium text-muted-foreground transition-colors hover:bg-accent hover:text-primary hover:shadow-none data-[state=active]:bg-transparent data-[state=active]:text-primary data-[state=active]:shadow-none";
 
   return (
     <>
-      <PageHeader eyebrow="Sistema" title="Configurações" description="Empresa, categorias, condições de pagamento e configuração fiscal." />
+      <PageHeader eyebrow="Sistema" title="Configurações" description="Tudo em um só lugar: empresa, usuários, fiscal e cadastros de apoio." />
       <div className="mb-6 flex flex-wrap items-center gap-x-1 gap-y-1">
-        <Link to="/configuracoes/empresas" className={navLinkCls}>
-          <Building2 className="h-4 w-4" /> Gerenciar empresas
+        <Link to="/configuracoes/categorias" className={configNavLinkCls}>
+          <Tags className="h-4 w-4" /> Categorias financeiras
+        </Link>
+        <Link to="/configuracoes/condicoes" className={configNavLinkCls}>
+          <CalendarClock className="h-4 w-4" /> Condições de pagamento
+        </Link>
+        <Link to="/configuracoes/nfe" className={configNavLinkCls}>
+          <FileText className="h-4 w-4" /> Configuração NF-e
         </Link>
         {mostrarFiscais && (
-          <Link to="/fiscal/configuracoes" className={navLinkCls}>
+          <Link to="/fiscal/configuracoes" className={configNavLinkCls}>
             <Settings2 className="h-4 w-4" /> Configurações fiscais
           </Link>
         )}
+        <Link to="/configuracoes/empresas" className={configNavLinkCls}>
+          <Building2 className="h-4 w-4" /> Gerenciar empresas
+        </Link>
+        <Link to="/configuracoes/rntrc" className={configNavLinkCls}>
+          <Truck className="h-4 w-4" /> RNTRC
+        </Link>
+        <Link to="/configuracoes/seguradoras" className={configNavLinkCls}>
+          <Umbrella className="h-4 w-4" /> Seguradoras
+        </Link>
         {ehAdmin && (
-          <Link to="/configuracoes/usuarios" className={navLinkCls}>
+          <Link to="/configuracoes/usuarios" className={configNavLinkCls}>
             <ShieldCheck className="h-4 w-4" /> Usuários e acessos
           </Link>
         )}
       </div>
-
-      {!empresa ? (
-        <Card className="rounded-2xl"><CardContent className="p-8 text-center text-sm text-muted-foreground">Cadastre uma empresa primeiro.</CardContent></Card>
-      ) : (
-        <Tabs defaultValue="categorias">
-          <TabsList className="h-auto flex-wrap justify-start gap-1 bg-transparent p-0 shadow-none">
-            <TabsTrigger value="categorias" className={tabLinkCls}>Categorias financeiras</TabsTrigger>
-            <TabsTrigger value="condicoes" className={tabLinkCls}>Condições de pagamento</TabsTrigger>
-            <TabsTrigger value="rntrc" className={tabLinkCls}>RNTRC</TabsTrigger>
-            <TabsTrigger value="seguradoras" className={tabLinkCls}>Seguradoras</TabsTrigger>
-            <TabsTrigger value="nfe" className={tabLinkCls}>Configuração NF-e</TabsTrigger>
-          </TabsList>
-          <TabsContent value="categorias"><CategoriasTab empresaId={empresa.id} /></TabsContent>
-          <TabsContent value="condicoes"><CondicoesTab empresaId={empresa.id} /></TabsContent>
-          <TabsContent value="rntrc"><RntrcTab empresaId={empresa.id} /></TabsContent>
-          <TabsContent value="seguradoras"><SeguradorasTab empresaId={empresa.id} /></TabsContent>
-          <TabsContent value="nfe"><NFeConfigTab empresaId={empresa.id} /></TabsContent>
-        </Tabs>
-      )}
+      <Card className="rounded-2xl"><CardContent className="p-8 text-center text-sm text-muted-foreground">Escolha um item acima para configurar.</CardContent></Card>
     </>
   );
 }
 
-function CategoriasTab({ empresaId }: { empresaId: string }) {
+export function CategoriasTab({ empresaId }: { empresaId: string }) {
   const qc = useQueryClient();
   const [nome, setNome] = useState("");
   const [tipo, setTipo] = useState<"receber" | "pagar">("pagar");
@@ -137,7 +131,7 @@ function CategoriasTab({ empresaId }: { empresaId: string }) {
 }
 
 
-function CondicoesTab({ empresaId }: { empresaId: string }) {
+export function CondicoesTab({ empresaId }: { empresaId: string }) {
   const qc = useQueryClient();
   const [form, setForm] = useState({ nome: "", parcelas: "1", intervalo_dias: "30" });
 
@@ -187,7 +181,7 @@ function CondicoesTab({ empresaId }: { empresaId: string }) {
   );
 }
 
-function NFeConfigTab({ empresaId }: { empresaId: string }) {
+export function NFeConfigTab({ empresaId }: { empresaId: string }) {
   const qc = useQueryClient();
   const { data } = useQuery({
     queryKey: ["nfe-config", empresaId],
@@ -250,7 +244,7 @@ function NFeConfigTab({ empresaId }: { empresaId: string }) {
   );
 }
 
-function RntrcTab({ empresaId }: { empresaId: string }) {
+export function RntrcTab({ empresaId }: { empresaId: string }) {
   const qc = useQueryClient();
   const [rntrc, setRntrc] = useState("");
   const [nome, setNome] = useState("");
@@ -419,7 +413,7 @@ function RntrcTab({ empresaId }: { empresaId: string }) {
   );
 }
 
-function SeguradorasTab({ empresaId }: { empresaId: string }) {
+export function SeguradorasTab({ empresaId }: { empresaId: string }) {
   const qc = useQueryClient();
   const [nome, setNome] = useState("");
   const [cnpj, setCnpj] = useState("");

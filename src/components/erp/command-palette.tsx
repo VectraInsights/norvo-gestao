@@ -35,6 +35,11 @@ const ROUTES: { label: string; to: string; hint?: string }[] = [
   { label: "Férias", to: "/rh/ferias" },
   { label: "Calculadora trabalhista", to: "/rh/calculadora" },
   { label: "Configurações", to: "/configuracoes" },
+  { label: "Categorias financeiras", to: "/configuracoes/categorias" },
+  { label: "Condições de pagamento", to: "/configuracoes/condicoes" },
+  { label: "RNTRC", to: "/configuracoes/rntrc" },
+  { label: "Seguradoras", to: "/configuracoes/seguradoras" },
+  { label: "Configuração NF-e", to: "/configuracoes/nfe" },
   { label: "Usuários e acessos", to: "/configuracoes/usuarios" },
 ];
 

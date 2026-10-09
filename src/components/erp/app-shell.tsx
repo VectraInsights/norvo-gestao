@@ -10,8 +10,6 @@ import {
 import {
   LayoutDashboard,
   Settings,
-  Settings2,
-  ShieldCheck,
   LogOut,
   ChevronDown,
   Check,
@@ -679,23 +677,13 @@ export function AppShell({ children }: { children: ReactNode }) {
                   )}
                 </button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-60">
+              <DropdownMenuContent align="end" className="w-56">
                 <DropdownMenuItem onSelect={() => setSenhaOpen(true)}>
                   <KeyRound className="mr-2 h-4 w-4" /> Dados da conta
                 </DropdownMenuItem>
                 <DropdownMenuItem onSelect={() => navigate({ to: "/configuracoes" })}>
-                  <Settings className="mr-2 h-4 w-4" /> Configurações gerais
+                  <Settings className="mr-2 h-4 w-4" /> Configurações
                 </DropdownMenuItem>
-                {visivel("/fiscal/configuracoes") && (
-                  <DropdownMenuItem onSelect={() => navigate({ to: "/fiscal/configuracoes" })}>
-                    <Settings2 className="mr-2 h-4 w-4" /> Configurações fiscais
-                  </DropdownMenuItem>
-                )}
-                {visivel("/configuracoes/usuarios") && (
-                  <DropdownMenuItem onSelect={() => navigate({ to: "/configuracoes/usuarios" })}>
-                    <ShieldCheck className="mr-2 h-4 w-4" /> Usuários e acessos
-                  </DropdownMenuItem>
-                )}
                 <DropdownMenuSeparator />
                 <DropdownMenuItem onSelect={signOut} className="text-destructive">
                   <LogOut className="mr-2 h-4 w-4" /> Sair
