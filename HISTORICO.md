@@ -5706,3 +5706,11 @@ pm run build OK.
 - 	sc identico a baseline (117 linhas) e 
 pm run build OK.
 
+
+## Tabela NCM + campo no produto (09/10)
+
+- Migration cria public.ncm (leitura autenticados); seed via
+  scripts/seed-ncm.mjs do JSON oficial Classif (10.516 NCMs).
+- Produto ganha campo NCM com busca + validacao 8 digitos.
+- BrasilAPI descartada (defasada desde 2022). 	sc/uild OK.
+
