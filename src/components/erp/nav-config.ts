@@ -26,6 +26,7 @@ import {
   Settings2,
   FileOutput,
   FileInput,
+  Settings,
   Sun,
   ShieldCheck,
   ClipboardList,
@@ -129,13 +130,16 @@ const RAW_NAV: NavGroup[] = [
       { to: "/fiscal/cadastro", label: "Cadastro", icon: BookUser },
       { to: "/fiscal/relatorios", label: "Relatórios e Dashboards", icon: BarChart3 },
       { to: "/fiscal/contador", label: "Painel do Contador", icon: Handshake },
-      { to: "/fiscal/configuracoes", label: "Configurações Fiscais", icon: Settings2 },
     ],
   },
   {
-    label: "Acessos",
-    icon: ShieldCheck,
-    items: [{ to: "/configuracoes/usuarios", label: "Usuários e acessos", icon: ShieldCheck }],
+    label: "Configurações",
+    icon: Settings,
+    items: [
+      { to: "/configuracoes", label: "Configurações", icon: Settings },
+      { to: "/fiscal/configuracoes", label: "Configurações fiscais", icon: Settings2 },
+      { to: "/configuracoes/usuarios", label: "Usuários e acessos", icon: ShieldCheck },
+    ],
   },
 ];
 
@@ -146,6 +150,6 @@ export const NAV: NavGroup[] = [...RAW_NAV]
   .sort((a, b) =>
     a.label === OVERVIEW_LABEL ? -1 : b.label === OVERVIEW_LABEL ? 1 : byLabel(a, b),
   )
-  .map((g) => ({ ...g, items: g.label === "Fiscal" ? [...g.items] : [...g.items].sort(byLabel) }));
+  .map((g) => ({ ...g, items: [...g.items].sort(byLabel) }));
 
 export const ALL_NAV_ITEMS: NavItem[] = NAV.flatMap((g) => g.items);
