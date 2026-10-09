@@ -282,7 +282,7 @@ function Movimentacoes() {
       <div className="mb-3 flex flex-col gap-2 sm:flex-row sm:items-center">
         <div className="relative flex-1">
           <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-          <Input className="h-9 rounded-xl pl-10 pr-10 shadow-sm" placeholder="Buscar por produto, depósito ou observação..." value={busca} onChange={(e) => setBusca(e.target.value)} />
+          <Input className="h-9 rounded-xl pl-10 pr-10 shadow-sm" value={busca} onChange={(e) => setBusca(e.target.value)} />
         </div>
         <div className="flex items-center gap-2">
             <Dialog
@@ -314,15 +314,15 @@ function Movimentacoes() {
                       value={tr.produto_id}
                       onChange={(v) => setTr({ ...tr, produto_id: v })}
                       options={(produtos ?? []).map((p) => ({ value: p.id, label: `${p.nome} · estoque ${num(p.estoque_atual ?? 0)}` }))}
-                      placeholder="Selecione"
-                      searchPlaceholder="Digite para buscar..."
+                     
+                     
                       emptyText="Nenhum item encontrado."
                     />
                   </div>
                   <div className="grid grid-cols-2 gap-3">
                     <div>
                       <Label>De (origem)</Label>
-                      <Combobox value={tr.origem} onChange={(v) => setTr({ ...tr, origem: v })} options={depositos.map((d) => ({ value: d.id, label: d.nome }))} placeholder="Selecione" searchPlaceholder="Digite para buscar..." emptyText="Nenhum item encontrado." />
+                      <Combobox value={tr.origem} onChange={(v) => setTr({ ...tr, origem: v })} options={depositos.map((d) => ({ value: d.id, label: d.nome }))} emptyText="Nenhum item encontrado." />
                     </div>
                     <div>
                       <Label>Para (destino)</Label>
@@ -330,8 +330,8 @@ function Movimentacoes() {
                         value={tr.destino}
                         onChange={(v) => setTr({ ...tr, destino: v })}
                         options={depositos.map((d) => ({ value: d.id, label: d.nome }))}
-                        placeholder="Selecione"
-                        searchPlaceholder="Digite para buscar..."
+                       
+                       
                         emptyText="Nenhum item encontrado."
                       />
                     </div>
@@ -379,8 +379,8 @@ function Movimentacoes() {
                       value={form.produto_id}
                       onChange={(v) => setForm({ ...form, produto_id: v })}
                       options={(produtos ?? []).map((p) => ({ value: p.id, label: `${p.nome} · estoque ${num(p.estoque_atual ?? 0)}` }))}
-                      placeholder="Selecione"
-                      searchPlaceholder="Digite para buscar..."
+                     
+                     
                       emptyText="Nenhum item encontrado."
                     />
                   </div>

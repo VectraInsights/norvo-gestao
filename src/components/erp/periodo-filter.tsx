@@ -163,7 +163,7 @@ export function PeriodoFilter({ value, onChange }: { value: Periodo; onChange: (
                 <div>
                   <Label className="text-xs">De</Label>
                   <Input
-                    placeholder="dd/mm/aaaa"
+                   
                     value={fromStr}
                     onChange={(e) => setFromStr(e.target.value)}
                     className="h-9 rounded-xl"
@@ -172,7 +172,7 @@ export function PeriodoFilter({ value, onChange }: { value: Periodo; onChange: (
                 <div>
                   <Label className="text-xs">Até</Label>
                   <Input
-                    placeholder="dd/mm/aaaa"
+                   
                     value={toStr}
                     onChange={(e) => setToStr(e.target.value)}
                     className="h-9 rounded-xl"

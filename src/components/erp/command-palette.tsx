@@ -142,7 +142,7 @@ export function CommandPalette() {
       </Button>
 
       <CommandDialog open={open} onOpenChange={fechar}>
-        <CommandInput placeholder="Buscar páginas, clientes, produtos, lançamentos…" value={q} onValueChange={setQ} />
+        <CommandInput value={q} onValueChange={setQ} />
         <CommandList>
           <CommandEmpty>{term.length < 2 ? "Digite ao menos 2 caracteres." : "Nada encontrado."}</CommandEmpty>
 

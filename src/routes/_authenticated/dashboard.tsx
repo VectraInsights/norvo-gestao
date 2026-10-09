@@ -802,7 +802,7 @@ function FirstEmpresa({ onCreated }: { onCreated: () => Promise<void> }) {
                   value={form.cnpj}
                   onChange={(e) => setForm({ ...form, cnpj: maskDoc(e.target.value) })}
                   onKeyDown={handleCnpjKeyDown}
-                  placeholder="00.000.000/0000-00"
+                 
                   className="h-10 rounded-xl"
                 />
                 <Button
@@ -824,7 +824,7 @@ function FirstEmpresa({ onCreated }: { onCreated: () => Promise<void> }) {
                 required
                 value={form.nome_fantasia}
                 onChange={(e) => setForm({ ...form, nome_fantasia: e.target.value })}
-                placeholder="Minha Empresa Ltda"
+               
                 className="h-10 rounded-xl"
               />
             </div>

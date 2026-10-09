@@ -495,7 +495,7 @@ function FeriasPage() {
                                                 <div>
                                                   <Label>Venda (abono pecuniário)</Label>
                                                   <MoneyInput prefix="" decimals={0} value={formAbono}
-                                                    placeholder="0"
+                                                   
                                                     className="h-9 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                                                     onChange={(v) => {
                                                       setFormAbono(v);

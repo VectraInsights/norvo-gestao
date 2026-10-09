@@ -263,8 +263,8 @@ function ContaDetalhe({ contaId, contas, empresaId, tabInicial, onVoltar, onSele
             value={contaId}
             onChange={(v) => { if (v && v !== contaId) onSelecionar(v); }}
             options={(contas ?? []).map((c) => ({ value: c.id, label: c.nome ?? c.banco ?? "—", icone: detectBancoByNome(c.banco)?.logo }))}
-            placeholder="Selecionar conta"
-            searchPlaceholder="Digite para buscar..."
+           
+           
             emptyText="Nenhuma conta encontrada."
             footer={{ label: "Adicionar nova conta", onClick: onNovaConta }}
             className="h-10"
@@ -802,7 +802,7 @@ function ContasFinanceiras() {
       <div className="mb-4 flex flex-col gap-3 sm:mb-6 sm:flex-row sm:items-center">
         <div className="relative flex-1">
           <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-          <Input className="h-9 rounded-xl pl-10 shadow-sm" placeholder="Buscar por nome, banco, agência ou conta..." value={busca} onChange={(e) => setBusca(e.target.value)} />
+          <Input className="h-9 rounded-xl pl-10 shadow-sm" value={busca} onChange={(e) => setBusca(e.target.value)} />
         </div>
         <div className="flex items-center gap-2">
           <div className="flex items-center gap-2.5">
@@ -865,7 +865,7 @@ function ContasFinanceiras() {
                           <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
                             <div><Label>Banco *</Label><Input required value={form.banco} onChange={(e) => setForm({ ...form, banco: e.target.value })} /></div>
                             <div><Label>Agência (sem dígito) *</Label><Input required value={form.agencia} onChange={(e) => setForm({ ...form, agencia: e.target.value })} /></div>
-                            <div><Label>Conta (com dígito) *</Label><Input required value={form.conta} onChange={(e) => setForm({ ...form, conta: e.target.value })} onBlur={(e) => setForm({ ...form, conta: formatContaComDigito(e.target.value) })} placeholder="Ex: 12345-6" /></div>
+                            <div><Label>Conta (com dígito) *</Label><Input required value={form.conta} onChange={(e) => setForm({ ...form, conta: e.target.value })} onBlur={(e) => setForm({ ...form, conta: formatContaComDigito(e.target.value) })} /></div>
                           </div>
                           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                             <div>
@@ -912,7 +912,7 @@ function ContasFinanceiras() {
                             <div>
                               <Label>Bandeira do cartão *</Label>
                               <Select value={form.cartao_bandeira} onValueChange={(v) => setForm({ ...form, cartao_bandeira: v })}>
-                                <SelectTrigger><SelectValue placeholder="Selecione a bandeira" /></SelectTrigger>
+                                <SelectTrigger><SelectValue /></SelectTrigger>
                                 <SelectContent>
                                   {["Visa", "Mastercard", "Elo", "American Express", "Hipercard", "Outra"].map((b) => (<SelectItem key={b} value={b}>{b}</SelectItem>))}
                                 </SelectContent>
@@ -920,13 +920,13 @@ function ContasFinanceiras() {
                             </div>
                             <div>
                               <Label>Emissor do cartão *</Label>
-                              <Input required value={form.cartao_emissor} onChange={(e) => setForm({ ...form, cartao_emissor: e.target.value })} placeholder="Ex: Bradesco" />
+                              <Input required value={form.cartao_emissor} onChange={(e) => setForm({ ...form, cartao_emissor: e.target.value })} />
                             </div>
                           </div>
                           <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
                             <div>
                               <Label>Conta padrão para pagamento *</Label>
-                              <Combobox value={form.cartao_conta_pagamento_id} onChange={(v) => setForm({ ...form, cartao_conta_pagamento_id: v })} options={contasCorrentes.map((c) => ({ value: c.id, label: c.nome ?? c.banco ?? "" }))} placeholder="Selecione" searchPlaceholder="Digite para buscar..." emptyText="Nenhum item encontrado." />
+                              <Combobox value={form.cartao_conta_pagamento_id} onChange={(v) => setForm({ ...form, cartao_conta_pagamento_id: v })} options={contasCorrentes.map((c) => ({ value: c.id, label: c.nome ?? c.banco ?? "" }))} emptyText="Nenhum item encontrado." />
                             </div>
                             <div><Label>Dia do fechamento *</Label><MoneyInput required prefix="" decimals={0} value={form.cartao_dia_fechamento} onChange={(v) => setForm({ ...form, cartao_dia_fechamento: v })} /></div>
                             <div><Label>Dia do vencimento *</Label><MoneyInput required prefix="" decimals={0} value={form.cartao_dia_vencimento} onChange={(v) => setForm({ ...form, cartao_dia_vencimento: v })} /></div>
@@ -944,7 +944,7 @@ function ContasFinanceiras() {
                           <div><Label>Banco *</Label><Input required value={form.banco} onChange={(e) => setForm({ ...form, banco: e.target.value })} /></div>
                           <div>
                             <Label>Conta corrente vinculada *</Label>
-                            <Combobox value={form.conta_vinculada_id} onChange={(v) => setForm({ ...form, conta_vinculada_id: v })} options={contasCorrentes.map((c) => ({ value: c.id, label: c.nome ?? c.banco ?? "" }))} placeholder="Selecione" searchPlaceholder="Digite para buscar..." emptyText="Nenhum item encontrado." />
+                            <Combobox value={form.conta_vinculada_id} onChange={(v) => setForm({ ...form, conta_vinculada_id: v })} options={contasCorrentes.map((c) => ({ value: c.id, label: c.nome ?? c.banco ?? "" }))} emptyText="Nenhum item encontrado." />
                           </div>
                         </div>
                       )}
@@ -960,7 +960,7 @@ function ContasFinanceiras() {
                             <div><Label>Banco *</Label><Input required value={form.banco} onChange={(e) => setForm({ ...form, banco: e.target.value })} /></div>
                             <div>
                               <Label>Conta corrente vinculada *</Label>
-                              <Combobox value={form.conta_vinculada_id} onChange={(v) => setForm({ ...form, conta_vinculada_id: v })} options={contasCorrentes.map((c) => ({ value: c.id, label: c.nome ?? c.banco ?? "" }))} placeholder="Selecione" searchPlaceholder="Digite para buscar..." emptyText="Nenhum item encontrado." />
+                              <Combobox value={form.conta_vinculada_id} onChange={(v) => setForm({ ...form, conta_vinculada_id: v })} options={contasCorrentes.map((c) => ({ value: c.id, label: c.nome ?? c.banco ?? "" }))} emptyText="Nenhum item encontrado." />
                             </div>
                           </div>
                           <div>
@@ -1616,11 +1616,11 @@ function ReconcileDialog({ contaId, conta, empresaId, autoConciliar, importing, 
             <div className="flex flex-wrap items-center gap-2">
                 <div className="relative w-full max-w-xs">
                   <Search className="pointer-events-none absolute left-2 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
-                  <Input className="pl-8 h-8 text-[13px]" placeholder="Descrição ou valor" value={busca} onChange={(e) => setBusca(e.target.value)} />
+                  <Input className="pl-8 h-8 text-[13px]" value={busca} onChange={(e) => setBusca(e.target.value)} />
                 </div>
                 {filtrosSalvos.filtros.length > 0 && (
                   <Select onValueChange={aplicarFiltroSalvo}>
-                    <SelectTrigger className="h-8 text-xs w-[160px]"><SelectValue placeholder="Filtros salvos" /></SelectTrigger>
+                    <SelectTrigger className="h-8 text-xs w-[160px]"><SelectValue /></SelectTrigger>
                     <SelectContent>
                       {filtrosSalvos.filtros.map((salvo) => <SelectItem key={salvo.id} value={salvo.id}>{salvo.nome}</SelectItem>)}
                     </SelectContent>
@@ -1928,7 +1928,7 @@ function BuscarLancamentoDialog({ open, onClose, tx, lancamentos, value, onConfi
               <span className="text-xs text-muted-foreground">Pesquisar</span>
               <div className="relative">
                 <Search className="pointer-events-none absolute left-2 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
-                <Input className="pl-8 h-8 text-[13px]" placeholder="Descrição, valor" value={q} onChange={(e) => setQ(e.target.value)} />
+                <Input className="pl-8 h-8 text-[13px]" value={q} onChange={(e) => setQ(e.target.value)} />
               </div>
             </div>
             <div>
@@ -1947,7 +1947,7 @@ function BuscarLancamentoDialog({ open, onClose, tx, lancamentos, value, onConfi
               <span className="text-xs text-muted-foreground">Tipo</span>
               {tipoF === "todos" ? (
                 <Select value={tipoF} onValueChange={(v) => setTipoF(v as "receber" | "pagar" | "todos")}>
-                  <SelectTrigger className="h-8 text-xs w-full"><SelectValue placeholder="Tipo" /></SelectTrigger>
+                  <SelectTrigger className="h-8 text-xs w-full"><SelectValue /></SelectTrigger>
                   <SelectContent>
                     <SelectItem value="receber">Recebimentos, Transferência de entrada</SelectItem>
                     <SelectItem value="pagar">Pagamentos, Transferência de saída</SelectItem>
@@ -1996,7 +1996,7 @@ function BuscarLancamentoDialog({ open, onClose, tx, lancamentos, value, onConfi
                 <div>
                   <span className="text-xs text-muted-foreground">Categoria</span>
                   <Select value={catF} onValueChange={setCatF}>
-                    <SelectTrigger className="h-8 text-xs w-full"><SelectValue placeholder="Categoria" /></SelectTrigger>
+                    <SelectTrigger className="h-8 text-xs w-full"><SelectValue /></SelectTrigger>
                     <SelectContent>
                       <SelectItem value="todas">Todas categorias</SelectItem>
                       {(catsBusca ?? []).filter((c) => tipoF === "todos" || c.tipo === tipoF).map((c) => (
@@ -2010,7 +2010,7 @@ function BuscarLancamentoDialog({ open, onClose, tx, lancamentos, value, onConfi
                 <div>
                   <span className="text-xs text-muted-foreground">Cliente/Fornecedor</span>
                   <Select value={contatoF} onValueChange={setContatoF}>
-                    <SelectTrigger className="h-8 text-xs w-full"><SelectValue placeholder="Cliente/Fornecedor" /></SelectTrigger>
+                    <SelectTrigger className="h-8 text-xs w-full"><SelectValue /></SelectTrigger>
                     <SelectContent>
                       <SelectItem value="todas">Todos</SelectItem>
                       {(contatos ?? []).map((c) => (
@@ -2024,7 +2024,7 @@ function BuscarLancamentoDialog({ open, onClose, tx, lancamentos, value, onConfi
                 <div>
                   <span className="text-xs text-muted-foreground">Centro de custo</span>
                   <Select value={centroF} onValueChange={setCentroF}>
-                    <SelectTrigger className="h-8 text-xs w-full"><SelectValue placeholder="Centro de custo" /></SelectTrigger>
+                    <SelectTrigger className="h-8 text-xs w-full"><SelectValue /></SelectTrigger>
                     <SelectContent>
                       <SelectItem value="todas">Todos</SelectItem>
                       {(centros ?? []).map((c) => (
@@ -2038,7 +2038,7 @@ function BuscarLancamentoDialog({ open, onClose, tx, lancamentos, value, onConfi
                 <div>
                   <span className="text-xs text-muted-foreground">Situação</span>
                   <Select value={sitF} onValueChange={setSitF}>
-                    <SelectTrigger className="h-8 text-xs w-full"><SelectValue placeholder="Situação" /></SelectTrigger>
+                    <SelectTrigger className="h-8 text-xs w-full"><SelectValue /></SelectTrigger>
                     <SelectContent>
                       <SelectItem value="todas">Todas</SelectItem>
                       <SelectItem value="aberto">Em aberto</SelectItem>
@@ -2291,19 +2291,19 @@ const ReconcileRow = memo(function ReconcileRow({
           <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
               <div className="space-y-1">
                 <Label className="text-xs">Descrição <span className="text-destructive">*</span></Label>
-                <Input value={r.descricao} onChange={(e) => onSetRow(tx.id, { descricao: e.target.value })} placeholder="Descrição" />
+                <Input value={r.descricao} onChange={(e) => onSetRow(tx.id, { descricao: e.target.value })} />
               </div>
               <div className="space-y-1">
                 <Label className="text-xs">Categoria <span className="text-destructive">*</span></Label>
-                <Combobox value={r.categoria_id} onChange={(v) => onSetRow(tx.id, { categoria_id: v })} options={categorias.map((c) => ({ value: c.id, label: c.nome }))} placeholder="Selecione" searchPlaceholder="Digite para buscar..." emptyText="Nenhum item encontrado." />
+                <Combobox value={r.categoria_id} onChange={(v) => onSetRow(tx.id, { categoria_id: v })} options={categorias.map((c) => ({ value: c.id, label: c.nome }))} emptyText="Nenhum item encontrado." />
               </div>
               <div className="space-y-1">
                 <Label className="text-xs">{tx.valor >= 0 ? "Cliente" : "Fornecedor"}</Label>
-                <Combobox value={r.contato_id} onChange={(v) => onSetRow(tx.id, { contato_id: v })} options={contatos.map((c) => ({ value: c.id, label: c.nome }))} placeholder="Selecione" searchPlaceholder="Digite para buscar..." emptyText="Nenhum item encontrado." footer={{ label: "Novo contato", onClick: () => setNovoContatoOpen(true) }} />
+                <Combobox value={r.contato_id} onChange={(v) => onSetRow(tx.id, { contato_id: v })} options={contatos.map((c) => ({ value: c.id, label: c.nome }))} emptyText="Nenhum item encontrado." footer={{ label: "Novo contato", onClick: () => setNovoContatoOpen(true) }} />
               </div>
               <div className="space-y-1">
                 <Label className="text-xs">Centro de custo</Label>
-                <Combobox value={r.centro_custo_id} onChange={(v) => onSetRow(tx.id, { centro_custo_id: v })} options={centros.map((c) => ({ value: c.id, label: c.nome }))} placeholder="Selecione" searchPlaceholder="Digite para buscar..." emptyText="Nenhum item encontrado." />
+                <Combobox value={r.centro_custo_id} onChange={(v) => onSetRow(tx.id, { centro_custo_id: v })} options={centros.map((c) => ({ value: c.id, label: c.nome }))} emptyText="Nenhum item encontrado." />
               </div>
             </div>
           </div>

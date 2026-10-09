@@ -274,7 +274,7 @@ function Reposicao() {
       <div className="mb-3 flex flex-col gap-2 sm:flex-row sm:items-center">
         <div className="relative flex-1">
           <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-          <Input className="h-9 rounded-xl pl-10 pr-10 shadow-sm" placeholder="Buscar produto..." value={busca} onChange={(e) => setBusca(e.target.value)} />
+          <Input className="h-9 rounded-xl pl-10 pr-10 shadow-sm" value={busca} onChange={(e) => setBusca(e.target.value)} />
         </div>
         <div className="flex items-center gap-2">
           <Button
@@ -322,15 +322,15 @@ function Reposicao() {
           <Card className="mb-4 grid gap-4 p-4 sm:grid-cols-4">
             <div>
               <Label>Fornecedor *</Label>
-              <Combobox value={fornecedor} onChange={setFornecedor} options={fornecedores.map((f) => ({ value: f.id, label: f.nome }))} placeholder="Selecione…" searchPlaceholder="Digite para buscar..." emptyText="Nenhum item encontrado." />
+              <Combobox value={fornecedor} onChange={setFornecedor} options={fornecedores.map((f) => ({ value: f.id, label: f.nome }))} emptyText="Nenhum item encontrado." />
             </div>
             <div>
               <Label>Depósito destino</Label>
-              <Combobox value={depositoId} onChange={setDepositoId} options={[{ value: "sem-deposito", label: "Sem depósito" }, ...depositos.map((d) => ({ value: d.id, label: d.nome }))]} placeholder="Opcional" searchPlaceholder="Digite para buscar..." emptyText="Nenhum item encontrado." />
+              <Combobox value={depositoId} onChange={setDepositoId} options={[{ value: "sem-deposito", label: "Sem depósito" }, ...depositos.map((d) => ({ value: d.id, label: d.nome }))]} emptyText="Nenhum item encontrado." />
             </div>
             <div>
               <Label>Conta p/ pagamento</Label>
-              <Combobox value={contaBanco} onChange={setContaBanco} options={contas.map((c) => ({ value: c.id, label: c.nome }))} placeholder="Opcional" searchPlaceholder="Digite para buscar..." emptyText="Nenhum item encontrado." />
+              <Combobox value={contaBanco} onChange={setContaBanco} options={contas.map((c) => ({ value: c.id, label: c.nome }))} emptyText="Nenhum item encontrado." />
             </div>
             <div>
               <Label>Previsão de entrega</Label>

@@ -451,7 +451,7 @@ function FolhaPage() {
       <div className="mb-4 flex flex-col gap-2 sm:mb-6 sm:flex-row sm:items-center">
         <div className="relative flex-1">
           <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-          <Input className="h-9 rounded-xl pl-10 pr-10 shadow-sm" placeholder="Buscar por colaborador..." value={busca} onChange={(e) => setBusca(e.target.value)} />
+          <Input className="h-9 rounded-xl pl-10 pr-10 shadow-sm" value={busca} onChange={(e) => setBusca(e.target.value)} />
           {busca && (
             <button
               type="button"
@@ -521,8 +521,8 @@ function FolhaPage() {
                         value: c.id,
                         label: c.nome + (c.optante_vt ? " (VT)" : ""),
                       }))}
-                      placeholder="Selecione"
-                      searchPlaceholder="Digite para buscar..."
+                     
+                     
                       emptyText="Nenhum item encontrado."
                     />
                   </div>
@@ -584,7 +584,7 @@ function FolhaPage() {
                     )}
                     <div className="mt-2 flex gap-2">
                       <Input
-                        placeholder="Nome (ex.: VT, vale refeição)"
+                       
                         value={novoDescNome}
                         onChange={(e) => setNovoDescNome(e.target.value)}
                         onKeyDown={(e) => {

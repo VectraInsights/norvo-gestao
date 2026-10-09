@@ -521,7 +521,7 @@ function Viagens() {
       <div className="mb-3 flex flex-col gap-2 sm:flex-row sm:items-center">
         <div className="relative flex-1">
           <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-          <Input className="pl-8" placeholder="Buscar por rota, cliente, motorista, placa ou status..." value={busca} onChange={(e) => { setBusca(e.target.value); setPagina(1); }} />
+          <Input className="pl-8" value={busca} onChange={(e) => { setBusca(e.target.value); setPagina(1); }} />
         </div>
         <div className="flex items-center gap-2">
           <Dialog
@@ -549,8 +549,8 @@ function Viagens() {
                       value={form.cliente_id}
                       onChange={(v) => set("cliente_id", v)}
                       options={clientes.map((c) => ({ value: c.id, label: c.nome }))}
-                      placeholder="Selecione…"
-                      searchPlaceholder="Digite para buscar..."
+                     
+                     
                       emptyText="Nenhum item encontrado."
                       footer={{ label: "Novo cliente", onClick: () => setNovoClienteOpen(true) }}
                     />
@@ -567,8 +567,8 @@ function Viagens() {
                           label: avisos.length > 0 ? `${m.nome} ⚠ ${avisos.join(" · ")}` : m.nome,
                         };
                       })}
-                      placeholder="Selecione…"
-                      searchPlaceholder="Digite para buscar..."
+                     
+                     
                       emptyText="Nenhum item encontrado."
                     />
                   </div>
@@ -581,8 +581,8 @@ function Viagens() {
                         value: v.id,
                         label: `${v.placa}${v.marca_modelo ? ` · ${v.marca_modelo}` : ""}`,
                       }))}
-                      placeholder="Selecione…"
-                      searchPlaceholder="Digite para buscar..."
+                     
+                     
                       emptyText="Nenhum item encontrado."
                     />
                   </div>
@@ -593,14 +593,14 @@ function Viagens() {
                     <div className="flex gap-2">
                       <Input
                         className="flex-1"
-                        placeholder="Cidade"
+                       
                         value={form.origem_cidade}
                         onChange={(e) => set("origem_cidade", e.target.value)}
                       />
                       <Input
                         className="w-20 uppercase"
                         maxLength={2}
-                        placeholder="UF"
+                       
                         value={form.origem_uf}
                         onChange={(e) => set("origem_uf", e.target.value.toUpperCase())}
                       />
@@ -611,14 +611,14 @@ function Viagens() {
                     <div className="flex gap-2">
                       <Input
                         className="flex-1"
-                        placeholder="Cidade"
+                       
                         value={form.destino_cidade}
                         onChange={(e) => set("destino_cidade", e.target.value)}
                       />
                       <Input
                         className="w-20 uppercase"
                         maxLength={2}
-                        placeholder="UF"
+                       
                         value={form.destino_uf}
                         onChange={(e) => set("destino_uf", e.target.value.toUpperCase())}
                       />
@@ -906,7 +906,7 @@ function Viagens() {
             <div>
               <Label>Descrição</Label>
               <Input
-                placeholder="Ex.: Posto Ipiranga — BR-116"
+               
                 value={despForm.descricao}
                 onChange={(e) => setDespForm((f) => ({ ...f, descricao: e.target.value }))}
               />

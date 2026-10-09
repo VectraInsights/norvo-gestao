@@ -220,7 +220,7 @@ export function EmpresasPage() {
       <div className="mb-4 flex flex-col gap-3 sm:mb-6 sm:flex-row sm:items-center">
         <div className="relative flex-1">
           <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-          <Input className="h-10 rounded-xl pl-10 shadow-sm" placeholder="Buscar por nome, CNPJ ou cidade..." value={busca} onChange={(e) => setBusca(e.target.value)} />
+          <Input className="h-10 rounded-xl pl-10 shadow-sm" value={busca} onChange={(e) => setBusca(e.target.value)} />
         </div>
         <div className="flex items-center gap-2">
           <Dialog open={open} onOpenChange={(v) => { setOpen(v); if (!v) setForm(emptyForm); }}>
@@ -231,7 +231,7 @@ export function EmpresasPage() {
                 <div className="grid gap-1.5">
                   <Label>CNPJ</Label>
                   <div className="flex gap-2">
-                    <Input placeholder="00.000.000/0000-00" value={form.cnpj} className="h-10 rounded-xl"
+                    <Input value={form.cnpj} className="h-10 rounded-xl"
                       onChange={(e) => setForm({ ...form, cnpj: maskDoc(e.target.value) })}
                       onKeyDown={handleCnpjKeyDown} />
                     <Button type="button" variant="outline" onClick={lookupCnpj} disabled={lookingUp || !form.cnpj} className="h-10 w-10 shrink-0 rounded-xl shadow-sm">
@@ -243,7 +243,7 @@ export function EmpresasPage() {
                 <div className="grid gap-1.5"><Label>Razão social</Label><Input value={form.razao_social} onChange={(e) => setForm({ ...form, razao_social: e.target.value })} className="h-10 rounded-xl" /></div>
                 <div className="grid gap-1.5"><Label>Regime tributário</Label>
                   <Select value={(form as any).regime_tributario} onValueChange={v => setForm({ ...form, regime_tributario: v } as any)}>
-                    <SelectTrigger className="h-10 rounded-xl"><SelectValue placeholder="Selecione" /></SelectTrigger>
+                    <SelectTrigger className="h-10 rounded-xl"><SelectValue /></SelectTrigger>
                     <SelectContent>
                       <SelectItem value="simples">Simples Nacional</SelectItem>
                       <SelectItem value="lucro_presumido">Lucro Presumido</SelectItem>

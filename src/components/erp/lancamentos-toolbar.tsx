@@ -401,7 +401,7 @@ export function LancamentosToolbar({
           </DialogHeader>
           <div className="space-y-2.5">
             <label className="text-sm font-medium">Conta financeira (opcional)</label>
-            <Combobox value={contaSel} onChange={setContaSel} options={[{ value: "__none", label: "Sem conta vinculada" }, ...((contas ?? []).map((c) => ({ value: c.id, label: c.nome })))]} placeholder="Selecione uma conta" searchPlaceholder="Digite para buscar..." emptyText="Nenhum item encontrado." />
+            <Combobox value={contaSel} onChange={setContaSel} options={[{ value: "__none", label: "Sem conta vinculada" }, ...((contas ?? []).map((c) => ({ value: c.id, label: c.nome })))]} emptyText="Nenhum item encontrado." />
           </div>
           <DialogFooter className="gap-2">
             <Button variant="outline" className="h-10 rounded-xl px-5" onClick={() => setPending(null)} disabled={saving}>Cancelar</Button>

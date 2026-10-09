@@ -194,7 +194,7 @@ function VendasPage() {
       <div className="mb-3 flex flex-col gap-2 sm:flex-row sm:items-center">
         <div className="relative flex-1">
           <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-          <Input className="pl-8" placeholder="Buscar por cliente, número ou condição..." value={busca} onChange={(e) => { setBusca(e.target.value); setPagina(1); }} />
+          <Input className="pl-8" value={busca} onChange={(e) => { setBusca(e.target.value); setPagina(1); }} />
         </div>
         <div className="flex items-center gap-2">
           <Select
@@ -548,8 +548,8 @@ function NovaVendaSheet({ onClose }: { onClose: () => void }) {
               value={clienteId}
               onChange={setClienteId}
               options={(clientes ?? []).map((c) => ({ value: c.id, label: c.nome }))}
-              placeholder="Selecione"
-              searchPlaceholder="Digite para buscar..."
+             
+             
               emptyText="Nenhum item encontrado."
               footer={{ label: "Novo cliente", onClick: () => setNovoClienteOpen(true) }}
             />
@@ -560,8 +560,8 @@ function NovaVendaSheet({ onClose }: { onClose: () => void }) {
               value={condicaoId}
               onChange={setCondicaoId}
               options={(condicoes ?? []).map((c) => ({ value: c.id, label: c.nome }))}
-              placeholder="À vista"
-              searchPlaceholder="Digite para buscar..."
+             
+             
               emptyText="Nenhum item encontrado."
             />
           </div>
@@ -577,8 +577,8 @@ function NovaVendaSheet({ onClose }: { onClose: () => void }) {
                 value: p.id,
                 label: p.nome + " — " + brl(Number(p.preco_venda ?? 0)),
               }))}
-              placeholder="+ Adicionar produto"
-              searchPlaceholder="Digite para buscar..."
+             
+             
               emptyText="Nenhum item encontrado."
             />
           </div>

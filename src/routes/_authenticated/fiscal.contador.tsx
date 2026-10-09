@@ -188,7 +188,7 @@ function PainelContador() {
                 }}>
                   <SelectTrigger id="periodo" className="h-10 rounded-xl bg-background shadow-sm">
                     <Calendar className="mr-2 h-4 w-4 text-muted-foreground" />
-                    <SelectValue placeholder="Selecione o período" />
+                    <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="08-2026">Agosto / 2026 (Período Atual)</SelectItem>
@@ -306,7 +306,7 @@ function PainelContador() {
                   type="email" 
                   value={emailContador}
                   onChange={(e) => setEmailContador(e.target.value)}
-                  placeholder="contabilidade@empresa.com"
+                 
                   className="h-10 rounded-xl pl-10"
                 />
               </div>

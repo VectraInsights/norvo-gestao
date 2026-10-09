@@ -443,7 +443,7 @@ function Multas() {
           <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
           <Input
             className="pl-8"
-            placeholder="Buscar por placa, auto de infração, órgão…"
+           
             value={busca}
             onChange={(e) => {
               setBusca(e.target.value);
@@ -510,8 +510,8 @@ function Multas() {
                       value={form.veiculo_id}
                       onChange={escolherVeiculo}
                       options={(veiculos ?? []).map((v) => ({ value: v.id, label: v.placa }))}
-                      placeholder="Selecionar veículo…"
-                      searchPlaceholder="Digite para buscar..."
+                     
+                     
                       emptyText="Nenhum item encontrado."
                     />
                   </div>
@@ -767,7 +767,7 @@ function Multas() {
             <div>
               <Label>Endpoint da API</Label>
               <Input
-                placeholder="https://exemplo.com/api/multas"
+               
                 value={configForm.endpoint}
                 onChange={(e) => setConfig("endpoint", e.target.value)}
               />

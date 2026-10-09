@@ -319,7 +319,7 @@ function Clientes() {
       <div className="mb-3 flex flex-col gap-2 sm:flex-row sm:items-center">
         <div className="relative flex-1">
           <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-          <Input className="pl-8" placeholder="Buscar por nome, CPF/CNPJ ou cidade..." value={busca} onChange={(e) => setBusca(e.target.value)} />
+          <Input className="pl-8" value={busca} onChange={(e) => setBusca(e.target.value)} />
         </div>
         <div className="flex items-center gap-2">
           <Button variant="ghost" size="sm" onClick={() => setTrilhaOpen(true)} className="h-9 rounded-xl px-4 active:scale-95">
@@ -343,7 +343,7 @@ function Clientes() {
                 </div>
                 <div className="grid grid-cols-3 gap-3">
                   <div className="col-span-2"><Label>Nome / Razão social *</Label><Input required value={form.nome} onChange={(e) => setForm({ ...form, nome: e.target.value })} /></div>
-                  <div><Label>IE</Label><Input value={form.ie} onChange={(e) => setForm({ ...form, ie: e.target.value })} placeholder="ISENTO" /></div>
+                  <div><Label>IE</Label><Input value={form.ie} onChange={(e) => setForm({ ...form, ie: e.target.value })} /></div>
                 </div>
                 <div>
                   <Label>Tipo *</Label>

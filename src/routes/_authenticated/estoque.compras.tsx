@@ -241,7 +241,7 @@ function Compras() {
       <div className="mb-4 flex flex-col gap-2 sm:mb-6 sm:flex-row sm:items-center">
         <div className="relative flex-1">
           <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-          <Input className="h-9 rounded-xl pl-10 pr-10 shadow-sm" placeholder="Buscar por número ou fornecedor…" value={busca} onChange={(e) => setBusca(e.target.value)} />
+          <Input className="h-9 rounded-xl pl-10 pr-10 shadow-sm" value={busca} onChange={(e) => setBusca(e.target.value)} />
           {busca && (
             <button
               type="button"
@@ -264,7 +264,7 @@ function Compras() {
                 <div className="grid gap-4 sm:grid-cols-3">
                   <div>
                     <Label>Fornecedor</Label>
-                    <Combobox value={fornecedor} onChange={setFornecedor} options={fornecedores.map((f) => ({ value: f.id, label: f.nome }))} placeholder="Selecione…" searchPlaceholder="Digite para buscar..." emptyText="Nenhum item encontrado." footer={{ label: "Novo fornecedor", onClick: () => setNovoFornOpen(true) }} />
+                    <Combobox value={fornecedor} onChange={setFornecedor} options={fornecedores.map((f) => ({ value: f.id, label: f.nome }))} emptyText="Nenhum item encontrado." footer={{ label: "Novo fornecedor", onClick: () => setNovoFornOpen(true) }} />
                   </div>
                   <div>
                     <Label>Previsão de entrega</Label>
@@ -272,7 +272,7 @@ function Compras() {
                   </div>
                   <div>
                     <Label>Conta p/ pagamento</Label>
-                    <Combobox value={contaBanco} onChange={setContaBanco} options={contas.map((c) => ({ value: c.id, label: c.nome ?? "" }))} placeholder="Opcional" searchPlaceholder="Digite para buscar..." emptyText="Nenhum item encontrado." />
+                    <Combobox value={contaBanco} onChange={setContaBanco} options={contas.map((c) => ({ value: c.id, label: c.nome ?? "" }))} emptyText="Nenhum item encontrado." />
                   </div>
                 </div>
 
@@ -292,7 +292,7 @@ function Compras() {
                           setItens((r) => r.map((x, i) => i === idx
                             ? { ...x, produto_id: v, custo_unitario: prod?.preco_custo ? String(prod.preco_custo) : x.custo_unitario }
                             : x));
-                        }} options={produtos.map((p) => ({ value: p.id, label: p.nome }))} placeholder="Produto" searchPlaceholder="Digite para buscar..." emptyText="Nenhum item encontrado." />
+                        }} options={produtos.map((p) => ({ value: p.id, label: p.nome }))} emptyText="Nenhum item encontrado." />
                         <MoneyInput prefix="" decimals={3} value={it.quantidade} onChange={(v) => setItens((r) => r.map((x, i) => i === idx ? { ...x, quantidade: v } : x))} />
                         <MoneyInput value={it.custo_unitario}
                           onChange={(v) => setItens((r) => r.map((x, i) => i === idx ? { ...x, custo_unitario: v } : x))} />
@@ -311,7 +311,7 @@ function Compras() {
 
                 <div>
                   <Label>Observações</Label>
-                  <Input value={obs} onChange={(e) => setObs(e.target.value)} placeholder="Opcional" />
+                  <Input value={obs} onChange={(e) => setObs(e.target.value)} />
                 </div>
               </div>
               <DialogFooter className="gap-2">

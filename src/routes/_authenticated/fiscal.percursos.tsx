@@ -192,7 +192,7 @@ function T({
           set(k, vv);
           if (on14 && vv.replace(/\D/g, "").length === 14) on14(vv.replace(/\D/g, ""));
         }}
-        placeholder={ph}
+       
       />
     </div>
   );
@@ -225,7 +225,7 @@ function Tc({
         onChange={(e) => {
           set(k, e.target.value.toUpperCase());
         }}
-        placeholder=""
+       
         readOnly={ro}
       />
     </div>
@@ -264,7 +264,7 @@ function Num({
         decimals={dec ?? 2}
         value={(editing as any)?.[k!] ?? ""}
         onChange={(v) => set!(k!, v)}
-        placeholder="0,00"
+       
       />
     </div>
   );
@@ -324,14 +324,14 @@ function ChaveEdit({
         className="col-span-6 h-6 text-[11px]"
         value={nome || ""}
         onChange={(e) => onNome(e.target.value.toUpperCase())}
-        placeholder="Nome"
+       
       />
       <Input
         className="col-span-4 h-6 text-[11px]"
         value={doc || ""}
         onChange={(e) => onDoc(maskDoc(e.target.value))}
         onBlur={onBlurDoc}
-        placeholder="CNPJ"
+       
         inputMode="numeric"
       />
     </div>
@@ -436,7 +436,7 @@ function Combo({
         <Input
           className="h-7 text-xs pr-6"
           value={open ? txt : sel ? sel.label : value || ""}
-          placeholder={placeholder}
+         
           onFocus={() => {
             setTxt("");
             setOpen(true);
@@ -1700,7 +1700,7 @@ function PercursosPage() {
           <Search className="h-4 w-4 shrink-0 text-muted-foreground" />
           <Input
             className="h-10 rounded-xl shadow-sm"
-            placeholder="Buscar por código, nome, empresa ou CNPJ..."
+           
             value={busca}
             onChange={(e) => setBusca(e.target.value)}
           />
@@ -2057,7 +2057,7 @@ function PercursosPage() {
                           <Combo
                             label="CFOP"
                             value={editing.cfop || ""}
-                            placeholder=""
+                           
                             onPick={(v) => {
                               const o = OPTS_CFOP.find((x) => x.v === v);
                               set("cfop", v);
@@ -2075,7 +2075,7 @@ function PercursosPage() {
                           <Combo
                             label="Natureza da Operação"
                             value={semNumCfop(editing.nat_operacao || "")}
-                            placeholder=""
+                           
                             onPick={(v) => set("nat_operacao", v)}
                             opts={OPTS_NAT}
                           />
@@ -2086,7 +2086,7 @@ function PercursosPage() {
                           <Combo
                             label="Tipo de carga (ANTT — piso mínimo)"
                             value={editing.tipo_carga_antt || "Carga Geral"}
-                            placeholder=""
+                           
                             onPick={(v) => set("tipo_carga_antt", v)}
                             opts={OPTS_TIPO_CARGA}
                           />
@@ -2145,8 +2145,8 @@ function PercursosPage() {
                             value: s.nome,
                             label: s.nome,
                           }))}
-                          placeholder="Selecione seguradora"
-                          searchPlaceholder="Digite para buscar..."
+                         
+                         
                           emptyText="Nenhum item encontrado."
                         />
                       </div>

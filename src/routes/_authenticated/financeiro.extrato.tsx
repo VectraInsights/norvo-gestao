@@ -296,12 +296,12 @@ function ExtratoPage() {
             <SelectItem value="pagar">Saídas</SelectItem>
           </SelectContent>
         </Select>
-        <Combobox value={contaId} onChange={setContaId} options={[{ value: "todas", label: "Todas as contas" }, ...((contas ?? []).map((c) => ({ value: c.id, label: c.nome ?? "" })) )]} placeholder="Conta" searchPlaceholder="Digite para buscar..." emptyText="Nenhum item encontrado." className="h-10" />
-        <Combobox value={categoriaId} onChange={setCategoriaId} options={[{ value: "todas", label: "Todas as categorias" }, ...((categorias ?? []).map((c) => ({ value: c.id, label: c.nome ?? "" })) )]} placeholder="Categoria" searchPlaceholder="Digite para buscar..." emptyText="Nenhum item encontrado." className="h-10" />
-        <Combobox value={centroId} onChange={setCentroId} options={[{ value: "todos", label: "Todos os centros" }, ...((centros ?? []).map((c) => ({ value: c.id, label: c.nome ?? "" })) )]} placeholder="Centro de custo" searchPlaceholder="Digite para buscar..." emptyText="Nenhum item encontrado." className="h-10" />
+        <Combobox value={contaId} onChange={setContaId} options={[{ value: "todas", label: "Todas as contas" }, ...((contas ?? []).map((c) => ({ value: c.id, label: c.nome ?? "" })) )]} emptyText="Nenhum item encontrado." className="h-10" />
+        <Combobox value={categoriaId} onChange={setCategoriaId} options={[{ value: "todas", label: "Todas as categorias" }, ...((categorias ?? []).map((c) => ({ value: c.id, label: c.nome ?? "" })) )]} emptyText="Nenhum item encontrado." className="h-10" />
+        <Combobox value={centroId} onChange={setCentroId} options={[{ value: "todos", label: "Todos os centros" }, ...((centros ?? []).map((c) => ({ value: c.id, label: c.nome ?? "" })) )]} emptyText="Nenhum item encontrado." className="h-10" />
         <div className="relative ml-auto w-full sm:w-72">
           <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-          <Input value={busca} onChange={(e) => setBusca(e.target.value)} placeholder="Pesquisar…" className="h-10 rounded-xl pl-10 pr-10 shadow-sm" />
+          <Input value={busca} onChange={(e) => setBusca(e.target.value)} className="h-10 rounded-xl pl-10 pr-10 shadow-sm" />
           {busca && (
             <button type="button" onClick={() => setBusca("")} aria-label="Limpar busca"
               className="absolute right-2.5 top-1/2 grid h-6 w-6 -translate-y-1/2 place-items-center rounded-lg text-muted-foreground transition-colors hover:bg-accent hover:text-foreground">

@@ -189,7 +189,7 @@ export function NovoContatoDialog({ empresaId, tipoFixo, titulo, open, onOpenCha
           </div>
           <div className="grid gap-3 sm:grid-cols-[1fr_140px]">
             <div><Label>Nome / Razão social *</Label><Input required value={form.nome} onChange={(e) => setForm({ ...form, nome: e.target.value })} className="h-10 rounded-xl" /></div>
-            <div><Label>IE</Label><Input value={form.ie} onChange={(e) => setForm({ ...form, ie: e.target.value })} placeholder="ISENTO" className="h-10 rounded-xl" /></div>
+            <div><Label>IE</Label><Input value={form.ie} onChange={(e) => setForm({ ...form, ie: e.target.value })} className="h-10 rounded-xl" /></div>
           </div>
           {!tipoFixo && (
             <div>

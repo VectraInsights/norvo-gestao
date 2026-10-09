@@ -454,7 +454,7 @@ export function ConfigFiscais() {
                         <Input 
                           id="senha-cert" 
                           type={showCertPassword ? "text" : "password"}
-                          placeholder="Digite a senha de proteção" 
+                          
                           className="h-10 rounded-xl pl-10 pr-10"
                           value={certPassword}
                           onChange={(e) => setCertPassword(e.target.value)}
@@ -523,7 +523,7 @@ export function ConfigFiscais() {
                       <Label htmlFor="regime">Regime Tributário</Label>
                       <Select value={regime} onValueChange={setRegime}>
                         <SelectTrigger id="regime" className="h-10 rounded-xl">
-                          <SelectValue placeholder="Selecione o regime" />
+                          <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
                           <SelectItem value="simples">Simples Nacional</SelectItem>
@@ -537,7 +537,7 @@ export function ConfigFiscais() {
                       <Label htmlFor="cnae">CNAE Principal</Label>
                       <Input 
                         id="cnae" 
-                        placeholder="Ex: 6201-5/01" 
+                        
                         value={cnae} 
                         onChange={(e) => setCnae(e.target.value)} 
                         className="h-10 rounded-xl"
@@ -548,7 +548,7 @@ export function ConfigFiscais() {
                       <Label htmlFor="nat">Natureza de Operação Padrão</Label>
                       <Input 
                         id="nat" 
-                        placeholder="Ex: Venda de mercadoria" 
+                        
                         value={natOp} 
                         onChange={(e) => setNatOp(e.target.value)} 
                         className="h-10 rounded-xl"
@@ -634,7 +634,7 @@ export function ConfigFiscais() {
                     <Label htmlFor="cfop-nome">Nome da Natureza</Label>
                     <Input 
                       id="cfop-nome" 
-                      placeholder="Ex: Venda de mercadoria interna"
+                     
                       value={cfopNome}
                       onChange={(e) => setCfopNome(e.target.value)}
                       className="h-10 rounded-xl"
@@ -646,7 +646,7 @@ export function ConfigFiscais() {
                       <Label htmlFor="cfop-val">Código CFOP</Label>
                       <Input 
                         id="cfop-val" 
-                        placeholder="Ex: 5102"
+                       
                         value={cfopValor}
                         onChange={(e) => setCfopValor(e.target.value)}
                         className="h-10 rounded-xl"
@@ -670,7 +670,7 @@ export function ConfigFiscais() {
                     <Label htmlFor="cfop-desc">Descrição Fiscal</Label>
                     <Input 
                       id="cfop-desc" 
-                      placeholder="Finalidade fiscal da natureza de operação"
+                     
                       value={cfopDesc}
                       onChange={(e) => setCfopDesc(e.target.value)}
                       className="h-10 rounded-xl"

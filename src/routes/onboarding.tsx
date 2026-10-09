@@ -139,7 +139,7 @@ function OnboardingPage() {
             <div className="grid gap-1.5">
               <Label>CNPJ (opcional)</Label>
               <div className="flex gap-2">
-                <Input placeholder="00.000.000/0000-00" value={form.cnpj} className="h-10 rounded-xl"
+                <Input value={form.cnpj} className="h-10 rounded-xl"
                   onChange={(e) => setForm({ ...form, cnpj: e.target.value })} />
                 <Button type="button" variant="outline" onClick={lookupCnpj} className="h-10 w-10 shrink-0 rounded-xl shadow-sm"
                   disabled={lookingUp || !form.cnpj}
@@ -152,7 +152,7 @@ function OnboardingPage() {
               <Label>Nome da empresa <span className="text-destructive">*</span></Label>
               <Input required value={form.nome_fantasia} className="h-10 rounded-xl"
                 onChange={(e) => setForm({ ...form, nome_fantasia: e.target.value })}
-                placeholder="Ex.: Minha Empresa LTDA" />
+                />
             </div>
             <div className="grid gap-1.5">
               <Label>Razão social</Label>
@@ -162,7 +162,7 @@ function OnboardingPage() {
             <div className="grid gap-1.5">
               <Label>Regime tributário <span className="text-muted-foreground text-xs">(usado p/ PIS/COFINS no CT-e)</span></Label>
               <Select value={form.regime_tributario} onValueChange={v => setForm({ ...form, regime_tributario: v })}>
-                <SelectTrigger className="h-10 rounded-xl"><SelectValue placeholder="Selecione" /></SelectTrigger>
+                <SelectTrigger className="h-10 rounded-xl"><SelectValue /></SelectTrigger>
                 <SelectContent>
                   <SelectItem value="simples">Simples Nacional</SelectItem>
                   <SelectItem value="lucro_presumido">Lucro Presumido</SelectItem>

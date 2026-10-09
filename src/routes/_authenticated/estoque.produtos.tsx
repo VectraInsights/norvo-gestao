@@ -334,7 +334,7 @@ function Produtos() {
         <div className="relative flex-1">
           <Input
             className="flex-1"
-            placeholder="Buscar por nome ou código…"
+           
             value={busca}
             onChange={(e) => {
               setBusca(e.target.value);
@@ -350,8 +350,8 @@ function Produtos() {
               setPagina(1);
             }}
             options={[{ value: "todas", label: "Todas as categorias" }, ...categorias.map((c) => ({ value: c, label: c }))]}
-            placeholder="Selecione"
-            searchPlaceholder="Digite para buscar..."
+           
+           
             emptyText="Nenhum item encontrado."
           />
         </div>
@@ -407,8 +407,8 @@ function Produtos() {
                         setForm({ ...form, categoria: v === "__none__" ? "" : v })
                       }
                       options={[{ value: "__none__", label: "Sem categoria" }, ...categorias.map((c) => ({ value: c, label: c }))]}
-                      placeholder="Selecione uma categoria"
-                      searchPlaceholder="Digite para buscar..."
+                     
+                     
                       emptyText="Nenhum item encontrado."
                     />
                   </div>

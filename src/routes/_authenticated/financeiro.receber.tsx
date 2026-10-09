@@ -767,8 +767,8 @@ export function LancamentosPage({ tipo }: { tipo: "receber" | "pagar" }) {
                     value={form.contato_id}
                     onChange={(v) => setForm({ ...form, contato_id: v })}
                     options={(contatosOpt ?? []).map((c) => ({ value: c.id, label: c.nome ?? "" }))}
-                    placeholder="Selecionar contato"
-                    searchPlaceholder="Digite para buscar..."
+                   
+                   
                     emptyText="Nenhum item encontrado."
                     className="h-10"
                     footer={{ label: "Novo contato", onClick: () => abrirNovoContato("form") }}
@@ -781,8 +781,8 @@ export function LancamentosPage({ tipo }: { tipo: "receber" | "pagar" }) {
                       value={form.conta_bancaria_id}
                       onChange={(v) => setForm({ ...form, conta_bancaria_id: v })}
                       options={(contasOpt ?? []).map((c) => ({ value: c.id, label: `${c.nome ?? ""}${c.banco ? ` — ${c.banco}` : ""}` }))}
-                      placeholder="Selecionar"
-                      searchPlaceholder="Digite para buscar..."
+                     
+                     
                       emptyText="Nenhum item encontrado."
                       className="h-10"
                     />
@@ -793,8 +793,8 @@ export function LancamentosPage({ tipo }: { tipo: "receber" | "pagar" }) {
                       value={form.categoria_id}
                       onChange={(v) => setForm({ ...form, categoria_id: v })}
                       options={(categoriasOpt ?? []).map((c) => ({ value: c.id, label: c.nome ?? "" }))}
-                      placeholder="Selecionar"
-                      searchPlaceholder="Digite para buscar..."
+                     
+                     
                       emptyText="Nenhum item encontrado."
                       className="h-10"
                     />
@@ -818,7 +818,7 @@ export function LancamentosPage({ tipo }: { tipo: "receber" | "pagar" }) {
                       }
                     >
                       <SelectTrigger className="h-10 rounded-xl">
-                        <SelectValue placeholder="Selecionar" />
+                        <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
                         <SelectItem value="__none">Não informar</SelectItem>
@@ -869,7 +869,7 @@ export function LancamentosPage({ tipo }: { tipo: "receber" | "pagar" }) {
                 setPagina(1);
                 clearSel();
               }}
-              placeholder="Pesquisar por descrição ou contato…"
+             
               className="h-9 rounded-xl pl-10 pr-10 shadow-sm"
             />
             {busca && (
@@ -931,7 +931,7 @@ export function LancamentosPage({ tipo }: { tipo: "receber" | "pagar" }) {
                         }
                       >
                         <SelectTrigger className="h-8 w-[170px] rounded-lg text-xs shadow-sm">
-                          <SelectValue placeholder="Alterar status" />
+                          <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
                           <SelectItem value="aberto">Aberto</SelectItem>
@@ -1238,8 +1238,8 @@ export function LancamentosPage({ tipo }: { tipo: "receber" | "pagar" }) {
                   value={editing.contato_id}
                   onChange={(v) => setEditing({ ...editing, contato_id: v })}
                   options={(contatosOpt ?? []).map((c) => ({ value: c.id, label: c.nome ?? "" }))}
-                  placeholder="Selecionar contato"
-                  searchPlaceholder="Digite para buscar..."
+                 
+                 
                   emptyText="Nenhum item encontrado."
                   className="h-10"
                   footer={{ label: "Novo contato", onClick: () => abrirNovoContato("edit") }}
@@ -1252,8 +1252,8 @@ export function LancamentosPage({ tipo }: { tipo: "receber" | "pagar" }) {
                     value={editing.conta_bancaria_id}
                     onChange={(v) => setEditing({ ...editing, conta_bancaria_id: v })}
                     options={(contasOpt ?? []).map((c) => ({ value: c.id, label: `${c.nome ?? ""}${c.banco ? ` — ${c.banco}` : ""}` }))}
-                    placeholder="Selecionar"
-                    searchPlaceholder="Digite para buscar..."
+                   
+                   
                     emptyText="Nenhum item encontrado."
                     className="h-10"
                   />
@@ -1264,8 +1264,8 @@ export function LancamentosPage({ tipo }: { tipo: "receber" | "pagar" }) {
                     value={editing.categoria_id}
                     onChange={(v) => setEditing({ ...editing, categoria_id: v })}
                     options={(categoriasOpt ?? []).map((c) => ({ value: c.id, label: c.nome ?? "" }))}
-                    placeholder="Selecionar"
-                    searchPlaceholder="Digite para buscar..."
+                   
+                   
                     emptyText="Nenhum item encontrado."
                     className="h-10"
                   />
@@ -1289,7 +1289,7 @@ export function LancamentosPage({ tipo }: { tipo: "receber" | "pagar" }) {
                     }
                   >
                     <SelectTrigger className="h-10 rounded-xl">
-                      <SelectValue placeholder="Selecionar" />
+                      <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="__none">Não informar</SelectItem>

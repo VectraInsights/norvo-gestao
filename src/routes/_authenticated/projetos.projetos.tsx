@@ -259,7 +259,7 @@ function ProjetosPage() {
       <div className="mb-4 flex flex-col gap-2 sm:mb-6 sm:flex-row sm:items-center">
         <div className="relative flex-1">
           <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-          <Input className="h-9 rounded-xl pl-10 pr-10 shadow-sm" placeholder="Buscar por nome, cliente ou descrição..." value={busca} onChange={(e) => { setBusca(e.target.value); setPagina(1); }} />
+          <Input className="h-9 rounded-xl pl-10 pr-10 shadow-sm" value={busca} onChange={(e) => { setBusca(e.target.value); setPagina(1); }} />
           {busca && (
             <button
               type="button"
@@ -312,8 +312,8 @@ function ProjetosPage() {
                         { value: "none", label: "— sem cliente —" },
                         ...clientes.map((c) => ({ value: c.id, label: c.nome })),
                       ]}
-                      placeholder="Selecione"
-                      searchPlaceholder="Digite para buscar..."
+                     
+                     
                       emptyText="Nenhum item encontrado."
                       footer={{ label: "Novo cliente", onClick: () => setNovoClienteOpen(true) }}
                     />

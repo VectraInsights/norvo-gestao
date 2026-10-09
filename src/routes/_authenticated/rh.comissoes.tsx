@@ -335,7 +335,7 @@ function ComissoesPage() {
       <div className="mb-4 flex flex-col gap-2 sm:mb-6 sm:flex-row sm:items-center">
         <div className="relative flex-1">
           <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-          <Input className="h-9 rounded-xl pl-10 pr-10 shadow-sm" placeholder="Buscar por colaborador ou descrição..." value={busca} onChange={(e) => setBusca(e.target.value)} />
+          <Input className="h-9 rounded-xl pl-10 pr-10 shadow-sm" value={busca} onChange={(e) => setBusca(e.target.value)} />
           {busca && (
             <button
               type="button"
@@ -410,8 +410,8 @@ function ComissoesPage() {
                       value={colaborador}
                       onChange={setColaborador}
                       options={colabs.map((c) => ({ value: c.id, label: c.nome }))}
-                      placeholder="Selecione"
-                      searchPlaceholder="Digite para buscar..."
+                     
+                     
                       emptyText="Nenhum item encontrado."
                     />
                     {colabs.length === 0 && (
@@ -426,7 +426,7 @@ function ComissoesPage() {
                     <Input
                       value={descricao}
                       onChange={(e) => setDescricao(e.target.value)}
-                      placeholder="Ex.: vendas do mês"
+                     
                     />
                   </div>
                   <div className="grid gap-2 sm:grid-cols-2">

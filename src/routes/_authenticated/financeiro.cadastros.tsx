@@ -326,7 +326,7 @@ function CadastrosPage() {
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
         <div className="relative flex-1">
           <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-          <Input className="h-10 rounded-xl pl-10 shadow-sm" placeholder="Buscar por nome, código ou descrição..." value={busca} onChange={(e) => setBusca(e.target.value)} />
+          <Input className="h-10 rounded-xl pl-10 shadow-sm" value={busca} onChange={(e) => setBusca(e.target.value)} />
         </div>
         <div className="flex items-center gap-2">
           <Button variant="ghost" size="sm" onClick={() => setTrilhaOpen(true)} className="h-9 rounded-xl px-4 active:scale-95">
@@ -637,7 +637,7 @@ function CadastrosPage() {
               <div className="grid gap-1.5">
                 <Label>Mover para *</Label>
                 <Select value={substituta} onValueChange={setSubstituta}>
-                  <SelectTrigger className="h-10 rounded-xl"><SelectValue placeholder="Selecione a categoria" /></SelectTrigger>
+                  <SelectTrigger className="h-10 rounded-xl"><SelectValue /></SelectTrigger>
                   <SelectContent>
                     {(categorias ?? [])
                       .filter((c) => c.tipo === confCat.tipo && c.id !== confCat.id && c.parent_id !== confCat.id)

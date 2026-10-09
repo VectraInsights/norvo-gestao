@@ -303,7 +303,7 @@ function OSPage() {
       <div className="mb-4 flex flex-col gap-2 sm:mb-6 sm:flex-row sm:items-center">
         <div className="relative flex-1">
           <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-          <Input className="h-9 rounded-xl pl-10 pr-10 shadow-sm" placeholder="Buscar por título, cliente, projeto ou número..." value={busca} onChange={(e) => setBusca(e.target.value)} />
+          <Input className="h-9 rounded-xl pl-10 pr-10 shadow-sm" value={busca} onChange={(e) => setBusca(e.target.value)} />
           {busca && (
             <button
               type="button"
@@ -358,8 +358,8 @@ function OSPage() {
                         { value: "none", label: "— sem cliente —" },
                         ...clientes.map((c) => ({ value: c.id, label: c.nome })),
                       ]}
-                      placeholder="Selecione"
-                      searchPlaceholder="Digite para buscar..."
+                     
+                     
                       emptyText="Nenhum item encontrado."
                       footer={{ label: "Novo cliente", onClick: () => setNovoClienteOpen(true) }}
                     />
@@ -373,8 +373,8 @@ function OSPage() {
                         { value: "none", label: "— sem projeto —" },
                         ...projetos.map((p) => ({ value: p.id, label: p.nome })),
                       ]}
-                      placeholder="Selecione"
-                      searchPlaceholder="Digite para buscar..."
+                     
+                     
                       emptyText="Nenhum item encontrado."
                     />
                   </div>

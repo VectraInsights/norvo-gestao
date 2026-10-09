@@ -260,7 +260,7 @@ export function AIChat() {
               ref={inputRef}
               value={input}
               onChange={(e) => setInput(e.target.value)}
-              placeholder="Digite sua pergunta..."
+             
               className="h-10 rounded-xl text-[13px]"
               disabled={loading}
             />

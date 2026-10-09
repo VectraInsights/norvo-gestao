@@ -237,7 +237,7 @@ function CRM() {
       <div className="mb-3 flex flex-col gap-2 sm:flex-row sm:items-center">
         <div className="relative flex-1">
           <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-          <Input className="pl-8" placeholder="Buscar por título ou cliente..." value={busca} onChange={(e) => setBusca(e.target.value)} />
+          <Input className="pl-8" value={busca} onChange={(e) => setBusca(e.target.value)} />
         </div>
         <div className="flex items-center gap-2">
           <Button onClick={() => openNew()} disabled={etapas.length === 0}>
@@ -307,8 +307,8 @@ function CRM() {
                   value={etapa}
                   onChange={setEtapa}
                   options={etapas.map((e) => ({ value: e.id, label: e.nome }))}
-                  placeholder="Selecione"
-                  searchPlaceholder="Digite para buscar..."
+                 
+                 
                   emptyText="Nenhum item encontrado."
                 />
               </div>
@@ -322,8 +322,8 @@ function CRM() {
                   { value: "none", label: "— sem contato —" },
                   ...contatos.map((c) => ({ value: c.id, label: c.nome })),
                 ]}
-                placeholder="Sem contato"
-                searchPlaceholder="Digite para buscar..."
+               
+               
                 emptyText="Nenhum item encontrado."
                 footer={{ label: "Novo contato", onClick: () => setNovoContatoOpen(true) }}
               />

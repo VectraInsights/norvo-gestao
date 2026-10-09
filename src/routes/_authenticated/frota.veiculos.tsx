@@ -678,7 +678,7 @@ function Veiculos() {
             <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
             <Input
               className="pl-8"
-              placeholder="Buscar por placa, modelo…"
+             
               value={busca}
               onChange={(e) => {
                 setBusca(e.target.value);
@@ -788,7 +788,7 @@ function Veiculos() {
                   <PopoverContent className="w-[320px] p-0" align="start">
                     <Command shouldFilter={false}>
                       <CommandInput
-                        placeholder="Buscar tipo..."
+                       
                         value={tipoQuery}
                         onValueChange={setTipoQuery}
                       />
@@ -933,7 +933,7 @@ function Veiculos() {
                   <PopoverContent className="w-max min-w-[350px] max-w-[90vw] p-0" align="start">
                     <Command>
                       <CommandInput
-                        placeholder="Buscar RNTRC ou nome..."
+                       
                         value={rntrcBusca}
                         onValueChange={(v) => setRntrcBusca(v.toUpperCase())}
                       />
@@ -1045,7 +1045,7 @@ function Veiculos() {
                     <Label className="text-[10px] text-muted-foreground">Categoria *</Label>
                     <Select value={form.categoria} onValueChange={(v) => set("categoria", v)}>
                       <SelectTrigger className="h-7 text-xs">
-                        <SelectValue placeholder="Selecione" />
+                        <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
                         {CATEGORIAS.map((c) => (
@@ -1091,7 +1091,7 @@ function Veiculos() {
           <div className="grid gap-2">
             <div className="flex gap-2">
               <Input
-                placeholder="Novo tipo..."
+               
                 value={novoTipo}
                 onChange={(e) => setNovoTipo(e.target.value)}
                 onKeyDown={(e) => {

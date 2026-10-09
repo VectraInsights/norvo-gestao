@@ -112,11 +112,11 @@ export function TransferenciaDialog({
           <div className="grid gap-3 sm:grid-cols-2">
             <div className="grid gap-1.5">
               <Label>Conta de origem</Label>
-              <Combobox value={origem} onChange={setOrigem} options={contas.map((c) => ({ value: c.id, label: `${c.nome || c.banco} · ${brl(c.saldo_atual)}` }))} placeholder="Selecione" searchPlaceholder="Digite para buscar..." emptyText="Nenhum item encontrado." className="h-10" />
+              <Combobox value={origem} onChange={setOrigem} options={contas.map((c) => ({ value: c.id, label: `${c.nome || c.banco} · ${brl(c.saldo_atual)}` }))} emptyText="Nenhum item encontrado." className="h-10" />
             </div>
             <div className="grid gap-1.5">
               <Label>Conta de destino</Label>
-              <Combobox value={destino} onChange={setDestino} options={contas.filter((c) => c.id !== origem).map((c) => ({ value: c.id, label: `${c.nome || c.banco} · ${brl(c.saldo_atual)}` }))} placeholder="Selecione" searchPlaceholder="Digite para buscar..." emptyText="Nenhum item encontrado." className="h-10" />
+              <Combobox value={destino} onChange={setDestino} options={contas.filter((c) => c.id !== origem).map((c) => ({ value: c.id, label: `${c.nome || c.banco} · ${brl(c.saldo_atual)}` }))} emptyText="Nenhum item encontrado." className="h-10" />
             </div>
           </div>
           <div className="grid gap-1.5">
@@ -125,7 +125,7 @@ export function TransferenciaDialog({
           </div>
           <div className="grid gap-1.5">
             <Label>Observações</Label>
-            <Input value={obs} onChange={(e) => setObs(e.target.value)} placeholder="Opcional" className="h-10 rounded-xl" />
+            <Input value={obs} onChange={(e) => setObs(e.target.value)} className="h-10 rounded-xl" />
           </div>
         </div>
         <DialogFooter className="gap-2">

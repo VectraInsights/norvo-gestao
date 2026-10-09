@@ -1400,7 +1400,7 @@ function ColaboradoresPage() {
       <div className="mb-4 flex flex-col gap-2 sm:mb-6 sm:flex-row sm:items-center">
         <div className="relative flex-1">
           <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-          <Input className="h-9 rounded-xl pl-10 pr-10 shadow-sm" placeholder="Buscar por nome, CPF, cargo ou cidade..." value={busca} onChange={(e) => { setBusca(e.target.value); setPagina(1); }} />
+          <Input className="h-9 rounded-xl pl-10 pr-10 shadow-sm" value={busca} onChange={(e) => { setBusca(e.target.value); setPagina(1); }} />
           {busca && (
             <button
               type="button"
@@ -1427,7 +1427,7 @@ function ColaboradoresPage() {
                   <div className="flex-1 space-y-1">
                     <Label>Novo cargo</Label>
                     <Input
-                      placeholder="Digite para filtrar ou criar"
+                     
                       value={novoCargo}
                       onChange={(e) => setNovoCargo(e.target.value)}
                       onKeyDown={(e) => {
@@ -1571,7 +1571,7 @@ function ColaboradoresPage() {
                         <div className="space-y-1 md:col-span-2">
                           <Label>CPF *</Label>
                           <Input
-                            placeholder="000.000.000-00"
+                           
                             value={form.cpf}
                             onChange={(e) => set("cpf", maskDoc(e.target.value))}
                           />
@@ -1587,7 +1587,7 @@ function ColaboradoresPage() {
                         <div className="space-y-1 md:col-span-2">
                           <Label>Telefone(s) *</Label>
                           <Input
-                            placeholder="(00) 00000-0000; (00) 00000-0000"
+                           
                             value={form.telefone}
                             onChange={(e) => set("telefone", mascaraTelefones(e.target.value))}
                           />
@@ -1639,7 +1639,7 @@ function ColaboradoresPage() {
                           <Label>Cidade</Label>
                           <div className="relative">
                             <Input
-                              placeholder="Digite para buscar"
+                             
                               value={form.cidade}
                               onChange={(e) => set("cidade", e.target.value.toUpperCase())}
                               onFocus={() => setCidadeFoco(true)}
@@ -1674,7 +1674,7 @@ function ColaboradoresPage() {
                             onValueChange={(v) => set("uf", v === "__limpar" ? "" : v)}
                           >
                             <SelectTrigger>
-                              <SelectValue placeholder="UF" />
+                              <SelectValue />
                             </SelectTrigger>
                             <SelectContent>
                               <SelectItem value="__limpar">Limpar</SelectItem>
@@ -1689,7 +1689,7 @@ function ColaboradoresPage() {
                         <div className="space-y-1 md:col-span-1">
                           <Label>CEP</Label>
                           <Input
-                            placeholder="00000-000"
+                           
                             value={form.cep}
                             onChange={(e) =>
                               set(
@@ -1713,7 +1713,7 @@ function ColaboradoresPage() {
                           <Label>Cargo *</Label>
                           <div className="relative">
                             <Input
-                              placeholder="Digite ou selecione o cargo"
+                             
                               value={form.cargo}
                               onChange={(e) => set("cargo", e.target.value.toUpperCase())}
                               onFocus={() => setCargoFoco(true)}
@@ -1811,7 +1811,7 @@ function ColaboradoresPage() {
                             onValueChange={(v) => set("cnh_categoria", v)}
                           >
                             <SelectTrigger>
-                              <SelectValue placeholder="Selecione" />
+                              <SelectValue />
                             </SelectTrigger>
                             <SelectContent>
                               {["A", "B", "AB", "C", "D", "E", "AC", "AD", "AE"].map((c) => (

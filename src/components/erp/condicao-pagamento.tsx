@@ -181,8 +181,8 @@ export function CondicaoPagamento({
                 { value: "__none__", label: "Sem conta" },
                 ...contas.map((c) => ({ value: c.id, label: c.nome })),
               ]}
-              placeholder="Conta de pagamento"
-              searchPlaceholder="Digite para buscar..."
+             
+             
               emptyText="Nenhuma conta encontrada."
               className="h-9 text-xs"
             />
@@ -244,7 +244,7 @@ export function CondicaoPagamento({
                     value={String(p.valor ?? 0)}
                     onChange={(v) => setRow(i, { valor: parseFloat(v) || 0 })}
                     className="h-9 text-xs text-right w-full"
-                    placeholder="0,00"
+                   
                   />
                   <Input className="h-9 rounded-xl text-xs text-right text-tabular" value={pct(p.valor, total)} readOnly tabIndex={-1} />
                   <Select

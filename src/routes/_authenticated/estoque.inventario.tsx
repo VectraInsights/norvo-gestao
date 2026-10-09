@@ -209,10 +209,10 @@ function Inventario() {
       <div className="mb-4 flex flex-col gap-2 sm:flex-row sm:items-center">
         <div className="relative flex-1">
           <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-          <Input className="h-9 rounded-xl pl-10 pr-10 shadow-sm" placeholder="Buscar produto…" value={busca} onChange={(e) => setBusca(e.target.value)} />
+          <Input className="h-9 rounded-xl pl-10 pr-10 shadow-sm" value={busca} onChange={(e) => setBusca(e.target.value)} />
         </div>
         <div className="w-56">
-          <Combobox value={depositoId} onChange={setDepositoId} options={[{ value: "sem-deposito", label: "Sem depósito" }, ...depositos.map((d) => ({ value: d.id, label: d.nome }))]} placeholder="Depósito (opcional)" searchPlaceholder="Digite para buscar..." emptyText="Nenhum item encontrado." />
+          <Combobox value={depositoId} onChange={setDepositoId} options={[{ value: "sem-deposito", label: "Sem depósito" }, ...depositos.map((d) => ({ value: d.id, label: d.nome }))]} emptyText="Nenhum item encontrado." />
         </div>
         <Button
           variant={somenteDiverg ? "default" : "outline"}
@@ -278,7 +278,7 @@ function Inventario() {
                       {num(atual)} {p.unidade ?? ""}
                     </TableCell>
                     <TableCell className="text-right">
-                      <MoneyInput className="ml-auto h-8 w-32" prefix="" decimals={3} placeholder="0,000" value={counts[p.id] ?? ""} onChange={(v) => setCounts((c) => ({ ...c, [p.id]: v }))} />
+                      <MoneyInput className="ml-auto h-8 w-32" prefix="" decimals={3} value={counts[p.id] ?? ""} onChange={(v) => setCounts((c) => ({ ...c, [p.id]: v }))} />
                     </TableCell>
                     <TableCell className="text-right">
                       {div ? (
