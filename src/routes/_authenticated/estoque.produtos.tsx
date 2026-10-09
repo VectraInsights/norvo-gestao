@@ -85,6 +85,7 @@ type Produto = {
   nome: string;
   categoria: string | null;
   unidade: string | null;
+  ncm: string | null;
   estoque_atual: number | null;
   estoque_minimo: number | null;
   preco_custo: number | null;
@@ -96,11 +97,17 @@ const EMPTY_FORM = {
   codigo: "",
   nome: "",
   categoria: "",
+  ncm: "",
   unidade: "UN",
   preco_venda: "0",
   preco_custo: "0",
   estoque_atual: "0",
   estoque_minimo: "0",
+};
+
+const fmtNcm = (d: string) => {
+  const t = (d || "").replace(/\D/g, "");
+  return t.length === 8 ? `${t.slice(0, 4)}.${t.slice(4, 6)}.${t.slice(6)}` : d;
 };
 
 function Produtos() {
@@ -161,7 +168,7 @@ function Produtos() {
         const { data, error } = await supabase
           .from("produtos")
           .select(
-            "id,codigo,nome,categoria,unidade,estoque_atual,estoque_minimo,preco_custo,preco_venda,ativo",
+            "id,codigo,nome,categoria,unidade,ncm,estoque_atual,estoque_minimo,preco_custo,preco_venda,ativo",
           )
           .eq("empresa_id", empresa!.id)
           .order("nome")
@@ -180,6 +187,32 @@ function Produtos() {
     [produtos],
   );
 
+  const { data: ncms } = useQuery({
+    queryKey: ["ncm-lista"],
+    staleTime: 24 * 60 * 60_000,
+    gcTime: 24 * 60 * 60_000,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("ncm" as never)
+        .select("codigo,descricao")
+        .order("codigo")
+        .limit(20000);
+      if (error) throw error;
+      return ((data ?? []) as unknown) as { codigo: string; descricao: string }[];
+    },
+  });
+
+  const ncmOpts = useMemo(
+    () => [
+      { value: "__none__", label: "Sem NCM" },
+      ...((ncms ?? []).map((n) => ({
+        value: n.codigo,
+        label: `${fmtNcm(n.codigo)} — ${n.descricao.slice(0, 70)}`,
+      }))),
+    ],
+    [ncms],
+  );
+
   const criarMut = useMutation({
     mutationFn: async () => {
       if (!empresa) throw new Error("Empresa não selecionada");
@@ -189,11 +222,14 @@ function Produtos() {
       const venda = Number(form.preco_venda);
       if (Number.isNaN(custo) || Number.isNaN(venda)) throw new Error("Preços inválidos");
       if (venda > 0 && custo > venda) throw new Error("Preço de venda menor que o custo");
+      const ncmDig = form.ncm.replace(/\D/g, "");
+      if (ncmDig && ncmDig.length !== 8) throw new Error("NCM precisa ter 8 dígitos");
       const { error } = await supabase.from("produtos").insert({
         empresa_id: empresa.id,
         codigo: form.codigo.trim() || null,
         nome,
         categoria: form.categoria.trim() || null,
+        ncm: ncmDig || null,
         unidade: form.unidade.trim() || "UN",
         preco_custo: custo,
         preco_venda: venda,
@@ -222,12 +258,15 @@ function Produtos() {
       const custo = Number(form.preco_custo);
       const venda = Number(form.preco_venda);
       if (Number.isNaN(custo) || Number.isNaN(venda)) throw new Error("Preços inválidos");
+      const ncmDig = form.ncm.replace(/\D/g, "");
+      if (ncmDig && ncmDig.length !== 8) throw new Error("NCM precisa ter 8 dígitos");
       const { error } = await supabase
         .from("produtos")
         .update({
           codigo: form.codigo.trim() || null,
           nome,
           categoria: form.categoria.trim() || null,
+          ncm: ncmDig || null,
           unidade: form.unidade.trim() || "UN",
           preco_custo: custo,
           preco_venda: venda,
@@ -277,6 +316,7 @@ function Produtos() {
     return base.filter((p) => {
       if (p.nome.toLowerCase().includes(q)) return true;
       if ((p.codigo ?? "").toLowerCase().includes(q)) return true;
+      if (qDig.length >= 4 && (p.ncm ?? "").includes(qDig)) return true;
       // Pesquisa por preço: "25,00" acha 25.00 (a partir de 2 dígitos)
       if (qDig.length >= 2) {
         for (const v of [p.preco_venda, p.preco_custo]) {
@@ -307,6 +347,7 @@ function Produtos() {
       codigo: p.codigo ?? "",
       nome: p.nome,
       categoria: p.categoria ?? "",
+      ncm: p.ncm ?? "",
       unidade: p.unidade ?? "UN",
       preco_custo: String(p.preco_custo ?? 0),
       preco_venda: String(p.preco_venda ?? 0),
@@ -407,10 +448,30 @@ function Produtos() {
                         setForm({ ...form, categoria: v === "__none__" ? "" : v })
                       }
                       options={[{ value: "__none__", label: "Sem categoria" }, ...categorias.map((c) => ({ value: c, label: c }))]}
-                     
-                     
+                      
+                      
                       emptyText="Nenhum item encontrado."
                     />
+                  </div>
+                  <div>
+                    <Label>NCM</Label>
+                    {(ncms?.length ?? 0) > 0 ? (
+                      <Combobox
+                        value={form.ncm.replace(/\D/g, "") || "__none__"}
+                        onChange={(v) =>
+                          setForm({ ...form, ncm: v === "__none__" ? "" : v })
+                        }
+                        options={ncmOpts}
+                        emptyText="Nenhum item encontrado."
+                      />
+                    ) : (
+                      <Input
+                        value={fmtNcm(form.ncm)}
+                        onChange={(e) =>
+                          setForm({ ...form, ncm: e.target.value.replace(/\D/g, "").slice(0, 8) })
+                        }
+                      />
+                    )}
                   </div>
                   <div className="grid grid-cols-3 gap-3">
                     <div>
