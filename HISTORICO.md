@@ -5670,3 +5670,9 @@ pm run build OK.
   fundo cinza: viram links de texto verdes como os de cima, com a
   ativa destacada. 	sc sem erros novos e 
 pm run build OK.
+
+## Configuracoes: aba ativa sem fundo (09/10)
+
+- Aba ativa sem pill de fundo: so texto verde, igual aos links
+  de cima. 	sc sem erros novos e 
+pm run build OK.
