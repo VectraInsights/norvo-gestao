@@ -5728,3 +5728,9 @@ pm run build OK.
 - tomaByMod virou identidade; docAnt emiDocAnt agrupado por CNPJ.
 - 11/11 testes vitest; 	sc identico a baseline; uild OK.
 
+
+## CT-e item 2: CIOT no XML (09/10)
+
+- Helper ciotXml + form.ciot no modalRod (2 emissores + servidor).
+- 14/14 testes; 	sc identico a baseline; uild OK.
+
