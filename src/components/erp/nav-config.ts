@@ -136,7 +136,6 @@ const RAW_NAV: NavGroup[] = [
     label: "Configurações",
     icon: Settings,
     items: [
-      { to: "/configuracoes", label: "Configurações", icon: Settings },
       { to: "/fiscal/configuracoes", label: "Configurações fiscais", icon: Settings2 },
       { to: "/configuracoes/usuarios", label: "Usuários e acessos", icon: ShieldCheck },
     ],
