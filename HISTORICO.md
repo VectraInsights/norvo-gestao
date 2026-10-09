@@ -5639,3 +5639,10 @@ pm run build OK.
   os grupos agora ordenam itens de A-Z (pt-BR).
 - Rota /fiscal/configuracoes mantida (sem quebra de links/permissoes);
   so mudou o grupo no menu. 	sc limpo em nav-config.
+
+## Nav: sem Configuracoes duplicado (09/10)
+
+- Grupo Configuracoes passa a ter so Configuracoes fiscais e
+  Usuarios e acessos. O Configuracoes geral (/configuracoes) segue
+  acessivel pelo menu do usuario (avatar) e pela busca, sem repetir
+  na sidebar. 	sc limpo em nav-config.
