@@ -187,6 +187,12 @@ export function docAntOficial(chaves: unknown): string {
   ).join("")}</docAnt>`;
 }
 
+// <CIOT> só com dígitos; em branco some (tag vazia seria rejeitada).
+export function ciotXml(modalRod: unknown): string {
+  const d = String((modalRod as any)?.ciot || "").replace(/\D/g, "");
+  return d ? `<CIOT>${d}</CIOT>` : "";
+}
+
 export function buildCteXml(input: CteInputCompleto): { xml: string; chave: string } {
   assertSefazAmbiente(input.ambiente);
   if (input.modelo === "normal") return buildCteNormalXml(input);
@@ -305,7 +311,7 @@ export function buildCteXml(input: CteInputCompleto): { xml: string; chave: stri
       <infQ><cUnid>01</cUnid><tpMed>00</tpMed><qCarga>${input.pesoKg.toFixed(4)}</qCarga></infQ>
     </infCarga>
     ${infNFeXml}
-    <infModal versaoModal="4.00"><rodo><RNTRC>${rntrcXml}</RNTRC>${motoXml}</rodo></infModal>
+    <infModal versaoModal="4.00"><rodo><RNTRC>${rntrcXml}</RNTRC>${motoXml}${ciotXml(input.modalRod)}</rodo></infModal>
     ${impXml}
     <total><vTPrest>${input.vPrest.toFixed(2)}</vTPrest><vTRec>${input.vPrest.toFixed(2)}</vTRec><vTotDFe>${vTotDFe}</vTotDFe></total>
     <infRespTec><CNPJ>${cnpjLimpo}</CNPJ><xContato>SUPORTE TECNICO</xContato><email>suporte@vectrainsights.com.br</email><fone>3139952572</fone></infRespTec>
@@ -524,7 +530,7 @@ export function buildCteNormalXml(input: CteInputCompleto): { xml: string; chave
   const veicRebXml = veics.slice(1, 4).filter(v => v?.placa).map(v =>
     `<veicReboque><placa>${escCte(String(v.placa).toUpperCase())}</placa>${v.renavam ? `<RENAVAM>${escCte(v.renavam)}</RENAVAM>` : ""}<tara>${Number((v as any).tara || 0).toFixed(0)}</tara><capKG>${Number((v as any).capKG || 0).toFixed(0)}</capKG><tpCar>${(v as any).tpCar || "00"}</tpCar><UF>${escCte(String(v.uf || input.ufIni || "").toUpperCase())}</UF></veicReboque>`
   ).join("");
-  const ciotXml = (input.modalRod as any)?.ciot ? `<CIOT>${escCte(String((input.modalRod as any).ciot).replace(/\D/g, ""))}</CIOT>` : "";
+  const ciotXmlN = ciotXml(input.modalRod);
 
   const qrBase = (input.ufEnv || input.emit.uf)?.toUpperCase() === "MG" ? "portalcte.fazenda.mg.gov.br/portalcte/sistema/qrcode.xhtml" : "dfeportal.svrs.rs.gov.br/cteQrCode";
   const xml = `<?xml version="1.0" encoding="UTF-8"?>
@@ -553,7 +559,7 @@ export function buildCteNormalXml(input: CteInputCompleto): { xml: string; chave
         <infQ><cUnid>01</cUnid><tpMed>00</tpMed><qCarga>${Number(input.pesoKg || 0).toFixed(4)}</qCarga></infQ>
       </infCarga>
       ${infDocXml}
-      <infModal versaoModal="4.00"><rodo><RNTRC>${rntrcXml}</RNTRC>${motoXml}${ciotXml}${veicTracXml}${veicRebXml}</rodo></infModal>
+      <infModal versaoModal="4.00"><rodo><RNTRC>${rntrcXml}</RNTRC>${motoXml}${ciotXmlN}${veicTracXml}${veicRebXml}</rodo></infModal>
     </infCTeNorm>
     <infRespTec><CNPJ>${cnpjLimpo}</CNPJ><xContato>SUPORTE TECNICO</xContato><email>suporte@vectrainsights.com.br</email><fone>3139952572</fone></infRespTec>
   </infCte>

@@ -4697,6 +4697,7 @@ function CtePage() {
               rntrc: rntrcFinal,
               modalRod: {
                 rntrc: rntrcFinal,
+                ciot: (form as any).ciot || undefined,
                 motoristas: motoristasXml(),
                 veiculos: (() => {
                   const tpRodDeTipo = (t: any) => { const s = String(t || "").toLowerCase(); if (s.includes("cavalo")) return "03"; if (s.includes("truck") && !s.includes("bitruck")) return "01"; if (s.includes("toco")) return "02"; if (s.includes("van") || s.includes("furg")) return "04"; if (s.includes("utilit")) return "05"; return "06"; };
@@ -5180,6 +5181,7 @@ function CtePage() {
             rntrc: rntrcFinal,
             modalRod: {
               rntrc: rntrcFinal,
+              ciot: (form as any).ciot || undefined,
               motoristas: motoristasXml(),
               veiculos: (() => {
                 const vv = (veiculos || []).find(

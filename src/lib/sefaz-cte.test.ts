@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { describe, expect, it } from "vitest";
-import { buildCteNormalXml, buildCteXml, docAntOficial, tomaSefazDeModFrete } from "./sefaz-cte";
+import { buildCteNormalXml, buildCteXml, ciotXml, docAntOficial, tomaSefazDeModFrete } from "./sefaz-cte";
 
 // Base mínima válida para emissão em homologação (SEFAZ_AMBIENTE é fixo).
 // Os valores reproduzem o CT-e de referência (chave ...5311429212600).
@@ -168,6 +168,35 @@ describe("toma: modFrete da tela vira tomador oficial SEFAZ", () => {
 
     expect(xml).toContain("<toma4><toma>3</toma>");
     expect(xml).not.toContain("<toma3><toma>1</toma>");
+  });
+});
+
+describe("<CIOT> no modal rodoviário (normal e simplificado)", () => {
+  it("normal emite o CIOT do form", () => {
+    const xml = buildNormal({
+      modalRod: { ...(baseCte().modalRod as any), ciot: "123456789012" },
+    });
+
+    expect(xml).toContain("<CIOT>123456789012</CIOT>");
+  });
+
+  it("simplificado emite o CIOT do form", () => {
+    const { xml } = buildCteXml(
+      baseCte({
+        modelo: "simp",
+        modalRod: { ...(baseCte().modalRod as any), ciot: "123456789012" },
+      }) as any,
+    );
+
+    expect(xml).toContain("<CIOT>123456789012</CIOT>");
+  });
+
+  it("CIOT em branco não gera tag vazia", () => {
+    expect(ciotXml({ ciot: "   " })).toBe("");
+    expect(ciotXml({})).toBe("");
+    const xml = buildNormal({ modalRod: { rntrc: "00839402" } });
+
+    expect(xml).not.toContain("<CIOT>");
   });
 });
 
