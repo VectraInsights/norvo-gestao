@@ -5676,3 +5676,11 @@ pm run build OK.
 - Aba ativa sem pill de fundo: so texto verde, igual aos links
   de cima. 	sc sem erros novos e 
 pm run build OK.
+
+## Configuracoes: hub unico sem abas (09/10)
+
+- Fim das abas: Categorias, Condicoes, RNTRC, Seguradoras e NF-e
+  viram paginas proprias (links como os de cima, com voltar).
+- /configuracoes e o menu do avatar com entrada unica.
+- 	sc sem erros novos e 
+pm run build OK.
