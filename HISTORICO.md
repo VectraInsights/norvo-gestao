@@ -5834,3 +5834,7 @@ pm run build OK.
 ## Conciliacao em lote com toast unico (13/10)
 
 - Conciliar em lote suprime os toasts individuais (flag silent) e mostra um unico toast com a quantidade conciliada + outro com a de falhas, se houver. Conciliar individual segue com seu toast.
+
+## Conciliacao: pesquisa reflete nos cabeçalhos (13/10)
+
+- Filtro de busca separado do filtro de tipo (porBusca): Todos/Recebimentos/Pagamentos passam a mostrar a quantidade pesquisada; chip Exibindo N de M removido.

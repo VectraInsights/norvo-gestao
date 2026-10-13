@@ -1611,9 +1611,6 @@ function ReconcileDialog({ contaId, conta, empresaId, autoConciliar, importing, 
 
   const porMes = pendentes;
 
-  const recebimentos = useMemo(() => porMes.filter((t) => t.valor >= 0).length, [porMes]);
-  const pagamentos = porMes.length - recebimentos;
-
   const normBusca = useCallback((s: string | null | undefined) =>
     String(s ?? "").toLocaleLowerCase("pt-BR").normalize("NFD").replace(/\p{Diacritic}/gu, ""), []);
 
@@ -1622,39 +1619,42 @@ function ReconcileDialog({ contaId, conta, empresaId, autoConciliar, importing, 
   const centroNomeBusca = useMemo(() => new Map((centros ?? []).map((c) => [c.id, c.nome])), [centros]);
 
   const q = buscaDebounced.trim().toLowerCase();
-  const visiveis = useMemo(() => {
+  // Base da pesquisa (sem o filtro de tipo): alimenta os cabeçalhos Todos/Recebimentos/Pagamentos.
+  const porBusca = useMemo(() => {
     const nq = normBusca(q);
-    return porMes
+    if (!nq) return porMes;
+    return porMes.filter((t) => {
+      const r = rows[t.id];
+      const campos = [
+        t.memo ?? "",
+        r?.descricao ?? "",
+        catNomeBusca.get(r?.categoria_id ?? "") ?? "",
+        contatoNomeBusca.get(r?.contato_id ?? "") ?? "",
+        centroNomeBusca.get(r?.centro_custo_id ?? "") ?? "",
+      ];
+      if (campos.some((c) => normBusca(c).includes(nq))) return true;
+      // valor: "8.890,27", "8890", "8890.27"
+      const vNum = String(Math.abs(Number(t.valor)));
+      const qNum = nq.replace(",", ".");
+      if (/\d/.test(nq) && (vNum.includes(qNum) || vNum.replace(/\D/g, "").includes(qNum.replace(/\D/g, "")))) return true;
+      // data: 02/09/2026, 02/09 ou 2026-09-02
+      const [y, m, d] = String(t.data_transacao).split("-");
+      if (y && m && d && (`${d}/${m}/${y}`.includes(nq) || `${d}/${m}`.includes(nq) || t.data_transacao.includes(nq))) return true;
+      return false;
+    });
+  }, [porMes, q, rows, normBusca, catNomeBusca, contatoNomeBusca, centroNomeBusca]);
+  const recebimentosBusca = useMemo(() => porBusca.filter((t) => t.valor >= 0).length, [porBusca]);
+  const pagamentosBusca = porBusca.length - recebimentosBusca;
+  const visiveis = useMemo(() => {
+    return porBusca
       .filter((t) => filtro === "todos" || (filtro === "recebimentos" ? t.valor >= 0 : t.valor < 0))
-      .filter((t) => {
-        if (!nq) return true;
-        const r = rows[t.id];
-        const campos = [
-          t.memo ?? "",
-          r?.descricao ?? "",
-          catNomeBusca.get(r?.categoria_id ?? "") ?? "",
-          contatoNomeBusca.get(r?.contato_id ?? "") ?? "",
-          centroNomeBusca.get(r?.centro_custo_id ?? "") ?? "",
-        ];
-        if (campos.some((c) => normBusca(c).includes(nq))) return true;
-        // valor: "8.890,27", "8890", "8890.27"
-        const vNum = String(Math.abs(Number(t.valor)));
-        const qNum = nq.replace(",", ".");
-        if (vNum.includes(qNum) || vNum.replace(/\D/g, "").includes(qNum.replace(/\D/g, ""))) {
-          if (/\d/.test(nq)) return true;
-        }
-        // data: 02/09/2026, 02/09 ou 2026-09-02
-        const [y, m, d] = String(t.data_transacao).split("-");
-        if (y && m && d && (`${d}/${m}/${y}`.includes(nq) || `${d}/${m}`.includes(nq) || t.data_transacao.includes(nq))) return true;
-        return false;
-      })
       .sort((a, b) => {
         if (ordem === "recentes") return b.data_transacao.localeCompare(a.data_transacao);
         if (ordem === "antigos") return a.data_transacao.localeCompare(b.data_transacao);
         if (ordem === "maior") return Math.abs(b.valor) - Math.abs(a.valor);
         return Math.abs(a.valor) - Math.abs(b.valor);
       });
-  }, [porMes, filtro, q, ordem, rows, normBusca, catNomeBusca, contatoNomeBusca, centroNomeBusca]);
+  }, [porBusca, filtro, ordem]);
 
   // Carregar mais: renderizar centenas de cards de uma vez trava a tela.
   useEffect(() => { setVisiveisQtd(PAGE_SIZE); }, [q, filtro, ordem, contaId]);
@@ -1879,9 +1879,9 @@ function ReconcileDialog({ contaId, conta, empresaId, autoConciliar, importing, 
 
             <div className="grid grid-cols-3 overflow-hidden rounded-md border">
               {([
-                { k: "todos", label: "Todos", n: porMes.length, cls: "text-blue-600 dark:text-blue-400" },
-                { k: "recebimentos", label: "Recebimentos", n: recebimentos, cls: "text-success" },
-                { k: "pagamentos", label: "Pagamentos", n: pagamentos, cls: "text-destructive" },
+                { k: "todos", label: "Todos", n: porBusca.length, cls: "text-blue-600 dark:text-blue-400" },
+                { k: "recebimentos", label: "Recebimentos", n: recebimentosBusca, cls: "text-success" },
+                { k: "pagamentos", label: "Pagamentos", n: pagamentosBusca, cls: "text-destructive" },
               ] as const).map((c) => (
                 <button
                   key={c.k}
@@ -1921,14 +1921,6 @@ function ReconcileDialog({ contaId, conta, empresaId, autoConciliar, importing, 
                 onClick={() => excluirTx.mutate(selVisiveis.map((t) => t.id))}>
                 <Trash2 className="mr-1 h-3 w-3" />Excluir{selVisiveis.length > 0 ? ` (${selVisiveis.length})` : ""}
               </Button>
-              {(q || filtro !== "todos") && (
-                <span className="text-[11px] text-muted-foreground">
-                  Exibindo {visiveis.length} de {porMes.length}
-                  <button type="button" className="ml-1 underline underline-offset-2 hover:text-foreground" onClick={() => { setBusca(""); setFiltro("todos"); }}>
-                    limpar
-                  </button>
-                </span>
-              )}
             </div>
 
             <div className="grid grid-cols-1 gap-2 text-xs font-medium md:grid-cols-[1fr_auto_1fr]">
