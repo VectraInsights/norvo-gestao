@@ -5859,3 +5859,7 @@ pm run build OK.
 ## Conciliacao com aba Transferencia (13/10)
 
 - Cartao Novo lancamento ganha abas Novo lancamento/Transferencia: informa descricao + outra conta, cria transferencias_contas com as 2 pernas, quita a perna desta conta e amarra o extrato (outra perna segue em aberto p/ conciliar na outra conta). Botao Conciliar do meio e Conciliar em lote respeitam a aba.
+
+## Transferencia: valor_pago NOT NULL (13/10)
+
+- Perna em aberto ia sem valor_pago e o banco rejeitava (NOT NULL): agora nasce com 0 na aba Transferencia da conciliacao e no dialogo Nova transferencia (mesmo bug latente).

@@ -1904,7 +1904,7 @@ function ReconcileDialog({ contaId, conta, empresaId, autoConciliar, importing, 
       const pernaOutraAberta = {
         ...base, conta_bancaria_id: outra,
         descricao: saiu ? `${desc} ← ${nomeConta(contaOrigem)}` : `${desc} → ${nomeConta(contaDestino)}`,
-        tipo: saiu ? "receber" : "pagar", status: "aberto",
+        tipo: saiu ? "receber" : "pagar", status: "aberto", valor_pago: 0,
       };
       const { data: pernas, error: e2 } = await supabase.from("lancamentos_financeiros")
         .insert([pernaMinhaPaga, pernaOutraAberta] as never)

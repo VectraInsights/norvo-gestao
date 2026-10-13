@@ -73,7 +73,7 @@ export function TransferenciaDialog({
 
       const base = {
         empresa_id: empresa.id, data_emissao: data, data_vencimento: data,
-        status: "aberto", valor: v, transferencia_id: tr.id,
+        status: "aberto", valor: v, valor_pago: 0, transferencia_id: tr.id,
       };
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const { error: e2 } = await (supabase.from("lancamentos_financeiros") as any).insert([
