@@ -1335,12 +1335,19 @@ function ReconcileDialog({ contaId, conta, empresaId, autoConciliar, importing, 
     enabled: open && !!empresaId,
     queryKey: ["lanc-abertos", empresaId] as const,
     queryFn: async () => {
-      const { data, error } = await supabase.from("lancamentos_financeiros")
-        .select("id,descricao,valor,tipo,status,data_vencimento,conta_bancaria_id,categoria_id,contato_id,centro_custo_id")
-        .eq("empresa_id", empresaId!).in("status", ["aberto", "vencido", "parcial"])
-        .order("data_vencimento").limit(200);
-      if (error) throw error;
-      return data ?? [];
+      // Busca em páginas: sem range, o Supabase corta em 1000; o limit(200) antigo
+      // escondia lançamentos (ex.: parcela 05/09 fora dos 200 mais antigos).
+      const todos: unknown[] = [];
+      for (let ini = 0; ; ini += 1000) {
+        const { data, error } = await supabase.from("lancamentos_financeiros")
+          .select("id,descricao,valor,tipo,status,data_vencimento,conta_bancaria_id,categoria_id,contato_id,centro_custo_id")
+          .eq("empresa_id", empresaId!).in("status", ["aberto", "vencido", "parcial"])
+          .order("data_vencimento").range(ini, ini + 999);
+        if (error) throw error;
+        todos.push(...((data as unknown[]) ?? []));
+        if (!data || (data as unknown[]).length < 1000) break;
+      }
+      return todos as unknown as LancOpt[];
     },
   });
 
@@ -2331,7 +2338,26 @@ function BuscarLancamentoDialog({ open, onClose, tx, lancamentos, value, onConfi
       }
       if ((l.data_vencimento || "").includes(termo)) return true;
       return false;
-    }).slice(0, 100);
+    })
+      // Com busca, o exato primeiro: valor igual e descrição começando pelo termo sobem.
+      .sort((a, b) => {
+        if (!termo) return 0;
+        const qV = termo.replace(/[^\d,]/g, "");
+        const score = (l: { descricao: string | null; valor: number }) => {
+          let s = 0;
+          if (qV.replace(/\D/g, "").length >= 2) {
+            const vv = Number(l.valor || 0).toFixed(2).replace(".", ",");
+            if (vv === qV) s += 3;
+            else if (vv.includes(qV)) s += 2;
+          }
+          const d = (l.descricao ?? "").toLowerCase();
+          if (d.startsWith(termo)) s += 2;
+          else if (d.includes(termo)) s += 1;
+          return s;
+        };
+        return score(b) - score(a);
+      })
+      .slice(0, 100);
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [lancamentos, q, periodo, contaF, catF, contatoF, centroF, sitF, tipoF]);
   const padrao = janelaPadrao(tx.data_transacao);

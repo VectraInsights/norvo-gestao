@@ -5879,3 +5879,8 @@ pm run build OK.
 ## Conta sem nome duplicado no pagar/receber (13/10)
 
 - Bradesco — Bradesco vira Bradesco: rotulo mostra so o nome quando banco vazio ou igual (novo e editar, vale p/ pagar e receber).
+
+## Buscar lancamentos: sem corte de 200 + relevancia (13/10)
+
+- lanc-abertos cortava nos 200 mais antigos: parcela 05/09 nem chegava no dialogo (lista vazia ao abrir). Agora busca paginada completa.
+- Com busca, valor exato e descricao iniciada pelo termo sobem primeiro (letras e numeros).
