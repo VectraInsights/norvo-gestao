@@ -5825,3 +5825,8 @@ pm run build OK.
 ## Nova categoria em popup centralizado (13/10)
 
 - DialogContent do projeto e fullscreen por padrao e abria como painel lateral; aplicada a classe do popup de cancelamento do MDF-e (inset-auto + centro via translate, 420px, altura auto).
+
+## Conciliacao: qtd na selecao + busca completa (13/10)
+
+- Botoes mostram quantidade: Limpar selecao (N), Conciliar (N), Excluir (N); selecao e acoes valem para a listagem visivel (respeita busca/filtro) e a selecao e podada quando itens saem da lista.
+- Busca agora sem acento e alcanca descricao digitada, categoria, cliente, centro, valor (8.890,27/8890) e data (02/09/2026); chip Exibindo N de M com limpar quando filtrado; placeholder explicativo no campo.

@@ -1614,18 +1614,47 @@ function ReconcileDialog({ contaId, conta, empresaId, autoConciliar, importing, 
   const recebimentos = useMemo(() => porMes.filter((t) => t.valor >= 0).length, [porMes]);
   const pagamentos = porMes.length - recebimentos;
 
+  const normBusca = useCallback((s: string | null | undefined) =>
+    String(s ?? "").toLocaleLowerCase("pt-BR").normalize("NFD").replace(/\p{Diacritic}/gu, ""), []);
+
+  const catNomeBusca = useMemo(() => new Map(((categorias ?? []) as { id: string; nome: string }[]).map((c) => [c.id, c.nome])), [categorias]);
+  const contatoNomeBusca = useMemo(() => new Map((contatos ?? []).map((c) => [c.id, c.nome])), [contatos]);
+  const centroNomeBusca = useMemo(() => new Map((centros ?? []).map((c) => [c.id, c.nome])), [centros]);
+
   const q = buscaDebounced.trim().toLowerCase();
   const visiveis = useMemo(() => {
+    const nq = normBusca(q);
     return porMes
       .filter((t) => filtro === "todos" || (filtro === "recebimentos" ? t.valor >= 0 : t.valor < 0))
-      .filter((t) => !q || (t.memo ?? "").toLowerCase().includes(q) || String(t.valor).includes(q.replace(",", ".")))
+      .filter((t) => {
+        if (!nq) return true;
+        const r = rows[t.id];
+        const campos = [
+          t.memo ?? "",
+          r?.descricao ?? "",
+          catNomeBusca.get(r?.categoria_id ?? "") ?? "",
+          contatoNomeBusca.get(r?.contato_id ?? "") ?? "",
+          centroNomeBusca.get(r?.centro_custo_id ?? "") ?? "",
+        ];
+        if (campos.some((c) => normBusca(c).includes(nq))) return true;
+        // valor: "8.890,27", "8890", "8890.27"
+        const vNum = String(Math.abs(Number(t.valor)));
+        const qNum = nq.replace(",", ".");
+        if (vNum.includes(qNum) || vNum.replace(/\D/g, "").includes(qNum.replace(/\D/g, ""))) {
+          if (/\d/.test(nq)) return true;
+        }
+        // data: 02/09/2026, 02/09 ou 2026-09-02
+        const [y, m, d] = String(t.data_transacao).split("-");
+        if (y && m && d && (`${d}/${m}/${y}`.includes(nq) || `${d}/${m}`.includes(nq) || t.data_transacao.includes(nq))) return true;
+        return false;
+      })
       .sort((a, b) => {
         if (ordem === "recentes") return b.data_transacao.localeCompare(a.data_transacao);
         if (ordem === "antigos") return a.data_transacao.localeCompare(b.data_transacao);
         if (ordem === "maior") return Math.abs(b.valor) - Math.abs(a.valor);
         return Math.abs(a.valor) - Math.abs(b.valor);
       });
-  }, [porMes, filtro, q, ordem]);
+  }, [porMes, filtro, q, ordem, rows, normBusca, catNomeBusca, contatoNomeBusca, centroNomeBusca]);
 
   // Carregar mais: renderizar centenas de cards de uma vez trava a tela.
   useEffect(() => { setVisiveisQtd(PAGE_SIZE); }, [q, filtro, ordem, contaId]);
@@ -1751,11 +1780,34 @@ function ReconcileDialog({ contaId, conta, empresaId, autoConciliar, importing, 
     onError: (e: Error) => toast.error(e.message),
   });
 
+  // Seleção vale para a listagem visível (respeita busca/filtro); contadores seguem o mesmo recorte.
+  const selVisiveis = useMemo(() => visiveis.filter((t) => sel.has(t.id)), [visiveis, sel]);
+
+  const alternarSelecaoVisiveis = useCallback(() => {
+    setSel((prev) => {
+      const todosMarcados = visiveis.length > 0 && visiveis.every((t) => prev.has(t.id));
+      const n = new Set(prev);
+      if (todosMarcados) visiveis.forEach((t) => n.delete(t.id));
+      else visiveis.forEach((t) => n.add(t.id));
+      return n;
+    });
+  }, [visiveis]);
+
+  // Limpa da seleção ids que sumiram da lista (conciliados/excluídos em outra ação).
+  useEffect(() => {
+    setSel((prev) => {
+      if (!prev.size) return prev;
+      const validos = new Set((txs ?? []).filter((t) => t.status !== "conciliada").map((t) => t.id));
+      if ([...prev].every((id) => validos.has(id))) return prev;
+      return new Set([...prev].filter((id) => validos.has(id)));
+    });
+  }, [txs]);
+
   const conciliarSelecionados = async () => {
-    const alvos = visiveis.filter((t) => sel.has(t.id));
+    const alvos = selVisiveis;
     if (!alvos.length) { toast.error("Selecione ao menos um lançamento"); return; }
     for (const tx of alvos) await criarEConciliar.mutateAsync({ tx, r: getRow(tx) }).catch(() => null);
-    setSel(new Set());
+    setSel((prev) => { const n = new Set(prev); alvos.forEach((t) => n.delete(t.id)); return n; });
   };
 
   // Sugestão visível: pré-seleciona o lançamento de mesmo valor e data
@@ -1804,7 +1856,7 @@ function ReconcileDialog({ contaId, conta, empresaId, autoConciliar, importing, 
             <div className="flex flex-wrap items-center gap-2">
                 <div className="relative w-full max-w-xs">
                   <Search className="pointer-events-none absolute left-2 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
-                  <Input className="pl-8 h-8 text-[13px]" value={busca} onChange={(e) => setBusca(e.target.value)} />
+                  <Input className="pl-8 h-8 text-[13px]" placeholder="Buscar por descrição, categoria, cliente, valor ou data…" value={busca} onChange={(e) => setBusca(e.target.value)} />
                 </div>
                 {filtrosSalvos.filtros.length > 0 && (
                   <Select onValueChange={aplicarFiltroSalvo}>
@@ -1853,16 +1905,24 @@ function ReconcileDialog({ contaId, conta, empresaId, autoConciliar, importing, 
                 </Select>
               </div>
               <Button variant="outline" size="sm" className="h-8 text-xs"
-                onClick={() => setSel(sel.size === visiveis.length ? new Set() : new Set(visiveis.map((t) => t.id)))}>
-                {sel.size === visiveis.length && visiveis.length > 0 ? "Limpar seleção" : "Selecionar lançamentos"}
+                onClick={alternarSelecaoVisiveis}>
+                {selVisiveis.length === visiveis.length && visiveis.length > 0 ? `Limpar seleção (${selVisiveis.length})` : selVisiveis.length > 0 ? `Selecionar lançamentos (${selVisiveis.length} marcados)` : "Selecionar lançamentos"}
               </Button>
-              <Button variant="outline" size="sm" className="h-8 text-xs" disabled={!sel.size || criarEConciliar.isPending} onClick={conciliarSelecionados}>
-                {criarEConciliar.isPending && <Loader2 className="mr-1 h-3 w-3 animate-spin" />}Conciliar
+              <Button variant="outline" size="sm" className="h-8 text-xs" disabled={!selVisiveis.length || criarEConciliar.isPending} onClick={conciliarSelecionados}>
+                {criarEConciliar.isPending && <Loader2 className="mr-1 h-3 w-3 animate-spin" />}Conciliar{selVisiveis.length > 0 ? ` (${selVisiveis.length})` : ""}
               </Button>
-              <Button variant="outline" size="sm" className="h-8 text-xs" disabled={!sel.size || excluirTx.isPending}
-                onClick={() => excluirTx.mutate(Array.from(sel))}>
-                <Trash2 className="mr-1 h-3 w-3" />Excluir
+              <Button variant="outline" size="sm" className="h-8 text-xs" disabled={!selVisiveis.length || excluirTx.isPending}
+                onClick={() => excluirTx.mutate(selVisiveis.map((t) => t.id))}>
+                <Trash2 className="mr-1 h-3 w-3" />Excluir{selVisiveis.length > 0 ? ` (${selVisiveis.length})` : ""}
               </Button>
+              {(q || filtro !== "todos") && (
+                <span className="text-[11px] text-muted-foreground">
+                  Exibindo {visiveis.length} de {porMes.length}
+                  <button type="button" className="ml-1 underline underline-offset-2 hover:text-foreground" onClick={() => { setBusca(""); setFiltro("todos"); }}>
+                    limpar
+                  </button>
+                </span>
+              )}
             </div>
 
             <div className="grid grid-cols-1 gap-2 text-xs font-medium md:grid-cols-[1fr_auto_1fr]">
