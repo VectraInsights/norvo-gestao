@@ -5816,3 +5816,8 @@ pm run build OK.
 - Linhas novas ja nascem com categoria/contato/centro da memoria; efeito complementar preenche campos vazios quando memoria/contatos chegam depois (nunca sobrescreve escolha do usuario).
 - Fallback por nome: contato com 2+ palavras (4+ letras) presentes no memo (ex.: FARMAX no TED) preenche o cliente.
 - Conciliar invalida conc-memoria: ao fazer 1, os proximos iguais passam a puxar sozinhos.
+
+## Conciliacao com Nova categoria inline (13/10)
+
+- Combo de categoria ganha rodape Nova categoria (igual ao Novo contato): dialog cria no plano da empresa com tipo da linha (receber/pagar), aplica na linha e invalida categorias-conc/cadastros-categorias.
+- Duplicada (23505) reaproveita a existente em vez de falhar.

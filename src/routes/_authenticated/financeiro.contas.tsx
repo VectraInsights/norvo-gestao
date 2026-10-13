@@ -1282,6 +1282,8 @@ function ReconcileDialog({ contaId, conta, empresaId, autoConciliar, importing, 
   const [sel, setSel] = useState<Set<string>>(new Set());
   const [rows, setRows] = useState<Record<string, RowState>>({});
   const [conciliandoIds, setConciliandoIds] = useState<Set<string>>(new Set());
+  const [novaCatTxId, setNovaCatTxId] = useState<string | null>(null);
+  const [novaCatNome, setNovaCatNome] = useState("");
   const [buscarModo, setBuscarModo] = useState<Record<string, boolean>>({});
   const [confExtrato, setConfExtrato] = useState(false);
 
@@ -1711,6 +1713,44 @@ function ReconcileDialog({ contaId, conta, empresaId, autoConciliar, importing, 
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [empresaId, contaId]);
 
+  // Criação rápida de categoria dentro da conciliação (rodapé do combo, igual ao Novo contato).
+  const criarCategoriaConc = useMutation({
+    mutationFn: async ({ txId, nome }: { txId: string; nome: string }) => {
+      if (!empresaId) throw new Error("Empresa não selecionada");
+      const tx = (txs ?? []).find((t) => t.id === txId);
+      if (!tx) throw new Error("Lançamento não encontrado");
+      const n = nome.trim();
+      if (!n) throw new Error("Informe o nome da categoria");
+      const tipo = tx.valor >= 0 ? "receber" : "pagar";
+      const { data, error } = await supabase.from("categorias_financeiras")
+        .insert({ empresa_id: empresaId, nome: n, tipo } as any)
+        .select("id,nome,tipo").single();
+      if (error) {
+        if ((error as any).code === "23505") {
+          const { data: ex } = await supabase.from("categorias_financeiras")
+            .select("id,nome,tipo").eq("empresa_id", empresaId).eq("tipo", tipo);
+          const norm = (s: string) =>
+            s.trim().toLocaleLowerCase("pt-BR").normalize("NFD").replace(/\p{Diacritic}/gu, "");
+          const achou = ((ex ?? []) as { id: string; nome: string; tipo: string }[]).find((c) => norm(c.nome) === norm(n));
+          if (achou) return achou;
+          throw new Error("Já existe uma categoria com esse nome para este tipo");
+        }
+        throw error;
+      }
+      return data as { id: string; nome: string; tipo: string };
+    },
+    onSuccess: (cat) => {
+      qc.invalidateQueries({ queryKey: ["categorias-conc", empresaId] });
+      qc.invalidateQueries({ queryKey: ["cadastros-categorias", empresaId] });
+      qc.invalidateQueries({ queryKey: ["categorias-opt"] });
+      if (novaCatTxId) setRow(novaCatTxId, { categoria_id: cat.id });
+      toast.success(`Categoria "${cat.nome}" criada`);
+      setNovaCatTxId(null);
+      setNovaCatNome("");
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
   const conciliarSelecionados = async () => {
     const alvos = visiveis.filter((t) => sel.has(t.id));
     if (!alvos.length) { toast.error("Selecione ao menos um lançamento"); return; }
@@ -1858,6 +1898,7 @@ function ReconcileDialog({ contaId, conta, empresaId, autoConciliar, importing, 
                     onSetRow={setRow}
                     onSetModoBusca={setModoBusca}
                     onConciliar={conciliarUm}
+                    onNovaCategoria={(txId) => { setNovaCatNome(""); setNovaCatTxId(txId); }}
                     onExcluir={(id) => excluirTx.mutate([id])}
                     empresaId={empresaId}
                     logoBanco={conta?.banco ? detectBancoByNome(conta.banco)?.logo ?? null : null}
@@ -1900,6 +1941,36 @@ function ReconcileDialog({ contaId, conta, empresaId, autoConciliar, importing, 
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      <Dialog open={!!novaCatTxId} onOpenChange={(o) => { if (!o) { setNovaCatTxId(null); setNovaCatNome(""); } }}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader className="gap-1.5 pb-1">
+            <DialogTitle className="tracking-tight">
+              Nova categoria ({((txs ?? []).find((t) => t.id === novaCatTxId)?.valor ?? 0) >= 0 ? "Receita" : "Despesa"})
+            </DialogTitle>
+            <DialogDescription>Criada no plano da empresa e aplicada ao lançamento.</DialogDescription>
+          </DialogHeader>
+          <div className="space-y-1.5">
+            <Label>Nome *</Label>
+            <Input
+              autoFocus
+              value={novaCatNome}
+              onChange={(e) => setNovaCatNome(e.target.value)}
+              onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); if (novaCatTxId && novaCatNome.trim()) criarCategoriaConc.mutate({ txId: novaCatTxId, nome: novaCatNome }); } }}
+            />
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => { setNovaCatTxId(null); setNovaCatNome(""); }}>Cancelar</Button>
+            <Button
+              disabled={criarCategoriaConc.isPending || !novaCatNome.trim()}
+              onClick={() => novaCatTxId && criarCategoriaConc.mutate({ txId: novaCatTxId, nome: novaCatNome })}
+              className="h-10 rounded-xl px-6 shadow-sm"
+            >
+              {criarCategoriaConc.isPending ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Salvando...</> : "Criar categoria"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </>
     );
 
@@ -2269,7 +2340,7 @@ function BuscarLancamentoDialog({ open, onClose, tx, lancamentos, value, onConfi
 
 const ReconcileRow = memo(function ReconcileRow({
   tx, r, modoBusca, selected, categorias, contatos, centros, lancamentosAbertos,
-  conciliando, excluindo, onToggleSel, onSetRow, onSetModoBusca, onConciliar, onExcluir, empresaId, logoBanco,
+  conciliando, excluindo, onToggleSel, onSetRow, onSetModoBusca, onConciliar, onNovaCategoria, onExcluir, empresaId, logoBanco,
 }: {
   tx: OfxRow;
   r: RowState;
@@ -2285,6 +2356,7 @@ const ReconcileRow = memo(function ReconcileRow({
   onSetRow: (id: string, patch: Partial<RowState>) => void;
   onSetModoBusca: (id: string, v: boolean) => void;
   onConciliar: (tx: OfxRow, r: RowState) => void;
+  onNovaCategoria: (txId: string) => void;
   onExcluir: (id: string) => void;
   empresaId: string | null;
   logoBanco?: string | null;
@@ -2443,7 +2515,7 @@ const ReconcileRow = memo(function ReconcileRow({
               </div>
               <div className="space-y-1">
                 <Label className="text-xs">Categoria <span className="text-destructive">*</span></Label>
-                <Combobox value={r.categoria_id} onChange={(v) => onSetRow(tx.id, { categoria_id: v })} options={categorias.map((c) => ({ value: c.id, label: c.nome }))} emptyText="Nenhum item encontrado." />
+                <Combobox value={r.categoria_id} onChange={(v) => onSetRow(tx.id, { categoria_id: v })} options={categorias.map((c) => ({ value: c.id, label: c.nome }))} emptyText="Nenhum item encontrado." footer={{ label: "Nova categoria", onClick: () => onNovaCategoria(tx.id) }} />
               </div>
               <div className="space-y-1">
                 <Label className="text-xs">{tx.valor >= 0 ? "Cliente" : "Fornecedor"}</Label>
