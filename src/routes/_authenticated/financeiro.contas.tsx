@@ -1943,7 +1943,7 @@ function ReconcileDialog({ contaId, conta, empresaId, autoConciliar, importing, 
       </AlertDialog>
 
       <Dialog open={!!novaCatTxId} onOpenChange={(o) => { if (!o) { setNovaCatTxId(null); setNovaCatNome(""); } }}>
-        <DialogContent className="sm:max-w-md">
+        <DialogContent className="inset-auto left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-[420px] max-w-[calc(100vw-2rem)] h-auto max-h-[90vh] p-4 gap-3 rounded-2xl sm:p-6">
           <DialogHeader className="gap-1.5 pb-1">
             <DialogTitle className="tracking-tight">
               Nova categoria ({((txs ?? []).find((t) => t.id === novaCatTxId)?.valor ?? 0) >= 0 ? "Receita" : "Despesa"})

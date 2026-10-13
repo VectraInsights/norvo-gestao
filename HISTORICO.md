@@ -5821,3 +5821,7 @@ pm run build OK.
 
 - Combo de categoria ganha rodape Nova categoria (igual ao Novo contato): dialog cria no plano da empresa com tipo da linha (receber/pagar), aplica na linha e invalida categorias-conc/cadastros-categorias.
 - Duplicada (23505) reaproveita a existente em vez de falhar.
+
+## Nova categoria em popup centralizado (13/10)
+
+- DialogContent do projeto e fullscreen por padrao e abria como painel lateral; aplicada a classe do popup de cancelamento do MDF-e (inset-auto + centro via translate, 420px, altura auto).
