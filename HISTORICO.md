@@ -5871,3 +5871,7 @@ pm run build OK.
 ## Buscar lancamentos: pesquisa de valor com milhar (13/10)
 
 - 33.748,45 nao achava 33748.45 (ponto de milhar quebrava o includes): busca por valor agora compara so digitos com toFixed(2), igual ao pagar/receber, a partir de 2 digitos.
+
+## Busca de valor: so numeros e virgula (13/10)
+
+- 33748,45 ou ate 33.74.8.,45 acham 33748,45 (pontos ignorados, vale digitos+virgula).

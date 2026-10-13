@@ -2322,11 +2322,12 @@ function BuscarLancamentoDialog({ open, onClose, tx, lancamentos, value, onConfi
       if (!dentroPeriodo(l.data_vencimento)) return false;
       if (!termo) return true;
       if ((l.descricao ?? "").toLowerCase().includes(termo)) return true;
-      // Pesquisa por valor: "33.748,45" acha 33748.45 (só dígitos, a partir de 2 p/ "0" não casar tudo)
-      const termoDig = termo.replace(/\D/g, "");
-      if (termoDig.length >= 2) {
-        const valorDig = Number(l.valor || 0).toFixed(2).replace(/\D/g, "");
-        if (valorDig.includes(termoDig)) return true;
+      // Pesquisa por valor: só números e vírgula ("33.748,45" vira "33748,45";
+      // a partir de 2 dígitos p/ "0" não casar tudo)
+      const qValor = termo.replace(/[^\d,]/g, "");
+      if (qValor.replace(/\D/g, "").length >= 2) {
+        const valorVirg = Number(l.valor || 0).toFixed(2).replace(".", ",");
+        if (valorVirg.includes(qValor)) return true;
       }
       if ((l.data_vencimento || "").includes(termo)) return true;
       return false;
