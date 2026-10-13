@@ -5855,3 +5855,7 @@ pm run build OK.
 ## Novo contato puxa texto digitado (13/10)
 
 - Combobox avisa o texto da busca (onSearchChange); NovoContatoDialog ganha nomeInicial e abre com Nome preenchido (ex.: FIBRASA S.A. digitado e nao achado). Demais chamadas sem a prop seguem zeradas.
+
+## Conciliacao com aba Transferencia (13/10)
+
+- Cartao Novo lancamento ganha abas Novo lancamento/Transferencia: informa descricao + outra conta, cria transferencias_contas com as 2 pernas, quita a perna desta conta e amarra o extrato (outra perna segue em aberto p/ conciliar na outra conta). Botao Conciliar do meio e Conciliar em lote respeitam a aba.

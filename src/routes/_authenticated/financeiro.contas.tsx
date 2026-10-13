@@ -1250,12 +1250,15 @@ type RowState = {
   contato_id: string;
   centro_custo_id: string;
   lancamento_id: string;
+  modo: "lancamento" | "transferencia";
+  conta_destino_id: string;
 };
 
 const PAGE_SIZE = 15;
 
 const emptyRow = (memo: string | null): RowState => ({
   descricao: memo ?? "", categoria_id: "", contato_id: "", centro_custo_id: "", lancamento_id: "",
+  modo: "lancamento", conta_destino_id: "",
 });
 
 function ReconcileDialog({ contaId, conta, empresaId, autoConciliar, importing, onImport, onClose, inline }: { contaId: string | null; conta: ContaBancaria | null; empresaId: string | null; autoConciliar: boolean; importing: boolean; onImport: () => void; onClose: () => void; inline?: boolean }) {
@@ -1490,6 +1493,20 @@ function ReconcileDialog({ contaId, conta, empresaId, autoConciliar, importing, 
     }
     return melhor;
   }, [normMemo]);
+
+  // Contas para a aba Transferência (destino/origem diferente da atual).
+  const { data: contasTransf } = useQuery({
+    enabled: open && !!empresaId,
+    queryKey: ["contas-conc-transf", empresaId] as const,
+    staleTime: 10 * 60_000,
+    gcTime: 30 * 60_000,
+    queryFn: async () => {
+      const { data, error } = await supabase.from("contas_bancarias")
+        .select("id,nome,banco").eq("empresa_id", empresaId!).eq("ativo", true).order("nome");
+      if (error) throw error;
+      return (data ?? []) as { id: string; nome: string | null; banco: string | null }[];
+    },
+  });
 
   const conciliar = useMutation({
     mutationFn: async ({ ofxId, lancamentoId, valor }: { ofxId: string; lancamentoId: string; valor: number }) => {
@@ -1847,6 +1864,82 @@ function ReconcileDialog({ contaId, conta, empresaId, autoConciliar, importing, 
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [empresaId, contaId]);
 
+  // Aba Transferência: cria a transferência entre contas, quita a perna desta
+  // conta e amarra o extrato nela (a outra perna segue em aberto e aparece na
+  // conciliação da outra conta / sugestão automática por valor+data).
+  const conciliarTransferencia = useMutation({
+    mutationFn: async ({ tx, r, silent }: { tx: OfxRow; r: RowState; silent?: boolean }) => {
+      if (!empresaId || !contaId) throw new Error("Empresa não selecionada");
+      const outra = r.conta_destino_id;
+      if (!outra) throw new Error(tx.valor < 0 ? "Selecione a conta de destino" : "Selecione a conta de origem");
+      if (outra === contaId) throw new Error("Escolha uma conta diferente desta");
+      const v = Math.abs(Number(tx.valor));
+      if (!v) throw new Error("Valor inválido");
+      const desc = (r.descricao || "").trim() || "Transferência entre contas";
+      const saiu = tx.valor < 0;
+      const contaOrigem = saiu ? contaId : outra;
+      const contaDestino = saiu ? outra : contaId;
+      const nomeConta = (id: string) =>
+        (contasTransf ?? []).find((c) => c.id === id)?.nome
+        || (contasTransf ?? []).find((c) => c.id === id)?.banco
+        || "Conta";
+      const { data: tr, error } = await supabase.from("transferencias_contas")
+        .insert({
+          empresa_id: empresaId, data: tx.data_transacao,
+          conta_origem_id: contaOrigem, conta_destino_id: contaDestino,
+          valor: v, descricao: desc,
+        } as never)
+        .select("id").single();
+      if (error) throw error;
+      const trId = (tr as { id: string }).id;
+      const base = {
+        empresa_id: empresaId, data_emissao: tx.data_transacao, data_vencimento: tx.data_transacao,
+        valor: v, transferencia_id: trId,
+      };
+      const pernaMinhaPaga = {
+        ...base, conta_bancaria_id: contaId,
+        descricao: saiu ? `${desc} → ${nomeConta(contaDestino)}` : `${desc} ← ${nomeConta(contaOrigem)}`,
+        tipo: saiu ? "pagar" : "receber", status: "pago", valor_pago: v, data_pagamento: tx.data_transacao,
+      };
+      const pernaOutraAberta = {
+        ...base, conta_bancaria_id: outra,
+        descricao: saiu ? `${desc} ← ${nomeConta(contaOrigem)}` : `${desc} → ${nomeConta(contaDestino)}`,
+        tipo: saiu ? "receber" : "pagar", status: "aberto",
+      };
+      const { data: pernas, error: e2 } = await supabase.from("lancamentos_financeiros")
+        .insert([pernaMinhaPaga, pernaOutraAberta] as never)
+        .select("id,conta_bancaria_id");
+      if (e2) throw e2;
+      const minha = ((pernas ?? []) as { id: string; conta_bancaria_id: string }[]).find((p) => p.conta_bancaria_id === contaId);
+      if (!minha) throw new Error("Falha ao criar as pernas da transferência");
+      const { error: e3 } = await supabase.from("ofx_transacoes")
+        .update({ status: "conciliada", lancamento_id: minha.id }).eq("id", tx.id);
+      if (e3) throw e3;
+    },
+    onSuccess: (_d, vars) => {
+      if (!vars?.silent) toast.success("Transferência conciliada");
+      qc.invalidateQueries({ queryKey: ["ofx", contaId] });
+      qc.invalidateQueries({ queryKey: ["lanc-abertos", empresaId] });
+      qc.invalidateQueries({ queryKey: ["lancamentos"] });
+      qc.invalidateQueries({ queryKey: ["conc-memoria"] });
+      qc.invalidateQueries({ queryKey: ["transferencias"] });
+      qc.invalidateQueries({ queryKey: ["contas-bancarias"] });
+    },
+    onError: (e: Error, vars) => { if (!vars?.silent) toast.error(e.message); },
+  });
+
+  const conciliarTransfUm = useCallback((t: OfxRow, r: RowState) => {
+    setConciliandoIds((prev) => new Set(prev).add(t.id));
+    conciliarTransferencia.mutate({ tx: t, r }, {
+      onSettled: () => setConciliandoIds((prev) => {
+        const n = new Set(prev);
+        n.delete(t.id);
+        return n;
+      }),
+    });
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [empresaId, contaId]);
+
   // Seleção vale para a listagem visível (respeita busca/filtro); contadores seguem o mesmo recorte.
   const selVisiveis = useMemo(() => visiveis.filter((t) => sel.has(t.id)), [visiveis, sel]);
 
@@ -1875,12 +1968,17 @@ function ReconcileDialog({ contaId, conta, empresaId, autoConciliar, importing, 
     if (!alvos.length) { toast.error("Selecione ao menos um lançamento"); return; }
     let ok = 0, falhas = 0;
     for (const tx of alvos) {
-      try { await criarEConciliar.mutateAsync({ tx, r: getRow(tx), silent: true }); ok++; }
+      const row = getRow(tx);
+      try {
+        if (row.modo === "transferencia") await conciliarTransferencia.mutateAsync({ tx, r: row, silent: true });
+        else await criarEConciliar.mutateAsync({ tx, r: row, silent: true });
+        ok++;
+      }
       catch { falhas++; }
     }
     setSel((prev) => { const n = new Set(prev); alvos.forEach((t) => n.delete(t.id)); return n; });
     if (ok > 0) toast.success(`${ok} lançamento(s) conciliado(s)`);
-    if (falhas > 0) toast.error(`${falhas} lançamento(s) com erro (verifique descrição e categoria)`);
+    if (falhas > 0) toast.error(`${falhas} lançamento(s) com erro (verifique descrição, categoria ou conta)`);
   };
 
   // Sugestão visível: pré-seleciona o lançamento de mesmo valor e data
@@ -2023,6 +2121,9 @@ function ReconcileDialog({ contaId, conta, empresaId, autoConciliar, importing, 
                     onSetRow={setRow}
                     onSetModoBusca={setModoBusca}
                     onConciliar={conciliarUm}
+                    onConciliarTransf={conciliarTransfUm}
+                    contasTransf={contasTransf ?? []}
+                    contaAtualId={contaId ?? ""}
                     onConciliarVarios={conciliarVariosUm}
                     onNovaCategoria={(txId) => { setNovaCatNome(""); setNovaCatTxId(txId); }}
                     onExcluir={(id) => excluirTx.mutate([id])}
@@ -2474,7 +2575,7 @@ function BuscarLancamentoDialog({ open, onClose, tx, lancamentos, value, onConfi
 
 const ReconcileRow = memo(function ReconcileRow({
   tx, r, modoBusca, selected, categorias, contatos, centros, lancamentosAbertos,
-  conciliando, excluindo, onToggleSel, onSetRow, onSetModoBusca, onConciliar, onConciliarVarios, onNovaCategoria, onExcluir, empresaId, logoBanco,
+  conciliando, excluindo, onToggleSel, onSetRow, onSetModoBusca, onConciliar, onConciliarTransf, contasTransf, contaAtualId, onConciliarVarios, onNovaCategoria, onExcluir, empresaId, logoBanco,
 }: {
   tx: OfxRow;
   r: RowState;
@@ -2490,6 +2591,9 @@ const ReconcileRow = memo(function ReconcileRow({
   onSetRow: (id: string, patch: Partial<RowState>) => void;
   onSetModoBusca: (id: string, v: boolean) => void;
   onConciliar: (tx: OfxRow, r: RowState) => void;
+  onConciliarTransf: (tx: OfxRow, r: RowState) => void;
+  contasTransf: { id: string; nome: string | null; banco: string | null }[];
+  contaAtualId: string;
   onConciliarVarios: (tx: OfxRow, ids: string[]) => void;
   onNovaCategoria: (txId: string) => void;
   onExcluir: (id: string) => void;
@@ -2547,8 +2651,12 @@ const ReconcileRow = memo(function ReconcileRow({
           </span>
         )}
         <Button
-          size="sm" disabled={conciliando}
-          onClick={() => (mostraSugestao && sugestao ? onConciliar(tx, { ...r, lancamento_id: sugestao.id }) : onConciliar(tx, r))}
+          size="sm" disabled={conciliando || (r.modo === "transferencia" && !mostraSugestao && !r.lancamento_id && !r.conta_destino_id)}
+          onClick={() => {
+            if (mostraSugestao && sugestao) { onConciliar(tx, { ...r, lancamento_id: sugestao.id }); return; }
+            if (r.modo === "transferencia" && !r.lancamento_id) { onConciliarTransf(tx, r); return; }
+            onConciliar(tx, r);
+          }}
         >
           {conciliando ? <Loader2 className="mr-1 h-3.5 w-3.5 animate-spin" /> : <Check className="mr-1 h-3.5 w-3.5" />}
           Conciliar
@@ -2642,13 +2750,51 @@ const ReconcileRow = memo(function ReconcileRow({
         ) : (
         <>
         <div className="flex items-center justify-between gap-2 border-b px-3 py-2">
-          <span className="text-xs font-semibold">Novo lançamento</span>
-          <Button size="sm" variant="outline" onClick={() => setBuscaOpen(true)}>
-            <Search className="mr-1 h-3 w-3" />Buscar lançamento
-          </Button>
+          <div className="flex items-center gap-0.5 rounded-lg bg-muted p-0.5">
+            {(["lancamento", "transferencia"] as const).map((m) => (
+              <button
+                key={m}
+                type="button"
+                onClick={() => onSetRow(tx.id, { modo: m })}
+                className={cn(
+                  "h-7 rounded-md px-2.5 text-xs transition-colors",
+                  r.modo === m ? "bg-background font-medium shadow-sm" : "text-muted-foreground hover:text-foreground",
+                )}
+              >
+                {m === "lancamento" ? "Novo lançamento" : "Transferência"}
+              </button>
+            ))}
+          </div>
+          {r.modo === "lancamento" && (
+            <Button size="sm" variant="outline" onClick={() => setBuscaOpen(true)}>
+              <Search className="mr-1 h-3 w-3" />Buscar lançamento
+            </Button>
+          )}
         </div>
-        <div className="px-3 py-2">
-          <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+        {r.modo === "transferencia" ? (
+          <div className="px-3 py-2">
+            <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+              <div className="space-y-1">
+                <Label className="text-xs">Descrição <span className="text-destructive">*</span></Label>
+                <Input value={r.descricao} onChange={(e) => onSetRow(tx.id, { descricao: e.target.value })} />
+              </div>
+              <div className="space-y-1">
+                <Label className="text-xs">{tx.valor < 0 ? "Conta de destino *" : "Conta de origem *"}</Label>
+                <Combobox
+                  value={r.conta_destino_id}
+                  onChange={(v) => onSetRow(tx.id, { conta_destino_id: v })}
+                  options={(contasTransf ?? []).filter((c) => c.id !== contaAtualId).map((c) => ({ value: c.id, label: c.nome || c.banco || "Conta" }))}
+                  emptyText="Nenhuma outra conta."
+                />
+              </div>
+            </div>
+            <p className="mt-2 text-[11px] leading-snug text-muted-foreground">
+              Cria a transferência entre as contas e quita a perna desta conta; a outra perna segue em aberto.
+            </p>
+          </div>
+        ) : (
+          <div className="px-3 py-2">
+            <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
               <div className="space-y-1">
                 <Label className="text-xs">Descrição <span className="text-destructive">*</span></Label>
                 <Input value={r.descricao} onChange={(e) => onSetRow(tx.id, { descricao: e.target.value })} />
@@ -2667,6 +2813,7 @@ const ReconcileRow = memo(function ReconcileRow({
               </div>
             </div>
           </div>
+        )}
         </>
         )}
       </Card>
