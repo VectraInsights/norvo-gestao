@@ -113,6 +113,7 @@ export function Combobox({
         <Button
           variant="outline"
           role="combobox"
+          type="button"
           aria-expanded={open}
           disabled={disabled}
           className={cn("h-10 w-full justify-between rounded-xl px-3 font-normal shadow-sm transition-all hover:shadow-md", className)}

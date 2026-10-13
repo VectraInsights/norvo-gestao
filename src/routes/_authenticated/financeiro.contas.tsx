@@ -2613,6 +2613,16 @@ const ReconcileRow = memo(function ReconcileRow({
   ), [lancamentosAbertos, tx.valor, tx.data_transacao]);
   const [ignorado, setIgnorado] = useState(false);
   const mostraSugestao = !!sugestao && !r.lancamento_id && !ignorado;
+  // Enter em qualquer campo do cartão aciona o Conciliar da linha (form + submit).
+  const enviandoRef = useRef(false);
+  useEffect(() => { if (!conciliando) enviandoRef.current = false; }, [conciliando]);
+  const submeter = () => {
+    if (conciliando || enviandoRef.current) return;
+    enviandoRef.current = true;
+    if (mostraSugestao && sugestao) { onConciliar(tx, { ...r, lancamento_id: sugestao.id }); return; }
+    if (r.modo === "transferencia" && !r.lancamento_id) { onConciliarTransf(tx, r); return; }
+    onConciliar(tx, r);
+  };
   const sugestaoContato = sugestao?.contato_id ? (contatos.find((c) => c.id === sugestao.contato_id)?.nome ?? "—") : "Informação não recebida";
   const sugestaoCategoria = sugestao?.categoria_id ? (categorias.find((c) => c.id === sugestao.categoria_id)?.nome ?? "—") : "—";
   const sugestaoData = sugestao ? new Date(`${sugestao.data_vencimento}T00:00:00`) : null;
@@ -2644,6 +2654,7 @@ const ReconcileRow = memo(function ReconcileRow({
         </div>
       </Card>
 
+      <form onSubmit={(e) => { e.preventDefault(); submeter(); }} className="contents">
       <div className="flex flex-col items-center justify-center gap-2 py-1">
         {mostraSugestao && (
           <span className="inline-flex items-center gap-1 rounded-full bg-success/15 px-2.5 py-1 text-[11px] font-semibold text-success shadow-sm">
@@ -2651,12 +2662,7 @@ const ReconcileRow = memo(function ReconcileRow({
           </span>
         )}
         <Button
-          size="sm" disabled={conciliando || (r.modo === "transferencia" && !mostraSugestao && !r.lancamento_id && !r.conta_destino_id)}
-          onClick={() => {
-            if (mostraSugestao && sugestao) { onConciliar(tx, { ...r, lancamento_id: sugestao.id }); return; }
-            if (r.modo === "transferencia" && !r.lancamento_id) { onConciliarTransf(tx, r); return; }
-            onConciliar(tx, r);
-          }}
+          size="sm" type="submit" disabled={conciliando || (r.modo === "transferencia" && !mostraSugestao && !r.lancamento_id && !r.conta_destino_id)}
         >
           {conciliando ? <Loader2 className="mr-1 h-3.5 w-3.5 animate-spin" /> : <Check className="mr-1 h-3.5 w-3.5" />}
           Conciliar
@@ -2704,10 +2710,10 @@ const ReconcileRow = memo(function ReconcileRow({
             <div className="flex items-center justify-between gap-2 border-t bg-muted/30 px-3 py-1.5">
               <Badge variant="secondary" className="text-[11px]">Sugestão do sistema</Badge>
               <div className="flex items-center gap-1">
-                <Button size="sm" variant="outline" className="h-7 text-xs" onClick={() => setBuscaOpen(true)}>
+                <Button size="sm" variant="outline" type="button" className="h-7 text-xs" onClick={() => setBuscaOpen(true)}>
                   Editar
                 </Button>
-                <Button size="sm" variant="outline" className="h-7 text-xs" onClick={() => setIgnorado(true)}>
+                <Button size="sm" variant="outline" type="button" className="h-7 text-xs" onClick={() => setIgnorado(true)}>
                   Desvincular
                 </Button>
               </div>
@@ -2738,10 +2744,10 @@ const ReconcileRow = memo(function ReconcileRow({
           <div className="flex items-center justify-between gap-2 border-t bg-muted/30 px-3 py-1.5">
             <Badge variant="secondary" className="text-[11px]">Vinculado</Badge>
             <div className="flex items-center gap-1">
-              <Button size="sm" variant="outline" className="h-7 text-xs" onClick={() => setBuscaOpen(true)}>
+              <Button size="sm" variant="outline" type="button" className="h-7 text-xs" onClick={() => setBuscaOpen(true)}>
                 Editar
               </Button>
-              <Button size="sm" variant="outline" className="h-7 text-xs" onClick={() => onSetRow(tx.id, { lancamento_id: "" })}>
+              <Button size="sm" variant="outline" type="button" className="h-7 text-xs" onClick={() => onSetRow(tx.id, { lancamento_id: "" })}>
                 Desvincular
               </Button>
             </div>
@@ -2766,7 +2772,7 @@ const ReconcileRow = memo(function ReconcileRow({
             ))}
           </div>
           {r.modo === "lancamento" && (
-            <Button size="sm" variant="outline" onClick={() => setBuscaOpen(true)}>
+            <Button size="sm" variant="outline" type="button" onClick={() => setBuscaOpen(true)}>
               <Search className="mr-1 h-3 w-3" />Buscar lançamento
             </Button>
           )}
@@ -2817,6 +2823,7 @@ const ReconcileRow = memo(function ReconcileRow({
         </>
         )}
       </Card>
+      </form>
       <NovoContatoDialog
         empresaId={empresaId ?? undefined}
         tipoFixo={tx.valor >= 0 ? "cliente" : "fornecedor"}

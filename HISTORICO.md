@@ -5863,3 +5863,7 @@ pm run build OK.
 ## Transferencia: valor_pago NOT NULL (13/10)
 
 - Perna em aberto ia sem valor_pago e o banco rejeitava (NOT NULL): agora nasce com 0 na aba Transferencia da conciliacao e no dialogo Nova transferencia (mesmo bug latente).
+
+## Enter concilia a linha (13/10)
+
+- Linha da conciliacao vira form (display contents, layout intacto): Enter em descricao/conta aciona o Conciliar respectivo (sugestao, transferencia ou lancamento), com trava contra duplo envio. Demais botoes do cartao e trigger do Combobox marcados type=button p/ nao submeter; busca do combo (portal) segue escolhendo opcao.
