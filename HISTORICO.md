@@ -5875,3 +5875,7 @@ pm run build OK.
 ## Busca de valor: so numeros e virgula (13/10)
 
 - 33748,45 ou ate 33.74.8.,45 acham 33748,45 (pontos ignorados, vale digitos+virgula).
+
+## Conta sem nome duplicado no pagar/receber (13/10)
+
+- Bradesco — Bradesco vira Bradesco: rotulo mostra so o nome quando banco vazio ou igual (novo e editar, vale p/ pagar e receber).

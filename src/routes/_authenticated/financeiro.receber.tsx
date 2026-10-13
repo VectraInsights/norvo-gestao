@@ -108,6 +108,14 @@ type Lancamento = {
   categoria_id: string | null;
 };
 
+// Rótulo da conta sem duplicar quando nome e banco são iguais ("Bradesco — Bradesco").
+const rotuloConta = (c: { nome?: string | null; banco?: string | null }) => {
+  const nome = (c.nome ?? "").trim();
+  const banco = (c.banco ?? "").trim();
+  if (!banco || banco.toLocaleLowerCase("pt-BR") === nome.toLocaleLowerCase("pt-BR")) return nome;
+  return `${nome} — ${banco}`;
+};
+
 const FORMAS_PAGAMENTO = [
   "Boleto",
   "Cartão de crédito",
@@ -780,7 +788,7 @@ export function LancamentosPage({ tipo }: { tipo: "receber" | "pagar" }) {
                     <Combobox
                       value={form.conta_bancaria_id}
                       onChange={(v) => setForm({ ...form, conta_bancaria_id: v })}
-                      options={(contasOpt ?? []).map((c) => ({ value: c.id, label: `${c.nome ?? ""}${c.banco ? ` — ${c.banco}` : ""}` }))}
+                      options={(contasOpt ?? []).map((c) => ({ value: c.id, label: rotuloConta(c) }))}
                      
                      
                       emptyText="Nenhum item encontrado."
@@ -1251,7 +1259,7 @@ export function LancamentosPage({ tipo }: { tipo: "receber" | "pagar" }) {
                   <Combobox
                     value={editing.conta_bancaria_id}
                     onChange={(v) => setEditing({ ...editing, conta_bancaria_id: v })}
-                    options={(contasOpt ?? []).map((c) => ({ value: c.id, label: `${c.nome ?? ""}${c.banco ? ` — ${c.banco}` : ""}` }))}
+                    options={(contasOpt ?? []).map((c) => ({ value: c.id, label: rotuloConta(c) }))}
                    
                    
                     emptyText="Nenhum item encontrado."
