@@ -5888,3 +5888,7 @@ pm run build OK.
 ## Sugestao com tolerancia de 3 dias (13/10)
 
 - Sugestao do sistema (card + pre-vinculo) aceita vencimento ate 3 dias p/ mais ou menos quando nao ha data exata (banco 08/09 x sistema 06/09); exata segue prioritaria. Conciliacao automatica continua exigindo data exata.
+
+## Automatica ao abrir o detalhe (13/10)
+
+- autoConciliarConta so rodava pelo link ?conciliar=; abrir pela lista (detalhe inline, fluxo normal) nunca conciliava sozinho. Agora roda 1x por abertura do detalhe, com toast da quantidade.

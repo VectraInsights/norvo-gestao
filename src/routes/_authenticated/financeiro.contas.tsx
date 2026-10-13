@@ -478,6 +478,28 @@ function ContasFinanceiras() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [conciliarParam, empresa?.id]);
 
+  // Automático também ao abrir o detalhe inline (lista de contas -> Conciliar):
+  // antes só rodava pelo link ?conciliar=, então no fluxo normal nunca conciliava sozinho.
+  const autoDetalheRef = useRef<string | null>(null);
+  useEffect(() => {
+    if (!detalheId || !empresa?.id) return;
+    if (autoDetalheRef.current === detalheId) return;
+    autoDetalheRef.current = detalheId;
+    (async () => {
+      try {
+        const ok = await autoConciliarConta(detalheId, empresa.id);
+        if (ok > 0) {
+          toast.success(`${ok} lançamento(s) conciliado(s) automaticamente`);
+          qc.invalidateQueries({ queryKey: ["ofx", detalheId] });
+          qc.invalidateQueries({ queryKey: ["lanc-abertos", empresa.id] });
+          qc.invalidateQueries({ queryKey: ["lancamentos"] });
+        }
+      } catch {
+        /* segue na tela mesmo se a automação falhar */
+      }
+    })();
+  }, [detalheId, empresa?.id, qc]);
+
 
 
   const [importing, setImporting] = useState<string | null>(null);
