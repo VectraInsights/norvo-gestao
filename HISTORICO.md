@@ -5867,3 +5867,7 @@ pm run build OK.
 ## Enter concilia a linha (13/10)
 
 - Linha da conciliacao vira form (display contents, layout intacto): Enter em descricao/conta aciona o Conciliar respectivo (sugestao, transferencia ou lancamento), com trava contra duplo envio. Demais botoes do cartao e trigger do Combobox marcados type=button p/ nao submeter; busca do combo (portal) segue escolhendo opcao.
+
+## Buscar lancamentos: pesquisa de valor com milhar (13/10)
+
+- 33.748,45 nao achava 33748.45 (ponto de milhar quebrava o includes): busca por valor agora compara so digitos com toFixed(2), igual ao pagar/receber, a partir de 2 digitos.

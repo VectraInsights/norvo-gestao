@@ -2321,9 +2321,15 @@ function BuscarLancamentoDialog({ open, onClose, tx, lancamentos, value, onConfi
       if (sitF !== "todas" && l.status !== sitF) return false;
       if (!dentroPeriodo(l.data_vencimento)) return false;
       if (!termo) return true;
-      return (l.descricao ?? "").toLowerCase().includes(termo)
-        || String(l.valor).includes(termo.replace(",", "."))
-        || (l.data_vencimento || "").includes(termo);
+      if ((l.descricao ?? "").toLowerCase().includes(termo)) return true;
+      // Pesquisa por valor: "33.748,45" acha 33748.45 (só dígitos, a partir de 2 p/ "0" não casar tudo)
+      const termoDig = termo.replace(/\D/g, "");
+      if (termoDig.length >= 2) {
+        const valorDig = Number(l.valor || 0).toFixed(2).replace(/\D/g, "");
+        if (valorDig.includes(termoDig)) return true;
+      }
+      if ((l.data_vencimento || "").includes(termo)) return true;
+      return false;
     }).slice(0, 100);
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [lancamentos, q, periodo, contaF, catF, contatoF, centroF, sitF, tipoF]);
