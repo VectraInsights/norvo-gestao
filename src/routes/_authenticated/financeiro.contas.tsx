@@ -1411,6 +1411,14 @@ function ReconcileDialog({ contaId, conta, empresaId, autoConciliar, importing, 
   const normMemo = useCallback((s: string | null | undefined) =>
     String(s ?? "").toUpperCase().replace(/\s+/g, " ").trim(), []);
 
+  // Assinatura do memo sem partes variáveis (datas 09/09, dias, sequenciais):
+  // "PIX RECEBIDO REM: FARMAX S.A. 09/09" e "... 16/09" viram a mesma chave.
+  const assinaturaMemo = useCallback((s: string | null | undefined) =>
+    normMemo(s)
+      .replace(/\b\d{1,2}[/-]\d{1,2}([/-]\d{2,4})?\b/g, " ")
+      .replace(/\d+/g, " ")
+      .replace(/\s+/g, " ").trim(), [normMemo]);
+
   // Mapa memo exato -> combinação mais frequente (desempate: mais recente).
   const memoriaMap = useMemo(() => {
     const grupos = new Map<string, { categoria_id: string | null; contato_id: string | null; centro_custo_id: string | null; n: number; ordem: number }>();
@@ -1431,11 +1439,29 @@ function ReconcileDialog({ contaId, conta, empresaId, autoConciliar, importing, 
     return grupos;
   }, [memoriaConc, normMemo]);
 
+  // Mapa assinatura (sem datas/números) -> combinação mais recente: cobre memos
+  // que só mudam o dia/sequencial ("... FARMAX S.A. 09/09" x "... 16/09").
+  const memoriaAssinatura = useMemo(() => {
+    const grupos = new Map<string, { categoria_id: string | null; contato_id: string | null; centro_custo_id: string | null }>();
+    (memoriaConc ?? []).forEach((h) => {
+      const k = assinaturaMemo(h.memo);
+      if (k.length < 8 || grupos.has(k)) return;
+      grupos.set(k, { categoria_id: h.categoria_id, contato_id: h.contato_id, centro_custo_id: h.centro_custo_id });
+    });
+    return grupos;
+  }, [memoriaConc, assinaturaMemo]);
+
   const lembrarConciliacao = useCallback((memo: string | null | undefined) => {
     const n = normMemo(memo);
     if (!n) return null;
     const exato = memoriaMap.get(n);
     if (exato) return exato;
+    // assinatura sem datas/números: memos iguais que só mudam o dia (09/09 x 16/09)
+    const ass = assinaturaMemo(memo);
+    if (ass.length >= 8) {
+      const porAss = memoriaAssinatura.get(ass);
+      if (porAss) return porAss;
+    }
     // fallback: histórico cujo memo (12+ chars) está contido no atual ou vice-versa; pega o mais longo
     let melhor: { categoria_id: string | null; contato_id: string | null; centro_custo_id: string | null } | null = null;
     let melhorTam = 0;
@@ -1444,7 +1470,7 @@ function ReconcileDialog({ contaId, conta, empresaId, autoConciliar, importing, 
       if ((n.includes(k) || k.includes(n)) && k.length > melhorTam) { melhor = v; melhorTam = k.length; }
     });
     return melhor;
-  }, [memoriaMap, normMemo]);
+  }, [memoriaMap, memoriaAssinatura, normMemo, assinaturaMemo]);
 
   // Fallback: contato cujo nome aparece no memo (ex.: FARMAX DISTRIBUIDORA no TED).
   const contatoPorNomeNoMemo = useCallback((memo: string | null | undefined, lista: { id: string; nome: string }[] | undefined) => {

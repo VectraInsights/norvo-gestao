@@ -5843,3 +5843,7 @@ pm run build OK.
 
 - Periodo de vencimento troca o preset 3/7/15/30 pelo PeriodoFilter do pagar/receber (presets + calendario personalizado); padrao segue a janela de 3 dias ate o vencimento do banco. PeriodoFilter ganha className/triggerClassName opcionais (padrao inalterado).
 - Buscar lancamentos permite marcar varios (checkbox no cabecalho marca os visiveis): rodape soma selecionados + diferenca; 1 ID vincula como antes, 2+ conciliam direto (cada lancamento quitado pelo proprio valor, extrato amarrado no 1o) com toast de quantidade.
+
+## Memoria por assinatura sem datas/numeros (13/10)
+
+- Memos iguais que so mudam o dia (09/09 x 16/09) nao casavam nem no exato nem no substring; nova assinatura normalizada (fora datas e numeros) agrupa e puxa cliente/categoria/centro. Validado em node.
