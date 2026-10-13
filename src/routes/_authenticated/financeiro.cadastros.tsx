@@ -32,9 +32,9 @@ export const Route = createFileRoute("/_authenticated/financeiro/cadastros")({
   component: CadastrosPage,
   head: () => ({
     meta: [
-      { title: "Cadastros financeiros — Norvo" },
+      { title: "Categorias e centros — Norvo" },
       { name: "description", content: "Cadastre e altere categorias financeiras e centros de custo da empresa." },
-      { property: "og:title", content: "Cadastros financeiros — Norvo" },
+      { property: "og:title", content: "Categorias e centros — Norvo" },
       { property: "og:description", content: "Cadastre e altere categorias financeiras e centros de custo da empresa." },
     ],
   }),
@@ -320,7 +320,7 @@ function CadastrosPage() {
     <div className="space-y-6">
       <PageHeader
         eyebrow="Financeiro"
-        title="Cadastros"
+        title="Categorias e centros"
         description="Gerencie as categorias financeiras e os centros de custo utilizados nos lançamentos."
       />
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
@@ -687,7 +687,7 @@ function CadastrosPage() {
       <Dialog open={trilhaOpen} onOpenChange={setTrilhaOpen}>
         <DialogContent className="max-h-[85vh] overflow-y-auto rounded-2xl sm:max-w-lg">
           <DialogHeader className="gap-1.5 pb-1">
-            <DialogTitle className="tracking-tight">Auditoria — Cadastros</DialogTitle>
+            <DialogTitle className="tracking-tight">Auditoria — Categorias e centros</DialogTitle>
           </DialogHeader>
           {trilhaQuery.isLoading ? (
             <p className="py-6 text-center text-sm text-muted-foreground">Carregando...</p>

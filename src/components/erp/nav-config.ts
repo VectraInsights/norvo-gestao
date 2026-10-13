@@ -60,7 +60,7 @@ const RAW_NAV: NavGroup[] = [
       { to: "/financeiro/dre", label: "DRE / Resultado", icon: PieChart },
       { to: "/financeiro/relatorios", label: "Relatórios financeiros", icon: BarChart3 },
       { to: "/financeiro/extrato", label: "Extrato de movimentações", icon: ListTree },
-      { to: "/financeiro/cadastros", label: "Cadastros", icon: FolderCog },
+      { to: "/financeiro/cadastros", label: "Categorias e centros", icon: FolderCog },
     ],
   },
   {

@@ -5802,3 +5802,10 @@ pm run build OK.
 - Fix: set conciliandoIds por tx.id; botao de cada linha gira so na
   propria; bulk "Conciliar" segue global.
 
+
+## Financeiro "Cadastros" vira "Categorias e centros" (13/10)
+
+- Menu, titulo, tab do navegador e dialog de auditoria renomeados: a tela
+  so tem categorias financeiras e centros de custo — "Cadastros" sozinho
+  confundia com cadastro de clientes. Rota inalterada.
+
