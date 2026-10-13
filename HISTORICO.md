@@ -5766,5 +5766,13 @@ pm run build OK.
 - Migration tc_config + cclasstrib (14 cods) aplicada no banco.
 - Aba Reforma Tributaria (toggle + cClassTrib); builder emite grupos
   novos so com fase2 ligada (padrao: tudo como hoje).
-- 27/27 testes; 	sc identico; uild OK.
+- 27/27 testes; tsc identico; build OK.
+
+
+## CT-e cabecalho neutro (13/10)
+
+- Faixa verde do cabecalho removida: Card claro com border-b bg-card,
+  titulo em text-primary, TabsList em bg-muted.
+- Abas ativas em bg-background + text-primary semibold; inativas em
+  text-muted-foreground. Mesmo padrao do MDF-e/dialogos.
 

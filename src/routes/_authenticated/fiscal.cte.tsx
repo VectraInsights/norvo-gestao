@@ -6415,46 +6415,46 @@ function CtePage() {
         <div className="space-y-2.5">{Array.from({ length: 4 }).map((_, i) => <div key={i} className="h-12 animate-pulse rounded-xl bg-muted/30" />)}</div>
       ) : (
         <Tabs value={statusTab} onValueChange={trocarAba} className="flex-1 min-h-0 flex flex-col">
-          {/* Cartão único: barra verde com título + abas + modo; conteúdo das abas abaixo */}
-          <Card className="overflow-hidden rounded-2xl border-2 border-primary/20 shadow-panel flex-1 min-h-0 flex flex-col">
-            <div className="bg-primary text-primary-foreground px-4 py-2 flex flex-wrap items-center gap-x-3 gap-y-1.5 shrink-0">
-              <h3 className="text-sm font-semibold flex items-center gap-2">
+          {/* Cartão único: cabeçalho neutro + abas; conteúdo das abas abaixo */}
+          <Card className="overflow-hidden rounded-2xl border shadow-panel flex-1 min-h-0 flex flex-col">
+            <div className="px-4 py-2.5 flex flex-wrap items-center gap-x-3 gap-y-2 shrink-0 border-b bg-card">
+              <h3 className="text-sm font-semibold flex items-center gap-2 text-primary">
                 <Package className="h-4 w-4" /> Cadastro de Mercadorias para Embarque
               </h3>
-              <TabsList className="bg-white/25 p-1 gap-1 flex-1">
+              <TabsList className="bg-muted p-1 gap-1 flex-1">
                 <TabsTrigger
                   value="embarque"
-                  className="flex-1 text-xs px-3 py-1.5 font-medium text-white/80 hover:text-white hover:bg-white/10 data-[state=active]:bg-white data-[state=active]:text-green-900 data-[state=active]:font-bold data-[state=active]:shadow"
+                  className="flex-1 text-xs px-3 py-1.5 font-medium text-muted-foreground hover:text-foreground data-[state=active]:bg-background data-[state=active]:text-primary data-[state=active]:font-semibold data-[state=active]:shadow-sm"
                 >
                   NF-es para embarque ({mercadorias.length})
                 </TabsTrigger>
                 <TabsTrigger
                   value="rascunhos"
-                  className="flex-1 text-xs px-3 py-1.5 font-medium text-white/80 hover:text-white hover:bg-white/10 data-[state=active]:bg-white data-[state=active]:text-green-900 data-[state=active]:font-bold data-[state=active]:shadow"
+                  className="flex-1 text-xs px-3 py-1.5 font-medium text-muted-foreground hover:text-foreground data-[state=active]:bg-background data-[state=active]:text-primary data-[state=active]:font-semibold data-[state=active]:shadow-sm"
                 >
                   Aguardando envio ({docsFiltrados.rascunhos.length})
                 </TabsTrigger>
                 <TabsTrigger
                   value="rejeitados"
-                  className="flex-1 text-xs px-3 py-1.5 font-medium text-white/80 hover:text-white hover:bg-white/10 data-[state=active]:bg-white data-[state=active]:text-green-900 data-[state=active]:font-bold data-[state=active]:shadow"
+                  className="flex-1 text-xs px-3 py-1.5 font-medium text-muted-foreground hover:text-foreground data-[state=active]:bg-background data-[state=active]:text-primary data-[state=active]:font-semibold data-[state=active]:shadow-sm"
                 >
                   Rejeitados ({docsFiltrados.rejeitados.length})
                 </TabsTrigger>
                 <TabsTrigger
                   value="cancelados"
-                  className="flex-1 text-xs px-3 py-1.5 font-medium text-white/80 hover:text-white hover:bg-white/10 data-[state=active]:bg-white data-[state=active]:text-green-900 data-[state=active]:font-bold data-[state=active]:shadow"
+                  className="flex-1 text-xs px-3 py-1.5 font-medium text-muted-foreground hover:text-foreground data-[state=active]:bg-background data-[state=active]:text-primary data-[state=active]:font-semibold data-[state=active]:shadow-sm"
                 >
                   Cancelados ({docsFiltrados.cancelados.length})
                 </TabsTrigger>
                 <TabsTrigger
                   value="autorizados"
-                  className="flex-1 text-xs px-3 py-1.5 font-medium text-white/80 hover:text-white hover:bg-white/10 data-[state=active]:bg-white data-[state=active]:text-green-900 data-[state=active]:font-bold data-[state=active]:shadow"
+                  className="flex-1 text-xs px-3 py-1.5 font-medium text-muted-foreground hover:text-foreground data-[state=active]:bg-background data-[state=active]:text-primary data-[state=active]:font-semibold data-[state=active]:shadow-sm"
                 >
                   Autorizados ({docsFiltrados.autorizados.length})
                 </TabsTrigger>
                 <TabsTrigger
                   value="ciot"
-                  className="flex-1 text-xs px-3 py-1.5 font-medium text-white/80 hover:text-white hover:bg-white/10 data-[state=active]:bg-white data-[state=active]:text-green-900 data-[state=active]:font-bold data-[state=active]:shadow"
+                  className="flex-1 text-xs px-3 py-1.5 font-medium text-muted-foreground hover:text-foreground data-[state=active]:bg-background data-[state=active]:text-primary data-[state=active]:font-semibold data-[state=active]:shadow-sm"
                 >
                   CIOT ({(ciotOps ?? []).length})
                 </TabsTrigger>
