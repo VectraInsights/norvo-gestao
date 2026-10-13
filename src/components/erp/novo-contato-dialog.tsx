@@ -21,6 +21,8 @@ type Props = {
   open: boolean;
   onOpenChange: (v: boolean) => void;
   onCriado: (c: { id: string; nome: string }) => void;
+  /** Pré-preenche Nome/Razão social (ex.: texto digitado no combo antes de "Novo contato") */
+  nomeInicial?: string;
 };
 
 const emptyForm = () => ({
@@ -33,7 +35,7 @@ const emptyForm = () => ({
 // Cadastro de contato em tela cheia, com os dados completos (mesmos campos de
 // Vendas → Clientes e fornecedores), p/ usar dentro de qualquer tela que peça
 // cliente/fornecedor (rodapé "Novo ..." dos Comboboxes).
-export function NovoContatoDialog({ empresaId, tipoFixo, titulo, open, onOpenChange, onCriado }: Props) {
+export function NovoContatoDialog({ empresaId, tipoFixo, titulo, open, onOpenChange, onCriado, nomeInicial }: Props) {
   const qc = useQueryClient();
   const [form, setForm] = useState(emptyForm);
   const [lookingUp, setLookingUp] = useState(false);
@@ -43,10 +45,12 @@ export function NovoContatoDialog({ empresaId, tipoFixo, titulo, open, onOpenCha
     if (open) {
       setForm({
         ...emptyForm(),
+        nome: (nomeInicial ?? "").trim(),
         isCliente: !tipoFixo || tipoFixo === "cliente" || tipoFixo === "ambos",
         isFornecedor: !tipoFixo || tipoFixo === "fornecedor" || tipoFixo === "ambos",
       });
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open, tipoFixo]);
 
   const lookupCnpj = async () => {

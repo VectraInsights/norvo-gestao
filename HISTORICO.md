@@ -5851,3 +5851,7 @@ pm run build OK.
 ## Combobox com X para limpar + conciliação liberada (13/10)
 
 - Combobox ganha prop allowClear (X no lugar da seta quando há seleção, com teclado e sem abrir o dropdown); ativado em categoria, cliente/fornecedor e centro de custo do Novo lançamento (vale p/ preenchidos pela memória). Demais usos inalterados.
+
+## Novo contato puxa texto digitado (13/10)
+
+- Combobox avisa o texto da busca (onSearchChange); NovoContatoDialog ganha nomeInicial e abre com Nome preenchido (ex.: FIBRASA S.A. digitado e nao achado). Demais chamadas sem a prop seguem zeradas.

@@ -19,6 +19,8 @@ type Props = {
   footer?: { label: string; onClick: () => void };
   // Permite limpar a seleção com um X (ex.: cliente/categoria na conciliação)
   allowClear?: boolean;
+  // Avisa o texto digitado na busca (ex.: pré-preencher "Novo contato")
+  onSearchChange?: (q: string) => void;
 };
 
 const norm = (s: string) =>
@@ -46,6 +48,7 @@ export function Combobox({
   className,
   footer,
   allowClear,
+  onSearchChange,
 }: Props) {
   const [open, setOpen] = useState(false);
   const [q, setQ] = useState("");
@@ -102,6 +105,7 @@ export function Combobox({
         if (!v) {
           setQ("");
           setHl(0);
+          onSearchChange?.("");
         }
       }}
     >
@@ -144,6 +148,7 @@ export function Combobox({
             onChange={(e) => {
               setQ(e.target.value);
               setHl(0);
+              onSearchChange?.(e.target.value);
             }}
             onKeyDown={onKeyDown}
             placeholder={searchPlaceholder}

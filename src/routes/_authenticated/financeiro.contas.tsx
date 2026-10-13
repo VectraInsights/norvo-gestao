@@ -2500,6 +2500,7 @@ const ReconcileRow = memo(function ReconcileRow({
   const nomeContato = r.contato_id ? (contatos.find((c) => c.id === r.contato_id)?.nome ?? "—") : "Informação não recebida";
   const [buscaOpen, setBuscaOpen] = useState(false);
   const [novoContatoOpen, setNovoContatoOpen] = useState(false);
+  const [contatoBusca, setContatoBusca] = useState("");
   const lancSel = lancamentosAbertos.find((l) => l.id === r.lancamento_id);
   // Sugestão do sistema (mesmo valor e data): vira o card da direita no padrão Conta Azul
   const sugestao = useMemo(() => (lancamentosAbertos ?? []).find((l) =>
@@ -2658,7 +2659,7 @@ const ReconcileRow = memo(function ReconcileRow({
               </div>
               <div className="space-y-1">
                 <Label className="text-xs">{tx.valor >= 0 ? "Cliente" : "Fornecedor"}</Label>
-                <Combobox value={r.contato_id} onChange={(v) => onSetRow(tx.id, { contato_id: v })} options={contatos.map((c) => ({ value: c.id, label: c.nome }))} emptyText="Nenhum item encontrado." allowClear footer={{ label: "Novo contato", onClick: () => setNovoContatoOpen(true) }} />
+                <Combobox value={r.contato_id} onChange={(v) => onSetRow(tx.id, { contato_id: v })} options={contatos.map((c) => ({ value: c.id, label: c.nome }))} emptyText="Nenhum item encontrado." allowClear onSearchChange={setContatoBusca} footer={{ label: "Novo contato", onClick: () => setNovoContatoOpen(true) }} />
               </div>
               <div className="space-y-1">
                 <Label className="text-xs">Centro de custo</Label>
@@ -2674,6 +2675,7 @@ const ReconcileRow = memo(function ReconcileRow({
         tipoFixo={tx.valor >= 0 ? "cliente" : "fornecedor"}
         open={novoContatoOpen}
         onOpenChange={setNovoContatoOpen}
+        nomeInicial={contatoBusca}
         onCriado={(c) => onSetRow(tx.id, { contato_id: c.id })}
       />
     </div>
