@@ -1261,8 +1261,26 @@ const emptyRow = (memo: string | null): RowState => ({
   modo: "lancamento", conta_destino_id: "",
 });
 
-function ReconcileDialog({ contaId, conta, empresaId, autoConciliar, importing, onImport, onClose, inline }: { contaId: string | null; conta: ContaBancaria | null; empresaId: string | null; autoConciliar: boolean; importing: boolean; onImport: () => void; onClose: () => void; inline?: boolean }) {
-  const autoRunRef = useRef<Set<string>>(new Set());
+// Sugestão de conciliação: mesmo valor e vencimento igual; na falta, o mais
+// próximo em até 3 dias para mais ou para menos (ex.: banco 08/09 x sistema 06/09).
+function sugerirLancamento(tx: OfxRow, lista: LancOpt[]): LancOpt | undefined {
+  const cands = (lista ?? []).filter((l) => Math.abs(Number(l.valor) - Math.abs(Number(tx.valor))) < 0.01);
+  const exata = cands.find((l) => l.data_vencimento === tx.data_transacao);
+  if (exata) return exata;
+  const base = new Date(`${tx.data_transacao}T00:00:00`).getTime();
+  if (Number.isNaN(base)) return undefined;
+  let melhor: LancOpt | undefined;
+  let melhorDist = 4;
+  for (const l of cands) {
+    const dv = new Date(`${l.data_vencimento}T00:00:00`).getTime();
+    if (Number.isNaN(dv)) continue;
+    const dist = Math.abs(Math.round((dv - base) / 86400000));
+    if (dist <= 3 && dist < melhorDist) { melhor = l; melhorDist = dist; }
+  }
+  return melhor;
+}
+
+function ReconcileDialog({ contaId, conta, empresaId, autoConciliar, importing, onImport, onClose, inline }: { contaId: string | null; conta: ContaBancaria | null; empresaId: string | null; autoConciliar: boolean; importing: boolean; onImport: () => void; onClose: () => void; inline?: boolean }) {  const autoRunRef = useRef<Set<string>>(new Set());
   const qc = useQueryClient();
   const open = !!contaId;
 
@@ -1998,10 +2016,7 @@ function ReconcileDialog({ contaId, conta, empresaId, autoConciliar, importing, 
         if (tx.status === "conciliada") continue;
         const cur = next[tx.id] ?? emptyRow(tx.memo);
         if (cur.lancamento_id) continue;
-        const match = lancamentosAbertos.find((l) =>
-          Math.abs(Number(l.valor) - Math.abs(Number(tx.valor))) < 0.01 &&
-          l.data_vencimento === tx.data_transacao
-        );
+        const match = sugerirLancamento(tx, lancamentosAbertos);
         if (match) { next[tx.id] = { ...cur, lancamento_id: match.id }; changed = true; }
       }
       return changed ? next : prev;
@@ -2639,11 +2654,8 @@ const ReconcileRow = memo(function ReconcileRow({
   const [novoContatoOpen, setNovoContatoOpen] = useState(false);
   const [contatoBusca, setContatoBusca] = useState("");
   const lancSel = lancamentosAbertos.find((l) => l.id === r.lancamento_id);
-  // Sugestão do sistema (mesmo valor e data): vira o card da direita no padrão Conta Azul
-  const sugestao = useMemo(() => (lancamentosAbertos ?? []).find((l) =>
-    Math.abs(Number(l.valor) - Math.abs(Number(tx.valor))) < 0.01 &&
-    l.data_vencimento === tx.data_transacao
-  ), [lancamentosAbertos, tx.valor, tx.data_transacao]);
+  // Sugestão do sistema (mesmo valor e data; na falta, o mais próximo em ±3 dias)
+  const sugestao = useMemo(() => sugerirLancamento(tx, lancamentosAbertos ?? []), [lancamentosAbertos, tx.valor, tx.data_transacao]);
   const [ignorado, setIgnorado] = useState(false);
   const mostraSugestao = !!sugestao && !r.lancamento_id && !ignorado;
   // Enter em qualquer campo do cartão aciona o Conciliar da linha (form + submit).

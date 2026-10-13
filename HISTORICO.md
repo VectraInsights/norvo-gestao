@@ -5884,3 +5884,7 @@ pm run build OK.
 
 - lanc-abertos cortava nos 200 mais antigos: parcela 05/09 nem chegava no dialogo (lista vazia ao abrir). Agora busca paginada completa.
 - Com busca, valor exato e descricao iniciada pelo termo sobem primeiro (letras e numeros).
+
+## Sugestao com tolerancia de 3 dias (13/10)
+
+- Sugestao do sistema (card + pre-vinculo) aceita vencimento ate 3 dias p/ mais ou menos quando nao ha data exata (banco 08/09 x sistema 06/09); exata segue prioritaria. Conciliacao automatica continua exigindo data exata.
