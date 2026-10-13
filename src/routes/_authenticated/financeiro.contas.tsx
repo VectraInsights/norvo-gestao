@@ -2654,15 +2654,15 @@ const ReconcileRow = memo(function ReconcileRow({
               </div>
               <div className="space-y-1">
                 <Label className="text-xs">Categoria <span className="text-destructive">*</span></Label>
-                <Combobox value={r.categoria_id} onChange={(v) => onSetRow(tx.id, { categoria_id: v })} options={categorias.map((c) => ({ value: c.id, label: c.nome }))} emptyText="Nenhum item encontrado." footer={{ label: "Nova categoria", onClick: () => onNovaCategoria(tx.id) }} />
+                <Combobox value={r.categoria_id} onChange={(v) => onSetRow(tx.id, { categoria_id: v })} options={categorias.map((c) => ({ value: c.id, label: c.nome }))} emptyText="Nenhum item encontrado." allowClear footer={{ label: "Nova categoria", onClick: () => onNovaCategoria(tx.id) }} />
               </div>
               <div className="space-y-1">
                 <Label className="text-xs">{tx.valor >= 0 ? "Cliente" : "Fornecedor"}</Label>
-                <Combobox value={r.contato_id} onChange={(v) => onSetRow(tx.id, { contato_id: v })} options={contatos.map((c) => ({ value: c.id, label: c.nome }))} emptyText="Nenhum item encontrado." footer={{ label: "Novo contato", onClick: () => setNovoContatoOpen(true) }} />
+                <Combobox value={r.contato_id} onChange={(v) => onSetRow(tx.id, { contato_id: v })} options={contatos.map((c) => ({ value: c.id, label: c.nome }))} emptyText="Nenhum item encontrado." allowClear footer={{ label: "Novo contato", onClick: () => setNovoContatoOpen(true) }} />
               </div>
               <div className="space-y-1">
                 <Label className="text-xs">Centro de custo</Label>
-                <Combobox value={r.centro_custo_id} onChange={(v) => onSetRow(tx.id, { centro_custo_id: v })} options={centros.map((c) => ({ value: c.id, label: c.nome }))} emptyText="Nenhum item encontrado." />
+                <Combobox value={r.centro_custo_id} onChange={(v) => onSetRow(tx.id, { centro_custo_id: v })} options={centros.map((c) => ({ value: c.id, label: c.nome }))} emptyText="Nenhum item encontrado." allowClear />
               </div>
             </div>
           </div>

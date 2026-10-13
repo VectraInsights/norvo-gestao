@@ -1,5 +1,5 @@
 import { useMemo, useRef, useState } from "react";
-import { Check, ChevronsUpDown, Plus, Search } from "lucide-react";
+import { Check, ChevronsUpDown, Plus, Search, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
@@ -17,6 +17,8 @@ type Props = {
   className?: string;
   // Ação de rodapé (ex.: "Adicionar nova conta")
   footer?: { label: string; onClick: () => void };
+  // Permite limpar a seleção com um X (ex.: cliente/categoria na conciliação)
+  allowClear?: boolean;
 };
 
 const norm = (s: string) =>
@@ -43,6 +45,7 @@ export function Combobox({
   disabled,
   className,
   footer,
+  allowClear,
 }: Props) {
   const [open, setOpen] = useState(false);
   const [q, setQ] = useState("");
@@ -116,7 +119,21 @@ export function Combobox({
             )}
             <span className="truncate">{sel ? rotulo(sel) : placeholder}</span>
           </span>
-          <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+          {allowClear && sel && !disabled ? (
+            <span
+              role="button"
+              tabIndex={0}
+              aria-label="Limpar seleção"
+              onMouseDown={(e) => e.preventDefault()}
+              onClick={(e) => { e.stopPropagation(); onChange(""); }}
+              onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); e.stopPropagation(); onChange(""); } }}
+              className="ml-2 grid h-5 w-5 shrink-0 place-items-center rounded-full text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+            >
+              <X className="h-3.5 w-3.5" />
+            </span>
+          ) : (
+            <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+          )}
         </Button>
       </PopoverTrigger>
       <PopoverContent className="w-[min(28rem,90vw)] overflow-hidden rounded-2xl p-0 shadow-xl" align="start">

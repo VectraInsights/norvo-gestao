@@ -5847,3 +5847,7 @@ pm run build OK.
 ## Memoria por assinatura sem datas/numeros (13/10)
 
 - Memos iguais que so mudam o dia (09/09 x 16/09) nao casavam nem no exato nem no substring; nova assinatura normalizada (fora datas e numeros) agrupa e puxa cliente/categoria/centro. Validado em node.
+
+## Combobox com X para limpar + conciliação liberada (13/10)
+
+- Combobox ganha prop allowClear (X no lugar da seta quando há seleção, com teclado e sem abrir o dropdown); ativado em categoria, cliente/fornecedor e centro de custo do Novo lançamento (vale p/ preenchidos pela memória). Demais usos inalterados.
