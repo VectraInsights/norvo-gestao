@@ -1555,6 +1555,21 @@ function ReconcileDialog({ contaId, conta, empresaId, autoConciliar, importing, 
   const setRow = useCallback((id: string, patch: Partial<RowState>) =>
     setRows((prev) => ({ ...prev, [id]: { ...(prev[id] ?? emptyRow(null)), ...patch } })), []);
 
+  // Pré-preenche a descrição com o memo do banco no estado (não só na exibição):
+  // sem isso, escolher a categoria antes de tocar na descrição criava a linha
+  // a partir de emptyRow(null) e apagava o texto pré-informado.
+  useEffect(() => {
+    if (!txs) return;
+    setRows((prev) => {
+      const next = { ...prev };
+      let changed = false;
+      for (const tx of txs) {
+        if (!next[tx.id]) { next[tx.id] = emptyRow(tx.memo); changed = true; }
+      }
+      return changed ? next : prev;
+    });
+  }, [txs]);
+
   const toggleSel = useCallback((id: string) =>
     setSel((prev) => { const n = new Set(prev); n.has(id) ? n.delete(id) : n.add(id); return n; }), []);
 

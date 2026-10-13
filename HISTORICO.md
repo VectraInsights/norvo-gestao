@@ -5785,3 +5785,12 @@ pm run build OK.
 - Salvar normaliza antes de montar dstOrg, entao mudouRota detecta e o
   calcDistDur recalcula distancia/duracao p/ o destino correto.
 
+
+## Conciliacao mantem descricao ao escolher categoria (13/10)
+
+- Causa: descricao vinha do memo so na exibicao (getRow); ao escolher a
+  categoria antes de editar, setRow criava a linha de emptyRow(null) e
+  apagava o texto pre-informado (ex.: RENTAB.INVEST FACILCRED*).
+- Fix: pre-inicializa rows com emptyRow(tx.memo) ao carregar txs; escolha
+  de categoria/contato/centro agora mescla e preserva a descricao.
+
