@@ -5776,3 +5776,12 @@ pm run build OK.
 - Abas ativas em bg-background + text-primary semibold; inativas em
   text-muted-foreground. Mesmo padrao do MDF-e/dialogos.
 
+
+## Percurso volta p/ destino sem redespacho (13/10)
+
+- Sem redespacho valido, entrega residual igual a cidade do ex-redespacho
+  (ex.: CONTAGEM) volta sozinha p/ dest_xmun/uf na tela e no salvar;
+  entrega manual diferente de ambos segue preservada.
+- Salvar normaliza antes de montar dstOrg, entao mudouRota detecta e o
+  calcDistDur recalcula distancia/duracao p/ o destino correto.
+

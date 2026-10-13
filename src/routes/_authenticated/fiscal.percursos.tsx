@@ -1093,6 +1093,21 @@ function PercursosPage() {
           .trim()
           .toUpperCase();
       const temRedesp = digits(payload.redesp_cnpj).length === 14;
+      // Sem redespacho válido, entrega residual igual à cidade do ex-redespacho
+      // volta para o destinatário antes de calcular a rota (caso CONTAGEM).
+      if (!temRedesp) {
+        const entX = String(payload.entrega_xmun || "").trim();
+        const redX = String(payload.redesp_xmun || "").trim();
+        if (!!entX && !!redX && normCidade(entX) === normCidade(redX)) {
+          payload.entrega_xmun = payload.dest_xmun || "";
+          payload.entrega_uf = payload.dest_uf || "";
+          setEditing((e) =>
+            e
+              ? { ...e, entrega_xmun: payload.entrega_xmun, entrega_uf: payload.entrega_uf }
+              : e,
+          );
+        }
+      }
       // Mesma regra da tela: cidade explícita diferente do cadastro descarta o CEP
       // antigo p/ a geocodificação (senão o salvar recalcula p/ a cidade errada e
       // grava por cima do valor certo). Ex.: entrega MARABÁ/PA com CEP de MACAPÁ/AP.
@@ -1372,6 +1387,9 @@ function PercursosPage() {
   // Mas cidade de entrega manual é preservada: só preenche a partir do
   // destinatário quando a entrega está vazia (entrega pode diferir da
   // cidade do dest., ex.: dest MACAPÁ/AP com entrega em MARABÁ/PA).
+  // Exceção: sem redespacho válido, entrega residual igual à cidade do
+  // ex-redespacho volta para o destinatário (senão o percurso fica preso,
+  // ex.: CONTAGEM após apagar o redespacho).
   useEffect(() => {
     if (!editing) return;
     const rx = (editing.redesp_xmun || "").trim();
@@ -1381,6 +1399,15 @@ function PercursosPage() {
       if ((editing.entrega_xmun || "") !== rx || (editing.entrega_uf || "") !== ru) {
         setEditing((e) => (e ? { ...e, entrega_xmun: rx, entrega_uf: ru } : e));
       }
+      return;
+    }
+    const entX = (editing.entrega_xmun || "").trim();
+    const entU = (editing.entrega_uf || "").trim();
+    const destX = (editing.dest_xmun || "").trim();
+    const destU = (editing.dest_uf || "").trim();
+    const entregaIgualRedesp = !!entX && !!rx && entX === rx && (!entU || !ru || entU === ru);
+    if (entregaIgualRedesp && (destX || destU) && (entX !== destX || entU !== destU)) {
+      setEditing((e) => (e ? { ...e, entrega_xmun: e.dest_xmun || "", entrega_uf: e.dest_uf || "" } : e));
       return;
     }
     if (
@@ -1397,6 +1424,8 @@ function PercursosPage() {
     editing?.redesp_uf,
     editing?.dest_xmun,
     editing?.dest_uf,
+    editing?.entrega_xmun,
+    editing?.entrega_uf,
   ]);
   // Amarracao: coleta segue o remetente (mesma regra: só preenche se vazia).
   useEffect(() => {
