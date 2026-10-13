@@ -1281,6 +1281,7 @@ function ReconcileDialog({ contaId, conta, empresaId, autoConciliar, importing, 
 
   const [sel, setSel] = useState<Set<string>>(new Set());
   const [rows, setRows] = useState<Record<string, RowState>>({});
+  const [conciliandoIds, setConciliandoIds] = useState<Set<string>>(new Set());
   const [buscarModo, setBuscarModo] = useState<Record<string, boolean>>({});
   const [confExtrato, setConfExtrato] = useState(false);
 
@@ -1578,6 +1579,18 @@ function ReconcileDialog({ contaId, conta, empresaId, autoConciliar, importing, 
     if (!v) setRow(id, { lancamento_id: "" });
   }, [setRow]);
 
+  const conciliarUm = useCallback((t: OfxRow, r: RowState) => {
+    setConciliandoIds((prev) => new Set(prev).add(t.id));
+    criarEConciliar.mutate({ tx: t, r }, {
+      onSettled: () => setConciliandoIds((prev) => {
+        const n = new Set(prev);
+        n.delete(t.id);
+        return n;
+      }),
+    });
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [empresaId, contaId]);
+
   const conciliarSelecionados = async () => {
     const alvos = visiveis.filter((t) => sel.has(t.id));
     if (!alvos.length) { toast.error("Selecione ao menos um lançamento"); return; }
@@ -1719,12 +1732,12 @@ function ReconcileDialog({ contaId, conta, empresaId, autoConciliar, importing, 
                     contatos={contatos ?? EMPTY}
                     centros={centros ?? EMPTY}
                     lancamentosAbertos={lancamentosAbertos ?? EMPTY_LANC}
-                    conciliando={criarEConciliar.isPending}
+                    conciliando={conciliandoIds.has(tx.id)}
                     excluindo={excluirTx.isPending}
                     onToggleSel={toggleSel}
                     onSetRow={setRow}
                     onSetModoBusca={setModoBusca}
-                    onConciliar={(t, r) => criarEConciliar.mutate({ tx: t, r })}
+                    onConciliar={conciliarUm}
                     onExcluir={(id) => excluirTx.mutate([id])}
                     empresaId={empresaId}
                     logoBanco={conta?.banco ? detectBancoByNome(conta.banco)?.logo ?? null : null}

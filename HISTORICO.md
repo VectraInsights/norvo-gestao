@@ -5794,3 +5794,11 @@ pm run build OK.
 - Fix: pre-inicializa rows com emptyRow(tx.memo) ao carregar txs; escolha
   de categoria/contato/centro agora mescla e preserva a descricao.
 
+
+## Conciliar por linha com loading individual (13/10)
+
+- Causa: conciliando={criarEConciliar.isPending} global acendia o spinner
+  em todas as linhas ao conciliar uma.
+- Fix: set conciliandoIds por tx.id; botao de cada linha gira so na
+  propria; bulk "Conciliar" segue global.
+
