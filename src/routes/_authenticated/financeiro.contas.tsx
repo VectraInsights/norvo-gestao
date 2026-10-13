@@ -1524,7 +1524,7 @@ function ReconcileDialog({ contaId, conta, empresaId, autoConciliar, importing, 
   }, [autoConciliar, txs, lancamentosAbertos, contaId, empresaId, qc]);
 
   const criarEConciliar = useMutation({
-    mutationFn: async ({ tx, r }: { tx: OfxRow; r: RowState }) => {
+    mutationFn: async ({ tx, r }: { tx: OfxRow; r: RowState; silent?: boolean }) => {
       if (!empresaId || !contaId) throw new Error("Empresa não selecionada");
       if (r.lancamento_id) {
         const { error: e1 } = await supabase.from("lancamentos_financeiros")
@@ -1553,14 +1553,14 @@ function ReconcileDialog({ contaId, conta, empresaId, autoConciliar, importing, 
         .update({ status: "conciliada", lancamento_id: lanc.id }).eq("id", tx.id);
       if (e2) throw e2;
     },
-    onSuccess: () => {
-      toast.success("Lançamento conciliado");
+    onSuccess: (_d, vars) => {
+      if (!vars?.silent) toast.success("Lançamento conciliado");
       qc.invalidateQueries({ queryKey: ["ofx", contaId] });
       qc.invalidateQueries({ queryKey: ["lanc-abertos", empresaId] });
       qc.invalidateQueries({ queryKey: ["lancamentos"] });
       qc.invalidateQueries({ queryKey: ["conc-memoria"] });
     },
-    onError: (e: Error) => toast.error(e.message),
+    onError: (e: Error, vars) => { if (!vars?.silent) toast.error(e.message); },
   });
 
   const excluirTx = useMutation({
@@ -1806,8 +1806,14 @@ function ReconcileDialog({ contaId, conta, empresaId, autoConciliar, importing, 
   const conciliarSelecionados = async () => {
     const alvos = selVisiveis;
     if (!alvos.length) { toast.error("Selecione ao menos um lançamento"); return; }
-    for (const tx of alvos) await criarEConciliar.mutateAsync({ tx, r: getRow(tx) }).catch(() => null);
+    let ok = 0, falhas = 0;
+    for (const tx of alvos) {
+      try { await criarEConciliar.mutateAsync({ tx, r: getRow(tx), silent: true }); ok++; }
+      catch { falhas++; }
+    }
     setSel((prev) => { const n = new Set(prev); alvos.forEach((t) => n.delete(t.id)); return n; });
+    if (ok > 0) toast.success(`${ok} lançamento(s) conciliado(s)`);
+    if (falhas > 0) toast.error(`${falhas} lançamento(s) com erro (verifique descrição e categoria)`);
   };
 
   // Sugestão visível: pré-seleciona o lançamento de mesmo valor e data

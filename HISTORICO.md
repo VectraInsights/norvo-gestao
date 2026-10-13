@@ -5830,3 +5830,7 @@ pm run build OK.
 
 - Botoes mostram quantidade: Limpar selecao (N), Conciliar (N), Excluir (N); selecao e acoes valem para a listagem visivel (respeita busca/filtro) e a selecao e podada quando itens saem da lista.
 - Busca agora sem acento e alcanca descricao digitada, categoria, cliente, centro, valor (8.890,27/8890) e data (02/09/2026); chip Exibindo N de M com limpar quando filtrado; placeholder explicativo no campo.
+
+## Conciliacao em lote com toast unico (13/10)
+
+- Conciliar em lote suprime os toasts individuais (flag silent) e mostra um unico toast com a quantidade conciliada + outro com a de falhas, se houver. Conciliar individual segue com seu toast.
