@@ -5809,3 +5809,10 @@ pm run build OK.
   so tem categorias financeiras e centros de custo — "Cadastros" sozinho
   confundia com cadastro de clientes. Rota inalterada.
 
+
+## Conciliacao aprende cliente/categoria por memo (13/10)
+
+- Query conc-memoria: ultimas 2000 txs conciliadas da conta + lancamento (categoria/contato/centro); mapa memo exato -> combinacao mais recente, com fallback por substring (12+ chars).
+- Linhas novas ja nascem com categoria/contato/centro da memoria; efeito complementar preenche campos vazios quando memoria/contatos chegam depois (nunca sobrescreve escolha do usuario).
+- Fallback por nome: contato com 2+ palavras (4+ letras) presentes no memo (ex.: FARMAX no TED) preenche o cliente.
+- Conciliar invalida conc-memoria: ao fazer 1, os proximos iguais passam a puxar sozinhos.

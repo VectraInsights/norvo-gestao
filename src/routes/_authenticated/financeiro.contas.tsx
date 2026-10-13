@@ -1377,6 +1377,91 @@ function ReconcileDialog({ contaId, conta, empresaId, autoConciliar, importing, 
     },
   });
 
+  // Memória de conciliações: memo do banco -> categoria/contato/centro usados.
+  // Ao conciliar 1 TED da FARMAX, os próximos iguais já vêm preenchidos.
+  const { data: memoriaConc } = useQuery({
+    enabled: open && !!empresaId && !!contaId,
+    queryKey: ["conc-memoria", contaId] as const,
+    staleTime: 5 * 60_000,
+    gcTime: 30 * 60_000,
+    queryFn: async (): Promise<{ memo: string; categoria_id: string | null; contato_id: string | null; centro_custo_id: string | null }[]> => {
+      const { data: hist, error } = await supabase.from("ofx_transacoes")
+        .select("memo,lancamento_id")
+        .eq("conta_bancaria_id", contaId!)
+        .eq("status", "conciliada")
+        .not("lancamento_id", "is", null)
+        .order("data_transacao", { ascending: false })
+        .limit(2000);
+      if (error) throw error;
+      const ids = Array.from(new Set(((hist ?? []) as { lancamento_id: string }[]).map((h) => h.lancamento_id).filter(Boolean)));
+      if (!ids.length) return [];
+      const { data: lancs, error: e2 } = await supabase.from("lancamentos_financeiros")
+        .select("id,categoria_id,contato_id,centro_custo_id").in("id", ids);
+      if (e2) throw e2;
+      const porId = new Map(((lancs ?? []) as { id: string; categoria_id: string | null; contato_id: string | null; centro_custo_id: string | null }[]).map((l) => [l.id, l]));
+      return ((hist ?? []) as { memo: string | null; lancamento_id: string }[])
+        .map((h) => ({ memo: h.memo ?? "", ...(porId.get(h.lancamento_id) ?? { categoria_id: null, contato_id: null, centro_custo_id: null }) }))
+        .filter((h) => h.memo.trim() && (h.categoria_id || h.contato_id || h.centro_custo_id));
+    },
+  });
+
+  const normMemo = useCallback((s: string | null | undefined) =>
+    String(s ?? "").toUpperCase().replace(/\s+/g, " ").trim(), []);
+
+  // Mapa memo exato -> combinação mais frequente (desempate: mais recente).
+  const memoriaMap = useMemo(() => {
+    const grupos = new Map<string, { categoria_id: string | null; contato_id: string | null; centro_custo_id: string | null; n: number; ordem: number }>();
+    (memoriaConc ?? []).forEach((h, i) => {
+      const k = normMemo(h.memo);
+      if (!k) return;
+      const g = grupos.get(k);
+      if (!g) {
+        grupos.set(k, { categoria_id: h.categoria_id, contato_id: h.contato_id, centro_custo_id: h.centro_custo_id, n: 1, ordem: i });
+      } else if (g.categoria_id === h.categoria_id && g.contato_id === h.contato_id && g.centro_custo_id === h.centro_custo_id) {
+        g.n += 1;
+      } else {
+        // combinação diferente: mantém a mais frequente; em empate fica a mais recente (ordem menor)
+        g.n += 0;
+        if (i < g.ordem) { /* nunca: i cresce; mantém primeira vista (mais recente pela query desc) */ }
+      }
+    });
+    return grupos;
+  }, [memoriaConc, normMemo]);
+
+  const lembrarConciliacao = useCallback((memo: string | null | undefined) => {
+    const n = normMemo(memo);
+    if (!n) return null;
+    const exato = memoriaMap.get(n);
+    if (exato) return exato;
+    // fallback: histórico cujo memo (12+ chars) está contido no atual ou vice-versa; pega o mais longo
+    let melhor: { categoria_id: string | null; contato_id: string | null; centro_custo_id: string | null } | null = null;
+    let melhorTam = 0;
+    memoriaMap.forEach((v, k) => {
+      if (k.length < 12) return;
+      if ((n.includes(k) || k.includes(n)) && k.length > melhorTam) { melhor = v; melhorTam = k.length; }
+    });
+    return melhor;
+  }, [memoriaMap, normMemo]);
+
+  // Fallback: contato cujo nome aparece no memo (ex.: FARMAX DISTRIBUIDORA no TED).
+  const contatoPorNomeNoMemo = useCallback((memo: string | null | undefined, lista: { id: string; nome: string }[] | undefined) => {
+    const m = ` ${normMemo(memo)} `;
+    if (m.trim().length < 4 || !lista?.length) return null;
+    let melhor: { id: string } | null = null;
+    let melhorScore = 0;
+    for (const c of lista) {
+      const palavras = normMemo(c.nome).split(" ").filter((w) => w.length > 3);
+      if (!palavras.length) continue;
+      const hits = palavras.filter((w) => m.includes(` ${w} `) || m.includes(w));
+      const precisa = Math.min(2, palavras.length);
+      if (hits.length >= precisa) {
+        const score = hits.join("").length;
+        if (score > melhorScore) { melhorScore = score; melhor = c; }
+      }
+    }
+    return melhor;
+  }, [normMemo]);
+
   const conciliar = useMutation({
     mutationFn: async ({ ofxId, lancamentoId, valor }: { ofxId: string; lancamentoId: string; valor: number }) => {
       const { error: e1 } = await supabase.from("lancamentos_financeiros")
@@ -1471,6 +1556,7 @@ function ReconcileDialog({ contaId, conta, empresaId, autoConciliar, importing, 
       qc.invalidateQueries({ queryKey: ["ofx", contaId] });
       qc.invalidateQueries({ queryKey: ["lanc-abertos", empresaId] });
       qc.invalidateQueries({ queryKey: ["lancamentos"] });
+      qc.invalidateQueries({ queryKey: ["conc-memoria"] });
     },
     onError: (e: Error) => toast.error(e.message),
   });
@@ -1559,17 +1645,51 @@ function ReconcileDialog({ contaId, conta, empresaId, autoConciliar, importing, 
   // Pré-preenche a descrição com o memo do banco no estado (não só na exibição):
   // sem isso, escolher a categoria antes de tocar na descrição criava a linha
   // a partir de emptyRow(null) e apagava o texto pré-informado.
+  // Aproveita e já puxa categoria/contato/centro da memória de conciliações.
   useEffect(() => {
     if (!txs) return;
     setRows((prev) => {
       const next = { ...prev };
       let changed = false;
       for (const tx of txs) {
-        if (!next[tx.id]) { next[tx.id] = emptyRow(tx.memo); changed = true; }
+        if (!next[tx.id]) {
+          const mem = lembrarConciliacao(tx.memo);
+          const porNome = !mem?.contato_id ? contatoPorNomeNoMemo(tx.memo, contatos as { id: string; nome: string }[] | undefined) : null;
+          next[tx.id] = {
+            ...emptyRow(tx.memo),
+            categoria_id: mem?.categoria_id ?? "",
+            contato_id: mem?.contato_id ?? (porNome?.id ?? ""),
+            centro_custo_id: mem?.centro_custo_id ?? "",
+          };
+          if (next[tx.id].categoria_id || next[tx.id].contato_id || next[tx.id].centro_custo_id) changed = true;
+          else if (next[tx.id].descricao !== (prev[tx.id] as RowState | undefined)?.descricao) changed = true;
+        }
       }
       return changed ? next : prev;
     });
-  }, [txs]);
+  }, [txs, lembrarConciliacao, contatoPorNomeNoMemo, contatos]);
+
+  // Memória chegou depois das linhas: preenche só campos ainda vazios (nunca sobrescreve escolha do usuário).
+  useEffect(() => {
+    if (!txs || (memoriaMap.size === 0 && !(contatos as { id: string; nome: string }[] | undefined)?.length)) return;
+    setRows((prev) => {
+      const next = { ...prev };
+      let changed = false;
+      for (const tx of txs) {
+        const cur = next[tx.id];
+        if (!cur || cur.lancamento_id) continue;
+        if (cur.categoria_id && cur.contato_id && cur.centro_custo_id) continue;
+        const mem = lembrarConciliacao(tx.memo);
+        const porNome = (!cur.contato_id && !mem?.contato_id) ? contatoPorNomeNoMemo(tx.memo, contatos as { id: string; nome: string }[] | undefined) : null;
+        const patch: Partial<RowState> = {};
+        if (!cur.categoria_id && mem?.categoria_id) patch.categoria_id = mem.categoria_id;
+        if (!cur.contato_id && (mem?.contato_id ?? porNome?.id)) patch.contato_id = (mem?.contato_id ?? porNome?.id) as string;
+        if (!cur.centro_custo_id && mem?.centro_custo_id) patch.centro_custo_id = mem.centro_custo_id;
+        if (Object.keys(patch).length) { next[tx.id] = { ...cur, ...patch }; changed = true; }
+      }
+      return changed ? next : prev;
+    });
+  }, [txs, memoriaMap, lembrarConciliacao, contatoPorNomeNoMemo, contatos]);
 
   const toggleSel = useCallback((id: string) =>
     setSel((prev) => { const n = new Set(prev); n.has(id) ? n.delete(id) : n.add(id); return n; }), []);
