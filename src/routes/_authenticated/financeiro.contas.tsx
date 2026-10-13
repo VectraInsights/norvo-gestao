@@ -27,6 +27,7 @@ import { Banknote, Plus, Upload, Loader2, Link2, Check, Landmark, Wallet, Credit
 import { Checkbox } from "@/components/ui/checkbox";
 import { DateInput } from "@/components/erp/date-input";
 import { Combobox } from "@/components/erp/combobox";
+import { PeriodoFilter, type Periodo } from "@/components/erp/periodo-filter";
 import { NovoContatoDialog } from "@/components/erp/novo-contato-dialog";
 import { TransferenciaDialog } from "@/components/erp/transferencia-dialog";
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
@@ -1780,6 +1781,46 @@ function ReconcileDialog({ contaId, conta, empresaId, autoConciliar, importing, 
     onError: (e: Error) => toast.error(e.message),
   });
 
+  // Conciliar 1 lançamento do banco com VÁRIOS lançamentos do sistema (soma bate o valor).
+  const conciliarVarios = useMutation({
+    mutationFn: async ({ tx, ids }: { tx: OfxRow; ids: string[] }) => {
+      if (!empresaId || !contaId) throw new Error("Empresa não selecionada");
+      if (!ids.length) throw new Error("Selecione ao menos um lançamento");
+      const mapa = new Map((lancamentosAbertos ?? []).map((l) => [l.id, l]));
+      for (const id of ids) {
+        const alvo = mapa.get(id);
+        const vp = Math.abs(Number(alvo?.valor) || Math.abs(tx.valor));
+        const { error: e1 } = await supabase.from("lancamentos_financeiros")
+          .update({ status: "pago", valor_pago: vp, data_pagamento: tx.data_transacao, conta_bancaria_id: contaId })
+          .eq("id", id);
+        if (e1) throw e1;
+      }
+      const { error: e2 } = await supabase.from("ofx_transacoes")
+        .update({ status: "conciliada", lancamento_id: ids[0] }).eq("id", tx.id);
+      if (e2) throw e2;
+    },
+    onSuccess: (_d, vars) => {
+      toast.success(`${vars.ids.length} lançamentos conciliados`);
+      qc.invalidateQueries({ queryKey: ["ofx", contaId] });
+      qc.invalidateQueries({ queryKey: ["lanc-abertos", empresaId] });
+      qc.invalidateQueries({ queryKey: ["lancamentos"] });
+      qc.invalidateQueries({ queryKey: ["conc-memoria"] });
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+  const conciliarVariosUm = useCallback((t: OfxRow, ids: string[]) => {
+    setConciliandoIds((prev) => new Set(prev).add(t.id));
+    conciliarVarios.mutate({ tx: t, ids }, {
+      onSettled: () => setConciliandoIds((prev) => {
+        const n = new Set(prev);
+        n.delete(t.id);
+        return n;
+      }),
+    });
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [empresaId, contaId]);
+
   // Seleção vale para a listagem visível (respeita busca/filtro); contadores seguem o mesmo recorte.
   const selVisiveis = useMemo(() => visiveis.filter((t) => sel.has(t.id)), [visiveis, sel]);
 
@@ -1956,6 +1997,7 @@ function ReconcileDialog({ contaId, conta, empresaId, autoConciliar, importing, 
                     onSetRow={setRow}
                     onSetModoBusca={setModoBusca}
                     onConciliar={conciliarUm}
+                    onConciliarVarios={conciliarVariosUm}
                     onNovaCategoria={(txId) => { setNovaCatNome(""); setNovaCatTxId(txId); }}
                     onExcluir={(id) => excluirTx.mutate([id])}
                     empresaId={empresaId}
@@ -2080,14 +2122,21 @@ function BuscarLancamentoDialog({ open, onClose, tx, lancamentos, value, onConfi
   tx: OfxRow;
   lancamentos: LancOpt[];
   value: string;
-  onConfirm: (id: string) => void;
+  onConfirm: (ids: string[]) => void;
   empresaId: string | null;
   contatos: { id: string; nome: string }[];
   centros: { id: string; nome: string }[];
   logoBanco?: string | null;
 }) {
   const [q, setQ] = useState("");
-  const [dias, setDias] = useState("3");
+  // Período igual ao do Contas a pagar/receber (PeriodoFilter); padrão: janela de 3 dias até o vencimento do banco.
+  const janelaPadrao = (dataTx: string): Periodo => {
+    const b = new Date(`${dataTx}T00:00:00`);
+    if (Number.isNaN(b.getTime())) return { from: null, to: null, label: "Todo o período" };
+    const from = new Date(b.getTime() - 3 * 86400000);
+    return { from, to: b, label: `${format(from, "dd/MM/yyyy")} — ${format(b, "dd/MM/yyyy")}` };
+  };
+  const [periodo, setPeriodo] = useState<Periodo>(() => janelaPadrao(tx.data_transacao));
   const [contaF, setContaF] = useState("todas");
   const [catF, setCatF] = useState("todas");
   const [contatoF, setContatoF] = useState("todas");
@@ -2095,13 +2144,16 @@ function BuscarLancamentoDialog({ open, onClose, tx, lancamentos, value, onConfi
   const [sitF, setSitF] = useState("todas");
   const [extras, setExtras] = useState<string[]>([]);
   const [tipoF, setTipoF] = useState<"receber" | "pagar" | "todos">(() => (Number(tx.valor) >= 0 ? "receber" : "pagar"));
-  const [sel, setSel] = useState(value);
+  const [selIds, setSelIds] = useState<string[]>(value ? [value] : []);
+  const alternarId = (id: string) => setSelIds((prev) => (prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]));
   useEffect(() => {
     if (open) {
-      setSel(value); setQ("");
+      setSelIds(value ? [value] : []); setQ("");
       setTipoF(Number(tx.valor) >= 0 ? "receber" : "pagar");
+      setPeriodo(janelaPadrao(tx.data_transacao));
     }
-  }, [open, value, tx.valor]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open, value, tx.valor, tx.data_transacao]);
 
   const { data: contasBusca = [] } = useQuery({
     enabled: open && !!empresaId,
@@ -2125,12 +2177,11 @@ function BuscarLancamentoDialog({ open, onClose, tx, lancamentos, value, onConfi
   });
   const nomeConta = (id?: string | null) => (contasBusca ?? []).find((c) => c.id === id)?.nome ?? "—";
 
-  const base = new Date(`${tx.data_transacao}T00:00:00`).getTime();
-  const fmtCurta = (t: number) => new Date(t).toLocaleDateString("pt-BR");
-  const rangeLabel = (n: string) => {
-    if (n === "todos" || Number.isNaN(base)) return "Todos os vencimentos";
-    const ini = base - Number(n) * 86400000;
-    return `${fmtCurta(ini)} a ${fmtCurta(base)}`;
+  const dentroPeriodo = (dataStr: string) => {
+    if (!periodo.from || !periodo.to) return true;
+    const f = format(periodo.from, "yyyy-MM-dd");
+    const t = format(periodo.to, "yyyy-MM-dd");
+    return dataStr >= f && dataStr <= t;
   };
   const filtrados = useMemo(() => {
     const termo = q.trim().toLowerCase();
@@ -2141,24 +2192,25 @@ function BuscarLancamentoDialog({ open, onClose, tx, lancamentos, value, onConfi
       if (contatoF !== "todas" && (l.contato_id ?? "") !== contatoF) return false;
       if (centroF !== "todas" && (l.centro_custo_id ?? "") !== centroF) return false;
       if (sitF !== "todas" && l.status !== sitF) return false;
-      if (dias !== "todos") {
-        const dv = new Date(`${l.data_vencimento}T00:00:00`).getTime();
-        // janela para trás: do lançamento até N dias antes
-        if (Number.isNaN(dv) || Number.isNaN(base) || dv > base || dv < base - Number(dias) * 86400000) return false;
-      }
+      if (!dentroPeriodo(l.data_vencimento)) return false;
       if (!termo) return true;
       return (l.descricao ?? "").toLowerCase().includes(termo)
         || String(l.valor).includes(termo.replace(",", "."))
         || (l.data_vencimento || "").includes(termo);
     }).slice(0, 100);
-  }, [lancamentos, q, dias, base, contaF, catF, contatoF, centroF, sitF, tipoF]);
-  const temFiltro = q.trim() !== "" || dias !== "3" || contaF !== "todas" || catF !== "todas" || contatoF !== "todas" || centroF !== "todas" || sitF !== "todas" || extras.length > 0;
-  const limparFiltros = () => { setQ(""); setDias("3"); setContaF("todas"); setCatF("todas"); setContatoF("todas"); setCentroF("todas"); setSitF("todas"); setExtras([]); };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [lancamentos, q, periodo, contaF, catF, contatoF, centroF, sitF, tipoF]);
+  const padrao = janelaPadrao(tx.data_transacao);
+  const periodoMudou = periodo.from?.getTime() !== padrao.from?.getTime() || periodo.to?.getTime() !== padrao.to?.getTime();
+  const temFiltro = q.trim() !== "" || periodoMudou || contaF !== "todas" || catF !== "todas" || contatoF !== "todas" || centroF !== "todas" || sitF !== "todas" || extras.length > 0;
+  const limparFiltros = () => { setQ(""); setPeriodo(janelaPadrao(tx.data_transacao)); setContaF("todas"); setCatF("todas"); setContatoF("todas"); setCentroF("todas"); setSitF("todas"); setExtras([]); };
   const alternarExtra = (k: string) => setExtras((prev) => (prev.includes(k) ? prev.filter((x) => x !== k) : [...prev, k]));
 
-  const escolhido = (lancamentos ?? []).find((l) => l.id === sel);
+  const escolhidos = (lancamentos ?? []).filter((l) => selIds.includes(l.id));
+  const todosVisiveisMarcados = filtrados.length > 0 && filtrados.every((l) => selIds.includes(l.id));
+  const alternarTodosVisiveis = () => setSelIds((prev) => (todosVisiveisMarcados ? prev.filter((id) => !filtrados.some((l) => l.id === id)) : [...prev, ...filtrados.map((l) => l.id).filter((id) => !prev.includes(id))]));
   const vBanco = Math.abs(Number(tx.valor) || 0);
-  const vSel = escolhido ? Number(escolhido.valor) || 0 : 0;
+  const vSel = escolhidos.reduce((s, l) => s + (Number(l.valor) || 0), 0);
   const dif = Math.round((vBanco - vSel) * 100) / 100;
 
   return (
@@ -2188,18 +2240,10 @@ function BuscarLancamentoDialog({ open, onClose, tx, lancamentos, value, onConfi
               </div>
             </div>
           </div>
-          <div className="grid shrink-0 grid-cols-2 gap-2 md:grid-cols-5">
-            <div>
+          <div className="grid shrink-0 grid-cols-2 gap-2 md:grid-cols-6">
+            <div className="md:col-span-2 min-w-0">
               <span className="text-xs text-muted-foreground">Período de vencimento</span>
-              <Select value={dias} onValueChange={setDias}>
-                <SelectTrigger className="h-8 text-xs w-full"><SelectValue>{rangeLabel(dias)}</SelectValue></SelectTrigger>
-                <SelectContent>
-                  {["3", "7", "15", "30"].map((n) => (
-                    <SelectItem key={n} value={n}>{rangeLabel(n)} ({n} dias)</SelectItem>
-                  ))}
-                  <SelectItem value="todos">Todos os vencimentos</SelectItem>
-                </SelectContent>
-              </Select>
+              <PeriodoFilter value={periodo} onChange={setPeriodo} className="flex w-full min-w-0" triggerClassName="min-w-0 flex-1 px-2" />
             </div>
             <div>
               <span className="text-xs text-muted-foreground">Pesquisar</span>
@@ -2343,7 +2387,9 @@ function BuscarLancamentoDialog({ open, onClose, tx, lancamentos, value, onConfi
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead className="w-10" />
+                    <TableHead className="w-10">
+                      <Checkbox checked={todosVisiveisMarcados} onCheckedChange={alternarTodosVisiveis} aria-label="Selecionar todos visíveis" />
+                    </TableHead>
                     <TableHead>Vencimento</TableHead>
                     <TableHead>Descrição</TableHead>
                     <TableHead>Conta</TableHead>
@@ -2353,9 +2399,9 @@ function BuscarLancamentoDialog({ open, onClose, tx, lancamentos, value, onConfi
                 </TableHeader>
                 <TableBody>
                   {filtrados.map((l) => (
-                    <TableRow key={l.id} className="cursor-pointer" onClick={() => setSel(l.id)}>
-                      <TableCell>
-                        <Checkbox checked={sel === l.id} onCheckedChange={() => setSel(l.id)} aria-label="Selecionar lançamento" />
+                    <TableRow key={l.id} className="cursor-pointer" onClick={() => alternarId(l.id)}>
+                      <TableCell onClick={(e) => e.stopPropagation()}>
+                        <Checkbox checked={selIds.includes(l.id)} onCheckedChange={() => alternarId(l.id)} aria-label="Selecionar lançamento" />
                       </TableCell>
                       <TableCell className="text-tabular whitespace-nowrap">
                         {l.data_vencimento ? new Date(`${l.data_vencimento}T00:00:00`).toLocaleDateString("pt-BR") : "—"}
@@ -2373,6 +2419,10 @@ function BuscarLancamentoDialog({ open, onClose, tx, lancamentos, value, onConfi
             )}
           </div>
           <div className="flex shrink-0 flex-wrap items-center gap-x-6 gap-y-1 border-t pt-2 text-sm">
+            <div className="text-left">
+              <span className="text-[11px] text-muted-foreground">Selecionados </span>
+              <span className="text-tabular font-bold">{selIds.length}</span>
+            </div>
             <div className="ml-auto text-right">
               <span className="text-[11px] text-muted-foreground">Valor do banco </span>
               <span className="text-tabular font-bold">{brl(vBanco)}</span>
@@ -2383,11 +2433,11 @@ function BuscarLancamentoDialog({ open, onClose, tx, lancamentos, value, onConfi
             </div>
             <div className="text-right">
               <span className="text-[11px] text-muted-foreground">Diferença </span>
-              <span className={`text-tabular font-bold ${dif === 0 && sel ? "text-success" : "text-amber-600 dark:text-amber-400"}`}>{brl(dif)}</span>
+              <span className={`text-tabular font-bold ${dif === 0 && selIds.length ? "text-success" : "text-amber-600 dark:text-amber-400"}`}>{brl(dif)}</span>
             </div>
             <Button variant="outline" onClick={onClose}>Cancelar</Button>
-            <Button disabled={!sel} onClick={() => onConfirm(sel)}>
-              <Check className="mr-1 h-4 w-4" />Conciliar
+            <Button disabled={!selIds.length} onClick={() => onConfirm(selIds)}>
+              <Check className="mr-1 h-4 w-4" />Conciliar{selIds.length > 1 ? ` (${selIds.length})` : ""}
             </Button>
           </div>
         </div>
@@ -2398,7 +2448,7 @@ function BuscarLancamentoDialog({ open, onClose, tx, lancamentos, value, onConfi
 
 const ReconcileRow = memo(function ReconcileRow({
   tx, r, modoBusca, selected, categorias, contatos, centros, lancamentosAbertos,
-  conciliando, excluindo, onToggleSel, onSetRow, onSetModoBusca, onConciliar, onNovaCategoria, onExcluir, empresaId, logoBanco,
+  conciliando, excluindo, onToggleSel, onSetRow, onSetModoBusca, onConciliar, onConciliarVarios, onNovaCategoria, onExcluir, empresaId, logoBanco,
 }: {
   tx: OfxRow;
   r: RowState;
@@ -2414,6 +2464,7 @@ const ReconcileRow = memo(function ReconcileRow({
   onSetRow: (id: string, patch: Partial<RowState>) => void;
   onSetModoBusca: (id: string, v: boolean) => void;
   onConciliar: (tx: OfxRow, r: RowState) => void;
+  onConciliarVarios: (tx: OfxRow, ids: string[]) => void;
   onNovaCategoria: (txId: string) => void;
   onExcluir: (id: string) => void;
   empresaId: string | null;
@@ -2485,7 +2536,11 @@ const ReconcileRow = memo(function ReconcileRow({
           tx={tx}
           lancamentos={lancamentosAbertos}
           value={r.lancamento_id}
-          onConfirm={(id) => { onSetRow(tx.id, { lancamento_id: id }); setBuscaOpen(false); }}
+          onConfirm={(ids) => {
+            if (ids.length === 1) onSetRow(tx.id, { lancamento_id: ids[0] });
+            else if (ids.length > 1) onConciliarVarios(tx, ids);
+            setBuscaOpen(false);
+          }}
           empresaId={empresaId}
           logoBanco={logoBanco}
           contatos={contatos}

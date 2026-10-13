@@ -78,7 +78,7 @@ function shiftPeriodo(p: Periodo, preset: PresetKey, dir: 1 | -1): Periodo | nul
   }
 }
 
-export function PeriodoFilter({ value, onChange }: { value: Periodo; onChange: (p: Periodo) => void }) {
+export function PeriodoFilter({ value, onChange, className, triggerClassName }: { value: Periodo; onChange: (p: Periodo) => void; className?: string; triggerClassName?: string }) {
   const [open, setOpen] = useState(false);
   const [mode, setMode] = useState<PresetKey>("todos");
   const [activePreset, setActivePreset] = useState<PresetKey | null>(
@@ -121,7 +121,7 @@ export function PeriodoFilter({ value, onChange }: { value: Periodo; onChange: (
   };
 
   return (
-    <div className="inline-flex items-center gap-1.5">
+    <div className={`inline-flex items-center gap-1.5${className ? ` ${className}` : ""}`}>
       {podeNavegar ? (
         <Button size="sm" variant="outline" className="h-9 w-9 shrink-0 rounded-xl px-0 shadow-sm transition-all hover:-translate-y-px hover:shadow-md" aria-label="Período anterior" onClick={() => navegar(-1)}>
           <ChevronLeft className="h-4 w-4" />
@@ -131,7 +131,7 @@ export function PeriodoFilter({ value, onChange }: { value: Periodo; onChange: (
       )}
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>
-        <Button size="sm" variant="outline" title={`Período: ${value.label}`} className="h-9 w-[300px] justify-center rounded-xl px-3 shadow-sm transition-all hover:-translate-y-px hover:shadow-md">
+        <Button size="sm" variant="outline" title={`Período: ${value.label}`} className={`h-9 justify-center rounded-xl px-3 shadow-sm transition-all hover:-translate-y-px hover:shadow-md${triggerClassName ? ` ${triggerClassName}` : " w-[300px]"}`}>
           <CalendarIcon className="mr-1.5 h-4 w-4 shrink-0" />
           <span className="truncate tabular-nums">Período: {value.label}</span>
         </Button>
