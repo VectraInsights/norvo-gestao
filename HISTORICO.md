@@ -5915,3 +5915,7 @@ pm run build OK.
 ## Movimentacoes so com descricao do sistema (14/10)
 
 - Tabela do dia simplificada: so Descricao (sistema) + Valor + Conciliacao + Acoes; sai coluna do banco e totais triplos (Totais do dia com valor unico). Banco segue alimentando o selo Conciliada/Pendente.
+
+## Delete exclui lote no pagar/receber (14/10)
+
+- Tecla Delete com lancamentos selecionados abre a mesma confirmacao do botao Excluir (vale p/ pagar e receber, mesma pagina). Ignora quando digitando ou com dialogo aberto.

@@ -54,7 +54,7 @@ import {
   Pencil,
   ArrowLeftRight,
 } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEmpresaAtual } from "@/hooks/use-empresa";
@@ -364,6 +364,21 @@ export function LancamentosPage({ tipo }: { tipo: "receber" | "pagar" }) {
     });
   // allIds calculado depois dos filtros (mais abaixo, via `filtrados`)
   const clearSel = () => setSelected(new Set());
+
+  // Tecla Delete abre a mesma confirmação do botão Excluir em lote.
+  useEffect(() => {
+    if (selected.size === 0) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key !== "Delete") return;
+      const t = e.target as HTMLElement;
+      if (t && (t.tagName === "INPUT" || t.tagName === "TEXTAREA" || t.tagName === "SELECT" || t.isContentEditable)) return;
+      if (document.querySelector('[role="dialog"]')) return;
+      e.preventDefault();
+      setConfLote(true);
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [selected.size]);
 
   // Lotes de 100 ids: URL longa demais dá Bad Request no PostgREST
   const emLotes = async (ids: string[], fn: (lote: string[]) => PromiseLike<unknown>) => {
