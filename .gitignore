@@ -61,3 +61,6 @@ coverage/
 # Desktop (Electron)
 desktop/release
 desktop/node_modules
+
+# Dump local de conversa/projeto (nao versionar)
+/PROJETO.json
