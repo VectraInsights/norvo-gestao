@@ -5957,3 +5957,7 @@ pm run build OK.
 ## Planilha modelo com abas Entradas e Saidas (14/10)
 
 - Botao Planilha modelo gera workbook com abas Entradas (exemplos positivos) e Saidas (exemplos negativos) + Instrucoes; importacao le todas as abas nao-instrucionais (vale p/ modelo antigo de aba unica). Erros de validacao indicam a aba.
+
+## Calendario em portugues (14/10)
+
+- Componente Calendar passa locale pt-BR por padrao: mes e dias da semana em portugues em todos os calendarios do app (filtro de periodo da conciliacao incluso).
