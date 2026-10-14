@@ -49,6 +49,12 @@ function parseValor(v: unknown): number {
   return isNaN(n) ? 0 : n;
 }
 
+// Normaliza nomes como a unicidade do banco (sem acento, sem caixa, sem espaço duplo):
+// "Prestação  de Serviços" == "prestacao de servicos" e não tenta recriar.
+function normNome(s: string | null | undefined): string {
+  return (s ?? "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim().replace(/\s+/g, " ").toLowerCase();
+}
+
 type Insert = {
   empresa_id: string; tipo: "receber" | "pagar"; descricao: string; valor: number;
   data_emissao?: string; data_vencimento: string;
@@ -242,15 +248,15 @@ export function LancamentosToolbar({
       }
       if (!parsed.length) { toast.error("Planilha vazia"); return; }
 
-      // Maps existentes
-      const mCategorias = new Map((categorias ?? []).map((o) => [o.nome.trim().toLowerCase(), o.id]));
-      const mContatos = new Map((contatos ?? []).map((o) => [o.nome.trim().toLowerCase(), o.id]));
+      // Maps existentes (normalizados como a unicidade do banco)
+      const mCategorias = new Map((categorias ?? []).map((o) => [normNome(o.nome), o.id]));
+      const mContatos = new Map((contatos ?? []).map((o) => [normNome(o.nome), o.id]));
 
       // Criar categorias faltantes (por nome+tipo)
       const novasCats = new Map<string, { nome: string; tipo: "receber" | "pagar" }>();
       parsed.forEach((p) => {
-        const key = p.catNome.toLowerCase();
-        if (!mCategorias.has(key)) novasCats.set(key, { nome: p.catNome, tipo: p.tipoLinha });
+        const key = normNome(p.catNome);
+        if (!mCategorias.has(key)) novasCats.set(key, { nome: p.catNome.trim(), tipo: p.tipoLinha });
       });
       let criadasCats = 0;
       if (novasCats.size) {
@@ -258,19 +264,27 @@ export function LancamentosToolbar({
           empresa_id: empresaId, nome: c.nome, tipo: c.tipo, parent_id: null,
         }));
         const { data, error } = await supabase.from("categorias_financeiras").insert(payload).select("id,nome");
-        if (error) throw error;
-        (data ?? []).forEach((c) => mCategorias.set(c.nome.trim().toLowerCase(), c.id));
-        criadasCats = data?.length ?? 0;
+        if (error) {
+          // Categoria já existia com outro acento/caixa (ex.: planilha "Prestacao" x banco "Prestação"):
+          // recarrega e segue a importação em vez de abortar.
+          if ((error as { code?: string }).code === "23505") {
+            const { data: fresh } = await supabase.from("categorias_financeiras").select("id,nome").eq("empresa_id", empresaId);
+            (fresh ?? []).forEach((c) => { if (!mCategorias.has(normNome(c.nome))) mCategorias.set(normNome(c.nome), c.id); });
+          } else throw error;
+        } else {
+          (data ?? []).forEach((c) => mCategorias.set(normNome(c.nome), c.id));
+          criadasCats = data?.length ?? 0;
+        }
       }
 
       // Criar contatos faltantes
       const novosContatos = new Map<string, { nome: string; tipo: "cliente" | "fornecedor"; documento: string | null }>();
       parsed.forEach((p) => {
         if (!p.contatoNome) return;
-        const key = p.contatoNome.toLowerCase();
+        const key = normNome(p.contatoNome);
         if (!mContatos.has(key)) {
           novosContatos.set(key, {
-            nome: p.contatoNome,
+            nome: p.contatoNome.trim(),
             tipo: p.tipoLinha === "receber" ? "cliente" : "fornecedor",
             documento: p.documento,
           });
@@ -283,7 +297,7 @@ export function LancamentosToolbar({
         }));
         const { data, error } = await supabase.from("contatos").insert(payload).select("id,nome");
         if (error) throw error;
-        (data ?? []).forEach((c) => mContatos.set(c.nome.trim().toLowerCase(), c.id));
+        (data ?? []).forEach((c) => mContatos.set(normNome(c.nome), c.id));
         criadosCtt = data?.length ?? 0;
       }
 
@@ -294,8 +308,8 @@ export function LancamentosToolbar({
         valor: p.valor,
         data_emissao: p.de,
         data_vencimento: p.dv,
-        contato_id: p.contatoNome ? mContatos.get(p.contatoNome.toLowerCase()) ?? null : null,
-        categoria_id: mCategorias.get(p.catNome.toLowerCase()) ?? null,
+        contato_id: p.contatoNome ? mContatos.get(normNome(p.contatoNome)) ?? null : null,
+        categoria_id: mCategorias.get(normNome(p.catNome)) ?? null,
         conta_bancaria_id: null,
         documento: p.documento,
         observacoes: p.observacoes,

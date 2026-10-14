@@ -5941,3 +5941,7 @@ pm run build OK.
 ## Botao Planilha modelo (14/10)
 
 - Rotulo 'Modelo de planilha' vira 'Planilha modelo' (pagar/receber).
+
+## Importacao de planilha sem duplicate key (14/10)
+
+- duplicate key uq_categorias: planilha 'Prestacao' nao achava banco 'Prestação' (comparacao so minusculas x unicidade sem acento) e o insert estourava. Nomes agora normalizados (sem acento/caixa/espaco duplo) em categorias e contatos; se ainda colidir (23505), recarrega e segue sem abortar.
