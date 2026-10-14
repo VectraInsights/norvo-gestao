@@ -1591,7 +1591,7 @@ function ReconcileDialog({ contaId, conta, empresaId, autoConciliar, importing, 
   gcTime: 30 * 60_000,
   queryFn: async () => {
       const { data, error } = await supabase.from("contatos")
-        .select("id,nome").eq("empresa_id", empresaId!).eq("ativo", true).order("nome").limit(500);
+        .select("id,nome,documento").eq("empresa_id", empresaId!).eq("ativo", true).order("nome").limit(500);
       if (error) throw error;
       return data ?? [];
     },
@@ -2649,7 +2649,7 @@ function BuscarLancamentoDialog({ open, onClose, tx, lancamentos, value, onConfi
           <div className="grid shrink-0 grid-cols-2 gap-2 md:grid-cols-6">
             <div className="md:col-span-2 min-w-0">
               <span className="text-xs text-muted-foreground">Período de vencimento</span>
-              <PeriodoFilter value={periodo} onChange={setPeriodo} />
+              <PeriodoFilter value={periodo} onChange={setPeriodo} preset="mesatual" />
             </div>
             <div>
               <span className="text-xs text-muted-foreground">Pesquisar</span>
@@ -3092,7 +3092,7 @@ const ReconcileRow = memo(function ReconcileRow({
               </div>
               <div className="space-y-1">
                 <Label className="text-xs">{tx.valor >= 0 ? "Cliente" : "Fornecedor"}</Label>
-                <Combobox value={r.contato_id} onChange={(v) => onSetRow(tx.id, { contato_id: v })} options={contatos.map((c) => ({ value: c.id, label: c.nome }))} emptyText="Nenhum item encontrado." allowClear onSearchChange={setContatoBusca} footer={{ label: "Novo contato", onClick: () => setNovoContatoOpen(true) }} />
+                <Combobox value={r.contato_id} onChange={(v) => onSetRow(tx.id, { contato_id: v })} options={contatos.map((c) => ({ value: c.id, label: c.nome, busca: (c as { documento?: string | null }).documento ?? "", detalhe: (c as { documento?: string | null }).documento ?? "" }))} emptyText="Nenhum item encontrado." allowClear onSearchChange={setContatoBusca} footer={{ label: "Novo contato", onClick: () => setNovoContatoOpen(true) }} />
               </div>
               <div className="space-y-1">
                 <Label className="text-xs">Centro de custo</Label>

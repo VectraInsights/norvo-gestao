@@ -29,6 +29,8 @@ type PresetKey =
   | "hoje" | "prox7" | "prox30" | "ult7" | "ult30"
   | "mesatual" | "anoatual" | "todos" | "custom";
 
+export type { PresetKey };
+
 const PRESETS: { k: PresetKey; label: string; range: () => Periodo }[] = [
   { k: "hoje", label: "Hoje", range: () => { const d = new Date(); return { from: startOfDay(d), to: endOfDay(d), label: "Hoje" }; } },
   { k: "prox7", label: "Próximos 7 dias", range: () => periodoProx7() },
@@ -78,11 +80,11 @@ function shiftPeriodo(p: Periodo, preset: PresetKey, dir: 1 | -1): Periodo | nul
   }
 }
 
-export function PeriodoFilter({ value, onChange, className, triggerClassName }: { value: Periodo; onChange: (p: Periodo) => void; className?: string; triggerClassName?: string }) {
+export function PeriodoFilter({ value, onChange, preset, className, triggerClassName }: { value: Periodo; onChange: (p: Periodo) => void; preset?: PresetKey; className?: string; triggerClassName?: string }) {
   const [open, setOpen] = useState(false);
   const [mode, setMode] = useState<PresetKey>("todos");
   const [activePreset, setActivePreset] = useState<PresetKey | null>(
-    () => PRESETS.find((p) => p.label === value.label)?.k ?? null,
+    () => preset ?? PRESETS.find((p) => p.label === value.label)?.k ?? null,
   );
   const [fromStr, setFromStr] = useState(value.from ? format(value.from, "dd/MM/yyyy") : "");
   const [toStr, setToStr] = useState(value.to ? format(value.to, "dd/MM/yyyy") : "");

@@ -5975,3 +5975,8 @@ pm run build OK.
 ## Buscar com botao de periodo padrao (14/10)
 
 - Periodo de vencimento do Buscar lancamento usa o PeriodoFilter padrao, identico ao do pagar/receber (com setas de navegacao).
+
+## Cliente por CNPJ + setas no Buscar (14/10)
+
+- Combobox de Cliente/Fornecedor busca tambem pelo CNPJ/CPF (com ou sem mascara) e mostra o documento abaixo do nome: novo/editar lancamento (pagar+receber) e conciliação.
+- PeriodoFilter ganha prop preset: Buscar lancamento abre com setas de navegacao ativas, igual ao pagar/receber.

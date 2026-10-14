@@ -206,7 +206,7 @@ export function LancamentosPage({ tipo }: { tipo: "receber" | "pagar" }) {
       )[];
       const { data, error } = await supabase
         .from("contatos")
-        .select("id,nome,tipo")
+        .select("id,nome,tipo,documento")
         .eq("empresa_id", empresa!.id)
         .in("tipo", tipos)
         .order("nome")
@@ -800,7 +800,7 @@ export function LancamentosPage({ tipo }: { tipo: "receber" | "pagar" }) {
                   <Combobox
                     value={form.contato_id}
                     onChange={(v) => setForm({ ...form, contato_id: v })}
-                    options={(contatosOpt ?? []).map((c) => ({ value: c.id, label: c.nome ?? "" }))}
+                    options={(contatosOpt ?? []).map((c) => ({ value: c.id, label: c.nome ?? "", busca: (c as { documento?: string | null }).documento ?? "", detalhe: (c as { documento?: string | null }).documento ?? "" }))}
                    
                    
                     emptyText="Nenhum item encontrado."
@@ -1271,7 +1271,7 @@ export function LancamentosPage({ tipo }: { tipo: "receber" | "pagar" }) {
                 <Combobox
                   value={editing.contato_id}
                   onChange={(v) => setEditing({ ...editing, contato_id: v })}
-                  options={(contatosOpt ?? []).map((c) => ({ value: c.id, label: c.nome ?? "" }))}
+                  options={(contatosOpt ?? []).map((c) => ({ value: c.id, label: c.nome ?? "", busca: (c as { documento?: string | null }).documento ?? "", detalhe: (c as { documento?: string | null }).documento ?? "" }))}
                  
                  
                   emptyText="Nenhum item encontrado."

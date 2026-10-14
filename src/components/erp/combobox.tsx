@@ -4,7 +4,7 @@ import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 
-export type ComboOption = { value: string; label: string; icone?: string };
+export type ComboOption = { value: string; label: string; icone?: string; busca?: string; detalhe?: string };
 
 type Props = {
   value: string;
@@ -60,7 +60,15 @@ export function Combobox({
   const filtrados = useMemo(() => {
     const nq = norm(q);
     if (!nq) return options;
-    return options.filter((o) => norm(rotulo(o)).includes(nq));
+    const dq = q.replace(/\D/g, "");
+    return options.filter((o) => {
+      if (norm(rotulo(o)).includes(nq)) return true;
+      const b = o.busca ?? "";
+      if (!b) return false;
+      if (norm(b).includes(nq)) return true;
+      // CNPJ/CPF com ou sem máscara: "12345" acha "12.345.678/0001-99".
+      return dq.length > 0 && b.replace(/\D/g, "").includes(dq);
+    });
   }, [options, q]);
   const visiveis = filtrados.slice(0, LIMITE_ITENS);
 
@@ -185,7 +193,10 @@ export function Combobox({
                 {o.icone && (
                   <img src={o.icone} alt="" className="mr-2 h-6 w-6 rounded-lg object-contain bg-white p-0.5 ring-1 ring-border shrink-0" />
                 )}
-                <span className="min-w-0 flex-1 truncate whitespace-nowrap text-left text-[15px]">{rotulo(o)}</span>
+                <span className="min-w-0 flex-1 text-left">
+                  <span className="block truncate whitespace-nowrap text-[15px]">{rotulo(o)}</span>
+                  {o.detalhe && <span className="block truncate text-xs text-muted-foreground">{o.detalhe}</span>}
+                </span>
               </button>
             </li>
           ))}
