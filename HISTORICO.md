@@ -5892,3 +5892,8 @@ pm run build OK.
 ## Automatica ao abrir o detalhe (13/10)
 
 - autoConciliarConta so rodava pelo link ?conciliar=; abrir pela lista (detalhe inline, fluxo normal) nunca conciliava sozinho. Agora roda 1x por abertura do detalhe, com toast da quantidade.
+
+## Automatica dentro da importacao OFX (14/10)
+
+- Importar OFX agora ja concilia os matches exatos antes de abrir a tela (spinner ativo): ao voltar, so resta o pendente + 1 toast combinado (importadas + conciliadas).
+- autoConciliarConta otimizada: match por indice valor+data O(1), busca paginada sem corte de 1000 e gravacao em paralelo (lotes de 25); fallback do dialogo tambem em paralelo.

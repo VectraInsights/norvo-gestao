@@ -107,42 +107,68 @@ const initialForm = (tipo: TipoConta): FormState => ({
 /** Concilia automaticamente (mesmo valor e mesma data) tudo o que der match.
  *  Retorna a quantidade de conciliações efetuadas. */
 async function autoConciliarConta(contaId: string, empresaId: string): Promise<number> {
-  const [{ data: txs }, { data: abertos }] = await Promise.all([
-    supabase.from("ofx_transacoes")
-      .select("id,data_transacao,valor,status")
-      .eq("conta_bancaria_id", contaId).neq("status", "conciliada"),
-    supabase.from("lancamentos_financeiros")
-      .select("id,valor,data_vencimento")
-      .eq("empresa_id", empresaId).in("status", ["aberto", "vencido", "parcial"])
-      .order("data_vencimento").limit(1000),
+  // Busca paginada: sem range o Supabase corta em 1000 e o match perde lançamentos.
+  const [txs, abertos] = await Promise.all([
+    (async () => {
+      const todas: { id: string; data_transacao: string; valor: number }[] = [];
+      for (let ini = 0; ; ini += 1000) {
+        const { data, error } = await supabase.from("ofx_transacoes")
+          .select("id,data_transacao,valor")
+          .eq("conta_bancaria_id", contaId).neq("status", "conciliada")
+          .order("data_transacao").range(ini, ini + 999);
+        if (error) throw error;
+        todas.push(...((data as unknown as typeof todas) ?? []));
+        if (!data || data.length < 1000) break;
+      }
+      return todas;
+    })(),
+    (async () => {
+      const todos: { id: string; valor: number; data_vencimento: string }[] = [];
+      for (let ini = 0; ; ini += 1000) {
+        const { data, error } = await supabase.from("lancamentos_financeiros")
+          .select("id,valor,data_vencimento")
+          .eq("empresa_id", empresaId).in("status", ["aberto", "vencido", "parcial"])
+          .order("data_vencimento").range(ini, ini + 999);
+        if (error) throw error;
+        todos.push(...((data as unknown as typeof todos) ?? []));
+        if (!data || data.length < 1000) break;
+      }
+      return todos;
+    })(),
   ]);
   if (!txs?.length || !abertos?.length) return 0;
 
-  const usados = new Set<string>();
+  // Índice valor+data (O(1) por transação em vez de find O(N*M)).
+  const porChave = new Map<string, { id: string; valor: number; data_vencimento: string }[]>();
+  for (const l of abertos) {
+    const k = `${Math.round(Number(l.valor) * 100)}|${l.data_vencimento}`;
+    const fila = porChave.get(k);
+    if (fila) fila.push(l); else porChave.set(k, [l]);
+  }
   const pares: { ofxId: string; lancamentoId: string; valor: number }[] = [];
   for (const tx of txs) {
-    const match = abertos.find((l) =>
-      !usados.has(l.id) &&
-      Math.abs(Number(l.valor) - Math.abs(Number(tx.valor))) < 0.01 &&
-      l.data_vencimento === tx.data_transacao
-    );
-    if (match) {
-      usados.add(match.id);
-      pares.push({ ofxId: tx.id, lancamentoId: match.id, valor: Number(tx.valor) });
-    }
+    const k = `${Math.round(Math.abs(Number(tx.valor)) * 100)}|${tx.data_transacao}`;
+    const fila = porChave.get(k);
+    const match = fila?.shift();
+    if (match) pares.push({ ofxId: tx.id, lancamentoId: match.id, valor: Number(tx.valor) });
   }
   if (!pares.length) return 0;
 
+  // Grava em paralelo (lotes de 25) em vez de 2 awaits sequenciais por par.
   const hoje = format(new Date(), "yyyy-MM-dd");
   let ok = 0;
-  for (const p of pares) {
-    const { error: e1 } = await supabase.from("lancamentos_financeiros")
-      .update({ status: "pago", valor_pago: Math.abs(p.valor), data_pagamento: hoje, conta_bancaria_id: contaId })
-      .eq("id", p.lancamentoId);
-    if (e1) continue;
-    const { error: e2 } = await supabase.from("ofx_transacoes")
-      .update({ status: "conciliada", lancamento_id: p.lancamentoId }).eq("id", p.ofxId);
-    if (!e2) ok++;
+  for (let i = 0; i < pares.length; i += 25) {
+    const lote = pares.slice(i, i + 25);
+    const res = await Promise.all(lote.map(async (p) => {
+      const { error: e1 } = await supabase.from("lancamentos_financeiros")
+        .update({ status: "pago", valor_pago: Math.abs(p.valor), data_pagamento: hoje, conta_bancaria_id: contaId })
+        .eq("id", p.lancamentoId);
+      if (e1) return false;
+      const { error: e2 } = await supabase.from("ofx_transacoes")
+        .update({ status: "conciliada", lancamento_id: p.lancamentoId }).eq("id", p.ofxId);
+      return !e2;
+    }));
+    ok += res.filter(Boolean).length;
   }
   return ok;
 }
@@ -733,8 +759,21 @@ function ContasFinanceiras() {
     if (error) throw error;
     const novas = count ?? 0;
     const duplicadas = rows.length - novas;
-    toast.success(`${novas} nova(s) transação(ões) importada(s)${duplicadas > 0 ? ` · ${duplicadas} já existiam` : ""}`);
+    // Automática ainda dentro da importação (com o spinner ativo): quando a tela
+    // de conciliação abre, os matches exatos já estão conciliados — resta 1 toast.
+    let autoOk = 0;
+    try {
+      if (empresa) autoOk = await autoConciliarConta(contaId, empresa.id);
+    } catch { /* segue sem automática: o fallback do diálogo tenta de novo */ }
+    toast.success(
+      `${novas} nova(s) transação(ões) importada(s)${duplicadas > 0 ? ` · ${duplicadas} já existiam` : ""}` +
+      (autoOk > 0 ? ` · ${autoOk} conciliada(s) automaticamente` : ""),
+    );
     qc.invalidateQueries({ queryKey: ["ofx", contaId] });
+    qc.invalidateQueries({ queryKey: ["ofx-pend", contaId] });
+    qc.invalidateQueries({ queryKey: ["lanc-abertos", empresa?.id] });
+    qc.invalidateQueries({ queryKey: ["lancamentos"] });
+    qc.invalidateQueries({ queryKey: ["lancs-conta", contaId] });
     setReconcilingId(contaId);
   };
 
@@ -1597,14 +1636,18 @@ function ReconcileDialog({ contaId, conta, empresaId, autoConciliar, importing, 
     (async () => {
       const hoje = format(new Date(), "yyyy-MM-dd");
       let ok = 0;
-      for (const p of pares) {
-        const { error: e1 } = await supabase.from("lancamentos_financeiros")
-          .update({ status: "pago", valor_pago: Math.abs(p.valor), data_pagamento: hoje, conta_bancaria_id: contaId })
-          .eq("id", p.lancamentoId);
-        if (e1) continue;
-        const { error: e2 } = await supabase.from("ofx_transacoes")
-          .update({ status: "conciliada", lancamento_id: p.lancamentoId }).eq("id", p.ofxId);
-        if (!e2) ok++;
+      for (let i = 0; i < pares.length; i += 25) {
+        const lote = pares.slice(i, i + 25);
+        const res = await Promise.all(lote.map(async (p) => {
+          const { error: e1 } = await supabase.from("lancamentos_financeiros")
+            .update({ status: "pago", valor_pago: Math.abs(p.valor), data_pagamento: hoje, conta_bancaria_id: contaId })
+            .eq("id", p.lancamentoId);
+          if (e1) return false;
+          const { error: e2 } = await supabase.from("ofx_transacoes")
+            .update({ status: "conciliada", lancamento_id: p.lancamentoId }).eq("id", p.ofxId);
+          return !e2;
+        }));
+        ok += res.filter(Boolean).length;
       }
       if (ok > 0) toast.success(`${ok} lançamento(s) conciliado(s) automaticamente`);
       qc.invalidateQueries({ queryKey: ["ofx", contaId] });
