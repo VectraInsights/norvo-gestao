@@ -5961,3 +5961,7 @@ pm run build OK.
 ## Calendario em portugues (14/10)
 
 - Componente Calendar passa locale pt-BR por padrao: mes e dias da semana em portugues em todos os calendarios do app (filtro de periodo da conciliacao incluso).
+
+## Conciliada some na hora, sem piscar (14/10)
+
+- Concilio a 1a com sugestao e piscava uma linha sem sugestao: refetch das sugestoes chegava antes do refetch do extrato. Linha conciliada/excluida agora some na hora (otimista, vale p/ unitario, varios, transferencia, lote e automatica); se falhar, ela volta com o erro.

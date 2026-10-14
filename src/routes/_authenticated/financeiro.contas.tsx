@@ -1439,6 +1439,17 @@ function ReconcileDialog({ contaId, conta, empresaId, autoConciliar, importing, 
   const [sel, setSel] = useState<Set<string>>(new Set());
   const [rows, setRows] = useState<Record<string, RowState>>({});
   const [conciliandoIds, setConciliandoIds] = useState<Set<string>>(new Set());
+  // Linhas já conciliadas/excluídas somem na hora (otimista): sem isso, o refetch
+  // das sugestões chega antes do refetch do extrato e a linha pisca sem sugestão.
+  const [ocultos, setOcultos] = useState<Set<string>>(new Set());
+  const ocultar = useCallback((...ids: string[]) => {
+    if (!ids.length) return;
+    setOcultos((prev) => { const n = new Set(prev); ids.forEach((id) => n.add(id)); return n; });
+  }, []);
+  const mostrar = useCallback((...ids: string[]) => {
+    if (!ids.length) return;
+    setOcultos((prev) => { const n = new Set(prev); ids.forEach((id) => n.delete(id)); return n; });
+  }, []);
   const [novaCatTxId, setNovaCatTxId] = useState<string | null>(null);
   const [novaCatNome, setNovaCatNome] = useState("");
   const [buscarModo, setBuscarModo] = useState<Record<string, boolean>>({});
@@ -1453,6 +1464,7 @@ function ReconcileDialog({ contaId, conta, empresaId, autoConciliar, importing, 
       setSel(new Set());
       setRows({});
       setBuscarModo({});
+      setOcultos(new Set());
       return;
     }
     // Dados frescos a cada abertura: lançamento criado no pagar/receber com o
@@ -1697,7 +1709,8 @@ function ReconcileDialog({ contaId, conta, empresaId, autoConciliar, importing, 
       qc.invalidateQueries({ queryKey: ["lanc-abertos", empresaId] });
       qc.invalidateQueries({ queryKey: ["lancamentos"] });
     },
-    onError: (e: Error) => toast.error(e.message),
+    onMutate: (vars) => ocultar(vars.ofxId),
+    onError: (e: Error, vars) => { mostrar(vars.ofxId); toast.error(e.message); },
   });
 
   const autoRunningRef = useRef(false);
@@ -1720,22 +1733,27 @@ function ReconcileDialog({ contaId, conta, empresaId, autoConciliar, importing, 
     }
     if (!pares.length) return;
     autoRunningRef.current = true;
+    ocultar(...pares.map((p) => p.ofxId));
     (async () => {
       const hoje = format(new Date(), "yyyy-MM-dd");
       let ok = 0;
+      const falharam: string[] = [];
       for (let i = 0; i < pares.length; i += 25) {
         const lote = pares.slice(i, i + 25);
         const res = await Promise.all(lote.map(async (p) => {
           const { error: e1 } = await supabase.from("lancamentos_financeiros")
             .update({ status: "pago", valor_pago: Math.abs(p.valor), data_pagamento: hoje, conta_bancaria_id: contaId })
             .eq("id", p.lancamentoId);
-          if (e1) return false;
+          if (e1) return null;
           const { error: e2 } = await supabase.from("ofx_transacoes")
             .update({ status: "conciliada", lancamento_id: p.lancamentoId }).eq("id", p.ofxId);
-          return !e2;
+          return e2 ? null : p.ofxId;
         }));
-        ok += res.filter(Boolean).length;
+        const bons = res.filter((x): x is string => !!x);
+        ok += bons.length;
+        falharam.push(...lote.filter((p) => !bons.includes(p.ofxId)).map((p) => p.ofxId));
       }
+      mostrar(...falharam);
       if (ok > 0) toast.success(`${ok} lançamento(s) conciliado(s) automaticamente`);
       qc.invalidateQueries({ queryKey: ["ofx", contaId] });
     qc.invalidateQueries({ queryKey: ["ofx-mes", contaId] });
@@ -1783,7 +1801,8 @@ function ReconcileDialog({ contaId, conta, empresaId, autoConciliar, importing, 
       qc.invalidateQueries({ queryKey: ["lancamentos"] });
       qc.invalidateQueries({ queryKey: ["conc-memoria"] });
     },
-    onError: (e: Error, vars) => { if (!vars?.silent) toast.error(e.message); },
+    onMutate: (vars) => ocultar(vars.tx.id),
+    onError: (e: Error, vars) => { mostrar(vars.tx.id); if (!vars?.silent) toast.error(e.message); },
   });
 
   const excluirTx = useMutation({
@@ -1792,13 +1811,14 @@ function ReconcileDialog({ contaId, conta, empresaId, autoConciliar, importing, 
         .delete().in("id", ids).neq("status", "conciliada");
       if (error) throw error;
     },
+    onMutate: (ids) => ocultar(...ids),
+    onError: (e: Error, ids) => { mostrar(...(ids ?? [])); toast.error(e.message); },
     onSuccess: () => {
       toast.success("Lançamento(s) excluído(s) do extrato");
       setSel(new Set());
       qc.invalidateQueries({ queryKey: ["ofx", contaId] });
     qc.invalidateQueries({ queryKey: ["ofx-mes", contaId] });
     },
-    onError: (e: Error) => toast.error(e.message),
   });
 
 
@@ -1830,8 +1850,8 @@ function ReconcileDialog({ contaId, conta, empresaId, autoConciliar, importing, 
   });
 
   const pendentes = useMemo(
-    () => (txs ?? []).filter((t) => t.status !== "conciliada" && t.status !== "arquivada"),
-    [txs],
+    () => (txs ?? []).filter((t) => t.status !== "conciliada" && t.status !== "arquivada" && !ocultos.has(t.id)),
+    [txs, ocultos],
   );
 
   const porMes = pendentes;
@@ -2031,7 +2051,8 @@ function ReconcileDialog({ contaId, conta, empresaId, autoConciliar, importing, 
       qc.invalidateQueries({ queryKey: ["lancamentos"] });
       qc.invalidateQueries({ queryKey: ["conc-memoria"] });
     },
-    onError: (e: Error) => toast.error(e.message),
+    onMutate: (vars) => ocultar(vars.tx.id),
+    onError: (e: Error, vars) => { mostrar(vars.tx.id); toast.error(e.message); },
   });
 
   const conciliarVariosUm = useCallback((t: OfxRow, ids: string[]) => {
@@ -2108,7 +2129,8 @@ function ReconcileDialog({ contaId, conta, empresaId, autoConciliar, importing, 
       qc.invalidateQueries({ queryKey: ["transferencias"] });
       qc.invalidateQueries({ queryKey: ["contas-bancarias"] });
     },
-    onError: (e: Error, vars) => { if (!vars?.silent) toast.error(e.message); },
+    onMutate: (vars) => ocultar(vars.tx.id),
+    onError: (e: Error, vars) => { mostrar(vars.tx.id); if (!vars?.silent) toast.error(e.message); },
   });
 
   const conciliarTransfUm = useCallback((t: OfxRow, r: RowState) => {
