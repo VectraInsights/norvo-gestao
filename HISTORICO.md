@@ -5902,3 +5902,7 @@ pm run build OK.
 
 - Dialogo recarrega lancamentos/transacoes ao abrir e no foco da janela: sugestao de 09/09 p/ banco 11/09 aparece de primeira, sem F5.
 - Sugestao tolera 1 centavo (comparacao em centavos); automatica segue exigindo valor e data exatos.
+
+## Movimentacoes em ordem crescente (14/10)
+
+- Aba Movimentacoes da conta passa a listar os dias em ordem crescente (mais antigo primeiro), na query e no agrupamento.

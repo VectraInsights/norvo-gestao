@@ -221,7 +221,7 @@ function ContaDetalhe({ contaId, contas, empresaId, tabInicial, onVoltar, onSele
         .select("id,descricao,valor,tipo,status,data_vencimento,data_pagamento")
         .eq("conta_bancaria_id", contaId)
         .gte("data_vencimento", mesIni).lte("data_vencimento", mesFim)
-        .order("data_vencimento", { ascending: false }).limit(2000);
+        .order("data_vencimento", { ascending: true }).limit(2000);
       if (error) throw error;
       return (data ?? []) as { id: string; descricao: string; valor: number; tipo: string; status: string; data_vencimento: string; data_pagamento: string | null }[];
     },
@@ -246,7 +246,7 @@ function ContaDetalhe({ contaId, contas, empresaId, tabInicial, onVoltar, onSele
       if (!m.has(dia)) m.set(dia, { dia, rows: [] });
       m.get(dia)!.rows.push(l);
     }
-    return [...m.values()].sort((a, b) => (a.dia < b.dia ? 1 : -1)).map((g) => {
+    return [...m.values()].sort((a, b) => (a.dia < b.dia ? -1 : 1)).map((g) => {
       const net = g.rows.reduce((a, l) => a + (l.tipo === "receber" ? Number(l.valor) : -Number(l.valor)), 0);
       const pend = g.rows.some((l) => ["aberto", "vencido", "parcial"].includes(l.status));
       const dt = new Date(`${g.dia}T00:00:00`);
