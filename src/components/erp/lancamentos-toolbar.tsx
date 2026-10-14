@@ -393,7 +393,7 @@ export function LancamentosToolbar({
       <input
         ref={fileRef}
         type="file"
-        accept=".xlsx,.xls,.csv"
+        accept=".xlsx,.xlsm,.xls,.csv"
         className="hidden"
         onChange={(e) => { const f = e.target.files?.[0]; if (f) importar(f); }}
       />
