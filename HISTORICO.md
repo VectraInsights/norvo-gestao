@@ -5897,3 +5897,8 @@ pm run build OK.
 
 - Importar OFX agora ja concilia os matches exatos antes de abrir a tela (spinner ativo): ao voltar, so resta o pendente + 1 toast combinado (importadas + conciliadas).
 - autoConciliarConta otimizada: match por indice valor+data O(1), busca paginada sem corte de 1000 e gravacao em paralelo (lotes de 25); fallback do dialogo tambem em paralelo.
+
+## Sugestao sem F5 + tolera 1 centavo (14/10)
+
+- Dialogo recarrega lancamentos/transacoes ao abrir e no foco da janela: sugestao de 09/09 p/ banco 11/09 aparece de primeira, sem F5.
+- Sugestao tolera 1 centavo (comparacao em centavos); automatica segue exigindo valor e data exatos.

@@ -1322,10 +1322,12 @@ const emptyRow = (memo: string | null): RowState => ({
   modo: "lancamento", conta_destino_id: "",
 });
 
-// Sugestão de conciliação: mesmo valor e vencimento igual; na falta, o mais
-// próximo em até 3 dias para mais ou para menos (ex.: banco 08/09 x sistema 06/09).
+// Sugestão de conciliação: mesmo valor (tolera 1 centavo de arredondamento) e
+// vencimento igual; na falta, o mais próximo em até 3 dias para mais ou menos
+// (ex.: banco 08/09 x sistema 06/09). A automática continua exigindo centavo e data exatos.
 function sugerirLancamento(tx: OfxRow, lista: LancOpt[]): LancOpt | undefined {
-  const cands = (lista ?? []).filter((l) => Math.abs(Number(l.valor) - Math.abs(Number(tx.valor))) < 0.01);
+  const txCent = Math.round(Math.abs(Number(tx.valor)) * 100);
+  const cands = (lista ?? []).filter((l) => Math.abs(Math.round(Number(l.valor) * 100) - txCent) <= 1);
   const exata = cands.find((l) => l.data_vencimento === tx.data_transacao);
   if (exata) return exata;
   const base = new Date(`${tx.data_transacao}T00:00:00`).getTime();
@@ -1379,8 +1381,15 @@ function ReconcileDialog({ contaId, conta, empresaId, autoConciliar, importing, 
       setSel(new Set());
       setRows({});
       setBuscarModo({});
+      return;
     }
-  }, [open]);
+    // Dados frescos a cada abertura: lançamento criado no pagar/receber com o
+    // diálogo aberto (ou antes dele) senão só apareceria após F5.
+    if (empresaId && contaId) {
+      qc.invalidateQueries({ queryKey: ["lanc-abertos", empresaId] });
+      qc.invalidateQueries({ queryKey: ["ofx", contaId] });
+    }
+  }, [open, empresaId, contaId, qc]);
 
   useEffect(() => {
     if (!open || inline) return;
@@ -1401,6 +1410,8 @@ function ReconcileDialog({ contaId, conta, empresaId, autoConciliar, importing, 
   const { data: txs, isLoading } = useQuery({
     enabled: open && !!empresaId,
     queryKey: ["ofx", contaId] as const,
+    staleTime: 30_000,
+    refetchOnWindowFocus: true,
     queryFn: async (): Promise<OfxRow[]> => {
       const { data, error } = await supabase.from("ofx_transacoes")
         .select("id,data_transacao,valor,tipo,memo,status,lancamento_id")
@@ -1413,6 +1424,8 @@ function ReconcileDialog({ contaId, conta, empresaId, autoConciliar, importing, 
   const { data: lancamentosAbertos } = useQuery({
     enabled: open && !!empresaId,
     queryKey: ["lanc-abertos", empresaId] as const,
+    staleTime: 30_000,
+    refetchOnWindowFocus: true,
     queryFn: async () => {
       // Busca em páginas: sem range, o Supabase corta em 1000; o limit(200) antigo
       // escondia lançamentos (ex.: parcela 05/09 fora dos 200 mais antigos).
