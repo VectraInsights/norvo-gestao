@@ -365,7 +365,7 @@ export function LancamentosToolbar({
     <div className="mb-6 flex flex-wrap items-center gap-2.5 rounded-2xl border bg-card px-4 py-3 shadow-panel">
       {busca && <div className="min-w-[200px] flex-1">{busca}</div>}
       <Button size="sm" variant="outline" className="h-9 rounded-xl px-3.5 shadow-sm transition-all hover:-translate-y-px hover:shadow-md" onClick={baixarModelo}>
-        <FileSpreadsheet className="mr-1.5 h-4 w-4" />Modelo de planilha
+        <FileSpreadsheet className="mr-1.5 h-4 w-4" />Planilha modelo
       </Button>
       <Button size="sm" variant="outline" className="h-9 rounded-xl px-3.5 shadow-sm transition-all hover:-translate-y-px hover:shadow-md" onClick={exportar}>
         <Download className="mr-1.5 h-4 w-4" />Exportar

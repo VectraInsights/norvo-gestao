@@ -5937,3 +5937,7 @@ pm run build OK.
 
 - Regra do dono: so abre centralizado o que ele pedir; resto ocupa a janela inteira. Convertidos 55 DialogContent (detalhes NF-e, cadastros, auditorias, RH, frota, vendas, estoque, financeiro, fiscal).
 - Mantidos pequenos: Cancelar CT-e/MDF-e (unit./lote), Encerrar MDF-e, Cancelar nota fiscal, Exportar CT-e, erro do CT-e, Onde encerrar, Nova categoria (contas/recebidas), Dados da conta.
+
+## Botao Planilha modelo (14/10)
+
+- Rotulo 'Modelo de planilha' vira 'Planilha modelo' (pagar/receber).
