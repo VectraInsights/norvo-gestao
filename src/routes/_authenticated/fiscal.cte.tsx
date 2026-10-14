@@ -6206,7 +6206,7 @@ function CtePage() {
             if (!v) setCteCancelarLote(false);
           }}
         >
-          <DialogContent className="inset-auto left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-[420px] max-w-[calc(100vw-2rem)] h-auto max-h-[90vh] p-4 gap-3 rounded-2xl sm:p-6">
+          <DialogContent className="max-h-[92vh] overflow-y-auto rounded-2xl sm:max-w-6xl sm:inset-auto sm:left-1/2 sm:top-1/2 sm:-translate-x-1/2 sm:-translate-y-1/2 sm:h-auto sm:w-[96vw]">
             <DialogHeader className="gap-1.5 pb-1">
               <DialogTitle className="tracking-tight">Cancelar CT-es selecionados</DialogTitle>
             </DialogHeader>
@@ -6316,7 +6316,7 @@ function CtePage() {
             if (!v) setCteCancelar(null);
           }}
         >
-          <DialogContent className="inset-auto left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-[420px] max-w-[calc(100vw-2rem)] h-auto max-h-[90vh] p-4 gap-3 rounded-2xl sm:p-6">
+          <DialogContent className="max-h-[92vh] overflow-y-auto rounded-2xl sm:max-w-6xl sm:inset-auto sm:left-1/2 sm:top-1/2 sm:-translate-x-1/2 sm:-translate-y-1/2 sm:h-auto sm:w-[96vw]">
             <DialogHeader className="gap-1.5 pb-1">
               <DialogTitle className="tracking-tight">Cancelar CT-e</DialogTitle>
             </DialogHeader>

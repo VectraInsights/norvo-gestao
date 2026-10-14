@@ -5923,3 +5923,7 @@ pm run build OK.
 ## Detalhes da NF-e em tela ampla (14/10)
 
 - Modal de detalhes sai do popup centralizado (max-w-lg) p/ tela ampla (max-w-6xl, 96vw, 92vh); cabecalho em 4 colunas no desktop. Dialog de nova categoria segue pequeno.
+
+## Cancelamentos CT-e/MDF-e em tela cheia (14/10)
+
+- Regra do dono: so centraliza o que ele pedir; demais telas abrem em cheio. Cancelar CT-e (unitario/lote) e Cancelar MDF-e saem do popup 420px/md p/ tela ampla (6xl/96vw). Exportar do CT-e revertido (pequeno).
