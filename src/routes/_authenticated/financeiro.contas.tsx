@@ -2649,7 +2649,7 @@ function BuscarLancamentoDialog({ open, onClose, tx, lancamentos, value, onConfi
           <div className="grid shrink-0 grid-cols-2 gap-2 md:grid-cols-6">
             <div className="md:col-span-2 min-w-0">
               <span className="text-xs text-muted-foreground">Período de vencimento</span>
-              <PeriodoFilter value={periodo} onChange={setPeriodo} className="flex w-full min-w-0" triggerClassName="min-w-0 flex-1 px-2" />
+              <PeriodoFilter value={periodo} onChange={setPeriodo} />
             </div>
             <div>
               <span className="text-xs text-muted-foreground">Pesquisar</span>

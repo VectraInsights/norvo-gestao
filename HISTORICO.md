@@ -5971,3 +5971,7 @@ pm run build OK.
 - Conciliacoes pendentes e total pendente seguem o mes selecionado (setembro nao vaza em outubro); Buscar lancamento trava a janela padrao no mes do extrato.
 - Conciliar com varios so com soma EXATA do banco (botao bloqueado + aviso + trava na mutacao).
 - Voltar p/ aberto ou cancelar desvincilia o extrato (igual a exclusao); reparo unico desfaz vinculos orfaos já existentes.
+
+## Buscar com botao de periodo padrao (14/10)
+
+- Periodo de vencimento do Buscar lancamento usa o PeriodoFilter padrao, identico ao do pagar/receber (com setas de navegacao).
