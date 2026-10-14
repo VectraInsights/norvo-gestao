@@ -197,11 +197,16 @@ function ContaDetalhe({ contaId, contas, empresaId, tabInicial, onVoltar, onSele
 
   const { data: ofxPend } = useQuery({
     enabled: !!contaId,
-    queryKey: ["ofx-pend", contaId] as const,
+    queryKey: ["ofx-pend", contaId, mes] as const,
     queryFn: async () => {
+      // Total acompanha o mês selecionado (mesmo recorte da lista).
+      const ini = `${mes}-01`;
+      const [yy, mm] = mes.split("-").map(Number);
+      const fim = `${mes}-${String(new Date(yy, mm, 0).getDate()).padStart(2, "0")}`;
       const { data, error } = await supabase.from("ofx_transacoes")
         .select("id,data_transacao,valor,tipo,memo,status")
         .eq("conta_bancaria_id", contaId).neq("status", "conciliada")
+        .gte("data_transacao", ini).lte("data_transacao", fim)
         .order("data_transacao", { ascending: false }).limit(1000);
       if (error) throw error;
       return (data ?? []) as { id: string; data_transacao: string; valor: number; tipo: string; memo: string | null; status: string }[];
@@ -254,6 +259,37 @@ function ContaDetalhe({ contaId, contas, empresaId, tabInicial, onVoltar, onSele
   })();
 
   const valorPendente = (ofxPend ?? []).reduce((a, t) => a + Math.abs(Number(t.valor) || 0), 0);
+
+  // Reparo único: extratos "conciliada" cujo lançamento voltou a aberto/vencido/
+  // parcial/cancelado (reaberturas antigas, antes do unlink automático) voltam a
+  // "aberto" para o selo das Movimentações e a pendência voltarem ao correto.
+  useEffect(() => {
+    if (!contaId || !empresaId) return;
+    (async () => {
+      try {
+        const { data: linked } = await supabase.from("ofx_transacoes")
+          .select("id,lancamento_id")
+          .eq("conta_bancaria_id", contaId).eq("status", "conciliada")
+          .not("lancamento_id", "is", null).limit(2000);
+        if (!linked?.length) return;
+        const lancIds = Array.from(new Set(linked.map((l) => l.lancamento_id)));
+        const { data: lancsRep } = await supabase.from("lancamentos_financeiros")
+          .select("id,status").in("id", lancIds);
+        const ruins = new Set(((lancsRep ?? []) as { id: string; status: string }[]).filter((l) => l.status !== "pago").map((l) => l.id));
+        const txRuins = linked.filter((l) => ruins.has(l.lancamento_id)).map((l) => l.id);
+        if (!txRuins.length) return;
+        const { error } = await supabase.from("ofx_transacoes")
+          .update({ status: "aberto", lancamento_id: null }).in("id", txRuins);
+        if (error) return;
+        toast.success(`${txRuins.length} conciliação(ões) desfeita(s) — lançamento em aberto`);
+        qc.invalidateQueries({ queryKey: ["ofx", contaId] });
+        qc.invalidateQueries({ queryKey: ["ofx-pend", contaId] });
+        qc.invalidateQueries({ queryKey: ["ofx-mes", contaId] });
+        qc.invalidateQueries({ queryKey: ["lanc-abertos", empresaId] });
+      } catch { /* reparo é melhor esforço */ }
+    })();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [contaId, empresaId]);
 
   const gruposDia = useMemo(() => {
     type Linha = { lanc: NonNullable<typeof lancs>[number] | null; ofx: NonNullable<typeof ofxMes>[number] | null };
@@ -383,6 +419,8 @@ function ContaDetalhe({ contaId, contas, empresaId, tabInicial, onVoltar, onSele
             onImport={() => onImportar(contaId)}
             onClose={() => {}}
             inline
+            mesIni={mesIni}
+            mesFim={mesFim}
           />
         </TabsContent>
 
@@ -1415,7 +1453,7 @@ function sugerirLancamento(tx: OfxRow, lista: LancOpt[]): LancOpt | undefined {
   return melhor;
 }
 
-function ReconcileDialog({ contaId, conta, empresaId, autoConciliar, importing, onImport, onClose, inline }: { contaId: string | null; conta: ContaBancaria | null; empresaId: string | null; autoConciliar: boolean; importing: boolean; onImport: () => void; onClose: () => void; inline?: boolean }) {  const autoRunRef = useRef<Set<string>>(new Set());
+function ReconcileDialog({ contaId, conta, empresaId, autoConciliar, importing, onImport, onClose, inline, mesIni, mesFim }: { contaId: string | null; conta: ContaBancaria | null; empresaId: string | null; autoConciliar: boolean; importing: boolean; onImport: () => void; onClose: () => void; inline?: boolean; mesIni?: string | null; mesFim?: string | null }) {  const autoRunRef = useRef<Set<string>>(new Set());
   const qc = useQueryClient();
   const open = !!contaId;
 
@@ -1494,13 +1532,18 @@ function ReconcileDialog({ contaId, conta, empresaId, autoConciliar, importing, 
 
   const { data: txs, isLoading } = useQuery({
     enabled: open && !!empresaId,
-    queryKey: ["ofx", contaId] as const,
+    queryKey: ["ofx", contaId, mesIni ?? "all", mesFim ?? "all"] as const,
     staleTime: 30_000,
     refetchOnWindowFocus: true,
     queryFn: async (): Promise<OfxRow[]> => {
-      const { data, error } = await supabase.from("ofx_transacoes")
+      // Com mês (aba Conciliações pendentes): só o mês selecionado — setembro
+      // não pode vazar em outubro. Sem mês (modal antigo): tudo pendente.
+      let qb = supabase.from("ofx_transacoes")
         .select("id,data_transacao,valor,tipo,memo,status,lancamento_id")
-        .eq("conta_bancaria_id", contaId!).order("data_transacao", { ascending: false }).limit(1000);
+        .eq("conta_bancaria_id", contaId!);
+      if (mesIni) qb = qb.gte("data_transacao", mesIni);
+      if (mesFim) qb = qb.lte("data_transacao", mesFim);
+      const { data, error } = await qb.order("data_transacao", { ascending: false }).limit(1000);
       if (error) throw error;
       return data ?? [];
     },
@@ -2031,6 +2074,9 @@ function ReconcileDialog({ contaId, conta, empresaId, autoConciliar, importing, 
       if (!empresaId || !contaId) throw new Error("Empresa não selecionada");
       if (!ids.length) throw new Error("Selecione ao menos um lançamento");
       const mapa = new Map((lancamentosAbertos ?? []).map((l) => [l.id, l]));
+      const soma = ids.reduce((s, id) => s + (Number(mapa.get(id)?.valor) || 0), 0);
+      if (Math.round(soma * 100) !== Math.round(Math.abs(Number(tx.valor)) * 100))
+        throw new Error(`A soma selecionada (${brl(soma)}) não fecha com o valor do banco (${brl(Math.abs(Number(tx.valor)))})`);
       for (const id of ids) {
         const alvo = mapa.get(id);
         const vp = Math.abs(Number(alvo?.valor) || Math.abs(tx.valor));
@@ -2458,12 +2504,15 @@ function BuscarLancamentoDialog({ open, onClose, tx, lancamentos, value, onConfi
   logoBanco?: string | null;
 }) {
   const [q, setQ] = useState("");
-  // Período igual ao do Contas a pagar/receber (PeriodoFilter); padrão: janela de 3 dias até o vencimento do banco.
+  // Período igual ao do Contas a pagar/receber (PeriodoFilter); padrão: janela de 3 dias
+  // até o vencimento do banco, travada no mês do lançamento (setembro não vaza em outubro).
   const janelaPadrao = (dataTx: string): Periodo => {
     const b = new Date(`${dataTx}T00:00:00`);
     if (Number.isNaN(b.getTime())) return { from: null, to: null, label: "Todo o período" };
     const from = new Date(b.getTime() - 3 * 86400000);
-    return { from, to: b, label: `${format(from, "dd/MM/yyyy")} — ${format(b, "dd/MM/yyyy")}` };
+    const iniMes = new Date(b.getFullYear(), b.getMonth(), 1);
+    const f = from < iniMes ? iniMes : from;
+    return { from: f, to: b, label: `${format(f, "dd/MM/yyyy")} — ${format(b, "dd/MM/yyyy")}` };
   };
   const [periodo, setPeriodo] = useState<Periodo>(() => janelaPadrao(tx.data_transacao));
   const [contaF, setContaF] = useState("todas");
@@ -2567,6 +2616,8 @@ function BuscarLancamentoDialog({ open, onClose, tx, lancamentos, value, onConfi
   const vBanco = Math.abs(Number(tx.valor) || 0);
   const vSel = escolhidos.reduce((s, l) => s + (Number(l.valor) || 0), 0);
   const dif = Math.round((vBanco - vSel) * 100) / 100;
+  // Conciliar com vários só quando a soma fecha EXATA com o banco (nem mais, nem menos).
+  const bateValor = selIds.length > 0 && Math.round(vBanco * 100) === Math.round(vSel * 100);
 
   return (
     <Dialog open={open} onOpenChange={(o) => { if (!o) onClose(); }}>
@@ -2791,9 +2842,14 @@ function BuscarLancamentoDialog({ open, onClose, tx, lancamentos, value, onConfi
               <span className={`text-tabular font-bold ${dif === 0 && selIds.length ? "text-success" : "text-amber-600 dark:text-amber-400"}`}>{brl(dif)}</span>
             </div>
             <Button variant="outline" onClick={onClose}>Cancelar</Button>
-            <Button disabled={!selIds.length} onClick={() => onConfirm(selIds)}>
+            <Button disabled={!bateValor} title={!bateValor ? `Selecione lançamentos que somem exatamente ${brl(vBanco)}` : undefined} onClick={() => onConfirm(selIds)}>
               <Check className="mr-1 h-4 w-4" />Conciliar{selIds.length > 1 ? ` (${selIds.length})` : ""}
             </Button>
+            {selIds.length > 0 && !bateValor && (
+              <span className="w-full text-xs font-medium text-amber-600 dark:text-amber-400">
+                A soma precisa fechar exatamente {brl(vBanco)} para conciliar.
+              </span>
+            )}
           </div>
         </div>
       </DialogContent>

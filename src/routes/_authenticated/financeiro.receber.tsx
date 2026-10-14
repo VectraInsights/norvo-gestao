@@ -440,6 +440,17 @@ export function LancamentosPage({ tipo }: { tipo: "receber" | "pagar" }) {
         const { error } = await supabase.from("lancamentos_financeiros").update(patch).in("id", lote);
         if (error) throw error;
       });
+      // Reabrir/cancelar desfaz a conciliação: o extrato volta a "aberto"
+      // (senão o movimento segue "Conciliada" nas Movimentações).
+      if (status !== "pago") {
+        await emLotes(ids, async (lote) => {
+          const { error: eOfx } = await supabase
+            .from("ofx_transacoes")
+            .update({ status: "aberto", lancamento_id: null })
+            .in("lancamento_id", lote);
+          if (eOfx) throw eOfx;
+        });
+      }
     },
     onSuccess: (_d, vars) => {
       toast.success("Status alterado");

@@ -5965,3 +5965,9 @@ pm run build OK.
 ## Conciliada some na hora, sem piscar (14/10)
 
 - Concilio a 1a com sugestao e piscava uma linha sem sugestao: refetch das sugestoes chegava antes do refetch do extrato. Linha conciliada/excluida agora some na hora (otimista, vale p/ unitario, varios, transferencia, lote e automatica); se falhar, ela volta com o erro.
+
+## Mes correto + soma exata + reabrir desvincilia (14/10)
+
+- Conciliacoes pendentes e total pendente seguem o mes selecionado (setembro nao vaza em outubro); Buscar lancamento trava a janela padrao no mes do extrato.
+- Conciliar com varios so com soma EXATA do banco (botao bloqueado + aviso + trava na mutacao).
+- Voltar p/ aberto ou cancelar desvincilia o extrato (igual a exclusao); reparo unico desfaz vinculos orfaos já existentes.
