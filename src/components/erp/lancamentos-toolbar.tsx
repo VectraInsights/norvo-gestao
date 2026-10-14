@@ -331,26 +331,27 @@ export function LancamentosToolbar({
       const contaId = contaSel === "__none" ? null : contaSel;
       const inserts = pending.inserts.map((i) => ({ ...i, conta_bancaria_id: contaId }));
 
-      // Dedup contra existentes
+      // Dedup SOMENTE contra o que já está no banco (tipo + emissão inclusos).
+      // Gêmeos idênticos na planilha (ex.: dois rendimentos de R$ 0,04 no mesmo dia)
+      // são lançamentos legítimos e entram os dois; reimportar a planilha segue
+      // seguro porque o que já foi importado está no banco e cai aqui.
       const vencs = Array.from(new Set(inserts.map((i) => i.data_vencimento)));
       const { data: existentes } = await supabase
         .from("lancamentos_financeiros")
-        .select("descricao,data_vencimento,valor")
+        .select("descricao,data_vencimento,valor,tipo,data_emissao")
         .eq("empresa_id", empresaId)
         .in("data_vencimento", vencs);
-      const chave = (d: string, v: string, val: number) =>
-        `${d.trim().toLowerCase()}|${v}|${Number(val).toFixed(2)}`;
-      const existSet = new Set((existentes ?? []).map((e) => chave(e.descricao, e.data_vencimento, Number(e.valor))));
-      const seen = new Set<string>();
+      const chave = (e: { descricao: string; data_vencimento: string; valor: number; tipo?: string; data_emissao?: string | null }) =>
+        `${e.tipo ?? ""}|${e.descricao.trim().toLowerCase()}|${e.data_vencimento}|${e.data_emissao ?? ""}|${Number(e.valor).toFixed(2)}`;
+      const existSet = new Set((existentes ?? []).map((e) => chave(e as { descricao: string; data_vencimento: string; valor: number; tipo?: string; data_emissao?: string | null })));
       const novos: Insert[] = [];
       const duplicados: string[] = [];
       inserts.forEach((ins) => {
-        const k = chave(ins.descricao, ins.data_vencimento, ins.valor);
-        if (existSet.has(k) || seen.has(k)) {
+        const k = chave(ins);
+        if (existSet.has(k)) {
           duplicados.push(`${ins.descricao} — ${format(new Date(ins.data_vencimento), "dd/MM/yyyy")} — R$ ${ins.valor.toFixed(2)}`);
           return;
         }
-        seen.add(k);
         novos.push(ins);
       });
 

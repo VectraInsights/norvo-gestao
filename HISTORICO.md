@@ -5949,3 +5949,7 @@ pm run build OK.
 ## Importacao aceita .xlsm (14/10)
 
 - Seletor de arquivo da importacao passa a aceitar .xlsm (leitura igual ao .xlsx).
+
+## Importacao sem matar gemeos (14/10)
+
+- 225 viravam 224: chave descricao+data+valor descartava o 2o rendimento identico de R$ 0,04. Trava dentro da planilha removida (gemeos entram os dois); dedup agora e so contra o banco, com tipo+emissao na chave. Reimportar segue seguro.
