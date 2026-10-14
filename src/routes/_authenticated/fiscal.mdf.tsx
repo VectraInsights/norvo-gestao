@@ -713,7 +713,7 @@ function MdfPage() {
 
       {mdfCancelar && (
         <Dialog open={openCancelar} onOpenChange={setOpenCancelar}>
-          <DialogContent className="max-h-[92vh] overflow-y-auto rounded-2xl sm:max-w-6xl sm:inset-auto sm:left-1/2 sm:top-1/2 sm:-translate-x-1/2 sm:-translate-y-1/2 sm:h-auto sm:w-[96vw]">
+          <DialogContent className="max-h-[90vh] overflow-y-auto rounded-2xl sm:max-w-md sm:inset-auto sm:left-1/2 sm:top-1/2 sm:-translate-x-1/2 sm:-translate-y-1/2 sm:h-auto sm:w-full">
             <DialogHeader className="gap-1.5 pb-1"><DialogTitle className="tracking-tight">Cancelar MDF-e #{mdfCancelar.numero}</DialogTitle></DialogHeader>
             <div className="space-y-2">
               <div className="grid gap-1.5">

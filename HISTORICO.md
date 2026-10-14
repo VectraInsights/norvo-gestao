@@ -5927,3 +5927,8 @@ pm run build OK.
 ## Cancelamentos CT-e/MDF-e em tela cheia (14/10)
 
 - Regra do dono: so centraliza o que ele pedir; demais telas abrem em cheio. Cancelar CT-e (unitario/lote) e Cancelar MDF-e saem do popup 420px/md p/ tela ampla (6xl/96vw). Exportar do CT-e revertido (pequeno).
+
+## Cancelamentos CT-e/MDF-e voltam a pequenos (14/10)
+
+- Correcao de entendimento: Cancelar CT-e (unitario/lote) e Cancelar MDF-e sao centralizados pequenos; revertida a ida p/ tela cheia.
+- Aproveitado: removido className duplicado no DialogContent do formulario de CT-e (valia o 2o em runtime; visual inalterado, -1 erro tsc).
