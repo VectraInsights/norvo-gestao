@@ -5906,3 +5906,8 @@ pm run build OK.
 ## Movimentacoes em ordem crescente (14/10)
 
 - Aba Movimentacoes da conta passa a listar os dias em ordem crescente (mais antigo primeiro), na query e no agrupamento.
+
+## Movimentacoes estilo Conta Azul (14/10)
+
+- Aba Movimentacoes vira cartoes por dia (data + dia da semana, total e chevron) com tabela Lançado no sistema x Movimentado no banco: descricao+categoria, valores coloridos, selo Conciliada/Pendente, Acoes > Conciliar e rodape Totais do dia (sistema, banco, diferenca).
+- Dia passa a incluir linhas so-banco sem vinculo; pendencia do dia = lancamento em aberto ou OFX nao conciliado.

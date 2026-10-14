@@ -218,12 +218,28 @@ function ContaDetalhe({ contaId, contas, empresaId, tabInicial, onVoltar, onSele
     queryKey: ["lancs-conta", contaId, mes] as const,
     queryFn: async () => {
       const { data, error } = await supabase.from("lancamentos_financeiros")
-        .select("id,descricao,valor,tipo,status,data_vencimento,data_pagamento")
+        .select("id,descricao,valor,tipo,status,data_vencimento,data_pagamento,categoria_id,categoria:categorias_financeiras(nome)")
         .eq("conta_bancaria_id", contaId)
         .gte("data_vencimento", mesIni).lte("data_vencimento", mesFim)
         .order("data_vencimento", { ascending: true }).limit(2000);
       if (error) throw error;
-      return (data ?? []) as { id: string; descricao: string; valor: number; tipo: string; status: string; data_vencimento: string; data_pagamento: string | null }[];
+      return (data ?? []) as { id: string; descricao: string; valor: number; tipo: string; status: string; data_vencimento: string; data_pagamento: string | null; categoria_id: string | null; categoria: { nome: string } | null }[];
+    },
+  });
+
+  // Extrato do mês (sistema × banco lado a lado, como na referência): inclui as
+  // conciliadas com o vínculo do lançamento.
+  const { data: ofxMes } = useQuery({
+    enabled: !!contaId,
+    queryKey: ["ofx-mes", contaId, mes] as const,
+    queryFn: async () => {
+      const { data, error } = await supabase.from("ofx_transacoes")
+        .select("id,data_transacao,valor,memo,status,lancamento_id")
+        .eq("conta_bancaria_id", contaId)
+        .gte("data_transacao", mesIni).lte("data_transacao", mesFim)
+        .order("data_transacao").limit(2000);
+      if (error) throw error;
+      return (data ?? []) as { id: string; data_transacao: string; valor: number; memo: string | null; status: string; lancamento_id: string | null }[];
     },
   });
 
@@ -240,23 +256,33 @@ function ContaDetalhe({ contaId, contas, empresaId, tabInicial, onVoltar, onSele
   const valorPendente = (ofxPend ?? []).reduce((a, t) => a + Math.abs(Number(t.valor) || 0), 0);
 
   const gruposDia = useMemo(() => {
-    const m = new Map<string, { dia: string; rows: NonNullable<typeof lancs> }>();
-    for (const l of lancs ?? []) {
-      const dia = (l.data_vencimento || "").slice(0, 10);
-      if (!m.has(dia)) m.set(dia, { dia, rows: [] });
-      m.get(dia)!.rows.push(l);
-    }
-    return [...m.values()].sort((a, b) => (a.dia < b.dia ? -1 : 1)).map((g) => {
-      const net = g.rows.reduce((a, l) => a + (l.tipo === "receber" ? Number(l.valor) : -Number(l.valor)), 0);
-      const pend = g.rows.some((l) => ["aberto", "vencido", "parcial"].includes(l.status));
-      const dt = new Date(`${g.dia}T00:00:00`);
+    type Linha = { lanc: NonNullable<typeof lancs>[number] | null; ofx: NonNullable<typeof ofxMes>[number] | null };
+    const ofxPorLanc = new Map<string, NonNullable<typeof ofxMes>[number]>();
+    for (const o of ofxMes ?? []) if (o.lancamento_id) ofxPorLanc.set(o.lancamento_id, o);
+    const m = new Map<string, Linha[]>();
+    const push = (dia: string, linha: Linha) => {
+      if (!dia) return;
+      const arr = m.get(dia);
+      if (arr) arr.push(linha); else m.set(dia, [linha]);
+    };
+    for (const l of lancs ?? []) push((l.data_vencimento || "").slice(0, 10), { lanc: l, ofx: ofxPorLanc.get(l.id) ?? null });
+    // Só-banco (sem vínculo): entra com o lado do sistema vazio.
+    for (const o of ofxMes ?? []) if (!o.lancamento_id) push((o.data_transacao || "").slice(0, 10), { lanc: null, ofx: o });
+    return [...m.entries()].sort(([a], [b]) => (a < b ? -1 : 1)).map(([dia, linhas]) => {
+      const totSistema = linhas.reduce((a, r) => a + (r.lanc ? (r.lanc.tipo === "receber" ? Number(r.lanc.valor) : -Number(r.lanc.valor)) : 0), 0);
+      const totBanco = linhas.reduce((a, r) => a + (r.ofx ? Number(r.ofx.valor) : 0), 0);
+      const pend = linhas.some((r) =>
+        (r.lanc && ["aberto", "vencido", "parcial"].includes(r.lanc.status)) ||
+        (r.ofx && r.ofx.status !== "conciliada"));
+      const dt = new Date(`${dia}T00:00:00`);
+      const semana = dt.toLocaleDateString("pt-BR", { weekday: "long" });
       return {
-        ...g, net, pend,
+        dia, rows: linhas, totSistema, totBanco, dif: totSistema - totBanco, pend,
         rotulo: dt.toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit", year: "numeric" }),
-        semana: dt.toLocaleDateString("pt-BR", { weekday: "long" }),
+        semana: semana.charAt(0).toUpperCase() + semana.slice(1),
       };
     });
-  }, [lancs]);
+  }, [lancs, ofxMes]);
   const diasComPend = gruposDia.filter((g) => g.pend).length;
 
   const toggleDia = (dia: string) => {
@@ -384,37 +410,104 @@ function ContaDetalhe({ contaId, contas, empresaId, tabInicial, onVoltar, onSele
                 <EmptyState icon={Banknote} title="Sem movimentações" description={`Nenhum lançamento nesta conta em ${mesLabel}.`} />
               </div>
             ) : (
-              <div className="divide-y divide-border/60">
-                {gruposDia.map((g) => (
-                  <div key={g.dia}>
-                    <button className="flex w-full items-center gap-3 px-4 py-3 text-left transition-colors hover:bg-accent/40 sm:px-5" onClick={() => toggleDia(g.dia)}>
-                      <span className="text-sm font-semibold">{g.rotulo}</span>
-                      <span className="text-xs capitalize text-muted-foreground">{g.semana}</span>
-                      {g.pend && (
-                        <span className="rounded-full bg-warning/15 px-2.5 py-1 text-[11px] font-medium text-warning-foreground shadow-sm">pendente</span>
-                      )}
-                      <span className={`ml-auto text-tabular text-sm font-bold ${g.net < 0 ? "text-destructive" : "text-foreground"}`}>
-                        {brl(g.net)}
+              <div className="space-y-3 p-4 sm:p-5">
+                {gruposDia.map((g) => {
+                  const aberto = expand.has(g.dia);
+                  return (
+                  <div key={g.dia} className="overflow-hidden rounded-xl border bg-card shadow-sm">
+                    <button className="flex w-full items-center gap-2.5 px-4 py-3 text-left transition-colors hover:bg-accent/40" onClick={() => toggleDia(g.dia)}>
+                      <span className="text-sm font-bold">{g.rotulo}</span>
+                      <span className="text-xs text-muted-foreground">{g.semana}</span>
+                      <span className="ml-auto text-right">
+                        <span className="block text-[11px] font-medium text-muted-foreground">{conta?.nome ?? conta?.banco ?? ""}</span>
+                        <span className={`text-tabular text-sm font-bold ${g.totSistema < 0 ? "text-destructive" : "text-foreground"}`}>
+                          {brl(g.totSistema)}
+                        </span>
                       </span>
-                      <ChevronRight className={`h-4 w-4 shrink-0 text-muted-foreground transition-transform ${expand.has(g.dia) ? "rotate-90" : ""}`} />
+                      <ChevronDown className={`h-4 w-4 shrink-0 text-muted-foreground transition-transform ${aberto ? "rotate-180" : ""}`} />
                     </button>
-                    {expand.has(g.dia) && (
-                      <div className="border-t border-border/60 bg-muted/20">
-                        {g.rows.map((l) => (
-                          <div key={l.id} className="flex items-center gap-3 px-4 py-2 text-sm sm:px-8">
-                            <span className="min-w-0 flex-1 truncate">{l.descricao || "—"}</span>
-                            <span className={`shrink-0 rounded-full px-2.5 py-1 text-[11px] font-medium shadow-sm ${l.status === "pago" || l.status === "conciliada" ? "bg-success/10 text-success" : l.status === "vencido" ? "bg-destructive/10 text-destructive" : "bg-muted text-muted-foreground"}`}>
-                              {l.status}
-                            </span>
-                            <span className={`shrink-0 text-tabular font-semibold ${l.tipo === "receber" ? "text-success" : "text-destructive"}`}>
-                              {l.tipo === "receber" ? "+" : "-"}{brl(Number(l.valor))}
-                            </span>
+                    {aberto && (
+                      <div className="border-t border-border/60">
+                        <div className="overflow-x-auto">
+                          <div className="min-w-[840px]">
+                            <div className="grid grid-cols-[minmax(0,1.5fr)_110px_minmax(0,1.5fr)_110px_120px_96px] gap-2 bg-muted/40 px-4 py-2 text-center text-xs font-semibold text-muted-foreground">
+                              <span className="col-span-2">Lançado no sistema</span>
+                              <span className="col-span-4">Movimentado no banco</span>
+                            </div>
+                            <div className="grid grid-cols-[minmax(0,1.5fr)_110px_minmax(0,1.5fr)_110px_120px_96px] gap-2 border-y border-border/60 bg-muted/20 px-4 py-1.5 text-[11px] font-medium text-muted-foreground">
+                              <span>Descrição no sistema</span>
+                              <span className="text-right">Valor (R$)</span>
+                              <span>Descrição no banco</span>
+                              <span className="text-right">Valor (R$)</span>
+                              <span className="text-center">Conciliação</span>
+                              <span />
+                            </div>
+                            <div className="divide-y divide-border/40">
+                              {g.rows.map((r) => {
+                                const conc = !!r.ofx && r.ofx.status === "conciliada";
+                                const bv = r.ofx ? Number(r.ofx.valor) : 0;
+                                return (
+                                <div key={r.lanc?.id ?? `ofx-${r.ofx?.id}`} className="grid grid-cols-[minmax(0,1.5fr)_110px_minmax(0,1.5fr)_110px_120px_96px] items-center gap-2 px-4 py-2 text-[13px] transition-colors hover:bg-primary/[0.05]">
+                                  <div className="min-w-0">
+                                    <div className="truncate font-medium" title={r.lanc?.descricao ?? ""}>{r.lanc?.descricao || "—"}</div>
+                                    <div className="truncate text-[11px] text-muted-foreground">{r.lanc?.categoria?.nome ?? (r.lanc ? r.lanc.status : "")}</div>
+                                  </div>
+                                  <span className={`text-tabular text-right font-semibold ${!r.lanc ? "text-muted-foreground" : r.lanc.tipo === "receber" ? "text-success" : "text-destructive"}`}>
+                                    {r.lanc ? `${r.lanc.tipo === "receber" ? "+" : "-"}${brl(Math.abs(Number(r.lanc.valor))).replace("R$", "").replace("- ", "-").trim()}` : "—"}
+                                  </span>
+                                  <div className="min-w-0 truncate text-muted-foreground" title={r.ofx?.memo ?? ""}>{r.ofx?.memo || "—"}</div>
+                                  <span className={`text-tabular text-right font-semibold ${!r.ofx ? "text-muted-foreground" : bv < 0 ? "text-destructive" : bv > 0 ? "text-success" : "text-muted-foreground"}`}>
+                                    {r.ofx ? `${bv < 0 ? "-" : ""}${brl(Math.abs(bv)).replace("R$", "").replace("- ", "-").trim()}` : "—"}
+                                  </span>
+                                  <span className="text-center">
+                                    {conc ? (
+                                      <span className="inline-block rounded-md bg-sky-100 px-2.5 py-1 text-[11px] font-semibold text-sky-700 dark:bg-sky-500/15 dark:text-sky-300">Conciliada</span>
+                                    ) : (
+                                      <span className="inline-block rounded-md bg-warning/15 px-2.5 py-1 text-[11px] font-semibold text-warning-foreground">Pendente</span>
+                                    )}
+                                  </span>
+                                  <span className="text-right">
+                                    {!conc && (
+                                      <DropdownMenu>
+                                        <DropdownMenuTrigger asChild>
+                                          <Button variant="outline" size="sm" className="h-7 rounded-lg text-xs">Ações <ChevronDown className="ml-1 h-3 w-3" /></Button>
+                                        </DropdownMenuTrigger>
+                                        <DropdownMenuContent align="end">
+                                          <DropdownMenuItem onClick={() => setTab("pendentes")}>
+                                            <Link2 className="mr-2 h-3.5 w-3.5" />Conciliar
+                                          </DropdownMenuItem>
+                                        </DropdownMenuContent>
+                                      </DropdownMenu>
+                                    )}
+                                  </span>
+                                </div>
+                                );
+                              })}
+                            </div>
+                            <div className="flex flex-wrap items-center gap-x-8 gap-y-1 border-t border-border/60 bg-muted/30 px-4 py-2.5">
+                              <span className="text-sm font-bold">Totais do dia</span>
+                              <span className="ml-auto flex items-center gap-x-8">
+                                <span className="text-right">
+                                  <span className="block text-[10px] font-medium uppercase tracking-wide text-muted-foreground">Sistema (R$)</span>
+                                  <span className="text-tabular text-[13px] font-bold">{brl(g.totSistema).replace("R$", "").replace("- ", "-").trim()}</span>
+                                </span>
+                                <span className="text-right">
+                                  <span className="block text-[10px] font-medium uppercase tracking-wide text-muted-foreground">Banco (R$)</span>
+                                  <span className="text-tabular text-[13px] font-bold">{brl(g.totBanco).replace("R$", "").replace("- ", "-").trim()}</span>
+                                </span>
+                                <span className="text-right">
+                                  <span className="block text-[10px] font-medium uppercase tracking-wide text-muted-foreground">Diferença (R$)</span>
+                                  <span className={`text-tabular text-[13px] font-bold ${Math.abs(g.dif) < 0.01 ? "text-muted-foreground" : "text-amber-600 dark:text-amber-400"}`}>{brl(g.dif).replace("R$", "").replace("- ", "-").trim()}</span>
+                                </span>
+                              </span>
+                            </div>
                           </div>
-                        ))}
+                        </div>
                       </div>
                     )}
                   </div>
-                ))}
+                  );
+                })}
               </div>
             )}
           </Card>
@@ -517,6 +610,8 @@ function ContasFinanceiras() {
         if (ok > 0) {
           toast.success(`${ok} lançamento(s) conciliado(s) automaticamente`);
           qc.invalidateQueries({ queryKey: ["ofx", detalheId] });
+          qc.invalidateQueries({ queryKey: ["ofx-mes", detalheId] });
+          qc.invalidateQueries({ queryKey: ["lancs-conta", detalheId] });
           qc.invalidateQueries({ queryKey: ["lanc-abertos", empresa.id] });
           qc.invalidateQueries({ queryKey: ["lancamentos"] });
         }
@@ -770,6 +865,7 @@ function ContasFinanceiras() {
       (autoOk > 0 ? ` · ${autoOk} conciliada(s) automaticamente` : ""),
     );
     qc.invalidateQueries({ queryKey: ["ofx", contaId] });
+    qc.invalidateQueries({ queryKey: ["ofx-mes", contaId] });
     qc.invalidateQueries({ queryKey: ["ofx-pend", contaId] });
     qc.invalidateQueries({ queryKey: ["lanc-abertos", empresa?.id] });
     qc.invalidateQueries({ queryKey: ["lancamentos"] });
@@ -1388,6 +1484,7 @@ function ReconcileDialog({ contaId, conta, empresaId, autoConciliar, importing, 
     if (empresaId && contaId) {
       qc.invalidateQueries({ queryKey: ["lanc-abertos", empresaId] });
       qc.invalidateQueries({ queryKey: ["ofx", contaId] });
+    qc.invalidateQueries({ queryKey: ["ofx-mes", contaId] });
     }
   }, [open, empresaId, contaId, qc]);
 
@@ -1620,6 +1717,7 @@ function ReconcileDialog({ contaId, conta, empresaId, autoConciliar, importing, 
     onSuccess: () => {
       toast.success("Transação conciliada");
       qc.invalidateQueries({ queryKey: ["ofx", contaId] });
+    qc.invalidateQueries({ queryKey: ["ofx-mes", contaId] });
       qc.invalidateQueries({ queryKey: ["lanc-abertos", empresaId] });
       qc.invalidateQueries({ queryKey: ["lancamentos"] });
     },
@@ -1664,6 +1762,7 @@ function ReconcileDialog({ contaId, conta, empresaId, autoConciliar, importing, 
       }
       if (ok > 0) toast.success(`${ok} lançamento(s) conciliado(s) automaticamente`);
       qc.invalidateQueries({ queryKey: ["ofx", contaId] });
+    qc.invalidateQueries({ queryKey: ["ofx-mes", contaId] });
       qc.invalidateQueries({ queryKey: ["lanc-abertos", empresaId] });
       qc.invalidateQueries({ queryKey: ["lancamentos"] });
       autoRunningRef.current = false;
@@ -1703,6 +1802,7 @@ function ReconcileDialog({ contaId, conta, empresaId, autoConciliar, importing, 
     onSuccess: (_d, vars) => {
       if (!vars?.silent) toast.success("Lançamento conciliado");
       qc.invalidateQueries({ queryKey: ["ofx", contaId] });
+    qc.invalidateQueries({ queryKey: ["ofx-mes", contaId] });
       qc.invalidateQueries({ queryKey: ["lanc-abertos", empresaId] });
       qc.invalidateQueries({ queryKey: ["lancamentos"] });
       qc.invalidateQueries({ queryKey: ["conc-memoria"] });
@@ -1720,6 +1820,7 @@ function ReconcileDialog({ contaId, conta, empresaId, autoConciliar, importing, 
       toast.success("Lançamento(s) excluído(s) do extrato");
       setSel(new Set());
       qc.invalidateQueries({ queryKey: ["ofx", contaId] });
+    qc.invalidateQueries({ queryKey: ["ofx-mes", contaId] });
     },
     onError: (e: Error) => toast.error(e.message),
   });
@@ -1743,6 +1844,7 @@ function ReconcileDialog({ contaId, conta, empresaId, autoConciliar, importing, 
     onSuccess: (r) => {
       toast.success(`Extrato removido — ${r.lancs} lançamento(s) excluído(s)`);
       qc.invalidateQueries({ queryKey: ["ofx", contaId] });
+    qc.invalidateQueries({ queryKey: ["ofx-mes", contaId] });
       qc.invalidateQueries({ queryKey: ["lanc-abertos", empresaId] });
       qc.invalidateQueries({ queryKey: ["lancamentos"] });
       qc.invalidateQueries({ queryKey: ["contas-bancarias"] });
@@ -1948,6 +2050,7 @@ function ReconcileDialog({ contaId, conta, empresaId, autoConciliar, importing, 
     onSuccess: (_d, vars) => {
       toast.success(`${vars.ids.length} lançamentos conciliados`);
       qc.invalidateQueries({ queryKey: ["ofx", contaId] });
+    qc.invalidateQueries({ queryKey: ["ofx-mes", contaId] });
       qc.invalidateQueries({ queryKey: ["lanc-abertos", empresaId] });
       qc.invalidateQueries({ queryKey: ["lancamentos"] });
       qc.invalidateQueries({ queryKey: ["conc-memoria"] });
@@ -2022,6 +2125,7 @@ function ReconcileDialog({ contaId, conta, empresaId, autoConciliar, importing, 
     onSuccess: (_d, vars) => {
       if (!vars?.silent) toast.success("Transferência conciliada");
       qc.invalidateQueries({ queryKey: ["ofx", contaId] });
+    qc.invalidateQueries({ queryKey: ["ofx-mes", contaId] });
       qc.invalidateQueries({ queryKey: ["lanc-abertos", empresaId] });
       qc.invalidateQueries({ queryKey: ["lancamentos"] });
       qc.invalidateQueries({ queryKey: ["conc-memoria"] });
