@@ -202,6 +202,21 @@ function MdfPage() {
   const [autSel, setAutSel] = useState<Set<string>>(new Set());
   const [confLoteRasc, setConfLoteRasc] = useState(false);
   const [confLoteCanc, setConfLoteCanc] = useState(false);
+
+  // Delete abre a confirmação de excluir rascunhos selecionados.
+  useEffect(() => {
+    if (rascSel.size === 0) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key !== "Delete") return;
+      const t = e.target as HTMLElement;
+      if (t && (t.tagName === "INPUT" || t.tagName === "TEXTAREA" || t.tagName === "SELECT" || t.isContentEditable)) return;
+      if (document.querySelector('[role="dialog"]')) return;
+      e.preventDefault();
+      setConfLoteRasc(true);
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [rascSel.size]);
   const [justLote, setJustLote] = useState("ERRO DE EMISSAO DO MDF-E");
   const [loteMdfProc, setLoteMdfProc] = useState(false);
   const trocarAbaMdf = (v: string) => { setFiltroStatus(v); setRascSel(new Set()); setAutSel(new Set()); };

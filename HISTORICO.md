@@ -5988,3 +5988,9 @@ pm run build OK.
 ## CNPJ com zero na importacao (14/10)
 
 - 02116946000143 virava 2116946000143 (13 digitos, depois travava o cadastro): celula numerica do Excel perde o zero. Importacao restaura pelo tamanho (10->11 CPF, 12/13->14 CNPJ).
+
+## Delete geral + CNPJ em fundo + ordenacao (14/10)
+
+- Delete abre/executa a exclusao em: pagar/receber (lote), clientes (lote), cadastros fiscais (lote), MDF-e (rascunhos) e conciliação do extrato; ignora digitacao e dialogos abertos.
+- Importacao completa contatos novos via CNPJ no fundo (razao/email/tel/endereco, sem trocar o nome da planilha).
+- Clientes e fornecedores com NOME/TIPO/DOCUMENTO/CONTATO clicaveis p/ ordenar.

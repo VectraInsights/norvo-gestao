@@ -9,10 +9,10 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
-import { Loader2, Plus, Search, Trash2, Users, Pencil } from "lucide-react";
+import { ArrowDown, ArrowUp, ArrowUpDown, Loader2, Plus, Search, Trash2, Users, Pencil } from "lucide-react";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEmpresaAtual } from "@/hooks/use-empresa";
@@ -53,8 +53,24 @@ function Clientes() {
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [editing, setEditing] = useState<Contato | null>(null);
   const [deleting, setDeleting] = useState<Contato | null>(null);
+  const [confLote, setConfLote] = useState(false);
   const [busca, setBusca] = useState("");
   const toggleOne = (id: string) => setSelected((s) => { const n = new Set(s); n.has(id) ? n.delete(id) : n.add(id); return n; });
+
+  // Delete abre a confirmação de excluir selecionados.
+  useEffect(() => {
+    if (selected.size === 0) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key !== "Delete") return;
+      const t = e.target as HTMLElement;
+      if (t && (t.tagName === "INPUT" || t.tagName === "TEXTAREA" || t.tagName === "SELECT" || t.isContentEditable)) return;
+      if (document.querySelector('[role="dialog"]')) return;
+      e.preventDefault();
+      setConfLote(true);
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [selected.size]);
 
   const lookupCnpj = async () => {
     const digits = onlyDigits(form.documento);
@@ -140,6 +156,32 @@ function Clientes() {
       return false;
     });
   }, [contatos, busca]);
+
+  // Cabeçalhos clicáveis ordenam (nome, tipo, documento, contato).
+  type SortCol = "nome" | "tipo" | "documento" | "contato";
+  const [sort, setSort] = useState<{ key: SortCol; dir: "asc" | "desc" }>({ key: "nome", dir: "asc" });
+  const valCol = (c: Contato, k: SortCol) =>
+    k === "contato" ? (c.email ?? c.telefone ?? "") : (c[k] ?? "");
+  const ordenados = useMemo(() => {
+    const arr = [...filtrados];
+    const m = sort.dir === "asc" ? 1 : -1;
+    arr.sort((a, b) => String(valCol(a, sort.key)).localeCompare(String(valCol(b, sort.key)), "pt-BR") * m);
+    return arr;
+  }, [filtrados, sort]);
+  const SortTh = ({ k, children, className }: { k: SortCol; children: ReactNode; className?: string }) => (
+    <TableHead className={className}>
+      <button
+        type="button"
+        onClick={() => setSort((s) => (s.key === k ? { key: k, dir: s.dir === "asc" ? "desc" : "asc" } : { key: k, dir: "asc" }))}
+        className="inline-flex items-center gap-1 font-medium uppercase hover:text-foreground"
+      >
+        {children}
+        {sort.key !== k
+          ? <ArrowUpDown className="h-3 w-3 opacity-40" />
+          : sort.dir === "asc" ? <ArrowUp className="h-3 w-3" /> : <ArrowDown className="h-3 w-3" />}
+      </button>
+    </TableHead>
+  );
 
   const criar = useMutation({
     mutationFn: async (input: ReturnType<typeof emptyForm>) => {
@@ -398,7 +440,7 @@ function Clientes() {
           {selected.size > 0 && (
             <div className="flex items-center justify-between border-b bg-muted/30 px-4 py-2 text-sm">
               <span>{selected.size} selecionado(s)</span>
-              <AlertDialog>
+              <AlertDialog open={confLote} onOpenChange={setConfLote}>
                 <AlertDialogTrigger asChild>
                   <Button size="sm" variant="destructive" disabled={excluir.isPending}>
                     <Trash2 className="mr-1 h-4 w-4" />Excluir
@@ -429,11 +471,11 @@ function Clientes() {
                     aria-label="Selecionar todos"
                   />
                 </TableHead>
-                <TableHead>Nome</TableHead><TableHead>Tipo</TableHead><TableHead>Documento</TableHead><TableHead>Contato</TableHead><TableHead className="w-20" />
+                <SortTh k="nome">Nome</SortTh><SortTh k="tipo">Tipo</SortTh><SortTh k="documento">Documento</SortTh><SortTh k="contato">Contato</SortTh><TableHead className="w-20" />
               </TableRow>
             </TableHeader>
             <TableBody>
-              {filtrados.map((c) => (
+              {ordenados.map((c) => (
                 <TableRow key={c.id} data-state={selected.has(c.id) ? "selected" : undefined}>
                   <TableCell>
                     <Checkbox checked={selected.has(c.id)} onCheckedChange={() => toggleOne(c.id)} aria-label={`Selecionar ${c.nome}`} />

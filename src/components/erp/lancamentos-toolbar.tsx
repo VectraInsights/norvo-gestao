@@ -49,6 +49,61 @@ function parseValor(v: unknown): number {
   return isNaN(n) ? 0 : n;
 }
 
+// Busca dados do CNPJ nas APIs públicas (mesma ordem do cadastro de contatos).
+async function buscarCnpj(digits: string): Promise<Record<string, unknown> | null> {
+  for (const url of [
+    `https://brasilapi.com.br/api/cnpj/v1/${digits}`,
+    `https://receitaws.com.br/v1/cnpj/${digits}`,
+  ]) {
+    try {
+      const res = await fetch(url, { signal: AbortSignal.timeout(8000) });
+      if (res.ok) {
+        const d = await res.json();
+        if (d && (d as { status?: string }).status !== "ERROR") return d as Record<string, unknown>;
+      }
+    } catch { /* tenta a próxima */ }
+  }
+  return null;
+}
+
+const str = (v: unknown): string | null => {
+  const s = String((v as string | number | null) ?? "").trim();
+  return s ? s : null;
+};
+
+// Completa no fundo os contatos recém-criados com os dados da Receita pelo CNPJ.
+// Não bloqueia a importação e nunca sobrescreve o nome informado na planilha.
+async function enriquecerContatos(itens: { id: string; doc: string }[]) {
+  const fila = itens.filter((c) => c.doc.replace(/\D/g, "").length === 14);
+  if (!fila.length) return;
+  let ok = 0;
+  const workers = Array.from({ length: 4 }, async () => {
+    while (fila.length) {
+      const item = fila.shift();
+      if (!item) return;
+      const d = await buscarCnpj(item.doc.replace(/\D/g, ""));
+      if (!d) continue;
+      const patch = {
+        email: str(d.email),
+        telefone: str(d.ddd_telefone_1 ?? d.telefone),
+        cep: (str(d.cep) ?? "").replace(/\D/g, "") || null,
+        logradouro: str(d.logradouro),
+        numero: str(d.numero),
+        complemento: str(d.complemento),
+        bairro: str(d.bairro),
+        cidade: str(d.municipio),
+        uf: str(d.uf),
+      };
+      const payload = Object.fromEntries(Object.entries(patch).filter(([, v]) => v != null)) as Record<string, string>;
+      if (!Object.keys(payload).length) continue;
+      const { error } = await supabase.from("contatos").update(payload as never).eq("id", item.id);
+      if (!error) ok++;
+    }
+  });
+  await Promise.all(workers);
+  if (ok > 0) toast.success(`${ok} contato(s) completado(s) via CNPJ`);
+}
+// ("02116946000143" chega como 2116946000143) — restaura pelo tamanho.
 // CNPJ/CPF vindo da planilha: célula numérica perde o zero à esquerda
 // ("02116946000143" chega como 2116946000143) — restaura pelo tamanho.
 function docFromSheet(v: unknown): string | null {
@@ -313,10 +368,12 @@ export function LancamentosToolbar({
         const payload = Array.from(novosContatos.values()).map((c) => ({
           empresa_id: empresaId, nome: c.nome, tipo: c.tipo, documento: c.documento,
         }));
-        const { data, error } = await supabase.from("contatos").insert(payload).select("id,nome");
+        const { data, error } = await supabase.from("contatos").insert(payload).select("id,nome,documento");
         if (error) throw error;
         (data ?? []).forEach((c) => mContatos.set(normNome(c.nome), c.id));
         criadosCtt = data?.length ?? 0;
+        // Completa via CNPJ no fundo (não trava a importação).
+        void enriquecerContatos(((data ?? []) as { id: string; documento: string | null }[]).filter((c) => c.documento).map((c) => ({ id: c.id, doc: c.documento as string })));
       }
 
       const inserts: Insert[] = parsed.map((p) => ({

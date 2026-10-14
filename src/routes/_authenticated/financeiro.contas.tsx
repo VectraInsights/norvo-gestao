@@ -2214,6 +2214,22 @@ function ReconcileDialog({ contaId, conta, empresaId, autoConciliar, importing, 
     });
   }, [txs]);
 
+  // Delete exclui do extrato os lançamentos selecionados (mesma ação do botão Excluir).
+  useEffect(() => {
+    if (!selVisiveis.length || excluirTx.isPending) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key !== "Delete") return;
+      const t = e.target as HTMLElement;
+      if (t && (t.tagName === "INPUT" || t.tagName === "TEXTAREA" || t.tagName === "SELECT" || t.isContentEditable)) return;
+      if (document.querySelector('[role="dialog"]')) return;
+      e.preventDefault();
+      excluirTx.mutate(selVisiveis.map((x) => x.id));
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selVisiveis]);
+
   const conciliarSelecionados = async () => {
     const alvos = selVisiveis;
     if (!alvos.length) { toast.error("Selecione ao menos um lançamento"); return; }
