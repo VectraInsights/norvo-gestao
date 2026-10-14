@@ -700,7 +700,7 @@ function MdfPage() {
 
       {mdfEncerrar && (
         <Dialog open={openEncerrar} onOpenChange={setOpenEncerrar}>
-          <DialogContent className="max-h-[90vh] overflow-y-auto rounded-2xl sm:max-w-md sm:inset-auto sm:left-1/2 sm:top-1/2 sm:-translate-x-1/2 sm:-translate-y-1/2 sm:h-auto sm:w-full">
+          <DialogContent className="flex h-screen w-screen flex-col m-0 max-h-none max-w-none overflow-y-auto rounded-none">
             <DialogHeader className="gap-1.5 pb-1"><DialogTitle className="tracking-tight">Encerrar MDF-e #{mdfEncerrar.numero}</DialogTitle></DialogHeader>
             <p className="text-sm leading-relaxed text-muted-foreground">Confirma o encerramento do manifesto? Esta ação é irreversível.</p>
             <DialogFooter className="gap-2">

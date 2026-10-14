@@ -553,7 +553,7 @@ function NotasEmitidas() {
                 <Plus className="mr-2 h-4 w-4" /> Nova Emissão
               </Button>
             </DialogTrigger>
-            <DialogContent className="max-h-[90vh] overflow-y-auto rounded-2xl sm:max-w-lg sm:inset-auto sm:left-1/2 sm:top-1/2 sm:-translate-x-1/2 sm:-translate-y-1/2 sm:h-auto sm:w-full">
+            <DialogContent className="flex h-screen w-screen flex-col m-0 max-h-none max-w-none overflow-y-auto rounded-none">
               <DialogHeader className="gap-1.5 pb-1">
                 <DialogTitle className="tracking-tight">Emitir Nota Fiscal (Rascunho)</DialogTitle>
                 <DialogDescription className="leading-relaxed">
@@ -747,7 +747,7 @@ function NotasEmitidas() {
       </div>
 
       <Dialog open={filtrosSalvosOpen} onOpenChange={setFiltrosSalvosOpen}>
-        <DialogContent className="max-h-[90vh] overflow-y-auto rounded-2xl sm:max-w-md sm:inset-auto sm:left-1/2 sm:top-1/2 sm:-translate-x-1/2 sm:-translate-y-1/2 sm:h-auto sm:w-full">
+        <DialogContent className="flex h-screen w-screen flex-col m-0 max-h-none max-w-none overflow-y-auto rounded-none">
           <DialogHeader className="gap-1.5 pb-1">
             <DialogTitle className="tracking-tight">Filtros salvos</DialogTitle>
             <DialogDescription className="leading-relaxed">Salve uma combinação de tipo, status e busca para reutilizar depois.</DialogDescription>
@@ -997,7 +997,7 @@ function NotasEmitidas() {
       )}
 
       <Dialog open={trilhaOpen} onOpenChange={setTrilhaOpen}>
-        <DialogContent className="max-h-[85vh] overflow-y-auto rounded-2xl sm:max-w-lg">
+        <DialogContent className="flex h-screen w-screen flex-col m-0 max-h-none max-w-none overflow-y-auto rounded-none">
           <DialogHeader className="gap-1.5 pb-1">
             <DialogTitle className="tracking-tight">Auditoria — Notas de Saída</DialogTitle>
           </DialogHeader>

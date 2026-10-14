@@ -530,7 +530,7 @@ function CadastrosPage() {
 
       {/* Dialog categoria */}
       <Dialog open={catOpen} onOpenChange={setCatOpen}>
-        <DialogContent className="sm:max-w-md sm:inset-auto sm:left-1/2 sm:top-1/2 sm:-translate-x-1/2 sm:-translate-y-1/2 sm:h-auto sm:max-h-[90vh] sm:w-full">
+        <DialogContent className="flex h-screen w-screen flex-col m-0 max-h-none max-w-none overflow-y-auto rounded-none">
           <DialogHeader className="gap-1.5 pb-1"><DialogTitle className="tracking-tight">{catForm.id ? "Editar categoria" : "Nova categoria"}</DialogTitle></DialogHeader>
           <form onSubmit={(e) => { e.preventDefault(); salvarCat.mutate(); }} className="space-y-4">
             {catForm.id ? (
@@ -583,7 +583,7 @@ function CadastrosPage() {
 
       {/* Dialog centro de custo */}
       <Dialog open={ccOpen} onOpenChange={setCcOpen}>
-        <DialogContent className="sm:max-w-md sm:inset-auto sm:left-1/2 sm:top-1/2 sm:-translate-x-1/2 sm:-translate-y-1/2 sm:h-auto sm:max-h-[90vh] sm:w-full">
+        <DialogContent className="flex h-screen w-screen flex-col m-0 max-h-none max-w-none overflow-y-auto rounded-none">
           <DialogHeader className="gap-1.5 pb-1"><DialogTitle className="tracking-tight">{ccForm.id ? "Editar centro de custo" : "Novo centro de custo"}</DialogTitle></DialogHeader>
           <form onSubmit={(e) => { e.preventDefault(); salvarCc.mutate(); }} className="space-y-4">
             <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
@@ -685,7 +685,7 @@ function CadastrosPage() {
       </AlertDialog>
 
       <Dialog open={trilhaOpen} onOpenChange={setTrilhaOpen}>
-        <DialogContent className="max-h-[85vh] overflow-y-auto rounded-2xl sm:max-w-lg">
+        <DialogContent className="flex h-screen w-screen flex-col m-0 max-h-none max-w-none overflow-y-auto rounded-none">
           <DialogHeader className="gap-1.5 pb-1">
             <DialogTitle className="tracking-tight">Auditoria — Categorias e centros</DialogTitle>
           </DialogHeader>

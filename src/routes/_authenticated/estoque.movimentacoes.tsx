@@ -297,7 +297,7 @@ function Movimentacoes() {
                   Transferir
                 </Button>
               </DialogTrigger>
-              <DialogContent className="rounded-2xl">
+              <DialogContent className="flex h-screen w-screen flex-col m-0 max-h-none max-w-none overflow-y-auto rounded-none">
                 <DialogHeader>
                   <DialogTitle>Transferir entre depósitos</DialogTitle>
                 </DialogHeader>
@@ -368,7 +368,7 @@ function Movimentacoes() {
                   Nova movimentação
                 </Button>
               </DialogTrigger>
-              <DialogContent className="rounded-2xl">
+              <DialogContent className="flex h-screen w-screen flex-col m-0 max-h-none max-w-none overflow-y-auto rounded-none">
                 <DialogHeader>
                   <DialogTitle>Nova movimentação</DialogTitle>
                 </DialogHeader>

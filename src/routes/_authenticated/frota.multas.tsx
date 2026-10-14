@@ -496,7 +496,7 @@ function Multas() {
                 Nova multa
               </Button>
             </DialogTrigger>
-            <DialogContent className="max-h-[90vh] overflow-y-auto">
+            <DialogContent className="flex h-screen w-screen flex-col m-0 max-h-none max-w-none overflow-y-auto rounded-none">
               <DialogHeader>
                 <DialogTitle>
                   {editing ? `Editar auto ${editing.auto_infracao ?? editing.id}` : "Nova multa"}
@@ -755,7 +755,7 @@ function Multas() {
       )}
 
       <Dialog open={configOpen} onOpenChange={setConfigOpen}>
-        <DialogContent>
+        <DialogContent className="flex h-screen w-screen flex-col m-0 max-h-none max-w-none overflow-y-auto rounded-none">
           <DialogHeader>
             <DialogTitle>Configuração SENATRAN</DialogTitle>
           </DialogHeader>

@@ -380,7 +380,7 @@ export function UsuariosPage() {
 
       {/* Novo usuário */}
       <Dialog open={openNovo} onOpenChange={setOpenNovo}>
-        <DialogContent className="max-h-[90vh] overflow-y-auto rounded-2xl sm:max-w-lg sm:inset-auto sm:left-1/2 sm:top-1/2 sm:-translate-x-1/2 sm:-translate-y-1/2 sm:h-auto sm:w-full">
+        <DialogContent className="flex h-screen w-screen flex-col m-0 max-h-none max-w-none overflow-y-auto rounded-none">
           <DialogHeader className="gap-1.5 pb-1">
             <DialogTitle className="tracking-tight">Criar acesso de usuário</DialogTitle>
           </DialogHeader>
@@ -467,7 +467,7 @@ export function UsuariosPage() {
 
       {/* Editar permissões */}
       <Dialog open={!!editando} onOpenChange={(o) => !o && setEditando(null)}>
-        <DialogContent className="max-h-[90vh] overflow-y-auto rounded-2xl sm:max-w-lg sm:inset-auto sm:left-1/2 sm:top-1/2 sm:-translate-x-1/2 sm:-translate-y-1/2 sm:h-auto sm:w-full">
+        <DialogContent className="flex h-screen w-screen flex-col m-0 max-h-none max-w-none overflow-y-auto rounded-none">
           <DialogHeader className="gap-1.5 pb-1">
             <DialogTitle className="tracking-tight">Dados de {editando?.nome}</DialogTitle>
           </DialogHeader>
@@ -529,7 +529,7 @@ export function UsuariosPage() {
 
       {/* Resetar senha */}
       <Dialog open={!!resetando} onOpenChange={(o) => !o && setResetando(null)}>
-        <DialogContent className="max-h-[90vh] overflow-y-auto rounded-2xl sm:max-w-md sm:inset-auto sm:left-1/2 sm:top-1/2 sm:-translate-x-1/2 sm:-translate-y-1/2 sm:h-auto sm:w-full">
+        <DialogContent className="flex h-screen w-screen flex-col m-0 max-h-none max-w-none overflow-y-auto rounded-none">
           <DialogHeader className="gap-1.5 pb-1">
             <DialogTitle className="tracking-tight">Redefinir senha de {resetando?.nome}</DialogTitle>
           </DialogHeader>

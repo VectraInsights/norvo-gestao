@@ -1837,7 +1837,7 @@ function PercursosPage() {
         }}
       >
         <DialogContent
-          className="rounded-2xl p-3 sm:p-4"
+          className="flex h-screen w-screen flex-col m-0 max-h-none max-w-none overflow-y-auto rounded-none"
           onKeyDown={(event) => {
             // Enter em campo de texto salva o percurso (a validação do salvar
             // barra quando faltar obrigatório; textarea quebra linha)

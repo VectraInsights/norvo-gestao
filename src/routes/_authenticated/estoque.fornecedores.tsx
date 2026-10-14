@@ -490,7 +490,7 @@ function Fornecedores() {
           }
         }}
       >
-        <DialogContent className="max-h-[90vh] overflow-y-auto rounded-2xl">
+        <DialogContent className="flex h-screen w-screen flex-col m-0 max-h-none max-w-none overflow-y-auto rounded-none">
           <DialogHeader>
             <DialogTitle>{editing ? "Editar fornecedor" : "Novo fornecedor"}</DialogTitle>
           </DialogHeader>

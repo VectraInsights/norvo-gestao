@@ -1084,7 +1084,7 @@ function Veiculos() {
 
       {/* Dialog gerenciar tipos */}
       <Dialog open={tiposOpen} onOpenChange={setTiposOpen}>
-        <DialogContent>
+        <DialogContent className="flex h-screen w-screen flex-col m-0 max-h-none max-w-none overflow-y-auto rounded-none">
           <DialogHeader>
             <DialogTitle>Tipos de veículo</DialogTitle>
           </DialogHeader>

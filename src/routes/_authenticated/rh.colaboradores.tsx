@@ -1419,7 +1419,7 @@ function ColaboradoresPage() {
                   Cargos
                 </Button>
               </DialogTrigger>
-              <DialogContent className="max-h-[90vh] overflow-y-auto rounded-2xl sm:max-w-lg sm:inset-auto sm:left-1/2 sm:top-1/2 sm:-translate-x-1/2 sm:-translate-y-1/2 sm:h-auto sm:w-full">
+              <DialogContent className="flex h-screen w-screen flex-col m-0 max-h-none max-w-none overflow-y-auto rounded-none">
                 <DialogHeader>
                   <DialogTitle>Cargos</DialogTitle>
                 </DialogHeader>
@@ -1540,7 +1540,7 @@ function ColaboradoresPage() {
                   Novo colaborador
                 </Button>
               </DialogTrigger>
-              <DialogContent className="flex max-h-[90vh] flex-col overflow-y-auto rounded-2xl sm:max-w-2xl sm:inset-auto sm:left-1/2 sm:top-1/2 sm:-translate-x-1/2 sm:-translate-y-1/2 sm:h-auto sm:w-full">
+              <DialogContent className="flex h-screen w-screen flex-col m-0 max-h-none max-w-none overflow-y-auto rounded-none">
                 <DialogHeader className="shrink-0 gap-1.5 pb-1">
                   <div className="flex items-center justify-between gap-2 pr-8">
                     <DialogTitle className="tracking-tight">

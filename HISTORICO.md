@@ -5932,3 +5932,8 @@ pm run build OK.
 
 - Correcao de entendimento: Cancelar CT-e (unitario/lote) e Cancelar MDF-e sao centralizados pequenos; revertida a ida p/ tela cheia.
 - Aproveitado: removido className duplicado no DialogContent do formulario de CT-e (valia o 2o em runtime; visual inalterado, -1 erro tsc).
+
+## Todos os dialogos em tela cheia (14/10)
+
+- Regra do dono: so abre centralizado o que ele pedir; resto ocupa a janela inteira. Convertidos 55 DialogContent (detalhes NF-e, cadastros, auditorias, RH, frota, vendas, estoque, financeiro, fiscal).
+- Mantidos pequenos: Cancelar CT-e/MDF-e (unit./lote), Encerrar MDF-e, Cancelar nota fiscal, Exportar CT-e, erro do CT-e, Onde encerrar, Nova categoria (contas/recebidas), Dados da conta.

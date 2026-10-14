@@ -273,7 +273,7 @@ function CRM() {
       )}
 
       <Dialog open={open} onOpenChange={(v) => { setOpen(v); if (!v) reset(); }}>
-        <DialogContent>
+        <DialogContent className="flex h-screen w-screen flex-col m-0 max-h-none max-w-none overflow-y-auto rounded-none">
           <DialogHeader>
             <DialogTitle>{editing ? "Editar oportunidade" : "Nova oportunidade"}</DialogTitle>
           </DialogHeader>

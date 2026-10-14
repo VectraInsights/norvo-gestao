@@ -258,7 +258,7 @@ function Compras() {
             <DialogTrigger asChild>
               <Button size="sm" className="h-9 rounded-xl px-4 text-sm shadow-sm transition-all hover:shadow-md active:scale-95"><Plus className="mr-1 h-3.5 w-3.5" /> Nova ordem</Button>
             </DialogTrigger>
-            <DialogContent className="max-h-[90vh] overflow-y-auto rounded-2xl sm:max-w-2xl sm:inset-auto sm:left-1/2 sm:top-1/2 sm:-translate-x-1/2 sm:-translate-y-1/2 sm:h-auto sm:w-full">
+            <DialogContent className="flex h-screen w-screen flex-col m-0 max-h-none max-w-none overflow-y-auto rounded-none">
               <DialogHeader className="gap-1.5 pb-1"><DialogTitle className="tracking-tight">Nova ordem de compra</DialogTitle></DialogHeader>
               <div className="grid gap-4">
                 <div className="grid gap-4 sm:grid-cols-3">

@@ -1718,7 +1718,7 @@ function NotasRecebidas() {
           )}
 
           <Dialog open={analiseOpen && !!importResults} onOpenChange={(o) => { if (!o && importResults) setConfSair(true); else setAnaliseOpen(o); }}>
-            <DialogContent className="flex flex-col">
+            <DialogContent className="flex h-screen w-screen flex-col m-0 max-h-none max-w-none overflow-y-auto rounded-none">
               <DialogTitle className="sr-only">Lançar notas fiscais</DialogTitle>
               {importResults && (
             <Card className="flex min-h-0 flex-1 flex-col border-muted bg-card/60 backdrop-blur-sm shadow-panel overflow-hidden animate-in fade-in slide-in-from-bottom-2 duration-300">
@@ -1915,7 +1915,7 @@ function NotasRecebidas() {
       </Tabs>
 
   <Dialog open={chaveImportModal} onOpenChange={setChaveImportModal}>
-        <DialogContent className="max-h-[90vh] overflow-y-auto rounded-2xl sm:max-w-lg sm:inset-auto sm:left-1/2 sm:top-1/2 sm:-translate-x-1/2 sm:-translate-y-1/2 sm:h-auto sm:w-full">
+        <DialogContent className="flex h-screen w-screen flex-col m-0 max-h-none max-w-none overflow-y-auto rounded-none">
           <DialogHeader className="gap-1.5 pb-1">
             <DialogTitle className="tracking-tight">Importar NF-e por Chave de Acesso</DialogTitle>
           </DialogHeader>
@@ -1970,7 +1970,7 @@ function NotasRecebidas() {
 
       {/* Modal de detalhes da nota importada por chave */}
       <Dialog open={!!notaDetalhe} onOpenChange={(open) => { if (!open) setNotaDetalhe(null); }}>
-        <DialogContent className="max-h-[92vh] overflow-y-auto rounded-2xl sm:max-w-6xl sm:inset-auto sm:left-1/2 sm:top-1/2 sm:-translate-x-1/2 sm:-translate-y-1/2 sm:h-auto sm:w-[96vw]">
+        <DialogContent className="flex h-screen w-screen flex-col m-0 max-h-none max-w-none overflow-y-auto rounded-none">
           <DialogHeader className="gap-1.5 pb-1">
             <DialogTitle className="tracking-tight">Detalhes da NF-e</DialogTitle>
           </DialogHeader>
@@ -2142,7 +2142,7 @@ function NotasRecebidas() {
       </AlertDialog>
 
       <Dialog open={trilhaOpen} onOpenChange={setTrilhaOpen}>
-        <DialogContent className="max-h-[90vh] overflow-y-auto rounded-2xl sm:max-w-lg sm:inset-auto sm:left-1/2 sm:top-1/2 sm:-translate-x-1/2 sm:-translate-y-1/2 sm:h-auto sm:w-full">
+        <DialogContent className="flex h-screen w-screen flex-col m-0 max-h-none max-w-none overflow-y-auto rounded-none">
           <DialogHeader className="gap-1.5 pb-1">
             <DialogTitle className="tracking-tight">Auditoria — Notas de Compra</DialogTitle>
           </DialogHeader>

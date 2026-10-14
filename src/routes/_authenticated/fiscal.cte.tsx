@@ -6366,7 +6366,7 @@ function CtePage() {
             if (!v) setCceDoc(null);
           }}
         >
-          <DialogContent className="inset-auto left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-[480px] max-w-[calc(100vw-2rem)] h-auto max-h-[90vh] p-4 gap-3 rounded-2xl sm:p-6">
+          <DialogContent className="flex h-screen w-screen flex-col m-0 max-h-none max-w-none overflow-y-auto rounded-none">
             <DialogHeader className="gap-1.5 pb-1">
               <DialogTitle className="tracking-tight">Carta de Correção — CT-e {cceDoc.numero ?? ""}</DialogTitle>
             </DialogHeader>
@@ -7665,7 +7665,7 @@ function CtePage() {
       </AlertDialog>
       <Dialog open={manualNfeOpen} onOpenChange={setManualNfeOpen}>
         <DialogContent
-          className="rounded-2xl"
+          className="flex h-screen w-screen flex-col m-0 max-h-none max-w-none overflow-y-auto rounded-none"
           onEscapeKeyDown={(event) => {
             event.preventDefault();
             event.stopPropagation();

@@ -537,7 +537,7 @@ function Viagens() {
                 Nova viagem
               </Button>
             </DialogTrigger>
-            <DialogContent>
+            <DialogContent className="flex h-screen w-screen flex-col m-0 max-h-none max-w-none overflow-y-auto rounded-none">
               <DialogHeader>
                 <DialogTitle>{editing ? "Editar viagem" : "Nova viagem"}</DialogTitle>
               </DialogHeader>
@@ -872,7 +872,7 @@ function Viagens() {
       )}
 
       <Dialog open={!!despViagem} onOpenChange={(v) => !v && setDespViagem(null)}>
-        <DialogContent>
+        <DialogContent className="flex h-screen w-screen flex-col m-0 max-h-none max-w-none overflow-y-auto rounded-none">
           <DialogHeader>
             <DialogTitle>Despesas da viagem {despViagem ? rota(despViagem) : ""}</DialogTitle>
           </DialogHeader>
