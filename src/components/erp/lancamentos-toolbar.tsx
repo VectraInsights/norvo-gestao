@@ -87,15 +87,7 @@ export function LancamentosToolbar({
   const [saving, setSaving] = useState(false);
   const label = tipo === "receber" ? "receitas" : "despesas";
 
-  const baixarModelo = () => {
-    const hoje = format(new Date(), "dd/MM/yyyy");
-    const linhas: (string | number)[][] = [
-      HEADERS,
-      [hoje, hoje, 1500.5, "Venda pedido 123", categorias?.[0]?.nome ?? "Vendas", contatos?.[0]?.nome ?? "Cliente exemplo", "", "Receita (valor positivo)"],
-      [hoje, hoje, -850, "Compra fornecedor X", categorias?.[0]?.nome ?? "Fornecedores", contatos?.[0]?.nome ?? "Fornecedor exemplo", "", "Despesa (valor negativo)"],
-      [hoje, hoje, 2300, "Prestação de serviço", categorias?.[0]?.nome ?? "Serviços", "", "", ""],
-      [hoje, hoje, -450.75, "Conta de energia", categorias?.[0]?.nome ?? "Utilidades", "", "12.345.678/0001-99", ""],
-    ];
+  const montarAba = (linhas: (string | number)[][]) => {
     const ws = XLSX.utils.aoa_to_sheet(linhas);
     ws["!cols"] = [{ wch: 22 }, { wch: 22 }, { wch: 14 }, { wch: 34 }, { wch: 22 }, { wch: 26 }, { wch: 20 }, { wch: 34 }];
     ws["!rows"] = [{ hpt: 32 }];
@@ -143,17 +135,30 @@ export function LancamentosToolbar({
         ws[ref].s = base;
       }
     }
+    return ws;
+  };
 
+  const baixarModelo = () => {
+    const hoje = format(new Date(), "dd/MM/yyyy");
     const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws, "Modelo");
+    XLSX.utils.book_append_sheet(wb, montarAba([
+      HEADERS,
+      [hoje, hoje, 1500.5, "Venda pedido 123", categorias?.[0]?.nome ?? "Vendas", contatos?.[0]?.nome ?? "Cliente exemplo", "", "Receita (valor positivo)"],
+      [hoje, hoje, 2300, "Prestação de serviço", categorias?.[0]?.nome ?? "Serviços", "", "", ""],
+    ]), "Entradas");
+    XLSX.utils.book_append_sheet(wb, montarAba([
+      HEADERS,
+      [hoje, hoje, -850, "Compra fornecedor X", categorias?.[0]?.nome ?? "Fornecedores", contatos?.[0]?.nome ?? "Fornecedor exemplo", "", "Despesa (valor negativo)"],
+      [hoje, hoje, -450.75, "Conta de energia", categorias?.[0]?.nome ?? "Utilidades", "", "12.345.678/0001-99", ""],
+    ]), "Saídas");
 
     const infoRows: string[][] = [
       ["Modelo de importação — Norvo"],
       [""],
       ["Como preencher"],
-      ["1. Uma linha por lançamento, começando na linha 2 da aba Modelo."],
+      ["1. Uma linha por lançamento, começando na linha 2 das abas Entradas e Saídas."],
       ["2. Campos obrigatórios: Data competência, Data Vencimento, Valor, Descrição, Categoria."],
-      ["3. Valor POSITIVO = Receita (a receber). Valor NEGATIVO = Despesa (a pagar)."],
+      ["3. Na aba Entradas use valor POSITIVO; na aba Saídas, valor NEGATIVO."],
       ["4. Datas sempre no formato dd/mm/aaaa."],
       ["5. Categorias e Clientes/Fornecedores inexistentes serão criados automaticamente."],
     ];
@@ -202,8 +207,13 @@ export function LancamentosToolbar({
     try {
       const buf = await file.arrayBuffer();
       const wb = XLSX.read(buf, { cellDates: true });
-      const ws = wb.Sheets[wb.SheetNames.find((n) => n.toLowerCase().includes("modelo")) ?? wb.SheetNames[0]];
-      const rows = XLSX.utils.sheet_to_json<Record<string, unknown>>(ws, { defval: "" });
+      // Lê as abas Recebimentos e Pagamentos (e a antiga "Modelo" por compatibilidade).
+      const abas = wb.SheetNames.filter((n) => !n.toLowerCase().includes("instru"));
+      const rows: { aba: string; r: Record<string, unknown>; i: number }[] = [];
+      abas.forEach((aba) => {
+        const linhas = XLSX.utils.sheet_to_json<Record<string, unknown>>(wb.Sheets[aba], { defval: "" });
+        linhas.forEach((r, i) => rows.push({ aba, r, i }));
+      });
 
       type Parsed = {
         linha: number;
@@ -213,7 +223,7 @@ export function LancamentosToolbar({
       };
       const parsed: Parsed[] = [];
       const erros: string[] = [];
-      rows.forEach((r, i) => {
+      rows.forEach(({ aba, r, i }) => {
         const linha = i + 2;
         const descricao = String(r["Descrição"] ?? "").trim();
         const valorRaw = parseValor(r["Valor"]);
@@ -227,7 +237,7 @@ export function LancamentosToolbar({
         if (!descricao) faltando.push("Descrição");
         if (!catNome) faltando.push("Categoria");
         if (faltando.length) {
-          erros.push(`Linha ${linha}: campo(s) obrigatório(s) ausente(s): ${faltando.join(", ")}`);
+          erros.push(`${aba} · linha ${linha}: campo(s) obrigatório(s) ausente(s): ${faltando.join(", ")}`);
           return;
         }
         parsed.push({

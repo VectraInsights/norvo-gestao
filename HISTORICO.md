@@ -5953,3 +5953,7 @@ pm run build OK.
 ## Importacao sem matar gemeos (14/10)
 
 - 225 viravam 224: chave descricao+data+valor descartava o 2o rendimento identico de R$ 0,04. Trava dentro da planilha removida (gemeos entram os dois); dedup agora e so contra o banco, com tipo+emissao na chave. Reimportar segue seguro.
+
+## Planilha modelo com abas Entradas e Saidas (14/10)
+
+- Botao Planilha modelo gera workbook com abas Entradas (exemplos positivos) e Saidas (exemplos negativos) + Instrucoes; importacao le todas as abas nao-instrucionais (vale p/ modelo antigo de aba unica). Erros de validacao indicam a aba.
