@@ -49,7 +49,15 @@ function parseValor(v: unknown): number {
   return isNaN(n) ? 0 : n;
 }
 
-// Normaliza nomes como a unicidade do banco (sem acento, sem caixa, sem espaço duplo):
+// CNPJ/CPF vindo da planilha: célula numérica perde o zero à esquerda
+// ("02116946000143" chega como 2116946000143) — restaura pelo tamanho.
+function docFromSheet(v: unknown): string | null {
+  const d = String(v ?? "").replace(/\D/g, "");
+  if (!d) return null;
+  if (d.length === 10) return d.padStart(11, "0"); // CPF
+  if (d.length === 12 || d.length === 13) return d.padStart(14, "0"); // CNPJ
+  return d;
+}
 // "Prestação  de Serviços" == "prestacao de servicos" e não tenta recriar.
 function normNome(s: string | null | undefined): string {
   return (s ?? "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim().replace(/\s+/g, " ").toLowerCase();
@@ -247,7 +255,7 @@ export function LancamentosToolbar({
           de: de!, dv: dv!,
           catNome,
           contatoNome: String(r["Cliente/Fornecedor"] ?? r["Contato"] ?? "").trim(),
-          documento: String(r["CNPJ/CPF"] ?? "").trim() || null,
+          documento: docFromSheet(r["CNPJ/CPF"]),
           observacoes: String(r["Obs."] ?? r["Observações"] ?? "").trim() || null,
         });
       });

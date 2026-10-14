@@ -5984,3 +5984,7 @@ pm run build OK.
 ## Obrigatorios do lancamento (14/10)
 
 - Emissao vira Competência (obrigatoria); obrigatorios passam a descricao, valor, competência, cliente/fornecedor e categoria (novo e editar, pagar+receber). Vencimento deixa de ser obrigatorio (vazio assume a competência).
+
+## CNPJ com zero na importacao (14/10)
+
+- 02116946000143 virava 2116946000143 (13 digitos, depois travava o cadastro): celula numerica do Excel perde o zero. Importacao restaura pelo tamanho (10->11 CPF, 12/13->14 CNPJ).
