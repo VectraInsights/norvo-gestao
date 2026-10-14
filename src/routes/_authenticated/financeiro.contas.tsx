@@ -269,19 +269,18 @@ function ContaDetalhe({ contaId, contas, empresaId, tabInicial, onVoltar, onSele
     // Só-banco (sem vínculo): entra com o lado do sistema vazio.
     for (const o of ofxMes ?? []) if (!o.lancamento_id) push((o.data_transacao || "").slice(0, 10), { lanc: null, ofx: o });
     return [...m.entries()].sort(([a], [b]) => (a < b ? -1 : 1)).map(([dia, linhas]) => {
-      const totSistema = linhas.reduce((a, r) => a + (r.lanc ? (r.lanc.tipo === "receber" ? Number(r.lanc.valor) : -Number(r.lanc.valor)) : 0), 0);
-      const totBanco = linhas.reduce((a, r) => a + (r.ofx ? Number(r.ofx.valor) : 0), 0);
-      const pend = linhas.some((r) =>
-        (r.lanc && ["aberto", "vencido", "parcial"].includes(r.lanc.status)) ||
-        (r.ofx && r.ofx.status !== "conciliada"));
+      // Movimentações = lançamentos do sistema; o banco entra só no selo de conciliação.
+      const visiveis = linhas.filter((r) => r.lanc);
+      const totSistema = visiveis.reduce((a, r) => a + (r.lanc!.tipo === "receber" ? Number(r.lanc!.valor) : -Number(r.lanc!.valor)), 0);
+      const pend = visiveis.some((r) => r.lanc && ["aberto", "vencido", "parcial"].includes(r.lanc.status));
       const dt = new Date(`${dia}T00:00:00`);
       const semana = dt.toLocaleDateString("pt-BR", { weekday: "long" });
       return {
-        dia, rows: linhas, totSistema, totBanco, dif: totSistema - totBanco, pend,
+        dia, rows: visiveis, totSistema, pend,
         rotulo: dt.toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit", year: "numeric" }),
         semana: semana.charAt(0).toUpperCase() + semana.slice(1),
       };
-    });
+    }).filter((g) => g.rows.length > 0);
   }, [lancs, ofxMes]);
   const diasComPend = gruposDia.filter((g) => g.pend).length;
 
@@ -430,14 +429,8 @@ function ContaDetalhe({ contaId, contas, empresaId, tabInicial, onVoltar, onSele
                       <div className="border-t border-border/60">
                         <div className="overflow-x-auto">
                           <div className="min-w-[840px]">
-                            <div className="grid grid-cols-[minmax(0,1.5fr)_110px_minmax(0,1.5fr)_110px_120px_96px] gap-2 bg-muted/40 px-4 py-2 text-center text-xs font-semibold text-muted-foreground">
-                              <span className="col-span-2">Lançado no sistema</span>
-                              <span className="col-span-4">Movimentado no banco</span>
-                            </div>
-                            <div className="grid grid-cols-[minmax(0,1.5fr)_110px_minmax(0,1.5fr)_110px_120px_96px] gap-2 border-y border-border/60 bg-muted/20 px-4 py-1.5 text-[11px] font-medium text-muted-foreground">
-                              <span>Descrição no sistema</span>
-                              <span className="text-right">Valor (R$)</span>
-                              <span>Descrição no banco</span>
+                            <div className="grid grid-cols-[minmax(0,1fr)_110px_120px_96px] gap-2 border-b border-border/60 bg-muted/20 px-4 py-1.5 text-[11px] font-medium text-muted-foreground">
+                              <span>Descrição</span>
                               <span className="text-right">Valor (R$)</span>
                               <span className="text-center">Conciliação</span>
                               <span />
@@ -445,19 +438,15 @@ function ContaDetalhe({ contaId, contas, empresaId, tabInicial, onVoltar, onSele
                             <div className="divide-y divide-border/40">
                               {g.rows.map((r) => {
                                 const conc = !!r.ofx && r.ofx.status === "conciliada";
-                                const bv = r.ofx ? Number(r.ofx.valor) : 0;
+                                const l = r.lanc!;
                                 return (
-                                <div key={r.lanc?.id ?? `ofx-${r.ofx?.id}`} className="grid grid-cols-[minmax(0,1.5fr)_110px_minmax(0,1.5fr)_110px_120px_96px] items-center gap-2 px-4 py-2 text-[13px] transition-colors hover:bg-primary/[0.05]">
+                                <div key={l.id} className="grid grid-cols-[minmax(0,1fr)_110px_120px_96px] items-center gap-2 px-4 py-2 text-[13px] transition-colors hover:bg-primary/[0.05]">
                                   <div className="min-w-0">
-                                    <div className="truncate font-medium" title={r.lanc?.descricao ?? ""}>{r.lanc?.descricao || "—"}</div>
-                                    <div className="truncate text-[11px] text-muted-foreground">{r.lanc?.categoria?.nome ?? (r.lanc ? r.lanc.status : "")}</div>
+                                    <div className="truncate font-medium" title={l.descricao ?? ""}>{l.descricao || "—"}</div>
+                                    <div className="truncate text-[11px] text-muted-foreground">{l.categoria?.nome ?? l.status}</div>
                                   </div>
-                                  <span className={`text-tabular text-right font-semibold ${!r.lanc ? "text-muted-foreground" : r.lanc.tipo === "receber" ? "text-success" : "text-destructive"}`}>
-                                    {r.lanc ? `${r.lanc.tipo === "receber" ? "+" : "-"}${brl(Math.abs(Number(r.lanc.valor))).replace("R$", "").replace("- ", "-").trim()}` : "—"}
-                                  </span>
-                                  <div className="min-w-0 truncate text-muted-foreground" title={r.ofx?.memo ?? ""}>{r.ofx?.memo || "—"}</div>
-                                  <span className={`text-tabular text-right font-semibold ${!r.ofx ? "text-muted-foreground" : bv < 0 ? "text-destructive" : bv > 0 ? "text-success" : "text-muted-foreground"}`}>
-                                    {r.ofx ? `${bv < 0 ? "-" : ""}${brl(Math.abs(bv)).replace("R$", "").replace("- ", "-").trim()}` : "—"}
+                                  <span className={`text-tabular text-right font-semibold ${l.tipo === "receber" ? "text-success" : "text-destructive"}`}>
+                                    {`${l.tipo === "receber" ? "+" : "-"}${brl(Math.abs(Number(l.valor))).replace("R$", "").replace("- ", "-").trim()}`}
                                   </span>
                                   <span className="text-center">
                                     {conc ? (
@@ -484,22 +473,9 @@ function ContaDetalhe({ contaId, contas, empresaId, tabInicial, onVoltar, onSele
                                 );
                               })}
                             </div>
-                            <div className="flex flex-wrap items-center gap-x-8 gap-y-1 border-t border-border/60 bg-muted/30 px-4 py-2.5">
+                            <div className="flex items-center gap-3 border-t border-border/60 bg-muted/30 px-4 py-2.5">
                               <span className="text-sm font-bold">Totais do dia</span>
-                              <span className="ml-auto flex items-center gap-x-8">
-                                <span className="text-right">
-                                  <span className="block text-[10px] font-medium uppercase tracking-wide text-muted-foreground">Sistema (R$)</span>
-                                  <span className="text-tabular text-[13px] font-bold">{brl(g.totSistema).replace("R$", "").replace("- ", "-").trim()}</span>
-                                </span>
-                                <span className="text-right">
-                                  <span className="block text-[10px] font-medium uppercase tracking-wide text-muted-foreground">Banco (R$)</span>
-                                  <span className="text-tabular text-[13px] font-bold">{brl(g.totBanco).replace("R$", "").replace("- ", "-").trim()}</span>
-                                </span>
-                                <span className="text-right">
-                                  <span className="block text-[10px] font-medium uppercase tracking-wide text-muted-foreground">Diferença (R$)</span>
-                                  <span className={`text-tabular text-[13px] font-bold ${Math.abs(g.dif) < 0.01 ? "text-muted-foreground" : "text-amber-600 dark:text-amber-400"}`}>{brl(g.dif).replace("R$", "").replace("- ", "-").trim()}</span>
-                                </span>
-                              </span>
+                              <span className="ml-auto text-tabular text-[13px] font-bold">{brl(g.totSistema).replace("R$", "").replace("- ", "-").trim()}</span>
                             </div>
                           </div>
                         </div>

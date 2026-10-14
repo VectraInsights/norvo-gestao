@@ -5911,3 +5911,7 @@ pm run build OK.
 
 - Aba Movimentacoes vira cartoes por dia (data + dia da semana, total e chevron) com tabela Lançado no sistema x Movimentado no banco: descricao+categoria, valores coloridos, selo Conciliada/Pendente, Acoes > Conciliar e rodape Totais do dia (sistema, banco, diferenca).
 - Dia passa a incluir linhas so-banco sem vinculo; pendencia do dia = lancamento em aberto ou OFX nao conciliado.
+
+## Movimentacoes so com descricao do sistema (14/10)
+
+- Tabela do dia simplificada: so Descricao (sistema) + Valor + Conciliacao + Acoes; sai coluna do banco e totais triplos (Totais do dia com valor unico). Banco segue alimentando o selo Conciliada/Pendente.
