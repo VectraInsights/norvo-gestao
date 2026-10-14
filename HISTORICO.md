@@ -5919,3 +5919,7 @@ pm run build OK.
 ## Delete exclui lote no pagar/receber (14/10)
 
 - Tecla Delete com lancamentos selecionados abre a mesma confirmacao do botao Excluir (vale p/ pagar e receber, mesma pagina). Ignora quando digitando ou com dialogo aberto.
+
+## Detalhes da NF-e em tela ampla (14/10)
+
+- Modal de detalhes sai do popup centralizado (max-w-lg) p/ tela ampla (max-w-6xl, 96vw, 92vh); cabecalho em 4 colunas no desktop. Dialog de nova categoria segue pequeno.

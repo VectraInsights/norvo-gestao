@@ -1970,13 +1970,13 @@ function NotasRecebidas() {
 
       {/* Modal de detalhes da nota importada por chave */}
       <Dialog open={!!notaDetalhe} onOpenChange={(open) => { if (!open) setNotaDetalhe(null); }}>
-        <DialogContent className="max-h-[90vh] overflow-y-auto rounded-2xl sm:max-w-lg sm:inset-auto sm:left-1/2 sm:top-1/2 sm:-translate-x-1/2 sm:-translate-y-1/2 sm:h-auto sm:w-full">
+        <DialogContent className="max-h-[92vh] overflow-y-auto rounded-2xl sm:max-w-6xl sm:inset-auto sm:left-1/2 sm:top-1/2 sm:-translate-x-1/2 sm:-translate-y-1/2 sm:h-auto sm:w-[96vw]">
           <DialogHeader className="gap-1.5 pb-1">
             <DialogTitle className="tracking-tight">Detalhes da NF-e</DialogTitle>
           </DialogHeader>
           {notaDetalhe && (
             <div className="space-y-4">
-              <div className="grid grid-cols-2 gap-3 text-sm">
+              <div className="grid grid-cols-2 gap-3 text-sm lg:grid-cols-4">
                 <div>
                   <span className="text-muted-foreground">Emitente:</span>
                   <p className="font-medium">{notaDetalhe.emitente}</p>
@@ -1993,7 +1993,7 @@ function NotasRecebidas() {
                   <span className="text-muted-foreground">Data Emissão:</span>
                   <p>{dateBR(notaDetalhe.data)}</p>
                 </div>
-                <div className="col-span-2">
+                <div className="col-span-2 lg:col-span-4">
                   <span className="text-muted-foreground">Chave de Acesso:</span>
                   <p className="font-mono text-xs">{notaDetalhe.chave}</p>
                 </div>
