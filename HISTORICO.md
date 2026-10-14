@@ -5980,3 +5980,7 @@ pm run build OK.
 
 - Combobox de Cliente/Fornecedor busca tambem pelo CNPJ/CPF (com ou sem mascara) e mostra o documento abaixo do nome: novo/editar lancamento (pagar+receber) e conciliação.
 - PeriodoFilter ganha prop preset: Buscar lancamento abre com setas de navegacao ativas, igual ao pagar/receber.
+
+## Obrigatorios do lancamento (14/10)
+
+- Emissao vira Competência (obrigatoria); obrigatorios passam a descricao, valor, competência, cliente/fornecedor e categoria (novo e editar, pagar+receber). Vencimento deixa de ser obrigatorio (vazio assume a competência).

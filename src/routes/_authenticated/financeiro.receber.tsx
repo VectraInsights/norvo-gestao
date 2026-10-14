@@ -303,13 +303,17 @@ export function LancamentosPage({ tipo }: { tipo: "receber" | "pagar" }) {
       if (!empresa) throw new Error("Empresa não selecionada");
       const valor = Number(input.valor);
       if (!(valor > 0)) throw new Error("Valor deve ser maior que zero");
+      if (!input.descricao.trim()) throw new Error("Informe a descrição");
+      if (!input.data_emissao) throw new Error("Informe a competência");
+      if (!input.contato_id) throw new Error(tipo === "receber" ? "Selecione o cliente" : "Selecione o fornecedor");
+      if (!input.categoria_id) throw new Error("Selecione a categoria");
       const { error } = await supabase.from("lancamentos_financeiros").insert({
         empresa_id: empresa.id,
         tipo,
         descricao: input.descricao,
         valor,
         data_emissao: input.data_emissao,
-        data_vencimento: input.data_vencimento,
+        data_vencimento: input.data_vencimento || input.data_emissao,
         contato_id: input.contato_id || null,
         categoria_id: input.categoria_id || null,
         conta_bancaria_id: input.conta_bancaria_id || null,
@@ -497,13 +501,17 @@ export function LancamentosPage({ tipo }: { tipo: "receber" | "pagar" }) {
     mutationFn: async (input: NonNullable<typeof editing>) => {
       const valor = Number(input.valor);
       if (!(valor > 0)) throw new Error("Valor deve ser maior que zero");
+      if (!input.descricao.trim()) throw new Error("Informe a descrição");
+      if (!input.data_emissao) throw new Error("Informe a competência");
+      if (!input.contato_id) throw new Error(tipo === "receber" ? "Selecione o cliente" : "Selecione o fornecedor");
+      if (!input.categoria_id) throw new Error("Selecione a categoria");
       const { error } = await supabase
         .from("lancamentos_financeiros")
         .update({
           descricao: input.descricao,
           valor,
           data_emissao: input.data_emissao,
-          data_vencimento: input.data_vencimento,
+          data_vencimento: input.data_vencimento || input.data_emissao,
           contato_id: input.contato_id || null,
           categoria_id: input.categoria_id || null,
           conta_bancaria_id: input.conta_bancaria_id || null,
@@ -778,17 +786,17 @@ export function LancamentosPage({ tipo }: { tipo: "receber" | "pagar" }) {
                     />
                   </div>
                   <div className="grid gap-1.5">
-                    <Label>Emissão</Label>
+                    <Label>Competência *</Label>
                     <DateInput
+                      required
                       value={form.data_emissao}
                       onChange={(v) => setForm({ ...form, data_emissao: v })}
                       className="h-10"
                     />
                   </div>
                   <div className="grid gap-1.5">
-                    <Label>Vencimento *</Label>
+                    <Label>Vencimento</Label>
                     <DateInput
-                      required
                       value={form.data_vencimento}
                       onChange={(v) => setForm({ ...form, data_vencimento: v })}
                       className="h-10"
@@ -796,7 +804,7 @@ export function LancamentosPage({ tipo }: { tipo: "receber" | "pagar" }) {
                   </div>
                 </div>
                 <div className="grid gap-1.5">
-                  <Label>{tipo === "receber" ? "Cliente" : "Fornecedor"}</Label>
+                  <Label>{tipo === "receber" ? "Cliente *" : "Fornecedor *"}</Label>
                   <Combobox
                     value={form.contato_id}
                     onChange={(v) => setForm({ ...form, contato_id: v })}
@@ -822,7 +830,7 @@ export function LancamentosPage({ tipo }: { tipo: "receber" | "pagar" }) {
                     />
                   </div>
                   <div className="grid gap-1.5">
-                    <Label>Categoria</Label>
+                    <Label>Categoria *</Label>
                     <Combobox
                       value={form.categoria_id}
                       onChange={(v) => setForm({ ...form, categoria_id: v })}
@@ -1249,17 +1257,17 @@ export function LancamentosPage({ tipo }: { tipo: "receber" | "pagar" }) {
                   />
                 </div>
                 <div className="grid gap-1.5">
-                  <Label>Emissão</Label>
+                  <Label>Competência *</Label>
                   <DateInput
+                    required
                     value={editing.data_emissao}
                     onChange={(v) => setEditing({ ...editing, data_emissao: v })}
                     className="h-10"
                   />
                 </div>
                 <div className="grid gap-1.5">
-                  <Label>Vencimento *</Label>
+                  <Label>Vencimento</Label>
                   <DateInput
-                    required
                     value={editing.data_vencimento}
                     onChange={(v) => setEditing({ ...editing, data_vencimento: v })}
                     className="h-10"
@@ -1267,7 +1275,7 @@ export function LancamentosPage({ tipo }: { tipo: "receber" | "pagar" }) {
                 </div>
               </div>
               <div className="grid gap-1.5">
-                <Label>{tipo === "receber" ? "Cliente" : "Fornecedor"}</Label>
+                <Label>{tipo === "receber" ? "Cliente *" : "Fornecedor *"}</Label>
                 <Combobox
                   value={editing.contato_id}
                   onChange={(v) => setEditing({ ...editing, contato_id: v })}
@@ -1293,7 +1301,7 @@ export function LancamentosPage({ tipo }: { tipo: "receber" | "pagar" }) {
                   />
                 </div>
                 <div className="grid gap-1.5">
-                  <Label>Categoria</Label>
+                  <Label>Categoria *</Label>
                   <Combobox
                     value={editing.categoria_id}
                     onChange={(v) => setEditing({ ...editing, categoria_id: v })}
