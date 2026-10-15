@@ -19,11 +19,10 @@ const ROUTES: RotaBusca[] = [
   { label: "Contas a pagar", to: "/financeiro/pagar" },
   { label: "Fluxo de caixa", to: "/financeiro/fluxo" },
   { label: "Contas financeiras", to: "/financeiro/contas" },
-  { label: "Clientes", to: "/vendas/clientes" },
+  { label: "Clientes e fornecedores", to: "/fiscal/cadastro" },
   { label: "Vendas", to: "/vendas/vendas" },
   { label: "Orçamentos", to: "/vendas/pedidos" },
   { label: "Produtos", to: "/estoque/produtos" },
-  { label: "Fornecedores", to: "/estoque/fornecedores" },
   { label: "Movimentações", to: "/estoque/movimentacoes" },
   { label: "Notas emitidas (NFS-e / NF-e / NFC-e)", to: "/fiscal/emitidas" },
   { label: "Notas de compra (Entradas & XMLs)", to: "/fiscal/recebidas" },
@@ -156,13 +155,13 @@ export function CommandPalette() {
               ))}
           </CommandGroup>
 
-          {contatos && contatos.length > 0 && (pode("vendas") || pode("estoque")) && (
+          {contatos && contatos.length > 0 && (pode("vendas") || pode("estoque") || pode("fiscal")) && (
             <>
               <CommandSeparator />
               <CommandGroup heading="Clientes / Fornecedores">
                 {contatos.map((c) => (
                   <CommandItem key={c.id} value={`contato-${c.id}-${c.nome}`}
-                    onSelect={() => go(c.tipo === "fornecedor" ? "/estoque/fornecedores" : "/vendas/clientes")}>
+                    onSelect={() => go("/fiscal/cadastro")}>
                     <span className="truncate">{c.nome}</span>
                     <span className="ml-auto text-xs text-muted-foreground capitalize">{c.tipo}</span>
                   </CommandItem>

@@ -10,6 +10,7 @@ import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "
 import { Textarea } from "@/components/ui/textarea";
 import { Loader2, Plus, Search, Trash2, Users, Pencil, ChevronLeft, ChevronRight } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
@@ -40,6 +41,7 @@ const emptyForm = () => ({
   nome: "", documento: "", ie: "", email: "", telefone: "",
   cep: "", logradouro: "", numero: "", complemento: "",
   bairro: "", cidade: "", uf: "", observacoes: "",
+  isCliente: true, isFornecedor: false,
 });
 
 function onlyDigits(s: string) { return s.replace(/\D/g, ""); }
@@ -60,6 +62,7 @@ function Cadastro() {
     dir: 1,
   });
   const [selecionados, setSelecionados] = useState<Set<string>>(new Set());
+  const [aba, setAba] = useState<"clientes" | "fornecedores">("clientes");
   const [confirmLote, setConfirmLote] = useState(false);
 
   // Unificação fiscal→contatos: na primeira abertura, migra sozinho os registros
@@ -166,7 +169,6 @@ function Cadastro() {
         const { data, error } = await supabase.from("contatos")
           .select("id,nome,tipo,documento,ie,email,telefone,cep,logradouro,numero,complemento,bairro,cidade,uf,observacoes")
           .eq("empresa_id", empresa!.id)
-          .in("tipo", ["cliente", "ambos"])
           .order("nome")
           .range(ini, ini + 499)
           .abortSignal(signal);
@@ -188,7 +190,12 @@ function Cadastro() {
     });
   }, [contatos, busca]);
 
-  const totalPaginas = Math.max(1, Math.ceil(filtrados.length / pageSize));
+  const daAba = useMemo(() => filtrados.filter((c) => aba === "clientes"
+    ? (c.tipo === "cliente" || c.tipo === "ambos")
+    : (c.tipo === "fornecedor" || c.tipo === "ambos")), [filtrados, aba]);
+  const nCli = useMemo(() => filtrados.filter((c) => c.tipo === "cliente" || c.tipo === "ambos").length, [filtrados]);
+  const nFor = useMemo(() => filtrados.filter((c) => c.tipo === "fornecedor" || c.tipo === "ambos").length, [filtrados]);
+  const totalPaginas = Math.max(1, Math.ceil(daAba.length / pageSize));
   const paginaAtual = Math.min(pagina, totalPaginas);
   const chOrd = (c: Contato): string => {
     if (ordem.key === "documento") return (c.documento || "").replace(/\D/g, "");
@@ -199,7 +206,7 @@ function Cadastro() {
     return (c.nome || "").toLowerCase();
   };
   const ordenados = [...filtrados].sort((a, b) => chOrd(a).localeCompare(chOrd(b), "pt-BR") * ordem.dir);
-  const visiveis = ordenados.slice((paginaAtual - 1) * pageSize, paginaAtual * pageSize);
+  const visiveis = daAba.slice((paginaAtual - 1) * pageSize, paginaAtual * pageSize);
   const alternarOrdem = (key: typeof ordem.key) => {
     setOrdem((o) => (o.key === key ? { key, dir: o.dir === 1 ? -1 : 1 } : { key, dir: 1 }));
   };
@@ -266,6 +273,8 @@ function Cadastro() {
   const criar = useMutation({
     mutationFn: async (input: ReturnType<typeof emptyForm>) => {
       if (!empresa) throw new Error("Empresa não selecionada");
+      if (!input.isCliente && !input.isFornecedor) throw new Error("Selecione ao menos um tipo: Cliente ou Fornecedor");
+      const tipo = input.isCliente && input.isFornecedor ? "ambos" : input.isCliente ? "cliente" : "fornecedor";
       const doc = onlyDigits(input.documento);
       if (doc) {
         const { data: existente } = await supabase.from("contatos")
@@ -274,7 +283,7 @@ function Cadastro() {
       }
       const logrFinal = await completarLogradouro(input.logradouro || "", input.cep || "");
       const { error } = await supabase.from("contatos").insert({
-        empresa_id: empresa.id, nome: input.nome, tipo: "cliente",
+        empresa_id: empresa.id, nome: input.nome, tipo,
         documento: doc || null, ie: input.ie || null, email: input.email || null, telefone: input.telefone || null,
         cep: input.cep || null, logradouro: logrFinal || null, numero: input.numero || null,
         complemento: input.complemento || null, bairro: input.bairro || null,
@@ -293,6 +302,8 @@ function Cadastro() {
   const editar = useMutation({
     mutationFn: async (input: ReturnType<typeof emptyForm> & { id: string }) => {
       if (!empresa) throw new Error("Empresa não selecionada");
+      if (!input.isCliente && !input.isFornecedor) throw new Error("Selecione ao menos um tipo: Cliente ou Fornecedor");
+      const tipo = input.isCliente && input.isFornecedor ? "ambos" : input.isCliente ? "cliente" : "fornecedor";
       const doc = onlyDigits(input.documento);
       if (doc) {
         const { data: existente } = await supabase.from("contatos")
@@ -301,7 +312,7 @@ function Cadastro() {
       }
       const logrFinal = await completarLogradouro(input.logradouro || "", input.cep || "");
       const { error } = await supabase.from("contatos").update({
-        nome: input.nome,
+        nome: input.nome, tipo,
         documento: doc || null, ie: input.ie || null, email: input.email || null, telefone: input.telefone || null,
         cep: input.cep || null, logradouro: logrFinal || null, numero: input.numero || null,
         complemento: input.complemento || null, bairro: input.bairro || null,
@@ -354,15 +365,23 @@ function Cadastro() {
       cep: c.cep ?? "", logradouro: c.logradouro ?? "", numero: c.numero ?? "",
       complemento: c.complemento ?? "", bairro: c.bairro ?? "", cidade: c.cidade ?? "",
       uf: c.uf ?? "", observacoes: c.observacoes ?? "",
+      isCliente: c.tipo === "cliente" || c.tipo === "ambos",
+      isFornecedor: c.tipo === "fornecedor" || c.tipo === "ambos",
     });
     setOpen(true);
   };
 
-  const openCreate = () => { setEditing(null); setForm(emptyForm()); setOpen(true); };
+  const openCreate = () => { setEditing(null); setForm({ ...emptyForm(), isCliente: aba === "clientes", isFornecedor: aba === "fornecedores" }); setOpen(true); };
 
   return (
     <>
-      <PageHeader eyebrow="Fiscal" title="Cadastro" description="Clientes e fornecedores juntos — remetentes, destinatários e tomadores usados no CT-e." />
+      <PageHeader eyebrow="Fiscal" title="Clientes e fornecedores" description="Cadastro único — vale para vendas, estoque e documentos fiscais." />
+      <Tabs value={aba} onValueChange={(v) => { setAba(v as "clientes" | "fornecedores"); setSelecionados(new Set()); setPagina(1); }}>
+        <TabsList className="rounded-xl shadow-sm">
+          <TabsTrigger value="clientes">Clientes ({nCli})</TabsTrigger>
+          <TabsTrigger value="fornecedores">Fornecedores ({nFor})</TabsTrigger>
+        </TabsList>
+      </Tabs>
       <div className="mb-4 flex flex-col gap-3 sm:mb-6 sm:flex-row sm:items-center">
         <div className="relative flex-1">
           <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
@@ -379,8 +398,8 @@ function Cadastro() {
       </div>
       {isLoading ? (
         <div className="space-y-2.5">{Array.from({ length: 4 }).map((_, i) => <div key={i} className="h-12 animate-pulse rounded-xl bg-muted/30" />)}</div>
-      ) : !filtrados?.length ? (
-        <EmptyState icon={Users} title="Nenhum cadastro" description={busca ? "Nada encontrado para a busca." : "Cadastre o primeiro cadastro (cliente ou fornecedor)."} />
+      ) : !daAba?.length ? (
+        <EmptyState icon={Users} title="Nenhum cadastro" description={busca ? "Nada encontrado para a busca." : aba === "clientes" ? "Nenhum cliente cadastrado." : "Nenhum fornecedor cadastrado."} />
       ) : (
         <Card className="overflow-hidden rounded-2xl shadow-panel">
           <Table className="min-w-[1280px]">
@@ -390,6 +409,7 @@ function Cadastro() {
                   <Checkbox checked={todosVisiveisSel} onCheckedChange={alternarTodosVisiveis} aria-label="Selecionar visíveis" />
                 </TableHead>
                 <TableHead className="cursor-pointer select-none whitespace-nowrap" onClick={() => alternarOrdem("nome")} title="Ordenar por nome">Nome{setaOrdem("nome")}</TableHead>
+                <TableHead className="whitespace-nowrap">Tipo</TableHead>
                 <TableHead className="cursor-pointer select-none whitespace-nowrap" onClick={() => alternarOrdem("documento")} title="Ordenar por CPF/CNPJ">CPF/CNPJ{setaOrdem("documento")}</TableHead>
                 <TableHead className="cursor-pointer select-none whitespace-nowrap" onClick={() => alternarOrdem("ie")} title="Ordenar por IE">IE{setaOrdem("ie")}</TableHead>
                 <TableHead className="cursor-pointer select-none whitespace-nowrap" onClick={() => alternarOrdem("cidade")} title="Ordenar por cidade">Cidade/UF{setaOrdem("cidade")}</TableHead>
@@ -404,6 +424,7 @@ function Cadastro() {
                   <TableCell>
                     <Checkbox checked={selecionados.has(c.id)} onCheckedChange={() => alternarUm(c.id)} aria-label={`Selecionar ${c.nome}`} />
                   </TableCell>                  <TableCell className="font-medium whitespace-nowrap">{c.nome}</TableCell>
+                  <TableCell className="whitespace-nowrap capitalize text-muted-foreground">{c.tipo}</TableCell>
                   <TableCell className="text-tabular whitespace-nowrap">{c.documento ? maskDoc(c.documento) : "—"}</TableCell>
                   <TableCell className="text-muted-foreground whitespace-nowrap">{c.ie || "—"}</TableCell>
                   <TableCell className="text-muted-foreground whitespace-nowrap">{c.cidade ? `${c.cidade}${c.uf ? `/${c.uf}` : ""}` : "—"}</TableCell>
@@ -442,7 +463,7 @@ function Cadastro() {
           </Table>
           <div className="flex flex-wrap items-center justify-between gap-2 border-t border-border/60 px-4 py-2.5 text-xs text-muted-foreground">
             <span>
-              {filtrados.length} cadastro(s){selecionados.size > 0 && ` · ${selecionados.size} selecionado(s)`}
+              {daAba.length} cadastro(s){selecionados.size > 0 && ` · ${selecionados.size} selecionado(s)`}
             </span>
             <div className="flex items-center gap-1.5">
               <Select value={String(pageSize)} onValueChange={(v) => { setPageSize(Number(v)); setPagina(1); }}>
@@ -486,6 +507,13 @@ function Cadastro() {
               </div>
             </div>
             <div className="grid gap-1.5"><Label>Nome / Razão social *</Label><Input required value={form.nome} onChange={(e) => setForm({ ...form, nome: e.target.value })} className="h-10 rounded-xl" /></div>
+            <div className="grid gap-1.5">
+              <Label>Tipo *</Label>
+              <div className="flex gap-4">
+                <label className="flex items-center gap-2 text-sm"><Checkbox checked={form.isCliente} onCheckedChange={(v) => setForm({ ...form, isCliente: v === true })} /> Cliente</label>
+                <label className="flex items-center gap-2 text-sm"><Checkbox checked={form.isFornecedor} onCheckedChange={(v) => setForm({ ...form, isFornecedor: v === true })} /> Fornecedor</label>
+              </div>
+            </div>
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
               <div className="grid gap-1.5"><Label>IE / ISENTO</Label><Input value={form.ie} onChange={(e) => setForm({ ...form, ie: e.target.value.toUpperCase() })} className="h-10 rounded-xl" /></div>
               <div className="grid gap-1.5"><Label>Telefone</Label><Input value={form.telefone} onChange={(e) => setForm({ ...form, telefone: e.target.value })} className="h-10 rounded-xl" /></div>
@@ -506,7 +534,7 @@ function Cadastro() {
             </div>
             <div className="grid gap-1.5"><Label>Observações</Label><Textarea rows={3} value={form.observacoes} onChange={(e) => setForm({ ...form, observacoes: e.target.value })} className="rounded-xl" /></div>
             <DialogFooter className="gap-2">
-              <Button type="submit" disabled={criar.isPending || editar.isPending} className="h-10 rounded-xl px-6 shadow-sm transition-all hover:-translate-y-px hover:shadow-md">
+              <Button type="submit" disabled={criar.isPending || editar.isPending || (!form.isCliente && !form.isFornecedor)} className="h-10 rounded-xl px-6 shadow-sm transition-all hover:-translate-y-px hover:shadow-md">
                 {(criar.isPending || editar.isPending) && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}Salvar
               </Button>
             </DialogFooter>

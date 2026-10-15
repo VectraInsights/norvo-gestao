@@ -22,7 +22,6 @@ import { Route as AuthenticatedConfiguracoesAuditoriaRouteImport } from './route
 import { Route as AuthenticatedConfiguracoesEmpresasRouteImport } from './routes/_authenticated/configuracoes.empresas'
 import { Route as AuthenticatedConfiguracoesUsuariosRouteImport } from './routes/_authenticated/configuracoes.usuarios'
 import { Route as AuthenticatedEstoqueComprasRouteImport } from './routes/_authenticated/estoque.compras'
-import { Route as AuthenticatedEstoqueFornecedoresRouteImport } from './routes/_authenticated/estoque.fornecedores'
 import { Route as AuthenticatedEstoqueInventarioRouteImport } from './routes/_authenticated/estoque.inventario'
 import { Route as AuthenticatedEstoqueMovimentacoesRouteImport } from './routes/_authenticated/estoque.movimentacoes'
 import { Route as AuthenticatedEstoqueProdutosRouteImport } from './routes/_authenticated/estoque.produtos'
@@ -60,7 +59,6 @@ import { Route as AuthenticatedRhColaboradoresRouteImport } from './routes/_auth
 import { Route as AuthenticatedRhComissoesRouteImport } from './routes/_authenticated/rh.comissoes'
 import { Route as AuthenticatedRhFeriasRouteImport } from './routes/_authenticated/rh.ferias'
 import { Route as AuthenticatedRhFolhaRouteImport } from './routes/_authenticated/rh.folha'
-import { Route as AuthenticatedVendasClientesRouteImport } from './routes/_authenticated/vendas.clientes'
 import { Route as AuthenticatedVendasCrmRouteImport } from './routes/_authenticated/vendas.crm'
 import { Route as AuthenticatedVendasPedidosRouteImport } from './routes/_authenticated/vendas.pedidos'
 import { Route as AuthenticatedVendasVendasRouteImport } from './routes/_authenticated/vendas.vendas'
@@ -132,12 +130,6 @@ const AuthenticatedEstoqueComprasRoute =
   AuthenticatedEstoqueComprasRouteImport.update({
     id: '/estoque/compras',
     path: '/estoque/compras',
-    getParentRoute: () => AuthenticatedRouteRoute,
-  } as any)
-const AuthenticatedEstoqueFornecedoresRoute =
-  AuthenticatedEstoqueFornecedoresRouteImport.update({
-    id: '/estoque/fornecedores',
-    path: '/estoque/fornecedores',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
 const AuthenticatedEstoqueInventarioRoute =
@@ -357,12 +349,6 @@ const AuthenticatedRhFolhaRoute = AuthenticatedRhFolhaRouteImport.update({
   path: '/rh/folha',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
-const AuthenticatedVendasClientesRoute =
-  AuthenticatedVendasClientesRouteImport.update({
-    id: '/vendas/clientes',
-    path: '/vendas/clientes',
-    getParentRoute: () => AuthenticatedRouteRoute,
-  } as any)
 const AuthenticatedVendasCrmRoute = AuthenticatedVendasCrmRouteImport.update({
   id: '/vendas/crm',
   path: '/vendas/crm',
@@ -393,7 +379,6 @@ export interface FileRoutesByFullPath {
   '/configuracoes/empresas': typeof AuthenticatedConfiguracoesEmpresasRoute
   '/configuracoes/usuarios': typeof AuthenticatedConfiguracoesUsuariosRoute
   '/estoque/compras': typeof AuthenticatedEstoqueComprasRoute
-  '/estoque/fornecedores': typeof AuthenticatedEstoqueFornecedoresRoute
   '/estoque/inventario': typeof AuthenticatedEstoqueInventarioRoute
   '/estoque/movimentacoes': typeof AuthenticatedEstoqueMovimentacoesRoute
   '/estoque/produtos': typeof AuthenticatedEstoqueProdutosRoute
@@ -431,7 +416,6 @@ export interface FileRoutesByFullPath {
   '/rh/comissoes': typeof AuthenticatedRhComissoesRoute
   '/rh/ferias': typeof AuthenticatedRhFeriasRoute
   '/rh/folha': typeof AuthenticatedRhFolhaRoute
-  '/vendas/clientes': typeof AuthenticatedVendasClientesRoute
   '/vendas/crm': typeof AuthenticatedVendasCrmRoute
   '/vendas/pedidos': typeof AuthenticatedVendasPedidosRoute
   '/vendas/vendas': typeof AuthenticatedVendasVendasRoute
@@ -449,7 +433,6 @@ export interface FileRoutesByTo {
   '/configuracoes/empresas': typeof AuthenticatedConfiguracoesEmpresasRoute
   '/configuracoes/usuarios': typeof AuthenticatedConfiguracoesUsuariosRoute
   '/estoque/compras': typeof AuthenticatedEstoqueComprasRoute
-  '/estoque/fornecedores': typeof AuthenticatedEstoqueFornecedoresRoute
   '/estoque/inventario': typeof AuthenticatedEstoqueInventarioRoute
   '/estoque/movimentacoes': typeof AuthenticatedEstoqueMovimentacoesRoute
   '/estoque/produtos': typeof AuthenticatedEstoqueProdutosRoute
@@ -487,7 +470,6 @@ export interface FileRoutesByTo {
   '/rh/comissoes': typeof AuthenticatedRhComissoesRoute
   '/rh/ferias': typeof AuthenticatedRhFeriasRoute
   '/rh/folha': typeof AuthenticatedRhFolhaRoute
-  '/vendas/clientes': typeof AuthenticatedVendasClientesRoute
   '/vendas/crm': typeof AuthenticatedVendasCrmRoute
   '/vendas/pedidos': typeof AuthenticatedVendasPedidosRoute
   '/vendas/vendas': typeof AuthenticatedVendasVendasRoute
@@ -507,7 +489,6 @@ export interface FileRoutesById {
   '/_authenticated/configuracoes/empresas': typeof AuthenticatedConfiguracoesEmpresasRoute
   '/_authenticated/configuracoes/usuarios': typeof AuthenticatedConfiguracoesUsuariosRoute
   '/_authenticated/estoque/compras': typeof AuthenticatedEstoqueComprasRoute
-  '/_authenticated/estoque/fornecedores': typeof AuthenticatedEstoqueFornecedoresRoute
   '/_authenticated/estoque/inventario': typeof AuthenticatedEstoqueInventarioRoute
   '/_authenticated/estoque/movimentacoes': typeof AuthenticatedEstoqueMovimentacoesRoute
   '/_authenticated/estoque/produtos': typeof AuthenticatedEstoqueProdutosRoute
@@ -545,7 +526,6 @@ export interface FileRoutesById {
   '/_authenticated/rh/comissoes': typeof AuthenticatedRhComissoesRoute
   '/_authenticated/rh/ferias': typeof AuthenticatedRhFeriasRoute
   '/_authenticated/rh/folha': typeof AuthenticatedRhFolhaRoute
-  '/_authenticated/vendas/clientes': typeof AuthenticatedVendasClientesRoute
   '/_authenticated/vendas/crm': typeof AuthenticatedVendasCrmRoute
   '/_authenticated/vendas/pedidos': typeof AuthenticatedVendasPedidosRoute
   '/_authenticated/vendas/vendas': typeof AuthenticatedVendasVendasRoute
@@ -565,7 +545,6 @@ export interface FileRouteTypes {
     | '/configuracoes/empresas'
     | '/configuracoes/usuarios'
     | '/estoque/compras'
-    | '/estoque/fornecedores'
     | '/estoque/inventario'
     | '/estoque/movimentacoes'
     | '/estoque/produtos'
@@ -603,7 +582,6 @@ export interface FileRouteTypes {
     | '/rh/comissoes'
     | '/rh/ferias'
     | '/rh/folha'
-    | '/vendas/clientes'
     | '/vendas/crm'
     | '/vendas/pedidos'
     | '/vendas/vendas'
@@ -621,7 +599,6 @@ export interface FileRouteTypes {
     | '/configuracoes/empresas'
     | '/configuracoes/usuarios'
     | '/estoque/compras'
-    | '/estoque/fornecedores'
     | '/estoque/inventario'
     | '/estoque/movimentacoes'
     | '/estoque/produtos'
@@ -659,7 +636,6 @@ export interface FileRouteTypes {
     | '/rh/comissoes'
     | '/rh/ferias'
     | '/rh/folha'
-    | '/vendas/clientes'
     | '/vendas/crm'
     | '/vendas/pedidos'
     | '/vendas/vendas'
@@ -678,7 +654,6 @@ export interface FileRouteTypes {
     | '/_authenticated/configuracoes/empresas'
     | '/_authenticated/configuracoes/usuarios'
     | '/_authenticated/estoque/compras'
-    | '/_authenticated/estoque/fornecedores'
     | '/_authenticated/estoque/inventario'
     | '/_authenticated/estoque/movimentacoes'
     | '/_authenticated/estoque/produtos'
@@ -716,7 +691,6 @@ export interface FileRouteTypes {
     | '/_authenticated/rh/comissoes'
     | '/_authenticated/rh/ferias'
     | '/_authenticated/rh/folha'
-    | '/_authenticated/vendas/clientes'
     | '/_authenticated/vendas/crm'
     | '/_authenticated/vendas/pedidos'
     | '/_authenticated/vendas/vendas'
@@ -824,13 +798,6 @@ declare module '@tanstack/react-router' {
       path: '/estoque/compras'
       fullPath: '/estoque/compras'
       preLoaderRoute: typeof AuthenticatedEstoqueComprasRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
-    '/_authenticated/estoque/fornecedores': {
-      id: '/_authenticated/estoque/fornecedores'
-      path: '/estoque/fornecedores'
-      fullPath: '/estoque/fornecedores'
-      preLoaderRoute: typeof AuthenticatedEstoqueFornecedoresRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/estoque/inventario': {
@@ -1092,13 +1059,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedRhFolhaRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
-    '/_authenticated/vendas/clientes': {
-      id: '/_authenticated/vendas/clientes'
-      path: '/vendas/clientes'
-      fullPath: '/vendas/clientes'
-      preLoaderRoute: typeof AuthenticatedVendasClientesRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
     '/_authenticated/vendas/crm': {
       id: '/_authenticated/vendas/crm'
       path: '/vendas/crm'
@@ -1129,7 +1089,6 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedConfiguracoesEmpresasRoute: typeof AuthenticatedConfiguracoesEmpresasRoute
   AuthenticatedConfiguracoesUsuariosRoute: typeof AuthenticatedConfiguracoesUsuariosRoute
   AuthenticatedEstoqueComprasRoute: typeof AuthenticatedEstoqueComprasRoute
-  AuthenticatedEstoqueFornecedoresRoute: typeof AuthenticatedEstoqueFornecedoresRoute
   AuthenticatedEstoqueInventarioRoute: typeof AuthenticatedEstoqueInventarioRoute
   AuthenticatedEstoqueMovimentacoesRoute: typeof AuthenticatedEstoqueMovimentacoesRoute
   AuthenticatedEstoqueProdutosRoute: typeof AuthenticatedEstoqueProdutosRoute
@@ -1167,7 +1126,6 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedRhComissoesRoute: typeof AuthenticatedRhComissoesRoute
   AuthenticatedRhFeriasRoute: typeof AuthenticatedRhFeriasRoute
   AuthenticatedRhFolhaRoute: typeof AuthenticatedRhFolhaRoute
-  AuthenticatedVendasClientesRoute: typeof AuthenticatedVendasClientesRoute
   AuthenticatedVendasCrmRoute: typeof AuthenticatedVendasCrmRoute
   AuthenticatedVendasPedidosRoute: typeof AuthenticatedVendasPedidosRoute
   AuthenticatedVendasVendasRoute: typeof AuthenticatedVendasVendasRoute
@@ -1183,7 +1141,6 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedConfiguracoesUsuariosRoute:
     AuthenticatedConfiguracoesUsuariosRoute,
   AuthenticatedEstoqueComprasRoute: AuthenticatedEstoqueComprasRoute,
-  AuthenticatedEstoqueFornecedoresRoute: AuthenticatedEstoqueFornecedoresRoute,
   AuthenticatedEstoqueInventarioRoute: AuthenticatedEstoqueInventarioRoute,
   AuthenticatedEstoqueMovimentacoesRoute:
     AuthenticatedEstoqueMovimentacoesRoute,
@@ -1226,7 +1183,6 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedRhComissoesRoute: AuthenticatedRhComissoesRoute,
   AuthenticatedRhFeriasRoute: AuthenticatedRhFeriasRoute,
   AuthenticatedRhFolhaRoute: AuthenticatedRhFolhaRoute,
-  AuthenticatedVendasClientesRoute: AuthenticatedVendasClientesRoute,
   AuthenticatedVendasCrmRoute: AuthenticatedVendasCrmRoute,
   AuthenticatedVendasPedidosRoute: AuthenticatedVendasPedidosRoute,
   AuthenticatedVendasVendasRoute: AuthenticatedVendasVendasRoute,

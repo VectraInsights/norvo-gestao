@@ -6031,6 +6031,19 @@ pm run build OK.
 - CT-e aba Embarque vazia: tabela min-w-max forcava scroll horizontal sem
   necessidade; vazia agora usa w-full.
 
+## Cadastro unico em Fiscal (15/10)
+
+- Fiscal -> Cadastro vira O lugar de clientes/fornecedores: sem filtro de tipo,
+  abas Clientes/Fornecedores (ambos nas duas, com contagem), coluna Tipo, form
+  com seletor Cliente/Fornecedor (padrao pela aba) e titulo atualizado.
+- Telas Vendas/Clientes e Estoque/Fornecedores APAGADAS (arquivos + menu +
+  Ctrl+K + atalho dashboard + Alt+C/F): dashboard, command-palette (contatos
+  passam a exigir modulo fiscal tambem) e app-shell apontam p/ /fiscal/cadastro;
+  routeTree regenerado sem as rotas.
+- ATENCAO: gerenciar contatos agora exige o modulo Fiscal liberado — membros que
+  so tinham Vendas/Estoque perdem o acesso; o admin precisa marcar Fiscal p/ eles
+  em Configuracoes -> Usuarios.
+
 ## Layout: sticky de verdade, sem borda dupla e header com contexto (14/10)
 
 - Cabeçalho de tabela sticky passa a funcionar: `.erp-table-wrap` ganhou `max-height`
