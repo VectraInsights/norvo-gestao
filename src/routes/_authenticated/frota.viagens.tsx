@@ -5,12 +5,13 @@ import { Combobox } from "@/components/erp/combobox";
 import { NovoContatoDialog } from "@/components/erp/novo-contato-dialog";
 import { PageHeader } from "@/components/erp/page-header";
 import { EmptyState } from "@/components/erp/empty-state";
+import { SearchField } from "@/components/erp/search-field";
+import { StatusBadge } from "@/components/erp/status-badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
 import { MoneyInput } from "@/components/erp/money-input";
 import {
@@ -58,7 +59,6 @@ import {
   CheckCircle2,
   XCircle,
   Wallet,
-  Search,
 } from "lucide-react";
 import { useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
@@ -141,12 +141,6 @@ function avisoDoc(m: Motorista) {
   return avisos;
 }
 
-const STATUS_COR: Record<string, string> = {
-  planejada: "bg-primary/15 text-primary",
-  em_transito: "bg-warning/20 text-warning-foreground",
-  concluida: "bg-success/15 text-success",
-  cancelada: "bg-muted text-muted-foreground",
-};
 const STATUS_LABEL: Record<string, string> = {
   planejada: "planejada",
   em_transito: "em trânsito",
@@ -519,10 +513,7 @@ function Viagens() {
         description="Fretes com motorista, veículo e resultado por viagem."
       />
       <div className="mb-3 flex flex-col gap-2 sm:flex-row sm:items-center">
-        <div className="relative flex-1">
-          <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-          <Input className="pl-8" value={busca} onChange={(e) => { setBusca(e.target.value); setPagina(1); }} />
-        </div>
+        <SearchField value={busca} onChange={(v) => { setBusca(v); setPagina(1); }} />
         <div className="flex items-center gap-2">
           <Dialog
             open={open}
@@ -758,9 +749,7 @@ function Viagens() {
                       {brl(resultado)}
                     </TableCell>
                     <TableCell>
-                      <Badge variant="secondary" className={STATUS_COR[v.status] ?? ""}>
-                        {STATUS_LABEL[v.status] ?? v.status}
-                      </Badge>
+                      <StatusBadge status={v.status} label={STATUS_LABEL[v.status] ?? v.status} />
                     </TableCell>
                     <TableCell className="text-right">
                       <div className="flex justify-end gap-1">

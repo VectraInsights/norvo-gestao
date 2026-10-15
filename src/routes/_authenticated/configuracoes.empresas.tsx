@@ -17,6 +17,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Plus, Loader2, Search, Trash2, Pencil } from "lucide-react";
+import { SearchField } from "@/components/erp/search-field";
 import { useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
@@ -216,10 +217,7 @@ export function EmpresasPage() {
   return (
     <>
       <div className="mb-4 flex flex-col gap-3 sm:mb-6 sm:flex-row sm:items-center">
-        <div className="relative flex-1">
-          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-          <Input className="h-10 rounded-xl pl-10 shadow-sm" value={busca} onChange={(e) => setBusca(e.target.value)} />
-        </div>
+        <SearchField value={busca} onChange={setBusca} />
         <div className="flex items-center gap-2">
           <Dialog open={open} onOpenChange={(v) => { setOpen(v); if (!v) setForm(emptyForm); }}>
             <DialogTrigger asChild><Button onClick={openNew} className="h-10 shrink-0 whitespace-nowrap rounded-xl px-5 shadow-sm transition-all hover:-translate-y-px hover:shadow-md"><Plus className="mr-1.5 h-4 w-4" />Nova empresa</Button></DialogTrigger>

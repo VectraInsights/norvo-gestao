@@ -1,6 +1,8 @@
 /* eslint-disable @typescript-eslint/no-explicit-any -- tabelas novas ainda não estão em types.ts; padrão do projeto é cast as never/as any */
 import { createFileRoute } from "@tanstack/react-router";
 import { DateInput } from "@/components/erp/date-input";
+import { SearchField } from "@/components/erp/search-field";
+import { StatusBadge } from "@/components/erp/status-badge";
 import { PageHeader } from "@/components/erp/page-header";
 import { EmptyState } from "@/components/erp/empty-state";
 import { Button } from "@/components/ui/button";
@@ -43,7 +45,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-import { ChevronLeft, ChevronRight, Users, Pencil, Plus, Trash2, X, FileUp, Search } from "lucide-react";
+import { ChevronLeft, ChevronRight, Users, Pencil, Plus, Trash2, FileUp } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import * as pdfjsLib from "pdfjs-dist";
 import pdfWorker from "pdfjs-dist/build/pdf.worker.min.mjs?url";
@@ -1398,20 +1400,7 @@ function ColaboradoresPage() {
         description="Cadastro de funcionários, cargos e dados de pagamento."
       />
       <div className="mb-4 flex flex-col gap-2 sm:mb-6 sm:flex-row sm:items-center">
-        <div className="relative flex-1">
-          <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-          <Input className="h-9 rounded-xl pl-10 pr-10 shadow-sm" value={busca} onChange={(e) => { setBusca(e.target.value); setPagina(1); }} />
-          {busca && (
-            <button
-              type="button"
-              onClick={() => { setBusca(""); setPagina(1); }}
-              className="absolute right-2.5 top-1/2 grid h-6 w-6 -translate-y-1/2 place-items-center rounded-lg text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
-              aria-label="Limpar busca"
-            >
-              <X className="h-4 w-4" />
-            </button>
-          )}
-        </div>
+        <SearchField value={busca} onChange={(v) => { setBusca(v); setPagina(1); }} size="xs" />
         <div className="flex items-center gap-2">
             <Dialog open={cargosOpen} onOpenChange={setCargosOpen}>
               <DialogTrigger asChild>
@@ -1961,18 +1950,7 @@ function ColaboradoresPage() {
                     <TableCell className="font-medium">{c.nome}</TableCell>
                     <TableCell>{c.cargo ?? "—"}</TableCell>
                     <TableCell>
-                      <span
-                        className={
-                          "inline-block rounded-full px-2 py-0.5 text-[11px] font-medium " +
-                          (c.status === "ativo"
-                            ? "bg-primary/15 text-primary"
-                            : c.status === "suspenso"
-                              ? "bg-amber-500/15 text-amber-700 dark:text-amber-400"
-                              : "bg-muted text-muted-foreground")
-                        }
-                      >
-                        {STATUS[c.status] ?? c.status}
-                      </span>
+                      <StatusBadge status={c.status} label={STATUS[c.status] ?? c.status} />
                     </TableCell>
                     <TableCell>{c.data_admissao ? dateBR(c.data_admissao) : "—"}</TableCell>
                     <TableCell className="text-right text-tabular">

@@ -19,6 +19,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEmpresaAtual } from "@/hooks/use-empresa";
 import { toast } from "sonner";
 import { completarLogradouro } from "@/lib/endereco";
+import { SearchField } from "@/components/erp/search-field";
 import { maskDoc } from "@/lib/format";
 
 export const Route = createFileRoute("/_authenticated/fiscal/cadastro")({
@@ -378,10 +379,7 @@ function Cadastro() {
     <>
       <PageHeader eyebrow="Fiscal" title="Contatos" description="Cadastro único — clientes, fornecedores e transporte." />
       <div className="mb-4 flex flex-col gap-3 sm:mb-6 sm:flex-row sm:items-center">
-        <div className="relative flex-1">
-          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-          <Input className="h-10 rounded-xl pl-10 shadow-sm" value={busca} onChange={(e) => { setBusca(e.target.value); setPagina(1); }} />
-        </div>
+        <SearchField value={busca} onChange={(v) => { setBusca(v); setPagina(1); }} />
         <div className="flex items-center gap-2">
           {selecionados.size > 0 && (
             <Button variant="destructive" size="sm" onClick={() => setConfirmLote(true)} className="h-10 rounded-xl px-4">

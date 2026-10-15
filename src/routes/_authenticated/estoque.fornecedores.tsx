@@ -1,6 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { PageHeader } from "@/components/erp/page-header";
 import { EmptyState } from "@/components/erp/empty-state";
+import { SearchField } from "@/components/erp/search-field";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -398,10 +399,7 @@ function Fornecedores() {
         description="Fornecedores cadastrados para compras e reposição de estoque."
       />
       <div className="mb-3 flex flex-col gap-2 sm:flex-row sm:items-center">
-        <div className="relative flex-1">
-          <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-          <Input className="h-9 rounded-xl pl-10 pr-10 shadow-sm" value={busca} onChange={(e) => { setBusca(e.target.value); setPagina(1); }} />
-        </div>
+        <SearchField value={busca} onChange={(v) => { setBusca(v); setPagina(1); }} />
         <div className="flex items-center gap-2">
           <Button onClick={openCreate} className="h-9 rounded-xl px-4 shadow-sm transition-all hover:shadow-md active:scale-95">
             <Plus className="mr-1 h-4 w-4" />

@@ -1,6 +1,8 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { PageHeader } from "@/components/erp/page-header";
 import { EmptyState } from "@/components/erp/empty-state";
+import { SearchField } from "@/components/erp/search-field";
+import { StatusBadge } from "@/components/erp/status-badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -340,10 +342,7 @@ function Clientes() {
     <>
       <PageHeader eyebrow="Vendas & CRM" title="Clientes" description="Cadastro de clientes — vendas e documentos fiscais." />
       <div className="mb-3 flex flex-col gap-2 sm:flex-row sm:items-center">
-        <div className="relative flex-1">
-          <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-          <Input className="pl-8" value={busca} onChange={(e) => setBusca(e.target.value)} />
-        </div>
+        <SearchField value={busca} onChange={(v) => setBusca(v)} />
         <div className="flex items-center gap-2">
           <Button variant="ghost" size="sm" onClick={() => setTrilhaOpen(true)} className="h-9 rounded-xl px-4 active:scale-95">
             Auditoria
@@ -519,13 +518,7 @@ function Clientes() {
             <div className="divide-y divide-border/60">
               {(trilhaQuery.data ?? []).map((ev: any) => (
                 <div key={ev.id} className="flex items-start gap-3 rounded-lg px-2 py-2.5 transition-colors hover:bg-accent/40">
-                  <span className={`mt-0.5 inline-flex shrink-0 items-center rounded-full px-2.5 py-1 text-[11px] font-medium shadow-sm ${
-                    ev.acao === "excluir" ? "bg-destructive/10 text-destructive"
-                    : ev.acao === "alterar" ? "bg-primary/10 text-primary"
-                    : "bg-success/10 text-success"
-                  }`}>
-                    {ev.acao === "excluir" ? "Excluiu" : ev.acao === "alterar" ? "Alterou" : "Criou"}
-                  </span>
+                  <StatusBadge status={ev.acao} label={ev.acao === "excluir" ? "Excluiu" : ev.acao === "alterar" ? "Alterou" : "Criou"} />
                   <div className="min-w-0 flex-1">
                     <p className="text-sm text-foreground">{ev.detalhes?.descricao || "—"}</p>
                     <p className="mt-0.5 text-xs text-muted-foreground">{ev.detalhes?.user_nome || ev.detalhes?.user_email || "—"}</p>

@@ -2,8 +2,8 @@ import { createFileRoute } from "@tanstack/react-router";
 import { PageHeader } from "@/components/erp/page-header";
 import { EmptyState } from "@/components/erp/empty-state";
 import { StatusBadge } from "@/components/erp/status-badge";
+import { SearchField } from "@/components/erp/search-field";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { MoneyInput } from "@/components/erp/money-input";
 import { Combobox } from "@/components/erp/combobox";
 import { NovoContatoDialog } from "@/components/erp/novo-contato-dialog";
@@ -47,7 +47,6 @@ import {
   Plus,
   ShoppingCart,
   Trash2,
-  Search,
 } from "lucide-react";
 import { useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
@@ -192,10 +191,7 @@ function VendasPage() {
         description="Proposta → pedido → faturamento. Ao faturar, o sistema baixa estoque, gera contas a receber e cria a nota fiscal."
       />
       <div className="mb-3 flex flex-col gap-2 sm:flex-row sm:items-center">
-        <div className="relative flex-1">
-          <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-          <Input className="pl-8" value={busca} onChange={(e) => { setBusca(e.target.value); setPagina(1); }} />
-        </div>
+        <SearchField value={busca} onChange={(v) => { setBusca(v); setPagina(1); }} />
         <div className="flex items-center gap-2">
           <Select
               value={statusFilter}

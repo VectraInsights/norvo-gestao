@@ -1,11 +1,11 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { PageHeader } from "@/components/erp/page-header";
 import { EmptyState } from "@/components/erp/empty-state";
+import { SearchField } from "@/components/erp/search-field";
 import { StatusBadge } from "@/components/erp/status-badge";
 import { Card } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { ShoppingCart, Search } from "lucide-react";
+import { ShoppingCart } from "lucide-react";
 import { useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery } from "@tanstack/react-query";
@@ -73,10 +73,7 @@ function VendasFaturadas() {
         description="Vendas já faturadas. Para criar ou faturar uma nova venda, use Orçamentos."
       />
       <div className="mb-3 flex flex-col gap-2 sm:flex-row sm:items-center">
-        <div className="relative flex-1">
-          <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-          <Input className="pl-8" value={busca} onChange={(e) => setBusca(e.target.value)} />
-        </div>
+        <SearchField value={busca} onChange={(v) => setBusca(v)} />
       </div>
       {isLoading ? null : !filtrados?.length ? (
         <EmptyState

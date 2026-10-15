@@ -2,6 +2,8 @@ import { createFileRoute } from "@tanstack/react-router";
 import { DateInput } from "@/components/erp/date-input";
 import { PageHeader } from "@/components/erp/page-header";
 import { EmptyState } from "@/components/erp/empty-state";
+import { SearchField } from "@/components/erp/search-field";
+import { StatusBadge } from "@/components/erp/status-badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -44,7 +46,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-import { Briefcase, ChevronLeft, ChevronRight, Plus, Trash2, Pencil, Search, X } from "lucide-react";
+import { Briefcase, ChevronLeft, ChevronRight, Plus, Trash2, Pencil } from "lucide-react";
 import { useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -85,14 +87,6 @@ const STATUS_LABEL: Record<string, string> = {
   concluido: "Concluído",
   cancelado: "Cancelado",
 };
-const STATUS_COLOR: Record<string, string> = {
-  planejado: "bg-primary/10 text-primary border-primary/20",
-  em_andamento: "bg-primary/10 text-primary border-primary/20",
-  pausado: "bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/20",
-  concluido: "bg-success/10 text-success border-success/20",
-  cancelado: "bg-destructive/10 text-destructive border-destructive/20",
-};
-
 function ProjetosPage() {
   const { data: empresa } = useEmpresaAtual();
   const qc = useQueryClient();
@@ -257,20 +251,7 @@ function ProjetosPage() {
         description="Organize entregas, prazos e orçamentos por projeto."
       />
       <div className="mb-4 flex flex-col gap-2 sm:mb-6 sm:flex-row sm:items-center">
-        <div className="relative flex-1">
-          <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-          <Input className="h-9 rounded-xl pl-10 pr-10 shadow-sm" value={busca} onChange={(e) => { setBusca(e.target.value); setPagina(1); }} />
-          {busca && (
-            <button
-              type="button"
-              onClick={() => { setBusca(""); setPagina(1); }}
-              className="absolute right-2.5 top-1/2 grid h-6 w-6 -translate-y-1/2 place-items-center rounded-lg text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
-              aria-label="Limpar busca"
-            >
-              <X className="h-4 w-4" />
-            </button>
-          )}
-        </div>
+        <SearchField value={busca} onChange={(v) => { setBusca(v); setPagina(1); }} />
         <div className="flex items-center gap-2">
           <Dialog
             open={open}
@@ -420,11 +401,7 @@ function ProjetosPage() {
                     </TableCell>
                     <TableCell>{p.contatos?.nome ?? "—"}</TableCell>
                     <TableCell>
-                      <span
-                        className={`inline-flex items-center rounded-full px-2 py-0.5 text-[11px] font-medium ${STATUS_COLOR[p.status] ?? ""}`}
-                      >
-                        {STATUS_LABEL[p.status] ?? p.status}
-                      </span>
+                      <StatusBadge status={p.status} label={STATUS_LABEL[p.status] ?? p.status} />
                     </TableCell>
                     <TableCell>{p.data_prevista ? dateBR(p.data_prevista) : "—"}</TableCell>
                     <TableCell className="text-right text-tabular">

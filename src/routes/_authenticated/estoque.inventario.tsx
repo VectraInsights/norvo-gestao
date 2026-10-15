@@ -3,11 +3,11 @@ import { Combobox } from "@/components/erp/combobox";
 import { createFileRoute } from "@tanstack/react-router";
 import { PageHeader } from "@/components/erp/page-header";
 import { EmptyState } from "@/components/erp/empty-state";
+import { SearchField } from "@/components/erp/search-field";
+import { StatusBadge } from "@/components/erp/status-badge";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Badge } from "@/components/ui/badge";
 import {
   Table,
   TableBody,
@@ -207,10 +207,7 @@ function Inventario() {
       />
 
       <div className="mb-4 flex flex-col gap-2 sm:flex-row sm:items-center">
-        <div className="relative flex-1">
-          <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-          <Input className="h-9 rounded-xl pl-10 pr-10 shadow-sm" value={busca} onChange={(e) => setBusca(e.target.value)} />
-        </div>
+        <SearchField value={busca} onChange={(v) => setBusca(v)} />
         <div className="w-56">
           <Combobox value={depositoId} onChange={setDepositoId} options={[{ value: "sem-deposito", label: "Sem depósito" }, ...depositos.map((d) => ({ value: d.id, label: d.nome }))]} emptyText="Nenhum item encontrado." />
         </div>
@@ -282,17 +279,11 @@ function Inventario() {
                     </TableCell>
                     <TableCell className="text-right">
                       {div ? (
-                        <Badge
-                          variant="secondary"
-                          className={
-                            div.diff > 0
-                              ? "bg-success/15 text-success"
-                              : "bg-destructive/10 text-destructive"
-                          }
-                        >
-                          {div.diff > 0 ? "+" : ""}
-                          {num(div.diff)}
-                        </Badge>
+                        <StatusBadge
+                          status={div.diff > 0 ? "entrada" : "saida"}
+                          label={`${div.diff > 0 ? "+" : ""}${num(div.diff)}`}
+                          tone={div.diff > 0 ? "bg-success/15 text-success" : "bg-destructive/10 text-destructive"}
+                        />
                       ) : (
                         <span className="text-muted-foreground">—</span>
                       )}

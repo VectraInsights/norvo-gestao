@@ -15,6 +15,7 @@ import {
 import { useState } from "react";
 import { toast } from "sonner";
 import { dateBR } from "@/lib/format";
+import { StatusBadge } from "@/components/erp/status-badge";
 
 export const Route = createFileRoute("/_authenticated/fiscal/contador")({
   component: PainelContador,
@@ -381,13 +382,9 @@ function PainelContador() {
               {historico.map((log) => {
                 const getStatusBadge = (status: typeof log.status) => {
                   return status === "enviado" ? (
-                    <span className="inline-flex items-center rounded-full bg-primary/10 px-2 py-0.5 text-xs font-medium text-primary">
-                      <Check className="mr-1 h-3 w-3" /> Enviado
-                    </span>
+                    <StatusBadge status="enviado" label="Enviado" icon={<Check className="mr-1 h-3 w-3" />} />
                   ) : (
-                    <span className="inline-flex items-center rounded-full bg-muted px-2 py-0.5 text-xs font-medium text-muted-foreground">
-                      <Download className="mr-1 h-3 w-3" /> Exportado Local
-                    </span>
+                    <StatusBadge status="exportado" label="Exportado Local" icon={<Download className="mr-1 h-3 w-3" />} />
                   );
                 };
 

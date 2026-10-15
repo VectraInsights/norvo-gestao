@@ -1,9 +1,9 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { PageHeader } from "@/components/erp/page-header";
 import { EmptyState } from "@/components/erp/empty-state";
-import { Badge } from "@/components/ui/badge";
+import { SearchField } from "@/components/erp/search-field";
+import { StatusBadge } from "@/components/erp/status-badge";
 import { Card } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
   Table,
@@ -20,7 +20,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { BarChart3, Boxes, Coins, Gauge, Search, TimerOff } from "lucide-react";
+import { BarChart3, Boxes, Coins, Gauge, TimerOff } from "lucide-react";
 import { useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery } from "@tanstack/react-query";
@@ -59,12 +59,6 @@ type MovSaida = {
   produto_id: string;
   quantidade: number;
   data: string;
-};
-
-const CLASSE_COR: Record<string, string> = {
-  A: "bg-success/15 text-success",
-  B: "bg-warning/20 text-warning-foreground",
-  C: "bg-muted text-muted-foreground",
 };
 
 function RelatoriosEstoque() {
@@ -227,10 +221,7 @@ function RelatoriosEstoque() {
         description="Curva ABC, giro e itens parados — últimos 12 meses, valor ao custo padrão."
       />
       <div className="mb-3 flex flex-col gap-2 sm:flex-row sm:items-center">
-        <div className="relative flex-1">
-          <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-          <Input className="h-9 rounded-xl pl-10 pr-10 shadow-sm" value={busca} onChange={(e) => setBusca(e.target.value)} />
-        </div>
+        <SearchField value={busca} onChange={(v) => setBusca(v)} />
         <div className="flex items-center gap-2">
           <Select value={janelaParados} onValueChange={setJanelaParados}>
             <SelectTrigger className="w-52">
@@ -325,9 +316,7 @@ function RelatoriosEstoque() {
                           {Math.min(r.pctAcum, 100).toFixed(1).replace(".", ",")}%
                         </TableCell>
                         <TableCell>
-                          <Badge variant="secondary" className={CLASSE_COR[r.classe]}>
-                            {r.classe}
-                          </Badge>
+                          <StatusBadge status={r.classe} />
                         </TableCell>
                       </TableRow>
                     ))}

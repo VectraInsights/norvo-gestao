@@ -3,12 +3,13 @@ import { MoneyInput } from "@/components/erp/money-input";
 import { createFileRoute } from "@tanstack/react-router";
 import { PageHeader } from "@/components/erp/page-header";
 import { EmptyState } from "@/components/erp/empty-state";
+import { SearchField } from "@/components/erp/search-field";
+import { StatusBadge } from "@/components/erp/status-badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
 import {
   Table,
@@ -51,7 +52,6 @@ import {
   Plus,
   Pencil,
   Trash2,
-  Search,
   ChevronsUpDown,
   Check,
   Upload,
@@ -101,12 +101,6 @@ type Veiculo = {
   tag_pedagio: string | null;
   status: string;
   observacoes: string | null;
-};
-
-const STATUS_COR: Record<string, string> = {
-  ativo: "bg-success/15 text-success",
-  manutencao: "bg-warning/20 text-warning-foreground",
-  inativo: "bg-muted text-muted-foreground",
 };
 
 function formVazio() {
@@ -674,18 +668,7 @@ function Veiculos() {
         }}
       >
         <div className="mb-4 flex items-center gap-2">
-          <div className="relative max-w-sm flex-1">
-            <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-            <Input
-              className="pl-8"
-             
-              value={busca}
-              onChange={(e) => {
-                setBusca(e.target.value);
-                setPagina(1);
-              }}
-            />
-          </div>
+          <SearchField value={busca} onChange={(v) => { setBusca(v); setPagina(1); }} className="max-w-sm" />
           <DialogTrigger asChild>
             <Button
               className="shrink-0"
@@ -1181,9 +1164,7 @@ function Veiculos() {
                   <TableCell className="capitalize">{(v as any).categoria ?? "—"}</TableCell>
                   <TableCell className="font-mono text-xs">{(v as any).chassi ?? "—"}</TableCell>
                   <TableCell>
-                    <Badge variant="secondary" className={STATUS_COR[v.status] ?? ""}>
-                      {v.status === "manutencao" ? "manutenção" : v.status}
-                    </Badge>
+                    <StatusBadge status={v.status} label={v.status === "manutencao" ? "manutenção" : v.status} />
                   </TableCell>
                   <TableCell className="text-right">
                     <div className="flex justify-end gap-1">

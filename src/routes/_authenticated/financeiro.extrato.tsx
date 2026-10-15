@@ -3,14 +3,15 @@ import { useMemo, useState } from "react";
 import { PageHeader } from "@/components/erp/page-header";
 import { EmptyState } from "@/components/erp/empty-state";
 import { Card } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Combobox } from "@/components/erp/combobox";
+import { SearchField } from "@/components/erp/search-field";
+import { StatusBadge } from "@/components/erp/status-badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { ListTree, Search, X, Download, ArrowDownCircle, ArrowUpCircle, Scale } from "lucide-react";
+import { ListTree, Download, ArrowDownCircle, ArrowUpCircle, Scale } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useEmpresaAtual } from "@/hooks/use-empresa";
@@ -299,16 +300,7 @@ function ExtratoPage() {
         <Combobox value={contaId} onChange={setContaId} options={[{ value: "todas", label: "Todas as contas" }, ...((contas ?? []).map((c) => ({ value: c.id, label: c.nome ?? "" })) )]} emptyText="Nenhum item encontrado." className="h-10" />
         <Combobox value={categoriaId} onChange={setCategoriaId} options={[{ value: "todas", label: "Todas as categorias" }, ...((categorias ?? []).map((c) => ({ value: c.id, label: c.nome ?? "" })) )]} emptyText="Nenhum item encontrado." className="h-10" />
         <Combobox value={centroId} onChange={setCentroId} options={[{ value: "todos", label: "Todos os centros" }, ...((centros ?? []).map((c) => ({ value: c.id, label: c.nome ?? "" })) )]} emptyText="Nenhum item encontrado." className="h-10" />
-        <div className="relative ml-auto w-full sm:w-72">
-          <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-          <Input value={busca} onChange={(e) => setBusca(e.target.value)} className="h-10 rounded-xl pl-10 pr-10 shadow-sm" />
-          {busca && (
-            <button type="button" onClick={() => setBusca("")} aria-label="Limpar busca"
-              className="absolute right-2.5 top-1/2 grid h-6 w-6 -translate-y-1/2 place-items-center rounded-lg text-muted-foreground transition-colors hover:bg-accent hover:text-foreground">
-              <X className="h-4 w-4" />
-            </button>
-          )}
-        </div>
+        <SearchField value={busca} onChange={setBusca} className="ml-auto w-full sm:w-72" />
         <div className="flex items-center gap-2">
           <Button variant="ghost" size="sm" onClick={() => setTrilhaOpen(true)} className="h-9 rounded-xl px-4 active:scale-95">
             Auditoria
@@ -386,13 +378,7 @@ function ExtratoPage() {
             <div className="divide-y divide-border/60">
               {(trilhaQuery.data ?? []).map((ev: any) => (
                 <div key={ev.id} className="flex items-start gap-3 rounded-lg px-2 py-2.5 transition-colors hover:bg-accent/40">
-                  <span className={`mt-0.5 inline-flex shrink-0 items-center rounded-full px-2.5 py-1 text-[11px] font-medium shadow-sm ${
-                    ev.acao === "excluir" ? "bg-destructive/10 text-destructive"
-                    : ev.acao === "alterar" ? "bg-primary/10 text-primary"
-                    : "bg-success/10 text-success"
-                  }`}>
-                    {ev.acao === "excluir" ? "Excluiu" : ev.acao === "alterar" ? "Alterou" : "Criou"}
-                  </span>
+                  <StatusBadge status={ev.acao} label={ev.acao === "excluir" ? "Excluiu" : ev.acao === "alterar" ? "Alterou" : "Criou"} />
                   <div className="min-w-0 flex-1">
                     <p className="text-sm text-foreground">{ev.detalhes?.descricao || "—"}</p>
                     <p className="mt-0.5 text-xs text-muted-foreground">{ev.detalhes?.user_nome || ev.detalhes?.user_email || "—"}</p>

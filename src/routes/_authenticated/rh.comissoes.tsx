@@ -5,7 +5,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
+import { SearchField } from "@/components/erp/search-field";
+import { StatusBadge } from "@/components/erp/status-badge";
 import { MoneyInput } from "@/components/erp/money-input";
 import { Combobox } from "@/components/erp/combobox";
 import {
@@ -31,7 +32,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Percent, Plus, Trash2, HandCoins, Pencil, Search, X } from "lucide-react";
+import { Percent, Plus, Trash2, HandCoins, Pencil } from "lucide-react";
 import { useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -333,20 +334,7 @@ function ComissoesPage() {
         description="Cálculo de comissões por colaborador e competência, com geração de contas a pagar."
       />
       <div className="mb-4 flex flex-col gap-2 sm:mb-6 sm:flex-row sm:items-center">
-        <div className="relative flex-1">
-          <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-          <Input className="h-9 rounded-xl pl-10 pr-10 shadow-sm" value={busca} onChange={(e) => setBusca(e.target.value)} />
-          {busca && (
-            <button
-              type="button"
-              onClick={() => setBusca("")}
-              className="absolute right-2.5 top-1/2 grid h-6 w-6 -translate-y-1/2 place-items-center rounded-lg text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
-              aria-label="Limpar busca"
-            >
-              <X className="h-4 w-4" />
-            </button>
-          )}
-        </div>
+        <SearchField value={busca} onChange={setBusca} size="xs" />
         <div className="flex flex-wrap items-center gap-2">
           <Select value={String(mes)} onValueChange={(v) => setMes(Number(v))}>
               <SelectTrigger className="h-9 w-[110px] rounded-xl shadow-sm">
@@ -501,7 +489,7 @@ function ComissoesPage() {
                   </TableCell>
                   <TableCell className="text-right font-medium">{brl(c.valor)}</TableCell>
                   <TableCell>
-                    <Badge variant="secondary">{STATUS_LABEL[c.status] ?? c.status}</Badge>
+                    <StatusBadge status={c.status} label={STATUS_LABEL[c.status] ?? c.status} />
                   </TableCell>
                   <TableCell className="text-right">
                     <div className="flex items-center justify-end gap-1">

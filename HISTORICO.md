@@ -6099,7 +6099,7 @@ pm run build OK.
   sem coluna Tipo, form sem ambos). Chaves de cache separadas por tela
   (contatos-clientes, fornecedores, contatos-fiscal) p/ nunca misturar.
 - Dedupe de documento segue global (evita conflito e protege o lookup do CT-e);
-  leituras do CT-e seguem sem filtro de tipo (tomador pode ser cliente — se
+  leituras do CT-e seguem sem filtro de tipo (tomador pode ser cliente ï¿½ se
   filtrar, a emissao quebra). Ambos nao e mais criavel em nenhuma tela.
 
 ## Exclusao em lote em fornecedores e percursos (15/10)
@@ -6119,3 +6119,15 @@ pm run build OK.
 
 - PeriodoFilter w-300px esmagava o search no max-w-md: fileira sem max, wrap,
   busca com min-w-52 e filtro com shrink-0.
+
+## Buscas padronizadas + pills unificadas (15/10)
+
+- Item 5: novo `src/components/erp/search-field.tsx` (icone + input + X,
+  sizes sm=h-10/xs=h-9/xxs=h-8); 34 blocos de busca migrados (vendas, frota,
+  estoque, projetos, financeiro, fiscal, RH, configuracoes). Placeholders e
+  handlers (setPagina/clearSel) preservados; CTe/docs usam xxs.
+- Item 7: `status-badge.tsx` estendido (TONE unico + props label/tone/icon);
+  convertidos status de financeiro/frota/estoque/projetos/RH/fiscal e trilhas
+  (criar/alterar/excluir/padrao). Chips fixos (categoria, contagens, SENATRAN,
+  prioridade, CNH/dias) mantidos.
+- tsc sem erros novos; `npm run build` OK.

@@ -1,8 +1,9 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { PageHeader } from "@/components/erp/page-header";
 import { EmptyState } from "@/components/erp/empty-state";
+import { SearchField } from "@/components/erp/search-field";
+import { StatusBadge } from "@/components/erp/status-badge";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { MoneyInput } from "@/components/erp/money-input";
 import { Combobox } from "@/components/erp/combobox";
 import { Label } from "@/components/ui/label";
@@ -32,7 +33,6 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import { Badge } from "@/components/ui/badge";
 import { ArrowLeftRight, Boxes, Plus, Search } from "lucide-react";
 import { useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
@@ -81,13 +81,6 @@ export const Route = createFileRoute("/_authenticated/estoque/movimentacoes")({
     </div>
   ),
 });
-
-const TIPO_COLOR: Record<MovTipo, string> = {
-  entrada: "bg-success/15 text-success",
-  saida: "bg-destructive/10 text-destructive",
-  ajuste: "bg-warning/20 text-warning-foreground",
-  transferencia: "bg-primary/15 text-primary",
-};
 
 const EMPTY_FORM = {
   produto_id: "",
@@ -280,10 +273,7 @@ function Movimentacoes() {
         description="Entradas, saídas e ajustes de inventário."
       />
       <div className="mb-3 flex flex-col gap-2 sm:flex-row sm:items-center">
-        <div className="relative flex-1">
-          <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-          <Input className="h-9 rounded-xl pl-10 pr-10 shadow-sm" value={busca} onChange={(e) => setBusca(e.target.value)} />
-        </div>
+        <SearchField value={busca} onChange={(v) => setBusca(v)} />
         <div className="flex items-center gap-2">
             <Dialog
               open={trOpen}
@@ -467,9 +457,7 @@ function Movimentacoes() {
                   <TableCell className="text-tabular">{dateBR(m.data)}</TableCell>
                   <TableCell className="font-medium">{m.produto?.nome ?? "—"}</TableCell>
                   <TableCell>
-                    <Badge className={TIPO_COLOR[m.tipo]} variant="secondary">
-                      {m.tipo}
-                    </Badge>
+                    <StatusBadge status={m.tipo} />
                   </TableCell>
                   <TableCell className="text-sm text-muted-foreground">
                     {m.deposito?.nome ?? "—"}

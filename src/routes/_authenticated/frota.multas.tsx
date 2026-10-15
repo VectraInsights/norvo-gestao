@@ -5,6 +5,8 @@ import { Combobox } from "@/components/erp/combobox";
 import { MoneyInput } from "@/components/erp/money-input";
 import { PageHeader } from "@/components/erp/page-header";
 import { EmptyState } from "@/components/erp/empty-state";
+import { SearchField } from "@/components/erp/search-field";
+import { StatusBadge } from "@/components/erp/status-badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -56,7 +58,6 @@ import {
   Plus,
   RefreshCw,
   RotateCcw,
-  Search,
   Settings2,
   Trash2,
 } from "lucide-react";
@@ -107,11 +108,6 @@ type ConfigSENATRAN = {
   ultima_sync: string | null;
 };
 
-const STATUS_COR: Record<string, string> = {
-  aberta: "bg-warning/20 text-warning-foreground",
-  paga: "bg-success/15 text-success",
-  contestada: "bg-primary/15 text-primary",
-};
 const STATUS_LABEL: Record<string, string> = {
   aberta: "aberta",
   paga: "paga",
@@ -439,18 +435,7 @@ function Multas() {
       </div>
 
       <div className="mb-4 flex flex-wrap items-center gap-3">
-        <div className="relative max-w-sm flex-1">
-          <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-          <Input
-            className="pl-8"
-           
-            value={busca}
-            onChange={(e) => {
-              setBusca(e.target.value);
-              setPagina(1);
-            }}
-          />
-        </div>
+        <SearchField value={busca} onChange={(v) => { setBusca(v); setPagina(1); }} className="max-w-sm" />
         <Select
           value={filtroStatus}
           onValueChange={(value) => {
@@ -654,9 +639,7 @@ function Multas() {
                     </TableCell>
                     <TableCell className="text-right text-tabular">{brl(m.valor)}</TableCell>
                     <TableCell>
-                      <Badge variant="secondary" className={STATUS_COR[m.status] ?? ""}>
-                        {STATUS_LABEL[m.status] ?? m.status}
-                      </Badge>
+                      <StatusBadge status={m.status} label={STATUS_LABEL[m.status] ?? m.status} />
                     </TableCell>
                     <TableCell className="text-right">
                       <div className="flex justify-end gap-1">

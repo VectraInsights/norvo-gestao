@@ -32,7 +32,9 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
-import { Wallet, Plus, Pencil, Trash2, HandCoins, Search, X } from "lucide-react";
+import { SearchField } from "@/components/erp/search-field";
+import { StatusBadge } from "@/components/erp/status-badge";
+import { Wallet, Plus, Pencil, Trash2, HandCoins } from "lucide-react";
 import { useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -449,20 +451,7 @@ function FolhaPage() {
         description="Gere a folha mensal por colaborador. INSS e IRRF são calculados automaticamente. Ao criar, um lançamento é gerado em Contas a pagar."
       />
       <div className="mb-4 flex flex-col gap-2 sm:mb-6 sm:flex-row sm:items-center">
-        <div className="relative flex-1">
-          <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-          <Input className="h-9 rounded-xl pl-10 pr-10 shadow-sm" value={busca} onChange={(e) => setBusca(e.target.value)} />
-          {busca && (
-            <button
-              type="button"
-              onClick={() => setBusca("")}
-              className="absolute right-2.5 top-1/2 grid h-6 w-6 -translate-y-1/2 place-items-center rounded-lg text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
-              aria-label="Limpar busca"
-            >
-              <X className="h-4 w-4" />
-            </button>
-          )}
-        </div>
+        <SearchField value={busca} onChange={setBusca} size="xs" />
         <div className="flex items-center gap-2">
             <Button
               size="sm"
@@ -702,19 +691,7 @@ function FolhaPage() {
                     {brl(f.liquido)}
                   </TableCell>
                   <TableCell>
-                    <span
-                      className={`inline-block rounded-full px-2 py-0.5 text-[11px] font-medium ${
-                        f.status === "paga"
-                          ? "bg-success/15 text-success"
-                          : f.status === "cancelada"
-                            ? "bg-destructive/10 text-destructive"
-                            : f.status === "lançada"
-                              ? "bg-primary/15 text-primary"
-                              : "bg-amber-500/15 text-amber-700 dark:text-amber-400"
-                      }`}
-                    >
-                      {f.status}
-                    </span>
+                    <StatusBadge status={f.status === "lançada" ? "lancada" : f.status} label={f.status} />
                   </TableCell>
                   <TableCell className="text-right">
                     <div className="flex items-center justify-end gap-1">

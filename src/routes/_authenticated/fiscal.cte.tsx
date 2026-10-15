@@ -102,6 +102,7 @@ import { completarLogradouro, temTipoLogradouro } from "@/lib/endereco";
 import { JUVENAL_LOGO } from "@/lib/juvenal-logo";
 import { Textarea } from "@/components/ui/textarea";
 import { DateInput } from "@/components/erp/date-input";
+import { SearchField } from "@/components/erp/search-field";
 import { MoneyInput } from "@/components/erp/money-input";
 import { useFiltrosSalvos } from "@/hooks/use-filtros-salvos";
 
@@ -868,24 +869,7 @@ function CtePage() {
         onChange={setPeriodoFim}
         className="h-7 text-xs w-[150px] shrink-0"
       />
-      <div className="relative ml-auto w-full sm:w-60">
-        <Search className="pointer-events-none absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
-        <Input
-          value={buscaDocs}
-          onChange={(e) => setBuscaDocs(e.target.value)}
-          className="h-7 rounded-lg pl-8 pr-8 text-xs"
-        />
-        {buscaDocs && (
-          <button
-            type="button"
-            onClick={() => setBuscaDocs("")}
-            aria-label="Limpar busca"
-            className="absolute right-1.5 top-1/2 grid h-5 w-5 -translate-y-1/2 place-items-center rounded-md text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
-          >
-            <X className="h-3.5 w-3.5" />
-          </button>
-        )}
-      </div>
+      <SearchField value={buscaDocs} onChange={setBuscaDocs} size="xxs" className="ml-auto w-full sm:w-60" />
     </div>
   );
 
@@ -6534,24 +6518,7 @@ function CtePage() {
                     <span className="text-[10px] font-semibold uppercase tracking-wide shrink-0">
                       Listagem das Notas Fiscais
                     </span>
-                    <div className="relative w-52 shrink-0">
-                      <Search className="pointer-events-none absolute left-2 top-1/2 h-3 w-3 -translate-y-1/2 text-muted-foreground" />
-                      <Input
-                        value={buscaEmb}
-                        onChange={(e) => setBuscaEmb(e.target.value)}
-                        className="h-6 rounded-md pl-7 pr-7 text-[11px]"
-                      />
-                      {buscaEmb && (
-                        <button
-                          type="button"
-                          onClick={() => setBuscaEmb("")}
-                          aria-label="Limpar busca"
-                          className="absolute right-1 top-1/2 grid h-4 w-4 -translate-y-1/2 place-items-center rounded text-muted-foreground hover:bg-accent hover:text-foreground"
-                        >
-                          <X className="h-3 w-3" />
-                        </button>
-                      )}
-                    </div>
+                    <SearchField value={buscaEmb} onChange={setBuscaEmb} size="xxs" className="w-52 shrink-0" />
                     <span className="text-xs shrink-0">
                       Qtde NF-e: {mercadoriasSorted.length}/{mercadorias.length}
                     </span>
@@ -7053,11 +7020,11 @@ function CtePage() {
               <DialogHeader className="mx-auto w-full max-w-3xl gap-1.5 pb-1">
                 <DialogTitle className="tracking-tight">Novo CT-e — escolher percurso</DialogTitle>
               </DialogHeader>
-              <Input
-                className="h-10 rounded-xl shadow-sm mx-auto w-full max-w-3xl"
-                placeholder="Buscar percurso por código, nome ou CNPJ..."
+              <SearchField
                 value={percPickQuery}
-                onChange={(e) => setPercPickQuery(e.target.value)}
+                onChange={setPercPickQuery}
+                placeholder="Buscar percurso por código, nome ou CNPJ..."
+                className="mx-auto w-full max-w-3xl"
               />
               <div className="mx-auto max-h-64 w-full max-w-3xl space-y-1.5 overflow-y-auto">
                 {percursos

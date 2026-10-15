@@ -4,8 +4,8 @@ import { createFileRoute } from "@tanstack/react-router";
 import { DateInput } from "@/components/erp/date-input";
 import { PageHeader } from "@/components/erp/page-header";
 import { EmptyState } from "@/components/erp/empty-state";
+import { SearchField } from "@/components/erp/search-field";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card } from "@/components/ui/card";
 import {
@@ -23,7 +23,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { PackagePlus, AlertTriangle, ShoppingCart, Trash2, Search } from "lucide-react";
+import { PackagePlus, AlertTriangle, ShoppingCart, Trash2 } from "lucide-react";
 import { useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -272,10 +272,7 @@ function Reposicao() {
         description="Itens no ou abaixo do estoque mínimo. Selecione e gere a ordem de compra de uma vez."
       />
       <div className="mb-3 flex flex-col gap-2 sm:flex-row sm:items-center">
-        <div className="relative flex-1">
-          <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-          <Input className="h-9 rounded-xl pl-10 pr-10 shadow-sm" value={busca} onChange={(e) => setBusca(e.target.value)} />
-        </div>
+        <SearchField value={busca} onChange={(v) => setBusca(v)} />
         <div className="flex items-center gap-2">
           <Button
             onClick={() => gerarOC.mutate()}

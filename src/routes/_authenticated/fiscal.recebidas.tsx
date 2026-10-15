@@ -13,11 +13,13 @@ import { Combobox } from "@/components/erp/combobox";
 import { CondicaoPagamento } from "@/components/erp/condicao-pagamento";
 import { MoneyInput } from "@/components/erp/money-input";
 import { 
-  FileDown, Search, AlertCircle, XCircle, 
+  FileDown, AlertCircle, XCircle, 
   UploadCloud, Check, RefreshCw, KeyRound,
   Eye, Download, FileText, Trash2, Pencil
 } from "lucide-react";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { SearchField } from "@/components/erp/search-field";
+import { StatusBadge } from "@/components/erp/status-badge";
 import { useState, useMemo, useEffect } from "react";
 import { toast } from "sonner";
 import { brl, dateBR } from "@/lib/format";
@@ -1529,15 +1531,12 @@ function NotasRecebidas() {
         <TabsContent value="manifesto" className="space-y-4">
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <div className="flex flex-1 flex-wrap gap-2">
-              <div className="relative min-w-52 flex-1">
-                <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                <Input
-                  placeholder="Buscar por emitente, CNPJ ou chave..."
-                  className="h-10 rounded-xl pl-10 shadow-sm"
-                  value={search}
-                  onChange={(e) => setSearch(e.target.value)}
-                />
-              </div>
+              <SearchField
+                value={search}
+                onChange={setSearch}
+                placeholder="Buscar por emitente, CNPJ ou chave..."
+                className="min-w-52"
+              />
               <PeriodoFilter value={periodo} onChange={setPeriodo} preset="mesatual" className="shrink-0" />
             </div>
             
@@ -2141,13 +2140,7 @@ function NotasRecebidas() {
             <div className="divide-y divide-border">
               {(trilhaQuery.data ?? []).map((ev: any) => (
                 <div key={ev.id} className="flex items-start gap-3 py-2.5">
-                  <span className={`mt-0.5 inline-flex shrink-0 items-center rounded-full px-2 py-0.5 text-[11px] font-medium ${
-                    ev.acao === "excluir" ? "bg-destructive/10 text-destructive"
-                    : ev.acao === "alterar" ? "bg-primary/10 text-primary"
-                    : "bg-success/10 text-success"
-                  }`}>
-                    {ev.acao === "excluir" ? "Excluiu" : ev.acao === "alterar" ? "Alterou" : "Lançou"}
-                  </span>
+                  <StatusBadge status={ev.acao} label={ev.acao === "excluir" ? "Excluiu" : ev.acao === "alterar" ? "Alterou" : "Lançou"} className="mt-0.5 shrink-0" />
                   <div className="min-w-0 flex-1">
                     <p className="text-sm text-foreground">{ev.detalhes?.descricao || "—"}</p>
                     <p className="text-xs text-muted-foreground">

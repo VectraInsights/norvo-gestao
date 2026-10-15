@@ -22,7 +22,9 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Plus, Pencil, Trash2, FolderCog, Loader2, Search, PlusCircle, ChevronRight } from "lucide-react";
+import { Plus, Pencil, Trash2, FolderCog, Loader2, PlusCircle, ChevronRight } from "lucide-react";
+import { SearchField } from "@/components/erp/search-field";
+import { StatusBadge } from "@/components/erp/status-badge";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useEmpresaAtual } from "@/hooks/use-empresa";
@@ -324,10 +326,7 @@ function CadastrosPage() {
         description="Gerencie as categorias financeiras e os centros de custo utilizados nos lançamentos."
       />
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
-        <div className="relative flex-1">
-          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-          <Input className="h-10 rounded-xl pl-10 shadow-sm" value={busca} onChange={(e) => setBusca(e.target.value)} />
-        </div>
+        <SearchField value={busca} onChange={setBusca} />
         <div className="flex items-center gap-2">
           <Button variant="ghost" size="sm" onClick={() => setTrilhaOpen(true)} className="h-9 rounded-xl px-4 active:scale-95">
             Auditoria
@@ -699,13 +698,7 @@ function CadastrosPage() {
             <div className="divide-y divide-border/60">
               {(trilhaQuery.data ?? []).map((ev: any) => (
                 <div key={ev.id} className="flex items-start gap-3 rounded-lg px-2 py-2.5 transition-colors hover:bg-accent/40">
-                  <span className={`mt-0.5 inline-flex shrink-0 items-center rounded-full px-2.5 py-1 text-[11px] font-medium shadow-sm ${
-                    ev.acao === "excluir" ? "bg-destructive/10 text-destructive"
-                    : ev.acao === "alterar" ? "bg-primary/10 text-primary"
-                    : "bg-success/10 text-success"
-                  }`}>
-                    {ev.acao === "excluir" ? "Excluiu" : ev.acao === "alterar" ? "Alterou" : "Criou"}
-                  </span>
+                  <StatusBadge status={ev.acao} label={ev.acao === "excluir" ? "Excluiu" : ev.acao === "alterar" ? "Alterou" : "Criou"} />
                   <div className="min-w-0 flex-1">
                     <p className="text-sm text-foreground">{ev.detalhes?.descricao || "—"}</p>
                     <p className="mt-0.5 text-xs text-muted-foreground">{ev.detalhes?.user_nome || ev.detalhes?.user_email || "—"}</p>

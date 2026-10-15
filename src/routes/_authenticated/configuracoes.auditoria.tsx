@@ -1,6 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
-import { CalendarDays, ClipboardList, Search } from "lucide-react";
+import { CalendarDays, ClipboardList } from "lucide-react";
+import { SearchField } from "@/components/erp/search-field";
 import { PageHeader } from "@/components/erp/page-header";
 import { EmptyState } from "@/components/erp/empty-state";
 import { Badge } from "@/components/ui/badge";
@@ -65,7 +66,7 @@ function AuditoriaPage() {
         <div className="grid gap-1.5"><Label>Ação</Label><Input value={acao} onChange={(event) => setAcao(event.target.value)} className="h-10 rounded-xl" /></div>
         <div className="grid gap-1.5"><Label>Desde</Label><Input type="date" value={desde} onChange={(event) => setDesde(event.target.value)} className="h-10 rounded-xl" /></div>
         <div className="grid gap-1.5"><Label>Até</Label><Input type="date" value={ate} onChange={(event) => setAte(event.target.value)} className="h-10 rounded-xl" /></div>
-        <div className="grid gap-1.5"><Label>Busca</Label><div className="relative"><Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" /><Input className="h-10 rounded-xl pl-10" value={busca} onChange={(event) => setBusca(event.target.value)} /></div></div>
+        <div className="grid gap-1.5"><Label>Busca</Label><SearchField value={busca} onChange={setBusca} className="flex-none" /></div>
         <Button variant="ghost" className="h-9 rounded-xl sm:col-span-2 lg:col-span-5 lg:justify-self-end" onClick={() => { setModulo("todos"); setAcao(""); setDesde(""); setAte(""); setBusca(""); }}>Limpar filtros</Button>
       </CardContent>
     </Card>

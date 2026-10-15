@@ -30,6 +30,8 @@ import { Combobox } from "@/components/erp/combobox";
 import { PeriodoFilter, type Periodo } from "@/components/erp/periodo-filter";
 import { NovoContatoDialog } from "@/components/erp/novo-contato-dialog";
 import { TransferenciaDialog } from "@/components/erp/transferencia-dialog";
+import { SearchField } from "@/components/erp/search-field";
+import { StatusBadge } from "@/components/erp/status-badge";
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -972,10 +974,7 @@ function ContasFinanceiras() {
       ) : (
       <>
       <div className="mb-4 flex flex-col gap-3 sm:mb-6 sm:flex-row sm:items-center">
-        <div className="relative flex-1">
-          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-          <Input className="h-9 rounded-xl pl-10 shadow-sm" value={busca} onChange={(e) => setBusca(e.target.value)} />
-        </div>
+        <SearchField value={busca} onChange={setBusca} />
         <div className="flex items-center gap-2">
           <div className="flex items-center gap-2.5">
             <Button variant="ghost" size="sm" onClick={() => setTrilhaOpen(true)} className="h-9 rounded-xl px-4 active:scale-95">
@@ -1335,14 +1334,7 @@ function ContasFinanceiras() {
             <div className="divide-y divide-border/60">
               {(trilhaQuery.data ?? []).map((ev: any) => (
                 <div key={ev.id} className="flex items-start gap-3 rounded-lg px-2 py-2.5 transition-colors hover:bg-accent/40">
-                  <span className={`mt-0.5 inline-flex shrink-0 items-center rounded-full px-2.5 py-1 text-[11px] font-medium shadow-sm ${
-                    ev.acao === "excluir" ? "bg-destructive/10 text-destructive"
-                    : ev.acao === "alterar" ? "bg-primary/10 text-primary"
-                    : ev.acao === "padrao" ? "bg-warning/15 text-warning-foreground"
-                    : "bg-success/10 text-success"
-                  }`}>
-                    {ev.acao === "excluir" ? "Excluiu" : ev.acao === "alterar" ? "Alterou" : ev.acao === "padrao" ? "Padrão" : "Criou"}
-                  </span>
+                  <StatusBadge status={ev.acao} label={ev.acao === "excluir" ? "Excluiu" : ev.acao === "alterar" ? "Alterou" : ev.acao === "padrao" ? "Padrão" : "Criou"} />
                   <div className="min-w-0 flex-1">
                     <p className="text-sm text-foreground">{ev.detalhes?.descricao || "—"}</p>
                     <p className="mt-0.5 text-xs text-muted-foreground">
@@ -2289,10 +2281,7 @@ function ReconcileDialog({ contaId, conta, empresaId, autoConciliar, importing, 
         <div className="w-full">
         <div className="space-y-2">
             <div className="flex flex-wrap items-center gap-2">
-                <div className="relative w-full max-w-xs">
-                  <Search className="pointer-events-none absolute left-2 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
-                  <Input className="pl-8 h-8 text-[13px]" placeholder="Buscar por descrição, categoria, cliente, valor ou data…" value={busca} onChange={(e) => setBusca(e.target.value)} />
-                </div>
+                <SearchField value={busca} onChange={setBusca} size="xxs" placeholder="Buscar por descrição, categoria, cliente, valor ou data…" className="w-full max-w-xs flex-none" />
                 {filtrosSalvos.filtros.length > 0 && (
                   <Select onValueChange={aplicarFiltroSalvo}>
                     <SelectTrigger className="h-8 text-xs w-[160px]"><SelectValue /></SelectTrigger>

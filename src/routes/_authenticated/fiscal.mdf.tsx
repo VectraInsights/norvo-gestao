@@ -3,7 +3,6 @@ import { PageHeader } from "@/components/erp/page-header";
 import { EmptyState } from "@/components/erp/empty-state";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -22,6 +21,8 @@ import { emitirMdfFn, consultarMdfFn, encerrarMdfFn, cancelarMdfFn } from "@/lib
 import { gerarDamdfePdf, damdfeDataDoXml } from "@/lib/damdfe-pdf";
 import { MDFE_AMBIENTE } from "@/lib/sefaz-ambiente";
 import { DateInput } from "@/components/erp/date-input";
+import { SearchField } from "@/components/erp/search-field";
+import { StatusBadge } from "@/components/erp/status-badge";
 import { Textarea } from "@/components/ui/textarea";
 
 export const Route = createFileRoute("/_authenticated/fiscal/mdf")({
@@ -495,10 +496,7 @@ function MdfPage() {
         description="Manifesto Eletrônico de Documentos Fiscais (modelo 58). Emissão, vinculação de CT-e e encerramento."
       />
       <div className="mb-4 flex flex-col gap-3 sm:mb-6 sm:flex-row sm:items-center">
-        <div className="relative flex-1">
-          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-          <Input className="h-10 rounded-xl pl-10 shadow-sm" placeholder="Buscar por número, chave, UF ou status..." value={busca} onChange={(e) => setBusca(e.target.value)} />
-        </div>
+        <SearchField value={busca} onChange={setBusca} placeholder="Buscar por número, chave, UF ou status..." />
         <div className="flex items-center gap-2">
           <div className="flex gap-2">
 <Button size="sm" disabled={!empresa?.id} onClick={() => { if (empresa?.id) setOpen(true); }} className="h-10 rounded-xl px-5 shadow-sm transition-all hover:-translate-y-px hover:shadow-md">
@@ -889,7 +887,7 @@ function DialogVerMdf({ d, xml, onClose, onBaixarXml, onBaixarPdf }: { d: MdfDoc
       <DialogContent className="w-screen h-screen max-w-none max-h-none m-0 rounded-none overflow-y-auto">
         <DialogHeader>
           <DialogTitle>
-            MDF-e #{d.numero ?? "—"} <Badge variant={d.status === "autorizado" ? "default" : "secondary"} className="ml-1">{d.status}</Badge>
+            MDF-e #{d.numero ?? "—"} <StatusBadge status={d.status} className="ml-1" />
             <span className="rounded bg-amber-100 px-1.5 py-0.5 text-xs font-normal text-amber-800 ml-2 dark:bg-amber-950/30 dark:text-amber-200">Homologação (testes)</span>
           </DialogTitle>
         </DialogHeader>

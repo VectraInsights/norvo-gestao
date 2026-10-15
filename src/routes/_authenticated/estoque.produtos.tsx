@@ -1,6 +1,8 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { PageHeader } from "@/components/erp/page-header";
 import { EmptyState } from "@/components/erp/empty-state";
+import { SearchField } from "@/components/erp/search-field";
+import { StatusBadge } from "@/components/erp/status-badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { MoneyInput } from "@/components/erp/money-input";
@@ -372,17 +374,7 @@ function Produtos() {
       />
 
       <div className="mb-4 flex flex-col gap-2 sm:flex-row sm:items-center">
-        <div className="relative flex-1">
-          <Input
-            className="flex-1"
-           
-            value={busca}
-            onChange={(e) => {
-              setBusca(e.target.value);
-              setPagina(1);
-            }}
-          />
-        </div>
+        <SearchField value={busca} onChange={(v) => { setBusca(v); setPagina(1); }} />
         <div className="w-48">
           <Combobox
             value={filtroCat}
@@ -586,13 +578,12 @@ function Produtos() {
                     <TableCell className="text-right text-tabular">
                       <div className="inline-flex items-center gap-2">
                         {baixo && (
-                          <Badge
-                            variant="secondary"
-                            className="bg-warning/20 text-warning-foreground"
-                          >
-                            <AlertTriangle className="mr-1 h-3 w-3" />
-                            baixo
-                          </Badge>
+                          <StatusBadge
+                            status="baixo"
+                            label="baixo"
+                            tone="bg-warning/20 text-warning-foreground"
+                            icon={<AlertTriangle className="mr-1 h-3 w-3" />}
+                          />
                         )}
                         {num(atual)}
                       </div>
@@ -718,13 +709,7 @@ function Produtos() {
             <div className="divide-y divide-border/60">
               {(trilhaQuery.data ?? []).map((ev: any) => (
                 <div key={ev.id} className="flex items-start gap-3 rounded-lg px-2 py-2.5 transition-colors hover:bg-accent/40">
-                  <span className={`mt-0.5 inline-flex shrink-0 items-center rounded-full px-2.5 py-1 text-[11px] font-medium shadow-sm ${
-                    ev.acao === "excluir" ? "bg-destructive/10 text-destructive"
-                    : ev.acao === "alterar" ? "bg-primary/10 text-primary"
-                    : "bg-success/10 text-success"
-                  }`}>
-                    {ev.acao === "excluir" ? "Excluiu" : ev.acao === "alterar" ? "Alterou" : "Criou"}
-                  </span>
+                  <StatusBadge status={ev.acao} label={ev.acao === "excluir" ? "Excluiu" : ev.acao === "alterar" ? "Alterou" : "Criou"} />
                   <div className="min-w-0 flex-1">
                     <p className="text-sm text-foreground">{ev.detalhes?.descricao || "—"}</p>
                     <p className="mt-0.5 text-xs text-muted-foreground">{ev.detalhes?.user_nome || ev.detalhes?.user_email || "—"}</p>

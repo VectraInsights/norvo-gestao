@@ -38,7 +38,6 @@ import {
   Route as RoadIcon,
   Pencil,
   Trash2,
-  Search,
   Save,
   ChevronDown,
   RefreshCw,
@@ -52,6 +51,7 @@ import { useState, useMemo, useRef, useEffect } from "react";
 import { toast } from "sonner";
 import { limparIE, validarIE } from "@/lib/ie";
 import { maskDoc } from "@/lib/format";
+import { SearchField } from "@/components/erp/search-field";
 import { TIPOS_CARGA_ANTT } from "@/lib/piso-antt";
 import { CFOPS_CTE } from "@/lib/cfops-transporte";
 
@@ -1770,15 +1770,7 @@ function PercursosPage() {
       />
 
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
-        <div className="flex flex-1 items-center gap-2.5">
-          <Search className="h-4 w-4 shrink-0 text-muted-foreground" />
-          <Input
-            className="h-10 rounded-xl shadow-sm"
-           
-            value={busca}
-            onChange={(e) => setBusca(e.target.value)}
-          />
-        </div>
+        <SearchField value={busca} onChange={setBusca} />
         <Button size="sm" className="h-10 shrink-0 whitespace-nowrap rounded-xl px-5 shadow-sm transition-all hover:-translate-y-px hover:shadow-md" onClick={novoAvulso}>
           <Plus className="mr-1.5 h-3.5 w-3.5" /> Novo percurso
         </Button>

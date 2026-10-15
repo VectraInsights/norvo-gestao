@@ -9,6 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { StatusBadge } from "@/components/erp/status-badge";
 import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from "@/components/ui/table";
@@ -129,20 +130,8 @@ const SIT_LABEL: Record<SitKey, string> = {
   sem_admissao: "Sem data de admissão", vencida: "Férias vencidas",
   vencendo: "Vence em até 60 dias", em_dia: "Em dia",
 };
-const SIT_BADGE: Record<SitKey, string> = {
-  sem_admissao: "bg-amber-500/15 text-amber-600 dark:text-amber-400",
-  vencida: "bg-destructive/15 text-destructive",
-  vencendo: "bg-primary/10 text-primary",
-  em_dia: "bg-success/10 text-success",
-};
 const CONC_STATUS: Record<string, string> = {
   agendada: "Agendada", em_gozo: "Em gozo", concluida: "Concluída", cancelada: "Cancelada",
-};
-const CONC_BADGE: Record<string, string> = {
-  agendada: "bg-primary/10 text-primary",
-  em_gozo: "bg-success/10 text-success",
-  concluida: "bg-muted text-muted-foreground",
-  cancelada: "bg-destructive/10 text-destructive",
 };
 
 function FeriasPage() {
@@ -411,9 +400,7 @@ function FeriasPage() {
                         {l.proximoLimite ? dateBR(l.proximoLimite) : "—"}
                       </TableCell>
                       <TableCell>
-                        <Badge variant="secondary" className={SIT_BADGE[l.sit]}>
-                          {SIT_LABEL[l.sit]}
-                        </Badge>
+                        <StatusBadge status={l.sit} label={SIT_LABEL[l.sit]} />
                       </TableCell>
                     </TableRow>
 
@@ -443,8 +430,8 @@ function FeriasPage() {
                                             <span className="text-muted-foreground">
                                               limite {dateBR(ciclo.limite)}
                                             </span>
-                                            {vencido && <Badge variant="secondary" className="bg-destructive/10 text-destructive">vencido</Badge>}
-                                            {venceBreve && <Badge variant="secondary" className="bg-primary/10 text-primary">vence em breve</Badge>}
+                                            {vencido && <StatusBadge status="vencido" label="vencido" tone="bg-destructive/10 text-destructive" />}
+                                            {venceBreve && <StatusBadge status="vencendo" label="vence em breve" tone="bg-primary/10 text-primary" />}
                                           </div>
                                           <div>
                                             {saldo > 0 && (
@@ -586,9 +573,7 @@ function FeriasPage() {
                                             </SelectContent>
                                           </Select>
                                         )}
-                                        <Badge variant="secondary" className={CONC_BADGE[c.status]}>
-                                          {CONC_STATUS[c.status] ?? c.status}
-                                        </Badge>
+                                        <StatusBadge status={c.status} label={CONC_STATUS[c.status] ?? c.status} />
                                         {c.status === "agendada" && (
                                           <Button variant="ghost" size="icon" className="h-8 w-8 rounded-lg text-destructive hover:bg-destructive/10" title="Excluir"
                                             onClick={() => setConfExcluir(c)}>
