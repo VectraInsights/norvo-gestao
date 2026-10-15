@@ -29,7 +29,7 @@ export const Route = createFileRoute("/_authenticated/fiscal/cadastro")({
 });
 
 type Contato = {
-  id: string; nome: string;
+  id: string; nome: string; tipo: string;
   documento: string | null; ie: string | null; email: string | null; telefone: string | null;
   cep: string | null; logradouro: string | null; numero: string | null;
   complemento: string | null; bairro: string | null; cidade: string | null;
@@ -62,6 +62,83 @@ function Cadastro() {
   const [selecionados, setSelecionados] = useState<Set<string>>(new Set());
   const [confirmLote, setConfirmLote] = useState(false);
 
+  // Unificação fiscal→contatos: na primeira abertura, migra sozinho os registros
+  // da tabela antiga (idempotente; preenche faltantes sem sobrescrever; todos os
+  // envolvidos entram como clientes). Uma vez por empresa (localStorage).
+  useEffect(() => {
+    if (!empresa) return;
+    const empId = empresa.id;
+    const flag = `norvo:mig-fiscal:${empId}`;
+    try {
+      if (localStorage.getItem(flag)) return;
+    } catch { return; }
+    let cancelado = false;
+    const marcaFeito = () => {
+      try { localStorage.setItem(flag, "1"); } catch { /* sem storage */ }
+    };
+    (async () => {
+      try {
+        const antigos: Record<string, string | null>[] = [];
+        for (let ini = 0; ; ini += 500) {
+          const { data, error } = await supabase.from("fiscal_cadastros" as never)
+            .select("nome,documento,ie,email,telefone,cep,logradouro,numero,complemento,bairro,cidade,uf,observacoes")
+            .eq("empresa_id", empId).range(ini, ini + 499);
+          if (error) throw error;
+          antigos.push(...((data ?? []) as Record<string, string | null>[]));
+          if (!data || data.length < 500) break;
+        }
+        if (cancelado) return;
+        if (!antigos.length) { marcaFeito(); return; }
+        const { data: atuais, error: errAtuais } = await supabase.from("contatos")
+          .select("id,nome,documento,email,telefone,ie,cep,logradouro,numero,complemento,bairro,cidade,uf,observacoes")
+          .eq("empresa_id", empId);
+        if (errAtuais) throw errAtuais;
+        if (cancelado) return;
+        const dig = (s: unknown) => String(s ?? "").replace(/\D/g, "");
+        const chave = (nome: unknown, documento: unknown) => dig(documento) || `nome:${String(nome ?? "").trim().toLowerCase()}`;
+        const porChave = new Map(((atuais ?? []) as Record<string, string | null>[]).map((c) => [chave(c.nome, c.documento), c]));
+        const limpo = (v: unknown) => {
+          const s = String(v ?? "").trim();
+          return s ? s : null;
+        };
+        let inseridos = 0, preenchidos = 0;
+        for (const f of antigos) {
+          const c = porChave.get(chave(f.nome, f.documento));
+          if (!c) {
+            const { error } = await supabase.from("contatos").insert({
+              empresa_id: empId, nome: String(f.nome ?? "").trim() || "Sem nome", tipo: "cliente",
+              documento: limpo(dig(f.documento)), ie: limpo(f.ie), email: limpo(f.email),
+              telefone: limpo(f.telefone), cep: limpo(f.cep), logradouro: limpo(f.logradouro),
+              numero: limpo(f.numero), complemento: limpo(f.complemento), bairro: limpo(f.bairro),
+              cidade: limpo(f.cidade), uf: limpo(f.uf), observacoes: limpo(f.observacoes),
+            });
+            if (!error) inseridos++;
+            continue;
+          }
+          const patch: Record<string, string> = {};
+          for (const campo of ["email", "telefone", "ie", "cep", "logradouro", "numero", "complemento", "bairro", "cidade", "uf", "observacoes"] as const) {
+            if (!String(c[campo] ?? "").trim() && String(f[campo] ?? "").trim()) patch[campo] = String(f[campo]).trim();
+          }
+          if (!String(c.nome ?? "").trim() && String(f.nome ?? "").trim()) patch.nome = String(f.nome).trim();
+          if (Object.keys(patch).length) {
+            const { error } = await supabase.from("contatos").update(patch as never).eq("id", c.id as string);
+            if (!error) preenchidos++;
+          }
+        }
+        marcaFeito();
+        if (inseridos || preenchidos) {
+          toast.success(`Cadastros fiscais unificados: ${inseridos} novo(s), ${preenchidos} completado(s)`);
+          qc.invalidateQueries({ queryKey: ["contatos"] });
+        }
+      } catch (e) {
+        // Tabela antiga aposentada/ausente: nada a migrar (marca p/ não tentar de novo).
+        const msg = String((e as { message?: unknown })?.message ?? e ?? "");
+        if (/fiscal_cadastros|PGRST|does not exist|404|not find/i.test(msg)) marcaFeito();
+      }
+    })();
+    return () => { cancelado = true; };
+  }, [empresa?.id]);
+
   // Delete abre a confirmação de excluir selecionados.
   useEffect(() => {
     if (selecionados.size === 0) return;
@@ -79,16 +156,17 @@ function Cadastro() {
 
   const { data: contatos, isLoading } = useQuery({
     enabled: !!empresa,
-    queryKey: ["fiscal-cadastro", empresa?.id] as const,
+    queryKey: ["contatos", empresa?.id] as const,
     staleTime: 2 * 60_000,
     gcTime: 15 * 60_000,
     queryFn: async ({ signal }) => {
       // Busca em páginas para nunca cortar a lista (sem limite silencioso)
       const todos: unknown[] = [];
       for (let ini = 0; ; ini += 500) {
-        const { data, error } = await supabase.from("fiscal_cadastros")
-          .select("id,nome,documento,ie,email,telefone,cep,logradouro,numero,complemento,bairro,cidade,uf,observacoes")
+        const { data, error } = await supabase.from("contatos")
+          .select("id,nome,tipo,documento,ie,email,telefone,cep,logradouro,numero,complemento,bairro,cidade,uf,observacoes")
           .eq("empresa_id", empresa!.id)
+          .in("tipo", ["cliente", "ambos"])
           .order("nome")
           .range(ini, ini + 499)
           .abortSignal(signal);
@@ -190,13 +268,13 @@ function Cadastro() {
       if (!empresa) throw new Error("Empresa não selecionada");
       const doc = onlyDigits(input.documento);
       if (doc) {
-        const { data: existente } = await supabase.from("fiscal_cadastros")
-          .select("id,nome").eq("empresa_id", empresa.id).eq("documento", doc).maybeSingle();
-        if (existente) throw new Error(`Já cadastrado: ${existente.nome}`);
+        const { data: existente } = await supabase.from("contatos")
+          .select("id,nome,tipo").eq("empresa_id", empresa.id).eq("documento", doc).maybeSingle();
+        if (existente) throw new Error(`Já cadastrado como ${existente.tipo}: ${existente.nome}`);
       }
       const logrFinal = await completarLogradouro(input.logradouro || "", input.cep || "");
-      const { error } = await supabase.from("fiscal_cadastros").insert({
-        empresa_id: empresa.id, nome: input.nome,
+      const { error } = await supabase.from("contatos").insert({
+        empresa_id: empresa.id, nome: input.nome, tipo: "cliente",
         documento: doc || null, ie: input.ie || null, email: input.email || null, telefone: input.telefone || null,
         cep: input.cep || null, logradouro: logrFinal || null, numero: input.numero || null,
         complemento: input.complemento || null, bairro: input.bairro || null,
@@ -207,7 +285,7 @@ function Cadastro() {
     onSuccess: () => {
       toast.success("Cadastro criado");
       setOpen(false); setForm(emptyForm());
-      qc.invalidateQueries({ queryKey: ["fiscal-cadastro"] });
+      qc.invalidateQueries({ queryKey: ["contatos"] });
     },
     onError: (e: Error) => toast.error(e.message),
   });
@@ -217,12 +295,12 @@ function Cadastro() {
       if (!empresa) throw new Error("Empresa não selecionada");
       const doc = onlyDigits(input.documento);
       if (doc) {
-        const { data: existente } = await supabase.from("fiscal_cadastros")
-          .select("id,nome").eq("empresa_id", empresa.id).eq("documento", doc).neq("id", input.id).maybeSingle();
-        if (existente) throw new Error(`Já existe outro cadastro com este CPF/CNPJ: ${existente.nome}`);
+        const { data: existente } = await supabase.from("contatos")
+          .select("id,nome,tipo").eq("empresa_id", empresa.id).eq("documento", doc).neq("id", input.id).maybeSingle();
+        if (existente) throw new Error(`Já existe outro cadastro com este CPF/CNPJ (${existente.tipo}): ${existente.nome}`);
       }
       const logrFinal = await completarLogradouro(input.logradouro || "", input.cep || "");
-      const { error } = await supabase.from("fiscal_cadastros").update({
+      const { error } = await supabase.from("contatos").update({
         nome: input.nome,
         documento: doc || null, ie: input.ie || null, email: input.email || null, telefone: input.telefone || null,
         cep: input.cep || null, logradouro: logrFinal || null, numero: input.numero || null,
@@ -234,20 +312,20 @@ function Cadastro() {
     onSuccess: () => {
       toast.success("Cadastro atualizado");
       setOpen(false); setEditing(null); setForm(emptyForm());
-      qc.invalidateQueries({ queryKey: ["fiscal-cadastro"] });
+      qc.invalidateQueries({ queryKey: ["contatos"] });
     },
     onError: (e: Error) => toast.error(e.message),
   });
 
   const excluir = useMutation({
     mutationFn: async (id: string) => {
-      const { error } = await supabase.from("fiscal_cadastros").delete().eq("id", id);
+      const { error } = await supabase.from("contatos").delete().eq("id", id);
       if (error) throw error;
     },
     onSuccess: () => {
       toast.success("Cadastro excluído");
       setDeleting(null);
-      qc.invalidateQueries({ queryKey: ["fiscal-cadastro"] });
+      qc.invalidateQueries({ queryKey: ["contatos"] });
     },
     onError: (e: Error) => toast.error(e.message),
   });
@@ -255,7 +333,7 @@ function Cadastro() {
   const excluirLote = useMutation({
     mutationFn: async (ids: string[]) => {
       if (!empresa) throw new Error("Empresa não selecionada");
-      const { error } = await supabase.from("fiscal_cadastros").delete().eq("empresa_id", empresa.id).in("id", ids);
+      const { error } = await supabase.from("contatos").delete().eq("empresa_id", empresa.id).in("id", ids);
       if (error) throw error;
       return ids.length;
     },
@@ -264,7 +342,7 @@ function Cadastro() {
       setSelecionados(new Set());
       setConfirmLote(false);
       setPagina(1);
-      qc.invalidateQueries({ queryKey: ["fiscal-cadastro"] });
+      qc.invalidateQueries({ queryKey: ["contatos"] });
     },
     onError: (e: Error) => toast.error(e.message),
   });
@@ -305,7 +383,6 @@ function Cadastro() {
         <EmptyState icon={Users} title="Nenhum cadastro" description={busca ? "Nada encontrado para a busca." : "Cadastre o primeiro cadastro (cliente ou fornecedor)."} />
       ) : (
         <Card className="overflow-hidden rounded-2xl shadow-panel">
-          <div className="overflow-x-auto">
           <Table className="min-w-[1280px]">
             <TableHeader>
               <TableRow>
@@ -363,7 +440,6 @@ function Cadastro() {
               ))}
             </TableBody>
           </Table>
-          </div>
           <div className="flex flex-wrap items-center justify-between gap-2 border-t border-border/60 px-4 py-2.5 text-xs text-muted-foreground">
             <span>
               {filtrados.length} cadastro(s){selecionados.size > 0 && ` · ${selecionados.size} selecionado(s)`}

@@ -5995,6 +5995,42 @@ pm run build OK.
 - Importacao completa contatos novos via CNPJ no fundo (razao/email/tel/endereco, sem trocar o nome da planilha).
 - Clientes e fornecedores com NOME/TIPO/DOCUMENTO/CONTATO clicaveis p/ ordenar.
 
+## Cadastro unico: fiscal absorvido por contatos (15/10)
+
+- fiscal_cadastros era subconjunto exato de contatos (mesmas colunas menos tipo):
+  remetente/destinatario/consignatario/redespacho/tomador passam a tipo='cliente'
+  (decisao A). Tela fiscal/cadastro, CT-e (15 pontos: DACTE, CNPJ lookup, XML import,
+  patches) e tipos agora usam contatos; fiscal/cadastro lista tipo cliente|ambos e
+  cria sempre como cliente (dedupe de documento vale p/ todos os tipos).
+- Migracao automatica na 1a abertura do Cadastro fiscal (idempotente, preenche
+  faltantes sem sobrescrever, toast com total, 1x por empresa); migration SQL
+  de registro + DROP da tabela antiga em
+  supabase/migrations/20261015120000_unificar_fiscal_cadastros_em_contatos.sql.
+- Cache unificado: fiscal usa a chave ["contatos"] (telas se atualizam juntas);
+  cache ["contatos-cte"] do CT-e mantido.
+
+## Abas Clientes/Fornecedores (15/10)
+
+- vendas/clientes ganha Tabs Clientes (cliente+ambos, com contagem) e Fornecedores
+  (fornecedor+ambos, com contagem) — resolve o nome errado da tela (decisao B).
+  Novo contato herda o tipo da aba ativa (ambos continua possivel); selecao,
+  ordenacao, exclusao em lote e empty-state respeitam a aba.
+
+## Titulos duplos nas Configuracoes (15/10)
+
+- Secoes fiscais/empresas/usuarios renderizavam PageHeader proprio abaixo do
+  "Configuracoes" (componentes so existem embutidos — as rotas redirecionam).
+  Headers internos removidos (3 arquivos); demais secoes ja eram titulo unico.
+
+## Varredura de scrollbars (15/10)
+
+- Removidos 7 wrappers `<div overflow-x-auto>` redundantes em volta de Table
+  (o .erp-table-wrap ja rola; dois scrollers = barra dupla): auditoria, contador,
+  fiscal.configuracoes, emitidas, relatorios, recebidas (1568) e fiscal.cadastro.
+  contas/468 mantido (grade customizada, div e o scroller legitimo).
+- CT-e aba Embarque vazia: tabela min-w-max forcava scroll horizontal sem
+  necessidade; vazia agora usa w-full.
+
 ## Layout: sticky de verdade, sem borda dupla e header com contexto (14/10)
 
 - Cabeçalho de tabela sticky passa a funcionar: `.erp-table-wrap` ganhou `max-height`

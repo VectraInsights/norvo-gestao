@@ -1272,7 +1272,7 @@ function CtePage() {
       try {
         if (empresa && (remD || dstD || tomaD)) {
           const { data: cts } = await supabase
-            .from("fiscal_cadastros" as any)
+            .from("contatos" as any)
             .select("documento,nome,cidade,uf")
             .eq("empresa_id", (empresa as any).id);
           const cl = (cts as any[]) || [];
@@ -1293,7 +1293,7 @@ function CtePage() {
       try {
         if (empresa && (remD || dstD || tomaD)) {
           const { data: cts2 } = await supabase
-            .from("fiscal_cadastros" as any)
+            .from("contatos" as any)
             .select("documento,nome,logradouro,numero,bairro,cidade,uf,cep,ie,telefone")
             .eq("empresa_id", (empresa as any).id);
           const cl2 = (cts2 as any[]) || [];
@@ -1317,7 +1317,7 @@ function CtePage() {
       try {
         if (empresa && (remD || tomaD)) {
           const { data: cts2 } = await supabase
-            .from("fiscal_cadastros" as any)
+            .from("contatos" as any)
             .select("documento,telefone")
             .eq("empresa_id", (empresa as any).id);
           const cl2 = (cts2 as any[]) || [];
@@ -1562,7 +1562,7 @@ function CtePage() {
           if (atual && temTipoLogradouro(atual)) return;
           pendUpd.push(
             supabase
-              .from("fiscal_cadastros" as any)
+              .from("contatos" as any)
               .update({ logradouro: novo })
               .eq("empresa_id", (empresa as any).id)
               .eq("documento", docDigits),
@@ -3031,7 +3031,7 @@ function CtePage() {
     });
   }, [regimeData, empresa?.id]);
 
-  // Lookup CNPJ p/ Consignatário/Redespacho: fiscal_cadastros → BrasilAPI → ReceitaWS
+  // Lookup CNPJ p/ Consignatário/Redespacho: contatos → BrasilAPI → ReceitaWS
   const [lookingUpConsig, setLookingUpConsig] = useState(false);
   const [lookingUpRedesp, setLookingUpRedesp] = useState(false);
   const lastLookupConsig = useRef("");
@@ -3046,9 +3046,9 @@ function CtePage() {
   };
   const buscarDadosCnpj = async (digits: string) => {
     if (empresa) {
-      // select * (fiscal_cadastros ja tem coluna ie nativa)
+      // select * (contatos tem coluna ie nativa)
       const { data } = await supabase
-        .from("fiscal_cadastros" as any)
+        .from("contatos" as any)
         .select("id,empresa_id,documento,nome,logradouro,numero,bairro,cidade,uf,cep,telefone,ie")
         .eq("empresa_id", empresa.id)
         .eq("documento", digits)
@@ -3101,10 +3101,10 @@ function CtePage() {
   // Insert resiliente: tenta com `ie`, se a migration ainda não foi aplicada reinsere sem.
   // Entra no cache na hora (busca instantânea) em vez de esperar refetch.
   const insertContatoResiliente = async (row: Record<string, unknown>) => {
-    const { error } = await supabase.from("fiscal_cadastros" as any).insert(row as any);
+    const { error } = await supabase.from("contatos" as any).insert({ ...(row as Record<string, unknown>), tipo: "cliente" } as any);
     if (error && /ie/i.test(error.message || "")) {
       const { ie: _omit, ...semIe } = row;
-      const retry = await supabase.from("fiscal_cadastros" as any).insert(semIe as any);
+      const retry = await supabase.from("contatos" as any).insert({ ...semIe, tipo: "cliente" } as any);
       if (!retry.error && empresa) {
         qc.setQueryData(["contatos-cte", empresa.id], (old: any) => [...(Array.isArray(old) ? old : []), semIe]);
       } else if (empresa) {
@@ -3217,7 +3217,7 @@ function CtePage() {
       const todos: unknown[] = [];
       for (let ini = 0; ; ini += 1000) {
         const { data } = await supabase
-          .from("fiscal_cadastros" as any)
+          .from("contatos" as any)
           .select("documento,nome,ie,logradouro,numero,bairro,cidade,uf,cep,telefone")
           .eq("empresa_id", empresa!.id)
           .range(ini, ini + 999);
@@ -3247,7 +3247,7 @@ function CtePage() {
     if (unicos.length === 0) return;
     (async () => {
       const { data } = await supabase
-        .from("fiscal_cadastros" as any)
+        .from("contatos" as any)
         .select("documento,nome,ie,logradouro,numero,bairro,cidade,uf,cep,telefone")
         .eq("empresa_id", empresa.id)
         .in("documento", unicos);
@@ -3435,7 +3435,7 @@ function CtePage() {
         if (hit) return hit;
         const p: Promise<any> = Promise.resolve(
           supabase
-            .from("fiscal_cadastros" as any)
+            .from("contatos" as any)
             .select("id,documento,nome,ie,uf,cidade,logradouro,numero,bairro,cep,telefone")
             .eq("empresa_id", empresa!.id)
             .eq("documento", doc)
@@ -3468,10 +3468,10 @@ function CtePage() {
         contatosUpsert.set(doc, c);
       };
       const inserirContatoComFallback = async (row: Record<string, unknown>) => {
-        const { error } = await supabase.from("fiscal_cadastros" as any).insert(row);
+        const { error } = await supabase.from("contatos" as any).insert(row);
         if (error && /ie/i.test(error.message || "")) {
           const { ie: _ie, ...semIe } = row;
-          await supabase.from("fiscal_cadastros" as any).insert(semIe);
+          await supabase.from("contatos" as any).insert(semIe);
         }
       };
       const flushContatos = async () => {
@@ -3482,6 +3482,7 @@ function CtePage() {
         if (novos.length > 0) {
           const rows = novos.map((c) => ({
             empresa_id: empresa!.id,
+            tipo: "cliente",
             nome: c.nome,
             documento: docDe(c),
             ie: c.ie || null,
@@ -3493,7 +3494,7 @@ function CtePage() {
             cep: c.cep || null,
             telefone: c.fone || null,
           }));
-          const { error } = await supabase.from("fiscal_cadastros" as any).insert(rows);
+          const { error } = await supabase.from("contatos" as any).insert(rows);
           if (error) {
             // Concorrência externa ou IE duplicado: cai p/ linha a linha com fallback.
             await mapPool(rows, 5, (r) => inserirContatoComFallback(r));
@@ -3519,7 +3520,7 @@ function CtePage() {
         }
         await mapPool(patches, 5, (p) =>
           Promise.resolve(
-            supabase.from("fiscal_cadastros" as any).update(p.upd).eq("empresa_id", empresa!.id).eq("documento", p.doc),
+            supabase.from("contatos" as any).update(p.upd).eq("empresa_id", empresa!.id).eq("documento", p.doc),
           ),
         );
       };
@@ -6556,7 +6557,7 @@ function CtePage() {
                     </span>
                   </div>
                   <div ref={embScrollRef} onScroll={() => syncEmb("tab")} className="overflow-auto flex-1 min-h-0 min-w-0 max-h-[60vh] [&_.erp-table-wrap]:overflow-x-visible [&_.erp-table-wrap]:max-h-none">
-                    <Table className="min-w-max [&_td]:px-1.5 [&_td]:py-1 [&_th]:px-1.5 [&_th]:py-1.5">
+                    <Table className={mercadorias.length ? "min-w-max [&_td]:px-1.5 [&_td]:py-1 [&_th]:px-1.5 [&_th]:py-1.5" : "w-full [&_td]:px-1.5 [&_td]:py-1 [&_th]:px-1.5 [&_th]:py-1.5"}>
                       <TableHeader className="sticky top-0 z-10 bg-muted">
                         <TableRow>
                           <TableHead className="w-6">
