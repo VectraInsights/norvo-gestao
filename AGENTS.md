@@ -11,10 +11,10 @@ Dono do projeto: VectraInsights. Conversas com o agente podem ser em português.
 - Rotas: file-based em `src/routes` (TanStack Router; `routeTree.gen.ts` é gerado, não editar)
 - Backend: Supabase (auth, Postgres, storage). Credenciais em `.env` LOCAL (não versionado;
   ver `.env.example`). Na Vercel as env vars são configuradas no dashboard do projeto.
-- `SUPABASE_STRING` (secret, server-only, Vercel Production): connection string do
-  Postgres (pooler) p/ DDL/migrações pontuais executadas pelo agente. NUNCA com
-  prefixo `VITE_` (a senha vazaria no JS do navegador) e nunca commitar o valor;
-  o app em si usa SUPABASE_URL + chaves (não esta var).
+- String direta do Postgres (pooler): usada pontualmente pelo agente p/ DDL/migrações,
+  passada no chat na hora (nunca commitar o valor; trocar a senha depois). NUNCA como
+  var `VITE_*` na Vercel (a senha vazaria no JS do navegador); o app em si usa
+  SUPABASE_URL + chaves.
 - Build: `vite.config.ts` nativo (tailwindcss + tsConfigPaths + tanstackStart + nitro + viteReact).
   Ordem importa: `tanstackStart` ANTES de `viteReact`. O preset do nitro é controlado pela env
   `NITRO_PRESET` (padrão do config: `cloudflare-module`).
