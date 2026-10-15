@@ -295,7 +295,6 @@ function RelatoriosFiscais() {
               <CardTitle className="tracking-tight">Notas no Período</CardTitle>
               <CardDescription className="leading-relaxed">Lista de todas as notas recebidas no período selecionado.</CardDescription>
             </CardHeader>
-            <div className="overflow-x-auto">
               <Table>
                 <TableHeader className="bg-[color-mix(in_oklab,var(--color-muted)_40%,var(--color-card))]">
                   <TableRow>
@@ -330,7 +329,6 @@ function RelatoriosFiscais() {
                   )}
                 </TableBody>
               </Table>
-            </div>
           </Card>
         </>
       ) : null}

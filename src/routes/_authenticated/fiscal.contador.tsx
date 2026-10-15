@@ -365,7 +365,6 @@ function PainelContador() {
           <CardTitle className="tracking-tight">Histórico de Fechamentos e Exportações Fiscais</CardTitle>
           <CardDescription className="leading-relaxed">Acompanhe o registro de tudo que foi gerado e enviado para a sua contabilidade.</CardDescription>
         </CardHeader>
-        <div className="overflow-x-auto">
           <Table>
             <TableHeader className="bg-[color-mix(in_oklab,var(--color-muted)_40%,var(--color-card))]">
               <TableRow>
@@ -420,7 +419,6 @@ function PainelContador() {
               })}
             </TableBody>
           </Table>
-        </div>
       </Card>
     </>
   );
