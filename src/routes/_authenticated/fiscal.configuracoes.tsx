@@ -1,6 +1,5 @@
 import { MoneyInput } from "@/components/erp/money-input";
 import { createFileRoute, redirect } from "@tanstack/react-router";
-import { PageHeader } from "@/components/erp/page-header";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -460,12 +459,6 @@ export function ConfigFiscais() {
 
   return (
     <>
-      <PageHeader 
-        eyebrow="Gestão Fiscal" 
-        title="Configurações Fiscais" 
-        description="Gerencie seu certificado digital A1, configure alíquotas de impostos e parâmetros de emissão." 
-      />
-
       <Tabs value={activeTab} onValueChange={setActiveTab} className="mt-6 space-y-6 sm:mt-8">
         <TabsList className="bg-muted/80 h-auto w-full max-w-[560px] flex-wrap gap-1 rounded-xl p-1.5">
           <TabsTrigger value="certificado" className="flex-1 text-xs sm:text-sm">Certificado Digital</TabsTrigger>
@@ -778,7 +771,6 @@ export function ConfigFiscais() {
           </div>
 
           <Card className="overflow-hidden rounded-2xl border-muted shadow-panel bg-card/60 backdrop-blur-sm">
-            <div className="overflow-x-auto">
               <Table>
                 <TableHeader className="bg-[color-mix(in_oklab,var(--color-muted)_40%,var(--color-card))]">
                   <TableRow>
@@ -818,7 +810,6 @@ export function ConfigFiscais() {
                   })}
                 </TableBody>
               </Table>
-            </div>
           </Card>
         </TabsContent>
         <TabsContent value="rtc" className="space-y-4">

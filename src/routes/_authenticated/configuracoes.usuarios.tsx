@@ -1,6 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any -- colunas novas (modulos/nome/email) ainda não estão em types.ts */
 import { createFileRoute, redirect } from "@tanstack/react-router";
-import { PageHeader } from "@/components/erp/page-header";
 import { EmptyState } from "@/components/erp/empty-state";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -250,15 +249,6 @@ export function UsuariosPage() {
 
   return (
     <div className="space-y-6">
-      <PageHeader
-        eyebrow="Configurações"
-        title="Usuários e acessos"
-        description={
-          souSuperAdmin
-            ? "Crie usuários com senha padrão e defina quais módulos cada um pode usar."
-            : "Gerencie os usuários desta empresa e os módulos que podem usar."
-        }
-      />
       <div className="mb-4 flex flex-col gap-3 sm:mb-6 sm:flex-row sm:items-center">
         <div className="relative flex-1">
           <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
