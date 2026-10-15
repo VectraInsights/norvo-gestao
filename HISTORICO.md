@@ -6061,6 +6061,17 @@ pm run build OK.
   depois UPDATE contatos SET tipo='transportadora' WHERE id IN (...); ou me passe
   uma string nova que eu faco.
 
+## Tipo transporte no fiscal (15/10)
+
+- Fiscal passa de transportadora p/ transporte (valor minusculo no banco,
+  exibe "Transporte" na coluna e no seletor): form, CT-e (3 pontos), migracao
+  automatica, types e migration SQL; enum ganha 'transporte' (arquivo
+  20261015130000; 'transportadora' segue no enum sem uso).
+- PENDENTE no banco (string nova falhou auth): rode no SQL editor o ALTER
+  sozinho primeiro (ADD VALUE nao roda em transacao), depois os UPDATEs de flip
+  (transportadora->transporte + os 7 cliente->transporte) + NOTIFY pgrst reload
+  — passos no arquivo da migration.
+
 ## Layout: sticky de verdade, sem borda dupla e header com contexto (14/10)
 
 - Cabeçalho de tabela sticky passa a funcionar: `.erp-table-wrap` ganhou `max-height`

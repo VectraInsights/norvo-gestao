@@ -1,5 +1,5 @@
 -- Unificação dos cadastros: fiscal_cadastros -> public.contatos (decisão do dono, 15/10/2026:
--- remetente/destinatário/consignatário/redespacho/tomador entram como tipo='transportadora').
+-- remetente/destinatário/consignatário/redespacho/tomador entram como tipo='transporte').
 -- Idempotente: pode rodar mais de uma vez sem duplicar. O app também faz essa
 -- migração sozinho na primeira abertura do Cadastro fiscal; este arquivo serve de
 -- registro e aposenta a tabela antiga.
@@ -7,7 +7,7 @@
 
 -- 1) Traz os que ainda não existem em contatos (por empresa+documento; sem doc, por nome).
 INSERT INTO public.contatos (empresa_id, nome, tipo, documento, ie, email, telefone, cep, logradouro, numero, complemento, bairro, cidade, uf, observacoes)
-SELECT f.empresa_id, f.nome, 'transportadora',
+SELECT f.empresa_id, f.nome, 'transporte',
   NULLIF(regexp_replace(COALESCE(f.documento, ''), '\D', '', 'g'), ''),
   NULLIF(f.ie, ''), NULLIF(f.email, ''), NULLIF(f.telefone, ''),
   NULLIF(f.cep, ''), NULLIF(f.logradouro, ''), NULLIF(f.numero, ''), NULLIF(f.complemento, ''),

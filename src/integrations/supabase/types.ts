@@ -3812,7 +3812,7 @@ export type Database = {
         | "poupanca"
         | "aplicacao_automatica"
         | "outras";
-      contato_tipo: "cliente" | "fornecedor" | "ambos" | "transportadora";
+      contato_tipo: "cliente" | "fornecedor" | "ambos" | "transporte";
       emprestimo_status: "ativo" | "quitado" | "cancelado";
       emprestimo_tipo: "emprestimo" | "financiamento";
       estoque_movimento: "entrada" | "saida" | "ajuste" | "transferencia";
@@ -3965,7 +3965,7 @@ export const Constants = {
         "aplicacao_automatica",
         "outras",
       ],
-      contato_tipo: ["cliente", "fornecedor", "ambos", "transportadora"],
+      contato_tipo: ["cliente", "fornecedor", "ambos", "transporte"],
       emprestimo_status: ["ativo", "quitado", "cancelado"],
       emprestimo_tipo: ["emprestimo", "financiamento"],
       estoque_movimento: ["entrada", "saida", "ajuste", "transferencia"],

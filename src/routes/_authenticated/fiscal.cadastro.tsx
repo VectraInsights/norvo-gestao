@@ -36,13 +36,13 @@ type Contato = {
   uf: string | null; observacoes: string | null;
 };
 
-type TipoContato = "cliente" | "fornecedor" | "ambos" | "transportadora";
+type TipoContato = "cliente" | "fornecedor" | "ambos" | "transporte";
 
 const emptyForm = () => ({
   nome: "", documento: "", ie: "", email: "", telefone: "",
   cep: "", logradouro: "", numero: "", complemento: "",
   bairro: "", cidade: "", uf: "", observacoes: "",
-  tipo: "transportadora" as TipoContato,
+  tipo: "transporte" as TipoContato,
 });
 
 function onlyDigits(s: string) { return s.replace(/\D/g, ""); }
@@ -109,7 +109,7 @@ function Cadastro() {
           const c = porChave.get(chave(f.nome, f.documento));
           if (!c) {
             const { error } = await supabase.from("contatos").insert({
-              empresa_id: empId, nome: String(f.nome ?? "").trim() || "Sem nome", tipo: "transportadora",
+              empresa_id: empId, nome: String(f.nome ?? "").trim() || "Sem nome", tipo: "transporte",
               documento: limpo(dig(f.documento)), ie: limpo(f.ie), email: limpo(f.email),
               telefone: limpo(f.telefone), cep: limpo(f.cep), logradouro: limpo(f.logradouro),
               numero: limpo(f.numero), complemento: limpo(f.complemento), bairro: limpo(f.bairro),
@@ -365,7 +365,7 @@ function Cadastro() {
 
   return (
     <>
-      <PageHeader eyebrow="Fiscal" title="Contatos" description="Cadastro único — clientes, fornecedores e transportadoras." />
+      <PageHeader eyebrow="Fiscal" title="Contatos" description="Cadastro único — clientes, fornecedores e transporte." />
       <div className="mb-4 flex flex-col gap-3 sm:mb-6 sm:flex-row sm:items-center">
         <div className="relative flex-1">
           <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
@@ -496,7 +496,7 @@ function Cadastro() {
               <Select value={form.tipo} onValueChange={(v) => setForm({ ...form, tipo: v as TipoContato })}>
                 <SelectTrigger className="h-10 rounded-xl"><SelectValue /></SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="transportadora">Transportadora</SelectItem>
+                  <SelectItem value="transporte">Transporte</SelectItem>
                   <SelectItem value="cliente">Cliente</SelectItem>
                   <SelectItem value="fornecedor">Fornecedor</SelectItem>
                   <SelectItem value="ambos">Ambos (cliente + fornecedor)</SelectItem>
