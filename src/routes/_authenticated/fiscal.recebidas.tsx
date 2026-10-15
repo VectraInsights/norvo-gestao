@@ -1528,8 +1528,8 @@ function NotasRecebidas() {
 
         <TabsContent value="manifesto" className="space-y-4">
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-            <div className="flex flex-1 gap-2 max-w-md">
-              <div className="relative flex-1">
+            <div className="flex flex-1 flex-wrap gap-2">
+              <div className="relative min-w-52 flex-1">
                 <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                 <Input
                   placeholder="Buscar por emitente, CNPJ ou chave..."
@@ -1538,7 +1538,7 @@ function NotasRecebidas() {
                   onChange={(e) => setSearch(e.target.value)}
                 />
               </div>
-              <PeriodoFilter value={periodo} onChange={setPeriodo} preset="mesatual" />
+              <PeriodoFilter value={periodo} onChange={setPeriodo} preset="mesatual" className="shrink-0" />
             </div>
             
             <Button 

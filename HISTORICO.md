@@ -6114,3 +6114,8 @@ pm run build OK.
 - Dropdown Ago/2026 troca pelo PeriodoFilter do pagar/receber (setas nas pontas,
   preset mesatual, Todo o periodo no lugar de Todos os meses). Filtro por faixa
   de emissao comparando YYYY-MM-DD como texto (sem deslocar dia no fuso).
+
+## Busca espremida na recebidas (15/10)
+
+- PeriodoFilter w-300px esmagava o search no max-w-md: fileira sem max, wrap,
+  busca com min-w-52 e filtro com shrink-0.
