@@ -6101,3 +6101,10 @@ pm run build OK.
 - Dedupe de documento segue global (evita conflito e protege o lookup do CT-e);
   leituras do CT-e seguem sem filtro de tipo (tomador pode ser cliente — se
   filtrar, a emissao quebra). Ambos nao e mais criavel em nenhuma tela.
+
+## Exclusao em lote em fornecedores e percursos (15/10)
+
+- Fornecedores: checkbox por linha + selecionar todos + barra Excluir
+  selecionados (n) + confirmacao + tecla Delete (padrao das demais telas).
+- Percursos: mesmo padrao; o lote reaproveita a trava de CT-e em uso por item
+  (exclui os livres, lista quantos ficaram presos + falhas, sem spam de toast).

@@ -44,7 +44,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
-import { useMemo, useState } from "react";
+import { useMemo, useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEmpresaAtual } from "@/hooks/use-empresa";
@@ -114,6 +114,24 @@ function Fornecedores() {
   const [form, setForm] = useState(emptyForm());
   const [editing, setEditing] = useState<Contato | null>(null);
   const [deleting, setDeleting] = useState<Contato | null>(null);
+  const [selecionados, setSelecionados] = useState<Set<string>>(new Set());
+  const [confLote, setConfLote] = useState(false);
+
+  // Delete abre a confirmação de excluir selecionados.
+  useEffect(() => {
+    if (selecionados.size === 0) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key !== "Delete") return;
+      const t = e.target as HTMLElement;
+      if (t && (t.tagName === "INPUT" || t.tagName === "TEXTAREA" || t.tagName === "SELECT" || t.isContentEditable)) return;
+      if (document.querySelector('[role="dialog"]')) return;
+      e.preventDefault();
+      setConfLote(true);
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [selecionados.size]);
+
   const [lookingUp, setLookingUp] = useState(false);
   const [busca, setBusca] = useState("");
   const [pagina, setPagina] = useState(1);
@@ -312,6 +330,23 @@ function Fornecedores() {
     onError: (e: Error) => toast.error(e.message),
   });
 
+  const excluirLote = useMutation({
+    mutationFn: async (ids: string[]) => {
+      if (!empresa) throw new Error("Empresa não selecionada");
+      const { error } = await supabase.from("contatos").delete().eq("empresa_id", empresa.id).in("id", ids);
+      if (error) throw error;
+      return ids.length;
+    },
+    onSuccess: (n) => {
+      toast.success(`${n} fornecedor(es) excluído(s)`);
+      setSelecionados(new Set());
+      setConfLote(false);
+      qc.invalidateQueries({ queryKey: ["fornecedores"] });
+      qc.invalidateQueries({ queryKey: ["contatos"] });
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
   const openEdit = (c: Contato) => {
     setEditing(c);
     setForm({
@@ -335,6 +370,24 @@ function Fornecedores() {
     setEditing(null);
     setForm(emptyForm());
     setOpen(true);
+  };
+
+  const todosVisiveisSel = contatosVisiveis.length > 0 && contatosVisiveis.every((c) => selecionados.has(c.id));
+  const alternarTodosVisiveis = () => {
+    setSelecionados((ant) => {
+      const prox = new Set(ant);
+      if (todosVisiveisSel) contatosVisiveis.forEach((c) => prox.delete(c.id));
+      else contatosVisiveis.forEach((c) => prox.add(c.id));
+      return prox;
+    });
+  };
+  const alternarUm = (id: string) => {
+    setSelecionados((ant) => {
+      const prox = new Set(ant);
+      if (prox.has(id)) prox.delete(id);
+      else prox.add(id);
+      return prox;
+    });
   };
 
   return (
@@ -372,9 +425,20 @@ function Fornecedores() {
         />
       ) : (
         <Card className="overflow-hidden shadow-panel">
+          {selecionados.size > 0 && (
+            <div className="flex items-center justify-between gap-2 border-b border-border/60 px-4 py-2">
+              <span className="text-xs text-muted-foreground">{selecionados.size} selecionado(s)</span>
+              <Button variant="destructive" size="sm" className="h-8 rounded-xl px-4" onClick={() => setConfLote(true)}>
+                <Trash2 className="mr-1.5 h-3.5 w-3.5" /> Excluir selecionados
+              </Button>
+            </div>
+          )}
           <Table className="[&_td]:px-3 [&_th]:px-3">
             <TableHeader>
               <TableRow>
+                <TableHead className="w-10">
+                  <Checkbox checked={todosVisiveisSel} onCheckedChange={alternarTodosVisiveis} aria-label="Selecionar visíveis" />
+                </TableHead>
                 <TableHead>Nome</TableHead>
                 <TableHead>Documento</TableHead>
                 <TableHead>Contato</TableHead>
@@ -384,6 +448,9 @@ function Fornecedores() {
             <TableBody>
               {contatosVisiveis.map((c) => (
                 <TableRow key={c.id}>
+                  <TableCell>
+                    <Checkbox checked={selecionados.has(c.id)} onCheckedChange={() => alternarUm(c.id)} aria-label={`Selecionar ${c.nome}`} />
+                  </TableCell>
                   <TableCell className="font-medium">{c.nome}</TableCell>
                   <TableCell className="text-tabular">{c.documento ? maskDoc(c.documento) : "—"}</TableCell>
                   <TableCell className="text-muted-foreground">
@@ -636,6 +703,27 @@ function Fornecedores() {
               data-acao
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
               onClick={() => deleting && excluir.mutate(deleting.id)}
+            >
+              Excluir
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      <AlertDialog open={confLote} onOpenChange={(v) => { if (!v) setConfLote(false); }}>
+        <AlertDialogContent className="rounded-2xl">
+          <AlertDialogHeader>
+            <AlertDialogTitle>Excluir selecionados</AlertDialogTitle>
+            <AlertDialogDescription>
+              Tem certeza que deseja excluir {selecionados.size} fornecedor(es)? Esta ação não pode ser desfeita.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              data-acao
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              onClick={() => excluirLote.mutate(Array.from(selecionados))}
             >
               Excluir
             </AlertDialogAction>

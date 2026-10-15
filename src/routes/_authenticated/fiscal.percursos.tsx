@@ -4,6 +4,7 @@ import { EmptyState } from "@/components/erp/empty-state";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { MoneyInput } from "@/components/erp/money-input";
 import { Combobox } from "@/components/erp/combobox";
@@ -671,6 +672,8 @@ function PercursosPage() {
   // a navegação desmonta a página atrás do véu (não precisa desligar)
   const [saindoCte, setSaindoCte] = useState(false);
   const [confExcluir, setConfExcluir] = useState<Percurso | null>(null);
+  const [selecionados, setSelecionados] = useState<Set<string>>(new Set());
+  const [confLote, setConfLote] = useState(false);
   const [calcando, setCalcando] = useState(false);
   // UF acompanha a cidade de entrega (IBGE); carrega uma vez
   const [municipios, setMunicipios] = useState<Mun[]>([]);
@@ -1292,8 +1295,7 @@ function PercursosPage() {
     if (voltarCteRef.current) setSaindoCte(true);
     if (editing && !salvar.isPending) salvar.mutate();
   };
-  const excluir = useMutation({
-    mutationFn: async (id: string) => {
+  const excluirUm = async (id: string) => {
       // Não exclui percurso com CT-e feito (rascunho ou emitido): compara o trio
       const alvo = (percursos || []).find((p) => p.id === id);
       const dg = (v: any) => String(v || "").replace(/\D/g, "");
@@ -1335,13 +1337,56 @@ function PercursosPage() {
         .delete()
         .eq("id", id);
       if (error) throw error;
-    },
+  };
+
+  const excluir = useMutation({
+    mutationFn: excluirUm,
     onSuccess: () => {
       toast.success("Percurso excluído");
       qc.invalidateQueries({ queryKey: ["cte-percursos", empresa!.id] });
     },
     onError: (e: Error) => toast.error(e.message),
   });
+
+  const excluirLote = useMutation({
+    mutationFn: async (ids: string[]) => {
+      const emUso: string[] = [];
+      const falhas: string[] = [];
+      for (const id of ids) {
+        try {
+          await excluirUm(id);
+        } catch (e) {
+          if (String((e as any)?.message || "").includes("em uso no CT-e")) emUso.push(id);
+          else falhas.push(id);
+        }
+      }
+      return { ok: ids.length - emUso.length - falhas.length, emUso: emUso.length, falhas: falhas.length };
+    },
+    onSuccess: ({ ok, emUso, falhas }) => {
+      setSelecionados(new Set());
+      setConfLote(false);
+      if (ok > 0) toast.success(`${ok} percurso(s) excluído(s)`);
+      if (emUso > 0) toast.error(`${emUso} em uso no CT-e — exclua o documento primeiro`);
+      if (falhas > 0) toast.error(`${falhas} falha(s) ao excluir`);
+      qc.invalidateQueries({ queryKey: ["cte-percursos", empresa!.id] });
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+  // Delete abre a confirmação de excluir selecionados.
+  useEffect(() => {
+    if (selecionados.size === 0) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key !== "Delete") return;
+      const t = e.target as HTMLElement;
+      if (t && (t.tagName === "INPUT" || t.tagName === "TEXTAREA" || t.tagName === "SELECT" || t.isContentEditable)) return;
+      if (document.querySelector('[role="dialog"]')) return;
+      e.preventDefault();
+      setConfLote(true);
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [selecionados.size]);
 
   // Completa endereço/IE com o cadastro de contatos quando o percurso não tem
   const withContato = (p: string) => {
@@ -1752,9 +1797,25 @@ function PercursosPage() {
               />
             </div>
           ) : (
+            <>
+              {selecionados.size > 0 && (
+                <div className="flex items-center justify-between gap-2 border-b border-border/60 px-4 py-2">
+                  <span className="text-xs text-muted-foreground">{selecionados.size} selecionado(s)</span>
+                  <Button variant="destructive" size="sm" className="h-8 rounded-lg" onClick={() => setConfLote(true)}>
+                    <Trash2 className="mr-1.5 h-3.5 w-3.5" /> Excluir selecionados
+                  </Button>
+                </div>
+              )}
             <Table className="[&_td]:px-3 [&_td]:py-2 [&_th]:px-3">
               <TableHeader>
                 <TableRow>
+                  <TableHead className="w-10">
+                    <Checkbox
+                      checked={lista.length > 0 && selecionados.size === lista.length}
+                      onCheckedChange={(v) => setSelecionados(v === true ? new Set(lista.map((p) => p.id)) : new Set())}
+                      aria-label="Selecionar todos"
+                    />
+                  </TableHead>
                   <THP k="codigo" label="Código" className="w-20" />
                   <THP k="nome" label="Nome" />
                   <THP k="rota" label="Remetente → Destinatário" />
@@ -1766,6 +1827,13 @@ function PercursosPage() {
               <TableBody>
                 {lista.map((p) => (
                   <TableRow key={p.id} className="transition-colors hover:bg-accent/30">
+                    <TableCell>
+                      <Checkbox
+                        checked={selecionados.has(p.id)}
+                        onCheckedChange={() => setSelecionados((ant) => { const prox = new Set(ant); if (prox.has(p.id)) prox.delete(p.id); else prox.add(p.id); return prox; })}
+                        aria-label={`Selecionar ${p.nome}`}
+                      />
+                    </TableCell>
                     <TableCell>
                       <Badge className="bg-primary/15 font-mono text-primary shadow-sm">
                         {p.codigo || "—"}
@@ -1826,6 +1894,7 @@ function PercursosPage() {
                 ))}
               </TableBody>
             </Table>
+            </>
           )}
         </CardContent>
       </Card>
@@ -2245,6 +2314,27 @@ function PercursosPage() {
               data-acao
               className="h-10 rounded-xl bg-destructive text-destructive-foreground hover:bg-destructive/90"
               onClick={() => confExcluir && excluir.mutate(confExcluir.id)}
+            >
+              Excluir
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      <AlertDialog open={confLote} onOpenChange={(v) => { if (!v) setConfLote(false); }}>
+        <AlertDialogContent className="rounded-2xl">
+          <AlertDialogHeader className="gap-1.5">
+            <AlertDialogTitle className="tracking-tight">Excluir selecionados</AlertDialogTitle>
+            <AlertDialogDescription className="leading-relaxed">
+              Tem certeza que deseja excluir {selecionados.size} percurso(s)? Percursos em uso no CT-e serão mantidos.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter className="gap-2">
+            <AlertDialogCancel className="h-10 rounded-xl">Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              data-acao
+              className="h-10 rounded-xl bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              onClick={() => excluirLote.mutate(Array.from(selecionados))}
             >
               Excluir
             </AlertDialogAction>
