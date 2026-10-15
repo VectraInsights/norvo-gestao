@@ -9,6 +9,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ArrowDown, ArrowUp, ArrowUpDown, Loader2, Plus, Search, Trash2, Users, Pencil } from "lucide-react";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
@@ -55,6 +56,7 @@ function Clientes() {
   const [deleting, setDeleting] = useState<Contato | null>(null);
   const [confLote, setConfLote] = useState(false);
   const [busca, setBusca] = useState("");
+  const [aba, setAba] = useState<"clientes" | "fornecedores">("clientes");
   const toggleOne = (id: string) => setSelected((s) => { const n = new Set(s); n.has(id) ? n.delete(id) : n.add(id); return n; });
 
   // Delete abre a confirmação de excluir selecionados.
@@ -168,6 +170,9 @@ function Clientes() {
     arr.sort((a, b) => String(valCol(a, sort.key)).localeCompare(String(valCol(b, sort.key)), "pt-BR") * m);
     return arr;
   }, [filtrados, sort]);
+  const listaAba = useMemo(() => ordenados.filter((c) => aba === "clientes" ? (c.tipo === "cliente" || c.tipo === "ambos") : (c.tipo === "fornecedor" || c.tipo === "ambos")), [ordenados, aba]);
+  const nCli = useMemo(() => filtrados.filter((c) => c.tipo === "cliente" || c.tipo === "ambos").length, [filtrados]);
+  const nFor = useMemo(() => filtrados.filter((c) => c.tipo === "fornecedor" || c.tipo === "ambos").length, [filtrados]);
   const SortTh = ({ k, children, className }: { k: SortCol; children: ReactNode; className?: string }) => (
     <TableHead className={className}>
       <button
@@ -315,7 +320,7 @@ function Clientes() {
 
   const openCreate = () => {
     setEditing(null);
-    setForm(emptyForm());
+    setForm({ ...emptyForm(), isCliente: aba === "clientes", isFornecedor: aba === "fornecedores" });
     setOpen(true);
   };
 
@@ -358,6 +363,12 @@ function Clientes() {
     <>
       <PageHeader eyebrow="Vendas & CRM" title="Clientes e fornecedores" description="Cadastro unificado de contatos."
       />
+      <Tabs value={aba} onValueChange={(v) => { setAba(v as "clientes" | "fornecedores"); setSelected(new Set()); }}>
+        <TabsList className="rounded-xl shadow-sm">
+          <TabsTrigger value="clientes">Clientes ({nCli})</TabsTrigger>
+          <TabsTrigger value="fornecedores">Fornecedores ({nFor})</TabsTrigger>
+        </TabsList>
+      </Tabs>
       <div className="mb-3 flex flex-col gap-2 sm:flex-row sm:items-center">
         <div className="relative flex-1">
           <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
@@ -433,8 +444,8 @@ function Clientes() {
       </div>
       {isLoading ? (
         <div className="space-y-2">{Array.from({ length: 4 }).map((_, i) => <div key={i} className="h-12 animate-pulse rounded-md bg-muted/30" />)}</div>
-      ) : !filtrados?.length ? (
-        <EmptyState icon={Users} title="Nenhum contato" description={busca ? "Nada encontrado para a busca." : "Cadastre clientes, fornecedores e transportadoras."} />
+      ) : !listaAba?.length ? (
+        <EmptyState icon={Users} title="Nenhum contato" description={busca ? "Nada encontrado para a busca." : aba === "clientes" ? "Nenhum cliente cadastrado." : "Nenhum fornecedor cadastrado."} />
       ) : (
         <Card className="overflow-hidden shadow-panel">
           {selected.size > 0 && (
@@ -466,8 +477,8 @@ function Clientes() {
               <TableRow>
                 <TableHead className="w-10">
                   <Checkbox
-                    checked={filtrados.length > 0 && selected.size === filtrados.length}
-                    onCheckedChange={(v) => setSelected(v === true ? new Set(filtrados.map((c) => c.id)) : new Set())}
+                    checked={listaAba.length > 0 && selected.size === listaAba.length}
+                    onCheckedChange={(v) => setSelected(v === true ? new Set(listaAba.map((c) => c.id)) : new Set())}
                     aria-label="Selecionar todos"
                   />
                 </TableHead>
@@ -475,7 +486,7 @@ function Clientes() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {ordenados.map((c) => (
+              {listaAba.map((c) => (
                 <TableRow key={c.id} data-state={selected.has(c.id) ? "selected" : undefined}>
                   <TableCell>
                     <Checkbox checked={selected.has(c.id)} onCheckedChange={() => toggleOne(c.id)} aria-label={`Selecionar ${c.nome}`} />
