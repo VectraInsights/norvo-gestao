@@ -6044,6 +6044,23 @@ pm run build OK.
   so tinham Vendas/Estoque perdem o acesso; o admin precisa marcar Fiscal p/ eles
   em Configuracoes -> Usuarios.
 
+## Telas por modulo com trava de tipo + fiscal vira transportadora (15/10)
+
+- REVISAO da decisao anterior: vendas/clientes e estoque/fornecedores VOLTARAM
+  (arquivos restaurados, menu, Ctrl+K, dashboard e Alt+C/F revertidos) — cada
+  tela lista seu tipo + ambos, mas o FORM NAO TEM MAIS ESCOLHA: vendas cria
+  sempre cliente, estoque sempre fornecedor (sem seletor; edicao preserva o tipo).
+  Sem trava, um cadastro feito no modulo errado poluía a lista do outro.
+- Fiscal vira TRANSPORTADORA (isolamento total): CT-e (XML, CNPJ, formulario),
+  form (seletor com 4 tipos, padrao transportadora), migração e tela passam a
+  usar/gravar transportadora; tela fiscal sem filtro e sem abas (lista tudo, com
+  coluna Tipo); titulo/menu viram "Contatos".
+- Pendente p/ voce: os 7 migrados entraram como cliente — rode no SQL editor:
+  SELECT id,nome,documento,created_at FROM contatos WHERE tipo='cliente' ORDER BY
+  created_at DESC LIMIT 15 (os 7 tem o mesmo created_at, minuto da migracao) e
+  depois UPDATE contatos SET tipo='transportadora' WHERE id IN (...); ou me passe
+  uma string nova que eu faco.
+
 ## Layout: sticky de verdade, sem borda dupla e header com contexto (14/10)
 
 - Cabeçalho de tabela sticky passa a funcionar: `.erp-table-wrap` ganhou `max-height`

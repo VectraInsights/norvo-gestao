@@ -3101,10 +3101,10 @@ function CtePage() {
   // Insert resiliente: tenta com `ie`, se a migration ainda não foi aplicada reinsere sem.
   // Entra no cache na hora (busca instantânea) em vez de esperar refetch.
   const insertContatoResiliente = async (row: Record<string, unknown>) => {
-    const { error } = await supabase.from("contatos" as any).insert({ ...(row as Record<string, unknown>), tipo: "cliente" } as any);
+    const { error } = await supabase.from("contatos" as any).insert({ ...(row as Record<string, unknown>), tipo: "transportadora" } as any);
     if (error && /ie/i.test(error.message || "")) {
       const { ie: _omit, ...semIe } = row;
-      const retry = await supabase.from("contatos" as any).insert({ ...semIe, tipo: "cliente" } as any);
+      const retry = await supabase.from("contatos" as any).insert({ ...semIe, tipo: "transportadora" } as any);
       if (!retry.error && empresa) {
         qc.setQueryData(["contatos-cte", empresa.id], (old: any) => [...(Array.isArray(old) ? old : []), semIe]);
       } else if (empresa) {
@@ -3482,7 +3482,7 @@ function CtePage() {
         if (novos.length > 0) {
           const rows = novos.map((c) => ({
             empresa_id: empresa!.id,
-            tipo: "cliente",
+            tipo: "transportadora",
             nome: c.nome,
             documento: docDe(c),
             ie: c.ie || null,

@@ -323,7 +323,7 @@ function Dashboard() {
     { label: "Nova venda", desc: "Emita em segundos", to: "/vendas/vendas", icon: ShoppingCart },
     { label: "Lançamento financeiro", desc: "Pagar ou receber", to: "/financeiro/extrato", icon: Wallet },
     { label: "Novo produto", desc: "Amplie o catálogo", to: "/estoque/produtos", icon: Package },
-    { label: "Novo contato", desc: "Cliente ou fornecedor", to: "/fiscal/cadastro", icon: Users },
+    { label: "Novo contato", desc: "Cliente ou fornecedor", to: "/vendas/clientes", icon: Users },
   ];
 
   const cards = [

@@ -68,6 +68,7 @@ const RAW_NAV: NavGroup[] = [
     icon: ShoppingCart,
     items: [
       { to: "/vendas/crm", label: "Funil (CRM)", icon: Kanban },
+      { to: "/vendas/clientes", label: "Clientes", icon: UserSquare2 },
       { to: "/vendas/vendas", label: "Vendas", icon: ShoppingCart },
       { to: "/vendas/pedidos", label: "Orçamentos", icon: ShoppingCart },
     ],
@@ -77,6 +78,7 @@ const RAW_NAV: NavGroup[] = [
     icon: Boxes,
     items: [
       { to: "/estoque/produtos", label: "Produtos", icon: Package },
+      { to: "/estoque/fornecedores", label: "Fornecedores", icon: UserSquare2 },
       { to: "/estoque/compras", label: "Ordens de compra", icon: ShoppingCart },
       { to: "/estoque/movimentacoes", label: "Movimentações", icon: Boxes },
       { to: "/estoque/inventario", label: "Inventário", icon: ClipboardList },
@@ -122,7 +124,7 @@ const RAW_NAV: NavGroup[] = [
       { to: "/fiscal/cte", label: "CT-e", icon: Truck },
       { to: "/fiscal/mdf", label: "MDF-e", icon: Route },
       { to: "/fiscal/percursos", label: "Percursos", icon: MapPin },
-      { to: "/fiscal/cadastro", label: "Clientes e fornecedores", icon: BookUser },
+      { to: "/fiscal/cadastro", label: "Contatos", icon: BookUser },
       { to: "/fiscal/relatorios", label: "Relatórios e Dashboards", icon: BarChart3 },
       { to: "/fiscal/contador", label: "Painel do Contador", icon: Handshake },
     ],

@@ -317,8 +317,8 @@ export function AppShell({ children }: { children: ReactNode }) {
     const shortcuts: Record<string, string> = {
       d: "/financeiro/pagar",
       r: "/financeiro/receber",
-      c: "/fiscal/cadastro",
-      f: "/fiscal/cadastro",
+      c: "/vendas/clientes",
+      f: "/vendas/clientes",
       p: "/vendas/pedidos",
       e: "/estoque/produtos",
       h: "/dashboard",
