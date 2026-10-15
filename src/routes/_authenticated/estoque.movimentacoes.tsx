@@ -4,6 +4,7 @@ import { EmptyState } from "@/components/erp/empty-state";
 import { SearchField } from "@/components/erp/search-field";
 import { StatusBadge } from "@/components/erp/status-badge";
 import { Button } from "@/components/ui/button";
+import { PrimaryButton } from "@/components/erp/primary-button";
 import { MoneyInput } from "@/components/erp/money-input";
 import { Combobox } from "@/components/erp/combobox";
 import { Label } from "@/components/ui/label";
@@ -353,10 +354,10 @@ function Movimentacoes() {
               }}
             >
               <DialogTrigger asChild>
-                <Button className="h-9 rounded-xl px-4 shadow-sm transition-all hover:shadow-md active:scale-95">
+                <PrimaryButton size="sm">
                   <Plus className="mr-1 h-4 w-4" />
                   Nova movimentação
-                </Button>
+                </PrimaryButton>
               </DialogTrigger>
               <DialogContent className="flex h-screen w-screen flex-col m-0 max-h-none max-w-none overflow-y-auto rounded-none">
                 <DialogHeader>

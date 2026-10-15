@@ -5,6 +5,7 @@ import { DateInput } from "@/components/erp/date-input";
 import { PageHeader } from "@/components/erp/page-header";
 import { EmptyState } from "@/components/erp/empty-state";
 import { SearchField } from "@/components/erp/search-field";
+import { PrimaryButton } from "@/components/erp/primary-button";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Card } from "@/components/ui/card";
@@ -274,14 +275,14 @@ function Reposicao() {
       <div className="mb-3 flex flex-col gap-2 sm:flex-row sm:items-center">
         <SearchField value={busca} onChange={(v) => setBusca(v)} />
         <div className="flex items-center gap-2">
-          <Button
+          <PrimaryButton
+            size="sm"
             onClick={() => gerarOC.mutate()}
             disabled={gerarOC.isPending || !selecionados.length}
-            className="h-9 rounded-xl px-4 shadow-sm transition-all hover:shadow-md active:scale-95"
           >
             <ShoppingCart className="mr-1 h-4 w-4" />
             {gerarOC.isPending ? "Gerando…" : `Gerar ordem de compra (${selecionados.length})`}
-          </Button>
+          </PrimaryButton>
         </div>
       </div>
 

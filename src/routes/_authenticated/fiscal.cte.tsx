@@ -2,6 +2,7 @@ import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { EmptyState } from "@/components/erp/empty-state";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { PrimaryButton } from "@/components/erp/primary-button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
@@ -6970,7 +6971,7 @@ function CtePage() {
                     >
                       Gerar CT-e com {selecionadas.size || 0} selecionada(s)
                     </Button>
-                    <Button
+                    <PrimaryButton
                       size="sm"
                       onClick={() => {
                         setPercPickQuery("");
@@ -6979,7 +6980,7 @@ function CtePage() {
                       }}
                     >
                       <Plus className="mr-1 h-3 w-3" /> Novo CT-e
-                    </Button>
+                    </PrimaryButton>
                   </div>
                 </div>
               </TabsContent>

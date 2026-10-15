@@ -1,6 +1,7 @@
 import { MoneyInput } from "@/components/erp/money-input";
 import { createFileRoute, redirect } from "@tanstack/react-router";
 import { Button } from "@/components/ui/button";
+import { PrimaryButton } from "@/components/erp/primary-button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -697,15 +698,15 @@ export function ConfigFiscais() {
             
             <Dialog open={cfopModalOpen} onOpenChange={setCfopModalOpen}>
               <DialogTrigger asChild>
-                <Button onClick={() => {
+                <PrimaryButton onClick={() => {
                   setEditingCfopId(null);
                   setCfopNome("");
                   setCfopValor("");
                   setCfopDesc("");
                   setCfopModalOpen(true);
-                }} className="h-10 shrink-0 whitespace-nowrap rounded-xl px-5 shadow-sm transition-all hover:-translate-y-px hover:shadow-md">
+                }}>
                   <Plus className="mr-2 h-4 w-4" /> Nova Regra CFOP
-                </Button>
+                </PrimaryButton>
               </DialogTrigger>
               <DialogContent className="flex h-screen w-screen flex-col m-0 max-h-none max-w-none overflow-y-auto rounded-none">
                 <DialogHeader className="gap-1.5 pb-1">

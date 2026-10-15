@@ -1,6 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any -- colunas novas (modulos/nome/email) ainda não estão em types.ts */
 import { createFileRoute, redirect } from "@tanstack/react-router";
 import { EmptyState } from "@/components/erp/empty-state";
+import { PrimaryButton } from "@/components/erp/primary-button";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -253,10 +254,10 @@ export function UsuariosPage() {
       <div className="mb-4 flex flex-col gap-3 sm:mb-6 sm:flex-row sm:items-center">
         <SearchField value={busca} onChange={setBusca} />
         <div className="flex items-center gap-2">
-          <Button size="sm" onClick={() => setOpenNovo(true)} className="h-10 rounded-xl px-5 shadow-sm transition-all hover:-translate-y-px hover:shadow-md">
+          <PrimaryButton onClick={() => setOpenNovo(true)}>
             <Plus className="mr-1.5 h-4 w-4" />
             Novo usuário
-          </Button>
+          </PrimaryButton>
         </div>
       </div>
 

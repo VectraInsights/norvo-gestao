@@ -5,6 +5,7 @@ import { EmptyState } from "@/components/erp/empty-state";
 import { StatusBadge } from "@/components/erp/status-badge";
 import { SearchField } from "@/components/erp/search-field";
 import { Button } from "@/components/ui/button";
+import { PrimaryButton } from "@/components/erp/primary-button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card } from "@/components/ui/card";
@@ -244,7 +245,7 @@ function Compras() {
         <div className="flex items-center gap-2">
           <Dialog open={open} onOpenChange={(v) => { setOpen(v); if (!v) reset(); }}>
             <DialogTrigger asChild>
-              <Button size="sm" className="h-9 rounded-xl px-4 text-sm shadow-sm transition-all hover:shadow-md active:scale-95"><Plus className="mr-1 h-3.5 w-3.5" /> Nova ordem</Button>
+              <PrimaryButton size="sm"><Plus className="mr-1 h-3.5 w-3.5" /> Nova ordem</PrimaryButton>
             </DialogTrigger>
             <DialogContent className="flex h-screen w-screen flex-col m-0 max-h-none max-w-none overflow-y-auto rounded-none">
               <DialogHeader className="gap-1.5 pb-1"><DialogTitle className="tracking-tight">Nova ordem de compra</DialogTitle></DialogHeader>

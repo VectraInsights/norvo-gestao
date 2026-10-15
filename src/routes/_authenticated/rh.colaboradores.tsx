@@ -5,6 +5,7 @@ import { SearchField } from "@/components/erp/search-field";
 import { StatusBadge } from "@/components/erp/status-badge";
 import { PageHeader } from "@/components/erp/page-header";
 import { EmptyState } from "@/components/erp/empty-state";
+import { PrimaryButton } from "@/components/erp/primary-button";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -1524,10 +1525,10 @@ function ColaboradoresPage() {
               }}
             >
               <DialogTrigger asChild>
-                <Button size="sm" className="h-9 rounded-xl px-4 text-sm shadow-sm transition-all hover:shadow-md active:scale-95">
+                <PrimaryButton size="sm">
                   <Plus className="mr-1 h-3.5 w-3.5" />
                   Novo colaborador
-                </Button>
+                </PrimaryButton>
               </DialogTrigger>
               <DialogContent className="flex h-screen w-screen flex-col m-0 max-h-none max-w-none overflow-y-auto rounded-none">
                 <DialogHeader className="shrink-0 gap-1.5 pb-1">

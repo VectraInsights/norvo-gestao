@@ -1,6 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { PageHeader } from "@/components/erp/page-header";
 import { EmptyState } from "@/components/erp/empty-state";
+import { PrimaryButton } from "@/components/erp/primary-button";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
@@ -113,7 +114,7 @@ function TransferenciasPage() {
           <Input className="h-9 rounded-xl pl-10 shadow-sm" value={busca} onChange={(e) => setBusca(e.target.value)} />
         </div>
         <div className="flex items-center gap-2">
-          <Button size="sm" onClick={() => setOpen(true)} className="h-9 rounded-xl px-4 text-sm shadow-sm transition-all hover:shadow-md active:scale-95"><Plus className="mr-1 h-3.5 w-3.5" /> Nova transferência</Button>
+          <PrimaryButton size="sm" onClick={() => setOpen(true)}><Plus className="mr-1 h-3.5 w-3.5" /> Nova transferência</PrimaryButton>
           <TransferenciaDialog open={open} onOpenChange={setOpen} />
         </div>
       </div>

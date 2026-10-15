@@ -9,8 +9,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Combobox } from "@/components/erp/combobox";
 import { SearchField } from "@/components/erp/search-field";
-import { StatusBadge } from "@/components/erp/status-badge";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { AuditDialog } from "@/components/erp/audit-dialog";
 import { ListTree, Download, ArrowDownCircle, ArrowUpCircle, Scale } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -363,32 +362,15 @@ function ExtratoPage() {
         </Card>
       )}
 
-      <Dialog open={trilhaOpen} onOpenChange={setTrilhaOpen}>
-        <DialogContent className="flex h-screen w-screen flex-col m-0 max-h-none max-w-none overflow-y-auto rounded-none">
-          <DialogHeader className="gap-1.5 pb-1">
-            <DialogTitle className="tracking-tight">Auditoria — Extrato</DialogTitle>
-          </DialogHeader>
-          {trilhaQuery.isLoading ? (
-            <p className="py-6 text-center text-sm text-muted-foreground">Carregando...</p>
-          ) : trilhaQuery.isError ? (
-            <p className="py-6 text-center text-sm text-muted-foreground">Trilha indisponível no momento.</p>
-          ) : (trilhaQuery.data ?? []).length === 0 ? (
-            <p className="py-6 text-center text-sm leading-relaxed text-muted-foreground">Nenhum evento registrado ainda. Movimentações em Receber/Pagar geram registros aqui.</p>
-          ) : (
-            <div className="divide-y divide-border/60">
-              {(trilhaQuery.data ?? []).map((ev: any) => (
-                <div key={ev.id} className="flex items-start gap-3 rounded-lg px-2 py-2.5 transition-colors hover:bg-accent/40">
-                  <StatusBadge status={ev.acao} label={ev.acao === "excluir" ? "Excluiu" : ev.acao === "alterar" ? "Alterou" : "Criou"} />
-                  <div className="min-w-0 flex-1">
-                    <p className="text-sm text-foreground">{ev.detalhes?.descricao || "—"}</p>
-                    <p className="mt-0.5 text-xs text-muted-foreground">{ev.detalhes?.user_nome || ev.detalhes?.user_email || "—"}</p>
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-        </DialogContent>
-      </Dialog>
+      <AuditDialog
+        open={trilhaOpen}
+        onOpenChange={setTrilhaOpen}
+        title="Auditoria — Extrato"
+        emptyText="Nenhum evento registrado ainda. Movimentações em Receber/Pagar geram registros aqui."
+        isLoading={trilhaQuery.isLoading}
+        isError={trilhaQuery.isError}
+        events={(trilhaQuery.data ?? [])}
+      />
     </div>
   );
 }

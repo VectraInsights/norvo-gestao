@@ -6131,3 +6131,15 @@ pm run build OK.
   (criar/alterar/excluir/padrao). Chips fixos (categoria, contagens, SENATRAN,
   prioridade, CNH/dias) mantidos.
 - tsc sem erros novos; `npm run build` OK.
+
+## Botao primario + auditoria unicos (15/10)
+
+- Item 6: novo `src/components/erp/primary-button.tsx` (md=h-10/sm=h-9/xs=h-8,
+  variants default/outline/ghost, com disabled); 31 "Novo X" migrados (vendas,
+  frota, estoque, projetos, financeiro, fiscal, RH, config). Gerar/Importar
+  secundarios e row actions mantidos.
+- Item 8: novo `src/components/erp/audit-dialog.tsx` (title/emptyText/events/
+  showDate/labelOf); 8 dialogs migrados (produtos, cadastros, extrato, receber,
+  contas, emitidas, recebidas, clientes). Queries/registros intactos; botao da
+  recebidas padronizado p/ ghost h-9.
+- tsc sem erros novos; `npm run build` OK.

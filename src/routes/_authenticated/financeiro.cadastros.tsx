@@ -2,6 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { Fragment, useMemo, useState } from "react";
 import { PageHeader } from "@/components/erp/page-header";
 import { EmptyState } from "@/components/erp/empty-state";
+import { PrimaryButton } from "@/components/erp/primary-button";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -24,7 +25,7 @@ import {
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Plus, Pencil, Trash2, FolderCog, Loader2, PlusCircle, ChevronRight } from "lucide-react";
 import { SearchField } from "@/components/erp/search-field";
-import { StatusBadge } from "@/components/erp/status-badge";
+import { AuditDialog } from "@/components/erp/audit-dialog";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useEmpresaAtual } from "@/hooks/use-empresa";
@@ -389,9 +390,9 @@ function CadastrosPage() {
                       <span className="text-sm font-semibold tracking-tight">{col.titulo}</span>
                       <Badge variant="secondary">{col.lista.length}</Badge>
                     </div>
-                    <Button size="sm" onClick={() => { setCatForm({ tipo: col.tipo, nome: "", sub: "" }); setCatOpen(true); }} className="h-8 rounded-lg px-3 text-xs shadow-sm">
+                    <PrimaryButton size="xs" onClick={() => { setCatForm({ tipo: col.tipo, nome: "", sub: "" }); setCatOpen(true); }}>
                       <Plus className="mr-1 h-3.5 w-3.5" />Nova categoria
-                    </Button>
+                    </PrimaryButton>
                   </div>
                   {col.lista.length === 0 ? (
                     <p className="px-4 py-8 text-center text-sm text-muted-foreground">
@@ -477,9 +478,9 @@ function CadastrosPage() {
 
         <TabsContent value="centros" className="mt-4 space-y-4">
           <div className="flex justify-end">
-            <Button size="sm" onClick={() => { setCcForm({ nome: "", codigo: "", descricao: "", ativo: true }); setCcOpen(true); }} className="h-10 rounded-xl px-5 shadow-sm transition-all hover:-translate-y-px hover:shadow-md">
+            <PrimaryButton onClick={() => { setCcForm({ nome: "", codigo: "", descricao: "", ativo: true }); setCcOpen(true); }}>
               <Plus className="mr-1.5 h-4 w-4" />Novo centro de custo
-            </Button>
+            </PrimaryButton>
           </div>
           {loadingCc ? (
             <div className="space-y-2.5">{Array.from({ length: 3 }).map((_, i) => <div key={i} className="h-12 animate-pulse rounded-xl bg-muted/30" />)}</div>
@@ -683,32 +684,15 @@ function CadastrosPage() {
         </AlertDialogContent>
       </AlertDialog>
 
-      <Dialog open={trilhaOpen} onOpenChange={setTrilhaOpen}>
-        <DialogContent className="flex h-screen w-screen flex-col m-0 max-h-none max-w-none overflow-y-auto rounded-none">
-          <DialogHeader className="gap-1.5 pb-1">
-            <DialogTitle className="tracking-tight">Auditoria — Categorias e centros</DialogTitle>
-          </DialogHeader>
-          {trilhaQuery.isLoading ? (
-            <p className="py-6 text-center text-sm text-muted-foreground">Carregando...</p>
-          ) : trilhaQuery.isError ? (
-            <p className="py-6 text-center text-sm text-muted-foreground">Trilha indisponível no momento.</p>
-          ) : (trilhaQuery.data ?? []).length === 0 ? (
-            <p className="py-6 text-center text-sm leading-relaxed text-muted-foreground">Nenhum evento registrado ainda. Criar ou excluir gera registros aqui.</p>
-          ) : (
-            <div className="divide-y divide-border/60">
-              {(trilhaQuery.data ?? []).map((ev: any) => (
-                <div key={ev.id} className="flex items-start gap-3 rounded-lg px-2 py-2.5 transition-colors hover:bg-accent/40">
-                  <StatusBadge status={ev.acao} label={ev.acao === "excluir" ? "Excluiu" : ev.acao === "alterar" ? "Alterou" : "Criou"} />
-                  <div className="min-w-0 flex-1">
-                    <p className="text-sm text-foreground">{ev.detalhes?.descricao || "—"}</p>
-                    <p className="mt-0.5 text-xs text-muted-foreground">{ev.detalhes?.user_nome || ev.detalhes?.user_email || "—"}</p>
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-        </DialogContent>
-      </Dialog>
+      <AuditDialog
+        open={trilhaOpen}
+        onOpenChange={setTrilhaOpen}
+        title="Auditoria — Categorias e centros"
+        emptyText="Nenhum evento registrado ainda. Criar ou excluir gera registros aqui."
+        isLoading={trilhaQuery.isLoading}
+        isError={trilhaQuery.isError}
+        events={(trilhaQuery.data ?? [])}
+      />
     </div>
   );
 }

@@ -1,6 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { PageHeader } from "@/components/erp/page-header";
 import { Button } from "@/components/ui/button";
+import { PrimaryButton } from "@/components/erp/primary-button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
@@ -19,7 +20,7 @@ import {
 } from "lucide-react";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { SearchField } from "@/components/erp/search-field";
-import { StatusBadge } from "@/components/erp/status-badge";
+import { AuditDialog } from "@/components/erp/audit-dialog";
 import { useState, useMemo, useEffect } from "react";
 import { toast } from "sonner";
 import { brl, dateBR } from "@/lib/format";
@@ -1515,7 +1516,7 @@ function NotasRecebidas() {
         description="Consulte notas fiscais emitidas contra seu CNPJ e importe XMLs para o estoque e financeiro." 
         actions={
           <div className="flex items-center gap-2">
-            <Button variant="outline" size="sm" onClick={() => setTrilhaOpen(true)} className="h-10 rounded-xl px-4 shadow-sm">
+            <Button variant="ghost" size="sm" onClick={() => setTrilhaOpen(true)} className="h-9 rounded-xl px-4 active:scale-95">
               Auditoria
             </Button>
           </div>
@@ -1540,14 +1541,14 @@ function NotasRecebidas() {
               <PeriodoFilter value={periodo} onChange={setPeriodo} preset="mesatual" className="shrink-0" />
             </div>
             
-            <Button 
-              variant="outline" 
+            <PrimaryButton
+              variant="outline"
               onClick={() => setChaveImportModal(true)}
-              className="h-10 w-full shrink-0 whitespace-nowrap rounded-xl px-4 shadow-sm transition-all hover:-translate-y-px hover:shadow-md sm:w-auto"
+              className="w-full sm:w-auto"
             >
               <KeyRound className="mr-2 h-4 w-4" />
               Importar por Chave
-            </Button>
+            </PrimaryButton>
           </div>
 
           <Card className="overflow-hidden rounded-2xl border-muted shadow-panel bg-card/60 backdrop-blur-sm">
@@ -2125,36 +2126,17 @@ function NotasRecebidas() {
         </AlertDialogContent>
       </AlertDialog>
 
-      <Dialog open={trilhaOpen} onOpenChange={setTrilhaOpen}>
-        <DialogContent className="flex h-screen w-screen flex-col m-0 max-h-none max-w-none overflow-y-auto rounded-none">
-          <DialogHeader className="gap-1.5 pb-1">
-            <DialogTitle className="tracking-tight">Auditoria — Notas de Compra</DialogTitle>
-          </DialogHeader>
-          {trilhaQuery.isLoading ? (
-            <p className="text-sm text-muted-foreground py-6 text-center">Carregando...</p>
-          ) : trilhaQuery.isError ? (
-            <p className="text-sm text-muted-foreground py-6 text-center">Trilha indisponível no momento.</p>
-          ) : (trilhaQuery.data ?? []).length === 0 ? (
-            <p className="text-sm text-muted-foreground py-6 text-center">Nenhum evento registrado ainda. Lançar, alterar ou excluir notas gera registros aqui.</p>
-          ) : (
-            <div className="divide-y divide-border">
-              {(trilhaQuery.data ?? []).map((ev: any) => (
-                <div key={ev.id} className="flex items-start gap-3 py-2.5">
-                  <StatusBadge status={ev.acao} label={ev.acao === "excluir" ? "Excluiu" : ev.acao === "alterar" ? "Alterou" : "Lançou"} className="mt-0.5 shrink-0" />
-                  <div className="min-w-0 flex-1">
-                    <p className="text-sm text-foreground">{ev.detalhes?.descricao || "—"}</p>
-                    <p className="text-xs text-muted-foreground">
-                      {ev.detalhes?.user_nome || ev.detalhes?.user_email || "—"}
-                      {" · "}
-                      {ev.created_at ? new Date(ev.created_at).toLocaleString("pt-BR") : ""}
-                    </p>
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-        </DialogContent>
-      </Dialog>
+      <AuditDialog
+        open={trilhaOpen}
+        onOpenChange={setTrilhaOpen}
+        title="Auditoria — Notas de Compra"
+        emptyText="Nenhum evento registrado ainda. Lançar, alterar ou excluir notas gera registros aqui."
+        isLoading={trilhaQuery.isLoading}
+        isError={trilhaQuery.isError}
+        events={(trilhaQuery.data ?? [])}
+        showDate
+        labelOf={(acao) => (acao === "excluir" ? "Excluiu" : acao === "alterar" ? "Alterou" : "Lançou")}
+      />
 
       {pdfNota && (
         <PdfViewer

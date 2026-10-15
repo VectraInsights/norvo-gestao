@@ -1,5 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { DateInput } from "@/components/erp/date-input";
+import { PrimaryButton } from "@/components/erp/primary-button";
 import { SearchField } from "@/components/erp/search-field";
 import { PageHeader } from "@/components/erp/page-header";
 import { Button } from "@/components/ui/button";
@@ -238,9 +239,9 @@ function CRM() {
       <div className="mb-3 flex flex-col gap-2 sm:flex-row sm:items-center">
         <SearchField value={busca} onChange={(v) => setBusca(v)} />
         <div className="flex items-center gap-2">
-          <Button onClick={() => openNew()} disabled={etapas.length === 0}>
+          <PrimaryButton onClick={() => openNew()} disabled={etapas.length === 0}>
             <Plus className="mr-2 h-4 w-4" /> Nova oportunidade
-          </Button>
+          </PrimaryButton>
         </div>
       </div>
 

@@ -8,6 +8,7 @@ import { EmptyState } from "@/components/erp/empty-state";
 import { SearchField } from "@/components/erp/search-field";
 import { StatusBadge } from "@/components/erp/status-badge";
 import { Button } from "@/components/ui/button";
+import { PrimaryButton } from "@/components/erp/primary-button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card } from "@/components/ui/card";
@@ -476,10 +477,10 @@ function Multas() {
             }}
           >
             <DialogTrigger asChild>
-              <Button>
+              <PrimaryButton>
                 <Plus className="mr-1 h-4 w-4" />
                 Nova multa
-              </Button>
+              </PrimaryButton>
             </DialogTrigger>
             <DialogContent className="flex h-screen w-screen flex-col m-0 max-h-none max-w-none overflow-y-auto rounded-none">
               <DialogHeader>

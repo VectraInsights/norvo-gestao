@@ -6,6 +6,7 @@ import { EmptyState } from "@/components/erp/empty-state";
 import { SearchField } from "@/components/erp/search-field";
 import { StatusBadge } from "@/components/erp/status-badge";
 import { Button } from "@/components/ui/button";
+import { PrimaryButton } from "@/components/erp/primary-button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card } from "@/components/ui/card";
@@ -670,8 +671,7 @@ function Veiculos() {
         <div className="mb-4 flex items-center gap-2">
           <SearchField value={busca} onChange={(v) => { setBusca(v); setPagina(1); }} className="max-w-sm" />
           <DialogTrigger asChild>
-            <Button
-              className="shrink-0"
+            <PrimaryButton
               onClick={() => {
                 reset();
                 setOpen(true);
@@ -679,7 +679,7 @@ function Veiculos() {
             >
               <Plus className="mr-1 h-4 w-4" />
               Novo veículo
-            </Button>
+            </PrimaryButton>
           </DialogTrigger>
         </div>
         <DialogContent className="w-screen h-screen max-w-none max-h-none m-0 rounded-none overflow-y-auto">

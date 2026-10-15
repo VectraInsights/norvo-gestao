@@ -1,5 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { PageHeader } from "@/components/erp/page-header";
+import { SearchField } from "@/components/erp/search-field";
+import { PrimaryButton } from "@/components/erp/primary-button";
 import { EmptyState } from "@/components/erp/empty-state";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -21,7 +23,6 @@ import { emitirMdfFn, consultarMdfFn, encerrarMdfFn, cancelarMdfFn } from "@/lib
 import { gerarDamdfePdf, damdfeDataDoXml } from "@/lib/damdfe-pdf";
 import { MDFE_AMBIENTE } from "@/lib/sefaz-ambiente";
 import { DateInput } from "@/components/erp/date-input";
-import { SearchField } from "@/components/erp/search-field";
 import { StatusBadge } from "@/components/erp/status-badge";
 import { Textarea } from "@/components/ui/textarea";
 
@@ -499,9 +500,9 @@ function MdfPage() {
         <SearchField value={busca} onChange={setBusca} placeholder="Buscar por número, chave, UF ou status..." />
         <div className="flex items-center gap-2">
           <div className="flex gap-2">
-<Button size="sm" disabled={!empresa?.id} onClick={() => { if (empresa?.id) setOpen(true); }} className="h-10 rounded-xl px-5 shadow-sm transition-all hover:-translate-y-px hover:shadow-md">
+<PrimaryButton disabled={!empresa?.id} onClick={() => { if (empresa?.id) setOpen(true); }}>
   <Plus className="mr-1.5 h-4 w-4" /> Novo MDF-e
-            </Button>
+            </PrimaryButton>
           </div>
         </div>
       </div>

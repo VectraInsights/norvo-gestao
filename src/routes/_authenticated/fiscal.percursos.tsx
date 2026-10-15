@@ -3,6 +3,7 @@ import { PageHeader } from "@/components/erp/page-header";
 import { EmptyState } from "@/components/erp/empty-state";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { PrimaryButton } from "@/components/erp/primary-button";
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
@@ -1771,9 +1772,9 @@ function PercursosPage() {
 
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
         <SearchField value={busca} onChange={setBusca} />
-        <Button size="sm" className="h-10 shrink-0 whitespace-nowrap rounded-xl px-5 shadow-sm transition-all hover:-translate-y-px hover:shadow-md" onClick={novoAvulso}>
+        <PrimaryButton onClick={novoAvulso}>
           <Plus className="mr-1.5 h-3.5 w-3.5" /> Novo percurso
-        </Button>
+        </PrimaryButton>
       </div>
 
       <Card className="overflow-hidden rounded-2xl shadow-panel">

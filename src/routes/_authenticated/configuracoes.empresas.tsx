@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { PrimaryButton } from "@/components/erp/primary-button";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -220,7 +221,7 @@ export function EmpresasPage() {
         <SearchField value={busca} onChange={setBusca} />
         <div className="flex items-center gap-2">
           <Dialog open={open} onOpenChange={(v) => { setOpen(v); if (!v) setForm(emptyForm); }}>
-            <DialogTrigger asChild><Button onClick={openNew} className="h-10 shrink-0 whitespace-nowrap rounded-xl px-5 shadow-sm transition-all hover:-translate-y-px hover:shadow-md"><Plus className="mr-1.5 h-4 w-4" />Nova empresa</Button></DialogTrigger>
+            <DialogTrigger asChild><PrimaryButton onClick={openNew}><Plus className="mr-1.5 h-4 w-4" />Nova empresa</PrimaryButton></DialogTrigger>
             <DialogContent className="flex h-screen w-screen flex-col m-0 max-h-none max-w-none overflow-y-auto rounded-none">
               <DialogHeader className="gap-1.5 pb-1"><DialogTitle className="tracking-tight">{editing ? "Editar empresa" : "Nova empresa"}</DialogTitle></DialogHeader>
               <form onSubmit={submit} className="space-y-4">

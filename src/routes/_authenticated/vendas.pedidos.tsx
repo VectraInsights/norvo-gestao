@@ -4,6 +4,7 @@ import { EmptyState } from "@/components/erp/empty-state";
 import { StatusBadge } from "@/components/erp/status-badge";
 import { SearchField } from "@/components/erp/search-field";
 import { Button } from "@/components/ui/button";
+import { PrimaryButton } from "@/components/erp/primary-button";
 import { MoneyInput } from "@/components/erp/money-input";
 import { Combobox } from "@/components/erp/combobox";
 import { NovoContatoDialog } from "@/components/erp/novo-contato-dialog";
@@ -214,10 +215,10 @@ function VendasPage() {
             </Select>
             <Sheet open={open} onOpenChange={setOpen}>
               <SheetTrigger asChild>
-                <Button>
+                <PrimaryButton>
                   <Plus className="mr-1 h-4 w-4" />
                   Nova venda
-                </Button>
+                </PrimaryButton>
               </SheetTrigger>
               <NovaVendaSheet
                 onClose={() => {

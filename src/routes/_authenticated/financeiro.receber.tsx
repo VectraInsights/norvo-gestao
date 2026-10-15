@@ -1,6 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { PageHeader } from "@/components/erp/page-header";
 import { EmptyState } from "@/components/erp/empty-state";
+import { PrimaryButton } from "@/components/erp/primary-button";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { MoneyInput } from "@/components/erp/money-input";
@@ -72,6 +73,7 @@ import { format } from "date-fns";
 import { LancamentosToolbar } from "@/components/erp/lancamentos-toolbar";
 import { SearchField } from "@/components/erp/search-field";
 import { StatusBadge } from "@/components/erp/status-badge";
+import { AuditDialog } from "@/components/erp/audit-dialog";
 import { DateInput } from "@/components/erp/date-input";
 import { PeriodoFilter, periodoProx7, type Periodo } from "@/components/erp/periodo-filter";
 import { usePerfisMap } from "@/hooks/use-perfis";
@@ -741,10 +743,10 @@ export function LancamentosPage({ tipo }: { tipo: "receber" | "pagar" }) {
             }}
           >
             <DialogTrigger asChild>
-              <Button size="sm" className="h-8 rounded-xl px-3 text-xs shadow-sm transition-all hover:shadow-md active:scale-95">
+              <PrimaryButton size="xs">
                 <Plus className="mr-1 h-3.5 w-3.5" />
                 Novo lançamento
-              </Button>
+              </PrimaryButton>
             </DialogTrigger>
             <DialogContent className="flex h-screen w-screen flex-col m-0 max-h-none max-w-none overflow-y-auto rounded-none">
               <DialogHeader className="gap-1.5 pb-1">
@@ -1405,35 +1407,16 @@ export function LancamentosPage({ tipo }: { tipo: "receber" | "pagar" }) {
         </AlertDialogContent>
       </AlertDialog>
 
-      <Dialog open={trilhaOpen} onOpenChange={setTrilhaOpen}>
-        <DialogContent className="flex h-screen w-screen flex-col m-0 max-h-none max-w-none overflow-y-auto rounded-none">
-          <DialogHeader className="gap-1.5 pb-1">
-            <DialogTitle className="tracking-tight">Auditoria — {titulo}</DialogTitle>
-          </DialogHeader>
-          {trilhaQuery.isLoading ? (
-            <p className="py-6 text-center text-sm text-muted-foreground">Carregando...</p>
-          ) : trilhaQuery.isError ? (
-            <p className="py-6 text-center text-sm text-muted-foreground">Trilha indisponível no momento.</p>
-          ) : (trilhaQuery.data ?? []).length === 0 ? (
-            <p className="py-6 text-center text-sm leading-relaxed text-muted-foreground">Nenhum evento registrado ainda. Criar, editar, excluir ou alterar status gera registros aqui.</p>
-          ) : (
-            <div className="divide-y divide-border/60">
-              {(trilhaQuery.data ?? []).map((ev: any) => (
-                <div key={ev.id} className="flex items-start gap-3 rounded-lg px-2 py-2.5 transition-colors hover:bg-accent/40">
-                  <StatusBadge status={ev.acao} label={ev.acao === "excluir" ? "Excluiu" : ev.acao === "alterar" ? "Alterou" : "Criou"} />
-                  <div className="min-w-0 flex-1">
-                    <p className="text-sm text-foreground">{ev.detalhes?.descricao || "—"}</p>
-                    <p className="mt-0.5 text-xs text-muted-foreground">
-                      {ev.detalhes?.user_nome || ev.detalhes?.user_email || "—"}
-                      {ev.created_at ? ` · ${format(new Date(ev.created_at), "dd/MM/yyyy HH:mm")}` : ""}
-                    </p>
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-        </DialogContent>
-      </Dialog>
+      <AuditDialog
+        open={trilhaOpen}
+        onOpenChange={setTrilhaOpen}
+        title={`Auditoria — ${titulo}`}
+        emptyText="Nenhum evento registrado ainda. Criar, editar, excluir ou alterar status gera registros aqui."
+        isLoading={trilhaQuery.isLoading}
+        isError={trilhaQuery.isError}
+        events={(trilhaQuery.data ?? [])}
+        showDate
+      />
       <NovoContatoDialog
         empresaId={empresa?.id}
         tipoFixo={tipo === "receber" ? "cliente" : "fornecedor"}

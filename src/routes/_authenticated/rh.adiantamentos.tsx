@@ -1,6 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { PageHeader } from "@/components/erp/page-header";
 import { EmptyState } from "@/components/erp/empty-state";
+import { PrimaryButton } from "@/components/erp/primary-button";
 import { DateInput } from "@/components/erp/date-input";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -413,9 +414,9 @@ function AdiantamentosPage() {
               }}
             >
               <DialogTrigger asChild>
-                <Button size="sm" className="h-9 rounded-xl px-4 text-sm shadow-sm transition-all hover:shadow-md active:scale-95">
+                <PrimaryButton size="sm">
                   <Plus className="mr-1 h-3.5 w-3.5" /> Novo adiantamento
-                </Button>
+                </PrimaryButton>
               </DialogTrigger>
               <DialogContent className="flex h-screen w-screen flex-col m-0 max-h-none max-w-none overflow-y-auto rounded-none">
                 <DialogHeader className="gap-1.5 pb-1">

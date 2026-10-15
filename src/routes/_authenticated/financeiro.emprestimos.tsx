@@ -4,6 +4,7 @@ import { Combobox } from "@/components/erp/combobox";
 import { NovoContatoDialog } from "@/components/erp/novo-contato-dialog";
 import { PageHeader } from "@/components/erp/page-header";
 import { EmptyState } from "@/components/erp/empty-state";
+import { PrimaryButton } from "@/components/erp/primary-button";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -449,7 +450,7 @@ function EmprestimosPage() {
         <div className="flex items-center gap-2">
           <Dialog open={open} onOpenChange={(o) => { setOpen(o); if (!o) reset(); }}>
             <DialogTrigger asChild>
-              <Button className="h-10 rounded-xl px-5 shadow-md transition-all hover:-translate-y-px hover:shadow-lg"><Plus className="mr-1.5 h-4 w-4" /> Novo contrato</Button>
+              <PrimaryButton><Plus className="mr-1.5 h-4 w-4" /> Novo contrato</PrimaryButton>
             </DialogTrigger>
             <DialogContent className="flex h-screen w-screen flex-col m-0 max-h-none max-w-none overflow-y-auto rounded-none">
               <DialogHeader className="gap-1.5 pb-1"><DialogTitle className="tracking-tight">Novo contrato</DialogTitle></DialogHeader>

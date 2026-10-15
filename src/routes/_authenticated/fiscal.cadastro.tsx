@@ -2,6 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { PageHeader } from "@/components/erp/page-header";
 import { EmptyState } from "@/components/erp/empty-state";
 import { Button } from "@/components/ui/button";
+import { PrimaryButton } from "@/components/erp/primary-button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card } from "@/components/ui/card";
@@ -386,7 +387,7 @@ function Cadastro() {
               <Trash2 className="mr-1.5 h-3.5 w-3.5" /> Excluir selecionados ({selecionados.size})
             </Button>
           )}
-          <Button onClick={openCreate} className="h-10 rounded-xl px-5 shadow-sm transition-all hover:-translate-y-px hover:shadow-md"><Plus className="mr-1.5 h-4 w-4" />Novo cadastro</Button>
+          <PrimaryButton onClick={openCreate}><Plus className="mr-1.5 h-4 w-4" />Novo cadastro</PrimaryButton>
         </div>
       </div>
       {isLoading ? (

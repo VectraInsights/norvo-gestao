@@ -3,6 +3,7 @@ import { PageHeader } from "@/components/erp/page-header";
 import { EmptyState } from "@/components/erp/empty-state";
 import { SearchField } from "@/components/erp/search-field";
 import { Button } from "@/components/ui/button";
+import { PrimaryButton } from "@/components/erp/primary-button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card } from "@/components/ui/card";
@@ -401,10 +402,10 @@ function Fornecedores() {
       <div className="mb-3 flex flex-col gap-2 sm:flex-row sm:items-center">
         <SearchField value={busca} onChange={(v) => { setBusca(v); setPagina(1); }} />
         <div className="flex items-center gap-2">
-          <Button onClick={openCreate} className="h-9 rounded-xl px-4 shadow-sm transition-all hover:shadow-md active:scale-95">
+          <PrimaryButton size="sm" onClick={openCreate}>
             <Plus className="mr-1 h-4 w-4" />
             Novo fornecedor
-          </Button>
+          </PrimaryButton>
         </div>
       </div>
       {isLoading ? (
