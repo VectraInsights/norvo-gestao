@@ -27,6 +27,9 @@ import { useEmpresaAtual } from "@/hooks/use-empresa";
 import { useMutation } from "@tanstack/react-query";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { consultarNFePorChaveFn } from "@/lib/sefaz-server";
+import { PeriodoFilter, type Periodo } from "@/components/erp/periodo-filter";
+import { startOfMonth, endOfMonth, format } from "date-fns";
+import { ptBR } from "date-fns/locale";
 import { gerarDanfePdf, DANFE_REV, type DanfeData } from "@/lib/danfe-pdf";
 import { PdfViewer } from "@/components/erp/pdf-viewer";
 
@@ -370,9 +373,11 @@ function NotasRecebidas() {
   // Notas Recebidas State
   const [notas, setNotas] = useState<NotaRecebida[]>(INITIAL_RECEBIDAS);
   const [search, setSearch] = useState("");
-  const [filtroMes, setFiltroMes] = useState<string>(() => {
+  const [periodo, setPeriodo] = useState<Periodo>(() => {
     const now = new Date();
-    return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
+    const f = startOfMonth(now);
+    const s = format(f, "MMMM/yyyy", { locale: ptBR });
+    return { from: f, to: endOfMonth(now), label: s.charAt(0).toUpperCase() + s.slice(1) };
   });
   // Importação XML State
   const [dragging, setDragging] = useState(false);
@@ -1309,23 +1314,16 @@ function NotasRecebidas() {
     }
   };
 
-  // Filtrar notas recebidas
-  const mesesDisponiveis = useMemo(() => {
-    const meses = new Set<string>();
-    notas.forEach(n => {
-      if (n.data_emissao) {
-        meses.add(n.data_emissao.slice(0, 7)); // "YYYY-MM"
-      }
-    });
-    return Array.from(meses).sort().reverse();
-  }, [notas]);
-
+  // Filtrar notas recebidas (mesmo PeriodoFilter do pagar/receber; compara "YYYY-MM-DD" como texto p/ não deslocar dia no fuso)
+  const de = periodo.from ? format(periodo.from, "yyyy-MM-dd") : null;
+  const ate = periodo.to ? format(periodo.to, "yyyy-MM-dd") : null;
   const filteredNotas = notas.filter(n => {
     const matchSearch = n.emitente.toLowerCase().includes(search.toLowerCase()) || 
       n.chave.includes(search) || 
       (n.numero_nf && n.numero_nf.includes(search)) ||
       n.cnpj.includes(search);
-    const matchMes = filtroMes === "todos" || (n.data_emissao || "").startsWith(filtroMes);
+    const emissao = n.data_emissao || "";
+    const matchMes = !de || !ate || (emissao >= de && emissao <= ate);
     return matchSearch && matchMes;
   });
 
@@ -1540,18 +1538,7 @@ function NotasRecebidas() {
                   onChange={(e) => setSearch(e.target.value)}
                 />
               </div>
-              <select
-                value={filtroMes}
-                onChange={(e) => setFiltroMes(e.target.value)}
-                className="h-10 shrink-0 rounded-xl border border-input bg-background px-3.5 text-sm font-medium shadow-sm transition-all hover:shadow-md"
-              >
-                <option value="todos">Todos os meses</option>
-                {mesesDisponiveis.map(m => {
-                  const [ano, mes] = m.split("-");
-                  const nomesMes = ["Jan","Fev","Mar","Abr","Mai","Jun","Jul","Ago","Set","Out","Nov","Dez"];
-                  return <option key={m} value={m}>{nomesMes[parseInt(mes)-1]}/{ano}</option>;
-                })}
-              </select>
+              <PeriodoFilter value={periodo} onChange={setPeriodo} preset="mesatual" />
             </div>
             
             <Button 

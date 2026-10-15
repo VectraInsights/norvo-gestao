@@ -6108,3 +6108,9 @@ pm run build OK.
   selecionados (n) + confirmacao + tecla Delete (padrao das demais telas).
 - Percursos: mesmo padrao; o lote reaproveita a trava de CT-e em uso por item
   (exclui os livres, lista quantos ficaram presos + falhas, sem spam de toast).
+
+## Seletor de mes padrao na recebidas (15/10)
+
+- Dropdown Ago/2026 troca pelo PeriodoFilter do pagar/receber (setas nas pontas,
+  preset mesatual, Todo o periodo no lugar de Todos os meses). Filtro por faixa
+  de emissao comparando YYYY-MM-DD como texto (sem deslocar dia no fuso).
