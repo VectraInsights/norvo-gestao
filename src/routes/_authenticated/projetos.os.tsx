@@ -470,7 +470,7 @@ function OSPage() {
           />
         ) : (
           <Table className="[&_td]:px-3 [&_td]:py-2 [&_th]:px-3">
-            <TableHeader className="static bg-card supports-[backdrop-filter]:bg-card">
+            <TableHeader>
               <TableRow>
                 <TableHead className="w-16">Nº</TableHead>
                 <TableHead>Título</TableHead>

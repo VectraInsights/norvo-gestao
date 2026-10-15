@@ -2800,7 +2800,7 @@ function BuscarLancamentoDialog({ open, onClose, tx, lancamentos, value, onConfi
               </Button>
             </div>
           )}
-          <div className="min-h-0 flex-1 overflow-y-auto rounded-md border">
+          <div className="min-h-0 flex-1 overflow-y-auto rounded-md border [&_.erp-table-wrap]:max-h-none">
             {filtrados.length === 0 ? (
               <div className="p-6">
                 <EmptyState icon={Search} title="Nenhum resultado encontrado" description="Selecione outros filtros para refazer sua busca." />

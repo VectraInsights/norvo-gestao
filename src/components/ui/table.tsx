@@ -18,7 +18,7 @@ const TableHeader = React.forwardRef<
   <thead
     ref={ref}
     className={cn(
-      "sticky top-0 z-10 bg-card/95 backdrop-blur supports-[backdrop-filter]:bg-card/80 [&_tr]:border-b",
+      "sticky top-0 z-10 bg-card [&_tr]:border-b",
       className,
     )}
     {...props}

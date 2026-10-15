@@ -841,7 +841,7 @@ function NotasEmitidas() {
         <Card className="overflow-hidden rounded-2xl border-muted shadow-panel bg-card/60 backdrop-blur-sm">
           <div className="overflow-x-auto">
             <Table className="[&_td]:px-3 [&_td]:py-2 [&_th]:px-3">
-              <TableHeader className="static bg-card supports-[backdrop-filter]:bg-card">
+              <TableHeader>
                 <TableRow>
                   <TableHead className="font-semibold text-foreground">Operação</TableHead>
                   <TableHead className="font-semibold text-foreground">Nº/Série</TableHead>

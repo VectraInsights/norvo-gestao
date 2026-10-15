@@ -1943,7 +1943,7 @@ function ColaboradoresPage() {
         ) : (
           <>
             <Table className="[&_td]:px-3 [&_td]:py-2 [&_th]:px-3">
-              <TableHeader className="static bg-card supports-[backdrop-filter]:bg-card">
+              <TableHeader>
                 <TableRow>
                   <TableHead className="cursor-pointer select-none whitespace-nowrap" onClick={() => alternarOrdem("codigo")} title="Ordenar por ID">ID{setaOrdem("codigo")}</TableHead>
                   <TableHead className="cursor-pointer select-none" onClick={() => alternarOrdem("nome")} title="Ordenar por nome">Nome{setaOrdem("nome")}</TableHead>

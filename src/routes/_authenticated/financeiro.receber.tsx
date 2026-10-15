@@ -945,7 +945,7 @@ export function LancamentosPage({ tipo }: { tipo: "receber" | "pagar" }) {
           <Table className="[&_td]:px-3 [&_td]:py-2 [&_th]:px-3">
             {/* Cabeçalho estático e opaco: o sticky global translúcido deixava
                 as linhas passarem por baixo aparecendo através */}
-            <TableHeader className="static bg-card supports-[backdrop-filter]:bg-card">
+            <TableHeader>
               <TableRow>
                 <TableHead className="w-10">
                   <Checkbox

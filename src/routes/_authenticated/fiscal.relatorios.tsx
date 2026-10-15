@@ -297,7 +297,7 @@ function RelatoriosFiscais() {
             </CardHeader>
             <div className="overflow-x-auto">
               <Table>
-                <TableHeader className="bg-muted/40">
+                <TableHeader className="bg-[color-mix(in_oklab,var(--color-muted)_40%,var(--color-card))]">
                   <TableRow>
                     <TableHead className="font-semibold text-foreground">NF-e</TableHead>
                     <TableHead className="font-semibold text-foreground">Emitente</TableHead>

@@ -367,7 +367,7 @@ function PainelContador() {
         </CardHeader>
         <div className="overflow-x-auto">
           <Table>
-            <TableHeader className="bg-muted/40">
+            <TableHeader className="bg-[color-mix(in_oklab,var(--color-muted)_40%,var(--color-card))]">
               <TableRow>
                 <TableHead className="font-semibold text-foreground">Data/Hora</TableHead>
                 <TableHead className="font-semibold text-foreground">Período Fiscal</TableHead>

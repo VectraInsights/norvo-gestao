@@ -780,7 +780,7 @@ export function ConfigFiscais() {
           <Card className="overflow-hidden rounded-2xl border-muted shadow-panel bg-card/60 backdrop-blur-sm">
             <div className="overflow-x-auto">
               <Table>
-                <TableHeader className="bg-muted/40">
+                <TableHeader className="bg-[color-mix(in_oklab,var(--color-muted)_40%,var(--color-card))]">
                   <TableRow>
                     <TableHead className="font-semibold text-foreground">Natureza da Operação</TableHead>
                     <TableHead className="font-semibold text-foreground">CFOP</TableHead>

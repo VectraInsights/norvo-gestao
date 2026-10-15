@@ -186,7 +186,10 @@
     background: color-mix(in oklab, var(--color-card) 92%, transparent);
     box-shadow: var(--shadow-panel);
   }
-  .erp-table-wrap { overflow-x: auto; border: 1px solid var(--color-border); border-radius: var(--radius-lg); background: var(--color-card); box-shadow: var(--shadow-panel); }
+  /* A borda e a sombra da caixa são do Card em volta (aqui só ficam fundo,
+     arredondamento e scroll). O max-height vertical é o que faz o thead
+     "sticky" grudar de verdade quando a tabela é longa. */
+  .erp-table-wrap { overflow-x: auto; max-height: calc(100vh - 20rem); background: var(--color-card); border-radius: var(--radius-lg); }
   .erp-table-wrap table thead { background: color-mix(in oklab, var(--color-muted) 62%, transparent); }
   .erp-table-wrap table th { white-space: nowrap; font-size: 0.72rem; font-weight: 650; letter-spacing: 0.08em; text-transform: uppercase; color: var(--color-muted-foreground); padding-block: 1rem; }
   .erp-table-wrap table td { padding-block: 1rem; }
@@ -221,7 +224,7 @@ html[data-density="compact"] .erp-surface h3 { margin-block: 0; }
 @media (max-width: 640px) {
   body { overflow-x: hidden; }
   #conteudo-principal { padding-inline: 0.75rem; padding-block: 1rem; }
-  .erp-table-wrap { max-width: calc(100vw - 1.5rem); scrollbar-width: thin; }
+  .erp-table-wrap { max-width: calc(100vw - 1.5rem); max-height: calc(100vh - 18rem); scrollbar-width: thin; }
   .erp-table-wrap table { min-width: 42rem; }
   .erp-table-wrap:focus-within { outline: 2px solid var(--color-ring); outline-offset: 2px; }
   .erp-surface { border-radius: 0.625rem; }
@@ -237,12 +240,14 @@ html[data-density="compact"] .erp-surface h3 { margin-block: 0; }
   body { background: white !important; color: black !important; }
   body > a, nav, aside, header button, [data-print="hidden"], .no-print { display: none !important; }
   #conteudo-principal { overflow: visible !important; padding: 0 !important; }
+  /* Tabela inteira na impressão (sem o scroll vertical da tela). */
+  .erp-table-wrap { max-height: none !important; overflow: visible !important; }
   .print-break-before { break-before: page; }
   .print-avoid-break { break-inside: avoid; }
 }
 
 @media (max-width: 640px) {
-  .erp-table-wrap { border-inline: 0; border-radius: 0.75rem; }
+  .erp-table-wrap { border-radius: 0.75rem; }
   [role="dialog"] { max-height: calc(100dvh - 1rem); }
 }
 

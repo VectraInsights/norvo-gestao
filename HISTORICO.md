@@ -5835,7 +5835,7 @@ pm run build OK.
 
 - Conciliar em lote suprime os toasts individuais (flag silent) e mostra um unico toast com a quantidade conciliada + outro com a de falhas, se houver. Conciliar individual segue com seu toast.
 
-## Conciliacao: pesquisa reflete nos cabeçalhos (13/10)
+## Conciliacao: pesquisa reflete nos cabeï¿½alhos (13/10)
 
 - Filtro de busca separado do filtro de tipo (porBusca): Todos/Recebimentos/Pagamentos passam a mostrar a quantidade pesquisada; chip Exibindo N de M removido.
 
@@ -5848,9 +5848,9 @@ pm run build OK.
 
 - Memos iguais que so mudam o dia (09/09 x 16/09) nao casavam nem no exato nem no substring; nova assinatura normalizada (fora datas e numeros) agrupa e puxa cliente/categoria/centro. Validado em node.
 
-## Combobox com X para limpar + conciliação liberada (13/10)
+## Combobox com X para limpar + conciliaï¿½ï¿½o liberada (13/10)
 
-- Combobox ganha prop allowClear (X no lugar da seta quando há seleção, com teclado e sem abrir o dropdown); ativado em categoria, cliente/fornecedor e centro de custo do Novo lançamento (vale p/ preenchidos pela memória). Demais usos inalterados.
+- Combobox ganha prop allowClear (X no lugar da seta quando hï¿½ seleï¿½ï¿½o, com teclado e sem abrir o dropdown); ativado em categoria, cliente/fornecedor e centro de custo do Novo lanï¿½amento (vale p/ preenchidos pela memï¿½ria). Demais usos inalterados.
 
 ## Novo contato puxa texto digitado (13/10)
 
@@ -5878,7 +5878,7 @@ pm run build OK.
 
 ## Conta sem nome duplicado no pagar/receber (13/10)
 
-- Bradesco — Bradesco vira Bradesco: rotulo mostra so o nome quando banco vazio ou igual (novo e editar, vale p/ pagar e receber).
+- Bradesco ï¿½ Bradesco vira Bradesco: rotulo mostra so o nome quando banco vazio ou igual (novo e editar, vale p/ pagar e receber).
 
 ## Buscar lancamentos: sem corte de 200 + relevancia (13/10)
 
@@ -5909,7 +5909,7 @@ pm run build OK.
 
 ## Movimentacoes estilo Conta Azul (14/10)
 
-- Aba Movimentacoes vira cartoes por dia (data + dia da semana, total e chevron) com tabela Lançado no sistema x Movimentado no banco: descricao+categoria, valores coloridos, selo Conciliada/Pendente, Acoes > Conciliar e rodape Totais do dia (sistema, banco, diferenca).
+- Aba Movimentacoes vira cartoes por dia (data + dia da semana, total e chevron) com tabela Lanï¿½ado no sistema x Movimentado no banco: descricao+categoria, valores coloridos, selo Conciliada/Pendente, Acoes > Conciliar e rodape Totais do dia (sistema, banco, diferenca).
 - Dia passa a incluir linhas so-banco sem vinculo; pendencia do dia = lancamento em aberto ou OFX nao conciliado.
 
 ## Movimentacoes so com descricao do sistema (14/10)
@@ -5944,7 +5944,7 @@ pm run build OK.
 
 ## Importacao de planilha sem duplicate key (14/10)
 
-- duplicate key uq_categorias: planilha 'Prestacao' nao achava banco 'Prestação' (comparacao so minusculas x unicidade sem acento) e o insert estourava. Nomes agora normalizados (sem acento/caixa/espaco duplo) em categorias e contatos; se ainda colidir (23505), recarrega e segue sem abortar.
+- duplicate key uq_categorias: planilha 'Prestacao' nao achava banco 'Prestaï¿½ï¿½o' (comparacao so minusculas x unicidade sem acento) e o insert estourava. Nomes agora normalizados (sem acento/caixa/espaco duplo) em categorias e contatos; se ainda colidir (23505), recarrega e segue sem abortar.
 
 ## Importacao aceita .xlsm (14/10)
 
@@ -5970,7 +5970,7 @@ pm run build OK.
 
 - Conciliacoes pendentes e total pendente seguem o mes selecionado (setembro nao vaza em outubro); Buscar lancamento trava a janela padrao no mes do extrato.
 - Conciliar com varios so com soma EXATA do banco (botao bloqueado + aviso + trava na mutacao).
-- Voltar p/ aberto ou cancelar desvincilia o extrato (igual a exclusao); reparo unico desfaz vinculos orfaos já existentes.
+- Voltar p/ aberto ou cancelar desvincilia o extrato (igual a exclusao); reparo unico desfaz vinculos orfaos jï¿½ existentes.
 
 ## Buscar com botao de periodo padrao (14/10)
 
@@ -5978,12 +5978,12 @@ pm run build OK.
 
 ## Cliente por CNPJ + setas no Buscar (14/10)
 
-- Combobox de Cliente/Fornecedor busca tambem pelo CNPJ/CPF (com ou sem mascara) e mostra o documento abaixo do nome: novo/editar lancamento (pagar+receber) e conciliação.
+- Combobox de Cliente/Fornecedor busca tambem pelo CNPJ/CPF (com ou sem mascara) e mostra o documento abaixo do nome: novo/editar lancamento (pagar+receber) e conciliaï¿½ï¿½o.
 - PeriodoFilter ganha prop preset: Buscar lancamento abre com setas de navegacao ativas, igual ao pagar/receber.
 
 ## Obrigatorios do lancamento (14/10)
 
-- Emissao vira Competência (obrigatoria); obrigatorios passam a descricao, valor, competência, cliente/fornecedor e categoria (novo e editar, pagar+receber). Vencimento deixa de ser obrigatorio (vazio assume a competência).
+- Emissao vira Competï¿½ncia (obrigatoria); obrigatorios passam a descricao, valor, competï¿½ncia, cliente/fornecedor e categoria (novo e editar, pagar+receber). Vencimento deixa de ser obrigatorio (vazio assume a competï¿½ncia).
 
 ## CNPJ com zero na importacao (14/10)
 
@@ -5991,6 +5991,23 @@ pm run build OK.
 
 ## Delete geral + CNPJ em fundo + ordenacao (14/10)
 
-- Delete abre/executa a exclusao em: pagar/receber (lote), clientes (lote), cadastros fiscais (lote), MDF-e (rascunhos) e conciliação do extrato; ignora digitacao e dialogos abertos.
+- Delete abre/executa a exclusao em: pagar/receber (lote), clientes (lote), cadastros fiscais (lote), MDF-e (rascunhos) e conciliaï¿½ï¿½o do extrato; ignora digitacao e dialogos abertos.
 - Importacao completa contatos novos via CNPJ no fundo (razao/email/tel/endereco, sem trocar o nome da planilha).
 - Clientes e fornecedores com NOME/TIPO/DOCUMENTO/CONTATO clicaveis p/ ordenar.
+
+## Layout: sticky de verdade, sem borda dupla e header com contexto (14/10)
+
+- CabeÃ§alho de tabela sticky passa a funcionar: `.erp-table-wrap` ganhou `max-height`
+  (100vh - 20rem; 18rem no mobile) â€” a altura limitada faz o wrapper virar scroller
+  vertical e o `thead` gruda; impressÃ£o ignora o limite (tabela inteira sai no papel).
+  Os 13 remendos `static bg-card` das pÃ¡ginas foram apagados (agora desnecessÃ¡rios).
+- Borda dupla acabada: o wrapper de tabela deixou de desenhar borda e sombra (a caixa
+  Ã© do Card em volta; fundo e arredondamento mantidos). Auditoria confirmou que as 61
+  tabelas do app jÃ¡ estÃ£o dentro de Card/painel com borda prÃ³pria.
+- CabeÃ§alhos com fundo translÃºcido (fiscal relatÃ³rios/contador/configuraÃ§Ãµes + aba
+  Documentos do CT-e) viraram opacos com a mesma cor (color-mix), senÃ£o o sticky
+  deixaria as linhas vazarem por trÃ¡s.
+- PainÃ©is com scroll prÃ³prio (diÃ¡logo de conciliaÃ§Ã£o do extrato, abas Docs e Embarque
+  do CT-e) receberam `max-h-none` no wrapper para nÃ£o virar rolagem dupla.
+- PageHeader volta a renderizar `eyebrow` e `description` (props que existiam em ~47
+  pÃ¡ginas mas nunca eram desenhadas): tÃ­tulo + contexto em toda tela.

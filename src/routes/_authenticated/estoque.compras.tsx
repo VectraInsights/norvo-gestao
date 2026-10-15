@@ -342,7 +342,7 @@ function Compras() {
             description="Registre pedidos aos fornecedores para controlar entregas, estoque e pagamentos." />
         ) : (
           <Table className="[&_td]:px-3 [&_th]:px-3">
-            <TableHeader className="static bg-card supports-[backdrop-filter]:bg-card">
+            <TableHeader>
               <TableRow>
                 <TableHead>Nº</TableHead>
                 <TableHead>Fornecedor</TableHead>

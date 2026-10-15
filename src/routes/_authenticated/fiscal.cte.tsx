@@ -6555,7 +6555,7 @@ function CtePage() {
                       Qtde NF-e: {mercadoriasSorted.length}/{mercadorias.length}
                     </span>
                   </div>
-                  <div ref={embScrollRef} onScroll={() => syncEmb("tab")} className="overflow-auto flex-1 min-h-0 min-w-0 max-h-[60vh] [&_.erp-table-wrap]:overflow-x-visible">
+                  <div ref={embScrollRef} onScroll={() => syncEmb("tab")} className="overflow-auto flex-1 min-h-0 min-w-0 max-h-[60vh] [&_.erp-table-wrap]:overflow-x-visible [&_.erp-table-wrap]:max-h-none">
                     <Table className="min-w-max [&_td]:px-1.5 [&_td]:py-1 [&_th]:px-1.5 [&_th]:py-1.5">
                       <TableHeader className="sticky top-0 z-10 bg-muted">
                         <TableRow>
@@ -8632,9 +8632,9 @@ function CtePage() {
             {/* === TAB: Doc Mercadorias === */}
             <TabsContent value="docs" className="mt-2 min-h-0 flex-1 space-y-3 overflow-hidden data-[state=inactive]:hidden data-[state=active]:flex data-[state=active]:flex-col">
               <Card className="overflow-hidden flex min-h-0 flex-1 flex-col">
-                <div className="min-h-0 flex-1 overflow-y-auto overflow-x-auto">
+                <div className="min-h-0 flex-1 overflow-y-auto overflow-x-auto [&_.erp-table-wrap]:max-h-none">
                   <Table>
-                    <TableHeader className="sticky top-0 bg-primary/10">
+                    <TableHeader className="sticky top-0 bg-[color-mix(in_oklab,var(--color-primary)_10%,var(--color-card))]">
                       <TableRow>
                         <TableHead className="w-6">
                           <input

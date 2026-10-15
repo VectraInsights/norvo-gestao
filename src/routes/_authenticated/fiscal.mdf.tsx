@@ -572,7 +572,7 @@ function MdfPage() {
       ) : (
         <Card className="overflow-hidden rounded-2xl shadow-panel">
             <Table className="[&_td]:px-3 [&_td]:py-2 [&_th]:px-3">
-              <TableHeader className="static bg-card supports-[backdrop-filter]:bg-card">
+              <TableHeader>
                 <TableRow>
                   {filtroStatus === "rascunho" && idsRascSel.length > 0 && (
                     <TableHead className="w-6">

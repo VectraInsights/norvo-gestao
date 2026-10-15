@@ -364,7 +364,7 @@ function FeriasPage() {
             description="Cadastre colaboradores com data de admissão para acompanhar as férias automaticamente." />
         ) : (
           <Table className="[&_td]:px-3 [&_td]:py-2 [&_th]:px-3">
-            <TableHeader className="static bg-card supports-[backdrop-filter]:bg-card">
+            <TableHeader>
               <TableRow>
                 <TableHead className="w-8"></TableHead>
                 <TableHead>Colaborador</TableHead>
