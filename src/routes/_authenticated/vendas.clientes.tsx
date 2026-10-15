@@ -125,14 +125,14 @@ function Clientes() {
 
   const { data: contatos, isLoading } = useQuery({
     enabled: !!empresa,
-    queryKey: ["contatos", empresa?.id] as const,
+    queryKey: ["contatos-clientes", empresa?.id] as const,
     queryFn: async ({ signal }): Promise<Contato[]> => {
       // Busca em páginas: sem range, o Supabase corta em 1000 (sem aviso)
       const todos: unknown[] = [];
       for (let ini = 0; ; ini += 1000) {
         const { data, error } = await supabase.from("contatos")
           .select("id,nome,tipo,documento,email,telefone,ie,cep,logradouro,numero,complemento,bairro,cidade,uf,observacoes")
-          .eq("empresa_id", empresa!.id).in("tipo", ["cliente", "ambos"]).order("nome").range(ini, ini + 999).abortSignal(signal);
+          .eq("empresa_id", empresa!.id).eq("tipo", "cliente").order("nome").range(ini, ini + 999).abortSignal(signal);
         if (error) throw error;
         todos.push(...((data as unknown[]) ?? []));
         if (!data || (data as unknown[]).length < 1000) break;
@@ -216,7 +216,7 @@ function Clientes() {
       toast.success("Contato criado");
       void registrarAuditoria("criar", `Contato "${input.nome}" criado`, { nome: input.nome });
       setOpen(false); setForm(emptyForm());
-      qc.invalidateQueries({ queryKey: ["contatos"] });
+      qc.invalidateQueries({ queryKey: ["contatos-clientes"] });
       qc.invalidateQueries({ queryKey: ["dashboard-stats"] });
     },
     onError: (e: Error) => toast.error(e.message),
@@ -254,7 +254,7 @@ function Clientes() {
       toast.success("Contato atualizado");
       void registrarAuditoria("alterar", `Contato "${input.nome}" alterado`, { contato_id: input.id });
       setOpen(false); setEditing(null); setForm(emptyForm());
-      qc.invalidateQueries({ queryKey: ["contatos"] });
+      qc.invalidateQueries({ queryKey: ["contatos-clientes"] });
     },
     onError: (e: Error) => toast.error(e.message),
   });
@@ -269,7 +269,7 @@ function Clientes() {
       toast.success(`${ids.length} contato(s) excluído(s)`);
       void registrarAuditoria("excluir", `${ids.length} contato(s) excluído(s)`, { qtd: ids.length });
       setSelected(new Set());
-      qc.invalidateQueries({ queryKey: ["contatos"] });
+      qc.invalidateQueries({ queryKey: ["contatos-clientes"] });
       qc.invalidateQueries({ queryKey: ["dashboard-stats"] });
     },
     onError: (e: Error) => toast.error(e.message),

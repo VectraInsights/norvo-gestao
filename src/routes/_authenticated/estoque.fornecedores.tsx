@@ -133,7 +133,7 @@ function Fornecedores() {
             "id,nome,tipo,documento,email,telefone,cep,logradouro,numero,complemento,bairro,cidade,uf,observacoes",
           )
           .eq("empresa_id", empresa!.id)
-          .in("tipo", ["fornecedor", "ambos"])
+          .eq("tipo", "fornecedor")
           .order("nome")
           .range(ini, ini + 999)
           .abortSignal(signal);

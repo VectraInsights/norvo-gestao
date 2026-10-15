@@ -6088,3 +6088,16 @@ pm run build OK.
   do CT-e) receberam `max-h-none` no wrapper para não virar rolagem dupla.
 - PageHeader volta a renderizar `eyebrow` e `description` (props que existiam em ~47
   páginas mas nunca eram desenhadas): título + contexto em toda tela.
+
+## Descricoes dos headers removidas + separacao estrita (15/10)
+
+- PageHeader nao renderiza mais description (so eyebrow + titulo): sumiu a
+  linha de explicacao abaixo do nome em todas as telas (props mantidas p/
+  eventual retorno; CardDescriptions internas mantidas).
+- Separacao estrita por tipo (mesma tabela, conjuntos disjuntos): vendas lista
+  e cria so cliente; estoque so fornecedor; fiscal so transporte (sem abas,
+  sem coluna Tipo, form sem ambos). Chaves de cache separadas por tela
+  (contatos-clientes, fornecedores, contatos-fiscal) p/ nunca misturar.
+- Dedupe de documento segue global (evita conflito e protege o lookup do CT-e);
+  leituras do CT-e seguem sem filtro de tipo (tomador pode ser cliente � se
+  filtrar, a emissao quebra). Ambos nao e mais criavel em nenhuma tela.

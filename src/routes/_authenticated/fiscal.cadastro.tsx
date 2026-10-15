@@ -131,7 +131,9 @@ function Cadastro() {
         marcaFeito();
         if (inseridos || preenchidos) {
           toast.success(`Cadastros fiscais unificados: ${inseridos} novo(s), ${preenchidos} completado(s)`);
-          qc.invalidateQueries({ queryKey: ["contatos"] });
+          qc.invalidateQueries({ queryKey: ["contatos-fiscal"] });
+      qc.invalidateQueries({ queryKey: ["contatos-clientes"] });
+      qc.invalidateQueries({ queryKey: ["fornecedores"] });
         }
       } catch (e) {
         // Tabela antiga aposentada/ausente: nada a migrar (marca p/ não tentar de novo).
@@ -159,7 +161,7 @@ function Cadastro() {
 
   const { data: contatos, isLoading } = useQuery({
     enabled: !!empresa,
-    queryKey: ["contatos", empresa?.id] as const,
+    queryKey: ["contatos-fiscal", empresa?.id] as const,
     staleTime: 2 * 60_000,
     gcTime: 15 * 60_000,
     queryFn: async ({ signal }) => {
@@ -169,6 +171,7 @@ function Cadastro() {
         const { data, error } = await supabase.from("contatos")
           .select("id,nome,tipo,documento,ie,email,telefone,cep,logradouro,numero,complemento,bairro,cidade,uf,observacoes")
           .eq("empresa_id", empresa!.id)
+          .eq("tipo", "transporte")
           .order("nome")
           .range(ini, ini + 499)
           .abortSignal(signal);
@@ -287,7 +290,9 @@ function Cadastro() {
     onSuccess: () => {
       toast.success("Cadastro criado");
       setOpen(false); setForm(emptyForm());
-      qc.invalidateQueries({ queryKey: ["contatos"] });
+      qc.invalidateQueries({ queryKey: ["contatos-fiscal"] });
+      qc.invalidateQueries({ queryKey: ["contatos-clientes"] });
+      qc.invalidateQueries({ queryKey: ["fornecedores"] });
     },
     onError: (e: Error) => toast.error(e.message),
   });
@@ -314,7 +319,9 @@ function Cadastro() {
     onSuccess: () => {
       toast.success("Cadastro atualizado");
       setOpen(false); setEditing(null); setForm(emptyForm());
-      qc.invalidateQueries({ queryKey: ["contatos"] });
+      qc.invalidateQueries({ queryKey: ["contatos-fiscal"] });
+      qc.invalidateQueries({ queryKey: ["contatos-clientes"] });
+      qc.invalidateQueries({ queryKey: ["fornecedores"] });
     },
     onError: (e: Error) => toast.error(e.message),
   });
@@ -327,7 +334,9 @@ function Cadastro() {
     onSuccess: () => {
       toast.success("Cadastro excluído");
       setDeleting(null);
-      qc.invalidateQueries({ queryKey: ["contatos"] });
+      qc.invalidateQueries({ queryKey: ["contatos-fiscal"] });
+      qc.invalidateQueries({ queryKey: ["contatos-clientes"] });
+      qc.invalidateQueries({ queryKey: ["fornecedores"] });
     },
     onError: (e: Error) => toast.error(e.message),
   });
@@ -344,7 +353,9 @@ function Cadastro() {
       setSelecionados(new Set());
       setConfirmLote(false);
       setPagina(1);
-      qc.invalidateQueries({ queryKey: ["contatos"] });
+      qc.invalidateQueries({ queryKey: ["contatos-fiscal"] });
+      qc.invalidateQueries({ queryKey: ["contatos-clientes"] });
+      qc.invalidateQueries({ queryKey: ["fornecedores"] });
     },
     onError: (e: Error) => toast.error(e.message),
   });
@@ -393,7 +404,6 @@ function Cadastro() {
                   <Checkbox checked={todosVisiveisSel} onCheckedChange={alternarTodosVisiveis} aria-label="Selecionar visíveis" />
                 </TableHead>
                 <TableHead className="cursor-pointer select-none whitespace-nowrap" onClick={() => alternarOrdem("nome")} title="Ordenar por nome">Nome{setaOrdem("nome")}</TableHead>
-                <TableHead className="whitespace-nowrap">Tipo</TableHead>
                 <TableHead className="cursor-pointer select-none whitespace-nowrap" onClick={() => alternarOrdem("documento")} title="Ordenar por CPF/CNPJ">CPF/CNPJ{setaOrdem("documento")}</TableHead>
                 <TableHead className="cursor-pointer select-none whitespace-nowrap" onClick={() => alternarOrdem("ie")} title="Ordenar por IE">IE{setaOrdem("ie")}</TableHead>
                 <TableHead className="cursor-pointer select-none whitespace-nowrap" onClick={() => alternarOrdem("cidade")} title="Ordenar por cidade">Cidade/UF{setaOrdem("cidade")}</TableHead>
@@ -408,7 +418,6 @@ function Cadastro() {
                   <TableCell>
                     <Checkbox checked={selecionados.has(c.id)} onCheckedChange={() => alternarUm(c.id)} aria-label={`Selecionar ${c.nome}`} />
                   </TableCell>                  <TableCell className="font-medium whitespace-nowrap">{c.nome}</TableCell>
-                  <TableCell className="whitespace-nowrap capitalize text-muted-foreground">{c.tipo}</TableCell>
                   <TableCell className="text-tabular whitespace-nowrap">{c.documento ? maskDoc(c.documento) : "—"}</TableCell>
                   <TableCell className="text-muted-foreground whitespace-nowrap">{c.ie || "—"}</TableCell>
                   <TableCell className="text-muted-foreground whitespace-nowrap">{c.cidade ? `${c.cidade}${c.uf ? `/${c.uf}` : ""}` : "—"}</TableCell>
@@ -499,7 +508,6 @@ function Cadastro() {
                   <SelectItem value="transporte">Transporte</SelectItem>
                   <SelectItem value="cliente">Cliente</SelectItem>
                   <SelectItem value="fornecedor">Fornecedor</SelectItem>
-                  <SelectItem value="ambos">Ambos (cliente + fornecedor)</SelectItem>
                 </SelectContent>
               </Select>
             </div>
