@@ -222,8 +222,7 @@ html[data-density="compact"] .erp-surface h2,
 html[data-density="compact"] .erp-surface h3 { margin-block: 0; }
 
 @media (max-width: 640px) {
-  body { overflow-x: hidden; }
-  #conteudo-principal { padding-inline: 0.75rem; padding-block: 1rem; }
+  #conteudo-principal { padding-inline: 1rem; padding-block: 1rem; }
   .erp-table-wrap { max-width: calc(100vw - 1.5rem); max-height: calc(100vh - 18rem); scrollbar-width: thin; }
   .erp-table-wrap table { min-width: 42rem; }
   .erp-table-wrap:focus-within { outline: 2px solid var(--color-ring); outline-offset: 2px; }
