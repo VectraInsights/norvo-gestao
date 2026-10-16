@@ -211,22 +211,14 @@ describe("CIOT fora do XML do CT-e (dado ANTT, não vai no leiaute 4.00)", () =>
   });
 });
 
-describe("<seg> no CT-e Normal (infCTeNorm, após infModal)", () => {
+describe("<seg> removido no CT-e Normal 4.00 (só existe no CT-e OS)", () => {
   const comSeg = {
     seg: { resp: "4", xSeg: "SEGURADORA TESTE SA", nApol: "12345", nAver: "678" },
   };
 
-  it("emite respSeg/xSeg/nApol/nAver após o infModal", () => {
-    const xml = buildNormal(comSeg);
-
-    expect(xml).toContain("<seg><respSeg>4</respSeg><xSeg>SEGURADORA TESTE SA</xSeg><nApol>12345</nApol><nAver>678</nAver></seg>");
-    expect(xml.indexOf("<seg>")).toBeGreaterThan(xml.indexOf("</infModal>"));
-    expect(xml.indexOf("<seg>")).toBeLessThan(xml.indexOf("</infCTeNorm>"));
-  });
-
-  it("respSeg só admite 4/5 (outros viram 4)", () => {
-    expect(buildNormal({ seg: { resp: "2", xSeg: "SEG" } })).toContain("<respSeg>4</respSeg>");
-    expect(buildNormal({ seg: { resp: "5", xSeg: "SEG" } })).toContain("<respSeg>5</respSeg>");
+  it("nunca emite <seg> no modelo 57 (XSD 4.00 não tem a tag)", () => {
+    expect(buildNormal(comSeg)).not.toContain("<seg>");
+    expect(buildNormal(comSeg)).not.toContain("<respSeg>");
   });
 
   it("sem dados de seguro omite o grupo", () => {
@@ -329,13 +321,13 @@ describe("RTC fase 2 (atrás de flag): cClassTrib, ISUF, compras gov, split", ()
   });
 });
 
-describe("<compl> no CT-e Normal (após infCTeNorm)", () => {
+describe("<compl> no CT-e Normal (logo após o ide, antes do emit)", () => {
   it("inclui <compl><xObs> quando há observação", () => {
     const xml = buildNormal({ obsGerais: "ENTREGA AGENDAR COM JOAO" } as any);
 
     expect(xml).toContain("<compl><xObs>ENTREGA AGENDAR COM JOAO</xObs></compl>");
-    expect(xml.indexOf("<compl>")).toBeGreaterThan(xml.indexOf("</infCTeNorm>"));
-    expect(xml.indexOf("<compl>")).toBeLessThan(xml.indexOf("<infRespTec>"));
+    expect(xml.indexOf("<compl>")).toBeGreaterThan(xml.indexOf("</ide>"));
+    expect(xml.indexOf("<compl>")).toBeLessThan(xml.indexOf("<emit>"));
   });
 
   it("omite <compl> sem observação", () => {

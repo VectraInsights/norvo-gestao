@@ -6197,3 +6197,11 @@ pm run build OK.
   teste atualizado; XML normal+simp validado contra o XSD oficial RTC
   (libxmljs2; so falta a Signature, aplicada depois na assinatura).
 - 27/27 testes; tsc sem erros novos; `npm run build` OK.
+
+## seg removido + compl no lugar certo (16/10)
+
+- 225 persistia: `<seg>` nao existe no CT-e 57 4.00 (so no CT-e OS) e o
+  `<compl>` ia apos o infCTeNorm (XSD exige logo apos o ide). Normal agora
+  emite sem seg (dados seguem salvos no banco) e compl apos o `</ide>`.
+  Fixtures rica+simplificadas revalidadas contra o XSD RTC (so falta Signature).
+- 26/26 testes; tsc sem erros novos; `npm run build` OK.

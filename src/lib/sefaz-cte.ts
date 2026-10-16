@@ -618,12 +618,8 @@ export function buildCteNormalXml(input: CteInputCompleto): { xml: string; chave
   // <compl> oficial (filho de infCte, após infCTeNorm): só xObs do form.
   const obsLiv = String((input as any).obsGerais || "").trim();
   const complXml = obsLiv ? `<compl><xObs>${escCte(obsLiv.slice(0, 2000))}</xObs></compl>` : "";
-  // <seg> oficial (infCTeNorm, 0-n): respSeg só admite 4 (emitente) ou 5 (tomador).
-  const segIn = (input as any).seg || {};
-  const segResp = String(segIn.resp || "") === "5" ? "5" : "4";
-  const segXml = (segIn.xSeg || segIn.nApol || segIn.nAver)
-    ? `<seg><respSeg>${segResp}</respSeg>${segIn.xSeg ? `<xSeg>${escCte(String(segIn.xSeg).slice(0, 30))}</xSeg>` : ""}${segIn.nApol ? `<nApol>${escCte(String(segIn.nApol).slice(0, 20))}</nApol>` : ""}${segIn.nAver ? `<nAver>${escCte(String(segIn.nAver).slice(0, 20))}</nAver>` : ""}</seg>`
-    : "";
+  // <seg> nao existe no CT-e 57 4.00 (so no CT-e OS): dados de seguro ficam
+  // salvos no banco/percurso, fora do XML.
 
   const qrBase = (input.ufEnv || input.emit.uf)?.toUpperCase() === "MG" ? "portalcte.fazenda.mg.gov.br/portalcte/sistema/qrcode.xhtml" : "dfeportal.svrs.rs.gov.br/cteQrCode";
   const xml = `<?xml version="1.0" encoding="UTF-8"?>
@@ -638,7 +634,7 @@ export function buildCteNormalXml(input: CteInputCompleto): { xml: string; chave
       <retira>${input.retira || "1"}</retira>
       <indIEToma>${indIETomaN}</indIEToma>
       ${tomaXml}${compraGovXml(input)}${pagAntXml(input)}
-    </ide>
+    </ide>${complXml}
     <emit>
       <CNPJ>${cnpjLimpo}</CNPJ>${/^\d{2,14}$/.test(String(input.emit.ie || "")) ? `<IE>${input.emit.ie}</IE>` : ""}<xNome>${escCte(input.emit.xNome)}</xNome>${rtcFase2(input) ? isufTag("ISUFEmit", (input.emit as any)?.isuf) : ""}${enderEmit}<CRT>${crt}</CRT>
     </emit>
@@ -652,8 +648,8 @@ export function buildCteNormalXml(input: CteInputCompleto): { xml: string; chave
         <infQ><cUnid>01</cUnid><tpMed>00</tpMed><qCarga>${Number(input.pesoKg || 0).toFixed(4)}</qCarga></infQ>
       </infCarga>
       ${infDocXml}${docAntXmlN}
-      <infModal versaoModal="4.00"><rodo><RNTRC>${rntrcXml}</RNTRC>${motoXml}${veicTracXml}${veicRebXml}</rodo></infModal>${segXml}
-    </infCTeNorm>${complXml}
+      <infModal versaoModal="4.00"><rodo><RNTRC>${rntrcXml}</RNTRC>${motoXml}${veicTracXml}${veicRebXml}</rodo></infModal>
+    </infCTeNorm>
     <infRespTec><CNPJ>${cnpjLimpo}</CNPJ><xContato>SUPORTE TECNICO</xContato><email>suporte@vectrainsights.com.br</email><fone>3139952572</fone></infRespTec>
   </infCte>${pgtoVincXml(input)}
   <infCTeSupl><qrCodCTe>https://${qrBase}?chCTe=${chave}&amp;tpAmb=${SEFAZ_TP_AMB}</qrCodCTe></infCTeSupl>
