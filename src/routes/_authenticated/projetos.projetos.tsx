@@ -14,6 +14,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { MoneyInput } from "@/components/erp/money-input";
 import { Combobox } from "@/components/erp/combobox";
 import { NovoContatoDialog } from "@/components/erp/novo-contato-dialog";
+import { RouteErrorState } from "@/components/erp/route-error-state";
 import {
   Table,
   TableBody,
@@ -58,13 +59,8 @@ import { brl, dateBR } from "@/lib/format";
 
 export const Route = createFileRoute("/_authenticated/projetos/projetos")({
   component: ProjetosPage,
-  errorComponent: ({ error }) => (
-    <div
-      role="alert"
-      className="rounded-md border border-destructive/40 bg-destructive/5 p-4 text-sm text-destructive"
-    >
-      Erro ao carregar projetos: {error.message}
-    </div>
+  errorComponent: (props) => (
+    <RouteErrorState {...props} title="Erro ao carregar projetos" />
   ),
 });
 

@@ -3,6 +3,7 @@ import { PageHeader } from "@/components/erp/page-header";
 import { EmptyState } from "@/components/erp/empty-state";
 import { SearchField } from "@/components/erp/search-field";
 import { StatusBadge } from "@/components/erp/status-badge";
+import { RouteErrorState } from "@/components/erp/route-error-state";
 import { Card } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { ShoppingCart } from "lucide-react";
@@ -14,9 +15,7 @@ import { brl, dateBR } from "@/lib/format";
 
 export const Route = createFileRoute("/_authenticated/vendas/vendas")({
   component: VendasFaturadas,
-  errorComponent: ({ error }) => (
-    <div className="p-6 text-sm text-destructive" role="alert">Falha: {error.message}</div>
-  ),
+  errorComponent: RouteErrorState
 });
 
 type Row = {

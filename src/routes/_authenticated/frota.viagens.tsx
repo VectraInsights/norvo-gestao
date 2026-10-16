@@ -16,6 +16,7 @@ import { Card } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Textarea } from "@/components/ui/textarea";
 import { MoneyInput } from "@/components/erp/money-input";
+import { RouteErrorState } from "@/components/erp/route-error-state";
 import {
   Table,
   TableBody,
@@ -69,13 +70,8 @@ import { brl, dateBR } from "@/lib/format";
 
 export const Route = createFileRoute("/_authenticated/frota/viagens")({
   component: Viagens,
-  errorComponent: ({ error }) => (
-    <div
-      role="alert"
-      className="rounded-md border border-destructive/40 bg-destructive/5 p-4 text-sm text-destructive"
-    >
-      Não foi possível carregar as viagens: {error.message}
-    </div>
+  errorComponent: (props) => (
+    <RouteErrorState {...props} title="Não foi possível carregar as viagens" />
   ),
 });
 

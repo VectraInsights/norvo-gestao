@@ -6,6 +6,7 @@ import { PageHeader } from "@/components/erp/page-header";
 import { EmptyState } from "@/components/erp/empty-state";
 import { SearchField } from "@/components/erp/search-field";
 import { PrimaryButton } from "@/components/erp/primary-button";
+import { RouteErrorState } from "@/components/erp/route-error-state";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Card } from "@/components/ui/card";
@@ -34,21 +35,8 @@ import { brl, num } from "@/lib/format";
 
 export const Route = createFileRoute("/_authenticated/estoque/reposicao")({
   component: Reposicao,
-  errorComponent: ({ error }) => (
-    <div
-      role="alert"
-      className="rounded-2xl border border-destructive/20 bg-destructive/5 p-6 text-center shadow-sm animate-in fade-in zoom-in duration-300 sm:p-10"
-    >
-      <div className="grid h-14 w-14 place-items-center rounded-2xl bg-destructive/10">
-        <AlertTriangle className="h-6 w-6 text-destructive" />
-      </div>
-      <p className="mt-4 text-base font-semibold tracking-tight text-foreground">
-        Não foi possível carregar a reposição
-      </p>
-      <p className="mt-1 text-sm text-muted-foreground">
-        {error instanceof Error ? error.message : "Erro desconhecido"}
-      </p>
-    </div>
+  errorComponent: (props) => (
+    <RouteErrorState {...props} title="Não foi possível carregar a reposição" />
   ),
 });
 

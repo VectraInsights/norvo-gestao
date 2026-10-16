@@ -10,6 +10,7 @@ import { SearchField } from "@/components/erp/search-field";
 import { StatusBadge } from "@/components/erp/status-badge";
 import { MoneyInput } from "@/components/erp/money-input";
 import { Combobox } from "@/components/erp/combobox";
+import { RouteErrorState } from "@/components/erp/route-error-state";
 import {
   Table,
   TableBody,
@@ -45,14 +46,7 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 
 export const Route = createFileRoute("/_authenticated/rh/comissoes")({
   component: ComissoesPage,
-  errorComponent: ({ error }) => (
-    <div
-      role="alert"
-      className="rounded-md border border-destructive/40 bg-destructive/5 p-4 text-sm text-destructive"
-    >
-      Erro: {error.message}
-    </div>
-  ),
+  errorComponent: RouteErrorState
 });
 
 type Comissao = {

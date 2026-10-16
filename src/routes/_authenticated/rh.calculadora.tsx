@@ -1,6 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { PageHeader } from "@/components/erp/page-header";
 import { MoneyInput } from "@/components/erp/money-input";
+import { RouteErrorState } from "@/components/erp/route-error-state";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card } from "@/components/ui/card";
@@ -16,11 +17,7 @@ import {
 
 export const Route = createFileRoute("/_authenticated/rh/calculadora")({
   component: CalculadoraPage,
-  errorComponent: ({ error }) => (
-    <div role="alert" className="rounded-md border border-destructive/40 bg-destructive/5 p-4 text-sm text-destructive">
-      Erro: {error.message}
-    </div>
-  ),
+  errorComponent: RouteErrorState
 });
 
 function Linha({ rotulo, valor, subtrair, total }: { rotulo: string; valor: number; subtrair?: boolean; total?: boolean }) {

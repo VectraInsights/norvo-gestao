@@ -13,6 +13,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { MoneyInput } from "@/components/erp/money-input";
 import { Combobox } from "@/components/erp/combobox";
 import { NovoContatoDialog } from "@/components/erp/novo-contato-dialog";
+import { RouteErrorState } from "@/components/erp/route-error-state";
 import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from "@/components/ui/table";
@@ -36,21 +37,8 @@ import { brl, dateBR } from "@/lib/format";
 
 export const Route = createFileRoute("/_authenticated/estoque/compras")({
   component: Compras,
-  errorComponent: ({ error }) => (
-    <div
-      role="alert"
-      className="rounded-2xl border border-destructive/20 bg-destructive/5 p-6 text-center shadow-sm animate-in fade-in zoom-in duration-300 sm:p-10"
-    >
-      <div className="grid h-14 w-14 place-items-center rounded-2xl bg-destructive/10">
-        <X className="h-6 w-6 text-destructive" />
-      </div>
-      <p className="mt-4 text-base font-semibold tracking-tight text-foreground">
-        Erro ao carregar ordens de compra
-      </p>
-      <p className="mt-1 text-sm text-muted-foreground">
-        {error instanceof Error ? error.message : "Erro desconhecido"}
-      </p>
-    </div>
+  errorComponent: (props) => (
+    <RouteErrorState {...props} title="Erro ao carregar ordens de compra" />
   ),
 });
 

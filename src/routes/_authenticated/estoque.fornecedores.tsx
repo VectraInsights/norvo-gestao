@@ -5,6 +5,7 @@ import { SearchField } from "@/components/erp/search-field";
 import { Pagination } from "@/components/erp/pagination";
 import { Button } from "@/components/ui/button";
 import { PrimaryButton } from "@/components/erp/primary-button";
+import { RouteErrorState } from "@/components/erp/route-error-state";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card } from "@/components/ui/card";
@@ -54,21 +55,8 @@ import { toast } from "sonner";
 
 export const Route = createFileRoute("/_authenticated/estoque/fornecedores")({
   component: Fornecedores,
-  errorComponent: ({ error }) => (
-    <div
-      role="alert"
-      className="rounded-2xl border border-destructive/20 bg-destructive/5 p-6 text-center shadow-sm animate-in fade-in zoom-in duration-300 sm:p-10"
-    >
-      <div className="grid h-14 w-14 place-items-center rounded-2xl bg-destructive/10">
-        <Search className="h-6 w-6 text-destructive" />
-      </div>
-      <p className="mt-4 text-base font-semibold tracking-tight text-foreground">
-        Não foi possível carregar os fornecedores
-      </p>
-      <p className="mt-1 text-sm text-muted-foreground">
-        {error instanceof Error ? error.message : "Erro desconhecido"}
-      </p>
-    </div>
+  errorComponent: (props) => (
+    <RouteErrorState {...props} title="Não foi possível carregar os fornecedores" />
   ),
 });
 

@@ -26,6 +26,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Plus, Pencil, Trash2, FolderCog, Loader2, PlusCircle, ChevronRight } from "lucide-react";
 import { SearchField } from "@/components/erp/search-field";
 import { AuditDialog } from "@/components/erp/audit-dialog";
+import { RouteErrorState } from "@/components/erp/route-error-state";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useEmpresaAtual } from "@/hooks/use-empresa";
@@ -41,9 +42,7 @@ export const Route = createFileRoute("/_authenticated/financeiro/cadastros")({
       { property: "og:description", content: "Cadastre e altere categorias financeiras e centros de custo da empresa." },
     ],
   }),
-  errorComponent: ({ error }) => (
-    <div className="rounded-2xl border border-destructive/40 bg-destructive/5 p-5 text-sm leading-relaxed text-destructive shadow-sm" role="alert">Falha: {error instanceof Error ? error.message : "erro desconhecido"}</div>
-  ),
+  errorComponent: RouteErrorState,
   notFoundComponent: () => <div className="rounded-2xl border bg-card p-8 text-center text-sm text-muted-foreground shadow-panel">Página não encontrada.</div>,
 });
 

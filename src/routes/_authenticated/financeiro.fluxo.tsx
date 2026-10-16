@@ -10,6 +10,7 @@ import { format, addDays, startOfDay, endOfDay, differenceInCalendarDays } from 
 import { ArrowDownRight, ArrowUpRight, Wallet } from "lucide-react";
 import { useState } from "react";
 import { PeriodoFilter, type Periodo } from "@/components/erp/periodo-filter";
+import { RouteErrorState } from "@/components/erp/route-error-state";
 import type { FluxoPoint } from "@/components/erp/fluxo-chart";
 
 const brl = (n: number) =>
@@ -20,7 +21,9 @@ const FluxoChart = lazy(() => import("@/components/erp/fluxo-chart"));
 
 export const Route = createFileRoute("/_authenticated/financeiro/fluxo")({
   component: FluxoCaixa,
-  errorComponent: FluxoError,
+  errorComponent: (props) => (
+    <RouteErrorState {...props} title="Não foi possível carregar o fluxo de caixa" />
+  ),
 });
 
 type LancamentoRow = {
@@ -154,13 +157,5 @@ function FluxoCaixa() {
         </CardContent>
       </Card>
     </>
-  );
-}
-
-function FluxoError({ error }: { error: unknown }) {
-  return (
-    <div className="rounded-2xl border border-destructive/40 bg-destructive/5 p-5 text-sm leading-relaxed text-destructive shadow-sm" role="alert">
-      Não foi possível carregar o fluxo de caixa: {error instanceof Error ? error.message : "erro desconhecido"}
-    </div>
   );
 }

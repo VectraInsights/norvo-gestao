@@ -10,6 +10,7 @@ import { SearchField } from "@/components/erp/search-field";
 import { Button } from "@/components/ui/button";
 import { PrimaryButton } from "@/components/erp/primary-button";
 import { Pagination } from "@/components/erp/pagination";
+import { RouteErrorState } from "@/components/erp/route-error-state";
 import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
@@ -45,7 +46,6 @@ import {
   Send,
   Ban,
   Download,
-  AlertTriangle,
   Plus,
   FileDown,
   Bookmark,
@@ -61,7 +61,9 @@ import { useFiltrosSalvos } from "@/hooks/use-filtros-salvos";
 
 export const Route = createFileRoute("/_authenticated/fiscal/emitidas")({
   component: NotasEmitidas,
-  errorComponent: FiscalError,
+  errorComponent: (props) => (
+    <RouteErrorState {...props} title="Ops! Ocorreu um problema no módulo fiscal" />
+  ),
 });
 
 type NotaStatus = "rascunho" | "autorizada" | "cancelada" | "rejeitada" | "denegada";
@@ -86,26 +88,6 @@ interface NfeConfig {
   proximo_numero: number | null;
   regime_tributario: string | null;
   natureza_operacao: string | null;
-}
-
-function FiscalError({ error, reset }: { error: unknown; reset: () => void }) {
-  return (
-    <div className="flex flex-col items-center gap-3 rounded-2xl border border-destructive/20 bg-destructive/5 p-8 text-center shadow-sm animate-in fade-in zoom-in duration-300 sm:p-10">
-      <div className="grid h-14 w-14 place-items-center rounded-2xl bg-destructive/10">
-        <AlertTriangle className="h-6 w-6 text-destructive" />
-      </div>
-      <div className="text-base font-semibold tracking-tight text-foreground">
-        Ops! Ocorreu um problema no módulo fiscal
-      </div>
-      <div className="max-w-[320px] text-xs leading-relaxed text-muted-foreground">
-        Não conseguimos carregar os dados das notas fiscais agora. Detalhes técnicos:{" "}
-        <code className="rounded-md bg-muted px-1.5 py-0.5">{error instanceof Error ? error.message : "erro desconhecido"}</code>
-      </div>
-      <Button size="sm" variant="outline" onClick={reset} className="mt-2 h-9 rounded-xl px-5 shadow-sm">
-        Tentar novamente
-      </Button>
-    </div>
-  );
 }
 
 function NotasEmitidas() {

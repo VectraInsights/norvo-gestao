@@ -1,6 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { PageHeader } from "@/components/erp/page-header";
 import { EmptyState } from "@/components/erp/empty-state";
+import { RouteErrorState } from "@/components/erp/route-error-state";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -14,11 +15,7 @@ import { brl } from "@/lib/format";
 
 export const Route = createFileRoute("/_authenticated/financeiro/conciliacao")({
   component: ConciliacaoPage,
-  errorComponent: ({ error }) => (
-    <div role="alert" className="rounded-2xl border border-destructive/40 bg-destructive/5 p-5 text-sm leading-relaxed text-destructive shadow-sm">
-      Erro: {error instanceof Error ? error.message : "erro desconhecido"}
-    </div>
-  ),
+  errorComponent: RouteErrorState
 });
 
 type ContaResumo = {

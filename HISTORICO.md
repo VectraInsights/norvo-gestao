@@ -6162,3 +6162,12 @@ pm run build OK.
   "Período: 2026") ao selecionar e ao navegar com as setas; item "Ano atual"
   segue destacado na lista.
 - tsc sem erros novos; `npm run build` OK.
+
+## StatCard + errorComponent unicos (16/10)
+
+- Item 10: novo `src/components/erp/stat-card.tsx` (variants primary/secondary +
+  StatCardSkeleton); 8 cards do dashboard migrados (4+4).
+- `route-error-state.tsx` ganhou props `title?`/`reset?`; ~36 errorComponents
+  inline + FluxoError/FiscalError migrados (titulos por pagina preservados;
+  fiscal mantem reset da rota).
+- tsc sem erros novos; `npm run build` OK.

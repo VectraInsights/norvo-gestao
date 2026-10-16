@@ -1,6 +1,7 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { PageHeader } from "@/components/erp/page-header";
 import { Card, CardContent } from "@/components/ui/card";
+import { StatCard, StatCardSkeleton } from "@/components/erp/stat-card";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { supabase } from "@/integrations/supabase/client";
@@ -30,19 +31,15 @@ function soma30meses(d: string) {
   return dt.toISOString().slice(0, 10);
 }
 import type { ReceitaPoint } from "@/components/erp/receita-chart";
+import { RouteErrorState } from "@/components/erp/route-error-state";
 
 // recharts (~120KB gz) fica em chunk separado, carregado só quando o dashboard renderiza.
 const ReceitaChart = lazy(() => import("@/components/erp/receita-chart"));
 
 export const Route = createFileRoute("/_authenticated/dashboard")({
   component: Dashboard,
-  errorComponent: ({ error }) => (
-    <div
-      role="alert"
-      className="rounded-2xl border border-destructive/40 bg-destructive/5 p-5 text-sm leading-relaxed text-destructive shadow-sm"
-    >
-      Não foi possível carregar o dashboard: {error instanceof Error ? error.message : "erro desconhecido"}
-    </div>
+  errorComponent: (props) => (
+    <RouteErrorState {...props} title="Não foi possível carregar o dashboard" />
   ),
 });
 
@@ -388,36 +385,9 @@ function Dashboard() {
       {/* Métricas primárias — 4 cards compactos h-[120px], sem descrições */}
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
         {loadingStats
-          ? Array.from({ length: 4 }).map((_, i) => (
-              <Card key={i} className="rounded-2xl shadow-panel">
-                <CardContent className="flex h-[120px] items-center gap-3 p-4">
-                  <Skeleton className="h-9 w-9 rounded-xl" />
-                  <div className="min-w-0 flex-1">
-                    <Skeleton className="h-3 w-24 rounded-full" />
-                    <Skeleton className="mt-2 h-7 w-28 rounded-lg" />
-                  </div>
-                </CardContent>
-              </Card>
-            ))
+          ? Array.from({ length: 4 }).map((_, i) => <StatCardSkeleton key={i} />)
           : cards.slice(0, 4).map((c) => (
-              <Card
-                key={c.label}
-                className="group rounded-2xl shadow-panel transition-all duration-200 hover:-translate-y-0.5 hover:border-primary/25 hover:shadow-md"
-              >
-                <CardContent className="flex h-[120px] items-center gap-3 p-4">
-                  <span className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-muted/70 transition-colors group-hover:bg-primary/10">
-                    <c.icon className={`h-4 w-4 ${c.tone}`} aria-hidden="true" />
-                  </span>
-                  <span className="min-w-0 flex-1">
-                    <span className="block truncate text-xs font-medium uppercase tracking-[0.08em] text-muted-foreground">
-                      {c.label}
-                    </span>
-                    <span className="mt-1 block truncate text-2xl font-semibold leading-tight text-tabular">
-                      {c.value}
-                    </span>
-                  </span>
-                </CardContent>
-              </Card>
+              <StatCard key={c.label} icon={c.icon} label={c.label} value={c.value} tone={c.tone} />
             ))}
       </div>
 
@@ -447,34 +417,9 @@ function Dashboard() {
       {/* Métricas secundárias — 4 cards menores, hierarquia secundária */}
       <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
         {loadingStats
-          ? Array.from({ length: 4 }).map((_, i) => (
-              <Card key={i} className="rounded-2xl shadow-panel">
-                <CardContent className="flex h-[96px] items-center gap-3 p-4">
-                  <Skeleton className="h-8 w-8 rounded-lg" />
-                  <div className="min-w-0 flex-1">
-                    <Skeleton className="h-3 w-20 rounded-full" />
-                    <Skeleton className="mt-2 h-6 w-16 rounded-lg" />
-                  </div>
-                </CardContent>
-              </Card>
-            ))
+          ? Array.from({ length: 4 }).map((_, i) => <StatCardSkeleton key={i} variant="secondary" />)
           : cards.slice(4).map((c) => (
-              <Card
-                key={c.label}
-                className="rounded-2xl bg-muted/30 shadow-panel transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md"
-              >
-                <CardContent className="flex h-[96px] items-center gap-3 p-4">
-                  <span className="grid h-8 w-8 shrink-0 place-items-center rounded-lg bg-background shadow-sm">
-                    <c.icon className="h-4 w-4 text-muted-foreground" aria-hidden="true" />
-                  </span>
-                  <span className="min-w-0 flex-1">
-                    <span className="block truncate text-xs text-muted-foreground">{c.label}</span>
-                    <span className="mt-0.5 block truncate text-xl font-semibold leading-tight text-tabular">
-                      {c.value}
-                    </span>
-                  </span>
-                </CardContent>
-              </Card>
+              <StatCard key={c.label} icon={c.icon} label={c.label} value={c.value} variant="secondary" />
             ))}
       </div>
 

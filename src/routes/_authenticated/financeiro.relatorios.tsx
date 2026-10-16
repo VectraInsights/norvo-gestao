@@ -1,5 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { PageHeader } from "@/components/erp/page-header";
+import { RouteErrorState } from "@/components/erp/route-error-state";
 import { Card } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -13,11 +14,7 @@ import { differenceInCalendarDays, parseISO } from "date-fns";
 
 export const Route = createFileRoute("/_authenticated/financeiro/relatorios")({
   component: RelatoriosPage,
-  errorComponent: ({ error }) => (
-    <div role="alert" className="rounded-2xl border border-destructive/40 bg-destructive/5 p-5 text-sm leading-relaxed text-destructive shadow-sm">
-      Erro: {error instanceof Error ? error.message : "erro desconhecido"}
-    </div>
-  ),
+  errorComponent: RouteErrorState
 });
 
 type Lanc = {

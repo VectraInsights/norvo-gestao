@@ -1,7 +1,7 @@
 import { AlertTriangle, RefreshCw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
-export function RouteErrorState({ error }: { error?: unknown }) {
+export function RouteErrorState({ error, title, reset }: { error?: unknown; title?: string; reset?: () => void }) {
   const msg =
     error instanceof Error
       ? error.message
@@ -14,7 +14,7 @@ export function RouteErrorState({ error }: { error?: unknown }) {
         <span className="grid size-12 place-items-center rounded-2xl bg-destructive/10 text-destructive shadow-sm" aria-hidden="true">
           <AlertTriangle className="size-5" />
         </span>
-        <h1 className="text-xl font-semibold tracking-tight">Não foi possível carregar esta página</h1>
+        <h1 className="text-xl font-semibold tracking-tight">{title ?? "Não foi possível carregar esta página"}</h1>
         <p className="max-w-sm text-sm leading-relaxed text-muted-foreground">
           Ocorreu um problema ao carregar os dados. Tente novamente ou volte mais tarde.
         </p>
@@ -23,7 +23,7 @@ export function RouteErrorState({ error }: { error?: unknown }) {
             {msg}
           </p>
         )}
-        <Button type="button" variant="outline" className="mt-1 h-10 rounded-xl px-5 shadow-sm transition-all hover:-translate-y-px hover:shadow-md" onClick={() => window.location.reload()}>
+        <Button type="button" variant="outline" className="mt-1 h-10 rounded-xl px-5 shadow-sm transition-all hover:-translate-y-px hover:shadow-md" onClick={() => (reset ? reset() : window.location.reload())}>
           <RefreshCw data-icon="inline-start" />
           Tentar novamente
         </Button>

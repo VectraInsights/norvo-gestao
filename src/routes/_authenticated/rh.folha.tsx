@@ -35,6 +35,7 @@ import {
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { SearchField } from "@/components/erp/search-field";
 import { StatusBadge } from "@/components/erp/status-badge";
+import { RouteErrorState } from "@/components/erp/route-error-state";
 import { Wallet, Plus, Pencil, Trash2, HandCoins } from "lucide-react";
 import { useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
@@ -45,14 +46,7 @@ import { brl } from "@/lib/format";
 
 export const Route = createFileRoute("/_authenticated/rh/folha")({
   component: FolhaPage,
-  errorComponent: ({ error }) => (
-    <div
-      role="alert"
-      className="rounded-md border border-destructive/40 bg-destructive/5 p-4 text-sm text-destructive"
-    >
-      Erro: {error.message}
-    </div>
-  ),
+  errorComponent: RouteErrorState
 });
 
 type Folha = {

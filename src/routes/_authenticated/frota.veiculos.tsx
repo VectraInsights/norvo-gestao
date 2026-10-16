@@ -8,6 +8,7 @@ import { StatusBadge } from "@/components/erp/status-badge";
 import { Button } from "@/components/ui/button";
 import { PrimaryButton } from "@/components/erp/primary-button";
 import { Pagination } from "@/components/erp/pagination";
+import { RouteErrorState } from "@/components/erp/route-error-state";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card } from "@/components/ui/card";
@@ -75,13 +76,8 @@ import {
 
 export const Route = createFileRoute("/_authenticated/frota/veiculos")({
   component: Veiculos,
-  errorComponent: ({ error }) => (
-    <div
-      role="alert"
-      className="rounded-md border border-destructive/40 bg-destructive/5 p-4 text-sm text-destructive"
-    >
-      Não foi possível carregar os veículos: {error.message}
-    </div>
+  errorComponent: (props) => (
+    <RouteErrorState {...props} title="Não foi possível carregar os veículos" />
   ),
 });
 

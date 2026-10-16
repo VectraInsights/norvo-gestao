@@ -18,6 +18,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Banknote, Plus, ChevronRight, Trash2, HandCoins, Pencil, Check, X, FileUp } from "lucide-react";
 import { SearchField } from "@/components/erp/search-field";
 import { StatusBadge } from "@/components/erp/status-badge";
+import { RouteErrorState } from "@/components/erp/route-error-state";
 import { useMemo, useRef, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -28,11 +29,7 @@ import { addMonths, format } from "date-fns";
 
 export const Route = createFileRoute("/_authenticated/financeiro/emprestimos")({
   component: EmprestimosPage,
-  errorComponent: ({ error }) => (
-    <div role="alert" className="rounded-2xl border border-destructive/40 bg-destructive/5 p-5 text-sm leading-relaxed text-destructive shadow-sm">
-      Erro: {error instanceof Error ? error.message : "erro desconhecido"}
-    </div>
-  ),
+  errorComponent: RouteErrorState
 });
 
 type Emprestimo = {

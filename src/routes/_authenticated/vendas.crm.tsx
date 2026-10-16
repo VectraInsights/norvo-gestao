@@ -12,6 +12,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { MoneyInput } from "@/components/erp/money-input";
 import { Combobox } from "@/components/erp/combobox";
 import { NovoContatoDialog } from "@/components/erp/novo-contato-dialog";
+import { RouteErrorState } from "@/components/erp/route-error-state";
 import {
   Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogTrigger,
 } from "@/components/ui/dialog";
@@ -33,10 +34,8 @@ import { useDraggable } from "@dnd-kit/core";
 
 export const Route = createFileRoute("/_authenticated/vendas/crm")({
   component: CRM,
-  errorComponent: ({ error }) => (
-    <div role="alert" className="rounded-md border border-destructive/40 bg-destructive/5 p-4 text-sm text-destructive">
-      Erro ao carregar CRM: {error.message}
-    </div>
+  errorComponent: (props) => (
+    <RouteErrorState {...props} title="Erro ao carregar CRM" />
   ),
 });
 

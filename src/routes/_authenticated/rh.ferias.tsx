@@ -10,6 +10,7 @@ import { Label } from "@/components/ui/label";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { StatusBadge } from "@/components/erp/status-badge";
+import { RouteErrorState } from "@/components/erp/route-error-state";
 import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from "@/components/ui/table";
@@ -27,11 +28,7 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 
 export const Route = createFileRoute("/_authenticated/rh/ferias")({
   component: FeriasPage,
-  errorComponent: ({ error }) => (
-    <div role="alert" className="rounded-md border border-destructive/40 bg-destructive/5 p-4 text-sm text-destructive">
-      Erro: {error.message}
-    </div>
-  ),
+  errorComponent: RouteErrorState
 });
 
 type ColabRow = {

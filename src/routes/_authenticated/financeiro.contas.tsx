@@ -33,6 +33,7 @@ import { NovoContatoDialog } from "@/components/erp/novo-contato-dialog";
 import { TransferenciaDialog } from "@/components/erp/transferencia-dialog";
 import { SearchField } from "@/components/erp/search-field";
 import { AuditDialog } from "@/components/erp/audit-dialog";
+import { RouteErrorState } from "@/components/erp/route-error-state";
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -52,9 +53,7 @@ export const Route = createFileRoute("/_authenticated/financeiro/contas")({
     tab: search.tab === "movs" || search.tab === "pendentes" ? search.tab : undefined,
   }),
   component: ContasFinanceiras,
-  errorComponent: ({ error }) => (
-    <div className="p-6 text-sm text-destructive" role="alert">Falha: {error.message}</div>
-  ),
+  errorComponent: RouteErrorState
 });
 
 

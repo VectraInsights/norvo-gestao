@@ -13,6 +13,7 @@ import { Label } from "@/components/ui/label";
 import { Card } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
 import { MoneyInput } from "@/components/erp/money-input";
+import { RouteErrorState } from "@/components/erp/route-error-state";
 import {
   Table,
   TableBody,
@@ -60,14 +61,7 @@ import { brl, dateBR, maskDoc } from "@/lib/format";
 
 export const Route = createFileRoute("/_authenticated/rh/colaboradores")({
   component: ColaboradoresPage,
-  errorComponent: ({ error }) => (
-    <div
-      role="alert"
-      className="rounded-md border border-destructive/40 bg-destructive/5 p-4 text-sm text-destructive"
-    >
-      Erro: {error.message}
-    </div>
-  ),
+  errorComponent: RouteErrorState
 });
 
 type Colab = {

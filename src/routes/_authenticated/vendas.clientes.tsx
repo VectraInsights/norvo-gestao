@@ -6,6 +6,7 @@ import { AuditDialog } from "@/components/erp/audit-dialog";
 import { Button } from "@/components/ui/button";
 import { PrimaryButton } from "@/components/erp/primary-button";
 import { Pagination } from "@/components/erp/pagination";
+import { RouteErrorState } from "@/components/erp/route-error-state";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card } from "@/components/ui/card";
@@ -34,9 +35,7 @@ type Contato = {
 
 export const Route = createFileRoute("/_authenticated/vendas/clientes")({
   component: Clientes,
-  errorComponent: ({ error }) => (
-    <div className="p-6 text-sm text-destructive" role="alert">Falha: {error.message}</div>
-  ),
+  errorComponent: RouteErrorState
 });
 
 const emptyForm = () => ({

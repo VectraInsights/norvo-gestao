@@ -8,6 +8,7 @@ import { Card } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { TransferenciaDialog } from "@/components/erp/transferencia-dialog";
+import { RouteErrorState } from "@/components/erp/route-error-state";
 import { ArrowLeftRight, Plus, Search, Trash2 } from "lucide-react";
 import { useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
@@ -18,11 +19,7 @@ import { brl, dateBR } from "@/lib/format";
 
 export const Route = createFileRoute("/_authenticated/financeiro/transferencias")({
   component: TransferenciasPage,
-  errorComponent: ({ error }) => (
-    <div role="alert" className="rounded-2xl border border-destructive/40 bg-destructive/5 p-5 text-sm leading-relaxed text-destructive shadow-sm">
-      Erro: {error instanceof Error ? error.message : "erro desconhecido"}
-    </div>
-  ),
+  errorComponent: RouteErrorState
 });
 
 type Conta = { id: string; nome: string | null; banco: string | null; saldo_atual: number };

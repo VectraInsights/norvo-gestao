@@ -75,15 +75,12 @@ import { StatusBadge } from "@/components/erp/status-badge";
 import { AuditDialog } from "@/components/erp/audit-dialog";
 import { DateInput } from "@/components/erp/date-input";
 import { PeriodoFilter, periodoProx7, type Periodo } from "@/components/erp/periodo-filter";
+import { RouteErrorState } from "@/components/erp/route-error-state";
 import { usePerfisMap } from "@/hooks/use-perfis";
 
 export const Route = createFileRoute("/_authenticated/financeiro/receber")({
   component: () => <LancamentosPage tipo="receber" />,
-  errorComponent: ({ error }) => (
-    <div className="p-6 text-sm text-destructive" role="alert">
-      Falha: {error.message}
-    </div>
-  ),
+  errorComponent: RouteErrorState
 });
 
 const brl = (n: number) =>

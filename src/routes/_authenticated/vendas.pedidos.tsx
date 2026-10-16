@@ -9,6 +9,7 @@ import { Pagination } from "@/components/erp/pagination";
 import { MoneyInput } from "@/components/erp/money-input";
 import { Combobox } from "@/components/erp/combobox";
 import { NovoContatoDialog } from "@/components/erp/novo-contato-dialog";
+import { RouteErrorState } from "@/components/erp/route-error-state";
 import { Label } from "@/components/ui/label";
 import { Card } from "@/components/ui/card";
 import {
@@ -70,11 +71,7 @@ type VendaRow = {
 
 export const Route = createFileRoute("/_authenticated/vendas/pedidos")({
   component: VendasPage,
-  errorComponent: ({ error }) => (
-    <div className="p-6 text-sm text-destructive" role="alert">
-      Falha: {error.message}
-    </div>
-  ),
+  errorComponent: RouteErrorState
 });
 
 type Item = {

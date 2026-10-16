@@ -5,6 +5,7 @@ import { PageHeader } from "@/components/erp/page-header";
 import { EmptyState } from "@/components/erp/empty-state";
 import { SearchField } from "@/components/erp/search-field";
 import { StatusBadge } from "@/components/erp/status-badge";
+import { RouteErrorState } from "@/components/erp/route-error-state";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -33,21 +34,8 @@ import { brl, num } from "@/lib/format";
 
 export const Route = createFileRoute("/_authenticated/estoque/inventario")({
   component: Inventario,
-  errorComponent: ({ error }) => (
-    <div
-      role="alert"
-      className="rounded-2xl border border-destructive/20 bg-destructive/5 p-6 text-center shadow-sm animate-in fade-in zoom-in duration-300 sm:p-10"
-    >
-      <div className="grid h-14 w-14 place-items-center rounded-2xl bg-destructive/10">
-        <Search className="h-6 w-6 text-destructive" />
-      </div>
-      <p className="mt-4 text-base font-semibold tracking-tight text-foreground">
-        Não foi possível carregar o inventário
-      </p>
-      <p className="mt-1 text-sm text-muted-foreground">
-        {error instanceof Error ? error.message : "Erro desconhecido"}
-      </p>
-    </div>
+  errorComponent: (props) => (
+    <RouteErrorState {...props} title="Não foi possível carregar o inventário" />
   ),
 });
 
