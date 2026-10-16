@@ -6153,3 +6153,12 @@ pm run build OK.
   summary de selecionados). Vendas/clientes ganhou paginacao (25/pag,
   reseta em busca/ordenacao; select-all segue sobre filtrados).
 - tsc sem erros novos; `npm run build` OK.
+
+## Padding mobile + ano numerico no periodo (16/10)
+
+- Item 9: `#conteudo-principal` mobile 0.75rem → 1rem (igual ao header px-4);
+  removido `body { overflow-x: hidden }` (tabelas ja rolam sozinhas).
+- PeriodoFilter "Ano atual" agora mostra o numero do ano no botao (ex.:
+  "Período: 2026") ao selecionar e ao navegar com as setas; item "Ano atual"
+  segue destacado na lista.
+- tsc sem erros novos; `npm run build` OK.
