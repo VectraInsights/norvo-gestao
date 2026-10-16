@@ -6206,6 +6206,15 @@ pm run build OK.
   Fixtures rica+simplificadas revalidadas contra o XSD RTC (so falta Signature).
 - 26/26 testes; tsc sem erros novos; `npm run build` OK.
 
+## Volta do percurso gera CT-e direto + seguradora obrigatoria (16/10)
+
+- Sem percurso: payload leva as chaves (`chaves`); ao salvar (ou se ja
+  existir), percursos volta p/ `/fiscal/cte?gerar=...` e o CT-e reseleciona
+  e dispara o Gerar sozinho (mesmo handler, revalida tudo). Cancelar segue
+  voltando p/ selecao.
+- Percurso agora exige Seguradora (`Pendencias: Seguradora`).
+- tsc sem erros novos; `npm run build` OK.
+
 ## NF-es em ordem crescente no CT-e (16/10)
 
 - Tabela de NF-es do dialogo (aba Tributacao e Carga) agora ordena por nNF

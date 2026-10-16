@@ -649,6 +649,8 @@ function PercursosPage() {
   const qc = useQueryClient();
   const navigate = useNavigate();
   const voltarCteRef = useRef(false);
+  // NF-es que voltam gerando o CT-e direto (payload prefill_percurso_from_cte)
+  const gerarChavesRef = useRef<string[]>([]);
   const [busca, setBusca] = useState("");
   const [percTab, setPercTab] = useState("geral");
   const [editing, setEditing] = useState<Percurso | null>(() => {
@@ -804,12 +806,21 @@ function PercursosPage() {
         dg(p.toma_cnpj) === dg(pre.tomaCnpj),
     );
     voltarCteRef.current = pre.returnTo === "/fiscal/cte";
+    gerarChavesRef.current = Array.isArray(pre.chaves)
+      ? pre.chaves.map((c: any) => String(c)).filter(Boolean)
+      : [];
     if (existe) {
       toast.success("Percurso já cadastrado — de volta ao CT-e");
       setChegadaCte(false);
       if (voltarCteRef.current) {
         voltarCteRef.current = false;
-        navigate({ to: "/fiscal/cte" } as any);
+        const chaves = gerarChavesRef.current;
+        gerarChavesRef.current = [];
+        navigate(
+          chaves.length > 0
+            ? ({ to: "/fiscal/cte", search: { gerar: chaves.join(",") } } as any)
+            : ({ to: "/fiscal/cte" } as any),
+        );
       }
       return;
     }
@@ -1021,6 +1032,7 @@ function PercursosPage() {
         pend.push("UF da coleta");
       if (String((editing as any).entrega_xmun || "").trim() && !String((editing as any).entrega_uf || "").trim())
         pend.push("UF da entrega");
+      if (!String((editing as any).seg_nome || "").trim()) pend.push("Seguradora");
       for (const p of [
         { k: "consig", label: "Consignatario" },
         { k: "redesp", label: "Redespacho" },
@@ -1276,7 +1288,13 @@ function PercursosPage() {
       qc.invalidateQueries({ queryKey: ["cte-percursos", empresa?.id] });
       if (voltarCteRef.current) {
         voltarCteRef.current = false;
-        navigate({ to: "/fiscal/cte" } as any);
+        const chaves = gerarChavesRef.current;
+        gerarChavesRef.current = [];
+        navigate(
+          chaves.length > 0
+            ? ({ to: "/fiscal/cte", search: { gerar: chaves.join(",") } } as any)
+            : ({ to: "/fiscal/cte" } as any),
+        );
       }
     },
     onError: (e: Error) => toast.error(e.message),

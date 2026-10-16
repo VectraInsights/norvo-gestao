@@ -353,6 +353,7 @@ export const Route = createFileRoute("/_authenticated/fiscal/cte")({
   head: () => ({ meta: [{ title: "CT-e — Norvo" }] }),
   validateSearch: (search: Record<string, unknown>) => ({
     fromNFe: (search.fromNFe as string) || undefined,
+    gerar: (search.gerar as string) || undefined,
   }),
 });
 
@@ -2771,6 +2772,9 @@ function CtePage() {
   // Espelho em ref: onSuccess do emitir precisa saber se está no lote
   // (state dentro do closure chega defasado no meio do loop).
   const enviandoLoteRef = useRef(false);
+  // Volta do cadastro de percurso: gera o CT-e direto com as NF-es (sem reselecionar)
+  const gerarBtnRef = useRef<HTMLButtonElement>(null);
+  const autoGerarRef = useRef(false);
   const [ordDocs, setOrdDocs] = useState<{ chave: string; dir: 1 | -1 } | null>(null);
   const fmtDataHora = (iso: any) => {
     try {
@@ -3899,6 +3903,25 @@ function CtePage() {
       setOpen(true);
     }
   }, [search.fromNFe]);
+
+  // Volta do cadastro de percurso (?gerar=chave1,chave2): reseleciona e
+  // dispara o Gerar CT-e direto (o handler revalida tudo, inclusive percurso)
+  useEffect(() => {
+    const g = (search as any).gerar as string | undefined;
+    if (!g || autoGerarRef.current || open || !mercadorias?.length) return;
+    const chaves = String(g)
+      .split(",")
+      .map((c) => c.trim())
+      .filter((c) => mercadorias.some((m: any) => m.chave === c));
+    if (chaves.length === 0) return;
+    autoGerarRef.current = true;
+    setSelecionadas(new Set(chaves));
+    navigate({ to: "/fiscal/cte", search: {}, replace: true } as any);
+    requestAnimationFrame(() => {
+      gerarBtnRef.current?.click();
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [(search as any).gerar, (mercadorias || []).length, open]);
 
   const excluirRascunho = async (doc: CteDoc) => {
     if (!empresa) return;
@@ -6834,6 +6857,7 @@ function CtePage() {
                       <Copy className="mr-1 h-3 w-3" /> Mesmo percurso
                     </Button>
                     <Button
+                      ref={gerarBtnRef}
                       variant="outline"
                       size="sm"
                       disabled={selecionadas.size === 0}
@@ -6876,6 +6900,7 @@ function CtePage() {
                                 tomaCnpj: String(p0.tomadorCnpj || "").replace(/\D/g, ""),
                                 tomaNome: p0.tomador || "",
                                 returnTo: "/fiscal/cte",
+                                chaves: sel.map((m) => m.chave),
                               }),
                             );
                           } catch {}
