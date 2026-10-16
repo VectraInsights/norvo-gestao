@@ -6163,6 +6163,13 @@ pm run build OK.
   segue destacado na lista.
 - tsc sem erros novos; `npm run build` OK.
 
+## Volta suave ao CT-e sem toasts (16/10)
+
+- `?gerar=` agora abre com veu de loading ate o dialogo (sem flash da
+  selecao); toasts "Percurso salvo"/"ja cadastrado" suprimidos no fluxo
+  automatico (erros reais continuam com toast).
+- tsc sem erros novos; `npm run build` OK.
+
 ## StatCard + errorComponent unicos (16/10)
 
 - Item 10: novo `src/components/erp/stat-card.tsx` (variants primary/secondary +

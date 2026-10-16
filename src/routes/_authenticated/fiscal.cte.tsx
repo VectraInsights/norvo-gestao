@@ -6429,6 +6429,11 @@ function CtePage() {
   };
   return (
     <div className="px-2 pb-2 pt-1 h-[calc(100dvh-88px)] sm:h-[calc(100dvh-104px)] lg:h-[calc(100dvh-120px)] min-h-[500px] flex flex-col gap-3">
+      {!!(search as any).gerar && !open && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-background">
+          <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+        </div>
+      )}
       <div className="border-l-4 border-primary pl-4 sm:pl-5 py-1 shrink-0">
         <h1 className="text-display text-2xl leading-tight tracking-tight md:text-3xl">CT-e</h1>
       </div>

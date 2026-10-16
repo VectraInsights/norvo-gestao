@@ -810,7 +810,8 @@ function PercursosPage() {
       ? pre.chaves.map((c: any) => String(c)).filter(Boolean)
       : [];
     if (existe) {
-      toast.success("Percurso já cadastrado — de volta ao CT-e");
+      const chavesJa = Array.isArray(pre.chaves) ? pre.chaves.map((c: any) => String(c)).filter(Boolean) : [];
+      if (!chavesJa.length) toast.success("Percurso já cadastrado — de volta ao CT-e");
       setChegadaCte(false);
       if (voltarCteRef.current) {
         voltarCteRef.current = false;
@@ -1283,7 +1284,9 @@ function PercursosPage() {
       qc.invalidateQueries({ queryKey: ["contatos-cte", empresa.id] });
     },
     onSuccess: () => {
-      toast.success("Percurso salvo");
+      const chavesAuto = voltarCteRef.current ? gerarChavesRef.current : [];
+      // Volta automatica p/ emitir: sem toast (o dialogo de emissao abre direto)
+      if (!voltarCteRef.current || chavesAuto.length === 0) toast.success("Percurso salvo");
       setEditing(null);
       qc.invalidateQueries({ queryKey: ["cte-percursos", empresa?.id] });
       if (voltarCteRef.current) {
