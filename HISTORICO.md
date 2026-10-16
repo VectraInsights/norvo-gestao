@@ -6171,3 +6171,11 @@ pm run build OK.
   inline + FluxoError/FiscalError migrados (titulos por pagina preservados;
   fiscal mantem reset da rota).
 - tsc sem erros novos; `npm run build` OK.
+
+## errorComponent nas telas restantes (16/10)
+
+- `RouteErrorState` adicionado as 12 rotas que nao tinham: configuracoes
+  (auditoria, empresas, usuarios, index), fiscal (configuracoes, contador,
+  cte, mdf, notas, percursos, recebidas, relatorios). Redirecionamentos
+  tambem cobertos.
+- tsc sem erros novos; `npm run build` OK.

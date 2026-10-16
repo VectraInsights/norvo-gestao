@@ -26,10 +26,13 @@ import { toast } from "sonner";
 import { getSelectedEmpresaId, setSelectedEmpresaId } from "@/hooks/use-empresa";
 import { maskDoc } from "@/lib/format";
 
+import { RouteErrorState } from "@/components/erp/route-error-state";
+
 export const Route = createFileRoute("/_authenticated/configuracoes/empresas")({
   beforeLoad: () => {
     throw redirect({ to: "/configuracoes", search: { secao: "empresas" } });
   },
+  errorComponent: RouteErrorState,
 });
 
 const emptyForm = {

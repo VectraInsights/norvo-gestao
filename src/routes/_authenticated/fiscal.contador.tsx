@@ -17,8 +17,11 @@ import { toast } from "sonner";
 import { dateBR } from "@/lib/format";
 import { StatusBadge } from "@/components/erp/status-badge";
 
+import { RouteErrorState } from "@/components/erp/route-error-state";
+
 export const Route = createFileRoute("/_authenticated/fiscal/contador")({
   component: PainelContador,
+  errorComponent: RouteErrorState,
 });
 
 interface LogEnvio {

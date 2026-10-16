@@ -26,8 +26,11 @@ import { DateInput } from "@/components/erp/date-input";
 import { StatusBadge } from "@/components/erp/status-badge";
 import { Textarea } from "@/components/ui/textarea";
 
+import { RouteErrorState } from "@/components/erp/route-error-state";
+
 export const Route = createFileRoute("/_authenticated/fiscal/mdf")({
   component: MdfPage,
+  errorComponent: RouteErrorState,
   head: () => ({ meta: [{ title: "MDF-e — Norvo" }] }),
 });
 

@@ -17,7 +17,9 @@ import { supabase } from "@/integrations/supabase/client";
 import { MODULOS } from "@/lib/permissoes";
 import { useState } from "react";
 
-export const Route = createFileRoute("/_authenticated/configuracoes/auditoria")({ component: AuditoriaPage });
+import { RouteErrorState } from "@/components/erp/route-error-state";
+
+export const Route = createFileRoute("/_authenticated/configuracoes/auditoria")({ component: AuditoriaPage, errorComponent: RouteErrorState });
 
 type Evento = {
   id: string;

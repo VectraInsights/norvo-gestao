@@ -52,10 +52,13 @@ import { criarUsuarioEmpresaFn, resetarSenhaUsuarioFn } from "@/lib/usuarios-api
 import { MODULOS } from "@/lib/permissoes";
 import { toast } from "sonner";
 
+import { RouteErrorState } from "@/components/erp/route-error-state";
+
 export const Route = createFileRoute("/_authenticated/configuracoes/usuarios")({
   beforeLoad: () => {
     throw redirect({ to: "/configuracoes", search: { secao: "usuarios" } });
   },
+  errorComponent: RouteErrorState,
 });
 
 type MembroRow = {

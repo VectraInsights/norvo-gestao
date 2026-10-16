@@ -20,8 +20,11 @@ import { supabase } from "@/integrations/supabase/client";
 import { useQuery } from "@tanstack/react-query";
 import { useEmpresaAtual } from "@/hooks/use-empresa";
 
+import { RouteErrorState } from "@/components/erp/route-error-state";
+
 export const Route = createFileRoute("/_authenticated/fiscal/relatorios")({
   component: RelatoriosFiscais,
+  errorComponent: RouteErrorState,
 });
 
 const MESES = ["Jan","Fev","Mar","Abr","Mai","Jun","Jul","Ago","Set","Out","Nov","Dez"];

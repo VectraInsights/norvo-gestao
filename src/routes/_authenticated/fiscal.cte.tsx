@@ -335,8 +335,11 @@ function PreviewDacte({
   );
 }
 
+import { RouteErrorState } from "@/components/erp/route-error-state";
+
 export const Route = createFileRoute("/_authenticated/fiscal/cte")({
   component: CtePage,
+  errorComponent: RouteErrorState,
   head: () => ({ meta: [{ title: "CT-e — Norvo" }] }),
   validateSearch: (search: Record<string, unknown>) => ({
     fromNFe: (search.fromNFe as string) || undefined,

@@ -25,10 +25,13 @@ import { toast } from "sonner";
 import { dateBR } from "@/lib/format";
 import forge from "node-forge";
 
+import { RouteErrorState } from "@/components/erp/route-error-state";
+
 export const Route = createFileRoute("/_authenticated/fiscal/configuracoes")({
   beforeLoad: () => {
     throw redirect({ to: "/configuracoes", search: { secao: "fiscais" } });
   },
+  errorComponent: RouteErrorState,
 });
 
 interface NfeConfig {

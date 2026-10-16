@@ -26,8 +26,11 @@ import { usePermissoes } from "@/hooks/use-permissoes";
 import { lazy, Suspense, useEffect, useState } from "react";
 import { toast } from "sonner";
 
+import { RouteErrorState } from "@/components/erp/route-error-state";
+
 export const Route = createFileRoute("/_authenticated/configuracoes/")({
   component: Configuracoes,
+  errorComponent: RouteErrorState,
   validateSearch: (search: Record<string, unknown>): { secao?: string } => ({
     secao: (search.secao as string) || undefined,
   }),

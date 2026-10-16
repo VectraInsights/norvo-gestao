@@ -56,8 +56,11 @@ import { SearchField } from "@/components/erp/search-field";
 import { TIPOS_CARGA_ANTT } from "@/lib/piso-antt";
 import { CFOPS_CTE } from "@/lib/cfops-transporte";
 
+import { RouteErrorState } from "@/components/erp/route-error-state";
+
 export const Route = createFileRoute("/_authenticated/fiscal/percursos")({
   component: PercursosPage,
+  errorComponent: RouteErrorState,
   head: () => ({ meta: [{ title: "Percursos — Norvo" }] }),
 });
 

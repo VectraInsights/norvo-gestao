@@ -36,8 +36,11 @@ import { ptBR } from "date-fns/locale";
 import { gerarDanfePdf, DANFE_REV, type DanfeData } from "@/lib/danfe-pdf";
 import { PdfViewer } from "@/components/erp/pdf-viewer";
 
+import { RouteErrorState } from "@/components/erp/route-error-state";
+
 export const Route = createFileRoute("/_authenticated/fiscal/recebidas")({
   component: NotasRecebidas,
+  errorComponent: RouteErrorState,
 });
 
 interface NotaRecebida {
