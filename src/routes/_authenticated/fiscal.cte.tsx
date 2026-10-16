@@ -113,6 +113,16 @@ function formatarCnpjPercurso(value: unknown) {
   return digits.replace(/(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})/, "$1.$2.$3/$4-$5");
 }
 
+// CSOSN validos p/ emitente do Simples/MEI (mesma lista da validacao de emissao)
+const CSOSN_SIMPLES = ["101", "102", "103", "201", "202", "203", "300", "400", "500", "900"];
+const ehSimplesMei = (regime: unknown) => /^(simples|mei)$/i.test(String(regime || "simples"));
+// Percurso/XML podem trazer CST do regime normal ("00"); no Simples cai p/ 102
+const normalizaCst = (v: unknown, simples: boolean) => {
+  const s = String(v ?? "").padStart(3, "0");
+  if (simples) return CSOSN_SIMPLES.includes(s) ? String(v) : "102";
+  return String(v ?? "00");
+};
+
 // Eixos da combinação (ANTT conta cavalo + carretas): tração + reboques pela placa
 function eixosCombinacao(f: any, veics: any[]) {
   const byPlaca = (p: string) =>
@@ -4171,7 +4181,7 @@ function CtePage() {
               segResponsavel: r.seg_responsavel || f.segResponsavel,
               distanciaKm: r.distancia_km || f.distanciaKm,
               duracaoHoras: r.duracao_horas || f.duracaoHoras,
-              icmsCST: r.icms_cst || f.icmsCST,
+              icmsCST: normalizaCst(r.icms_cst || (f as any).icmsCST, ehSimplesMei(empresa?.regime_tributario)),
               icmsAliq: r.icms_aliq || f.icmsAliq,
               reducaoBase: (r.reducao_base || (f as any).reducaoBase) as string,
               creditoOutorgado: (r.credito_outorgado || (f as any).creditoOutorgado) as string,
@@ -4641,7 +4651,7 @@ function CtePage() {
         }
         if (!(parseFloat(form.vPrest) > 0)) pend.push("Valor do servico maior que zero");
         if (!String(form.icmsCST || "").trim()) pend.push("CST do ICMS");
-        if (/^(simples|mei)$/i.test(String(empresa?.regime_tributario || "simples")) && !["101", "102", "103", "201", "202", "203", "300", "400", "500", "900"].includes(String(form.icmsCST || "").padStart(3, "0"))) pend.push("CSOSN do Simples (101/102/103/201/202/203/300/400/500/900)");
+        if (ehSimplesMei(empresa?.regime_tributario) && !CSOSN_SIMPLES.includes(String(form.icmsCST || "").padStart(3, "0"))) pend.push("CSOSN do Simples (101/102/103/201/202/203/300/400/500/900)");
         if (!String(form.cfop || "").trim()) pend.push("CFOP");
         if (!String(form.icmsAliq || "").trim()) pend.push("Aliquota do ICMS");
         if ((form as any).finalidadeEmissao !== "Complemento") {
@@ -5423,7 +5433,7 @@ function CtePage() {
       segResponsavel: r.seg_responsavel || f.segResponsavel,
       distanciaKm: r.distancia_km || f.distanciaKm,
       duracaoHoras: r.duracao_horas || f.duracaoHoras,
-      icmsCST: r.icms_cst || f.icmsCST,
+      icmsCST: normalizaCst(r.icms_cst || (f as any).icmsCST, ehSimplesMei(empresa?.regime_tributario)),
       icmsAliq: r.icms_aliq || f.icmsAliq,
       reducaoBase: (r.reducao_base || (f as any).reducaoBase) as string,
       creditoOutorgado: (r.credito_outorgado || (f as any).creditoOutorgado) as string,
@@ -8782,12 +8792,27 @@ function CtePage() {
                 </div>
                 <div className="flex flex-wrap items-end gap-x-2 gap-y-2">
                   <div className="min-w-[240px] max-w-[800px] flex-1">
-                    <Label className="text-[10px] text-muted-foreground">* CST</Label>
+                    <Label className="text-[10px] text-muted-foreground">* {ehSimplesMei(empresa?.regime_tributario) ? "CSOSN" : "CST"}</Label>
                     <Select value={form.icmsCST} onValueChange={(v) => { if (/^(simples|mei)$/i.test(String(empresa?.regime_tributario || "simples"))) setForm((f: any) => ({ ...f, icmsCST: v })); }} disabled={!/^(simples|mei)$/i.test(String(empresa?.regime_tributario || "simples"))}>
                       <SelectTrigger className="h-7 text-xs">
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
+                        {ehSimplesMei(empresa?.regime_tributario) ? (
+                          <>
+                        <SelectItem value="101">101 — SN com permissão de crédito</SelectItem>
+                        <SelectItem value="102">102 — SN sem permissão de crédito</SelectItem>
+                        <SelectItem value="103">103 — SN isenção para faixa de receita</SelectItem>
+                        <SelectItem value="201">201 — SN com ST e permissão de crédito</SelectItem>
+                        <SelectItem value="202">202 — SN com ST sem permissão de crédito</SelectItem>
+                        <SelectItem value="203">203 — SN isenção com ST para faixa de receita</SelectItem>
+                        <SelectItem value="300">300 — SN imune</SelectItem>
+                        <SelectItem value="400">400 — SN não tributada</SelectItem>
+                        <SelectItem value="500">500 — SN com ST já recolhido</SelectItem>
+                        <SelectItem value="900">900 — SN outros</SelectItem>
+                          </>
+                        ) : (
+                          <>
                         <SelectItem value="00">00 — Tributada integralmente</SelectItem>
                         <SelectItem value="10">
                           10 — Tributada e com cobrança do ICMS por substituição tributária
@@ -8809,16 +8834,8 @@ function CtePage() {
                           tributária
                         </SelectItem>
                         <SelectItem value="90">90 — Outras</SelectItem>
-                        <SelectItem value="101">101 — SN com permissão de crédito</SelectItem>
-                        <SelectItem value="102">102 — SN sem permissão de crédito</SelectItem>
-                        <SelectItem value="103">103 — SN isenção para faixa de receita</SelectItem>
-                        <SelectItem value="201">201 — SN com ST e permissão de crédito</SelectItem>
-                        <SelectItem value="202">202 — SN com ST sem permissão de crédito</SelectItem>
-                        <SelectItem value="203">203 — SN isenção com ST para faixa de receita</SelectItem>
-                        <SelectItem value="300">300 — SN imune</SelectItem>
-                        <SelectItem value="400">400 — SN não tributada</SelectItem>
-                        <SelectItem value="500">500 — SN com ST já recolhido</SelectItem>
-                        <SelectItem value="900">900 — SN outros</SelectItem>
+                          </>
+                        )}
                       </SelectContent>
                     </Select>
                   </div>

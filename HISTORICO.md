@@ -6179,3 +6179,11 @@ pm run build OK.
   cte, mdf, notas, percursos, recebidas, relatorios). Redirecionamentos
   tambem cobertos.
 - tsc sem erros novos; `npm run build` OK.
+
+## CSOSN automatico no CT-e p/ Simples (16/10)
+
+- Form do CT-e: percurso/XML com CST do regime normal ("00") cai p/ "102"
+  quando o emitente e Simples/MEI (`normalizaCst` + `CSOSN_SIMPLES`);
+  validacao reaproveita a mesma lista. Select mostra so CSOSNs no Simples
+  (rotulo "* CSOSN") e so CSTs no regime normal.
+- tsc sem erros novos; `npm run build` OK.
