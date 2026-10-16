@@ -1297,7 +1297,11 @@ function PercursosPage() {
         );
       }
     },
-    onError: (e: Error) => toast.error(e.message),
+    onError: (e: Error) => {
+      // Falha de validacao (ex.: sem seguradora): derruba o veu p/ corrigir
+      setSaindoCte(false);
+      toast.error(e.message);
+    },
   });
 
   // Fecha o editor voltando ao CT-e em andamento (lápis), se for o caso

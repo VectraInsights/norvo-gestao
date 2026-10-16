@@ -6215,6 +6215,13 @@ pm run build OK.
 - Percurso agora exige Seguradora (`Pendencias: Seguradora`).
 - tsc sem erros novos; `npm run build` OK.
 
+## Veu do percurso nao trava mais no erro (16/10)
+
+- `salvarPercurso` ligava o `saindoCte` antes do mutate e o `onError` nao
+  desligava: qualquer pendencia (ex.: seguradora) deixava a tela no spinner
+  eterno. Agora o erro derruba o veu e volta ao formulario p/ corrigir.
+- tsc sem erros novos; `npm run build` OK.
+
 ## NF-es em ordem crescente no CT-e (16/10)
 
 - Tabela de NF-es do dialogo (aba Tributacao e Carga) agora ordena por nNF
