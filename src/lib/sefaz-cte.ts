@@ -154,7 +154,8 @@ export function formUfsDoXml(xml: string, form: any): any {
   return f;
 }
 
-// CSOSN do Simples Nacional (CRT 1 e MEI 4): o <ICMS> vira <ICMSSN> com CST de 3 dígitos.
+// CSOSN do Simples Nacional (CRT 1 e MEI 4): o <ICMS> vira <ICMSSN> com CST 90 + indSN 1
+// (XSD oficial 4.00: ICMSSN so aceita CST=90 e indSN=1; nao existe CSOSN no CT-e).
 const CSOSN_SN = ["101", "102", "103", "201", "202", "203", "300", "400", "500", "900"];
 
 // RTC fase 2 (atrás de flag por empresa em input.rtc.fase2).
@@ -323,7 +324,7 @@ export function buildCteXml(input: CteInputCompleto): { xml: string; chave: stri
   if (crt === "1" || crt === "4") {
     const csosn = String(icms.CST || "").padStart(3, "0");
     if (!CSOSN_SN.includes(csosn)) throw new Error(`CRT ${crt} (Simples/MEI) exige CSOSN (101/102/103/201/202/203/300/400/500/900), recebido: ${icms.CST || "vazio"}`);
-    impXml = `<imp><ICMS><ICMSSN><CST>${csosn}</CST></ICMSSN></ICMS></imp>`;
+    impXml = `<imp><ICMS><ICMSSN><CST>90</CST><indSN>1</indSN></ICMSSN></ICMS></imp>`;
   }
   else if (cst === "00") impXml = `<imp><ICMS><ICMS00><CST>00</CST><vBC>${vBC}</vBC><pICMS>${pICMS}</pICMS><vICMS>${vICMS}</vICMS></ICMS00></ICMS></imp>`;
   else if (cst === "20") impXml = `<imp><ICMS><ICMS20><CST>20</CST><pRedBC>0.00</pRedBC><vBC>${vBC}</vBC><pICMS>${pICMS}</pICMS><vICMS>${vICMS}</vICMS></ICMS20></ICMS></imp>`;
@@ -578,7 +579,7 @@ export function buildCteNormalXml(input: CteInputCompleto): { xml: string; chave
   if (crt === "1" || crt === "4") {
     const csosn = String(icms.CST || "").padStart(3, "0");
     if (!CSOSN_SN.includes(csosn)) throw new Error(`CRT ${crt} (Simples/MEI) exige CSOSN (101/102/103/201/202/203/300/400/500/900), recebido: ${icms.CST || "vazio"}`);
-    impXml = `<imp><ICMS><ICMSSN><CST>${csosn}</CST></ICMSSN></ICMS></imp>`;
+    impXml = `<imp><ICMS><ICMSSN><CST>90</CST><indSN>1</indSN></ICMSSN></ICMS></imp>`;
   }
   else if (cst === "00") impXml = `<imp><ICMS><ICMS00><CST>00</CST><vBC>${vBC}</vBC><pICMS>${pICMS}</pICMS><vICMS>${vICMS}</vICMS></ICMS00></ICMS></imp>`;
   else if (cst === "20") impXml = `<imp><ICMS><ICMS20><CST>20</CST><pRedBC>0.00</pRedBC><vBC>${vBC}</vBC><pICMS>${pICMS}</pICMS><vICMS>${vICMS}</vICMS></ICMS20></ICMS></imp>`;

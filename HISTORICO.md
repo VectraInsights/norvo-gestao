@@ -6187,3 +6187,13 @@ pm run build OK.
   validacao reaproveita a mesma lista. Select mostra so CSOSNs no Simples
   (rotulo "* CSOSN") e so CSTs no regime normal.
 - tsc sem erros novos; `npm run build` OK.
+
+## ICMSSN 90+indSN no CT-e do Simples (16/10)
+
+- Rejeicao 225 "Falha no Schema": o builder emitia `<ICMSSN><CST>102</CST>`
+  (modelo da NF-e); o XSD oficial 4.00 (base e RTC) so aceita
+  `<ICMSSN><CST>90</CST><indSN>1</indSN></ICMSSN>` — sem CSOSN no CT-e.
+  `sefaz-cte.ts` (normal e simp) agora mapeia qualquer CSOSN valido p/ 90/1;
+  teste atualizado; XML normal+simp validado contra o XSD oficial RTC
+  (libxmljs2; so falta a Signature, aplicada depois na assinatura).
+- 27/27 testes; tsc sem erros novos; `npm run build` OK.

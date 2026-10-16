@@ -263,7 +263,7 @@ describe("<ICMSSN> no Simples Nacional (CRT 1/4)", () => {
     const xmlS = buildCteXml(baseCte({ modelo: "simp", ...sn }) as any).xml;
 
     for (const xml of [xmlN, xmlS]) {
-      expect(xml).toContain("<ICMSSN><CST>102</CST></ICMSSN>");
+      expect(xml).toContain("<ICMSSN><CST>90</CST><indSN>1</indSN></ICMSSN>");
       expect(xml).not.toContain("<ICMS00>");
     }
   });
