@@ -2,6 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { PageHeader } from "@/components/erp/page-header";
 import { EmptyState } from "@/components/erp/empty-state";
 import { PrimaryButton } from "@/components/erp/primary-button";
+import { Pagination } from "@/components/erp/pagination";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { MoneyInput } from "@/components/erp/money-input";
@@ -38,8 +39,6 @@ import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import {
-  ChevronLeft,
-  ChevronRight,
   Loader2,
   Plus,
   TrendingUp,
@@ -1118,52 +1117,15 @@ export function LancamentosPage({ tipo }: { tipo: "receber" | "pagar" }) {
               })}
             </TableBody>
           </Table>
-          <div className="flex flex-wrap items-center justify-between gap-2 border-t border-border/60 px-4 py-3 text-sm text-muted-foreground">
-            <div className="flex items-center gap-2.5">
-              <span className="text-tabular">
-                Mostrando {(paginaAtual - 1) * pageSize + 1}–
-                {Math.min(paginaAtual * pageSize, filtrados.length)} de {filtrados.length}
-              </span>
-              <Select
-                value={String(pageSize)}
-                onValueChange={(v) => { setPageSize(Number(v)); setPagina(1); }}
-              >
-                <SelectTrigger className="h-8 w-[88px] rounded-lg text-xs shadow-sm"><SelectValue /></SelectTrigger>
-                <SelectContent>
-                  {["10", "25", "50", "100"].map((n) => (
-                    <SelectItem key={n} value={n}>{n} / pág.</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="flex items-center gap-1.5">
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                aria-label="Página anterior"
-                disabled={paginaAtual === 1}
-                onClick={() => setPagina((value) => Math.max(1, value - 1))}
-                className="h-8 w-8 rounded-lg p-0 shadow-sm"
-              >
-                <ChevronLeft className="h-4 w-4" />
-              </Button>
-              <span className="px-2 text-xs text-tabular">
-                Página {paginaAtual} de {totalPaginas}
-              </span>
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                aria-label="Próxima página"
-                disabled={paginaAtual === totalPaginas}
-                onClick={() => setPagina((value) => Math.min(totalPaginas, value + 1))}
-                className="h-8 w-8 rounded-lg p-0 shadow-sm"
-              >
-                <ChevronRight className="h-4 w-4" />
-              </Button>
-            </div>
-          </div>
+          <Pagination
+            pagina={paginaAtual}
+            totalPaginas={totalPaginas}
+            total={filtrados.length}
+            pageSize={pageSize}
+            onPagina={setPagina}
+            pageSizes={[10, 25, 50, 100]}
+            onPageSize={(n) => { setPageSize(n); setPagina(1); }}
+          />
         </Card>
       )}
 

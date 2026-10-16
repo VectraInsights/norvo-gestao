@@ -5,6 +5,7 @@ import { SearchField } from "@/components/erp/search-field";
 import { AuditDialog } from "@/components/erp/audit-dialog";
 import { Button } from "@/components/ui/button";
 import { PrimaryButton } from "@/components/erp/primary-button";
+import { Pagination } from "@/components/erp/pagination";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card } from "@/components/ui/card";
@@ -57,6 +58,7 @@ function Clientes() {
   const [deleting, setDeleting] = useState<Contato | null>(null);
   const [confLote, setConfLote] = useState(false);
   const [busca, setBusca] = useState("");
+  const [pagina, setPagina] = useState(1);
   const toggleOne = (id: string) => setSelected((s) => { const n = new Set(s); n.has(id) ? n.delete(id) : n.add(id); return n; });
 
   // Delete abre a confirmação de excluir selecionados.
@@ -159,6 +161,8 @@ function Clientes() {
     });
   }, [contatos, busca]);
 
+  const pageSize = 25;
+
   // Cabeçalhos clicáveis ordenam (nome, tipo, documento, contato).
   type SortCol = "nome" | "tipo" | "documento" | "contato";
   const [sort, setSort] = useState<{ key: SortCol; dir: "asc" | "desc" }>({ key: "nome", dir: "asc" });
@@ -170,11 +174,14 @@ function Clientes() {
     arr.sort((a, b) => String(valCol(a, sort.key)).localeCompare(String(valCol(b, sort.key)), "pt-BR") * m);
     return arr;
   }, [filtrados, sort]);
+  const totalPaginas = Math.max(1, Math.ceil(ordenados.length / pageSize));
+  const paginaAtual = Math.min(pagina, totalPaginas);
+  const visiveis = ordenados.slice((paginaAtual - 1) * pageSize, paginaAtual * pageSize);
   const SortTh = ({ k, children, className }: { k: SortCol; children: ReactNode; className?: string }) => (
     <TableHead className={className}>
       <button
         type="button"
-        onClick={() => setSort((s) => (s.key === k ? { key: k, dir: s.dir === "asc" ? "desc" : "asc" } : { key: k, dir: "asc" }))}
+        onClick={() => { setSort((s) => (s.key === k ? { key: k, dir: s.dir === "asc" ? "desc" : "asc" } : { key: k, dir: "asc" })); setPagina(1); }}
         className="inline-flex items-center gap-1 font-medium uppercase hover:text-foreground"
       >
         {children}
@@ -343,7 +350,7 @@ function Clientes() {
     <>
       <PageHeader eyebrow="Vendas & CRM" title="Clientes" description="Cadastro de clientes — vendas e documentos fiscais." />
       <div className="mb-3 flex flex-col gap-2 sm:flex-row sm:items-center">
-        <SearchField value={busca} onChange={(v) => setBusca(v)} />
+        <SearchField value={busca} onChange={(v) => { setBusca(v); setPagina(1); }} />
         <div className="flex items-center gap-2">
           <Button variant="ghost" size="sm" onClick={() => setTrilhaOpen(true)} className="h-9 rounded-xl px-4 active:scale-95">
             Auditoria
@@ -443,7 +450,7 @@ function Clientes() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {ordenados.map((c) => (
+              {visiveis.map((c) => (
                 <TableRow key={c.id} data-state={selected.has(c.id) ? "selected" : undefined}>
                   <TableCell>
                     <Checkbox checked={selected.has(c.id)} onCheckedChange={() => toggleOne(c.id)} aria-label={`Selecionar ${c.nome}`} />
@@ -480,6 +487,13 @@ function Clientes() {
               ))}
             </TableBody>
           </Table>
+          <Pagination
+            pagina={paginaAtual}
+            totalPaginas={totalPaginas}
+            total={ordenados.length}
+            pageSize={pageSize}
+            onPagina={setPagina}
+          />
         </Card>
       )}
 

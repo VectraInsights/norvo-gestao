@@ -4,6 +4,7 @@ import { EmptyState } from "@/components/erp/empty-state";
 import { SearchField } from "@/components/erp/search-field";
 import { StatusBadge } from "@/components/erp/status-badge";
 import { AuditDialog } from "@/components/erp/audit-dialog";
+import { Pagination } from "@/components/erp/pagination";
 import { Button } from "@/components/ui/button";
 import { PrimaryButton } from "@/components/erp/primary-button";
 import { Input } from "@/components/ui/input";
@@ -38,8 +39,6 @@ import {
 } from "@/components/ui/select";
 import {
   AlertTriangle,
-  ChevronLeft,
-  ChevronRight,
   Package,
   Plus,
   Pencil,
@@ -635,37 +634,13 @@ function Produtos() {
               })}
             </TableBody>
           </Table>
-          <div className="flex items-center justify-between border-t px-4 py-3 text-sm text-muted-foreground">
-            <span>
-              Mostrando {(paginaAtual - 1) * pageSize + 1}–
-              {Math.min(paginaAtual * pageSize, filtrados.length)} de {filtrados.length}
-            </span>
-            <div className="flex items-center gap-1">
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                aria-label="Página anterior"
-                disabled={paginaAtual === 1}
-                onClick={() => setPagina((value) => Math.max(1, value - 1))}
-              >
-                <ChevronLeft className="h-4 w-4" />
-              </Button>
-              <span className="px-2 text-xs">
-                Página {paginaAtual} de {totalPaginas}
-              </span>
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                aria-label="Próxima página"
-                disabled={paginaAtual === totalPaginas}
-                onClick={() => setPagina((value) => Math.min(totalPaginas, value + 1))}
-              >
-                <ChevronRight className="h-4 w-4" />
-              </Button>
-            </div>
-          </div>
+          <Pagination
+            pagina={paginaAtual}
+            totalPaginas={totalPaginas}
+            total={filtrados.length}
+            pageSize={pageSize}
+            onPagina={setPagina}
+          />
         </Card>
       )}
 

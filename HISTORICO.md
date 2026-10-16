@@ -6143,3 +6143,13 @@ pm run build OK.
   contas, emitidas, recebidas, clientes). Queries/registros intactos; botao da
   recebidas padronizado p/ ghost h-9.
 - tsc sem erros novos; `npm run build` OK.
+
+## Paginacao unica + clientes paginados (15/10)
+
+- Item 4: novo `src/components/erp/pagination.tsx` (Mostrando X–Y de Z,
+  prev/prox, seletor opcional 10/25/50/100, summary custom); 11 footers
+  migrados (produtos, fornecedores, emitidas, veiculos, multas, viagens,
+  projetos, colaboradores, pedidos, receber com seletor, cadastro com
+  summary de selecionados). Vendas/clientes ganhou paginacao (25/pag,
+  reseta em busca/ordenacao; select-all segue sobre filtrados).
+- tsc sem erros novos; `npm run build` OK.

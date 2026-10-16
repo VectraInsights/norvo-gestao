@@ -3,13 +3,14 @@ import { PageHeader } from "@/components/erp/page-header";
 import { EmptyState } from "@/components/erp/empty-state";
 import { Button } from "@/components/ui/button";
 import { PrimaryButton } from "@/components/erp/primary-button";
+import { Pagination } from "@/components/erp/pagination";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
-import { Loader2, Plus, Search, Trash2, Users, Pencil, ChevronLeft, ChevronRight } from "lucide-react";
+import { Loader2, Plus, Search, Trash2, Users, Pencil } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
@@ -453,34 +454,20 @@ function Cadastro() {
               ))}
             </TableBody>
           </Table>
-          <div className="flex flex-wrap items-center justify-between gap-2 border-t border-border/60 px-4 py-2.5 text-xs text-muted-foreground">
-            <span>
-              {filtrados.length} contato(s){selecionados.size > 0 && ` · ${selecionados.size} selecionado(s)`}
-            </span>
-            <div className="flex items-center gap-1.5">
-              <Select value={String(pageSize)} onValueChange={(v) => { setPageSize(Number(v)); setPagina(1); }}>
-                <SelectTrigger className="h-8 w-28 rounded-lg text-xs">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {[10, 20, 50, 100].map((n) => (
-                    <SelectItem key={n} value={String(n)}>
-                      {n} / pág.
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              <span className="text-tabular">
-                Página {paginaAtual} de {totalPaginas}
+          <Pagination
+            pagina={paginaAtual}
+            totalPaginas={totalPaginas}
+            total={filtrados.length}
+            pageSize={pageSize}
+            onPagina={setPagina}
+            pageSizes={[10, 20, 50, 100]}
+            onPageSize={(n) => { setPageSize(n); setPagina(1); }}
+            summary={
+              <span>
+                {filtrados.length} contato(s){selecionados.size > 0 && ` · ${selecionados.size} selecionado(s)`}
               </span>
-              <Button size="sm" variant="ghost" className="h-8 w-8 rounded-lg p-0" disabled={paginaAtual <= 1} onClick={() => setPagina(paginaAtual - 1)}>
-                <ChevronLeft className="h-4 w-4" />
-              </Button>
-              <Button size="sm" variant="ghost" className="h-8 w-8 rounded-lg p-0" disabled={paginaAtual >= totalPaginas} onClick={() => setPagina(paginaAtual + 1)}>
-                <ChevronRight className="h-4 w-4" />
-              </Button>
-            </div>
-          </div>
+            }
+          />
         </Card>
       )}
 
