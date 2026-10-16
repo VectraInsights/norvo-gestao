@@ -8673,9 +8673,16 @@ function CtePage() {
                         </TableRow>
                       ) : (
                         (selecionadas.size > 0
-                          ? mercadorias.filter((m) => selecionadas.has(m.chave))
-                          : mercadorias
-                        ).map((m) => (
+                          ? [...mercadorias.filter((m) => selecionadas.has(m.chave))]
+                          : [...mercadorias]
+                        )
+                          .sort((a, b) => {
+                            const na = parseInt(String(a.nNF || ""), 10);
+                            const nb = parseInt(String(b.nNF || ""), 10);
+                            if (!isNaN(na) && !isNaN(nb) && na !== nb) return na - nb;
+                            return String(a.nNF || "").localeCompare(String(b.nNF || ""), "pt-BR", { numeric: true });
+                          })
+                          .map((m) => (
                           <TableRow
                             key={m.chave}
                             className="text-[11px]"

@@ -6205,3 +6205,9 @@ pm run build OK.
   emite sem seg (dados seguem salvos no banco) e compl apos o `</ide>`.
   Fixtures rica+simplificadas revalidadas contra o XSD RTC (so falta Signature).
 - 26/26 testes; tsc sem erros novos; `npm run build` OK.
+
+## NF-es em ordem crescente no CT-e (16/10)
+
+- Tabela de NF-es do dialogo (aba Tributacao e Carga) agora ordena por nNF
+  crescente (numerico; "AVULSA" por ultimo); vale p/ lista cheia e filtrada.
+- tsc sem erros novos; `npm run build` OK.
