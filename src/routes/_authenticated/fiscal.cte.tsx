@@ -2,7 +2,9 @@ import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { EmptyState } from "@/components/erp/empty-state";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { PageHeader } from "@/components/erp/page-header";
 import { PrimaryButton } from "@/components/erp/primary-button";
+import { StatCard } from "@/components/erp/stat-card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
@@ -78,6 +80,10 @@ import {
   Printer,
   Repeat,
   Copy,
+  Clock,
+  CheckCircle2,
+  AlertTriangle,
+  CreditCard,
 } from "lucide-react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -6434,8 +6440,34 @@ function CtePage() {
           <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
         </div>
       )}
-      <div className="border-l-4 border-primary pl-4 sm:pl-5 py-1 shrink-0">
-        <h1 className="text-display text-2xl leading-tight tracking-tight md:text-3xl">CT-e</h1>
+      <PageHeader
+        eyebrow="Fiscal"
+        title="CT-e"
+        description="Conhecimento de Transporte Eletrônico. Emissão, vinculação de NF-e, rastreio e CIOT."
+        actions={
+          <div className="flex items-center gap-2">
+            <PrimaryButton
+              size="sm"
+              onClick={() => {
+                setPercPickQuery("");
+                setPercPickSel("");
+                setPercPickOpen(true);
+              }}
+            >
+              <Plus className="mr-1 h-3 w-3" /> Novo CT-e
+            </PrimaryButton>
+          </div>
+        }
+      />
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+        <StatCard icon={Clock} label="Rascunhos" value={String(docsFiltrados.rascunhos.length)} />
+        <StatCard icon={CheckCircle2} label="Autorizados" value={String(docsFiltrados.autorizados.length)} tone="text-success" />
+        <StatCard icon={AlertTriangle} label="Rejeitados" value={String(docsFiltrados.rejeitados.length)} tone="text-destructive" />
+        <StatCard
+          icon={CreditCard}
+          label="Valor total (autorizados)"
+          value={brl(docsFiltrados.autorizados.reduce((s, d) => s + (Number(d.valor_servico) || 0), 0))}
+        />
       </div>
 
       {isLoading ? (
