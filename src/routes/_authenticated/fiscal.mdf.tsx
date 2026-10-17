@@ -2,7 +2,6 @@ import { createFileRoute } from "@tanstack/react-router";
 import { PageHeader } from "@/components/erp/page-header";
 import { SearchField } from "@/components/erp/search-field";
 import { PrimaryButton } from "@/components/erp/primary-button";
-import { StatCard } from "@/components/erp/stat-card";
 import { EmptyState } from "@/components/erp/empty-state";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -13,7 +12,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Route as RoadIcon, Plus, FileText, Search, Trash2, Filter, Calendar, CheckCircle2, XCircle, AlertTriangle, RefreshCw, Send, FileDown, Truck, Users, RotateCcw, Pencil, Eye, Download, Clock, CreditCard } from "lucide-react";
+import { Route as RoadIcon, Plus, FileText, Search, Trash2, Filter, Calendar, CheckCircle2, XCircle, AlertTriangle, RefreshCw, Send, FileDown, Truck, Users, RotateCcw, Pencil, Eye, Download } from "lucide-react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useEmpresaAtual } from "@/hooks/use-empresa";
@@ -500,16 +499,6 @@ function MdfPage() {
         title="MDF-e"
         description="Manifesto Eletrônico de Documentos Fiscais (modelo 58). Emissão, vinculação de CT-e e encerramento."
       />
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-        <StatCard icon={Clock} label="Rascunhos" value={String(statusCounts.rascunho)} />
-        <StatCard icon={CheckCircle2} label="Autorizados" value={String(statusCounts.autorizado)} tone="text-success" />
-        <StatCard icon={AlertTriangle} label="Rejeitados" value={String(statusCounts.rejeitado)} tone="text-destructive" />
-        <StatCard
-          icon={CreditCard}
-          label="Valor total da carga"
-          value={brl(docsFiltrados.reduce((s, d) => s + (Number(d.valor_total_carga) || 0), 0))}
-        />
-      </div>
       <div className="mb-4 flex flex-col gap-3 sm:mb-6 sm:flex-row sm:items-center">
         <SearchField value={busca} onChange={setBusca} placeholder="Buscar por número, chave, UF ou status..." />
         <div className="flex items-center gap-2">
