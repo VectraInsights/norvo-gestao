@@ -3,6 +3,7 @@ import { EmptyState } from "@/components/erp/empty-state";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { PrimaryButton } from "@/components/erp/primary-button";
+import { StatusBadge } from "@/components/erp/status-badge";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
@@ -5984,6 +5985,7 @@ function CtePage() {
                   <TH k="nfs" label="Notas Fiscais" />
                   <TH k="valor" label="Valor" />
                   <TH k="responsavel" label="Responsável" />
+                  <TH k="status" label="Status" />
                   <TH k="dataEmi" label="Data Emissão" />
                   <TableHead className="text-center">Ações</TableHead>
                 </TableRow>
@@ -6082,6 +6084,9 @@ function CtePage() {
                       title={(d as any).responsavel_emissao || ""}
                     >
                       {(d as any).responsavel_emissao || "—"}
+                    </TableCell>
+                    <TableCell className="text-xs whitespace-nowrap">
+                      <StatusBadge status={d.status} />
                     </TableCell>
                     <TableCell className="text-xs whitespace-nowrap">
                       {info.dataEmi || "—"}
@@ -7490,7 +7495,7 @@ function CtePage() {
                         <TableCell className="font-mono text-xs">{o.protocolo || "—"}</TableCell>
                         <TableCell className="text-right">{brl(Number(o.valor_frete) || 0)}</TableCell>
                         <TableCell className="text-center">{Array.isArray(o.cte_ids) ? o.cte_ids.length : "—"}</TableCell>
-                        <TableCell className="text-xs">{o.status}</TableCell>
+                        <TableCell className="text-xs"><StatusBadge status={o.status} /></TableCell>
                         <TableCell className="text-xs">{String(o.created_at || "").slice(0, 10)}</TableCell>
                       </TableRow>
                     ))}

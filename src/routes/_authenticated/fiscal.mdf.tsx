@@ -605,6 +605,7 @@ function MdfPage() {
                   <TableHead>Valor</TableHead>
                   <TableHead>Peso</TableHead>
                   <TableHead>Responsável Emissão</TableHead>
+                  <TableHead className="text-center">Status</TableHead>
                   <TableHead className="text-right">Ações</TableHead>
                 </TableRow>
               </TableHeader>
@@ -642,6 +643,9 @@ function MdfPage() {
                     <TableCell>{d.valor_total_carga ? brl(d.valor_total_carga) : "—"}</TableCell>
                     <TableCell>{d.peso_total ? num(d.peso_total) : "—"}</TableCell>
                     <TableCell className="text-xs max-w-[140px] truncate" title={d.responsavel_emissao || ""}>{d.responsavel_emissao || "—"}</TableCell>
+                    <TableCell className="text-center">
+                      <StatusBadge status={d.status} className="text-[10px] px-2 py-0.5" />
+                    </TableCell>
                     <TableCell className="text-right">
                     <div className="flex gap-1 justify-end">
                       {d.status === "autorizado" && (
