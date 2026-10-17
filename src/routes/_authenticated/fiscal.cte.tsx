@@ -7850,35 +7850,6 @@ function CtePage() {
                 : "Conhecimento de Transporte Avulso"}
             </DialogTitle>
             </DialogHeader>
-            {/* Stepper de seções da emissão */}
-            <div className="shrink-0 border-b border-border/50 bg-background/50 p-4">
-              <div className="flex items-center gap-2 text-xs font-medium">
-                <div className="flex-1 flex items-center gap-2">
-                  <div className="flex h-6 w-6 items-center justify-center rounded-full border border-primary bg-primary text-primary-foreground text-[10px] font-bold shadow-sm">1</div>
-                  <span className="text-primary font-semibold">Veículo / Motorista</span>
-                </div>
-                <div className="h-0.5 w-full bg-border/50"></div>
-                <div className="flex-1 flex items-center gap-2">
-                  <div className="flex h-6 w-6 items-center justify-center rounded-full border border-border bg-background text-muted-foreground text-[10px]">2</div>
-                  <span className="text-muted-foreground">Remetente / Destinatário</span>
-                </div>
-                <div className="h-0.5 w-full bg-border/50"></div>
-                <div className="flex-1 flex items-center gap-2">
-                  <div className="flex h-6 w-6 items-center justify-center rounded-full border border-border bg-background text-muted-foreground text-[10px]">3</div>
-                  <span className="text-muted-foreground">NF-es vinculadas</span>
-                </div>
-                <div className="h-0.5 w-full bg-border/50"></div>
-                <div className="flex-1 flex items-center gap-2">
-                  <div className="flex h-6 w-6 items-center justify-center rounded-full border border-border bg-background text-muted-foreground text-[10px]">4</div>
-                  <span className="text-muted-foreground">Valores e impostos</span>
-                </div>
-                <div className="h-0.5 w-full bg-border/50"></div>
-                <div className="flex-1 flex items-center gap-2">
-                  <div className="flex h-6 w-6 items-center justify-center rounded-full border border-border bg-background text-muted-foreground text-[10px]">5</div>
-                  <span className="text-muted-foreground">Resumo + Emitir</span>
-                </div>
-              </div>
-            </div>
             {viewDoc && (
             <div
               className={`mt-2 shrink-0 rounded-xl border px-4 py-2.5 text-xs font-semibold shadow-sm ${
