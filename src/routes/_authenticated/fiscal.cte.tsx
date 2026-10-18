@@ -79,6 +79,7 @@ import {
   Printer,
   Repeat,
   Copy,
+  Lock,
 } from "lucide-react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -7637,11 +7638,11 @@ function CtePage() {
           </AlertDialogHeader>
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
             <div className="grid gap-1.5">
-              <Label className="text-[11px] text-muted-foreground">Nº CIOT</Label>
+              <Label className="text-[11px] text-foreground/80">Nº CIOT</Label>
               <Input className="h-9 rounded-xl font-mono" value={loteCiot} onChange={(e) => setLoteCiot(e.target.value.replace(/\D/g, "").slice(0, 12))} maxLength={12} />
             </div>
             <div className="grid gap-1.5">
-              <Label className="text-[11px] text-muted-foreground">Pagto. pedágio</Label>
+              <Label className="text-[11px] text-foreground/80">Pagto. pedágio</Label>
               <Select value={loteModo} onValueChange={setLoteModo}>
                 <SelectTrigger className="h-9 rounded-xl"><SelectValue /></SelectTrigger>
                 <SelectContent>
@@ -7653,7 +7654,7 @@ function CtePage() {
               </Select>
             </div>
             <div className="grid gap-1.5">
-              <Label className="text-[11px] text-muted-foreground">Operadora</Label>
+              <Label className="text-[11px] text-foreground/80">Operadora</Label>
               <Select value={loteOperadora || undefined} onValueChange={setLoteOperadora}>
                 <SelectTrigger className="h-9 rounded-xl"><SelectValue placeholder="Manter atual" /></SelectTrigger>
                 <SelectContent>
@@ -7664,11 +7665,11 @@ function CtePage() {
               </Select>
             </div>
             <div className="grid gap-1.5">
-              <Label className="text-[11px] text-muted-foreground">Identificador VPO</Label>
+              <Label className="text-[11px] text-foreground/80">Identificador VPO</Label>
               <Input className="h-9 rounded-xl font-mono" value={loteVpo} onChange={(e) => setLoteVpo(e.target.value)} />
             </div>
             <div className="grid gap-1.5">
-              <Label className="text-[11px] text-muted-foreground">Vale-pedágio (R$)</Label>
+              <Label className="text-[11px] text-foreground/80">Vale-pedágio (R$)</Label>
               <MoneyInput className="h-9" value={loteVale} onChange={setLoteVale} />
             </div>
           </div>
@@ -7913,7 +7914,7 @@ function CtePage() {
                   </div>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
                     <div>
-                      <Label className="text-[10px] text-muted-foreground">Chave de Acesso</Label>
+                      <Label className="text-[10px] text-foreground/80">Chave de Acesso</Label>
                       <Input
                         className="h-6 text-[10px] font-mono bg-transparent dark:bg-transparent"
                         value={viewDoc?.chave_acesso || "— aguardando emissão —"}
@@ -7921,7 +7922,7 @@ function CtePage() {
                       />
                     </div>
                     <div>
-                      <Label className="text-[10px] text-muted-foreground">
+                      <Label className="text-[10px] text-foreground/80">
                         Protocolo de Envio
                       </Label>
                       <Input
@@ -7931,7 +7932,7 @@ function CtePage() {
                       />
                     </div>
                     <div>
-                      <Label className="text-[10px] text-muted-foreground">Data Hora Envio</Label>
+                      <Label className="text-[10px] text-foreground/80">Data Hora Envio</Label>
                       <Input
                         className="h-6 text-[10px] bg-transparent dark:bg-transparent"
                         value={
@@ -7941,7 +7942,7 @@ function CtePage() {
                       />
                     </div>
                     <div>
-                      <Label className="text-[10px] text-muted-foreground">Motivo Envio</Label>
+                      <Label className="text-[10px] text-foreground/80">Motivo Envio</Label>
                       <Input
                         className="h-6 text-[10px] bg-transparent dark:bg-transparent"
                         value={
@@ -7955,7 +7956,7 @@ function CtePage() {
                       />
                     </div>
                     <div>
-                      <Label className="text-[10px] text-muted-foreground">
+                      <Label className="text-[10px] text-foreground/80">
                         Protocolo Cancelamento
                       </Label>
                       <Input
@@ -7965,7 +7966,7 @@ function CtePage() {
                       />
                     </div>
                     <div>
-                      <Label className="text-[10px] text-muted-foreground">
+                      <Label className="text-[10px] text-foreground/80">
                         Data Hora Cancelamento
                       </Label>
                       <Input
@@ -7975,7 +7976,7 @@ function CtePage() {
                       />
                     </div>
                     <div className="md:col-span-2">
-                      <Label className="text-[10px] text-muted-foreground">
+                      <Label className="text-[10px] text-foreground/80">
                         Motivo Cancelamento
                       </Label>
                       <Input
@@ -7990,13 +7991,17 @@ function CtePage() {
               {/* Header: Ambiente, Nº, Data, Tomador, Mod/Ser + CFOP */}
               <div className="grid grid-cols-2 md:grid-cols-[auto_auto_auto_minmax(0,1fr)_auto_auto] gap-2 border rounded p-3 bg-muted/20">
                 <div>
-                  <Label className="text-[10px] text-muted-foreground">Ambiente</Label>
-                  <div className="flex h-7 items-center rounded-md border bg-amber-50 px-2 text-[10px] font-medium text-amber-800 dark:bg-amber-950/30 dark:text-amber-200">
-                    Homologação (testes)
+                  <Label className="text-[10px] text-foreground/80">Ambiente</Label>
+                  <div className={`flex h-7 items-center rounded-md border px-2 text-[10px] font-medium ${
+                    SEFAZ_AMBIENTE === "producao"
+                      ? "border-green-200 bg-green-50 text-green-800 dark:bg-green-950/30 dark:text-green-200"
+                      : "border-amber-200 bg-amber-50 text-amber-800 dark:bg-amber-950/30 dark:text-amber-200"
+                  }`}>
+                    {SEFAZ_AMBIENTE === "producao" ? "Produção" : "Homologação (testes)"}
                   </div>
                 </div>
                 <div className="w-44">
-                  <Label className="text-[10px] text-muted-foreground">N° Conhecimento</Label>
+                  <Label className="text-[10px] text-foreground/80">N° Conhecimento</Label>
                   <Input
                     className="h-7 text-xs font-mono bg-transparent"
                     value={viewDoc?.numero ?? "— aguardando emissão —"}
@@ -8004,7 +8009,7 @@ function CtePage() {
                   />
                 </div>
                 <div className="w-[136px]">
-                  <Label className="text-[10px] text-muted-foreground">Data Emissão</Label>
+                  <Label className="text-[10px] text-foreground/80">Data Emissão</Label>
                   <DateInput
                     value={form.dataEmissao}
                     onChange={(v) => setForm({ ...form, dataEmissao: v })}
@@ -8012,7 +8017,7 @@ function CtePage() {
                   />
                 </div>
                 <div className="min-w-0">
-                  <Label className="text-[10px] text-muted-foreground">Tomador do Serviço</Label>
+                  <Label className="text-[10px] text-foreground/80">Tomador do Serviço</Label>
                   <Popover open={tomadorOpen} onOpenChange={setTomadorOpen}>
                     <PopoverTrigger asChild>
                       <Button
@@ -8074,7 +8079,7 @@ function CtePage() {
                   </Popover>
                 </div>
                 <div>
-                  <Label className="text-[10px] text-muted-foreground">Mod / Série</Label>
+                  <Label className="text-[10px] text-foreground/80">Mod / Série</Label>
                   <Input
                     className="h-7 text-xs font-mono w-[92px] text-center px-1 bg-transparent"
                     value="57 / 001"
@@ -8082,7 +8087,7 @@ function CtePage() {
                   />
                 </div>
                 <div>
-                  <Label className="text-[10px] text-muted-foreground">Percurso</Label>
+                  <Label className="text-[10px] text-foreground/80">Percurso</Label>
                   <div className="flex items-center gap-1">
                     <Input
                       className="h-7 text-xs font-mono w-[76px] text-center px-1 bg-transparent"
@@ -8131,7 +8136,7 @@ function CtePage() {
                 </div>
                 <div className="flex flex-wrap items-start gap-x-3 gap-y-2 col-span-full border-t pt-2">
                   <div className="flex-[2_1_320px] max-w-[700px] min-w-0">
-                    <Label className="text-[10px] text-muted-foreground">CFOP Saída</Label>
+                    <Label className="text-[10px] text-foreground/80">CFOP Saída</Label>
                     <Popover open={cfopOpen} onOpenChange={setCfopOpen}>
                       <PopoverTrigger asChild>
                         <Button
@@ -8201,7 +8206,7 @@ function CtePage() {
                     </Popover>
                   </div>
                   <div className="flex-[1_1_160px] min-w-0">
-                    <Label className="text-[10px] text-muted-foreground">Coleta</Label>
+                    <Label className="text-[10px] text-foreground/80">Coleta</Label>
                     <div className="flex gap-1">
                       <Input
                         readOnly
@@ -8223,7 +8228,7 @@ function CtePage() {
                     </div>
                   </div>
                   <div className="flex-[1_1_160px] min-w-0">
-                    <Label className="text-[10px] text-muted-foreground">Entrega</Label>
+                    <Label className="text-[10px] text-foreground/80">Entrega</Label>
                     <div className="flex gap-1">
                       <Input
                         readOnly
@@ -8834,7 +8839,7 @@ function CtePage() {
                 </div>
                 <div className="flex flex-wrap items-end gap-x-2 gap-y-2">
                   <div className="min-w-[240px] max-w-[800px] flex-1">
-                    <Label className="text-[10px] text-muted-foreground">* {ehSimplesMei(empresa?.regime_tributario) ? "CSOSN" : "CST"}</Label>
+                    <Label className="text-[10px] text-foreground/80">* {ehSimplesMei(empresa?.regime_tributario) ? "CSOSN" : "CST"}</Label>
                     <Select value={form.icmsCST} onValueChange={(v) => { if (/^(simples|mei)$/i.test(String(empresa?.regime_tributario || "simples"))) setForm((f: any) => ({ ...f, icmsCST: v })); }} disabled={!/^(simples|mei)$/i.test(String(empresa?.regime_tributario || "simples"))}>
                       <SelectTrigger className="h-7 text-xs">
                         <SelectValue />
@@ -8882,9 +8887,9 @@ function CtePage() {
                     </Select>
                   </div>
                   <div className="w-[136px] shrink-0">
-                    <Label className="text-[10px] text-muted-foreground">Redução de Base (%)</Label>
+                    <Label className="text-[10px] text-foreground/80">Redução de Base (%)</Label>
                     <MoneyInput
-                      className="h-7 text-xs bg-muted"
+                      className="h-7 text-xs bg-muted/50 text-muted-foreground"
                       prefix=""
                       value={(form as any).reducaoBase || "0.00"}
                       onChange={() => {}}
@@ -8892,9 +8897,9 @@ function CtePage() {
                     />
                   </div>
                   <div className="w-[136px] shrink-0">
-                    <Label className="text-[10px] text-muted-foreground">Alíquota ICMS (%)</Label>
+                    <Label className="text-[10px] text-foreground/80">Alíquota ICMS (%)</Label>
                     <MoneyInput
-                      className="h-7 text-xs bg-muted"
+                      className="h-7 text-xs bg-muted/50 text-muted-foreground"
                       prefix=""
                       value={form.icmsAliq}
                       onChange={() => {}}
@@ -8902,29 +8907,29 @@ function CtePage() {
                     />
                   </div>
                   <div className="w-[136px] shrink-0">
-                    <Label className="text-[10px] text-muted-foreground">Base Cálculo (R$)</Label>
+                    <Label className="text-[10px] text-foreground/80">Base Cálculo (R$)</Label>
                     <MoneyInput
-                      className="h-7 text-xs bg-muted"
+                      className="h-7 text-xs bg-muted/50 text-muted-foreground"
                       value={totalPrestacao(form).toFixed(2)}
                       onChange={() => {}}
                       
                     />
                   </div>
                   <div className="w-[136px] shrink-0">
-                    <Label className="text-[10px] text-muted-foreground">ICMS (R$)</Label>
+                    <Label className="text-[10px] text-foreground/80">ICMS (R$)</Label>
                     <MoneyInput
-                      className="h-7 text-xs bg-muted"
+                      className="h-7 text-xs bg-muted/50 text-muted-foreground"
                       value={form.icmsValor}
                       onChange={() => {}}
                       
                     />
                   </div>
                   <div className="w-[136px] shrink-0">
-                    <Label className="text-[10px] text-muted-foreground">
+                    <Label className="text-[10px] text-foreground/80">
                       Crédito outorgado/presumido (R$)
                     </Label>
                     <MoneyInput
-                      className="h-7 text-xs bg-muted"
+                      className="h-7 text-xs bg-muted/50 text-muted-foreground"
                       value={(form as any).creditoOutorgado || "0.00"}
                       onChange={() => {}}
                       
@@ -8933,9 +8938,9 @@ function CtePage() {
                 </div>
                 <div className="flex flex-wrap items-end gap-x-2 gap-y-1 mt-2">
                   <div className="w-[136px] shrink-0">
-                    <Label className="text-[10px] text-muted-foreground">PIS (%)</Label>
+                    <Label className="text-[10px] text-foreground/80 flex items-center gap-1">PIS (%) <Lock className="h-3 w-3 text-muted-foreground/50" /></Label>
                     <MoneyInput
-                      className="h-7 text-xs bg-muted"
+                      className="h-7 text-xs bg-muted/50 text-muted-foreground"
                       prefix=""
                       value={form.pisAliq}
                       onChange={() => {}}
@@ -8943,9 +8948,9 @@ function CtePage() {
                     />
                   </div>
                   <div className="w-[136px] shrink-0">
-                    <Label className="text-[10px] text-muted-foreground">COFINS (%)</Label>
+                    <Label className="text-[10px] text-foreground/80 flex items-center gap-1">COFINS (%) <Lock className="h-3 w-3 text-muted-foreground/50" /></Label>
                     <MoneyInput
-                      className="h-7 text-xs bg-muted"
+                      className="h-7 text-xs bg-muted/50 text-muted-foreground"
                       prefix=""
                       value={form.cofinsAliq}
                       onChange={() => {}}
@@ -8953,9 +8958,9 @@ function CtePage() {
                     />
                   </div>
                   <div className="w-[136px] shrink-0">
-                    <Label className="text-[10px] text-muted-foreground">IBS (%)</Label>
+                    <Label className="text-[10px] text-foreground/80 flex items-center gap-1">IBS (%) <Lock className="h-3 w-3 text-muted-foreground/50" /></Label>
                     <MoneyInput
-                      className="h-7 text-xs bg-muted"
+                      className="h-7 text-xs bg-muted/50 text-muted-foreground"
                       prefix=""
                       value="0.10"
                       onChange={() => {}}
@@ -8963,9 +8968,9 @@ function CtePage() {
                     />
                   </div>
                   <div className="w-[136px] shrink-0">
-                    <Label className="text-[10px] text-muted-foreground">CBS (%)</Label>
+                    <Label className="text-[10px] text-foreground/80 flex items-center gap-1">CBS (%) <Lock className="h-3 w-3 text-muted-foreground/50" /></Label>
                     <MoneyInput
-                      className="h-7 text-xs bg-muted"
+                      className="h-7 text-xs bg-muted/50 text-muted-foreground"
                       prefix=""
                       value="0.90"
                       onChange={() => {}}
@@ -8973,43 +8978,43 @@ function CtePage() {
                     />
                   </div>
                   <div className="w-[136px] shrink-0">
-                    <Label className="text-[10px] text-muted-foreground">PIS (R$)</Label>
+                    <Label className="text-[10px] text-foreground/80 flex items-center gap-1">PIS (R$) <Lock className="h-3 w-3 text-muted-foreground/50" /></Label>
                     <MoneyInput
-                      className="h-7 text-xs bg-muted"
+                      className="h-7 text-xs bg-muted/50 text-muted-foreground"
                       value={valorImposto(form.pisAliq)}
                       onChange={() => {}}
                       
                     />
                   </div>
                   <div className="w-[136px] shrink-0">
-                    <Label className="text-[10px] text-muted-foreground">COFINS (R$)</Label>
+                    <Label className="text-[10px] text-foreground/80 flex items-center gap-1">COFINS (R$) <Lock className="h-3 w-3 text-muted-foreground/50" /></Label>
                     <MoneyInput
-                      className="h-7 text-xs bg-muted"
+                      className="h-7 text-xs bg-muted/50 text-muted-foreground"
                       value={valorImposto(form.cofinsAliq)}
                       onChange={() => {}}
                       
                     />
                   </div>
                   <div className="w-[136px] shrink-0">
-                    <Label className="text-[10px] text-muted-foreground">IBS (R$)</Label>
+                    <Label className="text-[10px] text-foreground/80 flex items-center gap-1">IBS (R$) <Lock className="h-3 w-3 text-muted-foreground/50" /></Label>
                     <MoneyInput
-                      className="h-7 text-xs bg-muted"
+                      className="h-7 text-xs bg-muted/50 text-muted-foreground"
                       value={valorImposto("0.10")}
                       onChange={() => {}}
                       
                     />
                   </div>
                   <div className="w-[136px] shrink-0">
-                    <Label className="text-[10px] text-muted-foreground">CBS (R$)</Label>
+                    <Label className="text-[10px] text-foreground/80 flex items-center gap-1">CBS (R$) <Lock className="h-3 w-3 text-muted-foreground/50" /></Label>
                     <MoneyInput
-                      className="h-7 text-xs bg-muted"
+                      className="h-7 text-xs bg-muted/50 text-muted-foreground"
                       value={valorImposto("0.90")}
                       onChange={() => {}}
                       
                     />
                   </div>
                 </div>
-                <p className="text-[9px] text-muted-foreground mt-1">
+                <p className="text-[9px] text-foreground/60 mt-1">
                   Somente leitura — CST e impostos vêm do Percurso (Fiscal → Percursos) e são
                   aplicados ao gerar o CT-e.
                 </p>
@@ -9026,7 +9031,7 @@ function CtePage() {
                   <div className="space-y-0.5">
                     <div className="grid grid-cols-12 gap-1">
                       <div className="col-span-7">
-                        <Label className="text-[10px] text-muted-foreground">Seguradora</Label>
+                        <Label className="text-[10px] text-foreground/80">Seguradora</Label>
                         <Popover open={seguradoraOpen} onOpenChange={setSeguradoraOpen}>
                           <PopoverTrigger asChild>
                             <Button
@@ -9106,7 +9111,7 @@ function CtePage() {
                         </Popover>
                       </div>
                       <div className="col-span-5">
-                        <Label className="text-[10px] text-muted-foreground">Apólice</Label>
+                        <Label className="text-[10px] text-foreground/80">Apólice</Label>
                         <Input
                           className="h-6 text-[10px]"
                           value={form.apolice}
@@ -9116,7 +9121,7 @@ function CtePage() {
                     </div>
                     <div className="grid grid-cols-4 gap-1">
                       <div>
-                        <Label className="text-[10px] text-muted-foreground">Responsável</Label>
+                        <Label className="text-[10px] text-foreground/80">Responsável</Label>
                         <Select
                           value={form.segResponsavel || "4"}
                           onValueChange={(v) => setForm({ ...form, segResponsavel: v })}
@@ -9134,7 +9139,7 @@ function CtePage() {
                         </Select>
                       </div>
                       <div>
-                        <Label className="text-[10px] text-muted-foreground">Nº Averbação</Label>
+                        <Label className="text-[10px] text-foreground/80">Nº Averbação</Label>
                         <Input
                           className="h-6 text-[10px]"
                           value={form.averbacao}
@@ -9142,7 +9147,7 @@ function CtePage() {
                         />
                       </div>
                       <div>
-                        <Label className="text-[10px] text-muted-foreground">Base Seg.</Label>
+                        <Label className="text-[10px] text-foreground/80">Base Seg.</Label>
                         <Input
                           className="h-6 text-[10px] bg-transparent dark:bg-transparent"
                           value={form.vCarga}
@@ -9150,7 +9155,7 @@ function CtePage() {
                         />
                       </div>
                       <div>
-                        <Label className="text-[10px] text-muted-foreground">Valor Doc.</Label>
+                        <Label className="text-[10px] text-foreground/80">Valor Doc.</Label>
                         <Input
                           className="h-6 text-[10px] bg-transparent dark:bg-transparent"
                           value={form.vCarga}
@@ -9160,7 +9165,7 @@ function CtePage() {
                     </div>
                     <div className="grid grid-cols-4 gap-1">
                       <div>
-                        <Label className="text-[10px] text-muted-foreground">RCTR-C</Label>
+                        <Label className="text-[10px] text-foreground/80">RCTR-C</Label>
                         <Input
                           className="h-6 text-[10px]"
                           value={form.rctrC || ""}
@@ -9168,7 +9173,7 @@ function CtePage() {
                         />
                       </div>
                       <div>
-                        <Label className="text-[10px] text-muted-foreground">RCF-DC</Label>
+                        <Label className="text-[10px] text-foreground/80">RCF-DC</Label>
                         <Input
                           className="h-6 text-[10px]"
                           value={form.rcfDc || ""}
@@ -9176,7 +9181,7 @@ function CtePage() {
                         />
                       </div>
                       <div>
-                        <Label className="text-[10px] text-muted-foreground">V. Adicional</Label>
+                        <Label className="text-[10px] text-foreground/80">V. Adicional</Label>
                         <Input
                           className="h-6 text-[10px]"
                           value={form.segAdicional || ""}
@@ -9185,7 +9190,7 @@ function CtePage() {
                       </div>
                       <div className="flex items-end gap-1">
                         <div className="flex-1">
-                          <Label className="text-[10px] text-muted-foreground">Total Seguro</Label>
+                          <Label className="text-[10px] text-foreground/80">Total Seguro</Label>
                           <Input
                             className="h-6 text-[10px]"
                             value={form.segTotal || ""}
@@ -9214,7 +9219,7 @@ function CtePage() {
                   <div className="space-y-0.5">
                     <div className="grid grid-cols-3 gap-1">
                       <div className="col-span-2">
-                        <Label className="text-[10px] text-muted-foreground">Nome Motorista</Label>
+                        <Label className="text-[10px] text-foreground/80">Nome Motorista</Label>
                         <Popover open={motoristaOpen} onOpenChange={setMotoristaOpen}>
                           <PopoverTrigger asChild>
                             <Button
@@ -9289,7 +9294,7 @@ function CtePage() {
                         </Popover>
                       </div>
                       <div>
-                        <Label className="text-[10px] text-muted-foreground">CIOT</Label>
+                        <Label className="text-[10px] text-foreground/80">CIOT</Label>
                         <div className="flex gap-1">
                           <Input
                             className="h-6 text-[10px] font-mono"
@@ -9305,7 +9310,7 @@ function CtePage() {
                     </div>
                     <div className="grid grid-cols-3 gap-1">
                       <div>
-                        <Label className="text-[10px] text-muted-foreground">
+                        <Label className="text-[10px] text-foreground/80">
                           {"Tra\u00e7\u00e3o"}
                         </Label>
                         <Popover
@@ -9421,7 +9426,7 @@ function CtePage() {
                         ) : null}
                       </div>
                       <div>
-                        <Label className="text-[10px] text-muted-foreground">Reboque 1</Label>
+                        <Label className="text-[10px] text-foreground/80">Reboque 1</Label>
                         <Popover
                           open={veiculoOpen === "semi1"}
                           onOpenChange={(v) => {
@@ -9537,7 +9542,7 @@ function CtePage() {
                         ) : null}
                       </div>
                       <div>
-                        <Label className="text-[10px] text-muted-foreground">Reboque 2</Label>
+                        <Label className="text-[10px] text-foreground/80">Reboque 2</Label>
                         <Popover
                           open={veiculoOpen === "semi2"}
                           onOpenChange={(v) => {
@@ -9758,7 +9763,7 @@ function CtePage() {
                   </div>
                   <div className="grid grid-cols-2 md:grid-cols-3 gap-1">
                     <div>
-                      <Label className="text-[10px] text-muted-foreground">Valor Serviço</Label>
+                      <Label className="text-[10px] text-foreground/80">Valor Serviço</Label>
                       <MoneyInput
                         className="h-6 text-[11px] font-medium"
                         value={form.vPrest}
@@ -9766,7 +9771,7 @@ function CtePage() {
                       />
                     </div>
                     <div>
-                      <Label className="text-[10px] text-muted-foreground">Taxa Coleta</Label>
+                      <Label className="text-[10px] text-foreground/80">Taxa Coleta</Label>
                       <MoneyInput
                         className="h-6 text-[11px] font-medium"
                         value={form.taxaColeta}
@@ -9774,7 +9779,7 @@ function CtePage() {
                       />
                     </div>
                     <div>
-                      <Label className="text-[10px] text-muted-foreground">Taxa Entrega</Label>
+                      <Label className="text-[10px] text-foreground/80">Taxa Entrega</Label>
                       <MoneyInput
                         className="h-6 text-[11px] font-medium"
                         value={form.taxaEntrega}
@@ -9782,7 +9787,7 @@ function CtePage() {
                       />
                     </div>
                     <div>
-                      <Label className="text-[10px] text-muted-foreground">Ad Valorem</Label>
+                      <Label className="text-[10px] text-foreground/80">Ad Valorem</Label>
                       <MoneyInput
                         className="h-6 text-[11px] font-medium"
                         value={form.adValorem}
@@ -9790,7 +9795,7 @@ function CtePage() {
                       />
                     </div>
                     <div>
-                      <Label className="text-[10px] text-muted-foreground">GRIS</Label>
+                      <Label className="text-[10px] text-foreground/80">GRIS</Label>
                       <MoneyInput
                         className="h-6 text-[11px] font-medium"
                         value={form.gris}
@@ -9798,7 +9803,7 @@ function CtePage() {
                       />
                     </div>
                     <div>
-                      <Label className="text-[10px] text-muted-foreground">Outros</Label>
+                      <Label className="text-[10px] text-foreground/80">Outros</Label>
                       <MoneyInput
                         className="h-6 text-[11px] font-medium"
                         value={form.outrosPed}
@@ -9806,7 +9811,7 @@ function CtePage() {
                       />
                     </div>
                     <div>
-                      <Label className="text-[10px] text-muted-foreground">Desconto</Label>
+                      <Label className="text-[10px] text-foreground/80">Desconto</Label>
                       <MoneyInput
                         className="h-6 text-[11px] font-medium"
                         value={form.descontoPed}
@@ -9820,7 +9825,7 @@ function CtePage() {
                   <div className="bg-primary/8 border-b border-primary/20 -m-1.5 mb-0.5 px-2 py-1 text-[10px] font-semibold uppercase tracking-wide text-primary/80">
                     Forma de Pagamento do Pedágio
                   </div>
-                  <div className="flex flex-wrap gap-3 text-[10px]">
+                  <div className="flex flex-wrap gap-6 text-[10px]">
                     <label className="flex items-center gap-1">
                       <input
                         type="radio"
@@ -9864,7 +9869,7 @@ function CtePage() {
                   </div>
                   <div className="grid grid-cols-2 md:grid-cols-6 gap-1 mt-0.5">
                     <div className="md:col-span-2">
-                      <Label className="text-[10px] text-muted-foreground">Operadora</Label>
+                      <Label className="text-[10px] text-foreground/80">Operadora</Label>
                       <Select
                         disabled={pagtoSeguro(form.pedagioPagto) === "sem-pagamento"}
                         value={form.pedagioOperadora || ""}
@@ -9890,7 +9895,7 @@ function CtePage() {
                       </Select>
                     </div>
                     <div className="md:col-span-2">
-                      <Label className="text-[10px] text-muted-foreground">CNPJ Operadora</Label>
+                      <Label className="text-[10px] text-foreground/80">CNPJ Operadora</Label>
                       <Input
                         className="h-6 text-[11px] font-mono"
                         disabled={pagtoSeguro(form.pedagioPagto) === "sem-pagamento"}
@@ -9905,7 +9910,7 @@ function CtePage() {
                       />
                     </div>
                     <div>
-                      <Label className="text-[10px] text-muted-foreground">Vale Pedágio (R$)</Label>
+                      <Label className="text-[10px] text-foreground/80">Vale Pedágio (R$)</Label>
                       <MoneyInput
                         className="h-6 text-[11px] font-medium"
                         disabled={pagtoSeguro(form.pedagioPagto) === "sem-pagamento"}
@@ -9914,7 +9919,7 @@ function CtePage() {
                       />
                     </div>
                     <div>
-                      <Label className="text-[10px] text-muted-foreground">Data Operação</Label>
+                      <Label className="text-[10px] text-foreground/80">Data Operação</Label>
                       <Input
                         className="h-6 text-[11px] bg-transparent"
                         title="Sempre a data de emissão"
@@ -9927,7 +9932,7 @@ function CtePage() {
                       />
                     </div>
                     <div className="md:col-span-2">
-                      <Label className="text-[10px] text-muted-foreground">Identificador VPO</Label>
+                      <Label className="text-[10px] text-foreground/80">Identificador VPO</Label>
                       <Input
                         className="h-6 text-[11px]"
                         disabled={pagtoSeguro(form.pedagioPagto) === "sem-pagamento"}
@@ -9938,7 +9943,7 @@ function CtePage() {
                       />
                     </div>
                     <div className="md:col-span-2">
-                      <Label className="text-[10px] text-muted-foreground">
+                      <Label className="text-[10px] text-foreground/80">
                         CNPJ Responsável Pagamento
                       </Label>
                       <Input
@@ -9949,7 +9954,7 @@ function CtePage() {
                       />
                     </div>
                     <div className="md:col-span-2">
-                      <Label className="text-[10px] text-muted-foreground">Nº TAG</Label>
+                      <Label className="text-[10px] text-foreground/80">Nº TAG</Label>
                       <Input
                         className="h-6 text-[11px]"
                         disabled={pagtoSeguro(form.pedagioPagto) === "sem-pagamento"}
@@ -9966,7 +9971,7 @@ function CtePage() {
                 </div>
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-1">
                   <div className="md:col-span-2">
-                    <Label className="text-[10px] text-muted-foreground">
+                    <Label className="text-[10px] text-foreground/80">
                       Finalidade / Tipo de Serviço
                     </Label>
                     <Select
@@ -10008,7 +10013,7 @@ function CtePage() {
                     </Select>
                   </div>
                   <div>
-                    <Label className="text-[10px] text-muted-foreground">Forma de Emissão</Label>
+                    <Label className="text-[10px] text-foreground/80">Forma de Emissão</Label>
                     <Select
                       value={(form as any).formaEmissao || "Normal"}
                       onValueChange={(v) => setForm({ ...form, formaEmissao: v } as any)}
@@ -10025,7 +10030,7 @@ function CtePage() {
                     </Select>
                   </div>
                   <div>
-                    <Label className="text-[10px] text-muted-foreground">Forma de Pagamento</Label>
+                    <Label className="text-[10px] text-foreground/80">Forma de Pagamento</Label>
                     <Select
                       value={(form as any).formaPagamento || "Outros"}
                       onValueChange={(v) => setForm({ ...form, formaPagamento: v } as any)}
@@ -10047,7 +10052,7 @@ function CtePage() {
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-1 mt-1">
                     {(form as any).finalidadeEmissao === "Complemento" && (
                       <div>
-                        <Label className="text-[10px] text-muted-foreground">
+                        <Label className="text-[10px] text-foreground/80">
                           Motivo do Complemento
                         </Label>
                         <Select
@@ -10068,7 +10073,7 @@ function CtePage() {
                       </div>
                     )}
                     <div>
-                      <Label className="text-[10px] text-muted-foreground">CT-e Original</Label>
+                      <Label className="text-[10px] text-foreground/80">CT-e Original</Label>
                       {(form as any).finalidadeEmissao === "Complemento" ||
                       (form as any).finalidadeEmissao === "Substituicao" ? (
                         <div className="flex items-center gap-1">
