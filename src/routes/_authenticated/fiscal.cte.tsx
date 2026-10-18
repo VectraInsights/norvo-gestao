@@ -4676,7 +4676,6 @@ function CtePage() {
         }
         if (!(parseFloat(form.vPrest) > 0)) pend.push("Valor do servico maior que zero");
         if (!String(form.icmsCST || "").trim()) pend.push("CST do ICMS");
-        if (ehSimplesMei(empresa?.regime_tributario) && !CSOSN_SIMPLES.includes(String(form.icmsCST || "").padStart(3, "0"))) pend.push("CSOSN do Simples (101/102/103/201/202/203/300/400/500/900)");
         if (!String(form.cfop || "").trim()) pend.push("CFOP");
         if (!String(form.icmsAliq || "").trim()) pend.push("Aliquota do ICMS");
         if ((form as any).finalidadeEmissao !== "Complemento") {
@@ -7909,7 +7908,7 @@ function CtePage() {
             <TabsContent value="geral" className="mt-2 min-h-0 flex-1 space-y-2 overflow-y-auto data-[state=inactive]:hidden data-[state=active]:flex data-[state=active]:flex-col">
               {viewDoc && (
                 <Card className="p-3">
-                  <div className="bg-primary/8 border-b border-primary/20 -m-3 mb-2 px-2 py-1 text-[10px] font-semibold uppercase tracking-wide text-primary/80">
+                  <div className="bg-primary/8 border-b border-primary/20 -m-3 mb-1 px-2 py-1 text-[10px] font-semibold uppercase tracking-wide text-primary/80">
                     Situação do CT-e
                   </div>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
@@ -8311,7 +8310,7 @@ function CtePage() {
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                       {/* Remetente */}
                       <Card className="p-3">
-                        <div className="bg-primary/8 border-b border-primary/20 -m-3 mb-2 px-2 py-1 flex items-center gap-2">
+                        <div className="bg-primary/8 border-b border-primary/20 -m-3 mb-1 px-2 py-1 flex items-center gap-2">
                           <div className="h-6 w-6 rounded bg-primary/10 grid place-items-center">
                             <UploadCloud className="h-3.5 w-3.5 text-primary" />
                           </div>
@@ -8350,7 +8349,7 @@ function CtePage() {
 
                       {/* Destinatário */}
                       <Card className="p-3">
-                        <div className="bg-primary/8 border-b border-primary/20 -m-3 mb-2 px-2 py-1 flex items-center gap-2">
+                        <div className="bg-primary/8 border-b border-primary/20 -m-3 mb-1 px-2 py-1 flex items-center gap-2">
                           <div className="h-6 w-6 rounded bg-primary/10 grid place-items-center">
                             <Package className="h-3.5 w-3.5 text-primary" />
                           </div>
@@ -8404,7 +8403,7 @@ function CtePage() {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                 {/* Consignatário */}
                 <Card className="p-3">
-                  <div className="bg-primary/8 border-b border-primary/20 -m-3 mb-2 px-2 py-1 flex items-center gap-2">
+                  <div className="bg-primary/8 border-b border-primary/20 -m-3 mb-1 px-2 py-1 flex items-center gap-2">
                     <div className="h-6 w-6 rounded bg-amber-500/10 grid place-items-center">
                       <Building2 className="h-3.5 w-3.5 text-amber-600" />
                     </div>
@@ -8524,7 +8523,7 @@ function CtePage() {
 
                 {/* Redespacho */}
                 <Card className="p-3">
-                  <div className="bg-primary/8 border-b border-primary/20 -m-3 mb-2 px-2 py-1 flex items-center gap-2">
+                  <div className="bg-primary/8 border-b border-primary/20 -m-3 mb-1 px-2 py-1 flex items-center gap-2">
                     <div className="h-6 w-6 rounded bg-primary/10 grid place-items-center">
                       <Truck className="h-3.5 w-3.5 text-primary" />
                     </div>
@@ -8831,7 +8830,7 @@ function CtePage() {
 
               {/* Tributação (fundida nesta aba) */}
               <Card className="p-3 shrink-0">
-                <div className="bg-primary/8 border-b border-primary/20 -m-3 mb-2 px-2 py-1 flex items-center gap-1.5">
+                <div className="bg-primary/8 border-b border-primary/20 -m-3 mb-1 px-2 py-1 flex items-center gap-1.5">
                   <ReceiptText className="h-3.5 w-3.5 text-primary" />
                   <h5 className="text-[10px] font-semibold uppercase tracking-wide text-primary/80">
                     Impostos
@@ -8839,35 +8838,19 @@ function CtePage() {
                 </div>
                 <div className="flex flex-wrap items-end gap-x-2 gap-y-2">
                   <div className="min-w-[240px] max-w-[800px] flex-1">
-                    <Label className="text-[10px] text-foreground/80">* {ehSimplesMei(empresa?.regime_tributario) ? "CSOSN" : "CST"}</Label>
-                    <Select value={form.icmsCST} onValueChange={(v) => { if (/^(simples|mei)$/i.test(String(empresa?.regime_tributario || "simples"))) setForm((f: any) => ({ ...f, icmsCST: v })); }} disabled={!/^(simples|mei)$/i.test(String(empresa?.regime_tributario || "simples"))}>
+                    <Label className="text-[10px] text-foreground/80">* CST</Label>
+                    <Select value={form.icmsCST} onValueChange={(v) => setForm((f: any) => ({ ...f, icmsCST: v }))}>
                       <SelectTrigger className="h-7 text-xs">
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
-                        {ehSimplesMei(empresa?.regime_tributario) ? (
-                          <>
-                        <SelectItem value="101">101 — SN com permissão de crédito</SelectItem>
-                        <SelectItem value="102">102 — SN sem permissão de crédito</SelectItem>
-                        <SelectItem value="103">103 — SN isenção para faixa de receita</SelectItem>
-                        <SelectItem value="201">201 — SN com ST e permissão de crédito</SelectItem>
-                        <SelectItem value="202">202 — SN com ST sem permissão de crédito</SelectItem>
-                        <SelectItem value="203">203 — SN isenção com ST para faixa de receita</SelectItem>
-                        <SelectItem value="300">300 — SN imune</SelectItem>
-                        <SelectItem value="400">400 — SN não tributada</SelectItem>
-                        <SelectItem value="500">500 — SN com ST já recolhido</SelectItem>
-                        <SelectItem value="900">900 — SN outros</SelectItem>
-                          </>
-                        ) : (
-                          <>
                         <SelectItem value="00">00 — Tributada integralmente</SelectItem>
                         <SelectItem value="10">
                           10 — Tributada e com cobrança do ICMS por substituição tributária
                         </SelectItem>
                         <SelectItem value="20">20 — Com redução de base de cálculo</SelectItem>
                         <SelectItem value="30">
-                          30 — Isenta ou não tributada e com cobrança do ICMS por substituição
-                          tributária
+                          30 — Isenta ou não tributada e com cobrança do ICMS por substituição tributária
                         </SelectItem>
                         <SelectItem value="40">40 — Isenta</SelectItem>
                         <SelectItem value="41">41 — Não tributada</SelectItem>
@@ -8877,12 +8860,9 @@ function CtePage() {
                           60 — ICMS cobrado anteriormente por substituição tributária
                         </SelectItem>
                         <SelectItem value="70">
-                          70 — Com redução de base de cálculo e cobrança do ICMS por substituição
-                          tributária
+                          70 — Com redução de base de cálculo e cobrança do ICMS por substituição tributária
                         </SelectItem>
                         <SelectItem value="90">90 — Outras</SelectItem>
-                          </>
-                        )}
                       </SelectContent>
                     </Select>
                   </div>
