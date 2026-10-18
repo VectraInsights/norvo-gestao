@@ -1325,47 +1325,62 @@ function PercursosPage() {
     if (editing && !salvar.isPending) salvar.mutate();
   };
   const excluirUm = async (id: string) => {
-      // Não exclui percurso com CT-e feito (rascunho ou emitido): compara o trio
-      const alvo = (percursos || []).find((p) => p.id === id);
-      const dg = (v: any) => String(v || "").replace(/\D/g, "");
-      const trio = [dg(alvo?.rem_cnpj), dg(alvo?.dest_cnpj), dg(alvo?.toma_cnpj)];
-      if (alvo && trio.every(Boolean)) {
-        // Busca em páginas: com corte, percurso em uso por doc antigo era excluído
-        for (let ini = 0; ; ini += 500) {
-          const { data: docs } = await supabase
-            .from("cte_documentos" as any)
-            .select("id,numero,status,xml_assinado")
-            .eq("empresa_id", empresa!.id)
-            .range(ini, ini + 499);
-          for (const doc of ((docs as any[]) || [])) {
-            let usa = false;
-            try {
-              const p = JSON.parse((doc as any).xml_assinado || "{}");
-              const f = p.form || {};
-              const n0 = (p.nfs || [])[0] || {};
-              usa =
-                dg(f.cnpjTomador) === trio[2] &&
-                dg(n0.emitCnpj) === trio[0] &&
-                dg(n0.destCnpj) === trio[1];
-            } catch {
-              usa = false;
-            }
-            if (usa) {
-              const st = String((doc as any).status || "");
-              const num = (doc as any).numero ? ` nº ${(doc as any).numero}` : "";
-              throw new Error(
-                `Percurso em uso no CT-e${num} (${st || "registrado"}) — exclua o documento primeiro`,
-              );
-            }
+    // 1) Bloqueia se algum CT-e (qualquer status) referencia este percurso diretamente
+    const { data: vinculados } = await supabase
+      .from("cte_documentos" as any)
+      .select("id,numero,status")
+      .eq("empresa_id", empresa!.id)
+      .eq("percurso_id", id);
+
+    if ((vinculados as any[])?.length > 0) {
+      const doc = (vinculados as any[])[0];
+      const num = doc.numero ? ` nº ${doc.numero}` : "";
+      throw new Error(
+        `Percurso em uso no CT-e${num} (${String(doc.status || "registrado")}) — exclua o documento primeiro`,
+      );
+    }
+
+    // 2) Fallback para CT-es antigos sem percurso_id gravado: compara o trio de CNPJs no XML
+    const alvo = (percursos || []).find((p) => p.id === id);
+    const dg = (v: any) => String(v || "").replace(/\D/g, "");
+    const trio = [dg(alvo?.rem_cnpj), dg(alvo?.dest_cnpj), dg(alvo?.toma_cnpj)];
+    if (alvo && trio.every(Boolean)) {
+      // Busca em páginas: com corte, percurso em uso por doc antigo era excluído
+      for (let ini = 0; ; ini += 500) {
+        const { data: docs } = await supabase
+          .from("cte_documentos" as any)
+          .select("id,numero,status,xml_assinado")
+          .eq("empresa_id", empresa!.id)
+          .range(ini, ini + 499);
+        for (const doc of ((docs as any[]) || [])) {
+          let usa = false;
+          try {
+            const p = JSON.parse((doc as any).xml_assinado || "{}");
+            const f = p.form || {};
+            const n0 = (p.nfs || [])[0] || {};
+            usa =
+              dg(f.cnpjTomador) === trio[2] &&
+              dg(n0.emitCnpj) === trio[0] &&
+              dg(n0.destCnpj) === trio[1];
+          } catch {
+            usa = false;
           }
-          if (!docs || (docs as any[]).length < 500) break;
+          if (usa) {
+            const st = String((doc as any).status || "");
+            const num = (doc as any).numero ? ` nº ${(doc as any).numero}` : "";
+            throw new Error(
+              `Percurso em uso no CT-e${num} (${st || "registrado"}) — exclua o documento primeiro`,
+            );
+          }
         }
+        if (!docs || (docs as any[]).length < 500) break;
       }
-      const { error } = await supabase
-        .from("cte_percursos" as any)
-        .delete()
-        .eq("id", id);
-      if (error) throw error;
+    }
+    const { error } = await supabase
+      .from("cte_percursos" as any)
+      .delete()
+      .eq("id", id);
+    if (error) throw error;
   };
 
   const excluir = useMutation({
