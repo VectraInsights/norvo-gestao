@@ -6327,3 +6327,26 @@ pm run build OK.
   `owner`, super admin consegue, admin/membro continuam liberados.
 - Preenchido `nome`/`email` da linha do dono da plataforma na LGP (nasceu sem os campos pelo
   trigger, que so grava empresa_id/user_id/role).
+
+## Cache de dados persistido no navegador (19/10)
+
+- Antes o cache do TanStack Query vivia so na memoria: um F5 limpava tudo e cada tela esperava
+  a resposta do Supabase antes de pintar. Agora o cache e gravado no `localStorage` e reidratado
+  no boot — a tela abre com os dados na hora e a atualizacao contra o banco rola em segundo
+  plano.
+- **Modulo novo** `src/lib/query-cache.ts` (com `query-cache.test.ts`, 5 casos):
+  - `maxAge` de 10 min: nada mais velho que isso entra na tela (o resto e descartado).
+  - `buster` de versao: ao subir uma versao nova do app o cache antigo e jogado fora.
+  - troca de usuario: navegador compartilhado nao herda o cache de outro usuario (o id vem da
+    sessao do Supabase no localStorage).
+  - logout: `limparCachePersistido` apaga o cache da memoria e do storage (chamado no
+    `signOut` do app-shell e no evento `SIGNED_OUT` do auth).
+  - consultas com payload grande (`cte-documentos`, `mdf-documentos` — listas com XML
+    assinado) nunca sao persistidas; teto de 2MB no payload guardado.
+  - gravacao com debounce de 1,5s (nao serializar o cache inteiro a cada mudanca).
+- **Nao** se segura a hidratacao ate o cache voltar: com SSR o servidor renderiza o skeleton e
+  o cliente renderizaria os dados -> hydration mismatch e re-render completo. O restore rola
+  logo apos a hidratacao (o `staleTime` de 60s continua valendo: dado velho e trocado pelo
+  novo em segundo plano).
+- Medido em dev server + pagina de teste: apos o F5 os dados apareceram em **2ms** (timestamp
+  antigo = vindos do cache) contra ~500ms de ida ao Supabase. `npm test` (59) e build OK.

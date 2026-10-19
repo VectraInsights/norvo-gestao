@@ -1,6 +1,7 @@
 import { QueryClient } from "@tanstack/react-query";
 import { createRouter } from "@tanstack/react-router";
 import { routeTree } from "./routeTree.gen";
+import { iniciarCachePersistido } from "@/lib/query-cache";
 
 export const getRouter = () => {
   const queryClient = new QueryClient({
@@ -21,6 +22,10 @@ export const getRouter = () => {
       mutations: { retry: 0 },
     },
   });
+
+  // Navegador: guarda o cache de dados no localStorage. O F5 passa a abrir com os
+  // dados na hora (reidratados antes do primeiro render) em vez de esperar o banco.
+  iniciarCachePersistido(queryClient);
 
   const router = createRouter({
     routeTree,

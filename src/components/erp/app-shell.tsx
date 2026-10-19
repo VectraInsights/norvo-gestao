@@ -39,6 +39,7 @@ import { ALL_NAV_ITEMS, FAVORITES_LABEL, OVERVIEW_LABEL } from "@/components/erp
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
+import { limparCachePersistido } from "@/lib/query-cache";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { setSelectedEmpresaId, useSelectedEmpresaId } from "@/hooks/use-empresa";
 import { usePermissoes } from "@/hooks/use-permissoes";
@@ -343,6 +344,8 @@ export function AppShell({ children }: { children: ReactNode }) {
   const signOut = async () => {
     await qc.cancelQueries();
     qc.clear();
+    // Limpa também o cache persistido no navegador (nada do usuário anterior fica gravado).
+    limparCachePersistido(qc);
     await supabase.auth.signOut();
     navigate({ to: "/auth", replace: true });
   };
