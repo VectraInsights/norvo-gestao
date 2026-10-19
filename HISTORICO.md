@@ -6319,3 +6319,11 @@ pm run build OK.
   na linha do dono da plataforma afetam 0 linhas, insert de linha de super admin e bloqueado
   por RLS; o dono da plataforma continua seeing/editing/criando membros normalmente. Nenhum
   dado foi alterado (3 linhas em `empresa_users` antes e depois).
+- **Migration** `20261019130000_papel_owner_restrito_ao_super_admin.sql`: o papel `owner`
+  (Dono) fica restrito ao dono da plataforma. Antes, um admin de CNPJ poderia criar/promover
+  alguem como owner via chamada direta a API (a tela so oferece Membro/Admin) — e owner tem o
+  direito de excluir a propria empresa (policy `empresas_delete_owner`). Agora `role <> owner`
+  so passa se quem escreve for super admin. Testado: cliente bloqueado em insert/update para
+  `owner`, super admin consegue, admin/membro continuam liberados.
+- Preenchido `nome`/`email` da linha do dono da plataforma na LGP (nasceu sem os campos pelo
+  trigger, que so grava empresa_id/user_id/role).
