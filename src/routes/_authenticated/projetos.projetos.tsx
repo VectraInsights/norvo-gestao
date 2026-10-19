@@ -431,7 +431,7 @@ function ProjetosPage() {
                             </AlertDialogHeader>
                             <AlertDialogFooter>
                               <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                              <AlertDialogAction data-acao onClick={() => del.mutate(p.id)}>
+                              <AlertDialogAction data-acao className="bg-destructive text-destructive-foreground hover:bg-destructive/90" onClick={() => del.mutate(p.id)}>
                                 Excluir
                               </AlertDialogAction>
                             </AlertDialogFooter>

@@ -446,7 +446,7 @@ function Clientes() {
                   </AlertDialogHeader>
                   <AlertDialogFooter>
                     <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                    <AlertDialogAction data-acao onClick={() => excluir.mutate(Array.from(selected))}>Confirmar</AlertDialogAction>
+                    <AlertDialogAction data-acao className="bg-destructive text-destructive-foreground hover:bg-destructive/90" onClick={() => excluir.mutate(Array.from(selected))}>Confirmar</AlertDialogAction>
                   </AlertDialogFooter>
                 </AlertDialogContent>
               </AlertDialog>

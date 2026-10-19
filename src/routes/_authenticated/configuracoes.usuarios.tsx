@@ -353,7 +353,7 @@ export function UsuariosPage() {
                             </AlertDialogHeader>
                             <AlertDialogFooter className="gap-2">
                               <AlertDialogCancel className="h-10 rounded-xl">Cancelar</AlertDialogCancel>
-                              <AlertDialogAction data-acao onClick={() => remover.mutate(m.id)} className="h-10 rounded-xl">
+                              <AlertDialogAction data-acao onClick={() => remover.mutate(m.id)} className="h-10 rounded-xl bg-destructive text-destructive-foreground hover:bg-destructive/90">
                                 Remover
                               </AlertDialogAction>
                             </AlertDialogFooter>

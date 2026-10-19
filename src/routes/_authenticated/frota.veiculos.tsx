@@ -1186,7 +1186,11 @@ function Veiculos() {
                           </AlertDialogHeader>
                           <AlertDialogFooter>
                             <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                            <AlertDialogAction data-acao onClick={() => excluir.mutate(v.id)}>
+                            <AlertDialogAction
+                              data-acao
+                              className="h-10 rounded-xl bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                              onClick={() => excluir.mutate(v.id)}
+                            >
                               Excluir
                             </AlertDialogAction>
                           </AlertDialogFooter>

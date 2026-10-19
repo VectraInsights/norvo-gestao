@@ -514,7 +514,7 @@ function OSPage() {
                           </AlertDialogHeader>
                           <AlertDialogFooter>
                             <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                            <AlertDialogAction data-acao onClick={() => del.mutate(o.id)}>
+                            <AlertDialogAction data-acao className="bg-destructive text-destructive-foreground hover:bg-destructive/90" onClick={() => del.mutate(o.id)}>
                               Excluir
                             </AlertDialogAction>
                           </AlertDialogFooter>
