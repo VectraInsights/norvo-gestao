@@ -6284,3 +6284,15 @@ pm run build OK.
   essas modalidades no CTeSimp (o Simplificado nao tem esses grupos). A previa usa a mesma regra.
   Testes novos em `sefaz-cte.test.ts` (30 casos).
 - `npm test` (54) e `npm run build` OK; tsc segue com os erros pre-existentes do repo, nenhum novo.
+
+## Layout compacto da aba Transporte (19/10)
+
+- A aba Transporte do CT-e (Avulso) passava da altura da janela e criava barra de rolagem. Ajuste
+  de densidade: cards com `p-1` (era `p-1.5`), titulos de bloco com `py-1.5` (era `py-2`), gaps
+  `gap-1`/`space-y-1` e o corpo de cada card com `text-[10px] leading-[1.2]` — o `line-height`
+  herdado do body (1.55) colocava ~15px de folga entre cada rotulo e seu campo, era o maior
+  gasto de altura da tela.
+- Medido numa replica local do layout (1600x900, mesma folha de estilo do build): conteudo da
+  aba passou de ~555px para ~435px, cabendo sem barra de rolagem. Em janelas menores a rolagem
+  continua (fallback do `overflow-y-auto`).
+- As outras abas (Geral, Tributacao e Carga) nao foram mexidas.
