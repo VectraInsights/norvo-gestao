@@ -24,7 +24,8 @@ import { completarLogradouro } from "@/lib/endereco";
 import { SearchField } from "@/components/erp/search-field";
 import { RouteErrorState } from "@/components/erp/route-error-state";
 import { maskDoc } from "@/lib/format";
-import { consultarCnpj, patchContatoComCnpj } from "@/lib/cnpj";
+import { consultarCnpj } from "@/lib/cnpj";
+import { useCorrigirPelaReceita } from "@/hooks/use-corrigir-receita";
 
 export const Route = createFileRoute("/_authenticated/fiscal/cadastro")({
   component: Cadastro,
@@ -262,52 +263,10 @@ function Cadastro() {
   };
 
   /**
-   * Correção em lote pela Receita Federal: o nome vem do XML como o emitente
-   * escreveu (com erro de digitação). Busca o CNPJ e troca pela razão social
-   * oficial, preenchendo endereço/CEP/telefone que estejam vazios.
-   * Processa os contatos que estão na lista (respeita o filtro da busca).
+   * Correção em lote pela Receita Federal (o nome vem do XML como o emitente
+   * escreveu). Corrige só a lista desta tela.
    */
-  const [corrigindo, setCorrigindo] = useState(false);
-  const corrigirPelaReceita = async () => {
-    if (!empresa) return;
-    // Todos os contatos do filtro (não só a página): o usuário quer o cadastro inteiro certo.
-    const temCnpj = (c: Record<string, unknown>) =>
-      String(c.documento || "").replace(/\D/g, "").length === 14;
-    const alvos = (filtrados || []).filter(temCnpj).slice(0, 200);
-    if (!alvos.length) {
-      toast.info("Nenhum contato com CNPJ na lista");
-      return;
-    }
-    setCorrigindo(true);
-    try {
-      let atualizados = 0;
-      for (const c of alvos) {
-        try {
-          const dados = await consultarCnpj(c.documento);
-          if (!dados) continue;
-          const patch = patchContatoComCnpj(c, dados);
-          if (!patch) continue;
-          const { error } = await supabase
-            .from("contatos")
-            .update(patch as never)
-            .eq("id", c.id);
-          if (!error) atualizados++;
-        } catch {
-          /* API fora do ar: segue para o próximo */
-        }
-        // Respeita o limite de taxa das APIs públicas.
-        await new Promise((r) => setTimeout(r, 200));
-      }
-      qc.invalidateQueries({ queryKey: ["contatos-fiscal"] });
-      qc.invalidateQueries({ queryKey: ["contatos-clientes"] });
-      qc.invalidateQueries({ queryKey: ["fornecedores"] });
-      if (atualizados > 0)
-        toast.success(`${atualizados} cadastro(s) corrigido(s) com a Receita Federal`);
-      else toast.info("Os cadastros desta página já estão de acordo com a Receita");
-    } finally {
-      setCorrigindo(false);
-    }
-  };
+  const { corrigindo, corrigir } = useCorrigirPelaReceita();
 
   const criar = useMutation({
     mutationFn: async (input: ReturnType<typeof emptyForm>) => {
@@ -417,7 +376,7 @@ function Cadastro() {
 
   return (
     <>
-      <PageHeader eyebrow="Fiscal" title="Contatos" description="Cadastro único — clientes, fornecedores e transporte." />
+      <PageHeader eyebrow="Fiscal" title="Contatos" description="Cadastro de transporte — os envolvidos do CT-e (remetente, destinatário, tomador, consignatário e redespacho)." />
       <div className="mb-4 flex flex-col gap-3 sm:mb-6 sm:flex-row sm:items-center">
         <SearchField value={busca} onChange={(v) => { setBusca(v); setPagina(1); }} />
         <div className="flex items-center gap-2">
@@ -429,7 +388,7 @@ function Cadastro() {
           <Button
             variant="outline"
             size="sm"
-            onClick={corrigirPelaReceita}
+            onClick={() => void corrigir((filtrados || []) as any)}
             disabled={corrigindo}
             className="h-10 rounded-xl px-4"
             title="Busca o CNPJ na Receita Federal e corrige o nome (razão social) e completa o endereço dos contatos da lista"

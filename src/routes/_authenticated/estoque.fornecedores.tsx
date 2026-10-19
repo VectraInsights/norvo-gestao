@@ -34,6 +34,7 @@ import {
   Trash2,
   Users,
   Pencil,
+  WandSparkles,
 } from "lucide-react";
 import {
   AlertDialog,
@@ -51,6 +52,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEmpresaAtual } from "@/hooks/use-empresa";
 import { maskDoc } from "@/lib/format";
+import { useCorrigirPelaReceita } from "@/hooks/use-corrigir-receita";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/_authenticated/estoque/fornecedores")({
@@ -124,6 +126,8 @@ function Fornecedores() {
   const [lookingUp, setLookingUp] = useState(false);
   const [busca, setBusca] = useState("");
   const [pagina, setPagina] = useState(1);
+  // Correção em lote pela Receita Federal (só a lista de fornecedores desta tela).
+  const { corrigindo, corrigir } = useCorrigirPelaReceita();
 
   const { data: contatos, isLoading } = useQuery({
     enabled: !!empresa,
@@ -389,6 +393,21 @@ function Fornecedores() {
       <div className="mb-3 flex flex-col gap-2 sm:flex-row sm:items-center">
         <SearchField value={busca} onChange={(v) => { setBusca(v); setPagina(1); }} />
         <div className="flex items-center gap-2">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => void corrigir((filtrados || []) as any)}
+            disabled={corrigindo}
+            className="h-10 rounded-xl px-4"
+            title="Busca o CNPJ na Receita Federal e corrige o nome (razão social) e completa o endereço dos fornecedores da lista"
+          >
+            {corrigindo ? (
+              <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />
+            ) : (
+              <WandSparkles className="mr-1.5 h-3.5 w-3.5" />
+            )}
+            {corrigindo ? "Corrigindo..." : "Corrigir pela Receita"}
+          </Button>
           <PrimaryButton size="sm" onClick={openCreate}>
             <Plus className="mr-1 h-4 w-4" />
             Novo fornecedor

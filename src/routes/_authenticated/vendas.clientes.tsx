@@ -14,13 +14,14 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
-import { ArrowDown, ArrowUp, ArrowUpDown, Loader2, Plus, Search, Trash2, Users, Pencil } from "lucide-react";
+import { ArrowDown, ArrowUp, ArrowUpDown, Loader2, Plus, Search, Trash2, Users, Pencil, WandSparkles } from "lucide-react";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEmpresaAtual } from "@/hooks/use-empresa";
+import { useCorrigirPelaReceita } from "@/hooks/use-corrigir-receita";
 import { toast } from "sonner";
 import type { Database } from "@/integrations/supabase/types";
 
@@ -58,6 +59,8 @@ function Clientes() {
   const [confLote, setConfLote] = useState(false);
   const [busca, setBusca] = useState("");
   const [pagina, setPagina] = useState(1);
+  // Correção em lote pela Receita Federal (só a lista de clientes desta tela).
+  const { corrigindo, corrigir } = useCorrigirPelaReceita();
   const toggleOne = (id: string) => setSelected((s) => { const n = new Set(s); n.has(id) ? n.delete(id) : n.add(id); return n; });
 
   // Delete abre a confirmação de excluir selecionados.
@@ -353,6 +356,21 @@ function Clientes() {
         <div className="flex items-center gap-2">
           <Button variant="ghost" size="sm" onClick={() => setTrilhaOpen(true)} className="h-9 rounded-xl px-4 active:scale-95">
             Auditoria
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => void corrigir((filtrados || []) as any)}
+            disabled={corrigindo}
+            className="h-9 rounded-xl px-4"
+            title="Busca o CNPJ na Receita Federal e corrige o nome (razão social) e completa o endereço dos clientes da lista"
+          >
+            {corrigindo ? (
+              <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />
+            ) : (
+              <WandSparkles className="mr-1.5 h-3.5 w-3.5" />
+            )}
+            {corrigindo ? "Corrigindo..." : "Corrigir pela Receita"}
           </Button>
             <Dialog open={open} onOpenChange={(v) => { if (!criar.isPending && !editar.isPending) { setOpen(v); if (!v) { setEditing(null); setForm(emptyForm()); } } }}>
               <DialogTrigger asChild><PrimaryButton onClick={openCreate}><Plus className="mr-1 h-4 w-4" />Novo contato</PrimaryButton></DialogTrigger>

@@ -6369,3 +6369,11 @@ pm run build OK.
 - A tela de Cadastro passou a usar o mesmo modulo (a chamada estava duplicada em ~8 arquivos).
 - Simulado na base da JUVENAL: 9 de 11 contatos tem nome diferente da razao social oficial.
   Testes: `src/lib/cnpj.test.ts` (5 casos). `npm test` (64) e build OK.
+- **Botao em cada modulo** (decisao do dono): o botao "Corrigir pela Receita" fica na tela de
+  cadastro de CADA modulo, porque quem tem acesso so ao Estoque precisa corrigir fornecedor
+  sem depender do Fiscal. Como cada tela lista so o proprio `tipo` da tabela `contatos`
+  (Fiscal>Contatos = `transporte`, Estoque>Fornecedores = `fornecedor`, Vendas>Clientes =
+  `cliente`), um modulo nunca mexe no cadastro do outro. Logica compartilhada no hook
+  `useCorrigirPelaReceita`.
+- Corrigido o texto do cabecalho de Fiscal > Contatos: a tela so lista `tipo = 'transporte'`
+  (descricao dizia "clientes, fornecedores e transporte").
