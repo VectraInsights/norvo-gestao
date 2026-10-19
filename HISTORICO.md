@@ -6298,3 +6298,24 @@ pm run build OK.
   para o bloco caber.
 - Replica local do layout (1600x900, mesma folha de estilo do build) usada para medir a
   altura do conteudo da aba.
+
+## Dono da plataforma fora da lista de usuarios das empresas (19/10)
+
+- **Problema**: o dono da plataforma (super admin) aparecia como "Dono" na lista de
+  "Usuarios e acessos" das empresas dos clientes. Quem cria a empresa vira owner por trigger
+  (`public.handle_new_empresa`, insere `empresa_users` com `role = 'owner'` a partir de
+  `empresas.created_by`) e o super admin e quem cria os CNPJs dos clientes.
+- **Decisao**: ele CONTINUA membro (owner) de cada empresa — precisa criar o admin de cada
+  CNPJ — mas a linha dele fica invisivel para quem loga com o e-mail do cliente, e o cliente
+  nao pode editar/excluir essa linha.
+- **Migration** `20261019120000_super_admin_fora_da_lista_de_usuarios.sql`: a policy unica
+  `empresa_users_manage_admins` (ALL) foi quebrada em policies por comando:
+  - SELECT: `empresa_users_select_members` — membro ve a empresa, mas a linha de um super
+    admin so aparece para super admins (`private.is_super_admin`).
+  - INSERT/UPDATE/DELETE: `empresa_users_insert_admins`, `..._update_admins`,
+    `..._delete_admins` — owner/admin do CNPJ continuam gerenciando os membros, mas nunca
+    mexem (nem criam) linha de super admin.
+- Testado na base com sessao simulada: login do cliente ve 1 membro (so ele), update/delete
+  na linha do dono da plataforma afetam 0 linhas, insert de linha de super admin e bloqueado
+  por RLS; o dono da plataforma continua seeing/editing/criando membros normalmente. Nenhum
+  dado foi alterado (3 linhas em `empresa_users` antes e depois).
