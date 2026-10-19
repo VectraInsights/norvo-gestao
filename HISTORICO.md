@@ -6285,14 +6285,16 @@ pm run build OK.
   Testes novos em `sefaz-cte.test.ts` (30 casos).
 - `npm test` (54) e `npm run build` OK; tsc segue com os erros pre-existentes do repo, nenhum novo.
 
-## Layout compacto da aba Transporte (19/10)
+## Ajuste de altura da aba Transporte (19/10)
 
-- A aba Transporte do CT-e (Avulso) passava da altura da janela e criava barra de rolagem. Ajuste
-  de densidade: cards com `p-1` (era `p-1.5`), titulos de bloco com `py-1.5` (era `py-2`), gaps
-  `gap-1`/`space-y-1` e o corpo de cada card com `text-[10px] leading-[1.2]` — o `line-height`
-  herdado do body (1.55) colocava ~15px de folga entre cada rotulo e seu campo, era o maior
-  gasto de altura da tela.
-- Medido numa replica local do layout (1600x900, mesma folha de estilo do build): conteudo da
-  aba passou de ~555px para ~435px, cabendo sem barra de rolagem. Em janelas menores a rolagem
-  continua (fallback do `overflow-y-auto`).
-- As outras abas (Geral, Tributacao e Carga) nao foram mexidas.
+- A aba Transporte do CT-e (Avulso) passava da altura da janela e criava barra de rolagem: o
+  card "Finalidade e Documentos Referenciados" (ultimo da aba) ficava cortado.
+- **Ajuste apenas no card "Finalidade e Documentos Referenciados"** (o resto da aba mantem a
+  densidade original): `p-1` (era `p-1.5`), titulo `py-1` (era `py-2`), corpo do grid com
+  `text-[10px] leading-[1.2]` e a linha do CT-e Original com `mt-1 py-1`. O `line-height`
+  herdado do body (1.55) colocava ~15px de folga entre o rotulo e seu campo.
+- Tentativa anterior de compactar a aba inteira foi revertida: o dono achou o resultado
+  apertado demais e com sobra de espaco vazio no rodape. Regra: mexer no minimo necessario
+  para o bloco caber.
+- Replica local do layout (1600x900, mesma folha de estilo do build) usada para medir a
+  altura do conteudo da aba.

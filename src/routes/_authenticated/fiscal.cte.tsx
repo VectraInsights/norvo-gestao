@@ -9141,13 +9141,13 @@ function CtePage() {
             </TabsContent>
 
             {/* === TAB: Seguros/Veículos === */}
-            <TabsContent value="seguros" className="mt-1 min-h-0 flex-1 space-y-1 overflow-y-auto [&>*]:shrink-0 data-[state=inactive]:hidden data-[state=active]:flex data-[state=active]:flex-col">
-              <div className="grid grid-cols-1 xl:grid-cols-2 gap-1">
-                <Card className="overflow-hidden p-1">
-                  <div className="bg-primary/8 border-b border-primary/20 rounded-t-xl px-3 py-1.5 text-[10px] font-semibold uppercase tracking-wide text-primary/80">
+            <TabsContent value="seguros" className="mt-2 min-h-0 flex-1 space-y-1.5 overflow-y-auto [&>*]:shrink-0 data-[state=inactive]:hidden data-[state=active]:flex data-[state=active]:flex-col">
+              <div className="grid grid-cols-1 xl:grid-cols-2 gap-1.5">
+                <Card className="overflow-hidden p-1.5">
+                  <div className="bg-primary/8 border-b border-primary/20 rounded-t-xl px-3 py-2 text-[10px] font-semibold uppercase tracking-wide text-primary/80">
                     Seguro da Carga
                   </div>
-                  <div className="space-y-0 text-[10px] leading-[1.2]">
+                  <div className="space-y-0.5">
                     <div className="grid grid-cols-12 gap-1">
                       <div className="col-span-7">
                         <Label className="text-[10px] text-foreground/80">Seguradora</Label>
@@ -9331,11 +9331,11 @@ function CtePage() {
                   </div>
                 </Card>
 
-                <Card className="overflow-hidden p-1">
-                  <div className="bg-primary/8 border-b border-primary/20 rounded-t-xl px-3 py-1.5 text-[10px] font-semibold uppercase tracking-wide text-primary/80">
+                <Card className="overflow-hidden p-1.5">
+                  <div className="bg-primary/8 border-b border-primary/20 rounded-t-xl px-3 py-2 text-[10px] font-semibold uppercase tracking-wide text-primary/80">
                     Dados do Veículo / Motorista
                   </div>
-                  <div className="space-y-0 text-[10px] leading-[1.2]">
+                  <div className="space-y-0.5">
                     <div className="grid grid-cols-3 gap-1">
                       <div className="col-span-2">
                         <Label className="text-[10px] text-foreground/80">Nome Motorista</Label>
@@ -9876,11 +9876,11 @@ function CtePage() {
                 </Card>
 
                 {/* Pedágio / Taxas / Despesas Acessórias (ex-aba Taxas) */}
-                <Card className="overflow-hidden p-1">
-                  <div className="bg-primary/8 border-b border-primary/20 rounded-t-xl px-3 py-1.5 text-[10px] font-semibold uppercase tracking-wide text-primary/80">
+                <Card className="overflow-hidden p-1.5">
+                  <div className="bg-primary/8 border-b border-primary/20 rounded-t-xl px-3 py-2 text-[10px] font-semibold uppercase tracking-wide text-primary/80">
                     Componentes do Frete
                   </div>
-                  <div className="grid grid-cols-2 md:grid-cols-3 gap-1 text-[10px] leading-[1.2]">
+                  <div className="grid grid-cols-2 md:grid-cols-3 gap-1">
                     <div>
                       <Label className="text-[10px] text-foreground/80">Valor Serviço</Label>
                       <MoneyInput
@@ -9940,11 +9940,11 @@ function CtePage() {
                   </div>
                 </Card>
 
-                <Card className="overflow-hidden p-1">
-                  <div className="bg-primary/8 border-b border-primary/20 rounded-t-xl px-3 py-1.5 text-[10px] font-semibold uppercase tracking-wide text-primary/80">
+                <Card className="overflow-hidden p-1.5">
+                  <div className="bg-primary/8 border-b border-primary/20 rounded-t-xl px-3 py-2 text-[10px] font-semibold uppercase tracking-wide text-primary/80">
                     Forma de Pagamento do Pedágio
                   </div>
-                  <div className="flex flex-wrap gap-6 text-[10px] leading-[1.2]">
+                  <div className="flex flex-wrap gap-6 text-[10px]">
                     <label className="flex items-center gap-1">
                       <input
                         type="radio"
@@ -9986,7 +9986,7 @@ function CtePage() {
                       Sem Pagamento de Pedágio
                     </label>
                   </div>
-                  <div className="grid grid-cols-2 md:grid-cols-6 gap-1 mt-0.5 text-[10px] leading-[1.2]">
+                  <div className="grid grid-cols-2 md:grid-cols-6 gap-1 mt-0.5">
                     <div className="md:col-span-2">
                       <Label className="text-[10px] text-foreground/80">Operadora</Label>
                       <Select
@@ -10085,7 +10085,7 @@ function CtePage() {
                 </Card>
               </div>
               <Card className="overflow-hidden p-1 mt-1">
-                <div className="bg-primary/8 border-b border-primary/20 rounded-t-xl px-3 py-1.5 text-[10px] font-semibold uppercase tracking-wide text-primary/80">
+                <div className="bg-primary/8 border-b border-primary/20 rounded-t-xl px-3 py-1 text-[10px] font-semibold uppercase tracking-wide text-primary/80">
                   Finalidade e Documentos Referenciados
                 </div>
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-1 text-[10px] leading-[1.2]">
