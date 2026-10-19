@@ -107,6 +107,11 @@ export interface CteInputCompleto {
   componentes?: Array<{ xNome: string; vComp: number }>;
   vRec?: number;
   retira?: string;
+  // Referência ao CT-e anterior (chave de 44 dígitos).
+  // tpCTe: 1=complemento, 3=substituto; tpServ: 1=subcontratação, 2=redespacho,
+  // 3=redespacho intermediário (vão no <docAnt>). 0 = normal.
+  tpCTe?: "0" | "1" | "3";
+  cteReferenciado?: string;
   docAnt?: { chaves: string[]; tpPrest?: string };
   obs?: string;
   // RTC fase 2 (atrás de flag por empresa): cClassTrib real; desligado usa 000001.
@@ -273,6 +278,12 @@ export function veicReboqueXml(veics: VeicRod[] | undefined, ufIni: string): str
 export function buildCteXml(input: CteInputCompleto): { xml: string; chave: string } {
   assertSefazAmbiente(input.ambiente);
   if (input.modelo === "normal") return buildCteNormalXml(input);
+  // O CTe Simplificado não tem os grupos de complemento/substituição/documentos
+  // anteriores: essas modalidades só podem sair como CT-e Normal (avulso).
+  if (String(input.tpCTe || "0") !== "0" || String(input.tpServ || "0") !== "0")
+    throw new Error(
+      "CT-e Simplificado não aceita complemento, substituição, subcontratação ou redespacho — emita como Avulso (CT-e Normal)",
+    );
   const rntrcRaw = String(input.modalRod?.rntrc || (input as any).rntrc || "ISENTO").toUpperCase();
   let rntrcXml = rntrcRaw === "ISENTO" ? "ISENTO" : rntrcRaw.replace(/\D/g, "");
   while (rntrcXml.length > 8 && rntrcXml.startsWith("0")) rntrcXml = rntrcXml.slice(1);
@@ -515,6 +526,16 @@ export function buildCteNormalXml(input: CteInputCompleto): { xml: string; chave
   const chave = gerarChaveCte(cUF, aamm, cnpjLimpo, "57", seriePadded, nCTPadded, "1", cCT);
   const id = `CTe${chave}`;
   const natOp = input.natOp || "PRESTACAO DE SERVICO DE TRANSPORTE";
+  // Modalidade do serviço: complemento/substituição (tpCTe 1/3) e subcontratação/
+  // redespacho (tpServ 1/2/3). A chave do CT-e anterior vai no root
+  // (infCteComp/infCteSub) ou em <docAnt>, conforme o leiaute 4.00.
+  const chCTeAnt = String(input.cteReferenciado || "").replace(/\D/g, "");
+  const tpCTe = ["1", "3"].includes(String(input.tpCTe || "0")) ? String(input.tpCTe) : "0";
+  const tpServ = ["1", "2", "3"].includes(String(input.tpServ || "0")) ? String(input.tpServ) : "0";
+  if ((tpCTe !== "0" || tpServ !== "0") && chCTeAnt.length !== 44)
+    throw new Error(
+      "Informe a chave do CT-e original (44 dígitos) para complemento, substituição, subcontratação ou redespacho",
+    );
   const toma = tomaSefazDeModFrete(input.tomador.toma);
   const crtRaw = String(input.emit.crt || "3").toLowerCase().trim();
   const crt = /^[1-4]$/.test(crtRaw) ? crtRaw : crtRaw.includes("mei") ? "4" : crtRaw.includes("simples") ? "1" : "3";
@@ -607,7 +628,12 @@ export function buildCteNormalXml(input: CteInputCompleto): { xml: string; chave
   // infDoc: <chave> por NF-e. docAnt é irmão (filho de infCTeNorm, após infDoc).
   const chsNfe = [...new Set(((input.chavesNFe || []).map(c => String(c).replace(/\D/g, "")).filter(c => c.length === 44)))];
   if (!chsNfe.length) throw new Error("CT-e Normal exige ao menos 1 NF-e vinculada");
-  const docAntXmlN = docAntOficial(input.docAnt?.chaves);
+  const docAntChaves = [
+    ...(Array.isArray(input.docAnt?.chaves) ? input.docAnt!.chaves : []),
+    // Subcontratação/redespacho: o CT-e anterior referenciado entra no <docAnt>.
+    ...(tpServ !== "0" ? [chCTeAnt] : []),
+  ];
+  const docAntXmlN = docAntOficial(docAntChaves);
   const infDocXml = `<infDoc>${chsNfe.map(ch => `<infNFe><chave>${ch}</chave></infNFe>`).join("")}</infDoc>`;
 
   // Modal rodoviário: RNTRC + moto + tração + reboques (regra única p/ os dois modelos)
@@ -627,9 +653,9 @@ export function buildCteNormalXml(input: CteInputCompleto): { xml: string; chave
   <infCte Id="${id}" versao="4.00">
     <ide>
       <cUF>${cUF}</cUF><cCT>${cCT}</cCT><CFOP>${input.cfop}</CFOP><natOp>${escCte(natOp)}</natOp><mod>57</mod><serie>${serie}</serie><nCT>${nCT}</nCT><dhEmi>${dhEmi}</dhEmi>
-      <tpImp>1</tpImp><tpEmis>1</tpEmis><cDV>${chave.slice(-1)}</cDV><tpAmb>${SEFAZ_TP_AMB}</tpAmb><tpCTe>0</tpCTe><procEmi>0</procEmi><verProc>NORVO_1.0</verProc>
+      <tpImp>1</tpImp><tpEmis>1</tpEmis><cDV>${chave.slice(-1)}</cDV><tpAmb>${SEFAZ_TP_AMB}</tpAmb><tpCTe>${tpCTe}</tpCTe><procEmi>0</procEmi><verProc>NORVO_1.0</verProc>
       <cMunEnv>${input.cMunEnv}</cMunEnv><xMunEnv>${escCte(input.xMunEnv)}</xMunEnv><UFEnv>${escCte(String(input.ufEnv || "").toUpperCase())}</UFEnv>
-      <modal>01</modal><tpServ>${input.tpServ || "0"}</tpServ>
+      <modal>01</modal><tpServ>${tpServ}</tpServ>
       <cMunIni>${input.cMunIni}</cMunIni><xMunIni>${escCte(input.xMunIni)}</xMunIni><UFIni>${escCte(String(input.ufIni || "").toUpperCase())}</UFIni><cMunFim>${input.cMunFim}</cMunFim><xMunFim>${escCte(input.xMunFim)}</xMunFim><UFFim>${escCte(String(input.ufFim || "").toUpperCase())}</UFFim>
       <retira>${input.retira || "1"}</retira>
       <indIEToma>${indIETomaN}</indIEToma>
@@ -651,7 +677,7 @@ export function buildCteNormalXml(input: CteInputCompleto): { xml: string; chave
       <infModal versaoModal="4.00"><rodo><RNTRC>${rntrcXml}</RNTRC>${motoXml}${veicTracXml}${veicRebXml}</rodo></infModal>
     </infCTeNorm>
     <infRespTec><CNPJ>${cnpjLimpo}</CNPJ><xContato>SUPORTE TECNICO</xContato><email>suporte@vectrainsights.com.br</email><fone>3139952572</fone></infRespTec>
-  </infCte>${pgtoVincXml(input)}
+  </infCte>${tpCTe === "1" ? `<infCteComp><chCTe>${chCTeAnt}</chCTe></infCteComp>` : tpCTe === "3" ? `<infCteSub><chCTe>${chCTeAnt}</chCTe></infCteSub>` : ""}${pgtoVincXml(input)}
   <infCTeSupl><qrCodCTe>https://${qrBase}?chCTe=${chave}&amp;tpAmb=${SEFAZ_TP_AMB}</qrCodCTe></infCTeSupl>
 </CTe>`;
   return { xml, chave };

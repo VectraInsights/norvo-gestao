@@ -248,6 +248,39 @@ describe("<docAnt> oficial (agrupado por emitente)", () => {
   });
 });
 
+describe("CT-e original (complemento/substituição/redespacho)", () => {
+  const chOrig = "35251021306287000152570010000000011000000010";
+
+  it("complemento usa tpCTe=1 e <infCteComp>", () => {
+    const xml = buildNormal({ tpCTe: "1", cteReferenciado: chOrig });
+
+    expect(xml).toContain("<tpCTe>1</tpCTe>");
+    expect(xml).toContain(`<infCteComp><chCTe>${chOrig}</chCTe></infCteComp>`);
+    expect(xml).toContain("<tpServ>0</tpServ>");
+    expect(xml).not.toContain("<docAnt>");
+  });
+
+  it("substituto usa tpCTe=3 e <infCteSub>", () => {
+    const xml = buildNormal({ tpCTe: "3", cteReferenciado: chOrig });
+
+    expect(xml).toContain("<tpCTe>3</tpCTe>");
+    expect(xml).toContain(`<infCteSub><chCTe>${chOrig}</chCTe></infCteSub>`);
+  });
+
+  it("redespacho usa tpServ=2 e a chave do CT-e anterior no <docAnt>", () => {
+    const xml = buildNormal({ tpServ: "2", cteReferenciado: chOrig });
+
+    expect(xml).toContain("<tpServ>2</tpServ>");
+    expect(xml).toContain("<docAnt><emiDocAnt><CNPJ>21306287000152</CNPJ>");
+    expect(xml).toContain(`<chCTe>${chOrig}</chCTe>`);
+  });
+
+  it("sem a chave do CT-e original, recusa o XML", () => {
+    expect(() => buildNormal({ tpCTe: "1" })).toThrow(/CT-e original/);
+    expect(() => buildNormal({ tpServ: "1" })).toThrow(/CT-e original/);
+  });
+});
+
 describe("<ICMSSN> no Simples Nacional (CRT 1/4)", () => {
   it("CRT 1 com CSOSN emite <ICMSSN> (normal e simp)", () => {
     const sn = { emit: { ...(baseCte().emit as any), crt: "1" }, icms: { CST: "102", vBC: 4404, pICMS: 0, vICMS: 0 } };

@@ -6256,3 +6256,31 @@ pm run build OK.
   - Radios de pedágio: `gap-3` → `gap-6` para evitar cliques acidentais.
   - Tag de ambiente dinâmica: `bg-amber-50` + "Homologação (testes)" ou `bg-green-50` + "Produção" conforme `SEFAZ_AMBIENTE`.
 - tsc sem erros novos; `npm run build` OK; push para `origin/main`.
+
+## CT-e Original em modal separado (19/10)
+
+- **Bug**: na emissao de CT-e de redespacho/subcontratacao/complementar, o bloco "CT-e Original"
+  na aba Transporte nao aparecia. A aba `TabsContent value="seguros"` tinha `overflow-hidden` sem
+  rolagem e os Cards sao itens flex: quando o conteudo nao cabia na altura da janela, o Card
+  "Finalidade e Documentos Referenciados" era espremido e o `overflow-hidden` (adicionado no commit
+  3723706 para os cantos arredondados) cortava o resto — no print do dono so sobrava o rotulo, com
+  a borda superior do input 1px antes da borda do card.
+- **Fix da aba**: o Transporte agora e `overflow-y-auto` + `[&>*]:shrink-0` — os blocos param de
+  ser comprimidos e a aba rola. A aba Tributacao e Carga (`docs`) nao foi mexida: la a tabela usa
+  `flex-1` com scroll interno de proposito.
+- **Novo fluxo do CT-e Original**: escolher Complemento / Subcontratacao / Redespacho / Redespacho
+  Intermediario no menu Finalidade/Tipo abre uma telinha centralizada pequena (mesmo estilo do
+  dialog "Cancelar CT-e", 460px) pedindo os dados do CT-e anterior: motivo (so Complemento) + o
+  CT-e — dropdown dos CT-es autorizados compativeis com o percurso (complemento/substituicao;
+  escolher um nosso herda motorista, veiculos e seguro do XML) ou chave digitada de 44 digitos
+  (redespacho/subcontratacao). Salvar grava e fecha; Voltar/Esc sem a chave confirmada devolve a
+  finalidade para Normal.
+- No card "Finalidade e Documentos Referenciados" ficou so uma linha-resumo com a chave (ou aviso
+  ambar "Nao informado - obrigatorio para X") e botao Editar/Preencher.
+- **XML do CT-e original**: antes a chave ficava so na tela (o XML saia sempre como Normal).
+  Agora `buildCteNormalXml` emite `tpCTe=1` + `<infCteComp>` (complemento), `tpCTe=3` +
+  `<infCteSub>` (substituicao) e `tpServ=1/2/3` + `<docAnt>` (subcontratacao/redespacho/
+  redespacho intermediario). Sem chave de 44 digitos o builder recusa; `buildCteXml` bloqueia
+  essas modalidades no CTeSimp (o Simplificado nao tem esses grupos). A previa usa a mesma regra.
+  Testes novos em `sefaz-cte.test.ts` (30 casos).
+- `npm test` (54) e `npm run build` OK; tsc segue com os erros pre-existentes do repo, nenhum novo.

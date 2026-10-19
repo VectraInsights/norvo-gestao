@@ -4616,6 +4616,26 @@ function CtePage() {
             );
         }
         const pend: string[] = [];
+        // Modalidade do CT-e: complemento/substituição (tpCTe 1/3) e subcontratação/
+        // redespacho (tpServ 1/2/3) exigem a chave do CT-e anterior no XML.
+        const tipoOrigem = (() => {
+          const t = String((form as any).tipoServico || "Normal");
+          const f = String((form as any).finalidadeEmissao || "Normal");
+          return f !== "Normal" ? f : t;
+        })();
+        const chaveOrigem = String((form as any).cteReferenciado || "").replace(/\D/g, "");
+        const tpCTeOrigem =
+          tipoOrigem === "Complemento" ? "1" : tipoOrigem === "Substituicao" ? "3" : "0";
+        const tpServOrigem =
+          tipoOrigem === "Subcontratacao"
+            ? "1"
+            : tipoOrigem === "Redespacho"
+              ? "2"
+              : tipoOrigem === "Redespacho Intermediario"
+                ? "3"
+                : "0";
+        if ((tpCTeOrigem !== "0" || tpServOrigem !== "0") && chaveOrigem.length !== 44)
+          pend.push("Chave do CT-e original (44 dígitos)");
         const ieOk = (vv: any) => String(vv || "").trim().length > 0;
         if (!ieOk((empresa as any).ie)) pend.push("IE do remetente (empresa)");
         const selDocs = mercadorias.filter((m) => chaves.includes(m.chave));
@@ -4732,7 +4752,11 @@ function CtePage() {
               cfop: form.cfop,
               rtc: { fase2: rtcCfg?.fase2_ativo === true },
               cClassTrib: rtcCfg?.cclasstrib_padrao || "000001",
-              tpServ: "0",
+              tpCTe: tpCTeOrigem as any,
+              tpServ: tpServOrigem,
+              cteReferenciado:
+                tpCTeOrigem !== "0" || tpServOrigem !== "0" ? chaveOrigem : undefined,
+              docAnt: tpServOrigem !== "0" ? { chaves: [chaveOrigem], tpPrest: "1" } : undefined,
               vPrest: totalPrestacao(form),
               vCarga: parseFloat(form.vCarga) || 0,
               pesoKg: parseFloat(form.peso) || 0,
@@ -4957,6 +4981,98 @@ function CtePage() {
   // CC-e (carta de correção, evento 110110): só texto complementar, nunca valores
   const [cceDoc, setCceDoc] = useState<CteDoc | null>(null);
   const [cceTexto, setCceTexto] = useState("");
+
+  // CT-e Original: modalidade que exige o CT-e anterior (complemento, subcontratação,
+  // redespacho...) abre uma telinha centralizada — o bloco inline dentro do card ficava
+  // espremido/cortado no fim da aba Transporte (ver HISTORICO). O rascunho é confirmado
+  // só no Salvar; cancelar sem chave salva devolve a finalidade para Normal.
+  const [cteOrigemOpen, setCteOrigemOpen] = useState(false);
+  const [cteOrigemDraft, setCteOrigemDraft] = useState({ motivo: "", chave: "" });
+  const ROTULO_CTE_ORIGEM: Record<string, string> = {
+    Complemento: "CT-e Complementar",
+    Subcontratacao: "Subcontratação",
+    Redespacho: "Redespacho",
+    "Redespacho Intermediario": "Redespacho Intermediário",
+    Substituicao: "Substituição",
+  };
+  const tipoCteOriginal = () => {
+    const f = String((form as any).finalidadeEmissao || "Normal");
+    const t = String((form as any).tipoServico || "Normal");
+    return f !== "Normal" ? f : t;
+  };
+  const exigeCteOriginal = () => tipoCteOriginal() !== "Normal";
+  const chaveCteOriginal = () => String((form as any).cteReferenciado || "").replace(/\D/g, "");
+  const abrirCteOrigem = () => {
+    setCteOrigemDraft({
+      motivo: String((form as any).motivoComplemento || ""),
+      chave: chaveCteOriginal(),
+    });
+    setCteOrigemOpen(true);
+  };
+  const fecharCteOrigem = (v: boolean) => {
+    setCteOrigemOpen(v);
+    if (v) return;
+    // Sem a chave confirmada, a modalidade não se sustenta: volta para Normal.
+    if (chaveCteOriginal().length !== 44) {
+      setForm({
+        ...form,
+        finalidadeEmissao: "Normal",
+        tipoServico: "Normal",
+        motivoComplemento: "",
+        cteReferenciado: "",
+      } as any);
+    }
+  };
+  const salvarCteOrigem = () => {
+    setForm({
+      ...form,
+      motivoComplemento: cteOrigemDraft.motivo,
+      cteReferenciado: cteOrigemDraft.chave,
+    } as any);
+    setCteOrigemOpen(false);
+  };
+  // Complemento do nosso CT-e: herda motorista, veículos e seguro do XML do original.
+  const herdarDadosCteOriginal = (chave: string) => {
+    const orig = ((docs || []) as CteDoc[]).find(
+      (x) => String(x.chave_acesso || "").replace(/\D/g, "") === String(chave).replace(/\D/g, ""),
+    );
+    try {
+      const f0 = JSON.parse(orig?.xml_assinado || "{}").form || {};
+      setForm((f: any) => ({
+        ...f,
+        motoristaId: f0.motoristaId || "",
+        motoristaNome: f0.motoristaNome || "",
+        possuiMoto2: f0.possuiMoto2 || "",
+        motorista2Id: f0.motorista2Id || "",
+        motorista2Nome: f0.motorista2Nome || "",
+        placaVeiculo: f0.placaVeiculo || "",
+        placaReboque: f0.placaReboque || "",
+        semiReboque1: f0.semiReboque1 || "",
+        semiReboque2: f0.semiReboque2 || "",
+        ciot: "",
+        ciotProtocolo: "",
+        pedagioPagto: "sem-pagamento",
+        pedagioOperadora: "",
+        pedagioCnpj: "",
+        valePedagio: "0.00",
+        pedagioTag: "",
+        pedagioIdentVPO: "",
+        pedagioDataOp: "",
+        seguradoraNome: "",
+        seguradoraId: "",
+        apolice: "",
+        averbacao: "",
+        rctrC: "",
+        rcfDc: "",
+        segAdicional: "",
+        segTotal: "",
+        segRepassar: "",
+        segResponsavel: "",
+      }));
+    } catch {
+      /* mantém só a chave */
+    }
+  };
   const enviarCce = useMutation({
     mutationFn: async () => {
       if (!empresa) throw new Error("Empresa não selecionada");
@@ -5194,6 +5310,25 @@ function CtePage() {
       const cMunFimFix =
         (await resolverCMunIBGE(form.xMunFim, form.ufFim)) || form.cMunFim;
 
+      // Mesma modalidade do XML real: complemento/substituição (tpCTe) e
+      // subcontratação/redespacho (tpServ) + chave do CT-e anterior.
+      const tipoOrigem = (() => {
+        const t = String((form as any).tipoServico || "Normal");
+        const f = String((form as any).finalidadeEmissao || "Normal");
+        return f !== "Normal" ? f : t;
+      })();
+      const chaveOrigem = String((form as any).cteReferenciado || "").replace(/\D/g, "");
+      const tpCTeOrigem =
+        tipoOrigem === "Complemento" ? "1" : tipoOrigem === "Substituicao" ? "3" : "0";
+      const tpServOrigem =
+        tipoOrigem === "Subcontratacao"
+          ? "1"
+          : tipoOrigem === "Redespacho"
+            ? "2"
+            : tipoOrigem === "Redespacho Intermediario"
+              ? "3"
+              : "0";
+
       return previewCteXmlFn({
         data: {
           empresaId: empresa.id,
@@ -5224,7 +5359,11 @@ function CtePage() {
             cfop: form.cfop,
             rtc: { fase2: rtcCfg?.fase2_ativo === true },
             cClassTrib: rtcCfg?.cclasstrib_padrao || "000001",
-            tpServ: "0",
+            tpCTe: tpCTeOrigem as any,
+            tpServ: tpServOrigem,
+            cteReferenciado:
+              tpCTeOrigem !== "0" || tpServOrigem !== "0" ? chaveOrigem : undefined,
+            docAnt: tpServOrigem !== "0" ? { chaves: [chaveOrigem], tpPrest: "1" } : undefined,
             vPrest: totalPrestacao(form),
             vCarga: parseFloat(form.vCarga) || 0,
             pesoKg: parseFloat(form.peso) || 0,
@@ -9002,7 +9141,7 @@ function CtePage() {
             </TabsContent>
 
             {/* === TAB: Seguros/Veículos === */}
-            <TabsContent value="seguros" className="mt-2 min-h-0 flex-1 space-y-1.5 overflow-hidden data-[state=inactive]:hidden data-[state=active]:flex data-[state=active]:flex-col">
+            <TabsContent value="seguros" className="mt-2 min-h-0 flex-1 space-y-1.5 overflow-y-auto [&>*]:shrink-0 data-[state=inactive]:hidden data-[state=active]:flex data-[state=active]:flex-col">
               <div className="grid grid-cols-1 xl:grid-cols-2 gap-1.5">
                 <Card className="overflow-hidden p-1.5">
                   <div className="bg-primary/8 border-b border-primary/20 rounded-t-xl px-3 py-2 text-[10px] font-semibold uppercase tracking-wide text-primary/80">
@@ -9962,10 +10101,9 @@ function CtePage() {
                         if (f === "Substituicao") return "";
                         return f;
                       })()}
-                      onValueChange={(v) =>
-                        setForm({
-                          ...form,
-                          ...(v === "Complemento"
+                      onValueChange={(v) => {
+                        const base: any =
+                          v === "Complemento"
                             ? { finalidadeEmissao: "Complemento", tipoServico: "Normal" }
                             : v === "Normal"
                               ? {
@@ -9974,9 +10112,23 @@ function CtePage() {
                                   motivoComplemento: "",
                                   cteReferenciado: "",
                                 }
-                              : { finalidadeEmissao: "Normal", tipoServico: v }),
-                        } as any)
-                      }
+                              : { finalidadeEmissao: "Normal", tipoServico: v };
+                        setForm({ ...form, ...base } as any);
+                        // Modalidade que exige o CT-e anterior abre a tela do CT-e original.
+                        if (v !== "Normal") {
+                          const f0 = form as any;
+                          setCteOrigemDraft({
+                            motivo: String(base.motivoComplemento ?? f0.motivoComplemento ?? ""),
+                            chave: String(base.cteReferenciado ?? f0.cteReferenciado ?? "").replace(
+                              /\D/g,
+                              "",
+                            ),
+                          });
+                          setCteOrigemOpen(true);
+                        } else {
+                          setCteOrigemOpen(false);
+                        }
+                      }}
                     >
                       <SelectTrigger className="h-6 text-[10px]">
                         <SelectValue placeholder="SUBSTITUIÇÃO (via ícone)" />
@@ -10026,154 +10178,190 @@ function CtePage() {
                     </Select>
                   </div>
                 </div>
-                {((form as any).finalidadeEmissao === "Complemento" ||
-                  (form as any).finalidadeEmissao === "Substituicao" ||
-                  ((form as any).tipoServico && (form as any).tipoServico !== "Normal")) && (
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-1 mt-1">
-                    {(form as any).finalidadeEmissao === "Complemento" && (
-                      <div>
-                        <Label className="text-[10px] text-foreground/80">
-                          Motivo do Complemento
-                        </Label>
-                        <Select
-                          value={(form as any).motivoComplemento || ""}
-                          onValueChange={(v) => setForm({ ...form, motivoComplemento: v } as any)}
-                        >
-                          <SelectTrigger className="h-6 text-[10px]">
-                            <SelectValue placeholder="Selecione o motivo" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {MOTIVOS_COMPLEMENTO.map((m) => (
-                              <SelectItem key={m} value={m}>
-                                {m.toUpperCase()}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      </div>
-                    )}
-                    <div>
-                      <Label className="text-[10px] text-foreground/80">CT-e Original</Label>
-                      {(form as any).finalidadeEmissao === "Complemento" ||
-                      (form as any).finalidadeEmissao === "Substituicao" ? (
-                        <div className="flex items-center gap-1">
-                          <Select
-                            value={(form as any).cteReferenciado || ""}
-                            onValueChange={(v) => {
-                              const base: any = { cteReferenciado: v };
-                              if (v && (form as any).finalidadeEmissao === "Complemento") {
-                                const orig = ((docs || []) as CteDoc[]).find(
-                                  (x) =>
-                                    String(x.chave_acesso || "").replace(/\D/g, "") ===
-                                    String(v).replace(/\D/g, ""),
-                                );
-                                try {
-                                  const f0 = JSON.parse(orig?.xml_assinado || "{}").form || {};
-                                  Object.assign(base, {
-                                    motoristaId: f0.motoristaId || "",
-                                    motoristaNome: f0.motoristaNome || "",
-                                    possuiMoto2: f0.possuiMoto2 || "",
-                                    motorista2Id: f0.motorista2Id || "",
-                                    motorista2Nome: f0.motorista2Nome || "",
-                                    placaVeiculo: f0.placaVeiculo || "",
-                                    placaReboque: f0.placaReboque || "",
-                                    semiReboque1: f0.semiReboque1 || "",
-                                    semiReboque2: f0.semiReboque2 || "",
-                                    ciot: "",
-                                    ciotProtocolo: "",
-                                    pedagioPagto: "sem-pagamento",
-                                    pedagioOperadora: "",
-                                    pedagioCnpj: "",
-                                    valePedagio: "0.00",
-                                    pedagioTag: "",
-                                    pedagioIdentVPO: "",
-                                    pedagioDataOp: "",
-                                    seguradoraNome: "",
-                                    seguradoraId: "",
-                                    apolice: "",
-                                    averbacao: "",
-                                    rctrC: "",
-                                    rcfDc: "",
-                                    segAdicional: "",
-                                    segTotal: "",
-                                    segRepassar: "",
-                                    segResponsavel: "",
-                                  });
-                                } catch {
-                                  /* mantém só a chave */
-                                }
-                              }
-                              setForm({ ...form, ...base } as any);
-                            }}
-                          >
-                            <SelectTrigger className="h-6 text-[10px] font-mono">
-                              <SelectValue
-                                placeholder={
-                                  ctesCompativeis.length > 0
-                                    ? "Selecione o CT-e original"
-                                    : "Sem CT-e compatível no percurso"
-                                }
-                              />
-                            </SelectTrigger>
-                            <SelectContent>
-                              {(form as any).cteReferenciado &&
-                                !ctesCompativeis.some(
-                                  (d) =>
-                                    String(d.chave_acesso || "").replace(/\D/g, "") ===
-                                    String((form as any).cteReferenciado).replace(/\D/g, ""),
-                                ) && (
-                                  <SelectItem
-                                    value={String((form as any).cteReferenciado).replace(/\D/g, "")}
-                                  >
-                                    CT-e {(form as any).cteReferenciado} (fora do percurso)
-                                  </SelectItem>
-                                )}
-                              {ctesCompativeis.map((d) => {
-                                const ch = String(d.chave_acesso || "").replace(/\D/g, "");
-                                return (
-                                  <SelectItem key={d.id} value={ch} title={ch}>
-                                    CT-e {d.numero} •{" "}
-                                    {d.valor_servico != null ? brl(Number(d.valor_servico)) : ""}
-                                  </SelectItem>
-                                );
-                              })}
-                            </SelectContent>
-                          </Select>
-                          {(form as any).cteReferenciado && (
-                            <Button
-                              size="icon"
-                              variant="ghost"
-                              className="h-6 w-6 shrink-0"
-                              onClick={() => setForm({ ...form, cteReferenciado: "" } as any)}
-                              title="Limpar"
-                            >
-                              <X className="h-3 w-3" />
-                            </Button>
+                {exigeCteOriginal() &&
+                  (() => {
+                    const ch = chaveCteOriginal();
+                    const ok = ch.length === 44;
+                    const rotulo = ROTULO_CTE_ORIGEM[tipoCteOriginal()] || tipoCteOriginal();
+                    return (
+                      <div className="mt-1.5 flex flex-wrap items-center gap-x-2 gap-y-1 rounded-lg border border-primary/20 bg-primary/5 px-2 py-1.5">
+                        <span className="text-[10px] font-semibold uppercase tracking-wide text-primary/80">
+                          CT-e Original
+                        </span>
+                        {ok ? (
+                          <span className="font-mono text-[10px] text-foreground/80" title={ch}>
+                            {ch}
+                          </span>
+                        ) : (
+                          <span className="text-[10px] font-medium text-amber-600">
+                            Não informado — obrigatório para {rotulo}
+                          </span>
+                        )}
+                        {(form as any).finalidadeEmissao === "Complemento" &&
+                          (form as any).motivoComplemento && (
+                            <span className="text-[10px] text-muted-foreground">
+                              Motivo: {(form as any).motivoComplemento}
+                            </span>
                           )}
-                        </div>
-                      ) : (
-                        <Input
-                          className="h-6 text-[10px] font-mono"
-                          
-                          value={(form as any).cteReferenciado || ""}
-                          onChange={(e) =>
-                            setForm({
-                              ...form,
-                              cteReferenciado: e.target.value.replace(/\D/g, "").slice(0, 44),
-                            } as any)
-                          }
-                          maxLength={44}
-                        />
-                      )}
-                    </div>
-                  </div>
-                )}
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          className="ml-auto h-6 rounded-lg px-2 text-[10px]"
+                          onClick={abrirCteOrigem}
+                        >
+                          {ok ? "Editar" : "Preencher"}
+                        </Button>
+                      </div>
+                    );
+                  })()}
                 <p className="text-[9px] text-muted-foreground mt-1">
                   Avulso transmite como CT-e Normal; Simplificado transmite como CTeSimp.
                 </p>
               </Card>
             </TabsContent>
           </Tabs>
+
+          <Dialog open={cteOrigemOpen} onOpenChange={fecharCteOrigem}>
+            <DialogContent className="inset-auto left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-[460px] max-w-[calc(100vw-2rem)] h-auto max-h-[90vh] overflow-y-auto p-4 gap-3 rounded-2xl sm:p-6">
+              <DialogHeader className="gap-1.5 pb-1">
+                <DialogTitle className="tracking-tight">
+                  {ROTULO_CTE_ORIGEM[tipoCteOriginal()] || tipoCteOriginal()} — CT-e Original
+                </DialogTitle>
+                <DialogDescription>
+                  Informe o CT-e a que este documento se refere (chave de acesso do CT-e anterior).
+                </DialogDescription>
+              </DialogHeader>
+              {(form as any).finalidadeEmissao === "Complemento" && (
+                <div className="grid gap-1.5">
+                  <Label>Motivo do Complemento</Label>
+                  <Select
+                    value={cteOrigemDraft.motivo}
+                    onValueChange={(v) => setCteOrigemDraft((d) => ({ ...d, motivo: v }))}
+                  >
+                    <SelectTrigger className="h-10 rounded-xl">
+                      <SelectValue placeholder="Selecione o motivo" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {MOTIVOS_COMPLEMENTO.map((m) => (
+                        <SelectItem key={m} value={m}>
+                          {m.toUpperCase()}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
+              <div className="grid gap-1.5">
+                <Label>
+                  {(form as any).finalidadeEmissao === "Complemento" ||
+                  (form as any).finalidadeEmissao === "Substituicao"
+                    ? "CT-e Original"
+                    : "Chave do CT-e anterior"}
+                </Label>
+                {(form as any).finalidadeEmissao === "Complemento" ||
+                (form as any).finalidadeEmissao === "Substituicao" ? (
+                  <div className="flex items-center gap-1">
+                    <Select
+                      value={cteOrigemDraft.chave}
+                      onValueChange={(v) => {
+                        setCteOrigemDraft((d) => ({ ...d, chave: v }));
+                        if ((form as any).finalidadeEmissao === "Complemento")
+                          herdarDadosCteOriginal(v);
+                      }}
+                    >
+                      <SelectTrigger className="h-10 rounded-xl font-mono">
+                        <SelectValue
+                          placeholder={
+                            ctesCompativeis.length > 0
+                              ? "Selecione o CT-e original"
+                              : "Sem CT-e compatível no percurso"
+                          }
+                        />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {cteOrigemDraft.chave &&
+                          !ctesCompativeis.some(
+                            (d) =>
+                              String(d.chave_acesso || "").replace(/\D/g, "") ===
+                              cteOrigemDraft.chave,
+                          ) && (
+                            <SelectItem value={cteOrigemDraft.chave}>
+                              CT-e {cteOrigemDraft.chave} (fora do percurso)
+                            </SelectItem>
+                          )}
+                        {ctesCompativeis.map((d) => {
+                          const ch = String(d.chave_acesso || "").replace(/\D/g, "");
+                          return (
+                            <SelectItem key={d.id} value={ch} title={ch}>
+                              CT-e {d.numero} •{" "}
+                              {d.valor_servico != null ? brl(Number(d.valor_servico)) : ""}
+                            </SelectItem>
+                          );
+                        })}
+                      </SelectContent>
+                    </Select>
+                    {cteOrigemDraft.chave && (
+                      <Button
+                        size="icon"
+                        variant="ghost"
+                        className="h-9 w-9 shrink-0"
+                        onClick={() => setCteOrigemDraft((d) => ({ ...d, chave: "" }))}
+                        title="Limpar"
+                      >
+                        <X className="h-3.5 w-3.5" />
+                      </Button>
+                    )}
+                  </div>
+                ) : (
+                  <>
+                    <Input
+                      className="rounded-xl font-mono"
+                      placeholder="44 dígitos da chave de acesso"
+                      value={cteOrigemDraft.chave}
+                      onChange={(e) =>
+                        setCteOrigemDraft((d) => ({
+                          ...d,
+                          chave: e.target.value.replace(/\D/g, "").slice(0, 44),
+                        }))
+                      }
+                      maxLength={44}
+                      inputMode="numeric"
+                    />
+                    {cteOrigemDraft.chave.length > 0 && cteOrigemDraft.chave.length !== 44 && (
+                      <p className="text-[11px] text-amber-600">
+                        A chave tem 44 dígitos ({cteOrigemDraft.chave.length}/44).
+                      </p>
+                    )}
+                  </>
+                )}
+                {(form as any).finalidadeEmissao === "Complemento" && (
+                  <p className="text-[11px] leading-relaxed text-muted-foreground">
+                    Escolher um CT-e emitido por esta empresa herda motorista, veículos e seguro
+                    do CT-e original.
+                  </p>
+                )}
+              </div>
+              <DialogFooter className="gap-2">
+                <Button
+                  variant="outline"
+                  onClick={() => fecharCteOrigem(false)}
+                  className="h-10 rounded-xl"
+                >
+                  Voltar
+                </Button>
+                <Button
+                  disabled={
+                    cteOrigemDraft.chave.length !== 44 ||
+                    ((form as any).finalidadeEmissao === "Complemento" && !cteOrigemDraft.motivo)
+                  }
+                  onClick={salvarCteOrigem}
+                  className="h-10 rounded-xl px-5 shadow-sm transition-all hover:-translate-y-px hover:shadow-md"
+                >
+                  Salvar
+                </Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
 
           <DialogFooter className="gap-2 shrink-0 border-t border-border/60 pt-4">
             <Button variant="ghost" onClick={limparFormularioAoSair} className="h-10 rounded-xl">
