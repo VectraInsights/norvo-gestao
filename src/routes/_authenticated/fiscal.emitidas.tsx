@@ -135,7 +135,7 @@ function NotasEmitidas() {
         const { data, error } = await supabase
           .from("notas_fiscais")
           .select(
-            "id,numero,serie,status,valor_total,data_emissao,chave,tipo,contato:contatos(nome),venda:vendas(numero)",
+            "id,numero,serie,status,valor_total,data_emissao,chave,tipo,contato:transportes(nome),venda:vendas(numero)",
           )
           .eq("empresa_id", empresa!.id)
           .order("created_at", { ascending: false })
@@ -178,7 +178,7 @@ function NotasEmitidas() {
       const todos: unknown[] = [];
       for (let ini = 0; ; ini += 1000) {
         const { data, error } = await supabase
-          .from("contatos")
+          .from("transportes")
           .select("id, nome")
           .eq("empresa_id", empresa!.id)
           .order("nome")

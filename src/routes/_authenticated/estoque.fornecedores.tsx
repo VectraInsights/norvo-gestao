@@ -65,7 +65,6 @@ export const Route = createFileRoute("/_authenticated/estoque/fornecedores")({
 type Contato = {
   id: string;
   nome: string;
-  tipo: string;
   documento: string | null;
   email: string | null;
   telefone: string | null;
@@ -139,13 +138,12 @@ function Fornecedores() {
       const todos: unknown[] = [];
       for (let ini = 0; ; ini += 1000) {
         const { data, error } = await supabase
-          .from("contatos")
+          .from("fornecedores")
           .select(
-            "id,nome,tipo,documento,email,telefone,cep,logradouro,numero,complemento,bairro,cidade,uf,observacoes",
+            "id,nome,documento,email,telefone,cep,logradouro,numero,complemento,bairro,cidade,uf,observacoes",
           )
           .eq("empresa_id", empresa!.id)
-          .eq("tipo", "fornecedor")
-          .order("nome")
+                    .order("nome")
           .range(ini, ini + 999)
           .abortSignal(signal);
         if (error) throw error;
@@ -229,18 +227,17 @@ function Fornecedores() {
       const doc = onlyDigits(input.documento);
       if (doc) {
         const { data: existente } = await supabase
-          .from("contatos")
+          .from("fornecedores")
           .select("id,nome")
           .eq("empresa_id", empresa.id)
           .eq("documento", doc)
           .maybeSingle();
         if (existente) throw new Error(`Já cadastrado: ${existente.nome}`);
       }
-      const { error } = await supabase.from("contatos").insert({
+      const { error } = await supabase.from("fornecedores").insert({
         empresa_id: empresa.id,
         nome: input.nome,
-        tipo: "fornecedor",
-        documento: doc || null,
+                documento: doc || null,
         email: input.email || null,
         telefone: input.telefone || null,
         cep: input.cep || null,
@@ -259,7 +256,7 @@ function Fornecedores() {
       setOpen(false);
       setForm(emptyForm());
       qc.invalidateQueries({ queryKey: ["fornecedores"] });
-      qc.invalidateQueries({ queryKey: ["contatos"] });
+      qc.invalidateQueries({ queryKey: ["fornecedores"] });
     },
     onError: (e: Error) => toast.error(e.message),
   });
@@ -270,7 +267,7 @@ function Fornecedores() {
       const doc = onlyDigits(input.documento);
       if (doc) {
         const { data: existente } = await supabase
-          .from("contatos")
+          .from("fornecedores")
           .select("id,nome")
           .eq("empresa_id", empresa.id)
           .eq("documento", doc)
@@ -280,7 +277,7 @@ function Fornecedores() {
           throw new Error(`Já existe outro contato com este CPF/CNPJ: ${existente.nome}`);
       }
       const { error } = await supabase
-        .from("contatos")
+        .from("fornecedores")
         .update({
           nome: input.nome,
           documento: doc || null,
@@ -304,21 +301,21 @@ function Fornecedores() {
       setEditing(null);
       setForm(emptyForm());
       qc.invalidateQueries({ queryKey: ["fornecedores"] });
-      qc.invalidateQueries({ queryKey: ["contatos"] });
+      qc.invalidateQueries({ queryKey: ["fornecedores"] });
     },
     onError: (e: Error) => toast.error(e.message),
   });
 
   const excluir = useMutation({
     mutationFn: async (id: string) => {
-      const { error } = await supabase.from("contatos").delete().eq("id", id);
+      const { error } = await supabase.from("fornecedores").delete().eq("id", id);
       if (error) throw error;
     },
     onSuccess: () => {
       toast.success("Fornecedor excluído");
       setDeleting(null);
       qc.invalidateQueries({ queryKey: ["fornecedores"] });
-      qc.invalidateQueries({ queryKey: ["contatos"] });
+      qc.invalidateQueries({ queryKey: ["fornecedores"] });
     },
     onError: (e: Error) => toast.error(e.message),
   });
@@ -326,7 +323,7 @@ function Fornecedores() {
   const excluirLote = useMutation({
     mutationFn: async (ids: string[]) => {
       if (!empresa) throw new Error("Empresa não selecionada");
-      const { error } = await supabase.from("contatos").delete().eq("empresa_id", empresa.id).in("id", ids);
+      const { error } = await supabase.from("fornecedores").delete().eq("empresa_id", empresa.id).in("id", ids);
       if (error) throw error;
       return ids.length;
     },
@@ -335,7 +332,7 @@ function Fornecedores() {
       setSelecionados(new Set());
       setConfLote(false);
       qc.invalidateQueries({ queryKey: ["fornecedores"] });
-      qc.invalidateQueries({ queryKey: ["contatos"] });
+      qc.invalidateQueries({ queryKey: ["fornecedores"] });
     },
     onError: (e: Error) => toast.error(e.message),
   });
@@ -396,7 +393,7 @@ function Fornecedores() {
           <Button
             variant="outline"
             size="sm"
-            onClick={() => void corrigir((filtrados || []) as any)}
+            onClick={() => void corrigir((filtrados || []) as any, "fornecedores")}
             disabled={corrigindo}
             className="h-10 rounded-xl px-4"
             title="Busca o CNPJ na Receita Federal e corrige o nome (razão social) e completa o endereço dos fornecedores da lista"

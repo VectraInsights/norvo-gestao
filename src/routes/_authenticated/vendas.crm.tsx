@@ -91,7 +91,7 @@ function CRM() {
       const todas: unknown[] = [];
       for (let ini = 0; ; ini += 1000) {
         const { data, error } = await supabase.from("crm_oportunidades" as never)
-          .select("id,titulo,descricao,valor,probabilidade,data_prevista,etapa_id,contato_id,status,contatos:contato_id(nome)")
+          .select("id,titulo,descricao,valor,probabilidade,data_prevista,etapa_id,contato_id,status,contatos:clientes(nome)")
           .eq("empresa_id", empresa!.id).order("ordem").range(ini, ini + 999);
         if (error) throw error;
         todas.push(...((data as unknown[]) ?? []));
@@ -110,7 +110,7 @@ function CRM() {
       // Busca em páginas: sem range, o Supabase corta em 1000 (sem aviso)
       const todos: unknown[] = [];
       for (let ini = 0; ; ini += 1000) {
-        const { data } = await supabase.from("contatos").select("id,nome")
+        const { data } = await supabase.from("clientes").select("id,nome")
           .eq("empresa_id", empresa!.id).order("nome").range(ini, ini + 999);
         todos.push(...((data as unknown[]) ?? []));
         if (!data || (data as unknown[]).length < 1000) break;

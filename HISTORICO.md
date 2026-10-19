@@ -6377,3 +6377,32 @@ pm run build OK.
   `useCorrigirPelaReceita`.
 - Corrigido o texto do cabecalho de Fiscal > Contatos: a tela so lista `tipo = 'transporte'`
   (descricao dizia "clientes, fornecedores e transporte").
+
+## Cadastros em tabelas separadas por modulo (19/10)
+
+- Decisao do dono: "o cadastro dos fornecedores deve ser um separado, o de transporte outro,
+  e o de cliente outro". Antes tudo vivia na tabela `contatos` com a coluna `tipo`, o que
+  deixava o dedupe por CNPJ **global** (cadastrar um fornecedor era bloqueado se o mesmo CNPJ
+  ja existisse como transporte) — um modulo atrapalhava o outro.
+- **Migration** `20261019140000_dividir_cadastros_em_tabelas.sql`:
+  - novas tabelas `clientes` (Vendas), `fornecedores` (Estoque) e `transportes` (Fiscal),
+    com as mesmas colunas, RLS de membro da empresa e trigger de `updated_at`;
+  - os dados de `contatos` migrados por tipo (2 clientes, 9 transportes);
+  - `contatos` virou **VIEW** de leitura (union das 3, `security_invoker = true`) para as
+    consultas genericas (command palette, relatorios, dashboard) — a view nao aceita escrita:
+    toda gravacao do app aponta para a tabela do modulo;
+  - FKs reapontadas: vendas/ordens_servico/viagens/projetos/crm -> `clientes`,
+    ordens_compra -> `fornecedores`, notas_fiscais/cte_documentos -> `transportes`;
+    `lancamentos_financeiros.contato_id` ficou **sem FK** (o contador do financeiro pode ser
+    cliente, fornecedor OU transportadora) e o nome e resolvido por
+    `src/lib/financeiro-contatos.ts` (`nomesContatosFinanceiros` / `listarContatosFinanceiros`).
+- App: cada tela de cadastro passou a escrever/ler na sua tabela (Fiscal>Contatos = transportes,
+  Estoque>Fornecedores = fornecedores, Vendas>Clientes = clientes); o "Tipo" saiu do formulario
+  do cadastro de transporte; o dialogo de contato rapido grava na(s) tabela(s) escolhida(s);
+  a importacao de planilha (lancamentos) cria clientes (a receber) e fornecedores (a pagar)
+  nas tabelas certas; os embeds do PostgREST (`cliente:clientes(nome)`, `contato:transportes(nome)`,
+  `fornecedores:fornecedor_id(nome)`) foram reapontados.
+- Correcao de bug: a tela de Fornecedores invalidava a query key `["contatos"]` enquanto a
+  lista usa `["fornecedores"]` — a lista nao atualizava depois de criar/editar/excluir.
+- Validado na base: consultas de leitura/escrita das 3 tabelas + view + embeds do PostgREST
+  (schema cache ja atualizado). `npm test` (64) e build OK.

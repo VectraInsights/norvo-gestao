@@ -11,19 +11,28 @@ type Contato = {
   [k: string]: unknown;
 };
 
+/** Tabela de cadastro de cada módulo (cada módulo tem a sua). */
+export type TabelaCadastro = "clientes" | "fornecedores" | "transportes";
+
+const CHAVE_CACHE: Record<TabelaCadastro, string> = {
+  clientes: "contatos-clientes",
+  fornecedores: "fornecedores",
+  transportes: "contatos-fiscal",
+};
+
 /**
  * Correção em lote pela Receita Federal (nome = razão social oficial + completa
  * endereço/CEP/telefone vazios).
  *
  * Usado nas telas de cadastro de cada módulo (Fiscal > Contatos, Estoque >
- * Fornecedores, Vendas > Clientes). Cada módulo corrige **apenas a própria lista** —
+ * Fornecedores, Vendas > Clientes). Cada módulo corrige **apenas a própria tabela** —
  * um módulo não mexe no cadastro do outro (os módulos são independentes).
  */
 export function useCorrigirPelaReceita() {
   const qc = useQueryClient();
   const [corrigindo, setCorrigindo] = useState(false);
 
-  const corrigir = async (alvos: Contato[]) => {
+  const corrigir = async (alvos: Contato[], tabela: TabelaCadastro) => {
     const comCnpj = alvos
       .filter((c) => String(c.documento || "").replace(/\D/g, "").length === 14)
       .slice(0, 200);
@@ -41,7 +50,7 @@ export function useCorrigirPelaReceita() {
           const patch = patchContatoComCnpj(c, dados);
           if (!patch) continue;
           const { error } = await supabase
-            .from("contatos")
+            .from(tabela as any)
             .update(patch as never)
             .eq("id", c.id);
           if (!error) atualizados++;
@@ -51,6 +60,7 @@ export function useCorrigirPelaReceita() {
         // Respeita o limite de taxa das APIs públicas.
         await new Promise((r) => setTimeout(r, 200));
       }
+      qc.invalidateQueries({ queryKey: [CHAVE_CACHE[tabela]] });
       qc.invalidateQueries({ queryKey: ["contatos-fiscal"] });
       qc.invalidateQueries({ queryKey: ["contatos-clientes"] });
       qc.invalidateQueries({ queryKey: ["fornecedores"] });

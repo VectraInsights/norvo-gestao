@@ -748,6 +748,220 @@ export type Database = {
           },
         ];
       };
+
+      clientes: {
+        Row: {
+          ativo: boolean;
+          bairro: string | null;
+          cep: string | null;
+          cidade: string | null;
+          complemento: string | null;
+          created_at: string;
+          documento: string | null;
+          email: string | null;
+          empresa_id: string;
+          id: string;
+          ie: string | null;
+          logradouro: string | null;
+          nome: string;
+          numero: string | null;
+          observacoes: string | null;
+          telefone: string | null;
+          uf: string | null;
+          updated_at: string;
+        };
+        Insert: {
+          ativo?: boolean;
+          bairro?: string | null;
+          cep?: string | null;
+          cidade?: string | null;
+          complemento?: string | null;
+          created_at?: string;
+          documento?: string | null;
+          email?: string | null;
+          empresa_id: string;
+          id?: string;
+          ie?: string | null;
+          logradouro?: string | null;
+          nome: string;
+          numero?: string | null;
+          observacoes?: string | null;
+          telefone?: string | null;
+          uf?: string | null;
+          updated_at?: string;
+        };
+        Update: {
+          ativo?: boolean;
+          bairro?: string | null;
+          cep?: string | null;
+          cidade?: string | null;
+          complemento?: string | null;
+          created_at?: string;
+          documento?: string | null;
+          email?: string | null;
+          empresa_id?: string;
+          id?: string;
+          ie?: string | null;
+          logradouro?: string | null;
+          nome?: string;
+          numero?: string | null;
+          observacoes?: string | null;
+          telefone?: string | null;
+          uf?: string | null;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "clientes_empresa_id_fkey";
+            columns: ["empresa_id"];
+            isOneToOne: false;
+            referencedRelation: "empresas";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      fornecedores: {
+        Row: {
+          ativo: boolean;
+          bairro: string | null;
+          cep: string | null;
+          cidade: string | null;
+          complemento: string | null;
+          created_at: string;
+          documento: string | null;
+          email: string | null;
+          empresa_id: string;
+          id: string;
+          ie: string | null;
+          logradouro: string | null;
+          nome: string;
+          numero: string | null;
+          observacoes: string | null;
+          telefone: string | null;
+          uf: string | null;
+          updated_at: string;
+        };
+        Insert: {
+          ativo?: boolean;
+          bairro?: string | null;
+          cep?: string | null;
+          cidade?: string | null;
+          complemento?: string | null;
+          created_at?: string;
+          documento?: string | null;
+          email?: string | null;
+          empresa_id: string;
+          id?: string;
+          ie?: string | null;
+          logradouro?: string | null;
+          nome: string;
+          numero?: string | null;
+          observacoes?: string | null;
+          telefone?: string | null;
+          uf?: string | null;
+          updated_at?: string;
+        };
+        Update: {
+          ativo?: boolean;
+          bairro?: string | null;
+          cep?: string | null;
+          cidade?: string | null;
+          complemento?: string | null;
+          created_at?: string;
+          documento?: string | null;
+          email?: string | null;
+          empresa_id?: string;
+          id?: string;
+          ie?: string | null;
+          logradouro?: string | null;
+          nome?: string;
+          numero?: string | null;
+          observacoes?: string | null;
+          telefone?: string | null;
+          uf?: string | null;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "fornecedores_empresa_id_fkey";
+            columns: ["empresa_id"];
+            isOneToOne: false;
+            referencedRelation: "empresas";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      transportes: {
+        Row: {
+          ativo: boolean;
+          bairro: string | null;
+          cep: string | null;
+          cidade: string | null;
+          complemento: string | null;
+          created_at: string;
+          documento: string | null;
+          email: string | null;
+          empresa_id: string;
+          id: string;
+          ie: string | null;
+          logradouro: string | null;
+          nome: string;
+          numero: string | null;
+          observacoes: string | null;
+          telefone: string | null;
+          uf: string | null;
+          updated_at: string;
+        };
+        Insert: {
+          ativo?: boolean;
+          bairro?: string | null;
+          cep?: string | null;
+          cidade?: string | null;
+          complemento?: string | null;
+          created_at?: string;
+          documento?: string | null;
+          email?: string | null;
+          empresa_id: string;
+          id?: string;
+          ie?: string | null;
+          logradouro?: string | null;
+          nome: string;
+          numero?: string | null;
+          observacoes?: string | null;
+          telefone?: string | null;
+          uf?: string | null;
+          updated_at?: string;
+        };
+        Update: {
+          ativo?: boolean;
+          bairro?: string | null;
+          cep?: string | null;
+          cidade?: string | null;
+          complemento?: string | null;
+          created_at?: string;
+          documento?: string | null;
+          email?: string | null;
+          empresa_id?: string;
+          id?: string;
+          ie?: string | null;
+          logradouro?: string | null;
+          nome?: string;
+          numero?: string | null;
+          observacoes?: string | null;
+          telefone?: string | null;
+          uf?: string | null;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "transportes_empresa_id_fkey";
+            columns: ["empresa_id"];
+            isOneToOne: false;
+            referencedRelation: "empresas";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
       crm_etapas: {
         Row: {
           cor: string | null;

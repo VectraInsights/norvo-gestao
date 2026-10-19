@@ -1274,7 +1274,7 @@ function CtePage() {
       try {
         if (empresa && (remD || dstD || tomaD)) {
           const { data: cts } = await supabase
-            .from("contatos" as any)
+            .from("transportes" as any)
             .select("documento,nome,cidade,uf")
             .eq("empresa_id", (empresa as any).id);
           const cl = (cts as any[]) || [];
@@ -1295,7 +1295,7 @@ function CtePage() {
       try {
         if (empresa && (remD || dstD || tomaD)) {
           const { data: cts2 } = await supabase
-            .from("contatos" as any)
+            .from("transportes" as any)
             .select("documento,nome,logradouro,numero,bairro,cidade,uf,cep,ie,telefone")
             .eq("empresa_id", (empresa as any).id);
           const cl2 = (cts2 as any[]) || [];
@@ -1319,7 +1319,7 @@ function CtePage() {
       try {
         if (empresa && (remD || tomaD)) {
           const { data: cts2 } = await supabase
-            .from("contatos" as any)
+            .from("transportes" as any)
             .select("documento,telefone")
             .eq("empresa_id", (empresa as any).id);
           const cl2 = (cts2 as any[]) || [];
@@ -1564,7 +1564,7 @@ function CtePage() {
           if (atual && temTipoLogradouro(atual)) return;
           pendUpd.push(
             supabase
-              .from("contatos" as any)
+              .from("transportes" as any)
               .update({ logradouro: novo })
               .eq("empresa_id", (empresa as any).id)
               .eq("documento", docDigits),
@@ -3053,7 +3053,7 @@ function CtePage() {
     if (empresa) {
       // select * (contatos tem coluna ie nativa)
       const { data } = await supabase
-        .from("contatos" as any)
+        .from("transportes" as any)
         .select("id,empresa_id,documento,nome,logradouro,numero,bairro,cidade,uf,cep,telefone,ie")
         .eq("empresa_id", empresa.id)
         .eq("documento", digits)
@@ -3106,10 +3106,10 @@ function CtePage() {
   // Insert resiliente: tenta com `ie`, se a migration ainda não foi aplicada reinsere sem.
   // Entra no cache na hora (busca instantânea) em vez de esperar refetch.
   const insertContatoResiliente = async (row: Record<string, unknown>) => {
-    const { error } = await supabase.from("contatos" as any).insert({ ...(row as Record<string, unknown>), tipo: "transporte" } as any);
+    const { error } = await supabase.from("transportes" as any).insert({ ...(row as Record<string, unknown>) } as any);
     if (error && /ie/i.test(error.message || "")) {
       const { ie: _omit, ...semIe } = row;
-      const retry = await supabase.from("contatos" as any).insert({ ...semIe, tipo: "transporte" } as any);
+      const retry = await supabase.from("transportes" as any).insert({ ...semIe } as any);
       if (!retry.error && empresa) {
         qc.setQueryData(["contatos-cte", empresa.id], (old: any) => [...(Array.isArray(old) ? old : []), semIe]);
       } else if (empresa) {
@@ -3222,7 +3222,7 @@ function CtePage() {
       const todos: unknown[] = [];
       for (let ini = 0; ; ini += 1000) {
         const { data } = await supabase
-          .from("contatos" as any)
+          .from("transportes" as any)
           .select("documento,nome,ie,logradouro,numero,bairro,cidade,uf,cep,telefone")
           .eq("empresa_id", empresa!.id)
           .range(ini, ini + 999);
@@ -3252,7 +3252,7 @@ function CtePage() {
     if (unicos.length === 0) return;
     (async () => {
       const { data } = await supabase
-        .from("contatos" as any)
+        .from("transportes" as any)
         .select("documento,nome,ie,logradouro,numero,bairro,cidade,uf,cep,telefone")
         .eq("empresa_id", empresa.id)
         .in("documento", unicos);
@@ -3440,7 +3440,7 @@ function CtePage() {
         if (hit) return hit;
         const p: Promise<any> = Promise.resolve(
           supabase
-            .from("contatos" as any)
+            .from("transportes" as any)
             .select("id,documento,nome,ie,uf,cidade,logradouro,numero,bairro,cep,telefone")
             .eq("empresa_id", empresa!.id)
             .eq("documento", doc)
@@ -3473,10 +3473,10 @@ function CtePage() {
         contatosUpsert.set(doc, c);
       };
       const inserirContatoComFallback = async (row: Record<string, unknown>) => {
-        const { error } = await supabase.from("contatos" as any).insert(row);
+        const { error } = await supabase.from("transportes" as any).insert(row);
         if (error && /ie/i.test(error.message || "")) {
           const { ie: _ie, ...semIe } = row;
-          await supabase.from("contatos" as any).insert(semIe);
+          await supabase.from("transportes" as any).insert(semIe);
         }
       };
       const flushContatos = async () => {
@@ -3487,8 +3487,7 @@ function CtePage() {
         if (novos.length > 0) {
           const rows = novos.map((c) => ({
             empresa_id: empresa!.id,
-            tipo: "transporte",
-            nome: c.nome,
+                nome: c.nome,
             documento: docDe(c),
             ie: c.ie || null,
             uf: c.uf || null,
@@ -3499,7 +3498,7 @@ function CtePage() {
             cep: c.cep || null,
             telefone: c.fone || null,
           }));
-          const { error } = await supabase.from("contatos" as any).insert(rows);
+          const { error } = await supabase.from("transportes" as any).insert(rows);
           if (error) {
             // Concorrência externa ou IE duplicado: cai p/ linha a linha com fallback.
             await mapPool(rows, 5, (r) => inserirContatoComFallback(r));
@@ -3525,7 +3524,7 @@ function CtePage() {
         }
         await mapPool(patches, 5, (p) =>
           Promise.resolve(
-            supabase.from("contatos" as any).update(p.upd).eq("empresa_id", empresa!.id).eq("documento", p.doc),
+            supabase.from("transportes" as any).update(p.upd).eq("empresa_id", empresa!.id).eq("documento", p.doc),
           ),
         );
       };
@@ -3546,7 +3545,7 @@ function CtePage() {
             const dados = await consultarCnpj(doc);
             if (dados) {
               const { data: atual } = await supabase
-                .from("contatos" as any)
+                .from("transportes" as any)
                 .select(
                   "id,nome,logradouro,numero,complemento,bairro,cidade,uf,cep,telefone,email",
                 )
@@ -3556,7 +3555,7 @@ function CtePage() {
               const patch = atual ? patchContatoComCnpj(atual as any, dados, c.nome) : null;
               if (patch && (atual as any)?.id) {
                 const { error } = await supabase
-                  .from("contatos" as any)
+                  .from("transportes" as any)
                   .update(patch)
                   .eq("id", (atual as any).id);
                 if (!error) atualizados++;

@@ -776,7 +776,7 @@ function NotasRecebidas() {
 
       let fornecedorId: string | null = null;
       const { data: contatosExistentes } = await supabase
-        .from("contatos")
+        .from("transportes")
         .select("id")
         .eq("empresa_id", empresa.id)
         .ilike("nome", `%${importResults.emitente.slice(0, 15)}%`)
@@ -799,13 +799,12 @@ function NotasRecebidas() {
           }
         }
         const { data: novoContato } = await supabase
-          .from("contatos")
+          .from("transportes")
           .insert({
             empresa_id: empresa.id,
             nome: dadosApi?.razao_social || dadosApi?.nome || importResults.emitente,
             documento: importResults.cnpj,
-            tipo: "fornecedor" as any,
-            email: dadosApi?.email || null,
+                        email: dadosApi?.email || null,
             telefone: dadosApi?.ddd_telefone_1 || dadosApi?.telefone || null,
             cep: dadosApi?.cep || null,
             logradouro: dadosApi?.logradouro || null,
@@ -1064,7 +1063,7 @@ function NotasRecebidas() {
       // 3. Obter ou criar fornecedor
       let fornecedorId: string | null = null;
       const { data: contatosExistentes } = await supabase
-        .from("contatos")
+        .from("transportes")
         .select("id")
         .eq("empresa_id", empresa.id)
         .ilike("nome", `%${notaDetalhe.emitente.slice(0, 15)}%`)
@@ -1088,13 +1087,12 @@ function NotasRecebidas() {
           }
         }
         const { data: novoContato } = await supabase
-          .from("contatos")
+          .from("transportes")
           .insert({
             empresa_id: empresa.id,
             nome: dadosApi?.razao_social || dadosApi?.nome || notaDetalhe.emitente,
             documento: notaDetalhe.cnpj,
-            tipo: "fornecedor" as any,
-            email: dadosApi?.email || null,
+                        email: dadosApi?.email || null,
             telefone: dadosApi?.ddd_telefone_1 || dadosApi?.telefone || null,
             cep: dadosApi?.cep || null,
             logradouro: dadosApi?.logradouro || null,
@@ -1290,7 +1288,7 @@ function NotasRecebidas() {
       }
       // Buscar fornecedor id atual
       let fornecedorId: string | null = null;
-      const { data: cont } = await supabase.from("contatos").select("id").eq("empresa_id", empresa.id).ilike("nome", `%${notaDetalhe.emitente.slice(0, 15)}%`).maybeSingle();
+      const { data: cont } = await supabase.from("transportes").select("id").eq("empresa_id", empresa.id).ilike("nome", `%${notaDetalhe.emitente.slice(0, 15)}%`).maybeSingle();
       if (cont) fornecedorId = (cont as any).id;
 
       // Deletar parcelas antigas e lançamentos antigos

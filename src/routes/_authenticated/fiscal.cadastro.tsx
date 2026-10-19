@@ -33,20 +33,17 @@ export const Route = createFileRoute("/_authenticated/fiscal/cadastro")({
 });
 
 type Contato = {
-  id: string; nome: string; tipo: string;
+  id: string; nome: string;
   documento: string | null; ie: string | null; email: string | null; telefone: string | null;
   cep: string | null; logradouro: string | null; numero: string | null;
   complemento: string | null; bairro: string | null; cidade: string | null;
   uf: string | null; observacoes: string | null;
 };
 
-type TipoContato = "cliente" | "fornecedor" | "ambos" | "transporte";
-
 const emptyForm = () => ({
   nome: "", documento: "", ie: "", email: "", telefone: "",
   cep: "", logradouro: "", numero: "", complemento: "",
   bairro: "", cidade: "", uf: "", observacoes: "",
-  tipo: "transporte" as TipoContato,
 });
 
 function onlyDigits(s: string) { return s.replace(/\D/g, ""); }
@@ -96,7 +93,7 @@ function Cadastro() {
         }
         if (cancelado) return;
         if (!antigos.length) { marcaFeito(); return; }
-        const { data: atuais, error: errAtuais } = await supabase.from("contatos")
+        const { data: atuais, error: errAtuais } = await supabase.from("transportes")
           .select("id,nome,documento,email,telefone,ie,cep,logradouro,numero,complemento,bairro,cidade,uf,observacoes")
           .eq("empresa_id", empId);
         if (errAtuais) throw errAtuais;
@@ -112,8 +109,8 @@ function Cadastro() {
         for (const f of antigos) {
           const c = porChave.get(chave(f.nome, f.documento));
           if (!c) {
-            const { error } = await supabase.from("contatos").insert({
-              empresa_id: empId, nome: String(f.nome ?? "").trim() || "Sem nome", tipo: "transporte",
+            const { error } = await supabase.from("transportes").insert({
+              empresa_id: empId, nome: String(f.nome ?? "").trim() || "Sem nome",
               documento: limpo(dig(f.documento)), ie: limpo(f.ie), email: limpo(f.email),
               telefone: limpo(f.telefone), cep: limpo(f.cep), logradouro: limpo(f.logradouro),
               numero: limpo(f.numero), complemento: limpo(f.complemento), bairro: limpo(f.bairro),
@@ -128,7 +125,7 @@ function Cadastro() {
           }
           if (!String(c.nome ?? "").trim() && String(f.nome ?? "").trim()) patch.nome = String(f.nome).trim();
           if (Object.keys(patch).length) {
-            const { error } = await supabase.from("contatos").update(patch as never).eq("id", c.id as string);
+            const { error } = await supabase.from("transportes").update(patch as never).eq("id", c.id as string);
             if (!error) preenchidos++;
           }
         }
@@ -172,11 +169,10 @@ function Cadastro() {
       // Busca em páginas para nunca cortar a lista (sem limite silencioso)
       const todos: unknown[] = [];
       for (let ini = 0; ; ini += 500) {
-        const { data, error } = await supabase.from("contatos")
-          .select("id,nome,tipo,documento,ie,email,telefone,cep,logradouro,numero,complemento,bairro,cidade,uf,observacoes")
+        const { data, error } = await supabase.from("transportes")
+          .select("id,nome,documento,ie,email,telefone,cep,logradouro,numero,complemento,bairro,cidade,uf,observacoes")
           .eq("empresa_id", empresa!.id)
-          .eq("tipo", "transporte")
-          .order("nome")
+                    .order("nome")
           .range(ini, ini + 499)
           .abortSignal(signal);
         if (error) throw error;
@@ -273,13 +269,13 @@ function Cadastro() {
       if (!empresa) throw new Error("Empresa não selecionada");
       const doc = onlyDigits(input.documento);
       if (doc) {
-        const { data: existente } = await supabase.from("contatos")
-          .select("id,nome,tipo").eq("empresa_id", empresa.id).eq("documento", doc).maybeSingle();
-        if (existente) throw new Error(`Já cadastrado como ${existente.tipo}: ${existente.nome}`);
+        const { data: existente } = await supabase.from("transportes")
+          .select("id,nome").eq("empresa_id", empresa.id).eq("documento", doc).maybeSingle();
+        if (existente) throw new Error(`Já cadastrado: ${existente.nome}`);
       }
       const logrFinal = await completarLogradouro(input.logradouro || "", input.cep || "");
-      const { error } = await supabase.from("contatos").insert({
-        empresa_id: empresa.id, nome: input.nome, tipo: input.tipo,
+      const { error } = await supabase.from("transportes").insert({
+        empresa_id: empresa.id, nome: input.nome,
         documento: doc || null, ie: input.ie || null, email: input.email || null, telefone: input.telefone || null,
         cep: input.cep || null, logradouro: logrFinal || null, numero: input.numero || null,
         complemento: input.complemento || null, bairro: input.bairro || null,
@@ -302,13 +298,13 @@ function Cadastro() {
       if (!empresa) throw new Error("Empresa não selecionada");
       const doc = onlyDigits(input.documento);
       if (doc) {
-        const { data: existente } = await supabase.from("contatos")
-          .select("id,nome,tipo").eq("empresa_id", empresa.id).eq("documento", doc).neq("id", input.id).maybeSingle();
-        if (existente) throw new Error(`Já existe outro cadastro com este CPF/CNPJ (${existente.tipo}): ${existente.nome}`);
+        const { data: existente } = await supabase.from("transportes")
+          .select("id,nome").eq("empresa_id", empresa.id).eq("documento", doc).neq("id", input.id).maybeSingle();
+        if (existente) throw new Error(`Já existe outro cadastro com este CPF/CNPJ: ${existente.nome}`);
       }
       const logrFinal = await completarLogradouro(input.logradouro || "", input.cep || "");
-      const { error } = await supabase.from("contatos").update({
-        nome: input.nome, tipo: input.tipo,
+      const { error } = await supabase.from("transportes").update({
+        nome: input.nome,
         documento: doc || null, ie: input.ie || null, email: input.email || null, telefone: input.telefone || null,
         cep: input.cep || null, logradouro: logrFinal || null, numero: input.numero || null,
         complemento: input.complemento || null, bairro: input.bairro || null,
@@ -328,7 +324,7 @@ function Cadastro() {
 
   const excluir = useMutation({
     mutationFn: async (id: string) => {
-      const { error } = await supabase.from("contatos").delete().eq("id", id);
+      const { error } = await supabase.from("transportes").delete().eq("id", id);
       if (error) throw error;
     },
     onSuccess: () => {
@@ -344,7 +340,7 @@ function Cadastro() {
   const excluirLote = useMutation({
     mutationFn: async (ids: string[]) => {
       if (!empresa) throw new Error("Empresa não selecionada");
-      const { error } = await supabase.from("contatos").delete().eq("empresa_id", empresa.id).in("id", ids);
+      const { error } = await supabase.from("transportes").delete().eq("empresa_id", empresa.id).in("id", ids);
       if (error) throw error;
       return ids.length;
     },
@@ -367,7 +363,6 @@ function Cadastro() {
       cep: c.cep ?? "", logradouro: c.logradouro ?? "", numero: c.numero ?? "",
       complemento: c.complemento ?? "", bairro: c.bairro ?? "", cidade: c.cidade ?? "",
       uf: c.uf ?? "", observacoes: c.observacoes ?? "",
-      tipo: c.tipo as TipoContato,
     });
     setOpen(true);
   };
@@ -388,7 +383,7 @@ function Cadastro() {
           <Button
             variant="outline"
             size="sm"
-            onClick={() => void corrigir((filtrados || []) as any)}
+            onClick={() => void corrigir((filtrados || []) as any, "transportes")}
             disabled={corrigindo}
             className="h-10 rounded-xl px-4"
             title="Busca o CNPJ na Receita Federal e corrige o nome (razão social) e completa o endereço dos contatos da lista"
@@ -498,17 +493,7 @@ function Cadastro() {
               </div>
             </div>
             <div className="grid gap-1.5"><Label>Nome / Razão social *</Label><Input required value={form.nome} onChange={(e) => setForm({ ...form, nome: e.target.value })} className="h-10 rounded-xl" /></div>
-            <div className="grid gap-1.5">
-              <Label>Tipo *</Label>
-              <Select value={form.tipo} onValueChange={(v) => setForm({ ...form, tipo: v as TipoContato })}>
-                <SelectTrigger className="h-10 rounded-xl"><SelectValue /></SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="transporte">Transporte</SelectItem>
-                  <SelectItem value="cliente">Cliente</SelectItem>
-                  <SelectItem value="fornecedor">Fornecedor</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
+
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
               <div className="grid gap-1.5"><Label>IE / ISENTO</Label><Input value={form.ie} onChange={(e) => setForm({ ...form, ie: e.target.value.toUpperCase() })} className="h-10 rounded-xl" /></div>
               <div className="grid gap-1.5"><Label>Telefone</Label><Input value={form.telefone} onChange={(e) => setForm({ ...form, telefone: e.target.value })} className="h-10 rounded-xl" /></div>

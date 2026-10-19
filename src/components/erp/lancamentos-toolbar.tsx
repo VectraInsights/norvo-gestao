@@ -73,7 +73,7 @@ const str = (v: unknown): string | null => {
 
 // Completa no fundo os contatos recém-criados com os dados da Receita pelo CNPJ.
 // Não bloqueia a importação e nunca sobrescreve o nome informado na planilha.
-async function enriquecerContatos(itens: { id: string; doc: string }[]) {
+async function enriquecerContatos(itens: { id: string; doc: string; tabela: string }[]) {
   const fila = itens.filter((c) => c.doc.replace(/\D/g, "").length === 14);
   if (!fila.length) return;
   let ok = 0;
@@ -96,7 +96,7 @@ async function enriquecerContatos(itens: { id: string; doc: string }[]) {
       };
       const payload = Object.fromEntries(Object.entries(patch).filter(([, v]) => v != null)) as Record<string, string>;
       if (!Object.keys(payload).length) continue;
-      const { error } = await supabase.from("contatos").update(payload as never).eq("id", item.id);
+      const { error } = await supabase.from(item.tabela).update(payload as never).eq("id", item.id);
       if (!error) ok++;
     }
   });
@@ -365,15 +365,31 @@ export function LancamentosToolbar({
       });
       let criadosCtt = 0;
       if (novosContatos.size) {
-        const payload = Array.from(novosContatos.values()).map((c) => ({
-          empresa_id: empresaId, nome: c.nome, tipo: c.tipo, documento: c.documento,
-        }));
-        const { data, error } = await supabase.from("contatos").insert(payload).select("id,nome,documento");
-        if (error) throw error;
-        (data ?? []).forEach((c) => mContatos.set(normNome(c.nome), c.id));
-        criadosCtt = data?.length ?? 0;
+        // A receber -> clientes; a pagar -> fornecedores (tabelas separadas por módulo).
+        const criados: { id: string; nome: string; documento: string | null; tabela: string }[] = [];
+        for (const tipo of ["cliente", "fornecedor"] as const) {
+          const tabela = tipo === "cliente" ? "clientes" : "fornecedores";
+          const payload = Array.from(novosContatos.values())
+            .filter((c) => c.tipo === tipo)
+            .map((c) => ({ empresa_id: empresaId, nome: c.nome, documento: c.documento }));
+          if (!payload.length) continue;
+          const { data, error } = await supabase
+            .from(tabela as any)
+            .insert(payload)
+            .select("id,nome,documento");
+          if (error) throw error;
+          for (const c of (data ?? []) as any[]) {
+            criados.push({ ...c, tabela });
+            mContatos.set(normNome(c.nome), c.id);
+          }
+          criadosCtt += data?.length ?? 0;
+        }
         // Completa via CNPJ no fundo (não trava a importação).
-        void enriquecerContatos(((data ?? []) as { id: string; documento: string | null }[]).filter((c) => c.documento).map((c) => ({ id: c.id, doc: c.documento as string })));
+        void enriquecerContatos(
+          criados
+            .filter((c) => c.documento)
+            .map((c) => ({ id: c.id, doc: c.documento as string, tabela: c.tabela })),
+        );
       }
 
       const inserts: Insert[] = parsed.map((p) => ({

@@ -111,7 +111,7 @@ function VendasPage() {
         let q = supabase
           .from("vendas")
           .select(
-            "id,numero,data,status,total,cliente:contatos(nome),condicao:condicoes_pagamento(nome)",
+            "id,numero,data,status,total,cliente:clientes(nome),condicao:condicoes_pagamento(nome)",
           )
           .eq("empresa_id", empresa!.id)
           .order("created_at", { ascending: false })
@@ -364,10 +364,10 @@ function NovaVendaSheet({ onClose }: { onClose: () => void }) {
       const todos: unknown[] = [];
       for (let ini = 0; ; ini += 1000) {
         const { data, error } = await supabase
-          .from("contatos")
+          .from("clientes")
           .select("id,nome")
           .eq("empresa_id", empresa!.id)
-          .in("tipo", ["cliente", "ambos"])
+          
           .order("nome")
           .range(ini, ini + 999)
           .abortSignal(signal);

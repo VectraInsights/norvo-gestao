@@ -65,11 +65,15 @@ export function NovoContatoDialog({ empresaId, tipoFixo, titulo, open, onOpenCha
     }
     setLookingUp(true);
     try {
-      const { data: existente } = await supabase.from("contatos")
-        .select("id,nome").eq("empresa_id", empresaId).eq("documento", digits).maybeSingle();
-      if (existente) {
-        toast.error(`Já cadastrado: ${(existente as { nome: string }).nome}`);
-        return;
+      // A existencia e verificada na tabela do tipo escolhido (modulos independentes):
+      // a mesma empresa pode ser cliente de um CNPJ e fornecedor de outro.
+      for (const tabela of form.isCliente ? ["clientes"] : ["fornecedores"]) {
+        const { data: existente } = await supabase.from(tabela as any)
+          .select("id,nome").eq("empresa_id", empresaId).eq("documento", digits).maybeSingle();
+        if (existente) {
+          toast.error(`Já cadastrado: ${(existente as { nome: string }).nome}`);
+          return;
+        }
       }
       let d: any = null;
       for (const url of [
@@ -123,15 +127,22 @@ export function NovoContatoDialog({ empresaId, tipoFixo, titulo, open, onOpenCha
     setSalvando(true);
     try {
       const doc = form.documento.replace(/\D/g, "");
-      if (doc) {
-        const { data: existente } = await supabase.from("contatos")
-          .select("id,nome").eq("empresa_id", empresaId).eq("documento", doc).maybeSingle();
-        if (existente) throw new Error(`Já existe um contato com este CPF/CNPJ: ${(existente as { nome: string }).nome}`);
+      // Cliente e fornecedor moram em tabelas separadas (modulos independentes):
+      // a mesma empresa pode estar nas duas sem bloqueio entre modulos.
+      const tabelas: string[] = [];
+      if (form.isCliente) tabelas.push("clientes");
+      if (form.isFornecedor) tabelas.push("fornecedores");
+      for (const tabela of tabelas) {
+        if (doc) {
+          const { data: existente } = await supabase.from(tabela as any)
+            .select("id,nome").eq("empresa_id", empresaId).eq("documento", doc).maybeSingle();
+          if (existente)
+            throw new Error(`Já existe um ${tabela === "clientes" ? "cliente" : "fornecedor"} com este CPF/CNPJ: ${(existente as { nome: string }).nome}`);
+        }
       }
-      const { data, error } = await supabase.from("contatos").insert({
+      const dados = {
         empresa_id: empresaId,
         nome: form.nome.trim(),
-        tipo,
         documento: doc || null,
         email: form.email.trim() || null,
         telefone: form.telefone.trim() || null,
@@ -144,14 +155,20 @@ export function NovoContatoDialog({ empresaId, tipoFixo, titulo, open, onOpenCha
         cidade: form.cidade.trim() || null,
         uf: form.uf.trim().toUpperCase() || null,
         observacoes: form.observacoes.trim() || null,
-      }).select("id,nome").single();
-      if (error) throw error;
+      };
+      let criado: { id: string; nome: string } | null = null;
+      for (const tabela of tabelas) {
+        const { data, error } = await supabase.from(tabela as any).insert(dados).select("id,nome").single();
+        if (error) throw error;
+        if (!criado) criado = data as { id: string; nome: string };
+      }
+      if (!criado) throw new Error("Não foi possível cadastrar o contato");
       // Atualiza todas as listas de contatos (chaves variam por tela)
       await qc.invalidateQueries({
         predicate: (q) => q.queryKey.some((k) => typeof k === "string" && k.includes("contat")),
       });
       toast.success("Contato cadastrado");
-      onCriado({ id: (data as { id: string }).id, nome: (data as { nome: string }).nome });
+      onCriado({ id: criado.id, nome: criado.nome });
       onOpenChange(false);
     } catch (e: unknown) {
       toast.error(e instanceof Error ? e.message : "Falha ao cadastrar contato");

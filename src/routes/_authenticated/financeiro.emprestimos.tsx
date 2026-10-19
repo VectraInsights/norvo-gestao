@@ -176,8 +176,8 @@ function EmprestimosPage() {
     staleTime: 10 * 60_000,
     gcTime: 30 * 60_000,
     queryFn: async () => {
-      const { data, error } = await supabase.from("contatos")
-        .select("id,nome").eq("empresa_id", empresa!.id).in("tipo", ["fornecedor", "ambos"] as never).order("nome");
+      const { data, error } = await supabase.from("fornecedores")
+        .select("id,nome").eq("empresa_id", empresa!.id).order("nome");
       if (error) throw error;
       return (data ?? []) as unknown as Array<{ id: string; nome: string | null }>;
     },

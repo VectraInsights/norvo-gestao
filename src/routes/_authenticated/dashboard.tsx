@@ -32,6 +32,7 @@ function soma30meses(d: string) {
 }
 import type { ReceitaPoint } from "@/components/erp/receita-chart";
 import { RouteErrorState } from "@/components/erp/route-error-state";
+import { nomesContatosFinanceiros } from "@/lib/financeiro-contatos";
 
 // recharts (~120KB gz) fica em chunk separado, carregado só quando o dashboard renderiza.
 const ReceitaChart = lazy(() => import("@/components/erp/receita-chart"));
@@ -291,7 +292,7 @@ function Dashboard() {
     queryFn: async ({ signal }) => {
       const { data, error } = await supabase
         .from("lancamentos_financeiros")
-        .select("id,descricao,valor,data_vencimento,contato:contatos(nome)")
+        .select("id,descricao,valor,data_vencimento,contato_id")
         .eq("empresa_id", empresa!.id)
         .eq("tipo", "receber")
         .is("transferencia_id", null)
@@ -300,7 +301,12 @@ function Dashboard() {
         .limit(5)
         .abortSignal(signal);
       if (error) throw error;
-      return (data ?? []) as unknown as ProximoReceberRow[];
+      const linhas = (data ?? []) as unknown as (ProximoReceberRow & { contato_id: string | null })[];
+      const nomes = await nomesContatosFinanceiros(linhas.map((l) => l.contato_id || ""));
+      return linhas.map((l) => ({
+        ...l,
+        contato: { nome: nomes[l.contato_id || ""] || "" },
+      })) as unknown as ProximoReceberRow[];
     },
   });
 

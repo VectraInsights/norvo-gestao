@@ -54,6 +54,7 @@ import {
 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { listarContatosFinanceiros, nomesContatosFinanceiros } from "@/lib/financeiro-contatos";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEmpresaAtual } from "@/hooks/use-empresa";
 import { toast } from "sonner";
@@ -169,7 +170,7 @@ export function LancamentosPage({ tipo }: { tipo: "receber" | "pagar" }) {
         const { data, error } = await supabase
           .from("lancamentos_financeiros")
           .select(
-            "id,descricao,valor,status,data_vencimento,created_at,created_by,contato:contatos(nome),categoria_id",
+            "id,descricao,valor,status,data_vencimento,created_at,created_by,contato_id,categoria_id",
           )
           .eq("empresa_id", empresa!.id)
           .eq("tipo", tipo)
@@ -181,7 +182,14 @@ export function LancamentosPage({ tipo }: { tipo: "receber" | "pagar" }) {
         todas.push(...(data ?? []));
         if (!data || data.length < 1000) break;
       }
-      return todas as unknown as Lancamento[];
+      // O contato do lançamento é cliente OU fornecedor (tabelas separadas por módulo).
+      const nomes = await nomesContatosFinanceiros(
+        todas.map((l) => String((l as any)?.contato_id || "")),
+      );
+      return todas.map((l) => ({
+        ...(l as any),
+        contato: { nome: nomes[String((l as any)?.contato_id || "")] || null },
+      })) as unknown as Lancamento[];
     },
   });
 
@@ -191,18 +199,9 @@ export function LancamentosPage({ tipo }: { tipo: "receber" | "pagar" }) {
     staleTime: 10 * 60_000,
     gcTime: 30 * 60_000,
     queryFn: async () => {
-      const tipos = (tipo === "receber" ? ["cliente", "ambos"] : ["fornecedor", "ambos"]) as (
-        "cliente" | "fornecedor" | "ambos"
-      )[];
-      const { data, error } = await supabase
-        .from("contatos")
-        .select("id,nome,tipo,documento")
-        .eq("empresa_id", empresa!.id)
-        .in("tipo", tipos)
-        .order("nome")
-        .limit(1000);
-      if (error) throw error;
-      return data ?? [];
+      // O contador do financeiro pode ser cliente, fornecedor ou transportadora
+      // (cada modulo tem sua tabela).
+      return listarContatosFinanceiros(empresa!.id, 1000);
     },
   });
 
@@ -621,7 +620,7 @@ export function LancamentosPage({ tipo }: { tipo: "receber" | "pagar" }) {
         const { data, error } = await supabase
           .from("lancamentos_financeiros")
           .select(
-            "id,descricao,valor,status,data_vencimento,created_at,created_by,contato:contatos(nome),categoria_id",
+            "id,descricao,valor,status,data_vencimento,created_at,created_by,contato_id,categoria_id",
           )
           .eq("empresa_id", empresa!.id)
           .eq("tipo", tipo)
@@ -633,7 +632,13 @@ export function LancamentosPage({ tipo }: { tipo: "receber" | "pagar" }) {
         todas.push(...(data ?? []));
         if (!data || data.length < 1000) break;
       }
-      return todas as unknown as Lancamento[];
+      const nomes = await nomesContatosFinanceiros(
+        todas.map((l) => String((l as any)?.contato_id || "")),
+      );
+      return todas.map((l) => ({
+        ...(l as any),
+        contato: { nome: nomes[String((l as any)?.contato_id || "")] || null },
+      })) as unknown as Lancamento[];
     },
   });
   const pernasNoPeriodo = buscaNorm

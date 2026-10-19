@@ -74,7 +74,7 @@ function Compras() {
       const todas: unknown[] = [];
       for (let ini = 0; ; ini += 500) {
         const { data, error } = await supabase.from("ordens_compra" as never)
-          .select("id,numero,status,total,data_emissao,data_prevista,fornecedor_id,observacoes,conta_bancaria_id,contatos:fornecedor_id(nome)")
+          .select("id,numero,status,total,data_emissao,data_prevista,fornecedor_id,observacoes,conta_bancaria_id,fornecedores:fornecedor_id(nome)")
           .eq("empresa_id", empresa!.id).order("created_at", { ascending: false }).range(ini, ini + 499);
         if (error) throw error;
         todas.push(...((data as unknown[]) ?? []));
@@ -93,8 +93,8 @@ function Compras() {
       // Busca em páginas: sem range, o Supabase corta em 1000 (sem aviso)
       const todos: unknown[] = [];
       for (let ini = 0; ; ini += 1000) {
-        const { data } = await supabase.from("contatos").select("id,nome")
-          .eq("empresa_id", empresa!.id).in("tipo", ["fornecedor", "ambos"]).order("nome").range(ini, ini + 999);
+        const { data } = await supabase.from("fornecedores").select("id,nome")
+          .eq("empresa_id", empresa!.id).order("nome").range(ini, ini + 999);
         todos.push(...((data as unknown[]) ?? []));
         if (!data || (data as unknown[]).length < 1000) break;
       }

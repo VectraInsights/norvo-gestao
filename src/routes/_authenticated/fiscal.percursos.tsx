@@ -905,7 +905,7 @@ function PercursosPage() {
       const todos: unknown[] = [];
       for (let ini = 0; ; ini += 1000) {
         const { data } = await supabase
-          .from("contatos" as any)
+          .from("transportes" as any)
           .select("id,documento,nome,ie,logradouro,numero,bairro,cidade,uf,cep,telefone")
           .eq("empresa_id", empresa!.id)
           .range(ini, ini + 999);
@@ -1264,20 +1264,20 @@ function PercursosPage() {
           cep: payload[p + "_cep"] || null,
         };
         const { data: ex } = await supabase
-          .from("contatos" as any)
+          .from("transportes" as any)
           .select("id")
           .eq("empresa_id", empresa.id)
           .eq("documento", doc)
           .maybeSingle();
         if (ex) {
           await supabase
-            .from("contatos" as any)
+            .from("transportes" as any)
             .update(crow)
             .eq("id", (ex as any).id);
         } else {
           await supabase
-            .from("contatos" as any)
-            .insert({ empresa_id: empresa.id, tipo: "cliente", documento: doc, ...crow } as any);
+            .from("transportes" as any)
+            .insert({ empresa_id: empresa.id, documento: doc, ...crow } as any);
         }
       });
       await Promise.all([...wbs]);
@@ -1590,7 +1590,7 @@ function PercursosPage() {
           if (api.cidade || api.logradouro) {
             if (found._id) {
               await supabase
-                .from("contatos" as any)
+                .from("transportes" as any)
                 .update({
                   logradouro: api.logradouro || null,
                   numero: api.numero || null,
@@ -1603,12 +1603,11 @@ function PercursosPage() {
                 .eq("id", found._id);
             } else if (api.nome || api.cidade) {
               await supabase
-                .from("contatos" as any)
+                .from("transportes" as any)
                 .insert({
                   empresa_id: empresa.id,
                   nome: api.nome || d,
-                  tipo: "cliente",
-                  documento: d,
+                            documento: d,
                   uf: api.uf || null,
                   cidade: api.cidade || null,
                   logradouro: api.logradouro || null,

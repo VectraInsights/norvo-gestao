@@ -35,7 +35,7 @@ function VendasFaturadas() {
       const todas: unknown[] = [];
       for (let ini = 0; ; ini += 1000) {
         const { data, error } = await supabase.from("vendas")
-          .select("id,numero,data,total,cliente:contatos(nome),condicao:condicoes_pagamento(nome)")
+          .select("id,numero,data,total,cliente:clientes(nome),condicao:condicoes_pagamento(nome)")
           .eq("empresa_id", empresa!.id)
           .eq("status", "faturado")
           .order("created_at", { ascending: false })

@@ -156,10 +156,10 @@ function ProjetosPage() {
       const todos: unknown[] = [];
       for (let ini = 0; ; ini += 1000) {
         const { data } = await supabase
-          .from("contatos")
+          .from("clientes")
           .select("id,nome")
           .eq("empresa_id", empresa!.id)
-          .in("tipo", ["cliente", "ambos"])
+          
           .order("nome")
           .range(ini, ini + 999);
         todos.push(...((data as unknown[]) ?? []));

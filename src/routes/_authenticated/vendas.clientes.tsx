@@ -25,9 +25,8 @@ import { useCorrigirPelaReceita } from "@/hooks/use-corrigir-receita";
 import { toast } from "sonner";
 import type { Database } from "@/integrations/supabase/types";
 
-type TipoContato = Database["public"]["Enums"]["contato_tipo"];
 type Contato = {
-  id: string; nome: string; tipo: TipoContato;
+  id: string; nome: string;
   documento: string | null; email: string | null; telefone: string | null;
   ie: string | null; cep: string | null; logradouro: string | null;
   numero: string | null; complemento: string | null; bairro: string | null;
@@ -84,7 +83,7 @@ function Clientes() {
     if (!empresa) return toast.error("Empresa não selecionada");
     setLookingUp(true);
     try {
-      const { data: existente } = await supabase.from("contatos")
+      const { data: existente } = await supabase.from("clientes")
         .select("id,nome").eq("empresa_id", empresa.id).eq("documento", digits).maybeSingle();
       // Se é outro contato (não o que está sendo editado), bloqueia; se é o próprio, atualiza
       if (existente && (!editing || existente.id !== editing.id)) {
@@ -137,9 +136,9 @@ function Clientes() {
       // Busca em páginas: sem range, o Supabase corta em 1000 (sem aviso)
       const todos: unknown[] = [];
       for (let ini = 0; ; ini += 1000) {
-        const { data, error } = await supabase.from("contatos")
-          .select("id,nome,tipo,documento,email,telefone,ie,cep,logradouro,numero,complemento,bairro,cidade,uf,observacoes")
-          .eq("empresa_id", empresa!.id).eq("tipo", "cliente").order("nome").range(ini, ini + 999).abortSignal(signal);
+        const { data, error } = await supabase.from("clientes")
+          .select("id,nome,documento,email,telefone,ie,cep,logradouro,numero,complemento,bairro,cidade,uf,observacoes")
+          .eq("empresa_id", empresa!.id).order("nome").range(ini, ini + 999).abortSignal(signal);
         if (error) throw error;
         todos.push(...((data as unknown[]) ?? []));
         if (!data || (data as unknown[]).length < 1000) break;
@@ -166,7 +165,7 @@ function Clientes() {
   const pageSize = 25;
 
   // Cabeçalhos clicáveis ordenam (nome, tipo, documento, contato).
-  type SortCol = "nome" | "tipo" | "documento" | "contato";
+  type SortCol = "nome" | "documento" | "contato";
   const [sort, setSort] = useState<{ key: SortCol; dir: "asc" | "desc" }>({ key: "nome", dir: "asc" });
   const valCol = (c: Contato, k: SortCol) =>
     k === "contato" ? (c.email ?? c.telefone ?? "") : (c[k] ?? "");
@@ -199,16 +198,16 @@ function Clientes() {
       if (!empresa) throw new Error("Empresa não selecionada");
       const doc = onlyDigits(input.documento);
       if (doc) {
-        const { data: existente, error: errBusca } = await supabase.from("contatos")
+        const { data: existente, error: errBusca } = await supabase.from("clientes")
           .select("id,nome").eq("empresa_id", empresa.id).eq("documento", doc).maybeSingle();
         if (errBusca) throw errBusca;
         if (existente) throw new Error(`Já existe um contato com este CPF/CNPJ: ${existente.nome}`);
       }
 
-      const { error } = await supabase.from("contatos").insert({
+      const { error } = await supabase.from("clientes").insert({
         empresa_id: empresa.id,
         nome: input.nome,
-        tipo: "cliente",
+        
         documento: doc || null,
         email: input.email || null,
         telefone: input.telefone || null,
@@ -239,13 +238,13 @@ function Clientes() {
       if (!empresa) throw new Error("Empresa não selecionada");
       const doc = onlyDigits(input.documento);
       if (doc) {
-        const { data: existente, error: errBusca } = await supabase.from("contatos")
+        const { data: existente, error: errBusca } = await supabase.from("clientes")
           .select("id,nome").eq("empresa_id", empresa.id).eq("documento", doc).neq("id", input.id).maybeSingle();
         if (errBusca) throw errBusca;
         if (existente) throw new Error(`Já existe outro contato com este CPF/CNPJ: ${existente.nome}`);
       }
 
-      const { error } = await supabase.from("contatos").update({
+      const { error } = await supabase.from("clientes").update({
         nome: input.nome,
         documento: doc || null,
         email: input.email || null,
@@ -274,7 +273,7 @@ function Clientes() {
   const excluir = useMutation({
     mutationFn: async (ids: string[]) => {
       if (!ids.length) return;
-      const { error } = await supabase.from("contatos").delete().in("id", ids);
+      const { error } = await supabase.from("clientes").delete().in("id", ids);
       if (error) throw error;
     },
     onSuccess: (_d, ids) => {
@@ -360,7 +359,7 @@ function Clientes() {
           <Button
             variant="outline"
             size="sm"
-            onClick={() => void corrigir((filtrados || []) as any)}
+            onClick={() => void corrigir((filtrados || []) as any, "clientes")}
             disabled={corrigindo}
             className="h-9 rounded-xl px-4"
             title="Busca o CNPJ na Receita Federal e corrige o nome (razão social) e completa o endereço dos clientes da lista"
@@ -463,7 +462,7 @@ function Clientes() {
                     aria-label="Selecionar todos"
                   />
                 </TableHead>
-                <SortTh k="nome">Nome</SortTh><SortTh k="tipo">Tipo</SortTh><SortTh k="documento">Documento</SortTh><SortTh k="contato">Contato</SortTh><TableHead className="w-20" />
+                <SortTh k="nome">Nome</SortTh><SortTh k="documento">Documento</SortTh><SortTh k="contato">Contato</SortTh><TableHead className="w-20" />
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -473,8 +472,7 @@ function Clientes() {
                     <Checkbox checked={selected.has(c.id)} onCheckedChange={() => toggleOne(c.id)} aria-label={`Selecionar ${c.nome}`} />
                   </TableCell>
                   <TableCell className="font-medium">{c.nome}</TableCell>
-                  <TableCell className="capitalize text-muted-foreground">{c.tipo}</TableCell>
-                  <TableCell className="text-tabular">{c.documento ?? "—"}</TableCell>
+                    <TableCell className="text-tabular">{c.documento ?? "—"}</TableCell>
                   <TableCell className="text-muted-foreground">{c.email ?? c.telefone ?? "—"}</TableCell>
                   <TableCell className="text-right">
                     <div className="flex items-center justify-end gap-1">

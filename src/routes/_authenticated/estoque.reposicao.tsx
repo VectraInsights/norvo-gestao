@@ -147,10 +147,9 @@ function Reposicao() {
       const todos: unknown[] = [];
       for (let ini = 0; ; ini += 1000) {
         const { data, error } = await supabase
-          .from("contatos")
+          .from("fornecedores")
           .select("id,nome")
           .eq("empresa_id", empresa!.id)
-          .in("tipo", ["fornecedor", "ambos"])
           .order("nome")
           .range(ini, ini + 999)
           .abortSignal(signal);

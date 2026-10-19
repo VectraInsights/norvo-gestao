@@ -13,6 +13,7 @@ import { AuditDialog } from "@/components/erp/audit-dialog";
 import { ListTree, Download, ArrowDownCircle, ArrowUpCircle, Scale } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { nomesContatosFinanceiros } from "@/lib/financeiro-contatos";
 import { useEmpresaAtual } from "@/hooks/use-empresa";
 import { usePerfisMap } from "@/hooks/use-perfis";
 import { PeriodoFilter, type Periodo } from "@/components/erp/periodo-filter";
@@ -109,8 +110,8 @@ function ExtratoPage() {
         const { data, error } = await supabase
           .from("lancamentos_financeiros")
           .select(
-            "id,descricao,tipo,valor,valor_pago,status,data_emissao,data_vencimento,data_pagamento,created_at,created_by,documento,forma_pagamento,observacoes," +
-              "contato:contatos(nome),categoria:categorias_financeiras(nome),conta:contas_bancarias(nome),centro:centros_custo(nome)",
+            "id,descricao,tipo,valor,valor_pago,status,data_emissao,data_vencimento,data_pagamento,created_at,created_by,documento,forma_pagamento,observacoes,contato_id," +
+              "categoria:categorias_financeiras(nome),conta:contas_bancarias(nome),centro:centros_custo(nome)",
           )
           .eq("empresa_id", empresa!.id)
           .order("data_vencimento", { ascending: false })
@@ -120,7 +121,14 @@ function ExtratoPage() {
         todas.push(...(data ?? []));
         if (!data || data.length < 1000) break;
       }
-      return todas as unknown as Mov[];
+      // O contato do lançamento é cliente OU fornecedor (tabelas separadas por módulo).
+      const nomes = await nomesContatosFinanceiros(
+        todas.map((m) => String((m as any)?.contato_id || "")),
+      );
+      return todas.map((m) => ({
+        ...(m as any),
+        contato: { nome: nomes[String((m as any)?.contato_id || "")] || null },
+      })) as unknown as Mov[];
     },
   });
 

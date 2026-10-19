@@ -36,6 +36,7 @@ import { AuditDialog } from "@/components/erp/audit-dialog";
 import { RouteErrorState } from "@/components/erp/route-error-state";
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { listarContatosFinanceiros } from "@/lib/financeiro-contatos";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEmpresaAtual } from "@/hooks/use-empresa";
 import { toast } from "sonner";
@@ -1563,10 +1564,7 @@ function ReconcileDialog({ contaId, conta, empresaId, autoConciliar, importing, 
   staleTime: 10 * 60_000,
   gcTime: 30 * 60_000,
   queryFn: async () => {
-      const { data, error } = await supabase.from("contatos")
-        .select("id,nome,documento").eq("empresa_id", empresaId!).eq("ativo", true).order("nome").limit(500);
-      if (error) throw error;
-      return data ?? [];
+      return listarContatosFinanceiros(empresaId!, 500);
     },
   });
 
