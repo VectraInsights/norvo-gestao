@@ -10214,9 +10214,6 @@ function CtePage() {
                       </div>
                     );
                   })()}
-                <p className="text-[9px] text-muted-foreground mt-1">
-                  Avulso transmite como CT-e Normal; Simplificado transmite como CTeSimp.
-                </p>
               </Card>
             </TabsContent>
           </Tabs>
