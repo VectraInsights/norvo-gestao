@@ -10,7 +10,7 @@ import { Card } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
-import { Loader2, Plus, Search, Trash2, Users, Pencil } from "lucide-react";
+import { Loader2, Plus, Search, Trash2, Users, Pencil, WandSparkles } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
@@ -24,6 +24,7 @@ import { completarLogradouro } from "@/lib/endereco";
 import { SearchField } from "@/components/erp/search-field";
 import { RouteErrorState } from "@/components/erp/route-error-state";
 import { maskDoc } from "@/lib/format";
+import { consultarCnpj, patchContatoComCnpj } from "@/lib/cnpj";
 
 export const Route = createFileRoute("/_authenticated/fiscal/cadastro")({
   component: Cadastro,
@@ -236,30 +237,21 @@ function Cadastro() {
     if (digits.length !== 14) return toast.error("CNPJ deve ter 14 dígitos");
     setLookingUp(true);
     try {
-      let d: any = null;
-      for (const url of [
-        `https://brasilapi.com.br/api/cnpj/v1/${digits}`,
-        `https://receitaws.com.br/v1/cnpj/${digits}`,
-      ]) {
-        try {
-          const res = await fetch(url, { signal: AbortSignal.timeout(8000) });
-          if (res.ok) { d = await res.json(); break; }
-        } catch { /* tenta próxima */ }
-      }
+      const d = await consultarCnpj(digits);
       if (!d) throw new Error("CNPJ não encontrado nas APIs públicas");
       setForm((f) => ({
         ...f,
         documento: maskDoc(digits),
-        nome: d.razao_social || d.nome || d.nome_fantasia || f.nome,
-        email: d.email ?? f.email,
-        telefone: d.ddd_telefone_1 || d.telefone || f.telefone,
-        cep: d.cep ?? f.cep,
-        logradouro: [d.descricao_tipo_de_logradouro || (d as any).tipo_logradouro || "", d.logradouro || ""].filter(Boolean).join(" ") || f.logradouro,
-        numero: d.numero ?? f.numero,
-        complemento: d.complemento ?? f.complemento,
-        bairro: d.bairro ?? f.bairro,
-        cidade: d.municipio || d.city || f.cidade,
-        uf: d.uf || d.state || f.uf,
+        nome: d.razaoSocial || f.nome,
+        email: d.email || f.email,
+        telefone: d.telefone || f.telefone,
+        cep: d.cep || f.cep,
+        logradouro: [d.tipoLogradouro, d.logradouro].filter(Boolean).join(" ") || f.logradouro,
+        numero: d.numero || f.numero,
+        complemento: d.complemento || f.complemento,
+        bairro: d.bairro || f.bairro,
+        cidade: d.cidade || f.cidade,
+        uf: d.uf || f.uf,
       }));
       toast.success("Dados preenchidos a partir da Receita");
     } catch (err) {
@@ -269,6 +261,53 @@ function Cadastro() {
     }
   };
 
+  /**
+   * Correção em lote pela Receita Federal: o nome vem do XML como o emitente
+   * escreveu (com erro de digitação). Busca o CNPJ e troca pela razão social
+   * oficial, preenchendo endereço/CEP/telefone que estejam vazios.
+   * Processa os contatos que estão na lista (respeita o filtro da busca).
+   */
+  const [corrigindo, setCorrigindo] = useState(false);
+  const corrigirPelaReceita = async () => {
+    if (!empresa) return;
+    // Todos os contatos do filtro (não só a página): o usuário quer o cadastro inteiro certo.
+    const temCnpj = (c: Record<string, unknown>) =>
+      String(c.documento || "").replace(/\D/g, "").length === 14;
+    const alvos = (filtrados || []).filter(temCnpj).slice(0, 200);
+    if (!alvos.length) {
+      toast.info("Nenhum contato com CNPJ na lista");
+      return;
+    }
+    setCorrigindo(true);
+    try {
+      let atualizados = 0;
+      for (const c of alvos) {
+        try {
+          const dados = await consultarCnpj(c.documento);
+          if (!dados) continue;
+          const patch = patchContatoComCnpj(c, dados);
+          if (!patch) continue;
+          const { error } = await supabase
+            .from("contatos")
+            .update(patch as never)
+            .eq("id", c.id);
+          if (!error) atualizados++;
+        } catch {
+          /* API fora do ar: segue para o próximo */
+        }
+        // Respeita o limite de taxa das APIs públicas.
+        await new Promise((r) => setTimeout(r, 200));
+      }
+      qc.invalidateQueries({ queryKey: ["contatos-fiscal"] });
+      qc.invalidateQueries({ queryKey: ["contatos-clientes"] });
+      qc.invalidateQueries({ queryKey: ["fornecedores"] });
+      if (atualizados > 0)
+        toast.success(`${atualizados} cadastro(s) corrigido(s) com a Receita Federal`);
+      else toast.info("Os cadastros desta página já estão de acordo com a Receita");
+    } finally {
+      setCorrigindo(false);
+    }
+  };
 
   const criar = useMutation({
     mutationFn: async (input: ReturnType<typeof emptyForm>) => {
@@ -387,6 +426,21 @@ function Cadastro() {
               <Trash2 className="mr-1.5 h-3.5 w-3.5" /> Excluir selecionados ({selecionados.size})
             </Button>
           )}
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={corrigirPelaReceita}
+            disabled={corrigindo}
+            className="h-10 rounded-xl px-4"
+            title="Busca o CNPJ na Receita Federal e corrige o nome (razão social) e completa o endereço dos contatos da lista"
+          >
+            {corrigindo ? (
+              <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />
+            ) : (
+              <WandSparkles className="mr-1.5 h-3.5 w-3.5" />
+            )}
+            {corrigindo ? "Corrigindo..." : "Corrigir pela Receita"}
+          </Button>
           <PrimaryButton onClick={openCreate}><Plus className="mr-1.5 h-4 w-4" />Novo cadastro</PrimaryButton>
         </div>
       </div>

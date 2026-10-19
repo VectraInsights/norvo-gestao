@@ -6350,3 +6350,22 @@ pm run build OK.
   novo em segundo plano).
 - Medido em dev server + pagina de teste: apos o F5 os dados apareceram em **2ms** (timestamp
   antigo = vindos do cache) contra ~500ms de ida ao Supabase. `npm test` (59) e build OK.
+
+## Cadastro de transporte conferido com a Receita Federal (19/10)
+
+- O nome do cadastro vinha **cru do XML** (como o emitente escreveu): "EMPREEENDIMENTOS
+  PAGUE MENOS SA", "EMPREND. PAGUE MENOS S/A", "FARMAUM NATAL MED. LTDA"...
+- **Modulo novo** `src/lib/cnpj.ts`: consulta de CNPJ (BrasilAPI -> ReceitaWS, com cache da
+  sessao) + `patchContatoComCnpj`, que monta o patch do contato:
+  - o **nome** vira a razao social oficial, mas **so** se o cadastro ainda estiver com o nome
+    do XML (ou vazio) — se o usuario corrigiu na mao, a correcao dele e preservada;
+  - endereco/CEP/telefone/e-mail so **preenchem campo vazio** (o que veio do documento fiscal
+    nao e sobrescrito).
+- **Importacao de XML do CT-e** (`fiscal.cte.tsx`): depois de gravar os cadastros, roda a
+  reconciliacao em **background** (nao segura a importacao), com 200ms entre consultas para
+  respeitar o limite das APIs publicas, e avisa quantos foram corrigidos.
+- **Tela Fiscal > Contatos**: botao "Corrigir pela Receita" corrige em lote os contatos da lista
+  (ate 200) — resolve os cadastros que ja existiam.
+- A tela de Cadastro passou a usar o mesmo modulo (a chamada estava duplicada em ~8 arquivos).
+- Simulado na base da JUVENAL: 9 de 11 contatos tem nome diferente da razao social oficial.
+  Testes: `src/lib/cnpj.test.ts` (5 casos). `npm test` (64) e build OK.

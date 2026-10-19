@@ -102,6 +102,7 @@ import { emitirCiotFn, consultarFrotaAnttFn, consultarCiotGeradoAnttFn } from "@
 import { CFOPS_CTE, MOD_FRETE_OPTIONS, RESPONSAVEL_CTE_OPTIONS } from "@/lib/cfops-transporte";
 import { gerarDactePdf, DACTE_REV } from "@/lib/dacte-pdf";
 import { completarLogradouro, temTipoLogradouro } from "@/lib/endereco";
+import { consultarCnpj, patchContatoComCnpj } from "@/lib/cnpj";
 import { JUVENAL_LOGO } from "@/lib/juvenal-logo";
 import { Textarea } from "@/components/ui/textarea";
 import { DateInput } from "@/components/erp/date-input";
@@ -3528,6 +3529,53 @@ function CtePage() {
           ),
         );
       };
+      // Reconciliação com a Receita Federal: o nome que o emitente escreveu no XML
+      // costuma vir com erro de digitação ("EMPREEENDIMENTOS..."). Busca o CNPJ e
+      // troca pela razão social oficial — mas só se o cadastro ainda estiver com o
+      // nome do XML (se o usuário corrigiu na mão, a correção dele é preservada).
+      // Endereço/CEP/telefone só preenchem campo vazio. Roda em background.
+      const reconciliarContatosReceita = async () => {
+        const alvos = [...contatosUpsert.values()].filter(
+          (c) => (c.cnpj || "").replace(/\D/g, "").length === 14,
+        );
+        if (!alvos.length) return;
+        let atualizados = 0;
+        for (const c of alvos) {
+          const doc = (c.cnpj || "").replace(/\D/g, "");
+          try {
+            const dados = await consultarCnpj(doc);
+            if (dados) {
+              const { data: atual } = await supabase
+                .from("contatos" as any)
+                .select(
+                  "id,nome,logradouro,numero,complemento,bairro,cidade,uf,cep,telefone,email",
+                )
+                .eq("empresa_id", empresa!.id)
+                .eq("documento", doc)
+                .maybeSingle();
+              const patch = atual ? patchContatoComCnpj(atual as any, dados, c.nome) : null;
+              if (patch && (atual as any)?.id) {
+                const { error } = await supabase
+                  .from("contatos" as any)
+                  .update(patch)
+                  .eq("id", (atual as any).id);
+                if (!error) atualizados++;
+              }
+            }
+          } catch {
+            /* API fora do ar: segue com os dados do XML */
+          }
+          // Respeita o limite de taxa das APIs públicas.
+          await new Promise((r) => setTimeout(r, 200));
+        }
+        if (atualizados > 0) {
+          qc.invalidateQueries({ queryKey: ["contatos-cte", empresa!.id] });
+          qc.invalidateQueries({ queryKey: ["contatos-fiscal"] });
+          toast.success(
+            `${atualizados} cadastro(s) corrigido(s) com a razão social oficial da Receita Federal`,
+          );
+        }
+      };
       // (upsert de contatos agora via queueContato + flushContatos em lote no fim)
       let added = 0;
       let duplicadas = 0;
@@ -3848,6 +3896,8 @@ function CtePage() {
         }
         added = novas.length;
         await flushContatos();
+        // Em background (não segura a importação): corrige o cadastro com a Receita.
+        void reconciliarContatosReceita();
       if (added > 0) {
         // Dedupe por chave: reimportar NF já presente (ex. devolvida) não duplica na lista
         const vistas = new Set(mercadorias.map((m) => m.chave));
