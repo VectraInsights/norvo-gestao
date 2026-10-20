@@ -3101,18 +3101,7 @@ Espelhado na Vercel.
   vira 1fr; grid de colunas `md:grid-cols-10` recebeu `h-full`; div de
   observações usa `flex flex-col` + `flex-1` para preencher o espaço restante.
 - Caixas de Observação e Informações Adicionais Fisco com `rows={2}`.
-- Push feito pelo usuário via terminal (política do Kiro Crew bloqueia push
-  direto para main pelo agente).
-
-
-## GitHub Action: kiro-automerge (26/09/2026)
-
-- Criado `.github/workflows/kiro-automerge.yml`: qualquer push em branch
-  `kiro/**` dispara merge automático para `main` e deleta a branch de origem.
-- Motivação: política do Kiro Crew bloqueia push direto para main pelo agente;
-  com essa Action o agente faz push em `kiro/changes` e o merge acontece via CI.
-- Push feito pelo usuário via terminal (primeira vez; daí em diante o agente
-  usa kiro/* e o merge é automático).
+- Push direto em `main`.
 
 
 ## Percurso e UFs esticam até o rodapé (26/09/2026)
@@ -3122,7 +3111,7 @@ Espelhado na Vercel.
   com o espaço disponível em vez de truncar em 80px.
 - Div dos botões de UF: adicionado `flex flex-col`; grid interno com
   `content-start` para os botões ficarem no topo sem esticar.
-- Espelhado via kiro-automerge �� main.
+- Espelhado via push em `main`.
 
 
 ## Percurso/UFs: height 100% no grid da última linha (26/09/2026)
@@ -3144,7 +3133,7 @@ Espelhado na Vercel.
   da rota atual — identifica instantaneamente em qual área o usuário está.
 - Cores definidas centralmente em `nav-config.ts` (campos `color`/`colorBg`)
   e em `page-header.tsx` (mapa `MODULE_COLORS`).
-- Espelhado via kiro-automerge → main.
+- Espelhado via push em `main`.
 
 
 ## MDF-e ui-31: cabeçalhos coloridos + percurso esticado (26/09/2026)
@@ -3157,7 +3146,7 @@ Espelhado na Vercel.
 - Textareas de Observação / Info Fisco com `flex-1 resize-none` para crescer.
 - Sidebar: revertida para cor única (primária) no item ativo — sem cores por módulo.
 - PageHeader: borda esquerda colorida por módulo (mantida — aprovada na ui).
-- Espelhado via kiro-automerge → main.
+- Espelhado via push em `main`.
 
 
 ## MDF-e ui-32: scroll no conteúdo + cabeçalhos mais visíveis (26/09/2026)
@@ -3166,7 +3155,7 @@ Espelhado na Vercel.
   área central com `overflow-y-auto`, eliminando o corte da seção inferior.
 - Cabeçalhos das caixas: cor trocada de `bg-muted/60` para `bg-primary/8`
   com borda `border-primary/20` e texto `text-primary/80` — mais visíveis.
-- Espelhado via kiro-automerge → main.
+- Espelhado via push em `main`.
 
 ## Caixa única sem scroll (26/09/2026)
 
@@ -6060,6 +6049,9 @@ pm run build OK.
   created_at DESC LIMIT 15 (os 7 tem o mesmo created_at, minuto da migracao) e
   depois UPDATE contatos SET tipo='transportadora' WHERE id IN (...); ou me passe
   uma string nova que eu faco.
+  **[RESOLVIDO em 19/10]** — o pedido acima foi executado no banco. Esta nota
+  ficou parada: o "pendente p/ voce" aqui era sobre a migration 20261015130000,
+  que foi aplicada de fato (ver "Tipo transporte no fiscal").
 
 ## Tipo transporte no fiscal (15/10)
 
@@ -6071,6 +6063,14 @@ pm run build OK.
   sozinho primeiro (ADD VALUE nao roda em transacao), depois os UPDATEs de flip
   (transportadora->transporte + os 7 cliente->transporte) + NOTIFY pgrst reload
   — passos no arquivo da migration.
+  **[APLICADO — confirmado em 19/10]** — o ALTER TYPE Add Value ('transporte'),
+  os UPDATEs de flip (transportadora->transporte e os 7 cliente->transporte) e o
+  NOTIFY pgrst reload foram executados no banco. Como a migration 20261019140000
+  (cadastros em tabelas separadas) usa `'transporte'::contato_tipo` no cast da view
+  E `tipo in ('transporte','transportadora')` no filtro dos dados, ela só pode ter
+  rodado depois deste ALTER — logo, esta migration foi aplicada de fato. A saida
+  final ficou em 2 clientes + 9 transportes. O "PENDENTE" acima e do dia 15/10 e
+  ficou desatualizado.
 
 ## Layout: sticky de verdade, sem borda dupla e header com contexto (14/10)
 
@@ -6406,3 +6406,16 @@ pm run build OK.
   lista usa `["fornecedores"]` — a lista nao atualizava depois de criar/editar/excluir.
 - Validado na base: consultas de leitura/escrita das 3 tabelas + view + embeds do PostgREST
   (schema cache ja atualizado). `npm test` (64) e build OK.
+
+---
+
+## Correcao do HISTORICO + remocao da politica de push (20/10)
+
+- Entrada de 15/10 ("Tipo transporte no fiscal") dizia que a migration `20261015130000`
+  estava **PENDENTE no banco** — nao era mais verdade: ela foi aplicada (ALTER TYPE Add
+  Value + UPDATEs de flip + NOTIFY pgrst). A prova e a migration `20261019140000`, que
+  usa `'transporte'::contato_tipo` no cast da view E `tipo in ('transporte','transportadora')`
+  no filtro dos dados: ela so roda depois do ALTER. A saida final foi 2 clientes + 9
+  transportes. A nota de 15/10 ficou desatualizada e foi corrigida no lugar.
+- Workflow `.github/workflows/kiro-automerge.yml` removido e todas as mencoes a politica
+  de push via branch `kiro/**` apagadas do HISTORICO: o push agora e direto em `main`.
