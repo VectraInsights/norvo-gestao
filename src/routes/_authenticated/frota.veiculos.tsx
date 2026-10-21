@@ -704,7 +704,7 @@ function Veiculos() {
               </span>
             </div>
             <Card className="p-1.5">
-              <div className="bg-primary/8 border-b border-primary/20 -m-1.5 mb-0.5 px-2 py-1 text-[10px] font-semibold uppercase tracking-wide text-primary/80">
+              <div className="bg-primary/8 border-b border-primary/20 rounded-t-xl px-2 py-1 text-[10px] font-semibold uppercase tracking-wide text-primary/80">
                 Identificação
               </div>
               <div className="space-y-1">
@@ -843,7 +843,7 @@ function Veiculos() {
               </div>
             </Card>
             <Card className="p-1.5">
-              <div className="bg-primary/8 border-b border-primary/20 -m-1.5 mb-0.5 px-2 py-1 text-[10px] font-semibold uppercase tracking-wide text-primary/80">
+              <div className="bg-primary/8 border-b border-primary/20 rounded-t-xl px-2 py-1 text-[10px] font-semibold uppercase tracking-wide text-primary/80">
                 Documentação
               </div>
               <div className="space-y-1">
@@ -996,7 +996,7 @@ function Veiculos() {
               </div>
             </Card>
             <Card className="p-1.5">
-              <div className="bg-primary/8 border-b border-primary/20 -m-1.5 mb-0.5 px-2 py-1 text-[10px] font-semibold uppercase tracking-wide text-primary/80">
+              <div className="bg-primary/8 border-b border-primary/20 rounded-t-xl px-2 py-1 text-[10px] font-semibold uppercase tracking-wide text-primary/80">
                 Proprietário
               </div>
               <div className="space-y-1">
@@ -1038,7 +1038,7 @@ function Veiculos() {
               </div>
             </Card>
             <Card className="p-1.5">
-              <div className="bg-primary/8 border-b border-primary/20 -m-1.5 mb-0.5 px-2 py-1 text-[10px] font-semibold uppercase tracking-wide text-primary/80">
+              <div className="bg-primary/8 border-b border-primary/20 rounded-t-xl px-2 py-1 text-[10px] font-semibold uppercase tracking-wide text-primary/80">
                 Observações
               </div>
               <Textarea

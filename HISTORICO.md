@@ -6572,3 +6572,21 @@ produtos do Estoque (`produtos.ncm`) e da referencia global oficial (`ncm`, Clas
 - MDF-e: `prodPred/xProd` usa "CAIXAS" como fallback e o `montarProdPredXml` passou a
   usar "CAIXAS" como xProd padrao (antes "CARGA GERAL"). Teste atualizado.
 - tsc sem erro novo, `npm test` (70) e build OK.
+
+## Varredura da "sombra na borda" dos blocos com cabecalho colorido (21/10)
+
+- **Causa**: em `frota.veiculos.tsx` (dialogo de cadastro de veiculo) os 4 cabecalhos de
+  secao (Identificacao, Documentacao, Proprietario, Observacoes) usavam `-m-1.5`
+  (margem negativa) para sangrar ate a borda do Card. Como o `Card` tem
+  `rounded-2xl` + `shadow-panel`, o cabecalho verde quadrado ultrapassava os cantos
+  arredondados e aparecia como uma "sombra" esverdeada na borda.
+- **Correcao**: margem negativa removida e `rounded-t-xl` no cabecalho — o bloco virou
+  uma barra verde alinhada dentro do Card, igual ao padrao do CT-e (fix identico ja
+  aplicado no CT-e em 16/10).
+- **Varredura do sistema inteiro**: o padrao so aparecia nesses 4 lugares. As outras
+  cabecalhos coloridos (`fiscal.cte.tsx`, `fiscal.mdf.tsx`, `rh.colaboradores.tsx`,
+  `condicao-pagamento.tsx`, `fiscal.recebidas.tsx`) ja estao dentro de container com
+  `overflow-hidden` ou com o cabecalho recuado — sem sangramento. As demais margens
+  negativas do repo (`-mx-2` do dashboard, `-mx-1` dos separadores do shadcn) sao de
+  outro tipo (hover/separador) e nao tem o problema.
+- tsc sem erro novo e build OK.
