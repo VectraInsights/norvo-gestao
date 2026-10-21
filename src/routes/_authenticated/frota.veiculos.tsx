@@ -84,6 +84,49 @@ export const Route = createFileRoute("/_authenticated/frota/veiculos")({
 /** Item de texto do PDF com a coordenada onde foi desenhado. */
 type ItemTexto = { s: string; x: number; y: number };
 
+/**
+ * Tipo de veículo a partir do texto do CRLV.
+ *
+ * O CRLV descreve a espécie em texto livre ("CARGA CAMINHAO", "PASSAGEIRO
+ * MICROONIBUS", "SEMI-REBOQUE", "TRUCK"...) e o cadastro usa os tipos da lista
+ * padrão. Aqui o texto vira um dos tipos do cadastro.
+ */
+function tipoVeiculoDoCrlv(texto: string): string {
+  const t = String(texto || "")
+    .toUpperCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/\s+/g, " ");
+  if (!t) return "";
+  if (t.includes("SEMI-REBOQUE") || t.includes("REBOQUE") || t.includes("CARRETA") || t.includes("BITREM"))
+    return "Carreta";
+  if (t.includes("TOCO")) return "Toco";
+  if (t.includes("3/4")) return "3/4";
+  if (t.includes("TRUCK")) return "Truck";
+  if (
+    t.includes("TRACAO") ||
+    t.includes("CAVALO MECANICO") ||
+    t.includes("CAMINHAO") ||
+    t.includes("CARGA CAMINHAO") ||
+    t.includes("CARGA SECA") ||
+    t.includes("CARGA FRIA") ||
+    t.includes("CARGA BORDA") ||
+    t.includes("IMPLEMENTO")
+  )
+    return "Cavalo Mecânico";
+  if (
+    t.includes("PASSAGEIRO") ||
+    t.includes("MICROONIBUS") ||
+    t.includes("MINIBUS") ||
+    t.includes("ONIBUS") ||
+    t.includes("VAN") ||
+    t.includes("UTILITARIO") ||
+    t.includes("FURGAO")
+  )
+    return "Van/Furgão";
+  return "";
+}
+
 /** Normaliza um rótulo para comparação: sem acento, sem pontuação, maiúsculo. */
 const normRotulo = (s: string) =>
   String(s || "")
@@ -465,18 +508,25 @@ function Veiculos() {
           }
         }
       }
-      const especieVal = dadosBloco.includes("SEMI-REBOQUE")
-        ? "Carreta"
-        : dadosBloco.includes("TRACAO") ||
-            dadosBloco.includes("CAMINHÃO") ||
-            dadosBloco.includes("CAMINHAO") ||
-            dadosBloco.includes("TRATOR") ||
-            dadosBloco.includes("CARGA CAMINHAO") ||
-            dadosBloco.includes("CARGA CAMINHÃO")
-          ? "Cavalo Mecânico"
-          : dadosBloco.includes("CARGA")
-            ? "Carreta"
-            : "";
+      // Tipo do veículo: pelo rótulo ESPÉCIE / TIPO do CRLV (texto livre tipo
+      // "PASSAGEIRO MICROONIBUS", que nenhuma palavra-chave antiga pegava) e, na
+      // falta, pelos padrões no texto linearizado (como já funcionava).
+      const especieRotulo = valorSobRotulo(itens, "ESPÉCIE / TIPO");
+      const especieVal =
+        tipoVeiculoDoCrlv(especieRotulo) ||
+        tipoVeiculoDoCrlv(valorSobRotulo(itens, "CARROCERIA")) ||
+        (dadosBloco.includes("SEMI-REBOQUE")
+          ? "Carreta"
+          : dadosBloco.includes("TRACAO") ||
+              dadosBloco.includes("CAMINHÃO") ||
+              dadosBloco.includes("CAMINHAO") ||
+              dadosBloco.includes("TRATOR") ||
+              dadosBloco.includes("CARGA CAMINHAO") ||
+              dadosBloco.includes("CARGA CAMINHÃO")
+            ? "Cavalo Mecânico"
+            : dadosBloco.includes("CARGA")
+              ? "Carreta"
+              : "");
       const updates: Partial<typeof form> = {};
       // Placa: a regex (formato que já funciona) e, na falta, a leitura pelo rótulo.
       if (placaMatch) updates.placa = placaMatch[1].replace(/[^A-Z0-9]/g, "").toUpperCase();

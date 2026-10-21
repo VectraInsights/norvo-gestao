@@ -6635,6 +6635,13 @@ produtos do Estoque (`produtos.ncm`) e da referencia global oficial (`ncm`, Clas
   Testado no CRLV real: placa GQU3265, renavam 00264021991, chassi 34500512300991,
   proprietario JUVENAL TRANSPORTES LTDA, CNPJ 03.919.614/0001-60, ano 1976,
   tipo Cavalo Mecanico, marca M.BENZ/L 1513.
+- **Tipo que nao vinha (CRLV HEH8H61)**: a especie deste CRLV e "PASSAGEIRO MICROONIBUS" e
+  o parser so olhava palavras-chave ("CARGA", "CAMINHAO", "TRATOR"...) — nenhuma batia, e o
+  tipo ficava vazio. Novo `tipoVeiculoDoCrlv(texto)`: mapeia o texto livre da especie para
+  um dos tipos do cadastro (Carreta / Toco / 3/4 / Truck / Cavalo Mecanico / Van-Furgao).
+  A leitura e pelo rotulo "ESPÉCIE / TIPO" (e "CARROCERIA"), com a regra antiga no texto
+  linearizado como reserva. Testado no CRLV real: tipo "Van/Furgao" (FIAT/DUCATO MINIBUS),
+  placa HEH8H61, chassi 93W245L3392042935, renavam 00152666907, marca FIAT/DUCATO MINIBUS.
 - **Tela de Veiculos sem rolagem fora**: a pagina virou coluna flex com altura da viewport
   (`h-[calc(100dvh-112px)] sm:h-[calc(100dvh-128px)] lg:h-[calc(100dvh-144px)]`,
   mesma conta do CT-e: header 64px + padding do `main`). O card da lista e `flex-1 min-h-0`
