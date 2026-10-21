@@ -3911,12 +3911,15 @@ function CtePage() {
           icmsBase: f.vPrest || "0.00",
         }));
         qc.invalidateQueries({ queryKey: ["cte-nfes-pendentes", empresa!.id] });
-        const extra = reservadas > 0 ? `, ${reservadas} bloqueada(s) (em rascunho/CT-e)` : "";
+        // Toast principal: só a quantidade importada.
+        toast.success(`${added} XML(s) importado(s)`);
+        // Detalhes (duplicadas/bloqueadas) vão em aviso próprio, fora do toast principal.
+        const avisos: string[] = [];
         if (duplicadas > 0)
-          toast.success(
-            `${added} importada(s), ${duplicadas} já existiam (chave duplicada bloqueada)${extra}`,
-          );
-        else toast.success(`${added} XML(s) importado(s) — selecione os que irão no CT-e${extra}`);
+          avisos.push(`${duplicadas} já existiam (chave duplicada bloqueada)`);
+        if (reservadas > 0)
+          avisos.push(`${reservadas} bloqueada(s) (em rascunho/CT-e)`);
+        if (avisos.length) toast.info(avisos.join("; "));
       } else if (duplicadas > 0 || reservadas > 0) {
         toast.info(
           `${duplicadas} NF-e(s) já importadas; ${reservadas} bloqueada(s) por estar(em) em rascunho ou CT-e`,

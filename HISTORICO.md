@@ -6419,3 +6419,12 @@ pm run build OK.
   transportes. A nota de 15/10 ficou desatualizada e foi corrigida no lugar.
 - Workflow `.github/workflows/kiro-automerge.yml` removido e todas as mencoes a politica
   de push via branch `kiro/**` apagadas do HISTORICO: o push agora e direto em `main`.
+
+## Toast da importacao de XML no CT-e so com a quantidade (21/10)
+
+- Import de NF-e(s) no embarque (`fiscal.cte.tsx`): o toast de sucesso passou a ser
+  apenas `${added} XML(s) importado(s)` — saiu o "— selecione os que irao no CT-e".
+- O aviso de duplicadas/bloqueadas (chave ja importada, nota em rascunho/CT-e) foi
+  para um `toast.info` proprio, so quando existe — o toast principal fica limpo
+  sem perder informacao.
+- tsc sem erro novo (57 = baseline de `fiscal.cte.tsx`, identico ao HEAD) e build OK.
