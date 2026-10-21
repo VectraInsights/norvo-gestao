@@ -6660,6 +6660,24 @@ produtos do Estoque (`produtos.ncm`) e da referencia global oficial (`ncm`, Clas
 - **Helpers do CRLV foram para `src/lib/crlv.ts`** (antes estavam dentro da rota), com
   teste proprio (`crlv.test.ts`, 9 casos: leitura por rotulo com acento/pontuacao e o
   mapeamento de tipo). `npm test` (79).
+- **OCR do CRLV impresso funcionando (21/10)**: duas causas. (1) **API do tesseract.js
+  v7**: o output padrao e SO `text` — as palavras (com bbox) so vem se o `blocks` for
+  pedido explicitamente (`worker.recognize(canvas, {}, { blocks: true, text: true })`); com
+  `data.words` (que nao existe no topo) a lista vinha vazia e o app caia no "Nao consegui
+  ler este CRLV". (2) **Parser**: no CRLV impresso o OCR embaralha os ROTULOS (o "NOME"
+  vira "?"), mas os VALORES sao legiveis — novo `extrairDoTextoOcr(texto)` le placa,
+  renavam, chassi, ano, nome (com sufixo), cpf/cnpj, especie, carroceria, marca e eixos
+  por padrao de TEXTO (a leitura por coordenada continua sendo a do CRLV digital).
+  Validado no PDF real (MIH1250, "Print to PDF" = 100% vetorial, sem camada de texto):
+  placa MIH1250, renavam 00956390668, chassi 9BM6953048B585200, ano 2008, nome JUVENAL
+  TRANSPORTES EIRELI, cnpj 03.919.614/0001-60, especie CARGA CAMINHAO, carroceria
+  CARROCERIA FECHADA, marca M.BENZ/L 1620, eixos 3 — e o tipo saiu **Truck**.
+  No OCR os fallbacks fixos (marca/proprietario/categoria/eixos) NAO sao preenchidos: o
+  campo fica vazio para conferir, em vez de vir "SR/RANDON" e "LGP TRANSPORTES".
+  O render do pdfjs在这些 PDFs e lento (~20s em 1x, o PDF tem ~3.600 operadores de
+  vetor): o botao mostra "Lendo PDF (OCR)…".
+- **Tela de cadastro de NCM saiu de `src/routes`** (aviso do TanStack por arquivo sem
+  `Route`) para `src/components/erp/ncm-fiscal-cadastro.tsx`. `npm test` (81).
 - **Tela de Veiculos sem rolagem fora**: a pagina virou coluna flex com altura da viewport
   (`h-[calc(100dvh-112px)] sm:h-[calc(100dvh-128px)] lg:h-[calc(100dvh-144px)]`,
   mesma conta do CT-e: header 64px + padding do `main`). O card da lista e `flex-1 min-h-0`
