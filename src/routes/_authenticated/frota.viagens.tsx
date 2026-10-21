@@ -67,6 +67,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEmpresaAtual } from "@/hooks/use-empresa";
 import { toast } from "sonner";
 import { brl, dateBR } from "@/lib/format";
+import { ALTURA_PAGINA } from "@/lib/layout";
 
 export const Route = createFileRoute("/_authenticated/frota/viagens")({
   component: Viagens,
@@ -502,13 +503,13 @@ function Viagens() {
     `${v.origem_cidade ?? "?"}${v.origem_uf ? "/" + v.origem_uf : ""} → ${v.destino_cidade ?? "?"}${v.destino_uf ? "/" + v.destino_uf : ""}`;
 
   return (
-    <>
+    <div className={ALTURA_PAGINA}>
       <PageHeader
         eyebrow="Frota"
         title="Viagens"
         description="Fretes com motorista, veículo e resultado por viagem."
       />
-      <div className="mb-3 flex flex-col gap-2 sm:flex-row sm:items-center">
+      <div className="mb-3 flex shrink-0 flex-col gap-2 sm:flex-row sm:items-center">
         <SearchField value={busca} onChange={(v) => { setBusca(v); setPagina(1); }} />
         <div className="flex items-center gap-2">
           <Dialog
@@ -687,7 +688,7 @@ function Viagens() {
       </div>
 
       {isLoading ? (
-        <Card className="overflow-hidden shadow-panel">
+        <Card className="flex-1 overflow-hidden shadow-panel">
           <div className="space-y-2 p-4">
             {Array.from({ length: 5 }).map((_, i) => (
               <Skeleton key={i} className="h-10 w-full" />
@@ -695,13 +696,17 @@ function Viagens() {
           </div>
         </Card>
       ) : !filtrados?.length ? (
-        <EmptyState
-          icon={ArrowLeftRight}
-          title="Nenhuma viagem registrada"
-          description={busca ? "Nada encontrado para a busca." : "Cadastre a viagem, lance diesel e pedágios, e conclua para gerar a receita automaticamente."}
-        />
+        <div className="min-h-0 flex-1 overflow-y-auto">
+          <EmptyState
+            icon={ArrowLeftRight}
+            title="Nenhuma viagem registrada"
+            description={busca ? "Nada encontrado para a busca." : "Cadastre a viagem, lance diesel e pedágios, e conclua para gerar a receita automaticamente."}
+          />
+        </div>
       ) : (
-        <Card className="overflow-hidden shadow-panel">
+        <Card className="flex min-h-0 flex-1 flex-col overflow-hidden shadow-panel">
+          {/* Rolagem só dentro da lista: a página não cria barra externa. */}
+          <div className="min-h-0 flex-1 overflow-y-auto [&_.erp-table-wrap]:max-h-none">
           <Table>
             <TableHeader>
               <TableRow>
@@ -822,13 +827,16 @@ function Viagens() {
               })}
             </TableBody>
           </Table>
-          <Pagination
-            pagina={paginaAtual}
-            totalPaginas={totalPaginas}
-            total={filtrados.length}
-            pageSize={pageSize}
-            onPagina={setPagina}
-          />
+          </div>
+          <div className="shrink-0">
+            <Pagination
+              pagina={paginaAtual}
+              totalPaginas={totalPaginas}
+              total={filtrados.length}
+              pageSize={pageSize}
+              onPagina={setPagina}
+            />
+          </div>
         </Card>
       )}
 
@@ -915,6 +923,6 @@ function Viagens() {
           </p>
         </DialogContent>
       </Dialog>
-    </>
+    </div>
   );
 }

@@ -64,6 +64,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEmpresaAtual } from "@/hooks/use-empresa";
 import { toast } from "sonner";
 import { num, maskDoc } from "@/lib/format";
+import { ALTURA_PAGINA } from "@/lib/layout";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import {
   Command,
@@ -790,7 +791,7 @@ function Veiculos() {
   const veiculosVisiveis = lista.slice((paginaAtual - 1) * pageSize, paginaAtual * pageSize);
 
   return (
-    <div className="flex h-[calc(100dvh-112px)] min-h-[500px] flex-col sm:h-[calc(100dvh-128px)] lg:h-[calc(100dvh-144px)]">
+    <div className={ALTURA_PAGINA}>
       <PageHeader
         eyebrow="Frota"
         title="Veículos"

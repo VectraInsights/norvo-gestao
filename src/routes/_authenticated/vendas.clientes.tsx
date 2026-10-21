@@ -23,6 +23,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEmpresaAtual } from "@/hooks/use-empresa";
 import { useCorrigirPelaReceita } from "@/hooks/use-corrigir-receita";
 import { toast } from "sonner";
+import { ALTURA_PAGINA } from "@/lib/layout";
 import type { Database } from "@/integrations/supabase/types";
 
 type Contato = {
@@ -348,9 +349,9 @@ function Clientes() {
   });
 
   return (
-    <>
+    <div className={ALTURA_PAGINA}>
       <PageHeader eyebrow="Vendas & CRM" title="Clientes" description="Cadastro de clientes — vendas e documentos fiscais." />
-      <div className="mb-3 flex flex-col gap-2 sm:flex-row sm:items-center">
+      <div className="mb-3 flex shrink-0 flex-col gap-2 sm:flex-row sm:items-center">
         <SearchField value={busca} onChange={(v) => { setBusca(v); setPagina(1); }} />
         <div className="flex items-center gap-2">
           <Button variant="ghost" size="sm" onClick={() => setTrilhaOpen(true)} className="h-9 rounded-xl px-4 active:scale-95">
@@ -425,11 +426,13 @@ function Clientes() {
       {isLoading ? (
         <div className="space-y-2">{Array.from({ length: 4 }).map((_, i) => <div key={i} className="h-12 animate-pulse rounded-md bg-muted/30" />)}</div>
       ) : !filtrados?.length ? (
-        <EmptyState icon={Users} title="Nenhum contato" description={busca ? "Nada encontrado para a busca." : "Nenhum cliente cadastrado."} />
+        <div className="min-h-0 flex-1 overflow-y-auto">
+          <EmptyState icon={Users} title="Nenhum contato" description={busca ? "Nada encontrado para a busca." : "Nenhum cliente cadastrado."} />
+        </div>
       ) : (
-        <Card className="overflow-hidden shadow-panel">
+        <Card className="flex min-h-0 flex-1 flex-col overflow-hidden shadow-panel">
           {selected.size > 0 && (
-            <div className="flex items-center justify-between border-b bg-muted/30 px-4 py-2 text-sm">
+            <div className="flex shrink-0 items-center justify-between border-b bg-muted/30 px-4 py-2 text-sm">
               <span>{selected.size} selecionado(s)</span>
               <AlertDialog open={confLote} onOpenChange={setConfLote}>
                 <AlertDialogTrigger asChild>
@@ -452,6 +455,8 @@ function Clientes() {
               </AlertDialog>
             </div>
           )}
+          {/* Rolagem só dentro da lista: a página não cria barra externa. */}
+          <div className="min-h-0 flex-1 overflow-y-auto [&_.erp-table-wrap]:max-h-none">
           <Table>
             <TableHeader>
               <TableRow>
@@ -502,13 +507,16 @@ function Clientes() {
               ))}
             </TableBody>
           </Table>
-          <Pagination
-            pagina={paginaAtual}
-            totalPaginas={totalPaginas}
-            total={ordenados.length}
-            pageSize={pageSize}
-            onPagina={setPagina}
-          />
+          </div>
+          <div className="shrink-0">
+            <Pagination
+              pagina={paginaAtual}
+              totalPaginas={totalPaginas}
+              total={ordenados.length}
+              pageSize={pageSize}
+              onPagina={setPagina}
+            />
+          </div>
         </Card>
       )}
 
@@ -542,6 +550,6 @@ function Clientes() {
         isError={trilhaQuery.isError}
         events={(trilhaQuery.data ?? [])}
       />
-    </>
+    </div>
   );
 }

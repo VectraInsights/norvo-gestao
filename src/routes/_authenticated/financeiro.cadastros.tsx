@@ -31,6 +31,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useEmpresaAtual } from "@/hooks/use-empresa";
 import { toast } from "sonner";
+import { ALTURA_PAGINA } from "@/lib/layout";
 
 export const Route = createFileRoute("/_authenticated/financeiro/cadastros")({
   component: CadastrosPage,
@@ -319,13 +320,13 @@ function CadastrosPage() {
   }, [centros, busca]);
 
   return (
-    <div className="space-y-6">
+    <div className={`${ALTURA_PAGINA} gap-4`}>
       <PageHeader
         eyebrow="Financeiro"
         title="Categorias e centros"
         description="Gerencie as categorias financeiras e os centros de custo utilizados nos lançamentos."
       />
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+      <div className="flex shrink-0 flex-col gap-3 sm:flex-row sm:items-center">
         <SearchField value={busca} onChange={setBusca} />
         <div className="flex items-center gap-2">
           <Button variant="ghost" size="sm" onClick={() => setTrilhaOpen(true)} className="h-9 rounded-xl px-4 active:scale-95">
@@ -334,14 +335,14 @@ function CadastrosPage() {
         </div>
       </div>
 
-      <Tabs defaultValue="categorias">
-        <TabsList className="h-auto flex-wrap gap-1">
+      <Tabs defaultValue="categorias" className="flex min-h-0 flex-1 flex-col">
+        <TabsList className="h-auto shrink-0 flex-wrap gap-1">
           <TabsTrigger value="categorias">Categorias financeiras</TabsTrigger>
           <TabsTrigger value="centros">Centros de custo</TabsTrigger>
         </TabsList>
 
         {/* Categorias */}
-        <TabsContent value="categorias" className="mt-4 space-y-4">
+        <TabsContent value="categorias" className="mt-4 min-h-0 flex-1 space-y-4 overflow-y-auto [&_.erp-table-wrap]:max-h-none">
           {loadingCat ? (
             <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
               {[0, 1].map((col) => (
@@ -475,7 +476,7 @@ function CadastrosPage() {
           )}
         </TabsContent>
 
-        <TabsContent value="centros" className="mt-4 space-y-4">
+        <TabsContent value="centros" className="mt-4 min-h-0 flex-1 space-y-4 overflow-y-auto [&_.erp-table-wrap]:max-h-none">
           <div className="flex justify-end">
             <PrimaryButton onClick={() => { setCcForm({ nome: "", codigo: "", descricao: "", ativo: true }); setCcOpen(true); }}>
               <Plus className="mr-1.5 h-4 w-4" />Novo centro de custo

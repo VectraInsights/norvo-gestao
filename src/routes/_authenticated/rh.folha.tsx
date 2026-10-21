@@ -43,6 +43,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEmpresaAtual } from "@/hooks/use-empresa";
 import { toast } from "sonner";
 import { brl } from "@/lib/format";
+import { ALTURA_PAGINA } from "@/lib/layout";
 
 export const Route = createFileRoute("/_authenticated/rh/folha")({
   component: FolhaPage,
@@ -439,13 +440,13 @@ function FolhaPage() {
   const total = folhas?.reduce((s, f) => s + Number(f.liquido || 0), 0) ?? 0;
 
   return (
-    <div className="space-y-6">
+    <div className={`${ALTURA_PAGINA} gap-4`}>
       <PageHeader
         eyebrow="DP / RH"
         title="Folha de pagamento"
         description="Gere a folha mensal por colaborador. INSS e IRRF são calculados automaticamente. Ao criar, um lançamento é gerado em Contas a pagar."
       />
-      <div className="mb-4 flex flex-col gap-2 sm:mb-6 sm:flex-row sm:items-center">
+      <div className="mb-4 flex shrink-0 flex-col gap-2 sm:mb-6 sm:flex-row sm:items-center">
         <SearchField value={busca} onChange={setBusca} size="xs" />
         <div className="flex items-center gap-2">
             <Button
@@ -639,7 +640,7 @@ function FolhaPage() {
         </div>
       </div>
 
-      <Card className="overflow-hidden rounded-2xl shadow-panel">
+      <Card className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-2xl shadow-panel">
         {isLoading ? (
           <div className="space-y-2.5 p-4" aria-label="Carregando">
             {Array.from({ length: 4 }).map((_, i) => (
@@ -647,18 +648,23 @@ function FolhaPage() {
             ))}
           </div>
         ) : !folhas || folhas.length === 0 ? (
-          <EmptyState
-            icon={Wallet}
-            title="Nenhum lançamento"
-            description="Crie o primeiro lançamento da folha desta competência."
-          />
+          <div className="min-h-0 flex-1 overflow-y-auto">
+            <EmptyState
+              icon={Wallet}
+              title="Nenhum lançamento"
+              description="Crie o primeiro lançamento da folha desta competência."
+            />
+          </div>
         ) : !filtrados.length ? (
-          <EmptyState
-            icon={Wallet}
-            title="Nenhum resultado"
-            description="Nada encontrado para a busca."
-          />
+          <div className="min-h-0 flex-1 overflow-y-auto">
+            <EmptyState
+              icon={Wallet}
+              title="Nenhum resultado"
+              description="Nada encontrado para a busca."
+            />
+          </div>
         ) : (
+          <div className="min-h-0 flex-1 overflow-y-auto [&_.erp-table-wrap]:max-h-none">
           <Table className="[&_td]:px-3 [&_td]:py-2 [&_th]:px-3">
             <TableHeader>
               <TableRow>
@@ -736,6 +742,7 @@ function FolhaPage() {
               ))}
             </TableBody>
           </Table>
+          </div>
         )}
       </Card>
       <AlertDialog open={confLote} onOpenChange={setConfLote}>

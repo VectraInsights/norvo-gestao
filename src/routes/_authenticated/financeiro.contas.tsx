@@ -37,6 +37,7 @@ import { RouteErrorState } from "@/components/erp/route-error-state";
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { listarContatosFinanceiros } from "@/lib/financeiro-contatos";
+import { ALTURA_PAGINA } from "@/lib/layout";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEmpresaAtual } from "@/hooks/use-empresa";
 import { toast } from "sonner";
@@ -956,10 +957,11 @@ function ContasFinanceiras() {
   };
 
   return (
-    <>
+    <div className={ALTURA_PAGINA}>
       <input ref={fileRef} type="file" accept=".ofx,.OFX,text/plain" className="hidden" onChange={handleFile} />
       <PageHeader eyebrow="Financeiro" title="Contas financeiras" description="Cadastro e gestão das contas financeiras da empresa." />
       {detalheId ? (
+        <div className="min-h-0 flex-1 overflow-y-auto">
         <ContaDetalhe
           contaId={detalheId}
           contas={contas ?? []}
@@ -972,9 +974,10 @@ function ContasFinanceiras() {
           onImportar={(id) => triggerUpload(id)}
           onExcluir={(c) => setConfConta(c)}
         />
+        </div>
       ) : (
       <>
-      <div className="mb-4 flex flex-col gap-3 sm:mb-6 sm:flex-row sm:items-center">
+      <div className="mb-4 flex shrink-0 flex-col gap-3 sm:mb-6 sm:flex-row sm:items-center">
         <SearchField value={busca} onChange={setBusca} />
         <div className="flex items-center gap-2">
           <div className="flex items-center gap-2.5">
@@ -1220,9 +1223,12 @@ function ContasFinanceiras() {
         </div>
       </div>
       {!filtrados?.length ? (
-        <EmptyState icon={Banknote} title="Sem contas financeiras" description={busca ? "Nada encontrado para a busca." : "Cadastre suas contas para acompanhar saldos e realizar conciliação."} />
+        <div className="min-h-0 flex-1 overflow-y-auto">
+          <EmptyState icon={Banknote} title="Sem contas financeiras" description={busca ? "Nada encontrado para a busca." : "Cadastre suas contas para acompanhar saldos e realizar conciliação."} />
+        </div>
       ) : (
-        <Card className="overflow-hidden rounded-2xl bg-primary/[0.04] shadow-panel">
+        <Card className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-2xl bg-primary/[0.04] shadow-panel">
+          <div className="min-h-0 flex-1 overflow-y-auto [&_.erp-table-wrap]:max-h-none">
           <Table className="[&_td]:px-3 [&_td]:py-2 [&_th]:px-3 [&_th]:py-2">
             <TableHeader><TableRow>
               <TableHead className="text-[13px]">Banco</TableHead><TableHead className="text-[13px]">Nome da conta</TableHead><TableHead className="text-[13px]">Tipo de conta</TableHead>
@@ -1285,6 +1291,7 @@ function ContasFinanceiras() {
               })}
             </TableBody>
           </Table>
+          </div>
         </Card>
       )}
       </>)}
@@ -1364,7 +1371,7 @@ function ContasFinanceiras() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
-    </>
+    </div>
   );
 }
 

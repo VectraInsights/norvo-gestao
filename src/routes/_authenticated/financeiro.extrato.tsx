@@ -14,6 +14,7 @@ import { ListTree, Download, ArrowDownCircle, ArrowUpCircle, Scale } from "lucid
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { nomesContatosFinanceiros } from "@/lib/financeiro-contatos";
+import { ALTURA_PAGINA } from "@/lib/layout";
 import { useEmpresaAtual } from "@/hooks/use-empresa";
 import { usePerfisMap } from "@/hooks/use-perfis";
 import { PeriodoFilter, type Periodo } from "@/components/erp/periodo-filter";
@@ -241,14 +242,14 @@ function ExtratoPage() {
   };
 
   return (
-    <div className="space-y-6">
+    <div className={`${ALTURA_PAGINA} gap-4`}>
       <PageHeader
         eyebrow="Financeiro"
         title="Extrato de movimentações"
         description="Consulte entradas e saídas por período, conta financeira, categoria e centro de custo."
       />
 
-      <div className="grid gap-4 sm:gap-5 lg:grid-cols-3">
+      <div className="grid shrink-0 gap-4 sm:gap-5 lg:grid-cols-3">
         <Card className="flex items-center gap-4 rounded-2xl p-5 shadow-panel transition-all duration-200 hover:-translate-y-1 hover:shadow-lg sm:p-6">
           <span className="grid h-12 w-12 shrink-0 place-items-center rounded-2xl bg-success/10">
             <ArrowDownCircle className="h-6 w-6 text-success" />
@@ -278,7 +279,7 @@ function ExtratoPage() {
         </Card>
       </div>
 
-      <div className="flex flex-wrap items-center gap-2.5">
+      <div className="flex shrink-0 flex-wrap items-center gap-2.5">
         <PeriodoFilter value={periodo} onChange={setPeriodo} />
         <Select value={base} onValueChange={(v) => setBase(v as typeof base)}>
           <SelectTrigger className="h-10 w-[190px] rounded-xl shadow-sm"><SelectValue /></SelectTrigger>
@@ -322,9 +323,13 @@ function ExtratoPage() {
           {Array.from({ length: 5 }).map((_, i) => <div key={i} className="h-12 animate-pulse rounded-xl bg-muted/30" />)}
         </div>
       ) : !linhas.length ? (
-        <EmptyState icon={ListTree} title="Nenhuma movimentação no período" description="Ajuste os filtros acima para ampliar a consulta." />
+        <div className="min-h-0 flex-1 overflow-y-auto">
+          <EmptyState icon={ListTree} title="Nenhuma movimentação no período" description="Ajuste os filtros acima para ampliar a consulta." />
+        </div>
       ) : (
-        <Card className="overflow-x-auto rounded-2xl shadow-panel">
+        <Card className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-2xl shadow-panel">
+          {/* Rolagem só dentro da lista: a página não cria barra externa. */}
+          <div className="min-h-0 flex-1 overflow-y-auto overflow-x-auto [&_.erp-table-wrap]:max-h-none">
           <Table>
             <TableHeader>
               <TableRow>
@@ -366,6 +371,7 @@ function ExtratoPage() {
               ))}
             </TableBody>
           </Table>
+          </div>
         </Card>
       )}
 

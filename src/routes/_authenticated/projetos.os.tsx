@@ -56,6 +56,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEmpresaAtual } from "@/hooks/use-empresa";
 import { toast } from "sonner";
 import { brl, dateBR } from "@/lib/format";
+import { ALTURA_PAGINA } from "@/lib/layout";
 
 export const Route = createFileRoute("/_authenticated/projetos/os")({
   component: OSPage,
@@ -285,13 +286,13 @@ function OSPage() {
   });
 
   return (
-    <div className="space-y-6">
+    <div className={`${ALTURA_PAGINA} gap-4`}>
       <PageHeader
         eyebrow="Projetos"
         title="Ordens de serviço"
         description="Registre chamados, execute e feche entregas com prazos e responsáveis."
       />
-      <div className="mb-4 flex flex-col gap-2 sm:mb-6 sm:flex-row sm:items-center">
+      <div className="mb-4 flex shrink-0 flex-col gap-2 sm:mb-6 sm:flex-row sm:items-center">
         <SearchField value={busca} onChange={(v) => setBusca(v)} />
         <div className="flex items-center gap-2">
           <Dialog
@@ -433,7 +434,7 @@ function OSPage() {
         </TabsList>
       </Tabs>
 
-      <Card className="overflow-hidden rounded-2xl shadow-panel">
+      <Card className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-2xl shadow-panel">
         {isLoading ? (
           <div className="space-y-2.5 p-4" aria-label="Carregando">
             {Array.from({ length: 4 }).map((_, i) => (
@@ -441,12 +442,15 @@ function OSPage() {
             ))}
           </div>
         ) : filtrados.length === 0 ? (
-          <EmptyState
-            icon={Wrench}
-            title="Nenhuma OS"
-            description={busca ? "Nada encontrado para a busca." : "Crie sua primeira ordem de serviço."}
-          />
+          <div className="min-h-0 flex-1 overflow-y-auto">
+            <EmptyState
+              icon={Wrench}
+              title="Nenhuma OS"
+              description={busca ? "Nada encontrado para a busca." : "Crie sua primeira ordem de serviço."}
+            />
+          </div>
         ) : (
+          <div className="min-h-0 flex-1 overflow-y-auto [&_.erp-table-wrap]:max-h-none">
           <Table className="[&_td]:px-3 [&_td]:py-2 [&_th]:px-3">
             <TableHeader>
               <TableRow>
@@ -526,6 +530,7 @@ function OSPage() {
               ))}
             </TableBody>
           </Table>
+          </div>
         )}
       </Card>
     </div>

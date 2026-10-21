@@ -56,6 +56,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEmpresaAtual } from "@/hooks/use-empresa";
 import { toast } from "sonner";
 import { brl, dateBR } from "@/lib/format";
+import { ALTURA_PAGINA } from "@/lib/layout";
 import { useState, useEffect } from "react";
 import { useFiltrosSalvos } from "@/hooks/use-filtros-salvos";
 
@@ -515,8 +516,8 @@ function NotasEmitidas() {
   const notasVisiveis = notasFiltradas.slice((paginaAtual - 1) * pageSize, paginaAtual * pageSize);
 
   return (
-    <>
-      <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
+    <div className={ALTURA_PAGINA}>
+      <div className="flex shrink-0 flex-col justify-between gap-4 sm:flex-row sm:items-center">
         <PageHeader
           eyebrow="Gestão Fiscal"
           title="Notas de Saída"
@@ -811,13 +812,17 @@ function NotasEmitidas() {
           </CardContent>
         </Card>
       ) : !notasFiltradas?.length ? (
-        <EmptyState
-          icon={FileText}
-          title="Nenhum documento fiscal encontrado"
-          description="Refine seus filtros ou realize uma nova emissão para gerar rascunhos de notas fiscais."
-        />
+        <div className="min-h-0 flex-1 overflow-y-auto">
+          <EmptyState
+            icon={FileText}
+            title="Nenhum documento fiscal encontrado"
+            description="Refine seus filtros ou realize uma nova emissão para gerar rascunhos de notas fiscais."
+          />
+        </div>
       ) : (
-        <Card className="overflow-hidden rounded-2xl border-muted shadow-panel bg-card/60 backdrop-blur-sm">
+        <Card className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-2xl border-muted shadow-panel bg-card/60 backdrop-blur-sm">
+          {/* Rolagem só dentro da lista: a página não cria barra externa. */}
+          <div className="min-h-0 flex-1 overflow-y-auto [&_.erp-table-wrap]:max-h-none">
             <Table className="[&_td]:px-3 [&_td]:py-2 [&_th]:px-3">
               <TableHeader>
                 <TableRow>
@@ -939,6 +944,8 @@ function NotasEmitidas() {
                 })}
               </TableBody>
             </Table>
+          </div>
+          <div className="shrink-0">
             <Pagination
               pagina={paginaAtual}
               totalPaginas={totalPaginas}
@@ -946,6 +953,7 @@ function NotasEmitidas() {
               pageSize={pageSize}
               onPagina={setPagina}
             />
+          </div>
         </Card>
       )}
 
@@ -958,6 +966,6 @@ function NotasEmitidas() {
         isError={trilhaQuery.isError}
         events={(trilhaQuery.data ?? [])}
       />
-    </>
+    </div>
   );
 }

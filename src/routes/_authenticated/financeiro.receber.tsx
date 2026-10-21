@@ -55,6 +55,7 @@ import {
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { listarContatosFinanceiros, nomesContatosFinanceiros } from "@/lib/financeiro-contatos";
+import { ALTURA_PAGINA } from "@/lib/layout";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEmpresaAtual } from "@/hooks/use-empresa";
 import { toast } from "sonner";
@@ -684,14 +685,14 @@ export function LancamentosPage({ tipo }: { tipo: "receber" | "pagar" }) {
       : "Compromissos financeiros a vencer e pagos.";
 
   return (
-    <>
+    <div className={ALTURA_PAGINA}>
       <PageHeader
         eyebrow="Financeiro"
         title={titulo}
         description={desc}
       />
 
-      <div className="mb-4 flex flex-wrap items-center gap-2.5 sm:mb-6 lg:flex-nowrap">
+      <div className="mb-4 flex shrink-0 flex-wrap items-center gap-2.5 sm:mb-6 lg:flex-nowrap">
         <div className="inline-flex max-w-full min-w-0 flex-wrap items-center gap-0.5 whitespace-nowrap rounded-xl border bg-muted/30 p-1.5 text-[13px] shadow-sm">
           {(
             [
@@ -908,13 +909,17 @@ export function LancamentosPage({ tipo }: { tipo: "receber" | "pagar" }) {
           ))}
         </div>
       ) : !filtrados.length ? (
-        <EmptyState
-          icon={TrendingUp}
-          title="Nenhum lançamento nesta aba"
-          description="Ajuste a aba acima ou crie um novo lançamento."
-        />
+        <div className="min-h-0 flex-1 overflow-y-auto">
+          <EmptyState
+            icon={TrendingUp}
+            title="Nenhum lançamento nesta aba"
+            description="Ajuste a aba acima ou crie um novo lançamento."
+          />
+        </div>
       ) : (
-        <Card className="overflow-hidden rounded-2xl shadow-panel">
+        <Card className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-2xl shadow-panel">
+          {/* Rolagem só dentro da lista: a página não cria barra externa. */}
+          <div className="min-h-0 flex-1 overflow-y-auto [&_.erp-table-wrap]:max-h-none">
           <Table className="[&_td]:px-3 [&_td]:py-2 [&_th]:px-3">
             {/* Cabeçalho estático e opaco: o sticky global translúcido deixava
                 as linhas passarem por baixo aparecendo através */}
@@ -1119,15 +1124,18 @@ export function LancamentosPage({ tipo }: { tipo: "receber" | "pagar" }) {
               })}
             </TableBody>
           </Table>
-          <Pagination
-            pagina={paginaAtual}
-            totalPaginas={totalPaginas}
-            total={filtrados.length}
-            pageSize={pageSize}
-            onPagina={setPagina}
-            pageSizes={[10, 25, 50, 100]}
-            onPageSize={(n) => { setPageSize(n); setPagina(1); }}
-          />
+          </div>
+          <div className="shrink-0">
+            <Pagination
+              pagina={paginaAtual}
+              totalPaginas={totalPaginas}
+              total={filtrados.length}
+              pageSize={pageSize}
+              onPagina={setPagina}
+              pageSizes={[10, 25, 50, 100]}
+              onPageSize={(n) => { setPageSize(n); setPagina(1); }}
+            />
+          </div>
         </Card>
       )}
 
@@ -1391,6 +1399,6 @@ export function LancamentosPage({ tipo }: { tipo: "receber" | "pagar" }) {
           else setForm((f) => ({ ...f, contato_id: c.id }));
         }}
       />
-    </>
+    </div>
   );
 }

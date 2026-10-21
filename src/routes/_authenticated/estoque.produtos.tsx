@@ -51,6 +51,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEmpresaAtual } from "@/hooks/use-empresa";
 import { toast } from "sonner";
 import { brl, num } from "@/lib/format";
+import { ALTURA_PAGINA } from "@/lib/layout";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import {
   AlertDialog,
@@ -355,14 +356,14 @@ function Produtos() {
   };
 
   return (
-    <>
+    <div className={ALTURA_PAGINA}>
       <PageHeader
         eyebrow="Estoque"
         title="Produtos"
         description="Cadastro de produtos, preços e saldos."
       />
 
-      <div className="mb-4 flex flex-col gap-2 sm:flex-row sm:items-center">
+      <div className="mb-4 flex shrink-0 flex-col gap-2 sm:flex-row sm:items-center">
         <SearchField value={busca} onChange={(v) => { setBusca(v); setPagina(1); }} />
         <div className="w-48">
           <Combobox
@@ -511,7 +512,7 @@ function Produtos() {
       </div>
 
       {isLoading ? (
-        <Card className="overflow-hidden shadow-panel">
+        <Card className="flex-1 overflow-hidden shadow-panel">
           <div className="space-y-2 p-4">
             {Array.from({ length: 6 }).map((_, i) => (
               <Skeleton key={i} className="h-10 w-full" />
@@ -519,18 +520,22 @@ function Produtos() {
           </div>
         </Card>
       ) : !filtrados.length ? (
-        <EmptyState
-          icon={Package}
-          title={busca ? "Nenhum resultado" : "Nenhum produto"}
-          description={
-            busca
-              ? "Ajuste o filtro de busca."
-              : "Cadastre seu primeiro produto para começar a movimentar o estoque."
-          }
-        />
+        <div className="min-h-0 flex-1 overflow-y-auto">
+          <EmptyState
+            icon={Package}
+            title={busca ? "Nenhum resultado" : "Nenhum produto"}
+            description={
+              busca
+                ? "Ajuste o filtro de busca."
+                : "Cadastre seu primeiro produto para começar a movimentar o estoque."
+            }
+          />
+        </div>
       ) : (
-        <Card className="overflow-hidden shadow-panel">
-          <Table className="[&_td]:px-3 [&_th]:px-3">
+        <Card className="flex min-h-0 flex-1 flex-col overflow-hidden shadow-panel">
+          {/* Rolagem só dentro da lista: a página não cria barra externa. */}
+          <div className="min-h-0 flex-1 overflow-y-auto [&_.erp-table-wrap]:max-h-none">
+            <Table className="[&_td]:px-3 [&_th]:px-3">
             <TableHeader>
               <TableRow>
                 <TableHead>Código</TableHead>
@@ -622,13 +627,16 @@ function Produtos() {
               })}
             </TableBody>
           </Table>
-          <Pagination
-            pagina={paginaAtual}
-            totalPaginas={totalPaginas}
-            total={filtrados.length}
-            pageSize={pageSize}
-            onPagina={setPagina}
-          />
+          </div>
+          <div className="shrink-0">
+            <Pagination
+              pagina={paginaAtual}
+              totalPaginas={totalPaginas}
+              total={filtrados.length}
+              pageSize={pageSize}
+              onPagina={setPagina}
+            />
+          </div>
         </Card>
       )}
 
@@ -668,6 +676,6 @@ function Produtos() {
         isError={trilhaQuery.isError}
         events={(trilhaQuery.data ?? [])}
       />
-    </>
+    </div>
   );
 }

@@ -27,6 +27,7 @@ import { brl, dateBR } from "@/lib/format";
 
 import { supabase } from "@/integrations/supabase/client";
 import { registrarNcmFiscal, ncmValido } from "@/lib/ncm-fiscal";
+import { ALTURA_PAGINA } from "@/lib/layout";
 import { useEmpresaAtual } from "@/hooks/use-empresa";
 import { useMutation } from "@tanstack/react-query";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
@@ -1643,11 +1644,11 @@ function NotasRecebidas() {
   };
 
   return (
-    <>
-      <PageHeader 
-        eyebrow="Gestão Fiscal" 
-        title="Notas de Compra" 
-        description="Consulte notas fiscais emitidas contra seu CNPJ e importe XMLs para o estoque e financeiro." 
+    <div className={`${ALTURA_PAGINA} gap-4`}>
+      <PageHeader
+        eyebrow="Gestão Fiscal"
+        title="Notas de Compra"
+        description="Consulte notas fiscais emitidas contra seu CNPJ e importe XMLs para o estoque e financeiro."
         actions={
           <div className="flex items-center gap-2">
             <Button variant="ghost" size="sm" onClick={() => setTrilhaOpen(true)} className="h-9 rounded-xl px-4 active:scale-95">
@@ -1657,14 +1658,14 @@ function NotasRecebidas() {
         }
       />
 
-      <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-        <TabsList className="bg-muted/80 h-auto w-full max-w-[420px] flex-wrap gap-1 rounded-xl p-1.5">
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="flex min-h-0 flex-1 flex-col">
+        <TabsList className="bg-muted/80 h-auto w-full max-w-[420px] shrink-0 flex-wrap gap-1 rounded-xl p-1.5">
           <TabsTrigger value="manifesto" className="flex-1 text-xs sm:text-sm">Notas de Compra</TabsTrigger>
           <TabsTrigger value="xml" className="flex-1 text-xs sm:text-sm">Importação de XML</TabsTrigger>
         </TabsList>
 
-        <TabsContent value="manifesto" className="space-y-4">
-          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <TabsContent value="manifesto" className="mt-4 min-h-0 flex-1 space-y-4 overflow-y-auto [&_.erp-table-wrap]:max-h-none">
+          <div className="flex shrink-0 flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <div className="flex flex-1 flex-wrap gap-2">
               <SearchField
                 value={search}
@@ -1762,7 +1763,7 @@ function NotasRecebidas() {
           </Card>
         </TabsContent>
 
-        <TabsContent value="xml" className="space-y-4">
+        <TabsContent value="xml" className="mt-4 min-h-0 flex-1 space-y-4 overflow-y-auto [&_.erp-table-wrap]:max-h-none">
           <div className="grid gap-4 sm:gap-5 md:grid-cols-3">
             <Card className="rounded-2xl md:col-span-2 border-muted bg-card/60 backdrop-blur-sm shadow-panel">
               <CardHeader className="pb-2">
@@ -2295,6 +2296,6 @@ function NotasRecebidas() {
           }
         />
       )}
-    </>
+    </div>
   );
 }

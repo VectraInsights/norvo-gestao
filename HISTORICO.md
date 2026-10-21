@@ -6648,4 +6648,16 @@ produtos do Estoque (`produtos.ncm`) e da referencia global oficial (`ncm`, Clas
   e a rolagem ficou SO dentro da tabela (`[&_.erp-table-wrap]:max-h-none` + wrapper
   `overflow-y-auto`); a paginacao fica fixa no rodape. A barra de rolagem externa
   (da janela) some.
+- **Onda 1 — 12 telas de lista sem rolagem fora**: novo `src/lib/layout.ts` com
+  `ALTURA_PAGINA` (a conta do viewport: header 64px + padding do `main`) e aplicacao
+  padrao — pagina em coluna flex, card da lista `flex-1 min-h-0`, rolagem SO dentro da
+  tabela e paginacao fixa no rodape:
+  Estoque > Produtos · Vendas > Clientes · Frota > Veiculos e Viagens ·
+  Financeiro > Contas, Pagar, Receber (mesmo componente `LancamentosPage`), Extrato e
+  Categorias e centros · Fiscal > Notas Emitidas, Notas de Compra ·
+  Projetos > Ordens de servico · DP/RH > Folha de pagamento.
+  Em telas com abas (Cadastros, Notas de Compra) a rolagem fica no `TabsContent`
+  (`min-h-0 flex-1 overflow-y-auto`); em Contas financeiras o detalhe da conta
+  tambem passou a rolar por dentro. Telas que precisam rolar a pagina inteira
+  (Dashboard, Relatorios, hub de Configuracoes) nao foram tocadas.
 - tsc sem erro novo, `npm test` (70) e build OK.
