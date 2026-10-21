@@ -80,6 +80,7 @@ import {
   Repeat,
   Copy,
   Lock,
+  UsersRound,
 } from "lucide-react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -2888,6 +2889,21 @@ function CtePage() {
       }>;
     },
   });
+  // Cadastro de apoio (veículo/motorista) aberto em OUTRA aba: o formulário do CT-e
+  // vive em memória e seria perdido ao navegar. Ao voltar para a aba, as listas de
+  // veículos e motoristas são recarregadas.
+  const abrirCadastro = (rota: string) => {
+    window.open(rota, "_blank", "noopener");
+  };
+  useEffect(() => {
+    if (!open) return;
+    const onFocus = () => {
+      qc.invalidateQueries({ queryKey: ["veiculos-cte"] });
+      qc.invalidateQueries({ queryKey: ["cte-motoristas"] });
+    };
+    window.addEventListener("focus", onFocus);
+    return () => window.removeEventListener("focus", onFocus);
+  }, [open, qc]);
   // RTC fase 2 (flag por empresa): cClassTrib real e grupos novos quando ligada.
   const { data: rtcCfg } = useQuery({
     enabled: !!empresa,
@@ -9455,8 +9471,32 @@ function CtePage() {
                 </Card>
 
                 <Card className="overflow-hidden p-1.5">
-                  <div className="bg-primary/8 border-b border-primary/20 rounded-t-xl px-3 py-2 text-[10px] font-semibold uppercase tracking-wide text-primary/80">
-                    Dados do Veículo / Motorista
+                  <div className="flex items-center gap-2 bg-primary/8 border-b border-primary/20 rounded-t-xl px-3 py-2">
+                    <span className="text-[10px] font-semibold uppercase tracking-wide text-primary/80">
+                      Dados do Veículo / Motorista
+                    </span>
+                    <div className="ml-auto flex items-center gap-1">
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        className="h-5 gap-1 px-1.5 text-[10px] font-medium normal-case tracking-normal text-primary/80 hover:bg-primary/10 hover:text-primary"
+                        title="Cadastrar motorista (abre em outra aba)"
+                        onClick={() => abrirCadastro("/rh/colaboradores")}
+                      >
+                        <UsersRound className="h-3 w-3" />
+                        Motorista
+                      </Button>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        className="h-5 gap-1 px-1.5 text-[10px] font-medium normal-case tracking-normal text-primary/80 hover:bg-primary/10 hover:text-primary"
+                        title="Cadastrar veículo (abre em outra aba)"
+                        onClick={() => abrirCadastro("/frota/veiculos")}
+                      >
+                        <Truck className="h-3 w-3" />
+                        Veículo
+                      </Button>
+                    </div>
                   </div>
                   <div className="space-y-0.5">
                     <div className="grid grid-cols-3 gap-1">

@@ -1107,6 +1107,21 @@ function DialogNovoMdf({ open, onOpenChange, empresaId, empresa, chavesIniciais,
   const [ufDescarregamento, setUfDescarregamento] = useState("");
   const [observacoes, setObservacoes] = useState("");
 
+  // Cadastro de apoio (veículo/motorista) em OUTRA aba: o formulário do MDF-e vive
+  // em memória e seria perdido ao navegar. Ao voltar, a lista é recarregada.
+  const abrirCadastro = (rota: string) => {
+    window.open(rota, "_blank", "noopener");
+  };
+  useEffect(() => {
+    if (!open) return;
+    const onFocus = () => {
+      qc.invalidateQueries({ queryKey: ["veiculos-mdf"] });
+      qc.invalidateQueries({ queryKey: ["motoristas-mdf"] });
+    };
+    window.addEventListener("focus", onFocus);
+    return () => window.removeEventListener("focus", onFocus);
+  }, [open, qc]);
+
   const { data: veiculos } = useQuery({
     enabled: !!empresaId && open,
     queryKey: ["veiculos-mdf", empresaId],
@@ -1835,7 +1850,17 @@ function DialogNovoMdf({ open, onOpenChange, empresaId, empresa, chavesIniciais,
           <div className="space-y-1 flex-1 flex flex-col" style={{ minHeight: 0 }}>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-1">
             <div className="border rounded-xl overflow-hidden">
-              <div className="bg-primary/8 border-b border-primary/20 px-2 py-1 text-[10px] font-semibold uppercase tracking-wide text-primary/80">Dados do Veículo / Motorista</div>
+              <div className="flex items-center gap-2 bg-primary/8 border-b border-primary/20 px-2 py-1">
+                <span className="text-[10px] font-semibold uppercase tracking-wide text-primary/80">Dados do Veículo / Motorista</span>
+                <div className="ml-auto flex items-center gap-1">
+                  <Button type="button" variant="ghost" className="h-5 gap-1 px-1.5 text-[10px] font-medium normal-case tracking-normal text-primary/80 hover:bg-primary/10 hover:text-primary" title="Cadastrar motorista (abre em outra aba)" onClick={() => abrirCadastro("/rh/colaboradores")}>
+                    <Users className="h-3 w-3" /> Motorista
+                  </Button>
+                  <Button type="button" variant="ghost" className="h-5 gap-1 px-1.5 text-[10px] font-medium normal-case tracking-normal text-primary/80 hover:bg-primary/10 hover:text-primary" title="Cadastrar veículo (abre em outra aba)" onClick={() => abrirCadastro("/frota/veiculos")}>
+                    <Truck className="h-3 w-3" /> Veículo
+                  </Button>
+                </div>
+              </div>
               <div className="p-2 space-y-1">
               <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
                 <div className="space-y-1">

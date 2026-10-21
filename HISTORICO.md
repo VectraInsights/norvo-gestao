@@ -6536,3 +6536,15 @@ produtos do Estoque (`produtos.ncm`) e da referencia global oficial (`ncm`, Clas
   Veiculos/Motoristas") em vez de "Cadastre em RH".
 - Testes novos em `permissoes.test.ts` (4 casos: liberacao p/ fiscal, resto restrito,
   rotas sem modulo e modulos alternativos). `npm test` (68) e build OK; tsc sem erro novo.
+
+## CT-e/MDF-e: cadastrar veiculo e motorista de dentro do dialogo (21/10)
+
+- No card/box **"Dados do Veículo / Motorista"** do dialogo de emissao do CT-e e do
+  MDF-e, dois botoes discretos: **Motorista** (DP / RH) e **Veiculo** (Frota).
+- O cadastro abre em **OUTRA aba** (`window.open`): o formulario da emissao vive em
+  memoria e seria perdido se a navegacao fosse na mesma aba.
+- Ao voltar para a aba da emissao, o `focus` da janela invalida as queries de veiculos
+  e motoristas (`veiculos-cte`/`cte-motoristas` no CT-e, `veiculos-mdf`/`motoristas-mdf`
+  no MDF-e) — o item recem-cadastrado ja aparece no seletor. O listener so fica ativo
+  com o dialogo de emissao aberto.
+- tsc sem erro novo, `npm test` (68) e build OK.
