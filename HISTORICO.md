@@ -6607,3 +6607,16 @@ produtos do Estoque (`produtos.ncm`) e da referencia global oficial (`ncm`, Clas
   mostra o toast "Veiculo ja cadastrado" (com a placa na descricao) e devolve o formulario
   como estava.
 - tsc sem erro novo, `npm test` (70) e build OK.
+
+## Frota: sufixo do proprietario no CRLV + RNTRC preenchendo o dono (21/10)
+
+- **Parser do CRLV perdia o sufixo juridico**: o padrao 1 (`CARROCERIA FECHADA <nome>
+  <sufixo>`) e o padrao 3 (`0XP <x> <nome> <sufixo> <cnpj>`) usavam o sufixo (LTDA/EPP/
+  MEI/EIRELI/SA) como grupo **nao capturado** — o nome do proprietor saia sem o sufixo
+  ("ROSANGELA RIBEIRO MENDES EPP" virava "ROSANGELA RIBEIRO MENDES"). O sufixo agora tem
+  captura propria e entra no nome.
+- **RNTRC passa a ser a fonte do dono**: ao selecionar um RNTRC na lista, o campo
+  Proprietario passa a ser **exatamente** o nome cadastrado no RNTRC (antes so era
+  preenchido se estivesse vazio) e o CNPJ/CPF do dono vem junto. O caminho inverso
+  (digitar o proprietario preenche o RNTRC) continua valendo.
+- tsc sem erro novo, `npm test` (70) e build OK.

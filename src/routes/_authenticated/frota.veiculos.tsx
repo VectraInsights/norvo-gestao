@@ -395,10 +395,11 @@ function Veiculos() {
       }
       let propVal = "";
       // Padrão 1: CARROCERIA FECHADA + nome + sufixo jurídico (LTDA/EPP/MEI/EIRELI/SA/etc)
+      // O sufixo entra no nome (captura própria) — antes o "EPP" ficava de fora.
       const propSec = dadosBloco.match(
-        /CARROCERIA\s+FECHADA\s+([A-Z][A-Z0-9 \.\-\/&]+?)\s+(?:LTDA|EPP|MEI|EIRELI|S\.?A\.?)/i,
+        /CARROCERIA\s+FECHADA\s+([A-Z][A-Z0-9 \.\-\/&]+?)\s+(LTDA|EPP|MEI|EIRELI|S\.?A\.?)/i,
       );
-      if (propSec) propVal = clean(propSec[1]);
+      if (propSec) propVal = clean(`${propSec[1]} ${propSec[2]}`);
       else {
         // Padrão 2: após "0XP" + 2 palavras, nome + CNPJ (formato BTB3808 etc)
         const p2 = dadosBloco.match(
@@ -408,9 +409,9 @@ function Veiculos() {
         else {
           // Padrão 3: após "0XP" + 1 palavra, nome + sufixo jurídico + CNPJ
           const p3 = dadosBloco.match(
-            /0\dP\s+\S+\s+([A-Z][A-Z0-9 \.\-\/&]+?)\s+(?:EPP|LTDA|MEI|EIRELI|S\.?A\.?)\s+\d/,
+            /0\dP\s+\S+\s+([A-Z][A-Z0-9 \.\-\/&]+?)\s+(EPP|LTDA|MEI|EIRELI|S\.?A\.?)\s+\d/,
           );
-          if (p3) propVal = clean(p3[1]);
+          if (p3) propVal = clean(`${p3[1]} ${p3[2]}`);
         }
       }
       const especieVal = dadosBloco.includes("SEMI-REBOQUE")
@@ -987,12 +988,11 @@ function Veiculos() {
                               value={`${r.rntrc} ${r.nome}`}
                               onSelect={() => {
                                 set("rntrc", r.rntrc);
-                                // RNTRC carrega o dono junto: preenche CNPJ/CPF do
-                                // proprietário (e o nome, se vazio)
-                                if (r.cnpj) {
-                                  set("proprietario_doc", maskDoc(r.cnpj));
-                                  if (!form.proprietario && r.nome) set("proprietario", r.nome);
-                                }
+                                // O RNTRC é a fonte do dono: o proprietário passa a ser
+                                // EXATAMENTE o nome cadastrado no RNTRC (e o CNPJ/CPF
+                                // junto, quando houver).
+                                if (r.nome) set("proprietario", r.nome);
+                                if (r.cnpj) set("proprietario_doc", maskDoc(r.cnpj));
                                 rntrcSelRef.current = true;
                                 setRntrcBusca("");
                                 setRntrcOpen(false);
