@@ -464,7 +464,16 @@ function Veiculos() {
         toast.error("Não foi possível extrair dados do PDF. Verifique se é o CRLV digital.");
       } else {
         setForm((f) => ({ ...f, ...updates }));
-        toast.success("Dados do CRLV importados — confira e salve");
+        // A placa que veio do CRLV pode já estar cadastrada: avisa na hora.
+        const dup = updates.placa ? veiculoComMesmaPlaca(updates.placa) : null;
+        if (dup) {
+          toast.error("Já existe um veículo com esta placa", {
+            description: `${dup.placa}${dup.marca_modelo ? ` — ${dup.marca_modelo}` : ""}. Confira os dados antes de salvar.`,
+            duration: 8000,
+          });
+        } else {
+          toast.success("Dados do CRLV importados — confira e salve");
+        }
       }
     } catch (e: any) {
       toast.error("Falha ao ler PDF", { description: e.message });
@@ -496,6 +505,20 @@ function Veiculos() {
       return todos as unknown as Veiculo[];
     },
   });
+
+  // Placa duplicada: o aviso aparece na hora (digitando a placa ou importando o CRLV),
+  // sem esperar o salvar. A lista em memória tem todos os veículos da empresa.
+  const normalizePlaca = (p: string) => String(p || "").replace(/[^A-Z0-9]/gi, "").toUpperCase();
+  const veiculoComMesmaPlaca = (placa: string) => {
+    const alvo = normalizePlaca(placa);
+    if (!alvo) return null;
+    return (
+      (veiculos ?? []).find(
+        (v) => normalizePlaca(v.placa ?? "") === alvo && v.id !== editing?.id,
+      ) ?? null
+    );
+  };
+  const placaDuplicada = veiculoComMesmaPlaca(form.placa);
 
   const reset = () => {
     setEditing(null);
@@ -714,8 +737,16 @@ function Veiculos() {
                     <Input
                       className="uppercase h-7 text-xs"
                       value={form.placa}
-                      onChange={(e) => set("placa", e.target.value)}
+                      onChange={(e) =>
+                        set("placa", e.target.value.replace(/[^A-Za-z0-9]/g, "").toUpperCase())
+                      }
                     />
+                    {placaDuplicada && (
+                      <p className="mt-0.5 text-[10px] leading-tight text-destructive">
+                        Já existe um veículo com esta placa
+                        {placaDuplicada.marca_modelo ? ` (${placaDuplicada.marca_modelo})` : ""}.
+                      </p>
+                    )}
                   </div>
                   <div>
                     <Label className="text-[10px] text-muted-foreground">Ano *</Label>

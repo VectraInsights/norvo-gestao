@@ -6590,3 +6590,17 @@ produtos do Estoque (`produtos.ncm`) e da referencia global oficial (`ncm`, Clas
   negativas do repo (`-mx-2` do dashboard, `-mx-1` dos separadores do shadcn) sao de
   outro tipo (hover/separador) e nao tem o problema.
 - tsc sem erro novo e build OK.
+
+## Frota: aviso de placa duplicada na hora (21/10)
+
+- Antes o aviso "Já existe um veículo com esta placa" so aparecia ao clicar em Salvar
+  (traducao do erro de unique constraint do banco).
+- Agora o aviso e **imediato**: aparece **abaixo do campo Placa** (em vermelho) enquanto a
+  placa e digitada, e tambem em **toast** quando o CRLV (PDF) e importado com uma placa
+  que ja existe. O texto mostra o veiculo em conflito (modelo).
+- A checagem usa a lista de veiculos que ja esta em memoria (query `["veiculos"]` carrega
+  a frota inteira, paginada) — sem consulta extra ao banco. A comparacao ignora
+  separadores e caixa ("ARL-4D94" = "ARL4D94") e ignora o veiculo que esta sendo editado.
+- O campo Placa agora normaliza a digitacao (so letras e numeros, maiusculas) — evita a
+  variante com traco que escapava da unique constraint e criava placa duplicada.
+- tsc sem erro novo, `npm test` (70) e build OK.
