@@ -962,6 +962,47 @@ export type Database = {
           },
         ];
       };
+      ncm_fiscal: {
+        Row: {
+          created_at: string;
+          empresa_id: string;
+          id: string;
+          ncm: string | null;
+          origem: string;
+          tp_carga: string | null;
+          updated_at: string;
+          x_prod: string;
+        };
+        Insert: {
+          created_at?: string;
+          empresa_id: string;
+          id?: string;
+          ncm?: string | null;
+          origem?: string;
+          tp_carga?: string | null;
+          updated_at?: string;
+          x_prod: string;
+        };
+        Update: {
+          created_at?: string;
+          empresa_id?: string;
+          id?: string;
+          ncm?: string | null;
+          origem?: string;
+          tp_carga?: string | null;
+          updated_at?: string;
+          x_prod?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "ncm_fiscal_empresa_id_fkey";
+            columns: ["empresa_id"];
+            isOneToOne: false;
+            referencedRelation: "empresas";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
       crm_etapas: {
         Row: {
           cor: string | null;

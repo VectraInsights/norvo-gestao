@@ -1619,6 +1619,25 @@ function DialogNovoMdf({ open, onOpenChange, empresaId, empresa, chavesIniciais,
           if (!proPredMdf) proPredMdf = (cteXml.match(/<proPred>([^<]{1,120})<\/proPred>/)?.[1] || "").trim();
         } catch {}
       }
+      // Produto predominante: o nome vem do <proPred> do CT-e; o tipo de carga e o
+      // NCM sao complementados pelo cadastro fiscal do modulo (ncm_fiscal).
+      let proPredNcm = "";
+      let proPredTpCarga = "";
+      if (proPredMdf) {
+        try {
+          const { data: ncmFiscal } = await supabase
+            .from("ncm_fiscal" as never)
+            .select("ncm, x_prod, tp_carga")
+            .eq("empresa_id", empresaId);
+          const item = ((ncmFiscal ?? []) as any[]).find(
+            (r) => String(r?.x_prod || "").trim().toLowerCase() === proPredMdf.trim().toLowerCase(),
+          );
+          if (item) {
+            proPredNcm = String(item.ncm || "");
+            proPredTpCarga = String(item.tp_carga || "");
+          }
+        } catch {}
+      }
       // cMun do EMITENTE (empresa): resolve IBGE pela cidade/UF do cadastro;
       // fallback para o município de coleta quando a lookup falhar.
       let emitCMun = "";
@@ -1688,7 +1707,7 @@ function DialogNovoMdf({ open, onOpenChange, empresaId, empresa, chavesIniciais,
           cnpjSeg: segOrigem?.cnpjSeg || "",
         }),
         contratantes: contratantesMdf,
-        prodPred: { xProd: proPredMdf },
+        prodPred: { xProd: proPredMdf, tpCarga: proPredTpCarga || undefined, ncm: proPredNcm || undefined },
         mdfesTransbordo: await (async () => {
           // Municípios de descarga reais do manifesto origem (do XML dele);
           // xMun ausente é resolvido via IBGE, senão a emissão aborta (215).

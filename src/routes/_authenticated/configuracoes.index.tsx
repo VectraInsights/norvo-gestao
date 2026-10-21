@@ -18,7 +18,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Building2, Trash2, Plus, Pencil, Check, X, Settings2, ShieldCheck, ShieldAlert, Tags, CalendarClock, FileText, Truck, Umbrella } from "lucide-react";
+import { Building2, Trash2, Plus, Pencil, Check, X, Settings2, ShieldCheck, ShieldAlert, Tags, CalendarClock, FileText, Truck, Umbrella, Package } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEmpresaAtual } from "@/hooks/use-empresa";
@@ -36,11 +36,14 @@ export const Route = createFileRoute("/_authenticated/configuracoes/")({
   }),
 });
 
-const SECOES = ["categorias", "condicoes", "nfe", "fiscais", "empresas", "rntrc", "seguradoras", "usuarios"] as const;
+const SECOES = ["categorias", "condicoes", "nfe", "fiscais", "ncm", "empresas", "rntrc", "seguradoras", "usuarios"] as const;
 type SecaoId = (typeof SECOES)[number];
 
 const ConfigFiscaisSecao = lazy(() =>
   import("./fiscal.configuracoes").then((m) => ({ default: m.ConfigFiscais })),
+);
+const NcmFiscalSecao = lazy(() =>
+  import("./configuracoes.ncmfiscal").then((m) => ({ default: m.NcmFiscalTab })),
 );
 const EmpresasSecao = lazy(() =>
   import("./configuracoes.empresas").then((m) => ({ default: m.EmpresasPage })),
@@ -106,6 +109,11 @@ function Configuracoes() {
             <Settings2 className="h-4 w-4" /> Configurações fiscais
           </Link>
         )}
+        {mostrarFiscais && (
+          <Link to="/configuracoes" search={{ secao: "ncm" }} className={cls("ncm")}>
+            <Package className="h-4 w-4" /> NCM dos CT-es
+          </Link>
+        )}
         <Link to="/configuracoes" search={{ secao: "empresas" }} className={cls("empresas")}>
           <Building2 className="h-4 w-4" /> Gerenciar empresas
         </Link>
@@ -128,6 +136,11 @@ function Configuracoes() {
       {secaoAtual === "nfe" && (empresa ? <NFeConfigTab empresaId={empresa.id} /> : <SemEmpresa />)}
       {secaoAtual === "fiscais" && (mostrarFiscais ? (
         <Suspense fallback={<SecaoLoading />}><ConfigFiscaisSecao /></Suspense>
+      ) : <SemAcessoSecao />)}
+      {secaoAtual === "ncm" && (mostrarFiscais ? (
+        empresa ? (
+          <Suspense fallback={<SecaoLoading />}><NcmFiscalSecao empresaId={empresa.id} /></Suspense>
+        ) : <SemEmpresa />
       ) : <SemAcessoSecao />)}
       {secaoAtual === "empresas" && (
         <Suspense fallback={<SecaoLoading />}><EmpresasSecao /></Suspense>

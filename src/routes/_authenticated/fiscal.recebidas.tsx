@@ -26,6 +26,7 @@ import { toast } from "sonner";
 import { brl, dateBR } from "@/lib/format";
 
 import { supabase } from "@/integrations/supabase/client";
+import { registrarNcmFiscal, ncmValido } from "@/lib/ncm-fiscal";
 import { useEmpresaAtual } from "@/hooks/use-empresa";
 import { useMutation } from "@tanstack/react-query";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
@@ -73,7 +74,7 @@ interface ParsedXMLResult {
   total: number;
   xml: string;
   temDups: boolean;
-  produtos: { codigo: string; nome: string; qtd: number; un: string; valor: number; categoria: string }[];
+  produtos: { codigo: string; nome: string; qtd: number; un: string; valor: number; categoria: string; ncm: string }[];
   parcelas: { numero: string; dataVencimento: string; valor: number; forma_pagamento: string; conta_bancaria_id: string }[];
 }
 
@@ -98,6 +99,7 @@ function parseProdutosDoXml(xml: string) {
       valorUnit: parseFloat(det.querySelector("prod > vUnCom")?.textContent || "0"),
       valorTotal: parseFloat(det.querySelector("prod > vProd")?.textContent || "0"),
       categoria: "",
+      ncm: (det.querySelector("prod > NCM")?.textContent || "").replace(/\D/g, ""),
     }));
   } catch {
     return [];
@@ -433,6 +435,123 @@ function NotasRecebidas() {
     })();
   }, [empresa?.id]);
 
+  // Backfill do NCM (1x por empresa): as notas importadas antes de o NCM existir no
+  // cadastro nao gravaram o codigo no produto. Le o XML guardado, preenche
+  // `produtos.ncm` (so quando vazio) e registra o cadastro fiscal (`ncm_fiscal`).
+  useEffect(() => {
+    if (!empresa) return;
+    const flag = `norvo:mig-ncm-produtos:${empresa.id}`;
+    try {
+      if (localStorage.getItem(flag)) return;
+    } catch {
+      return;
+    }
+    let cancelado = false;
+    (async () => {
+      try {
+        // 1) Notas com XML guardado (paginada, sem corte silencioso)
+        const notas: { id: string; xml_completo: string | null }[] = [];
+        for (let ini = 0; ; ini += 200) {
+          const { data, error } = await supabase
+            .from("notas_importadas" as never)
+            .select("id, xml_completo")
+            .eq("empresa_id", empresa.id)
+            .not("xml_completo", "is", null)
+            .range(ini, ini + 199);
+          if (error) return; // tabela/coluna ausente: tenta de novo na proxima vez
+          notas.push(...((data as unknown as { id: string; xml_completo: string | null }[]) ?? []));
+          if (!data || (data as unknown[]).length < 200) break;
+        }
+        if (cancelado || !notas.length) {
+          try { localStorage.setItem(flag, "1"); } catch { /* sem storage */ }
+          return;
+        }
+
+        // 2) Itens com NCM por nota (do XML guardado)
+        const porCodigo = new Map<string, string>(); // codigo do produto -> ncm
+        const porNome = new Map<string, string>(); // nome do produto -> ncm
+        const paraCadastro: { nome: string; ncm: string }[] = [];
+        for (const n of notas) {
+          if (!n.xml_completo) continue;
+          let itens: { codigo: string; nome: string; ncm: string }[] = [];
+          try {
+            const doc = new DOMParser().parseFromString(n.xml_completo, "text/xml");
+            itens = Array.from(doc.querySelectorAll("det")).map((det) => ({
+              codigo: (det.querySelector("prod > cProd")?.textContent || "").trim(),
+              nome: (det.querySelector("prod > xProd")?.textContent || "").trim(),
+              ncm: (det.querySelector("prod > NCM")?.textContent || "").replace(/\D/g, ""),
+            }));
+          } catch {
+            continue;
+          }
+          for (const it of itens) {
+            if (!ncmValido(it.ncm)) continue;
+            if (it.codigo) porCodigo.set(it.codigo, it.ncm);
+            if (it.nome) porNome.set(it.nome.toLowerCase(), it.ncm);
+            if (it.nome) paraCadastro.push({ nome: it.nome, ncm: it.ncm });
+          }
+        }
+        if (cancelado) return;
+
+        // 3) Preenche produtos.ncm (so quando o cadastro ainda esta vazio)
+        let corrigidos = 0;
+        const prods: { id: string; codigo: string | null; nome: string | null; ncm: string | null }[] = [];
+        for (let ini = 0; ; ini += 500) {
+          const { data, error } = await supabase
+            .from("produtos")
+            .select("id, codigo, nome, ncm")
+            .eq("empresa_id", empresa.id)
+            .range(ini, ini + 499);
+          if (error) return;
+          prods.push(...((data as unknown as typeof prods) ?? []));
+          if (!data || (data as unknown[]).length < 500) break;
+        }
+        for (const p of prods) {
+          if (cancelado) return;
+          if (p.ncm) continue; // ja tem NCM: nao sobrescreve
+          const ncm =
+            (p.codigo ? porCodigo.get(p.codigo) : undefined) ||
+            (p.nome ? porNome.get(p.nome.toLowerCase()) : undefined);
+          if (!ncm) continue;
+          const { error } = await (supabase.from("produtos") as any)
+            .update({ ncm })
+            .eq("id", p.id);
+          if (!error) corrigidos++;
+        }
+
+        // 4) Cadastro fiscal de NCM (modulo Fiscal)
+        // A tabela pode ainda nao existir (migration nao aplicada): nesse caso o
+        // backfill do cadastro fiscal fica pendente e roda na proxima abertura.
+        const { error: errTabela } = await supabase
+          .from("ncm_fiscal" as never)
+          .select("id")
+          .limit(1);
+        if (errTabela) {
+          if (corrigidos) {
+            toast.success(`NCM preenchido em ${corrigidos} produto(s)`);
+            qc.invalidateQueries({ queryKey: ["produtos"] });
+          }
+          return;
+        }
+        const novos = await registrarNcmFiscal(empresa.id, paraCadastro);
+        if (cancelado) return;
+        try { localStorage.setItem(flag, "1"); } catch { /* sem storage */ }
+        if (corrigidos || novos) {
+          toast.success(
+            `NCM preenchido: ${corrigidos} produto(s) e ${novos} item(ns) no cadastro fiscal`,
+          );
+          qc.invalidateQueries({ queryKey: ["produtos"] });
+          qc.invalidateQueries({ queryKey: ["ncm-fiscal"] });
+        }
+      } catch {
+        // Falhou: tenta de novo na proxima abertura.
+      }
+    })();
+    return () => {
+      cancelado = true;
+    };
+  }, [empresa?.id]);
+
   // Mutation para excluir nota importada
   const excluirNota = useMutation({
     mutationFn: async (nota: NotaRecebida) => {
@@ -474,7 +593,7 @@ function NotasRecebidas() {
     valor: number;
     data: string;
     nNF: string;
-    produtos: { codigo: string; nome: string; qtd: number; un: string; valorUnit: number; valorTotal: number; categoria: string }[];
+    produtos: { codigo: string; nome: string; qtd: number; un: string; valorUnit: number; valorTotal: number; categoria: string; ncm: string }[];
     parcelas: { numero: string; dataVencimento: string; valor: number; forma_pagamento: string; conta_bancaria_id: string }[];
     xml: string;
   } | null>(null);
@@ -532,7 +651,7 @@ function NotasRecebidas() {
 
       if (result.nota) {
         const xml = result.nota.xml;
-        let produtos: { codigo: string; nome: string; qtd: number; un: string; valorUnit: number; valorTotal: number; categoria: string }[] = [];
+        let produtos: { codigo: string; nome: string; qtd: number; un: string; valorUnit: number; valorTotal: number; categoria: string; ncm: string }[] = [];
         let parcelas: { numero: string; dataVencimento: string; valor: number; forma_pagamento: string; conta_bancaria_id: string }[] = [];
         let nNF = "";
 
@@ -549,7 +668,8 @@ function NotasRecebidas() {
               const uCom = det.querySelector("prod > uCom")?.textContent || "UN";
               const vUnCom = parseFloat(det.querySelector("prod > vUnCom")?.textContent || "0");
               const vProd = parseFloat(det.querySelector("prod > vProd")?.textContent || "0");
-              return { codigo: cProd, nome: xProd, qtd: qCom, un: uCom, valorUnit: vUnCom, valorTotal: vProd, categoria: "" };
+              const ncm = (det.querySelector("prod > NCM")?.textContent || "").replace(/\D/g, "");
+              return { codigo: cProd, nome: xProd, qtd: qCom, un: uCom, valorUnit: vUnCom, valorTotal: vProd, categoria: "", ncm };
             });
             // Extrair parcelas (cobr/dup)
             const dupNodes = Array.from(doc.querySelectorAll("cobr > dup"));
@@ -653,7 +773,7 @@ function NotasRecebidas() {
 
     let parsedChave = chNFe;
     let parsedEmitente = emit;
-    let parsedProdutos: { codigo: string; nome: string; qtd: number; un: string; valor: number; categoria: string }[] = [];
+    let parsedProdutos: { codigo: string; nome: string; qtd: number; un: string; valor: number; categoria: string; ncm: string }[] = [];
 
     if (detNodes.length > 0) {
       parsedProdutos = detNodes.map((det) => {
@@ -662,7 +782,8 @@ function NotasRecebidas() {
         const qCom = parseFloat(det.querySelector("prod > qCom")?.textContent || "1");
         const uCom = det.querySelector("prod > uCom")?.textContent || "UN";
         const vUnCom = parseFloat(det.querySelector("prod > vUnCom")?.textContent || "100");
-        return { codigo: cProd, nome: xProd, qtd: qCom, un: uCom, valor: vUnCom, categoria: "" };
+        const ncm = (det.querySelector("prod > NCM")?.textContent || "").replace(/\D/g, "");
+        return { codigo: cProd, nome: xProd, qtd: qCom, un: uCom, valor: vUnCom, categoria: "", ncm };
       });
     } else {
       // Fallback estruturado baseado no arquivo caso não seja XML padrão SEFAZ
@@ -670,9 +791,9 @@ function NotasRecebidas() {
       parsedChave = "352608" + fileHash.padStart(38, "0").slice(-38);
       parsedEmitente = fileItem.name.replace(/\.[^/.]+$/, "").replace(/[-_]/g, " ").toUpperCase() + " LTDA";
       parsedProdutos = [
-        { codigo: "PROD-" + fileHash.slice(0, 4), nome: `Item ${fileItem.name.replace(/\.xml$/i, "")} Wireless`, qtd: 5, un: "UN", valor: 150.00, categoria: "" },
-        { codigo: "PROD-" + fileHash.slice(4, 8), nome: `Acessório ${fileItem.name.replace(/\.xml$/i, "")} Pro`, qtd: 3, un: "UN", valor: 110.00, categoria: "" },
-        { codigo: "PROD-" + fileHash.slice(8, 12), nome: `Componente IPS ${fileItem.name.replace(/\.xml$/i, "")}`, qtd: 2, un: "UN", valor: 450.00, categoria: "" }
+        { codigo: "PROD-" + fileHash.slice(0, 4), nome: `Item ${fileItem.name.replace(/\.xml$/i, "")} Wireless`, qtd: 5, un: "UN", valor: 150.00, categoria: "", ncm: "" },
+        { codigo: "PROD-" + fileHash.slice(4, 8), nome: `Acessório ${fileItem.name.replace(/\.xml$/i, "")} Pro`, qtd: 3, un: "UN", valor: 110.00, categoria: "", ncm: "" },
+        { codigo: "PROD-" + fileHash.slice(8, 12), nome: `Componente IPS ${fileItem.name.replace(/\.xml$/i, "")}`, qtd: 2, un: "UN", valor: 450.00, categoria: "", ncm: "" }
       ];
     }
 
@@ -829,7 +950,7 @@ function NotasRecebidas() {
       for (const p of importResults.produtos) {
         const { data: prodExistente } = await supabase
           .from("produtos")
-          .select("id, estoque_atual")
+          .select("id, estoque_atual, ncm")
           .eq("empresa_id", empresa.id)
           .or(`codigo.eq.${p.codigo},nome.ilike.%${p.nome.slice(0, 10)}%`)
           .maybeSingle();
@@ -837,11 +958,11 @@ function NotasRecebidas() {
         let prodId: string;
         if (prodExistente) {
           prodId = prodExistente.id;
-          await (supabase.from("produtos") as any).update({ estoque_atual: (Number(prodExistente.estoque_atual) || 0) + p.qtd, preco_custo: p.valor, categoria: p.categoria || (prodExistente as any).categoria || null }).eq("id", prodId);
+          await (supabase.from("produtos") as any).update({ estoque_atual: (Number(prodExistente.estoque_atual) || 0) + p.qtd, preco_custo: p.valor, categoria: p.categoria || (prodExistente as any).categoria || null, ncm: p.ncm || (prodExistente as any).ncm || null }).eq("id", prodId);
         } else {
           const { data: novoProd } = await supabase
             .from("produtos")
-            .insert({ empresa_id: empresa.id, codigo: p.codigo, nome: p.nome, unidade: p.un, preco_custo: p.valor, preco_venda: p.valor * 1.4, estoque_atual: p.qtd, ativo: true, categoria: p.categoria || null } as any)
+            .insert({ empresa_id: empresa.id, codigo: p.codigo, nome: p.nome, unidade: p.un, preco_custo: p.valor, preco_venda: p.valor * 1.4, estoque_atual: p.qtd, ativo: true, categoria: p.categoria || null, ncm: p.ncm || null } as any)
             .select("id").single();
           prodId = novoProd!.id;
         }
@@ -851,6 +972,12 @@ function NotasRecebidas() {
           custo_unitario: p.valor, observacoes: `Entrada via Importação de XML (Chave: ${importResults.chave})`
         });
       }
+
+      // Cadastro fiscal de NCM (modulo Fiscal): alimenta o <prodPred> do CT-e/MDF-e.
+      await registrarNcmFiscal(
+        empresa.id,
+        importResults.produtos.map((p) => ({ nome: p.nome, ncm: p.ncm })),
+      );
 
       // 5. Salvar nota no banco
       const { data: notaSalva } = await supabase
@@ -1120,7 +1247,7 @@ function NotasRecebidas() {
         totalQtd += p.qtd;
         const { data: prodExistente } = await supabase
           .from("produtos" as any)
-          .select("id, estoque_atual, categoria")
+          .select("id, estoque_atual, categoria, ncm")
           .eq("empresa_id", empresa.id)
           .or(`codigo.eq.${p.codigo},nome.ilike.%${p.nome.slice(0, 10)}%`)
           .maybeSingle();
@@ -1128,11 +1255,11 @@ function NotasRecebidas() {
         let prodId: string;
         if (prodExistente) {
           prodId = (prodExistente as any).id;
-          await (supabase.from("produtos") as any).update({ estoque_atual: (Number((prodExistente as any).estoque_atual) || 0) + p.qtd, preco_custo: p.valorUnit, categoria: p.categoria || (prodExistente as any).categoria || null }).eq("id", prodId);
+          await (supabase.from("produtos") as any).update({ estoque_atual: (Number((prodExistente as any).estoque_atual) || 0) + p.qtd, preco_custo: p.valorUnit, categoria: p.categoria || (prodExistente as any).categoria || null, ncm: p.ncm || (prodExistente as any).ncm || null }).eq("id", prodId);
         } else {
           const { data: novoProd } = await (supabase
             .from("produtos")
-            .insert({ empresa_id: empresa.id, codigo: p.codigo, nome: p.nome, unidade: p.un, preco_custo: p.valorUnit, preco_venda: p.valorUnit * 1.4, estoque_atual: p.qtd, ativo: true, categoria: p.categoria || null } as any)
+            .insert({ empresa_id: empresa.id, codigo: p.codigo, nome: p.nome, unidade: p.un, preco_custo: p.valorUnit, preco_venda: p.valorUnit * 1.4, estoque_atual: p.qtd, ativo: true, categoria: p.categoria || null, ncm: p.ncm || null } as any)
             .select("id") as any).single();
           prodId = novoProd!.id;
         }
@@ -1142,6 +1269,12 @@ function NotasRecebidas() {
           custo_unitario: p.valorUnit, observacoes: `Entrada NF-e ${notaDetalhe.nNF} (Chave: ${notaDetalhe.chave})`
         });
       }
+
+      // Cadastro fiscal de NCM (modulo Fiscal): alimenta o <prodPred> do CT-e/MDF-e.
+      await registrarNcmFiscal(
+        empresa.id,
+        notaDetalhe.produtos.map((p) => ({ nome: p.nome, ncm: p.ncm })),
+      );
 
       // 5. Lançar parcelas no contas a pagar (só se houver parcelas)
       // Buscar categoria financeira correspondente ao produto (primeiro produto da nota)
@@ -1245,17 +1378,17 @@ function NotasRecebidas() {
       for (const p of notaDetalhe.produtos) {
         const qtdAntiga = mapaAntigo.get(p.codigo) ?? 0;
         const delta = p.qtd - qtdAntiga;
-        const { data: prodExistente } = await supabase.from("produtos").select("id, estoque_atual, categoria").eq("empresa_id", empresa.id).or(`codigo.eq.${p.codigo},nome.ilike.%${p.nome.slice(0, 10)}%`).maybeSingle();
+        const { data: prodExistente } = await supabase.from("produtos").select("id, estoque_atual, categoria, ncm").eq("empresa_id", empresa.id).or(`codigo.eq.${p.codigo},nome.ilike.%${p.nome.slice(0, 10)}%`).maybeSingle();
         let prodId: string | null = prodExistente ? (prodExistente as any).id : null;
         if (prodExistente) {
           prodId = (prodExistente as any).id;
           const novoEstoque = (Number((prodExistente as any).estoque_atual) || 0) + delta;
-          await (supabase.from("produtos") as any).update({ estoque_atual: novoEstoque, preco_custo: p.valorUnit, categoria: p.categoria || (prodExistente as any).categoria || null }).eq("id", prodId);
+          await (supabase.from("produtos") as any).update({ estoque_atual: novoEstoque, preco_custo: p.valorUnit, categoria: p.categoria || (prodExistente as any).categoria || null, ncm: p.ncm || (prodExistente as any).ncm || null }).eq("id", prodId);
           if (delta !== 0) {
             await supabase.from("movimentacoes_estoque").insert({ empresa_id: empresa.id, produto_id: prodId!, tipo: delta > 0 ? "entrada" : "saida", quantidade: Math.abs(delta), custo_unitario: p.valorUnit, observacoes: `Ajuste NF-e ${notaDetalhe.nNF} alterada (Chave: ${notaDetalhe.chave})` });
           }
         } else {
-          const { data: novoProd } = await (supabase.from("produtos").insert({ empresa_id: empresa.id, codigo: p.codigo, nome: p.nome, unidade: p.un, preco_custo: p.valorUnit, preco_venda: p.valorUnit * 1.4, estoque_atual: p.qtd, ativo: true, categoria: p.categoria || null } as any).select("id") as any).single();
+          const { data: novoProd } = await (supabase.from("produtos").insert({ empresa_id: empresa.id, codigo: p.codigo, nome: p.nome, unidade: p.un, preco_custo: p.valorUnit, preco_venda: p.valorUnit * 1.4, estoque_atual: p.qtd, ativo: true, categoria: p.categoria || null, ncm: p.ncm || null } as any).select("id") as any).single();
           prodId = novoProd!.id;
           await supabase.from("movimentacoes_estoque").insert({ empresa_id: empresa.id, produto_id: prodId!, tipo: "entrada", quantidade: p.qtd, custo_unitario: p.valorUnit, observacoes: `Entrada NF-e ${notaDetalhe.nNF} alterada (Chave: ${notaDetalhe.chave})` });
         }
@@ -1339,7 +1472,7 @@ function NotasRecebidas() {
     valor: number;
     data: string;
     nNF: string;
-    produtos: { codigo: string; nome: string; qtd: number; un: string; valorUnit: number; valorTotal: number; categoria: string }[];
+    produtos: { codigo: string; nome: string; qtd: number; un: string; valorUnit: number; valorTotal: number; categoria: string; ncm: string }[];
     parcelas: { numero: string; dataVencimento: string; valor: number; forma_pagamento: string; conta_bancaria_id: string }[];
     xml: string;
   };
@@ -1351,7 +1484,7 @@ function NotasRecebidas() {
     if (n.id) {
       const { data: itens } = await supabase.from("notas_importadas_itens" as never).select("codigo, nome, quantidade, unidade, valor_unitario, valor_total, categoria").eq("nota_id", n.id as any);
       const { data: parcelasDB } = await supabase.from("notas_importadas_parcelas" as never).select("numero, data_vencimento, valor, lancamento_id").eq("nota_id", n.id as any);
-      const produtos = ((itens as any[]) || []).map((it: any) => ({ codigo: it.codigo, nome: it.nome, qtd: Number(it.quantidade), un: it.unidade, valorUnit: Number(it.valor_unitario), valorTotal: Number(it.valor_total), categoria: it.categoria || "" }));
+      const produtos = ((itens as any[]) || []).map((it: any) => ({ codigo: it.codigo, nome: it.nome, qtd: Number(it.quantidade), un: it.unidade, valorUnit: Number(it.valor_unitario), valorTotal: Number(it.valor_total), categoria: it.categoria || "", ncm: it.ncm || "" }));
       let parcelas: DadosNota["parcelas"] = [];
       if (parcelasDB && (parcelasDB as any).length > 0) {
         const lancIds = (parcelasDB as any[]).map((p: any) => p.lancamento_id).filter(Boolean);

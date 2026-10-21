@@ -6428,3 +6428,41 @@ pm run build OK.
   para um `toast.info` proprio, so quando existe — o toast principal fica limpo
   sem perder informacao.
 - tsc sem erro novo (57 = baseline de `fiscal.cte.tsx`, identico ao HEAD) e build OK.
+
+## Cadastro de NCM do modulo Fiscal + NCM do XML no produto (21/10)
+
+Decisao do dono: os modulos tem cadastros proprios (clientes / fornecedores / transportes).
+O NCM do modulo Fiscal (CT-e / MDF-e) ganhou tabela propria, **separada** do cadastro de
+produtos do Estoque (`produtos.ncm`) e da referencia global oficial (`ncm`, Classif).
+
+- **Migration `20261021120000_ncm_fiscal.sql`**: tabela `ncm_fiscal` (empresa_id, ncm,
+  x_prod, tp_carga, origem 'manual'|'nf'), RLS `private.is_empresa_member`, indice
+  empresa+ncm+nome e trigger `tg_touch_updated_at`. **APLICAR no Supabase (Dashboard >
+  SQL Editor)** — ate la o app funciona: o backfill e o import so registram quando a
+  tabela existe.
+- **O que e o cadastro**: o PRODUTO PREDOMINANTE da carga, que e o que os documentos de
+  transporte transportam. `x_prod` -> `<proPred>` do CT-e (texto livre 1-120);
+  `tp_carga` -> `<prodPred><tpCarga>` do MDF-e (01-11); `ncm` -> `<prodPred><NCM>` do
+  MDF-e (2 ou 8 digitos, opcional). O CT-e 4.00 **nao tem NCM** — as NF-e entram so
+  pela chave.
+- **`src/lib/ncm-fiscal.ts`** (novo): tipos, mapa `tpCarga` (01-11) <-> tipo de carga
+  ANTT do `piso-antt.ts` (mapeamento 1:1; "Carga Granel Pressurizada" e aquaviario e
+  nao tem codigo no MDF-e), `registrarNcmFiscal` (idempotente) e `listarNcmFiscal`.
+- **Import de NF-e** (`fiscal.recebidas.tsx`): o NCM do `<det>` agora e lido no parser e
+  gravado em `produtos.ncm` (na importacao, no lancamento e na alteracao — sem
+  sobrescrever um NCM ja cadastrado). O item tambem entra no cadastro fiscal
+  (`ncm_fiscal`, origem 'nf').
+- **Backfill automatico** (1x por empresa, flag `norvo:mig-ncm-produtos:<empresa>`):
+  na 1a abertura de Notas de Compra le o XML guardado das notas importadas, preenche
+  `produtos.ncm` (so quando vazio) e monta o `ncm_fiscal`. Cobre as notas importadas
+  antes do NCM existir no cadastro.
+- **Tela Configuracoes > "NCM dos CT-es"** (nova secao `?secao=ncm`, exige modulo
+  fiscal): lista com busca, cadastro/edicao inline, tipo de carga com o codigo do
+  MDF-e e exclusao com confirmacao. Mostra a descricao oficial do codigo (tabela `ncm`).
+- **CT-e**: novo card "Produto Predominante" na aba Geral (Select do cadastro + NCM e
+  tipo de carga somente leitura). O `proPred` vai no payload (`infCTeNorm.proPred`) —
+  antes saia sempre "CARGA GERAL" fixo.
+- **MDF-e**: o `prodPred` passou a levar `tpCarga` e `NCM` (o nome vem do `<proPred>` do
+  CT-e; tipo de carga e NCM sao completados pelo cadastro fiscal).
+- tsc sem erro novo (33 assinaturas unicas, igual ao baseline), `npm test` (64) e
+  build OK.
