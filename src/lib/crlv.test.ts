@@ -1,5 +1,10 @@
 import { describe, expect, it } from "vitest";
-import { tipoVeiculoDoCrlv, valorSobRotulo, type ItemTexto } from "./crlv";
+import {
+  extrairDoTextoOcr,
+  tipoVeiculoDoCrlv,
+  valorSobRotulo,
+  type ItemTexto,
+} from "./crlv";
 
 // Itens no formato do CRLV digital: rótulo numa linha, valor logo abaixo na mesma coluna.
 const itens: ItemTexto[] = [
@@ -68,5 +73,51 @@ describe("tipoVeiculoDoCrlv", () => {
   it("não devolve tipo para espécie desconhecida", () => {
     expect(tipoVeiculoDoCrlv("")).toBe("");
     expect(tipoVeiculoDoCrlv("REBOQUE", "")).toBe("Carreta");
+  });
+});
+
+// Texto real do OCR de um CRLV impresso (rótulos embaralhados, valores legíveis).
+const textoOcr = `REPÚBLICA FEDERATIVA DO BRASIL
+SECRETARIA NACIONAL DE TRÂNSITO - SENATRAN
+DETRAN- MG !
+CERTIFICADO DE REGISTRO E LICENCIAMENTO DE VEÍCULO - DIGITAL ; CATEGORIA CAPACIDADE
+CÓDIGO RENAVAM [5] FATE AAA ASIA [E] 2 : 13.75
+00956390668 Tt) ba EA fo 7 =. & ! POTÊNCIA/CILINDRADA | PESO BRUTO TOTAL
+PLACA EXERCÍCIO EEE: AO E ! 231CV/***x* 0.23
+EE Ps ERR ——
+MIH1250 2026 F. TE e Fecnf£a . z ; MOTOR | CMT | EIXOS | LOTAÇÃO
+ANO FABRICAÇÃO ANO MODELO A, SEA, 5 2 meo aro 906973U0768790 0.32 3 03P
+E E A+ E
+2008 2008 : Nr PEA * SE o ' CARROCERIA
+NÚMERO DO CRV =) SRT ADA Sã % : CARROCERIA FECHADA
+? : JUVENAL TRANSPORTES EIRELI
+: | CPF / CNP)
+i 03.919.614/0001-60
+MARCA / MODELO / VERSÃO ! ASSINADO DIGITALMENTE PELO DETRAN
+M.BENZ/L 1620 '
+ESPÉCIE / TIPO ! CAT. TARIF DATA DE QUITAÇÃO PAGAMENTO
+i " x [corta única [ ] PARCELADO
+CARGA CAMINHAO ' o
+PLACA ANTERIOR / UF | CHASSI ; FUNDO NACIONAL DE SAÚDE (R$)
+REAR RARA (RA 9BM6953048B585200 O RD MM`;
+
+describe("extrairDoTextoOcr (CRLV impresso)", () => {
+  it("lê os campos pelo padrão do texto (rótulos do OCR saem embaralhados)", () => {
+    const o = extrairDoTextoOcr(textoOcr);
+    expect(o.placa).toBe("MIH1250");
+    expect(o.renavam).toBe("00956390668");
+    expect(o.chassi).toBe("9BM6953048B585200");
+    expect(o.ano).toBe("2008");
+    expect(o.nome).toBe("JUVENAL TRANSPORTES EIRELI");
+    expect(o.cpf).toBe("03.919.614/0001-60");
+    expect(o.especie).toBe("CARGA CAMINHAO");
+    expect(o.carroceria).toBe("CARROCERIA FECHADA");
+    expect(o.marca).toBe("M.BENZ/L 1620");
+    expect(o.eixos).toBe("3");
+  });
+
+  it("o tipo sai pela espécie + carroceria do texto do OCR", () => {
+    const o = extrairDoTextoOcr(textoOcr);
+    expect(tipoVeiculoDoCrlv(o.especie, o.carroceria)).toBe("Truck");
   });
 });

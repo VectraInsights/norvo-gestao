@@ -66,6 +66,7 @@ import { toast } from "sonner";
 import { num, maskDoc } from "@/lib/format";
 import { ALTURA_PAGINA } from "@/lib/layout";
 import {
+  extrairDoTextoOcr,
   ocrPaginaCrlv,
   tipoVeiculoDoCrlv,
   valorSobRotulo,
@@ -364,6 +365,7 @@ function Veiculos() {
       // camada de texto. Cai no OCR (mesma lib que a CNH usa no RH) e os itens do OCR
       // viram os "itens" — como a página impressa tem o mesmo layout do CRLV digital,
       // as coordenadas batem e o parser por rótulo funciona igual.
+      let veioDeOcr = false;
       if (text.replace(/\s/g, "").length < 200) {
         setIsOcr(true);
         const ocr = await ocrPaginaCrlv(pdf);
@@ -377,6 +379,7 @@ function Veiculos() {
         }
         itens = ocr;
         text = ocr.map((i) => i.s).join(" ") + "\n";
+        veioDeOcr = true;
       }
       // CRLV digital é 2 colunas — texto extraído vem embaralhado. Estratégia: isola bloco de DADOS após "Leia o QR Code" e antes de "RECUPERADO"
       const upper = text.toUpperCase().replace(/\s+/g, " ");
@@ -479,71 +482,101 @@ function Veiculos() {
               ? "Carreta"
               : "");
       const updates: Partial<typeof form> = {};
-      // Placa: a regex (formato que já funciona) e, na falta, a leitura pelo rótulo.
-      if (placaMatch) updates.placa = placaMatch[1].replace(/[^A-Z0-9]/g, "").toUpperCase();
-      else {
-        const pRot = valorSobRotulo(itens, "PLACA").replace(/[^A-Z0-9]/g, "").toUpperCase();
-        if (pRot.length === 7) updates.placa = pRot;
-      }
-      if (renavamMatch) updates.renavam = renavamMatch[1];
-      else {
-        const rm2 = upper.match(/C[ÓO]DIGO\s+RENAVAM[^0-9]*([0-9]{11})/);
-        if (rm2) updates.renavam = rm2[1];
-        else {
-          const rRot = valorSobRotulo(itens, "CÓDIGO RENAVAM").replace(/\D/g, "");
-          if (rRot.length === 11) updates.renavam = rRot;
-        }
-      }
-      // Chassi: a regex de 17 caracteres (formato que já funciona) e, na falta, a
-      // leitura pelo rótulo — neste CRLV o chassi tem 14 caracteres e a regex não pega.
-      if (chassiMatch && chassiMatch[1].length === 17) updates.chassi = chassiMatch[1];
-      else {
-        const cRot = valorSobRotulo(itens, "CHASSI").replace(/[^A-Za-z0-9]/g, "").toUpperCase();
-        if (cRot.length >= 8) updates.chassi = cRot;
-      }
-      // CPF/CNPJ do proprietário: vem pelo rótulo (o CRLV traz, a regex não pegava).
-      const docRotulo = valorSobRotulo(itens, "CPF / CNPJ").replace(/\D/g, "");
-      if (docRotulo.length === 11 || docRotulo.length === 14)
-        updates.proprietario_doc = maskDoc(docRotulo);
-      // CRLV: primeiro ano = EXERCÍCIO (licenciamento), segundo = ANO FAB/MODELO
-      if (anos.length >= 2)
-        updates.ano = anos[1]; // segundo = fabricação
-      else if (anos.length === 1) updates.ano = anos[0];
-      if (marcaVal && marcaVal.length > 3 && !marcaVal.includes("PLACA ANTERIOR"))
-        updates.marca_modelo = marcaVal.slice(0, 60);
-      else updates.marca_modelo = "SR/RANDON SRFG CG";
-      if (catMatch) {
-        const c = catMatch[1];
-        updates.categoria = c.toLowerCase();
-      } else updates.categoria = "aluguel";
-      if (propVal) updates.proprietario = propVal;
-      else updates.proprietario = "LGP TRANSPORTES LTDA";
-      // Eixos: dígito solitário antes de "0XP" (ex: "2   03P" ou "*.* 3 00P")
-      // Evita pegar CMT (25.0) - só pega dígito único isolado
-      let eixosVal = "";
-      const eixosMatch2 = dadosBloco.match(/(?:^|\s)(\d)\s+0\dP\b/m);
-      if (eixosMatch2) eixosVal = eixosMatch2[1];
-      else {
-        const e2 = dadosBloco.match(/\*\.\*\s+(\d)\s+0\dP/);
-        if (e2) eixosVal = e2[1];
-      }
-      if (eixosVal) updates.quantidade_eixos = eixosVal;
-      else updates.quantidade_eixos = "3";
-      if (especieVal) updates.tipo = especieVal;
-      updates.observacoes = ""; // chassi agora tem campo proprio
-      console.log("[CRLV] updates", updates);
-      if (Object.keys(updates).length === 0) {
-        toast.error("Não foi possível extrair dados do PDF. Verifique se é o CRLV digital.");
+      if (veioDeOcr) {
+        // ---- CRLV IMPRESSO: os rótulos saem embaralhados no OCR, mas os VALORES
+        // estão legíveis — a leitura aqui é por padrão de texto.
+        const o = extrairDoTextoOcr(text);
+        if (o.placa) updates.placa = o.placa;
+        if (o.renavam) updates.renavam = o.renavam;
+        if (o.chassi) updates.chassi = o.chassi;
+        if (o.ano) updates.ano = o.ano;
+        if (o.nome) updates.proprietario = o.nome;
+        if (o.cpf) updates.proprietario_doc = maskDoc(o.cpf.replace(/\D/g, ""));
+        if (o.marca) updates.marca_modelo = o.marca;
+        if (o.eixos) updates.quantidade_eixos = o.eixos;
+        if (o.categoria) updates.categoria = o.categoria.toLowerCase();
+        const tpOcr = tipoVeiculoDoCrlv(o.especie, o.carroceria);
+        if (tpOcr) updates.tipo = tpOcr;
       } else {
-        // Veículo já cadastrado: não preenche o formulário, só avisa.
-        const dup = updates.placa ? veiculoComMesmaPlaca(updates.placa) : null;
-        if (dup) {
-          toast.error("Veículo já cadastrado", { description: updates.placa });
-          return;
+        // ---- CRLV DIGITAL: regex + leitura por rótulo (coordenada) ----
+        // Placa: a regex (formato que já funciona) e, na falta, a leitura pelo rótulo.
+        if (placaMatch) updates.placa = placaMatch[1].replace(/[^A-Z0-9]/g, "").toUpperCase();
+        else {
+          const pRot = valorSobRotulo(itens, "PLACA").replace(/[^A-Z0-9]/g, "").toUpperCase();
+          if (pRot.length === 7) updates.placa = pRot;
         }
-        setForm((f) => ({ ...f, ...updates }));
-        toast.success("Dados do CRLV importados — confira e salve");
+        if (renavamMatch) updates.renavam = renavamMatch[1];
+        else {
+          const rm2 = upper.match(/C[ÓO]DIGO\s+RENAVAM[^0-9]*([0-9]{11})/);
+          if (rm2) updates.renavam = rm2[1];
+          else {
+            const rRot = valorSobRotulo(itens, "CÓDIGO RENAVAM").replace(/\D/g, "");
+            if (rRot.length === 11) updates.renavam = rRot;
+          }
+        }
+        // Chassi: a regex de 17 caracteres (formato que já funciona) e, na falta, a
+        // leitura pelo rótulo — neste CRLV o chassi tem 14 caracteres e a regex não pega.
+        if (chassiMatch && chassiMatch[1].length === 17) updates.chassi = chassiMatch[1];
+        else {
+          const cRot = valorSobRotulo(itens, "CHASSI").replace(/[^A-Za-z0-9]/g, "").toUpperCase();
+          if (cRot.length >= 8) updates.chassi = cRot;
+        }
+        // CPF/CNPJ do proprietário: vem pelo rótulo (o CRLV traz, a regex não pegava).
+        const docRotulo = valorSobRotulo(itens, "CPF / CNPJ").replace(/\D/g, "");
+        if (docRotulo.length === 11 || docRotulo.length === 14)
+          updates.proprietario_doc = maskDoc(docRotulo);
+        // CRLV: primeiro ano = EXERCÍCIO (licenciamento), segundo = ANO FAB/MODELO
+        if (anos.length >= 2)
+          updates.ano = anos[1]; // segundo = fabricação
+        else if (anos.length === 1) updates.ano = anos[0];
+        if (marcaVal && marcaVal.length > 3 && !marcaVal.includes("PLACA ANTERIOR"))
+          updates.marca_modelo = marcaVal.slice(0, 60);
+        else updates.marca_modelo = "SR/RANDON SRFG CG";
+        if (catMatch) {
+          const c = catMatch[1];
+          updates.categoria = c.toLowerCase();
+        } else updates.categoria = "aluguel";
+        if (propVal) updates.proprietario = propVal;
+        else updates.proprietario = "LGP TRANSPORTES LTDA";
+        // Eixos: dígito solitário antes de "0XP" (ex: "2   03P" ou "*.* 3 00P")
+        // Evita pegar CMT (25.0) - só pega dígito único isolado
+        let eixosVal = "";
+        const eixosMatch2 = dadosBloco.match(/(?:^|\s)(\d)\s+0\dP\b/m);
+        if (eixosMatch2) eixosVal = eixosMatch2[1];
+        else {
+          const e2 = dadosBloco.match(/\*\.\*\s+(\d)\s+0\dP/);
+          if (e2) eixosVal = e2[1];
+        }
+        if (eixosVal) updates.quantidade_eixos = eixosVal;
+        else updates.quantidade_eixos = "3";
+        if (especieVal) updates.tipo = especieVal;
       }
+      updates.observacoes = ""; // chassi agora tem campo proprio
+      console.log("[CRLV] updates", updates, "| ocr:", veioDeOcr);
+      // Veículo já cadastrado: não preenche o formulário, só avisa.
+      const dup = updates.placa ? veiculoComMesmaPlaca(updates.placa) : null;
+      if (dup) {
+        toast.error("Veículo já cadastrado", { description: updates.placa });
+        return;
+      }
+      if (!updates.placa) {
+        toast.error(
+          veioDeOcr ? "O OCR não achou a placa" : "Não consegui ler a placa deste CRLV",
+          {
+            description: veioDeOcr
+              ? "O PDF é uma impressão e a leitura ficou ruim. Preencha os dados manualmente."
+              : "Verifique se é o CRLV digital.",
+            duration: 9000,
+          },
+        );
+        return;
+      }
+      setForm((f) => ({ ...f, ...updates }));
+      toast.success(
+        veioDeOcr
+          ? "Dados lidos por OCR — confira e salve"
+          : "Dados do CRLV importados — conferir e salvar",
+      );
     } catch (e: any) {
       toast.error("Falha ao ler PDF", { description: e.message });
     } finally {

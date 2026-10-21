@@ -43,7 +43,7 @@ const ConfigFiscaisSecao = lazy(() =>
   import("./fiscal.configuracoes").then((m) => ({ default: m.ConfigFiscais })),
 );
 const NcmFiscalSecao = lazy(() =>
-  import("./configuracoes.ncmfiscal").then((m) => ({ default: m.NcmFiscalTab })),
+  import("@/components/erp/ncm-fiscal-cadastro").then((m) => ({ default: m.NcmFiscalTab })),
 );
 const EmpresasSecao = lazy(() =>
   import("./configuracoes.empresas").then((m) => ({ default: m.EmpresasPage })),
