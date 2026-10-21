@@ -1548,6 +1548,30 @@ function PercursosPage() {
       setEditing((e) => (e ? { ...e, coleta_xmun: nx, coleta_uf: nu } : e));
     }
   }, [editing?.rem_xmun, editing?.rem_uf]);
+  // Regra MG: coleta e entrega dentro de Minas Gerais => ICMS isento (CST 40).
+  // Só entra quando o CST ainda é o padrão (00) ou já é isento/não tributado: um CST
+  // escolhido à mão (20, 60, 70...) é preservado. O efeito roda na mudança de UF, então
+  // uma escolha manual do CST depois disso continua valendo.
+  useEffect(() => {
+    if (!editing) return;
+    const cU = String(editing.coleta_uf || "").trim().toUpperCase();
+    const eU = String(editing.entrega_uf || "").trim().toUpperCase();
+    if (cU !== "MG" || eU !== "MG") return;
+    const cst = String(editing.icms_cst || "00").trim();
+    const aliq = String(editing.icms_aliq ?? "").trim();
+    if (cst === "40") {
+      if (aliq === "0.00" || aliq === "0,00") return;
+      setEditing((e) => (e ? { ...e, icms_aliq: "0.00" } : e));
+      return;
+    }
+    if (cst === "41") {
+      if (aliq === "0.00" || aliq === "0,00") return;
+      setEditing((e) => (e ? { ...e, icms_aliq: "0.00" } : e));
+      return;
+    }
+    if (cst !== "00") return; // CST escolhido à mão: não mexe.
+    setEditing((e) => (e ? { ...e, icms_cst: "40", icms_aliq: "0.00" } : e));
+  }, [editing?.coleta_uf, editing?.entrega_uf]);
   const lastLookupParte = useRef<Record<string, string>>({});
   const lookupParte = async (p: "consig" | "redesp", digits: string) => {
     const d = digits.replace(/\D/g, "").slice(0, 14);

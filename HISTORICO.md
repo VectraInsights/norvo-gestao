@@ -6477,3 +6477,18 @@ produtos do Estoque (`produtos.ncm`) e da referencia global oficial (`ncm`, Clas
 - Novo prop `bloqueado` no componente local `Num` (o `fixo` so mostrava valor fixo sem
   poder zerar por codigo).
 - tsc sem erro novo, `npm test` (64) e build OK.
+
+## Percursos: CST 40 automatico quando coleta e entrega sao MG (21/10)
+
+- Regra MG (frete dentro do Estado = ICMS isento): quando a **coleta** e a **entrega**
+  ficam em **MG**, o `icms_cst` vai para **40** e a `icms_aliq` para 0,00 — o campo de
+  aliquota ja nasce travado (cadeado + `bg-muted`).
+- Implementado como efeito que observa `coleta_uf` e `entrega_uf`, entao cobre todos os
+  caminhos: digitacao do UF, preenchimento automatico pelo IBGE (cidade), amarração
+  entrega/redespacho/destinatario e a abertura do percurso.
+- **Preserva escolha manual**: so mexe quando o CST e o padrao (00) ou ja e isento (40/41).
+  Um CST escolhido a mao (20, 60, 70...) nao e sobrescrito. O efeito roda na mudanca de
+  UF, entao um CST escolhido manualmente depois continua valendo.
+- O efeito nao volta o CST quando a rota sai de MG (ex.: entrega vira SP) — o CST fica
+  como esta, para o usuario ajustar; apenas a aliquota e zerada nos CST 40/41.
+- tsc sem erro novo, `npm test` (64) e build OK.
