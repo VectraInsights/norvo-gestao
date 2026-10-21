@@ -6506,3 +6506,12 @@ produtos do Estoque (`produtos.ncm`) e da referencia global oficial (`ncm`, Clas
 - Efeito so age quando as DUAS UFs estao preenchidas (rota identificada); a regra tambem
   roda na abertura de percurso, corrigindo cadastros legados com CST 40 em rota interestadual.
 - tsc sem erro novo, `npm test` (64) e build OK.
+
+## Percursos: alinhou o campo de aliquota travado (21/10)
+
+- O cadeado do campo "Alíq. ICMS %" travado (CST 40/41) saiu do rotulo e foi para
+  DENTRO do input (icone absoluto a direita, `pr-7` no campo).
+- Causa: o `Label` do projeto tem `leading-none` (linha de ~10px); virar `flex` com o
+  icone de 12px growava o rotulo ~2px e empurrava o input, quebrando o alinhamento da
+  grade de 8 colunas do bloco Fiscal. Agora o rotulo e identico ao dos outros campos.
+- tsc sem erro novo e build OK.

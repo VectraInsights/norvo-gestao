@@ -260,14 +260,17 @@ function Num({
   if (bloqueado !== undefined)
     return (
       <div>
-        <Label className="text-[10px] text-muted-foreground flex items-center gap-1">
-          {label} <Lock className="h-3 w-3 text-muted-foreground/50" />
-        </Label>
-        <Input
-          className="h-7 text-xs bg-muted text-muted-foreground"
-          value={bloqueado}
-          readOnly
-        />
+        {/* Rótulo idêntico ao dos outros campos (o `Label` tem leading-none): o
+            cadeado fica DENTRO do input para não growar a linha e desalinhar a grade. */}
+        <Label className="text-[10px] text-muted-foreground">{label}</Label>
+        <div className="relative">
+          <Input
+            className="h-7 text-xs bg-muted pr-7 text-muted-foreground"
+            value={bloqueado}
+            readOnly
+          />
+          <Lock className="pointer-events-none absolute right-2 top-1/2 h-3 w-3 -translate-y-1/2 text-muted-foreground/60" />
+        </div>
       </div>
     );
   if (fixo !== undefined)
