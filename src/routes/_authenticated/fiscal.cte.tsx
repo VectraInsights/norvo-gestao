@@ -9486,7 +9486,7 @@ function CtePage() {
                                 <CommandEmpty>
                                   {motoristas?.length
                                     ? "Nenhum motorista encontrado."
-                                    : "Nenhum colaborador com cargo Motorista. Cadastre em RH."}
+                                    : "Nenhum motorista cadastrado. Cadastre em Fiscal > Motoristas."}
                                 </CommandEmpty>
                                 <CommandGroup>
                                   {(motoristas ?? [])
@@ -9585,7 +9585,7 @@ function CtePage() {
                                 <CommandEmpty>
                                   {veiculos?.length
                                     ? "Nenhum veículo encontrado."
-                                    : "Nenhum veículo cadastrado."}
+                                    : "Nenhum veículo cadastrado. Cadastre em Fiscal > Veículos."}
                                 </CommandEmpty>
                                 <CommandGroup>
                                   {(veiculos ?? [])
@@ -9699,7 +9699,7 @@ function CtePage() {
                                 <CommandEmpty>
                                   {veiculos?.length
                                     ? "Nenhum reboque encontrado."
-                                    : "Nenhum veículo cadastrado."}
+                                    : "Nenhum veículo cadastrado. Cadastre em Fiscal > Veículos."}
                                 </CommandEmpty>
                                 <CommandGroup>
                                   {(veiculos ?? [])
@@ -9815,7 +9815,7 @@ function CtePage() {
                                 <CommandEmpty>
                                   {veiculos?.length
                                     ? "Nenhum reboque encontrado."
-                                    : "Nenhum veículo cadastrado."}
+                                    : "Nenhum veículo cadastrado. Cadastre em Fiscal > Veículos."}
                                 </CommandEmpty>
                                 <CommandGroup>
                                   {(veiculos ?? [])
@@ -9941,7 +9941,7 @@ function CtePage() {
                                   <CommandEmpty>
                                     {motoristas?.length
                                       ? "Nenhum motorista encontrado."
-                                      : "Nenhum colaborador com cargo Motorista. Cadastre em RH."}
+                                      : "Nenhum motorista cadastrado. Cadastre em Fiscal > Motoristas."}
                                   </CommandEmpty>
                                   <CommandGroup>
                                     {(motoristas ?? [])

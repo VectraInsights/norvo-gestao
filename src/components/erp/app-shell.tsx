@@ -43,7 +43,7 @@ import { limparCachePersistido } from "@/lib/query-cache";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { setSelectedEmpresaId, useSelectedEmpresaId } from "@/hooks/use-empresa";
 import { usePermissoes } from "@/hooks/use-permissoes";
-import { moduloDaRota } from "@/lib/permissoes";
+import { podeAcessarRota } from "@/lib/permissoes";
 import { AlterarSenhaDialog } from "@/components/erp/alterar-senha-dialog";
 import {
   DropdownMenu,
@@ -195,7 +195,7 @@ export function AppShell({ children }: { children: ReactNode }) {
   const { pode, ehAdmin, souSuperAdmin } = usePermissoes();
   const visivel = (to: string) => {
     if (to === "/configuracoes/usuarios") return ehAdmin;
-    return pode(moduloDaRota(to));
+    return podeAcessarRota(to, pode);
   };
 
   // Visão geral é um link direto (Dashboard); Favoritos sempre visível; demais conforme personalização
@@ -212,8 +212,8 @@ export function AppShell({ children }: { children: ReactNode }) {
   ];
 
   // Bloqueia páginas de módulos que o usuário não tem permissão para acessar
-  const moduloAtual = moduloDaRota(location.pathname);
-  const semAcesso = !pode(moduloAtual);
+  // (cadastros de apoio aceitam mais de um módulo — ver MODULOS_ALTERNATIVOS).
+  const semAcesso = !podeAcessarRota(location.pathname, pode);
 
   // Grupo que contém a rota atual — deve permanecer aberto
   const activeGroupLabel = navGroups.find((g) =>

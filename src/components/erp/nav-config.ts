@@ -127,6 +127,10 @@ const RAW_NAV: NavGroup[] = [
       { to: "/fiscal/cadastro", label: "Contatos", icon: BookUser },
       { to: "/fiscal/relatorios", label: "Relatórios e Dashboards", icon: BarChart3 },
       { to: "/fiscal/contador", label: "Painel do Contador", icon: Handshake },
+      // Cadastros de apoio: o Fiscal precisa de veículo e motorista para emitir
+      // (o cadastro é o mesmo do Frota/RH — ver MODULOS_ALTERNATIVOS).
+      { to: "/frota/veiculos", label: "Veículos", icon: Truck },
+      { to: "/rh/colaboradores", label: "Motoristas", icon: UsersRound },
     ],
   },
 ];

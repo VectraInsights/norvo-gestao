@@ -6515,3 +6515,24 @@ produtos do Estoque (`produtos.ncm`) e da referencia global oficial (`ncm`, Clas
   icone de 12px growava o rotulo ~2px e empurrava o input, quebrando o alinhamento da
   grade de 8 colunas do bloco Fiscal. Agora o rotulo e identico ao dos outros campos.
 - tsc sem erro novo e build OK.
+
+## Cadastros de apoio: veiculos e motoristas liberados para o modulo Fiscal (21/10)
+
+- Problema: no modulo Fiscal nao dava para cadastrar veiculo nem motorista — e os dois
+  sao essenciais para a emissao (tracao, reboques, motorista, placa no CT-e/MDF-e).
+- Decisao: **cadastro unico, acesso compartilhado**. Veiculo e motorista continuam nas
+  tabelas do Frota (`veiculos`) e do RH (`colaboradores`) — duplicar criaria duas frotas
+  e duas listas de motorista.
+- `src/lib/permissoes.ts`: novo `MODULOS_ALTERNATIVOS` (rota -> modulos que abrem ela) +
+  `modulosDaRota()` + `podeAcessarRota()`. Cadastros de apoio:
+  `/frota/veiculos` -> [frota, fiscal] e `/rh/colaboradores` -> [rh, fiscal].
+- `app-shell.tsx` (filtro do menu + tela "Sem acesso") e `command-palette.tsx` (Ctrl+K)
+  passam a usar `podeAcessarRota` no lugar do `moduloDaRota` — as demais rotas seguem
+  restritas ao proprio modulo.
+- `nav-config.ts`: grupo Fiscal ganhou **Veiculos** e **Motoristas** (apontam para as
+  telas do Frota/RH) — o item aparece nos dois grupos, mas e a mesma tela e a mesma
+  tabela.
+- CT-e: as mensagens de lista vazia apontam o caminho certo ("Cadastre em Fiscal >
+  Veiculos/Motoristas") em vez de "Cadastre em RH".
+- Testes novos em `permissoes.test.ts` (4 casos: liberacao p/ fiscal, resto restrito,
+  rotas sem modulo e modulos alternativos). `npm test` (68) e build OK; tsc sem erro novo.
